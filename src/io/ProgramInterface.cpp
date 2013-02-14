@@ -8,6 +8,7 @@
 #include "ProgramInterface.h"
 #include <iostream>
 #include <cstdlib>
+#include "../io/convert.h"
 
 ProgramInterface::ProgramInterface(std::string name, std::string shortDescription, std::string version)
 : m_programName(name),
@@ -52,15 +53,27 @@ void ProgramInterface::exitWithUsage()
 
 	if (!m_optionArguments.empty())
 		std::cout << "\n[OPTIONS]" << std::endl;
+
+	// First stringify the options part to get the maximum length
+	std::deque<std::string> optionStrings(m_optionArguments.size());
+	std::string::size_type maxLength = 0;
 	for (unsigned int i = 0; i < m_optionArguments.size(); ++i)
 	{
 		Option& opt = *m_optionArguments[i];
 		if (opt.requireArgument)
-			std::cout << "  -" << opt.shortName << "<" << opt.argumentName << "> or --" <<
-			opt.longName << "=<" << opt.argumentName << ">\n" << std::string(15, ' ') << opt.description <<
-			" (default value: " << opt << ")" << std::endl;
+			optionStrings[i] = io::Str() << "  -" << opt.shortName << "<" << opt.argumentName <<
+			"> --" << opt.longName << "=<" << opt.argumentName << ">";
 		else
-			std::cout << "  -" << opt.shortName << " or --" << opt.longName << "\n" << std::string(15, ' ') << opt.description << std::endl;
+			optionStrings[i] = io::Str() << "  -" << opt.shortName << "    --" << opt.longName;
+		if (optionStrings[i].length() > maxLength)
+			maxLength = optionStrings[i].length();
+	}
+
+	for (unsigned int i = 0; i < m_optionArguments.size(); ++i)
+	{
+		Option& opt = *m_optionArguments[i];
+		std::string::size_type numSpaces = maxLength + 3 - optionStrings[i].length();
+		std::cout << optionStrings[i] << std::string(numSpaces, ' ') << opt.description << "\n";
 	}
 	std::cout << std::endl;
 	std::exit(0);

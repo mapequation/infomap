@@ -24,7 +24,7 @@ struct Config
 		directed(false),
 		undirdir(false),
 		unrecordedTeleportation(false),
-		teleportToLinks(false),
+		teleportToNodes(false),
 		teleportationProbability(0.15),
 		seedToRandomNumberGenerator(123),
 		numTrials(1),
@@ -109,7 +109,7 @@ struct Config
 	bool directed;
 	bool undirdir;
 	bool unrecordedTeleportation;
-	bool teleportToLinks;
+	bool teleportToNodes;
 	double teleportationProbability;
 	double seedToRandomNumberGenerator;
 
