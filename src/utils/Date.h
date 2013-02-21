@@ -11,17 +11,17 @@
 #include <ctime>
 #include <cmath>
 #include <ostream>
-#include <time.h>
 
 class ElapsedTime
 {
 public:
-//	enum InSeconds
-//	{
-//		SECONDS_IN_A_MINUTE = 60,
-//		SECONDS_IN_AN_HOUR = 3600,
-//		SECONDS_IN_A_DAY = 86400 // 3600*24
-//	};
+	enum InSeconds
+	{
+		SECONDS_IN_A_MINUTE = 60,
+		SECONDS_IN_AN_HOUR = 3600,
+		SECONDS_IN_A_DAY = 86400 // 3600*24
+	};
+
 	ElapsedTime(double elapsedTime) : m_elapsedTime(elapsedTime) {}
 	~ElapsedTime() {}
 

@@ -62,7 +62,7 @@ public:
 private:
     std::clock_t m_start, m_stop;
     bool m_running;
-    static const double DBL_CLOCKS_PER_SEC = CLOCKS_PER_SEC;
+    static const double DBL_CLOCKS_PER_SEC = CLOCKS_PER_SEC; // 1000000
 };
 
 
