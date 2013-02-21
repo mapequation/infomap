@@ -1,9 +1,12 @@
-/*
- * InfomapGreedy.cpp
- *
- *  Created on: Mar 15, 2012
- *      Author: daniel
- */
+/* -----------------------------------------------------------------------
+
+ Infomap software package for multi-level network clustering
+
+   * Copyright (c) 2013. See LICENSE for more info.
+   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+
+----------------------------------------------------------------------- */
+
 #include "InfomapGreedy.h"
 //#include "../utils/Logger.h"
 //#include "flowData.h"

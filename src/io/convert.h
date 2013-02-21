@@ -1,9 +1,11 @@
-/*
- * convert.h
- *
- *  Created on: Feb 27, 2012
- *      Author: daniel
- */
+/* -----------------------------------------------------------------------
+
+ Infomap software package for multi-level network clustering
+
+   * Copyright (c) 2013. See LICENSE for more info.
+   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+
+----------------------------------------------------------------------- */
 
 #ifndef CONVERT_H_
 #define CONVERT_H_

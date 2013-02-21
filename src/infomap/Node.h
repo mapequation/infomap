@@ -1,9 +1,11 @@
-/*
- * Node.h
- *
- *  Created on: Mar 14, 2012
- *      Author: daniel
- */
+/* -----------------------------------------------------------------------
+
+ Infomap software package for multi-level network clustering
+
+   * Copyright (c) 2013. See LICENSE for more info.
+   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+
+----------------------------------------------------------------------- */
 
 #ifndef NODE_H_
 #define NODE_H_

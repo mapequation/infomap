@@ -1,11 +1,11 @@
-/*
- * logger.h
- *
- *  Created on: Sep 15, 2011
- *      Author: daniel
- *
- *	Some logging and debugging macros and methods
- */
+/* -----------------------------------------------------------------------
+
+ Infomap software package for multi-level network clustering
+
+   * Copyright (c) 2013. See LICENSE for more info.
+   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+
+----------------------------------------------------------------------- */
 
 #ifndef LOGGER_H_
 #define LOGGER_H_

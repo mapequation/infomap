@@ -1,9 +1,11 @@
-/*
- * types.h
- *
- *  Created on: Jul 29, 2011
- *      Author: daniel
- */
+/* -----------------------------------------------------------------------
+
+ Infomap software package for multi-level network clustering
+
+   * Copyright (c) 2013. See LICENSE for more info.
+   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+
+----------------------------------------------------------------------- */
 
 #ifndef TYPES_H_
 #define TYPES_H_

@@ -1,9 +1,11 @@
-/*
- * NodeFactory.h
- *
- *  Created on: Mar 15, 2012
- *      Author: daniel
- */
+/* -----------------------------------------------------------------------
+
+ Infomap software package for multi-level network clustering
+
+   * Copyright (c) 2013. See LICENSE for more info.
+   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+
+----------------------------------------------------------------------- */
 
 #ifndef NODEFACTORY_H_
 #define NODEFACTORY_H_

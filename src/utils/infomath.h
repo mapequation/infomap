@@ -1,9 +1,11 @@
-/*
- * infomapth.h
- *
- *  Created on: Sep 2, 2011
- *      Author: daniel
- */
+/* -----------------------------------------------------------------------
+
+ Infomap software package for multi-level network clustering
+
+   * Copyright (c) 2013. See LICENSE for more info.
+   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+
+----------------------------------------------------------------------- */
 
 #ifndef INFOMATH_H_
 #define INFOMATH_H_

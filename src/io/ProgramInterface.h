@@ -1,9 +1,11 @@
-/*
- * ProgramInterface.h
- *
- *  Created on: Oct 29, 2012
- *      Author: Daniel
- */
+/* -----------------------------------------------------------------------
+
+ Infomap software package for multi-level network clustering
+
+   * Copyright (c) 2013. See LICENSE for more info.
+   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+
+----------------------------------------------------------------------- */
 
 #ifndef PROGRAMINTERFACE_H_
 #define PROGRAMINTERFACE_H_

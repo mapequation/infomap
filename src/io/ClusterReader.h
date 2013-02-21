@@ -1,9 +1,11 @@
-/*
- * ClusterReader.h
- *
- *  Created on: Feb 24, 2012
- *      Author: daniel
- */
+/* -----------------------------------------------------------------------
+
+ Infomap software package for multi-level network clustering
+
+   * Copyright (c) 2013. See LICENSE for more info.
+   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+
+----------------------------------------------------------------------- */
 
 #ifndef CLUSTERREADER_H_
 #define CLUSTERREADER_H_

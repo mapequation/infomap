@@ -1,9 +1,11 @@
-/*
- * PajekConverter.h
- *
- *  Created on: Aug 2, 2011
- *      Author: daniel
- */
+/* -----------------------------------------------------------------------
+
+ Infomap software package for multi-level network clustering
+
+   * Copyright (c) 2013. See LICENSE for more info.
+   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+
+----------------------------------------------------------------------- */
 
 #ifndef PAJEKCONVERTER_H_
 #define PAJEKCONVERTER_H_

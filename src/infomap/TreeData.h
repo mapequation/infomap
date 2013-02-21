@@ -1,9 +1,11 @@
-/*
- * TreeData.h
- *
- *  Created on: Mar 14, 2012
- *      Author: daniel
- */
+/* -----------------------------------------------------------------------
+
+ Infomap software package for multi-level network clustering
+
+   * Copyright (c) 2013. See LICENSE for more info.
+   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+
+----------------------------------------------------------------------- */
 
 #ifndef TREEDATA_H_
 #define TREEDATA_H_

@@ -1,9 +1,12 @@
-/*
- * InfomapBase.cpp
- *
- *  Created on: Mar 15, 2012
- *      Author: daniel
- */
+/* -----------------------------------------------------------------------
+
+ Infomap software package for multi-level network clustering
+
+   * Copyright (c) 2013. See LICENSE for more info.
+   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+
+----------------------------------------------------------------------- */
+
 #include "InfomapBase.h"
 #include "../io/DataConverterHelper.h"
 #include "../utils/Logger.h"
