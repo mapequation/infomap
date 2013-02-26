@@ -28,6 +28,7 @@
 #endif
 #include <map>
 #include "../utils/Date.h"
+#include "Network.h"
 
 void InfomapBase::run()
 {
@@ -39,19 +40,20 @@ void InfomapBase::run()
 			omp_get_num_procs() << " processors...)\n";
 #endif
 
-	try
-	{
-		readData();
-	}
-	catch (const std::runtime_error& error)
-	{
-		std::cerr << "Error parsing the input file: " << error.what() << std::endl;
-		return;
-	}
-	m_treeData.root()->setChildDegree(m_treeData.numLeafNodes());
+//	try
+//	{
+//		readData();
+//	}
+//	catch (const std::runtime_error& error)
+//	{
+//		std::cerr << "Error parsing the input file: " << error.what() << std::endl;
+//		return;
+//	}
+//	m_treeData.root()->setChildDegree(m_treeData.numLeafNodes());
+//
+//	calculateFlow();
 
-	calculateFlow();
-
+	initNetwork();
 
 	indexCodelength = root()->codelength = calcModuleCodelength(*root());
 	RELEASE_OUT("One-level codelength: " << indexCodelength << std::endl);
@@ -99,7 +101,8 @@ void InfomapBase::run()
 		{
 			bestHierarchicalCodelength = hierarchicalCodelength;
 			bestSolutionStatistics.str("");
-			printNetworkData(bestSolutionStatistics);
+			printNetworkData();
+			printPerLevelCodelength(bestSolutionStatistics);
 		}
 	}
 
@@ -124,6 +127,8 @@ void InfomapBase::run()
 
 	std::cout << "Best end solution:" << std::endl;
 	std::cout << bestSolutionStatistics.str() << std::endl;
+
+	printNetworkDebug("debug", true, false);
 
 
 	//TODO: Test recursive search only one step further each time to be able to show progress
@@ -173,8 +178,8 @@ void InfomapBase::runPartition()
 			bestIntermediateCodelength = hierarchicalCodelength;
 			bestIntermediateStatistics.clear();
 			bestIntermediateStatistics.str("");
-			printNetworkData(bestIntermediateStatistics,
-				io::Str() << FileURI(m_config.networkFile).getName() << "_fast", false);
+			printPerLevelCodelength(bestIntermediateStatistics);
+			printNetworkData(io::Str() << FileURI(m_config.networkFile).getName() << "_fast", false);
 
 		}
 		if (m_config.fastHierarchicalSolution == 1)
@@ -193,13 +198,29 @@ void InfomapBase::runPartition()
 		partitionAndQueueNextLevel(partitionQueue);
 	}
 
+//	//DEBUG:
+//	RELEASE_OUT(std::setprecision(10));
+//	RELEASE_OUT("Current codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
+//				codelength << "\nRecalculate codelength..\n");
+//
+//	recalculateCodelengthFromConsolidatedNetwork();
+//
+//	RELEASE_OUT("Current codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
+//			codelength << "\n");
+//
+//	RELEASE_OUT("\nDEBUG: Skipping recursive part!!\n");
+//	return;
 
+	// TODO: Write out initial codelength (two-level/hierarchical) on which the compression rate depends
 	if (m_config.verbosity == 0)
 	{
-		RELEASE_OUT("Recursive sub-structure compression: " << std::flush);
+		RELEASE_OUT("\nRecursive sub-structure compression: " << std::flush);
+
 	}
 	else
 	{
+		RELEASE_OUT("Current codelength: " << indexCodelength << " + " <<
+					(hierarchicalCodelength - indexCodelength) << " = " << hierarchicalCodelength<< "\n");
 		RELEASE_OUT("\nTrying to find deeper structure under current modules recursively... \n");
 	}
 
@@ -319,7 +340,8 @@ double InfomapBase::hierarchicalPartition(int recursiveCount, bool tryIndexing)
 
 	if (tryIndexing)
 	{
-		optimalIndexlength = tryIndexingIteratively();
+		tryIndexingIteratively();
+		optimalIndexlength = indexCodelength;
 	}
 
 
@@ -374,6 +396,7 @@ double InfomapBase::partitionAndQueueNextLevel(PartitionQueue& partitionQueue, b
 	if (numTopModules() == 1)
 	{
 		//		return hierarchicalCodelength; // 0.0 but doesn't seem to be used.. check unnecessary checks..
+		root()->codelength = calcModuleCodelength(*root());
 		hierarchicalCodelength = codelength;
 		return codelength;
 	}
@@ -381,12 +404,12 @@ double InfomapBase::partitionAndQueueNextLevel(PartitionQueue& partitionQueue, b
 	// Instead of a flat codelength, use the two-level structure found.
 	hierarchicalCodelength = codelength;
 
-
 	if (tryIndexing)
 	{
 		tryIndexingIteratively();
 	}
 
+	root()->codelength = calcModuleCodelength(*root());
 
 	queueTopModules(partitionQueue);
 
@@ -417,6 +440,7 @@ void InfomapBase::queueTopModules(PartitionQueue& partitionQueue)
 
 double InfomapBase::tryIndexingIteratively()
 {
+//	return indexCodelength;//TODO: DEBUG!!
 	double optimalIndexlength = indexCodelength;
 	unsigned int numIndexingCompleted = 0;
 	bool verbose = m_subLevel == 0;
@@ -429,6 +453,7 @@ double InfomapBase::tryIndexingIteratively()
 			RELEASE_OUT("\n");
 	}
 
+	double minHierarchicalCodelength = hierarchicalCodelength;
 	// Add index codebooks as long as the code gets shorter (and collapse each iteration)
 	bool tryIndexing = true;
 	while(tryIndexing)
@@ -469,7 +494,7 @@ double InfomapBase::tryIndexingIteratively()
 			break;
 		}
 
-		hierarchicalCodelength += superInfomap->codelength - indexCodelength;
+		minHierarchicalCodelength += superInfomap->codelength - indexCodelength;
 
 
 		if (verbose)
@@ -482,7 +507,7 @@ double InfomapBase::tryIndexingIteratively()
 			{
 				RELEASE_OUT("succeeded. Found " << superInfomap->numTopModules() << " "
 						"super modules with estimated hierarchical codelength " <<
-						hierarchicalCodelength << ".\n");
+						minHierarchicalCodelength << ".\n");
 			}
 		}
 
@@ -519,6 +544,11 @@ double InfomapBase::tryIndexingIteratively()
 		bool replaceExistingModules = m_config.fastHierarchicalSolution == 0;
 		consolidateModules(replaceExistingModules);
 
+		if (replaceExistingModules)
+			hierarchicalCodelength = codelength;
+		else
+			hierarchicalCodelength = minHierarchicalCodelength;
+
 		++numIndexingCompleted;
 		tryIndexing = m_numNonTrivialTopModules > 1 && numTopModules() != numLeafNodes();
 //		RELEASE_OUT("!!! DEBUG, early exit !!!\n");
@@ -526,36 +556,7 @@ double InfomapBase::tryIndexingIteratively()
 	}
 
 	if (verbose && m_config.verbosity == 0)
-		RELEASE_OUT("super modules. ");
-
-	if (m_config.fastHierarchicalSolution)
-	{
-		// Print current hierarchical solution
-		if (m_subLevel == 0)
-		{
-			RELEASE_OUT("\nNum top modules: " << numTopModules() << ", root child degree: " <<
-					root()->childDegree() << std::endl);
-			for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-					moduleIt != endIt; ++moduleIt)
-			{
-				RELEASE_OUT("  childDegree: " << moduleIt->childDegree() << std::endl);
-			}
-			RELEASE_OUT("Deleting sub-modules in " << numIndexingCompleted << " levels... ");
-		}
-		// Clear all sub-modules
-		for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-				moduleIt != endIt; ++moduleIt)
-		{
-			for (unsigned int i = 0; i < numIndexingCompleted; ++i)
-			{
-				moduleIt->replaceChildrenWithGrandChildren();
-			}
-		}
-		if (m_subLevel == 0)
-		{
-			RELEASE_OUT("done!" << std::endl);
-		}
-	}
+		RELEASE_OUT("super modules with estimated codelength " << minHierarchicalCodelength << ". ");
 
 
 	optimalIndexlength = indexCodelength;
@@ -644,13 +645,11 @@ double InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partitionQue
 			break;
 		}
 
-
 		// Consolidate the dynamic modules without replacing any existing ones.
 		consolidateModules(false);
 
 		hierarchicalCodelength = workingHierarchicalCodelength;
 		oldIndexLength = indexCodelength;
-
 
 		// Store the individual codelengths on each module
 		for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
@@ -664,23 +663,29 @@ double InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partitionQue
 			queueTopModules(partitionQueue);
 		}
 
-
 		nodesLabel = "modules";
 		isLeafLevel = false;
 		++numLevelsCreated;
+
+//		//TODO: DEBUG!!
+//		if (numLevelsCreated == 2)
+//		{
+//			RELEASE_OUT("DEBUG: Early exit! ");
+//			break;
+//		}
 
 	} while (m_numNonTrivialTopModules != 1);
 
 	if (verbose)
 	{
-		if (m_config.verbosity < 2)
-			RELEASE_OUT("done! Added " << numLevelsCreated << " levels with " <<
-					numTopModules() << " top modules to codelength: " <<
-					std::setprecision(m_config.verboseNumberPrecision) << hierarchicalCodelength << "\n");
+		RELEASE_OUT(std::setprecision(m_config.verboseNumberPrecision));
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("to codelength " << hierarchicalCodelength << " in " <<
+					numTopModules() << " top modules. ");
 		else
 			RELEASE_OUT("done! Added " << numLevelsCreated << " levels with " <<
-					numTopModules() << " top modules. Hierarchical codelength: " <<
-					hierarchicalCodelength << std::endl);
+					numTopModules() << " top modules to codelength: " <<
+					hierarchicalCodelength << " ");
 	}
 
 	return numLevelsCreated;
@@ -698,9 +703,9 @@ unsigned int InfomapBase::deleteSubLevels()
 	if (numLevels <= 1)
 		return 0;
 
-	if (m_subLevel == 0 && m_config.verbosity > 1)
+	if (m_subLevel == 0 && m_config.verbosity > 0)
 	{
-		RELEASE_OUT("Clearing " << (numLevels-1) << " levels of sub-modules... ");
+		RELEASE_OUT("Clearing " << (numLevels-1) << " levels of sub-modules");
 	}
 
 	// Clear all sub-modules
@@ -728,10 +733,13 @@ unsigned int InfomapBase::deleteSubLevels()
 	moduleCodelength = sumModuleLength;
 	hierarchicalCodelength = codelength = indexCodelength + moduleCodelength;
 
-	if (m_subLevel == 0 && m_config.verbosity > 1)
+	if (m_subLevel == 0)
 	{
-		RELEASE_OUT("done! Two-level codelength " << indexCodelength << " + " << moduleCodelength << " = " <<
-				codelength << " in " << numTopModules() << " modules." << std::endl);
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("Clearing sub-modules to codelength " << codelength << "\n");
+		else
+			RELEASE_OUT("done! Two-level codelength " << indexCodelength << " + " << moduleCodelength <<
+					" = " << codelength << " in " << numTopModules() << " modules." << std::endl);
 	}
 
 	return numLevels-1;
@@ -1391,6 +1399,36 @@ void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)
 			" nodes in " << root()->childDegree() << " modules." << std::endl);
 }
 
+void InfomapBase::initNetwork()
+{
+	Network network(m_config);
+
+	try
+	{
+		network.readFromFile(m_config.networkFile);
+	}
+	catch (const std::runtime_error& error)
+	{
+		std::cerr << "Error parsing the input file: " << error.what() << std::endl;
+		return;
+	}
+
+	network.calculateFlow();
+
+	m_treeData.reserveNodeCount(network.numNodes());
+
+	for (unsigned int i = 0; i < network.numNodes(); ++i)
+		m_treeData.addNewNode(network.nodeNames()[i], network.nodeTeleportRates()[i]);
+	const Network::LinkVec& links = network.links();
+	for (unsigned int i = 0; i < links.size(); ++i)
+		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow);
+
+	setNodeFlow(network.nodeFlow());
+	initEnterExitFlow();
+
+//	printNetworkDebug("debug", false, true);
+}
+
 void InfomapBase::readData()
 {
 	DEBUG_OUT("InfomapBase::readData(" << m_config.inDataFilename << ")..." << std::endl);
@@ -1405,8 +1443,8 @@ void InfomapBase::initSubNetwork(NodeBase& parent, bool recalculateFlow)
 	generateNetworkFromChildren(parent); // Updates the exitNetworkFlow for the nodes
 	root()->setChildDegree(numLeafNodes());
 
-	if (recalculateFlow)
-		calculateFlow();
+//	if (recalculateFlow)
+//		calculateFlow();
 
 }
 
@@ -1487,17 +1525,20 @@ void InfomapBase::calcCodelengthFromExternalClusterData()
 			codelength << " in " << numTopModules() << " modules." << std::endl);
 }
 
-void InfomapBase::printNetworkData(std::ostream& logOut, std::string filename, bool sort)
+void InfomapBase::printNetworkData(std::string filename, bool sort)
 {
+	if (m_config.noFileOutput)
+		return;
+
 	if (filename.length() == 0)
 		filename = FileURI(m_config.networkFile).getName();
 
 	// Print .tree
 	std::string outName = io::Str() << m_config.outDirectory << filename << ".tree";
 	if (m_config.verbosity == 0)
-		RELEASE_OUT("Writing " << outName);
+		RELEASE_OUT("(Writing " << outName << ".." << std::flush);
 	else
-		RELEASE_OUT("Print hierarchical cluster data to " << outName << "... ");
+		RELEASE_OUT("Print hierarchical cluster data to " << outName << "... " << std::flush);
 	SafeOutFile treeOut(outName.c_str());
 	treeOut << "# Codelength " << hierarchicalCodelength << " bits in " <<
 			Stopwatch::getElapsedTimeSinceProgramStartInSec() << "s. Network size: "
@@ -1506,7 +1547,7 @@ void InfomapBase::printNetworkData(std::ostream& logOut, std::string filename, b
 	printSubInfomapTree(treeOut, m_treeData);
 
 	if (m_config.verbosity == 0)
-		RELEASE_OUT(" and ");
+		RELEASE_OUT(") ");
 	else
 		RELEASE_OUT("done!" << std::endl);
 
@@ -1522,17 +1563,13 @@ void InfomapBase::printNetworkData(std::ostream& logOut, std::string filename, b
 
 	// Print .map
 	outName = io::Str() << m_config.outDirectory << filename << ".map";
-	if (m_config.verbosity == 0)
-		RELEASE_OUT(outName);
-	else
+	if (m_config.verbosity > 0)
 		RELEASE_OUT("Print top modules to " << outName << "... ");
 	SafeOutFile mapOut(outName.c_str());
 	printMap(mapOut);
 
-	if (m_config.verbosity == 0)
-		RELEASE_OUT(".\n");
-	else
-		RELEASE_OUT("done!" << std::endl);
+	if (m_config.verbosity > 0)
+		RELEASE_OUT("done!\n");
 
 	// Print .clu if constrained to two-level
 	if (m_config.twoLevel)
@@ -1544,9 +1581,18 @@ void InfomapBase::printNetworkData(std::ostream& logOut, std::string filename, b
 		printNodeRanks();
 
 	// Print flow network
-//	printFlowNetwork(); //TODO: Make this method accept arguments as all other print methods!
+	if (m_config.printFlowNetwork)
+	{
+		outName = io::Str() << m_config.outDirectory << filename << ".flow";
+		SafeOutFile flowOut(outName.c_str());
+		if (m_config.verbosity > 0)
+			RELEASE_OUT("Print flow network to " << outName << "... " << std::flush);
+		printFlowNetwork(flowOut);
+		if (m_config.verbosity > 0)
+			RELEASE_OUT("done!\n");
+	}
 
-	printPerLevelCodelength(logOut);
+//	printPerLevelCodelength(logOut);
 }
 
 void InfomapBase::printNetworkDebug(std::string filenameSuffix, bool includeSubInfomapInstances, bool toStdOut)
@@ -1555,10 +1601,11 @@ void InfomapBase::printNetworkDebug(std::string filenameSuffix, bool includeSubI
 	if (toStdOut)
 	{
 		ALL_OUT(std::endl << "Printing current tree at \"" << filenameSuffix << "\":" << std::endl);
-		if (includeSubInfomapInstances)
-			printSubInfomapTree(std::cout, m_treeData);
-		else
-			printTree(std::cout, *root());
+//		if (includeSubInfomapInstances)
+//			printSubInfomapTree(std::cout, m_treeData);
+//		else
+//			printTree(std::cout, *root());
+		printSubInfomapTreeDebug(std::cout, m_treeData);
 		ALL_OUT(std::flush << std::endl);
 	}
 	else
@@ -1572,7 +1619,7 @@ void InfomapBase::printNetworkDebug(std::string filenameSuffix, bool includeSubI
 		SafeOutFile treeOut(oss.str().c_str());
 		treeOut << "# Codelength = " << hierarchicalCodelength << " bits." << std::endl;
 		if (includeSubInfomapInstances)
-			printSubInfomapTree(treeOut, m_treeData);
+			printSubInfomapTreeDebug(treeOut, m_treeData);
 		else
 			printTree(treeOut, *root());
 	}

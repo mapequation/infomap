@@ -70,6 +70,10 @@ protected:
 	virtual void getTopModuleRanks(std::vector<double>& ranks) = 0;
 	// end debug
 
+	virtual void setNodeFlow(const std::vector<double>& nodeFlow) = 0;
+
+	virtual void initEnterExitFlow() = 0;
+
 	virtual void recalculateCodelengthFromActiveNetwork() = 0;
 
 	virtual void recalculateCodelengthFromConsolidatedNetwork() = 0;
@@ -144,7 +148,7 @@ protected:
 
 	virtual void printNodeRanks() = 0;
 
-	virtual void printFlowNetwork() = 0;
+	virtual void printFlowNetwork(std::ostream& out) = 0;
 
 	virtual void printMap(std::ostream& out) = 0;
 
@@ -186,13 +190,14 @@ private:
 	void partitionEachModule(unsigned int recursiveCount = 0, bool fast = false);
 	double generateSubInfomapInstancesToLevel(unsigned int level, bool tryIndexing);
 	double partitionModule(NodeBase& module, bool tryIndexing);
+	void initNetwork();
 	void readData();
 	void initSubNetwork(NodeBase& parent, bool recalculateFlow = false);
 	void initSuperNetwork(NodeBase& parent);
 	void setActiveNetworkFromChildrenOfRoot();
 	void setActiveNetworkFromLeafs();
 	void calcCodelengthFromExternalClusterData();
-	void printNetworkData(std::ostream& logOut, std::string filename = "", bool sort = true);
+	void printNetworkData(std::string filename = "", bool sort = true);
 	void printClusterVector(std::string filename = "");
 	void printTree(std::ostream& out, const NodeBase& root, const std::string& prefix = "");
 	void printPerLevelCodelength(std::ostream& out);

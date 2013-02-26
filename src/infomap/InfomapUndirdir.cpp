@@ -651,14 +651,4 @@ void InfomapUndirdir::recalculateCodelengthFromActiveNetwork()
 	DEBUG_OUT("$$$$$$$$$ Tuned codelength for dir unrec: " << codelength << std::endl);
 }
 
-void InfomapUndirdir::preparePartitionIndexCodebook()
-{
-	DEBUG_OUT("InfomapUndirdir::preparePartitionIndexCodebook()... " << std::endl);
-	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-			moduleIt != endIt; ++moduleIt)
-	{
-		NodeType& module = getNode(*moduleIt);
-		module.data.flow = module.data.enterFlow;
-	}
-}
 

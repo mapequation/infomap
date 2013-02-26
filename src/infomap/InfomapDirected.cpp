@@ -19,7 +19,11 @@ InfomapDirected::InfomapDirected(const Config& conf)
 :	InfomapGreedy<InfomapDirected>(conf),
  	alpha(conf.teleportationProbability),
  	beta(1.0-alpha)
- 	{}
+// 	alpha(0.0),
+// 	beta(1.0)
+ 	{
+//		RELEASE_OUT(" (DEBUG: Coding directed network with alpha = 0) ");
+ 	}
 
 /**
  * Calculate the PageRank flow on nodes and edges using the power method.
@@ -110,8 +114,8 @@ void InfomapDirected::calculateFlow()
 	}
 
 	int numIterations = 0;
-	double alpha = m_config.teleportationProbability;
-	double beta = 1.0 - alpha;
+	double alpha = this->alpha;
+	double beta = this->beta;
 	double sqdiff = 1.0;
 	double danglingRank = 0.0;
 	do{
@@ -351,11 +355,9 @@ unsigned int InfomapDirected::optimizeModulesImpl()
 		}
 
 		// For teleportation and dangling nodes
-		double alpha = m_config.teleportationProbability;
-		double beta = 1.0 - alpha;
 		unsigned int oldM = current.index;
-		double additionalTeleInFlowOldModuleIfNodeIsMovedOut = (alpha*current.data.flow + beta*current.data.danglingFlow)*(m_moduleFlowData[oldM].teleportWeight-current.data.teleportWeight);
-		double additionalTeleOutFlowOldModuleIfNodeIsMovedOut = (alpha*(m_moduleFlowData[oldM].flow-current.data.flow) + beta*(m_moduleFlowData[oldM].danglingFlow-current.data.danglingFlow))*current.data.teleportWeight;
+		double additionalTeleInFlowOldModuleIfNodeIsMovedOut = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow)*(m_moduleFlowData[oldM].teleportWeight-current.data.teleportWeight);
+		double additionalTeleOutFlowOldModuleIfNodeIsMovedOut = (alpha*(m_moduleFlowData[oldM].teleportSourceFlow-current.data.teleportSourceFlow) + beta*(m_moduleFlowData[oldM].danglingFlow-current.data.danglingFlow))*current.data.teleportWeight;
 		for (unsigned int j = 0; j < numModuleLinks; ++j)
 		{
 			unsigned int otherModule = moduleDeltaExits[j].first;
@@ -364,8 +366,8 @@ unsigned int InfomapDirected::optimizeModulesImpl()
 				moduleDeltaExits[j].second.second += additionalTeleOutFlowOldModuleIfNodeIsMovedOut;
 			}
 			else {
-				moduleDeltaExits[j].second.first += (alpha*current.data.flow + beta*current.data.danglingFlow)*m_moduleFlowData[otherModule].teleportWeight;
-				moduleDeltaExits[j].second.second += (alpha*m_moduleFlowData[otherModule].flow + beta*m_moduleFlowData[otherModule].danglingFlow)*current.data.teleportWeight;
+				moduleDeltaExits[j].second.first += (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow)*m_moduleFlowData[otherModule].teleportWeight;
+				moduleDeltaExits[j].second.second += (alpha*m_moduleFlowData[otherModule].teleportSourceFlow + beta*m_moduleFlowData[otherModule].danglingFlow)*current.data.teleportWeight;
 			}
 		}
 
@@ -493,14 +495,14 @@ unsigned int InfomapDirected::moveNodesToPredefinedModulesImpl()
 			double deltaInFlowNewM = 0.0;
 
 			// For teleportation
-			double nodeTeleFlow = alpha*current.data.flow + beta*current.data.danglingFlow;
+			double nodeTeleFlow = alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow;
 			// module tele-flow self-out
 			deltaOutFlowOldM += nodeTeleFlow * (m_moduleFlowData[oldM].teleportWeight - current.data.teleportWeight);
 			deltaOutFlowNewM += nodeTeleFlow * m_moduleFlowData[newM].teleportWeight;
 			// module tele-flow self-in
-			deltaInFlowOldM += (alpha*(m_moduleFlowData[oldM].flow - current.data.flow) +
+			deltaInFlowOldM += (alpha*(m_moduleFlowData[oldM].teleportSourceFlow - current.data.teleportSourceFlow) +
 					beta*(m_moduleFlowData[oldM].danglingFlow - current.data.danglingFlow)) * current.data.teleportWeight;
-			deltaInFlowNewM += (alpha*m_moduleFlowData[newM].flow +	beta*m_moduleFlowData[newM].danglingFlow) * current.data.teleportWeight;
+			deltaInFlowNewM += (alpha*m_moduleFlowData[newM].teleportSourceFlow +	beta*m_moduleFlowData[newM].danglingFlow) * current.data.teleportWeight;
 
 			// For all outlinks
 			for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
@@ -597,6 +599,8 @@ void InfomapDirected::updateCodelength(NodeType& current, double additionalExitO
 	m_moduleFlowData[newModule].danglingFlow += current.data.danglingFlow;
 	m_moduleFlowData[oldModule].teleportWeight -= current.data.teleportWeight;
 	m_moduleFlowData[newModule].teleportWeight += current.data.teleportWeight;
+	m_moduleFlowData[oldModule].teleportSourceFlow -= current.data.teleportSourceFlow;
+	m_moduleFlowData[newModule].teleportSourceFlow += current.data.teleportSourceFlow;
 
 	enterFlow += \
 			m_moduleFlowData[oldModule].exitFlow + \
@@ -633,12 +637,17 @@ void InfomapDirected::recalculateCodelengthFromConsolidatedNetwork()
 		NodeType& module = getNode(*moduleIt);
 //		RELEASE_OUT(moduleIt->index << ": " << module << ", childDegree: " << moduleIt->childDegree() << ", in/outDegree: " <<
 //				moduleIt->inDegree() << "/" << moduleIt->outDegree() << ". (");
+
+		// Recalculate module teleport weight
+//		double teleportRate = 0.0;
 //		for (NodeBase::sibling_iterator childIt(moduleIt->begin_child()), endChildIt(moduleIt->end_child());
 //				childIt != endChildIt; ++childIt)
 //		{
-//			RELEASE_OUT(childIt->name << ", ");
+//			teleportRate += getNode(*childIt).data.teleportWeight;
 //		}
-//		RELEASE_OUT(")" << std::endl);
+//		if (std::abs(module.data.teleportWeight - teleportRate) > 1.0e-10)
+//			RELEASE_OUT("*");
+//		module.data.teleportWeight = teleportRate;
 
 		double linkExit = 0.0;
 		for (NodeBase::edge_iterator outEdgeIt(moduleIt->begin_outEdge()), endEdgeIt(moduleIt->end_outEdge());
@@ -649,7 +658,7 @@ void InfomapDirected::recalculateCodelengthFromConsolidatedNetwork()
 		}
 
 		// Calculate exit from teleportation
-		double teleExit = (alpha*module.data.flow + beta*module.data.danglingFlow) * (1.0 - module.data.teleportWeight);
+		double teleExit = (alpha*module.data.teleportSourceFlow + beta*module.data.danglingFlow) * (1.0 - module.data.teleportWeight);
 
 		double exitFlow = linkExit + teleExit;
 //		for (NodeBase::sibling_iterator childIt(moduleIt->begin_child()), endChildIt(moduleIt->end_child());
@@ -662,13 +671,13 @@ void InfomapDirected::recalculateCodelengthFromConsolidatedNetwork()
 
 //		RELEASE_OUT("  ----- sumOut: " << exitFlow << ", teleOut: " << teleExit << ", -> exit: " << exitFlow <<
 //				"(" << module.data.exitFlow << ")" << std::endl);
-		module.data.exitFlow = exitFlow;
+//		module.data.exitFlow = exitFlow;
 
 		// use of index codebook
-		enterFlow      += module.data.exitFlow;
-		exit_log_exit += infomath::plogp(module.data.exitFlow);
+		enterFlow      += exitFlow;
+		exit_log_exit += infomath::plogp(exitFlow);
 		// use of module codebook
-		flow_log_flow += infomath::plogp(module.data.flow + module.data.exitFlow);
+		flow_log_flow += infomath::plogp(module.data.flow + exitFlow);
 	}
 
 

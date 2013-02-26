@@ -742,6 +742,9 @@ void InfomapDirectedUnrecordedTeleportation::updateCodelength(NodeType& current,
 
 void InfomapDirectedUnrecordedTeleportation::calculateCodelengthFromActiveNetwork()
 {
+//	RELEASE_OUT("########### Calculate codelength from active network: ############" << std::endl);
+//	RELEASE_OUT("(*)");
+
 	DEBUG_OUT("InfomapDirectedUnrecordedTeleportation::calculateCodelengthFromActiveNetwork()... ");
 	//		nodeFlow_log_nodeFlow = 0.0;
 	enter_log_enter = 0.0;
@@ -771,20 +774,11 @@ void InfomapDirectedUnrecordedTeleportation::calculateCodelengthFromActiveNetwor
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
 	codelength = indexCodelength + moduleCodelength;
 	DEBUG_OUT("done! Codelength for " << m_activeNetwork.size() << " nodes: " << codelength << std::endl);
-	//	if (m_subLevel == 0 && !tmpDebug)
-	//	{
-	//		tmpDebug = true;
-	//		RELEASE_OUT("Initiated codelength to " << codelength << std::endl);
-	//		RELEASE_OUT("codelength = enterFlow_log_enterFlow - 2.0*exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow\n");
-	//		RELEASE_OUT("enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << std::endl);
-	//		RELEASE_OUT("exit_log_exit: " << exit_log_exit << std::endl);
-	//		RELEASE_OUT("flow_log_flow: " << flow_log_flow << std::endl);
-	//		RELEASE_OUT("nodeFlow_log_nodeFlow: " << nodeFlow_log_nodeFlow << std::endl);
-	//	}
 }
 
 void InfomapDirectedUnrecordedTeleportation::recalculateCodelengthFromActiveNetwork()
 {
+	RELEASE_OUT("########### Recalculate codelength from active network: ############" << std::endl);
 	DEBUG_OUT("InfomapDirectedUnrecordedTeleportation::recalculateCodelengthFromActiveNetwork()... ");
 	enter_log_enter = 0.0;
 	exit_log_exit = 0.0;

@@ -45,6 +45,10 @@ protected:
 	// --- Overridden ---
 	virtual std::auto_ptr<InfomapBase> getNewInfomapInstance();
 
+	virtual void setNodeFlow(const std::vector<double>& nodeFlow);
+
+	virtual void initEnterExitFlow();
+
 	virtual void initConstantInfomapTerms();
 
 	virtual void initModuleOptimization();
@@ -69,7 +73,7 @@ protected:
 
 	virtual void printNodeRanks();
 
-	virtual void printFlowNetwork();
+	virtual void printFlowNetwork(std::ostream& out);
 
 	virtual void printMap(std::ostream& out);
 
@@ -130,6 +134,98 @@ template<typename InfomapImplementation>
 std::auto_ptr<InfomapBase> InfomapGreedy<InfomapImplementation>::getNewInfomapInstance()
 {
 	return std::auto_ptr<InfomapBase>(new InfomapImplementation(m_config));
+}
+
+template<typename InfomapImplementation>
+inline
+void InfomapGreedy<InfomapImplementation>::setNodeFlow(const std::vector<double>& nodeFlow)
+{
+	unsigned int i = 0;
+	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
+			it != itEnd; ++it, ++i)
+	{
+		getNode(**it).data.flow = nodeFlow[i];
+	}
+}
+
+template<typename InfomapImplementation>
+inline
+void InfomapGreedy<InfomapImplementation>::initEnterExitFlow()
+{
+	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
+			it != itEnd; ++it)
+	{
+		NodeBase& node = **it;
+		for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), edgeEnd(node.end_outEdge());
+				edgeIt != edgeEnd; ++edgeIt)
+		{
+			EdgeType& edge = **edgeIt;
+			getNode(edge.source).data.exitFlow += edge.data.flow;
+			getNode(edge.target).data.enterFlow += edge.data.flow;
+		}
+	}
+
+}
+
+//template<>
+//inline
+//void InfomapGreedy<InfomapUndirected>::initEnterExitFlow()
+//{
+//	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
+//			it != itEnd; ++it)
+//	{
+//		NodeBase& node = **it;
+//		for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), edgeEnd(node.end_outEdge());
+//				edgeIt != edgeEnd; ++edgeIt)
+//		{
+//			EdgeType& edge = **edgeIt;
+//			getNode(edge.source).data.exitFlow += edge.data.flow;
+////			getNode(edge.source).data.enterFlow += edge.data.flow;
+//			getNode(edge.target).data.exitFlow += edge.data.flow;
+////			getNode(edge.target).data.enterFlow += edge.data.flow;
+//		}
+//	}
+//}
+
+template<>
+inline
+void InfomapGreedy<InfomapDirected>::initEnterExitFlow()
+{
+	double sumDanglingFlow = 0.0;
+	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
+			it != itEnd; ++it)
+	{
+		NodeBase& node = **it;
+		FlowType& data = getNode(node).data;
+		// Also store the flow to use for teleportation as the flow can be transformed
+		data.teleportSourceFlow = data.flow;
+		if (node.isDangling())
+		{
+			sumDanglingFlow += data.flow;
+			data.danglingFlow = data.flow;
+		}
+		else
+		{
+			for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), edgeEnd(node.end_outEdge());
+					edgeIt != edgeEnd; ++edgeIt)
+			{
+				EdgeType& edge = **edgeIt;
+				getNode(edge.source).data.exitFlow += edge.data.flow;
+//				getNode(edge.target).data.enterFlow += edge.data.flow;
+			}
+		}
+	}
+	double alpha = m_config.teleportationProbability;
+	double beta = 1.0 - alpha;
+	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
+			it != itEnd; ++it)
+	{
+		NodeType& node = getNode(**it);
+		node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * \
+				(1.0 - node.data.teleportWeight);
+//		node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
+	}
+
 }
 
 template<typename InfomapImplementation>
@@ -472,13 +568,13 @@ void InfomapGreedy<InfomapDirectedUnrecordedTeleportation>::printNodeRanks()
 
 template<typename InfomapImplementation>
 inline
-void InfomapGreedy<InfomapImplementation>::printFlowNetwork()
+void InfomapGreedy<InfomapImplementation>::printFlowNetwork(std::ostream& out)
 {
 	DEBUG_OUT("InfomapGreedy::printFlowNetwork()...");
-	std::string outName = m_config.outDirectory + FileURI(m_config.networkFile).getName() + ".flow";
-	ALL_OUT("Print flow network to " << outName << "... ");
+//	std::string outName = m_config.outDirectory + FileURI(m_config.networkFile).getName() + ".flow";
+//	ALL_OUT("Print flow network to " << outName << "... ");
 
-	SafeOutFile out(outName.c_str());
+//	SafeOutFile out(outName.c_str());
 
 	for (TreeData::leafIterator nodeIt(m_treeData.begin_leaf());
 			nodeIt != m_treeData.end_leaf(); ++nodeIt)
@@ -489,13 +585,13 @@ void InfomapGreedy<InfomapImplementation>::printFlowNetwork()
 				edgeIt != endEdgeIt; ++edgeIt)
 		{
 			EdgeType& edge = **edgeIt;
-			out << " --> " << edge.target.originalIndex << " (" << edge.data.flow << ")\n";
+			out << "  --> " << edge.target.originalIndex << " (" << edge.data.flow << ")\n";
 		}
 		for (NodeBase::edge_iterator edgeIt(node.begin_inEdge()), endEdgeIt(node.end_inEdge());
 				edgeIt != endEdgeIt; ++edgeIt)
 		{
 			EdgeType& edge = **edgeIt;
-			out << " <-- " << edge.source.originalIndex << " (" << edge.data.flow << ")\n";
+			out << "  <-- " << edge.source.originalIndex << " (" << edge.data.flow << ")\n";
 		}
 	}
 	ALL_OUT("done!" << std::endl);
@@ -663,8 +759,14 @@ void InfomapGreedy<InfomapImplementation>::printSubInfomapTreeDebug(std::ostream
 {
 	NodeType& node = getNode(*root());
 //	out << prefix << " " << node.data.flow << " (" << node.data.exitFlow << ")\n";
-	out << prefix << " " << node.data.flow << " \"" <<
-			node.name << "\" (" << node.id << ")\n";
+//	out << prefix << " " << node.data.flow << " \"" <<
+//			node.name << "\" (" << node.id << ")\n";
+	out << prefix << " (flow: " << node.data.flow << ", enter: " <<
+					node.data.enterFlow << ", exit: " << node.data.exitFlow <<
+					", L: " << node.codelength << ")\n";
+//	out << prefix << " (flow: " << node.data.flow << ", enter: " <<
+//					node.data.enterFlow << ", exit: " << node.data.exitFlow << ")\n";
+
 
 	unsigned int moduleIndex = 1;
 	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
@@ -689,14 +791,24 @@ void InfomapGreedy<InfomapImplementation>::printSubTreeDebug(std::ostream& out, 
 		const NodeType& node = getNode(originalData.getLeafNode(module.originalIndex));
 //		out << prefix << " " << node.data.flow <<
 //								" (" << node.data.exitFlow << ") \"" << node.name << "\"\n";
-		out << prefix << " " << node.data.flow << " \"" <<
-				node.name << "\" (" << node.id << ")\n";
+//		out << prefix << " " << node.data.flow << " \"" <<
+//				node.name << "\" (" << node.id << ")\n";
+		out << prefix << " \"" << node.name << "\" (flow: " << node.data.flow << ", enter: " <<
+				node.data.enterFlow << ", exit: " << node.data.exitFlow <<
+				", L: " << node.codelength << ")\n";
+//		out << prefix << " \"" << node.name << "\" (flow: " << node.data.flow << ", enter: " <<
+//				node.data.enterFlow << ", exit: " << node.data.exitFlow << ")\n";
 		return;
 	}
 	const FlowType& moduleData = getNode(module).data;
 //	out << prefix << " " << moduleData.flow << " (" << moduleData.exitFlow << ")\n";
-	out << prefix << " " << moduleData.flow << " \"" <<
-					module.name << "\" (" << module.id << ")\n";
+//	out << prefix << " " << moduleData.flow << " \"" <<
+//					module.name << "\" (" << module.id << ")\n";
+	out << prefix << " (flow: " << moduleData.flow << ", enter: " <<
+			moduleData.enterFlow << ", exit: " << moduleData.exitFlow <<
+			", L: " << module.codelength << ")\n";
+//	out << prefix << " (flow: " << moduleData.flow << ", enter: " <<
+//			moduleData.enterFlow << ", exit: " << moduleData.exitFlow << ")\n";
 
 	unsigned int moduleIndex = 1;
 	for (NodeBase::sibling_iterator childIt(module.begin_child()), endIt(module.end_child());
@@ -710,8 +822,15 @@ void InfomapGreedy<InfomapImplementation>::printSubTreeDebug(std::ostream& out, 
 				const NodeType& node = getNode(originalData.getLeafNode(childIt->originalIndex));
 //				out << prefix << moduleIndex << " " << node.data.flow <<
 //						" (" << node.data.exitFlow << ") \"" << node.name << "\"\n";
-				out << prefix << moduleIndex << " " << node.data.flow <<
-						" \"" << node.name << "\" (" <<	node.id << ")\n";
+//				out << prefix << moduleIndex << " " << node.data.flow <<
+//						" \"" << node.name << "\" (" <<	node.id << ")\n";
+				out << prefix << moduleIndex << " \"" << node.name << "\" (flow: " <<
+						node.data.flow << ", enter: " << node.data.enterFlow << ", exit: " <<
+						node.data.exitFlow << ", L: " << node.codelength << ")\n";
+//				out << prefix << moduleIndex << " \"" << node.name << "\" (flow: " <<
+//						node.data.flow << ", enter: " << node.data.enterFlow << ", exit: " <<
+//						node.data.exitFlow << ")\n";
+
 			}
 			else
 			{
@@ -807,6 +926,8 @@ void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(
 template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::recalculateCodelengthFromActiveNetwork()
 {
+	RELEASE_OUT("########### Recalculate codelength from activenetwork: ############" << std::endl);
+
 	DEBUG_OUT("*** InfomapGreedy::recalculateCodelengthFromActiveNetwork()... ");
 	exit_log_exit = 0.0;
 	flow_log_flow = 0.0;
@@ -860,7 +981,7 @@ void InfomapGreedy<InfomapImplementation>::recalculateCodelengthFromConsolidated
 	flow_log_flow = 0.0;
 	enterFlow = 0.0;
 
-//	RELEASE_OUT("########### Recalculate codelength from consolidated modular network: ############" << std::endl);
+	RELEASE_OUT("########### Recalculate codelength from consolidated modular network: ############" << std::endl);
 	// For each module
 	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
 			moduleIt != endIt; ++moduleIt)
@@ -968,32 +1089,29 @@ void InfomapGreedy<InfomapImplementation>::resetModuleFlow(NodeBase& node)
 template<typename InfomapImplementation>
 double InfomapGreedy<InfomapImplementation>::calcModuleCodelength(const NodeBase& parent)
 {
-	DEBUG_OUT("*** InfomapGreedy::initSubNetworkCodelength()... " << std::endl);
 	const FlowType& parentData = getNode(parent).data;
 	double parentFlow = parentData.flow;
 	double parentExit = parentData.exitFlow;
 	double totalParentFlow = parentFlow + parentExit;
-	double length = 0.0;
-	if (totalParentFlow == 0.0)
+	double indexLength = 0.0;
+	if (totalParentFlow < 1e-16)
 		return 0.0;
 
 	// For each child
 	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
 			childIt != endIt; ++childIt)
 	{
-		length -= infomath::plogp(getNode(*childIt).data.flow / totalParentFlow);
+		indexLength -= infomath::plogp(getNode(*childIt).data.enterFlow / totalParentFlow);
 	}
-	length -= infomath::plogp(parentExit / totalParentFlow);
+	indexLength -= infomath::plogp(parentExit / totalParentFlow);
 
-	length *= totalParentFlow;
-	return length;
+	indexLength *= totalParentFlow;
+	return indexLength;
 }
 
 template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::generateNetworkFromChildren(NodeBase& parent)
 {
-	DEBUG_OUT("*** InfomapGreedy::generateNetworkFromChildren()... " << std::endl);
-
 	exitNetworkFlow = 0.0;
 
 	// Clone all nodes
@@ -1010,6 +1128,7 @@ void InfomapGreedy<InfomapImplementation>::generateNetworkFromChildren(NodeBase&
 		node->index = i;
 	}
 
+//	double exitFlowFromLinks = 0.0;
 	NodeBase* parentPtr = &parent;
 	// Clone edges
 //	typename flowData_traits<InfomapImplementation>::directed_type asdf;
@@ -1028,7 +1147,7 @@ void InfomapGreedy<InfomapImplementation>::generateNetworkFromChildren(NodeBase&
 			}
 //			else
 //			{
-//				exitNetworkFlow += edge.data.flow;
+//				exitFlowFromLinks += edge.data.flow;
 //			}
 		}
 
@@ -1054,6 +1173,7 @@ void InfomapGreedy<InfomapImplementation>::generateNetworkFromChildren(NodeBase&
 	exitNetworkFlow = parentExit;
 	exitNetworkFlow_log_exitNetworkFlow = infomath::plogp(exitNetworkFlow);
 }
+
 
 //template<typename InfomapImplementation, typename directed_type>
 //void InfomapGreedy<InfomapImplementation>::cloneEdges(NodeBase* parent)
@@ -1099,6 +1219,7 @@ void InfomapGreedy<InfomapImplementation>::generateNetworkFromChildren(NodeBase&
 //}
 
 template<typename InfomapImplementation>
+inline
 void InfomapGreedy<InfomapImplementation>::transformNodeFlowToEnterFlow(NodeBase* parent)
 {
 	DEBUG_OUT("*** InfomapGreedy::transformNodeFlowToEnterOrExitFlow()... " << std::endl);

@@ -49,8 +49,15 @@ Config getConfig(int argc, char *argv[])
 			"Provide an initial two-level solution (.clu format).", "p");
 
 	// --------------------- Output options ---------------------
-	api.addOptionArgument(conf.printNodeRanks, 'p', "print-node-ranks",
-			"Print the calculated flow for each node to a file.");
+//	api.addOptionArgument(conf.printNodeRanks, 'p', "print-node-ranks",
+//			"Print the calculated flow for each node to a file.");
+//
+//	api.addOptionArgument(conf.printFlowNetwork, 'w', "print-flow-network",
+//			"Print the network with calculated flow values.");
+	//TODO: Add map container so that printing can be added like -Pr -Pf etc!!
+
+	api.addOptionArgument(conf.noFileOutput, '0', "no-file-output",
+			"Don't print any output to file.");
 
 	// --------------------- Core algorithm options ---------------------
 	api.addOptionArgument(conf.twoLevel, '2', "two-level",
@@ -71,6 +78,9 @@ Config getConfig(int argc, char *argv[])
 
 	api.addOptionArgument(conf.teleportToNodes, 'o', "to-nodes",
 			"Teleport to nodes (like the PageRank algorithm) instead of to links.");
+
+	api.addOptionArgument(conf.teleportationProbability, 'p', "teleportation-probability",
+			"The probability of teleporting to a random node or link.", "f");
 
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
 			"A seed (integer) to the random number generator.", "n");

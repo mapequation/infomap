@@ -42,6 +42,8 @@ struct Config
 		fastHierarchicalSolution(0),
 		outDirectory(""),
 		printNodeRanks(false),
+		printFlowNetwork(false),
+		noFileOutput(false),
 		verbosity(0),
 		verboseNumberPrecision(6),
 		benchmark(false)
@@ -131,6 +133,8 @@ struct Config
 	// Output
 	std::string outDirectory;
 	bool printNodeRanks;
+	bool printFlowNetwork;
+	bool noFileOutput;
 	unsigned int verbosity;
 	unsigned int verboseNumberPrecision;
 	bool benchmark;

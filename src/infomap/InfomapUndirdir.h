@@ -29,8 +29,6 @@ protected:
 	virtual void calculateCodelengthFromActiveNetwork();
 	virtual void recalculateCodelengthFromActiveNetwork();
 
-	virtual void preparePartitionIndexCodebook();
-
 private:
 	double getDeltaCodelength(NodeType& current, double additionalExitOldModuleIfMoved,
 			unsigned int newModule, double reductionInExitFlowNewModule);
