@@ -286,7 +286,6 @@ unsigned int InfomapGreedy<InfomapImplementation>::optimizeModules()
 			static_cast<unsigned int>(m_rand() * m_config.coreLoopLimit) + 1 :
 			m_config.coreLoopLimit;
 
-
 	// Iterate while the optimization loop moves some nodes within the dynamic modular structure
 	do
 	{
@@ -1085,27 +1084,54 @@ void InfomapGreedy<InfomapImplementation>::resetModuleFlow(NodeBase& node)
 			resetModuleFlow(*childIt);
 	}
 }
+//
+//template<typename InfomapImplementation>
+//double InfomapGreedy<InfomapImplementation>::calcModuleCodelength(const NodeBase& parent)
+//{
+//	const FlowType& parentData = getNode(parent).data;
+//	double parentFlow = parentData.flow;
+//	double parentExit = parentData.exitFlow;
+//	double totalParentFlow = parentFlow + parentExit;
+//	double indexLength = 0.0;
+//	if (totalParentFlow < 1e-16)
+//		return 0.0;
+//
+//	// For each child
+//	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+//			childIt != endIt; ++childIt)
+//	{
+//		indexLength -= infomath::plogp(getNode(*childIt).data.enterFlow / totalParentFlow);
+//	}
+//	indexLength -= infomath::plogp(parentExit / totalParentFlow);
+//
+//	indexLength *= totalParentFlow;
+//	return indexLength;
+//}
 
 template<typename InfomapImplementation>
 double InfomapGreedy<InfomapImplementation>::calcModuleCodelength(const NodeBase& parent)
 {
 	const FlowType& parentData = getNode(parent).data;
-	double parentFlow = parentData.flow;
 	double parentExit = parentData.exitFlow;
-	double totalParentFlow = parentFlow + parentExit;
 	double indexLength = 0.0;
-	if (totalParentFlow < 1e-16)
+	if (parentData.flow < 1e-16)
 		return 0.0;
 
-	// For each child
+	double totalCodewordUse = parentExit; // rate of exit to coarser level
 	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
 			childIt != endIt; ++childIt)
 	{
-		indexLength -= infomath::plogp(getNode(*childIt).data.enterFlow / totalParentFlow);
+		totalCodewordUse += getNode(*childIt).data.enterFlow; // rate of enter to finer level
 	}
-	indexLength -= infomath::plogp(parentExit / totalParentFlow);
 
-	indexLength *= totalParentFlow;
+	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+			childIt != endIt; ++childIt)
+	{
+		indexLength -= infomath::plogp(getNode(*childIt).data.enterFlow / totalCodewordUse);
+	}
+	indexLength -= infomath::plogp(parentExit / totalCodewordUse);
+
+	indexLength *= totalCodewordUse;
 	return indexLength;
 }
 

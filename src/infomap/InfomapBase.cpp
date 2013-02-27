@@ -128,7 +128,7 @@ void InfomapBase::run()
 	std::cout << "Best end solution:" << std::endl;
 	std::cout << bestSolutionStatistics.str() << std::endl;
 
-	printNetworkDebug("debug", true, false);
+//	printNetworkDebug("debug", true, false);
 
 
 	//TODO: Test recursive search only one step further each time to be able to show progress
@@ -208,6 +208,11 @@ void InfomapBase::runPartition()
 //	RELEASE_OUT("Current codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
 //			codelength << "\n");
 //
+//	root()->codelength = calcModuleCodelength(*root());
+//	if (std::abs(root()->codelength - indexCodelength) > 1e-5)
+//		RELEASE_OUT("indexCodelength diff: " << std::abs(root()->codelength - indexCodelength));
+//	indexCodelength = root()->codelength;
+
 //	RELEASE_OUT("\nDEBUG: Skipping recursive part!!\n");
 //	return;
 
@@ -260,9 +265,13 @@ void InfomapBase::runPartition()
 		}
 		else
 		{
+//			RELEASE_OUT("done! Codelength: " << partitionQueue.indexCodelength << " + " <<
+//					partitionQueue.leafCodelength << " (+ " << leftToImprove << " left to improve)" <<
+//					" -> limit: " << limitCodelength << " bits.\n");
 			RELEASE_OUT("done! Codelength: " << partitionQueue.indexCodelength << " + " <<
 					partitionQueue.leafCodelength << " (+ " << leftToImprove << " left to improve)" <<
-					" -> limit: " << limitCodelength << " bits.\n");
+					" -> limit: " << std::setprecision(10) << limitCodelength <<
+					std::setprecision(6) << " bits.\n");
 		}
 
 		hierarchicalCodelength = limitCodelength;
@@ -385,31 +394,45 @@ double InfomapBase::partitionAndQueueNextLevel(PartitionQueue& partitionQueue, b
 	hierarchicalCodelength = codelength = root()->codelength; // only != 0 on top root
 
 	if (numLeafNodes() == 1)
+	{
 		return hierarchicalCodelength;
+	}
 
 	// Two-level partition --> index codebook + module codebook
 
 	partition();
 
-	// Return if trivial result from partitioning
-	//	if (numTopModules() <= 2 || numTopModules() == numLeafNodes())
-	if (numTopModules() == 1)
-	{
-		//		return hierarchicalCodelength; // 0.0 but doesn't seem to be used.. check unnecessary checks..
-		root()->codelength = calcModuleCodelength(*root());
-		hierarchicalCodelength = codelength;
-		return codelength;
-	}
-
 	// Instead of a flat codelength, use the two-level structure found.
+	if (codelength < hierarchicalCodelength - m_config.minimumCodelengthImprovement)
+		RELEASE_OUT("<");
 	hierarchicalCodelength = codelength;
 
-	if (tryIndexing)
+	// Return if trivial result from partitioning
+	//	if (numTopModules() <= 2 || numTopModules() == numLeafNodes())
+//	if (numTopModules() == 2)
+//	{
+//		//		return hierarchicalCodelength; // 0.0 but doesn't seem to be used.. check unnecessary checks..
+//		root()->codelength = calcModuleCodelength(*root());
+//		if (std::abs(root()->codelength - indexCodelength) > 1e-10)
+//			RELEASE_OUT("*");
+//		indexCodelength = root()->codelength;
+////		root()->codelength = indexCodelength;
+//		return codelength;
+//	}
+	if (numTopModules() == 1)
 	{
+		return hierarchicalCodelength;
+	}
+	else if (tryIndexing)
+	{
+		root()->codelength = calcModuleCodelength(*root());
+		if (std::abs(root()->codelength - indexCodelength) > 1e-10)
+			RELEASE_OUT("#");
+		indexCodelength = root()->codelength;
+
 		tryIndexingIteratively();
 	}
 
-	root()->codelength = calcModuleCodelength(*root());
 
 	queueTopModules(partitionQueue);
 
@@ -456,6 +479,7 @@ double InfomapBase::tryIndexingIteratively()
 	double minHierarchicalCodelength = hierarchicalCodelength;
 	// Add index codebooks as long as the code gets shorter (and collapse each iteration)
 	bool tryIndexing = true;
+	bool replaceExistingModules = m_config.fastHierarchicalSolution == 0;
 	while(tryIndexing)
 	{
 		if (verbose)
@@ -495,7 +519,6 @@ double InfomapBase::tryIndexingIteratively()
 		}
 
 		minHierarchicalCodelength += superInfomap->codelength - indexCodelength;
-
 
 		if (verbose)
 		{
@@ -541,13 +564,7 @@ double InfomapBase::tryIndexingIteratively()
 		// Move the leaf nodes to the modules collected above
 		moveNodesToPredefinedModules();
 		// Replace the old modular structure with the super structure generated above
-		bool replaceExistingModules = m_config.fastHierarchicalSolution == 0;
 		consolidateModules(replaceExistingModules);
-
-		if (replaceExistingModules)
-			hierarchicalCodelength = codelength;
-		else
-			hierarchicalCodelength = minHierarchicalCodelength;
 
 		++numIndexingCompleted;
 		tryIndexing = m_numNonTrivialTopModules > 1 && numTopModules() != numLeafNodes();
@@ -558,7 +575,7 @@ double InfomapBase::tryIndexingIteratively()
 	if (verbose && m_config.verbosity == 0)
 		RELEASE_OUT("super modules with estimated codelength " << minHierarchicalCodelength << ". ");
 
-
+	hierarchicalCodelength = replaceExistingModules ? codelength : minHierarchicalCodelength;
 	optimalIndexlength = indexCodelength;
 	return optimalIndexlength;
 }
@@ -1107,6 +1124,9 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 
 	mergeAndConsolidateRepeatedly(forceConsolidation, fast);
 
+	if (codelength > initialCodelength)
+		RELEASE_OUT("*");
+
 	double oldCodelength = oneLevelCodelength;
 	double compression = (oldCodelength - codelength)/oldCodelength;
 	if (verbose && m_config.verbosity == 0)
@@ -1206,25 +1226,49 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 		RELEASE_OUT("Iteration " << m_iterationCount << ", moving " << m_activeNetwork.size() << "*" << std::flush);
 	}
 	bool consolidated = false;
+	double initialCodelength = codelength;
+	double oldCodelength = codelength;
 	unsigned int iterationCount = 0;
 	while(true)
 	{
+		// This gives no output!!!!
+//		if (m_subLevel < m_TOP_LEVEL_ADDITION)
+//		{
+//			root()->codelength = calcModuleCodelength(*root());
+//			if (std::abs(root()->codelength - indexCodelength) > 1e-10)
+//				RELEASE_OUT(iterationCount);
+//			indexCodelength = root()->codelength;
+//		}
+
+		consolidated = false;
+		oldCodelength = codelength;
+
 		++iterationCount;
-		double oldCodelength = codelength;
 		unsigned int numOptimizationLoops = optimizeModules();
+
+
 		if (verbose) {
 			RELEASE_OUT(numOptimizationLoops << ", " << std::flush);
 		}
 		if (fast || !(codelength < oldCodelength - m_config.minimumCodelengthImprovement))
-		{
 			break;
-		}
-		oldCodelength = codelength;
 
 		consolidateModules();
 		consolidated = true;
+
 		if (numTopModules() == 1 || iterationCount == m_config.levelAggregationLimit)
 			break;
+
+		oldCodelength = codelength;
+
+		if (m_subLevel < m_TOP_LEVEL_ADDITION)
+		{
+			root()->codelength = calcModuleCodelength(*root());
+			if (std::abs(root()->codelength - indexCodelength) > 1e-6)
+				RELEASE_OUT("(" << iterationCount << ": " << indexCodelength << " - " << root()->codelength << ")");
+//				RELEASE_OUT("-" << iterationCount);
+			indexCodelength = root()->codelength;
+		}
 		if (verbose) {
 			RELEASE_OUT("" << numTopModules() << "*" << std::flush);
 		}
@@ -1240,7 +1284,36 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 	{
 		consolidateModules();
 		consolidated = true;
+
+		if (m_subLevel < m_TOP_LEVEL_ADDITION)
+		{
+			if (codelength >= initialCodelength)
+				RELEASE_OUT("!");
+			if (codelength > oldCodelength + 1e-18)
+				RELEASE_OUT("'" << iterationCount);
+
+			root()->codelength = calcModuleCodelength(*root());
+			if (std::abs(root()->codelength - indexCodelength) > 1e-10)
+			{
+				RELEASE_OUT("$" << iterationCount);
+			}
+				indexCodelength = root()->codelength;
+
+			if (indexCodelength + moduleCodelength > oldCodelength + 1e-14)// - 1e-21)
+				RELEASE_OUT("%");
+		}
 	}
+
+	if (m_subLevel < m_TOP_LEVEL_ADDITION)
+	{
+		root()->codelength = calcModuleCodelength(*root());
+		if (std::abs(root()->codelength - indexCodelength) > 1e-10)
+		{
+			RELEASE_OUT("+" << iterationCount);
+			indexCodelength = root()->codelength;
+		}
+	}
+
 
 	if (verbose) {
 		if (consolidated)
