@@ -68,6 +68,7 @@ protected:
 	virtual void printNodeData(NodeBase& node, std::ostream& out) = 0;
 	virtual FlowDummy getNodeData(NodeBase& node) = 0;
 	virtual void getTopModuleRanks(std::vector<double>& ranks) = 0;
+	virtual void testConsolidation() = 0;
 	// end debug
 
 	virtual void setNodeFlow(const std::vector<double>& nodeFlow) = 0;

@@ -1225,9 +1225,12 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 	if (verbose) {
 		RELEASE_OUT("Iteration " << m_iterationCount << ", moving " << m_activeNetwork.size() << "*" << std::flush);
 	}
+
 	bool consolidated = false;
 	double initialCodelength = codelength;
 	double oldCodelength = codelength;
+	double oldIndexLength = indexCodelength;
+	double oldModuleLength = moduleCodelength;
 	unsigned int iterationCount = 0;
 	while(true)
 	{
@@ -1242,6 +1245,8 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 
 		consolidated = false;
 		oldCodelength = codelength;
+		oldIndexLength = indexCodelength;
+		oldModuleLength = moduleCodelength;
 
 		++iterationCount;
 		unsigned int numOptimizationLoops = optimizeModules();
@@ -1251,7 +1256,19 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 			RELEASE_OUT(numOptimizationLoops << ", " << std::flush);
 		}
 		if (fast || !(codelength < oldCodelength - m_config.minimumCodelengthImprovement))
+		{
+			// If already consolidated and next level is worse, reverse to old
+			//TODO: Check effect more
+			if (iterationCount > 1)
+			{
+//				root()->codelength = calcModuleCodelength(*root());
+//				indexCodelength = root()->codelength;
+				indexCodelength = oldIndexLength;
+				moduleCodelength = oldModuleLength;
+				consolidated = true;
+			}
 			break;
+		}
 
 		consolidateModules();
 		consolidated = true;
@@ -1265,8 +1282,57 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 		{
 			root()->codelength = calcModuleCodelength(*root());
 			if (std::abs(root()->codelength - indexCodelength) > 1e-6)
-				RELEASE_OUT("(" << iterationCount << ": " << indexCodelength << " - " << root()->codelength << ")");
-//				RELEASE_OUT("-" << iterationCount);
+			{
+				NodeBase& parent = *root();
+				double sumEnter = 0.0;
+				double sumEnterLogEnter = 0.0;
+				for (NodeBase::sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+						childIt != endIt; ++childIt)
+				{
+					double enterFlow = getNodeData(*childIt).enterFlow;
+					sumEnter += enterFlow;
+					sumEnterLogEnter += infomath::plogp(enterFlow);
+				}
+				double parentExit = getNodeData(parent).exitFlow;
+				double sumTotal = parentExit + sumEnter;
+				double sumTotLogTot = infomath::plogp(sumTotal);
+				double exitLogExit = infomath::plogp(parentExit);
+				double indexLength = sumTotLogTot - sumEnterLogEnter - exitLogExit;
+
+				RELEASE_OUT("\n(" << iterationCount << ": " <<
+						indexCodelength << " / " << parent.codelength << " / " << indexLength << ")\n");
+				RELEASE_OUT("sumEnter: " << (enterFlow - exitNetworkFlow) << " / " << sumEnter << "\n" <<
+						"exitNetwork: " << exitNetworkFlow << " / " << getNodeData(parent).exitFlow << "\n)");
+				testConsolidation();
+
+				RELEASE_OUT("REBUILDING MODULES... ");
+				m_moveTo.resize(m_activeNetwork.size());
+				for (unsigned int i = 0; i < m_activeNetwork.size(); ++i)
+					m_moveTo[i] = m_activeNetwork[i]->index;
+				RELEASE_OUT("  deleting modules.. \n" << std::flush);
+				root()->replaceChildrenWithGrandChildren();
+				RELEASE_OUT("  init new movement... \n" << std::flush);
+				initModuleOptimization();
+				RELEASE_OUT("  move to predefined modules... \n" << std::flush);
+				moveNodesToPredefinedModules();
+				RELEASE_OUT("  New index length: " << indexCodelength << "\nConsolidate.." << std::flush);
+				consolidateModules();
+				sumEnter = 0.0;
+				sumEnterLogEnter = 0.0;
+				for (NodeBase::sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+						childIt != endIt; ++childIt)
+				{
+					double enterFlow = getNodeData(*childIt).enterFlow;
+					sumEnter += enterFlow;
+					sumEnterLogEnter += infomath::plogp(enterFlow);
+				}
+				RELEASE_OUT("\n Re:" <<
+						indexCodelength << " / " << parent.codelength << " / " << indexLength << "\n");
+				RELEASE_OUT("sumEnter: " << (enterFlow - exitNetworkFlow) << " / " << sumEnter << "\n" <<
+						"exitNetwork: " << exitNetworkFlow << " / " << getNodeData(parent).exitFlow << "\n)");
+				RELEASE_OUT("DONE!!!\n");
+				testConsolidation();
+			}
 			indexCodelength = root()->codelength;
 		}
 		if (verbose) {
@@ -1280,7 +1346,7 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 		setActiveNetworkFromChildrenOfRoot();
 		initModuleOptimization();
 	}
-	if (!consolidated && forceConsolidation)
+	if (iterationCount == 1 && !consolidated && forceConsolidation)
 	{
 		consolidateModules();
 		consolidated = true;

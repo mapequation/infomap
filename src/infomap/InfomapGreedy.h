@@ -59,6 +59,9 @@ protected:
 
 	virtual unsigned int consolidateModules(bool replaceExistingStructure, bool asSubModules);
 
+	// DEBUG!!
+	virtual void testConsolidation();
+
 	virtual void resetModuleFlowFromLeafNodes();
 
 	virtual void resetModuleFlow(NodeBase& node);
@@ -245,9 +248,6 @@ void InfomapGreedy<InfomapImplementation>::initConstantInfomapTerms()
 template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::initModuleOptimization()
 {
-	calculateCodelengthFromActiveNetwork();
-	DEBUG_OUT("*** InfomapGreedy::initModuleOptimization()..." << std::endl);
-
 	unsigned int numNodes = m_activeNetwork.size();
 	m_moduleFlowData.resize(numNodes);
 	m_moduleMembers.assign(numNodes, 1);
@@ -262,6 +262,9 @@ void InfomapGreedy<InfomapImplementation>::initModuleOptimization()
 		node.index = i; // Unique module index for each node
 		m_moduleFlowData[i] = node.data;
 	}
+
+	// Initiate codelength terms for the initial state of one module per node
+	calculateCodelengthFromActiveNetwork();
 
 //	m_numNonTrivialTopModules = numNodes;
 }
@@ -484,6 +487,33 @@ unsigned int InfomapGreedy<InfomapImplementation>::consolidateModules(bool repla
 	}
 
 	return numActiveModules();
+}
+
+
+template<typename InfomapImplementation>
+void InfomapGreedy<InfomapImplementation>::testConsolidation()
+{
+	double sumEnter = 0.0;
+	double sumEnterAll = 0.0;
+	double sumFlow = 0.0;
+	double sumFlowAll = 0.0;
+	unsigned int numModules = 0;
+	for (unsigned int i = 0; i < m_activeNetwork.size(); ++i)
+	{
+		sumEnterAll += m_moduleFlowData[i].enterFlow;
+		sumFlowAll += m_moduleFlowData[i].flow;
+		if (m_moduleMembers[i] != 0)
+		{
+			++numModules;
+			sumEnter += m_moduleFlowData[i].enterFlow;
+			sumFlow += m_moduleFlowData[i].flow;
+		}
+	}
+	RELEASE_OUT("sumFlow: " << sumFlow << ", all: " << sumFlowAll << "\n" <<
+			"sumEnter: " << sumEnter << ", all: " << sumEnterAll << "\n" <<
+			"numModules: " << numModules << "\n" <<
+			"childDegree: " << root()->childDegree() << "\n" <<
+			"numNonTrivialModules: " << m_numNonTrivialTopModules << "\n");
 }
 
 //template<typename InfomapImplementation>
@@ -886,9 +916,13 @@ void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(
 	enterFlow = 0.0;
 	flow_log_flow = 0.0;
 
+	//DEBUG:
+	double sumEnter = 0.0;
+
 	// For each module
+	unsigned int i = 0;
 	for (activeNetwork_iterator it(m_activeNetwork.begin()), itEnd(m_activeNetwork.end());
-			it != itEnd; ++it)
+			it != itEnd; ++it, ++i)
 	{
 		NodeType& node = getNode(**it);
 		//			nodeFlow_log_nodeFlow += infomath::plogp(node.data.flow);
@@ -899,7 +933,13 @@ void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(
 		enterFlow      += node.data.exitFlow;
 //		enter_log_enter += infomath::plogp(node.data.enterFlow);
 		exit_log_exit += infomath::plogp(node.data.exitFlow);
+
+		//TODO: DEBUG!!
+		sumEnter += m_moduleFlowData[i].exitFlow;
 	}
+
+	if (std::abs(sumEnter - enterFlow) > 1.0e-7)
+		RELEASE_OUT("\n!!!!!!!!!! sumEnter: " << enterFlow << " != " << sumEnter << "\n");
 
 	enterFlow += exitNetworkFlow;
 	enterFlow_log_enterFlow = infomath::plogp(enterFlow);
@@ -1107,32 +1147,55 @@ void InfomapGreedy<InfomapImplementation>::resetModuleFlow(NodeBase& node)
 //	indexLength *= totalParentFlow;
 //	return indexLength;
 //}
+//
+//template<typename InfomapImplementation>
+//double InfomapGreedy<InfomapImplementation>::calcModuleCodelength(const NodeBase& parent)
+//{
+//	const FlowType& parentData = getNode(parent).data;
+//	double parentExit = parentData.exitFlow;
+//	double indexLength = 0.0;
+//	if (parentData.flow < 1e-16)
+//		return 0.0;
+//
+//	double totalCodewordUse = parentExit; // rate of exit to coarser level
+//	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+//			childIt != endIt; ++childIt)
+//	{
+//		totalCodewordUse += getNode(*childIt).data.enterFlow; // rate of enter to finer level
+//	}
+//
+//	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+//			childIt != endIt; ++childIt)
+//	{
+//		indexLength -= infomath::plogp(getNode(*childIt).data.enterFlow / totalCodewordUse);
+//	}
+//	indexLength -= infomath::plogp(parentExit / totalCodewordUse);
+//
+//	indexLength *= totalCodewordUse;
+//	return indexLength;
+//}
 
 template<typename InfomapImplementation>
 double InfomapGreedy<InfomapImplementation>::calcModuleCodelength(const NodeBase& parent)
 {
 	const FlowType& parentData = getNode(parent).data;
 	double parentExit = parentData.exitFlow;
-	double indexLength = 0.0;
 	if (parentData.flow < 1e-16)
 		return 0.0;
 
-	double totalCodewordUse = parentExit; // rate of exit to coarser level
+	double sumEnter = 0.0;
+	double sumEnterLogEnter = 0.0;
 	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
 			childIt != endIt; ++childIt)
 	{
-		totalCodewordUse += getNode(*childIt).data.enterFlow; // rate of enter to finer level
+		const double& enterFlow = getNode(*childIt).data.enterFlow; // rate of enter to finer level
+		sumEnter += enterFlow;
+		sumEnterLogEnter += infomath::plogp(enterFlow);
 	}
+	// The possibilities from this module: Either exit to coarser level or enter one of its children
+	double totalCodewordUse = parentExit + sumEnter;
 
-	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
-			childIt != endIt; ++childIt)
-	{
-		indexLength -= infomath::plogp(getNode(*childIt).data.enterFlow / totalCodewordUse);
-	}
-	indexLength -= infomath::plogp(parentExit / totalCodewordUse);
-
-	indexLength *= totalCodewordUse;
-	return indexLength;
+	return infomath::plogp(totalCodewordUse) - sumEnterLogEnter - infomath::plogp(parentExit);
 }
 
 template<typename InfomapImplementation>
