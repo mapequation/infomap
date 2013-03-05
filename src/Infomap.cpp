@@ -54,7 +54,7 @@ Config getConfig(int argc, char *argv[])
 //
 //	api.addOptionArgument(conf.printFlowNetwork, 'w', "print-flow-network",
 //			"Print the network with calculated flow values.");
-	//TODO: Add map container so that printing can be added like -Pr -Pf etc!!
+	//TODO: Add map container so that printing can be added like -Pranks -Pflow etc!!
 
 	api.addOptionArgument(conf.noFileOutput, '0', "no-file-output",
 			"Don't print any output to file.");
@@ -117,7 +117,7 @@ Config getConfig(int argc, char *argv[])
 			"Set the recursion limit when searching for sub-modules. A level of 1 will find sub-sub-modules.", "n");
 
 	api.addIncrementalOptionArgument(conf.fastHierarchicalSolution, 'F', "fast-hierarchical-solution",
-			"Keep the substructures when reapplying the core loops on existing modular network. Use -FF to stop after that.");
+			"Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.");
 
 	api.addOptionArgument(conf.coarseTuneLevel, 'S', "course-tune-level",
 			"Set the recursion limit when searching for sub-modules. A level of 1 will find sub-sub-modules.", "n");

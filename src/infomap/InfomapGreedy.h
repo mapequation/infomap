@@ -66,7 +66,9 @@ protected:
 
 	virtual void resetModuleFlow(NodeBase& node);
 
-	virtual double calcModuleCodelength(const NodeBase& parent);
+	virtual double calcCodelengthFromFlowWithinOrExit(const NodeBase& parent);
+
+	virtual double calcCodelengthFromEnterWithinOrExit(const NodeBase& parent);
 
 	virtual void generateNetworkFromChildren(NodeBase& parent);
 
@@ -189,7 +191,7 @@ void InfomapGreedy<InfomapImplementation>::initEnterExitFlow()
 //		}
 //	}
 //}
-
+//
 template<>
 inline
 void InfomapGreedy<InfomapDirected>::initEnterExitFlow()
@@ -224,12 +226,38 @@ void InfomapGreedy<InfomapDirected>::initEnterExitFlow()
 			it != itEnd; ++it)
 	{
 		NodeType& node = getNode(**it);
-		node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * \
-				(1.0 - node.data.teleportWeight);
+		// Don't code self-teleportation
+		node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
 //		node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
-	}
 
+		//Note: Self-teleportation should be coded at leaf-level, but setting it like this:
+//		node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow);
+//		node.data.enterFlow += (alpha + beta * (sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
+		// doesn't aggregate correctly when putting the node in a single module, because
+		// self-teleportation goes outside the node but not outside its module.
+		// Thus, the enter/exit flow on the node should be seen as the enter/exit flow a module
+		// would have if it contained just that node. Instead add the special case when calculating
+		// the codelength on a module if the children are leaf nodes, i.e. use the flow values
+		// instead of the enter values on leaf nodes.
+	}
 }
+
+//template<>
+//inline
+//void InfomapGreedy<InfomapDirected>::initEnterExitFlow()
+//{
+//	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
+//			it != itEnd; ++it)
+//	{
+//		NodeBase& node = **it;
+//		FlowType& data = getNode(node).data;
+//		// Also store the flow to use for teleportation as the flow can be transformed
+//		data.teleportSourceFlow = data.flow;
+//		data.exitFlow = data.flow;
+//		if (node.isDangling())
+//			data.danglingFlow = data.flow;
+//	}
+//}
 
 template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::initConstantInfomapTerms()
@@ -509,11 +537,11 @@ void InfomapGreedy<InfomapImplementation>::testConsolidation()
 			sumFlow += m_moduleFlowData[i].flow;
 		}
 	}
-	RELEASE_OUT("sumFlow: " << sumFlow << ", all: " << sumFlowAll << "\n" <<
-			"sumEnter: " << sumEnter << ", all: " << sumEnterAll << "\n" <<
-			"numModules: " << numModules << "\n" <<
-			"childDegree: " << root()->childDegree() << "\n" <<
-			"numNonTrivialModules: " << m_numNonTrivialTopModules << "\n");
+	RELEASE_OUT("  sumFlow: " << sumFlow << ", all: " << sumFlowAll << "\n" <<
+			"  sumEnter: " << sumEnter << ", all: " << sumEnterAll << "\n" <<
+			"  numModules: " << numModules << "\n" <<
+			"  childDegree: " << root()->childDegree() << "\n" <<
+			"  numNonTrivialModules: " << m_numNonTrivialTopModules << "\n");
 }
 
 //template<typename InfomapImplementation>
@@ -1124,7 +1152,7 @@ void InfomapGreedy<InfomapImplementation>::resetModuleFlow(NodeBase& node)
 			resetModuleFlow(*childIt);
 	}
 }
-//
+
 //template<typename InfomapImplementation>
 //double InfomapGreedy<InfomapImplementation>::calcModuleCodelength(const NodeBase& parent)
 //{
@@ -1140,7 +1168,7 @@ void InfomapGreedy<InfomapImplementation>::resetModuleFlow(NodeBase& node)
 //	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
 //			childIt != endIt; ++childIt)
 //	{
-//		indexLength -= infomath::plogp(getNode(*childIt).data.enterFlow / totalParentFlow);
+//		indexLength -= infomath::plogp(getNode(*childIt).data.flow / totalParentFlow);
 //	}
 //	indexLength -= infomath::plogp(parentExit / totalParentFlow);
 //
@@ -1176,7 +1204,30 @@ void InfomapGreedy<InfomapImplementation>::resetModuleFlow(NodeBase& node)
 //}
 
 template<typename InfomapImplementation>
-double InfomapGreedy<InfomapImplementation>::calcModuleCodelength(const NodeBase& parent)
+double InfomapGreedy<InfomapImplementation>::calcCodelengthFromFlowWithinOrExit(const NodeBase& parent)
+{
+	const FlowType& parentData = getNode(parent).data;
+	double parentFlow = parentData.flow;
+	double parentExit = parentData.exitFlow;
+	double totalParentFlow = parentFlow + parentExit;
+	if (totalParentFlow < 1e-16)
+		return 0.0;
+
+	double indexLength = 0.0;
+	// For each child
+	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+			childIt != endIt; ++childIt)
+	{
+		indexLength -= infomath::plogp(getNode(*childIt).data.flow / totalParentFlow);
+	}
+	indexLength -= infomath::plogp(parentExit / totalParentFlow);
+
+	indexLength *= totalParentFlow;
+	return indexLength;
+}
+
+template<typename InfomapImplementation>
+double InfomapGreedy<InfomapImplementation>::calcCodelengthFromEnterWithinOrExit(const NodeBase& parent)
 {
 	const FlowType& parentData = getNode(parent).data;
 	double parentExit = parentData.exitFlow;

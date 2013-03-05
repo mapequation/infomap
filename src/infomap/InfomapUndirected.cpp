@@ -116,6 +116,7 @@ unsigned int InfomapUndirected::optimizeModulesImpl()
 		// Pick nodes in random order
 		unsigned int flip = randomOrder[i];
 		NodeType& current = getNode(*m_activeNetwork[flip]);
+		unsigned int currentModuleIndex = current.index;
 
 //		DEBUG_OUT("Checking current node: " << current << " in module " << current.index << "... ");
 
@@ -131,20 +132,58 @@ unsigned int InfomapUndirected::optimizeModulesImpl()
 
 		// Create vector with module links
 		unsigned int numModuleLinks = 0;
-		for (NodeBase::inout_edge_iterator edgeIt(current.begin_inoutEdge()), endIt(current.end_inoutEdge());
+//		for (NodeBase::inout_edge_iterator edgeIt(current.begin_inoutEdge()), endIt(current.end_inoutEdge());
+//				edgeIt != endIt; ++edgeIt)
+//		{
+//			EdgeType& edge = **edgeIt;
+//			NodeType& neighbour = getNode(edge.other(current));
+//
+//			if (redirect[neighbour.index] >= offset)
+//			{
+//				moduleDeltaExits[redirect[neighbour.index] - offset].second += edge.data.flow;
+//			}
+//			else
+//			{
+//				redirect[neighbour.index] = offset + numModuleLinks;
+//				moduleDeltaExits[numModuleLinks].first = neighbour.index;
+//				moduleDeltaExits[numModuleLinks].second = edge.data.flow;
+//				++numModuleLinks;
+//			}
+//		}
+
+		// For all outlinks
+		for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
 				edgeIt != endIt; ++edgeIt)
 		{
 			EdgeType& edge = **edgeIt;
-			NodeType& neighbour = getNode(edge.other(current));
-
-			if (redirect[neighbour.index] >= offset)
+			unsigned int otherModule = edge.target.index;
+			if (redirect[otherModule] >= offset)
 			{
-				moduleDeltaExits[redirect[neighbour.index] - offset].second += edge.data.flow;
+				moduleDeltaExits[redirect[otherModule] - offset].second += edge.data.flow;
 			}
 			else
 			{
-				redirect[neighbour.index] = offset + numModuleLinks;
-				moduleDeltaExits[numModuleLinks].first = neighbour.index;
+				redirect[otherModule] = offset + numModuleLinks;
+				moduleDeltaExits[numModuleLinks].first = otherModule;
+				moduleDeltaExits[numModuleLinks].second = edge.data.flow;
+				++numModuleLinks;
+			}
+		}
+
+		// For all inlinks
+		for (NodeBase::edge_iterator edgeIt(current.begin_inEdge()), endIt(current.end_inEdge());
+				edgeIt != endIt; ++edgeIt)
+		{
+			EdgeType& edge = **edgeIt;
+			unsigned int otherModule = edge.source.index;
+			if (redirect[otherModule] >= offset)
+			{
+				moduleDeltaExits[redirect[otherModule] - offset].second += edge.data.flow;
+			}
+			else
+			{
+				redirect[otherModule] = offset + numModuleLinks;
+				moduleDeltaExits[numModuleLinks].first = otherModule;
 				moduleDeltaExits[numModuleLinks].second = edge.data.flow;
 				++numModuleLinks;
 			}
@@ -152,13 +191,13 @@ unsigned int InfomapUndirected::optimizeModulesImpl()
 
 		// Calculate exit weight to own module (zero if no link to own module)
 		double deltaExitOldModule = 0.0;
-		if (redirect[current.index] >= offset)
+		if (redirect[currentModuleIndex] >= offset)
 		{
-			deltaExitOldModule = moduleDeltaExits[redirect[current.index] - offset].second;
+			deltaExitOldModule = moduleDeltaExits[redirect[currentModuleIndex] - offset].second;
 		}
 
 		// Option to move to empty module (if node not already alone)
-		if (m_moduleMembers[current.index] > 1 && m_emptyModules.size() > 0)
+		if (m_moduleMembers[currentModuleIndex] > 1 && m_emptyModules.size() > 0)
 		{
 			moduleDeltaExits[numModuleLinks].first = m_emptyModules.back();
 			moduleDeltaExits[numModuleLinks].second = 0.0;
@@ -173,7 +212,7 @@ unsigned int InfomapUndirected::optimizeModulesImpl()
 			std::swap(moduleDeltaExits[j], moduleDeltaExits[randPos]);
 		}
 
-		unsigned int bestModuleIndex = current.index;
+		unsigned int bestModuleIndex = currentModuleIndex;
 		double bestDeltaExitOtherModule = 0.0;
 		double bestDeltaCodelength = 0.0;
 
@@ -181,7 +220,7 @@ unsigned int InfomapUndirected::optimizeModulesImpl()
 		for (unsigned int j = 0; j < numModuleLinks; ++j)
 		{
 			unsigned int otherModule = moduleDeltaExits[j].first;
-			if(otherModule != current.index)
+			if(otherModule != currentModuleIndex)
 			{
 				double deltaExitOtherModule = moduleDeltaExits[j].second;
 
@@ -198,23 +237,41 @@ unsigned int InfomapUndirected::optimizeModulesImpl()
 		}
 
 		// Make best possible move
-		if(bestModuleIndex != current.index)
+		if(bestModuleIndex != currentModuleIndex)
 		{
 			//Update empty module vector
 			if(m_moduleMembers[bestModuleIndex] == 0)
 			{
 				m_emptyModules.pop_back();
 			}
-			if(m_moduleMembers[current.index] == 1)
+			if(m_moduleMembers[currentModuleIndex] == 1)
 			{
-				m_emptyModules.push_back(current.index);
+				m_emptyModules.push_back(currentModuleIndex);
 			}
 
 
-			updateCodelength(current, deltaExitOldModule, bestModuleIndex, bestDeltaExitOtherModule);
+			if (m_moduleMembers[currentModuleIndex] == 1)
+			{
+				if(std::abs(deltaExitOldModule) > 1e-10 ||
+					std::abs(m_moduleFlowData[currentModuleIndex].exitFlow - current.data.exitFlow) > 1e-10)
+				{
+					RELEASE_OUT("\n#### " << numMoved << ": Node " << i << " in module " << currentModuleIndex <<
+							" -> empty exitFlow: " << m_moduleFlowData[currentModuleIndex].exitFlow <<
+							" - " << current.data.exitFlow << " + " << deltaExitOldModule << "\n");
+				}
+			}
 
-			m_moduleMembers[current.index] -= 1;
+			// Each exit flow is also enter flow
+			updateCodelength(current, 2*deltaExitOldModule, bestModuleIndex, 2*bestDeltaExitOtherModule);
+
+			m_moduleMembers[currentModuleIndex] -= 1;
 			m_moduleMembers[bestModuleIndex] += 1;
+
+			if (m_moduleMembers[currentModuleIndex] == 0 && std::abs(m_moduleFlowData[currentModuleIndex].exitFlow) > 1e-10)
+			{
+				RELEASE_OUT("\n!!!! " << numMoved << ": Node " << i << " in module " << currentModuleIndex <<
+						" -> empty exitFlow: " << m_moduleFlowData[currentModuleIndex].exitFlow << "\n");
+			}
 
 			current.index = bestModuleIndex;
 			++numMoved;
@@ -251,8 +308,8 @@ void InfomapUndirected::updateCodelength(NodeType& current, double deltaExitOldM
 			plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) + \
 			plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow);
 
-	m_moduleFlowData[oldModule].exitFlow -= current.data.exitFlow - 2*deltaExitOldModule;
-	m_moduleFlowData[newModule].exitFlow += current.data.exitFlow - 2*deltaExitNewModule;
+	m_moduleFlowData[oldModule].exitFlow -= current.data.exitFlow - deltaExitOldModule;
+	m_moduleFlowData[newModule].exitFlow += current.data.exitFlow - deltaExitNewModule;
 	m_moduleFlowData[oldModule].flow -= current.data.flow;
 	m_moduleFlowData[newModule].flow += current.data.flow;
 
@@ -347,7 +404,10 @@ unsigned int InfomapUndirected::moveNodesToPredefinedModulesImpl()
 //				" to " << bestModuleIndex << " => " << numActiveModules() <<
 //				" modules.");
 
-			updateCodelength(current, outFlowOldM + inFlowOldM, newM, outFlowNewM + inFlowNewM);
+			double additionInExitOldModule = outFlowOldM + inFlowOldM;
+			double reductionInExitNewModule = outFlowNewM + inFlowNewM;
+
+			updateCodelength(current, 2*additionInExitOldModule, newM, 2*reductionInExitNewModule);
 //			DEBUG_OUT("    (best out/in: " << tmpOut << "/" << tmpIn << ", best_delta: " << bestDeltaCodelength << std::endl);
 
 			m_moduleMembers[current.index] -= 1;
