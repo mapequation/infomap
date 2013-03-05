@@ -662,13 +662,6 @@ double InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partitionQue
 		isLeafLevel = false;
 		++numLevelsCreated;
 
-//		//TODO: DEBUG!!
-//		if (numLevelsCreated == 2)
-//		{
-//			RELEASE_OUT("DEBUG: Early exit! ");
-//			break;
-//		}
-
 	} while (m_numNonTrivialTopModules != 1);
 
 	if (verbose)
@@ -739,71 +732,6 @@ unsigned int InfomapBase::deleteSubLevels()
 
 	return numLevels-1;
 }
-
-//double InfomapBase::findHierarchicalSubstructures(NodeBase& root, int recursiveCount, bool tryIndexing)
-//{
-//	// Return if trivial result
-//	//	if (numTopModules() <= 2 || numTopModules() == numLeafNodes())
-////	if (numTopModules() == 1)
-//	if (root.childDegree() <= 1)
-//	{
-//		std::cout << "!!" << root.childDegree() << ":" << root.firstChild->codelength << "!!";
-//		return root.firstChild->codelength;
-//	}
-//
-//	double sumHierarchicalSubNetworkCodelength = 0.0;
-//	unsigned int moduleIndex = 0;
-//	// Partition each module recursively
-//	Logger::pushIndentLevel();
-//	for (NodeBase::sibling_iterator moduleIt(root.begin_child()), endIt(root.end_child());
-//			moduleIt != endIt; ++moduleIt, ++moduleIndex)
-//	{
-//		// Delete former sub-structure if exists
-//		//		moduleIt->attachSubInfomapInstance(0);
-//		moduleIt->getSubStructure().subInfomap.reset(0);
-//
-//		// If only trivial substructure is to be found, no need to create infomap instance to find sub-module structures.
-//		if (moduleIt->childDegree() <= 2)
-//		{
-////			RELEASE_OUT("+");
-//			//TODO: Check consistency with removing this shortcut
-//			moduleIt->codelength = calcModuleCodelength(*moduleIt);
-//			sumHierarchicalSubNetworkCodelength += moduleIt->codelength;
-//			continue;
-//		}
-//
-//		std::auto_ptr<InfomapBase> subInfomap(getNewInfomapInstance());
-//		subInfomap->m_subLevel = m_subLevel + 1;
-//		subInfomap->initSubNetwork(*moduleIt, false);
-//		subInfomap->hierarchicalPartition(recursiveCount, tryIndexing);
-//		double hierarchicalSubNetCodelength = subInfomap->hierarchicalCodelength;
-//
-//		moduleIt->codelength = calcModuleCodelength(*moduleIt);
-//
-//		// If non-trivial substructure is found which improves the codelength, store it on the module
-//		bool nonTrivialSubstructure = subInfomap->numTopModules() > 1 &&
-//				subInfomap->numTopModules() < subInfomap->numLeafNodes();
-//		bool improvement = nonTrivialSubstructure &&
-//				(hierarchicalSubNetCodelength < moduleIt->codelength - m_config.minimumCodelengthImprovement);
-//
-//		if (improvement)
-//		{
-//			moduleIt->getSubStructure().subInfomap = subInfomap;
-//		}
-//		else
-//		{
-//			moduleIt->getSubStructure().exploredWithoutImprovement = true;
-//			// Else use the codelength from the flat substructure
-//			hierarchicalSubNetCodelength = moduleIt->codelength;
-//		}
-//
-//		sumHierarchicalSubNetworkCodelength += hierarchicalSubNetCodelength;
-//
-//	}
-//	Logger::popIndentLevel();
-//
-//	return sumHierarchicalSubNetworkCodelength;
-//}
 
 double InfomapBase::findHierarchicalSubstructures(NodeBase& root, int recursiveCount, bool tryIndexing)
 {
@@ -1163,8 +1091,6 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 	}
 
 
-
-
 	if (!fast && recursiveCount > 0 && numTopModules() != 1 && numTopModules() != numLeafNodes())
 	{
 		partitionEachModule(recursiveCount - 1);
@@ -1249,6 +1175,7 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 
 //	if (m_subLevel < m_TOP_LEVEL_ADDITION)
 //	{
+//		//TODO: Why does the enter version give correct results here and not flow, it's leaf level?!
 ////		double debug = calcCodelengthFromFlowWithinOrExit(*root());
 //		double debug = calcCodelengthFromEnterWithinOrExit(*root());
 //		if (std::abs(debug - indexCodelength) > 1e-10)
@@ -1280,219 +1207,6 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 
 }
 
-//
-//void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fast)
-//{
-//	++m_iterationCount;
-//	bool verbose = (m_subLevel == 0 && m_config.verbosity != 0) ||
-//			(isSuperLevelOnTopLevel() && m_config.verbosity >= 3);
-//	DEBUG_OUT("InfomapBase::mergeAndConsolidateRepeatedly() from root " << *root() << "..." << std::endl);
-//	// Merge and collapse repeatedly until no code improvement or only one big cluster left
-//	if (verbose) {
-//		RELEASE_OUT("Iteration " << m_iterationCount << ", moving " << m_activeNetwork.size() << "*" << std::flush);
-//	}
-//
-//	bool consolidated = false;
-//	unsigned int numLevelsConsolidated = 0;
-////	double initialCodelength = codelength;
-//	double oldCodelength = codelength;
-//	double oldIndexLength = indexCodelength;
-//	double oldModuleLength = moduleCodelength;
-//	unsigned int iterationCount = 0;
-//	while(true)
-//	{
-//		// This gives no output!!!!
-////		if (m_subLevel < m_TOP_LEVEL_ADDITION)
-////		{
-////			root()->codelength = calcModuleCodelength(*root());
-////			if (std::abs(root()->codelength - indexCodelength) > 1e-10)
-////				RELEASE_OUT(iterationCount);
-////			indexCodelength = root()->codelength;
-////		}
-//
-//		++iterationCount;
-//		unsigned int numOptimizationLoops = optimizeModules();
-//
-//
-//		if (verbose) {
-//			RELEASE_OUT(numOptimizationLoops << ", " << std::flush);
-//		}
-//		if (fast || !(codelength < oldCodelength - m_config.minimumCodelengthImprovement))
-//		{
-//			// If already consolidated and next level is worse, reverse to old
-//			//TODO: Check effect more
-//			if (iterationCount > 1)
-//			{
-////				root()->codelength = calcModuleCodelength(*root());
-////				indexCodelength = root()->codelength;
-//				indexCodelength = oldIndexLength;
-//				moduleCodelength = oldModuleLength;
-//				consolidated = true;
-//			}
-//			break;
-//		}
-//
-//		consolidateModules();
-//		consolidated = true;
-//		++numLevelsConsolidated;
-//
-//		if (numTopModules() == 1 || iterationCount == m_config.levelAggregationLimit)
-//			break;
-//
-//		oldCodelength = codelength;
-//		oldIndexLength = indexCodelength;
-//		oldModuleLength = moduleCodelength;
-//
-//		if (m_subLevel < m_TOP_LEVEL_ADDITION)
-//		{
-//			double consolidatedIndexLength = calcCodelengthFromEnterWithinOrExit(*root());
-////			root()->codelength = calcModuleCodelength(*root());
-//			if (std::abs(consolidatedIndexLength - indexCodelength) > 1e-6)
-//			{
-//				NodeBase& parent = *root();
-//				double sumEnter = 0.0;
-//				double sumEnterLogEnter = 0.0;
-//				for (NodeBase::sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
-//						childIt != endIt; ++childIt)
-//				{
-//					double enterFlow = getNodeData(*childIt).enterFlow;
-//					sumEnter += enterFlow;
-//					sumEnterLogEnter += infomath::plogp(enterFlow);
-//				}
-//				double parentExit = getNodeData(parent).exitFlow;
-//				double sumTotal = parentExit + sumEnter;
-//				double sumTotLogTot = infomath::plogp(sumTotal);
-//				double exitLogExit = infomath::plogp(parentExit);
-//				double indexLength = sumTotLogTot - sumEnterLogEnter - exitLogExit;
-//
-//				RELEASE_OUT("\n(" << iterationCount << ": " <<
-//						indexCodelength << " / " << parent.codelength << " / " << indexLength << ")\n");
-//				RELEASE_OUT("sumEnter: " << (enterFlow - exitNetworkFlow) << " / " << sumEnter << "\n");
-//				testConsolidation();
-//
-////				RELEASE_OUT("REBUILDING MODULES... ");
-////				m_moveTo.resize(m_activeNetwork.size());
-////				for (unsigned int i = 0; i < m_activeNetwork.size(); ++i)
-////					m_moveTo[i] = m_activeNetwork[i]->index;
-////				RELEASE_OUT("  deleting modules.. \n" << std::flush);
-////				root()->replaceChildrenWithGrandChildren();
-////				RELEASE_OUT("  init new movement... \n" << std::flush);
-////				initModuleOptimization();
-////				RELEASE_OUT("  move to predefined modules... \n" << std::flush);
-////				moveNodesToPredefinedModules();
-////				RELEASE_OUT("  New index length: " << indexCodelength << "\nConsolidate.." << std::flush);
-////				consolidateModules();
-////				sumEnter = 0.0;
-////				sumEnterLogEnter = 0.0;
-////				for (NodeBase::sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
-////						childIt != endIt; ++childIt)
-////				{
-////					double enterFlow = getNodeData(*childIt).enterFlow;
-////					sumEnter += enterFlow;
-////					sumEnterLogEnter += infomath::plogp(enterFlow);
-////				}
-////				RELEASE_OUT("\n Re:" <<
-////						indexCodelength << " / " << parent.codelength << " / " << indexLength << "\n");
-////				RELEASE_OUT("sumEnter: " << (enterFlow - exitNetworkFlow) << " / " << sumEnter << "\n");
-////				RELEASE_OUT("DONE!!!\n");
-////				testConsolidation();
-//			}
-////			indexCodelength = root()->codelength;
-//		}
-//		if (verbose) {
-//			RELEASE_OUT("" << numTopModules() << "*" << std::flush);
-//		}
-//		if (m_subLevel == 0 && m_config.benchmark)
-//		{
-//			Logger::benchmark(io::Str() << "lvl" << iterationCount, codelength, numTopModules(),
-//					numNonTrivialTopModules(), 2);
-//		}
-//		setActiveNetworkFromChildrenOfRoot();
-//		initModuleOptimization();
-//		consolidated = false;
-//	}
-//
-//	if (m_subLevel < m_TOP_LEVEL_ADDITION && numLevelsConsolidated > 0)
-//	{
-//		double debug = numLevelsConsolidated == 1 ?
-//			calcCodelengthFromFlowWithinOrExit(*root()) :
-//			calcCodelengthFromEnterWithinOrExit(*root());
-//		if (std::abs(debug - indexCodelength) > 1e-10)
-//		{
-//			RELEASE_OUT("+" << iterationCount << ":" << numTopModules());
-//			indexCodelength = debug;
-//		}
-//	}
-//
-//	if (iterationCount == 1 && !consolidated && forceConsolidation)
-//	{
-//		consolidateModules();
-//		consolidated = true;
-//		++numLevelsConsolidated;
-//
-////		if (m_subLevel < m_TOP_LEVEL_ADDITION)
-////		{
-//////			if (codelength >= initialCodelength)
-//////				RELEASE_OUT("!");
-////			if (codelength > oldCodelength + 1e-18)
-////				RELEASE_OUT("'" << iterationCount);
-////
-////			root()->codelength = calcCodelengthFromEnterWithinOrExit(*root());
-////			if (std::abs(root()->codelength - indexCodelength) > 1e-10)
-////			{
-////				RELEASE_OUT("$" << iterationCount);
-////			}
-////				indexCodelength = root()->codelength;
-////
-////			if (indexCodelength + moduleCodelength > oldCodelength + 1e-14)// - 1e-21)
-////				RELEASE_OUT("%");
-////		}
-//	}
-////
-////	if (m_subLevel < m_TOP_LEVEL_ADDITION)
-////	{
-////		double debug = iterationCount != 1 ?
-////			calcCodelengthFromFlowWithinOrExit(*root()) :
-////			calcCodelengthFromEnterWithinOrExit(*root());
-////		if (std::abs(debug - indexCodelength) > 1e-10)
-////		{
-////			RELEASE_OUT("+" << iterationCount << ":" << numTopModules());
-////			indexCodelength = debug;
-////		}
-////	}
-//
-//
-//	if (verbose) {
-//		if (consolidated)
-//		{
-//			RELEASE_OUT((m_isCoarseTune ? "modules" : "nodes") << "*loops to codelength " << codelength <<
-//					" in " << numTopModules() << " modules. (" << m_numNonTrivialTopModules <<
-//					" non-trivial modules)" << std::endl);
-//		}
-//		else
-//		{
-//			RELEASE_OUT((m_isCoarseTune ? "modules" : "nodes") << "*loops with no improvement." <<
-//					std::endl);
-//		}
-//	}
-//	if (m_subLevel == 0 && m_config.benchmark)
-//	{
-//		Logger::benchmark(io::Str() << "iter" << m_iterationCount, codelength, numTopModules(),
-//				numNonTrivialTopModules(), 2);
-//	}
-//
-//	// Set module indices from a zero-based contiguous set
-//	unsigned int packedModuleIndex = 0;
-//	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-//			moduleIt != endIt; ++moduleIt)
-//	{
-//		moduleIt->index = moduleIt->originalIndex = packedModuleIndex++;
-//	}
-//
-//	//	if (!root()->firstChild->isLeaf()) // Unnecessary check, should never happen!
-////	recalculateCodelengthFromConsolidatedNetwork();
-//}
-//
 void InfomapBase::generalTune(unsigned int level)
 {
 
@@ -1798,7 +1512,15 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 	}
 
 	if (m_config.printNodeRanks)
-		printNodeRanks();
+	{
+		outName = io::Str() << m_config.outDirectory << filename << ".rank";
+		SafeOutFile rankOut(outName.c_str());
+		if (m_config.verbosity > 0)
+			RELEASE_OUT("Print node ranks to " << outName << "... " << std::flush);
+		printNodeRanks(rankOut);
+		if (m_config.verbosity > 0)
+			RELEASE_OUT("done!\n");
+	}
 
 	// Print flow network
 	if (m_config.printFlowNetwork)
@@ -1812,7 +1534,6 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 			RELEASE_OUT("done!\n");
 	}
 
-//	printPerLevelCodelength(logOut);
 }
 
 void InfomapBase::printNetworkDebug(std::string filenameSuffix, bool includeSubInfomapInstances, bool toStdOut)

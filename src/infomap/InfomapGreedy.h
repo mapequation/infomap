@@ -76,7 +76,7 @@ protected:
 
 	virtual void cloneFlowData(const NodeBase& source, NodeBase& target);
 
-	virtual void printNodeRanks();
+	virtual void printNodeRanks(std::ostream& out);
 
 	virtual void printFlowNetwork(std::ostream& out);
 
@@ -262,7 +262,6 @@ void InfomapGreedy<InfomapDirected>::initEnterExitFlow()
 template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::initConstantInfomapTerms()
 {
-	DEBUG_OUT("*** InfomapGreedy::initConstantInfomapTerms()... " << std::endl);
 	nodeFlow_log_nodeFlow = 0.0;
 	// For each module
 	for (activeNetwork_iterator it(m_activeNetwork.begin()), itEnd(m_activeNetwork.end());
@@ -300,7 +299,6 @@ void InfomapGreedy<InfomapImplementation>::initModuleOptimization()
 template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::moveNodesToPredefinedModules()
 {
-	DEBUG_OUT("*** InfomapGreedy::moveNodesToPredefinedModules()..." << std::endl);
 	// Size of active network and cluster array should match.
 	ASSERT(m_moveTo.size() == m_activeNetwork.size());
 	getImpl().moveNodesToPredefinedModulesImpl();
@@ -310,7 +308,6 @@ template<typename InfomapImplementation>
 inline
 unsigned int InfomapGreedy<InfomapImplementation>::optimizeModules()
 {
-	DEBUG_OUT("*** InfomapGreedy::optimizeModules()..." << std::endl);
 	unsigned int numOptimizationRounds = 0;
 	double oldCodelength = codelength;
 	unsigned int loopLimit = m_config.randomizeCoreLoopLimit ?
@@ -341,7 +338,6 @@ unsigned int InfomapGreedy<InfomapImplementation>::optimizeModules()
 template<typename InfomapImplementation>
 unsigned int InfomapGreedy<InfomapImplementation>::consolidateModules(bool replaceExistingStructure, bool asSubModules)
 {
-	DEBUG_OUT("*** InfomapGreedy::consolidateModules()... ");
 	unsigned int numNodes = m_activeNetwork.size();
 	std::vector<NodeBase*> modules(numNodes, 0);
 
@@ -441,12 +437,6 @@ unsigned int InfomapGreedy<InfomapImplementation>::consolidateModules(bool repla
 			nodeIt != nodeEnd; ++nodeIt)
 	{
 		NodeBase* node = *nodeIt;
-		//TODO: DEBUG
-//		double f = getNode(*node).data.flow;
-//		bool test = f > 0.0151 && f < 0.0152;
-//		if (test)
-//			RELEASE_OUT("Consolidating active node (" << f << "/" << getNode(*node).data.exitFlow <<
-//					") with outLinks: " << node->outDegree() << "\n");
 
 		NodeBase* parent = node->parent;
 		for (NodeBase::edge_iterator edgeIt(node->begin_outEdge()), edgeEnd(node->end_outEdge());
@@ -454,19 +444,14 @@ unsigned int InfomapGreedy<InfomapImplementation>::consolidateModules(bool repla
 		{
 			EdgeType* edge = *edgeIt;
 			NodeBase* otherParent = edge->target.parent;
-//			if (test)
-//				RELEASE_OUT("  -> (" << getNode(edge->target).data.flow << "), same parent: " <<
-//						(otherParent == parent) << "\n");
+
 			if (otherParent != parent)
 			{
-
 				// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
 				std::pair<EdgeMap::iterator, bool> ret = \
 						moduleLinks.insert(std::make_pair(NodePair(parent, otherParent), edge->data.flow));
 				if (!ret.second)
 					ret.first->second += edge->data.flow;
-//				NodePair tmp = std::make_pair(NodePair(parent, otherParent));
-//				moduleLinks[tmp] += edge->data.flow;
 			}
 		}
 	}
@@ -485,25 +470,13 @@ unsigned int InfomapGreedy<InfomapImplementation>::consolidateModules(bool repla
 	if (!activeNetworkIsLeafNetwork && replaceExistingStructure)
 	{
 		DEBUG_OUT("Replacing active network level (" << m_activeNetwork.size() << " modules) with the leaf nodes..." << std::endl);
-//		RELEASE_OUT("Replacing active network level (" << m_activeNetwork.size() << " modules) with the leaf nodes..." << std::endl);
-
-//		TreeDataWriter treeWriter(m_treeData);
-//		std::cout << "============== Tree: =============" << std::endl;
-//		std::cout << "node count: " << NodeBase::nodeCount() << std::endl;
-//		treeWriter.writeTree(std::cout, true);
 
 		for (activeNetwork_iterator nodeIt(m_activeNetwork.begin()), nodeEnd(m_activeNetwork.end());
 				nodeIt != nodeEnd; ++nodeIt)
 		{
-//			DEBUG_OUT("Deleting node '" << **nodeIt << "', replacing it with its children..." << std::endl);
-//			RELEASE_OUT("Replacing node " << **nodeIt << " with its " << (*nodeIt)->childDegree() << " children." << std::endl);
 			(*nodeIt)->replaceWithChildren();
-//			std::cout << "node count: " << NodeBase::nodeCount() << std::endl;
 		}
-//		std::cout << "============== Tree: =============" << std::endl;
-//		treeWriter.writeTree(std::cout, true);
 	}
-
 
 	// Calculate the number of non-trivial modules
 	m_numNonTrivialTopModules = 0;
@@ -544,95 +517,23 @@ void InfomapGreedy<InfomapImplementation>::testConsolidation()
 			"  numNonTrivialModules: " << m_numNonTrivialTopModules << "\n");
 }
 
-//template<typename InfomapImplementation>
-//inline
-//void InfomapGreedy<InfomapImplementation>::printNodeRanks()
-//{
-//	std::string outName = m_config.outDirectory + FileURI(m_config.networkFile).getName() + ".rank";
-//	ALL_OUT("Print node flow to " << outName << "... ");
-//	double min = 1.0;
-//	double max = 0.0;
-//	SafeOutFile out(outName.c_str());
-//	out << "#node-flow\n";
-//	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
-//			it != itEnd; ++it)
-//	{
-//		double flow = getNode(**it).data.flow;
-//		out << flow << '\n';
-//		if (flow < min)
-//			min = flow;
-//		if (flow > max)
-//			max = flow;
-//	}
-//	ALL_OUT("done!" << std::endl);
-//
-//	double range = max - min;
-//	unsigned int numBins = 20;
-//	std::vector<unsigned int> freq(numBins,0);
-//	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
-//			it != itEnd; ++it)
-//	{
-//		double flow = getNode(**it).data.flow;
-//		unsigned int binIndex = static_cast<unsigned int>((flow - min) / range * numBins);
-//		if (binIndex == numBins)
-//			binIndex = numBins - 1;
-//		++freq[binIndex];
-//	}
-//	outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".freq";
-//	ALL_OUT("Print node size distributions to " << outName << "... ");
-//	SafeOutFile freqOut(outName.c_str());
-//	for (unsigned int i = 0; i < numBins; ++i)
-//	{
-//		freqOut << (i+1) << " " << freq[i] << '\n';
-//	}
-//
-//	ALL_OUT("done!" << std::endl);
-//}
 
 template<typename InfomapImplementation>
 inline
-void InfomapGreedy<InfomapImplementation>::printNodeRanks()
+void InfomapGreedy<InfomapImplementation>::printNodeRanks(std::ostream& out)
 {
-	std::string outName = m_config.outDirectory + FileURI(m_config.networkFile).getName() + ".rank";
-	ALL_OUT("Print node flow to " << outName << "... ");
-
-	SafeOutFile out(outName.c_str());
 	out << "#node-flow\n";
 	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
 			it != itEnd; ++it)
 	{
 		out << getNode(**it).data.flow << '\n';
 	}
-	ALL_OUT("done!" << std::endl);
-}
-
-template<>
-inline
-void InfomapGreedy<InfomapDirectedUnrecordedTeleportation>::printNodeRanks()
-{
-	std::string outName = m_config.outDirectory + FileURI(m_config.networkFile).getName() + ".rank";
-	ALL_OUT("Print node flow to " << outName << "... ");
-
-	SafeOutFile out(outName.c_str());
-	out << "#node-flow teleport-weight\n";
-	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
-			it != itEnd; ++it)
-	{
-		out << getNode(**it).data.flow << " " << getNode(**it).data.teleportWeight << '\n';
-	}
-	ALL_OUT("done!" << std::endl);
 }
 
 template<typename InfomapImplementation>
 inline
 void InfomapGreedy<InfomapImplementation>::printFlowNetwork(std::ostream& out)
 {
-	DEBUG_OUT("InfomapGreedy::printFlowNetwork()...");
-//	std::string outName = m_config.outDirectory + FileURI(m_config.networkFile).getName() + ".flow";
-//	ALL_OUT("Print flow network to " << outName << "... ");
-
-//	SafeOutFile out(outName.c_str());
-
 	for (TreeData::leafIterator nodeIt(m_treeData.begin_leaf());
 			nodeIt != m_treeData.end_leaf(); ++nodeIt)
 	{
@@ -651,7 +552,6 @@ void InfomapGreedy<InfomapImplementation>::printFlowNetwork(std::ostream& out)
 			out << "  <-- " << edge.source.originalIndex << " (" << edge.data.flow << ")\n";
 		}
 	}
-	ALL_OUT("done!" << std::endl);
 }
 
 template<typename InfomapImplementation>
@@ -937,15 +837,11 @@ double InfomapGreedy<InfomapImplementation>::getDeltaCodelength(NodeType& curren
 template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork()
 {
-	DEBUG_OUT("*** InfomapGreedy::calculateCodelengthFromActiveNetwork()... ");
 	//		nodeFlow_log_nodeFlow = 0.0;
 	exit_log_exit = 0.0;
 //	enter_log_enter = 0.0;
 	enterFlow = 0.0;
 	flow_log_flow = 0.0;
-
-	//DEBUG:
-	double sumEnter = 0.0;
 
 	// For each module
 	unsigned int i = 0;
@@ -961,13 +857,7 @@ void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(
 		enterFlow      += node.data.exitFlow;
 //		enter_log_enter += infomath::plogp(node.data.enterFlow);
 		exit_log_exit += infomath::plogp(node.data.exitFlow);
-
-		//TODO: DEBUG!!
-		sumEnter += m_moduleFlowData[i].exitFlow;
 	}
-
-	if (std::abs(sumEnter - enterFlow) > 1.0e-7)
-		RELEASE_OUT("\n!!!!!!!!!! sumEnter: " << enterFlow << " != " << sumEnter << "\n");
 
 	enterFlow += exitNetworkFlow;
 	enterFlow_log_enterFlow = infomath::plogp(enterFlow);
@@ -976,26 +866,12 @@ void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(
 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
 	codelength = indexCodelength + moduleCodelength;
-
-	DEBUG_OUT("done! Codelength for " << m_activeNetwork.size() << " nodes: " << codelength << std::endl);
-//	if (m_subLevel == 0 && !tmpDebug)
-//	{
-//		tmpDebug = true;
-//		RELEASE_OUT("Initiated codelength to " << codelength << std::endl);
-//		RELEASE_OUT("codelength = exitFlow_log_exitFlow - 2.0*exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow\n");
-//		RELEASE_OUT("exitFlow_log_exitFlow: " << exitFlow_log_exitFlow << std::endl);
-//		RELEASE_OUT("exit_log_exit: " << exit_log_exit << std::endl);
-//		RELEASE_OUT("flow_log_flow: " << flow_log_flow << std::endl);
-//		RELEASE_OUT("nodeFlow_log_nodeFlow: " << nodeFlow_log_nodeFlow << std::endl);
-//	}
 }
 
 template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::recalculateCodelengthFromActiveNetwork()
 {
 	RELEASE_OUT("########### Recalculate codelength from activenetwork: ############" << std::endl);
-
-	DEBUG_OUT("*** InfomapGreedy::recalculateCodelengthFromActiveNetwork()... ");
 	exit_log_exit = 0.0;
 	flow_log_flow = 0.0;
 	enterFlow = 0.0;
@@ -1035,14 +911,11 @@ void InfomapGreedy<InfomapImplementation>::recalculateCodelengthFromActiveNetwor
 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
 	codelength = indexCodelength + moduleCodelength;
-
-	DEBUG_OUT("$$$$$$$$$ Tuned codelength: " << codelength << std::endl);
 }
 
 template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::recalculateCodelengthFromConsolidatedNetwork()
 {
-	DEBUG_OUT("*** InfomapGreedy::recalculateCodelengthFromConsolidatedNetwork()... ");
 	exit_log_exit = 0.0;
 	enter_log_enter = 0.0;
 	flow_log_flow = 0.0;
@@ -1054,42 +927,6 @@ void InfomapGreedy<InfomapImplementation>::recalculateCodelengthFromConsolidated
 			moduleIt != endIt; ++moduleIt)
 	{
 		NodeType& module = getNode(*moduleIt);
-//		RELEASE_OUT(moduleIt->index << ": " << module << ", childDegree: " << moduleIt->childDegree() << ", in/outDegree: " <<
-//				moduleIt->inDegree() << "/" << moduleIt->outDegree() << ". (");
-//		for (NodeBase::sibling_iterator childIt(moduleIt->begin_child()), endChildIt(moduleIt->end_child());
-//				childIt != endChildIt; ++childIt)
-//		{
-//			RELEASE_OUT(childIt->name << ", ");
-//		}
-//		RELEASE_OUT(")" << std::endl);
-
-//		double sumFlowExitingModule = 0.0;
-//		for (NodeBase::sibling_iterator nodeIt(moduleIt->begin_child()), endChildIt(moduleIt->end_child());
-//				nodeIt != endChildIt; ++nodeIt)
-//		{
-//			for (NodeBase::edge_iterator outEdgeIt(nodeIt->begin_outEdge()), endEdgeIt(nodeIt->end_outEdge());
-//					outEdgeIt != endEdgeIt; ++outEdgeIt)
-//			{
-//				EdgeType& edge = **outEdgeIt;
-//				if (edge.target.parent != edge.source.parent)
-//					sumFlowExitingModule += edge.data.flow;
-//			}
-//		}
-
-//		double exitFlow = 0.0;
-//		for (NodeBase::edge_iterator outEdgeIt(moduleIt->begin_outEdge()), endEdgeIt(moduleIt->end_outEdge());
-//				outEdgeIt != endEdgeIt; ++outEdgeIt)
-//		{
-//			EdgeType& edge = **outEdgeIt;
-////			NodeType& neighbour = getNode(edge.target);
-////			RELEASE_OUT("  --> " << edge.target.index << " (" << edge.data.flow << ")" << std::endl);
-//			exitFlow += edge.data.flow;
-//		}
-//		RELEASE_OUT("  ----- sumOut: " << exitFlow << " (" << module.data.exitFlow << ")" << std::endl);
-//		module.data.exitFlow = exitFlow;
-//		RELEASE_OUT("--" << std::abs(sumFlowExitingModule-exitFlow) <<
-//				"|" << std::abs(sumFlowExitingModule-module.data.exitFlow) << "--"); // equal but often non-zero (~1e-19)
-//		RELEASE_OUT("--" << std::abs(module.data.exitFlow-exitFlow) << "--"); // always zero
 
 		// use of index codebook
 		enterFlow      += module.data.enterFlow;
@@ -1117,9 +954,8 @@ void InfomapGreedy<InfomapImplementation>::recalculateCodelengthFromConsolidated
 //	double diffModuleLength = std::abs(moduleCodelength - oldModuleCodelength);
 //	if (diffModuleLength > 1.0e-15)
 //		RELEASE_OUT("!!(moduleLength +-" << diffModuleLength << "->" << moduleCodelength << ")!! ");
-	if (std::abs(codelength - oldCodelength) > 1.0e-8)
-		RELEASE_OUT("## (codelength error > 1.0e-8!!) ## ");
-	DEBUG_OUT("$$$$$$$$$ Tuned codelength: " << codelength << std::endl);
+//	if (std::abs(codelength - oldCodelength) > 1.0e-8)
+//		RELEASE_OUT("## (codelength error > 1.0e-8!!) ## ");
 }
 
 
@@ -1362,7 +1198,6 @@ template<typename InfomapImplementation>
 inline
 void InfomapGreedy<InfomapImplementation>::transformNodeFlowToEnterFlow(NodeBase* parent)
 {
-	DEBUG_OUT("*** InfomapGreedy::transformNodeFlowToEnterOrExitFlow()... " << std::endl);
 	for (NodeBase::sibling_iterator moduleIt(parent->begin_child()), endIt(parent->end_child());
 			moduleIt != endIt; ++moduleIt)
 	{
@@ -1374,7 +1209,6 @@ void InfomapGreedy<InfomapImplementation>::transformNodeFlowToEnterFlow(NodeBase
 template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::cloneFlowData(const NodeBase& source, NodeBase& target)
 {
-	DEBUG_OUT("*** InfomapGreedy::cloneFlowData()... " << std::endl);
 	getNode(target).data = getNode(source).data;
 }
 

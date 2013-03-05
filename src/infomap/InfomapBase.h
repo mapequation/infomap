@@ -149,7 +149,7 @@ protected:
 
 	virtual void cloneFlowData(const NodeBase& source, NodeBase& target) = 0;
 
-	virtual void printNodeRanks() = 0;
+	virtual void printNodeRanks(std::ostream& out) = 0;
 
 	virtual void printFlowNetwork(std::ostream& out) = 0;
 
