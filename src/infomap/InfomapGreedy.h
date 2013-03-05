@@ -942,7 +942,6 @@ void InfomapGreedy<InfomapImplementation>::recalculateCodelengthFromConsolidated
 
 //	double oldIndexCodelength = indexCodelength;
 //	double oldModuleCodelength = moduleCodelength;
-	double oldCodelength = codelength;
 	indexCodelength = enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow;
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
 	codelength = indexCodelength + moduleCodelength;
