@@ -1,0 +1,17 @@
+# Shell-style glob.
+syntax: glob
+
+.DS_Store
+
+# Regular expression, Python/Perl syntax.
+syntax: regexp
+
+^networks$
+^output$
+^Debug$
+^Release$
+^Infomap.*$
+^generateMakefile$
+^build$
+^.project$
+^.cproject$
