@@ -18,10 +18,7 @@
 using std::pair;
 
 InfomapDirectedUnrecordedTeleportation::InfomapDirectedUnrecordedTeleportation(const Config& conf)
-:	InfomapGreedy<InfomapDirectedUnrecordedTeleportation>(conf),
- 	alpha(conf.teleportationProbability),
- 	beta(1.0-alpha)
-// 	enter_log_enter(0.0)
+:	InfomapGreedy<InfomapDirectedUnrecordedTeleportation>(conf)
  	{}
 
 

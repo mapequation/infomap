@@ -44,6 +44,9 @@ Config getConfig(int argc, char *argv[])
 	api.addOptionArgument(conf.zeroBasedNodeNumbers, 'z', "zero-based-numbering",
 			"Assume node numbers start from zero in the input file instead of one.");
 
+	api.addOptionArgument(conf.includeSelfLinks, 'k', "include-self-links",
+			"Include links with the same source and target node. (Ignored by default.)");
+
 	api.addOptionArgument(conf.nodeLimit, 'S', "node-limit",
 			"Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", "n");
 
@@ -74,6 +77,9 @@ Config getConfig(int argc, char *argv[])
 
 	api.addOptionArgument(conf.undirdir, 't', "undirdir",
 			"Two-mode dynamics: Assume undirected links for calculating flow, but directed when minimizing codelength.");
+
+	api.addOptionArgument(conf.rawdir, 'w', "rawdir",
+			"Two-mode dynamics: Assume directed links and let the raw link weights be the flow.");
 
 	api.addOptionArgument(conf.unrecordedTeleportation, 'e', "unrecorded-teleportation",
 			"Assume teleportation when calculating flow (on directed network) but don't encode that flow.");

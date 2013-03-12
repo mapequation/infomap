@@ -165,8 +165,12 @@ void InfomapGreedy<InfomapImplementation>::initEnterExitFlow()
 				edgeIt != edgeEnd; ++edgeIt)
 		{
 			EdgeType& edge = **edgeIt;
-			getNode(edge.source).data.exitFlow += edge.data.flow;
-			getNode(edge.target).data.enterFlow += edge.data.flow;
+			// Possible self-links should not add to enter and exit flow in its enclosing module
+			if (edge.source.id != edge.target.id)
+			{
+				getNode(edge.source).data.exitFlow += edge.data.flow;
+				getNode(edge.target).data.enterFlow += edge.data.flow;
+			}
 		}
 	}
 
@@ -215,8 +219,12 @@ void InfomapGreedy<InfomapDirected>::initEnterExitFlow()
 					edgeIt != edgeEnd; ++edgeIt)
 			{
 				EdgeType& edge = **edgeIt;
-				getNode(edge.source).data.exitFlow += edge.data.flow;
-//				getNode(edge.target).data.enterFlow += edge.data.flow;
+				// Possible self-links should not add to enter and exit flow in its enclosing module
+				if (edge.source.id != edge.target.id)
+				{
+					getNode(edge.source).data.exitFlow += edge.data.flow;
+	//				getNode(edge.target).data.enterFlow += edge.data.flow;
+				}
 			}
 		}
 	}
@@ -323,15 +331,6 @@ unsigned int InfomapGreedy<InfomapImplementation>::optimizeModules()
 	} while (numOptimizationRounds != loopLimit &&
 			codelength < oldCodelength - m_config.minimumCodelengthImprovement);
 
-//	while (getImpl().optimizeModulesImpl())
-//	{
-//		++numOptimizationRounds;
-//		if (codelength > oldCodelength - m_config.minimumCodelengthImprovement)
-//			break;
-//		//DEBUG
-//		break;
-//		oldCodelength = codelength;
-//	}
 	return numOptimizationRounds;
 }
 
@@ -344,15 +343,6 @@ unsigned int InfomapGreedy<InfomapImplementation>::consolidateModules(bool repla
 	bool activeNetworkAlreadyHaveModuleLevel = m_activeNetwork[0]->parent != root();
 	bool activeNetworkIsLeafNetwork = m_activeNetwork[0]->isLeaf();
 
-//	if (m_subLevel == 0)
-//	{
-//		std::ostringstream oss;
-//		oss << "beforeConsolidation. replaceExisting: " << replaceExistingStructure << ", asSubModules: " << asSubModules <<
-//				", activeNetworkAlreadyHaveModuleLevel: " << activeNetworkAlreadyHaveModuleLevel <<
-//				", activeNetworkIsLeafNetwork: " << activeNetworkIsLeafNetwork;
-//		printNetworkDebug(oss.str(), true);
-//		RELEASE_OUT(std::flush);
-//	}
 
 	if (asSubModules)
 	{
@@ -378,10 +368,6 @@ unsigned int InfomapGreedy<InfomapImplementation>::consolidateModules(bool repla
 	}
 
 	// Create the new module nodes and re-parent the active network from its common parent to the new module level
-//	if (m_subLevel == 0 && m_debug)
-//	{
-//		RELEASE_OUT("Creating new modular level.. (node -> modIndex)" << std::endl);
-//	}
 	for (unsigned int i = 0; i < numNodes; ++i)
 	{
 		NodeBase* node = m_activeNetwork[i];
@@ -420,10 +406,7 @@ unsigned int InfomapGreedy<InfomapImplementation>::consolidateModules(bool repla
 		if (replaceExistingStructure)
 		{
 			// Remove the module level
-			DEBUG_OUT("Replace existing " << numTopModules() << " modules with its " << numActiveModules() << " submodule children... ");
 			root()->replaceChildrenWithGrandChildren();
-//			printNetworkDebug("afterReplacingModulesWithSubmodules", true);
-//			RELEASE_OUT(std::flush);
 		}
 	}
 
@@ -463,14 +446,10 @@ unsigned int InfomapGreedy<InfomapImplementation>::consolidateModules(bool repla
 		const NodePair& nodePair = edgeIt->first;
 		nodePair.first->addOutEdge(*nodePair.second, 0.0, edgeIt->second);
 	}
-	DEBUG_OUT("done! Created " << numActiveModules() << " modules and " <<
-			moduleLinks.size() << " inter-module edges." << std::endl);
 
 	// Replace active network with its children if not at leaf level.
 	if (!activeNetworkIsLeafNetwork && replaceExistingStructure)
 	{
-		DEBUG_OUT("Replacing active network level (" << m_activeNetwork.size() << " modules) with the leaf nodes..." << std::endl);
-
 		for (activeNetwork_iterator nodeIt(m_activeNetwork.begin()), nodeEnd(m_activeNetwork.end());
 				nodeIt != nodeEnd; ++nodeIt)
 		{

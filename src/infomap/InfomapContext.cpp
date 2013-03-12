@@ -19,7 +19,7 @@ InfomapContext::InfomapContext(const Config& config)
 {
 	if (m_config.isUndirected())
 		m_infomap = std::auto_ptr<InfomapBase>(new InfomapUndirected(m_config));
-	else if (m_config.undirdir)
+	else if (m_config.undirdir || m_config.rawdir)
 		m_infomap = std::auto_ptr<InfomapBase>(new InfomapUndirdir(m_config));
 	else if (m_config.unrecordedTeleportation)
 		m_infomap = std::auto_ptr<InfomapBase>(new InfomapDirectedUnrecordedTeleportation(m_config));

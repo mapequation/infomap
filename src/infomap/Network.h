@@ -61,7 +61,9 @@ public:
 
 	Network(const Config& config)
 	:	m_config(config),
-	 	m_numNodes(0)
+	 	m_numNodes(0),
+	 	m_sumNodeWeights(0.0),
+	 	m_totalLinkWeight(0.0)
 	{}
 	virtual ~Network() {}
 

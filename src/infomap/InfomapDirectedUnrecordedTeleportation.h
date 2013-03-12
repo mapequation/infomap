@@ -36,9 +36,6 @@ private:
 	void updateCodelength(NodeType& current, double additionalExitOldModuleIfMoved,
 			unsigned int newModule, double reductionInExitFlowNewModule);
 
-	const double alpha;
-	const double beta;
-
 	//XXX Take back from base after debug
 //	double enter_log_enter;
 

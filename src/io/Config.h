@@ -25,6 +25,7 @@ struct Config
 	 	twoLevel(false),
 		directed(false),
 		undirdir(false),
+		rawdir(false),
 		unrecordedTeleportation(false),
 		teleportToNodes(false),
 		teleportationProbability(0.15),
@@ -112,6 +113,7 @@ struct Config
 	bool twoLevel;
 	bool directed;
 	bool undirdir;
+	bool rawdir;
 	bool unrecordedTeleportation;
 	bool teleportToNodes;
 	double teleportationProbability;
