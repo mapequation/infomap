@@ -32,7 +32,7 @@ Config getConfig(int argc, char *argv[])
 	Config conf;
 	ProgramInterface api("Infomap",
 			"Implementation of the Infomap clustering algorithm based on the Map Equation (see www.mapequation.org)",
-			"0.9.2");
+			"0.10.1");
 
 	// --------------------- Input options ---------------------
 	api.addNonOptionArgument(conf.networkFile, "network_file",
