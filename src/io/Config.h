@@ -98,7 +98,7 @@ struct Config
 		}
 	}
 
-	bool isUndirected() const { return !directed && !undirdir; }
+	bool isUndirected() const { return !directed && !undirdir && !rawdir; }
 
 	// Input
 	std::string networkFile;

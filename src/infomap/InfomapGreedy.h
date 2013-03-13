@@ -570,7 +570,7 @@ void InfomapGreedy<InfomapImplementation>::printMap(std::ostream& out)
 	out << "# nodes: " << numLeafNodes() << "\n";
 	out << "# links: " << m_treeData.numLeafEdges() << "\n";
 	out << "# codelength: " << hierarchicalCodelength << "\n";
-	out << "*" << (m_config.directed ? "Directed" : "Undirected") << "\n";
+	out << "*" << (m_config.isUndirected() ? "Undirected" : "Directed") << "\n";
 
 	out << "*Modules " << numTopModules() << "\n";
 	unsigned int moduleNumber = 1;

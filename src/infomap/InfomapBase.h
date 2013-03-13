@@ -201,7 +201,7 @@ private:
 	void setActiveNetworkFromLeafs();
 	void calcCodelengthFromExternalClusterData();
 	void printNetworkData(std::string filename = "", bool sort = true);
-	void printClusterVector(std::string filename = "");
+	void printClusterVector(std::ostream& out);
 	void printTree(std::ostream& out, const NodeBase& root, const std::string& prefix = "");
 	void printPerLevelCodelength(std::ostream& out);
 	void aggregatePerLevelCodelength(std::vector<double>& indexCodelengths, std::vector<double>& leafLengths, unsigned int level = 0);

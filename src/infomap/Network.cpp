@@ -497,6 +497,7 @@ void Network::calculateFlow()
 		for (unsigned int i = 0; i < numNodes; ++i)
 			m_nodeFlow[i] /= sumNodeRank;
 		std::cout << "using directed links with raw flow... done!" << std::endl;
+		std::cout << "Total link weight: " << m_totalLinkWeight << "\n";
 		return;
 	}
 

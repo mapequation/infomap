@@ -163,6 +163,11 @@ void InfomapBase::runPartition()
 	{
 		partition();
 		hierarchicalCodelength = codelength;
+		for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
+				moduleIt != endIt; ++moduleIt)
+		{
+			moduleIt->codelength = calcCodelengthFromFlowWithinOrExit(*moduleIt);
+		}
 		return;
 	}
 
@@ -1470,7 +1475,7 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 	// Print .tree
 	std::string outName = io::Str() << m_config.outDirectory << filename << ".tree";
 	if (m_config.verbosity == 0)
-		RELEASE_OUT("(Writing " << outName << ".." << std::flush);
+		RELEASE_OUT("(Writing .tree file.." << std::flush);
 	else
 		RELEASE_OUT("Print hierarchical cluster data to " << outName << "... " << std::flush);
 	SafeOutFile treeOut(outName.c_str());
@@ -1508,7 +1513,15 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 	// Print .clu if constrained to two-level
 	if (m_config.twoLevel)
 	{
-		printClusterVector(filename);
+		outName = io::Str() << m_config.outDirectory << filename << ".clu";
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("(Writing .clu file.. ) ");
+		else
+			RELEASE_OUT("Print cluster data to " << outName << "... ");
+		SafeOutFile cluOut(outName.c_str());
+		printClusterVector(cluOut);
+		if (m_config.verbosity > 0)
+			RELEASE_OUT("done!\n");
 	}
 
 	if (m_config.printNodeRanks)
@@ -1527,10 +1540,14 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 	{
 		outName = io::Str() << m_config.outDirectory << filename << ".flow";
 		SafeOutFile flowOut(outName.c_str());
-		if (m_config.verbosity > 0)
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("(Writing .flow file.. " << std::flush);
+		else
 			RELEASE_OUT("Print flow network to " << outName << "... " << std::flush);
 		printFlowNetwork(flowOut);
-		if (m_config.verbosity > 0)
+		if (m_config.verbosity == 0)
+			RELEASE_OUT(") ");
+		else
 			RELEASE_OUT("done!\n");
 	}
 
@@ -1568,15 +1585,8 @@ void InfomapBase::printNetworkDebug(std::string filenameSuffix, bool includeSubI
 
 }
 
-void InfomapBase::printClusterVector(std::string filename)
+void InfomapBase::printClusterVector(std::ostream& out)
 {
-	DEBUG_OUT("InfomapBase::printClusterVector()...");
-	if (filename.length() == 0)
-		filename = FileURI(m_config.networkFile).getName();
-	std::string outName = m_config.outDirectory + filename + ".clu";
-	ALL_OUT("Print cluster data to " << outName << "... ");
-
-	SafeOutFile out(outName.c_str());
 	out << "*Vertices " << m_treeData.numLeafNodes() << std::endl;
 	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
 			it != itEnd; ++it)
@@ -1584,7 +1594,6 @@ void InfomapBase::printClusterVector(std::string filename)
 		unsigned int index = (*it)->parent->index;
 		out <<  (index + 1) << std::endl;
 	}
-	ALL_OUT("done!" << std::endl);
 }
 
 
@@ -1700,16 +1709,16 @@ void InfomapBase::aggregatePerLevelCodelength(std::vector<double>& indexLengths,
 	aggregatePerLevelCodelength(*root(), indexLengths, leafLengths, level);
 }
 
-void InfomapBase::aggregatePerLevelCodelength(NodeBase& root, std::vector<double>& indexLengths,
+void InfomapBase::aggregatePerLevelCodelength(NodeBase& parent, std::vector<double>& indexLengths,
 		std::vector<double>& leafLengths, unsigned int level)
 {
 	if (indexLengths.size() < level+1)
 		indexLengths.resize(level+1, 0.0);
 	if (leafLengths.size() < level+2)
 		leafLengths.resize(level+2, 0.0);
-	indexLengths[level] += root.isRoot() ? indexCodelength : root.codelength;
+	indexLengths[level] += parent.isRoot() ? indexCodelength : parent.codelength;
 
-	for (NodeBase::sibling_iterator moduleIt(root.begin_child()), endIt(root.end_child());
+	for (NodeBase::sibling_iterator moduleIt(parent.begin_child()), endIt(parent.end_child());
 			moduleIt != endIt; ++moduleIt)
 	{
 		if (moduleIt->getSubInfomap() != 0)
