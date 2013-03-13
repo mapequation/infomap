@@ -33,6 +33,7 @@ src/io/Options.h \
 src/io/ProgramInterface.h \
 src/io/SafeFile.h \
 src/io/TreeDataWriter.h \
+src/io/version.h \
 src/utils/Date.h \
 src/utils/FileURI.h \
 src/utils/gap_iterator.h \
@@ -62,6 +63,7 @@ src/io/DataConverterHelper.cpp \
 src/io/Options.cpp \
 src/io/ProgramInterface.cpp \
 src/io/TreeDataWriter.cpp \
+src/io/version.cpp \
 src/utils/FileURI.cpp \
 src/utils/Logger.cpp \
 

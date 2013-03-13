@@ -1,11 +1,11 @@
-/* -----------------------------------------------------------------------
+/* ------------------------------------------------------------------------
 
  Infomap software package for multi-level network clustering
 
-   * Copyright (c) 2013. See LICENSE for more info.
-   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+ * Copyright (c) 2013
+ * For license and authors, see README.txt or http://www.mapequation.org
 
------------------------------------------------------------------------ */
+------------------------------------------------------------------------ */
 
 #ifndef INFOMAPBASE_H_
 #define INFOMAPBASE_H_
@@ -174,7 +174,7 @@ private:
 	double hierarchicalPartition(int recursiveCount = -1, bool tryIndexing = true);
 	double partitionAndQueueNextLevel(PartitionQueue& partitionQueue, bool tryIndexing = true);
 	double tryIndexingIteratively();
-	double findSuperModulesIterativelyFast(PartitionQueue& partitionQueue);
+	unsigned int findSuperModulesIterativelyFast(PartitionQueue& partitionQueue);
 	unsigned int deleteSubLevels();
 	double findHierarchicalSubstructures(NodeBase& root, int recursiveCount = -1, bool tryIndexing = true);
 	void queueTopModules(PartitionQueue& partitionQueue);

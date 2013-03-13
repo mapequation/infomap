@@ -1,11 +1,11 @@
-/* -----------------------------------------------------------------------
+/* ------------------------------------------------------------------------
 
  Infomap software package for multi-level network clustering
 
-   * Copyright (c) 2013. See LICENSE for more info.
-   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+ * Copyright (c) 2013
+ * For license and authors, see README.txt or http://www.mapequation.org
 
------------------------------------------------------------------------ */
+------------------------------------------------------------------------ */
 
 #ifndef FLOWDATA_TRAITS_H_
 #define FLOWDATA_TRAITS_H_

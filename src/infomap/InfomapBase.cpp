@@ -1,11 +1,11 @@
-/* -----------------------------------------------------------------------
+/* ------------------------------------------------------------------------
 
  Infomap software package for multi-level network clustering
 
-   * Copyright (c) 2013. See LICENSE for more info.
-   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+ * Copyright (c) 2013
+ * For license and authors, see README.txt or http://www.mapequation.org
 
------------------------------------------------------------------------ */
+------------------------------------------------------------------------ */
 
 #include "InfomapBase.h"
 #include "../io/DataConverterHelper.h"
@@ -567,7 +567,7 @@ double InfomapBase::tryIndexingIteratively()
  * Like mergeAndConsolidateRepeatedly but let it build up the tree for each
  * new level of aggregation. It doesn't create new Infomap instances.
  */
-double InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partitionQueue)
+unsigned int InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partitionQueue)
 {
 	bool verbose = m_subLevel == 0;
 

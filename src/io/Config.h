@@ -1,11 +1,11 @@
-/* -----------------------------------------------------------------------
+/* ------------------------------------------------------------------------
 
  Infomap software package for multi-level network clustering
 
-   * Copyright (c) 2013. See LICENSE for more info.
-   * For credits and origins, see AUTHORS or www.mapequation.org/about.
+ * Copyright (c) 2013
+ * For license and authors, see README.txt or http://www.mapequation.org
 
------------------------------------------------------------------------ */
+------------------------------------------------------------------------ */
 
 #ifndef CONFIG_H_
 #define CONFIG_H_
@@ -117,7 +117,7 @@ struct Config
 	bool unrecordedTeleportation;
 	bool teleportToNodes;
 	double teleportationProbability;
-	double seedToRandomNumberGenerator;
+	unsigned long seedToRandomNumberGenerator;
 
 	// Performance and accuracy
 	unsigned int numTrials;
