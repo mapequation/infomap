@@ -156,6 +156,8 @@ unsigned int InfomapUndirected::optimizeModulesImpl()
 				edgeIt != endIt; ++edgeIt)
 		{
 			EdgeType& edge = **edgeIt;
+			if (edge.isSelfPointing())
+				continue;
 			unsigned int otherModule = edge.target.index;
 			if (redirect[otherModule] >= offset)
 			{
@@ -175,6 +177,8 @@ unsigned int InfomapUndirected::optimizeModulesImpl()
 				edgeIt != endIt; ++edgeIt)
 		{
 			EdgeType& edge = **edgeIt;
+			if (edge.isSelfPointing())
+				continue;
 			unsigned int otherModule = edge.source.index;
 			if (redirect[otherModule] >= offset)
 			{
@@ -250,37 +254,16 @@ unsigned int InfomapUndirected::optimizeModulesImpl()
 			}
 
 
-			if (m_moduleMembers[currentModuleIndex] == 1)
-			{
-				if(std::abs(deltaExitOldModule) > 1e-10 ||
-					std::abs(m_moduleFlowData[currentModuleIndex].exitFlow - current.data.exitFlow) > 1e-10)
-				{
-					RELEASE_OUT("\n#### " << numMoved << ": Node " << i << " in module " << currentModuleIndex <<
-							" -> empty exitFlow: " << m_moduleFlowData[currentModuleIndex].exitFlow <<
-							" - " << current.data.exitFlow << " + " << deltaExitOldModule << "\n");
-				}
-			}
-
 			// Each exit flow is also enter flow
 			updateCodelength(current, 2*deltaExitOldModule, bestModuleIndex, 2*bestDeltaExitOtherModule);
 
 			m_moduleMembers[currentModuleIndex] -= 1;
 			m_moduleMembers[bestModuleIndex] += 1;
 
-			if (m_moduleMembers[currentModuleIndex] == 0 && std::abs(m_moduleFlowData[currentModuleIndex].exitFlow) > 1e-10)
-			{
-				RELEASE_OUT("\n!!!! " << numMoved << ": Node " << i << " in module " << currentModuleIndex <<
-						" -> empty exitFlow: " << m_moduleFlowData[currentModuleIndex].exitFlow << "\n");
-			}
-
 			current.index = bestModuleIndex;
 			++numMoved;
 //			DEBUG_OUT(" --> Moved to module: " << bestModuleIndex << " => codelength: " << codelength << std::endl);
 		}
-//		else
-//		{
-//			DEBUG_OUT(std::endl);
-//		}
 
 		offset += numNodes;
 	}
@@ -363,6 +346,8 @@ unsigned int InfomapUndirected::moveNodesToPredefinedModulesImpl()
 					edgeIt != endIt; ++edgeIt)
 			{
 				EdgeType& edge = **edgeIt;
+				if (edge.isSelfPointing())
+					continue;
 				unsigned int otherModule = edge.target.index;
 				if (otherModule == oldM)
 				{
@@ -379,6 +364,8 @@ unsigned int InfomapUndirected::moveNodesToPredefinedModulesImpl()
 					edgeIt != endIt; ++edgeIt)
 			{
 				EdgeType& edge = **edgeIt;
+				if (edge.isSelfPointing())
+					continue;
 				unsigned int otherModule = edge.source.index;
 				if (otherModule == oldM)
 				{

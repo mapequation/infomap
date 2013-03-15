@@ -317,6 +317,8 @@ unsigned int InfomapDirected::optimizeModulesImpl()
 					edgeIt != endIt; ++edgeIt)
 			{
 				EdgeType& edge = **edgeIt;
+				if (edge.isSelfPointing())
+					continue;
 				NodeType& neighbour = getNode(edge.target);
 
 				if (redirect[neighbour.index] >= offset)
@@ -338,6 +340,8 @@ unsigned int InfomapDirected::optimizeModulesImpl()
 				edgeIt != endIt; ++edgeIt)
 		{
 			EdgeType& edge = **edgeIt;
+			if (edge.isSelfPointing())
+				continue;
 			NodeType& neighbour = getNode(edge.source);
 
 			if (redirect[neighbour.index] >= offset)
@@ -509,6 +513,8 @@ unsigned int InfomapDirected::moveNodesToPredefinedModulesImpl()
 					edgeIt != endIt; ++edgeIt)
 			{
 				EdgeType& edge = **edgeIt;
+				if (edge.isSelfPointing())
+					continue;
 				unsigned int otherModule = edge.target.index;
 				if (otherModule == oldM)
 				{
@@ -525,6 +531,8 @@ unsigned int InfomapDirected::moveNodesToPredefinedModulesImpl()
 					edgeIt != endIt; ++edgeIt)
 			{
 				EdgeType& edge = **edgeIt;
+				if (edge.isSelfPointing())
+					continue;
 				unsigned int otherModule = edge.source.index;
 				if (otherModule == oldM)
 				{

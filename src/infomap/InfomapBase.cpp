@@ -178,7 +178,7 @@ void InfomapBase::runPartition()
 		unsigned int numLevelsCreated = findSuperModulesIterativelyFast(partitionQueue);
 
 		// Print current hierarchical solution
-		if (hierarchicalCodelength < bestIntermediateCodelength)
+		if (m_config.fastHierarchicalSolution < 3 && hierarchicalCodelength < bestIntermediateCodelength)
 		{
 			bestIntermediateCodelength = hierarchicalCodelength;
 			bestIntermediateStatistics.clear();
@@ -1483,7 +1483,8 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 			Stopwatch::getElapsedTimeSinceProgramStartInSec() << "s. Network size: "
 			<< numLeafNodes() << " nodes and " << m_treeData.numLeafEdges() << " links." << std::endl;
 	sortTree();
-	printSubInfomapTree(treeOut, m_treeData);
+//	printSubInfomapTree(treeOut, m_treeData);
+	printSubInfomapTreeDebug(treeOut, m_treeData);
 
 	if (m_config.verbosity == 0)
 		RELEASE_OUT(") ");

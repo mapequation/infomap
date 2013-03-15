@@ -166,7 +166,7 @@ void InfomapGreedy<InfomapImplementation>::initEnterExitFlow()
 		{
 			EdgeType& edge = **edgeIt;
 			// Possible self-links should not add to enter and exit flow in its enclosing module
-			if (edge.source.id != edge.target.id)
+			if (edge.source != edge.target)
 			{
 				getNode(edge.source).data.exitFlow += edge.data.flow;
 				getNode(edge.target).data.enterFlow += edge.data.flow;
@@ -220,7 +220,7 @@ void InfomapGreedy<InfomapDirected>::initEnterExitFlow()
 			{
 				EdgeType& edge = **edgeIt;
 				// Possible self-links should not add to enter and exit flow in its enclosing module
-				if (edge.source.id != edge.target.id)
+				if (edge.source != edge.target)
 				{
 					getNode(edge.source).data.exitFlow += edge.data.flow;
 	//				getNode(edge.target).data.enterFlow += edge.data.flow;

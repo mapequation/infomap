@@ -52,6 +52,11 @@ public:
 		return (node == source) ? target : source;
 	}
 
+	bool isSelfPointing()
+	{
+		return source == target;
+	}
+
 	friend std::ostream& operator<<(std::ostream& out, const Edge& edge)
 	{
 		return out << "(" << edge.source << ") -> (" << edge.target << "), flow: "

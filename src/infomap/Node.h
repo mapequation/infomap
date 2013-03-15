@@ -136,8 +136,11 @@ public:
 
 	// ---------------------------- Operators ----------------------------
 
-	bool operator==(const NodeBase& rhs) const
+	bool operator ==(const NodeBase& rhs) const
 	{ return id == rhs.id; }
+
+	bool operator !=(const NodeBase& rhs) const
+	{ return id != rhs.id; }
 
 	friend std::ostream& operator<<(std::ostream& out, const NodeBase& node)
 	{

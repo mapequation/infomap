@@ -25,7 +25,7 @@ Getting started:
 --------------------------------------------------------
 In a terminal with the GNU Compiler Collection installed,
 just run 'make' in the current directory to compile the
-code, and then ./Infomap to run. 
+code with the included Makefile. Call ./Infomap to run.
 
 For more info, see
 http://www.mapequation.org/code
