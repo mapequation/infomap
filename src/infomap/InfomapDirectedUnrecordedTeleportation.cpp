@@ -366,11 +366,12 @@ unsigned int InfomapDirectedUnrecordedTeleportation::optimizeModulesImpl()
 
 		// If no links connecting this node with other nodes, it won't move into others,
 		// and others won't move into this. TODO: Always best leave it alone?
-		if (current.degree() == 0)
+//		if (current.degree() == 0)
+		if (current.degree() == 0 ||
+			(m_config.includeSelfLinks && (current.outDegree() == current.inDegree() == 1) \
+					&& (**current.begin_outEdge()).target == current))
 		{
 			DEBUG_OUT("SKIPPING isolated node " << current << std::endl);
-			//TODO: If not skipping self-links, this yields different results from moveNodesToPredefinedModules!!
-			ASSERT(!m_config.includeSelfLinks);
 			continue;
 		}
 

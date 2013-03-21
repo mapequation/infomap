@@ -124,7 +124,6 @@ void Network::parsePajekNetwork(std::string filename)
 	}
 
 	unsigned int numDoubleLinks = 0;
-	unsigned int numSelfLinks = 0;
 	unsigned int numEdgeLines = 0;
 	unsigned int numSkippedEdges = 0;
 	unsigned int maxLinkEnd = 0;
@@ -153,10 +152,11 @@ void Network::parsePajekNetwork(std::string filename)
 			continue;
 		}
 
-		if (linkEnd2 == linkEnd1 && !m_config.includeSelfLinks)
+		if (linkEnd2 == linkEnd1)
 		{
-			++numSelfLinks;
-			continue;
+			++m_numSelfLinks;
+			if (!m_config.includeSelfLinks)
+				continue;
 		}
 
 		double linkWeight;
@@ -188,6 +188,8 @@ void Network::parsePajekNetwork(std::string filename)
 		{
 			it->second += linkWeight;
 			++numDoubleLinks;
+			if (linkEnd2 == linkEnd1)
+				--m_numSelfLinks;
 		}
 	}
 
@@ -198,15 +200,15 @@ void Network::parsePajekNetwork(std::string filename)
 	if (maxLinkEnd >= numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 
-	unsigned int sumEdgesFound = m_links.size() + numSelfLinks + numDoubleLinks + numSkippedEdges;
+	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
 	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << sumEdgesFound << " links. ";
 //	std::cout << "Average node weight: " << (m_sumNodeWeights / numNodes) << ". ";
 	if (m_config.nodeLimit > 0)
 		std::cout << "Limiting network to " << numNodes << " nodes and " << m_links.size() << " links. ";
 	if(numDoubleLinks > 0)
 		std::cout << numDoubleLinks << " links was aggregated to existing links. ";
-	if (numSelfLinks > 0)
-		std::cout << numSelfLinks << " self-links was ignored. ";
+	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
+		std::cout << m_numSelfLinks << " self-links was ignored. ";
 	std::cout << std::endl;
 
 }
@@ -222,7 +224,6 @@ void Network::parseLinkList(std::string filename)
 	std::istringstream ss;
 
 	unsigned int numDoubleLinks = 0;
-	unsigned int numSelfLinks = 0;
 	unsigned int numEdgeLines = 0;
 	unsigned int numSkippedEdges = 0;
 	m_totalLinkWeight = 0.0;
@@ -260,10 +261,11 @@ void Network::parseLinkList(std::string filename)
 			continue;
 		}
 
-		if (linkEnd2 == linkEnd1 && !m_config.includeSelfLinks)
+		if (linkEnd2 == linkEnd1)
 		{
-			++numSelfLinks;
-			continue;
+			++m_numSelfLinks;
+			if (!m_config.includeSelfLinks)
+				continue;
 		}
 
 		double linkWeight = 1.0;
@@ -293,6 +295,8 @@ void Network::parseLinkList(std::string filename)
 		{
 			it->second += linkWeight;
 			++numDoubleLinks;
+			if (linkEnd2 == linkEnd1)
+				--m_numSelfLinks;
 		}
 	}
 
@@ -331,7 +335,6 @@ void Network::parseSparseLinkList(std::string filename)
 	std::istringstream ss;
 
 	unsigned int numDoubleLinks = 0;
-	unsigned int numSelfLinks = 0;
 	unsigned int numEdgeLines = 0;
 	unsigned int numSkippedEdges = 0;
 	m_totalLinkWeight = 0.0;
@@ -373,10 +376,11 @@ void Network::parseSparseLinkList(std::string filename)
 			continue;
 		}
 
-		if (linkEnd2 == linkEnd1 && !m_config.includeSelfLinks)
+		if (linkEnd2 == linkEnd1)
 		{
-			++numSelfLinks;
-			continue;
+			++m_numSelfLinks;
+			if (!m_config.includeSelfLinks)
+				continue;
 		}
 
 		double linkWeight = 1.0;
@@ -414,8 +418,10 @@ void Network::parseSparseLinkList(std::string filename)
 				++numLinks;
 			}
 			else{
-			  toLink_it->second += linkWeight;
-			  ++numDoubleLinks;
+				toLink_it->second += linkWeight;
+				++numDoubleLinks;
+				if (linkEnd2 == linkEnd1)
+					--m_numSelfLinks;
 			}
 		}
 	}
@@ -459,15 +465,23 @@ void Network::parseSparseLinkList(std::string filename)
 void Network::calculateFlow()
 {
 	std::cout << "Calculating global flow... ";
+
+//	bool addSelfLinks = m_config.selfTeleportationProbability > 0 && m_config.selfTeleportationProbability < 1;
+//	double outRate = 1.0;
+//	if (addSelfLinks)
+//		outRate = 1.0 - m_config.selfTeleportationProbability;
+
 	// Prepare data in sequence containers for fast access of individual elements
 	unsigned int numNodes = m_numNodes;
-	unsigned int numLinks = m_links.size();
 	m_nodeOutDegree.assign(numNodes, 0);
 	m_sumLinkOutWeight.assign(numNodes, 0.0);
 	m_nodeFlow.assign(numNodes, 0.0);
+//	unsigned int numLinks = addSelfLinks ? (m_links.size() + m_numNodes - m_numSelfLinks) : m_links.size();
+	unsigned int numLinks = m_links.size();
 	m_flowLinks.resize(numLinks);
 	double sumUndirLinkWeight = (m_config.isUndirected() ? 1 : 2) * m_totalLinkWeight;
 	unsigned int linkIndex = 0;
+
 	for (LinkMap::iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt, ++linkIndex)
 	{
 		const std::pair<unsigned int, unsigned int>& linkEnds = linkIt->first;
@@ -480,6 +494,28 @@ void Network::calculateFlow()
 		m_nodeFlow[linkEnds.second] += linkWeight / sumUndirLinkWeight;
 		m_flowLinks[linkIndex] = Link(linkEnds.first, linkEnds.second, linkWeight);
 	}
+
+//	if (addSelfLinks)
+//	{
+//		for (unsigned int i = 0; i < numNodes; ++i)
+//		{
+//			double linkWeight = m_sumLinkOutWeight[i] > 0 ?
+//					(m_sumLinkOutWeight[i] * m_config.selfTeleportationProbability) : 1.0;
+//			LinkMap::iterator it = m_links.find(std::make_pair(i, i));
+//			if(it == m_links.end())
+//			{
+//				m_links.insert(std::make_pair(std::make_pair(i, i), linkWeight));
+//				m_flowLinks[linkIndex++] = Link(i, i, linkWeight);
+//			}
+//			else
+//			{
+//				it->second += linkWeight;
+//				++m_numSelfLinks;
+////				m_flowLinks[i].weight += linkWeight;
+//			}
+//		}
+//	}
+
 
 	if (m_config.rawdir)
 	{

@@ -29,6 +29,7 @@ struct Config
 		unrecordedTeleportation(false),
 		teleportToNodes(false),
 		teleportationProbability(0.15),
+		selfTeleportationProbability(-1),
 		seedToRandomNumberGenerator(123),
 		numTrials(1),
 		minimumCodelengthImprovement(1.0e-10),
@@ -117,6 +118,7 @@ struct Config
 	bool unrecordedTeleportation;
 	bool teleportToNodes;
 	double teleportationProbability;
+	double selfTeleportationProbability;
 	unsigned long seedToRandomNumberGenerator;
 
 	// Performance and accuracy

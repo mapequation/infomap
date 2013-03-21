@@ -53,7 +53,9 @@ void InfomapBase::run()
 //
 //	calculateFlow();
 
-	initNetwork();
+	if (!initNetwork())
+		return;
+
 
 	indexCodelength = root()->codelength = calcCodelengthFromFlowWithinOrExit(*root());
 	RELEASE_OUT("One-level codelength: " << indexCodelength << std::endl);
@@ -1338,7 +1340,7 @@ void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)
 			" nodes in " << root()->childDegree() << " modules." << std::endl);
 }
 
-void InfomapBase::initNetwork()
+bool InfomapBase::initNetwork()
 {
 	Network network(m_config);
 
@@ -1349,7 +1351,7 @@ void InfomapBase::initNetwork()
 	catch (const std::runtime_error& error)
 	{
 		std::cerr << "Error parsing the input file: " << error.what() << std::endl;
-		return;
+		return false;
 	}
 
 	network.calculateFlow();
@@ -1365,6 +1367,7 @@ void InfomapBase::initNetwork()
 	setNodeFlow(network.nodeFlow());
 	initEnterExitFlow();
 
+	return true;
 //	printNetworkDebug("debug", false, true);
 }
 
@@ -1483,8 +1486,8 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 			Stopwatch::getElapsedTimeSinceProgramStartInSec() << "s. Network size: "
 			<< numLeafNodes() << " nodes and " << m_treeData.numLeafEdges() << " links." << std::endl;
 	sortTree();
-//	printSubInfomapTree(treeOut, m_treeData);
-	printSubInfomapTreeDebug(treeOut, m_treeData);
+	printSubInfomapTree(treeOut, m_treeData);
+//	printSubInfomapTreeDebug(treeOut, m_treeData);
 
 	if (m_config.verbosity == 0)
 		RELEASE_OUT(") ");

@@ -137,10 +137,12 @@ public:
 	// ---------------------------- Operators ----------------------------
 
 	bool operator ==(const NodeBase& rhs) const
-	{ return id == rhs.id; }
+	{ return this == &rhs; }
+//	{ return id == rhs.id; }
 
 	bool operator !=(const NodeBase& rhs) const
-	{ return id != rhs.id; }
+	{ return this != &rhs; }
+//	{ return id != rhs.id; }
 
 	friend std::ostream& operator<<(std::ostream& out, const NodeBase& node)
 	{
@@ -151,10 +153,10 @@ public:
 		return out << "n" << node.id << ":" << node.name;
 	}
 
-	friend std::ostream& operator<<(std::ostream& out, const NodeBase* node)
-	{
-		return node == 0 ? (out << "null") : (out << *node);
-	}
+//	friend std::ostream& operator<<(std::ostream& out, const NodeBase* node)
+//	{
+//		return node == 0 ? (out << "null") : (out << *node);
+//	}
 
 	//debug
 	virtual void printData(std::ostream& out)

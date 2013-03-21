@@ -234,7 +234,7 @@ void InfomapGreedy<InfomapDirected>::initEnterExitFlow()
 			it != itEnd; ++it)
 	{
 		NodeType& node = getNode(**it);
-		// Don't code self-teleportation
+		// Don't let self-teleportation add to the enter/exit flow
 		node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
 //		node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
 

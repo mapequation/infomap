@@ -91,6 +91,9 @@ Config getConfig(int argc, char *argv[])
 	api.addOptionArgument(conf.teleportationProbability, 'p', "teleportation-probability",
 			"The probability of teleporting to a random node or link.", "f");
 
+	api.addOptionArgument(conf.selfTeleportationProbability, 'y', "self-link-teleportation-probability",
+			"The probability of teleporting to itself.", "f");
+
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
 			"A seed (integer) to the random number generator.", "n");
 

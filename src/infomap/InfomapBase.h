@@ -193,7 +193,7 @@ private:
 	void partitionEachModule(unsigned int recursiveCount = 0, bool fast = false);
 	double generateSubInfomapInstancesToLevel(unsigned int level, bool tryIndexing);
 	double partitionModule(NodeBase& module, bool tryIndexing);
-	void initNetwork();
+	bool initNetwork();
 	void readData();
 	void initSubNetwork(NodeBase& parent, bool recalculateFlow = false);
 	void initSuperNetwork(NodeBase& parent);

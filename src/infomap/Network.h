@@ -65,7 +65,8 @@ public:
 	:	m_config(config),
 	 	m_numNodes(0),
 	 	m_sumNodeWeights(0.0),
-	 	m_totalLinkWeight(0.0)
+	 	m_totalLinkWeight(0.0),
+	 	m_numSelfLinks(0)
 	{}
 	virtual ~Network() {}
 
@@ -96,6 +97,7 @@ private:
 	NodeMap m_nodeMap;
 	double m_totalLinkWeight; // On whole network
 	LinkMap m_links;
+	unsigned int m_numSelfLinks;
 
 	// For the flow calculation
 	std::vector<unsigned int> m_nodeOutDegree;
