@@ -36,8 +36,8 @@ void InfomapBase::run()
 	ASSERT(m_subLevel == 0);
 
 #ifdef _OPENMP
-	std::cout << "(OpenMP " << _OPENMP << " detected, trying to parallelize the recursive part on " <<
-			omp_get_num_procs() << " processors...)\n";
+	RELEASE_OUT("(OpenMP " << _OPENMP << " detected, trying to parallelize the recursive part on " <<
+			omp_get_num_procs() << " processors...)\n" << std::flush);
 #endif
 
 //	try

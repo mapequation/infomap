@@ -12,6 +12,7 @@
 #include "../io/convert.h"
 #include "../io/SafeFile.h"
 #include <cmath>
+#include "../utils/Logger.h"
 using std::make_pair;
 
 void Network::readFromFile(std::string filename)
@@ -44,11 +45,11 @@ void Network::readFromFile(std::string filename)
 
 void Network::parsePajekNetwork(std::string filename)
 {
+	RELEASE_OUT("Parsing " << (m_config.isUndirected() ? "undirected" : "directed") << " network from file '" <<
+			filename << "'... " << std::flush);
 	string line;
 	string buf;
 	SafeInFile input(filename.c_str());
-	std::cout << "Parsing " << (m_config.directed ? "directed" : "undirected") << " network from file '" <<
-			filename << "'... " << std::flush;
 
 	if( getline(input,line) == NULL)
 		throw FileFormatError("Can't read first line of pajek file.");
@@ -120,7 +121,7 @@ void Network::parsePajekNetwork(std::string filename)
 	ss.str(line);
 	ss >> buf;
 	if(buf != "*Edges" && buf != "*edges" && buf != "*Arcs" && buf != "*arcs") {
-		throw FileFormatError("The first line (to lower cases) after the nodes doesn't match *vertices or *arcs.");
+		throw FileFormatError("The first line (to lower cases) after the nodes doesn't match *edges or *arcs.");
 	}
 
 	unsigned int numDoubleLinks = 0;
@@ -139,8 +140,16 @@ void Network::parsePajekNetwork(std::string filename)
 		ss.str(line);
 		unsigned int linkEnd1;
 		if (!(ss >> linkEnd1))
+		{
+			std::string asdf = line;
+			asdf += "000";
+			std::ostringstream tmp;
+			RELEASE_OUT("asdf: " << asdf << std::endl);
+			RELEASE_OUT("asdf: " << asdf << std::endl);
+			RELEASE_OUT("asdf: " << asdf << std::endl);
 			throw BadConversionError(io::Str() << "Can't parse first integer of link number " <<
 					numEdgeLines << " from line '" << line << "'");
+		}
 		unsigned int linkEnd2;
 		if (!(ss >> linkEnd2))
 			throw BadConversionError(io::Str() << "Can't parse second integer of link number " <<

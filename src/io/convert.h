@@ -73,11 +73,11 @@ namespace io
 class Str {
 public:
 	Str() {}
-	template<class T> Str& operator<<(const T& t) {
+	template<class T> Str& operator << (const T& t) {
 		m_oss << t;
 		return *this;
 	}
-	Str& operator<<(std::ostream& (*f) (std::ostream&)) {
+	Str& operator << (std::ostream& (*f) (std::ostream&)) {
 		m_oss << f;
 		return *this;
 	}
