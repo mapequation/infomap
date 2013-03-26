@@ -56,6 +56,25 @@ NodeBase::NodeBase(std::string name)
 	++s_nodeCount;
 }
 
+NodeBase::NodeBase(const NodeBase& other)
+:	id(s_UID++),
+ 	name(other.name),
+ 	index(0),
+ 	originalIndex(0),
+	parent(0),
+	previous(0),
+	next(0),
+	firstChild(0),
+	lastChild(0),
+	codelength(0.0),
+	m_subStructure(),
+	m_childDegree(0),
+	m_childrenChanged(false),
+	m_numLeafMembers(1)
+{
+	++s_nodeCount;
+}
+
 NodeBase::~NodeBase()
 {
 	deleteChildren();

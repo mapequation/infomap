@@ -49,6 +49,7 @@ public:
 
 	NodeBase();
 	NodeBase(std::string name);
+	NodeBase(const NodeBase& other);
 
 	virtual ~NodeBase();
 

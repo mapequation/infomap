@@ -1510,9 +1510,20 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 		RELEASE_OUT("Print top modules to " << outName << "... ");
 	SafeOutFile mapOut(outName.c_str());
 	printMap(mapOut);
-
 	if (m_config.verbosity > 0)
 		RELEASE_OUT("done!\n");
+
+//	if (root()->firstChild->getSubInfomap() != 0)
+//	{
+//		outName = io::Str() << m_config.outDirectory << filename << "_1.map";
+//		if (m_config.verbosity > 0)
+//			RELEASE_OUT("Print first super module to " << outName << "... ");
+//		SafeOutFile mapOut1(outName.c_str());
+//		root()->firstChild->getSubInfomap()->printMap(mapOut1);
+//		if (m_config.verbosity > 0)
+//			RELEASE_OUT("done!\n");
+//	}
+
 
 	// Print .clu if constrained to two-level
 	if (m_config.twoLevel)

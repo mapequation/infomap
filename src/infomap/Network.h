@@ -86,6 +86,8 @@ private:
 	void parseLinkList(std::string filename);
 	void parseSparseLinkList(std::string filename);
 
+	void zoom();
+
 	const Config& m_config;
 
 	// For the network data
