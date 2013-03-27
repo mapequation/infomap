@@ -719,3 +719,19 @@ void Network::calculateFlow()
 
 	std::cout << "done in " << numIterations << " iterations!" << std::endl;
 }
+
+void Network::printNetworkAsPajek(std::string filename)
+{
+	SafeOutFile out(filename.c_str());
+
+	out << "*Vertices " << m_numNodes << "\n";
+	for (unsigned int i = 0; i < m_numNodes; ++i)
+		out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
+
+	out << (m_config.isUndirected() ? "*Edges " : "*Arcs ") << m_flowLinks.size() << "\n";
+	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
+	{
+		Link& link = *linkIt;
+		out << (link.source+1) << " " << (link.target+1) << " " << link.weight << "\n";
+	}
+}

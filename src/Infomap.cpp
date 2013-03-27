@@ -58,6 +58,9 @@ Config getConfig(int argc, char *argv[])
 //	api.addOptionArgument(conf.printNodeRanks, 'p', "print-node-ranks",
 //			"Print the calculated flow for each node to a file.");
 //
+	api.addOptionArgument(conf.printPajekNetwork, 'J', "print-pajek-network",
+			"Print the parsed network in Pajek format.");
+//
 	api.addOptionArgument(conf.printFlowNetwork, 'W', "print-flow-network",
 			"Print the network with calculated flow values.");
 //	TODO: Add map container so that printing can be added like -Pranks -Pflow etc!!

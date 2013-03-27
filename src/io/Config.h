@@ -45,6 +45,7 @@ struct Config
 		outDirectory(""),
 		printNodeRanks(false),
 		printFlowNetwork(false),
+		printPajekNetwork(false),
 		noFileOutput(false),
 		verbosity(0),
 		verboseNumberPrecision(6),
@@ -138,6 +139,7 @@ struct Config
 	std::string outDirectory;
 	bool printNodeRanks;
 	bool printFlowNetwork;
+	bool printPajekNetwork;
 	bool noFileOutput;
 	unsigned int verbosity;
 	unsigned int verboseNumberPrecision;

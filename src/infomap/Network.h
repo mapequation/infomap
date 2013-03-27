@@ -72,6 +72,7 @@ public:
 
 	void readFromFile(std::string filename);
 	void calculateFlow();
+	void printNetworkAsPajek(std::string filename);
 
 	unsigned int numNodes() { return m_numNodes; }
 	const std::vector<std::string>& nodeNames() { return m_nodeNames; }

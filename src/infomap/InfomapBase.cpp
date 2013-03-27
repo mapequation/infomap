@@ -1356,6 +1356,13 @@ bool InfomapBase::initNetwork()
 
 	network.calculateFlow();
 
+	if (m_config.printPajekNetwork)
+	{
+		std::string outName = io::Str() <<
+				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
+		network.printNetworkAsPajek(outName);
+	}
+
 	m_treeData.reserveNodeCount(network.numNodes());
 
 	for (unsigned int i = 0; i < network.numNodes(); ++i)
