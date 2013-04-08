@@ -169,7 +169,7 @@ void initBenchmark(const Config& conf, int argc, char * const argv[])
 	std::cout << "(Writing benchmark log to '" << logFilename << "'...)\n";
 }
 
-int main(int argc, char *argv[])
+int run(int argc, char* argv[])
 {
 	Date startDate;
 	Config conf;
@@ -208,4 +208,9 @@ int main(int argc, char *argv[])
 //	std::cout << "Elapsed time: " << t1 << " (" <<
 //			Stopwatch::getElapsedTimeSinceProgramStartInSec() << "s serial)." << std::endl;
 	return 0;
+}
+
+int main(int argc, char* argv[])
+{
+	return run(argc, argv);
 }
