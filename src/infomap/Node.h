@@ -462,7 +462,7 @@ public:
 	{}
 	Node(std::string name) : NodeBase(name)
 	{}
-	Node(std::string name, double nodeWeight) : NodeBase(name), data(nodeWeight)
+	Node(std::string name, double flow, double teleWeight) : NodeBase(name), data(flow, teleWeight)
 	{}
 	Node(T data) : NodeBase(), data(data)
 	{}

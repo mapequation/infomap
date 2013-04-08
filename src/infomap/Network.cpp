@@ -40,6 +40,7 @@ void Network::readFromFile(std::string filename)
 	else
 		throw UnknownFileTypeError("No known input format specified.");
 
+	zoom();
 }
 
 
@@ -76,9 +77,8 @@ void Network::parsePajekNetwork(std::string filename)
 		numNodes = m_config.nodeLimit;
 
 	m_numNodes = numNodes;
-//	m_leafNodes.resize(numNodes);
 	m_nodeNames.resize(numNodes);
-	m_nodeTeleportRates.assign(numNodes, 1.0);
+	m_nodeWeights.assign(numNodes, 1.0);
 	m_sumNodeWeights = 0.0;
 
 	// Read node names, assuming order 1, 2, 3, ...
@@ -103,7 +103,7 @@ void Network::parsePajekNetwork(std::string filename)
 		}
 		ss >> nodeWeight; // Extract the next token as node weight. If failed, the old value (1.0) is kept.
 		m_sumNodeWeights += nodeWeight;
-		m_nodeTeleportRates[i] = nodeWeight;
+		m_nodeWeights[i] = nodeWeight;
 //		m_nodeMap.insert(make_pair(name, i));
 		m_nodeNames[i] = name;
 	}
@@ -317,9 +317,8 @@ void Network::parseLinkList(std::string filename)
 
 	m_numNodes = maxLinkEnd + 1;
 
-//	m_leafNodes.resize(m_numNodes);
 	m_nodeNames.resize(m_numNodes);
-	m_nodeTeleportRates.assign(m_numNodes, 1.0);
+	m_nodeWeights.assign(m_numNodes, 1.0);
 	m_sumNodeWeights = 1.0 * m_numNodes;
 
 	for (unsigned int i = 0; i < m_numNodes; ++i)
@@ -438,9 +437,8 @@ void Network::parseSparseLinkList(std::string filename)
 
 	m_numNodes = links.size();
 
-//	m_leafNodes.resize(m_numNodes);
 	m_nodeNames.resize(m_numNodes);
-	m_nodeTeleportRates.assign(m_numNodes, 1.0);
+	m_nodeWeights.assign(m_numNodes, 1.0);
 	m_sumNodeWeights = 1.0 * m_numNodes;
 
 	std::map<unsigned int, unsigned int> packedIndices;
@@ -512,214 +510,6 @@ void Network::zoom()
 	m_totalLinkWeight += sumAdditionalLinkWeight * (m_config.isUndirected() ? 2 : 1);
 }
 
-void Network::calculateFlow()
-{
-	std::cout << "Calculating global flow... ";
-
-	zoom();
-
-	// Prepare data in sequence containers for fast access of individual elements
-	unsigned int numNodes = m_numNodes;
-	m_nodeOutDegree.assign(numNodes, 0);
-	m_sumLinkOutWeight.assign(numNodes, 0.0);
-	m_nodeFlow.assign(numNodes, 0.0);
-	unsigned int numLinks = m_links.size();
-	m_flowLinks.resize(numLinks);
-	double sumUndirLinkWeight = (m_config.isUndirected() ? 1 : 2) * m_totalLinkWeight;
-	unsigned int linkIndex = 0;
-
-	for (LinkMap::iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt, ++linkIndex)
-	{
-		const std::pair<unsigned int, unsigned int>& linkEnds = linkIt->first;
-		++m_nodeOutDegree[linkEnds.first];
-		double linkWeight = linkIt->second;
-		m_sumLinkOutWeight[linkEnds.first] += linkWeight;
-		if (m_config.isUndirected())
-			m_sumLinkOutWeight[linkEnds.second] += linkWeight;
-		m_nodeFlow[linkEnds.first] += linkWeight / sumUndirLinkWeight;
-		m_nodeFlow[linkEnds.second] += linkWeight / sumUndirLinkWeight;
-		m_flowLinks[linkIndex] = Link(linkEnds.first, linkEnds.second, linkWeight);
-	}
-
-	if (m_config.rawdir)
-	{
-		// Treat the link weights as flow (after global normalization) and
-		// do one power iteration to set the node flow
-		m_nodeFlow.assign(numNodes, 0.0);
-		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
-		{
-			Link& link = *linkIt;
-			link.flow /= m_totalLinkWeight;
-			m_nodeFlow[link.target] += link.flow;
-		}
-		//Normalize node flow
-		double sumNodeRank = 0.0;
-		for (unsigned int i = 0; i < numNodes; ++i)
-			sumNodeRank += m_nodeFlow[i];
-		for (unsigned int i = 0; i < numNodes; ++i)
-			m_nodeFlow[i] /= sumNodeRank;
-		std::cout << "using directed links with raw flow... done!" << std::endl;
-		std::cout << "Total link weight: " << m_totalLinkWeight << "\n";
-		return;
-	}
-
-	if (!m_config.directed)
-	{
-		if (m_config.undirdir)
-		{
-			//Take one last power iteration
-			std::vector<double> nodeFlowSteadyState(m_nodeFlow);
-			m_nodeFlow.assign(numNodes, 0.0);
-			for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
-			{
-				Link& link = *linkIt;
-				m_nodeFlow[link.target] += nodeFlowSteadyState[link.source] * link.flow / m_sumLinkOutWeight[link.source];
-			}
-			//Normalize node flow
-			double sumNodeRank = 0.0;
-			for (unsigned int i = 0; i < numNodes; ++i)
-				sumNodeRank += m_nodeFlow[i];
-			for (unsigned int i = 0; i < numNodes; ++i)
-				m_nodeFlow[i] /= sumNodeRank;
-			// Update link data to represent flow instead of weight
-			for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
-			{
-				Link& link = *linkIt;
-				link.flow *= nodeFlowSteadyState[link.source] / m_sumLinkOutWeight[link.source] / sumNodeRank;
-			}
-		}
-		else // undirected
-		{
-			for (unsigned int i = 0; i < numLinks; ++i)
-				m_flowLinks[i].flow /= sumUndirLinkWeight;
-		}
-
-		std::cout << "using undirected links" << (m_config.undirdir? ", switching to directed after steady state... done!" :
-				"... done!") << std::endl;
-		return;
-	}
-
-	std::cout << "using " << (m_config.unrecordedTeleportation ? "unrecorded" : "recorded") << " teleportation to " <<
-			(m_config.teleportToNodes ? "nodes" : "links") << "... " << std::flush;
-
-	// Calculate the teleport rate distribution
-	if (m_config.teleportToNodes)
-	{
-		// Teleport proportionally to node weights specified in network file or default uniformly.
-		for (unsigned int i = 0; i < numNodes; ++i)
-			m_nodeTeleportRates[i] /= m_sumNodeWeights;
-	}
-	else
-	{
-		m_nodeTeleportRates.assign(numNodes, 0.0);
-		// Teleport proportionally to in-degree, or out-degree if unrecorded teleportation.
-		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
-		{
-			unsigned int toNode = m_config.unrecordedTeleportation ? linkIt->source : linkIt->target;
-			m_nodeTeleportRates[toNode] += linkIt->flow / m_totalLinkWeight;
-		}
-	}
-
-
-	// Normalize link weights with respect to its source nodes total out-link weight;
-	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
-	{
-		linkIt->flow /= m_sumLinkOutWeight[linkIt->source];
-	}
-
-	// Collect dangling nodes
-	std::vector<unsigned int> danglings;
-	for (unsigned int i = 0; i < numNodes; ++i)
-	{
-		if (m_nodeOutDegree[i] == 0)
-			danglings.push_back(i);
-	}
-
-	// Calculate PageRank
-	std::vector<double> nodeFlowTmp(numNodes, 0.0);
-	unsigned int numIterations = 0;
-	double alpha = m_config.teleportationProbability;
-	double beta = 1.0 - alpha;
-	double sqdiff = 1.0;
-	double danglingRank = 0.0;
-	do
-	{
-		// Calculate dangling rank
-		danglingRank = 0.0;
-		for (std::vector<unsigned int>::iterator danglingIt(danglings.begin()); danglingIt != danglings.end(); ++danglingIt)
-		{
-			danglingRank += m_nodeFlow[*danglingIt];
-		}
-
-		// Flow from teleportation
-		for (unsigned int i = 0; i < numNodes; ++i)
-		{
-			nodeFlowTmp[i] = (alpha + beta*danglingRank) * m_nodeTeleportRates[i];
-		}
-
-		// Flow from links
-		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
-		{
-			Link& link = *linkIt;
-			nodeFlowTmp[link.target] += beta * link.flow * m_nodeFlow[link.source];
-		}
-
-		// Update node flow from the power iteration above and check if converged
-		double sum = 0.0;
-		double sqdiff_old = sqdiff;
-		sqdiff = 0.0;
-		for (unsigned int i = 0; i < numNodes; ++i)
-		{
-			sum += nodeFlowTmp[i];
-			sqdiff += std::abs(nodeFlowTmp[i] - m_nodeFlow[i]);
-			m_nodeFlow[i] = nodeFlowTmp[i];
-		}
-
-		// Normalize if needed
-		if (std::abs(sum - 1.0) > 1.0e-10)
-		{
-			std::cout << "(Normalizing ranks after " <<	numIterations << " power iterations with error " << (sum-1.0) << ") ";
-			for (unsigned int i = 0; i < numNodes; ++i)
-			{
-				m_nodeFlow[i] /= sum;
-			}
-		}
-
-		// Perturb the system if equilibrium
-		if(sqdiff == sqdiff_old)
-		{
-			alpha += 1.0e-10;
-			beta = 1.0 - alpha;
-		}
-
-		numIterations++;
-	}  while((numIterations < 200) && (sqdiff > 1.0e-15 || numIterations < 50));
-
-	double sumNodeRank = 1.0;
-
-	if (m_config.unrecordedTeleportation)
-	{
-		//Take one last power iteration excluding the teleportation (and normalize node flow to sum 1.0)
-		sumNodeRank = 1.0 - danglingRank;
-		m_nodeFlow.assign(numNodes, 0.0);
-		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
-		{
-			Link& link = *linkIt;
-			m_nodeFlow[link.target] += link.flow * nodeFlowTmp[link.source] / sumNodeRank;
-		}
-		beta = 1.0;
-	}
-
-
-	// Update the links with their global flow from the PageRank values. (Note: beta is set to 1 if unrec)
-	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
-	{
-		linkIt->flow *= beta * nodeFlowTmp[linkIt->source] / sumNodeRank;
-	}
-
-	std::cout << "done in " << numIterations << " iterations!" << std::endl;
-}
-
 void Network::printNetworkAsPajek(std::string filename)
 {
 	SafeOutFile out(filename.c_str());
@@ -728,10 +518,10 @@ void Network::printNetworkAsPajek(std::string filename)
 	for (unsigned int i = 0; i < m_numNodes; ++i)
 		out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
 
-	out << (m_config.isUndirected() ? "*Edges " : "*Arcs ") << m_flowLinks.size() << "\n";
-	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
+	out << (m_config.isUndirected() ? "*Edges " : "*Arcs ") << m_links.size() << "\n";
+	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
 	{
-		Link& link = *linkIt;
-		out << (link.source+1) << " " << (link.target+1) << " " << link.weight << "\n";
+		const std::pair<unsigned int, unsigned int>& link = linkIt->first;
+		out << (link.first + 1) << " " << (link.second + 1) << " " << linkIt->second << "\n";
 	}
 }

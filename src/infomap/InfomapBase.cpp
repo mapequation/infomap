@@ -8,7 +8,6 @@
 ------------------------------------------------------------------------ */
 
 #include "InfomapBase.h"
-#include "../io/DataConverterHelper.h"
 #include "../utils/Logger.h"
 #include <algorithm>
 #include "../utils/FileURI.h"
@@ -29,6 +28,7 @@
 #include <map>
 #include "../utils/Date.h"
 #include "Network.h"
+#include "FlowNetwork.h"
 
 void InfomapBase::run()
 {
@@ -40,18 +40,6 @@ void InfomapBase::run()
 			omp_get_num_procs() << " processors...)\n" << std::flush);
 #endif
 
-//	try
-//	{
-//		readData();
-//	}
-//	catch (const std::runtime_error& error)
-//	{
-//		std::cerr << "Error parsing the input file: " << error.what() << std::endl;
-//		return;
-//	}
-//	m_treeData.root()->setChildDegree(m_treeData.numLeafNodes());
-//
-//	calculateFlow();
 
 	if (!initNetwork())
 		return;
@@ -281,104 +269,6 @@ void InfomapBase::runPartition()
 	}
 }
 
-/**
- *
- * - Two-level partition
- * - Store new two-level substructure (Store temporary result)
- * - Remove former substructure (Clear deeper hierarchy of previous map)
- * - Extend map with the new level
- * - - Calculate codelength on all modules
- * - Set bestCodelength as the two-level one
- * - Set codelength to parent.codelength to begin with.
- * - Add index codebooks as long as the code gets shorter
- * (while(sub_greedy->Nnode > 1 && sub_greedy->Nnode != Nmod){ // Continue as long as the network can be partitioned and the result is non-trivial)
- */
-double InfomapBase::hierarchicalPartition(int recursiveCount, bool tryIndexing)
-{
-	DEBUG_OUT("InfomapBase::hierarchicalPartition()..." << std::endl);
-
-	hierarchicalCodelength = root()->codelength; // only != 0 on top root
-
-	if (numLeafNodes() == 1)
-		return hierarchicalCodelength;
-
-	// Two-level partition --> index codebook + module codebook
-	if (m_subLevel == 0)
-	{
-		if (m_config.verbosity > 0)
-			RELEASE_OUT(std::endl << "Trying to find modular structure... " << std::endl);
-		else
-			RELEASE_OUT("Trying to find modular structure... ");
-	}
-	partition();
-
-	if (m_subLevel == 0 && m_config.verbosity == 0)
-		RELEASE_OUT("done! Found " << numTopModules() << " modules with two-level codelength: " <<
-				indexCodelength << " + " << moduleCodelength <<	" = " << codelength << std::endl);
-
-	// Return if trivial result from partitioning
-	//	if (numTopModules() <= 2 || numTopModules() == numLeafNodes())
-	if (numTopModules() == 1)
-	{
-		//		return hierarchicalCodelength; // 0.0 but doesn't seem to be used.. check unnecessary checks..
-		return codelength;
-	}
-
-	// Instead of a flat codelength, use the two-level structure found.
-	hierarchicalCodelength = codelength;
-	double optimalIndexlength = indexCodelength; //TODO: Should be safe to use indexCodelength all the way!
-
-	if (m_subLevel == 0 && m_config.fastHierarchicalSolution)
-	{
-		RELEASE_OUT("\nTrying to find early deeper structure... " << std::flush);
-		double subCodelength = findHierarchicalSubstructures(*root(), -1, true);
-
-		hierarchicalCodelength = optimalIndexlength + subCodelength;
-
-		RELEASE_OUT("done! Hierarchical codelength: " << optimalIndexlength << " + " << subCodelength << " = " <<
-				hierarchicalCodelength << std::endl);
-
-	}
-
-	if (tryIndexing)
-	{
-		tryIndexingIteratively();
-		optimalIndexlength = indexCodelength;
-	}
-
-
-	if (recursiveCount == 0)
-	{
-		return hierarchicalCodelength;
-	}
-
-	if (m_subLevel == 0)
-	{
-		//TODO: Add time stamp before, like [08:32]
-		RELEASE_OUT("\nTrying to find new deeper structure under current top modules recursively... " <<
-				std::flush);
-	}
-
-	// Find substructures recursively (deep)
-	double subCodelength = findHierarchicalSubstructures(*root(), recursiveCount-1, true);
-	//	double subCodelength = findHierarchicalSubstructures(recursiveCount-1, false);
-
-	hierarchicalCodelength = optimalIndexlength + subCodelength;
-
-	if (m_subLevel == 0)
-	{
-		RELEASE_OUT("done! Hierarchical codelength: " << optimalIndexlength << " + " << subCodelength <<
-				" = " << hierarchicalCodelength << std::endl);
-
-		DepthStat depthStat = calcMaxAndAverageDepth();
-		RELEASE_OUT("Average/max depth: " << depthStat.averageDepth << "/" << depthStat.maxDepth << "\n");
-		if (m_config.benchmark)
-			Logger::benchmark("hierDown", hierarchicalCodelength, numTopModules(), numNonTrivialTopModules(), depthStat.maxDepth);
-	}
-
-	return hierarchicalCodelength;
-}
-
 
 double InfomapBase::partitionAndQueueNextLevel(PartitionQueue& partitionQueue, bool tryIndexing)
 {
@@ -446,10 +336,9 @@ void InfomapBase::queueTopModules(PartitionQueue& partitionQueue)
 	partitionQueue.moduleCodelength = moduleCodelength;
 }
 
-double InfomapBase::tryIndexingIteratively()
+void InfomapBase::tryIndexingIteratively()
 {
 //	return indexCodelength;//TODO: DEBUG!!
-	double optimalIndexlength = indexCodelength;
 	unsigned int numIndexingCompleted = 0;
 	bool verbose = m_subLevel == 0;
 
@@ -561,8 +450,6 @@ double InfomapBase::tryIndexingIteratively()
 		RELEASE_OUT("super modules with estimated codelength " << minHierarchicalCodelength << ". ");
 
 	hierarchicalCodelength = replaceExistingModules ? codelength : minHierarchicalCodelength;
-	optimalIndexlength = indexCodelength;
-	return optimalIndexlength;
 }
 
 /**
@@ -740,71 +627,6 @@ unsigned int InfomapBase::deleteSubLevels()
 	return numLevels-1;
 }
 
-double InfomapBase::findHierarchicalSubstructures(NodeBase& root, int recursiveCount, bool tryIndexing)
-{
-	// Return if trivial result
-	//	if (numTopModules() <= 2 || numTopModules() == numLeafNodes())
-//	if (numTopModules() == 1)
-	if (root.childDegree() <= 1)
-	{
-		std::cout << "!!" << root.childDegree() << ":" << root.firstChild->codelength << "!!";
-		return root.firstChild->codelength;
-	}
-
-	double sumHierarchicalSubNetworkCodelength = 0.0;
-	unsigned int moduleIndex = 0;
-
-
-	// Partition each module recursively
-	for (NodeBase::sibling_iterator moduleIt(root.begin_child()), endIt(root.end_child());
-			moduleIt != endIt; ++moduleIt, ++moduleIndex)
-	{
-		NodeBase& module = *moduleIt;
-		// Delete former sub-structure if exists
-		//		moduleIt->attachSubInfomapInstance(0);
-		module.getSubStructure().subInfomap.reset(0);
-
-		module.codelength = calcCodelengthFromFlowWithinOrExit(module);
-
-		// If only trivial substructure is to be found, no need to create infomap instance to find sub-module structures.
-		if (module.childDegree() <= 2)
-		{
-//			RELEASE_OUT("+");
-			//TODO: Check consistency with removing this shortcut
-			sumHierarchicalSubNetworkCodelength += module.codelength;
-			continue;
-		}
-
-		std::auto_ptr<InfomapBase> subInfomap(getNewInfomapInstance());
-		subInfomap->m_subLevel = m_subLevel + 1;
-		subInfomap->initSubNetwork(module, false);
-		subInfomap->hierarchicalPartition(recursiveCount, tryIndexing);
-		double hierarchicalSubNetCodelength = subInfomap->hierarchicalCodelength;
-
-		// If non-trivial substructure is found which improves the codelength, store it on the module
-		bool nonTrivialSubstructure = subInfomap->numTopModules() > 1 &&
-				subInfomap->numTopModules() < subInfomap->numLeafNodes();
-		bool improvement = nonTrivialSubstructure &&
-				(hierarchicalSubNetCodelength < module.codelength - m_config.minimumCodelengthImprovement);
-
-		if (improvement)
-		{
-			module.getSubStructure().subInfomap = subInfomap;
-		}
-		else
-		{
-			module.getSubStructure().exploredWithoutImprovement = true;
-			// Else use the codelength from the flat substructure
-			hierarchicalSubNetCodelength = module.codelength;
-		}
-
-		sumHierarchicalSubNetworkCodelength += hierarchicalSubNetCodelength;
-
-	}
-
-	return sumHierarchicalSubNetworkCodelength;
-}
-
 bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevelQueue, bool tryIndexing)
 {
 	PartitionQueue::size_t numModules = queue.size();
@@ -937,64 +759,6 @@ void InfomapBase::sortPartitionQueue(PartitionQueue& queue)
 	}
 
 
-}
-
-double InfomapBase::generateSubInfomapInstancesToLevel(unsigned int level, bool tryIndexing)
-{
-	if (m_subLevel >= level)
-		return indexCodelength;
-	unsigned int moduleIndex = 0;
-	double subCodelength = 0.0;
-	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-			moduleIt != endIt; ++moduleIt, ++moduleIndex)
-	{
-		SubStructure& sub = moduleIt->getSubStructure();
-		if (sub.subInfomap.get() != 0)
-		{
-			subCodelength += sub.subInfomap->generateSubInfomapInstancesToLevel(level - 1, tryIndexing);
-		}
-		else if (sub.exploredWithoutImprovement)
-		{
-			subCodelength += moduleIt->codelength;
-		}
-		else
-		{
-			subCodelength += partitionModule(*moduleIt, tryIndexing);
-		}
-	}
-	return subCodelength;
-}
-
-double InfomapBase::partitionModule(NodeBase& module, bool tryIndexing)
-{
-	module.getSubStructure().subInfomap.reset(0);
-
-	std::auto_ptr<InfomapBase> subInfomap(getNewInfomapInstance());
-	subInfomap->m_subLevel = m_subLevel + 1;
-	subInfomap->initSubNetwork(module, false);
-	subInfomap->hierarchicalPartition(0, tryIndexing);
-	double hierarchicalSubNetworkCodelength = subInfomap->hierarchicalCodelength;
-
-	module.codelength = calcCodelengthFromFlowWithinOrExit(module);
-
-	// If non-trivial substructure is found which improves the codelength, store it on the module
-	bool nonTrivialSubstructure = subInfomap->numTopModules() > 1 &&
-			subInfomap->numTopModules() < subInfomap->numLeafNodes();
-	bool improvement = nonTrivialSubstructure &&
-			(hierarchicalSubNetworkCodelength < module.codelength - m_config.minimumCodelengthImprovement);
-
-
-	if (improvement)
-	{
-		module.getSubStructure().subInfomap = subInfomap;
-	}
-	else
-	{
-		module.getSubStructure().exploredWithoutImprovement = true;
-		// Else use the codelength from the flat substructure
-		hierarchicalSubNetworkCodelength = module.codelength;
-	}
-	return hierarchicalSubNetworkCodelength;
 }
 
 void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceConsolidation)
@@ -1354,7 +1118,8 @@ bool InfomapBase::initNetwork()
 		return false;
 	}
 
-	network.calculateFlow();
+	FlowNetwork flowNetwork;
+	flowNetwork.calculateFlow(network, m_config);
 
 	if (m_config.printPajekNetwork)
 	{
@@ -1363,27 +1128,23 @@ bool InfomapBase::initNetwork()
 		network.printNetworkAsPajek(outName);
 	}
 
+	const std::vector<std::string>& nodeNames = network.nodeNames();
+	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
+	const std::vector<double>& nodeTeleportWeights = flowNetwork.getNodeTeleportRates();
 	m_treeData.reserveNodeCount(network.numNodes());
 
 	for (unsigned int i = 0; i < network.numNodes(); ++i)
-		m_treeData.addNewNode(network.nodeNames()[i], network.nodeTeleportRates()[i]);
-	const Network::LinkVec& links = network.links();
+		m_treeData.addNewNode(nodeNames[i], nodeFlow[i], nodeTeleportWeights[i]);
+	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();
 	for (unsigned int i = 0; i < links.size(); ++i)
 		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow);
 
-	setNodeFlow(network.nodeFlow());
 	initEnterExitFlow();
 
 	return true;
 //	printNetworkDebug("debug", false, true);
 }
 
-void InfomapBase::readData()
-{
-	DEBUG_OUT("InfomapBase::readData(" << m_config.inDataFilename << ")..." << std::endl);
-	DataConverterHelper dataAdapter;
-	dataAdapter.readData(m_treeData, m_config);
-}
 
 void InfomapBase::initSubNetwork(NodeBase& parent, bool recalculateFlow)
 {
@@ -1391,10 +1152,6 @@ void InfomapBase::initSubNetwork(NodeBase& parent, bool recalculateFlow)
 	cloneFlowData(parent, *root());
 	generateNetworkFromChildren(parent); // Updates the exitNetworkFlow for the nodes
 	root()->setChildDegree(numLeafNodes());
-
-//	if (recalculateFlow)
-//		calculateFlow();
-
 }
 
 void InfomapBase::initSuperNetwork(NodeBase& parent)

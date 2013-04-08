@@ -14,7 +14,7 @@
 //template class TreeData<Node<FlowUndirected> >;
 //template class TreeData<Node<FlowDirected> >;
 
-TreeData::TreeData(NodeFactory* nodeFactory)
+TreeData::TreeData(NodeFactoryBase* nodeFactory)
 :	m_nodeFactory(nodeFactory),
 	m_numLeafEdges(0)
 {

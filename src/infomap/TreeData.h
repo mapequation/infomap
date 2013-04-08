@@ -9,7 +9,6 @@
 
 #ifndef TREEDATA_H_
 #define TREEDATA_H_
-#include "../io/IData.h"
 #include <string>
 #include <vector>
 //#include "Edge.h"
@@ -17,7 +16,7 @@
 #include "NodeFactory.h"
 #include <memory>
 
-class TreeData : public IData
+class TreeData
 {
 	friend class InfomapBase; // Expose m_leafNodes to InfomapBase to use as active network in fine-tune
 public:
@@ -25,7 +24,7 @@ public:
 	typedef std::vector<NodeBase*>::const_iterator	const_leafIterator;
 	typedef NodeBase::EdgeType						EdgeType;
 
-	TreeData(NodeFactory*);
+	TreeData(NodeFactoryBase*);
 	virtual ~TreeData();
 
 	void readFromSubNetwork(NodeBase* parent);
@@ -71,16 +70,11 @@ public:
 
 	unsigned int calcSize();
 
-	// ---------------------------- IData implementation ----------------------------
+	// ---------------------------- Manipulation: ----------------------------
 
-	virtual void reserveNodeCount(unsigned int nodeCount)
+	void reserveNodeCount(unsigned int nodeCount)
 	{
 		m_leafNodes.reserve(nodeCount);
-	}
-
-	virtual void reserveEdgeCount(unsigned int edgeCount)
-	{
-//		m_leafEdges.reserve(edgeCount);
 	}
 
 	void addNewNode(const NodeBase& other)
@@ -91,9 +85,9 @@ public:
 		m_leafNodes.push_back(node);
 	}
 
-	virtual void addNewNode(std::string name, double nodeWeight)
+	void addNewNode(std::string name, double flow, double teleportWeight)
 	{
-		NodeBase* node = m_nodeFactory->createNode(name, nodeWeight);
+		NodeBase* node = m_nodeFactory->createNode(name, flow, teleportWeight);
 		m_root->addChild(node);
 		node->originalIndex = m_leafNodes.size();
 		m_leafNodes.push_back(node);
@@ -105,7 +99,7 @@ public:
 		m_leafNodes.push_back(node);
 	}
 
-	virtual void addEdge(unsigned int sourceIndex, unsigned int targetIndex, double weight, double flow)
+	void addEdge(unsigned int sourceIndex, unsigned int targetIndex, double weight, double flow)
 	{
 		NodeBase* source = m_leafNodes[sourceIndex];
 		NodeBase* target = m_leafNodes[targetIndex];
@@ -118,7 +112,7 @@ public:
 	// ---------------------------- End IData implementation ----------------------------
 
 private:
-	std::auto_ptr<NodeFactory> m_nodeFactory;
+	std::auto_ptr<NodeFactoryBase> m_nodeFactory;
 	NodeBase* m_root;
 	std::vector<NodeBase*> m_leafNodes;
 	unsigned int m_numLeafEdges;

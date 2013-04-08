@@ -33,7 +33,7 @@ public:
 	typedef Edge<NodeBase>													EdgeType;
 
 	InfomapGreedy(const Config& conf)
-	:	InfomapBase(conf, new NodeFactoryTyped<FlowType>())
+	:	InfomapBase(conf, new NodeFactory<FlowType>())
 	{
 		FlowType& rootData = getNode(*root()).data;
 		rootData.flow = 1.0;
@@ -44,8 +44,6 @@ public:
 protected:
 	// --- Overridden ---
 	virtual std::auto_ptr<InfomapBase> getNewInfomapInstance();
-
-	virtual void setNodeFlow(const std::vector<double>& nodeFlow);
 
 	virtual void initEnterExitFlow();
 
@@ -92,10 +90,6 @@ protected:
 	// --- Overridable ---
 	virtual void calculateCodelengthFromActiveNetwork();
 
-	virtual void recalculateCodelengthFromActiveNetwork();
-
-	virtual void recalculateCodelengthFromConsolidatedNetwork();
-
 	// --- Helper methods ---
 	double getDeltaCodelength(NodeType& current, double additionalExitOldModuleIfMoved,
 			unsigned int newModule, double reductionInExitFlowNewModule);
@@ -139,18 +133,6 @@ template<typename InfomapImplementation>
 std::auto_ptr<InfomapBase> InfomapGreedy<InfomapImplementation>::getNewInfomapInstance()
 {
 	return std::auto_ptr<InfomapBase>(new InfomapImplementation(m_config));
-}
-
-template<typename InfomapImplementation>
-inline
-void InfomapGreedy<InfomapImplementation>::setNodeFlow(const std::vector<double>& nodeFlow)
-{
-	unsigned int i = 0;
-	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
-			it != itEnd; ++it, ++i)
-	{
-		getNode(**it).data.flow = nodeFlow[i];
-	}
 }
 
 template<typename InfomapImplementation>
@@ -845,95 +827,6 @@ void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(
 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
 	codelength = indexCodelength + moduleCodelength;
-}
-
-template<typename InfomapImplementation>
-void InfomapGreedy<InfomapImplementation>::recalculateCodelengthFromActiveNetwork()
-{
-	RELEASE_OUT("########### Recalculate codelength from activenetwork: ############" << std::endl);
-	exit_log_exit = 0.0;
-	flow_log_flow = 0.0;
-	enterFlow = 0.0;
-	unsigned int numNodes = m_activeNetwork.size();
-	for (unsigned int i = 0; i < numNodes; ++i)
-	{
-		m_moduleFlowData[i] = 0;
-	}
-
-	for (unsigned int i = 0; i < numNodes; ++i)
-	{
-		NodeType& current = getNode(*m_activeNetwork[i]);
-		m_moduleFlowData[current.index].flow += current.data.flow;
-		for (NodeBase::edge_iterator outEdgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
-				outEdgeIt != endIt; ++outEdgeIt)
-		{
-			EdgeType& edge = **outEdgeIt;
-			NodeType& neighbour = getNode(edge.target);
-			if (neighbour.index != current.index)
-			{
-				m_moduleFlowData[current.index].exitFlow += edge.data.flow;
-			}
-		}
-	}
-
-	using infomath::plogp;
-	for (unsigned int i = 0; i < numNodes; ++i)
-	{
-		exit_log_exit += plogp(m_moduleFlowData[i].exitFlow);
-		flow_log_flow += plogp(m_moduleFlowData[i].exitFlow + m_moduleFlowData[i].flow);
-		enterFlow += m_moduleFlowData[i].exitFlow;
-	}
-	enterFlow += exitNetworkFlow;
-	enterFlow_log_enterFlow = plogp(enterFlow);
-
-//	codelength = enterFlow_log_enterFlow - enter_log_enter - exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
-	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
-	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
-	codelength = indexCodelength + moduleCodelength;
-}
-
-template<typename InfomapImplementation>
-void InfomapGreedy<InfomapImplementation>::recalculateCodelengthFromConsolidatedNetwork()
-{
-	exit_log_exit = 0.0;
-	enter_log_enter = 0.0;
-	flow_log_flow = 0.0;
-	enterFlow = 0.0;
-
-	RELEASE_OUT("########### Recalculate codelength from consolidated modular network: ############" << std::endl);
-	// For each module
-	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-			moduleIt != endIt; ++moduleIt)
-	{
-		NodeType& module = getNode(*moduleIt);
-
-		// use of index codebook
-		enterFlow      += module.data.enterFlow;
-		enter_log_enter += infomath::plogp(module.data.enterFlow);
-		exit_log_exit += infomath::plogp(module.data.exitFlow);
-		// use of module codebook
-		flow_log_flow += infomath::plogp(module.data.flow + module.data.exitFlow);
-	}
-
-
-	enterFlow += exitNetworkFlow;
-	enterFlow_log_enterFlow = infomath::plogp(enterFlow);
-
-//	double oldIndexCodelength = indexCodelength;
-//	double oldModuleCodelength = moduleCodelength;
-	indexCodelength = enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow;
-	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
-	codelength = indexCodelength + moduleCodelength;
-
-	//DEBUG, many diffs > 1.0e-15 but almost none > 1.0e-14. All in coarse-tune
-//	double diffIndexLength = std::abs(indexCodelength - oldIndexCodelength);
-//	if (diffIndexLength > 1.0e-15)
-//		RELEASE_OUT("##(indexLength +-" << diffIndexLength << "->" << indexCodelength << ")## ");
-//	double diffModuleLength = std::abs(moduleCodelength - oldModuleCodelength);
-//	if (diffModuleLength > 1.0e-15)
-//		RELEASE_OUT("!!(moduleLength +-" << diffModuleLength << "->" << moduleCodelength << ")!! ");
-//	if (std::abs(codelength - oldCodelength) > 1.0e-8)
-//		RELEASE_OUT("## (codelength error > 1.0e-8!!) ## ");
 }
 
 

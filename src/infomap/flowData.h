@@ -14,8 +14,8 @@
 class FlowUndirected
 {
 public:
-	FlowUndirected(double tpWeight = 1.0) :
-		flow(0.0),
+	FlowUndirected(double flow = 1.0, double teleportWeight = 1.0) :
+		flow(flow),
 		exitFlow(0.0),
 		enterFlow(exitFlow)
 	{}
@@ -44,8 +44,8 @@ public:
 class FlowDirected
 {
 public:
-	FlowDirected(double tpWeight = 1.0) :
-		flow(0.0),
+	FlowDirected(double flow = 1.0, double teleportWeight = 1.0) :
+		flow(flow),
 		exitFlow(0.0),
 		enterFlow(exitFlow)
 	{}
@@ -74,11 +74,11 @@ public:
 class FlowDirectedWithTeleportation
 {
 public:
-	FlowDirectedWithTeleportation(double tpWeight = 1.0) :
-		flow(0.0),
+	FlowDirectedWithTeleportation(double flow = 1.0, double teleportWeight = 1.0) :
+		flow(flow),
 		exitFlow(0.0),
 		enterFlow(exitFlow),
-		teleportWeight(tpWeight),
+		teleportWeight(teleportWeight),
 		danglingFlow(0.0),
 		teleportSourceFlow(0.0)
 	{}
@@ -119,8 +119,8 @@ public:
 class FlowDirectedNonDetailedBalance
 {
 public:
-	FlowDirectedNonDetailedBalance(double tpWeight = 1.0) :
-		flow(0.0),
+	FlowDirectedNonDetailedBalance(double flow = 1.0, double teleportWeight = 1.0) :
+		flow(flow),
 		enterFlow(0.0),
 		exitFlow(0.0)
 	{}
@@ -151,11 +151,11 @@ public:
 class FlowDirectedNonDetailedBalanceWithTeleportation
 {
 public:
-	FlowDirectedNonDetailedBalanceWithTeleportation(double tpWeight = 1.0) :
-		flow(0.0),
+	FlowDirectedNonDetailedBalanceWithTeleportation(double flow = 1.0, double teleportWeight = 1.0) :
+		flow(flow),
 		enterFlow(0.0),
 		exitFlow(0.0),
-		teleportWeight(tpWeight),
+		teleportWeight(teleportWeight),
 		danglingFlow(0.0)
 	{}
 	FlowDirectedNonDetailedBalanceWithTeleportation(const FlowDirectedNonDetailedBalanceWithTeleportation& other) :

@@ -23,7 +23,7 @@ class PartitionQueue;
 class InfomapBase
 {
 public:
-	InfomapBase(const Config& conf, NodeFactory* nodeFactory)
+	InfomapBase(const Config& conf, NodeFactoryBase* nodeFactory)
 	:	m_config(conf),
 	 	m_rand(conf.seedToRandomNumberGenerator),
 	 	m_treeData(nodeFactory),
@@ -71,13 +71,7 @@ protected:
 	virtual void testConsolidation() = 0;
 	// end debug
 
-	virtual void setNodeFlow(const std::vector<double>& nodeFlow) = 0;
-
 	virtual void initEnterExitFlow() = 0;
-
-	virtual void recalculateCodelengthFromActiveNetwork() = 0;
-
-	virtual void recalculateCodelengthFromConsolidatedNetwork() = 0;
 
 	virtual void resetModuleFlowFromLeafNodes() = 0;
 
@@ -171,12 +165,10 @@ protected:
 
 private:
 	void runPartition();
-	double hierarchicalPartition(int recursiveCount = -1, bool tryIndexing = true);
 	double partitionAndQueueNextLevel(PartitionQueue& partitionQueue, bool tryIndexing = true);
-	double tryIndexingIteratively();
+	void tryIndexingIteratively();
 	unsigned int findSuperModulesIterativelyFast(PartitionQueue& partitionQueue);
 	unsigned int deleteSubLevels();
-	double findHierarchicalSubstructures(NodeBase& root, int recursiveCount = -1, bool tryIndexing = true);
 	void queueTopModules(PartitionQueue& partitionQueue);
 	bool processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevel, bool tryIndexing = true);
 	void sortPartitionQueue(PartitionQueue& queue);
@@ -191,8 +183,6 @@ private:
 	 * leaf node with the sub-module structure found by partitioning each module.
 	 */
 	void partitionEachModule(unsigned int recursiveCount = 0, bool fast = false);
-	double generateSubInfomapInstancesToLevel(unsigned int level, bool tryIndexing);
-	double partitionModule(NodeBase& module, bool tryIndexing);
 	bool initNetwork();
 	void readData();
 	void initSubNetwork(NodeBase& parent, bool recalculateFlow = false);

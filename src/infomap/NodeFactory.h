@@ -13,25 +13,25 @@
 #include "Node.h"
 #include "flowData.h"
 
-class NodeFactory
+class NodeFactoryBase
 {
 public:
-	virtual ~NodeFactory() {}
+	virtual ~NodeFactoryBase() {}
 
-	virtual NodeBase* createNode(std::string, double nodeWeight) = 0;
+	virtual NodeBase* createNode(std::string, double flow, double teleWeight = 1.0) = 0;
 	virtual NodeBase* createNode(const NodeBase&) = 0;
 };
 
 
 template <typename FlowType>
-class NodeFactoryTyped : public NodeFactory
+class NodeFactory : public NodeFactoryBase
 {
 	typedef Node<FlowType> 			node_type;
 	typedef const Node<FlowType>	const_node_type;
 public:
-	NodeBase* createNode(std::string name, double nodeWeight)
+	NodeBase* createNode(std::string name, double flow, double teleWeight)
 	{
-		return new node_type(name, nodeWeight);
+		return new node_type(name, flow, teleWeight);
 	}
 	NodeBase* createNode(const NodeBase& node)
 	{
