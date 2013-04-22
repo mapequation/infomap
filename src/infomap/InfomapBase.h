@@ -16,6 +16,7 @@
 #include <memory>
 #include "../io/SafeFile.h"
 #include <limits>
+#include "../io/HierarchicalNetwork.h"
 
 struct DepthStat;
 class PartitionQueue;
@@ -53,6 +54,8 @@ public:
 	const NodeBase* root() const { return m_treeData.root(); }
 
 	void sortTree();
+
+	virtual void buildHierarchicalNetwork(HierarchicalNetwork& data, bool includeLinks) = 0;
 
 	virtual void printSubInfomapTree(std::ostream& out, const TreeData& originalData, const std::string& prefix = "");
 	virtual void printSubInfomapTreeDebug(std::ostream& out, const TreeData& originalData, const std::string& prefix = "");

@@ -6,9 +6,9 @@ LFLAGS = -fopenmp
 
 HEADERS = \
 src/infomap/Edge.h \
-src/infomap/FlowCalculator.h \
 src/infomap/flowData.h \
 src/infomap/flowData_traits.h \
+src/infomap/FlowNetwork.h \
 src/infomap/InfomapBase.h \
 src/infomap/InfomapContext.h \
 src/infomap/InfomapDirected.h \
@@ -24,11 +24,7 @@ src/infomap/treeIterators.h \
 src/io/ClusterReader.h \
 src/io/Config.h \
 src/io/convert.h \
-src/io/converters/LinkListConverter.h \
-src/io/converters/PajekConverter.h \
-src/io/DataConverterHelper.h \
-src/io/IData.h \
-src/io/IDataConverter.h \
+src/io/HierarchicalNetwork.h \
 src/io/Options.h \
 src/io/ProgramInterface.h \
 src/io/SafeFile.h \
@@ -44,7 +40,7 @@ src/utils/Stopwatch.h \
 src/utils/types.h \
 
 SOURCES = \
-src/infomap/FlowCalculator.cpp \
+src/infomap/FlowNetwork.cpp \
 src/infomap/InfomapBase.cpp \
 src/infomap/InfomapContext.cpp \
 src/infomap/InfomapDirected.cpp \
@@ -57,9 +53,7 @@ src/infomap/Node.cpp \
 src/infomap/TreeData.cpp \
 src/Infomap.cpp \
 src/io/ClusterReader.cpp \
-src/io/converters/LinkListConverter.cpp \
-src/io/converters/PajekConverter.cpp \
-src/io/DataConverterHelper.cpp \
+src/io/HierarchicalNetwork.cpp \
 src/io/Options.cpp \
 src/io/ProgramInterface.cpp \
 src/io/TreeDataWriter.cpp \

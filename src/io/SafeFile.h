@@ -13,6 +13,7 @@
 #include <fstream>
 #include <ios>
 #include <stdexcept>
+#include "convert.h"
 
 using std::ifstream;
 using std::ofstream;
@@ -45,7 +46,7 @@ public:
 	: ifstream(filename, mode)
 	{
 		if (fail())
-			throw FileOpenError("Error opening file '" + std::string(filename) + "'");
+			throw FileOpenError(io::Str() << "Error opening file '" << filename << "'");
 	}
 
 	~SafeInFile()
@@ -62,7 +63,7 @@ public:
 	: ofstream(filename, mode)
 	{
 		if (fail())
-			throw FileOpenError("Error opening file '" + std::string(filename) + "'");
+			throw FileOpenError(io::Str() << "Error opening file '" << filename << "'");
 	}
 
 	~SafeOutFile()
@@ -70,6 +71,50 @@ public:
 		if (is_open())
 			close();
 	}
+};
+
+#include <stddef.h>
+
+class ofstream_binary : public ofstream
+{
+public:
+	ofstream_binary(const char* filename)
+		: ofstream(filename, ios_base::out | ios_base::trunc | ios_base::binary), m_size(0) {}
+
+	template<typename T>
+	ofstream_binary& operator<<(T value)
+	{
+		size_t size = sizeof(value);
+		m_size += size;
+		write(reinterpret_cast<const char*>(&value), size);
+		return *this;
+	}
+
+	size_t size()
+	{
+		return m_size;
+	}
+
+protected:
+	size_t m_size;
+};
+
+class SafeOutFileBinary : public ofstream_binary
+{
+public:
+	SafeOutFileBinary(const char* filename)
+	: ofstream_binary(filename)
+	{
+		if (fail())
+			throw FileOpenError(io::Str() << "Error opening file '" << filename << "'");
+	}
+
+	~SafeOutFileBinary()
+	{
+		if (is_open())
+			close();
+	}
+
 };
 
 #endif /* SAFEFILE_H_ */

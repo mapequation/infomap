@@ -1330,6 +1330,17 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 			RELEASE_OUT("done!\n");
 	}
 
+	if (m_config.printBinaryTree || m_config.printBinaryFlowTree)
+	{
+		outName = io::Str() << m_config.outDirectory << filename << ".btree";
+		HierarchicalNetwork hierData(numLeafNodes());
+		RELEASE_OUT("\nBuild streamable tree... " << std::flush);
+		buildHierarchicalNetwork(hierData, m_config.printBinaryFlowTree);
+		RELEASE_OUT("done! Writing streamable tree... " << std::flush);
+		hierData.writeStreamableTree(outName, false);
+		RELEASE_OUT("done!" << std::endl);
+	}
+
 }
 
 void InfomapBase::printNetworkDebug(std::string filenameSuffix, bool includeSubInfomapInstances, bool toStdOut)

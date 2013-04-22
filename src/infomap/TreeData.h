@@ -109,7 +109,6 @@ public:
 //		m_leafEdges.push_back(edge);
 	}
 
-	// ---------------------------- End IData implementation ----------------------------
 
 private:
 	std::auto_ptr<NodeFactoryBase> m_nodeFactory;

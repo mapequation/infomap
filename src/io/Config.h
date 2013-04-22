@@ -46,6 +46,8 @@ struct Config
 		printNodeRanks(false),
 		printFlowNetwork(false),
 		printPajekNetwork(false),
+		printBinaryTree(false),
+		printBinaryFlowTree(false),
 		noFileOutput(false),
 		verbosity(0),
 		verboseNumberPrecision(6),
@@ -140,6 +142,8 @@ struct Config
 	bool printNodeRanks;
 	bool printFlowNetwork;
 	bool printPajekNetwork;
+	bool printBinaryTree;
+	bool printBinaryFlowTree; // tree including horizontal links (hierarchical network)
 	bool noFileOutput;
 	unsigned int verbosity;
 	unsigned int verboseNumberPrecision;
