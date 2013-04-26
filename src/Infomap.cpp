@@ -48,7 +48,7 @@ Config getConfig(int argc, char *argv[])
 	api.addOptionArgument(conf.includeSelfLinks, 'k', "include-self-links",
 			"Include links with the same source and target node. (Ignored by default.)");
 
-	api.addOptionArgument(conf.nodeLimit, 'S', "node-limit",
+	api.addOptionArgument(conf.nodeLimit, 'O', "node-limit",
 			"Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", "n");
 
 	api.addOptionArgument(conf.clusterDataFile, 'c', "cluster-data",
@@ -125,17 +125,14 @@ Config getConfig(int argc, char *argv[])
 	api.addOptionArgument(conf.fastCoarseTunePartition, 'C', "fast-coarse-tune",
 			"Try to find the quickest partition of each module when creating sub-modules for the coarse-tune part.");
 
-	api.addOptionArgument(conf.alternateCoarseTuneLevel, 'A', "alternate-course-tune-level",
+	api.addOptionArgument(conf.alternateCoarseTuneLevel, 'A', "alternate-coarse-tune-level",
 			"Try to find different levels of sub-modules to move in the coarse-tune part.");
 
-	api.addOptionArgument(conf.coarseTuneLevel, 'S', "course-tune-level",
+	api.addOptionArgument(conf.coarseTuneLevel, 'S', "coarse-tune-level",
 			"Set the recursion limit when searching for sub-modules. A level of 1 will find sub-sub-modules.", "n");
 
 	api.addIncrementalOptionArgument(conf.fastHierarchicalSolution, 'F', "fast-hierarchical-solution",
 			"Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.");
-
-	api.addOptionArgument(conf.coarseTuneLevel, 'S', "course-tune-level",
-			"Set the recursion limit when searching for sub-modules. A level of 1 will find sub-sub-modules.", "n");
 
 	// --------------------- Output options ---------------------
 	api.addNonOptionArgument(conf.outDirectory, "out_directory",

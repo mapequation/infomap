@@ -10,7 +10,7 @@ For contact information, see
 http://www.mapequation.org/about
 
 For a list of recent feature updates, see
-CHANGES.txt
+CHANGES.txt in the source directory.
 
 Terms of use:
 --------------------------------------------------------

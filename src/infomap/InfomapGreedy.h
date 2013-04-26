@@ -304,9 +304,9 @@ unsigned int InfomapGreedy<InfomapImplementation>::optimizeModules()
 {
 	unsigned int numOptimizationRounds = 0;
 	double oldCodelength = codelength;
-	unsigned int loopLimit = m_config.randomizeCoreLoopLimit ?
-			static_cast<unsigned int>(m_rand() * m_config.coreLoopLimit) + 1 :
-			m_config.coreLoopLimit;
+	unsigned int loopLimit = m_config.coreLoopLimit;
+	if (m_config.coreLoopLimit > 0 && m_config.randomizeCoreLoopLimit)
+		loopLimit = static_cast<unsigned int>(m_rand() * m_config.coreLoopLimit) + 1;
 
 	// Iterate while the optimization loop moves some nodes within the dynamic modular structure
 	do
