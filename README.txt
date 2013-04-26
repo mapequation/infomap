@@ -9,6 +9,8 @@ Martin Rosvall
 For contact information, see 
 http://www.mapequation.org/about
 
+For a list of recent feature updates, see
+CHANGES.txt
 
 Terms of use:
 --------------------------------------------------------
