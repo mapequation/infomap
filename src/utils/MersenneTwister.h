@@ -1,11 +1,44 @@
-/* ------------------------------------------------------------------------
+// MersenneTwister.h
+// Mersenne Twister random number generator -- a C++ class MTRand
+// Based on code by Makoto Matsumoto, Takuji Nishimura, and Shawn Cokus
+// Richard J. Wagner  v0.8  24 March 2002  rjwagner@writeme.com
 
- Infomap software package for multi-level network clustering
+// The Mersenne Twister is an algorithm for generating random numbers.  It
+// was designed with consideration of the flaws in various other generators.
+// The period, 2^19937-1, and the order of equidistribution, 623 dimensions,
+// are far greater.  The generator is also fast; it avoids multiplication and
+// division, and it benefits from caches and pipelines.  For more information
+// see the inventors' web page at http://www.math.keio.ac.jp/~matumoto/emt.html
 
- * Copyright (c) 2013
- * For license and authors, see README.txt or http://www.mapequation.org
+// Reference
+// M. Matsumoto and T. Nishimura, "Mersenne Twister: A 623-Dimensionally
+// Equidistributed Uniform Pseudo-Random Number Generator", ACM Transactions on
+// Modeling and Computer Simulation, Vol. 8, No. 1, January 1998, pp 3-30.
 
------------------------------------------------------------------------- */
+// Copyright (C) 2002  Richard J. Wagner
+// 
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+// The original code included the following notice:
+//
+//     Copyright (C) 1997, 1999 Makoto Matsumoto and Takuji Nishimura.
+//     When you use this, send an email to: matumoto@math.keio.ac.jp
+//     with an appropriate reference to your work.
+//
+// It would be nice to CC: rjwagner@writeme.com and Cokus@math.washington.edu
+// when you write.
 
 #ifndef MERSENNETWISTER_H
 #define MERSENNETWISTER_H
