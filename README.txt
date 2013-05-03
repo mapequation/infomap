@@ -18,7 +18,8 @@ The Infomap software is released under a dual licence.
 
 To give everyone maximum freedom to make use of Infomap 
 and derivative works, we make the code open source under 
-the AGPLv3 license (see LICENSE_AGPLv3.txt.) 
+the GNU Affero General Public License version 3 or any 
+later version (see LICENSE_AGPLv3.txt.)
 
 For a non-copyleft license, please contact us.
 
