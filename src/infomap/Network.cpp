@@ -159,12 +159,6 @@ void Network::parsePajekNetwork(std::string filename)
 		unsigned int linkEnd1;
 		if (!(ss >> linkEnd1))
 		{
-			std::string asdf = line;
-			asdf += "000";
-			std::ostringstream tmp;
-			RELEASE_OUT("asdf: " << asdf << std::endl);
-			RELEASE_OUT("asdf: " << asdf << std::endl);
-			RELEASE_OUT("asdf: " << asdf << std::endl);
 			throw BadConversionError(io::Str() << "Can't parse first integer of link number " <<
 					numEdgeLines << " from line '" << line << "'");
 		}

@@ -51,7 +51,7 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 	const LinkMap& linkMap = network.linkMap();
 	unsigned int numLinks = linkMap.size();
 	m_flowLinks.resize(numLinks);
-	unsigned int totalLinkWeight = network.totalLinkWeight();
+	double totalLinkWeight = network.totalLinkWeight();
 	double sumUndirLinkWeight = (config.isUndirected() ? 1 : 2) * totalLinkWeight;
 	unsigned int linkIndex = 0;
 

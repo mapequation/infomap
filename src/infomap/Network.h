@@ -57,7 +57,7 @@ public:
 	double sumNodeWeights() const { return m_sumNodeWeights; }
 
 	const LinkMap& linkMap() const { return m_links; }
-	unsigned int totalLinkWeight() const { return m_totalLinkWeight; }
+	double totalLinkWeight() const { return m_totalLinkWeight; }
 
 private:
 
