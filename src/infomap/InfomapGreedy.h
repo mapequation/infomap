@@ -434,9 +434,13 @@ unsigned int InfomapGreedy<InfomapImplementation>::consolidateModules(bool repla
 
 			if (otherParent != parent)
 			{
+				NodeBase *m1 = parent, *m2 = otherParent;
+				// If undirected, the order may be swapped to aggregate the edge on an opposite one
+				if (m_config.isUndirected() && m1->index > m2->index)
+					std::swap(m1, m2);
 				// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
 				std::pair<EdgeMap::iterator, bool> ret = \
-						moduleLinks.insert(std::make_pair(NodePair(parent, otherParent), edge->data.flow));
+						moduleLinks.insert(std::make_pair(NodePair(m1, m2), edge->data.flow));
 				if (!ret.second)
 					ret.first->second += edge->data.flow;
 			}
@@ -557,7 +561,7 @@ void InfomapGreedy<InfomapImplementation>::printMap(std::ostream& out)
 		LeafNodeIterator<NodeBase*> liEnd(moduleIt->next);
 		while (li != liEnd)
 		{
-			moduleData[moduleIndex].second.insert(std::pair<double, NodeBase*>(getNode(*li).data.flow, li.base()));
+			moduleData[moduleIndex].second.insert(std::make_pair(getNode(*li).data.flow, li.base()));
 			++li;
 		}
 
@@ -565,7 +569,7 @@ void InfomapGreedy<InfomapImplementation>::printMap(std::ostream& out)
 		for (NodeBase::edge_iterator outEdgeIt(moduleIt->begin_outEdge()), endIt(moduleIt->end_outEdge());
 				outEdgeIt != endIt; ++outEdgeIt)
 		{
-			moduleLinks.insert(std::pair<double, EdgeType*>((*outEdgeIt)->data.flow, *outEdgeIt));
+			moduleLinks.insert(std::make_pair((*outEdgeIt)->data.flow, *outEdgeIt));
 		}
 	}
 
