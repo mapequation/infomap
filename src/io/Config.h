@@ -61,6 +61,9 @@ struct Config
 		coarseTuneLevel(1),
 		fastHierarchicalSolution(0),
 		outDirectory(""),
+		printTree(false),
+		printMap(false),
+		printClu(false),
 		printNodeRanks(false),
 		printFlowNetwork(false),
 		printPajekNetwork(false),
@@ -72,6 +75,8 @@ struct Config
 		benchmark(false)
 	{
 		setOptimizationLevel(1);
+		// Default output to .tree
+		printTree = true;
 	}
 
 	// Set all optimization options at once with different accuracy to performance trade-off
@@ -157,6 +162,9 @@ struct Config
 
 	// Output
 	std::string outDirectory;
+	bool printTree;
+	bool printMap;
+	bool printClu;
 	bool printNodeRanks;
 	bool printFlowNetwork;
 	bool printPajekNetwork;

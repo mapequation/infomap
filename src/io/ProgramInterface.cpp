@@ -28,6 +28,8 @@
 #include "ProgramInterface.h"
 #include <iostream>
 #include <cstdlib>
+#include <map>
+#include <utility>
 #include "../io/convert.h"
 
 ProgramInterface::ProgramInterface(std::string name, std::string shortDescription, std::string version)
@@ -80,11 +82,13 @@ void ProgramInterface::exitWithUsage()
 	for (unsigned int i = 0; i < m_optionArguments.size(); ++i)
 	{
 		Option& opt = *m_optionArguments[i];
+		std::string shortOption = opt.shortName == '\0' ? std::string(4, ' ') :
+				io::Str() <<  "  -" << opt.shortName;
 		if (opt.requireArgument)
-			optionStrings[i] = io::Str() << "  -" << opt.shortName << "<" << opt.argumentName <<
+			optionStrings[i] = io::Str() << shortOption << "<" << opt.argumentName <<
 			"> --" << opt.longName << "=<" << opt.argumentName << ">";
 		else
-			optionStrings[i] = io::Str() << "  -" << opt.shortName << "    --" << opt.longName;
+			optionStrings[i] = io::Str() << shortOption << "    --" << opt.longName;
 		if (optionStrings[i].length() > maxLength)
 			maxLength = optionStrings[i].length();
 	}
@@ -121,17 +125,32 @@ void ProgramInterface::parseArgs(int argc, char** argv)
 
 	std::vector<option> longOptions;
 	std::string shortOptions;
+	std::map<char, Option*> shortOptionMap;
+	std::map<std::string, Option*> longOptionMap;
 	for (unsigned int i = 0; i < m_optionArguments.size(); ++i)
 	{
 		Option& opt = *m_optionArguments[i];
 		option o = {opt.longName.c_str(), opt.requireArgument ? required_argument : no_argument, 0, opt.shortName};
 		longOptions.push_back(o);
-		shortOptions += opt.shortName;
+		if (opt.shortName != '\0')
+		{
+			shortOptions += opt.shortName;
+			std::map<char, Option*>::iterator it = shortOptionMap.find(opt.shortName);
+			if (it != shortOptionMap.end())
+				throw OptionConflictError(io::Str() << "Duplication of option '" << opt.shortName << "'");
+			shortOptionMap.insert(std::make_pair(opt.shortName, &opt));
+		}
 		if (opt.requireArgument)
 			shortOptions += ":";
+
+		std::map<std::string, Option*>::iterator it = longOptionMap.find(opt.longName);
+		if (it != longOptionMap.end())
+			throw OptionConflictError(io::Str() << "Duplication of option \"" << opt.longName << "\"");
+		longOptionMap.insert(std::make_pair(opt.longName, &opt));
 	}
 	option o = {NULL, 0, NULL, 0}; //TODO: Why add this?
 	longOptions.push_back(o);
+
 
 	int c, option_index = 0;
 	while ((c = getopt_long(argc, argv, shortOptions.c_str(), &longOptions[0], &option_index)) != -1)
@@ -142,6 +161,8 @@ void ProgramInterface::parseArgs(int argc, char** argv)
 		for (unsigned int i = 0; i < m_optionArguments.size(); ++i)
 		{
 			Option& opt = *m_optionArguments[i];
+			if (opt.shortName == '\0')
+				continue;
 			if ((int)opt.shortName == c)
 			{
 				if (!opt.requireArgument || opt.incrementalArgument)
@@ -170,10 +191,24 @@ void ProgramInterface::parseArgs(int argc, char** argv)
 			continue;
 		switch (c)
 		{
-		case 0:
-			std::cout << "long option " << longOptions[option_index].name << " with arg " <<
-			(optarg? optarg : "void") << std::endl;
+		case 0: // Long option without a corresponding short option
+		{
+//			std::cout << "long option " << longOptions[option_index].name << " with arg " <<
+//			(optarg? optarg : "void") << std::endl;
+			Option& longOpt = *longOptionMap[longOptions[option_index].name];
+			if (!longOpt.requireArgument || longOpt.incrementalArgument)
+			{
+				longOpt.set(!negate);
+			}
+			else
+			{
+				if (!longOpt.parse(optarg))
+					exitWithError(Str() << "Cannot parse argument '" << optarg << "' to option '" <<
+							longOpt.longName << "'. ");
+			}
+			parsed = true;
 			break;
+		}
 		case '?':
 			exitWithError("");
 			break;
@@ -181,7 +216,7 @@ void ProgramInterface::parseArgs(int argc, char** argv)
 			std::cout << "?? getopt returned character code '" << c << "' ??" << std::endl;
 			break;
 		}
-		std::cout << "  ---- " << std::endl;
+//		std::cout << "  ---- " << std::endl;
 	}
 	// non-option ARGV-elements:
 	unsigned int argsLeft = argc - optind;

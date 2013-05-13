@@ -1257,24 +1257,29 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 	if (filename.length() == 0)
 		filename = FileURI(m_config.networkFile).getName();
 
-	// Print .tree
-	std::string outName = io::Str() << m_config.outDirectory << filename << ".tree";
-	if (m_config.verbosity == 0)
-		RELEASE_OUT("(Writing .tree file.." << std::flush);
-	else
-		RELEASE_OUT("Print hierarchical cluster data to " << outName << "... " << std::flush);
-	SafeOutFile treeOut(outName.c_str());
-	treeOut << "# Codelength " << hierarchicalCodelength << " bits in " <<
-			Stopwatch::getElapsedTimeSinceProgramStartInSec() << "s. Network size: "
-			<< numLeafNodes() << " nodes and " << m_treeData.numLeafEdges() << " links." << std::endl;
-	sortTree();
-	printSubInfomapTree(treeOut, m_treeData);
-//	printSubInfomapTreeDebug(treeOut, m_treeData);
+	std::string outName;
 
-	if (m_config.verbosity == 0)
-		RELEASE_OUT(") ");
-	else
-		RELEASE_OUT("done!" << std::endl);
+	// Print .tree
+	if (m_config.printTree)
+	{
+		outName = io::Str() << m_config.outDirectory << filename << ".tree";
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("(Writing .tree file.." << std::flush);
+		else
+			RELEASE_OUT("Print hierarchical cluster data to " << outName << "... " << std::flush);
+		SafeOutFile treeOut(outName.c_str());
+		treeOut << "# Codelength " << hierarchicalCodelength << " bits in " <<
+				Stopwatch::getElapsedTimeSinceProgramStartInSec() << "s. Network size: "
+				<< numLeafNodes() << " nodes and " << m_treeData.numLeafEdges() << " links." << std::endl;
+		sortTree();
+		printSubInfomapTree(treeOut, m_treeData);
+	//	printSubInfomapTreeDebug(treeOut, m_treeData);
+
+		if (m_config.verbosity == 0)
+			RELEASE_OUT(") ");
+		else
+			RELEASE_OUT("done!" << std::endl);
+	}
 
 //	// Print .debug.tree
 //	outName = io::Str() << m_config.outDirectory << filename << ".debug.tree";
@@ -1287,13 +1292,16 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 //	ALL_OUT("done!" << std::endl);
 
 	// Print .map
-	outName = io::Str() << m_config.outDirectory << filename << ".map";
-	if (m_config.verbosity > 0)
-		RELEASE_OUT("Print top modules to " << outName << "... ");
-	SafeOutFile mapOut(outName.c_str());
-	printMap(mapOut);
-	if (m_config.verbosity > 0)
-		RELEASE_OUT("done!\n");
+	if (m_config.printMap)
+	{
+		outName = io::Str() << m_config.outDirectory << filename << ".map";
+		if (m_config.verbosity > 0)
+			RELEASE_OUT("Print top modules to " << outName << "... ");
+		SafeOutFile mapOut(outName.c_str());
+		printMap(mapOut);
+		if (m_config.verbosity > 0)
+			RELEASE_OUT("done!\n");
+	}
 
 //	if (root()->firstChild->getSubInfomap() != 0)
 //	{
@@ -1307,8 +1315,8 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 //	}
 
 
-	// Print .clu if constrained to two-level
-	if (m_config.twoLevel)
+	// Print .clu
+	if (m_config.printClu)
 	{
 		outName = io::Str() << m_config.outDirectory << filename << ".clu";
 		if (m_config.verbosity == 0)
