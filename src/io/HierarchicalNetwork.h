@@ -47,9 +47,17 @@ static const unsigned int SIZE_OF_UNSIGNED_SHORT = sizeof(unsigned short);	// 2 
 static const unsigned int MIN_TOTAL_SIZE = SIZE_OF_UNSIGNED_SHORT + SIZE_OF_FLOAT + SIZE_OF_UNSIGNED_SHORT;
 
 struct NodeData {
-	NodeData(double flow = 0.0, std::string name = "") :
+	NodeData(unsigned int level, double flow = 0.0, std::string name = "") :
+		level(level),
 		flow(flow),
+		enter(0.0),
+		exit(0.0),
+		teleportRate(0.0),
+		danglingFlow(0.0),
+		indexCodelength(0.0),
+		moduleCodelength(0.0),
 		name(name)
+//		id(0)
 	{}
 	unsigned int level;
 	double flow;
@@ -60,7 +68,7 @@ struct NodeData {
 	double indexCodelength;
 	double moduleCodelength;
 	std::string name;
-	unsigned int id;
+//	unsigned int id;
 };
 
 class SNode; // Forward declaration

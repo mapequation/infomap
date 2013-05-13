@@ -34,10 +34,17 @@
 #include <iosfwd>
 #include <string>
 #include <sstream>
+#include <stdexcept>
 
 /**
  *
  */
+
+
+struct OptionConflictError : std::logic_error
+{
+	OptionConflictError(std::string const& s) : std::logic_error(s) {}
+};
 
 template<typename T>
 bool stringToValue(std::string const& str, T& value)
@@ -192,10 +199,25 @@ public:
 		m_optionArguments.push_back(o);
 	}
 
+	// Without shortName
+	void addOptionArgument(bool& target, std::string longName, std::string description)
+	{
+		Option* o = new ArgumentOption<bool>(target, '\0', longName, description);
+		m_optionArguments.push_back(o);
+	}
+
 	template<typename T>
 	void addOptionArgument(T& target, char shortName, std::string longName, std::string description, std::string argumentName)
 	{
 		Option* o = new ArgumentOption<T>(target, shortName, longName, description, argumentName);
+		m_optionArguments.push_back(o);
+	}
+
+	// Without shortName
+	template<typename T>
+	void addOptionArgument(T& target, std::string longName, std::string description, std::string argumentName)
+	{
+		Option* o = new ArgumentOption<T>(target, '\0', longName, description, argumentName);
 		m_optionArguments.push_back(o);
 	}
 

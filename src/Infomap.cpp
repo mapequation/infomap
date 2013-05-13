@@ -73,15 +73,29 @@ Config getConfig(int argc, char *argv[])
 			"Provide an initial two-level solution (.clu format).", "p");
 
 	// --------------------- Output options ---------------------
-//	api.addOptionArgument(conf.printNodeRanks, 'p', "print-node-ranks",
-//			"Print the calculated flow for each node to a file.");
-//
-	api.addOptionArgument(conf.printPajekNetwork, 'J', "print-pajek-network",
+	api.addOptionArgument(conf.printTree, "tree",
+			"Print the hierarchy in .tree format. (default true)");
+
+	api.addOptionArgument(conf.printMap, "map",
+			"Print the top two-level modular network in the .map format.");
+
+	api.addOptionArgument(conf.printClu, "clu",
+			"Print the top cluster indices for each node.");
+
+	api.addOptionArgument(conf.printNodeRanks, "node-ranks",
+			"Print the calculated flow for each node to a file.");
+
+	api.addOptionArgument(conf.printPajekNetwork, "pajek",
 			"Print the parsed network in Pajek format.");
-//
-	api.addOptionArgument(conf.printFlowNetwork, 'W', "print-flow-network",
+
+	api.addOptionArgument(conf.printBinaryTree, "btree",
+			"Print the tree in a streamable binary format.");
+
+	api.addOptionArgument(conf.printBinaryFlowTree, "bftree",
+			"Print the tree including horizontal flow links in a streamable binary format.");
+
+	api.addOptionArgument(conf.printFlowNetwork, "flow-network",
 			"Print the network with calculated flow values.");
-//	TODO: Add map container so that printing can be added like -Pranks -Pflow etc!!
 
 	api.addOptionArgument(conf.noFileOutput, '0', "no-file-output",
 			"Don't print any output to file.");
