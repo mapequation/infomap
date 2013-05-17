@@ -261,6 +261,8 @@ protected:
 	std::vector<EdgeType*> m_outEdges;
 	std::vector<EdgeType*> m_inEdges;
 
+	// TODO: Add list of physical nodes for memory nodes, see Node.h#26
+
 };
 
 inline

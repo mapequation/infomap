@@ -78,6 +78,8 @@ private:
 	LinkMap m_links;
 	unsigned int m_numSelfLinks;
 
+	// TODO: For memory network, add trigram datastructures and a parseMemoryNetwork function
+
 };
 
 #endif /* NETWORK_H_ */
