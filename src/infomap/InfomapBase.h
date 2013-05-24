@@ -47,20 +47,18 @@ public:
 	 	m_rand(conf.seedToRandomNumberGenerator),
 	 	m_treeData(nodeFactory),
 	 	m_activeNetwork(m_nonLeafActiveNetwork),
+	 	m_isCoarseTune(false),
+	 	m_iterationCount(0),
+	 	m_numNonTrivialTopModules(0),
+	 	m_subLevel(0),
+	 	m_TOP_LEVEL_ADDITION(1 << 20),
+	 	oneLevelCodelength(0.0),
 	 	codelength(0.0),
 	 	indexCodelength(0.0),
 	 	moduleCodelength(0.0),
-	 	m_subLevel(0),
-	 	m_isCoarseTune(false),
-	 	m_iterationCount(0),
-	 	m_TOP_LEVEL_ADDITION(1 << 20),
-	 	m_debug(false),
-	 	m_debugOutCounter(0),
-		bestHierarchicalCodelength(std::numeric_limits<double>::max()),
-	 	bestIntermediateCodelength(std::numeric_limits<double>::max()),
 	 	hierarchicalCodelength(0.0),
-	 	exitNetworkFlow(0.0),
-	 	exitNetworkFlow_log_exitNetworkFlow(0.0)
+		bestHierarchicalCodelength(std::numeric_limits<double>::max()),
+	 	bestIntermediateCodelength(std::numeric_limits<double>::max())
 	{}
 
 	virtual ~InfomapBase()
@@ -78,29 +76,36 @@ public:
 	virtual void printSubInfomapTree(std::ostream& out, const TreeData& originalData, const std::string& prefix = "");
 	virtual void printSubInfomapTreeDebug(std::ostream& out, const TreeData& originalData, const std::string& prefix = "");
 
-	// Debug
-	void printNetworkDebug(std::string filenameSuffix = "", bool includeSubInfomapInstances = true, bool toStdOut = false);
-
 
 protected:
 
-	// start debug
-	virtual void printCodelengthTerms() = 0;
-	virtual void printNodeData(NodeBase& node, std::ostream& out) = 0;
 	virtual FlowDummy getNodeData(NodeBase& node) = 0;
-	virtual void getTopModuleRanks(std::vector<double>& ranks) = 0;
-	virtual void testConsolidation() = 0;
-	// end debug
 
+	/**
+	 * Set the exit (and enter) flow on the nodes.
+	 *
+	 * Note 1: Each node data has a enterFlow and exitFlow member, but
+	 * for models with detailed balance (undirected and directed with teleportation)
+	 * the enterFlow is equal to the exitFlow and declared as a reference to the exitFlow
+	 * to simplify output methods. Thus, don't add to enterFlow for those cases if it should
+	 * not add to the exitFlow.
+	 *
+	 * Note 2: The enter and exit flow defines what should be coded for in the
+	 * map equation for the *modular levels*, not the leaf node level.
+	 *
+	 * The reason for that special case is to be able to code self-flow (self-links and
+	 * self-teleportation). If adding self-flow to enter and exit flow though, the enclosing
+	 * module will also aggregate those initial values, but self-flow should not be seen
+	 * as exiting the enclosing module, just the node.
+	 *
+	 * Instead of having special cases for the flow aggregation to modular levels, take
+	 * the special case when calculating the codelength, using the flow values rather
+	 * than the enter/exit flow values for the leaf nodes.
+	 *
+	 */
 	virtual void initEnterExitFlow() = 0;
 
 	virtual void resetModuleFlowFromLeafNodes() = 0;
-
-	/**
-	 * Calculate the flow and exit flow on the leaf network,
-	 * assuming individual modules for each node for the exit flow.
-	 */
-//	virtual void calculateFlow() = 0;
 
 	/**
 	 * Init the infomap term that only depends on the flow value on
@@ -229,34 +234,20 @@ protected:
 	TreeData m_treeData;
 	std::vector<NodeBase*>& m_activeNetwork; // Points either to m_nonLeafActiveNetwork or m_treeData.m_leafNodes
 	std::vector<unsigned int> m_moveTo;
+	bool m_isCoarseTune;
+	unsigned int m_iterationCount;
+	unsigned int m_numNonTrivialTopModules;
+	unsigned int m_subLevel;
+	const unsigned int m_TOP_LEVEL_ADDITION;
+	double oneLevelCodelength;
 	double codelength;
 	double indexCodelength;
 	double moduleCodelength;
-	unsigned int m_subLevel;
-	bool m_isCoarseTune;
-	unsigned int m_numNonTrivialTopModules;
-	unsigned int m_iterationCount;
-	const unsigned int m_TOP_LEVEL_ADDITION;
-	bool m_debug;
-	unsigned int m_debugOutCounter;
+	double hierarchicalCodelength;
 	double bestHierarchicalCodelength;
 	double bestIntermediateCodelength;
 	std::ostringstream bestIntermediateStatistics;
 
-	double oneLevelCodelength;
-	// Hierarchical data. TODO: Find better place.
-	double hierarchicalCodelength;
-
-	//TODO: Take back to InfomapGreedy.h after debugging!!
-	double exitNetworkFlow;
-	double exitNetworkFlow_log_exitNetworkFlow;
-
-	//TODO: Take back to specialized classes
-	double exit_log_exit;
-	double enterFlow;
-	double enterFlow_log_enterFlow;
-
-	double enter_log_enter;
 };
 
 struct PendingModule
