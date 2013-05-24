@@ -38,17 +38,6 @@ public:
 	InfomapUndirected(const Config& conf) : InfomapGreedy<InfomapUndirected>(conf) {}
 	virtual ~InfomapUndirected() {}
 
-protected:
-	virtual void calculateFlow();
-	virtual unsigned int optimizeModulesImpl();
-	virtual unsigned int moveNodesToPredefinedModulesImpl();
-//	virtual void generateNetworkFromChildren(NodeBase* parent);
-	virtual void writeLeafNetwork(std::ostream& out);
-
-private:
-	void updateCodelength(NodeType& current, double deltaExitOwnModule,
-			unsigned int newModule, double deltaExitNewModule);
-
 };
 
 #endif /* INFOMAPUNDIRECTED_H_ */

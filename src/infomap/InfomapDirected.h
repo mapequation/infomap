@@ -39,16 +39,6 @@ public:
 	InfomapDirected(const Config& conf);
 	virtual ~InfomapDirected() {}
 
-protected:
-	virtual void calculateFlow();
-	virtual unsigned int optimizeModulesImpl();
-	virtual unsigned int moveNodesToPredefinedModulesImpl();
-
-	virtual void recalculateCodelengthFromConsolidatedNetwork();
-
-private:
-	void updateCodelength(NodeType& current, double deltaInOutOldModule,
-			unsigned int newModule, double deltaInOutNewModule);
 
 	const double alpha;
 	const double beta;

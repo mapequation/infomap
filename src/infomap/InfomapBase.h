@@ -100,7 +100,7 @@ protected:
 	 * Calculate the flow and exit flow on the leaf network,
 	 * assuming individual modules for each node for the exit flow.
 	 */
-	virtual void calculateFlow() = 0;
+//	virtual void calculateFlow() = 0;
 
 	/**
 	 * Init the infomap term that only depends on the flow value on
