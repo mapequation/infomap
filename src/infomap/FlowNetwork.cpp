@@ -64,7 +64,8 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 		if (config.isUndirected())
 			m_sumLinkOutWeight[linkEnds.second] += linkWeight;
 		m_nodeFlow[linkEnds.first] += linkWeight / sumUndirLinkWeight;
-		m_nodeFlow[linkEnds.second] += linkWeight / sumUndirLinkWeight;
+		if (!config.outdirdir)
+			m_nodeFlow[linkEnds.second] += linkWeight / sumUndirLinkWeight;
 		m_flowLinks[linkIndex] = Link(linkEnds.first, linkEnds.second, linkWeight);
 	}
 
@@ -92,7 +93,7 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 
 	if (!config.directed)
 	{
-		if (config.undirdir)
+		if (config.undirdir || config.outdirdir)
 		{
 			//Take one last power iteration
 			std::vector<double> nodeFlowSteadyState(m_nodeFlow);
@@ -121,8 +122,11 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 				m_flowLinks[i].flow /= sumUndirLinkWeight;
 		}
 
-		std::cout << "using undirected links" << (config.undirdir? ", switching to directed after steady state... done!" :
-				"... done!") << std::endl;
+		if (config.outdirdir)
+			std::cout << "counting only ingoing links... done!" << std::endl;
+		else
+			std::cout << "using undirected links" << (config.undirdir? ", switching to directed after steady state... done!" :
+					"... done!") << std::endl;
 		return;
 	}
 

@@ -114,6 +114,9 @@ Config getConfig(int argc, char *argv[])
 	api.addOptionArgument(conf.undirdir, 't', "undirdir",
 			"Two-mode dynamics: Assume undirected links for calculating flow, but directed when minimizing codelength.");
 
+	api.addOptionArgument(conf.outdirdir, "outdirdir",
+			"Two-mode dynamics: Count only ingoing links when calculating the flow, but all when minimizing codelength.");
+
 	api.addOptionArgument(conf.rawdir, 'w', "rawdir",
 			"Two-mode dynamics: Assume directed links and let the raw link weights be the flow.");
 

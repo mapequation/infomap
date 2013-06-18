@@ -43,6 +43,7 @@ struct Config
 	 	twoLevel(false),
 		directed(false),
 		undirdir(false),
+		outdirdir(false),
 		rawdir(false),
 		unrecordedTeleportation(false),
 		teleportToNodes(false),
@@ -125,7 +126,7 @@ struct Config
 		}
 	}
 
-	bool isUndirected() const { return !directed && !undirdir && !rawdir; }
+	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 
 	// Input
 	std::string networkFile;
@@ -140,6 +141,7 @@ struct Config
 	bool twoLevel;
 	bool directed;
 	bool undirdir;
+	bool outdirdir;
 	bool rawdir;
 	bool unrecordedTeleportation;
 	bool teleportToNodes;
