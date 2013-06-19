@@ -44,9 +44,11 @@ class InfomapUndirected;
 template<>
 struct flowData_traits<InfomapUndirected>
 {
-	typedef FlowUndirected	flow_type;
-	typedef bool2type<false> directed_type;
+	typedef FlowUndirected		flow_type;
+	typedef bool2type<false>	directed_type;
+	typedef bool2type<true>		detailedBalance_type;
 	static const bool directed = false;
+	static const bool detailed_balance = true;
 };
 
 class InfomapDirected;
@@ -56,7 +58,9 @@ struct flowData_traits<InfomapDirected>
 {
 	typedef FlowDirectedWithTeleportation	flow_type;
 	typedef bool2type<true> 				directed_type;
+	typedef bool2type<true> 				detailedBalance_type;
 	static const bool directed = true;
+	static const bool detailed_balance = true;
 };
 
 class InfomapUndirdir;
@@ -66,7 +70,9 @@ struct flowData_traits<InfomapUndirdir>
 {
 	typedef FlowDirectedNonDetailedBalance	flow_type;
 	typedef bool2type<true> 				directed_type;
+	typedef bool2type<false> 				detailedBalance_type;
 	static const bool directed = true;
+	static const bool detailed_balance = false;
 };
 
 class InfomapDirectedUnrecordedTeleportation;
@@ -76,7 +82,9 @@ struct flowData_traits<InfomapDirectedUnrecordedTeleportation>
 {
 	typedef FlowDirectedNonDetailedBalanceWithTeleportation	flow_type;
 	typedef bool2type<true> 				directed_type;
+	typedef bool2type<false> 				detailedBalance_type;
 	static const bool directed = true;
+	static const bool detailed_balance = false;
 };
 
 

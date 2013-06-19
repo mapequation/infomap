@@ -53,6 +53,20 @@ public:
 	double exitFlow;
 	double& enterFlow;
 
+	FlowUndirected& operator+=(const FlowUndirected& other)
+	{
+		flow += other.flow;
+		exitFlow += other.exitFlow;
+		return *this;
+	}
+
+	FlowUndirected& operator-=(const FlowUndirected& other)
+	{
+		flow -= other.flow;
+		exitFlow -= other.exitFlow;
+		return *this;
+	}
+
 	friend std::ostream& operator<<(std::ostream& out, const FlowUndirected& data)
 	{
 		return out << "flow: " << data.flow << ", exit: " << data.exitFlow;
@@ -82,6 +96,20 @@ public:
 	double flow;
 	double exitFlow;
 	double& enterFlow;
+
+	FlowDirected& operator+=(const FlowDirected& other)
+	{
+		flow += other.flow;
+		exitFlow += other.exitFlow;
+		return *this;
+	}
+
+	FlowDirected& operator-=(const FlowDirected& other)
+	{
+		flow -= other.flow;
+		exitFlow -= other.exitFlow;
+		return *this;
+	}
 
 	friend std::ostream& operator<<(std::ostream& out, const FlowDirected& data)
 	{
@@ -125,6 +153,26 @@ public:
 	double danglingFlow;
 	double teleportSourceFlow; // Equals flow when the latter isn't transformed to enter flow
 
+	FlowDirectedWithTeleportation& operator+=(const FlowDirectedWithTeleportation& other)
+	{
+		flow += other.flow;
+		exitFlow += other.exitFlow;
+		teleportWeight += other.teleportWeight;
+		danglingFlow += other.danglingFlow;
+		teleportSourceFlow += other.teleportSourceFlow;
+		return *this;
+	}
+
+	FlowDirectedWithTeleportation& operator-=(const FlowDirectedWithTeleportation& other)
+	{
+		flow -= other.flow;
+		exitFlow -= other.exitFlow;
+		teleportWeight -= other.teleportWeight;
+		danglingFlow -= other.danglingFlow;
+		teleportSourceFlow -= other.teleportSourceFlow;
+		return *this;
+	}
+
 	friend std::ostream& operator<<(std::ostream& out, const FlowDirectedWithTeleportation& data)
 	{
 //		return out << "flow: " << data.flow << ", exit: " << data.exitFlow;
@@ -158,7 +206,22 @@ public:
 	double flow;
 	double enterFlow;
 	double exitFlow;
-//	double selfLinkFlow;
+
+	FlowDirectedNonDetailedBalance& operator+=(const FlowDirectedNonDetailedBalance& other)
+	{
+		flow += other.flow;
+		enterFlow += other.enterFlow;
+		exitFlow += other.exitFlow;
+		return *this;
+	}
+
+	FlowDirectedNonDetailedBalance& operator-=(const FlowDirectedNonDetailedBalance& other)
+	{
+		flow -= other.flow;
+		enterFlow -= other.enterFlow;
+		exitFlow -= other.exitFlow;
+		return *this;
+	}
 
 	friend std::ostream& operator<<(std::ostream& out, const FlowDirectedNonDetailedBalance& data)
 	{
@@ -198,7 +261,26 @@ public:
 	double exitFlow;
 	double teleportWeight;
 	double danglingFlow;
-//	double selfLinkFlow;
+
+	FlowDirectedNonDetailedBalanceWithTeleportation& operator+=(const FlowDirectedNonDetailedBalanceWithTeleportation& other)
+	{
+		flow += other.flow;
+		enterFlow += other.enterFlow;
+		exitFlow += other.exitFlow;
+		teleportWeight += other.teleportWeight;
+		danglingFlow += other.danglingFlow;
+		return *this;
+	}
+
+	FlowDirectedNonDetailedBalanceWithTeleportation& operator-=(const FlowDirectedNonDetailedBalanceWithTeleportation& other)
+	{
+		flow -= other.flow;
+		enterFlow -= other.enterFlow;
+		exitFlow -= other.exitFlow;
+		teleportWeight -= other.teleportWeight;
+		danglingFlow -= other.danglingFlow;
+		return *this;
+	}
 
 	friend std::ostream& operator<<(std::ostream& out, const FlowDirectedNonDetailedBalanceWithTeleportation& data)
 	{
@@ -275,6 +357,26 @@ public:
 		exitFlow = other.exitFlow;
 		teleportWeight = other.teleportWeight;
 		danglingFlow = other.danglingFlow;
+		return *this;
+	}
+
+	FlowDummy& operator+=(const FlowDummy& other)
+	{
+		flow += other.flow;
+		enterFlow += other.enterFlow;
+		exitFlow += other.exitFlow;
+		teleportWeight += other.teleportWeight;
+		danglingFlow += other.danglingFlow;
+		return *this;
+	}
+
+	FlowDummy& operator-=(const FlowDummy& other)
+	{
+		flow -= other.flow;
+		enterFlow -= other.enterFlow;
+		exitFlow -= other.exitFlow;
+		teleportWeight -= other.teleportWeight;
+		danglingFlow -= other.danglingFlow;
 		return *this;
 	}
 

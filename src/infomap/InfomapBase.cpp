@@ -1358,48 +1358,18 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 
 	if (m_config.printBinaryTree || m_config.printBinaryFlowTree)
 	{
-		outName = io::Str() << m_config.outDirectory << filename << ".btree";
-		HierarchicalNetwork hierData(numLeafNodes());
-		RELEASE_OUT("\nBuild streamable tree... " << std::flush);
-		buildHierarchicalNetwork(hierData, m_config.printBinaryFlowTree);
-		RELEASE_OUT("done! Writing streamable tree... " << std::flush);
-		hierData.writeStreamableTree(outName, false);
+		bool writeEdges = m_config.printBinaryFlowTree;
+		outName = io::Str() << m_config.outDirectory << filename << (writeEdges? ".bftree" : ".btree");
+		HierarchicalNetwork hierData(filename, numLeafNodes());
+		RELEASE_OUT("\nBuild streamable " << (writeEdges ? "flow " : "") <<	"tree... " << std::flush);
+		buildHierarchicalNetwork(hierData, writeEdges);
+		RELEASE_OUT("done! Writing to " << outName << "... " << std::flush);
+		hierData.writeStreamableTree(outName, writeEdges);
 		RELEASE_OUT("done!" << std::endl);
 	}
 
 }
 
-void InfomapBase::printNetworkDebug(std::string filenameSuffix, bool includeSubInfomapInstances, bool toStdOut)
-{
-	sortTree();
-	if (toStdOut)
-	{
-		ALL_OUT(std::endl << "Printing current tree at \"" << filenameSuffix << "\":" << std::endl);
-//		if (includeSubInfomapInstances)
-//			printSubInfomapTree(std::cout, m_treeData);
-//		else
-//			printTree(std::cout, *root());
-		printSubInfomapTreeDebug(std::cout, m_treeData);
-		ALL_OUT(std::flush << std::endl);
-	}
-	else
-	{
-		std::string filename = FileURI(m_config.networkFile).getName();
-
-		std::ostringstream oss;
-		oss << m_config.outDirectory << filename <<
-				"_debug_" << m_debugOutCounter++ << "_" << filenameSuffix << ".tree";
-		ALL_OUT("(Printing tree to " << oss.str() << ") " << std::flush);
-		SafeOutFile treeOut(oss.str().c_str());
-		treeOut << std::setprecision(10);
-		treeOut << "# Codelength = " << hierarchicalCodelength << " bits." << std::endl;
-		if (includeSubInfomapInstances)
-			printSubInfomapTreeDebug(treeOut, m_treeData);
-		else
-			printTree(treeOut, *root());
-	}
-
-}
 
 void InfomapBase::printClusterVector(std::ostream& out)
 {
