@@ -1258,6 +1258,19 @@ inline
 void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetwork(HierarchicalNetwork& data, bool includeLinks)
 {
 	buildHierarchicalNetworkHelper(data, data.getRootNode(), m_treeData);
+	if (includeLinks)
+	{
+		for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()); leafIt != m_treeData.end_leaf(); ++leafIt)
+		{
+			NodeBase& node = **leafIt;
+			for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
+					outEdgeIt != endIt; ++outEdgeIt)
+			{
+				EdgeType& edge = **outEdgeIt;
+				data.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
+			}
+		}
+	}
 }
 
 template<typename InfomapImplementation>
@@ -1275,21 +1288,20 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(Hierar
 		return;
 	}
 
-	const NodeType& n = getNode(node);
-
-	if (!node.isRoot())
+	if (node.isLeaf())
 	{
-		if (node.isLeaf())
-			data.addLeafNode(parent, n.data.flow, node.name, node.originalIndex);
-		else
-			data.addNode(parent, n.data.flow);
+		const NodeType& n = getNode(node);
+		data.addLeafNode(parent, n.data.flow, originalData.getLeafNode(node.originalIndex).name, node.originalIndex);
 	}
-	for (NodeBase::sibling_iterator moduleIt(node.begin_child()), endIt(node.end_child());
-			moduleIt != endIt; ++moduleIt)
+	else
 	{
-		const NodeType& module = getNode(*moduleIt);
-		SNode& newParent = data.addNode(parent, module.data.flow);
-		buildHierarchicalNetworkHelper(data, newParent, originalData, moduleIt.base());
+		for (NodeBase::sibling_iterator moduleIt(node.begin_child()), endIt(node.end_child());
+				moduleIt != endIt; ++moduleIt)
+		{
+			const NodeType& module = getNode(*moduleIt);
+			SNode& newParent = data.addNode(parent, module.data.flow);
+			buildHierarchicalNetworkHelper(data, newParent, originalData, moduleIt.base());
+		}
 	}
 }
 
@@ -1594,7 +1606,7 @@ void InfomapGreedy<InfomapImplementation>::generateNetworkFromChildren(NodeBase&
 		for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
 				outEdgeIt != endIt; ++outEdgeIt)
 		{
-			EdgeType edge = **outEdgeIt;
+			const EdgeType& edge = **outEdgeIt;
 			// If neighbour node is within the same module, add the link to this subnetwork.
 			if (edge.target.parent == parentPtr)
 			{
