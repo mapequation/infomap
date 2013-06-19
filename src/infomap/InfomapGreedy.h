@@ -1275,32 +1275,29 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetwork(Hierarchical
 
 template<typename InfomapImplementation>
 inline
-void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(HierarchicalNetwork& data, HierarchicalNetwork::node_type& parent, const TreeData& originalData, NodeBase* sourceNode)
+void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(HierarchicalNetwork& data, HierarchicalNetwork::node_type& parent, const TreeData& originalData, NodeBase* rootNode)
 {
-	if (sourceNode == 0)
-		sourceNode = root();
+	if (rootNode == 0)
+		rootNode = root();
 
-	NodeBase& node = *sourceNode;
-
-	if (node.getSubInfomap() != 0)
+	if (rootNode->getSubInfomap() != 0)
 	{
-		getImpl(*node.getSubInfomap()).buildHierarchicalNetworkHelper(data, parent, originalData);
+		getImpl(*rootNode->getSubInfomap()).buildHierarchicalNetworkHelper(data, parent, originalData);
 		return;
 	}
 
-	if (node.isLeaf())
+	for (NodeBase::sibling_iterator childIt(rootNode->begin_child()), endIt(rootNode->end_child());
+			childIt != endIt; ++childIt)
 	{
-		const NodeType& n = getNode(node);
-		data.addLeafNode(parent, n.data.flow, originalData.getLeafNode(node.originalIndex).name, node.originalIndex);
-	}
-	else
-	{
-		for (NodeBase::sibling_iterator moduleIt(node.begin_child()), endIt(node.end_child());
-				moduleIt != endIt; ++moduleIt)
+		const NodeType& node = getNode(*childIt);
+		if (node.isLeaf())
 		{
-			const NodeType& module = getNode(*moduleIt);
-			SNode& newParent = data.addNode(parent, module.data.flow);
-			buildHierarchicalNetworkHelper(data, newParent, originalData, moduleIt.base());
+			data.addLeafNode(parent, node.data.flow, originalData.getLeafNode(node.originalIndex).name, node.originalIndex);
+		}
+		else
+		{
+			SNode& newParent = data.addNode(parent, node.data.flow);
+			buildHierarchicalNetworkHelper(data, newParent, originalData, childIt.base());
 		}
 	}
 }

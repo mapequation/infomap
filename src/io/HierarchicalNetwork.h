@@ -130,13 +130,13 @@ public:
 	typedef std::deque<SNode*>		NodePtrList;
 	typedef std::deque<SEdge*>		EdgePtrList;
 
-	SNode(NodeData data, unsigned short depth = 0, unsigned short parentIndex = 0, unsigned int leafIndex = 0) :
+	SNode(NodeData data, unsigned short depth, unsigned short parentIndex, unsigned int id) :
 		data(data),
 		depth(depth),
 		parentNode(0),
 		parentIndex(parentIndex),
 		isLeaf(false),
-		leafIndex(leafIndex)
+		id(id)
 	{
 	}
 
@@ -147,7 +147,7 @@ public:
 		parentNode(other.parentNode),
 		parentIndex(other.parentIndex),
 		isLeaf(false),
-		leafIndex(other.leafIndex)
+		id(other.id)
 	{
 	}
 
@@ -188,6 +188,7 @@ public:
 	unsigned short parentIndex; // The index of this node in its tree parent's child list.
 	bool isLeaf;
 	unsigned int leafIndex; // The index in the original network file if a leaf node.
+	unsigned int id;
 	NodePtrList children;
 	EdgePtrList inEdges;
 	EdgePtrList outEdges;
@@ -244,9 +245,9 @@ public:
 
 
 
-	void createEdge(SNode* target, double flow)
+	void createEdge(SNode* target, double flow, bool directed)
 	{
-		createEdge(this, target, flow, NULL);
+		createEdge(this, target, flow, directed, NULL);
 	}
 
 private:
@@ -255,9 +256,13 @@ private:
 	 * Create a weighted edge between the source and target node.
 	 * If a non-null child edge is provided, its parentEdge property will be set to the created edge.
 	 */
-	void createEdge(SNode* source, SNode* target, float flow, SEdge* childEdge = NULL)
+	void createEdge(SNode* source, SNode* target, float flow, bool directed, SEdge* childEdge = NULL)
 	{
 		SEdge* edge;
+		// Check to not add opposite edges if undirected
+		if (!directed && source->id > target->id)
+			std::swap(source, target);
+
 		std::map<SNode*, SEdge*>::iterator find = source->mapOfAggregatedOutEdges.find(target);
 		if (find == source->mapOfAggregatedOutEdges.end()) // Add the weight if an edge is already created between the nodes
 		{
@@ -324,10 +329,11 @@ class HierarchicalNetwork
 public:
 	typedef SNode	node_type;
 
-	HierarchicalNetwork(std::string networkName, unsigned int numLeafNodes)
-	:	m_rootNode(1.0),
+	HierarchicalNetwork(std::string networkName, unsigned int numLeafNodes, bool directedEdges)
+	:	m_rootNode(1.0, 0, 0, 0),
 	 	m_networkName(networkName),
 		m_leafNodes(numLeafNodes),
+		m_directedEdges(directedEdges),
 		m_numNodesInTree(1)
 	{}
 
@@ -341,7 +347,7 @@ public:
 
 	SNode& addNode(SNode& parent, double flow)
 	{
-		SNode* n = new SNode(NodeData(flow), parent.depth + 1, parent.children.size());
+		SNode* n = new SNode(NodeData(flow), parent.depth + 1, parent.children.size(), m_numNodesInTree);
 		//TODO: Let the node be created in the node class as that is responsible for deleting it!
 		parent.addChild(*n);
 		++m_numNodesInTree;
@@ -377,7 +383,7 @@ public:
 		else if (source->depth < target->depth)
 			do { target = target->parentNode; } while (source->depth != target->depth);
 
-		source->createEdge(target, flow);
+		source->createEdge(target, flow, m_directedEdges);
 	}
 
 	void propagateNodeNameUpInHierarchy(SNode& node)
@@ -479,6 +485,7 @@ private:
 	SNode m_rootNode;
 	std::string m_networkName;
 	SNode::NodePtrList m_leafNodes;
+	bool m_directedEdges;
 	unsigned int m_numNodesInTree;
 
 };

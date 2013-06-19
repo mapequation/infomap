@@ -1360,7 +1360,7 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 	{
 		bool writeEdges = m_config.printBinaryFlowTree;
 		outName = io::Str() << m_config.outDirectory << filename << (writeEdges? ".bftree" : ".btree");
-		HierarchicalNetwork hierData(filename, numLeafNodes());
+		HierarchicalNetwork hierData(filename, numLeafNodes(), !m_config.isUndirected());
 		RELEASE_OUT("\nBuild streamable " << (writeEdges ? "flow " : "") <<	"tree... " << std::flush);
 		buildHierarchicalNetwork(hierData, writeEdges);
 		RELEASE_OUT("done! Writing to " << outName << "... " << std::flush);
