@@ -143,7 +143,7 @@ inline MTRand::uint32 MTRand::randInt()
 {
 	if( left == 0 ) reload();
 	--left;
-		
+
 	register uint32 s1;
 	s1 = *pNext++;
 	s1 ^= (s1 >> 11);
