@@ -138,6 +138,11 @@ struct ToBinary<std::string> {
 	}
 };
 
+/**
+ * Wrapper class for writing low-level binary data with a simple stream interface.
+ *
+ * @note Strings are prepended with its length as unsigned short.
+ */
 class BinaryFile {
 public:
 	BinaryFile (const char* filename)

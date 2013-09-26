@@ -1292,11 +1292,11 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(Hierar
 		const NodeType& node = getNode(*childIt);
 		if (node.isLeaf())
 		{
-			data.addLeafNode(parent, node.data.flow, originalData.getLeafNode(node.originalIndex).name, node.originalIndex);
+			data.addLeafNode(parent, node.data.flow, node.data.exitFlow, originalData.getLeafNode(node.originalIndex).name, node.originalIndex);
 		}
 		else
 		{
-			SNode& newParent = data.addNode(parent, node.data.flow);
+			SNode& newParent = data.addNode(parent, node.data.flow, node.data.exitFlow);
 			buildHierarchicalNetworkHelper(data, newParent, originalData, childIt.base());
 		}
 	}

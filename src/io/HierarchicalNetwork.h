@@ -44,13 +44,15 @@ static const unsigned int SIZE_OF_UNSIGNED_INT = sizeof(unsigned int);		// 4 byt
 static const unsigned int SIZE_OF_CHAR = sizeof(char);						// 1 byte (8 bit)
 static const unsigned int SIZE_OF_FLOAT = sizeof(float); 					// 4 byte (32 bit)
 static const unsigned int SIZE_OF_UNSIGNED_SHORT = sizeof(unsigned short);	// 2 byte (16 bit)
-static const unsigned int MIN_TOTAL_SIZE = SIZE_OF_UNSIGNED_SHORT + SIZE_OF_FLOAT + SIZE_OF_UNSIGNED_SHORT;
+
+// Min node size: name size + numChildren + flow + exitFlow
+static const unsigned int MIN_TOTAL_SIZE = 2*SIZE_OF_UNSIGNED_SHORT + 2*SIZE_OF_FLOAT;
 
 struct NodeData {
-	NodeData(double flow = 0.0, std::string name = "") :
+	NodeData(double flow = 0.0, double exitFlow = 0.0, std::string name = "") :
 		flow(flow),
-		enter(0.0),
-		exit(0.0),
+		enterFlow(0.0),
+		exitFlow(exitFlow),
 		teleportRate(0.0),
 		danglingFlow(0.0),
 		indexCodelength(0.0),
@@ -59,8 +61,8 @@ struct NodeData {
 //		id(0)
 	{}
 	double flow;
-	double enter;
-	double exit;
+	double enterFlow;
+	double exitFlow;
 	double teleportRate;
 	double danglingFlow;
 	double indexCodelength;
@@ -217,7 +219,8 @@ public:
 	{
 //		outFile << static_cast<unsigned short>(data.name.length()); // unsigned short nameLength
 		outFile << data.name;					// char* name
-		outFile << static_cast<float>(data.flow); // float pageRank
+		outFile << static_cast<float>(data.flow); // float flow
+		outFile << static_cast<float>(data.exitFlow); // float exitFlow
 		unsigned short numChildren = static_cast<unsigned short>(children.size());
 		outFile << numChildren; 			// unsigned short numChildren
 		if (numChildren > 0)
@@ -345,18 +348,18 @@ public:
 		return m_rootNode;
 	}
 
-	SNode& addNode(SNode& parent, double flow)
+	SNode& addNode(SNode& parent, double flow, double exitFlow)
 	{
-		SNode* n = new SNode(NodeData(flow), parent.depth + 1, parent.children.size(), m_numNodesInTree);
+		SNode* n = new SNode(NodeData(flow, exitFlow), parent.depth + 1, parent.children.size(), m_numNodesInTree);
 		//TODO: Let the node be created in the node class as that is responsible for deleting it!
 		parent.addChild(*n);
 		++m_numNodesInTree;
 		return *n;
 	}
 
-	SNode& addLeafNode(SNode& parent, double flow, std::string name, unsigned int leafIndex)
+	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex)
 	{
-		SNode& n = addNode(parent, flow);
+		SNode& n = addNode(parent, flow, exitFlow);
 		n.data.name = name;
 		n.isLeaf = true;
 		n.leafIndex = leafIndex;
