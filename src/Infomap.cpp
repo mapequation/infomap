@@ -120,8 +120,8 @@ Config getConfig(int argc, char *argv[])
 	api.addOptionArgument(conf.rawdir, 'w', "rawdir",
 			"Two-mode dynamics: Assume directed links and let the raw link weights be the flow.");
 
-	api.addOptionArgument(conf.unrecordedTeleportation, 'e', "unrecorded-teleportation",
-			"Assume teleportation when calculating flow (on directed network) but don't encode that flow.");
+	api.addOptionArgument(conf.recordedTeleportation, 'e', "recorded-teleportation",
+			"If teleportation is used to calculate the flow, also record it when minimizing codelength.");
 
 	api.addOptionArgument(conf.teleportToNodes, 'o', "to-nodes",
 			"Teleport to nodes (like the PageRank algorithm) instead of to links.");

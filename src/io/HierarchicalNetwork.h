@@ -44,13 +44,15 @@ static const unsigned int SIZE_OF_UNSIGNED_INT = sizeof(unsigned int);		// 4 byt
 static const unsigned int SIZE_OF_CHAR = sizeof(char);						// 1 byte (8 bit)
 static const unsigned int SIZE_OF_FLOAT = sizeof(float); 					// 4 byte (32 bit)
 static const unsigned int SIZE_OF_UNSIGNED_SHORT = sizeof(unsigned short);	// 2 byte (16 bit)
-static const unsigned int MIN_TOTAL_SIZE = SIZE_OF_UNSIGNED_SHORT + SIZE_OF_FLOAT + SIZE_OF_UNSIGNED_SHORT;
+
+// Min node size: name size + numChildren + flow + exitFlow
+static const unsigned int MIN_TOTAL_SIZE = 2*SIZE_OF_UNSIGNED_SHORT + 2*SIZE_OF_FLOAT;
 
 struct NodeData {
-	NodeData(double flow = 0.0, std::string name = "") :
+	NodeData(double flow = 0.0, double exitFlow = 0.0, std::string name = "") :
 		flow(flow),
-		enter(0.0),
-		exit(0.0),
+		enterFlow(0.0),
+		exitFlow(exitFlow),
 		teleportRate(0.0),
 		danglingFlow(0.0),
 		indexCodelength(0.0),
@@ -59,8 +61,8 @@ struct NodeData {
 //		id(0)
 	{}
 	double flow;
-	double enter;
-	double exit;
+	double enterFlow;
+	double exitFlow;
 	double teleportRate;
 	double danglingFlow;
 	double indexCodelength;
@@ -136,6 +138,7 @@ public:
 		parentNode(0),
 		parentIndex(parentIndex),
 		isLeaf(false),
+		leafIndex(0),
 		id(id)
 	{
 	}
@@ -147,6 +150,7 @@ public:
 		parentNode(other.parentNode),
 		parentIndex(other.parentIndex),
 		isLeaf(false),
+		leafIndex(0),
 		id(other.id)
 	{
 	}
@@ -217,7 +221,8 @@ public:
 	{
 //		outFile << static_cast<unsigned short>(data.name.length()); // unsigned short nameLength
 		outFile << data.name;					// char* name
-		outFile << static_cast<float>(data.flow); // float pageRank
+		outFile << static_cast<float>(data.flow); // float flow
+		outFile << static_cast<float>(data.exitFlow); // float exitFlow
 		unsigned short numChildren = static_cast<unsigned short>(children.size());
 		outFile << numChildren; 			// unsigned short numChildren
 		if (numChildren > 0)
@@ -329,12 +334,18 @@ class HierarchicalNetwork
 public:
 	typedef SNode	node_type;
 
-	HierarchicalNetwork(std::string networkName, unsigned int numLeafNodes, bool directedEdges)
+	HierarchicalNetwork(std::string networkName, unsigned int numLeafNodes, bool directedEdges,
+			double codelength, double oneLevelCodelength, std::string infomapVersion)
 	:	m_rootNode(1.0, 0, 0, 0),
 	 	m_networkName(networkName),
 		m_leafNodes(numLeafNodes),
 		m_directedEdges(directedEdges),
-		m_numNodesInTree(1)
+		m_numLeafEdges(0),
+		m_numNodesInTree(1),
+		m_maxDepth(0),
+		m_codelength(codelength),
+		m_oneLevelCodelength(oneLevelCodelength),
+		m_infomapVersion(infomapVersion)
 	{}
 
 	virtual ~HierarchicalNetwork() {}
@@ -345,23 +356,25 @@ public:
 		return m_rootNode;
 	}
 
-	SNode& addNode(SNode& parent, double flow)
+	SNode& addNode(SNode& parent, double flow, double exitFlow)
 	{
-		SNode* n = new SNode(NodeData(flow), parent.depth + 1, parent.children.size(), m_numNodesInTree);
+		SNode* n = new SNode(NodeData(flow, exitFlow), parent.depth + 1, parent.children.size(), m_numNodesInTree);
 		//TODO: Let the node be created in the node class as that is responsible for deleting it!
 		parent.addChild(*n);
 		++m_numNodesInTree;
 		return *n;
 	}
 
-	SNode& addLeafNode(SNode& parent, double flow, std::string name, unsigned int leafIndex)
+	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex)
 	{
-		SNode& n = addNode(parent, flow);
+		SNode& n = addNode(parent, flow, exitFlow);
 		n.data.name = name;
 		n.isLeaf = true;
 		n.leafIndex = leafIndex;
 		m_leafNodes[leafIndex] = &n;
 		propagateNodeNameUpInHierarchy(n);
+		if (n.depth > m_maxDepth)
+			m_maxDepth = n.depth;
 		return n;
 	}
 
@@ -384,6 +397,7 @@ public:
 			do { target = target->parentNode; } while (source->depth != target->depth);
 
 		source->createEdge(target, flow, m_directedEdges);
+		++m_numLeafEdges;
 	}
 
 	void propagateNodeNameUpInHierarchy(SNode& node)
@@ -428,28 +442,28 @@ public:
 	 */
 	void writeStreamableTree(const std::string& fileName, bool writeEdges)
 	{
-//		SafeOutFile out(fileName.c_str());
-//		SafeOutFileBinary out(fileName.c_str());
-//		SafeOutFileDebug out(fileName.c_str());
 		BinaryFile out(fileName.c_str());
 
-		std::string magicTag ("infomap");
-		unsigned short firstTagLength = magicTag.length();
-		unsigned short formatVersion = 1;
-		unsigned int childPosition = SIZE_OF_UNSIGNED_SHORT + firstTagLength * SIZE_OF_CHAR + SIZE_OF_UNSIGNED_SHORT + SIZE_OF_UNSIGNED_INT * 2;
-//		unsigned int childPosition = SIZE_OF_UNSIGNED_INT * 2;
-		unsigned int numNodesTotal = m_numNodesInTree;
+		std::string magicTag ("Infomap");
+		unsigned int numLeafNodes = m_leafNodes.size();
+		std::string infomapOptions("");
 
-//		out << firstTagLength;
 		out << magicTag;
-		out << formatVersion;
-		out << childPosition;
-		out << numNodesTotal;
+		out << m_infomapVersion;
+		out << infomapOptions;
+		out << m_directedEdges;
+		out << m_networkName;
+		out << numLeafNodes;
+		out << m_numLeafEdges;
+		out << m_numNodesInTree;
+		out << m_maxDepth;
+		out << m_oneLevelCodelength;
+		out << m_codelength;
 
 		std::deque<SNode*> nodeList;
 		nodeList.push_back(&m_rootNode);
 		m_rootNode.data.name = m_networkName;
-		childPosition += m_rootNode.serializationSize(writeEdges);
+		unsigned int childPosition = out.size() + m_rootNode.serializationSize(writeEdges);
 		while (nodeList.size() > 0) // visit tree breadth first
 		{
 			SNode& node = *nodeList.front();
@@ -486,7 +500,12 @@ private:
 	std::string m_networkName;
 	SNode::NodePtrList m_leafNodes;
 	bool m_directedEdges;
+	unsigned int m_numLeafEdges;
 	unsigned int m_numNodesInTree;
+	unsigned int m_maxDepth;
+	double m_codelength;
+	double m_oneLevelCodelength;
+	std::string m_infomapVersion;
 
 };
 

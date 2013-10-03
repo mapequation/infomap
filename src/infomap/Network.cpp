@@ -221,7 +221,10 @@ void Network::parsePajekNetwork(std::string filename)
 	if (maxLinkEnd >= numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 
-//	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
+	if (m_links.size() == 0)
+		throw InputDomainError(io::Str() << "No links could be found!");
+
+	//	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
 	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << m_links.size() << " links. ";
 //	std::cout << "Average node weight: " << (m_sumNodeWeights / numNodes) << ". ";
 	if (m_config.nodeLimit > 0)
@@ -320,6 +323,9 @@ void Network::parseLinkList(std::string filename)
 				--m_numSelfLinks;
 		}
 	}
+
+	if (m_links.size() == 0)
+		throw InputDomainError(io::Str() << "No links could be found!");
 
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
@@ -446,6 +452,8 @@ void Network::parseSparseLinkList(std::string filename)
 		}
 	}
 
+	if (m_links.size() == 0)
+		throw InputDomainError(io::Str() << "No links could be found!");
 
 	m_numNodes = links.size();
 

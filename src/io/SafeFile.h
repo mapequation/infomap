@@ -138,11 +138,15 @@ struct ToBinary<std::string> {
 	}
 };
 
+/**
+ * Wrapper class for writing low-level binary data with a simple stream interface.
+ *
+ * @note Strings are prepended with its length as unsigned short.
+ */
 class BinaryFile {
 public:
 	BinaryFile (const char* filename)
-	: m_file(std::fopen(filename, "w")),
-	  m_size(0)
+	: m_file(std::fopen(filename, "w"))
 	{
         if (!m_file)
             throw std::runtime_error("file open failure");
@@ -176,14 +180,16 @@ public:
 		return fwrite(ptr, size, count, m_file);
     }
 
+    /**
+     * Return the number of bytes written to the file stream
+     */
 	size_t size()
 	{
-		return m_size;
+		return ftell(m_file);
 	}
 
 private:
     std::FILE* m_file;
-	size_t m_size;
 
     // prevent copying and assignment; not implemented
 	BinaryFile (const BinaryFile &);

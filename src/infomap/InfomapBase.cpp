@@ -47,6 +47,7 @@
 #include "../utils/Date.h"
 #include "Network.h"
 #include "FlowNetwork.h"
+#include "../io/version.h"
 
 void InfomapBase::run()
 {
@@ -1360,7 +1361,9 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 	{
 		bool writeEdges = m_config.printBinaryFlowTree;
 		outName = io::Str() << m_config.outDirectory << filename << (writeEdges? ".bftree" : ".btree");
-		HierarchicalNetwork hierData(filename, numLeafNodes(), !m_config.isUndirected());
+
+		HierarchicalNetwork hierData(filename, numLeafNodes(), !m_config.isUndirected(),
+				hierarchicalCodelength, oneLevelCodelength, INFOMAP_VERSION);
 		RELEASE_OUT("\nBuild streamable " << (writeEdges ? "flow " : "") <<	"tree... " << std::flush);
 		buildHierarchicalNetwork(hierData, writeEdges);
 		RELEASE_OUT("done! Writing to " << outName << "... " << std::flush);
