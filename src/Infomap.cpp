@@ -221,7 +221,7 @@ int run(int argc, char* argv[])
 	}
 
 	std::cout << "===========================================\n";
-	std::cout << "  Infomap starts at " << Date() << "\n";
+	std::cout << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
 	std::cout << "===========================================\n";
 
 	runInfomap(conf);
