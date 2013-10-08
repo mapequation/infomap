@@ -1260,6 +1260,9 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 
 	std::string outName;
 
+	// Sort tree on flow
+	sortTree();
+
 	// Print .tree
 	if (m_config.printTree)
 	{
@@ -1272,7 +1275,7 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 		treeOut << "# Codelength " << hierarchicalCodelength << " bits in " <<
 				Stopwatch::getElapsedTimeSinceProgramStartInSec() << "s. Network size: "
 				<< numLeafNodes() << " nodes and " << m_treeData.numLeafEdges() << " links." << std::endl;
-		sortTree();
+
 		printSubInfomapTree(treeOut, m_treeData);
 	//	printSubInfomapTreeDebug(treeOut, m_treeData);
 
