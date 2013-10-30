@@ -118,13 +118,23 @@ void InfomapBase::run()
 	std::cout << "\n\n";
 	if (m_config.numTrials > 1)
 	{
+		double averageCodelength = 0.0;
+		double minCodelength = codelengths[0];
+		double maxCodelength = 0.0;
 		std::cout << std::fixed << std::setprecision(9);
 		std::cout << "Codelengths for " << m_config.numTrials << " trials: [";
 		for (std::vector<double>::const_iterator it(codelengths.begin()); it != codelengths.end(); ++it)
 		{
-			std::cout << *it << ", ";
+			double mdl = *it;
+			std::cout << mdl << ", ";
+			averageCodelength += mdl;
+			minCodelength = std::min(minCodelength, mdl);
+			maxCodelength = std::max(maxCodelength, mdl);
 		}
-		std::cout << "\b\b]\n\n";
+		averageCodelength /= m_config.numTrials;
+		std::cout << "\b\b]\n";
+		std::cout << "[min, average, max] codelength: [" <<
+				minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n\n";
 		std::cout << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
 	}
 
