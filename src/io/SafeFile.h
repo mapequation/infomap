@@ -117,6 +117,85 @@ protected:
 	size_t m_size;
 };
 
+
+#include <cstdio>
+
+template<typename T>
+struct ToBinary {
+	static size_t write(T value, std::FILE* file)
+	{
+		return fwrite(reinterpret_cast<const char*>(&value), sizeof(value), 1, file);
+	}
+};
+
+template<>
+struct ToBinary<std::string> {
+	static size_t write(std::string value, std::FILE* file)
+	{
+		unsigned short stringLength = static_cast<unsigned short>(value.length());
+		fwrite(&stringLength, sizeof(stringLength), 1, file);
+		return fwrite(value.c_str(), sizeof(char), value.length(), file);
+	}
+};
+
+/**
+ * Wrapper class for writing low-level binary data with a simple stream interface.
+ *
+ * @note Strings are prepended with its length as unsigned short.
+ */
+class BinaryFile {
+public:
+	BinaryFile (const char* filename)
+	: m_file(std::fopen(filename, "w"))
+	{
+        if (!m_file)
+            throw std::runtime_error("file open failure");
+    }
+
+    ~BinaryFile() {
+        if (std::fclose(m_file)) {
+           // failed to flush latest changes.
+           // handle it
+        }
+    }
+
+    template<typename T>
+    BinaryFile& operator<<(T value)
+	{
+    	ToBinary<T>::write(value, m_file);
+    	return *this;
+	}
+
+
+    /**
+     * Writes an array of <i>count</i> elements, each one with a size of <i>size</i> bytes,
+     * from the block of memory pointed by <i>ptr</i> to the current position in the stream.
+     * The position indicator of the stream is advanced by the total number of bytes written.
+     *
+     * @see cstdio.fwrite
+     * @return The total number of elements successfully written.
+     */
+    size_t write(const void * ptr, size_t size, size_t count)
+    {
+		return fwrite(ptr, size, count, m_file);
+    }
+
+    /**
+     * Return the number of bytes written to the file stream
+     */
+	size_t size()
+	{
+		return ftell(m_file);
+	}
+
+private:
+    std::FILE* m_file;
+
+    // prevent copying and assignment; not implemented
+	BinaryFile (const BinaryFile &);
+	BinaryFile & operator= (const BinaryFile &);
+};
+
 class SafeOutFileBinary : public ofstream_binary
 {
 public:

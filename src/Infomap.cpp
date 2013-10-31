@@ -106,19 +106,22 @@ Config getConfig(int argc, char *argv[])
 
 	bool dummyUndirected;
 	api.addOptionArgument(dummyUndirected, 'u', "undirected",
-			"Assume undirected links (default)");
+			"Assume undirected links. (default)");
 
 	api.addOptionArgument(conf.directed, 'd', "directed",
-			"Assume directed links");
+			"Assume directed links.");
 
 	api.addOptionArgument(conf.undirdir, 't', "undirdir",
 			"Two-mode dynamics: Assume undirected links for calculating flow, but directed when minimizing codelength.");
 
+	api.addOptionArgument(conf.outdirdir, "outdirdir",
+			"Two-mode dynamics: Count only ingoing links when calculating the flow, but all when minimizing codelength.");
+
 	api.addOptionArgument(conf.rawdir, 'w', "rawdir",
 			"Two-mode dynamics: Assume directed links and let the raw link weights be the flow.");
 
-	api.addOptionArgument(conf.unrecordedTeleportation, 'e', "unrecorded-teleportation",
-			"Assume teleportation when calculating flow (on directed network) but don't encode that flow.");
+	api.addOptionArgument(conf.recordedTeleportation, 'e', "recorded-teleportation",
+			"If teleportation is used to calculate the flow, also record it when minimizing codelength.");
 
 	api.addOptionArgument(conf.teleportToNodes, 'o', "to-nodes",
 			"Teleport to nodes (like the PageRank algorithm) instead of to links.");
@@ -127,7 +130,7 @@ Config getConfig(int argc, char *argv[])
 			"The probability of teleporting to a random node or link.", "f");
 
 	api.addOptionArgument(conf.selfTeleportationProbability, 'y', "self-link-teleportation-probability",
-			"The probability of teleporting to itself.", "f");
+			"The probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", "f");
 
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
 			"A seed (integer) to the random number generator.", "n");
@@ -218,7 +221,7 @@ int run(int argc, char* argv[])
 	}
 
 	std::cout << "===========================================\n";
-	std::cout << "  Infomap starts at " << Date() << "\n";
+	std::cout << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
 	std::cout << "===========================================\n";
 
 	runInfomap(conf);

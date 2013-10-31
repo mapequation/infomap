@@ -36,6 +36,7 @@
 #include <ios>
 #include <deque>
 #include <algorithm>
+#include <set>
 #include "SafeFile.h"
 
 enum EdgeAggregationPolicy { NONE, PARTIAL, FULL };
@@ -44,14 +45,17 @@ static const unsigned int SIZE_OF_UNSIGNED_INT = sizeof(unsigned int);		// 4 byt
 static const unsigned int SIZE_OF_CHAR = sizeof(char);						// 1 byte (8 bit)
 static const unsigned int SIZE_OF_FLOAT = sizeof(float); 					// 4 byte (32 bit)
 static const unsigned int SIZE_OF_UNSIGNED_SHORT = sizeof(unsigned short);	// 2 byte (16 bit)
-static const unsigned int MIN_TOTAL_SIZE = SIZE_OF_UNSIGNED_SHORT + SIZE_OF_FLOAT + SIZE_OF_UNSIGNED_SHORT;
+
+// Min node size: name size + numChildren + flow + exitFlow
+static const unsigned int MIN_TOTAL_SIZE = 2*SIZE_OF_UNSIGNED_SHORT + 2*SIZE_OF_FLOAT;
+// source + target + flow
+static const unsigned int CHILD_EDGE_SIZE = 2*SIZE_OF_UNSIGNED_SHORT + SIZE_OF_FLOAT;
 
 struct NodeData {
-	NodeData(unsigned int level, double flow = 0.0, std::string name = "") :
-		level(level),
+	NodeData(double flow = 0.0, double exitFlow = 0.0, std::string name = "") :
 		flow(flow),
-		enter(0.0),
-		exit(0.0),
+		enterFlow(0.0),
+		exitFlow(exitFlow),
 		teleportRate(0.0),
 		danglingFlow(0.0),
 		indexCodelength(0.0),
@@ -59,10 +63,9 @@ struct NodeData {
 		name(name)
 //		id(0)
 	{}
-	unsigned int level;
 	double flow;
-	double enter;
-	double exit;
+	double enterFlow;
+	double exitFlow;
 	double teleportRate;
 	double danglingFlow;
 	double indexCodelength;
@@ -71,57 +74,21 @@ struct NodeData {
 //	unsigned int id;
 };
 
-class SNode; // Forward declaration
 
-class SEdge {
-public:
-	SEdge(SNode* source, SNode* target, double flow) :
-		source(source),
-		target(target),
-		flow(flow),
-		parentEdge(0),
-		pathComputed(false),
-		depthFromCommonAncestor(0),
-		targetUpPath(0)
-	{
-	}
-
-	// TODO: Have the FullNode::prepareEdgeSerialization in this class, need separate implementation to different file for linker.
-	unsigned int serializationSize()
-	{
-//		if (!pathComputed)
-//		{
-//			source->prepareEdgeSerialization(*this);
-//			pathComputed = true;
-//		}
-		return (depthFromCommonAncestor+1) * SIZE_OF_UNSIGNED_SHORT + SIZE_OF_FLOAT;
-	}
-
-	// Operations:
-	void serialize(ofstream_binary& outFile) const
-	{
-		// How many parent calls needed to reach the common ancestor
-		outFile << depthFromCommonAncestor;
-		// The path from common ancestor to target node
-		for (std::vector<unsigned short>::const_reverse_iterator rit = targetUpPath.rbegin(); rit < targetUpPath.rend(); ++rit)
-			outFile << *rit;
-		// The edge weight
-		outFile << static_cast<float>(flow);
-	}
-
-	SNode* source;
-	SNode* target;
-	double flow;
-	SEdge* parentEdge; // The aggregated edge between the parent nodes depending on the aggregation policy
-
-	bool pathComputed;
-	unsigned short depthFromCommonAncestor;
-	std::vector<unsigned short> targetUpPath;
-
-	static EdgeAggregationPolicy aggregationPolicy;
+struct ChildEdge {
+	ChildEdge(unsigned short int source, unsigned short int target, double flow)
+	: source(source), target(target), flow(flow) {}
+	unsigned short int source;
+	unsigned short int target;
+	mutable double flow;
 };
 
-
+struct EdgeComp {
+	bool operator() (const ChildEdge& lhs, const ChildEdge& rhs) const
+	{
+		return lhs.source == rhs.source ? (lhs.target < rhs.target) : (lhs.source < rhs.source);
+	}
+};
 
 /**
  *  A node class that is self-contained and can be used consistently for both leaf nodes
@@ -129,15 +96,18 @@ public:
  */
 class SNode {
 public:
-	typedef std::deque<SNode*>		NodePtrList;
-	typedef std::deque<SEdge*>		EdgePtrList;
+	typedef std::deque<SNode*>				NodePtrList;
+	typedef std::set<ChildEdge, EdgeComp>	ChildEdgeList;
 
-	SNode(NodeData data, unsigned short depth = 0, unsigned short parentIndex = 0, unsigned int leafIndex = 0) :
+	SNode(NodeData data, unsigned short depth, unsigned short parentIndex, unsigned int id) :
 		data(data),
 		depth(depth),
+		depthBelow(0),
+		parentNode(0),
 		parentIndex(parentIndex),
-		leafIndex(leafIndex),
-		parentNode(0)
+		isLeaf(false),
+		leafIndex(0),
+		id(id)
 	{
 	}
 
@@ -145,9 +115,12 @@ public:
 	SNode(SNode const& other) :
 		data(other.data),
 		depth(other.depth),
+		depthBelow(other.depthBelow),
+		parentNode(other.parentNode),
 		parentIndex(other.parentIndex),
-		leafIndex(other.leafIndex),
-		parentNode(other.parentNode)
+		isLeaf(false),
+		leafIndex(0),
+		id(other.id)
 	{
 	}
 
@@ -165,12 +138,6 @@ public:
 			delete children[i];
 		}
 		children.clear();
-		// Only delete the outEdges in each node as the inEdges are a collection of other node's outEdges.
-		for (int i = outEdges.size() - 1; i >= 0; --i) {
-			delete outEdges[i];
-		}
-		outEdges.clear();
-		inEdges.clear();
 	}
 
 	void addChild(SNode& child)
@@ -184,15 +151,14 @@ public:
 	NodeData data;
 
 	unsigned short depth;
-	unsigned short parentIndex; // The index of this node in its tree parent's child list.
-	unsigned int leafIndex; // The index in the original network file if a leaf node.
+	unsigned short depthBelow;
 	SNode* parentNode;
+	unsigned short parentIndex; // The index of this node in its tree parent's child list.
+	bool isLeaf;
+	unsigned int leafIndex; // The index in the original network file if a leaf node.
+	unsigned int id;
 	NodePtrList children;
-	EdgePtrList inEdges;
-	EdgePtrList outEdges;
-
-private:
-	std::map<SNode*, SEdge*> mapOfAggregatedOutEdges; // The key object is the target node
+	ChildEdgeList childEdges;
 
 
 public:
@@ -200,33 +166,50 @@ public:
 	// Capacity:
 	unsigned int serializationSize(bool writeEdges)
 	{
-		unsigned int size = MIN_TOTAL_SIZE + data.name.length() * SIZE_OF_CHAR + (children.size() > 0 ? SIZE_OF_UNSIGNED_INT : 0);
-		if (writeEdges)
+		unsigned int size = MIN_TOTAL_SIZE + data.name.length() * SIZE_OF_CHAR;
+		if (children.size() > 0)
+			size += SIZE_OF_UNSIGNED_INT + SIZE_OF_UNSIGNED_SHORT;
+		// The edges are printed out after the last child
+		if (writeEdges && parentNode != NULL && (parentIndex + 1) == parentNode->children.size())
 		{
-			size += SIZE_OF_UNSIGNED_SHORT; // outDegree
-			for (SNode::EdgePtrList::iterator it = outEdges.begin(); it != outEdges.end(); ++it)
-				size += (*it)->serializationSize();
+			// numEdges + {edges}
+			size += parentNode->childEdges.size() * CHILD_EDGE_SIZE + SIZE_OF_UNSIGNED_SHORT;
 		}
 		return size;
 	}
 
 	// Operations:
-	void serialize(ofstream_binary& outFile, unsigned int childPosition, bool writeEdges)
+	void serialize(BinaryFile& outFile, unsigned int childPosition, bool writeEdges)
 	{
-		outFile << static_cast<unsigned short>(data.name.length()); // unsigned short nameLength
+//		outFile << static_cast<unsigned short>(data.name.length()); // unsigned short nameLength
 		outFile << data.name;					// char* name
-		outFile << static_cast<float>(data.flow); // float pageRank
+		outFile << static_cast<float>(data.flow); // float flow
+		outFile << static_cast<float>(data.exitFlow); // float exitFlow
 		unsigned short numChildren = static_cast<unsigned short>(children.size());
 		outFile << numChildren; 			// unsigned short numChildren
 		if (numChildren > 0)
-			outFile << childPosition;		// unsigned int childPosition
-
-		if (writeEdges)
 		{
-			unsigned short outDegree = static_cast<unsigned short>(outEdges.size());
-			outFile << outDegree;
-			for (SNode::EdgePtrList::const_iterator it = outEdges.begin(); it != outEdges.end(); ++it)
-				(*it)->serialize(outFile);
+			outFile << depthBelow;			// unsigned short depthBelow
+			outFile << childPosition;		// unsigned int childPosition
+		}
+
+		// Write edges after the last child of the parent node
+		if (writeEdges && parentNode != NULL && (parentIndex + 1) == parentNode->children.size())
+		{
+			const ChildEdgeList& edges = parentNode->childEdges;
+			unsigned short numEdges = static_cast<unsigned short>(edges.size());
+			// First sort the edges
+			std::multimap<double, ChildEdge, std::greater<double> > sortedEdges;
+			for (SNode::ChildEdgeList::const_iterator it = edges.begin(); it != edges.end(); ++it)
+				sortedEdges.insert(std::make_pair(it->flow, *it));
+			outFile << numEdges;
+			for (std::multimap<double, ChildEdge, std::greater<double> >::const_iterator it =
+					sortedEdges.begin(); it != sortedEdges.end(); ++it)
+			{
+				outFile << it->second.source;
+				outFile << it->second.target;
+				outFile << static_cast<float>(it->second.flow);
+			}
 		}
 	}
 
@@ -242,78 +225,19 @@ public:
 	}
 
 
-
-	void createEdge(SNode* target, double flow)
+	void createChildEdge(unsigned short int sourceIndex, unsigned short int targetIndex, double flow, bool directed)
 	{
-		createEdge(this, target, flow, NULL);
-	}
+		if (!directed && sourceIndex > targetIndex)
+			std::swap(sourceIndex, targetIndex);
 
-private:
+		ChildEdge edge(sourceIndex, targetIndex, flow);
 
-	/**
-	 * Create a weighted edge between the source and target node.
-	 * If a non-null child edge is provided, its parentEdge property will be set to the created edge.
-	 */
-	void createEdge(SNode* source, SNode* target, float flow, SEdge* childEdge = NULL)
-	{
-		SEdge* edge;
-		std::map<SNode*, SEdge*>::iterator find = source->mapOfAggregatedOutEdges.find(target);
-		if (find == source->mapOfAggregatedOutEdges.end()) // Add the weight if an edge is already created between the nodes
-		{
-			edge = new SEdge(source, target, flow);
-			buildShortestPath(*edge);
-			std::cout << "\tCreated new edge: " << toString(*edge) << " on depth: " << source->depth << std::endl;
-			source->outEdges.push_back(edge);
-			target->inEdges.push_back(edge);
-
-			// Map the edge so that other leaf edges may be aggregated to it.
-			source->mapOfAggregatedOutEdges.insert(std::make_pair(target, edge));
-
-			if (childEdge != NULL)
-				childEdge->parentEdge = edge;
-
-			// Create the edge between the parent nodes recursively while different.
-			if (source->parentNode != target->parentNode)
-				createEdge(source->parentNode, target->parentNode, flow, edge);
-		}
+		ChildEdgeList::iterator it = childEdges.find(edge);
+		if (it == childEdges.end())
+			childEdges.insert(edge);
 		else
-		{
-			// The parent edge already exists, only aggregate the weight recursively
-			edge = find->second;
-			if (childEdge != NULL)
-				childEdge->parentEdge = edge;
-			std::cout << "\tAdd weight (" << flow << ") to " << toString(*edge) << std::endl;
-			do
-			{
-				edge->flow += flow;
-				edge = edge->parentEdge;
-			}
-			while (edge != NULL);
-		}
-	}
+			it->flow += flow;
 
-
-	void buildShortestPath(SEdge& edge)
-	{
-		unsigned short depthFromCommonAncestor = 0;
-		SNode* sourceAncestor = edge.source;
-		SNode* targetAncestor = edge.target;
-		while (sourceAncestor != targetAncestor)
-		{
-			++depthFromCommonAncestor;
-			edge.targetUpPath.push_back(targetAncestor->parentIndex);
-			sourceAncestor = sourceAncestor->parentNode;
-			targetAncestor = targetAncestor->parentNode;
-		}
-		edge.depthFromCommonAncestor = depthFromCommonAncestor;
-	}
-
-
-	std::string toString(const SEdge& edge)
-	{
-		std::ostringstream oss;
-		oss << edge.source->data.name << " --> " << edge.target->data.name << " (" << edge.flow << ")";
-		return oss.str();
 	}
 
 };
@@ -323,10 +247,18 @@ class HierarchicalNetwork
 public:
 	typedef SNode	node_type;
 
-	HierarchicalNetwork(unsigned int numLeafNodes)
-	:	m_rootNode(1.0),
+	HierarchicalNetwork(std::string networkName, unsigned int numLeafNodes, bool directedEdges,
+			double codelength, double oneLevelCodelength, std::string infomapVersion)
+	:	m_rootNode(1.0, 0, 0, 0),
+	 	m_networkName(networkName),
 		m_leafNodes(numLeafNodes),
-		m_numNodesInTree(1)
+		m_directedEdges(directedEdges),
+		m_numLeafEdges(0),
+		m_numNodesInTree(1),
+		m_maxDepth(0),
+		m_codelength(codelength),
+		m_oneLevelCodelength(oneLevelCodelength),
+		m_infomapVersion(infomapVersion)
 	{}
 
 	virtual ~HierarchicalNetwork() {}
@@ -337,21 +269,33 @@ public:
 		return m_rootNode;
 	}
 
-	SNode& addNode(SNode& parent, double flow)
+	SNode& addNode(SNode& parent, double flow, double exitFlow)
 	{
-		SNode* n = new SNode(NodeData(flow), parent.depth + 1, parent.children.size());
+		SNode* n = new SNode(NodeData(flow, exitFlow), parent.depth + 1, parent.children.size(), m_numNodesInTree);
 		//TODO: Let the node be created in the node class as that is responsible for deleting it!
 		parent.addChild(*n);
 		++m_numNodesInTree;
 		return *n;
 	}
 
-	SNode& addLeafNode(SNode& parent, double flow, std::string name, unsigned int leafIndex)
+	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex)
 	{
-		SNode& n = addNode(parent, flow);
+		SNode& n = addNode(parent, flow, exitFlow);
 		n.data.name = name;
+		n.isLeaf = true;
 		n.leafIndex = leafIndex;
 		m_leafNodes[leafIndex] = &n;
+		propagateNodeNameUpInHierarchy(n);
+		if (n.depth > m_maxDepth)
+			m_maxDepth = n.depth;
+		SNode* node = n.parentNode;
+		unsigned short currentDepthBelow = 1;
+		while (node != NULL && node->depthBelow < currentDepthBelow)
+		{
+			node->depthBelow = currentDepthBelow++;
+			node = node->parentNode;
+		}
+
 		return n;
 	}
 
@@ -373,9 +317,27 @@ public:
 		else if (source->depth < target->depth)
 			do { target = target->parentNode; } while (source->depth != target->depth);
 
-		source->createEdge(target, flow);
+//		source->createEdge(target, flow, m_directedEdges);
+
+		// Only add links under the same parent
+		while (source->parentNode != target->parentNode)
+		{
+			source = source->parentNode;
+			target = target->parentNode;
+		}
+		source->parentNode->createChildEdge(source->parentIndex, target->parentIndex, flow, m_directedEdges);
+
+		++m_numLeafEdges;
 	}
 
+	void propagateNodeNameUpInHierarchy(SNode& node)
+	{
+		if (node.parentNode != 0 && node.parentIndex == 0)
+		{
+			node.parentNode->data.name = io::Str() << node.data.name << (node.isLeaf? ",." : ".");
+			propagateNodeNameUpInHierarchy(*node.parentNode);
+		}
+	}
 
 
 	/**
@@ -390,19 +352,28 @@ public:
 	 *
 	 * [Network]
 	 * [depth 0]
-	 * binary rootNode
+	 * rootNode
 	 *
 	 * [depth 1]
-	 * binary firstModule
-	 * binary secondModule
-	 * binary ...
+	 * firstModule
+	 * secondModule
+	 * ...
+	 * lastModule
+	 * edgesBetweenChildrenOfRootNode
 	 *
 	 * [depth 2]
-	 * binary firstChildOfFirstModule
-	 * binary secondChildOfFirstModule
-	 * binary ...
-	 * binary firstChildOfSecondModule
-	 * binary ...
+	 * firstChildOfFirstModule
+	 * secondChildOfFirstModule
+	 * ...
+	 * lastChildOfFirstModule
+	 * edgesBetweenChildrenOfFirstModuleOnDepth1
+	 *
+	 * firstChildOfSecondModule
+	 * ...
+	 * lastChildOfSecondModule
+	 * edgesBetweenChildrenOfSecondModuleOnDepth1
+	 *
+	 * ...
 	 *
 	 * [EOF]
 	 *
@@ -410,27 +381,28 @@ public:
 	 */
 	void writeStreamableTree(const std::string& fileName, bool writeEdges)
 	{
-//		SafeOutFile out(fileName.c_str());
-		SafeOutFileBinary out(fileName.c_str());
-//		SafeOutFileDebug out(fileName.c_str());
+		BinaryFile out(fileName.c_str());
 
-		std::string magicTag ("infomap");
-		unsigned short firstTagLength = magicTag.length();
-		unsigned short formatVersion = 1;
-		unsigned int childPosition = SIZE_OF_UNSIGNED_SHORT + firstTagLength * SIZE_OF_CHAR + SIZE_OF_UNSIGNED_SHORT + SIZE_OF_UNSIGNED_INT * 2;
-//		unsigned int childPosition = SIZE_OF_UNSIGNED_INT * 2;
-		unsigned int numNodesTotal = m_numNodesInTree;
+		std::string magicTag ("Infomap");
+		unsigned int numLeafNodes = m_leafNodes.size();
+		std::string infomapOptions("");
 
-
-		out << firstTagLength;
 		out << magicTag;
-		out << formatVersion;
-		out << childPosition;
-		out << numNodesTotal;
+		out << m_infomapVersion;
+		out << infomapOptions;
+		out << m_directedEdges;
+		out << m_networkName;
+		out << numLeafNodes;
+		out << m_numLeafEdges;
+		out << m_numNodesInTree;
+		out << m_maxDepth;
+		out << m_oneLevelCodelength;
+		out << m_codelength;
 
 		std::deque<SNode*> nodeList;
 		nodeList.push_back(&m_rootNode);
-		childPosition += m_rootNode.serializationSize(writeEdges);
+		m_rootNode.data.name = m_networkName;
+		unsigned int childPosition = out.size() + m_rootNode.serializationSize(writeEdges);
 		while (nodeList.size() > 0) // visit tree breadth first
 		{
 			SNode& node = *nodeList.front();
@@ -464,8 +436,15 @@ private:
 
 
 	SNode m_rootNode;
+	std::string m_networkName;
 	SNode::NodePtrList m_leafNodes;
+	bool m_directedEdges;
+	unsigned int m_numLeafEdges;
 	unsigned int m_numNodesInTree;
+	unsigned int m_maxDepth;
+	double m_codelength;
+	double m_oneLevelCodelength;
+	std::string m_infomapVersion;
 
 };
 

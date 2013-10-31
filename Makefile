@@ -75,6 +75,11 @@ all: $(TARGET)
 clean:
 	@-rm -f $(TARGET) $(OBJECTS)
 
+noomp: $(OBJECTS)
+	@echo "Linking object files to target $(TARGET) without OpenMP..."
+	@$(LINKER) -o $(TARGET) $^
+	@echo "-- Link finished --"
+
 ## Rule for making the actual target
 $(TARGET): $(OBJECTS)
 	@echo "Linking object files to target $@..."

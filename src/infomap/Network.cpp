@@ -70,7 +70,8 @@ void Network::parsePajekNetwork(std::string filename)
 	string buf;
 	SafeInFile input(filename.c_str());
 
-	if( getline(input,line) == NULL)
+	std::getline(input,line);
+	if (!input.good())
 		throw FileFormatError("Can't read first line of pajek file.");
 
 	unsigned int numNodes = 0;
@@ -102,7 +103,7 @@ void Network::parsePajekNetwork(std::string filename)
 	// Read node names, assuming order 1, 2, 3, ...
 	for (unsigned int i = 0; i < numNodes; ++i)
 	{
-		getline(input, line);
+		std::getline(input,line);
 		unsigned int nameStart = line.find_first_of("\"");
 		unsigned int nameEnd = line.find_last_of("\"");
 		string name;
@@ -130,7 +131,7 @@ void Network::parsePajekNetwork(std::string filename)
 	{
 		unsigned int surplus = specifiedNumNodes - numNodes;
 		for (unsigned int i = 0; i < surplus; ++i)
-			getline(input, line);
+			std::getline(input, line);
 	}
 
 	// Read the number of links in the network
@@ -149,7 +150,7 @@ void Network::parsePajekNetwork(std::string filename)
 	m_totalLinkWeight = 0.0;
 
 	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
-	while(getline(input, line))
+	while(std::getline(input, line).good())
 	{
 		if (line.length() == 0)
 			continue;
@@ -221,7 +222,10 @@ void Network::parsePajekNetwork(std::string filename)
 	if (maxLinkEnd >= numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 
-//	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
+	if (m_links.size() == 0)
+		throw InputDomainError(io::Str() << "No links could be found!");
+
+	//	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
 	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << m_links.size() << " links. ";
 //	std::cout << "Average node weight: " << (m_sumNodeWeights / numNodes) << ". ";
 	if (m_config.nodeLimit > 0)
@@ -255,11 +259,9 @@ void Network::parseLinkList(std::string filename)
 	unsigned int lowestNodeNumber = m_config.zeroBasedNodeNumbers ? 0 : 1;
 
 	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
-	while(getline(input, line))
+	while(std::getline(input, line).good())
 	{
-		if (line.length() == 0)
-			continue;
-		if (line[0] == '#')
+		if (line.length() == 0 || line[0] == '#')
 			continue;
 		++numEdgeLines;
 		ss.clear();
@@ -321,6 +323,9 @@ void Network::parseLinkList(std::string filename)
 		}
 	}
 
+	if (m_links.size() == 0)
+		throw InputDomainError(io::Str() << "No links could be found!");
+
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
 	if (maxLinkEnd == zeroMinusOne)
@@ -369,11 +374,9 @@ void Network::parseSparseLinkList(std::string filename)
 	unsigned int numLinks = 0;
 
 	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
-	while(getline(input, line))
+	while(std::getline(input, line).good())
 	{
-		if (line.length() == 0)
-			continue;
-		if (line[0] == '#')
+		if (line.length() == 0 || line[0] == '#')
 			continue;
 		++numEdgeLines;
 		ss.clear();
@@ -446,6 +449,8 @@ void Network::parseSparseLinkList(std::string filename)
 		}
 	}
 
+	if (m_links.size() == 0)
+		throw InputDomainError(io::Str() << "No links could be found!");
 
 	m_numNodes = links.size();
 

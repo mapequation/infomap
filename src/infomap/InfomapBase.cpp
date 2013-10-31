@@ -47,6 +47,7 @@
 #include "../utils/Date.h"
 #include "Network.h"
 #include "FlowNetwork.h"
+#include "../io/version.h"
 
 void InfomapBase::run()
 {
@@ -117,13 +118,23 @@ void InfomapBase::run()
 	std::cout << "\n\n";
 	if (m_config.numTrials > 1)
 	{
+		double averageCodelength = 0.0;
+		double minCodelength = codelengths[0];
+		double maxCodelength = 0.0;
 		std::cout << std::fixed << std::setprecision(9);
 		std::cout << "Codelengths for " << m_config.numTrials << " trials: [";
 		for (std::vector<double>::const_iterator it(codelengths.begin()); it != codelengths.end(); ++it)
 		{
-			std::cout << *it << ", ";
+			double mdl = *it;
+			std::cout << mdl << ", ";
+			averageCodelength += mdl;
+			minCodelength = std::min(minCodelength, mdl);
+			maxCodelength = std::max(maxCodelength, mdl);
 		}
-		std::cout << "\b\b]\n\n";
+		averageCodelength /= m_config.numTrials;
+		std::cout << "\b\b]\n";
+		std::cout << "[min, average, max] codelength: [" <<
+				minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n\n";
 		std::cout << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
 	}
 
@@ -1259,6 +1270,9 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 
 	std::string outName;
 
+	// Sort tree on flow
+	sortTree();
+
 	// Print .tree
 	if (m_config.printTree)
 	{
@@ -1271,7 +1285,7 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 		treeOut << "# Codelength " << hierarchicalCodelength << " bits in " <<
 				Stopwatch::getElapsedTimeSinceProgramStartInSec() << "s. Network size: "
 				<< numLeafNodes() << " nodes and " << m_treeData.numLeafEdges() << " links." << std::endl;
-		sortTree();
+
 		printSubInfomapTree(treeOut, m_treeData);
 	//	printSubInfomapTreeDebug(treeOut, m_treeData);
 
@@ -1358,48 +1372,20 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 
 	if (m_config.printBinaryTree || m_config.printBinaryFlowTree)
 	{
-		outName = io::Str() << m_config.outDirectory << filename << ".btree";
-		HierarchicalNetwork hierData(numLeafNodes());
-		RELEASE_OUT("\nBuild streamable tree... " << std::flush);
-		buildHierarchicalNetwork(hierData, m_config.printBinaryFlowTree);
-		RELEASE_OUT("done! Writing streamable tree... " << std::flush);
-		hierData.writeStreamableTree(outName, false);
+		bool writeEdges = m_config.printBinaryFlowTree;
+		outName = io::Str() << m_config.outDirectory << filename << (writeEdges? ".bftree" : ".btree");
+
+		HierarchicalNetwork hierData(filename, numLeafNodes(), !m_config.isUndirected(),
+				hierarchicalCodelength, oneLevelCodelength, INFOMAP_VERSION);
+		RELEASE_OUT("\nBuild streamable " << (writeEdges ? "flow " : "") <<	"tree... " << std::flush);
+		buildHierarchicalNetwork(hierData, writeEdges);
+		RELEASE_OUT("done! Writing to " << outName << "... " << std::flush);
+		hierData.writeStreamableTree(outName, writeEdges);
 		RELEASE_OUT("done!" << std::endl);
 	}
 
 }
 
-void InfomapBase::printNetworkDebug(std::string filenameSuffix, bool includeSubInfomapInstances, bool toStdOut)
-{
-	sortTree();
-	if (toStdOut)
-	{
-		ALL_OUT(std::endl << "Printing current tree at \"" << filenameSuffix << "\":" << std::endl);
-//		if (includeSubInfomapInstances)
-//			printSubInfomapTree(std::cout, m_treeData);
-//		else
-//			printTree(std::cout, *root());
-		printSubInfomapTreeDebug(std::cout, m_treeData);
-		ALL_OUT(std::flush << std::endl);
-	}
-	else
-	{
-		std::string filename = FileURI(m_config.networkFile).getName();
-
-		std::ostringstream oss;
-		oss << m_config.outDirectory << filename <<
-				"_debug_" << m_debugOutCounter++ << "_" << filenameSuffix << ".tree";
-		ALL_OUT("(Printing tree to " << oss.str() << ") " << std::flush);
-		SafeOutFile treeOut(oss.str().c_str());
-		treeOut << std::setprecision(10);
-		treeOut << "# Codelength = " << hierarchicalCodelength << " bits." << std::endl;
-		if (includeSubInfomapInstances)
-			printSubInfomapTreeDebug(treeOut, m_treeData);
-		else
-			printTree(treeOut, *root());
-	}
-
-}
 
 void InfomapBase::printClusterVector(std::ostream& out)
 {

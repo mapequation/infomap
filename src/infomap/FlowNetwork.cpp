@@ -64,7 +64,8 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 		if (config.isUndirected())
 			m_sumLinkOutWeight[linkEnds.second] += linkWeight;
 		m_nodeFlow[linkEnds.first] += linkWeight / sumUndirLinkWeight;
-		m_nodeFlow[linkEnds.second] += linkWeight / sumUndirLinkWeight;
+		if (!config.outdirdir)
+			m_nodeFlow[linkEnds.second] += linkWeight / sumUndirLinkWeight;
 		m_flowLinks[linkIndex] = Link(linkEnds.first, linkEnds.second, linkWeight);
 	}
 
@@ -92,7 +93,7 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 
 	if (!config.directed)
 	{
-		if (config.undirdir)
+		if (config.undirdir || config.outdirdir)
 		{
 			//Take one last power iteration
 			std::vector<double> nodeFlowSteadyState(m_nodeFlow);
@@ -121,12 +122,15 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 				m_flowLinks[i].flow /= sumUndirLinkWeight;
 		}
 
-		std::cout << "using undirected links" << (config.undirdir? ", switching to directed after steady state... done!" :
-				"... done!") << std::endl;
+		if (config.outdirdir)
+			std::cout << "counting only ingoing links... done!" << std::endl;
+		else
+			std::cout << "using undirected links" << (config.undirdir? ", switching to directed after steady state... done!" :
+					"... done!") << std::endl;
 		return;
 	}
 
-	std::cout << "using " << (config.unrecordedTeleportation ? "unrecorded" : "recorded") << " teleportation to " <<
+	std::cout << "using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
 			(config.teleportToNodes ? "nodes" : "links") << "... " << std::flush;
 
 
@@ -139,10 +143,10 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 	}
 	else // Teleport to nodes
 	{
-		// Teleport proportionally to in-degree, or out-degree if unrecorded teleportation.
+		// Teleport proportionally to out-degree, or in-degree if recorded teleportation.
 		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 		{
-			unsigned int toNode = config.unrecordedTeleportation ? linkIt->source : linkIt->target;
+			unsigned int toNode = config.recordedTeleportation ? linkIt->target : linkIt->source;
 			m_nodeTeleportRates[toNode] += linkIt->flow / totalLinkWeight;
 		}
 	}
@@ -224,7 +228,7 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 
 	double sumNodeRank = 1.0;
 
-	if (config.unrecordedTeleportation)
+	if (!config.recordedTeleportation)
 	{
 		//Take one last power iteration excluding the teleportation (and normalize node flow to sum 1.0)
 		sumNodeRank = 1.0 - danglingRank;

@@ -71,14 +71,13 @@ void ClusterReader::readData(const string filename)
 	if (numVertices == 0)
 		throw FileFormatError("Number of vertices declared in the cluster data file is zero.");
 
-	std::ostringstream oss;
 	unsigned int numParsedValues = 0;
 	while(std::getline(clusterFile, line))
 	{
 	    std::istringstream lineStream(line);
 		unsigned int clusterIndex;
 		if (!(lineStream >> clusterIndex))
-			throw FileFormatError("Couldn't parse cluster data from line " + numParsedValues);
+			throw FileFormatError(io::Str() << "Couldn't parse cluster data from line " << (numParsedValues+1));
 
 		// Assume data range [1..numNodes]
 //		if (clusterIndex == 0 || clusterIndex > m_clusterData.size())
@@ -88,8 +87,8 @@ void ClusterReader::readData(const string filename)
 
 		// Assume data range [0..numNodes-1]
 		if (clusterIndex >= m_clusterData.size())
-			throw FileFormatError((oss << "Cluster value for node " << (numParsedValues+1) << " (" << clusterIndex << ")" <<
-					" is out of the valid range [0..numNodes-1]", oss.str()));
+			throw FileFormatError(io::Str() << "Cluster value for node " << (numParsedValues+1) << " (" << clusterIndex << ")" <<
+					" is out of the valid range [0..numNodes-1]");
 	    m_clusterData[numParsedValues] = clusterIndex;
 
 //	    DEBUG_OUT(" parsed value: " << clusterIndex << std::endl);
@@ -100,11 +99,7 @@ void ClusterReader::readData(const string filename)
 		}
 	}
 	if (numParsedValues != numNodes)
-	{
-		std::stringstream ss;
-		ss << "Could only read cluster data for " << numParsedValues << " nodes, but the given network contains " <<
-				numNodes << " nodes.";
-		throw FileFormatError(ss.str());
-	}
-	DEBUG_OUT("Successfully parsed " << numNodes << " lines of cluster data." << std::endl);
+		throw FileFormatError(io::Str() << "Could only read cluster data for " << numParsedValues << " nodes, but the given network contains " <<
+				numNodes << " nodes.");
+//	DEBUG_OUT("Successfully parsed " << numNodes << " lines of cluster data." << std::endl);
 }
