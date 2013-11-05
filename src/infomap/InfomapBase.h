@@ -189,6 +189,13 @@ protected:
 	bool isTopLevel() { return (m_subLevel & (m_TOP_LEVEL_ADDITION-1)) == 0; }
 	bool isSuperLevelOnTopLevel() { return m_subLevel == m_TOP_LEVEL_ADDITION; }
 
+	unsigned long int getSeedFromCodelength(double value)
+	{
+		return static_cast<unsigned long int>(value/m_config.minimumCodelengthImprovement);
+	}
+
+	void reseed(unsigned long int seed) { m_rand.seed(seed); }
+
 private:
 	void runPartition();
 	double partitionAndQueueNextLevel(PartitionQueue& partitionQueue, bool tryIndexing = true);

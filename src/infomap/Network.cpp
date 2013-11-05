@@ -150,7 +150,7 @@ void Network::parsePajekNetwork(std::string filename)
 	m_totalLinkWeight = 0.0;
 
 	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
-	while(std::getline(input, line).good())
+	while(!std::getline(input, line).fail())
 	{
 		if (line.length() == 0)
 			continue;
@@ -259,7 +259,7 @@ void Network::parseLinkList(std::string filename)
 	unsigned int lowestNodeNumber = m_config.zeroBasedNodeNumbers ? 0 : 1;
 
 	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
-	while(std::getline(input, line).good())
+	while(!std::getline(input, line).fail())
 	{
 		if (line.length() == 0 || line[0] == '#')
 			continue;
@@ -374,7 +374,7 @@ void Network::parseSparseLinkList(std::string filename)
 	unsigned int numLinks = 0;
 
 	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
-	while(std::getline(input, line).good())
+	while(!std::getline(input, line).fail())
 	{
 		if (line.length() == 0 || line[0] == '#')
 			continue;
