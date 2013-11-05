@@ -396,6 +396,7 @@ void InfomapBase::tryIndexingIteratively()
 		}
 
 		std::auto_ptr<InfomapBase> superInfomap(getNewInfomapInstance());
+		superInfomap->reseed(getSeedFromCodelength(minHierarchicalCodelength));
 		superInfomap->m_subLevel = m_subLevel + m_TOP_LEVEL_ADDITION;
 		superInfomap->initSuperNetwork(*root());
 		superInfomap->partition();
@@ -679,6 +680,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 //			for (int moduleIndex = iProc; moduleIndex < numModulesInt; moduleIndex += numProcs)
 //			{
 #pragma omp parallel for schedule(dynamic, 1)
+//#pragma omp for
 	for(iModule = 0; iModule < numModulesInt; ++iModule)
 	{
 		unsigned int moduleIndex = static_cast<unsigned int>(iModule);
@@ -1108,6 +1110,8 @@ void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)
 		DEBUG_OUT(">>>>>>>>>>>>>>>>>> RUN SUB_INFOMAP on node n" << moduleIt->id << " with childDegree: " << moduleIt->childDegree() << " >>>>>>>>>>>>" << std::endl);
 
 		std::auto_ptr<InfomapBase> subInfomap(getNewInfomapInstance());
+		// To not happen to get back the same network with the same seed
+		subInfomap->reseed(getSeedFromCodelength(codelength));
 		subInfomap->m_subLevel = m_subLevel + 1;
 		subInfomap->initSubNetwork(*moduleIt, false);
 		//		if (hierarchical)
