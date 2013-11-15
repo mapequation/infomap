@@ -679,8 +679,8 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 //		{
 //			for (int moduleIndex = iProc; moduleIndex < numModulesInt; moduleIndex += numProcs)
 //			{
-#pragma omp parallel for schedule(dynamic, 1)
-//#pragma omp for
+//#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp for
 	for(iModule = 0; iModule < numModulesInt; ++iModule)
 	{
 		unsigned int moduleIndex = static_cast<unsigned int>(iModule);
