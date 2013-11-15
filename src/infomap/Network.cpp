@@ -61,9 +61,14 @@ void Network::readFromFile(std::string filename)
 	zoom();
 }
 
-
 void Network::parsePajekNetwork(std::string filename)
 {
+	if (m_config.parseWithoutIOStreams)
+	{
+		parsePajekNetworkCStyle(filename);
+		return;
+	}
+
 	RELEASE_OUT("Parsing " << (m_config.isUndirected() ? "undirected" : "directed") << " network from file '" <<
 			filename << "'... " << std::flush);
 	string line;
@@ -240,6 +245,12 @@ void Network::parsePajekNetwork(std::string filename)
 
 void Network::parseLinkList(std::string filename)
 {
+	if (m_config.parseWithoutIOStreams)
+	{
+		parseLinkListCStyle(filename);
+		return;
+	}
+
 	string line;
 	string buf;
 	SafeInFile input(filename.c_str());
@@ -483,6 +494,295 @@ void Network::parseSparseLinkList(std::string filename)
 	if (!minLinkIsZero)
 		std::cout << "(Warning: minimum link index is not zero, check that you don't use zero based numbering if it's not true.)\n";
 
+}
+
+void Network::parsePajekNetworkCStyle(std::string filename)
+{
+	RELEASE_OUT("Parsing " << (m_config.isUndirected() ? "undirected" : "directed") << " network from file '" <<
+				filename << "' (without iostreams)... " << std::flush);
+	FILE* file;
+	file = fopen(filename.c_str(), "r");
+	if (file == NULL)
+		throw FileOpenError(io::Str() << "Error opening file '" << filename << "'");
+
+	const int LINELENGTH = 511;
+	char line[LINELENGTH];
+	char *cptr;
+
+	unsigned int numNodes = 0;
+	while (numNodes == 0)
+	{
+		if (fgets(line , LINELENGTH , file) == NULL)
+			throw FileFormatError("Can't find a correct line that defines the beginning of the node section.");
+		if (strncmp(line, "*", 1) != 0)
+			continue;
+
+		cptr = strchr(line, ' ');
+		if (cptr == NULL)
+			throw FileFormatError("Can't find a correct line that defines the beginning of the node section.");
+		numNodes = atoi(++cptr);
+	}
+
+	unsigned int specifiedNumNodes = numNodes;
+	bool checkNodeLimit = m_config.nodeLimit > 0;
+	if (checkNodeLimit)
+		numNodes = m_config.nodeLimit;
+
+	m_numNodes = numNodes;
+	m_nodeNames.resize(numNodes);
+	m_nodeWeights.assign(numNodes, 1.0);
+	m_sumNodeWeights = 0.0;
+
+	char *first;
+	char *last;
+	// Read node names, assuming order 1, 2, 3, ...
+	for(unsigned int i = 0; i < numNodes; ++i)
+	{
+		if (fgets (line , LINELENGTH , file) == NULL)
+			throw FileFormatError("Can't read enough nodes.");
+
+		first = strchr(line, '\"')+1;
+		last = strrchr(line, '\"');
+		if(last > first)
+		{
+			size_t len = (size_t)(last - first);
+			m_nodeNames[i] = std::string(first, len);
+		}
+		else
+		{
+			throw FileFormatError(io::Str() << "Can't read \"name\" of node " << (i+1) << ".");
+		}
+
+		double nodeWeight = strtod(++last, NULL);
+		if (nodeWeight < 1e-10)
+			nodeWeight = 1.0;
+
+		m_sumNodeWeights += nodeWeight;
+		m_nodeWeights[i] = nodeWeight;
+	}
+
+	if (m_config.nodeLimit > 0 && numNodes < specifiedNumNodes)
+	{
+		unsigned int surplus = specifiedNumNodes - numNodes;
+		for (unsigned int i = 0; i < surplus; ++i)
+		{
+			if (fgets (line , LINELENGTH , file) == NULL)
+				throw FileFormatError("The specified number of nodes is more than the number of lines that can be read.");
+		}
+	}
+
+	// Read the number of links in the network
+	unsigned int numDoubleLinks = 0;
+	unsigned int numEdgeLines = 0;
+	unsigned int numSkippedEdges = 0;
+	unsigned int maxLinkEnd = 0;
+	m_totalLinkWeight = 0.0;
+
+	if (fgets (line , LINELENGTH , file) == NULL)
+		throw FileFormatError("Can't find a correct line that defines the beginning of the edge section.");
+	if (strncmp(line, "*", 1) != 0)
+		throw FileFormatError("Can't find a correct line that defines the beginning of the edge section.");
+
+	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
+	while(fgets (line , LINELENGTH , file) != NULL)
+	{
+		++numEdgeLines;
+		unsigned int linkEnd1, linkEnd2;
+		double linkWeight;
+		// Parse the line
+		if (!parseEdgeCStyle(line, linkEnd1, linkEnd2, linkWeight))
+			throw FileFormatError(io::Str() << "Can't parse correct edge data from edge number " << numEdgeLines);
+
+
+
+		if (checkNodeLimit && (linkEnd2 > numNodes || linkEnd1 > numNodes))
+		{
+			++numSkippedEdges;
+			continue;
+		}
+
+		if (linkEnd2 == linkEnd1)
+		{
+			++m_numSelfLinks;
+			if (!m_config.includeSelfLinks)
+				continue;
+		}
+
+		--linkEnd1; // Node numbering starts from 1 in the .net format
+		--linkEnd2;
+
+		maxLinkEnd = std::max(maxLinkEnd, std::max(linkEnd1, linkEnd2));
+
+		// If undirected links, aggregate weight rather than adding an opposite link.
+		if (m_config.isUndirected() && linkEnd2 < linkEnd1)
+			std::swap(linkEnd1, linkEnd2);
+
+		m_totalLinkWeight += linkWeight;
+		if (m_config.isUndirected())
+		{
+			m_totalLinkWeight += linkWeight;
+		}
+
+		// Aggregate link weights if they are definied more than once
+		LinkMap::iterator it = m_links.find(std::make_pair(linkEnd1, linkEnd2));
+		if(it == m_links.end())
+		{
+			m_links.insert(std::make_pair(std::make_pair(linkEnd1, linkEnd2), linkWeight));
+		}
+		else
+		{
+			it->second += linkWeight;
+			++numDoubleLinks;
+			if (linkEnd2 == linkEnd1)
+				--m_numSelfLinks;
+		}
+	}
+
+	unsigned int zeroMinusOne = 0;
+	--zeroMinusOne;
+	if (maxLinkEnd == zeroMinusOne)
+		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers starts from zero.");
+	if (maxLinkEnd >= numNodes)
+		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
+
+	if (m_links.size() == 0)
+		throw InputDomainError(io::Str() << "No links could be found!");
+
+	//	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
+	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << m_links.size() << " links. ";
+//	std::cout << "Average node weight: " << (m_sumNodeWeights / numNodes) << ". ";
+	if (m_config.nodeLimit > 0)
+		std::cout << "Limiting network to " << numNodes << " nodes and " << m_links.size() << " links. ";
+	if(numDoubleLinks > 0)
+		std::cout << numDoubleLinks << " links was aggregated to existing links. ";
+	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
+		std::cout << m_numSelfLinks << " self-links was ignored. ";
+	std::cout << std::endl;
+}
+
+bool Network::parseEdgeCStyle(char line[], unsigned int& sourceIndex, unsigned int& targetIndex, double& weight)
+{
+	char *cptr;
+	cptr = strtok(line, " \t"); // Get first non-whitespace character position
+	if (cptr == NULL)
+		return false;
+	sourceIndex = atoi(cptr); // get first connected node
+	cptr = strtok(NULL, " \t"); // Get second non-whitespace character position
+	if (cptr == NULL)
+		return false;
+	targetIndex = atoi(cptr); // get the second connected node
+	cptr = strtok(NULL, " \t"); // Get third non-whitespace character position
+	if (cptr != NULL)
+		weight = atof(cptr); // get the link weight
+	else
+		weight = 1.0;
+
+	return true;
+}
+
+void Network::parseLinkListCStyle(std::string filename)
+{
+	RELEASE_OUT("Parsing " << (m_config.isUndirected() ? "undirected" : "directed") << " link list from file '" <<
+					filename << "' (without iostreams)... " << std::flush);
+	FILE* file;
+	file = fopen(filename.c_str(), "r");
+	if (file == NULL)
+		throw FileOpenError(io::Str() << "Error opening file '" << filename << "'");
+
+	const int LINELENGTH = 511;
+	char line[LINELENGTH];
+	char *cptr;
+
+
+	unsigned int numDoubleLinks = 0;
+	unsigned int numEdgeLines = 0;
+	unsigned int numSkippedEdges = 0;
+	m_totalLinkWeight = 0.0;
+	unsigned int maxLinkEnd = 0;
+	bool minLinkIsZero = false;
+	bool checkNodeLimit = m_config.nodeLimit > 0;
+	unsigned int nodeLimit = m_config.nodeLimit;
+	unsigned int lowestNodeNumber = m_config.zeroBasedNodeNumbers ? 0 : 1;
+
+	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
+	while(fgets (line , LINELENGTH , file) != NULL)
+	{
+		if (*line == '#')
+			continue;
+		++numEdgeLines;
+		unsigned int linkEnd1, linkEnd2;
+		double linkWeight;
+		parseEdgeCStyle(line, linkEnd1, linkEnd2, linkWeight);
+
+		linkEnd1 -= lowestNodeNumber;
+		linkEnd2 -= lowestNodeNumber;
+
+		if (checkNodeLimit && (linkEnd2 >= nodeLimit || linkEnd1 >= nodeLimit))
+		{
+			++numSkippedEdges;
+			continue;
+		}
+
+		if (linkEnd2 == linkEnd1)
+		{
+			++m_numSelfLinks;
+			if (!m_config.includeSelfLinks)
+				continue;
+		}
+
+		maxLinkEnd = std::max(maxLinkEnd, std::max(linkEnd1, linkEnd2));
+		if (!minLinkIsZero && (linkEnd1 == 0 || linkEnd2 == 0))
+			minLinkIsZero = true;
+
+		// If undirected links, aggregate weight rather than adding an opposite link.
+		if (m_config.isUndirected() && linkEnd2 < linkEnd1)
+			std::swap(linkEnd1, linkEnd2);
+
+		m_totalLinkWeight += linkWeight;
+		if (m_config.isUndirected())
+		{
+			m_totalLinkWeight += linkWeight;
+		}
+
+		// Aggregate link weights if they are definied more than once
+		LinkMap::iterator it = m_links.find(std::make_pair(linkEnd1, linkEnd2));
+		if(it == m_links.end())
+		{
+			m_links.insert(std::make_pair(std::make_pair(linkEnd1, linkEnd2), linkWeight));
+		}
+		else
+		{
+			it->second += linkWeight;
+			++numDoubleLinks;
+			if (linkEnd2 == linkEnd1)
+				--m_numSelfLinks;
+		}
+	}
+
+	if (m_links.size() == 0)
+		throw InputDomainError(io::Str() << "No links could be found!");
+
+	unsigned int zeroMinusOne = 0;
+	--zeroMinusOne;
+	if (maxLinkEnd == zeroMinusOne)
+		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers starts from zero.");
+
+
+	m_numNodes = maxLinkEnd + 1;
+
+	m_nodeNames.resize(m_numNodes);
+	m_nodeWeights.assign(m_numNodes, 1.0);
+	m_sumNodeWeights = 1.0 * m_numNodes;
+
+	for (unsigned int i = 0; i < m_numNodes; ++i)
+	{
+		int length = snprintf(line, LINELENGTH, "%d", i+1);
+		m_nodeNames[i] = std::string(line, length);
+	}
+
+	std::cout << "done! Found " << m_numNodes << " nodes and " << m_links.size() << " links." << std::endl;
+	if (!minLinkIsZero)
+		std::cout << "(Warning: minimum link index is not zero, check that you don't use zero based numbering if it's not true.)\n";
 }
 
 void Network::zoom()

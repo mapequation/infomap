@@ -35,6 +35,7 @@ struct Config
 	Config()
 	:	networkFile(""),
 	 	inputFormat(""),
+	 	parseWithoutIOStreams(false),
 		zeroBasedNodeNumbers(false),
 		includeSelfLinks(false),
 		ignoreEdgeWeights(false),
@@ -131,6 +132,7 @@ struct Config
 	// Input
 	std::string networkFile;
 	std::string inputFormat;
+	bool parseWithoutIOStreams;
 	bool zeroBasedNodeNumbers;
 	bool includeSelfLinks;
 	bool ignoreEdgeWeights;

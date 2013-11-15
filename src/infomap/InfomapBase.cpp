@@ -222,7 +222,7 @@ void InfomapBase::runPartition()
 		partitionAndQueueNextLevel(partitionQueue);
 	}
 
-	if (m_config.fastHierarchicalSolution > 2)
+	if (m_config.fastHierarchicalSolution > 2 || partitionQueue.size() == 0)
 		return;
 
 
@@ -331,6 +331,7 @@ double InfomapBase::partitionAndQueueNextLevel(PartitionQueue& partitionQueue, b
 //	}
 	if (numTopModules() == 1)
 	{
+		root()->firstChild->codelength = codelength;
 		return hierarchicalCodelength;
 	}
 	else if (tryIndexing)
@@ -537,6 +538,10 @@ unsigned int InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partit
 		unsigned int numOptimizationLoops = optimizeModules();
 
 		bool acceptSolution = codelength < oldIndexLength - m_config.minimumCodelengthImprovement;
+		// Force at least one modular level!
+		bool acceptByForce = !acceptSolution && numLevelsCreated == 0;
+		if (acceptByForce)
+			acceptSolution = true;
 
 		workingHierarchicalCodelength += codelength - oldIndexLength;
 

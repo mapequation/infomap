@@ -60,6 +60,9 @@ Config getConfig(int argc, char *argv[])
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
 			"Specify input format ('pajek' or 'link-list') to override format possibly implied by file extension.", "s");
 
+	api.addOptionArgument(conf.parseWithoutIOStreams, "without-iostream",
+			"Parse the input network data without the iostream library. Can be a bit faster, but not as robust.");
+
 	api.addOptionArgument(conf.zeroBasedNodeNumbers, 'z', "zero-based-numbering",
 			"Assume node numbers start from zero in the input file instead of one.");
 

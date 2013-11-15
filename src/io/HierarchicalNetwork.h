@@ -37,6 +37,7 @@
 #include <deque>
 #include <algorithm>
 #include <set>
+#include <functional>   // std::greater
 #include "SafeFile.h"
 
 enum EdgeAggregationPolicy { NONE, PARTIAL, FULL };
