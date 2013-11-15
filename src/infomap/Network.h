@@ -64,6 +64,9 @@ private:
 	void parsePajekNetwork(std::string filename);
 	void parseLinkList(std::string filename);
 	void parseSparseLinkList(std::string filename);
+	void parsePajekNetworkCStyle(std::string filename);
+	bool parseEdgeCStyle(char line[], unsigned int& sourceIndex, unsigned int& targetIndex, double& weight);
+	void parseLinkListCStyle(std::string filename);
 
 	void zoom();
 
