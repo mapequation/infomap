@@ -31,6 +31,9 @@
 #include "../io/SafeFile.h"
 #include <cmath>
 #include "../utils/Logger.h"
+#include <cstdlib>
+#include <cstring>
+
 using std::make_pair;
 
 void Network::readFromFile(std::string filename)
@@ -689,9 +692,8 @@ void Network::parseLinkListCStyle(std::string filename)
 	if (file == NULL)
 		throw FileOpenError(io::Str() << "Error opening file '" << filename << "'");
 
-	const int LINELENGTH = 511;
+	const int LINELENGTH = 63;
 	char line[LINELENGTH];
-	char *cptr;
 
 
 	unsigned int numDoubleLinks = 0;
