@@ -64,7 +64,8 @@ public:
 	: ifstream(filename, mode)
 	{
 		if (fail())
-			throw FileOpenError(io::Str() << "Error opening file '" << filename << "'");
+			throw FileOpenError(io::Str() << "Error opening file '" << filename <<
+					"'. Check that the path points to a file and you have read permissions.");
 	}
 
 	~SafeInFile()
@@ -81,7 +82,8 @@ public:
 	: ofstream(filename, mode)
 	{
 		if (fail())
-			throw FileOpenError(io::Str() << "Error opening file '" << filename << "'");
+			throw FileOpenError(io::Str() << "Error opening file '" << filename <<
+					"'. Check that the directory you are writing to exists and you have write permissions.");
 	}
 
 	~SafeOutFile()
