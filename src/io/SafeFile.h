@@ -65,7 +65,7 @@ public:
 	{
 		if (fail())
 			throw FileOpenError(io::Str() << "Error opening file '" << filename <<
-					"'. Check that the path points to a file and you have read permissions.");
+					"'. Check that the path points to a file and that you have read permissions.");
 	}
 
 	~SafeInFile()
@@ -83,7 +83,7 @@ public:
 	{
 		if (fail())
 			throw FileOpenError(io::Str() << "Error opening file '" << filename <<
-					"'. Check that the directory you are writing to exists and you have write permissions.");
+					"'. Check that the directory you are writing to exists and that you have write permissions.");
 	}
 
 	~SafeOutFile()
