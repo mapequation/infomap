@@ -222,7 +222,7 @@ private:
 	void setActiveNetworkFromLeafs();
 	void calcCodelengthFromExternalClusterData();
 	bool initNetwork();
-	void checkAndConvertBinaryTree();
+	bool checkAndConvertBinaryTree();
 	void printNetworkData(std::string filename = "", bool sort = true);
 	void printClusterVector(std::ostream& out);
 	void printTree(std::ostream& out, const NodeBase& root, const std::string& prefix = "");

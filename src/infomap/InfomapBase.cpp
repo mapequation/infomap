@@ -1231,6 +1231,9 @@ bool InfomapBase::initNetwork()
 {
 	Network network(m_config);
 
+	if (checkAndConvertBinaryTree())
+		return false;
+
 	try
 	{
 		network.readFromFile(m_config.networkFile);
@@ -1268,9 +1271,26 @@ bool InfomapBase::initNetwork()
 //	printNetworkDebug("debug", false, true);
 }
 
-void InfomapBase::checkAndConvertBinaryTree()
+bool InfomapBase::checkAndConvertBinaryTree()
 {
+	if (FileURI(m_config.networkFile).getExtension() != "bftree" &&
+			FileURI(m_config.networkFile).getExtension() != "btree")
+		return false;
 
+	HierarchicalNetwork network("", 0, false, 0.0, 0.0, "");
+
+	try
+	{
+		network.readStreamableTree(m_config.networkFile);
+	}
+	catch (const std::runtime_error& error)
+	{
+		std::cerr << "Error parsing the input file: " << error.what() << std::endl;
+		return true;
+	}
+
+
+	return true;
 }
 
 void InfomapBase::printNetworkData(std::string filename, bool sort)

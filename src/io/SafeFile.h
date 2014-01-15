@@ -93,6 +93,47 @@ public:
 	}
 };
 
+
+template<typename T>
+struct BinaryHelper {
+	static size_t write(T value, std::FILE* file)
+	{
+		return fwrite(reinterpret_cast<const char*>(&value), sizeof(value), 1, file);
+	}
+
+	static size_t read(T& value, ifstream& ifstream)
+	{
+		size_t size = sizeof(value);
+		ifstream.read(reinterpret_cast<char*>(&value), size);
+		return size;
+	}
+};
+
+template<>
+struct BinaryHelper<std::string> {
+	static size_t write(std::string value, std::FILE* file)
+	{
+		unsigned short stringLength = static_cast<unsigned short>(value.length());
+		fwrite(&stringLength, sizeof(stringLength), 1, file);
+		return fwrite(value.c_str(), sizeof(char), value.length(), file);
+	}
+
+	static size_t read(std::string& value, ifstream& ifstream)
+	{
+		unsigned short stringLength;
+		size_t size = sizeof(stringLength);
+		ifstream.read(reinterpret_cast<char*>(&stringLength), size);
+		if (stringLength > 0)
+		{
+			char cstr[stringLength];
+			ifstream.read(cstr, stringLength);
+			std::string str(cstr, stringLength);
+			value.swap(str);
+		}
+		return size + sizeof(char) * stringLength;
+	}
+};
+
 #include <stddef.h>
 
 class ofstream_binary : public ofstream
@@ -120,41 +161,47 @@ protected:
 };
 
 
+class ifstream_binary : public ifstream
+{
+public:
+	ifstream_binary(const char* filename)
+		: ifstream(filename, ios_base::in | ios_base::binary), m_sizeRead(0) {}
+
+	template<typename T>
+	ifstream_binary& operator>>(T& value)
+	{
+		m_sizeRead += BinaryHelper<T>::read(value, *this);
+		return *this;
+	}
+
+	size_t sizeRead()
+	{
+		return m_sizeRead;
+	}
+
+protected:
+	size_t m_sizeRead;
+};
+
+
 #include <cstdio>
 
-template<typename T>
-struct ToBinary {
-	static size_t write(T value, std::FILE* file)
-	{
-		return fwrite(reinterpret_cast<const char*>(&value), sizeof(value), 1, file);
-	}
-};
-
-template<>
-struct ToBinary<std::string> {
-	static size_t write(std::string value, std::FILE* file)
-	{
-		unsigned short stringLength = static_cast<unsigned short>(value.length());
-		fwrite(&stringLength, sizeof(stringLength), 1, file);
-		return fwrite(value.c_str(), sizeof(char), value.length(), file);
-	}
-};
 
 /**
  * Wrapper class for writing low-level binary data with a simple stream interface.
  *
  * @note Strings are prepended with its length as unsigned short.
  */
-class BinaryFile {
+class SafeBinaryOutFile {
 public:
-	BinaryFile (const char* filename)
+	SafeBinaryOutFile (const char* filename)
 	: m_file(std::fopen(filename, "w"))
 	{
         if (!m_file)
             throw std::runtime_error("file open failure");
     }
 
-    ~BinaryFile() {
+    ~SafeBinaryOutFile() {
         if (std::fclose(m_file)) {
            // failed to flush latest changes.
            // handle it
@@ -162,25 +209,11 @@ public:
     }
 
     template<typename T>
-    BinaryFile& operator<<(T value)
+    SafeBinaryOutFile& operator<<(T value)
 	{
-    	ToBinary<T>::write(value, m_file);
+    	BinaryHelper<T>::write(value, m_file);
     	return *this;
 	}
-
-
-    /**
-     * Writes an array of <i>count</i> elements, each one with a size of <i>size</i> bytes,
-     * from the block of memory pointed by <i>ptr</i> to the current position in the stream.
-     * The position indicator of the stream is advanced by the total number of bytes written.
-     *
-     * @see cstdio.fwrite
-     * @return The total number of elements successfully written.
-     */
-    size_t write(const void * ptr, size_t size, size_t count)
-    {
-		return fwrite(ptr, size, count, m_file);
-    }
 
     /**
      * Return the number of bytes written to the file stream
@@ -194,8 +227,8 @@ private:
     std::FILE* m_file;
 
     // prevent copying and assignment; not implemented
-	BinaryFile (const BinaryFile &);
-	BinaryFile & operator= (const BinaryFile &);
+	SafeBinaryOutFile (const SafeBinaryOutFile &);
+	SafeBinaryOutFile & operator= (const SafeBinaryOutFile &);
 };
 
 class SafeOutFileBinary : public ofstream_binary
@@ -209,6 +242,24 @@ public:
 	}
 
 	~SafeOutFileBinary()
+	{
+		if (is_open())
+			close();
+	}
+
+};
+
+class SafeBinaryInFile : public ifstream_binary
+{
+public:
+	SafeBinaryInFile(const char* filename)
+	: ifstream_binary(filename)
+	{
+		if (fail())
+			throw FileOpenError(io::Str() << "Error opening file '" << filename << "'");
+	}
+
+	~SafeBinaryInFile()
 	{
 		if (is_open())
 			close();

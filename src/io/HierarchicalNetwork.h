@@ -180,7 +180,7 @@ public:
 	}
 
 	// Operations:
-	void serialize(BinaryFile& outFile, unsigned int childPosition, bool writeEdges)
+	void serialize(SafeBinaryOutFile& outFile, unsigned int childPosition, bool writeEdges)
 	{
 //		outFile << static_cast<unsigned short>(data.name.length()); // unsigned short nameLength
 		outFile << data.name;					// char* name
@@ -212,6 +212,41 @@ public:
 				outFile << static_cast<float>(it->second.flow);
 			}
 		}
+//		else {
+//			outFile << 0; // numEdges 0, XXX: Skip bftree or btree and use the same format!!
+//		}
+	}
+
+	unsigned short deserialize(SafeBinaryInFile& dataStream)
+	{
+		float flow = 0.0, exitFlow = 0.0;
+		unsigned short numChildren = 0;
+		unsigned int childPosition = 0;
+		dataStream >> data.name >> flow >> exitFlow >> numChildren;
+		if (numChildren > 0)
+		{
+			dataStream >> depthBelow >> childPosition;
+		}
+		data.flow = flow;
+		data.exitFlow = exitFlow;
+//		std::cout << depth << ":" << std::string(depth * 4, ' ') << "\"" << data.name << "\" (flow: " <<
+//						data.flow << ", exitFlow: " << data.exitFlow << ", numChildren: " << numChildren <<
+//						", depthBelow: " << depthBelow << ", childPos: " << childPosition <<")\n";
+		return numChildren;
+	}
+
+	unsigned short deserializeEdges(SafeBinaryInFile& dataStream, bool directedEdges)
+	{
+		unsigned short numEdges;
+		dataStream >> numEdges;
+		unsigned short source = 0, target = 0;
+		float flow = 0.0;
+		for (unsigned short i = 0; i < numEdges; ++i)
+		{
+			dataStream >> source >> target >> flow;
+			createChildEdge(source, target, flow, directedEdges);
+		}
+		return numEdges;
 	}
 
 	// Accessors:
@@ -382,7 +417,7 @@ public:
 	 */
 	void writeStreamableTree(const std::string& fileName, bool writeEdges)
 	{
-		BinaryFile out(fileName.c_str());
+		SafeBinaryOutFile out(fileName.c_str());
 
 		std::string magicTag ("Infomap");
 		unsigned int numLeafNodes = m_leafNodes.size();
@@ -422,6 +457,10 @@ public:
 			nodeList.pop_front();
 		}
 	}
+
+	void readStreamableTree(const std::string& fileName);
+
+	void writeMap(const std::string& fileName);
 
 private:
 
