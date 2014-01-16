@@ -216,13 +216,13 @@ private:
 	 * leaf node with the sub-module structure found by partitioning each module.
 	 */
 	void partitionEachModule(unsigned int recursiveCount = 0, bool fast = false);
-	bool initNetwork();
-	void readData();
 	void initSubNetwork(NodeBase& parent, bool recalculateFlow = false);
 	void initSuperNetwork(NodeBase& parent);
 	void setActiveNetworkFromChildrenOfRoot();
 	void setActiveNetworkFromLeafs();
 	void calcCodelengthFromExternalClusterData();
+	bool initNetwork();
+	bool checkAndConvertBinaryTree();
 	void printNetworkData(std::string filename = "", bool sort = true);
 	void printClusterVector(std::ostream& out);
 	void printTree(std::ostream& out, const NodeBase& root, const std::string& prefix = "");
