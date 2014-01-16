@@ -1289,6 +1289,16 @@ bool InfomapBase::checkAndConvertBinaryTree()
 		return true;
 	}
 
+	if (m_config.printMap)
+	{
+		std::string mapFilename = io::Str() <<
+				m_config.outDirectory <<
+				FileURI(m_config.networkFile).getName() << ".map";
+		std::cout << "Write map to '" << mapFilename << "'... ";
+		network.writeMap(mapFilename);
+		std::cout << "done!\n";
+	}
+
 
 	return true;
 }

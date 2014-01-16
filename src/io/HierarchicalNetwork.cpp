@@ -26,6 +26,7 @@
 
 
 #include "HierarchicalNetwork.h"
+#include <map>
 
 void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 {
@@ -61,6 +62,7 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 
 	std::deque<SNode*> nodeList;
 	nodeList.push_back(&m_rootNode);
+	unsigned int numEdges = 0;
 	while (nodeList.size() > 0) // visit tree breadth first
 	{
 		SNode& node = *nodeList.front();
@@ -73,15 +75,83 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 		}
 		if (node.parentNode != NULL && node.parentIndex + 1 == node.parentNode->children.size())
 		{
-			unsigned short numEdges = node.deserializeEdges(dataStream, m_directedEdges);
+			numEdges += node.parentNode->deserializeEdges(dataStream, m_directedEdges);
 		}
 		if (m_numNodesInTree > numNodesInTree)
 			throw FileFormatError("Tree overflow");
 	}
-	std::cout << "Done! Num nodes deserialized: " << m_numNodesInTree << "\n";
+	std::cout << "Done! Deserialized " << m_numNodesInTree << " nodes and " << numEdges << " links.\n";
+
+	m_numLeafEdges = numLeafEdges;
 }
+
 
 void HierarchicalNetwork::writeMap(const std::string& fileName)
 {
+	// First collect the leaf nodes under each top module, sorted on flow
+	unsigned int numModules = m_rootNode.children.size();
+	using HierIter::LeafNodeIterator;
+	typedef std::multimap<double, SNode*, std::greater<double> > NodeMap;
+	std::vector<NodeMap> nodeMaps(numModules);
+	unsigned int numNodes = 0;
 
+	for (unsigned int i = 0; i < numModules; ++i)
+	{
+		SNode& module = *m_rootNode.children[i];
+		if (module.children.empty())
+			continue;
+
+		NodeMap& nodeMap = nodeMaps[i];
+		SNode* node = &module;
+		LeafNodeIterator<SNode*> li(node);
+		LeafNodeIterator<SNode*> liEnd(module.nextSibling());
+		while (li != liEnd)
+		{
+//			std::cout << i << std::string(module.depth, ' ') << ": inserting " << li->data.name << "\n";
+			nodeMap.insert(std::make_pair(li->data.flow, li.base()));
+			++li;
+			++numNodes;
+		}
+
+	}
+
+
+	SafeOutFile out(fileName.c_str());
+
+	out << "# modules: " << numModules << "\n";
+	out << "# modulelinks: " << m_rootNode.childEdges.size() << "\n";
+	out << "# nodes: " << numNodes << "\n";
+	out << "# links: " << m_numLeafEdges << "\n";
+	out << "# codelength: " << m_codelength << "\n";
+	out << "*" << (m_directedEdges ? "Directed" : "Undirected") << "\n";
+
+	out << "*Modules " << numModules << "\n";
+	for (unsigned int i = 0; i < numModules; ++i)
+	{
+		SNode& module = *m_rootNode.children[i];
+		out << (i + 1) << " \"" << module.data.name << "\" " << module.data.flow << " " << module.data.exitFlow << "\n";
+	}
+
+	out << "*Nodes " << numNodes << "\n";
+	for (unsigned int i = 0; i < numModules; ++i)
+	{
+		NodeMap& nodeMap = nodeMaps[i];
+		unsigned int nodeNumber = 1;
+		for (NodeMap::iterator it(nodeMap.begin()), itEnd(nodeMap.end());
+				it != itEnd; ++it, ++nodeNumber)
+		{
+			out << (i + 1) << ":" << nodeNumber << " \"" << it->second->data.name << "\" " <<
+				it->first << "\n";
+		}
+	}
+
+
+	out << "*Links " << m_rootNode.childEdges.size() << "\n";
+	for (SNode::ChildEdgeList::iterator it(m_rootNode.childEdges.begin()); it != m_rootNode.childEdges.end(); ++it)
+	{
+		const ChildEdge& edge = *it;
+		out << (edge.source+1) << " " << (edge.target+1) << " " << edge.flow << "\n";
+	}
 }
+
+
