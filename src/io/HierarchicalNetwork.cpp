@@ -73,7 +73,7 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 			SNode& child = addNode(node, 0.0, 0.0);
 			nodeList.push_back(&child);
 		}
-		if (node.parentNode != NULL && node.parentIndex + 1 == node.parentNode->children.size())
+		if (node.parentNode != NULL && static_cast<unsigned int>(node.parentIndex + 1) == node.parentNode->children.size())
 		{
 			numEdges += node.parentNode->deserializeEdges(dataStream, m_directedEdges);
 		}
@@ -90,7 +90,6 @@ void HierarchicalNetwork::writeMap(const std::string& fileName)
 {
 	// First collect the leaf nodes under each top module, sorted on flow
 	unsigned int numModules = m_rootNode.children.size();
-	using HierIter::LeafNodeIterator;
 	typedef std::multimap<double, SNode*, std::greater<double> > NodeMap;
 	std::vector<NodeMap> nodeMaps(numModules);
 	unsigned int numNodes = 0;
@@ -103,8 +102,8 @@ void HierarchicalNetwork::writeMap(const std::string& fileName)
 
 		NodeMap& nodeMap = nodeMaps[i];
 		SNode* node = &module;
-		LeafNodeIterator<SNode*> li(node);
-		LeafNodeIterator<SNode*> liEnd(module.nextSibling());
+		LeafIterator li(node);
+		LeafIterator liEnd(module.nextSibling());
 		while (li != liEnd)
 		{
 //			std::cout << i << std::string(module.depth, ' ') << ": inserting " << li->data.name << "\n";

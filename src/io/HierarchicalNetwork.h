@@ -264,7 +264,7 @@ public:
 
 	SNode* nextSibling()
 	{
-		if (parentNode == NULL || parentIndex + 1 == parentNode->children.size())
+		if (parentNode == NULL || static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
 			return NULL;
 		return parentNode->children[parentIndex + 1];
 	}
@@ -287,33 +287,18 @@ public:
 
 };
 
-namespace HierIter
-{
-#include <iterator>
-using std::iterator_traits;
 
-template <typename NodePointerType> // SNode* or const SNode*
-class LeafNodeIterator
+class LeafIterator
 {
 public:
-	typedef LeafNodeIterator<NodePointerType>							self_type;
 
-	// Use iterator_traits<...> to forward correct typedefs. (It uses 'partial template specialization' to give correct semantics both for pointer and non-pointer types.)
-	//	typedef typename iterator_traits<NodePointerType>::iterator_category	iterator_category; //random_access_iterator_tag
-	typedef std::forward_iterator_tag										iterator_category;
-	typedef typename iterator_traits<NodePointerType>::value_type  			value_type;
-	typedef typename iterator_traits<NodePointerType>::difference_type		difference_type;
-	typedef typename iterator_traits<NodePointerType>::reference			reference;
-	typedef typename iterator_traits<NodePointerType>::pointer				pointer;
-
-
-	LeafNodeIterator()
-	:	m_current(NodePointerType()),
+	LeafIterator()
+	:	m_current(NULL),
 	 	m_depth(0)
 	{}
 
 	explicit
-	LeafNodeIterator(const NodePointerType& nodePointer)
+	LeafIterator(SNode* nodePointer)
 	:	m_current(nodePointer),
 	 	m_depth(0)
 	{
@@ -329,31 +314,31 @@ public:
 
 
 
-	LeafNodeIterator(const LeafNodeIterator& other)
+	LeafIterator(const LeafIterator& other)
 	:	m_current(other.m_current),
 	 	m_depth(other.m_depth)
 	{}
 
-	LeafNodeIterator & operator= (const LeafNodeIterator& other)
+	LeafIterator & operator= (const LeafIterator& other)
 	{
 		m_current = other.m_current;
 		m_depth = other.m_depth;
 		return *this;
 	}
 
-	pointer base() const
+	SNode* base() const
 	{ return m_current; }
 
 	// Forward iterator requirements
-	reference
+	SNode&
 	operator*() const
 	{ return *m_current; }
 
-	pointer
+	SNode*
 	operator->() const
 	{ return m_current; }
 
-	LeafNodeIterator&
+	LeafIterator&
 	operator++()
 	{
 		while(m_current->nextSibling() == NULL)
@@ -377,10 +362,10 @@ public:
 		return *this;
 	}
 
-	LeafNodeIterator
+	LeafIterator
 	operator++(int)
 	{
-		LeafNodeIterator copy(*this);
+		LeafIterator copy(*this);
 		++(*this);
 		return copy;
 	}
@@ -390,22 +375,21 @@ public:
 		return m_depth;
 	}
 
-	bool operator==(const self_type& rhs) const
+	bool operator==(const LeafIterator& rhs) const
 	{
 		return m_current == rhs.m_current;
 	}
 
-	bool operator!=(const self_type& rhs) const
+	bool operator!=(const LeafIterator& rhs) const
 	{
 		return !(m_current == rhs.m_current);
 	}
 
 private:
-	NodePointerType m_current;
+	SNode* m_current;
 	unsigned int m_depth;
 };
 
-}
 
 class HierarchicalNetwork
 {
