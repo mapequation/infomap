@@ -78,7 +78,7 @@ struct Config
 	{
 		setOptimizationLevel(1);
 		// Default output to .tree
-		printTree = true;
+//		printTree = true;
 	}
 
 	// Set all optimization options at once with different accuracy to performance trade-off
@@ -128,6 +128,16 @@ struct Config
 	}
 
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
+
+	bool haveModularResultOutput() const
+	{
+		return printTree ||
+				printMap ||
+				printClu ||
+				printBinaryTree ||
+				printBinaryFlowTree;
+	}
+
 
 	// Input
 	std::string networkFile;

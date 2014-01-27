@@ -77,7 +77,7 @@ Config getConfig(int argc, char *argv[])
 
 	// --------------------- Output options ---------------------
 	api.addOptionArgument(conf.printTree, "tree",
-			"Print the hierarchy in .tree format. (default true)");
+			"Print the hierarchy in .tree format. (default true if no other output with cluster data)");
 
 	api.addOptionArgument(conf.printMap, "map",
 			"Print the top two-level modular network in the .map format.");
@@ -184,6 +184,9 @@ Config getConfig(int argc, char *argv[])
 	// Some checks
 	if (*--conf.outDirectory.end() != '/')
 		conf.outDirectory.append("/");
+
+	if (!conf.haveModularResultOutput())
+		conf.printTree = true;
 
 	return conf;
 }
