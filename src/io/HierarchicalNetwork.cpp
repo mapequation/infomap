@@ -30,7 +30,7 @@
 
 void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 {
-	std::cout << "Read streamable tree from file '" << fileName << "'..." << std::endl;
+	std::cout << "Read streamable tree from file '" << fileName << "'... ";
 	SafeBinaryInFile dataStream(fileName.c_str());
 	std::string magicTag, infomapVersion, infomapOptions;
 	unsigned int numLeafNodes, numLeafEdges, numNodesInTree;
@@ -48,7 +48,7 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 		>> m_oneLevelCodelength
 		>> m_codelength;
 
-	std::cout << "Metadata:\n";
+	std::cout << "\nMetadata:\n";
 	std::cout << "  Infomap version: \"" << m_infomapVersion << "\"" << std::endl;
 	std::cout << "  Infomap options: " << infomapOptions << std::endl;
 	std::cout << "  Directed edges: " << m_directedEdges << std::endl;

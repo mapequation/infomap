@@ -42,15 +42,31 @@
 
 enum EdgeAggregationPolicy { NONE, PARTIAL, FULL };
 
-static const unsigned int SIZE_OF_UNSIGNED_INT = sizeof(unsigned int);		// 4 byte (32 bit)
-static const unsigned int SIZE_OF_CHAR = sizeof(char);						// 1 byte (8 bit)
-static const unsigned int SIZE_OF_FLOAT = sizeof(float); 					// 4 byte (32 bit)
-static const unsigned int SIZE_OF_UNSIGNED_SHORT = sizeof(unsigned short);	// 2 byte (16 bit)
+//static const unsigned int SIZE_OF_UNSIGNED_INT = sizeof(unsigned int);		// 4 byte (32 bit)
+//static const unsigned int SIZE_OF_CHAR = sizeof(char);						// 1 byte (8 bit)
+//static const unsigned int SIZE_OF_FLOAT = sizeof(float); 					// 4 byte (32 bit)
+//static const unsigned int SIZE_OF_UNSIGNED_SHORT = sizeof(unsigned short);	// 2 byte (16 bit)
 
-// Min node size: name size + numChildren + flow + exitFlow
-static const unsigned int MIN_TOTAL_SIZE = 2*SIZE_OF_UNSIGNED_SHORT + 2*SIZE_OF_FLOAT;
-// source + target + flow
-static const unsigned int CHILD_EDGE_SIZE = 2*SIZE_OF_UNSIGNED_SHORT + SIZE_OF_FLOAT;
+namespace SerialTypes {
+	typedef unsigned short nameSize_t;
+	typedef float flow_t;
+	typedef unsigned int childSize_t;
+	typedef unsigned int childPos_t;
+	typedef unsigned int edgeSize_t;
+
+	template<typename T, typename U>
+	T numeric_cast(U value)
+	{
+//		return value > std::numeric_limits<T>::max() ?
+//				std::numeric_limits<T>::max() :
+//				static_cast<T>(value);
+		if (value > std::numeric_limits<T>::max()) {
+			std::cout << " [Warning: truncating internal serial network size] ";
+			return std::numeric_limits<T>::max();
+		}
+		return static_cast<T>(value);
+	}
+};
 
 struct NodeData {
 	NodeData(double flow = 0.0, double exitFlow = 0.0, std::string name = "") :
@@ -79,8 +95,8 @@ struct NodeData {
 struct ChildEdge {
 	ChildEdge(unsigned short int source, unsigned short int target, double flow)
 	: source(source), target(target), flow(flow) {}
-	unsigned short int source;
-	unsigned short int target;
+	SerialTypes::edgeSize_t source;
+	SerialTypes::edgeSize_t target;
 	mutable double flow;
 };
 
@@ -148,6 +164,11 @@ public:
 		child.parentNode = this;
 	}
 
+	SerialTypes::edgeSize_t numSerializableChildEdges() const
+	{
+		return SerialTypes::numeric_cast<SerialTypes::edgeSize_t>(childEdges.size());
+	}
+
 
 	NodeData data;
 
@@ -167,26 +188,31 @@ public:
 	// Capacity:
 	unsigned int serializationSize(bool writeEdges)
 	{
-		unsigned int size = MIN_TOTAL_SIZE + data.name.length() * SIZE_OF_CHAR;
+		using namespace SerialTypes;
+		unsigned int size = sizeof(nameSize_t) + data.name.length() * sizeof(char);
+		size += 2 * sizeof(flow_t);
+		size += sizeof(childSize_t);
+
 		if (children.size() > 0)
-			size += SIZE_OF_UNSIGNED_INT + SIZE_OF_UNSIGNED_SHORT;
+			size += sizeof(depthBelow) + sizeof(childPos_t);
 		// The edges are printed out after the last child
 		if (writeEdges && parentNode != NULL && static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
 		{
 			// numEdges + {edges}
-			size += parentNode->childEdges.size() * CHILD_EDGE_SIZE + SIZE_OF_UNSIGNED_SHORT;
+			size += sizeof(edgeSize_t) + parentNode->numSerializableChildEdges() * (2 * sizeof(edgeSize_t) + sizeof(flow_t));
 		}
 		return size;
 	}
 
 	// Operations:
-	void serialize(SafeBinaryOutFile& outFile, unsigned int childPosition, bool writeEdges)
+	void serialize(SafeBinaryOutFile& outFile, SerialTypes::childPos_t childPosition, bool writeEdges)
 	{
+		using namespace SerialTypes;
 //		outFile << static_cast<unsigned short>(data.name.length()); // unsigned short nameLength
 		outFile << data.name;					// char* name
-		outFile << static_cast<float>(data.flow); // float flow
-		outFile << static_cast<float>(data.exitFlow); // float exitFlow
-		unsigned short numChildren = static_cast<unsigned short>(children.size());
+		outFile << static_cast<flow_t>(data.flow); // float flow
+		outFile << static_cast<flow_t>(data.exitFlow); // float exitFlow
+		childSize_t numChildren = numeric_cast<childSize_t>(children.size());
 		outFile << numChildren; 			// unsigned short numChildren
 		if (numChildren > 0)
 		{
@@ -198,14 +224,14 @@ public:
 		if (writeEdges && parentNode != NULL && static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
 		{
 			const ChildEdgeList& edges = parentNode->childEdges;
-			unsigned short numEdges = static_cast<unsigned short>(edges.size());
+			edgeSize_t numEdges = numeric_cast<edgeSize_t>(edges.size());
 			// First sort the edges
 			std::multimap<double, ChildEdge, std::greater<double> > sortedEdges;
 			for (SNode::ChildEdgeList::const_iterator it = edges.begin(); it != edges.end(); ++it)
 				sortedEdges.insert(std::make_pair(it->flow, *it));
 			outFile << numEdges;
-			for (std::multimap<double, ChildEdge, std::greater<double> >::const_iterator it =
-					sortedEdges.begin(); it != sortedEdges.end(); ++it)
+			std::multimap<double, ChildEdge, std::greater<double> >::const_iterator it(sortedEdges.begin());
+			for (edgeSize_t i = 0; i < numEdges; ++i, ++it)
 			{
 				outFile << it->second.source;
 				outFile << it->second.target;
@@ -219,9 +245,10 @@ public:
 
 	unsigned short deserialize(SafeBinaryInFile& dataStream)
 	{
-		float flow = 0.0, exitFlow = 0.0;
-		unsigned short numChildren = 0;
-		unsigned int childPosition = 0;
+		using namespace SerialTypes;
+		flow_t flow = 0.0, exitFlow = 0.0;
+		childSize_t numChildren = 0;
+		childPos_t childPosition = 0;
 		dataStream >> data.name >> flow >> exitFlow >> numChildren;
 		if (numChildren > 0)
 		{
@@ -229,6 +256,7 @@ public:
 		}
 		data.flow = flow;
 		data.exitFlow = exitFlow;
+
 //		std::cout << depth << ":" << std::string(depth * 4, ' ') << "\"" << data.name << "\" (flow: " <<
 //						data.flow << ", exitFlow: " << data.exitFlow << ", numChildren: " << numChildren <<
 //						", depthBelow: " << depthBelow << ", childPos: " << childPosition <<")\n";
@@ -237,12 +265,13 @@ public:
 
 	unsigned short deserializeEdges(SafeBinaryInFile& dataStream, bool directedEdges)
 	{
-		unsigned short numEdges;
+		using namespace SerialTypes;
+		edgeSize_t numEdges;
 		dataStream >> numEdges;
-		unsigned short source = 0, target = 0;
-		float flow = 0.0;
+		edgeSize_t source = 0, target = 0;
+		flow_t flow = 0.0;
 //		std::cout << "---- Child edges to \"" << data.name << "\":\n";
-		for (unsigned short i = 0; i < numEdges; ++i)
+		for (edgeSize_t i = 0; i < numEdges; ++i)
 		{
 			dataStream >> source >> target >> flow;
 //			std::cout << source << " " << target << " " << flow << "\n";
@@ -270,7 +299,7 @@ public:
 	}
 
 
-	void createChildEdge(unsigned short int sourceIndex, unsigned short int targetIndex, double flow, bool directed)
+	void createChildEdge(SerialTypes::edgeSize_t sourceIndex, SerialTypes::edgeSize_t targetIndex, double flow, bool directed)
 	{
 		if (!directed && sourceIndex > targetIndex)
 			std::swap(sourceIndex, targetIndex);
@@ -456,7 +485,6 @@ public:
 	 */
 	void addLeafEdge(unsigned int sourceLeafNodeIndex, unsigned int targetLeafNodeIndex, double flow)
 	{
-
 		SNode* source = m_leafNodes[sourceLeafNodeIndex];
 		SNode* target = m_leafNodes[targetLeafNodeIndex];
 
@@ -548,10 +576,21 @@ public:
 		out << m_oneLevelCodelength;
 		out << m_codelength;
 
+//		std::cout << "\nMeta data:\n";
+//		std::cout << "  directedEdges: " << m_directedEdges << "\n";
+//		std::cout << "  networkName: " << m_networkName << "\n";
+//		std::cout << "  numLeafNodes: " << numLeafNodes << "\n";
+//		std::cout << "  numLeafEdges: " << m_numLeafEdges << "\n";
+//		std::cout << "  numNodeInTree: " << m_numNodesInTree << "\n";
+//		std::cout << "  maxDepth: " << m_maxDepth << "\n";
+//		std::cout << "  oneLevelCodelength: " << m_oneLevelCodelength << "\n";
+//		std::cout << "  codelength: " << m_codelength << "\n";
+
 		std::deque<SNode*> nodeList;
 		nodeList.push_back(&m_rootNode);
 		m_rootNode.data.name = m_networkName;
 		unsigned int childPosition = out.size() + m_rootNode.serializationSize(writeEdges);
+		using namespace SerialTypes;
 		while (nodeList.size() > 0) // visit tree breadth first
 		{
 			SNode& node = *nodeList.front();
@@ -559,7 +598,8 @@ public:
 			// Write current node to the file
 			node.serialize(out, childPosition, writeEdges);
 			// add the children of the current node to the list and aggregate their binary sizes to the children pointer
-			for (unsigned int i = 0; i < node.children.size(); ++i)
+			childSize_t numChildren = numeric_cast<childSize_t>(node.children.size());
+			for (childSize_t i = 0; i < numChildren; ++i)
 			{
 				SNode* child = node.children[i];
 				nodeList.push_back(child);
