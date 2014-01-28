@@ -75,6 +75,9 @@ Config getConfig(int argc, char *argv[])
 	api.addOptionArgument(conf.clusterDataFile, 'c', "cluster-data",
 			"Provide an initial two-level solution (.clu format).", "p");
 
+	api.addOptionArgument(conf.noInfomap, "no-infomap",
+			"Don't run Infomap. Useful if initial cluster data should be preserved or non-modular data printed.");
+
 	// --------------------- Output options ---------------------
 	api.addOptionArgument(conf.printTree, "tree",
 			"Print the hierarchy in .tree format. (default true if no other output with cluster data)");
