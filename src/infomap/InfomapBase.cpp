@@ -71,11 +71,6 @@ void InfomapBase::run()
 	if (m_config.benchmark)
 		Logger::benchmark("calcFlow", root()->codelength, 1, 1, 1);
 
-	if (m_config.clusterDataFile != "")
-	{
-		calcCodelengthFromExternalClusterData();
-		//		return;
-	}
 
 	std::vector<double> codelengths(m_config.numTrials);
 	std::ostringstream bestSolutionStatistics;
@@ -87,21 +82,17 @@ void InfomapBase::run()
 		m_iterationCount = 0;
 
 		// First clear existing modular structure
-//		unsigned int d = 0;
 		while ((*m_treeData.begin_leaf())->parent != root())
 		{
-//			++d;
-//			RELEASE_OUT(" ====================== BEFORE clearing level " << d << " ===================\n");
-//			RELEASE_OUT("Node count: " << NodeBase::nodeCount() << "\n");
-//			printSubInfomapTreeDebug(std::cout, m_treeData);
-//			root()->replaceChildrenWithGrandChildrenDebug();
 			root()->replaceChildrenWithGrandChildren();
-//			RELEASE_OUT(" ---------------------- AFTER clearing level " << d << " --------------------\n");
-//			RELEASE_OUT("Node count: " << NodeBase::nodeCount() << "\n");
-//			printSubInfomapTreeDebug(std::cout, m_treeData);
 		}
 
-		runPartition();
+		if (m_config.clusterDataFile != "")
+			consolidateExternalClusterData();
+
+		if (!m_config.noInfomap)
+			runPartition();
+
 //		hierarchicalPartition();
 
 		codelengths[iTrial] = hierarchicalCodelength;
@@ -1182,7 +1173,7 @@ void InfomapBase::setActiveNetworkFromLeafs()
 	m_moveTo.resize(m_activeNetwork.size());
 }
 
-void InfomapBase::calcCodelengthFromExternalClusterData()
+void InfomapBase::consolidateExternalClusterData()
 {
 	ALL_OUT("Calculating codelength from external data... ");
 	ClusterReader cluReader(numLeafNodes());
@@ -1221,7 +1212,10 @@ void InfomapBase::calcCodelengthFromExternalClusterData()
 			moduleIt != endIt; ++moduleIt)
 	{
 		moduleIt->index = moduleIt->originalIndex = packedModuleIndex++;
+		moduleIt->codelength = calcCodelengthFromFlowWithinOrExit(*moduleIt);
 	}
+
+	hierarchicalCodelength = codelength;
 
 	ALL_OUT("done! Two-level codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
 			codelength << " in " << numTopModules() << " modules." << std::endl);
