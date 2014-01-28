@@ -108,38 +108,51 @@ void Network::parsePajekNetwork(std::string filename)
 	m_nodeWeights.assign(numNodes, 1.0);
 	m_sumNodeWeights = 0.0;
 
-	// Read node names, assuming order 1, 2, 3, ...
-	for (unsigned int i = 0; i < numNodes; ++i)
+	char next = input.peek();
+	if (next == '*') // Short pajek version (no nodes defined), set node number as name
 	{
-		std::getline(input,line);
-		unsigned int nameStart = line.find_first_of("\"");
-		unsigned int nameEnd = line.find_last_of("\"");
-		string name;
-		double nodeWeight = 1.0;
-		if(nameStart < nameEnd) {
-			name = string(line.begin() + nameStart + 1, line.begin() + nameEnd);
-			line = line.substr(nameEnd + 1);
-			ss.clear();
-			ss.str(line);
+		for (unsigned int i = 0; i < numNodes; ++i)
+		{
+			m_nodeWeights[i] = 1.0;
+			m_nodeNames[i] = io::stringify(i+1);
 		}
-		else {
-			ss.clear();
-			ss.str(line);
-			ss >> buf; // Take away the index from the stream
-			ss >> name; // Extract the next token as the name assuming no spaces
-		}
-		ss >> nodeWeight; // Extract the next token as node weight. If failed, the old value (1.0) is kept.
-		m_sumNodeWeights += nodeWeight;
-		m_nodeWeights[i] = nodeWeight;
-//		m_nodeMap.insert(make_pair(name, i));
-		m_nodeNames[i] = name;
+		m_sumNodeWeights = numNodes * 1.0;
 	}
-
-	if (m_config.nodeLimit > 0 && numNodes < specifiedNumNodes)
+	else
 	{
-		unsigned int surplus = specifiedNumNodes - numNodes;
-		for (unsigned int i = 0; i < surplus; ++i)
-			std::getline(input, line);
+		// Read node names, assuming order 1, 2, 3, ...
+		for (unsigned int i = 0; i < numNodes; ++i)
+		{
+			std::getline(input,line);
+			unsigned int nameStart = line.find_first_of("\"");
+			unsigned int nameEnd = line.find_last_of("\"");
+			string name;
+			double nodeWeight = 1.0;
+			if(nameStart < nameEnd) {
+				name = string(line.begin() + nameStart + 1, line.begin() + nameEnd);
+				line = line.substr(nameEnd + 1);
+				ss.clear();
+				ss.str(line);
+			}
+			else {
+				ss.clear();
+				ss.str(line);
+				ss >> buf; // Take away the index from the stream
+				ss >> name; // Extract the next token as the name assuming no spaces
+			}
+			ss >> nodeWeight; // Extract the next token as node weight. If failed, the old value (1.0) is kept.
+			m_sumNodeWeights += nodeWeight;
+			m_nodeWeights[i] = nodeWeight;
+	//		m_nodeMap.insert(make_pair(name, i));
+			m_nodeNames[i] = name;
+		}
+
+		if (m_config.nodeLimit > 0 && numNodes < specifiedNumNodes)
+		{
+			unsigned int surplus = specifiedNumNodes - numNodes;
+			for (unsigned int i = 0; i < surplus; ++i)
+				std::getline(input, line);
+		}
 	}
 
 	// Read the number of links in the network

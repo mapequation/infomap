@@ -41,6 +41,7 @@ struct Config
 		ignoreEdgeWeights(false),
 		nodeLimit(0),
 	 	clusterDataFile(""),
+	 	noInfomap(false),
 	 	twoLevel(false),
 		directed(false),
 		undirdir(false),
@@ -148,6 +149,7 @@ struct Config
 	bool ignoreEdgeWeights;
 	unsigned int nodeLimit;
 	std::string clusterDataFile;
+	bool noInfomap;
 
 	// Core algorithm
 	bool twoLevel;

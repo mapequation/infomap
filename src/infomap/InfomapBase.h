@@ -220,7 +220,7 @@ private:
 	void initSuperNetwork(NodeBase& parent);
 	void setActiveNetworkFromChildrenOfRoot();
 	void setActiveNetworkFromLeafs();
-	void calcCodelengthFromExternalClusterData();
+	void consolidateExternalClusterData();
 	bool initNetwork();
 	bool checkAndConvertBinaryTree();
 	void printNetworkData(std::string filename = "", bool sort = true);
