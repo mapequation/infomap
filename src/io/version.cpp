@@ -27,4 +27,4 @@
 
 #include "version.h"
 
-const char* INFOMAP_VERSION = "0.13.2";
+const char* INFOMAP_VERSION = "0.13.3";
