@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <set>
 #include <functional>   // std::greater
+#include <limits>
 #include "SafeFile.h"
 
 enum EdgeAggregationPolicy { NONE, PARTIAL, FULL };
