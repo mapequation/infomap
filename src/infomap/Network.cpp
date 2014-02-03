@@ -33,6 +33,7 @@
 #include "../utils/Logger.h"
 #include <cstdlib>
 #include <cstring>
+#include <cstdio>
 
 using std::make_pair;
 
@@ -549,19 +550,21 @@ void Network::parsePajekNetworkCStyle(std::string filename)
 	m_nodeWeights.assign(numNodes, 1.0);
 	m_sumNodeWeights = 0.0;
 
-//	char next = input.peek();
-//	if (next == '*') // Short pajek version (no nodes defined), set node number as name
-//	{
-//		char nameBuff[16];
-//		for (unsigned int i = 0; i < numNodes; ++i)
-//		{
-//			m_nodeWeights[i] = 1.0;
-//			std::snprintf(buffer, bufferLength, "%d", i+1);
-//			m_nodeNames[i] = std::string(asdf);
-//		}
-//		m_sumNodeWeights = numNodes * 1.0;
-//	}
-//	else
+
+	int next = fgetc(file);
+	ungetc(next, file);
+	if (next == '*') // Short pajek version (no nodes defined), set node number as name
+	{
+		char nameBuff[16];
+		for (unsigned int i = 0; i < numNodes; ++i)
+		{
+			m_nodeWeights[i] = 1.0;
+			std::snprintf(nameBuff, 16, "%d", i+1);
+			m_nodeNames[i] = std::string(nameBuff);
+		}
+		m_sumNodeWeights = numNodes * 1.0;
+	}
+	else
 	{
 		char *first;
 		char *last;
