@@ -559,7 +559,7 @@ void Network::parsePajekNetworkCStyle(std::string filename)
 		for (unsigned int i = 0; i < numNodes; ++i)
 		{
 			m_nodeWeights[i] = 1.0;
-			std::snprintf(nameBuff, 16, "%d", i+1);
+			snprintf(nameBuff, 16, "%d", i+1);
 			m_nodeNames[i] = std::string(nameBuff);
 		}
 		m_sumNodeWeights = numNodes * 1.0;
