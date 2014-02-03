@@ -33,6 +33,7 @@
 #include "../utils/Logger.h"
 #include <cstdlib>
 #include <cstring>
+#include <cstdio>
 
 using std::make_pair;
 
@@ -549,43 +550,61 @@ void Network::parsePajekNetworkCStyle(std::string filename)
 	m_nodeWeights.assign(numNodes, 1.0);
 	m_sumNodeWeights = 0.0;
 
-	char *first;
-	char *last;
-	// Read node names, assuming order 1, 2, 3, ...
-	for(unsigned int i = 0; i < numNodes; ++i)
+
+	int next = fgetc(file);
+	ungetc(next, file);
+	if (next == '*') // Short pajek version (no nodes defined), set node number as name
 	{
-		if (fgets (line , LINELENGTH , file) == NULL)
-			throw FileFormatError("Can't read enough nodes.");
-
-		first = strchr(line, '\"')+1;
-		last = strrchr(line, '\"');
-		if(last > first)
+		char nameBuff[16];
+		for (unsigned int i = 0; i < numNodes; ++i)
 		{
-			size_t len = (size_t)(last - first);
-			m_nodeNames[i] = std::string(first, len);
+			m_nodeWeights[i] = 1.0;
+			std::snprintf(nameBuff, 16, "%d", i+1);
+			m_nodeNames[i] = std::string(nameBuff);
 		}
-		else
-		{
-			throw FileFormatError(io::Str() << "Can't read \"name\" of node " << (i+1) << ".");
-		}
-
-		double nodeWeight = strtod(++last, NULL);
-		if (nodeWeight < 1e-10)
-			nodeWeight = 1.0;
-
-		m_sumNodeWeights += nodeWeight;
-		m_nodeWeights[i] = nodeWeight;
+		m_sumNodeWeights = numNodes * 1.0;
 	}
-
-	if (m_config.nodeLimit > 0 && numNodes < specifiedNumNodes)
+	else
 	{
-		unsigned int surplus = specifiedNumNodes - numNodes;
-		for (unsigned int i = 0; i < surplus; ++i)
+		char *first;
+		char *last;
+		// Read node names, assuming order 1, 2, 3, ...
+		for(unsigned int i = 0; i < numNodes; ++i)
 		{
 			if (fgets (line , LINELENGTH , file) == NULL)
-				throw FileFormatError("The specified number of nodes is more than the number of lines that can be read.");
+				throw FileFormatError("Can't read enough nodes.");
+
+			first = strchr(line, '\"')+1;
+			last = strrchr(line, '\"');
+			if(last > first)
+			{
+				size_t len = (size_t)(last - first);
+				m_nodeNames[i] = std::string(first, len);
+			}
+			else
+			{
+				throw FileFormatError(io::Str() << "Can't read \"name\" of node " << (i+1) << ".");
+			}
+
+			double nodeWeight = strtod(++last, NULL);
+			if (nodeWeight < 1e-10)
+				nodeWeight = 1.0;
+
+			m_sumNodeWeights += nodeWeight;
+			m_nodeWeights[i] = nodeWeight;
+		}
+
+		if (m_config.nodeLimit > 0 && numNodes < specifiedNumNodes)
+		{
+			unsigned int surplus = specifiedNumNodes - numNodes;
+			for (unsigned int i = 0; i < surplus; ++i)
+			{
+				if (fgets (line , LINELENGTH , file) == NULL)
+					throw FileFormatError("The specified number of nodes is more than the number of lines that can be read.");
+			}
 		}
 	}
+
 
 	// Read the number of links in the network
 	unsigned int numDoubleLinks = 0;
@@ -727,7 +746,9 @@ void Network::parseLinkListCStyle(std::string filename)
 		++numEdgeLines;
 		unsigned int linkEnd1, linkEnd2;
 		double linkWeight;
-		parseEdgeCStyle(line, linkEnd1, linkEnd2, linkWeight);
+		if (!parseEdgeCStyle(line, linkEnd1, linkEnd2, linkWeight))
+			throw FileFormatError("Can't parse edge data.");
+
 
 		linkEnd1 -= lowestNodeNumber;
 		linkEnd2 -= lowestNodeNumber;
