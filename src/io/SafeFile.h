@@ -121,7 +121,7 @@ protected:
 #include <cstdio>
 
 template<typename T>
-struct ToBinary {
+struct BinaryHelper {
 	static size_t write(T value, std::FILE* file)
 	{
 		return fwrite(reinterpret_cast<const char*>(&value), sizeof(value), 1, file);
@@ -129,7 +129,7 @@ struct ToBinary {
 };
 
 template<>
-struct ToBinary<std::string> {
+struct BinaryHelper<std::string> {
 	static size_t write(std::string value, std::FILE* file)
 	{
 		unsigned short stringLength = static_cast<unsigned short>(value.length());
@@ -143,16 +143,16 @@ struct ToBinary<std::string> {
  *
  * @note Strings are prepended with its length as unsigned short.
  */
-class BinaryFile {
+class SafeBinaryOutFile {
 public:
-	BinaryFile (const char* filename)
+	SafeBinaryOutFile (const char* filename)
 	: m_file(std::fopen(filename, "w"))
 	{
         if (!m_file)
             throw std::runtime_error("file open failure");
     }
 
-    ~BinaryFile() {
+    ~SafeBinaryOutFile() {
         if (std::fclose(m_file)) {
            // failed to flush latest changes.
            // handle it
@@ -160,9 +160,9 @@ public:
     }
 
     template<typename T>
-    BinaryFile& operator<<(T value)
+    SafeBinaryOutFile& operator<<(T value)
 	{
-    	ToBinary<T>::write(value, m_file);
+    	BinaryHelper<T>::write(value, m_file);
     	return *this;
 	}
 
@@ -192,8 +192,8 @@ private:
     std::FILE* m_file;
 
     // prevent copying and assignment; not implemented
-	BinaryFile (const BinaryFile &);
-	BinaryFile & operator= (const BinaryFile &);
+	SafeBinaryOutFile (const SafeBinaryOutFile &);
+	SafeBinaryOutFile & operator= (const SafeBinaryOutFile &);
 };
 
 class SafeOutFileBinary : public ofstream_binary

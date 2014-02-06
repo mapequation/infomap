@@ -39,6 +39,8 @@
 #include "../utils/infomath.h"
 #include "../io/convert.h"
 #include "../utils/Stopwatch.h"
+#include "MemFlowNetwork.h"
+#include "MemNetwork.h"
 #ifdef _OPENMP
 #include <omp.h>
 #include <stdio.h>
@@ -48,6 +50,7 @@
 #include "Network.h"
 #include "FlowNetwork.h"
 #include "../io/version.h"
+#include <functional>
 
 void InfomapBase::run()
 {
@@ -73,7 +76,7 @@ void InfomapBase::run()
 
 	if (m_config.clusterDataFile != "")
 	{
-		calcCodelengthFromExternalClusterData();
+		consolidateExternalClusterData();
 		//		return;
 	}
 
@@ -678,7 +681,8 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 //		{
 //			for (int moduleIndex = iProc; moduleIndex < numModulesInt; moduleIndex += numProcs)
 //			{
-#pragma omp parallel for schedule(dynamic, 1)
+//#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp for
 	for(iModule = 0; iModule < numModulesInt; ++iModule)
 	{
 		unsigned int moduleIndex = static_cast<unsigned int>(iModule);
@@ -804,10 +808,8 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 	}
 
 	setActiveNetworkFromChildrenOfRoot();
-
 	initConstantInfomapTerms();
 	initModuleOptimization();
-
 
 	if (verbose)
 	{
@@ -1135,7 +1137,8 @@ void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)
 
 bool InfomapBase::initNetwork()
 {
-	Network network(m_config);
+//	Network network(m_config);
+	MemNetwork network(m_config);
 
 	try
 	{
@@ -1147,7 +1150,7 @@ bool InfomapBase::initNetwork()
 		return false;
 	}
 
-	FlowNetwork flowNetwork;
+	MemFlowNetwork flowNetwork;
 	flowNetwork.calculateFlow(network, m_config);
 
 	if (m_config.printPajekNetwork)
@@ -1157,16 +1160,24 @@ bool InfomapBase::initNetwork()
 		network.printNetworkAsPajek(outName);
 	}
 
-	const std::vector<std::string>& nodeNames = network.nodeNames();
+//	const std::vector<std::string>& nodeNames = network.nodeNames();
 	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
 	const std::vector<double>& nodeTeleportWeights = flowNetwork.getNodeTeleportRates();
-	m_treeData.reserveNodeCount(network.numNodes());
+	m_treeData.reserveNodeCount(network.numM2Nodes());
 
-	for (unsigned int i = 0; i < network.numNodes(); ++i)
-		m_treeData.addNewNode(nodeNames[i], nodeFlow[i], nodeTeleportWeights[i]);
+	for (unsigned int i = 0; i < network.numM2Nodes(); ++i)
+		m_treeData.addNewNode((io::Str() << "m2-" << i), nodeFlow[i], nodeTeleportWeights[i]);
 	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();
 	for (unsigned int i = 0; i < links.size(); ++i)
 		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow);
+
+	// Add physical nodes
+	const MemNetwork::M2NodeMap& nodeMap = network.m2NodeMap();
+	for (MemNetwork::M2NodeMap::const_iterator m2nodeIt(nodeMap.begin()); m2nodeIt != nodeMap.end(); ++m2nodeIt)
+	{
+		unsigned int nodeIndex = m2nodeIt->second;
+		getPhysicalNodes(m_treeData.getLeafNode(nodeIndex)).push_back(PhysData(m2nodeIt->first.phys2, nodeFlow[nodeIndex]));
+	}
 
 	initEnterExitFlow();
 
@@ -1195,7 +1206,7 @@ void InfomapBase::initSuperNetwork(NodeBase& parent)
 void InfomapBase::setActiveNetworkFromChildrenOfRoot()
 {
 	DEBUG_OUT("InfomapBase::setActiveNetworkFromChildrenOfRoot() with childDegree: " <<
-			root()->childDegree() << "..." << std::endl);
+			root()->childDegree() << "... ");
 	unsigned int numNodes = root()->childDegree();
 	m_activeNetwork = m_nonLeafActiveNetwork;
 	m_activeNetwork.resize(numNodes);
@@ -1205,6 +1216,7 @@ void InfomapBase::setActiveNetworkFromChildrenOfRoot()
 	{
 		m_activeNetwork[i] = childIt.base();
 	}
+	DEBUG_OUT("done!\n");
 }
 
 void InfomapBase::setActiveNetworkFromLeafs()
@@ -1215,7 +1227,7 @@ void InfomapBase::setActiveNetworkFromLeafs()
 	m_moveTo.resize(m_activeNetwork.size());
 }
 
-void InfomapBase::calcCodelengthFromExternalClusterData()
+void InfomapBase::consolidateExternalClusterData()
 {
 	ALL_OUT("Calculating codelength from external data... ");
 	ClusterReader cluReader(numLeafNodes());

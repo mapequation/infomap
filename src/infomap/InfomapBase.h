@@ -80,6 +80,7 @@ public:
 protected:
 
 	virtual FlowDummy getNodeData(NodeBase& node) = 0;
+	virtual std::vector<PhysData>& getPhysicalNodes(NodeBase& node) = 0;
 
 	/**
 	 * Set the exit (and enter) flow on the nodes.
@@ -215,7 +216,7 @@ private:
 	void initSuperNetwork(NodeBase& parent);
 	void setActiveNetworkFromChildrenOfRoot();
 	void setActiveNetworkFromLeafs();
-	void calcCodelengthFromExternalClusterData();
+	void consolidateExternalClusterData();
 	void printNetworkData(std::string filename = "", bool sort = true);
 	void printClusterVector(std::ostream& out);
 	void printTree(std::ostream& out, const NodeBase& root, const std::string& prefix = "");

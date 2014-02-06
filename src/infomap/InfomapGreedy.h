@@ -46,11 +46,11 @@
 
 struct DeltaFlow {
 	DeltaFlow()
-	:	module(0), deltaExit(0.0), deltaEnter(0.0) {}
-	DeltaFlow(unsigned int module, double deltaExit, double deltaEnter)
-	:	module(module), deltaExit(deltaExit), deltaEnter(deltaEnter) {}
+	:	module(0), deltaExit(0.0), deltaEnter(0.0), sumDeltaPlogpPhysFlow(0.0), sumPlogpPhysFlow(0.0) {}
+	DeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow, double sumPlogpPhysFlow)
+	:	module(module), deltaExit(deltaExit), deltaEnter(deltaEnter), sumDeltaPlogpPhysFlow(sumDeltaPlogpPhysFlow), sumPlogpPhysFlow(sumPlogpPhysFlow) {}
 	DeltaFlow(const DeltaFlow& other) // Copy constructor
-	:	module(other.module), deltaExit(other.deltaExit), deltaEnter(other.deltaEnter) {}
+	:	module(other.module), deltaExit(other.deltaExit), deltaEnter(other.deltaEnter), sumDeltaPlogpPhysFlow(other.sumDeltaPlogpPhysFlow), sumPlogpPhysFlow(other.sumPlogpPhysFlow) {}
 	DeltaFlow& operator=(DeltaFlow other) // Assignment operator (copy-and-swap idiom)
 	{
 		swap(*this, other);
@@ -61,12 +61,23 @@ struct DeltaFlow {
 		std::swap(first.module, second.module);
 		std::swap(first.deltaExit, second.deltaExit);
 		std::swap(first.deltaEnter, second.deltaEnter);
+		std::swap(first.sumDeltaPlogpPhysFlow, second.sumDeltaPlogpPhysFlow);
+		std::swap(first.sumPlogpPhysFlow, second.sumPlogpPhysFlow);
 	}
 	unsigned int module;
 	double deltaExit;
 	double deltaEnter;
+	double sumDeltaPlogpPhysFlow;
+	double sumPlogpPhysFlow;
 };
 
+struct MemNodeSet
+{
+	MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) {}
+	unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
+	double sumFlow;
+};
+typedef std::map<unsigned int, MemNodeSet>		ModuleToMemNodes;
 
 template<typename InfomapImplementation>
 class InfomapGreedy : public InfomapBase
@@ -74,17 +85,19 @@ class InfomapGreedy : public InfomapBase
 public:
 	typedef typename flowData_traits<InfomapImplementation>::flow_type		FlowType;
 	typedef typename flowData_traits<InfomapImplementation>::detailedBalance_type DetailedBalanceBoolType;
-	typedef Node<FlowType>													NodeType;
+	typedef MemNode<FlowType>												NodeType;
 	typedef Edge<NodeBase>													EdgeType;
 
 	InfomapGreedy(const Config& conf)
-	:	InfomapBase(conf, new NodeFactory<FlowType>()),
+	:	InfomapBase(conf, new MemNodeFactory<FlowType>()),
 	 	nodeFlow_log_nodeFlow(0.0),
 		flow_log_flow(0.0),
 		exit_log_exit(0.0),
 		enter_log_enter(0.0),
 		enterFlow(0.0),
 		enterFlow_log_enterFlow(0.0),
+		physFlow_log_physFlow(0.0),
+		m_numPhysicalNodes(0),
 	 	exitNetworkFlow(0.0),
 	 	exitNetworkFlow_log_exitNetworkFlow(0.0)
 	{
@@ -166,6 +179,8 @@ protected:
 
 	virtual FlowDummy getNodeData(NodeBase& node);
 
+	virtual std::vector<PhysData>& getPhysicalNodes(NodeBase& node);
+
 private:
 	InfomapImplementation& getImpl();
 	InfomapImplementation& getImpl(InfomapBase& infomap);
@@ -175,12 +190,17 @@ protected:
 	std::vector<unsigned int> m_moduleMembers;
 	std::vector<unsigned int> m_emptyModules;
 
+	std::vector<ModuleToMemNodes> m_physToModuleToMemNodes; // vector[physicalNodeID] map<moduleID, {#memNodes, sumFlow}>  
+
 	double nodeFlow_log_nodeFlow; // constant while the leaf network is the same
 	double flow_log_flow; // node.(flow + exitFlow)
 	double exit_log_exit;
 	double enter_log_enter;
 	double enterFlow;
 	double enterFlow_log_enterFlow;
+
+	double physFlow_log_physFlow; // For memory networks
+	unsigned int m_numPhysicalNodes;
 
 	// For hierarchical
 	double exitNetworkFlow;
@@ -284,11 +304,17 @@ void InfomapGreedy<InfomapImplementation>::initConstantInfomapTerms()
 template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::initModuleOptimization()
 {
+	DEBUG_OUT("\n::initModuleOptimization()" << std::flush);
 	unsigned int numNodes = m_activeNetwork.size();
 	m_moduleFlowData.resize(numNodes);
 	m_moduleMembers.assign(numNodes, 1);
 	m_emptyModules.clear();
 	m_emptyModules.reserve(numNodes);
+
+	if (m_numPhysicalNodes == 0)
+		m_numPhysicalNodes = numNodes;
+	m_physToModuleToMemNodes.clear();
+	m_physToModuleToMemNodes.resize(m_numPhysicalNodes);
 
 	unsigned int i = 0;
 	for (activeNetwork_iterator it(m_activeNetwork.begin()), itEnd(m_activeNetwork.end());
@@ -297,7 +323,17 @@ void InfomapGreedy<InfomapImplementation>::initModuleOptimization()
 		NodeType& node = getNode(**it);
 		node.index = i; // Unique module index for each node
 		m_moduleFlowData[i] = node.data;
+
+		unsigned int numPhysicalMembers = node.physicalNodes.size();
+		for(unsigned int j = 0; j < numPhysicalMembers; ++j)
+		{
+			PhysData& physData = node.physicalNodes[j];
+			m_physToModuleToMemNodes[physData.physNodeIndex].insert(m_physToModuleToMemNodes[physData.physNodeIndex].end(),
+					std::make_pair(i, MemNodeSet(1, physData.sumFlowFromM2Node)));
+		}
 	}
+
+
 
 	// Initiate codelength terms for the initial state of one module per node
 	calculateCodelengthFromActiveNetwork();
@@ -382,6 +418,7 @@ template<typename InfomapImplementation>
 inline
 unsigned int InfomapGreedy<InfomapImplementation>::optimizeModules()
 {
+	DEBUG_OUT("\nInfomapGreedy<InfomapImplementation>::optimizeModules()");
 	unsigned int numOptimizationRounds = 0;
 	double oldCodelength = codelength;
 	unsigned int loopLimit = m_config.coreLoopLimit;
@@ -470,7 +507,9 @@ double InfomapGreedy<InfomapImplementation>::getDeltaCodelength(NodeType& curren
 			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
-	double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
+	double delta_physFlow_log_physFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
+	double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow - delta_physFlow_log_physFlow;
 	return deltaL;
 }
 
@@ -505,7 +544,9 @@ double InfomapGreedy<InfomapUndirected>::getDeltaCodelength(NodeType& current,
 			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
-	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow;
+	double delta_physFlow_log_physFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
+	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_physFlow_log_physFlow;
 	return deltaL;
 }
 
@@ -536,7 +577,9 @@ double InfomapGreedy<InfomapDirected>::getDeltaCodelength(NodeType& current,
 			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
-	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow;
+	double delta_physFlow_log_physFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
+	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_physFlow_log_physFlow;
 	return deltaL;
 }
 
@@ -594,8 +637,10 @@ void InfomapGreedy<InfomapImplementation>::updateCodelength(NodeType& current,
 
 	enterFlow_log_enterFlow = plogp(enterFlow);
 
+	physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
 	indexCodelength = enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow;
-	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
+	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow - physFlow_log_physFlow;
 	codelength = indexCodelength + moduleCodelength;
 }
 
@@ -643,8 +688,10 @@ void InfomapGreedy<InfomapUndirected>::updateCodelength(NodeType& current,
 
 	enterFlow_log_enterFlow = plogp(enterFlow);
 
+	physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
-	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
+	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow - physFlow_log_physFlow;
 	codelength = indexCodelength + moduleCodelength;
 }
 
@@ -691,8 +738,10 @@ void InfomapGreedy<InfomapDirected>::updateCodelength(NodeType& current,
 
 	enterFlow_log_enterFlow = plogp(enterFlow);
 
+	physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
-	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
+	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow - physFlow_log_physFlow;
 	codelength = indexCodelength + moduleCodelength;
 }
 
@@ -747,7 +796,7 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 			(current.outDegree() == 1 && current.inDegree() == 1) &&
 			(**current.begin_outEdge()).target == current))
 		{
-			DEBUG_OUT("SKIPPING isolated node " << current << std::endl);
+			DEBUG_OUT("SKIPPING isolated node " << current << "\n");
 			//TODO: If not skipping self-links, this yields different results from moveNodesToPredefinedModules!!
 			ASSERT(!m_config.includeSelfLinks);
 			continue;
@@ -762,6 +811,8 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 			moduleDeltaEnterExit[numModuleLinks].module = current.index;
 			moduleDeltaEnterExit[numModuleLinks].deltaExit = 0.0;
 			moduleDeltaEnterExit[numModuleLinks].deltaEnter = 0.0;
+			moduleDeltaEnterExit[numModuleLinks].sumDeltaPlogpPhysFlow = 0.0;
+			moduleDeltaEnterExit[numModuleLinks].sumPlogpPhysFlow = 0.0;
 			++numModuleLinks;
 		}
 		else
@@ -785,6 +836,8 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 					moduleDeltaEnterExit[numModuleLinks].module = neighbour.index;
 					moduleDeltaEnterExit[numModuleLinks].deltaExit = edge.data.flow;
 					moduleDeltaEnterExit[numModuleLinks].deltaEnter = 0.0;
+					moduleDeltaEnterExit[numModuleLinks].sumDeltaPlogpPhysFlow = 0.0;
+					moduleDeltaEnterExit[numModuleLinks].sumPlogpPhysFlow = 0.0;
 					++numModuleLinks;
 				}
 			}
@@ -808,6 +861,8 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 				moduleDeltaEnterExit[numModuleLinks].module = neighbour.index;
 				moduleDeltaEnterExit[numModuleLinks].deltaExit = 0.0;
 				moduleDeltaEnterExit[numModuleLinks].deltaEnter = edge.data.flow;
+				moduleDeltaEnterExit[numModuleLinks].sumDeltaPlogpPhysFlow = 0.0;
+				moduleDeltaEnterExit[numModuleLinks].sumPlogpPhysFlow = 0.0;
 				++numModuleLinks;
 			}
 		}
@@ -819,8 +874,11 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 			moduleDeltaEnterExit[numModuleLinks].module = current.index;
 			moduleDeltaEnterExit[numModuleLinks].deltaExit = 0.0;
 			moduleDeltaEnterExit[numModuleLinks].deltaEnter = 0.0;
+			moduleDeltaEnterExit[numModuleLinks].sumDeltaPlogpPhysFlow = 0.0;
+			moduleDeltaEnterExit[numModuleLinks].sumPlogpPhysFlow = 0.0;
 			++numModuleLinks;
 		}
+
 
 		// Empty function if no teleportation coding model
 		addTeleportationDeltaFlowIfMove(current, moduleDeltaEnterExit, numModuleLinks);
@@ -831,11 +889,99 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 			moduleDeltaEnterExit[numModuleLinks].module = m_emptyModules.back();
 			moduleDeltaEnterExit[numModuleLinks].deltaExit = 0.0;
 			moduleDeltaEnterExit[numModuleLinks].deltaEnter = 0.0;
+			moduleDeltaEnterExit[numModuleLinks].sumDeltaPlogpPhysFlow = 0.0;
+			moduleDeltaEnterExit[numModuleLinks].sumPlogpPhysFlow = 0.0;
 			++numModuleLinks;
 		}
 
 		// Store the DeltaFlow of the current module
 		DeltaFlow oldModuleDelta(moduleDeltaEnterExit[redirect[current.index] - offset]);
+
+
+		// Overlapping modules
+		/**
+		 * delta = old.first + new.first + old.second - new.second.
+		 * Two cases: (p(x) = plogp(x))
+		 * Moving to a module that already have that physical node: (old: p1, p2, new p3, moving p2 -> old:p1, new p2,p3)
+		 * Then old.second = new.second = plogp(physicalNodeSize) -> cancelation -> delta = p(p1) - p(p1+p2) + p(p2+p3) - p(p3)
+		 * Moving to a module that not have that physical node: (old: p1, p2, new -, moving p2 -> old: p1, new: p2)
+		 * Then new.first = new.second = 0 -> delta = p(p1) - p(p1+p2) + p(p2).
+		 */
+//		overlapNtoOldM.first = 0.0;
+//		overlapNtoOldM.second = 0.0;
+//		// For all multiple assigned nodes
+//		int flipNphysicalNode = node[flip]->physicalNodes.size();
+//		for(int j=0;j<flipNphysicalNode;j++){
+//			int physicalNode = node[flip]->physicalNodes[j].first;
+//			double physicalNodeSize = node[flip]->physicalNodes[j].second;
+//			for(map<int,pair<int,double> >::iterator overlap_it = mod_nodeSize[physicalNode].begin(); overlap_it != mod_nodeSize[physicalNode].end(); ++overlap_it){
+//				int nb_M = overlap_it->first;
+//				if(nb_M == oldM){ // From where the multiple assigned node is moved
+//					double oldP = overlap_it->second.second;
+//					double newP = overlap_it->second.second - physicalNodeSize;
+//					overlapNtoOldM.first += plogp(newP) - plogp(oldP);
+//					overlapNtoOldM.second += plogp(physicalNodeSize);
+//				}
+//				else{ // To where the multiple assigned node is moved
+//					double oldP = overlap_it->second.second;
+//					double newP = overlap_it->second.second + physicalNodeSize;
+//					if(redirect[nb_M] >= offset){
+//						overlapNtoM[redirect[nb_M] - offset].first += plogp(newP) - plogp(oldP);
+//						overlapNtoM[redirect[nb_M] - offset].second += plogp(physicalNodeSize);
+//						// cout << "(" << flip << ">" << nb_M << " " << (plogp(newP) - plogp(oldP))/log(2.0) << ") ";
+//					}
+//					else{
+//						redirect[nb_M] = offset + NmodLinks;
+//						flowNtoM[NmodLinks].first = nb_M;
+//						flowNtoM[NmodLinks].second.first = 0.0;
+//						flowNtoM[NmodLinks].second.second = 0.0;
+//						overlapNtoM[NmodLinks].first = plogp(newP) - plogp(oldP);
+//						overlapNtoM[NmodLinks].second = plogp(physicalNodeSize);
+//						NmodLinks++;
+//					}
+//				}
+//			}
+//		}
+
+		unsigned int numPhysicalNodes = current.physicalNodes.size();
+		for (unsigned int i = 0; i < numPhysicalNodes; ++i)
+		{
+			PhysData& physData = current.physicalNodes[i];
+			ModuleToMemNodes& moduleToMemNodes = m_physToModuleToMemNodes[physData.physNodeIndex];
+			for (ModuleToMemNodes::iterator overlapIt(moduleToMemNodes.begin()); overlapIt != moduleToMemNodes.end(); ++overlapIt)
+			{
+				unsigned int moduleIndex = overlapIt->first;
+				MemNodeSet& memNodeSet = overlapIt->second;
+				if (moduleIndex == current.index) // From where the multiple assigned node is moved
+				{
+					double oldPhysFlow = memNodeSet.sumFlow;
+					double newPhysFlow = memNodeSet.sumFlow - physData.sumFlowFromM2Node;
+					oldModuleDelta.sumDeltaPlogpPhysFlow += infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
+					oldModuleDelta.sumPlogpPhysFlow += infomath::plogp(physData.sumFlowFromM2Node);
+				}
+				else // To where the multiple assigned node is moved
+				{
+					double oldPhysFlow = memNodeSet.sumFlow;
+					double newPhysFlow = memNodeSet.sumFlow + physData.sumFlowFromM2Node;
+					if (redirect[moduleIndex] >= offset)
+					{
+						moduleDeltaEnterExit[redirect[moduleIndex] - offset].sumDeltaPlogpPhysFlow += infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
+						moduleDeltaEnterExit[redirect[moduleIndex] - offset].sumPlogpPhysFlow += infomath::plogp(physData.sumFlowFromM2Node);
+					}
+					else
+					{
+						redirect[moduleIndex] = offset + numModuleLinks;
+						moduleDeltaEnterExit[numModuleLinks].module = moduleIndex;
+						moduleDeltaEnterExit[numModuleLinks].deltaExit = 0.0;
+						moduleDeltaEnterExit[numModuleLinks].deltaEnter = 0.0;
+						moduleDeltaEnterExit[numModuleLinks].sumDeltaPlogpPhysFlow = infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
+						moduleDeltaEnterExit[numModuleLinks].sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
+						++numModuleLinks;
+					}
+				}
+			}
+		}
+
 
 
 		// Randomize link order for optimized search
@@ -881,10 +1027,42 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 
 			updateCodelength(current, oldModuleDelta, bestDeltaModule);
 
+//			RELEASE_OUT("\n-->codelength: " << indexCodelength << " + " << moduleCodelength << " = " << codelength);
+
 			m_moduleMembers[current.index] -= 1;
 			m_moduleMembers[bestModuleIndex] += 1;
 
+			unsigned int oldModuleIndex = current.index;
 			current.index = bestModuleIndex;
+
+
+			// For all multiple assigned nodes
+			for (unsigned int i = 0; i < numPhysicalNodes; ++i)
+			{
+				PhysData& physData = current.physicalNodes[i];
+				ModuleToMemNodes& moduleToMemNodes = m_physToModuleToMemNodes[physData.physNodeIndex];
+
+				// Remove contribution to old module
+				ModuleToMemNodes::iterator overlapIt = moduleToMemNodes.find(oldModuleIndex);
+				if (overlapIt == moduleToMemNodes.end())
+					throw std::length_error("Couldn't find old module among physical node assignments.");
+				MemNodeSet& memNodeSet = overlapIt->second;
+				memNodeSet.sumFlow -= physData.sumFlowFromM2Node;
+				if (--memNodeSet.numMemNodes == 0)
+					moduleToMemNodes.erase(overlapIt);
+
+				// Add contribution to new module
+				overlapIt = moduleToMemNodes.find(bestModuleIndex);
+				if (overlapIt == moduleToMemNodes.end())
+					moduleToMemNodes.insert(std::make_pair(bestModuleIndex, MemNodeSet(1, physData.sumFlowFromM2Node)));
+				else {
+					MemNodeSet& memNodeSet = overlapIt->second;
+					++memNodeSet.numMemNodes;
+					memNodeSet.sumFlow += physData.sumFlowFromM2Node;
+				}
+			}
+
+
 			++numMoved;
 		}
 
@@ -915,8 +1093,8 @@ void InfomapGreedy<InfomapImplementation>::moveNodesToPredefinedModules()
 
 		if (newM != oldM)
 		{
-			DeltaFlow oldModuleDelta(oldM, 0.0, 0.0);
-			DeltaFlow newModuleDelta(newM, 0.0, 0.0);
+			DeltaFlow oldModuleDelta(oldM, 0.0, 0.0, 0.0, 0.0);
+			DeltaFlow newModuleDelta(newM, 0.0, 0.0, 0.0, 0.0);
 
 			addTeleportationDeltaFlowOnOldModuleIfMove(current, oldModuleDelta);
 			addTeleportationDeltaFlowOnNewModuleIfMove(current, newModuleDelta);
@@ -1108,6 +1286,23 @@ unsigned int InfomapGreedy<InfomapImplementation>::consolidateModules(bool repla
 		if (moduleIt->childDegree() != 1)
 			++m_numNonTrivialTopModules;
 	}
+
+
+	// Update physicalNodes
+	std::map<unsigned int, std::map<unsigned int, unsigned int> > validate;
+
+	for(unsigned int i = 0; i < m_numPhysicalNodes; ++i)
+	{
+		ModuleToMemNodes& modToMemNodes = m_physToModuleToMemNodes[i];
+		for(ModuleToMemNodes::iterator overlapIt = modToMemNodes.begin(); overlapIt != modToMemNodes.end(); ++overlapIt)
+		{
+			if(++validate[overlapIt->first][i] > 1)
+				throw std::domain_error("[InfomapGreedy::consolidateModules] Error updating physical nodes: duplication error");
+
+			getNode(*modules[overlapIt->first]).physicalNodes.push_back(PhysData(i, overlapIt->second.sumFlow));
+		}
+	}
+
 
 	return numActiveModules();
 }
@@ -1547,6 +1742,70 @@ double InfomapGreedy<InfomapImplementation>::calcCodelengthFromFlowWithinOrExit(
 	indexLength -= infomath::plogp(parentExit / totalParentFlow);
 
 	indexLength *= totalParentFlow;
+
+//	exit_log_exit = 0.0;
+//	enterFlow = 0.0;
+//	flow_log_flow = 0.0;
+//
+//	// For each module
+////	unsigned int i = 0;
+//	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+//			childIt != endIt; ++childIt)
+//	{
+//		const NodeType& node = getNode(*childIt);
+//
+//		// own node/module codebook
+//		flow_log_flow += infomath::plogp(node.data.flow + node.data.exitFlow);
+//
+//		// use of index codebook
+//		enterFlow      += node.data.exitFlow;
+//		exit_log_exit += infomath::plogp(node.data.exitFlow);
+//	}
+//
+//	enterFlow += exitNetworkFlow;
+//	enterFlow_log_enterFlow = infomath::plogp(enterFlow);
+//
+//	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
+//	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
+//	codelength = indexCodelength + moduleCodelength;
+//
+//	std::cout << "\nTEST Codelength " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
+
+	// meminfomap_unrec::Greedy::calibrate()
+//	enter_log_enter = 0.0;
+//	exit_log_exit = 0.0;
+//	size_log_size = 0.0;
+//	enterFlow = 0.0;
+//
+//	for(int i=0;i<Nmod;i++){
+//
+//	  enter_log_enter += plogp(node[i]->enter);
+//	  exit_log_exit += plogp(node[i]->exit);
+//	  size_log_size += plogp(node[i]->exit + node[i]->size);
+//	  enterFlow += node[i]->enter;
+//
+//	  mod_enter[i] = node[i]->enter;
+//	  mod_exit[i] = node[i]->exit;
+//	  mod_size[i] = node[i]->size;
+//	  mod_members[i] = node[i]->members.size();
+//	  node[i]->index = i;
+//
+//	  int Nmem = node[i]->physicalNodes.size();
+//	  for(int j=0;j<Nmem;j++){
+//		int overlapModule = node[i]->physicalNodes[j].first;
+//		mod_nodeSize[overlapModule].insert(mod_nodeSize[overlapModule].end(),make_pair(i,make_pair(1,node[i]->physicalNodes[j].second)));
+//	  }
+//	}
+//
+//	enter = plogp(enterFlow);
+//
+//	nodeSize_log_nodeSize = 0.0;
+//	for(int i=0;i<NphysicalNode;i++)
+//	  for(map<int,pair<int,double> >::iterator overlap_it = mod_nodeSize[i].begin(); overlap_it != mod_nodeSize[i].end(); ++overlap_it)
+//		nodeSize_log_nodeSize += plogp(overlap_it->second.second);
+//
+//	  codeLength = enter - enter_log_enter - exit_log_exit + size_log_size - nodeSize_log_nodeSize;
+
 	return indexLength;
 }
 
@@ -1578,6 +1837,8 @@ void InfomapGreedy<InfomapImplementation>::generateNetworkFromChildren(NodeBase&
 {
 	exitNetworkFlow = 0.0;
 
+	std::set<unsigned int> setOfPhysicalNodes;
+
 	// Clone all nodes
 	unsigned int numNodes = parent.childDegree();
 	m_treeData.reserveNodeCount(numNodes);
@@ -1585,12 +1846,41 @@ void InfomapGreedy<InfomapImplementation>::generateNetworkFromChildren(NodeBase&
 	for (NodeBase::sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
 			childIt != endIt; ++childIt, ++i)
 	{
-		NodeBase* node = new NodeType(getNode(*childIt));
+		NodeType& otherNode = getNode(*childIt);
+		NodeBase* node = new NodeType(otherNode);
 		node->originalIndex = childIt->originalIndex;
 		m_treeData.addClonedNode(node);
 		childIt->index = i; // Set index to its place in this subnetwork to be able to find edge target below
 		node->index = i;
+
+//		NodeType& newNode = getNode(*node);
+		for (unsigned int j = 0; j < otherNode.physicalNodes.size(); ++j)
+		{
+			PhysData& physData = otherNode.physicalNodes[j];
+			setOfPhysicalNodes.insert(physData.physNodeIndex);
+//			newNode.physicalNodes.push_back(PhysData(physData));
+		}
 	}
+
+	// Re-index physical nodes
+	std::map<unsigned int, unsigned int> subPhysIndexMap;
+	unsigned int subPhysIndex = 0;
+	for (std::set<unsigned int>::iterator it(setOfPhysicalNodes.begin()); it != setOfPhysicalNodes.end(); ++it, ++subPhysIndex)
+	{
+		subPhysIndexMap.insert(std::make_pair(*it, subPhysIndex));
+	}
+
+	for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()); leafIt != m_treeData.end_leaf(); ++leafIt, ++i)
+	{
+		NodeType& node = getNode(**leafIt);
+		for (unsigned int j = 0; j < node.physicalNodes.size(); ++j)
+		{
+			PhysData& physData = node.physicalNodes[j];
+			physData.physNodeIndex = subPhysIndexMap[physData.physNodeIndex];
+		}
+	}
+
+	m_numPhysicalNodes = setOfPhysicalNodes.size();
 
 //	double exitFlowFromLinks = 0.0;
 	NodeBase* parentPtr = &parent;
@@ -1747,6 +2037,13 @@ inline
 FlowDummy InfomapGreedy<InfomapImplementation>::getNodeData(NodeBase& node)
 {
 	return FlowDummy(getNode(node).data);
+}
+
+template<typename InfomapImplementation>
+inline
+std::vector<PhysData>& InfomapGreedy<InfomapImplementation>::getPhysicalNodes(NodeBase& node)
+{
+	return getNode(node).physicalNodes;
 }
 
 

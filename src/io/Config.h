@@ -37,6 +37,7 @@ struct Config
 	 	inputFormat(""),
 		zeroBasedNodeNumbers(false),
 		includeSelfLinks(false),
+		selfMemoryNodes(false),
 		ignoreEdgeWeights(false),
 		nodeLimit(0),
 	 	clusterDataFile(""),
@@ -133,6 +134,7 @@ struct Config
 	std::string inputFormat;
 	bool zeroBasedNodeNumbers;
 	bool includeSelfLinks;
+	bool selfMemoryNodes;
 	bool ignoreEdgeWeights;
 	unsigned int nodeLimit;
 	std::string clusterDataFile;

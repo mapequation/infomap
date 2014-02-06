@@ -59,7 +59,7 @@ public:
 	const LinkMap& linkMap() const { return m_links; }
 	double totalLinkWeight() const { return m_totalLinkWeight; }
 
-private:
+protected:
 
 	void parsePajekNetwork(std::string filename);
 	void parseLinkList(std::string filename);
@@ -77,8 +77,6 @@ private:
 	double m_totalLinkWeight; // On whole network
 	LinkMap m_links;
 	unsigned int m_numSelfLinks;
-
-	// TODO: For memory network, add trigram datastructures and a parseMemoryNetwork function
 
 };
 

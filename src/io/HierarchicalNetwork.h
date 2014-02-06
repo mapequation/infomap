@@ -170,7 +170,7 @@ public:
 		if (children.size() > 0)
 			size += SIZE_OF_UNSIGNED_INT + SIZE_OF_UNSIGNED_SHORT;
 		// The edges are printed out after the last child
-		if (writeEdges && parentNode != NULL && (parentIndex + 1) == parentNode->children.size())
+		if (writeEdges && parentNode != NULL && static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
 		{
 			// numEdges + {edges}
 			size += parentNode->childEdges.size() * CHILD_EDGE_SIZE + SIZE_OF_UNSIGNED_SHORT;
@@ -179,7 +179,7 @@ public:
 	}
 
 	// Operations:
-	void serialize(BinaryFile& outFile, unsigned int childPosition, bool writeEdges)
+	void serialize(SafeBinaryOutFile& outFile, unsigned int childPosition, bool writeEdges)
 	{
 //		outFile << static_cast<unsigned short>(data.name.length()); // unsigned short nameLength
 		outFile << data.name;					// char* name
@@ -194,7 +194,7 @@ public:
 		}
 
 		// Write edges after the last child of the parent node
-		if (writeEdges && parentNode != NULL && (parentIndex + 1) == parentNode->children.size())
+		if (writeEdges && parentNode != NULL && static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
 		{
 			const ChildEdgeList& edges = parentNode->childEdges;
 			unsigned short numEdges = static_cast<unsigned short>(edges.size());
@@ -381,7 +381,7 @@ public:
 	 */
 	void writeStreamableTree(const std::string& fileName, bool writeEdges)
 	{
-		BinaryFile out(fileName.c_str());
+		SafeBinaryOutFile out(fileName.c_str());
 
 		std::string magicTag ("Infomap");
 		unsigned int numLeafNodes = m_leafNodes.size();

@@ -1,6 +1,6 @@
 #Generated Makefile
 CXX  = g++
-CXXFLAGS = -Wall -O3 -pipe -fopenmp
+CXXFLAGS = -Wall -O4 -pipe -fopenmp
 LINKER = $(CXX)
 LFLAGS = -fopenmp
 
@@ -16,6 +16,8 @@ src/infomap/InfomapDirectedUnrecordedTeleportation.h \
 src/infomap/InfomapGreedy.h \
 src/infomap/InfomapUndirdir.h \
 src/infomap/InfomapUndirected.h \
+src/infomap/MemFlowNetwork.h \
+src/infomap/MemNetwork.h \
 src/infomap/Network.h \
 src/infomap/Node.h \
 src/infomap/NodeFactory.h \
@@ -48,6 +50,8 @@ src/infomap/InfomapDirectedUnrecordedTeleportation.cpp \
 src/infomap/InfomapGreedy.cpp \
 src/infomap/InfomapUndirdir.cpp \
 src/infomap/InfomapUndirected.cpp \
+src/infomap/MemFlowNetwork.cpp \
+src/infomap/MemNetwork.cpp \
 src/infomap/Network.cpp \
 src/infomap/Node.cpp \
 src/infomap/TreeData.cpp \
