@@ -1093,7 +1093,7 @@ void InfomapGreedy<InfomapImplementation>::moveNodesToPredefinedModules()
 
 
 			// For all multiple assigned nodes
-			for (unsigned int i = 0; i < m_numPhysicalNodes; ++i)
+			for (unsigned int i = 0; i < current.physicalNodes.size(); ++i)
 			{
 				PhysData& physData = current.physicalNodes[i];
 				ModuleToMemNodes& moduleToMemNodes = m_physToModuleToMemNodes[physData.physNodeIndex];
