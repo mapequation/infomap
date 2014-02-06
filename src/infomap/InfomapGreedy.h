@@ -291,6 +291,7 @@ void InfomapGreedy<InfomapDirected>::initEnterExitFlow()
 template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::initConstantInfomapTerms()
 {
+	// Not constant for memory Infomap!
 	nodeFlow_log_nodeFlow = 0.0;
 	// For each module
 	for (activeNetwork_iterator it(m_activeNetwork.begin()), itEnd(m_activeNetwork.end());
@@ -360,9 +361,8 @@ void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(
 	flow_log_flow = 0.0;
 
 	// For each module
-	unsigned int i = 0;
 	for (activeNetwork_iterator it(m_activeNetwork.begin()), itEnd(m_activeNetwork.end());
-			it != itEnd; ++it, ++i)
+			it != itEnd; ++it)
 	{
 		NodeType& node = getNode(**it);
 		// own node/module codebook
@@ -376,6 +376,14 @@ void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(
 
 	enterFlow += exitNetworkFlow;
 	enterFlow_log_enterFlow = infomath::plogp(enterFlow);
+
+	nodeFlow_log_nodeFlow = 0.0;
+	for (unsigned int i = 0; i < m_numPhysicalNodes; ++i)
+	{
+		const ModuleToMemNodes& moduleToMemNodes = m_physToModuleToMemNodes[i];
+		for (ModuleToMemNodes::const_iterator modToMemIt(moduleToMemNodes.begin()); modToMemIt != moduleToMemNodes.end(); ++modToMemIt)
+			nodeFlow_log_nodeFlow += infomath::plogp(modToMemIt->second.sumFlow);
+	}
 
 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
@@ -408,6 +416,14 @@ void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(
 	}
 	enterFlow += exitNetworkFlow;
 	enterFlow_log_enterFlow = infomath::plogp(enterFlow);
+
+	nodeFlow_log_nodeFlow = 0.0;
+	for (unsigned int i = 0; i < m_numPhysicalNodes; ++i)
+	{
+		const ModuleToMemNodes& moduleToMemNodes = m_physToModuleToMemNodes[i];
+		for (ModuleToMemNodes::const_iterator modToMemIt(moduleToMemNodes.begin()); modToMemIt != moduleToMemNodes.end(); ++modToMemIt)
+			nodeFlow_log_nodeFlow += infomath::plogp(modToMemIt->second.sumFlow);
+	}
 
 	indexCodelength = enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow;
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
