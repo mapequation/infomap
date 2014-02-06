@@ -907,42 +907,6 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 		 * Moving to a module that not have that physical node: (old: p1, p2, new -, moving p2 -> old: p1, new: p2)
 		 * Then new.first = new.second = 0 -> delta = p(p1) - p(p1+p2) + p(p2).
 		 */
-//		overlapNtoOldM.first = 0.0;
-//		overlapNtoOldM.second = 0.0;
-//		// For all multiple assigned nodes
-//		int flipNphysicalNode = node[flip]->physicalNodes.size();
-//		for(int j=0;j<flipNphysicalNode;j++){
-//			int physicalNode = node[flip]->physicalNodes[j].first;
-//			double physicalNodeSize = node[flip]->physicalNodes[j].second;
-//			for(map<int,pair<int,double> >::iterator overlap_it = mod_nodeSize[physicalNode].begin(); overlap_it != mod_nodeSize[physicalNode].end(); ++overlap_it){
-//				int nb_M = overlap_it->first;
-//				if(nb_M == oldM){ // From where the multiple assigned node is moved
-//					double oldP = overlap_it->second.second;
-//					double newP = overlap_it->second.second - physicalNodeSize;
-//					overlapNtoOldM.first += plogp(newP) - plogp(oldP);
-//					overlapNtoOldM.second += plogp(physicalNodeSize);
-//				}
-//				else{ // To where the multiple assigned node is moved
-//					double oldP = overlap_it->second.second;
-//					double newP = overlap_it->second.second + physicalNodeSize;
-//					if(redirect[nb_M] >= offset){
-//						overlapNtoM[redirect[nb_M] - offset].first += plogp(newP) - plogp(oldP);
-//						overlapNtoM[redirect[nb_M] - offset].second += plogp(physicalNodeSize);
-//						// cout << "(" << flip << ">" << nb_M << " " << (plogp(newP) - plogp(oldP))/log(2.0) << ") ";
-//					}
-//					else{
-//						redirect[nb_M] = offset + NmodLinks;
-//						flowNtoM[NmodLinks].first = nb_M;
-//						flowNtoM[NmodLinks].second.first = 0.0;
-//						flowNtoM[NmodLinks].second.second = 0.0;
-//						overlapNtoM[NmodLinks].first = plogp(newP) - plogp(oldP);
-//						overlapNtoM[NmodLinks].second = plogp(physicalNodeSize);
-//						NmodLinks++;
-//					}
-//				}
-//			}
-//		}
-
 		unsigned int numPhysicalNodes = current.physicalNodes.size();
 		for (unsigned int i = 0; i < numPhysicalNodes; ++i)
 		{
@@ -1126,6 +1090,98 @@ void InfomapGreedy<InfomapImplementation>::moveNodesToPredefinedModules()
 				else if (otherModule == newM)
 					newModuleDelta.deltaEnter += edge.data.flow;
 			}
+
+
+			// For all multiple assigned nodes
+			for (unsigned int i = 0; i < m_numPhysicalNodes; ++i)
+			{
+				PhysData& physData = current.physicalNodes[i];
+				ModuleToMemNodes& moduleToMemNodes = m_physToModuleToMemNodes[physData.physNodeIndex];
+
+				// Remove contribution to old module
+				ModuleToMemNodes::iterator overlapIt = moduleToMemNodes.find(oldM);
+				if (overlapIt == moduleToMemNodes.end())
+					throw std::length_error("Couldn't find old module among physical node assignments.");
+				MemNodeSet& memNodeSet = overlapIt->second;
+				double oldPhysFlow = memNodeSet.sumFlow;
+				double newPhysFlow = memNodeSet.sumFlow - physData.sumFlowFromM2Node;
+				oldModuleDelta.sumDeltaPlogpPhysFlow += infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
+				oldModuleDelta.sumPlogpPhysFlow += infomath::plogp(physData.sumFlowFromM2Node);
+				memNodeSet.sumFlow -= physData.sumFlowFromM2Node;
+				if (--memNodeSet.numMemNodes == 0)
+					moduleToMemNodes.erase(overlapIt);
+
+
+				// Add contribution to new module
+				overlapIt = moduleToMemNodes.find(newM);
+				if (overlapIt == moduleToMemNodes.end())
+				{
+					moduleToMemNodes.insert(std::make_pair(newM, MemNodeSet(1, physData.sumFlowFromM2Node)));
+					oldPhysFlow = 0.0;
+					newPhysFlow = physData.sumFlowFromM2Node;
+					newModuleDelta.sumDeltaPlogpPhysFlow += infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
+					newModuleDelta.sumPlogpPhysFlow += infomath::plogp(physData.sumFlowFromM2Node);
+				}
+				else
+				{
+					MemNodeSet& memNodeSet = overlapIt->second;
+					oldPhysFlow = memNodeSet.sumFlow;
+					newPhysFlow = memNodeSet.sumFlow + physData.sumFlowFromM2Node;
+					newModuleDelta.sumDeltaPlogpPhysFlow += infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
+					newModuleDelta.sumPlogpPhysFlow += infomath::plogp(physData.sumFlowFromM2Node);
+					++memNodeSet.numMemNodes;
+					memNodeSet.sumFlow += physData.sumFlowFromM2Node;
+				}
+
+			}
+
+//			physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
+//			// For all multiple assigned nodes
+//			double delta_nodeSize_log_nodeSize = 0.0;
+//
+//			int iNphysicalNode = node[i]->physicalNodes.size();
+//			for(int j=0;j<iNphysicalNode;j++){
+//				int physicalNode = node[i]->physicalNodes[j].first;
+//				int Nassignments = mod_nodeSize[physicalNode].size();
+//				// Measure changes in nodeSize_log_nodeSize
+//				double physicalNodeSize = node[i]->physicalNodes[j].second;
+//
+//				// Remove contribution to old module
+//				map<int,pair<int,double> >::iterator overlap_it = mod_nodeSize[physicalNode].find(oldM);
+//				if(overlap_it == mod_nodeSize[physicalNode].end() ){
+//					cout << "ERROR: Could not find module " << oldM << " among physical node " << physicalNode << "'s assignments." << endl;
+//					abort();
+//				}
+//				else{
+//					double oldP = overlap_it->second.second;
+//					double newP = overlap_it->second.second - physicalNodeSize;
+//					delta_nodeSize_log_nodeSize += plogp(newP) - plogp(oldP);
+//					overlap_it->second.second -= physicalNodeSize;
+//					overlap_it->second.first--;
+//					if(overlap_it->second.first == 0)
+//						mod_nodeSize[physicalNode].erase(overlap_it);
+//				}
+//
+//				// Add contribution to new module
+//				overlap_it = mod_nodeSize[physicalNode].find(newM);
+//				if(overlap_it == mod_nodeSize[physicalNode].end() ){
+//
+//					delta_nodeSize_log_nodeSize += plogp(physicalNodeSize);
+//					mod_nodeSize[physicalNode].insert(make_pair(newM,make_pair(1,physicalNodeSize)));
+//
+//				}
+//				else{
+//
+//					double oldP = overlap_it->second.second;
+//					double newP = overlap_it->second.second + physicalNodeSize;
+//					delta_nodeSize_log_nodeSize += plogp(newP) - plogp(oldP);
+//					overlap_it->second.second += physicalNodeSize;
+//					overlap_it->second.first++;
+//
+//				}
+//
+//			}
 
 
 			//Update empty module vector
