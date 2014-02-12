@@ -523,7 +523,7 @@ double InfomapGreedy<InfomapImplementation>::getDeltaCodelength(NodeType& curren
 			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
-	double delta_physFlow_log_physFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+	double delta_physFlow_log_physFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
 	double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow - delta_physFlow_log_physFlow;
 	return deltaL;
@@ -560,7 +560,7 @@ double InfomapGreedy<InfomapUndirected>::getDeltaCodelength(NodeType& current,
 			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
-	double delta_physFlow_log_physFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+	double delta_physFlow_log_physFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
 	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_physFlow_log_physFlow;
 	return deltaL;
@@ -593,7 +593,7 @@ double InfomapGreedy<InfomapDirected>::getDeltaCodelength(NodeType& current,
 			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
-	double delta_physFlow_log_physFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+	double delta_physFlow_log_physFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
 	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_physFlow_log_physFlow;
 	return deltaL;
@@ -653,7 +653,7 @@ void InfomapGreedy<InfomapImplementation>::updateCodelength(NodeType& current,
 
 	enterFlow_log_enterFlow = plogp(enterFlow);
 
-	physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+	physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
 	indexCodelength = enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow;
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow - physFlow_log_physFlow;
@@ -704,7 +704,7 @@ void InfomapGreedy<InfomapUndirected>::updateCodelength(NodeType& current,
 
 	enterFlow_log_enterFlow = plogp(enterFlow);
 
-	physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+	physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow - physFlow_log_physFlow;
@@ -754,7 +754,7 @@ void InfomapGreedy<InfomapDirected>::updateCodelength(NodeType& current,
 
 	enterFlow_log_enterFlow = plogp(enterFlow);
 
-	physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+	physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow - physFlow_log_physFlow;
@@ -1005,9 +1005,25 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 				m_emptyModules.push_back(current.index);
 			}
 
+//			double oldIndexLength = indexCodelength;
+//			double oldModuleLength = moduleCodelength;
+//			double oldCodelength = codelength;
+//			double oldphysFlow_log_physFlow = physFlow_log_physFlow;
+
 			updateCodelength(current, oldModuleDelta, bestDeltaModule);
 
-//			RELEASE_OUT("\n-->codelength: " << indexCodelength << " + " << moduleCodelength << " = " << codelength);
+//			RELEASE_OUT("\n  Moved node " << (i+1) << " (" << current << ") from module " << current.index << " to " << bestModuleIndex <<
+//					" => codelength: (" << oldIndexLength << " + " << oldModuleLength << " = " << oldCodelength << ") --> " <<
+//					"(" << indexCodelength << " + " << moduleCodelength << " = " << codelength << ") ");
+
+			// indexCodelength = enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow;
+			// moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow - physFlow_log_physFlow;
+//			RELEASE_OUT("\n     * indexCodelength: " << enterFlow_log_enterFlow << " - " << enter_log_enter << " - " << exitNetworkFlow_log_exitNetworkFlow << " = " << (enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow));
+//			RELEASE_OUT("\n     * moduleCodelength: -" << exit_log_exit << " + " << flow_log_flow << " - " << nodeFlow_log_nodeFlow << " - " << physFlow_log_physFlow << " = " << (-exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow - physFlow_log_physFlow));
+//			RELEASE_OUT("\n     -- deltaPhys: " << oldModuleDelta.sumDeltaPlogpPhysFlow << " + " << bestDeltaModule.sumDeltaPlogpPhysFlow << " + " << oldModuleDelta.sumPlogpPhysFlow << " - " << bestDeltaModule.sumPlogpPhysFlow);
+//			RELEASE_OUT(" = " << (oldModuleDelta.sumDeltaPlogpPhysFlow + bestDeltaModule.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - bestDeltaModule.sumPlogpPhysFlow));
+//			RELEASE_OUT(" -> phys = " << oldphysFlow_log_physFlow << " + delta = " << physFlow_log_physFlow << ". ");
+
 
 			m_moduleMembers[current.index] -= 1;
 			m_moduleMembers[bestModuleIndex] += 1;
@@ -1843,40 +1859,6 @@ double InfomapGreedy<InfomapImplementation>::calcCodelengthFromFlowWithinOrExit(
 //
 //	std::cout << "\nTEST Codelength " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
 
-	// meminfomap_unrec::Greedy::calibrate()
-//	enter_log_enter = 0.0;
-//	exit_log_exit = 0.0;
-//	size_log_size = 0.0;
-//	enterFlow = 0.0;
-//
-//	for(int i=0;i<Nmod;i++){
-//
-//	  enter_log_enter += plogp(node[i]->enter);
-//	  exit_log_exit += plogp(node[i]->exit);
-//	  size_log_size += plogp(node[i]->exit + node[i]->size);
-//	  enterFlow += node[i]->enter;
-//
-//	  mod_enter[i] = node[i]->enter;
-//	  mod_exit[i] = node[i]->exit;
-//	  mod_size[i] = node[i]->size;
-//	  mod_members[i] = node[i]->members.size();
-//	  node[i]->index = i;
-//
-//	  int Nmem = node[i]->physicalNodes.size();
-//	  for(int j=0;j<Nmem;j++){
-//		int overlapModule = node[i]->physicalNodes[j].first;
-//		mod_nodeSize[overlapModule].insert(mod_nodeSize[overlapModule].end(),make_pair(i,make_pair(1,node[i]->physicalNodes[j].second)));
-//	  }
-//	}
-//
-//	enter = plogp(enterFlow);
-//
-//	nodeSize_log_nodeSize = 0.0;
-//	for(int i=0;i<NphysicalNode;i++)
-//	  for(map<int,pair<int,double> >::iterator overlap_it = mod_nodeSize[i].begin(); overlap_it != mod_nodeSize[i].end(); ++overlap_it)
-//		nodeSize_log_nodeSize += plogp(overlap_it->second.second);
-//
-//	  codeLength = enter - enter_log_enter - exit_log_exit + size_log_size - nodeSize_log_nodeSize;
 
 	return indexLength;
 }
@@ -1925,12 +1907,10 @@ void InfomapGreedy<InfomapImplementation>::generateNetworkFromChildren(NodeBase&
 		childIt->index = i; // Set index to its place in this subnetwork to be able to find edge target below
 		node->index = i;
 
-//		NodeType& newNode = getNode(*node);
 		for (unsigned int j = 0; j < otherNode.physicalNodes.size(); ++j)
 		{
 			PhysData& physData = otherNode.physicalNodes[j];
 			setOfPhysicalNodes.insert(physData.physNodeIndex);
-//			newNode.physicalNodes.push_back(PhysData(physData));
 		}
 	}
 

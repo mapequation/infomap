@@ -947,6 +947,8 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 		double consolidatedIndexLength = indexCodelength;
 		double consolidatedModuleLength = moduleCodelength;
 
+		std::cout << "\n--> level " << numLevelsConsolidated << " codelength: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
+
 		if (m_subLevel == 0 && m_config.benchmark)
 			Logger::benchmark(io::Str() << "lvl" << numLevelsConsolidated, codelength, numTopModules(),
 					numNonTrivialTopModules(), 2);
@@ -956,6 +958,9 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 
 		setActiveNetworkFromChildrenOfRoot();
 		initModuleOptimization();
+
+		std::cout << "\n --> init next level codelength: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
+
 		numOptimizationLoops = optimizeModules();
 
 		if (verbose)
@@ -1031,7 +1036,12 @@ void InfomapBase::fineTune()
 	}
 
 	initModuleOptimization();
+
+	std::cout << "\n--> FineTune: initial codelength: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "";
+
 	moveNodesToPredefinedModules();
+
+	std::cout << "\n--> FineTune: predefined codelength: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "";
 
 	mergeAndConsolidateRepeatedly();
 
@@ -1171,15 +1181,43 @@ bool InfomapBase::initNetwork()
 	for (unsigned int i = 0; i < links.size(); ++i)
 		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow);
 
+//	std::vector<double> m1Flow(network.numNodes(), 0.0);
+
 	// Add physical nodes
 	const MemNetwork::M2NodeMap& nodeMap = network.m2NodeMap();
 	for (MemNetwork::M2NodeMap::const_iterator m2nodeIt(nodeMap.begin()); m2nodeIt != nodeMap.end(); ++m2nodeIt)
 	{
 		unsigned int nodeIndex = m2nodeIt->second;
 		getPhysicalNodes(m_treeData.getLeafNode(nodeIndex)).push_back(PhysData(m2nodeIt->first.phys2, nodeFlow[nodeIndex]));
+//		m1Flow[m2nodeIt->first.phys2] += nodeFlow[nodeIndex];
 	}
 
 	initEnterExitFlow();
+
+
+	if (m_config.printNodeRanks)
+	{
+		//TODO: Split printNetworkData to printNetworkData and printModuleData, and move this to first
+		std::string outName = io::Str() <<
+				m_config.outDirectory << FileURI(m_config.networkFile).getName() << "_M1.rank";
+		std::cout << "Printing physical flow to " << outName << "... ";
+		SafeOutFile out(outName.c_str());
+		double sumFlow = 0.0;
+		double sumM2flow = 0.0;
+		std::vector<double> m1Flow(network.numNodes(), 0.0);
+		for (unsigned int i = 0; i < network.numM2Nodes(); ++i)
+		{
+			const PhysData& physData = getPhysicalNodes(m_treeData.getLeafNode(i))[0];
+			m1Flow[physData.physNodeIndex] += physData.sumFlowFromM2Node;
+			sumFlow += physData.sumFlowFromM2Node;
+			sumM2flow += nodeFlow[i];
+		}
+		for (unsigned int i = 0; i < m1Flow.size(); ++i)
+		{
+			out << m1Flow[i] << "\n";
+		}
+		std::cout << "done! (Sum flow: " << sumFlow << ", sumM2flow: " << sumM2flow << ")\n";
+	}
 
 	return true;
 //	printNetworkDebug("debug", false, true);
@@ -1355,16 +1393,16 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 			RELEASE_OUT("done!\n");
 	}
 
-	if (m_config.printNodeRanks)
-	{
-		outName = io::Str() << m_config.outDirectory << filename << ".rank";
-		SafeOutFile rankOut(outName.c_str());
-		if (m_config.verbosity > 0)
-			RELEASE_OUT("Print node ranks to " << outName << "... " << std::flush);
-		printNodeRanks(rankOut);
-		if (m_config.verbosity > 0)
-			RELEASE_OUT("done!\n");
-	}
+//	if (m_config.printNodeRanks)
+//	{
+//		outName = io::Str() << m_config.outDirectory << filename << ".rank";
+//		SafeOutFile rankOut(outName.c_str());
+//		if (m_config.verbosity > 0)
+//			RELEASE_OUT("Print node ranks to " << outName << "... " << std::flush);
+//		printNodeRanks(rankOut);
+//		if (m_config.verbosity > 0)
+//			RELEASE_OUT("done!\n");
+//	}
 
 	// Print flow network
 	if (m_config.printFlowNetwork)
