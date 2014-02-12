@@ -29,6 +29,7 @@
 #define MEMFLOWNETWORK_H_
 
 #include "FlowNetwork.h"
+#include "MemNetwork.h"
 
 class MemFlowNetwork: public FlowNetwork {
 public:
@@ -36,6 +37,11 @@ public:
 	virtual ~MemFlowNetwork();
 
 	virtual void calculateFlow(const Network& network, const Config& config);
+
+	const std::vector<M2Node>& getMemIndexToPhys() const { return m_memIndexToPhys; }
+
+protected:
+	std::vector<M2Node> m_memIndexToPhys;
 };
 
 #endif /* MEMFLOWNETWORK_H_ */

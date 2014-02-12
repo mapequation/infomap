@@ -514,6 +514,9 @@ struct PhysData
 	double sumFlowFromM2Node; // The amount of flow from the memory node in this physical node
 };
 
+
+#include "MemNetwork.h"
+
 template <typename T>
 class MemNode : public Node<T>
 {
@@ -529,13 +532,15 @@ public:
 	{}
 	MemNode(T data) : node_base_type(data)
 	{}
-	MemNode(const node_type& other) : node_base_type(other.data), physicalNodes(other.physicalNodes)
+	MemNode(const node_type& other) : node_base_type(other.data), m2Node(other.m2Node), physicalNodes(other.physicalNodes)
 	{}
 
 	friend std::ostream& operator<<(std::ostream& out, const node_type& node)
 	{
-		return out << "(name: " << node.name << ", flow: " << node.data.flow << ", #phys: " << node.physicalNodes.size() << ")";
+		return out << "(name: " << node.name << ", flow: " << node.data.flow << ", phys: " << node.m2Node << ")";
 	}
+
+	M2Node m2Node;
 
 	std::vector<PhysData> physicalNodes;
 };

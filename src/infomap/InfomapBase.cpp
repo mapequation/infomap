@@ -1174,9 +1174,14 @@ bool InfomapBase::initNetwork()
 	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
 	const std::vector<double>& nodeTeleportWeights = flowNetwork.getNodeTeleportRates();
 	m_treeData.reserveNodeCount(network.numM2Nodes());
+	const std::vector<M2Node>& memIndexToPhys = flowNetwork.getMemIndexToPhys();
 
-	for (unsigned int i = 0; i < network.numM2Nodes(); ++i)
-		m_treeData.addNewNode((io::Str() << "m2-" << i), nodeFlow[i], nodeTeleportWeights[i]);
+	for (unsigned int i = 0; i < network.numM2Nodes(); ++i) {
+		m_treeData.addNewNode((io::Str() << i << "_(" << memIndexToPhys[i].phys1 << "-" << memIndexToPhys[i].phys2 << ")"), nodeFlow[i], nodeTeleportWeights[i]);
+		M2Node& m2Node = getPhysical(m_treeData.getLeafNode(i));
+		m2Node.phys1 = memIndexToPhys[i].phys1;
+		m2Node.phys2 = memIndexToPhys[i].phys2;
+	}
 	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();
 	for (unsigned int i = 0; i < links.size(); ++i)
 		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow);
@@ -1188,7 +1193,7 @@ bool InfomapBase::initNetwork()
 	for (MemNetwork::M2NodeMap::const_iterator m2nodeIt(nodeMap.begin()); m2nodeIt != nodeMap.end(); ++m2nodeIt)
 	{
 		unsigned int nodeIndex = m2nodeIt->second;
-		getPhysicalNodes(m_treeData.getLeafNode(nodeIndex)).push_back(PhysData(m2nodeIt->first.phys2, nodeFlow[nodeIndex]));
+		getPhysicalMembers(m_treeData.getLeafNode(nodeIndex)).push_back(PhysData(m2nodeIt->first.phys2, nodeFlow[nodeIndex]));
 //		m1Flow[m2nodeIt->first.phys2] += nodeFlow[nodeIndex];
 	}
 
@@ -1207,7 +1212,7 @@ bool InfomapBase::initNetwork()
 		std::vector<double> m1Flow(network.numNodes(), 0.0);
 		for (unsigned int i = 0; i < network.numM2Nodes(); ++i)
 		{
-			const PhysData& physData = getPhysicalNodes(m_treeData.getLeafNode(i))[0];
+			const PhysData& physData = getPhysicalMembers(m_treeData.getLeafNode(i))[0];
 			m1Flow[physData.physNodeIndex] += physData.sumFlowFromM2Node;
 			sumFlow += physData.sumFlowFromM2Node;
 			sumM2flow += nodeFlow[i];
@@ -1443,8 +1448,10 @@ void InfomapBase::printClusterVector(std::ostream& out)
 	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
 			it != itEnd; ++it)
 	{
-		unsigned int index = (*it)->parent->index;
-		out <<  (index + 1) << std::endl;
+		NodeBase& node = **it;
+		M2Node& m2Node = getPhysical(node);
+		unsigned int index = node.parent->index;
+		out << (m2Node.phys1 + 1) << " " << (m2Node.phys2 + 1) << " " << (index + 1) << "\n";
 	}
 }
 

@@ -128,10 +128,10 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	 */
 
 
-	std::vector<unsigned int> physicalNodes(numM2Nodes);
+	m_memIndexToPhys.resize(numM2Nodes);
 	for (MemNetwork::M2NodeMap::const_iterator m2nodeIt(nodeMap.begin()); m2nodeIt != nodeMap.end(); ++m2nodeIt)
 	{
-		physicalNodes[m2nodeIt->second] = m2nodeIt->first.phys2;
+		m_memIndexToPhys[m2nodeIt->second] = m2nodeIt->first;
 	}
 
 	unsigned int numM1Nodes = network.numNodes();
@@ -159,7 +159,8 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		if (m_nodeOutDegree[i] == 0)
 		{
 			++numDanglingM2Nodes;
-			const PhysToMemWeightMap& physToMem = netPhysToMem[physicalNodes[i]];
+			// We are in phys2, lookup all mem nodes in that physical node
+			const PhysToMemWeightMap& physToMem = netPhysToMem[m_memIndexToPhys[i].phys2];
 			for(PhysToMemWeightMap::const_iterator it = physToMem.begin(); it != physToMem.end(); it++)
 			{
 				unsigned int from = i;

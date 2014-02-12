@@ -41,8 +41,14 @@ struct M2Node
 {
 	unsigned int phys1;
 	unsigned int phys2;
+	M2Node() :
+		phys1(0), phys2(0)
+	{}
 	M2Node(unsigned int phys1, unsigned int phys2) :
 		phys1(phys1), phys2(phys2)
+	{}
+	M2Node(const M2Node& other) :
+		phys1(other.phys1), phys2(other.phys2)
 	{}
 
 	bool operator<(M2Node other) const

@@ -80,7 +80,8 @@ public:
 protected:
 
 	virtual FlowDummy getNodeData(NodeBase& node) = 0;
-	virtual std::vector<PhysData>& getPhysicalNodes(NodeBase& node) = 0;
+	virtual std::vector<PhysData>& getPhysicalMembers(NodeBase& node) = 0;
+	virtual M2Node& getPhysical(NodeBase& node) = 0;
 
 	/**
 	 * Set the exit (and enter) flow on the nodes.

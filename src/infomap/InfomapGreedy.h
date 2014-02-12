@@ -179,7 +179,8 @@ protected:
 
 	virtual FlowDummy getNodeData(NodeBase& node);
 
-	virtual std::vector<PhysData>& getPhysicalNodes(NodeBase& node);
+	virtual std::vector<PhysData>& getPhysicalMembers(NodeBase& node);
+	virtual M2Node& getPhysical(NodeBase& node);
 
 private:
 	InfomapImplementation& getImpl();
@@ -2093,9 +2094,16 @@ FlowDummy InfomapGreedy<InfomapImplementation>::getNodeData(NodeBase& node)
 
 template<typename InfomapImplementation>
 inline
-std::vector<PhysData>& InfomapGreedy<InfomapImplementation>::getPhysicalNodes(NodeBase& node)
+std::vector<PhysData>& InfomapGreedy<InfomapImplementation>::getPhysicalMembers(NodeBase& node)
 {
 	return getNode(node).physicalNodes;
+}
+
+template<typename InfomapImplementation>
+inline
+M2Node& InfomapGreedy<InfomapImplementation>::getPhysical(NodeBase& node)
+{
+	return getNode(node).m2Node;
 }
 
 
