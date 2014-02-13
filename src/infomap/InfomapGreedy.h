@@ -96,7 +96,6 @@ public:
 		enter_log_enter(0.0),
 		enterFlow(0.0),
 		enterFlow_log_enterFlow(0.0),
-		physFlow_log_physFlow(0.0),
 		m_numPhysicalNodes(0),
 	 	exitNetworkFlow(0.0),
 	 	exitNetworkFlow_log_exitNetworkFlow(0.0)
@@ -182,6 +181,8 @@ protected:
 	virtual std::vector<PhysData>& getPhysicalMembers(NodeBase& node);
 	virtual M2Node& getPhysical(NodeBase& node);
 
+	virtual void debugPrintInfomapTerms();
+
 private:
 	InfomapImplementation& getImpl();
 	InfomapImplementation& getImpl(InfomapBase& infomap);
@@ -200,7 +201,6 @@ protected:
 	double enterFlow;
 	double enterFlow_log_enterFlow;
 
-	double physFlow_log_physFlow; // For memory networks
 	unsigned int m_numPhysicalNodes;
 
 	// For hierarchical
@@ -524,9 +524,9 @@ double InfomapGreedy<InfomapImplementation>::getDeltaCodelength(NodeType& curren
 			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
-	double delta_physFlow_log_physFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
-	double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow - delta_physFlow_log_physFlow;
+	double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow - delta_nodeFlow_log_nodeFlow;
 	return deltaL;
 }
 
@@ -561,9 +561,9 @@ double InfomapGreedy<InfomapUndirected>::getDeltaCodelength(NodeType& current,
 			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
-	double delta_physFlow_log_physFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
-	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_physFlow_log_physFlow;
+	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_nodeFlow_log_nodeFlow;
 	return deltaL;
 }
 
@@ -594,9 +594,9 @@ double InfomapGreedy<InfomapDirected>::getDeltaCodelength(NodeType& current,
 			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
-	double delta_physFlow_log_physFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
-	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_physFlow_log_physFlow;
+	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_nodeFlow_log_nodeFlow;
 	return deltaL;
 }
 
@@ -654,10 +654,10 @@ void InfomapGreedy<InfomapImplementation>::updateCodelength(NodeType& current,
 
 	enterFlow_log_enterFlow = plogp(enterFlow);
 
-	physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+	nodeFlow_log_nodeFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
 	indexCodelength = enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow;
-	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow - physFlow_log_physFlow;
+	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
 	codelength = indexCodelength + moduleCodelength;
 }
 
@@ -705,10 +705,10 @@ void InfomapGreedy<InfomapUndirected>::updateCodelength(NodeType& current,
 
 	enterFlow_log_enterFlow = plogp(enterFlow);
 
-	physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+	nodeFlow_log_nodeFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
-	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow - physFlow_log_physFlow;
+	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
 	codelength = indexCodelength + moduleCodelength;
 }
 
@@ -755,10 +755,10 @@ void InfomapGreedy<InfomapDirected>::updateCodelength(NodeType& current,
 
 	enterFlow_log_enterFlow = plogp(enterFlow);
 
-	physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+	nodeFlow_log_nodeFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
-	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow - physFlow_log_physFlow;
+	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
 	codelength = indexCodelength + moduleCodelength;
 }
 
@@ -2104,6 +2104,13 @@ inline
 M2Node& InfomapGreedy<InfomapImplementation>::getPhysical(NodeBase& node)
 {
 	return getNode(node).m2Node;
+}
+
+template<typename InfomapImplementation>
+inline
+void InfomapGreedy<InfomapImplementation>::debugPrintInfomapTerms()
+{
+	std::cout << "(moduleLength: " << -exit_log_exit << " + " << flow_log_flow << " - " << nodeFlow_log_nodeFlow << " = " << moduleCodelength <<")\n";
 }
 
 
