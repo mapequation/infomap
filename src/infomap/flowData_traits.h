@@ -39,7 +39,7 @@ struct flowData_traits;
 //	typedef FlowUndirected	flow_type;
 //};
 
-class InfomapUndirected;
+struct InfomapUndirected;
 
 template<>
 struct flowData_traits<InfomapUndirected>
@@ -51,7 +51,7 @@ struct flowData_traits<InfomapUndirected>
 	static const bool detailed_balance = true;
 };
 
-class InfomapDirected;
+struct InfomapDirected;
 
 template<>
 struct flowData_traits<InfomapDirected>
@@ -63,7 +63,7 @@ struct flowData_traits<InfomapDirected>
 	static const bool detailed_balance = true;
 };
 
-class InfomapUndirdir;
+struct InfomapUndirdir;
 
 template<>
 struct flowData_traits<InfomapUndirdir>
@@ -75,7 +75,7 @@ struct flowData_traits<InfomapUndirdir>
 	static const bool detailed_balance = false;
 };
 
-class InfomapDirectedUnrecordedTeleportation;
+struct InfomapDirectedUnrecordedTeleportation;
 
 template<>
 struct flowData_traits<InfomapDirectedUnrecordedTeleportation>

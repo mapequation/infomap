@@ -26,11 +26,6 @@
 
 
 #include "InfomapContext.h"
-#include "InfomapUndirected.h"
-#include "InfomapDirected.h"
-#include "InfomapUndirdir.h"
-#include "InfomapDirectedUnrecordedTeleportation.h"
-#include <memory>
 
 InfomapContext::InfomapContext(const Config& config)
 :	m_config(config)
