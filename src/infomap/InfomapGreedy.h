@@ -432,6 +432,66 @@ void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(
 }
 
 template<typename InfomapImplementation>
+double InfomapGreedy<InfomapImplementation>::calcCodelengthFromFlowWithinOrExit(const NodeBase& parent)
+{
+	const FlowType& parentData = getNode(parent).data;
+	double parentFlow = parentData.flow;
+	double parentExit = parentData.exitFlow;
+	double totalParentFlow = parentFlow + parentExit;
+	if (totalParentFlow < 1e-16)
+		return 0.0;
+
+	double indexLength = 0.0;
+	// For each child
+	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+			childIt != endIt; ++childIt)
+	{
+//		indexLength -= infomath::plogp(getNode(*childIt).data.flow / totalParentFlow);
+		const std::vector<PhysData>& physNodes = getNode(*childIt).physicalNodes;
+		for (unsigned int i = 0; i < physNodes.size(); ++i)
+		{
+			indexLength -= infomath::plogp(physNodes[i].sumFlowFromM2Node / totalParentFlow);
+		}
+	}
+	indexLength -= infomath::plogp(parentExit / totalParentFlow);
+
+	indexLength *= totalParentFlow;
+
+	return indexLength;
+}
+
+template<typename InfomapImplementation>
+double InfomapGreedy<InfomapImplementation>::calcCodelengthFromEnterWithinOrExit(const NodeBase& parent)
+{
+	const FlowType& parentData = getNode(parent).data;
+	double parentExit = parentData.exitFlow;
+	if (parentData.flow < 1e-16)
+		return 0.0;
+
+	// H(x) = -xlog(x), T = q + SUM(p), q = exitFlow, p = flow or enterFlow
+	// Normal format
+	// L = q * -log(q/T) + p * SUM(-log(p/T))
+	// Compact format
+	// L = T * ( H(q/T) + SUM( H(p/T) ) )
+	// Expanded format
+	// L = q * -log(q) - q * -log(T) + SUM( p * -log(p) - p * -log(T) ) = T * log(T) - q*log(q) - SUM( p*log(p) )
+	// As T is not known, use expanded format to avoid two loops
+	double sumEnter = 0.0;
+	double sumEnterLogEnter = 0.0;
+	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+			childIt != endIt; ++childIt)
+	{
+		const double& enterFlow = getNode(*childIt).data.enterFlow; // rate of enter to finer level
+		sumEnter += enterFlow;
+		sumEnterLogEnter += infomath::plogp(enterFlow);
+	}
+	// The possibilities from this module: Either exit to coarser level or enter one of its children
+	double totalCodewordUse = parentExit + sumEnter;
+
+	return infomath::plogp(totalCodewordUse) - sumEnterLogEnter - infomath::plogp(parentExit);
+}
+
+template<typename InfomapImplementation>
 inline
 unsigned int InfomapGreedy<InfomapImplementation>::optimizeModules()
 {
@@ -1759,132 +1819,6 @@ void InfomapGreedy<InfomapImplementation>::resetModuleFlow(NodeBase& node)
 		if (!childIt->isLeaf())
 			resetModuleFlow(*childIt);
 	}
-}
-
-//template<typename InfomapImplementation>
-//double InfomapGreedy<InfomapImplementation>::calcModuleCodelength(const NodeBase& parent)
-//{
-//	const FlowType& parentData = getNode(parent).data;
-//	double parentFlow = parentData.flow;
-//	double parentExit = parentData.exitFlow;
-//	double totalParentFlow = parentFlow + parentExit;
-//	double indexLength = 0.0;
-//	if (totalParentFlow < 1e-16)
-//		return 0.0;
-//
-//	// For each child
-//	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
-//			childIt != endIt; ++childIt)
-//	{
-//		indexLength -= infomath::plogp(getNode(*childIt).data.flow / totalParentFlow);
-//	}
-//	indexLength -= infomath::plogp(parentExit / totalParentFlow);
-//
-//	indexLength *= totalParentFlow;
-//	return indexLength;
-//}
-//
-//template<typename InfomapImplementation>
-//double InfomapGreedy<InfomapImplementation>::calcModuleCodelength(const NodeBase& parent)
-//{
-//	const FlowType& parentData = getNode(parent).data;
-//	double parentExit = parentData.exitFlow;
-//	double indexLength = 0.0;
-//	if (parentData.flow < 1e-16)
-//		return 0.0;
-//
-//	double totalCodewordUse = parentExit; // rate of exit to coarser level
-//	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
-//			childIt != endIt; ++childIt)
-//	{
-//		totalCodewordUse += getNode(*childIt).data.enterFlow; // rate of enter to finer level
-//	}
-//
-//	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
-//			childIt != endIt; ++childIt)
-//	{
-//		indexLength -= infomath::plogp(getNode(*childIt).data.enterFlow / totalCodewordUse);
-//	}
-//	indexLength -= infomath::plogp(parentExit / totalCodewordUse);
-//
-//	indexLength *= totalCodewordUse;
-//	return indexLength;
-//}
-
-template<typename InfomapImplementation>
-double InfomapGreedy<InfomapImplementation>::calcCodelengthFromFlowWithinOrExit(const NodeBase& parent)
-{
-	const FlowType& parentData = getNode(parent).data;
-	double parentFlow = parentData.flow;
-	double parentExit = parentData.exitFlow;
-	double totalParentFlow = parentFlow + parentExit;
-	if (totalParentFlow < 1e-16)
-		return 0.0;
-
-	double indexLength = 0.0;
-	// For each child
-	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
-			childIt != endIt; ++childIt)
-	{
-		indexLength -= infomath::plogp(getNode(*childIt).data.flow / totalParentFlow);
-	}
-	indexLength -= infomath::plogp(parentExit / totalParentFlow);
-
-	indexLength *= totalParentFlow;
-
-//	exit_log_exit = 0.0;
-//	enterFlow = 0.0;
-//	flow_log_flow = 0.0;
-//
-//	// For each module
-////	unsigned int i = 0;
-//	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
-//			childIt != endIt; ++childIt)
-//	{
-//		const NodeType& node = getNode(*childIt);
-//
-//		// own node/module codebook
-//		flow_log_flow += infomath::plogp(node.data.flow + node.data.exitFlow);
-//
-//		// use of index codebook
-//		enterFlow      += node.data.exitFlow;
-//		exit_log_exit += infomath::plogp(node.data.exitFlow);
-//	}
-//
-//	enterFlow += exitNetworkFlow;
-//	enterFlow_log_enterFlow = infomath::plogp(enterFlow);
-//
-//	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
-//	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
-//	codelength = indexCodelength + moduleCodelength;
-//
-//	std::cout << "\nTEST Codelength " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
-
-
-	return indexLength;
-}
-
-template<typename InfomapImplementation>
-double InfomapGreedy<InfomapImplementation>::calcCodelengthFromEnterWithinOrExit(const NodeBase& parent)
-{
-	const FlowType& parentData = getNode(parent).data;
-	double parentExit = parentData.exitFlow;
-	if (parentData.flow < 1e-16)
-		return 0.0;
-
-	double sumEnter = 0.0;
-	double sumEnterLogEnter = 0.0;
-	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
-			childIt != endIt; ++childIt)
-	{
-		const double& enterFlow = getNode(*childIt).data.enterFlow; // rate of enter to finer level
-		sumEnter += enterFlow;
-		sumEnterLogEnter += infomath::plogp(enterFlow);
-	}
-	// The possibilities from this module: Either exit to coarser level or enter one of its children
-	double totalCodewordUse = parentExit + sumEnter;
-
-	return infomath::plogp(totalCodewordUse) - sumEnterLogEnter - infomath::plogp(parentExit);
 }
 
 template<typename InfomapImplementation>

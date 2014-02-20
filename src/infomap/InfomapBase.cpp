@@ -930,13 +930,13 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 		RELEASE_OUT("Iteration " << m_iterationCount << ", moving " << m_activeNetwork.size() << "*" << std::flush);
 	}
 
-	std::cout << "\n--> level 0 codelength for " << numTopModules() << " modules: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
+//	std::cout << "\n--> level 0 codelength for " << numTopModules() << " modules: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
 
 	// Core loop, merging modules
 	unsigned int numOptimizationLoops = optimizeModules();
 
-	std::cout << "\n ==> result to consolidate: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
-	debugPrintInfomapTerms();
+//	std::cout << "\n ==> result to consolidate: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
+//	debugPrintInfomapTerms();
 
 	if (verbose)
 		RELEASE_OUT(numOptimizationLoops << ", " << std::flush);
@@ -952,8 +952,8 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 		double consolidatedIndexLength = indexCodelength;
 		double consolidatedModuleLength = moduleCodelength;
 
-		std::cout << "\n--> level " << numLevelsConsolidated << " consolidated codelength for " << numTopModules() << " modules: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
-		debugPrintInfomapTerms();
+//		std::cout << "\n--> level " << numLevelsConsolidated << " consolidated codelength for " << numTopModules() << " modules: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
+//		debugPrintInfomapTerms();
 
 		if (m_subLevel == 0 && m_config.benchmark)
 			Logger::benchmark(io::Str() << "lvl" << numLevelsConsolidated, codelength, numTopModules(),
@@ -964,8 +964,8 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 
 		setActiveNetworkFromChildrenOfRoot();
 		initModuleOptimization();
-		std::cout << "\n --> initiated next level codelength for " << numTopModules() << " modules: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
-		debugPrintInfomapTerms();
+//		std::cout << "\n --> initiated next level codelength for " << numTopModules() << " modules: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
+//		debugPrintInfomapTerms();
 
 		numOptimizationLoops = optimizeModules();
 
@@ -975,23 +975,23 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 		// If no improvement, revert codelength terms to the actual structure
 		if (!(codelength < consolidatedCodelength - m_config.minimumCodelengthImprovement))
 		{
-			std::cout << "\n --> no improvement! (codelength: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "), reverting to: " << consolidatedCodelength << "\n";
+//			std::cout << "\n --> no improvement! (codelength: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "), reverting to: " << consolidatedCodelength << "\n";
 			indexCodelength = consolidatedIndexLength;
 			moduleCodelength = consolidatedModuleLength;
 			codelength = consolidatedCodelength;
 			break;
 		}
-		else {
-			std::cout << "\n ==> result to consolidate: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
-			debugPrintInfomapTerms();
-		}
+//		else {
+//			std::cout << "\n ==> result to consolidate: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
+//			debugPrintInfomapTerms();
+//		}
 
 		consolidateModules();
 		++numLevelsConsolidated;
 	}
 
-	std::cout << "\n =====> end result for " << numTopModules() << " modules: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
-	debugPrintInfomapTerms();
+//	std::cout << "\n =====> end result for " << numTopModules() << " modules: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
+//	debugPrintInfomapTerms();
 
 //	if (m_subLevel < m_TOP_LEVEL_ADDITION)
 //	{
@@ -1006,8 +1006,25 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 //	}
 
 
-	if (verbose) {
+	if (verbose)
+	{
+//		double testIndex = calcCodelengthFromEnterWithinOrExit(*root());
+//		double testMod = 0.0;
+//		for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
+//				moduleIt != endIt; ++moduleIt)
+//		{
+//			testMod += calcCodelengthFromFlowWithinOrExit(*moduleIt);
+//		}
+//		double testLength = testIndex + testMod;
+//
+//		RELEASE_OUT((m_isCoarseTune ? "modules" : "nodes") << "*loops to codelength " <<
+//				indexCodelength << " + " << moduleCodelength << " = " << codelength <<
+//				" (" << testIndex << " + " << testMod << " = " << testLength << ")" <<
+//				" in " << numTopModules() << " modules. (" << m_numNonTrivialTopModules <<
+//				" non-trivial modules)" << std::endl);
+
 		RELEASE_OUT((m_isCoarseTune ? "modules" : "nodes") << "*loops to codelength " << codelength <<
+				" (" << indexCodelength << " + " << moduleCodelength << ")" <<
 				" in " << numTopModules() << " modules. (" << m_numNonTrivialTopModules <<
 				" non-trivial modules)" << std::endl);
 	}
@@ -1050,11 +1067,11 @@ void InfomapBase::fineTune()
 
 	initModuleOptimization();
 
-	std::cout << "\n--> FineTune: initial codelength: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "";
+//	std::cout << "\n--> FineTune: initial codelength: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "";
 
 	moveNodesToPredefinedModules();
 
-	std::cout << "\n--> FineTune: predefined codelength: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "";
+//	std::cout << "\n--> FineTune: predefined codelength: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "";
 
 	mergeAndConsolidateRepeatedly();
 
