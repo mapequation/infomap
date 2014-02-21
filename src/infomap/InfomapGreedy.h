@@ -1066,32 +1066,13 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 				m_emptyModules.push_back(current.index);
 			}
 
-//			double oldIndexLength = indexCodelength;
-//			double oldModuleLength = moduleCodelength;
-//			double oldCodelength = codelength;
-//			double oldphysFlow_log_physFlow = physFlow_log_physFlow;
-
 			updateCodelength(current, oldModuleDelta, bestDeltaModule);
-
-//			RELEASE_OUT("\n  Moved node " << (i+1) << " (" << current << ") from module " << current.index << " to " << bestModuleIndex <<
-//					" => codelength: (" << oldIndexLength << " + " << oldModuleLength << " = " << oldCodelength << ") --> " <<
-//					"(" << indexCodelength << " + " << moduleCodelength << " = " << codelength << ") ");
-
-			// indexCodelength = enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow;
-			// moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow - physFlow_log_physFlow;
-//			RELEASE_OUT("\n     * indexCodelength: " << enterFlow_log_enterFlow << " - " << enter_log_enter << " - " << exitNetworkFlow_log_exitNetworkFlow << " = " << (enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow));
-//			RELEASE_OUT("\n     * moduleCodelength: -" << exit_log_exit << " + " << flow_log_flow << " - " << nodeFlow_log_nodeFlow << " - " << physFlow_log_physFlow << " = " << (-exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow - physFlow_log_physFlow));
-//			RELEASE_OUT("\n     -- deltaPhys: " << oldModuleDelta.sumDeltaPlogpPhysFlow << " + " << bestDeltaModule.sumDeltaPlogpPhysFlow << " + " << oldModuleDelta.sumPlogpPhysFlow << " - " << bestDeltaModule.sumPlogpPhysFlow);
-//			RELEASE_OUT(" = " << (oldModuleDelta.sumDeltaPlogpPhysFlow + bestDeltaModule.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - bestDeltaModule.sumPlogpPhysFlow));
-//			RELEASE_OUT(" -> phys = " << oldphysFlow_log_physFlow << " + delta = " << physFlow_log_physFlow << ". ");
-
 
 			m_moduleMembers[current.index] -= 1;
 			m_moduleMembers[bestModuleIndex] += 1;
 
 			unsigned int oldModuleIndex = current.index;
 			current.index = bestModuleIndex;
-
 
 			// For all multiple assigned nodes
 			for (unsigned int i = 0; i < numPhysicalNodes; ++i)
@@ -1118,7 +1099,6 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 					memNodeSet.sumFlow += physData.sumFlowFromM2Node;
 				}
 			}
-
 
 			++numMoved;
 		}
@@ -1228,54 +1208,6 @@ void InfomapGreedy<InfomapImplementation>::moveNodesToPredefinedModules()
 
 			}
 
-//			physFlow_log_physFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
-
-//			// For all multiple assigned nodes
-//			double delta_nodeSize_log_nodeSize = 0.0;
-//
-//			int iNphysicalNode = node[i]->physicalNodes.size();
-//			for(int j=0;j<iNphysicalNode;j++){
-//				int physicalNode = node[i]->physicalNodes[j].first;
-//				int Nassignments = mod_nodeSize[physicalNode].size();
-//				// Measure changes in nodeSize_log_nodeSize
-//				double physicalNodeSize = node[i]->physicalNodes[j].second;
-//
-//				// Remove contribution to old module
-//				map<int,pair<int,double> >::iterator overlap_it = mod_nodeSize[physicalNode].find(oldM);
-//				if(overlap_it == mod_nodeSize[physicalNode].end() ){
-//					cout << "ERROR: Could not find module " << oldM << " among physical node " << physicalNode << "'s assignments." << endl;
-//					abort();
-//				}
-//				else{
-//					double oldP = overlap_it->second.second;
-//					double newP = overlap_it->second.second - physicalNodeSize;
-//					delta_nodeSize_log_nodeSize += plogp(newP) - plogp(oldP);
-//					overlap_it->second.second -= physicalNodeSize;
-//					overlap_it->second.first--;
-//					if(overlap_it->second.first == 0)
-//						mod_nodeSize[physicalNode].erase(overlap_it);
-//				}
-//
-//				// Add contribution to new module
-//				overlap_it = mod_nodeSize[physicalNode].find(newM);
-//				if(overlap_it == mod_nodeSize[physicalNode].end() ){
-//
-//					delta_nodeSize_log_nodeSize += plogp(physicalNodeSize);
-//					mod_nodeSize[physicalNode].insert(make_pair(newM,make_pair(1,physicalNodeSize)));
-//
-//				}
-//				else{
-//
-//					double oldP = overlap_it->second.second;
-//					double newP = overlap_it->second.second + physicalNodeSize;
-//					delta_nodeSize_log_nodeSize += plogp(newP) - plogp(oldP);
-//					overlap_it->second.second += physicalNodeSize;
-//					overlap_it->second.first++;
-//
-//				}
-//
-//			}
-
 
 			//Update empty module vector
 			if(m_moduleMembers[newM] == 0)
@@ -1338,10 +1270,6 @@ unsigned int InfomapGreedy<InfomapImplementation>::consolidateModules(bool repla
 	{
 		NodeBase* node = m_activeNetwork[i];
 		unsigned int moduleIndex = node->index;
-//		if (m_subLevel == 0 && m_debug)
-//		{
-//			RELEASE_OUT("(" << node << "->" << moduleIndex << "), ");
-//		}
 		if (modules[moduleIndex] == 0)
 		{
 			modules[moduleIndex] = new NodeType(m_moduleFlowData[moduleIndex]);
@@ -1872,7 +1800,6 @@ void InfomapGreedy<InfomapImplementation>::generateNetworkFromChildren(NodeBase&
 //	double exitFlowFromLinks = 0.0;
 	NodeBase* parentPtr = &parent;
 	// Clone edges
-//	typename flowData_traits<InfomapImplementation>::directed_type asdf;
 	for (NodeBase::sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
 			childIt != endIt; ++childIt)
 	{
@@ -1898,66 +1825,11 @@ void InfomapGreedy<InfomapImplementation>::generateNetworkFromChildren(NodeBase&
 
 	double parentExit = getNode(parent).data.exitFlow;
 
-//	RELEASE_OUT("\nGenerate network from " << parent.name << "->" << parent.firstChild->name << ",.. " <<
-//			"(flow: " << getNode(parent).data.flow << ", exit: " << parentExit << ")\n");
-
-//	if (std::abs(exitNetworkFlow -  parentExit) > 1.0e-6)
-//		RELEASE_OUT(" ###(netExit: " << exitNetworkFlow << "<->" << parentExit << ")## ");
-//	if (std::abs(exitNetworkFlow -  parentExit) < 1.0e-10)
-//		RELEASE_OUT("$" << m_subLevel << "$");
-//	else
-//		RELEASE_OUT("<" << m_subLevel << ">");
-	// This method does not add edges out from the sub-network, thus in lower levels the total
-	// out flow may be more than the sum of flow out from this sub-network.
-
 
 	exitNetworkFlow = parentExit;
 	exitNetworkFlow_log_exitNetworkFlow = infomath::plogp(exitNetworkFlow);
 }
 
-
-//template<typename InfomapImplementation, typename directed_type>
-//void InfomapGreedy<InfomapImplementation>::cloneEdges(NodeBase* parent)
-//{
-//	for (NodeBase::sibling_iterator childIt(parent->begin_child()), endIt(parent->end_child());
-//			childIt != endIt; ++childIt)
-//	{
-//		// If neighbour node is within the same module, add the link to this subnetwork.
-//		NodeBase& node = *childIt;
-//		for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
-//				outEdgeIt != endIt; ++outEdgeIt)
-//		{
-//			EdgeType edge = **outEdgeIt;
-//			if (edge.target.parent == parent)
-//				m_treeData.addEdge(node.index, edge.target.index, edge.data.weight, edge.data.flow);
-//		}
-//	}
-//}
-//
-//template<typename InfomapImplementation, typename directed_type>
-//void InfomapGreedy<InfomapImplementation>::cloneEdges(NodeBase* parent)
-//{
-//	for (NodeBase::sibling_iterator childIt(parent->begin_child()), endIt(parent->end_child());
-//			childIt != endIt; ++childIt)
-//	{
-//		// If neighbour node is within the same module, add the link to this subnetwork.
-//		NodeBase& node = *childIt;
-//		for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
-//				outEdgeIt != endIt; ++outEdgeIt)
-//		{
-//			EdgeType edge = **outEdgeIt;
-//			if (edge.target.parent == parent)
-//				m_treeData.addEdge(node.index, edge.target.index, edge.data.weight, edge.data.flow);
-//		}
-//		for (NodeBase::edge_iterator inEdgeIt(node.begin_inEdge()), endIt(node.end_inEdge());
-//				inEdgeIt != endIt; ++inEdgeIt)
-//		{
-//			EdgeType edge = **inEdgeIt;
-//			if (edge.source.parent == parent)
-//				m_treeData.addEdge(node.index, edge.target.index, edge.data.weight, edge.data.flow);
-//		}
-//	}
-//}
 
 template<typename InfomapImplementation>
 inline

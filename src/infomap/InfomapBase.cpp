@@ -930,13 +930,8 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 		RELEASE_OUT("Iteration " << m_iterationCount << ", moving " << m_activeNetwork.size() << "*" << std::flush);
 	}
 
-//	std::cout << "\n--> level 0 codelength for " << numTopModules() << " modules: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
-
 	// Core loop, merging modules
 	unsigned int numOptimizationLoops = optimizeModules();
-
-//	std::cout << "\n ==> result to consolidate: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
-//	debugPrintInfomapTerms();
 
 	if (verbose)
 		RELEASE_OUT(numOptimizationLoops << ", " << std::flush);
@@ -952,9 +947,6 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 		double consolidatedIndexLength = indexCodelength;
 		double consolidatedModuleLength = moduleCodelength;
 
-//		std::cout << "\n--> level " << numLevelsConsolidated << " consolidated codelength for " << numTopModules() << " modules: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
-//		debugPrintInfomapTerms();
-
 		if (m_subLevel == 0 && m_config.benchmark)
 			Logger::benchmark(io::Str() << "lvl" << numLevelsConsolidated, codelength, numTopModules(),
 					numNonTrivialTopModules(), 2);
@@ -964,8 +956,6 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 
 		setActiveNetworkFromChildrenOfRoot();
 		initModuleOptimization();
-//		std::cout << "\n --> initiated next level codelength for " << numTopModules() << " modules: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
-//		debugPrintInfomapTerms();
 
 		numOptimizationLoops = optimizeModules();
 
@@ -975,36 +965,15 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 		// If no improvement, revert codelength terms to the actual structure
 		if (!(codelength < consolidatedCodelength - m_config.minimumCodelengthImprovement))
 		{
-//			std::cout << "\n --> no improvement! (codelength: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "), reverting to: " << consolidatedCodelength << "\n";
 			indexCodelength = consolidatedIndexLength;
 			moduleCodelength = consolidatedModuleLength;
 			codelength = consolidatedCodelength;
 			break;
 		}
-//		else {
-//			std::cout << "\n ==> result to consolidate: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
-//			debugPrintInfomapTerms();
-//		}
 
 		consolidateModules();
 		++numLevelsConsolidated;
 	}
-
-//	std::cout << "\n =====> end result for " << numTopModules() << " modules: " << indexCodelength << " + " << moduleCodelength << " = " << codelength << "\n";
-//	debugPrintInfomapTerms();
-
-//	if (m_subLevel < m_TOP_LEVEL_ADDITION)
-//	{
-//		//TODO: Why does the enter version give correct results here and not flow, it's leaf level?!
-////		double debug = calcCodelengthFromFlowWithinOrExit(*root());
-//		double debug = calcCodelengthFromEnterWithinOrExit(*root());
-//		if (std::abs(debug - indexCodelength) > 1e-10)
-//		{
-//			RELEASE_OUT("+" << numLevelsConsolidated << ":" << numTopModules());
-//			indexCodelength = debug;
-//		}
-//	}
-
 
 	if (verbose)
 	{
