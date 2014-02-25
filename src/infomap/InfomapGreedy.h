@@ -443,15 +443,16 @@ double InfomapGreedy<InfomapImplementation>::calcCodelengthFromFlowWithinOrExit(
 
 	double indexLength = 0.0;
 	// For each child
-	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
-			childIt != endIt; ++childIt)
-	{
+//	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+//			childIt != endIt; ++childIt)
+//	{
 //		indexLength -= infomath::plogp(getNode(*childIt).data.flow / totalParentFlow);
-		const std::vector<PhysData>& physNodes = getNode(*childIt).physicalNodes;
-		for (unsigned int i = 0; i < physNodes.size(); ++i)
-		{
-			indexLength -= infomath::plogp(physNodes[i].sumFlowFromM2Node / totalParentFlow);
-		}
+//	}
+	// For each physical node
+	const std::vector<PhysData>& physNodes = getNode(parent).physicalNodes;
+	for (unsigned int i = 0; i < physNodes.size(); ++i)
+	{
+		indexLength -= infomath::plogp(physNodes[i].sumFlowFromM2Node / totalParentFlow);
 	}
 	indexLength -= infomath::plogp(parentExit / totalParentFlow);
 
