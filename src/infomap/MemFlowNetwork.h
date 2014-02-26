@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -25,9 +25,23 @@
 **********************************************************************************/
 
 
-#include "InfomapDirectedUnrecordedTeleportation.h"
+#ifndef MEMFLOWNETWORK_H_
+#define MEMFLOWNETWORK_H_
 
-InfomapDirectedUnrecordedTeleportation::InfomapDirectedUnrecordedTeleportation(const Config& conf)
-:	InfomapGreedy<InfomapDirectedUnrecordedTeleportation>(conf)
- 	{}
+#include "FlowNetwork.h"
+#include "MemNetwork.h"
 
+class MemFlowNetwork: public FlowNetwork {
+public:
+	MemFlowNetwork();
+	virtual ~MemFlowNetwork();
+
+	virtual void calculateFlow(const Network& network, const Config& config);
+
+	const std::vector<M2Node>& getMemIndexToPhys() const { return m_memIndexToPhys; }
+
+protected:
+	std::vector<M2Node> m_memIndexToPhys;
+};
+
+#endif /* MEMFLOWNETWORK_H_ */

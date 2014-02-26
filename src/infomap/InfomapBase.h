@@ -76,10 +76,13 @@ public:
 	virtual void printSubInfomapTree(std::ostream& out, const TreeData& originalData, const std::string& prefix = "");
 	virtual void printSubInfomapTreeDebug(std::ostream& out, const TreeData& originalData, const std::string& prefix = "");
 
+	virtual void debugPrintInfomapTerms() = 0;
 
 protected:
 
 	virtual FlowDummy getNodeData(NodeBase& node) = 0;
+	virtual std::vector<PhysData>& getPhysicalMembers(NodeBase& node) = 0;
+	virtual M2Node& getPhysical(NodeBase& node) = 0;
 
 	/**
 	 * Set the exit (and enter) flow on the nodes.

@@ -37,7 +37,7 @@
 
 class FlowNetwork
 {
-
+public:
 	struct Link
 	{
 		Link(unsigned int sourceIndex = 0, unsigned int targetIndex = 0, double weight = 0.0) :
@@ -58,7 +58,6 @@ class FlowNetwork
 		double flow;
 	};
 
-public:
 	typedef std::map<std::string, int>								NodeMap;
 	typedef std::map<std::pair<unsigned int, unsigned int>, double>	LinkMap;
 	typedef std::vector<Link>										LinkVec;
@@ -66,13 +65,13 @@ public:
 	FlowNetwork();
 	virtual ~FlowNetwork();
 
-	void calculateFlow(const Network& network, const Config& config);
+	virtual void calculateFlow(const Network& network, const Config& config);
 
 	const std::vector<double>& getNodeFlow() const { return m_nodeFlow; }
 	const std::vector<double>& getNodeTeleportRates() const { return m_nodeTeleportRates; }
 	const LinkVec& getFlowLinks() const { return m_flowLinks; }
 
-private:
+protected:
 
 	std::vector<unsigned int> m_nodeOutDegree;
 	std::vector<double> m_sumLinkOutWeight; // Per leaf nodes

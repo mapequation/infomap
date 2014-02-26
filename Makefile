@@ -11,11 +11,9 @@ src/infomap/flowData_traits.h \
 src/infomap/FlowNetwork.h \
 src/infomap/InfomapBase.h \
 src/infomap/InfomapContext.h \
-src/infomap/InfomapDirected.h \
-src/infomap/InfomapDirectedUnrecordedTeleportation.h \
 src/infomap/InfomapGreedy.h \
-src/infomap/InfomapUndirdir.h \
-src/infomap/InfomapUndirected.h \
+src/infomap/MemFlowNetwork.h \
+src/infomap/MemNetwork.h \
 src/infomap/Network.h \
 src/infomap/Node.h \
 src/infomap/NodeFactory.h \
@@ -43,11 +41,9 @@ SOURCES = \
 src/infomap/FlowNetwork.cpp \
 src/infomap/InfomapBase.cpp \
 src/infomap/InfomapContext.cpp \
-src/infomap/InfomapDirected.cpp \
-src/infomap/InfomapDirectedUnrecordedTeleportation.cpp \
 src/infomap/InfomapGreedy.cpp \
-src/infomap/InfomapUndirdir.cpp \
-src/infomap/InfomapUndirected.cpp \
+src/infomap/MemFlowNetwork.cpp \
+src/infomap/MemNetwork.cpp \
 src/infomap/Network.cpp \
 src/infomap/Node.cpp \
 src/infomap/TreeData.cpp \
