@@ -79,14 +79,17 @@ struct MemNodeSet
 };
 typedef std::map<unsigned int, MemNodeSet>		ModuleToMemNodes;
 
+
 template<typename InfomapImplementation>
 class InfomapGreedy : public InfomapBase
 {
 public:
-	typedef typename flowData_traits<InfomapImplementation>::flow_type		FlowType;
-	typedef typename flowData_traits<InfomapImplementation>::detailedBalance_type DetailedBalanceBoolType;
-	typedef MemNode<FlowType>												NodeType;
-	typedef Edge<NodeBase>													EdgeType;
+	typedef typename base_traits<InfomapImplementation>::flow_type		FlowType;
+	typedef typename flowData_traits<FlowType>::detailed_balance_type 	DetailedBalanceType;
+	typedef typename flowData_traits<FlowType>::directed_with_recorded_teleportation_type DirectedWithRecordedTeleportationType;
+	typedef typename flowData_traits<FlowType>::teleportation_type 		TeleportationType;
+	typedef MemNode<FlowType>											NodeType;
+	typedef Edge<NodeBase>												EdgeType;
 
 	InfomapGreedy(const Config& conf)
 	:	InfomapBase(conf, new MemNodeFactory<FlowType>()),
@@ -110,28 +113,27 @@ protected:
 
 	virtual std::auto_ptr<InfomapBase> getNewInfomapInstance();
 
-	virtual void initEnterExitFlow();
+//	virtual void initEnterExitFlow();
 
 	virtual void initConstantInfomapTerms();
 
 	virtual void initModuleOptimization();
 
 	// Calculate initial codelength, specialized on detailed balance
-	void calculateCodelengthFromActiveNetwork();
-	void calculateCodelengthFromActiveNetwork(bool2type<true>);
-	void calculateCodelengthFromActiveNetwork(bool2type<false>);
+	void calculateCodelengthFromActiveNetwork(DetailedBalance);
+	void calculateCodelengthFromActiveNetwork(NoDetailedBalance);
 
 	virtual unsigned int optimizeModules();
 
 	// Teleportation methods - specialized implementation for InfomapDirected
-	void addTeleportationDeltaFlowOnOldModuleIfMove(NodeType& nodeToMove, DeltaFlow& oldModuleDeltaFlow) {}
-	void addTeleportationDeltaFlowOnNewModuleIfMove(NodeType& nodeToMove, DeltaFlow& newModuleDeltaFlow) {}
-	void addTeleportationDeltaFlowIfMove(NodeType& current, std::vector<DeltaFlow>& moduleDeltaExits, unsigned int numModuleLinks) {}
+	// void addTeleportationDeltaFlowOnOldModuleIfMove(NodeType& nodeToMove, DeltaFlow& oldModuleDeltaFlow) {}
+	// void addTeleportationDeltaFlowOnNewModuleIfMove(NodeType& nodeToMove, DeltaFlow& newModuleDeltaFlow) {}
+	// void addTeleportationDeltaFlowIfMove(NodeType& current, std::vector<DeltaFlow>& moduleDeltaExits, unsigned int numModuleLinks) {}
 
 	// --- Helper methods ---
-	double getDeltaCodelength(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
+	// double getDeltaCodelength(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
 
-	void updateCodelength(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
+	// void updateCodelength(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
 
 	unsigned int tryMoveEachNodeIntoBestModule();
 
@@ -217,79 +219,6 @@ std::auto_ptr<InfomapBase> InfomapGreedy<InfomapImplementation>::getNewInfomapIn
 }
 
 template<typename InfomapImplementation>
-inline
-void InfomapGreedy<InfomapImplementation>::initEnterExitFlow()
-{
-	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
-			it != itEnd; ++it)
-	{
-		NodeBase& node = **it;
-		for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), edgeEnd(node.end_outEdge());
-				edgeIt != edgeEnd; ++edgeIt)
-		{
-			EdgeType& edge = **edgeIt;
-			// Possible self-links should not add to enter and exit flow in its enclosing module
-			if (edge.source != edge.target)
-			{
-				// For undirected links, this automatically adds to both direction (as enterFlow = &exitFlow)
-				getNode(edge.source).data.exitFlow += edge.data.flow;
-				getNode(edge.target).data.enterFlow += edge.data.flow;
-			}
-		}
-	}
-
-}
-
-/**
- * Specialization for directed with teleportation.
- * Note: As detailed balance is fulfilled, enterFlow = &exitFlow, so this
- * specialization skips adding to enterFlow as that will double up the exitFlow.
- */
-template<>
-inline
-void InfomapGreedy<InfomapDirected>::initEnterExitFlow()
-{
-	double sumDanglingFlow = 0.0;
-	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
-			it != itEnd; ++it)
-	{
-		NodeBase& node = **it;
-		FlowType& data = getNode(node).data;
-		// Also store the flow to use for teleportation as the flow can be transformed
-		data.teleportSourceFlow = data.flow;
-		if (node.isDangling())
-		{
-			sumDanglingFlow += data.flow;
-			data.danglingFlow = data.flow;
-		}
-		else
-		{
-			for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), edgeEnd(node.end_outEdge());
-					edgeIt != edgeEnd; ++edgeIt)
-			{
-				EdgeType& edge = **edgeIt;
-				// Possible self-links should not add to enter and exit flow in its enclosing module
-				if (edge.source != edge.target)
-				{
-					getNode(edge.source).data.exitFlow += edge.data.flow;
-	//				getNode(edge.target).data.enterFlow += edge.data.flow;
-				}
-			}
-		}
-	}
-	double alpha = m_config.teleportationProbability;
-	double beta = 1.0 - alpha;
-	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
-			it != itEnd; ++it)
-	{
-		NodeType& node = getNode(**it);
-		// Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
-		node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
-//		node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
-	}
-}
-
-template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::initConstantInfomapTerms()
 {
 	// Not constant for memory Infomap!
@@ -338,23 +267,17 @@ void InfomapGreedy<InfomapImplementation>::initModuleOptimization()
 
 
 	// Initiate codelength terms for the initial state of one module per node
-	calculateCodelengthFromActiveNetwork();
+	calculateCodelengthFromActiveNetwork(DetailedBalanceType());
 
 //	m_numNonTrivialTopModules = numNodes;
 }
 
-template<typename InfomapImplementation>
-void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork()
-{
-	calculateCodelengthFromActiveNetwork(DetailedBalanceBoolType());
-}
-
 
 /**
- * Specialized for detailed balance == true
+ * Specialized for the case when enter flow equals exit flow
  */
 template<typename InfomapImplementation>
-void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(bool2type<true>)
+void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(DetailedBalance)
 {
 	exit_log_exit = 0.0;
 //	enter_log_enter = 0.0;
@@ -392,10 +315,10 @@ void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(
 }
 
 /**
- * Specialized for detailed balance == false
+ * Specialized for the case when enter and exit flow may differ
  */
 template<typename InfomapImplementation>
-void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(bool2type<false>)
+void InfomapGreedy<InfomapImplementation>::calculateCodelengthFromActiveNetwork(NoDetailedBalance)
 {
 	enter_log_enter = 0.0;
 	flow_log_flow = 0.0;
@@ -492,6 +415,279 @@ double InfomapGreedy<InfomapImplementation>::calcCodelengthFromEnterWithinOrExit
 	return infomath::plogp(totalCodewordUse) - sumEnterLogEnter - infomath::plogp(parentExit);
 }
 
+
+// template<typename InfomapImplementation>
+// inline
+// double InfomapGreedySpecialized<InfomapImplementation>::getDeltaCodelength(NodeType& current,
+// 		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
+// {
+// 	using infomath::plogp;
+// 	unsigned int oldModule = oldModuleDelta.module;
+// 	unsigned int newModule = newModuleDelta.module;
+// 	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+// 	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+
+// 	double delta_enter = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
+
+// 	double delta_enter_log_enter = \
+// 			- plogp(m_moduleFlowData[oldModule].enterFlow) \
+// 			- plogp(m_moduleFlowData[newModule].enterFlow) \
+// 			+ plogp(m_moduleFlowData[oldModule].enterFlow - current.data.enterFlow + deltaEnterExitOldModule) \
+// 			+ plogp(m_moduleFlowData[newModule].enterFlow + current.data.enterFlow - deltaEnterExitNewModule);
+
+// 	double delta_exit_log_exit = \
+// 			- plogp(m_moduleFlowData[oldModule].exitFlow) \
+// 			- plogp(m_moduleFlowData[newModule].exitFlow) \
+// 			+ plogp(m_moduleFlowData[oldModule].exitFlow - current.data.exitFlow + deltaEnterExitOldModule) \
+// 			+ plogp(m_moduleFlowData[newModule].exitFlow + current.data.exitFlow - deltaEnterExitNewModule);
+
+// 	double delta_flow_log_flow = \
+// 			- plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) \
+// 			- plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow) \
+// 			+ plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow \
+// 					- current.data.exitFlow - current.data.flow + deltaEnterExitOldModule) \
+// 			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
+// 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
+
+// 	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
+// 	double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow - delta_nodeFlow_log_nodeFlow;
+// 	return deltaL;
+// }
+
+// template<>
+// inline
+// double InfomapGreedySpecialized<InfomapUndirected>::getDeltaCodelength(NodeType& current,
+// 		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
+// {
+// 	using infomath::plogp;
+// 	unsigned int oldModule = oldModuleDelta.module;
+// 	unsigned int newModule = newModuleDelta.module;
+// 	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+// 	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+
+// 	// Double the effect as each link works in both directions
+// 	deltaEnterExitOldModule *= 2;
+// 	deltaEnterExitNewModule *= 2;
+
+// 	double delta_exit = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
+
+// 	double delta_exit_log_exit = \
+// 			- plogp(m_moduleFlowData[oldModule].exitFlow) \
+// 			- plogp(m_moduleFlowData[newModule].exitFlow) \
+// 			+ plogp(m_moduleFlowData[oldModule].exitFlow - current.data.exitFlow + deltaEnterExitOldModule) \
+// 			+ plogp(m_moduleFlowData[newModule].exitFlow + current.data.exitFlow - deltaEnterExitNewModule);
+
+// 	double delta_flow_log_flow = \
+// 			- plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) \
+// 			- plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow) \
+// 			+ plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow \
+// 					- current.data.exitFlow - current.data.flow + deltaEnterExitOldModule) \
+// 			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
+// 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
+
+// 	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
+// 	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_nodeFlow_log_nodeFlow;
+// 	return deltaL;
+// }
+
+// template<>
+// inline
+// double InfomapGreedySpecialized<InfomapDirected>::getDeltaCodelength(NodeType& current,
+// 		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
+// {
+// 	using infomath::plogp;
+// 	unsigned int oldModule = oldModuleDelta.module;
+// 	unsigned int newModule = newModuleDelta.module;
+// 	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+// 	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+
+// 	double delta_exit = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
+
+// 	double delta_exit_log_exit = \
+// 			- plogp(m_moduleFlowData[oldModule].exitFlow) \
+// 			- plogp(m_moduleFlowData[newModule].exitFlow) \
+// 			+ plogp(m_moduleFlowData[oldModule].exitFlow - current.data.exitFlow + deltaEnterExitOldModule) \
+// 			+ plogp(m_moduleFlowData[newModule].exitFlow + current.data.exitFlow - deltaEnterExitNewModule);
+
+// 	double delta_flow_log_flow = \
+// 			- plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) \
+// 			- plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow) \
+// 			+ plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow \
+// 					- current.data.exitFlow - current.data.flow + deltaEnterExitOldModule) \
+// 			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
+// 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
+
+// 	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
+// 	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_nodeFlow_log_nodeFlow;
+// 	return deltaL;
+// }
+
+
+// /**
+//  * Update the codelength to reflect the move of node current
+//  * in oldModuleDelta to newModuleDelta
+//  * (Specialized for undirected flow and when exitFlow == enterFlow
+//  */
+// template<typename InfomapImplementation>
+// inline
+// void InfomapGreedySpecialized<InfomapImplementation>::updateCodelength(NodeType& current,
+// 		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
+// {
+// 	using infomath::plogp;
+// 	unsigned int oldModule = oldModuleDelta.module;
+// 	unsigned int newModule = newModuleDelta.module;
+// 	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+// 	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+
+// 	enterFlow -= \
+// 			m_moduleFlowData[oldModule].enterFlow + \
+// 			m_moduleFlowData[newModule].enterFlow;
+// 	enter_log_enter -= \
+// 			plogp(m_moduleFlowData[oldModule].enterFlow) + \
+// 			plogp(m_moduleFlowData[newModule].enterFlow);
+// 	exit_log_exit -= \
+// 			plogp(m_moduleFlowData[oldModule].exitFlow) + \
+// 			plogp(m_moduleFlowData[newModule].exitFlow);
+// 	flow_log_flow -= \
+// 			plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) + \
+// 			plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow);
+
+
+// 	m_moduleFlowData[oldModule] -= current.data;
+// 	m_moduleFlowData[newModule] += current.data;
+
+// 	m_moduleFlowData[oldModule].enterFlow += deltaEnterExitOldModule;
+// 	m_moduleFlowData[oldModule].exitFlow += deltaEnterExitOldModule;
+// 	m_moduleFlowData[newModule].enterFlow -= deltaEnterExitNewModule;
+// 	m_moduleFlowData[newModule].exitFlow -= deltaEnterExitNewModule;
+
+// 	enterFlow += \
+// 			m_moduleFlowData[oldModule].enterFlow + \
+// 			m_moduleFlowData[newModule].enterFlow;
+// 	enter_log_enter += \
+// 			plogp(m_moduleFlowData[oldModule].enterFlow) + \
+// 			plogp(m_moduleFlowData[newModule].enterFlow);
+// 	exit_log_exit += \
+// 			plogp(m_moduleFlowData[oldModule].exitFlow) + \
+// 			plogp(m_moduleFlowData[newModule].exitFlow);
+// 	flow_log_flow += \
+// 			plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) + \
+// 			plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow);
+
+// 	enterFlow_log_enterFlow = plogp(enterFlow);
+
+// 	nodeFlow_log_nodeFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
+// 	indexCodelength = enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow;
+// 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
+// 	codelength = indexCodelength + moduleCodelength;
+// }
+
+// template<>
+// inline
+// void InfomapGreedySpecialized<InfomapUndirected>::updateCodelength(NodeType& current,
+// 		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
+// {
+// 	using infomath::plogp;
+// 	unsigned int oldModule = oldModuleDelta.module;
+// 	unsigned int newModule = newModuleDelta.module;
+// 	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+// 	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+
+// 	// Double the effect as each link works in both directions
+// 	deltaEnterExitOldModule *= 2;
+// 	deltaEnterExitNewModule *= 2;
+
+// 	enterFlow -= \
+// 			m_moduleFlowData[oldModule].enterFlow + \
+// 			m_moduleFlowData[newModule].enterFlow;
+// 	exit_log_exit -= \
+// 			plogp(m_moduleFlowData[oldModule].exitFlow) + \
+// 			plogp(m_moduleFlowData[newModule].exitFlow);
+// 	flow_log_flow -= \
+// 			plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) + \
+// 			plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow);
+
+
+// 	m_moduleFlowData[oldModule] -= current.data;
+// 	m_moduleFlowData[newModule] += current.data;
+
+// 	m_moduleFlowData[oldModule].exitFlow += deltaEnterExitOldModule;
+// 	m_moduleFlowData[newModule].exitFlow -= deltaEnterExitNewModule;
+
+// 	enterFlow += \
+// 			m_moduleFlowData[oldModule].enterFlow + \
+// 			m_moduleFlowData[newModule].enterFlow;
+// 	exit_log_exit += \
+// 			plogp(m_moduleFlowData[oldModule].exitFlow) + \
+// 			plogp(m_moduleFlowData[newModule].exitFlow);
+// 	flow_log_flow += \
+// 			plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) + \
+// 			plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow);
+
+// 	enterFlow_log_enterFlow = plogp(enterFlow);
+
+// 	nodeFlow_log_nodeFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
+// 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
+// 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
+// 	codelength = indexCodelength + moduleCodelength;
+// }
+
+// /**
+//  * Specialized when exitFlow == enterFlow
+//  */
+// template<>
+// inline
+// void InfomapGreedySpecialized<InfomapDirected>::updateCodelength(NodeType& current,
+// 		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
+// {
+// 	using infomath::plogp;
+// 	unsigned int oldModule = oldModuleDelta.module;
+// 	unsigned int newModule = newModuleDelta.module;
+// 	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+// 	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+
+// 	enterFlow -= \
+// 			m_moduleFlowData[oldModule].enterFlow + \
+// 			m_moduleFlowData[newModule].enterFlow;
+// 	exit_log_exit -= \
+// 			plogp(m_moduleFlowData[oldModule].exitFlow) + \
+// 			plogp(m_moduleFlowData[newModule].exitFlow);
+// 	flow_log_flow -= \
+// 			plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) + \
+// 			plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow);
+
+
+// 	m_moduleFlowData[oldModule] -= current.data;
+// 	m_moduleFlowData[newModule] += current.data;
+
+// 	m_moduleFlowData[oldModule].exitFlow += deltaEnterExitOldModule;
+// 	m_moduleFlowData[newModule].exitFlow -= deltaEnterExitNewModule;
+
+// 	enterFlow += \
+// 			m_moduleFlowData[oldModule].enterFlow + \
+// 			m_moduleFlowData[newModule].enterFlow;
+// 	exit_log_exit += \
+// 			plogp(m_moduleFlowData[oldModule].exitFlow) + \
+// 			plogp(m_moduleFlowData[newModule].exitFlow);
+// 	flow_log_flow += \
+// 			plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) + \
+// 			plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow);
+
+// 	enterFlow_log_enterFlow = plogp(enterFlow);
+
+// 	nodeFlow_log_nodeFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
+
+// 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
+// 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
+// 	codelength = indexCodelength + moduleCodelength;
+// }
+
+
 template<typename InfomapImplementation>
 inline
 unsigned int InfomapGreedy<InfomapImplementation>::optimizeModules()
@@ -514,316 +710,6 @@ unsigned int InfomapGreedy<InfomapImplementation>::optimizeModules()
 
 	return numOptimizationRounds;
 }
-
-template<>
-inline
-void InfomapGreedy<InfomapDirected>::addTeleportationDeltaFlowOnOldModuleIfMove(NodeType& nodeToMove, DeltaFlow& oldModuleDeltaFlow)
-{
-	double alpha = m_config.teleportationProbability;
-	double beta = 1.0 - alpha;
-	FlowType& oldModuleFlowData = m_moduleFlowData[oldModuleDeltaFlow.module];
-	oldModuleDeltaFlow.deltaExit += (alpha*nodeToMove.data.teleportSourceFlow + beta*nodeToMove.data.danglingFlow) * (oldModuleFlowData.teleportWeight - nodeToMove.data.teleportWeight);
-	oldModuleDeltaFlow.deltaEnter += (alpha*(oldModuleFlowData.teleportSourceFlow - nodeToMove.data.teleportSourceFlow) +
-			beta*(oldModuleFlowData.danglingFlow - nodeToMove.data.danglingFlow)) * nodeToMove.data.teleportWeight;
-}
-
-template<>
-inline
-void InfomapGreedy<InfomapDirected>::addTeleportationDeltaFlowOnNewModuleIfMove(NodeType& nodeToMove, DeltaFlow& newModuleDeltaFlow)
-{
-	double alpha = m_config.teleportationProbability;
-	double beta = 1.0 - alpha;
-	FlowType& newModuleFlowData = m_moduleFlowData[newModuleDeltaFlow.module];
-	newModuleDeltaFlow.deltaExit += (alpha*nodeToMove.data.teleportSourceFlow + beta*nodeToMove.data.danglingFlow) * newModuleFlowData.teleportWeight;
-	newModuleDeltaFlow.deltaEnter += (alpha*newModuleFlowData.teleportSourceFlow +	beta*newModuleFlowData.danglingFlow) * nodeToMove.data.teleportWeight;
-}
-
-template<>
-inline
-void InfomapGreedy<InfomapDirected>::addTeleportationDeltaFlowIfMove(NodeType& current, std::vector<DeltaFlow>& moduleDeltaExits, unsigned int numModuleLinks)
-{
-	for (unsigned int j = 0; j < numModuleLinks; ++j)
-	{
-		unsigned int moduleIndex = moduleDeltaExits[j].module;
-		if (moduleIndex == current.index)
-			addTeleportationDeltaFlowOnOldModuleIfMove(current, moduleDeltaExits[j]);
-		else
-			addTeleportationDeltaFlowOnNewModuleIfMove(current, moduleDeltaExits[j]);
-	}
-}
-
-template<typename InfomapImplementation>
-inline
-double InfomapGreedy<InfomapImplementation>::getDeltaCodelength(NodeType& current,
-		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
-{
-	using infomath::plogp;
-	unsigned int oldModule = oldModuleDelta.module;
-	unsigned int newModule = newModuleDelta.module;
-	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
-	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
-
-	double delta_enter = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
-
-	double delta_enter_log_enter = \
-			- plogp(m_moduleFlowData[oldModule].enterFlow) \
-			- plogp(m_moduleFlowData[newModule].enterFlow) \
-			+ plogp(m_moduleFlowData[oldModule].enterFlow - current.data.enterFlow + deltaEnterExitOldModule) \
-			+ plogp(m_moduleFlowData[newModule].enterFlow + current.data.enterFlow - deltaEnterExitNewModule);
-
-	double delta_exit_log_exit = \
-			- plogp(m_moduleFlowData[oldModule].exitFlow) \
-			- plogp(m_moduleFlowData[newModule].exitFlow) \
-			+ plogp(m_moduleFlowData[oldModule].exitFlow - current.data.exitFlow + deltaEnterExitOldModule) \
-			+ plogp(m_moduleFlowData[newModule].exitFlow + current.data.exitFlow - deltaEnterExitNewModule);
-
-	double delta_flow_log_flow = \
-			- plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) \
-			- plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow) \
-			+ plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow \
-					- current.data.exitFlow - current.data.flow + deltaEnterExitOldModule) \
-			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
-					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
-
-	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
-
-	double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow - delta_nodeFlow_log_nodeFlow;
-	return deltaL;
-}
-
-template<>
-inline
-double InfomapGreedy<InfomapUndirected>::getDeltaCodelength(NodeType& current,
-		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
-{
-	using infomath::plogp;
-	unsigned int oldModule = oldModuleDelta.module;
-	unsigned int newModule = newModuleDelta.module;
-	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
-	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
-
-	// Double the effect as each link works in both directions
-	deltaEnterExitOldModule *= 2;
-	deltaEnterExitNewModule *= 2;
-
-	double delta_exit = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
-
-	double delta_exit_log_exit = \
-			- plogp(m_moduleFlowData[oldModule].exitFlow) \
-			- plogp(m_moduleFlowData[newModule].exitFlow) \
-			+ plogp(m_moduleFlowData[oldModule].exitFlow - current.data.exitFlow + deltaEnterExitOldModule) \
-			+ plogp(m_moduleFlowData[newModule].exitFlow + current.data.exitFlow - deltaEnterExitNewModule);
-
-	double delta_flow_log_flow = \
-			- plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) \
-			- plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow) \
-			+ plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow \
-					- current.data.exitFlow - current.data.flow + deltaEnterExitOldModule) \
-			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
-					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
-
-	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
-
-	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_nodeFlow_log_nodeFlow;
-	return deltaL;
-}
-
-template<>
-inline
-double InfomapGreedy<InfomapDirected>::getDeltaCodelength(NodeType& current,
-		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
-{
-	using infomath::plogp;
-	unsigned int oldModule = oldModuleDelta.module;
-	unsigned int newModule = newModuleDelta.module;
-	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
-	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
-
-	double delta_exit = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
-
-	double delta_exit_log_exit = \
-			- plogp(m_moduleFlowData[oldModule].exitFlow) \
-			- plogp(m_moduleFlowData[newModule].exitFlow) \
-			+ plogp(m_moduleFlowData[oldModule].exitFlow - current.data.exitFlow + deltaEnterExitOldModule) \
-			+ plogp(m_moduleFlowData[newModule].exitFlow + current.data.exitFlow - deltaEnterExitNewModule);
-
-	double delta_flow_log_flow = \
-			- plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) \
-			- plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow) \
-			+ plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow \
-					- current.data.exitFlow - current.data.flow + deltaEnterExitOldModule) \
-			+ plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow \
-					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
-
-	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
-
-	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_nodeFlow_log_nodeFlow;
-	return deltaL;
-}
-
-
-/**
- * Update the codelength to reflect the move of node current
- * in oldModuleDelta to newModuleDelta
- * (Specialized for undirected flow and when exitFlow == enterFlow
- */
-template<typename InfomapImplementation>
-inline
-void InfomapGreedy<InfomapImplementation>::updateCodelength(NodeType& current,
-		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
-{
-	using infomath::plogp;
-	unsigned int oldModule = oldModuleDelta.module;
-	unsigned int newModule = newModuleDelta.module;
-	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
-	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
-
-	enterFlow -= \
-			m_moduleFlowData[oldModule].enterFlow + \
-			m_moduleFlowData[newModule].enterFlow;
-	enter_log_enter -= \
-			plogp(m_moduleFlowData[oldModule].enterFlow) + \
-			plogp(m_moduleFlowData[newModule].enterFlow);
-	exit_log_exit -= \
-			plogp(m_moduleFlowData[oldModule].exitFlow) + \
-			plogp(m_moduleFlowData[newModule].exitFlow);
-	flow_log_flow -= \
-			plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) + \
-			plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow);
-
-
-	m_moduleFlowData[oldModule] -= current.data;
-	m_moduleFlowData[newModule] += current.data;
-
-	m_moduleFlowData[oldModule].enterFlow += deltaEnterExitOldModule;
-	m_moduleFlowData[oldModule].exitFlow += deltaEnterExitOldModule;
-	m_moduleFlowData[newModule].enterFlow -= deltaEnterExitNewModule;
-	m_moduleFlowData[newModule].exitFlow -= deltaEnterExitNewModule;
-
-	enterFlow += \
-			m_moduleFlowData[oldModule].enterFlow + \
-			m_moduleFlowData[newModule].enterFlow;
-	enter_log_enter += \
-			plogp(m_moduleFlowData[oldModule].enterFlow) + \
-			plogp(m_moduleFlowData[newModule].enterFlow);
-	exit_log_exit += \
-			plogp(m_moduleFlowData[oldModule].exitFlow) + \
-			plogp(m_moduleFlowData[newModule].exitFlow);
-	flow_log_flow += \
-			plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) + \
-			plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow);
-
-	enterFlow_log_enterFlow = plogp(enterFlow);
-
-	nodeFlow_log_nodeFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
-
-	indexCodelength = enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow;
-	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
-	codelength = indexCodelength + moduleCodelength;
-}
-
-template<>
-inline
-void InfomapGreedy<InfomapUndirected>::updateCodelength(NodeType& current,
-		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
-{
-	using infomath::plogp;
-	unsigned int oldModule = oldModuleDelta.module;
-	unsigned int newModule = newModuleDelta.module;
-	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
-	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
-
-	// Double the effect as each link works in both directions
-	deltaEnterExitOldModule *= 2;
-	deltaEnterExitNewModule *= 2;
-
-	enterFlow -= \
-			m_moduleFlowData[oldModule].enterFlow + \
-			m_moduleFlowData[newModule].enterFlow;
-	exit_log_exit -= \
-			plogp(m_moduleFlowData[oldModule].exitFlow) + \
-			plogp(m_moduleFlowData[newModule].exitFlow);
-	flow_log_flow -= \
-			plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) + \
-			plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow);
-
-
-	m_moduleFlowData[oldModule] -= current.data;
-	m_moduleFlowData[newModule] += current.data;
-
-	m_moduleFlowData[oldModule].exitFlow += deltaEnterExitOldModule;
-	m_moduleFlowData[newModule].exitFlow -= deltaEnterExitNewModule;
-
-	enterFlow += \
-			m_moduleFlowData[oldModule].enterFlow + \
-			m_moduleFlowData[newModule].enterFlow;
-	exit_log_exit += \
-			plogp(m_moduleFlowData[oldModule].exitFlow) + \
-			plogp(m_moduleFlowData[newModule].exitFlow);
-	flow_log_flow += \
-			plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) + \
-			plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow);
-
-	enterFlow_log_enterFlow = plogp(enterFlow);
-
-	nodeFlow_log_nodeFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
-
-	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
-	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
-	codelength = indexCodelength + moduleCodelength;
-}
-
-/**
- * Specialized when exitFlow == enterFlow
- */
-template<>
-inline
-void InfomapGreedy<InfomapDirected>::updateCodelength(NodeType& current,
-		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
-{
-	using infomath::plogp;
-	unsigned int oldModule = oldModuleDelta.module;
-	unsigned int newModule = newModuleDelta.module;
-	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
-	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
-
-	enterFlow -= \
-			m_moduleFlowData[oldModule].enterFlow + \
-			m_moduleFlowData[newModule].enterFlow;
-	exit_log_exit -= \
-			plogp(m_moduleFlowData[oldModule].exitFlow) + \
-			plogp(m_moduleFlowData[newModule].exitFlow);
-	flow_log_flow -= \
-			plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) + \
-			plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow);
-
-
-	m_moduleFlowData[oldModule] -= current.data;
-	m_moduleFlowData[newModule] += current.data;
-
-	m_moduleFlowData[oldModule].exitFlow += deltaEnterExitOldModule;
-	m_moduleFlowData[newModule].exitFlow -= deltaEnterExitNewModule;
-
-	enterFlow += \
-			m_moduleFlowData[oldModule].enterFlow + \
-			m_moduleFlowData[newModule].enterFlow;
-	exit_log_exit += \
-			plogp(m_moduleFlowData[oldModule].exitFlow) + \
-			plogp(m_moduleFlowData[newModule].exitFlow);
-	flow_log_flow += \
-			plogp(m_moduleFlowData[oldModule].exitFlow + m_moduleFlowData[oldModule].flow) + \
-			plogp(m_moduleFlowData[newModule].exitFlow + m_moduleFlowData[newModule].flow);
-
-	enterFlow_log_enterFlow = plogp(enterFlow);
-
-	nodeFlow_log_nodeFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
-
-	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
-	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
-	codelength = indexCodelength + moduleCodelength;
-}
-
-
 
 
 /**
@@ -959,7 +845,7 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 
 
 		// Empty function if no teleportation coding model
-		addTeleportationDeltaFlowIfMove(current, moduleDeltaEnterExit, numModuleLinks);
+		getImpl().addTeleportationDeltaFlowIfMove(current, moduleDeltaEnterExit, numModuleLinks);
 
 		// Option to move to empty module (if node not already alone)
 		if (m_moduleMembers[current.index] > 1 && m_emptyModules.size() > 0)
@@ -1042,7 +928,7 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 			unsigned int otherModule = moduleDeltaEnterExit[j].module;
 			if(otherModule != current.index)
 			{
-				double deltaCodelength = getDeltaCodelength(current, oldModuleDelta, moduleDeltaEnterExit[j]);
+				double deltaCodelength = getImpl().getDeltaCodelength(current, oldModuleDelta, moduleDeltaEnterExit[j]);
 
 				if (deltaCodelength < bestDeltaCodelength)
 				{
@@ -1067,7 +953,7 @@ unsigned int InfomapGreedy<InfomapImplementation>::tryMoveEachNodeIntoBestModule
 				m_emptyModules.push_back(current.index);
 			}
 
-			updateCodelength(current, oldModuleDelta, bestDeltaModule);
+			getImpl().updateCodelength(current, oldModuleDelta, bestDeltaModule);
 
 			m_moduleMembers[current.index] -= 1;
 			m_moduleMembers[bestModuleIndex] += 1;
@@ -1134,8 +1020,8 @@ void InfomapGreedy<InfomapImplementation>::moveNodesToPredefinedModules()
 			DeltaFlow oldModuleDelta(oldM, 0.0, 0.0, 0.0, 0.0);
 			DeltaFlow newModuleDelta(newM, 0.0, 0.0, 0.0, 0.0);
 
-			addTeleportationDeltaFlowOnOldModuleIfMove(current, oldModuleDelta);
-			addTeleportationDeltaFlowOnNewModuleIfMove(current, newModuleDelta);
+			getImpl().addTeleportationDeltaFlowOnOldModuleIfMove(current, oldModuleDelta);
+			getImpl().addTeleportationDeltaFlowOnNewModuleIfMove(current, newModuleDelta);
 
 			// For all outlinks
 			for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
@@ -1220,7 +1106,7 @@ void InfomapGreedy<InfomapImplementation>::moveNodesToPredefinedModules()
 				m_emptyModules.push_back(oldM);
 			}
 
-			updateCodelength(current, oldModuleDelta, newModuleDelta);
+			getImpl().updateCodelength(current, oldModuleDelta, newModuleDelta);
 
 			m_moduleMembers[oldM] -= 1;
 			m_moduleMembers[newM] += 1;

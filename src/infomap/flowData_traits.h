@@ -32,60 +32,97 @@
 // A boolean type as function templates can't be partially specialized.
 template<bool> struct bool2type {};
 
+struct WithMemory {};
+struct WithoutMemory {};
+
+struct DetailedBalance {};
+struct NoDetailedBalance {};
+
+struct WithTeleportation {};
+struct WithRecordedTeleportation {};
+struct WithUnrecordedTeleportation {};
+struct WithoutTeleportation {};
+
+struct Directed {};
+struct Undirected {};
+
+struct DirectedWithRecordedTeleportation {};
+struct NotDirectedWithRecordedTeleportation {};
+
+template<typename FlowType, typename NetworkType>
+struct InfomapType
+{
+	typedef FlowType	flow_type;
+	typedef NetworkType	network_type;
+};
 
 template<typename InfomapType>
 struct flowData_traits;
-//{
-//	typedef FlowUndirected	flow_type;
-//};
-
-struct InfomapUndirected;
 
 template<>
-struct flowData_traits<InfomapUndirected>
+struct flowData_traits<FlowUndirected>
 {
-	typedef FlowUndirected		flow_type;
-	typedef bool2type<false>	directed_type;
-	typedef bool2type<true>		detailedBalance_type;
-	static const bool directed = false;
-	static const bool detailed_balance = true;
+	typedef DetailedBalance								detailed_balance_type;
+	typedef NotDirectedWithRecordedTeleportation		directed_with_recorded_teleportation_type;
+	typedef WithoutTeleportation						teleportation_type;
 };
-
-struct InfomapDirected;
 
 template<>
-struct flowData_traits<InfomapDirected>
+struct flowData_traits<FlowDirectedNonDetailedBalance>
 {
-	typedef FlowDirectedWithTeleportation	flow_type;
-	typedef bool2type<true> 				directed_type;
-	typedef bool2type<true> 				detailedBalance_type;
-	static const bool directed = true;
-	static const bool detailed_balance = true;
+	typedef NoDetailedBalance							detailed_balance_type;
+	typedef NotDirectedWithRecordedTeleportation		directed_with_recorded_teleportation_type;
+	typedef WithoutTeleportation						teleportation_type;
 };
-
-struct InfomapUndirdir;
 
 template<>
-struct flowData_traits<InfomapUndirdir>
+struct flowData_traits<FlowDirectedWithTeleportation>
 {
-	typedef FlowDirectedNonDetailedBalance	flow_type;
-	typedef bool2type<true> 				directed_type;
-	typedef bool2type<false> 				detailedBalance_type;
-	static const bool directed = true;
-	static const bool detailed_balance = false;
+	typedef DetailedBalance								detailed_balance_type;
+	typedef DirectedWithRecordedTeleportation			directed_with_recorded_teleportation_type;
+	typedef WithTeleportation							teleportation_type;
 };
-
-struct InfomapDirectedUnrecordedTeleportation;
 
 template<>
-struct flowData_traits<InfomapDirectedUnrecordedTeleportation>
+struct flowData_traits<FlowDirectedNonDetailedBalanceWithTeleportation>
 {
-	typedef FlowDirectedNonDetailedBalanceWithTeleportation	flow_type;
-	typedef bool2type<true> 				directed_type;
-	typedef bool2type<false> 				detailedBalance_type;
-	static const bool directed = true;
-	static const bool detailed_balance = false;
+	typedef NoDetailedBalance							detailed_balance_type;
+	typedef NotDirectedWithRecordedTeleportation		directed_with_recorded_teleportation_type;
+	typedef WithTeleportation							teleportation_type;
 };
+
+
+// A traits class template to be able to extract the flow type from the incomplete derived class in the CRTP class InfomapGreedy
+template <typename derived_t>
+struct base_traits;
+
+template<typename FlowType>
+class InfomapGreedySpecialized;
+
+// Declare and define a base_traits specialization for derived:
+template <>
+struct base_traits<InfomapGreedySpecialized<FlowUndirected> > {
+    typedef FlowUndirected flow_type;
+};
+
+// Declare and define a base_traits specialization for derived:
+template <>
+struct base_traits<InfomapGreedySpecialized<FlowDirectedNonDetailedBalance> > {
+    typedef FlowDirectedNonDetailedBalance flow_type;
+};
+
+// Declare and define a base_traits specialization for derived:
+template <>
+struct base_traits<InfomapGreedySpecialized<FlowDirectedWithTeleportation> > {
+    typedef FlowDirectedWithTeleportation flow_type;
+};
+
+// Declare and define a base_traits specialization for derived:
+template <>
+struct base_traits<InfomapGreedySpecialized<FlowDirectedNonDetailedBalanceWithTeleportation> > {
+    typedef FlowDirectedNonDetailedBalanceWithTeleportation flow_type;
+};
+
 
 
 #endif /* FLOWDATA_TRAITS_H_ */

@@ -29,9 +29,8 @@
 #define FLOWDATA_H_
 #include <ostream>
 
-class FlowUndirected
+struct FlowUndirected
 {
-public:
 	FlowUndirected(double flow = 1.0, double teleportWeight = 1.0) :
 		flow(flow),
 		exitFlow(0.0),
@@ -73,9 +72,8 @@ public:
 	}
 };
 
-class FlowDirected
+struct FlowDirected
 {
-public:
 	FlowDirected(double flow = 1.0, double teleportWeight = 1.0) :
 		flow(flow),
 		exitFlow(0.0),
@@ -117,9 +115,8 @@ public:
 	}
 };
 
-class FlowDirectedWithTeleportation
+struct FlowDirectedWithTeleportation
 {
-public:
 	FlowDirectedWithTeleportation(double flow = 1.0, double teleportWeight = 1.0) :
 		flow(flow),
 		exitFlow(0.0),
@@ -182,9 +179,8 @@ public:
 	}
 };
 
-class FlowDirectedNonDetailedBalance
+struct FlowDirectedNonDetailedBalance
 {
-public:
 	FlowDirectedNonDetailedBalance(double flow = 1.0, double teleportWeight = 1.0) :
 		flow(flow),
 		enterFlow(0.0),
@@ -229,9 +225,8 @@ public:
 	}
 };
 
-class FlowDirectedNonDetailedBalanceWithTeleportation
+struct FlowDirectedNonDetailedBalanceWithTeleportation
 {
-public:
 	FlowDirectedNonDetailedBalanceWithTeleportation(double flow = 1.0, double teleportWeight = 1.0) :
 		flow(flow),
 		enterFlow(0.0),
@@ -289,11 +284,10 @@ public:
 };
 
 /**
- * Dummy class to be able to return flow data from specialized structures to non-templated contexts
+ * Dummy struct to be able to return flow data from specialized structures to non-templated contexts
  */
-class FlowDummy
+struct FlowDummy
 {
-public:
 	FlowDummy() :
 		flow(0.0),
 		enterFlow(0.0),

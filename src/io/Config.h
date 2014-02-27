@@ -131,6 +131,8 @@ struct Config
 
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 
+	bool isMemoryNetwork() const { return inputFormat == "3gram"; }
+
 	bool haveModularResultOutput() const
 	{
 		return printTree ||
