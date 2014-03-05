@@ -27,7 +27,7 @@
 
 #include "InfomapContext.h"
 #include "flowData_traits.h"
-#include "InfomapGreedySpecialized.h"
+#include "InfomapGreedyTypeSpecialized.h"
 
 // InfomapFactory::create(const Config& config)
 // {
@@ -55,11 +55,11 @@ template<typename NetworkType>
 void InfomapContext::createInfomap()
 {
 	if (m_config.isUndirected())
-		m_infomap = std::auto_ptr<InfomapBase>(new InfomapGreedyType<InfomapType<FlowUndirected, NetworkType> >(m_config));
+		m_infomap = std::auto_ptr<InfomapBase>(new InfomapGreedyTypeSpecialized<FlowUndirected, NetworkType>(m_config));
 	else if (m_config.undirdir || m_config.outdirdir || m_config.rawdir)
-		m_infomap = std::auto_ptr<InfomapBase>(new InfomapGreedyType<InfomapType<FlowDirectedNonDetailedBalance, NetworkType> >(m_config));
+		m_infomap = std::auto_ptr<InfomapBase>(new InfomapGreedyTypeSpecialized<FlowDirectedNonDetailedBalance, NetworkType>(m_config));
 	else if (m_config.recordedTeleportation)
-		m_infomap = std::auto_ptr<InfomapBase>(new InfomapGreedyType<InfomapType<FlowDirectedWithTeleportation, NetworkType> >(m_config));
+		m_infomap = std::auto_ptr<InfomapBase>(new InfomapGreedyTypeSpecialized<FlowDirectedWithTeleportation, NetworkType>(m_config));
 	else // unrecorded teleportation
-		m_infomap = std::auto_ptr<InfomapBase>(new InfomapGreedyType<InfomapType<FlowDirectedNonDetailedBalanceWithTeleportation, NetworkType> >(m_config));
+		m_infomap = std::auto_ptr<InfomapBase>(new InfomapGreedyTypeSpecialized<FlowDirectedNonDetailedBalanceWithTeleportation, NetworkType>(m_config));
 }

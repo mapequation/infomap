@@ -29,6 +29,7 @@
 #define INFOMAPGREEDYSPECIALIZED_H_
 #include "InfomapGreedy.h"
 
+struct DeltaFlow;
 
 template<typename FlowType>
 class InfomapGreedySpecialized : public InfomapGreedy<InfomapGreedySpecialized<FlowType> >
@@ -42,7 +43,7 @@ class InfomapGreedySpecialized : public InfomapGreedy<InfomapGreedySpecialized<F
 	typedef MemNode<FlowType>											NodeType;
 	typedef Edge<NodeBase>												EdgeType;
 public:
-	typedef FlowType													flow_type;
+	typedef DeltaFlow													DeltaFlow;
 
 
 	InfomapGreedySpecialized(const Config& conf) : InfomapGreedy<SelfType>(conf) {}
@@ -56,10 +57,40 @@ protected:
 	void addTeleportationDeltaFlowOnNewModuleIfMove(NodeType& nodeToMove, DeltaFlow& newModuleDeltaFlow) {}
 	void addTeleportationDeltaFlowIfMove(NodeType& current, std::vector<DeltaFlow>& moduleDeltaExits, unsigned int numModuleLinks) {}
 
-	double getDeltaCodelength(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
-	void updateCodelength(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
+	double getDeltaCodelengthOnMovingNode(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
+	void updateCodelengthOnMovingNode(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
 
 };
+
+
+struct DeltaFlow
+{
+	DeltaFlow()
+	:	module(0), deltaExit(0.0), deltaEnter(0.0), sumDeltaPlogpPhysFlow(0.0), sumPlogpPhysFlow(0.0) {}
+	DeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow, double sumPlogpPhysFlow)
+	:	module(module), deltaExit(deltaExit), deltaEnter(deltaEnter), sumDeltaPlogpPhysFlow(sumDeltaPlogpPhysFlow), sumPlogpPhysFlow(sumPlogpPhysFlow) {}
+	DeltaFlow(const DeltaFlow& other) // Copy constructor
+	:	module(other.module), deltaExit(other.deltaExit), deltaEnter(other.deltaEnter), sumDeltaPlogpPhysFlow(other.sumDeltaPlogpPhysFlow), sumPlogpPhysFlow(other.sumPlogpPhysFlow) {}
+	DeltaFlow& operator=(DeltaFlow other) // Assignment operator (copy-and-swap idiom)
+	{
+		swap(*this, other);
+		return *this;
+	}
+	friend void swap(DeltaFlow& first, DeltaFlow& second)
+	{
+		std::swap(first.module, second.module);
+		std::swap(first.deltaExit, second.deltaExit);
+		std::swap(first.deltaEnter, second.deltaEnter);
+		std::swap(first.sumDeltaPlogpPhysFlow, second.sumDeltaPlogpPhysFlow);
+		std::swap(first.sumPlogpPhysFlow, second.sumPlogpPhysFlow);
+	}
+	unsigned int module;
+	double deltaExit;
+	double deltaEnter;
+	double sumDeltaPlogpPhysFlow;
+	double sumPlogpPhysFlow;
+};
+
 
 template<typename FlowType>
 inline
@@ -177,7 +208,7 @@ void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::addTeleportationDe
 
 template<typename FlowType>
 inline
-double InfomapGreedySpecialized<FlowType>::getDeltaCodelength(NodeType& current,
+double InfomapGreedySpecialized<FlowType>::getDeltaCodelengthOnMovingNode(NodeType& current,
 		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
 {
 	using infomath::plogp;
@@ -209,15 +240,13 @@ double InfomapGreedySpecialized<FlowType>::getDeltaCodelength(NodeType& current,
 			+ plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow \
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
-	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
-
-	double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow - delta_nodeFlow_log_nodeFlow;
+	double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
 	return deltaL;
 }
 
 template<>
 inline
-double InfomapGreedySpecialized<FlowUndirected>::getDeltaCodelength(NodeType& current,
+double InfomapGreedySpecialized<FlowUndirected>::getDeltaCodelengthOnMovingNode(NodeType& current,
 		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
 {
 	using infomath::plogp;
@@ -247,15 +276,13 @@ double InfomapGreedySpecialized<FlowUndirected>::getDeltaCodelength(NodeType& cu
 			+ plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow \
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
-	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
-
-	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_nodeFlow_log_nodeFlow;
+	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow;
 	return deltaL;
 }
 
 template<>
 inline
-double InfomapGreedySpecialized<FlowDirectedWithTeleportation>::getDeltaCodelength(NodeType& current,
+double InfomapGreedySpecialized<FlowDirectedWithTeleportation>::getDeltaCodelengthOnMovingNode(NodeType& current,
 		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
 {
 	using infomath::plogp;
@@ -281,9 +308,7 @@ double InfomapGreedySpecialized<FlowDirectedWithTeleportation>::getDeltaCodeleng
 			+ plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow \
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
-	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
-
-	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow - delta_nodeFlow_log_nodeFlow;
+	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow;
 	return deltaL;
 }
 
@@ -295,7 +320,7 @@ double InfomapGreedySpecialized<FlowDirectedWithTeleportation>::getDeltaCodeleng
  */
 template<typename FlowType>
 inline
-void InfomapGreedySpecialized<FlowType>::updateCodelength(NodeType& current,
+void InfomapGreedySpecialized<FlowType>::updateCodelengthOnMovingNode(NodeType& current,
 		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
 {
 	using infomath::plogp;
@@ -342,8 +367,6 @@ void InfomapGreedySpecialized<FlowType>::updateCodelength(NodeType& current,
 
 	Super::enterFlow_log_enterFlow = plogp(Super::enterFlow);
 
-	Super::nodeFlow_log_nodeFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
-
 	Super::indexCodelength = Super::enterFlow_log_enterFlow - Super::enter_log_enter - Super::exitNetworkFlow_log_exitNetworkFlow;
 	Super::moduleCodelength = -Super::exit_log_exit + Super::flow_log_flow - Super::nodeFlow_log_nodeFlow;
 	Super::codelength = Super::indexCodelength + Super::moduleCodelength;
@@ -351,7 +374,7 @@ void InfomapGreedySpecialized<FlowType>::updateCodelength(NodeType& current,
 
 template<>
 inline
-void InfomapGreedySpecialized<FlowUndirected>::updateCodelength(NodeType& current,
+void InfomapGreedySpecialized<FlowUndirected>::updateCodelengthOnMovingNode(NodeType& current,
 		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
 {
 	using infomath::plogp;
@@ -394,8 +417,6 @@ void InfomapGreedySpecialized<FlowUndirected>::updateCodelength(NodeType& curren
 
 	enterFlow_log_enterFlow = plogp(enterFlow);
 
-	nodeFlow_log_nodeFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
-
 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
 	codelength = indexCodelength + moduleCodelength;
@@ -406,7 +427,7 @@ void InfomapGreedySpecialized<FlowUndirected>::updateCodelength(NodeType& curren
  */
 template<>
 inline
-void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::updateCodelength(NodeType& current,
+void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::updateCodelengthOnMovingNode(NodeType& current,
 		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
 {
 	using infomath::plogp;
@@ -445,45 +466,10 @@ void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::updateCodelength(N
 
 	enterFlow_log_enterFlow = plogp(enterFlow);
 
-	nodeFlow_log_nodeFlow += oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
-
 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
 	codelength = indexCodelength + moduleCodelength;
 }
-
-
-
-
-
-
-
-
-
-
-
-template<typename InfomapTypes>
-class InfomapGreedyType : public InfomapGreedySpecialized<typename InfomapTypes::flow_type>
-{
-public:
-	typedef InfomapTypes												infomap_types;
-	typedef typename InfomapTypes::network_type							NetworkTypeType;
-	typedef typename InfomapTypes::flow_type							FlowType;
-	typedef typename flowData_traits<FlowType>::detailed_balance_type 	DetailedBalanceType;
-	typedef typename flowData_traits<FlowType>::directed_with_recorded_teleportation_type DirectedWithRecordedTeleportationType;
-	typedef typename flowData_traits<FlowType>::teleportation_type 		TeleportationType;
-	typedef MemNode<FlowType>											NodeType;
-	typedef Edge<NodeBase>												EdgeType;
-
-
-	InfomapGreedyType(const Config& conf) : InfomapGreedySpecialized<FlowType>(conf) {}
-	virtual ~InfomapGreedyType() {}
-};
-
-
-
-
-
 
 
 

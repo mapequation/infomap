@@ -30,6 +30,7 @@
 #include <iostream>
 #include <cmath>
 #include "../io/convert.h"
+#include <map>
 
 MemFlowNetwork::MemFlowNetwork() {
 	// TODO Auto-generated constructor stub
@@ -43,6 +44,11 @@ MemFlowNetwork::~MemFlowNetwork() {
 
 void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 {
+	if (!config.isMemoryNetwork())
+	{
+		FlowNetwork::calculateFlow(net, config);
+		return;
+	}
 	std::cout << "Calculating global flow... ";
 	const MemNetwork& network = static_cast<const MemNetwork&>(net);
 

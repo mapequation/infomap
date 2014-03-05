@@ -829,6 +829,7 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 
 	if (codelength > initialCodelength)
 		RELEASE_OUT("*");
+	ASSERT(codelength <= initialCodelength + 1e-10);
 
 	double oldCodelength = oneLevelCodelength;
 	double compression = (oldCodelength - codelength)/oldCodelength;
@@ -1144,7 +1145,52 @@ void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)
 
 bool InfomapBase::initNetwork()
 {
-//	Network network(m_config);
+	if (m_config.isMemoryNetwork())
+		return initMemoryNetwork();
+
+	Network network(m_config);
+
+ 	if (checkAndConvertBinaryTree())
+ 		return false;
+
+ 	try
+ 	{
+ 		network.readFromFile(m_config.networkFile);
+ 	}
+ 	catch (const std::runtime_error& error)
+ 	{
+ 		std::cerr << "Error parsing the input file: " << error.what() << std::endl;
+ 		return false;
+ 	}
+
+ 	FlowNetwork flowNetwork;
+ 	flowNetwork.calculateFlow(network, m_config);
+
+ 	if (m_config.printPajekNetwork)
+ 	{
+ 		std::string outName = io::Str() <<
+ 				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
+ 		network.printNetworkAsPajek(outName);
+ 	}
+
+ 	const std::vector<std::string>& nodeNames = network.nodeNames();
+ 	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
+ 	const std::vector<double>& nodeTeleportWeights = flowNetwork.getNodeTeleportRates();
+ 	m_treeData.reserveNodeCount(network.numNodes());
+
+ 	for (unsigned int i = 0; i < network.numNodes(); ++i)
+ 		m_treeData.addNewNode(nodeNames[i], nodeFlow[i], nodeTeleportWeights[i]);
+ 	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();
+ 	for (unsigned int i = 0; i < links.size(); ++i)
+ 		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow);
+
+ 	initEnterExitFlow();
+
+ 	return true;
+}
+
+bool InfomapBase::initMemoryNetwork()
+{
 	MemNetwork network(m_config);
 
 	try
@@ -1166,6 +1212,7 @@ bool InfomapBase::initNetwork()
 				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
 		network.printNetworkAsPajek(outName);
 	}
+
 
 //	const std::vector<std::string>& nodeNames = network.nodeNames();
 	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
@@ -1222,52 +1269,7 @@ bool InfomapBase::initNetwork()
 	}
 
 	return true;
-//	printNetworkDebug("debug", false, true);
 }
-
-// bool InfomapBase::initNetwork()
-// {
-// 	Network network(m_config);
-
-// 	if (checkAndConvertBinaryTree())
-// 		return false;
-
-// 	try
-// 	{
-// 		network.readFromFile(m_config.networkFile);
-// 	}
-// 	catch (const std::runtime_error& error)
-// 	{
-// 		std::cerr << "Error parsing the input file: " << error.what() << std::endl;
-// 		return false;
-// 	}
-
-// 	FlowNetwork flowNetwork;
-// 	flowNetwork.calculateFlow(network, m_config);
-
-// 	if (m_config.printPajekNetwork)
-// 	{
-// 		std::string outName = io::Str() <<
-// 				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
-// 		network.printNetworkAsPajek(outName);
-// 	}
-
-// 	const std::vector<std::string>& nodeNames = network.nodeNames();
-// 	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
-// 	const std::vector<double>& nodeTeleportWeights = flowNetwork.getNodeTeleportRates();
-// 	m_treeData.reserveNodeCount(network.numNodes());
-
-// 	for (unsigned int i = 0; i < network.numNodes(); ++i)
-// 		m_treeData.addNewNode(nodeNames[i], nodeFlow[i], nodeTeleportWeights[i]);
-// 	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();
-// 	for (unsigned int i = 0; i < links.size(); ++i)
-// 		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow);
-
-// 	initEnterExitFlow();
-
-// 	return true;
-// //	printNetworkDebug("debug", false, true);
-// }
 
 void InfomapBase::initSubNetwork(NodeBase& parent, bool recalculateFlow)
 {

@@ -56,6 +56,7 @@ struct InfomapType
 	typedef NetworkType	network_type;
 };
 
+
 template<typename InfomapType>
 struct flowData_traits;
 
@@ -92,36 +93,48 @@ struct flowData_traits<FlowDirectedNonDetailedBalanceWithTeleportation>
 };
 
 
-// A traits class template to be able to extract the flow type from the incomplete derived class in the CRTP class InfomapGreedy
+
+// A traits class template to be able to extract the flow type from incomplete derived classes in the inherited CRTP class
 template <typename derived_t>
-struct base_traits;
+struct derived_traits;
+
+template<typename FlowType, typename NetworkType>
+class InfomapGreedyTypeSpecialized;
+
+template<typename FlowType, typename NetworkType>
+struct derived_traits<InfomapGreedyTypeSpecialized<FlowType, NetworkType> > {
+	typedef FlowType flow_type;
+};
+
 
 template<typename FlowType>
 class InfomapGreedySpecialized;
 
-// Declare and define a base_traits specialization for derived:
-template <>
-struct base_traits<InfomapGreedySpecialized<FlowUndirected> > {
-    typedef FlowUndirected flow_type;
+template<typename FlowType>
+struct derived_traits<InfomapGreedySpecialized<FlowType> > {
+	typedef FlowType flow_type;
 };
 
-// Declare and define a base_traits specialization for derived:
-template <>
-struct base_traits<InfomapGreedySpecialized<FlowDirectedNonDetailedBalance> > {
-    typedef FlowDirectedNonDetailedBalance flow_type;
-};
+// // Declare and define a base_traits specialization for derived types:
+// template <>
+// struct base_traits<InfomapGreedySpecialized<FlowUndirected> > {
+//     typedef FlowUndirected flow_type;
+// };
 
-// Declare and define a base_traits specialization for derived:
-template <>
-struct base_traits<InfomapGreedySpecialized<FlowDirectedWithTeleportation> > {
-    typedef FlowDirectedWithTeleportation flow_type;
-};
+// template <>
+// struct base_traits<InfomapGreedySpecialized<FlowDirectedNonDetailedBalance> > {
+//     typedef FlowDirectedNonDetailedBalance flow_type;
+// };
 
-// Declare and define a base_traits specialization for derived:
-template <>
-struct base_traits<InfomapGreedySpecialized<FlowDirectedNonDetailedBalanceWithTeleportation> > {
-    typedef FlowDirectedNonDetailedBalanceWithTeleportation flow_type;
-};
+// template <>
+// struct base_traits<InfomapGreedySpecialized<FlowDirectedWithTeleportation> > {
+//     typedef FlowDirectedWithTeleportation flow_type;
+// };
+
+// template <>
+// struct base_traits<InfomapGreedySpecialized<FlowDirectedNonDetailedBalanceWithTeleportation> > {
+//     typedef FlowDirectedNonDetailedBalanceWithTeleportation flow_type;
+// };
 
 
 

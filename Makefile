@@ -12,6 +12,9 @@ src/infomap/FlowNetwork.h \
 src/infomap/InfomapBase.h \
 src/infomap/InfomapContext.h \
 src/infomap/InfomapGreedy.h \
+src/infomap/InfomapGreedyCommon.h \
+src/infomap/InfomapGreedySpecialized.h \
+src/infomap/InfomapGreedyTypeSpecialized.h \
 src/infomap/MemFlowNetwork.h \
 src/infomap/MemNetwork.h \
 src/infomap/Network.h \
@@ -41,7 +44,6 @@ SOURCES = \
 src/infomap/FlowNetwork.cpp \
 src/infomap/InfomapBase.cpp \
 src/infomap/InfomapContext.cpp \
-src/infomap/InfomapGreedy.cpp \
 src/infomap/MemFlowNetwork.cpp \
 src/infomap/MemNetwork.cpp \
 src/infomap/Network.cpp \

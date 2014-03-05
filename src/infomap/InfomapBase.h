@@ -225,6 +225,7 @@ private:
 	void setActiveNetworkFromLeafs();
 	void consolidateExternalClusterData();
 	bool initNetwork();
+	bool initMemoryNetwork();
 	bool checkAndConvertBinaryTree();
 	void printNetworkData(std::string filename = "", bool sort = true);
 	void printClusterVector(std::ostream& out);
