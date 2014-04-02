@@ -197,6 +197,7 @@ public:
 		if (children.size() > 0)
 			size += sizeof(depthBelow) + sizeof(childPos_t);
 		// The edges are printed out after the last child
+		writeEdges = true;
 		if (writeEdges && parentNode != NULL && static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
 		{
 			// numEdges + {edges}
@@ -221,6 +222,7 @@ public:
 			outFile << childPosition;		// unsigned int childPosition
 		}
 
+		writeEdges = true;
 		// Write edges after the last child of the parent node
 		if (writeEdges && parentNode != NULL && static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
 		{
