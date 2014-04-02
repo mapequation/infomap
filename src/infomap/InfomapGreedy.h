@@ -44,6 +44,7 @@
 #include "../io/convert.h"
 #include "../io/HierarchicalNetwork.h"
 #include <deque>
+#include <functional>
 
 
 template<typename InfomapImplementation>
@@ -128,9 +129,9 @@ protected:
 
 	virtual void sortTree(NodeBase& parent);
 
-	virtual void buildHierarchicalNetwork(HierarchicalNetwork& data, bool includeLinks);
-	void buildHierarchicalNetworkHelper(HierarchicalNetwork& data, HierarchicalNetwork::node_type& parent, const TreeData& originalData, NodeBase* node = 0);
-	void buildHierarchicalNetworkHelper(HierarchicalNetwork& data, HierarchicalNetwork::node_type& parent, std::deque<std::pair<NodeBase*, HierarchicalNetwork::node_type*> >& leafModules, NodeBase* node = 0);
+	virtual void buildHierarchicalNetwork(HierarchicalNetwork& hierarchicalNetwork, bool includeLinks);
+	void buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, const TreeData& originalData, NodeBase* node = 0);
+	void buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, std::deque<std::pair<NodeBase*, HierarchicalNetwork::node_type*> >& leafModules, NodeBase* node = 0);
 	virtual void printSubInfomapTree(std::ostream& out, const TreeData& originalData, const std::string& prefix);
 	void printSubTree(std::ostream& out, NodeBase& module, const TreeData& originalData, const std::string& prefix);
 	virtual void printSubInfomapTreeDebug(std::ostream& out, const TreeData& originalData, const std::string& prefix);
@@ -365,15 +366,29 @@ void InfomapGreedy<InfomapImplementation>::sortTree(NodeBase& parent)
 
 template<typename InfomapImplementation>
 inline
-void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetwork(HierarchicalNetwork& data, bool includeLinks)
+void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetwork(HierarchicalNetwork& hierarchicalNetwork, bool includeLinks)
 {
 	if (m_config.isMemoryNetwork())
 	{
 		std::deque<std::pair<NodeBase*, HierarchicalNetwork::node_type*> > leafModules;
-		buildHierarchicalNetworkHelper(data, data.getRootNode(), leafModules);
+		buildHierarchicalNetworkHelper(hierarchicalNetwork, hierarchicalNetwork.getRootNode(), leafModules);
 
-//		std::map<unsigned int, unsigned int> condensedLeafNodeIndices;
-		typedef std::pair<unsigned int, FlowType> IndexedFlow;
+		struct IndexedFlow {
+			IndexedFlow() : originalIndex(0), physicalIndex(0) {}
+			IndexedFlow(unsigned int originalIndex, unsigned int physicalIndex, FlowType flowData) :
+				originalIndex(originalIndex), physicalIndex(physicalIndex), flowData(flowData) {}
+			IndexedFlow(const IndexedFlow& other) :
+				originalIndex(other.originalIndex), physicalIndex(other.physicalIndex), flowData(other.flowData) {}
+			IndexedFlow& operator=(const IndexedFlow& other) {
+				originalIndex = other.originalIndex;
+				physicalIndex = other.physicalIndex;
+				flowData = other.flowData;
+				return *this;
+			}
+			unsigned int originalIndex;
+			unsigned int physicalIndex;
+			FlowType flowData;
+		};
 		std::vector<std::map<unsigned int, IndexedFlow> > physicalNodes(leafModules.size());
 		unsigned int numCondensedNodes = 0;
 		std::vector<unsigned int> condensedLeafNodeIndices(m_treeData.numLeafNodes());
@@ -386,26 +401,31 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetwork(Hierarchical
 		{
 			NodeBase* leafModule = leafModules[i].first;
 			std::map<unsigned int, IndexedFlow>& condensedNodes = physicalNodes[i];
-//			std::cout << "\n" << i << ": === (" << leafModule->childDegree() << std::flush;
 			for (NodeBase::sibling_iterator childIt(leafModule->begin_child()), endIt(leafModule->end_child());
 					childIt != endIt; ++childIt)
 			{
 				const NodeType& node = getNode(*childIt);
-				std::pair<typename std::map<unsigned int, IndexedFlow>::iterator, bool> ret = condensedNodes.insert(std::make_pair(node.m2Node.phys2, std::make_pair(childIt->originalIndex, node.data)));
+				std::pair<typename std::map<unsigned int, IndexedFlow>::iterator, bool> ret = condensedNodes.insert(std::make_pair(node.m2Node.phys2, IndexedFlow(childIt->originalIndex, node.m2Node.phys2, node.data)));
 				if (!ret.second) // Add flow if physical node already exist
-					ret.first->second.second += node.data;
+					ret.first->second.flowData += node.data;
 				else // A new insertion was made
 					++numCondensedNodes;
 				condensedLeafNodeIndices[childIt->originalIndex] = numCondensedNodes;
 			}
-			HierarchicalNetwork::node_type* parent = leafModules[i].second;
-			// Add the condensed leaf nodes to the hierarchical network
+
+			// Sort the nodes on flow
+			std::multimap<double, IndexedFlow, std::greater<double> > sortedNodes;
 			for (typename std::map<unsigned int, IndexedFlow>::iterator it(condensedNodes.begin()); it != condensedNodes.end(); ++it)
 			{
-				unsigned int physicalIndex = it->first;
-				unsigned int originalIndex = it->second.first;
-				FlowType& flowData = it->second.second;
-				data.addLeafNode(*parent, flowData.flow, flowData.exitFlow, m_nodeNames[physicalIndex], condensedLeafNodeIndices[originalIndex]);
+				sortedNodes.insert(std::make_pair(it->second.flowData.flow, it->second));
+			}
+
+			// Add the condensed leaf nodes to the hierarchical network
+			HierarchicalNetwork::node_type* parent = leafModules[i].second;
+			for (typename std::multimap<double, IndexedFlow, std::greater<double> >::iterator it(sortedNodes.begin()); it != sortedNodes.end(); ++it)
+			{
+				IndexedFlow& nodeData = it->second;
+				hierarchicalNetwork.addLeafNode(*parent, nodeData.flowData.flow, nodeData.flowData.exitFlow, m_nodeNames[nodeData.physicalIndex], condensedLeafNodeIndices[nodeData.originalIndex]);
 			}
 		}
 
@@ -420,7 +440,7 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetwork(Hierarchical
 						outEdgeIt != endIt; ++outEdgeIt)
 				{
 					EdgeType& edge = **outEdgeIt;
-					data.addLeafEdge(condensedLeafNodeIndices[edge.source.originalIndex], condensedLeafNodeIndices[edge.target.originalIndex], edge.data.flow);
+					hierarchicalNetwork.addLeafEdge(condensedLeafNodeIndices[edge.source.originalIndex], condensedLeafNodeIndices[edge.target.originalIndex], edge.data.flow);
 				}
 			}
 		}
@@ -428,7 +448,7 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetwork(Hierarchical
 	}
 	else
 	{
-		buildHierarchicalNetworkHelper(data, data.getRootNode(), m_treeData);
+		buildHierarchicalNetworkHelper(hierarchicalNetwork, hierarchicalNetwork.getRootNode(), m_treeData);
 
 		if (includeLinks)
 		{
@@ -439,7 +459,7 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetwork(Hierarchical
 						outEdgeIt != endIt; ++outEdgeIt)
 				{
 					EdgeType& edge = **outEdgeIt;
-					data.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
+					hierarchicalNetwork.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
 				}
 			}
 		}
@@ -448,14 +468,14 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetwork(Hierarchical
 
 template<typename InfomapImplementation>
 inline
-void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(HierarchicalNetwork& data, HierarchicalNetwork::node_type& parent, const TreeData& originalData, NodeBase* rootNode)
+void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, const TreeData& originalData, NodeBase* rootNode)
 {
 	if (rootNode == 0)
 		rootNode = root();
 
 	if (rootNode->getSubInfomap() != 0)
 	{
-		getImpl(*rootNode->getSubInfomap()).buildHierarchicalNetworkHelper(data, parent, originalData);
+		getImpl(*rootNode->getSubInfomap()).buildHierarchicalNetworkHelper(hierarchicalNetwork, parent, originalData);
 		return;
 	}
 
@@ -465,26 +485,26 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(Hierar
 		const NodeType& node = getNode(*childIt);
 		if (node.isLeaf())
 		{
-			data.addLeafNode(parent, node.data.flow, node.data.exitFlow, originalData.getLeafNode(node.originalIndex).name, node.originalIndex);
+			hierarchicalNetwork.addLeafNode(parent, node.data.flow, node.data.exitFlow, originalData.getLeafNode(node.originalIndex).name, node.originalIndex);
 		}
 		else
 		{
-			SNode& newParent = data.addNode(parent, node.data.flow, node.data.exitFlow);
-			buildHierarchicalNetworkHelper(data, newParent, originalData, childIt.base());
+			SNode& newParent = hierarchicalNetwork.addNode(parent, node.data.flow, node.data.exitFlow);
+			buildHierarchicalNetworkHelper(hierarchicalNetwork, newParent, originalData, childIt.base());
 		}
 	}
 }
 
 template<typename InfomapImplementation>
 inline
-void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(HierarchicalNetwork& data, HierarchicalNetwork::node_type& parent, std::deque<std::pair<NodeBase*, HierarchicalNetwork::node_type*> >& leafModules, NodeBase* rootNode)
+void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, std::deque<std::pair<NodeBase*, HierarchicalNetwork::node_type*> >& leafModules, NodeBase* rootNode)
 {
 	if (rootNode == 0)
 		rootNode = root();
 
 	if (rootNode->getSubInfomap() != 0)
 	{
-		getImpl(*rootNode->getSubInfomap()).buildHierarchicalNetworkHelper(data, parent, leafModules);
+		getImpl(*rootNode->getSubInfomap()).buildHierarchicalNetworkHelper(hierarchicalNetwork, parent, leafModules);
 		return;
 	}
 
@@ -498,8 +518,8 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(Hierar
 				childIt != endIt; ++childIt)
 		{
 			const NodeType& node = getNode(*childIt);
-			SNode& newParent = data.addNode(parent, node.data.flow, node.data.exitFlow);
-			buildHierarchicalNetworkHelper(data, newParent, leafModules, childIt.base());
+			SNode& newParent = hierarchicalNetwork.addNode(parent, node.data.flow, node.data.exitFlow);
+			buildHierarchicalNetworkHelper(hierarchicalNetwork, newParent, leafModules, childIt.base());
 		}
 	}
 }
