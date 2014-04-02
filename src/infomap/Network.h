@@ -59,6 +59,8 @@ public:
 	const LinkMap& linkMap() const { return m_links; }
 	double totalLinkWeight() const { return m_totalLinkWeight; }
 
+	void swapNodeNames(std::vector<std::string>& target) { target.swap(m_nodeNames); }
+
 protected:
 
 	void parsePajekNetwork(std::string filename);

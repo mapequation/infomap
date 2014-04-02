@@ -82,7 +82,7 @@ protected:
 
 	virtual FlowDummy getNodeData(NodeBase& node) = 0;
 	virtual std::vector<PhysData>& getPhysicalMembers(NodeBase& node) = 0;
-	virtual M2Node& getPhysical(NodeBase& node) = 0;
+	virtual M2Node& getMemoryNode(NodeBase& node) = 0;
 
 	/**
 	 * Set the exit (and enter) flow on the nodes.
@@ -243,6 +243,7 @@ protected:
 	const Config m_config;
 	MTRand m_rand;
 	TreeData m_treeData;
+	std::vector<std::string> m_nodeNames;
 	std::vector<NodeBase*>& m_activeNetwork; // Points either to m_nonLeafActiveNetwork or m_treeData.m_leafNodes
 	std::vector<unsigned int> m_moveTo;
 	bool m_isCoarseTune;

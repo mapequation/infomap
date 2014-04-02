@@ -883,3 +883,4 @@ void Network::printNetworkAsPajek(std::string filename)
 		out << (link.first + 1) << " " << (link.second + 1) << " " << linkIt->second << "\n";
 	}
 }
+

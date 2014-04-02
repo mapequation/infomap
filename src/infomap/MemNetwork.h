@@ -34,6 +34,7 @@
 #include <utility>
 
 #include "../io/Config.h"
+#include "../utils/types.h"
 using std::map;
 using std::pair;
 
@@ -59,7 +60,6 @@ struct M2Node
 	{
 		return out << "(" << node.phys1 << "-" << node.phys2 << ")";
 	}
-
 };
 
 class MemNetwork: public Network

@@ -1221,11 +1221,13 @@ bool InfomapBase::initMemoryNetwork()
 	const std::vector<M2Node>& memIndexToPhys = flowNetwork.getMemIndexToPhys();
 
 	for (unsigned int i = 0; i < network.numM2Nodes(); ++i) {
-		m_treeData.addNewNode((io::Str() << i << "_(" << memIndexToPhys[i].phys1 << "-" << memIndexToPhys[i].phys2 << ")"), nodeFlow[i], nodeTeleportWeights[i]);
-		M2Node& m2Node = getPhysical(m_treeData.getLeafNode(i));
+//		m_treeData.addNewNode((io::Str() << i << "_(" << memIndexToPhys[i].phys1 << "-" << memIndexToPhys[i].phys2 << ")"), nodeFlow[i], nodeTeleportWeights[i]);
+		m_treeData.addNewNode("", nodeFlow[i], nodeTeleportWeights[i]);
+		M2Node& m2Node = getMemoryNode(m_treeData.getLeafNode(i));
 		m2Node.phys1 = memIndexToPhys[i].phys1;
 		m2Node.phys2 = memIndexToPhys[i].phys2;
 	}
+
 	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();
 	for (unsigned int i = 0; i < links.size(); ++i)
 		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow);
@@ -1267,6 +1269,8 @@ bool InfomapBase::initMemoryNetwork()
 		}
 		std::cout << "done! (Sum flow: " << sumFlow << ", sumM2flow: " << sumM2flow << ")\n";
 	}
+
+	network.swapNodeNames(m_nodeNames);
 
 	return true;
 }
@@ -1526,7 +1530,7 @@ void InfomapBase::printClusterVector(std::ostream& out)
 			it != itEnd; ++it)
 	{
 		NodeBase& node = **it;
-		M2Node& m2Node = getPhysical(node);
+		M2Node& m2Node = getMemoryNode(node);
 		unsigned int index = node.parent->index;
 		out << (m2Node.phys1 + 1) << " " << (m2Node.phys2 + 1) << " " << (index + 1) << "\n";
 	}
