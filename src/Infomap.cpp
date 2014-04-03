@@ -58,7 +58,7 @@ Config getConfig(int argc, char *argv[])
 			"The file containing the network data. Accepted formats: Pajek (implied by .net) and link list (.txt)");
 
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
-			"Specify input format ('pajek' or 'link-list') to override format possibly implied by file extension.", "s");
+			"Specify input format ('pajek', 'link-list' or '3gram') to override format possibly implied by file extension.", "s");
 
 	api.addOptionArgument(conf.parseWithoutIOStreams, "without-iostream",
 			"Parse the input network data without the iostream library. Can be a bit faster, but not as robust.");
@@ -68,6 +68,9 @@ Config getConfig(int argc, char *argv[])
 
 	api.addOptionArgument(conf.includeSelfLinks, 'k', "include-self-links",
 			"Include links with the same source and target node. (Ignored by default.)");
+
+	api.addOptionArgument(conf.selfMemoryNodes, "self-memory-nodes",
+			"Include self-memory nodes.");
 
 	api.addOptionArgument(conf.nodeLimit, 'O', "node-limit",
 			"Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", "n");

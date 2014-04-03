@@ -31,10 +31,43 @@
 #include "InfomapBase.h"
 #include <memory>
 
+// struct InfomapUndirected : public InfomapGreedy<InfomapUndirected>
+// {
+// 	InfomapUndirected(const Config& conf) : InfomapGreedy<InfomapUndirected>(conf) {}
+// 	virtual ~InfomapUndirected() {};
+// };
+
+// struct InfomapUndirdir : public InfomapGreedy<InfomapUndirdir>
+// {
+// 	InfomapUndirdir(const Config& conf) : InfomapGreedy<InfomapUndirdir>(conf) {}
+// 	virtual ~InfomapUndirdir() {};
+// };
+
+// struct InfomapDirected : public InfomapGreedy<InfomapDirected>
+// {
+// 	InfomapDirected(const Config& conf) : InfomapGreedy<InfomapDirected>(conf) {}
+// 	virtual ~InfomapDirected() {};
+// };
+
+// struct InfomapDirectedUnrecordedTeleportation : public InfomapGreedy<InfomapDirectedUnrecordedTeleportation>
+// {
+// 	InfomapDirectedUnrecordedTeleportation(const Config& conf) : InfomapGreedy<InfomapDirectedUnrecordedTeleportation>(conf) {}
+// 	virtual ~InfomapDirectedUnrecordedTeleportation() {};
+// };
+
+// template<typename NetworkType>
+// struct InfomapFactory
+// {
+
+// }
+
 class InfomapContext
 {
 public:
 	InfomapContext(const Config& config);
+
+	template<typename NetworkType>
+	void createInfomap();
 
 	const std::auto_ptr<InfomapBase>& getInfomap() const
 	{

@@ -38,6 +38,7 @@ struct Config
 	 	parseWithoutIOStreams(false),
 		zeroBasedNodeNumbers(false),
 		includeSelfLinks(false),
+		selfMemoryNodes(false),
 		ignoreEdgeWeights(false),
 		nodeLimit(0),
 	 	clusterDataFile(""),
@@ -130,6 +131,8 @@ struct Config
 
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 
+	bool isMemoryNetwork() const { return inputFormat == "3gram"; }
+
 	bool haveModularResultOutput() const
 	{
 		return printTree ||
@@ -146,6 +149,7 @@ struct Config
 	bool parseWithoutIOStreams;
 	bool zeroBasedNodeNumbers;
 	bool includeSelfLinks;
+	bool selfMemoryNodes;
 	bool ignoreEdgeWeights;
 	unsigned int nodeLimit;
 	std::string clusterDataFile;

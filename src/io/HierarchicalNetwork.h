@@ -152,10 +152,17 @@ public:
 	// Destructor
 	~SNode()
 	{
-		for (int i = children.size() - 1; i >= 0; --i) {
+		clear();
+	}
+
+	void clear()
+	{
+		for (int i = children.size() - 1; i >= 0; --i)
+		{
 			delete children[i];
 		}
 		children.clear();
+		childEdges.clear();
 	}
 
 	void addChild(SNode& child)
@@ -197,6 +204,7 @@ public:
 		if (children.size() > 0)
 			size += sizeof(depthBelow) + sizeof(childPos_t);
 		// The edges are printed out after the last child
+		writeEdges = true;
 		if (writeEdges && parentNode != NULL && static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
 		{
 			// numEdges + {edges}
@@ -221,6 +229,7 @@ public:
 			outFile << childPosition;		// unsigned int childPosition
 		}
 
+		writeEdges = true;
 		// Write edges after the last child of the parent node
 		if (writeEdges && parentNode != NULL && static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
 		{
@@ -307,11 +316,9 @@ public:
 
 		ChildEdge edge(sourceIndex, targetIndex, flow);
 
-		ChildEdgeList::iterator it = childEdges.find(edge);
-		if (it == childEdges.end())
-			childEdges.insert(edge);
-		else
-			it->flow += flow;
+		std::pair<ChildEdgeList::iterator, bool> ret = childEdges.insert(edge);
+		if (!ret.second)
+			ret.first->flow += flow;
 
 	}
 
@@ -426,57 +433,32 @@ class HierarchicalNetwork
 public:
 	typedef SNode	node_type;
 
-	HierarchicalNetwork(std::string networkName, unsigned int numLeafNodes, bool directedEdges,
-			double codelength, double oneLevelCodelength, std::string infomapVersion)
+	HierarchicalNetwork()
 	:	m_rootNode(1.0, 0, 0, 0),
-	 	m_networkName(networkName),
-		m_leafNodes(numLeafNodes),
-		m_directedEdges(directedEdges),
+		m_networkName(""),
+		m_leafNodes(0),
+		m_directedEdges(false),
 		m_numLeafEdges(0),
 		m_numNodesInTree(1),
 		m_maxDepth(0),
-		m_codelength(codelength),
-		m_oneLevelCodelength(oneLevelCodelength),
-		m_infomapVersion(infomapVersion)
-	{}
+		m_codelength(0.0),
+		m_oneLevelCodelength(0.0),
+		m_infomapVersion("")
+		{}
 
 	virtual ~HierarchicalNetwork() {}
 
+	void init(std::string networkName, bool directedEdges, double codelength, double oneLevelCodelength, std::string infomapVersion);
 
-	SNode& getRootNode()
-	{
-		return m_rootNode;
-	}
+	void clear();
 
-	SNode& addNode(SNode& parent, double flow, double exitFlow)
-	{
-		SNode* n = new SNode(NodeData(flow, exitFlow), parent.depth + 1, parent.children.size(), m_numNodesInTree);
-		//TODO: Let the node be created in the node class as that is responsible for deleting it!
-		parent.addChild(*n);
-		++m_numNodesInTree;
-		return *n;
-	}
+	SNode& getRootNode() { return m_rootNode; }
 
-	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex)
-	{
-		SNode& n = addNode(parent, flow, exitFlow);
-		n.data.name = name;
-		n.isLeaf = true;
-		n.leafIndex = leafIndex;
-		m_leafNodes[leafIndex] = &n;
-		propagateNodeNameUpInHierarchy(n);
-		if (n.depth > m_maxDepth)
-			m_maxDepth = n.depth;
-		SNode* node = n.parentNode;
-		unsigned short currentDepthBelow = 1;
-		while (node != NULL && node->depthBelow < currentDepthBelow)
-		{
-			node->depthBelow = currentDepthBelow++;
-			node = node->parentNode;
-		}
+	SNode& addNode(SNode& parent, double flow, double exitFlow);
 
-		return n;
-	}
+	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex);
+
+	void prepareAddLeafNodes(unsigned int numLeafNodes);
 
 	/**
 	 * Add flow-edges to the tree. This method can aggregate the edges between the leaf-nodes
@@ -484,38 +466,9 @@ public:
 	 * @param aggregationFilter A flag to decide the type of aggregation.
 	 * @note The EdgeAggregationPolicy enumeration lists the available aggregation policies.
 	 */
-	void addLeafEdge(unsigned int sourceLeafNodeIndex, unsigned int targetLeafNodeIndex, double flow)
-	{
-		SNode* source = m_leafNodes[sourceLeafNodeIndex];
-		SNode* target = m_leafNodes[targetLeafNodeIndex];
+	void addLeafEdge(unsigned int sourceLeafNodeIndex, unsigned int targetLeafNodeIndex, double flow);
 
-		// Allow only horizontal flow edges
-		if (source->depth > target->depth)
-			do { source = source->parentNode; } while (source->depth != target->depth);
-		else if (source->depth < target->depth)
-			do { target = target->parentNode; } while (source->depth != target->depth);
-
-//		source->createEdge(target, flow, m_directedEdges);
-
-		// Only add links under the same parent
-		while (source->parentNode != target->parentNode)
-		{
-			source = source->parentNode;
-			target = target->parentNode;
-		}
-		source->parentNode->createChildEdge(source->parentIndex, target->parentIndex, flow, m_directedEdges);
-
-		++m_numLeafEdges;
-	}
-
-	void propagateNodeNameUpInHierarchy(SNode& node)
-	{
-		if (node.parentNode != 0 && node.parentIndex == 0)
-		{
-			node.parentNode->data.name = io::Str() << node.data.name << (node.isLeaf? ",." : ".");
-			propagateNodeNameUpInHierarchy(*node.parentNode);
-		}
-	}
+	void propagateNodeNameUpInHierarchy(SNode& node);
 
 
 	/**
@@ -557,66 +510,17 @@ public:
 	 *
 	 * Each binary node contains a pointer to where its children is located in the file
 	 */
-	void writeStreamableTree(const std::string& fileName, bool writeEdges)
-	{
-		SafeBinaryOutFile out(fileName.c_str());
-
-		std::string magicTag ("Infomap");
-		unsigned int numLeafNodes = m_leafNodes.size();
-		std::string infomapOptions("");
-
-		out << magicTag;
-		out << m_infomapVersion;
-		out << infomapOptions;
-		out << m_directedEdges;
-		out << m_networkName;
-		out << numLeafNodes;
-		out << m_numLeafEdges;
-		out << m_numNodesInTree;
-		out << m_maxDepth;
-		out << m_oneLevelCodelength;
-		out << m_codelength;
-
-//		std::cout << "\nMeta data:\n";
-//		std::cout << "  directedEdges: " << m_directedEdges << "\n";
-//		std::cout << "  networkName: " << m_networkName << "\n";
-//		std::cout << "  numLeafNodes: " << numLeafNodes << "\n";
-//		std::cout << "  numLeafEdges: " << m_numLeafEdges << "\n";
-//		std::cout << "  numNodeInTree: " << m_numNodesInTree << "\n";
-//		std::cout << "  maxDepth: " << m_maxDepth << "\n";
-//		std::cout << "  oneLevelCodelength: " << m_oneLevelCodelength << "\n";
-//		std::cout << "  codelength: " << m_codelength << "\n";
-
-		std::deque<SNode*> nodeList;
-		nodeList.push_back(&m_rootNode);
-		m_rootNode.data.name = m_networkName;
-		unsigned int childPosition = out.size() + m_rootNode.serializationSize(writeEdges);
-		using namespace SerialTypes;
-		while (nodeList.size() > 0) // visit tree breadth first
-		{
-			SNode& node = *nodeList.front();
-
-			// Write current node to the file
-			node.serialize(out, childPosition, writeEdges);
-			// add the children of the current node to the list and aggregate their binary sizes to the children pointer
-			childSize_t numChildren = numeric_cast<childSize_t>(node.children.size());
-			for (childSize_t i = 0; i < numChildren; ++i)
-			{
-				SNode* child = node.children[i];
-				nodeList.push_back(child);
-				childPosition += child->serializationSize(writeEdges);
-			}
-
-			// remove the printed node from the list
-			nodeList.pop_front();
-		}
-	}
+	void writeStreamableTree(const std::string& fileName, bool writeEdges);
 
 	void readStreamableTree(const std::string& fileName);
+
+	void writeHumanReadableTree(const std::string& fileName);
 
 	void writeMap(const std::string& fileName);
 
 private:
+
+	void writeHumanReadableTreeRecursiveHelper(std::ostream& out, SNode& node, std::string prefix = "");
 
 	static bool compareLeafNodePredicate(const SNode* lhs, const SNode* rhs) { return (lhs->leafIndex < rhs->leafIndex); }
 
