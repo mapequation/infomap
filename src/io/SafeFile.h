@@ -32,6 +32,7 @@
 #include <ios>
 #include <stdexcept>
 #include "convert.h"
+#include <cstdio>
 
 using std::ifstream;
 using std::ofstream;
@@ -182,9 +183,6 @@ public:
 protected:
 	size_t m_sizeRead;
 };
-
-
-#include <cstdio>
 
 
 /**

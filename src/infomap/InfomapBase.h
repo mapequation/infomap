@@ -71,15 +71,18 @@ public:
 
 	void sortTree();
 
-	virtual void buildHierarchicalNetwork(HierarchicalNetwork& data, bool includeLinks) = 0;
+	virtual void saveHierarchicalNetwork(std::string rootName, bool includeLinks) = 0;
 
 	virtual void printSubInfomapTree(std::ostream& out, const TreeData& originalData, const std::string& prefix = "");
 	virtual void printSubInfomapTreeDebug(std::ostream& out, const TreeData& originalData, const std::string& prefix = "");
 
+	virtual void debugPrintInfomapTerms() = 0;
 
 protected:
 
 	virtual FlowDummy getNodeData(NodeBase& node) = 0;
+	virtual std::vector<PhysData>& getPhysicalMembers(NodeBase& node) = 0;
+	virtual M2Node& getMemoryNode(NodeBase& node) = 0;
 
 	/**
 	 * Set the exit (and enter) flow on the nodes.
@@ -222,6 +225,7 @@ private:
 	void setActiveNetworkFromLeafs();
 	void consolidateExternalClusterData();
 	bool initNetwork();
+	bool initMemoryNetwork();
 	bool checkAndConvertBinaryTree();
 	void printNetworkData(std::string filename = "", bool sort = true);
 	void printClusterVector(std::ostream& out);
@@ -239,6 +243,7 @@ protected:
 	const Config m_config;
 	MTRand m_rand;
 	TreeData m_treeData;
+	std::vector<std::string> m_nodeNames;
 	std::vector<NodeBase*>& m_activeNetwork; // Points either to m_nonLeafActiveNetwork or m_treeData.m_leafNodes
 	std::vector<unsigned int> m_moveTo;
 	bool m_isCoarseTune;
@@ -254,6 +259,7 @@ protected:
 	double bestHierarchicalCodelength;
 	double bestIntermediateCodelength;
 	std::ostringstream bestIntermediateStatistics;
+	HierarchicalNetwork m_ioNetwork;
 
 };
 

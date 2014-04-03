@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -25,21 +25,23 @@
 **********************************************************************************/
 
 
-#include "InfomapGreedy.h"
-//#include "../utils/Logger.h"
-//#include "flowData.h"
+#ifndef MEMFLOWNETWORK_H_
+#define MEMFLOWNETWORK_H_
 
-//template<typename InfomapImplementation>
-//void InfomapGreedy<InfomapImplementation>::initIndividualModulesForEachNode()
-//{
-//	DEBUG_OUT("InfomapGreedy::initIndividualModulesForEachNode()..." << std::endl);
-//
-//	unsigned int numNodes = m_treeData.numLeafNodes();
-//	m_moduleFlowData.resize(numNodes);
-//
-//	NodeType& root = static_cast<NodeType&>(*m_treeData.root());
-//
-//	DEBUG_OUT("Root: " << root << std::endl);
-//}
+#include "FlowNetwork.h"
+#include "MemNetwork.h"
 
+class MemFlowNetwork: public FlowNetwork {
+public:
+	MemFlowNetwork();
+	virtual ~MemFlowNetwork();
 
+	virtual void calculateFlow(const Network& network, const Config& config);
+
+	const std::vector<M2Node>& getMemIndexToPhys() const { return m_memIndexToPhys; }
+
+protected:
+	std::vector<M2Node> m_memIndexToPhys;
+};
+
+#endif /* MEMFLOWNETWORK_H_ */

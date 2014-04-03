@@ -124,6 +124,11 @@ void Network::parsePajekNetwork(std::string filename)
 		// Read node names, assuming order 1, 2, 3, ...
 		for (unsigned int i = 0; i < numNodes; ++i)
 		{
+			unsigned int id = 0;
+			if (!(input >> id) || id != static_cast<unsigned int>(i+1))
+			{
+				throw BadConversionError(io::Str() << "Couldn't parse node number " << (i+1) << " from line " << (i+2) << ".");
+			}
 			std::getline(input,line);
 			unsigned int nameStart = line.find_first_of("\"");
 			unsigned int nameEnd = line.find_last_of("\"");
@@ -878,3 +883,4 @@ void Network::printNetworkAsPajek(std::string filename)
 		out << (link.first + 1) << " " << (link.second + 1) << " " << linkIt->second << "\n";
 	}
 }
+

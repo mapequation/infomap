@@ -261,6 +261,8 @@ protected:
 	std::vector<EdgeType*> m_outEdges;
 	std::vector<EdgeType*> m_inEdges;
 
+	// TODO: Add list of physical nodes for memory nodes, see Node.h#26
+
 };
 
 inline
@@ -500,6 +502,47 @@ public:
 	}
 
 	T data; // Flow data
+};
+
+struct PhysData
+{
+	PhysData(unsigned int physNodeIndex, double sumFlowFromM2Node = 0.0)
+	: physNodeIndex(physNodeIndex), sumFlowFromM2Node(sumFlowFromM2Node)
+	{}
+	PhysData(const PhysData& other) : physNodeIndex(other.physNodeIndex), sumFlowFromM2Node(other.sumFlowFromM2Node) {}
+	unsigned int physNodeIndex;
+	double sumFlowFromM2Node; // The amount of flow from the memory node in this physical node
+};
+
+
+#include "MemNetwork.h"
+
+template <typename T>
+class MemNode : public Node<T>
+{
+public:
+	typedef MemNode<T>			node_type;
+	typedef Node<T>				node_base_type;
+
+	MemNode() : node_base_type()
+	{}
+	MemNode(std::string name) : node_base_type(name)
+	{}
+	MemNode(std::string name, double flow, double teleWeight) : node_base_type(name, flow, teleWeight)
+	{}
+	MemNode(T data) : node_base_type(data)
+	{}
+	MemNode(const node_type& other) : node_base_type(other.data), m2Node(other.m2Node), physicalNodes(other.physicalNodes)
+	{}
+
+	friend std::ostream& operator<<(std::ostream& out, const node_type& node)
+	{
+		return out << "(name: " << node.name << ", flow: " << node.data.flow << ", phys: " << node.m2Node << ")";
+	}
+
+	M2Node m2Node;
+
+	std::vector<PhysData> physicalNodes;
 };
 
 

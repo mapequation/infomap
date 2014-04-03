@@ -57,4 +57,20 @@ public:
 	}
 };
 
+template <typename FlowType>
+class MemNodeFactory : public NodeFactoryBase
+{
+	typedef MemNode<FlowType> 			node_type;
+	typedef const MemNode<FlowType>		const_node_type;
+public:
+	NodeBase* createNode(std::string name, double flow, double teleWeight)
+	{
+		return new node_type(name, flow, teleWeight);
+	}
+	NodeBase* createNode(const NodeBase& node)
+	{
+		return new node_type(static_cast<const_node_type&>(node));
+	}
+};
+
 #endif /* NODEFACTORY_H_ */
