@@ -1370,11 +1370,9 @@ bool InfomapBase::checkAndConvertBinaryTree()
 			FileURI(m_config.networkFile).getExtension() != "btree")
 		return false;
 
-	HierarchicalNetwork network("", 0, false, 0.0, 0.0, "");
-
 	try
 	{
-		network.readStreamableTree(m_config.networkFile);
+		m_ioNetwork.readStreamableTree(m_config.networkFile);
 	}
 	catch (const std::runtime_error& error)
 	{
@@ -1388,7 +1386,7 @@ bool InfomapBase::checkAndConvertBinaryTree()
 				m_config.outDirectory <<
 				FileURI(m_config.networkFile).getName() << ".map";
 		std::cout << "Write map to '" << mapFilename << "'... ";
-		network.writeMap(mapFilename);
+		m_ioNetwork.writeMap(mapFilename);
 		std::cout << "done!\n";
 	}
 
@@ -1511,13 +1509,18 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 		bool writeEdges = m_config.printBinaryFlowTree;
 		outName = io::Str() << m_config.outDirectory << filename << (writeEdges? ".bftree" : ".btree");
 
-		HierarchicalNetwork hierData(filename, numLeafNodes(), !m_config.isUndirected(),
-				hierarchicalCodelength, oneLevelCodelength, INFOMAP_VERSION);
 		RELEASE_OUT("\nBuild streamable " << (writeEdges ? "flow " : "") <<	"tree... " << std::flush);
-		buildHierarchicalNetwork(hierData, writeEdges);
+
+		saveHierarchicalNetwork(filename, writeEdges);
+
 		RELEASE_OUT("done! Writing to " << outName << "... " << std::flush);
-		hierData.writeStreamableTree(outName, writeEdges);
+
+		m_ioNetwork.writeStreamableTree(outName, writeEdges);
+
 		RELEASE_OUT("done!" << std::endl);
+
+		// Clear the data
+		m_ioNetwork.clear();
 	}
 
 }

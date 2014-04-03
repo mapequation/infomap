@@ -27,6 +27,155 @@
 
 #include "HierarchicalNetwork.h"
 #include <map>
+#include <stdexcept>
+
+void HierarchicalNetwork::init(std::string networkName, bool directedEdges,
+			double codelength, double oneLevelCodelength, std::string infomapVersion)
+{
+	// First clear if necessary
+	clear();
+
+	m_networkName = networkName;
+	m_directedEdges = directedEdges;
+	m_numLeafEdges = 0;
+	m_numNodesInTree = 1;
+	m_maxDepth = 0;
+	m_codelength = codelength;
+	m_oneLevelCodelength = oneLevelCodelength;
+	m_infomapVersion = infomapVersion;
+}
+
+void HierarchicalNetwork::clear()
+{
+	m_rootNode.clear();
+}
+
+
+
+SNode& HierarchicalNetwork::addNode(SNode& parent, double flow, double exitFlow)
+{
+	SNode* n = new SNode(NodeData(flow, exitFlow), parent.depth + 1, parent.children.size(), m_numNodesInTree);
+	//TODO: Let the node be created in the node class as that is responsible for deleting it!
+	parent.addChild(*n);
+	++m_numNodesInTree;
+	return *n;
+}
+
+SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex)
+{
+	if (leafIndex > m_leafNodes.size())
+		throw std::range_error("In HierarchicalNetwork::addLeafNode(), leaf index out of range or missed calling prepare method.");
+	SNode& n = addNode(parent, flow, exitFlow);
+	n.data.name = name;
+	n.isLeaf = true;
+	n.leafIndex = leafIndex;
+	m_leafNodes[leafIndex] = &n;
+	propagateNodeNameUpInHierarchy(n);
+	if (n.depth > m_maxDepth)
+		m_maxDepth = n.depth;
+	SNode* node = n.parentNode;
+	unsigned short currentDepthBelow = 1;
+	while (node != NULL && node->depthBelow < currentDepthBelow)
+	{
+		node->depthBelow = currentDepthBelow++;
+		node = node->parentNode;
+	}
+
+	return n;
+}
+
+void HierarchicalNetwork::prepareAddLeafNodes(unsigned int numLeafNodes)
+{
+	m_leafNodes.resize(numLeafNodes);
+}
+
+void HierarchicalNetwork::addLeafEdge(unsigned int sourceLeafNodeIndex, unsigned int targetLeafNodeIndex, double flow)
+{
+	SNode* source = m_leafNodes[sourceLeafNodeIndex];
+	SNode* target = m_leafNodes[targetLeafNodeIndex];
+
+	// Allow only horizontal flow edges
+	if (source->depth > target->depth)
+		do { source = source->parentNode; } while (source->depth != target->depth);
+	else if (source->depth < target->depth)
+		do { target = target->parentNode; } while (source->depth != target->depth);
+
+//		source->createEdge(target, flow, m_directedEdges);
+
+	// Only add links under the same parent
+	while (source->parentNode != target->parentNode)
+	{
+		source = source->parentNode;
+		target = target->parentNode;
+	}
+	source->parentNode->createChildEdge(source->parentIndex, target->parentIndex, flow, m_directedEdges);
+
+	++m_numLeafEdges;
+}
+
+void HierarchicalNetwork::propagateNodeNameUpInHierarchy(SNode& node)
+{
+	if (node.parentNode != 0 && node.parentIndex == 0)
+	{
+		node.parentNode->data.name = io::Str() << node.data.name << (node.isLeaf? ",." : ".");
+		propagateNodeNameUpInHierarchy(*node.parentNode);
+	}
+}
+
+void HierarchicalNetwork::writeStreamableTree(const std::string& fileName, bool writeEdges)
+{
+	SafeBinaryOutFile out(fileName.c_str());
+
+	std::string magicTag ("Infomap");
+	unsigned int numLeafNodes = m_leafNodes.size();
+	std::string infomapOptions("");
+
+	out << magicTag;
+	out << m_infomapVersion;
+	out << infomapOptions;
+	out << m_directedEdges;
+	out << m_networkName;
+	out << numLeafNodes;
+	out << m_numLeafEdges;
+	out << m_numNodesInTree;
+	out << m_maxDepth;
+	out << m_oneLevelCodelength;
+	out << m_codelength;
+
+//		std::cout << "\nMeta data:\n";
+//		std::cout << "  directedEdges: " << m_directedEdges << "\n";
+//		std::cout << "  networkName: " << m_networkName << "\n";
+//		std::cout << "  numLeafNodes: " << numLeafNodes << "\n";
+//		std::cout << "  numLeafEdges: " << m_numLeafEdges << "\n";
+//		std::cout << "  numNodeInTree: " << m_numNodesInTree << "\n";
+//		std::cout << "  maxDepth: " << m_maxDepth << "\n";
+//		std::cout << "  oneLevelCodelength: " << m_oneLevelCodelength << "\n";
+//		std::cout << "  codelength: " << m_codelength << "\n";
+
+	std::deque<SNode*> nodeList;
+	nodeList.push_back(&m_rootNode);
+	m_rootNode.data.name = m_networkName;
+	unsigned int childPosition = out.size() + m_rootNode.serializationSize(writeEdges);
+	using namespace SerialTypes;
+	while (nodeList.size() > 0) // visit tree breadth first
+	{
+		SNode& node = *nodeList.front();
+
+		// Write current node to the file
+		node.serialize(out, childPosition, writeEdges);
+		// add the children of the current node to the list and aggregate their binary sizes to the children pointer
+		childSize_t numChildren = numeric_cast<childSize_t>(node.children.size());
+		for (childSize_t i = 0; i < numChildren; ++i)
+		{
+			SNode* child = node.children[i];
+			nodeList.push_back(child);
+			childPosition += child->serializationSize(writeEdges);
+		}
+
+		// remove the printed node from the list
+		nodeList.pop_front();
+	}
+}
 
 void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 {

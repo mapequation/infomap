@@ -28,6 +28,7 @@
 #ifndef INFOMAPGREEDYTYPESPECIALIZED_H_
 #define INFOMAPGREEDYTYPESPECIALIZED_H_
 #include "InfomapGreedyCommon.h"
+#include "../io/version.h"
 
 template<typename FlowType, typename NetworkType>
 class InfomapGreedyTypeSpecialized : public InfomapGreedyCommon<InfomapGreedyTypeSpecialized<FlowType, NetworkType> >
@@ -91,6 +92,23 @@ class InfomapGreedyTypeSpecialized<FlowType, WithMemory> : public InfomapGreedyC
 	typedef Edge<NodeBase>																	EdgeType;
 	typedef std::map<unsigned int, MemNodeSet>												ModuleToMemNodes;
 
+	struct IndexedFlow {
+		IndexedFlow() : originalIndex(0), physicalIndex(0) {}
+		IndexedFlow(unsigned int originalIndex, unsigned int physicalIndex, FlowType flowData) :
+			originalIndex(originalIndex), physicalIndex(physicalIndex), flowData(flowData) {}
+		IndexedFlow(const IndexedFlow& other) :
+			originalIndex(other.originalIndex), physicalIndex(other.physicalIndex), flowData(other.flowData) {}
+		IndexedFlow& operator=(const IndexedFlow& other) {
+			originalIndex = other.originalIndex;
+			physicalIndex = other.physicalIndex;
+			flowData = other.flowData;
+			return *this;
+		}
+		unsigned int originalIndex;
+		unsigned int physicalIndex;
+		FlowType flowData;
+	};
+
 public:
 	typedef FlowType																		flow_type;
 	InfomapGreedyTypeSpecialized(const Config& conf) : 
@@ -120,6 +138,8 @@ protected:
 	void consolidatePhysicalNodes(std::vector<NodeBase*>& modules);
 
 	void generateNetworkFromChildren(NodeBase& parent);
+
+	virtual void saveHierarchicalNetwork(std::string rootName, bool includeLinks);
 
 private:
 	std::vector<ModuleToMemNodes> m_physToModuleToMemNodes; // vector[physicalNodeID] map<moduleID, {#memNodes, sumFlow}>  
@@ -538,6 +558,83 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::generateNetworkFromChil
 
 	Super::exitNetworkFlow = parentExit;
 	Super::exitNetworkFlow_log_exitNetworkFlow = infomath::plogp(Super::exitNetworkFlow);
+}
+
+
+
+template<typename FlowType>
+void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork(std::string rootName, bool includeLinks)
+{
+	HierarchicalNetwork& ioNetwork = Super::m_ioNetwork;
+
+	ioNetwork.init(rootName, !Super::m_config.isUndirected(), Super::hierarchicalCodelength, Super::oneLevelCodelength, INFOMAP_VERSION);
+
+	std::deque<std::pair<NodeBase*, HierarchicalNetwork::node_type*> > leafModules;
+
+	Super::buildHierarchicalNetworkHelper(ioNetwork, ioNetwork.getRootNode(), leafModules);
+
+	std::vector<std::map<unsigned int, IndexedFlow> > physicalNodes(leafModules.size());
+	unsigned int numCondensedNodes = 0;
+	std::vector<unsigned int> condensedLeafNodeIndices(Super::m_treeData.numLeafNodes());
+
+	std::cout << "merging " << Super::m_treeData.numLeafNodes() << " memory nodes within " <<
+			leafModules.size() << " modules...";
+	std::cout << std::flush;
+
+	// Aggregate memory nodes with the same physical node if in the same module
+	for (unsigned int i = 0; i < leafModules.size(); ++i)
+	{
+		NodeBase* leafModule = leafModules[i].first;
+		std::map<unsigned int, IndexedFlow>& condensedNodes = physicalNodes[i];
+		for (NodeBase::sibling_iterator childIt(leafModule->begin_child()), endIt(leafModule->end_child());
+				childIt != endIt; ++childIt)
+		{
+			const NodeType& node = Super::getNode(*childIt);
+			std::pair<typename std::map<unsigned int, IndexedFlow>::iterator, bool> ret = condensedNodes.insert(std::make_pair(node.m2Node.phys2, IndexedFlow(childIt->originalIndex, node.m2Node.phys2, node.data)));
+			if (!ret.second) // Add flow if physical node already exist
+				ret.first->second.flowData += node.data;
+			else // A new insertion was made
+				++numCondensedNodes;
+			condensedLeafNodeIndices[childIt->originalIndex] = numCondensedNodes;
+		}
+	}
+
+	std::cout << " to " << numCondensedNodes << " nodes... " << std::flush;
+	ioNetwork.prepareAddLeafNodes(numCondensedNodes);
+
+	for (unsigned int i = 0; i < leafModules.size(); ++i)
+	{
+		// Sort the nodes on flow
+		std::map<unsigned int, IndexedFlow>& condensedNodes = physicalNodes[i];
+		std::multimap<double, IndexedFlow, std::greater<double> > sortedNodes;
+		for (typename std::map<unsigned int, IndexedFlow>::iterator it(condensedNodes.begin()); it != condensedNodes.end(); ++it)
+		{
+			sortedNodes.insert(std::make_pair(it->second.flowData.flow, it->second));
+		}
+
+		// Add the condensed leaf nodes to the hierarchical network
+		HierarchicalNetwork::node_type* parent = leafModules[i].second;
+		for (typename std::multimap<double, IndexedFlow, std::greater<double> >::iterator it(sortedNodes.begin()); it != sortedNodes.end(); ++it)
+		{
+			IndexedFlow& nodeData = it->second;
+			ioNetwork.addLeafNode(*parent, nodeData.flowData.flow, nodeData.flowData.exitFlow, Super::m_nodeNames[nodeData.physicalIndex], condensedLeafNodeIndices[nodeData.originalIndex]);
+		}
+	}
+
+
+	if (includeLinks)
+	{
+		for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)
+		{
+			NodeBase& node = **leafIt;
+			for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
+					outEdgeIt != endIt; ++outEdgeIt)
+			{
+				EdgeType& edge = **outEdgeIt;
+				ioNetwork.addLeafEdge(condensedLeafNodeIndices[edge.source.originalIndex], condensedLeafNodeIndices[edge.target.originalIndex], edge.data.flow);
+			}
+		}
+	}
 }
 
 

@@ -45,6 +45,7 @@
 #include "../io/HierarchicalNetwork.h"
 #include <deque>
 #include <functional>
+#include "../io/version.h"
 
 
 template<typename InfomapImplementation>
@@ -129,8 +130,9 @@ protected:
 
 	virtual void sortTree(NodeBase& parent);
 
-	virtual void buildHierarchicalNetwork(HierarchicalNetwork& hierarchicalNetwork, bool includeLinks);
+	virtual void saveHierarchicalNetwork(std::string rootName, bool includeLinks);
 	void buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, const TreeData& originalData, NodeBase* node = 0);
+	// Don't add leaf nodes, but collect all leaf modules instead
 	void buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, std::deque<std::pair<NodeBase*, HierarchicalNetwork::node_type*> >& leafModules, NodeBase* node = 0);
 	virtual void printSubInfomapTree(std::ostream& out, const TreeData& originalData, const std::string& prefix);
 	void printSubTree(std::ostream& out, NodeBase& module, const TreeData& originalData, const std::string& prefix);
@@ -366,101 +368,24 @@ void InfomapGreedy<InfomapImplementation>::sortTree(NodeBase& parent)
 
 template<typename InfomapImplementation>
 inline
-void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetwork(HierarchicalNetwork& hierarchicalNetwork, bool includeLinks)
+void InfomapGreedy<InfomapImplementation>::saveHierarchicalNetwork(std::string rootName, bool includeLinks)
 {
-	if (m_config.isMemoryNetwork())
+	m_ioNetwork.init(rootName, !m_config.isUndirected(), hierarchicalCodelength, oneLevelCodelength, INFOMAP_VERSION);
+
+	m_ioNetwork.prepareAddLeafNodes(m_treeData.numLeafNodes());
+
+	buildHierarchicalNetworkHelper(m_ioNetwork, m_ioNetwork.getRootNode(), m_treeData);
+
+	if (includeLinks)
 	{
-		std::deque<std::pair<NodeBase*, HierarchicalNetwork::node_type*> > leafModules;
-		buildHierarchicalNetworkHelper(hierarchicalNetwork, hierarchicalNetwork.getRootNode(), leafModules);
-
-		struct IndexedFlow {
-			IndexedFlow() : originalIndex(0), physicalIndex(0) {}
-			IndexedFlow(unsigned int originalIndex, unsigned int physicalIndex, FlowType flowData) :
-				originalIndex(originalIndex), physicalIndex(physicalIndex), flowData(flowData) {}
-			IndexedFlow(const IndexedFlow& other) :
-				originalIndex(other.originalIndex), physicalIndex(other.physicalIndex), flowData(other.flowData) {}
-			IndexedFlow& operator=(const IndexedFlow& other) {
-				originalIndex = other.originalIndex;
-				physicalIndex = other.physicalIndex;
-				flowData = other.flowData;
-				return *this;
-			}
-			unsigned int originalIndex;
-			unsigned int physicalIndex;
-			FlowType flowData;
-		};
-		std::vector<std::map<unsigned int, IndexedFlow> > physicalNodes(leafModules.size());
-		unsigned int numCondensedNodes = 0;
-		std::vector<unsigned int> condensedLeafNodeIndices(m_treeData.numLeafNodes());
-
-		std::cout << "merging " << m_treeData.numLeafNodes() << " memory nodes within " <<
-				leafModules.size() << " modules..." << std::flush;
-
-		// Aggregate memory nodes with the same physical node if in the same module
-		for (unsigned int i = 0; i < leafModules.size(); ++i)
+		for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()); leafIt != m_treeData.end_leaf(); ++leafIt)
 		{
-			NodeBase* leafModule = leafModules[i].first;
-			std::map<unsigned int, IndexedFlow>& condensedNodes = physicalNodes[i];
-			for (NodeBase::sibling_iterator childIt(leafModule->begin_child()), endIt(leafModule->end_child());
-					childIt != endIt; ++childIt)
+			NodeBase& node = **leafIt;
+			for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
+					outEdgeIt != endIt; ++outEdgeIt)
 			{
-				const NodeType& node = getNode(*childIt);
-				std::pair<typename std::map<unsigned int, IndexedFlow>::iterator, bool> ret = condensedNodes.insert(std::make_pair(node.m2Node.phys2, IndexedFlow(childIt->originalIndex, node.m2Node.phys2, node.data)));
-				if (!ret.second) // Add flow if physical node already exist
-					ret.first->second.flowData += node.data;
-				else // A new insertion was made
-					++numCondensedNodes;
-				condensedLeafNodeIndices[childIt->originalIndex] = numCondensedNodes;
-			}
-
-			// Sort the nodes on flow
-			std::multimap<double, IndexedFlow, std::greater<double> > sortedNodes;
-			for (typename std::map<unsigned int, IndexedFlow>::iterator it(condensedNodes.begin()); it != condensedNodes.end(); ++it)
-			{
-				sortedNodes.insert(std::make_pair(it->second.flowData.flow, it->second));
-			}
-
-			// Add the condensed leaf nodes to the hierarchical network
-			HierarchicalNetwork::node_type* parent = leafModules[i].second;
-			for (typename std::multimap<double, IndexedFlow, std::greater<double> >::iterator it(sortedNodes.begin()); it != sortedNodes.end(); ++it)
-			{
-				IndexedFlow& nodeData = it->second;
-				hierarchicalNetwork.addLeafNode(*parent, nodeData.flowData.flow, nodeData.flowData.exitFlow, m_nodeNames[nodeData.physicalIndex], condensedLeafNodeIndices[nodeData.originalIndex]);
-			}
-		}
-
-		std::cout << " to " << numCondensedNodes << " nodes... " << std::flush;
-
-		if (includeLinks)
-		{
-			for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()); leafIt != m_treeData.end_leaf(); ++leafIt)
-			{
-				NodeBase& node = **leafIt;
-				for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
-						outEdgeIt != endIt; ++outEdgeIt)
-				{
-					EdgeType& edge = **outEdgeIt;
-					hierarchicalNetwork.addLeafEdge(condensedLeafNodeIndices[edge.source.originalIndex], condensedLeafNodeIndices[edge.target.originalIndex], edge.data.flow);
-				}
-			}
-		}
-
-	}
-	else
-	{
-		buildHierarchicalNetworkHelper(hierarchicalNetwork, hierarchicalNetwork.getRootNode(), m_treeData);
-
-		if (includeLinks)
-		{
-			for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()); leafIt != m_treeData.end_leaf(); ++leafIt)
-			{
-				NodeBase& node = **leafIt;
-				for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
-						outEdgeIt != endIt; ++outEdgeIt)
-				{
-					EdgeType& edge = **outEdgeIt;
-					hierarchicalNetwork.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
-				}
+				EdgeType& edge = **outEdgeIt;
+				m_ioNetwork.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
 			}
 		}
 	}

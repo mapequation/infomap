@@ -71,7 +71,7 @@ public:
 
 	void sortTree();
 
-	virtual void buildHierarchicalNetwork(HierarchicalNetwork& data, bool includeLinks) = 0;
+	virtual void saveHierarchicalNetwork(std::string rootName, bool includeLinks) = 0;
 
 	virtual void printSubInfomapTree(std::ostream& out, const TreeData& originalData, const std::string& prefix = "");
 	virtual void printSubInfomapTreeDebug(std::ostream& out, const TreeData& originalData, const std::string& prefix = "");
@@ -259,6 +259,7 @@ protected:
 	double bestHierarchicalCodelength;
 	double bestIntermediateCodelength;
 	std::ostringstream bestIntermediateStatistics;
+	HierarchicalNetwork m_ioNetwork;
 
 };
 
