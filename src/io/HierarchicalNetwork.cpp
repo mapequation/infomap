@@ -28,6 +28,7 @@
 #include "HierarchicalNetwork.h"
 #include <map>
 #include <stdexcept>
+#include "convert.h"
 
 void HierarchicalNetwork::init(std::string networkName, bool directedEdges,
 			double codelength, double oneLevelCodelength, std::string infomapVersion)
@@ -234,6 +235,31 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 	m_numLeafEdges = numLeafEdges;
 }
 
+
+void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName)
+{
+	SafeOutFile out(fileName.c_str());
+	out << "# Network '" << m_networkName << "', size: " << m_leafNodes.size() << " nodes in " << m_maxDepth << " levels, codelength: " << m_codelength << " bits.\n";
+
+	writeHumanReadableTreeRecursiveHelper(out, m_rootNode);
+}
+
+void HierarchicalNetwork::writeHumanReadableTreeRecursiveHelper(std::ostream& out, SNode& node, std::string prefix)
+{
+	for (unsigned int i = 0; i < node.children.size(); ++i)
+	{
+		SNode& child = *node.children[i];
+		if (child.isLeaf)
+		{
+			out << prefix << (i+1) << " " << child.data.flow << " \"" << child.data.name << "\"\n";
+		}
+		else
+		{
+			const std::string subPrefix = io::Str() << prefix << (i+1) << ":";
+			writeHumanReadableTreeRecursiveHelper(out, child, subPrefix);
+		}
+	}
+}
 
 void HierarchicalNetwork::writeMap(const std::string& fileName)
 {

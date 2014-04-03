@@ -1407,37 +1407,35 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 	// Sort tree on flow
 	sortTree();
 
-	// Print .tree
-	if (m_config.printTree)
+	// Print hierarchy
+	if (m_config.printTree || m_config.printBinaryTree || m_config.printBinaryFlowTree)
 	{
-		outName = io::Str() << m_config.outDirectory << filename << ".tree";
-		if (m_config.verbosity == 0)
-			RELEASE_OUT("(Writing .tree file.." << std::flush);
-		else
-			RELEASE_OUT("Print hierarchical cluster data to " << outName << "... " << std::flush);
-		SafeOutFile treeOut(outName.c_str());
-		treeOut << "# Codelength " << hierarchicalCodelength << " bits in " <<
-				Stopwatch::getElapsedTimeSinceProgramStartInSec() << "s. Network size: "
-				<< numLeafNodes() << " nodes and " << m_treeData.numLeafEdges() << " links." << std::endl;
+		bool writeEdges = m_config.printBinaryFlowTree;
+		RELEASE_OUT("\nBuilding output tree" << (writeEdges ? " with links" : "") << "... " << std::flush);
 
-		printSubInfomapTree(treeOut, m_treeData);
-	//	printSubInfomapTreeDebug(treeOut, m_treeData);
+		saveHierarchicalNetwork(filename, writeEdges);
 
-		if (m_config.verbosity == 0)
-			RELEASE_OUT(") ");
-		else
-			RELEASE_OUT("done!" << std::endl);
+		// Print .tree
+		if (m_config.printTree)
+		{
+			outName = io::Str() << m_config.outDirectory << filename << ".tree";
+			RELEASE_OUT("writing .tree... " << std::flush);
+			m_ioNetwork.writeHumanReadableTree(outName);
+		}
+
+		if (m_config.printBinaryTree || m_config.printBinaryFlowTree)
+		{
+			outName = io::Str() << m_config.outDirectory << filename << (writeEdges? ".bftree" : ".btree");
+			RELEASE_OUT("writing " << (writeEdges ? ".bftree" : ".btree") << "... " << std::flush);
+			m_ioNetwork.writeStreamableTree(outName, writeEdges);
+		}
+
+		RELEASE_OUT("done!" << std::endl);
+
+		// Clear the data
+		m_ioNetwork.clear();
 	}
 
-//	// Print .debug.tree
-//	outName = io::Str() << m_config.outDirectory << filename << ".debug.tree";
-//	ALL_OUT("Print hierarchical debug cluster data to " << outName << "... ");
-//	SafeOutFile debugTreeOut(outName.c_str());
-//	debugTreeOut << "# Codelength " << hierarchicalCodelength << " bits in " <<
-//			Stopwatch::getElapsedTimeSinceProgramStartInSec() << "s. Network size: "
-//			<< numLeafNodes() << " nodes and " << m_treeData.numLeafEdges() << " links." << std::endl;
-//	printSubInfomapTreeDebug(debugTreeOut, m_treeData);
-//	ALL_OUT("done!" << std::endl);
 
 	// Print .map
 	if (m_config.printMap)
@@ -1450,17 +1448,6 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 		if (m_config.verbosity > 0)
 			RELEASE_OUT("done!\n");
 	}
-
-//	if (root()->firstChild->getSubInfomap() != 0)
-//	{
-//		outName = io::Str() << m_config.outDirectory << filename << "_1.map";
-//		if (m_config.verbosity > 0)
-//			RELEASE_OUT("Print first super module to " << outName << "... ");
-//		SafeOutFile mapOut1(outName.c_str());
-//		root()->firstChild->getSubInfomap()->printMap(mapOut1);
-//		if (m_config.verbosity > 0)
-//			RELEASE_OUT("done!\n");
-//	}
 
 
 	// Print .clu
@@ -1477,17 +1464,6 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 			RELEASE_OUT("done!\n");
 	}
 
-//	if (m_config.printNodeRanks)
-//	{
-//		outName = io::Str() << m_config.outDirectory << filename << ".rank";
-//		SafeOutFile rankOut(outName.c_str());
-//		if (m_config.verbosity > 0)
-//			RELEASE_OUT("Print node ranks to " << outName << "... " << std::flush);
-//		printNodeRanks(rankOut);
-//		if (m_config.verbosity > 0)
-//			RELEASE_OUT("done!\n");
-//	}
-
 	// Print flow network
 	if (m_config.printFlowNetwork)
 	{
@@ -1502,25 +1478,6 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 			RELEASE_OUT(") ");
 		else
 			RELEASE_OUT("done!\n");
-	}
-
-	if (m_config.printBinaryTree || m_config.printBinaryFlowTree)
-	{
-		bool writeEdges = m_config.printBinaryFlowTree;
-		outName = io::Str() << m_config.outDirectory << filename << (writeEdges? ".bftree" : ".btree");
-
-		RELEASE_OUT("\nBuild streamable " << (writeEdges ? "flow " : "") <<	"tree... " << std::flush);
-
-		saveHierarchicalNetwork(filename, writeEdges);
-
-		RELEASE_OUT("done! Writing to " << outName << "... " << std::flush);
-
-		m_ioNetwork.writeStreamableTree(outName, writeEdges);
-
-		RELEASE_OUT("done!" << std::endl);
-
-		// Clear the data
-		m_ioNetwork.clear();
 	}
 
 }
