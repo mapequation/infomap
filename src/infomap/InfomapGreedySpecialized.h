@@ -43,8 +43,6 @@ class InfomapGreedySpecialized : public InfomapGreedy<InfomapGreedySpecialized<F
 	typedef MemNode<FlowType>											NodeType;
 	typedef Edge<NodeBase>												EdgeType;
 public:
-	typedef DeltaFlow													DeltaFlow;
-
 
 	InfomapGreedySpecialized(const Config& conf) : InfomapGreedy<SelfType>(conf) {}
 	virtual ~InfomapGreedySpecialized() {}
@@ -96,7 +94,7 @@ template<typename FlowType>
 inline
 void InfomapGreedySpecialized<FlowType>::initEnterExitFlow()
 {
-	for (TreeData::leafIterator it(InfomapBase::m_treeData.begin_leaf()), itEnd(InfomapBase::m_treeData.end_leaf());
+	for (TreeData::leafIterator it(Super::m_treeData.begin_leaf()), itEnd(Super::m_treeData.end_leaf());
 			it != itEnd; ++it)
 	{
 		NodeBase& node = **it;
