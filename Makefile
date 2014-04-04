@@ -1,5 +1,5 @@
 #Generated Makefile
-CXX  = g++
+CXX  = g++-4.2
 CXXFLAGS = -Wall -O4 -pipe -fopenmp
 LINKER = $(CXX)
 LFLAGS = -fopenmp
