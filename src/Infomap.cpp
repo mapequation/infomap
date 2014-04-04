@@ -69,9 +69,6 @@ Config getConfig(int argc, char *argv[])
 	api.addOptionArgument(conf.includeSelfLinks, 'k', "include-self-links",
 			"Include links with the same source and target node. (Ignored by default.)");
 
-	api.addOptionArgument(conf.selfMemoryNodes, "self-memory-nodes",
-			"Include self-memory nodes.");
-
 	api.addOptionArgument(conf.nodeLimit, 'O', "node-limit",
 			"Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", "n");
 

@@ -187,7 +187,7 @@ void MemNetwork::parseTrigram(std::string filename)
 		//		}
 
 
-		if(m_config.selfMemoryNodes)
+		if(m_config.includeSelfLinks)
 		{
 			m_m2Nodes[M2Node(n1,n2)] += linkWeight;
 			m_m2Nodes[M2Node(n2,n3)] += 0.0;
