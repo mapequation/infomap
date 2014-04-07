@@ -186,7 +186,6 @@ void MemNetwork::parseTrigram(std::string filename)
 		//				--m_numSelfLinks;
 		//		}
 
-
 		if(m_config.includeSelfLinks)
 		{
 			m_m2Nodes[M2Node(n1,n2)] += linkWeight;
@@ -195,10 +194,57 @@ void MemNetwork::parseTrigram(std::string filename)
 			m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
 			m_totM2LinkWeight += linkWeight;
 
-			m_links[make_pair(n2,n3)] += linkWeight;
 			m_totalLinkWeight += linkWeight;
+
+			if (n2 == n3) {
+				++m_numSelfLinks;
+				m_totalSelfLinkWeight += linkWeight;
+				if (n1 == n2) {
+					++m_numMemorySelfLinks;
+					m_totalMemorySelfLinkWeight += linkWeight;
+				}
+			}
+//			m_links[make_pair(n2,n3)] += linkWeight;
+			LinkMap::iterator firstIt = m_links.lower_bound(n2);
+			if (firstIt != m_links.end() && firstIt->first == n2) // First linkEnd already exists, check second linkEnd
+			{
+				std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(n3, linkWeight));
+				if (!ret2.second)
+				{
+					ret2.first->second += linkWeight;
+//					++numDoubleLinks;
+					if (n2 == n3)
+						--m_numSelfLinks;
+				}
+			}
+			else
+			{
+				m_links.insert(firstIt, std::make_pair(n2, std::map<unsigned int, double>()))->second.insert(std::make_pair(n3, linkWeight));
+				++m_numLinks;
+			}
 		}
-		else{
+		else if (n2 != n3)
+		{
+			m_totalLinkWeight += linkWeight;
+//			m_links[make_pair(n2,n3)] += linkWeight;
+			LinkMap::iterator firstIt = m_links.lower_bound(n2);
+			if (firstIt != m_links.end() && firstIt->first == n2) // First linkEnd already exists, check second linkEnd
+			{
+				std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(n3, linkWeight));
+				if (!ret2.second)
+				{
+					ret2.first->second += linkWeight;
+//					++numDoubleLinks;
+				}
+				else
+					++m_numLinks;
+			}
+			else
+			{
+				m_links.insert(firstIt, std::make_pair(n2, std::map<unsigned int, double>()))->second.insert(std::make_pair(n3, linkWeight));
+				++m_numLinks;
+			}
+
 			if(n1 != n2 && n2 != n3)
 			{
 				m_m2Nodes[M2Node(n1,n2)] += linkWeight;
@@ -207,15 +253,11 @@ void MemNetwork::parseTrigram(std::string filename)
 				m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
 				m_totM2LinkWeight += linkWeight;
 
-				m_links[make_pair(n2,n3)] += linkWeight;
-				m_totalLinkWeight += linkWeight;
 			}
 			else if(n2 != n3)
 			{
 				m_m2Nodes[M2Node(n2,n3)] += linkWeight;
 
-				m_links[make_pair(n2,n3)] += linkWeight;
-				m_totalLinkWeight += linkWeight;
 			}
 		}
 	}
@@ -255,7 +297,7 @@ void MemNetwork::parseTrigram(std::string filename)
 
 
 	//	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
-	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << m_links.size() << " links. ";
+	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << m_numLinks << " links. ";
 	std::cout << "Generated " << m_m2Nodes.size() << " memory nodes and " << m_m2Links.size() << " memory links. ";
 	//	std::cout << "Average node weight: " << (m_sumNodeWeights / numNodes) << ". ";
 	if (m_config.nodeLimit > 0)

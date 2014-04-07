@@ -71,7 +71,9 @@ public:
 	MemNetwork(const Config& config) :
 		Network(config),
 		m_totM2NodeWeight(0.0),
-		m_totM2LinkWeight(0.0)
+		m_totM2LinkWeight(0.0),
+		m_numMemorySelfLinks(0),
+		m_totalMemorySelfLinkWeight(0.0)
 	{}
 	virtual ~MemNetwork() {}
 
@@ -83,6 +85,7 @@ public:
 	const std::vector<double>& m2NodeWeights() const { return m_m2NodeWeights; }
 	double totalM2NodeWeight() const { return m_totM2NodeWeight; }
 	double totalM2LinkWeight() const { return m_totM2LinkWeight; }
+	double totalMemorySelfLinkWeight() const { return m_totalMemorySelfLinkWeight; }
 
 protected:
 
@@ -94,6 +97,8 @@ protected:
 	std::vector<double> m_m2NodeWeights;
 	double m_totM2NodeWeight;
 	double m_totM2LinkWeight;
+	unsigned int m_numMemorySelfLinks;
+	double m_totalMemorySelfLinkWeight;
 
 };
 

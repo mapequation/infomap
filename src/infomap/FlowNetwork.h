@@ -58,8 +58,8 @@ public:
 		double flow;
 	};
 
-	typedef std::map<std::string, int>								NodeMap;
-	typedef std::map<std::pair<unsigned int, unsigned int>, double>	LinkMap;
+	typedef Network::NodeMap										NodeMap;
+	typedef Network::LinkMap										LinkMap;
 	typedef std::vector<Link>										LinkVec;
 
 	FlowNetwork();

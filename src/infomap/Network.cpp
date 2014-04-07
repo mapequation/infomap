@@ -57,8 +57,6 @@ void Network::readFromFile(std::string filename)
 		parsePajekNetwork(filename);
 	else if (format == "link-list")
 		parseLinkList(filename);
-	else if (format == "sparse-link-list")
-		parseSparseLinkList(filename);
 	else
 		throw UnknownFileTypeError("No known input format specified.");
 
@@ -201,13 +199,6 @@ void Network::parsePajekNetwork(std::string filename)
 			continue;
 		}
 
-		if (linkEnd2 == linkEnd1)
-		{
-			++m_numSelfLinks;
-			if (!m_config.includeSelfLinks)
-				continue;
-		}
-
 		double linkWeight;
 		if (!(ss >> linkWeight))
 			linkWeight = 1.0;
@@ -217,30 +208,42 @@ void Network::parsePajekNetwork(std::string filename)
 
 		maxLinkEnd = std::max(maxLinkEnd, std::max(linkEnd1, linkEnd2));
 
-		// If undirected links, aggregate weight rather than adding an opposite link.
-		if (m_config.isUndirected() && linkEnd2 < linkEnd1)
+		if (linkEnd2 == linkEnd1)
+		{
+			++m_numSelfLinks;
+			if (!m_config.includeSelfLinks)
+				continue;
+			m_totalSelfLinkWeight += linkWeight;
+		}
+		else if (m_config.isUndirected() && linkEnd2 < linkEnd1) // minimize number of links
 			std::swap(linkEnd1, linkEnd2);
 
+		++m_numLinks;
 		m_totalLinkWeight += linkWeight;
-		if (m_config.isUndirected())
-		{
-			m_totalLinkWeight += linkWeight;
-		}
 
 		// Aggregate link weights if they are definied more than once
-		LinkMap::iterator it = m_links.find(std::make_pair(linkEnd1, linkEnd2));
-		if(it == m_links.end())
+		LinkMap::iterator firstIt = m_links.lower_bound(linkEnd1);
+		if (!m_links.empty() && firstIt->first == linkEnd1) // First linkEnd already exists, check second linkEnd
 		{
-			m_links.insert(std::make_pair(std::make_pair(linkEnd1, linkEnd2), linkWeight));
+			std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(linkEnd2, linkWeight));
+			if (!ret2.second)
+			{
+				ret2.first->second += linkWeight;
+				++numDoubleLinks;
+				if (linkEnd2 == linkEnd1)
+					--m_numSelfLinks;
+			}
 		}
 		else
 		{
-			it->second += linkWeight;
-			++numDoubleLinks;
-			if (linkEnd2 == linkEnd1)
-				--m_numSelfLinks;
+			std::map<unsigned int, double> second;
+			second.insert(std::make_pair(linkEnd2, linkWeight));
+			m_links.insert(firstIt, std::make_pair(linkEnd1, second));
 		}
 	}
+
+	if (m_links.empty())
+		throw InputDomainError(io::Str() << "No links could be found!");
 
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
@@ -249,14 +252,12 @@ void Network::parsePajekNetwork(std::string filename)
 	if (maxLinkEnd >= numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 
-	if (m_links.size() == 0)
-		throw InputDomainError(io::Str() << "No links could be found!");
-
+	m_numLinks -= numDoubleLinks;
 	//	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
-	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << m_links.size() << " links. ";
+	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << (m_numLinks + numSkippedEdges) << " links. ";
 //	std::cout << "Average node weight: " << (m_sumNodeWeights / numNodes) << ". ";
 	if (m_config.nodeLimit > 0)
-		std::cout << "Limiting network to " << numNodes << " nodes and " << m_links.size() << " links. ";
+		std::cout << "Limiting network to " << numNodes << " nodes and " << m_numLinks << " links. ";
 	if(numDoubleLinks > 0)
 		std::cout << numDoubleLinks << " links was aggregated to existing links. ";
 	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
@@ -317,13 +318,6 @@ void Network::parseLinkList(std::string filename)
 			continue;
 		}
 
-		if (linkEnd2 == linkEnd1)
-		{
-			++m_numSelfLinks;
-			if (!m_config.includeSelfLinks)
-				continue;
-		}
-
 		double linkWeight = 1.0;
 		ss >> linkWeight;
 
@@ -331,32 +325,43 @@ void Network::parseLinkList(std::string filename)
 		if (!minLinkIsZero && (linkEnd1 == 0 || linkEnd2 == 0))
 			minLinkIsZero = true;
 
-		// If undirected links, aggregate weight rather than adding an opposite link.
-		if (m_config.isUndirected() && linkEnd2 < linkEnd1)
+		if (linkEnd2 == linkEnd1)
+		{
+			++m_numSelfLinks;
+			if (!m_config.includeSelfLinks)
+				continue;
+			m_totalSelfLinkWeight += linkWeight;
+		}
+		else if (m_config.isUndirected() && linkEnd2 < linkEnd1) // minimize number of links
 			std::swap(linkEnd1, linkEnd2);
 
+		++m_numLinks;
 		m_totalLinkWeight += linkWeight;
-		if (m_config.isUndirected())
-		{
-			m_totalLinkWeight += linkWeight;
-		}
 
 		// Aggregate link weights if they are definied more than once
-		LinkMap::iterator it = m_links.find(std::make_pair(linkEnd1, linkEnd2));
-		if(it == m_links.end())
+		LinkMap::iterator firstIt = m_links.lower_bound(linkEnd1);
+		if (firstIt->first == linkEnd1) // First linkEnd already exists, check second linkEnd
 		{
-			m_links.insert(std::make_pair(std::make_pair(linkEnd1, linkEnd2), linkWeight));
+			std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(linkEnd2, linkWeight));
+			if (!ret2.second)
+			{
+				ret2.first->second += linkWeight;
+				++numDoubleLinks;
+				if (linkEnd2 == linkEnd1)
+					--m_numSelfLinks;
+			}
 		}
 		else
 		{
-			it->second += linkWeight;
-			++numDoubleLinks;
-			if (linkEnd2 == linkEnd1)
-				--m_numSelfLinks;
+			std::map<unsigned int, double> second;
+			second.insert(std::make_pair(linkEnd2, linkWeight));
+			m_links.insert(firstIt, std::make_pair(linkEnd1, second));
 		}
+
+
 	}
 
-	if (m_links.size() == 0)
+	if (m_links.empty())
 		throw InputDomainError(io::Str() << "No links could be found!");
 
 	unsigned int zeroMinusOne = 0;
@@ -365,6 +370,7 @@ void Network::parseLinkList(std::string filename)
 		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers starts from zero.");
 
 
+	m_numLinks -= numDoubleLinks;
 	m_numNodes = maxLinkEnd + 1;
 
 	m_nodeNames.resize(m_numNodes);
@@ -382,141 +388,6 @@ void Network::parseLinkList(std::string filename)
 		std::cout << "(Warning: minimum link index is not zero, check that you don't use zero based numbering if it's not true.)\n";
 }
 
-void Network::parseSparseLinkList(std::string filename)
-{
-	string line;
-	string buf;
-	SafeInFile input(filename.c_str());
-	std::cout << "Parsing " << (m_config.directed ? "directed" : "undirected") <<
-			" sparse link list from file '" << filename << "'... " << std::flush;
-
-	std::istringstream ss;
-
-	unsigned int numDoubleLinks = 0;
-	unsigned int numEdgeLines = 0;
-	unsigned int numSkippedEdges = 0;
-	m_totalLinkWeight = 0.0;
-	unsigned int maxLinkEnd = 0;
-	bool minLinkIsZero = false;
-	bool checkNodeLimit = m_config.nodeLimit > 0;
-	unsigned int nodeLimit = m_config.nodeLimit > 0 ? m_config.nodeLimit : 0;
-	unsigned int lowestNodeNumber = m_config.zeroBasedNodeNumbers ? 0 : 1;
-
-	typedef std::map<unsigned int, std::map<unsigned int, double> > OutLinkMap;
-	OutLinkMap links;
-	unsigned int numLinks = 0;
-
-	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
-	while(!std::getline(input, line).fail())
-	{
-		if (line.length() == 0 || line[0] == '#')
-			continue;
-		++numEdgeLines;
-		ss.clear();
-		ss.str(line);
-		unsigned int linkEnd1;
-		if (!(ss >> linkEnd1))
-			throw BadConversionError(io::Str() << "Can't parse first integer of link number " <<
-					numEdgeLines << " from line '" << line << "'");
-		unsigned int linkEnd2;
-		if (!(ss >> linkEnd2))
-			throw BadConversionError(io::Str() << "Can't parse second integer of link number " <<
-					numEdgeLines << " from line '" << line << "'");
-
-		linkEnd1 -= lowestNodeNumber;
-		linkEnd2 -= lowestNodeNumber;
-
-		if (checkNodeLimit && (linkEnd2 >= nodeLimit || linkEnd1 >= nodeLimit))
-		{
-			++numSkippedEdges;
-			continue;
-		}
-
-		if (linkEnd2 == linkEnd1)
-		{
-			++m_numSelfLinks;
-			if (!m_config.includeSelfLinks)
-				continue;
-		}
-
-		double linkWeight = 1.0;
-		ss >> linkWeight;
-
-		maxLinkEnd = std::max(maxLinkEnd, std::max(linkEnd1, linkEnd2));
-		if (!minLinkIsZero && (linkEnd1 == 0 || linkEnd2 == 0))
-			minLinkIsZero = true;
-
-		// If undirected links, aggregate weight rather than adding an opposite link.
-		if (m_config.isUndirected() && linkEnd2 < linkEnd1)
-			std::swap(linkEnd1, linkEnd2);
-
-		m_totalLinkWeight += linkWeight;
-		if (m_config.isUndirected())
-		{
-			m_totalLinkWeight += linkWeight;
-		}
-
-		// Aggregate link weights if they are definied more than once
-		OutLinkMap::iterator fromLinkIt = links.find(linkEnd1);
-		if(fromLinkIt == links.end())
-		{
-			std::map<unsigned int, double> outLinkMap;
-			outLinkMap.insert(std::make_pair(linkEnd2, linkWeight));
-			links.insert(std::make_pair(linkEnd1, outLinkMap));
-			++numLinks;
-		}
-		else
-		{
-			std::map<unsigned int, double>::iterator toLink_it = fromLinkIt->second.find(linkEnd2);
-			if(toLink_it == fromLinkIt->second.end())
-			{
-				fromLinkIt->second.insert(make_pair(linkEnd2,linkWeight));
-				++numLinks;
-			}
-			else{
-				toLink_it->second += linkWeight;
-				++numDoubleLinks;
-				if (linkEnd2 == linkEnd1)
-					--m_numSelfLinks;
-			}
-		}
-	}
-
-	if (m_links.size() == 0)
-		throw InputDomainError(io::Str() << "No links could be found!");
-
-	m_numNodes = links.size();
-
-	m_nodeNames.resize(m_numNodes);
-	m_nodeWeights.assign(m_numNodes, 1.0);
-	m_sumNodeWeights = 1.0 * m_numNodes;
-
-	std::map<unsigned int, unsigned int> packedIndices;
-	unsigned int linkIndex = 0;
-	for (OutLinkMap::iterator linkIt(links.begin()); linkIt != links.end(); ++linkIt, ++linkIndex)
-	{
-		packedIndices.insert(std::make_pair(linkIt->first, linkIndex));
-		m_nodeMap.insert(make_pair(io::stringify(linkIt->first + 1), linkIndex));
-		m_nodeNames[linkIndex] = io::stringify(linkIt->first + 1);
-	}
-
-	for (OutLinkMap::iterator linkIt(links.begin()); linkIt != links.end(); ++linkIt, ++linkIndex)
-	{
-		std::map<unsigned int, double>& outLinkMap = linkIt->second;
-		for (std::map<unsigned int, double>::iterator toLinkIt(outLinkMap.begin());
-				toLinkIt != outLinkMap.end(); ++toLinkIt)
-		{
-			unsigned int first = packedIndices[linkIt->first];
-			unsigned int second = packedIndices[toLinkIt->first];
-			m_links.insert(make_pair(make_pair(first, second), toLinkIt->second));
-		}
-	}
-
-	std::cout << "done! Found " << m_numNodes << " nodes and " << m_links.size() << " links." << std::endl;
-	if (!minLinkIsZero)
-		std::cout << "(Warning: minimum link index is not zero, check that you don't use zero based numbering if it's not true.)\n";
-
-}
 
 void Network::parsePajekNetworkCStyle(std::string filename)
 {
@@ -641,42 +512,47 @@ void Network::parsePajekNetworkCStyle(std::string filename)
 			continue;
 		}
 
-		if (linkEnd2 == linkEnd1)
-		{
-			++m_numSelfLinks;
-			if (!m_config.includeSelfLinks)
-				continue;
-		}
-
 		--linkEnd1; // Node numbering starts from 1 in the .net format
 		--linkEnd2;
 
 		maxLinkEnd = std::max(maxLinkEnd, std::max(linkEnd1, linkEnd2));
 
-		// If undirected links, aggregate weight rather than adding an opposite link.
-		if (m_config.isUndirected() && linkEnd2 < linkEnd1)
+		if (linkEnd2 == linkEnd1)
+		{
+			++m_numSelfLinks;
+			if (!m_config.includeSelfLinks)
+				continue;
+			m_totalSelfLinkWeight += linkWeight;
+		}
+		else if (m_config.isUndirected() && linkEnd2 < linkEnd1) // minimize number of links
 			std::swap(linkEnd1, linkEnd2);
 
+		++m_numLinks;
 		m_totalLinkWeight += linkWeight;
-		if (m_config.isUndirected())
-		{
-			m_totalLinkWeight += linkWeight;
-		}
 
 		// Aggregate link weights if they are definied more than once
-		LinkMap::iterator it = m_links.find(std::make_pair(linkEnd1, linkEnd2));
-		if(it == m_links.end())
+		LinkMap::iterator firstIt = m_links.lower_bound(linkEnd1);
+		if (firstIt->first == linkEnd1) // First linkEnd already exists, check second linkEnd
 		{
-			m_links.insert(std::make_pair(std::make_pair(linkEnd1, linkEnd2), linkWeight));
+			std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(linkEnd2, linkWeight));
+			if (!ret2.second)
+			{
+				ret2.first->second += linkWeight;
+				++numDoubleLinks;
+				if (linkEnd2 == linkEnd1)
+					--m_numSelfLinks;
+			}
 		}
 		else
 		{
-			it->second += linkWeight;
-			++numDoubleLinks;
-			if (linkEnd2 == linkEnd1)
-				--m_numSelfLinks;
+			std::map<unsigned int, double> second;
+			second.insert(std::make_pair(linkEnd2, linkWeight));
+			m_links.insert(firstIt, std::make_pair(linkEnd1, second));
 		}
 	}
+
+	if (m_links.empty())
+		throw InputDomainError(io::Str() << "No links could be found!");
 
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
@@ -685,14 +561,12 @@ void Network::parsePajekNetworkCStyle(std::string filename)
 	if (maxLinkEnd >= numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 
-	if (m_links.size() == 0)
-		throw InputDomainError(io::Str() << "No links could be found!");
-
+	m_numLinks -= numDoubleLinks;
 	//	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
-	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << m_links.size() << " links. ";
+	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << (m_numLinks + numSkippedEdges) << " links. ";
 //	std::cout << "Average node weight: " << (m_sumNodeWeights / numNodes) << ". ";
 	if (m_config.nodeLimit > 0)
-		std::cout << "Limiting network to " << numNodes << " nodes and " << m_links.size() << " links. ";
+		std::cout << "Limiting network to " << numNodes << " nodes and " << m_numLinks << " links. ";
 	if(numDoubleLinks > 0)
 		std::cout << numDoubleLinks << " links was aggregated to existing links. ";
 	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
@@ -764,39 +638,41 @@ void Network::parseLinkListCStyle(std::string filename)
 			continue;
 		}
 
+		maxLinkEnd = std::max(maxLinkEnd, std::max(linkEnd1, linkEnd2));
+		if (!minLinkIsZero && (linkEnd1 == 0 || linkEnd2 == 0))
+			minLinkIsZero = true;
+
 		if (linkEnd2 == linkEnd1)
 		{
 			++m_numSelfLinks;
 			if (!m_config.includeSelfLinks)
 				continue;
+			m_totalSelfLinkWeight += linkWeight;
 		}
-
-		maxLinkEnd = std::max(maxLinkEnd, std::max(linkEnd1, linkEnd2));
-		if (!minLinkIsZero && (linkEnd1 == 0 || linkEnd2 == 0))
-			minLinkIsZero = true;
-
-		// If undirected links, aggregate weight rather than adding an opposite link.
-		if (m_config.isUndirected() && linkEnd2 < linkEnd1)
+		else if (m_config.isUndirected() && linkEnd2 < linkEnd1) // minimize number of links
 			std::swap(linkEnd1, linkEnd2);
 
+		++m_numLinks;
 		m_totalLinkWeight += linkWeight;
-		if (m_config.isUndirected())
-		{
-			m_totalLinkWeight += linkWeight;
-		}
 
 		// Aggregate link weights if they are definied more than once
-		LinkMap::iterator it = m_links.find(std::make_pair(linkEnd1, linkEnd2));
-		if(it == m_links.end())
+		LinkMap::iterator firstIt = m_links.lower_bound(linkEnd1);
+		if (firstIt->first == linkEnd1) // First linkEnd already exists, check second linkEnd
 		{
-			m_links.insert(std::make_pair(std::make_pair(linkEnd1, linkEnd2), linkWeight));
+			std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(linkEnd2, linkWeight));
+			if (!ret2.second)
+			{
+				ret2.first->second += linkWeight;
+				++numDoubleLinks;
+				if (linkEnd2 == linkEnd1)
+					--m_numSelfLinks;
+			}
 		}
 		else
 		{
-			it->second += linkWeight;
-			++numDoubleLinks;
-			if (linkEnd2 == linkEnd1)
-				--m_numSelfLinks;
+			std::map<unsigned int, double> second;
+			second.insert(std::make_pair(linkEnd2, linkWeight));
+			m_links.insert(firstIt, std::make_pair(linkEnd1, second));
 		}
 	}
 
@@ -809,6 +685,7 @@ void Network::parseLinkListCStyle(std::string filename)
 		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers starts from zero.");
 
 
+	m_numLinks -= numDoubleLinks;
 	m_numNodes = maxLinkEnd + 1;
 
 	m_nodeNames.resize(m_numNodes);
@@ -821,7 +698,7 @@ void Network::parseLinkListCStyle(std::string filename)
 		m_nodeNames[i] = std::string(line, length);
 	}
 
-	std::cout << "done! Found " << m_numNodes << " nodes and " << m_links.size() << " links." << std::endl;
+	std::cout << "done! Found " << m_numNodes << " nodes and " << m_numLinks << " links." << std::endl;
 	if (!minLinkIsZero)
 		std::cout << "(Warning: minimum link index is not zero, check that you don't use zero based numbering if it's not true.)\n";
 }
@@ -836,36 +713,65 @@ void Network::zoom()
 	unsigned int numNodes = m_numNodes;
 	std::vector<unsigned int> nodeOutDegree(numNodes, 0);
 	std::vector<double> sumLinkOutWeight(numNodes, 0.0);
-	std::vector<LinkMap::iterator> existingSelfLinks(numNodes, m_links.end());
+	std::map<unsigned int, double> dummy;
+	std::vector<std::map<unsigned int, double>::iterator> existingSelfLinks(numNodes, dummy.end());
 
 	for (LinkMap::iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
 	{
-		const std::pair<unsigned int, unsigned int>& linkEnds = linkIt->first;
-		++nodeOutDegree[linkEnds.first];
-		// If existing self-link, store that for below
-		if (linkEnds.first == linkEnds.second)
-			existingSelfLinks[linkEnds.first] = linkIt;
-		double linkWeight = linkIt->second;
-		sumLinkOutWeight[linkEnds.first] += linkWeight;
-		if (m_config.isUndirected())
-			sumLinkOutWeight[linkEnds.second] += linkWeight;
+		unsigned int linkEnd1 = linkIt->first;
+		std::map<unsigned int, double>& subLinks = linkIt->second;
+		for (std::map<unsigned int, double>::iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			unsigned int linkEnd2 = subIt->first;
+			double linkWeight = subIt->second;
+			++nodeOutDegree[linkEnd1];
+			if (linkEnd1 == linkEnd2)
+			{
+				// Store existing self-link to aggregate additional weight
+				existingSelfLinks[linkEnd1] = subIt;
+				sumLinkOutWeight[linkEnd1] += linkWeight;
+			}
+			else
+			{
+				if (m_config.isUndirected())
+				{
+					sumLinkOutWeight[linkEnd1] += linkWeight * 0.5;
+					sumLinkOutWeight[linkEnd2] += linkWeight * 0.5;
+					++nodeOutDegree[linkEnd2];
+				}
+				else
+				{
+					sumLinkOutWeight[linkEnd1] += linkWeight;
+				}
+			}
+		}
 	}
 
 	double sumAdditionalLinkWeight = 0.0;
+	unsigned int numAdditionalLinks = 0;
 	for (unsigned int i = 0; i < numNodes; ++i)
 	{
 		if (nodeOutDegree[i] == 0)
 			continue; // Skip dangling nodes at the moment
+
 		double selfLinkWeight = sumLinkOutWeight[i] * selfProb / (1.0 - selfProb);
 
-		if (existingSelfLinks[i] != m_links.end())
+		if (existingSelfLinks[i] != dummy.end()) {
 			existingSelfLinks[i]->second += selfLinkWeight;
-		else
-			m_links.insert(std::make_pair(std::make_pair(i, i), selfLinkWeight));
+		}
+		else {
+			m_links[i].insert(std::make_pair(i, selfLinkWeight));
+			++numAdditionalLinks;
+		}
 		sumAdditionalLinkWeight += selfLinkWeight;
 	}
 
-	m_totalLinkWeight += sumAdditionalLinkWeight * (m_config.isUndirected() ? 2 : 1);
+	m_numLinks += numAdditionalLinks;
+	m_totalLinkWeight += sumAdditionalLinkWeight;
+	m_numSelfLinks += numAdditionalLinks;
+	m_totalSelfLinkWeight += sumAdditionalLinkWeight;
+
+	std::cout << "(Added " << numAdditionalLinks << " self-links. " << (m_totalSelfLinkWeight / m_totalLinkWeight * 100) << "% of the total link weight is now from self-links.)\n";
 }
 
 void Network::printNetworkAsPajek(std::string filename)
@@ -879,8 +785,14 @@ void Network::printNetworkAsPajek(std::string filename)
 	out << (m_config.isUndirected() ? "*Edges " : "*Arcs ") << m_links.size() << "\n";
 	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
 	{
-		const std::pair<unsigned int, unsigned int>& link = linkIt->first;
-		out << (link.first + 1) << " " << (link.second + 1) << " " << linkIt->second << "\n";
+		unsigned int linkEnd1 = linkIt->first;
+		const std::map<unsigned int, double>& subLinks = linkIt->second;
+		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			unsigned int linkEnd2 = subIt->first;
+			double linkWeight = subIt->second;
+			out << (linkEnd1 + 1) << " " << (linkEnd2 + 1) << " " << linkWeight << "\n";
+		}
 	}
 }
 
