@@ -48,7 +48,6 @@ public:
 	virtual ~InfomapGreedyTypeSpecialized() {}
 
 protected:
-	virtual double calcCodelengthFromFlowWithinOrExit(const NodeBase& parent);
 
 	virtual void initModuleOptimization();
 
@@ -117,7 +116,9 @@ public:
 	virtual ~InfomapGreedyTypeSpecialized() {}
 
 protected:
-	virtual double calcCodelengthFromFlowWithinOrExit(const NodeBase& parent);
+	virtual double calcCodelengthOnRootOfLeafNodes(const NodeBase& parent);
+	virtual double calcCodelengthOnModuleOfModules(const NodeBase& parent);
+	virtual double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent);
 
 	virtual void initModuleOptimization();
 
@@ -149,32 +150,14 @@ private:
 };
 
 
-template<typename FlowType, typename NetworkType>
-inline double InfomapGreedyTypeSpecialized<FlowType, NetworkType>::calcCodelengthFromFlowWithinOrExit(const NodeBase& parent)
+template<typename FlowType>
+inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelengthOnRootOfLeafNodes(const NodeBase& parent)
 {
-	const FlowType& parentData = Super::getNode(parent).data;
-	double parentFlow = parentData.flow;
-	double parentExit = parentData.exitFlow;
-	double totalParentFlow = parentFlow + parentExit;
-	if (totalParentFlow < 1e-16)
-		return 0.0;
-
-	double indexLength = 0.0;
-	// For each child
-	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
-			childIt != endIt; ++childIt)
-	{
-		indexLength -= infomath::plogp(Super::getNode(*childIt).data.flow / totalParentFlow);
-	}
-	indexLength -= infomath::plogp(parentExit / totalParentFlow);
-
-	indexLength *= totalParentFlow;
-
-	return indexLength;
+	return Super::calcCodelengthOnModuleOfLeafNodes(parent);
 }
 
 template<typename FlowType>
-double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelengthFromFlowWithinOrExit(const NodeBase& parent)
+inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent)
 {
 	const FlowType& parentData = Super::getNode(parent).data;
 	double parentFlow = parentData.flow;
@@ -197,6 +180,13 @@ double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelengthFromFlo
 	return indexLength;
 }
 
+template<typename FlowType>
+inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelengthOnModuleOfModules(const NodeBase& parent)
+{
+	return calcCodelengthOnModuleOfLeafNodes(parent);
+	//TODO: In above indexLength -= infomath::plogp(physNodes[i].sumFlowFromM2Node / totalParentFlow),
+	// shouldn't sum of enterFlow be used instead of flow even for the memory nodes?
+}
 
 template<typename FlowType, typename NetworkType>
 void InfomapGreedyTypeSpecialized<FlowType, NetworkType>::initModuleOptimization()

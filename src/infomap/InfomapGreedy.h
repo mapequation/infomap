@@ -114,7 +114,7 @@ protected:
 
 	// virtual double calcCodelengthFromFlowWithinOrExit(const NodeBase& parent);
 
-	virtual double calcCodelengthFromEnterWithinOrExit(const NodeBase& parent);
+//	virtual double calcCodelengthOnModuleOfModules(const NodeBase& parent);
 
 	// virtual void generateNetworkFromChildren(NodeBase& parent);
 
@@ -190,39 +190,6 @@ void InfomapGreedy<InfomapImplementation>::initConstantInfomapTerms()
 		nodeFlow_log_nodeFlow += infomath::plogp(node.data.flow);
 	}
 }
-
-
-template<typename InfomapImplementation>
-double InfomapGreedy<InfomapImplementation>::calcCodelengthFromEnterWithinOrExit(const NodeBase& parent)
-{
-	const FlowType& parentData = getNode(parent).data;
-	double parentExit = parentData.exitFlow;
-	if (parentData.flow < 1e-16)
-		return 0.0;
-
-	// H(x) = -xlog(x), T = q + SUM(p), q = exitFlow, p = flow or enterFlow
-	// Normal format
-	// L = q * -log(q/T) + p * SUM(-log(p/T))
-	// Compact format
-	// L = T * ( H(q/T) + SUM( H(p/T) ) )
-	// Expanded format
-	// L = q * -log(q) - q * -log(T) + SUM( p * -log(p) - p * -log(T) ) = T * log(T) - q*log(q) - SUM( p*log(p) )
-	// As T is not known, use expanded format to avoid two loops
-	double sumEnter = 0.0;
-	double sumEnterLogEnter = 0.0;
-	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
-			childIt != endIt; ++childIt)
-	{
-		const double& enterFlow = getNode(*childIt).data.enterFlow; // rate of enter to finer level
-		sumEnter += enterFlow;
-		sumEnterLogEnter += infomath::plogp(enterFlow);
-	}
-	// The possibilities from this module: Either exit to coarser level or enter one of its children
-	double totalCodewordUse = parentExit + sumEnter;
-
-	return infomath::plogp(totalCodewordUse) - sumEnterLogEnter - infomath::plogp(parentExit);
-}
-
 
 
 

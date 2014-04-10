@@ -67,7 +67,7 @@ void InfomapBase::run()
 		return;
 
 
-	indexCodelength = root()->codelength = calcCodelengthFromFlowWithinOrExit(*root());
+	indexCodelength = root()->codelength = calcCodelengthOnRootOfLeafNodes(*root());
 	RELEASE_OUT("One-level codelength: " << indexCodelength << std::endl);
 	oneLevelCodelength = indexCodelength;
 
@@ -178,7 +178,7 @@ void InfomapBase::runPartition()
 		for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
 				moduleIt != endIt; ++moduleIt)
 		{
-			moduleIt->codelength = calcCodelengthFromFlowWithinOrExit(*moduleIt);
+			moduleIt->codelength = calcCodelengthOnModuleOfLeafNodes(*moduleIt);
 		}
 		return;
 	}
@@ -572,7 +572,10 @@ unsigned int InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partit
 		for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
 				moduleIt != endIt; ++moduleIt)
 		{
-			moduleIt->codelength = calcCodelengthFromFlowWithinOrExit(*moduleIt);
+//			moduleIt->codelength = calcCodelengthOnModuleOfLeafNodes(*moduleIt);
+			moduleIt->codelength = isLeafLevel?
+					calcCodelengthOnModuleOfLeafNodes(*moduleIt) :
+					calcCodelengthOnModuleOfModules(*moduleIt);
 		}
 
 		if (isLeafLevel && m_config.fastHierarchicalSolution > 1)
@@ -638,7 +641,7 @@ unsigned int InfomapBase::deleteSubLevels()
 	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
 			moduleIt != endIt; ++moduleIt)
 	{
-		sumModuleLength += moduleIt->codelength = calcCodelengthFromFlowWithinOrExit(*moduleIt);
+		sumModuleLength += moduleIt->codelength = calcCodelengthOnModuleOfLeafNodes(*moduleIt);
 	}
 	moduleCodelength = sumModuleLength;
 	hierarchicalCodelength = codelength = indexCodelength + moduleCodelength;
@@ -691,7 +694,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 
 		// Delete former sub-structure if exists
 		module.getSubStructure().subInfomap.reset(0);
-		module.codelength = calcCodelengthFromFlowWithinOrExit(module);
+		module.codelength = calcCodelengthOnModuleOfLeafNodes(module);
 
 		// If only trivial substructure is to be found, no need to create infomap instance to find sub-module structures.
 		if (module.childDegree() <= 2)
@@ -1368,7 +1371,7 @@ void InfomapBase::consolidateExternalClusterData()
 			moduleIt != endIt; ++moduleIt)
 	{
 		moduleIt->index = moduleIt->originalIndex = packedModuleIndex++;
-		moduleIt->codelength = calcCodelengthFromFlowWithinOrExit(*moduleIt);
+		moduleIt->codelength = calcCodelengthOnModuleOfLeafNodes(*moduleIt);
 	}
 
 	hierarchicalCodelength = codelength;

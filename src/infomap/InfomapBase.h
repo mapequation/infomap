@@ -162,9 +162,11 @@ protected:
 
 	virtual std::auto_ptr<InfomapBase> getNewInfomapInstance() = 0;
 
-	virtual double calcCodelengthFromFlowWithinOrExit(const NodeBase& parent) = 0;
+	virtual double calcCodelengthOnRootOfLeafNodes(const NodeBase& parent) = 0;
 
-	virtual double calcCodelengthFromEnterWithinOrExit(const NodeBase& parent) = 0;
+	virtual double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent) = 0;
+
+	virtual double calcCodelengthOnModuleOfModules(const NodeBase& parent) = 0;
 
 	virtual void generateNetworkFromChildren(NodeBase& parent) = 0;
 
