@@ -203,11 +203,6 @@ void Network::parsePajekNetwork(std::string filename)
 		if (!(ss >> linkWeight))
 			linkWeight = 1.0;
 
-		--linkEnd1; // Node numbering starts from 1 in the .net format
-		--linkEnd2;
-
-		maxLinkEnd = std::max(maxLinkEnd, std::max(linkEnd1, linkEnd2));
-
 		if (linkEnd2 == linkEnd1)
 		{
 			++m_numSelfLinks;
@@ -218,28 +213,16 @@ void Network::parsePajekNetwork(std::string filename)
 		else if (m_config.isUndirected() && linkEnd2 < linkEnd1) // minimize number of links
 			std::swap(linkEnd1, linkEnd2);
 
+		--linkEnd1; // Node numbering starts from 1 in the .net format
+		--linkEnd2;
+
+		maxLinkEnd = std::max(maxLinkEnd, std::max(linkEnd1, linkEnd2));
+
 		++m_numLinks;
 		m_totalLinkWeight += linkWeight;
 
-		// Aggregate link weights if they are definied more than once
-		LinkMap::iterator firstIt = m_links.lower_bound(linkEnd1);
-		if (!m_links.empty() && firstIt->first == linkEnd1) // First linkEnd already exists, check second linkEnd
-		{
-			std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(linkEnd2, linkWeight));
-			if (!ret2.second)
-			{
-				ret2.first->second += linkWeight;
-				++numDoubleLinks;
-				if (linkEnd2 == linkEnd1)
-					--m_numSelfLinks;
-			}
-		}
-		else
-		{
-			std::map<unsigned int, double> second;
-			second.insert(std::make_pair(linkEnd2, linkWeight));
-			m_links.insert(firstIt, std::make_pair(linkEnd1, second));
-		}
+		if (!addLink(linkEnd1, linkEnd2, linkWeight) && linkEnd1 == linkEnd2)
+			--m_numSelfLinks;
 	}
 
 	if (m_links.empty())
@@ -321,10 +304,6 @@ void Network::parseLinkList(std::string filename)
 		double linkWeight = 1.0;
 		ss >> linkWeight;
 
-		maxLinkEnd = std::max(maxLinkEnd, std::max(linkEnd1, linkEnd2));
-		if (!minLinkIsZero && (linkEnd1 == 0 || linkEnd2 == 0))
-			minLinkIsZero = true;
-
 		if (linkEnd2 == linkEnd1)
 		{
 			++m_numSelfLinks;
@@ -335,28 +314,15 @@ void Network::parseLinkList(std::string filename)
 		else if (m_config.isUndirected() && linkEnd2 < linkEnd1) // minimize number of links
 			std::swap(linkEnd1, linkEnd2);
 
+		maxLinkEnd = std::max(maxLinkEnd, std::max(linkEnd1, linkEnd2));
+		if (!minLinkIsZero && (linkEnd1 == 0 || linkEnd2 == 0))
+			minLinkIsZero = true;
+
 		++m_numLinks;
 		m_totalLinkWeight += linkWeight;
 
-		// Aggregate link weights if they are definied more than once
-		LinkMap::iterator firstIt = m_links.lower_bound(linkEnd1);
-		if (firstIt->first == linkEnd1) // First linkEnd already exists, check second linkEnd
-		{
-			std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(linkEnd2, linkWeight));
-			if (!ret2.second)
-			{
-				ret2.first->second += linkWeight;
-				++numDoubleLinks;
-				if (linkEnd2 == linkEnd1)
-					--m_numSelfLinks;
-			}
-		}
-		else
-		{
-			std::map<unsigned int, double> second;
-			second.insert(std::make_pair(linkEnd2, linkWeight));
-			m_links.insert(firstIt, std::make_pair(linkEnd1, second));
-		}
+		if (!addLink(linkEnd1, linkEnd2, linkWeight) && linkEnd1 == linkEnd2)
+			--m_numSelfLinks;
 
 
 	}
@@ -530,25 +496,8 @@ void Network::parsePajekNetworkCStyle(std::string filename)
 		++m_numLinks;
 		m_totalLinkWeight += linkWeight;
 
-		// Aggregate link weights if they are definied more than once
-		LinkMap::iterator firstIt = m_links.lower_bound(linkEnd1);
-		if (firstIt->first == linkEnd1) // First linkEnd already exists, check second linkEnd
-		{
-			std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(linkEnd2, linkWeight));
-			if (!ret2.second)
-			{
-				ret2.first->second += linkWeight;
-				++numDoubleLinks;
-				if (linkEnd2 == linkEnd1)
-					--m_numSelfLinks;
-			}
-		}
-		else
-		{
-			std::map<unsigned int, double> second;
-			second.insert(std::make_pair(linkEnd2, linkWeight));
-			m_links.insert(firstIt, std::make_pair(linkEnd1, second));
-		}
+		if (!addLink(linkEnd1, linkEnd2, linkWeight) && linkEnd1 == linkEnd2)
+			--m_numSelfLinks;
 	}
 
 	if (m_links.empty())
@@ -655,25 +604,8 @@ void Network::parseLinkListCStyle(std::string filename)
 		++m_numLinks;
 		m_totalLinkWeight += linkWeight;
 
-		// Aggregate link weights if they are definied more than once
-		LinkMap::iterator firstIt = m_links.lower_bound(linkEnd1);
-		if (firstIt->first == linkEnd1) // First linkEnd already exists, check second linkEnd
-		{
-			std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(linkEnd2, linkWeight));
-			if (!ret2.second)
-			{
-				ret2.first->second += linkWeight;
-				++numDoubleLinks;
-				if (linkEnd2 == linkEnd1)
-					--m_numSelfLinks;
-			}
-		}
-		else
-		{
-			std::map<unsigned int, double> second;
-			second.insert(std::make_pair(linkEnd2, linkWeight));
-			m_links.insert(firstIt, std::make_pair(linkEnd1, second));
-		}
+		if (!addLink(linkEnd1, linkEnd2, linkWeight) && linkEnd1 == linkEnd2)
+			--m_numSelfLinks;
 	}
 
 	if (m_links.size() == 0)
@@ -795,4 +727,30 @@ void Network::printNetworkAsPajek(std::string filename)
 		}
 	}
 }
+
+bool Network::addLink(unsigned int n1, unsigned int n2, double weight)
+{
+	// Aggregate link weights if they are definied more than once
+	LinkMap::iterator firstIt = m_links.lower_bound(n1);
+	if (firstIt != m_links.end() && firstIt->first == n1) // First linkEnd already exists, check second linkEnd
+	{
+		std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(n2, weight));
+		if (!ret2.second)
+		{
+			ret2.first->second += weight;
+			++m_numAggregatedLinks;
+			return false;
+		}
+	}
+	else
+	{
+		m_links.insert(firstIt, std::make_pair(n1, std::map<unsigned int, double>()))->second.insert(std::make_pair(n2, weight));
+	}
+
+	++m_numLinks;
+	return true;
+}
+
+
+
 

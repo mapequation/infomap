@@ -45,6 +45,7 @@ public:
 	 	m_sumNodeWeights(0.0),
 	 	m_numLinks(0),
 	 	m_totalLinkWeight(0.0),
+	 	m_numAggregatedLinks(0),
 	 	m_numSelfLinks(0),
 	 	m_totalSelfLinkWeight(0)
 	{}
@@ -76,6 +77,13 @@ protected:
 
 	void zoom();
 
+	// Helper methods
+	/**
+	 * Add ordinary link, indexed on first node and aggregated if exist
+	 * @return true if a new link was inserted, false if aggregated
+	 */
+	bool addLink(unsigned int n1, unsigned int n2, double weight);
+
 	const Config& m_config;
 
 	NodeMap m_nodeMap;
@@ -87,6 +95,7 @@ protected:
 	LinkMap m_links;
 	unsigned int m_numLinks;
 	double m_totalLinkWeight; // On whole network
+	unsigned int m_numAggregatedLinks;
 	unsigned int m_numSelfLinks;
 	double m_totalSelfLinkWeight; // On whole network
 

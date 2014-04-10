@@ -146,10 +146,10 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	 */
 
 
-	m_memIndexToPhys.resize(numM2Nodes);
+	m_m2nodes.resize(numM2Nodes);
 	for (MemNetwork::M2NodeMap::const_iterator m2nodeIt(nodeMap.begin()); m2nodeIt != nodeMap.end(); ++m2nodeIt)
 	{
-		m_memIndexToPhys[m2nodeIt->second] = m2nodeIt->first;
+		m_m2nodes[m2nodeIt->second] = m2nodeIt->first;
 	}
 
 	unsigned int numM1Nodes = network.numNodes();
@@ -168,7 +168,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 			double linkWeight = subIt->second;
 			MemNetwork::M2NodeMap::const_iterator m2it = nodeMap.find(M2Node(linkEnd1, linkEnd2));
 			if (m2it == nodeMap.end())
-				throw InputDomainError("Memory node not indexed!");
+				throw InputDomainError(io::Str() << "Memory node (" << linkEnd1 << ", " << linkEnd2 << ") not indexed!");
 			unsigned int m2nodeIndex = m2it->second;
 			PhysToMemWeightMap& physMap = netPhysToMem[linkEnd1];
 			physMap.insert(std::make_pair(linkWeight, m2nodeIndex));
@@ -185,7 +185,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		{
 			++numDanglingM2Nodes;
 			// We are in phys2, lookup all mem nodes in that physical node
-			const PhysToMemWeightMap& physToMem = netPhysToMem[m_memIndexToPhys[i].phys2];
+			const PhysToMemWeightMap& physToMem = netPhysToMem[m_m2nodes[i].phys2];
 			for(PhysToMemWeightMap::const_iterator it = physToMem.begin(); it != physToMem.end(); it++)
 			{
 				unsigned int from = i;

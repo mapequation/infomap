@@ -90,6 +90,25 @@ public:
 protected:
 
 	void parseTrigram(std::string filename);
+	/**
+	 * Create trigrams from first order data by chaining pair of links
+	 * with the same connection node, respecting the direction, for example
+	 * {n1 n2} and {n2 n3}, but not {n1 n2} and {n3 n2}.
+	 *
+	 * Example of ordinary network:
+	 * n1 n2 w12
+	 * n1 n3 w13
+	 * n2 n3 w23
+	 * n2 n4 w24
+	 * n3 n4 w34
+	 *
+	 * Its corresponding trigram:
+	 * n1 n2 n3 w23
+	 * n1 n2 n4 w24
+	 * n1 n3 n4 w34
+	 * n2 n3 n4 w34
+	 */
+	void simulateMemoryFromOrdinaryNetwork();
 
 	map<M2Node, double> m_m2Nodes;
 	M2LinkMap m_m2Links; // Raw data from file

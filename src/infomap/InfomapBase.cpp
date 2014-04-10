@@ -1225,14 +1225,14 @@ bool InfomapBase::initMemoryNetwork()
 	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
 	const std::vector<double>& nodeTeleportWeights = flowNetwork.getNodeTeleportRates();
 	m_treeData.reserveNodeCount(network.numM2Nodes());
-	const std::vector<M2Node>& memIndexToPhys = flowNetwork.getMemIndexToPhys();
+	const std::vector<M2Node>& m2Nodes = flowNetwork.getM2Nodes();
 
 	for (unsigned int i = 0; i < network.numM2Nodes(); ++i) {
 //		m_treeData.addNewNode((io::Str() << i << "_(" << memIndexToPhys[i].phys1 << "-" << memIndexToPhys[i].phys2 << ")"), nodeFlow[i], nodeTeleportWeights[i]);
 		m_treeData.addNewNode("", nodeFlow[i], nodeTeleportWeights[i]);
 		M2Node& m2Node = getMemoryNode(m_treeData.getLeafNode(i));
-		m2Node.phys1 = memIndexToPhys[i].phys1;
-		m2Node.phys2 = memIndexToPhys[i].phys2;
+		m2Node.phys1 = m2Nodes[i].phys1;
+		m2Node.phys2 = m2Nodes[i].phys2;
 	}
 
 	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();

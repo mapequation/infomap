@@ -60,6 +60,9 @@ Config getConfig(int argc, char *argv[])
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
 			"Specify input format ('pajek', 'link-list', '3gram' or 'pajek-to-3gram') to override format possibly implied by file extension.", "s");
 
+	api.addOptionArgument(conf.withMemory, "with-memory",
+			"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.");
+
 	api.addOptionArgument(conf.parseWithoutIOStreams, "without-iostream",
 			"Parse the input network data without the iostream library. Can be a bit faster, but not as robust.");
 
