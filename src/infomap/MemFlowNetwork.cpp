@@ -66,7 +66,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	unsigned int numLinks = linkMap.size();
 	m_flowLinks.resize(numLinks);
 	double totalLinkWeight = network.totalM2LinkWeight();
-	double sumUndirLinkWeight = (config.isUndirected() ? 1 : 2) * totalLinkWeight;
+	double sumUndirLinkWeight = 2 * totalLinkWeight - network.totalMemorySelfLinkWeight();
 	unsigned int linkIndex = 0;
 	const MemNetwork::M2NodeMap& nodeMap = network.m2NodeMap();
 
@@ -82,18 +82,30 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		if (nodeMapIt == nodeMap.end())
 			throw InputDomainError(io::Str() << "Couldn't find mapped index for target M2 node " << linkM2Ends.second);
 		unsigned int targetIndex = nodeMapIt->second;
-//		const std::pair<unsigned int, unsigned int> linkEnds = std::make_pair(nodeMap.find(linkM2Ends.first)->second, nodeMap.find(linkM2Ends.second)->second);
-		const std::pair<unsigned int, unsigned int> linkEnds = std::make_pair(sourceIndex, targetIndex);
-		++m_nodeOutDegree[linkEnds.first];
+		++m_nodeOutDegree[sourceIndex];
 		double linkWeight = linkIt->second;
-		m_sumLinkOutWeight[linkEnds.first] += linkWeight;
-		if (config.isUndirected())
-			m_sumLinkOutWeight[linkEnds.second] += linkWeight;
-		m_nodeFlow[linkEnds.first] += linkWeight;// / sumUndirLinkWeight;
-		if (!config.outdirdir)
-			m_nodeFlow[linkEnds.second] += linkWeight;// / sumUndirLinkWeight;
-		m_flowLinks[linkIndex] = Link(linkEnds.first, linkEnds.second, linkWeight);
+		m_sumLinkOutWeight[sourceIndex] += linkWeight;
+
+		if (sourceIndex != targetIndex)
+		{
+			// Possibly aggregate if no self-link
+			if (config.isUndirected()) {
+				m_sumLinkOutWeight[targetIndex] += linkWeight;
+				++m_nodeOutDegree[targetIndex];
+			}
+			if (!config.outdirdir)
+				m_nodeFlow[targetIndex] += linkWeight;// / sumUndirLinkWeight;
+		}
+
+		m_nodeFlow[sourceIndex] += linkWeight;// / sumUndirLinkWeight;
+		m_flowLinks[linkIndex] = Link(sourceIndex, targetIndex, linkWeight);
 	}
+
+//	double sumNodeFlow = 0.0;
+//	for (unsigned int i = 0; i < numM2Nodes; ++i)
+//		sumNodeFlow += m_nodeFlow[i];
+//
+//	std::cout << "\nsumNodeFlow: " << sumNodeFlow << " (" << sumNodeFlow / sumUndirLinkWeight << "), totM2LinkWeight: " << network.totalM2LinkWeight() << ", totalMemorySelfLinkWeight: " << network.totalMemorySelfLinkWeight() << ", sumUndirLinkWeight: " << sumUndirLinkWeight << "\n";
 
 
 	/**
@@ -134,10 +146,10 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	 */
 
 
-	m_memIndexToPhys.resize(numM2Nodes);
+	m_m2nodes.resize(numM2Nodes);
 	for (MemNetwork::M2NodeMap::const_iterator m2nodeIt(nodeMap.begin()); m2nodeIt != nodeMap.end(); ++m2nodeIt)
 	{
-		m_memIndexToPhys[m2nodeIt->second] = m2nodeIt->first;
+		m_m2nodes[m2nodeIt->second] = m2nodeIt->first;
 	}
 
 	unsigned int numM1Nodes = network.numNodes();
@@ -148,25 +160,32 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 
 	for (LinkMap::const_iterator linkIt(m1LinkMap.begin()); linkIt != m1LinkMap.end(); ++linkIt)
 	{
-		const std::pair<unsigned int, unsigned int>& linkEnds = linkIt->first;
-		double linkWeight = linkIt->second;
-		MemNetwork::M2NodeMap::const_iterator m2it = nodeMap.find(M2Node(linkEnds.first, linkEnds.second));
-		if (m2it == nodeMap.end())
-			throw InputDomainError("Memory node not indexed!");
-		unsigned int m2nodeIndex = m2it->second;
-		netPhysToMem[linkEnds.first].insert(std::make_pair(linkWeight, m2nodeIndex));
+		unsigned int linkEnd1 = linkIt->first;
+		const std::map<unsigned int, double>& subLinks = linkIt->second;
+		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			unsigned int linkEnd2 = subIt->first;
+			double linkWeight = subIt->second;
+			MemNetwork::M2NodeMap::const_iterator m2it = nodeMap.find(M2Node(linkEnd1, linkEnd2));
+			if (m2it == nodeMap.end())
+				throw InputDomainError(io::Str() << "Memory node (" << linkEnd1 << ", " << linkEnd2 << ") not indexed!");
+			unsigned int m2nodeIndex = m2it->second;
+			PhysToMemWeightMap& physMap = netPhysToMem[linkEnd1];
+			physMap.insert(std::make_pair(linkWeight, m2nodeIndex));
+		}
 	}
 
 	// Add M1 flow to dangling M2 nodes
 	unsigned int numDanglingM2Nodes = 0;
 	unsigned int numSelfLinks = 0;
+	double sumExtraLinkWeight = 0.0;
 	for (unsigned int i = 0; i < numM2Nodes; ++i)
 	{
 		if (m_nodeOutDegree[i] == 0)
 		{
 			++numDanglingM2Nodes;
 			// We are in phys2, lookup all mem nodes in that physical node
-			const PhysToMemWeightMap& physToMem = netPhysToMem[m_memIndexToPhys[i].phys2];
+			const PhysToMemWeightMap& physToMem = netPhysToMem[m_m2nodes[i].phys2];
 			for(PhysToMemWeightMap::const_iterator it = physToMem.begin(); it != physToMem.end(); it++)
 			{
 				unsigned int from = i;
@@ -179,16 +198,19 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 					else {
 						++m_nodeOutDegree[from];
 						m_sumLinkOutWeight[from] += linkWeight;
-						if (config.isUndirected())
-							m_sumLinkOutWeight[to] += linkWeight;
+						sumExtraLinkWeight += linkWeight;
 						m_nodeFlow[from] += linkWeight;
-						if (!config.outdirdir)
+						if (config.isUndirected()) {
+							++m_nodeOutDegree[to];
+							m_sumLinkOutWeight[to] += linkWeight;
+						}
+						if (!config.outdirdir) {
 							m_nodeFlow[to] += linkWeight;
+						}
 						if (from >= numM2Nodes || to >= numM2Nodes) {
 							std::cout << "\nRange error adding dangling links " << from << " " << to << " !!!";
 						}
 						m_flowLinks.push_back(Link(from, to, linkWeight));
-						totalLinkWeight += linkWeight;
 					}
 				}
 			}
@@ -198,8 +220,8 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	std::cout << "--> Added " << (m_flowLinks.size() - numLinks) << " links with first order flow to " <<
 			numDanglingM2Nodes << " dangling memory nodes -> " << m_flowLinks.size() << " links." << std::endl;
 
-
-	sumUndirLinkWeight = (config.isUndirected() ? 1 : 2) * totalLinkWeight;
+	totalLinkWeight += sumExtraLinkWeight;
+	sumUndirLinkWeight = 2 * totalLinkWeight - network.totalMemorySelfLinkWeight();
 	numLinks = m_flowLinks.size();
 
 
@@ -374,6 +396,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	{
 		//Take one last power iteration excluding the teleportation (and normalize node flow to sum 1.0)
 		sumNodeRank = 1.0 - danglingRank;
+		std::cout << "\nDangling rank: " << danglingRank << " -> sumNodeRank: " << sumNodeRank;
 		m_nodeFlow.assign(numM2Nodes, 0.0);
 		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 		{

@@ -38,10 +38,10 @@ public:
 
 	virtual void calculateFlow(const Network& network, const Config& config);
 
-	const std::vector<M2Node>& getMemIndexToPhys() const { return m_memIndexToPhys; }
+	const std::vector<M2Node>& getM2Nodes() const { return m_m2nodes; }
 
 protected:
-	std::vector<M2Node> m_memIndexToPhys;
+	std::vector<M2Node> m_m2nodes;
 };
 
 #endif /* MEMFLOWNETWORK_H_ */

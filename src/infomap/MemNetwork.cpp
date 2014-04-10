@@ -38,7 +38,10 @@ void MemNetwork::readFromFile(std::string filename)
 	if (m_config.inputFormat == "3gram")
 		parseTrigram(filename);
 	else
+	{
 		Network::readFromFile(filename);
+		simulateMemoryFromOrdinaryNetwork();
+	}
 }
 
 void MemNetwork::parseTrigram(std::string filename)
@@ -186,8 +189,7 @@ void MemNetwork::parseTrigram(std::string filename)
 		//				--m_numSelfLinks;
 		//		}
 
-
-		if(m_config.selfMemoryNodes)
+		if(m_config.includeSelfLinks)
 		{
 			m_m2Nodes[M2Node(n1,n2)] += linkWeight;
 			m_m2Nodes[M2Node(n2,n3)] += 0.0;
@@ -195,27 +197,34 @@ void MemNetwork::parseTrigram(std::string filename)
 			m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
 			m_totM2LinkWeight += linkWeight;
 
-			m_links[make_pair(n2,n3)] += linkWeight;
 			m_totalLinkWeight += linkWeight;
+
+			if (n2 == n3) {
+				++m_numSelfLinks;
+				m_totalSelfLinkWeight += linkWeight;
+				if (n1 == n2) {
+					++m_numMemorySelfLinks;
+					m_totalMemorySelfLinkWeight += linkWeight;
+				}
+			}
+			addLink(n2, n3, linkWeight);
 		}
-		else{
-			if(n1 != n2 && n2 != n3)
+		else if (n2 != n3)
+		{
+			m_totalLinkWeight += linkWeight;
+			addLink(n2, n3, linkWeight);
+
+			if(n1 != n2)
 			{
 				m_m2Nodes[M2Node(n1,n2)] += linkWeight;
 				m_m2Nodes[M2Node(n2,n3)] += 0.0;
 
 				m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
 				m_totM2LinkWeight += linkWeight;
-
-				m_links[make_pair(n2,n3)] += linkWeight;
-				m_totalLinkWeight += linkWeight;
 			}
-			else if(n2 != n3)
+			else
 			{
 				m_m2Nodes[M2Node(n2,n3)] += linkWeight;
-
-				m_links[make_pair(n2,n3)] += linkWeight;
-				m_totalLinkWeight += linkWeight;
 			}
 		}
 	}
@@ -255,7 +264,7 @@ void MemNetwork::parseTrigram(std::string filename)
 
 
 	//	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
-	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << m_links.size() << " links. ";
+	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << m_numLinks << " links. ";
 	std::cout << "Generated " << m_m2Nodes.size() << " memory nodes and " << m_m2Links.size() << " memory links. ";
 	//	std::cout << "Average node weight: " << (m_sumNodeWeights / numNodes) << ". ";
 	if (m_config.nodeLimit > 0)
@@ -268,3 +277,158 @@ void MemNetwork::parseTrigram(std::string filename)
 
 }
 
+void MemNetwork::simulateMemoryFromOrdinaryNetwork()
+{
+	std::cout << "Simulating memory from ordinary network by chaining pair of overlapping links to trigrams... " << std::flush;
+
+	// Reset some data from ordinary network
+	m_totalLinkWeight = 0.0;
+	m_numSelfLinks = 0.0;
+	m_totalSelfLinkWeight = 0.0;
+
+	if (m_config.isUndirectedFlow())
+	{
+		std::cout << "(inflating undirected network...) ";
+		LinkMap oldNetwork;
+		oldNetwork.swap(m_links);
+		for (LinkMap::const_iterator linkIt(oldNetwork.begin()); linkIt != oldNetwork.end(); ++linkIt)
+		{
+			unsigned int linkEnd1 = linkIt->first;
+			const std::map<unsigned int, double>& subLinks = linkIt->second;
+			for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+			{
+				unsigned int linkEnd2 = subIt->first;
+				double linkWeight = subIt->second;
+				// Add link to both directions
+//				std::cout << "\nAdding (" << linkEnd1 << ", " << linkEnd2 << ") and opposite.. ";
+				addLink(linkEnd1, linkEnd2, linkWeight);
+				addLink(linkEnd2, linkEnd1, linkWeight);
+//				bool add1 = addLink(linkEnd1, linkEnd2, linkWeight);
+//				bool add2 = addLink(linkEnd2, linkEnd1, linkWeight);
+//				std::cout << "Add first: " << add1 << ", add second: " << add2 << ", numLinks: " << m_numLinks << " ";
+			}
+		}
+
+		// Dispose old network from memory
+		LinkMap().swap(oldNetwork);
+	}
+
+//	std::cout << "\nCURRENT NETWORK:\n";
+//	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
+//	{
+//		unsigned int n1 = linkIt->first;
+//		const std::map<unsigned int, double>& subLinks = linkIt->second;
+//		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+//		{
+//			unsigned int n2 = subIt->first;
+//			std::cout << "(" << n1 << ", " << n2 << ") " << subIt->second << "\n";
+//		}
+//	}
+
+//	std::cout << "\nGENERATING MEMORY NETWORK:\n";
+
+	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
+	{
+		unsigned int n1 = linkIt->first;
+		const std::map<unsigned int, double>& subLinks = linkIt->second;
+		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			unsigned int n2 = subIt->first;
+			double firstLinkWeight = subIt->second;
+
+//			std::cout << "(" << n1 << ", " << n2 <<") - Trying to create trigram... \n";
+
+			// Create trigrams with all links that start with the end node of current link
+			LinkMap::iterator secondLinkIt = m_links.find(n2);
+			if (secondLinkIt != m_links.end())
+			{
+				std::map<unsigned int, double>& secondLinkSubMap = secondLinkIt->second;
+				for (std::map<unsigned int, double>::const_iterator secondSubIt(secondLinkSubMap.begin()); secondSubIt != secondLinkSubMap.end(); ++secondSubIt)
+				{
+					unsigned int n3 = secondSubIt->first;
+					double linkWeight = secondSubIt->second;
+
+//					std::cout << "  -> (" << n2 << ", " << n3 << ") ";
+
+
+					if(m_config.includeSelfLinks)
+					{
+						m_m2Nodes[M2Node(n1,n2)] += firstLinkWeight;
+						m_m2Nodes[M2Node(n2,n3)] += 0.0;
+
+						m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
+						m_totM2LinkWeight += linkWeight;
+
+						m_totalLinkWeight += linkWeight;
+
+//						std::cout << "=> connected two memory nodes!";
+
+						if (n2 == n3) {
+							++m_numSelfLinks;
+							m_totalSelfLinkWeight += linkWeight;
+							if (n1 == n2) {
+								++m_numMemorySelfLinks;
+								m_totalMemorySelfLinkWeight += linkWeight;
+							}
+						}
+					}
+					else if (n2 != n3)
+					{
+						m_totalLinkWeight += linkWeight;
+
+						if(n1 != n2)
+						{
+							m_m2Nodes[M2Node(n1,n2)] += linkWeight;
+							m_m2Nodes[M2Node(n2,n3)] += 0.0;
+
+							m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
+							m_totM2LinkWeight += linkWeight;
+
+//							std::cout << "=> connected two memory nodes!";
+						}
+						else
+						{
+							m_m2Nodes[M2Node(n2,n3)] += linkWeight;
+
+//							std::cout << "=> created memory node (" << n2 << ", " << n3 << ")";
+						}
+					}
+//					else // n2 == n3
+//					{
+//
+//					}
+
+//					std::cout << "\n";
+				}
+			}
+			else
+			{
+				// No chainable link found, create a dangling memory node (or remove need for existence in MemFlowNetwork?)
+				m_m2Nodes[M2Node(n1,n2)] += firstLinkWeight;
+			}
+//			std::cout << "\n";
+		}
+	}
+
+	unsigned int M2nodeNr = 0;
+	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
+	{
+		m_m2NodeMap[it->first] = M2nodeNr;
+		M2nodeNr++;
+	}
+
+//	set<int> M1nodes;
+	m_m2NodeWeights.resize(m_m2Nodes.size());
+	m_totM2NodeWeight = 0.0;
+
+	M2nodeNr = 0;
+	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
+	{
+//		M1nodes.insert(it->first.second);
+		m_m2NodeWeights[M2nodeNr] += it->second;
+		m_totM2NodeWeight += it->second;
+		++M2nodeNr;
+	}
+
+	std::cout << "generated " << m_m2Nodes.size() << " memory nodes and " << m_m2Links.size() << " memory links. " << std::endl;
+}

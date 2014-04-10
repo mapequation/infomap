@@ -49,24 +49,35 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 	m_nodeTeleportRates.assign(numNodes, 0.0);
 
 	const LinkMap& linkMap = network.linkMap();
-	unsigned int numLinks = linkMap.size();
+	unsigned int numLinks = network.numLinks();
 	m_flowLinks.resize(numLinks);
 	double totalLinkWeight = network.totalLinkWeight();
-	double sumUndirLinkWeight = (config.isUndirected() ? 1 : 2) * totalLinkWeight;
+	double sumUndirLinkWeight = 2 * totalLinkWeight - network.totalSelfLinkWeight();
 	unsigned int linkIndex = 0;
 
-	for (LinkMap::const_iterator linkIt(linkMap.begin()); linkIt != linkMap.end(); ++linkIt, ++linkIndex)
+	for (LinkMap::const_iterator linkIt(linkMap.begin()); linkIt != linkMap.end(); ++linkIt)
 	{
-		const std::pair<unsigned int, unsigned int>& linkEnds = linkIt->first;
-		++m_nodeOutDegree[linkEnds.first];
-		double linkWeight = linkIt->second;
-		m_sumLinkOutWeight[linkEnds.first] += linkWeight;
-		if (config.isUndirected())
-			m_sumLinkOutWeight[linkEnds.second] += linkWeight;
-		m_nodeFlow[linkEnds.first] += linkWeight / sumUndirLinkWeight;
-		if (!config.outdirdir)
-			m_nodeFlow[linkEnds.second] += linkWeight / sumUndirLinkWeight;
-		m_flowLinks[linkIndex] = Link(linkEnds.first, linkEnds.second, linkWeight);
+		unsigned int linkEnd1 = linkIt->first;
+		const std::map<unsigned int, double>& subLinks = linkIt->second;
+		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt, ++linkIndex)
+		{
+			unsigned int linkEnd2 = subIt->first;
+			double linkWeight = subIt->second;
+			++m_nodeOutDegree[linkEnd1];
+			m_sumLinkOutWeight[linkEnd1] += linkWeight;
+			if (linkEnd1 != linkEnd2)
+			{
+				// Possibly aggregate if no self-link
+				if (config.isUndirected()) {
+					m_sumLinkOutWeight[linkEnd2] += linkWeight;
+					++m_nodeOutDegree[linkEnd2];
+				}
+				if (!config.outdirdir)
+					m_nodeFlow[linkEnd2] += linkWeight / sumUndirLinkWeight;
+			}
+			m_nodeFlow[linkEnd1] += linkWeight / sumUndirLinkWeight;
+			m_flowLinks[linkIndex] = Link(linkEnd1, linkEnd2, linkWeight);
+		}
 	}
 
 	if (config.rawdir)

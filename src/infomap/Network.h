@@ -37,14 +37,17 @@ class Network
 {
 public:
 	typedef std::map<std::string, int>								NodeMap;
-	typedef std::map<std::pair<unsigned int, unsigned int>, double>	LinkMap;
+	typedef std::map<unsigned int, std::map<unsigned int, double> >	LinkMap;
 
 	Network(const Config& config)
 	:	m_config(config),
 	 	m_numNodes(0),
 	 	m_sumNodeWeights(0.0),
+	 	m_numLinks(0),
 	 	m_totalLinkWeight(0.0),
-	 	m_numSelfLinks(0)
+	 	m_numAggregatedLinks(0),
+	 	m_numSelfLinks(0),
+	 	m_totalSelfLinkWeight(0)
 	{}
 	virtual ~Network() {}
 
@@ -57,7 +60,9 @@ public:
 	double sumNodeWeights() const { return m_sumNodeWeights; }
 
 	const LinkMap& linkMap() const { return m_links; }
+	unsigned int numLinks() const { return m_numLinks; }
 	double totalLinkWeight() const { return m_totalLinkWeight; }
+	double totalSelfLinkWeight() const { return m_totalSelfLinkWeight; }
 
 	void swapNodeNames(std::vector<std::string>& target) { target.swap(m_nodeNames); }
 
@@ -72,16 +77,27 @@ protected:
 
 	void zoom();
 
+	// Helper methods
+	/**
+	 * Add ordinary link, indexed on first node and aggregated if exist
+	 * @return true if a new link was inserted, false if aggregated
+	 */
+	bool addLink(unsigned int n1, unsigned int n2, double weight);
+
 	const Config& m_config;
 
+	NodeMap m_nodeMap;
 	unsigned int m_numNodes;
 	std::vector<std::string> m_nodeNames;
 	std::vector<double> m_nodeWeights;
 	double m_sumNodeWeights;
-	NodeMap m_nodeMap;
-	double m_totalLinkWeight; // On whole network
+
 	LinkMap m_links;
+	unsigned int m_numLinks;
+	double m_totalLinkWeight; // On whole network
+	unsigned int m_numAggregatedLinks;
 	unsigned int m_numSelfLinks;
+	double m_totalSelfLinkWeight; // On whole network
 
 };
 

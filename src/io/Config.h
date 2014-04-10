@@ -35,10 +35,10 @@ struct Config
 	Config()
 	:	networkFile(""),
 	 	inputFormat(""),
+	 	withMemory(false),
 	 	parseWithoutIOStreams(false),
 		zeroBasedNodeNumbers(false),
 		includeSelfLinks(false),
-		selfMemoryNodes(false),
 		ignoreEdgeWeights(false),
 		nodeLimit(0),
 	 	clusterDataFile(""),
@@ -131,7 +131,9 @@ struct Config
 
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 
-	bool isMemoryNetwork() const { return inputFormat == "3gram"; }
+	bool isUndirectedFlow() const { return !directed && !outdirdir && !rawdir; } // isUndirected || undirdir
+
+	bool isMemoryNetwork() const { return withMemory || inputFormat == "3gram"; }
 
 	bool haveModularResultOutput() const
 	{
@@ -146,10 +148,10 @@ struct Config
 	// Input
 	std::string networkFile;
 	std::string inputFormat;
+	bool withMemory;
 	bool parseWithoutIOStreams;
 	bool zeroBasedNodeNumbers;
 	bool includeSelfLinks;
-	bool selfMemoryNodes;
 	bool ignoreEdgeWeights;
 	unsigned int nodeLimit;
 	std::string clusterDataFile;

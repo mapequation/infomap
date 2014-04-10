@@ -1184,6 +1184,13 @@ bool InfomapBase::initNetwork()
  	for (unsigned int i = 0; i < links.size(); ++i)
  		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow);
 
+
+ 	double sumNodeFlow = 0.0;
+	for (unsigned int i = 0; i < nodeFlow.size(); ++i)
+		sumNodeFlow += nodeFlow[i];
+	if (std::abs(1.0 - sumNodeFlow) > 1e-10)
+		std::cout << "Warning: Sum node flow differ from 1 by " << (1.0 - sumNodeFlow) << "\n";
+
  	initEnterExitFlow();
 
  	return true;
@@ -1218,14 +1225,14 @@ bool InfomapBase::initMemoryNetwork()
 	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
 	const std::vector<double>& nodeTeleportWeights = flowNetwork.getNodeTeleportRates();
 	m_treeData.reserveNodeCount(network.numM2Nodes());
-	const std::vector<M2Node>& memIndexToPhys = flowNetwork.getMemIndexToPhys();
+	const std::vector<M2Node>& m2Nodes = flowNetwork.getM2Nodes();
 
 	for (unsigned int i = 0; i < network.numM2Nodes(); ++i) {
 //		m_treeData.addNewNode((io::Str() << i << "_(" << memIndexToPhys[i].phys1 << "-" << memIndexToPhys[i].phys2 << ")"), nodeFlow[i], nodeTeleportWeights[i]);
 		m_treeData.addNewNode("", nodeFlow[i], nodeTeleportWeights[i]);
 		M2Node& m2Node = getMemoryNode(m_treeData.getLeafNode(i));
-		m2Node.phys1 = memIndexToPhys[i].phys1;
-		m2Node.phys2 = memIndexToPhys[i].phys2;
+		m2Node.phys1 = m2Nodes[i].phys1;
+		m2Node.phys2 = m2Nodes[i].phys2;
 	}
 
 	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();
@@ -1242,6 +1249,12 @@ bool InfomapBase::initMemoryNetwork()
 		getPhysicalMembers(m_treeData.getLeafNode(nodeIndex)).push_back(PhysData(m2nodeIt->first.phys2, nodeFlow[nodeIndex]));
 //		m1Flow[m2nodeIt->first.phys2] += nodeFlow[nodeIndex];
 	}
+
+	double sumNodeFlow = 0.0;
+	for (unsigned int i = 0; i < nodeFlow.size(); ++i)
+		sumNodeFlow += nodeFlow[i];
+	if (std::abs(1.0 - sumNodeFlow) > 1e-10)
+		std::cout << "Warning: Sum node flow differ from 1 by " << (1.0 - sumNodeFlow) << "\n";
 
 	initEnterExitFlow();
 
