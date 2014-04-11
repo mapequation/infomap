@@ -1231,8 +1231,8 @@ bool InfomapBase::initMemoryNetwork()
 	const std::vector<M2Node>& m2Nodes = flowNetwork.getM2Nodes();
 
 	for (unsigned int i = 0; i < network.numM2Nodes(); ++i) {
-//		m_treeData.addNewNode((io::Str() << i << "_(" << memIndexToPhys[i].phys1 << "-" << memIndexToPhys[i].phys2 << ")"), nodeFlow[i], nodeTeleportWeights[i]);
-		m_treeData.addNewNode("", nodeFlow[i], nodeTeleportWeights[i]);
+		m_treeData.addNewNode((io::Str() << i << "_(" << (m2Nodes[i].phys1+1) << "-" << (m2Nodes[i].phys2+1) << ")"), nodeFlow[i], nodeTeleportWeights[i]);
+//		m_treeData.addNewNode("", nodeFlow[i], nodeTeleportWeights[i]);
 		M2Node& m2Node = getMemoryNode(m_treeData.getLeafNode(i));
 		m2Node.phys1 = m2Nodes[i].phys1;
 		m2Node.phys2 = m2Nodes[i].phys2;

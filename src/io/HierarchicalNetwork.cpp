@@ -90,7 +90,7 @@ void HierarchicalNetwork::prepareAddLeafNodes(unsigned int numLeafNodes)
 	m_leafNodes.resize(numLeafNodes);
 }
 
-void HierarchicalNetwork::addLeafEdge(unsigned int sourceLeafNodeIndex, unsigned int targetLeafNodeIndex, double flow)
+bool HierarchicalNetwork::addLeafEdge(unsigned int sourceLeafNodeIndex, unsigned int targetLeafNodeIndex, double flow)
 {
 	SNode* source = m_leafNodes[sourceLeafNodeIndex];
 	SNode* target = m_leafNodes[targetLeafNodeIndex];
@@ -109,9 +109,10 @@ void HierarchicalNetwork::addLeafEdge(unsigned int sourceLeafNodeIndex, unsigned
 		source = source->parentNode;
 		target = target->parentNode;
 	}
-	source->parentNode->createChildEdge(source->parentIndex, target->parentIndex, flow, m_directedEdges);
+	bool createdNewEdge = source->parentNode->createChildEdge(source->parentIndex, target->parentIndex, flow, m_directedEdges);
 
 	++m_numLeafEdges;
+	return createdNewEdge;
 }
 
 void HierarchicalNetwork::propagateNodeNameUpInHierarchy(SNode& node)
