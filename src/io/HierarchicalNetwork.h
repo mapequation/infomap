@@ -514,13 +514,14 @@ public:
 
 	void readStreamableTree(const std::string& fileName);
 
-	void writeHumanReadableTree(const std::string& fileName);
+	void writeHumanReadableTree(const std::string& fileName, bool writeHierarchicalNetworkEdges = false);
 
 	void writeMap(const std::string& fileName);
 
 private:
 
 	void writeHumanReadableTreeRecursiveHelper(std::ostream& out, SNode& node, std::string prefix = "");
+	void writeHumanReadableTreeFlowLinksRecursiveHelper(std::ostream& out, SNode& node, std::string prefix = "");
 
 	static bool compareLeafNodePredicate(const SNode* lhs, const SNode* rhs) { return (lhs->leafIndex < rhs->leafIndex); }
 

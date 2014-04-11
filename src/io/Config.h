@@ -66,6 +66,7 @@ struct Config
 		fastHierarchicalSolution(0),
 		outDirectory(""),
 		printTree(false),
+		printFlowTree(false),
 		printMap(false),
 		printClu(false),
 		printNodeRanks(false),
@@ -138,6 +139,7 @@ struct Config
 	bool haveModularResultOutput() const
 	{
 		return printTree ||
+				printFlowTree ||
 				printMap ||
 				printClu ||
 				printBinaryTree ||
@@ -185,6 +187,7 @@ struct Config
 	// Output
 	std::string outDirectory;
 	bool printTree;
+	bool printFlowTree;
 	bool printMap;
 	bool printClu;
 	bool printNodeRanks;

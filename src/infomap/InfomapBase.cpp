@@ -1439,6 +1439,13 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 			m_ioNetwork.writeHumanReadableTree(outName);
 		}
 
+		if (m_config.printFlowTree)
+		{
+			outName = io::Str() << m_config.outDirectory << filename << ".ftree";
+			RELEASE_OUT("writing .ftree... " << std::flush);
+			m_ioNetwork.writeHumanReadableTree(outName, true);
+		}
+
 		if (m_config.printBinaryTree || m_config.printBinaryFlowTree)
 		{
 			outName = io::Str() << m_config.outDirectory << filename << (writeEdges? ".bftree" : ".btree");

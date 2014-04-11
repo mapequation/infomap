@@ -236,12 +236,14 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 }
 
 
-void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName)
+void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bool writeHierarchicalNetworkEdges)
 {
 	SafeOutFile out(fileName.c_str());
 	out << "# Network '" << m_networkName << "', size: " << m_leafNodes.size() << " nodes in " << m_maxDepth << " levels, codelength: " << m_codelength << " bits.\n";
 
 	writeHumanReadableTreeRecursiveHelper(out, m_rootNode);
+	if (writeHierarchicalNetworkEdges)
+		writeHumanReadableTreeFlowLinksRecursiveHelper(out, m_rootNode);
 }
 
 void HierarchicalNetwork::writeHumanReadableTreeRecursiveHelper(std::ostream& out, SNode& node, std::string prefix)
@@ -257,6 +259,43 @@ void HierarchicalNetwork::writeHumanReadableTreeRecursiveHelper(std::ostream& ou
 		{
 			const std::string subPrefix = io::Str() << prefix << (i+1) << ":";
 			writeHumanReadableTreeRecursiveHelper(out, child, subPrefix);
+		}
+	}
+}
+
+void HierarchicalNetwork::writeHumanReadableTreeFlowLinksRecursiveHelper(std::ostream& out, SNode& node, std::string prefix)
+{
+	for (unsigned int i = 0; i < node.children.size(); ++i)
+	{
+		SNode& child = *node.children[i];
+
+		// Write edges after the last child of the parent node
+		if (static_cast<unsigned int>(i + 1) == node.children.size())
+		{
+			const SNode::ChildEdgeList& edges = child.parentNode->childEdges;
+			// First sort the edges
+			std::multimap<double, ChildEdge, std::greater<double> > sortedEdges;
+			for (SNode::ChildEdgeList::const_iterator it = edges.begin(); it != edges.end(); ++it)
+				sortedEdges.insert(std::make_pair(it->flow, *it));
+			if (prefix.empty())
+				out << "*Edges " << edges.size() << ", module 'root':\n";
+			else
+				out << "*Edges " << edges.size() << ", module " << prefix << "\n";
+			std::multimap<double, ChildEdge, std::greater<double> >::const_iterator it(sortedEdges.begin());
+			for (unsigned int i = 0; i < edges.size(); ++i, ++it)
+			{
+				out << (it->second.source + 1) << " " << (it->second.target + 1) << " " << it->second.flow << "\n";
+			}
+		}
+	}
+	for (unsigned int i = 0; i < node.children.size(); ++i)
+	{
+		SNode& child = *node.children[i];
+
+		if (!child.isLeaf)
+		{
+			const std::string subPrefix = io::Str() << prefix << (i+1) << ":";
+			writeHumanReadableTreeFlowLinksRecursiveHelper(out, child, subPrefix);
 		}
 	}
 }

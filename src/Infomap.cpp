@@ -85,6 +85,9 @@ Config getConfig(int argc, char *argv[])
 	api.addOptionArgument(conf.printTree, "tree",
 			"Print the hierarchy in .tree format. (default true if no other output with cluster data)");
 
+	api.addOptionArgument(conf.printFlowTree, "ftree",
+			"Print the hierarchy in .tree format and append the hierarchically aggregated network links.");
+
 	api.addOptionArgument(conf.printMap, "map",
 			"Print the top two-level modular network in the .map format.");
 
