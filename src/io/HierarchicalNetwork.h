@@ -309,7 +309,11 @@ public:
 	}
 
 
-	void createChildEdge(SerialTypes::edgeSize_t sourceIndex, SerialTypes::edgeSize_t targetIndex, double flow, bool directed)
+	/**
+	 * Create an edge between two children, defined by their child indices.
+	 * @return true if a new edge was inserted, false if it was aggregated to an existing edge.
+	 */
+	bool createChildEdge(SerialTypes::edgeSize_t sourceIndex, SerialTypes::edgeSize_t targetIndex, double flow, bool directed)
 	{
 		if (!directed && sourceIndex > targetIndex)
 			std::swap(sourceIndex, targetIndex);
@@ -318,8 +322,11 @@ public:
 
 		std::pair<ChildEdgeList::iterator, bool> ret = childEdges.insert(edge);
 		if (!ret.second)
+		{
 			ret.first->flow += flow;
-
+			return false;
+		}
+		return true;
 	}
 
 };
@@ -464,9 +471,10 @@ public:
 	 * Add flow-edges to the tree. This method can aggregate the edges between the leaf-nodes
 	 * up in the tree based on the edge aggregation policy.
 	 * @param aggregationFilter A flag to decide the type of aggregation.
+	 * @return true if a new edge was inserted, false if it was aggregated to an existing edge
 	 * @note The EdgeAggregationPolicy enumeration lists the available aggregation policies.
 	 */
-	void addLeafEdge(unsigned int sourceLeafNodeIndex, unsigned int targetLeafNodeIndex, double flow);
+	bool addLeafEdge(unsigned int sourceLeafNodeIndex, unsigned int targetLeafNodeIndex, double flow);
 
 	void propagateNodeNameUpInHierarchy(SNode& node);
 
@@ -514,13 +522,14 @@ public:
 
 	void readStreamableTree(const std::string& fileName);
 
-	void writeHumanReadableTree(const std::string& fileName);
+	void writeHumanReadableTree(const std::string& fileName, bool writeHierarchicalNetworkEdges = false);
 
 	void writeMap(const std::string& fileName);
 
 private:
 
 	void writeHumanReadableTreeRecursiveHelper(std::ostream& out, SNode& node, std::string prefix = "");
+	void writeHumanReadableTreeFlowLinksRecursiveHelper(std::ostream& out, SNode& node, std::string prefix = "");
 
 	static bool compareLeafNodePredicate(const SNode* lhs, const SNode* rhs) { return (lhs->leafIndex < rhs->leafIndex); }
 

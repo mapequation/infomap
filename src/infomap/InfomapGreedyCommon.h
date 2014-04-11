@@ -56,8 +56,12 @@ protected:
 
 	virtual std::auto_ptr<InfomapBase> getNewInfomapInstance();
 
-	void calculateCodelengthFromActiveNetwork(DetailedBalance);
-	void calculateCodelengthFromActiveNetwork(NoDetailedBalance);
+	virtual double calcCodelengthOnRootOfLeafNodes(const NodeBase& parent);
+	virtual double calcCodelengthOnModuleOfModules(const NodeBase& parent);
+	virtual double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent);
+
+	virtual void calculateCodelengthFromActiveNetwork(DetailedBalance);
+	virtual void calculateCodelengthFromActiveNetwork(NoDetailedBalance);
 
 	virtual unsigned int optimizeModules();
 
@@ -86,6 +90,66 @@ std::auto_ptr<InfomapBase> InfomapGreedyCommon<InfomapGreedyDerivedType>::getNew
 	return std::auto_ptr<InfomapBase>(new InfomapGreedyDerivedType(Super::m_config));
 }
 
+template<typename InfomapGreedyDerivedType>
+inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnRootOfLeafNodes(const NodeBase& parent)
+{
+	return calcCodelengthOnModuleOfLeafNodes(parent);
+}
+
+template<typename InfomapGreedyDerivedType>
+inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent)
+{
+	const FlowType& parentData = Super::getNode(parent).data;
+	double parentFlow = parentData.flow;
+	double parentExit = parentData.exitFlow;
+	double totalParentFlow = parentFlow + parentExit;
+	if (totalParentFlow < 1e-16)
+		return 0.0;
+
+	double indexLength = 0.0;
+	// For each child
+	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+			childIt != endIt; ++childIt)
+	{
+		indexLength -= infomath::plogp(Super::getNode(*childIt).data.flow / totalParentFlow);
+	}
+	indexLength -= infomath::plogp(parentExit / totalParentFlow);
+
+	indexLength *= totalParentFlow;
+
+	return indexLength;
+}
+
+template<typename InfomapGreedyDerivedType>
+inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnModuleOfModules(const NodeBase& parent)
+{
+	const FlowType& parentData = Super::getNode(parent).data;
+	double parentExit = parentData.exitFlow;
+	if (parentData.flow < 1e-16)
+		return 0.0;
+
+	// H(x) = -xlog(x), T = q + SUM(p), q = exitFlow, p = enterFlow
+	// Normal format
+	// L = q * -log(q/T) + p * SUM(-log(p/T))
+	// Compact format
+	// L = T * ( H(q/T) + SUM( H(p/T) ) )
+	// Expanded format
+	// L = q * -log(q) - q * -log(T) + SUM( p * -log(p) - p * -log(T) ) = T * log(T) - q*log(q) - SUM( p*log(p) )
+	// As T is not known, use expanded format to avoid two loops
+	double sumEnter = 0.0;
+	double sumEnterLogEnter = 0.0;
+	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+			childIt != endIt; ++childIt)
+	{
+		const double& enterFlow = Super::getNode(*childIt).data.enterFlow; // rate of enter to finer level
+		sumEnter += enterFlow;
+		sumEnterLogEnter += infomath::plogp(enterFlow);
+	}
+	// The possibilities from this module: Either exit to coarser level or enter one of its children
+	double totalCodewordUse = parentExit + sumEnter;
+
+	return infomath::plogp(totalCodewordUse) - sumEnterLogEnter - infomath::plogp(parentExit);
+}
 
 /**
  * Specialized for the case when enter flow equals exit flow

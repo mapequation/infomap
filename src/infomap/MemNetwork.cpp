@@ -288,7 +288,7 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 
 	if (m_config.isUndirectedFlow())
 	{
-		std::cout << "(inflating undirected network...) ";
+//		std::cout << "(inflating undirected network...) ";
 		LinkMap oldNetwork;
 		oldNetwork.swap(m_links);
 		for (LinkMap::const_iterator linkIt(oldNetwork.begin()); linkIt != oldNetwork.end(); ++linkIt)
