@@ -286,9 +286,9 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 	m_numSelfLinks = 0.0;
 	m_totalSelfLinkWeight = 0.0;
 
-	if (m_config.isUndirectedFlow())
+	if (m_config.originallyUndirected)
 	{
-//		std::cout << "(inflating undirected network...) ";
+		std::cout << "(inflating undirected network... " << std::flush;
 		LinkMap oldNetwork;
 		oldNetwork.swap(m_links);
 		for (LinkMap::const_iterator linkIt(oldNetwork.begin()); linkIt != oldNetwork.end(); ++linkIt)
@@ -300,32 +300,15 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 				unsigned int linkEnd2 = subIt->first;
 				double linkWeight = subIt->second;
 				// Add link to both directions
-//				std::cout << "\nAdding (" << linkEnd1 << ", " << linkEnd2 << ") and opposite.. ";
 				addLink(linkEnd1, linkEnd2, linkWeight);
 				addLink(linkEnd2, linkEnd1, linkWeight);
-//				bool add1 = addLink(linkEnd1, linkEnd2, linkWeight);
-//				bool add2 = addLink(linkEnd2, linkEnd1, linkWeight);
-//				std::cout << "Add first: " << add1 << ", add second: " << add2 << ", numLinks: " << m_numLinks << " ";
 			}
 		}
 
 		// Dispose old network from memory
 		LinkMap().swap(oldNetwork);
+		std::cout << "done!) " << std::flush;
 	}
-
-//	std::cout << "\nCURRENT NETWORK:\n";
-//	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
-//	{
-//		unsigned int n1 = linkIt->first;
-//		const std::map<unsigned int, double>& subLinks = linkIt->second;
-//		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
-//		{
-//			unsigned int n2 = subIt->first;
-//			std::cout << "(" << n1 << ", " << n2 << ") " << subIt->second << "\n";
-//		}
-//	}
-
-//	std::cout << "\nGENERATING MEMORY NETWORK:\n";
 
 	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
 	{
@@ -335,8 +318,6 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 		{
 			unsigned int n2 = subIt->first;
 			double firstLinkWeight = subIt->second;
-
-//			std::cout << "(" << n1 << ", " << n2 <<") - Trying to create trigram... \n";
 
 			// Create trigrams with all links that start with the end node of current link
 			LinkMap::iterator secondLinkIt = m_links.find(n2);
@@ -348,20 +329,17 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 					unsigned int n3 = secondSubIt->first;
 					double linkWeight = secondSubIt->second;
 
-//					std::cout << "  -> (" << n2 << ", " << n3 << ") ";
-
 
 					if(m_config.includeSelfLinks)
 					{
-						m_m2Nodes[M2Node(n1,n2)] += firstLinkWeight;
+						// Set teleportation weight on first memory node (normalized to not multiply physical weight)
+						m_m2Nodes[M2Node(n1,n2)] += firstLinkWeight / secondLinkSubMap.size();
 						m_m2Nodes[M2Node(n2,n3)] += 0.0;
 
 						m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
 						m_totM2LinkWeight += linkWeight;
 
 						m_totalLinkWeight += linkWeight;
-
-//						std::cout << "=> connected two memory nodes!";
 
 						if (n2 == n3) {
 							++m_numSelfLinks;
@@ -378,27 +356,19 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 
 						if(n1 != n2)
 						{
-							m_m2Nodes[M2Node(n1,n2)] += linkWeight;
+							// Set teleportation weight on first memory node (normalized to not multiply physical weight)
+							m_m2Nodes[M2Node(n1,n2)] += firstLinkWeight / secondLinkSubMap.size();
 							m_m2Nodes[M2Node(n2,n3)] += 0.0;
 
 							m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
 							m_totM2LinkWeight += linkWeight;
-
-//							std::cout << "=> connected two memory nodes!";
 						}
 						else
 						{
+							// First memory node is a self-link, create the second
 							m_m2Nodes[M2Node(n2,n3)] += linkWeight;
-
-//							std::cout << "=> created memory node (" << n2 << ", " << n3 << ")";
 						}
 					}
-//					else // n2 == n3
-//					{
-//
-//					}
-
-//					std::cout << "\n";
 				}
 			}
 			else
@@ -406,7 +376,6 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 				// No chainable link found, create a dangling memory node (or remove need for existence in MemFlowNetwork?)
 				m_m2Nodes[M2Node(n1,n2)] += firstLinkWeight;
 			}
-//			std::cout << "\n";
 		}
 	}
 
@@ -424,7 +393,6 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 	M2nodeNr = 0;
 	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
 	{
-//		M1nodes.insert(it->first.second);
 		m_m2NodeWeights[M2nodeNr] += it->second;
 		m_totM2NodeWeight += it->second;
 		++M2nodeNr;

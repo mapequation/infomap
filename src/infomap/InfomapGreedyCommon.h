@@ -40,6 +40,7 @@ class InfomapGreedyCommon : public InfomapGreedySpecialized<typename derived_tra
 	typedef typename flowData_traits<FlowType>::detailed_balance_type 	DetailedBalanceType;
 	typedef typename flowData_traits<FlowType>::directed_with_recorded_teleportation_type DirectedWithRecordedTeleportationType;
 	typedef typename flowData_traits<FlowType>::teleportation_type 		TeleportationType;
+	typedef typename flowData_traits<FlowType>::is_directed_type		IsDirectedType;
 	typedef MemNode<FlowType>											NodeType;//TODO: Specialize node type on network type!
 	typedef Edge<NodeBase>												EdgeType;
 public:
@@ -640,7 +641,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::consolidateModules(b
 			{
 				NodeBase *m1 = parent, *m2 = otherParent;
 				// If undirected, the order may be swapped to aggregate the edge on an opposite one
-				if (Super::m_config.isUndirected() && m1->index > m2->index)
+				if (!IsDirectedType() && m1->index > m2->index)
 					std::swap(m1, m2);
 				// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
 				std::pair<EdgeMap::iterator, bool> ret = \

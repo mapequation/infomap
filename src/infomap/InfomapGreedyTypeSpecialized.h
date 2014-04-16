@@ -558,7 +558,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 
 	HierarchicalNetwork& ioNetwork = Super::m_ioNetwork;
 
-	ioNetwork.init(rootName, !Super::m_config.isUndirected(), Super::hierarchicalCodelength, Super::oneLevelCodelength, INFOMAP_VERSION);
+	ioNetwork.init(rootName, !Super::m_config.printAsUndirected(), Super::hierarchicalCodelength, Super::oneLevelCodelength, INFOMAP_VERSION);
 
 	std::deque<std::pair<NodeBase*, HierarchicalNetwork::node_type*> > leafModules;
 

@@ -572,10 +572,7 @@ unsigned int InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partit
 		for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
 				moduleIt != endIt; ++moduleIt)
 		{
-//			moduleIt->codelength = calcCodelengthOnModuleOfLeafNodes(*moduleIt);
-			moduleIt->codelength = isLeafLevel?
-					calcCodelengthOnModuleOfLeafNodes(*moduleIt) :
-					calcCodelengthOnModuleOfModules(*moduleIt);
+			moduleIt->codelength = calcCodelengthOnModuleOfLeafNodes(*moduleIt);
 		}
 
 		if (isLeafLevel && m_config.fastHierarchicalSolution > 1)

@@ -52,9 +52,6 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	std::cout << "Calculating global flow... ";
 	const MemNetwork& network = static_cast<const MemNetwork&>(net);
 
-//	typedef map<pair<M2Node, M2Node>, double> M2LinkMap;
-	std::cout << "on memory network with " << network.m2LinkMap().size() << " memory links... ";
-
 	// Prepare data in sequence containers for fast access of individual elements
 	unsigned int numM2Nodes = network.numM2Nodes();
 	m_nodeOutDegree.assign(numM2Nodes, 0);
@@ -100,50 +97,6 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		m_nodeFlow[sourceIndex] += linkWeight;// / sumUndirLinkWeight;
 		m_flowLinks[linkIndex] = Link(sourceIndex, targetIndex, linkWeight);
 	}
-
-//	double sumNodeFlow = 0.0;
-//	for (unsigned int i = 0; i < numM2Nodes; ++i)
-//		sumNodeFlow += m_nodeFlow[i];
-//
-//	std::cout << "\nsumNodeFlow: " << sumNodeFlow << " (" << sumNodeFlow / sumUndirLinkWeight << "), totM2LinkWeight: " << network.totalM2LinkWeight() << ", totalMemorySelfLinkWeight: " << network.totalMemorySelfLinkWeight() << ", sumUndirLinkWeight: " << sumUndirLinkWeight << "\n";
-
-
-	/**
-	 * vector<multimap<double,int> > N1net(network.Nnode); // M1 Network
-  ////////////// Create M1 network with transition probabilities from M1 nodes to M2 nodes //////////////////////////////////////
-	 * for(map<pair<int,int>,double>::iterator it = network.Links.begin(); it != network.Links.end(); it++)
-    N1net[it->first.first].insert(make_pair(it->second,network.M2nodeMap[make_pair(it->first.first,it->first.second)]));
-
-    N1net[m1link.first (= n2), in 0..numM1Nodes] = multimap<linkWeight, M2 node index for M2Node(m1LinkEnds = (n2,n3))>
-
-	 * int Ndangl = 0;
-  // Add M1 flow to dangling M2 nodes
-  for(int i=0;i<Nnode;i++){
-    if(node[i]->outLinks.size() == 0){
-      Ndangl++;
-	  // for all transitions from n2 to (n2,n3)
-      for(multimap<double,int>::iterator it = N1net[node[i]->physicalNodes[0].first].begin(); it != N1net[node[i]->physicalNodes[0].first].end(); it++){
-
-        int from = i;
-        int to = it->second;
-        double weight = it->first;
-        if(weight > 0.0){
-          if(from == to){
-            NselfLinks++;
-          }
-          else{
-            node[from]->outLinks.push_back(make_pair(to,weight));
-            node[to]->inLinks.push_back(make_pair(from,weight));
-          }
-        }
-
-
-      }
-    }
-  }
-  cout << "-->Added first order flow to " << Ndangl << " dangling memory nodes." << endl;
-	 *
-	 */
 
 
 	m_m2nodes.resize(numM2Nodes);
@@ -217,8 +170,9 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 
 		}
 	}
-	std::cout << "--> Added " << (m_flowLinks.size() - numLinks) << " links with first order flow to " <<
-			numDanglingM2Nodes << " dangling memory nodes -> " << m_flowLinks.size() << " links." << std::endl;
+	if (m_flowLinks.size() - numLinks != 0)
+		std::cout << "(added " << (m_flowLinks.size() - numLinks) << " links to " <<
+			numDanglingM2Nodes << " dangling memory nodes -> " << m_flowLinks.size() << " links) " << std::flush;
 
 	totalLinkWeight += sumExtraLinkWeight;
 	sumUndirLinkWeight = 2 * totalLinkWeight - network.totalMemorySelfLinkWeight();
@@ -292,8 +246,15 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		return;
 	}
 
-	std::cout << "using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
-			(config.teleportToNodes ? "nodes" : "links") << "... " << std::flush;
+	std::cout << "using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to memory " <<
+				(config.teleportToNodes ? "nodes" : "links") << "... " << std::flush;
+	if (config.originallyUndirected)
+	{
+		if (config.recordedTeleportation || !config.teleportToNodes)
+			std::cout << "(warning: should be unrecorded teleportation to nodes to correspond to undirected flow on physical network) " << std::flush;
+		else
+			std::cout << "(corresponding to undirected flow on physical network) " << std::flush;
+	}
 
 
 	// Calculate the teleport rate distribution
@@ -396,7 +357,6 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	{
 		//Take one last power iteration excluding the teleportation (and normalize node flow to sum 1.0)
 		sumNodeRank = 1.0 - danglingRank;
-		std::cout << "\nDangling rank: " << danglingRank << " -> sumNodeRank: " << sumNodeRank;
 		m_nodeFlow.assign(numM2Nodes, 0.0);
 		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 		{

@@ -136,7 +136,7 @@ Config getConfig(int argc, char *argv[])
 			"If teleportation is used to calculate the flow, also record it when minimizing codelength.");
 
 	api.addOptionArgument(conf.teleportToNodes, 'o', "to-nodes",
-			"Teleport to nodes (like the PageRank algorithm) instead of to links.");
+			"Teleport to nodes instead of to links, assuming uniform node weights if no such input data.");
 
 	api.addOptionArgument(conf.teleportationProbability, 'p', "teleportation-probability",
 			"The probability of teleporting to a random node or link.", "f");
@@ -196,6 +196,15 @@ Config getConfig(int argc, char *argv[])
 
 	if (!conf.haveModularResultOutput())
 		conf.printTree = true;
+
+	conf.originallyUndirected = conf.isUndirected();
+	if (conf.isMemoryNetwork())
+	{
+		conf.teleportToNodes = true;
+		conf.recordedTeleportation = false;
+		if (conf.isUndirected())
+			conf.directed = true;
+	}
 
 	return conf;
 }
