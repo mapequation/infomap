@@ -49,6 +49,9 @@ struct Undirected {};
 struct DirectedWithRecordedTeleportation {};
 struct NotDirectedWithRecordedTeleportation {};
 
+struct true_type { operator bool() const { return true; }};
+struct false_type { operator bool() const { return false; }};
+
 template<typename FlowType, typename NetworkType>
 struct InfomapType
 {
@@ -66,6 +69,7 @@ struct flowData_traits<FlowUndirected>
 	typedef DetailedBalance								detailed_balance_type;
 	typedef NotDirectedWithRecordedTeleportation		directed_with_recorded_teleportation_type;
 	typedef WithoutTeleportation						teleportation_type;
+	typedef true_type									is_directed_type;
 };
 
 template<>
@@ -74,6 +78,7 @@ struct flowData_traits<FlowDirectedNonDetailedBalance>
 	typedef NoDetailedBalance							detailed_balance_type;
 	typedef NotDirectedWithRecordedTeleportation		directed_with_recorded_teleportation_type;
 	typedef WithoutTeleportation						teleportation_type;
+	typedef false_type									is_directed_type;
 };
 
 template<>
@@ -82,6 +87,7 @@ struct flowData_traits<FlowDirectedWithTeleportation>
 	typedef DetailedBalance								detailed_balance_type;
 	typedef DirectedWithRecordedTeleportation			directed_with_recorded_teleportation_type;
 	typedef WithTeleportation							teleportation_type;
+	typedef false_type									is_directed_type;
 };
 
 template<>
@@ -90,6 +96,7 @@ struct flowData_traits<FlowDirectedNonDetailedBalanceWithTeleportation>
 	typedef NoDetailedBalance							detailed_balance_type;
 	typedef NotDirectedWithRecordedTeleportation		directed_with_recorded_teleportation_type;
 	typedef WithTeleportation							teleportation_type;
+	typedef false_type									is_directed_type;
 };
 
 

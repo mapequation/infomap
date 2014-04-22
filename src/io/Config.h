@@ -65,6 +65,7 @@ struct Config
 		coarseTuneLevel(1),
 		fastHierarchicalSolution(0),
 		outDirectory(""),
+		originallyUndirected(false),
 		printTree(false),
 		printFlowTree(false),
 		printMap(false),
@@ -132,9 +133,13 @@ struct Config
 
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 
-	bool isUndirectedFlow() const { return !directed && !outdirdir && !rawdir; } // isUndirected || undirdir
+	bool isUndirectedFlow() const { return !directed && !outdirdir && !rawdir; } // isUndirected() || undirdir
+
+	bool printAsUndirected() const { return originallyUndirected; }
 
 	bool isMemoryNetwork() const { return withMemory || inputFormat == "3gram"; }
+
+	bool isSimulatedMemoryNetwork() const { return withMemory && inputFormat != "3gram"; }
 
 	bool haveModularResultOutput() const
 	{
@@ -186,6 +191,7 @@ struct Config
 
 	// Output
 	std::string outDirectory;
+	bool originallyUndirected;
 	bool printTree;
 	bool printFlowTree;
 	bool printMap;
