@@ -129,7 +129,6 @@ void MemNetwork::parseTrigram(std::string filename)
 		throw FileFormatError("The first line (to lower cases) after the nodes doesn't match *arcs or *3grams.");
 	}
 
-	unsigned int numDoubleLinks = 0;
 	unsigned int numEdgeLines = 0;
 	unsigned int numSkippedEdges = 0;
 	unsigned int maxLinkEnd = 0;
@@ -269,8 +268,8 @@ void MemNetwork::parseTrigram(std::string filename)
 	//	std::cout << "Average node weight: " << (m_sumNodeWeights / numNodes) << ". ";
 	if (m_config.nodeLimit > 0)
 		std::cout << "Limiting network to " << numNodes << " nodes and " << m_links.size() << " links. ";
-	if(numDoubleLinks > 0)
-		std::cout << numDoubleLinks << " links was aggregated to existing links. ";
+	if(m_numAggregatedLinks > 0)
+		std::cout << m_numAggregatedLinks << " links was aggregated to existing links. ";
 	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
 		std::cout << m_numSelfLinks << " self-links was ignored. ";
 	std::cout << std::endl;
