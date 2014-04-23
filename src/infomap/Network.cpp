@@ -169,7 +169,6 @@ void Network::parsePajekNetwork(std::string filename)
 		throw FileFormatError("The first line (to lower cases) after the nodes doesn't match *edges or *arcs.");
 	}
 
-	unsigned int numDoubleLinks = 0;
 	unsigned int numEdgeLines = 0;
 	unsigned int numSkippedEdges = 0;
 	unsigned int maxLinkEnd = 0;
@@ -236,14 +235,14 @@ void Network::parsePajekNetwork(std::string filename)
 	if (maxLinkEnd >= numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 
-	m_numLinks -= numDoubleLinks;
+	m_numLinks -= m_numAggregatedLinks;
 	//	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
 	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << (m_numLinks + numSkippedEdges) << " links. ";
 //	std::cout << "Average node weight: " << (m_sumNodeWeights / numNodes) << ". ";
 	if (m_config.nodeLimit > 0)
 		std::cout << "Limiting network to " << numNodes << " nodes and " << m_numLinks << " links. ";
-	if(numDoubleLinks > 0)
-		std::cout << numDoubleLinks << " links was aggregated to existing links. ";
+	if(m_numAggregatedLinks > 0)
+		std::cout << m_numAggregatedLinks << " links was aggregated to existing links. ";
 	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
 		std::cout << m_numSelfLinks << " self-links was ignored. ";
 	std::cout << std::endl;
@@ -266,7 +265,6 @@ void Network::parseLinkList(std::string filename)
 
 	std::istringstream ss;
 
-	unsigned int numDoubleLinks = 0;
 	unsigned int numEdgeLines = 0;
 	unsigned int numSkippedEdges = 0;
 	m_totalLinkWeight = 0.0;
@@ -337,7 +335,7 @@ void Network::parseLinkList(std::string filename)
 		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
 
 
-	m_numLinks -= numDoubleLinks;
+	m_numLinks -= m_numAggregatedLinks;
 	m_numNodes = maxLinkEnd + 1;
 
 	m_nodeNames.resize(m_numNodes);
@@ -450,7 +448,6 @@ void Network::parsePajekNetworkCStyle(std::string filename)
 
 
 	// Read the number of links in the network
-	unsigned int numDoubleLinks = 0;
 	unsigned int numEdgeLines = 0;
 	unsigned int numSkippedEdges = 0;
 	unsigned int maxLinkEnd = 0;
@@ -511,14 +508,14 @@ void Network::parsePajekNetworkCStyle(std::string filename)
 	if (maxLinkEnd >= numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 
-	m_numLinks -= numDoubleLinks;
+	m_numLinks -= m_numAggregatedLinks;
 	//	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
 	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << (m_numLinks + numSkippedEdges) << " links. ";
 //	std::cout << "Average node weight: " << (m_sumNodeWeights / numNodes) << ". ";
 	if (m_config.nodeLimit > 0)
 		std::cout << "Limiting network to " << numNodes << " nodes and " << m_numLinks << " links. ";
-	if(numDoubleLinks > 0)
-		std::cout << numDoubleLinks << " links was aggregated to existing links. ";
+	if(m_numAggregatedLinks > 0)
+		std::cout << m_numAggregatedLinks << " links was aggregated to existing links. ";
 	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
 		std::cout << m_numSelfLinks << " self-links was ignored. ";
 	std::cout << std::endl;
@@ -557,7 +554,6 @@ void Network::parseLinkListCStyle(std::string filename)
 	char line[LINELENGTH];
 
 
-	unsigned int numDoubleLinks = 0;
 	unsigned int numEdgeLines = 0;
 	unsigned int numSkippedEdges = 0;
 	m_totalLinkWeight = 0.0;
@@ -618,7 +614,7 @@ void Network::parseLinkListCStyle(std::string filename)
 		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
 
 
-	m_numLinks -= numDoubleLinks;
+	m_numLinks -= m_numAggregatedLinks;
 	m_numNodes = maxLinkEnd + 1;
 
 	m_nodeNames.resize(m_numNodes);
