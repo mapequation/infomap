@@ -33,13 +33,14 @@
 #include <cmath>
 using std::make_pair;
 
-void MemNetwork::readFromFile(std::string filename)
+void MemNetwork::readInputData()
 {
+	std::string filename = m_config.networkFile;
 	if (m_config.inputFormat == "3gram")
 		parseTrigram(filename);
 	else
 	{
-		Network::readFromFile(filename);
+		Network::readInputData();
 		simulateMemoryFromOrdinaryNetwork();
 	}
 }
@@ -232,7 +233,7 @@ void MemNetwork::parseTrigram(std::string filename)
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
 	if (maxLinkEnd == zeroMinusOne)
-		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers starts from zero.");
+		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
 	if (maxLinkEnd >= numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 
@@ -399,4 +400,334 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 	}
 
 	std::cout << "generated " << m_m2Nodes.size() << " memory nodes and " << m_m2Links.size() << " memory links. " << std::endl;
+}
+
+
+void MultiplexNetwork::readInputData()
+{
+	if (m_config.inputFormat == "multiplex")
+		parseMultiplex(m_config.networkFile);
+	else
+		throw ImplementationError("Multiplex network only supports single multiplex data input for now.");
+}
+
+void MultiplexNetwork::parseMultiplex(std::string filename)
+{
+	RELEASE_OUT("Parsing multiplex network from file '" << filename << "'... " << std::flush);
+
+	SafeInFile input(filename.c_str());
+
+	string line;
+	string buf;
+	std::istringstream ss;
+
+	unsigned int lineNumber = 0;
+	unsigned int numDoubleLinks = 0;
+	unsigned int numEdgeLines = 0;
+	unsigned int numSkippedEdges = 0;
+	m_totalLinkWeight = 0.0;
+	unsigned int maxLinkEnd = 0;
+	unsigned int maxLevel = 0;
+	bool minLinkIsZero = false;
+	bool checkNodeLimit = m_config.nodeLimit > 0;
+	unsigned int nodeLimit = m_config.nodeLimit;
+	unsigned int lowestNodeNumber = m_config.zeroBasedNodeNumbers ? 0 : 1;
+
+	bool intra = true;
+
+	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
+	while(!std::getline(input, line).fail())
+	{
+		++lineNumber;
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+		if (line == "*Intra" || line == "*intra") {
+			intra = true;
+			continue;
+		}
+		if (line == "*Inter" || line == "*inter") {
+			intra = false;
+			continue;
+		}
+		++numEdgeLines;
+		ss.clear();
+		ss.str(line);
+
+
+		if (intra) // intra-links: level node node weight
+		{
+			unsigned int level;
+			if (!(ss >> level))
+				throw BadConversionError(io::Str() << "Can't parse first integer (level) of multiplex link on line number " <<
+					lineNumber << " from file '" << filename << "'");
+
+			unsigned int linkEnd1;
+			if (!(ss >> linkEnd1))
+				throw BadConversionError(io::Str() << "Can't parse second integer (first node) of multiplex link on line number " <<
+					lineNumber << " from file '" << filename << "'");
+			unsigned int linkEnd2;
+			if (!(ss >> linkEnd2))
+				throw BadConversionError(io::Str() << "Can't parse third integer (second node) of multiplex link on line number " <<
+					lineNumber << " from file '" << filename << "'");
+
+			level -= lowestNodeNumber;
+			linkEnd1 -= lowestNodeNumber;
+			linkEnd2 -= lowestNodeNumber;
+
+			if (checkNodeLimit && (linkEnd2 >= nodeLimit || linkEnd1 >= nodeLimit))
+			{
+				++numSkippedEdges;
+				continue;
+			}
+
+			double linkWeight = 1.0;
+			ss >> linkWeight;
+
+			if (linkEnd2 == linkEnd1)
+			{
+				++m_numSelfLinks;
+				if (!m_config.includeSelfLinks)
+					continue;
+				m_totalSelfLinkWeight += linkWeight;
+			}
+			else if (m_config.isUndirected() && linkEnd2 < linkEnd1) // minimize number of links
+				std::swap(linkEnd1, linkEnd2);
+
+			maxLinkEnd = std::max(maxLinkEnd, std::max(linkEnd1, linkEnd2));
+			if (!minLinkIsZero && (linkEnd1 == 0 || linkEnd2 == 0))
+				minLinkIsZero = true;
+
+			maxLevel = std::max(maxLevel, level);
+
+			++m_numLinks;
+			m_totalLinkWeight += linkWeight;
+
+			if (!addLink(linkEnd1, linkEnd2, linkWeight) && linkEnd1 == linkEnd2)
+				--m_numSelfLinks;
+		}
+		else // inter-links: node level level weight
+		{
+			unsigned int nodeIndex;
+			if (!(ss >> nodeIndex))
+				throw BadConversionError(io::Str() << "Can't parse second integer (first node) of multiplex link on line number " <<
+					lineNumber << " from file '" << filename << "'");
+
+			unsigned int level1;
+			if (!(ss >> level1))
+				throw BadConversionError(io::Str() << "Can't parse second integer (first level) of multiplex link on line number " <<
+					lineNumber << " from file '" << filename << "'");
+
+			unsigned int level2;
+			if (!(ss >> level2))
+				throw BadConversionError(io::Str() << "Can't parse third integer (second level) of multiplex link on line number " <<
+					lineNumber << " from file '" << filename << "'");
+
+		}
+
+	}
+
+	if (m_links.empty())
+		throw InputDomainError(io::Str() << "No links could be found!");
+
+	unsigned int zeroMinusOne = 0;
+	--zeroMinusOne;
+	if (maxLinkEnd == zeroMinusOne || maxLevel == zeroMinusOne)
+		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based indexing if the levels or node numbers start from zero.");
+
+
+
+
+
+	m_numLinks -= numDoubleLinks;
+	m_numNodes = maxLinkEnd + 1;
+
+	m_nodeNames.resize(m_numNodes);
+	m_nodeWeights.assign(m_numNodes, 1.0);
+	m_sumNodeWeights = 1.0 * m_numNodes;
+
+	for (unsigned int i = 0; i < m_numNodes; ++i)
+	{
+//		m_nodeMap.insert(make_pair(io::stringify(i + 1), i));
+		m_nodeNames[i] = io::stringify(i+1);
+	}
+
+	std::cout << "done! Found " << m_numNodes << " nodes and " << m_links.size() << " links." << std::endl;
+	if (!minLinkIsZero)
+		std::cout << "(Warning: minimum link index is not zero, check that you don't use zero based numbering if it's not true.)\n";
+
+
+
+
+
+
+
+
+
+	string line;
+	string buf;
+	SafeInFile input(filename.c_str());
+
+	std::getline(input,line);
+	if (!input.good())
+		throw FileFormatError("Can't read first line of network input file.");
+
+	unsigned int numNodes = 0;
+	std::istringstream ss;
+	ss.str(line);
+	ss >> buf;
+	if(buf != "*Intra" && buf != "*intra")
+		throw FileFormatError("The first line (to lower cases) doesn't match '*intra'.");
+
+	bool checkNodeLimit = m_config.nodeLimit > 0;
+	if (checkNodeLimit)
+		numNodes = m_config.nodeLimit;
+
+	m_sumNodeWeights = 0.0;
+
+
+	unsigned int numDoubleLinks = 0;
+	unsigned int numEdgeLines = 0;
+	unsigned int numSkippedEdges = 0;
+	unsigned int maxLinkEnd = 0;
+	m_totalLinkWeight = 0.0;
+
+	// Read links in format "from through to weight", for example "1 2 3 2" (all integers) and each undirected link only ones (weight is optional).
+	while(!std::getline(input, line).fail())
+	{
+		if (line.length() == 0)
+			continue;
+		++numEdgeLines;
+		ss.clear();
+		ss.str(line);
+		unsigned int n1;
+		if (!(ss >> n1))
+		{
+			throw BadConversionError(io::Str() << "Can't parse first integer of link number " <<
+					numEdgeLines << " from line '" << line << "'");
+		}
+		unsigned int n2;
+		if (!(ss >> n2))
+			throw BadConversionError(io::Str() << "Can't parse second integer of link number " <<
+					numEdgeLines << " from line '" << line << "'");
+
+		unsigned int n3;
+		if (!(ss >> n3))
+			throw BadConversionError(io::Str() << "Can't parse third integer of link number " <<
+					numEdgeLines << " from line '" << line << "'");
+
+		if (checkNodeLimit && (n3 > numNodes || n2 > numNodes || n1 > numNodes))
+		{
+			++numSkippedEdges;
+			continue;
+		}
+
+		double linkWeight;
+		if (!(ss >> linkWeight))
+			linkWeight = 1.0;
+
+		--n1; // Node numbering starts from 1 in the .net format
+		--n2;
+		--n3;
+
+		maxLinkEnd = std::max(maxLinkEnd, std::max(n1, std::max(n2, n3)));
+
+		//		// Aggregate link weights if they are definied more than once
+		//		LinkMap::iterator it = m_links.find(std::make_pair(n1, n2));
+		//		if(it == m_links.end())
+		//		{
+		//			m_links.insert(std::make_pair(std::make_pair(n1, n2), linkWeight));
+		//		}
+		//		else
+		//		{
+		//			it->second += linkWeight;
+		//			++numDoubleLinks;
+		//			if (n2 == n1)
+		//				--m_numSelfLinks;
+		//		}
+
+		if(m_config.includeSelfLinks)
+		{
+			m_m2Nodes[M2Node(n1,n2)] += linkWeight;
+			m_m2Nodes[M2Node(n2,n3)] += 0.0;
+
+			m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
+			m_totM2LinkWeight += linkWeight;
+
+			m_totalLinkWeight += linkWeight;
+
+			if (n2 == n3) {
+				++m_numSelfLinks;
+				m_totalSelfLinkWeight += linkWeight;
+				if (n1 == n2) {
+					++m_numMemorySelfLinks;
+					m_totalMemorySelfLinkWeight += linkWeight;
+				}
+			}
+			addLink(n2, n3, linkWeight);
+		}
+		else if (n2 != n3)
+		{
+			m_totalLinkWeight += linkWeight;
+			addLink(n2, n3, linkWeight);
+
+			if(n1 != n2)
+			{
+				m_m2Nodes[M2Node(n1,n2)] += linkWeight;
+				m_m2Nodes[M2Node(n2,n3)] += 0.0;
+
+				m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
+				m_totM2LinkWeight += linkWeight;
+			}
+			else
+			{
+				m_m2Nodes[M2Node(n2,n3)] += linkWeight;
+			}
+		}
+	}
+
+	unsigned int zeroMinusOne = 0;
+	--zeroMinusOne;
+	if (maxLinkEnd == zeroMinusOne)
+		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
+	if (maxLinkEnd >= numNodes)
+		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
+
+	if (m_links.size() == 0)
+		throw InputDomainError(io::Str() << "No links could be found!");
+
+
+
+	unsigned int M2nodeNr = 0;
+	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
+	{
+		m_m2NodeMap[it->first] = M2nodeNr;
+		M2nodeNr++;
+	}
+
+//	set<int> M1nodes;
+	m_m2NodeWeights.resize(m_m2Nodes.size());
+	m_totM2NodeWeight = 0.0;
+
+	M2nodeNr = 0;
+	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
+	{
+//		M1nodes.insert(it->first.second);
+		m_m2NodeWeights[M2nodeNr] += it->second;
+		m_totM2NodeWeight += it->second;
+		++M2nodeNr;
+	}
+
+
+
+	//	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
+	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << m_numLinks << " links. ";
+	std::cout << "Generated " << m_m2Nodes.size() << " memory nodes and " << m_m2Links.size() << " memory links. ";
+	//	std::cout << "Average node weight: " << (m_sumNodeWeights / numNodes) << ". ";
+	if (m_config.nodeLimit > 0)
+		std::cout << "Limiting network to " << numNodes << " nodes and " << m_links.size() << " links. ";
+	if(numDoubleLinks > 0)
+		std::cout << numDoubleLinks << " links was aggregated to existing links. ";
+	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
+		std::cout << m_numSelfLinks << " self-links was ignored. ";
+	std::cout << std::endl;
 }

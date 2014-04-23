@@ -137,9 +137,13 @@ struct Config
 
 	bool printAsUndirected() const { return originallyUndirected; }
 
-	bool isMemoryNetwork() const { return withMemory || inputFormat == "3gram"; }
+	bool isMemoryInput() const { return inputFormat == "3gram" || inputFormat == "multiplex"; }
 
-	bool isSimulatedMemoryNetwork() const { return withMemory && inputFormat != "3gram"; }
+	bool isMemoryNetwork() const { return withMemory || isMemoryInput(); }
+
+	bool isSimulatedMemoryNetwork() const { return withMemory && !isMemoryInput(); }
+
+	bool isMultiplexNetwork() const { return inputFormat == "multiplex"; }
 
 	bool haveModularResultOutput() const
 	{
@@ -154,7 +158,7 @@ struct Config
 
 	// Input
 	std::string networkFile;
-	std::string inputFormat;
+	std::string inputFormat; // 'pajek', 'link-list', '3gram' or 'multiplex'
 	bool withMemory;
 	bool parseWithoutIOStreams;
 	bool zeroBasedNodeNumbers;

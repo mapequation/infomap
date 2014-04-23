@@ -37,8 +37,9 @@
 
 using std::make_pair;
 
-void Network::readFromFile(std::string filename)
+void Network::readInputData()
 {
+	std::string filename = m_config.networkFile;
 	FileURI networkFilename(filename, false);
 	std::string format = m_config.inputFormat;
 
@@ -231,7 +232,7 @@ void Network::parsePajekNetwork(std::string filename)
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
 	if (maxLinkEnd == zeroMinusOne)
-		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers starts from zero.");
+		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
 	if (maxLinkEnd >= numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 
@@ -333,7 +334,7 @@ void Network::parseLinkList(std::string filename)
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
 	if (maxLinkEnd == zeroMinusOne)
-		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers starts from zero.");
+		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
 
 
 	m_numLinks -= numDoubleLinks;
@@ -350,7 +351,7 @@ void Network::parseLinkList(std::string filename)
 	}
 
 	std::cout << "done! Found " << m_numNodes << " nodes and " << m_links.size() << " links." << std::endl;
-	if (!minLinkIsZero)
+	if (!minLinkIsZero && m_config.zeroBasedNodeNumbers)
 		std::cout << "(Warning: minimum link index is not zero, check that you don't use zero based numbering if it's not true.)\n";
 }
 
@@ -506,7 +507,7 @@ void Network::parsePajekNetworkCStyle(std::string filename)
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
 	if (maxLinkEnd == zeroMinusOne)
-		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers starts from zero.");
+		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
 	if (maxLinkEnd >= numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 
@@ -614,7 +615,7 @@ void Network::parseLinkListCStyle(std::string filename)
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
 	if (maxLinkEnd == zeroMinusOne)
-		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers starts from zero.");
+		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
 
 
 	m_numLinks -= numDoubleLinks;
@@ -631,7 +632,7 @@ void Network::parseLinkListCStyle(std::string filename)
 	}
 
 	std::cout << "done! Found " << m_numNodes << " nodes and " << m_numLinks << " links." << std::endl;
-	if (!minLinkIsZero)
+	if (!minLinkIsZero && m_config.zeroBasedNodeNumbers)
 		std::cout << "(Warning: minimum link index is not zero, check that you don't use zero based numbering if it's not true.)\n";
 }
 

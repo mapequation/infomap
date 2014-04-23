@@ -1155,7 +1155,7 @@ bool InfomapBase::initNetwork()
 
  	try
  	{
- 		network.readFromFile(m_config.networkFile);
+ 		network.readInputData();
  	}
  	catch (const std::runtime_error& error)
  	{
@@ -1198,11 +1198,12 @@ bool InfomapBase::initNetwork()
 
 bool InfomapBase::initMemoryNetwork()
 {
-	MemNetwork network(m_config);
+	std::auto_ptr<MemNetwork> net(m_config.isMultiplexNetwork() ? new MultiplexNetwork(m_config) : new MemNetwork(m_config));
+	MemNetwork& network = *net;
 
 	try
 	{
-		network.readFromFile(m_config.networkFile);
+		network.readFromFile();
 	}
 	catch (const std::runtime_error& error)
 	{

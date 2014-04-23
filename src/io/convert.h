@@ -73,6 +73,10 @@ public:
 	InternalOrderError(std::string const& s) : std::logic_error(s) { }
 };
 
+struct ImplementationError : public std::runtime_error {
+	ImplementationError(std::string const& s) : std::runtime_error(s) {}
+};
+
 template<typename T>
 struct TypeInfo { static std::string name() { return "non-specialized type"; } };
 template<>

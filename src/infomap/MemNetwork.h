@@ -77,7 +77,7 @@ public:
 	{}
 	virtual ~MemNetwork() {}
 
-	virtual void readFromFile(std::string filename);
+	virtual void readInputData();
 
 	unsigned int numM2Nodes() const { return m_m2Nodes.size(); }
 	const M2LinkMap& m2LinkMap() const { return m_m2Links; }
@@ -90,10 +90,12 @@ public:
 protected:
 
 	void parseTrigram(std::string filename);
+	void parseMultiplex(std::string filename);
+
 	/**
-	 * Create trigrams from first order data by chaining pair of links
-	 * with the same connection node, respecting the direction, for example
-	 * {n1 n2} and {n2 n3}, but not {n1 n2} and {n3 n2}.
+	 * Create trigrams from first order data by chaining pair of overlapping links.
+	 * Example pair (1,2) and (2,3) will be chained
+	 * and (2,1) (2,3) only if undirected
 	 *
 	 * Example of ordinary network:
 	 * n1 n2 w12
@@ -102,11 +104,49 @@ protected:
 	 * n2 n4 w24
 	 * n3 n4 w34
 	 *
-	 * Its corresponding trigram:
+	 * Its corresponding trigram (for directed input):
 	 * n1 n2 n3 w23
 	 * n1 n2 n4 w24
 	 * n1 n3 n4 w34
 	 * n2 n3 n4 w34
+	 * +first-order links for dangling memory nodes
+	 *
+	 * For undirected input, the ordinary network
+	 * will first be inflated for both directions:
+	 * n1 n2 w12
+	 * n1 n3 w13
+	 * n2 n3 w23
+	 * n2 n4 w24
+	 * n3 n4 w34
+	 * n2 n1 w12
+	 * n3 n1 w13
+	 * n3 n2 w23
+	 * n4 n2 w24
+	 * n4 n3 w34
+	 *
+	 * Its corresponding trigram (for undirected input):
+	 * n1 n2 n1 w12
+	 * n1 n2 n3 w23
+	 * n1 n2 n4 w24
+	 * n1 n3 n1 w13
+	 * n1 n3 n2 w23
+	 * n1 n3 n4 w34
+	 * n2 n3 n1 w13
+	 * n2 n3 n2 w32
+	 * n2 n3 n4 w34
+	 * n2 n1 n2 w12
+	 * n2 n1 n3 w13
+	 * n3 n1 n2 w12
+	 * n3 n1 n3 w13
+	 * n3 n2 n1 w12
+	 * n3 n2 n3 w23
+	 * n3 n2 n4 w24
+	 * n4 n2 n1 w12
+	 * n4 n2 n3 w23
+	 * n4 n2 n4 w24
+	 * n4 n3 n1 w13
+	 * n4 n3 n2 w23
+	 * n4 n3 n4 w34
 	 */
 	void simulateMemoryFromOrdinaryNetwork();
 
@@ -119,6 +159,30 @@ protected:
 	unsigned int m_numMemorySelfLinks;
 	double m_totalMemorySelfLinkWeight;
 
+};
+
+class MultiplexNetwork : public MemNetwork
+{
+public:
+
+	MultiplexNetwork(const Config& config) :
+		MemNetwork(config)
+	{}
+	virtual ~MultiplexNetwork() {}
+
+	virtual void readFromFile(std::string filename);
+
+	unsigned int numM2Nodes() const { return m_m2Nodes.size(); }
+	const M2LinkMap& m2LinkMap() const { return m_m2Links; }
+	const M2NodeMap& m2NodeMap() const { return m_m2NodeMap; }
+	const std::vector<double>& m2NodeWeights() const { return m_m2NodeWeights; }
+	double totalM2NodeWeight() const { return m_totM2NodeWeight; }
+	double totalM2LinkWeight() const { return m_totM2LinkWeight; }
+	double totalMemorySelfLinkWeight() const { return m_totalMemorySelfLinkWeight; }
+
+protected:
+
+	std::vector<Network> m_networks;
 };
 
 #endif /* MEMNETWORK_H_ */

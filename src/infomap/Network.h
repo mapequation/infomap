@@ -51,7 +51,7 @@ public:
 	{}
 	virtual ~Network() {}
 
-	void readFromFile(std::string filename);
+	virtual void readInputData();
 	void printNetworkAsPajek(std::string filename);
 
 	unsigned int numNodes() const { return m_numNodes; }
