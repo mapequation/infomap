@@ -27,7 +27,6 @@
 
 #ifndef CONFIG_H_
 #define CONFIG_H_
-#include <ostream>
 #include <string>
 
 struct Config
@@ -81,8 +80,107 @@ struct Config
 		benchmark(false)
 	{
 		setOptimizationLevel(1);
-		// Default output to .tree
-//		printTree = true;
+	}
+
+	Config(const Config& other)
+	:	networkFile(other.networkFile),
+	 	inputFormat(other.inputFormat),
+	 	withMemory(other.withMemory),
+	 	parseWithoutIOStreams(other.parseWithoutIOStreams),
+		zeroBasedNodeNumbers(other.zeroBasedNodeNumbers),
+		includeSelfLinks(other.includeSelfLinks),
+		ignoreEdgeWeights(other.ignoreEdgeWeights),
+		nodeLimit(other.nodeLimit),
+	 	clusterDataFile(other.clusterDataFile),
+	 	noInfomap(other.noInfomap),
+	 	twoLevel(other.twoLevel),
+		directed(other.directed),
+		undirdir(other.undirdir),
+		outdirdir(other.outdirdir),
+		rawdir(other.rawdir),
+		recordedTeleportation(other.recordedTeleportation),
+		teleportToNodes(other.teleportToNodes),
+		teleportationProbability(other.teleportationProbability),
+		selfTeleportationProbability(other.selfTeleportationProbability),
+		seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
+		numTrials(other.numTrials),
+		minimumCodelengthImprovement(other.minimumCodelengthImprovement),
+		randomizeCoreLoopLimit(other.randomizeCoreLoopLimit),
+		coreLoopLimit(other.coreLoopLimit),
+		levelAggregationLimit(other.levelAggregationLimit),
+		tuneIterationLimit(other.tuneIterationLimit),
+		minimumRelativeTuneIterationImprovement(other.minimumRelativeTuneIterationImprovement),
+		fastCoarseTunePartition(other.fastCoarseTunePartition),
+		alternateCoarseTuneLevel(other.alternateCoarseTuneLevel),
+		coarseTuneLevel(other.coarseTuneLevel),
+		fastHierarchicalSolution(other.fastHierarchicalSolution),
+		outDirectory(other.outDirectory),
+		originallyUndirected(other.originallyUndirected),
+		printTree(other.printTree),
+		printFlowTree(other.printFlowTree),
+		printMap(other.printMap),
+		printClu(other.printClu),
+		printNodeRanks(other.printNodeRanks),
+		printFlowNetwork(other.printFlowNetwork),
+		printPajekNetwork(other.printPajekNetwork),
+		printBinaryTree(other.printBinaryTree),
+		printBinaryFlowTree(other.printBinaryFlowTree),
+		noFileOutput(other.noFileOutput),
+		verbosity(other.verbosity),
+		verboseNumberPrecision(other.verboseNumberPrecision),
+		benchmark(other.benchmark)
+	{
+	}
+
+	Config& operator=(const Config& other)
+	{
+		networkFile = other.networkFile;
+	 	inputFormat = other.inputFormat;
+	 	withMemory = other.withMemory;
+	 	parseWithoutIOStreams = other.parseWithoutIOStreams;
+		zeroBasedNodeNumbers = other.zeroBasedNodeNumbers;
+		includeSelfLinks = other.includeSelfLinks;
+		ignoreEdgeWeights = other.ignoreEdgeWeights;
+		nodeLimit = other.nodeLimit;
+	 	clusterDataFile = other.clusterDataFile;
+	 	noInfomap = other.noInfomap;
+	 	twoLevel = other.twoLevel;
+		directed = other.directed;
+		undirdir = other.undirdir;
+		outdirdir = other.outdirdir;
+		rawdir = other.rawdir;
+		recordedTeleportation = other.recordedTeleportation;
+		teleportToNodes = other.teleportToNodes;
+		teleportationProbability = other.teleportationProbability;
+		selfTeleportationProbability = other.selfTeleportationProbability;
+		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
+		numTrials = other.numTrials;
+		minimumCodelengthImprovement = other.minimumCodelengthImprovement;
+		randomizeCoreLoopLimit = other.randomizeCoreLoopLimit;
+		coreLoopLimit = other.coreLoopLimit;
+		levelAggregationLimit = other.levelAggregationLimit;
+		tuneIterationLimit = other.tuneIterationLimit;
+		minimumRelativeTuneIterationImprovement = other.minimumRelativeTuneIterationImprovement;
+		fastCoarseTunePartition = other.fastCoarseTunePartition;
+		alternateCoarseTuneLevel = other.alternateCoarseTuneLevel;
+		coarseTuneLevel = other.coarseTuneLevel;
+		fastHierarchicalSolution = other.fastHierarchicalSolution;
+		outDirectory = other.outDirectory;
+		originallyUndirected = other.originallyUndirected;
+		printTree = other.printTree;
+		printFlowTree = other.printFlowTree;
+		printMap = other.printMap;
+		printClu = other.printClu;
+		printNodeRanks = other.printNodeRanks;
+		printFlowNetwork = other.printFlowNetwork;
+		printPajekNetwork = other.printPajekNetwork;
+		printBinaryTree = other.printBinaryTree;
+		printBinaryFlowTree = other.printBinaryFlowTree;
+		noFileOutput = other.noFileOutput;
+		verbosity = other.verbosity;
+		verboseNumberPrecision = other.verboseNumberPrecision;
+		benchmark = other.benchmark;
+		return *this;
 	}
 
 	// Set all optimization options at once with different accuracy to performance trade-off
@@ -137,9 +235,15 @@ struct Config
 
 	bool printAsUndirected() const { return originallyUndirected; }
 
-	bool isMemoryNetwork() const { return withMemory || inputFormat == "3gram"; }
+	bool parseAsUndirected() const { return originallyUndirected; }
 
-	bool isSimulatedMemoryNetwork() const { return withMemory && inputFormat != "3gram"; }
+	bool isMemoryInput() const { return inputFormat == "3gram" || inputFormat == "multiplex"; }
+
+	bool isMemoryNetwork() const { return withMemory || isMemoryInput(); }
+
+	bool isSimulatedMemoryNetwork() const { return withMemory && !isMemoryInput(); }
+
+	bool isMultiplexNetwork() const { return inputFormat == "multiplex"; }
 
 	bool haveModularResultOutput() const
 	{
@@ -154,7 +258,7 @@ struct Config
 
 	// Input
 	std::string networkFile;
-	std::string inputFormat;
+	std::string inputFormat; // 'pajek', 'link-list', '3gram' or 'multiplex'
 	bool withMemory;
 	bool parseWithoutIOStreams;
 	bool zeroBasedNodeNumbers;

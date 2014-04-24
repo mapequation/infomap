@@ -37,6 +37,7 @@
 #include "../utils/types.h"
 using std::map;
 using std::pair;
+#include <deque>
 
 struct M2Node
 {
@@ -77,7 +78,7 @@ public:
 	{}
 	virtual ~MemNetwork() {}
 
-	virtual void readFromFile(std::string filename);
+	virtual void readInputData();
 
 	unsigned int numM2Nodes() const { return m_m2Nodes.size(); }
 	const M2LinkMap& m2LinkMap() const { return m_m2Links; }
@@ -90,10 +91,12 @@ public:
 protected:
 
 	void parseTrigram(std::string filename);
+	void parseMultiplex(std::string filename);
+
 	/**
-	 * Create trigrams from first order data by chaining pair of links
-	 * with the same connection node, respecting the direction, for example
-	 * {n1 n2} and {n2 n3}, but not {n1 n2} and {n3 n2}.
+	 * Create trigrams from first order data by chaining pair of overlapping links.
+	 * Example pair (1,2) and (2,3) will be chained
+	 * and (2,1) (2,3) only if undirected
 	 *
 	 * Example of ordinary network:
 	 * n1 n2 w12
@@ -102,11 +105,49 @@ protected:
 	 * n2 n4 w24
 	 * n3 n4 w34
 	 *
-	 * Its corresponding trigram:
+	 * Its corresponding trigram (for directed input):
 	 * n1 n2 n3 w23
 	 * n1 n2 n4 w24
 	 * n1 n3 n4 w34
 	 * n2 n3 n4 w34
+	 * +first-order links for dangling memory nodes
+	 *
+	 * For undirected input, the ordinary network
+	 * will first be inflated for both directions:
+	 * n1 n2 w12
+	 * n1 n3 w13
+	 * n2 n3 w23
+	 * n2 n4 w24
+	 * n3 n4 w34
+	 * n2 n1 w12
+	 * n3 n1 w13
+	 * n3 n2 w23
+	 * n4 n2 w24
+	 * n4 n3 w34
+	 *
+	 * Its corresponding trigram (for undirected input):
+	 * n1 n2 n1 w12
+	 * n1 n2 n3 w23
+	 * n1 n2 n4 w24
+	 * n1 n3 n1 w13
+	 * n1 n3 n2 w23
+	 * n1 n3 n4 w34
+	 * n2 n3 n1 w13
+	 * n2 n3 n2 w32
+	 * n2 n3 n4 w34
+	 * n2 n1 n2 w12
+	 * n2 n1 n3 w13
+	 * n3 n1 n2 w12
+	 * n3 n1 n3 w13
+	 * n3 n2 n1 w12
+	 * n3 n2 n3 w23
+	 * n3 n2 n4 w24
+	 * n4 n2 n1 w12
+	 * n4 n2 n3 w23
+	 * n4 n2 n4 w24
+	 * n4 n3 n1 w13
+	 * n4 n3 n2 w23
+	 * n4 n3 n4 w34
 	 */
 	void simulateMemoryFromOrdinaryNetwork();
 
@@ -119,6 +160,67 @@ protected:
 	unsigned int m_numMemorySelfLinks;
 	double m_totalMemorySelfLinkWeight;
 
+};
+
+struct InterLinkKey
+{
+	InterLinkKey(unsigned int nodeIndex = 0, unsigned int layer1 = 0, unsigned int layer2 = 0) :
+		nodeIndex(nodeIndex), layer1(layer1), layer2(layer2) {}
+	InterLinkKey(const InterLinkKey& other) :
+		nodeIndex(other.nodeIndex), layer1(other.layer1), layer2(other.layer2) {}
+	InterLinkKey& operator=(const InterLinkKey& other) {
+		nodeIndex = other.nodeIndex; layer1 = other.layer1; layer2 = other.layer2; return *this;
+	}
+	bool operator<(InterLinkKey other) const
+	{
+		return nodeIndex == other.nodeIndex ?
+				(layer1 == other.layer1? layer2 < other.layer2 : layer1 < other.layer1) :
+				nodeIndex < other.nodeIndex;
+	}
+
+	unsigned int nodeIndex;
+	unsigned int layer1;
+	unsigned int layer2;
+};
+
+class MultiplexNetwork : public MemNetwork
+{
+public:
+
+	MultiplexNetwork(const Config& config) :
+		MemNetwork(config)
+	{}
+	virtual ~MultiplexNetwork() {}
+
+	virtual void readInputData();
+
+protected:
+
+	void parseMultiplexNetwork(std::string filename);
+
+	void generateMemoryNetwork();
+
+	// Helper methods
+
+	/**
+	 * Parse a string of intra link data for a certain network, "level node node weight".
+	 * If no weight data can be extracted, the default value 1.0 will be used.
+	 * @throws an error if not enough data can be extracted.
+	 */
+	void parseIntraLink(const std::string& line, unsigned int& level, unsigned int& n1, unsigned int& n2, double& weight);
+
+	/**
+	 * Parse a string of inter link data for a certain node, "node level level weight".
+	 * If no weight data can be extracted, the default value 1.0 will be used.
+	 * @throws an error if not enough data can be extracted.
+	 */
+	void parseInterLink(const std::string& line, unsigned int& node, unsigned int& level1, unsigned int& level2, double& weight);
+
+	// Member variables
+
+	std::deque<Network> m_networks;
+
+	std::map<InterLinkKey, double> m_interLinks; // {node level level} -> {weight}
 };
 
 #endif /* MEMNETWORK_H_ */

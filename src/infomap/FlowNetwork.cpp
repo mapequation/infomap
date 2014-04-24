@@ -148,9 +148,18 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 	// Calculate the teleport rate distribution
 	if (config.teleportToNodes)
 	{
-		const std::vector<double>& nodeWeights = network.nodeTeleportRates();
-		for (unsigned int i = 0; i < numNodes; ++i)
-			m_nodeTeleportRates[i] = nodeWeights[i] / network.sumNodeWeights();
+		const std::vector<double>& nodeWeights = network.nodeWeights();
+		if (nodeWeights.empty())
+		{
+			double rate = 1.0 / numNodes;
+			for (unsigned int i = 0; i < numNodes; ++i)
+				m_nodeTeleportRates[i] = rate;
+		}
+		else
+		{
+			for (unsigned int i = 0; i < numNodes; ++i)
+				m_nodeTeleportRates[i] = nodeWeights[i] / network.sumNodeWeights();
+		}
 	}
 	else // Teleport to nodes
 	{
