@@ -170,17 +170,29 @@ public:
 	{}
 	virtual ~MultiplexNetwork() {}
 
-	virtual void readFromFile(std::string filename);
-
-	unsigned int numM2Nodes() const { return m_m2Nodes.size(); }
-	const M2LinkMap& m2LinkMap() const { return m_m2Links; }
-	const M2NodeMap& m2NodeMap() const { return m_m2NodeMap; }
-	const std::vector<double>& m2NodeWeights() const { return m_m2NodeWeights; }
-	double totalM2NodeWeight() const { return m_totM2NodeWeight; }
-	double totalM2LinkWeight() const { return m_totM2LinkWeight; }
-	double totalMemorySelfLinkWeight() const { return m_totalMemorySelfLinkWeight; }
+	virtual void readInputData();
 
 protected:
+
+	void parseMultiplexNetwork(std::string filename);
+
+	// Helper methods
+
+	/**
+	 * Parse a string of intra link data for a certain network, "level node node weight".
+	 * If no weight data can be extracted, the default value 1.0 will be used.
+	 * @throws an error if not enough data can be extracted.
+	 */
+	void parseIntraLink(const std::string& line, unsigned int& level, unsigned int& n1, unsigned int& n2, double& weight);
+
+	/**
+	 * Parse a string of inter link data for a certain node, "node level level weight".
+	 * If no weight data can be extracted, the default value 1.0 will be used.
+	 * @throws an error if not enough data can be extracted.
+	 */
+	void parseInterLink(const std::string& line, unsigned int& node, unsigned int& level1, unsigned int& level2, double& weight);
+
+	// Member variables
 
 	std::vector<Network> m_networks;
 };

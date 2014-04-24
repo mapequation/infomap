@@ -58,7 +58,6 @@ public:
 		double flow;
 	};
 
-	typedef Network::NodeMap										NodeMap;
 	typedef Network::LinkMap										LinkMap;
 	typedef std::vector<Link>										LinkVec;
 

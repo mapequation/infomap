@@ -1203,7 +1203,7 @@ bool InfomapBase::initMemoryNetwork()
 
 	try
 	{
-		network.readFromFile();
+		network.readInputData();
 	}
 	catch (const std::runtime_error& error)
 	{
