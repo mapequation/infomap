@@ -113,11 +113,22 @@ public:
 	 */
 	bool addLink(unsigned int n1, unsigned int n2, double weight);
 
+	/**
+	 * Run after adding links to check for non-feasible values and set the
+	 * node count if not specified in the network.
+	 * @param desiredNumberOfNodes Set the desired number of nodes, or leave at
+	 * zero to set it automatically to match the highest node number defined on
+	 * the links.
+	 */
+	void finalizeAndCheckNetwork(unsigned int desiredNumberOfNodes = 0);
+
+	void printParsingResult();
+
 	void printNetworkAsPajek(std::string filename);
 
 	unsigned int numNodes() const { return m_numNodes; }
 	const std::vector<std::string>& nodeNames() const { return m_nodeNames; }
-	const std::vector<double>& nodeTeleportRates() const { return m_nodeWeights; }
+	const std::vector<double>& nodeWeights() const { return m_nodeWeights; }
 	double sumNodeWeights() const { return m_sumNodeWeights; }
 
 	const LinkMap& linkMap() const { return m_links; }
@@ -153,9 +164,6 @@ protected:
 	 */
 	bool insertLink(unsigned int n1, unsigned int n2, double weight);
 
-	void checkLinksOk();
-
-	void printParsingResult();
 
 	Config m_config;
 

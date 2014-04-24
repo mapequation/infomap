@@ -178,7 +178,9 @@ void Network::parsePajekNetwork(std::string filename)
 		addLink(n1, n2, weight);
 	}
 
-	checkLinksOk();
+	finalizeAndCheckNetwork();
+
+	std::cout << "done! ";
 
 	printParsingResult();
 
@@ -288,7 +290,11 @@ void Network::parsePajekNetworkWithoutIOStreams(std::string filename)
 		addLink(n1, n2, weight);
 	}
 
-	checkLinksOk();
+	fclose(file);
+
+	finalizeAndCheckNetwork();
+
+	std::cout << "done! ";
 
 	printParsingResult();
 }
@@ -324,20 +330,9 @@ void Network::parseLinkList(std::string filename)
 		addLink(n1, n2, weight);
 	}
 
-	// Define nodes
-	m_numNodes = m_numNodesFound = m_maxNodeIndex + 1;
+	finalizeAndCheckNetwork();
 
-	m_nodeNames.resize(m_numNodes);
-	m_nodeWeights.assign(m_numNodes, 1.0);
-	m_sumNodeWeights = 1.0 * m_numNodes;
-
-	for (unsigned int i = 0; i < m_numNodes; ++i)
-	{
-		m_nodeNames[i] = io::stringify(i+1);
-	}
-
-
-	checkLinksOk();
+	std::cout << "done! ";
 
 	printParsingResult();
 
@@ -366,20 +361,11 @@ void Network::parseLinkListWithoutIOStreams(std::string filename)
 		addLink(n1, n2, weight);
 	}
 
-	// Define nodes
-	m_numNodes = m_numNodesFound = m_maxNodeIndex + 1;
+	fclose(file);
 
-	m_nodeNames.resize(m_numNodes);
-	m_nodeWeights.assign(m_numNodes, 1.0);
-	m_sumNodeWeights = 1.0 * m_numNodes;
+	finalizeAndCheckNetwork();
 
-	for (unsigned int i = 0; i < m_numNodes; ++i)
-	{
-		int length = snprintf(line, LINELENGTH, "%d", i+1);
-		m_nodeNames[i] = std::string(line, length);
-	}
-
-	checkLinksOk();
+	RELEASE_OUT("done! ");
 
 	printParsingResult();
 }
@@ -565,10 +551,21 @@ bool Network::insertLink(unsigned int n1, unsigned int n2, double weight)
 	return true;
 }
 
-void Network::checkLinksOk()
+void Network::finalizeAndCheckNetwork(unsigned int desiredNumberOfNodes)
 {
 	if (m_links.empty())
-		throw InputDomainError(io::Str() << "No links could be found!");
+		throw InputDomainError("No links added!");
+
+	// If no nodes defined
+	if (m_numNodes == 0)
+		m_numNodes = m_numNodesFound = m_maxNodeIndex + 1;
+
+	if (desiredNumberOfNodes != 0)
+	{
+		if (!m_nodeNames.empty() && desiredNumberOfNodes != m_nodeNames.size())
+			throw InputDomainError("Can't change the number of nodes in networks with a specified number of nodes.");
+		m_numNodes = desiredNumberOfNodes;
+	}
 
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
@@ -577,13 +574,13 @@ void Network::checkLinksOk()
 	if (m_maxNodeIndex >= m_numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
-		std::cout << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.)\n";
+		std::cout << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.) ";
 
 }
 
 void Network::printParsingResult()
 {
-	std::cout << "done! Found " << m_numNodesFound << " nodes and " << m_numLinksFound << " links.\n  -> ";
+	std::cout << "Found " << m_numNodesFound << " nodes and " << m_numLinksFound << " links.\n  -> ";
 	if(m_numAggregatedLinks > 0)
 		std::cout << m_numAggregatedLinks << " links was aggregated to existing links. ";
 	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)

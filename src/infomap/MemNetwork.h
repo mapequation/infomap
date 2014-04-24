@@ -37,6 +37,7 @@
 #include "../utils/types.h"
 using std::map;
 using std::pair;
+#include <deque>
 
 struct M2Node
 {
@@ -161,6 +162,27 @@ protected:
 
 };
 
+struct InterLinkKey
+{
+	InterLinkKey(unsigned int nodeIndex = 0, unsigned int layer1 = 0, unsigned int layer2 = 0) :
+		nodeIndex(nodeIndex), layer1(layer1), layer2(layer2) {}
+	InterLinkKey(const InterLinkKey& other) :
+		nodeIndex(other.nodeIndex), layer1(other.layer1), layer2(other.layer2) {}
+	InterLinkKey& operator=(const InterLinkKey& other) {
+		nodeIndex = other.nodeIndex; layer1 = other.layer1; layer2 = other.layer2; return *this;
+	}
+	bool operator<(InterLinkKey other) const
+	{
+		return nodeIndex == other.nodeIndex ?
+				(layer1 == other.layer1? layer2 < other.layer2 : layer1 < other.layer1) :
+				nodeIndex < other.nodeIndex;
+	}
+
+	unsigned int nodeIndex;
+	unsigned int layer1;
+	unsigned int layer2;
+};
+
 class MultiplexNetwork : public MemNetwork
 {
 public:
@@ -175,6 +197,8 @@ public:
 protected:
 
 	void parseMultiplexNetwork(std::string filename);
+
+	void generateMemoryNetwork();
 
 	// Helper methods
 
@@ -194,7 +218,9 @@ protected:
 
 	// Member variables
 
-	std::vector<Network> m_networks;
+	std::deque<Network> m_networks;
+
+	std::map<InterLinkKey, double> m_interLinks; // {node level level} -> {weight}
 };
 
 #endif /* MEMNETWORK_H_ */

@@ -1163,6 +1163,9 @@ bool InfomapBase::initNetwork()
  		return false;
  	}
 
+ 	if (network.numNodes() == 0)
+		throw InternalOrderError("Zero nodes or missing finalization of network.");
+
  	FlowNetwork flowNetwork;
  	flowNetwork.calculateFlow(network, m_config);
 
@@ -1173,13 +1176,14 @@ bool InfomapBase::initNetwork()
  		network.printNetworkAsPajek(outName);
  	}
 
- 	const std::vector<std::string>& nodeNames = network.nodeNames();
+ 	initNodeNames(network);
+
  	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
  	const std::vector<double>& nodeTeleportWeights = flowNetwork.getNodeTeleportRates();
  	m_treeData.reserveNodeCount(network.numNodes());
 
  	for (unsigned int i = 0; i < network.numNodes(); ++i)
- 		m_treeData.addNewNode(nodeNames[i], nodeFlow[i], nodeTeleportWeights[i]);
+ 		m_treeData.addNewNode(m_nodeNames[i], nodeFlow[i], nodeTeleportWeights[i]);
  	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();
  	for (unsigned int i = 0; i < links.size(); ++i)
  		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow);
@@ -1211,6 +1215,9 @@ bool InfomapBase::initMemoryNetwork()
 		return false;
 	}
 
+	if (network.numNodes() == 0)
+		throw InternalOrderError("Zero nodes or missing finalization of network.");
+
 	MemFlowNetwork flowNetwork;
 	flowNetwork.calculateFlow(network, m_config);
 
@@ -1221,6 +1228,7 @@ bool InfomapBase::initMemoryNetwork()
 		network.printNetworkAsPajek(outName);
 	}
 
+	initNodeNames(network);
 
 //	const std::vector<std::string>& nodeNames = network.nodeNames();
 	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
@@ -1284,9 +1292,33 @@ bool InfomapBase::initMemoryNetwork()
 		std::cout << "done! (Sum flow: " << sumFlow << ", sumM2flow: " << sumM2flow << ")\n";
 	}
 
-	network.swapNodeNames(m_nodeNames);
-
 	return true;
+}
+
+void InfomapBase::initNodeNames(Network& network)
+{
+	network.swapNodeNames(m_nodeNames);
+	if (m_nodeNames.empty())
+	{
+		// Define nodes
+		m_nodeNames.resize(network.numNodes());
+
+		if (m_config.parseWithoutIOStreams)
+		{
+			const int NAME_BUFFER_SIZE = 32;
+			char line[NAME_BUFFER_SIZE];
+			for (unsigned int i = 0; i < network.numNodes(); ++i)
+			{
+				int length = snprintf(line, NAME_BUFFER_SIZE, "%d", i+1);
+				m_nodeNames[i] = std::string(line, length);
+			}
+		}
+		else
+		{
+			for (unsigned int i = 0; i < network.numNodes(); ++i)
+				m_nodeNames[i] = io::stringify(i+1);
+		}
+	}
 }
 
 void InfomapBase::initSubNetwork(NodeBase& parent, bool recalculateFlow)
