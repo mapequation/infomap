@@ -6,7 +6,12 @@ www.mapequation.org
 
 
 --------------------------------------------------------------------------------
-Apri 3, 2014. Infomap 0.14.x
+Apr 24, 2014. Infomap 0.15.x
+--------------------------------------------------------------------------------
+* Multiplex networks supported, generating memory from different networks layers.
+
+--------------------------------------------------------------------------------
+Apr 3, 2014. Infomap 0.14.x
 --------------------------------------------------------------------------------
 * Infomap can now handle memory networks, which may give overlapping partitions.
 
