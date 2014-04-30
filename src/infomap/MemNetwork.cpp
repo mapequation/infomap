@@ -520,6 +520,9 @@ void MultiplexNetwork::generateMemoryNetwork()
 
 	std::cout << "Generating memory network... " << std::flush;
 
+	// Map intra-links on source node. TODO: Use two-step map for all m2links from start, as for ordinary links!
+	std::map<M2Node, std::vector<std::pair<unsigned int, double> > > intraOutLinkMap;
+
 	// First generate memory links from intra links (from ordinary links within each network)
 	for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
 	{
@@ -541,6 +544,8 @@ void MultiplexNetwork::generateMemoryNetwork()
 					m_m2Nodes[M2Node(layerIndex, n1)] += linkWeight; // -> total weighted out-degree
 				}
 				m_m2Nodes[M2Node(layerIndex, n2)] += 0.0;
+
+				intraOutLinkMap[M2Node(layerIndex, n1)].push_back(make_pair(n2, linkWeight));
 			}
 		}
 	}
@@ -555,12 +560,35 @@ void MultiplexNetwork::generateMemoryNetwork()
 		double linkWeight = interIt->second;
 		if (layer1 != layer2)
 		{
-			//TODO: Rescale with self-layer weight if possible
-			m_m2Links[make_pair(M2Node(layer1, nodeIndex), M2Node(layer2, nodeIndex))] += linkWeight;
-			m_totM2LinkWeight += linkWeight;
-			// Create corresponding memory nodes if not exist
-			m_m2Nodes[M2Node(layer1, nodeIndex)] += 0.0;
-			m_m2Nodes[M2Node(layer2, nodeIndex)] += 0.0;
+			// Switch to same physical node within other layer
+//			//TODO: Rescale with self-layer weight if possible
+//			m_m2Links[make_pair(M2Node(layer1, nodeIndex), M2Node(layer2, nodeIndex))] += linkWeight;
+//			m_totM2LinkWeight += linkWeight;
+//			// Create corresponding memory nodes if not exist
+//			m_m2Nodes[M2Node(layer1, nodeIndex)] += 0.0;
+//			m_m2Nodes[M2Node(layer2, nodeIndex)] += 0.0;
+
+			// Distribute inter-link to the outgoing intra-links of the node in the inter-linked layer
+			std::map<M2Node, std::vector<std::pair<unsigned int, double> > >::iterator otherLayerLinkIt = intraOutLinkMap.find(M2Node(layer2, nodeIndex));
+			if (otherLayerLinkIt != intraOutLinkMap.end())
+			{
+				std::vector<std::pair<unsigned int, double> >& outLinksOtherLayer = otherLayerLinkIt->second;
+				double sumLinkWeightOtherLayer = 0.0;
+				for (unsigned int i = 0; i < outLinksOtherLayer.size(); ++i)
+					sumLinkWeightOtherLayer += outLinksOtherLayer[i].second;
+				for (unsigned int i = 0; i < outLinksOtherLayer.size(); ++i)
+				{
+					unsigned int otherNeighbour = outLinksOtherLayer[i].first;
+					double linkWeightOtherLayer = outLinksOtherLayer[i].second;
+					double interIntraLinkWeight = linkWeight * linkWeightOtherLayer / sumLinkWeightOtherLayer;
+					m_m2Links[make_pair(M2Node(layer1, nodeIndex), M2Node(layer2, otherNeighbour))] += interIntraLinkWeight;
+//					m_totM2LinkWeight += interIntraLinkWeight; // Do below for total
+					// Create corresponding memory nodes if not exist
+					m_m2Nodes[M2Node(layer1, nodeIndex)] += 0.0;
+					m_m2Nodes[M2Node(layer2, otherNeighbour)] += 0.0;
+				}
+				m_totM2LinkWeight += linkWeight;
+			}
 		}
 	}
 
