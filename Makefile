@@ -17,6 +17,7 @@ src/infomap/InfomapGreedySpecialized.h \
 src/infomap/InfomapGreedyTypeSpecialized.h \
 src/infomap/MemFlowNetwork.h \
 src/infomap/MemNetwork.h \
+src/infomap/MultiplexNetwork.h \
 src/infomap/Network.h \
 src/infomap/Node.h \
 src/infomap/NodeFactory.h \
@@ -46,6 +47,7 @@ src/infomap/InfomapBase.cpp \
 src/infomap/InfomapContext.cpp \
 src/infomap/MemFlowNetwork.cpp \
 src/infomap/MemNetwork.cpp \
+src/infomap/MultiplexNetwork.cpp \
 src/infomap/Network.cpp \
 src/infomap/Node.cpp \
 src/infomap/TreeData.cpp \

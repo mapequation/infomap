@@ -32,47 +32,57 @@
 
 #include <map>
 #include <utility>
+#include <deque>
 
 #include "../io/Config.h"
 #include "../utils/types.h"
 using std::map;
 using std::pair;
-#include <deque>
 
 struct M2Node
 {
-	unsigned int phys1;
-	unsigned int phys2;
+	unsigned int priorState;
+	unsigned int physIndex;
 	M2Node() :
-		phys1(0), phys2(0)
+		priorState(0), physIndex(0)
 	{}
-	M2Node(unsigned int phys1, unsigned int phys2) :
-		phys1(phys1), phys2(phys2)
+	M2Node(unsigned int priorState, unsigned int physIndex) :
+		priorState(priorState), physIndex(physIndex)
 	{}
 	M2Node(const M2Node& other) :
-		phys1(other.phys1), phys2(other.phys2)
+		priorState(other.priorState), physIndex(other.physIndex)
 	{}
 
 	bool operator<(M2Node other) const
 	{
-		return phys1 == other.phys1 ? phys2 < other.phys2 : phys1 < other.phys1;
+		return priorState == other.priorState ? physIndex < other.physIndex : priorState < other.priorState;
 	}
+
+	bool operator==(M2Node other) const
+	{
+		return priorState == other.priorState && physIndex == other.physIndex;
+	}
+
 	friend std::ostream& operator<<(std::ostream& out, const M2Node& node)
 	{
-		return out << "(" << node.phys1 << "-" << node.phys2 << ")";
+		return out << "(" << node.priorState << "-" << node.physIndex << ")";
 	}
 };
 
 class MemNetwork: public Network
 {
 public:
-	typedef map<pair<M2Node, M2Node>, double> M2LinkMap;
+	// typedef map<pair<M2Node, M2Node>, double> M2LinkMap;
+	typedef map<M2Node, map<M2Node, double> > M2LinkMap; // Main key is first m2-node, sub-key is second m2-node
 	typedef map<M2Node, unsigned int> M2NodeMap;
 
 	MemNetwork(const Config& config) :
 		Network(config),
 		m_totM2NodeWeight(0.0),
+		m_numM2LinksFound(0),
+		m_numM2Links(0),
 		m_totM2LinkWeight(0.0),
+		m_numAggregatedM2Links(0),
 		m_numMemorySelfLinks(0),
 		m_totalMemorySelfLinkWeight(0.0)
 	{}
@@ -81,10 +91,11 @@ public:
 	virtual void readInputData();
 
 	unsigned int numM2Nodes() const { return m_m2Nodes.size(); }
-	const M2LinkMap& m2LinkMap() const { return m_m2Links; }
 	const M2NodeMap& m2NodeMap() const { return m_m2NodeMap; }
 	const std::vector<double>& m2NodeWeights() const { return m_m2NodeWeights; }
 	double totalM2NodeWeight() const { return m_totM2NodeWeight; }
+	const M2LinkMap& m2LinkMap() const { return m_m2Links; }
+	unsigned int numM2Links() const { return m_numM2Links; }
 	double totalM2LinkWeight() const { return m_totM2LinkWeight; }
 	double totalMemorySelfLinkWeight() const { return m_totalMemorySelfLinkWeight; }
 
@@ -151,76 +162,67 @@ protected:
 	 */
 	void simulateMemoryFromOrdinaryNetwork();
 
+	// Helper methods
+	/**
+	 * Parse a string of link data.
+	 * If no weight data can be extracted, the default value 1.0 will be used.
+	 * @throws an error if not both node numbers can be extracted.
+	 */
+	void parseM2Link(const std::string& line, unsigned int& n1, unsigned int& n2, unsigned int& n3, double& weight);
+	void parseM2Link(char line[], unsigned int& n1, unsigned int& n2, unsigned int& n3, double& weight);
+
+	/**
+	 * Add a weighted link between two memory nodes.
+	 * @return true if a new link was inserted, false if skipped due to cutoff limit or aggregated to existing link
+	 */
+	bool addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight);
+	bool addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstM2NodeWeight, double secondM2NodeWeight);
+
+	void addM2Node(unsigned int priorState, unsigned int nodeIndex, double weight);
+	void addM2Node(M2Node m2node, double weight);
+
+	/**
+	 * Insert memory link, indexed on first m2-node and aggregated if exist
+	 * @note Called by addMemoryLink
+	 * @return true if a new link was inserted, false if aggregated
+	 */
+	bool insertM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight);
+	bool insertM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight);
+
 	map<M2Node, double> m_m2Nodes;
-	M2LinkMap m_m2Links; // Raw data from file
 	M2NodeMap m_m2NodeMap;
 	std::vector<double> m_m2NodeWeights;
 	double m_totM2NodeWeight;
+
+	unsigned int m_numM2LinksFound;
+	unsigned int m_numM2Links;
+	M2LinkMap m_m2Links; // Raw data from file
+
 	double m_totM2LinkWeight;
+	unsigned int m_numAggregatedM2Links;
 	unsigned int m_numMemorySelfLinks;
 	double m_totalMemorySelfLinkWeight;
 
 };
 
-struct InterLinkKey
+inline
+bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight)
 {
-	InterLinkKey(unsigned int nodeIndex = 0, unsigned int layer1 = 0, unsigned int layer2 = 0) :
-		nodeIndex(nodeIndex), layer1(layer1), layer2(layer2) {}
-	InterLinkKey(const InterLinkKey& other) :
-		nodeIndex(other.nodeIndex), layer1(other.layer1), layer2(other.layer2) {}
-	InterLinkKey& operator=(const InterLinkKey& other) {
-		nodeIndex = other.nodeIndex; layer1 = other.layer1; layer2 = other.layer2; return *this;
-	}
-	bool operator<(InterLinkKey other) const
-	{
-		return nodeIndex == other.nodeIndex ?
-				(layer1 == other.layer1? layer2 < other.layer2 : layer1 < other.layer1) :
-				nodeIndex < other.nodeIndex;
-	}
+	return addM2Link(n1PriorState, n1, n2PriorState, n2, weight, weight, 0.0);
+}
 
-	unsigned int nodeIndex;
-	unsigned int layer1;
-	unsigned int layer2;
-};
-
-class MultiplexNetwork : public MemNetwork
+inline
+void MemNetwork::addM2Node(unsigned int previousState, unsigned int nodeIndex, double weight)
 {
-public:
+	m_m2Nodes[M2Node(previousState, nodeIndex)] += weight;
+	m_totM2NodeWeight += weight;
+}
 
-	MultiplexNetwork(const Config& config) :
-		MemNetwork(config)
-	{}
-	virtual ~MultiplexNetwork() {}
-
-	virtual void readInputData();
-
-protected:
-
-	void parseMultiplexNetwork(std::string filename);
-
-	void generateMemoryNetwork();
-
-	// Helper methods
-
-	/**
-	 * Parse a string of intra link data for a certain network, "level node node weight".
-	 * If no weight data can be extracted, the default value 1.0 will be used.
-	 * @throws an error if not enough data can be extracted.
-	 */
-	void parseIntraLink(const std::string& line, unsigned int& level, unsigned int& n1, unsigned int& n2, double& weight);
-
-	/**
-	 * Parse a string of inter link data for a certain node, "node level level weight".
-	 * If no weight data can be extracted, the default value 1.0 will be used.
-	 * @throws an error if not enough data can be extracted.
-	 */
-	void parseInterLink(const std::string& line, unsigned int& node, unsigned int& level1, unsigned int& level2, double& weight);
-
-	// Member variables
-
-	std::deque<Network> m_networks;
-
-	std::map<InterLinkKey, double> m_interLinks; // {node level level} -> {weight}
-};
+inline
+void MemNetwork::addM2Node(M2Node m2Node, double weight)
+{
+	m_m2Nodes[m2Node] += weight;
+	m_totM2NodeWeight += weight;
+}
 
 #endif /* MEMNETWORK_H_ */

@@ -60,42 +60,48 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	m_nodeTeleportRates.assign(numM2Nodes, 0.0);
 
 	const MemNetwork::M2LinkMap& linkMap = network.m2LinkMap();
-	unsigned int numLinks = linkMap.size();
+	unsigned int numLinks = network.numM2Links();
 	m_flowLinks.resize(numLinks);
 	double totalLinkWeight = network.totalM2LinkWeight();
 	double sumUndirLinkWeight = 2 * totalLinkWeight - network.totalMemorySelfLinkWeight();
 	unsigned int linkIndex = 0;
 	const MemNetwork::M2NodeMap& nodeMap = network.m2NodeMap();
 
-	for (MemNetwork::M2LinkMap::const_iterator linkIt(linkMap.begin()); linkIt != linkMap.end(); ++linkIt, ++linkIndex)
+	for (MemNetwork::M2LinkMap::const_iterator linkIt(linkMap.begin()); linkIt != linkMap.end(); ++linkIt)
 	{
-		const std::pair<M2Node, M2Node>& linkM2Ends = linkIt->first;
-		// Get the indices for the m2 nodes
-		MemNetwork::M2NodeMap::const_iterator nodeMapIt = nodeMap.find(linkM2Ends.first);
-		if (nodeMapIt == nodeMap.end())
-			throw InputDomainError(io::Str() << "Couldn't find mapped index for source M2 node " << linkM2Ends.first);
-		unsigned int sourceIndex = nodeMapIt->second;
-		nodeMapIt = nodeMap.find(linkM2Ends.second);
-		if (nodeMapIt == nodeMap.end())
-			throw InputDomainError(io::Str() << "Couldn't find mapped index for target M2 node " << linkM2Ends.second);
-		unsigned int targetIndex = nodeMapIt->second;
-		++m_nodeOutDegree[sourceIndex];
-		double linkWeight = linkIt->second;
-		m_sumLinkOutWeight[sourceIndex] += linkWeight;
-
-		if (sourceIndex != targetIndex)
+		const M2Node& m2source = linkIt->first;
+		const std::map<M2Node, double>& subLinks = linkIt->second;
+		for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt, ++linkIndex)
 		{
-			// Possibly aggregate if no self-link
-			if (config.isUndirected()) {
-				m_sumLinkOutWeight[targetIndex] += linkWeight;
-				++m_nodeOutDegree[targetIndex];
-			}
-			if (!config.outdirdir)
-				m_nodeFlow[targetIndex] += linkWeight;// / sumUndirLinkWeight;
-		}
+			const M2Node& m2target = subIt->first;
+			double linkWeight = subIt->second;
 
-		m_nodeFlow[sourceIndex] += linkWeight;// / sumUndirLinkWeight;
-		m_flowLinks[linkIndex] = Link(sourceIndex, targetIndex, linkWeight);
+			// Get the indices for the m2 nodes
+			MemNetwork::M2NodeMap::const_iterator nodeMapIt = nodeMap.find(m2source);
+			if (nodeMapIt == nodeMap.end())
+				throw InputDomainError(io::Str() << "Couldn't find mapped index for source M2 node " << m2source);
+			unsigned int sourceIndex = nodeMapIt->second;
+			nodeMapIt = nodeMap.find(m2target);
+			if (nodeMapIt == nodeMap.end())
+				throw InputDomainError(io::Str() << "Couldn't find mapped index for target M2 node " << m2target);
+			unsigned int targetIndex = nodeMapIt->second;
+			++m_nodeOutDegree[sourceIndex];
+			m_sumLinkOutWeight[sourceIndex] += linkWeight;
+
+			if (sourceIndex != targetIndex)
+			{
+				// Possibly aggregate if no self-link
+				if (config.isUndirected()) {
+					m_sumLinkOutWeight[targetIndex] += linkWeight;
+					++m_nodeOutDegree[targetIndex];
+				}
+				if (!config.outdirdir)
+					m_nodeFlow[targetIndex] += linkWeight;// / sumUndirLinkWeight;
+			}
+
+			m_nodeFlow[sourceIndex] += linkWeight;// / sumUndirLinkWeight;
+			m_flowLinks[linkIndex] = Link(sourceIndex, targetIndex, linkWeight);
+		}
 	}
 
 
@@ -137,8 +143,8 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		if (m_nodeOutDegree[i] == 0)
 		{
 			++numDanglingM2Nodes;
-			// We are in phys2, lookup all mem nodes in that physical node
-			const PhysToMemWeightMap& physToMem = netPhysToMem[m_m2nodes[i].phys2];
+			// We are in physIndex, lookup all mem nodes in that physical node
+			const PhysToMemWeightMap& physToMem = netPhysToMem[m_m2nodes[i].physIndex];
 			for(PhysToMemWeightMap::const_iterator it = physToMem.begin(); it != physToMem.end(); it++)
 			{
 				unsigned int from = i;
