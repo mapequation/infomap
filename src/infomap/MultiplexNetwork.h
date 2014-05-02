@@ -34,11 +34,10 @@
 #include <deque>
 #include <string>
 
-struct InterLinkKey;
-
 class MultiplexNetwork : public MemNetwork
 {
 public:
+	typedef std::map<unsigned int, double> InterLinkMap;
 
 	MultiplexNetwork(const Config& config) :
 		MemNetwork(config)
@@ -73,28 +72,7 @@ protected:
 
 	std::deque<Network> m_networks;
 
-	std::map<InterLinkKey, double> m_interLinks; // {node level level} -> {weight}
-};
-
-struct InterLinkKey
-{
-	InterLinkKey(unsigned int nodeIndex = 0, unsigned int layer1 = 0, unsigned int layer2 = 0) :
-		nodeIndex(nodeIndex), layer1(layer1), layer2(layer2) {}
-	InterLinkKey(const InterLinkKey& other) :
-		nodeIndex(other.nodeIndex), layer1(other.layer1), layer2(other.layer2) {}
-	InterLinkKey& operator=(const InterLinkKey& other) {
-		nodeIndex = other.nodeIndex; layer1 = other.layer1; layer2 = other.layer2; return *this;
-	}
-	bool operator<(InterLinkKey other) const
-	{
-		return nodeIndex == other.nodeIndex ?
-				(layer1 == other.layer1? layer2 < other.layer2 : layer1 < other.layer1) :
-				nodeIndex < other.nodeIndex;
-	}
-
-	unsigned int nodeIndex;
-	unsigned int layer1;
-	unsigned int layer2;
+	std::map<M2Node, InterLinkMap> m_interLinks; // {(layer,node)} -> ({linkedLayer} -> {weight})
 };
 
 #endif /* MULTIPLEXNETWORK_H_ */

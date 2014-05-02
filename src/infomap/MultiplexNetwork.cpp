@@ -86,12 +86,12 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 		}
 		else
 		{
-			unsigned int nodeIndex, level1, level2;
+			unsigned int nodeIndex, layer1, layer2;
 			double weight;
 
-			parseInterLink(line, nodeIndex, level1, level2, weight);
+			parseInterLink(line, nodeIndex, layer1, layer2, weight);
 
-			m_interLinks[InterLinkKey(nodeIndex, level1, level2)] += weight;
+			m_interLinks[M2Node(layer1, nodeIndex)][layer2] += weight;
 
 			++numInterLinksFound;
 		}
@@ -164,7 +164,6 @@ void MultiplexNetwork::generateMemoryNetwork()
 
 				insertM2Link(layerIndex, n1, layerIndex, n2, linkWeight);
 
-
 //				std::cout << "\nGenerating memory link (" << layerIndex << "," << n1 << ") -> (" << layerIndex << "," << n2 << ") with weight " << linkWeight;
 
 				if (m_config.includeSelfLinks || n1 != n2)
@@ -178,57 +177,67 @@ void MultiplexNetwork::generateMemoryNetwork()
 		}
 	}
 
+	std::cout << "connecting layers... " << std::flush;
+
 	// Then generate memory links from inter links (links between nodes in different layers)
-	for (std::map<InterLinkKey, double>::const_iterator interIt(m_interLinks.begin()); interIt != m_interLinks.end(); ++interIt)
+	for (std::map<M2Node, InterLinkMap>::const_iterator m2NodeIt(m_interLinks.begin()); m2NodeIt != m_interLinks.end(); ++m2NodeIt)
 	{
-		const InterLinkKey& interLink = interIt->first;
-		unsigned int layer1 = interLink.layer1;
-		unsigned int layer2 = interLink.layer2;
-		unsigned int nodeIndex = interLink.nodeIndex;
-		double linkWeight = interIt->second;
-		if (layer1 != layer2)
+		const M2Node& m2Node = m2NodeIt->first;
+//		MemNetwork::M2LinkMap::iterator m2SourceIt = m_m2Links.find(m2Node);
+		M2LinkMap::iterator m2SourceIt = m_m2Links.lower_bound(m2Node);
+		if (m2SourceIt == m_m2Links.end() || m2SourceIt->first != m2Node)
+			m2SourceIt = m_m2Links.insert(--m2SourceIt, std::make_pair(m2Node, std::map<M2Node, double>())); // Insertion optimized if position hint preceeds the element to insert (C++98)
+		unsigned int layer1 = m2Node.priorState;
+		unsigned int nodeIndex = m2Node.physIndex;
+		const InterLinkMap& interLinkMap = m2NodeIt->second;
+		for (InterLinkMap::const_iterator interLinkIt(interLinkMap.begin()); interLinkIt != interLinkMap.end(); ++interLinkIt)
 		{
-			// Switch to same physical node within other layer
-//			//TODO: Rescale with self-layer weight if possible
-			bool nonPhysicalSwitch = false;
-			if (nonPhysicalSwitch)
+			unsigned int layer2 = interLinkIt->first;
+			double linkWeight = interLinkIt->second;
+			if (layer2 != layer1)
 			{
-				insertM2Link(layer1, nodeIndex, layer2, nodeIndex, linkWeight);
-				addM2Node(layer1, nodeIndex, 0.0);
-				addM2Node(layer2, nodeIndex, 0.0);
-			}
-			else
-			{
-				// Distribute inter-link to the outgoing intra-links of the node in the inter-linked layer
-				MemNetwork::M2LinkMap::const_iterator otherLayerLinkIt = m_m2Links.find(M2Node(layer2, nodeIndex));
-	//			std::cout << "\nAdding inter-layer link #node #layer1 #layer2: " << nodeIndex << " " << layer1 << " " << layer2 << std::flush;
-
-				if (otherLayerLinkIt != m_m2Links.end())
+				// Switch to same physical node within other layer
+	//			//TODO: Rescale with self-layer weight if possible
+				bool nonPhysicalSwitch = false;
+				if (nonPhysicalSwitch)
 				{
-					const std::map<M2Node, double>& otherLayerIntraLinks = otherLayerLinkIt->second;
-					double sumLinkWeightOtherLayer = 0.0;
-					for (std::map<M2Node, double>::const_iterator interIntraIt(otherLayerIntraLinks.begin()); interIntraIt != otherLayerIntraLinks.end(); ++interIntraIt)
-					{
-						if (interIntraIt->first.priorState == layer2)
-							sumLinkWeightOtherLayer += interIntraIt->second;
-					}
+					insertM2Link(m2SourceIt, layer2, nodeIndex, linkWeight);
+					addM2Node(layer1, nodeIndex, 0.0);
+					addM2Node(layer2, nodeIndex, 0.0);
+				}
+				else
+				{
+					// Distribute inter-link to the outgoing intra-links of the node in the inter-linked layer
+					MemNetwork::M2LinkMap::const_iterator otherLayerLinkIt = m_m2Links.find(M2Node(layer2, nodeIndex));
+		//			std::cout << "\nAdding inter-layer link #node #layer1 #layer2: " << nodeIndex << " " << layer1 << " " << layer2 << std::flush;
 
-					for (std::map<M2Node, double>::const_iterator interIntraIt(otherLayerIntraLinks.begin()); interIntraIt != otherLayerIntraLinks.end(); ++interIntraIt)
+					if (otherLayerLinkIt != m_m2Links.end())
 					{
-						const M2Node& m2target = interIntraIt->first;
-						double linkWeightOtherLayer = interIntraIt->second;
-
-						//XXX: DEBUG TEST
-	//					std::cout << "\n  -> physical inter-layer link: (" << layer1 << "," << nodeIndex << ") -> (" << m2target.priorState << "," << m2target.physIndex << ").. " << std::flush;
-						if (m2target.priorState != layer2) {
-							std::cout << " * " << std::flush;
-							continue;
+						const std::map<M2Node, double>& otherLayerIntraLinks = otherLayerLinkIt->second;
+						double sumLinkWeightOtherLayer = 0.0;
+						for (std::map<M2Node, double>::const_iterator interIntraIt(otherLayerIntraLinks.begin()); interIntraIt != otherLayerIntraLinks.end(); ++interIntraIt)
+						{
+							if (interIntraIt->first.priorState == layer2)
+								sumLinkWeightOtherLayer += interIntraIt->second;
 						}
 
-						double interIntraLinkWeight = linkWeight * linkWeightOtherLayer / sumLinkWeightOtherLayer;
-						insertM2Link(layer1, nodeIndex, layer2, m2target.physIndex, interIntraLinkWeight);
+						for (std::map<M2Node, double>::const_iterator interIntraIt(otherLayerIntraLinks.begin()); interIntraIt != otherLayerIntraLinks.end(); ++interIntraIt)
+						{
+							const M2Node& m2target = interIntraIt->first;
+							double linkWeightOtherLayer = interIntraIt->second;
 
-						addM2Node(layer1, nodeIndex, 0.0);
+							//XXX: DEBUG TEST
+		//					std::cout << "\n  -> physical inter-layer link: (" << layer1 << "," << nodeIndex << ") -> (" << m2target.priorState << "," << m2target.physIndex << ").. " << std::flush;
+							if (m2target.priorState != layer2) {
+								std::cout << " * " << std::flush;
+								continue;
+							}
+
+							double interIntraLinkWeight = linkWeight * linkWeightOtherLayer / sumLinkWeightOtherLayer;
+							insertM2Link(m2SourceIt, layer2, m2target.physIndex, interIntraLinkWeight);
+
+							addM2Node(layer1, nodeIndex, 0.0);
+						}
 					}
 				}
 			}

@@ -63,6 +63,11 @@ struct M2Node
 		return priorState == other.priorState && physIndex == other.physIndex;
 	}
 
+	bool operator!=(M2Node other) const
+	{
+		return priorState != other.priorState || physIndex != other.physIndex;
+	}
+
 	friend std::ostream& operator<<(std::ostream& out, const M2Node& node)
 	{
 		return out << "(" << node.priorState << "-" << node.physIndex << ")";
