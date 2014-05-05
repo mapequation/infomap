@@ -50,7 +50,15 @@ protected:
 
 	void parseMultiplexNetwork(std::string filename);
 
-	void generateMemoryNetwork();
+	void adjustForDifferentNumberOfNodes();
+
+	void generateMemoryNetworkWithInterLayerLinksFromData();
+
+	void generateMemoryNetworkWithSimulatedInterLayerLinks();
+
+	void finalizeAndCheckNetwork();
+
+	void printParsingResult();
 
 	// Helper methods
 

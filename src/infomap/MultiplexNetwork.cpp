@@ -111,10 +111,22 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 		m_networks[layerIndex].printParsingResult();
 	}
 
-	generateMemoryNetwork();
+	adjustForDifferentNumberOfNodes();
+
+	std::cout << "Generating memory network... " << std::flush;
+
+	bool useInterLayerData = numInterLinksFound > 0;
+	if (useInterLayerData)
+		generateMemoryNetworkWithInterLayerLinksFromData();
+	else
+		generateMemoryNetworkWithSimulatedInterLayerLinks();
+
+	finalizeAndCheckNetwork();
+
+	printParsingResult();
 }
 
-void MultiplexNetwork::generateMemoryNetwork()
+void MultiplexNetwork::adjustForDifferentNumberOfNodes()
 {
 	// Check maximum number of nodes
 	unsigned int maxNumNodes = m_networks[0].numNodes();
@@ -147,7 +159,12 @@ void MultiplexNetwork::generateMemoryNetwork()
 		}
 	}
 
-	std::cout << "Generating memory network... " << std::flush;
+}
+
+void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
+{
+	std::vector<double> physNodeWeights(m_numNodes, 0.0);
+	bool connectLayersFromData = false;
 
 	// First generate memory links from intra links (from ordinary links within each network)
 	for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
@@ -183,7 +200,6 @@ void MultiplexNetwork::generateMemoryNetwork()
 	for (std::map<M2Node, InterLinkMap>::const_iterator m2NodeIt(m_interLinks.begin()); m2NodeIt != m_interLinks.end(); ++m2NodeIt)
 	{
 		const M2Node& m2Node = m2NodeIt->first;
-//		MemNetwork::M2LinkMap::iterator m2SourceIt = m_m2Links.find(m2Node);
 		M2LinkMap::iterator m2SourceIt = m_m2Links.lower_bound(m2Node);
 		if (m2SourceIt == m_m2Links.end() || m2SourceIt->first != m2Node)
 			m2SourceIt = m_m2Links.insert(--m2SourceIt, std::make_pair(m2Node, std::map<M2Node, double>())); // Insertion optimized if position hint preceeds the element to insert (C++98)
@@ -208,8 +224,7 @@ void MultiplexNetwork::generateMemoryNetwork()
 				else
 				{
 					// Distribute inter-link to the outgoing intra-links of the node in the inter-linked layer
-					MemNetwork::M2LinkMap::const_iterator otherLayerLinkIt = m_m2Links.find(M2Node(layer2, nodeIndex));
-		//			std::cout << "\nAdding inter-layer link #node #layer1 #layer2: " << nodeIndex << " " << layer1 << " " << layer2 << std::flush;
+					M2LinkMap::const_iterator otherLayerLinkIt = m_m2Links.find(M2Node(layer2, nodeIndex));
 
 					if (otherLayerLinkIt != m_m2Links.end())
 					{
@@ -237,13 +252,79 @@ void MultiplexNetwork::generateMemoryNetwork()
 							insertM2Link(m2SourceIt, layer2, m2target.physIndex, interIntraLinkWeight);
 
 							addM2Node(layer1, nodeIndex, 0.0);
+							addM2Node(layer2, m2target.physIndex, 0.0);
 						}
 					}
 				}
 			}
 		}
 	}
+}
 
+void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
+{
+	// Simulate inter-layer links
+	double aggregationRate = 1.0;
+
+	std::cout << "Generating memory network... " << std::flush;
+
+	std::vector<double> physNodeWeights(m_numNodes, 0.0);
+
+	// First generate memory links from intra links (from ordinary links within each network)
+	for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
+	{
+		const LinkMap& linkMap = m_networks[layerIndex].linkMap();
+		for (LinkMap::const_iterator linkIt(linkMap.begin()); linkIt != linkMap.end(); ++linkIt)
+		{
+			unsigned int n1 = linkIt->first;
+			const std::map<unsigned int, double>& subLinks = linkIt->second;
+			for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+			{
+				double linkWeight = subIt->second;
+				physNodeWeights[n1] += linkWeight;
+			}
+		}
+	}
+
+	for (unsigned int nodeIndex = 0; nodeIndex < m_numNodes; ++nodeIndex)
+	{
+		for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1)
+		{
+			for (unsigned int layer2 = 0; layer2 < m_networks.size(); ++layer2)
+			{
+				// Distribute inter-link to the outgoing intra-links of the node in the inter-linked layer
+				const LinkMap& linkMap = m_networks[layer2].linkMap();
+				LinkMap::const_iterator otherLayerLinkIt = linkMap.find(nodeIndex);
+
+				if (otherLayerLinkIt != linkMap.end())
+				{
+					const std::map<unsigned int, double>& otherLayerIntraLinks = otherLayerLinkIt->second;
+					double sumLinkWeightOtherLayer = 0.0;
+					for (std::map<unsigned int, double>::const_iterator interIntraIt(otherLayerIntraLinks.begin()); interIntraIt != otherLayerIntraLinks.end(); ++interIntraIt)
+					{
+						sumLinkWeightOtherLayer += interIntraIt->second;
+					}
+
+					for (std::map<unsigned int, double>::const_iterator interIntraIt(otherLayerIntraLinks.begin()); interIntraIt != otherLayerIntraLinks.end(); ++interIntraIt)
+					{
+						unsigned int n2 = interIntraIt->first;
+						double linkWeightOtherLayer = interIntraIt->second;
+
+						double interIntraLinkWeight = aggregationRate * linkWeightOtherLayer / physNodeWeights[nodeIndex];
+//						std::cout << "\nCreating link " << M2Node(layer1, nodeIndex) << " -> " << M2Node(layer2, n2) << " with weight: " << interIntraLinkWeight << "  ";
+						insertM2Link(layer1, nodeIndex, layer2, n2, interIntraLinkWeight);
+
+						addM2Node(layer1, nodeIndex, interIntraLinkWeight);
+						addM2Node(layer2, n2, 0.0);
+					}
+				}
+			}
+		}
+	}
+}
+
+void MultiplexNetwork::finalizeAndCheckNetwork()
+{
 	unsigned int M2nodeNr = 0;
 	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
 	{
@@ -261,7 +342,10 @@ void MultiplexNetwork::generateMemoryNetwork()
 		m_totM2NodeWeight += it->second;
 		++M2nodeNr;
 	}
+}
 
+void MultiplexNetwork::printParsingResult()
+{
 	std::cout << "done! Generated " << m_m2Nodes.size() << " memory nodes and " << m_numM2Links << " memory links. ";
 	if (m_numAggregatedM2Links)
 		std::cout << "Aggregated " << m_numAggregatedM2Links << " memory links. ";
