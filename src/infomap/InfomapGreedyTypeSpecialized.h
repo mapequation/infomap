@@ -582,7 +582,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 				childIt != endIt; ++childIt)
 		{
 			const NodeType& node = Super::getNode(*childIt);
-			std::pair<typename std::map<unsigned int, IndexedFlow>::iterator, bool> ret = condensedNodes.insert(std::make_pair(node.m2Node.phys2, IndexedFlow(node.m2Node.phys2, node.data)));
+			std::pair<typename std::map<unsigned int, IndexedFlow>::iterator, bool> ret = condensedNodes.insert(std::make_pair(node.m2Node.physIndex, IndexedFlow(node.m2Node.physIndex, node.data)));
 			if (!ret.second) // Add flow if physical node already exist
 				ret.first->second.flowData += node.data;
 			else // A new insertion was made
@@ -627,7 +627,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 			NodeBase& node = **leafIt;
 			unsigned int leafModuleIndex = memNodeIndexToLeafModuleIndex[node.originalIndex];
 			std::map<unsigned int, IndexedFlow>& condensedNodes = physicalNodes[leafModuleIndex];
-			unsigned int sourceNodeIndex = condensedNodes.find(Super::getNode(node).m2Node.phys2)->second.index;
+			unsigned int sourceNodeIndex = condensedNodes.find(Super::getNode(node).m2Node.physIndex)->second.index;
 
 			for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
 					outEdgeIt != endIt; ++outEdgeIt)
@@ -635,7 +635,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 				EdgeType& edge = **outEdgeIt;
 				unsigned int targetLeafModuleIndex = memNodeIndexToLeafModuleIndex[edge.target.originalIndex];
 				std::map<unsigned int, IndexedFlow>& targetCondensedNodes = physicalNodes[targetLeafModuleIndex];
-				unsigned int targetNodeIndex = targetCondensedNodes.find(Super::getNode(edge.target).m2Node.phys2)->second.index;
+				unsigned int targetNodeIndex = targetCondensedNodes.find(Super::getNode(edge.target).m2Node.physIndex)->second.index;
 				ioNetwork.addLeafEdge(sourceNodeIndex, targetNodeIndex, edge.data.flow);
 			}
 		}

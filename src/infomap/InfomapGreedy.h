@@ -131,7 +131,7 @@ protected:
 	virtual void sortTree(NodeBase& parent);
 
 	virtual void saveHierarchicalNetwork(std::string rootName, bool includeLinks);
-	void buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, std::vector<std::string> leafNodeNames, NodeBase* node = 0);
+	void buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, std::vector<std::string>& leafNodeNames, NodeBase* node = 0);
 	// Don't add leaf nodes, but collect all leaf modules instead
 	void buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, std::deque<std::pair<NodeBase*, HierarchicalNetwork::node_type*> >& leafModules, NodeBase* node = 0);
 	virtual void printSubInfomapTree(std::ostream& out, const TreeData& originalData, const std::string& prefix);
@@ -360,7 +360,7 @@ void InfomapGreedy<InfomapImplementation>::saveHierarchicalNetwork(std::string r
 
 template<typename InfomapImplementation>
 inline
-void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, std::vector<std::string> leafNodeNames, NodeBase* rootNode)
+void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, std::vector<std::string>& leafNodeNames, NodeBase* rootNode)
 {
 	if (rootNode == 0)
 		rootNode = root();

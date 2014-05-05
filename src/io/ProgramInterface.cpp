@@ -62,9 +62,9 @@ void ProgramInterface::exitWithUsage()
 	std::cout << "\nUsage:" << std::endl;
 	std::cout << "        " << m_executableName;
 	for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
-		std::cout << " [" << m_nonOptionArguments[i]->variableName << "]";
+		std::cout << " " << m_nonOptionArguments[i]->variableName;
 	if (!m_optionArguments.empty())
-		std::cout << " [OPTIONS]";
+		std::cout << " [options]";
 	std::cout << std::endl;
 
 	if (m_programDescription != "")
@@ -74,7 +74,7 @@ void ProgramInterface::exitWithUsage()
 		std::cout << "\n[" << m_nonOptionArguments[i]->variableName << "]\n    " << m_nonOptionArguments[i]->description << std::endl;
 
 	if (!m_optionArguments.empty())
-		std::cout << "\n[OPTIONS]" << std::endl;
+		std::cout << "\n[options]" << std::endl;
 
 	// First stringify the options part to get the maximum length
 	std::deque<std::string> optionStrings(m_optionArguments.size());
@@ -112,7 +112,14 @@ void ProgramInterface::exitWithVersionInformation()
 
 void ProgramInterface::exitWithError(std::string message)
 {
-	std::cerr << message << "Run with argument '-h' for usage information." << std::endl;
+	std::cout << m_programName << " version " << m_programVersion << std::endl;
+	std::cerr << message;
+	std::cout << "\nUsage: " << m_executableName;
+	for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
+		std::cout << " " << m_nonOptionArguments[i]->variableName;
+	if (!m_optionArguments.empty())
+		std::cout << " [options]";
+	std::cout << ". Run with option '-h' for more information." << std::endl;
 	std::exit(1);
 }
 

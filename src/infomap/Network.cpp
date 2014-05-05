@@ -476,6 +476,8 @@ void Network::parseLink(const std::string& line, unsigned int& n1, unsigned int&
 	if (!(m_extractor >> n1 >> n2))
 		throw FileFormatError(io::Str() << "Can't parse link data from line '" << line << "'");
 	(m_extractor >> weight) || (weight = 1.0);
+	n1 -= m_indexOffset;
+	n2 -= m_indexOffset;
 }
 
 void Network::parseLink(char line[], unsigned int& n1, unsigned int& n2, double& weight)
@@ -494,6 +496,8 @@ void Network::parseLink(char line[], unsigned int& n1, unsigned int& n2, double&
 		weight = atof(cptr); // get the link weight
 	else
 		weight = 1.0;
+	n1 -= m_indexOffset;
+	n2 -= m_indexOffset;
 }
 
 
@@ -501,8 +505,6 @@ void Network::parseLink(char line[], unsigned int& n1, unsigned int& n2, double&
 bool Network::addLink(unsigned int n1, unsigned int n2, double weight)
 {
 	++m_numLinksFound;
-	n1 -= m_indexOffset;
-	n2 -= m_indexOffset;
 
 	if (m_config.nodeLimit > 0 && (n1 >= m_config.nodeLimit || n2 >= m_config.nodeLimit))
 		return false;

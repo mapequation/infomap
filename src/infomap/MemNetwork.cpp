@@ -31,6 +31,9 @@
 #include "../io/SafeFile.h"
 #include "../utils/Logger.h"
 #include <cmath>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 using std::make_pair;
 
 void MemNetwork::readInputData()
@@ -130,8 +133,6 @@ void MemNetwork::parseTrigram(std::string filename)
 		throw FileFormatError("The first line (to lower cases) after the nodes doesn't match *arcs or *3grams.");
 	}
 
-	unsigned int numEdgeLines = 0;
-	unsigned int numSkippedEdges = 0;
 	unsigned int maxLinkEnd = 0;
 	m_totalLinkWeight = 0.0;
 
@@ -140,93 +141,54 @@ void MemNetwork::parseTrigram(std::string filename)
 	{
 		if (line.length() == 0)
 			continue;
-		++numEdgeLines;
-		ss.clear();
-		ss.str(line);
-		unsigned int n1;
-		if (!(ss >> n1))
-		{
-			throw BadConversionError(io::Str() << "Can't parse first integer of link number " <<
-					numEdgeLines << " from line '" << line << "'");
-		}
-		unsigned int n2;
-		if (!(ss >> n2))
-			throw BadConversionError(io::Str() << "Can't parse second integer of link number " <<
-					numEdgeLines << " from line '" << line << "'");
 
-		unsigned int n3;
-		if (!(ss >> n3))
-			throw BadConversionError(io::Str() << "Can't parse third integer of link number " <<
-					numEdgeLines << " from line '" << line << "'");
+		unsigned int n1, n2, n3;
+		double weight;
+		parseM2Link(line, n1, n2, n3, weight);
 
-		if (checkNodeLimit && (n3 > numNodes || n2 > numNodes || n1 > numNodes))
-		{
-			++numSkippedEdges;
-			continue;
-		}
+		addM2Link(n1, n2, n2, n3, weight);
 
-		double linkWeight;
-		if (!(ss >> linkWeight))
-			linkWeight = 1.0;
+		if (n2 != n3 || m_config.includeSelfLinks)
+			insertLink(n2, n3, weight);
 
-		--n1; // Node numbering starts from 1 in the .net format
-		--n2;
-		--n3;
-
-		maxLinkEnd = std::max(maxLinkEnd, std::max(n1, std::max(n2, n3)));
-
-		//		// Aggregate link weights if they are definied more than once
-		//		LinkMap::iterator it = m_links.find(std::make_pair(n1, n2));
-		//		if(it == m_links.end())
-		//		{
-		//			m_links.insert(std::make_pair(std::make_pair(n1, n2), linkWeight));
-		//		}
-		//		else
-		//		{
-		//			it->second += linkWeight;
-		//			++numDoubleLinks;
-		//			if (n2 == n1)
-		//				--m_numSelfLinks;
-		//		}
-
-		if(m_config.includeSelfLinks)
-		{
-			m_m2Nodes[M2Node(n1,n2)] += linkWeight;
-			m_m2Nodes[M2Node(n2,n3)] += 0.0;
-
-			m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
-			m_totM2LinkWeight += linkWeight;
-
-			m_totalLinkWeight += linkWeight;
-
-			if (n2 == n3) {
-				++m_numSelfLinks;
-				m_totalSelfLinkWeight += linkWeight;
-				if (n1 == n2) {
-					++m_numMemorySelfLinks;
-					m_totalMemorySelfLinkWeight += linkWeight;
-				}
-			}
-			insertLink(n2, n3, linkWeight);
-		}
-		else if (n2 != n3)
-		{
-			m_totalLinkWeight += linkWeight;
-			insertLink(n2, n3, linkWeight);
-
-			if(n1 != n2)
-			{
-				m_m2Nodes[M2Node(n1,n2)] += linkWeight;
-				m_m2Nodes[M2Node(n2,n3)] += 0.0;
-
-				m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
-				m_totM2LinkWeight += linkWeight;
-			}
-			else
-			{
-				m_m2Nodes[M2Node(n2,n3)] += linkWeight;
-			}
-		}
+//		if(m_config.includeSelfLinks)
+//		{
+//			m_m2Nodes[M2Node(n1,n2)] += linkWeight;
+//			m_m2Nodes[M2Node(n2,n3)] += 0.0;
+//
+//			m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
+//			m_totM2LinkWeight += linkWeight;
+//
+//			m_totalLinkWeight += linkWeight;
+//
+//			if (n2 == n3) {
+//				++m_numSelfLinks;
+//				m_totalSelfLinkWeight += linkWeight;
+//				if (n1 == n2) {
+//					++m_numMemorySelfLinks;
+//					m_totalMemorySelfLinkWeight += linkWeight;
+//				}
+//			}
+//			insertLink(n2, n3, linkWeight);
+//		}
+//		else if (n2 != n3)
+//		{
+//			m_totalLinkWeight += linkWeight;
+//			insertLink(n2, n3, linkWeight);
+//
+//			if(n1 != n2)
+//			{
+//				m_m2Nodes[M2Node(n1,n2)] += linkWeight;
+//				m_m2Nodes[M2Node(n2,n3)] += 0.0;
+//
+//				m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
+//				m_totM2LinkWeight += linkWeight;
+//			}
+//			else
+//			{
+//				m_m2Nodes[M2Node(n2,n3)] += linkWeight;
+//			}
+//		}
 	}
 
 	unsigned int zeroMinusOne = 0;
@@ -329,52 +291,53 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 					unsigned int n3 = secondSubIt->first;
 					double linkWeight = secondSubIt->second;
 
+					addM2Link(n1, n2, n2, n3, linkWeight, firstLinkWeight / secondLinkSubMap.size(), 0.0);
 
-					if(m_config.includeSelfLinks)
-					{
-						// Set teleportation weight on first memory node (normalized to not multiply physical weight)
-						m_m2Nodes[M2Node(n1,n2)] += firstLinkWeight / secondLinkSubMap.size();
-						m_m2Nodes[M2Node(n2,n3)] += 0.0;
-
-						m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
-						m_totM2LinkWeight += linkWeight;
-
-						m_totalLinkWeight += linkWeight;
-
-						if (n2 == n3) {
-							++m_numSelfLinks;
-							m_totalSelfLinkWeight += linkWeight;
-							if (n1 == n2) {
-								++m_numMemorySelfLinks;
-								m_totalMemorySelfLinkWeight += linkWeight;
-							}
-						}
-					}
-					else if (n2 != n3)
-					{
-						m_totalLinkWeight += linkWeight;
-
-						if(n1 != n2)
-						{
-							// Set teleportation weight on first memory node (normalized to not multiply physical weight)
-							m_m2Nodes[M2Node(n1,n2)] += firstLinkWeight / secondLinkSubMap.size();
-							m_m2Nodes[M2Node(n2,n3)] += 0.0;
-
-							m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
-							m_totM2LinkWeight += linkWeight;
-						}
-						else
-						{
-							// First memory node is a self-link, create the second
-							m_m2Nodes[M2Node(n2,n3)] += linkWeight;
-						}
-					}
+//					if(m_config.includeSelfLinks)
+//					{
+//						// Set teleportation weight on first memory node (normalized to not multiply physical weight)
+//						m_m2Nodes[M2Node(n1,n2)] += firstLinkWeight / secondLinkSubMap.size();
+//						m_m2Nodes[M2Node(n2,n3)] += 0.0;
+//
+//						m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
+//						m_totM2LinkWeight += linkWeight;
+//
+//						m_totalLinkWeight += linkWeight;
+//
+//						if (n2 == n3) {
+//							++m_numSelfLinks;
+//							m_totalSelfLinkWeight += linkWeight;
+//							if (n1 == n2) {
+//								++m_numMemorySelfLinks;
+//								m_totalMemorySelfLinkWeight += linkWeight;
+//							}
+//						}
+//					}
+//					else if (n2 != n3)
+//					{
+//						m_totalLinkWeight += linkWeight;
+//
+//						if(n1 != n2)
+//						{
+//							// Set teleportation weight on first memory node (normalized to not multiply physical weight)
+//							m_m2Nodes[M2Node(n1,n2)] += firstLinkWeight / secondLinkSubMap.size();
+//							m_m2Nodes[M2Node(n2,n3)] += 0.0;
+//
+//							m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
+//							m_totM2LinkWeight += linkWeight;
+//						}
+//						else
+//						{
+//							// First memory node is a self-link, create the second
+//							m_m2Nodes[M2Node(n2,n3)] += linkWeight;
+//						}
+//					}
 				}
 			}
 			else
 			{
 				// No chainable link found, create a dangling memory node (or remove need for existence in MemFlowNetwork?)
-				m_m2Nodes[M2Node(n1,n2)] += firstLinkWeight;
+				addM2Node(n1, n2, firstLinkWeight);
 			}
 		}
 	}
@@ -401,207 +364,119 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 	std::cout << "generated " << m_m2Nodes.size() << " memory nodes and " << m_m2Links.size() << " memory links. " << std::endl;
 }
 
-
-void MultiplexNetwork::readInputData()
+void MemNetwork::parseM2Link(const std::string& line, unsigned int& n1, unsigned int& n2, unsigned int& n3, double& weight)
 {
-	if (m_config.inputFormat == "multiplex")
-		parseMultiplexNetwork(m_config.networkFile);
-	else
-		throw ImplementationError("Multiplex network only supports single multiplex data input for now.");
+	m_extractor.clear();
+	m_extractor.str(line);
+	if (!(m_extractor >> n1 >> n2 >> n3))
+		throw FileFormatError(io::Str() << "Can't parse link data from line '" << line << "'");
+	(m_extractor >> weight) || (weight = 1.0);
+
+	n1 -= m_indexOffset;
+	n2 -= m_indexOffset;
+	n3 -= m_indexOffset;
 }
 
-void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
+void MemNetwork::parseM2Link(char line[], unsigned int& n1, unsigned int& n2, unsigned int& n3, double& weight)
 {
-	RELEASE_OUT("Parsing multiplex network from file '" << filename << "'... " << std::flush);
+	char *cptr;
+	cptr = strtok(line, " \t"); // Get first non-whitespace character position
+	if (cptr == NULL)
+		throw FileFormatError(io::Str() << "Can't parse link data from line '" << line << "'");
+	n1 = atoi(cptr); // get first connected node
+	cptr = strtok(NULL, " \t"); // Get second non-whitespace character position
+	if (cptr == NULL)
+		throw FileFormatError(io::Str() << "Can't parse link data from line '" << line << "'");
+	n2 = atoi(cptr); // get second connected node
+	cptr = strtok(NULL, " \t"); // Get third non-whitespace character position
+	if (cptr == NULL)
+		throw FileFormatError(io::Str() << "Can't parse link data from line '" << line << "'");
+	n3 = atoi(cptr); // get the third connected node
+	cptr = strtok(NULL, " \t"); // Get fourth non-whitespace character position
+	if (cptr != NULL)
+		weight = atof(cptr); // get the link weight
+	else
+		weight = 1.0;
 
-	SafeInFile input(filename.c_str());
+	n1 -= m_indexOffset;
+	n2 -= m_indexOffset;
+	n3 -= m_indexOffset;
+}
 
-	string line;
-	bool intra = true;
-	unsigned int numIntraLinksFound = 0;
-	unsigned int numInterLinksFound = 0;
+bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstM2NodeWeight, double secondM2NodeWeight)
+{
+	++m_numM2LinksFound;
 
-	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
-	while(!std::getline(input, line).fail())
+	if (m_config.nodeLimit > 0 && (n1 >= m_config.nodeLimit || n2 >= m_config.nodeLimit))
+		return false;
+
+	m_maxNodeIndex = std::max(m_maxNodeIndex, std::max(n1, n2));
+	m_minNodeIndex = std::min(m_minNodeIndex, std::min(n1, n2));
+
+	if(m_config.includeSelfLinks)
 	{
-		if (line.length() == 0 || line[0] == '#')
-			continue;
-		if (line == "*Intra" || line == "*intra") {
-			intra = true;
-			continue;
-		}
-		if (line == "*Inter" || line == "*inter") {
-			intra = false;
-			continue;
-		}
-
-		if (intra)
+		insertM2Link(n1PriorState, n1, n2PriorState, n2, weight);
+		addM2Node(n1PriorState, n1, firstM2NodeWeight);
+		addM2Node(n2PriorState, n2, secondM2NodeWeight);
+	}
+	else if (n1 != n2)
+	{
+		if(n1PriorState != n1)
 		{
-			unsigned int level, n1, n2;
-			double weight;
-
-			parseIntraLink(line, level, n1, n2, weight);
-
-			level -= m_indexOffset;
-
-			while (m_networks.size() < level + 1)
-				m_networks.push_back(Network(m_config));
-
-			m_networks[level].addLink(n1, n2, weight);
-
-			++numIntraLinksFound;
+			insertM2Link(n1PriorState, n1, n2PriorState, n2, weight);
+			addM2Node(n1PriorState, n1, firstM2NodeWeight);
+			addM2Node(n2PriorState, n2, secondM2NodeWeight);
 		}
 		else
-		{
-			unsigned int nodeIndex, level1, level2;
-			double weight;
-
-			parseInterLink(line, nodeIndex, level1, level2, weight);
-
-			nodeIndex -= m_indexOffset;
-			level1 -= m_indexOffset;
-			level2 -= m_indexOffset;
-
-			m_interLinks[InterLinkKey(nodeIndex, level1, level2)] += weight;
-
-			++numInterLinksFound;
-		}
+			addM2Node(n2PriorState, n2, weight);
 	}
 
-	if (m_networks.size() < 2)
-		throw InputDomainError("Need at least two layers of network data for multiplex network.");
-
-	std::cout << "done! Found " << numIntraLinksFound << " intra-network links in " << m_networks.size() << " layers with " <<
-			numInterLinksFound << " inter-network links\n";
-
-	// Finalize and check each network layer
-	for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
-	{
-		std::cout << "Layer " << (layerIndex + 1) << ": " << std::flush;
-		m_networks[layerIndex].finalizeAndCheckNetwork();
-		m_networks[layerIndex].printParsingResult();
-	}
-
-	generateMemoryNetwork();
+	return true;
 }
 
-void MultiplexNetwork::generateMemoryNetwork()
+bool MemNetwork::insertM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight)
 {
-	// Check maximum number of nodes
-	unsigned int maxNumNodes = m_networks[0].numNodes();
-	bool differentNodeCount = false;
-	for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
+	M2Node m1(n1PriorState, n1);
+	M2Node m2(n2PriorState, n2);
+
+	++m_numM2Links;
+	m_totM2LinkWeight += weight;
+
+	// Aggregate link weights if they are definied more than once
+	M2LinkMap::iterator firstIt = m_m2Links.lower_bound(m1);
+	if (firstIt != m_m2Links.end() && firstIt->first == m1) // First node already exists, check second node
 	{
-		unsigned int numNodesInLayer = m_networks[layerIndex].numNodes();
-		if (numNodesInLayer != maxNumNodes)
-			differentNodeCount = true;
-		maxNumNodes = std::max(maxNumNodes, numNodesInLayer);
-
-		// Take node names from networks if exist
-		if (m_nodeNames.empty() && !m_networks[layerIndex].nodeNames().empty())
-			m_networks[layerIndex].swapNodeNames(m_nodeNames);
-	}
-
-	m_numNodes = maxNumNodes;
-
-	if (differentNodeCount)
-	{
-		std::cout << "Adjusting for equal number of nodes:\n";
-		for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
+		std::pair<std::map<M2Node, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(m2, weight));
+		if (!ret2.second)
 		{
-			if (m_networks[layerIndex].numNodes() != maxNumNodes)
-			{
-				std::cout << "  Layer " << (layerIndex + 1) << ": " <<
-						m_networks[layerIndex].numNodes() << " -> " << maxNumNodes << " nodes." << std::endl;
-				m_networks[layerIndex].finalizeAndCheckNetwork(maxNumNodes);
-			}
+			ret2.first->second += weight;
+			++m_numAggregatedM2Links;
+			--m_numM2Links;
+			return false;
 		}
 	}
-
-	std::cout << "Generating memory network... " << std::flush;
-
-	// First generate memory links from intra links (from ordinary links within each network)
-	for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
+	else
 	{
-		const LinkMap& linkMap = m_networks[layerIndex].linkMap();
-		for (LinkMap::const_iterator linkIt(linkMap.begin()); linkIt != linkMap.end(); ++linkIt)
-		{
-			unsigned int n1 = linkIt->first;
-			const std::map<unsigned int, double>& subLinks = linkIt->second;
-			for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
-			{
-				unsigned int n2 = subIt->first;
-				double linkWeight = subIt->second;
-
-				m_m2Links[make_pair(M2Node(layerIndex, n1), M2Node(layerIndex, n2))] += linkWeight;
-				m_totM2LinkWeight += linkWeight;
-
-				if (m_config.includeSelfLinks || n1 != n2)
-				{
-					m_m2Nodes[M2Node(layerIndex, n1)] += linkWeight; // -> total weighted out-degree
-				}
-				m_m2Nodes[M2Node(layerIndex, n2)] += 0.0;
-			}
-		}
+		m_m2Links.insert(firstIt, std::make_pair(m1, std::map<M2Node, double>()))->second.insert(std::make_pair(m2, weight));
 	}
 
-	// Then generate memory links from inter links (links between nodes in different layers)
-	for (std::map<InterLinkKey, double>::const_iterator interIt(m_interLinks.begin()); interIt != m_interLinks.end(); ++interIt)
-	{
-		const InterLinkKey& interLink = interIt->first;
-		unsigned int layer1 = interLink.layer1;
-		unsigned int layer2 = interLink.layer2;
-		unsigned int nodeIndex = interLink.nodeIndex;
-		double linkWeight = interIt->second;
-		if (layer1 != layer2)
-		{
-			//TODO: Rescale with self-layer weight if possible
-			m_m2Links[make_pair(M2Node(layer1, nodeIndex), M2Node(layer2, nodeIndex))] += linkWeight;
-			m_totM2LinkWeight += linkWeight;
-			// Create corresponding memory nodes if not exist
-			m_m2Nodes[M2Node(layer1, nodeIndex)] += 0.0;
-			m_m2Nodes[M2Node(layer2, nodeIndex)] += 0.0;
-		}
-	}
-
-	unsigned int M2nodeNr = 0;
-	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
-	{
-		m_m2NodeMap[it->first] = M2nodeNr;
-		M2nodeNr++;
-	}
-
-	m_m2NodeWeights.resize(m_m2Nodes.size());
-	m_totM2NodeWeight = 0.0;
-
-	M2nodeNr = 0;
-	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
-	{
-		m_m2NodeWeights[M2nodeNr] += it->second;
-		m_totM2NodeWeight += it->second;
-		++M2nodeNr;
-	}
-
-	std::cout << "done! Generated " << m_m2Nodes.size() << " memory nodes and " << m_m2Links.size() << " memory links. ";
-	std::cout << std::endl;
+	return true;
 }
 
-void MultiplexNetwork::parseIntraLink(const std::string& line, unsigned int& level, unsigned int& n1, unsigned int& n2, double& weight)
+bool MemNetwork::insertM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight)
 {
-	m_extractor.clear();
-	m_extractor.str(line);
-	if (!(m_extractor >> level >> n1 >> n2))
-		throw FileFormatError(io::Str() << "Can't parse multiplex intra link data from line '" << line << "'");
-	(m_extractor >> weight) || (weight = 1.0);
+	m_totM2LinkWeight += weight;
+	std::pair<std::map<M2Node, double>::iterator, bool> ret2 = firstM2Node->second.insert(std::make_pair(M2Node(n2PriorState, n2), weight));
+	if (!ret2.second)
+	{
+		ret2.first->second += weight;
+		++m_numAggregatedM2Links;
+		return false;
+	}
+	else
+	{
+		++m_numM2Links;
+		return true;
+	}
 }
-
-void MultiplexNetwork::parseInterLink(const std::string& line, unsigned int& node, unsigned int& level1, unsigned int& level2, double& weight)
-{
-	m_extractor.clear();
-	m_extractor.str(line);
-	if (!(m_extractor >> node >> level1 >> level2))
-		throw FileFormatError(io::Str() << "Can't parse multiplex intra link data from line '" << line << "'");
-	(m_extractor >> weight) || (weight = 1.0);
-}
-
 

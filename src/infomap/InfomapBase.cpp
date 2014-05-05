@@ -41,6 +41,7 @@
 #include "../utils/Stopwatch.h"
 #include "MemFlowNetwork.h"
 #include "MemNetwork.h"
+#include "MultiplexNetwork.h"
 #ifdef _OPENMP
 #include <omp.h>
 #include <stdio.h>
@@ -1237,11 +1238,11 @@ bool InfomapBase::initMemoryNetwork()
 	const std::vector<M2Node>& m2Nodes = flowNetwork.getM2Nodes();
 
 	for (unsigned int i = 0; i < network.numM2Nodes(); ++i) {
-		m_treeData.addNewNode((io::Str() << i << "_(" << (m2Nodes[i].phys1+1) << "-" << (m2Nodes[i].phys2+1) << ")"), nodeFlow[i], nodeTeleportWeights[i]);
+		m_treeData.addNewNode((io::Str() << i << "_(" << (m2Nodes[i].priorState+1) << "-" << (m2Nodes[i].physIndex+1) << ")"), nodeFlow[i], nodeTeleportWeights[i]);
 //		m_treeData.addNewNode("", nodeFlow[i], nodeTeleportWeights[i]);
 		M2Node& m2Node = getMemoryNode(m_treeData.getLeafNode(i));
-		m2Node.phys1 = m2Nodes[i].phys1;
-		m2Node.phys2 = m2Nodes[i].phys2;
+		m2Node.priorState = m2Nodes[i].priorState;
+		m2Node.physIndex = m2Nodes[i].physIndex;
 	}
 
 	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();
@@ -1255,8 +1256,8 @@ bool InfomapBase::initMemoryNetwork()
 	for (MemNetwork::M2NodeMap::const_iterator m2nodeIt(nodeMap.begin()); m2nodeIt != nodeMap.end(); ++m2nodeIt)
 	{
 		unsigned int nodeIndex = m2nodeIt->second;
-		getPhysicalMembers(m_treeData.getLeafNode(nodeIndex)).push_back(PhysData(m2nodeIt->first.phys2, nodeFlow[nodeIndex]));
-//		m1Flow[m2nodeIt->first.phys2] += nodeFlow[nodeIndex];
+		getPhysicalMembers(m_treeData.getLeafNode(nodeIndex)).push_back(PhysData(m2nodeIt->first.physIndex, nodeFlow[nodeIndex]));
+//		m1Flow[m2nodeIt->first.physIndex] += nodeFlow[nodeIndex];
 	}
 
 	double sumNodeFlow = 0.0;
@@ -1545,7 +1546,7 @@ void InfomapBase::printClusterVector(std::ostream& out)
 		NodeBase& node = **it;
 		M2Node& m2Node = getMemoryNode(node);
 		unsigned int index = node.parent->index;
-		out << (m2Node.phys1 + 1) << " " << (m2Node.phys2 + 1) << " " << (index + 1) << "\n";
+		out << (m2Node.priorState + 1) << " " << (m2Node.physIndex + 1) << " " << (index + 1) << "\n";
 	}
 }
 
