@@ -256,7 +256,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 	// Simulate inter-layer links
 	double aggregationRate = 1.0;
 
-	std::cout << "Generating memory network... " << std::flush;
+	std::cout << "Generating memory network with aggregation rate " << aggregationRate << "... " << std::flush;
 
 	std::vector<double> physNodeWeights(m_numNodes, 0.0);
 

@@ -62,8 +62,8 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	const MemNetwork::M2LinkMap& linkMap = network.m2LinkMap();
 	unsigned int numLinks = network.numM2Links();
 	m_flowLinks.resize(numLinks);
-	double totalLinkWeight = network.totalM2LinkWeight();
-	double sumUndirLinkWeight = 2 * totalLinkWeight - network.totalMemorySelfLinkWeight();
+	double totalM2LinkWeight = network.totalM2LinkWeight();
+	double sumUndirLinkWeight = 2 * totalM2LinkWeight - network.totalMemorySelfLinkWeight();
 	unsigned int linkIndex = 0;
 	const MemNetwork::M2NodeMap& nodeMap = network.m2NodeMap();
 
@@ -180,8 +180,8 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		std::cout << "(added " << (m_flowLinks.size() - numLinks) << " links to " <<
 			numDanglingM2Nodes << " dangling memory nodes -> " << m_flowLinks.size() << " links) " << std::flush;
 
-	totalLinkWeight += sumExtraLinkWeight;
-	sumUndirLinkWeight = 2 * totalLinkWeight - network.totalMemorySelfLinkWeight();
+	totalM2LinkWeight += sumExtraLinkWeight;
+	sumUndirLinkWeight = 2 * totalM2LinkWeight - network.totalMemorySelfLinkWeight();
 	numLinks = m_flowLinks.size();
 
 
@@ -199,7 +199,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 		{
 			Link& link = *linkIt;
-			link.flow /= totalLinkWeight;
+			link.flow /= totalM2LinkWeight;
 			m_nodeFlow[link.target] += link.flow;
 		}
 		//Normalize node flow
@@ -209,7 +209,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		for (unsigned int i = 0; i < numM2Nodes; ++i)
 			m_nodeFlow[i] /= sumNodeRank;
 		std::cout << "using directed links with raw flow... done!" << std::endl;
-		std::cout << "Total link weight: " << totalLinkWeight << "\n";
+		std::cout << "Total link weight: " << totalM2LinkWeight << "\n";
 		return;
 	}
 
@@ -276,10 +276,9 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 		{
 			unsigned int toNode = config.recordedTeleportation ? linkIt->target : linkIt->source;
-			m_nodeTeleportRates[toNode] += linkIt->flow / totalLinkWeight;
+			m_nodeTeleportRates[toNode] += linkIt->flow / totalM2LinkWeight;
 		}
 	}
-
 
 	// Normalize link weights with respect to its source nodes total out-link weight;
 	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
