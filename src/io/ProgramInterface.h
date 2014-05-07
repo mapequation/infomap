@@ -73,11 +73,12 @@ private:
 
 struct Option
 {
-	Option(char shortName, std::string longName, std::string desc, bool requireArgument = false,
+	Option(char shortName, std::string longName, std::string desc, bool isAdvanced, bool requireArgument = false,
 			std::string argName = "", std::string defaultValue = "")
 	: shortName(shortName),
 	  longName(longName),
 	  description(desc),
+	  isAdvanced(isAdvanced),
 	  requireArgument(requireArgument),
 	  incrementalArgument(false),
 	  argumentName(argName),
@@ -94,6 +95,7 @@ struct Option
 	char shortName;
 	std::string longName;
 	std::string description;
+	bool isAdvanced;
 	bool requireArgument;
 	bool incrementalArgument;
 	std::string argumentName;
@@ -102,8 +104,8 @@ struct Option
 
 struct IncrementalOption : Option
 {
-	IncrementalOption(unsigned int& target, char shortName, std::string longName, std::string desc)
-	: Option(shortName, longName, desc, false), target(target)
+	IncrementalOption(unsigned int& target, char shortName, std::string longName, std::string desc, bool isAdvanced)
+	: Option(shortName, longName, desc, isAdvanced, false), target(target)
 	{ incrementalArgument = true; }
 	virtual bool parse(std::string const&  value) {	return ++target; }
 	virtual void set(bool value) { if (value) { ++target; } else if (target > 0) {--target;} }
@@ -115,8 +117,8 @@ struct IncrementalOption : Option
 template<typename T>
 struct ArgumentOption : Option
 {
-	ArgumentOption(T& target, char shortName, std::string longName, std::string desc, std::string argName)
-	: Option(shortName, longName, desc, true, argName), target(target)
+	ArgumentOption(T& target, char shortName, std::string longName, std::string desc, bool isAdvanced, std::string argName)
+	: Option(shortName, longName, desc, isAdvanced, true, argName), target(target)
 	{}
 	virtual bool parse(std::string const&  value) {	return stringToValue(value, target); }
 	virtual std::ostream& printValue(std::ostream& out) const { return out << target; }
@@ -127,8 +129,8 @@ struct ArgumentOption : Option
 template<>
 struct ArgumentOption<bool> : Option
 {
-	ArgumentOption(bool& target, char shortName, std::string longName, std::string desc)
-	: Option(shortName, longName, desc, false), target(target)
+	ArgumentOption(bool& target, char shortName, std::string longName, std::string desc, bool isAdvanced)
+	: Option(shortName, longName, desc, isAdvanced, false), target(target)
 	{}
 	virtual bool parse(std::string const&  value) {	return target = true; }
 	virtual void set(bool value) { target = value; }
@@ -139,22 +141,25 @@ struct ArgumentOption<bool> : Option
 
 struct TargetBase
 {
-	TargetBase(std::string variableName, std::string desc)
-	: variableName(variableName), description(desc)
+	TargetBase(std::string variableName, std::string desc, bool isAdvanced)
+	: variableName(variableName), description(desc), isOptionalVector(false), isAdvanced(isAdvanced)
 	{}
 	virtual ~TargetBase() {}
 	virtual bool parse(std::string const& value) = 0;
 
 	std::string variableName;
 	std::string description;
+	bool isOptionalVector;
+	bool isAdvanced;
 };
 
 template<typename T>
 struct Target : TargetBase
 {
-	Target(T& target, std::string variableName, std::string desc)
-	: TargetBase(variableName, desc), target(target)
+	Target(T& target, std::string variableName, std::string desc, bool isAdvanced)
+	: TargetBase(variableName, desc, isAdvanced), target(target)
 	{}
+	virtual ~Target() {}
 
 	virtual bool parse(std::string const&  value)
 	{
@@ -162,6 +167,25 @@ struct Target : TargetBase
 	}
 
 	T& target;
+};
+
+template<typename T>
+struct OptionalTargets : TargetBase
+{
+	OptionalTargets(std::vector<T>& target, std::string variableName, std::string desc, bool isAdvanced)
+	: TargetBase(variableName, desc, isAdvanced), targets(target)
+	{ isOptionalVector = true; }
+	virtual ~OptionalTargets() {}
+
+	virtual bool parse(std::string const&  value)
+	{
+		T target;
+		bool ok = stringToValue(value, target);
+		if (ok)
+			targets.push_back(target);
+		return ok;
+	}
+	std::vector<T>& targets;
 };
 
 class ProgramInterface
@@ -176,48 +200,58 @@ public:
 	}
 
 	template<typename T>
-	void addNonOptionArgument(T& target, std::string variableName, std::string desc)
+	void addNonOptionArgument(T& target, std::string variableName, std::string desc, bool isAdvanced = false)
 	{
-		TargetBase* t = new Target<T>(target, variableName, desc);
+		TargetBase* t = new Target<T>(target, variableName, desc, isAdvanced);
 		m_nonOptionArguments.push_back(t);
 	}
 
-	void addOptionArgument(char shortName, std::string longName, std::string description)
+	template<typename T>
+	void addOptionalNonOptionArguments(std::vector<T>& target, std::string variableName, std::string desc, bool isAdvanced = false)
 	{
-		m_optionArguments.push_back(new Option(shortName, longName, description));
+		if (m_numOptionalNonOptionArguments != 0)
+			throw OptionConflictError("Can't have two non-option vector arguments");
+		++m_numOptionalNonOptionArguments;
+		TargetBase* t = new OptionalTargets<T>(target, variableName, desc, isAdvanced);
+		m_nonOptionArguments.push_back(t);
 	}
 
-	void addIncrementalOptionArgument(unsigned int& target, char shortName, std::string longName, std::string description)
+	void addOptionArgument(char shortName, std::string longName, std::string description, bool isAdvanced = false)
 	{
-		Option* o = new IncrementalOption(target, shortName, longName, description);
+		m_optionArguments.push_back(new Option(shortName, longName, description, isAdvanced));
+	}
+
+	void addIncrementalOptionArgument(unsigned int& target, char shortName, std::string longName, std::string description, bool isAdvanced = false)
+	{
+		Option* o = new IncrementalOption(target, shortName, longName, description, isAdvanced);
 		m_optionArguments.push_back(o);
 	}
 
-	void addOptionArgument(bool& target, char shortName, std::string longName, std::string description)
+	void addOptionArgument(bool& target, char shortName, std::string longName, std::string description, bool isAdvanced = false)
 	{
-		Option* o = new ArgumentOption<bool>(target, shortName, longName, description);
+		Option* o = new ArgumentOption<bool>(target, shortName, longName, description, isAdvanced);
 		m_optionArguments.push_back(o);
 	}
 
 	// Without shortName
-	void addOptionArgument(bool& target, std::string longName, std::string description)
+	void addOptionArgument(bool& target, std::string longName, std::string description, bool isAdvanced = false)
 	{
-		Option* o = new ArgumentOption<bool>(target, '\0', longName, description);
+		Option* o = new ArgumentOption<bool>(target, '\0', longName, description, isAdvanced);
 		m_optionArguments.push_back(o);
 	}
 
 	template<typename T>
-	void addOptionArgument(T& target, char shortName, std::string longName, std::string description, std::string argumentName)
+	void addOptionArgument(T& target, char shortName, std::string longName, std::string description, std::string argumentName, bool isAdvanced = false)
 	{
-		Option* o = new ArgumentOption<T>(target, shortName, longName, description, argumentName);
+		Option* o = new ArgumentOption<T>(target, shortName, longName, description, isAdvanced, argumentName);
 		m_optionArguments.push_back(o);
 	}
 
 	// Without shortName
 	template<typename T>
-	void addOptionArgument(T& target, std::string longName, std::string description, std::string argumentName)
+	void addOptionArgument(T& target, std::string longName, std::string description, std::string argumentName, bool isAdvanced = false)
 	{
-		Option* o = new ArgumentOption<T>(target, '\0', longName, description, argumentName);
+		Option* o = new ArgumentOption<T>(target, '\0', longName, description, isAdvanced, argumentName);
 		m_optionArguments.push_back(o);
 	}
 
@@ -227,7 +261,7 @@ public:
 	void parseArgs(int argc, char** argv);
 
 private:
-	void exitWithUsage();
+	void exitWithUsage(bool showAdvanced);
 	void exitWithVersionInformation();
 	void exitWithError(std::string message);
 
@@ -239,9 +273,11 @@ private:
 	std::string m_programVersion;
 	std::string m_programDescription;
 	std::string m_executableName;
-	bool m_displayHelp;
+	unsigned int m_displayHelp;
 	bool m_displayVersion;
 	bool m_negateNextOption;
+
+	unsigned int m_numOptionalNonOptionArguments;
 };
 
 

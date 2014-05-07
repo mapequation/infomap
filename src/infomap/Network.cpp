@@ -37,9 +37,10 @@
 
 using std::make_pair;
 
-void Network::readInputData()
+void Network::readInputData(std::string filename)
 {
-	std::string filename = m_config.networkFile;
+	if (filename.empty())
+		filename = m_config.networkFile;
 	FileURI networkFilename(filename, false);
 	std::string format = m_config.inputFormat;
 

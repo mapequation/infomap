@@ -37,12 +37,16 @@
 
 using std::make_pair;
 
-void MultiplexNetwork::readInputData()
+void MultiplexNetwork::readInputData(std::string filename)
 {
+	if (filename.empty())
+		filename = m_config.networkFile;
 	if (m_config.inputFormat == "multiplex")
 		parseMultiplexNetwork(m_config.networkFile);
+	else if (m_config.additionalInput.size() > 0)
+		parseMultipleNetworks();
 	else
-		throw ImplementationError("Multiplex network only supports single multiplex data input for now.");
+		throw ImplementationError("No multiplex identified.");
 }
 
 void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
@@ -116,6 +120,35 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 	std::cout << "Generating memory network... " << std::flush;
 
 	bool useInterLayerData = numInterLinksFound > 0;
+	if (useInterLayerData)
+		generateMemoryNetworkWithInterLayerLinksFromData();
+	else
+		generateMemoryNetworkWithSimulatedInterLayerLinks();
+
+	finalizeAndCheckNetwork();
+
+	printParsingResult();
+}
+
+void MultiplexNetwork::parseMultipleNetworks()
+{
+	std::vector<std::string> networkFilenames;
+	networkFilenames.push_back(m_config.networkFile);
+	for (unsigned int i = 0; i < m_config.additionalInput.size(); ++i)
+		networkFilenames.push_back(m_config.additionalInput[i]);
+
+	for (unsigned int i = 0; i < networkFilenames.size(); ++i)
+	{
+		m_networks.push_back(Network(m_config));
+		std::cout << "[Network layer " << (i + 1) << "]:\n";
+		m_networks[i].readInputData(networkFilenames[i]);
+	}
+
+	adjustForDifferentNumberOfNodes();
+
+	std::cout << "Generating memory network... " << std::flush;
+
+	bool useInterLayerData = false;
 	if (useInterLayerData)
 		generateMemoryNetworkWithInterLayerLinksFromData();
 	else
@@ -305,6 +338,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 						insertM2Link(layer1, nodeIndex, layer2, n2, interIntraLinkWeight);
 
 						addM2Node(layer1, nodeIndex, interIntraLinkWeight);
+//						addM2Node(layer1, nodeIndex, 0.0);
 						addM2Node(layer2, n2, 0.0);
 					}
 				}

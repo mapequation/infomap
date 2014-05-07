@@ -29,19 +29,6 @@
 #include "flowData_traits.h"
 #include "InfomapGreedyTypeSpecialized.h"
 
-// InfomapFactory::create(const Config& config)
-// {
-// 	if (config.isUndirected())
-// 		return std::auto_ptr<InfomapBase>(new InfomapGreedySpecialized<InfomapType<FlowUndirected, WithMemory> >(m_config));
-// 	if (m_config.undirdir || m_config.outdirdir || m_config.rawdir)
-// 		return std::auto_ptr<InfomapBase>(new InfomapGreedySpecialized<InfomapType<FlowDirectedNonDetailedBalance, WithMemory> >(m_config));
-// 	if (m_config.recordedTeleportation)
-// 		return std::auto_ptr<InfomapBase>(new InfomapGreedySpecialized<InfomapType<FlowDirectedWithTeleportation, WithMemory> >(m_config));
-// 	// unrecorded teleportation
-// 	return std::auto_ptr<InfomapBase>(new InfomapGreedySpecialized<InfomapType<FlowDirectedNonDetailedBalanceWithTeleportation, WithMemory> >(m_config));
-
-// }
-
 InfomapContext::InfomapContext(const Config& config)
 : m_config(config)
 {

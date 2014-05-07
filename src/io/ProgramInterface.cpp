@@ -40,11 +40,12 @@ ProgramInterface::ProgramInterface(std::string name, std::string shortDescriptio
   m_executableName(""),
   m_displayHelp(false),
   m_displayVersion(false),
-  m_negateNextOption(false)
+  m_negateNextOption(false),
+  m_numOptionalNonOptionArguments(0)
 {
-	addOptionArgument(m_displayHelp, 'h', "help", "Prints this help message.");
+	addIncrementalOptionArgument(m_displayHelp, 'h', "help", "Prints this help message. Use -hh to show advanced options.");
 	addOptionArgument(m_displayVersion, 'V', "version", "Display program version information.");
-	addOptionArgument(m_negateNextOption, 'n', "negate-next", "Set the next (no-argument) option to false.");
+	addOptionArgument(m_negateNextOption, 'n', "negate-next", "Set the next (no-argument) option to false.", true);
 }
 
 ProgramInterface::~ProgramInterface()
@@ -55,14 +56,15 @@ ProgramInterface::~ProgramInterface()
 		delete m_optionArguments[i];
 }
 
-void ProgramInterface::exitWithUsage()
+void ProgramInterface::exitWithUsage(bool showAdvanced)
 {
 	std::cout << "Name:" << std::endl;
 	std::cout << "        " << m_programName << " - " << m_shortProgramDescription << std::endl;
 	std::cout << "\nUsage:" << std::endl;
 	std::cout << "        " << m_executableName;
 	for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
-		std::cout << " " << m_nonOptionArguments[i]->variableName;
+		if (showAdvanced || !m_nonOptionArguments[i]->isAdvanced)
+			std::cout << " " << m_nonOptionArguments[i]->variableName;
 	if (!m_optionArguments.empty())
 		std::cout << " [options]";
 	std::cout << std::endl;
@@ -71,7 +73,8 @@ void ProgramInterface::exitWithUsage()
 		std::cout << "\nDescription: " << m_programDescription << std::endl;
 
 	for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
-		std::cout << "\n[" << m_nonOptionArguments[i]->variableName << "]\n    " << m_nonOptionArguments[i]->description << std::endl;
+		if (showAdvanced || !m_nonOptionArguments[i]->isAdvanced)
+			std::cout << "\n[" << m_nonOptionArguments[i]->variableName << "]\n    " << m_nonOptionArguments[i]->description << std::endl;
 
 	if (!m_optionArguments.empty())
 		std::cout << "\n[options]" << std::endl;
@@ -97,7 +100,8 @@ void ProgramInterface::exitWithUsage()
 	{
 		Option& opt = *m_optionArguments[i];
 		std::string::size_type numSpaces = maxLength + 3 - optionStrings[i].length();
-		std::cout << optionStrings[i] << std::string(numSpaces, ' ') << opt.description << "\n";
+		if (showAdvanced || !opt.isAdvanced)
+			std::cout << optionStrings[i] << std::string(numSpaces, ' ') << opt.description << "\n";
 	}
 	std::cout << std::endl;
 	std::exit(0);
@@ -116,7 +120,8 @@ void ProgramInterface::exitWithError(std::string message)
 	std::cerr << message;
 	std::cout << "\nUsage: " << m_executableName;
 	for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
-		std::cout << " " << m_nonOptionArguments[i]->variableName;
+		if (!m_nonOptionArguments[i]->isAdvanced)
+			std::cout << " " << m_nonOptionArguments[i]->variableName;
 	if (!m_optionArguments.empty())
 		std::cout << " [options]";
 	std::cout << ". Run with option '-h' for more information." << std::endl;
@@ -186,11 +191,7 @@ void ProgramInterface::parseArgs(int argc, char** argv)
 				break;
 			}
 		}
-		if (m_displayHelp)
-		{
-			exitWithUsage();
-		}
-		else if (m_displayVersion)
+		if (m_displayVersion)
 		{
 			exitWithVersionInformation();
 		}
@@ -225,15 +226,47 @@ void ProgramInterface::parseArgs(int argc, char** argv)
 		}
 //		std::cout << "  ---- " << std::endl;
 	}
+
+	if (m_displayHelp > 0)
+	{
+		exitWithUsage(m_displayHelp > 1);
+	}
+
 	// non-option ARGV-elements:
 	unsigned int argsLeft = argc - optind;
-	if (argsLeft != m_nonOptionArguments.size())
-		exitWithError("Argument error. ");
 
-	for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
+	if (m_numOptionalNonOptionArguments == 0)
 	{
-		if (!m_nonOptionArguments[i]->parse(argv[optind++]))
+		if (argsLeft != m_nonOptionArguments.size())
 			exitWithError("Argument error. ");
+	}
+	else
+	{
+		if (argsLeft < m_nonOptionArguments.size() - 1)
+			exitWithError("Argument error. ");
+	}
+
+	if (m_nonOptionArguments.size() == 0)
+		return;
+
+	unsigned int numVectorArguments = argsLeft - (m_nonOptionArguments.size() - 1);
+
+	std::deque<std::string> argvLeft;
+	while (argvLeft.size() != argsLeft)
+		argvLeft.push_back(argv[optind++]);
+
+//	for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i, --argsLeft)
+	unsigned int i = 0;
+	while (!argvLeft.empty())
+	{
+		std::string arg = argvLeft.front();
+		argvLeft.pop_front();
+		if (m_nonOptionArguments[i]->isOptionalVector && numVectorArguments == 0)
+			++i;
+		if (!m_nonOptionArguments[i]->parse(arg))
+			exitWithError("Argument error. ");
+		if (!m_nonOptionArguments[i]->isOptionalVector || --numVectorArguments == 0)
+			++i;
 	}
 
 }

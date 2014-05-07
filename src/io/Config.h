@@ -28,6 +28,7 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 #include <string>
+#include <vector>
 
 struct Config
 {
@@ -84,6 +85,7 @@ struct Config
 
 	Config(const Config& other)
 	:	networkFile(other.networkFile),
+	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
 	 	withMemory(other.withMemory),
 	 	parseWithoutIOStreams(other.parseWithoutIOStreams),
@@ -135,6 +137,7 @@ struct Config
 	Config& operator=(const Config& other)
 	{
 		networkFile = other.networkFile;
+	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
 	 	withMemory = other.withMemory;
 	 	parseWithoutIOStreams = other.parseWithoutIOStreams;
@@ -237,13 +240,13 @@ struct Config
 
 	bool parseAsUndirected() const { return originallyUndirected; }
 
-	bool isMemoryInput() const { return inputFormat == "3gram" || inputFormat == "multiplex"; }
+	bool isMemoryInput() const { return inputFormat == "3gram" || inputFormat == "multiplex" || additionalInput.size() > 0; }
 
 	bool isMemoryNetwork() const { return withMemory || isMemoryInput(); }
 
 	bool isSimulatedMemoryNetwork() const { return withMemory && !isMemoryInput(); }
 
-	bool isMultiplexNetwork() const { return inputFormat == "multiplex"; }
+	bool isMultiplexNetwork() const { return inputFormat == "multiplex" || additionalInput.size() > 0; }
 
 	bool haveModularResultOutput() const
 	{
@@ -258,6 +261,7 @@ struct Config
 
 	// Input
 	std::string networkFile;
+	std::vector<std::string> additionalInput;
 	std::string inputFormat; // 'pajek', 'link-list', '3gram' or 'multiplex'
 	bool withMemory;
 	bool parseWithoutIOStreams;

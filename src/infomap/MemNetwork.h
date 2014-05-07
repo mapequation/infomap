@@ -93,7 +93,7 @@ public:
 	{}
 	virtual ~MemNetwork() {}
 
-	virtual void readInputData();
+	virtual void readInputData(std::string filename = "");
 
 	unsigned int numM2Nodes() const { return m_m2Nodes.size(); }
 	const M2NodeMap& m2NodeMap() const { return m_m2NodeMap; }
