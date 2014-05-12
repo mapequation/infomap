@@ -583,7 +583,13 @@ void Network::finalizeAndCheckNetwork(unsigned int desiredNumberOfNodes)
 
 void Network::printParsingResult()
 {
-	std::cout << "Found " << m_numNodesFound << " nodes and " << m_numLinksFound << " links.\n  -> ";
+	std::cout << "Found " << m_numNodesFound << " nodes";
+	if (std::abs(m_sumNodeWeights / m_numNodes - 1.0) > 1e-9)
+		std::cout << " (with total weight " << m_sumNodeWeights << ")";
+	std::cout << " and " << m_numLinksFound << " links";
+	if (std::abs(m_totalLinkWeight / m_numLinks - 1.0) > 1e-9)
+		std::cout << " (with total weight " << m_totalLinkWeight << ")";
+	std::cout << ".\n  -> ";
 	if(m_numAggregatedLinks > 0)
 		std::cout << m_numAggregatedLinks << " links was aggregated to existing links. ";
 	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)

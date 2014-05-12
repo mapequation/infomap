@@ -85,8 +85,8 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
 	for (unsigned int i = 0; i < m_optionArguments.size(); ++i)
 	{
 		Option& opt = *m_optionArguments[i];
-		std::string shortOption = opt.shortName == '\0' ? std::string(4, ' ') :
-				io::Str() <<  "  -" << opt.shortName;
+		bool haveShort = opt.shortName != '\0';
+		std::string shortOption = haveShort ? (io::Str() <<  "  -" << opt.shortName) : std::string(4, ' ');
 		if (opt.requireArgument)
 			optionStrings[i] = io::Str() << shortOption << "<" << opt.argumentName <<
 			"> --" << opt.longName << "=<" << opt.argumentName << ">";

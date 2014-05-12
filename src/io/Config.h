@@ -52,6 +52,7 @@ struct Config
 		teleportToNodes(false),
 		teleportationProbability(0.15),
 		selfTeleportationProbability(-1),
+		multiplexAggregationRate(-1),
 		seedToRandomNumberGenerator(123),
 		numTrials(1),
 		minimumCodelengthImprovement(1.0e-10),
@@ -104,6 +105,7 @@ struct Config
 		teleportToNodes(other.teleportToNodes),
 		teleportationProbability(other.teleportationProbability),
 		selfTeleportationProbability(other.selfTeleportationProbability),
+		multiplexAggregationRate(other.multiplexAggregationRate),
 		seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
 		numTrials(other.numTrials),
 		minimumCodelengthImprovement(other.minimumCodelengthImprovement),
@@ -156,6 +158,7 @@ struct Config
 		teleportToNodes = other.teleportToNodes;
 		teleportationProbability = other.teleportationProbability;
 		selfTeleportationProbability = other.selfTeleportationProbability;
+		multiplexAggregationRate = other.multiplexAggregationRate;
 		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
 		numTrials = other.numTrials;
 		minimumCodelengthImprovement = other.minimumCodelengthImprovement;
@@ -282,6 +285,7 @@ struct Config
 	bool teleportToNodes;
 	double teleportationProbability;
 	double selfTeleportationProbability;
+	double multiplexAggregationRate;
 	unsigned long seedToRandomNumberGenerator;
 
 	// Performance and accuracy
