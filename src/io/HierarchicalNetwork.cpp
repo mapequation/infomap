@@ -254,7 +254,8 @@ void HierarchicalNetwork::writeHumanReadableTreeRecursiveHelper(std::ostream& ou
 		SNode& child = *node.children[i];
 		if (child.isLeaf)
 		{
-			out << prefix << (i+1) << " " << child.data.flow << " \"" << child.data.name << "\"\n";
+//			out << prefix << (i+1) << " " << child.data.flow << " \"" << child.data.name << "\"\n";
+			out << prefix << (i+1) << " " << child.data.flow << " " << child.data.enterFlow << " " << child.data.exitFlow << " \"" << child.data.name << "\"\n";
 		}
 		else
 		{

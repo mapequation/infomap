@@ -1455,9 +1455,9 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 	sortTree();
 
 	// Print hierarchy
-	if (m_config.printTree || m_config.printBinaryTree || m_config.printBinaryFlowTree)
+	if (m_config.printTree || m_config.printFlowTree || m_config.printBinaryTree || m_config.printBinaryFlowTree)
 	{
-		bool writeEdges = m_config.printBinaryFlowTree;
+		bool writeEdges = m_config.printBinaryFlowTree || m_config.printFlowTree;
 		RELEASE_OUT("\nBuilding output tree" << (writeEdges ? " with links" : "") << "... " << std::flush);
 
 		saveHierarchicalNetwork(filename, writeEdges);
