@@ -295,10 +295,10 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 	// First generate memory links from intra links (from ordinary links within each network)
 	for (unsigned int nodeIndex = 0; nodeIndex < m_numNodes; ++nodeIndex)
 	{
-		std::cout << "\n==== Node " << nodeIndex << " ====";
+//		std::cout << "\n==== Node " << nodeIndex << " ====";
 		for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1)
 		{
-			std::cout << "\n---- 1st layer: " << layer1;
+//			std::cout << "\n---- 1st layer: " << layer1;
 			M2Node m2Source(layer1, nodeIndex);
 
 			const LinkMap& layer1LinkMap = m_networks[layer1].linkMap();
@@ -306,7 +306,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 
 			if (layer1OutLinksIt == layer1LinkMap.end())
 			{
-				std::cout << " ---> SKIPPING DANGLING NODE " << m2Source;
+//				std::cout << " ---> SKIPPING DANGLING NODE " << m2Source;
 				continue;
 			}
 
@@ -317,7 +317,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 			for (unsigned int layer2 = 0; layer2 < m_networks.size(); ++layer2)
 			{
 				// Distribute inter-link to the outgoing intra-links of the node in the inter-linked layer
-				std::cout << "\n---- 2nd layer: " << layer2;
+//				std::cout << "\n---- 2nd layer: " << layer2;
 				bool isIntra = layer2 == layer1;
 				LinkMap::const_iterator layer2OutLinksIt = layer1OutLinksIt;
 				if (!isIntra)
@@ -326,7 +326,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 					layer2OutLinksIt = layer2LinkMap.find(nodeIndex);
 					if (layer2OutLinksIt == layer2LinkMap.end())
 					{
-						std::cout << "\n  No mirror to node " << m2Source << " on layer " << layer2;
+//						std::cout << "\n  No mirror to node " << m2Source << " on layer " << layer2;
 						continue;
 					}
 				}
@@ -346,7 +346,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 					double intraLinkWeight = isIntra ? linkWeight : 0.0;
 
 					double aggregatedLinkWeight = aggregationRate * linkWeight + (1.0 - aggregationRate) * intraLinkWeight;
-					std::cout << "\n  Creating link " << M2Node(layer1, nodeIndex) << " -> " << M2Node(layer2, n2) << " with weight: " << aggregatedLinkWeight << "  ";
+//					std::cout << "\n  Creating link " << M2Node(layer1, nodeIndex) << " -> " << M2Node(layer2, n2) << " with weight: " << aggregatedLinkWeight << "  ";
 					insertM2Link(layer1, nodeIndex, layer2, n2, aggregatedLinkWeight);
 //					insertM2Link(m2SourceIt, layer2, n2, aggregatedLinkWeight);
 

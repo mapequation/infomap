@@ -254,8 +254,8 @@ void HierarchicalNetwork::writeHumanReadableTreeRecursiveHelper(std::ostream& ou
 		SNode& child = *node.children[i];
 		if (child.isLeaf)
 		{
-//			out << prefix << (i+1) << " " << child.data.flow << " \"" << child.data.name << "\"\n";
-			out << prefix << (i+1) << " " << child.data.flow << " " << child.data.enterFlow << " " << child.data.exitFlow << " \"" << child.data.name << "\"\n";
+			out << prefix << (i+1) << " " << child.data.flow << " \"" << child.data.name << "\"\n";
+//			out << prefix << (i+1) << " " << child.data.flow << " " << child.data.enterFlow << " " << child.data.exitFlow << " \"" << child.data.name << "\"\n";
 		}
 		else
 		{
@@ -267,29 +267,26 @@ void HierarchicalNetwork::writeHumanReadableTreeRecursiveHelper(std::ostream& ou
 
 void HierarchicalNetwork::writeHumanReadableTreeFlowLinksRecursiveHelper(std::ostream& out, SNode& node, std::string prefix)
 {
-	for (unsigned int i = 0; i < node.children.size(); ++i)
-	{
-		SNode& child = *node.children[i];
+	if (node.children.empty())
+		return;
 
-		// Write edges after the last child of the parent node
-		if (static_cast<unsigned int>(i + 1) == node.children.size())
-		{
-			const SNode::ChildEdgeList& edges = child.parentNode->childEdges;
-			// First sort the edges
-			std::multimap<double, ChildEdge, std::greater<double> > sortedEdges;
-			for (SNode::ChildEdgeList::const_iterator it = edges.begin(); it != edges.end(); ++it)
-				sortedEdges.insert(std::make_pair(it->flow, *it));
-			if (prefix.empty())
-				out << "*Edges " << edges.size() << ", module 'root':\n";
-			else
-				out << "*Edges " << edges.size() << ", module " << prefix << "\n";
-			std::multimap<double, ChildEdge, std::greater<double> >::const_iterator it(sortedEdges.begin());
-			for (unsigned int i = 0; i < edges.size(); ++i, ++it)
-			{
-				out << (it->second.source + 1) << " " << (it->second.target + 1) << " " << it->second.flow << "\n";
-			}
-		}
+	// Write edges after the last child of the parent node
+	const SNode::ChildEdgeList& edges = node.childEdges;
+	// First sort the edges
+	std::multimap<double, ChildEdge, std::greater<double> > sortedEdges;
+	for (SNode::ChildEdgeList::const_iterator it = edges.begin(); it != edges.end(); ++it)
+		sortedEdges.insert(std::make_pair(it->flow, *it));
+	if (prefix.empty())
+		out << "*Edges " << edges.size() << ", module 'root':(" << node.children.size() << ")\n";
+	else
+		out << "*Edges " << edges.size() << ", module " << prefix << "(" << node.children.size() << ")\n";
+	std::multimap<double, ChildEdge, std::greater<double> >::const_iterator it(sortedEdges.begin());
+
+	for (unsigned int i = 0; i < edges.size(); ++i, ++it)
+	{
+		out << (it->second.source + 1) << " " << (it->second.target + 1) << " " << it->second.flow << "\n";
 	}
+
 	for (unsigned int i = 0; i < node.children.size(); ++i)
 	{
 		SNode& child = *node.children[i];
