@@ -76,6 +76,7 @@ struct Config
 		printPajekNetwork(false),
 		printBinaryTree(false),
 		printBinaryFlowTree(false),
+		printExpanded(false),
 		noFileOutput(false),
 		verbosity(0),
 		verboseNumberPrecision(6),
@@ -129,6 +130,7 @@ struct Config
 		printPajekNetwork(other.printPajekNetwork),
 		printBinaryTree(other.printBinaryTree),
 		printBinaryFlowTree(other.printBinaryFlowTree),
+		printExpanded(other.printExpanded),
 		noFileOutput(other.noFileOutput),
 		verbosity(other.verbosity),
 		verboseNumberPrecision(other.verboseNumberPrecision),
@@ -182,6 +184,7 @@ struct Config
 		printPajekNetwork = other.printPajekNetwork;
 		printBinaryTree = other.printBinaryTree;
 		printBinaryFlowTree = other.printBinaryFlowTree;
+		printExpanded = other.printExpanded;
 		noFileOutput = other.noFileOutput;
 		verbosity = other.verbosity;
 		verboseNumberPrecision = other.verboseNumberPrecision;
@@ -313,6 +316,7 @@ struct Config
 	bool printPajekNetwork;
 	bool printBinaryTree;
 	bool printBinaryFlowTree; // tree including horizontal links (hierarchical network)
+	bool printExpanded; // Print the expanded network of memory nodes if possible
 	bool noFileOutput;
 	unsigned int verbosity;
 	unsigned int verboseNumberPrecision;

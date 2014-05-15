@@ -143,7 +143,6 @@ protected:
 
 
 	NodeType& getNode(NodeBase& node);
-
 	const NodeType& getNode(const NodeBase& node) const;
 
 	unsigned int numActiveModules();

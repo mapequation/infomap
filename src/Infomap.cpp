@@ -84,11 +84,8 @@ void getConfig(Config& conf, int argc, char *argv[])
 			"Don't run Infomap. Useful if initial cluster data should be preserved or non-modular data printed.", true);
 
 	// --------------------- Output options ---------------------
-	api.addOptionArgument(conf.printTree, "tree",
-			"Print the hierarchy in .tree format. (default true if no other output with cluster data)");
-
-	api.addOptionArgument(conf.printFlowTree, "ftree",
-			"Print the hierarchy in .tree format and append the hierarchically aggregated network links.", true);
+	api.addOptionArgument(conf.noFileOutput, '0', "no-file-output",
+			"Don't print any output to file.", true);
 
 	api.addOptionArgument(conf.printMap, "map",
 			"Print the top two-level modular network in the .map format.");
@@ -96,11 +93,11 @@ void getConfig(Config& conf, int argc, char *argv[])
 	api.addOptionArgument(conf.printClu, "clu",
 			"Print the top cluster indices for each node.");
 
-	api.addOptionArgument(conf.printNodeRanks, "node-ranks",
-			"Print the calculated flow for each node to a file.", true);
+	api.addOptionArgument(conf.printTree, "tree",
+			"Print the hierarchy in .tree format. (default true if no other output with cluster data)");
 
-	api.addOptionArgument(conf.printPajekNetwork, "pajek",
-			"Print the parsed network in Pajek format.", true);
+	api.addOptionArgument(conf.printFlowTree, "ftree",
+			"Print the hierarchy in .tree format and append the hierarchically aggregated network links.", true);
 
 	api.addOptionArgument(conf.printBinaryTree, "btree",
 			"Print the tree in a streamable binary format.", true);
@@ -108,11 +105,17 @@ void getConfig(Config& conf, int argc, char *argv[])
 	api.addOptionArgument(conf.printBinaryFlowTree, "bftree",
 			"Print the tree including horizontal flow links in a streamable binary format.");
 
+	api.addOptionArgument(conf.printNodeRanks, "node-ranks",
+			"Print the calculated flow for each node to a file.", true);
+
 	api.addOptionArgument(conf.printFlowNetwork, "flow-network",
 			"Print the network with calculated flow values.", true);
 
-	api.addOptionArgument(conf.noFileOutput, '0', "no-file-output",
-			"Don't print any output to file.", true);
+	api.addOptionArgument(conf.printPajekNetwork, "pajek",
+			"Print the parsed network in Pajek format.", true);
+
+	api.addOptionArgument(conf.printExpanded, "expanded",
+			"Print the expanded network of memory nodes if possible.", true);
 
 	// --------------------- Core algorithm options ---------------------
 	api.addOptionArgument(conf.twoLevel, '2', "two-level",
