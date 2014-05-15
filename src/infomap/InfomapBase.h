@@ -178,8 +178,6 @@ protected:
 
 	virtual void printFlowNetwork(std::ostream& out) = 0;
 
-	virtual void printMap(std::ostream& out) = 0;
-
 	virtual void sortTree(NodeBase& parent) = 0;
 
 	NodeBase* root() { return m_treeData.root(); }

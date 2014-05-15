@@ -341,7 +341,9 @@ void HierarchicalNetwork::writeMap(const std::string& fileName)
 	for (unsigned int i = 0; i < numModules; ++i)
 	{
 		SNode& module = *m_rootNode.children[i];
-		out << (i + 1) << " \"" << module.data.name << "\" " << module.data.flow << " " << module.data.exitFlow << "\n";
+		NodeMap& leafNodes = nodeMaps[i];
+		SNode& biggestLeafNode = *(leafNodes.begin()->second); // Use the biggest leaf node under each super module to name the super module
+		out << (i + 1) << " \"" << biggestLeafNode.data.name << ",...\" " << module.data.flow << " " << module.data.exitFlow << "\n";
 	}
 
 	out << "*Nodes " << numNodes << "\n";

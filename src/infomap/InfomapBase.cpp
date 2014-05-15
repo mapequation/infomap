@@ -1455,9 +1455,9 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 	sortTree();
 
 	// Print hierarchy
-	if (m_config.printTree || m_config.printFlowTree || m_config.printBinaryTree || m_config.printBinaryFlowTree)
+	if (m_config.printTree || m_config.printFlowTree || m_config.printBinaryTree || m_config.printBinaryFlowTree || m_config.printMap)
 	{
-		bool writeEdges = m_config.printBinaryFlowTree || m_config.printFlowTree;
+		bool writeEdges = m_config.printBinaryFlowTree || m_config.printFlowTree || m_config.printMap;
 		RELEASE_OUT("\nBuilding output tree" << (writeEdges ? " with links" : "") << "... " << std::flush);
 
 		saveHierarchicalNetwork(filename, writeEdges);
@@ -1484,25 +1484,18 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 			m_ioNetwork.writeStreamableTree(outName, writeEdges);
 		}
 
+		if (m_config.printMap)
+		{
+			outName = io::Str() << m_config.outDirectory << filename << ".map";
+			RELEASE_OUT("writing .map... " << std::flush);
+			m_ioNetwork.writeMap(outName);
+		}
+
 		RELEASE_OUT("done!" << std::endl);
 
 		// Clear the data
 		m_ioNetwork.clear();
 	}
-
-
-	// Print .map
-	if (m_config.printMap)
-	{
-		outName = io::Str() << m_config.outDirectory << filename << ".map";
-		if (m_config.verbosity > 0)
-			RELEASE_OUT("Print top modules to " << outName << "... ");
-		SafeOutFile mapOut(outName.c_str());
-		printMap(mapOut);
-		if (m_config.verbosity > 0)
-			RELEASE_OUT("done!\n");
-	}
-
 
 	// Print .clu
 	if (m_config.printClu)
