@@ -105,7 +105,7 @@ public:
 
 	virtual ~Network() {}
 
-	virtual void readInputData();
+	virtual void readInputData(std::string filename = "");
 
 	/**
 	 * Add a weighted link between two nodes.

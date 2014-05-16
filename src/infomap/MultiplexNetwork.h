@@ -44,11 +44,13 @@ public:
 	{}
 	virtual ~MultiplexNetwork() {}
 
-	virtual void readInputData();
+	virtual void readInputData(std::string filename = "");
 
 protected:
 
 	void parseMultiplexNetwork(std::string filename);
+
+	void parseMultipleNetworks();
 
 	void adjustForDifferentNumberOfNodes();
 

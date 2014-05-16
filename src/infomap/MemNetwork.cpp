@@ -36,14 +36,15 @@
 #include <cstdio>
 using std::make_pair;
 
-void MemNetwork::readInputData()
+void MemNetwork::readInputData(std::string filename)
 {
-	std::string filename = m_config.networkFile;
+	if (filename.empty())
+		filename = m_config.networkFile;
 	if (m_config.inputFormat == "3gram")
 		parseTrigram(filename);
 	else
 	{
-		Network::readInputData();
+		Network::readInputData(filename);
 		simulateMemoryFromOrdinaryNetwork();
 	}
 }

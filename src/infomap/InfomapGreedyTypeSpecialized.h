@@ -27,8 +27,10 @@
 
 #ifndef INFOMAPGREEDYTYPESPECIALIZED_H_
 #define INFOMAPGREEDYTYPESPECIALIZED_H_
+
 #include "InfomapGreedyCommon.h"
 #include "../io/version.h"
+#include <ostream>
 
 template<typename FlowType, typename NetworkType>
 class InfomapGreedyTypeSpecialized : public InfomapGreedyCommon<InfomapGreedyTypeSpecialized<FlowType, NetworkType> >
@@ -140,7 +142,12 @@ protected:
 
 	virtual void saveHierarchicalNetwork(std::string rootName, bool includeLinks);
 
+	virtual void printClusterNumbers(std::ostream& out);
+
 private:
+	NodeType& getNode(NodeBase& node) { return static_cast<NodeType&>(node); }
+	const NodeType& getNode(const NodeBase& node) const { return static_cast<const NodeType&>(node); }
+
 	std::vector<ModuleToMemNodes> m_physToModuleToMemNodes; // vector[physicalNodeID] map<moduleID, {#memNodes, sumFlow}>  
 	unsigned int m_numPhysicalNodes;
 
@@ -553,12 +560,45 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::generateNetworkFromChil
 template<typename FlowType>
 void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork(std::string rootName, bool includeLinks)
 {
-//	Super::saveHierarchicalNetwork(rootName, includeLinks);
-//	return;
-
 	HierarchicalNetwork& ioNetwork = Super::m_ioNetwork;
 
 	ioNetwork.init(rootName, !Super::m_config.printAsUndirected(), Super::hierarchicalCodelength, Super::oneLevelCodelength, INFOMAP_VERSION);
+
+	if (Super::m_config.printExpanded)
+	{
+		// Create vector of node names for memory nodes
+		std::vector<std::string>& physicalNames = Super::m_nodeNames;
+		std::vector<std::string> m2NodeNames(Super::m_treeData.numLeafNodes());
+		unsigned int i = 0;
+		for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt, ++i)
+		{
+			NodeType& node = getNode(**leafIt);
+			M2Node& m2Node = node.m2Node;
+			if (Super::m_config.isMultiplexNetwork())
+				m2NodeNames[i] = io::Str() << physicalNames[m2Node.physIndex] << " | " << (m2Node.priorState + (Super::m_config.zeroBasedNodeNumbers? 0 : 1));
+			else
+				m2NodeNames[i] = io::Str() << physicalNames[m2Node.physIndex] << " | " << physicalNames[m2Node.priorState];
+		}
+
+		ioNetwork.prepareAddLeafNodes(Super::m_treeData.numLeafNodes());
+
+		Super::buildHierarchicalNetworkHelper(ioNetwork, ioNetwork.getRootNode(), m2NodeNames);
+
+		if (includeLinks)
+		{
+			for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)
+			{
+				NodeBase& node = **leafIt;
+				for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
+						outEdgeIt != endIt; ++outEdgeIt)
+				{
+					EdgeType& edge = **outEdgeIt;
+					ioNetwork.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
+				}
+			}
+		}
+		return;
+	}
 
 	std::deque<std::pair<NodeBase*, HierarchicalNetwork::node_type*> > leafModules;
 
@@ -642,6 +682,19 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 	}
 }
 
+template<typename FlowType>
+void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printClusterNumbers(std::ostream& out)
+{
+	out << "*Vertices " << Super::m_treeData.numLeafNodes() << "\n";
+	out << "# from to moduleNr flow\n";
+	for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)
+	{
+		NodeType& node = getNode(**leafIt);
+		M2Node& m2Node = node.m2Node;
+		unsigned int index = node.parent->index;
+		out << (m2Node.priorState + 1) << " " << (m2Node.physIndex + 1) << " " << (index + 1) << " " << node.data.flow << "\n";
+	}
+}
 
 
 

@@ -27,25 +27,29 @@
 
 #ifndef INFOMAPGREEDY_H_
 #define INFOMAPGREEDY_H_
-#include "InfomapBase.h"
-#include "Node.h"
-#include "NodeFactory.h"
-#include "flowData_traits.h"
-#include "../utils/Logger.h"
-#include "../utils/infomath.h"
-#include <map>
-#include <utility>
-#include "../io/TreeDataWriter.h"
-#include "../utils/FileURI.h"
-#include "../utils/types.h"
-#include "../io/SafeFile.h"
-#include <sstream>
-#include <iomanip>
-#include "../io/convert.h"
-#include "../io/HierarchicalNetwork.h"
+
 #include <deque>
 #include <functional>
+#include <iostream>
+#include <iterator>
+#include <map>
+#include <utility>
+#include <vector>
+
+#include "../io/convert.h"
+#include "../io/Config.h"
+#include "../io/HierarchicalNetwork.h"
 #include "../io/version.h"
+#include "../utils/infomath.h"
+#include "Edge.h"
+#include "flowData.h"
+#include "flowData_traits.h"
+#include "InfomapBase.h"
+#include "MemNetwork.h"
+#include "Node.h"
+#include "NodeFactory.h"
+#include "treeIterators.h"
+#include "TreeData.h"
 
 
 template<typename InfomapImplementation>
@@ -126,8 +130,6 @@ protected:
 
 	virtual void printFlowNetwork(std::ostream& out);
 
-	virtual void printMap(std::ostream& out);
-
 	virtual void sortTree(NodeBase& parent);
 
 	virtual void saveHierarchicalNetwork(std::string rootName, bool includeLinks);
@@ -141,7 +143,6 @@ protected:
 
 
 	NodeType& getNode(NodeBase& node);
-
 	const NodeType& getNode(const NodeBase& node) const;
 
 	unsigned int numActiveModules();
@@ -226,83 +227,6 @@ void InfomapGreedy<InfomapImplementation>::printFlowNetwork(std::ostream& out)
 			EdgeType& edge = **edgeIt;
 			out << "  <-- " << edge.source.originalIndex << " (" << edge.data.flow << ")\n";
 		}
-	}
-}
-
-template<typename InfomapImplementation>
-inline
-void InfomapGreedy<InfomapImplementation>::printMap(std::ostream& out)
-{
-	typedef std::multimap<double, EdgeType*, std::greater<double> > LinkMap;
-	typedef std::multimap<double, NodeBase*, std::greater<double> > NodeMap;
-	typedef std::vector<std::pair<NodeBase*, NodeMap> > ModuleData;
-	// First collect and sort leaf nodes and module links
-	LinkMap moduleLinks;
-	ModuleData moduleData(root()->childDegree());
-	unsigned int moduleIndex = 0;
-	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-			moduleIt != endIt; ++moduleIt, ++moduleIndex)
-	{
-		moduleData[moduleIndex].first = moduleIt.base();
-		// Collect leaf nodes
-		LeafNodeIterator<NodeBase*> li(moduleIt.base());
-		LeafNodeIterator<NodeBase*> liEnd(moduleIt->next);
-		while (li != liEnd)
-		{
-			moduleData[moduleIndex].second.insert(std::make_pair(getNode(*li).data.flow, li.base()));
-			++li;
-		}
-
-		// Collect module links
-		for (NodeBase::edge_iterator outEdgeIt(moduleIt->begin_outEdge()), endIt(moduleIt->end_outEdge());
-				outEdgeIt != endIt; ++outEdgeIt)
-		{
-			moduleLinks.insert(std::make_pair((*outEdgeIt)->data.flow, *outEdgeIt));
-		}
-	}
-
-	out << "# modules: " << numTopModules() << "\n";
-	out << "# modulelinks: " << moduleLinks.size() << "\n";
-	out << "# nodes: " << numLeafNodes() << "\n";
-	out << "# links: " << m_treeData.numLeafEdges() << "\n";
-	out << "# codelength: " << hierarchicalCodelength << "\n";
-	out << "*" << (m_config.isUndirected() ? "Undirected" : "Directed") << "\n";
-
-	out << "*Modules " << numTopModules() << "\n";
-	unsigned int moduleNumber = 1;
-	for (ModuleData::iterator moduleIt(moduleData.begin()), endIt(moduleData.end());
-			moduleIt != endIt; ++moduleIt, ++moduleNumber)
-	{
-		// Use the name of the biggest leaf node in the module to name the module
-		NodeBase& module = *moduleIt->first;
-		FlowType flowData = getNode(module).data;
-		out << (module.index + 1) << " \"" << moduleIt->second.begin()->second->name << ",...\" " <<
-				flowData.flow << " " << flowData.exitFlow << "\n";
-	}
-
-	// Collect the leaf nodes under each top module, sort them on flow, and write grouped on top module
-	out << "*Nodes " << numLeafNodes() << "\n";
-	moduleNumber = 1;
-	for (ModuleData::iterator moduleIt(moduleData.begin()), endIt(moduleData.end());
-			moduleIt != endIt; ++moduleIt, ++moduleNumber)
-	{
-		// Use the name of the biggest leaf node in the module to name the module
-		NodeMap& nodeMap = moduleIt->second;
-		unsigned int nodeNumber = 1;
-		for (NodeMap::iterator it(nodeMap.begin()), itEnd(nodeMap.end());
-				it != itEnd; ++it, ++nodeNumber)
-		{
-			out << moduleNumber << ":" << nodeNumber << " \"" << it->second->name << "\" " <<
-				it->first << "\n";
-		}
-	}
-
-	out << "*Links " << moduleLinks.size() << "\n";
-	for (LinkMap::iterator linkIt(moduleLinks.begin()), endIt(moduleLinks.end());
-			linkIt != endIt; ++linkIt)
-	{
-		EdgeType& edge = *linkIt->second;
-		out << (edge.source.index+1) << " " << (edge.target.index+1) << " " << edge.data.flow << "\n";
 	}
 }
 

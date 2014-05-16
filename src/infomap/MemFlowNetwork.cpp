@@ -371,7 +371,6 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		beta = 1.0;
 	}
 
-
 	// Update the links with their global flow from the PageRank values. (Note: beta is set to 1 if unrec)
 	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 	{

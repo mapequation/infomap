@@ -178,8 +178,6 @@ protected:
 
 	virtual void printFlowNetwork(std::ostream& out) = 0;
 
-	virtual void printMap(std::ostream& out) = 0;
-
 	virtual void sortTree(NodeBase& parent) = 0;
 
 	NodeBase* root() { return m_treeData.root(); }
@@ -231,7 +229,7 @@ private:
 	void initNodeNames(Network& network);
 	bool checkAndConvertBinaryTree();
 	void printNetworkData(std::string filename = "", bool sort = true);
-	void printClusterVector(std::ostream& out);
+	virtual void printClusterNumbers(std::ostream& out);
 	void printTree(std::ostream& out, const NodeBase& root, const std::string& prefix = "");
 	void printPerLevelCodelength(std::ostream& out);
 	void aggregatePerLevelCodelength(std::vector<double>& indexCodelengths, std::vector<double>& leafLengths, unsigned int level = 0);

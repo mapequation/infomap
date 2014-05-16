@@ -46,9 +46,8 @@ void runInfomap(Config const& config)
 	context.getInfomap()->run();
 }
 
-Config getConfig(int argc, char *argv[])
+void getConfig(Config& conf, int argc, char *argv[])
 {
-	Config conf;
 	ProgramInterface api("Infomap",
 			"Implementation of the Infomap clustering algorithm based on the Map Equation (see www.mapequation.org)",
 			INFOMAP_VERSION);
@@ -57,6 +56,9 @@ Config getConfig(int argc, char *argv[])
 	api.addNonOptionArgument(conf.networkFile, "network_file",
 			"The file containing the network data. Accepted formats: Pajek (implied by .net) and link list (.txt)");
 
+	api.addOptionalNonOptionArguments(conf.additionalInput, "[additional input]",
+			"More network layers for multiplex.", true);
+
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
 			"Specify input format ('pajek', 'link-list', '3gram' or 'multiplex') to override format possibly implied by file extension.", "s");
 
@@ -64,7 +66,7 @@ Config getConfig(int argc, char *argv[])
 			"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.");
 
 	api.addOptionArgument(conf.parseWithoutIOStreams, "without-iostream",
-			"Parse the input network data without the iostream library. Can be a bit faster, but not as robust.");
+			"Parse the input network data without the iostream library. Can be a bit faster, but not as robust.", true);
 
 	api.addOptionArgument(conf.zeroBasedNodeNumbers, 'z', "zero-based-numbering",
 			"Assume node numbers start from zero in the input file instead of one.");
@@ -73,20 +75,17 @@ Config getConfig(int argc, char *argv[])
 			"Include links with the same source and target node. (Ignored by default.)");
 
 	api.addOptionArgument(conf.nodeLimit, 'O', "node-limit",
-			"Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", "n");
+			"Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", "n", true);
 
 	api.addOptionArgument(conf.clusterDataFile, 'c', "cluster-data",
-			"Provide an initial two-level solution (.clu format).", "p");
+			"Provide an initial two-level solution (.clu format).", "p", true);
 
 	api.addOptionArgument(conf.noInfomap, "no-infomap",
-			"Don't run Infomap. Useful if initial cluster data should be preserved or non-modular data printed.");
+			"Don't run Infomap. Useful if initial cluster data should be preserved or non-modular data printed.", true);
 
 	// --------------------- Output options ---------------------
-	api.addOptionArgument(conf.printTree, "tree",
-			"Print the hierarchy in .tree format. (default true if no other output with cluster data)");
-
-	api.addOptionArgument(conf.printFlowTree, "ftree",
-			"Print the hierarchy in .tree format and append the hierarchically aggregated network links.");
+	api.addOptionArgument(conf.noFileOutput, '0', "no-file-output",
+			"Don't print any output to file.", true);
 
 	api.addOptionArgument(conf.printMap, "map",
 			"Print the top two-level modular network in the .map format.");
@@ -94,23 +93,29 @@ Config getConfig(int argc, char *argv[])
 	api.addOptionArgument(conf.printClu, "clu",
 			"Print the top cluster indices for each node.");
 
-	api.addOptionArgument(conf.printNodeRanks, "node-ranks",
-			"Print the calculated flow for each node to a file.");
+	api.addOptionArgument(conf.printTree, "tree",
+			"Print the hierarchy in .tree format. (default true if no other output with cluster data)");
 
-	api.addOptionArgument(conf.printPajekNetwork, "pajek",
-			"Print the parsed network in Pajek format.");
+	api.addOptionArgument(conf.printFlowTree, "ftree",
+			"Print the hierarchy in .tree format and append the hierarchically aggregated network links.", true);
 
 	api.addOptionArgument(conf.printBinaryTree, "btree",
-			"Print the tree in a streamable binary format.");
+			"Print the tree in a streamable binary format.", true);
 
 	api.addOptionArgument(conf.printBinaryFlowTree, "bftree",
 			"Print the tree including horizontal flow links in a streamable binary format.");
 
-	api.addOptionArgument(conf.printFlowNetwork, "flow-network",
-			"Print the network with calculated flow values.");
+	api.addOptionArgument(conf.printNodeRanks, "node-ranks",
+			"Print the calculated flow for each node to a file.", true);
 
-	api.addOptionArgument(conf.noFileOutput, '0', "no-file-output",
-			"Don't print any output to file.");
+	api.addOptionArgument(conf.printFlowNetwork, "flow-network",
+			"Print the network with calculated flow values.", true);
+
+	api.addOptionArgument(conf.printPajekNetwork, "pajek",
+			"Print the parsed network in Pajek format.", true);
+
+	api.addOptionArgument(conf.printExpanded, "expanded",
+			"Print the expanded network of memory nodes if possible.", true);
 
 	// --------------------- Core algorithm options ---------------------
 	api.addOptionArgument(conf.twoLevel, '2', "two-level",
@@ -127,22 +132,25 @@ Config getConfig(int argc, char *argv[])
 			"Two-mode dynamics: Assume undirected links for calculating flow, but directed when minimizing codelength.");
 
 	api.addOptionArgument(conf.outdirdir, "outdirdir",
-			"Two-mode dynamics: Count only ingoing links when calculating the flow, but all when minimizing codelength.");
+			"Two-mode dynamics: Count only ingoing links when calculating the flow, but all when minimizing codelength.", true);
 
 	api.addOptionArgument(conf.rawdir, 'w', "rawdir",
-			"Two-mode dynamics: Assume directed links and let the raw link weights be the flow.");
+			"Two-mode dynamics: Assume directed links and let the raw link weights be the flow.", true);
 
 	api.addOptionArgument(conf.recordedTeleportation, 'e', "recorded-teleportation",
-			"If teleportation is used to calculate the flow, also record it when minimizing codelength.");
+			"If teleportation is used to calculate the flow, also record it when minimizing codelength.", true);
 
 	api.addOptionArgument(conf.teleportToNodes, 'o', "to-nodes",
-			"Teleport to nodes instead of to links, assuming uniform node weights if no such input data.");
+			"Teleport to nodes instead of to links, assuming uniform node weights if no such input data.", true);
 
 	api.addOptionArgument(conf.teleportationProbability, 'p', "teleportation-probability",
-			"The probability of teleporting to a random node or link.", "f");
+			"The probability of teleporting to a random node or link.", "f", true);
 
 	api.addOptionArgument(conf.selfTeleportationProbability, 'y', "self-link-teleportation-probability",
-			"The probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", "f");
+			"The probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", "f", true);
+
+	api.addOptionArgument(conf.multiplexAggregationRate, "multiplex-aggregation-rate",
+			"The probability of following a link as if the layers where completely aggregated. Zero means completely disconnected layers.", "f", true);
 
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
 			"A seed (integer) to the random number generator.", "n");
@@ -152,31 +160,31 @@ Config getConfig(int argc, char *argv[])
 			"The number of outer-most loops to run before picking the best solution.", "n");
 
 	api.addOptionArgument(conf.minimumCodelengthImprovement, 'm', "min-improvement",
-			"Minimum codelength threshold for accepting a new solution.", "f");
+			"Minimum codelength threshold for accepting a new solution.", "f", true);
 
 	api.addOptionArgument(conf.randomizeCoreLoopLimit, 'a', "random-loop-limit",
-			"Randomize the core loop limit from 1 to 'core-loop-limit'");
+			"Randomize the core loop limit from 1 to 'core-loop-limit'", true);
 
 	api.addOptionArgument(conf.coreLoopLimit, 'M', "core-loop-limit",
-			"Limit the number of loops that tries to move each node into the best possible module", "n");
+			"Limit the number of loops that tries to move each node into the best possible module", "n", true);
 
 	api.addOptionArgument(conf.levelAggregationLimit, 'L', "core-level-limit",
-			"Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.", "n");
+			"Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.", "n", true);
 
 	api.addOptionArgument(conf.tuneIterationLimit, 'T', "tune-iteration-limit",
-			"Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.", "n");
+			"Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.", "n", true);
 
 	api.addOptionArgument(conf.minimumRelativeTuneIterationImprovement, 'U', "tune-iteration-threshold",
-			"Set a codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.", "f");
+			"Set a codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.", "f", true);
 
 	api.addOptionArgument(conf.fastCoarseTunePartition, 'C', "fast-coarse-tune",
-			"Try to find the quickest partition of each module when creating sub-modules for the coarse-tune part.");
+			"Try to find the quickest partition of each module when creating sub-modules for the coarse-tune part.", true);
 
 	api.addOptionArgument(conf.alternateCoarseTuneLevel, 'A', "alternate-coarse-tune-level",
-			"Try to find different levels of sub-modules to move in the coarse-tune part.");
+			"Try to find different levels of sub-modules to move in the coarse-tune part.", true);
 
 	api.addOptionArgument(conf.coarseTuneLevel, 'S', "coarse-tune-level",
-			"Set the recursion limit when searching for sub-modules. A level of 1 will find sub-sub-modules.", "n");
+			"Set the recursion limit when searching for sub-modules. A level of 1 will find sub-sub-modules.", "n", true);
 
 	api.addIncrementalOptionArgument(conf.fastHierarchicalSolution, 'F', "fast-hierarchical-solution",
 			"Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.");
@@ -205,8 +213,6 @@ Config getConfig(int argc, char *argv[])
 		if (conf.isUndirected())
 			conf.directed = true;
 	}
-
-	return conf;
 }
 
 void initBenchmark(const Config& conf, int argc, char * const argv[])
@@ -231,7 +237,7 @@ int run(int argc, char* argv[])
 	Config conf;
 	try
 	{
-		conf = getConfig(argc, argv);
+		getConfig(conf, argc, argv);
 		if (conf.benchmark)
 			initBenchmark(conf, argc, argv);
 		if (conf.verbosity == 0)

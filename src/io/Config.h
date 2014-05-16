@@ -28,6 +28,7 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 #include <string>
+#include <vector>
 
 struct Config
 {
@@ -51,6 +52,7 @@ struct Config
 		teleportToNodes(false),
 		teleportationProbability(0.15),
 		selfTeleportationProbability(-1),
+		multiplexAggregationRate(-1),
 		seedToRandomNumberGenerator(123),
 		numTrials(1),
 		minimumCodelengthImprovement(1.0e-10),
@@ -74,6 +76,7 @@ struct Config
 		printPajekNetwork(false),
 		printBinaryTree(false),
 		printBinaryFlowTree(false),
+		printExpanded(false),
 		noFileOutput(false),
 		verbosity(0),
 		verboseNumberPrecision(6),
@@ -84,6 +87,7 @@ struct Config
 
 	Config(const Config& other)
 	:	networkFile(other.networkFile),
+	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
 	 	withMemory(other.withMemory),
 	 	parseWithoutIOStreams(other.parseWithoutIOStreams),
@@ -102,6 +106,7 @@ struct Config
 		teleportToNodes(other.teleportToNodes),
 		teleportationProbability(other.teleportationProbability),
 		selfTeleportationProbability(other.selfTeleportationProbability),
+		multiplexAggregationRate(other.multiplexAggregationRate),
 		seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
 		numTrials(other.numTrials),
 		minimumCodelengthImprovement(other.minimumCodelengthImprovement),
@@ -125,6 +130,7 @@ struct Config
 		printPajekNetwork(other.printPajekNetwork),
 		printBinaryTree(other.printBinaryTree),
 		printBinaryFlowTree(other.printBinaryFlowTree),
+		printExpanded(other.printExpanded),
 		noFileOutput(other.noFileOutput),
 		verbosity(other.verbosity),
 		verboseNumberPrecision(other.verboseNumberPrecision),
@@ -135,6 +141,7 @@ struct Config
 	Config& operator=(const Config& other)
 	{
 		networkFile = other.networkFile;
+	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
 	 	withMemory = other.withMemory;
 	 	parseWithoutIOStreams = other.parseWithoutIOStreams;
@@ -153,6 +160,7 @@ struct Config
 		teleportToNodes = other.teleportToNodes;
 		teleportationProbability = other.teleportationProbability;
 		selfTeleportationProbability = other.selfTeleportationProbability;
+		multiplexAggregationRate = other.multiplexAggregationRate;
 		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
 		numTrials = other.numTrials;
 		minimumCodelengthImprovement = other.minimumCodelengthImprovement;
@@ -176,6 +184,7 @@ struct Config
 		printPajekNetwork = other.printPajekNetwork;
 		printBinaryTree = other.printBinaryTree;
 		printBinaryFlowTree = other.printBinaryFlowTree;
+		printExpanded = other.printExpanded;
 		noFileOutput = other.noFileOutput;
 		verbosity = other.verbosity;
 		verboseNumberPrecision = other.verboseNumberPrecision;
@@ -237,13 +246,13 @@ struct Config
 
 	bool parseAsUndirected() const { return originallyUndirected; }
 
-	bool isMemoryInput() const { return inputFormat == "3gram" || inputFormat == "multiplex"; }
+	bool isMemoryInput() const { return inputFormat == "3gram" || inputFormat == "multiplex" || additionalInput.size() > 0; }
 
 	bool isMemoryNetwork() const { return withMemory || isMemoryInput(); }
 
 	bool isSimulatedMemoryNetwork() const { return withMemory && !isMemoryInput(); }
 
-	bool isMultiplexNetwork() const { return inputFormat == "multiplex"; }
+	bool isMultiplexNetwork() const { return inputFormat == "multiplex" || additionalInput.size() > 0; }
 
 	bool haveModularResultOutput() const
 	{
@@ -258,6 +267,7 @@ struct Config
 
 	// Input
 	std::string networkFile;
+	std::vector<std::string> additionalInput;
 	std::string inputFormat; // 'pajek', 'link-list', '3gram' or 'multiplex'
 	bool withMemory;
 	bool parseWithoutIOStreams;
@@ -278,6 +288,7 @@ struct Config
 	bool teleportToNodes;
 	double teleportationProbability;
 	double selfTeleportationProbability;
+	double multiplexAggregationRate;
 	unsigned long seedToRandomNumberGenerator;
 
 	// Performance and accuracy
@@ -305,6 +316,7 @@ struct Config
 	bool printPajekNetwork;
 	bool printBinaryTree;
 	bool printBinaryFlowTree; // tree including horizontal links (hierarchical network)
+	bool printExpanded; // Print the expanded network of memory nodes if possible
 	bool noFileOutput;
 	unsigned int verbosity;
 	unsigned int verboseNumberPrecision;
