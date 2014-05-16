@@ -1271,26 +1271,50 @@ bool InfomapBase::initMemoryNetwork()
 
 	if (m_config.printNodeRanks)
 	{
-		//TODO: Split printNetworkData to printNetworkData and printModuleData, and move this to first
-		std::string outName = io::Str() <<
-				m_config.outDirectory << FileURI(m_config.networkFile).getName() << "_M1.rank";
-		std::cout << "Printing physical flow to " << outName << "... ";
-		SafeOutFile out(outName.c_str());
-		double sumFlow = 0.0;
-		double sumM2flow = 0.0;
-		std::vector<double> m1Flow(network.numNodes(), 0.0);
-		for (unsigned int i = 0; i < network.numM2Nodes(); ++i)
+		if (m_config.printExpanded)
 		{
-			const PhysData& physData = getPhysicalMembers(m_treeData.getLeafNode(i))[0];
-			m1Flow[physData.physNodeIndex] += physData.sumFlowFromM2Node;
-			sumFlow += physData.sumFlowFromM2Node;
-			sumM2flow += nodeFlow[i];
+			std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << "_expanded.rank";
+			std::cout << "Printing flow of memory nodes to " << outName << "... ";
+			SafeOutFile out(outName.c_str());
+
+			// Sort the m2 nodes on flow
+			std::multimap<double, M2Node, std::greater<double> > sortedMemNodes;
+			for (unsigned int i = 0; i < m2Nodes.size(); ++i)
+				sortedMemNodes.insert(std::make_pair(nodeFlow[i], m2Nodes[i]));
+
+			out << "# m2state nodeIndex flow\n";
+			std::multimap<double, M2Node, std::greater<double> >::const_iterator it(sortedMemNodes.begin());
+			for (unsigned int i = 0; i < m2Nodes.size(); ++i, ++it)
+			{
+				const M2Node& m2Node = it->second;
+				out << m2Node.priorState << " " << m2Node.physIndex << " " << it->first << "\n";
+			}
+
+			std::cout << "done!\n";
 		}
-		for (unsigned int i = 0; i < m1Flow.size(); ++i)
+		else
 		{
-			out << m1Flow[i] << "\n";
+			//TODO: Split printNetworkData to printNetworkData and printModuleData, and move this to first
+			std::string outName = io::Str() <<
+					m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".rank";
+			std::cout << "Printing physical flow to " << outName << "... ";
+			SafeOutFile out(outName.c_str());
+			double sumFlow = 0.0;
+			double sumM2flow = 0.0;
+			std::vector<double> m1Flow(network.numNodes(), 0.0);
+			for (unsigned int i = 0; i < network.numM2Nodes(); ++i)
+			{
+				const PhysData& physData = getPhysicalMembers(m_treeData.getLeafNode(i))[0];
+				m1Flow[physData.physNodeIndex] += physData.sumFlowFromM2Node;
+				sumFlow += physData.sumFlowFromM2Node;
+				sumM2flow += nodeFlow[i];
+			}
+			for (unsigned int i = 0; i < m1Flow.size(); ++i)
+			{
+				out << m1Flow[i] << "\n";
+			}
+			std::cout << "done!\n";
 		}
-		std::cout << "done! (Sum flow: " << sumFlow << ", sumM2flow: " << sumM2flow << ")\n";
 	}
 
 	return true;
