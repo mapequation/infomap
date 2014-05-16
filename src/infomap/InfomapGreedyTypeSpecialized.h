@@ -144,6 +144,8 @@ protected:
 
 	virtual void printClusterNumbers(std::ostream& out);
 
+	virtual void printFlowNetwork(std::ostream& out);
+
 private:
 	NodeType& getNode(NodeBase& node) { return static_cast<NodeType&>(node); }
 	const NodeType& getNode(const NodeBase& node) const { return static_cast<const NodeType&>(node); }
@@ -624,7 +626,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 			const NodeType& node = Super::getNode(*childIt);
 			std::pair<typename std::map<unsigned int, IndexedFlow>::iterator, bool> ret = condensedNodes.insert(std::make_pair(node.m2Node.physIndex, IndexedFlow(node.m2Node.physIndex, node.data)));
 			if (!ret.second) // Add flow if physical node already exist
-				ret.first->second.flowData += node.data;
+				ret.first->second.flowData += node.data; //TODO: If exitFlow should be correct, flow between memory nodes within same physical node should be subtracted.
 			else // A new insertion was made
 				++numCondensedNodes;
 			memNodeIndexToLeafModuleIndex[node.originalIndex] = i;
@@ -694,6 +696,67 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printClusterNumbers(std
 		unsigned int index = node.parent->index;
 		out << (m2Node.priorState + 1) << " " << (m2Node.physIndex + 1) << " " << (index + 1) << " " << node.data.flow << "\n";
 	}
+}
+
+
+struct PhysNode
+{
+	PhysNode() : flow(0.0) {}
+	double flow;
+	std::map<unsigned int, double> edges;
+};
+
+template<typename FlowType>
+void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printFlowNetwork(std::ostream& out)
+{
+	if (Super::m_config.printExpanded)
+	{
+		out << "# flow in network with " << Super::m_treeData.numLeafNodes() << " memory nodes (from-to) and " << Super::m_treeData.numLeafEdges() << " links\n";
+		for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)
+		{
+			NodeType& node = getNode(**leafIt);
+			M2Node& m2Node = node.m2Node;
+			out << m2Node << " (" << node.data << ")\n";
+			for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), endEdgeIt(node.end_outEdge());
+					edgeIt != endEdgeIt; ++edgeIt)
+			{
+				EdgeType& edge = **edgeIt;
+				out << "  --> " << getNode(edge.target).m2Node << " (" << edge.data.flow << ")\n";
+			}
+			for (NodeBase::edge_iterator edgeIt(node.begin_inEdge()), endEdgeIt(node.end_inEdge());
+					edgeIt != endEdgeIt; ++edgeIt)
+			{
+				EdgeType& edge = **edgeIt;
+				out << "  <-- " << getNode(edge.source).m2Node << " (" << edge.data.flow << ")\n";
+			}
+		}
+		return;
+	}
+
+//	std::map<unsigned int, PhysNode> physicalNetwork;
+//	for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)
+//	{
+//		NodeType& node = getNode(**leafIt);
+//		M2Node& m2Node = node.m2Node;
+//
+//		PhysNode& physNode = physicalNetwork[m2Node.physIndex];
+//		physNode.flow += node.data.flow;
+//
+//		out << m2Node << " (" << node.data << ")\n";
+//		for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), endEdgeIt(node.end_outEdge());
+//				edgeIt != endEdgeIt; ++edgeIt)
+//		{
+//			EdgeType& edge = **edgeIt;
+//			out << "  --> " << getNode(edge.target).m2Node << " (" << edge.data.flow << ")\n";
+//		}
+//		for (NodeBase::edge_iterator edgeIt(node.begin_inEdge()), endEdgeIt(node.end_inEdge());
+//				edgeIt != endEdgeIt; ++edgeIt)
+//		{
+//			EdgeType& edge = **edgeIt;
+//			out << "  <-- " << getNode(edge.source).m2Node << " (" << edge.data.flow << ")\n";
+//		}
+//	}
+
 }
 
 

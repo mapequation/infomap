@@ -67,10 +67,18 @@ void InfomapBase::run()
 	if (!initNetwork())
 		return;
 
+	// Print flow network
+	if (m_config.printFlowNetwork)
+	{
+		std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << (m_config.printExpanded? "_expanded.flow" : ".flow");
+		SafeOutFile flowOut(outName.c_str());
+		RELEASE_OUT("Printing flow network to " << outName << "... " << std::flush);
+		printFlowNetwork(flowOut);
+		RELEASE_OUT("done!\n");
+	}
 
-	indexCodelength = root()->codelength = calcCodelengthOnRootOfLeafNodes(*root());
+	oneLevelCodelength = indexCodelength = root()->codelength = calcCodelengthOnRootOfLeafNodes(*root());
 	RELEASE_OUT("One-level codelength: " << indexCodelength << std::endl);
-	oneLevelCodelength = indexCodelength;
 
 	if (m_config.benchmark)
 		Logger::benchmark("calcFlow", root()->codelength, 1, 1, 1);
@@ -92,6 +100,11 @@ void InfomapBase::run()
 
 		if (m_config.clusterDataFile != "")
 			consolidateExternalClusterData();
+		else
+		{
+			hierarchicalCodelength = codelength = indexCodelength = oneLevelCodelength;
+			moduleCodelength = 0.0;
+		}
 
 		if (!m_config.noInfomap)
 			runPartition();
@@ -168,10 +181,6 @@ void InfomapBase::run()
 
 void InfomapBase::runPartition()
 {
-	hierarchicalCodelength = oneLevelCodelength;
-	indexCodelength = oneLevelCodelength;
-	moduleCodelength = 0.0;
-
 	if (m_config.twoLevel)
 	{
 		partition();
@@ -297,10 +306,11 @@ double InfomapBase::partitionAndQueueNextLevel(PartitionQueue& partitionQueue, b
 {
 	DEBUG_OUT("InfomapBase::hierarchicalPartition()..." << std::endl);
 
-	hierarchicalCodelength = codelength = root()->codelength; // only != 0 on top root
+//	hierarchicalCodelength = codelength = root()->codelength; // only != 0 on top root
 
 	if (numLeafNodes() == 1)
 	{
+		hierarchicalCodelength = codelength = root()->codelength;
 		return hierarchicalCodelength;
 	}
 
@@ -799,7 +809,7 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 
 	if ((*m_treeData.begin_leaf())->parent != root())
 	{
-		RELEASE_OUT("Already partitioned with codelength " << codelength <<
+		RELEASE_OUT("Already partitioned with codelength " << indexCodelength << " + " << moduleCodelength << " = " << codelength <<
 				" in " << numTopModules() << " modules." << std::endl);
 		return;
 	}
@@ -1198,6 +1208,25 @@ bool InfomapBase::initNetwork()
 
  	initEnterExitFlow();
 
+
+	if (m_config.printNodeRanks)
+	{
+			//TODO: Split printNetworkData to printNetworkData and printModuleData, and move this to first
+			std::string outName = io::Str() <<
+					m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".rank";
+			std::cout << "Printing node flow to " << outName << "... ";
+			SafeOutFile out(outName.c_str());
+
+			out << "# node-flow\n";
+			for (unsigned int i = 0; i < nodeFlow.size(); ++i)
+			{
+				out << nodeFlow[i] << "\n";
+			}
+
+			std::cout << "done!\n";
+	}
+
+
  	return true;
 }
 
@@ -1274,7 +1303,7 @@ bool InfomapBase::initMemoryNetwork()
 		if (m_config.printExpanded)
 		{
 			std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << "_expanded.rank";
-			std::cout << "Printing flow of memory nodes to " << outName << "... ";
+			std::cout << "Printing node flow to " << outName << "... ";
 			SafeOutFile out(outName.c_str());
 
 			// Sort the m2 nodes on flow
@@ -1551,22 +1580,6 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 		SafeOutFile cluOut(outName.c_str());
 		printClusterNumbers(cluOut);
 		if (m_config.verbosity > 0)
-			RELEASE_OUT("done!\n");
-	}
-
-	// Print flow network
-	if (m_config.printFlowNetwork)
-	{
-		outName = io::Str() << m_config.outDirectory << filename << ".flow";
-		SafeOutFile flowOut(outName.c_str());
-		if (m_config.verbosity == 0)
-			RELEASE_OUT("(Writing .flow file.. " << std::flush);
-		else
-			RELEASE_OUT("Print flow network to " << outName << "... " << std::flush);
-		printFlowNetwork(flowOut);
-		if (m_config.verbosity == 0)
-			RELEASE_OUT(") ");
-		else
 			RELEASE_OUT("done!\n");
 	}
 
