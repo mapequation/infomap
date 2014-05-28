@@ -198,8 +198,11 @@ void MultiplexNetwork::adjustForDifferentNumberOfNodes()
 void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 {
 	// First generate memory links from intra links (from ordinary links within each network)
+	std::vector<std::vector<double> > sumOutWeights(m_networks.size());
+
 	for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
 	{
+		sumOutWeights[layerIndex].assign(m_numNodes, 0.0);
 		const LinkMap& linkMap = m_networks[layerIndex].linkMap();
 		for (LinkMap::const_iterator linkIt(linkMap.begin()); linkIt != linkMap.end(); ++linkIt)
 		{
@@ -209,6 +212,8 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 			{
 				unsigned int n2 = subIt->first;
 				double linkWeight = subIt->second;
+
+				sumOutWeights[layerIndex][n1] += linkWeight;
 
 				insertM2Link(layerIndex, n1, layerIndex, n2, linkWeight);
 
@@ -227,6 +232,26 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 
 	std::cout << "connecting layers... " << std::flush;
 
+
+	// Extract the self-layer links to be able to scale the inter-layer links correctly. Use the sum of intra out weights as default.
+	std::vector<std::vector<double> > selfLayerWeights(sumOutWeights);
+	for (std::map<M2Node, InterLinkMap>::const_iterator m2NodeIt(m_interLinks.begin()); m2NodeIt != m_interLinks.end(); ++m2NodeIt)
+	{
+		const M2Node& m2Node = m2NodeIt->first;
+		unsigned int layer1 = m2Node.priorState;
+		unsigned int nodeIndex = m2Node.physIndex;
+		const InterLinkMap& interLinkMap = m2NodeIt->second;
+		for (InterLinkMap::const_iterator interLinkIt(interLinkMap.begin()); interLinkIt != interLinkMap.end(); ++interLinkIt)
+		{
+			unsigned int layer2 = interLinkIt->first;
+			double linkWeight = interLinkIt->second;
+			if (layer2 == layer1)
+			{
+				selfLayerWeights[layer1][nodeIndex] = linkWeight;
+			}
+		}
+	}
+
 	// Then generate memory links from inter links (links between nodes in different layers)
 	for (std::map<M2Node, InterLinkMap>::const_iterator m2NodeIt(m_interLinks.begin()); m2NodeIt != m_interLinks.end(); ++m2NodeIt)
 	{
@@ -240,15 +265,17 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 		for (InterLinkMap::const_iterator interLinkIt(interLinkMap.begin()); interLinkIt != interLinkMap.end(); ++interLinkIt)
 		{
 			unsigned int layer2 = interLinkIt->first;
-			double linkWeight = interLinkIt->second;
 			if (layer2 != layer1)
 			{
+				double interLinkWeight = interLinkIt->second;
+	//			//Rescale with self-layer weight if possible
+				double scaledInterLinkWeight = sumOutWeights[layer1][nodeIndex] / selfLayerWeights[layer1][nodeIndex] * interLinkWeight;
+
 				// Switch to same physical node within other layer
-	//			//TODO: Rescale with self-layer weight if possible
 				bool nonPhysicalSwitch = false;
 				if (nonPhysicalSwitch)
 				{
-					insertM2Link(m2SourceIt, layer2, nodeIndex, linkWeight);
+					insertM2Link(m2SourceIt, layer2, nodeIndex, scaledInterLinkWeight);
 					addM2Node(layer1, nodeIndex, 0.0);
 					addM2Node(layer2, nodeIndex, 0.0);
 				}
@@ -261,18 +288,12 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 					if (otherLayerOutLinkIt != otherLayerLinks.end())
 					{
 						const std::map<unsigned int, double>& otherLayerOutLinks = otherLayerOutLinkIt->second;
-						double sumLinkWeightOtherLayer = 0.0;
-						for (std::map<unsigned int, double>::const_iterator interIntraIt(otherLayerOutLinks.begin()); interIntraIt != otherLayerOutLinks.end(); ++interIntraIt)
-						{
-							sumLinkWeightOtherLayer += interIntraIt->second;
-						}
-
 						for (std::map<unsigned int, double>::const_iterator interIntraIt(otherLayerOutLinks.begin()); interIntraIt != otherLayerOutLinks.end(); ++interIntraIt)
 						{
 							unsigned int otherLayerTargetNodeIndex = interIntraIt->first;
 							double otherLayerLinkWeight = interIntraIt->second;
 
-							double interIntraLinkWeight = linkWeight * otherLayerLinkWeight / sumLinkWeightOtherLayer;
+							double interIntraLinkWeight = scaledInterLinkWeight * otherLayerLinkWeight / sumOutWeights[layer2][nodeIndex];
 							insertM2Link(m2SourceIt, layer2, otherLayerTargetNodeIndex, interIntraLinkWeight);
 
 							addM2Node(layer1, nodeIndex, 0.0);
@@ -288,7 +309,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 {
 	// Simulate inter-layer links
-	double aggregationRate = m_config.multiplexAggregationRate < 0 ? 0.15 : m_config.multiplexAggregationRate;
+	double aggregationRate = m_config.multiplexAggregationRate < 0 ? 0.15 : m_config.multiplexAggregationRate; //TODO: Set default in config and use separate bool
 
 	std::cout << "Generating memory network with aggregation rate " << aggregationRate << "... " << std::flush;
 
