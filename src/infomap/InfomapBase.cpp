@@ -1167,13 +1167,13 @@ void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)
 
 bool InfomapBase::initNetwork()
 {
+ 	if (checkAndConvertBinaryTree())
+ 		return false;
+
 	if (m_config.isMemoryNetwork())
 		return initMemoryNetwork();
 
 	Network network(m_config);
-
- 	if (checkAndConvertBinaryTree())
- 		return false;
 
  	try
  	{
@@ -1487,7 +1487,7 @@ bool InfomapBase::checkAndConvertBinaryTree()
 	}
 	catch (const std::runtime_error& error)
 	{
-		std::cerr << "Error parsing the input file: " << error.what() << std::endl;
+		std::cerr << "Error parsing the input file '" << m_config.networkFile << "': " << error.what() << std::endl;
 		return true;
 	}
 

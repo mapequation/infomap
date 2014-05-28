@@ -140,7 +140,7 @@ void MultiplexNetwork::parseMultipleNetworks()
 	for (unsigned int i = 0; i < networkFilenames.size(); ++i)
 	{
 		m_networks.push_back(Network(m_config));
-		std::cout << "[Network layer " << (i + 1) << "]:\n";
+		std::cout << "[Network layer " << (i + 1) << " from file '" << networkFilenames[i] << "']:\n";
 		m_networks[i].readInputData(networkFilenames[i]);
 	}
 
