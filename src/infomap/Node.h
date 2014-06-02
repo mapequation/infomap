@@ -248,6 +248,7 @@ public:
 	NodeBase* firstChild;
 	NodeBase* lastChild;
 	double codelength; //TODO: Better design for hierarchical stuff!?
+	bool dirty;
 
 protected:
 	SubStructure m_subStructure;

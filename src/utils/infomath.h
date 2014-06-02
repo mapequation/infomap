@@ -29,6 +29,8 @@
 #define INFOMATH_H_
 
 #include <cmath>
+#include <vector>
+#include "MersenneTwister.h"
 
 namespace infomath
 {

@@ -211,6 +211,7 @@ void InfomapGreedyTypeSpecialized<FlowType, NetworkType>::initModuleOptimization
 		NodeType& node = Super::getNode(**it);
 		node.index = i; // Unique module index for each node
 		Super::m_moduleFlowData[i] = node.data;
+		node.dirty = true;
 	}
 
 	// Initiate codelength terms for the initial state of one module per node
@@ -239,6 +240,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::initModuleOptimization(
 		NodeType& node = Super::getNode(**it);
 		node.index = i; // Unique module index for each node
 		Super::m_moduleFlowData[i] = node.data;
+		node.dirty = true;
 
 		unsigned int numPhysicalMembers = node.physicalNodes.size();
 		for(unsigned int j = 0; j < numPhysicalMembers; ++j)
