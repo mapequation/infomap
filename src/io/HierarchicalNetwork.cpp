@@ -301,6 +301,12 @@ void HierarchicalNetwork::writeHumanReadableTreeFlowLinksRecursiveHelper(std::os
 
 void HierarchicalNetwork::writeMap(const std::string& fileName)
 {
+	if (m_maxDepth < 2)
+	{
+		std::cout << "(skipping .map, no modular solution) ";
+		return;
+	}
+
 	// First collect the leaf nodes under each top module, sorted on flow
 	unsigned int numModules = m_rootNode.children.size();
 	typedef std::multimap<double, SNode*, std::greater<double> > NodeMap;

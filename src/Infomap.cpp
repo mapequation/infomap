@@ -206,12 +206,23 @@ void getConfig(Config& conf, int argc, char *argv[])
 		conf.printTree = true;
 
 	conf.originallyUndirected = conf.isUndirected();
-	if (conf.isMemoryNetwork() && !conf.isMultiplexNetwork())
+	if (conf.isMemoryNetwork())
 	{
-		conf.teleportToNodes = true;
-		conf.recordedTeleportation = false;
-		if (conf.isUndirected())
-			conf.directed = true;
+		if (conf.isMultiplexNetwork())
+		{
+			if (!conf.isUndirected())
+			{
+				conf.teleportToNodes = true;
+				conf.recordedTeleportation = false;
+			}
+		}
+		else
+		{
+			conf.teleportToNodes = true;
+			conf.recordedTeleportation = false;
+			if (conf.isUndirected())
+				conf.directed = true;
+		}
 	}
 }
 

@@ -102,14 +102,24 @@ void InfomapBase::run()
 			consolidateExternalClusterData();
 		else
 		{
-			hierarchicalCodelength = codelength = indexCodelength = oneLevelCodelength;
-			moduleCodelength = 0.0;
+			hierarchicalCodelength = codelength = moduleCodelength = oneLevelCodelength;
+			indexCodelength = 0.0;
 		}
 
 		if (!m_config.noInfomap)
 			runPartition();
 
-//		hierarchicalPartition();
+		if (oneLevelCodelength < hierarchicalCodelength - m_config.minimumCodelengthImprovement)
+		{
+			std::cout << "No improvement in modular solution, reverting to one-level solution with codelength " << oneLevelCodelength << ".\n";
+			// Clear existing modular structure
+			while ((*m_treeData.begin_leaf())->parent != root())
+			{
+				root()->replaceChildrenWithGrandChildren();
+			}
+			hierarchicalCodelength = codelength = moduleCodelength = oneLevelCodelength;
+			indexCodelength = 0.0;
+		}
 
 		codelengths[iTrial] = hierarchicalCodelength;
 
@@ -510,6 +520,7 @@ unsigned int InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partit
 
 	unsigned int networkLevel = 0;
 	unsigned int numLevelsCreated = 0;
+	hierarchicalCodelength = 0.0;
 
 	bool isLeafLevel = (*m_treeData.begin_leaf())->parent == root();
 	std::string nodesLabel = isLeafLevel ? "nodes" : "modules";
@@ -1156,13 +1167,13 @@ void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)
 
 bool InfomapBase::initNetwork()
 {
+ 	if (checkAndConvertBinaryTree())
+ 		return false;
+
 	if (m_config.isMemoryNetwork())
 		return initMemoryNetwork();
 
 	Network network(m_config);
-
- 	if (checkAndConvertBinaryTree())
- 		return false;
 
  	try
  	{
@@ -1476,7 +1487,7 @@ bool InfomapBase::checkAndConvertBinaryTree()
 	}
 	catch (const std::runtime_error& error)
 	{
-		std::cerr << "Error parsing the input file: " << error.what() << std::endl;
+		std::cerr << "Error parsing the input file '" << m_config.networkFile << "': " << error.what() << std::endl;
 		return true;
 	}
 
@@ -1719,17 +1730,24 @@ void InfomapBase::aggregatePerLevelCodelength(NodeBase& parent, std::vector<doub
 		leafLengths.resize(level+2, 0.0);
 	indexLengths[level] += parent.isRoot() ? indexCodelength : parent.codelength;
 
-	for (NodeBase::sibling_iterator moduleIt(parent.begin_child()), endIt(parent.end_child());
-			moduleIt != endIt; ++moduleIt)
+	if (parent.firstChild->isLeaf())
 	{
-		if (moduleIt->getSubInfomap() != 0)
-			moduleIt->getSubInfomap()->aggregatePerLevelCodelength(indexLengths, leafLengths, level+1);
-		else if (!moduleIt->isLeaf())
+		leafLengths[level+1] += parent.codelength;
+	}
+	else
+	{
+		for (NodeBase::sibling_iterator moduleIt(parent.begin_child()), endIt(parent.end_child());
+				moduleIt != endIt; ++moduleIt)
 		{
-			if (moduleIt->firstChild->isLeaf())
-				leafLengths[level+1] += moduleIt->codelength;
+			if (moduleIt->getSubInfomap() != 0)
+				moduleIt->getSubInfomap()->aggregatePerLevelCodelength(indexLengths, leafLengths, level+1);
 			else
-				aggregatePerLevelCodelength(*moduleIt, indexLengths, leafLengths, level+1);
+			{
+				if (moduleIt->firstChild->isLeaf())
+					leafLengths[level+1] += moduleIt->codelength;
+				else
+					aggregatePerLevelCodelength(*moduleIt, indexLengths, leafLengths, level+1);
+			}
 		}
 	}
 }

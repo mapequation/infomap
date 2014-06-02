@@ -287,6 +287,9 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 		unsigned int flip = randomOrder[i];
 		NodeType& current = Super::getNode(*Super::m_activeNetwork[flip]);
 
+		if (!current.dirty)
+			continue;
+
 		// If no links connecting this node with other nodes, it won't move into others,
 		// and others won't move into this. TODO: Always best leave it alone?
 //		if (current.degree() == 0)
@@ -298,6 +301,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			DEBUG_OUT("SKIPPING isolated node " << current << "\n");
 			//TODO: If not skipping self-links, this yields different results from moveNodesToPredefinedModules!!
 			ASSERT(!m_config.includeSelfLinks);
+			current.dirty = false;
 			continue;
 		}
 
@@ -456,7 +460,17 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			derived().performMoveOfMemoryNode(current, oldModuleIndex, bestModuleIndex);
 
 			++numMoved;
+
+			// Mark neighbours as dirty
+			for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
+					edgeIt != endIt; ++edgeIt)
+				(*edgeIt)->target.dirty = true;
+			for (NodeBase::edge_iterator edgeIt(current.begin_inEdge()), endIt(current.end_inEdge());
+					edgeIt != endIt; ++edgeIt)
+				(*edgeIt)->source.dirty = true;
 		}
+		else
+			current.dirty = false;
 
 		offset += numNodes;
 	}
