@@ -2,7 +2,7 @@
 
  Infomap software package for multi-level network clustering
 
- Copyright (c) 2013 Daniel Edler, Martin Rosvall
+ Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
 
  For more information, see <http://www.mapequation.org>
 
