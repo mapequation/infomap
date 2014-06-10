@@ -63,7 +63,10 @@ void getConfig(Config& conf, int argc, char *argv[])
 			"Specify input format ('pajek', 'link-list', '3gram' or 'multiplex') to override format possibly implied by file extension.", "s");
 
 	api.addOptionArgument(conf.withMemory, "with-memory",
-			"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.");
+			"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.", true);
+
+	api.addOptionArgument(conf.withMemory, "overlapping",
+			"Let nodes be part of different, and thus overlapping, modules. (Same as --with-memory for ordinary networks)");
 
 	api.addOptionArgument(conf.parseWithoutIOStreams, "without-iostream",
 			"Parse the input network data without the iostream library. Can be a bit faster, but not as robust.", true);
