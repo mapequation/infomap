@@ -403,7 +403,7 @@ void Network::zoom()
 			{
 				if (m_config.isUndirected())
 				{
-					sumLinkOutWeight[linkEnd1] += linkWeight * 0.5;
+					sumLinkOutWeight[linkEnd1] += linkWeight * 0.5; // Why half?
 					sumLinkOutWeight[linkEnd2] += linkWeight * 0.5;
 					++nodeOutDegree[linkEnd2];
 				}
@@ -533,6 +533,7 @@ bool Network::insertLink(unsigned int n1, unsigned int n2, double weight)
 {
 	++m_numLinks;
 	m_totalLinkWeight += weight;
+
 	// Aggregate link weights if they are definied more than once
 	LinkMap::iterator firstIt = m_links.lower_bound(n1);
 	if (firstIt != m_links.end() && firstIt->first == n1) // First linkEnd already exists, check second linkEnd
@@ -579,25 +580,49 @@ void Network::finalizeAndCheckNetwork(unsigned int desiredNumberOfNodes)
 	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
 		std::cout << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.) ";
 
+	initNodeDegrees();
+}
+
+void Network::initNodeDegrees()
+{
+	m_outDegree.assign(m_numNodes, 0.0);
+	m_sumLinkOutWeight.assign(m_numNodes, 0.0);
+	for (LinkMap::iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
+	{
+		unsigned int n1 = linkIt->first;
+		std::map<unsigned int, double>& subLinks = linkIt->second;
+		for (std::map<unsigned int, double>::iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			unsigned int n2 = subIt->first;
+			double linkWeight = subIt->second;
+			++m_outDegree[n1];
+			m_sumLinkOutWeight[n1] += linkWeight;
+			if (n1 != n2 && m_config.parseAsUndirected())
+			{
+				++m_outDegree[n2];
+				m_sumLinkOutWeight[n2] += linkWeight;
+			}
+		}
+	}
 }
 
 void Network::printParsingResult()
 {
-	std::cout << "Found " << m_numNodesFound << " nodes";
-	if (!m_nodeWeights.empty() && std::abs(m_sumNodeWeights / m_numNodes - 1.0) > 1e-9)
-		std::cout << " (with total weight " << m_sumNodeWeights << ")";
-	std::cout << " and " << m_numLinksFound << " links";
-	if (std::abs(m_totalLinkWeight / m_numLinks - 1.0) > 1e-9)
-		std::cout << " (with total weight " << m_totalLinkWeight << ")";
-	std::cout << ".\n  -> ";
+	std::cout << "Found " << m_numNodesFound << " nodes and " << m_numLinksFound << " links.\n  -> ";
 	if(m_numAggregatedLinks > 0)
 		std::cout << m_numAggregatedLinks << " links was aggregated to existing links. ";
 	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
 		std::cout << m_numSelfLinks << " self-links was ignored. ";
 	if (m_config.nodeLimit > 0)
-		std::cout << (m_numNodesFound - m_numNodes) << " last nodes was ignored due to limit. ";
+		std::cout << (m_numNodesFound - m_numNodes) << "/" << m_numNodesFound << " last nodes ignored due to limit. ";
 
-	std::cout << "Resulting size: " << m_numNodes << " nodes and " << m_numLinks << " links. " << std::endl;
+	std::cout << "Resulting size: " << m_numNodes << " nodes";
+	if (!m_nodeWeights.empty() && std::abs(m_sumNodeWeights / m_numNodes - 1.0) > 1e-9)
+		std::cout << " (with total weight " << m_sumNodeWeights << ")";
+	std::cout << " and " << m_numLinks << " links";
+	if (std::abs(m_totalLinkWeight / m_numLinks - 1.0) > 1e-9)
+		std::cout << " (with total weight " << m_totalLinkWeight << ")";
+	std::cout << "." << std::endl;
 }
 
 

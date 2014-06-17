@@ -43,8 +43,8 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 
 	// Prepare data in sequence containers for fast access of individual elements
 	unsigned int numNodes = network.numNodes();
-	m_nodeOutDegree.assign(numNodes, 0);
-	m_sumLinkOutWeight.assign(numNodes, 0.0);
+	const std::vector<double>& nodeOutDegree = network.outDegree();
+	const std::vector<double>& sumLinkOutWeight = network.sumLinkOutWeight();
 	m_nodeFlow.assign(numNodes, 0.0);
 	m_nodeTeleportRates.assign(numNodes, 0.0);
 
@@ -63,20 +63,12 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 		{
 			unsigned int linkEnd2 = subIt->first;
 			double linkWeight = subIt->second;
-			++m_nodeOutDegree[linkEnd1];
-			m_sumLinkOutWeight[linkEnd1] += linkWeight;
-			if (linkEnd1 != linkEnd2)
-			{
-				// Possibly aggregate if no self-link
-				if (config.isUndirected()) {
-					m_sumLinkOutWeight[linkEnd2] += linkWeight;
-					++m_nodeOutDegree[linkEnd2];
-				}
-				if (!config.outdirdir)
-					m_nodeFlow[linkEnd2] += linkWeight / sumUndirLinkWeight;
-			}
+
 			m_nodeFlow[linkEnd1] += linkWeight / sumUndirLinkWeight;
 			m_flowLinks[linkIndex] = Link(linkEnd1, linkEnd2, linkWeight);
+
+			if (linkEnd1 != linkEnd2 && !config.outdirdir)
+				m_nodeFlow[linkEnd2] += linkWeight / sumUndirLinkWeight;
 		}
 	}
 
@@ -111,7 +103,7 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 			for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 			{
 				Link& link = *linkIt;
-				m_nodeFlow[link.target] += nodeFlowSteadyState[link.source] * link.flow / m_sumLinkOutWeight[link.source];
+				m_nodeFlow[link.target] += nodeFlowSteadyState[link.source] * link.flow / sumLinkOutWeight[link.source];
 			}
 			//Normalize node flow
 			double sumNodeRank = 0.0;
@@ -123,7 +115,7 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 			for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 			{
 				Link& link = *linkIt;
-				link.flow *= nodeFlowSteadyState[link.source] / m_sumLinkOutWeight[link.source] / sumNodeRank;
+				link.flow *= nodeFlowSteadyState[link.source] / sumLinkOutWeight[link.source] / sumNodeRank;
 			}
 		}
 		else // undirected
@@ -174,14 +166,14 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 	// Normalize link weights with respect to its source nodes total out-link weight;
 	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 	{
-		linkIt->flow /= m_sumLinkOutWeight[linkIt->source];
+		linkIt->flow /= sumLinkOutWeight[linkIt->source];
 	}
 
 	// Collect dangling nodes
 	std::vector<unsigned int> danglings;
 	for (unsigned int i = 0; i < numNodes; ++i)
 	{
-		if (m_nodeOutDegree[i] == 0)
+		if (nodeOutDegree[i] == 0)
 			danglings.push_back(i);
 	}
 
