@@ -26,20 +26,17 @@
 
 
 #include "MemFlowNetwork.h"
-#include "MemNetwork.h"
-#include <iostream>
+
 #include <cmath>
-#include "../io/convert.h"
+#include <iostream>
+#include <iterator>
 #include <map>
+#include <utility>
+#include <vector>
 
-MemFlowNetwork::MemFlowNetwork() {
-	// TODO Auto-generated constructor stub
-
-}
-
-MemFlowNetwork::~MemFlowNetwork() {
-	// TODO Auto-generated destructor stub
-}
+#include "../io/convert.h"
+#include "../io/Config.h"
+//#include "MemNetwork.h"
 
 
 void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
@@ -54,8 +51,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 
 	// Prepare data in sequence containers for fast access of individual elements
 	unsigned int numM2Nodes = network.numM2Nodes();
-//	const std::vector<double>& nodeOutDegree = network.outDegree();
-//	const std::vector<double>& sumLinkOutWeight = network.sumLinkOutWeight();
+	// Copy to be able to modify
 	std::vector<double> nodeOutDegree(network.outDegree());
 	std::vector<double> sumLinkOutWeight(network.sumLinkOutWeight());
 	m_nodeFlow.assign(numM2Nodes, 0.0);
