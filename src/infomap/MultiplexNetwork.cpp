@@ -315,6 +315,10 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 	// First generate memory links from intra links (from ordinary links within each network)
 	for (unsigned int nodeIndex = 0; nodeIndex < m_numNodes; ++nodeIndex)
 	{
+		double sumOutLinkWeightAllLayers = 0.0;
+		for (unsigned int i = 0; i< m_networks.size(); ++i)
+			sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
+
 //		std::cout << "\n==== Node " << nodeIndex << " ====";
 		for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1)
 		{
@@ -329,6 +333,8 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 //				std::cout << " ---> SKIPPING DANGLING NODE " << m2Source;
 				continue;
 			}
+
+			double sumOutLinkWeightLayer1 = m_networks[layer1].sumLinkOutWeight()[nodeIndex];
 
 //			M2LinkMap::iterator m2SourceIt = m_m2Links.lower_bound(m2Source);
 //			if (m2SourceIt == m_m2Links.end() || m2SourceIt->first != m2Source)
@@ -360,7 +366,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 
 					double intraLinkWeight = isIntra ? linkWeight : 0.0;
 
-					double aggregatedLinkWeight = aggregationRate * linkWeight  + (1.0 - aggregationRate) * intraLinkWeight;
+					double aggregatedLinkWeight = aggregationRate * linkWeight / sumOutLinkWeightAllLayers  + (1.0 - aggregationRate) * intraLinkWeight / sumOutLinkWeightLayer1;
 //					std::cout << "\n  Creating link " << M2Node(layer1, nodeIndex) << " -> " << M2Node(layer2, n2) << " with weight: " << aggregatedLinkWeight << "  ";
 					insertM2Link(layer1, nodeIndex, layer2, n2, aggregatedLinkWeight);
 //					insertM2Link(m2SourceIt, layer2, n2, aggregatedLinkWeight);
