@@ -58,10 +58,6 @@ protected:
 
 	void generateMemoryNetworkWithSimulatedInterLayerLinks();
 
-	void finalizeAndCheckNetwork();
-
-	void printParsingResult();
-
 	// Helper methods
 
 	/**

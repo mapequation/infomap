@@ -134,7 +134,6 @@ void MemNetwork::parseTrigram(std::string filename)
 		throw FileFormatError("The first line (to lower cases) after the nodes doesn't match *arcs or *3grams.");
 	}
 
-	unsigned int maxLinkEnd = 0;
 	m_totalLinkWeight = 0.0;
 
 	// Read links in format "from through to weight", for example "1 2 3 2" (all integers) and each undirected link only ones (weight is optional).
@@ -151,92 +150,11 @@ void MemNetwork::parseTrigram(std::string filename)
 
 		if (n2 != n3 || m_config.includeSelfLinks)
 			insertLink(n2, n3, weight);
-
-//		if(m_config.includeSelfLinks)
-//		{
-//			m_m2Nodes[M2Node(n1,n2)] += linkWeight;
-//			m_m2Nodes[M2Node(n2,n3)] += 0.0;
-//
-//			m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
-//			m_totM2LinkWeight += linkWeight;
-//
-//			m_totalLinkWeight += linkWeight;
-//
-//			if (n2 == n3) {
-//				++m_numSelfLinks;
-//				m_totalSelfLinkWeight += linkWeight;
-//				if (n1 == n2) {
-//					++m_numMemorySelfLinks;
-//					m_totalMemorySelfLinkWeight += linkWeight;
-//				}
-//			}
-//			insertLink(n2, n3, linkWeight);
-//		}
-//		else if (n2 != n3)
-//		{
-//			m_totalLinkWeight += linkWeight;
-//			insertLink(n2, n3, linkWeight);
-//
-//			if(n1 != n2)
-//			{
-//				m_m2Nodes[M2Node(n1,n2)] += linkWeight;
-//				m_m2Nodes[M2Node(n2,n3)] += 0.0;
-//
-//				m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
-//				m_totM2LinkWeight += linkWeight;
-//			}
-//			else
-//			{
-//				m_m2Nodes[M2Node(n2,n3)] += linkWeight;
-//			}
-//		}
 	}
 
-	unsigned int zeroMinusOne = 0;
-	--zeroMinusOne;
-	if (maxLinkEnd == zeroMinusOne)
-		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
-	if (maxLinkEnd >= numNodes)
-		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
+	finalizeAndCheckNetwork();
 
-	if (m_links.size() == 0)
-		throw InputDomainError(io::Str() << "No links could be found!");
-
-
-
-	unsigned int M2nodeNr = 0;
-	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
-	{
-		m_m2NodeMap[it->first] = M2nodeNr;
-		M2nodeNr++;
-	}
-
-//	set<int> M1nodes;
-	m_m2NodeWeights.resize(m_m2Nodes.size());
-	m_totM2NodeWeight = 0.0;
-
-	M2nodeNr = 0;
-	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
-	{
-//		M1nodes.insert(it->first.second);
-		m_m2NodeWeights[M2nodeNr] += it->second;
-		m_totM2NodeWeight += it->second;
-		++M2nodeNr;
-	}
-
-
-
-	//	unsigned int sumEdgesFound = m_links.size() + m_numSelfLinks + numDoubleLinks + numSkippedEdges;
-	std::cout << "done! Found " << specifiedNumNodes << " nodes and " << m_numLinks << " links. ";
-	std::cout << "Generated " << m_m2Nodes.size() << " memory nodes and " << m_m2Links.size() << " memory links. ";
-	//	std::cout << "Average node weight: " << (m_sumNodeWeights / numNodes) << ". ";
-	if (m_config.nodeLimit > 0)
-		std::cout << "Limiting network to " << numNodes << " nodes and " << m_links.size() << " links. ";
-	if(m_numAggregatedLinks > 0)
-		std::cout << m_numAggregatedLinks << " links was aggregated to existing links. ";
-	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
-		std::cout << m_numSelfLinks << " self-links was ignored. ";
-	std::cout << std::endl;
+	printParsingResult();
 
 }
 
@@ -270,7 +188,7 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 
 		// Dispose old network from memory
 		LinkMap().swap(oldNetwork);
-		std::cout << "done!) " << std::flush;
+		std::cout << ") " << std::flush;
 	}
 
 	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
@@ -294,45 +212,6 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 
 					addM2Link(n1, n2, n2, n3, linkWeight, firstLinkWeight / secondLinkSubMap.size(), 0.0);
 
-//					if(m_config.includeSelfLinks)
-//					{
-//						// Set teleportation weight on first memory node (normalized to not multiply physical weight)
-//						m_m2Nodes[M2Node(n1,n2)] += firstLinkWeight / secondLinkSubMap.size();
-//						m_m2Nodes[M2Node(n2,n3)] += 0.0;
-//
-//						m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
-//						m_totM2LinkWeight += linkWeight;
-//
-//						m_totalLinkWeight += linkWeight;
-//
-//						if (n2 == n3) {
-//							++m_numSelfLinks;
-//							m_totalSelfLinkWeight += linkWeight;
-//							if (n1 == n2) {
-//								++m_numMemorySelfLinks;
-//								m_totalMemorySelfLinkWeight += linkWeight;
-//							}
-//						}
-//					}
-//					else if (n2 != n3)
-//					{
-//						m_totalLinkWeight += linkWeight;
-//
-//						if(n1 != n2)
-//						{
-//							// Set teleportation weight on first memory node (normalized to not multiply physical weight)
-//							m_m2Nodes[M2Node(n1,n2)] += firstLinkWeight / secondLinkSubMap.size();
-//							m_m2Nodes[M2Node(n2,n3)] += 0.0;
-//
-//							m_m2Links[make_pair(M2Node(n1,n2),M2Node(n2,n3))] += linkWeight;
-//							m_totM2LinkWeight += linkWeight;
-//						}
-//						else
-//						{
-//							// First memory node is a self-link, create the second
-//							m_m2Nodes[M2Node(n2,n3)] += linkWeight;
-//						}
-//					}
 				}
 			}
 			else
@@ -343,26 +222,10 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 		}
 	}
 
-	unsigned int M2nodeNr = 0;
-	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
-	{
-		m_m2NodeMap[it->first] = M2nodeNr;
-		M2nodeNr++;
-	}
 
-//	set<int> M1nodes;
-	m_m2NodeWeights.resize(m_m2Nodes.size());
-	m_totM2NodeWeight = 0.0;
+	finalizeAndCheckNetwork();
 
-	M2nodeNr = 0;
-	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
-	{
-		m_m2NodeWeights[M2nodeNr] += it->second;
-		m_totM2NodeWeight += it->second;
-		++M2nodeNr;
-	}
-
-	std::cout << "generated " << m_m2Nodes.size() << " memory nodes and " << m_m2Links.size() << " memory links. " << std::endl;
+	printParsingResult(false);
 }
 
 void MemNetwork::parseM2Link(const std::string& line, unsigned int& n1, unsigned int& n2, unsigned int& n3, double& weight)
@@ -479,5 +342,100 @@ bool MemNetwork::insertM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2Pr
 		++m_numM2Links;
 		return true;
 	}
+}
+
+void MemNetwork::finalizeAndCheckNetwork()
+{
+	if (m_m2Links.empty())
+		throw InputDomainError("No memory links added!");
+
+	// If no nodes defined
+	if (m_numNodes == 0)
+		m_numNodes = m_numNodesFound = m_maxNodeIndex + 1;
+
+	if (m_numNodesFound == 0)
+		m_numNodesFound = m_numNodes;
+	if (m_numLinksFound == 0)
+		m_numLinksFound = m_numLinks;
+
+	unsigned int zeroMinusOne = 0;
+	--zeroMinusOne;
+	if (m_maxNodeIndex == zeroMinusOne)
+		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
+	if (m_maxNodeIndex >= m_numNodes)
+		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
+	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
+		std::cout << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.) ";
+
+
+	m_m2NodeWeights.resize(m_m2Nodes.size());
+	m_totM2NodeWeight = 0.0;
+	unsigned int m2NodeIndex = 0;
+	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it, ++m2NodeIndex)
+	{
+		m_m2NodeMap[it->first] = m2NodeIndex;
+		m_m2NodeWeights[m2NodeIndex] += it->second;
+		m_totM2NodeWeight += it->second;
+	}
+
+	initNodeDegrees();
+}
+
+void MemNetwork::initNodeDegrees()
+{
+	m_outDegree.assign(m_m2Nodes.size(), 0.0);
+	m_sumLinkOutWeight.assign(m_m2Nodes.size(), 0.0);
+
+	for (MemNetwork::M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
+	{
+		const M2Node& m2source = linkIt->first;
+		const std::map<M2Node, double>& subLinks = linkIt->second;
+		for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+//			const M2Node& m2target = subIt->first;
+			double linkWeight = subIt->second;
+
+			// Get the indices for the m2 nodes
+			MemNetwork::M2NodeMap::const_iterator nodeMapIt = m_m2NodeMap.find(m2source);
+			if (nodeMapIt == m_m2NodeMap.end())
+				throw InputDomainError(io::Str() << "Couldn't find mapped index for source M2 node " << m2source);
+			unsigned int sourceIndex = nodeMapIt->second;
+//			nodeMapIt = m_m2NodeMap.find(m2target);
+//			if (nodeMapIt == m_m2NodeMap.end())
+//				throw InputDomainError(io::Str() << "Couldn't find mapped index for target M2 node " << m2target);
+//			unsigned int targetIndex = nodeMapIt->second;
+
+			++m_outDegree[sourceIndex];
+			m_sumLinkOutWeight[sourceIndex] += linkWeight;
+
+			// Never undirected memory links
+		}
+	}
+}
+
+void MemNetwork::printParsingResult(bool includeFirstOrderData)
+{
+	if (includeFirstOrderData)
+	{
+		std::cout << "Found " << m_numNodesFound << " nodes and " << m_numLinksFound << " links.\n  -> ";
+		if(m_numAggregatedLinks > 0)
+			std::cout << m_numAggregatedLinks << " links was aggregated to existing links. ";
+		if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
+			std::cout << m_numSelfLinks << " self-links was ignored. ";
+		if (m_config.nodeLimit > 0)
+			std::cout << (m_numNodesFound - m_numNodes) << "/" << m_numNodesFound << " last nodes ignored due to limit. ";
+
+		std::cout << "Resulting size: " << m_numNodes << " nodes";
+		if (!m_nodeWeights.empty() && std::abs(m_sumNodeWeights / m_numNodes - 1.0) > 1e-9)
+			std::cout << " (with total weight " << m_sumNodeWeights << ")";
+		std::cout << " and " << m_numLinks << " links";
+		if (std::abs(m_totalLinkWeight / m_numLinks - 1.0) > 1e-9)
+			std::cout << " (with total weight " << m_totalLinkWeight << ")";
+		std::cout << ".";
+	}
+
+	std::cout << "\n  -> Generated " << m_m2Nodes.size() << " memory nodes and " << m_numM2Links << " memory links." << std::endl;
+	if (m_numAggregatedM2Links > 0)
+		std::cout << "Aggregated " << m_numAggregatedM2Links << " memory links. ";
 }
 

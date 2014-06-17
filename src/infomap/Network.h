@@ -115,7 +115,7 @@ public:
 
 	/**
 	 * Run after adding links to check for non-feasible values and set the
-	 * node count if not specified in the network.
+	 * node count if not specified in the network, and outDegree and sumLinkOutWeight.
 	 * @param desiredNumberOfNodes Set the desired number of nodes, or leave at
 	 * zero to set it automatically to match the highest node number defined on
 	 * the links.
@@ -130,6 +130,8 @@ public:
 	const std::vector<std::string>& nodeNames() const { return m_nodeNames; }
 	const std::vector<double>& nodeWeights() const { return m_nodeWeights; }
 	double sumNodeWeights() const { return m_sumNodeWeights; }
+	const std::vector<double>& outDegree() const { return m_outDegree; }
+	const std::vector<double>& sumLinkOutWeight() const { return m_sumLinkOutWeight; }
 
 	const LinkMap& linkMap() const { return m_links; }
 	unsigned int numLinks() const { return m_numLinks; }
@@ -164,6 +166,8 @@ protected:
 	 */
 	bool insertLink(unsigned int n1, unsigned int n2, double weight);
 
+	virtual void initNodeDegrees();
+
 
 	Config m_config;
 
@@ -172,6 +176,8 @@ protected:
 	std::vector<std::string> m_nodeNames;
 	std::vector<double> m_nodeWeights;
 	double m_sumNodeWeights;
+	std::vector<double> m_outDegree;
+	std::vector<double> m_sumLinkOutWeight;
 
 	LinkMap m_links;
 	unsigned int m_numLinksFound;

@@ -72,8 +72,6 @@ public:
 
 protected:
 
-	std::vector<unsigned int> m_nodeOutDegree;
-	std::vector<double> m_sumLinkOutWeight; // Per leaf nodes
 	std::vector<double> m_nodeFlow;
 	std::vector<double> m_nodeTeleportRates;
 	LinkVec m_flowLinks;

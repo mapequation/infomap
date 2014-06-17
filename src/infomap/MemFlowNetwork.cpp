@@ -49,13 +49,15 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		FlowNetwork::calculateFlow(net, config);
 		return;
 	}
-	std::cout << "Calculating global flow... ";
+	std::cout << "Calculating global flow... " << std::flush;
 	const MemNetwork& network = static_cast<const MemNetwork&>(net);
 
 	// Prepare data in sequence containers for fast access of individual elements
 	unsigned int numM2Nodes = network.numM2Nodes();
-	m_nodeOutDegree.assign(numM2Nodes, 0);
-	m_sumLinkOutWeight.assign(numM2Nodes, 0.0);
+//	const std::vector<double>& nodeOutDegree = network.outDegree();
+//	const std::vector<double>& sumLinkOutWeight = network.sumLinkOutWeight();
+	std::vector<double> nodeOutDegree(network.outDegree());
+	std::vector<double> sumLinkOutWeight(network.sumLinkOutWeight());
 	m_nodeFlow.assign(numM2Nodes, 0.0);
 	m_nodeTeleportRates.assign(numM2Nodes, 0.0);
 
@@ -85,25 +87,15 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 			if (nodeMapIt == nodeMap.end())
 				throw InputDomainError(io::Str() << "Couldn't find mapped index for target M2 node " << m2target);
 			unsigned int targetIndex = nodeMapIt->second;
-			++m_nodeOutDegree[sourceIndex];
-			m_sumLinkOutWeight[sourceIndex] += linkWeight;
-
-			if (sourceIndex != targetIndex)
-			{
-				// Possibly aggregate if no self-link
-				if (config.isUndirected()) {
-					m_sumLinkOutWeight[targetIndex] += linkWeight;
-					++m_nodeOutDegree[targetIndex];
-				}
-				if (!config.outdirdir)
-					m_nodeFlow[targetIndex] += linkWeight;// / sumUndirLinkWeight;
-			}
 
 			m_nodeFlow[sourceIndex] += linkWeight;// / sumUndirLinkWeight;
 			m_flowLinks[linkIndex] = Link(sourceIndex, targetIndex, linkWeight);
+
+			if (sourceIndex != targetIndex && !config.outdirdir)
+				m_nodeFlow[targetIndex] += linkWeight;// / sumUndirLinkWeight;
+
 		}
 	}
-
 
 	m_m2nodes.resize(numM2Nodes);
 	for (MemNetwork::M2NodeMap::const_iterator m2nodeIt(nodeMap.begin()); m2nodeIt != nodeMap.end(); ++m2nodeIt)
@@ -140,7 +132,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	double sumExtraLinkWeight = 0.0;
 	for (unsigned int i = 0; i < numM2Nodes; ++i)
 	{
-		if (m_nodeOutDegree[i] == 0)
+		if (nodeOutDegree[i] == 0)
 		{
 			++numDanglingM2Nodes;
 			// We are in physIndex, lookup all mem nodes in that physical node
@@ -155,13 +147,13 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 						++numSelfLinks;
 					}
 					else {
-						++m_nodeOutDegree[from];
-						m_sumLinkOutWeight[from] += linkWeight;
+						++nodeOutDegree[from];
+						sumLinkOutWeight[from] += linkWeight;
 						sumExtraLinkWeight += linkWeight;
 						m_nodeFlow[from] += linkWeight;
 						if (config.isUndirected()) {
-							++m_nodeOutDegree[to];
-							m_sumLinkOutWeight[to] += linkWeight;
+							++nodeOutDegree[to];
+							sumLinkOutWeight[to] += linkWeight;
 						}
 						if (!config.outdirdir) {
 							m_nodeFlow[to] += linkWeight;
@@ -223,7 +215,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 			for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 			{
 				Link& link = *linkIt;
-				m_nodeFlow[link.target] += nodeFlowSteadyState[link.source] * link.flow / m_sumLinkOutWeight[link.source];
+				m_nodeFlow[link.target] += nodeFlowSteadyState[link.source] * link.flow / sumLinkOutWeight[link.source];
 			}
 			//Normalize node flow
 			double sumNodeRank = 0.0;
@@ -235,7 +227,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 			for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 			{
 				Link& link = *linkIt;
-				link.flow *= nodeFlowSteadyState[link.source] / m_sumLinkOutWeight[link.source] / sumNodeRank;
+				link.flow *= nodeFlowSteadyState[link.source] / sumLinkOutWeight[link.source] / sumNodeRank;
 			}
 		}
 		else // undirected
@@ -283,14 +275,14 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	// Normalize link weights with respect to its source nodes total out-link weight;
 	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 	{
-		linkIt->flow /= m_sumLinkOutWeight[linkIt->source];
+		linkIt->flow /= sumLinkOutWeight[linkIt->source];
 	}
 
 	// Collect dangling nodes
 	std::vector<unsigned int> danglings;
 	for (unsigned int i = 0; i < numM2Nodes; ++i)
 	{
-		if (m_nodeOutDegree[i] == 0)
+		if (nodeOutDegree[i] == 0)
 			danglings.push_back(i);
 	}
 

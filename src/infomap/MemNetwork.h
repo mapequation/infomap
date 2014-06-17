@@ -188,11 +188,17 @@ protected:
 
 	/**
 	 * Insert memory link, indexed on first m2-node and aggregated if exist
-	 * @note Called by addMemoryLink
+	 * @note Called by addM2Link
 	 * @return true if a new link was inserted, false if aggregated
 	 */
 	bool insertM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight);
 	bool insertM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight);
+
+	virtual void finalizeAndCheckNetwork();
+
+	virtual void initNodeDegrees();
+
+	virtual void printParsingResult(bool includeFirstOrderData = true);
 
 	map<M2Node, double> m_m2Nodes;
 	M2NodeMap m_m2NodeMap;
