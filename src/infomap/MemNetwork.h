@@ -33,6 +33,7 @@
 #include <map>
 #include <vector>
 #include <utility>
+#include <deque>
 
 #include "../io/Config.h"
 #include "../utils/types.h"
@@ -72,6 +73,15 @@ struct M2Node
 	{
 		return out << "(" << node.priorState << "-" << node.physIndex << ")";
 	}
+};
+
+struct Link
+{
+	Link(unsigned int n1, unsigned int n2, double weight) : n1(n1), n2(n2), weight(weight) {}
+
+	unsigned int n1;
+	unsigned int n2;
+	double weight;
 };
 
 class MemNetwork: public Network
@@ -167,6 +177,8 @@ protected:
 	 */
 	void simulateMemoryFromOrdinaryNetwork();
 
+	void simulateMemoryFromOrdinaryNetworkToIncompleteData();
+
 	// Helper methods
 	/**
 	 * Parse a string of link data.
@@ -206,6 +218,7 @@ protected:
 	M2NodeMap m_m2NodeMap;
 	std::vector<double> m_m2NodeWeights;
 	double m_totM2NodeWeight;
+	std::deque<Link> m_incompleteTrigrams;
 
 	unsigned int m_numM2LinksFound;
 	unsigned int m_numM2Links;

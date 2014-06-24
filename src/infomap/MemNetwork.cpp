@@ -149,7 +149,8 @@ void MemNetwork::parseTrigram(std::string filename)
 
 		if (n1 + m_indexOffset == -1)
 		{
-			//TODO: Save bigram and build trigram from other bigrams
+			// Save bigram and later build trigrams by chaining with other bigrams
+			m_incompleteTrigrams.push_back(Link(n2, n3, weight));
 		}
 		else
 			addM2Link(n1, n2, n2, n3, weight);
@@ -232,6 +233,47 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 	finalizeAndCheckNetwork();
 
 	printParsingResult(false);
+}
+
+void MemNetwork::simulateMemoryFromOrdinaryNetworkToIncompleteData()
+{
+	if (m_incompleteTrigrams.empty())
+		return;
+
+	std::cout << "patching " << m_incompleteTrigrams.size() << " incomplete trigrams " << std::flush;
+
+	// Map all m1 links on the target node
+	typedef std::map<unsigned int, std::vector<unsigned int> > LinkTargetMap;
+	LinkTargetMap n2Map; // (n2 -> all n1 targeting n2)
+	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
+	{
+		unsigned int n1 = linkIt->first;
+		const std::map<unsigned int, double>& subLinks = linkIt->second;
+		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			unsigned int n2 = subIt->first;
+			n2Map[n2].push_back(n1);
+		}
+	}
+
+	unsigned int numM2LinksBefore = m_numM2Links;
+
+	// For all bigrams (n2,n3), create trigrams (n1, n2, n3) for all n1 in m1 links targeting n2.
+	for (unsigned int i = 0; i < m_incompleteTrigrams.size(); ++i)
+	{
+		const Link& link = m_incompleteTrigrams[i];
+		LinkTargetMap::const_iterator targetIt = n2Map.find(link.n1);
+		if (targetIt != n2Map.end())
+		{
+			const std::vector<unsigned int>& sourceNodes = targetIt->second;
+			for (unsigned int j = 0; j < sourceNodes.size(); ++j)
+			{
+				addM2Link(sourceNodes[j], link.n1, link.n1, link.n2, link.weight / sourceNodes.size());
+			}
+		}
+	}
+
+	std::cout << "with " << (m_numM2Links - numM2LinksBefore) << " memory links... " << std::flush;
 }
 
 void MemNetwork::parseM2Link(const std::string& line, int& n1, unsigned int& n2, unsigned int& n3, double& weight)
@@ -352,6 +394,8 @@ bool MemNetwork::insertM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2Pr
 
 void MemNetwork::finalizeAndCheckNetwork()
 {
+	simulateMemoryFromOrdinaryNetworkToIncompleteData();
+
 	if (m_m2Links.empty())
 		throw InputDomainError("No memory links added!");
 
