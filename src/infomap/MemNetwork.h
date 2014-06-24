@@ -171,10 +171,12 @@ protected:
 	/**
 	 * Parse a string of link data.
 	 * If no weight data can be extracted, the default value 1.0 will be used.
+	 * Note that the first node number can be negative, which means that memory
+	 * information is missing.
 	 * @throws an error if not both node numbers can be extracted.
 	 */
-	void parseM2Link(const std::string& line, unsigned int& n1, unsigned int& n2, unsigned int& n3, double& weight);
-	void parseM2Link(char line[], unsigned int& n1, unsigned int& n2, unsigned int& n3, double& weight);
+	void parseM2Link(const std::string& line, int& n1, unsigned int& n2, unsigned int& n3, double& weight);
+	void parseM2Link(char line[], int& n1, unsigned int& n2, unsigned int& n3, double& weight);
 
 	/**
 	 * Add a weighted link between two memory nodes.

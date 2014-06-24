@@ -142,11 +142,17 @@ void MemNetwork::parseTrigram(std::string filename)
 		if (line.length() == 0)
 			continue;
 
-		unsigned int n1, n2, n3;
+		int n1;
+		unsigned int n2, n3;
 		double weight;
 		parseM2Link(line, n1, n2, n3, weight);
 
-		addM2Link(n1, n2, n2, n3, weight);
+		if (n1 + m_indexOffset == -1)
+		{
+			//TODO: Save bigram and build trigram from other bigrams
+		}
+		else
+			addM2Link(n1, n2, n2, n3, weight);
 
 		if (n2 != n3 || m_config.includeSelfLinks)
 			insertLink(n2, n3, weight);
@@ -228,7 +234,7 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 	printParsingResult(false);
 }
 
-void MemNetwork::parseM2Link(const std::string& line, unsigned int& n1, unsigned int& n2, unsigned int& n3, double& weight)
+void MemNetwork::parseM2Link(const std::string& line, int& n1, unsigned int& n2, unsigned int& n3, double& weight)
 {
 	m_extractor.clear();
 	m_extractor.str(line);
@@ -241,7 +247,7 @@ void MemNetwork::parseM2Link(const std::string& line, unsigned int& n1, unsigned
 	n3 -= m_indexOffset;
 }
 
-void MemNetwork::parseM2Link(char line[], unsigned int& n1, unsigned int& n2, unsigned int& n3, double& weight)
+void MemNetwork::parseM2Link(char line[], int& n1, unsigned int& n2, unsigned int& n3, double& weight)
 {
 	char *cptr;
 	cptr = strtok(line, " \t"); // Get first non-whitespace character position
