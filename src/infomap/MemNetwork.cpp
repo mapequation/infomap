@@ -396,16 +396,17 @@ void MemNetwork::initNodeDegrees()
 	{
 		const M2Node& m2source = linkIt->first;
 		const std::map<M2Node, double>& subLinks = linkIt->second;
+
+		// Get the index for the m2 source node
+		MemNetwork::M2NodeMap::const_iterator nodeMapIt = m_m2NodeMap.find(m2source);
+		if (nodeMapIt == m_m2NodeMap.end())
+			throw InputDomainError(io::Str() << "Couldn't find mapped index for source M2 node " << m2source);
+		unsigned int sourceIndex = nodeMapIt->second;
+
 		for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
 //			const M2Node& m2target = subIt->first;
 			double linkWeight = subIt->second;
-
-			// Get the indices for the m2 nodes
-			MemNetwork::M2NodeMap::const_iterator nodeMapIt = m_m2NodeMap.find(m2source);
-			if (nodeMapIt == m_m2NodeMap.end())
-				throw InputDomainError(io::Str() << "Couldn't find mapped index for source M2 node " << m2source);
-			unsigned int sourceIndex = nodeMapIt->second;
 //			nodeMapIt = m_m2NodeMap.find(m2target);
 //			if (nodeMapIt == m_m2NodeMap.end())
 //				throw InputDomainError(io::Str() << "Couldn't find mapped index for target M2 node " << m2target);
