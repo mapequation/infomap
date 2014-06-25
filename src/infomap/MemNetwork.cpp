@@ -224,7 +224,8 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 			else
 			{
 				// No chainable link found, create a dangling memory node (or remove need for existence in MemFlowNetwork?)
-				addM2Node(n1, n2, firstLinkWeight);
+//				addM2Node(n1, n2, firstLinkWeight);
+				addM2Link(n1, n1, n1, n2, firstLinkWeight);
 			}
 		}
 	}
@@ -270,6 +271,11 @@ void MemNetwork::simulateMemoryFromOrdinaryNetworkToIncompleteData()
 			{
 				addM2Link(sourceNodes[j], link.n1, link.n1, link.n2, link.weight / sourceNodes.size());
 			}
+		}
+		else
+		{
+			// No link to chain, create self-link
+			addM2Link(link.n1, link.n1, link.n1, link.n2, link.weight);
 		}
 	}
 
@@ -333,6 +339,7 @@ bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned 
 	}
 	else if (n1 != n2)
 	{
+		std::cout << "\naddM2Link " << n1 << " " << n2 << " ";
 		if(n1PriorState != n1)
 		{
 			insertM2Link(n1PriorState, n1, n2PriorState, n2, weight);
