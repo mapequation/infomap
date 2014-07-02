@@ -339,7 +339,6 @@ bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned 
 	}
 	else if (n1 != n2)
 	{
-		std::cout << "\naddM2Link " << n1 << " " << n2 << " ";
 		if(n1PriorState != n1)
 		{
 			insertM2Link(n1PriorState, n1, n2PriorState, n2, weight);
