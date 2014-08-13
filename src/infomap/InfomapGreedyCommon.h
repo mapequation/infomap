@@ -424,7 +424,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 				double deltaCodelength = Super::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, moduleDeltaEnterExit[j]);
 				deltaCodelength += derived().getDeltaCodelengthOnMovingMemoryNode(oldModuleDelta, moduleDeltaEnterExit[j]);
 
-				if (deltaCodelength < bestDeltaCodelength)
+				if (deltaCodelength < bestDeltaCodelength - Super::m_config.minimumSingleNodeCodelengthImprovement)
 				{
 					bestDeltaModule = moduleDeltaEnterExit[j];
 					bestDeltaCodelength = deltaCodelength;

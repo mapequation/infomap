@@ -56,6 +56,7 @@ struct Config
 		seedToRandomNumberGenerator(123),
 		numTrials(1),
 		minimumCodelengthImprovement(1.0e-10),
+		minimumSingleNodeCodelengthImprovement(1.0e-16),
 		randomizeCoreLoopLimit(false),
 		coreLoopLimit(0),
 		levelAggregationLimit(0),
@@ -110,6 +111,7 @@ struct Config
 		seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
 		numTrials(other.numTrials),
 		minimumCodelengthImprovement(other.minimumCodelengthImprovement),
+		minimumSingleNodeCodelengthImprovement(other.minimumSingleNodeCodelengthImprovement),
 		randomizeCoreLoopLimit(other.randomizeCoreLoopLimit),
 		coreLoopLimit(other.coreLoopLimit),
 		levelAggregationLimit(other.levelAggregationLimit),
@@ -164,6 +166,7 @@ struct Config
 		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
 		numTrials = other.numTrials;
 		minimumCodelengthImprovement = other.minimumCodelengthImprovement;
+		minimumSingleNodeCodelengthImprovement = other.minimumSingleNodeCodelengthImprovement;
 		randomizeCoreLoopLimit = other.randomizeCoreLoopLimit;
 		coreLoopLimit = other.coreLoopLimit;
 		levelAggregationLimit = other.levelAggregationLimit;
@@ -294,6 +297,7 @@ struct Config
 	// Performance and accuracy
 	unsigned int numTrials;
 	double minimumCodelengthImprovement;
+	double minimumSingleNodeCodelengthImprovement;
 	bool randomizeCoreLoopLimit;
 	unsigned int coreLoopLimit;
 	unsigned int levelAggregationLimit;
