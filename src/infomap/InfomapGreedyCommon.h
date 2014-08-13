@@ -414,6 +414,8 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 
 		DeltaFlow bestDeltaModule(oldModuleDelta);
 		double bestDeltaCodelength = 0.0;
+		DeltaFlow strongestConnectedModule(oldModuleDelta);
+		double deltaCodelengthOnStrongestConnectedModule = 0.0;
 
 		// Find the move that minimizes the description length
 		for (unsigned int j = 0; j < numModuleLinks; ++j)
@@ -430,7 +432,21 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 					bestDeltaCodelength = deltaCodelength;
 				}
 
+				// Save strongest connected module to prefer if codelength improvement equal
+				if (moduleDeltaEnterExit[j].deltaExit > strongestConnectedModule.deltaExit)
+				{
+					strongestConnectedModule = moduleDeltaEnterExit[j];
+					deltaCodelengthOnStrongestConnectedModule = deltaCodelength;
+				}
 			}
+		}
+
+		// Prefer strongest connected module if equal delta codelength
+		if (strongestConnectedModule.module != bestDeltaModule.module &&
+				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + Super::m_config.minimumCodelengthImprovement)
+		{
+			bestDeltaModule = strongestConnectedModule;
+//			RELEASE_OUT("!");
 		}
 
 		// Make best possible move
