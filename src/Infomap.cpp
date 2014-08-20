@@ -29,6 +29,7 @@
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
+#include <cstdlib>
 #include "utils/Logger.h"
 #include "io/Config.h"
 #include "infomap/InfomapContext.h"
@@ -257,18 +258,19 @@ int run(int argc, char* argv[])
 		if (conf.verbosity == 0)
 			conf.verboseNumberPrecision = 4;
 		std::cout << std::setprecision(conf.verboseNumberPrecision);
+
+		std::cout << "===========================================\n";
+		std::cout << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
+		std::cout << "===========================================\n";
+
+		runInfomap(conf);
+
 	}
 	catch (std::exception& e)
 	{
 		std::cerr << e.what() << std::endl;
-		return 1;
+		return EXIT_FAILURE;
 	}
-
-	std::cout << "===========================================\n";
-	std::cout << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
-	std::cout << "===========================================\n";
-
-	runInfomap(conf);
 
 	ASSERT(NodeBase::nodeCount() == 0); //TODO: Not working with OpenMP
 //	if (NodeBase::nodeCount() != 0)
