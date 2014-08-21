@@ -244,7 +244,8 @@ void MemNetwork::simulateMemoryFromOrdinaryNetworkToIncompleteData()
 	std::cout << "patching " << m_incompleteTrigrams.size() << " incomplete trigrams " << std::flush;
 
 	// Map all m1 links on the target node
-	typedef std::map<unsigned int, std::vector<unsigned int> > LinkTargetMap;
+	typedef std::pair<double, std::vector<Link> > SimulatedMemNodes; // <sum link weight, [links targeting same node]>
+	typedef std::map<unsigned int, SimulatedMemNodes> LinkTargetMap;
 	LinkTargetMap n2Map; // (n2 -> all n1 targeting n2)
 	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
 	{
@@ -253,7 +254,12 @@ void MemNetwork::simulateMemoryFromOrdinaryNetworkToIncompleteData()
 		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
 			unsigned int n2 = subIt->first;
-			n2Map[n2].push_back(n1);
+			double weight = subIt->second;
+			SimulatedMemNodes& simulatedMemNodes = n2Map[n2];
+			if (simulatedMemNodes.second.empty())
+				simulatedMemNodes.first = 0.0;
+			simulatedMemNodes.second.push_back(Link(n1, n2, weight));
+			simulatedMemNodes.first += weight;
 		}
 	}
 
@@ -266,10 +272,11 @@ void MemNetwork::simulateMemoryFromOrdinaryNetworkToIncompleteData()
 		LinkTargetMap::const_iterator targetIt = n2Map.find(link.n1);
 		if (targetIt != n2Map.end())
 		{
-			const std::vector<unsigned int>& sourceNodes = targetIt->second;
-			for (unsigned int j = 0; j < sourceNodes.size(); ++j)
+			const SimulatedMemNodes& simulatedMemNodes = targetIt->second;
+			for (unsigned int j = 0; j < simulatedMemNodes.second.size(); ++j)
 			{
-				addM2Link(sourceNodes[j], link.n1, link.n1, link.n2, link.weight / sourceNodes.size());
+				double normalizationFactor = simulatedMemNodes.second[j].weight / simulatedMemNodes.first;
+				addM2Link(simulatedMemNodes.second[j].n1, link.n1, link.n1, link.n2, link.weight * normalizationFactor);
 			}
 		}
 		else
