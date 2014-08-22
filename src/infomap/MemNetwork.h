@@ -114,6 +114,8 @@ public:
 	double totalM2LinkWeight() const { return m_totM2LinkWeight; }
 	double totalMemorySelfLinkWeight() const { return m_totalMemorySelfLinkWeight; }
 
+	virtual void printNetworkAsPajek(std::string filename);
+
 protected:
 
 	void parseTrigram(std::string filename);

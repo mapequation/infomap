@@ -124,7 +124,7 @@ public:
 
 	void printParsingResult();
 
-	void printNetworkAsPajek(std::string filename);
+	virtual void printNetworkAsPajek(std::string filename);
 
 	unsigned int numNodes() const { return m_numNodes; }
 	const std::vector<std::string>& nodeNames() const { return m_nodeNames; }

@@ -286,7 +286,7 @@ void MemNetwork::simulateMemoryFromOrdinaryNetworkToIncompleteData()
 		}
 	}
 
-	std::cout << "with " << (m_numM2Links - numM2LinksBefore) << " memory links... " << std::flush;
+	std::cout << "with " << (m_numM2Links - numM2LinksBefore) << " new memory links... " << std::flush;
 }
 
 void MemNetwork::parseM2Link(const std::string& line, int& n1, unsigned int& n2, unsigned int& n3, double& weight)
@@ -503,3 +503,30 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 		std::cout << "Aggregated " << m_numAggregatedM2Links << " memory links. ";
 }
 
+void MemNetwork::printNetworkAsPajek(std::string filename)
+{
+	if (!m_config.printExpanded)
+	{
+		Network::printNetworkAsPajek(filename);
+		return;
+	}
+
+	SafeOutFile out(filename.c_str());
+
+	out << "*Vertices " << m_numNodes << "\n";
+	for (unsigned int i = 0; i < m_numNodes; ++i)
+		out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
+
+	out << "*3grams " << m_links.size() << "\n";
+	for (M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
+	{
+		const M2Node& m2source = linkIt->first;
+		const std::map<M2Node, double>& subLinks = linkIt->second;
+		for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			const M2Node& m2target = subIt->first;
+			double linkWeight = subIt->second;
+			out << (m2source.priorState + 1) << " " << (m2source.physIndex + 1) << " " << (m2target.physIndex + 1) << " " << linkWeight << "\n";
+		}
+	}
+}

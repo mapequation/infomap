@@ -1183,15 +1183,17 @@ bool InfomapBase::initNetwork()
  	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
 
- 	FlowNetwork flowNetwork;
- 	flowNetwork.calculateFlow(network, m_config);
-
  	if (m_config.printPajekNetwork)
  	{
  		std::string outName = io::Str() <<
  				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
+ 		std::cout << "Printing network to " << outName << "... " << std::flush;
  		network.printNetworkAsPajek(outName);
+		std::cout << "done!\n";
  	}
+
+ 	FlowNetwork flowNetwork;
+ 	flowNetwork.calculateFlow(network, m_config);
 
  	initNodeNames(network);
 
@@ -1245,15 +1247,18 @@ void InfomapBase::initMemoryNetwork()
 	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
 
+	if (m_config.printPajekNetwork)
+ 	{
+ 		std::string outName = io::Str() <<
+ 				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
+ 		std::cout << "Printing network to " << outName << "... " << std::flush;
+ 		network.printNetworkAsPajek(outName);
+		std::cout << "done!\n";
+ 	}
+
+
 	MemFlowNetwork flowNetwork;
 	flowNetwork.calculateFlow(network, m_config);
-
-	if (m_config.printPajekNetwork)
-	{
-		std::string outName = io::Str() <<
-				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
-		network.printNetworkAsPajek(outName);
-	}
 
 	initNodeNames(network);
 
