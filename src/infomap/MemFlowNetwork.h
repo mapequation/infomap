@@ -33,8 +33,8 @@
 
 class MemFlowNetwork: public FlowNetwork {
 public:
-	MemFlowNetwork();
-	virtual ~MemFlowNetwork();
+	MemFlowNetwork() {}
+	virtual ~MemFlowNetwork() {}
 
 	virtual void calculateFlow(const Network& network, const Config& config);
 

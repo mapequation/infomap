@@ -26,14 +26,18 @@
 
 
 #include "Network.h"
-#include "../utils/FileURI.h"
-#include "../io/convert.h"
-#include "../io/SafeFile.h"
+
 #include <cmath>
-#include "../utils/Logger.h"
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cstdio>
+#include <iostream>
+
+#include "../io/convert.h"
+#include "../io/SafeFile.h"
+#include "../utils/FileURI.h"
+#include "../utils/Logger.h"
+
 
 using std::make_pair;
 
@@ -117,13 +121,14 @@ void Network::parsePajekNetwork(std::string filename)
 	}
 	else
 	{
-		// Read node names, assuming order 1, 2, 3, ...
+		// Read node names, assuming order 1, 2, 3, ... (or 0, 1, 2, ... if zero-based node numbering)
 		for (unsigned int i = 0; i < m_numNodes; ++i)
 		{
 			unsigned int id = 0;
-			if (!(input >> id) || id != static_cast<unsigned int>(i+1))
+			if (!(input >> id) || id != static_cast<unsigned int>(i + m_indexOffset))
 			{
-				throw BadConversionError(io::Str() << "Couldn't parse node number " << (i+1) << " from line " << (i+2) << ".");
+				throw BadConversionError(io::Str() << "Couldn't parse line " << (i + m_indexOffset + 1) << ". Should begin with node number " << (i + m_indexOffset) <<
+						((m_indexOffset == 1 && id == i)? ".\nBe sure to use zero-based node numbering if the node numbers start from zero." : "."));
 			}
 			std::getline(input,line);
 			unsigned int nameStart = line.find_first_of("\"");

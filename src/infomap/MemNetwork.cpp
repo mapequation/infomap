@@ -142,11 +142,18 @@ void MemNetwork::parseTrigram(std::string filename)
 		if (line.length() == 0)
 			continue;
 
-		unsigned int n1, n2, n3;
+		int n1;
+		unsigned int n2, n3;
 		double weight;
 		parseM2Link(line, n1, n2, n3, weight);
 
-		addM2Link(n1, n2, n2, n3, weight);
+		if (n1 + m_indexOffset == -1)
+		{
+			// Save bigram and later build trigrams by chaining with other bigrams
+			m_incompleteTrigrams.push_back(Link(n2, n3, weight));
+		}
+		else
+			addM2Link(n1, n2, n2, n3, weight);
 
 		if (n2 != n3 || m_config.includeSelfLinks)
 			insertLink(n2, n3, weight);
@@ -217,7 +224,8 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 			else
 			{
 				// No chainable link found, create a dangling memory node (or remove need for existence in MemFlowNetwork?)
-				addM2Node(n1, n2, firstLinkWeight);
+//				addM2Node(n1, n2, firstLinkWeight);
+				addM2Link(n1, n1, n1, n2, firstLinkWeight);
 			}
 		}
 	}
@@ -228,7 +236,60 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 	printParsingResult(false);
 }
 
-void MemNetwork::parseM2Link(const std::string& line, unsigned int& n1, unsigned int& n2, unsigned int& n3, double& weight)
+void MemNetwork::simulateMemoryFromOrdinaryNetworkToIncompleteData()
+{
+	if (m_incompleteTrigrams.empty())
+		return;
+
+	std::cout << "patching " << m_incompleteTrigrams.size() << " incomplete trigrams " << std::flush;
+
+	// Map all m1 links on the target node
+	typedef std::pair<double, std::vector<Link> > SimulatedMemNodes; // <sum link weight, [links targeting same node]>
+	typedef std::map<unsigned int, SimulatedMemNodes> LinkTargetMap;
+	LinkTargetMap n2Map; // (n2 -> all n1 targeting n2)
+	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
+	{
+		unsigned int n1 = linkIt->first;
+		const std::map<unsigned int, double>& subLinks = linkIt->second;
+		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			unsigned int n2 = subIt->first;
+			double weight = subIt->second;
+			SimulatedMemNodes& simulatedMemNodes = n2Map[n2];
+			if (simulatedMemNodes.second.empty())
+				simulatedMemNodes.first = 0.0;
+			simulatedMemNodes.second.push_back(Link(n1, n2, weight));
+			simulatedMemNodes.first += weight;
+		}
+	}
+
+	unsigned int numM2LinksBefore = m_numM2Links;
+
+	// For all bigrams (n2,n3), create trigrams (n1, n2, n3) for all n1 in m1 links targeting n2.
+	for (unsigned int i = 0; i < m_incompleteTrigrams.size(); ++i)
+	{
+		const Link& link = m_incompleteTrigrams[i];
+		LinkTargetMap::const_iterator targetIt = n2Map.find(link.n1);
+		if (targetIt != n2Map.end())
+		{
+			const SimulatedMemNodes& simulatedMemNodes = targetIt->second;
+			for (unsigned int j = 0; j < simulatedMemNodes.second.size(); ++j)
+			{
+				double normalizationFactor = simulatedMemNodes.second[j].weight / simulatedMemNodes.first;
+				addM2Link(simulatedMemNodes.second[j].n1, link.n1, link.n1, link.n2, link.weight * normalizationFactor);
+			}
+		}
+		else
+		{
+			// No link to chain, create self-link
+			addM2Link(link.n1, link.n1, link.n1, link.n2, link.weight);
+		}
+	}
+
+	std::cout << "with " << (m_numM2Links - numM2LinksBefore) << " new memory links... " << std::flush;
+}
+
+void MemNetwork::parseM2Link(const std::string& line, int& n1, unsigned int& n2, unsigned int& n3, double& weight)
 {
 	m_extractor.clear();
 	m_extractor.str(line);
@@ -241,7 +302,7 @@ void MemNetwork::parseM2Link(const std::string& line, unsigned int& n1, unsigned
 	n3 -= m_indexOffset;
 }
 
-void MemNetwork::parseM2Link(char line[], unsigned int& n1, unsigned int& n2, unsigned int& n3, double& weight)
+void MemNetwork::parseM2Link(char line[], int& n1, unsigned int& n2, unsigned int& n3, double& weight)
 {
 	char *cptr;
 	cptr = strtok(line, " \t"); // Get first non-whitespace character position
@@ -346,6 +407,8 @@ bool MemNetwork::insertM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2Pr
 
 void MemNetwork::finalizeAndCheckNetwork()
 {
+	simulateMemoryFromOrdinaryNetworkToIncompleteData();
+
 	if (m_m2Links.empty())
 		throw InputDomainError("No memory links added!");
 
@@ -390,16 +453,17 @@ void MemNetwork::initNodeDegrees()
 	{
 		const M2Node& m2source = linkIt->first;
 		const std::map<M2Node, double>& subLinks = linkIt->second;
+
+		// Get the index for the m2 source node
+		MemNetwork::M2NodeMap::const_iterator nodeMapIt = m_m2NodeMap.find(m2source);
+		if (nodeMapIt == m_m2NodeMap.end())
+			throw InputDomainError(io::Str() << "Couldn't find mapped index for source M2 node " << m2source);
+		unsigned int sourceIndex = nodeMapIt->second;
+
 		for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
 //			const M2Node& m2target = subIt->first;
 			double linkWeight = subIt->second;
-
-			// Get the indices for the m2 nodes
-			MemNetwork::M2NodeMap::const_iterator nodeMapIt = m_m2NodeMap.find(m2source);
-			if (nodeMapIt == m_m2NodeMap.end())
-				throw InputDomainError(io::Str() << "Couldn't find mapped index for source M2 node " << m2source);
-			unsigned int sourceIndex = nodeMapIt->second;
 //			nodeMapIt = m_m2NodeMap.find(m2target);
 //			if (nodeMapIt == m_m2NodeMap.end())
 //				throw InputDomainError(io::Str() << "Couldn't find mapped index for target M2 node " << m2target);
@@ -439,3 +503,30 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 		std::cout << "Aggregated " << m_numAggregatedM2Links << " memory links. ";
 }
 
+void MemNetwork::printNetworkAsPajek(std::string filename)
+{
+	if (!m_config.printExpanded)
+	{
+		Network::printNetworkAsPajek(filename);
+		return;
+	}
+
+	SafeOutFile out(filename.c_str());
+
+	out << "*Vertices " << m_numNodes << "\n";
+	for (unsigned int i = 0; i < m_numNodes; ++i)
+		out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
+
+	out << "*3grams " << m_links.size() << "\n";
+	for (M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
+	{
+		const M2Node& m2source = linkIt->first;
+		const std::map<M2Node, double>& subLinks = linkIt->second;
+		for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			const M2Node& m2target = subIt->first;
+			double linkWeight = subIt->second;
+			out << (m2source.priorState + 1) << " " << (m2source.physIndex + 1) << " " << (m2target.physIndex + 1) << " " << linkWeight << "\n";
+		}
+	}
+}

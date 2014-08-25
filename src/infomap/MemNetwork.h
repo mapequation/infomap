@@ -31,6 +31,7 @@
 #include "Network.h"
 
 #include <map>
+#include <vector>
 #include <utility>
 #include <deque>
 
@@ -74,6 +75,15 @@ struct M2Node
 	}
 };
 
+struct Link
+{
+	Link(unsigned int n1, unsigned int n2, double weight) : n1(n1), n2(n2), weight(weight) {}
+
+	unsigned int n1;
+	unsigned int n2;
+	double weight;
+};
+
 class MemNetwork: public Network
 {
 public:
@@ -103,6 +113,8 @@ public:
 	unsigned int numM2Links() const { return m_numM2Links; }
 	double totalM2LinkWeight() const { return m_totM2LinkWeight; }
 	double totalMemorySelfLinkWeight() const { return m_totalMemorySelfLinkWeight; }
+
+	virtual void printNetworkAsPajek(std::string filename);
 
 protected:
 
@@ -167,14 +179,18 @@ protected:
 	 */
 	void simulateMemoryFromOrdinaryNetwork();
 
+	void simulateMemoryFromOrdinaryNetworkToIncompleteData();
+
 	// Helper methods
 	/**
 	 * Parse a string of link data.
 	 * If no weight data can be extracted, the default value 1.0 will be used.
+	 * Note that the first node number can be negative, which means that memory
+	 * information is missing.
 	 * @throws an error if not both node numbers can be extracted.
 	 */
-	void parseM2Link(const std::string& line, unsigned int& n1, unsigned int& n2, unsigned int& n3, double& weight);
-	void parseM2Link(char line[], unsigned int& n1, unsigned int& n2, unsigned int& n3, double& weight);
+	void parseM2Link(const std::string& line, int& n1, unsigned int& n2, unsigned int& n3, double& weight);
+	void parseM2Link(char line[], int& n1, unsigned int& n2, unsigned int& n3, double& weight);
 
 	/**
 	 * Add a weighted link between two memory nodes.
@@ -204,6 +220,7 @@ protected:
 	M2NodeMap m_m2NodeMap;
 	std::vector<double> m_m2NodeWeights;
 	double m_totM2NodeWeight;
+	std::deque<Link> m_incompleteTrigrams;
 
 	unsigned int m_numM2LinksFound;
 	unsigned int m_numM2Links;

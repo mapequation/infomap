@@ -2,7 +2,7 @@
 
  Infomap software package for multi-level network clustering
 
- Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
+ Copyright (c) 2013 Daniel Edler, Martin Rosvall
  
  For more information, see <http://www.mapequation.org>
  
@@ -1171,32 +1171,29 @@ bool InfomapBase::initNetwork()
  		return false;
 
 	if (m_config.isMemoryNetwork())
-		return initMemoryNetwork();
+	{
+		initMemoryNetwork();
+		return true;
+	}
 
 	Network network(m_config);
 
- 	try
- 	{
- 		network.readInputData();
- 	}
- 	catch (const std::runtime_error& error)
- 	{
- 		std::cerr << "Error parsing the input file: " << error.what() << std::endl;
- 		return false;
- 	}
+	network.readInputData();
 
  	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
-
- 	FlowNetwork flowNetwork;
- 	flowNetwork.calculateFlow(network, m_config);
 
  	if (m_config.printPajekNetwork)
  	{
  		std::string outName = io::Str() <<
  				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
+ 		std::cout << "Printing network to " << outName << "... " << std::flush;
  		network.printNetworkAsPajek(outName);
+		std::cout << "done!\n";
  	}
+
+ 	FlowNetwork flowNetwork;
+ 	flowNetwork.calculateFlow(network, m_config);
 
  	initNodeNames(network);
 
@@ -1237,37 +1234,31 @@ bool InfomapBase::initNetwork()
 			std::cout << "done!\n";
 	}
 
-
  	return true;
 }
 
-bool InfomapBase::initMemoryNetwork()
+void InfomapBase::initMemoryNetwork()
 {
 	std::auto_ptr<MemNetwork> net(m_config.isMultiplexNetwork() ? new MultiplexNetwork(m_config) : new MemNetwork(m_config));
 	MemNetwork& network = *net;
 
-	try
-	{
-		network.readInputData();
-	}
-	catch (const std::runtime_error& error)
-	{
-		std::cerr << "Error parsing the input file: " << error.what() << std::endl;
-		return false;
-	}
+	network.readInputData();
 
 	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
 
+	if (m_config.printPajekNetwork)
+ 	{
+ 		std::string outName = io::Str() <<
+ 				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
+ 		std::cout << "Printing network to " << outName << "... " << std::flush;
+ 		network.printNetworkAsPajek(outName);
+		std::cout << "done!\n";
+ 	}
+
+
 	MemFlowNetwork flowNetwork;
 	flowNetwork.calculateFlow(network, m_config);
-
-	if (m_config.printPajekNetwork)
-	{
-		std::string outName = io::Str() <<
-				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
-		network.printNetworkAsPajek(outName);
-	}
 
 	initNodeNames(network);
 
@@ -1356,8 +1347,6 @@ bool InfomapBase::initMemoryNetwork()
 			std::cout << "done!\n";
 		}
 	}
-
-	return true;
 }
 
 void InfomapBase::initNodeNames(Network& network)
@@ -1481,15 +1470,7 @@ bool InfomapBase::checkAndConvertBinaryTree()
 			FileURI(m_config.networkFile).getExtension() != "btree")
 		return false;
 
-	try
-	{
-		m_ioNetwork.readStreamableTree(m_config.networkFile);
-	}
-	catch (const std::runtime_error& error)
-	{
-		std::cerr << "Error parsing the input file '" << m_config.networkFile << "': " << error.what() << std::endl;
-		return true;
-	}
+	m_ioNetwork.readStreamableTree(m_config.networkFile);
 
 	if (m_config.printMap)
 	{
