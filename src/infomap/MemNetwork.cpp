@@ -244,21 +244,18 @@ void MemNetwork::simulateMemoryToIncompleteData()
 
 	// Store all incomplete data on a compact array, with fast mapping from incomplete link source index to the compact index
 	std::deque<std::deque<ComplementaryData> > complementaryData(m_numIncompleteM2Links);
-	std::cout << "m_numNodes: " << m_numNodes << std::endl;
 	std::vector<int> incompleteSourceMapping(m_numNodes, -1);
 	int compactIndex = 0;
 	for (LinkMap::const_iterator linkIt(m_incompleteM2Links.begin()); linkIt != m_incompleteM2Links.end(); ++linkIt, ++compactIndex)
 	{
 		unsigned int n1 = linkIt->first;
 		incompleteSourceMapping[n1] = compactIndex;
-		std::cout << "Source: " << n1 << " -> compactIndex: " << compactIndex << std::endl;
 		const std::map<unsigned int, double>& subLinks = linkIt->second;
 		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
 			unsigned int n2 = subIt->first;
 			double weight = subIt->second;
 			complementaryData[compactIndex].push_back(ComplementaryData(n1, n2, weight));
-			std::cout << "Target: " << n2 << " -> compactIndex: " << compactIndex << std::endl;
 		}
 	}
 
@@ -271,11 +268,9 @@ void MemNetwork::simulateMemoryToIncompleteData()
 		{
 			const M2Node& m2target = subIt->first;
 			double weight = subIt->second;
-			std::cout << "== Checking m2 link " << m2source.priorState << " " << m2source.physIndex << " " <<
-					m2target.physIndex << " " << weight << "\n";
-			// First try to match on physical source index
+
+			// Check physical source index for exact and partial match
 			int compactIndex = incompleteSourceMapping[m2source.physIndex];
-			std::cout << "  (m2source.physIndex: " << m2source.physIndex << " -> compact index: " << compactIndex << ")\n";
 			if (compactIndex != -1)
 			{
 				std::deque<ComplementaryData>& matchedComplementaryData = complementaryData[compactIndex];
@@ -286,16 +281,11 @@ void MemNetwork::simulateMemoryToIncompleteData()
 						data.addExactMatch(m2source.priorState, m2source.physIndex, weight);
 					else
 						data.addPartialMatch(m2source.priorState, m2source.physIndex, weight);
-					std::cout << "-- Add " << ((data.incompleteLink.n2 == m2target.physIndex) ? "exact" : "partial") <<
-							" matched link " << m2source.priorState << " " << m2source.physIndex << " " << weight <<
-							" to incomplete link -1 " << data.incompleteLink.n1 << " " << data.incompleteLink.n2 << " " <<
-							data.incompleteLink.weight << "\n";
 				}
 			}
 
-			// Also try to match on target index, using the physical source as memory data if no other match available
+			// Check target index for shifted match (using the physical source as memory data)
 			compactIndex = incompleteSourceMapping[m2target.physIndex];
-			std::cout << "  (m2target.physIndex: " << m2target.physIndex << " -> compact index: " << compactIndex << ")\n";
 			if (compactIndex != -1)
 			{
 				std::deque<ComplementaryData>& matchedComplementaryData = complementaryData[compactIndex];
@@ -303,15 +293,11 @@ void MemNetwork::simulateMemoryToIncompleteData()
 				{
 					ComplementaryData& data = matchedComplementaryData[i];
 					data.addShiftedMatch(m2target.priorState, m2target.physIndex, weight);
-					std::cout << "-- Add shifted matched link " << m2target.priorState << " " << m2target.physIndex << " " << weight <<
-							" to incomplete link -1 " << data.incompleteLink.n1 << " " << data.incompleteLink.n2 << " " <<
-								data.incompleteLink.weight << "\n";
 				}
 			}
 		}
 	}
 
-	std::cout << "\n\n";
 	unsigned int numM2LinksBefore = m_numM2Links;
 
 	// Create the additional memory links from the aggregated complementary data
@@ -321,31 +307,23 @@ void MemNetwork::simulateMemoryToIncompleteData()
 		for (unsigned int i = 0; i < complementaryLinks.size(); ++i)
 		{
 			ComplementaryData& data = complementaryLinks[i];
-			std::cout << "Completing link -1 " << data.incompleteLink.n1 << " " << data.incompleteLink.n2 << " " << data.incompleteLink.weight << "\n";
 			if (data.exactMatch.size() > 0)
 			{
-				for (std::deque<Link>::const_iterator linkIt(data.exactMatch.begin()); linkIt != data.exactMatch.end(); ++linkIt) {
-					std::cout << "   with exact match " << linkIt->n1 << " " << linkIt->n2 << " " << linkIt->weight << "/" << data.sumWeightExactMatch << "\n";
+				for (std::deque<Link>::const_iterator linkIt(data.exactMatch.begin()); linkIt != data.exactMatch.end(); ++linkIt)
 					addM2Link(linkIt->n1, linkIt->n2, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->weight / data.sumWeightExactMatch);
-				}
 			}
 			else if (data.partialMatch.size() > 0)
 			{
-				for (std::deque<Link>::const_iterator linkIt(data.partialMatch.begin()); linkIt != data.partialMatch.end(); ++linkIt) {
-					std::cout << "   with partial match " << linkIt->n1 << " " << linkIt->n2 << " " << linkIt->weight << "/" << data.sumWeightPartialMatch << "\n";
+				for (std::deque<Link>::const_iterator linkIt(data.partialMatch.begin()); linkIt != data.partialMatch.end(); ++linkIt)
 					addM2Link(linkIt->n1, linkIt->n2, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->weight / data.sumWeightPartialMatch);
-				}
 			}
 			else if (data.shiftedMatch.size() > 0)
 			{
-				for (std::deque<Link>::const_iterator linkIt(data.shiftedMatch.begin()); linkIt != data.shiftedMatch.end(); ++linkIt) {
-					std::cout << "   with shifted match " << linkIt->n1 << " " << linkIt->n2 << " " << linkIt->weight << "/" << data.sumWeightShiftedMatch << "\n";
+				for (std::deque<Link>::const_iterator linkIt(data.shiftedMatch.begin()); linkIt != data.shiftedMatch.end(); ++linkIt)
 					addM2Link(linkIt->n1, linkIt->n2, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->weight / data.sumWeightShiftedMatch);
-				}
 			}
 			else
 			{
-				std::cout << "   with self-link!\n";
 				// No matching data to complement, create self-memory link
 				addM2Link(data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight);
 			}
