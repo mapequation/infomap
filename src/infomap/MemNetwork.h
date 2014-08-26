@@ -77,11 +77,37 @@ struct M2Node
 
 struct Link
 {
+	Link() : n1(0), n2(0), weight(0.0) {}
 	Link(unsigned int n1, unsigned int n2, double weight) : n1(n1), n2(n2), weight(weight) {}
 
 	unsigned int n1;
 	unsigned int n2;
 	double weight;
+};
+
+struct ComplementaryData
+{
+	/*
+	 * @params incomplete link
+	 */
+	ComplementaryData(unsigned int n1, unsigned int n2, double weight) :
+		incompleteLink(n1, n2, weight),
+		sumWeightExactMatch(0.0),
+		sumWeightPartialMatch(0.0),
+		sumWeightShiftedMatch(0.0)
+	{}
+
+	void addExactMatch(unsigned int n1, unsigned int n2, double weight) { sumWeightExactMatch += weight; exactMatch.push_back(Link(n1, n2, weight)); }
+	void addPartialMatch(unsigned int n1, unsigned int n2, double weight) { sumWeightPartialMatch += weight; partialMatch.push_back(Link(n1, n2, weight)); }
+	void addShiftedMatch(unsigned int n1, unsigned int n2, double weight) { sumWeightShiftedMatch += weight; shiftedMatch.push_back(Link(n1, n2, weight)); }
+
+	Link incompleteLink; // -1 n2 n3
+	std::deque<Link> exactMatch; // match x n2 n3, use [x n2] as memory node
+	double sumWeightExactMatch;
+	std::deque<Link> partialMatch; // match x n2 y, use [x n2] as memory node
+	double sumWeightPartialMatch;
+	std::deque<Link> shiftedMatch; // match x y n3, use [y n3] as memory node
+	double sumWeightShiftedMatch;
 };
 
 class MemNetwork: public Network
@@ -99,7 +125,10 @@ public:
 		m_totM2LinkWeight(0.0),
 		m_numAggregatedM2Links(0),
 		m_numMemorySelfLinks(0),
-		m_totalMemorySelfLinkWeight(0.0)
+		m_totalMemorySelfLinkWeight(0.0),
+		m_numIncompleteM2LinksFound(0),
+		m_numIncompleteM2Links(0),
+		m_numAggregatedIncompleteM2Links(0)
 	{}
 	virtual ~MemNetwork() {}
 
@@ -179,7 +208,7 @@ protected:
 	 */
 	void simulateMemoryFromOrdinaryNetwork();
 
-	void simulateMemoryFromOrdinaryNetworkToIncompleteData();
+	void simulateMemoryToIncompleteData();
 
 	// Helper methods
 	/**
@@ -209,6 +238,7 @@ protected:
 	 */
 	bool insertM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight);
 	bool insertM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight);
+	bool addIncompleteM2Link(unsigned int n1, unsigned int n2, double weight);
 
 	virtual void finalizeAndCheckNetwork();
 
@@ -220,7 +250,7 @@ protected:
 	M2NodeMap m_m2NodeMap;
 	std::vector<double> m_m2NodeWeights;
 	double m_totM2NodeWeight;
-	std::deque<Link> m_incompleteTrigrams;
+	LinkMap m_incompleteM2Links;
 
 	unsigned int m_numM2LinksFound;
 	unsigned int m_numM2Links;
@@ -230,6 +260,10 @@ protected:
 	unsigned int m_numAggregatedM2Links;
 	unsigned int m_numMemorySelfLinks;
 	double m_totalMemorySelfLinkWeight;
+
+	unsigned int m_numIncompleteM2LinksFound;
+	unsigned int m_numIncompleteM2Links;
+	unsigned int m_numAggregatedIncompleteM2Links;
 
 };
 
