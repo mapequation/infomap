@@ -124,7 +124,7 @@ public:
 		parentNode(0),
 		parentIndex(parentIndex),
 		isLeaf(false),
-		leafIndex(0),
+		originalLeafIndex(0),
 		id(id)
 	{
 	}
@@ -137,7 +137,7 @@ public:
 		parentNode(other.parentNode),
 		parentIndex(other.parentIndex),
 		isLeaf(false),
-		leafIndex(0),
+		originalLeafIndex(0),
 		id(other.id)
 	{
 	}
@@ -185,7 +185,7 @@ public:
 	SNode* parentNode;
 	unsigned short parentIndex; // The index of this node in its tree parent's child list.
 	bool isLeaf;
-	unsigned int leafIndex; // The index in the original network file if a leaf node.
+	unsigned int originalLeafIndex; // The index in the original network file if a leaf node.
 	unsigned int id;
 	NodePtrList children;
 	ChildEdgeList childEdges;
@@ -464,6 +464,7 @@ public:
 	SNode& addNode(SNode& parent, double flow, double exitFlow);
 
 	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex);
+	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex, unsigned int originalIndex);
 
 	void prepareAddLeafNodes(unsigned int numLeafNodes);
 
@@ -531,7 +532,7 @@ private:
 	void writeHumanReadableTreeRecursiveHelper(std::ostream& out, SNode& node, std::string prefix = "");
 	void writeHumanReadableTreeFlowLinksRecursiveHelper(std::ostream& out, SNode& node, std::string prefix = "");
 
-	static bool compareLeafNodePredicate(const SNode* lhs, const SNode* rhs) { return (lhs->leafIndex < rhs->leafIndex); }
+	static bool compareLeafNodePredicate(const SNode* lhs, const SNode* rhs) { return (lhs->originalLeafIndex < rhs->originalLeafIndex); }
 
 	void sortLeafNodes()
 	{
