@@ -645,7 +645,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 		std::map<unsigned int, IndexedFlow>& condensedNodes = physicalNodes[i];
 		typedef typename std::map<unsigned int, IndexedFlow>::iterator CondensedIterator;
 		std::multimap<double, CondensedIterator, std::greater<double> > sortedNodes;
-		for (typename std::map<unsigned int, IndexedFlow>::iterator it(condensedNodes.begin()); it != condensedNodes.end(); ++it)
+		for (CondensedIterator it(condensedNodes.begin()); it != condensedNodes.end(); ++it)
 		{
 			// Store the iterator to keep the reference to the mapped IndexedFlow item;
 			sortedNodes.insert(std::make_pair(it->second.flowData.flow, it));
@@ -657,7 +657,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 		{
 			CondensedIterator& condensedIt(it->second);
 			IndexedFlow& nodeData = condensedIt->second;
-			ioNetwork.addLeafNode(*parent, nodeData.flowData.flow, nodeData.flowData.exitFlow, Super::m_nodeNames[nodeData.index], sortedNodeIndex);
+			ioNetwork.addLeafNode(*parent, nodeData.flowData.flow, nodeData.flowData.exitFlow, Super::m_nodeNames[nodeData.index], sortedNodeIndex, nodeData.index);
 			// Remap to sorted indices to help link creation
 			nodeData.index = sortedNodeIndex;
 			++sortedNodeIndex;

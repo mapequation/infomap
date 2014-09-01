@@ -149,8 +149,7 @@ void MemNetwork::parseTrigram(std::string filename)
 
 		if (n1 + m_indexOffset == -1)
 		{
-			// Save bigram and later build trigrams by chaining with other bigrams
-			m_incompleteTrigrams.push_back(Link(n2, n3, weight));
+			addIncompleteM2Link(n2, n3, weight);
 		}
 		else
 			addM2Link(n1, n2, n2, n3, weight);
@@ -236,55 +235,101 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 	printParsingResult(false);
 }
 
-void MemNetwork::simulateMemoryFromOrdinaryNetworkToIncompleteData()
+void MemNetwork::simulateMemoryToIncompleteData()
 {
-	if (m_incompleteTrigrams.empty())
+	if (m_numIncompleteM2Links == 0)
 		return;
 
-	std::cout << "patching " << m_incompleteTrigrams.size() << " incomplete trigrams " << std::flush;
+	std::cout << "patching " << m_numIncompleteM2Links << " incomplete trigrams " << std::flush;
 
-	// Map all m1 links on the target node
-	typedef std::pair<double, std::vector<Link> > SimulatedMemNodes; // <sum link weight, [links targeting same node]>
-	typedef std::map<unsigned int, SimulatedMemNodes> LinkTargetMap;
-	LinkTargetMap n2Map; // (n2 -> all n1 targeting n2)
-	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
+	// Store all incomplete data on a compact array, with fast mapping from incomplete link source index to the compact index
+	std::deque<std::deque<ComplementaryData> > complementaryData(m_numIncompleteM2Links);
+	std::vector<int> incompleteSourceMapping(m_numNodes, -1);
+	int compactIndex = 0;
+	for (LinkMap::const_iterator linkIt(m_incompleteM2Links.begin()); linkIt != m_incompleteM2Links.end(); ++linkIt, ++compactIndex)
 	{
 		unsigned int n1 = linkIt->first;
+		incompleteSourceMapping[n1] = compactIndex;
 		const std::map<unsigned int, double>& subLinks = linkIt->second;
 		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
 			unsigned int n2 = subIt->first;
 			double weight = subIt->second;
-			SimulatedMemNodes& simulatedMemNodes = n2Map[n2];
-			if (simulatedMemNodes.second.empty())
-				simulatedMemNodes.first = 0.0;
-			simulatedMemNodes.second.push_back(Link(n1, n2, weight));
-			simulatedMemNodes.first += weight;
+			complementaryData[compactIndex].push_back(ComplementaryData(n1, n2, weight));
+		}
+	}
+
+	// Loop through all m2 links and store all chainable links to the incomplete data
+	for (M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
+	{
+		const M2Node& m2source = linkIt->first;
+		const std::map<M2Node, double>& subLinks = linkIt->second;
+		for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			const M2Node& m2target = subIt->first;
+			double weight = subIt->second;
+
+			// Check physical source index for exact and partial match
+			int compactIndex = incompleteSourceMapping[m2source.physIndex];
+			if (compactIndex != -1)
+			{
+				std::deque<ComplementaryData>& matchedComplementaryData = complementaryData[compactIndex];
+				for (unsigned int i = 0; i < matchedComplementaryData.size(); ++i)
+				{
+					ComplementaryData& data = matchedComplementaryData[i];
+					if (data.incompleteLink.n2 == m2target.physIndex)
+						data.addExactMatch(m2source.priorState, m2source.physIndex, weight);
+					else
+						data.addPartialMatch(m2source.priorState, m2source.physIndex, weight);
+				}
+			}
+
+			// Check target index for shifted match (using the physical source as memory data)
+			compactIndex = incompleteSourceMapping[m2target.physIndex];
+			if (compactIndex != -1)
+			{
+				std::deque<ComplementaryData>& matchedComplementaryData = complementaryData[compactIndex];
+				for (unsigned int i = 0; i < matchedComplementaryData.size(); ++i)
+				{
+					ComplementaryData& data = matchedComplementaryData[i];
+					data.addShiftedMatch(m2target.priorState, m2target.physIndex, weight);
+				}
+			}
 		}
 	}
 
 	unsigned int numM2LinksBefore = m_numM2Links;
 
-	// For all bigrams (n2,n3), create trigrams (n1, n2, n3) for all n1 in m1 links targeting n2.
-	for (unsigned int i = 0; i < m_incompleteTrigrams.size(); ++i)
+	// Create the additional memory links from the aggregated complementary data
+	for (unsigned int i = 0; i < m_numIncompleteM2Links; ++i)
 	{
-		const Link& link = m_incompleteTrigrams[i];
-		LinkTargetMap::const_iterator targetIt = n2Map.find(link.n1);
-		if (targetIt != n2Map.end())
+		std::deque<ComplementaryData>& complementaryLinks = complementaryData[i];
+		for (unsigned int i = 0; i < complementaryLinks.size(); ++i)
 		{
-			const SimulatedMemNodes& simulatedMemNodes = targetIt->second;
-			for (unsigned int j = 0; j < simulatedMemNodes.second.size(); ++j)
+			ComplementaryData& data = complementaryLinks[i];
+			if (data.exactMatch.size() > 0)
 			{
-				double normalizationFactor = simulatedMemNodes.second[j].weight / simulatedMemNodes.first;
-				addM2Link(simulatedMemNodes.second[j].n1, link.n1, link.n1, link.n2, link.weight * normalizationFactor);
+				for (std::deque<Link>::const_iterator linkIt(data.exactMatch.begin()); linkIt != data.exactMatch.end(); ++linkIt)
+					addM2Link(linkIt->n1, linkIt->n2, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->weight / data.sumWeightExactMatch);
+			}
+			else if (data.partialMatch.size() > 0)
+			{
+				for (std::deque<Link>::const_iterator linkIt(data.partialMatch.begin()); linkIt != data.partialMatch.end(); ++linkIt)
+					addM2Link(linkIt->n1, linkIt->n2, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->weight / data.sumWeightPartialMatch);
+			}
+			else if (data.shiftedMatch.size() > 0)
+			{
+				for (std::deque<Link>::const_iterator linkIt(data.shiftedMatch.begin()); linkIt != data.shiftedMatch.end(); ++linkIt)
+					addM2Link(linkIt->n1, linkIt->n2, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->weight / data.sumWeightShiftedMatch);
+			}
+			else
+			{
+				// No matching data to complement, create self-memory link
+				addM2Link(data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight);
 			}
 		}
-		else
-		{
-			// No link to chain, create self-link
-			addM2Link(link.n1, link.n1, link.n1, link.n2, link.weight);
-		}
 	}
+
 
 	std::cout << "with " << (m_numM2Links - numM2LinksBefore) << " new memory links... " << std::flush;
 }
@@ -405,9 +450,39 @@ bool MemNetwork::insertM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2Pr
 	}
 }
 
+bool MemNetwork::addIncompleteM2Link(unsigned int n1, unsigned int n2, double weight)
+{
+	++m_numIncompleteM2LinksFound;
+
+	if (m_config.nodeLimit > 0 && (n1 >= m_config.nodeLimit || n2 >= m_config.nodeLimit))
+		return false;
+
+	++m_numIncompleteM2Links;
+
+	// Aggregate link weights if they are definied more than once
+	LinkMap::iterator firstIt = m_incompleteM2Links.lower_bound(n1);
+	if (firstIt != m_incompleteM2Links.end() && firstIt->first == n1) // First linkEnd already exists, check second linkEnd
+	{
+		std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(n2, weight));
+		if (!ret2.second)
+		{
+			ret2.first->second += weight;
+			++m_numAggregatedIncompleteM2Links;
+			--m_numIncompleteM2Links;
+			return false;
+		}
+	}
+	else
+	{
+		m_incompleteM2Links.insert(firstIt, std::make_pair(n1, std::map<unsigned int, double>()))->second.insert(std::make_pair(n2, weight));
+	}
+
+	return true;
+}
+
 void MemNetwork::finalizeAndCheckNetwork()
 {
-	simulateMemoryFromOrdinaryNetworkToIncompleteData();
+	simulateMemoryToIncompleteData();
 
 	if (m_m2Links.empty())
 		throw InputDomainError("No memory links added!");

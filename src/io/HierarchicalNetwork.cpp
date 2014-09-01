@@ -64,12 +64,17 @@ SNode& HierarchicalNetwork::addNode(SNode& parent, double flow, double exitFlow)
 
 SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex)
 {
+	return addLeafNode(parent, flow, exitFlow, name, leafIndex, leafIndex);
+}
+
+SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex, unsigned int originalIndex)
+{
 	if (leafIndex > m_leafNodes.size())
 		throw std::range_error("In HierarchicalNetwork::addLeafNode(), leaf index out of range or missed calling prepare method.");
 	SNode& n = addNode(parent, flow, exitFlow);
 	n.data.name = name;
 	n.isLeaf = true;
-	n.leafIndex = leafIndex;
+	n.originalLeafIndex = originalIndex;
 	m_leafNodes[leafIndex] = &n;
 	propagateNodeNameUpInHierarchy(n);
 	if (n.depth > m_maxDepth)
@@ -254,7 +259,7 @@ void HierarchicalNetwork::writeHumanReadableTreeRecursiveHelper(std::ostream& ou
 		SNode& child = *node.children[i];
 		if (child.isLeaf)
 		{
-			out << prefix << (i+1) << " " << child.data.flow << " \"" << child.data.name << "\"\n";
+			out << prefix << (i+1) << " " << child.data.flow << " \"" << child.data.name << "\" " << child.originalLeafIndex << "\n";
 //			out << prefix << (i+1) << " " << child.data.flow << " " << child.data.enterFlow << " " << child.data.exitFlow << " \"" << child.data.name << "\"\n";
 		}
 		else
