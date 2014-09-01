@@ -592,7 +592,7 @@ void MemNetwork::printNetworkAsPajek(std::string filename)
 	for (unsigned int i = 0; i < m_numNodes; ++i)
 		out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
 
-	out << "*3grams " << m_links.size() << "\n";
+	out << "*3grams " << m_numM2Links << "\n";
 	for (M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
 	{
 		const M2Node& m2source = linkIt->first;
