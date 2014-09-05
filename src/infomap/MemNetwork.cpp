@@ -385,6 +385,12 @@ bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned 
 
 	if(m_config.includeSelfLinks)
 	{
+		if (n1 == n2 && n1PriorState == n2PriorState)
+		{
+			++m_numMemorySelfLinks;
+			m_totalMemorySelfLinkWeight += weight;
+		}
+
 		insertM2Link(n1PriorState, n1, n2PriorState, n2, weight);
 		addM2Node(n1PriorState, n1, firstM2NodeWeight);
 		addM2Node(n2PriorState, n2, secondM2NodeWeight);

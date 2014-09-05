@@ -444,7 +444,8 @@ void Network::zoom()
 	m_numSelfLinks += numAdditionalLinks;
 	m_totalSelfLinkWeight += sumAdditionalLinkWeight;
 
-	std::cout << "(Added " << numAdditionalLinks << " self-links. " << (m_totalSelfLinkWeight / m_totalLinkWeight * 100) << "% of the total link weight is now from self-links.)\n";
+	std::cout << "(Added " << numAdditionalLinks << " self-links with total weight " << sumAdditionalLinkWeight <<
+			". (" << (m_totalSelfLinkWeight / m_totalLinkWeight * 100) << "% of the total link weight is now from self-links.)\n";
 }
 
 void Network::printNetworkAsPajek(std::string filename)
