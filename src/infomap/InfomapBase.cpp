@@ -960,10 +960,10 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 	// Force create modules even if worse (don't mix modules and leaf nodes under the same parent)
 	consolidateModules();
 	unsigned int numLevelsConsolidated = 1;
+	unsigned int levelAggregationLimit = levelAggregationLimit();
 
 	// Reapply core algorithm on modular network, replacing modules with super modules
-//	while (numTopModules() > 1 && numLevelsConsolidated != m_config.levelAggregationLimit)
-	while (numTopModules() > 1 && numLevelsConsolidated != m_config.levelAggregationLimit && m_tuneIterationIndex != 0)
+	while (numTopModules() > 1 && numLevelsConsolidated != levelAggregationLimit)
 	{
 		double consolidatedCodelength = codelength;
 		double consolidatedIndexLength = indexCodelength;

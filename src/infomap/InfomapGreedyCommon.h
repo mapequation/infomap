@@ -294,7 +294,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 		if (!current.dirty)
 			continue;
 
-		if (Super::m_moduleMembers[current.index] > 1 && Super::m_aggregationLevel == 0 && Super::m_tuneIterationIndex == 0)
+		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop())
 			continue;
 
 		// If no links connecting this node with other nodes, it won't move into others,
