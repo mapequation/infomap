@@ -942,6 +942,7 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fast)
 {
 	++m_iterationCount;
+	m_aggregationLevel = 0;
 	bool verbose = (m_subLevel == 0 && m_config.verbosity != 0) ||
 			(isSuperLevelOnTopLevel() && m_config.verbosity >= 3);
 	// Merge and collapse repeatedly until no code improvement or only one big cluster left
@@ -965,6 +966,8 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 		double consolidatedCodelength = codelength;
 		double consolidatedIndexLength = indexCodelength;
 		double consolidatedModuleLength = moduleCodelength;
+
+		++m_aggregationLevel;
 
 		if (m_subLevel == 0 && m_config.benchmark)
 			Logger::benchmark(io::Str() << "lvl" << numLevelsConsolidated, codelength, numTopModules(),
@@ -1040,7 +1043,6 @@ void InfomapBase::generalTune(unsigned int level)
 void InfomapBase::fineTune()
 {
 	DEBUG_OUT("InfomapBase::fineTune(" << *root() << ")..." << std::endl);
-	m_isCoarseTune = false;
 	setActiveNetworkFromLeafs();
 
 	// Init dynamic modules from existing modular structure
@@ -1116,6 +1118,7 @@ void InfomapBase::coarseTune(unsigned int recursiveCount)
 	ASSERT(std::abs(codelength - old_codelength) < 1.0e-4);
 
 	mergeAndConsolidateRepeatedly(true);
+	m_isCoarseTune = false;
 }
 
 void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)

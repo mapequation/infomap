@@ -233,6 +233,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModules()
 	unsigned int loopLimit = Super::m_config.coreLoopLimit;
 	if (Super::m_config.coreLoopLimit > 0 && Super::m_config.randomizeCoreLoopLimit)
 		loopLimit = static_cast<unsigned int>(Super::m_rand() * Super::m_config.coreLoopLimit) + 1;
+	unsigned int loopLimitOnAggregationLevels = -1;
 
 	// Iterate while the optimization loop moves some nodes within the dynamic modular structure
 	do
@@ -240,7 +241,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModules()
 		oldCodelength = Super::codelength;
 		tryMoveEachNodeIntoBestModule(); // returns numNodesMoved
 		++numOptimizationRounds;
-	} while (numOptimizationRounds != loopLimit &&
+	} while (numOptimizationRounds != (Super::m_aggregationLevel == 0 && !Super::m_isCoarseTune? loopLimit : loopLimitOnAggregationLevels) &&
 			Super::codelength < oldCodelength - Super::m_config.minimumCodelengthImprovement);
 
 	return numOptimizationRounds;
