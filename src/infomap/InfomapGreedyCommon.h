@@ -45,7 +45,10 @@ class InfomapGreedyCommon : public InfomapGreedySpecialized<typename derived_tra
 	typedef Edge<NodeBase>												EdgeType;
 public:
 
-	InfomapGreedyCommon(const Config& conf) : InfomapGreedySpecialized<FlowType>(conf) {}
+	InfomapGreedyCommon(const Config& conf) :
+		InfomapGreedySpecialized<FlowType>(conf),
+		m_coreLoopCount(0)
+		{}
 	virtual ~InfomapGreedyCommon() {}
 
 
@@ -72,7 +75,7 @@ protected:
 
 	virtual unsigned int consolidateModules(bool replaceExistingStructure, bool asSubModules);
 
-
+	unsigned int m_coreLoopCount;
 };
 
 
@@ -228,7 +231,7 @@ inline
 unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModules()
 {
 	DEBUG_OUT("\nInfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModules()");
-	unsigned int numOptimizationRounds = 0;
+	m_coreLoopCount = 0;
 	double oldCodelength = Super::codelength;
 	unsigned int loopLimit = Super::m_config.coreLoopLimit;
 	if (Super::m_config.coreLoopLimit > 0 && Super::m_config.randomizeCoreLoopLimit)
@@ -240,11 +243,11 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModules()
 	{
 		oldCodelength = Super::codelength;
 		tryMoveEachNodeIntoBestModule(); // returns numNodesMoved
-		++numOptimizationRounds;
-	} while (numOptimizationRounds != (Super::m_aggregationLevel == 0 && !Super::m_isCoarseTune? loopLimit : loopLimitOnAggregationLevels) &&
+		++m_coreLoopCount;
+	} while (m_coreLoopCount != (Super::m_aggregationLevel == 0 && !Super::m_isCoarseTune? loopLimit : loopLimitOnAggregationLevels) &&
 			Super::codelength < oldCodelength - Super::m_config.minimumCodelengthImprovement);
 
-	return numOptimizationRounds;
+	return m_coreLoopCount;
 }
 
 
@@ -289,6 +292,9 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 		NodeType& current = Super::getNode(*Super::m_activeNetwork[flip]);
 
 		if (!current.dirty)
+			continue;
+
+		if (Super::m_moduleMembers[current.index] > 1 && Super::m_aggregationLevel == 0 && Super::m_tuneIterationIndex == 0)
 			continue;
 
 		// If no links connecting this node with other nodes, it won't move into others,

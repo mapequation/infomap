@@ -825,6 +825,8 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 		return;
 	}
 
+	m_tuneIterationIndex = 0;
+
 	setActiveNetworkFromChildrenOfRoot();
 	initConstantInfomapTerms();
 	initModuleOptimization();
@@ -860,13 +862,13 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 
 	if (!fast && m_config.tuneIterationLimit != 1 && numTopModules() != numLeafNodes())
 	{
-		unsigned int tuneIterationCount = 1;
 		unsigned int coarseTuneLevel = m_config.coarseTuneLevel - 1;
 		bool doFineTune = true;
 //		bool coarseTuned = false;
 		oldCodelength = codelength;
 		while (numTopModules() > 1)
 		{
+			++m_tuneIterationIndex;
 			if (doFineTune)
 			{
 				fineTune();
@@ -892,8 +894,7 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 					RELEASE_OUT((compression * 100) << "% " << std::flush);
 				oldCodelength = codelength;
 			}
-			++tuneIterationCount;
-			if (m_config.tuneIterationLimit == tuneIterationCount)
+			if (m_config.tuneIterationLimit == m_tuneIterationIndex + 1)
 				break;
 			doFineTune = !doFineTune;
 		}
@@ -961,7 +962,8 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 	unsigned int numLevelsConsolidated = 1;
 
 	// Reapply core algorithm on modular network, replacing modules with super modules
-	while (numTopModules() > 1 && numLevelsConsolidated != m_config.levelAggregationLimit)
+//	while (numTopModules() > 1 && numLevelsConsolidated != m_config.levelAggregationLimit)
+	while (numTopModules() > 1 && numLevelsConsolidated != m_config.levelAggregationLimit && m_tuneIterationIndex != 0)
 	{
 		double consolidatedCodelength = codelength;
 		double consolidatedIndexLength = indexCodelength;

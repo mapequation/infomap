@@ -49,6 +49,7 @@ public:
 	 	m_activeNetwork(m_nonLeafActiveNetwork),
 	 	m_isCoarseTune(false),
 	 	m_iterationCount(0),
+	 	m_tuneIterationIndex(0),
 	 	m_aggregationLevel(0),
 	 	m_numNonTrivialTopModules(0),
 	 	m_subLevel(0),
@@ -250,6 +251,7 @@ protected:
 	std::vector<unsigned int> m_moveTo;
 	bool m_isCoarseTune;
 	unsigned int m_iterationCount;
+	unsigned int m_tuneIterationIndex;
 	unsigned int m_aggregationLevel;
 	unsigned int m_numNonTrivialTopModules;
 	unsigned int m_subLevel;
