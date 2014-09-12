@@ -39,6 +39,7 @@
 #include "../utils/infomath.h"
 #include "../io/convert.h"
 #include "../utils/Stopwatch.h"
+#include "../utils/Date.h"
 #include "MemFlowNetwork.h"
 #include "MemNetwork.h"
 #include "MultiplexNetwork.h"
@@ -47,7 +48,6 @@
 #include <stdio.h>
 #endif
 #include <map>
-#include "../utils/Date.h"
 #include "Network.h"
 #include "FlowNetwork.h"
 #include "../io/version.h"
@@ -61,6 +61,15 @@ void InfomapBase::run()
 #ifdef _OPENMP
 	RELEASE_OUT("(OpenMP " << _OPENMP << " detected, trying to parallelize the recursive part on " <<
 			omp_get_num_procs() << " processors...)\n" << std::flush);
+
+//	omp_sched_t sched;
+//	int mod;
+//	omp_get_schedule(&sched, &mod);
+//	std::cout << "schedule type: " << sched << ", chunk size: " << mod << "\n";
+//	std::cout << "sched_static: " << omp_sched_static << "\n";
+//	std::cout << "sched_dynamic: " << omp_sched_dynamic << "\n";
+//	std::cout << "sched_guided: " << omp_sched_guided << "\n";
+//	std::cout << "sched_auto: " << omp_sched_auto << "\n";
 #endif
 
 
@@ -258,6 +267,8 @@ void InfomapBase::runPartition()
 //					codelength << ", hc: " << hierarchicalCodelength <<
 //					", hc-queue.mc: " << sumConsolidatedCodelength << ") ");
 
+//	double t0 = omp_get_wtime();
+
 	while (partitionQueue.size() > 0)
 	{
 		if (m_config.verbosity > 0)
@@ -309,6 +320,8 @@ void InfomapBase::runPartition()
 	{
 		RELEASE_OUT("\n");
 	}
+//	double t1 = omp_get_wtime();
+//	RELEASE_OUT("\nParallel wall-time: " << (t1-t0));
 }
 
 
@@ -700,7 +713,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 //			for (int moduleIndex = iProc; moduleIndex < numModulesInt; moduleIndex += numProcs)
 //			{
 //#pragma omp parallel for schedule(dynamic, 1)
-#pragma omp for
+#pragma omp parallel for schedule(dynamic)
 	for(iModule = 0; iModule < numModulesInt; ++iModule)
 	{
 		unsigned int moduleIndex = static_cast<unsigned int>(iModule);
@@ -1087,7 +1100,10 @@ void InfomapBase::coarseTune(unsigned int recursiveCount)
 		return;
 
 	m_isCoarseTune = true;
-	partitionEachModule(recursiveCount, m_config.fastCoarseTunePartition);
+	if (m_subLevel == 0)
+		partitionEachModuleParallel(recursiveCount, m_config.fastCoarseTunePartition);
+	else
+		partitionEachModule(recursiveCount, m_config.fastCoarseTunePartition);
 
 	// Prepare leaf network to move into the sub-module structure given from partitioning each module
 	setActiveNetworkFromLeafs();
@@ -1168,6 +1184,96 @@ void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)
 
 	DEBUG_OUT("Partitioning each module gave " << moduleIndexOffset << " sub-modules from " << m_treeData.numLeafNodes() <<
 			" nodes in " << root()->childDegree() << " modules." << std::endl);
+}
+
+void InfomapBase::partitionEachModuleParallel(unsigned int recursiveCount, bool fast)
+{
+#ifndef _OPENMP
+	return partitionEachModule(recursiveCount, fast);
+#endif
+
+//	double t0 = omp_get_wtime();
+
+	// Store pointers to all modules in a vector
+	unsigned int numModules = root()->childDegree();
+	std::vector<NodeBase*> modules(numModules);
+	NodeBase::sibling_iterator moduleIt(root()->begin_child());
+	for (unsigned int i = 0; i < numModules; ++i, ++moduleIt)
+		modules[i] = moduleIt.base();
+
+	// Sort modules on flow
+	std::multimap<double, NodeBase*, std::greater<double> > sortedModules;
+	for (unsigned int i = 0; i < numModules; ++i)
+	{
+		sortedModules.insert(std::pair<double, NodeBase*>(getNodeData(*modules[i]).flow, modules[i]));
+	}
+	std::multimap<double, NodeBase*, std::greater<double> >::const_iterator sortedModuleIt(sortedModules.begin());
+	for (unsigned int i = 0; i < numModules; ++i, ++sortedModuleIt)
+		modules[i] = sortedModuleIt->second;
+
+//	double t1 = omp_get_wtime();
+//	std::cout << "Sorting: " << (t1-t0)*1000 << " ms";
+
+	// Partition each module in a parallel loop
+	int numModulesInt = static_cast<int>(numModules);
+	int iModule;
+#pragma omp parallel for schedule(dynamic)
+	for(iModule = 0; iModule < numModulesInt; ++iModule)
+	{
+//		omp_sched_t sched;
+//		int mod;
+//		omp_get_schedule(&sched, &mod);
+//		printf("\nThread %d in loop index %d (schedule type: %d, chunk size: %d)\n", omp_get_thread_num(), iModule, sched, mod);
+
+		unsigned int moduleIndex = static_cast<unsigned int>(iModule);
+		NodeBase& module = *modules[moduleIndex];
+
+		// Delete former sub-structure if exists
+		module.getSubStructure().subInfomap.reset(0);
+
+		if (module.childDegree() > 1)
+		{
+			std::auto_ptr<InfomapBase> subInfomap(getNewInfomapInstance());
+			subInfomap->reseed(getSeedFromCodelength(codelength));
+			subInfomap->m_subLevel = m_subLevel + 1;
+			subInfomap->initSubNetwork(module, false);
+			subInfomap->partition(recursiveCount, fast);
+
+			module.getSubStructure().subInfomap = subInfomap;
+		}
+	}
+
+//	double t2 = omp_get_wtime();
+//	std::cout << "\nParallel for: " << (t2-t1)*1000 << " ms\n";
+
+	// Collect result: set sub-module index on each module
+	unsigned int moduleIndexOffset = 0;
+	for (unsigned int i = 0; i < numModules; ++i)
+	{
+		NodeBase& module = *modules[i];
+		if (module.getSubStructure().haveSubInfomapInstance())
+		{
+			InfomapBase& subInfomap = *module.getSubStructure().subInfomap;
+
+			NodeBase::sibling_iterator originalLeafNodeIt(module.begin_child());
+			for (TreeData::leafIterator leafIt(subInfomap.m_treeData.begin_leaf()), endIt(subInfomap.m_treeData.end_leaf());
+					leafIt != endIt; ++leafIt, ++originalLeafNodeIt)
+			{
+				NodeBase& node = **leafIt;
+				originalLeafNodeIt->index = node.parent->index + moduleIndexOffset;
+			}
+			moduleIndexOffset += subInfomap.m_treeData.root()->childDegree();
+		}
+		else
+		{
+			for (NodeBase::sibling_iterator nodeIt(module.begin_child()), endIt(module.end_child());
+					nodeIt != endIt; ++nodeIt)
+			{
+				nodeIt->index = moduleIndexOffset;
+			}
+			moduleIndexOffset += 1;
+		}
+	}
 }
 
 bool InfomapBase::initNetwork()

@@ -44,6 +44,7 @@ struct SubStructure
 	SubStructure();
 	~SubStructure();
 	std::auto_ptr<InfomapBase> subInfomap;
+	bool haveSubInfomapInstance() { return subInfomap.get() != 0; }
 	bool exploredWithoutImprovement;
 };
 

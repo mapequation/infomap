@@ -47,6 +47,12 @@ public:
     	m_running = true;
     }
 
+    void reset()
+    {
+    	if (m_running)
+    		m_start = std::clock();
+    }
+
     void stop()
     {
         if (m_running)

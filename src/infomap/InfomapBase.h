@@ -227,6 +227,7 @@ private:
 	 * leaf node with the sub-module structure found by partitioning each module.
 	 */
 	void partitionEachModule(unsigned int recursiveCount = 0, bool fast = false);
+	void partitionEachModuleParallel(unsigned int recursiveCount = 0, bool fast = false);
 	void initSubNetwork(NodeBase& parent, bool recalculateFlow = false);
 	void initSuperNetwork(NodeBase& parent);
 	void setActiveNetworkFromChildrenOfRoot();
