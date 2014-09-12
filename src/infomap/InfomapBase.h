@@ -196,8 +196,8 @@ protected:
 	bool isFullNetwork() { return m_subLevel == 0 && m_aggregationLevel == 0; }
 	bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 
-	unsigned int levelAggregationLimit() {
-		return isFirstLoop ? 1 : m_config.levelAggregationLimit;
+	unsigned int getLevelAggregationLimit() {
+		return isFirstLoop() ? 1 : m_config.levelAggregationLimit;
 	}
 
 	unsigned long int getSeedFromCodelength(double value)
