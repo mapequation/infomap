@@ -1,8 +1,15 @@
-#Generated Makefile
-CXX  = g++
-CXXFLAGS = -Wall -O4 -pipe -fopenmp
-LINKER = $(CXX)
-LFLAGS = -fopenmp
+CXXFLAGS = -Wall -pipe
+LDFLAGS =
+CXX_CLANG := $(shell $(CXX) --version 2>/dev/null | grep clang)
+ifeq "$(CXX_CLANG)" ""
+	CXXFLAGS += -O4
+	ifneq "$(MAKECMDGOALS)" "noomp"
+		CXXFLAGS += -fopenmp
+		LDFLAGS += -fopenmp
+	endif
+else
+	CXXFLAGS += -O3
+endif
 
 HEADERS = \
 src/infomap/Edge.h \
@@ -73,17 +80,15 @@ all: $(TARGET)
 
 ## Clean Rule
 clean:
-	@-rm -f $(TARGET) $(OBJECTS)
+	$(RM) $(TARGET) $(OBJECTS)
 
-noomp: $(OBJECTS)
-	@echo "Linking object files to target $(TARGET) without OpenMP..."
-	@$(LINKER) -o $(TARGET) $^
-	@echo "-- Link finished --"
+noomp: $(TARGET)
+	@true
 
 ## Rule for making the actual target
 $(TARGET): $(OBJECTS)
 	@echo "Linking object files to target $@..."
-	@$(LINKER) $(LFLAGS) -o $@ $^
+	$(CXX) $(LDFLAGS) -o $@ $^
 	@echo "-- Link finished --"
 
 ## Generic compilation rule for object files from cpp files
