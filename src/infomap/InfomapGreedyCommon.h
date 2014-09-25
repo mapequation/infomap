@@ -63,13 +63,18 @@ protected:
 	virtual double calcCodelengthOnRootOfLeafNodes(const NodeBase& parent);
 	virtual double calcCodelengthOnModuleOfModules(const NodeBase& parent);
 	virtual double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent);
+	virtual std::pair<double, double> calcCodelength(const NodeBase& parent);
 
 	virtual void calculateCodelengthFromActiveNetwork(DetailedBalance);
 	virtual void calculateCodelengthFromActiveNetwork(NoDetailedBalance);
 
 	virtual unsigned int optimizeModules();
 
+	virtual unsigned int optimizeModulesCrude();
+
 	unsigned int tryMoveEachNodeIntoBestModule();
+
+	unsigned int tryMoveEachNodeIntoStrongestConnectedModule();
 
 	virtual void moveNodesToPredefinedModules();
 
@@ -154,6 +159,20 @@ inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnMod
 
 	return infomath::plogp(totalCodewordUse) - sumEnterLogEnter - infomath::plogp(parentExit);
 }
+
+template<typename InfomapGreedyDerivedType>
+inline std::pair<double, double> InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelength(const NodeBase& parent)
+{
+	double indexCodelength = calcCodelengthOnModuleOfModules(parent);
+	double moduleCodelength = 0.0;
+	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
+			childIt != endIt; ++childIt)
+	{
+		moduleCodelength += calcCodelengthOnModuleOfLeafNodes(*childIt);
+	}
+	return std::make_pair(indexCodelength, moduleCodelength);
+}
+
 
 /**
  * Specialized for the case when enter flow equals exit flow
@@ -243,6 +262,29 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModules()
 	{
 		oldCodelength = Super::codelength;
 		tryMoveEachNodeIntoBestModule(); // returns numNodesMoved
+		++m_coreLoopCount;
+	} while (m_coreLoopCount != (Super::m_aggregationLevel == 0 && !Super::m_isCoarseTune? loopLimit : loopLimitOnAggregationLevels) &&
+			Super::codelength < oldCodelength - Super::m_config.minimumCodelengthImprovement);
+
+	return m_coreLoopCount;
+}
+
+template<typename InfomapGreedyDerivedType>
+inline
+unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModulesCrude()
+{
+	m_coreLoopCount = 0;
+	double oldCodelength = Super::codelength;
+	unsigned int loopLimit = Super::m_config.coreLoopLimit;
+	if (Super::m_config.coreLoopLimit > 0 && Super::m_config.randomizeCoreLoopLimit)
+		loopLimit = static_cast<unsigned int>(Super::m_rand() * Super::m_config.coreLoopLimit) + 1;
+	unsigned int loopLimitOnAggregationLevels = -1;
+
+	// Iterate while the optimization loop moves some nodes within the dynamic modular structure
+	do
+	{
+		oldCodelength = Super::codelength;
+		tryMoveEachNodeIntoStrongestConnectedModule(); // returns numNodesMoved
 		++m_coreLoopCount;
 	} while (m_coreLoopCount != (Super::m_aggregationLevel == 0 && !Super::m_isCoarseTune? loopLimit : loopLimitOnAggregationLevels) &&
 			Super::codelength < oldCodelength - Super::m_config.minimumCodelengthImprovement);
@@ -496,6 +538,68 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			current.dirty = false;
 
 		offset += numNodes;
+	}
+
+	return numMoved;
+}
+
+
+/**
+ * Try fast and crude minimization of the codelength by trying to move nodes into strongest connected modules.
+ * @return The number of nodes moved.
+ */
+template<typename InfomapGreedyDerivedType>
+inline
+unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoStrongestConnectedModule()
+{
+	unsigned int numNodes = Super::m_activeNetwork.size();
+	// Get random enumeration of nodes
+	std::vector<unsigned int> randomOrder(numNodes);
+	infomath::getRandomizedIndexVector(randomOrder, Super::m_rand);
+
+	unsigned int numMoved = 0;
+	for (unsigned int i = 0; i < numNodes; ++i)
+	{
+		// Pick nodes in random order
+		unsigned int flip = randomOrder[i];
+		NodeType& current = Super::getNode(*Super::m_activeNetwork[flip]);
+
+		if (!current.dirty) //TODO: Only skip stable nodes until converged, then start over as a fine tune?
+			continue;
+
+		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop())
+			continue;
+
+		unsigned int strongestConnectedModule = current.index;
+		double maxFlow = 0.0;
+		// For all outlinks
+		for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
+				edgeIt != endIt; ++edgeIt)
+		{
+			EdgeType& edge = **edgeIt;
+			if (edge.data.flow > maxFlow) {
+				maxFlow = edge.data.flow;
+				strongestConnectedModule = edge.target.index;
+			}
+		}
+
+		// Move to strongest connected module
+		if(strongestConnectedModule != current.index)
+		{
+			current.index = strongestConnectedModule;
+
+			++numMoved;
+
+			// Mark neighbours as dirty
+			for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
+					edgeIt != endIt; ++edgeIt)
+				(*edgeIt)->target.dirty = true;
+			for (NodeBase::edge_iterator edgeIt(current.begin_inEdge()), endIt(current.end_inEdge());
+					edgeIt != endIt; ++edgeIt)
+				(*edgeIt)->source.dirty = true;
+		}
+		else
+			current.dirty = false;
 	}
 
 	return numMoved;

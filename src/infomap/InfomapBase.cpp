@@ -965,13 +965,14 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 	}
 
 	// Core loop, merging modules
-	unsigned int numOptimizationLoops = optimizeModules();
+	unsigned int numOptimizationLoops = m_config.fastFirstIteration? optimizeModulesCrude() : optimizeModules();
 
 	if (verbose)
 		RELEASE_OUT(numOptimizationLoops << ", " << std::flush);
 
 	// Force create modules even if worse (don't mix modules and leaf nodes under the same parent)
 	consolidateModules();
+
 	unsigned int numLevelsConsolidated = 1;
 	unsigned int levelAggregationLimit = getLevelAggregationLimit();
 

@@ -139,6 +139,15 @@ protected:
 	virtual unsigned int optimizeModules() = 0;
 
 	/**
+	 * Loop through each node and move it to the strongest connected
+	 * module. Start over until converged.
+	 *
+	 * @return The number of effective optimization rounds,
+	 * i.e. zero if no move was made.
+	 */
+	virtual unsigned int optimizeModulesCrude() = 0;
+
+	/**
 	 * Take the non-empty dynamic modules from the optimization of the active network
 	 * and create module nodes to insert above the active network in the tree. Also
 	 * aggregate the links from the active network to inter-module links in the new
@@ -170,6 +179,8 @@ protected:
 
 	virtual double calcCodelengthOnModuleOfModules(const NodeBase& parent) = 0;
 
+	virtual std::pair<double, double> calcCodelength(const NodeBase& parent) = 0;
+
 	virtual void generateNetworkFromChildren(NodeBase& parent) = 0;
 
 	virtual void transformNodeFlowToEnterFlow(NodeBase* parent) = 0;
@@ -197,7 +208,7 @@ protected:
 	bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 
 	unsigned int getLevelAggregationLimit() {
-		return isFirstLoop() ? 1 : m_config.levelAggregationLimit;
+		return (m_config.fastFirstIteration && isFirstLoop()) ? 1 : m_config.levelAggregationLimit;
 	}
 
 	unsigned long int getSeedFromCodelength(double value)
