@@ -251,7 +251,7 @@ private:
 	void printNetworkData(std::string filename = "", bool sort = true);
 	virtual void printClusterNumbers(std::ostream& out);
 	void printTree(std::ostream& out, const NodeBase& root, const std::string& prefix = "");
-	void printPerLevelCodelength(std::ostream& out);
+	unsigned int printPerLevelCodelength(std::ostream& out);
 	void aggregatePerLevelCodelength(std::vector<double>& indexCodelengths, std::vector<double>& leafLengths, unsigned int level = 0);
 	void aggregatePerLevelCodelength(NodeBase& root, std::vector<double>& indexCodelengths, std::vector<double>& leafLengths, unsigned int level);
 	DepthStat calcMaxAndAverageDepth();

@@ -94,6 +94,7 @@ void InfomapBase::run()
 
 	std::vector<double> codelengths(m_config.numTrials);
 	std::ostringstream bestSolutionStatistics;
+	unsigned int bestNumLevels = 0;
 
 	for (unsigned int iTrial = 0; iTrial < m_config.numTrials; ++iTrial)
 	{
@@ -137,7 +138,7 @@ void InfomapBase::run()
 			bestHierarchicalCodelength = hierarchicalCodelength;
 			bestSolutionStatistics.str("");
 			printNetworkData();
-			printPerLevelCodelength(bestSolutionStatistics);
+			bestNumLevels = printPerLevelCodelength(bestSolutionStatistics);
 		}
 	}
 
@@ -170,7 +171,7 @@ void InfomapBase::run()
 		std::cout << bestIntermediateStatistics.str() << std::endl << std::endl;
 	}
 
-	std::cout << "Best end solution:" << std::endl;
+	std::cout << "Best end solution in " << bestNumLevels << " levels:" << std::endl;
 	std::cout << bestSolutionStatistics.str() << std::endl;
 
 //	printNetworkDebug("debug", true, false);
@@ -1757,7 +1758,7 @@ void InfomapBase::printTree(std::ostream& out, const NodeBase& root, const std::
 	}
 }
 
-void InfomapBase::printPerLevelCodelength(std::ostream& out)
+unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
 {
 	std::vector<double> indexLengths;
 	std::vector<double> leafLengths;
@@ -1806,6 +1807,7 @@ void InfomapBase::printPerLevelCodelength(std::ostream& out)
 		sumCodelengths += codelengths[i];
 	out << " (sum: " << sumCodelengths << ")" << std::endl;
 
+	return numLevels;
 }
 
 void InfomapBase::aggregatePerLevelCodelength(std::vector<double>& indexLengths,
