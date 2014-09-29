@@ -87,7 +87,7 @@ void InfomapBase::run()
 	}
 
 	oneLevelCodelength = indexCodelength = root()->codelength = calcCodelengthOnRootOfLeafNodes(*root());
-	RELEASE_OUT("One-level codelength: " << indexCodelength << std::endl);
+	RELEASE_OUT("One-level codelength: " << io::toPrecision(indexCodelength) << std::endl);
 
 	if (m_config.benchmark)
 		Logger::benchmark("calcFlow", root()->codelength, 1, 1, 1);
@@ -258,7 +258,8 @@ void InfomapBase::runPartition()
 	else
 	{
 		RELEASE_OUT("Current codelength: " << indexCodelength << " + " <<
-					(hierarchicalCodelength - indexCodelength) << " = " << hierarchicalCodelength<< "\n");
+					(hierarchicalCodelength - indexCodelength) << " = " <<
+					io::toPrecision(hierarchicalCodelength) << "\n");
 		RELEASE_OUT("\nTrying to find deeper structure under current modules recursively... \n");
 	}
 
@@ -305,8 +306,7 @@ void InfomapBase::runPartition()
 //					" -> limit: " << limitCodelength << " bits.\n");
 			RELEASE_OUT("done! Codelength: " << partitionQueue.indexCodelength << " + " <<
 					partitionQueue.leafCodelength << " (+ " << leftToImprove << " left to improve)" <<
-					" -> limit: " << std::setprecision(10) << limitCodelength <<
-					std::setprecision(6) << " bits.\n");
+					" -> limit: " << io::toPrecision(limitCodelength) << " bits.\n");
 		}
 
 		hierarchicalCodelength = limitCodelength;
@@ -315,11 +315,13 @@ void InfomapBase::runPartition()
 	}
 	if (m_config.verbosity == 0)
 	{
-		RELEASE_OUT("to codelength " << hierarchicalCodelength << "\n");
+		RELEASE_OUT(". Found " << partitionQueue.level << " levels with codelength " <<
+				io::toPrecision(hierarchicalCodelength) << "\n");
 	}
 	else
 	{
-		RELEASE_OUT("\n");
+		RELEASE_OUT("  -> Found " << partitionQueue.level << " levels with codelength " <<
+				io::toPrecision(hierarchicalCodelength));
 	}
 //	double t1 = omp_get_wtime();
 //	RELEASE_OUT("\nParallel wall-time: " << (t1-t0));
@@ -506,7 +508,8 @@ void InfomapBase::tryIndexingIteratively()
 	}
 
 	if (verbose && m_config.verbosity == 0)
-		RELEASE_OUT("super modules with estimated codelength " << minHierarchicalCodelength << ". ");
+		RELEASE_OUT("super modules with estimated codelength " <<
+				io::toPrecision(minHierarchicalCodelength) << ". ");
 
 	hierarchicalCodelength = replaceExistingModules ? codelength : minHierarchicalCodelength;
 }
@@ -626,12 +629,12 @@ unsigned int InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partit
 	{
 		RELEASE_OUT(std::setprecision(m_config.verboseNumberPrecision));
 		if (m_config.verbosity == 0)
-			RELEASE_OUT("to codelength " << hierarchicalCodelength << " in " <<
+			RELEASE_OUT("to codelength " << io::toPrecision(hierarchicalCodelength) << " in " <<
 					numTopModules() << " top modules. ");
 		else
 			RELEASE_OUT("done! Added " << numLevelsCreated << " levels with " <<
 					numTopModules() << " top modules to codelength: " <<
-					hierarchicalCodelength << " ");
+					io::toPrecision(hierarchicalCodelength) << " ");
 	}
 
 	return numLevelsCreated;
@@ -918,11 +921,11 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 	{
 		if (m_config.verbosity == 0)
 			RELEASE_OUT("to " << numTopModules() << " modules with codelength " <<
-					std::setprecision(m_config.verboseNumberPrecision) << codelength << std::endl);
+					io::toPrecision(codelength) << std::endl);
 		else
 		{
 			RELEASE_OUT("Two-level codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
-					codelength << std::endl);
+					io::toPrecision(codelength) << std::endl);
 		}
 	}
 
@@ -1574,7 +1577,8 @@ void InfomapBase::consolidateExternalClusterData()
 	hierarchicalCodelength = codelength;
 
 	ALL_OUT("done! Two-level codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
-			codelength << " in " << numTopModules() << " modules." << std::endl);
+			io::toPrecision(codelength) <<
+			" in " << numTopModules() << " modules." << std::endl);
 }
 
 bool InfomapBase::checkAndConvertBinaryTree()
