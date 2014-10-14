@@ -51,6 +51,7 @@ public:
 	 	m_totalLinkWeight(0.0),
 	 	m_numAggregatedLinks(0),
 	 	m_numSelfLinks(0),
+	 	m_numSelfLinksFound(0),
 	 	m_totalSelfLinkWeight(0),
 		m_addSelfLinks(m_config.selfTeleportationProbability > 0 && m_config.selfTeleportationProbability < 1),
 		m_numAdditionalLinks(0),
@@ -70,6 +71,7 @@ public:
 	 	m_totalLinkWeight(0.0),
 	 	m_numAggregatedLinks(0),
 	 	m_numSelfLinks(0),
+	 	m_numSelfLinksFound(0),
 	 	m_totalSelfLinkWeight(0),
 		m_addSelfLinks(m_config.selfTeleportationProbability > 0 && m_config.selfTeleportationProbability < 1),
 		m_numAdditionalLinks(0),
@@ -89,6 +91,7 @@ public:
 	 	m_totalLinkWeight(other.m_totalLinkWeight),
 	 	m_numAggregatedLinks(other.m_numAggregatedLinks),
 	 	m_numSelfLinks(other.m_numSelfLinks),
+	 	m_numSelfLinksFound(other.m_numSelfLinksFound),
 	 	m_totalSelfLinkWeight(other.m_totalSelfLinkWeight),
 		m_addSelfLinks(other.m_addSelfLinks),
 		m_numAdditionalLinks(other.m_numAdditionalLinks),
@@ -109,6 +112,7 @@ public:
 	 	m_totalLinkWeight = other.m_totalLinkWeight;
 	 	m_numAggregatedLinks = other.m_numAggregatedLinks;
 	 	m_numSelfLinks = other.m_numSelfLinks;
+	 	m_numSelfLinksFound = other.m_numSelfLinksFound;
 	 	m_totalSelfLinkWeight = other.m_totalSelfLinkWeight;
 	 	m_addSelfLinks = other.m_addSelfLinks;
 		m_numAdditionalLinks = other.m_numAdditionalLinks;
@@ -204,6 +208,7 @@ protected:
 	double m_totalLinkWeight; // On whole network
 	unsigned int m_numAggregatedLinks;
 	unsigned int m_numSelfLinks;
+	unsigned int m_numSelfLinksFound;
 	double m_totalSelfLinkWeight; // On whole network
 
 	// Zooming

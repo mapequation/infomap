@@ -173,10 +173,19 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	numLinks = m_flowLinks.size();
 
 
+	double tmp = 0.0;
+	double tmp2 = 0.0;
 	// Normalize node flow
 	for (unsigned int i = 0; i < numM2Nodes; ++i)
+	{
+		tmp += m_nodeFlow[i];
 		m_nodeFlow[i] /= sumUndirLinkWeight;
+		tmp2 += m_nodeFlow[i];
+	}
 
+	std::cout << "\n\nsumUndirLinkWeight: " << sumUndirLinkWeight;
+	std::cout << "\nnetwork.totalMemorySelfLinkWeight(): " << network.totalMemorySelfLinkWeight();
+	std::cout << "\nsum NodeFlow: " << tmp << " --> " << tmp2 << "\n\n";
 
 
 	if (config.rawdir)
@@ -272,8 +281,6 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 	{
 		linkIt->flow /= sumLinkOutWeight[linkIt->source];
-		if (linkIt->source == linkIt->target)
-			std::cout << "[==]";
 	}
 
 	// Collect dangling nodes

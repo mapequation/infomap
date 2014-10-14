@@ -444,9 +444,10 @@ bool Network::addLink(unsigned int n1, unsigned int n2, double weight)
 
 	if (n2 == n1)
 	{
-		++m_numSelfLinks;
+		++m_numSelfLinksFound;
 		if (!m_config.includeSelfLinks)
 			return false;
+		++m_numSelfLinks;
 		m_totalSelfLinkWeight += weight;
 	}
 	else if (m_config.parseAsUndirected() && n2 < n1) // minimize number of links
@@ -623,8 +624,8 @@ void Network::printParsingResult()
 
 	if(m_numAggregatedLinks > 0)
 		std::cout << "\n --> Aggregated " << m_numAggregatedLinks << io::toPlural(" link", m_numAggregatedLinks) << " to existing links.";
-	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
-		std::cout << "\n --> Ignored " << m_numSelfLinks << io::toPlural(" self-link", m_numSelfLinks) << ".";
+	if (m_numSelfLinksFound > 0 && !m_config.includeSelfLinks)
+		std::cout << "\n --> Ignored " << m_numSelfLinksFound << io::toPlural(" self-link", m_numSelfLinksFound) << ".";
 	unsigned int numNodesIgnored = m_numNodesFound - m_numNodes;
 	if (m_config.nodeLimit > 0)
 		std::cout << "\n --> Ignored " << numNodesIgnored << io::toPlural(" node", numNodesIgnored) << " due to specified limit.";
@@ -636,7 +637,7 @@ void Network::printParsingResult()
 	if (m_addSelfLinks || m_config.includeSelfLinks) {
 		std::cout << "\n --> " << m_numSelfLinks << io::toPlural(" self-link", m_numSelfLinks);
 		if (m_numSelfLinks > 0)
-			std::cout << " with " << (m_totalSelfLinkWeight / m_totalLinkWeight * 100) << "% of the total link weight";
+			std::cout << " with total weight " << m_totalSelfLinkWeight << " (" << (m_totalSelfLinkWeight / m_totalLinkWeight * 100) << "% of the total link weight)";
 		std::cout << ".";
 	}
 
