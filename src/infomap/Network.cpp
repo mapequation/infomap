@@ -65,8 +65,6 @@ void Network::readInputData(std::string filename)
 		parseLinkList(filename);
 	else
 		throw UnknownFileTypeError("No known input format specified.");
-
-	zoom();
 }
 
 void Network::parsePajekNetwork(std::string filename)
@@ -376,78 +374,6 @@ void Network::parseLinkListWithoutIOStreams(std::string filename)
 	printParsingResult();
 }
 
-void Network::zoom()
-{
-	double selfProb = m_config.selfTeleportationProbability;
-	bool addSelfLinks = selfProb > 0 && selfProb < 1;
-	if (!addSelfLinks)
-		return;
-
-	unsigned int numNodes = m_numNodes;
-	std::vector<unsigned int> nodeOutDegree(numNodes, 0);
-	std::vector<double> sumLinkOutWeight(numNodes, 0.0);
-	std::map<unsigned int, double> dummy;
-	std::vector<std::map<unsigned int, double>::iterator> existingSelfLinks(numNodes, dummy.end());
-
-	for (LinkMap::iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
-	{
-		unsigned int linkEnd1 = linkIt->first;
-		std::map<unsigned int, double>& subLinks = linkIt->second;
-		for (std::map<unsigned int, double>::iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
-		{
-			unsigned int linkEnd2 = subIt->first;
-			double linkWeight = subIt->second;
-			++nodeOutDegree[linkEnd1];
-			if (linkEnd1 == linkEnd2)
-			{
-				// Store existing self-link to aggregate additional weight
-				existingSelfLinks[linkEnd1] = subIt;
-				sumLinkOutWeight[linkEnd1] += linkWeight;
-			}
-			else
-			{
-				if (m_config.isUndirected())
-				{
-					sumLinkOutWeight[linkEnd1] += linkWeight * 0.5; // Why half?
-					sumLinkOutWeight[linkEnd2] += linkWeight * 0.5;
-					++nodeOutDegree[linkEnd2];
-				}
-				else
-				{
-					sumLinkOutWeight[linkEnd1] += linkWeight;
-				}
-			}
-		}
-	}
-
-	double sumAdditionalLinkWeight = 0.0;
-	unsigned int numAdditionalLinks = 0;
-	for (unsigned int i = 0; i < numNodes; ++i)
-	{
-		if (nodeOutDegree[i] == 0)
-			continue; // Skip dangling nodes at the moment
-
-		double selfLinkWeight = sumLinkOutWeight[i] * selfProb / (1.0 - selfProb);
-
-		if (existingSelfLinks[i] != dummy.end()) {
-			existingSelfLinks[i]->second += selfLinkWeight;
-		}
-		else {
-			m_links[i].insert(std::make_pair(i, selfLinkWeight));
-			++numAdditionalLinks;
-		}
-		sumAdditionalLinkWeight += selfLinkWeight;
-	}
-
-	m_numLinks += numAdditionalLinks;
-	m_totalLinkWeight += sumAdditionalLinkWeight;
-	m_numSelfLinks += numAdditionalLinks;
-	m_totalSelfLinkWeight += sumAdditionalLinkWeight;
-
-	std::cout << "(Added " << numAdditionalLinks << " self-links with total weight " << sumAdditionalLinkWeight <<
-			". (" << (m_totalSelfLinkWeight / m_totalLinkWeight * 100) << "% of the total link weight is now from self-links.)\n";
-}
-
 void Network::printNetworkAsPajek(std::string filename)
 {
 	SafeOutFile out(filename.c_str());
@@ -518,9 +444,10 @@ bool Network::addLink(unsigned int n1, unsigned int n2, double weight)
 
 	if (n2 == n1)
 	{
-		++m_numSelfLinks;
+		++m_numSelfLinksFound;
 		if (!m_config.includeSelfLinks)
 			return false;
+		++m_numSelfLinks;
 		m_totalSelfLinkWeight += weight;
 	}
 	else if (m_config.parseAsUndirected() && n2 < n1) // minimize number of links
@@ -586,13 +513,81 @@ void Network::finalizeAndCheckNetwork(unsigned int desiredNumberOfNodes)
 	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
 		std::cout << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.) ";
 
+	if (m_addSelfLinks)
+		zoom();
+
 	initNodeDegrees();
+}
+
+void Network::zoom()
+{
+	unsigned int numNodes = m_numNodes;
+	std::vector<unsigned int> nodeOutDegree(numNodes, 0);
+	std::vector<double> sumLinkOutWeight(numNodes, 0.0);
+	std::map<unsigned int, double> dummy;
+	std::vector<std::map<unsigned int, double>::iterator> existingSelfLinks(numNodes, dummy.end());
+
+	for (LinkMap::iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
+	{
+		unsigned int linkEnd1 = linkIt->first;
+		std::map<unsigned int, double>& subLinks = linkIt->second;
+		for (std::map<unsigned int, double>::iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			unsigned int linkEnd2 = subIt->first;
+			double linkWeight = subIt->second;
+			++nodeOutDegree[linkEnd1];
+			if (linkEnd1 == linkEnd2)
+			{
+				// Store existing self-link to aggregate additional weight
+				existingSelfLinks[linkEnd1] = subIt;
+//				sumLinkOutWeight[linkEnd1] += linkWeight;
+			}
+			else
+			{
+				if (m_config.isUndirected())
+				{
+					sumLinkOutWeight[linkEnd1] += linkWeight * 0.5; // Why half?
+					sumLinkOutWeight[linkEnd2] += linkWeight * 0.5;
+					++nodeOutDegree[linkEnd2];
+				}
+				else
+				{
+					sumLinkOutWeight[linkEnd1] += linkWeight;
+				}
+			}
+		}
+	}
+
+	double selfProb = m_config.selfTeleportationProbability;
+
+	for (unsigned int i = 0; i < numNodes; ++i)
+	{
+		if (nodeOutDegree[i] == 0)
+			continue; // Skip dangling nodes at the moment
+
+		double selfLinkWeight = sumLinkOutWeight[i] * selfProb / (1.0 - selfProb);
+
+		if (existingSelfLinks[i] != dummy.end()) {
+			existingSelfLinks[i]->second += selfLinkWeight;
+		}
+		else {
+			m_links[i].insert(std::make_pair(i, selfLinkWeight));
+			++m_numAdditionalLinks;
+		}
+		m_sumAdditionalLinkWeight += selfLinkWeight;
+	}
+
+	m_numLinks += m_numAdditionalLinks;
+	m_numSelfLinks += m_numAdditionalLinks;
+	m_totalLinkWeight += m_sumAdditionalLinkWeight;
+	m_totalSelfLinkWeight += m_sumAdditionalLinkWeight;
 }
 
 void Network::initNodeDegrees()
 {
 	m_outDegree.assign(m_numNodes, 0.0);
 	m_sumLinkOutWeight.assign(m_numNodes, 0.0);
+	m_numDanglingNodes = m_numNodes;
 	for (LinkMap::iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
 	{
 		unsigned int n1 = linkIt->first;
@@ -601,10 +596,14 @@ void Network::initNodeDegrees()
 		{
 			unsigned int n2 = subIt->first;
 			double linkWeight = subIt->second;
+			if (m_outDegree[n1] == 0)
+				--m_numDanglingNodes;
 			++m_outDegree[n1];
 			m_sumLinkOutWeight[n1] += linkWeight;
 			if (n1 != n2 && m_config.parseAsUndirected())
 			{
+				if (m_outDegree[n2] == 0)
+					--m_numDanglingNodes;
 				++m_outDegree[n2];
 				m_sumLinkOutWeight[n2] += linkWeight;
 			}
@@ -614,21 +613,51 @@ void Network::initNodeDegrees()
 
 void Network::printParsingResult()
 {
-	std::cout << "Found " << m_numNodesFound << " nodes and " << m_numLinksFound << " links.\n  -> ";
-	if(m_numAggregatedLinks > 0)
-		std::cout << m_numAggregatedLinks << " links was aggregated to existing links. ";
-	if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
-		std::cout << m_numSelfLinks << " self-links was ignored. ";
-	if (m_config.nodeLimit > 0)
-		std::cout << (m_numNodesFound - m_numNodes) << "/" << m_numNodesFound << " last nodes ignored due to limit. ";
+	bool dataModified = m_numNodesFound != m_numNodes || m_numLinksFound != m_numLinks;
 
-	std::cout << "Resulting size: " << m_numNodes << " nodes";
+	if (!dataModified)
+		std::cout << "\n ==> " << getParsingResultSummary();
+	else {
+		std::cout << "\n --> Found " << m_numNodesFound << io::toPlural(" node", m_numNodesFound);
+		std::cout << " and " << m_numLinksFound << io::toPlural(" link", m_numLinksFound) << ".";
+	}
+
+	if(m_numAggregatedLinks > 0)
+		std::cout << "\n --> Aggregated " << m_numAggregatedLinks << io::toPlural(" link", m_numAggregatedLinks) << " to existing links.";
+	if (m_numSelfLinksFound > 0 && !m_config.includeSelfLinks)
+		std::cout << "\n --> Ignored " << m_numSelfLinksFound << io::toPlural(" self-link", m_numSelfLinksFound) << ".";
+	unsigned int numNodesIgnored = m_numNodesFound - m_numNodes;
+	if (m_config.nodeLimit > 0)
+		std::cout << "\n --> Ignored " << numNodesIgnored << io::toPlural(" node", numNodesIgnored) << " due to specified limit.";
+	if (m_numDanglingNodes > 0)
+		std::cout << "\n --> " << m_numDanglingNodes << " dangling " << io::toPlural("node", m_numDanglingNodes) << " (nodes with no outgoing links).";
+
+	if (m_addSelfLinks)
+		std::cout << "\n --> Added " << m_numAdditionalLinks << io::toPlural(" self-link", m_numAdditionalLinks) << " with total weight " << m_sumAdditionalLinkWeight << ".";
+	if (m_addSelfLinks || m_config.includeSelfLinks) {
+		std::cout << "\n --> " << m_numSelfLinks << io::toPlural(" self-link", m_numSelfLinks);
+		if (m_numSelfLinks > 0)
+			std::cout << " with total weight " << m_totalSelfLinkWeight << " (" << (m_totalSelfLinkWeight / m_totalLinkWeight * 100) << "% of the total link weight)";
+		std::cout << ".";
+	}
+
+	if (dataModified) {
+		std::cout << "\n ==> " << getParsingResultSummary();
+	}
+	std::cout << std::endl;
+}
+
+std::string Network::getParsingResultSummary()
+{
+	std::ostringstream o;
+	o << m_numNodes << io::toPlural(" node", m_numNodes);
 	if (!m_nodeWeights.empty() && std::abs(m_sumNodeWeights / m_numNodes - 1.0) > 1e-9)
-		std::cout << " (with total weight " << m_sumNodeWeights << ")";
-	std::cout << " and " << m_numLinks << " links";
+		o << " (with total weight " << m_sumNodeWeights << ")";
+	o << " and " << m_numLinks << io::toPlural(" link", m_numLinks);
 	if (std::abs(m_totalLinkWeight / m_numLinks - 1.0) > 1e-9)
-		std::cout << " (with total weight " << m_totalLinkWeight << ")";
-	std::cout << "." << std::endl;
+		o << " (with total weight " << m_totalLinkWeight << ")";
+	o << ".";
+	return o.str();
 }
 
 

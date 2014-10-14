@@ -39,6 +39,7 @@
 #include "../utils/infomath.h"
 #include "../io/convert.h"
 #include "../utils/Stopwatch.h"
+#include "../utils/Date.h"
 #include "MemFlowNetwork.h"
 #include "MemNetwork.h"
 #include "MultiplexNetwork.h"
@@ -47,7 +48,6 @@
 #include <stdio.h>
 #endif
 #include <map>
-#include "../utils/Date.h"
 #include "Network.h"
 #include "FlowNetwork.h"
 #include "../io/version.h"
@@ -61,6 +61,15 @@ void InfomapBase::run()
 #ifdef _OPENMP
 	RELEASE_OUT("(OpenMP " << _OPENMP << " detected, trying to parallelize the recursive part on " <<
 			omp_get_num_procs() << " processors...)\n" << std::flush);
+
+//	omp_sched_t sched;
+//	int mod;
+//	omp_get_schedule(&sched, &mod);
+//	std::cout << "schedule type: " << sched << ", chunk size: " << mod << "\n";
+//	std::cout << "sched_static: " << omp_sched_static << "\n";
+//	std::cout << "sched_dynamic: " << omp_sched_dynamic << "\n";
+//	std::cout << "sched_guided: " << omp_sched_guided << "\n";
+//	std::cout << "sched_auto: " << omp_sched_auto << "\n";
 #endif
 
 
@@ -78,13 +87,14 @@ void InfomapBase::run()
 	}
 
 	oneLevelCodelength = indexCodelength = root()->codelength = calcCodelengthOnRootOfLeafNodes(*root());
-	RELEASE_OUT("One-level codelength: " << indexCodelength << std::endl);
+	RELEASE_OUT("One-level codelength: " << io::toPrecision(indexCodelength) << std::endl);
 
 	if (m_config.benchmark)
 		Logger::benchmark("calcFlow", root()->codelength, 1, 1, 1);
 
 	std::vector<double> codelengths(m_config.numTrials);
 	std::ostringstream bestSolutionStatistics;
+	unsigned int bestNumLevels = 0;
 
 	for (unsigned int iTrial = 0; iTrial < m_config.numTrials; ++iTrial)
 	{
@@ -128,7 +138,7 @@ void InfomapBase::run()
 			bestHierarchicalCodelength = hierarchicalCodelength;
 			bestSolutionStatistics.str("");
 			printNetworkData();
-			printPerLevelCodelength(bestSolutionStatistics);
+			bestNumLevels = printPerLevelCodelength(bestSolutionStatistics);
 		}
 	}
 
@@ -161,7 +171,7 @@ void InfomapBase::run()
 		std::cout << bestIntermediateStatistics.str() << std::endl << std::endl;
 	}
 
-	std::cout << "Best end solution:" << std::endl;
+	std::cout << "Best end solution in " << bestNumLevels << " levels:" << std::endl;
 	std::cout << bestSolutionStatistics.str() << std::endl;
 
 //	printNetworkDebug("debug", true, false);
@@ -248,7 +258,8 @@ void InfomapBase::runPartition()
 	else
 	{
 		RELEASE_OUT("Current codelength: " << indexCodelength << " + " <<
-					(hierarchicalCodelength - indexCodelength) << " = " << hierarchicalCodelength<< "\n");
+					(hierarchicalCodelength - indexCodelength) << " = " <<
+					io::toPrecision(hierarchicalCodelength) << "\n");
 		RELEASE_OUT("\nTrying to find deeper structure under current modules recursively... \n");
 	}
 
@@ -257,6 +268,8 @@ void InfomapBase::runPartition()
 //	RELEASE_OUT("(ic: " << indexCodelength << ", mc: " << moduleCodelength << ", c: " <<
 //					codelength << ", hc: " << hierarchicalCodelength <<
 //					", hc-queue.mc: " << sumConsolidatedCodelength << ") ");
+
+//	double t0 = omp_get_wtime();
 
 	while (partitionQueue.size() > 0)
 	{
@@ -293,8 +306,7 @@ void InfomapBase::runPartition()
 //					" -> limit: " << limitCodelength << " bits.\n");
 			RELEASE_OUT("done! Codelength: " << partitionQueue.indexCodelength << " + " <<
 					partitionQueue.leafCodelength << " (+ " << leftToImprove << " left to improve)" <<
-					" -> limit: " << std::setprecision(10) << limitCodelength <<
-					std::setprecision(6) << " bits.\n");
+					" -> limit: " << io::toPrecision(limitCodelength) << " bits.\n");
 		}
 
 		hierarchicalCodelength = limitCodelength;
@@ -303,12 +315,16 @@ void InfomapBase::runPartition()
 	}
 	if (m_config.verbosity == 0)
 	{
-		RELEASE_OUT("to codelength " << hierarchicalCodelength << "\n");
+		RELEASE_OUT(". Found " << partitionQueue.level << " levels with codelength " <<
+				io::toPrecision(hierarchicalCodelength) << "\n");
 	}
 	else
 	{
-		RELEASE_OUT("\n");
+		RELEASE_OUT("  -> Found " << partitionQueue.level << " levels with codelength " <<
+				io::toPrecision(hierarchicalCodelength));
 	}
+//	double t1 = omp_get_wtime();
+//	RELEASE_OUT("\nParallel wall-time: " << (t1-t0));
 }
 
 
@@ -492,7 +508,8 @@ void InfomapBase::tryIndexingIteratively()
 	}
 
 	if (verbose && m_config.verbosity == 0)
-		RELEASE_OUT("super modules with estimated codelength " << minHierarchicalCodelength << ". ");
+		RELEASE_OUT("super modules with estimated codelength " <<
+				io::toPrecision(minHierarchicalCodelength) << ". ");
 
 	hierarchicalCodelength = replaceExistingModules ? codelength : minHierarchicalCodelength;
 }
@@ -612,12 +629,12 @@ unsigned int InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partit
 	{
 		RELEASE_OUT(std::setprecision(m_config.verboseNumberPrecision));
 		if (m_config.verbosity == 0)
-			RELEASE_OUT("to codelength " << hierarchicalCodelength << " in " <<
+			RELEASE_OUT("to codelength " << io::toPrecision(hierarchicalCodelength) << " in " <<
 					numTopModules() << " top modules. ");
 		else
 			RELEASE_OUT("done! Added " << numLevelsCreated << " levels with " <<
 					numTopModules() << " top modules to codelength: " <<
-					hierarchicalCodelength << " ");
+					io::toPrecision(hierarchicalCodelength) << " ");
 	}
 
 	return numLevelsCreated;
@@ -700,7 +717,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 //			for (int moduleIndex = iProc; moduleIndex < numModulesInt; moduleIndex += numProcs)
 //			{
 //#pragma omp parallel for schedule(dynamic, 1)
-#pragma omp for
+#pragma omp parallel for schedule(dynamic)
 	for(iModule = 0; iModule < numModulesInt; ++iModule)
 	{
 		unsigned int moduleIndex = static_cast<unsigned int>(iModule);
@@ -825,6 +842,8 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 		return;
 	}
 
+	m_tuneIterationIndex = 0;
+
 	setActiveNetworkFromChildrenOfRoot();
 	initConstantInfomapTerms();
 	initModuleOptimization();
@@ -860,13 +879,13 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 
 	if (!fast && m_config.tuneIterationLimit != 1 && numTopModules() != numLeafNodes())
 	{
-		unsigned int tuneIterationCount = 1;
 		unsigned int coarseTuneLevel = m_config.coarseTuneLevel - 1;
 		bool doFineTune = true;
 //		bool coarseTuned = false;
 		oldCodelength = codelength;
 		while (numTopModules() > 1)
 		{
+			++m_tuneIterationIndex;
 			if (doFineTune)
 			{
 				fineTune();
@@ -892,8 +911,7 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 					RELEASE_OUT((compression * 100) << "% " << std::flush);
 				oldCodelength = codelength;
 			}
-			++tuneIterationCount;
-			if (m_config.tuneIterationLimit == tuneIterationCount)
+			if (m_config.tuneIterationLimit == m_tuneIterationIndex + 1)
 				break;
 			doFineTune = !doFineTune;
 		}
@@ -903,11 +921,11 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 	{
 		if (m_config.verbosity == 0)
 			RELEASE_OUT("to " << numTopModules() << " modules with codelength " <<
-					std::setprecision(m_config.verboseNumberPrecision) << codelength << std::endl);
+					io::toPrecision(codelength) << std::endl);
 		else
 		{
 			RELEASE_OUT("Two-level codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
-					codelength << std::endl);
+					io::toPrecision(codelength) << std::endl);
 		}
 	}
 
@@ -942,6 +960,7 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fast)
 {
 	++m_iterationCount;
+	m_aggregationLevel = 0;
 	bool verbose = (m_subLevel == 0 && m_config.verbosity != 0) ||
 			(isSuperLevelOnTopLevel() && m_config.verbosity >= 3);
 	// Merge and collapse repeatedly until no code improvement or only one big cluster left
@@ -950,21 +969,25 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 	}
 
 	// Core loop, merging modules
-	unsigned int numOptimizationLoops = optimizeModules();
+	unsigned int numOptimizationLoops = m_config.fastFirstIteration? optimizeModulesCrude() : optimizeModules();
 
 	if (verbose)
 		RELEASE_OUT(numOptimizationLoops << ", " << std::flush);
 
 	// Force create modules even if worse (don't mix modules and leaf nodes under the same parent)
 	consolidateModules();
+
 	unsigned int numLevelsConsolidated = 1;
+	unsigned int levelAggregationLimit = getLevelAggregationLimit();
 
 	// Reapply core algorithm on modular network, replacing modules with super modules
-	while (numTopModules() > 1 && numLevelsConsolidated != m_config.levelAggregationLimit)
+	while (numTopModules() > 1 && numLevelsConsolidated != levelAggregationLimit)
 	{
 		double consolidatedCodelength = codelength;
 		double consolidatedIndexLength = indexCodelength;
 		double consolidatedModuleLength = moduleCodelength;
+
+		++m_aggregationLevel;
 
 		if (m_subLevel == 0 && m_config.benchmark)
 			Logger::benchmark(io::Str() << "lvl" << numLevelsConsolidated, codelength, numTopModules(),
@@ -1040,7 +1063,6 @@ void InfomapBase::generalTune(unsigned int level)
 void InfomapBase::fineTune()
 {
 	DEBUG_OUT("InfomapBase::fineTune(" << *root() << ")..." << std::endl);
-	m_isCoarseTune = false;
 	setActiveNetworkFromLeafs();
 
 	// Init dynamic modules from existing modular structure
@@ -1083,7 +1105,10 @@ void InfomapBase::coarseTune(unsigned int recursiveCount)
 		return;
 
 	m_isCoarseTune = true;
-	partitionEachModule(recursiveCount, m_config.fastCoarseTunePartition);
+	if (m_subLevel == 0)
+		partitionEachModuleParallel(recursiveCount, m_config.fastCoarseTunePartition);
+	else
+		partitionEachModule(recursiveCount, m_config.fastCoarseTunePartition);
 
 	// Prepare leaf network to move into the sub-module structure given from partitioning each module
 	setActiveNetworkFromLeafs();
@@ -1116,6 +1141,7 @@ void InfomapBase::coarseTune(unsigned int recursiveCount)
 	ASSERT(std::abs(codelength - old_codelength) < 1.0e-4);
 
 	mergeAndConsolidateRepeatedly(true);
+	m_isCoarseTune = false;
 }
 
 void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)
@@ -1163,6 +1189,96 @@ void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)
 
 	DEBUG_OUT("Partitioning each module gave " << moduleIndexOffset << " sub-modules from " << m_treeData.numLeafNodes() <<
 			" nodes in " << root()->childDegree() << " modules." << std::endl);
+}
+
+void InfomapBase::partitionEachModuleParallel(unsigned int recursiveCount, bool fast)
+{
+#ifndef _OPENMP
+	return partitionEachModule(recursiveCount, fast);
+#endif
+
+//	double t0 = omp_get_wtime();
+
+	// Store pointers to all modules in a vector
+	unsigned int numModules = root()->childDegree();
+	std::vector<NodeBase*> modules(numModules);
+	NodeBase::sibling_iterator moduleIt(root()->begin_child());
+	for (unsigned int i = 0; i < numModules; ++i, ++moduleIt)
+		modules[i] = moduleIt.base();
+
+	// Sort modules on flow
+	std::multimap<double, NodeBase*, std::greater<double> > sortedModules;
+	for (unsigned int i = 0; i < numModules; ++i)
+	{
+		sortedModules.insert(std::pair<double, NodeBase*>(getNodeData(*modules[i]).flow, modules[i]));
+	}
+	std::multimap<double, NodeBase*, std::greater<double> >::const_iterator sortedModuleIt(sortedModules.begin());
+	for (unsigned int i = 0; i < numModules; ++i, ++sortedModuleIt)
+		modules[i] = sortedModuleIt->second;
+
+//	double t1 = omp_get_wtime();
+//	std::cout << "Sorting: " << (t1-t0)*1000 << " ms";
+
+	// Partition each module in a parallel loop
+	int numModulesInt = static_cast<int>(numModules);
+	int iModule;
+#pragma omp parallel for schedule(dynamic)
+	for(iModule = 0; iModule < numModulesInt; ++iModule)
+	{
+//		omp_sched_t sched;
+//		int mod;
+//		omp_get_schedule(&sched, &mod);
+//		printf("\nThread %d in loop index %d (schedule type: %d, chunk size: %d)\n", omp_get_thread_num(), iModule, sched, mod);
+
+		unsigned int moduleIndex = static_cast<unsigned int>(iModule);
+		NodeBase& module = *modules[moduleIndex];
+
+		// Delete former sub-structure if exists
+		module.getSubStructure().subInfomap.reset(0);
+
+		if (module.childDegree() > 1)
+		{
+			std::auto_ptr<InfomapBase> subInfomap(getNewInfomapInstance());
+			subInfomap->reseed(getSeedFromCodelength(codelength));
+			subInfomap->m_subLevel = m_subLevel + 1;
+			subInfomap->initSubNetwork(module, false);
+			subInfomap->partition(recursiveCount, fast);
+
+			module.getSubStructure().subInfomap = subInfomap;
+		}
+	}
+
+//	double t2 = omp_get_wtime();
+//	std::cout << "\nParallel for: " << (t2-t1)*1000 << " ms\n";
+
+	// Collect result: set sub-module index on each module
+	unsigned int moduleIndexOffset = 0;
+	for (unsigned int i = 0; i < numModules; ++i)
+	{
+		NodeBase& module = *modules[i];
+		if (module.getSubStructure().haveSubInfomapInstance())
+		{
+			InfomapBase& subInfomap = *module.getSubStructure().subInfomap;
+
+			NodeBase::sibling_iterator originalLeafNodeIt(module.begin_child());
+			for (TreeData::leafIterator leafIt(subInfomap.m_treeData.begin_leaf()), endIt(subInfomap.m_treeData.end_leaf());
+					leafIt != endIt; ++leafIt, ++originalLeafNodeIt)
+			{
+				NodeBase& node = **leafIt;
+				originalLeafNodeIt->index = node.parent->index + moduleIndexOffset;
+			}
+			moduleIndexOffset += subInfomap.m_treeData.root()->childDegree();
+		}
+		else
+		{
+			for (NodeBase::sibling_iterator nodeIt(module.begin_child()), endIt(module.end_child());
+					nodeIt != endIt; ++nodeIt)
+			{
+				nodeIt->index = moduleIndexOffset;
+			}
+			moduleIndexOffset += 1;
+		}
+	}
 }
 
 bool InfomapBase::initNetwork()
@@ -1461,7 +1577,8 @@ void InfomapBase::consolidateExternalClusterData()
 	hierarchicalCodelength = codelength;
 
 	ALL_OUT("done! Two-level codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
-			codelength << " in " << numTopModules() << " modules." << std::endl);
+			io::toPrecision(codelength) <<
+			" in " << numTopModules() << " modules." << std::endl);
 }
 
 bool InfomapBase::checkAndConvertBinaryTree()
@@ -1472,16 +1589,7 @@ bool InfomapBase::checkAndConvertBinaryTree()
 
 	m_ioNetwork.readStreamableTree(m_config.networkFile);
 
-	if (m_config.printMap)
-	{
-		std::string mapFilename = io::Str() <<
-				m_config.outDirectory <<
-				FileURI(m_config.networkFile).getName() << ".map";
-		std::cout << "Write map to '" << mapFilename << "'... ";
-		m_ioNetwork.writeMap(mapFilename);
-		std::cout << "done!\n";
-	}
-
+	printHierarchicalData();
 
 	return true;
 }
@@ -1507,55 +1615,7 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 
 		saveHierarchicalNetwork(filename, writeEdges);
 
-		std::string outNameWithoutExtension = io::Str() << m_config.outDirectory << filename <<
-				(m_config.printExpanded && m_config.isMemoryNetwork() ? "_expanded" : "");
-
-		// Print .tree
-		if (m_config.printTree)
-		{
-			outName = io::Str() << outNameWithoutExtension << ".tree";
-			if (m_config.verbosity == 0)
-				RELEASE_OUT("writing .tree... " << std::flush);
-			else
-				RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
-			m_ioNetwork.writeHumanReadableTree(outName);
-		}
-
-		if (m_config.printFlowTree)
-		{
-			outName = io::Str() << outNameWithoutExtension << ".ftree";
-			if (m_config.verbosity == 0)
-				RELEASE_OUT("writing .ftree... " << std::flush);
-			else
-				RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
-			m_ioNetwork.writeHumanReadableTree(outName, true);
-		}
-
-		if (m_config.printBinaryTree || m_config.printBinaryFlowTree)
-		{
-			outName = io::Str() << outNameWithoutExtension << (writeEdges? ".bftree" : ".btree");
-			if (m_config.verbosity == 0)
-				RELEASE_OUT("writing " << (writeEdges ? ".bftree" : ".btree") << "... " << std::flush);
-			else
-				RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
-			m_ioNetwork.writeStreamableTree(outName, writeEdges);
-		}
-
-		if (m_config.printMap)
-		{
-			outName = io::Str() << outNameWithoutExtension << ".map";
-			if (m_config.verbosity == 0)
-				RELEASE_OUT("writing .map... " << std::flush);
-			else
-				RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
-
-			m_ioNetwork.writeMap(outName);
-		}
-
-		if (m_config.verbosity == 0)
-			RELEASE_OUT("done!" << std::endl);
-		else
-			RELEASE_OUT("\nDone!" << std::endl);
+		printHierarchicalData(filename);
 
 		// Clear the data
 		m_ioNetwork.clear();
@@ -1577,6 +1637,72 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 
 }
 
+void InfomapBase::printHierarchicalData(std::string filename)
+{
+	if (filename.length() == 0)
+			filename = FileURI(m_config.networkFile).getName();
+
+	std::string outName;
+	std::string outNameWithoutExtension = io::Str() << m_config.outDirectory << filename <<
+			(m_config.printExpanded && m_config.isMemoryNetwork() ? "_expanded" : "");
+
+	// Print .tree
+	if (m_config.printTree)
+	{
+		outName = io::Str() << outNameWithoutExtension << ".tree";
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("writing .tree... " << std::flush);
+		else
+			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
+		m_ioNetwork.writeHumanReadableTree(outName);
+	}
+
+	if (m_config.printFlowTree)
+	{
+		outName = io::Str() << outNameWithoutExtension << ".ftree";
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("writing .ftree... " << std::flush);
+		else
+			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
+		m_ioNetwork.writeHumanReadableTree(outName, true);
+	}
+
+	if (m_config.printBinaryTree)
+	{
+		outName = io::Str() << outNameWithoutExtension << ".btree";
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("writing .btree... " << std::flush);
+		else
+			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
+		m_ioNetwork.writeStreamableTree(outName, false);
+	}
+
+	if (m_config.printBinaryFlowTree)
+	{
+		outName = io::Str() << outNameWithoutExtension << ".bftree";
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("writing .bftree... " << std::flush);
+		else
+			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
+		m_ioNetwork.writeStreamableTree(outName, true);
+	}
+
+	if (m_config.printMap)
+	{
+		outName = io::Str() << outNameWithoutExtension << ".map";
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("writing .map... " << std::flush);
+		else
+			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
+
+		m_ioNetwork.writeMap(outName);
+	}
+
+	if (m_config.verbosity == 0)
+		RELEASE_OUT("done!" << std::endl);
+	else
+		RELEASE_OUT("\nDone!" << std::endl);
+}
 
 void InfomapBase::printClusterNumbers(std::ostream& out)
 {
@@ -1645,7 +1771,7 @@ void InfomapBase::printTree(std::ostream& out, const NodeBase& root, const std::
 	}
 }
 
-void InfomapBase::printPerLevelCodelength(std::ostream& out)
+unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
 {
 	std::vector<double> indexLengths;
 	std::vector<double> leafLengths;
@@ -1694,6 +1820,7 @@ void InfomapBase::printPerLevelCodelength(std::ostream& out)
 		sumCodelengths += codelengths[i];
 	out << " (sum: " << sumCodelengths << ")" << std::endl;
 
+	return numLevels;
 }
 
 void InfomapBase::aggregatePerLevelCodelength(std::vector<double>& indexLengths,

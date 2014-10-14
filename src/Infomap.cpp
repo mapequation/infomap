@@ -151,7 +151,7 @@ void getConfig(Config& conf, int argc, char *argv[])
 			"The probability of teleporting to a random node or link.", "f", true);
 
 	api.addOptionArgument(conf.selfTeleportationProbability, 'y', "self-link-teleportation-probability",
-			"The probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", "f", true);
+			"Additional probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", "f", true);
 
 	api.addOptionArgument(conf.multiplexAggregationRate, "multiplex-aggregation-rate",
 			"The probability of following a link as if the layers where completely aggregated. Zero means completely disconnected layers.", "f", true);

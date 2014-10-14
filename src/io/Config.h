@@ -66,6 +66,7 @@ struct Config
 		alternateCoarseTuneLevel(false),
 		coarseTuneLevel(1),
 		fastHierarchicalSolution(0),
+		fastFirstIteration(false),
 		outDirectory(""),
 		originallyUndirected(false),
 		printTree(false),
@@ -121,6 +122,7 @@ struct Config
 		alternateCoarseTuneLevel(other.alternateCoarseTuneLevel),
 		coarseTuneLevel(other.coarseTuneLevel),
 		fastHierarchicalSolution(other.fastHierarchicalSolution),
+		fastFirstIteration(other.fastFirstIteration),
 		outDirectory(other.outDirectory),
 		originallyUndirected(other.originallyUndirected),
 		printTree(other.printTree),
@@ -176,6 +178,7 @@ struct Config
 		alternateCoarseTuneLevel = other.alternateCoarseTuneLevel;
 		coarseTuneLevel = other.coarseTuneLevel;
 		fastHierarchicalSolution = other.fastHierarchicalSolution;
+		fastFirstIteration = other.fastFirstIteration;
 		outDirectory = other.outDirectory;
 		originallyUndirected = other.originallyUndirected;
 		printTree = other.printTree;
@@ -307,6 +310,7 @@ struct Config
 	bool alternateCoarseTuneLevel;
 	unsigned int coarseTuneLevel;
 	unsigned int fastHierarchicalSolution;
+	bool fastFirstIteration;
 
 	// Output
 	std::string outDirectory;

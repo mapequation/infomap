@@ -49,6 +49,8 @@ public:
 	 	m_activeNetwork(m_nonLeafActiveNetwork),
 	 	m_isCoarseTune(false),
 	 	m_iterationCount(0),
+	 	m_tuneIterationIndex(0),
+	 	m_aggregationLevel(0),
 	 	m_numNonTrivialTopModules(0),
 	 	m_subLevel(0),
 	 	m_TOP_LEVEL_ADDITION(1 << 20),
@@ -137,6 +139,15 @@ protected:
 	virtual unsigned int optimizeModules() = 0;
 
 	/**
+	 * Loop through each node and move it to the strongest connected
+	 * module. Start over until converged.
+	 *
+	 * @return The number of effective optimization rounds,
+	 * i.e. zero if no move was made.
+	 */
+	virtual unsigned int optimizeModulesCrude() = 0;
+
+	/**
 	 * Take the non-empty dynamic modules from the optimization of the active network
 	 * and create module nodes to insert above the active network in the tree. Also
 	 * aggregate the links from the active network to inter-module links in the new
@@ -168,6 +179,8 @@ protected:
 
 	virtual double calcCodelengthOnModuleOfModules(const NodeBase& parent) = 0;
 
+	virtual std::pair<double, double> calcCodelength(const NodeBase& parent) = 0;
+
 	virtual void generateNetworkFromChildren(NodeBase& parent) = 0;
 
 	virtual void transformNodeFlowToEnterFlow(NodeBase* parent) = 0;
@@ -191,6 +204,12 @@ protected:
 
 	bool isTopLevel() { return (m_subLevel & (m_TOP_LEVEL_ADDITION-1)) == 0; }
 	bool isSuperLevelOnTopLevel() { return m_subLevel == m_TOP_LEVEL_ADDITION; }
+	bool isFullNetwork() { return m_subLevel == 0 && m_aggregationLevel == 0; }
+	bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
+
+	unsigned int getLevelAggregationLimit() {
+		return (m_config.fastFirstIteration && isFirstLoop()) ? 1 : m_config.levelAggregationLimit;
+	}
 
 	unsigned long int getSeedFromCodelength(double value)
 	{
@@ -219,6 +238,7 @@ private:
 	 * leaf node with the sub-module structure found by partitioning each module.
 	 */
 	void partitionEachModule(unsigned int recursiveCount = 0, bool fast = false);
+	void partitionEachModuleParallel(unsigned int recursiveCount = 0, bool fast = false);
 	void initSubNetwork(NodeBase& parent, bool recalculateFlow = false);
 	void initSuperNetwork(NodeBase& parent);
 	void setActiveNetworkFromChildrenOfRoot();
@@ -229,9 +249,10 @@ private:
 	void initNodeNames(Network& network);
 	bool checkAndConvertBinaryTree();
 	void printNetworkData(std::string filename = "", bool sort = true);
+	void printHierarchicalData(std::string filename = "");
 	virtual void printClusterNumbers(std::ostream& out);
 	void printTree(std::ostream& out, const NodeBase& root, const std::string& prefix = "");
-	void printPerLevelCodelength(std::ostream& out);
+	unsigned int printPerLevelCodelength(std::ostream& out);
 	void aggregatePerLevelCodelength(std::vector<double>& indexCodelengths, std::vector<double>& leafLengths, unsigned int level = 0);
 	void aggregatePerLevelCodelength(NodeBase& root, std::vector<double>& indexCodelengths, std::vector<double>& leafLengths, unsigned int level);
 	DepthStat calcMaxAndAverageDepth();
@@ -249,6 +270,8 @@ protected:
 	std::vector<unsigned int> m_moveTo;
 	bool m_isCoarseTune;
 	unsigned int m_iterationCount;
+	unsigned int m_tuneIterationIndex;
+	unsigned int m_aggregationLevel;
 	unsigned int m_numNonTrivialTopModules;
 	unsigned int m_subLevel;
 	const unsigned int m_TOP_LEVEL_ADDITION;

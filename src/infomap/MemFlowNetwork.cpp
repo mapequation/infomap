@@ -172,11 +172,9 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	sumUndirLinkWeight = 2 * totalM2LinkWeight - network.totalMemorySelfLinkWeight();
 	numLinks = m_flowLinks.size();
 
-
 	// Normalize node flow
 	for (unsigned int i = 0; i < numM2Nodes; ++i)
 		m_nodeFlow[i] /= sumUndirLinkWeight;
-
 
 
 	if (config.rawdir)

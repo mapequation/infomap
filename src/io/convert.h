@@ -28,10 +28,10 @@
 #ifndef CONVERT_H_
 #define CONVERT_H_
 
-#include <iostream>
+#include <iomanip>
 #include <sstream>
-#include <string>
 #include <stdexcept>
+#include <string>
 
 class AbortAndHelp : public std::runtime_error {
 public:
@@ -145,6 +145,23 @@ inline void padString(std::string &str, const std::string::size_type newSize, co
 {
 	if(newSize > str.size())
 		str.assign(newSize, paddingChar);
+}
+
+inline std::string toPrecision(double value, unsigned int precision = 10)
+{
+	std::ostringstream o;
+	o << std::setprecision(precision);
+	if (!(o << value))
+		throw BadConversionError((o << "stringify(" << value << ")", o.str()));
+	return o.str();
+}
+
+
+inline std::string toPlural(std::string object, unsigned int num)
+{
+	if (num > 1 || num == 0)
+		object.push_back('s');
+	return object;
 }
 
 }
