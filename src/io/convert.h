@@ -156,6 +156,14 @@ inline std::string toPrecision(double value, unsigned int precision = 10)
 	return o.str();
 }
 
+
+inline std::string toPlural(std::string object, unsigned int num)
+{
+	if (num > 1 || num == 0)
+		object.push_back('s');
+	return object;
+}
+
 }
 
 #endif /* CONVERT_H_ */

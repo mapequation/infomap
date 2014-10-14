@@ -272,6 +272,8 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 	{
 		linkIt->flow /= sumLinkOutWeight[linkIt->source];
+		if (linkIt->source == linkIt->target)
+			std::cout << "[==]";
 	}
 
 	// Collect dangling nodes

@@ -45,12 +45,16 @@ public:
 	 	m_numNodesFound(0),
 	 	m_numNodes(0),
 	 	m_sumNodeWeights(0.0),
+		m_numDanglingNodes(0),
 	 	m_numLinksFound(0),
 	 	m_numLinks(0),
 	 	m_totalLinkWeight(0.0),
 	 	m_numAggregatedLinks(0),
 	 	m_numSelfLinks(0),
 	 	m_totalSelfLinkWeight(0),
+		m_addSelfLinks(m_config.selfTeleportationProbability > 0 && m_config.selfTeleportationProbability < 1),
+		m_numAdditionalLinks(0),
+		m_sumAdditionalLinkWeight(0.0),
 	 	m_maxNodeIndex(std::numeric_limits<unsigned int>::min()),
 	 	m_minNodeIndex(std::numeric_limits<unsigned int>::max()),
 	 	m_indexOffset(m_config.zeroBasedNodeNumbers ? 0 : 1)
@@ -60,12 +64,16 @@ public:
 	 	m_numNodesFound(0),
 	 	m_numNodes(0),
 	 	m_sumNodeWeights(0.0),
+		m_numDanglingNodes(0),
 	 	m_numLinksFound(0),
 	 	m_numLinks(0),
 	 	m_totalLinkWeight(0.0),
 	 	m_numAggregatedLinks(0),
 	 	m_numSelfLinks(0),
 	 	m_totalSelfLinkWeight(0),
+		m_addSelfLinks(m_config.selfTeleportationProbability > 0 && m_config.selfTeleportationProbability < 1),
+		m_numAdditionalLinks(0),
+		m_sumAdditionalLinkWeight(0.0),
 	 	m_maxNodeIndex(std::numeric_limits<unsigned int>::min()),
 	 	m_minNodeIndex(std::numeric_limits<unsigned int>::max()),
 	 	m_indexOffset(m_config.zeroBasedNodeNumbers ? 0 : 1)
@@ -75,12 +83,16 @@ public:
 	 	m_numNodesFound(other.m_numNodesFound),
 	 	m_numNodes(other.m_numNodes),
 	 	m_sumNodeWeights(other.m_sumNodeWeights),
+		m_numDanglingNodes(other.m_numDanglingNodes),
 	 	m_numLinksFound(other.m_numLinksFound),
 	 	m_numLinks(other.m_numLinks),
 	 	m_totalLinkWeight(other.m_totalLinkWeight),
 	 	m_numAggregatedLinks(other.m_numAggregatedLinks),
 	 	m_numSelfLinks(other.m_numSelfLinks),
 	 	m_totalSelfLinkWeight(other.m_totalSelfLinkWeight),
+		m_addSelfLinks(other.m_addSelfLinks),
+		m_numAdditionalLinks(other.m_numAdditionalLinks),
+		m_sumAdditionalLinkWeight(other.m_sumAdditionalLinkWeight),
 	 	m_maxNodeIndex(other.m_maxNodeIndex),
 	 	m_minNodeIndex(other.m_minNodeIndex),
 	 	m_indexOffset(other.m_indexOffset)
@@ -91,12 +103,16 @@ public:
 	 	m_numNodesFound = other.m_numNodesFound;
 	 	m_numNodes = other.m_numNodes;
 	 	m_sumNodeWeights = other.m_sumNodeWeights;
+		m_numDanglingNodes = other.m_numDanglingNodes;
 	 	m_numLinksFound = other.m_numLinksFound;
 	 	m_numLinks = other.m_numLinks;
 	 	m_totalLinkWeight = other.m_totalLinkWeight;
 	 	m_numAggregatedLinks = other.m_numAggregatedLinks;
 	 	m_numSelfLinks = other.m_numSelfLinks;
 	 	m_totalSelfLinkWeight = other.m_totalSelfLinkWeight;
+	 	m_addSelfLinks = other.m_addSelfLinks;
+		m_numAdditionalLinks = other.m_numAdditionalLinks;
+		m_sumAdditionalLinkWeight = other.m_sumAdditionalLinkWeight;
 	 	m_maxNodeIndex = other.m_maxNodeIndex;
 	 	m_minNodeIndex = other.m_minNodeIndex;
 	 	m_indexOffset = other.m_indexOffset;
@@ -123,6 +139,8 @@ public:
 	void finalizeAndCheckNetwork(unsigned int desiredNumberOfNodes = 0);
 
 	void printParsingResult();
+
+	std::string getParsingResultSummary();
 
 	virtual void printNetworkAsPajek(std::string filename);
 
@@ -178,6 +196,7 @@ protected:
 	double m_sumNodeWeights;
 	std::vector<double> m_outDegree;
 	std::vector<double> m_sumLinkOutWeight;
+	unsigned int m_numDanglingNodes;
 
 	LinkMap m_links;
 	unsigned int m_numLinksFound;
@@ -186,6 +205,11 @@ protected:
 	unsigned int m_numAggregatedLinks;
 	unsigned int m_numSelfLinks;
 	double m_totalSelfLinkWeight; // On whole network
+
+	// Zooming
+	bool m_addSelfLinks;
+	unsigned int m_numAdditionalLinks;
+	unsigned int m_sumAdditionalLinkWeight;
 
 	// Checkers
 	unsigned int m_maxNodeIndex; // On links
