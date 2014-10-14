@@ -213,18 +213,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 				double linkWeight = subIt->second;
 
 				sumOutWeights[layerIndex][n1] += linkWeight;
-
-				insertM2Link(layerIndex, n1, layerIndex, n2, linkWeight);
-
-//				std::cout << "\nGenerating memory link (" << layerIndex << "," << n1 << ") -> (" << layerIndex << "," << n2 << ") with weight " << linkWeight;
-
-				if (m_config.includeSelfLinks || n1 != n2)
-				{
-//					std::cout << "\n  -> Generating state node (" << layerIndex << "," << n1 << ") with weight!";
-					addM2Node(layerIndex, n1, linkWeight); // -> total weighted out-degree
-				}
-//				std::cout << "\n  -> Generating state node (" << layerIndex << "," << n2 << ")";
-				addM2Node(layerIndex, n2, 0.0);
+				addM2Link(layerIndex, n1, layerIndex, n2, linkWeight);
 			}
 		}
 	}
