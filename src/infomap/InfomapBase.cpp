@@ -1589,16 +1589,7 @@ bool InfomapBase::checkAndConvertBinaryTree()
 
 	m_ioNetwork.readStreamableTree(m_config.networkFile);
 
-	if (m_config.printMap)
-	{
-		std::string mapFilename = io::Str() <<
-				m_config.outDirectory <<
-				FileURI(m_config.networkFile).getName() << ".map";
-		std::cout << "Write map to '" << mapFilename << "'... ";
-		m_ioNetwork.writeMap(mapFilename);
-		std::cout << "done!\n";
-	}
-
+	printHierarchicalData();
 
 	return true;
 }
@@ -1624,55 +1615,7 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 
 		saveHierarchicalNetwork(filename, writeEdges);
 
-		std::string outNameWithoutExtension = io::Str() << m_config.outDirectory << filename <<
-				(m_config.printExpanded && m_config.isMemoryNetwork() ? "_expanded" : "");
-
-		// Print .tree
-		if (m_config.printTree)
-		{
-			outName = io::Str() << outNameWithoutExtension << ".tree";
-			if (m_config.verbosity == 0)
-				RELEASE_OUT("writing .tree... " << std::flush);
-			else
-				RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
-			m_ioNetwork.writeHumanReadableTree(outName);
-		}
-
-		if (m_config.printFlowTree)
-		{
-			outName = io::Str() << outNameWithoutExtension << ".ftree";
-			if (m_config.verbosity == 0)
-				RELEASE_OUT("writing .ftree... " << std::flush);
-			else
-				RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
-			m_ioNetwork.writeHumanReadableTree(outName, true);
-		}
-
-		if (m_config.printBinaryTree || m_config.printBinaryFlowTree)
-		{
-			outName = io::Str() << outNameWithoutExtension << (writeEdges? ".bftree" : ".btree");
-			if (m_config.verbosity == 0)
-				RELEASE_OUT("writing " << (writeEdges ? ".bftree" : ".btree") << "... " << std::flush);
-			else
-				RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
-			m_ioNetwork.writeStreamableTree(outName, writeEdges);
-		}
-
-		if (m_config.printMap)
-		{
-			outName = io::Str() << outNameWithoutExtension << ".map";
-			if (m_config.verbosity == 0)
-				RELEASE_OUT("writing .map... " << std::flush);
-			else
-				RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
-
-			m_ioNetwork.writeMap(outName);
-		}
-
-		if (m_config.verbosity == 0)
-			RELEASE_OUT("done!" << std::endl);
-		else
-			RELEASE_OUT("\nDone!" << std::endl);
+		printHierarchicalData(filename);
 
 		// Clear the data
 		m_ioNetwork.clear();
@@ -1694,6 +1637,72 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 
 }
 
+void InfomapBase::printHierarchicalData(std::string filename)
+{
+	if (filename.length() == 0)
+			filename = FileURI(m_config.networkFile).getName();
+
+	std::string outName;
+	std::string outNameWithoutExtension = io::Str() << m_config.outDirectory << filename <<
+			(m_config.printExpanded && m_config.isMemoryNetwork() ? "_expanded" : "");
+
+	// Print .tree
+	if (m_config.printTree)
+	{
+		outName = io::Str() << outNameWithoutExtension << ".tree";
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("writing .tree... " << std::flush);
+		else
+			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
+		m_ioNetwork.writeHumanReadableTree(outName);
+	}
+
+	if (m_config.printFlowTree)
+	{
+		outName = io::Str() << outNameWithoutExtension << ".ftree";
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("writing .ftree... " << std::flush);
+		else
+			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
+		m_ioNetwork.writeHumanReadableTree(outName, true);
+	}
+
+	if (m_config.printBinaryTree)
+	{
+		outName = io::Str() << outNameWithoutExtension << ".btree";
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("writing .btree... " << std::flush);
+		else
+			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
+		m_ioNetwork.writeStreamableTree(outName, false);
+	}
+
+	if (m_config.printBinaryFlowTree)
+	{
+		outName = io::Str() << outNameWithoutExtension << ".bftree";
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("writing .bftree... " << std::flush);
+		else
+			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
+		m_ioNetwork.writeStreamableTree(outName, true);
+	}
+
+	if (m_config.printMap)
+	{
+		outName = io::Str() << outNameWithoutExtension << ".map";
+		if (m_config.verbosity == 0)
+			RELEASE_OUT("writing .map... " << std::flush);
+		else
+			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
+
+		m_ioNetwork.writeMap(outName);
+	}
+
+	if (m_config.verbosity == 0)
+		RELEASE_OUT("done!" << std::endl);
+	else
+		RELEASE_OUT("\nDone!" << std::endl);
+}
 
 void InfomapBase::printClusterNumbers(std::ostream& out)
 {

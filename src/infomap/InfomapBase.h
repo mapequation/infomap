@@ -249,6 +249,7 @@ private:
 	void initNodeNames(Network& network);
 	bool checkAndConvertBinaryTree();
 	void printNetworkData(std::string filename = "", bool sort = true);
+	void printHierarchicalData(std::string filename = "");
 	virtual void printClusterNumbers(std::ostream& out);
 	void printTree(std::ostream& out, const NodeBase& root, const std::string& prefix = "");
 	unsigned int printPerLevelCodelength(std::ostream& out);
