@@ -37,6 +37,7 @@
 #include "../io/HierarchicalNetwork.h"
 
 struct DepthStat;
+struct PerLevelStat;
 class PartitionQueue;
 
 class InfomapBase
@@ -253,8 +254,8 @@ private:
 	virtual void printClusterNumbers(std::ostream& out);
 	void printTree(std::ostream& out, const NodeBase& root, const std::string& prefix = "");
 	unsigned int printPerLevelCodelength(std::ostream& out);
-	void aggregatePerLevelCodelength(std::vector<double>& indexCodelengths, std::vector<double>& leafLengths, unsigned int level = 0);
-	void aggregatePerLevelCodelength(NodeBase& root, std::vector<double>& indexCodelengths, std::vector<double>& leafLengths, unsigned int level);
+	void aggregatePerLevelCodelength(std::vector<PerLevelStat>& perLevelStat, unsigned int level = 0);
+	void aggregatePerLevelCodelength(NodeBase& root, std::vector<PerLevelStat>& perLevelStat, unsigned int level);
 	DepthStat calcMaxAndAverageDepth();
 	void calcMaxAndAverageDepthHelper(NodeBase& root, unsigned int& maxDepth, double& sumLeafDepth,	unsigned int currentDepth);
 
@@ -356,6 +357,18 @@ struct DepthStat
 	: maxDepth(depth), averageDepth(aveDepth) {}
 	unsigned int maxDepth;
 	double averageDepth;
+};
+
+struct PerLevelStat
+{
+	PerLevelStat()
+	: numModules(0), numLeafNodes(0), indexLength(0.0), leafLength(0.0) {}
+	double codelength() { return indexLength + leafLength; }
+	unsigned int numNodes() { return numModules + numLeafNodes; }
+	unsigned int numModules;
+	unsigned int numLeafNodes;
+	double indexLength;
+	double leafLength;
 };
 
 

@@ -1773,74 +1773,104 @@ void InfomapBase::printTree(std::ostream& out, const NodeBase& root, const std::
 
 unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
 {
-	std::vector<double> indexLengths;
-	std::vector<double> leafLengths;
-	aggregatePerLevelCodelength(indexLengths, leafLengths);
+	std::vector<PerLevelStat> perLevelStats;
+	aggregatePerLevelCodelength(perLevelStats);
 
-	unsigned int numLevels = leafLengths.size();
-	indexLengths.resize(numLevels, 0.0);
+	unsigned int numLevels = perLevelStats.size();
+	double averageNumNodesPerLevel = 0.0;
+	for (unsigned int i = 0; i < numLevels; ++i)
+		averageNumNodesPerLevel += perLevelStats[i].numNodes();
+	averageNumNodesPerLevel /= numLevels;
+
+	out << "Per level number of modules:         [";
+	for (unsigned int i = 0; i < numLevels - 1; ++i)
+	{
+		out << io::padValue(perLevelStats[i].numModules, 11) << ", ";
+	}
+	out << io::padValue(perLevelStats[numLevels-1].numModules, 11) << "]";
+	unsigned int sumNumModules = 0;
+	for (unsigned int i = 0; i < numLevels; ++i)
+		sumNumModules += perLevelStats[i].numModules;
+	out << " (sum: " << sumNumModules << ")" << std::endl;
+
+	out << "Per level number of leaf nodes:      [";
+	for (unsigned int i = 0; i < numLevels - 1; ++i)
+	{
+		out << io::padValue(perLevelStats[i].numLeafNodes, 11) << ", ";
+	}
+	out << io::padValue(perLevelStats[numLevels-1].numLeafNodes, 11) << "]";
+	unsigned int sumNumLeafNodes = 0;
+	for (unsigned int i = 0; i < numLevels; ++i)
+		sumNumLeafNodes += perLevelStats[i].numLeafNodes;
+	out << " (sum: " << sumNumLeafNodes << ")" << std::endl;
+
+	out << "Per level average child degree:      [";
+	out << io::padValue(perLevelStats[0].numModules, 11) << ", ";
+	for (unsigned int i = 1; i < numLevels - 1; ++i)
+	{
+		out << io::padValue(perLevelStats[i].numNodes() * 1.0 / perLevelStats[i-1].numModules, 11) << ", ";
+	}
+	out << io::padValue(perLevelStats[numLevels-1].numNodes() * 1.0 / perLevelStats[numLevels-2].numModules, 11) << "]";
+	double sumAverageChildDegree = 0.0;
+	for (unsigned int i = 1; i < numLevels; ++i)
+		sumAverageChildDegree += perLevelStats[i].numNodes() / perLevelStats[i-1].numModules;
+	out << " (average: " << sumAverageChildDegree/numLevels << ")" << std::endl;
 
 	out << std::fixed << std::setprecision(9);
 	out << "Per level codelength for modules:    [";
 	for (unsigned int i = 0; i < numLevels - 1; ++i)
 	{
-		out << indexLengths[i] << ", ";
+		out << perLevelStats[i].indexLength << ", ";
 	}
-	out << indexLengths[numLevels-1] << "]";
+	out << perLevelStats[numLevels-1].indexLength << "]";
 	double sumIndexLengths = 0.0;
 	for (unsigned int i = 0; i < numLevels; ++i)
-		sumIndexLengths += indexLengths[i];
+		sumIndexLengths += perLevelStats[i].indexLength;
 	out << " (sum: " << sumIndexLengths << ")" << std::endl;
 
 	out << "Per level codelength for leaf nodes: [";
 	for (unsigned int i = 0; i < numLevels - 1; ++i)
 	{
-		out << leafLengths[i] << ", ";
+		out << perLevelStats[i].leafLength << ", ";
 	}
-	out << leafLengths[numLevels-1] << "]";
+	out << perLevelStats[numLevels-1].leafLength << "]";
 
 	double sumLeafLengths = 0.0;
 	for (unsigned int i = 0; i < numLevels; ++i)
-		sumLeafLengths += leafLengths[i];
+		sumLeafLengths += perLevelStats[i].leafLength;
 	out << " (sum: " << sumLeafLengths << ")" << std::endl;
 
-
-	std::vector<double> codelengths(leafLengths);
-	for (unsigned int i = 0; i < numLevels; ++i)
-		codelengths[i] += indexLengths[i];
 	out << "Per level codelength total:          [";
 	for (unsigned int i = 0; i < numLevels - 1; ++i)
 	{
-		out << codelengths[i] << ", ";
+		out << perLevelStats[i].codelength() << ", ";
 	}
-	out << codelengths[numLevels-1] << "]";
+	out << perLevelStats[numLevels-1].codelength() << "]";
 
 	double sumCodelengths = 0.0;
 	for (unsigned int i = 0; i < numLevels; ++i)
-		sumCodelengths += codelengths[i];
+		sumCodelengths += perLevelStats[i].codelength();
 	out << " (sum: " << sumCodelengths << ")" << std::endl;
 
 	return numLevels;
 }
 
-void InfomapBase::aggregatePerLevelCodelength(std::vector<double>& indexLengths,
-		std::vector<double>& leafLengths, unsigned int level)
+void InfomapBase::aggregatePerLevelCodelength(std::vector<PerLevelStat>& perLevelStat, unsigned int level)
 {
-	aggregatePerLevelCodelength(*root(), indexLengths, leafLengths, level);
+	aggregatePerLevelCodelength(*root(), perLevelStat, level);
 }
 
-void InfomapBase::aggregatePerLevelCodelength(NodeBase& parent, std::vector<double>& indexLengths,
-		std::vector<double>& leafLengths, unsigned int level)
+void InfomapBase::aggregatePerLevelCodelength(NodeBase& parent, std::vector<PerLevelStat>& perLevelStat, unsigned int level)
 {
-	if (indexLengths.size() < level+1)
-		indexLengths.resize(level+1, 0.0);
-	if (leafLengths.size() < level+2)
-		leafLengths.resize(level+2, 0.0);
-	indexLengths[level] += parent.isRoot() ? indexCodelength : parent.codelength;
+	if (perLevelStat.size() < level+2)
+		perLevelStat.resize(level+2);
+	perLevelStat[level].indexLength += parent.isRoot() ? indexCodelength : parent.codelength;
+	perLevelStat[level].numModules += parent.childDegree();
 
 	if (parent.firstChild->isLeaf())
 	{
-		leafLengths[level+1] += parent.codelength;
+		perLevelStat[level+1].leafLength += parent.codelength;
+		perLevelStat[level+1].numLeafNodes += parent.childDegree();
 	}
 	else
 	{
@@ -1848,13 +1878,15 @@ void InfomapBase::aggregatePerLevelCodelength(NodeBase& parent, std::vector<doub
 				moduleIt != endIt; ++moduleIt)
 		{
 			if (moduleIt->getSubInfomap() != 0)
-				moduleIt->getSubInfomap()->aggregatePerLevelCodelength(indexLengths, leafLengths, level+1);
+				moduleIt->getSubInfomap()->aggregatePerLevelCodelength(perLevelStat, level+1);
 			else
 			{
-				if (moduleIt->firstChild->isLeaf())
-					leafLengths[level+1] += moduleIt->codelength;
+				if (moduleIt->firstChild->isLeaf()) {
+					perLevelStat[level+1].leafLength += moduleIt->codelength;
+					perLevelStat[level+1].numLeafNodes += moduleIt->childDegree();
+				}
 				else
-					aggregatePerLevelCodelength(*moduleIt, indexLengths, leafLengths, level+1);
+					aggregatePerLevelCodelength(*moduleIt, perLevelStat, level+1);
 			}
 		}
 	}
