@@ -154,6 +154,13 @@ public:
 	const SubStructure& getSubStructure() const
 	{ return m_subStructure; }
 
+	// ---------------------------- Order ----------------------------
+	bool isFirst() const
+	{ return !parent || parent->firstChild == this; }
+
+	bool isLast() const
+	{ return !parent || parent->lastChild == this; }
+
 	// ---------------------------- Operators ----------------------------
 
 	bool operator ==(const NodeBase& rhs) const

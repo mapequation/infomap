@@ -1804,17 +1804,25 @@ unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
 		sumNumLeafNodes += perLevelStats[i].numLeafNodes;
 	out << " (sum: " << sumNumLeafNodes << ")" << std::endl;
 
+
 	out << "Per level average child degree:      [";
-	out << io::padValue(perLevelStats[0].numModules, 11) << ", ";
+	double childDegree = perLevelStats[0].numNodes();
+	double sumAverageChildDegree = childDegree * childDegree;
+	if (numLevels > 1) {
+		out << io::padValue(perLevelStats[0].numModules, 11) << ", ";
+	}
 	for (unsigned int i = 1; i < numLevels - 1; ++i)
 	{
-		out << io::padValue(perLevelStats[i].numNodes() * 1.0 / perLevelStats[i-1].numModules, 11) << ", ";
+		childDegree = perLevelStats[i].numNodes() * 1.0 / perLevelStats[i-1].numModules;
+		sumAverageChildDegree += childDegree * perLevelStats[i].numNodes();
+		out << io::padValue(childDegree, 11) << ", ";
 	}
-	out << io::padValue(perLevelStats[numLevels-1].numNodes() * 1.0 / perLevelStats[numLevels-2].numModules, 11) << "]";
-	double sumAverageChildDegree = 0.0;
-	for (unsigned int i = 1; i < numLevels; ++i)
-		sumAverageChildDegree += perLevelStats[i].numNodes() / perLevelStats[i-1].numModules;
-	out << " (average: " << sumAverageChildDegree/numLevels << ")" << std::endl;
+	if (numLevels > 1) {
+		childDegree = perLevelStats[numLevels-1].numNodes() * 1.0 / perLevelStats[numLevels-2].numModules;
+		sumAverageChildDegree += childDegree * perLevelStats[numLevels-1].numNodes();
+	}
+	out << io::padValue(childDegree, 11) << "]";
+	out << " (average: " << sumAverageChildDegree/(sumNumModules + sumNumLeafNodes) << ")" << std::endl;
 
 	out << std::fixed << std::setprecision(9);
 	out << "Per level codelength for modules:    [";
@@ -1862,33 +1870,25 @@ void InfomapBase::aggregatePerLevelCodelength(std::vector<PerLevelStat>& perLeve
 
 void InfomapBase::aggregatePerLevelCodelength(NodeBase& parent, std::vector<PerLevelStat>& perLevelStat, unsigned int level)
 {
-	if (perLevelStat.size() < level+2)
-		perLevelStat.resize(level+2);
-	perLevelStat[level].indexLength += parent.isRoot() ? indexCodelength : parent.codelength;
-	perLevelStat[level].numModules += parent.childDegree();
+	if (perLevelStat.size() < level+1)
+		perLevelStat.resize(level+1);
 
-	if (parent.firstChild->isLeaf())
-	{
-		perLevelStat[level+1].leafLength += parent.codelength;
-		perLevelStat[level+1].numLeafNodes += parent.childDegree();
+	if (parent.firstChild->isLeaf()) {
+		perLevelStat[level].numLeafNodes += parent.childDegree();
+		perLevelStat[level].leafLength += parent.codelength;
+		return;
 	}
-	else
+
+	perLevelStat[level].numModules += parent.childDegree();
+	perLevelStat[level].indexLength += parent.isRoot() ? indexCodelength : parent.codelength;
+
+	for (NodeBase::sibling_iterator moduleIt(parent.begin_child()), endIt(parent.end_child());
+			moduleIt != endIt; ++moduleIt)
 	{
-		for (NodeBase::sibling_iterator moduleIt(parent.begin_child()), endIt(parent.end_child());
-				moduleIt != endIt; ++moduleIt)
-		{
-			if (moduleIt->getSubInfomap() != 0)
-				moduleIt->getSubInfomap()->aggregatePerLevelCodelength(perLevelStat, level+1);
-			else
-			{
-				if (moduleIt->firstChild->isLeaf()) {
-					perLevelStat[level+1].leafLength += moduleIt->codelength;
-					perLevelStat[level+1].numLeafNodes += moduleIt->childDegree();
-				}
-				else
-					aggregatePerLevelCodelength(*moduleIt, perLevelStat, level+1);
-			}
-		}
+		if (moduleIt->getSubStructure().haveSubInfomapInstance())
+			moduleIt->getSubStructure().subInfomap->aggregatePerLevelCodelength(perLevelStat, level+1);
+		else
+			aggregatePerLevelCodelength(*moduleIt, perLevelStat, level+1);
 	}
 }
 
