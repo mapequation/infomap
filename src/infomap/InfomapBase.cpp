@@ -321,7 +321,7 @@ void InfomapBase::runPartition()
 	else
 	{
 		RELEASE_OUT("  -> Found " << partitionQueue.level << " levels with codelength " <<
-				io::toPrecision(hierarchicalCodelength));
+				io::toPrecision(hierarchicalCodelength) << "\n");
 	}
 //	double t1 = omp_get_wtime();
 //	RELEASE_OUT("\nParallel wall-time: " << (t1-t0));
