@@ -36,8 +36,8 @@ class NodeFactoryBase
 public:
 	virtual ~NodeFactoryBase() {}
 
-	virtual NodeBase* createNode(std::string, double flow, double teleWeight = 1.0) = 0;
-	virtual NodeBase* createNode(const NodeBase&) = 0;
+	virtual NodeBase* createNode(std::string, double flow, double teleWeight = 1.0) const = 0;
+	virtual NodeBase* createNode(const NodeBase&) const = 0;
 };
 
 
@@ -47,11 +47,11 @@ class NodeFactory : public NodeFactoryBase
 	typedef Node<FlowType> 			node_type;
 	typedef const Node<FlowType>	const_node_type;
 public:
-	NodeBase* createNode(std::string name, double flow, double teleWeight)
+	NodeBase* createNode(std::string name, double flow, double teleWeight) const
 	{
 		return new node_type(name, flow, teleWeight);
 	}
-	NodeBase* createNode(const NodeBase& node)
+	NodeBase* createNode(const NodeBase& node) const
 	{
 		return new node_type(static_cast<const_node_type&>(node));
 	}
@@ -63,11 +63,11 @@ class MemNodeFactory : public NodeFactoryBase
 	typedef MemNode<FlowType> 			node_type;
 	typedef const MemNode<FlowType>		const_node_type;
 public:
-	NodeBase* createNode(std::string name, double flow, double teleWeight)
+	NodeBase* createNode(std::string name, double flow, double teleWeight) const
 	{
 		return new node_type(name, flow, teleWeight);
 	}
-	NodeBase* createNode(const NodeBase& node)
+	NodeBase* createNode(const NodeBase& node) const
 	{
 		return new node_type(static_cast<const_node_type&>(node));
 	}

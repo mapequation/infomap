@@ -43,6 +43,7 @@
 #include "MemFlowNetwork.h"
 #include "MemNetwork.h"
 #include "MultiplexNetwork.h"
+#include "NetworkAdapter.h"
 #ifdef _OPENMP
 #include <omp.h>
 #include <stdio.h>
@@ -108,13 +109,11 @@ void InfomapBase::run()
 			root()->replaceChildrenWithGrandChildren();
 		}
 
+		hierarchicalCodelength = codelength = moduleCodelength = oneLevelCodelength;
+		indexCodelength = 0.0;
+
 		if (m_config.clusterDataFile != "")
 			consolidateExternalClusterData();
-		else
-		{
-			hierarchicalCodelength = codelength = moduleCodelength = oneLevelCodelength;
-			indexCodelength = 0.0;
-		}
 
 		if (!m_config.noInfomap)
 			runPartition();
@@ -1534,51 +1533,58 @@ void InfomapBase::setActiveNetworkFromLeafs()
 
 void InfomapBase::consolidateExternalClusterData()
 {
-	ALL_OUT("Calculating codelength from external data... ");
-	ClusterReader cluReader(numLeafNodes());
-	try
-	{
-		cluReader.readData(m_config.clusterDataFile);
-	}
-	catch (const std::runtime_error& error)
-	{
-		std::cerr << "Error parsing input cluster data: " << error.what() << std::endl;
-		return;
-	}
+	RELEASE_OUT("Build hierarchical structure from external cluster data... ");
 
-	const std::vector<unsigned int>& clusterIndices = cluReader.getClusterData();
+	NetworkAdapter adapter(m_config, m_treeData);
 
-	m_activeNetwork = m_treeData.m_leafNodes;
-	m_moveTo.resize(m_activeNetwork.size());
+	adapter.addExternalHierarchy(m_config.clusterDataFile);
 
-	initConstantInfomapTerms();
 
-	unsigned int i = 0;
-	for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()), endIt(m_treeData.end_leaf());
-			leafIt != endIt; ++leafIt, ++i)
-	{
-		m_moveTo[i] = clusterIndices[i];
-		ASSERT(m_moveTo[i] < m_activeNetwork.size());
-	}
 
-	initModuleOptimization();
-	moveNodesToPredefinedModules();
-	consolidateModules();
-
-	// Set module indices from a zero-based contiguous set
-	unsigned int packedModuleIndex = 0;
-	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-			moduleIt != endIt; ++moduleIt)
-	{
-		moduleIt->index = moduleIt->originalIndex = packedModuleIndex++;
-		moduleIt->codelength = calcCodelengthOnModuleOfLeafNodes(*moduleIt);
-	}
-
-	hierarchicalCodelength = codelength;
-
-	ALL_OUT("done! Two-level codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
-			io::toPrecision(codelength) <<
-			" in " << numTopModules() << " modules." << std::endl);
+//	ClusterReader cluReader(numLeafNodes());
+//	try
+//	{
+//		cluReader.readData(m_config.clusterDataFile);
+//	}
+//	catch (const std::runtime_error& error)
+//	{
+//		std::cerr << "Error parsing input cluster data: " << error.what() << std::endl;
+//		return;
+//	}
+//
+//	const std::vector<unsigned int>& clusterIndices = cluReader.getClusterData();
+//
+//	m_activeNetwork = m_treeData.m_leafNodes;
+//	m_moveTo.resize(m_activeNetwork.size());
+//
+//	initConstantInfomapTerms();
+//
+//	unsigned int i = 0;
+//	for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()), endIt(m_treeData.end_leaf());
+//			leafIt != endIt; ++leafIt, ++i)
+//	{
+//		m_moveTo[i] = clusterIndices[i];
+//		ASSERT(m_moveTo[i] < m_activeNetwork.size());
+//	}
+//
+//	initModuleOptimization();
+//	moveNodesToPredefinedModules();
+//	consolidateModules();
+//
+//	// Set module indices from a zero-based contiguous set
+//	unsigned int packedModuleIndex = 0;
+//	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
+//			moduleIt != endIt; ++moduleIt)
+//	{
+//		moduleIt->index = moduleIt->originalIndex = packedModuleIndex++;
+//		moduleIt->codelength = calcCodelengthOnModuleOfLeafNodes(*moduleIt);
+//	}
+//
+//	hierarchicalCodelength = codelength;
+//
+//	ALL_OUT("done! Two-level codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
+//			io::toPrecision(codelength) <<
+//			" in " << numTopModules() << " modules." << std::endl);
 }
 
 bool InfomapBase::checkAndConvertBinaryTree()

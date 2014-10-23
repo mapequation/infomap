@@ -86,8 +86,7 @@ void TreeData::readFromSubNetwork(NodeBase* parent)
 unsigned int TreeData::calcSize()
 {
 	unsigned int numNodes = 0;
-	for (NodeBase::const_dfs_pre_order_iterator nodeIt(m_root->begin_DFS());
-			nodeIt != m_root->end_DFS(); ++nodeIt, ++numNodes)
+	for (NodeBase::const_pre_depth_first_iterator nodeIt(m_root); !nodeIt.isEnd(); ++nodeIt, ++numNodes)
 	{}
 	return numNodes;
 }

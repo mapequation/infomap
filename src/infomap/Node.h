@@ -54,16 +54,21 @@ public:
 	typedef Edge<NodeBase>	EdgeType;
 
 	// Iterators
-	typedef SiblingIterator<NodeBase*>				sibling_iterator;
-	typedef SiblingIterator<NodeBase const*>		const_sibling_iterator;
-	typedef DFSPreOrderIterator<NodeBase*>			dfs_pre_order_iterator;
-	typedef DFSPreOrderIterator<NodeBase const*>	const_dfs_pre_order_iterator;
-	typedef LeafNodeIterator<NodeBase*>				leaf_iterator;
-	typedef LeafNodeIterator<NodeBase const*>		const_leaf_iterator;
+	typedef SiblingIterator<NodeBase*>					sibling_iterator;
+	typedef SiblingIterator<NodeBase const*>			const_sibling_iterator;
+	typedef LeafNodeIterator<NodeBase*>					leaf_iterator;
+	typedef LeafNodeIterator<NodeBase const*>			const_leaf_iterator;
+	typedef LeafModuleIterator<NodeBase*>				leaf_module_iterator;
+	typedef LeafModuleIterator<NodeBase const*>			const_leaf_module_iterator;
 
-	typedef std::vector<EdgeType*>::iterator		edge_iterator;
-	typedef std::vector<EdgeType*>::const_iterator	const_edge_iterator;
-	typedef gap_iterator<edge_iterator>				inout_edge_iterator;
+	typedef DepthFirstIterator<NodeBase*, true>			pre_depth_first_iterator;
+	typedef DepthFirstIterator<NodeBase const*, true>	const_pre_depth_first_iterator;
+	typedef DepthFirstIterator<NodeBase*, false>		post_depth_first_iterator;
+	typedef DepthFirstIterator<NodeBase const*, false>	const_post_depth_first_iterator;
+
+	typedef std::vector<EdgeType*>::iterator			edge_iterator;
+	typedef std::vector<EdgeType*>::const_iterator		const_edge_iterator;
+	typedef gap_iterator<edge_iterator>					inout_edge_iterator;
 
 
 	NodeBase();
@@ -94,11 +99,17 @@ public:
 	leaf_iterator end_leaf()
 	{ return leaf_iterator(0); }
 
-	const_dfs_pre_order_iterator begin_DFS() const
-	{ return const_dfs_pre_order_iterator(this); }
+	pre_depth_first_iterator begin_depthFirst()
+	{ return pre_depth_first_iterator(this); }
 
-	const_dfs_pre_order_iterator end_DFS() const
-	{ return const_dfs_pre_order_iterator(0); }
+	pre_depth_first_iterator end_depthFirst()
+	{ return pre_depth_first_iterator(0); }
+
+	const_pre_depth_first_iterator begin_depthFirst() const
+	{ return const_pre_depth_first_iterator(this); }
+
+	const_pre_depth_first_iterator end_depthFirst() const
+	{ return const_pre_depth_first_iterator(0); }
 
 	// ---------------------------- Graph iterators ----------------------------
 
@@ -160,6 +171,8 @@ public:
 
 	bool isLast() const
 	{ return !parent || parent->lastChild == this; }
+
+	unsigned int childIndex() const;
 
 	// ---------------------------- Operators ----------------------------
 
@@ -284,6 +297,18 @@ inline
 bool NodeBase::isRoot() const
 {
 	return parent == 0;
+}
+
+inline
+unsigned int NodeBase::childIndex() const
+{
+	unsigned int childIndex = 0;
+	const NodeBase* n(this);
+	while (n->previous) {
+		n = n->previous;
+		++childIndex;
+	}
+	return childIndex;
 }
 
 inline
