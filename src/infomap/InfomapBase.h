@@ -174,6 +174,10 @@ protected:
 
 	virtual std::auto_ptr<InfomapBase> getNewInfomapInstance() = 0;
 
+	virtual void aggregateFlowValuesFromLeafToRoot() = 0;
+
+	virtual double calcCodelengthOnAllNodesInTree() = 0;
+
 	virtual double calcCodelengthOnRootOfLeafNodes(const NodeBase& parent) = 0;
 
 	virtual double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent) = 0;

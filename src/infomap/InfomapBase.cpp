@@ -1539,6 +1539,13 @@ void InfomapBase::consolidateExternalClusterData()
 
 	adapter.addExternalHierarchy(m_config.clusterDataFile);
 
+	aggregateFlowValuesFromLeafToRoot();
+
+	hierarchicalCodelength = calcCodelengthOnAllNodesInTree();
+
+	indexCodelength = root()->codelength;
+
+	moduleCodelength = hierarchicalCodelength - indexCodelength;
 
 
 //	ClusterReader cluReader(numLeafNodes());

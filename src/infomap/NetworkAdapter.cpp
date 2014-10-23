@@ -33,6 +33,7 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	std::cout << "Parsing tree '" << filename << "'... " << std::flush;
 
 	std::auto_ptr<NodeBase> root(m_treeData.nodeFactory().createNode("tmpRoot", 1.0, 0.0));
+	root->originalIndex = 0; // Use originalIndex as depth in tree for modules
 	std::vector<double> flowValues(m_numNodes);
 	bool gotOriginalIndex = true;
 	std::string header;
@@ -84,6 +85,7 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 			{
 				NodeBase* child = m_treeData.nodeFactory().createNode("", 0.0, 0.0);
 				node->addChild(child);
+				child->originalIndex = node->originalIndex + 1; // Use originalIndex as depth for modules
 			}
 			node = node->lastChild;
 		}
@@ -102,46 +104,41 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 		return;
 	}
 
-	std::cout << "------ tree: \n";
-	for (NodeBase::pre_depth_first_iterator it(root.get()); !it.isEnd(); ++it) {
-		std::cout << std::string(it.depth(), ' ') << it->childIndex() << "\n";
-	}
+//	std::cout << "------ tree: \n";
+//	for (NodeBase::pre_depth_first_iterator it(root.get()); !it.isEnd(); ++it) {
+//		std::cout << std::string(it.depth(), ' ') << it->childIndex() << "\n";
+//	}
 
-	std::cout << "------ top modules: \n";
-	for (NodeBase::sibling_iterator it(root->begin_child()); !it.isEnd(); ++it) {
-		std::cout << it->childIndex() << "\n";
-	}
+//	std::cout << "------ top modules: \n";
+//	for (NodeBase::sibling_iterator it(root->begin_child()); !it.isEnd(); ++it) {
+//		std::cout << it->childIndex() << "\n";
+//	}
 
-	std::cout << "re-root:" << std::endl;
+//	std::cout << "re-root:" << std::endl;
 	// Re-root loaded tree
 	m_treeData.root()->releaseChildren();
 	NodeBase::sibling_iterator superModuleIt(root->begin_child());
-	while (!superModuleIt.isEnd()) {
-		std::cout << superModuleIt->childIndex() << ", ";
+	while (!superModuleIt.isEnd())
 		m_treeData.root()->addChild((superModuleIt++).base());
-	}
 
 //	for (NodeBase::sibling_iterator superModuleIt(root->begin_child()); !superModuleIt.isEnd(); ++superModuleIt)
 //	{
 //		std::cout << superModuleIt->childIndex() << ", ";
 //		m_treeData.root()->addChild(superModuleIt.base());
 //	}
-	std::cout << std::endl;
 	root->releaseChildren();
 
-	TreeDataWriter treeWriter(m_treeData);
-	treeWriter.writeTree(std::cout);
+//	TreeDataWriter treeWriter(m_treeData);
+//	treeWriter.writeTree(std::cout);
 
 	// Replace externally loaded leaf nodes with network nodes
 	for (NodeBase::leaf_module_iterator leafModuleIt(m_treeData.root()); !leafModuleIt.isEnd(); ++leafModuleIt)
 	{
 		std::vector<NodeBase*> leafNodes(leafModuleIt->childDegree());
 		unsigned int childIndex = 0;
-		std::cout << "\n" << std::string(leafModuleIt.depth(), ' ') << "childIndex: " << leafModuleIt->childIndex() << ", childDegree: " << leafModuleIt->childDegree() << "\n";
 		for (NodeBase::sibling_iterator nodeIt(leafModuleIt->begin_child()); !nodeIt.isEnd(); ++nodeIt, ++childIndex)
 		{
 			leafNodes[childIndex] = &m_treeData.getLeafNode(nodeIt->originalIndex);
-			std::cout << nodeIt->originalIndex << ", ";
 		}
 		leafModuleIt->deleteChildren();
 		for (childIndex = 0; childIndex < leafNodes.size(); ++childIndex)
@@ -149,65 +146,9 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	}
 
 
-	std::cout << "re-leaf:" << std::endl;
-	treeWriter.writeTree(std::cout);
-	std::cout << "-------" << std::endl;
+//	std::cout << "re-leaf:" << std::endl;
+//	treeWriter.writeTree(std::cout);
+//	std::cout << "-------" << std::endl;
 
 }
 
-/**
- *
-template<typename InfomapImplementation>
-inline
-void InfomapGreedy<InfomapImplementation>::saveHierarchicalNetwork(std::string rootName, bool includeLinks)
-{
-	m_ioNetwork.init(rootName, !m_config.isUndirected(), hierarchicalCodelength, oneLevelCodelength, INFOMAP_VERSION);
-
-	m_ioNetwork.prepareAddLeafNodes(m_treeData.numLeafNodes());
-
-	buildHierarchicalNetworkHelper(m_ioNetwork, m_ioNetwork.getRootNode(), m_nodeNames);
-
-	if (includeLinks)
-	{
-		for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()); leafIt != m_treeData.end_leaf(); ++leafIt)
-		{
-			NodeBase& node = **leafIt;
-			for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
-					outEdgeIt != endIt; ++outEdgeIt)
-			{
-				EdgeType& edge = **outEdgeIt;
-				m_ioNetwork.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
-			}
-		}
-	}
-}
-
-template<typename InfomapImplementation>
-inline
-void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, std::vector<std::string>& leafNodeNames, NodeBase* rootNode)
-{
-	if (rootNode == 0)
-		rootNode = root();
-
-	if (rootNode->getSubInfomap() != 0)
-	{
-		getImpl(*rootNode->getSubInfomap()).buildHierarchicalNetworkHelper(hierarchicalNetwork, parent, leafNodeNames);
-		return;
-	}
-
-	for (NodeBase::sibling_iterator childIt(rootNode->begin_child()), endIt(rootNode->end_child());
-			childIt != endIt; ++childIt)
-	{
-		const NodeType& node = getNode(*childIt);
-		if (node.isLeaf())
-		{
-			hierarchicalNetwork.addLeafNode(parent, node.data.flow, node.data.exitFlow, leafNodeNames[node.originalIndex], node.originalIndex);
-		}
-		else
-		{
-			SNode& newParent = hierarchicalNetwork.addNode(parent, node.data.flow, node.data.exitFlow);
-			buildHierarchicalNetworkHelper(hierarchicalNetwork, newParent, leafNodeNames, childIt.base());
-		}
-	}
-}
- */

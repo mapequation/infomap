@@ -51,6 +51,7 @@ protected:
 	virtual void initEnterExitFlow();
 
 	// // Teleportation methods - specialized implementation for InfomapDirected
+	void addTeleportationFlowOnModules() {}
 	void addTeleportationDeltaFlowOnOldModuleIfMove(NodeType& nodeToMove, DeltaFlow& oldModuleDeltaFlow) {}
 	void addTeleportationDeltaFlowOnNewModuleIfMove(NodeType& nodeToMove, DeltaFlow& newModuleDeltaFlow) {}
 	void addTeleportationDeltaFlowIfMove(NodeType& current, std::vector<DeltaFlow>& moduleDeltaExits, unsigned int numModuleLinks) {}
@@ -163,7 +164,32 @@ void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::initEnterExitFlow(
 	}
 }
 
+template<>
+inline
+void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::addTeleportationFlowOnModules()
+{
+	double alpha = m_config.teleportationProbability;
+	double beta = 1.0 - alpha;
+	double sumDanglingFlow = 0.0;
 
+	// Aggregate enter and exit flow between modules
+	for (TreeData::const_leafIterator leafIt(m_treeData.begin_leaf());
+			leafIt != m_treeData.end_leaf(); ++leafIt)
+	{
+		sumDanglingFlow += getNode(**leafIt).data.danglingFlow;
+	}
+
+	for (NodeBase::pre_depth_first_iterator it(root()); !it.isEnd(); ++it)
+	{
+		NodeType& node = getNode(*it);
+		if (!node.isLeaf())
+		{
+			// Don't code self-teleportation
+			node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
+			node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
+		}
+	}
+}
 
 template<>
 inline

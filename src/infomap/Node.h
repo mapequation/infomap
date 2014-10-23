@@ -136,6 +136,7 @@ public:
 	unsigned int childDegree() const;
 
 	bool isLeaf() const;
+	bool isLeafModule() const;
 	bool isRoot() const;
 
 	unsigned int numLeafMembers()
@@ -291,6 +292,12 @@ inline
 bool NodeBase::isLeaf() const
 {
 	return firstChild == 0;
+}
+
+inline
+bool NodeBase::isLeafModule() const
+{
+	return firstChild != 0 && firstChild->firstChild == 0;
 }
 
 inline
