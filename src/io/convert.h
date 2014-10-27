@@ -162,10 +162,13 @@ inline std::string padValue(T value, const std::string::size_type size, bool rig
 	return std::string(size - valStr.size(), paddingChar).append(valStr);
 }
 
-inline std::string toPrecision(double value, unsigned int precision = 10)
+inline std::string toPrecision(double value, unsigned int precision = 10, bool fixed = false)
 {
 	std::ostringstream o;
-	o << std::setprecision(precision);
+	if (fixed)
+		o << std::fixed << std::setprecision(precision);
+	else
+		o << std::setprecision(precision);
 	if (!(o << value))
 		throw BadConversionError((o << "stringify(" << value << ")", o.str()));
 	return o.str();
