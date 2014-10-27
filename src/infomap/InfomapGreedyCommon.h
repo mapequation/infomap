@@ -113,20 +113,16 @@ inline void InfomapGreedyCommon<InfomapGreedyDerivedType>::aggregateFlowValuesFr
 	rootData.flow = 0.0;
 
 	// Aggregate flow from leaf nodes to root node
-	for (TreeData::leafIterator leafIt(m_treeData.begin_leaf());
-			leafIt != m_treeData.end_leaf(); ++leafIt)
+	for (NodeBase::post_depth_first_iterator it(root()); !it.isEnd(); ++it)
 	{
-		NodeBase* node = *leafIt;
-		FlowType& leafData = getNode(*node).data;
-		while (node->parent != 0)
-		{
-			node = node->parent;
-			FlowType& data = getNode(*node).data;
-			data += leafData;
-			// Don't aggregate enter and exit flow
-			data.exitFlow = 0.0;
-			data.enterFlow = 0.0;
-		}
+		NodeType& node = getNode(*it);
+		if (!node.isRoot())
+			getNode(*node.parent).data += node.data;
+		// Don't aggregate enter and exit flow
+		node.data.exitFlow = 0.0;
+		node.data.enterFlow = 0.0;
+		if (!node.isLeaf())
+			node.originalIndex = it.depth(); // Use originalIndex to store the depth on modules
 	}
 
 	if (std::abs(rootData.flow - 1.0) > 1e-10)

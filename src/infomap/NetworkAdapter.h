@@ -22,6 +22,7 @@ public:
 	void addExternalHierarchy(std::string filename);
 
 protected:
+	void readClu(std::string filename);
 	void readHumanReadableTree(std::string filename);
 
 

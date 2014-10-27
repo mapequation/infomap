@@ -24,6 +24,16 @@ void NetworkAdapter::addExternalHierarchy(std::string filename)
 
 }
 
+void NetworkAdapter::readClu(std::string filename)
+{
+	std::string line;
+	std::string buf;
+	SafeInFile input(filename.c_str());
+	std::cout << "Parsing tree '" << filename << "'... " << std::flush;
+
+	std::auto_ptr<NodeBase> root(m_treeData.nodeFactory().createNode("tmpRoot", 1.0, 0.0));
+	root->originalIndex = 0; // Use originalIndex as depth in tree for modules
+}
 
 void NetworkAdapter::readHumanReadableTree(std::string filename)
 {
@@ -33,7 +43,6 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	std::cout << "Parsing tree '" << filename << "'... " << std::flush;
 
 	std::auto_ptr<NodeBase> root(m_treeData.nodeFactory().createNode("tmpRoot", 1.0, 0.0));
-	root->originalIndex = 0; // Use originalIndex as depth in tree for modules
 	std::vector<double> flowValues(m_numNodes);
 	bool gotOriginalIndex = true;
 	std::string header;
@@ -85,7 +94,6 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 			{
 				NodeBase* child = m_treeData.nodeFactory().createNode("", 0.0, 0.0);
 				node->addChild(child);
-				child->originalIndex = node->originalIndex + 1; // Use originalIndex as depth for modules
 			}
 			node = node->lastChild;
 		}
