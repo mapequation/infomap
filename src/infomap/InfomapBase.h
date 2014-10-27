@@ -211,6 +211,7 @@ protected:
 	bool isSuperLevelOnTopLevel() { return m_subLevel == m_TOP_LEVEL_ADDITION; }
 	bool isFullNetwork() { return m_subLevel == 0 && m_aggregationLevel == 0; }
 	bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
+	bool haveModules() { return !m_treeData.root()->firstChild->isLeaf(); }
 
 	unsigned int getLevelAggregationLimit() {
 		return (m_config.fastFirstIteration && isFirstLoop()) ? 1 : m_config.levelAggregationLimit;
@@ -230,6 +231,7 @@ private:
 	unsigned int findSuperModulesIterativelyFast(PartitionQueue& partitionQueue);
 	unsigned int deleteSubLevels();
 	void queueTopModules(PartitionQueue& partitionQueue);
+	void queueLeafModules(PartitionQueue& partitionQueue);
 	bool processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevel, bool tryIndexing = true);
 	void sortPartitionQueue(PartitionQueue& queue);
 	void partition(unsigned int recursiveCount = 0, bool fast = false, bool forceConsolidation = true);

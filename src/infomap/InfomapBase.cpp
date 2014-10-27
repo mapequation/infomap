@@ -214,7 +214,19 @@ void InfomapBase::runPartition()
 
 	PartitionQueue partitionQueue;
 
-	if (m_config.fastHierarchicalSolution != 0)
+	if (haveModules())
+	{
+		if (m_config.fastHierarchicalSolution <= 1)
+		{
+			deleteSubLevels();
+			queueTopModules(partitionQueue);
+		}
+		else
+		{
+			queueLeafModules(partitionQueue);
+		}
+	}
+	else if (m_config.fastHierarchicalSolution != 0)
 	{
 		unsigned int numLevelsCreated = findSuperModulesIterativelyFast(partitionQueue);
 
@@ -393,6 +405,41 @@ void InfomapBase::queueTopModules(PartitionQueue& partitionQueue)
 	partitionQueue.nonTrivialFlow = nonTrivialFlow;
 	partitionQueue.indexCodelength = indexCodelength;
 	partitionQueue.moduleCodelength = moduleCodelength;
+}
+
+void InfomapBase::queueLeafModules(PartitionQueue& partitionQueue)
+{
+	unsigned int numLeafModules = 0;
+	for (NodeBase::leaf_module_iterator leafModuleIt(m_treeData.root()); !leafModuleIt.isEnd(); ++leafModuleIt, ++numLeafModules)
+	{}
+
+	// Add modules to partition queue
+	partitionQueue.resize(numLeafModules);
+	unsigned int numNonTrivialModules = 0;
+	double sumFlow = 0.0;
+	double sumNonTrivialFlow = 0.0;
+	double sumModuleCodelength = 0.0;
+	unsigned int moduleIndex = 0;
+	unsigned int maxDepth = 0;
+	for (NodeBase::leaf_module_iterator leafModuleIt(m_treeData.root()); !leafModuleIt.isEnd(); ++leafModuleIt, ++moduleIndex)
+	{
+		partitionQueue[moduleIndex] = leafModuleIt.base();
+		double flow = getNodeData(*leafModuleIt).flow;
+		sumFlow += flow;
+		sumModuleCodelength += leafModuleIt->codelength;
+		if (leafModuleIt->childDegree() > 1)
+		{
+			++numNonTrivialModules;
+			sumNonTrivialFlow += flow;
+		}
+		maxDepth = std::max(maxDepth, leafModuleIt.depth());
+	}
+	partitionQueue.flow = sumFlow;
+	partitionQueue.numNonTrivialModules = numNonTrivialModules;
+	partitionQueue.nonTrivialFlow = sumNonTrivialFlow;
+	partitionQueue.indexCodelength = indexCodelength;
+	partitionQueue.moduleCodelength = sumModuleCodelength;
+	partitionQueue.level = maxDepth;
 }
 
 void InfomapBase::tryIndexingIteratively()
@@ -1541,7 +1588,7 @@ void InfomapBase::consolidateExternalClusterData()
 
 	aggregateFlowValuesFromLeafToRoot();
 
-	hierarchicalCodelength = calcCodelengthOnAllNodesInTree();
+	hierarchicalCodelength = codelength = calcCodelengthOnAllNodesInTree();
 
 	indexCodelength = root()->codelength;
 
