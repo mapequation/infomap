@@ -244,7 +244,7 @@ protected:
 
 	virtual void initNodeDegrees();
 
-	virtual void printParsingResult(bool includeFirstOrderData = true);
+	virtual void printParsingResult(bool includeFirstOrderData = false);
 
 	map<M2Node, double> m_m2Nodes;
 	M2NodeMap m_m2NodeMap;
