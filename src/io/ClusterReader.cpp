@@ -30,14 +30,6 @@
 #include "convert.h"
 #include "SafeFile.h"
 
-ClusterReader::ClusterReader(unsigned int numNodes)
-:	m_clusterData(numNodes)
-{
-}
-
-ClusterReader::~ClusterReader()
-{
-}
 
 /**
  * The cluster data file should be a list of cluster indices, where the lowest is 1 and largest the number of nodes.
@@ -53,12 +45,11 @@ ClusterReader::~ClusterReader()
  */
 void ClusterReader::readData(const string filename)
 {
-	SafeInFile clusterFile(filename.c_str());
-	DEBUG_OUT("ClusterReader::readData() from file '" << filename << "'..." << std::endl);
+	SafeInFile input(filename.c_str());
+	std::string line;
+	std::cout << "Parsing '" << filename << "'... " << std::flush;
 
-	unsigned int numNodes = m_clusterData.size();
-	string line;
-	if (!std::getline(clusterFile, line))
+	if (!getline(input, line))
 		throw FileFormatError("First line of cluster data file couldn't be read.");
 
 	std::istringstream lineStream(line);
@@ -72,34 +63,47 @@ void ClusterReader::readData(const string filename)
 		throw FileFormatError("Number of vertices declared in the cluster data file is zero.");
 
 	unsigned int numParsedValues = 0;
-	while(std::getline(clusterFile, line))
+	unsigned int maxClusterIndex = 0;
+
+	while(getline(input, line))
 	{
-	    std::istringstream lineStream(line);
+		std::istringstream lineStream(line);
 		unsigned int clusterIndex;
 		if (!(lineStream >> clusterIndex))
 			throw FileFormatError(io::Str() << "Couldn't parse cluster data from line " << (numParsedValues+1));
 
-		// Assume data range [1..numNodes]
-//		if (clusterIndex == 0 || clusterIndex > m_clusterData.size())
-//			throw FileFormatError((oss << "Cluster value for node " << (numParsedValues+1) << " (" << clusterIndex << ")" <<
-//					" is out of the valid range [1..numNodes]", oss.str()));
-//	    m_clusterData[numParsedValues] = clusterIndex - 1;
-
-		// Assume data range [0..numNodes-1]
-		if (clusterIndex >= m_clusterData.size())
-			throw FileFormatError(io::Str() << "Cluster value for node " << (numParsedValues+1) << " (" << clusterIndex << ")" <<
-					" is out of the valid range [0..numNodes-1]");
-	    m_clusterData[numParsedValues] = clusterIndex;
-
-//	    DEBUG_OUT(" parsed value: " << clusterIndex << std::endl);
+		clusterIndex -= m_indexOffset; // Get zero-based indices
+		m_clusters[numParsedValues] = clusterIndex;
+		maxClusterIndex = std::max(maxClusterIndex, clusterIndex);
 		++numParsedValues;
-		if (numParsedValues == numNodes)
-		{
+		if (numParsedValues == m_numNodes)
 			break;
-		}
 	}
-	if (numParsedValues != numNodes)
+	if (numParsedValues != m_numNodes)
 		throw FileFormatError(io::Str() << "Could only read cluster data for " << numParsedValues << " nodes, but the given network contains " <<
-				numNodes << " nodes.");
-//	DEBUG_OUT("Successfully parsed " << numNodes << " lines of cluster data." << std::endl);
+				m_numNodes << " nodes.");
+
+	unsigned int zeroMinusOne = 0;
+	--zeroMinusOne;
+	if (maxClusterIndex == zeroMinusOne)
+		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
+	if (maxClusterIndex >= m_numNodes)
+		throw InputDomainError(io::Str() << "Max module number (" << maxClusterIndex + m_indexOffset <<
+				") is larger than the number of nodes");
+
+	m_numModules = maxClusterIndex + 1;
+
+	// Calculate the number of nodes per module to check for compactness and non-emptyness
+	std::vector<unsigned int> moduleSize(m_numModules);
+	for (unsigned int i = 0; i < m_numNodes; ++i)
+	{
+		++moduleSize[m_clusters[i]];
+	}
+
+	for (unsigned int i = 0; i < m_numModules; ++i)
+	{
+		if (moduleSize[i] == 0)
+			throw InputDomainError(io::Str() << "Module " << (i + 1) << " is empty.");
+	}
+
 }
