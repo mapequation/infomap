@@ -38,6 +38,7 @@ using std::string;
  * getDirectory -> "path/to/"
  * getName -> "file"
  * getExtension -> "ext"
+ * Can throw std::invalid_argument on creation.
  */
 class FileURI
 {

@@ -7,32 +7,123 @@
 
 #include "NetworkAdapter.h"
 
-#include <deque>
 #include <iostream>
-#include <sstream>
 #include <memory>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
+#include <algorithm>
 
 #include "../io/convert.h"
 #include "../io/SafeFile.h"
-#include "../io/TreeDataWriter.h"
+#include "../utils/FileURI.h"
+#include "Node.h"
+#include "NodeFactory.h"
+#include "treeIterators.h"
 
 
-void NetworkAdapter::addExternalHierarchy(std::string filename)
+bool NetworkAdapter::readExternalHierarchy(std::string filename)
 {
+	bool ok = true;
+	try
+	{
+		FileURI file(filename);
+		if (file.getExtension() == "clu")
+			readClu(filename);
+		else if (file.getExtension() == "tree")
+			readHumanReadableTree(filename);
+		else
+			throw std::invalid_argument("Extension to external cluster data not recognized.");
+	}
+	catch (std::exception& err)
+	{
+		std::cout << "Error: \"" << err.what() << "\"\n";
+		ok = false;
+	}
 
-	readHumanReadableTree(filename);
-
+	return ok;
 }
 
 void NetworkAdapter::readClu(std::string filename)
 {
-	std::string line;
-	std::string buf;
 	SafeInFile input(filename.c_str());
-	std::cout << "Parsing tree '" << filename << "'... " << std::flush;
+	std::string line;
+	std::cout << "Parsing '" << filename << "'... " << std::flush;
 
-	std::auto_ptr<NodeBase> root(m_treeData.nodeFactory().createNode("tmpRoot", 1.0, 0.0));
-	root->originalIndex = 0; // Use originalIndex as depth in tree for modules
+	if (!getline(input, line))
+		throw FileFormatError("First line of cluster data file couldn't be read.");
+
+	std::istringstream lineStream(line);
+	string tmp;
+	if (!(lineStream >> tmp))
+		throw FileFormatError("First line of cluster data file couldn't be read.");
+	unsigned int numVertices;
+	if (!(lineStream >> numVertices))
+		throw FileFormatError("First line of cluster data file doesn't match '*Vertices x' where x is the number of vertices.");
+	if (numVertices == 0)
+		throw FileFormatError("Number of vertices declared in the cluster data file is zero.");
+
+	std::vector<unsigned int> clusters(m_numNodes);
+	unsigned int numParsedValues = 0;
+	unsigned int maxClusterIndex = 0;
+
+	while(getline(input, line))
+	{
+		std::istringstream lineStream(line);
+		unsigned int clusterIndex;
+		if (!(lineStream >> clusterIndex))
+			throw FileFormatError(io::Str() << "Couldn't parse cluster data from line " << (numParsedValues+1));
+
+		// Assume data range [1..numNodes]
+		if (clusterIndex == 0 || clusterIndex > m_numNodes)
+			throw FileFormatError(io::Str() << "Cluster value for node " << (numParsedValues+1) << " (" << clusterIndex << ")" <<
+					" is out of the valid range [1..numNodes]");
+		--clusterIndex; // Zero-based
+		clusters[numParsedValues] = clusterIndex;
+		maxClusterIndex = std::max(maxClusterIndex, clusterIndex);
+		++numParsedValues;
+		if (numParsedValues == m_numNodes)
+			break;
+	}
+	if (numParsedValues != m_numNodes)
+		throw FileFormatError(io::Str() << "Could only read cluster data for " << numParsedValues << " nodes, but the given network contains " <<
+				m_numNodes << " nodes.");
+
+	unsigned int numModules = maxClusterIndex + 1;
+	std::vector<NodeBase*> modules(numModules);
+
+	// Create and store the module nodes in a random access array, and add to root
+	for (unsigned int i = 0; i < numModules; ++i)
+	{
+		NodeBase* module = m_treeData.nodeFactory().createNode("", 0.0, 0.0);
+		modules[i] = module;
+	}
+
+	// Check that no modules are empty
+	std::vector<unsigned int> childDegrees(numModules);
+	for (unsigned int i = 0; i < m_numNodes; ++i)
+		++childDegrees[clusters[i]];
+
+	for (unsigned int i = 0; i < numModules; ++i)
+	{
+		if (childDegrees[i] == 0)
+			throw InputDomainError(io::Str() << "Module " << (i + 1) << " is empty.");
+	}
+
+	// Add all leaf nodes to the modules defined by the parsed cluster indices
+	for (unsigned int i = 0; i < m_numNodes; ++i)
+	{
+		modules[clusters[i]]->addChild(&m_treeData.getLeafNode(i));
+	}
+
+	// Release leaf nodes from root to add the modules inbetween
+	m_treeData.root()->releaseChildren();
+	for (unsigned int i = 0; i < numModules; ++i)
+	{
+		m_treeData.root()->addChild(modules[i]);
+	}
+
+	std::cout << "done! Found " << numModules + 1 << " modules." << std::endl;
 }
 
 void NetworkAdapter::readHumanReadableTree(std::string filename)
@@ -49,6 +140,7 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	unsigned int lineNr = 0;
 	std::istringstream ss;
 	unsigned int nodeCount = 0;
+	unsigned int maxDepth = 0;
 	while(getline(input, line))
 	{
 		++lineNr;
@@ -83,6 +175,7 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 		ss.str(treePath);
 		unsigned int childIndex;
 		NodeBase* node = root.get();
+		unsigned int depth = 0;
 		while (ss >> childIndex)
 		{
 			ss.get(); // Extract the delimiting character also
@@ -96,48 +189,30 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 				node->addChild(child);
 			}
 			node = node->lastChild;
+			++depth;
 		}
 		node->name = name;
 		node->originalIndex = originalIndex;;
 		flowValues[originalIndex] = flow;
 		++nodeCount;
+		maxDepth = std::max(maxDepth, depth);
 	}
 	if (nodeCount < m_numNodes)
 		throw MisMatchError("There are less nodes in the tree than in the network.");
 
-	std::cout << "done!" << std::endl;
+	if (!gotOriginalIndex)
+		throw FileFormatError("Not implemented for old .tree format (missing original index column).");
 
-	if (!gotOriginalIndex) {
-		std::cout << "Not implemented for old .tree format (missing original index data, ignoring tree structure.\n";
-		return;
-	}
+	if (maxDepth < 2)
+		throw InputDomainError("No modular solution found in file.");
 
-//	std::cout << "------ tree: \n";
-//	for (NodeBase::pre_depth_first_iterator it(root.get()); !it.isEnd(); ++it) {
-//		std::cout << std::string(it.depth(), ' ') << it->childIndex() << "\n";
-//	}
-
-//	std::cout << "------ top modules: \n";
-//	for (NodeBase::sibling_iterator it(root->begin_child()); !it.isEnd(); ++it) {
-//		std::cout << it->childIndex() << "\n";
-//	}
-
-//	std::cout << "re-root:" << std::endl;
 	// Re-root loaded tree
 	m_treeData.root()->releaseChildren();
 	NodeBase::sibling_iterator superModuleIt(root->begin_child());
 	while (!superModuleIt.isEnd())
 		m_treeData.root()->addChild((superModuleIt++).base());
 
-//	for (NodeBase::sibling_iterator superModuleIt(root->begin_child()); !superModuleIt.isEnd(); ++superModuleIt)
-//	{
-//		std::cout << superModuleIt->childIndex() << ", ";
-//		m_treeData.root()->addChild(superModuleIt.base());
-//	}
 	root->releaseChildren();
-
-//	TreeDataWriter treeWriter(m_treeData);
-//	treeWriter.writeTree(std::cout);
 
 	// Replace externally loaded leaf nodes with network nodes
 	for (NodeBase::leaf_module_iterator leafModuleIt(m_treeData.root()); !leafModuleIt.isEnd(); ++leafModuleIt)
@@ -153,10 +228,6 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 			leafModuleIt->addChild(leafNodes[childIndex]);
 	}
 
-
-//	std::cout << "re-leaf:" << std::endl;
-//	treeWriter.writeTree(std::cout);
-//	std::cout << "-------" << std::endl;
-
+	std::cout << "done! Found " << maxDepth << " levels." << std::endl;
 }
 

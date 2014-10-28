@@ -1584,7 +1584,10 @@ void InfomapBase::consolidateExternalClusterData()
 
 	NetworkAdapter adapter(m_config, m_treeData);
 
-	adapter.addExternalHierarchy(m_config.clusterDataFile);
+	bool isModulesLoaded = adapter.readExternalHierarchy(m_config.clusterDataFile);
+
+	if (!isModulesLoaded)
+		return;
 
 	aggregateFlowValuesFromLeafToRoot();
 
