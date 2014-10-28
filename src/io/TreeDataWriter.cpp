@@ -50,8 +50,7 @@ void TreeDataWriter::writeTree(std::ostream& out, bool collapseLeafs)
 	uint oldDepth = 0;
 	std::vector<unsigned int> indexStack;
 	const NodeBase* root = m_tree.root();
-	for (NodeBase::const_dfs_pre_order_iterator nodeIt(root->begin_DFS());
-			nodeIt != root->end_DFS(); ++nodeIt)
+	for (NodeBase::const_pre_depth_first_iterator nodeIt(root);	!nodeIt.isEnd(); ++nodeIt)
 	{
 		if (collapseLeafs)
 		{

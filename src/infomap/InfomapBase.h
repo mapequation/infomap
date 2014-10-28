@@ -37,6 +37,7 @@
 #include "../io/HierarchicalNetwork.h"
 
 struct DepthStat;
+struct PerLevelStat;
 class PartitionQueue;
 
 class InfomapBase
@@ -173,6 +174,10 @@ protected:
 
 	virtual std::auto_ptr<InfomapBase> getNewInfomapInstance() = 0;
 
+	virtual void aggregateFlowValuesFromLeafToRoot() = 0;
+
+	virtual double calcCodelengthOnAllNodesInTree() = 0;
+
 	virtual double calcCodelengthOnRootOfLeafNodes(const NodeBase& parent) = 0;
 
 	virtual double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent) = 0;
@@ -206,6 +211,7 @@ protected:
 	bool isSuperLevelOnTopLevel() { return m_subLevel == m_TOP_LEVEL_ADDITION; }
 	bool isFullNetwork() { return m_subLevel == 0 && m_aggregationLevel == 0; }
 	bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
+	bool haveModules() { return !m_treeData.root()->firstChild->isLeaf(); }
 
 	unsigned int getLevelAggregationLimit() {
 		return (m_config.fastFirstIteration && isFirstLoop()) ? 1 : m_config.levelAggregationLimit;
@@ -225,6 +231,7 @@ private:
 	unsigned int findSuperModulesIterativelyFast(PartitionQueue& partitionQueue);
 	unsigned int deleteSubLevels();
 	void queueTopModules(PartitionQueue& partitionQueue);
+	void queueLeafModules(PartitionQueue& partitionQueue);
 	bool processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevel, bool tryIndexing = true);
 	void sortPartitionQueue(PartitionQueue& queue);
 	void partition(unsigned int recursiveCount = 0, bool fast = false, bool forceConsolidation = true);
@@ -253,8 +260,8 @@ private:
 	virtual void printClusterNumbers(std::ostream& out);
 	void printTree(std::ostream& out, const NodeBase& root, const std::string& prefix = "");
 	unsigned int printPerLevelCodelength(std::ostream& out);
-	void aggregatePerLevelCodelength(std::vector<double>& indexCodelengths, std::vector<double>& leafLengths, unsigned int level = 0);
-	void aggregatePerLevelCodelength(NodeBase& root, std::vector<double>& indexCodelengths, std::vector<double>& leafLengths, unsigned int level);
+	void aggregatePerLevelCodelength(std::vector<PerLevelStat>& perLevelStat, unsigned int level = 0);
+	void aggregatePerLevelCodelength(NodeBase& root, std::vector<PerLevelStat>& perLevelStat, unsigned int level);
 	DepthStat calcMaxAndAverageDepth();
 	void calcMaxAndAverageDepthHelper(NodeBase& root, unsigned int& maxDepth, double& sumLeafDepth,	unsigned int currentDepth);
 
@@ -356,6 +363,18 @@ struct DepthStat
 	: maxDepth(depth), averageDepth(aveDepth) {}
 	unsigned int maxDepth;
 	double averageDepth;
+};
+
+struct PerLevelStat
+{
+	PerLevelStat()
+	: numModules(0), numLeafNodes(0), indexLength(0.0), leafLength(0.0) {}
+	double codelength() { return indexLength + leafLength; }
+	unsigned int numNodes() { return numModules + numLeafNodes; }
+	unsigned int numModules;
+	unsigned int numLeafNodes;
+	double indexLength;
+	double leafLength;
 };
 
 

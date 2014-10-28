@@ -57,8 +57,13 @@ private:
 	InfomapGreedyDerivedType& derived();
 
 protected:
+	using Super::getNode;
+	using Super::root;
 
 	virtual std::auto_ptr<InfomapBase> getNewInfomapInstance();
+
+	virtual void aggregateFlowValuesFromLeafToRoot();
+	virtual double calcCodelengthOnAllNodesInTree();
 
 	virtual double calcCodelengthOnRootOfLeafNodes(const NodeBase& parent);
 	virtual double calcCodelengthOnModuleOfModules(const NodeBase& parent);
@@ -81,6 +86,8 @@ protected:
 	virtual unsigned int consolidateModules(bool replaceExistingStructure, bool asSubModules);
 
 	unsigned int m_coreLoopCount;
+	using Super::m_treeData;
+	using Super::m_config;
 };
 
 
@@ -97,6 +104,111 @@ inline
 std::auto_ptr<InfomapBase> InfomapGreedyCommon<InfomapGreedyDerivedType>::getNewInfomapInstance()
 {
 	return std::auto_ptr<InfomapBase>(new InfomapGreedyDerivedType(Super::m_config));
+}
+
+template<typename InfomapGreedyDerivedType>
+inline void InfomapGreedyCommon<InfomapGreedyDerivedType>::aggregateFlowValuesFromLeafToRoot()
+{
+	FlowType& rootData = getNode(*root()).data;
+	rootData.flow = 0.0;
+
+	// Aggregate flow from leaf nodes to root node
+	for (NodeBase::post_depth_first_iterator it(root()); !it.isEnd(); ++it)
+	{
+		NodeType& node = getNode(*it);
+		if (!node.isRoot())
+			getNode(*node.parent).data += node.data;
+		// Don't aggregate enter and exit flow
+		node.data.exitFlow = 0.0;
+		node.data.enterFlow = 0.0;
+		if (!node.isLeaf())
+			node.originalIndex = it.depth(); // Use originalIndex to store the depth on modules
+	}
+
+	if (std::abs(rootData.flow - 1.0) > 1e-10)
+		std::cout << "Warning, aggregated flow is not exactly 1.0, but " << rootData.flow << ".\n";
+
+	// Aggregate enter and exit flow between modules
+	for (TreeData::leafIterator leafIt(m_treeData.begin_leaf());
+			leafIt != m_treeData.end_leaf(); ++leafIt)
+	{
+		NodeBase& leafNodeSource = **leafIt;
+		for (NodeBase::edge_iterator edgeIt(leafNodeSource.begin_outEdge()), endIt(leafNodeSource.end_outEdge());
+				edgeIt != endIt; ++edgeIt)
+		{
+			EdgeType& edge = **edgeIt;
+			NodeBase& leafNodeTarget = edge.target;
+			double linkFlow = edge.data.flow;
+
+			NodeBase* node1 = leafNodeSource.parent;
+			NodeBase* node2 = leafNodeTarget.parent;
+
+			if (node1 == node2)
+				continue;
+
+			// First aggregate link flow until equal depth
+			while(node1->originalIndex > node2->originalIndex)
+			{
+				getNode(*node1).data.exitFlow += linkFlow;
+//				if (m_config.isUndirected())
+//					getNode(*node1).data.enterFlow += linkFlow;
+				node1 = node1->parent;
+			}
+			while(node2->originalIndex > node1->originalIndex)
+			{
+				getNode(*node2).data.enterFlow += linkFlow;
+//				if (m_config.isUndirected())
+//					getNode(*node2).data.exitFlow += linkFlow;
+				node2 = node2->parent;
+			}
+
+			// Then aggregate link flow until equal parent
+			while (node1 != node2)
+			{
+				getNode(*node1).data.exitFlow += linkFlow;
+				getNode(*node2).data.enterFlow += linkFlow;
+//				if (m_config.isUndirected())
+//				{
+//					getNode(*node1).data.enterFlow += linkFlow;
+//					getNode(*node2).data.exitFlow += linkFlow;
+//				}
+				node1 = node1->parent;
+				node2 = node2->parent;
+			}
+		}
+	}
+
+	Super::addTeleportationFlowOnModules();
+}
+
+template<typename InfomapGreedyDerivedType>
+inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnAllNodesInTree()
+{
+	double sumCodelength = 0.0;
+	for (NodeBase::pre_depth_first_iterator it(root()); !it.isEnd(); ++it)
+	{
+		NodeBase& node = *it;
+		if (node.isLeaf())
+			node.codelength = 0.0;
+		else if (node.isLeafModule())
+			node.codelength = calcCodelengthOnModuleOfLeafNodes(node);
+		else
+			node.codelength = calcCodelengthOnModuleOfModules(node);
+		sumCodelength += node.codelength;
+	}
+
+
+//	std::cout << "\nTree:\n";
+//	for (NodeBase::pre_depth_first_iterator it(root()); !it.isEnd(); ++it)
+//	{
+//		NodeBase& node = *it;
+//		FlowType& data = getNode(node).data;
+//		std::cout << std::string(it.depth() * 2, ' ') << node.childIndex() << " (codelength: " << node.codelength <<
+//				", flow: " << data.flow << ", enter: " << data.enterFlow << ", exit: " << data.exitFlow << ")\n";
+//	}
+//	std::cout << "\n";
+
+	return sumCodelength;
 }
 
 template<typename InfomapGreedyDerivedType>

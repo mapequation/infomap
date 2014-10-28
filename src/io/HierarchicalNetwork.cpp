@@ -245,7 +245,8 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bool writeHierarchicalNetworkEdges)
 {
 	SafeOutFile out(fileName.c_str());
-	out << "# Network '" << m_networkName << "', size: " << m_leafNodes.size() << " nodes in " << m_maxDepth << " levels, codelength: " << m_codelength << " bits.\n";
+	out << "# Network '" << m_networkName << "', size: " << m_leafNodes.size() << " nodes in " << m_maxDepth <<
+			" levels, codelength: " << io::toPrecision(m_codelength, 9, true) << " bits.\n";
 
 	writeHumanReadableTreeRecursiveHelper(out, m_rootNode);
 	if (writeHierarchicalNetworkEdges)
@@ -302,6 +303,78 @@ void HierarchicalNetwork::writeHumanReadableTreeFlowLinksRecursiveHelper(std::os
 			writeHumanReadableTreeFlowLinksRecursiveHelper(out, child, subPrefix);
 		}
 	}
+}
+
+void HierarchicalNetwork::readHumanReadableTree(const std::string& fileName)
+{
+	if (m_leafNodes.empty())
+		throw InternalOrderError("Hierarchical network not initialized before parsing tree.");
+	std::string line;
+	std::string buf;
+	SafeInFile input(fileName.c_str());
+	std::cout << "Parsing tree '" << fileName << "'... " << std::flush;
+
+	std::string header;
+	unsigned int lineNr = 0;
+	std::istringstream ss;
+	unsigned int nodeCount = 0;
+	while(getline(input, line))
+	{
+		++lineNr;
+		if (line[0] == '#')
+		{
+			if (lineNr == 1)
+				header = line; // e.g. '# Codelength = 8.45977 bits.'
+			continue;
+		}
+		if (nodeCount > m_leafNodes.size())
+			throw MisMatchError("There are more nodes in the tree than in the network.");
+
+		ss.clear();
+		ss.str(line);
+		std::string treePath;
+		if (!(ss >> treePath))
+			throw BadConversionError(io::Str() << "Can't parse node path from line " << lineNr << " ('" << line << "').");
+		double flow;
+		if (!(ss >> flow))
+			throw BadConversionError(io::Str() << "Can't parse node flow from line " << lineNr << " ('" << line << "').");
+		std::string name;
+		// Get the name by extracting the rest of the stream until the first quotation mark and then the last.
+		if (!getline(ss, name, '"'))
+			throw BadConversionError(io::Str() << "Can't parse node name from line " << lineNr << " ('" << line << "').");
+		if (!getline(ss, name, '"'))
+			throw BadConversionError(io::Str() << "Can't parse node name from line " << lineNr << " ('" << line << "').");
+//		unsigned int originalIndex = 0;
+//		bool gotOriginalIndex = (ss >> originalIndex);
+
+		// Analyze the path and build up the tree
+		ss.clear(); // Clear the eofbit from last extraction!
+		ss.str(treePath);
+		unsigned int childIndex;
+		SNode* node = &m_rootNode;
+		while (ss >> childIndex)
+		{
+			ss.get(); // Extract the delimiting character also
+			if (childIndex == 0)
+				throw FileFormatError("There is a '0' in the tree path, lowest allowed integer is 1.");
+			--childIndex;
+			// Create new node if path doesn't exist
+			if (node->children.size() <= childIndex)
+			{
+				SNode& child = addNode(*node, 0.0, 0.0);
+				node->children.push_back(&child);
+			}
+			node = node->children.back();
+		}
+		node->data.flow = flow;
+		node->data.name = name;
+		node->isLeaf = true;
+		++nodeCount;
+	}
+	if (nodeCount < m_leafNodes.size())
+		throw MisMatchError("There are less nodes in the tree than in the network.");
+
+	std::cout << "done!" << std::endl;
 }
 
 void HierarchicalNetwork::writeMap(const std::string& fileName)

@@ -260,7 +260,8 @@ public:
 		childSize_t numChildren = 0;
 		childPos_t childPosition = 0;
 		dataStream >> data.name >> flow >> exitFlow >> numChildren;
-		if (numChildren > 0)
+		isLeaf = numChildren == 0;
+		if (!isLeaf)
 		{
 			dataStream >> depthBelow >> childPosition;
 		}
@@ -524,6 +525,8 @@ public:
 	void readStreamableTree(const std::string& fileName);
 
 	void writeHumanReadableTree(const std::string& fileName, bool writeHierarchicalNetworkEdges = false);
+
+	void readHumanReadableTree(const std::string& fileName);
 
 	void writeMap(const std::string& fileName);
 

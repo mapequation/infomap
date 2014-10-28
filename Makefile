@@ -26,6 +26,7 @@ src/infomap/MemFlowNetwork.h \
 src/infomap/MemNetwork.h \
 src/infomap/MultiplexNetwork.h \
 src/infomap/Network.h \
+src/infomap/NetworkAdapter.h \
 src/infomap/Node.h \
 src/infomap/NodeFactory.h \
 src/infomap/TreeData.h \
@@ -56,6 +57,7 @@ src/infomap/MemFlowNetwork.cpp \
 src/infomap/MemNetwork.cpp \
 src/infomap/MultiplexNetwork.cpp \
 src/infomap/Network.cpp \
+src/infomap/NetworkAdapter.cpp \
 src/infomap/Node.cpp \
 src/infomap/TreeData.cpp \
 src/Infomap.cpp \

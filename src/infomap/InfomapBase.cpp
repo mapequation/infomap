@@ -43,6 +43,7 @@
 #include "MemFlowNetwork.h"
 #include "MemNetwork.h"
 #include "MultiplexNetwork.h"
+#include "NetworkAdapter.h"
 #ifdef _OPENMP
 #include <omp.h>
 #include <stdio.h>
@@ -108,13 +109,11 @@ void InfomapBase::run()
 			root()->replaceChildrenWithGrandChildren();
 		}
 
+		hierarchicalCodelength = codelength = moduleCodelength = oneLevelCodelength;
+		indexCodelength = 0.0;
+
 		if (m_config.clusterDataFile != "")
 			consolidateExternalClusterData();
-		else
-		{
-			hierarchicalCodelength = codelength = moduleCodelength = oneLevelCodelength;
-			indexCodelength = 0.0;
-		}
 
 		if (!m_config.noInfomap)
 			runPartition();
@@ -215,7 +214,19 @@ void InfomapBase::runPartition()
 
 	PartitionQueue partitionQueue;
 
-	if (m_config.fastHierarchicalSolution != 0)
+	if (haveModules())
+	{
+		if (m_config.fastHierarchicalSolution <= 1)
+		{
+			deleteSubLevels();
+			queueTopModules(partitionQueue);
+		}
+		else
+		{
+			queueLeafModules(partitionQueue);
+		}
+	}
+	else if (m_config.fastHierarchicalSolution != 0)
 	{
 		unsigned int numLevelsCreated = findSuperModulesIterativelyFast(partitionQueue);
 
@@ -321,7 +332,7 @@ void InfomapBase::runPartition()
 	else
 	{
 		RELEASE_OUT("  -> Found " << partitionQueue.level << " levels with codelength " <<
-				io::toPrecision(hierarchicalCodelength));
+				io::toPrecision(hierarchicalCodelength) << "\n");
 	}
 //	double t1 = omp_get_wtime();
 //	RELEASE_OUT("\nParallel wall-time: " << (t1-t0));
@@ -394,6 +405,41 @@ void InfomapBase::queueTopModules(PartitionQueue& partitionQueue)
 	partitionQueue.nonTrivialFlow = nonTrivialFlow;
 	partitionQueue.indexCodelength = indexCodelength;
 	partitionQueue.moduleCodelength = moduleCodelength;
+}
+
+void InfomapBase::queueLeafModules(PartitionQueue& partitionQueue)
+{
+	unsigned int numLeafModules = 0;
+	for (NodeBase::leaf_module_iterator leafModuleIt(m_treeData.root()); !leafModuleIt.isEnd(); ++leafModuleIt, ++numLeafModules)
+	{}
+
+	// Add modules to partition queue
+	partitionQueue.resize(numLeafModules);
+	unsigned int numNonTrivialModules = 0;
+	double sumFlow = 0.0;
+	double sumNonTrivialFlow = 0.0;
+	double sumModuleCodelength = 0.0;
+	unsigned int moduleIndex = 0;
+	unsigned int maxDepth = 0;
+	for (NodeBase::leaf_module_iterator leafModuleIt(m_treeData.root()); !leafModuleIt.isEnd(); ++leafModuleIt, ++moduleIndex)
+	{
+		partitionQueue[moduleIndex] = leafModuleIt.base();
+		double flow = getNodeData(*leafModuleIt).flow;
+		sumFlow += flow;
+		sumModuleCodelength += leafModuleIt->codelength;
+		if (leafModuleIt->childDegree() > 1)
+		{
+			++numNonTrivialModules;
+			sumNonTrivialFlow += flow;
+		}
+		maxDepth = std::max(maxDepth, leafModuleIt.depth());
+	}
+	partitionQueue.flow = sumFlow;
+	partitionQueue.numNonTrivialModules = numNonTrivialModules;
+	partitionQueue.nonTrivialFlow = sumNonTrivialFlow;
+	partitionQueue.indexCodelength = indexCodelength;
+	partitionQueue.moduleCodelength = sumModuleCodelength;
+	partitionQueue.level = maxDepth;
 }
 
 void InfomapBase::tryIndexingIteratively()
@@ -1534,51 +1580,68 @@ void InfomapBase::setActiveNetworkFromLeafs()
 
 void InfomapBase::consolidateExternalClusterData()
 {
-	ALL_OUT("Calculating codelength from external data... ");
-	ClusterReader cluReader(numLeafNodes());
-	try
-	{
-		cluReader.readData(m_config.clusterDataFile);
-	}
-	catch (const std::runtime_error& error)
-	{
-		std::cerr << "Error parsing input cluster data: " << error.what() << std::endl;
+	RELEASE_OUT("Build hierarchical structure from external cluster data... ");
+
+	NetworkAdapter adapter(m_config, m_treeData);
+
+	bool isModulesLoaded = adapter.readExternalHierarchy(m_config.clusterDataFile);
+
+	if (!isModulesLoaded)
 		return;
-	}
 
-	const std::vector<unsigned int>& clusterIndices = cluReader.getClusterData();
+	aggregateFlowValuesFromLeafToRoot();
 
-	m_activeNetwork = m_treeData.m_leafNodes;
-	m_moveTo.resize(m_activeNetwork.size());
+	hierarchicalCodelength = codelength = calcCodelengthOnAllNodesInTree();
 
-	initConstantInfomapTerms();
+	indexCodelength = root()->codelength;
 
-	unsigned int i = 0;
-	for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()), endIt(m_treeData.end_leaf());
-			leafIt != endIt; ++leafIt, ++i)
-	{
-		m_moveTo[i] = clusterIndices[i];
-		ASSERT(m_moveTo[i] < m_activeNetwork.size());
-	}
+	moduleCodelength = hierarchicalCodelength - indexCodelength;
 
-	initModuleOptimization();
-	moveNodesToPredefinedModules();
-	consolidateModules();
 
-	// Set module indices from a zero-based contiguous set
-	unsigned int packedModuleIndex = 0;
-	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-			moduleIt != endIt; ++moduleIt)
-	{
-		moduleIt->index = moduleIt->originalIndex = packedModuleIndex++;
-		moduleIt->codelength = calcCodelengthOnModuleOfLeafNodes(*moduleIt);
-	}
-
-	hierarchicalCodelength = codelength;
-
-	ALL_OUT("done! Two-level codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
-			io::toPrecision(codelength) <<
-			" in " << numTopModules() << " modules." << std::endl);
+//	ClusterReader cluReader(numLeafNodes());
+//	try
+//	{
+//		cluReader.readData(m_config.clusterDataFile);
+//	}
+//	catch (const std::runtime_error& error)
+//	{
+//		std::cerr << "Error parsing input cluster data: " << error.what() << std::endl;
+//		return;
+//	}
+//
+//	const std::vector<unsigned int>& clusterIndices = cluReader.getClusterData();
+//
+//	m_activeNetwork = m_treeData.m_leafNodes;
+//	m_moveTo.resize(m_activeNetwork.size());
+//
+//	initConstantInfomapTerms();
+//
+//	unsigned int i = 0;
+//	for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()), endIt(m_treeData.end_leaf());
+//			leafIt != endIt; ++leafIt, ++i)
+//	{
+//		m_moveTo[i] = clusterIndices[i];
+//		ASSERT(m_moveTo[i] < m_activeNetwork.size());
+//	}
+//
+//	initModuleOptimization();
+//	moveNodesToPredefinedModules();
+//	consolidateModules();
+//
+//	// Set module indices from a zero-based contiguous set
+//	unsigned int packedModuleIndex = 0;
+//	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
+//			moduleIt != endIt; ++moduleIt)
+//	{
+//		moduleIt->index = moduleIt->originalIndex = packedModuleIndex++;
+//		moduleIt->codelength = calcCodelengthOnModuleOfLeafNodes(*moduleIt);
+//	}
+//
+//	hierarchicalCodelength = codelength;
+//
+//	ALL_OUT("done! Two-level codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
+//			io::toPrecision(codelength) <<
+//			" in " << numTopModules() << " modules." << std::endl);
 }
 
 bool InfomapBase::checkAndConvertBinaryTree()
@@ -1773,90 +1836,122 @@ void InfomapBase::printTree(std::ostream& out, const NodeBase& root, const std::
 
 unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
 {
-	std::vector<double> indexLengths;
-	std::vector<double> leafLengths;
-	aggregatePerLevelCodelength(indexLengths, leafLengths);
+	std::vector<PerLevelStat> perLevelStats;
+	aggregatePerLevelCodelength(perLevelStats);
 
-	unsigned int numLevels = leafLengths.size();
-	indexLengths.resize(numLevels, 0.0);
+	unsigned int numLevels = perLevelStats.size();
+	double averageNumNodesPerLevel = 0.0;
+	for (unsigned int i = 0; i < numLevels; ++i)
+		averageNumNodesPerLevel += perLevelStats[i].numNodes();
+	averageNumNodesPerLevel /= numLevels;
+
+	out << "Per level number of modules:         [";
+	for (unsigned int i = 0; i < numLevels - 1; ++i)
+	{
+		out << io::padValue(perLevelStats[i].numModules, 11) << ", ";
+	}
+	out << io::padValue(perLevelStats[numLevels-1].numModules, 11) << "]";
+	unsigned int sumNumModules = 0;
+	for (unsigned int i = 0; i < numLevels; ++i)
+		sumNumModules += perLevelStats[i].numModules;
+	out << " (sum: " << sumNumModules << ")" << std::endl;
+
+	out << "Per level number of leaf nodes:      [";
+	for (unsigned int i = 0; i < numLevels - 1; ++i)
+	{
+		out << io::padValue(perLevelStats[i].numLeafNodes, 11) << ", ";
+	}
+	out << io::padValue(perLevelStats[numLevels-1].numLeafNodes, 11) << "]";
+	unsigned int sumNumLeafNodes = 0;
+	for (unsigned int i = 0; i < numLevels; ++i)
+		sumNumLeafNodes += perLevelStats[i].numLeafNodes;
+	out << " (sum: " << sumNumLeafNodes << ")" << std::endl;
+
+
+	out << "Per level average child degree:      [";
+	double childDegree = perLevelStats[0].numNodes();
+	double sumAverageChildDegree = childDegree * childDegree;
+	if (numLevels > 1) {
+		out << io::padValue(perLevelStats[0].numModules, 11) << ", ";
+	}
+	for (unsigned int i = 1; i < numLevels - 1; ++i)
+	{
+		childDegree = perLevelStats[i].numNodes() * 1.0 / perLevelStats[i-1].numModules;
+		sumAverageChildDegree += childDegree * perLevelStats[i].numNodes();
+		out << io::padValue(childDegree, 11) << ", ";
+	}
+	if (numLevels > 1) {
+		childDegree = perLevelStats[numLevels-1].numNodes() * 1.0 / perLevelStats[numLevels-2].numModules;
+		sumAverageChildDegree += childDegree * perLevelStats[numLevels-1].numNodes();
+	}
+	out << io::padValue(childDegree, 11) << "]";
+	out << " (average: " << sumAverageChildDegree/(sumNumModules + sumNumLeafNodes) << ")" << std::endl;
 
 	out << std::fixed << std::setprecision(9);
 	out << "Per level codelength for modules:    [";
 	for (unsigned int i = 0; i < numLevels - 1; ++i)
 	{
-		out << indexLengths[i] << ", ";
+		out << perLevelStats[i].indexLength << ", ";
 	}
-	out << indexLengths[numLevels-1] << "]";
+	out << perLevelStats[numLevels-1].indexLength << "]";
 	double sumIndexLengths = 0.0;
 	for (unsigned int i = 0; i < numLevels; ++i)
-		sumIndexLengths += indexLengths[i];
+		sumIndexLengths += perLevelStats[i].indexLength;
 	out << " (sum: " << sumIndexLengths << ")" << std::endl;
 
 	out << "Per level codelength for leaf nodes: [";
 	for (unsigned int i = 0; i < numLevels - 1; ++i)
 	{
-		out << leafLengths[i] << ", ";
+		out << perLevelStats[i].leafLength << ", ";
 	}
-	out << leafLengths[numLevels-1] << "]";
+	out << perLevelStats[numLevels-1].leafLength << "]";
 
 	double sumLeafLengths = 0.0;
 	for (unsigned int i = 0; i < numLevels; ++i)
-		sumLeafLengths += leafLengths[i];
+		sumLeafLengths += perLevelStats[i].leafLength;
 	out << " (sum: " << sumLeafLengths << ")" << std::endl;
 
-
-	std::vector<double> codelengths(leafLengths);
-	for (unsigned int i = 0; i < numLevels; ++i)
-		codelengths[i] += indexLengths[i];
 	out << "Per level codelength total:          [";
 	for (unsigned int i = 0; i < numLevels - 1; ++i)
 	{
-		out << codelengths[i] << ", ";
+		out << perLevelStats[i].codelength() << ", ";
 	}
-	out << codelengths[numLevels-1] << "]";
+	out << perLevelStats[numLevels-1].codelength() << "]";
 
 	double sumCodelengths = 0.0;
 	for (unsigned int i = 0; i < numLevels; ++i)
-		sumCodelengths += codelengths[i];
+		sumCodelengths += perLevelStats[i].codelength();
 	out << " (sum: " << sumCodelengths << ")" << std::endl;
 
 	return numLevels;
 }
 
-void InfomapBase::aggregatePerLevelCodelength(std::vector<double>& indexLengths,
-		std::vector<double>& leafLengths, unsigned int level)
+void InfomapBase::aggregatePerLevelCodelength(std::vector<PerLevelStat>& perLevelStat, unsigned int level)
 {
-	aggregatePerLevelCodelength(*root(), indexLengths, leafLengths, level);
+	aggregatePerLevelCodelength(*root(), perLevelStat, level);
 }
 
-void InfomapBase::aggregatePerLevelCodelength(NodeBase& parent, std::vector<double>& indexLengths,
-		std::vector<double>& leafLengths, unsigned int level)
+void InfomapBase::aggregatePerLevelCodelength(NodeBase& parent, std::vector<PerLevelStat>& perLevelStat, unsigned int level)
 {
-	if (indexLengths.size() < level+1)
-		indexLengths.resize(level+1, 0.0);
-	if (leafLengths.size() < level+2)
-		leafLengths.resize(level+2, 0.0);
-	indexLengths[level] += parent.isRoot() ? indexCodelength : parent.codelength;
+	if (perLevelStat.size() < level+1)
+		perLevelStat.resize(level+1);
 
-	if (parent.firstChild->isLeaf())
-	{
-		leafLengths[level+1] += parent.codelength;
+	if (parent.firstChild->isLeaf()) {
+		perLevelStat[level].numLeafNodes += parent.childDegree();
+		perLevelStat[level].leafLength += parent.codelength;
+		return;
 	}
-	else
+
+	perLevelStat[level].numModules += parent.childDegree();
+	perLevelStat[level].indexLength += parent.isRoot() ? indexCodelength : parent.codelength;
+
+	for (NodeBase::sibling_iterator moduleIt(parent.begin_child()), endIt(parent.end_child());
+			moduleIt != endIt; ++moduleIt)
 	{
-		for (NodeBase::sibling_iterator moduleIt(parent.begin_child()), endIt(parent.end_child());
-				moduleIt != endIt; ++moduleIt)
-		{
-			if (moduleIt->getSubInfomap() != 0)
-				moduleIt->getSubInfomap()->aggregatePerLevelCodelength(indexLengths, leafLengths, level+1);
-			else
-			{
-				if (moduleIt->firstChild->isLeaf())
-					leafLengths[level+1] += moduleIt->codelength;
-				else
-					aggregatePerLevelCodelength(*moduleIt, indexLengths, leafLengths, level+1);
-			}
-		}
+		if (moduleIt->getSubStructure().haveSubInfomapInstance())
+			moduleIt->getSubStructure().subInfomap->aggregatePerLevelCodelength(perLevelStat, level+1);
+		else
+			aggregatePerLevelCodelength(*moduleIt, perLevelStat, level+1);
 	}
 }
 

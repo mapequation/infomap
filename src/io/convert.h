@@ -144,13 +144,31 @@ inline std::string stringify(T x)
 inline void padString(std::string &str, const std::string::size_type newSize, const char paddingChar = ' ')
 {
 	if(newSize > str.size())
-		str.assign(newSize, paddingChar);
+		str.append(newSize - str.size(), paddingChar);
 }
 
-inline std::string toPrecision(double value, unsigned int precision = 10)
+template<typename T>
+inline std::string padValue(T value, const std::string::size_type size, bool rightAligned = true, const char paddingChar = ' ')
+{
+	std::string valStr = stringify(value);
+	if(size == valStr.size())
+		return valStr;
+	if (size < valStr.size())
+		return valStr.substr(0, size);
+
+	if (!rightAligned)
+		return valStr.append(size - valStr.size(), paddingChar);
+
+	return std::string(size - valStr.size(), paddingChar).append(valStr);
+}
+
+inline std::string toPrecision(double value, unsigned int precision = 10, bool fixed = false)
 {
 	std::ostringstream o;
-	o << std::setprecision(precision);
+	if (fixed)
+		o << std::fixed << std::setprecision(precision);
+	else
+		o << std::setprecision(precision);
 	if (!(o << value))
 		throw BadConversionError((o << "stringify(" << value << ")", o.str()));
 	return o.str();

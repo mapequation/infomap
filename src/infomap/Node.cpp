@@ -143,6 +143,7 @@ void NodeBase::deleteChildren()
 
 	firstChild = 0;
 	lastChild = 0;
+	m_childDegree = 0;
 }
 
 void NodeBase::calcChildDegree()

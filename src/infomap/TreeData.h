@@ -47,6 +47,8 @@ public:
 
 	void readFromSubNetwork(NodeBase* parent);
 
+	const NodeFactoryBase& nodeFactory() const { return *m_nodeFactory; }
+
 	// ---------------------------- Iterators and element access ----------------------------
 	leafIterator begin_leaf()
 	{ return m_leafNodes.begin(); }
@@ -126,6 +128,7 @@ public:
 //		EdgeType* edge = source->addOutEdge(*target, weight);
 //		m_leafEdges.push_back(edge);
 	}
+
 
 
 private:
