@@ -60,17 +60,12 @@ void InfomapBase::run()
 	ASSERT(m_subLevel == 0);
 
 #ifdef _OPENMP
-	RELEASE_OUT("(OpenMP " << _OPENMP << " detected, trying to parallelize the recursive part on " <<
-			omp_get_num_procs() << " processors...)\n" << std::flush);
-
-//	omp_sched_t sched;
-//	int mod;
-//	omp_get_schedule(&sched, &mod);
-//	std::cout << "schedule type: " << sched << ", chunk size: " << mod << "\n";
-//	std::cout << "sched_static: " << omp_sched_static << "\n";
-//	std::cout << "sched_dynamic: " << omp_sched_dynamic << "\n";
-//	std::cout << "sched_guided: " << omp_sched_guided << "\n";
-//	std::cout << "sched_auto: " << omp_sched_auto << "\n";
+#pragma omp parallel
+	#pragma omp master
+	{
+		RELEASE_OUT("(OpenMP " << _OPENMP << " detected, trying to parallelize the recursive part on " <<
+				omp_get_num_threads() << " processors...)\n" << std::flush);
+	}
 #endif
 
 
