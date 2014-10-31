@@ -64,7 +64,7 @@ void InfomapBase::run()
 	#pragma omp master
 	{
 		RELEASE_OUT("(OpenMP " << _OPENMP << " detected, trying to parallelize the recursive part on " <<
-				omp_get_num_threads() << " processors...)\n" << std::flush);
+				omp_get_num_threads() << " threads...)\n" << std::flush);
 	}
 #endif
 
@@ -72,18 +72,7 @@ void InfomapBase::run()
 	if (!initNetwork())
 		return;
 
-	// Print flow network
-	if (m_config.printFlowNetwork)
-	{
-		std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << (m_config.printExpanded? "_expanded.flow" : ".flow");
-		SafeOutFile flowOut(outName.c_str());
-		RELEASE_OUT("Printing flow network to " << outName << "... " << std::flush);
-		printFlowNetwork(flowOut);
-		RELEASE_OUT("done!\n");
-	}
-
-	oneLevelCodelength = indexCodelength = root()->codelength = calcCodelengthOnRootOfLeafNodes(*root());
-	RELEASE_OUT("One-level codelength: " << io::toPrecision(indexCodelength) << std::endl);
+	calcOneLevelCodelength();
 
 	if (m_config.benchmark)
 		Logger::benchmark("calcFlow", root()->codelength, 1, 1, 1);
@@ -191,6 +180,14 @@ void InfomapBase::run()
 	//		printPerLevelCodelength();
 	//	}
 
+}
+
+
+void InfomapBase::calcOneLevelCodelength()
+{
+	RELEASE_OUT("Calculating one-level codelength... " << std::flush);
+	oneLevelCodelength = indexCodelength = root()->codelength = calcCodelengthOnRootOfLeafNodes(*root());
+	RELEASE_OUT("done!\n  -> One-level codelength: " << io::toPrecision(indexCodelength) << std::endl);
 }
 
 void InfomapBase::runPartition()
@@ -1391,6 +1388,16 @@ bool InfomapBase::initNetwork()
 			std::cout << "done!\n";
 	}
 
+	// Print flow network
+	if (m_config.printFlowNetwork)
+	{
+		std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << (m_config.printExpanded? "_expanded.flow" : ".flow");
+		SafeOutFile flowOut(outName.c_str());
+		RELEASE_OUT("Printing flow network to " << outName << "... " << std::flush);
+		printFlowNetwork(flowOut);
+		RELEASE_OUT("done!\n");
+	}
+
  	return true;
 }
 
@@ -1504,6 +1511,16 @@ void InfomapBase::initMemoryNetwork()
 			std::cout << "done!\n";
 		}
 	}
+
+	// Print flow network
+	if (m_config.printFlowNetwork)
+	{
+		std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << (m_config.printExpanded? "_expanded.flow" : ".flow");
+		SafeOutFile flowOut(outName.c_str());
+		RELEASE_OUT("Printing flow network to " << outName << "... " << std::flush);
+		printFlowNetwork(flowOut);
+		RELEASE_OUT("done!\n");
+	}
 }
 
 void InfomapBase::initNodeNames(Network& network)
@@ -1573,16 +1590,16 @@ void InfomapBase::setActiveNetworkFromLeafs()
 	m_moveTo.resize(m_activeNetwork.size());
 }
 
-void InfomapBase::consolidateExternalClusterData()
+bool InfomapBase::consolidateExternalClusterData(bool printResults)
 {
-	RELEASE_OUT("Build hierarchical structure from external cluster data... ");
+	RELEASE_OUT("Build hierarchical structure from external cluster data... " << std::flush);
 
 	NetworkAdapter adapter(m_config, m_treeData);
 
 	bool isModulesLoaded = adapter.readExternalHierarchy(m_config.clusterDataFile);
 
 	if (!isModulesLoaded)
-		return;
+		return false;
 
 	aggregateFlowValuesFromLeafToRoot();
 
@@ -1592,51 +1609,22 @@ void InfomapBase::consolidateExternalClusterData()
 
 	moduleCodelength = hierarchicalCodelength - indexCodelength;
 
+	if (!printResults)
+		return true;
 
-//	ClusterReader cluReader(numLeafNodes());
-//	try
-//	{
-//		cluReader.readData(m_config.clusterDataFile);
-//	}
-//	catch (const std::runtime_error& error)
-//	{
-//		std::cerr << "Error parsing input cluster data: " << error.what() << std::endl;
-//		return;
-//	}
-//
-//	const std::vector<unsigned int>& clusterIndices = cluReader.getClusterData();
-//
-//	m_activeNetwork = m_treeData.m_leafNodes;
-//	m_moveTo.resize(m_activeNetwork.size());
-//
-//	initConstantInfomapTerms();
-//
-//	unsigned int i = 0;
-//	for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()), endIt(m_treeData.end_leaf());
-//			leafIt != endIt; ++leafIt, ++i)
-//	{
-//		m_moveTo[i] = clusterIndices[i];
-//		ASSERT(m_moveTo[i] < m_activeNetwork.size());
-//	}
-//
-//	initModuleOptimization();
-//	moveNodesToPredefinedModules();
-//	consolidateModules();
-//
-//	// Set module indices from a zero-based contiguous set
-//	unsigned int packedModuleIndex = 0;
-//	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-//			moduleIt != endIt; ++moduleIt)
-//	{
-//		moduleIt->index = moduleIt->originalIndex = packedModuleIndex++;
-//		moduleIt->codelength = calcCodelengthOnModuleOfLeafNodes(*moduleIt);
-//	}
-//
-//	hierarchicalCodelength = codelength;
-//
-//	ALL_OUT("done! Two-level codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
-//			io::toPrecision(codelength) <<
-//			" in " << numTopModules() << " modules." << std::endl);
+	if (oneLevelCodelength < hierarchicalCodelength - m_config.minimumCodelengthImprovement)
+	{
+		std::cout << "Warning: No improvement in modular solution over one-level solution!\n";
+	}
+
+	printNetworkData();
+	std::ostringstream solutionStatistics;
+	unsigned int numLevels = printPerLevelCodelength(solutionStatistics);
+
+	std::cout << "Hierarchical solution in " << numLevels << " levels:\n";
+	std::cout << solutionStatistics.str() << std::endl;
+
+	return true;
 }
 
 bool InfomapBase::checkAndConvertBinaryTree()

@@ -60,7 +60,6 @@ src/infomap/Network.cpp \
 src/infomap/NetworkAdapter.cpp \
 src/infomap/Node.cpp \
 src/infomap/TreeData.cpp \
-src/Infomap.cpp \
 src/io/ClusterReader.cpp \
 src/io/HierarchicalNetwork.cpp \
 src/io/Options.cpp \
@@ -73,11 +72,13 @@ src/utils/Logger.cpp \
 TARGET = Infomap
 
 OBJECTS = $(SOURCES:src/%.cpp=build/%.o)
+INFOMAP_OBJECT = build/Infomap.o
+INFORMATTER_OBJECT = build/Informatter.o
 
 .PHONY: all clean
 
 ## Default rule executed
-all: $(TARGET)
+all: $(TARGET) Informatter
 	@true
 
 ## Clean Rule
@@ -88,12 +89,17 @@ noomp: $(TARGET)
 	@true
 
 ## Rule for making the actual target
-$(TARGET): $(OBJECTS)
+$(TARGET): $(OBJECTS) $(INFOMAP_OBJECT)
 	@echo "Linking object files to target $@..."
 	$(CXX) $(LDFLAGS) -o $@ $^
 	@echo "-- Link finished --"
+
+Informatter: $(OBJECTS) $(INFORMATTER_OBJECT)
+	@echo "Making Informatter..."
+	$(CXX) $(LDFLAGS) -o $@ $^
 
 ## Generic compilation rule for object files from cpp files
 build/%.o : src/%.cpp $(HEADERS) Makefile
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+	
