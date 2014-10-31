@@ -379,8 +379,14 @@ void Network::printNetworkAsPajek(std::string filename)
 	SafeOutFile out(filename.c_str());
 
 	out << "*Vertices " << m_numNodes << "\n";
-	for (unsigned int i = 0; i < m_numNodes; ++i)
-		out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
+	if (m_nodeNames.empty()) {
+		for (unsigned int i = 0; i < m_numNodes; ++i)
+			out << (i+1) << " \"" << i + 1 << "\"\n";
+	}
+	else {
+		for (unsigned int i = 0; i < m_numNodes; ++i)
+			out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
+	}
 
 	out << (m_config.isUndirected() ? "*Edges " : "*Arcs ") << m_links.size() << "\n";
 	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
