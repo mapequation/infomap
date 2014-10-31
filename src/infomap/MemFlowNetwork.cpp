@@ -165,8 +165,8 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		}
 	}
 	if (m_flowLinks.size() - numLinks != 0)
-		std::cout << "(added " << (m_flowLinks.size() - numLinks) << " links to " <<
-			numDanglingM2Nodes << " dangling memory nodes -> " << m_flowLinks.size() << " links) " << std::flush;
+		std::cout << "\n  -> Added " << (m_flowLinks.size() - numLinks) << " links to " <<
+			numDanglingM2Nodes << " dangling memory nodes -> " << m_flowLinks.size() << " links" << std::flush;
 
 	totalM2LinkWeight += sumExtraLinkWeight;
 	sumUndirLinkWeight = 2 * totalM2LinkWeight - network.totalMemorySelfLinkWeight();
@@ -194,8 +194,9 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 			sumNodeRank += m_nodeFlow[i];
 		for (unsigned int i = 0; i < numM2Nodes; ++i)
 			m_nodeFlow[i] /= sumNodeRank;
-		std::cout << "using directed links with raw flow... done!" << std::endl;
-		std::cout << "Total link weight: " << totalM2LinkWeight << "\n";
+		std::cout << "\n  -> Using directed links with raw flow.";
+		std::cout << "\n  -> Total link weight: " << totalM2LinkWeight << ".";
+		std::cout << std::endl;
 		return;
 	}
 
@@ -231,15 +232,16 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		}
 
 		if (config.outdirdir)
-			std::cout << "counting only ingoing links... done!" << std::endl;
+			std::cout << "\n  -> Counting only ingoing links.";
 		else
-			std::cout << "using undirected links" << (config.undirdir? ", switching to directed after steady state... done!" :
-					"... done!") << std::endl;
+			std::cout << "\n  -> Using undirected links" << (config.undirdir? ", switching to directed after steady state." :
+					".");
+		std::cout << std::endl;
 		return;
 	}
 
-	std::cout << "using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to memory " <<
-				(config.teleportToNodes ? "nodes" : "links") << "... " << std::flush;
+	std::cout << "\n  -> Using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to memory " <<
+				(config.teleportToNodes ? "nodes" : "links") << " " << std::flush;
 	if (config.originallyUndirected)
 	{
 		if (config.recordedTeleportation || !config.teleportToNodes)
@@ -363,5 +365,5 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		linkIt->flow *= beta * nodeFlowTmp[linkIt->source] / sumNodeRank;
 	}
 
-	std::cout << "done in " << numIterations << " iterations!" << std::endl;
+	std::cout << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
 }

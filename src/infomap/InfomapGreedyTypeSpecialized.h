@@ -734,6 +734,11 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printFlowNetwork(std::o
 		}
 		return;
 	}
+	else
+	{
+		//TODO: Implement printing of flow network for unexpanded memory network!
+		RELEASE_OUT("Notice: Printing flow network currently only implemented for expanded memory network.\n");
+	}
 
 //	std::map<unsigned int, PhysNode> physicalNetwork;
 //	for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)

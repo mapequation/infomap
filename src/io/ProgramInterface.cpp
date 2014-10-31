@@ -70,7 +70,7 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
 	std::cout << std::endl;
 
 	if (m_programDescription != "")
-		std::cout << "\nDescription: " << m_programDescription << std::endl;
+		std::cout << "\nDescription:\n        " << m_programDescription << std::endl;
 
 	for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
 		if (showAdvanced || !m_nonOptionArguments[i]->isAdvanced)

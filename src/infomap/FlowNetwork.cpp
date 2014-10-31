@@ -39,7 +39,7 @@ FlowNetwork::~FlowNetwork()
 
 void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 {
-	std::cout << "Calculating global flow... ";
+	std::cout << "Calculating global flow... " << std::flush;
 
 	// Prepare data in sequence containers for fast access of individual elements
 	unsigned int numNodes = network.numNodes();
@@ -89,7 +89,9 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 			sumNodeRank += m_nodeFlow[i];
 		for (unsigned int i = 0; i < numNodes; ++i)
 			m_nodeFlow[i] /= sumNodeRank;
-		std::cout << "using directed links with raw flow... done!" << std::endl;
+		std::cout << "\n  -> Using directed links with raw flow.";
+		std::cout << "\n  -> Total link weight: " << totalLinkWeight << ".";
+		std::cout << std::endl;
 		return;
 	}
 
@@ -125,15 +127,16 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 		}
 
 		if (config.outdirdir)
-			std::cout << "counting only ingoing links... done!" << std::endl;
+			std::cout << "\n  -> Counting only ingoing links.";
 		else
-			std::cout << "using undirected links" << (config.undirdir? ", switching to directed after steady state... done!" :
-					"... done!") << std::endl;
+			std::cout << "\n  -> Using undirected links" << (config.undirdir? ", switching to directed after steady state." :
+					".");
+		std::cout << std::endl;
 		return;
 	}
 
-	std::cout << "using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
-			(config.teleportToNodes ? "nodes" : "links") << "... " << std::flush;
+	std::cout << "\n  -> Using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
+			(config.teleportToNodes ? "nodes" : "links") << ". " << std::flush;
 
 
 	// Calculate the teleport rate distribution
@@ -258,5 +261,5 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 		linkIt->flow *= beta * nodeFlowTmp[linkIt->source] / sumNodeRank;
 	}
 
-	std::cout << "done in " << numIterations << " iterations!" << std::endl;
+	std::cout << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
 }

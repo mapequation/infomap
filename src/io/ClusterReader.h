@@ -27,25 +27,41 @@
 
 #ifndef CLUSTERREADER_H_
 #define CLUSTERREADER_H_
-#include <vector>
+
 #include <string>
+#include <vector>
+
 using std::string;
 
 class ClusterReader
 {
 public:
-	ClusterReader(unsigned int numNodes);
-	~ClusterReader();
+	ClusterReader(unsigned int numNodes, bool zeroBasedIndexing = false)
+	: m_numNodes(numNodes),
+	  m_numModules(0),
+	  m_indexOffset(zeroBasedIndexing? 0 : 1),
+	  m_clusters(numNodes)
+	{}
+
+	virtual ~ClusterReader() {}
 
 	void readData(const string filename);
 
-	const std::vector<unsigned int>& getClusterData() const
+	const std::vector<unsigned int>& clusters() const
 	{
-		return m_clusterData;
+		return m_clusters;
+	}
+
+	unsigned int numModules() const
+	{
+		return m_numModules;
 	}
 
 private:
-	std::vector<unsigned int> m_clusterData;
+	unsigned int m_numNodes;
+	unsigned int m_numModules;
+	unsigned int m_indexOffset;
+	std::vector<unsigned int> m_clusters;
 };
 
 

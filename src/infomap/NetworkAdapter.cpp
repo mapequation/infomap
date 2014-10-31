@@ -1,20 +1,40 @@
-/*
- * NetworkAdapter.cpp
- *
- *  Created on: 16 okt 2014
- *      Author: Daniel
- */
+/**********************************************************************************
+
+ Infomap software package for multi-level network clustering
+
+ Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
+
+ For more information, see <http://www.mapequation.org>
+
+
+ This file is part of Infomap software package.
+
+ Infomap software package is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ Infomap software package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with Infomap software package.  If not, see <http://www.gnu.org/licenses/>.
+
+**********************************************************************************/
 
 #include "NetworkAdapter.h"
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
-#include <algorithm>
 
 #include "../io/convert.h"
+#include "../io/ClusterReader.h"
 #include "../io/SafeFile.h"
 #include "../utils/FileURI.h"
 #include "Node.h"
@@ -46,84 +66,30 @@ bool NetworkAdapter::readExternalHierarchy(std::string filename)
 
 void NetworkAdapter::readClu(std::string filename)
 {
-	SafeInFile input(filename.c_str());
-	std::string line;
-	std::cout << "Parsing '" << filename << "'... " << std::flush;
+	ClusterReader cluReader(m_numNodes);
 
-	if (!getline(input, line))
-		throw FileFormatError("First line of cluster data file couldn't be read.");
-
-	std::istringstream lineStream(line);
-	string tmp;
-	if (!(lineStream >> tmp))
-		throw FileFormatError("First line of cluster data file couldn't be read.");
-	unsigned int numVertices;
-	if (!(lineStream >> numVertices))
-		throw FileFormatError("First line of cluster data file doesn't match '*Vertices x' where x is the number of vertices.");
-	if (numVertices == 0)
-		throw FileFormatError("Number of vertices declared in the cluster data file is zero.");
-
-	std::vector<unsigned int> clusters(m_numNodes);
-	unsigned int numParsedValues = 0;
-	unsigned int maxClusterIndex = 0;
-
-	while(getline(input, line))
-	{
-		std::istringstream lineStream(line);
-		unsigned int clusterIndex;
-		if (!(lineStream >> clusterIndex))
-			throw FileFormatError(io::Str() << "Couldn't parse cluster data from line " << (numParsedValues+1));
-
-		// Assume data range [1..numNodes]
-		if (clusterIndex == 0 || clusterIndex > m_numNodes)
-			throw FileFormatError(io::Str() << "Cluster value for node " << (numParsedValues+1) << " (" << clusterIndex << ")" <<
-					" is out of the valid range [1..numNodes]");
-		--clusterIndex; // Zero-based
-		clusters[numParsedValues] = clusterIndex;
-		maxClusterIndex = std::max(maxClusterIndex, clusterIndex);
-		++numParsedValues;
-		if (numParsedValues == m_numNodes)
-			break;
-	}
-	if (numParsedValues != m_numNodes)
-		throw FileFormatError(io::Str() << "Could only read cluster data for " << numParsedValues << " nodes, but the given network contains " <<
-				m_numNodes << " nodes.");
-
-	unsigned int numModules = maxClusterIndex + 1;
-	std::vector<NodeBase*> modules(numModules);
+	cluReader.readData(filename);
+	const std::vector<unsigned int>& clusters = cluReader.clusters();
+	unsigned int numModules = cluReader.numModules();
 
 	// Create and store the module nodes in a random access array, and add to root
+	std::vector<NodeBase*> modules(numModules);
 	for (unsigned int i = 0; i < numModules; ++i)
 	{
 		NodeBase* module = m_treeData.nodeFactory().createNode("", 0.0, 0.0);
 		modules[i] = module;
 	}
 
-	// Check that no modules are empty
-	std::vector<unsigned int> childDegrees(numModules);
-	for (unsigned int i = 0; i < m_numNodes; ++i)
-		++childDegrees[clusters[i]];
-
-	for (unsigned int i = 0; i < numModules; ++i)
-	{
-		if (childDegrees[i] == 0)
-			throw InputDomainError(io::Str() << "Module " << (i + 1) << " is empty.");
-	}
-
 	// Add all leaf nodes to the modules defined by the parsed cluster indices
 	for (unsigned int i = 0; i < m_numNodes; ++i)
-	{
 		modules[clusters[i]]->addChild(&m_treeData.getLeafNode(i));
-	}
 
 	// Release leaf nodes from root to add the modules inbetween
 	m_treeData.root()->releaseChildren();
 	for (unsigned int i = 0; i < numModules; ++i)
-	{
 		m_treeData.root()->addChild(modules[i]);
-	}
 
-	std::cout << "done! Found " << numModules + 1 << " modules." << std::endl;
+	std::cout << "done! Found " << numModules << " modules." << std::endl;
 }
 
 void NetworkAdapter::readHumanReadableTree(std::string filename)

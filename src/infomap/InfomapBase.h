@@ -69,6 +69,12 @@ public:
 
 	void run();
 
+	bool initNetwork();
+
+	void calcOneLevelCodelength();
+
+	bool consolidateExternalClusterData(bool printResults = false);
+
 	// Cannot be protected as they are called from inherited class through pointer to this class.
 	const NodeBase* root() const { return m_treeData.root(); }
 
@@ -250,8 +256,6 @@ private:
 	void initSuperNetwork(NodeBase& parent);
 	void setActiveNetworkFromChildrenOfRoot();
 	void setActiveNetworkFromLeafs();
-	void consolidateExternalClusterData();
-	bool initNetwork();
 	void initMemoryNetwork();
 	void initNodeNames(Network& network);
 	bool checkAndConvertBinaryTree();

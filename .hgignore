@@ -10,7 +10,8 @@ syntax: regexp
 ^output$
 ^Debug$
 ^Release$
-^Infomap.*$
+^Infomap$
+^Informatter$
 ^generateMakefile$
 ^build$
 ^.project$
