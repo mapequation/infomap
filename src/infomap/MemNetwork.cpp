@@ -428,6 +428,9 @@ void MemNetwork::simulateMemoryToIncompleteDataMemoryEfficient()
 	unsigned int lastProgress = 0;
 	std::deque<Link> tryPartial;
 
+	// Use second network to gather matched links to keep original network untouched until all matches have been found.
+	MemNetwork patchedNetwork(m_config);
+
 	for (LinkMap::const_iterator linkIt(m_incompleteM2Links.begin()); linkIt != m_incompleteM2Links.end(); ++linkIt)
 	{
 		unsigned int n1 = linkIt->first;
@@ -461,7 +464,7 @@ void MemNetwork::simulateMemoryToIncompleteDataMemoryEfficient()
 				tempNumM2LinksBefore = m_numM2Links;
 				tempNumM2AggregationsBefore = m_numAggregatedM2Links;
 				for (std::deque<Link>::const_iterator linkIt(matchedLinks.begin()); linkIt != matchedLinks.end(); ++linkIt)
-					addM2Link(linkIt->n1, linkIt->n2, n1, n2, incompleteLinkWeight * linkIt->weight / sumMatchedLinkWeight);
+					patchedNetwork.addM2Link(linkIt->n1, linkIt->n2, n1, n2, incompleteLinkWeight * linkIt->weight / sumMatchedLinkWeight);
 				numExactLinksAdded += m_numM2Links - tempNumM2LinksBefore;
 				numExactAggregations += m_numAggregatedM2Links - tempNumM2AggregationsBefore;
 				++numIncompleteLinksWithExactMatches;
@@ -514,7 +517,7 @@ void MemNetwork::simulateMemoryToIncompleteDataMemoryEfficient()
 				tempNumM2LinksBefore = m_numM2Links;
 				tempNumM2AggregationsBefore = m_numAggregatedM2Links;
 				for (std::deque<Link>::const_iterator linkIt(matchedLinks.begin()); linkIt != matchedLinks.end(); ++linkIt)
-					addM2Link(linkIt->n1, linkIt->n2, n1, n2, incompleteLinkWeight * linkIt->weight / sumMatchedLinkWeight);
+					patchedNetwork.addM2Link(linkIt->n1, linkIt->n2, n1, n2, incompleteLinkWeight * linkIt->weight / sumMatchedLinkWeight);
 				numPartialLinksAdded += m_numM2Links - tempNumM2LinksBefore;
 				numPartialAggregations += m_numAggregatedM2Links - tempNumM2AggregationsBefore;
 				++numIncompleteLinksWithPartialMatches;
@@ -601,6 +604,29 @@ void MemNetwork::simulateMemoryToIncompleteDataMemoryEfficient()
 			}
 		}
 
+	}
+
+	// Update network with patched data
+	std::cout << "\n";
+	unsigned int numPatchedLinks = patchedNetwork.numM2Links();
+	lastProgress = 0;
+	linkCount = 0;
+	for (M2LinkMap::const_iterator linkIt(patchedNetwork.m_m2Links.begin()); linkIt != patchedNetwork.m_m2Links.end(); ++linkIt)
+	{
+		const M2Node& m2source = linkIt->first;
+		const std::map<M2Node, double>& subLinks = linkIt->second;
+		for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			const M2Node& m2target = subIt->first;
+			double weight = subIt->second;
+			addM2Link(m2source.priorState, m2source.physIndex, m2target.priorState, m2target.physIndex, weight);
+			++linkCount;
+			unsigned int progress = linkCount * 10000 / numPatchedLinks;
+			if (progress != lastProgress) {
+				std::cout << "\r    -> Updating network... (" << progress * 0.01 << "%)      ";
+				lastProgress = progress;
+			}
+		}
 	}
 
 	std::cout << "\n  -> " << m_numM2Links - numM2LinksBefore << " memory links added and " <<
