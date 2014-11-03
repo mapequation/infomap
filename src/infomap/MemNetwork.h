@@ -102,11 +102,11 @@ struct ComplementaryData
 	void addShiftedMatch(unsigned int n1, unsigned int n2, double weight) { sumWeightShiftedMatch += weight; shiftedMatch.push_back(Link(n1, n2, weight)); }
 
 	Link incompleteLink; // -1 n2 n3
-	std::deque<Link> exactMatch; // match x n2 n3, use [x n2] as memory node
+	std::deque<Link> exactMatch; // match x n2 n3 -> x n2 n3
 	double sumWeightExactMatch;
-	std::deque<Link> partialMatch; // match x n2 y, use [x n2] as memory node
+	std::deque<Link> partialMatch; // match x n2 y -> x n2 n3
 	double sumWeightPartialMatch;
-	std::deque<Link> shiftedMatch; // match x y n3, use [y n3] as memory node
+	std::deque<Link> shiftedMatch; // match x y n2 -> y n2 n3
 	double sumWeightShiftedMatch;
 };
 
@@ -209,6 +209,7 @@ protected:
 	void simulateMemoryFromOrdinaryNetwork();
 
 	void simulateMemoryToIncompleteData();
+	void simulateMemoryToIncompleteDataMemoryEfficient();
 
 	// Helper methods
 	/**

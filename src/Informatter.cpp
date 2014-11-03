@@ -160,6 +160,9 @@ void getConfig(Config& conf, int argc, char *argv[])
 	api.addOptionArgument(conf.multiplexAggregationRate, "multiplex-aggregation-rate",
 			"The probability of following a link as if the layers where completely aggregated. Zero means completely disconnected layers.", "f", true);
 
+	api.addIncrementalOptionArgument(conf.lowMemoryPriority, 'l', "low-memory",
+			"Prioritize memory efficient algorithms before fast. Use -ll to optimize even more, but this may give approximate results.");
+
 	// --------------------- Output options ---------------------
 	api.addNonOptionArgument(conf.outDirectory, "out_directory",
 			"The directory to write the results to");

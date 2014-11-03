@@ -240,6 +240,9 @@ void MemNetwork::simulateMemoryToIncompleteData()
 	if (m_numIncompleteM2Links == 0)
 		return;
 
+	if (m_config.lowMemoryPriority > 0)
+		return simulateMemoryToIncompleteDataMemoryEfficient();
+
 	std::cout << "\n  -> Found " << m_numM2LinksFound << " trigrams with " <<
 			m_numIncompleteM2LinksFound << " incomplete trigrams.";
 	std::cout << "\n  -> Patching " << m_numIncompleteM2Links << " incomplete trigrams.." << std::flush;
@@ -261,7 +264,7 @@ void MemNetwork::simulateMemoryToIncompleteData()
 		}
 	}
 
-	// Loop through all m2 links and store all chainable links to the incomplete data
+	// Loop through all m2 links and store all feasible chainable links to the incomplete data
 	unsigned int numExactMatches = 0;
 	unsigned int numPartialMatches = 0;
 	unsigned int numShiftedMatches = 0;
@@ -316,12 +319,21 @@ void MemNetwork::simulateMemoryToIncompleteData()
 			numShiftedMatches << " shifted matches in priority... " << std::flush;
 	unsigned int numM2LinksBefore = m_numM2Links;
 	unsigned int tempNumM2LinksBefore = 0;
-	numExactMatches = 0;
-	numPartialMatches = 0;
-	numShiftedMatches = 0;
+	unsigned int tempNumM2LinksAggregatedBefore = 0;
+	unsigned int numAggregatedLinksBefore = m_numAggregatedM2Links;
+	unsigned int numExactLinksAdded = 0;
+	unsigned int numPartialLinksAdded = 0;
+	unsigned int numShiftedLinksAdded = 0;
+	unsigned int numExactAggregations = 0;
+	unsigned int numPartialAggregations = 0;
+	unsigned int numShiftedAggregations = 0;
+	unsigned int numIncompleteLinksWithExactMatches = 0;
+	unsigned int numIncompleteLinksWithPartialMatches = 0;
+	unsigned int numIncompleteLinksWithShiftedMatches = 0;
+	unsigned int numIncompleteLinksWithNoMatches = 0;
 
 	// Create the additional memory links from the aggregated complementary data
-	for (unsigned int i = 0; i < m_numIncompleteM2Links; ++i)
+	for (unsigned int i = 0; i < complementaryData.size(); ++i)
 	{
 		std::deque<ComplementaryData>& complementaryLinks = complementaryData[i];
 		for (unsigned int i = 0; i < complementaryLinks.size(); ++i)
@@ -331,36 +343,277 @@ void MemNetwork::simulateMemoryToIncompleteData()
 			if (data.exactMatch.size() > 0)
 			{
 				tempNumM2LinksBefore = m_numM2Links;
+				tempNumM2LinksAggregatedBefore = m_numAggregatedM2Links;
 				for (std::deque<Link>::const_iterator linkIt(data.exactMatch.begin()); linkIt != data.exactMatch.end(); ++linkIt)
 					addM2Link(linkIt->n1, linkIt->n2, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->weight / data.sumWeightExactMatch);
-				numExactMatches += m_numM2Links - tempNumM2LinksBefore;
+				numExactLinksAdded += m_numM2Links - tempNumM2LinksBefore;
+				numExactAggregations += m_numAggregatedM2Links - tempNumM2LinksAggregatedBefore;
+				++numIncompleteLinksWithExactMatches;
 			}
 			else if (data.partialMatch.size() > 0)
 			{
 				tempNumM2LinksBefore = m_numM2Links;
+				tempNumM2LinksAggregatedBefore = m_numAggregatedM2Links;
 				for (std::deque<Link>::const_iterator linkIt(data.partialMatch.begin()); linkIt != data.partialMatch.end(); ++linkIt)
 					addM2Link(linkIt->n1, linkIt->n2, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->weight / data.sumWeightPartialMatch);
-				numPartialMatches += m_numM2Links - tempNumM2LinksBefore;
+				numPartialLinksAdded += m_numM2Links - tempNumM2LinksBefore;
+				numPartialAggregations += m_numAggregatedM2Links - tempNumM2LinksAggregatedBefore;
+				++numIncompleteLinksWithPartialMatches;
 			}
 			else if (data.shiftedMatch.size() > 0)
 			{
 				tempNumM2LinksBefore = m_numM2Links;
+				tempNumM2LinksAggregatedBefore = m_numAggregatedM2Links;
 				for (std::deque<Link>::const_iterator linkIt(data.shiftedMatch.begin()); linkIt != data.shiftedMatch.end(); ++linkIt)
 					addM2Link(linkIt->n1, linkIt->n2, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->weight / data.sumWeightShiftedMatch);
-				numShiftedMatches += m_numM2Links - tempNumM2LinksBefore;
+				numShiftedLinksAdded += m_numM2Links - tempNumM2LinksBefore;
+				numShiftedAggregations += m_numAggregatedM2Links - tempNumM2LinksAggregatedBefore;
+				++numIncompleteLinksWithShiftedMatches;
 			}
 			else
 			{
 				// No matching data to complement, create self-memory link
 				addM2Link(data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight);
+				++numIncompleteLinksWithNoMatches;
 			}
 		}
 	}
 
 	std::cout << "done!";
-	std::cout << "\n  -> Added " << m_numM2Links - numM2LinksBefore << " patched memory links (" <<
-			numExactMatches << " exact, " << numPartialMatches << " partial and " <<
-			numShiftedMatches << " shifted) " << std::flush;
+	std::cout << "\n  -> " << m_numM2Links - numM2LinksBefore << " memory links added and " <<
+		m_numAggregatedM2Links - numAggregatedLinksBefore << " updated:" <<
+		"\n    -> " << numIncompleteLinksWithExactMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithExactMatches) << " patched by " <<
+			numExactAggregations << " updates and " << numExactLinksAdded << " new links from exact matches." <<
+		"\n    -> " << numIncompleteLinksWithPartialMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithPartialMatches) << " patched by " <<
+			numPartialAggregations << " updates and " << numPartialLinksAdded << " new links from partial matches." <<
+		"\n    -> " << numIncompleteLinksWithShiftedMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithShiftedMatches) << " patched by " <<
+			numShiftedAggregations << " updates and " << numShiftedLinksAdded << " new links from shifted matches." << std::flush;
+	if (numIncompleteLinksWithNoMatches != 0)
+		std::cout << "\n    -> " << numIncompleteLinksWithNoMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithNoMatches) << " with no matches patched by self-links." << std::flush;
+
+}
+
+void MemNetwork::simulateMemoryToIncompleteDataMemoryEfficient()
+{
+	if (m_numIncompleteM2Links == 0)
+		return;
+
+	std::cout << "\n  -> Found " << m_numM2LinksFound << " trigrams with " <<
+			m_numIncompleteM2LinksFound << " incomplete trigrams.";
+	std::cout << "\n  -> Patching " << m_numIncompleteM2Links << " incomplete trigrams (slower but memory efficient)..." << std::flush;
+	std::cout << std::endl;
+
+	unsigned int numM2LinksBefore = m_numM2Links;
+	unsigned int numAggregatedLinksBefore = 0;
+	unsigned int tempNumM2LinksBefore = 0;
+	unsigned int tempNumM2AggregationsBefore = 0;
+	unsigned int numExactMatches = 0;
+	unsigned int numPartialMatches = 0;
+	unsigned int numShiftedMatches = 0;
+	unsigned int numExactLinksAdded = 0;
+	unsigned int numPartialLinksAdded = 0;
+	unsigned int numShiftedLinksAdded = 0;
+	unsigned int numExactAggregations = 0;
+	unsigned int numPartialAggregations = 0;
+	unsigned int numShiftedAggregations = 0;
+
+	std::deque<Link> matchedLinks;
+	double sumMatchedLinkWeight = 0.0;
+	unsigned int linkCount = 0;
+	unsigned int numIncompleteLinks = m_numIncompleteM2Links;
+	unsigned int numIncompleteLinksWithExactMatches = 0;
+	unsigned int numIncompleteLinksWithPartialMatches = 0;
+	unsigned int numIncompleteLinksWithShiftedMatches = 0;
+	unsigned int numIncompleteLinksWithNoMatches = 0;
+	unsigned int lastProgress = 0;
+	std::deque<Link> tryPartial;
+
+	for (LinkMap::const_iterator linkIt(m_incompleteM2Links.begin()); linkIt != m_incompleteM2Links.end(); ++linkIt)
+	{
+		unsigned int n1 = linkIt->first;
+		const std::map<unsigned int, double>& subLinks = linkIt->second;
+		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			unsigned int n2 = subIt->first;
+			double incompleteLinkWeight = subIt->second;
+			sumMatchedLinkWeight = 0.0;
+			matchedLinks.clear();
+			for (M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
+			{
+				const M2Node& m2source = linkIt->first;
+				if (m2source.physIndex != n1)
+					continue;
+				const std::map<M2Node, double>& subLinks = linkIt->second;
+				for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+				{
+					const M2Node& m2target = subIt->first;
+					if (m2target.physIndex != n2)
+						continue;
+					double weight = subIt->second;
+					matchedLinks.push_back(Link(m2source.priorState, n1, weight));
+					sumMatchedLinkWeight += weight;
+				}
+			}
+
+			if (matchedLinks.size() > 0)
+			{
+				numExactMatches += matchedLinks.size();
+				tempNumM2LinksBefore = m_numM2Links;
+				tempNumM2AggregationsBefore = m_numAggregatedM2Links;
+				for (std::deque<Link>::const_iterator linkIt(matchedLinks.begin()); linkIt != matchedLinks.end(); ++linkIt)
+					addM2Link(linkIt->n1, linkIt->n2, n1, n2, incompleteLinkWeight * linkIt->weight / sumMatchedLinkWeight);
+				numExactLinksAdded += m_numM2Links - tempNumM2LinksBefore;
+				numExactAggregations += m_numAggregatedM2Links - tempNumM2AggregationsBefore;
+				++numIncompleteLinksWithExactMatches;
+			}
+			else
+				tryPartial.push_back(Link(n1, n2, incompleteLinkWeight));
+			++linkCount;
+			// Write progress with resolution 0.01%
+			unsigned int progress = linkCount * 10000 / numIncompleteLinks;
+			if (progress != lastProgress) {
+				std::cout << "\r    -> Searching for exact matches for incomplete link " << linkCount << "/" << numIncompleteLinks <<
+					" (" << progress * 0.01 << "%) " <<
+					"-> " << numIncompleteLinksWithExactMatches << " links matched with " << numExactMatches << " existing links.      " << std::flush;
+				lastProgress = progress;
+			}
+		}
+	}
+
+	if (!tryPartial.empty())
+	{
+		std::cout << "\n";
+		std::deque<Link> tryShifted;
+		linkCount = 0;
+		lastProgress = 0;
+
+		for (std::deque<Link>::const_iterator linkIt(tryPartial.begin()); linkIt != tryPartial.end(); ++linkIt)
+		{
+			unsigned int n1 = linkIt->n1;
+			unsigned int n2 = linkIt->n2;
+			double incompleteLinkWeight = linkIt->weight;
+			sumMatchedLinkWeight = 0.0;
+			matchedLinks.clear();
+			for (M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
+			{
+				const M2Node& m2source = linkIt->first;
+				if (m2source.physIndex != n1)
+					continue;
+				const std::map<M2Node, double>& subLinks = linkIt->second;
+				for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+				{
+					double weight = subIt->second;
+					matchedLinks.push_back(Link(m2source.priorState, n1, weight));
+					sumMatchedLinkWeight += weight;
+				}
+			}
+
+			if (matchedLinks.size() > 0)
+			{
+				numPartialMatches += matchedLinks.size();
+				tempNumM2LinksBefore = m_numM2Links;
+				tempNumM2AggregationsBefore = m_numAggregatedM2Links;
+				for (std::deque<Link>::const_iterator linkIt(matchedLinks.begin()); linkIt != matchedLinks.end(); ++linkIt)
+					addM2Link(linkIt->n1, linkIt->n2, n1, n2, incompleteLinkWeight * linkIt->weight / sumMatchedLinkWeight);
+				numPartialLinksAdded += m_numM2Links - tempNumM2LinksBefore;
+				numPartialAggregations += m_numAggregatedM2Links - tempNumM2AggregationsBefore;
+				++numIncompleteLinksWithPartialMatches;
+			}
+			else
+				tryShifted.push_back(Link(n1, n2, incompleteLinkWeight));
+			++linkCount;
+			// Write progress with resolution 0.01%
+			unsigned int progress = linkCount * 10000 / tryPartial.size();
+			if (progress != lastProgress) {
+				std::cout << "\r    -> Searching for partial matches for incomplete link " << linkCount << "/" << tryPartial.size() <<
+					" (" << progress * 0.01 << "%) " <<
+					"-> " << numIncompleteLinksWithPartialMatches << " links matched with " << numPartialMatches << " existing links.      " << std::flush;
+				lastProgress = progress;
+			}
+
+		}
+
+		if (!tryShifted.empty())
+		{
+			std::cout << "\n";
+			std::deque<Link> noMatches;
+			linkCount = 0;
+			lastProgress = 0;
+
+			for (std::deque<Link>::const_iterator linkIt(tryShifted.begin()); linkIt != tryShifted.end(); ++linkIt)
+			{
+				unsigned int n1 = linkIt->n1;
+				unsigned int n2 = linkIt->n2;
+				double incompleteLinkWeight = linkIt->weight;
+				sumMatchedLinkWeight = 0.0;
+				matchedLinks.clear();
+				for (M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
+				{
+					const M2Node& m2source = linkIt->first;
+					const std::map<M2Node, double>& subLinks = linkIt->second;
+					for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+					{
+						const M2Node& m2target = subIt->first;
+						double weight = subIt->second;
+						if (m2target.physIndex == n1)
+						{
+							matchedLinks.push_back(Link(m2source.physIndex, n1, weight));
+							sumMatchedLinkWeight += weight;
+						}
+					}
+				}
+
+				if (matchedLinks.size() > 0)
+				{
+					numShiftedMatches += matchedLinks.size();
+					tempNumM2LinksBefore = m_numM2Links;
+					tempNumM2AggregationsBefore = m_numAggregatedM2Links;
+					for (std::deque<Link>::const_iterator linkIt(matchedLinks.begin()); linkIt != matchedLinks.end(); ++linkIt)
+						addM2Link(linkIt->n1, linkIt->n2, n1, n2, incompleteLinkWeight * linkIt->weight / sumMatchedLinkWeight);
+					numShiftedLinksAdded += m_numM2Links - tempNumM2LinksBefore;
+					numShiftedAggregations += m_numAggregatedM2Links - tempNumM2AggregationsBefore;
+					++numIncompleteLinksWithShiftedMatches;
+				}
+				else
+					noMatches.push_back(Link(n1, n2, incompleteLinkWeight));
+				++linkCount;
+				// Write progress with resolution 0.01%
+				unsigned int progress = linkCount * 10000 / tryShifted.size();
+				if (progress != lastProgress) {
+					std::cout << "\r    -> Searching for shifted matches for incomplete link " << linkCount << "/" << tryShifted.size() <<
+						" (" << progress * 0.01 << "%) " <<
+						"-> " << numIncompleteLinksWithShiftedMatches << " links matched with " << numShiftedMatches << " existing links.      " << std::flush;
+					lastProgress = progress;
+				}
+
+			}
+
+			numIncompleteLinksWithNoMatches = noMatches.size();
+			if (numIncompleteLinksWithNoMatches != 0)
+			{
+				// No matching data to complement, create self-memory link
+				for (std::deque<Link>::const_iterator linkIt(noMatches.begin()); linkIt != noMatches.end(); ++linkIt)
+				{
+					unsigned int n1 = linkIt->n1;
+					unsigned int n2 = linkIt->n2;
+					addM2Link(n1, n1, n1, n2, linkIt->weight);
+				}
+			}
+		}
+
+	}
+
+	std::cout << "\n  -> " << m_numM2Links - numM2LinksBefore << " memory links added and " <<
+		m_numAggregatedM2Links - numAggregatedLinksBefore << " updated:" <<
+		"\n    -> " << numIncompleteLinksWithExactMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithExactMatches) << " patched by " <<
+			numExactAggregations << " updates and " << numExactLinksAdded << " new links from exact matches." <<
+		"\n    -> " << numIncompleteLinksWithPartialMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithPartialMatches) << " patched by " <<
+			numPartialAggregations << " updates and " << numPartialLinksAdded << " new links from partial matches." <<
+		"\n    -> " << numIncompleteLinksWithShiftedMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithShiftedMatches) << " patched by " <<
+			numShiftedAggregations << " updates and " << numShiftedLinksAdded << " new links from shifted matches." << std::flush;
+	if (numIncompleteLinksWithNoMatches != 0)
+		std::cout << "\n    -> " << numIncompleteLinksWithNoMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithNoMatches) << " with no matches patched by self-links." << std::flush;
+
 
 //	std::cout << "with " << (m_numM2Links - numM2LinksBefore) << " new memory links... " << std::flush;
 }
