@@ -901,12 +901,6 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 
 void MemNetwork::printNetworkAsPajek(std::string filename)
 {
-	if (!m_config.printExpanded)
-	{
-		Network::printNetworkAsPajek(filename);
-		return;
-	}
-
 	SafeOutFile out(filename.c_str());
 
 	out << "*Vertices " << m_numNodes << "\n";
