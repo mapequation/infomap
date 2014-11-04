@@ -572,7 +572,7 @@ void MemNetwork::simulateMemoryToIncompleteDataMemoryEfficient()
 					tempNumM2LinksBefore = m_numM2Links;
 					tempNumM2AggregationsBefore = m_numAggregatedM2Links;
 					for (std::deque<Link>::const_iterator linkIt(matchedLinks.begin()); linkIt != matchedLinks.end(); ++linkIt)
-						addM2Link(linkIt->n1, linkIt->n2, n1, n2, incompleteLinkWeight * linkIt->weight / sumMatchedLinkWeight);
+						patchedNetwork.addM2Link(linkIt->n1, linkIt->n2, n1, n2, incompleteLinkWeight * linkIt->weight / sumMatchedLinkWeight);
 					numShiftedLinksAdded += m_numM2Links - tempNumM2LinksBefore;
 					numShiftedAggregations += m_numAggregatedM2Links - tempNumM2AggregationsBefore;
 					++numIncompleteLinksWithShiftedMatches;
