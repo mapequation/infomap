@@ -270,6 +270,10 @@ void MemNetwork::simulateMemoryToIncompleteData()
 		}
 	}
 
+	std::cout << "." << std::endl;
+	unsigned int lastProgress = 0;
+	unsigned int linkCount = 0;
+
 	// Loop through all m2 links and store all feasible chainable links to the incomplete data
 	unsigned int numExactMatches = 0;
 	unsigned int numPartialMatches = 0;
@@ -318,11 +322,20 @@ void MemNetwork::simulateMemoryToIncompleteData()
 					++numShiftedMatches;
 				}
 			}
+
+			++linkCount;
+			unsigned int progress = linkCount * 1000 / m_numM2Links; // 0.1% resolution
+			if (progress != lastProgress) {
+				std::cout << "\r    -> Collecting matches... (" << progress * 0.1 << "%)      ";
+				lastProgress = progress;
+			}
+
 		}
 	}
 
-	std::cout << ". from " << numExactMatches << " exact, " << numPartialMatches << " partial and " <<
-			numShiftedMatches << " shifted matches in priority... " << std::flush;
+	std::cout << "\r    -> Found " << numExactMatches << " exact, " << numPartialMatches << " partial and " <<
+			numShiftedMatches << " shifted matches.\n" << std::flush;
+	linkCount = 0;
 	unsigned int numM2LinksBefore = m_numM2Links;
 	unsigned int tempNumM2LinksBefore = 0;
 	unsigned int tempNumM2LinksAggregatedBefore = 0;
@@ -383,9 +396,14 @@ void MemNetwork::simulateMemoryToIncompleteData()
 				++numIncompleteLinksWithNoMatches;
 			}
 		}
+		++linkCount;
+		unsigned int progress = linkCount * 1000 / complementaryData.size(); // 0.1% resolution
+		if (progress != lastProgress) {
+			std::cout << "\r    -> Patching network from collected matches in priority... (" << progress * 0.1 << "%)      ";
+			lastProgress = progress;
+		}
 	}
 
-	std::cout << "done!";
 	std::cout << "\n  -> " << m_numM2Links - numM2LinksBefore << " memory links added and " <<
 		m_numAggregatedM2Links - numAggregatedLinksBefore << " updated:" <<
 		"\n    -> " << numIncompleteLinksWithExactMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithExactMatches) << " patched by " <<
