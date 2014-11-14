@@ -326,7 +326,7 @@ void MemNetwork::simulateMemoryToIncompleteData()
 			++linkCount;
 			unsigned int progress = linkCount * 1000 / m_numM2Links; // 0.1% resolution
 			if (progress != lastProgress) {
-				std::cout << "\r    -> Collecting matches... (" << progress * 0.1 << "%)      ";
+				std::cout << "\r    -> Collecting matches... (" << progress * 0.1 << "%)      " << std::flush;
 				lastProgress = progress;
 			}
 
@@ -399,7 +399,7 @@ void MemNetwork::simulateMemoryToIncompleteData()
 		++linkCount;
 		unsigned int progress = linkCount * 1000 / complementaryData.size(); // 0.1% resolution
 		if (progress != lastProgress) {
-			std::cout << "\r    -> Patching network from collected matches in priority... (" << progress * 0.1 << "%)      ";
+			std::cout << "\r    -> Patching network from collected matches in priority... (" << progress * 0.1 << "%)      " << std::flush;
 			lastProgress = progress;
 		}
 	}
