@@ -29,6 +29,10 @@
 #define INFOMAPGREEDYCOMMON_H_
 #include "InfomapGreedySpecialized.h"
 #include <memory>
+#ifdef _OPENMP
+#include <omp.h>
+#include <stdio.h>
+#endif
 
 
 template<typename InfomapGreedyDerivedType>
@@ -78,6 +82,10 @@ protected:
 	virtual unsigned int optimizeModulesCrude();
 
 	unsigned int tryMoveEachNodeIntoBestModule();
+
+	unsigned int tryMoveEachNodeIntoBestModuleParallelizable();
+
+	unsigned int tryMoveEachNodeIntoBestModuleInParallel();
 
 	unsigned int tryMoveEachNodeIntoStrongestConnectedModule();
 
@@ -355,8 +363,6 @@ void InfomapGreedyCommon<InfomapGreedyDerivedType>::calculateCodelengthFromActiv
 	Super::codelength = Super::indexCodelength + Super::moduleCodelength;
 }
 
-
-
 template<typename InfomapGreedyDerivedType>
 inline
 unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModules()
@@ -367,13 +373,16 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModules()
 	unsigned int loopLimit = Super::m_config.coreLoopLimit;
 	if (Super::m_config.coreLoopLimit > 0 && Super::m_config.randomizeCoreLoopLimit)
 		loopLimit = static_cast<unsigned int>(Super::m_rand() * Super::m_config.coreLoopLimit) + 1;
-	unsigned int loopLimitOnAggregationLevels = -1;
+	unsigned int loopLimitOnAggregationLevels = 20;
 
 	// Iterate while the optimization loop moves some nodes within the dynamic modular structure
 	do
 	{
 		oldCodelength = Super::codelength;
-		tryMoveEachNodeIntoBestModule(); // returns numNodesMoved
+		if (Super::m_config.innerParallelization)
+			tryMoveEachNodeIntoBestModuleInParallel(); // returns numNodesMoved
+		else
+			tryMoveEachNodeIntoBestModule(); // returns numNodesMoved
 		++m_coreLoopCount;
 	} while (m_coreLoopCount != (Super::m_aggregationLevel == 0 && !Super::m_isCoarseTune? loopLimit : loopLimitOnAggregationLevels) &&
 			Super::codelength < oldCodelength - Super::m_config.minimumCodelengthImprovement);
@@ -404,15 +413,12 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModulesCrude
 	return m_coreLoopCount;
 }
 
-
 /**
- * Try to minimize the codelength by trying to move nodes into the same modules as neighbouring nodes.
+ * Minimize the codelength by trying to move each node into best module.
+ *
  * For each node:
  * 1. Calculate the change in codelength for a move to each of its neighbouring modules or to an empty module
  * 2. Move to the one that reduces the codelength the most, if any.
- *
- * The first step would require O(d^2), where d is the degree, if calculating the full change at each neighbour,
- * but a special data structure is used to accumulate the marginal effect of each link on its target, giving O(d).
  *
  * @return The number of nodes moved.
  */
@@ -653,6 +659,476 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 	}
 
 	return numMoved;
+}
+
+/**
+ * Minimize the codelength by trying to move each node into best module.
+ *
+ * For each node:
+ * 1. Calculate the change in codelength for a move to each of its neighbouring modules or to an empty module
+ * 2. Move to the one that reduces the codelength the most, if any.
+ *
+ * @return The number of nodes moved.
+ */
+template<typename InfomapGreedyDerivedType>
+inline
+unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoBestModuleParallelizable()
+{
+	unsigned int numNodes = Super::m_activeNetwork.size();
+	// Get random enumeration of nodes
+	std::vector<unsigned int> randomOrder(numNodes);
+	infomath::getRandomizedIndexVector(randomOrder, Super::m_rand);
+
+	unsigned int numMoved = 0;
+	int numNodesInt = static_cast<int>(numNodes);
+
+	for (int i = 0; i < numNodesInt; ++i)
+	{
+		// Pick nodes in random order
+		unsigned int flip = randomOrder[i];
+		NodeType& current = Super::getNode(*Super::m_activeNetwork[flip]);
+
+		if (!current.dirty)
+			continue;
+
+		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop())
+			continue;
+
+		// If no links connecting this node with other nodes, it won't move into others,
+		// and others won't move into this. TODO: Always best leave it alone?
+//		if (current.degree() == 0)
+		if (current.degree() == 0 ||
+			(Super::m_config.includeSelfLinks &&
+			(current.outDegree() == 1 && current.inDegree() == 1) &&
+			(**current.begin_outEdge()).target == current))
+		{
+			DEBUG_OUT("SKIPPING isolated node " << current << "\n");
+			//TODO: If not skipping self-links, this yields different results from moveNodesToPredefinedModules!!
+			ASSERT(!m_config.includeSelfLinks);
+			current.dirty = false;
+			continue;
+		}
+
+		// Create map with module links
+		std::map<unsigned int, DeltaFlow> deltaFlow;
+
+		// If alone in the module, add virtual link to the module (used when adding teleportation)
+		deltaFlow[current.index] += DeltaFlow(current.index, 0.0, 0.0);
+
+		// For all outlinks
+		for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
+				edgeIt != endIt; ++edgeIt)
+		{
+			EdgeType& edge = **edgeIt;
+			if (edge.isSelfPointing())
+				continue;
+			NodeType& neighbour = Super::getNode(edge.target);
+
+			deltaFlow[neighbour.index] += DeltaFlow(neighbour.index, edge.data.flow, 0.0);
+		}
+		// For all inlinks
+		for (NodeBase::edge_iterator edgeIt(current.begin_inEdge()), endIt(current.end_inEdge());
+				edgeIt != endIt; ++edgeIt)
+		{
+			EdgeType& edge = **edgeIt;
+			if (edge.isSelfPointing())
+				continue;
+			NodeType& neighbour = Super::getNode(edge.source);
+
+			deltaFlow[neighbour.index] += DeltaFlow(neighbour.index, 0.0, edge.data.flow);
+		}
+
+
+		// Empty function if no teleportation coding model
+		Super::addTeleportationDeltaFlowIfMove(current, deltaFlow);
+
+		// Option to move to empty module (if node not already alone)
+		if (Super::m_moduleMembers[current.index] > 1 && Super::m_emptyModules.size() > 0)
+			deltaFlow[Super::m_emptyModules.back()] += DeltaFlow(Super::m_emptyModules.back(), 0.0, 0.0);
+
+		// Store the DeltaFlow of the current module
+		DeltaFlow oldModuleDelta(deltaFlow[current.index]);
+
+		// For memory networks
+		derived().addContributionOfMovingMemoryNodes(current, oldModuleDelta, deltaFlow);
+
+
+		std::vector<DeltaFlow> moduleDeltaEnterExit(deltaFlow.size());
+		unsigned int numModuleLinks = 0;
+		for (std::map<unsigned int, DeltaFlow>::iterator it(deltaFlow.begin()); it != deltaFlow.end(); ++it)
+		{
+			moduleDeltaEnterExit[numModuleLinks] = it->second;
+			++numModuleLinks;
+		}
+
+		// Randomize link order for optimized search
+		for (unsigned int j = 0; j < numModuleLinks - 1; ++j)
+		{
+			unsigned int randPos = j + Super::m_rand.randInt(numModuleLinks - j - 1);
+			swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+		}
+
+		DeltaFlow bestDeltaModule(oldModuleDelta);
+		double bestDeltaCodelength = 0.0;
+		DeltaFlow strongestConnectedModule(oldModuleDelta);
+		double deltaCodelengthOnStrongestConnectedModule = 0.0;
+
+		// Find the move that minimizes the description length
+		for (unsigned int j = 0; j < numModuleLinks; ++j)
+		{
+			unsigned int otherModule = moduleDeltaEnterExit[j].module;
+			if(otherModule != current.index)
+			{
+				double deltaCodelength = Super::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, moduleDeltaEnterExit[j]);
+				deltaCodelength += derived().getDeltaCodelengthOnMovingMemoryNode(oldModuleDelta, moduleDeltaEnterExit[j]);
+
+				if (deltaCodelength < bestDeltaCodelength - Super::m_config.minimumSingleNodeCodelengthImprovement)
+				{
+					bestDeltaModule = moduleDeltaEnterExit[j];
+					bestDeltaCodelength = deltaCodelength;
+				}
+
+				// Save strongest connected module to prefer if codelength improvement equal
+				if (moduleDeltaEnterExit[j].deltaExit > strongestConnectedModule.deltaExit)
+				{
+					strongestConnectedModule = moduleDeltaEnterExit[j];
+					deltaCodelengthOnStrongestConnectedModule = deltaCodelength;
+				}
+			}
+		}
+
+		// Prefer strongest connected module if equal delta codelength
+		if (strongestConnectedModule.module != bestDeltaModule.module &&
+				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + Super::m_config.minimumCodelengthImprovement)
+		{
+			bestDeltaModule = strongestConnectedModule;
+//			RELEASE_OUT("!");
+		}
+
+		// Make best possible move
+		if(bestDeltaModule.module != current.index)
+		{
+			unsigned int bestModuleIndex = bestDeltaModule.module;
+			//Update empty module vector
+			if(Super::m_moduleMembers[bestModuleIndex] == 0)
+			{
+				Super::m_emptyModules.pop_back();
+			}
+			if(Super::m_moduleMembers[current.index] == 1)
+			{
+				Super::m_emptyModules.push_back(current.index);
+			}
+
+			Super::updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule);
+			derived().updateCodelengthOnMovingMemoryNode(oldModuleDelta, bestDeltaModule);
+
+			Super::m_moduleMembers[current.index] -= 1;
+			Super::m_moduleMembers[bestModuleIndex] += 1;
+
+			unsigned int oldModuleIndex = current.index;
+			current.index = bestModuleIndex;
+
+			// Update physical node map on move for memory networks
+			derived().performMoveOfMemoryNode(current, oldModuleIndex, bestModuleIndex);
+
+			++numMoved;
+
+			// Mark neighbours as dirty
+			for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
+					edgeIt != endIt; ++edgeIt)
+				(*edgeIt)->target.dirty = true;
+			for (NodeBase::edge_iterator edgeIt(current.begin_inEdge()), endIt(current.end_inEdge());
+					edgeIt != endIt; ++edgeIt)
+				(*edgeIt)->source.dirty = true;
+		}
+		else
+			current.dirty = false;
+
+	}
+
+	return numMoved;
+}
+
+/**
+ * Minimize the codelength by trying to move each node into best module, in parallel.
+ *
+ * For each node:
+ * 1. Calculate the change in codelength for a move to each of its neighbouring modules or to an empty module
+ * 2. Move to the one that reduces the codelength the most, if any.
+ *
+ * @return The number of nodes moved.
+ */
+template<typename InfomapGreedyDerivedType>
+inline
+unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoBestModuleInParallel()
+{
+	// Don't nest parallelization
+	if (!Super::isTopLevel())
+		return tryMoveEachNodeIntoBestModule();
+
+	unsigned int numNodes = Super::m_activeNetwork.size();
+	// Get random enumeration of nodes
+	std::vector<unsigned int> randomOrder(numNodes);
+	infomath::getRandomizedIndexVector(randomOrder, Super::m_rand);
+
+	unsigned int numMoved = 0;
+	unsigned int numInvalidMoves = 0;
+	double diffSerialParallelCodelength = 0.0;
+	const unsigned int emptyTarget = numNodes; // Use last node index + 1 as index for empty module target.
+	int numNodesInt = static_cast<int>(numNodes);
+
+//#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(dynamic) // Use dynamic scheduling as some threads could end early
+	for (int i = 0; i < numNodesInt; ++i)
+	{
+//		printf("Node %d processed by thread %d\n", i, omp_get_thread_num());
+		// Pick nodes in random order
+		unsigned int flip = randomOrder[i];
+		NodeType& current = Super::getNode(*Super::m_activeNetwork[flip]);
+
+		if (!current.dirty)
+			continue;
+
+		// If other nodes have moved here, don't move away on first loop
+		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop())
+			continue;
+
+		// If no links connecting this node with other nodes, it won't move into others,
+		// and others won't move into this. TODO: Always best leave it alone?
+//		if (current.degree() == 0)
+		if (current.degree() == 0 ||
+			(Super::m_config.includeSelfLinks &&
+			(current.outDegree() == 1 && current.inDegree() == 1) &&
+			(**current.begin_outEdge()).target == current))
+		{
+			DEBUG_OUT("SKIPPING isolated node " << current << "\n");
+			//TODO: If not skipping self-links, this yields different results from moveNodesToPredefinedModules!!
+			ASSERT(!m_config.includeSelfLinks);
+			current.dirty = false;
+			continue;
+		}
+
+		// Create map with module links
+		std::map<unsigned int, DeltaFlow> deltaFlow;
+
+		// If alone in the module, add virtual link to the module (used when adding teleportation)
+		deltaFlow[current.index] += DeltaFlow(current.index, 0.0, 0.0);
+
+		// For all outlinks
+		for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
+				edgeIt != endIt; ++edgeIt)
+		{
+			EdgeType& edge = **edgeIt;
+			if (edge.isSelfPointing())
+				continue;
+			NodeType& neighbour = Super::getNode(edge.target);
+
+			deltaFlow[neighbour.index] += DeltaFlow(neighbour.index, edge.data.flow, 0.0);
+		}
+		// For all inlinks
+		for (NodeBase::edge_iterator edgeIt(current.begin_inEdge()), endIt(current.end_inEdge());
+				edgeIt != endIt; ++edgeIt)
+		{
+			EdgeType& edge = **edgeIt;
+			if (edge.isSelfPointing())
+				continue;
+			NodeType& neighbour = Super::getNode(edge.source);
+
+			deltaFlow[neighbour.index] += DeltaFlow(neighbour.index, 0.0, edge.data.flow);
+		}
+
+
+		// Empty function if no teleportation coding model
+		Super::addTeleportationDeltaFlowIfMove(current, deltaFlow);
+
+		// Option to move to empty module (if node not already alone)
+		unsigned int emptyModuleIndex = emptyTarget;
+		if (Super::m_moduleMembers[current.index] > 1 && Super::m_emptyModules.size() > 0) {
+			emptyModuleIndex = Super::m_emptyModules.back();
+			deltaFlow[emptyModuleIndex] += DeltaFlow(emptyModuleIndex, 0.0, 0.0);
+		}
+
+		// Store the DeltaFlow of the current module
+		DeltaFlow oldModuleDelta(deltaFlow[current.index]);
+
+		// For memory networks
+		derived().addContributionOfMovingMemoryNodes(current, oldModuleDelta, deltaFlow);
+
+
+		std::vector<DeltaFlow> moduleDeltaEnterExit(deltaFlow.size());
+		unsigned int numModuleLinks = 0;
+		for (std::map<unsigned int, DeltaFlow>::iterator it(deltaFlow.begin()); it != deltaFlow.end(); ++it)
+		{
+			moduleDeltaEnterExit[numModuleLinks] = it->second;
+			++numModuleLinks;
+		}
+
+		// Randomize link order for optimized search
+		for (unsigned int j = 0; j < numModuleLinks - 1; ++j)
+		{
+			unsigned int randPos = j + Super::m_rand.randInt(numModuleLinks - j - 1);
+			swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+		}
+
+		DeltaFlow bestDeltaModule(oldModuleDelta);
+		double bestDeltaCodelength = 0.0;
+		DeltaFlow strongestConnectedModule(oldModuleDelta);
+		double deltaCodelengthOnStrongestConnectedModule = 0.0;
+
+		// Find the move that minimizes the description length
+		for (unsigned int j = 0; j < numModuleLinks; ++j)
+		{
+			unsigned int otherModule = moduleDeltaEnterExit[j].module;
+			if(otherModule != current.index)
+			{
+				double deltaCodelength = Super::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, moduleDeltaEnterExit[j]);
+				deltaCodelength += derived().getDeltaCodelengthOnMovingMemoryNode(oldModuleDelta, moduleDeltaEnterExit[j]);
+
+				if (deltaCodelength < bestDeltaCodelength - Super::m_config.minimumSingleNodeCodelengthImprovement)
+				{
+					bestDeltaModule = moduleDeltaEnterExit[j];
+					bestDeltaCodelength = deltaCodelength;
+				}
+
+				// Save strongest connected module to prefer if codelength improvement equal
+				if (moduleDeltaEnterExit[j].deltaExit > strongestConnectedModule.deltaExit)
+				{
+					strongestConnectedModule = moduleDeltaEnterExit[j];
+					deltaCodelengthOnStrongestConnectedModule = deltaCodelength;
+				}
+			}
+		}
+
+		// Prefer strongest connected module if equal delta codelength
+		if (strongestConnectedModule.module != bestDeltaModule.module &&
+				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength)// + Super::m_config.minimumCodelengthImprovement)
+		{
+			bestDeltaModule = strongestConnectedModule;
+//			RELEASE_OUT("!");
+		}
+
+		// Make best possible move
+		if(bestDeltaModule.module == current.index)
+		{
+			current.dirty = false;
+			continue;
+		}
+		else
+		{
+#pragma omp critical (moveUpdate)
+			{
+				unsigned int bestModuleIndex = bestDeltaModule.module;
+				unsigned int oldModuleIndex = current.index;
+
+				bool validMove = true;
+				if (bestModuleIndex == emptyModuleIndex)	{
+					// Check validity of move to empty target
+					validMove = Super::m_moduleMembers[current.index] > 1 && Super::m_emptyModules.size() > 0;
+				}
+				else
+				{
+					// Not valid if the best module is empty now but not when decided
+					validMove = Super::m_moduleMembers[bestModuleIndex] > 0;
+				}
+
+				if (validMove)
+				{
+
+					// Recalculate delta codelength for proposed move to see if still an improvement
+					DeltaFlow oldModuleDelta(oldModuleIndex, 0.0, 0.0, 0.0, 0.0);
+					DeltaFlow newModuleDelta(bestModuleIndex, 0.0, 0.0, 0.0, 0.0);
+
+					Super::addTeleportationDeltaFlowOnOldModuleIfMove(current, oldModuleDelta);
+					Super::addTeleportationDeltaFlowOnNewModuleIfMove(current, newModuleDelta);
+
+					// For all outlinks
+					for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
+							edgeIt != endIt; ++edgeIt)
+					{
+						EdgeType& edge = **edgeIt;
+						if (edge.isSelfPointing())
+							continue;
+						unsigned int otherModule = edge.target.index;
+						if (otherModule == oldModuleIndex)
+							oldModuleDelta.deltaExit += edge.data.flow;
+						else if (otherModule == bestModuleIndex)
+							newModuleDelta.deltaExit += edge.data.flow;
+					}
+
+					// For all inlinks
+					for (NodeBase::edge_iterator edgeIt(current.begin_inEdge()), endIt(current.end_inEdge());
+							edgeIt != endIt; ++edgeIt)
+					{
+						EdgeType& edge = **edgeIt;
+						if (edge.isSelfPointing())
+							continue;
+						unsigned int otherModule = edge.source.index;
+						if (otherModule == oldModuleIndex)
+							oldModuleDelta.deltaEnter += edge.data.flow;
+						else if (otherModule == bestModuleIndex)
+							newModuleDelta.deltaEnter += edge.data.flow;
+					}
+
+
+					double deltaCodelength = Super::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta);
+					deltaCodelength += derived().getDeltaCodelengthOnMovingMemoryNode(oldModuleDelta, newModuleDelta);
+
+					if (deltaCodelength <= 0.0 - Super::m_config.minimumSingleNodeCodelengthImprovement)
+					{
+						//Update empty module vector
+						if(Super::m_moduleMembers[bestModuleIndex] == 0)
+						{
+							Super::m_emptyModules.pop_back();
+						}
+						if(Super::m_moduleMembers[oldModuleIndex] == 1)
+						{
+							Super::m_emptyModules.push_back(oldModuleIndex);
+						}
+
+						Super::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta);
+						derived().updateCodelengthOnMovingMemoryNode(oldModuleDelta, newModuleDelta);
+
+						// Update physical node map on move for memory networks
+						derived().performMoveOfMemoryNode(current, oldModuleIndex, bestModuleIndex);
+
+						// Mark neighbours as dirty
+						for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
+								edgeIt != endIt; ++edgeIt)
+							(*edgeIt)->target.dirty = true;
+						for (NodeBase::edge_iterator edgeIt(current.begin_inEdge()), endIt(current.end_inEdge());
+								edgeIt != endIt; ++edgeIt)
+							(*edgeIt)->source.dirty = true;
+
+						Super::m_moduleMembers[oldModuleIndex] -= 1;
+						Super::m_moduleMembers[bestModuleIndex] += 1;
+
+						current.index = bestModuleIndex;
+						++numMoved;
+						diffSerialParallelCodelength += bestDeltaCodelength - deltaCodelength;
+					}
+					else
+					{
+						++numInvalidMoves;
+//						std::cout << "Move to module " << bestModuleIndex << " is NOT an improvement longer!\n";
+//						std::cout << "_=*=_";
+					}
+				}
+				else
+				{
+//					std::cout << "Move to module " << bestModuleIndex << " is NOT valid!\n";
+					++numInvalidMoves;
+//					std::cout << "_-*-_";
+				}
+			}
+		}
+
+	}
+
+//	std::cout << "\n(#invalidMoves: " << numInvalidMoves <<
+//			", diffSerialParallelCodelength: " << diffSerialParallelCodelength << ") ";
+
+//	return numMoved;
+	return numMoved + numInvalidMoves;
 }
 
 

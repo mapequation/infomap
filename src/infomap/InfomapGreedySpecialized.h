@@ -28,6 +28,7 @@
 #ifndef INFOMAPGREEDYSPECIALIZED_H_
 #define INFOMAPGREEDYSPECIALIZED_H_
 #include "InfomapGreedy.h"
+#include <map>
 
 struct DeltaFlow;
 
@@ -55,6 +56,7 @@ protected:
 	void addTeleportationDeltaFlowOnOldModuleIfMove(NodeType& nodeToMove, DeltaFlow& oldModuleDeltaFlow) {}
 	void addTeleportationDeltaFlowOnNewModuleIfMove(NodeType& nodeToMove, DeltaFlow& newModuleDeltaFlow) {}
 	void addTeleportationDeltaFlowIfMove(NodeType& current, std::vector<DeltaFlow>& moduleDeltaExits, unsigned int numModuleLinks) {}
+	void addTeleportationDeltaFlowIfMove(NodeType& current, std::map<unsigned int, DeltaFlow>& moduleDeltaFlow) {}
 
 	double getDeltaCodelengthOnMovingNode(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
 	void updateCodelengthOnMovingNode(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
@@ -65,16 +67,47 @@ protected:
 struct DeltaFlow
 {
 	DeltaFlow()
-	:	module(0), deltaExit(0.0), deltaEnter(0.0), sumDeltaPlogpPhysFlow(0.0), sumPlogpPhysFlow(0.0) {}
-	DeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow, double sumPlogpPhysFlow)
-	:	module(module), deltaExit(deltaExit), deltaEnter(deltaEnter), sumDeltaPlogpPhysFlow(sumDeltaPlogpPhysFlow), sumPlogpPhysFlow(sumPlogpPhysFlow) {}
+	:	module(0),
+		deltaExit(0.0),
+		deltaEnter(0.0),
+		sumDeltaPlogpPhysFlow(0.0),
+		sumPlogpPhysFlow(0.0),
+		count(0) {}
+	DeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow = 0.0, double sumPlogpPhysFlow = 0.0)
+	:	module(module),
+		deltaExit(deltaExit),
+		deltaEnter(deltaEnter),
+		sumDeltaPlogpPhysFlow(sumDeltaPlogpPhysFlow),
+		sumPlogpPhysFlow(sumPlogpPhysFlow),
+		count(0) {}
 	DeltaFlow(const DeltaFlow& other) // Copy constructor
-	:	module(other.module), deltaExit(other.deltaExit), deltaEnter(other.deltaEnter), sumDeltaPlogpPhysFlow(other.sumDeltaPlogpPhysFlow), sumPlogpPhysFlow(other.sumPlogpPhysFlow) {}
+	:	module(other.module),
+		deltaExit(other.deltaExit),
+		deltaEnter(other.deltaEnter),
+		sumDeltaPlogpPhysFlow(other.sumDeltaPlogpPhysFlow),
+		sumPlogpPhysFlow(other.sumPlogpPhysFlow),
+		count(other.count) {}
 	DeltaFlow& operator=(DeltaFlow other) // Assignment operator (copy-and-swap idiom)
 	{
 		swap(*this, other);
 		return *this;
 	}
+
+	DeltaFlow& operator +=(const DeltaFlow& other)
+	{
+		module = other.module;
+		deltaExit += other.deltaExit;
+		deltaEnter += other.deltaEnter;
+		++count;
+		return *this;
+	}
+
+	void addMemFlowTerms(double _sumDeltaPlogpPhysFlow, double _sumPlogpPhysFlow)
+	{
+		sumDeltaPlogpPhysFlow = _sumDeltaPlogpPhysFlow;
+		sumPlogpPhysFlow = _sumPlogpPhysFlow;
+	}
+
 	friend void swap(DeltaFlow& first, DeltaFlow& second)
 	{
 		std::swap(first.module, second.module);
@@ -82,12 +115,14 @@ struct DeltaFlow
 		std::swap(first.deltaEnter, second.deltaEnter);
 		std::swap(first.sumDeltaPlogpPhysFlow, second.sumDeltaPlogpPhysFlow);
 		std::swap(first.sumPlogpPhysFlow, second.sumPlogpPhysFlow);
+		std::swap(first.count, second.count);
 	}
 	unsigned int module;
 	double deltaExit;
 	double deltaEnter;
 	double sumDeltaPlogpPhysFlow;
 	double sumPlogpPhysFlow;
+	unsigned int count;
 };
 
 
@@ -225,6 +260,20 @@ void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::addTeleportationDe
 			addTeleportationDeltaFlowOnOldModuleIfMove(current, moduleDeltaExits[j]);
 		else
 			addTeleportationDeltaFlowOnNewModuleIfMove(current, moduleDeltaExits[j]);
+	}
+}
+
+template<>
+inline
+void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::addTeleportationDeltaFlowIfMove(NodeType& current, std::map<unsigned int, DeltaFlow>& moduleDeltaFlow)
+{
+	for (std::map<unsigned int, DeltaFlow>::iterator it(moduleDeltaFlow.begin()); it != moduleDeltaFlow.end(); ++it)
+	{
+		unsigned int moduleIndex = it->first;
+		if (moduleIndex == current.index)
+			addTeleportationDeltaFlowOnOldModuleIfMove(current, it->second);
+		else
+			addTeleportationDeltaFlowOnNewModuleIfMove(current, it->second);
 	}
 }
 

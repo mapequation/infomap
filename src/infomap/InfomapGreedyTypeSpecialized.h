@@ -59,6 +59,9 @@ protected:
 		DeltaFlow& oldModuleDelta, std::vector<DeltaFlow>& moduleDeltaEnterExit, 
 		std::vector<unsigned int>& redirect, unsigned int& offset, unsigned int& numModuleLinks) {}
 	
+	void addContributionOfMovingMemoryNodes(NodeType& current,
+		DeltaFlow& oldModuleDelta, std::map<unsigned int, DeltaFlow>& moduleDeltaFlow) {}
+
 	void performMoveOfMemoryNode(NodeType& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex) {}
 	
 	void performPredefinedMoveOfMemoryNode(NodeType& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta) {}
@@ -128,6 +131,9 @@ protected:
 		DeltaFlow& oldModuleDelta, std::vector<DeltaFlow>& moduleDeltaEnterExit, 
 		std::vector<unsigned int>& redirect, unsigned int& offset, unsigned int& numModuleLinks);
 	
+	void addContributionOfMovingMemoryNodes(NodeType& current,
+			DeltaFlow& oldModuleDelta, std::map<unsigned int, DeltaFlow>& moduleDeltaFlow);
+
 	void performMoveOfMemoryNode(NodeType& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
 	void performPredefinedMoveOfMemoryNode(NodeType& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
@@ -323,6 +329,47 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::addContributionOfMoving
 					moduleDeltaEnterExit[numModuleLinks].sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
 					++numModuleLinks;
 				}
+			}
+		}
+	}
+}
+
+template<typename FlowType>
+inline
+void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::addContributionOfMovingMemoryNodes(NodeType& current,
+	DeltaFlow& oldModuleDelta, std::map<unsigned int, DeltaFlow>& moduleDeltaFlow)
+{
+	// Overlapping modules
+	/**
+	 * delta = old.first + new.first + old.second - new.second.
+	 * Two cases: (p(x) = plogp(x))
+	 * Moving to a module that already have that physical node: (old: p1, p2, new p3, moving p2 -> old:p1, new p2,p3)
+	 * Then old.second = new.second = plogp(physicalNodeSize) -> cancelation -> delta = p(p1) - p(p1+p2) + p(p2+p3) - p(p3)
+	 * Moving to a module that not have that physical node: (old: p1, p2, new -, moving p2 -> old: p1, new: p2)
+	 * Then new.first = new.second = 0 -> delta = p(p1) - p(p1+p2) + p(p2).
+	 */
+	unsigned int numPhysicalNodes = current.physicalNodes.size();
+	for (unsigned int i = 0; i < numPhysicalNodes; ++i)
+	{
+		PhysData& physData = current.physicalNodes[i];
+		ModuleToMemNodes& moduleToMemNodes = m_physToModuleToMemNodes[physData.physNodeIndex];
+		for (ModuleToMemNodes::iterator overlapIt(moduleToMemNodes.begin()); overlapIt != moduleToMemNodes.end(); ++overlapIt)
+		{
+			unsigned int moduleIndex = overlapIt->first;
+			MemNodeSet& memNodeSet = overlapIt->second;
+			if (moduleIndex == current.index) // From where the multiple assigned node is moved
+			{
+				double oldPhysFlow = memNodeSet.sumFlow;
+				double newPhysFlow = memNodeSet.sumFlow - physData.sumFlowFromM2Node;
+				oldModuleDelta.sumDeltaPlogpPhysFlow += infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
+				oldModuleDelta.sumPlogpPhysFlow += infomath::plogp(physData.sumFlowFromM2Node);
+			}
+			else // To where the multiple assigned node is moved
+			{
+				double oldPhysFlow = memNodeSet.sumFlow;
+				double newPhysFlow = memNodeSet.sumFlow + physData.sumFlowFromM2Node;
+
+				moduleDeltaFlow[moduleIndex].addMemFlowTerms(infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow), infomath::plogp(physData.sumFlowFromM2Node));
 			}
 		}
 	}
