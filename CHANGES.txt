@@ -6,6 +6,11 @@ www.mapequation.org
 
 
 --------------------------------------------------------------------------------
+Oct 31, 2014. Infomap 0.16.x
+--------------------------------------------------------------------------------
+* Added compilation target intended for input/output conversion and formatting.
+
+--------------------------------------------------------------------------------
 Apr 24, 2014. Infomap 0.15.x
 --------------------------------------------------------------------------------
 * Multiplex networks supported, generating memory from different networks layers.

@@ -67,6 +67,8 @@ struct Config
 		coarseTuneLevel(1),
 		fastHierarchicalSolution(0),
 		fastFirstIteration(false),
+		lowMemoryPriority(0),
+		innerParallelization(false),
 		outDirectory(""),
 		originallyUndirected(false),
 		printTree(false),
@@ -123,6 +125,8 @@ struct Config
 		coarseTuneLevel(other.coarseTuneLevel),
 		fastHierarchicalSolution(other.fastHierarchicalSolution),
 		fastFirstIteration(other.fastFirstIteration),
+		lowMemoryPriority(other.lowMemoryPriority),
+		innerParallelization(other.innerParallelization),
 		outDirectory(other.outDirectory),
 		originallyUndirected(other.originallyUndirected),
 		printTree(other.printTree),
@@ -179,6 +183,8 @@ struct Config
 		coarseTuneLevel = other.coarseTuneLevel;
 		fastHierarchicalSolution = other.fastHierarchicalSolution;
 		fastFirstIteration = other.fastFirstIteration;
+		lowMemoryPriority = other.lowMemoryPriority;
+		innerParallelization = other.innerParallelization;
 		outDirectory = other.outDirectory;
 		originallyUndirected = other.originallyUndirected;
 		printTree = other.printTree;
@@ -311,6 +317,8 @@ struct Config
 	unsigned int coarseTuneLevel;
 	unsigned int fastHierarchicalSolution;
 	bool fastFirstIteration;
+	unsigned int lowMemoryPriority; // Prioritize memory efficient algorithms before fast if > 0
+	bool innerParallelization;
 
 	// Output
 	std::string outDirectory;

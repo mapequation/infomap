@@ -193,6 +193,12 @@ void getConfig(Config& conf, int argc, char *argv[])
 	api.addIncrementalOptionArgument(conf.fastHierarchicalSolution, 'F', "fast-hierarchical-solution",
 			"Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.");
 
+	api.addIncrementalOptionArgument(conf.lowMemoryPriority, 'l', "low-memory",
+			"Prioritize memory efficient algorithms before fast. Use -ll to optimize even more, but this may give approximate results.");
+
+	api.addOptionArgument(conf.innerParallelization, "inner-parallelization",
+			"Parallelize the innermost loop for greater speed. Note that this may give some accuracy tradeoff.");
+
 	// --------------------- Output options ---------------------
 	api.addNonOptionArgument(conf.outDirectory, "out_directory",
 			"The directory to write the results to");

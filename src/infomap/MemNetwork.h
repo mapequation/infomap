@@ -87,6 +87,8 @@ struct Link
 
 struct ComplementaryData
 {
+	typedef EasyMap<unsigned int, double> MapType;
+
 	/*
 	 * @params incomplete link
 	 */
@@ -97,16 +99,25 @@ struct ComplementaryData
 		sumWeightShiftedMatch(0.0)
 	{}
 
-	void addExactMatch(unsigned int n1, unsigned int n2, double weight) { sumWeightExactMatch += weight; exactMatch.push_back(Link(n1, n2, weight)); }
-	void addPartialMatch(unsigned int n1, unsigned int n2, double weight) { sumWeightPartialMatch += weight; partialMatch.push_back(Link(n1, n2, weight)); }
-	void addShiftedMatch(unsigned int n1, unsigned int n2, double weight) { sumWeightShiftedMatch += weight; shiftedMatch.push_back(Link(n1, n2, weight)); }
+	void addExactMatch(unsigned int missing, double weight) {
+		sumWeightExactMatch += weight;
+		exactMatch.getOrSet(missing) += weight;
+	}
+	void addPartialMatch(unsigned int missing, double weight) {
+		sumWeightPartialMatch += weight;
+		partialMatch.getOrSet(missing) += weight;
+	}
+	void addShiftedMatch(unsigned int missing, double weight) {
+		sumWeightShiftedMatch += weight;
+		shiftedMatch.getOrSet(missing) += weight;
+	}
 
 	Link incompleteLink; // -1 n2 n3
-	std::deque<Link> exactMatch; // match x n2 n3, use [x n2] as memory node
+	MapType exactMatch; // match x n2 n3 -> x n2 n3
 	double sumWeightExactMatch;
-	std::deque<Link> partialMatch; // match x n2 y, use [x n2] as memory node
+	MapType partialMatch; // match x n2 y -> x n2 n3
 	double sumWeightPartialMatch;
-	std::deque<Link> shiftedMatch; // match x y n3, use [y n3] as memory node
+	MapType shiftedMatch; // match x y n2 -> y n2 n3
 	double sumWeightShiftedMatch;
 };
 
