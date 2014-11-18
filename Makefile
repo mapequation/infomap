@@ -3,7 +3,7 @@ LDFLAGS =
 CXX_CLANG := $(shell $(CXX) --version 2>/dev/null | grep clang)
 ifeq "$(CXX_CLANG)" ""
 	CXXFLAGS += -O4
-	ifneq "$(MAKECMDGOALS)" "noomp"
+	ifneq "$(findstring noomp, $(MAKECMDGOALS))" "noomp"
 		CXXFLAGS += -fopenmp
 		LDFLAGS += -fopenmp
 	endif
