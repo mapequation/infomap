@@ -220,8 +220,6 @@ protected:
 	void simulateMemoryFromOrdinaryNetwork();
 
 	void simulateMemoryToIncompleteData();
-	void simulateMemoryToIncompleteDataWithPerformanceTradeOff();
-	void simulateMemoryToIncompleteDataMemoryEfficient();
 
 	// Helper methods
 	/**
