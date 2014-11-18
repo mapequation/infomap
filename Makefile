@@ -83,7 +83,7 @@ all: $(TARGET) Informatter
 
 ## Clean Rule
 clean:
-	$(RM) $(TARGET) $(OBJECTS)
+	$(RM) $(TARGET) Informatter $(OBJECTS)
 
 noomp: $(TARGET)
 	@true
