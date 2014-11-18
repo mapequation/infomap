@@ -147,7 +147,7 @@ void MemNetwork::parseTrigram(std::string filename)
 		double weight;
 		parseM2Link(line, n1, n2, n3, weight);
 
-		if (n1 + m_indexOffset == -1)
+		if (n1 + static_cast<int>(m_indexOffset) == -1)
 		{
 			addIncompleteM2Link(n2, n3, weight);
 		}
