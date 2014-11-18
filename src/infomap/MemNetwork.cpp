@@ -240,15 +240,6 @@ void MemNetwork::simulateMemoryToIncompleteData()
 	if (m_numIncompleteM2Links == 0)
 		return;
 
-	if (m_config.lowMemoryPriority > 0)
-	{
-		if (m_config.lowMemoryPriority == 1)
-			simulateMemoryToIncompleteDataWithPerformanceTradeOff();
-		else
-			simulateMemoryToIncompleteDataMemoryEfficient();
-		return;
-	}
-
 	std::cout << "\n  -> Found " << m_numM2LinksFound << " trigrams with " <<
 			m_numIncompleteM2LinksFound << " incomplete trigrams.";
 	std::cout << "\n  -> Patching " << m_numIncompleteM2Links << " incomplete trigrams.." << std::flush;
