@@ -212,29 +212,6 @@ std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 	if (*--conf.outDirectory.end() != '/')
 		conf.outDirectory.append("/");
 
-	if (!conf.haveModularResultOutput())
-		conf.printTree = true;
-
-	conf.originallyUndirected = conf.isUndirected();
-	if (conf.isMemoryNetwork())
-	{
-		if (conf.isMultiplexNetwork())
-		{
-			if (!conf.isUndirected())
-			{
-				conf.teleportToNodes = true;
-				conf.recordedTeleportation = false;
-			}
-		}
-		else
-		{
-			conf.teleportToNodes = true;
-			conf.recordedTeleportation = false;
-			if (conf.isUndirected())
-				conf.directed = true;
-		}
-	}
-
 	return api.getUsedOptionArguments();
 }
 
@@ -261,19 +238,58 @@ int run(int argc, char* argv[])
 	try
 	{
 		std::vector<ParsedOption> flags = getConfig(conf, argc, argv);
-		if (conf.benchmark)
-			initBenchmark(conf, argc, argv);
-		if (conf.verbosity == 0)
-			conf.verboseNumberPrecision = 4;
-		std::cout << std::setprecision(conf.verboseNumberPrecision);
 
 		std::cout << "===================================================\n";
 		std::cout << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
 		std::cout << "  -> Input network: " << conf.networkFile << "\n";
 		std::cout << "  -> Output path:   " << conf.outDirectory << "\n";
-		for (unsigned int i = 0; i < flags.size(); ++i)
-			std::cout << (i == 0 ? "  -> Flags:         " : "                    ") << flags[i] << "\n";
+		if (!flags.empty()) {
+			for (unsigned int i = 0; i < flags.size(); ++i)
+				std::cout << (i == 0 ? "  -> Configuration: " : "                    ") << flags[i] << "\n";
+		}
+//		std::cout << "  => " << (conf.isUndirected()? "Undirected" : "Directed") << " flow\n";
+//		std::cout << "  => " << (conf.isMemoryNetwork()? "Second" : "First") << "-order Markov dynamics\n";
+//		if (conf.useTeleportation())
+//			std::cout << "  => " << (conf.recordedTeleportation ? "Recorded" : "Unrecorded") << " teleportation to " <<
+//			(conf.teleportToNodes ? "nodes" : "links") << "\n";
+		std::cout << "  -> Use " << (conf.isUndirected()? "undirected" : "directed") << " flow and " <<
+			(conf.isMemoryNetwork()? "2nd" : "1st") << " order Markov dynamics";
+		if (conf.useTeleportation())
+			std::cout << " with " << (conf.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
+			(conf.teleportToNodes ? "nodes" : "links");
+		std::cout << "\n";
 		std::cout << "===================================================\n";
+
+		if (conf.benchmark)
+			initBenchmark(conf, argc, argv);
+
+		if (!conf.haveModularResultOutput())
+			conf.printTree = true;
+
+		conf.originallyUndirected = conf.isUndirected();
+		if (conf.isMemoryNetwork())
+		{
+			if (conf.isMultiplexNetwork())
+			{
+				if (!conf.isUndirected())
+				{
+					conf.teleportToNodes = true;
+					conf.recordedTeleportation = false;
+				}
+			}
+			else
+			{
+				conf.teleportToNodes = true;
+				conf.recordedTeleportation = false;
+				if (conf.isUndirected())
+					conf.directed = true;
+			}
+		}
+
+		if (conf.verbosity == 0)
+			conf.verboseNumberPrecision = 4;
+
+		std::cout << std::setprecision(conf.verboseNumberPrecision);
 
 		runInfomap(conf);
 

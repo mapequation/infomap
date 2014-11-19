@@ -258,6 +258,8 @@ struct Config
 
 	bool parseAsUndirected() const { return originallyUndirected; }
 
+	bool useTeleportation() const { return 	directed; }
+
 	bool isMemoryInput() const { return inputFormat == "3gram" || inputFormat == "multiplex" || additionalInput.size() > 0; }
 
 	bool isMemoryNetwork() const { return withMemory || isMemoryInput(); }
