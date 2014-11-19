@@ -268,3 +268,15 @@ void ProgramInterface::parseArgs(int argc, char** argv)
 
 }
 
+std::vector<ParsedOption> ProgramInterface::getUsedOptionArguments()
+{
+	std::vector<ParsedOption> opts;
+	unsigned int numFlags = m_optionArguments.size();
+	for (unsigned int i = 0; i < numFlags; ++i)
+	{
+		Option& opt = *m_optionArguments[i];
+		if (opt.used && opt.longName != "negate-next")
+			opts.push_back(ParsedOption(opt));
+	}
+	return opts;
+}

@@ -47,7 +47,7 @@ void runInfomap(Config const& config)
 	context.getInfomap()->run();
 }
 
-void getConfig(Config& conf, int argc, char *argv[])
+std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 {
 	ProgramInterface api("Infomap",
 			"Implementation of the Infomap clustering algorithm based on the Map Equation (see www.mapequation.org)",
@@ -234,6 +234,8 @@ void getConfig(Config& conf, int argc, char *argv[])
 				conf.directed = true;
 		}
 	}
+
+	return api.getUsedOptionArguments();
 }
 
 void initBenchmark(const Config& conf, int argc, char * const argv[])
@@ -258,16 +260,20 @@ int run(int argc, char* argv[])
 	Config conf;
 	try
 	{
-		getConfig(conf, argc, argv);
+		std::vector<ParsedOption> flags = getConfig(conf, argc, argv);
 		if (conf.benchmark)
 			initBenchmark(conf, argc, argv);
 		if (conf.verbosity == 0)
 			conf.verboseNumberPrecision = 4;
 		std::cout << std::setprecision(conf.verboseNumberPrecision);
 
-		std::cout << "===========================================\n";
+		std::cout << "===================================================\n";
 		std::cout << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
-		std::cout << "===========================================\n";
+		std::cout << "  -> Input network: " << conf.networkFile << "\n";
+		std::cout << "  -> Output path:   " << conf.outDirectory << "\n";
+		for (unsigned int i = 0; i < flags.size(); ++i)
+			std::cout << (i == 0 ? "  -> Flags:         " : "                    ") << flags[i] << "\n";
+		std::cout << "===================================================\n";
 
 		runInfomap(conf);
 
@@ -283,10 +289,10 @@ int run(int argc, char* argv[])
 //		std::cout << "Warning: " << NodeBase::nodeCount() << " nodes not deleted!\n";
 
 
-	std::cout << "===========================================\n";
+	std::cout << "===================================================\n";
 	std::cout << "  Infomap ends at " << Date() << "\n";
 	std::cout << "  (Elapsed time: " << (Date() - startDate) << ")\n";
-	std::cout << "===========================================\n";
+	std::cout << "===================================================\n";
 
 //	ElapsedTime t1 = (Date() - startDate);
 //	std::cout << "Elapsed time: " << t1 << " (" <<

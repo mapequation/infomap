@@ -31,10 +31,10 @@
 #include <getopt.h>
 #include <vector>
 #include <deque>
-#include <iosfwd>
 #include <string>
 #include <sstream>
 #include <stdexcept>
+#include <iostream>
 
 /**
  *
@@ -82,15 +82,23 @@ struct Option
 	  requireArgument(requireArgument),
 	  incrementalArgument(false),
 	  argumentName(argName),
-	  defaultValue(defaultValue)
+	  defaultValue(defaultValue),
+	  used(false),
+	  negated(false)
 	{}
 	virtual ~Option() {}
-	virtual bool parse(std::string const&) { return true; }
-	virtual void set(bool value) {};
+	virtual bool parse(std::string const&) { used = true; return true; }
+	virtual void set(bool value) { used = true; negated = !value; };
 	virtual std::ostream& printValue(std::ostream& out) const { return out; }
+	virtual std::string printValue() const { return ""; }
 	friend std::ostream& operator<<(std::ostream& out, const Option& option)
 	{
-		return option.printValue(out);
+		out << option.longName;
+		if (option.requireArgument) {
+			out << " = ";
+			option.printValue(out);
+		}
+		return out;
 	}
 	char shortName;
 	std::string longName;
@@ -100,6 +108,8 @@ struct Option
 	bool incrementalArgument;
 	std::string argumentName;
 	std::string defaultValue;
+	bool used;
+	bool negated;
 };
 
 struct IncrementalOption : Option
@@ -107,8 +117,9 @@ struct IncrementalOption : Option
 	IncrementalOption(unsigned int& target, char shortName, std::string longName, std::string desc, bool isAdvanced)
 	: Option(shortName, longName, desc, isAdvanced, false), target(target)
 	{ incrementalArgument = true; }
-	virtual bool parse(std::string const&  value) {	return ++target; }
-	virtual void set(bool value) { if (value) { ++target; } else if (target > 0) {--target;} }
+	virtual bool parse(std::string const&  value) {	Option::parse(value); return ++target; }
+	virtual void set(bool value) { Option::set(value); if (value) { ++target; } else if (target > 0) {--target;} }
+	virtual std::string printValue() const { return Str() << target; }
 	virtual std::ostream& printValue(std::ostream& out) const { return out << target; }
 
 	unsigned int& target;
@@ -120,7 +131,8 @@ struct ArgumentOption : Option
 	ArgumentOption(T& target, char shortName, std::string longName, std::string desc, bool isAdvanced, std::string argName)
 	: Option(shortName, longName, desc, isAdvanced, true, argName), target(target)
 	{}
-	virtual bool parse(std::string const&  value) {	return stringToValue(value, target); }
+	virtual bool parse(std::string const&  value) {	Option::parse(value); return stringToValue(value, target); }
+	virtual std::string printValue() const { return Str() << target; }
 	virtual std::ostream& printValue(std::ostream& out) const { return out << target; }
 
 	T& target;
@@ -132,11 +144,49 @@ struct ArgumentOption<bool> : Option
 	ArgumentOption(bool& target, char shortName, std::string longName, std::string desc, bool isAdvanced)
 	: Option(shortName, longName, desc, isAdvanced, false), target(target)
 	{}
-	virtual bool parse(std::string const&  value) {	return target = true; }
-	virtual void set(bool value) { target = value; }
+	virtual bool parse(std::string const&  value) {	Option::parse(value); return target = true; }
+	virtual void set(bool value) { Option::set(value); target = value; }
+	virtual std::string printValue() const { return Str() << target; }
 	virtual std::ostream& printValue(std::ostream& out) const { return out << target; }
 
 	bool& target;
+};
+
+struct ParsedOption
+{
+	ParsedOption(const Option& opt) :
+		shortName(opt.shortName),
+		longName(opt.longName),
+		description(opt.description),
+		isAdvanced(opt.isAdvanced),
+		requireArgument(opt.requireArgument),
+		incrementalArgument(opt.incrementalArgument),
+		argumentName(opt.argumentName),
+		defaultValue(opt.defaultValue),
+		negated(opt.negated),
+		value(opt.printValue())
+	{}
+
+	friend std::ostream& operator<<(std::ostream& out, const ParsedOption& option)
+	{
+		if (option.negated)
+			out << "no ";
+		out << option.longName;
+		if (option.requireArgument)
+			out << " = " << option.value;
+		return out;
+	}
+
+	char shortName;
+	std::string longName;
+	std::string description;
+	bool isAdvanced;
+	bool requireArgument;
+	bool incrementalArgument;
+	std::string argumentName;
+	std::string defaultValue;
+	bool negated;
+	std::string value;
 };
 
 struct TargetBase
@@ -255,10 +305,9 @@ public:
 		m_optionArguments.push_back(o);
 	}
 
-
-
-
 	void parseArgs(int argc, char** argv);
+
+	std::vector<ParsedOption> getUsedOptionArguments();
 
 private:
 	void exitWithUsage(bool showAdvanced);
