@@ -1349,6 +1349,8 @@ bool InfomapBase::initNetwork()
  	FlowNetwork flowNetwork;
  	flowNetwork.calculateFlow(network, m_config);
 
+ 	network.disposeLinks();
+
  	initNodeNames(network);
 
  	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
@@ -1424,6 +1426,8 @@ void InfomapBase::initMemoryNetwork()
 	MemFlowNetwork flowNetwork;
 	flowNetwork.calculateFlow(network, m_config);
 
+	network.disposeLinks();
+
 	initNodeNames(network);
 
 //	const std::vector<std::string>& nodeNames = network.nodeNames();
@@ -1469,7 +1473,7 @@ void InfomapBase::initMemoryNetwork()
 		if (m_config.printExpanded)
 		{
 			std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << "_expanded.rank";
-			std::cout << "Printing node flow to " << outName << "... ";
+			std::cout << "Printing node flow to " << outName << "... " << std::flush;
 			SafeOutFile out(outName.c_str());
 
 			// Sort the m2 nodes on flow
@@ -1492,7 +1496,7 @@ void InfomapBase::initMemoryNetwork()
 			//TODO: Split printNetworkData to printNetworkData and printModuleData, and move this to first
 			std::string outName = io::Str() <<
 					m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".rank";
-			std::cout << "Printing physical flow to " << outName << "... ";
+			std::cout << "Printing physical flow to " << outName << "... " << std::flush;
 			SafeOutFile out(outName.c_str());
 			double sumFlow = 0.0;
 			double sumM2flow = 0.0;
