@@ -382,4 +382,10 @@ void MultiplexNetwork::parseInterLink(const std::string& line, unsigned int& nod
 	level2 -= m_indexOffset;
 }
 
-
+void MultiplexNetwork::finalizeAndCheckNetwork()
+{
+	// First dispose intermediate data structures to clear memory
+	m_interLinks.clear();
+	m_networks.clear();
+	MemNetwork::finalizeAndCheckNetwork();
+}
