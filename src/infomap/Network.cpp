@@ -167,6 +167,8 @@ void Network::parsePajekNetwork(std::string filename)
 	if(buf != "*Edges" && buf != "*edges" && buf != "*Arcs" && buf != "*arcs") {
 		throw FileFormatError("The first line (to lower cases) after the nodes doesn't match *edges or *arcs.");
 	}
+	if (m_config.parseAsUndirected() && (buf == "*Arcs" || buf == "*arcs"))
+		RELEASE_OUT("\n --> Notice: Links marked as directed in pajek file but parsed as undirected.\n");
 
 
 	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
@@ -282,6 +284,9 @@ void Network::parsePajekNetworkWithoutIOStreams(std::string filename)
 		throw FileFormatError("Can't find a correct line that defines the beginning of the edge section.");
 	if (strncmp(line, "*", 1) != 0)
 		throw FileFormatError("Can't find a correct line that defines the beginning of the edge section.");
+
+	if (m_config.parseAsUndirected() && (strncmp(line, "*Arcs", 5) == 0 || strncmp(line, "*arcs", 5) == 0))
+		RELEASE_OUT("\n --> Notice: Links marked as directed in pajek file but parsed as undirected.\n");
 
 
 	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
