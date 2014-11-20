@@ -268,6 +268,11 @@ struct Config
 
 	bool isMultiplexNetwork() const { return inputFormat == "multiplex" || additionalInput.size() > 0; }
 
+	bool haveOutput() const
+	{
+		return !noFileOutput;
+	}
+
 	bool haveModularResultOutput() const
 	{
 		return printTree ||
