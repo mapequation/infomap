@@ -35,6 +35,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
+#include "convert.h"
 
 /**
  *
@@ -46,35 +47,10 @@ struct OptionConflictError : std::logic_error
 	OptionConflictError(std::string const& s) : std::logic_error(s) {}
 };
 
-template<typename T>
-bool stringToValue(std::string const& str, T& value)
-{
-	std::istringstream istream(str);
-	return istream >> value;
-}
-
-class Str {
-public:
-	Str() {}
-	template<class T> Str& operator<<(const T& t) {
-		m_oss << t;
-		return *this;
-	}
-	Str& operator<<(std::ostream& (*f) (std::ostream&)) {
-		m_oss << f;
-		return *this;
-	}
-	operator std::string() const {
-		return m_oss.str();
-	}
-private:
-	std::ostringstream m_oss;
-};
-
 struct Option
 {
 	Option(char shortName, std::string longName, std::string desc, bool isAdvanced, bool requireArgument = false,
-			std::string argName = "", std::string defaultValue = "")
+			std::string argName = "")
 	: shortName(shortName),
 	  longName(longName),
 	  description(desc),
@@ -82,7 +58,6 @@ struct Option
 	  requireArgument(requireArgument),
 	  incrementalArgument(false),
 	  argumentName(argName),
-	  defaultValue(defaultValue),
 	  used(false),
 	  negated(false)
 	{}
@@ -91,6 +66,7 @@ struct Option
 	virtual void set(bool value) { used = true; negated = !value; };
 	virtual std::ostream& printValue(std::ostream& out) const { return out; }
 	virtual std::string printValue() const { return ""; }
+	virtual std::string printNumericValue() const { return ""; }
 	friend std::ostream& operator<<(std::ostream& out, const Option& option)
 	{
 		out << option.longName;
@@ -107,7 +83,6 @@ struct Option
 	bool requireArgument;
 	bool incrementalArgument;
 	std::string argumentName;
-	std::string defaultValue;
 	bool used;
 	bool negated;
 };
@@ -119,8 +94,9 @@ struct IncrementalOption : Option
 	{ incrementalArgument = true; }
 	virtual bool parse(std::string const&  value) {	Option::parse(value); return ++target; }
 	virtual void set(bool value) { Option::set(value); if (value) { ++target; } else if (target > 0) {--target;} }
-	virtual std::string printValue() const { return Str() << target; }
 	virtual std::ostream& printValue(std::ostream& out) const { return out << target; }
+	virtual std::string printValue() const { return io::Str() << target; }
+	virtual std::string printNumericValue() const { return ""; }
 
 	unsigned int& target;
 };
@@ -131,9 +107,10 @@ struct ArgumentOption : Option
 	ArgumentOption(T& target, char shortName, std::string longName, std::string desc, bool isAdvanced, std::string argName)
 	: Option(shortName, longName, desc, isAdvanced, true, argName), target(target)
 	{}
-	virtual bool parse(std::string const&  value) {	Option::parse(value); return stringToValue(value, target); }
-	virtual std::string printValue() const { return Str() << target; }
+	virtual bool parse(std::string const&  value) {	Option::parse(value); return io::stringToValue(value, target); }
+	virtual std::string printValue() const { return io::Str() << target; }
 	virtual std::ostream& printValue(std::ostream& out) const { return out << target; }
+	virtual std::string printNumericValue() const { return TypeInfo<T>::isNumeric()? printValue() : ""; }
 
 	T& target;
 };
@@ -146,8 +123,9 @@ struct ArgumentOption<bool> : Option
 	{}
 	virtual bool parse(std::string const&  value) {	Option::parse(value); return target = true; }
 	virtual void set(bool value) { Option::set(value); target = value; }
-	virtual std::string printValue() const { return Str() << target; }
 	virtual std::ostream& printValue(std::ostream& out) const { return out << target; }
+	virtual std::string printValue() const { return io::Str() << target; }
+	virtual std::string printNumericValue() const { return ""; }
 
 	bool& target;
 };
@@ -162,7 +140,6 @@ struct ParsedOption
 		requireArgument(opt.requireArgument),
 		incrementalArgument(opt.incrementalArgument),
 		argumentName(opt.argumentName),
-		defaultValue(opt.defaultValue),
 		negated(opt.negated),
 		value(opt.printValue())
 	{}
@@ -184,7 +161,6 @@ struct ParsedOption
 	bool requireArgument;
 	bool incrementalArgument;
 	std::string argumentName;
-	std::string defaultValue;
 	bool negated;
 	std::string value;
 };
@@ -213,7 +189,7 @@ struct Target : TargetBase
 
 	virtual bool parse(std::string const&  value)
 	{
-		return stringToValue(value, target);
+		return io::stringToValue(value, target);
 	}
 
 	T& target;
@@ -230,7 +206,7 @@ struct OptionalTargets : TargetBase
 	virtual bool parse(std::string const&  value)
 	{
 		T target;
-		bool ok = stringToValue(value, target);
+		bool ok = io::stringToValue(value, target);
 		if (ok)
 			targets.push_back(target);
 		return ok;

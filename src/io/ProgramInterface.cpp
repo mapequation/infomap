@@ -98,8 +98,12 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
 	{
 		Option& opt = *m_optionArguments[i];
 		std::string::size_type numSpaces = maxLength + 3 - optionStrings[i].length();
-		if (showAdvanced || !opt.isAdvanced)
-			std::cout << optionStrings[i] << std::string(numSpaces, ' ') << opt.description << "\n";
+		if (showAdvanced || !opt.isAdvanced) {
+			std::cout << optionStrings[i] << std::string(numSpaces, ' ') << opt.description;
+			if (!opt.printNumericValue().empty())
+				std::cout << " (Default: " << opt.printNumericValue() << ")";
+			std::cout << "\n";
+		}
 	}
 	std::cout << std::endl;
 	std::exit(0);
@@ -182,7 +186,7 @@ void ProgramInterface::parseArgs(int argc, char** argv)
 				else
 				{
 					if (!opt.parse(optarg))
-						exitWithError(Str() << "Cannot parse argument '" << optarg << "' to option '" <<
+						exitWithError(io::Str() << "Cannot parse argument '" << optarg << "' to option '" <<
 								opt.longName << "'. ");
 				}
 				parsed = true;
@@ -209,7 +213,7 @@ void ProgramInterface::parseArgs(int argc, char** argv)
 			else
 			{
 				if (!longOpt.parse(optarg))
-					exitWithError(Str() << "Cannot parse argument '" << optarg << "' to option '" <<
+					exitWithError(io::Str() << "Cannot parse argument '" << optarg << "' to option '" <<
 							longOpt.longName << "'. ");
 			}
 			parsed = true;
