@@ -212,7 +212,7 @@ std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 	if (*--conf.outDirectory.end() != '/')
 		conf.outDirectory.append("/");
 
-	if (!isDirectoryWritable(conf.outDirectory))
+	if (conf.haveOutput() && !isDirectoryWritable(conf.outDirectory))
 		throw FileOpenError(io::Str() << "Can't write to directory '" <<
 				conf.outDirectory << "'. Check that the directory exists and that you have write permissions.");
 
