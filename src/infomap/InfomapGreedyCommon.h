@@ -66,7 +66,7 @@ protected:
 
 	virtual std::auto_ptr<InfomapBase> getNewInfomapInstance();
 
-	virtual void aggregateFlowValuesFromLeafToRoot();
+	virtual unsigned int aggregateFlowValuesFromLeafToRoot();
 	virtual double calcCodelengthOnAllNodesInTree();
 
 	virtual double calcCodelengthOnRootOfLeafNodes(const NodeBase& parent);
@@ -115,10 +115,11 @@ std::auto_ptr<InfomapBase> InfomapGreedyCommon<InfomapGreedyDerivedType>::getNew
 }
 
 template<typename InfomapGreedyDerivedType>
-inline void InfomapGreedyCommon<InfomapGreedyDerivedType>::aggregateFlowValuesFromLeafToRoot()
+inline unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::aggregateFlowValuesFromLeafToRoot()
 {
 	FlowType& rootData = getNode(*root()).data;
 	rootData.flow = 0.0;
+	unsigned int numLevels = 0;
 
 	// Aggregate flow from leaf nodes to root node
 	for (NodeBase::post_depth_first_iterator it(root()); !it.isEnd(); ++it)
@@ -131,6 +132,8 @@ inline void InfomapGreedyCommon<InfomapGreedyDerivedType>::aggregateFlowValuesFr
 		node.data.enterFlow = 0.0;
 		if (!node.isLeaf())
 			node.originalIndex = it.depth(); // Use originalIndex to store the depth on modules
+		else
+			numLevels = std::max(numLevels, it.depth());
 	}
 
 	if (std::abs(rootData.flow - 1.0) > 1e-10)
@@ -187,6 +190,7 @@ inline void InfomapGreedyCommon<InfomapGreedyDerivedType>::aggregateFlowValuesFr
 	}
 
 	Super::addTeleportationFlowOnModules();
+	return numLevels;
 }
 
 template<typename InfomapGreedyDerivedType>

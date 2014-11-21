@@ -1605,7 +1605,7 @@ bool InfomapBase::consolidateExternalClusterData(bool printResults)
 	if (!isModulesLoaded)
 		return false;
 
-	aggregateFlowValuesFromLeafToRoot();
+	unsigned int numLevels = aggregateFlowValuesFromLeafToRoot();
 
 	hierarchicalCodelength = codelength = calcCodelengthOnAllNodesInTree();
 
@@ -1613,17 +1613,20 @@ bool InfomapBase::consolidateExternalClusterData(bool printResults)
 
 	moduleCodelength = hierarchicalCodelength - indexCodelength;
 
+	std::cout << " -> Codelength " << indexCodelength << " + " << moduleCodelength <<
+			" = " << io::toPrecision(hierarchicalCodelength) << std::endl;
+
 	if (!printResults)
 		return true;
 
 	if (oneLevelCodelength < hierarchicalCodelength - m_config.minimumCodelengthImprovement)
 	{
-		std::cout << "Warning: No improvement in modular solution over one-level solution!\n";
+		std::cout << "\n -> Warning: No improvement in modular solution over one-level solution!";
 	}
 
 	printNetworkData();
 	std::ostringstream solutionStatistics;
-	unsigned int numLevels = printPerLevelCodelength(solutionStatistics);
+	printPerLevelCodelength(solutionStatistics);
 
 	std::cout << "Hierarchical solution in " << numLevels << " levels:\n";
 	std::cout << solutionStatistics.str() << std::endl;

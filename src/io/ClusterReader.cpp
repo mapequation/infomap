@@ -106,4 +106,5 @@ void ClusterReader::readData(const string filename)
 			throw InputDomainError(io::Str() << "Module " << (i + 1) << " is empty.");
 	}
 
+	std::cout << "done! " << std::flush;
 }
