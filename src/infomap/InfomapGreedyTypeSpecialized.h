@@ -74,6 +74,12 @@ protected:
 
 	void generateNetworkFromChildren(NodeBase& parent);
 
+	using Super::calculateCodelengthFromActiveNetwork;
+
+	using Super::m_activeNetwork;
+	using Super::m_moduleFlowData;
+	using Super::m_moduleMembers;
+	using Super::m_emptyModules;
 };
 
 
@@ -152,6 +158,13 @@ protected:
 
 	virtual void printFlowNetwork(std::ostream& out);
 
+	using Super::calculateCodelengthFromActiveNetwork;
+
+	using Super::m_activeNetwork;
+	using Super::m_moduleFlowData;
+	using Super::m_moduleMembers;
+	using Super::m_emptyModules;
+
 private:
 	NodeType& getNode(NodeBase& node) { return static_cast<NodeType&>(node); }
 	const NodeType& getNode(const NodeBase& node) const { return static_cast<const NodeType&>(node); }
@@ -205,13 +218,13 @@ template<typename FlowType, typename NetworkType>
 void InfomapGreedyTypeSpecialized<FlowType, NetworkType>::initModuleOptimization()
 {
 	unsigned int numNodes = Super::m_activeNetwork.size();
-	Super::m_moduleFlowData.resize(numNodes);
-	Super::m_moduleMembers.assign(numNodes, 1);
-	Super::m_emptyModules.clear();
-	Super::m_emptyModules.reserve(numNodes);
+	m_moduleFlowData.resize(numNodes);
+	m_moduleMembers.assign(numNodes, 1);
+	m_emptyModules.clear();
+	m_emptyModules.reserve(numNodes);
 
 	unsigned int i = 0;
-	for (typename Super::activeNetwork_iterator it(Super::m_activeNetwork.begin()), itEnd(Super::m_activeNetwork.end());
+	for (typename Super::activeNetwork_iterator it(m_activeNetwork.begin()), itEnd(m_activeNetwork.end());
 			it != itEnd; ++it, ++i)
 	{
 		NodeType& node = Super::getNode(**it);

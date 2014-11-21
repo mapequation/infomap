@@ -872,6 +872,7 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 	bool verbose = (m_subLevel == 0 && m_config.verbosity != 0) ||
 			(isSuperLevelOnTopLevel() && m_config.verbosity == 2);
 	verbose = m_subLevel == 0;
+//	verbose = m_subLevel == 0 || (m_subLevel == 1 && m_config.verbosity > 2);
 
 	if ((*m_treeData.begin_leaf())->parent != root())
 	{

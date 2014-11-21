@@ -128,10 +128,11 @@ inline unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::aggregateFlow
 		if (!node.isRoot())
 			getNode(*node.parent).data += node.data;
 		// Don't aggregate enter and exit flow
-		node.data.exitFlow = 0.0;
-		node.data.enterFlow = 0.0;
-		if (!node.isLeaf())
+		if (!node.isLeaf()) {
 			node.originalIndex = it.depth(); // Use originalIndex to store the depth on modules
+			node.data.exitFlow = 0.0;
+			node.data.enterFlow = 0.0;
+		}
 		else
 			numLevels = std::max(numLevels, it.depth());
 	}
@@ -331,6 +332,9 @@ void InfomapGreedyCommon<InfomapGreedyDerivedType>::calculateCodelengthFromActiv
 	Super::indexCodelength = Super::enterFlow_log_enterFlow - Super::exit_log_exit - Super::exitNetworkFlow_log_exitNetworkFlow;
 	Super::moduleCodelength = -Super::exit_log_exit + Super::flow_log_flow - Super::nodeFlow_log_nodeFlow;
 	Super::codelength = Super::indexCodelength + Super::moduleCodelength;
+//	std::cout << "\n ==> Codelength: " << Super::enterFlow_log_enterFlow << " - 2 *" << Super::exit_log_exit << " -" <<
+//			Super::exitNetworkFlow_log_exitNetworkFlow << " +" <<  Super::flow_log_flow << " -" << Super::nodeFlow_log_nodeFlow <<
+//			" = " << Super::indexCodelength << " + " << Super::moduleCodelength << " = " << Super::codelength << " ";
 }
 
 /**
