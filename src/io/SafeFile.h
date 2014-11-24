@@ -265,4 +265,18 @@ public:
 
 };
 
+inline
+bool isDirectoryWritable(const std::string& dir)
+{
+	std::string path = io::Str() << dir << "_1nf0m4p_.tmp";
+	bool ok = true;
+	try {
+		SafeOutFile out(path.c_str());
+	}
+	catch(const FileOpenError&) {
+		ok = false;
+	}
+	return ok;
+}
+
 #endif /* SAFEFILE_H_ */

@@ -89,7 +89,7 @@ void NetworkAdapter::readClu(std::string filename)
 	for (unsigned int i = 0; i < numModules; ++i)
 		m_treeData.root()->addChild(modules[i]);
 
-	std::cout << "done! Found " << numModules << " modules." << std::endl;
+	std::cout << "Found " << numModules << " modules." << std::endl;
 }
 
 void NetworkAdapter::readHumanReadableTree(std::string filename)

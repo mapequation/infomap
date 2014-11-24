@@ -120,7 +120,7 @@ struct FlowDirectedWithTeleportation
 	FlowDirectedWithTeleportation(double flow = 1.0, double teleportWeight = 1.0) :
 		flow(flow),
 		exitFlow(0.0),
-		enterFlow(exitFlow),
+		enterFlow(0.0),
 		teleportWeight(teleportWeight),
 		danglingFlow(0.0),
 		teleportSourceFlow(0.0)
@@ -128,7 +128,7 @@ struct FlowDirectedWithTeleportation
 	FlowDirectedWithTeleportation(const FlowDirectedWithTeleportation& other) :
 		flow(other.flow),
 		exitFlow(other.exitFlow),
-		enterFlow(exitFlow),
+		enterFlow(other.enterFlow),
 		teleportWeight(other.teleportWeight),
 		danglingFlow(other.danglingFlow),
 		teleportSourceFlow(other.teleportSourceFlow)
@@ -137,6 +137,7 @@ struct FlowDirectedWithTeleportation
 	{
 		flow = other.flow;
 		exitFlow = other.exitFlow;
+		enterFlow = other.enterFlow;
 		teleportWeight = other.teleportWeight;
 		danglingFlow = other.danglingFlow;
 		teleportSourceFlow = other.teleportSourceFlow;
@@ -145,7 +146,7 @@ struct FlowDirectedWithTeleportation
 
 	double flow;
 	double exitFlow;
-	double& enterFlow;
+	double enterFlow;
 	double teleportWeight;
 	double danglingFlow;
 	double teleportSourceFlow; // Equals flow when the latter isn't transformed to enter flow
@@ -154,6 +155,7 @@ struct FlowDirectedWithTeleportation
 	{
 		flow += other.flow;
 		exitFlow += other.exitFlow;
+		enterFlow += other.enterFlow;
 		teleportWeight += other.teleportWeight;
 		danglingFlow += other.danglingFlow;
 		teleportSourceFlow += other.teleportSourceFlow;
@@ -164,6 +166,7 @@ struct FlowDirectedWithTeleportation
 	{
 		flow -= other.flow;
 		exitFlow -= other.exitFlow;
+		enterFlow -= other.enterFlow;
 		teleportWeight -= other.teleportWeight;
 		danglingFlow -= other.danglingFlow;
 		teleportSourceFlow -= other.teleportSourceFlow;

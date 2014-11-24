@@ -156,6 +156,8 @@ public:
 
 	virtual void printNetworkAsPajek(std::string filename);
 
+	virtual void disposeLinks();
+
 protected:
 
 	void parseTrigram(std::string filename);

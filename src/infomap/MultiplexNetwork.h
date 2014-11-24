@@ -74,6 +74,8 @@ protected:
 	 */
 	void parseInterLink(const std::string& line, unsigned int& node, unsigned int& level1, unsigned int& level2, double& weight);
 
+	virtual void finalizeAndCheckNetwork();
+
 	// Member variables
 
 	std::deque<Network> m_networks;

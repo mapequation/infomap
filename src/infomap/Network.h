@@ -162,6 +162,8 @@ public:
 
 	void swapNodeNames(std::vector<std::string>& target) { target.swap(m_nodeNames); }
 
+	virtual void disposeLinks() { m_links.clear(); }
+
 protected:
 
 	void parsePajekNetwork(std::string filename);

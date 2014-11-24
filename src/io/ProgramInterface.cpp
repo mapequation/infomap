@@ -86,7 +86,8 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
 	{
 		Option& opt = *m_optionArguments[i];
 		bool haveShort = opt.shortName != '\0';
-		std::string optArg = opt.requireArgument ? (io::Str() << "<" << opt.argumentName << ">") : std::string(3, ' ');
+		std::string optArg = opt.requireArgument ? (io::Str() << "<" << opt.argumentName << ">") :
+				opt.incrementalArgument? "[+]" : std::string(3, ' ');
 		std::string shortOption = haveShort ? (io::Str() <<  "  -" << opt.shortName << optArg) : std::string(7, ' ');
 		optionStrings[i] = io::Str() << shortOption << " --" << opt.longName << (opt.requireArgument? '=' : ' ') << optArg;
 		if (optionStrings[i].length() > maxLength)
@@ -97,8 +98,12 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
 	{
 		Option& opt = *m_optionArguments[i];
 		std::string::size_type numSpaces = maxLength + 3 - optionStrings[i].length();
-		if (showAdvanced || !opt.isAdvanced)
-			std::cout << optionStrings[i] << std::string(numSpaces, ' ') << opt.description << "\n";
+		if (showAdvanced || !opt.isAdvanced) {
+			std::cout << optionStrings[i] << std::string(numSpaces, ' ') << opt.description;
+			if (!opt.printNumericValue().empty())
+				std::cout << " (Default: " << opt.printNumericValue() << ")";
+			std::cout << "\n";
+		}
 	}
 	std::cout << std::endl;
 	std::exit(0);
@@ -181,7 +186,7 @@ void ProgramInterface::parseArgs(int argc, char** argv)
 				else
 				{
 					if (!opt.parse(optarg))
-						exitWithError(Str() << "Cannot parse argument '" << optarg << "' to option '" <<
+						exitWithError(io::Str() << "Cannot parse argument '" << optarg << "' to option '" <<
 								opt.longName << "'. ");
 				}
 				parsed = true;
@@ -208,7 +213,7 @@ void ProgramInterface::parseArgs(int argc, char** argv)
 			else
 			{
 				if (!longOpt.parse(optarg))
-					exitWithError(Str() << "Cannot parse argument '" << optarg << "' to option '" <<
+					exitWithError(io::Str() << "Cannot parse argument '" << optarg << "' to option '" <<
 							longOpt.longName << "'. ");
 			}
 			parsed = true;
@@ -268,3 +273,15 @@ void ProgramInterface::parseArgs(int argc, char** argv)
 
 }
 
+std::vector<ParsedOption> ProgramInterface::getUsedOptionArguments()
+{
+	std::vector<ParsedOption> opts;
+	unsigned int numFlags = m_optionArguments.size();
+	for (unsigned int i = 0; i < numFlags; ++i)
+	{
+		Option& opt = *m_optionArguments[i];
+		if (opt.used && opt.longName != "negate-next")
+			opts.push_back(ParsedOption(opt));
+	}
+	return opts;
+}

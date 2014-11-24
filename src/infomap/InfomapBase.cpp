@@ -872,6 +872,7 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 	bool verbose = (m_subLevel == 0 && m_config.verbosity != 0) ||
 			(isSuperLevelOnTopLevel() && m_config.verbosity == 2);
 	verbose = m_subLevel == 0;
+//	verbose = m_subLevel == 0 || (m_subLevel == 1 && m_config.verbosity > 2);
 
 	if ((*m_treeData.begin_leaf())->parent != root())
 	{
@@ -1349,6 +1350,8 @@ bool InfomapBase::initNetwork()
  	FlowNetwork flowNetwork;
  	flowNetwork.calculateFlow(network, m_config);
 
+ 	network.disposeLinks();
+
  	initNodeNames(network);
 
  	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
@@ -1424,6 +1427,8 @@ void InfomapBase::initMemoryNetwork()
 	MemFlowNetwork flowNetwork;
 	flowNetwork.calculateFlow(network, m_config);
 
+	network.disposeLinks();
+
 	initNodeNames(network);
 
 //	const std::vector<std::string>& nodeNames = network.nodeNames();
@@ -1469,7 +1474,7 @@ void InfomapBase::initMemoryNetwork()
 		if (m_config.printExpanded)
 		{
 			std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << "_expanded.rank";
-			std::cout << "Printing node flow to " << outName << "... ";
+			std::cout << "Printing node flow to " << outName << "... " << std::flush;
 			SafeOutFile out(outName.c_str());
 
 			// Sort the m2 nodes on flow
@@ -1492,7 +1497,7 @@ void InfomapBase::initMemoryNetwork()
 			//TODO: Split printNetworkData to printNetworkData and printModuleData, and move this to first
 			std::string outName = io::Str() <<
 					m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".rank";
-			std::cout << "Printing physical flow to " << outName << "... ";
+			std::cout << "Printing physical flow to " << outName << "... " << std::flush;
 			SafeOutFile out(outName.c_str());
 			double sumFlow = 0.0;
 			double sumM2flow = 0.0;
@@ -1601,7 +1606,7 @@ bool InfomapBase::consolidateExternalClusterData(bool printResults)
 	if (!isModulesLoaded)
 		return false;
 
-	aggregateFlowValuesFromLeafToRoot();
+	unsigned int numLevels = aggregateFlowValuesFromLeafToRoot();
 
 	hierarchicalCodelength = codelength = calcCodelengthOnAllNodesInTree();
 
@@ -1609,17 +1614,20 @@ bool InfomapBase::consolidateExternalClusterData(bool printResults)
 
 	moduleCodelength = hierarchicalCodelength - indexCodelength;
 
+	std::cout << " -> Codelength " << indexCodelength << " + " << moduleCodelength <<
+			" = " << io::toPrecision(hierarchicalCodelength) << std::endl;
+
 	if (!printResults)
 		return true;
 
 	if (oneLevelCodelength < hierarchicalCodelength - m_config.minimumCodelengthImprovement)
 	{
-		std::cout << "Warning: No improvement in modular solution over one-level solution!\n";
+		std::cout << "\n -> Warning: No improvement in modular solution over one-level solution!";
 	}
 
 	printNetworkData();
 	std::ostringstream solutionStatistics;
-	unsigned int numLevels = printPerLevelCodelength(solutionStatistics);
+	printPerLevelCodelength(solutionStatistics);
 
 	std::cout << "Hierarchical solution in " << numLevels << " levels:\n";
 	std::cout << solutionStatistics.str() << std::endl;

@@ -684,3 +684,10 @@ void MemNetwork::printNetworkAsPajek(std::string filename)
 		}
 	}
 }
+
+void MemNetwork::disposeLinks()
+{
+	Network::disposeLinks();
+	m_m2Links.clear();
+	m_incompleteM2Links.clear();
+}
