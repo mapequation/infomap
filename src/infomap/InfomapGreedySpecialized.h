@@ -32,6 +32,11 @@
 
 struct DeltaFlow;
 
+/**
+ * Infomap methods specialized on the flow type, e.g. including teleportation flow if coding teleportation.
+ * As methods can't be partially specialized, the network type template variable is dropped, so
+ * this class don't know if it is a memory network or not.
+ */
 template<typename FlowType>
 class InfomapGreedySpecialized : public InfomapGreedy<InfomapGreedySpecialized<FlowType> >
 {
@@ -45,14 +50,17 @@ class InfomapGreedySpecialized : public InfomapGreedy<InfomapGreedySpecialized<F
 	typedef Edge<NodeBase>												EdgeType;
 public:
 
-	InfomapGreedySpecialized(const Config& conf) : InfomapGreedy<SelfType>(conf) {}
+	InfomapGreedySpecialized(const Config& conf) :
+		InfomapGreedy<SelfType>(conf),
+		m_sumDanglingFlow(0.0) {}
 	virtual ~InfomapGreedySpecialized() {}
 
 protected:
+	void addTeleportationFlowOnLeafNodes() {}
+	void addTeleportationFlowOnModules() {}
+
 	virtual void initEnterExitFlow();
 
-	// // Teleportation methods - specialized implementation for InfomapDirected
-	void addTeleportationFlowOnModules() {}
 	void addTeleportationDeltaFlowOnOldModuleIfMove(NodeType& nodeToMove, DeltaFlow& oldModuleDeltaFlow) {}
 	void addTeleportationDeltaFlowOnNewModuleIfMove(NodeType& nodeToMove, DeltaFlow& newModuleDeltaFlow) {}
 	void addTeleportationDeltaFlowIfMove(NodeType& current, std::vector<DeltaFlow>& moduleDeltaExits, unsigned int numModuleLinks) {}
@@ -61,6 +69,7 @@ protected:
 	double getDeltaCodelengthOnMovingNode(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
 	void updateCodelengthOnMovingNode(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
 
+	double m_sumDanglingFlow;
 };
 
 
@@ -126,6 +135,41 @@ struct DeltaFlow
 };
 
 
+template<>
+inline
+void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::addTeleportationFlowOnLeafNodes()
+{
+	double alpha = m_config.teleportationProbability;
+	double beta = 1.0 - alpha;
+	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
+			it != itEnd; ++it)
+	{
+		NodeType& node = getNode(**it);
+		// Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
+		node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
+		node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
+	}
+}
+
+template<>
+inline
+void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::addTeleportationFlowOnModules()
+{
+	double alpha = m_config.teleportationProbability;
+	double beta = 1.0 - alpha;
+
+	for (NodeBase::pre_depth_first_iterator it(root()); !it.isEnd(); ++it)
+	{
+		NodeType& node = getNode(*it);
+		if (!node.isLeaf())
+		{
+			// Don't code self-teleportation
+			node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
+			node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
+		}
+	}
+}
+
 template<typename FlowType>
 inline
 void InfomapGreedySpecialized<FlowType>::initEnterExitFlow()
@@ -152,14 +196,11 @@ void InfomapGreedySpecialized<FlowType>::initEnterExitFlow()
 
 /**
  * Specialization for directed with teleportation.
- * Note: As detailed balance is fulfilled, enterFlow = &exitFlow, so this
- * specialization skips adding to enterFlow as that will double up the exitFlow.
  */
 template<>
 inline
 void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::initEnterExitFlow()
 {
-	double sumDanglingFlow = 0.0;
 	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
 			it != itEnd; ++it)
 	{
@@ -169,7 +210,7 @@ void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::initEnterExitFlow(
 		data.teleportSourceFlow = data.flow;
 		if (node.isDangling())
 		{
-			sumDanglingFlow += data.flow;
+			m_sumDanglingFlow += data.flow;
 			data.danglingFlow = data.flow;
 		}
 		else
@@ -182,48 +223,13 @@ void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::initEnterExitFlow(
 				if (edge.source != edge.target)
 				{
 					getNode(edge.source).data.exitFlow += edge.data.flow;
-	//				getNode(edge.target).data.enterFlow += edge.data.flow;
+					getNode(edge.target).data.enterFlow += edge.data.flow;
 				}
 			}
 		}
 	}
-	double alpha = m_config.teleportationProbability;
-	double beta = 1.0 - alpha;
-	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
-			it != itEnd; ++it)
-	{
-		NodeType& node = getNode(**it);
-		// Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
-		node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
-//		node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
-	}
-}
 
-template<>
-inline
-void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::addTeleportationFlowOnModules()
-{
-	double alpha = m_config.teleportationProbability;
-	double beta = 1.0 - alpha;
-	double sumDanglingFlow = 0.0;
-
-	// Aggregate enter and exit flow between modules
-	for (TreeData::const_leafIterator leafIt(m_treeData.begin_leaf());
-			leafIt != m_treeData.end_leaf(); ++leafIt)
-	{
-		sumDanglingFlow += getNode(**leafIt).data.danglingFlow;
-	}
-
-	for (NodeBase::pre_depth_first_iterator it(root()); !it.isEnd(); ++it)
-	{
-		NodeType& node = getNode(*it);
-		if (!node.isLeaf())
-		{
-			// Don't code self-teleportation
-			node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
-			node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
-		}
-	}
+	addTeleportationFlowOnLeafNodes();
 }
 
 template<>
@@ -353,43 +359,11 @@ double InfomapGreedySpecialized<FlowUndirected>::getDeltaCodelengthOnMovingNode(
 	return deltaL;
 }
 
-template<>
-inline
-double InfomapGreedySpecialized<FlowDirectedWithTeleportation>::getDeltaCodelengthOnMovingNode(NodeType& current,
-		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
-{
-	using infomath::plogp;
-	std::vector<FlowType>& moduleFlowData = Super::m_moduleFlowData;
-	unsigned int oldModule = oldModuleDelta.module;
-	unsigned int newModule = newModuleDelta.module;
-	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
-	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
-
-	double delta_exit = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
-
-	double delta_exit_log_exit = \
-			- plogp(moduleFlowData[oldModule].exitFlow) \
-			- plogp(moduleFlowData[newModule].exitFlow) \
-			+ plogp(moduleFlowData[oldModule].exitFlow - current.data.exitFlow + deltaEnterExitOldModule) \
-			+ plogp(moduleFlowData[newModule].exitFlow + current.data.exitFlow - deltaEnterExitNewModule);
-
-	double delta_flow_log_flow = \
-			- plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow) \
-			- plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow) \
-			+ plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow \
-					- current.data.exitFlow - current.data.flow + deltaEnterExitOldModule) \
-			+ plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow \
-					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
-
-	double deltaL = delta_exit - 2.0*delta_exit_log_exit + delta_flow_log_flow;
-	return deltaL;
-}
-
 
 /**
  * Update the codelength to reflect the move of node current
  * in oldModuleDelta to newModuleDelta
- * (Specialized for undirected flow and when exitFlow == enterFlow
+ * (Specialized for undirected flow and when exitFlow == enterFlow)
  */
 template<typename FlowType>
 inline
@@ -460,55 +434,6 @@ void InfomapGreedySpecialized<FlowUndirected>::updateCodelengthOnMovingNode(Node
 	// Double the effect as each link works in both directions
 	deltaEnterExitOldModule *= 2;
 	deltaEnterExitNewModule *= 2;
-
-	enterFlow -= \
-			moduleFlowData[oldModule].enterFlow + \
-			moduleFlowData[newModule].enterFlow;
-	exit_log_exit -= \
-			plogp(moduleFlowData[oldModule].exitFlow) + \
-			plogp(moduleFlowData[newModule].exitFlow);
-	flow_log_flow -= \
-			plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow) + \
-			plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow);
-
-
-	moduleFlowData[oldModule] -= current.data;
-	moduleFlowData[newModule] += current.data;
-
-	moduleFlowData[oldModule].exitFlow += deltaEnterExitOldModule;
-	moduleFlowData[newModule].exitFlow -= deltaEnterExitNewModule;
-
-	enterFlow += \
-			moduleFlowData[oldModule].enterFlow + \
-			moduleFlowData[newModule].enterFlow;
-	exit_log_exit += \
-			plogp(moduleFlowData[oldModule].exitFlow) + \
-			plogp(moduleFlowData[newModule].exitFlow);
-	flow_log_flow += \
-			plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow) + \
-			plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow);
-
-	enterFlow_log_enterFlow = plogp(enterFlow);
-
-	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
-	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
-	codelength = indexCodelength + moduleCodelength;
-}
-
-/**
- * Specialized when exitFlow == enterFlow
- */
-template<>
-inline
-void InfomapGreedySpecialized<FlowDirectedWithTeleportation>::updateCodelengthOnMovingNode(NodeType& current,
-		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
-{
-	using infomath::plogp;
-	std::vector<FlowType>& moduleFlowData = Super::m_moduleFlowData;
-	unsigned int oldModule = oldModuleDelta.module;
-	unsigned int newModule = newModuleDelta.module;
-	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
-	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
 	enterFlow -= \
 			moduleFlowData[oldModule].enterFlow + \

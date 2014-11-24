@@ -234,7 +234,7 @@ void InfomapGreedyTypeSpecialized<FlowType, NetworkType>::initModuleOptimization
 	}
 
 	// Initiate codelength terms for the initial state of one module per node
-	Super::calculateCodelengthFromActiveNetwork(DetailedBalanceType());
+	Super::calculateCodelengthFromActiveNetwork();
 }
 
 template<typename FlowType>
@@ -272,7 +272,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::initModuleOptimization(
 
 
 	// Initiate codelength terms for the initial state of one module per node
-	Super::calculateCodelengthFromActiveNetwork(DetailedBalanceType());
+	Super::calculateCodelengthFromActiveNetwork();
 }
 
 

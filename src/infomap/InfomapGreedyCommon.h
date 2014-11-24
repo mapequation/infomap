@@ -74,8 +74,7 @@ protected:
 	virtual double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent);
 	virtual std::pair<double, double> calcCodelength(const NodeBase& parent);
 
-	virtual void calculateCodelengthFromActiveNetwork(DetailedBalance);
-	virtual void calculateCodelengthFromActiveNetwork(NoDetailedBalance);
+	virtual void calculateCodelengthFromActiveNetwork();
 
 	virtual unsigned int optimizeModules();
 
@@ -118,7 +117,7 @@ template<typename InfomapGreedyDerivedType>
 inline unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::aggregateFlowValuesFromLeafToRoot()
 {
 	FlowType& rootData = getNode(*root()).data;
-	rootData.flow = 0.0;
+	rootData = FlowType(0.0, 0.0);
 	unsigned int numLevels = 0;
 
 	// Aggregate flow from leaf nodes to root node
@@ -162,15 +161,11 @@ inline unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::aggregateFlow
 			while(node1->originalIndex > node2->originalIndex)
 			{
 				getNode(*node1).data.exitFlow += linkFlow;
-//				if (m_config.isUndirected())
-//					getNode(*node1).data.enterFlow += linkFlow;
 				node1 = node1->parent;
 			}
 			while(node2->originalIndex > node1->originalIndex)
 			{
 				getNode(*node2).data.enterFlow += linkFlow;
-//				if (m_config.isUndirected())
-//					getNode(*node2).data.exitFlow += linkFlow;
 				node2 = node2->parent;
 			}
 
@@ -179,11 +174,6 @@ inline unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::aggregateFlow
 			{
 				getNode(*node1).data.exitFlow += linkFlow;
 				getNode(*node2).data.enterFlow += linkFlow;
-//				if (m_config.isUndirected())
-//				{
-//					getNode(*node1).data.enterFlow += linkFlow;
-//					getNode(*node2).data.exitFlow += linkFlow;
-//				}
 				node1 = node1->parent;
 				node2 = node2->parent;
 			}
@@ -191,6 +181,7 @@ inline unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::aggregateFlow
 	}
 
 	Super::addTeleportationFlowOnModules();
+
 	return numLevels;
 }
 
@@ -209,17 +200,6 @@ inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnAll
 			node.codelength = calcCodelengthOnModuleOfModules(node);
 		sumCodelength += node.codelength;
 	}
-
-
-//	std::cout << "\nTree:\n";
-//	for (NodeBase::pre_depth_first_iterator it(root()); !it.isEnd(); ++it)
-//	{
-//		NodeBase& node = *it;
-//		FlowType& data = getNode(node).data;
-//		std::cout << std::string(it.depth() * 2, ' ') << node.childIndex() << " (codelength: " << node.codelength <<
-//				", flow: " << data.flow << ", enter: " << data.enterFlow << ", exit: " << data.exitFlow << ")\n";
-//	}
-//	std::cout << "\n";
 
 	return sumCodelength;
 }
@@ -300,48 +280,10 @@ inline std::pair<double, double> InfomapGreedyCommon<InfomapGreedyDerivedType>::
 
 
 /**
- * Specialized for the case when enter flow equals exit flow
- */
-template<typename InfomapGreedyDerivedType>
-void InfomapGreedyCommon<InfomapGreedyDerivedType>::calculateCodelengthFromActiveNetwork(DetailedBalance)
-{
-	Super::exit_log_exit = 0.0;
-//	enter_log_enter = 0.0;
-	Super::enterFlow = 0.0;
-	Super::flow_log_flow = 0.0;
-
-	// For each module
-	for (typename Super::activeNetwork_iterator it(Super::m_activeNetwork.begin()), itEnd(Super::m_activeNetwork.end());
-			it != itEnd; ++it)
-	{
-		NodeType& node = Super::getNode(**it);
-		// own node/module codebook
-		Super::flow_log_flow += infomath::plogp(node.data.flow + node.data.exitFlow);
-
-		// use of index codebook
-		Super::enterFlow      += node.data.exitFlow;
-//		enter_log_enter += infomath::plogp(node.data.enterFlow);
-		Super::exit_log_exit += infomath::plogp(node.data.exitFlow);
-	}
-
-	Super::enterFlow += Super::exitNetworkFlow;
-	Super::enterFlow_log_enterFlow = infomath::plogp(Super::enterFlow);
-
-	derived().calculateNodeFlow_log_nodeFlowForMemoryNetwork();
-	
-	Super::indexCodelength = Super::enterFlow_log_enterFlow - Super::exit_log_exit - Super::exitNetworkFlow_log_exitNetworkFlow;
-	Super::moduleCodelength = -Super::exit_log_exit + Super::flow_log_flow - Super::nodeFlow_log_nodeFlow;
-	Super::codelength = Super::indexCodelength + Super::moduleCodelength;
-//	std::cout << "\n ==> Codelength: " << Super::enterFlow_log_enterFlow << " - 2 *" << Super::exit_log_exit << " -" <<
-//			Super::exitNetworkFlow_log_exitNetworkFlow << " +" <<  Super::flow_log_flow << " -" << Super::nodeFlow_log_nodeFlow <<
-//			" = " << Super::indexCodelength << " + " << Super::moduleCodelength << " = " << Super::codelength << " ";
-}
-
-/**
  * Specialized for the case when enter and exit flow may differ
  */
 template<typename InfomapGreedyDerivedType>
-void InfomapGreedyCommon<InfomapGreedyDerivedType>::calculateCodelengthFromActiveNetwork(NoDetailedBalance)
+void InfomapGreedyCommon<InfomapGreedyDerivedType>::calculateCodelengthFromActiveNetwork()
 {
 	Super::enter_log_enter = 0.0;
 	Super::flow_log_flow = 0.0;
