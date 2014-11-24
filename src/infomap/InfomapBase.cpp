@@ -1658,12 +1658,12 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 
 	std::string outName;
 
-	// Sort tree on flow
-	sortTree();
-
 	// Print hierarchy
 	if (m_config.printTree || m_config.printFlowTree || m_config.printBinaryTree || m_config.printBinaryFlowTree || m_config.printMap)
 	{
+		// Sort tree on flow
+		sortTree();
+
 		bool writeEdges = m_config.printBinaryFlowTree || m_config.printFlowTree || m_config.printMap;
 		RELEASE_OUT("\nBuilding output tree" << (writeEdges ? " with links" : "") << "... " << std::flush);
 
@@ -1773,56 +1773,6 @@ void InfomapBase::printClusterNumbers(std::ostream& out)
 void InfomapBase::sortTree()
 {
 	sortTree(*root());
-}
-
-void InfomapBase::printSubInfomapTree(std::ostream& out, const TreeData& originalData, const std::string& prefix)
-{
-	unsigned int moduleIndex = 0;
-	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-			moduleIt != endIt; ++moduleIt, ++moduleIndex)
-	{
-		std::ostringstream subPrefix;
-		subPrefix << prefix << moduleIndex << ":";
-		const std::string& subPrefixStr = subPrefix.str();
-		if (moduleIt->getSubInfomap() == 0)
-		{
-			unsigned int nodeIndex = 0;
-			for (NodeBase::sibling_iterator childIt(moduleIt->begin_child()), endChildIt(moduleIt->end_child());
-					childIt != endChildIt; ++childIt, ++nodeIndex)
-			{
-				out << subPrefixStr << nodeIndex << " " << originalData.getLeafNode(childIt->originalIndex) <<
-						" (" << childIt->originalIndex << ")" << std::endl;
-			}
-		}
-		else
-		{
-			moduleIt->getSubInfomap()->printSubInfomapTree(out, originalData, subPrefixStr);
-		}
-	}
-}
-
-void InfomapBase::printSubInfomapTreeDebug(std::ostream& out, const TreeData& originalData, const std::string& prefix)
-{
-}
-
-void InfomapBase::printTree(std::ostream& out, const NodeBase& root, const std::string& prefix)
-{
-	if (root.isLeaf())
-	{
-		out << prefix << " (" << root.parent->index << ")" << " \"" << root.name << "\"" << std::endl;
-	}
-	else
-	{
-		unsigned int childNumber = 1;
-		for (NodeBase::const_sibling_iterator nodeIt(root.begin_child()), endIt(root.end_child());
-				nodeIt != endIt; ++nodeIt, ++childNumber)
-		{
-			std::ostringstream subPrefix;
-			subPrefix << prefix << childNumber << ":";
-			const std::string& subPrefixStr = subPrefix.str();
-			printTree(out, *nodeIt, subPrefixStr);
-		}
-	}
 }
 
 unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)

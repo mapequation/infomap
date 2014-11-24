@@ -74,6 +74,8 @@ protected:
 	virtual double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent);
 	virtual std::pair<double, double> calcCodelength(const NodeBase& parent);
 
+	virtual void initConstantInfomapTerms();
+
 	virtual void calculateCodelengthFromActiveNetwork();
 
 	virtual unsigned int optimizeModules();
@@ -278,6 +280,19 @@ inline std::pair<double, double> InfomapGreedyCommon<InfomapGreedyDerivedType>::
 	return std::make_pair(indexCodelength, moduleCodelength);
 }
 
+template<typename InfomapGreedyDerivedType>
+void InfomapGreedyCommon<InfomapGreedyDerivedType>::initConstantInfomapTerms()
+{
+	// Not constant for memory Infomap!
+	Super::nodeFlow_log_nodeFlow = 0.0;
+	// For each module
+	for (typename Super::activeNetwork_iterator it(Super::m_activeNetwork.begin()), itEnd(Super::m_activeNetwork.end());
+			it != itEnd; ++it)
+	{
+		NodeType& node = getNode(**it);
+		Super::nodeFlow_log_nodeFlow += infomath::plogp(node.data.flow);
+	}
+}
 
 /**
  * Specialized for the case when enter and exit flow may differ

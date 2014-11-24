@@ -82,45 +82,9 @@ public:
 
 protected:
 
-	// virtual std::auto_ptr<InfomapBase> getNewInfomapInstance();
-
-//	virtual void initEnterExitFlow();
-
-	virtual void initConstantInfomapTerms();
-
-	// virtual void initModuleOptimization();
-
-	// Calculate initial codelength, specialized on detailed balance
-	// void calculateCodelengthFromActiveNetwork(DetailedBalance);
-	// void calculateCodelengthFromActiveNetwork(NoDetailedBalance);
-
-	// virtual unsigned int optimizeModules();
-
-	// Teleportation methods - specialized implementation for InfomapDirected
-	// void addTeleportationDeltaFlowOnOldModuleIfMove(NodeType& nodeToMove, DeltaFlow& oldModuleDeltaFlow) {}
-	// void addTeleportationDeltaFlowOnNewModuleIfMove(NodeType& nodeToMove, DeltaFlow& newModuleDeltaFlow) {}
-	// void addTeleportationDeltaFlowIfMove(NodeType& current, std::vector<DeltaFlow>& moduleDeltaExits, unsigned int numModuleLinks) {}
-
-	// --- Helper methods ---
-	// double getDeltaCodelength(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
-
-	// void updateCodelength(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
-
-	// unsigned int tryMoveEachNodeIntoBestModule();
-
-	// virtual void moveNodesToPredefinedModules();
-
-	// virtual unsigned int consolidateModules(bool replaceExistingStructure, bool asSubModules);
-
 	virtual void resetModuleFlowFromLeafNodes();
 
 	virtual void resetModuleFlow(NodeBase& node);
-
-	// virtual double calcCodelengthFromFlowWithinOrExit(const NodeBase& parent);
-
-//	virtual double calcCodelengthOnModuleOfModules(const NodeBase& parent);
-
-	// virtual void generateNetworkFromChildren(NodeBase& parent);
 
 	virtual void transformNodeFlowToEnterFlow(NodeBase* parent);
 
@@ -136,11 +100,6 @@ protected:
 	void buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, std::vector<std::string>& leafNodeNames, NodeBase* node = 0);
 	// Don't add leaf nodes, but collect all leaf modules instead
 	void buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, std::deque<std::pair<NodeBase*, HierarchicalNetwork::node_type*> >& leafModules, NodeBase* node = 0);
-	virtual void printSubInfomapTree(std::ostream& out, const TreeData& originalData, const std::string& prefix);
-	void printSubTree(std::ostream& out, NodeBase& module, const TreeData& originalData, const std::string& prefix);
-	virtual void printSubInfomapTreeDebug(std::ostream& out, const TreeData& originalData, const std::string& prefix);
-	void printSubTreeDebug(std::ostream& out, NodeBase& module, const TreeData& originalData, const std::string& prefix);
-
 
 	NodeType& getNode(NodeBase& node);
 	const NodeType& getNode(const NodeBase& node) const;
@@ -176,23 +135,6 @@ protected:
 	double exitNetworkFlow_log_exitNetworkFlow;
 
 };
-
-
-template<typename InfomapImplementation>
-void InfomapGreedy<InfomapImplementation>::initConstantInfomapTerms()
-{
-	// Not constant for memory Infomap!
-	nodeFlow_log_nodeFlow = 0.0;
-	// For each module
-	for (activeNetwork_iterator it(m_activeNetwork.begin()), itEnd(m_activeNetwork.end());
-			it != itEnd; ++it)
-	{
-		NodeType& node = getNode(**it);
-		nodeFlow_log_nodeFlow += infomath::plogp(node.data.flow);
-	}
-}
-
-
 
 template<typename InfomapImplementation>
 inline
@@ -339,151 +281,6 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(Hierar
 		}
 	}
 }
-
-template<typename InfomapImplementation>
-inline
-void InfomapGreedy<InfomapImplementation>::printSubInfomapTree(std::ostream& out, const TreeData& originalData, const std::string& prefix)
-{
-	unsigned int moduleIndex = 1;
-	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-			moduleIt != endIt; ++moduleIt, ++moduleIndex)
-	{
-		std::ostringstream subPrefix;
-		subPrefix << prefix << moduleIndex << ":";
-		const std::string subPrefixStr = subPrefix.str();
-		if (moduleIt->getSubInfomap() == 0)
-			printSubTree(out, *moduleIt, originalData, subPrefixStr);
-		else
-			moduleIt->getSubInfomap()->printSubInfomapTree(out, originalData, subPrefixStr);
-	}
-}
-
-template<typename InfomapImplementation>
-inline
-void InfomapGreedy<InfomapImplementation>::printSubTree(std::ostream& out, NodeBase& module, const TreeData& originalData, const std::string& prefix)
-{
-	if (module.isLeaf())
-	{
-		const NodeType& node = getNode(originalData.getLeafNode(module.originalIndex));
-		out << prefix << " " << node.data.flow << " \"" << node.name << "\"\n";
-		return;
-	}
-
-	unsigned int moduleIndex = 1;
-	for (NodeBase::sibling_iterator childIt(module.begin_child()), endIt(module.end_child());
-			childIt != endIt; ++childIt, ++moduleIndex)
-	{
-		const std::string subPrefixStr = io::Str() << prefix << moduleIndex << ":";
-		if (childIt->getSubInfomap() == 0)
-		{
-			if (childIt->isLeaf())
-			{
-				const NodeType& node = getNode(originalData.getLeafNode(childIt->originalIndex));
-				out << prefix << moduleIndex << " " << node.data.flow << " \"" << node.name << "\"\n";
-			}
-			else
-			{
-				printSubTree(out, *childIt, originalData, subPrefixStr);
-			}
-		}
-		else
-		{
-			childIt->getSubInfomap()->printSubInfomapTree(out, originalData, subPrefixStr);
-		}
-	}
-}
-
-template<typename InfomapImplementation>
-inline
-void InfomapGreedy<InfomapImplementation>::printSubInfomapTreeDebug(std::ostream& out, const TreeData& originalData, const std::string& prefix)
-{
-	NodeType& node = getNode(*root());
-//	out << prefix << " " << node.data.flow << " (" << node.data.exitFlow << ")\n";
-//	out << prefix << " " << node.data.flow << " \"" <<
-//			node.name << "\" (" << node.id << ")\n";
-	out << prefix << " (flow: " << node.data.flow << ", enter: " <<
-					node.data.enterFlow << ", exit: " << node.data.exitFlow <<
-					", L: " << node.codelength << ")\n";
-//	out << prefix << " (flow: " << node.data.flow << ", enter: " <<
-//					node.data.enterFlow << ", exit: " << node.data.exitFlow << ")\n";
-
-
-	unsigned int moduleIndex = 1;
-	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-			moduleIt != endIt; ++moduleIt, ++moduleIndex)
-	{
-		std::ostringstream subPrefix;
-		subPrefix << prefix << moduleIndex << ":";
-		const std::string subPrefixStr = subPrefix.str();
-		if (moduleIt->getSubInfomap() == 0)
-			printSubTreeDebug(out, *moduleIt, originalData, subPrefixStr);
-		else
-			moduleIt->getSubInfomap()->printSubInfomapTreeDebug(out, originalData, subPrefixStr);
-	}
-}
-
-template<typename InfomapImplementation>
-inline
-void InfomapGreedy<InfomapImplementation>::printSubTreeDebug(std::ostream& out, NodeBase& module, const TreeData& originalData, const std::string& prefix)
-{
-	if (module.isLeaf())
-	{
-		const NodeType& node = getNode(originalData.getLeafNode(module.originalIndex));
-//		out << prefix << " " << node.data.flow <<
-//								" (" << node.data.exitFlow << ") \"" << node.name << "\"\n";
-//		out << prefix << " " << node.data.flow << " \"" <<
-//				node.name << "\" (" << node.id << ")\n";
-		out << prefix << " \"" << node.name << "\" (flow: " << node.data.flow << ", enter: " <<
-				node.data.enterFlow << ", exit: " << node.data.exitFlow <<
-				", L: " << node.codelength << ")\n";
-//		out << prefix << " \"" << node.name << "\" (flow: " << node.data.flow << ", enter: " <<
-//				node.data.enterFlow << ", exit: " << node.data.exitFlow << ")\n";
-		return;
-	}
-	const FlowType& moduleData = getNode(module).data;
-//	out << prefix << " " << moduleData.flow << " (" << moduleData.exitFlow << ")\n";
-//	out << prefix << " " << moduleData.flow << " \"" <<
-//					module.name << "\" (" << module.id << ")\n";
-	out << prefix << " (flow: " << moduleData.flow << ", enter: " <<
-			moduleData.enterFlow << ", exit: " << moduleData.exitFlow <<
-			", L: " << module.codelength << ")\n";
-//	out << prefix << " (flow: " << moduleData.flow << ", enter: " <<
-//			moduleData.enterFlow << ", exit: " << moduleData.exitFlow << ")\n";
-
-	unsigned int moduleIndex = 1;
-	for (NodeBase::sibling_iterator childIt(module.begin_child()), endIt(module.end_child());
-			childIt != endIt; ++childIt, ++moduleIndex)
-	{
-		const std::string subPrefixStr = io::Str() << prefix << moduleIndex << ":";
-		if (childIt->getSubInfomap() == 0)
-		{
-			if (childIt->isLeaf())
-			{
-				const NodeType& node = getNode(originalData.getLeafNode(childIt->originalIndex));
-//				out << prefix << moduleIndex << " " << node.data.flow <<
-//						" (" << node.data.exitFlow << ") \"" << node.name << "\"\n";
-//				out << prefix << moduleIndex << " " << node.data.flow <<
-//						" \"" << node.name << "\" (" <<	node.id << ")\n";
-				out << prefix << moduleIndex << " \"" << node.name << "\" (flow: " <<
-						node.data.flow << ", enter: " << node.data.enterFlow << ", exit: " <<
-						node.data.exitFlow << ", L: " << node.codelength << ")\n";
-//				out << prefix << moduleIndex << " \"" << node.name << "\" (flow: " <<
-//						node.data.flow << ", enter: " << node.data.enterFlow << ", exit: " <<
-//						node.data.exitFlow << ")\n";
-
-			}
-			else
-			{
-				printSubTreeDebug(out, *childIt, originalData, subPrefixStr);
-			}
-		}
-		else
-		{
-			childIt->getSubInfomap()->printSubInfomapTreeDebug(out, originalData, subPrefixStr);
-		}
-	}
-}
-
 
 template<typename InfomapImplementation>
 void InfomapGreedy<InfomapImplementation>::resetModuleFlowFromLeafNodes()

@@ -82,9 +82,6 @@ public:
 
 	virtual void saveHierarchicalNetwork(std::string rootName, bool includeLinks) = 0;
 
-	virtual void printSubInfomapTree(std::ostream& out, const TreeData& originalData, const std::string& prefix = "");
-	virtual void printSubInfomapTreeDebug(std::ostream& out, const TreeData& originalData, const std::string& prefix = "");
-
 	virtual void debugPrintInfomapTerms() = 0;
 
 protected:
