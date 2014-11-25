@@ -46,12 +46,12 @@ class InfomapGreedySpecialized : public InfomapGreedy<InfomapGreedySpecialized<F
 	typedef typename flowData_traits<FlowType>::detailed_balance_type 	DetailedBalanceType;
 	typedef typename flowData_traits<FlowType>::directed_with_recorded_teleportation_type DirectedWithRecordedTeleportationType;
 	typedef typename flowData_traits<FlowType>::teleportation_type 		TeleportationType;
-	typedef MemNode<FlowType>											NodeType;
+	typedef Node<FlowType>												NodeType;
 	typedef Edge<NodeBase>												EdgeType;
 public:
 
-	InfomapGreedySpecialized(const Config& conf) :
-		InfomapGreedy<SelfType>(conf),
+	InfomapGreedySpecialized(const Config& conf, NodeFactoryBase* nodeFactory) :
+		InfomapGreedy<SelfType>(conf, nodeFactory),
 		m_sumDanglingFlow(0.0) {}
 	virtual ~InfomapGreedySpecialized() {}
 

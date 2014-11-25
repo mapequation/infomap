@@ -38,19 +38,18 @@
 template<typename InfomapGreedyDerivedType>
 class InfomapGreedyCommon : public InfomapGreedySpecialized<typename derived_traits<InfomapGreedyDerivedType>::flow_type>
 {
-	typedef typename derived_traits<InfomapGreedyDerivedType>::flow_type				FlowType;
-	// typedef FlowDirectedNonDetailedBalance 												FlowType; // DEBUG!!
-	typedef InfomapGreedySpecialized<FlowType>							Super;
-	typedef typename flowData_traits<FlowType>::detailed_balance_type 	DetailedBalanceType;
-	typedef typename flowData_traits<FlowType>::directed_with_recorded_teleportation_type DirectedWithRecordedTeleportationType;
-	typedef typename flowData_traits<FlowType>::teleportation_type 		TeleportationType;
-	typedef typename flowData_traits<FlowType>::is_directed_type		IsDirectedType;
-	typedef MemNode<FlowType>											NodeType;//TODO: Specialize node type on network type!
-	typedef Edge<NodeBase>												EdgeType;
+	typedef typename derived_traits<InfomapGreedyDerivedType>::flow_type					FlowType;
+	typedef typename derived_traits<InfomapGreedyDerivedType>::node_type					NodeType;
+	typedef InfomapGreedySpecialized<FlowType>												Super;
+	typedef typename flowData_traits<FlowType>::detailed_balance_type 						DetailedBalanceType;
+	typedef typename flowData_traits<FlowType>::directed_with_recorded_teleportation_type 	DirectedWithRecordedTeleportationType;
+	typedef typename flowData_traits<FlowType>::teleportation_type 							TeleportationType;
+	typedef typename flowData_traits<FlowType>::is_directed_type							IsDirectedType;
+	typedef Edge<NodeBase>																	EdgeType;
 public:
 
-	InfomapGreedyCommon(const Config& conf) :
-		InfomapGreedySpecialized<FlowType>(conf),
+	InfomapGreedyCommon(const Config& conf, NodeFactoryBase* nodeFactory) :
+		InfomapGreedySpecialized<FlowType>(conf, nodeFactory),
 		m_coreLoopCount(0)
 		{}
 	virtual ~InfomapGreedyCommon() {}
@@ -61,10 +60,12 @@ private:
 	InfomapGreedyDerivedType& derived();
 
 protected:
-	using Super::getNode;
 	using Super::root;
 
 	virtual std::auto_ptr<InfomapBase> getNewInfomapInstance();
+
+	NodeType& getNode(NodeBase& node);
+	const NodeType& getNode(const NodeBase& node) const;
 
 	virtual unsigned int aggregateFlowValuesFromLeafToRoot();
 	virtual double calcCodelengthOnAllNodesInTree();
@@ -113,6 +114,20 @@ inline
 std::auto_ptr<InfomapBase> InfomapGreedyCommon<InfomapGreedyDerivedType>::getNewInfomapInstance()
 {
 	return std::auto_ptr<InfomapBase>(new InfomapGreedyDerivedType(Super::m_config));
+}
+
+template<typename InfomapGreedyDerivedType>
+inline
+typename InfomapGreedyCommon<InfomapGreedyDerivedType>::NodeType& InfomapGreedyCommon<InfomapGreedyDerivedType>::getNode(NodeBase& node)
+{
+	return static_cast<NodeType&>(node);
+}
+
+template<typename InfomapGreedyDerivedType>
+inline
+const typename InfomapGreedyCommon<InfomapGreedyDerivedType>::NodeType& InfomapGreedyCommon<InfomapGreedyDerivedType>::getNode(const NodeBase& node) const
+{
+	return static_cast<const NodeType&>(node);
 }
 
 template<typename InfomapGreedyDerivedType>
@@ -215,7 +230,7 @@ inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnRoo
 template<typename InfomapGreedyDerivedType>
 inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent)
 {
-	const FlowType& parentData = Super::getNode(parent).data;
+	const FlowType& parentData = getNode(parent).data;
 	double parentFlow = parentData.flow;
 	double parentExit = parentData.exitFlow;
 	double totalParentFlow = parentFlow + parentExit;
@@ -227,7 +242,7 @@ inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnMod
 	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
 			childIt != endIt; ++childIt)
 	{
-		indexLength -= infomath::plogp(Super::getNode(*childIt).data.flow / totalParentFlow);
+		indexLength -= infomath::plogp(getNode(*childIt).data.flow / totalParentFlow);
 	}
 	indexLength -= infomath::plogp(parentExit / totalParentFlow);
 
@@ -239,7 +254,7 @@ inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnMod
 template<typename InfomapGreedyDerivedType>
 inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnModuleOfModules(const NodeBase& parent)
 {
-	const FlowType& parentData = Super::getNode(parent).data;
+	const FlowType& parentData = getNode(parent).data;
 	double parentExit = parentData.exitFlow;
 	if (parentData.flow < 1e-16)
 		return 0.0;
@@ -257,7 +272,7 @@ inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnMod
 	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
 			childIt != endIt; ++childIt)
 	{
-		const double& enterFlow = Super::getNode(*childIt).data.enterFlow; // rate of enter to finer level
+		const double& enterFlow = getNode(*childIt).data.enterFlow; // rate of enter to finer level
 		sumEnter += enterFlow;
 		sumEnterLogEnter += infomath::plogp(enterFlow);
 	}
@@ -309,7 +324,7 @@ void InfomapGreedyCommon<InfomapGreedyDerivedType>::calculateCodelengthFromActiv
 	for (typename Super::activeNetwork_iterator it(Super::m_activeNetwork.begin()), itEnd(Super::m_activeNetwork.end());
 			it != itEnd; ++it)
 	{
-		NodeType& node = Super::getNode(**it);
+		NodeType& node = getNode(**it);
 		// own node/module codebook
 		Super::flow_log_flow += infomath::plogp(node.data.flow + node.data.exitFlow);
 
@@ -414,7 +429,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 
 		// Pick nodes in random order
 		unsigned int flip = randomOrder[i];
-		NodeType& current = Super::getNode(*Super::m_activeNetwork[flip]);
+		NodeType& current = getNode(*Super::m_activeNetwork[flip]);
 
 		if (!current.dirty)
 			continue;
@@ -459,7 +474,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 				EdgeType& edge = **edgeIt;
 				if (edge.isSelfPointing())
 					continue;
-				NodeType& neighbour = Super::getNode(edge.target);
+				NodeType& neighbour = getNode(edge.target);
 
 				if (redirect[neighbour.index] >= offset)
 				{
@@ -484,7 +499,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			EdgeType& edge = **edgeIt;
 			if (edge.isSelfPointing())
 				continue;
-			NodeType& neighbour = Super::getNode(edge.source);
+			NodeType& neighbour = getNode(edge.source);
 
 			if (redirect[neighbour.index] >= offset)
 			{
@@ -651,7 +666,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 	{
 		// Pick nodes in random order
 		unsigned int flip = randomOrder[i];
-		NodeType& current = Super::getNode(*Super::m_activeNetwork[flip]);
+		NodeType& current = getNode(*Super::m_activeNetwork[flip]);
 
 		if (!current.dirty)
 			continue;
@@ -687,7 +702,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			EdgeType& edge = **edgeIt;
 			if (edge.isSelfPointing())
 				continue;
-			NodeType& neighbour = Super::getNode(edge.target);
+			NodeType& neighbour = getNode(edge.target);
 
 			deltaFlow[neighbour.index] += DeltaFlow(neighbour.index, edge.data.flow, 0.0);
 		}
@@ -698,7 +713,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			EdgeType& edge = **edgeIt;
 			if (edge.isSelfPointing())
 				continue;
-			NodeType& neighbour = Super::getNode(edge.source);
+			NodeType& neighbour = getNode(edge.source);
 
 			deltaFlow[neighbour.index] += DeltaFlow(neighbour.index, 0.0, edge.data.flow);
 		}
@@ -849,7 +864,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 //		printf("Node %d processed by thread %d\n", i, omp_get_thread_num());
 		// Pick nodes in random order
 		unsigned int flip = randomOrder[i];
-		NodeType& current = Super::getNode(*Super::m_activeNetwork[flip]);
+		NodeType& current = getNode(*Super::m_activeNetwork[flip]);
 
 		if (!current.dirty)
 			continue;
@@ -886,7 +901,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			EdgeType& edge = **edgeIt;
 			if (edge.isSelfPointing())
 				continue;
-			NodeType& neighbour = Super::getNode(edge.target);
+			NodeType& neighbour = getNode(edge.target);
 
 			deltaFlow[neighbour.index] += DeltaFlow(neighbour.index, edge.data.flow, 0.0);
 		}
@@ -897,7 +912,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			EdgeType& edge = **edgeIt;
 			if (edge.isSelfPointing())
 				continue;
-			NodeType& neighbour = Super::getNode(edge.source);
+			NodeType& neighbour = getNode(edge.source);
 
 			deltaFlow[neighbour.index] += DeltaFlow(neighbour.index, 0.0, edge.data.flow);
 		}
@@ -1115,7 +1130,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoS
 	{
 		// Pick nodes in random order
 		unsigned int flip = randomOrder[i];
-		NodeType& current = Super::getNode(*Super::m_activeNetwork[flip]);
+		NodeType& current = getNode(*Super::m_activeNetwork[flip]);
 
 		if (!current.dirty) //TODO: Only skip stable nodes until converged, then start over as a fine tune?
 			continue;
@@ -1172,7 +1187,7 @@ void InfomapGreedyCommon<InfomapGreedyDerivedType>::moveNodesToPredefinedModules
 	unsigned int numMoved = 0;
 	for(unsigned int k = 0; k < numNodes; ++k)
 	{
-		NodeType& current = Super::getNode(*Super::m_activeNetwork[k]);
+		NodeType& current = getNode(*Super::m_activeNetwork[k]);
 		unsigned int oldM = current.index; // == k
 		unsigned int newM = Super::m_moveTo[k];
 

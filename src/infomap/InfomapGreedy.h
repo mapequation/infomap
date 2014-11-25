@@ -60,11 +60,11 @@ public:
 	typedef typename flowData_traits<FlowType>::detailed_balance_type 	DetailedBalanceType;
 	typedef typename flowData_traits<FlowType>::directed_with_recorded_teleportation_type DirectedWithRecordedTeleportationType;
 	typedef typename flowData_traits<FlowType>::teleportation_type 		TeleportationType;
-	typedef MemNode<FlowType>											NodeType;
+	typedef Node<FlowType>												NodeType;
 	typedef Edge<NodeBase>												EdgeType;
 
-	InfomapGreedy(const Config& conf)
-	:	InfomapBase(conf, new MemNodeFactory<FlowType>()),
+	InfomapGreedy(const Config& conf, NodeFactoryBase* nodeFactory)
+	:	InfomapBase(conf, nodeFactory),
 	 	nodeFlow_log_nodeFlow(0.0),
 		flow_log_flow(0.0),
 		exit_log_exit(0.0),
@@ -108,9 +108,6 @@ protected:
 	virtual unsigned int numDynamicModules();
 
 	virtual FlowDummy getNodeData(NodeBase& node);
-
-	virtual std::vector<PhysData>& getPhysicalMembers(NodeBase& node);
-	virtual M2Node& getMemoryNode(NodeBase& node);
 
 	virtual void debugPrintInfomapTerms();
 
@@ -377,20 +374,6 @@ inline
 FlowDummy InfomapGreedy<InfomapImplementation>::getNodeData(NodeBase& node)
 {
 	return FlowDummy(getNode(node).data);
-}
-
-template<typename InfomapImplementation>
-inline
-std::vector<PhysData>& InfomapGreedy<InfomapImplementation>::getPhysicalMembers(NodeBase& node)
-{
-	return getNode(node).physicalNodes;
-}
-
-template<typename InfomapImplementation>
-inline
-M2Node& InfomapGreedy<InfomapImplementation>::getMemoryNode(NodeBase& node)
-{
-	return getNode(node).m2Node;
 }
 
 template<typename InfomapImplementation>
