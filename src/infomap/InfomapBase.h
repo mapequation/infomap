@@ -46,7 +46,7 @@ public:
 	InfomapBase(const Config& conf, NodeFactoryBase* nodeFactory)
 	:	m_config(conf),
 	 	m_rand(conf.seedToRandomNumberGenerator),
-	 	m_treeData(nodeFactory),
+		m_treeData(nodeFactory),
 	 	m_activeNetwork(m_nonLeafActiveNetwork),
 	 	m_isCoarseTune(false),
 	 	m_iterationCount(0),

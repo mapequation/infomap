@@ -42,6 +42,7 @@ class InfomapGreedyTypeSpecialized : public InfomapGreedyCommon<InfomapGreedyTyp
 	typedef typename flowData_traits<FlowType>::teleportation_type 							TeleportationType;
 	typedef Node<FlowType>																	NodeType;
 	typedef Edge<NodeBase>																	EdgeType;
+	typedef DeltaFlow																		DeltaFlowType;
 
 public:
 	typedef FlowType																		flow_type;
@@ -56,19 +57,19 @@ protected:
 	void calculateNodeFlow_log_nodeFlowForMemoryNetwork() {}
 	
 	void addContributionOfMovingMemoryNodes(NodeType& current, 
-		DeltaFlow& oldModuleDelta, std::vector<DeltaFlow>& moduleDeltaEnterExit, 
+		DeltaFlowType& oldModuleDelta, std::vector<DeltaFlowType>& moduleDeltaEnterExit,
 		std::vector<unsigned int>& redirect, unsigned int& offset, unsigned int& numModuleLinks) {}
 	
 	void addContributionOfMovingMemoryNodes(NodeType& current,
-		DeltaFlow& oldModuleDelta, std::map<unsigned int, DeltaFlow>& moduleDeltaFlow) {}
+		DeltaFlowType& oldModuleDelta, std::map<unsigned int, DeltaFlowType>& moduleDeltaFlow) {}
 
 	void performMoveOfMemoryNode(NodeType& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex) {}
 	
-	void performPredefinedMoveOfMemoryNode(NodeType& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta) {}
+	void performPredefinedMoveOfMemoryNode(NodeType& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex, DeltaFlowType& oldModuleDelta, DeltaFlowType& newModuleDelta) {}
 	
-	double getDeltaCodelengthOnMovingMemoryNode(DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta) { return 0.0; } 
+	double getDeltaCodelengthOnMovingMemoryNode(DeltaFlowType& oldModuleDelta, DeltaFlowType& newModuleDelta) { return 0.0; }
 	
-	void updateCodelengthOnMovingMemoryNode(DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta) {}
+	void updateCodelengthOnMovingMemoryNode(DeltaFlowType& oldModuleDelta, DeltaFlowType& newModuleDelta) {}
 
 	void consolidatePhysicalNodes(std::vector<NodeBase*>& modules) {}
 
@@ -107,6 +108,7 @@ class InfomapGreedyTypeSpecialized<FlowType, WithMemory> : public InfomapGreedyC
 	typedef typename flowData_traits<FlowType>::teleportation_type 							TeleportationType;
 	typedef MemNode<FlowType>																NodeType;
 	typedef Edge<NodeBase>																	EdgeType;
+	typedef MemDeltaFlow																	DeltaFlowType;
 	typedef std::map<unsigned int, MemNodeSet>												ModuleToMemNodes;
 
 	struct IndexedFlow {
@@ -141,19 +143,19 @@ protected:
 	void calculateNodeFlow_log_nodeFlowForMemoryNetwork();
 	
 	void addContributionOfMovingMemoryNodes(NodeType& current, 
-		DeltaFlow& oldModuleDelta, std::vector<DeltaFlow>& moduleDeltaEnterExit, 
+		DeltaFlowType& oldModuleDelta, std::vector<DeltaFlowType>& moduleDeltaEnterExit,
 		std::vector<unsigned int>& redirect, unsigned int& offset, unsigned int& numModuleLinks);
 	
 	void addContributionOfMovingMemoryNodes(NodeType& current,
-			DeltaFlow& oldModuleDelta, std::map<unsigned int, DeltaFlow>& moduleDeltaFlow);
+			DeltaFlowType& oldModuleDelta, std::map<unsigned int, DeltaFlowType>& moduleDeltaFlow);
 
 	void performMoveOfMemoryNode(NodeType& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
-	void performPredefinedMoveOfMemoryNode(NodeType& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
+	void performPredefinedMoveOfMemoryNode(NodeType& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex, DeltaFlowType& oldModuleDelta, DeltaFlowType& newModuleDelta);
 	
-	double getDeltaCodelengthOnMovingMemoryNode(DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
+	double getDeltaCodelengthOnMovingMemoryNode(DeltaFlowType& oldModuleDelta, DeltaFlowType& newModuleDelta);
 	
-	void updateCodelengthOnMovingMemoryNode(DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
+	void updateCodelengthOnMovingMemoryNode(DeltaFlowType& oldModuleDelta, DeltaFlowType& newModuleDelta);
 
 	void consolidatePhysicalNodes(std::vector<NodeBase*>& modules);
 
@@ -305,7 +307,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calculateNodeFlow_log_n
 template<typename FlowType>
 inline
 void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::addContributionOfMovingMemoryNodes(NodeType& current, 
-	DeltaFlow& oldModuleDelta, std::vector<DeltaFlow>& moduleDeltaEnterExit, 
+	DeltaFlowType& oldModuleDelta, std::vector<DeltaFlowType>& moduleDeltaEnterExit,
 	std::vector<unsigned int>& redirect, unsigned int& offset, unsigned int& numModuleLinks)
 {
 	// Overlapping modules
@@ -361,7 +363,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::addContributionOfMoving
 template<typename FlowType>
 inline
 void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::addContributionOfMovingMemoryNodes(NodeType& current,
-	DeltaFlow& oldModuleDelta, std::map<unsigned int, DeltaFlow>& moduleDeltaFlow)
+	DeltaFlowType& oldModuleDelta, std::map<unsigned int, DeltaFlowType>& moduleDeltaFlow)
 {
 	// Overlapping modules
 	/**
@@ -435,7 +437,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::performMoveOfMemoryNode
 template<typename FlowType>
 inline
 void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::performPredefinedMoveOfMemoryNode(NodeType& current, 
-	unsigned int oldModuleIndex, unsigned int bestModuleIndex, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
+	unsigned int oldModuleIndex, unsigned int bestModuleIndex, DeltaFlowType& oldModuleDelta, DeltaFlowType& newModuleDelta)
 {
 	// For all multiple assigned nodes
 	for (unsigned int i = 0; i < current.physicalNodes.size(); ++i)
@@ -483,14 +485,14 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::performPredefinedMoveOf
 
 
 template<typename FlowType>
-double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::getDeltaCodelengthOnMovingMemoryNode(DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
+double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::getDeltaCodelengthOnMovingMemoryNode(DeltaFlowType& oldModuleDelta, DeltaFlowType& newModuleDelta)
 {
 	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 	return -delta_nodeFlow_log_nodeFlow;
 }
 
 template<typename FlowType>
-void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::updateCodelengthOnMovingMemoryNode(DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
+void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::updateCodelengthOnMovingMemoryNode(DeltaFlowType& oldModuleDelta, DeltaFlowType& newModuleDelta)
 {
 	double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 	Super::nodeFlow_log_nodeFlow += delta_nodeFlow_log_nodeFlow;

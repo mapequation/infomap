@@ -113,12 +113,14 @@ template<typename FlowType, typename NetworkType>
 struct derived_traits<InfomapGreedyTypeSpecialized<FlowType, NetworkType> > {
 	typedef FlowType flow_type;
 	typedef Node<FlowType> node_type;
+	typedef DeltaFlow deltaflow_type;
 };
 
 template<typename FlowType>
 struct derived_traits<InfomapGreedyTypeSpecialized<FlowType, WithMemory> > {
 	typedef FlowType flow_type;
 	typedef MemNode<FlowType> node_type;
+	typedef MemDeltaFlow deltaflow_type;
 };
 
 

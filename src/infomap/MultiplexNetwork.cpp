@@ -60,7 +60,6 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 	unsigned int numIntraLinksFound = 0;
 	unsigned int numInterLinksFound = 0;
 
-	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
 	while(!std::getline(input, line).fail())
 	{
 		if (line.length() == 0 || line[0] == '#')
