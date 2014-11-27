@@ -157,7 +157,7 @@ void getConfig(Config& conf, int argc, char *argv[])
 	api.addOptionArgument(conf.selfTeleportationProbability, 'y', "self-link-teleportation-probability",
 			"Additional probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", "f", true);
 
-	api.addOptionArgument(conf.multiplexAggregationRate, "multiplex-aggregation-rate",
+	api.addOptionArgument(conf.multiplexRelaxRate, "multiplex-aggregation-rate",
 			"The probability of following a link as if the layers where completely aggregated. Zero means completely disconnected layers.", "f", true);
 
 	api.addIncrementalOptionArgument(conf.lowMemoryPriority, 'l', "low-memory",

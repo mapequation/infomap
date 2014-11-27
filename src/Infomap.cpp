@@ -153,8 +153,8 @@ std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 	api.addOptionArgument(conf.selfTeleportationProbability, 'y', "self-link-teleportation-probability",
 			"Additional probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", "f", true);
 
-	api.addOptionArgument(conf.multiplexAggregationRate, "multiplex-aggregation-rate",
-			"The probability of following a link as if the layers where completely aggregated. Zero means completely disconnected layers.", "f", true);
+	api.addOptionArgument(conf.multiplexRelaxRate, "multiplex-relax-rate",
+			"The probability to relax the constraint to move only in the current layer. If negative, the inter-links have to be provided.", "f", true);
 
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
 			"A seed (integer) to the random number generator.", "n");

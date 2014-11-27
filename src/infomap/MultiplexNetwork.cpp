@@ -116,7 +116,7 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 
 	adjustForDifferentNumberOfNodes();
 
-	bool simulateInterLayerLinks = m_config.multiplexAggregationRate >= 0.0 || numInterLinksFound == 0;
+	bool simulateInterLayerLinks = m_config.multiplexRelaxRate >= 0.0 || numInterLinksFound == 0;
 	if (simulateInterLayerLinks)
 		generateMemoryNetworkWithSimulatedInterLayerLinks();
 	else
@@ -143,11 +143,11 @@ void MultiplexNetwork::parseMultipleNetworks()
 
 	adjustForDifferentNumberOfNodes();
 
-	unsigned int numInterLinksFound = 0; //TODO: Assume last additional data is inter-layer data if #additionalInputs > 1 && multiplexAggregationRate < 0
+	unsigned int numInterLinksFound = 0; //TODO: Assume last additional data is inter-layer data if #additionalInputs > 1 && multiplexRelaxRate < 0
 
 	std::cout << "Generating memory network... " << std::flush;
 
-	bool simulateInterLayerLinks = m_config.multiplexAggregationRate >= 0.0 || numInterLinksFound == 0;
+	bool simulateInterLayerLinks = m_config.multiplexRelaxRate >= 0.0 || numInterLinksFound == 0;
 	if (simulateInterLayerLinks)
 		generateMemoryNetworkWithSimulatedInterLayerLinks();
 	else
@@ -296,9 +296,9 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 {
 	// Simulate inter-layer links
-	double aggregationRate = m_config.multiplexAggregationRate < 0 ? 0.15 : m_config.multiplexAggregationRate; //TODO: Set default in config and use separate bool
+	double relaxRate = m_config.multiplexRelaxRate < 0 ? 0.15 : m_config.multiplexRelaxRate; //TODO: Set default in config and use separate bool
 
-	std::cout << "Generating memory network with aggregation rate " << aggregationRate << "... " << std::flush;
+	std::cout << "Generating memory network with multiplex relax rate " << relaxRate << "... " << std::flush;
 
 	for (unsigned int nodeIndex = 0; nodeIndex < m_numNodes; ++nodeIndex)
 	{
@@ -348,7 +348,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 
 					double intraLinkWeight = isIntra ? linkWeight : 0.0;
 
-					double aggregatedLinkWeight = aggregationRate * linkWeight / sumOutLinkWeightAllLayers  + (1.0 - aggregationRate) * intraLinkWeight / sumOutLinkWeightLayer1;
+					double aggregatedLinkWeight = relaxRate * linkWeight / sumOutLinkWeightAllLayers  + (1.0 - relaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
 
 					addM2Link(layer1, nodeIndex, layer2, n2, aggregatedLinkWeight, intraLinkWeight, 0.0);
 				}
