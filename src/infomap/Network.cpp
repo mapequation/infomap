@@ -77,91 +77,14 @@ void Network::parsePajekNetwork(std::string filename)
 
 	RELEASE_OUT("Parsing " << (m_config.isUndirected() ? "undirected" : "directed") << " network from file '" <<
 			filename << "'... " << std::flush);
-	string line;
-	string buf;
+
 	SafeInFile input(filename.c_str());
 
-	std::getline(input,line);
-	if (!input.good())
-		throw FileFormatError("Can't read first line of pajek file.");
+	// Parse the vertices and return the line after
+	std::string line = parseVertices(input);
 
 	std::istringstream ss;
-	ss.str(line);
-	ss >> buf;
-	if(buf == "*Vertices" || buf == "*vertices" || buf == "*VERTICES") {
-		if (!(ss >> m_numNodesFound))
-			throw BadConversionError(io::Str() << "Can't parse an integer after \"" << buf <<
-					"\" as the number of nodes.");
-	}
-	else {
-		throw FileFormatError("The first line (to lower cases) doesn't match *vertices.");
-	}
-
-	if (m_numNodesFound == 0)
-		throw FileFormatError("The number of vertices cannot be zero.");
-
-	bool checkNodeLimit = m_config.nodeLimit > 0;
-	m_numNodes = checkNodeLimit ? m_config.nodeLimit : m_numNodesFound;
-
-	m_nodeNames.resize(m_numNodes);
-	m_nodeWeights.assign(m_numNodes, 1.0);
-	m_sumNodeWeights = 0.0;
-
-	char next = input.peek();
-	if (next == '*') // Short pajek version (no nodes defined), set node number as name
-	{
-		for (unsigned int i = 0; i < m_numNodes; ++i)
-		{
-			m_nodeWeights[i] = 1.0;
-			m_nodeNames[i] = io::stringify(i+1);
-		}
-		m_sumNodeWeights = m_numNodes * 1.0;
-	}
-	else
-	{
-		// Read node names, assuming order 1, 2, 3, ... (or 0, 1, 2, ... if zero-based node numbering)
-		for (unsigned int i = 0; i < m_numNodes; ++i)
-		{
-			unsigned int id = 0;
-			if (!(input >> id) || id != static_cast<unsigned int>(i + m_indexOffset))
-			{
-				throw BadConversionError(io::Str() << "Couldn't parse line " << (i + m_indexOffset + 1) << ". Should begin with node number " << (i + m_indexOffset) <<
-						((m_indexOffset == 1 && id == i)? ".\nBe sure to use zero-based node numbering if the node numbers start from zero." : "."));
-			}
-			std::getline(input,line);
-			unsigned int nameStart = line.find_first_of("\"");
-			unsigned int nameEnd = line.find_last_of("\"");
-			string name;
-			double nodeWeight = 1.0;
-			if(nameStart < nameEnd) {
-				name = string(line.begin() + nameStart + 1, line.begin() + nameEnd);
-				line = line.substr(nameEnd + 1);
-				ss.clear();
-				ss.str(line);
-			}
-			else {
-				ss.clear();
-				ss.str(line);
-				ss >> buf; // Take away the index from the stream
-				ss >> name; // Extract the next token as the name assuming no spaces
-			}
-			ss >> nodeWeight; // Extract the next token as node weight. If failed, the old value (1.0) is kept.
-			m_sumNodeWeights += nodeWeight;
-			m_nodeWeights[i] = nodeWeight;
-			m_nodeNames[i] = name;
-		}
-
-		if (m_config.nodeLimit > 0 && m_numNodes < m_numNodesFound)
-		{
-			unsigned int surplus = m_numNodesFound - m_numNodes;
-			for (unsigned int i = 0; i < surplus; ++i)
-				std::getline(input, line);
-		}
-	}
-
-	// Read the number of links in the network
-	getline(input, line);
-	ss.clear();
+	std::string buf;
 	ss.str(line);
 	ss >> buf;
 	if(buf != "*Edges" && buf != "*edges" && buf != "*Arcs" && buf != "*arcs") {
@@ -169,7 +92,6 @@ void Network::parsePajekNetwork(std::string filename)
 	}
 	if (m_config.parseAsUndirected() && (buf == "*Arcs" || buf == "*arcs"))
 		RELEASE_OUT("\n --> Notice: Links marked as directed in pajek file but parsed as undirected.\n");
-
 
 	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
 	while(!std::getline(input, line).fail())
@@ -379,39 +301,112 @@ void Network::parseLinkListWithoutIOStreams(std::string filename)
 	printParsingResult();
 }
 
-void Network::printNetworkAsPajek(std::string filename)
-{
-	SafeOutFile out(filename.c_str());
-
-	out << "*Vertices " << m_numNodes << "\n";
-	if (m_nodeNames.empty()) {
-		for (unsigned int i = 0; i < m_numNodes; ++i)
-			out << (i+1) << " \"" << i + 1 << "\"\n";
-	}
-	else {
-		for (unsigned int i = 0; i < m_numNodes; ++i)
-			out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
-	}
-
-	out << (m_config.isUndirected() ? "*Edges " : "*Arcs ") << m_links.size() << "\n";
-	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
-	{
-		unsigned int linkEnd1 = linkIt->first;
-		const std::map<unsigned int, double>& subLinks = linkIt->second;
-		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
-		{
-			unsigned int linkEnd2 = subIt->first;
-			double linkWeight = subIt->second;
-			out << (linkEnd1 + 1) << " " << (linkEnd2 + 1) << " " << linkWeight << "\n";
-		}
-	}
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////
 //
 //  HELPER METHODS
 //
 //////////////////////////////////////////////////////////////////////////////////////////
+
+std::string Network::parseVertices(std::ifstream& file)
+{
+	std::string line;
+
+	while(!std::getline(file, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+		if (line[0] == '*')
+			break;
+
+	}
+	if (line.length() == 0 || line[0] != '*')
+		throw FileFormatError("No matching header for vertices found.");
+
+	return parseVertices(file, line);
+}
+
+std::string Network::parseVertices(std::ifstream& file, std::string header)
+{
+	std::istringstream ss;
+	std::string buf;
+	ss.str(header);
+	ss >> buf;
+	if(buf == "*Vertices" || buf == "*vertices" || buf == "*VERTICES") {
+		if (!(ss >> m_numNodesFound))
+			throw BadConversionError(io::Str() << "Can't parse an integer after '" << buf <<
+					"' as the number of nodes.");
+	}
+	else {
+		throw FileFormatError(io::Str() << "The header '" << header << "' doesn't match *Vertices (case insensitive).");
+	}
+
+	if (m_numNodesFound == 0)
+		throw FileFormatError("The number of vertices cannot be zero.");
+
+	bool checkNodeLimit = m_config.nodeLimit > 0;
+	m_numNodes = checkNodeLimit ? m_config.nodeLimit : m_numNodesFound;
+
+	m_nodeNames.resize(m_numNodes);
+	m_nodeWeights.assign(m_numNodes, 1.0);
+	m_sumNodeWeights = 0.0;
+
+	std::string line;
+	char next = file.peek();
+	if (next == '*') // Short pajek version (no nodes defined), set node number as name
+	{
+		for (unsigned int i = 0; i < m_numNodes; ++i)
+		{
+			m_nodeWeights[i] = 1.0;
+			m_nodeNames[i] = io::stringify(i+1);
+		}
+		m_sumNodeWeights = m_numNodes * 1.0;
+	}
+	else
+	{
+		// Read node names, assuming order 1, 2, 3, ... (or 0, 1, 2, ... if zero-based node numbering)
+		for (unsigned int i = 0; i < m_numNodes; ++i)
+		{
+			unsigned int id = 0;
+			if (!(file >> id) || id != static_cast<unsigned int>(i + m_indexOffset))
+			{
+				throw BadConversionError(io::Str() << "Couldn't parse line " << (i + m_indexOffset + 1) << ". Should begin with node number " << (i + m_indexOffset) <<
+						((m_indexOffset == 1 && id == i)? ".\nBe sure to use zero-based node numbering if the node numbers start from zero." : "."));
+			}
+			// Read the rest of the line
+			std::getline(file,line);
+			unsigned int nameStart = line.find_first_of("\"");
+			unsigned int nameEnd = line.find_last_of("\"");
+			string name;
+			double nodeWeight = 1.0;
+			if(nameStart < nameEnd) {
+				name = string(line.begin() + nameStart + 1, line.begin() + nameEnd);
+				line = line.substr(nameEnd + 1);
+				ss.clear();
+				ss.str(line);
+			}
+			else {
+				ss.clear();
+				ss.str(line);
+				ss >> buf; // Take away the index from the stream
+				ss >> name; // Extract the next token as the name assuming no spaces
+			}
+			ss >> nodeWeight; // Extract the next token as node weight. If failed, the old value (1.0) is kept.
+			m_sumNodeWeights += nodeWeight;
+			m_nodeWeights[i] = nodeWeight;
+			m_nodeNames[i] = name;
+		}
+
+		if (m_config.nodeLimit > 0 && m_numNodes < m_numNodesFound)
+		{
+			unsigned int surplus = m_numNodesFound - m_numNodes;
+			for (unsigned int i = 0; i < surplus; ++i)
+				std::getline(file, line);
+		}
+	}
+	// Return the line after the vertices
+	std::getline(file, line);
+	return line;
+}
 
 void Network::parseLink(const std::string& line, unsigned int& n1, unsigned int& n2, double& weight)
 {
@@ -671,6 +666,34 @@ std::string Network::getParsingResultSummary()
 	return o.str();
 }
 
+
+void Network::printNetworkAsPajek(std::string filename)
+{
+	SafeOutFile out(filename.c_str());
+
+	out << "*Vertices " << m_numNodes << "\n";
+	if (m_nodeNames.empty()) {
+		for (unsigned int i = 0; i < m_numNodes; ++i)
+			out << (i+1) << " \"" << i + 1 << "\"\n";
+	}
+	else {
+		for (unsigned int i = 0; i < m_numNodes; ++i)
+			out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
+	}
+
+	out << (m_config.isUndirected() ? "*Edges " : "*Arcs ") << m_links.size() << "\n";
+	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
+	{
+		unsigned int linkEnd1 = linkIt->first;
+		const std::map<unsigned int, double>& subLinks = linkIt->second;
+		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			unsigned int linkEnd2 = subIt->first;
+			double linkWeight = subIt->second;
+			out << (linkEnd1 + 1) << " " << (linkEnd2 + 1) << " " << linkWeight << "\n";
+		}
+	}
+}
 
 
 

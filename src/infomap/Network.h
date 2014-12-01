@@ -192,6 +192,18 @@ protected:
 
 	virtual void initNodeDegrees();
 
+	/**
+	 * Parse vertices
+	 * @return The line after the vertices
+	 */
+	std::string parseVertices(std::ifstream& file);
+
+	/**
+	 * Parse vertices under the heading
+	 * @return The line after the vertices
+	 */
+	std::string parseVertices(std::ifstream& file, std::string heading);
+
 
 	Config m_config;
 

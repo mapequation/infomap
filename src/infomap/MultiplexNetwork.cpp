@@ -50,35 +50,64 @@ void MultiplexNetwork::readInputData(std::string filename)
 }
 
 /**
- * Example of multiplex network
-*Intra
-# layer node node weight
-1 1 2 1
-1 2 1 1
-1 2 3 1
-1 3 2 1
-1 3 1 1
-1 1 3 1
-1 2 4 1
-1 4 2 1
-2 4 5 1
-2 5 4 1
-2 5 6 1
-2 6 5 1
-2 6 4 1
-2 4 6 1
-2 3 6 1
-2 6 3 1
-*Inter
-# layer node layer weight
-1 3 1 2
-1 3 2 1
-2 3 2 1
-2 3 1 1
-1 4 1 1
-1 4 2 1
-2 4 2 2
-2 4 1 1
+ * Example of general multiplex network:
+ *
+ * *Vertices 4
+ * 1 "Node 1"
+ * 2 "Node 2"
+ * 3 "Node 3"
+ * 4 "Node 4"
+ * *Multiplex
+ * # layer node layer node [weight]
+ * 1 1 1 2 2
+ * 1 1 2 2 1
+ * 1 2 1 1 1
+ * 1 3 2 2 1
+ * 2 2 1 3 1
+ * 2 3 2 2 1
+ * 2 4 2 1 2
+ * 2 4 1 2 1
+ *
+ * The *Vertices section and the *Multiplex line can be omitted.
+ * More compact sections can be defined for intra-network links
+ * and inter-network links by adding *Intra and *Inter lines
+ * like below:
+ *
+ * *Intra
+ * # layer node node weight
+ * 1 1 2 1
+ * 1 2 1 1
+ * 1 2 3 1
+ * 1 3 2 1
+ * 1 3 1 1
+ * 1 1 3 1
+ * 1 2 4 1
+ * 1 4 2 1
+ * 2 4 5 1
+ * 2 5 4 1
+ * 2 5 6 1
+ * 2 6 5 1
+ * 2 6 4 1
+ * 2 4 6 1
+ * 2 3 6 1
+ * 2 6 3 1
+ * *Inter
+ * # layer node layer weight
+ * 1 3 1 2
+ * 1 3 2 1
+ * 2 3 2 1
+ * 2 3 1 1
+ * 1 4 1 1
+ * 1 4 2 1
+ * 2 4 2 2
+ * 2 4 1 1
+ *
+ * Note: 
+ * *Inter links define unrecorded movements:
+ * Each inter-link (layer1 node1 layer2) is expanded to a set of
+ * multiplex links {layer1 node1 layer2 node2} for all node2 that 
+ * node1 points to in the second layer.
+ * 
  */
 void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 {
@@ -86,68 +115,47 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 
 	SafeInFile input(filename.c_str());
 
-	string line;
-	bool intra = true;
-	unsigned int numIntraLinksFound = 0;
-	unsigned int numInterLinksFound = 0;
+	// Assume general multiplex links
+	string line = parseMultiplexLinks(input);
 
-	while(!std::getline(input, line).fail())
+	while (line.length() > 0 && line[0] == '*')
 	{
-		if (line.length() == 0 || line[0] == '#')
-			continue;
-		if (line == "*Intra" || line == "*intra") {
-			intra = true;
-			continue;
+		std::string header = io::firstWord(line);
+		if (header == "*Vertices" || header == "*vertices") {
+			line = parseVertices(input, line);
 		}
-		if (line == "*Inter" || line == "*inter") {
-			intra = false;
-			continue;
+		else if (header == "*Intra" || header == "*intra") {
+			line = parseIntraLinks(input);
 		}
-
-		if (intra)
-		{
-			unsigned int layerIndex, n1, n2;
-			double weight;
-
-			parseIntraLink(line, layerIndex, n1, n2, weight);
-
-			while (m_networks.size() < layerIndex + 1)
-				m_networks.push_back(Network(m_config));
-
-			m_networks[layerIndex].addLink(n1, n2, weight);
-
-			++numIntraLinksFound;
+		else if (header == "*Inter" || header == "*inter") {
+			line = parseInterLinks(input);
+		}
+		else if (header == "*Multiplex" || header == "*multiplex") {
+			line = parseMultiplexLinks(input);
 		}
 		else
-		{
-			unsigned int nodeIndex, layer1, layer2;
-			double weight;
-
-			parseInterLink(line, layer1, nodeIndex, layer2, weight);
-
-			m_interLinks[M2Node(layer1, nodeIndex)][layer2] += weight;
-
-			++numInterLinksFound;
-		}
+			throw FileFormatError(io::Str() << "Unrecognized header in multiplex network file: '" << line << "'.");
 	}
 
 	if (m_networks.size() < 2)
 		throw InputDomainError("Need at least two layers of network data for multiplex network.");
 
-	std::cout << "done! Found " << numIntraLinksFound << " intra-network links in " << m_networks.size() << " layers with " <<
-			numInterLinksFound << " inter-network links\n";
+	std::cout << "done!\n";
+	std::cout << " --> Found " << m_numIntraLinksFound << " intra-network links in " << m_networks.size() << " layers.\n";
+	std::cout << " --> Found " << m_numInterLinksFound << " inter-network links.\n";
+	std::cout << " --> Found " << m_numMultiplexLinksFound << " general multiplex links.\n";
 
 	// Finalize and check each network layer
 	for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
 	{
-		std::cout << "Layer " << (layerIndex + 1) << ": " << std::flush;
+		std::cout << "Intra-network links on layer " << (layerIndex + 1) << ": " << std::flush;
 		m_networks[layerIndex].finalizeAndCheckNetwork();
 		m_networks[layerIndex].printParsingResult();
 	}
 
 	adjustForDifferentNumberOfNodes();
 
-	bool simulateInterLayerLinks = m_config.multiplexRelaxRate >= 0.0 || numInterLinksFound == 0;
+	bool simulateInterLayerLinks = m_config.multiplexRelaxRate >= 0.0 || m_numInterLinksFound == 0;
 	if (simulateInterLayerLinks)
 		generateMemoryNetworkWithSimulatedInterLayerLinks();
 	else
@@ -388,6 +396,79 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 	}
 }
 
+
+std::string MultiplexNetwork::parseIntraLinks(std::ifstream& file)
+{
+	std::string line;
+	while(!std::getline(file, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+
+		if (line[0] == '*')
+			break;
+
+		unsigned int layerIndex, n1, n2;
+		double weight;
+
+		parseIntraLink(line, layerIndex, n1, n2, weight);
+
+		while (m_networks.size() < layerIndex + 1)
+			m_networks.push_back(Network(m_config));
+
+		m_networks[layerIndex].addLink(n1, n2, weight);
+
+		++m_numIntraLinksFound;
+	}
+	return line;
+}
+
+std::string MultiplexNetwork::parseInterLinks(std::ifstream& file)
+{
+	std::string line;
+	while(!std::getline(file, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+
+		if (line[0] == '*')
+			break;
+
+		unsigned int nodeIndex, layer1, layer2;
+		double weight;
+
+		parseInterLink(line, layer1, nodeIndex, layer2, weight);
+
+		m_interLinks[M2Node(layer1, nodeIndex)][layer2] += weight;
+
+		++m_numInterLinksFound;
+	}
+	return line;
+}
+
+std::string MultiplexNetwork::parseMultiplexLinks(std::ifstream& file)
+{
+	std::string line;
+	while(!std::getline(file, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+
+		if (line[0] == '*')
+			break;
+
+		unsigned int layer1, node1, layer2, node2;
+		double weight;
+
+		parseMultiplexLink(line, layer1, node1, layer2, node2, weight);
+
+		m_multiplexLinks[M2Node(layer1, node1)][M2Node(layer2, node2)] += weight;
+
+		++m_numMultiplexLinksFound;
+	}
+	return line;
+}
+
 /**
  * Link within the layer:
  *
@@ -415,11 +496,29 @@ void MultiplexNetwork::parseInterLink(const std::string& line, unsigned int& lay
 	m_extractor.clear();
 	m_extractor.str(line);
 	if (!(m_extractor >> layer1 >> node >> layer2))
-		throw FileFormatError(io::Str() << "Can't parse multiplex intra link data (layer1 node layer2) from line '" << line << "'");
+		throw FileFormatError(io::Str() << "Can't parse multiplex inter link data (layer1 node layer2) from line '" << line << "'");
 	(m_extractor >> weight) || (weight = 1.0);
 	layer1 -= m_indexOffset;
 	node -= m_indexOffset;
 	layer2 -= m_indexOffset;
+}
+
+/**
+ * Parse general multiplex link:
+ *
+ *   layer1 node1 layer2 node2 [weight]
+ */
+void MultiplexNetwork::parseMultiplexLink(const std::string& line, unsigned int& layer1, unsigned int& node1, unsigned int& layer2, unsigned int& node2, double& weight)
+{
+	m_extractor.clear();
+	m_extractor.str(line);
+	if (!(m_extractor >> layer1 >> node1 >> layer2 >> node2))
+		throw FileFormatError(io::Str() << "Can't parse multiplex link data (layer1 node1 layer2 node2) from line '" << line << "'");
+	(m_extractor >> weight) || (weight = 1.0);
+	layer1 -= m_indexOffset;
+	node1 -= m_indexOffset;
+	layer2 -= m_indexOffset;
+	node2 -= m_indexOffset;
 }
 
 void MultiplexNetwork::finalizeAndCheckNetwork()
