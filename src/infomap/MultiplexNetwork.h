@@ -56,11 +56,13 @@ protected:
 
 	void parseMultipleNetworks();
 
-	void adjustForDifferentNumberOfNodes();
+	unsigned int adjustForDifferentNumberOfNodes();
 
 	void generateMemoryNetworkWithInterLayerLinksFromData();
 
 	void generateMemoryNetworkWithSimulatedInterLayerLinks();
+
+	void addMemoryNetworkFromMultiplexLinks();
 
 	// Helper methods
 
@@ -107,17 +109,16 @@ protected:
 
 	// Member variables
 
+	unsigned int m_numIntraLinksFound;
 	std::deque<Network> m_networks;
 
-	std::map<M2Node, InterLinkMap> m_interLinks; // {(layer,node)} -> ({linkedLayer} -> {weight})
-
-	MultiplexLinkMap m_multiplexLinks; // {(layer,node)} -> ({(layer,node)} -> {weight})
-
-	unsigned int m_numIntraLinksFound;
-
 	unsigned int m_numInterLinksFound;
+	std::map<M2Node, InterLinkMap> m_interLinks; // {(layer,node)} -> ({linkedLayer} -> {weight})
+	std::map<unsigned int, unsigned int> m_interLinkLayers;
 
 	unsigned int m_numMultiplexLinksFound;
+	MultiplexLinkMap m_multiplexLinks; // {(layer,node)} -> ({(layer,node)} -> {weight})
+	std::map<unsigned int, unsigned int> m_multiplexLinkLayers;
 };
 
 #endif /* MULTIPLEXNETWORK_H_ */

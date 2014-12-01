@@ -158,6 +158,8 @@ void MemNetwork::parseTrigram(std::string filename)
 			insertLink(n2, n3, weight);
 	}
 
+	std::cout << "done!" << std::endl;
+
 	finalizeAndCheckNetwork();
 
 	printParsingResult();
@@ -229,6 +231,7 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 		}
 	}
 
+	std::cout << "done!" << std::endl;
 
 	finalizeAndCheckNetwork();
 
@@ -653,14 +656,14 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 		if (std::abs(m_totalLinkWeight / m_numLinks - 1.0) > 1e-9)
 			std::cout << " (with total weight " << m_totalLinkWeight << ")";
 		std::cout << ".";
-		std::cout << "\n-------------------";
+		std::cout << "-------------------\n";
 	}
 
-	std::cout << "\n  -> Found " << m_numNodesFound << " nodes and " << m_numM2LinksFound << " memory links.";
-	std::cout << "\n  -> Generated " << m_m2Nodes.size() << " memory nodes and " << m_numM2Links << " memory links.";
+	std::cout << "  -> Found " << m_numNodesFound << " nodes and " << m_numM2LinksFound << " memory links.\n";
+	std::cout << "  -> Generated " << m_m2Nodes.size() << " memory nodes and " << m_numM2Links << " memory links.\n";
 	if (m_numAggregatedM2Links > 0)
-		std::cout << "\n  -> Aggregated " << m_numAggregatedM2Links << " memory links.";
-	std::cout << std::endl;
+		std::cout << "  -> Aggregated " << m_numAggregatedM2Links << " memory links.\n";
+	std::cout << std::flush;
 }
 
 void MemNetwork::printNetworkAsPajek(std::string filename)

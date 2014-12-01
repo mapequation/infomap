@@ -1531,7 +1531,7 @@ void InfomapBase::initMemoryNetwork()
 void InfomapBase::initNodeNames(Network& network)
 {
 	network.swapNodeNames(m_nodeNames);
-	if (m_nodeNames.empty())
+	if (m_nodeNames.size() < network.numNodes())
 	{
 		// Define nodes
 		m_nodeNames.resize(network.numNodes());
@@ -1540,7 +1540,7 @@ void InfomapBase::initNodeNames(Network& network)
 		{
 			const int NAME_BUFFER_SIZE = 32;
 			char line[NAME_BUFFER_SIZE];
-			for (unsigned int i = 0; i < network.numNodes(); ++i)
+			for (unsigned int i = m_nodeNames.size(); i < network.numNodes(); ++i)
 			{
 				int length = snprintf(line, NAME_BUFFER_SIZE, "%d", i+1);
 				m_nodeNames[i] = std::string(line, length);
@@ -1548,7 +1548,7 @@ void InfomapBase::initNodeNames(Network& network)
 		}
 		else
 		{
-			for (unsigned int i = 0; i < network.numNodes(); ++i)
+			for (unsigned int i = m_nodeNames.size(); i < network.numNodes(); ++i)
 				m_nodeNames[i] = io::stringify(i+1);
 		}
 	}
