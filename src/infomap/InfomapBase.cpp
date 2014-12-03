@@ -1534,13 +1534,14 @@ void InfomapBase::initNodeNames(Network& network)
 	if (m_nodeNames.size() < network.numNodes())
 	{
 		// Define nodes
+		unsigned int oldSize = m_nodeNames.size();
 		m_nodeNames.resize(network.numNodes());
 
 		if (m_config.parseWithoutIOStreams)
 		{
 			const int NAME_BUFFER_SIZE = 32;
 			char line[NAME_BUFFER_SIZE];
-			for (unsigned int i = m_nodeNames.size(); i < network.numNodes(); ++i)
+			for (unsigned int i = oldSize; i < network.numNodes(); ++i)
 			{
 				int length = snprintf(line, NAME_BUFFER_SIZE, "%d", i+1);
 				m_nodeNames[i] = std::string(line, length);
@@ -1548,7 +1549,7 @@ void InfomapBase::initNodeNames(Network& network)
 		}
 		else
 		{
-			for (unsigned int i = m_nodeNames.size(); i < network.numNodes(); ++i)
+			for (unsigned int i = oldSize; i < network.numNodes(); ++i)
 				m_nodeNames[i] = io::stringify(i+1);
 		}
 	}
