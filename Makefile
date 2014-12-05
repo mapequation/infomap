@@ -78,7 +78,7 @@ INFORMATTER_OBJECT = build/Informatter.o
 .PHONY: all clean
 
 ## Default rule executed
-all: $(TARGET) Informatter
+all: $(TARGET)
 	@true
 
 ## Clean Rule
@@ -94,7 +94,7 @@ $(TARGET): $(OBJECTS) $(INFOMAP_OBJECT)
 	$(CXX) $(LDFLAGS) -o $@ $^
 	@echo "-- Link finished --"
 
-Informatter: $(OBJECTS) $(INFORMATTER_OBJECT)
+Infomap-formatter: $(OBJECTS) $(INFORMATTER_OBJECT)
 	@echo "Making Informatter..."
 	$(CXX) $(LDFLAGS) -o $@ $^
 
