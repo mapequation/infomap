@@ -263,6 +263,34 @@ struct Config
 		}
 	}
 
+	void adaptDefaults()
+	{
+		if (!haveModularResultOutput())
+			printTree = true;
+
+		originallyUndirected = isUndirected();
+		if (isMemoryNetwork())
+		{
+			if (isMultiplexNetwork())
+			{
+				// Include self-links in multiplex networks as layer and node numbers are unrelated
+				includeSelfLinks = true;
+				if (!isUndirected())
+				{
+					teleportToNodes = true;
+					recordedTeleportation = false;
+				}
+			}
+			else
+			{
+				teleportToNodes = true;
+				recordedTeleportation = false;
+				if (isUndirected())
+					directed = true;
+			}
+		}
+	}
+
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 
 	bool isUndirectedFlow() const { return !directed && !outdirdir && !rawdir; } // isUndirected() || undirdir

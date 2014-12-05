@@ -216,30 +216,7 @@ int run(int argc, char* argv[])
 		}
 		std::cout << "=======================================================\n";
 
-		if (!conf.haveModularResultOutput())
-			conf.printTree = true;
-
-		conf.originallyUndirected = conf.isUndirected();
-		if (conf.isMemoryNetwork())
-		{
-			if (conf.isMultiplexNetwork())
-			{
-				// Include self-links in multiplex networks as layer and node numbers are unrelated
-				conf.includeSelfLinks = true;
-				if (!conf.isUndirected())
-				{
-					conf.teleportToNodes = true;
-					conf.recordedTeleportation = false;
-				}
-			}
-			else
-			{
-				conf.teleportToNodes = true;
-				conf.recordedTeleportation = false;
-				if (conf.isUndirected())
-					conf.directed = true;
-			}
-		}
+		conf.adaptDefaults();
 
 		std::cout << std::setprecision(conf.verboseNumberPrecision);
 
