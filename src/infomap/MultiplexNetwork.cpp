@@ -317,9 +317,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 				bool nonPhysicalSwitch = false;
 				if (nonPhysicalSwitch)
 				{
-					insertM2Link(m2SourceIt, layer2, nodeIndex, scaledInterLinkWeight);
-					addM2Node(layer1, nodeIndex, 0.0);
-					addM2Node(layer2, nodeIndex, 0.0);
+					addM2Link(m2SourceIt, layer2, nodeIndex, scaledInterLinkWeight, 0.0, 0.0);
 				}
 				else
 				{
@@ -336,10 +334,8 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 							double otherLayerLinkWeight = interIntraIt->second;
 
 							double interIntraLinkWeight = scaledInterLinkWeight * otherLayerLinkWeight / sumOutWeights[layer2][nodeIndex];
-							insertM2Link(m2SourceIt, layer2, otherLayerTargetNodeIndex, interIntraLinkWeight);
 
-							addM2Node(layer1, nodeIndex, 0.0);
-							addM2Node(layer2, otherLayerTargetNodeIndex, 0.0);
+							addM2Link(m2SourceIt, layer2, otherLayerTargetNodeIndex, interIntraLinkWeight, 0.0, 0.0);
 						}
 					}
 				}

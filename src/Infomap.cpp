@@ -272,6 +272,8 @@ int run(int argc, char* argv[])
 		{
 			if (conf.isMultiplexNetwork())
 			{
+				// Include self-links in multiplex networks as layer and node numbers are unrelated
+				conf.includeSelfLinks = true;
 				if (!conf.isUndirected())
 				{
 					conf.teleportToNodes = true;

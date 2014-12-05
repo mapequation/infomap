@@ -457,9 +457,6 @@ bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned 
 	if (m_config.nodeLimit > 0 && (n1 >= m_config.nodeLimit || n2 >= m_config.nodeLimit))
 		return false;
 
-	m_maxNodeIndex = std::max(m_maxNodeIndex, std::max(n1, n2));
-	m_minNodeIndex = std::min(m_minNodeIndex, std::min(n1, n2));
-
 	if(m_config.includeSelfLinks)
 	{
 		if (n1 == n2 && n1PriorState == n2PriorState)
@@ -477,6 +474,44 @@ bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned 
 		if(n1PriorState != n1)
 		{
 			insertM2Link(n1PriorState, n1, n2PriorState, n2, weight);
+			addM2Node(n1PriorState, n1, firstM2NodeWeight);
+			addM2Node(n2PriorState, n2, secondM2NodeWeight);
+		}
+		else
+			addM2Node(n2PriorState, n2, weight);
+	}
+
+	return true;
+}
+
+bool MemNetwork::addM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight, double firstM2NodeWeight, double secondM2NodeWeight)
+{
+	++m_numM2LinksFound;
+
+	if (m_config.nodeLimit > 0 && (n2 >= m_config.nodeLimit))
+		return false;
+
+	const M2Node& m2Source = firstM2Node->first;
+	unsigned int n1 = m2Source.physIndex;
+	unsigned int n1PriorState = m2Source.priorState;
+
+	if(m_config.includeSelfLinks)
+	{
+		if (n1 == n2 && n1PriorState == n2PriorState)
+		{
+			++m_numMemorySelfLinks;
+			m_totalMemorySelfLinkWeight += weight;
+		}
+
+		insertM2Link(firstM2Node, n2PriorState, n2, weight);
+		addM2Node(n1PriorState, n1, firstM2NodeWeight);
+		addM2Node(n2PriorState, n2, secondM2NodeWeight);
+	}
+	else if (n1 != n2)
+	{
+		if(n1PriorState != n1)
+		{
+			insertM2Link(firstM2Node, n2PriorState, n2, weight);
 			addM2Node(n1PriorState, n1, firstM2NodeWeight);
 			addM2Node(n2PriorState, n2, secondM2NodeWeight);
 		}
