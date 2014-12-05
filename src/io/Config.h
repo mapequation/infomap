@@ -38,7 +38,8 @@
 struct Config
 {
 	Config()
-	:	networkFile(""),
+	:	parsedArgs(""),
+		networkFile(""),
 	 	inputFormat(""),
 	 	withMemory(false),
 	 	parseWithoutIOStreams(false),
@@ -96,7 +97,8 @@ struct Config
 	}
 
 	Config(const Config& other)
-	:	networkFile(other.networkFile),
+	:	parsedArgs(other.parsedArgs),
+		networkFile(other.networkFile),
 	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
 	 	withMemory(other.withMemory),
@@ -156,6 +158,7 @@ struct Config
 
 	Config& operator=(const Config& other)
 	{
+		parsedArgs = other.parsedArgs;
 		networkFile = other.networkFile;
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;

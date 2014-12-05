@@ -42,7 +42,7 @@
 #include <iomanip>
 #include "io/version.h"
 
-void getConfig(Config& conf, int argc, char *argv[])
+std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 {
 	ProgramInterface api("Informatter", "Infomap formatter utility", INFOMAP_VERSION);
 
@@ -172,32 +172,17 @@ void getConfig(Config& conf, int argc, char *argv[])
 
 	api.parseArgs(argc, argv);
 
+	conf.parsedArgs = api.parsedArgs();
+
 	// Some checks
 	if (*--conf.outDirectory.end() != '/')
 		conf.outDirectory.append("/");
 
-	if (!conf.haveModularResultOutput())
-		conf.printTree = true;
+	if (conf.haveOutput() && !isDirectoryWritable(conf.outDirectory))
+		throw FileOpenError(io::Str() << "Can't write to directory '" <<
+				conf.outDirectory << "'. Check that the directory exists and that you have write permissions.");
 
-	conf.originallyUndirected = conf.isUndirected();
-	if (conf.isMemoryNetwork())
-	{
-		if (conf.isMultiplexNetwork())
-		{
-			if (!conf.isUndirected())
-			{
-				conf.teleportToNodes = true;
-				conf.recordedTeleportation = false;
-			}
-		}
-		else
-		{
-			conf.teleportToNodes = true;
-			conf.recordedTeleportation = false;
-			if (conf.isUndirected())
-				conf.directed = true;
-		}
-	}
+	return api.getUsedOptionArguments();
 }
 
 void runInformatter(Config const& config)
@@ -219,12 +204,42 @@ int run(int argc, char* argv[])
 	Config conf;
 	try
 	{
-		getConfig(conf, argc, argv);
-		std::cout << std::setprecision(conf.verboseNumberPrecision);
+		std::vector<ParsedOption> flags = getConfig(conf, argc, argv);
 
-		std::cout << "===========================================\n";
+		std::cout << "=======================================================\n";
 		std::cout << "  Informatter v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
-		std::cout << "===========================================\n";
+		std::cout << "  -> Input: " << conf.networkFile << "\n";
+		std::cout << "  -> Output path:   " << conf.outDirectory << "\n";
+		if (!flags.empty()) {
+			for (unsigned int i = 0; i < flags.size(); ++i)
+				std::cout << (i == 0 ? "  -> Configuration: " : "                    ") << flags[i] << "\n";
+		}
+		std::cout << "=======================================================\n";
+
+		if (!conf.haveModularResultOutput())
+			conf.printTree = true;
+
+		conf.originallyUndirected = conf.isUndirected();
+		if (conf.isMemoryNetwork())
+		{
+			if (conf.isMultiplexNetwork())
+			{
+				if (!conf.isUndirected())
+				{
+					conf.teleportToNodes = true;
+					conf.recordedTeleportation = false;
+				}
+			}
+			else
+			{
+				conf.teleportToNodes = true;
+				conf.recordedTeleportation = false;
+				if (conf.isUndirected())
+					conf.directed = true;
+			}
+		}
+
+		std::cout << std::setprecision(conf.verboseNumberPrecision);
 
 		runInformatter(conf);
 	}

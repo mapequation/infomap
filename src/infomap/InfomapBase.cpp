@@ -1761,6 +1761,9 @@ void InfomapBase::printHierarchicalData(std::string filename)
 
 void InfomapBase::printClusterNumbers(std::ostream& out)
 {
+	out << "# '" << m_config.parsedArgs << "' -> " << numLeafNodes() << " nodes with codelength " <<
+			io::toPrecision(codelength, 9, true) << " in " <<	m_config.elapsedTime() << "\n";
+
 	out << "*Vertices " << m_treeData.numLeafNodes() << "\n";
 	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
 			it != itEnd; ++it)

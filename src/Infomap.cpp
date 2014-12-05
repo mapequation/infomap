@@ -245,7 +245,7 @@ int run(int argc, char* argv[])
 	{
 		std::vector<ParsedOption> flags = getConfig(conf, argc, argv);
 
-		std::cout << "===================================================\n";
+		std::cout << "=======================================================\n";
 		std::cout << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
 		std::cout << "  -> Input network: " << conf.networkFile << "\n";
 		std::cout << "  -> Output path:   " << conf.outDirectory << "\n";
@@ -253,18 +253,13 @@ int run(int argc, char* argv[])
 			for (unsigned int i = 0; i < flags.size(); ++i)
 				std::cout << (i == 0 ? "  -> Configuration: " : "                    ") << flags[i] << "\n";
 		}
-//		std::cout << "  => " << (conf.isUndirected()? "Undirected" : "Directed") << " flow\n";
-//		std::cout << "  => " << (conf.isMemoryNetwork()? "Second" : "First") << "-order Markov dynamics\n";
-//		if (conf.useTeleportation())
-//			std::cout << "  => " << (conf.recordedTeleportation ? "Recorded" : "Unrecorded") << " teleportation to " <<
-//			(conf.teleportToNodes ? "nodes" : "links") << "\n";
 		std::cout << "  -> Use " << (conf.isUndirected()? "undirected" : "directed") << " flow and " <<
 			(conf.isMemoryNetwork()? "2nd" : "1st") << " order Markov dynamics";
 		if (conf.useTeleportation())
 			std::cout << " with " << (conf.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
 			(conf.teleportToNodes ? "nodes" : "links");
 		std::cout << "\n";
-		std::cout << "===================================================\n";
+		std::cout << "=======================================================\n";
 
 		if (conf.benchmark)
 			initBenchmark(conf, argc, argv);

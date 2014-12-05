@@ -84,6 +84,7 @@ protected:
 	using Super::m_moduleFlowData;
 	using Super::m_moduleMembers;
 	using Super::m_emptyModules;
+	using Super::m_config;
 
 	std::vector<PhysData> m_dummyPhysData;
 	M2Node m_dummyM2Node;
@@ -176,6 +177,7 @@ protected:
 	using Super::m_moduleFlowData;
 	using Super::m_moduleMembers;
 	using Super::m_emptyModules;
+	using Super::m_config;
 
 private:
 	NodeType& getNode(NodeBase& node) { return static_cast<NodeType&>(node); }
@@ -761,6 +763,9 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 template<typename FlowType>
 void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printClusterNumbers(std::ostream& out)
 {
+	out << "# '" << m_config.parsedArgs << "' -> " << Super::numLeafNodes() << " nodes with codelength " <<
+		io::toPrecision(Super::codelength, 9, true) << " in " <<	m_config.elapsedTime() << "\n";
+
 	out << "*Vertices " << Super::m_treeData.numLeafNodes() << "\n";
 	out << "# from to moduleNr flow\n";
 	for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)
