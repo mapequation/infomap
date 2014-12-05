@@ -39,6 +39,8 @@
 #include <set>
 #include <functional>   // std::greater
 #include <limits>
+
+#include "../io/Config.h"
 #include "SafeFile.h"
 
 enum EdgeAggregationPolicy { NONE, PARTIAL, FULL };
@@ -441,22 +443,24 @@ class HierarchicalNetwork
 public:
 	typedef SNode	node_type;
 
-	HierarchicalNetwork()
-	:	m_rootNode(1.0, 0, 0, 0),
+	HierarchicalNetwork(const Config& conf)
+	:	m_config(conf),
+		m_directedEdges(!conf.printAsUndirected()),
+		m_rootNode(1.0, 0, 0, 0),
 		m_networkName(""),
 		m_leafNodes(0),
-		m_directedEdges(false),
 		m_numLeafEdges(0),
 		m_numNodesInTree(1),
 		m_maxDepth(0),
 		m_codelength(0.0),
 		m_oneLevelCodelength(0.0),
-		m_infomapVersion("")
+		m_infomapVersion(conf.version),
+		m_infomapOptions(conf.parsedArgs)
 		{}
 
 	virtual ~HierarchicalNetwork() {}
 
-	void init(std::string networkName, bool directedEdges, double codelength, double oneLevelCodelength, std::string infomapVersion);
+	void init(std::string networkName, double codelength, double oneLevelCodelength);
 
 	void clear();
 
@@ -544,18 +548,18 @@ private:
 		std::cout << "done!" << std::endl;
 	}
 
-
-
+	Config m_config;
+	bool m_directedEdges;
 	SNode m_rootNode;
 	std::string m_networkName;
 	SNode::NodePtrList m_leafNodes;
-	bool m_directedEdges;
 	unsigned int m_numLeafEdges;
 	unsigned int m_numNodesInTree;
 	unsigned int m_maxDepth;
 	double m_codelength;
 	double m_oneLevelCodelength;
 	std::string m_infomapVersion;
+	std::string m_infomapOptions;
 
 };
 

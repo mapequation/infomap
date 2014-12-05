@@ -61,7 +61,8 @@ public:
 	 	moduleCodelength(0.0),
 	 	hierarchicalCodelength(0.0),
 		bestHierarchicalCodelength(std::numeric_limits<double>::max()),
-	 	bestIntermediateCodelength(std::numeric_limits<double>::max())
+	 	bestIntermediateCodelength(std::numeric_limits<double>::max()),
+		m_ioNetwork(conf)
 	{}
 
 	virtual ~InfomapBase()

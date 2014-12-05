@@ -200,7 +200,7 @@ template<typename InfomapImplementation>
 inline
 void InfomapGreedy<InfomapImplementation>::saveHierarchicalNetwork(std::string rootName, bool includeLinks)
 {
-	m_ioNetwork.init(rootName, !m_config.isUndirected(), hierarchicalCodelength, oneLevelCodelength, INFOMAP_VERSION);
+	m_ioNetwork.init(rootName, hierarchicalCodelength, oneLevelCodelength);
 
 	m_ioNetwork.prepareAddLeafNodes(m_treeData.numLeafNodes());
 

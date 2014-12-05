@@ -132,6 +132,11 @@ void ProgramInterface::exitWithError(std::string message)
 
 void ProgramInterface::parseArgs(int argc, char** argv)
 {
+	std::ostringstream ss;
+	for (unsigned int i = 0; i < argc; ++i)
+		ss << argv[i] << (i + 1 == argc? "" : " ");
+	m_parsedArgs = ss.str();
+
 	m_executableName = argv[0];
 	size_t pos = m_executableName.find_last_of("/");
 	if (pos != std::string::npos)

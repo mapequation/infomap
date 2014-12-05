@@ -29,7 +29,6 @@
 #define INFOMAPGREEDYTYPESPECIALIZED_H_
 
 #include "InfomapGreedyCommon.h"
-#include "../io/version.h"
 #include <ostream>
 
 template<typename FlowType, typename NetworkType>
@@ -639,7 +638,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 {
 	HierarchicalNetwork& ioNetwork = Super::m_ioNetwork;
 
-	ioNetwork.init(rootName, !Super::m_config.printAsUndirected(), Super::hierarchicalCodelength, Super::oneLevelCodelength, INFOMAP_VERSION);
+	ioNetwork.init(rootName, Super::hierarchicalCodelength, Super::oneLevelCodelength);
 
 	if (Super::m_config.printExpanded)
 	{

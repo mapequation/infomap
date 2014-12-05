@@ -30,20 +30,17 @@
 #include <stdexcept>
 #include "convert.h"
 
-void HierarchicalNetwork::init(std::string networkName, bool directedEdges,
-			double codelength, double oneLevelCodelength, std::string infomapVersion)
+void HierarchicalNetwork::init(std::string networkName, double codelength, double oneLevelCodelength)
 {
 	// First clear if necessary
 	clear();
 
 	m_networkName = networkName;
-	m_directedEdges = directedEdges;
 	m_numLeafEdges = 0;
 	m_numNodesInTree = 1;
 	m_maxDepth = 0;
 	m_codelength = codelength;
 	m_oneLevelCodelength = oneLevelCodelength;
-	m_infomapVersion = infomapVersion;
 }
 
 void HierarchicalNetwork::clear()
@@ -135,11 +132,10 @@ void HierarchicalNetwork::writeStreamableTree(const std::string& fileName, bool 
 
 	std::string magicTag ("Infomap");
 	unsigned int numLeafNodes = m_leafNodes.size();
-	std::string infomapOptions("");
 
 	out << magicTag;
-	out << m_infomapVersion;
-	out << infomapOptions;
+	out << m_config.version;
+	out << m_infomapOptions;
 	out << m_directedEdges;
 	out << m_networkName;
 	out << numLeafNodes;
@@ -188,13 +184,13 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 {
 	std::cout << "Read streamable tree from file '" << fileName << "'... ";
 	SafeBinaryInFile dataStream(fileName.c_str());
-	std::string magicTag, infomapVersion, infomapOptions;
+	std::string magicTag;
 	unsigned int numLeafNodes, numLeafEdges, numNodesInTree;
 	dataStream >> magicTag;
 	if (magicTag != "Infomap")
 		throw FileFormatError("The first content of the file doesn't match the format.");
 	dataStream >> m_infomapVersion
-		>> infomapOptions
+		>> m_infomapOptions
 		>> m_directedEdges
 		>> m_networkName
 		>> numLeafNodes
@@ -206,7 +202,7 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 
 	std::cout << "\nMetadata:\n";
 	std::cout << "  Infomap version: \"" << m_infomapVersion << "\"" << std::endl;
-	std::cout << "  Infomap options: " << infomapOptions << std::endl;
+	std::cout << "  Infomap options: " << m_infomapOptions << std::endl;
 	std::cout << "  Directed edges: " << m_directedEdges << std::endl;
 	std::cout << "  Network name: \"" << m_networkName << "\"" << std::endl;
 	std::cout << "  Num leaf nodes: " << numLeafNodes << std::endl;
@@ -245,8 +241,9 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bool writeHierarchicalNetworkEdges)
 {
 	SafeOutFile out(fileName.c_str());
-	out << "# Network '" << m_networkName << "', size: " << m_leafNodes.size() << " nodes in " << m_maxDepth <<
-			" levels, codelength: " << io::toPrecision(m_codelength, 9, true) << " bits.\n";
+	out << "# '" << m_infomapOptions << "' -> " << m_leafNodes.size() << " nodes and " <<
+			m_numLeafEdges << " links in " << m_maxDepth << " levels with codelength " <<
+			io::toPrecision(m_codelength, 9, true) << " in " <<	m_config.elapsedTime() << "\n";
 
 	writeHumanReadableTreeRecursiveHelper(out, m_rootNode);
 	if (writeHierarchicalNetworkEdges)

@@ -208,6 +208,8 @@ std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 
 	api.parseArgs(argc, argv);
 
+	conf.parsedArgs = api.parsedArgs();
+
 	// Some checks
 	if (*--conf.outDirectory.end() != '/')
 		conf.outDirectory.append("/");

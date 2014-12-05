@@ -27,8 +27,13 @@
 
 #ifndef CONFIG_H_
 #define CONFIG_H_
+
+#include <iostream>
 #include <string>
 #include <vector>
+
+#include "../utils/Date.h"
+#include "version.h"
 
 struct Config
 {
@@ -84,7 +89,8 @@ struct Config
 		noFileOutput(false),
 		verbosity(0),
 		verboseNumberPrecision(6),
-		benchmark(false)
+		benchmark(false),
+		version(INFOMAP_VERSION)
 	{
 		setOptimizationLevel(1);
 	}
@@ -142,7 +148,9 @@ struct Config
 		noFileOutput(other.noFileOutput),
 		verbosity(other.verbosity),
 		verboseNumberPrecision(other.verboseNumberPrecision),
-		benchmark(other.benchmark)
+		benchmark(other.benchmark),
+		startDate(other.startDate),
+		version(other.version)
 	{
 	}
 
@@ -201,6 +209,8 @@ struct Config
 		verbosity = other.verbosity;
 		verboseNumberPrecision = other.verboseNumberPrecision;
 		benchmark = other.benchmark;
+		startDate = other.startDate;
+		version = other.version;
 		return *this;
 	}
 
@@ -283,8 +293,11 @@ struct Config
 				printBinaryFlowTree;
 	}
 
+	ElapsedTime elapsedTime() const { return Date() - startDate; }
+
 
 	// Input
+	std::string parsedArgs;
 	std::string networkFile;
 	std::vector<std::string> additionalInput;
 	std::string inputFormat; // 'pajek', 'link-list', '3gram' or 'multiplex'
@@ -344,6 +357,10 @@ struct Config
 	unsigned int verbosity;
 	unsigned int verboseNumberPrecision;
 	bool benchmark;
+
+	// Other
+	Date startDate;
+	std::string version;
 };
 
 #endif /* CONFIG_H_ */
