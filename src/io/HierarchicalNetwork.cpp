@@ -89,6 +89,7 @@ SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitF
 
 void HierarchicalNetwork::prepareAddLeafNodes(unsigned int numLeafNodes)
 {
+	m_numLeafNodes = numLeafNodes;
 	m_leafNodes.resize(numLeafNodes);
 }
 
@@ -131,14 +132,13 @@ void HierarchicalNetwork::writeStreamableTree(const std::string& fileName, bool 
 	SafeBinaryOutFile out(fileName.c_str());
 
 	std::string magicTag ("Infomap");
-	unsigned int numLeafNodes = m_leafNodes.size();
 
 	out << magicTag;
 	out << m_config.version;
 	out << m_infomapOptions;
 	out << m_directedEdges;
 	out << m_networkName;
-	out << numLeafNodes;
+	out << m_numLeafNodes;
 	out << m_numLeafEdges;
 	out << m_numNodesInTree;
 	out << m_maxDepth;
@@ -185,7 +185,7 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 	std::cout << "Read streamable tree from file '" << fileName << "'... ";
 	SafeBinaryInFile dataStream(fileName.c_str());
 	std::string magicTag;
-	unsigned int numLeafNodes, numLeafEdges, numNodesInTree;
+	unsigned int numNodesInTree;
 	dataStream >> magicTag;
 	if (magicTag != "Infomap")
 		throw FileFormatError("The first content of the file doesn't match the format.");
@@ -193,8 +193,8 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 		>> m_infomapOptions
 		>> m_directedEdges
 		>> m_networkName
-		>> numLeafNodes
-		>> numLeafEdges
+		>> m_numLeafNodes
+		>> m_numLeafEdges
 		>> numNodesInTree
 		>> m_maxDepth
 		>> m_oneLevelCodelength
@@ -205,8 +205,8 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 	std::cout << "  Infomap options: " << m_infomapOptions << std::endl;
 	std::cout << "  Directed edges: " << m_directedEdges << std::endl;
 	std::cout << "  Network name: \"" << m_networkName << "\"" << std::endl;
-	std::cout << "  Num leaf nodes: " << numLeafNodes << std::endl;
-	std::cout << "  Num leaf edges: " << numLeafEdges << std::endl;
+	std::cout << "  Num leaf nodes: " << m_numLeafNodes << std::endl;
+	std::cout << "  Num leaf edges: " << m_numLeafEdges << std::endl;
 	std::cout << "  Num nodes in tree: " << numNodesInTree << std::endl;
 	std::cout << "  Max depth: " << m_maxDepth << std::endl;
 	std::cout << "  One-level codelength: " << m_oneLevelCodelength << std::endl;
@@ -225,6 +225,7 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 			SNode& child = addNode(node, 0.0, 0.0);
 			nodeList.push_back(&child);
 		}
+		// Parse edges after last child for each module
 		if (node.parentNode != NULL && static_cast<unsigned int>(node.parentIndex + 1) == node.parentNode->children.size())
 		{
 			numEdges += node.parentNode->deserializeEdges(dataStream, m_directedEdges);
@@ -233,15 +234,13 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 			throw FileFormatError("Tree overflow");
 	}
 	std::cout << "Done! Deserialized " << m_numNodesInTree << " nodes and " << numEdges << " links.\n";
-
-	m_numLeafEdges = numLeafEdges;
 }
 
 
 void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bool writeHierarchicalNetworkEdges)
 {
 	SafeOutFile out(fileName.c_str());
-	out << "# '" << m_infomapOptions << "' -> " << m_leafNodes.size() << " nodes and " <<
+	out << "# '" << m_infomapOptions << "' -> " << m_numLeafNodes << " nodes and " <<
 			m_numLeafEdges << " links in " << m_maxDepth << " levels with codelength " <<
 			io::toPrecision(m_codelength, 9, true) << " in " <<	m_config.elapsedTime() << "\n";
 

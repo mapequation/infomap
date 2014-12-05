@@ -448,7 +448,7 @@ public:
 		m_directedEdges(!conf.printAsUndirected()),
 		m_rootNode(1.0, 0, 0, 0),
 		m_networkName(""),
-		m_leafNodes(0),
+		m_numLeafNodes(0),
 		m_numLeafEdges(0),
 		m_numNodesInTree(1),
 		m_maxDepth(0),
@@ -553,6 +553,7 @@ private:
 	SNode m_rootNode;
 	std::string m_networkName;
 	SNode::NodePtrList m_leafNodes;
+	unsigned int m_numLeafNodes;
 	unsigned int m_numLeafEdges;
 	unsigned int m_numNodesInTree;
 	unsigned int m_maxDepth;
