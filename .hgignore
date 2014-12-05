@@ -12,6 +12,7 @@ syntax: regexp
 ^Release$
 ^Infomap$
 ^Informatter$
+^Infomap-formatter$
 ^generateMakefile$
 ^build$
 ^.project$
