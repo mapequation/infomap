@@ -42,6 +42,7 @@ struct Config
 		networkFile(""),
 	 	inputFormat(""),
 	 	withMemory(false),
+	 	nonBacktracking(false),
 	 	parseWithoutIOStreams(false),
 		zeroBasedNodeNumbers(false),
 		includeSelfLinks(false),
@@ -102,6 +103,7 @@ struct Config
 	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
 	 	withMemory(other.withMemory),
+	 	nonBacktracking(other.nonBacktracking),
 	 	parseWithoutIOStreams(other.parseWithoutIOStreams),
 		zeroBasedNodeNumbers(other.zeroBasedNodeNumbers),
 		includeSelfLinks(other.includeSelfLinks),
@@ -163,6 +165,7 @@ struct Config
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
 	 	withMemory = other.withMemory;
+	 	nonBacktracking = other.nonBacktracking;
 	 	parseWithoutIOStreams = other.parseWithoutIOStreams;
 		zeroBasedNodeNumbers = other.zeroBasedNodeNumbers;
 		includeSelfLinks = other.includeSelfLinks;
@@ -303,9 +306,9 @@ struct Config
 
 	bool isMemoryInput() const { return inputFormat == "3gram" || inputFormat == "multiplex" || additionalInput.size() > 0; }
 
-	bool isMemoryNetwork() const { return withMemory || isMemoryInput(); }
+	bool isMemoryNetwork() const { return withMemory || nonBacktracking || isMemoryInput(); }
 
-	bool isSimulatedMemoryNetwork() const { return withMemory && !isMemoryInput(); }
+	bool isSimulatedMemoryNetwork() const { return (withMemory || nonBacktracking) && !isMemoryInput(); }
 
 	bool isMultiplexNetwork() const { return inputFormat == "multiplex" || additionalInput.size() > 0; }
 
@@ -333,6 +336,7 @@ struct Config
 	std::vector<std::string> additionalInput;
 	std::string inputFormat; // 'pajek', 'link-list', '3gram' or 'multiplex'
 	bool withMemory;
+	bool nonBacktracking;
 	bool parseWithoutIOStreams;
 	bool zeroBasedNodeNumbers;
 	bool includeSelfLinks;

@@ -218,7 +218,8 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 					unsigned int n3 = secondSubIt->first;
 					double linkWeight = secondSubIt->second;
 
-					addM2Link(n1, n2, n2, n3, linkWeight, firstLinkWeight / secondLinkSubMap.size(), 0.0);
+					if(!m_config.nonBacktracking || (n1 != n3))
+						addM2Link(n1, n2, n2, n3, linkWeight, firstLinkWeight / secondLinkSubMap.size(), 0.0);
 
 				}
 			}
