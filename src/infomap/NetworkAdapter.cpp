@@ -107,9 +107,12 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	std::istringstream ss;
 	unsigned int nodeCount = 0;
 	unsigned int maxDepth = 0;
-	while(getline(input, line))
+
+	while(!std::getline(input, line).fail())
 	{
 		++lineNr;
+		if (line.length() == 0 || line[0] == '#')
+			continue;
 		if (line[0] == '#')
 		{
 			if (lineNr == 1)

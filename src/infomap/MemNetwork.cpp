@@ -628,7 +628,7 @@ void MemNetwork::finalizeAndCheckNetwork()
 	m_m2NodeWeights.resize(m_m2Nodes.size());
 	m_totM2NodeWeight = 0.0;
 	unsigned int m2NodeIndex = 0;
-	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it, ++m2NodeIndex)
+	for(std::map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it, ++m2NodeIndex)
 	{
 		m_m2NodeMap[it->first] = m2NodeIndex;
 		m_m2NodeWeights[m2NodeIndex] += it->second;
