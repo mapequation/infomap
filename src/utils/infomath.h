@@ -59,6 +59,20 @@ namespace infomath
 		for(unsigned int i = 0; i < size; ++i)
 			std::swap(randomOrder[i], randomOrder[i + randGen.randInt(size - i - 1)]);
 	}
+
+	template<typename T, typename U>
+	inline
+	bool isBetween(T value, U lowerLimit, U higherLimit)
+	{
+		return value >= lowerLimit && value <= higherLimit;
+	}
+
+	template<typename T, typename U>
+	inline
+	bool isBetweenStrict(T value, U lowerLimit, U higherLimit)
+	{
+		return value > lowerLimit && value < higherLimit;
+	}
 }
 
 #endif /* INFOMAPTH_H_ */

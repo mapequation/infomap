@@ -35,6 +35,7 @@
 #include <cstring>
 #include <cstdio>
 
+#include "../utils/infomath.h"
 using std::make_pair;
 
 void MultiplexNetwork::readInputData(std::string filename)
@@ -155,12 +156,17 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 
 	if (!m_networks.empty())
 	{
+		bool printLayerSummary = m_networks.size() <= 10 ||
+				(m_networks.size() < 20 && infomath::isBetween(m_config.verbosity, 1, 2)) ||
+				(m_networks.size() < 50 && infomath::isBetween(m_config.verbosity, 1, 3));
 		// Finalize and check each layer of intra-network links
 		for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
 		{
-			std::cout << "Intra-network links on layer " << (layerIndex + 1) << ": " << std::flush;
+			if (printLayerSummary)
+				std::cout << "Intra-network links on layer " << (layerIndex + 1) << ": " << std::flush;
 			m_networks[layerIndex].finalizeAndCheckNetwork();
-			m_networks[layerIndex].printParsingResult();
+			if (printLayerSummary)
+				m_networks[layerIndex].printParsingResult(m_config.verbosity <= 1);
 		}
 
 		m_numNodes = adjustForDifferentNumberOfNodes();
@@ -232,16 +238,19 @@ unsigned int MultiplexNetwork::adjustForDifferentNumberOfNodes()
 
 	if (differentNodeCount)
 	{
-		std::cout << "Adjusting for equal number of nodes:\n";
+		std::cout << "Adjusting for equal number of nodes... " << std::flush;
+		unsigned int numAdjusted = 0;
 		for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
 		{
 			if (m_networks[layerIndex].numNodes() != maxNumNodes)
 			{
-				std::cout << "  Layer " << (layerIndex + 1) << ": " <<
-						m_networks[layerIndex].numNodes() << " -> " << maxNumNodes << " nodes." << std::endl;
+//				std::cout << "  Layer " << (layerIndex + 1) << ": " <<
+//						m_networks[layerIndex].numNodes() << " -> " << maxNumNodes << " nodes." << std::endl;
+				++numAdjusted;
 				m_networks[layerIndex].finalizeAndCheckNetwork(maxNumNodes);
 			}
 		}
+		std::cout << "done! Adjusted " << numAdjusted << "/" << m_networks.size() << " networks to have " << maxNumNodes << " nodes." << std::endl;
 	}
 
 	return maxNumNodes;

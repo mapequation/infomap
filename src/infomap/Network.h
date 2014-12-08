@@ -142,7 +142,7 @@ public:
 	 */
 	void finalizeAndCheckNetwork(unsigned int desiredNumberOfNodes = 0);
 
-	void printParsingResult();
+	void printParsingResult(bool onlySummary = false);
 
 	std::string getParsingResultSummary();
 

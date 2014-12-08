@@ -617,9 +617,15 @@ void Network::initNodeDegrees()
 	}
 }
 
-void Network::printParsingResult()
+void Network::printParsingResult(bool onlySummary)
 {
 	bool dataModified = m_numNodesFound != m_numNodes || m_numLinksFound != m_numLinks;
+
+	if (onlySummary)
+	{
+		std::cout << " ==> " << getParsingResultSummary() << '\n';
+		return;
+	}
 
 	if (!dataModified)
 		std::cout << "\n ==> " << getParsingResultSummary();
