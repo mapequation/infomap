@@ -876,30 +876,49 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 	verbose = m_subLevel == 0;
 //	verbose = m_subLevel == 0 || (m_subLevel == 1 && m_config.verbosity > 2);
 
-	if ((*m_treeData.begin_leaf())->parent != root())
+	bool initiatedWithModules = haveModules();
+	if (initiatedWithModules)
 	{
-		RELEASE_OUT("Already partitioned with codelength " << indexCodelength << " + " << moduleCodelength << " = " << codelength <<
-				" in " << numTopModules() << " modules." << std::endl);
-		return;
+		// Delete possible sub-modules and move nodes into current modular structure
+		deleteSubLevels();
+		unsigned int i = 0;
+		for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
+				moduleIt != endIt; ++moduleIt, ++i)
+		{
+			moduleIt->index = i;
+		}
+		i = 0;
+		setActiveNetworkFromLeafs();
+		for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()), endIt(m_treeData.end_leaf());
+				leafIt != endIt; ++leafIt, ++i)
+		{
+			m_moveTo[i] = (*leafIt)->parent->index;
+		}
+
+		initConstantInfomapTerms();
+		initModuleOptimization();
+		moveNodesToPredefinedModules();
+	}
+	else
+	{
+		setActiveNetworkFromLeafs();
+		initConstantInfomapTerms();
+		initModuleOptimization();
 	}
 
 	m_tuneIterationIndex = 0;
 
-	setActiveNetworkFromChildrenOfRoot();
-	initConstantInfomapTerms();
-	initModuleOptimization();
-
 	if (verbose)
 	{
+		RELEASE_OUT("Initiated to codelength " << indexCodelength << " + " << moduleCodelength << " = " <<
+				io::toPrecision(codelength) << " in " << numTopModules() << " modules.\n");
 		if (m_config.verbosity == 0)
 		{
 			RELEASE_OUT("Two-level compression: " << std::setprecision(2) << std::flush);
 		}
 		else
 		{
-			RELEASE_OUT("\nTrying to find modular structure... \n");
-			RELEASE_OUT("Initiated to codelength " << indexCodelength << " + " << moduleCodelength << " = " <<
-					codelength << " in " << numTopModules() << " modules." << std::endl);
+			RELEASE_OUT("Trying to find modular structure... \n");
 		}
 		if (m_config.benchmark)
 			Logger::benchmark("init", codelength, numTopModules(), numNonTrivialTopModules(), 2);
@@ -962,7 +981,7 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 	{
 		if (m_config.verbosity == 0)
 			RELEASE_OUT("to " << numTopModules() << " modules with codelength " <<
-					io::toPrecision(codelength) << std::endl);
+					std::setprecision(6) << io::toPrecision(codelength) << std::endl);
 		else
 		{
 			RELEASE_OUT("Two-level codelength: " << indexCodelength << " + " << moduleCodelength << " = " <<
