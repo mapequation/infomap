@@ -144,14 +144,14 @@ template<typename T>
 inline bool stringToValue(std::string const& str, T& value)
 {
 	std::istringstream istream(str);
-	return istream >> value;
+	return !!(istream >> value);
 }
 
 template<>
 inline bool stringToValue<bool>(std::string const& str, bool& value)
 {
 	std::istringstream istream(str);
-	return istream >> value;
+	return !!(istream >> value);
 }
 
 template<typename T>
