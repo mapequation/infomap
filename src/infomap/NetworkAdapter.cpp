@@ -137,7 +137,7 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 		if (!getline(ss, name, '"'))
 			throw BadConversionError(io::Str() << "Can't parse node name from line " << lineNr << " ('" << line << "').");
 		unsigned int originalIndex = 0;
-		gotOriginalIndex = (ss >> originalIndex);
+		gotOriginalIndex = !!(ss >> originalIndex);
 
 		// Analyze the path and build up the tree
 		ss.clear(); // Clear the eofbit from last extraction!
