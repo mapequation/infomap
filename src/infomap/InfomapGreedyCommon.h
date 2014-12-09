@@ -435,8 +435,14 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 		if (!current.dirty)
 			continue;
 
+		// Don't move out from previous merge on first loop
 		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop())
 			continue;
+
+		// Don't decrease the number of modules if already equal the preferred number
+		if (Super::isTopLevel() && Super::numActiveModules() == m_config.preferredNumberOfModules && Super::m_moduleMembers[current.index] == 1)
+			continue;
+
 
 		// If no links connecting this node with other nodes, it won't move into others,
 		// and others won't move into this. TODO: Always best leave it alone?
@@ -518,8 +524,9 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 		// Empty function if no teleportation coding model
 		Super::template addTeleportationDeltaFlowIfMove<DeltaFlowType>(current, moduleDeltaEnterExit, numModuleLinks);
 
-		// Option to move to empty module (if node not already alone)
-		if (Super::m_moduleMembers[current.index] > 1 && Super::m_emptyModules.size() > 0)
+		// Option to move to empty module (if node not already alone, and not already at the preferred number of modules)
+		if (Super::m_moduleMembers[current.index] > 1 && Super::m_emptyModules.size() > 0 &&
+				(m_config.preferredNumberOfModules == 0 || (Super::isTopLevel() && Super::numActiveModules() != m_config.preferredNumberOfModules)))
 		{
 			moduleDeltaEnterExit[numModuleLinks] = DeltaFlowType(Super::m_emptyModules.back(), 0.0, 0.0);
 			++numModuleLinks;

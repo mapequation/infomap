@@ -49,6 +49,7 @@ struct Config
 		ignoreEdgeWeights(false),
 		nodeLimit(0),
 	 	clusterDataFile(""),
+		preferredNumberOfModules(0),
 	 	noInfomap(false),
 	 	twoLevel(false),
 		directed(false),
@@ -110,6 +111,7 @@ struct Config
 		ignoreEdgeWeights(other.ignoreEdgeWeights),
 		nodeLimit(other.nodeLimit),
 	 	clusterDataFile(other.clusterDataFile),
+		preferredNumberOfModules(other.preferredNumberOfModules),
 	 	noInfomap(other.noInfomap),
 	 	twoLevel(other.twoLevel),
 		directed(other.directed),
@@ -172,6 +174,7 @@ struct Config
 		ignoreEdgeWeights = other.ignoreEdgeWeights;
 		nodeLimit = other.nodeLimit;
 	 	clusterDataFile = other.clusterDataFile;
+	 	preferredNumberOfModules = other.preferredNumberOfModules;
 	 	noInfomap = other.noInfomap;
 	 	twoLevel = other.twoLevel;
 		directed = other.directed;
@@ -343,6 +346,7 @@ struct Config
 	bool ignoreEdgeWeights;
 	unsigned int nodeLimit;
 	std::string clusterDataFile;
+	unsigned int preferredNumberOfModules;
 	bool noInfomap;
 
 	// Core algorithm

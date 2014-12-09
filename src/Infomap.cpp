@@ -87,6 +87,9 @@ std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 	api.addOptionArgument(conf.clusterDataFile, 'c', "cluster-data",
 			"Provide an initial two-level solution (.clu format).", "p", true);
 
+	api.addOptionArgument(conf.preferredNumberOfModules, "preferred-number-of-modules",
+			"Merge nodes until preferred number of modules.", "n", true);
+
 	api.addOptionArgument(conf.noInfomap, "no-infomap",
 			"Don't run Infomap. Useful if initial cluster data should be preserved or non-modular data printed.", true);
 
