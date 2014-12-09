@@ -130,7 +130,7 @@ void ProgramInterface::exitWithError(std::string message)
 	std::exit(1);
 }
 
-void ProgramInterface::parseArgs(int argc, char** argv)
+void ProgramInterface::parseArgs(unsigned int argc, char** argv)
 {
 	std::ostringstream ss;
 	for (unsigned int i = 0; i < argc; ++i)
