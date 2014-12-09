@@ -62,7 +62,8 @@ public:
 	 	hierarchicalCodelength(0.0),
 		bestHierarchicalCodelength(std::numeric_limits<double>::max()),
 	 	bestIntermediateCodelength(std::numeric_limits<double>::max()),
-		m_ioNetwork(conf)
+		m_ioNetwork(conf),
+		m_initialMaxNumberOfModularLevels(0)
 	{}
 
 	virtual ~InfomapBase()
@@ -293,6 +294,7 @@ protected:
 	double bestIntermediateCodelength;
 	std::ostringstream bestIntermediateStatistics;
 	HierarchicalNetwork m_ioNetwork;
+	unsigned int m_initialMaxNumberOfModularLevels;
 
 };
 

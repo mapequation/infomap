@@ -225,11 +225,17 @@ public:
 
 	void releaseChildren();
 
-	void replaceWithChildren();
+	/**
+	 * @return 1 if the node is removed, otherwise 0
+	 */
+	unsigned int replaceWithChildren();
 
 	void replaceWithChildrenDebug();
 
-	void replaceChildrenWithGrandChildren();
+	/**
+	 * @return The number of children removed
+	 */
+	unsigned int replaceChildrenWithGrandChildren();
 
 	void replaceChildrenWithGrandChildrenDebug();
 
@@ -365,26 +371,28 @@ void NodeBase::remove(bool removeChildren)
 }
 
 inline
-void NodeBase::replaceChildrenWithGrandChildren()
+unsigned int NodeBase::replaceChildrenWithGrandChildren()
 {
 	if (firstChild == 0)
-		return;
+		return 0;
 	NodeBase::sibling_iterator nodeIt = begin_child();
 	unsigned int numOriginalChildrenLeft = m_childDegree;
+	unsigned int numChildrenReplaced = 0;
 	do
 	{
 		NodeBase* n = nodeIt.base();
 		++nodeIt;
-		n->replaceWithChildren();
+		numChildrenReplaced += n->replaceWithChildren();
 	}
 	while (--numOriginalChildrenLeft != 0);
+	return numChildrenReplaced;
 }
 
 inline
-void NodeBase::replaceWithChildren()
+unsigned int NodeBase::replaceWithChildren()
 {
 	if (isLeaf() || isRoot())
-		return;
+		return 0;
 
 	// Reparent children
 	unsigned int deltaChildDegree = 0;
@@ -417,6 +425,7 @@ void NodeBase::replaceWithChildren()
 	previous = 0;
 	parent = 0;
 	delete this;
+	return 1;
 }
 
 inline

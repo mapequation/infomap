@@ -192,6 +192,12 @@ void InfomapBase::calcOneLevelCodelength()
 
 void InfomapBase::runPartition()
 {
+	if (m_config.tuneExternalSolution && haveModules())
+	{
+
+		return;
+	}
+
 	if (m_config.twoLevel)
 	{
 		partition();
@@ -680,30 +686,27 @@ unsigned int InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partit
 
 unsigned int InfomapBase::deleteSubLevels()
 {
-	NodeBase* node = *m_treeData.begin_leaf();
-	unsigned int numLevels = 0;
-	while (node = node->parent, node != 0)
-	{
-		++numLevels;
-	}
-
-	if (numLevels <= 1)
+	if (!haveModules())
 		return 0;
 
-	if (m_subLevel == 0 && m_config.verbosity > 0)
-	{
-		RELEASE_OUT("Clearing " << (numLevels-1) << " levels of sub-modules");
-	}
-
-	// Clear all sub-modules
+	// Clear all possible sub-modules
+	unsigned int numSubModulesRemoved = 0;
+	unsigned int maxNumLevelsRemoved = 0;
 	for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
 			moduleIt != endIt; ++moduleIt)
 	{
-		for (unsigned int i = numLevels - 1; i != 0; --i)
+		unsigned int numLevelsRemoved = 0;
+		while (!moduleIt->isLeafModule())
 		{
-			moduleIt->replaceChildrenWithGrandChildren();
+			numSubModulesRemoved += moduleIt->replaceChildrenWithGrandChildren();
+			if (numSubModulesRemoved > 0)
+				++numLevelsRemoved;
 		}
+		maxNumLevelsRemoved = std::max(maxNumLevelsRemoved, numLevelsRemoved);
 	}
+
+	if (numSubModulesRemoved == 0)
+		return 0;
 
 	// Reset to leaf-level codelength terms
 	setActiveNetworkFromLeafs();
@@ -722,14 +725,13 @@ unsigned int InfomapBase::deleteSubLevels()
 
 	if (m_subLevel == 0)
 	{
-		if (m_config.verbosity == 0)
-			RELEASE_OUT("Clearing sub-modules to codelength " << codelength << "\n");
-		else
-			RELEASE_OUT("done! Two-level codelength " << indexCodelength << " + " << moduleCodelength <<
-					" = " << codelength << " in " << numTopModules() << " modules." << std::endl);
+		RELEASE_OUT("Cleared " << numSubModulesRemoved << " sub-modules in " << maxNumLevelsRemoved <<
+				io::toPlural(" level", maxNumLevelsRemoved) << " to codelength " << indexCodelength <<
+				" + " << moduleCodelength << " = " << io::toPrecision(codelength) << " in " <<
+				numTopModules() << " modules." << std::endl);
 	}
 
-	return numLevels-1;
+	return maxNumLevelsRemoved;
 }
 
 bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevelQueue, bool tryIndexing)
@@ -1608,6 +1610,8 @@ bool InfomapBase::consolidateExternalClusterData(bool printResults)
 		return false;
 
 	unsigned int numLevels = aggregateFlowValuesFromLeafToRoot();
+
+	m_initialMaxNumberOfModularLevels = numLevels - 1;
 
 	hierarchicalCodelength = codelength = calcCodelengthOnAllNodesInTree();
 
