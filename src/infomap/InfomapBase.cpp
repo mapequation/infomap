@@ -210,7 +210,8 @@ void InfomapBase::runPartition()
 	{
 		if (m_config.fastHierarchicalSolution <= 1)
 		{
-			deleteSubLevels();
+//			deleteSubLevels();
+			partition();
 			queueTopModules(partitionQueue);
 		}
 		else
