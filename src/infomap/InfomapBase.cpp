@@ -192,12 +192,6 @@ void InfomapBase::calcOneLevelCodelength()
 
 void InfomapBase::runPartition()
 {
-	if (m_config.tuneExternalSolution && haveModules())
-	{
-
-		return;
-	}
-
 	if (m_config.twoLevel)
 	{
 		partition();
@@ -941,7 +935,7 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 	{
 		unsigned int coarseTuneLevel = m_config.coarseTuneLevel - 1;
 		bool doFineTune = true;
-//		bool coarseTuned = false;
+		bool coarseTuned = false;
 		oldCodelength = codelength;
 		while (numTopModules() > 1)
 		{
@@ -949,7 +943,7 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 			if (doFineTune)
 			{
 				fineTune();
-				if (//coarseTuned &&
+				if (coarseTuned &&
 						(codelength > oldCodelength - initialCodelength*m_config.minimumRelativeTuneIterationImprovement ||
 								codelength > oldCodelength - m_config.minimumCodelengthImprovement))
 					break;
@@ -962,10 +956,10 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 			{
 				coarseTune(m_config.alternateCoarseTuneLevel ? (++coarseTuneLevel % m_config.coarseTuneLevel) :
 						m_config.coarseTuneLevel - 1);
+				coarseTuned = true;
 				if (codelength > oldCodelength - initialCodelength*m_config.minimumRelativeTuneIterationImprovement ||
 						codelength > oldCodelength - m_config.minimumCodelengthImprovement)
 					break;
-//				coarseTuned = true;
 				compression = (oldCodelength - codelength)/oldCodelength;
 				if (verbose && m_config.verbosity == 0)
 					RELEASE_OUT((compression * 100) << "% " << std::flush);
