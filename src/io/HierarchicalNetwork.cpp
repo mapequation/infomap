@@ -240,8 +240,10 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bool writeHierarchicalNetworkEdges)
 {
 	SafeOutFile out(fileName.c_str());
-	out << "# '" << m_infomapOptions << "' -> " << m_numLeafNodes << " nodes and " <<
-			m_numLeafEdges << " links in " << m_maxDepth << " levels with codelength " <<
+	out << "# '" << m_infomapOptions << "' -> " << m_numLeafNodes << " nodes ";
+	if (m_numLeafEdges > 0)
+		out << "and " << m_numLeafEdges << " links ";
+	out << "in " << m_maxDepth << " levels with codelength " <<
 			io::toPrecision(m_codelength, 9, true) << " in " <<	m_config.elapsedTime() << "\n";
 
 	writeHumanReadableTreeRecursiveHelper(out, m_rootNode);
