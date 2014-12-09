@@ -210,8 +210,14 @@ void InfomapBase::runPartition()
 	{
 		if (m_config.fastHierarchicalSolution <= 1)
 		{
-//			deleteSubLevels();
+			// Try to tune existing solution before hierarchical algorithm
 			partition();
+			hierarchicalCodelength = codelength;
+			for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
+					moduleIt != endIt; ++moduleIt)
+			{
+				moduleIt->codelength = calcCodelengthOnModuleOfLeafNodes(*moduleIt);
+			}
 			queueTopModules(partitionQueue);
 		}
 		else
@@ -263,7 +269,7 @@ void InfomapBase::runPartition()
 	{
 		RELEASE_OUT("Current codelength: " << indexCodelength << " + " <<
 					(hierarchicalCodelength - indexCodelength) << " = " <<
-					io::toPrecision(hierarchicalCodelength) << "\n");
+					io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " modules\n");
 		RELEASE_OUT("\nTrying to find deeper structure under current modules recursively... \n");
 	}
 
