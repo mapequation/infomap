@@ -87,9 +87,6 @@ std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 	api.addOptionArgument(conf.clusterDataFile, 'c', "cluster-data",
 			"Provide an initial two-level solution (.clu format).", "p", true);
 
-	api.addOptionArgument(conf.preferredNumberOfModules, "preferred-number-of-modules",
-			"Stop merge or split modules if preferred number of modules is reached.", "n", true);
-
 	api.addOptionArgument(conf.noInfomap, "no-infomap",
 			"Don't run Infomap. Useful if initial cluster data should be preserved or non-modular data printed.", true);
 
@@ -158,6 +155,12 @@ std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 
 	api.addOptionArgument(conf.selfTeleportationProbability, 'y', "self-link-teleportation-probability",
 			"Additional probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", "f", true);
+
+	api.addOptionArgument(conf.codeRate, "code-rate",
+			"Scale link flow with this value to change the cost of moving between modules. Higher for less modules.", "f", true);
+
+	api.addOptionArgument(conf.preferredNumberOfModules, "preferred-number-of-modules",
+			"Stop merge or split modules if preferred number of modules is reached.", "n", true);
 
 	api.addOptionArgument(conf.multiplexRelaxRate, "multiplex-relax-rate",
 			"The probability to relax the constraint to move only in the current layer. If negative, the inter-links have to be provided.", "f", true);

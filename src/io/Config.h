@@ -49,7 +49,6 @@ struct Config
 		ignoreEdgeWeights(false),
 		nodeLimit(0),
 	 	clusterDataFile(""),
-		preferredNumberOfModules(0),
 	 	noInfomap(false),
 	 	twoLevel(false),
 		directed(false),
@@ -60,6 +59,8 @@ struct Config
 		teleportToNodes(false),
 		teleportationProbability(0.15),
 		selfTeleportationProbability(-1),
+		codeRate(1.0),
+		preferredNumberOfModules(0),
 		multiplexRelaxRate(-1),
 		seedToRandomNumberGenerator(123),
 		numTrials(1),
@@ -111,7 +112,6 @@ struct Config
 		ignoreEdgeWeights(other.ignoreEdgeWeights),
 		nodeLimit(other.nodeLimit),
 	 	clusterDataFile(other.clusterDataFile),
-		preferredNumberOfModules(other.preferredNumberOfModules),
 	 	noInfomap(other.noInfomap),
 	 	twoLevel(other.twoLevel),
 		directed(other.directed),
@@ -122,6 +122,8 @@ struct Config
 		teleportToNodes(other.teleportToNodes),
 		teleportationProbability(other.teleportationProbability),
 		selfTeleportationProbability(other.selfTeleportationProbability),
+		codeRate(other.codeRate),
+		preferredNumberOfModules(other.preferredNumberOfModules),
 		multiplexRelaxRate(other.multiplexRelaxRate),
 		seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
 		numTrials(other.numTrials),
@@ -174,7 +176,6 @@ struct Config
 		ignoreEdgeWeights = other.ignoreEdgeWeights;
 		nodeLimit = other.nodeLimit;
 	 	clusterDataFile = other.clusterDataFile;
-	 	preferredNumberOfModules = other.preferredNumberOfModules;
 	 	noInfomap = other.noInfomap;
 	 	twoLevel = other.twoLevel;
 		directed = other.directed;
@@ -185,6 +186,8 @@ struct Config
 		teleportToNodes = other.teleportToNodes;
 		teleportationProbability = other.teleportationProbability;
 		selfTeleportationProbability = other.selfTeleportationProbability;
+	 	codeRate = other.codeRate;
+	 	preferredNumberOfModules = other.preferredNumberOfModules;
 		multiplexRelaxRate = other.multiplexRelaxRate;
 		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
 		numTrials = other.numTrials;
@@ -346,7 +349,6 @@ struct Config
 	bool ignoreEdgeWeights;
 	unsigned int nodeLimit;
 	std::string clusterDataFile;
-	unsigned int preferredNumberOfModules;
 	bool noInfomap;
 
 	// Core algorithm
@@ -359,6 +361,8 @@ struct Config
 	bool teleportToNodes;
 	double teleportationProbability;
 	double selfTeleportationProbability;
+	double codeRate;
+	unsigned int preferredNumberOfModules;
 	double multiplexRelaxRate;
 	unsigned long seedToRandomNumberGenerator;
 
