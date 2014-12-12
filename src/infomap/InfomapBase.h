@@ -217,6 +217,9 @@ protected:
 	bool isFullNetwork() { return m_subLevel == 0 && m_aggregationLevel == 0; }
 	bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 	bool haveModules() { return !m_treeData.root()->firstChild->isLeaf(); }
+	bool haveSubModules() { return haveModules() && !m_treeData.root()->firstChild->firstChild->isLeaf(); }
+
+	bool useHardPartitions() { return m_config.isMemoryNetwork() && m_config.hardPartitions && m_subLevel == 0; }
 
 	unsigned int getLevelAggregationLimit() {
 		return (m_config.fastFirstIteration && isFirstLoop()) ? 1 : m_config.levelAggregationLimit;
@@ -242,7 +245,7 @@ private:
 	void partition(unsigned int recursiveCount = 0, bool fast = false, bool forceConsolidation = true);
 	void mergeAndConsolidateRepeatedly(bool forceConsolidation = false, bool fast = false);
 	void generalTune(unsigned int level);
-	void fineTune();
+	void fineTune(bool leafLevel = true);
 	void coarseTune(unsigned int recursiveCount = 0);
 	/**
 	 * For each module, create a new infomap instance and clone the interior structure of the module
@@ -254,6 +257,7 @@ private:
 	void initSubNetwork(NodeBase& parent, bool recalculateFlow = false);
 	void initSuperNetwork(NodeBase& parent);
 	void setActiveNetworkFromChildrenOfRoot();
+	void setActiveNetworkFromLeafModules();
 	void setActiveNetworkFromLeafs();
 	void initMemoryNetwork();
 	void initNodeNames(Network& network);
@@ -261,7 +265,7 @@ private:
 	void printNetworkData(std::string filename = "", bool sort = true);
 	void printHierarchicalData(std::string filename = "");
 	virtual void printClusterNumbers(std::ostream& out);
-	void printTree(std::ostream& out, const NodeBase& root, const std::string& prefix = "");
+	void printTreeLevelSizes(std::ostream& out, std::string heading = "");
 	unsigned int printPerLevelCodelength(std::ostream& out);
 	void aggregatePerLevelCodelength(std::vector<PerLevelStat>& perLevelStat, unsigned int level = 0);
 	void aggregatePerLevelCodelength(NodeBase& root, std::vector<PerLevelStat>& perLevelStat, unsigned int level);

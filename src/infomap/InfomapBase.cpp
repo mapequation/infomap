@@ -923,6 +923,27 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 
 	double initialCodelength = codelength;
 
+	if (useHardPartitions())
+	{
+		std::cout << "Move " << numLeafNodes() << " memory nodes into physical node structure... ";
+		// Move memory nodes into their physical nodes
+		unsigned int i = 0;
+		for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()), endIt(m_treeData.end_leaf());
+				leafIt != endIt; ++leafIt, ++i)
+		{
+			m_moveTo[i] = getMemoryNode(**leafIt).physIndex;
+		}
+
+		moveNodesToPredefinedModules();
+		consolidateModules();
+
+		std::cout << "done! Codelength: " << io::toPrecision(codelength) << " in " << numTopModules() << " modules\n";
+
+		setActiveNetworkFromChildrenOfRoot();
+		initModuleOptimization();
+	}
+
+	// First optimization iteration
 	mergeAndConsolidateRepeatedly(forceConsolidation, fast);
 
 	if (codelength > initialCodelength)
@@ -938,6 +959,7 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 	{
 		unsigned int coarseTuneLevel = m_config.coarseTuneLevel - 1;
 		bool doFineTune = true;
+		bool fineTuneLeafNodes = !useHardPartitions();
 		bool coarseTuned = false;
 		oldCodelength = codelength;
 		while (numTopModules() > 1)
@@ -945,7 +967,7 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 			++m_tuneIterationIndex;
 			if (doFineTune)
 			{
-				fineTune();
+				fineTune(fineTuneLeafNodes);
 				if (coarseTuned &&
 						(codelength > oldCodelength - initialCodelength*m_config.minimumRelativeTuneIterationImprovement ||
 								codelength > oldCodelength - m_config.minimumCodelengthImprovement))
@@ -1032,7 +1054,8 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 		RELEASE_OUT(numOptimizationLoops << ", " << std::flush);
 
 	// Force create modules even if worse (don't mix modules and leaf nodes under the same parent)
-	consolidateModules();
+	bool replaceExistingModules = !useHardPartitions();
+	consolidateModules(replaceExistingModules);
 
 	unsigned int numLevelsConsolidated = 1;
 	unsigned int levelAggregationLimit = getLevelAggregationLimit();
@@ -1117,19 +1140,33 @@ void InfomapBase::generalTune(unsigned int level)
 
 }
 
-void InfomapBase::fineTune()
+void InfomapBase::fineTune(bool leafLevel)
 {
-	DEBUG_OUT("InfomapBase::fineTune(" << *root() << ")..." << std::endl);
-	setActiveNetworkFromLeafs();
+	if (!leafLevel && !haveSubModules())
+		leafLevel = true;
 
-	// Init dynamic modules from existing modular structure
-	ASSERT(m_activeNetwork[0]->parent->parent == root());
-	unsigned int i = 0;
-	for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()), endIt(m_treeData.end_leaf());
-			leafIt != endIt; ++leafIt, ++i)
+	if(leafLevel)
 	{
-		m_moveTo[i] = (*leafIt)->parent->index;
-		ASSERT(m_moveTo[i] < m_activeNetwork.size());
+		setActiveNetworkFromLeafs();
+
+		// Init dynamic modules from existing modular structure
+		ASSERT(m_activeNetwork[0]->parent->parent == root());
+		unsigned int i = 0;
+		for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()), endIt(m_treeData.end_leaf());
+				leafIt != endIt; ++leafIt, ++i)
+		{
+			m_moveTo[i] = (*leafIt)->parent->index;
+			ASSERT(m_moveTo[i] < m_activeNetwork.size());
+		}
+	}
+	else
+	{
+		setActiveNetworkFromLeafModules();
+		m_moveTo.resize(m_activeNetwork.size());
+		for (unsigned int i = 0; i < m_activeNetwork.size(); ++i)
+		{
+			m_moveTo[i] = m_activeNetwork[i]->parent->index;
+		}
 	}
 
 	initModuleOptimization();
@@ -1157,7 +1194,6 @@ void InfomapBase::fineTune()
  */
 void InfomapBase::coarseTune(unsigned int recursiveCount)
 {
-	DEBUG_OUT("InfomapBase::coarseTune(" << *root() << ")..." << std::endl);
 	if (numTopModules() == 1)
 		return;
 
@@ -1167,20 +1203,40 @@ void InfomapBase::coarseTune(unsigned int recursiveCount)
 	else
 		partitionEachModule(recursiveCount, m_config.fastCoarseTunePartition);
 
-	// Prepare leaf network to move into the sub-module structure given from partitioning each module
-	setActiveNetworkFromLeafs();
+	bool keepLeafModules = useHardPartitions();
 	unsigned int i = 0;
-	for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()), endIt(m_treeData.end_leaf());
-			leafIt != endIt; ++leafIt, ++i)
+	if (keepLeafModules)
 	{
-		m_moveTo[i] = (*leafIt)->index;
-		ASSERT(m_moveTo[i] < m_activeNetwork.size());
+		setActiveNetworkFromLeafModules();
+		for (unsigned int i = 0; i < m_activeNetwork.size(); ++i)
+			m_moveTo[i] = m_activeNetwork[i]->index;
+	}
+	else
+	{
+		// Prepare leaf network to move into the sub-module structure given from partitioning each module
+		setActiveNetworkFromLeafs();
+		for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()), endIt(m_treeData.end_leaf());
+				leafIt != endIt; ++leafIt, ++i)
+		{
+			m_moveTo[i] = (*leafIt)->index;
+			ASSERT(m_moveTo[i] < m_activeNetwork.size());
+		}
 	}
 
 	initModuleOptimization();
 	moveNodesToPredefinedModules();
-	// Consolidate the sub-modules and store the current module structure in the sub-modules before replacing it
-	consolidateModules(true, true);
+	if (keepLeafModules)
+	{
+		// Don't replace leaf modules
+		consolidateModules(false, true);
+		// Replace top-modules with coarse-tune modules
+		root()->replaceChildrenWithGrandChildren();
+	}
+	else
+	{
+		// Replace the module level with the sub-module level and store the module level structure on the sub-modules
+		consolidateModules(true, true);
+	}
 
 	// Prepare the sub-modules to move into the former module structure and begin optimization from there
 	setActiveNetworkFromChildrenOfRoot();
@@ -1199,6 +1255,16 @@ void InfomapBase::coarseTune(unsigned int recursiveCount)
 
 	mergeAndConsolidateRepeatedly(true);
 	m_isCoarseTune = false;
+
+	// TODO: don't keep initial structure in mergeAndConsolidateRepeatedly if already having sub-modules
+	if (keepLeafModules)
+	{
+		for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
+				moduleIt != endIt; ++moduleIt)
+		{
+			moduleIt->replaceChildrenWithGrandChildren();
+		}
+	}
 }
 
 void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)
@@ -1606,6 +1672,20 @@ void InfomapBase::setActiveNetworkFromChildrenOfRoot()
 	DEBUG_OUT("done!\n");
 }
 
+void InfomapBase::setActiveNetworkFromLeafModules()
+{
+	unsigned int numNodes = 0;
+	for (NodeBase::leaf_module_iterator leafModuleIt(root()); !leafModuleIt.isEnd(); ++leafModuleIt)
+		++numNodes;
+	m_activeNetwork = m_nonLeafActiveNetwork;
+	m_activeNetwork.resize(numNodes);
+	unsigned int i = 0;
+	for (NodeBase::leaf_module_iterator leafModuleIt(root()); !leafModuleIt.isEnd(); ++leafModuleIt, ++i)
+	{
+		m_activeNetwork[i] = leafModuleIt.base();
+	}
+}
+
 void InfomapBase::setActiveNetworkFromLeafs()
 {
 	DEBUG_OUT("InfomapBase::setActiveNetworkFromLeafs(), numNodes: " << m_treeData.numLeafNodes() << std::endl);
@@ -1791,6 +1871,20 @@ void InfomapBase::printClusterNumbers(std::ostream& out)
 		unsigned int index = (*it)->parent->index;
 		out <<  (index + 1) << "\n";
 	}
+}
+
+void InfomapBase::printTreeLevelSizes(std::ostream& out, std::string heading)
+{
+	std::cout << heading << std::endl;
+	std::map<unsigned int, unsigned int> levelMap;
+	for (NodeBase::pre_depth_first_iterator it(root()); !it.isEnd(); ++it) {
+		++levelMap[it.depth()];
+	}
+
+	for (std::map<unsigned int, unsigned int>::iterator it(levelMap.begin()); it != levelMap.end(); ++it) {
+		std::cout << "[Level " << it->first << "]: " << it->second << "\n";
+	}
+	std::cout << std::flush;
 }
 
 

@@ -42,6 +42,7 @@ struct Config
 		networkFile(""),
 	 	inputFormat(""),
 	 	withMemory(false),
+		hardPartitions(false),
 	 	nonBacktracking(false),
 	 	parseWithoutIOStreams(false),
 		zeroBasedNodeNumbers(false),
@@ -105,6 +106,7 @@ struct Config
 	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
 	 	withMemory(other.withMemory),
+		hardPartitions(other.hardPartitions),
 	 	nonBacktracking(other.nonBacktracking),
 	 	parseWithoutIOStreams(other.parseWithoutIOStreams),
 		zeroBasedNodeNumbers(other.zeroBasedNodeNumbers),
@@ -169,6 +171,7 @@ struct Config
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
 	 	withMemory = other.withMemory;
+	 	hardPartitions = other.hardPartitions;
 	 	nonBacktracking = other.nonBacktracking;
 	 	parseWithoutIOStreams = other.parseWithoutIOStreams;
 		zeroBasedNodeNumbers = other.zeroBasedNodeNumbers;
@@ -342,6 +345,7 @@ struct Config
 	std::vector<std::string> additionalInput;
 	std::string inputFormat; // 'pajek', 'link-list', '3gram' or 'multiplex'
 	bool withMemory;
+	bool hardPartitions;
 	bool nonBacktracking;
 	bool parseWithoutIOStreams;
 	bool zeroBasedNodeNumbers;

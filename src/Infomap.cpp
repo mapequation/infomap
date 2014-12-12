@@ -69,6 +69,9 @@ std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 	api.addOptionArgument(conf.withMemory, "overlapping",
 			"Let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the memoryless dynamics with memory nodes.");
 
+	api.addOptionArgument(conf.hardPartitions, "hard-partitions",
+			"Don't allow overlapping modules in memory networks by keeping the memory nodes constrained into their physical nodes.");
+
 	api.addOptionArgument(conf.nonBacktracking, "non-backtracking",
 			"Use non-backtracking dynamics and let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the non-backtracking dynamics with memory nodes.", true);
 
