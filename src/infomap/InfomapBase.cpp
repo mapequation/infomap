@@ -104,14 +104,7 @@ void InfomapBase::run()
 
 		if (oneLevelCodelength < hierarchicalCodelength - m_config.minimumCodelengthImprovement)
 		{
-			std::cout << "No improvement in modular solution, reverting to one-level solution with codelength " << oneLevelCodelength << ".\n";
-			// Clear existing modular structure
-			while ((*m_treeData.begin_leaf())->parent != root())
-			{
-				root()->replaceChildrenWithGrandChildren();
-			}
-			hierarchicalCodelength = codelength = moduleCodelength = oneLevelCodelength;
-			indexCodelength = 0.0;
+			std::cout << "Warning: No codelength improvement in modular solution over one-level solution!\n";
 		}
 
 		codelengths[iTrial] = hierarchicalCodelength;
@@ -154,7 +147,10 @@ void InfomapBase::run()
 		std::cout << bestIntermediateStatistics.str() << std::endl << std::endl;
 	}
 
-	std::cout << "Best end solution in " << bestNumLevels << " levels:" << std::endl;
+	std::cout << "Best end modular solution in " << bestNumLevels << " levels";
+	if (bestHierarchicalCodelength > oneLevelCodelength)
+		std::cout << " (warning: worse than one-level solution)";
+	std::cout << ":" << std::endl;
 	std::cout << bestSolutionStatistics.str() << std::endl;
 
 //	printNetworkDebug("debug", true, false);
@@ -1647,7 +1643,7 @@ bool InfomapBase::consolidateExternalClusterData(bool printResults)
 
 	if (oneLevelCodelength < hierarchicalCodelength - m_config.minimumCodelengthImprovement)
 	{
-		std::cout << "\n -> Warning: No improvement in modular solution over one-level solution!";
+		std::cout << "\n -> Warning: No improvement in modular solution over one-level solution.";
 	}
 
 	printNetworkData();
