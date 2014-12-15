@@ -34,6 +34,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#include <set>
 using std::make_pair;
 
 void MemNetwork::readInputData(std::string filename)
@@ -624,10 +625,12 @@ void MemNetwork::finalizeAndCheckNetwork()
 	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
 		std::cout << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.) ";
 
+	addMissingPhysicalNodes();
 
 	m_m2NodeWeights.resize(m_m2Nodes.size());
 	m_totM2NodeWeight = 0.0;
 	unsigned int m2NodeIndex = 0;
+	std::vector<unsigned int> existingPhysicalNodes(m_numNodes);
 	for(std::map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it, ++m2NodeIndex)
 	{
 		m_m2NodeMap[it->first] = m2NodeIndex;
@@ -636,6 +639,25 @@ void MemNetwork::finalizeAndCheckNetwork()
 	}
 
 	initNodeDegrees();
+}
+
+unsigned int MemNetwork::addMissingPhysicalNodes()
+{
+	std::vector<unsigned int> existingPhysicalNodes(m_numNodes);
+	for(std::map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
+	{
+		++existingPhysicalNodes[it->first.physIndex];
+	}
+	unsigned int numMissingPhysicalNodes = 0;
+	for (unsigned int i = 0; i < m_numNodes; ++i)
+	{
+		if (existingPhysicalNodes[i] == 0)
+		{
+			++numMissingPhysicalNodes;
+			addM2Node(i, i, 0.0);
+		}
+	}
+	return numMissingPhysicalNodes;
 }
 
 void MemNetwork::initNodeDegrees()

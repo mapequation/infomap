@@ -256,6 +256,8 @@ protected:
 
 	virtual void finalizeAndCheckNetwork();
 
+	unsigned int addMissingPhysicalNodes();
+
 	virtual void initNodeDegrees();
 
 	virtual void printParsingResult(bool includeFirstOrderData = false);
