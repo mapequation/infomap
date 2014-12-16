@@ -105,7 +105,7 @@ protected:
 	 */
 	void parseMultiplexLink(const std::string& line, unsigned int& node, unsigned int& level1, unsigned int& level2, unsigned int& node2, double& weight);
 
-	virtual void finalizeAndCheckNetwork();
+	virtual void finalizeAndCheckNetwork(bool printSummary = true);
 
 	// Member variables
 

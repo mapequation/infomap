@@ -125,13 +125,15 @@ public:
 
 	virtual ~Network() {}
 
+	void setConfig(const Config& config) { m_config = config; }
+
 	virtual void readInputData(std::string filename = "");
 
 	/**
 	 * Add a weighted link between two nodes.
 	 * @return true if a new link was inserted, false if skipped due to cutoff limit or aggregated to existing link
 	 */
-	bool addLink(unsigned int n1, unsigned int n2, double weight);
+	bool addLink(unsigned int n1, unsigned int n2, double weight = 1.0);
 
 	/**
 	 * Run after adding links to check for non-feasible values and set the
@@ -140,13 +142,13 @@ public:
 	 * zero to set it automatically to match the highest node number defined on
 	 * the links.
 	 */
-	void finalizeAndCheckNetwork(unsigned int desiredNumberOfNodes = 0);
+	void finalizeAndCheckNetwork(bool printSummary = true, unsigned int desiredNumberOfNodes = 0);
 
 	void printParsingResult(bool onlySummary = false);
 
 	std::string getParsingResultSummary();
 
-	virtual void printNetworkAsPajek(std::string filename);
+	virtual void printNetworkAsPajek(std::string filename) const;
 
 	unsigned int numNodes() const { return m_numNodes; }
 	const std::vector<std::string>& nodeNames() const { return m_nodeNames; }
@@ -163,6 +165,8 @@ public:
 	void swapNodeNames(std::vector<std::string>& target) { target.swap(m_nodeNames); }
 
 	virtual void disposeLinks() { m_links.clear(); }
+
+	const Config& config() { return m_config; }
 
 protected:
 

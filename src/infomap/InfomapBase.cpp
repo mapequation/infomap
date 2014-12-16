@@ -56,8 +56,6 @@
 
 void InfomapBase::run()
 {
-	DEBUG_OUT("InfomapBase::run()..." << std::endl);
-	ASSERT(m_subLevel == 0);
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -153,8 +151,6 @@ void InfomapBase::run()
 	std::cout << ":" << std::endl;
 	std::cout << bestSolutionStatistics.str() << std::endl;
 
-//	printNetworkDebug("debug", true, false);
-
 
 	//TODO: Test recursive search only one step further each time to be able to show progress
 	//	if (m_subLevel == 0)
@@ -178,6 +174,105 @@ void InfomapBase::run()
 
 }
 
+void InfomapBase::run(Network& input, HierarchicalNetwork& output)
+{
+
+#ifdef _OPENMP
+#pragma omp parallel
+	#pragma omp master
+	{
+		RELEASE_OUT("(OpenMP " << _OPENMP << " detected, trying to parallelize the recursive part on " <<
+				omp_get_num_threads() << " threads...)\n" << std::flush);
+	}
+#endif
+
+	m_externalOutput = true;
+
+	if (!initNetwork(input))
+		return;
+
+	calcOneLevelCodelength();
+
+	if (m_config.benchmark)
+		Logger::benchmark("calcFlow", root()->codelength, 1, 1, 1);
+
+	std::vector<double> codelengths(m_config.numTrials);
+	std::ostringstream bestSolutionStatistics;
+	unsigned int bestNumLevels = 0;
+
+	for (unsigned int iTrial = 0; iTrial < m_config.numTrials; ++iTrial)
+	{
+		RELEASE_OUT(std::endl << "Attempt " << (iTrial+1) << "/" << m_config.numTrials <<
+				" at " << Date() << std::endl);
+		m_iterationCount = 0;
+
+		// First clear existing modular structure
+		while ((*m_treeData.begin_leaf())->parent != root())
+		{
+			root()->replaceChildrenWithGrandChildren();
+		}
+
+		hierarchicalCodelength = codelength = moduleCodelength = oneLevelCodelength;
+		indexCodelength = 0.0;
+
+		if (m_config.clusterDataFile != "")
+			consolidateExternalClusterData();
+
+		if (!m_config.noInfomap)
+			runPartition();
+
+		if (oneLevelCodelength < hierarchicalCodelength - m_config.minimumCodelengthImprovement)
+		{
+			std::cout << "Warning: No codelength improvement in modular solution over one-level solution!\n";
+		}
+
+		codelengths[iTrial] = hierarchicalCodelength;
+
+		if (hierarchicalCodelength < bestHierarchicalCodelength)
+		{
+			bestHierarchicalCodelength = hierarchicalCodelength;
+			bestSolutionStatistics.str("");
+			printNetworkData(output);
+			bestNumLevels = printPerLevelCodelength(bestSolutionStatistics);
+		}
+	}
+
+	std::cout << "\n\n";
+	if (m_config.numTrials > 1)
+	{
+		double averageCodelength = 0.0;
+		double minCodelength = codelengths[0];
+		double maxCodelength = 0.0;
+		std::cout << std::fixed << std::setprecision(9);
+		std::cout << "Codelengths for " << m_config.numTrials << " trials: [";
+		for (std::vector<double>::const_iterator it(codelengths.begin()); it != codelengths.end(); ++it)
+		{
+			double mdl = *it;
+			std::cout << mdl << ", ";
+			averageCodelength += mdl;
+			minCodelength = std::min(minCodelength, mdl);
+			maxCodelength = std::max(maxCodelength, mdl);
+		}
+		averageCodelength /= m_config.numTrials;
+		std::cout << "\b\b]\n";
+		std::cout << "[min, average, max] codelength: [" <<
+				minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n\n";
+		std::cout << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
+	}
+
+	if (bestIntermediateStatistics.str() != "")
+	{
+		std::cout << "Best intermediate solution:" << std::endl;
+		std::cout << bestIntermediateStatistics.str() << std::endl << std::endl;
+	}
+
+	std::cout << "Best end modular solution in " << bestNumLevels << " levels";
+	if (bestHierarchicalCodelength > oneLevelCodelength)
+		std::cout << " (warning: worse than one-level solution)";
+	std::cout << ":" << std::endl;
+	std::cout << bestSolutionStatistics.str() << std::endl;
+
+}
 
 void InfomapBase::calcOneLevelCodelength()
 {
@@ -232,7 +327,7 @@ void InfomapBase::runPartition()
 			bestIntermediateStatistics.clear();
 			bestIntermediateStatistics.str("");
 			printPerLevelCodelength(bestIntermediateStatistics);
-			printNetworkData(io::Str() << FileURI(m_config.networkFile).getName() << "_fast", false);
+			printNetworkData(io::Str() << FileURI(m_config.networkFile).getName() << "_fast");
 
 		}
 		if (m_config.fastHierarchicalSolution == 1)
@@ -1419,6 +1514,12 @@ bool InfomapBase::initNetwork()
 
 	network.readInputData();
 
+	return initNetwork(network);
+}
+
+bool InfomapBase::initNetwork(Network& network)
+{
+
  	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
 
@@ -1744,14 +1845,19 @@ bool InfomapBase::checkAndConvertBinaryTree()
 
 	m_ioNetwork.readStreamableTree(m_config.networkFile);
 
-	printHierarchicalData();
+	printHierarchicalData(m_ioNetwork);
 
 	return true;
 }
 
-void InfomapBase::printNetworkData(std::string filename, bool sort)
+void InfomapBase::printNetworkData(std::string filename)
 {
-	if (m_config.noFileOutput)
+	printNetworkData(m_ioNetwork, filename);
+}
+
+void InfomapBase::printNetworkData(HierarchicalNetwork& output, std::string filename)
+{
+	if (m_config.noFileOutput && !m_externalOutput)
 		return;
 
 	if (filename.length() == 0)
@@ -1768,16 +1874,20 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 		bool writeEdges = m_config.printBinaryFlowTree || m_config.printFlowTree || m_config.printMap;
 		RELEASE_OUT("\nBuilding output tree" << (writeEdges ? " with links" : "") << "... " << std::flush);
 
-		saveHierarchicalNetwork(filename, writeEdges);
+		saveHierarchicalNetwork(output, filename, writeEdges);
 
-		printHierarchicalData(filename);
+		if (!m_config.noFileOutput && !m_externalOutput)
+		{
+			printHierarchicalData(output, filename);
 
-		// Clear the data
-		m_ioNetwork.clear();
+			// Clear the data
+			output.clear();
+		}
+
 	}
 
 	// Print .clu
-	if (m_config.printClu)
+	if (m_config.printClu && !m_config.noFileOutput && !m_externalOutput)
 	{
 		outName = io::Str() << m_config.outDirectory << filename << ".clu";
 		if (m_config.verbosity == 0)
@@ -1792,10 +1902,10 @@ void InfomapBase::printNetworkData(std::string filename, bool sort)
 
 }
 
-void InfomapBase::printHierarchicalData(std::string filename)
+void InfomapBase::printHierarchicalData(HierarchicalNetwork& hierarchicalNetwork, std::string filename)
 {
 	if (filename.length() == 0)
-			filename = FileURI(m_config.networkFile).getName();
+		filename = FileURI(m_config.networkFile).getName();
 
 	std::string outName;
 	std::string outNameWithoutExtension = io::Str() << m_config.outDirectory << filename <<
@@ -1809,7 +1919,7 @@ void InfomapBase::printHierarchicalData(std::string filename)
 			RELEASE_OUT("writing .tree... " << std::flush);
 		else
 			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
-		m_ioNetwork.writeHumanReadableTree(outName);
+		hierarchicalNetwork.writeHumanReadableTree(outName);
 	}
 
 	if (m_config.printFlowTree)
@@ -1819,7 +1929,7 @@ void InfomapBase::printHierarchicalData(std::string filename)
 			RELEASE_OUT("writing .ftree... " << std::flush);
 		else
 			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
-		m_ioNetwork.writeHumanReadableTree(outName, true);
+		hierarchicalNetwork.writeHumanReadableTree(outName, true);
 	}
 
 	if (m_config.printBinaryTree)
@@ -1829,7 +1939,7 @@ void InfomapBase::printHierarchicalData(std::string filename)
 			RELEASE_OUT("writing .btree... " << std::flush);
 		else
 			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
-		m_ioNetwork.writeStreamableTree(outName, false);
+		hierarchicalNetwork.writeStreamableTree(outName, false);
 	}
 
 	if (m_config.printBinaryFlowTree)
@@ -1839,7 +1949,7 @@ void InfomapBase::printHierarchicalData(std::string filename)
 			RELEASE_OUT("writing .bftree... " << std::flush);
 		else
 			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
-		m_ioNetwork.writeStreamableTree(outName, true);
+		hierarchicalNetwork.writeStreamableTree(outName, true);
 	}
 
 	if (m_config.printMap)
@@ -1850,7 +1960,7 @@ void InfomapBase::printHierarchicalData(std::string filename)
 		else
 			RELEASE_OUT("\n  -> Writing " << outName << "..." << std::flush);
 
-		m_ioNetwork.writeMap(outName);
+		hierarchicalNetwork.writeMap(outName);
 	}
 
 	if (m_config.verbosity == 0)

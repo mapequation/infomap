@@ -28,6 +28,7 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -301,6 +302,8 @@ struct Config
 					directed = true;
 			}
 		}
+
+		std::cout << std::setprecision(verboseNumberPrecision);
 	}
 
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }

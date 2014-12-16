@@ -42,7 +42,7 @@
 #include <iomanip>
 #include "io/version.h"
 
-std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
+std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>& args)
 {
 	ProgramInterface api("Informatter", "Infomap formatter utility", INFOMAP_VERSION);
 
@@ -170,7 +170,7 @@ std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 	api.addIncrementalOptionArgument(conf.verbosity, 'v', "verbose",
 			"Verbose output on the console. Add additional 'v' flags to increase verbosity up to -vvv.");
 
-	api.parseArgs(argc, argv);
+	api.parseArgs(args);
 
 	conf.parsedArgs = api.parsedArgs();
 
@@ -202,9 +202,12 @@ int run(int argc, char* argv[])
 {
 	Date startDate;
 	Config conf;
+	std::vector<std::string> args(argc);
+	for (unsigned int i = 0; i < args.size(); ++i)
+		args[i] = argv[i];
 	try
 	{
-		std::vector<ParsedOption> flags = getConfig(conf, argc, argv);
+		std::vector<ParsedOption> flags = getConfig(conf, args);
 
 		std::cout << "=======================================================\n";
 		std::cout << "  Informatter v" << INFOMAP_VERSION << " starts at " << Date() << "\n";

@@ -276,6 +276,8 @@ bool isDirectoryWritable(const std::string& dir)
 	catch(const FileOpenError&) {
 		ok = false;
 	}
+	if (ok)
+		std::remove(path.c_str());
 	return ok;
 }
 

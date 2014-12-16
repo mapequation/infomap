@@ -90,7 +90,7 @@ SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitF
 void HierarchicalNetwork::prepareAddLeafNodes(unsigned int numLeafNodes)
 {
 	m_numLeafNodes = numLeafNodes;
-	m_leafNodes.resize(numLeafNodes);
+	m_leafNodes.assign(numLeafNodes, 0);
 }
 
 bool HierarchicalNetwork::addLeafEdge(unsigned int sourceLeafNodeIndex, unsigned int targetLeafNodeIndex, double flow)

@@ -15,5 +15,7 @@ syntax: regexp
 ^Infomap-formatter$
 ^generateMakefile$
 ^build$
-^.project$
-^.cproject$
+^\.project$
+^\.cproject$
+^\.settings$
+^examples/Infomap-as-library$

@@ -164,7 +164,7 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 		{
 			if (printLayerSummary)
 				std::cout << "Intra-network links on layer " << (layerIndex + 1) << ": " << std::flush;
-			m_networks[layerIndex].finalizeAndCheckNetwork();
+			m_networks[layerIndex].finalizeAndCheckNetwork(false);
 			if (printLayerSummary)
 				m_networks[layerIndex].printParsingResult(m_config.verbosity <= 1);
 		}
@@ -181,8 +181,6 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 	addMemoryNetworkFromMultiplexLinks();
 
 	finalizeAndCheckNetwork();
-
-	printParsingResult(false);
 }
 
 void MultiplexNetwork::parseMultipleNetworks()
@@ -212,8 +210,6 @@ void MultiplexNetwork::parseMultipleNetworks()
 		generateMemoryNetworkWithInterLayerLinksFromData();
 
 	finalizeAndCheckNetwork();
-
-	printParsingResult(false);
 }
 
 unsigned int MultiplexNetwork::adjustForDifferentNumberOfNodes()
@@ -247,7 +243,7 @@ unsigned int MultiplexNetwork::adjustForDifferentNumberOfNodes()
 //				std::cout << "  Layer " << (layerIndex + 1) << ": " <<
 //						m_networks[layerIndex].numNodes() << " -> " << maxNumNodes << " nodes." << std::endl;
 				++numAdjusted;
-				m_networks[layerIndex].finalizeAndCheckNetwork(maxNumNodes);
+				m_networks[layerIndex].finalizeAndCheckNetwork(false, maxNumNodes);
 			}
 		}
 		std::cout << "done! Adjusted " << numAdjusted << "/" << m_networks.size() << " networks to have " << maxNumNodes << " nodes." << std::endl;
@@ -567,11 +563,11 @@ void MultiplexNetwork::parseMultiplexLink(const std::string& line, unsigned int&
 	node2 -= m_indexOffset;
 }
 
-void MultiplexNetwork::finalizeAndCheckNetwork()
+void MultiplexNetwork::finalizeAndCheckNetwork(bool printSummary)
 {
 	// First dispose intermediate data structures to clear memory
 	m_interLinks.clear();
 	m_networks.clear();
 
-	MemNetwork::finalizeAndCheckNetwork();
+	MemNetwork::finalizeAndCheckNetwork(printSummary);
 }

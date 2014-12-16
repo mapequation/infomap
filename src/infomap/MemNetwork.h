@@ -154,7 +154,7 @@ public:
 	double totalM2LinkWeight() const { return m_totM2LinkWeight; }
 	double totalMemorySelfLinkWeight() const { return m_totalMemorySelfLinkWeight; }
 
-	virtual void printNetworkAsPajek(std::string filename);
+	virtual void printNetworkAsPajek(std::string filename) const;
 
 	virtual void disposeLinks();
 
@@ -254,7 +254,7 @@ protected:
 	bool insertM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight);
 	bool addIncompleteM2Link(unsigned int n1, unsigned int n2, double weight);
 
-	virtual void finalizeAndCheckNetwork();
+	virtual void finalizeAndCheckNetwork(bool printSummary = true);
 
 	unsigned int addMissingPhysicalNodes();
 

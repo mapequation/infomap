@@ -96,7 +96,7 @@ protected:
 
 	virtual void sortTree(NodeBase& parent);
 
-	virtual void saveHierarchicalNetwork(std::string rootName, bool includeLinks);
+	virtual void saveHierarchicalNetwork(HierarchicalNetwork& output, std::string rootName, bool includeLinks);
 	void buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, std::vector<std::string>& leafNodeNames, NodeBase* node = 0);
 	// Don't add leaf nodes, but collect all leaf modules instead
 	void buildHierarchicalNetworkHelper(HierarchicalNetwork& hierarchicalNetwork, HierarchicalNetwork::node_type& parent, std::deque<std::pair<NodeBase*, HierarchicalNetwork::node_type*> >& leafModules, NodeBase* node = 0);
@@ -198,13 +198,13 @@ void InfomapGreedy<InfomapImplementation>::sortTree(NodeBase& parent)
 
 template<typename InfomapImplementation>
 inline
-void InfomapGreedy<InfomapImplementation>::saveHierarchicalNetwork(std::string rootName, bool includeLinks)
+void InfomapGreedy<InfomapImplementation>::saveHierarchicalNetwork(HierarchicalNetwork& output, std::string rootName, bool includeLinks)
 {
-	m_ioNetwork.init(rootName, hierarchicalCodelength, oneLevelCodelength);
+	output.init(rootName, hierarchicalCodelength, oneLevelCodelength);
 
-	m_ioNetwork.prepareAddLeafNodes(m_treeData.numLeafNodes());
+	output.prepareAddLeafNodes(m_treeData.numLeafNodes());
 
-	buildHierarchicalNetworkHelper(m_ioNetwork, m_ioNetwork.getRootNode(), m_nodeNames);
+	buildHierarchicalNetworkHelper(output, output.getRootNode(), m_nodeNames);
 
 	if (includeLinks)
 	{
@@ -215,7 +215,7 @@ void InfomapGreedy<InfomapImplementation>::saveHierarchicalNetwork(std::string r
 					outEdgeIt != endIt; ++outEdgeIt)
 			{
 				EdgeType& edge = **outEdgeIt;
-				m_ioNetwork.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
+				output.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
 			}
 		}
 	}

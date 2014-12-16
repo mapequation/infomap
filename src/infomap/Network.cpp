@@ -106,12 +106,9 @@ void Network::parsePajekNetwork(std::string filename)
 		addLink(n1, n2, weight);
 	}
 
+	std::cout << "done!" << std::endl;
+
 	finalizeAndCheckNetwork();
-
-	std::cout << "done! ";
-
-	printParsingResult();
-
 }
 
 void Network::parsePajekNetworkWithoutIOStreams(std::string filename)
@@ -223,11 +220,9 @@ void Network::parsePajekNetworkWithoutIOStreams(std::string filename)
 
 	fclose(file);
 
+	std::cout << "done!" << std::endl;
+
 	finalizeAndCheckNetwork();
-
-	std::cout << "done! ";
-
-	printParsingResult();
 }
 
 void Network::parseLinkList(std::string filename)
@@ -261,12 +256,9 @@ void Network::parseLinkList(std::string filename)
 		addLink(n1, n2, weight);
 	}
 
+	std::cout << "done!" << std::endl;
+
 	finalizeAndCheckNetwork();
-
-	std::cout << "done! ";
-
-	printParsingResult();
-
 }
 
 void Network::parseLinkListWithoutIOStreams(std::string filename)
@@ -294,11 +286,9 @@ void Network::parseLinkListWithoutIOStreams(std::string filename)
 
 	fclose(file);
 
-	finalizeAndCheckNetwork();
-
 	RELEASE_OUT("done! ");
 
-	printParsingResult();
+	finalizeAndCheckNetwork();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -494,7 +484,7 @@ bool Network::insertLink(unsigned int n1, unsigned int n2, double weight)
 	return true;
 }
 
-void Network::finalizeAndCheckNetwork(unsigned int desiredNumberOfNodes)
+void Network::finalizeAndCheckNetwork(bool printSummary, unsigned int desiredNumberOfNodes)
 {
 	if (m_links.empty())
 		throw InputDomainError("No links added!");
@@ -523,6 +513,9 @@ void Network::finalizeAndCheckNetwork(unsigned int desiredNumberOfNodes)
 		zoom();
 
 	initNodeDegrees();
+
+	if (printSummary)
+		printParsingResult();
 }
 
 void Network::zoom()
@@ -628,9 +621,9 @@ void Network::printParsingResult(bool onlySummary)
 	}
 
 	if (!dataModified)
-		std::cout << "\n ==> " << getParsingResultSummary();
+		std::cout << " ==> " << getParsingResultSummary();
 	else {
-		std::cout << "\n --> Found " << m_numNodesFound << io::toPlural(" node", m_numNodesFound);
+		std::cout << " --> Found " << m_numNodesFound << io::toPlural(" node", m_numNodesFound);
 		std::cout << " and " << m_numLinksFound << io::toPlural(" link", m_numLinksFound) << ".";
 	}
 
@@ -644,13 +637,11 @@ void Network::printParsingResult(bool onlySummary)
 	if (m_numDanglingNodes > 0)
 		std::cout << "\n --> " << m_numDanglingNodes << " dangling " << io::toPlural("node", m_numDanglingNodes) << " (nodes with no outgoing links).";
 
-	if (m_addSelfLinks)
+	if (m_numAdditionalLinks > 0)
 		std::cout << "\n --> Added " << m_numAdditionalLinks << io::toPlural(" self-link", m_numAdditionalLinks) << " with total weight " << m_sumAdditionalLinkWeight << ".";
-	if (m_addSelfLinks || m_config.includeSelfLinks) {
+	if (m_numSelfLinks > 0) {
 		std::cout << "\n --> " << m_numSelfLinks << io::toPlural(" self-link", m_numSelfLinks);
-		if (m_numSelfLinks > 0)
-			std::cout << " with total weight " << m_totalSelfLinkWeight << " (" << (m_totalSelfLinkWeight / m_totalLinkWeight * 100) << "% of the total link weight)";
-		std::cout << ".";
+		std::cout << " with total weight " << m_totalSelfLinkWeight << " (" << (m_totalSelfLinkWeight / m_totalLinkWeight * 100) << "% of the total link weight).";
 	}
 
 	if (dataModified) {
@@ -673,7 +664,7 @@ std::string Network::getParsingResultSummary()
 }
 
 
-void Network::printNetworkAsPajek(std::string filename)
+void Network::printNetworkAsPajek(std::string filename) const
 {
 	SafeOutFile out(filename.c_str());
 

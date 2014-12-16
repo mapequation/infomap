@@ -161,7 +161,7 @@ protected:
 
 	void generateNetworkFromChildren(NodeBase& parent);
 
-	virtual void saveHierarchicalNetwork(std::string rootName, bool includeLinks);
+	virtual void saveHierarchicalNetwork(HierarchicalNetwork& output, std::string rootName, bool includeLinks);
 
 	virtual void printClusterNumbers(std::ostream& out);
 
@@ -636,9 +636,9 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::generateNetworkFromChil
 
 
 template<typename FlowType>
-void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork(std::string rootName, bool includeLinks)
+void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork(HierarchicalNetwork& output, std::string rootName, bool includeLinks)
 {
-	HierarchicalNetwork& ioNetwork = Super::m_ioNetwork;
+	HierarchicalNetwork& ioNetwork = output;
 
 	ioNetwork.init(rootName, Super::hierarchicalCodelength, Super::oneLevelCodelength);
 

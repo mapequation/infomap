@@ -62,8 +62,9 @@ public:
 	 	hierarchicalCodelength(0.0),
 		bestHierarchicalCodelength(std::numeric_limits<double>::max()),
 	 	bestIntermediateCodelength(std::numeric_limits<double>::max()),
+		m_initialMaxNumberOfModularLevels(0),
 		m_ioNetwork(conf),
-		m_initialMaxNumberOfModularLevels(0)
+		m_externalOutput(false)
 	{}
 
 	virtual ~InfomapBase()
@@ -71,7 +72,11 @@ public:
 
 	void run();
 
+	void run(Network& input, HierarchicalNetwork& output);
+
 	bool initNetwork();
+
+	bool initNetwork(Network& input);
 
 	void calcOneLevelCodelength();
 
@@ -82,7 +87,7 @@ public:
 
 	void sortTree();
 
-	virtual void saveHierarchicalNetwork(std::string rootName, bool includeLinks) = 0;
+	virtual void saveHierarchicalNetwork(HierarchicalNetwork& output, std::string rootName, bool includeLinks) = 0;
 
 	virtual void debugPrintInfomapTerms() = 0;
 
@@ -262,8 +267,9 @@ private:
 	void initMemoryNetwork();
 	void initNodeNames(Network& network);
 	bool checkAndConvertBinaryTree();
-	void printNetworkData(std::string filename = "", bool sort = true);
-	void printHierarchicalData(std::string filename = "");
+	void printNetworkData(std::string filename = "");
+	void printNetworkData(HierarchicalNetwork& output, std::string filename = "");
+	void printHierarchicalData(HierarchicalNetwork& hierarchicalNetwork, std::string filename = "");
 	virtual void printClusterNumbers(std::ostream& out);
 	void printTreeLevelSizes(std::ostream& out, std::string heading = "");
 	unsigned int printPerLevelCodelength(std::ostream& out);
@@ -297,8 +303,9 @@ protected:
 	double bestHierarchicalCodelength;
 	double bestIntermediateCodelength;
 	std::ostringstream bestIntermediateStatistics;
-	HierarchicalNetwork m_ioNetwork;
 	unsigned int m_initialMaxNumberOfModularLevels;
+	HierarchicalNetwork m_ioNetwork;
+	bool m_externalOutput; // Write to external HierarchicalNetwork
 
 };
 

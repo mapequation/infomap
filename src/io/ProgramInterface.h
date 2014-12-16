@@ -281,7 +281,7 @@ public:
 		m_optionArguments.push_back(o);
 	}
 
-	void parseArgs(unsigned int argc, char** argv);
+	void parseArgs(const std::vector<std::string>& args);
 
 	std::vector<ParsedOption> getUsedOptionArguments();
 

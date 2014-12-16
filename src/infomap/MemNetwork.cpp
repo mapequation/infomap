@@ -163,8 +163,6 @@ void MemNetwork::parseTrigram(std::string filename)
 
 	finalizeAndCheckNetwork();
 
-	printParsingResult();
-
 }
 
 void MemNetwork::simulateMemoryFromOrdinaryNetwork()
@@ -236,8 +234,6 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 	std::cout << "done!" << std::endl;
 
 	finalizeAndCheckNetwork();
-
-	printParsingResult(false);
 }
 
 void MemNetwork::simulateMemoryToIncompleteData()
@@ -600,7 +596,7 @@ bool MemNetwork::addIncompleteM2Link(unsigned int n1, unsigned int n2, double we
 	return true;
 }
 
-void MemNetwork::finalizeAndCheckNetwork()
+void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 {
 	simulateMemoryToIncompleteData();
 
@@ -639,6 +635,9 @@ void MemNetwork::finalizeAndCheckNetwork()
 	}
 
 	initNodeDegrees();
+
+	if (printSummary)
+		printParsingResult();
 }
 
 unsigned int MemNetwork::addMissingPhysicalNodes()
@@ -724,7 +723,7 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 	std::cout << std::flush;
 }
 
-void MemNetwork::printNetworkAsPajek(std::string filename)
+void MemNetwork::printNetworkAsPajek(std::string filename) const
 {
 	SafeOutFile out(filename.c_str());
 
