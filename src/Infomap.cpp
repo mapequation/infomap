@@ -24,7 +24,7 @@
 
 **********************************************************************************/
 
-
+#include "Infomap.h"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -38,7 +38,6 @@
 #include "io/convert.h"
 #include "utils/FileURI.h"
 #include "utils/Date.h"
-#include <iomanip>
 #include "io/version.h"
 
 void runInfomap(Config const& config)
@@ -47,27 +46,45 @@ void runInfomap(Config const& config)
 	context.getInfomap()->run();
 }
 
-std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
+void runInfomap(Config const& config, Network& input, HierarchicalNetwork& output)
+{
+	InfomapContext context(config);
+	context.getInfomap()->run(input, output);
+}
+
+std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>& flags, bool noFileIO = false)
 {
 	ProgramInterface api("Infomap",
 			"Implementation of the Infomap clustering algorithm based on the Map Equation (see www.mapequation.org)",
 			INFOMAP_VERSION);
 
+	std::vector<std::string> optionalOutputDir; // Used if noFileIO
 	// --------------------- Input options ---------------------
-	api.addNonOptionArgument(conf.networkFile, "network_file",
-			"The file containing the network data. Accepted formats: Pajek (implied by .net) and link list (.txt)");
+	if (!noFileIO)
+	{
+		api.addNonOptionArgument(conf.networkFile, "network_file",
+				"The file containing the network data. Accepted formats: Pajek (implied by .net) and link list (.txt)");
 
-	api.addOptionalNonOptionArguments(conf.additionalInput, "[additional input]",
-			"More network layers for multiplex.", true);
+		api.addOptionalNonOptionArguments(conf.additionalInput, "[additional input]",
+				"More network layers for multiplex.", true);
+	}
+	else
+		conf.networkFile = "no-file";
 
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
 			"Specify input format ('pajek', 'link-list', '3gram' or 'multiplex') to override format possibly implied by file extension.", "s");
 
-	api.addOptionArgument(conf.withMemory, "with-memory",
-			"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.", true);
+	// api.addOptionArgument(conf.withMemory, "with-memory",
+	// 		"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.", true);
 
 	api.addOptionArgument(conf.withMemory, "overlapping",
-			"Let nodes be part of different, and thus overlapping, modules. (Same as --with-memory for ordinary networks)");
+			"Let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the memoryless dynamics with memory nodes.");
+
+	api.addOptionArgument(conf.hardPartitions, "hard-partitions",
+			"Don't allow overlapping modules in memory networks by keeping the memory nodes constrained into their physical nodes.");
+
+	api.addOptionArgument(conf.nonBacktracking, "non-backtracking",
+			"Use non-backtracking dynamics and let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the non-backtracking dynamics with memory nodes.", true);
 
 	api.addOptionArgument(conf.parseWithoutIOStreams, "without-iostream",
 			"Parse the input network data without the iostream library. Can be a bit faster, but not as robust.", true);
@@ -153,8 +170,14 @@ std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 	api.addOptionArgument(conf.selfTeleportationProbability, 'y', "self-link-teleportation-probability",
 			"Additional probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", "f", true);
 
-	api.addOptionArgument(conf.multiplexAggregationRate, "multiplex-aggregation-rate",
-			"The probability of following a link as if the layers where completely aggregated. Zero means completely disconnected layers.", "f", true);
+	api.addOptionArgument(conf.codeRate, "code-rate",
+			"Scale link flow with this value to change the cost of moving between modules. Higher for less modules.", "f", true);
+
+	api.addOptionArgument(conf.preferredNumberOfModules, "preferred-number-of-modules",
+			"Stop merge or split modules if preferred number of modules is reached.", "n", true);
+
+	api.addOptionArgument(conf.multiplexRelaxRate, "multiplex-relax-rate",
+			"The probability to relax the constraint to move only in the current layer. If negative, the inter-links have to be provided.", "f", true);
 
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
 			"A seed (integer) to the random number generator.", "n");
@@ -200,13 +223,32 @@ std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 			"Parallelize the innermost loop for greater speed. Note that this may give some accuracy tradeoff.");
 
 	// --------------------- Output options ---------------------
-	api.addNonOptionArgument(conf.outDirectory, "out_directory",
-			"The directory to write the results to");
+	if (!noFileIO)
+	{
+		api.addNonOptionArgument(conf.outDirectory, "out_directory",
+				"The directory to write the results to");
+		std::cout << "Require outDirectery" << std::endl;
+	}
+	else
+	{
+		api.addOptionalNonOptionArguments(optionalOutputDir, "[out_directory]",
+				"The directory to write the results to.");
+	}
 
 	api.addIncrementalOptionArgument(conf.verbosity, 'v', "verbose",
 			"Verbose output on the console. Add additional 'v' flags to increase verbosity up to -vvv.");
 
-	api.parseArgs(argc, argv);
+	api.parseArgs(flags);
+
+	conf.parsedArgs = api.parsedArgs();
+
+	if (noFileIO)
+	{
+		if (!optionalOutputDir.empty())
+			conf.outDirectory = optionalOutputDir[0];
+		else
+			conf.outDirectory = ".";
+	}
 
 	// Some checks
 	if (*--conf.outDirectory.end() != '/')
@@ -219,15 +261,15 @@ std::vector<ParsedOption> getConfig(Config& conf, int argc, char *argv[])
 	return api.getUsedOptionArguments();
 }
 
-void initBenchmark(const Config& conf, int argc, char * const argv[])
+void initBenchmark(const Config& conf, const std::vector<std::string>& args)
 {
 	std::string networkName = FileURI(conf.networkFile).getName();
 	std::string logFilename = io::Str() << conf.outDirectory << networkName << ".tsv";
 	Logger::setBenchmarkFilename(logFilename);
 	std::ostringstream logInfo;
 	logInfo << "#benchmark for";
-	for (int i = 0; i < argc; ++i)
-		logInfo << " " << argv[i];
+	for (unsigned int i = 0; i < args.size(); ++i)
+		logInfo << " " << args[i];
 	Logger::benchmark(logInfo.str(), 0, 0, 0, 0, true);
 	Logger::benchmark("elapsedSeconds\ttag\tcodelength\tnumTopModules\tnumNonTrivialTopModules\ttreeDepth",
 			0, 0, 0, 0, true);
@@ -235,65 +277,79 @@ void initBenchmark(const Config& conf, int argc, char * const argv[])
 	std::cout << "(Writing benchmark log to '" << logFilename << "'...)\n";
 }
 
-int run(int argc, char* argv[])
+Config init(const std::vector<std::string>& flags)
 {
-	Date startDate;
 	Config conf;
 	try
 	{
-		std::vector<ParsedOption> flags = getConfig(conf, argc, argv);
+		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags, true);
 
-		std::cout << "===================================================\n";
+		std::cout << "=======================================================\n";
 		std::cout << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
-		std::cout << "  -> Input network: " << conf.networkFile << "\n";
-		std::cout << "  -> Output path:   " << conf.outDirectory << "\n";
-		if (!flags.empty()) {
-			for (unsigned int i = 0; i < flags.size(); ++i)
-				std::cout << (i == 0 ? "  -> Configuration: " : "                    ") << flags[i] << "\n";
+		if (!parsedFlags.empty()) {
+			for (unsigned int i = 0; i < parsedFlags.size(); ++i)
+				std::cout << (i == 0 ? "  -> Configuration: " : "                    ") << parsedFlags[i] << "\n";
 		}
-//		std::cout << "  => " << (conf.isUndirected()? "Undirected" : "Directed") << " flow\n";
-//		std::cout << "  => " << (conf.isMemoryNetwork()? "Second" : "First") << "-order Markov dynamics\n";
-//		if (conf.useTeleportation())
-//			std::cout << "  => " << (conf.recordedTeleportation ? "Recorded" : "Unrecorded") << " teleportation to " <<
-//			(conf.teleportToNodes ? "nodes" : "links") << "\n";
 		std::cout << "  -> Use " << (conf.isUndirected()? "undirected" : "directed") << " flow and " <<
 			(conf.isMemoryNetwork()? "2nd" : "1st") << " order Markov dynamics";
 		if (conf.useTeleportation())
 			std::cout << " with " << (conf.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
 			(conf.teleportToNodes ? "nodes" : "links");
 		std::cout << "\n";
-		std::cout << "===================================================\n";
+		std::cout << "=======================================================\n";
+
+		conf.adaptDefaults();
+	}
+	catch (std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
+
+	return conf;
+}
+
+int run(Network& input, HierarchicalNetwork& output)
+{
+	try
+	{
+		runInfomap(input.config(), input, output);
+	}
+	catch (std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+		return 1;
+	}
+	return 0;
+}
+
+int run(const std::vector<std::string>& flags)
+{
+	Date startDate;
+	Config conf;
+	try
+	{
+		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags);
+
+		std::cout << "=======================================================\n";
+		std::cout << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
+		std::cout << "  -> Input network: " << conf.networkFile << "\n";
+		std::cout << "  -> Output path:   " << conf.outDirectory << "\n";
+		if (!parsedFlags.empty()) {
+			for (unsigned int i = 0; i < parsedFlags.size(); ++i)
+				std::cout << (i == 0 ? "  -> Configuration: " : "                    ") << parsedFlags[i] << "\n";
+		}
+		std::cout << "  -> Use " << (conf.isUndirected()? "undirected" : "directed") << " flow and " <<
+			(conf.isMemoryNetwork()? "2nd" : "1st") << " order Markov dynamics";
+		if (conf.useTeleportation())
+			std::cout << " with " << (conf.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
+			(conf.teleportToNodes ? "nodes" : "links");
+		std::cout << "\n";
+		std::cout << "=======================================================\n";
 
 		if (conf.benchmark)
-			initBenchmark(conf, argc, argv);
+			initBenchmark(conf, flags);
 
-		if (!conf.haveModularResultOutput())
-			conf.printTree = true;
-
-		conf.originallyUndirected = conf.isUndirected();
-		if (conf.isMemoryNetwork())
-		{
-			if (conf.isMultiplexNetwork())
-			{
-				if (!conf.isUndirected())
-				{
-					conf.teleportToNodes = true;
-					conf.recordedTeleportation = false;
-				}
-			}
-			else
-			{
-				conf.teleportToNodes = true;
-				conf.recordedTeleportation = false;
-				if (conf.isUndirected())
-					conf.directed = true;
-			}
-		}
-
-		if (conf.verbosity == 0)
-			conf.verboseNumberPrecision = 4;
-
-		std::cout << std::setprecision(conf.verboseNumberPrecision);
+		conf.adaptDefaults();
 
 		runInfomap(conf);
 
@@ -314,13 +370,16 @@ int run(int argc, char* argv[])
 	std::cout << "  (Elapsed time: " << (Date() - startDate) << ")\n";
 	std::cout << "===================================================\n";
 
-//	ElapsedTime t1 = (Date() - startDate);
-//	std::cout << "Elapsed time: " << t1 << " (" <<
-//			Stopwatch::getElapsedTimeSinceProgramStartInSec() << "s serial)." << std::endl;
 	return 0;
 }
 
+#ifndef NO_MAIN
 int main(int argc, char* argv[])
 {
-	return run(argc, argv);
+	std::vector<std::string> flags;
+	for (int i = 1; i < argc; ++i)
+		flags.push_back(argv[i]);
+
+	return run(flags);
 }
+#endif

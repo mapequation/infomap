@@ -38,9 +38,13 @@ class MultiplexNetwork : public MemNetwork
 {
 public:
 	typedef std::map<unsigned int, double> InterLinkMap;
+	typedef std::map<M2Node, std::map<M2Node, double> > MultiplexLinkMap;
 
 	MultiplexNetwork(const Config& config) :
-		MemNetwork(config)
+		MemNetwork(config),
+		m_numIntraLinksFound(0),
+		m_numInterLinksFound(0),
+		m_numMultiplexLinksFound(0)
 	{}
 	virtual ~MultiplexNetwork() {}
 
@@ -52,35 +56,69 @@ protected:
 
 	void parseMultipleNetworks();
 
-	void adjustForDifferentNumberOfNodes();
+	unsigned int adjustForDifferentNumberOfNodes();
 
 	void generateMemoryNetworkWithInterLayerLinksFromData();
 
 	void generateMemoryNetworkWithSimulatedInterLayerLinks();
 
+	void addMemoryNetworkFromMultiplexLinks();
+
 	// Helper methods
 
 	/**
-	 * Parse a string of intra link data for a certain network, "level node node weight".
-	 * If no weight data can be extracted, the default value 1.0 will be used.
-	 * @throws an error if not enough data can be extracted.
+	 * Parse intra-network links (links within a network) until end or new header.
+	 * @return The last line parsed, which may be a new header.
 	 */
-	void parseIntraLink(const std::string& line, unsigned int& level, unsigned int& n1, unsigned int& n2, double& weight);
+	std::string parseIntraLinks(std::ifstream& file);
 
 	/**
-	 * Parse a string of inter link data for a certain node, "node level level weight".
+	 * Parse inter-network links (links between networks) until end or new header.
+	 * @return The last line parsed, which may be a new header.
+	 */
+	std::string parseInterLinks(std::ifstream& file);
+
+	/**
+	 * Parse general multiplex links until end or new header.
+	 * @return The last line parsed, which may be a new header.
+	 */
+	std::string parseMultiplexLinks(std::ifstream& file);
+
+	/**
+	 * Parse a string of intra link data for a certain network, "layer node node [weight]".
 	 * If no weight data can be extracted, the default value 1.0 will be used.
 	 * @throws an error if not enough data can be extracted.
 	 */
-	void parseInterLink(const std::string& line, unsigned int& node, unsigned int& level1, unsigned int& level2, double& weight);
+	void parseIntraLink(const std::string& line, unsigned int& layer, unsigned int& node1, unsigned int& node2, double& weight);
 
-	virtual void finalizeAndCheckNetwork();
+	/**
+	 * Parse a string of inter link data for a certain node, "layer node layer [weight]".
+	 * If no weight data can be extracted, the default value 1.0 will be used.
+	 * @throws an error if not enough data can be extracted.
+	 */
+	void parseInterLink(const std::string& line, unsigned int& layer1, unsigned int& node, unsigned int& layer2, double& weight);
+
+	/**
+	 * Parse a string of general multiplex link data, "layer1 node1 layer2 node2 weight".
+	 * If no weight data can be extracted, the default value 1.0 will be used.
+	 * @throws an error if not enough data can be extracted.
+	 */
+	void parseMultiplexLink(const std::string& line, unsigned int& node, unsigned int& level1, unsigned int& level2, unsigned int& node2, double& weight);
+
+	virtual void finalizeAndCheckNetwork(bool printSummary = true);
 
 	// Member variables
 
+	unsigned int m_numIntraLinksFound;
 	std::deque<Network> m_networks;
 
+	unsigned int m_numInterLinksFound;
 	std::map<M2Node, InterLinkMap> m_interLinks; // {(layer,node)} -> ({linkedLayer} -> {weight})
+	std::map<unsigned int, unsigned int> m_interLinkLayers;
+
+	unsigned int m_numMultiplexLinksFound;
+	MultiplexLinkMap m_multiplexLinks; // {(layer,node)} -> ({(layer,node)} -> {weight})
+	std::map<unsigned int, unsigned int> m_multiplexLinkLayers;
 };
 
 #endif /* MULTIPLEXNETWORK_H_ */

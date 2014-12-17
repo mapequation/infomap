@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -25,5 +25,25 @@
 **********************************************************************************/
 
 
-#include "Options.h"
+#ifndef SRC_INFOMAP_H_
+#define SRC_INFOMAP_H_
 
+#include <string>
+#include "io/HierarchicalNetwork.h"
+#include "infomap/Network.h"
+
+/**
+ * Run as stand-alone
+ */
+int run(const std::vector<std::string>& flags);
+
+/**
+ * Run from other C++ code
+ */
+Config init(const std::vector<std::string>& flags);
+
+int run(Network& input, HierarchicalNetwork& output);
+
+
+
+#endif /* SRC_INFOMAP_H_ */

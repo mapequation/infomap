@@ -42,7 +42,7 @@
 #include <iomanip>
 #include "io/version.h"
 
-void getConfig(Config& conf, int argc, char *argv[])
+std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>& args)
 {
 	ProgramInterface api("Informatter", "Infomap formatter utility", INFOMAP_VERSION);
 
@@ -157,7 +157,7 @@ void getConfig(Config& conf, int argc, char *argv[])
 	api.addOptionArgument(conf.selfTeleportationProbability, 'y', "self-link-teleportation-probability",
 			"Additional probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", "f", true);
 
-	api.addOptionArgument(conf.multiplexAggregationRate, "multiplex-aggregation-rate",
+	api.addOptionArgument(conf.multiplexRelaxRate, "multiplex-aggregation-rate",
 			"The probability of following a link as if the layers where completely aggregated. Zero means completely disconnected layers.", "f", true);
 
 	api.addIncrementalOptionArgument(conf.lowMemoryPriority, 'l', "low-memory",
@@ -170,34 +170,19 @@ void getConfig(Config& conf, int argc, char *argv[])
 	api.addIncrementalOptionArgument(conf.verbosity, 'v', "verbose",
 			"Verbose output on the console. Add additional 'v' flags to increase verbosity up to -vvv.");
 
-	api.parseArgs(argc, argv);
+	api.parseArgs(args);
+
+	conf.parsedArgs = api.parsedArgs();
 
 	// Some checks
 	if (*--conf.outDirectory.end() != '/')
 		conf.outDirectory.append("/");
 
-	if (!conf.haveModularResultOutput())
-		conf.printTree = true;
+	if (conf.haveOutput() && !isDirectoryWritable(conf.outDirectory))
+		throw FileOpenError(io::Str() << "Can't write to directory '" <<
+				conf.outDirectory << "'. Check that the directory exists and that you have write permissions.");
 
-	conf.originallyUndirected = conf.isUndirected();
-	if (conf.isMemoryNetwork())
-	{
-		if (conf.isMultiplexNetwork())
-		{
-			if (!conf.isUndirected())
-			{
-				conf.teleportToNodes = true;
-				conf.recordedTeleportation = false;
-			}
-		}
-		else
-		{
-			conf.teleportToNodes = true;
-			conf.recordedTeleportation = false;
-			if (conf.isUndirected())
-				conf.directed = true;
-		}
-	}
+	return api.getUsedOptionArguments();
 }
 
 void runInformatter(Config const& config)
@@ -217,14 +202,26 @@ int run(int argc, char* argv[])
 {
 	Date startDate;
 	Config conf;
+	std::vector<std::string> args(argc);
+	for (unsigned int i = 0; i < args.size(); ++i)
+		args[i] = argv[i];
 	try
 	{
-		getConfig(conf, argc, argv);
-		std::cout << std::setprecision(conf.verboseNumberPrecision);
+		std::vector<ParsedOption> flags = getConfig(conf, args);
 
-		std::cout << "===========================================\n";
+		std::cout << "=======================================================\n";
 		std::cout << "  Informatter v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
-		std::cout << "===========================================\n";
+		std::cout << "  -> Input: " << conf.networkFile << "\n";
+		std::cout << "  -> Output path:   " << conf.outDirectory << "\n";
+		if (!flags.empty()) {
+			for (unsigned int i = 0; i < flags.size(); ++i)
+				std::cout << (i == 0 ? "  -> Configuration: " : "                    ") << flags[i] << "\n";
+		}
+		std::cout << "=======================================================\n";
+
+		conf.adaptDefaults();
+
+		std::cout << std::setprecision(conf.verboseNumberPrecision);
 
 		runInformatter(conf);
 	}

@@ -144,14 +144,14 @@ template<typename T>
 inline bool stringToValue(std::string const& str, T& value)
 {
 	std::istringstream istream(str);
-	return istream >> value;
+	return !!(istream >> value);
 }
 
 template<>
 inline bool stringToValue<bool>(std::string const& str, bool& value)
 {
 	std::istringstream istream(str);
-	return istream >> value;
+	return !!(istream >> value);
 }
 
 template<typename T>
@@ -174,6 +174,15 @@ inline bool parse<bool>(std::string const& str)
 	if (!(istream >> value))
 		throw BadConversionError(Str() << "Error converting '" << str << "' to bool");
 	return value;
+}
+
+inline std::string firstWord(const std::string& line)
+{
+	std::istringstream ss;
+	std::string buf;
+	ss.str(line);
+	ss >> buf;
+	return buf;
 }
 
 inline void padString(std::string &str, const std::string::size_type newSize, const char paddingChar = ' ')

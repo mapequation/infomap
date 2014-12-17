@@ -27,15 +27,24 @@
 
 #ifndef CONFIG_H_
 #define CONFIG_H_
+
+#include <iomanip>
+#include <iostream>
 #include <string>
 #include <vector>
+
+#include "../utils/Date.h"
+#include "version.h"
 
 struct Config
 {
 	Config()
-	:	networkFile(""),
+	:	parsedArgs(""),
+		networkFile(""),
 	 	inputFormat(""),
 	 	withMemory(false),
+		hardPartitions(false),
+	 	nonBacktracking(false),
 	 	parseWithoutIOStreams(false),
 		zeroBasedNodeNumbers(false),
 		includeSelfLinks(false),
@@ -52,7 +61,9 @@ struct Config
 		teleportToNodes(false),
 		teleportationProbability(0.15),
 		selfTeleportationProbability(-1),
-		multiplexAggregationRate(-1),
+		codeRate(1.0),
+		preferredNumberOfModules(0),
+		multiplexRelaxRate(-1),
 		seedToRandomNumberGenerator(123),
 		numTrials(1),
 		minimumCodelengthImprovement(1.0e-10),
@@ -84,16 +95,20 @@ struct Config
 		noFileOutput(false),
 		verbosity(0),
 		verboseNumberPrecision(6),
-		benchmark(false)
+		benchmark(false),
+		version(INFOMAP_VERSION)
 	{
 		setOptimizationLevel(1);
 	}
 
 	Config(const Config& other)
-	:	networkFile(other.networkFile),
+	:	parsedArgs(other.parsedArgs),
+		networkFile(other.networkFile),
 	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
 	 	withMemory(other.withMemory),
+		hardPartitions(other.hardPartitions),
+	 	nonBacktracking(other.nonBacktracking),
 	 	parseWithoutIOStreams(other.parseWithoutIOStreams),
 		zeroBasedNodeNumbers(other.zeroBasedNodeNumbers),
 		includeSelfLinks(other.includeSelfLinks),
@@ -110,7 +125,9 @@ struct Config
 		teleportToNodes(other.teleportToNodes),
 		teleportationProbability(other.teleportationProbability),
 		selfTeleportationProbability(other.selfTeleportationProbability),
-		multiplexAggregationRate(other.multiplexAggregationRate),
+		codeRate(other.codeRate),
+		preferredNumberOfModules(other.preferredNumberOfModules),
+		multiplexRelaxRate(other.multiplexRelaxRate),
 		seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
 		numTrials(other.numTrials),
 		minimumCodelengthImprovement(other.minimumCodelengthImprovement),
@@ -142,16 +159,21 @@ struct Config
 		noFileOutput(other.noFileOutput),
 		verbosity(other.verbosity),
 		verboseNumberPrecision(other.verboseNumberPrecision),
-		benchmark(other.benchmark)
+		benchmark(other.benchmark),
+		startDate(other.startDate),
+		version(other.version)
 	{
 	}
 
 	Config& operator=(const Config& other)
 	{
+		parsedArgs = other.parsedArgs;
 		networkFile = other.networkFile;
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
 	 	withMemory = other.withMemory;
+	 	hardPartitions = other.hardPartitions;
+	 	nonBacktracking = other.nonBacktracking;
 	 	parseWithoutIOStreams = other.parseWithoutIOStreams;
 		zeroBasedNodeNumbers = other.zeroBasedNodeNumbers;
 		includeSelfLinks = other.includeSelfLinks;
@@ -168,7 +190,9 @@ struct Config
 		teleportToNodes = other.teleportToNodes;
 		teleportationProbability = other.teleportationProbability;
 		selfTeleportationProbability = other.selfTeleportationProbability;
-		multiplexAggregationRate = other.multiplexAggregationRate;
+	 	codeRate = other.codeRate;
+	 	preferredNumberOfModules = other.preferredNumberOfModules;
+		multiplexRelaxRate = other.multiplexRelaxRate;
 		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
 		numTrials = other.numTrials;
 		minimumCodelengthImprovement = other.minimumCodelengthImprovement;
@@ -201,6 +225,8 @@ struct Config
 		verbosity = other.verbosity;
 		verboseNumberPrecision = other.verboseNumberPrecision;
 		benchmark = other.benchmark;
+		startDate = other.startDate;
+		version = other.version;
 		return *this;
 	}
 
@@ -250,6 +276,36 @@ struct Config
 		}
 	}
 
+	void adaptDefaults()
+	{
+		if (!haveModularResultOutput())
+			printTree = true;
+
+		originallyUndirected = isUndirected();
+		if (isMemoryNetwork())
+		{
+			if (isMultiplexNetwork())
+			{
+				// Include self-links in multiplex networks as layer and node numbers are unrelated
+				includeSelfLinks = true;
+				if (!isUndirected())
+				{
+					teleportToNodes = true;
+					recordedTeleportation = false;
+				}
+			}
+			else
+			{
+				teleportToNodes = true;
+				recordedTeleportation = false;
+				if (isUndirected())
+					directed = true;
+			}
+		}
+
+		std::cout << std::setprecision(verboseNumberPrecision);
+	}
+
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 
 	bool isUndirectedFlow() const { return !directed && !outdirdir && !rawdir; } // isUndirected() || undirdir
@@ -262,9 +318,9 @@ struct Config
 
 	bool isMemoryInput() const { return inputFormat == "3gram" || inputFormat == "multiplex" || additionalInput.size() > 0; }
 
-	bool isMemoryNetwork() const { return withMemory || isMemoryInput(); }
+	bool isMemoryNetwork() const { return withMemory || nonBacktracking || isMemoryInput(); }
 
-	bool isSimulatedMemoryNetwork() const { return withMemory && !isMemoryInput(); }
+	bool isSimulatedMemoryNetwork() const { return (withMemory || nonBacktracking) && !isMemoryInput(); }
 
 	bool isMultiplexNetwork() const { return inputFormat == "multiplex" || additionalInput.size() > 0; }
 
@@ -283,12 +339,17 @@ struct Config
 				printBinaryFlowTree;
 	}
 
+	ElapsedTime elapsedTime() const { return Date() - startDate; }
+
 
 	// Input
+	std::string parsedArgs;
 	std::string networkFile;
 	std::vector<std::string> additionalInput;
 	std::string inputFormat; // 'pajek', 'link-list', '3gram' or 'multiplex'
 	bool withMemory;
+	bool hardPartitions;
+	bool nonBacktracking;
 	bool parseWithoutIOStreams;
 	bool zeroBasedNodeNumbers;
 	bool includeSelfLinks;
@@ -307,7 +368,9 @@ struct Config
 	bool teleportToNodes;
 	double teleportationProbability;
 	double selfTeleportationProbability;
-	double multiplexAggregationRate;
+	double codeRate;
+	unsigned int preferredNumberOfModules;
+	double multiplexRelaxRate;
 	unsigned long seedToRandomNumberGenerator;
 
 	// Performance and accuracy
@@ -344,6 +407,10 @@ struct Config
 	unsigned int verbosity;
 	unsigned int verboseNumberPrecision;
 	bool benchmark;
+
+	// Other
+	Date startDate;
+	std::string version;
 };
 
 #endif /* CONFIG_H_ */

@@ -35,7 +35,6 @@ src/io/ClusterReader.h \
 src/io/Config.h \
 src/io/convert.h \
 src/io/HierarchicalNetwork.h \
-src/io/Options.h \
 src/io/ProgramInterface.h \
 src/io/SafeFile.h \
 src/io/TreeDataWriter.h \
@@ -48,6 +47,7 @@ src/utils/Logger.h \
 src/utils/MersenneTwister.h \
 src/utils/Stopwatch.h \
 src/utils/types.h \
+src/Infomap.h \
 
 SOURCES = \
 src/infomap/FlowNetwork.cpp \
@@ -62,7 +62,6 @@ src/infomap/Node.cpp \
 src/infomap/TreeData.cpp \
 src/io/ClusterReader.cpp \
 src/io/HierarchicalNetwork.cpp \
-src/io/Options.cpp \
 src/io/ProgramInterface.cpp \
 src/io/TreeDataWriter.cpp \
 src/io/version.cpp \
@@ -71,22 +70,16 @@ src/utils/Logger.cpp \
 
 TARGET = Infomap
 
-OBJECTS = $(SOURCES:src/%.cpp=build/%.o)
+OBJECTS := $(SOURCES:src/%.cpp=build/%.o)
 INFOMAP_OBJECT = build/Infomap.o
 INFORMATTER_OBJECT = build/Informatter.o
 
-.PHONY: all clean
+LIBDIR = build/lib
+LIBTARGET = $(LIBDIR)/libInfomap.a
+LIBHEADERS := $(HEADERS:src/%.h=$(LIBDIR)/include/%.h)
+INFOMAP_LIB_OBJECT = build/Infomaplib.o
 
-## Default rule executed
-all: $(TARGET) Informatter
-	@true
-
-## Clean Rule
-clean:
-	$(RM) $(TARGET) Informatter $(OBJECTS)
-
-noomp: $(TARGET)
-	@true
+.PHONY: all clean noomp lib
 
 ## Rule for making the actual target
 $(TARGET): $(OBJECTS) $(INFOMAP_OBJECT)
@@ -94,12 +87,40 @@ $(TARGET): $(OBJECTS) $(INFOMAP_OBJECT)
 	$(CXX) $(LDFLAGS) -o $@ $^
 	@echo "-- Link finished --"
 
-Informatter: $(OBJECTS) $(INFORMATTER_OBJECT)
+all: $(TARGET) Infomap-formatter lib
+	@true
+
+Infomap-formatter: $(OBJECTS) $(INFORMATTER_OBJECT)
 	@echo "Making Informatter..."
 	$(CXX) $(LDFLAGS) -o $@ $^
+
+lib: $(LIBTARGET) $(LIBHEADERS)
+	@echo "Wrote static library and headers to $(LIBDIR)"
+
+$(LIBTARGET): $(INFOMAP_LIB_OBJECT) $(OBJECTS)
+	@echo "Creating static library..."
+	@mkdir -p $(LIBDIR)
+	ar rcs $@ $^
+
+$(LIBDIR)/include/%.h: src/%.h
+	@mkdir -p $(dir $@)
+	@cp -a $^ $@
+
+$(INFOMAP_LIB_OBJECT): src/Infomap.cpp $(OBJECTS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -DNO_MAIN -c $< -o $@
 
 ## Generic compilation rule for object files from cpp files
 build/%.o : src/%.cpp $(HEADERS) Makefile
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
-	
+
+example: examples/Infomap-as-library.cpp lib
+	$(CXX) $(CXXFLAGS) $< -o examples/Infomap-as-library -I$(LIBDIR)/include -L$(LIBDIR) -lInfomap
+
+noomp: $(TARGET)
+	@true
+
+## Clean Rule
+clean:
+	$(RM) -r $(TARGET) Informatter build

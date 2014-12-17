@@ -37,7 +37,7 @@ ProgramInterface::ProgramInterface(std::string name, std::string shortDescriptio
   m_shortProgramDescription(shortDescription),
   m_programVersion(version),
   m_programDescription(""),
-  m_executableName(""),
+  m_executableName("Infomap"),
   m_displayHelp(false),
   m_displayVersion(false),
   m_negateNextOption(false),
@@ -130,147 +130,139 @@ void ProgramInterface::exitWithError(std::string message)
 	std::exit(1);
 }
 
-void ProgramInterface::parseArgs(int argc, char** argv)
+void ProgramInterface::parseArgs(const std::vector<std::string>& flags)
 {
-	m_executableName = argv[0];
-	size_t pos = m_executableName.find_last_of("/");
-	if (pos != std::string::npos)
-		m_executableName = m_executableName.substr(pos + 1);
+	std::ostringstream ss;
+	for (unsigned int i = 0; i < flags.size(); ++i)
+		ss << flags[i] << (i + 1 == flags.size()? "" : " ");
+	m_parsedArgs = ss.str();
 
-	std::vector<option> longOptions;
-	std::string shortOptions;
+	// Map the options on short and long name, and check for duplication
 	std::map<char, Option*> shortOptionMap;
 	std::map<std::string, Option*> longOptionMap;
 	for (unsigned int i = 0; i < m_optionArguments.size(); ++i)
 	{
 		Option& opt = *m_optionArguments[i];
-		option o = {opt.longName.c_str(), opt.requireArgument ? required_argument : no_argument, 0, opt.shortName};
-		longOptions.push_back(o);
 		if (opt.shortName != '\0')
 		{
-			shortOptions += opt.shortName;
 			std::map<char, Option*>::iterator it = shortOptionMap.find(opt.shortName);
 			if (it != shortOptionMap.end())
 				throw OptionConflictError(io::Str() << "Duplication of option '" << opt.shortName << "'");
 			shortOptionMap.insert(std::make_pair(opt.shortName, &opt));
 		}
-		if (opt.requireArgument)
-			shortOptions += ":";
 
 		std::map<std::string, Option*>::iterator it = longOptionMap.find(opt.longName);
 		if (it != longOptionMap.end())
 			throw OptionConflictError(io::Str() << "Duplication of option \"" << opt.longName << "\"");
 		longOptionMap.insert(std::make_pair(opt.longName, &opt));
 	}
-	option o = {NULL, 0, NULL, 0}; //TODO: Why add this?
-	longOptions.push_back(o);
 
-
-	int c, option_index = 0;
-	while ((c = getopt_long(argc, argv, shortOptions.c_str(), &longOptions[0], &option_index)) != -1)
+	std::deque<std::string> nonOpts;
+	try
 	{
-		bool parsed = false;
-		bool negate = m_negateNextOption;
-		m_negateNextOption = false;
-		for (unsigned int i = 0; i < m_optionArguments.size(); ++i)
+		for (unsigned int i = 0; i < flags.size(); ++i)
 		{
-			Option& opt = *m_optionArguments[i];
-			if (opt.shortName == '\0')
-				continue;
-			if ((int)opt.shortName == c)
-			{
-				if (!opt.requireArgument || opt.incrementalArgument)
-				{
-					opt.set(!negate);
-				}
-				else
-				{
-					if (!opt.parse(optarg))
-						exitWithError(io::Str() << "Cannot parse argument '" << optarg << "' to option '" <<
-								opt.longName << "'. ");
-				}
-				parsed = true;
-				break;
-			}
-		}
-		if (m_displayVersion)
-		{
-			exitWithVersionInformation();
-		}
-		if (parsed)
-			continue;
-		switch (c)
-		{
-		case 0: // Long option without a corresponding short option
-		{
-//			std::cout << "long option " << longOptions[option_index].name << " with arg " <<
-//			(optarg? optarg : "void") << std::endl;
-			Option& longOpt = *longOptionMap[longOptions[option_index].name];
-			if (!longOpt.requireArgument || longOpt.incrementalArgument)
-			{
-				longOpt.set(!negate);
+			bool negate = m_negateNextOption;
+			m_negateNextOption = false;
+			unsigned int numArgsLeft = flags.size() - i - 1;
+
+			const std::string& arg = flags[i];
+			if (arg.length() == 0)
+				throw InputSyntaxError("Illegal argument ''");
+
+			if (arg[0] != '-') {
+				nonOpts.push_back(arg);
 			}
 			else
 			{
-				if (!longOpt.parse(optarg))
-					exitWithError(io::Str() << "Cannot parse argument '" << optarg << "' to option '" <<
-							longOpt.longName << "'. ");
+				if (arg.length() < 2)
+					throw InputSyntaxError("Illegal argument '-'");
+
+				if (arg[1] == '-')
+				{
+					// Long option
+					if (arg.length() < 3)
+						throw InputSyntaxError("Illegal argument '--'");
+					std::string longOpt = arg.substr(2);
+					std::map<std::string, Option*>::iterator it = longOptionMap.find(longOpt);
+					if (it == longOptionMap.end())
+						throw InputDomainError(io::Str() << "Unrecognized option: '--" << longOpt << "'");
+					Option& opt = *it->second;
+					if (!opt.requireArgument || opt.incrementalArgument)
+						opt.set(!negate);
+					else
+					{
+						if (numArgsLeft == 0)
+							throw InputDomainError(io::Str() << "Option '" << opt.longName << "' requires argument");
+						++i;
+						if (!opt.parse(flags[i]))
+							throw InputDomainError(io::Str() << "Cannot parse '" << flags[i] << "' as argument to option '" <<
+									opt.longName << "'. ");
+					}
+				}
+				else
+				{
+					// Short option(s)
+					for (unsigned int j = 1; j < arg.length(); ++j)
+					{
+						negate = m_negateNextOption;
+						m_negateNextOption = false;
+						char o = arg[j];
+						unsigned int numCharsLeft = arg.length() - j - 1;
+						std::map<char, Option*>::iterator it = shortOptionMap.find(o);
+						if (it == shortOptionMap.end())
+							throw InputDomainError(io::Str() << "Unrecognized option: '-" << o << "'");
+						Option& opt = *it->second;
+						if (!opt.requireArgument || opt.incrementalArgument)
+							opt.set(!negate);
+						else
+						{
+							std::string optArg;
+							if (numCharsLeft > 0)
+							{
+								optArg = arg.substr(j + 1);
+								j = arg.length() - 1;
+							}
+							else if (numArgsLeft)
+							{
+								++i;
+								optArg = flags[i];
+							}
+							else
+								throw InputDomainError(io::Str() << "Option '" << opt.longName << "' requires argument");
+
+							if (!opt.parse(optArg))
+								throw InputDomainError(io::Str() << "Cannot parse '" << optArg << "' as argument to option '" <<
+										opt.longName << "'. ");
+						}
+					}
+				}
+
 			}
-			parsed = true;
-			break;
+			if (m_displayHelp > 0)
+				exitWithUsage(m_displayHelp > 1);
+			if (m_displayVersion)
+				exitWithVersionInformation();
 		}
-		case '?':
-			exitWithError("");
-			break;
-		default:
-			std::cout << "?? getopt returned character code '" << c << "' ??" << std::endl;
-			break;
-		}
-//		std::cout << "  ---- " << std::endl;
 	}
-
-	if (m_displayHelp > 0)
+	catch (std::exception& e)
 	{
-		exitWithUsage(m_displayHelp > 1);
+		exitWithError(e.what());
 	}
 
-	// non-option ARGV-elements:
-	unsigned int argsLeft = argc - optind;
-
-	if (m_numOptionalNonOptionArguments == 0)
-	{
-		if (argsLeft != m_nonOptionArguments.size())
-			exitWithError("Argument error. ");
-	}
-	else
-	{
-		if (argsLeft < m_nonOptionArguments.size() - 1)
-			exitWithError("Argument error. ");
-	}
-
-	if (m_nonOptionArguments.size() == 0)
-		return;
-
-	unsigned int numVectorArguments = argsLeft - (m_nonOptionArguments.size() - 1);
-
-	std::deque<std::string> argvLeft;
-	while (argvLeft.size() != argsLeft)
-		argvLeft.push_back(argv[optind++]);
-
-//	for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i, --argsLeft)
 	unsigned int i = 0;
-	while (!argvLeft.empty())
+	unsigned int numVectorArguments = nonOpts.size() - (m_nonOptionArguments.size() - 1);
+	while (!nonOpts.empty())
 	{
-		std::string arg = argvLeft.front();
-		argvLeft.pop_front();
+		std::string arg = nonOpts.front();
+		nonOpts.pop_front();
 		if (m_nonOptionArguments[i]->isOptionalVector && numVectorArguments == 0)
 			++i;
 		if (!m_nonOptionArguments[i]->parse(arg))
-			exitWithError("Argument error. ");
+			exitWithError("Argument error.");
 		if (!m_nonOptionArguments[i]->isOptionalVector || --numVectorArguments == 0)
 			++i;
 	}
-
 }
 
 std::vector<ParsedOption> ProgramInterface::getUsedOptionArguments()

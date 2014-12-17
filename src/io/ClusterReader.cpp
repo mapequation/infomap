@@ -45,40 +45,54 @@
  */
 void ClusterReader::readData(const string filename)
 {
+	std::cout << "Parsing '" << filename << "'... " << std::flush;
 	SafeInFile input(filename.c_str());
 	std::string line;
-	std::cout << "Parsing '" << filename << "'... " << std::flush;
-
-	if (!getline(input, line))
-		throw FileFormatError("First line of cluster data file couldn't be read.");
-
-	std::istringstream lineStream(line);
-	string tmp;
-	if (!(lineStream >> tmp))
-		throw FileFormatError("First line of cluster data file couldn't be read.");
-	unsigned int numVertices;
-	if (!(lineStream >> numVertices))
-		throw FileFormatError("First line of cluster data file doesn't match '*Vertices x' where x is the number of vertices.");
-	if (numVertices == 0)
-		throw FileFormatError("Number of vertices declared in the cluster data file is zero.");
-
+	std::istringstream lineStream;
+	unsigned int numVertices = 0;
 	unsigned int numParsedValues = 0;
 	unsigned int maxClusterIndex = 0;
 
-	while(getline(input, line))
+	while(!std::getline(input, line).fail())
 	{
-		std::istringstream lineStream(line);
-		unsigned int clusterIndex;
-		if (!(lineStream >> clusterIndex))
-			throw FileFormatError(io::Str() << "Couldn't parse cluster data from line " << (numParsedValues+1));
+		if (line.length() == 0 || line[0] == '#')
+			continue;
 
-		clusterIndex -= m_indexOffset; // Get zero-based indices
-		m_clusters[numParsedValues] = clusterIndex;
-		maxClusterIndex = std::max(maxClusterIndex, clusterIndex);
-		++numParsedValues;
-		if (numParsedValues == m_numNodes)
-			break;
+		lineStream.clear();
+		lineStream.str(line);
+
+		if (line[0] == '*')
+		{
+			std::string buf;
+			lineStream >> buf;
+			if(buf == "*Vertices" || buf == "*vertices") {
+				if (!(lineStream >> numVertices))
+					throw FileFormatError(io::Str() << "Can't parse an integer after '" << buf <<
+							"' as the number of nodes.");
+			}
+			else {
+				throw FileFormatError(io::Str() << "Unrecognized heading '" << line << " in .clu file.");
+			}
+
+			if (numVertices == 0)
+				throw FileFormatError("Number of vertices declared in the cluster data file is zero.");
+			continue;
+		}
+		else
+		{
+			unsigned int clusterIndex;
+			if (!(lineStream >> clusterIndex))
+				throw FileFormatError(io::Str() << "Couldn't parse cluster data from line '" << line << "'");
+
+			clusterIndex -= m_indexOffset; // Get zero-based indices
+			m_clusters[numParsedValues] = clusterIndex;
+			maxClusterIndex = std::max(maxClusterIndex, clusterIndex);
+			++numParsedValues;
+			if (numParsedValues == m_numNodes)
+				break;
+		}
 	}
+
 	if (numParsedValues != m_numNodes)
 		throw FileFormatError(io::Str() << "Could only read cluster data for " << numParsedValues << " nodes, but the given network contains " <<
 				m_numNodes << " nodes.");

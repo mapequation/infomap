@@ -281,9 +281,11 @@ public:
 		m_optionArguments.push_back(o);
 	}
 
-	void parseArgs(int argc, char** argv);
+	void parseArgs(const std::vector<std::string>& args);
 
 	std::vector<ParsedOption> getUsedOptionArguments();
+
+	std::string parsedArgs() { return m_parsedArgs; }
 
 private:
 	void exitWithUsage(bool showAdvanced);
@@ -301,6 +303,7 @@ private:
 	unsigned int m_displayHelp;
 	bool m_displayVersion;
 	bool m_negateNextOption;
+	std::string m_parsedArgs;
 
 	unsigned int m_numOptionalNonOptionArguments;
 };

@@ -34,6 +34,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#include <set>
 using std::make_pair;
 
 void MemNetwork::readInputData(std::string filename)
@@ -158,9 +159,9 @@ void MemNetwork::parseTrigram(std::string filename)
 			insertLink(n2, n3, weight);
 	}
 
-	finalizeAndCheckNetwork();
+	std::cout << "done!" << std::endl;
 
-	printParsingResult();
+	finalizeAndCheckNetwork();
 
 }
 
@@ -216,7 +217,8 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 					unsigned int n3 = secondSubIt->first;
 					double linkWeight = secondSubIt->second;
 
-					addM2Link(n1, n2, n2, n3, linkWeight, firstLinkWeight / secondLinkSubMap.size(), 0.0);
+					if(!m_config.nonBacktracking || (n1 != n3))
+						addM2Link(n1, n2, n2, n3, linkWeight, firstLinkWeight / secondLinkSubMap.size(), 0.0);
 
 				}
 			}
@@ -229,10 +231,9 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 		}
 	}
 
+	std::cout << "done!" << std::endl;
 
 	finalizeAndCheckNetwork();
-
-	printParsingResult(false);
 }
 
 void MemNetwork::simulateMemoryToIncompleteData()
@@ -454,9 +455,6 @@ bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned 
 	if (m_config.nodeLimit > 0 && (n1 >= m_config.nodeLimit || n2 >= m_config.nodeLimit))
 		return false;
 
-	m_maxNodeIndex = std::max(m_maxNodeIndex, std::max(n1, n2));
-	m_minNodeIndex = std::min(m_minNodeIndex, std::min(n1, n2));
-
 	if(m_config.includeSelfLinks)
 	{
 		if (n1 == n2 && n1PriorState == n2PriorState)
@@ -474,6 +472,44 @@ bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned 
 		if(n1PriorState != n1)
 		{
 			insertM2Link(n1PriorState, n1, n2PriorState, n2, weight);
+			addM2Node(n1PriorState, n1, firstM2NodeWeight);
+			addM2Node(n2PriorState, n2, secondM2NodeWeight);
+		}
+		else
+			addM2Node(n2PriorState, n2, weight);
+	}
+
+	return true;
+}
+
+bool MemNetwork::addM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight, double firstM2NodeWeight, double secondM2NodeWeight)
+{
+	++m_numM2LinksFound;
+
+	if (m_config.nodeLimit > 0 && (n2 >= m_config.nodeLimit))
+		return false;
+
+	const M2Node& m2Source = firstM2Node->first;
+	unsigned int n1 = m2Source.physIndex;
+	unsigned int n1PriorState = m2Source.priorState;
+
+	if(m_config.includeSelfLinks)
+	{
+		if (n1 == n2 && n1PriorState == n2PriorState)
+		{
+			++m_numMemorySelfLinks;
+			m_totalMemorySelfLinkWeight += weight;
+		}
+
+		insertM2Link(firstM2Node, n2PriorState, n2, weight);
+		addM2Node(n1PriorState, n1, firstM2NodeWeight);
+		addM2Node(n2PriorState, n2, secondM2NodeWeight);
+	}
+	else if (n1 != n2)
+	{
+		if(n1PriorState != n1)
+		{
+			insertM2Link(firstM2Node, n2PriorState, n2, weight);
 			addM2Node(n1PriorState, n1, firstM2NodeWeight);
 			addM2Node(n2PriorState, n2, secondM2NodeWeight);
 		}
@@ -560,7 +596,7 @@ bool MemNetwork::addIncompleteM2Link(unsigned int n1, unsigned int n2, double we
 	return true;
 }
 
-void MemNetwork::finalizeAndCheckNetwork()
+void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 {
 	simulateMemoryToIncompleteData();
 
@@ -585,11 +621,13 @@ void MemNetwork::finalizeAndCheckNetwork()
 	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
 		std::cout << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.) ";
 
+	addMissingPhysicalNodes();
 
 	m_m2NodeWeights.resize(m_m2Nodes.size());
 	m_totM2NodeWeight = 0.0;
 	unsigned int m2NodeIndex = 0;
-	for(map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it, ++m2NodeIndex)
+	std::vector<unsigned int> existingPhysicalNodes(m_numNodes);
+	for(std::map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it, ++m2NodeIndex)
 	{
 		m_m2NodeMap[it->first] = m2NodeIndex;
 		m_m2NodeWeights[m2NodeIndex] += it->second;
@@ -597,6 +635,28 @@ void MemNetwork::finalizeAndCheckNetwork()
 	}
 
 	initNodeDegrees();
+
+	if (printSummary)
+		printParsingResult();
+}
+
+unsigned int MemNetwork::addMissingPhysicalNodes()
+{
+	std::vector<unsigned int> existingPhysicalNodes(m_numNodes);
+	for(std::map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
+	{
+		++existingPhysicalNodes[it->first.physIndex];
+	}
+	unsigned int numMissingPhysicalNodes = 0;
+	for (unsigned int i = 0; i < m_numNodes; ++i)
+	{
+		if (existingPhysicalNodes[i] == 0)
+		{
+			++numMissingPhysicalNodes;
+			addM2Node(i, i, 0.0);
+		}
+	}
+	return numMissingPhysicalNodes;
 }
 
 void MemNetwork::initNodeDegrees()
@@ -653,17 +713,17 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 		if (std::abs(m_totalLinkWeight / m_numLinks - 1.0) > 1e-9)
 			std::cout << " (with total weight " << m_totalLinkWeight << ")";
 		std::cout << ".";
-		std::cout << "\n-------------------";
+		std::cout << "-------------------\n";
 	}
 
-	std::cout << "\n  -> Found " << m_numNodesFound << " nodes and " << m_numM2LinksFound << " memory links.";
-	std::cout << "\n  -> Generated " << m_m2Nodes.size() << " memory nodes and " << m_numM2Links << " memory links.";
+	std::cout << "  -> Found " << m_numNodesFound << " nodes and " << m_numM2LinksFound << " memory links.\n";
+	std::cout << "  -> Generated " << m_m2Nodes.size() << " memory nodes and " << m_numM2Links << " memory links.\n";
 	if (m_numAggregatedM2Links > 0)
-		std::cout << "\n  -> Aggregated " << m_numAggregatedM2Links << " memory links.";
-	std::cout << std::endl;
+		std::cout << "  -> Aggregated " << m_numAggregatedM2Links << " memory links.\n";
+	std::cout << std::flush;
 }
 
-void MemNetwork::printNetworkAsPajek(std::string filename)
+void MemNetwork::printNetworkAsPajek(std::string filename) const
 {
 	SafeOutFile out(filename.c_str());
 

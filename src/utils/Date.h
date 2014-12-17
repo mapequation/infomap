@@ -84,6 +84,12 @@ class Date
 {
 public:
 	Date() : m_timeOfCreation(time(NULL)) {}
+	Date(const Date& other) : m_timeOfCreation(other.m_timeOfCreation) {}
+	Date& operator=(Date other) {
+		m_timeOfCreation = other.m_timeOfCreation;
+		return *this;
+	}
+
 	virtual ~Date() {}
 
 	friend std::ostream& operator<<(std::ostream& out, const Date& date)

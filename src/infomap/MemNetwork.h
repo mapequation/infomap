@@ -154,7 +154,7 @@ public:
 	double totalM2LinkWeight() const { return m_totM2LinkWeight; }
 	double totalMemorySelfLinkWeight() const { return m_totalMemorySelfLinkWeight; }
 
-	virtual void printNetworkAsPajek(std::string filename);
+	virtual void printNetworkAsPajek(std::string filename) const;
 
 	virtual void disposeLinks();
 
@@ -240,6 +240,7 @@ protected:
 	 */
 	bool addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight);
 	bool addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstM2NodeWeight, double secondM2NodeWeight);
+	bool addM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight, double firstM2NodeWeight, double secondM2NodeWeight);
 
 	void addM2Node(unsigned int priorState, unsigned int nodeIndex, double weight);
 	void addM2Node(M2Node m2node, double weight);
@@ -253,7 +254,9 @@ protected:
 	bool insertM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight);
 	bool addIncompleteM2Link(unsigned int n1, unsigned int n2, double weight);
 
-	virtual void finalizeAndCheckNetwork();
+	virtual void finalizeAndCheckNetwork(bool printSummary = true);
+
+	unsigned int addMissingPhysicalNodes();
 
 	virtual void initNodeDegrees();
 
@@ -291,6 +294,9 @@ void MemNetwork::addM2Node(unsigned int previousState, unsigned int nodeIndex, d
 {
 	m_m2Nodes[M2Node(previousState, nodeIndex)] += weight;
 	m_totM2NodeWeight += weight;
+
+	m_maxNodeIndex = std::max(m_maxNodeIndex, nodeIndex);
+	m_minNodeIndex = std::min(m_minNodeIndex, nodeIndex);
 }
 
 inline
@@ -298,6 +304,9 @@ void MemNetwork::addM2Node(M2Node m2Node, double weight)
 {
 	m_m2Nodes[m2Node] += weight;
 	m_totM2NodeWeight += weight;
+
+	m_maxNodeIndex = std::max(m_maxNodeIndex, m2Node.physIndex);
+	m_minNodeIndex = std::min(m_minNodeIndex, m2Node.physIndex);
 }
 
 #endif /* MEMNETWORK_H_ */

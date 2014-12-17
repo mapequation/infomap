@@ -28,6 +28,7 @@
 #ifndef FLOWDATA_TRAITS_H_
 #define FLOWDATA_TRAITS_H_
 #include "flowData.h"
+#include "Node.h"
 
 // A boolean type as function templates can't be partially specialized.
 template<bool> struct bool2type {};
@@ -111,6 +112,15 @@ class InfomapGreedyTypeSpecialized;
 template<typename FlowType, typename NetworkType>
 struct derived_traits<InfomapGreedyTypeSpecialized<FlowType, NetworkType> > {
 	typedef FlowType flow_type;
+	typedef Node<FlowType> node_type;
+	typedef DeltaFlow deltaflow_type;
+};
+
+template<typename FlowType>
+struct derived_traits<InfomapGreedyTypeSpecialized<FlowType, WithMemory> > {
+	typedef FlowType flow_type;
+	typedef MemNode<FlowType> node_type;
+	typedef MemDeltaFlow deltaflow_type;
 };
 
 

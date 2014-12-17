@@ -38,19 +38,19 @@
 template<typename InfomapGreedyDerivedType>
 class InfomapGreedyCommon : public InfomapGreedySpecialized<typename derived_traits<InfomapGreedyDerivedType>::flow_type>
 {
-	typedef typename derived_traits<InfomapGreedyDerivedType>::flow_type				FlowType;
-	// typedef FlowDirectedNonDetailedBalance 												FlowType; // DEBUG!!
-	typedef InfomapGreedySpecialized<FlowType>							Super;
-	typedef typename flowData_traits<FlowType>::detailed_balance_type 	DetailedBalanceType;
-	typedef typename flowData_traits<FlowType>::directed_with_recorded_teleportation_type DirectedWithRecordedTeleportationType;
-	typedef typename flowData_traits<FlowType>::teleportation_type 		TeleportationType;
-	typedef typename flowData_traits<FlowType>::is_directed_type		IsDirectedType;
-	typedef MemNode<FlowType>											NodeType;//TODO: Specialize node type on network type!
-	typedef Edge<NodeBase>												EdgeType;
+	typedef typename derived_traits<InfomapGreedyDerivedType>::flow_type					FlowType;
+	typedef typename derived_traits<InfomapGreedyDerivedType>::node_type					NodeType;
+	typedef typename derived_traits<InfomapGreedyDerivedType>::deltaflow_type				DeltaFlowType;
+	typedef InfomapGreedySpecialized<FlowType>												Super;
+	typedef typename flowData_traits<FlowType>::detailed_balance_type 						DetailedBalanceType;
+	typedef typename flowData_traits<FlowType>::directed_with_recorded_teleportation_type 	DirectedWithRecordedTeleportationType;
+	typedef typename flowData_traits<FlowType>::teleportation_type 							TeleportationType;
+	typedef typename flowData_traits<FlowType>::is_directed_type							IsDirectedType;
+	typedef Edge<NodeBase>																	EdgeType;
 public:
 
-	InfomapGreedyCommon(const Config& conf) :
-		InfomapGreedySpecialized<FlowType>(conf),
+	InfomapGreedyCommon(const Config& conf, NodeFactoryBase* nodeFactory) :
+		InfomapGreedySpecialized<FlowType>(conf, nodeFactory),
 		m_coreLoopCount(0)
 		{}
 	virtual ~InfomapGreedyCommon() {}
@@ -61,10 +61,12 @@ private:
 	InfomapGreedyDerivedType& derived();
 
 protected:
-	using Super::getNode;
 	using Super::root;
 
 	virtual std::auto_ptr<InfomapBase> getNewInfomapInstance();
+
+	NodeType& getNode(NodeBase& node);
+	const NodeType& getNode(const NodeBase& node) const;
 
 	virtual unsigned int aggregateFlowValuesFromLeafToRoot();
 	virtual double calcCodelengthOnAllNodesInTree();
@@ -73,6 +75,8 @@ protected:
 	virtual double calcCodelengthOnModuleOfModules(const NodeBase& parent);
 	virtual double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent);
 	virtual std::pair<double, double> calcCodelength(const NodeBase& parent);
+
+	virtual void initConstantInfomapTerms();
 
 	virtual void calculateCodelengthFromActiveNetwork();
 
@@ -111,6 +115,20 @@ inline
 std::auto_ptr<InfomapBase> InfomapGreedyCommon<InfomapGreedyDerivedType>::getNewInfomapInstance()
 {
 	return std::auto_ptr<InfomapBase>(new InfomapGreedyDerivedType(Super::m_config));
+}
+
+template<typename InfomapGreedyDerivedType>
+inline
+typename InfomapGreedyCommon<InfomapGreedyDerivedType>::NodeType& InfomapGreedyCommon<InfomapGreedyDerivedType>::getNode(NodeBase& node)
+{
+	return static_cast<NodeType&>(node);
+}
+
+template<typename InfomapGreedyDerivedType>
+inline
+const typename InfomapGreedyCommon<InfomapGreedyDerivedType>::NodeType& InfomapGreedyCommon<InfomapGreedyDerivedType>::getNode(const NodeBase& node) const
+{
+	return static_cast<const NodeType&>(node);
 }
 
 template<typename InfomapGreedyDerivedType>
@@ -213,7 +231,7 @@ inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnRoo
 template<typename InfomapGreedyDerivedType>
 inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent)
 {
-	const FlowType& parentData = Super::getNode(parent).data;
+	const FlowType& parentData = getNode(parent).data;
 	double parentFlow = parentData.flow;
 	double parentExit = parentData.exitFlow;
 	double totalParentFlow = parentFlow + parentExit;
@@ -225,7 +243,7 @@ inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnMod
 	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
 			childIt != endIt; ++childIt)
 	{
-		indexLength -= infomath::plogp(Super::getNode(*childIt).data.flow / totalParentFlow);
+		indexLength -= infomath::plogp(getNode(*childIt).data.flow / totalParentFlow);
 	}
 	indexLength -= infomath::plogp(parentExit / totalParentFlow);
 
@@ -237,7 +255,7 @@ inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnMod
 template<typename InfomapGreedyDerivedType>
 inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnModuleOfModules(const NodeBase& parent)
 {
-	const FlowType& parentData = Super::getNode(parent).data;
+	const FlowType& parentData = getNode(parent).data;
 	double parentExit = parentData.exitFlow;
 	if (parentData.flow < 1e-16)
 		return 0.0;
@@ -255,7 +273,7 @@ inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnMod
 	for (NodeBase::const_sibling_iterator childIt(parent.begin_child()), endIt(parent.end_child());
 			childIt != endIt; ++childIt)
 	{
-		const double& enterFlow = Super::getNode(*childIt).data.enterFlow; // rate of enter to finer level
+		const double& enterFlow = getNode(*childIt).data.enterFlow; // rate of enter to finer level
 		sumEnter += enterFlow;
 		sumEnterLogEnter += infomath::plogp(enterFlow);
 	}
@@ -278,6 +296,19 @@ inline std::pair<double, double> InfomapGreedyCommon<InfomapGreedyDerivedType>::
 	return std::make_pair(indexCodelength, moduleCodelength);
 }
 
+template<typename InfomapGreedyDerivedType>
+void InfomapGreedyCommon<InfomapGreedyDerivedType>::initConstantInfomapTerms()
+{
+	// Not constant for memory Infomap!
+	Super::nodeFlow_log_nodeFlow = 0.0;
+	// For each module
+	for (typename Super::activeNetwork_iterator it(Super::m_activeNetwork.begin()), itEnd(Super::m_activeNetwork.end());
+			it != itEnd; ++it)
+	{
+		NodeType& node = getNode(**it);
+		Super::nodeFlow_log_nodeFlow += infomath::plogp(node.data.flow);
+	}
+}
 
 /**
  * Specialized for the case when enter and exit flow may differ
@@ -294,7 +325,7 @@ void InfomapGreedyCommon<InfomapGreedyDerivedType>::calculateCodelengthFromActiv
 	for (typename Super::activeNetwork_iterator it(Super::m_activeNetwork.begin()), itEnd(Super::m_activeNetwork.end());
 			it != itEnd; ++it)
 	{
-		NodeType& node = Super::getNode(**it);
+		NodeType& node = getNode(**it);
 		// own node/module codebook
 		Super::flow_log_flow += infomath::plogp(node.data.flow + node.data.exitFlow);
 
@@ -381,7 +412,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 	std::vector<unsigned int> randomOrder(numNodes);
 	infomath::getRandomizedIndexVector(randomOrder, Super::m_rand);
 
-	std::vector<DeltaFlow> moduleDeltaEnterExit(numNodes);
+	std::vector<DeltaFlowType> moduleDeltaEnterExit(numNodes);
 	std::vector<unsigned int> redirect(numNodes, 0);
 	unsigned int offset = 1;
 	unsigned int maxOffset = std::numeric_limits<unsigned int>::max() - 1 - numNodes;
@@ -399,13 +430,19 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 
 		// Pick nodes in random order
 		unsigned int flip = randomOrder[i];
-		NodeType& current = Super::getNode(*Super::m_activeNetwork[flip]);
+		NodeType& current = getNode(*Super::m_activeNetwork[flip]);
 
 		if (!current.dirty)
 			continue;
 
+		// Don't move out from previous merge on first loop
 		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop())
 			continue;
+
+		// Don't decrease the number of modules if already equal the preferred number
+		if (Super::isTopLevel() && Super::numActiveModules() == m_config.preferredNumberOfModules && Super::m_moduleMembers[current.index] == 1)
+			continue;
+
 
 		// If no links connecting this node with other nodes, it won't move into others,
 		// and others won't move into this. TODO: Always best leave it alone?
@@ -428,11 +465,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 		if (current.isDangling())
 		{
 			redirect[current.index] = offset + numModuleLinks;
-			moduleDeltaEnterExit[numModuleLinks].module = current.index;
-			moduleDeltaEnterExit[numModuleLinks].deltaExit = 0.0;
-			moduleDeltaEnterExit[numModuleLinks].deltaEnter = 0.0;
-			moduleDeltaEnterExit[numModuleLinks].sumDeltaPlogpPhysFlow = 0.0;
-			moduleDeltaEnterExit[numModuleLinks].sumPlogpPhysFlow = 0.0;
+			moduleDeltaEnterExit[numModuleLinks] = DeltaFlowType(current.index, 0.0, 0.0);
 			++numModuleLinks;
 		}
 		else
@@ -444,7 +477,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 				EdgeType& edge = **edgeIt;
 				if (edge.isSelfPointing())
 					continue;
-				NodeType& neighbour = Super::getNode(edge.target);
+				NodeType& neighbour = getNode(edge.target);
 
 				if (redirect[neighbour.index] >= offset)
 				{
@@ -453,11 +486,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 				else
 				{
 					redirect[neighbour.index] = offset + numModuleLinks;
-					moduleDeltaEnterExit[numModuleLinks].module = neighbour.index;
-					moduleDeltaEnterExit[numModuleLinks].deltaExit = edge.data.flow;
-					moduleDeltaEnterExit[numModuleLinks].deltaEnter = 0.0;
-					moduleDeltaEnterExit[numModuleLinks].sumDeltaPlogpPhysFlow = 0.0;
-					moduleDeltaEnterExit[numModuleLinks].sumPlogpPhysFlow = 0.0;
+					moduleDeltaEnterExit[numModuleLinks] = DeltaFlowType(neighbour.index, edge.data.flow, 0.0);
 					++numModuleLinks;
 				}
 			}
@@ -469,7 +498,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			EdgeType& edge = **edgeIt;
 			if (edge.isSelfPointing())
 				continue;
-			NodeType& neighbour = Super::getNode(edge.source);
+			NodeType& neighbour = getNode(edge.source);
 
 			if (redirect[neighbour.index] >= offset)
 			{
@@ -478,11 +507,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			else
 			{
 				redirect[neighbour.index] = offset + numModuleLinks;
-				moduleDeltaEnterExit[numModuleLinks].module = neighbour.index;
-				moduleDeltaEnterExit[numModuleLinks].deltaExit = 0.0;
-				moduleDeltaEnterExit[numModuleLinks].deltaEnter = edge.data.flow;
-				moduleDeltaEnterExit[numModuleLinks].sumDeltaPlogpPhysFlow = 0.0;
-				moduleDeltaEnterExit[numModuleLinks].sumPlogpPhysFlow = 0.0;
+				moduleDeltaEnterExit[numModuleLinks] = DeltaFlowType(neighbour.index, 0.0, edge.data.flow);
 				++numModuleLinks;
 			}
 		}
@@ -491,31 +516,24 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 		if (redirect[current.index] < offset)
 		{
 			redirect[current.index] = offset + numModuleLinks;
-			moduleDeltaEnterExit[numModuleLinks].module = current.index;
-			moduleDeltaEnterExit[numModuleLinks].deltaExit = 0.0;
-			moduleDeltaEnterExit[numModuleLinks].deltaEnter = 0.0;
-			moduleDeltaEnterExit[numModuleLinks].sumDeltaPlogpPhysFlow = 0.0;
-			moduleDeltaEnterExit[numModuleLinks].sumPlogpPhysFlow = 0.0;
+			moduleDeltaEnterExit[numModuleLinks] = DeltaFlowType(current.index, 0.0, 0.0);
 			++numModuleLinks;
 		}
 
 
 		// Empty function if no teleportation coding model
-		Super::addTeleportationDeltaFlowIfMove(current, moduleDeltaEnterExit, numModuleLinks);
+		Super::template addTeleportationDeltaFlowIfMove<DeltaFlowType>(current, moduleDeltaEnterExit, numModuleLinks);
 
-		// Option to move to empty module (if node not already alone)
-		if (Super::m_moduleMembers[current.index] > 1 && Super::m_emptyModules.size() > 0)
+		// Option to move to empty module (if node not already alone, and not already at the preferred number of modules)
+		if (Super::m_moduleMembers[current.index] > 1 && Super::m_emptyModules.size() > 0 &&
+				(m_config.preferredNumberOfModules == 0 || (Super::isTopLevel() && Super::numActiveModules() != m_config.preferredNumberOfModules)))
 		{
-			moduleDeltaEnterExit[numModuleLinks].module = Super::m_emptyModules.back();
-			moduleDeltaEnterExit[numModuleLinks].deltaExit = 0.0;
-			moduleDeltaEnterExit[numModuleLinks].deltaEnter = 0.0;
-			moduleDeltaEnterExit[numModuleLinks].sumDeltaPlogpPhysFlow = 0.0;
-			moduleDeltaEnterExit[numModuleLinks].sumPlogpPhysFlow = 0.0;
+			moduleDeltaEnterExit[numModuleLinks] = DeltaFlowType(Super::m_emptyModules.back(), 0.0, 0.0);
 			++numModuleLinks;
 		}
 
 		// Store the DeltaFlow of the current module
-		DeltaFlow oldModuleDelta(moduleDeltaEnterExit[redirect[current.index] - offset]);
+		DeltaFlowType oldModuleDelta(moduleDeltaEnterExit[redirect[current.index] - offset]);
 
 
 		// For memory networks
@@ -529,9 +547,9 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
 		}
 
-		DeltaFlow bestDeltaModule(oldModuleDelta);
+		DeltaFlowType bestDeltaModule(oldModuleDelta);
 		double bestDeltaCodelength = 0.0;
-		DeltaFlow strongestConnectedModule(oldModuleDelta);
+		DeltaFlowType strongestConnectedModule(oldModuleDelta);
 		double deltaCodelengthOnStrongestConnectedModule = 0.0;
 
 		// Find the move that minimizes the description length
@@ -636,7 +654,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 	{
 		// Pick nodes in random order
 		unsigned int flip = randomOrder[i];
-		NodeType& current = Super::getNode(*Super::m_activeNetwork[flip]);
+		NodeType& current = getNode(*Super::m_activeNetwork[flip]);
 
 		if (!current.dirty)
 			continue;
@@ -660,10 +678,10 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 		}
 
 		// Create map with module links
-		std::map<unsigned int, DeltaFlow> deltaFlow;
+		std::map<unsigned int, DeltaFlowType> deltaFlow;
 
 		// If alone in the module, add virtual link to the module (used when adding teleportation)
-		deltaFlow[current.index] += DeltaFlow(current.index, 0.0, 0.0);
+		deltaFlow[current.index] += DeltaFlowType(current.index, 0.0, 0.0);
 
 		// For all outlinks
 		for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
@@ -672,9 +690,9 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			EdgeType& edge = **edgeIt;
 			if (edge.isSelfPointing())
 				continue;
-			NodeType& neighbour = Super::getNode(edge.target);
+			NodeType& neighbour = getNode(edge.target);
 
-			deltaFlow[neighbour.index] += DeltaFlow(neighbour.index, edge.data.flow, 0.0);
+			deltaFlow[neighbour.index] += DeltaFlowType(neighbour.index, edge.data.flow, 0.0);
 		}
 		// For all inlinks
 		for (NodeBase::edge_iterator edgeIt(current.begin_inEdge()), endIt(current.end_inEdge());
@@ -683,29 +701,29 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			EdgeType& edge = **edgeIt;
 			if (edge.isSelfPointing())
 				continue;
-			NodeType& neighbour = Super::getNode(edge.source);
+			NodeType& neighbour = getNode(edge.source);
 
-			deltaFlow[neighbour.index] += DeltaFlow(neighbour.index, 0.0, edge.data.flow);
+			deltaFlow[neighbour.index] += DeltaFlowType(neighbour.index, 0.0, edge.data.flow);
 		}
 
 
 		// Empty function if no teleportation coding model
-		Super::addTeleportationDeltaFlowIfMove(current, deltaFlow);
+		Super::template addTeleportationDeltaFlowIfMove<DeltaFlowType>(current, deltaFlow);
 
 		// Option to move to empty module (if node not already alone)
 		if (Super::m_moduleMembers[current.index] > 1 && Super::m_emptyModules.size() > 0)
-			deltaFlow[Super::m_emptyModules.back()] += DeltaFlow(Super::m_emptyModules.back(), 0.0, 0.0);
+			deltaFlow[Super::m_emptyModules.back()] += DeltaFlowType(Super::m_emptyModules.back(), 0.0, 0.0);
 
 		// Store the DeltaFlow of the current module
-		DeltaFlow oldModuleDelta(deltaFlow[current.index]);
+		DeltaFlowType oldModuleDelta(deltaFlow[current.index]);
 
 		// For memory networks
 		derived().addContributionOfMovingMemoryNodes(current, oldModuleDelta, deltaFlow);
 
 
-		std::vector<DeltaFlow> moduleDeltaEnterExit(deltaFlow.size());
+		std::vector<DeltaFlowType> moduleDeltaEnterExit(deltaFlow.size());
 		unsigned int numModuleLinks = 0;
-		for (std::map<unsigned int, DeltaFlow>::iterator it(deltaFlow.begin()); it != deltaFlow.end(); ++it)
+		for (typename std::map<unsigned int, DeltaFlowType>::iterator it(deltaFlow.begin()); it != deltaFlow.end(); ++it)
 		{
 			moduleDeltaEnterExit[numModuleLinks] = it->second;
 			++numModuleLinks;
@@ -718,9 +736,9 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
 		}
 
-		DeltaFlow bestDeltaModule(oldModuleDelta);
+		DeltaFlowType bestDeltaModule(oldModuleDelta);
 		double bestDeltaCodelength = 0.0;
-		DeltaFlow strongestConnectedModule(oldModuleDelta);
+		DeltaFlowType strongestConnectedModule(oldModuleDelta);
 		double deltaCodelengthOnStrongestConnectedModule = 0.0;
 
 		// Find the move that minimizes the description length
@@ -834,13 +852,17 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 //		printf("Node %d processed by thread %d\n", i, omp_get_thread_num());
 		// Pick nodes in random order
 		unsigned int flip = randomOrder[i];
-		NodeType& current = Super::getNode(*Super::m_activeNetwork[flip]);
+		NodeType& current = getNode(*Super::m_activeNetwork[flip]);
 
 		if (!current.dirty)
 			continue;
 
 		// If other nodes have moved here, don't move away on first loop
 		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop())
+			continue;
+
+		// Don't decrease the number of modules if already equal the preferred number
+		if (Super::isTopLevel() && Super::numActiveModules() == m_config.preferredNumberOfModules && Super::m_moduleMembers[current.index] == 1)
 			continue;
 
 		// If no links connecting this node with other nodes, it won't move into others,
@@ -859,10 +881,10 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 		}
 
 		// Create map with module links
-		std::map<unsigned int, DeltaFlow> deltaFlow;
+		std::map<unsigned int, DeltaFlowType> deltaFlow;
 
 		// If alone in the module, add virtual link to the module (used when adding teleportation)
-		deltaFlow[current.index] += DeltaFlow(current.index, 0.0, 0.0);
+		deltaFlow[current.index] += DeltaFlowType(current.index, 0.0, 0.0);
 
 		// For all outlinks
 		for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
@@ -871,9 +893,9 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			EdgeType& edge = **edgeIt;
 			if (edge.isSelfPointing())
 				continue;
-			NodeType& neighbour = Super::getNode(edge.target);
+			NodeType& neighbour = getNode(edge.target);
 
-			deltaFlow[neighbour.index] += DeltaFlow(neighbour.index, edge.data.flow, 0.0);
+			deltaFlow[neighbour.index] += DeltaFlowType(neighbour.index, edge.data.flow, 0.0);
 		}
 		// For all inlinks
 		for (NodeBase::edge_iterator edgeIt(current.begin_inEdge()), endIt(current.end_inEdge());
@@ -882,32 +904,34 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			EdgeType& edge = **edgeIt;
 			if (edge.isSelfPointing())
 				continue;
-			NodeType& neighbour = Super::getNode(edge.source);
+			NodeType& neighbour = getNode(edge.source);
 
-			deltaFlow[neighbour.index] += DeltaFlow(neighbour.index, 0.0, edge.data.flow);
+			deltaFlow[neighbour.index] += DeltaFlowType(neighbour.index, 0.0, edge.data.flow);
 		}
 
 
 		// Empty function if no teleportation coding model
-		Super::addTeleportationDeltaFlowIfMove(current, deltaFlow);
+		Super::template addTeleportationDeltaFlowIfMove<DeltaFlowType>(current, deltaFlow);
 
-		// Option to move to empty module (if node not already alone)
+		// Option to move to empty module (if node not already alone, and not already at the preferred number of modules)
 		unsigned int emptyModuleIndex = emptyTarget;
-		if (Super::m_moduleMembers[current.index] > 1 && Super::m_emptyModules.size() > 0) {
+		if (Super::m_moduleMembers[current.index] > 1 && Super::m_emptyModules.size() > 0 &&
+				(m_config.preferredNumberOfModules == 0 || (Super::isTopLevel() && Super::numActiveModules() != m_config.preferredNumberOfModules)))
+		{
 			emptyModuleIndex = Super::m_emptyModules.back();
-			deltaFlow[emptyModuleIndex] += DeltaFlow(emptyModuleIndex, 0.0, 0.0);
+			deltaFlow[emptyModuleIndex] += DeltaFlowType(emptyModuleIndex, 0.0, 0.0);
 		}
 
 		// Store the DeltaFlow of the current module
-		DeltaFlow oldModuleDelta(deltaFlow[current.index]);
+		DeltaFlowType oldModuleDelta(deltaFlow[current.index]);
 
 		// For memory networks
 		derived().addContributionOfMovingMemoryNodes(current, oldModuleDelta, deltaFlow);
 
 
-		std::vector<DeltaFlow> moduleDeltaEnterExit(deltaFlow.size());
+		std::vector<DeltaFlowType> moduleDeltaEnterExit(deltaFlow.size());
 		unsigned int numModuleLinks = 0;
-		for (std::map<unsigned int, DeltaFlow>::iterator it(deltaFlow.begin()); it != deltaFlow.end(); ++it)
+		for (typename std::map<unsigned int, DeltaFlowType>::iterator it(deltaFlow.begin()); it != deltaFlow.end(); ++it)
 		{
 			moduleDeltaEnterExit[numModuleLinks] = it->second;
 			++numModuleLinks;
@@ -920,9 +944,9 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
 		}
 
-		DeltaFlow bestDeltaModule(oldModuleDelta);
+		DeltaFlowType bestDeltaModule(oldModuleDelta);
 		double bestDeltaCodelength = 0.0;
-		DeltaFlow strongestConnectedModule(oldModuleDelta);
+		DeltaFlowType strongestConnectedModule(oldModuleDelta);
 		double deltaCodelengthOnStrongestConnectedModule = 0.0;
 
 		// Find the move that minimizes the description length
@@ -985,8 +1009,8 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 				{
 
 					// Recalculate delta codelength for proposed move to see if still an improvement
-					DeltaFlow oldModuleDelta(oldModuleIndex, 0.0, 0.0, 0.0, 0.0);
-					DeltaFlow newModuleDelta(bestModuleIndex, 0.0, 0.0, 0.0, 0.0);
+					DeltaFlowType oldModuleDelta(oldModuleIndex, 0.0, 0.0, 0.0, 0.0);
+					DeltaFlowType newModuleDelta(bestModuleIndex, 0.0, 0.0, 0.0, 0.0);
 
 					Super::addTeleportationDeltaFlowOnOldModuleIfMove(current, oldModuleDelta);
 					Super::addTeleportationDeltaFlowOnNewModuleIfMove(current, newModuleDelta);
@@ -1100,7 +1124,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoS
 	{
 		// Pick nodes in random order
 		unsigned int flip = randomOrder[i];
-		NodeType& current = Super::getNode(*Super::m_activeNetwork[flip]);
+		NodeType& current = getNode(*Super::m_activeNetwork[flip]);
 
 		if (!current.dirty) //TODO: Only skip stable nodes until converged, then start over as a fine tune?
 			continue;
@@ -1157,14 +1181,14 @@ void InfomapGreedyCommon<InfomapGreedyDerivedType>::moveNodesToPredefinedModules
 	unsigned int numMoved = 0;
 	for(unsigned int k = 0; k < numNodes; ++k)
 	{
-		NodeType& current = Super::getNode(*Super::m_activeNetwork[k]);
+		NodeType& current = getNode(*Super::m_activeNetwork[k]);
 		unsigned int oldM = current.index; // == k
 		unsigned int newM = Super::m_moveTo[k];
 
 		if (newM != oldM)
 		{
-			DeltaFlow oldModuleDelta(oldM, 0.0, 0.0, 0.0, 0.0);
-			DeltaFlow newModuleDelta(newM, 0.0, 0.0, 0.0, 0.0);
+			DeltaFlowType oldModuleDelta(oldM, 0.0, 0.0, 0.0, 0.0);
+			DeltaFlowType newModuleDelta(newM, 0.0, 0.0, 0.0, 0.0);
 
 			Super::addTeleportationDeltaFlowOnOldModuleIfMove(current, oldModuleDelta);
 			Super::addTeleportationDeltaFlowOnNewModuleIfMove(current, newModuleDelta);
