@@ -34,6 +34,9 @@
 #include "convert.h"
 #include <cstdio>
 
+namespace infomap
+{
+
 using std::ifstream;
 using std::ofstream;
 
@@ -279,6 +282,8 @@ bool isDirectoryWritable(const std::string& dir)
 	if (ok)
 		std::remove(path.c_str());
 	return ok;
+}
+
 }
 
 #endif /* SAFEFILE_H_ */

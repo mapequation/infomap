@@ -54,6 +54,9 @@
 #include "../io/version.h"
 #include <functional>
 
+namespace infomap
+{
+
 void InfomapBase::run()
 {
 
@@ -81,8 +84,8 @@ void InfomapBase::run()
 
 	for (unsigned int iTrial = 0; iTrial < m_config.numTrials; ++iTrial)
 	{
-		RELEASE_OUT(std::endl << "Attempt " << (iTrial+1) << "/" << m_config.numTrials <<
-				" at " << Date() << std::endl);
+		std::cout << "\nAttempt " << (iTrial+1) << "/" << m_config.numTrials <<	" at " << Date();
+		std::cout << std::endl;
 		m_iterationCount = 0;
 
 		// First clear existing modular structure
@@ -202,8 +205,8 @@ void InfomapBase::run(Network& input, HierarchicalNetwork& output)
 
 	for (unsigned int iTrial = 0; iTrial < m_config.numTrials; ++iTrial)
 	{
-		RELEASE_OUT(std::endl << "Attempt " << (iTrial+1) << "/" << m_config.numTrials <<
-				" at " << Date() << std::endl);
+		std::cout << "\nAttempt " << (iTrial+1) << "/" << m_config.numTrials <<	" at " << Date();
+		std::cout << std::endl;
 		m_iterationCount = 0;
 
 		// First clear existing modular structure
@@ -2151,9 +2154,4 @@ void InfomapBase::calcMaxAndAverageDepthHelper(NodeBase& root, unsigned int& max
 	}
 }
 
-
-
-
-
-
-
+}

@@ -32,6 +32,9 @@
 #include <utility>
 #include "../io/convert.h"
 
+namespace infomap
+{
+
 ProgramInterface::ProgramInterface(std::string name, std::string shortDescription, std::string version)
 : m_programName(name),
   m_shortProgramDescription(shortDescription),
@@ -250,6 +253,9 @@ void ProgramInterface::parseArgs(const std::vector<std::string>& flags)
 		exitWithError(e.what());
 	}
 
+	if (nonOpts.size() < numRequiredArguments())
+		exitWithError("Missing required arguments.");
+
 	unsigned int i = 0;
 	unsigned int numVectorArguments = nonOpts.size() - (m_nonOptionArguments.size() - 1);
 	while (!nonOpts.empty())
@@ -276,4 +282,6 @@ std::vector<ParsedOption> ProgramInterface::getUsedOptionArguments()
 			opts.push_back(ParsedOption(opt));
 	}
 	return opts;
+}
+
 }

@@ -33,6 +33,9 @@
 #include "Stopwatch.h"
 #include "../io/SafeFile.h"
 
+namespace infomap
+{
+
 class Logger
 {
 public:
@@ -197,5 +200,6 @@ public:
 	} while (0)
 #endif
 
+}
 
 #endif /* LOGGER_H_ */

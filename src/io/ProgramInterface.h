@@ -37,10 +37,8 @@
 #include <iostream>
 #include "convert.h"
 
-/**
- *
- */
-
+namespace infomap
+{
 
 struct OptionConflictError : std::logic_error
 {
@@ -285,6 +283,8 @@ public:
 
 	std::vector<ParsedOption> getUsedOptionArguments();
 
+	unsigned int numRequiredArguments() { return m_nonOptionArguments.size() - m_numOptionalNonOptionArguments; }
+
 	std::string parsedArgs() { return m_parsedArgs; }
 
 private:
@@ -308,5 +308,6 @@ private:
 	unsigned int m_numOptionalNonOptionArguments;
 };
 
+}
 
 #endif /* ARGPARSER_H_ */

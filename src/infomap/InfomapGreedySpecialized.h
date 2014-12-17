@@ -31,6 +31,8 @@
 #include "flowData.h"
 #include <map>
 
+namespace infomap
+{
 
 /**
  * Infomap methods specialized on the flow type, e.g. including teleportation flow if coding teleportation.
@@ -412,7 +414,6 @@ void InfomapGreedySpecialized<FlowUndirected>::updateCodelengthOnMovingNode(Node
 	codelength = indexCodelength + moduleCodelength;
 }
 
-
-
+}
 
 #endif /* INFOMAPGREEDYSPECIALIZED_H_ */

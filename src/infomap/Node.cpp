@@ -30,6 +30,9 @@
 
 #include "InfomapBase.h"
 
+namespace infomap
+{
+
 long NodeBase::s_nodeCount = 0;
 unsigned long NodeBase::s_UID = 0;
 
@@ -159,4 +162,6 @@ void NodeBase::calcChildDegree()
 		for (NodeBase::sibling_iterator childIt(begin_child()), endIt(end_child());
 				childIt != endIt; ++childIt, ++m_childDegree);
 	}
+}
+
 }

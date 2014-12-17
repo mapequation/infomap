@@ -41,6 +41,8 @@
 #include "NodeFactory.h"
 #include "treeIterators.h"
 
+namespace infomap
+{
 
 bool NetworkAdapter::readExternalHierarchy(std::string filename)
 {
@@ -200,3 +202,4 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	std::cout << "done! Found " << maxDepth << " levels." << std::endl;
 }
 
+}

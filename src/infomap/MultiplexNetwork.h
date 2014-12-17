@@ -34,6 +34,9 @@
 #include <deque>
 #include <string>
 
+namespace infomap
+{
+
 class MultiplexNetwork : public MemNetwork
 {
 public:
@@ -120,5 +123,7 @@ protected:
 	MultiplexLinkMap m_multiplexLinks; // {(layer,node)} -> ({(layer,node)} -> {weight})
 	std::map<unsigned int, unsigned int> m_multiplexLinkLayers;
 };
+
+}
 
 #endif /* MULTIPLEXNETWORK_H_ */

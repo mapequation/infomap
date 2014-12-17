@@ -32,6 +32,9 @@
 #include <vector>
 #include "MersenneTwister.h"
 
+namespace infomap
+{
+
 namespace infomath
 {
 	inline
@@ -73,6 +76,8 @@ namespace infomath
 	{
 		return value > lowerLimit && value < higherLimit;
 	}
+}
+
 }
 
 #endif /* INFOMAPTH_H_ */

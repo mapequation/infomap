@@ -31,6 +31,9 @@
 #include <string>
 #include <vector>
 
+namespace infomap
+{
+
 using std::string;
 
 class ClusterReader
@@ -64,6 +67,6 @@ private:
 	std::vector<unsigned int> m_clusters;
 };
 
-
+}
 
 #endif /* CLUSTERREADER_H_ */

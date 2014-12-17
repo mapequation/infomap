@@ -35,6 +35,9 @@
 #include "Network.h"
 #include "../io/Config.h"
 
+namespace infomap
+{
+
 class FlowNetwork
 {
 public:
@@ -61,8 +64,8 @@ public:
 	typedef Network::LinkMap										LinkMap;
 	typedef std::vector<Link>										LinkVec;
 
-	FlowNetwork();
-	virtual ~FlowNetwork();
+	FlowNetwork() {}
+	virtual ~FlowNetwork() {}
 
 	virtual void calculateFlow(const Network& network, const Config& config);
 
@@ -77,5 +80,7 @@ protected:
 	LinkVec m_flowLinks;
 
 };
+
+}
 
 #endif /* FLOWNETWORK_H_ */

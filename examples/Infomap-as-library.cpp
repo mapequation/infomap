@@ -34,11 +34,11 @@
 using std::vector;
 using std::string;
 
-void printTreeHelper(std::ostream& out, SNode& node, std::string prefix = "")
+void printTreeHelper(std::ostream& out, infomap::SNode& node, std::string prefix = "")
 {
 	for (unsigned int i = 0; i < node.children.size(); ++i)
 	{
-		SNode& child = *node.children[i];
+		infomap::SNode& child = *node.children[i];
 		if (child.isLeaf)
 			out << prefix << (i+1) << " " << child.data.flow <<" \"" << child.data.name << "\" " << child.originalLeafIndex << "\n";
 		else {
@@ -50,7 +50,7 @@ void printTreeHelper(std::ostream& out, SNode& node, std::string prefix = "")
 	}
 }
 
-void printTree(HierarchicalNetwork& hierarchicalNetwork)
+void printTree(infomap::HierarchicalNetwork& hierarchicalNetwork)
 {
 	std::cout << "Result tree:\n";
 	printTreeHelper(std::cout, hierarchicalNetwork.getRootNode());
@@ -60,9 +60,9 @@ int main(int argc, char** argv)
 {
 	vector<string> flags;
 
-	Config config = init(flags);
+	infomap::Config config = infomap::init(flags);
 
-	Network network(config);
+	infomap::Network network(config);
 
   	network.addLink(0, 1);
   	network.addLink(0, 2);
@@ -81,9 +81,9 @@ int main(int argc, char** argv)
 
   	network.finalizeAndCheckNetwork();
 
-  	HierarchicalNetwork resultNetwork(config);
+  	infomap::HierarchicalNetwork resultNetwork(config);
 
-  	run(network, resultNetwork);
+  	infomap::run(network, resultNetwork);
   	
   	printTree(resultNetwork);
 }

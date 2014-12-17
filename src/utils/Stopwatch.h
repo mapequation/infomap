@@ -29,6 +29,9 @@
 
 #include <ctime>
 
+namespace infomap
+{
+
 class Stopwatch
 {
 public:
@@ -89,5 +92,6 @@ private:
     bool m_running;
 };
 
+}
 
 #endif /* STOPWATCH_H_ */

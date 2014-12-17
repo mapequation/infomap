@@ -40,6 +40,9 @@
 #include "utils/Date.h"
 #include "io/version.h"
 
+namespace infomap
+{
+	
 void runInfomap(Config const& config)
 {
 	InfomapContext context(config);
@@ -227,7 +230,6 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>
 	{
 		api.addNonOptionArgument(conf.outDirectory, "out_directory",
 				"The directory to write the results to");
-		std::cout << "Require outDirectery" << std::endl;
 	}
 	else
 	{
@@ -246,8 +248,6 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>
 	{
 		if (!optionalOutputDir.empty())
 			conf.outDirectory = optionalOutputDir[0];
-		else
-			conf.outDirectory = ".";
 	}
 
 	// Some checks
@@ -373,6 +373,8 @@ int run(const std::vector<std::string>& flags)
 	return 0;
 }
 
+}
+
 #ifndef NO_MAIN
 int main(int argc, char* argv[])
 {
@@ -380,6 +382,6 @@ int main(int argc, char* argv[])
 	for (int i = 1; i < argc; ++i)
 		flags.push_back(argv[i]);
 
-	return run(flags);
+	return infomap::run(flags);
 }
 #endif

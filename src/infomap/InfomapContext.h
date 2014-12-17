@@ -31,6 +31,9 @@
 #include "InfomapBase.h"
 #include <memory>
 
+namespace infomap
+{
+
 class InfomapContext
 {
 public:
@@ -48,5 +51,7 @@ private:
 	const Config& m_config;
 	std::auto_ptr<InfomapBase> m_infomap;
 };
+
+}
 
 #endif /* INFOMAPCONTEXT_H_ */

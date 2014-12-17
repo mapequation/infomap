@@ -35,6 +35,9 @@
 #include <limits>
 #include <sstream>
 
+namespace infomap
+{
+
 class Network
 {
 public:
@@ -338,5 +341,6 @@ struct Triple
 	unsigned int n3;
 };
 
+}
 
 #endif /* NETWORK_H_ */

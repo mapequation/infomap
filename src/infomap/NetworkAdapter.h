@@ -32,6 +32,9 @@
 #include "../io/Config.h"
 #include "TreeData.h"
 
+namespace infomap
+{
+
 class NetworkAdapter {
 public:
 	NetworkAdapter(const Config& config, TreeData& treeData) :
@@ -55,5 +58,7 @@ protected:
 	unsigned int m_numNodes;
 	unsigned int m_indexOffset;
 };
+
+}
 
 #endif /* SRC_INFOMAP_NETWORKADAPTER_H_ */

@@ -37,6 +37,9 @@
 #include "../utils/Logger.h"
 #include <memory>
 
+namespace infomap
+{
+
 class InfomapBase;
 
 struct SubStructure
@@ -565,7 +568,41 @@ struct PhysData
 };
 
 
-#include "MemNetwork.h"
+
+struct M2Node
+{
+	unsigned int priorState;
+	unsigned int physIndex;
+	M2Node() :
+		priorState(0), physIndex(0)
+	{}
+	M2Node(unsigned int priorState, unsigned int physIndex) :
+		priorState(priorState), physIndex(physIndex)
+	{}
+	M2Node(const M2Node& other) :
+		priorState(other.priorState), physIndex(other.physIndex)
+	{}
+
+	bool operator<(M2Node other) const
+	{
+		return priorState == other.priorState ? physIndex < other.physIndex : priorState < other.priorState;
+	}
+
+	bool operator==(M2Node other) const
+	{
+		return priorState == other.priorState && physIndex == other.physIndex;
+	}
+
+	bool operator!=(M2Node other) const
+	{
+		return priorState != other.priorState || physIndex != other.physIndex;
+	}
+
+	friend std::ostream& operator<<(std::ostream& out, const M2Node& node)
+	{
+		return out << "(" << node.priorState << "-" << node.physIndex << ")";
+	}
+};
 
 template <typename T>
 class MemNode : public Node<T>
@@ -595,6 +632,6 @@ public:
 	std::vector<PhysData> physicalNodes;
 };
 
-
+}
 
 #endif /* NODE_H_ */

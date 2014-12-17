@@ -35,6 +35,10 @@
 #include "../io/SafeFile.h"
 #include <limits>
 #include "../io/HierarchicalNetwork.h"
+#include "Network.h"
+
+namespace infomap
+{
 
 struct DepthStat;
 struct PerLevelStat;
@@ -392,5 +396,6 @@ struct PerLevelStat
 	double leafLength;
 };
 
+}
 
 #endif /* INFOMAPBASE_H_ */

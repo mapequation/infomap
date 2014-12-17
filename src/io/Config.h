@@ -36,6 +36,9 @@
 #include "../utils/Date.h"
 #include "version.h"
 
+namespace infomap
+{
+
 struct Config
 {
 	Config()
@@ -80,7 +83,7 @@ struct Config
 		fastFirstIteration(false),
 		lowMemoryPriority(0),
 		innerParallelization(false),
-		outDirectory(""),
+		outDirectory("."),
 		originallyUndirected(false),
 		printTree(false),
 		printFlowTree(false),
@@ -412,5 +415,7 @@ struct Config
 	Date startDate;
 	std::string version;
 };
+
+}
 
 #endif /* CONFIG_H_ */

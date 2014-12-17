@@ -38,6 +38,8 @@
 #include "../utils/FileURI.h"
 #include "../utils/Logger.h"
 
+namespace infomap
+{
 
 using std::make_pair;
 
@@ -692,5 +694,4 @@ void Network::printNetworkAsPajek(std::string filename) const
 	}
 }
 
-
-
+}
