@@ -133,13 +133,8 @@ void ProgramInterface::exitWithError(std::string message)
 	std::exit(1);
 }
 
-void ProgramInterface::parseArgs(const std::vector<std::string>& flags)
+void ProgramInterface::parseArgs(const std::string& args)
 {
-	std::ostringstream ss;
-	for (unsigned int i = 0; i < flags.size(); ++i)
-		ss << flags[i] << (i + 1 == flags.size()? "" : " ");
-	m_parsedArgs = ss.str();
-
 	// Map the options on short and long name, and check for duplication
 	std::map<char, Option*> shortOptionMap;
 	std::map<std::string, Option*> longOptionMap;
@@ -159,6 +154,13 @@ void ProgramInterface::parseArgs(const std::vector<std::string>& flags)
 			throw OptionConflictError(io::Str() << "Duplication of option \"" << opt.longName << "\"");
 		longOptionMap.insert(std::make_pair(opt.longName, &opt));
 	}
+
+	// Split the flags on whitespace
+	std::vector<std::string> flags;
+	std::istringstream argStream(args);
+	std::string arg;
+	while (!(argStream >> arg).fail())
+		flags.push_back(arg);
 
 	std::deque<std::string> nonOpts;
 	try

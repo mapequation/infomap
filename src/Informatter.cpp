@@ -45,7 +45,7 @@
 namespace infomap
 {
 
-std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>& args)
+std::vector<ParsedOption> getConfig(Config& conf, const std::string& args)
 {
 	ProgramInterface api("Informatter", "Infomap formatter utility", INFOMAP_VERSION);
 
@@ -175,7 +175,7 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>
 
 	api.parseArgs(args);
 
-	conf.parsedArgs = api.parsedArgs();
+	conf.parsedArgs = args;
 
 	// Some checks
 	if (*--conf.outDirectory.end() != '/')
@@ -201,13 +201,10 @@ void runInformatter(Config const& config)
 	infomap.consolidateExternalClusterData(true);
 }
 
-int run(int argc, char* argv[])
+int run(const std::string& args)
 {
 	Date startDate;
 	Config conf;
-	std::vector<std::string> args(argc);
-	for (unsigned int i = 0; i < args.size(); ++i)
-		args[i] = argv[i];
 	try
 	{
 		std::vector<ParsedOption> flags = getConfig(conf, args);
@@ -246,5 +243,9 @@ int run(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-	return infomap::run(argc, argv);
+	std::ostringstream args("");
+	for (int i = 1; i < argc; ++i)
+		args << argv[i] << (i + 1 == argc? "" : " ");
+
+	return infomap::run(args.str());
 }

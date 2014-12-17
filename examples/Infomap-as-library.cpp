@@ -58,9 +58,7 @@ void printTree(infomap::HierarchicalNetwork& hierarchicalNetwork)
 
 int main(int argc, char** argv)
 {
-	vector<string> flags;
-
-	infomap::Config config = infomap::init(flags);
+	infomap::Config config = infomap::init("--two-level -N2");
 
 	infomap::Network network(config);
 

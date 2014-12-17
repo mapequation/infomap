@@ -55,7 +55,7 @@ void runInfomap(Config const& config, Network& input, HierarchicalNetwork& outpu
 	context.getInfomap()->run(input, output);
 }
 
-std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>& flags, bool noFileIO = false)
+std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool noFileIO = false)
 {
 	ProgramInterface api("Infomap",
 			"Implementation of the Infomap clustering algorithm based on the Map Equation (see www.mapequation.org)",
@@ -242,7 +242,7 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>
 
 	api.parseArgs(flags);
 
-	conf.parsedArgs = api.parsedArgs();
+	conf.parsedArgs = flags;
 
 	if (noFileIO)
 	{
@@ -261,15 +261,13 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>
 	return api.getUsedOptionArguments();
 }
 
-void initBenchmark(const Config& conf, const std::vector<std::string>& args)
+void initBenchmark(const Config& conf, const std::string& flags)
 {
 	std::string networkName = FileURI(conf.networkFile).getName();
 	std::string logFilename = io::Str() << conf.outDirectory << networkName << ".tsv";
 	Logger::setBenchmarkFilename(logFilename);
 	std::ostringstream logInfo;
-	logInfo << "#benchmark for";
-	for (unsigned int i = 0; i < args.size(); ++i)
-		logInfo << " " << args[i];
+	logInfo << "#benchmark for '" << flags << "'";
 	Logger::benchmark(logInfo.str(), 0, 0, 0, 0, true);
 	Logger::benchmark("elapsedSeconds\ttag\tcodelength\tnumTopModules\tnumNonTrivialTopModules\ttreeDepth",
 			0, 0, 0, 0, true);
@@ -277,7 +275,7 @@ void initBenchmark(const Config& conf, const std::vector<std::string>& args)
 	std::cout << "(Writing benchmark log to '" << logFilename << "'...)\n";
 }
 
-Config init(const std::vector<std::string>& flags)
+Config init(const std::string& flags)
 {
 	Config conf;
 	try
@@ -322,7 +320,7 @@ int run(Network& input, HierarchicalNetwork& output)
 	return 0;
 }
 
-int run(const std::vector<std::string>& flags)
+int run(const std::string& flags)
 {
 	Date startDate;
 	Config conf;
@@ -378,10 +376,10 @@ int run(const std::vector<std::string>& flags)
 #ifndef NO_MAIN
 int main(int argc, char* argv[])
 {
-	std::vector<std::string> flags;
+	std::ostringstream args("");
 	for (int i = 1; i < argc; ++i)
-		flags.push_back(argv[i]);
+		args << argv[i] << (i + 1 == argc? "" : " ");
 
-	return infomap::run(flags);
+	return infomap::run(args.str());
 }
 #endif
