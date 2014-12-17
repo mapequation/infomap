@@ -30,6 +30,6 @@
 namespace infomap
 {
 
-const char* INFOMAP_VERSION = "0.17.0";
+const char* INFOMAP_VERSION = "0.17.1";
 
 }
