@@ -33,6 +33,9 @@
 #include <stdexcept>
 #include <string>
 
+namespace infomap
+{
+
 class AbortAndHelp : public std::runtime_error {
 public:
 	AbortAndHelp(std::string const& s) : std::runtime_error(s) { }
@@ -224,6 +227,8 @@ inline std::string toPlural(std::string object, unsigned int num)
 	if (num > 1 || num == 0)
 		object.push_back('s');
 	return object;
+}
+
 }
 
 }

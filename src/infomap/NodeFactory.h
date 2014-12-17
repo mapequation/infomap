@@ -31,6 +31,9 @@
 #include "Node.h"
 #include "flowData.h"
 
+namespace infomap
+{
+
 class NodeFactoryBase
 {
 public:
@@ -72,5 +75,7 @@ public:
 		return new node_type(static_cast<const_node_type&>(node));
 	}
 };
+
+}
 
 #endif /* NODEFACTORY_H_ */

@@ -40,6 +40,9 @@
 #include "utils/Date.h"
 #include "io/version.h"
 
+namespace infomap
+{
+	
 void runInfomap(Config const& config)
 {
 	InfomapContext context(config);
@@ -373,6 +376,8 @@ int run(const std::vector<std::string>& flags)
 	return 0;
 }
 
+}
+
 #ifndef NO_MAIN
 int main(int argc, char* argv[])
 {
@@ -380,6 +385,6 @@ int main(int argc, char* argv[])
 	for (int i = 1; i < argc; ++i)
 		flags.push_back(argv[i]);
 
-	return run(flags);
+	return infomap::run(flags);
 }
 #endif

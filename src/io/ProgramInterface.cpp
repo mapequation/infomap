@@ -32,6 +32,9 @@
 #include <utility>
 #include "../io/convert.h"
 
+namespace infomap
+{
+
 ProgramInterface::ProgramInterface(std::string name, std::string shortDescription, std::string version)
 : m_programName(name),
   m_shortProgramDescription(shortDescription),
@@ -276,4 +279,6 @@ std::vector<ParsedOption> ProgramInterface::getUsedOptionArguments()
 			opts.push_back(ParsedOption(opt));
 	}
 	return opts;
+}
+
 }

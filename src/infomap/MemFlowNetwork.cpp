@@ -36,8 +36,9 @@
 
 #include "../io/convert.h"
 #include "../io/Config.h"
-//#include "MemNetwork.h"
 
+namespace infomap
+{
 
 void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 {
@@ -366,4 +367,6 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	}
 
 	std::cout << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
+}
+
 }

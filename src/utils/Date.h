@@ -32,6 +32,9 @@
 #include <cmath>
 #include <ostream>
 
+namespace infomap
+{
+
 class ElapsedTime
 {
 public:
@@ -117,5 +120,7 @@ public:
 private:
 	std::time_t m_timeOfCreation;
 };
+
+}
 
 #endif /* DATE_H_ */

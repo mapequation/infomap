@@ -31,6 +31,9 @@
 #include "FlowNetwork.h"
 #include "MemNetwork.h"
 
+namespace infomap
+{
+
 class MemFlowNetwork: public FlowNetwork {
 public:
 	MemFlowNetwork() {}
@@ -43,5 +46,7 @@ public:
 protected:
 	std::vector<M2Node> m_m2nodes;
 };
+
+}
 
 #endif /* MEMFLOWNETWORK_H_ */

@@ -36,6 +36,10 @@
 #include <cstdio>
 
 #include "../utils/infomath.h"
+
+namespace infomap
+{
+	
 using std::make_pair;
 
 void MultiplexNetwork::readInputData(std::string filename)
@@ -570,4 +574,6 @@ void MultiplexNetwork::finalizeAndCheckNetwork(bool printSummary)
 	m_networks.clear();
 
 	MemNetwork::finalizeAndCheckNetwork(printSummary);
+}
+
 }

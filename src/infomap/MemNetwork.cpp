@@ -35,6 +35,10 @@
 #include <cstring>
 #include <cstdio>
 #include <set>
+
+namespace infomap
+{
+
 using std::make_pair;
 
 void MemNetwork::readInputData(std::string filename)
@@ -750,4 +754,6 @@ void MemNetwork::disposeLinks()
 	Network::disposeLinks();
 	m_m2Links.clear();
 	m_incompleteM2Links.clear();
+}
+
 }

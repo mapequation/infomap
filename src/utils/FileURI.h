@@ -29,6 +29,10 @@
 #define FILEURI_H_
 #include <iostream>
 #include <string>
+
+namespace infomap
+{
+	
 using std::string;
 
 /**
@@ -97,5 +101,7 @@ private:
 	string m_name;
 	string m_extension;
 };
+
+}
 
 #endif /* FILEURI_H_ */

@@ -29,6 +29,9 @@
 #include <stdexcept>
 #include "../io/convert.h"
 
+namespace infomap
+{
+
 FileURI::FileURI()
 :	m_filename(""),
  	m_requireExtension(false),
@@ -109,4 +112,6 @@ string FileURI::getErrorMessage()
 {
 	return io::Str() << "Filename '" << m_filename << "' must match the pattern \"[dir/]name" <<
 			(m_requireExtension ? ".extension\"" : "[.extension]\"");
+}
+
 }

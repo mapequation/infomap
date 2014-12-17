@@ -28,6 +28,11 @@
 #ifndef GAP_ITERATOR_H_
 #define GAP_ITERATOR_H_
 
+#include <iterator>
+
+namespace infomap
+{
+
 //using std::iterator; // Can inherit from std::iterator to automatically forward typedefs
 using std::iterator_traits;
 
@@ -164,6 +169,6 @@ operator>=(const gap_iterator<_Iterator>& __x,
 		const gap_iterator<_Iterator>& __y)
 { return !(__x < __y); }
 
-
+}
 
 #endif /* GAP_ITERATOR_H_ */

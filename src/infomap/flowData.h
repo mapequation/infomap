@@ -29,6 +29,9 @@
 #define FLOWDATA_H_
 #include <ostream>
 
+namespace infomap
+{
+
 struct FlowUndirected
 {
 	FlowUndirected(double flow = 1.0, double teleportWeight = 1.0) :
@@ -482,5 +485,6 @@ struct MemDeltaFlow : DeltaFlow
 	double sumPlogpPhysFlow;
 };
 
+}
 
 #endif /* FLOWDATA_H_ */

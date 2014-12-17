@@ -26,11 +26,9 @@
 
 
 #include "TreeData.h"
-//#include "flowData.h"
-//#include "Node.h"
 
-//template class TreeData<Node<FlowUndirected> >;
-//template class TreeData<Node<FlowDirected> >;
+namespace infomap
+{
 
 TreeData::TreeData(NodeFactoryBase* nodeFactory)
 :	m_nodeFactory(nodeFactory),
@@ -89,4 +87,6 @@ unsigned int TreeData::calcSize()
 	for (NodeBase::const_pre_depth_first_iterator nodeIt(m_root); !nodeIt.isEnd(); ++nodeIt, ++numNodes)
 	{}
 	return numNodes;
+}
+
 }

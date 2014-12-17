@@ -29,13 +29,8 @@
 #include <iostream>
 #include <cmath>
 
-FlowNetwork::FlowNetwork()
+namespace infomap
 {
-}
-
-FlowNetwork::~FlowNetwork()
-{
-}
 
 void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 {
@@ -262,4 +257,6 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 	}
 
 	std::cout << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
+}
+
 }

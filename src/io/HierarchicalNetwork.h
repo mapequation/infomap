@@ -43,6 +43,9 @@
 #include "../io/Config.h"
 #include "SafeFile.h"
 
+namespace infomap
+{
+
 enum EdgeAggregationPolicy { NONE, PARTIAL, FULL };
 
 //static const unsigned int SIZE_OF_UNSIGNED_INT = sizeof(unsigned int);		// 4 byte (32 bit)
@@ -563,5 +566,7 @@ private:
 	std::string m_infomapOptions;
 
 };
+
+}
 
 #endif /* HIERARCHICALNETWORK_H_ */

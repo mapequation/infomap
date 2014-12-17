@@ -28,6 +28,11 @@
 #ifndef EDGE_H_
 #define EDGE_H_
 
+#include <ostream>
+
+namespace infomap
+{
+
 struct EdgeData
 {
 public:
@@ -85,5 +90,7 @@ public:
 	node_type& target;
 	EdgeData data;
 };
+
+}
 
 #endif /* EDGE_H_ */

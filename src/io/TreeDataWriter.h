@@ -30,6 +30,9 @@
 #include <iostream>
 #include "../infomap/TreeData.h"
 
+namespace infomap
+{
+
 class TreeDataWriter
 {
 public:
@@ -45,5 +48,7 @@ private:
 	const TreeData& m_tree;
 
 };
+
+}
 
 #endif /* TREEDATAWRITER_H_ */

@@ -30,6 +30,10 @@
 #include <cstddef>
 #include <iterator>
 #include "../utils/Logger.h"
+
+namespace infomap
+{
+
 using std::iterator_traits;
 
 /**
@@ -520,7 +524,6 @@ public:
 
 };
 
-
-
+}
 
 #endif /* TREEITERATORS_H_ */

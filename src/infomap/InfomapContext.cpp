@@ -29,6 +29,9 @@
 #include "flowData_traits.h"
 #include "InfomapGreedyTypeSpecialized.h"
 
+namespace infomap
+{
+
 InfomapContext::InfomapContext(const Config& config)
 : m_config(config)
 {
@@ -49,4 +52,6 @@ void InfomapContext::createInfomap()
 		m_infomap = std::auto_ptr<InfomapBase>(new InfomapGreedyTypeSpecialized<FlowDirectedWithTeleportation, NetworkType>(m_config));
 	else // unrecorded teleportation
 		m_infomap = std::auto_ptr<InfomapBase>(new InfomapGreedyTypeSpecialized<FlowDirectedNonDetailedBalanceWithTeleportation, NetworkType>(m_config));
+}
+
 }

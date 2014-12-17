@@ -34,6 +34,9 @@
 #include "NodeFactory.h"
 #include <memory>
 
+namespace infomap
+{
+
 class TreeData
 {
 	friend class InfomapBase; // Expose m_leafNodes to InfomapBase to use as active network in fine-tune
@@ -139,5 +142,7 @@ private:
 //	std::vector<EdgeType*> m_leafEdges;
 
 };
+
+}
 
 #endif /* TREEDATA_H_ */

@@ -27,6 +27,9 @@
 
 #include "Logger.h"
 
+namespace infomap
+{
+
 unsigned int Logger::s_indentLevel = 0;
 unsigned int Logger::s_indentWidth = 4;
 std::string Logger::s_indentString = "";
@@ -40,3 +43,5 @@ std::string Logger::s_benchmarkFilename = "benchmark.tsv";
 //	if (logFile.is_open())
 //		logFile << Stopwatch::getElapsedTimeSinceProgramStartInSec() << " " << row << std::endl;
 //}
+
+}

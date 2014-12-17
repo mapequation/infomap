@@ -42,6 +42,9 @@
 #include <iomanip>
 #include "io/version.h"
 
+namespace infomap
+{
+
 std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>& args)
 {
 	ProgramInterface api("Informatter", "Infomap formatter utility", INFOMAP_VERSION);
@@ -239,7 +242,9 @@ int run(int argc, char* argv[])
 	return 0;
 }
 
+}
+
 int main(int argc, char* argv[])
 {
-	return run(argc, argv);
+	return infomap::run(argc, argv);
 }

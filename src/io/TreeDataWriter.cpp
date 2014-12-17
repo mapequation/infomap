@@ -28,6 +28,8 @@
 #include "TreeDataWriter.h"
 #include <iostream>
 
+namespace infomap
+{
 
 TreeDataWriter::TreeDataWriter(const TreeData& tree) :
 m_tree(tree)
@@ -120,4 +122,6 @@ void TreeDataWriter::writeLeafNodes(std::ostream& out)
 	{
 		out << i << " (" << **nodeIt << ")" << std::endl;
 	}
+}
+
 }

@@ -27,4 +27,9 @@
 
 #include "version.h"
 
+namespace infomap
+{
+
 const char* INFOMAP_VERSION = "0.17.0";
+
+}
