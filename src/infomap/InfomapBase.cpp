@@ -1974,8 +1974,10 @@ void InfomapBase::printHierarchicalData(HierarchicalNetwork& hierarchicalNetwork
 
 void InfomapBase::printClusterNumbers(std::ostream& out)
 {
-	out << "# '" << m_config.parsedArgs << "' -> " << numLeafNodes() << " nodes with codelength " <<
-			io::toPrecision(codelength, 9, true) << " in " <<	m_config.elapsedTime() << "\n";
+	out << "# '" << m_config.parsedArgs << "' -> " << numLeafNodes() << " nodes " <<
+		"partitioned in " << m_config.elapsedTime() << " from codelength " <<
+		io::toPrecision(oneLevelCodelength, 9, true) << " in one level to codelength " <<
+		io::toPrecision(codelength, 9, true) << ".\n";
 
 	out << "*Vertices " << m_treeData.numLeafNodes() << "\n";
 	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());

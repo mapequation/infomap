@@ -246,8 +246,9 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 	out << "# '" << m_infomapOptions << "' -> " << m_numLeafNodes << " nodes ";
 	if (m_numLeafEdges > 0)
 		out << "and " << m_numLeafEdges << " links ";
-	out << "in " << m_maxDepth << " levels with codelength " <<
-			io::toPrecision(m_codelength, 9, true) << " in " <<	m_config.elapsedTime() << "\n";
+	out << "partitioned in " << m_config.elapsedTime() << " from codelength " <<
+		io::toPrecision(m_oneLevelCodelength, 9, true) << " in one level to codelength " <<
+		io::toPrecision(m_codelength, 9, true) << " in " << m_maxDepth << " levels.\n";
 
 	writeHumanReadableTreeRecursiveHelper(out, m_rootNode);
 	if (writeHierarchicalNetworkEdges)

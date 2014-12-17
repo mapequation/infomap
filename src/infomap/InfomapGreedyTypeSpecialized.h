@@ -766,11 +766,13 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 template<typename FlowType>
 void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printClusterNumbers(std::ostream& out)
 {
-	out << "# '" << m_config.parsedArgs << "' -> " << Super::numLeafNodes() << " nodes with codelength " <<
-		io::toPrecision(Super::codelength, 9, true) << " in " <<	m_config.elapsedTime() << "\n";
+	out << "# '" << m_config.parsedArgs << "' -> " << Super::numLeafNodes() << " nodes " <<
+		"partitioned in " << m_config.elapsedTime() << " from codelength " <<
+		io::toPrecision(Super::oneLevelCodelength, 9, true) << " in one level to codelength " <<
+		io::toPrecision(Super::codelength, 9, true) << ".\n";
+	out << "# columns: from to moduleNr flow\n";
 
 	out << "*Vertices " << Super::m_treeData.numLeafNodes() << "\n";
-	out << "# from to moduleNr flow\n";
 	for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)
 	{
 		NodeType& node = getNode(**leafIt);
