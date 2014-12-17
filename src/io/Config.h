@@ -83,7 +83,7 @@ struct Config
 		fastFirstIteration(false),
 		lowMemoryPriority(0),
 		innerParallelization(false),
-		outDirectory(""),
+		outDirectory("."),
 		originallyUndirected(false),
 		printTree(false),
 		printFlowTree(false),

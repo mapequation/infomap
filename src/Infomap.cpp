@@ -230,7 +230,6 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>
 	{
 		api.addNonOptionArgument(conf.outDirectory, "out_directory",
 				"The directory to write the results to");
-		std::cout << "Require outDirectery" << std::endl;
 	}
 	else
 	{
@@ -249,8 +248,6 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>
 	{
 		if (!optionalOutputDir.empty())
 			conf.outDirectory = optionalOutputDir[0];
-		else
-			conf.outDirectory = ".";
 	}
 
 	// Some checks

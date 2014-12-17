@@ -253,6 +253,9 @@ void ProgramInterface::parseArgs(const std::vector<std::string>& flags)
 		exitWithError(e.what());
 	}
 
+	if (nonOpts.size() < numRequiredArguments())
+		exitWithError("Missing required arguments.");
+
 	unsigned int i = 0;
 	unsigned int numVectorArguments = nonOpts.size() - (m_nonOptionArguments.size() - 1);
 	while (!nonOpts.empty())

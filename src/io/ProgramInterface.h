@@ -283,6 +283,8 @@ public:
 
 	std::vector<ParsedOption> getUsedOptionArguments();
 
+	unsigned int numRequiredArguments() { return m_nonOptionArguments.size() - m_numOptionalNonOptionArguments; }
+
 	std::string parsedArgs() { return m_parsedArgs; }
 
 private:
