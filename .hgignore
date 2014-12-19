@@ -13,10 +13,9 @@ syntax: regexp
 ^Infomap$
 ^Informatter$
 ^Infomap-formatter$
-^generateMakefile$
 ^build$
 ^\.project$
 ^\.cproject$
 ^\.settings$
-^examples/Infomap-as-library$
+^examples/cpp/example$
 ^examples/python/infomap$

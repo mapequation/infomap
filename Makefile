@@ -9,81 +9,37 @@ ifeq "$(CXX_CLANG)" ""
 	endif
 else
 	CXXFLAGS += -O3
-ifeq "$(findstring lib, $(MAKECMDGOALS))" "lib"
-	CXXFLAGS += -DUSE_NS
 endif
-endif
+
+##################################################
+# General file dependencies
+##################################################
 
 HEADERS := $(shell find src -name "*.h")
+# Only one main
 SOURCES := $(shell find src -name "*.cpp" -depth 2)
-
+SOURCES += src/Infomap.cpp
 OBJECTS := $(SOURCES:src/%.cpp=build/%.o)
-INFOMAP_OBJECT = build/Infomap.o
-INFORMATTER_OBJECT = build/Informatter.o
 
-LIBDIR = build/lib
-LIBTARGET = $(LIBDIR)/libInfomap.a
-LIBHEADERS := $(HEADERS:src/%.h=$(LIBDIR)/include/%.h)
-INFOMAP_LIB_OBJECT = build/Infomaplib.o
+##################################################
+# Stand-alone C++ targets
+##################################################
 
-SWIG_FILES := $(shell find swig -name "*.i")
-SWIG_HEADERS = src/Infomap.h src/infomap/Network.h src/io/HierarchicalNetwork.h
-PY_BUILD_DIR = build/py
-PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
-PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
-PY_SOURCES += $(PY_BUILD_DIR)/src/Infomap.cpp
+INFORMATTER_OBJECTS = $(OBJECTS:Infomap.o=Informatter.o)
 
-.PHONY: all clean noomp lib
+.PHONY: all noomp test
 
-## Rule for making the actual target
-Infomap: $(OBJECTS) $(INFOMAP_OBJECT)
+Infomap: $(OBJECTS)
 	@echo "Linking object files to target $@..."
 	$(CXX) $(LDFLAGS) -o $@ $^
 	@echo "-- Link finished --"
 
-Infomap-formatter: $(OBJECTS) $(INFORMATTER_OBJECT)
+Infomap-formatter: $(INFORMATTER_OBJECTS)
 	@echo "Making Informatter..."
 	$(CXX) $(LDFLAGS) -o $@ $^
 
 all: Infomap Infomap-formatter
 	@true
-
-python: py-build Makefile
-	cd $(PY_BUILD_DIR) && python setup.py build_ext --inplace
-	@true
-
-setup.py:
-	cd $(PY_BUILD_DIR) && python setup.py build_ext --inplace
-
-py-build: Makefile $(PY_HEADERS) $(PY_SOURCES)
-	@mkdir -p $(PY_BUILD_DIR)
-	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/
-	@cp -a swig/setup.py $(PY_BUILD_DIR)/
-	swig -c++ -python -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
-
-lib: $(LIBTARGET) $(LIBHEADERS)
-	@echo "Wrote static library and headers to $(LIBDIR)"
-
-$(LIBTARGET): $(INFOMAP_LIB_OBJECT) $(OBJECTS)
-	@echo "Creating static library..."
-	@mkdir -p $(LIBDIR)
-	ar rcs $@ $^
-
-$(LIBDIR)/include/%.h: src/%.h
-	@mkdir -p $(dir $@)
-	@cp -a $^ $@
-
-$(PY_BUILD_DIR)/src/%.h: src/%.h
-	@mkdir -p $(dir $@)
-	@cp -a $^ $@
-
-$(PY_BUILD_DIR)/src/%.cpp: src/%.cpp
-	@mkdir -p $(dir $@)
-	@cp -a $^ $@
-
-$(INFOMAP_LIB_OBJECT): src/Infomap.cpp $(OBJECTS)
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -DNO_MAIN -c $< -o $@
 
 ## Generic compilation rule for object files from cpp files
 build/%.o : src/%.cpp $(HEADERS) Makefile
@@ -93,6 +49,78 @@ build/%.o : src/%.cpp $(HEADERS) Makefile
 noomp: Infomap
 	@true
 
-## Clean Rule
+
+##################################################
+# Static C++ library
+##################################################
+
+# Use separate object files to compile with definitions
+# USE_NS: Use namespace infomap
+# NO_MAIN: Skip main function
+LIB_DIR = build/lib
+LIB_HEADERS := $(HEADERS:src/%.h=$(LIB_DIR)/include/%.h)
+LIB_OBJECTS := $(SOURCES:src/%.cpp=$(LIB_DIR)/build/%.o)
+
+.PHONY: lib
+
+lib: $(LIB_DIR)/libInfomap.a $(LIB_HEADERS)
+	@echo "Wrote static library and headers to $(LIB_DIR)"
+
+$(LIB_DIR)/libInfomap.a: $(LIB_OBJECTS) Makefile
+	@echo "Creating static library..."
+	@mkdir -p $(LIB_DIR)
+	ar rcs $@ $^
+
+# Rule for $(LIB_HEADERS)
+$(LIB_DIR)/include/%.h: src/%.h
+	@mkdir -p $(dir $@)
+	@cp -a $^ $@
+
+# Rule for $(LIB_OBJECTS)
+$(LIB_DIR)/build/%.o: src/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -DUSE_NS -DNO_MAIN -c $< -o $@
+
+
+##################################################
+# General SWIG helpers
+##################################################
+
+SWIG_FILES := $(shell find swig -name "*.i")
+
+
+##################################################
+# Python module
+##################################################
+
+PY_BUILD_DIR = build/py
+PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
+PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
+
+.PHONY: python py-build
+
+# Use python distutils to compile the module
+python: py-build Makefile
+	@cp -a swig/setup.py $(PY_BUILD_DIR)/
+	cd $(PY_BUILD_DIR) && python setup.py build_ext --inplace
+	@true
+
+# Generate wrapper files from source and interface files
+py-build: Makefile $(PY_HEADERS) $(PY_SOURCES)
+	@mkdir -p $(PY_BUILD_DIR)
+	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/
+	swig -c++ -python -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
+
+# Rule for $(PY_HEADERS) and $(PY_SOURCES)
+$(PY_BUILD_DIR)/src/%: src/%
+	@mkdir -p $(dir $@)
+	@cp -a $^ $@
+
+
+
+##################################################
+# Clean
+##################################################
+
 clean:
 	$(RM) -r Infomap Informatter build
