@@ -31,8 +31,10 @@
 #include <iterator>
 #include "../utils/Logger.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 using std::iterator_traits;
 
@@ -524,6 +526,8 @@ public:
 
 };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* TREEITERATORS_H_ */

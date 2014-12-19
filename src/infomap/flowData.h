@@ -29,8 +29,10 @@
 #define FLOWDATA_H_
 #include <ostream>
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 struct FlowUndirected
 {
@@ -485,6 +487,8 @@ struct MemDeltaFlow : DeltaFlow
 	double sumPlogpPhysFlow;
 };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* FLOWDATA_H_ */

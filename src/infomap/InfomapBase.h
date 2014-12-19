@@ -37,8 +37,10 @@
 #include "../io/HierarchicalNetwork.h"
 #include "Network.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 struct DepthStat;
 struct PerLevelStat;
@@ -396,6 +398,8 @@ struct PerLevelStat
 	double leafLength;
 };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* INFOMAPBASE_H_ */

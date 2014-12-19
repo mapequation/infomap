@@ -29,8 +29,10 @@
 #include <stdexcept>
 #include "../io/convert.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 FileURI::FileURI()
 :	m_filename(""),
@@ -114,4 +116,6 @@ string FileURI::getErrorMessage()
 			(m_requireExtension ? ".extension\"" : "[.extension]\"");
 }
 
+#ifdef USE_NS
 }
+#endif

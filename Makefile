@@ -9,6 +9,9 @@ ifeq "$(CXX_CLANG)" ""
 	endif
 else
 	CXXFLAGS += -O3
+ifeq "$(findstring lib, $(MAKECMDGOALS))" "lib"
+	CXXFLAGS += -DUSE_NS
+endif
 endif
 
 HEADERS = \
@@ -114,9 +117,6 @@ $(INFOMAP_LIB_OBJECT): src/Infomap.cpp $(OBJECTS)
 build/%.o : src/%.cpp $(HEADERS) Makefile
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-example: examples/Infomap-as-library.cpp lib
-	$(CXX) $(CXXFLAGS) $< -o examples/Infomap-as-library -I$(LIBDIR)/include -L$(LIBDIR) -lInfomap
 
 noomp: $(TARGET)
 	@true

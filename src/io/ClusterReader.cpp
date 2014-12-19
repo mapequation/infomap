@@ -30,8 +30,10 @@
 #include "convert.h"
 #include "SafeFile.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 /**
  * The cluster data file should be a list of cluster indices, where the lowest is 1 and largest the number of nodes.
@@ -125,4 +127,6 @@ void ClusterReader::readData(const string filename)
 	std::cout << "done! " << std::flush;
 }
 
+#ifdef USE_NS
 }
+#endif

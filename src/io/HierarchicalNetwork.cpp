@@ -30,8 +30,10 @@
 #include <stdexcept>
 #include "convert.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 void HierarchicalNetwork::init(std::string networkName, double codelength, double oneLevelCodelength)
 {
@@ -454,4 +456,6 @@ void HierarchicalNetwork::writeMap(const std::string& fileName)
 	}
 }
 
+#ifdef USE_NS
 }
+#endif

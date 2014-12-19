@@ -28,8 +28,10 @@
 #include "TreeDataWriter.h"
 #include <iostream>
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 TreeDataWriter::TreeDataWriter(const TreeData& tree) :
 m_tree(tree)
@@ -124,4 +126,6 @@ void TreeDataWriter::writeLeafNodes(std::ostream& out)
 	}
 }
 
+#ifdef USE_NS
 }
+#endif

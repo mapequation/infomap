@@ -30,8 +30,10 @@
 #include "flowData.h"
 #include "Node.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 // A boolean type as function templates can't be partially specialized.
 template<bool> struct bool2type {};
@@ -156,6 +158,8 @@ struct derived_traits<InfomapGreedySpecialized<FlowType> > {
 //     typedef FlowDirectedNonDetailedBalanceWithTeleportation flow_type;
 // };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* FLOWDATA_TRAITS_H_ */

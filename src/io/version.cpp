@@ -27,9 +27,13 @@
 
 #include "version.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 const char* INFOMAP_VERSION = "0.17.1";
 
+#ifdef USE_NS
 }
+#endif

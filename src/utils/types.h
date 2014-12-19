@@ -28,13 +28,17 @@
 #ifndef TYPES_H_
 #define TYPES_H_
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 typedef unsigned int uint;
 typedef float number;
 //typedef double number;
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* TYPES_H_ */

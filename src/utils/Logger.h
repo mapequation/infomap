@@ -33,8 +33,10 @@
 #include "Stopwatch.h"
 #include "../io/SafeFile.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 class Logger
 {
@@ -200,6 +202,8 @@ public:
 	} while (0)
 #endif
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* LOGGER_H_ */

@@ -40,8 +40,10 @@
 #include "utils/Date.h"
 #include "io/version.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 	
 void runInfomap(Config const& config)
 {
@@ -371,8 +373,6 @@ int run(const std::string& flags)
 	return 0;
 }
 
-}
-
 #ifndef NO_MAIN
 int main(int argc, char* argv[])
 {
@@ -380,6 +380,10 @@ int main(int argc, char* argv[])
 	for (int i = 1; i < argc; ++i)
 		args << argv[i] << (i + 1 == argc? "" : " ");
 
-	return infomap::run(args.str());
+	return run(args.str());
+}
+#endif
+
+#ifdef USE_NS
 }
 #endif

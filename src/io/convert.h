@@ -33,8 +33,10 @@
 #include <stdexcept>
 #include <string>
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 class AbortAndHelp : public std::runtime_error {
 public:
@@ -231,6 +233,8 @@ inline std::string toPlural(std::string object, unsigned int num)
 
 }
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* CONVERT_H_ */

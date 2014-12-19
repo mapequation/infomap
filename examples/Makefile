@@ -6,7 +6,7 @@ LIB_DIR = $(INFOMAP_DIR)/build/lib
 INFOMAP_LIB = $(LIB_DIR)/libInfomap.a
 
 Infomap-as-library: Infomap-as-library.cpp $(INFOMAP_LIB) Makefile
-	$(CXX) $(CXXFLAGS) $< -o $@ -I$(LIB_DIR)/include -L$(LIB_DIR) -lInfomap
+	$(CXX) $(CXXFLAGS) -DUSE_NS $< -o $@ -I$(LIB_DIR)/include -L$(LIB_DIR) -lInfomap
 
 $(INFOMAP_LIB):
 	cd $(INFOMAP_DIR) && $(MAKE) lib

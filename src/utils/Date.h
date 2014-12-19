@@ -32,8 +32,10 @@
 #include <cmath>
 #include <ostream>
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 class ElapsedTime
 {
@@ -121,6 +123,8 @@ private:
 	std::time_t m_timeOfCreation;
 };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* DATE_H_ */

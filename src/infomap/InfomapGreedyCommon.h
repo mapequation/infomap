@@ -34,8 +34,10 @@
 #include <stdio.h>
 #endif
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 template<typename InfomapGreedyDerivedType>
 class InfomapGreedyCommon : public InfomapGreedySpecialized<typename derived_traits<InfomapGreedyDerivedType>::flow_type>
@@ -1390,6 +1392,8 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::consolidateModules(b
 	return Super::numActiveModules();
 }
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* INFOMAPGREEDYCOMMON_H_ */
