@@ -30,8 +30,10 @@
 
 #include <ostream>
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 struct EdgeData
 {
@@ -91,6 +93,8 @@ public:
 	EdgeData data;
 };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* EDGE_H_ */

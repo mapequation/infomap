@@ -54,8 +54,10 @@
 #include "../io/version.h"
 #include <functional>
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 void InfomapBase::run()
 {
@@ -2156,4 +2158,6 @@ void InfomapBase::calcMaxAndAverageDepthHelper(NodeBase& root, unsigned int& max
 	}
 }
 
+#ifdef USE_NS
 }
+#endif

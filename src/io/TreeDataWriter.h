@@ -30,8 +30,10 @@
 #include <iostream>
 #include "../infomap/TreeData.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 class TreeDataWriter
 {
@@ -49,6 +51,8 @@ private:
 
 };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* TREEDATAWRITER_H_ */

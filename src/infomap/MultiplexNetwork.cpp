@@ -37,8 +37,10 @@
 
 #include "../utils/infomath.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 	
 using std::make_pair;
 
@@ -576,4 +578,6 @@ void MultiplexNetwork::finalizeAndCheckNetwork(bool printSummary)
 	MemNetwork::finalizeAndCheckNetwork(printSummary);
 }
 
+#ifdef USE_NS
 }
+#endif

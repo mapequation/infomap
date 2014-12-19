@@ -36,8 +36,10 @@
 #include <cstdio>
 #include <set>
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 using std::make_pair;
 
@@ -756,4 +758,6 @@ void MemNetwork::disposeLinks()
 	m_incompleteM2Links.clear();
 }
 
+#ifdef USE_NS
 }
+#endif

@@ -42,8 +42,10 @@
 #include <iomanip>
 #include "io/version.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 std::vector<ParsedOption> getConfig(Config& conf, const std::string& args)
 {
@@ -248,4 +250,6 @@ int main(int argc, char* argv[])
 	return run(args.str());
 }
 
+#ifdef USE_NS
 }
+#endif

@@ -40,8 +40,10 @@
 #include "utils/Date.h"
 #include "io/version.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 	
 void runInfomap(Config const& config)
 {
@@ -277,7 +279,7 @@ void initBenchmark(const Config& conf, const std::string& flags)
 
 Config init(const std::string& flags)
 {
-	infomap::Config conf;
+	Config conf;
 	try
 	{
 		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags, true);
@@ -323,7 +325,7 @@ int run(Network& input, HierarchicalNetwork& output)
 int run(const std::string& flags)
 {
 	Date startDate;
-	infomap::Config conf;
+	Config conf;
 	try
 	{
 		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags);
@@ -382,4 +384,6 @@ int main(int argc, char* argv[])
 }
 #endif
 
+#ifdef USE_NS
 }
+#endif

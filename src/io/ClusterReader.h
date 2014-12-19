@@ -31,8 +31,10 @@
 #include <string>
 #include <vector>
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 using std::string;
 
@@ -67,6 +69,8 @@ private:
 	std::vector<unsigned int> m_clusters;
 };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* CLUSTERREADER_H_ */

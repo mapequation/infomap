@@ -30,8 +30,10 @@
 
 #include "InfomapBase.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 long NodeBase::s_nodeCount = 0;
 unsigned long NodeBase::s_UID = 0;
@@ -164,4 +166,6 @@ void NodeBase::calcChildDegree()
 	}
 }
 
+#ifdef USE_NS
 }
+#endif

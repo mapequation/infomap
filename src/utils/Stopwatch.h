@@ -29,8 +29,10 @@
 
 #include <ctime>
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 class Stopwatch
 {
@@ -92,6 +94,8 @@ private:
     bool m_running;
 };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* STOPWATCH_H_ */

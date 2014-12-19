@@ -9,6 +9,9 @@ ifeq "$(CXX_CLANG)" ""
 	endif
 else
 	CXXFLAGS += -O3
+ifeq "$(findstring lib, $(MAKECMDGOALS))" "lib"
+	CXXFLAGS += -DUSE_NS
+endif
 endif
 
 HEADERS = \
@@ -87,6 +90,15 @@ PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
 
 .PHONY: all clean noomp lib
 
+## Rule for making the actual target
+$(TARGET): $(OBJECTS) $(INFOMAP_OBJECT)
+	@echo "Linking object files to target $@..."
+	$(CXX) $(LDFLAGS) -o $@ $^
+	@echo "-- Link finished --"
+
+all: $(TARGET) Infomap-formatter
+	@true
+
 python: py-build Makefile
 	cd $(PY_BUILD_DIR) && python setup.py build_ext --inplace
 	@true
@@ -100,15 +112,6 @@ py-build: Makefile $(PY_HEADERS) $(PY_SOURCES)
 	@cp -a swig/setup.py $(PY_BUILD_DIR)/
 	swig -c++ -python -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
 
-
-## Rule for making the actual target
-$(TARGET): $(OBJECTS) $(INFOMAP_OBJECT)
-	@echo "Linking object files to target $@..."
-	$(CXX) $(LDFLAGS) -o $@ $^
-	@echo "-- Link finished --"
-
-all: $(TARGET) Infomap-formatter lib
-	@true
 
 Infomap-formatter: $(OBJECTS) $(INFORMATTER_OBJECT)
 	@echo "Making Informatter..."
@@ -142,9 +145,6 @@ $(INFOMAP_LIB_OBJECT): src/Infomap.cpp $(OBJECTS)
 build/%.o : src/%.cpp $(HEADERS) Makefile
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-example: examples/Infomap-as-library.cpp lib
-	$(CXX) $(CXXFLAGS) $< -o examples/Infomap-as-library -I$(LIBDIR)/include -L$(LIBDIR) -lInfomap
 
 noomp: $(TARGET)
 	@true

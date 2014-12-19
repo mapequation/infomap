@@ -34,8 +34,10 @@
 #include <deque>
 #include <string>
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 class MultiplexNetwork : public MemNetwork
 {
@@ -124,6 +126,8 @@ protected:
 	std::map<unsigned int, unsigned int> m_multiplexLinkLayers;
 };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* MULTIPLEXNETWORK_H_ */

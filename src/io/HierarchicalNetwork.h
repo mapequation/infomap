@@ -43,8 +43,10 @@
 #include "../io/Config.h"
 #include "SafeFile.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 enum EdgeAggregationPolicy { NONE, PARTIAL, FULL };
 
@@ -53,7 +55,8 @@ enum EdgeAggregationPolicy { NONE, PARTIAL, FULL };
 //static const unsigned int SIZE_OF_FLOAT = sizeof(float); 					// 4 byte (32 bit)
 //static const unsigned int SIZE_OF_UNSIGNED_SHORT = sizeof(unsigned short);	// 2 byte (16 bit)
 
-namespace SerialTypes {
+namespace SerialTypes
+{
 	typedef unsigned short nameSize_t;
 	typedef float flow_t;
 	typedef unsigned int childSize_t;
@@ -574,6 +577,8 @@ private:
 
 };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* HIERARCHICALNETWORK_H_ */

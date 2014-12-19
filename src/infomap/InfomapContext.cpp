@@ -29,8 +29,10 @@
 #include "flowData_traits.h"
 #include "InfomapGreedyTypeSpecialized.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 InfomapContext::InfomapContext(const Config& config)
 : m_config(config)
@@ -54,4 +56,6 @@ void InfomapContext::createInfomap()
 		m_infomap = std::auto_ptr<InfomapBase>(new InfomapGreedyTypeSpecialized<FlowDirectedNonDetailedBalanceWithTeleportation, NetworkType>(m_config));
 }
 
+#ifdef USE_NS
 }
+#endif

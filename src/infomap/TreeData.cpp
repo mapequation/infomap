@@ -27,8 +27,10 @@
 
 #include "TreeData.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 TreeData::TreeData(NodeFactoryBase* nodeFactory)
 :	m_nodeFactory(nodeFactory),
@@ -89,4 +91,6 @@ unsigned int TreeData::calcSize()
 	return numNodes;
 }
 
+#ifdef USE_NS
 }
+#endif

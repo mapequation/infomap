@@ -32,8 +32,10 @@
 #include "io/HierarchicalNetwork.h"
 #include "infomap/Network.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 /**
  * Run as stand-alone
@@ -47,7 +49,8 @@ Config init(const std::string& flags);
 
 int run(Network& input, HierarchicalNetwork& output);
 
+#ifdef USE_NS
 }
-
+#endif
 
 #endif /* SRC_INFOMAP_H_ */

@@ -37,8 +37,10 @@
 #include <iostream>
 #include "convert.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 struct OptionConflictError : std::logic_error
 {
@@ -305,6 +307,8 @@ private:
 	unsigned int m_numOptionalNonOptionArguments;
 };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* ARGPARSER_H_ */

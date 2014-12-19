@@ -31,8 +31,10 @@
 #include "Node.h"
 #include "flowData.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 class NodeFactoryBase
 {
@@ -76,6 +78,8 @@ public:
 	}
 };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* NODEFACTORY_H_ */

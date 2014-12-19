@@ -31,8 +31,10 @@
 #include "InfomapGreedyCommon.h"
 #include <ostream>
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 template<typename FlowType, typename NetworkType>
 class InfomapGreedyTypeSpecialized : public InfomapGreedyCommon<InfomapGreedyTypeSpecialized<FlowType, NetworkType> >
@@ -864,6 +866,8 @@ M2Node& InfomapGreedyTypeSpecialized<FlowType, WithMemory>::getMemoryNode(NodeBa
 	return getNode(node).m2Node;
 }
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* INFOMAPGREEDYTYPESPECIALIZED_H_ */

@@ -35,8 +35,10 @@
 #include "Network.h"
 #include "../io/Config.h"
 
+#ifdef USE_NS
 namespace infomap
 {
+#endif
 
 class FlowNetwork
 {
@@ -81,6 +83,8 @@ protected:
 
 };
 
+#ifdef USE_NS
 }
+#endif
 
 #endif /* FLOWNETWORK_H_ */
