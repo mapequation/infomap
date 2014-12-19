@@ -87,6 +87,7 @@ SWIG_HEADERS = src/Infomap.h src/infomap/Network.h src/io/HierarchicalNetwork.h
 PY_BUILD_DIR = build/py
 PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
 PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
+PY_SOURCES += $(PY_BUILD_DIR)/src/Infomap.cpp
 
 .PHONY: all clean noomp lib
 

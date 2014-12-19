@@ -8,6 +8,7 @@ conf = infomap.init("--two-level -v -N2");
 
 print "Creating network..."
 network = infomap.Network(conf);
+
 network.addLink(0, 1);
 network.addLink(0, 2);
 network.addLink(0, 3);

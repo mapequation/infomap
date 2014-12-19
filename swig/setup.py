@@ -6,7 +6,6 @@ setup.py file for SWIG Infomap module
 
 from distutils.core import setup, Extension
 
-
 infomap_module = Extension('_infomap',
 	sources=['infomap_wrap.cpp',
 	'src/Infomap.cpp',
@@ -28,7 +27,7 @@ infomap_module = Extension('_infomap',
 	'src/utils/FileURI.cpp',
 	'src/utils/Logger.cpp'
 	],
-
+	extra_compile_args=['-DNO_MAIN']
 	)
 
 setup (name = 'infomap',
