@@ -277,7 +277,7 @@ void initBenchmark(const Config& conf, const std::string& flags)
 
 Config init(const std::string& flags)
 {
-	Config conf;
+	infomap::Config conf;
 	try
 	{
 		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags, true);
@@ -323,7 +323,7 @@ int run(Network& input, HierarchicalNetwork& output)
 int run(const std::string& flags)
 {
 	Date startDate;
-	Config conf;
+	infomap::Config conf;
 	try
 	{
 		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags);
@@ -371,8 +371,6 @@ int run(const std::string& flags)
 	return 0;
 }
 
-}
-
 #ifndef NO_MAIN
 int main(int argc, char* argv[])
 {
@@ -380,6 +378,8 @@ int main(int argc, char* argv[])
 	for (int i = 1; i < argc; ++i)
 		args << argv[i] << (i + 1 == argc? "" : " ");
 
-	return infomap::run(args.str());
+	return run(args.str());
 }
 #endif
+
+}

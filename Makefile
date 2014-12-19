@@ -79,7 +79,27 @@ LIBTARGET = $(LIBDIR)/libInfomap.a
 LIBHEADERS := $(HEADERS:src/%.h=$(LIBDIR)/include/%.h)
 INFOMAP_LIB_OBJECT = build/Infomaplib.o
 
+SWIG_FILES = $(shell find swig -name "*.i")
+SWIG_HEADERS = src/Infomap.h src/infomap/Network.h src/io/HierarchicalNetwork.h
+PY_BUILD_DIR = build/py
+PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
+PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
+
 .PHONY: all clean noomp lib
+
+python: py-build Makefile
+	cd $(PY_BUILD_DIR) && python setup.py build_ext --inplace
+	@true
+
+setup.py:
+	cd $(PY_BUILD_DIR) && python setup.py build_ext --inplace
+
+py-build: Makefile $(PY_HEADERS) $(PY_SOURCES)
+	@mkdir -p $(PY_BUILD_DIR)
+	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/
+	@cp -a swig/setup.py $(PY_BUILD_DIR)/
+	swig -c++ -python -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
+
 
 ## Rule for making the actual target
 $(TARGET): $(OBJECTS) $(INFOMAP_OBJECT)
@@ -103,6 +123,14 @@ $(LIBTARGET): $(INFOMAP_LIB_OBJECT) $(OBJECTS)
 	ar rcs $@ $^
 
 $(LIBDIR)/include/%.h: src/%.h
+	@mkdir -p $(dir $@)
+	@cp -a $^ $@
+
+$(PY_BUILD_DIR)/src/%.h: src/%.h
+	@mkdir -p $(dir $@)
+	@cp -a $^ $@
+
+$(PY_BUILD_DIR)/src/%.cpp: src/%.cpp
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 

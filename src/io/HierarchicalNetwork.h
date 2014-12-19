@@ -537,6 +537,13 @@ public:
 
 	void writeMap(const std::string& fileName);
 
+	unsigned int numLeafNodes() { return m_numLeafNodes; }
+	unsigned int numLeafEdges() { return m_numLeafEdges; }
+	unsigned int numNodesInTree() { return m_numNodesInTree; }
+	unsigned int maxDepth() { return m_maxDepth; }
+	double codelength() { return m_codelength; }
+	double onelevelCodelength() { return m_oneLevelCodelength; }
+
 private:
 
 	void writeHumanReadableTreeRecursiveHelper(std::ostream& out, SNode& node, std::string prefix = "");

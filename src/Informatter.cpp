@@ -239,13 +239,13 @@ int run(const std::string& args)
 	return 0;
 }
 
-}
-
 int main(int argc, char* argv[])
 {
 	std::ostringstream args("");
 	for (int i = 1; i < argc; ++i)
 		args << argv[i] << (i + 1 == argc? "" : " ");
 
-	return infomap::run(args.str());
+	return run(args.str());
+}
+
 }

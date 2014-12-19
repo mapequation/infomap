@@ -19,3 +19,4 @@ syntax: regexp
 ^\.cproject$
 ^\.settings$
 ^examples/Infomap-as-library$
+^examples/python/infomap$
