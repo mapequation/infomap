@@ -123,4 +123,4 @@ $(PY_BUILD_DIR)/src/%: src/%
 ##################################################
 
 clean:
-	$(RM) -r Infomap Informatter build
+	$(RM) -r Infomap Infomap-formatter build
