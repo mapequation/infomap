@@ -3,7 +3,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
-import matplotlib.cm as cmx
 
 from infomap import infomap
 
@@ -52,8 +51,6 @@ def drawNetwork(G):
 	cmapLight = colors.ListedColormap(['#a6cee3', '#b2df8a', '#fb9a99', '#fdbf6f', '#cab2d6'], 'indexed', numCommunities)
 	cmapDark = colors.ListedColormap(['#1f78b4', '#33a02c', '#e31a1c', '#ff7f00', '#6a3d9a'], 'indexed', numCommunities)
 
-	colorMap = cmx.ScalarMappable(norm=colors.NoNorm(), cmap=cmapDark)
-	
 	# edges
 	nx.draw_networkx_edges(G, pos)
 
@@ -64,7 +61,7 @@ def drawNetwork(G):
 		cmap = cmapLight
 	)
 	# set node border color to the darker shade
-	darkColors = [colorMap.to_rgba(v) for v in communities]
+	darkColors = [cmapDark(v) for v in communities]
 	nodeCollection.set_edgecolor(darkColors)
 
 	# Print node labels separately instead
@@ -74,7 +71,8 @@ def drawNetwork(G):
 			textcoords = 'offset points',
 			horizontalalignment = 'center',
 			verticalalignment = 'center',
-			xytext = [0, 2]
+			xytext = [0, 2],
+			color = cmapDark(communities[n])
 		)
 
 	plt.axis('off')
