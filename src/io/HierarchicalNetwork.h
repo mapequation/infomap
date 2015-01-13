@@ -163,6 +163,11 @@ public:
 		clear();
 	}
 
+	unsigned int childDegree()
+	{
+		return children.size();
+	}
+
 	void clear()
 	{
 		for (int i = children.size() - 1; i >= 0; --i)
@@ -365,8 +370,6 @@ public:
 		}
 	}
 
-
-
 	LeafIterator(const LeafIterator& other)
 	:	m_current(other.m_current),
 	 	m_depth(other.m_depth)
@@ -380,16 +383,27 @@ public:
 	}
 
 	SNode* base() const
-	{ return m_current; }
+	{
+		return m_current;
+	}
+
+	bool isEnd()
+	{
+		return m_current == NULL;
+	}
 
 	// Forward iterator requirements
 	SNode&
 	operator*() const
-	{ return *m_current; }
+	{
+		return *m_current;
+	}
 
 	SNode*
 	operator->() const
-	{ return m_current; }
+	{
+		return m_current;
+	}
 
 	LeafIterator&
 	operator++()
@@ -471,6 +485,10 @@ public:
 	void clear();
 
 	SNode& getRootNode() { return m_rootNode; }
+
+	unsigned int numTopModules() { return m_rootNode.childDegree(); }
+
+	LeafIterator leafIter() { return LeafIterator(&m_rootNode); }
 
 	SNode& addNode(SNode& parent, double flow, double exitFlow);
 
