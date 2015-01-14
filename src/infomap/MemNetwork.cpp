@@ -52,7 +52,7 @@ void MemNetwork::readInputData(std::string filename)
 	else
 	{
 		Network::readInputData(filename);
-		simulateMemoryFromOrdinaryNetwork();
+		finalizeAndCheckNetwork();
 	}
 }
 
@@ -238,8 +238,6 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 	}
 
 	std::cout << "done!" << std::endl;
-
-	finalizeAndCheckNetwork();
 }
 
 void MemNetwork::simulateMemoryToIncompleteData()
@@ -607,7 +605,12 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 	simulateMemoryToIncompleteData();
 
 	if (m_m2Links.empty())
-		throw InputDomainError("No memory links added!");
+	{
+		if (m_numLinks > 0)
+			simulateMemoryFromOrdinaryNetwork();
+		else
+			throw InputDomainError("No memory links added!");
+	}
 
 	// If no nodes defined
 	if (m_numNodes == 0)
