@@ -35,7 +35,7 @@
 #include "../io/SafeFile.h"
 #include <limits>
 #include "../io/HierarchicalNetwork.h"
-#include "Network.h"
+#include "MemNetwork.h"
 
 #ifdef USE_NS
 namespace infomap
@@ -271,6 +271,7 @@ private:
 	void setActiveNetworkFromLeafModules();
 	void setActiveNetworkFromLeafs();
 	void initMemoryNetwork();
+	void initMemoryNetwork(MemNetwork& input);
 	void initNodeNames(Network& network);
 	bool checkAndConvertBinaryTree();
 	void printNetworkData(std::string filename = "");

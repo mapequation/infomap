@@ -1524,6 +1524,11 @@ bool InfomapBase::initNetwork()
 
 bool InfomapBase::initNetwork(Network& network)
 {
+	if (m_config.isMemoryNetwork())
+	{
+		initMemoryNetwork(static_cast<MemNetwork&>(network));
+		return true;
+	}
 
  	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
@@ -1601,6 +1606,11 @@ void InfomapBase::initMemoryNetwork()
 
 	network.readInputData();
 
+	initMemoryNetwork(network);
+}
+
+void InfomapBase::initMemoryNetwork(MemNetwork& network)
+{
 	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
 
