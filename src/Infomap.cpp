@@ -373,7 +373,7 @@ int run(const std::string& flags)
 	return 0;
 }
 
-#ifndef NO_MAIN
+#ifndef AS_LIB
 int main(int argc, char* argv[])
 {
 	std::ostringstream args("");

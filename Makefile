@@ -56,7 +56,7 @@ noomp: Infomap
 
 # Use separate object files to compile with definitions
 # USE_NS: Use namespace infomap
-# NO_MAIN: Skip main function
+# AS_LIB: Skip main function
 LIB_DIR = build/lib
 LIB_HEADERS := $(HEADERS:src/%.h=$(LIB_DIR)/include/%.h)
 LIB_OBJECTS := $(SOURCES:src/%.cpp=$(LIB_DIR)/build/%.o)
@@ -79,7 +79,7 @@ $(LIB_DIR)/include/%.h: src/%.h
 # Rule for $(LIB_OBJECTS)
 $(LIB_DIR)/build/%.o: src/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -DUSE_NS -DNO_MAIN -c $< -o $@
+	$(CXX) $(CXXFLAGS) -DUSE_NS -DAS_LIB -c $< -o $@
 
 
 ##################################################
