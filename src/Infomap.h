@@ -30,7 +30,7 @@
 
 #include <string>
 #include "io/HierarchicalNetwork.h"
-#include "infomap/Network.h"
+#include "infomap/MultiplexNetwork.h"
 
 #ifdef USE_NS
 namespace infomap
