@@ -14,6 +14,8 @@ syntax: regexp
 ^Informatter$
 ^Infomap-formatter$
 ^build$
+^include$
+^lib$
 ^\.project$
 ^\.cproject$
 ^\.settings$
