@@ -30,7 +30,7 @@
 #include "flowData.h"
 #include "Node.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -158,7 +158,7 @@ struct derived_traits<InfomapGreedySpecialized<FlowType> > {
 //     typedef FlowDirectedNonDetailedBalanceWithTeleportation flow_type;
 // };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

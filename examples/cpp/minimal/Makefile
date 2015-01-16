@@ -7,7 +7,7 @@ INFOMAP_LIB = $(INFOMAP_DIR)/lib/libInfomap.a
 .PHONY: clean example
 
 example: example.cpp $(INFOMAP_LIB) Makefile
-	$(CXX) $(CXXFLAGS) -DUSE_NS $< -o $@ -I$(INFOMAP_DIR)/include -L$(INFOMAP_DIR)/lib -lInfomap
+	$(CXX) $(CXXFLAGS) -DNS_INFOMAP $< -o $@ -I$(INFOMAP_DIR)/include -L$(INFOMAP_DIR)/lib -lInfomap
 
 $(INFOMAP_LIB):
 	cd $(INFOMAP_DIR) && $(MAKE) lib

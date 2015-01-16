@@ -35,7 +35,7 @@
 #include <limits>
 #include <sstream>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -343,7 +343,7 @@ struct Triple
 	unsigned int n3;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

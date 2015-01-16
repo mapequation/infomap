@@ -32,7 +32,7 @@
 #include "../io/Config.h"
 #include "TreeData.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -61,7 +61,7 @@ protected:
 	unsigned int m_indexOffset;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

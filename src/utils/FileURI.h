@@ -30,7 +30,7 @@
 #include <iostream>
 #include <string>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -104,7 +104,7 @@ private:
 	string m_extension;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

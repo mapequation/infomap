@@ -37,7 +37,7 @@
 #include "../io/convert.h"
 #include "../io/Config.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -371,6 +371,6 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	std::cout << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif

@@ -32,7 +32,7 @@
 #include <utility>
 #include "../io/convert.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -288,6 +288,6 @@ std::vector<ParsedOption> ProgramInterface::getUsedOptionArguments()
 	return opts;
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif

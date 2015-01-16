@@ -40,7 +40,7 @@
 #include "utils/Date.h"
 #include "io/version.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -384,6 +384,6 @@ int main(int argc, char* argv[])
 }
 #endif
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif

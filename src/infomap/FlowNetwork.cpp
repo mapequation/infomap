@@ -29,7 +29,7 @@
 #include <iostream>
 #include <cmath>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -261,6 +261,6 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 	std::cout << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif

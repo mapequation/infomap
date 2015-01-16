@@ -32,7 +32,7 @@
 #include <cmath>
 #include <ostream>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -123,7 +123,7 @@ private:
 	std::time_t m_timeOfCreation;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

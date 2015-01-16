@@ -27,7 +27,7 @@
 
 #include "Logger.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -46,7 +46,7 @@ std::string Logger::s_benchmarkFilename = "benchmark.tsv";
 //		logFile << Stopwatch::getElapsedTimeSinceProgramStartInSec() << " " << row << std::endl;
 //}
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

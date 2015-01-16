@@ -29,7 +29,7 @@
 
 #include <ctime>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -94,7 +94,7 @@ private:
     bool m_running;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

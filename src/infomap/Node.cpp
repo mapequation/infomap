@@ -30,7 +30,7 @@
 
 #include "InfomapBase.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -166,6 +166,6 @@ void NodeBase::calcChildDegree()
 	}
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif

@@ -31,7 +31,7 @@
 #include "FlowNetwork.h"
 #include "MemNetwork.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -49,7 +49,7 @@ protected:
 	std::vector<M2Node> m_m2nodes;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

@@ -27,7 +27,7 @@
 
 #include "TreeData.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -91,6 +91,6 @@ unsigned int TreeData::calcSize()
 	return numNodes;
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif

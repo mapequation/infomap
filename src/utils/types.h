@@ -28,7 +28,7 @@
 #ifndef TYPES_H_
 #define TYPES_H_
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -37,7 +37,7 @@ typedef unsigned int uint;
 typedef float number;
 //typedef double number;
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

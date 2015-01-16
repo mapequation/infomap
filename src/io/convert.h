@@ -33,7 +33,7 @@
 #include <stdexcept>
 #include <string>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -233,7 +233,7 @@ inline std::string toPlural(std::string object, unsigned int num)
 
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

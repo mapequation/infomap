@@ -38,7 +38,7 @@
 #include "../utils/FileURI.h"
 #include "../utils/Logger.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -696,6 +696,6 @@ void Network::printNetworkAsPajek(std::string filename) const
 	}
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif

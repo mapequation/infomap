@@ -34,7 +34,7 @@
 #include <stdio.h>
 #endif
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -1392,7 +1392,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::consolidateModules(b
 	return Super::numActiveModules();
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

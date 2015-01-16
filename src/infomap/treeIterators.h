@@ -31,7 +31,7 @@
 #include <iterator>
 #include "../utils/Logger.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -526,7 +526,7 @@ public:
 
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

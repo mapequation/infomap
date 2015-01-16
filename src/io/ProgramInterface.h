@@ -37,7 +37,7 @@
 #include <iostream>
 #include "convert.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -307,7 +307,7 @@ private:
 	unsigned int m_numOptionalNonOptionArguments;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

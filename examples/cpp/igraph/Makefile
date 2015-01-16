@@ -17,13 +17,13 @@ INC_IGRAPH = -I$(IGRAPH_INCLUDE_DIR) -L$(IGRAPH_LIB_DIR) -ligraph
 .PHONY: example-igraph
 
 example-igraph: example-igraph.cpp $(INFOMAP_LIB)
-	$(CXX) $(CXXFLAGS) $< -o $@ -DUSE_NS $(INC_IGRAPH) $(INC_INFOMAP) $(INC_INTERFACE)
+	$(CXX) $(CXXFLAGS) $< -o $@ -DNS_INFOMAP $(INC_IGRAPH) $(INC_INFOMAP) $(INC_INTERFACE)
 
 
 # # Rule for lib objects
 # build/%.o: src/%.cpp src/%.h $(INFOMAP_LIB) Makefile
 # 	@mkdir -p $(dir $@)
-# 	$(CXX) $(CXXFLAGS) -DUSE_NS -c $< -o $@ -I$(IGRAPH_INCLUDE_DIR) -I$(INFOMAP_DIR)/include
+# 	$(CXX) $(CXXFLAGS) -DNS_INFOMAP -c $< -o $@ -I$(IGRAPH_INCLUDE_DIR) -I$(INFOMAP_DIR)/include
 
 # Make Infomap library
 $(INFOMAP_LIB):

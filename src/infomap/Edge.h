@@ -30,7 +30,7 @@
 
 #include <ostream>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -93,7 +93,7 @@ public:
 	EdgeData data;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

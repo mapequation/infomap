@@ -30,7 +30,7 @@
 
 #include <iterator>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -171,7 +171,7 @@ operator>=(const gap_iterator<_Iterator>& __x,
 		const gap_iterator<_Iterator>& __y)
 { return !(__x < __y); }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

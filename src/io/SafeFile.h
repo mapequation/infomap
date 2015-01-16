@@ -34,7 +34,7 @@
 #include "convert.h"
 #include <cstdio>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -286,7 +286,7 @@ bool isDirectoryWritable(const std::string& dir)
 	return ok;
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

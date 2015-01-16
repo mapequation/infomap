@@ -34,7 +34,7 @@
 #include <deque>
 #include <string>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -126,7 +126,7 @@ protected:
 	std::map<unsigned int, unsigned int> m_multiplexLinkLayers;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

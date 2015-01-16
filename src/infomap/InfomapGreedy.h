@@ -51,7 +51,7 @@
 #include "treeIterators.h"
 #include "TreeData.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -387,7 +387,7 @@ void InfomapGreedy<InfomapImplementation>::debugPrintInfomapTerms()
 	std::cout << "(moduleLength: " << -exit_log_exit << " + " << flow_log_flow << " - " << nodeFlow_log_nodeFlow << " = " << moduleCodelength <<")\n";
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

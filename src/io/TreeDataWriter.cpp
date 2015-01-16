@@ -28,7 +28,7 @@
 #include "TreeDataWriter.h"
 #include <iostream>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -126,6 +126,6 @@ void TreeDataWriter::writeLeafNodes(std::ostream& out)
 	}
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif

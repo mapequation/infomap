@@ -31,7 +31,7 @@
 #include <string>
 #include <vector>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -69,7 +69,7 @@ private:
 	std::vector<unsigned int> m_clusters;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

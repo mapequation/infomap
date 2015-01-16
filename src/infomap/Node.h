@@ -37,7 +37,7 @@
 #include "../utils/Logger.h"
 #include <memory>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -634,7 +634,7 @@ public:
 	std::vector<PhysData> physicalNodes;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

@@ -26,7 +26,7 @@ include/%.h: src/%.h
 # Rule for lib objects
 build/%.o: src/%.cpp src/%.h $(INFOMAP_LIB) Makefile
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -DUSE_NS -c $< -o $@ -I$(IGRAPH_INCLUDE_DIR) -I$(INFOMAP_DIR)/include
+	$(CXX) $(CXXFLAGS) -DNS_INFOMAP -c $< -o $@ -I$(IGRAPH_INCLUDE_DIR) -I$(INFOMAP_DIR)/include
 
 # Make Infomap library
 $(INFOMAP_LIB):

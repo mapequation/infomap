@@ -33,7 +33,7 @@
 #include "Stopwatch.h"
 #include "../io/SafeFile.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -202,7 +202,7 @@ public:
 	} while (0)
 #endif
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

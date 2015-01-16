@@ -31,7 +31,7 @@
 #include "Node.h"
 #include "flowData.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -78,7 +78,7 @@ public:
 	}
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

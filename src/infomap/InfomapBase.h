@@ -37,7 +37,7 @@
 #include "../io/HierarchicalNetwork.h"
 #include "MemNetwork.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -399,7 +399,7 @@ struct PerLevelStat
 	double leafLength;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

@@ -36,7 +36,7 @@
 #include "../utils/Date.h"
 #include "version.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -418,7 +418,7 @@ struct Config
 	std::string version;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

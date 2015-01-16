@@ -30,7 +30,7 @@
 #include <iostream>
 #include "../infomap/TreeData.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -51,7 +51,7 @@ private:
 
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

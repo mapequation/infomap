@@ -31,7 +31,7 @@
 #include "flowData.h"
 #include <map>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -416,7 +416,7 @@ void InfomapGreedySpecialized<FlowUndirected>::updateCodelengthOnMovingNode(Node
 	codelength = indexCodelength + moduleCodelength;
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

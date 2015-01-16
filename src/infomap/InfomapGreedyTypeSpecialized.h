@@ -31,7 +31,7 @@
 #include "InfomapGreedyCommon.h"
 #include <ostream>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -866,7 +866,7 @@ M2Node& InfomapGreedyTypeSpecialized<FlowType, WithMemory>::getMemoryNode(NodeBa
 	return getNode(node).m2Node;
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

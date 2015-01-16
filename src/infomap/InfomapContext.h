@@ -31,7 +31,7 @@
 #include "InfomapBase.h"
 #include <memory>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -54,7 +54,7 @@ private:
 	std::auto_ptr<InfomapBase> m_infomap;
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

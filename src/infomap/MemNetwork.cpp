@@ -36,7 +36,7 @@
 #include <cstdio>
 #include <set>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -761,6 +761,6 @@ void MemNetwork::disposeLinks()
 	m_incompleteM2Links.clear();
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif

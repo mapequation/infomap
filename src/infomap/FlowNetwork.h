@@ -35,7 +35,7 @@
 #include "Network.h"
 #include "../io/Config.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -83,7 +83,7 @@ protected:
 
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

@@ -32,7 +32,7 @@
 #include "io/HierarchicalNetwork.h"
 #include "infomap/MultiplexNetwork.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -49,7 +49,7 @@ Config init(const std::string& flags);
 
 int run(Network& input, HierarchicalNetwork& output);
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

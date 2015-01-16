@@ -32,7 +32,7 @@
 #include <vector>
 #include "MersenneTwister.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -81,7 +81,7 @@ namespace infomath
 	}
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

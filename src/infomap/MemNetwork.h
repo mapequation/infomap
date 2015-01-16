@@ -39,7 +39,7 @@
 #include "../utils/types.h"
 #include "Node.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -280,7 +280,7 @@ void MemNetwork::addM2Node(M2Node m2Node, double weight)
 	m_minNodeIndex = std::min(m_minNodeIndex, m2Node.physIndex);
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

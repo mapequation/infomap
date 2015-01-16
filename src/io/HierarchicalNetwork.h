@@ -43,7 +43,7 @@
 #include "../io/Config.h"
 #include "SafeFile.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -595,7 +595,7 @@ private:
 
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

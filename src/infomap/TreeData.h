@@ -34,7 +34,7 @@
 #include "NodeFactory.h"
 #include <memory>
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -145,7 +145,7 @@ private:
 
 };
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
 

@@ -42,7 +42,7 @@
 #include <iomanip>
 #include "io/version.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -250,6 +250,6 @@ int main(int argc, char* argv[])
 	return run(args.str());
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif

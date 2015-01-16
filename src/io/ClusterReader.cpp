@@ -30,7 +30,7 @@
 #include "convert.h"
 #include "SafeFile.h"
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 namespace infomap
 {
 #endif
@@ -127,6 +127,6 @@ void ClusterReader::readData(const string filename)
 	std::cout << "done! " << std::flush;
 }
 
-#ifdef USE_NS
+#ifdef NS_INFOMAP
 }
 #endif
