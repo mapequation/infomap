@@ -55,6 +55,14 @@ public:
 
 	virtual void readInputData(std::string filename = "");
 
+	virtual void finalizeAndCheckNetwork(bool printSummary = true);
+
+	virtual void addMultiplexLink(int layer1, int node1, int layer2, int node2, double w);
+
+	void addMemoryNetworkFromMultiplexLinks();
+
+	void finalizeParser();
+
 protected:
 
 	void parseMultiplexNetwork(std::string filename);
@@ -67,7 +75,7 @@ protected:
 
 	void generateMemoryNetworkWithSimulatedInterLayerLinks();
 
-	void addMemoryNetworkFromMultiplexLinks();
+
 
 	// Helper methods
 
@@ -110,7 +118,7 @@ protected:
 	 */
 	void parseMultiplexLink(const std::string& line, unsigned int& node, unsigned int& level1, unsigned int& level2, unsigned int& node2, double& weight);
 
-	virtual void finalizeAndCheckNetwork(bool printSummary = true);
+	
 
 	// Member variables
 

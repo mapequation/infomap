@@ -145,6 +145,12 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 	}
 
 	std::cout << "done!\n";
+
+	finalizeParser();
+	
+}
+
+void MultiplexNetwork::finalizeParser(){
 	if (!m_networks.empty())
 		std::cout << " --> Found " << m_numIntraLinksFound << " intra-network links in " << m_networks.size() << " layers.\n";
 	if (!m_interLinkLayers.empty())
@@ -185,6 +191,8 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 		generateMemoryNetworkWithInterLayerLinksFromData();
 
 	addMemoryNetworkFromMultiplexLinks();
+
+	std::cout << m_numLinks  << std::endl;
 
 	finalizeAndCheckNetwork();
 }
@@ -492,6 +500,15 @@ std::string MultiplexNetwork::parseInterLinks(std::ifstream& file)
 	return line;
 }
 
+void MultiplexNetwork::addMultiplexLink(int layer1, int node1, int layer2, int node2, double weight){
+	m_multiplexLinks[M2Node(layer1, node1)][M2Node(layer2, node2)] += weight;
+
+	++m_numMultiplexLinksFound;
+	++m_multiplexLinkLayers[layer1];
+	++m_multiplexLinkLayers[layer2];
+
+}
+
 std::string MultiplexNetwork::parseMultiplexLinks(std::ifstream& file)
 {
 	std::string line;
@@ -508,11 +525,8 @@ std::string MultiplexNetwork::parseMultiplexLinks(std::ifstream& file)
 
 		parseMultiplexLink(line, layer1, node1, layer2, node2, weight);
 
-		m_multiplexLinks[M2Node(layer1, node1)][M2Node(layer2, node2)] += weight;
-
-		++m_numMultiplexLinksFound;
-		++m_multiplexLinkLayers[layer1];
-		++m_multiplexLinkLayers[layer2];
+		addMultiplexLink(layer1, node1, layer2, node2, weight);
+		
 	}
 	return line;
 }
