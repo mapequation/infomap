@@ -12,6 +12,9 @@ example: example.cpp $(INFOMAP_LIB) Makefile
 mem-example: mem-example.cpp $(INFOMAP_LIB) Makefile
 	$(CXX) $(CXXFLAGS) -DNS_INFOMAP $< -o $@ -I$(INFOMAP_DIR)/include -L$(INFOMAP_DIR)/lib -lInfomap
 
+multi-example: multi-example.cpp $(INFOMAP_LIB) Makefile
+	$(CXX) $(CXXFLAGS) -DNS_INFOMAP $< -o $@ -I$(INFOMAP_DIR)/include -L$(INFOMAP_DIR)/lib -lInfomap
+
 $(INFOMAP_LIB):
 	cd $(INFOMAP_DIR) && $(MAKE) lib
 

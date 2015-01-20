@@ -47,7 +47,7 @@ void parseM2ClusterInfo(std::string line, int &n1, int &n2){
 
 void printClusters(infomap::HierarchicalNetwork & tree) {
 	int n1, n2;
-    std::cout << "\nClusters:\n#originalIndex clusterIndex:\n";
+    std::cout << "\nClusters:\n#from to clusterIndex:\n";
     for (infomap::LeafIterator leafIt(&tree.getRootNode()); !leafIt.isEnd(); ++leafIt) {
     	parseM2ClusterInfo(leafIt->data.name, n1, n2);
         std::cout << n1 << " " << n2 << " " << leafIt->parentNode->parentIndex << '\n';
