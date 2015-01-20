@@ -645,8 +645,6 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 
 	initNodeDegrees();
 
-	std::cout << "jdsds" << std::endl;
-
 	if (printSummary)
 		printParsingResult();
 }

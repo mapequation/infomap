@@ -192,8 +192,6 @@ void MultiplexNetwork::finalizeParser(){
 
 	addMemoryNetworkFromMultiplexLinks();
 
-	std::cout << m_numLinks  << std::endl;
-
 	finalizeAndCheckNetwork();
 }
 
