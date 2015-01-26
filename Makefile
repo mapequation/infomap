@@ -16,9 +16,9 @@ endif
 ##################################################
 
 HEADERS := $(shell find src -name "*.h")
+SOURCES := $(shell find src -name "*.cpp")
 # Only one main
-SOURCES := $(shell find src -name "*.cpp" -depth 2)
-SOURCES += src/Infomap.cpp
+SOURCES := $(filter-out src/Informatter.cpp,$(SOURCES))
 OBJECTS := $(SOURCES:src/%.cpp=build/Infomap/%.o)
 
 ##################################################
