@@ -32,6 +32,9 @@ namespace infomap
 {
 #endif
 
+unsigned int Log::s_verboseLevel = 1;
+unsigned int Log::s_silent = false;
+
 unsigned int Logger::s_indentLevel = 0;
 unsigned int Logger::s_indentWidth = 4;
 std::string Logger::s_indentString = "";

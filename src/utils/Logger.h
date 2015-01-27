@@ -38,6 +38,82 @@ namespace infomap
 {
 #endif
 
+class Log
+{
+	public:
+
+	/**
+	 * Log when level is below or equal Log::verboseLevel()
+	 */
+	Log(unsigned int level = 0) :
+		m_level(level),
+		m_maxLevel(std::numeric_limits<unsigned int>::max()),
+		m_ostream(getOutputStream(m_level, m_maxLevel))
+	{}
+
+	/**
+	 * Log when level is below or equal Log::verboseLevel()
+	 * and maxLevel is above or equal Log::verboseLevel()
+	 */
+	Log(unsigned int level, unsigned int maxLevel) :
+		m_level(level),
+		m_maxLevel(maxLevel),
+		m_ostream(getOutputStream(m_level, m_maxLevel))
+	{}
+
+	bool isVisible() { return !s_silent && s_verboseLevel >= m_level && s_verboseLevel <= m_maxLevel; }
+
+	template<typename T>
+	Log& operator<< (const T& data)
+	{
+		if (isVisible())
+			m_ostream << data;
+		return *this;
+	}
+
+	Log& operator<<( std::ostream& (*f) (std::ostream&) )
+	{
+		if (isVisible())
+			m_ostream << f;
+		return *this;
+	}
+
+	static void setVerboseLevel(unsigned int level)
+	{
+		s_verboseLevel = level;
+	}
+
+	static unsigned int verboseLevel()
+	{
+		return s_verboseLevel;
+	}
+
+	static void setSilent(bool silent)
+	{
+		s_silent = silent;
+	}
+
+	static bool isSilent()
+	{
+		return s_silent;
+	}
+
+	static std::ostream& getOutputStream(unsigned int level, unsigned int maxLevel)
+	{
+		return std::cout;
+	}
+
+
+	private:
+	unsigned int m_level;
+	unsigned int m_maxLevel;
+	std::ostream& m_ostream;
+
+	static unsigned int s_verboseLevel;
+	static unsigned int s_silent;
+};
+
+
 class Logger
 {
 public:
