@@ -384,7 +384,7 @@ template<typename InfomapImplementation>
 inline
 void InfomapGreedy<InfomapImplementation>::debugPrintInfomapTerms()
 {
-	std::cout << "(moduleLength: " << -exit_log_exit << " + " << flow_log_flow << " - " << nodeFlow_log_nodeFlow << " = " << moduleCodelength <<")\n";
+	Log() << "(moduleLength: " << -exit_log_exit << " + " << flow_log_flow << " - " << nodeFlow_log_nodeFlow << " = " << moduleCodelength <<")\n";
 }
 
 #ifdef NS_INFOMAP

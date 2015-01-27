@@ -126,10 +126,6 @@ NodeBase::~NodeBase()
 	}
 
 	--s_nodeCount;
-	DEBUG_EXEC(
-	if (s_nodeCount == 0)
-		std::cout << "Deleted all tree nodes!" << std::endl;
-	);
 }
 
 void NodeBase::deleteChildren()

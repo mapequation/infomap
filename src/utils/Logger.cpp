@@ -32,7 +32,7 @@ namespace infomap
 {
 #endif
 
-unsigned int Log::s_verboseLevel = 1;
+unsigned int Log::s_verboseLevel = 0;
 unsigned int Log::s_silent = false;
 
 unsigned int Logger::s_indentLevel = 0;

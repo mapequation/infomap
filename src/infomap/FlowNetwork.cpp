@@ -28,6 +28,7 @@
 #include "FlowNetwork.h"
 #include <iostream>
 #include <cmath>
+#include "../utils/Logger.h"
 
 #ifdef NS_INFOMAP
 namespace infomap
@@ -36,7 +37,7 @@ namespace infomap
 
 void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 {
-	std::cout << "Calculating global flow... " << std::flush;
+	Log() << "Calculating global flow... " << std::flush;
 
 	// Prepare data in sequence containers for fast access of individual elements
 	unsigned int numNodes = network.numNodes();
@@ -86,9 +87,9 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 			sumNodeRank += m_nodeFlow[i];
 		for (unsigned int i = 0; i < numNodes; ++i)
 			m_nodeFlow[i] /= sumNodeRank;
-		std::cout << "\n  -> Using directed links with raw flow.";
-		std::cout << "\n  -> Total link weight: " << totalLinkWeight << ".";
-		std::cout << std::endl;
+		Log() << "\n  -> Using directed links with raw flow.";
+		Log() << "\n  -> Total link weight: " << totalLinkWeight << ".";
+		Log() << std::endl;
 		return;
 	}
 
@@ -124,15 +125,15 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 		}
 
 		if (config.outdirdir)
-			std::cout << "\n  -> Counting only ingoing links.";
+			Log() << "\n  -> Counting only ingoing links.";
 		else
-			std::cout << "\n  -> Using undirected links" << (config.undirdir? ", switching to directed after steady state." :
+			Log() << "\n  -> Using undirected links" << (config.undirdir? ", switching to directed after steady state." :
 					".");
-		std::cout << std::endl;
+		Log() << std::endl;
 		return;
 	}
 
-	std::cout << "\n  -> Using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
+	Log() << "\n  -> Using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
 			(config.teleportToNodes ? "nodes" : "links") << ". " << std::flush;
 
 
@@ -219,7 +220,7 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 		// Normalize if needed
 		if (std::abs(sum - 1.0) > 1.0e-10)
 		{
-			std::cout << "(Normalizing ranks after " <<	numIterations << " power iterations with error " << (sum-1.0) << ") ";
+			Log() << "(Normalizing ranks after " <<	numIterations << " power iterations with error " << (sum-1.0) << ") ";
 			for (unsigned int i = 0; i < numNodes; ++i)
 			{
 				m_nodeFlow[i] /= sum;
@@ -258,7 +259,7 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 		linkIt->flow *= beta * nodeFlowTmp[linkIt->source] / sumNodeRank;
 	}
 
-	std::cout << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
+	Log() << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
 }
 
 #ifdef NS_INFOMAP

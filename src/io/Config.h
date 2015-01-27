@@ -100,6 +100,7 @@ struct Config
 		noFileOutput(false),
 		verbosity(0),
 		verboseNumberPrecision(6),
+		silent(false),
 		benchmark(false),
 		version(INFOMAP_VERSION)
 	{
@@ -164,6 +165,7 @@ struct Config
 		noFileOutput(other.noFileOutput),
 		verbosity(other.verbosity),
 		verboseNumberPrecision(other.verboseNumberPrecision),
+		silent(other.silent),
 		benchmark(other.benchmark),
 		startDate(other.startDate),
 		version(other.version)
@@ -229,7 +231,7 @@ struct Config
 		noFileOutput = other.noFileOutput;
 		verbosity = other.verbosity;
 		verboseNumberPrecision = other.verboseNumberPrecision;
-		benchmark = other.benchmark;
+		silent = other.silent;
 		startDate = other.startDate;
 		version = other.version;
 		return *this;
@@ -308,7 +310,6 @@ struct Config
 			}
 		}
 
-		std::cout << std::setprecision(verboseNumberPrecision);
 	}
 
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
@@ -411,6 +412,7 @@ struct Config
 	bool noFileOutput;
 	unsigned int verbosity;
 	unsigned int verboseNumberPrecision;
+	bool silent;
 	bool benchmark;
 
 	// Other

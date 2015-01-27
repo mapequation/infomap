@@ -31,6 +31,7 @@
 #include <map>
 #include <utility>
 #include "../io/convert.h"
+#include "../utils/Logger.h"
 
 #ifdef NS_INFOMAP
 namespace infomap
@@ -63,26 +64,26 @@ ProgramInterface::~ProgramInterface()
 
 void ProgramInterface::exitWithUsage(bool showAdvanced)
 {
-	std::cout << "Name:" << std::endl;
-	std::cout << "        " << m_programName << " - " << m_shortProgramDescription << std::endl;
-	std::cout << "\nUsage:" << std::endl;
-	std::cout << "        " << m_executableName;
+	Log() << "Name:" << std::endl;
+	Log() << "        " << m_programName << " - " << m_shortProgramDescription << std::endl;
+	Log() << "\nUsage:" << std::endl;
+	Log() << "        " << m_executableName;
 	for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
 		if (showAdvanced || !m_nonOptionArguments[i]->isAdvanced)
-			std::cout << " " << m_nonOptionArguments[i]->variableName;
+			Log() << " " << m_nonOptionArguments[i]->variableName;
 	if (!m_optionArguments.empty())
-		std::cout << " [options]";
-	std::cout << std::endl;
+		Log() << " [options]";
+	Log() << std::endl;
 
 	if (m_programDescription != "")
-		std::cout << "\nDescription:\n        " << m_programDescription << std::endl;
+		Log() << "\nDescription:\n        " << m_programDescription << std::endl;
 
 	for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
 		if (showAdvanced || !m_nonOptionArguments[i]->isAdvanced)
-			std::cout << "\n[" << m_nonOptionArguments[i]->variableName << "]\n    " << m_nonOptionArguments[i]->description << std::endl;
+			Log() << "\n[" << m_nonOptionArguments[i]->variableName << "]\n    " << m_nonOptionArguments[i]->description << std::endl;
 
 	if (!m_optionArguments.empty())
-		std::cout << "\n[options]" << std::endl;
+		Log() << "\n[options]" << std::endl;
 
 	// First stringify the options part to get the maximum length
 	std::deque<std::string> optionStrings(m_optionArguments.size());
@@ -104,34 +105,34 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
 		Option& opt = *m_optionArguments[i];
 		std::string::size_type numSpaces = maxLength + 3 - optionStrings[i].length();
 		if (showAdvanced || !opt.isAdvanced) {
-			std::cout << optionStrings[i] << std::string(numSpaces, ' ') << opt.description;
+			Log() << optionStrings[i] << std::string(numSpaces, ' ') << opt.description;
 			if (!opt.printNumericValue().empty())
-				std::cout << " (Default: " << opt.printNumericValue() << ")";
-			std::cout << "\n";
+				Log() << " (Default: " << opt.printNumericValue() << ")";
+			Log() << "\n";
 		}
 	}
-	std::cout << std::endl;
+	Log() << std::endl;
 	std::exit(0);
 }
 
 void ProgramInterface::exitWithVersionInformation()
 {
-	std::cout << m_programName << " version " << m_programVersion << std::endl;
-	std::cout << "See www.mapequation.org for terms of use." << std::endl;
+	Log() << m_programName << " version " << m_programVersion << std::endl;
+	Log() << "See www.mapequation.org for terms of use." << std::endl;
 	std::exit(0);
 }
 
 void ProgramInterface::exitWithError(std::string message)
 {
-	std::cout << m_programName << " version " << m_programVersion << std::endl;
+	Log() << m_programName << " version " << m_programVersion << std::endl;
 	std::cerr << message;
-	std::cout << "\nUsage: " << m_executableName;
+	Log() << "\nUsage: " << m_executableName;
 	for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
 		if (!m_nonOptionArguments[i]->isAdvanced)
-			std::cout << " " << m_nonOptionArguments[i]->variableName;
+			Log() << " " << m_nonOptionArguments[i]->variableName;
 	if (!m_optionArguments.empty())
-		std::cout << " [options]";
-	std::cout << ". Run with option '-h' for more information." << std::endl;
+		Log() << " [options]";
+	Log() << ". Run with option '-h' for more information." << std::endl;
 	std::exit(1);
 }
 

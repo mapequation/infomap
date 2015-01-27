@@ -692,9 +692,8 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 	std::vector<unsigned int> memNodeIndexToLeafModuleIndex(Super::m_treeData.numLeafNodes());
 	unsigned int numCondensedNodes = 0;
 
-	std::cout << "merging " << Super::m_treeData.numLeafNodes() << " memory nodes within " <<
-			leafModules.size() << " modules...";
-	std::cout << std::flush;
+	Log() << "merging " << Super::m_treeData.numLeafNodes() << " memory nodes within " <<
+			leafModules.size() << " modules..." << std::flush;
 
 	// Aggregate memory nodes with the same physical node if in the same module
 	for (unsigned int i = 0; i < leafModules.size(); ++i)
@@ -714,7 +713,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 		}
 	}
 
-	std::cout << " to " << numCondensedNodes << " nodes... " << std::flush;
+	Log() << " to " << numCondensedNodes << " nodes... " << std::flush;
 	ioNetwork.prepareAddLeafNodes(numCondensedNodes);
 
 	unsigned int sortedNodeIndex = 0;
@@ -821,7 +820,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printFlowNetwork(std::o
 	else
 	{
 		//TODO: Implement printing of flow network for unexpanded memory network!
-		RELEASE_OUT("Notice: Printing flow network currently only implemented for expanded memory network.\n");
+		Log() << "Notice: Printing flow network currently only implemented for expanded memory network.\n";
 	}
 
 //	std::map<unsigned int, PhysNode> physicalNetwork;

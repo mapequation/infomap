@@ -159,7 +159,7 @@ inline unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::aggregateFlow
 	}
 
 	if (std::abs(rootData.flow - 1.0) > 1e-10)
-		std::cout << "Warning, aggregated flow is not exactly 1.0, but " << rootData.flow << ".\n";
+		Log() << "Warning, aggregated flow is not exactly 1.0, but " << rootData.flow << ".\n";
 
 	// Aggregate enter and exit flow between modules
 	for (TreeData::leafIterator leafIt(m_treeData.begin_leaf());
@@ -585,7 +585,6 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + Super::m_config.minimumCodelengthImprovement)
 		{
 			bestDeltaModule = strongestConnectedModule;
-//			RELEASE_OUT("!");
 		}
 
 		// Make best possible move
@@ -774,7 +773,6 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + Super::m_config.minimumCodelengthImprovement)
 		{
 			bestDeltaModule = strongestConnectedModule;
-//			RELEASE_OUT("!");
 		}
 
 		// Make best possible move
@@ -982,7 +980,6 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength)// + Super::m_config.minimumCodelengthImprovement)
 		{
 			bestDeltaModule = strongestConnectedModule;
-//			RELEASE_OUT("!");
 		}
 
 		// Make best possible move
@@ -1087,22 +1084,18 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 					else
 					{
 						++numInvalidMoves;
-//						std::cout << "Move to module " << bestModuleIndex << " is NOT an improvement longer!\n";
-//						std::cout << "_=*=_";
 					}
 				}
 				else
 				{
-//					std::cout << "Move to module " << bestModuleIndex << " is NOT valid!\n";
 					++numInvalidMoves;
-//					std::cout << "_-*-_";
 				}
 			}
 		}
 
 	}
 
-//	std::cout << "\n(#invalidMoves: " << numInvalidMoves <<
+//	Log() << "\n(#invalidMoves: " << numInvalidMoves <<
 //			", diffSerialParallelCodelength: " << diffSerialParallelCodelength << ") ";
 
 //	return numMoved;

@@ -70,7 +70,7 @@ namespace SerialTypes
 //				std::numeric_limits<T>::max() :
 //				static_cast<T>(value);
 		if (value > std::numeric_limits<T>::max()) {
-			std::cout << " [Warning: truncating internal serial network size] ";
+			Log() << " [Warning: truncating internal serial network size] ";
 			return std::numeric_limits<T>::max();
 		}
 		return static_cast<T>(value);
@@ -281,7 +281,7 @@ public:
 		data.flow = flow;
 		data.exitFlow = exitFlow;
 
-//		std::cout << depth << ":" << std::string(depth * 4, ' ') << "\"" << data.name << "\" (flow: " <<
+//		Log() << depth << ":" << std::string(depth * 4, ' ') << "\"" << data.name << "\" (flow: " <<
 //						data.flow << ", exitFlow: " << data.exitFlow << ", numChildren: " << numChildren <<
 //						", depthBelow: " << depthBelow << ", childPos: " << childPosition <<")\n";
 		return numChildren;
@@ -294,11 +294,11 @@ public:
 		dataStream >> numEdges;
 		edgeSize_t source = 0, target = 0;
 		flow_t flow = 0.0;
-//		std::cout << "---- Child edges to \"" << data.name << "\":\n";
+//		Log() << "---- Child edges to \"" << data.name << "\":\n";
 		for (edgeSize_t i = 0; i < numEdges; ++i)
 		{
 			dataStream >> source >> target >> flow;
-//			std::cout << source << " " << target << " " << flow << "\n";
+//			Log() << source << " " << target << " " << flow << "\n";
 			createChildEdge(source, target, flow, directedEdges);
 		}
 		return numEdges;
@@ -574,9 +574,9 @@ private:
 
 	void sortLeafNodes()
 	{
-		std::cout << "Sort leaf nodes according to original order... ";
+		Log() << "Sort leaf nodes according to original order... ";
 		std::sort(m_leafNodes.begin(), m_leafNodes.end(), compareLeafNodePredicate);
-		std::cout << "done!" << std::endl;
+		Log() << "done!" << std::endl;
 	}
 
 	Config m_config;

@@ -58,7 +58,7 @@ void MemNetwork::readInputData(std::string filename)
 
 void MemNetwork::parseTrigram(std::string filename)
 {
-	RELEASE_OUT("Parsing directed trigram from file '" << filename << "'... " << std::flush);
+	Log() << "Parsing directed trigram from file '" << filename << "'... " << std::flush;
 	string line;
 	string buf;
 	SafeInFile input(filename.c_str());
@@ -165,7 +165,7 @@ void MemNetwork::parseTrigram(std::string filename)
 			insertLink(n2, n3, weight);
 	}
 
-	std::cout << "done!" << std::endl;
+	Log() << "done!" << std::endl;
 
 	finalizeAndCheckNetwork();
 
@@ -173,7 +173,7 @@ void MemNetwork::parseTrigram(std::string filename)
 
 void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 {
-	std::cout << "Simulating memory from ordinary network by chaining pair of overlapping links to trigrams... " << std::flush;
+	Log() << "Simulating memory from ordinary network by chaining pair of overlapping links to trigrams... " << std::flush;
 
 	// Reset some data from ordinary network
 	m_totalLinkWeight = 0.0;
@@ -182,7 +182,7 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 
 	if (m_config.originallyUndirected)
 	{
-		std::cout << "(inflating undirected network... " << std::flush;
+		Log() << "(inflating undirected network... " << std::flush;
 		LinkMap oldNetwork;
 		oldNetwork.swap(m_links);
 		for (LinkMap::const_iterator linkIt(oldNetwork.begin()); linkIt != oldNetwork.end(); ++linkIt)
@@ -201,7 +201,7 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 
 		// Dispose old network from memory
 		LinkMap().swap(oldNetwork);
-		std::cout << ") " << std::flush;
+		Log() << ") " << std::flush;
 	}
 
 	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
@@ -237,7 +237,7 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 		}
 	}
 
-	std::cout << "done!" << std::endl;
+	Log() << "done!" << std::endl;
 }
 
 void MemNetwork::simulateMemoryToIncompleteData()
@@ -245,9 +245,9 @@ void MemNetwork::simulateMemoryToIncompleteData()
 	if (m_numIncompleteM2Links == 0)
 		return;
 
-	std::cout << "\n  -> Found " << m_numM2LinksFound << " trigrams with " <<
+	Log() << "\n  -> Found " << m_numM2LinksFound << " trigrams with " <<
 			m_numIncompleteM2LinksFound << " incomplete trigrams.";
-	std::cout << "\n  -> Patching " << m_numIncompleteM2Links << " incomplete trigrams.." << std::flush;
+	Log() << "\n  -> Patching " << m_numIncompleteM2Links << " incomplete trigrams.." << std::flush;
 
 	// Store all incomplete data on a compact array, with fast mapping from incomplete link source index to the compact index
 	std::vector<std::deque<ComplementaryData> > complementaryData(m_numIncompleteM2Links);
@@ -266,7 +266,7 @@ void MemNetwork::simulateMemoryToIncompleteData()
 		}
 	}
 
-	std::cout << "." << std::endl;
+	Log() << "." << std::endl;
 	unsigned int lastProgress = 0;
 	unsigned int linkCount = 0;
 
@@ -322,14 +322,14 @@ void MemNetwork::simulateMemoryToIncompleteData()
 			++linkCount;
 			unsigned int progress = linkCount * 1000 / m_numM2Links; // 0.1% resolution
 			if (progress != lastProgress) {
-				std::cout << "\r    -> Collecting matches... (" << progress * 0.1 << "%)      " << std::flush;
+				Log() << "\r    -> Collecting matches... (" << progress * 0.1 << "%)      " << std::flush;
 				lastProgress = progress;
 			}
 
 		}
 	}
 
-	std::cout << "\r    -> Found " << numExactMatches << " exact, " << numPartialMatches << " partial and " <<
+	Log() << "\r    -> Found " << numExactMatches << " exact, " << numPartialMatches << " partial and " <<
 			numShiftedMatches << " shifted matches.\n" << std::flush;
 	linkCount = 0;
 	unsigned int numM2LinksBefore = m_numM2Links;
@@ -395,12 +395,12 @@ void MemNetwork::simulateMemoryToIncompleteData()
 		++linkCount;
 		unsigned int progress = linkCount * 1000 / complementaryData.size(); // 0.1% resolution
 		if (progress != lastProgress) {
-			std::cout << "\r    -> Patching network from collected matches in priority... (" << progress * 0.1 << "%)      " << std::flush;
+			Log() << "\r    -> Patching network from collected matches in priority... (" << progress * 0.1 << "%)      " << std::flush;
 			lastProgress = progress;
 		}
 	}
 
-	std::cout << "\n  -> " << m_numM2Links - numM2LinksBefore << " memory links added and " <<
+	Log() << "\n  -> " << m_numM2Links - numM2LinksBefore << " memory links added and " <<
 		m_numAggregatedM2Links - numAggregatedLinksBefore << " updated:" <<
 		"\n    -> " << numIncompleteLinksWithExactMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithExactMatches) << " patched by " <<
 			numExactAggregations << " updates and " << numExactLinksAdded << " new links from exact matches." <<
@@ -409,7 +409,7 @@ void MemNetwork::simulateMemoryToIncompleteData()
 		"\n    -> " << numIncompleteLinksWithShiftedMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithShiftedMatches) << " patched by " <<
 			numShiftedAggregations << " updates and " << numShiftedLinksAdded << " new links from shifted matches." << std::flush;
 	if (numIncompleteLinksWithNoMatches != 0)
-		std::cout << "\n    -> " << numIncompleteLinksWithNoMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithNoMatches) << " with no matches patched by self-links." << std::flush;
+		Log() << "\n    -> " << numIncompleteLinksWithNoMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithNoMatches) << " with no matches patched by self-links." << std::flush;
 
 }
 
@@ -628,7 +628,7 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 	if (m_maxNodeIndex >= m_numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
-		std::cout << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.) ";
+		Log() << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.) ";
 
 	addMissingPhysicalNodes();
 
@@ -705,31 +705,31 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 {
 	if (includeFirstOrderData)
 	{
-		std::cout << "-------------------\n";
-		std::cout << "First order data:";
-		std::cout << "\n  -> Found " << m_numNodesFound << " nodes and " << m_numLinksFound << " links.";
+		Log() << "-------------------\n";
+		Log() << "First order data:";
+		Log() << "\n  -> Found " << m_numNodesFound << " nodes and " << m_numLinksFound << " links.";
 		if(m_numAggregatedLinks > 0)
-			std::cout << "\n  -> " << m_numAggregatedLinks << " links was aggregated to existing links. ";
+			Log() << "\n  -> " << m_numAggregatedLinks << " links was aggregated to existing links. ";
 		if (m_numSelfLinks > 0 && !m_config.includeSelfLinks)
-			std::cout << "\n  -> " << m_numSelfLinks << " self-links was ignored. ";
+			Log() << "\n  -> " << m_numSelfLinks << " self-links was ignored. ";
 		if (m_config.nodeLimit > 0)
-			std::cout << "\n  -> " << (m_numNodesFound - m_numNodes) << "/" << m_numNodesFound << " last nodes ignored due to limit. ";
+			Log() << "\n  -> " << (m_numNodesFound - m_numNodes) << "/" << m_numNodesFound << " last nodes ignored due to limit. ";
 
-		std::cout << "\n  -> Resulting size: " << m_numNodes << " nodes";
+		Log() << "\n  -> Resulting size: " << m_numNodes << " nodes";
 		if (!m_nodeWeights.empty() && std::abs(m_sumNodeWeights / m_numNodes - 1.0) > 1e-9)
-			std::cout << " (with total weight " << m_sumNodeWeights << ")";
-		std::cout << " and " << m_numLinks << " links";
+			Log() << " (with total weight " << m_sumNodeWeights << ")";
+		Log() << " and " << m_numLinks << " links";
 		if (std::abs(m_totalLinkWeight / m_numLinks - 1.0) > 1e-9)
-			std::cout << " (with total weight " << m_totalLinkWeight << ")";
-		std::cout << ".";
-		std::cout << "-------------------\n";
+			Log() << " (with total weight " << m_totalLinkWeight << ")";
+		Log() << ".";
+		Log() << "-------------------\n";
 	}
 
-	std::cout << "  -> Found " << m_numNodesFound << " nodes and " << m_numM2LinksFound << " memory links.\n";
-	std::cout << "  -> Generated " << m_m2Nodes.size() << " memory nodes and " << m_numM2Links << " memory links.\n";
+	Log() << "  -> Found " << m_numNodesFound << " nodes and " << m_numM2LinksFound << " memory links.\n";
+	Log() << "  -> Generated " << m_m2Nodes.size() << " memory nodes and " << m_numM2Links << " memory links.\n";
 	if (m_numAggregatedM2Links > 0)
-		std::cout << "  -> Aggregated " << m_numAggregatedM2Links << " memory links.\n";
-	std::cout << std::flush;
+		Log() << "  -> Aggregated " << m_numAggregatedM2Links << " memory links.\n";
+	Log() << std::flush;
 }
 
 void MemNetwork::printNetworkAsPajek(std::string filename) const

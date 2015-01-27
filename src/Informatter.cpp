@@ -211,19 +211,21 @@ int run(const std::string& args)
 	{
 		std::vector<ParsedOption> flags = getConfig(conf, args);
 
-		std::cout << "=======================================================\n";
-		std::cout << "  Informatter v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
-		std::cout << "  -> Input: " << conf.networkFile << "\n";
-		std::cout << "  -> Output path:   " << conf.outDirectory << "\n";
+		Log::init(conf.verbosity, conf.silent, conf.verboseNumberPrecision);
+
+		Log() << "=======================================================\n";
+		Log() << "  Informatter v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
+		Log() << "  -> Input: " << conf.networkFile << "\n";
+		Log() << "  -> Output path:   " << conf.outDirectory << "\n";
 		if (!flags.empty()) {
 			for (unsigned int i = 0; i < flags.size(); ++i)
-				std::cout << (i == 0 ? "  -> Configuration: " : "                    ") << flags[i] << "\n";
+				Log() << (i == 0 ? "  -> Configuration: " : "                    ") << flags[i] << "\n";
 		}
-		std::cout << "=======================================================\n";
+		Log() << "=======================================================\n";
 
 		conf.adaptDefaults();
 
-		std::cout << std::setprecision(conf.verboseNumberPrecision);
+		Log() << std::setprecision(conf.verboseNumberPrecision);
 
 		runInformatter(conf);
 	}
@@ -233,10 +235,10 @@ int run(const std::string& args)
 		return EXIT_FAILURE;
 	}
 
-	std::cout << "===========================================\n";
-	std::cout << "  Informatter ends at " << Date() << "\n";
-	std::cout << "  (Elapsed time: " << (Date() - startDate) << ")\n";
-	std::cout << "===========================================\n";
+	Log() << "===========================================\n";
+	Log() << "  Informatter ends at " << Date() << "\n";
+	Log() << "  (Elapsed time: " << (Date() - startDate) << ")\n";
+	Log() << "===========================================\n";
 
 	return 0;
 }

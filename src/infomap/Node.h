@@ -447,7 +447,6 @@ void NodeBase::replaceChildrenWithGrandChildrenDebug()
 		n->replaceWithChildrenDebug();
 	}
 	while (--numOriginalChildrenLeft != 0);
-	RELEASE_OUT("-- done! n" << id << " (" << getNeighbourhood() << ")\n");
 }
 
 
@@ -457,9 +456,6 @@ void NodeBase::replaceWithChildrenDebug()
 	if (isLeaf() || isRoot())
 		return;
 
-
-	RELEASE_OUT("Replace n" << id << " (" << getNeighbourhood() << ") with " <<
-			firstChild->id << " - " << lastChild->id << "\n");
 
 	// Reparent children
 	unsigned int deltaChildDegree = 0;
