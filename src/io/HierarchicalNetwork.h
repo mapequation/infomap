@@ -39,6 +39,7 @@
 #include <set>
 #include <functional>   // std::greater
 #include <limits>
+#include "../utils/Logger.h"
 
 #include "../io/Config.h"
 #include "SafeFile.h"
