@@ -10,4 +10,6 @@ loadInfomap <- function() {
 # Only load if not already loaded
 if (!exists("HierarchicalNetwork")) {
 	loadInfomap()
+} else {
+	message("Infomap already loaded!")
 }
