@@ -26,3 +26,4 @@ syntax: regexp
 ^examples/cpp/Infomap-igraph-interface-library/lib$
 ^examples/python/infomap$
 ^examples/R/infomap$
+^examples/R/\.Rhistory$

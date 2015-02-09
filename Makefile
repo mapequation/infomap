@@ -129,7 +129,7 @@ R_SOURCES := $(SOURCES:src/%.cpp=$(R_BUILD_DIR)/src/%.cpp)
 
 # Use R to compile the module
 R: R-build Makefile
-	cd $(R_BUILD_DIR) && MAKEFLAGS="PKG_CPPFLAGS=-DAS_LIB PKG_LIBS=$(LDFLAGS)" R CMD SHLIB infomap_wrap.cpp $(SOURCES)
+	cd $(R_BUILD_DIR) && CXX="$(CXX)" PKG_CPPFLAGS="$(CXXFLAGS) -DAS_LIB" PKG_LIBS="$(LDFLAGS)" R CMD SHLIB infomap_wrap.cpp $(SOURCES)
 	@true
 
 # Generate wrapper files from source and interface files
