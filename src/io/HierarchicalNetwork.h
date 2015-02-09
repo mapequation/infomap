@@ -438,6 +438,12 @@ public:
 		return copy;
 	}
 
+	LeafIterator& stepForward()
+	{
+		++(*this);
+		return *this;
+	}
+
 	unsigned int depth() const
 	{
 		return m_depth;

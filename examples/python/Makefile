@@ -19,3 +19,6 @@ $(PY_BUILD_DIR)/infomap.py:
 
 clean:
 	$(RM) -r infomap
+
+distclean:
+	cd $(INFOMAP_DIR) && $(MAKE) clean

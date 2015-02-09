@@ -1,7 +1,7 @@
 
 source("load-infomap.R")
 
-conf <- init("--two-level -v")
+conf <- init("--two-level --silent")
 
 network <- Network(conf);
 
@@ -20,14 +20,19 @@ network$addLink(4, 5);
 network$addLink(5, 4);
 network$addLink(5, 3);
 
-cat("Num links:", network$numLinks(), '\n')
-
 network$finalizeAndCheckNetwork()
+
+cat("Created network with", network$numNodes(), "nodes and", network$numLinks(), "links.\n")
 
 tree <- HierarchicalNetwork(conf)
 
 run(network, tree);
 
-codelength = tree$codelength()
+leafIt <- tree$leafIter()
 
-cat("Codelength:", codelength, '\n')
+cat("Partitioned network in", tree$getRootNode()$childDegree(), "modules with codelength", tree$codelength(), "bits:\n")
+while (!leafIt$isEnd()) {
+	cat("Node:", leafIt$base()$data$name, "module:", leafIt$base()$parentNode$parentIndex, '\n')
+	leafIt$stepForward()
+}
+

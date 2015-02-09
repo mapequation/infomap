@@ -13,12 +13,6 @@
 #ifdef SWIGPYTHON
 %extend LeafIterator
 {
-	// In current swig, operator++ is ignored
-	LeafIterator& stepForward()
-	{
-		++(*self);
-		return *self;
-	}
 
 	// Make the class iterable, and wait until
 	// first call to next() to yield first element
