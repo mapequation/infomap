@@ -117,6 +117,32 @@ $(PY_BUILD_DIR)/src/%: src/%
 	@cp -a $^ $@
 
 
+##################################################
+# R module
+##################################################
+
+R_BUILD_DIR = build/R
+R_HEADERS := $(HEADERS:src/%.h=$(R_BUILD_DIR)/src/%.h)
+R_SOURCES := $(SOURCES:src/%.cpp=$(R_BUILD_DIR)/src/%.cpp)
+
+.PHONY: R R-build
+
+# Use R to compile the module
+R: R-build Makefile
+	cd $(R_BUILD_DIR) && MAKEFLAGS="PKG_CPPFLAGS=-DAS_LIB PKG_LIBS=$(LDFLAGS)" R CMD SHLIB infomap_wrap.cpp $(SOURCES)
+	@true
+
+# Generate wrapper files from source and interface files
+R-build: Makefile $(R_HEADERS) $(R_SOURCES)
+	@mkdir -p $(R_BUILD_DIR)
+	@cp -a $(SWIG_FILES) $(R_BUILD_DIR)/
+	swig -c++ -r -outdir $(R_BUILD_DIR) -o $(R_BUILD_DIR)/infomap_wrap.cpp $(R_BUILD_DIR)/Infomap.i
+
+# Rule for $(R_HEADERS) and $(R_SOURCES)
+$(R_BUILD_DIR)/src/%: src/%
+	@mkdir -p $(dir $@)
+	@cp -a $^ $@
+
 
 ##################################################
 # Clean

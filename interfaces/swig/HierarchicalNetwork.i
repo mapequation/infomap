@@ -3,13 +3,14 @@
 %{
 /* Includes the header in the wrapper code */
 #include "src/io/HierarchicalNetwork.h"
-	%}
+%}
 
-	%include "std_string.i"
+%include "std_string.i"
 
 /* Parse the header file to generate wrappers */
 #include "src/io/HierarchicalNetwork.h"
 
+#ifdef SWIGPYTHON
 %extend LeafIterator
 {
 	// In current swig, operator++ is ignored
@@ -38,3 +39,4 @@
 			return self
 	%}
 }
+#endif
