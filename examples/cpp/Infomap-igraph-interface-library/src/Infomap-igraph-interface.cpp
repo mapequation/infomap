@@ -26,6 +26,6 @@ void igraphToInfomapNetwork(infomap::Network& network, const igraph_t* graph,
 		}
 	}
 	
-	network.finalizeAndCheckNetwork();
+	network.finalizeAndCheckNetwork(true, numNodes);
 }
 }

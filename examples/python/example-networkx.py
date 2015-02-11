@@ -26,7 +26,7 @@ def findCommunities(G):
 	for e in G.edges_iter():
 		network.addLink(*e)
 
-	network.finalizeAndCheckNetwork();
+	network.finalizeAndCheckNetwork(True, nx.number_of_nodes(G));
 	
 	# Cluster network
 	infomap.run(network, tree);

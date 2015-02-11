@@ -17,7 +17,7 @@ network <- Network(conf);
 edgelist <- get.edgelist(g)
 apply(edgelist, 1, function(e) network$addLink(e[1] - 1, e[2] - 1))
 
-network$finalizeAndCheckNetwork()
+network$finalizeAndCheckNetwork(TRUE, vcount(g))
 
 cat("Created network with", network$numNodes(), "nodes and", network$numLinks(), "links.\n")
 
