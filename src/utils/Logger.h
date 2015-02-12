@@ -32,6 +32,8 @@
 #include <cassert>
 #include "Stopwatch.h"
 #include "../io/SafeFile.h"
+#include <iomanip>
+#include <limits>
 
 #ifdef NS_INFOMAP
 namespace infomap
