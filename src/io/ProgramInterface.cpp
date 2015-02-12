@@ -95,7 +95,7 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
 		std::string optArg = opt.requireArgument ? (io::Str() << "<" << opt.argumentName << ">") :
 				opt.incrementalArgument? "[+]" : std::string(3, ' ');
 		std::string shortOption = haveShort ? (io::Str() <<  "  -" << opt.shortName << optArg) : std::string(7, ' ');
-		optionStrings[i] = io::Str() << shortOption << " --" << opt.longName << (opt.requireArgument? '=' : ' ') << optArg;
+		optionStrings[i] = io::Str() << shortOption << " --" << opt.longName << (opt.requireArgument? ' ' : ' ') << optArg;
 		if (optionStrings[i].length() > maxLength)
 			maxLength = optionStrings[i].length();
 	}
