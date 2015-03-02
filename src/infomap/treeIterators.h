@@ -184,12 +184,12 @@ public:
 			while(curr->next == 0)
 			{
 				curr = curr->parent;
+				--Base::m_depth;
 				if(curr == Base::m_root || curr == 0) // 0 if no children in first place
 				{
 					Base::m_current = 0;
 					return *this;
 				}
-				--Base::m_depth;
 			}
 			curr = curr->next;
 		}
