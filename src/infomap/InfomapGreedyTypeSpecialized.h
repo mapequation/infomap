@@ -767,6 +767,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 template<typename FlowType>
 void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printClusterNumbers(std::ostream& out)
 {
+	unsigned int indexOffset = m_config.zeroBasedNodeNumbers ? 0 : 1;
 	out << "# '" << m_config.parsedArgs << "' -> " << Super::numLeafNodes() << " nodes " <<
 		"partitioned in " << m_config.elapsedTime() << " from codelength " <<
 		io::toPrecision(Super::oneLevelCodelength, 9, true) << " in one level to codelength " <<
@@ -779,7 +780,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printClusterNumbers(std
 		NodeType& node = getNode(**leafIt);
 		M2Node& m2Node = node.m2Node;
 		unsigned int index = node.parent->index;
-		out << (m2Node.priorState + 1) << " " << (m2Node.physIndex + 1) << " " << (index + 1) << " " << node.data.flow << "\n";
+		out << (m2Node.priorState + indexOffset) << " " << (m2Node.physIndex + indexOffset) << " " << (index + 1) << " " << node.data.flow << "\n";
 	}
 }
 
@@ -794,6 +795,7 @@ struct PhysNode
 template<typename FlowType>
 void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printFlowNetwork(std::ostream& out)
 {
+	unsigned int indexOffset = m_config.zeroBasedNodeNumbers ? 0 : 1;
 	if (Super::m_config.printExpanded)
 	{
 		out << "# flow in network with " << Super::m_treeData.numLeafNodes() << " memory nodes (from-to) and " << Super::m_treeData.numLeafEdges() << " links\n";
@@ -801,18 +803,20 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printFlowNetwork(std::o
 		{
 			NodeType& node = getNode(**leafIt);
 			M2Node& m2Node = node.m2Node;
-			out << m2Node << " (" << node.data << ")\n";
+			out << "(" << m2Node.priorState + indexOffset << "-" << m2Node.physIndex + indexOffset << ") (" << node.data << ")\n";
 			for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), endEdgeIt(node.end_outEdge());
 					edgeIt != endEdgeIt; ++edgeIt)
 			{
 				EdgeType& edge = **edgeIt;
-				out << "  --> " << getNode(edge.target).m2Node << " (" << edge.data.flow << ")\n";
+				M2Node& m2Target = getNode(edge.target).m2Node;
+				out << "  --> " << "(" << m2Target.priorState + indexOffset << "-" << m2Target.physIndex + indexOffset << ") (" << edge.data.flow << ")\n";
 			}
 			for (NodeBase::edge_iterator edgeIt(node.begin_inEdge()), endEdgeIt(node.end_inEdge());
 					edgeIt != endEdgeIt; ++edgeIt)
 			{
 				EdgeType& edge = **edgeIt;
-				out << "  <-- " << getNode(edge.source).m2Node << " (" << edge.data.flow << ")\n";
+				M2Node& m2Source = getNode(edge.source).m2Node;
+				out << "  <-- " << "(" << m2Source.priorState + indexOffset << "-" << m2Source.physIndex + indexOffset << ") (" << edge.data.flow << ")\n";
 			}
 		}
 		return;
