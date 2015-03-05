@@ -1588,12 +1588,14 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 			for (unsigned int i = 0; i < m2Nodes.size(); ++i)
 				sortedMemNodes.insert(std::make_pair(nodeFlow[i], m2Nodes[i]));
 
-			out << "# m2state nodeIndex flow\n";
+			out << "# m2state nodeIndex flow teleportationWeight\n";
 			std::multimap<double, M2Node, std::greater<double> >::const_iterator it(sortedMemNodes.begin());
 			for (unsigned int i = 0; i < m2Nodes.size(); ++i, ++it)
 			{
 				const M2Node& m2Node = it->second;
-				out << m2Node.priorState + indexOffset << " " << m2Node.physIndex + indexOffset << " " << it->first << "\n";
+				out << m2Node.priorState + indexOffset << " " << m2Node.physIndex + indexOffset << " " <<
+						it->first << " " << nodeTeleportWeights[i] << "\n";
+
 			}
 
 			Log() << "done!\n";
