@@ -258,9 +258,9 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	// Calculate the teleport rate distribution
 	if (config.teleportToNodes)
 	{
-		const std::vector<double>& nodeWeights = network.m2NodeWeights();
+//		const std::vector<double>& nodeWeights = network.m2NodeWeights();
 		for (unsigned int i = 0; i < numM2Nodes; ++i)
-			m_nodeTeleportRates[i] = nodeWeights[i] / network.totalM2NodeWeight();
+			m_nodeTeleportRates[i] = sumLinkOutWeight[i] / totalM2LinkWeight;
 	}
 	else // Teleport to links
 	{
