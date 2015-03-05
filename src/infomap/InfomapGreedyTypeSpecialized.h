@@ -772,15 +772,45 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printClusterNumbers(std
 		"partitioned in " << m_config.elapsedTime() << " from codelength " <<
 		io::toPrecision(Super::oneLevelCodelength, 9, true) << " in one level to codelength " <<
 		io::toPrecision(Super::codelength, 9, true) << ".\n";
-	out << "# columns: from to moduleNr flow\n";
 
-	out << "*Vertices " << Super::m_treeData.numLeafNodes() << "\n";
-	for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)
+	if (m_config.printExpanded)
 	{
-		NodeType& node = getNode(**leafIt);
-		M2Node& m2Node = node.m2Node;
-		unsigned int index = node.parent->index;
-		out << (m2Node.priorState + indexOffset) << " " << (m2Node.physIndex + indexOffset) << " " << (index + 1) << " " << node.data.flow << "\n";
+		out << "# columns: from to moduleNr flow\n";
+
+		out << "*Vertices " << Super::m_treeData.numLeafNodes() << "\n";
+		for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)
+		{
+			NodeType& node = getNode(**leafIt);
+			M2Node& m2Node = node.m2Node;
+			unsigned int index = node.parent->index; // module index
+			out << (m2Node.priorState + indexOffset) << " " << (m2Node.physIndex + indexOffset) << " " << (index + 1) << " " << node.data.flow << "\n";
+		}
+	}
+	else
+	{
+		out << "# columns: nodeIndex [(module1, flowInModule1), (module2, flowInModule2),...]\n";
+
+		std::map<unsigned int, std::map<unsigned int, double> > modules;
+		for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)
+		{
+			NodeType& node = getNode(**leafIt);
+			M2Node& m2Node = node.m2Node;
+			unsigned int index = node.parent->index; // module index
+			modules[m2Node.physIndex][index] += node.data.flow;
+		}
+		for (std::map<unsigned int, std::map<unsigned int, double> >::const_iterator it(modules.begin());
+				it != modules.end(); ++it)
+		{
+			unsigned int physNode = it->first + indexOffset;
+			const std::map<unsigned int, double>& overlapping = it->second;
+			out << physNode << " [";
+			for (std::map<unsigned int, double>::const_iterator moduleIt(overlapping.begin());
+					moduleIt != overlapping.end(); ++moduleIt)
+			{
+				out << "(" << moduleIt->first << ", " << moduleIt->second << "), ";
+			}
+			out << "\b\b]\n";
+		}
 	}
 }
 

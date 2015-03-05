@@ -1812,7 +1812,8 @@ void InfomapBase::printNetworkData(HierarchicalNetwork& output, std::string file
 	// Print .clu
 	if (m_config.printClu && !m_config.noFileOutput && !m_externalOutput)
 	{
-		outName = io::Str() << m_config.outDirectory << filename << ".clu";
+		outName = io::Str() << m_config.outDirectory << filename <<
+			(m_config.printExpanded ? "_expanded.clu" : ".clu");
 		Log(0,0) << "(Writing .clu file.. ) ";
 		Log(1) << "Print cluster data to " << outName << "... ";
 		SafeOutFile cluOut(outName.c_str());
