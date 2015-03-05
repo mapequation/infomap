@@ -235,7 +235,7 @@ protected:
 
 	map<M2Node, double> m_m2Nodes;
 	M2NodeMap m_m2NodeMap;
-	std::vector<double> m_m2NodeWeights;
+	std::vector<double> m_m2NodeWeights; // out weights on memory nodes
 	double m_totM2NodeWeight;
 	LinkMap m_incompleteM2Links;
 

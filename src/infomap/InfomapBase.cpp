@@ -1576,6 +1576,7 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 
 	if (m_config.printNodeRanks)
 	{
+		unsigned int indexOffset = m_config.zeroBasedNodeNumbers ? 0 : 1;
 		if (m_config.printExpanded)
 		{
 			std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << "_expanded.rank";
@@ -1592,7 +1593,7 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 			for (unsigned int i = 0; i < m2Nodes.size(); ++i, ++it)
 			{
 				const M2Node& m2Node = it->second;
-				out << m2Node.priorState << " " << m2Node.physIndex << " " << it->first << "\n";
+				out << m2Node.priorState + indexOffset << " " << m2Node.physIndex + indexOffset << " " << it->first << "\n";
 			}
 
 			Log() << "done!\n";
