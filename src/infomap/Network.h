@@ -35,8 +35,10 @@
 #include <limits>
 #include <sstream>
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 class Network
 {
@@ -341,6 +343,8 @@ struct Triple
 	unsigned int n3;
 };
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* NETWORK_H_ */

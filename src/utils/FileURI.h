@@ -30,8 +30,10 @@
 #include <iostream>
 #include <string>
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 	
 using std::string;
 
@@ -102,6 +104,8 @@ private:
 	string m_extension;
 };
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* FILEURI_H_ */

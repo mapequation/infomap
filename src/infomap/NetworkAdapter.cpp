@@ -40,9 +40,12 @@
 #include "Node.h"
 #include "NodeFactory.h"
 #include "treeIterators.h"
+#include "../utils/Logger.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 bool NetworkAdapter::readExternalHierarchy(std::string filename)
 {
@@ -59,7 +62,7 @@ bool NetworkAdapter::readExternalHierarchy(std::string filename)
 	}
 	catch (std::exception& err)
 	{
-		std::cout << "Error: \"" << err.what() << "\"\n";
+		std::cerr << "Error: \"" << err.what() << "\"\n";
 		ok = false;
 	}
 
@@ -91,7 +94,7 @@ void NetworkAdapter::readClu(std::string filename)
 	for (unsigned int i = 0; i < numModules; ++i)
 		m_treeData.root()->addChild(modules[i]);
 
-	std::cout << "Found " << numModules << " modules." << std::endl;
+	Log() << "Found " << numModules << " modules." << std::endl;
 }
 
 void NetworkAdapter::readHumanReadableTree(std::string filename)
@@ -99,7 +102,7 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	std::string line;
 	std::string buf;
 	SafeInFile input(filename.c_str());
-	std::cout << "Parsing tree '" << filename << "'... " << std::flush;
+	Log() << "Parsing tree '" << filename << "'... " << std::flush;
 
 	std::auto_ptr<NodeBase> root(m_treeData.nodeFactory().createNode("tmpRoot", 1.0, 0.0));
 	std::vector<double> flowValues(m_numNodes);
@@ -199,7 +202,9 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 			leafModuleIt->addChild(leafNodes[childIndex]);
 	}
 
-	std::cout << "done! Found " << maxDepth << " levels." << std::endl;
+	Log() << "done! Found " << maxDepth << " levels." << std::endl;
 }
 
+#ifdef NS_INFOMAP
 }
+#endif

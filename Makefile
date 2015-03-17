@@ -11,116 +11,142 @@ else
 	CXXFLAGS += -O3
 endif
 
-HEADERS = \
-src/infomap/Edge.h \
-src/infomap/flowData.h \
-src/infomap/flowData_traits.h \
-src/infomap/FlowNetwork.h \
-src/infomap/InfomapBase.h \
-src/infomap/InfomapContext.h \
-src/infomap/InfomapGreedy.h \
-src/infomap/InfomapGreedyCommon.h \
-src/infomap/InfomapGreedySpecialized.h \
-src/infomap/InfomapGreedyTypeSpecialized.h \
-src/infomap/MemFlowNetwork.h \
-src/infomap/MemNetwork.h \
-src/infomap/MultiplexNetwork.h \
-src/infomap/Network.h \
-src/infomap/NetworkAdapter.h \
-src/infomap/Node.h \
-src/infomap/NodeFactory.h \
-src/infomap/TreeData.h \
-src/infomap/treeIterators.h \
-src/io/ClusterReader.h \
-src/io/Config.h \
-src/io/convert.h \
-src/io/HierarchicalNetwork.h \
-src/io/ProgramInterface.h \
-src/io/SafeFile.h \
-src/io/TreeDataWriter.h \
-src/io/version.h \
-src/utils/Date.h \
-src/utils/FileURI.h \
-src/utils/gap_iterator.h \
-src/utils/infomath.h \
-src/utils/Logger.h \
-src/utils/MersenneTwister.h \
-src/utils/Stopwatch.h \
-src/utils/types.h \
-src/Infomap.h \
+##################################################
+# General file dependencies
+##################################################
 
-SOURCES = \
-src/infomap/FlowNetwork.cpp \
-src/infomap/InfomapBase.cpp \
-src/infomap/InfomapContext.cpp \
-src/infomap/MemFlowNetwork.cpp \
-src/infomap/MemNetwork.cpp \
-src/infomap/MultiplexNetwork.cpp \
-src/infomap/Network.cpp \
-src/infomap/NetworkAdapter.cpp \
-src/infomap/Node.cpp \
-src/infomap/TreeData.cpp \
-src/io/ClusterReader.cpp \
-src/io/HierarchicalNetwork.cpp \
-src/io/ProgramInterface.cpp \
-src/io/TreeDataWriter.cpp \
-src/io/version.cpp \
-src/utils/FileURI.cpp \
-src/utils/Logger.cpp \
+HEADERS := $(shell find src -name "*.h")
+SOURCES := $(shell find src -name "*.cpp")
+# Only one main
+SOURCES := $(filter-out src/Informatter.cpp,$(SOURCES))
+OBJECTS := $(SOURCES:src/%.cpp=build/Infomap/%.o)
 
-TARGET = Infomap
+##################################################
+# Stand-alone C++ targets
+##################################################
 
-OBJECTS := $(SOURCES:src/%.cpp=build/%.o)
-INFOMAP_OBJECT = build/Infomap.o
-INFORMATTER_OBJECT = build/Informatter.o
+INFORMATTER_OBJECTS = $(OBJECTS:Infomap.o=Informatter.o)
 
-LIBDIR = build/lib
-LIBTARGET = $(LIBDIR)/libInfomap.a
-LIBHEADERS := $(HEADERS:src/%.h=$(LIBDIR)/include/%.h)
-INFOMAP_LIB_OBJECT = build/Infomaplib.o
+.PHONY: all noomp test
 
-.PHONY: all clean noomp lib
-
-## Rule for making the actual target
-$(TARGET): $(OBJECTS) $(INFOMAP_OBJECT)
+Infomap: $(OBJECTS)
 	@echo "Linking object files to target $@..."
 	$(CXX) $(LDFLAGS) -o $@ $^
 	@echo "-- Link finished --"
 
-all: $(TARGET) Infomap-formatter lib
-	@true
-
-Infomap-formatter: $(OBJECTS) $(INFORMATTER_OBJECT)
+Infomap-formatter: $(INFORMATTER_OBJECTS)
 	@echo "Making Informatter..."
 	$(CXX) $(LDFLAGS) -o $@ $^
 
-lib: $(LIBTARGET) $(LIBHEADERS)
-	@echo "Wrote static library and headers to $(LIBDIR)"
-
-$(LIBTARGET): $(INFOMAP_LIB_OBJECT) $(OBJECTS)
-	@echo "Creating static library..."
-	@mkdir -p $(LIBDIR)
-	ar rcs $@ $^
-
-$(LIBDIR)/include/%.h: src/%.h
-	@mkdir -p $(dir $@)
-	@cp -a $^ $@
-
-$(INFOMAP_LIB_OBJECT): src/Infomap.cpp $(OBJECTS)
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -DNO_MAIN -c $< -o $@
+all: Infomap Infomap-formatter
+	@true
 
 ## Generic compilation rule for object files from cpp files
-build/%.o : src/%.cpp $(HEADERS) Makefile
+build/Infomap/%.o : src/%.cpp $(HEADERS) Makefile
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-example: examples/Infomap-as-library.cpp lib
-	$(CXX) $(CXXFLAGS) $< -o examples/Infomap-as-library -I$(LIBDIR)/include -L$(LIBDIR) -lInfomap
-
-noomp: $(TARGET)
+noomp: Infomap
 	@true
 
-## Clean Rule
+
+##################################################
+# Static C++ library
+##################################################
+
+# Use separate object files to compile with definitions
+# NS_INFOMAP: Wrap code in namespace infomap
+# AS_LIB: Skip main function
+LIB_DIR = build/lib
+LIB_HEADERS := $(HEADERS:src/%.h=include/%.h)
+LIB_OBJECTS := $(SOURCES:src/%.cpp=build/lib/%.o)
+
+.PHONY: lib
+
+lib: lib/libInfomap.a $(LIB_HEADERS)
+	@echo "Wrote static library to lib/ and headers to include/"
+
+lib/libInfomap.a: $(LIB_OBJECTS) Makefile
+	@echo "Creating static library..."
+	@mkdir -p lib
+	ar rcs $@ $^
+
+# Rule for $(LIB_HEADERS)
+include/%.h: src/%.h
+	@mkdir -p $(dir $@)
+	@cp -a $^ $@
+
+# Rule for $(LIB_OBJECTS)
+build/lib/%.o: src/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -DNS_INFOMAP -DAS_LIB -c $< -o $@
+
+
+##################################################
+# General SWIG helpers
+##################################################
+
+SWIG_FILES := $(shell find interfaces/swig -name "*.i")
+
+
+##################################################
+# Python module
+##################################################
+
+PY_BUILD_DIR = build/py
+PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
+PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
+
+.PHONY: python py-build
+
+# Use python distutils to compile the module
+python: py-build Makefile
+	@cp -a interfaces/python/setup.py $(PY_BUILD_DIR)/
+	cd $(PY_BUILD_DIR) && python setup.py build_ext --inplace
+	@true
+
+# Generate wrapper files from source and interface files
+py-build: $(PY_HEADERS) $(PY_SOURCES)
+	@mkdir -p $(PY_BUILD_DIR)
+	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/
+	swig -c++ -python -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
+
+# Rule for $(PY_HEADERS) and $(PY_SOURCES)
+$(PY_BUILD_DIR)/src/%: src/%
+	@mkdir -p $(dir $@)
+	@cp -a $^ $@
+
+
+##################################################
+# R module
+##################################################
+
+R_BUILD_DIR = build/R
+R_HEADERS := $(HEADERS:src/%.h=$(R_BUILD_DIR)/src/%.h)
+R_SOURCES := $(SOURCES:src/%.cpp=$(R_BUILD_DIR)/src/%.cpp)
+
+.PHONY: R R-build
+
+# Use R to compile the module
+R: R-build Makefile
+	cd $(R_BUILD_DIR) && CXX="$(CXX)" PKG_CPPFLAGS="$(CXXFLAGS) -DAS_LIB" PKG_LIBS="$(LDFLAGS)" R CMD SHLIB infomap_wrap.cpp $(SOURCES)
+	@true
+
+# Generate wrapper files from source and interface files
+R-build: Makefile $(R_HEADERS) $(R_SOURCES)
+	@mkdir -p $(R_BUILD_DIR)
+	@cp -a $(SWIG_FILES) $(R_BUILD_DIR)/
+	swig -c++ -r -outdir $(R_BUILD_DIR) -o $(R_BUILD_DIR)/infomap_wrap.cpp $(R_BUILD_DIR)/Infomap.i
+
+# Rule for $(R_HEADERS) and $(R_SOURCES)
+$(R_BUILD_DIR)/src/%: src/%
+	@mkdir -p $(dir $@)
+	@cp -a $^ $@
+
+
+##################################################
+# Clean
+##################################################
+
 clean:
-	$(RM) -r $(TARGET) Informatter build
+	$(RM) -r Infomap Infomap-formatter build lib include

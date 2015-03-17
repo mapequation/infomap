@@ -39,8 +39,10 @@
 #include "../utils/types.h"
 #include "Node.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 using std::map;
 using std::pair;
@@ -115,6 +117,21 @@ public:
 
 	virtual void readInputData(std::string filename = "");
 
+	/**
+	 * Add a weighted link between two memory nodes.
+	 * @return true if a new link was inserted, false if skipped due to cutoff limit or aggregated to existing link
+	 */
+	bool addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight);
+	bool addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstM2NodeWeight, double secondM2NodeWeight);
+	bool addM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight, double firstM2NodeWeight, double secondM2NodeWeight);
+
+	void addM2Node(unsigned int priorState, unsigned int nodeIndex, double weight);
+	void addM2Node(M2Node m2node, double weight);
+
+	virtual void finalizeAndCheckNetwork(bool printSummary = true);
+
+	virtual void printParsingResult(bool includeFirstOrderData = false);
+
 	unsigned int numM2Nodes() const { return m_m2Nodes.size(); }
 	const M2NodeMap& m2NodeMap() const { return m_m2NodeMap; }
 	const std::vector<double>& m2NodeWeights() const { return m_m2NodeWeights; }
@@ -131,7 +148,6 @@ public:
 protected:
 
 	void parseTrigram(std::string filename);
-	void parseMultiplex(std::string filename);
 
 	/**
 	 * Create trigrams from first order data by chaining pair of overlapping links.
@@ -205,17 +221,6 @@ protected:
 	void parseM2Link(char line[], int& n1, unsigned int& n2, unsigned int& n3, double& weight);
 
 	/**
-	 * Add a weighted link between two memory nodes.
-	 * @return true if a new link was inserted, false if skipped due to cutoff limit or aggregated to existing link
-	 */
-	bool addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight);
-	bool addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstM2NodeWeight, double secondM2NodeWeight);
-	bool addM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight, double firstM2NodeWeight, double secondM2NodeWeight);
-
-	void addM2Node(unsigned int priorState, unsigned int nodeIndex, double weight);
-	void addM2Node(M2Node m2node, double weight);
-
-	/**
 	 * Insert memory link, indexed on first m2-node and aggregated if exist
 	 * @note Called by addM2Link
 	 * @return true if a new link was inserted, false if aggregated
@@ -224,17 +229,13 @@ protected:
 	bool insertM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight);
 	bool addIncompleteM2Link(unsigned int n1, unsigned int n2, double weight);
 
-	virtual void finalizeAndCheckNetwork(bool printSummary = true);
-
 	unsigned int addMissingPhysicalNodes();
 
 	virtual void initNodeDegrees();
 
-	virtual void printParsingResult(bool includeFirstOrderData = false);
-
 	map<M2Node, double> m_m2Nodes;
 	M2NodeMap m_m2NodeMap;
-	std::vector<double> m_m2NodeWeights;
+	std::vector<double> m_m2NodeWeights; // out weights on memory nodes
 	double m_totM2NodeWeight;
 	LinkMap m_incompleteM2Links;
 
@@ -279,6 +280,8 @@ void MemNetwork::addM2Node(M2Node m2Node, double weight)
 	m_minNodeIndex = std::min(m_minNodeIndex, m2Node.physIndex);
 }
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* MEMNETWORK_H_ */

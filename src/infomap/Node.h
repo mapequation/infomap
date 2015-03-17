@@ -37,8 +37,10 @@
 #include "../utils/Logger.h"
 #include <memory>
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 class InfomapBase;
 
@@ -445,7 +447,6 @@ void NodeBase::replaceChildrenWithGrandChildrenDebug()
 		n->replaceWithChildrenDebug();
 	}
 	while (--numOriginalChildrenLeft != 0);
-	RELEASE_OUT("-- done! n" << id << " (" << getNeighbourhood() << ")\n");
 }
 
 
@@ -455,9 +456,6 @@ void NodeBase::replaceWithChildrenDebug()
 	if (isLeaf() || isRoot())
 		return;
 
-
-	RELEASE_OUT("Replace n" << id << " (" << getNeighbourhood() << ") with " <<
-			firstChild->id << " - " << lastChild->id << "\n");
 
 	// Reparent children
 	unsigned int deltaChildDegree = 0;
@@ -632,6 +630,8 @@ public:
 	std::vector<PhysData> physicalNodes;
 };
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* NODE_H_ */

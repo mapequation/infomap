@@ -30,24 +30,27 @@
 
 #include <string>
 #include "io/HierarchicalNetwork.h"
-#include "infomap/Network.h"
+#include "infomap/MultiplexNetwork.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 /**
  * Run as stand-alone
  */
-int run(const std::vector<std::string>& flags);
+int run(const std::string& flags);
 
 /**
  * Run from other C++ code
  */
-Config init(const std::vector<std::string>& flags);
+Config init(const std::string& flags);
 
 int run(Network& input, HierarchicalNetwork& output);
 
+#ifdef NS_INFOMAP
 }
-
+#endif
 
 #endif /* SRC_INFOMAP_H_ */

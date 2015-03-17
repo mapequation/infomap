@@ -50,40 +50,48 @@ void printTreeHelper(std::ostream& out, infomap::SNode& node, std::string prefix
 	}
 }
 
-void printTree(infomap::HierarchicalNetwork& hierarchicalNetwork)
+void printTree(infomap::HierarchicalNetwork& tree)
 {
-	std::cout << "Result tree:\n";
-	printTreeHelper(std::cout, hierarchicalNetwork.getRootNode());
+	std::cout << "\nResult tree:\n";
+	printTreeHelper(std::cout, tree.getRootNode());
+}
+
+void printClusters(infomap::HierarchicalNetwork& tree)
+{
+	std::cout << "\nClusters:\n#originalIndex clusterIndex:\n";
+
+	for (infomap::LeafIterator leafIt(&tree.getRootNode()); !leafIt.isEnd(); ++leafIt)
+		std::cout << leafIt->originalLeafIndex << " " << leafIt->parentNode->parentIndex << '\n';
 }
 
 int main(int argc, char** argv)
 {
-	vector<string> flags;
-
-	infomap::Config config = infomap::init(flags);
+	infomap::Config config = infomap::init("--two-level -N2");
 
 	infomap::Network network(config);
 
-  	network.addLink(0, 1);
-  	network.addLink(0, 2);
-  	network.addLink(0, 3);
-  	network.addLink(1, 0);
-  	network.addLink(1, 2);
-  	network.addLink(2, 1);
-  	network.addLink(2, 0);
-  	network.addLink(3, 0);
-  	network.addLink(3, 4);
-  	network.addLink(3, 5);
-  	network.addLink(4, 3);
-  	network.addLink(4, 5);
-  	network.addLink(5, 4);
-  	network.addLink(5, 3);
+	network.addLink(0, 1);
+	network.addLink(0, 2);
+	network.addLink(0, 3);
+	network.addLink(1, 0);
+	network.addLink(1, 2);
+	network.addLink(2, 1);
+	network.addLink(2, 0);
+	network.addLink(3, 0);
+	network.addLink(3, 4);
+	network.addLink(3, 5);
+	network.addLink(4, 3);
+	network.addLink(4, 5);
+	network.addLink(5, 4);
+	network.addLink(5, 3);
 
-  	network.finalizeAndCheckNetwork();
+	network.finalizeAndCheckNetwork();
 
-  	infomap::HierarchicalNetwork resultNetwork(config);
+	infomap::HierarchicalNetwork resultNetwork(config);
 
-  	infomap::run(network, resultNetwork);
-  	
-  	printTree(resultNetwork);
+	infomap::run(network, resultNetwork);
+	
+	printTree(resultNetwork);
+
+	printClusters(resultNetwork);
 }

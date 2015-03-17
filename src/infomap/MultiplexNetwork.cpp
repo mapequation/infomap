@@ -37,8 +37,10 @@
 
 #include "../utils/infomath.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 	
 using std::make_pair;
 
@@ -116,7 +118,7 @@ void MultiplexNetwork::readInputData(std::string filename)
  */
 void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 {
-	RELEASE_OUT("Parsing multiplex network from file '" << filename << "'... " << std::flush);
+	Log() << "Parsing multiplex network from file '" << filename << "'... " << std::flush;
 
 	SafeInFile input(filename.c_str());
 
@@ -142,13 +144,19 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 			throw FileFormatError(io::Str() << "Unrecognized header in multiplex network file: '" << line << "'.");
 	}
 
-	std::cout << "done!\n";
+	Log() << "done!\n";
+
+	finalizeParser();
+	
+}
+
+void MultiplexNetwork::finalizeParser(){
 	if (!m_networks.empty())
-		std::cout << " --> Found " << m_numIntraLinksFound << " intra-network links in " << m_networks.size() << " layers.\n";
+		Log() << " --> Found " << m_numIntraLinksFound << " intra-network links in " << m_networks.size() << " layers.\n";
 	if (!m_interLinkLayers.empty())
-		std::cout << " --> Found " << m_numInterLinksFound << " inter-network links in " << m_interLinkLayers.size() << " layers.\n";
+		Log() << " --> Found " << m_numInterLinksFound << " inter-network links in " << m_interLinkLayers.size() << " layers.\n";
 	if (!m_multiplexLinkLayers.empty())
-		std::cout << " --> Found " << m_numMultiplexLinksFound << " multiplex links in " << m_multiplexLinkLayers.size() << " layers.\n";
+		Log() << " --> Found " << m_numMultiplexLinksFound << " multiplex links in " << m_multiplexLinkLayers.size() << " layers.\n";
 
 	if (!m_interLinkLayers.empty())
 	{
@@ -167,7 +175,7 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 		for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
 		{
 			if (printLayerSummary)
-				std::cout << "Intra-network links on layer " << (layerIndex + 1) << ": " << std::flush;
+				Log() << "Intra-network links on layer " << (layerIndex + 1) << ": " << std::flush;
 			m_networks[layerIndex].finalizeAndCheckNetwork(false);
 			if (printLayerSummary)
 				m_networks[layerIndex].printParsingResult(m_config.verbosity <= 1);
@@ -197,7 +205,7 @@ void MultiplexNetwork::parseMultipleNetworks()
 	for (unsigned int i = 0; i < networkFilenames.size(); ++i)
 	{
 		m_networks.push_back(Network(m_config));
-		std::cout << "[Network layer " << (i + 1) << " from file '" << networkFilenames[i] << "']:\n";
+		Log() << "[Network layer " << (i + 1) << " from file '" << networkFilenames[i] << "']:\n";
 		m_networks[i].readInputData(networkFilenames[i]);
 	}
 
@@ -205,7 +213,7 @@ void MultiplexNetwork::parseMultipleNetworks()
 
 	unsigned int numInterLinksFound = 0; //TODO: Assume last additional data is inter-layer data if #additionalInputs > 1 && multiplexRelaxRate < 0
 
-	std::cout << "Generating memory network... " << std::flush;
+	Log() << "Generating memory network... " << std::flush;
 
 	bool simulateInterLayerLinks = m_config.multiplexRelaxRate >= 0.0 || numInterLinksFound == 0;
 	if (simulateInterLayerLinks)
@@ -238,19 +246,19 @@ unsigned int MultiplexNetwork::adjustForDifferentNumberOfNodes()
 
 	if (differentNodeCount)
 	{
-		std::cout << "Adjusting for equal number of nodes... " << std::flush;
+		Log() << "Adjusting for equal number of nodes... " << std::flush;
 		unsigned int numAdjusted = 0;
 		for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
 		{
 			if (m_networks[layerIndex].numNodes() != maxNumNodes)
 			{
-//				std::cout << "  Layer " << (layerIndex + 1) << ": " <<
+//				Log() << "  Layer " << (layerIndex + 1) << ": " <<
 //						m_networks[layerIndex].numNodes() << " -> " << maxNumNodes << " nodes." << std::endl;
 				++numAdjusted;
 				m_networks[layerIndex].finalizeAndCheckNetwork(false, maxNumNodes);
 			}
 		}
-		std::cout << "done! Adjusted " << numAdjusted << "/" << m_networks.size() << " networks to have " << maxNumNodes << " nodes." << std::endl;
+		Log() << "done! Adjusted " << numAdjusted << "/" << m_networks.size() << " networks to have " << maxNumNodes << " nodes." << std::endl;
 	}
 
 	return maxNumNodes;
@@ -258,7 +266,7 @@ unsigned int MultiplexNetwork::adjustForDifferentNumberOfNodes()
 
 void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 {
-	std::cout << "Generating memory network with inter layer links from data... " << std::flush;
+	Log() << "Generating memory network with inter layer links from data... " << std::flush;
 	// First generate memory links from intra links (from ordinary links within each network)
 	std::vector<std::vector<double> > sumOutWeights(m_networks.size());
 
@@ -281,7 +289,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 		}
 	}
 
-	std::cout << "connecting layers... " << std::flush;
+	Log() << "connecting layers... " << std::flush;
 
 
 	// Extract the self-layer links to be able to scale the inter-layer links correctly. Use the sum of intra out weights as default.
@@ -351,7 +359,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 			}
 		}
 	}
-	std::cout << "done!" << std::endl;
+	Log() << "done!" << std::endl;
 }
 
 void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
@@ -359,7 +367,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 	// Simulate inter-layer links
 	double relaxRate = m_config.multiplexRelaxRate < 0 ? 0.15 : m_config.multiplexRelaxRate; //TODO: Set default in config and use separate bool
 
-	std::cout << "Generating memory network with multiplex relax rate " << relaxRate << "... " << std::flush;
+	Log() << "Generating memory network with multiplex relax rate " << relaxRate << "... " << std::flush;
 
 	for (unsigned int nodeIndex = 0; nodeIndex < m_numNodes; ++nodeIndex)
 	{
@@ -395,7 +403,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 					layer2OutLinksIt = layer2LinkMap.find(nodeIndex);
 					if (layer2OutLinksIt == layer2LinkMap.end())
 					{
-//						std::cout << "\n  No mirror to node " << m2Source << " on layer " << layer2;
+//						Log() << "\n  No mirror to node " << m2Source << " on layer " << layer2;
 						continue;
 					}
 				}
@@ -416,14 +424,14 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 			}
 		}
 	}
-	std::cout << "done!" << std::endl;
+	Log() << "done!" << std::endl;
 }
 
 void MultiplexNetwork::addMemoryNetworkFromMultiplexLinks()
 {
 	if (m_multiplexLinks.empty())
 		return;
-	std::cout << "Adding memory network from multiplex links... " << std::flush;
+	Log() << "Adding memory network from multiplex links... " << std::flush;
 
 	for (MultiplexLinkMap::const_iterator it(m_multiplexLinks.begin()); it != m_multiplexLinks.end(); ++it)
 	{
@@ -436,7 +444,7 @@ void MultiplexNetwork::addMemoryNetworkFromMultiplexLinks()
 			addM2Link(source.priorState, source.physIndex, target.priorState, target.physIndex, linkWeight);
 		}
 	}
-	std::cout << "done!" << std::endl;
+	Log() << "done!" << std::endl;
 }
 
 std::string MultiplexNetwork::parseIntraLinks(std::ifstream& file)
@@ -490,6 +498,15 @@ std::string MultiplexNetwork::parseInterLinks(std::ifstream& file)
 	return line;
 }
 
+void MultiplexNetwork::addMultiplexLink(int layer1, int node1, int layer2, int node2, double weight){
+	m_multiplexLinks[M2Node(layer1, node1)][M2Node(layer2, node2)] += weight;
+
+	++m_numMultiplexLinksFound;
+	++m_multiplexLinkLayers[layer1];
+	++m_multiplexLinkLayers[layer2];
+
+}
+
 std::string MultiplexNetwork::parseMultiplexLinks(std::ifstream& file)
 {
 	std::string line;
@@ -506,11 +523,8 @@ std::string MultiplexNetwork::parseMultiplexLinks(std::ifstream& file)
 
 		parseMultiplexLink(line, layer1, node1, layer2, node2, weight);
 
-		m_multiplexLinks[M2Node(layer1, node1)][M2Node(layer2, node2)] += weight;
-
-		++m_numMultiplexLinksFound;
-		++m_multiplexLinkLayers[layer1];
-		++m_multiplexLinkLayers[layer2];
+		addMultiplexLink(layer1, node1, layer2, node2, weight);
+		
 	}
 	return line;
 }
@@ -576,4 +590,6 @@ void MultiplexNetwork::finalizeAndCheckNetwork(bool printSummary)
 	MemNetwork::finalizeAndCheckNetwork(printSummary);
 }
 
+#ifdef NS_INFOMAP
 }
+#endif

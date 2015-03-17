@@ -34,8 +34,10 @@
 #include "NodeFactory.h"
 #include <memory>
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 class TreeData
 {
@@ -143,6 +145,8 @@ private:
 
 };
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* TREEDATA_H_ */

@@ -31,8 +31,10 @@
 #include <iterator>
 #include "../utils/Logger.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 using std::iterator_traits;
 
@@ -182,12 +184,12 @@ public:
 			while(curr->next == 0)
 			{
 				curr = curr->parent;
+				--Base::m_depth;
 				if(curr == Base::m_root || curr == 0) // 0 if no children in first place
 				{
 					Base::m_current = 0;
 					return *this;
 				}
-				--Base::m_depth;
 			}
 			curr = curr->next;
 		}
@@ -524,6 +526,8 @@ public:
 
 };
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* TREEITERATORS_H_ */

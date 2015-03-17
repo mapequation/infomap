@@ -51,8 +51,10 @@
 #include "treeIterators.h"
 #include "TreeData.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 template<typename InfomapImplementation>
 class InfomapGreedy : public InfomapBase
@@ -151,22 +153,23 @@ template<typename InfomapImplementation>
 inline
 void InfomapGreedy<InfomapImplementation>::printFlowNetwork(std::ostream& out)
 {
+	unsigned int indexOffset = m_config.zeroBasedNodeNumbers ? 0 : 1;
 	for (TreeData::leafIterator nodeIt(m_treeData.begin_leaf());
 			nodeIt != m_treeData.end_leaf(); ++nodeIt)
 	{
 		NodeBase& node = **nodeIt;
-		out << node.originalIndex << " (" << getNode(node).data << ")\n";
+		out << node.originalIndex + indexOffset << " (" << getNode(node).data << ")\n";
 		for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), endEdgeIt(node.end_outEdge());
 				edgeIt != endEdgeIt; ++edgeIt)
 		{
 			EdgeType& edge = **edgeIt;
-			out << "  --> " << edge.target.originalIndex << " (" << edge.data.flow << ")\n";
+			out << "  --> " << edge.target.originalIndex + indexOffset << " (" << edge.data.flow << ")\n";
 		}
 		for (NodeBase::edge_iterator edgeIt(node.begin_inEdge()), endEdgeIt(node.end_inEdge());
 				edgeIt != endEdgeIt; ++edgeIt)
 		{
 			EdgeType& edge = **edgeIt;
-			out << "  <-- " << edge.source.originalIndex << " (" << edge.data.flow << ")\n";
+			out << "  <-- " << edge.source.originalIndex + indexOffset << " (" << edge.data.flow << ")\n";
 		}
 	}
 }
@@ -382,9 +385,11 @@ template<typename InfomapImplementation>
 inline
 void InfomapGreedy<InfomapImplementation>::debugPrintInfomapTerms()
 {
-	std::cout << "(moduleLength: " << -exit_log_exit << " + " << flow_log_flow << " - " << nodeFlow_log_nodeFlow << " = " << moduleCodelength <<")\n";
+	Log() << "(moduleLength: " << -exit_log_exit << " + " << flow_log_flow << " - " << nodeFlow_log_nodeFlow << " = " << moduleCodelength <<")\n";
 }
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* INFOMAPGREEDY_H_ */

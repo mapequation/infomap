@@ -37,8 +37,10 @@
 #include <iostream>
 #include "convert.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 struct OptionConflictError : std::logic_error
 {
@@ -279,13 +281,11 @@ public:
 		m_optionArguments.push_back(o);
 	}
 
-	void parseArgs(const std::vector<std::string>& args);
+	void parseArgs(const std::string& args);
 
 	std::vector<ParsedOption> getUsedOptionArguments();
 
 	unsigned int numRequiredArguments() { return m_nonOptionArguments.size() - m_numOptionalNonOptionArguments; }
-
-	std::string parsedArgs() { return m_parsedArgs; }
 
 private:
 	void exitWithUsage(bool showAdvanced);
@@ -303,11 +303,12 @@ private:
 	unsigned int m_displayHelp;
 	bool m_displayVersion;
 	bool m_negateNextOption;
-	std::string m_parsedArgs;
 
 	unsigned int m_numOptionalNonOptionArguments;
 };
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* ARGPARSER_H_ */

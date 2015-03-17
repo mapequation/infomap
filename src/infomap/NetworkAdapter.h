@@ -32,8 +32,10 @@
 #include "../io/Config.h"
 #include "TreeData.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 class NetworkAdapter {
 public:
@@ -59,6 +61,8 @@ protected:
 	unsigned int m_indexOffset;
 };
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* SRC_INFOMAP_NETWORKADAPTER_H_ */

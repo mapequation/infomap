@@ -42,10 +42,12 @@
 #include <iomanip>
 #include "io/version.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
-std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>& args)
+std::vector<ParsedOption> getConfig(Config& conf, const std::string& args)
 {
 	ProgramInterface api("Informatter", "Infomap formatter utility", INFOMAP_VERSION);
 
@@ -175,7 +177,7 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>
 
 	api.parseArgs(args);
 
-	conf.parsedArgs = api.parsedArgs();
+	conf.parsedArgs = args;
 
 	// Some checks
 	if (*--conf.outDirectory.end() != '/')
@@ -201,30 +203,29 @@ void runInformatter(Config const& config)
 	infomap.consolidateExternalClusterData(true);
 }
 
-int run(int argc, char* argv[])
+int run(const std::string& args)
 {
 	Date startDate;
 	Config conf;
-	std::vector<std::string> args(argc);
-	for (unsigned int i = 0; i < args.size(); ++i)
-		args[i] = argv[i];
 	try
 	{
 		std::vector<ParsedOption> flags = getConfig(conf, args);
 
-		std::cout << "=======================================================\n";
-		std::cout << "  Informatter v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
-		std::cout << "  -> Input: " << conf.networkFile << "\n";
-		std::cout << "  -> Output path:   " << conf.outDirectory << "\n";
+		Log::init(conf.verbosity, conf.silent, conf.verboseNumberPrecision);
+
+		Log() << "=======================================================\n";
+		Log() << "  Informatter v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
+		Log() << "  -> Input: " << conf.networkFile << "\n";
+		Log() << "  -> Output path:   " << conf.outDirectory << "\n";
 		if (!flags.empty()) {
 			for (unsigned int i = 0; i < flags.size(); ++i)
-				std::cout << (i == 0 ? "  -> Configuration: " : "                    ") << flags[i] << "\n";
+				Log() << (i == 0 ? "  -> Configuration: " : "                    ") << flags[i] << "\n";
 		}
-		std::cout << "=======================================================\n";
+		Log() << "=======================================================\n";
 
 		conf.adaptDefaults();
 
-		std::cout << std::setprecision(conf.verboseNumberPrecision);
+		Log() << std::setprecision(conf.verboseNumberPrecision);
 
 		runInformatter(conf);
 	}
@@ -234,17 +235,23 @@ int run(int argc, char* argv[])
 		return EXIT_FAILURE;
 	}
 
-	std::cout << "===========================================\n";
-	std::cout << "  Informatter ends at " << Date() << "\n";
-	std::cout << "  (Elapsed time: " << (Date() - startDate) << ")\n";
-	std::cout << "===========================================\n";
+	Log() << "===========================================\n";
+	Log() << "  Informatter ends at " << Date() << "\n";
+	Log() << "  (Elapsed time: " << (Date() - startDate) << ")\n";
+	Log() << "===========================================\n";
 
 	return 0;
 }
 
-}
-
 int main(int argc, char* argv[])
 {
-	return infomap::run(argc, argv);
+	std::ostringstream args("");
+	for (int i = 1; i < argc; ++i)
+		args << argv[i] << (i + 1 == argc? "" : " ");
+
+	return run(args.str());
 }
+
+#ifdef NS_INFOMAP
+}
+#endif

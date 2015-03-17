@@ -31,8 +31,10 @@
 #include "InfomapBase.h"
 #include <memory>
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 class InfomapContext
 {
@@ -52,6 +54,8 @@ private:
 	std::auto_ptr<InfomapBase> m_infomap;
 };
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* INFOMAPCONTEXT_H_ */

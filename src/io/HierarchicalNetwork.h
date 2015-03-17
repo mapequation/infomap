@@ -39,12 +39,15 @@
 #include <set>
 #include <functional>   // std::greater
 #include <limits>
+#include "../utils/Logger.h"
 
 #include "../io/Config.h"
 #include "SafeFile.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 enum EdgeAggregationPolicy { NONE, PARTIAL, FULL };
 
@@ -53,7 +56,8 @@ enum EdgeAggregationPolicy { NONE, PARTIAL, FULL };
 //static const unsigned int SIZE_OF_FLOAT = sizeof(float); 					// 4 byte (32 bit)
 //static const unsigned int SIZE_OF_UNSIGNED_SHORT = sizeof(unsigned short);	// 2 byte (16 bit)
 
-namespace SerialTypes {
+namespace SerialTypes
+{
 	typedef unsigned short nameSize_t;
 	typedef float flow_t;
 	typedef unsigned int childSize_t;
@@ -67,7 +71,7 @@ namespace SerialTypes {
 //				std::numeric_limits<T>::max() :
 //				static_cast<T>(value);
 		if (value > std::numeric_limits<T>::max()) {
-			std::cout << " [Warning: truncating internal serial network size] ";
+			Log() << " [Warning: truncating internal serial network size] ";
 			return std::numeric_limits<T>::max();
 		}
 		return static_cast<T>(value);
@@ -158,6 +162,11 @@ public:
 	~SNode()
 	{
 		clear();
+	}
+
+	unsigned int childDegree()
+	{
+		return children.size();
 	}
 
 	void clear()
@@ -273,7 +282,7 @@ public:
 		data.flow = flow;
 		data.exitFlow = exitFlow;
 
-//		std::cout << depth << ":" << std::string(depth * 4, ' ') << "\"" << data.name << "\" (flow: " <<
+//		Log() << depth << ":" << std::string(depth * 4, ' ') << "\"" << data.name << "\" (flow: " <<
 //						data.flow << ", exitFlow: " << data.exitFlow << ", numChildren: " << numChildren <<
 //						", depthBelow: " << depthBelow << ", childPos: " << childPosition <<")\n";
 		return numChildren;
@@ -286,11 +295,11 @@ public:
 		dataStream >> numEdges;
 		edgeSize_t source = 0, target = 0;
 		flow_t flow = 0.0;
-//		std::cout << "---- Child edges to \"" << data.name << "\":\n";
+//		Log() << "---- Child edges to \"" << data.name << "\":\n";
 		for (edgeSize_t i = 0; i < numEdges; ++i)
 		{
 			dataStream >> source >> target >> flow;
-//			std::cout << source << " " << target << " " << flow << "\n";
+//			Log() << source << " " << target << " " << flow << "\n";
 			createChildEdge(source, target, flow, directedEdges);
 		}
 		return numEdges;
@@ -362,8 +371,6 @@ public:
 		}
 	}
 
-
-
 	LeafIterator(const LeafIterator& other)
 	:	m_current(other.m_current),
 	 	m_depth(other.m_depth)
@@ -377,16 +384,27 @@ public:
 	}
 
 	SNode* base() const
-	{ return m_current; }
+	{
+		return m_current;
+	}
+
+	bool isEnd()
+	{
+		return m_current == NULL;
+	}
 
 	// Forward iterator requirements
 	SNode&
 	operator*() const
-	{ return *m_current; }
+	{
+		return *m_current;
+	}
 
 	SNode*
 	operator->() const
-	{ return m_current; }
+	{
+		return m_current;
+	}
 
 	LeafIterator&
 	operator++()
@@ -418,6 +436,12 @@ public:
 		LeafIterator copy(*this);
 		++(*this);
 		return copy;
+	}
+
+	LeafIterator& stepForward()
+	{
+		++(*this);
+		return *this;
 	}
 
 	unsigned int depth() const
@@ -468,6 +492,10 @@ public:
 	void clear();
 
 	SNode& getRootNode() { return m_rootNode; }
+
+	unsigned int numTopModules() { return m_rootNode.childDegree(); }
+
+	LeafIterator leafIter() { return LeafIterator(&m_rootNode); }
 
 	SNode& addNode(SNode& parent, double flow, double exitFlow);
 
@@ -537,6 +565,13 @@ public:
 
 	void writeMap(const std::string& fileName);
 
+	unsigned int numLeafNodes() { return m_numLeafNodes; }
+	unsigned int numLeafEdges() { return m_numLeafEdges; }
+	unsigned int numNodesInTree() { return m_numNodesInTree; }
+	unsigned int maxDepth() { return m_maxDepth; }
+	double codelength() { return m_codelength; }
+	double onelevelCodelength() { return m_oneLevelCodelength; }
+
 private:
 
 	void writeHumanReadableTreeRecursiveHelper(std::ostream& out, SNode& node, std::string prefix = "");
@@ -546,9 +581,9 @@ private:
 
 	void sortLeafNodes()
 	{
-		std::cout << "Sort leaf nodes according to original order... ";
+		Log() << "Sort leaf nodes according to original order... ";
 		std::sort(m_leafNodes.begin(), m_leafNodes.end(), compareLeafNodePredicate);
-		std::cout << "done!" << std::endl;
+		Log() << "done!" << std::endl;
 	}
 
 	Config m_config;
@@ -567,6 +602,8 @@ private:
 
 };
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* HIERARCHICALNETWORK_H_ */

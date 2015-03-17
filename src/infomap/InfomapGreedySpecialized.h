@@ -31,8 +31,10 @@
 #include "flowData.h"
 #include <map>
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 /**
  * Infomap methods specialized on the flow type, e.g. including teleportation flow if coding teleportation.
@@ -414,6 +416,8 @@ void InfomapGreedySpecialized<FlowUndirected>::updateCodelengthOnMovingNode(Node
 	codelength = indexCodelength + moduleCodelength;
 }
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* INFOMAPGREEDYSPECIALIZED_H_ */

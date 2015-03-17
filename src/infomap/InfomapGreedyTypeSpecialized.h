@@ -31,8 +31,10 @@
 #include "InfomapGreedyCommon.h"
 #include <ostream>
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 template<typename FlowType, typename NetworkType>
 class InfomapGreedyTypeSpecialized : public InfomapGreedyCommon<InfomapGreedyTypeSpecialized<FlowType, NetworkType> >
@@ -399,7 +401,11 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::addContributionOfMoving
 				double oldPhysFlow = memNodeSet.sumFlow;
 				double newPhysFlow = memNodeSet.sumFlow + physData.sumFlowFromM2Node;
 
-				moduleDeltaFlow[moduleIndex].addMemFlowTerms(infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow), infomath::plogp(physData.sumFlowFromM2Node));
+				// moduleDeltaFlow[moduleIndex].addMemFlowTerms(infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow), infomath::plogp(physData.sumFlowFromM2Node));
+				DeltaFlowType& physNeighbourDeltaFlow = moduleDeltaFlow[moduleIndex];
+				physNeighbourDeltaFlow.module = moduleIndex; // Make sure module is correct if created new
+				physNeighbourDeltaFlow.sumDeltaPlogpPhysFlow = infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
+				physNeighbourDeltaFlow.sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
 			}
 		}
 	}
@@ -690,9 +696,8 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 	std::vector<unsigned int> memNodeIndexToLeafModuleIndex(Super::m_treeData.numLeafNodes());
 	unsigned int numCondensedNodes = 0;
 
-	std::cout << "merging " << Super::m_treeData.numLeafNodes() << " memory nodes within " <<
-			leafModules.size() << " modules...";
-	std::cout << std::flush;
+	Log() << "merging " << Super::m_treeData.numLeafNodes() << " memory nodes within " <<
+			leafModules.size() << " modules..." << std::flush;
 
 	// Aggregate memory nodes with the same physical node if in the same module
 	for (unsigned int i = 0; i < leafModules.size(); ++i)
@@ -712,7 +717,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 		}
 	}
 
-	std::cout << " to " << numCondensedNodes << " nodes... " << std::flush;
+	Log() << " to " << numCondensedNodes << " nodes... " << std::flush;
 	ioNetwork.prepareAddLeafNodes(numCondensedNodes);
 
 	unsigned int sortedNodeIndex = 0;
@@ -766,17 +771,50 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 template<typename FlowType>
 void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printClusterNumbers(std::ostream& out)
 {
-	out << "# '" << m_config.parsedArgs << "' -> " << Super::numLeafNodes() << " nodes with codelength " <<
-		io::toPrecision(Super::codelength, 9, true) << " in " <<	m_config.elapsedTime() << "\n";
+	unsigned int indexOffset = m_config.zeroBasedNodeNumbers ? 0 : 1;
+	out << "# '" << m_config.parsedArgs << "' -> " << Super::numLeafNodes() << " nodes " <<
+		"partitioned in " << m_config.elapsedTime() << " from codelength " <<
+		io::toPrecision(Super::oneLevelCodelength, 9, true) << " in one level to codelength " <<
+		io::toPrecision(Super::codelength, 9, true) << ".\n";
 
-	out << "*Vertices " << Super::m_treeData.numLeafNodes() << "\n";
-	out << "# from to moduleNr flow\n";
-	for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)
+	if (m_config.printExpanded)
 	{
-		NodeType& node = getNode(**leafIt);
-		M2Node& m2Node = node.m2Node;
-		unsigned int index = node.parent->index;
-		out << (m2Node.priorState + 1) << " " << (m2Node.physIndex + 1) << " " << (index + 1) << " " << node.data.flow << "\n";
+		out << "# columns: from to moduleNr flow\n";
+
+		out << "*Vertices " << Super::m_treeData.numLeafNodes() << "\n";
+		for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)
+		{
+			NodeType& node = getNode(**leafIt);
+			M2Node& m2Node = node.m2Node;
+			unsigned int index = node.parent->index; // module index
+			out << (m2Node.priorState + indexOffset) << " " << (m2Node.physIndex + indexOffset) << " " << (index + 1) << " " << node.data.flow << "\n";
+		}
+	}
+	else
+	{
+		out << "# columns: nodeIndex [(module1, flowInModule1), (module2, flowInModule2),...]\n";
+
+		std::map<unsigned int, std::map<unsigned int, double> > modules;
+		for (typename TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt)
+		{
+			NodeType& node = getNode(**leafIt);
+			M2Node& m2Node = node.m2Node;
+			unsigned int index = node.parent->index; // module index
+			modules[m2Node.physIndex][index] += node.data.flow;
+		}
+		for (std::map<unsigned int, std::map<unsigned int, double> >::const_iterator it(modules.begin());
+				it != modules.end(); ++it)
+		{
+			unsigned int physNode = it->first + indexOffset;
+			const std::map<unsigned int, double>& overlapping = it->second;
+			out << physNode << " [";
+			for (std::map<unsigned int, double>::const_iterator moduleIt(overlapping.begin());
+					moduleIt != overlapping.end(); ++moduleIt)
+			{
+				out << "(" << moduleIt->first << ", " << moduleIt->second << "), ";
+			}
+			out << "\b\b]\n";
+		}
 	}
 }
 
@@ -791,6 +829,7 @@ struct PhysNode
 template<typename FlowType>
 void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printFlowNetwork(std::ostream& out)
 {
+	unsigned int indexOffset = m_config.zeroBasedNodeNumbers ? 0 : 1;
 	if (Super::m_config.printExpanded)
 	{
 		out << "# flow in network with " << Super::m_treeData.numLeafNodes() << " memory nodes (from-to) and " << Super::m_treeData.numLeafEdges() << " links\n";
@@ -798,18 +837,20 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printFlowNetwork(std::o
 		{
 			NodeType& node = getNode(**leafIt);
 			M2Node& m2Node = node.m2Node;
-			out << m2Node << " (" << node.data << ")\n";
+			out << "(" << m2Node.priorState + indexOffset << "-" << m2Node.physIndex + indexOffset << ") (" << node.data << ")\n";
 			for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), endEdgeIt(node.end_outEdge());
 					edgeIt != endEdgeIt; ++edgeIt)
 			{
 				EdgeType& edge = **edgeIt;
-				out << "  --> " << getNode(edge.target).m2Node << " (" << edge.data.flow << ")\n";
+				M2Node& m2Target = getNode(edge.target).m2Node;
+				out << "  --> " << "(" << m2Target.priorState + indexOffset << "-" << m2Target.physIndex + indexOffset << ") (" << edge.data.flow << ")\n";
 			}
 			for (NodeBase::edge_iterator edgeIt(node.begin_inEdge()), endEdgeIt(node.end_inEdge());
 					edgeIt != endEdgeIt; ++edgeIt)
 			{
 				EdgeType& edge = **edgeIt;
-				out << "  <-- " << getNode(edge.source).m2Node << " (" << edge.data.flow << ")\n";
+				M2Node& m2Source = getNode(edge.source).m2Node;
+				out << "  <-- " << "(" << m2Source.priorState + indexOffset << "-" << m2Source.physIndex + indexOffset << ") (" << edge.data.flow << ")\n";
 			}
 		}
 		return;
@@ -817,7 +858,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printFlowNetwork(std::o
 	else
 	{
 		//TODO: Implement printing of flow network for unexpanded memory network!
-		RELEASE_OUT("Notice: Printing flow network currently only implemented for expanded memory network.\n");
+		Log() << "Notice: Printing flow network currently only implemented for expanded memory network.\n";
 	}
 
 //	std::map<unsigned int, PhysNode> physicalNetwork;
@@ -862,6 +903,8 @@ M2Node& InfomapGreedyTypeSpecialized<FlowType, WithMemory>::getMemoryNode(NodeBa
 	return getNode(node).m2Node;
 }
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* INFOMAPGREEDYTYPESPECIALIZED_H_ */

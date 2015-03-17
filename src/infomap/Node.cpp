@@ -30,8 +30,10 @@
 
 #include "InfomapBase.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 long NodeBase::s_nodeCount = 0;
 unsigned long NodeBase::s_UID = 0;
@@ -124,10 +126,6 @@ NodeBase::~NodeBase()
 	}
 
 	--s_nodeCount;
-	DEBUG_EXEC(
-	if (s_nodeCount == 0)
-		std::cout << "Deleted all tree nodes!" << std::endl;
-	);
 }
 
 void NodeBase::deleteChildren()
@@ -164,4 +162,6 @@ void NodeBase::calcChildDegree()
 	}
 }
 
+#ifdef NS_INFOMAP
 }
+#endif

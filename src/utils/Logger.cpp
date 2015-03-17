@@ -27,8 +27,13 @@
 
 #include "Logger.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
+
+unsigned int Log::s_verboseLevel = 0;
+unsigned int Log::s_silent = false;
 
 unsigned int Logger::s_indentLevel = 0;
 unsigned int Logger::s_indentWidth = 4;
@@ -44,4 +49,7 @@ std::string Logger::s_benchmarkFilename = "benchmark.tsv";
 //		logFile << Stopwatch::getElapsedTimeSinceProgramStartInSec() << " " << row << std::endl;
 //}
 
+#ifdef NS_INFOMAP
 }
+#endif
+

@@ -40,8 +40,10 @@
 #include "utils/Date.h"
 #include "io/version.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 	
 void runInfomap(Config const& config)
 {
@@ -55,7 +57,7 @@ void runInfomap(Config const& config, Network& input, HierarchicalNetwork& outpu
 	context.getInfomap()->run(input, output);
 }
 
-std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>& flags, bool noFileIO = false)
+std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool noFileIO = false)
 {
 	ProgramInterface api("Infomap",
 			"Implementation of the Infomap clustering algorithm based on the Map Equation (see www.mapequation.org)",
@@ -240,9 +242,12 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>
 	api.addIncrementalOptionArgument(conf.verbosity, 'v', "verbose",
 			"Verbose output on the console. Add additional 'v' flags to increase verbosity up to -vvv.");
 
+	api.addOptionArgument(conf.silent, "silent",
+			"No output on the console.");
+
 	api.parseArgs(flags);
 
-	conf.parsedArgs = api.parsedArgs();
+	conf.parsedArgs = flags;
 
 	if (noFileIO)
 	{
@@ -261,42 +266,42 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::vector<std::string>
 	return api.getUsedOptionArguments();
 }
 
-void initBenchmark(const Config& conf, const std::vector<std::string>& args)
+void initBenchmark(const Config& conf, const std::string& flags)
 {
 	std::string networkName = FileURI(conf.networkFile).getName();
 	std::string logFilename = io::Str() << conf.outDirectory << networkName << ".tsv";
 	Logger::setBenchmarkFilename(logFilename);
 	std::ostringstream logInfo;
-	logInfo << "#benchmark for";
-	for (unsigned int i = 0; i < args.size(); ++i)
-		logInfo << " " << args[i];
+	logInfo << "#benchmark for '" << flags << "'";
 	Logger::benchmark(logInfo.str(), 0, 0, 0, 0, true);
 	Logger::benchmark("elapsedSeconds\ttag\tcodelength\tnumTopModules\tnumNonTrivialTopModules\ttreeDepth",
 			0, 0, 0, 0, true);
 	// (todo: fix problem with initializing same static file from different functions to simplify above)
-	std::cout << "(Writing benchmark log to '" << logFilename << "'...)\n";
+	Log() << "(Writing benchmark log to '" << logFilename << "'...)\n";
 }
 
-Config init(const std::vector<std::string>& flags)
+Config init(const std::string& flags)
 {
 	Config conf;
 	try
 	{
 		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags, true);
 
-		std::cout << "=======================================================\n";
-		std::cout << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
+		Log::init(conf.verbosity, conf.silent, conf.verboseNumberPrecision);
+
+		Log() << "=======================================================\n";
+		Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
 		if (!parsedFlags.empty()) {
 			for (unsigned int i = 0; i < parsedFlags.size(); ++i)
-				std::cout << (i == 0 ? "  -> Configuration: " : "                    ") << parsedFlags[i] << "\n";
+				Log() << (i == 0 ? "  -> Configuration: " : "                    ") << parsedFlags[i] << "\n";
 		}
-		std::cout << "  -> Use " << (conf.isUndirected()? "undirected" : "directed") << " flow and " <<
+		Log() << "  -> Use " << (conf.isUndirected()? "undirected" : "directed") << " flow and " <<
 			(conf.isMemoryNetwork()? "2nd" : "1st") << " order Markov dynamics";
 		if (conf.useTeleportation())
-			std::cout << " with " << (conf.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
+			Log() << " with " << (conf.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
 			(conf.teleportToNodes ? "nodes" : "links");
-		std::cout << "\n";
-		std::cout << "=======================================================\n";
+		Log() << "\n";
+		Log() << "=======================================================\n";
 
 		conf.adaptDefaults();
 	}
@@ -322,7 +327,7 @@ int run(Network& input, HierarchicalNetwork& output)
 	return 0;
 }
 
-int run(const std::vector<std::string>& flags)
+int run(const std::string& flags)
 {
 	Date startDate;
 	Config conf;
@@ -330,21 +335,23 @@ int run(const std::vector<std::string>& flags)
 	{
 		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags);
 
-		std::cout << "=======================================================\n";
-		std::cout << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
-		std::cout << "  -> Input network: " << conf.networkFile << "\n";
-		std::cout << "  -> Output path:   " << conf.outDirectory << "\n";
+		Log::init(conf.verbosity, conf.silent, conf.verboseNumberPrecision);
+
+		Log() << "=======================================================\n";
+		Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
+		Log() << "  -> Input network: " << conf.networkFile << "\n";
+		Log() << "  -> Output path:   " << conf.outDirectory << "\n";
 		if (!parsedFlags.empty()) {
 			for (unsigned int i = 0; i < parsedFlags.size(); ++i)
-				std::cout << (i == 0 ? "  -> Configuration: " : "                    ") << parsedFlags[i] << "\n";
+				Log() << (i == 0 ? "  -> Configuration: " : "                    ") << parsedFlags[i] << "\n";
 		}
-		std::cout << "  -> Use " << (conf.isUndirected()? "undirected" : "directed") << " flow and " <<
+		Log() << "  -> Use " << (conf.isUndirected()? "undirected" : "directed") << " flow and " <<
 			(conf.isMemoryNetwork()? "2nd" : "1st") << " order Markov dynamics";
 		if (conf.useTeleportation())
-			std::cout << " with " << (conf.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
+			Log() << " with " << (conf.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
 			(conf.teleportToNodes ? "nodes" : "links");
-		std::cout << "\n";
-		std::cout << "=======================================================\n";
+		Log() << "\n";
+		Log() << "=======================================================\n";
 
 		if (conf.benchmark)
 			initBenchmark(conf, flags);
@@ -362,26 +369,28 @@ int run(const std::vector<std::string>& flags)
 
 	ASSERT(NodeBase::nodeCount() == 0); //TODO: Not working with OpenMP
 //	if (NodeBase::nodeCount() != 0)
-//		std::cout << "Warning: " << NodeBase::nodeCount() << " nodes not deleted!\n";
+//		Log() << "Warning: " << NodeBase::nodeCount() << " nodes not deleted!\n";
 
 
-	std::cout << "===================================================\n";
-	std::cout << "  Infomap ends at " << Date() << "\n";
-	std::cout << "  (Elapsed time: " << (Date() - startDate) << ")\n";
-	std::cout << "===================================================\n";
+	Log() << "===================================================\n";
+	Log() << "  Infomap ends at " << Date() << "\n";
+	Log() << "  (Elapsed time: " << (Date() - startDate) << ")\n";
+	Log() << "===================================================\n";
 
 	return 0;
 }
 
-}
-
-#ifndef NO_MAIN
+#ifndef AS_LIB
 int main(int argc, char* argv[])
 {
-	std::vector<std::string> flags;
+	std::ostringstream args("");
 	for (int i = 1; i < argc; ++i)
-		flags.push_back(argv[i]);
+		args << argv[i] << (i + 1 == argc? "" : " ");
 
-	return infomap::run(flags);
+	return run(args.str());
+}
+#endif
+
+#ifdef NS_INFOMAP
 }
 #endif

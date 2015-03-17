@@ -34,8 +34,10 @@
 #include "convert.h"
 #include <cstdio>
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 using std::ifstream;
 using std::ofstream;
@@ -284,6 +286,8 @@ bool isDirectoryWritable(const std::string& dir)
 	return ok;
 }
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* SAFEFILE_H_ */

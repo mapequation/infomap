@@ -29,9 +29,12 @@
 #include <map>
 #include <stdexcept>
 #include "convert.h"
+#include "../utils/Logger.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 void HierarchicalNetwork::init(std::string networkName, double codelength, double oneLevelCodelength)
 {
@@ -148,15 +151,15 @@ void HierarchicalNetwork::writeStreamableTree(const std::string& fileName, bool 
 	out << m_oneLevelCodelength;
 	out << m_codelength;
 
-//		std::cout << "\nMeta data:\n";
-//		std::cout << "  directedEdges: " << m_directedEdges << "\n";
-//		std::cout << "  networkName: " << m_networkName << "\n";
-//		std::cout << "  numLeafNodes: " << numLeafNodes << "\n";
-//		std::cout << "  numLeafEdges: " << m_numLeafEdges << "\n";
-//		std::cout << "  numNodeInTree: " << m_numNodesInTree << "\n";
-//		std::cout << "  maxDepth: " << m_maxDepth << "\n";
-//		std::cout << "  oneLevelCodelength: " << m_oneLevelCodelength << "\n";
-//		std::cout << "  codelength: " << m_codelength << "\n";
+//		Log() << "\nMeta data:\n";
+//		Log() << "  directedEdges: " << m_directedEdges << "\n";
+//		Log() << "  networkName: " << m_networkName << "\n";
+//		Log() << "  numLeafNodes: " << numLeafNodes << "\n";
+//		Log() << "  numLeafEdges: " << m_numLeafEdges << "\n";
+//		Log() << "  numNodeInTree: " << m_numNodesInTree << "\n";
+//		Log() << "  maxDepth: " << m_maxDepth << "\n";
+//		Log() << "  oneLevelCodelength: " << m_oneLevelCodelength << "\n";
+//		Log() << "  codelength: " << m_codelength << "\n";
 
 	std::deque<SNode*> nodeList;
 	nodeList.push_back(&m_rootNode);
@@ -185,7 +188,7 @@ void HierarchicalNetwork::writeStreamableTree(const std::string& fileName, bool 
 
 void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 {
-	std::cout << "Read streamable tree from file '" << fileName << "'... ";
+	Log() << "Read streamable tree from file '" << fileName << "'... ";
 	SafeBinaryInFile dataStream(fileName.c_str());
 	std::string magicTag;
 	unsigned int numNodesInTree;
@@ -203,17 +206,17 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 		>> m_oneLevelCodelength
 		>> m_codelength;
 
-	std::cout << "\nMetadata:\n";
-	std::cout << "  Infomap version: \"" << m_infomapVersion << "\"" << std::endl;
-	std::cout << "  Infomap options: " << m_infomapOptions << std::endl;
-	std::cout << "  Directed edges: " << m_directedEdges << std::endl;
-	std::cout << "  Network name: \"" << m_networkName << "\"" << std::endl;
-	std::cout << "  Num leaf nodes: " << m_numLeafNodes << std::endl;
-	std::cout << "  Num leaf edges: " << m_numLeafEdges << std::endl;
-	std::cout << "  Num nodes in tree: " << numNodesInTree << std::endl;
-	std::cout << "  Max depth: " << m_maxDepth << std::endl;
-	std::cout << "  One-level codelength: " << m_oneLevelCodelength << std::endl;
-	std::cout << "  Codelength: " << m_codelength << std::endl;
+	Log() << "\nMetadata:\n";
+	Log() << "  Infomap version: \"" << m_infomapVersion << "\"" << std::endl;
+	Log() << "  Infomap options: " << m_infomapOptions << std::endl;
+	Log() << "  Directed edges: " << m_directedEdges << std::endl;
+	Log() << "  Network name: \"" << m_networkName << "\"" << std::endl;
+	Log() << "  Num leaf nodes: " << m_numLeafNodes << std::endl;
+	Log() << "  Num leaf edges: " << m_numLeafEdges << std::endl;
+	Log() << "  Num nodes in tree: " << numNodesInTree << std::endl;
+	Log() << "  Max depth: " << m_maxDepth << std::endl;
+	Log() << "  One-level codelength: " << m_oneLevelCodelength << std::endl;
+	Log() << "  Codelength: " << m_codelength << std::endl;
 
 	std::deque<SNode*> nodeList;
 	nodeList.push_back(&m_rootNode);
@@ -236,7 +239,7 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 		if (m_numNodesInTree > numNodesInTree)
 			throw FileFormatError("Tree overflow");
 	}
-	std::cout << "Done! Deserialized " << m_numNodesInTree << " nodes and " << numEdges << " links.\n";
+	Log() << "Done! Deserialized " << m_numNodesInTree << " nodes and " << numEdges << " links.\n";
 }
 
 
@@ -246,8 +249,9 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 	out << "# '" << m_infomapOptions << "' -> " << m_numLeafNodes << " nodes ";
 	if (m_numLeafEdges > 0)
 		out << "and " << m_numLeafEdges << " links ";
-	out << "in " << m_maxDepth << " levels with codelength " <<
-			io::toPrecision(m_codelength, 9, true) << " in " <<	m_config.elapsedTime() << "\n";
+	out << "partitioned in " << m_config.elapsedTime() << " from codelength " <<
+		io::toPrecision(m_oneLevelCodelength, 9, true) << " in one level to codelength " <<
+		io::toPrecision(m_codelength, 9, true) << " in " << m_maxDepth << " levels.\n";
 
 	writeHumanReadableTreeRecursiveHelper(out, m_rootNode);
 	if (writeHierarchicalNetworkEdges)
@@ -313,7 +317,7 @@ void HierarchicalNetwork::readHumanReadableTree(const std::string& fileName)
 	std::string line;
 	std::string buf;
 	SafeInFile input(fileName.c_str());
-	std::cout << "Parsing tree '" << fileName << "'... " << std::flush;
+	Log() << "Parsing tree '" << fileName << "'... " << std::flush;
 
 	std::string header;
 	unsigned int lineNr = 0;
@@ -375,14 +379,14 @@ void HierarchicalNetwork::readHumanReadableTree(const std::string& fileName)
 	if (nodeCount < m_leafNodes.size())
 		throw MisMatchError("There are less nodes in the tree than in the network.");
 
-	std::cout << "done!" << std::endl;
+	Log() << "done!" << std::endl;
 }
 
 void HierarchicalNetwork::writeMap(const std::string& fileName)
 {
 	if (m_maxDepth < 2)
 	{
-		std::cout << "(skipping .map, no modular solution) ";
+		Log() << "(skipping .map, no modular solution) ";
 		return;
 	}
 
@@ -404,7 +408,7 @@ void HierarchicalNetwork::writeMap(const std::string& fileName)
 		LeafIterator liEnd(module.nextSibling());
 		while (li != liEnd)
 		{
-//			std::cout << i << std::string(module.depth, ' ') << ": inserting " << li->data.name << "\n";
+//			Log() << i << std::string(module.depth, ' ') << ": inserting " << li->data.name << "\n";
 			nodeMap.insert(std::make_pair(li->data.flow, li.base()));
 			++li;
 			++numNodes;
@@ -453,4 +457,6 @@ void HierarchicalNetwork::writeMap(const std::string& fileName)
 	}
 }
 
+#ifdef NS_INFOMAP
 }
+#endif

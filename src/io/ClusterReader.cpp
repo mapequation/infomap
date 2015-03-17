@@ -30,8 +30,10 @@
 #include "convert.h"
 #include "SafeFile.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 /**
  * The cluster data file should be a list of cluster indices, where the lowest is 1 and largest the number of nodes.
@@ -47,7 +49,7 @@ namespace infomap
  */
 void ClusterReader::readData(const string filename)
 {
-	std::cout << "Parsing '" << filename << "'... " << std::flush;
+	Log() << "Parsing '" << filename << "'... " << std::flush;
 	SafeInFile input(filename.c_str());
 	std::string line;
 	std::istringstream lineStream;
@@ -122,7 +124,9 @@ void ClusterReader::readData(const string filename)
 			throw InputDomainError(io::Str() << "Module " << (i + 1) << " is empty.");
 	}
 
-	std::cout << "done! " << std::flush;
+	Log() << "done! " << std::flush;
 }
 
+#ifdef NS_INFOMAP
 }
+#endif

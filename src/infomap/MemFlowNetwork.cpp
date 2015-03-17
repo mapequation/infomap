@@ -36,9 +36,12 @@
 
 #include "../io/convert.h"
 #include "../io/Config.h"
+#include "../utils/Logger.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 {
@@ -47,7 +50,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		FlowNetwork::calculateFlow(net, config);
 		return;
 	}
-	std::cout << "Calculating global flow... " << std::flush;
+	Log() << "Calculating global flow... " << std::flush;
 	const MemNetwork& network = static_cast<const MemNetwork&>(net);
 
 	// Prepare data in sequence containers for fast access of individual elements
@@ -156,7 +159,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 							m_nodeFlow[to] += linkWeight;
 						}
 						if (from >= numM2Nodes || to >= numM2Nodes) {
-							std::cout << "\nRange error adding dangling links " << from << " " << to << " !!!";
+							Log() << "\nRange error adding dangling links " << from << " " << to << " !!!";
 						}
 						m_flowLinks.push_back(Link(from, to, linkWeight));
 					}
@@ -166,7 +169,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		}
 	}
 	if (m_flowLinks.size() - numLinks != 0)
-		std::cout << "\n  -> Added " << (m_flowLinks.size() - numLinks) << " links to " <<
+		Log() << "\n  -> Added " << (m_flowLinks.size() - numLinks) << " links to " <<
 			numDanglingM2Nodes << " dangling memory nodes -> " << m_flowLinks.size() << " links" << std::flush;
 
 	totalM2LinkWeight += sumExtraLinkWeight;
@@ -195,9 +198,9 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 			sumNodeRank += m_nodeFlow[i];
 		for (unsigned int i = 0; i < numM2Nodes; ++i)
 			m_nodeFlow[i] /= sumNodeRank;
-		std::cout << "\n  -> Using directed links with raw flow.";
-		std::cout << "\n  -> Total link weight: " << totalM2LinkWeight << ".";
-		std::cout << std::endl;
+		Log() << "\n  -> Using directed links with raw flow.";
+		Log() << "\n  -> Total link weight: " << totalM2LinkWeight << ".";
+		Log() << std::endl;
 		return;
 	}
 
@@ -233,22 +236,22 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		}
 
 		if (config.outdirdir)
-			std::cout << "\n  -> Counting only ingoing links.";
+			Log() << "\n  -> Counting only ingoing links.";
 		else
-			std::cout << "\n  -> Using undirected links" << (config.undirdir? ", switching to directed after steady state." :
+			Log() << "\n  -> Using undirected links" << (config.undirdir? ", switching to directed after steady state." :
 					".");
-		std::cout << std::endl;
+		Log() << std::endl;
 		return;
 	}
 
-	std::cout << "\n  -> Using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to memory " <<
+	Log() << "\n  -> Using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to memory " <<
 				(config.teleportToNodes ? "nodes" : "links") << " " << std::flush;
 	if (config.originallyUndirected)
 	{
 		if (config.recordedTeleportation || !config.teleportToNodes)
-			std::cout << "(warning: should be unrecorded teleportation to nodes to correspond to undirected flow on physical network) " << std::flush;
+			Log() << "(warning: should be unrecorded teleportation to nodes to correspond to undirected flow on physical network) " << std::flush;
 		else
-			std::cout << "(corresponding to undirected flow on physical network) " << std::flush;
+			Log() << "(corresponding to undirected flow on physical network) " << std::flush;
 	}
 
 
@@ -256,8 +259,11 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	if (config.teleportToNodes)
 	{
 		const std::vector<double>& nodeWeights = network.m2NodeWeights();
-		for (unsigned int i = 0; i < numM2Nodes; ++i)
+		for (unsigned int i = 0; i < numM2Nodes; ++i) {
+//			m_nodeTeleportRates[i] = sumLinkOutWeight[i] / totalM2LinkWeight;
+			// Use original m2 weights (without m1-completed weights for dangling m2 nodes)
 			m_nodeTeleportRates[i] = nodeWeights[i] / network.totalM2NodeWeight();
+		}
 	}
 	else // Teleport to links
 	{
@@ -326,7 +332,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		// Normalize if needed
 		if (std::abs(sum - 1.0) > 1.0e-10)
 		{
-			std::cout << "(Normalizing ranks after " <<	numIterations << " power iterations with error " << (sum-1.0) << ") ";
+			Log() << "(Normalizing ranks after " <<	numIterations << " power iterations with error " << (sum-1.0) << ") ";
 			for (unsigned int i = 0; i < numM2Nodes; ++i)
 			{
 				m_nodeFlow[i] /= sum;
@@ -366,7 +372,9 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		linkIt->flow *= beta * nodeFlowTmp[linkIt->source] / sumNodeRank;
 	}
 
-	std::cout << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
+	Log() << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
 }
 
+#ifdef NS_INFOMAP
 }
+#endif

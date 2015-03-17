@@ -35,10 +35,12 @@
 #include "../io/SafeFile.h"
 #include <limits>
 #include "../io/HierarchicalNetwork.h"
-#include "Network.h"
+#include "MemNetwork.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 struct DepthStat;
 struct PerLevelStat;
@@ -269,6 +271,7 @@ private:
 	void setActiveNetworkFromLeafModules();
 	void setActiveNetworkFromLeafs();
 	void initMemoryNetwork();
+	void initMemoryNetwork(MemNetwork& input);
 	void initNodeNames(Network& network);
 	bool checkAndConvertBinaryTree();
 	void printNetworkData(std::string filename = "");
@@ -396,6 +399,8 @@ struct PerLevelStat
 	double leafLength;
 };
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* INFOMAPBASE_H_ */

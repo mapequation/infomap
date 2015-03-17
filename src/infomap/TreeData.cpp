@@ -27,8 +27,10 @@
 
 #include "TreeData.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 TreeData::TreeData(NodeFactoryBase* nodeFactory)
 :	m_nodeFactory(nodeFactory),
@@ -39,9 +41,7 @@ TreeData::TreeData(NodeFactoryBase* nodeFactory)
 
 TreeData::~TreeData()
 {
-//	RELEASE_OUT("~TreeData() -> delete " << *m_root << "... #NodeCount: " << NodeBase::nodeCount());
 	delete m_root;
-//	RELEASE_OUT(" -> " << NodeBase::nodeCount() << "\n");
 }
 
 /**
@@ -89,4 +89,6 @@ unsigned int TreeData::calcSize()
 	return numNodes;
 }
 
+#ifdef NS_INFOMAP
 }
+#endif

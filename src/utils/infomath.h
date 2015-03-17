@@ -32,11 +32,14 @@
 #include <vector>
 #include "MersenneTwister.h"
 
+#ifdef NS_INFOMAP
 namespace infomap
 {
+#endif
 
 namespace infomath
 {
+
 	inline
 	double log2(double p)
 	{
@@ -78,6 +81,8 @@ namespace infomath
 	}
 }
 
+#ifdef NS_INFOMAP
 }
+#endif
 
 #endif /* INFOMAPTH_H_ */
