@@ -401,7 +401,11 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::addContributionOfMoving
 				double oldPhysFlow = memNodeSet.sumFlow;
 				double newPhysFlow = memNodeSet.sumFlow + physData.sumFlowFromM2Node;
 
-				moduleDeltaFlow[moduleIndex].addMemFlowTerms(infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow), infomath::plogp(physData.sumFlowFromM2Node));
+				// moduleDeltaFlow[moduleIndex].addMemFlowTerms(infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow), infomath::plogp(physData.sumFlowFromM2Node));
+				DeltaFlowType& physNeighbourDeltaFlow = moduleDeltaFlow[moduleIndex];
+				physNeighbourDeltaFlow.module = moduleIndex; // Make sure module is correct if created new
+				physNeighbourDeltaFlow.sumDeltaPlogpPhysFlow = infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
+				physNeighbourDeltaFlow.sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
 			}
 		}
 	}
