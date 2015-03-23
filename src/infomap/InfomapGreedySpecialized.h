@@ -76,6 +76,8 @@ protected:
 	double getDeltaCodelengthOnMovingNode(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
 	void updateCodelengthOnMovingNode(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
 
+	void updateFlowOnMovingNode(NodeType& current, DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta);
+
 	double m_sumDanglingFlow;
 };
 
@@ -414,6 +416,46 @@ void InfomapGreedySpecialized<FlowUndirected>::updateCodelengthOnMovingNode(Node
 	indexCodelength = enterFlow_log_enterFlow - exit_log_exit - exitNetworkFlow_log_exitNetworkFlow;
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
 	codelength = indexCodelength + moduleCodelength;
+}
+
+template<typename FlowType>
+inline
+void InfomapGreedySpecialized<FlowType>::updateFlowOnMovingNode(NodeType& current,
+		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
+{
+	std::vector<FlowType>& moduleFlowData = Super::m_moduleFlowData;
+	unsigned int oldModule = oldModuleDelta.module;
+	unsigned int newModule = newModuleDelta.module;
+	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+
+	moduleFlowData[oldModule] -= current.data;
+	moduleFlowData[newModule] += current.data;
+
+	moduleFlowData[oldModule].exitFlow += deltaEnterExitOldModule;
+	moduleFlowData[newModule].exitFlow -= deltaEnterExitNewModule;
+}
+
+template<>
+inline
+void InfomapGreedySpecialized<FlowUndirected>::updateFlowOnMovingNode(NodeType& current,
+		DeltaFlow& oldModuleDelta, DeltaFlow& newModuleDelta)
+{
+	std::vector<FlowType>& moduleFlowData = Super::m_moduleFlowData;
+	unsigned int oldModule = oldModuleDelta.module;
+	unsigned int newModule = newModuleDelta.module;
+	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+
+	// Double the effect as each link works in both directions
+	deltaEnterExitOldModule *= 2;
+	deltaEnterExitNewModule *= 2;
+
+	moduleFlowData[oldModule] -= current.data;
+	moduleFlowData[newModule] += current.data;
+
+	moduleFlowData[oldModule].exitFlow += deltaEnterExitOldModule;
+	moduleFlowData[newModule].exitFlow -= deltaEnterExitNewModule;
 }
 
 #ifdef NS_INFOMAP

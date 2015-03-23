@@ -88,7 +88,6 @@ void InfomapBase::run()
 	{
 		Log() << "\nAttempt " << (iTrial+1) << "/" << m_config.numTrials <<	" at " << Date();
 		Log() << std::endl;
-		m_iterationCount = 0;
 
 		// First clear existing modular structure
 		while ((*m_treeData.begin_leaf())->parent != root())
@@ -209,7 +208,6 @@ void InfomapBase::run(Network& input, HierarchicalNetwork& output)
 	{
 		Log() << "\nAttempt " << (iTrial+1) << "/" << m_config.numTrials <<	" at " << Date();
 		Log() << std::endl;
-		m_iterationCount = 0;
 
 		// First clear existing modular structure
 		while ((*m_treeData.begin_leaf())->parent != root())
@@ -288,6 +286,7 @@ void InfomapBase::calcOneLevelCodelength()
 
 void InfomapBase::runPartition()
 {
+	m_tuneIterationIndex = 0;
 	if (m_config.twoLevel)
 	{
 		partition();
@@ -1065,17 +1064,42 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 
 void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fast)
 {
-	++m_iterationCount;
 	m_aggregationLevel = 0;
+	unsigned int numLevelsConsolidated = 0;
+
 	bool verbose = (m_subLevel == 0 && m_config.verbosity != 0) ||
 			(isSuperLevelOnTopLevel() && m_config.verbosity >= 3);
 	// Merge and collapse repeatedly until no code improvement or only one big cluster left
+
+	if (m_config.fastFirstIteration && m_tuneIterationIndex == 0 && m_subLevel == 0) {
+		if (verbose) {
+			Log() << "Iteration 0, moving " << m_activeNetwork.size() << "*" << std::flush;
+		}
+		unsigned int numFastLoops = optimizeModulesCrude();
+
+		consolidateModules(!useHardPartitions());
+		++numLevelsConsolidated;
+
+		codelength = calcCodelengthOnAllNodesInTree();
+		indexCodelength = root()->codelength;
+		moduleCodelength = codelength - indexCodelength;
+
+		if (verbose)
+			Log() << numFastLoops << " nodes*loops to codelength " << codelength <<
+				" (" << indexCodelength << " + " << moduleCodelength << ")" <<
+				" in " << numTopModules() << " modules. (" << m_numNonTrivialTopModules <<
+				" non-trivial modules)" << std::endl;
+
+		setActiveNetworkFromChildrenOfRoot();
+		initModuleOptimization();
+	}
+
 	if (verbose) {
-		Log() << "Iteration " << m_iterationCount << ", moving " << m_activeNetwork.size() << "*" << std::flush;
+		Log() << "Iteration " << (m_tuneIterationIndex + 1) << ", moving " << m_activeNetwork.size() << "*" << std::flush;
 	}
 
 	// Core loop, merging modules
-	unsigned int numOptimizationLoops = m_config.fastFirstIteration? optimizeModulesCrude() : optimizeModules();
+	unsigned int numOptimizationLoops = optimizeModules();
 
 	if (verbose)
 		Log() << numOptimizationLoops << ", " << std::flush;
@@ -1084,7 +1108,7 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 	bool replaceExistingModules = !useHardPartitions();
 	consolidateModules(replaceExistingModules);
 
-	unsigned int numLevelsConsolidated = 1;
+	++numLevelsConsolidated;
 	unsigned int levelAggregationLimit = getLevelAggregationLimit();
 
 	// Reapply core algorithm on modular network, replacing modules with super modules
@@ -1133,7 +1157,7 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 	}
 	if (m_subLevel == 0 && m_config.benchmark)
 	{
-		Logger::benchmark(io::Str() << "iter" << m_iterationCount, codelength, numTopModules(),
+		Logger::benchmark(io::Str() << "iter" << m_tuneIterationIndex, codelength, numTopModules(),
 				numNonTrivialTopModules(), 2);
 	}
 

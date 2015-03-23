@@ -384,16 +384,16 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModulesCrude
 	unsigned int loopLimit = Super::m_config.coreLoopLimit;
 	if (Super::m_config.coreLoopLimit > 0 && Super::m_config.randomizeCoreLoopLimit)
 		loopLimit = static_cast<unsigned int>(Super::m_rand() * Super::m_config.coreLoopLimit) + 1;
-	unsigned int loopLimitOnAggregationLevels = -1;
+	// unsigned int loopLimitOnAggregationLevels = -1;
+	unsigned int numMoved = 0;
 
 	// Iterate while the optimization loop moves some nodes within the dynamic modular structure
 	do
 	{
 		oldCodelength = Super::codelength;
-		tryMoveEachNodeIntoStrongestConnectedModule(); // returns numNodesMoved
+		numMoved = tryMoveEachNodeIntoStrongestConnectedModule(); // returns numNodesMoved
 		++m_coreLoopCount;
-	} while (m_coreLoopCount != (Super::m_aggregationLevel == 0 && !Super::m_isCoarseTune? loopLimit : loopLimitOnAggregationLevels) &&
-			Super::codelength < oldCodelength - Super::m_config.minimumCodelengthImprovement);
+	} while (m_coreLoopCount != loopLimit && numMoved > 0);
 
 	return m_coreLoopCount;
 }
@@ -1131,6 +1131,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoS
 
 		unsigned int strongestConnectedModule = current.index;
 		double maxFlow = 0.0;
+
 		// For all outlinks
 		for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
 				edgeIt != endIt; ++edgeIt)
@@ -1141,10 +1142,72 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoS
 				strongestConnectedModule = edge.target.index;
 			}
 		}
+		// For all inlinks
+		for (NodeBase::edge_iterator edgeIt(current.begin_inEdge()), endIt(current.end_inEdge());
+				edgeIt != endIt; ++edgeIt)
+		{
+			EdgeType& edge = **edgeIt;
+			if (edge.data.flow > maxFlow) {
+				maxFlow = edge.data.flow;
+				strongestConnectedModule = edge.source.index;
+			}
+		}
 
 		// Move to strongest connected module
 		if(strongestConnectedModule != current.index)
 		{
+
+			unsigned int newM = strongestConnectedModule;
+			unsigned int oldM = current.index;
+
+			DeltaFlowType oldModuleDelta(oldM, 0.0, 0.0, 0.0, 0.0);
+			DeltaFlowType newModuleDelta(newM, 0.0, 0.0, 0.0, 0.0);
+
+			// For all outlinks
+			for (NodeBase::edge_iterator edgeIt(current.begin_outEdge()), endIt(current.end_outEdge());
+					edgeIt != endIt; ++edgeIt)
+			{
+				EdgeType& edge = **edgeIt;
+				if (edge.isSelfPointing())
+					continue;
+				unsigned int otherModule = edge.target.index;
+				if (otherModule == oldM)
+					oldModuleDelta.deltaExit += edge.data.flow;
+				else if (otherModule == newM)
+					newModuleDelta.deltaExit += edge.data.flow;
+			}
+
+			// For all inlinks
+			for (NodeBase::edge_iterator edgeIt(current.begin_inEdge()), endIt(current.end_inEdge());
+					edgeIt != endIt; ++edgeIt)
+			{
+				EdgeType& edge = **edgeIt;
+				if (edge.isSelfPointing())
+					continue;
+				unsigned int otherModule = edge.source.index;
+				if (otherModule == oldM)
+					oldModuleDelta.deltaEnter += edge.data.flow;
+				else if (otherModule == newM)
+					newModuleDelta.deltaEnter += edge.data.flow;
+			}
+
+
+			//Update empty module vector
+			if(Super::m_moduleMembers[newM] == 0)
+			{
+				Super::m_emptyModules.pop_back();
+			}
+			if(Super::m_moduleMembers[oldM] == 1)
+			{
+				Super::m_emptyModules.push_back(oldM);
+			}
+
+			derived().performMoveOfMemoryNode(current, oldM, newM);
+			Super::updateFlowOnMovingNode(current, oldModuleDelta, newModuleDelta);
+
+			Super::m_moduleMembers[oldM] -= 1;
+			Super::m_moduleMembers[newM] += 1;
+
 			current.index = strongestConnectedModule;
 
 			++numMoved;

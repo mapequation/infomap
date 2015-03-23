@@ -209,6 +209,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.minimumRelativeTuneIterationImprovement, 'U', "tune-iteration-threshold",
 			"Set a codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.", "f", true);
 
+	api.addOptionArgument(conf.fastFirstIteration, "fast-first-iteration",
+			"Move nodes to strongest connected module in the first iteration instead of minimizing the map equation.", true);
+
 	api.addOptionArgument(conf.fastCoarseTunePartition, 'C', "fast-coarse-tune",
 			"Try to find the quickest partition of each module when creating sub-modules for the coarse-tune part.", true);
 

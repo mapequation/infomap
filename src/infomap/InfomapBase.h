@@ -55,7 +55,6 @@ public:
 		m_treeData(nodeFactory),
 	 	m_activeNetwork(m_nonLeafActiveNetwork),
 	 	m_isCoarseTune(false),
-	 	m_iterationCount(0),
 	 	m_tuneIterationIndex(0),
 	 	m_aggregationLevel(0),
 	 	m_numNonTrivialTopModules(0),
@@ -296,7 +295,6 @@ protected:
 	std::vector<NodeBase*>& m_activeNetwork; // Points either to m_nonLeafActiveNetwork or m_treeData.m_leafNodes
 	std::vector<unsigned int> m_moveTo;
 	bool m_isCoarseTune;
-	unsigned int m_iterationCount;
 	unsigned int m_tuneIterationIndex;
 	unsigned int m_aggregationLevel;
 	unsigned int m_numNonTrivialTopModules;
