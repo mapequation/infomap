@@ -4,7 +4,7 @@ CXXFLAGS = -Wall -O3
 INFOMAP_DIR = ../../..
 INFOMAP_LIB = $(INFOMAP_DIR)/lib/libInfomap.a
 
-.PHONY: clean example
+.PHONY: clean distclean
 
 example: example.cpp $(INFOMAP_LIB) Makefile
 	$(CXX) $(CXXFLAGS) -DNS_INFOMAP $< -o $@ -I$(INFOMAP_DIR)/include -L$(INFOMAP_DIR)/lib -lInfomap
@@ -20,3 +20,6 @@ $(INFOMAP_LIB):
 
 clean:
 	$(RM) example
+
+distclean:
+	cd $(INFOMAP_DIR) && $(MAKE) clean
