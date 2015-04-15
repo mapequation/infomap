@@ -71,7 +71,7 @@ bool NetworkAdapter::readExternalHierarchy(std::string filename)
 
 void NetworkAdapter::readClu(std::string filename)
 {
-	ClusterReader cluReader(m_numNodes);
+	ClusterReader cluReader(m_numNodes, m_config.zeroBasedNodeNumbers);
 
 	cluReader.readData(filename);
 	const std::vector<unsigned int>& clusters = cluReader.clusters();
@@ -107,7 +107,8 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	std::auto_ptr<NodeBase> root(m_treeData.nodeFactory().createNode("tmpRoot", 1.0, 0.0));
 	std::vector<double> flowValues(m_numNodes);
 	bool gotOriginalIndex = true;
-	std::string header;
+	unsigned int indexOffset = m_config.zeroBasedNodeNumbers ? 0 : 1;
+	std::string header = "";
 	unsigned int lineNr = 0;
 	std::istringstream ss;
 	unsigned int nodeCount = 0;
@@ -116,12 +117,13 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	while(!std::getline(input, line).fail())
 	{
 		++lineNr;
-		if (line.length() == 0 || line[0] == '#')
+		if (line.length() == 0)
 			continue;
 		if (line[0] == '#')
 		{
-			if (lineNr == 1)
+			if (lineNr == 1) {
 				header = line; // e.g. '# Codelength = 8.45977 bits.'
+			}
 			continue;
 		}
 		if (nodeCount > m_numNodes)
@@ -143,6 +145,8 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 			throw BadConversionError(io::Str() << "Can't parse node name from line " << lineNr << " ('" << line << "').");
 		unsigned int originalIndex = 0;
 		gotOriginalIndex = !!(ss >> originalIndex);
+
+		originalIndex -= indexOffset;
 
 		// Analyze the path and build up the tree
 		ss.clear(); // Clear the eofbit from last extraction!
@@ -203,6 +207,8 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	}
 
 	Log() << "done! Found " << maxDepth << " levels." << std::endl;
+	if (!header.empty())
+		Log(1) << " -> Parsed header: '" << header << "'" << std::endl;
 }
 
 #ifdef NS_INFOMAP
