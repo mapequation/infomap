@@ -380,7 +380,7 @@ inline
 unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModulesCrude()
 {
 	m_coreLoopCount = 0;
-	double oldCodelength = Super::codelength;
+	// double oldCodelength = Super::codelength;
 	unsigned int loopLimit = Super::m_config.coreLoopLimit;
 	if (Super::m_config.coreLoopLimit > 0 && Super::m_config.randomizeCoreLoopLimit)
 		loopLimit = static_cast<unsigned int>(Super::m_rand() * Super::m_config.coreLoopLimit) + 1;
@@ -390,7 +390,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModulesCrude
 	// Iterate while the optimization loop moves some nodes within the dynamic modular structure
 	do
 	{
-		oldCodelength = Super::codelength;
+		// oldCodelength = Super::codelength;
 		numMoved = tryMoveEachNodeIntoStrongestConnectedModule(); // returns numNodesMoved
 		++m_coreLoopCount;
 	} while (m_coreLoopCount != loopLimit && numMoved > 0);
