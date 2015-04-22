@@ -245,8 +245,7 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(Hierar
 		const NodeType& node = getNode(*childIt);
 		if (node.isLeaf())
 		{
-			if (m_config.maxNodeIndexVisible == 0 || node.originalIndex <= m_config.maxNodeIndexVisible)
-				hierarchicalNetwork.addLeafNode(parent, node.data.flow, node.data.exitFlow, leafNodeNames[node.originalIndex], node.originalIndex);
+			hierarchicalNetwork.addLeafNode(parent, node.data.flow, node.data.exitFlow, leafNodeNames[node.originalIndex], node.originalIndex);
 		}
 		else
 		{

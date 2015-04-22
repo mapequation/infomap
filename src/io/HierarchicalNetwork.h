@@ -486,18 +486,20 @@ public:
 		m_current(NULL),
 	 	m_depth(0),
 		m_clusterIndex(0),
-		m_maxClusterLevel(std::numeric_limits<unsigned int>::max())
+		m_clusterIndexLevel(-1)
 	{}
 
 	explicit
-	TreeIterator(SNode* nodePointer,
-			unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
+	TreeIterator(SNode* nodePointer, int clusterIndexLevel = -1)
 	:	m_root(nodePointer),
 		m_current(nodePointer),
 	 	m_depth(0),
 		m_clusterIndex(0),
-		m_maxClusterLevel(maxClusterLevel)
-	{}
+		m_clusterIndexLevel(clusterIndexLevel)
+	{
+		if (m_current->skip)
+			m_current = NULL;
+	}
 
 	TreeIterator(const TreeIterator& other)
 	:	m_root(other.m_root),
@@ -505,7 +507,7 @@ public:
 	 	m_depth(other.m_depth),
 		m_path(other.m_path),
 		m_clusterIndex(other.m_clusterIndex),
-		m_maxClusterLevel(other.m_maxClusterLevel)
+		m_clusterIndexLevel(other.m_clusterIndexLevel)
 	{}
 
 	TreeIterator & operator= (const TreeIterator& other)
@@ -515,8 +517,7 @@ public:
 		m_depth = other.m_depth;
 		m_path = other.m_path;
 		m_clusterIndex = other.m_clusterIndex;
-		m_maxClusterLevel = other.m_maxClusterLevel;
-	{}
+		m_clusterIndexLevel = other.m_clusterIndexLevel;
 		return *this;
 	}
 
@@ -546,7 +547,7 @@ public:
 	TreeIterator&
 	operator++()
 	{
-		if(m_current->firstChild() != NULL)
+		if(m_current->firstChild() != NULL && !m_current->firstChild()->skip)
 		{
 			m_current = m_current->firstChild();
 			++m_depth;
@@ -555,6 +556,7 @@ public:
 		else
 		{
 			// Presupposes that the next pointer can't reach out from the current parent.
+			tryNext:
 			while(m_current->nextSibling() == 0)
 			{
 				m_current = m_current->parentNode;
@@ -565,10 +567,17 @@ public:
 					m_current = 0;
 					return *this;
 				}
-				if (m_depth == m_maxClusterLevel || m_current->isLeafModule())
+				if (m_clusterIndexLevel < 0) {
+					 if (m_current->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
+						 ++m_clusterIndex;
+				}
+				else if (m_clusterIndexLevel == m_depth)
 					++m_clusterIndex;
 			}
 			m_current = m_current->nextSibling();
+			if (m_current->skip) {
+				goto tryNext;
+			}
 			++m_path.back();
 		}
 		return *this;
@@ -620,7 +629,114 @@ private:
 
 	std::deque<unsigned int> m_path; // The child index path to current node
 	unsigned int m_clusterIndex;
-	unsigned int m_maxClusterLevel;
+	int m_clusterIndexLevel;
+};
+
+class ChildIterator
+{
+public:
+
+	ChildIterator()
+	:	m_root(NULL),
+		m_current(NULL),
+		m_childIndex(0)
+	{}
+
+	explicit
+	ChildIterator(SNode* nodePointer)
+	:	m_root(nodePointer),
+		m_current(NULL),
+		m_childIndex(0)
+	{
+		if (m_root != NULL)
+		{
+			if (!m_root->skip && !m_root->children.empty())
+				m_current = m_root->firstChild();
+		}
+	}
+
+	ChildIterator(const ChildIterator& other)
+	:	m_root(other.m_root),
+		m_current(other.m_current),
+		m_childIndex(other.m_childIndex)
+	{}
+
+	ChildIterator & operator= (const ChildIterator& other)
+	{
+		m_root = other.m_root;
+		m_current = other.m_current;
+		m_childIndex = other.m_childIndex;
+		return *this;
+	}
+
+	SNode* base() const
+	{
+		return m_current;
+	}
+
+	bool isEnd()
+	{
+		return m_current == NULL;
+	}
+
+	// Forward iterator requirements
+	SNode&
+	operator*() const
+	{
+		return *m_current;
+	}
+
+	SNode*
+	operator->() const
+	{
+		return m_current;
+	}
+
+	ChildIterator&
+	operator++()
+	{
+		do {
+			m_current = m_current->nextSibling();
+		} while (m_current != NULL && m_current->skip);
+
+		if (m_current != NULL)
+			++m_childIndex;
+		return *this;
+	}
+
+	ChildIterator
+	operator++(int)
+	{
+		ChildIterator copy(*this);
+		++(*this);
+		return copy;
+	}
+
+	ChildIterator& stepForward()
+	{
+		++(*this);
+		return *this;
+	}
+
+	unsigned int childIndex() const
+	{
+		return m_childIndex;
+	}
+
+	bool operator==(const ChildIterator& rhs) const
+	{
+		return m_current == rhs.m_current;
+	}
+
+	bool operator!=(const ChildIterator& rhs) const
+	{
+		return !(m_current == rhs.m_current);
+	}
+
+private:
+	SNode* m_root;
+	SNode* m_current;
+	unsigned int m_childIndex;
 };
 
 
@@ -649,6 +765,8 @@ public:
 	void init(std::string networkName, double codelength, double oneLevelCodelength);
 
 	void clear();
+
+	void clear(const Config& conf);
 
 	SNode& getRootNode() { return m_rootNode; }
 
@@ -720,7 +838,12 @@ public:
 
 	void writeHumanReadableTree(const std::string& fileName, bool writeHierarchicalNetworkEdges = false);
 
-	void writeClu(const std::string& fileName, unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max());
+	/**
+	 * Write a chosen cluster level to file
+	 * Default cluster level 1 corresponds to top modules
+	 * Set to -1 for leaf modules.
+	 */
+	void writeClu(const std::string& fileName, int clusterIndexLevel = 1);
 
 	void readHumanReadableTree(const std::string& fileName);
 

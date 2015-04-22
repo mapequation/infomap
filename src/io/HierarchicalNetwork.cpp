@@ -54,6 +54,12 @@ void HierarchicalNetwork::clear()
 	m_rootNode.clear();
 }
 
+void HierarchicalNetwork::clear(const Config& conf)
+{
+	clear();
+	m_config = conf;
+}
+
 
 
 SNode& HierarchicalNetwork::addNode(SNode& parent, double flow, double exitFlow)
@@ -243,7 +249,7 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 }
 
 
-void HierarchicalNetwork::writeClu(const std::string& fileName, unsigned int maxClusterLevel)
+void HierarchicalNetwork::writeClu(const std::string& fileName, int clusterIndexLevel)
 {
 	markNodesToSkip();
 
@@ -258,17 +264,87 @@ void HierarchicalNetwork::writeClu(const std::string& fileName, unsigned int max
 	out << "# nodeId clusterIndex flow:\n";
 
 	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
-	for (TreeIterator it(&m_rootNode, maxClusterLevel); !it.isEnd(); ++it) {
+	for (TreeIterator it(&m_rootNode, clusterIndexLevel); !it.isEnd(); ++it) {
 		SNode &node = *it;
 		if (node.isLeafNode()) {
-			 out << node.originalLeafIndex + indexOffset << " " << it.clusterIndex() << " " << node.data.flow << "\n";
+			 out << node.originalLeafIndex + indexOffset << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
 		}
+	}
+}
+
+void HierarchicalNetwork::writeMap(const std::string& fileName)
+{
+	if (m_maxDepth < 2)
+	{
+		Log() << "(skipping .map, no modular solution) ";
+		return;
+	}
+
+	markNodesToSkip();
+
+	// First collect the leaf nodes under each top module, sorted on flow
+	// Note that modules can be skipped
+	unsigned int numModules = m_rootNode.children.size();
+	typedef std::multimap<double, SNode*, std::greater<double> > NodeMap;
+	std::vector<NodeMap> nodeMaps;
+	nodeMaps.reserve(numModules); // Reserve size for max number of modules (no skipped)
+
+	unsigned int numNodes = 0;
+	for (TreeIterator it(&m_rootNode, 1); !it.isEnd(); ++it) {
+		if (it->isLeafNode()) {
+			if (it.clusterIndex() >= nodeMaps.size())
+				nodeMaps.push_back(NodeMap());
+			 nodeMaps[it.clusterIndex()].insert(std::make_pair(it->data.flow, it.base()));
+			 ++numNodes;
+		}
+	}
+	numModules = nodeMaps.size();
+
+	SafeOutFile out(fileName.c_str());
+
+	out << "# modules: " << numModules << "\n";
+	out << "# modulelinks: " << m_rootNode.childEdges.size() << "\n";
+	out << "# nodes: " << numNodes << "\n";
+	out << "# links: " << m_numLeafEdges << "\n";
+	out << "# codelength: " << m_codelength << "\n";
+	out << "*" << (m_directedEdges ? "Directed" : "Undirected") << "\n";
+
+	out << "*Modules " << numModules << "\n";
+	for (ChildIterator it(&m_rootNode); !it.isEnd(); ++it)
+	{
+		SNode& module = *it;
+		unsigned int moduleIndex = it.childIndex();
+		NodeMap& leafNodes = nodeMaps[moduleIndex];
+		SNode& biggestLeafNode = *(leafNodes.begin()->second); // Use the biggest leaf node under each super module to name the super module
+		out << (moduleIndex + 1) << " \"" << biggestLeafNode.data.name << ",...\" " << module.data.flow << " " << module.data.exitFlow << "\n";
+	}
+
+	out << "*Nodes " << numNodes << "\n";
+	for (ChildIterator moduleIt(&m_rootNode); !moduleIt.isEnd(); ++moduleIt)
+	{
+		unsigned int moduleIndex = moduleIt.childIndex();
+		NodeMap& leafNodes = nodeMaps[moduleIndex];
+		unsigned int nodeNumber = 1;
+		for (NodeMap::iterator it(leafNodes.begin()), itEnd(leafNodes.end());
+				it != itEnd; ++it, ++nodeNumber)
+		{
+			out << (moduleIndex + 1) << ":" << nodeNumber << " \"" << it->second->data.name << "\" " <<
+				it->first << "\n";
+		}
+	}
+
+	out << "*Links " << m_rootNode.childEdges.size() << "\n";
+	for (SNode::ChildEdgeList::iterator it(m_rootNode.childEdges.begin()); it != m_rootNode.childEdges.end(); ++it)
+	{
+		const ChildEdge& edge = *it;
+		out << (edge.source+1) << " " << (edge.target+1) << " " << edge.flow << "\n";
 	}
 }
 
 void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bool writeHierarchicalNetworkEdges)
 {
 	markNodesToSkip();
+
 	SafeOutFile out(fileName.c_str());
 	out << "# '" << m_infomapOptions << "' -> " << m_numLeafNodes << " nodes ";
 	if (m_numLeafEdges > 0)
@@ -278,7 +354,7 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 		io::toPrecision(m_codelength, 9, true) << " in " << m_maxDepth << " levels.\n";
 
 	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
-	for (TreeIterator it(&m_rootNode); !it.isEnd(); ++it) {
+	for (TreeIterator it(&m_rootNode, 2); !it.isEnd(); ++it) {
 		SNode &node = *it;
 		if (node.isLeafNode()) {
 			 out << io::stringify(it.path(), ":", 1) << " " << node.data.flow << " \"" << node.data.name << "\" " <<
@@ -319,6 +395,7 @@ void HierarchicalNetwork::markNodesToSkip()
 {
 	if (m_config.maxNodeIndexVisible == 0)
 		return;
+
 	// First assume all should be skipped
 	for (TreeIterator it(&m_rootNode); !it.isEnd(); ++it) {
 		it->skip = true;
@@ -329,7 +406,7 @@ void HierarchicalNetwork::markNodesToSkip()
 		SNode* node = *it;
 		if (node->originalLeafIndex <= m_config.maxNodeIndexVisible) {
 			do {
-				node->skip = true;
+				node->skip = false;
 				node = node->parentNode;
 			} while (node != NULL);
 		}
@@ -406,81 +483,6 @@ void HierarchicalNetwork::readHumanReadableTree(const std::string& fileName)
 		throw MisMatchError("There are less nodes in the tree than in the network.");
 
 	Log() << "done!" << std::endl;
-}
-
-void HierarchicalNetwork::writeMap(const std::string& fileName)
-{
-	if (m_maxDepth < 2)
-	{
-		Log() << "(skipping .map, no modular solution) ";
-		return;
-	}
-
-	// First collect the leaf nodes under each top module, sorted on flow
-	unsigned int numModules = m_rootNode.children.size();
-	typedef std::multimap<double, SNode*, std::greater<double> > NodeMap;
-	std::vector<NodeMap> nodeMaps(numModules);
-	unsigned int numNodes = 0;
-
-	for (unsigned int i = 0; i < numModules; ++i)
-	{
-		SNode& module = *m_rootNode.children[i];
-		if (module.children.empty())
-			continue;
-
-		NodeMap& nodeMap = nodeMaps[i];
-		SNode* node = &module;
-		LeafIterator li(node);
-		LeafIterator liEnd(module.nextSibling());
-		while (li != liEnd)
-		{
-//			Log() << i << std::string(module.depth, ' ') << ": inserting " << li->data.name << "\n";
-			nodeMap.insert(std::make_pair(li->data.flow, li.base()));
-			++li;
-			++numNodes;
-		}
-
-	}
-
-
-	SafeOutFile out(fileName.c_str());
-
-	out << "# modules: " << numModules << "\n";
-	out << "# modulelinks: " << m_rootNode.childEdges.size() << "\n";
-	out << "# nodes: " << numNodes << "\n";
-	out << "# links: " << m_numLeafEdges << "\n";
-	out << "# codelength: " << m_codelength << "\n";
-	out << "*" << (m_directedEdges ? "Directed" : "Undirected") << "\n";
-
-	out << "*Modules " << numModules << "\n";
-	for (unsigned int i = 0; i < numModules; ++i)
-	{
-		SNode& module = *m_rootNode.children[i];
-		NodeMap& leafNodes = nodeMaps[i];
-		SNode& biggestLeafNode = *(leafNodes.begin()->second); // Use the biggest leaf node under each super module to name the super module
-		out << (i + 1) << " \"" << biggestLeafNode.data.name << ",...\" " << module.data.flow << " " << module.data.exitFlow << "\n";
-	}
-
-	out << "*Nodes " << numNodes << "\n";
-	for (unsigned int i = 0; i < numModules; ++i)
-	{
-		NodeMap& nodeMap = nodeMaps[i];
-		unsigned int nodeNumber = 1;
-		for (NodeMap::iterator it(nodeMap.begin()), itEnd(nodeMap.end());
-				it != itEnd; ++it, ++nodeNumber)
-		{
-			out << (i + 1) << ":" << nodeNumber << " \"" << it->second->data.name << "\" " <<
-				it->first << "\n";
-		}
-	}
-
-
-	out << "*Links " << m_rootNode.childEdges.size() << "\n";
-	for (SNode::ChildEdgeList::iterator it(m_rootNode.childEdges.begin()); it != m_rootNode.childEdges.end(); ++it)
-	{
-		const ChildEdge& edge = *it;
-		out << (edge.source+1) << " " << (edge.target+1) << " " << edge.flow << "\n";
-	}
 }
 
 #ifdef NS_INFOMAP

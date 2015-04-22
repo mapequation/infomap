@@ -1448,8 +1448,12 @@ bool InfomapBase::initNetwork()
 
 	network.readInputData();
 
-	if (m_config.isBipartite() && !m_config.showBiNodes)
+	Log() << "is bipartite: " << m_config.isBipartite() << ", show bi-nodes: " << m_config.showBiNodes << "\n";
+	if (m_config.isBipartite() && !m_config.showBiNodes) {
 		m_config.maxNodeIndexVisible = network.numNodes() - network.numBipartiteNodes() - 1;
+		Log() << "limit = " << network.numNodes() << " - " << network.numBipartiteNodes() << " - 1 = " <<
+				m_config.maxNodeIndexVisible << "\n";
+	}
 
 	return initNetwork(network);
 }
@@ -1829,6 +1833,7 @@ void InfomapBase::printNetworkData(HierarchicalNetwork& output, std::string file
 		bool writeEdges = m_config.printBinaryFlowTree || m_config.printFlowTree || m_config.printMap || m_externalOutput;
 		Log() << "\nBuilding output tree" << (writeEdges ? " with links" : "") << "... " << std::flush;
 
+		output.clear(m_config);
 		saveHierarchicalNetwork(output, filename, writeEdges);
 
 		if (!m_config.noFileOutput && !m_externalOutput)
