@@ -134,7 +134,8 @@ public:
 		parentIndex(parentIndex),
 		isLeaf(false),
 		originalLeafIndex(0),
-		id(id)
+		id(id),
+		skip(false)
 	{
 	}
 
@@ -147,7 +148,8 @@ public:
 		parentIndex(other.parentIndex),
 		isLeaf(false),
 		originalLeafIndex(0),
-		id(other.id)
+		id(other.id),
+		skip(other.skip)
 	{
 	}
 
@@ -203,6 +205,7 @@ public:
 	unsigned int id;
 	NodePtrList children;
 	ChildEdgeList childEdges;
+	bool skip; // Skip in output
 
 
 public:
@@ -321,6 +324,16 @@ public:
 		if (parentNode == NULL || static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
 			return NULL;
 		return parentNode->children[parentIndex + 1];
+	}
+
+	bool isLeafNode()
+	{
+		return children.empty();
+	}
+
+	bool isLeafModule()
+	{
+		return !children.empty() && children.front()->isLeaf;
 	}
 
 
@@ -464,6 +477,152 @@ private:
 	unsigned int m_depth;
 };
 
+class TreeIterator
+{
+public:
+
+	TreeIterator()
+	:	m_root(NULL),
+		m_current(NULL),
+	 	m_depth(0),
+		m_clusterIndex(0),
+		m_maxClusterLevel(std::numeric_limits<unsigned int>::max())
+	{}
+
+	explicit
+	TreeIterator(SNode* nodePointer,
+			unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
+	:	m_root(nodePointer),
+		m_current(nodePointer),
+	 	m_depth(0),
+		m_clusterIndex(0),
+		m_maxClusterLevel(maxClusterLevel)
+	{}
+
+	TreeIterator(const TreeIterator& other)
+	:	m_root(other.m_root),
+		m_current(other.m_current),
+	 	m_depth(other.m_depth),
+		m_path(other.m_path),
+		m_clusterIndex(other.m_clusterIndex),
+		m_maxClusterLevel(other.m_maxClusterLevel)
+	{}
+
+	TreeIterator & operator= (const TreeIterator& other)
+	{
+		m_root = other.m_root;
+		m_current = other.m_current;
+		m_depth = other.m_depth;
+		m_path = other.m_path;
+		m_clusterIndex = other.m_clusterIndex;
+		m_maxClusterLevel = other.m_maxClusterLevel;
+	{}
+		return *this;
+	}
+
+	SNode* base() const
+	{
+		return m_current;
+	}
+
+	bool isEnd()
+	{
+		return m_current == NULL;
+	}
+
+	// Forward iterator requirements
+	SNode&
+	operator*() const
+	{
+		return *m_current;
+	}
+
+	SNode*
+	operator->() const
+	{
+		return m_current;
+	}
+
+	TreeIterator&
+	operator++()
+	{
+		if(m_current->firstChild() != NULL)
+		{
+			m_current = m_current->firstChild();
+			++m_depth;
+			m_path.push_back(0);
+		}
+		else
+		{
+			// Presupposes that the next pointer can't reach out from the current parent.
+			while(m_current->nextSibling() == 0)
+			{
+				m_current = m_current->parentNode;
+				--m_depth;
+				m_path.pop_back();
+				if(m_current == m_root || m_current == 0) // 0 if no children in first place
+				{
+					m_current = 0;
+					return *this;
+				}
+				if (m_depth == m_maxClusterLevel || m_current->isLeafModule())
+					++m_clusterIndex;
+			}
+			m_current = m_current->nextSibling();
+			++m_path.back();
+		}
+		return *this;
+	}
+
+	TreeIterator
+	operator++(int)
+	{
+		TreeIterator copy(*this);
+		++(*this);
+		return copy;
+	}
+
+	TreeIterator& stepForward()
+	{
+		++(*this);
+		return *this;
+	}
+
+	unsigned int depth() const
+	{
+		return m_depth;
+	}
+
+	unsigned int clusterIndex() const
+	{
+		return m_clusterIndex;
+	}
+
+	const std::deque<unsigned int>& path() const
+	{
+		return m_path;
+	}
+
+	bool operator==(const TreeIterator& rhs) const
+	{
+		return m_current == rhs.m_current;
+	}
+
+	bool operator!=(const TreeIterator& rhs) const
+	{
+		return !(m_current == rhs.m_current);
+	}
+
+private:
+	SNode* m_root;
+	SNode* m_current;
+	unsigned int m_depth;
+
+	std::deque<unsigned int> m_path; // The child index path to current node
+	unsigned int m_clusterIndex;
+	unsigned int m_maxClusterLevel;
+};
+
 
 class HierarchicalNetwork
 {
@@ -561,6 +720,8 @@ public:
 
 	void writeHumanReadableTree(const std::string& fileName, bool writeHierarchicalNetworkEdges = false);
 
+	void writeClu(const std::string& fileName, unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max());
+
 	void readHumanReadableTree(const std::string& fileName);
 
 	void writeMap(const std::string& fileName);
@@ -573,6 +734,8 @@ public:
 	double onelevelCodelength() { return m_oneLevelCodelength; }
 
 private:
+
+	void markNodesToSkip();
 
 	void writeHumanReadableTreeRecursiveHelper(std::ostream& out, SNode& node, std::string prefix = "");
 	void writeHumanReadableTreeFlowLinksRecursiveHelper(std::ostream& out, SNode& node, std::string prefix = "");

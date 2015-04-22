@@ -104,6 +104,7 @@ struct Config
 		silent(false),
 		benchmark(false),
 		maxNodeIndexVisible(0),
+		showBiNodes(false),
 		version(INFOMAP_VERSION)
 	{
 		setOptimizationLevel(1);
@@ -171,6 +172,7 @@ struct Config
 		silent(other.silent),
 		benchmark(other.benchmark),
 		maxNodeIndexVisible(other.maxNodeIndexVisible),
+		showBiNodes(other.showBiNodes),
 		startDate(other.startDate),
 		version(other.version)
 	{
@@ -239,6 +241,7 @@ struct Config
 		silent = other.silent;
 		benchmark = other.benchmark;
 	 	maxNodeIndexVisible = other.maxNodeIndexVisible;
+	 	showBiNodes = other.showBiNodes;
 		startDate = other.startDate;
 		version = other.version;
 		return *this;
@@ -429,6 +432,7 @@ struct Config
 	bool benchmark;
 
 	unsigned int maxNodeIndexVisible;
+	bool showBiNodes;
 
 	// Other
 	Date startDate;

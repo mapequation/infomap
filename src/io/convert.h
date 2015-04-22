@@ -121,6 +121,41 @@ inline std::string stringify(T x)
 	return o.str();
 }
 
+
+template<typename Container>
+inline std::string stringify(const Container& cont, std::string delimiter)
+{
+	std::ostringstream o;
+	if (cont.empty())
+		return "";
+	unsigned int maxIndex = cont.size() - 1;
+	for (unsigned int i = 0; i < maxIndex; ++i) {
+		if (!(o << cont[i]))
+			throw BadConversionError((o << "stringify(container[" << i << "])", o.str()));
+		o << delimiter;
+	}
+	if (!(o << cont[maxIndex]))
+		throw BadConversionError((o << "stringify(container[" << maxIndex << "])", o.str()));
+	return o.str();
+}
+
+template<typename Container>
+inline std::string stringify(const Container& cont, std::string delimiter, unsigned int offset)
+{
+	std::ostringstream o;
+	if (cont.empty())
+		return "";
+	unsigned int maxIndex = cont.size() - 1;
+	for (unsigned int i = 0; i < maxIndex; ++i) {
+		if (!(o << (cont[i] + offset)))
+			throw BadConversionError((o << "stringify(container[" << i << "])", o.str()));
+		o << delimiter;
+	}
+	if (!(o << (cont[maxIndex] + offset)))
+		throw BadConversionError((o << "stringify(container[" << maxIndex << "])", o.str()));
+	return o.str();
+}
+
 template<>
 inline std::string stringify(bool b)
 {

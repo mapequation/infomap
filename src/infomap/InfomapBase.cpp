@@ -1448,7 +1448,7 @@ bool InfomapBase::initNetwork()
 
 	network.readInputData();
 
-	if (m_config.isBipartite())
+	if (m_config.isBipartite() && !m_config.showBiNodes)
 		m_config.maxNodeIndexVisible = network.numNodes() - network.numBipartiteNodes() - 1;
 
 	return initNetwork(network);
@@ -1816,7 +1816,12 @@ void InfomapBase::printNetworkData(HierarchicalNetwork& output, std::string file
 	std::string outName;
 
 	// Print hierarchy
-	if (m_config.printTree || m_config.printFlowTree || m_config.printBinaryTree || m_config.printBinaryFlowTree || m_config.printMap)
+	if (m_config.printTree ||
+			m_config.printFlowTree ||
+			m_config.printBinaryTree ||
+			m_config.printBinaryFlowTree ||
+			m_config.printMap ||
+			m_config.printClu)
 	{
 		// Sort tree on flow
 		sortTree();
@@ -1836,17 +1841,17 @@ void InfomapBase::printNetworkData(HierarchicalNetwork& output, std::string file
 
 	}
 
-	// Print .clu
-	if (m_config.printClu && !m_config.noFileOutput && !m_externalOutput)
-	{
-		outName = io::Str() << m_config.outDirectory << filename <<
-			(m_config.printExpanded ? "_expanded.clu" : ".clu");
-		Log(0,0) << "(Writing .clu file.. ) ";
-		Log(1) << "Print cluster data to " << outName << "... ";
-		SafeOutFile cluOut(outName.c_str());
-		printClusterNumbers(cluOut);
-		Log(1) << "done!\n";
-	}
+//	// Print .clu
+//	if (m_config.printClu && !m_config.noFileOutput && !m_externalOutput)
+//	{
+//		outName = io::Str() << m_config.outDirectory << filename <<
+//			(m_config.printExpanded ? "_expanded.clu" : ".clu");
+//		Log(0,0) << "(Writing .clu file.. ) ";
+//		Log(1) << "Print cluster data to " << outName << "... ";
+//		SafeOutFile cluOut(outName.c_str());
+//		printClusterNumbers(cluOut);
+//		Log(1) << "done!\n";
+//	}
 
 }
 
@@ -1899,6 +1904,15 @@ void InfomapBase::printHierarchicalData(HierarchicalNetwork& hierarchicalNetwork
 		Log(1) << "\n  -> Writing " << outName << "..." << std::flush;
 
 		hierarchicalNetwork.writeMap(outName);
+	}
+
+	if (m_config.printClu)
+	{
+		outName = io::Str() << outNameWithoutExtension << ".clu";
+		Log(0,0) << "writing .clu... " << std::flush;
+		Log(1) << "\n  -> Writing " << outName << "..." << std::flush;
+
+		hierarchicalNetwork.writeClu(outName);
 	}
 
 	Log(0,0) << "done!" << std::endl;

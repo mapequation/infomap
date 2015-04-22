@@ -207,45 +207,20 @@ void InfomapGreedy<InfomapImplementation>::saveHierarchicalNetwork(HierarchicalN
 {
 	output.init(rootName, hierarchicalCodelength, oneLevelCodelength);
 
-	if (m_config.maxNodeIndexVisible != 0)
+	output.prepareAddLeafNodes(m_treeData.numLeafNodes());
+
+	buildHierarchicalNetworkHelper(output, output.getRootNode(), m_nodeNames);
+
+	if (includeLinks)
 	{
-		output.prepareAddLeafNodes(m_config.maxNodeIndexVisible + 1);
-
-		buildHierarchicalNetworkHelper(output, output.getRootNode(), m_nodeNames);
-
-		if (includeLinks)
+		for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()); leafIt != m_treeData.end_leaf(); ++leafIt)
 		{
-			for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()); leafIt != m_treeData.end_leaf(); ++leafIt)
+			NodeBase& node = **leafIt;
+			for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
+					outEdgeIt != endIt; ++outEdgeIt)
 			{
-				NodeBase& node = **leafIt;
-				for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
-						outEdgeIt != endIt; ++outEdgeIt)
-				{
-					EdgeType& edge = **outEdgeIt;
-					if (edge.source.originalIndex <= m_config.maxNodeIndexVisible &&
-							edge.target.originalIndex <= m_config.maxNodeIndexVisible)
-						output.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
-				}
-			}
-		}
-	}
-	else
-	{
-		output.prepareAddLeafNodes(m_treeData.numLeafNodes());
-
-		buildHierarchicalNetworkHelper(output, output.getRootNode(), m_nodeNames);
-
-		if (includeLinks)
-		{
-			for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()); leafIt != m_treeData.end_leaf(); ++leafIt)
-			{
-				NodeBase& node = **leafIt;
-				for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
-						outEdgeIt != endIt; ++outEdgeIt)
-				{
-					EdgeType& edge = **outEdgeIt;
-					output.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
-				}
+				EdgeType& edge = **outEdgeIt;
+				output.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
 			}
 		}
 	}

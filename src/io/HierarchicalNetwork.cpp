@@ -243,8 +243,32 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 }
 
 
+void HierarchicalNetwork::writeClu(const std::string& fileName, unsigned int maxClusterLevel)
+{
+	markNodesToSkip();
+
+	SafeOutFile out(fileName.c_str());
+
+	out << "# '" << m_infomapOptions << "' -> " << m_numLeafNodes << " nodes ";
+	if (m_numLeafEdges > 0)
+		out << "and " << m_numLeafEdges << " links ";
+	out << "partitioned in " << m_config.elapsedTime() << " from codelength " <<
+		io::toPrecision(m_oneLevelCodelength, 9, true) << " in one level to codelength " <<
+		io::toPrecision(m_codelength, 9, true) << " in " << m_maxDepth << " levels.\n";
+	out << "# nodeId clusterIndex flow:\n";
+
+	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
+	for (TreeIterator it(&m_rootNode, maxClusterLevel); !it.isEnd(); ++it) {
+		SNode &node = *it;
+		if (node.isLeafNode()) {
+			 out << node.originalLeafIndex + indexOffset << " " << it.clusterIndex() << " " << node.data.flow << "\n";
+		}
+	}
+}
+
 void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bool writeHierarchicalNetworkEdges)
 {
+	markNodesToSkip();
 	SafeOutFile out(fileName.c_str());
 	out << "# '" << m_infomapOptions << "' -> " << m_numLeafNodes << " nodes ";
 	if (m_numLeafEdges > 0)
@@ -253,59 +277,61 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 		io::toPrecision(m_oneLevelCodelength, 9, true) << " in one level to codelength " <<
 		io::toPrecision(m_codelength, 9, true) << " in " << m_maxDepth << " levels.\n";
 
-	writeHumanReadableTreeRecursiveHelper(out, m_rootNode);
-	if (writeHierarchicalNetworkEdges)
-		writeHumanReadableTreeFlowLinksRecursiveHelper(out, m_rootNode);
-}
-
-void HierarchicalNetwork::writeHumanReadableTreeRecursiveHelper(std::ostream& out, SNode& node, std::string prefix)
-{
-	for (unsigned int i = 0; i < node.children.size(); ++i)
-	{
-		SNode& child = *node.children[i];
-		if (child.isLeaf)
-		{
-			out << prefix << (i+1) << " " << child.data.flow << " \"" << child.data.name << "\" " << child.originalLeafIndex << "\n";
-//			out << prefix << (i+1) << " " << child.data.flow << " " << child.data.enterFlow << " " << child.data.exitFlow << " \"" << child.data.name << "\"\n";
-		}
-		else
-		{
-			const std::string subPrefix = io::Str() << prefix << (i+1) << ":";
-			writeHumanReadableTreeRecursiveHelper(out, child, subPrefix);
+	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
+	for (TreeIterator it(&m_rootNode); !it.isEnd(); ++it) {
+		SNode &node = *it;
+		if (node.isLeafNode()) {
+			 out << io::stringify(it.path(), ":", 1) << " " << node.data.flow << " \"" << node.data.name << "\" " <<
+				node.originalLeafIndex + indexOffset << "\n";
 		}
 	}
-}
 
-void HierarchicalNetwork::writeHumanReadableTreeFlowLinksRecursiveHelper(std::ostream& out, SNode& node, std::string prefix)
-{
-	if (node.children.empty())
+	if (!writeHierarchicalNetworkEdges)
 		return;
 
-	// Write edges after the last child of the parent node
-	const SNode::ChildEdgeList& edges = node.childEdges;
-	// First sort the edges
-	std::multimap<double, ChildEdge, std::greater<double> > sortedEdges;
-	for (SNode::ChildEdgeList::const_iterator it = edges.begin(); it != edges.end(); ++it)
-		sortedEdges.insert(std::make_pair(it->flow, *it));
-	if (prefix.empty())
-		out << "*Edges " << edges.size() << ", module 'root':(" << node.children.size() << ")\n";
-	else
-		out << "*Edges " << edges.size() << ", module " << prefix << "(" << node.children.size() << ")\n";
-	std::multimap<double, ChildEdge, std::greater<double> >::const_iterator it(sortedEdges.begin());
-
-	for (unsigned int i = 0; i < edges.size(); ++i, ++it)
+	for (TreeIterator it(&m_rootNode); !it.isEnd(); ++it)
 	{
-		out << (it->second.source + 1) << " " << (it->second.target + 1) << " " << it->second.flow << "\n";
+		SNode &node = *it;
+		if (node.isLeafNode())
+			return;
+
+		// Write edges after the last child of the parent node
+		const SNode::ChildEdgeList& edges = node.childEdges;
+		// First sort the edges
+		std::multimap<double, ChildEdge, std::greater<double> > sortedEdges;
+		for (SNode::ChildEdgeList::const_iterator it = edges.begin(); it != edges.end(); ++it)
+			sortedEdges.insert(std::make_pair(it->flow, *it));
+		if (it.path().empty())
+			out << "*Edges " << edges.size() << ", module 'root':(" << node.children.size() << ")\n";
+		else
+			out << "*Edges " << edges.size() << ", module " << io::stringify(it.path(), ":", 1) <<
+				"(" << node.children.size() << ")\n";
+
+		std::multimap<double, ChildEdge, std::greater<double> >::const_iterator edgeIt(sortedEdges.begin());
+		for (unsigned int i = 0; i < edges.size(); ++i, ++edgeIt)
+		{
+			out << (edgeIt->second.source + 1) << " " << (edgeIt->second.target + 1) << " " << edgeIt->second.flow << "\n";
+		}
+	}
+}
+
+void HierarchicalNetwork::markNodesToSkip()
+{
+	if (m_config.maxNodeIndexVisible == 0)
+		return;
+	// First assume all should be skipped
+	for (TreeIterator it(&m_rootNode); !it.isEnd(); ++it) {
+		it->skip = true;
 	}
 
-	for (unsigned int i = 0; i < node.children.size(); ++i)
-	{
-		SNode& child = *node.children[i];
-
-		if (!child.isLeaf)
-		{
-			const std::string subPrefix = io::Str() << prefix << (i+1) << ":";
-			writeHumanReadableTreeFlowLinksRecursiveHelper(out, child, subPrefix);
+	// Then propagate from unskipped leaf nodes up in tree to unmark branches with included leaf nodes
+	for (SNode::NodePtrList::iterator it = m_leafNodes.begin(); it != m_leafNodes.end(); ++it) {
+		SNode* node = *it;
+		if (node->originalLeafIndex <= m_config.maxNodeIndexVisible) {
+			do {
+				node->skip = true;
+				node = node->parentNode;
+			} while (node != NULL);
 		}
 	}
 }

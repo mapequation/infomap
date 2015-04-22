@@ -233,6 +233,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.innerParallelization, "inner-parallelization",
 			"Parallelize the innermost loop for greater speed. Note that this may give some accuracy tradeoff.");
 
+	api.addOptionArgument(conf.showBiNodes, "show-bipartite-nodes",
+			"Include the bipartite nodes in the output.", true);
+
 	// --------------------- Output options ---------------------
 	if (!noFileIO)
 	{
