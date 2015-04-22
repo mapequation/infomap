@@ -207,20 +207,45 @@ void InfomapGreedy<InfomapImplementation>::saveHierarchicalNetwork(HierarchicalN
 {
 	output.init(rootName, hierarchicalCodelength, oneLevelCodelength);
 
-	output.prepareAddLeafNodes(m_treeData.numLeafNodes());
-
-	buildHierarchicalNetworkHelper(output, output.getRootNode(), m_nodeNames);
-
-	if (includeLinks)
+	if (m_config.maxNodeIndexVisible != 0)
 	{
-		for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()); leafIt != m_treeData.end_leaf(); ++leafIt)
+		output.prepareAddLeafNodes(m_config.maxNodeIndexVisible + 1);
+
+		buildHierarchicalNetworkHelper(output, output.getRootNode(), m_nodeNames);
+
+		if (includeLinks)
 		{
-			NodeBase& node = **leafIt;
-			for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
-					outEdgeIt != endIt; ++outEdgeIt)
+			for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()); leafIt != m_treeData.end_leaf(); ++leafIt)
 			{
-				EdgeType& edge = **outEdgeIt;
-				output.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
+				NodeBase& node = **leafIt;
+				for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
+						outEdgeIt != endIt; ++outEdgeIt)
+				{
+					EdgeType& edge = **outEdgeIt;
+					if (edge.source.originalIndex <= m_config.maxNodeIndexVisible &&
+							edge.target.originalIndex <= m_config.maxNodeIndexVisible)
+						output.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
+				}
+			}
+		}
+	}
+	else
+	{
+		output.prepareAddLeafNodes(m_treeData.numLeafNodes());
+
+		buildHierarchicalNetworkHelper(output, output.getRootNode(), m_nodeNames);
+
+		if (includeLinks)
+		{
+			for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()); leafIt != m_treeData.end_leaf(); ++leafIt)
+			{
+				NodeBase& node = **leafIt;
+				for (NodeBase::edge_iterator outEdgeIt(node.begin_outEdge()), endIt(node.end_outEdge());
+						outEdgeIt != endIt; ++outEdgeIt)
+				{
+					EdgeType& edge = **outEdgeIt;
+					output.addLeafEdge(edge.source.originalIndex, edge.target.originalIndex, edge.data.flow);
+				}
 			}
 		}
 	}
@@ -245,7 +270,8 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(Hierar
 		const NodeType& node = getNode(*childIt);
 		if (node.isLeaf())
 		{
-			hierarchicalNetwork.addLeafNode(parent, node.data.flow, node.data.exitFlow, leafNodeNames[node.originalIndex], node.originalIndex);
+			if (m_config.maxNodeIndexVisible == 0 || node.originalIndex <= m_config.maxNodeIndexVisible)
+				hierarchicalNetwork.addLeafNode(parent, node.data.flow, node.data.exitFlow, leafNodeNames[node.originalIndex], node.originalIndex);
 		}
 		else
 		{

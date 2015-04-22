@@ -40,6 +40,9 @@ namespace infomap
 {
 #endif
 
+struct Bigram;
+struct Weight;
+
 class Network
 {
 public:
@@ -63,7 +66,8 @@ public:
 		m_sumAdditionalLinkWeight(0.0),
 	 	m_maxNodeIndex(std::numeric_limits<unsigned int>::min()),
 	 	m_minNodeIndex(std::numeric_limits<unsigned int>::max()),
-	 	m_indexOffset(m_config.zeroBasedNodeNumbers ? 0 : 1)
+	 	m_indexOffset(m_config.zeroBasedNodeNumbers ? 0 : 1),
+		m_numBipartiteNodes(0)
 	{}
 	Network(const Config& config)
 	:	m_config(config),
@@ -83,7 +87,8 @@ public:
 		m_sumAdditionalLinkWeight(0.0),
 	 	m_maxNodeIndex(std::numeric_limits<unsigned int>::min()),
 	 	m_minNodeIndex(std::numeric_limits<unsigned int>::max()),
-	 	m_indexOffset(m_config.zeroBasedNodeNumbers ? 0 : 1)
+	 	m_indexOffset(m_config.zeroBasedNodeNumbers ? 0 : 1),
+		m_numBipartiteNodes(0)
 	{}
 	Network(const Network& other)
 	:	m_config(other.m_config),
@@ -103,7 +108,8 @@ public:
 		m_sumAdditionalLinkWeight(other.m_sumAdditionalLinkWeight),
 	 	m_maxNodeIndex(other.m_maxNodeIndex),
 	 	m_minNodeIndex(other.m_minNodeIndex),
-	 	m_indexOffset(other.m_indexOffset)
+	 	m_indexOffset(other.m_indexOffset),
+		m_numBipartiteNodes(other.m_numBipartiteNodes)
 	{}
 	Network& operator=(const Network& other)
 	{
@@ -125,6 +131,7 @@ public:
 	 	m_maxNodeIndex = other.m_maxNodeIndex;
 	 	m_minNodeIndex = other.m_minNodeIndex;
 	 	m_indexOffset = other.m_indexOffset;
+	 	m_numBipartiteNodes = other.m_numBipartiteNodes;
 	 	return *this;
 	}
 
@@ -139,6 +146,8 @@ public:
 	 * @return true if a new link was inserted, false if skipped due to cutoff limit or aggregated to existing link
 	 */
 	bool addLink(unsigned int n1, unsigned int n2, double weight = 1.0);
+
+	bool addBipartiteLink(unsigned int n1, unsigned int n2, double weight = 1.0);
 
 	/**
 	 * Run after adding links to check for non-feasible values and set the
@@ -167,6 +176,9 @@ public:
 	double totalLinkWeight() const { return m_totalLinkWeight; }
 	double totalSelfLinkWeight() const { return m_totalSelfLinkWeight; }
 
+	bool isBipartite() const { return m_numBipartiteNodes > 0; }
+	unsigned int numBipartiteNodes() const { return m_numBipartiteNodes; }
+
 	void swapNodeNames(std::vector<std::string>& target) { target.swap(m_nodeNames); }
 
 	virtual void disposeLinks() { m_links.clear(); }
@@ -180,10 +192,17 @@ protected:
 	void parseSparseLinkList(std::string filename);
 	void parsePajekNetworkWithoutIOStreams(std::string filename);
 	void parseLinkListWithoutIOStreams(std::string filename);
+	void parseGeneralNetwork(std::string filename);
+	void parseBipartiteNetwork(std::string filename);
 
 	void zoom();
 
 	// Helper methods
+
+	std::string parseLinks(std::ifstream& file);
+
+	std::string parseBipartiteLinks(std::ifstream& file);
+
 	/**
 	 * Parse a string of link data.
 	 * If no weight data can be extracted, the default value 1.0 will be used.
@@ -247,8 +266,35 @@ protected:
 	std::istringstream m_extractor;
 	unsigned int m_indexOffset;
 
+	// Bipartite
+	std::map<Bigram, Weight> m_bipartiteLinks;
+	unsigned int m_numBipartiteNodes;
+
 };
 
+struct Bigram
+{
+	unsigned int first, second;
+	Bigram(unsigned int first = 0, unsigned int second = 0) : first(first), second(second) {}
+
+	bool operator<(const Bigram other) const
+	{
+		return first == other.first ? second < other.second : first < other.first;
+	}
+};
+
+// Struct to make the weight initialized to zero by default in a map
+struct Weight
+{
+	double weight;
+	Weight(double weight = 0) : weight(weight) {}
+
+	Weight& operator+=(double w)
+	{
+		weight += w;
+		return *this;
+	}
+};
 
 template<typename key_t, typename subkey_t, typename value_t>
 class MapMap

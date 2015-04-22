@@ -1448,6 +1448,9 @@ bool InfomapBase::initNetwork()
 
 	network.readInputData();
 
+	if (m_config.isBipartite())
+		m_config.maxNodeIndexVisible = network.numNodes() - network.numBipartiteNodes() - 1;
+
 	return initNetwork(network);
 }
 

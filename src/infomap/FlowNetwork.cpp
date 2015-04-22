@@ -81,20 +81,22 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 			link.flow /= totalLinkWeight;
 			m_nodeFlow[link.target] += link.flow;
 		}
-		//Normalize node flow
-		double sumNodeRank = 0.0;
-		for (unsigned int i = 0; i < numNodes; ++i)
-			sumNodeRank += m_nodeFlow[i];
-		for (unsigned int i = 0; i < numNodes; ++i)
-			m_nodeFlow[i] /= sumNodeRank;
 		Log() << "\n  -> Using directed links with raw flow.";
 		Log() << "\n  -> Total link weight: " << totalLinkWeight << ".";
 		Log() << std::endl;
+		finalize(network, config, true);
 		return;
 	}
 
 	if (!config.directed)
 	{
+		if (config.outdirdir)
+			Log() << "\n  -> Counting only ingoing links.";
+		else
+			Log() << "\n  -> Using undirected links" << (config.undirdir? ", switching to directed after steady state." :
+					".");
+		Log() << std::endl;
+
 		if (config.undirdir || config.outdirdir)
 		{
 			//Take one last power iteration
@@ -105,31 +107,23 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 				Link& link = *linkIt;
 				m_nodeFlow[link.target] += nodeFlowSteadyState[link.source] * link.flow / sumLinkOutWeight[link.source];
 			}
-			//Normalize node flow
-			double sumNodeRank = 0.0;
-			for (unsigned int i = 0; i < numNodes; ++i)
-				sumNodeRank += m_nodeFlow[i];
-			for (unsigned int i = 0; i < numNodes; ++i)
-				m_nodeFlow[i] /= sumNodeRank;
+			double sumNodeFlow = 0.0;
+			for (unsigned int i = 0; i < m_nodeFlow.size(); ++i)
+				sumNodeFlow += m_nodeFlow[i];
 			// Update link data to represent flow instead of weight
 			for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 			{
 				Link& link = *linkIt;
-				link.flow *= nodeFlowSteadyState[link.source] / sumLinkOutWeight[link.source] / sumNodeRank;
+				link.flow *= nodeFlowSteadyState[link.source] / sumLinkOutWeight[link.source] / sumNodeFlow;
 			}
+			finalize(network, config, true);
 		}
 		else // undirected
 		{
 			for (unsigned int i = 0; i < numLinks; ++i)
 				m_flowLinks[i].flow /= sumUndirLinkWeight;
+			finalize(network, config);
 		}
-
-		if (config.outdirdir)
-			Log() << "\n  -> Counting only ingoing links.";
-		else
-			Log() << "\n  -> Using undirected links" << (config.undirdir? ", switching to directed after steady state." :
-					".");
-		Log() << std::endl;
 		return;
 	}
 
@@ -260,6 +254,33 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 	}
 
 	Log() << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
+	finalize(network, config);
+}
+
+void FlowNetwork::finalize(const Network& network, const Config& config, bool normalizeNodeFlow)
+{
+	if (network.isBipartite())
+	{
+		// Only links between nodes and bi-nodes in bipartite network
+		// Don't code bi-nodes -> distribute all flow from those to ordinary nodes
+
+		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
+		{
+			Link& link = *linkIt;
+			m_nodeFlow[link.target] += link.flow;
+			m_nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
+		}
+		normalizeNodeFlow = true;
+	}
+
+	if (normalizeNodeFlow)
+	{
+		double sumNodeFlow = 0.0;
+		for (unsigned int i = 0; i < m_nodeFlow.size(); ++i)
+			sumNodeFlow += m_nodeFlow[i];
+		for (unsigned int i = 0; i < m_nodeFlow.size(); ++i)
+			m_nodeFlow[i] /= sumNodeFlow;
+	}
 }
 
 #ifdef NS_INFOMAP

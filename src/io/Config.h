@@ -48,6 +48,7 @@ struct Config
 		networkFile(""),
 	 	inputFormat(""),
 	 	withMemory(false),
+		bipartite(false),
 		hardPartitions(false),
 	 	nonBacktracking(false),
 	 	parseWithoutIOStreams(false),
@@ -102,6 +103,7 @@ struct Config
 		verboseNumberPrecision(6),
 		silent(false),
 		benchmark(false),
+		maxNodeIndexVisible(0),
 		version(INFOMAP_VERSION)
 	{
 		setOptimizationLevel(1);
@@ -113,6 +115,7 @@ struct Config
 	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
 	 	withMemory(other.withMemory),
+		bipartite(other.bipartite),
 		hardPartitions(other.hardPartitions),
 	 	nonBacktracking(other.nonBacktracking),
 	 	parseWithoutIOStreams(other.parseWithoutIOStreams),
@@ -167,6 +170,7 @@ struct Config
 		verboseNumberPrecision(other.verboseNumberPrecision),
 		silent(other.silent),
 		benchmark(other.benchmark),
+		maxNodeIndexVisible(other.maxNodeIndexVisible),
 		startDate(other.startDate),
 		version(other.version)
 	{
@@ -179,6 +183,7 @@ struct Config
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
 	 	withMemory = other.withMemory;
+	 	bipartite = other.bipartite;
 	 	hardPartitions = other.hardPartitions;
 	 	nonBacktracking = other.nonBacktracking;
 	 	parseWithoutIOStreams = other.parseWithoutIOStreams;
@@ -232,6 +237,8 @@ struct Config
 		verbosity = other.verbosity;
 		verboseNumberPrecision = other.verboseNumberPrecision;
 		silent = other.silent;
+		benchmark = other.benchmark;
+	 	maxNodeIndexVisible = other.maxNodeIndexVisible;
 		startDate = other.startDate;
 		version = other.version;
 		return *this;
@@ -309,7 +316,10 @@ struct Config
 					directed = true;
 			}
 		}
-
+		if (isBipartite())
+		{
+			bipartite = true;
+		}
 	}
 
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
@@ -329,6 +339,8 @@ struct Config
 	bool isSimulatedMemoryNetwork() const { return (withMemory || nonBacktracking) && !isMemoryInput(); }
 
 	bool isMultiplexNetwork() const { return inputFormat == "multiplex" || additionalInput.size() > 0; }
+
+	bool isBipartite() const { return inputFormat == "bipartite"; }
 
 	bool haveOutput() const
 	{
@@ -354,6 +366,7 @@ struct Config
 	std::vector<std::string> additionalInput;
 	std::string inputFormat; // 'pajek', 'link-list', '3gram' or 'multiplex'
 	bool withMemory;
+	bool bipartite;
 	bool hardPartitions;
 	bool nonBacktracking;
 	bool parseWithoutIOStreams;
@@ -414,6 +427,8 @@ struct Config
 	unsigned int verboseNumberPrecision;
 	bool silent;
 	bool benchmark;
+
+	unsigned int maxNodeIndexVisible;
 
 	// Other
 	Date startDate;

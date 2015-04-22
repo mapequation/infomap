@@ -288,7 +288,7 @@ private:
 
 protected:
 	typedef std::vector<NodeBase*>::iterator	activeNetwork_iterator;
-	const Config m_config;
+	Config m_config;
 	MTRand m_rand;
 	TreeData m_treeData;
 	std::vector<std::string> m_nodeNames;
