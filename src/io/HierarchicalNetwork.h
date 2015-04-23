@@ -774,6 +774,8 @@ public:
 
 	LeafIterator leafIter() { return LeafIterator(&m_rootNode); }
 
+	TreeIterator treeIter(int clusterIndexLevel = -1) { return TreeIterator(&m_rootNode, clusterIndexLevel); }
+
 	SNode& addNode(SNode& parent, double flow, double exitFlow);
 
 	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex);

@@ -74,6 +74,19 @@ void Network::readInputData(std::string filename)
 //		throw UnknownFileTypeError("No known input format specified.");
 }
 
+unsigned int Network::addNodes(const std::vector<std::string>& names)
+{
+	m_numNodes = names.size();
+	if (m_config.nodeLimit > 0 && m_config.nodeLimit < m_numNodes)
+		m_numNodes = m_config.nodeLimit;
+	
+	m_nodeNames.resize(m_numNodes);
+	m_nodeWeights.assign(m_numNodes, 1.0);
+	for (unsigned int i = 0; i < m_numNodes; ++i)
+		m_nodeNames[i] = names[i];
+	return m_numNodes;
+}
+
 void Network::parsePajekNetwork(std::string filename)
 {
 	if (m_config.parseWithoutIOStreams)
