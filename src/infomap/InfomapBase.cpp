@@ -1471,8 +1471,7 @@ bool InfomapBase::initNetwork(Network& network)
 
  	if (m_config.printPajekNetwork)
  	{
- 		std::string outName = io::Str() <<
- 				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
+ 		std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
  		Log() << "Printing network to " << outName << "... " << std::flush;
  		network.printNetworkAsPajek(outName);
 		Log() << "done!\n";
@@ -1505,13 +1504,16 @@ bool InfomapBase::initNetwork(Network& network)
  	initEnterExitFlow();
 
 
+ 	std::string outname = m_config.outName;
+ 	if (outname.empty())
+ 		outname = FileURI(m_config.networkFile).getName();
 	if (m_config.printNodeRanks)
 	{
 		//TODO: Split printNetworkData to printNetworkData and printModuleData, and move this to first
-		std::string outName = io::Str() <<
-				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".rank";
-		Log() << "Printing node flow to " << outName << "... ";
-		SafeOutFile out(outName.c_str());
+		std::string outfile = io::Str() <<
+				m_config.outDirectory << outname << ".rank";
+		Log() << "Printing node flow to " << outfile << "... ";
+		SafeOutFile out(outfile.c_str());
 
 		out << "# node-flow\n";
 		for (unsigned int i = 0; i < nodeFlow.size(); ++i)
@@ -1525,7 +1527,7 @@ bool InfomapBase::initNetwork(Network& network)
 	// Print flow network
 	if (m_config.printFlowNetwork)
 	{
-		std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << (m_config.printExpanded? "_expanded.flow" : ".flow");
+		std::string outName = io::Str() << m_config.outDirectory << outname << (m_config.printExpanded? "_expanded.flow" : ".flow");
 		SafeOutFile flowOut(outName.c_str());
 		Log() << "Printing flow network to " << outName << "... " << std::flush;
 		printFlowNetwork(flowOut);
@@ -1550,10 +1552,12 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
 
+	std::string outname = m_config.outName;
+	if (outname.empty())
+		outname = FileURI(m_config.networkFile).getName();
 	if (m_config.printPajekNetwork)
  	{
- 		std::string outName = io::Str() <<
- 				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
+ 		std::string outName = io::Str() << m_config.outDirectory << outname << ".net";
  		Log() << "Printing network to " << outName << "... " << std::flush;
  		network.printNetworkAsPajek(outName);
 		Log() << "done!\n";
@@ -1610,7 +1614,7 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 		unsigned int indexOffset = m_config.zeroBasedNodeNumbers ? 0 : 1;
 		if (m_config.printExpanded)
 		{
-			std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << "_expanded.rank";
+			std::string outName = io::Str() << m_config.outDirectory << outname << "_expanded.rank";
 			Log() << "Printing node flow to " << outName << "... " << std::flush;
 			SafeOutFile out(outName.c_str());
 
@@ -1635,7 +1639,7 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 		{
 			//TODO: Split printNetworkData to printNetworkData and printModuleData, and move this to first
 			std::string outName = io::Str() <<
-					m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".rank";
+					m_config.outDirectory << outname << ".rank";
 			Log() << "Printing physical flow to " << outName << "... " << std::flush;
 			SafeOutFile out(outName.c_str());
 			double sumFlow = 0.0;
@@ -1659,7 +1663,7 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 	// Print flow network
 	if (m_config.printFlowNetwork)
 	{
-		std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << (m_config.printExpanded? "_expanded.flow" : ".flow");
+		std::string outName = io::Str() << m_config.outDirectory << outname << (m_config.printExpanded? "_expanded.flow" : ".flow");
 		SafeOutFile flowOut(outName.c_str());
 		Log() << "Printing flow network to " << outName << "... " << std::flush;
 		printFlowNetwork(flowOut);
@@ -1814,8 +1818,12 @@ void InfomapBase::printNetworkData(HierarchicalNetwork& output, std::string file
 	if (m_config.noFileOutput && !m_externalOutput)
 		return;
 
-	if (filename.length() == 0)
-		filename = FileURI(m_config.networkFile).getName();
+	if (filename.empty()) {
+		if (!m_config.outName.empty())
+			filename = m_config.outName;
+		else
+			filename = FileURI(m_config.networkFile).getName();
+	}
 
 	std::string outName;
 
@@ -1862,8 +1870,12 @@ void InfomapBase::printNetworkData(HierarchicalNetwork& output, std::string file
 
 void InfomapBase::printHierarchicalData(HierarchicalNetwork& hierarchicalNetwork, std::string filename)
 {
-	if (filename.length() == 0)
-		filename = FileURI(m_config.networkFile).getName();
+	if (filename.empty()) {
+		if (!m_config.outName.empty())
+			filename = m_config.outName;
+		else
+			filename = FileURI(m_config.networkFile).getName();
+	}
 
 	std::string outName;
 	std::string outNameWithoutExtension = io::Str() << m_config.outDirectory << filename <<

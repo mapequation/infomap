@@ -87,6 +87,7 @@ struct Config
 		lowMemoryPriority(0),
 		innerParallelization(false),
 		outDirectory("."),
+		outName("."),
 		originallyUndirected(false),
 		printTree(false),
 		printFlowTree(false),
@@ -155,6 +156,7 @@ struct Config
 		lowMemoryPriority(other.lowMemoryPriority),
 		innerParallelization(other.innerParallelization),
 		outDirectory(other.outDirectory),
+		outName(other.outName),
 		originallyUndirected(other.originallyUndirected),
 		printTree(other.printTree),
 		printFlowTree(other.printFlowTree),
@@ -224,6 +226,7 @@ struct Config
 		lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
 		outDirectory = other.outDirectory;
+		outName = other.outName;
 		originallyUndirected = other.originallyUndirected;
 		printTree = other.printTree;
 		printFlowTree = other.printFlowTree;
@@ -414,6 +417,7 @@ struct Config
 
 	// Output
 	std::string outDirectory;
+	std::string outName;
 	bool originallyUndirected;
 	bool printTree;
 	bool printFlowTree;

@@ -113,6 +113,10 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 			"Don't run Infomap. Useful if initial cluster data should be preserved or non-modular data printed.", true);
 
 	// --------------------- Output options ---------------------
+
+	api.addOptionArgument(conf.outName, "out-name",
+			"Use this name for the output files, like [output_directory]/[out-name].tree", "s", true);
+
 	api.addOptionArgument(conf.noFileOutput, '0', "no-file-output",
 			"Don't print any output to file.", true);
 
