@@ -276,6 +276,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 		throw FileOpenError(io::Str() << "Can't write to directory '" <<
 				conf.outDirectory << "'. Check that the directory exists and that you have write permissions.");
 
+	if (conf.outName.empty())
+		conf.outName = FileURI(conf.networkFile).getName();
+
 	return api.getUsedOptionArguments();
 }
 

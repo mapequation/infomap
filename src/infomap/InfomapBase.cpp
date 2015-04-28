@@ -331,7 +331,7 @@ void InfomapBase::runPartition()
 			bestIntermediateStatistics.clear();
 			bestIntermediateStatistics.str("");
 			printPerLevelCodelength(bestIntermediateStatistics);
-			printNetworkData(io::Str() << FileURI(m_config.networkFile).getName() << "_fast");
+			printNetworkData(io::Str() << m_config.outName << "_fast");
 
 		}
 		if (m_config.fastHierarchicalSolution == 1)
@@ -1448,11 +1448,8 @@ bool InfomapBase::initNetwork()
 
 	network.readInputData();
 
-	Log() << "is bipartite: " << m_config.isBipartite() << ", show bi-nodes: " << m_config.showBiNodes << "\n";
 	if (m_config.isBipartite() && !m_config.showBiNodes) {
 		m_config.maxNodeIndexVisible = network.numNodes() - network.numBipartiteNodes() - 1;
-		Log() << "limit = " << network.numNodes() << " - " << network.numBipartiteNodes() << " - 1 = " <<
-				m_config.maxNodeIndexVisible << "\n";
 	}
 
 	return initNetwork(network);
@@ -1471,7 +1468,7 @@ bool InfomapBase::initNetwork(Network& network)
 
  	if (m_config.printPajekNetwork)
  	{
- 		std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
+ 		std::string outName = io::Str() << m_config.outDirectory << m_config.outName << ".net";
  		Log() << "Printing network to " << outName << "... " << std::flush;
  		network.printNetworkAsPajek(outName);
 		Log() << "done!\n";
@@ -1505,8 +1502,6 @@ bool InfomapBase::initNetwork(Network& network)
 
 
  	std::string outname = m_config.outName;
- 	if (outname.empty())
- 		outname = FileURI(m_config.networkFile).getName();
 	if (m_config.printNodeRanks)
 	{
 		//TODO: Split printNetworkData to printNetworkData and printModuleData, and move this to first
@@ -1553,8 +1548,6 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
 
 	std::string outname = m_config.outName;
-	if (outname.empty())
-		outname = FileURI(m_config.networkFile).getName();
 	if (m_config.printPajekNetwork)
  	{
  		std::string outName = io::Str() << m_config.outDirectory << outname << ".net";
@@ -1818,12 +1811,8 @@ void InfomapBase::printNetworkData(HierarchicalNetwork& output, std::string file
 	if (m_config.noFileOutput && !m_externalOutput)
 		return;
 
-	if (filename.empty()) {
-		if (!m_config.outName.empty())
-			filename = m_config.outName;
-		else
-			filename = FileURI(m_config.networkFile).getName();
-	}
+	if (filename.empty())
+		filename = m_config.outName;
 
 	std::string outName;
 
@@ -1870,12 +1859,8 @@ void InfomapBase::printNetworkData(HierarchicalNetwork& output, std::string file
 
 void InfomapBase::printHierarchicalData(HierarchicalNetwork& hierarchicalNetwork, std::string filename)
 {
-	if (filename.empty()) {
-		if (!m_config.outName.empty())
-			filename = m_config.outName;
-		else
-			filename = FileURI(m_config.networkFile).getName();
-	}
+	if (filename.empty())
+		filename = m_config.outName;
 
 	std::string outName;
 	std::string outNameWithoutExtension = io::Str() << m_config.outDirectory << filename <<

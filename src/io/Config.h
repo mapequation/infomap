@@ -87,7 +87,7 @@ struct Config
 		lowMemoryPriority(0),
 		innerParallelization(false),
 		outDirectory("."),
-		outName("."),
+		outName(""),
 		originallyUndirected(false),
 		printTree(false),
 		printFlowTree(false),
