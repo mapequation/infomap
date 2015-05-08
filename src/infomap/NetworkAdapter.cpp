@@ -74,20 +74,20 @@ void NetworkAdapter::readClu(std::string filename)
 	ClusterReader cluReader(m_numNodes, m_config.zeroBasedNodeNumbers);
 
 	cluReader.readData(filename);
-	const std::vector<unsigned int>& clusters = cluReader.clusters();
+	const std::map<unsigned int, unsigned int>& clusters = cluReader.clusters();
 	unsigned int numModules = cluReader.numModules();
 
 	// Create and store the module nodes in a random access array, and add to root
-	std::vector<NodeBase*> modules(numModules);
-	for (unsigned int i = 0; i < numModules; ++i)
+	std::vector<NodeBase*> modules(numModules, 0);
+	for (std::map<unsigned int, unsigned int>::const_iterator it(clusters.begin()); it != clusters.end(); ++it)
 	{
-		NodeBase* module = m_treeData.nodeFactory().createNode("", 0.0, 0.0);
-		modules[i] = module;
+		unsigned int nodeIndex = it->first;
+		unsigned int clusterIndex = it->second;
+		if (modules[clusterIndex] == 0)
+			modules[clusterIndex] = m_treeData.nodeFactory().createNode("", 0.0, 0.0);
+		// Add all leaf nodes to the modules defined by the parsed cluster indices
+		modules[clusterIndex]->addChild(&m_treeData.getLeafNode(nodeIndex));
 	}
-
-	// Add all leaf nodes to the modules defined by the parsed cluster indices
-	for (unsigned int i = 0; i < m_numNodes; ++i)
-		modules[clusters[i]]->addChild(&m_treeData.getLeafNode(i));
 
 	// Release leaf nodes from root to add the modules inbetween
 	m_treeData.root()->releaseChildren();

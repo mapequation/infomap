@@ -55,7 +55,7 @@ void ClusterReader::readData(const string filename)
 	std::istringstream lineStream;
 	unsigned int numVertices = 0;
 	unsigned int numParsedValues = 0;
-	unsigned int maxClusterIndex = 0;
+	unsigned int maxNodeIndex = 0;
 
 	while(!std::getline(input, line).fail())
 	{
@@ -84,13 +84,18 @@ void ClusterReader::readData(const string filename)
 		}
 		else
 		{
-			unsigned int clusterIndex;
-			if (!(lineStream >> clusterIndex))
-				throw FileFormatError(io::Str() << "Couldn't parse cluster data from line '" << line << "'");
+			// Parse nodeIndex clusterIndex, or only clusterIndex
+			unsigned int nodeIndex, clusterIndex;
+			if (!(lineStream >> nodeIndex))
+				throw FileFormatError(io::Str() << "Couldn't parse integer from line '" << line << "'");
+			if (!(lineStream >> clusterIndex)) {
+				clusterIndex = nodeIndex; // Only one column => assume natural order for node indices
+				nodeIndex = numParsedValues + m_indexOffset;
+			}
 
-			clusterIndex -= m_indexOffset; // Get zero-based indices
-			m_clusters[numParsedValues] = clusterIndex;
-			maxClusterIndex = std::max(maxClusterIndex, clusterIndex);
+			nodeIndex -= m_indexOffset; // Get zero-based indexing
+			m_clusters[nodeIndex] = clusterIndex;
+			maxNodeIndex = std::max(maxNodeIndex, nodeIndex);
 			++numParsedValues;
 			if (numParsedValues == m_numNodes)
 				break;
@@ -103,26 +108,27 @@ void ClusterReader::readData(const string filename)
 
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
-	if (maxClusterIndex == zeroMinusOne)
+	if (maxNodeIndex == zeroMinusOne)
 		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
-	if (maxClusterIndex >= m_numNodes)
-		throw InputDomainError(io::Str() << "Max module number (" << maxClusterIndex + m_indexOffset <<
-				") is larger than the number of nodes");
 
-	m_numModules = maxClusterIndex + 1;
-
-	// Calculate the number of nodes per module to check for compactness and non-emptyness
-	std::vector<unsigned int> moduleSize(m_numModules);
-	for (unsigned int i = 0; i < m_numNodes; ++i)
-	{
-		++moduleSize[m_clusters[i]];
+	// Re-map cluster id:s to zero-based compact indices
+	std::map<unsigned int, unsigned int> clusterIdToNumber;
+	unsigned int clusterNumber = 1;
+	for (std::map<unsigned int, unsigned int>::iterator it(m_clusters.begin()); it != m_clusters.end(); ++it) {
+		unsigned int clusterId = it->second;
+		unsigned int& n = clusterIdToNumber[clusterId];
+		if (n == 0) {
+			n = clusterNumber; // A new cluster id
+			++clusterNumber;
+		}
 	}
 
-	for (unsigned int i = 0; i < m_numModules; ++i)
-	{
-		if (moduleSize[i] == 0)
-			throw InputDomainError(io::Str() << "Module " << (i + 1) << " is empty.");
+	// Update cluster map
+	for (std::map<unsigned int, unsigned int>::iterator it(m_clusters.begin()); it != m_clusters.end(); ++it) {
+		it->second = clusterIdToNumber[it->second] - 1; // To zero-based indexing
 	}
+
+	m_numModules = clusterNumber - 1;
 
 	Log() << "done! " << std::flush;
 }

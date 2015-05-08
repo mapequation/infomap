@@ -517,6 +517,7 @@ void InfomapBase::tryIndexingIteratively()
 	// Add index codebooks as long as the code gets shorter (and collapse each iteration)
 	bool tryIndexing = true;
 	bool replaceExistingModules = m_config.fastHierarchicalSolution == 0;
+	replaceExistingModules = true; // Uses leaf network below
 	while(tryIndexing)
 	{
 		if (verbose)
@@ -564,6 +565,7 @@ void InfomapBase::tryIndexingIteratively()
 
 		// Replace current module structure with the super structure
 		setActiveNetworkFromLeafs();
+//		setActiveNetworkFromChildrenOfRoot();
 		initModuleOptimization();
 
 		unsigned int i = 0;
@@ -593,6 +595,11 @@ void InfomapBase::tryIndexingIteratively()
 		moveNodesToPredefinedModules();
 		// Replace the old modular structure with the super structure generated above
 		consolidateModules(replaceExistingModules);
+
+		double superIndexCodelength = superInfomap->indexCodelength;
+		if (std::abs(superIndexCodelength - indexCodelength) > 1e-10)
+			std::cout << "*** (" << superIndexCodelength << " / " << indexCodelength << ") ";
+
 
 		++numIndexingCompleted;
 		tryIndexing = m_numNonTrivialTopModules > 1 && numTopModules() != numLeafNodes();
