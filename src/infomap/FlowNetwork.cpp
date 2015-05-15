@@ -259,7 +259,7 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 
 void FlowNetwork::finalize(const Network& network, const Config& config, bool normalizeNodeFlow)
 {
-	if (network.isBipartite())
+	if (network.isBipartite() && !config.skipAdjustBipartiteFlow)
 	{
 		// Only links between nodes and bi-nodes in bipartite network
 		// Don't code bi-nodes -> distribute all flow from those to ordinary nodes
@@ -268,6 +268,7 @@ void FlowNetwork::finalize(const Network& network, const Config& config, bool no
 		{
 			Link& link = *linkIt;
 			m_nodeFlow[link.target] += link.flow;
+			link.flow *= 1;
 			m_nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
 		}
 		normalizeNodeFlow = true;

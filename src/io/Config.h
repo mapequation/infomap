@@ -49,6 +49,7 @@ struct Config
 	 	inputFormat(""),
 	 	withMemory(false),
 		bipartite(false),
+		skipAdjustBipartiteFlow(false),
 		hardPartitions(false),
 	 	nonBacktracking(false),
 	 	parseWithoutIOStreams(false),
@@ -118,6 +119,7 @@ struct Config
 	 	inputFormat(other.inputFormat),
 	 	withMemory(other.withMemory),
 		bipartite(other.bipartite),
+		skipAdjustBipartiteFlow(other.skipAdjustBipartiteFlow),
 		hardPartitions(other.hardPartitions),
 	 	nonBacktracking(other.nonBacktracking),
 	 	parseWithoutIOStreams(other.parseWithoutIOStreams),
@@ -188,6 +190,7 @@ struct Config
 	 	inputFormat = other.inputFormat;
 	 	withMemory = other.withMemory;
 	 	bipartite = other.bipartite;
+	 	skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;
 	 	hardPartitions = other.hardPartitions;
 	 	nonBacktracking = other.nonBacktracking;
 	 	parseWithoutIOStreams = other.parseWithoutIOStreams;
@@ -373,6 +376,7 @@ struct Config
 	std::string inputFormat; // 'pajek', 'link-list', '3gram' or 'multiplex'
 	bool withMemory;
 	bool bipartite;
+	bool skipAdjustBipartiteFlow;
 	bool hardPartitions;
 	bool nonBacktracking;
 	bool parseWithoutIOStreams;

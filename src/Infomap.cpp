@@ -85,6 +85,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 //	api.addOptionArgument(conf.bipartite, "bipartite",
 //			"Let the source id of a link belong to a different kind of nodes and ignore that set in the output.");
 
+	api.addOptionArgument(conf.skipAdjustBipartiteFlow, "skip-adjust-bipartite-flow",
+			"Skip distributing all flow from the bipartite nodes (first column) to the ordinary nodes (second column).", true);
+
 	api.addOptionArgument(conf.withMemory, "overlapping",
 			"Let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the memoryless dynamics with memory nodes.");
 
