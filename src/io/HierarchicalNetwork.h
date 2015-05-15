@@ -547,11 +547,14 @@ public:
 	TreeIterator&
 	operator++()
 	{
-		if(m_current->firstChild() != NULL && !m_current->firstChild()->skip)
+		if(m_current->firstChild() != NULL)
 		{
 			m_current = m_current->firstChild();
 			++m_depth;
 			m_path.push_back(0);
+			if (m_current->skip) {
+				goto tryNext;
+			}
 		}
 		else
 		{
