@@ -268,7 +268,7 @@ void FlowNetwork::finalize(const Network& network, const Config& config, bool no
 		{
 			Link& link = *linkIt;
 			m_nodeFlow[link.target] += link.flow;
-//			link.flow *= 2;
+			link.flow *= 2; // Markov time 2 on the full network will correspond to markov time 1 between the real nodes.
 			m_nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
 		}
 		normalizeNodeFlow = true;
