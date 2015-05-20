@@ -574,7 +574,7 @@ public:
 					 if (m_current->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
 						 ++m_clusterIndex;
 				}
-				else if (m_clusterIndexLevel == m_depth)
+				else if (static_cast<unsigned int>(m_clusterIndexLevel) == m_depth)
 					++m_clusterIndex;
 			}
 			m_current = m_current->nextSibling();
