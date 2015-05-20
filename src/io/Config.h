@@ -68,7 +68,7 @@ struct Config
 		teleportToNodes(false),
 		teleportationProbability(0.15),
 		selfTeleportationProbability(-1),
-		codeRate(1.0),
+		markovTime(1.0),
 		preferredNumberOfModules(0),
 		multiplexRelaxRate(-1),
 		seedToRandomNumberGenerator(123),
@@ -138,7 +138,7 @@ struct Config
 		teleportToNodes(other.teleportToNodes),
 		teleportationProbability(other.teleportationProbability),
 		selfTeleportationProbability(other.selfTeleportationProbability),
-		codeRate(other.codeRate),
+		markovTime(other.markovTime),
 		preferredNumberOfModules(other.preferredNumberOfModules),
 		multiplexRelaxRate(other.multiplexRelaxRate),
 		seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
@@ -209,7 +209,7 @@ struct Config
 		teleportToNodes = other.teleportToNodes;
 		teleportationProbability = other.teleportationProbability;
 		selfTeleportationProbability = other.selfTeleportationProbability;
-	 	codeRate = other.codeRate;
+	 	markovTime = other.markovTime;
 	 	preferredNumberOfModules = other.preferredNumberOfModules;
 		multiplexRelaxRate = other.multiplexRelaxRate;
 		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
@@ -397,7 +397,7 @@ struct Config
 	bool teleportToNodes;
 	double teleportationProbability;
 	double selfTeleportationProbability;
-	double codeRate;
+	double markovTime;
 	unsigned int preferredNumberOfModules;
 	double multiplexRelaxRate;
 	unsigned long seedToRandomNumberGenerator;

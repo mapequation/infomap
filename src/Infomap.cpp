@@ -185,7 +185,7 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.selfTeleportationProbability, 'y', "self-link-teleportation-probability",
 			"Additional probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", "f", true);
 
-	api.addOptionArgument(conf.codeRate, "code-rate",
+	api.addOptionArgument(conf.markovTime, "markov-time",
 			"Scale link flow with this value to change the cost of moving between modules. Higher for less modules.", "f", true);
 
 	api.addOptionArgument(conf.preferredNumberOfModules, "preferred-number-of-modules",

@@ -1498,7 +1498,7 @@ bool InfomapBase::initNetwork(Network& network)
  		m_treeData.addNewNode(m_nodeNames[i], nodeFlow[i], nodeTeleportWeights[i]);
  	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();
  	for (unsigned int i = 0; i < links.size(); ++i)
- 		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow * m_config.codeRate);
+ 		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow * m_config.markovTime);
 
 
  	double sumNodeFlow = 0.0;
