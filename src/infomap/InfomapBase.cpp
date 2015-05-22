@@ -1460,6 +1460,7 @@ bool InfomapBase::initNetwork()
 		Log(1) << "Skip " << network.numBipartiteNodes() << " bipartites nodes in output, limit to " <<
 				m_config.maxNodeIndexVisible + 1 << " ordinary nodes.\n";
 	}
+	m_config.minBipartiteNodeIndex = network.numNodes() - network.numBipartiteNodes();
 
 	return initNetwork(network);
 }
