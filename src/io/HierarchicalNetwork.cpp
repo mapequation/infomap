@@ -264,23 +264,16 @@ void HierarchicalNetwork::writeClu(const std::string& fileName, int clusterIndex
 	out << "# nodeId clusterIndex flow:\n";
 
 	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
-	if (m_config.isBipartite())
-	{
-		for (TreeIterator it(&m_rootNode, clusterIndexLevel); !it.isEnd(); ++it) {
-			SNode &node = *it;
-			if (node.isLeafNode()) {
+	for (TreeIterator it(&m_rootNode, clusterIndexLevel); !it.isEnd(); ++it) {
+		SNode &node = *it;
+		if (node.isLeafNode()) {
+			if (m_config.isBipartite()) {
 				if (node.originalLeafIndex < m_config.minBipartiteNodeIndex)
 					out << 'n' << node.originalLeafIndex + indexOffset << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
 				else
 					out << 'f' << node.originalLeafIndex + indexOffset - m_config.minBipartiteNodeIndex << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
 			}
-		}
-	}
-	else
-	{
-		for (TreeIterator it(&m_rootNode, clusterIndexLevel); !it.isEnd(); ++it) {
-			SNode &node = *it;
-			if (node.isLeafNode()) {
+			else {
 				 out << node.originalLeafIndex + indexOffset << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
 			}
 		}
@@ -372,8 +365,16 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 	for (TreeIterator it(&m_rootNode, 2); !it.isEnd(); ++it) {
 		SNode &node = *it;
 		if (node.isLeafNode()) {
-			 out << io::stringify(it.path(), ":", 1) << " " << node.data.flow << " \"" << node.data.name << "\" " <<
-				node.originalLeafIndex + indexOffset << "\n";
+			out << io::stringify(it.path(), ":", 1) << " " << node.data.flow << " \"" << node.data.name << "\" ";
+			if (m_config.isBipartite()) {
+				if (node.originalLeafIndex < m_config.minBipartiteNodeIndex)
+					out << 'n' << node.originalLeafIndex + indexOffset;
+				else
+					out << 'f' << node.originalLeafIndex + indexOffset - m_config.minBipartiteNodeIndex;
+			}
+			else
+				out << node.originalLeafIndex + indexOffset;
+			out << "\n";
 		}
 	}
 
