@@ -108,7 +108,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	std::vector<PhysToMemWeightMap> netPhysToMem(numM1Nodes);
 
 	const LinkMap& m1LinkMap = network.linkMap();
-
+	// Map middle column in trigrams to target m2 nodes (source to link for m1 links)
 	for (LinkMap::const_iterator linkIt(m1LinkMap.begin()); linkIt != m1LinkMap.end(); ++linkIt)
 	{
 		unsigned int linkEnd1 = linkIt->first;
@@ -136,6 +136,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		{
 			++numDanglingM2Nodes;
 			// We are in physIndex, lookup all mem nodes in that physical node
+			// and add a link to the target node of those mem nodes (pre-mapped above)
 			const PhysToMemWeightMap& physToMem = netPhysToMem[m_m2nodes[i].physIndex];
 			for(PhysToMemWeightMap::const_iterator it = physToMem.begin(); it != physToMem.end(); it++)
 			{

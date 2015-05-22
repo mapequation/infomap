@@ -519,11 +519,11 @@ std::string Network::parseBipartiteLinks(std::ifstream& file)
 		if (line[0] == '*')
 			break;
 
-		unsigned int n1, n2;
+		unsigned int featureNode, ordinaryNode;
 		double weight;
-		parseLink(line, n1, n2, weight);
+		bool swappedOrder = parseBipartiteLink(line, featureNode, ordinaryNode, weight);
 
-		addBipartiteLink(n1, n2, weight);
+		addBipartiteLink(featureNode, ordinaryNode, swappedOrder, weight);
 	}
 	return line;
 }
@@ -559,6 +559,29 @@ void Network::parseLink(char line[], unsigned int& n1, unsigned int& n2, double&
 	n2 -= m_indexOffset;
 }
 
+bool Network::parseBipartiteLink(const std::string& line, unsigned int& featureNode, unsigned int& node, double& weight)
+{
+	bool swappedOrder = false;
+	m_extractor.clear();
+	m_extractor.str(line);
+	std::string fn, n;
+	if (!(m_extractor >> fn >> n))
+		throw FileFormatError(io::Str() << "Can't parse bipartite link data from line '" << line << "'");
+	(m_extractor >> weight) || (weight = 1.0);
+	if (fn[0] != 'f') {
+		std::swap(fn, n);
+		swappedOrder = true;
+	}
+	if (fn[0] != 'f' || fn.length() == 1 || !(std::istringstream( fn.substr(1) ) >> featureNode))
+		throw FileFormatError(io::Str() << "Can't parse bipartite feature node (a numerical id prefixed by 'f') from line '" << line << "'");
+	if (n[0] != 'n' || n.length() == 1 || !(std::istringstream( n.substr(1) ) >> node))
+		throw FileFormatError(io::Str() << "Can't parse bipartite ordinary node (a numerical id prefixed by 'n') from line '" << line << "'");
+
+	featureNode -= m_indexOffset;
+	node -= m_indexOffset;
+	return swappedOrder;
+}
+
 
 
 bool Network::addLink(unsigned int n1, unsigned int n2, double weight)
@@ -587,17 +610,17 @@ bool Network::addLink(unsigned int n1, unsigned int n2, double weight)
 	return true;
 }
 
-bool Network::addBipartiteLink(unsigned int n1, unsigned int n2, double weight)
+bool Network::addBipartiteLink(unsigned int featureNode, unsigned int node, bool swapOrder, double weight)
 {
 	++m_numLinksFound;
 
-	if (m_config.nodeLimit > 0 && n2 >= m_config.nodeLimit)
+	if (m_config.nodeLimit > 0 && node >= m_config.nodeLimit)
 		return false;
 
-	m_maxNodeIndex = std::max(m_maxNodeIndex, n2);
-	m_minNodeIndex = std::min(m_minNodeIndex, n2);
+	m_maxNodeIndex = std::max(m_maxNodeIndex, node);
+	m_minNodeIndex = std::min(m_minNodeIndex, node);
 
-	m_bipartiteLinks[Bigram(n1, n2)] += weight;
+	m_bipartiteLinks[BipartiteLink(featureNode, node, swapOrder)] += weight;
 
 	return true;
 }
@@ -655,13 +678,16 @@ void Network::finalizeAndCheckNetwork(bool printSummary, unsigned int desiredNum
 	{
 		if (m_numLinks > 0)
 			throw InputDomainError("Can't add bipartite links together with ordinary links.");
-		for (std::map<Bigram, Weight>::iterator it(m_bipartiteLinks.begin()); it != m_bipartiteLinks.end(); ++it)
+		for (std::map<BipartiteLink, Weight>::iterator it(m_bipartiteLinks.begin()); it != m_bipartiteLinks.end(); ++it)
 		{
-			const Bigram& bigram = it->first;
-			// Offset bi-nodes by the number of ordinary nodes to make them unique
-			unsigned int biNodeIndex = bigram.first + m_numNodes;
-			m_maxNodeIndex = std::max(m_maxNodeIndex, biNodeIndex);
-			insertLink(biNodeIndex, bigram.second, it->second.weight);
+			const BipartiteLink& link = it->first;
+			// Offset feature nodes by the number of ordinary nodes to make them unique
+			unsigned int featureNodeIndex = link.featureNode + m_numNodes;
+			m_maxNodeIndex = std::max(m_maxNodeIndex, featureNodeIndex);
+			if (link.swapOrder)
+				insertLink(link.node, featureNodeIndex, it->second.weight);
+			else
+				insertLink(featureNodeIndex, link.node, it->second.weight);
 		}
 		m_numBipartiteNodes = m_maxNodeIndex + 1 - m_numNodes;
 		m_numNodes += m_numBipartiteNodes;
@@ -811,7 +837,7 @@ void Network::printParsingResult(bool onlySummary)
 
 	if (isBipartite())
 		Log() << "\nBipartite => " << m_numNodes - m_numBipartiteNodes << " ordinary nodes and " <<
-			m_numBipartiteNodes << " nodes of other kind.";
+			m_numBipartiteNodes << " feature nodes.";
 
 	Log() << std::endl;
 }

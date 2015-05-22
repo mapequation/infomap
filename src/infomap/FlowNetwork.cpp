@@ -259,17 +259,25 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 
 void FlowNetwork::finalize(const Network& network, const Config& config, bool normalizeNodeFlow)
 {
+	// TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
 	if (network.isBipartite() && !config.skipAdjustBipartiteFlow)
 	{
-		// Only links between nodes and bi-nodes in bipartite network
-		// Don't code bi-nodes -> distribute all flow from those to ordinary nodes
+		// Only links between ordinary nodes and feature nodes in bipartite network
+		// Don't code feature nodes -> distribute all flow from those to ordinary nodes
+		unsigned int minBipartiteNodeIndex = network.numNodes() - network.numBipartiteNodes();
 
 		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 		{
 			Link& link = *linkIt;
-			m_nodeFlow[link.target] += link.flow;
 			link.flow *= 2; // Markov time 2 on the full network will correspond to markov time 1 between the real nodes.
-			m_nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
+			if (link.source >= minBipartiteNodeIndex) {
+				m_nodeFlow[link.target] += link.flow;
+				m_nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
+			}
+//			else {
+//				m_nodeFlow[link.source] += link.flow;
+//				m_nodeFlow[link.target] = 0.0; // Doesn't matter if done multiple times on each node.
+//			}
 		}
 		normalizeNodeFlow = true;
 	}

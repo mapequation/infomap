@@ -42,6 +42,7 @@ namespace infomap
 
 struct Bigram;
 struct Weight;
+struct BipartiteLink;
 
 class Network
 {
@@ -149,7 +150,7 @@ public:
 	 */
 	bool addLink(unsigned int n1, unsigned int n2, double weight = 1.0);
 
-	bool addBipartiteLink(unsigned int n1, unsigned int n2, double weight = 1.0);
+	bool addBipartiteLink(unsigned int featureNode, unsigned int node, bool swapOrder, double weight = 1.0);
 
 	/**
 	 * Run after adding links to check for non-feasible values and set the
@@ -214,6 +215,16 @@ protected:
 	void parseLink(char line[], unsigned int& n1, unsigned int& n2, double& weight);
 
 	/**
+	 * Parse a bipartite link of format "f1 n1 1.0" for a link between
+	 * feature node 1 to ordinary node 1 with weight 1.0.
+	 * The order of the feature nodes and ordinary nodes can be swapped.
+	 * Store the numberical id (minus possible indexOffset for non-zerobased indexing)
+	 * on the referenced uints.
+	 * @return true if the input order was swapped
+	 */
+	bool parseBipartiteLink(const std::string& line, unsigned int& featureNode, unsigned int& node, double& weight);
+
+	/**
 	 * Insert ordinary link, indexed on first node and aggregated if exist
 	 * @note Called by addLink
 	 * @return true if a new link was inserted, false if aggregated
@@ -269,7 +280,7 @@ protected:
 	unsigned int m_indexOffset;
 
 	// Bipartite
-	std::map<Bigram, Weight> m_bipartiteLinks;
+	std::map<BipartiteLink, Weight> m_bipartiteLinks;
 	unsigned int m_numBipartiteNodes;
 
 };
@@ -282,6 +293,19 @@ struct Bigram
 	bool operator<(const Bigram other) const
 	{
 		return first == other.first ? second < other.second : first < other.first;
+	}
+};
+
+struct BipartiteLink
+{
+	unsigned int featureNode, node;
+	bool swapOrder;
+	BipartiteLink(unsigned int featureNode = 0, unsigned int node = 0, bool swapOrder = false)
+	: featureNode(featureNode), node(node), swapOrder(swapOrder) {}
+
+	bool operator<(const BipartiteLink other) const
+	{
+		return featureNode == other.featureNode ? node < other.node : featureNode < other.featureNode;
 	}
 };
 
