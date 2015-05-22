@@ -41,10 +41,10 @@ using std::string;
 class ClusterReader
 {
 public:
-	ClusterReader(unsigned int numNodes, bool zeroBasedIndexing = false)
-	: m_numNodes(numNodes),
-	  m_numModules(0),
-	  m_indexOffset(zeroBasedIndexing? 0 : 1)
+	ClusterReader(bool zeroBasedIndexing = false)
+	: m_indexOffset(zeroBasedIndexing? 0 : 1),
+	  m_maxNodeIndex(0),
+	  m_numParsedRows(0)
 	{}
 
 	virtual ~ClusterReader() {}
@@ -56,16 +56,20 @@ public:
 		return m_clusters;
 	}
 
-	unsigned int numModules() const
+	unsigned int maxNodeIndex() const
 	{
-		return m_numModules;
+		return m_maxNodeIndex;
+	}
+
+	unsigned int numParsedRows() const
+	{
+		return m_numParsedRows;
 	}
 
 private:
-	unsigned int m_numNodes;
-	unsigned int m_numModules;
 	unsigned int m_indexOffset;
-//	std::vector<unsigned int> m_clusters;
+	unsigned int m_maxNodeIndex;
+	unsigned int m_numParsedRows;
 	std::map<unsigned int, unsigned int> m_clusters;
 };
 

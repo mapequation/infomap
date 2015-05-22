@@ -49,13 +49,10 @@ namespace infomap
  */
 void ClusterReader::readData(const string filename)
 {
-	Log() << "Parsing '" << filename << "'... " << std::flush;
 	SafeInFile input(filename.c_str());
 	std::string line;
 	std::istringstream lineStream;
 	unsigned int numVertices = 0;
-	unsigned int numParsedValues = 0;
-	unsigned int maxNodeIndex = 0;
 
 	while(!std::getline(input, line).fail())
 	{
@@ -90,47 +87,21 @@ void ClusterReader::readData(const string filename)
 				throw FileFormatError(io::Str() << "Couldn't parse integer from line '" << line << "'");
 			if (!(lineStream >> clusterIndex)) {
 				clusterIndex = nodeIndex; // Only one column => assume natural order for node indices
-				nodeIndex = numParsedValues + m_indexOffset;
+				nodeIndex = m_numParsedRows + m_indexOffset;
 			}
 
 			nodeIndex -= m_indexOffset; // Get zero-based indexing
 			m_clusters[nodeIndex] = clusterIndex;
-			maxNodeIndex = std::max(maxNodeIndex, nodeIndex);
-			++numParsedValues;
-			if (numParsedValues == m_numNodes)
-				break;
+			m_maxNodeIndex = std::max(m_maxNodeIndex, nodeIndex);
+			++m_numParsedRows;
 		}
 	}
-
-	if (numParsedValues != m_numNodes)
-		throw FileFormatError(io::Str() << "Could only read cluster data for " << numParsedValues << " nodes, but the given network contains " <<
-				m_numNodes << " nodes.");
 
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
-	if (maxNodeIndex == zeroMinusOne)
+	if (m_maxNodeIndex == zeroMinusOne)
 		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
 
-	// Re-map cluster id:s to zero-based compact indices
-	std::map<unsigned int, unsigned int> clusterIdToNumber;
-	unsigned int clusterNumber = 1;
-	for (std::map<unsigned int, unsigned int>::iterator it(m_clusters.begin()); it != m_clusters.end(); ++it) {
-		unsigned int clusterId = it->second;
-		unsigned int& n = clusterIdToNumber[clusterId];
-		if (n == 0) {
-			n = clusterNumber; // A new cluster id
-			++clusterNumber;
-		}
-	}
-
-	// Update cluster map
-	for (std::map<unsigned int, unsigned int>::iterator it(m_clusters.begin()); it != m_clusters.end(); ++it) {
-		it->second = clusterIdToNumber[it->second] - 1; // To zero-based indexing
-	}
-
-	m_numModules = clusterNumber - 1;
-
-	Log() << "done! " << std::flush;
 }
 
 #ifdef NS_INFOMAP
