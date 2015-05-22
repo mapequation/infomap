@@ -274,10 +274,10 @@ void FlowNetwork::finalize(const Network& network, const Config& config, bool no
 				m_nodeFlow[link.target] += link.flow;
 				m_nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
 			}
-//			else {
-//				m_nodeFlow[link.source] += link.flow;
-//				m_nodeFlow[link.target] = 0.0; // Doesn't matter if done multiple times on each node.
-//			}
+			else if (config.parseAsUndirected()) {
+				m_nodeFlow[link.source] += link.flow;
+				m_nodeFlow[link.target] = 0.0; // Doesn't matter if done multiple times on each node.
+			}
 		}
 		normalizeNodeFlow = true;
 	}
