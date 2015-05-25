@@ -103,7 +103,7 @@ struct NodeData {
 
 
 struct ChildEdge {
-	ChildEdge(unsigned short int source, unsigned short int target, double flow)
+	ChildEdge(SerialTypes::edgeSize_t source, SerialTypes::edgeSize_t target, double flow)
 	: source(source), target(target), flow(flow) {}
 	SerialTypes::edgeSize_t source;
 	SerialTypes::edgeSize_t target;
@@ -126,7 +126,7 @@ public:
 	typedef std::deque<SNode*>				NodePtrList;
 	typedef std::set<ChildEdge, EdgeComp>	ChildEdgeList;
 
-	SNode(NodeData data, unsigned short depth, unsigned short parentIndex, unsigned int id) :
+	SNode(NodeData data, unsigned short depth, unsigned int parentIndex, unsigned int id) :
 		data(data),
 		depth(depth),
 		depthBelow(0),
@@ -199,7 +199,7 @@ public:
 	unsigned short depth;
 	unsigned short depthBelow;
 	SNode* parentNode;
-	unsigned short parentIndex; // The index of this node in its tree parent's child list.
+	unsigned int parentIndex; // The index of this node in its tree parent's child list.
 	bool isLeaf;
 	unsigned int originalLeafIndex; // The index in the original network file if a leaf node.
 	unsigned int id;
@@ -222,7 +222,7 @@ public:
 			size += sizeof(depthBelow) + sizeof(childPos_t);
 		// The edges are printed out after the last child
 		writeEdges = true;
-		if (writeEdges && parentNode != NULL && static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
+		if (writeEdges && parentNode != NULL && (parentIndex + 1 == parentNode->children.size()))
 		{
 			// numEdges + {edges}
 			size += sizeof(edgeSize_t) + parentNode->numSerializableChildEdges() * (2 * sizeof(edgeSize_t) + sizeof(flow_t));
@@ -248,7 +248,7 @@ public:
 
 		writeEdges = true;
 		// Write edges after the last child of the parent node
-		if (writeEdges && parentNode != NULL && static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
+		if (writeEdges && parentNode != NULL && (parentIndex + 1 == parentNode->children.size()))
 		{
 			const ChildEdgeList& edges = parentNode->childEdges;
 			edgeSize_t numEdges = numeric_cast<edgeSize_t>(edges.size());
@@ -321,7 +321,7 @@ public:
 
 	SNode* nextSibling()
 	{
-		if (parentNode == NULL || static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
+		if (parentNode == NULL || (parentIndex + 1 == parentNode->children.size()))
 			return NULL;
 		return parentNode->children[parentIndex + 1];
 	}
