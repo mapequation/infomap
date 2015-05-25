@@ -49,7 +49,7 @@ public:
 
 	virtual ~ClusterReader() {}
 
-	void readData(const string filename);
+	virtual void readData(const string filename);
 
 	const std::map<unsigned int, unsigned int>& clusters() const
 	{
@@ -66,7 +66,9 @@ public:
 		return m_numParsedRows;
 	}
 
-private:
+protected:
+	virtual void parseClusterLine(std::string line);
+
 	unsigned int m_indexOffset;
 	unsigned int m_maxNodeIndex;
 	unsigned int m_numParsedRows;

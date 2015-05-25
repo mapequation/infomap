@@ -36,7 +36,7 @@ namespace infomap
 #endif
 
 /**
- * The cluster data file should be a list of cluster indices, where the lowest is 1 and largest the number of nodes.
+ * Read cluster data
  *
  * Example file for a network with 6 nodes and two clusters:
  * *Vertices 6
@@ -46,6 +46,16 @@ namespace infomap
  * 1
  * 2
  * 2
+ *
+ * Example with node mapping
+ * # nodeId clusterId
+ * 1 1
+ * 2 1
+ * 4 1
+ * 3 2
+ * 5 2
+ * 6 2
+ *
  */
 void ClusterReader::readData(const string filename)
 {
@@ -81,19 +91,7 @@ void ClusterReader::readData(const string filename)
 		}
 		else
 		{
-			// Parse nodeIndex clusterIndex, or only clusterIndex
-			unsigned int nodeIndex, clusterIndex;
-			if (!(lineStream >> nodeIndex))
-				throw FileFormatError(io::Str() << "Couldn't parse integer from line '" << line << "'");
-			if (!(lineStream >> clusterIndex)) {
-				clusterIndex = nodeIndex; // Only one column => assume natural order for node indices
-				nodeIndex = m_numParsedRows + m_indexOffset;
-			}
-
-			nodeIndex -= m_indexOffset; // Get zero-based indexing
-			m_clusters[nodeIndex] = clusterIndex;
-			m_maxNodeIndex = std::max(m_maxNodeIndex, nodeIndex);
-			++m_numParsedRows;
+			parseClusterLine(line);
 		}
 	}
 
@@ -102,6 +100,24 @@ void ClusterReader::readData(const string filename)
 	if (m_maxNodeIndex == zeroMinusOne)
 		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
 
+}
+
+void ClusterReader::parseClusterLine(std::string line)
+{
+	std::istringstream lineStream(line);
+	// Parse nodeIndex clusterIndex, or only clusterIndex
+	unsigned int nodeIndex, clusterIndex;
+	if (!(lineStream >> nodeIndex))
+		throw FileFormatError(io::Str() << "Couldn't parse integer from line '" << line << "'");
+	if (!(lineStream >> clusterIndex)) {
+		clusterIndex = nodeIndex; // Only one column => assume natural order for node indices
+		nodeIndex = m_numParsedRows + m_indexOffset;
+	}
+
+	nodeIndex -= m_indexOffset; // Get zero-based indexing
+	m_clusters[nodeIndex] = clusterIndex;
+	m_maxNodeIndex = std::max(m_maxNodeIndex, nodeIndex);
+	++m_numParsedRows;
 }
 
 #ifdef NS_INFOMAP
