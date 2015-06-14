@@ -40,7 +40,7 @@ infomap.run(network, tree)
 print "Found %d top modules with codelength: %f" % (tree.numTopModules(), tree.codelength())
 
 communities = {}
-clusterIndexLevel = 1 # 1, 2 or 3 for top, second and lowest cluster level
+clusterIndexLevel = 1 # 1, 2, ... or -1 for top, second, ... or lowest cluster level
 print "Tree:"
 for node in tree.treeIter(clusterIndexLevel):
 	print node.clusterIndex(), "  " * node.depth(), node.data.flow, '"%s"' % node.data.name
