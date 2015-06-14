@@ -23,4 +23,7 @@ tree.writeClu("%s_level1.clu" % name, 1)
 print "Writing second level clusters to %s_level2.clu..." % name
 tree.writeClu("%s_level2.clu" % name, 2)
 
+print "Writing tree to %s.tree..." % name
+tree.writeHumanReadableTree("%s.tree" % name)
+
 print "Done!"
