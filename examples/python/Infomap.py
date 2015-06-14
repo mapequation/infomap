@@ -49,4 +49,6 @@ for node in tree.treeIter(clusterIndexLevel):
 
 print "Communities:", communities
 
+# tree.writeClu("test.clu")
+
 print "Done!"
