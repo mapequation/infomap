@@ -48,6 +48,8 @@ struct Config
 		networkFile(""),
 	 	inputFormat(""),
 	 	withMemory(false),
+		bipartite(false),
+		skipAdjustBipartiteFlow(false),
 		hardPartitions(false),
 	 	nonBacktracking(false),
 	 	parseWithoutIOStreams(false),
@@ -66,7 +68,7 @@ struct Config
 		teleportToNodes(false),
 		teleportationProbability(0.15),
 		selfTeleportationProbability(-1),
-		codeRate(1.0),
+		markovTime(1.0),
 		preferredNumberOfModules(0),
 		multiplexRelaxRate(-1),
 		seedToRandomNumberGenerator(123),
@@ -86,6 +88,7 @@ struct Config
 		lowMemoryPriority(0),
 		innerParallelization(false),
 		outDirectory("."),
+		outName(""),
 		originallyUndirected(false),
 		printTree(false),
 		printFlowTree(false),
@@ -102,6 +105,9 @@ struct Config
 		verboseNumberPrecision(6),
 		silent(false),
 		benchmark(false),
+		maxNodeIndexVisible(0),
+		showBiNodes(false),
+		minBipartiteNodeIndex(0),
 		version(INFOMAP_VERSION)
 	{
 		setOptimizationLevel(1);
@@ -113,6 +119,8 @@ struct Config
 	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
 	 	withMemory(other.withMemory),
+		bipartite(other.bipartite),
+		skipAdjustBipartiteFlow(other.skipAdjustBipartiteFlow),
 		hardPartitions(other.hardPartitions),
 	 	nonBacktracking(other.nonBacktracking),
 	 	parseWithoutIOStreams(other.parseWithoutIOStreams),
@@ -131,7 +139,7 @@ struct Config
 		teleportToNodes(other.teleportToNodes),
 		teleportationProbability(other.teleportationProbability),
 		selfTeleportationProbability(other.selfTeleportationProbability),
-		codeRate(other.codeRate),
+		markovTime(other.markovTime),
 		preferredNumberOfModules(other.preferredNumberOfModules),
 		multiplexRelaxRate(other.multiplexRelaxRate),
 		seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
@@ -151,6 +159,7 @@ struct Config
 		lowMemoryPriority(other.lowMemoryPriority),
 		innerParallelization(other.innerParallelization),
 		outDirectory(other.outDirectory),
+		outName(other.outName),
 		originallyUndirected(other.originallyUndirected),
 		printTree(other.printTree),
 		printFlowTree(other.printFlowTree),
@@ -167,6 +176,9 @@ struct Config
 		verboseNumberPrecision(other.verboseNumberPrecision),
 		silent(other.silent),
 		benchmark(other.benchmark),
+		maxNodeIndexVisible(other.maxNodeIndexVisible),
+		showBiNodes(other.showBiNodes),
+		minBipartiteNodeIndex(other.minBipartiteNodeIndex),
 		startDate(other.startDate),
 		version(other.version)
 	{
@@ -179,6 +191,8 @@ struct Config
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
 	 	withMemory = other.withMemory;
+	 	bipartite = other.bipartite;
+	 	skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;
 	 	hardPartitions = other.hardPartitions;
 	 	nonBacktracking = other.nonBacktracking;
 	 	parseWithoutIOStreams = other.parseWithoutIOStreams;
@@ -197,7 +211,7 @@ struct Config
 		teleportToNodes = other.teleportToNodes;
 		teleportationProbability = other.teleportationProbability;
 		selfTeleportationProbability = other.selfTeleportationProbability;
-	 	codeRate = other.codeRate;
+	 	markovTime = other.markovTime;
 	 	preferredNumberOfModules = other.preferredNumberOfModules;
 		multiplexRelaxRate = other.multiplexRelaxRate;
 		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
@@ -217,6 +231,7 @@ struct Config
 		lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
 		outDirectory = other.outDirectory;
+		outName = other.outName;
 		originallyUndirected = other.originallyUndirected;
 		printTree = other.printTree;
 		printFlowTree = other.printFlowTree;
@@ -232,6 +247,10 @@ struct Config
 		verbosity = other.verbosity;
 		verboseNumberPrecision = other.verboseNumberPrecision;
 		silent = other.silent;
+		benchmark = other.benchmark;
+	 	maxNodeIndexVisible = other.maxNodeIndexVisible;
+	 	showBiNodes = other.showBiNodes;
+	 	minBipartiteNodeIndex = other.minBipartiteNodeIndex;
 		startDate = other.startDate;
 		version = other.version;
 		return *this;
@@ -309,7 +328,10 @@ struct Config
 					directed = true;
 			}
 		}
-
+		if (isBipartite())
+		{
+			bipartite = true;
+		}
 	}
 
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
@@ -329,6 +351,8 @@ struct Config
 	bool isSimulatedMemoryNetwork() const { return (withMemory || nonBacktracking) && !isMemoryInput(); }
 
 	bool isMultiplexNetwork() const { return inputFormat == "multiplex" || additionalInput.size() > 0; }
+
+	bool isBipartite() const { return inputFormat == "bipartite"; }
 
 	bool haveOutput() const
 	{
@@ -354,6 +378,8 @@ struct Config
 	std::vector<std::string> additionalInput;
 	std::string inputFormat; // 'pajek', 'link-list', '3gram' or 'multiplex'
 	bool withMemory;
+	bool bipartite;
+	bool skipAdjustBipartiteFlow;
 	bool hardPartitions;
 	bool nonBacktracking;
 	bool parseWithoutIOStreams;
@@ -374,7 +400,7 @@ struct Config
 	bool teleportToNodes;
 	double teleportationProbability;
 	double selfTeleportationProbability;
-	double codeRate;
+	double markovTime;
 	unsigned int preferredNumberOfModules;
 	double multiplexRelaxRate;
 	unsigned long seedToRandomNumberGenerator;
@@ -398,6 +424,7 @@ struct Config
 
 	// Output
 	std::string outDirectory;
+	std::string outName;
 	bool originallyUndirected;
 	bool printTree;
 	bool printFlowTree;
@@ -414,6 +441,10 @@ struct Config
 	unsigned int verboseNumberPrecision;
 	bool silent;
 	bool benchmark;
+
+	unsigned int maxNodeIndexVisible;
+	bool showBiNodes;
+	unsigned int minBipartiteNodeIndex;
 
 	// Other
 	Date startDate;

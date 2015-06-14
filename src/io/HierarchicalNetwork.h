@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -103,7 +103,7 @@ struct NodeData {
 
 
 struct ChildEdge {
-	ChildEdge(unsigned short int source, unsigned short int target, double flow)
+	ChildEdge(SerialTypes::edgeSize_t source, SerialTypes::edgeSize_t target, double flow)
 	: source(source), target(target), flow(flow) {}
 	SerialTypes::edgeSize_t source;
 	SerialTypes::edgeSize_t target;
@@ -126,7 +126,7 @@ public:
 	typedef std::deque<SNode*>				NodePtrList;
 	typedef std::set<ChildEdge, EdgeComp>	ChildEdgeList;
 
-	SNode(NodeData data, unsigned short depth, unsigned short parentIndex, unsigned int id) :
+	SNode(NodeData data, unsigned short depth, unsigned int parentIndex, unsigned int id) :
 		data(data),
 		depth(depth),
 		depthBelow(0),
@@ -134,7 +134,8 @@ public:
 		parentIndex(parentIndex),
 		isLeaf(false),
 		originalLeafIndex(0),
-		id(id)
+		id(id),
+		skip(false)
 	{
 	}
 
@@ -147,7 +148,8 @@ public:
 		parentIndex(other.parentIndex),
 		isLeaf(false),
 		originalLeafIndex(0),
-		id(other.id)
+		id(other.id),
+		skip(other.skip)
 	{
 	}
 
@@ -197,12 +199,13 @@ public:
 	unsigned short depth;
 	unsigned short depthBelow;
 	SNode* parentNode;
-	unsigned short parentIndex; // The index of this node in its tree parent's child list.
+	unsigned int parentIndex; // The index of this node in its tree parent's child list.
 	bool isLeaf;
 	unsigned int originalLeafIndex; // The index in the original network file if a leaf node.
 	unsigned int id;
 	NodePtrList children;
 	ChildEdgeList childEdges;
+	bool skip; // Skip in output
 
 
 public:
@@ -219,7 +222,7 @@ public:
 			size += sizeof(depthBelow) + sizeof(childPos_t);
 		// The edges are printed out after the last child
 		writeEdges = true;
-		if (writeEdges && parentNode != NULL && static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
+		if (writeEdges && parentNode != NULL && (parentIndex + 1 == parentNode->children.size()))
 		{
 			// numEdges + {edges}
 			size += sizeof(edgeSize_t) + parentNode->numSerializableChildEdges() * (2 * sizeof(edgeSize_t) + sizeof(flow_t));
@@ -245,7 +248,7 @@ public:
 
 		writeEdges = true;
 		// Write edges after the last child of the parent node
-		if (writeEdges && parentNode != NULL && static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
+		if (writeEdges && parentNode != NULL && (parentIndex + 1 == parentNode->children.size()))
 		{
 			const ChildEdgeList& edges = parentNode->childEdges;
 			edgeSize_t numEdges = numeric_cast<edgeSize_t>(edges.size());
@@ -318,9 +321,19 @@ public:
 
 	SNode* nextSibling()
 	{
-		if (parentNode == NULL || static_cast<unsigned int>(parentIndex + 1) == parentNode->children.size())
+		if (parentNode == NULL || (parentIndex + 1 == parentNode->children.size()))
 			return NULL;
 		return parentNode->children[parentIndex + 1];
+	}
+
+	bool isLeafNode()
+	{
+		return children.empty();
+	}
+
+	bool isLeafModule()
+	{
+		return !children.empty() && children.front()->isLeaf;
 	}
 
 
@@ -352,14 +365,20 @@ class LeafIterator
 public:
 
 	LeafIterator()
-	:	m_current(NULL),
-	 	m_depth(0)
+	:	m_root(NULL),
+  	m_current(NULL),
+	 	m_depth(0),
+		m_clusterIndex(0),
+		m_clusterIndexLevel(-1)
 	{}
 
 	explicit
-	LeafIterator(SNode* nodePointer)
-	:	m_current(nodePointer),
-	 	m_depth(0)
+	LeafIterator(SNode* nodePointer, int clusterIndexLevel = -1)
+	:	m_root(nodePointer),
+	  m_current(nodePointer),
+	 	m_depth(0),
+		m_clusterIndex(0),
+		m_clusterIndexLevel(clusterIndexLevel)
 	{
 		if (m_current != 0)
 		{
@@ -372,14 +391,20 @@ public:
 	}
 
 	LeafIterator(const LeafIterator& other)
-	:	m_current(other.m_current),
-	 	m_depth(other.m_depth)
+	: m_root(other.m_root),
+    m_current(other.m_current),
+    m_depth(other.m_depth),
+    m_clusterIndex(other.m_clusterIndex),
+    m_clusterIndexLevel(other.m_clusterIndexLevel)
 	{}
 
 	LeafIterator & operator= (const LeafIterator& other)
 	{
+    m_root = other.m_root;
 		m_current = other.m_current;
 		m_depth = other.m_depth;
+    m_clusterIndex = other.m_clusterIndex;
+    m_clusterIndexLevel = other.m_clusterIndexLevel;
 		return *this;
 	}
 
@@ -413,8 +438,17 @@ public:
 		{
 			m_current = m_current->parentNode;
 			--m_depth;
-			if(m_current == NULL)
+      if(m_current == m_root || m_current == NULL) // NULL if no children in first place
+			{
+				m_current = NULL;
 				return *this;
+			}
+      if (m_clusterIndexLevel < 0) {
+         if (m_current->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
+           ++m_clusterIndex;
+      }
+      else if (static_cast<unsigned int>(m_clusterIndexLevel) == m_depth)
+        ++m_clusterIndex;
 		}
 
 		m_current = m_current->nextSibling();
@@ -449,6 +483,11 @@ public:
 		return m_depth;
 	}
 
+	unsigned int clusterIndex() const
+	{
+		return m_clusterIndex;
+	}
+
 	bool operator==(const LeafIterator& rhs) const
 	{
 		return m_current == rhs.m_current;
@@ -460,8 +499,276 @@ public:
 	}
 
 private:
+	SNode* m_root;
 	SNode* m_current;
 	unsigned int m_depth;
+  unsigned int m_clusterIndex;
+  int m_clusterIndexLevel;
+};
+
+class TreeIterator
+{
+public:
+
+	TreeIterator()
+	:	m_root(NULL),
+		m_current(NULL),
+	 	m_depth(0),
+		m_clusterIndex(0),
+		m_clusterIndexLevel(-1)
+	{}
+
+	explicit
+	TreeIterator(SNode* nodePointer, int clusterIndexLevel = -1)
+	:	m_root(nodePointer),
+		m_current(nodePointer),
+	 	m_depth(0),
+		m_clusterIndex(0),
+		m_clusterIndexLevel(clusterIndexLevel)
+	{
+		if (m_current->skip)
+			m_current = NULL;
+	}
+
+	TreeIterator(const TreeIterator& other)
+	:	m_root(other.m_root),
+		m_current(other.m_current),
+	 	m_depth(other.m_depth),
+		m_path(other.m_path),
+		m_clusterIndex(other.m_clusterIndex),
+		m_clusterIndexLevel(other.m_clusterIndexLevel)
+	{}
+
+	TreeIterator & operator= (const TreeIterator& other)
+	{
+		m_root = other.m_root;
+		m_current = other.m_current;
+		m_depth = other.m_depth;
+		m_path = other.m_path;
+		m_clusterIndex = other.m_clusterIndex;
+		m_clusterIndexLevel = other.m_clusterIndexLevel;
+		return *this;
+	}
+
+	SNode* base() const
+	{
+		return m_current;
+	}
+
+	bool isEnd()
+	{
+		return m_current == NULL;
+	}
+
+	// Forward iterator requirements
+	SNode&
+	operator*() const
+	{
+		return *m_current;
+	}
+
+	SNode*
+	operator->() const
+	{
+		return m_current;
+	}
+
+	TreeIterator&
+	operator++()
+	{
+		if(m_current->firstChild() != NULL)
+		{
+			m_current = m_current->firstChild();
+			++m_depth;
+			m_path.push_back(0);
+			if (m_current->skip) {
+				goto tryNext;
+			}
+		}
+		else
+		{
+			// Presupposes that the next pointer can't reach out from the current parent.
+			tryNext:
+			while(m_current->nextSibling() == 0)
+			{
+				m_current = m_current->parentNode;
+				--m_depth;
+				m_path.pop_back();
+				if(m_current == m_root || m_current == 0) // 0 if no children in first place
+				{
+					m_current = 0;
+					return *this;
+				}
+				if (m_clusterIndexLevel < 0) {
+					 if (m_current->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
+						 ++m_clusterIndex;
+				}
+				else if (static_cast<unsigned int>(m_clusterIndexLevel) == m_depth)
+					++m_clusterIndex;
+			}
+			m_current = m_current->nextSibling();
+			if (m_current->skip) {
+				goto tryNext;
+			}
+			++m_path.back();
+		}
+		return *this;
+	}
+
+	TreeIterator
+	operator++(int)
+	{
+		TreeIterator copy(*this);
+		++(*this);
+		return copy;
+	}
+
+	TreeIterator& stepForward()
+	{
+		++(*this);
+		return *this;
+	}
+
+	unsigned int depth() const
+	{
+		return m_depth;
+	}
+
+	unsigned int clusterIndex() const
+	{
+		return m_clusterIndex;
+	}
+
+	const std::deque<unsigned int>& path() const
+	{
+		return m_path;
+	}
+
+	bool operator==(const TreeIterator& rhs) const
+	{
+		return m_current == rhs.m_current;
+	}
+
+	bool operator!=(const TreeIterator& rhs) const
+	{
+		return !(m_current == rhs.m_current);
+	}
+
+private:
+	SNode* m_root;
+	SNode* m_current;
+	unsigned int m_depth;
+
+	std::deque<unsigned int> m_path; // The child index path to current node
+	unsigned int m_clusterIndex;
+	int m_clusterIndexLevel;
+};
+
+class ChildIterator
+{
+public:
+
+	ChildIterator()
+	:	m_root(NULL),
+		m_current(NULL),
+		m_childIndex(0)
+	{}
+
+	explicit
+	ChildIterator(SNode* nodePointer)
+	:	m_root(nodePointer),
+		m_current(NULL),
+		m_childIndex(0)
+	{
+		if (m_root != NULL)
+		{
+			if (!m_root->skip && !m_root->children.empty())
+				m_current = m_root->firstChild();
+		}
+	}
+
+	ChildIterator(const ChildIterator& other)
+	:	m_root(other.m_root),
+		m_current(other.m_current),
+		m_childIndex(other.m_childIndex)
+	{}
+
+	ChildIterator & operator= (const ChildIterator& other)
+	{
+		m_root = other.m_root;
+		m_current = other.m_current;
+		m_childIndex = other.m_childIndex;
+		return *this;
+	}
+
+	SNode* base() const
+	{
+		return m_current;
+	}
+
+	bool isEnd()
+	{
+		return m_current == NULL;
+	}
+
+	// Forward iterator requirements
+	SNode&
+	operator*() const
+	{
+		return *m_current;
+	}
+
+	SNode*
+	operator->() const
+	{
+		return m_current;
+	}
+
+	ChildIterator&
+	operator++()
+	{
+		do {
+			m_current = m_current->nextSibling();
+		} while (m_current != NULL && m_current->skip);
+
+		if (m_current != NULL)
+			++m_childIndex;
+		return *this;
+	}
+
+	ChildIterator
+	operator++(int)
+	{
+		ChildIterator copy(*this);
+		++(*this);
+		return copy;
+	}
+
+	ChildIterator& stepForward()
+	{
+		++(*this);
+		return *this;
+	}
+
+	unsigned int childIndex() const
+	{
+		return m_childIndex;
+	}
+
+	bool operator==(const ChildIterator& rhs) const
+	{
+		return m_current == rhs.m_current;
+	}
+
+	bool operator!=(const ChildIterator& rhs) const
+	{
+		return !(m_current == rhs.m_current);
+	}
+
+private:
+	SNode* m_root;
+	SNode* m_current;
+	unsigned int m_childIndex;
 };
 
 
@@ -491,11 +798,15 @@ public:
 
 	void clear();
 
+	void clear(const Config& conf);
+
 	SNode& getRootNode() { return m_rootNode; }
 
 	unsigned int numTopModules() { return m_rootNode.childDegree(); }
 
-	LeafIterator leafIter() { return LeafIterator(&m_rootNode); }
+	LeafIterator leafIter(int clusterIndexLevel = -1) { return LeafIterator(&m_rootNode, clusterIndexLevel); }
+
+	TreeIterator treeIter(int clusterIndexLevel = -1) { return TreeIterator(&m_rootNode, clusterIndexLevel); }
 
 	SNode& addNode(SNode& parent, double flow, double exitFlow);
 
@@ -561,6 +872,13 @@ public:
 
 	void writeHumanReadableTree(const std::string& fileName, bool writeHierarchicalNetworkEdges = false);
 
+	/**
+	 * Write a chosen cluster level to file
+	 * Default cluster level 1 corresponds to top modules
+	 * Set to -1 for leaf modules.
+	 */
+	void writeClu(const std::string& fileName, int clusterIndexLevel = 1);
+
 	void readHumanReadableTree(const std::string& fileName);
 
 	void writeMap(const std::string& fileName);
@@ -573,6 +891,8 @@ public:
 	double onelevelCodelength() { return m_oneLevelCodelength; }
 
 private:
+
+	void markNodesToSkip();
 
 	void writeHumanReadableTreeRecursiveHelper(std::ostream& out, SNode& node, std::string prefix = "");
 	void writeHumanReadableTreeFlowLinksRecursiveHelper(std::ostream& out, SNode& node, std::string prefix = "");

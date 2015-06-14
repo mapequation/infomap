@@ -51,6 +51,7 @@ public:
 
 protected:
 	void readClu(std::string filename);
+	void readBipartiteClu(std::string filename);
 	void readHumanReadableTree(std::string filename);
 
 

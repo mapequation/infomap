@@ -35,6 +35,7 @@
 
 #include "../io/convert.h"
 #include "../io/ClusterReader.h"
+#include "../io/BipartiteClusterReader.h"
 #include "../io/SafeFile.h"
 #include "../utils/FileURI.h"
 #include "Node.h"
@@ -71,30 +72,177 @@ bool NetworkAdapter::readExternalHierarchy(std::string filename)
 
 void NetworkAdapter::readClu(std::string filename)
 {
-	ClusterReader cluReader(m_numNodes);
-
-	cluReader.readData(filename);
-	const std::vector<unsigned int>& clusters = cluReader.clusters();
-	unsigned int numModules = cluReader.numModules();
-
-	// Create and store the module nodes in a random access array, and add to root
-	std::vector<NodeBase*> modules(numModules);
-	for (unsigned int i = 0; i < numModules; ++i)
-	{
-		NodeBase* module = m_treeData.nodeFactory().createNode("", 0.0, 0.0);
-		modules[i] = module;
+	if (m_config.isBipartite()) {
+		readBipartiteClu(filename);
+		return;
 	}
 
-	// Add all leaf nodes to the modules defined by the parsed cluster indices
-	for (unsigned int i = 0; i < m_numNodes; ++i)
-		modules[clusters[i]]->addChild(&m_treeData.getLeafNode(i));
+	Log() << "Parsing '" << filename << "'... " << std::flush;
+	ClusterReader cluReader(m_config.zeroBasedNodeNumbers);
+	cluReader.readData(filename);
+	const std::map<unsigned int, unsigned int>& clusters = cluReader.clusters();
+
+	if (cluReader.maxNodeIndex() >= m_numNodes)
+		throw InputDomainError(io::Str() << "Max node index in cluster file is " << cluReader.maxNodeIndex() <<
+				" but there are only " << m_numNodes << " in the network.");
+
+	Log() << "done!";
+
+	if (cluReader.numParsedRows() > clusters.size())
+		Log() << "\n -> Warning: " << (cluReader.numParsedRows() - clusters.size()) << " duplicate node indices!";
+
+
+	// Re-map cluster id:s to zero-based compact indices
+	std::map<unsigned int, unsigned int> clusterIdToNumber;
+	unsigned int clusterNumber = 1; // Start from 1 and use default int() (0) as indicating not assigned
+	for (std::map<unsigned int, unsigned int>::const_iterator it(clusters.begin()); it != clusters.end(); ++it) {
+		unsigned int clusterId = it->second;
+		unsigned int& n = clusterIdToNumber[clusterId];
+		if (n == 0) {
+			n = clusterNumber; // A new cluster id
+			++clusterNumber;
+		}
+	}
+
+	Log() << "\n -> Parsed " << clusterNumber - 1 << " unique clusters for " << clusters.size() << " nodes.";
+
+	// Store the parsed cluster indices in a vector
+	std::vector<unsigned int> modules(m_numNodes);
+	std::vector<unsigned int> selectedNodes(m_numNodes, 0);
+	for (std::map<unsigned int, unsigned int>::const_iterator it(clusters.begin()); it != clusters.end(); ++it) {
+		unsigned int nodeIndex = it->first;
+		unsigned int moduleIndex = clusterIdToNumber[it->second] - 1; // To zero-based indexing
+		++selectedNodes[nodeIndex];
+		modules[nodeIndex] = moduleIndex;
+	}
+
+	// Put non-selected nodes (if any) in its own module
+	unsigned int numNonSelectedNodes = 0;
+	for (unsigned int i = 0; i < m_numNodes; ++i) {
+		if (selectedNodes[i] == 0) {
+			modules[i] = clusterNumber - 1;
+			++clusterNumber;
+			++numNonSelectedNodes;
+		}
+	}
+
+	if (numNonSelectedNodes > 0)
+		Log() << "\n -> Put the rest " << numNonSelectedNodes << " nodes in their own modules";
+
+	unsigned int numModules = clusterNumber - 1;
+
+	// Create and store the module nodes in a random access array, and add to root
+	std::vector<NodeBase*> moduleNodes(numModules, 0);
+	for (unsigned int i = 0; i < m_numNodes; ++i) {
+		unsigned int clusterIndex = modules[i];
+		if (moduleNodes[clusterIndex] == 0)
+			moduleNodes[clusterIndex] = m_treeData.nodeFactory().createNode("", 0.0, 0.0);
+		// Add all leaf nodes to the modules defined by the parsed cluster indices
+		moduleNodes[clusterIndex]->addChild(&m_treeData.getLeafNode(i));
+	}
 
 	// Release leaf nodes from root to add the modules inbetween
 	m_treeData.root()->releaseChildren();
 	for (unsigned int i = 0; i < numModules; ++i)
-		m_treeData.root()->addChild(modules[i]);
+		m_treeData.root()->addChild(moduleNodes[i]);
 
-	Log() << "Found " << numModules << " modules." << std::endl;
+	Log() << "\n -> Generated " << numModules << " modules." << std::endl;
+}
+
+void NetworkAdapter::readBipartiteClu(std::string filename)
+{
+	Log() << "Parsing '" << filename << "'... " << std::flush;
+	BipartiteClusterReader cluReader(m_config.zeroBasedNodeNumbers);
+	cluReader.readData(filename);
+	const std::map<unsigned int, unsigned int>& nClusters = cluReader.clusters();
+	const std::map<unsigned int, unsigned int>& fClusters = cluReader.featureClusters();
+
+	unsigned int numOrdinaryNodes = m_config.minBipartiteNodeIndex;
+	unsigned int numFeatureNodes = m_numNodes - numOrdinaryNodes;
+	if (cluReader.maxNodeIndex() >= m_config.minBipartiteNodeIndex)
+		throw InputDomainError(io::Str() << "Max node index in cluster file is " << cluReader.maxNodeIndex() <<
+				" but there are only " << numOrdinaryNodes << " ordinary nodes in the network.");
+
+	if (cluReader.maxFeatureNodeIndex() >= numFeatureNodes)
+		throw InputDomainError(io::Str() << "Max feature node index in cluster file is " << cluReader.maxFeatureNodeIndex() <<
+				" but there are only " << numFeatureNodes << " feature nodes in the network.");
+
+	Log() << "done!";
+
+	unsigned int numMappedNodes = nClusters.size() + fClusters.size();
+	if (cluReader.numParsedRows() > numMappedNodes)
+		Log() << "\n -> Warning: " << (cluReader.numParsedRows() - numMappedNodes) << " duplicate node indices!";
+
+
+	// Re-map cluster id:s to zero-based compact indices
+	std::map<unsigned int, unsigned int> clusterIdToNumber;
+	unsigned int clusterNumber = 1; // Start from 1 and use default int() (0) as indicating not assigned
+	for (std::map<unsigned int, unsigned int>::const_iterator it(nClusters.begin()); it != nClusters.end(); ++it) {
+		unsigned int clusterId = it->second;
+		unsigned int& n = clusterIdToNumber[clusterId];
+		if (n == 0) {
+			n = clusterNumber; // A new cluster id
+			++clusterNumber;
+		}
+	}
+	for (std::map<unsigned int, unsigned int>::const_iterator it(fClusters.begin()); it != fClusters.end(); ++it) {
+		unsigned int clusterId = it->second;
+		unsigned int& n = clusterIdToNumber[clusterId];
+		if (n == 0) {
+			n = clusterNumber; // A new cluster id
+			++clusterNumber;
+		}
+	}
+
+	Log() << "\n -> Parsed " << clusterNumber - 1 << " unique clusters for " << numMappedNodes << " nodes.";
+
+	// Store the parsed cluster indices in a vector
+	std::vector<unsigned int> modules(m_numNodes);
+	std::vector<unsigned int> selectedNodes(m_numNodes, 0);
+	for (std::map<unsigned int, unsigned int>::const_iterator it(nClusters.begin()); it != nClusters.end(); ++it) {
+		unsigned int nodeIndex = it->first;
+		unsigned int moduleIndex = clusterIdToNumber[it->second] - 1; // To zero-based indexing
+		++selectedNodes[nodeIndex];
+		modules[nodeIndex] = moduleIndex;
+	}
+	for (std::map<unsigned int, unsigned int>::const_iterator it(fClusters.begin()); it != fClusters.end(); ++it) {
+		unsigned int nodeIndex = it->first + m_config.minBipartiteNodeIndex; // Offset for feature nodes
+		unsigned int moduleIndex = clusterIdToNumber[it->second] - 1; // To zero-based indexing
+		++selectedNodes[nodeIndex];
+		modules[nodeIndex] = moduleIndex;
+	}
+
+	// Put non-selected nodes (if any) in its own module
+	unsigned int numNonSelectedNodes = 0;
+	for (unsigned int i = 0; i < m_numNodes; ++i) {
+		if (selectedNodes[i] == 0) {
+			modules[i] = clusterNumber - 1;
+			++clusterNumber;
+			++numNonSelectedNodes;
+		}
+	}
+
+	if (numNonSelectedNodes > 0)
+		Log() << "\n -> Put the rest " << numNonSelectedNodes << " nodes in their own modules";
+
+	unsigned int numModules = clusterNumber - 1;
+
+	// Create and store the module nodes in a random access array, and add to root
+	std::vector<NodeBase*> moduleNodes(numModules, 0);
+	for (unsigned int i = 0; i < m_numNodes; ++i) {
+		unsigned int clusterIndex = modules[i];
+		if (moduleNodes[clusterIndex] == 0)
+			moduleNodes[clusterIndex] = m_treeData.nodeFactory().createNode("", 0.0, 0.0);
+		// Add all leaf nodes to the modules defined by the parsed cluster indices
+		moduleNodes[clusterIndex]->addChild(&m_treeData.getLeafNode(i));
+	}
+
+	// Release leaf nodes from root to add the modules inbetween
+	m_treeData.root()->releaseChildren();
+	for (unsigned int i = 0; i < numModules; ++i)
+		m_treeData.root()->addChild(moduleNodes[i]);
+
+	Log() << "\n -> Generated " << numModules << " modules." << std::endl;
 }
 
 void NetworkAdapter::readHumanReadableTree(std::string filename)
@@ -107,7 +255,8 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	std::auto_ptr<NodeBase> root(m_treeData.nodeFactory().createNode("tmpRoot", 1.0, 0.0));
 	std::vector<double> flowValues(m_numNodes);
 	bool gotOriginalIndex = true;
-	std::string header;
+	unsigned int indexOffset = m_config.zeroBasedNodeNumbers ? 0 : 1;
+	std::string header = "";
 	unsigned int lineNr = 0;
 	std::istringstream ss;
 	unsigned int nodeCount = 0;
@@ -116,12 +265,13 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	while(!std::getline(input, line).fail())
 	{
 		++lineNr;
-		if (line.length() == 0 || line[0] == '#')
+		if (line.length() == 0)
 			continue;
 		if (line[0] == '#')
 		{
-			if (lineNr == 1)
+			if (lineNr == 1) {
 				header = line; // e.g. '# Codelength = 8.45977 bits.'
+			}
 			continue;
 		}
 		if (nodeCount > m_numNodes)
@@ -143,6 +293,8 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 			throw BadConversionError(io::Str() << "Can't parse node name from line " << lineNr << " ('" << line << "').");
 		unsigned int originalIndex = 0;
 		gotOriginalIndex = !!(ss >> originalIndex);
+
+		originalIndex -= indexOffset;
 
 		// Analyze the path and build up the tree
 		ss.clear(); // Clear the eofbit from last extraction!
@@ -203,6 +355,8 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	}
 
 	Log() << "done! Found " << maxDepth << " levels." << std::endl;
+	if (!header.empty())
+		Log(1) << " -> Parsed header: '" << header << "'" << std::endl;
 }
 
 #ifdef NS_INFOMAP

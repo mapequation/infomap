@@ -67,8 +67,24 @@ void Network::readInputData(std::string filename)
 		parsePajekNetwork(filename);
 	else if (format == "link-list")
 		parseLinkList(filename);
+	else if (format == "bipartite")
+		parseBipartiteNetwork(filename);
 	else
-		throw UnknownFileTypeError("No known input format specified.");
+		parseGeneralNetwork(filename);
+//		throw UnknownFileTypeError("No known input format specified.");
+}
+
+unsigned int Network::addNodes(const std::vector<std::string>& names)
+{
+	m_numNodes = names.size();
+	if (m_config.nodeLimit > 0 && m_config.nodeLimit < m_numNodes)
+		m_numNodes = m_config.nodeLimit;
+	
+	m_nodeNames.resize(m_numNodes);
+	m_nodeWeights.assign(m_numNodes, 1.0);
+	for (unsigned int i = 0; i < m_numNodes; ++i)
+		m_nodeNames[i] = names[i];
+	return m_numNodes;
 }
 
 void Network::parsePajekNetwork(std::string filename)
@@ -295,6 +311,76 @@ void Network::parseLinkListWithoutIOStreams(std::string filename)
 	finalizeAndCheckNetwork();
 }
 
+void Network::parseGeneralNetwork(std::string filename)
+{
+	Log() << "Parsing network from file '" <<
+			filename << "'... " << std::flush;
+
+	SafeInFile input(filename.c_str());
+
+	std::string line = parseLinks(input);
+
+	while (line.length() > 0 && line[0] == '*')
+	{
+		std::string header = io::firstWord(line);
+		if (header == "*Vertices" || header == "*vertices") {
+			line = parseVertices(input, line);
+		}
+		else if (header == "*Edges" || header == "*edges") {
+			if (!m_config.parseAsUndirected())
+				Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
+			line = parseLinks(input);
+		}
+		else if (header == "*Arcs" || header == "*arcs") {
+			if (m_config.parseAsUndirected())
+				Log() << "\n --> Notice: Links marked as directed but parsed as undirected.\n";
+			line = parseLinks(input);
+		}
+		else
+			throw FileFormatError(io::Str() << "Unrecognized header in network file: '" << line << "'.");
+	}
+
+	Log() << "done!" << std::endl;
+
+	finalizeAndCheckNetwork();
+}
+
+void Network::parseBipartiteNetwork(std::string filename)
+{
+	Log() << "Parsing bipartite network from file '" <<
+			filename << "'... " << std::flush;
+
+	SafeInFile input(filename.c_str());
+
+	std::string line = parseBipartiteLinks(input);
+
+	while (line.length() > 0 && line[0] == '*')
+	{
+		std::string header = io::firstWord(line);
+		if (header == "*Vertices" || header == "*vertices") {
+			line = parseVertices(input, line);
+		}
+		else if (header == "*Edges" || header == "*edges") {
+			if (!m_config.parseAsUndirected())
+				Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
+			line = parseBipartiteLinks(input);
+		}
+		else if (header == "*Arcs" || header == "*arcs") {
+			if (m_config.parseAsUndirected())
+				Log() << "\n --> Notice: Links marked as directed but parsed as undirected.\n";
+			line = parseBipartiteLinks(input);
+		}
+		else
+			throw FileFormatError(io::Str() << "Unrecognized header in bipartite network file: '" << line << "'.");
+	}
+
+	Log() << "done!" << std::endl;
+
+	m_config.bipartite = true;
+
+	finalizeAndCheckNetwork();
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////
 //
 //  HELPER METHODS
@@ -402,6 +488,46 @@ std::string Network::parseVertices(std::ifstream& file, std::string header)
 	return line;
 }
 
+std::string Network::parseLinks(std::ifstream& file)
+{
+	std::string line;
+	while(!std::getline(file, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+
+		if (line[0] == '*')
+			break;
+
+		unsigned int n1, n2;
+		double weight;
+		parseLink(line, n1, n2, weight);
+
+		addLink(n1, n2, weight);
+	}
+	return line;
+}
+
+std::string Network::parseBipartiteLinks(std::ifstream& file)
+{
+	std::string line;
+	while(!std::getline(file, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+
+		if (line[0] == '*')
+			break;
+
+		unsigned int featureNode, ordinaryNode;
+		double weight;
+		bool swappedOrder = parseBipartiteLink(line, featureNode, ordinaryNode, weight);
+
+		addBipartiteLink(featureNode, ordinaryNode, swappedOrder, weight);
+	}
+	return line;
+}
+
 void Network::parseLink(const std::string& line, unsigned int& n1, unsigned int& n2, double& weight)
 {
 	m_extractor.clear();
@@ -433,6 +559,29 @@ void Network::parseLink(char line[], unsigned int& n1, unsigned int& n2, double&
 	n2 -= m_indexOffset;
 }
 
+bool Network::parseBipartiteLink(const std::string& line, unsigned int& featureNode, unsigned int& node, double& weight)
+{
+	bool swappedOrder = false;
+	m_extractor.clear();
+	m_extractor.str(line);
+	std::string fn, n;
+	if (!(m_extractor >> fn >> n))
+		throw FileFormatError(io::Str() << "Can't parse bipartite link data from line '" << line << "'");
+	(m_extractor >> weight) || (weight = 1.0);
+	if (fn[0] != 'f') {
+		std::swap(fn, n);
+		swappedOrder = true;
+	}
+	if (fn[0] != 'f' || fn.length() == 1 || !(std::istringstream( fn.substr(1) ) >> featureNode))
+		throw FileFormatError(io::Str() << "Can't parse bipartite feature node (a numerical id prefixed by 'f') from line '" << line << "'");
+	if (n[0] != 'n' || n.length() == 1 || !(std::istringstream( n.substr(1) ) >> node))
+		throw FileFormatError(io::Str() << "Can't parse bipartite ordinary node (a numerical id prefixed by 'n') from line '" << line << "'");
+
+	featureNode -= m_indexOffset;
+	node -= m_indexOffset;
+	return swappedOrder;
+}
+
 
 
 bool Network::addLink(unsigned int n1, unsigned int n2, double weight)
@@ -457,6 +606,21 @@ bool Network::addLink(unsigned int n1, unsigned int n2, double weight)
 	m_minNodeIndex = std::min(m_minNodeIndex, std::min(n1, n2));
 
 	insertLink(n1, n2, weight);
+
+	return true;
+}
+
+bool Network::addBipartiteLink(unsigned int featureNode, unsigned int node, bool swapOrder, double weight)
+{
+	++m_numLinksFound;
+
+	if (m_config.nodeLimit > 0 && node >= m_config.nodeLimit)
+		return false;
+
+	m_maxNodeIndex = std::max(m_maxNodeIndex, node);
+	m_minNodeIndex = std::min(m_minNodeIndex, node);
+
+	m_bipartiteLinks[BipartiteLink(featureNode, node, swapOrder)] += weight;
 
 	return true;
 }
@@ -490,9 +654,6 @@ bool Network::insertLink(unsigned int n1, unsigned int n2, double weight)
 
 void Network::finalizeAndCheckNetwork(bool printSummary, unsigned int desiredNumberOfNodes)
 {
-	if (m_links.empty())
-		throw InputDomainError("No links added!");
-
 	// If no nodes defined
 	if (m_numNodes == 0)
 		m_numNodes = m_numNodesFound = m_maxNodeIndex + 1;
@@ -512,6 +673,28 @@ void Network::finalizeAndCheckNetwork(bool printSummary, unsigned int desiredNum
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
 		Log() << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.) ";
+
+	if (!m_bipartiteLinks.empty())
+	{
+		if (m_numLinks > 0)
+			throw InputDomainError("Can't add bipartite links together with ordinary links.");
+		for (std::map<BipartiteLink, Weight>::iterator it(m_bipartiteLinks.begin()); it != m_bipartiteLinks.end(); ++it)
+		{
+			const BipartiteLink& link = it->first;
+			// Offset feature nodes by the number of ordinary nodes to make them unique
+			unsigned int featureNodeIndex = link.featureNode + m_numNodes;
+			m_maxNodeIndex = std::max(m_maxNodeIndex, featureNodeIndex);
+			if (link.swapOrder)
+				insertLink(link.node, featureNodeIndex, it->second.weight);
+			else
+				insertLink(featureNodeIndex, link.node, it->second.weight);
+		}
+		m_numBipartiteNodes = m_maxNodeIndex + 1 - m_numNodes;
+		m_numNodes += m_numBipartiteNodes;
+	}
+
+	if (m_links.empty())
+		throw InputDomainError("No links added!");
 
 	if (m_addSelfLinks)
 		zoom();
@@ -651,6 +834,11 @@ void Network::printParsingResult(bool onlySummary)
 	if (dataModified) {
 		Log() << "\n ==> " << getParsingResultSummary();
 	}
+
+	if (isBipartite())
+		Log() << "\nBipartite => " << m_numNodes - m_numBipartiteNodes << " ordinary nodes and " <<
+			m_numBipartiteNodes << " feature nodes.";
+
 	Log() << std::endl;
 }
 

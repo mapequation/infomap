@@ -88,7 +88,6 @@ void InfomapBase::run()
 	{
 		Log() << "\nAttempt " << (iTrial+1) << "/" << m_config.numTrials <<	" at " << Date();
 		Log() << std::endl;
-		m_iterationCount = 0;
 
 		// First clear existing modular structure
 		while ((*m_treeData.begin_leaf())->parent != root())
@@ -209,7 +208,6 @@ void InfomapBase::run(Network& input, HierarchicalNetwork& output)
 	{
 		Log() << "\nAttempt " << (iTrial+1) << "/" << m_config.numTrials <<	" at " << Date();
 		Log() << std::endl;
-		m_iterationCount = 0;
 
 		// First clear existing modular structure
 		while ((*m_treeData.begin_leaf())->parent != root())
@@ -288,6 +286,7 @@ void InfomapBase::calcOneLevelCodelength()
 
 void InfomapBase::runPartition()
 {
+	m_tuneIterationIndex = 0;
 	if (m_config.twoLevel)
 	{
 		partition();
@@ -332,7 +331,7 @@ void InfomapBase::runPartition()
 			bestIntermediateStatistics.clear();
 			bestIntermediateStatistics.str("");
 			printPerLevelCodelength(bestIntermediateStatistics);
-			printNetworkData(io::Str() << FileURI(m_config.networkFile).getName() << "_fast");
+			printNetworkData(io::Str() << m_config.outName << "_fast");
 
 		}
 		if (m_config.fastHierarchicalSolution == 1)
@@ -518,6 +517,7 @@ void InfomapBase::tryIndexingIteratively()
 	// Add index codebooks as long as the code gets shorter (and collapse each iteration)
 	bool tryIndexing = true;
 	bool replaceExistingModules = m_config.fastHierarchicalSolution == 0;
+	replaceExistingModules = true; // Uses leaf network below
 	while(tryIndexing)
 	{
 		if (verbose)
@@ -565,6 +565,7 @@ void InfomapBase::tryIndexingIteratively()
 
 		// Replace current module structure with the super structure
 		setActiveNetworkFromLeafs();
+//		setActiveNetworkFromChildrenOfRoot();
 		initModuleOptimization();
 
 		unsigned int i = 0;
@@ -594,6 +595,11 @@ void InfomapBase::tryIndexingIteratively()
 		moveNodesToPredefinedModules();
 		// Replace the old modular structure with the super structure generated above
 		consolidateModules(replaceExistingModules);
+
+		double superIndexCodelength = superInfomap->indexCodelength;
+		if (std::abs(superIndexCodelength - indexCodelength) > 1e-10)
+			std::cout << "*** (" << superIndexCodelength << " / " << indexCodelength << ") ";
+
 
 		++numIndexingCompleted;
 		tryIndexing = m_numNonTrivialTopModules > 1 && numTopModules() != numLeafNodes();
@@ -1065,17 +1071,42 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 
 void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fast)
 {
-	++m_iterationCount;
 	m_aggregationLevel = 0;
+	unsigned int numLevelsConsolidated = 0;
+
 	bool verbose = (m_subLevel == 0 && m_config.verbosity != 0) ||
 			(isSuperLevelOnTopLevel() && m_config.verbosity >= 3);
 	// Merge and collapse repeatedly until no code improvement or only one big cluster left
+
+	if (m_config.fastFirstIteration && m_tuneIterationIndex == 0 && m_subLevel == 0) {
+		if (verbose) {
+			Log() << "Iteration 0, moving " << m_activeNetwork.size() << "*" << std::flush;
+		}
+		unsigned int numFastLoops = optimizeModulesCrude();
+
+		consolidateModules(!useHardPartitions());
+		++numLevelsConsolidated;
+
+		codelength = calcCodelengthOnAllNodesInTree();
+		indexCodelength = root()->codelength;
+		moduleCodelength = codelength - indexCodelength;
+
+		if (verbose)
+			Log() << numFastLoops << " nodes*loops to codelength " << codelength <<
+				" (" << indexCodelength << " + " << moduleCodelength << ")" <<
+				" in " << numTopModules() << " modules. (" << m_numNonTrivialTopModules <<
+				" non-trivial modules)" << std::endl;
+
+		setActiveNetworkFromChildrenOfRoot();
+		initModuleOptimization();
+	}
+
 	if (verbose) {
-		Log() << "Iteration " << m_iterationCount << ", moving " << m_activeNetwork.size() << "*" << std::flush;
+		Log() << "Iteration " << (m_tuneIterationIndex + 1) << ", moving " << m_activeNetwork.size() << "*" << std::flush;
 	}
 
 	// Core loop, merging modules
-	unsigned int numOptimizationLoops = m_config.fastFirstIteration? optimizeModulesCrude() : optimizeModules();
+	unsigned int numOptimizationLoops = optimizeModules();
 
 	if (verbose)
 		Log() << numOptimizationLoops << ", " << std::flush;
@@ -1084,7 +1115,7 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 	bool replaceExistingModules = !useHardPartitions();
 	consolidateModules(replaceExistingModules);
 
-	unsigned int numLevelsConsolidated = 1;
+	++numLevelsConsolidated;
 	unsigned int levelAggregationLimit = getLevelAggregationLimit();
 
 	// Reapply core algorithm on modular network, replacing modules with super modules
@@ -1133,7 +1164,7 @@ void InfomapBase::mergeAndConsolidateRepeatedly(bool forceConsolidation, bool fa
 	}
 	if (m_subLevel == 0 && m_config.benchmark)
 	{
-		Logger::benchmark(io::Str() << "iter" << m_iterationCount, codelength, numTopModules(),
+		Logger::benchmark(io::Str() << "iter" << m_tuneIterationIndex, codelength, numTopModules(),
 				numNonTrivialTopModules(), 2);
 	}
 
@@ -1424,6 +1455,13 @@ bool InfomapBase::initNetwork()
 
 	network.readInputData();
 
+	if (m_config.isBipartite() && !m_config.showBiNodes) {
+		m_config.maxNodeIndexVisible = network.numNodes() - network.numBipartiteNodes() - 1;
+		Log(1) << "Skip " << network.numBipartiteNodes() << " bipartites nodes in output, limit to " <<
+				m_config.maxNodeIndexVisible + 1 << " ordinary nodes.\n";
+	}
+	m_config.minBipartiteNodeIndex = network.numNodes() - network.numBipartiteNodes();
+
 	return initNetwork(network);
 }
 
@@ -1440,8 +1478,7 @@ bool InfomapBase::initNetwork(Network& network)
 
  	if (m_config.printPajekNetwork)
  	{
- 		std::string outName = io::Str() <<
- 				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
+ 		std::string outName = io::Str() << m_config.outDirectory << m_config.outName << ".net";
  		Log() << "Printing network to " << outName << "... " << std::flush;
  		network.printNetworkAsPajek(outName);
 		Log() << "done!\n";
@@ -1462,7 +1499,7 @@ bool InfomapBase::initNetwork(Network& network)
  		m_treeData.addNewNode(m_nodeNames[i], nodeFlow[i], nodeTeleportWeights[i]);
  	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();
  	for (unsigned int i = 0; i < links.size(); ++i)
- 		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow * m_config.codeRate);
+ 		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow * m_config.markovTime);
 
 
  	double sumNodeFlow = 0.0;
@@ -1474,13 +1511,14 @@ bool InfomapBase::initNetwork(Network& network)
  	initEnterExitFlow();
 
 
+ 	std::string outname = m_config.outName;
 	if (m_config.printNodeRanks)
 	{
 		//TODO: Split printNetworkData to printNetworkData and printModuleData, and move this to first
-		std::string outName = io::Str() <<
-				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".rank";
-		Log() << "Printing node flow to " << outName << "... ";
-		SafeOutFile out(outName.c_str());
+		std::string outfile = io::Str() <<
+				m_config.outDirectory << outname << ".rank";
+		Log() << "Printing node flow to " << outfile << "... ";
+		SafeOutFile out(outfile.c_str());
 
 		out << "# node-flow\n";
 		for (unsigned int i = 0; i < nodeFlow.size(); ++i)
@@ -1494,7 +1532,7 @@ bool InfomapBase::initNetwork(Network& network)
 	// Print flow network
 	if (m_config.printFlowNetwork)
 	{
-		std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << (m_config.printExpanded? "_expanded.flow" : ".flow");
+		std::string outName = io::Str() << m_config.outDirectory << outname << (m_config.printExpanded? "_expanded.flow" : ".flow");
 		SafeOutFile flowOut(outName.c_str());
 		Log() << "Printing flow network to " << outName << "... " << std::flush;
 		printFlowNetwork(flowOut);
@@ -1519,10 +1557,10 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
 
+	std::string outname = m_config.outName;
 	if (m_config.printPajekNetwork)
  	{
- 		std::string outName = io::Str() <<
- 				m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".net";
+ 		std::string outName = io::Str() << m_config.outDirectory << outname << ".net";
  		Log() << "Printing network to " << outName << "... " << std::flush;
  		network.printNetworkAsPajek(outName);
 		Log() << "done!\n";
@@ -1579,7 +1617,7 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 		unsigned int indexOffset = m_config.zeroBasedNodeNumbers ? 0 : 1;
 		if (m_config.printExpanded)
 		{
-			std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << "_expanded.rank";
+			std::string outName = io::Str() << m_config.outDirectory << outname << "_expanded.rank";
 			Log() << "Printing node flow to " << outName << "... " << std::flush;
 			SafeOutFile out(outName.c_str());
 
@@ -1604,7 +1642,7 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 		{
 			//TODO: Split printNetworkData to printNetworkData and printModuleData, and move this to first
 			std::string outName = io::Str() <<
-					m_config.outDirectory << FileURI(m_config.networkFile).getName() << ".rank";
+					m_config.outDirectory << outname << ".rank";
 			Log() << "Printing physical flow to " << outName << "... " << std::flush;
 			SafeOutFile out(outName.c_str());
 			double sumFlow = 0.0;
@@ -1628,7 +1666,7 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 	// Print flow network
 	if (m_config.printFlowNetwork)
 	{
-		std::string outName = io::Str() << m_config.outDirectory << FileURI(m_config.networkFile).getName() << (m_config.printExpanded? "_expanded.flow" : ".flow");
+		std::string outName = io::Str() << m_config.outDirectory << outname << (m_config.printExpanded? "_expanded.flow" : ".flow");
 		SafeOutFile flowOut(outName.c_str());
 		Log() << "Printing flow network to " << outName << "... " << std::flush;
 		printFlowNetwork(flowOut);
@@ -1783,13 +1821,18 @@ void InfomapBase::printNetworkData(HierarchicalNetwork& output, std::string file
 	if (m_config.noFileOutput && !m_externalOutput)
 		return;
 
-	if (filename.length() == 0)
-		filename = FileURI(m_config.networkFile).getName();
+	if (filename.empty())
+		filename = m_config.outName;
 
 	std::string outName;
 
 	// Print hierarchy
-	if (m_config.printTree || m_config.printFlowTree || m_config.printBinaryTree || m_config.printBinaryFlowTree || m_config.printMap)
+	if (m_config.printTree ||
+			m_config.printFlowTree ||
+			m_config.printBinaryTree ||
+			m_config.printBinaryFlowTree ||
+			m_config.printMap ||
+			m_config.printClu)
 	{
 		// Sort tree on flow
 		sortTree();
@@ -1797,36 +1840,38 @@ void InfomapBase::printNetworkData(HierarchicalNetwork& output, std::string file
 		bool writeEdges = m_config.printBinaryFlowTree || m_config.printFlowTree || m_config.printMap || m_externalOutput;
 		Log() << "\nBuilding output tree" << (writeEdges ? " with links" : "") << "... " << std::flush;
 
+		output.clear(m_config);
 		saveHierarchicalNetwork(output, filename, writeEdges);
 
-		if (!m_config.noFileOutput && !m_externalOutput)
+		if (!m_config.noFileOutput)
 		{
 			printHierarchicalData(output, filename);
 
-			// Clear the data
-			output.clear();
+			// Clear the data after written to file, if not used as a library
+			if (!m_externalOutput)
+				output.clear();
 		}
 
 	}
 
-	// Print .clu
-	if (m_config.printClu && !m_config.noFileOutput && !m_externalOutput)
-	{
-		outName = io::Str() << m_config.outDirectory << filename <<
-			(m_config.printExpanded ? "_expanded.clu" : ".clu");
-		Log(0,0) << "(Writing .clu file.. ) ";
-		Log(1) << "Print cluster data to " << outName << "... ";
-		SafeOutFile cluOut(outName.c_str());
-		printClusterNumbers(cluOut);
-		Log(1) << "done!\n";
-	}
+//	// Print .clu
+//	if (m_config.printClu && !m_config.noFileOutput && !m_externalOutput)
+//	{
+//		outName = io::Str() << m_config.outDirectory << filename <<
+//			(m_config.printExpanded ? "_expanded.clu" : ".clu");
+//		Log(0,0) << "(Writing .clu file.. ) ";
+//		Log(1) << "Print cluster data to " << outName << "... ";
+//		SafeOutFile cluOut(outName.c_str());
+//		printClusterNumbers(cluOut);
+//		Log(1) << "done!\n";
+//	}
 
 }
 
 void InfomapBase::printHierarchicalData(HierarchicalNetwork& hierarchicalNetwork, std::string filename)
 {
-	if (filename.length() == 0)
-		filename = FileURI(m_config.networkFile).getName();
+	if (filename.empty())
+		filename = m_config.outName;
 
 	std::string outName;
 	std::string outNameWithoutExtension = io::Str() << m_config.outDirectory << filename <<
@@ -1872,6 +1917,15 @@ void InfomapBase::printHierarchicalData(HierarchicalNetwork& hierarchicalNetwork
 		Log(1) << "\n  -> Writing " << outName << "..." << std::flush;
 
 		hierarchicalNetwork.writeMap(outName);
+	}
+
+	if (m_config.printClu)
+	{
+		outName = io::Str() << outNameWithoutExtension << ".clu";
+		Log(0,0) << "writing .clu... " << std::flush;
+		Log(1) << "\n  -> Writing " << outName << "..." << std::flush;
+
+		hierarchicalNetwork.writeClu(outName);
 	}
 
 	Log(0,0) << "done!" << std::endl;

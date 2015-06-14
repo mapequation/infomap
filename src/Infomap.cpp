@@ -74,13 +74,19 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 				"More network layers for multiplex.", true);
 	}
 	else
-		conf.networkFile = "no-file";
+		conf.networkFile = "no-name";
 
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
-			"Specify input format ('pajek', 'link-list', '3gram' or 'multiplex') to override format possibly implied by file extension.", "s");
+			"Specify input format ('pajek', 'link-list', '3gram', 'multiplex' or 'bipartite') to override format possibly implied by file extension.", "s");
 
 	// api.addOptionArgument(conf.withMemory, "with-memory",
 	// 		"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.", true);
+
+//	api.addOptionArgument(conf.bipartite, "bipartite",
+//			"Let the source id of a link belong to a different kind of nodes and ignore that set in the output.");
+
+	api.addOptionArgument(conf.skipAdjustBipartiteFlow, "skip-adjust-bipartite-flow",
+			"Skip distributing all flow from the bipartite nodes (first column) to the ordinary nodes (second column).", true);
 
 	api.addOptionArgument(conf.withMemory, "overlapping",
 			"Let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the memoryless dynamics with memory nodes.");
@@ -110,6 +116,10 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 			"Don't run Infomap. Useful if initial cluster data should be preserved or non-modular data printed.", true);
 
 	// --------------------- Output options ---------------------
+
+	api.addOptionArgument(conf.outName, "out-name",
+			"Use this name for the output files, like [output_directory]/[out-name].tree", "s", true);
+
 	api.addOptionArgument(conf.noFileOutput, '0', "no-file-output",
 			"Don't print any output to file.", true);
 
@@ -175,7 +185,7 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.selfTeleportationProbability, 'y', "self-link-teleportation-probability",
 			"Additional probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", "f", true);
 
-	api.addOptionArgument(conf.codeRate, "code-rate",
+	api.addOptionArgument(conf.markovTime, "markov-time",
 			"Scale link flow with this value to change the cost of moving between modules. Higher for less modules.", "f", true);
 
 	api.addOptionArgument(conf.preferredNumberOfModules, "preferred-number-of-modules",
@@ -209,6 +219,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.minimumRelativeTuneIterationImprovement, 'U', "tune-iteration-threshold",
 			"Set a codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.", "f", true);
 
+	api.addOptionArgument(conf.fastFirstIteration, "fast-first-iteration",
+			"Move nodes to strongest connected module in the first iteration instead of minimizing the map equation.", true);
+
 	api.addOptionArgument(conf.fastCoarseTunePartition, 'C', "fast-coarse-tune",
 			"Try to find the quickest partition of each module when creating sub-modules for the coarse-tune part.", true);
 
@@ -226,6 +239,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 
 	api.addOptionArgument(conf.innerParallelization, "inner-parallelization",
 			"Parallelize the innermost loop for greater speed. Note that this may give some accuracy tradeoff.");
+
+	api.addOptionArgument(conf.showBiNodes, "show-bipartite-nodes",
+			"Include the bipartite nodes in the output.", true);
 
 	// --------------------- Output options ---------------------
 	if (!noFileIO)
@@ -253,6 +269,8 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	{
 		if (!optionalOutputDir.empty())
 			conf.outDirectory = optionalOutputDir[0];
+		else
+			conf.noFileOutput = true;
 	}
 
 	// Some checks
@@ -262,6 +280,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	if (conf.haveOutput() && !isDirectoryWritable(conf.outDirectory))
 		throw FileOpenError(io::Str() << "Can't write to directory '" <<
 				conf.outDirectory << "'. Check that the directory exists and that you have write permissions.");
+
+	if (conf.outName.empty())
+		conf.outName = FileURI(conf.networkFile).getName();
 
 	return api.getUsedOptionArguments();
 }

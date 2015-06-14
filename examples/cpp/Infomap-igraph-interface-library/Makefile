@@ -13,6 +13,8 @@ INC_IGRAPH = -I$(IGRAPH_INCLUDE_DIR) -L$(IGRAPH_LIB_DIR) -ligraph
 # Abbreviation
 III = Infomap-igraph-interface
 
+.PHONY: clean distclean
+
 lib/lib$(III).a: build/$(III).o include/$(III).h
 	@echo "Creating static $(III) library..."
 	@mkdir -p lib
@@ -34,3 +36,6 @@ $(INFOMAP_LIB):
 
 clean:
 	$(RM) -r build lib include
+
+distclean:
+	cd $(INFOMAP_DIR) && $(MAKE) clean

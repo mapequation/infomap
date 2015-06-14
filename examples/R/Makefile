@@ -5,10 +5,7 @@ INFOMAP_DIR = ../..
 R_BUILD_DIR = $(INFOMAP_DIR)/build/R
 MODULE_FILES = $(R_BUILD_DIR)/infomap.R $(R_BUILD_DIR)/infomap_wrap.so
 
-.PHONY: infomap-module clean distclean
-
-infomap-module: infomap/infomap.R
-	@true
+.PHONY: clean distclean
 
 infomap/infomap.R: $(R_BUILD_DIR)/infomap.R Makefile
 	@echo Copying Infomap library and the R wrapper to a local folder...

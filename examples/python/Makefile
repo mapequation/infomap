@@ -3,18 +3,18 @@ CXXFLAGS = -Wall -O3
 # Set INFOMAP_DIR to your Infomap directory
 INFOMAP_DIR = ../..
 PY_BUILD_DIR = $(INFOMAP_DIR)/build/py
-MODULE_FILES = $(PY_BUILD_DIR)/infomap.py $(PY_BUILD_DIR)/_infomap.so
+PY_WRAPPER = $(PY_BUILD_DIR)/infomap.py
+INFOMAP_LIB = $(PY_BUILD_DIR)/_infomap.so
 
-infomap-module: infomap/infomap.py Makefile
-	@true
+.PHONY: clean distclean
 
-infomap/infomap.py: $(MODULE_FILES)
+infomap/infomap.py: $(PY_WRAPPER) Makefile
 	@echo Copying Infomap library and the python wrapper to a local module folder...
 	@mkdir -p infomap
-	@cp -av $^ infomap
+	@cp -av $(PY_WRAPPER) $(INFOMAP_LIB) infomap
 	touch infomap/__init__.py
 
-$(PY_BUILD_DIR)/infomap.py:
+$(PY_WRAPPER):
 	cd $(INFOMAP_DIR) && $(MAKE) python
 
 clean:

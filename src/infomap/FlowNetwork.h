@@ -77,6 +77,8 @@ public:
 
 protected:
 
+	void finalize(const Network& network, const Config& config, bool normalizeNodeFlow = false);
+
 	std::vector<double> m_nodeFlow;
 	std::vector<double> m_nodeTeleportRates;
 	LinkVec m_flowLinks;

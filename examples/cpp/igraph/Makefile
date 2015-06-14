@@ -14,16 +14,10 @@ IGRAPH_LIB_DIR = /usr/local/lib
 IGRAPH_INCLUDE_DIR = /usr/local/include/igraph
 INC_IGRAPH = -I$(IGRAPH_INCLUDE_DIR) -L$(IGRAPH_LIB_DIR) -ligraph
 
-.PHONY: example-igraph
+.PHONY: clean distclean
 
-example-igraph: example-igraph.cpp $(INFOMAP_LIB)
+example-igraph: example-igraph.cpp $(INFOMAP_LIB) Makefile
 	$(CXX) $(CXXFLAGS) $< -o $@ -DNS_INFOMAP $(INC_IGRAPH) $(INC_INFOMAP) $(INC_INTERFACE)
-
-
-# # Rule for lib objects
-# build/%.o: src/%.cpp src/%.h $(INFOMAP_LIB) Makefile
-# 	@mkdir -p $(dir $@)
-# 	$(CXX) $(CXXFLAGS) -DNS_INFOMAP -c $< -o $@ -I$(IGRAPH_INCLUDE_DIR) -I$(INFOMAP_DIR)/include
 
 # Make Infomap library
 $(INFOMAP_LIB):
@@ -31,3 +25,6 @@ $(INFOMAP_LIB):
 
 clean:
 	$(RM) example-igraph
+
+distclean:
+	cd $(INFOMAP_DIR) && $(MAKE) clean

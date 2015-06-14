@@ -36,7 +36,7 @@ namespace infomap
 #endif
 
 /**
- * The cluster data file should be a list of cluster indices, where the lowest is 1 and largest the number of nodes.
+ * Read cluster data
  *
  * Example file for a network with 6 nodes and two clusters:
  * *Vertices 6
@@ -46,16 +46,23 @@ namespace infomap
  * 1
  * 2
  * 2
+ *
+ * Example with node mapping
+ * # nodeId clusterId
+ * 1 1
+ * 2 1
+ * 4 1
+ * 3 2
+ * 5 2
+ * 6 2
+ *
  */
 void ClusterReader::readData(const string filename)
 {
-	Log() << "Parsing '" << filename << "'... " << std::flush;
 	SafeInFile input(filename.c_str());
 	std::string line;
 	std::istringstream lineStream;
 	unsigned int numVertices = 0;
-	unsigned int numParsedValues = 0;
-	unsigned int maxClusterIndex = 0;
 
 	while(!std::getline(input, line).fail())
 	{
@@ -84,47 +91,33 @@ void ClusterReader::readData(const string filename)
 		}
 		else
 		{
-			unsigned int clusterIndex;
-			if (!(lineStream >> clusterIndex))
-				throw FileFormatError(io::Str() << "Couldn't parse cluster data from line '" << line << "'");
-
-			clusterIndex -= m_indexOffset; // Get zero-based indices
-			m_clusters[numParsedValues] = clusterIndex;
-			maxClusterIndex = std::max(maxClusterIndex, clusterIndex);
-			++numParsedValues;
-			if (numParsedValues == m_numNodes)
-				break;
+			parseClusterLine(line);
 		}
 	}
 
-	if (numParsedValues != m_numNodes)
-		throw FileFormatError(io::Str() << "Could only read cluster data for " << numParsedValues << " nodes, but the given network contains " <<
-				m_numNodes << " nodes.");
-
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
-	if (maxClusterIndex == zeroMinusOne)
+	if (m_maxNodeIndex == zeroMinusOne)
 		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
-	if (maxClusterIndex >= m_numNodes)
-		throw InputDomainError(io::Str() << "Max module number (" << maxClusterIndex + m_indexOffset <<
-				") is larger than the number of nodes");
 
-	m_numModules = maxClusterIndex + 1;
+}
 
-	// Calculate the number of nodes per module to check for compactness and non-emptyness
-	std::vector<unsigned int> moduleSize(m_numModules);
-	for (unsigned int i = 0; i < m_numNodes; ++i)
-	{
-		++moduleSize[m_clusters[i]];
+void ClusterReader::parseClusterLine(std::string line)
+{
+	std::istringstream lineStream(line);
+	// Parse nodeIndex clusterIndex, or only clusterIndex
+	unsigned int nodeIndex, clusterIndex;
+	if (!(lineStream >> nodeIndex))
+		throw FileFormatError(io::Str() << "Couldn't parse integer from line '" << line << "'");
+	if (!(lineStream >> clusterIndex)) {
+		clusterIndex = nodeIndex; // Only one column => assume natural order for node indices
+		nodeIndex = m_numParsedRows + m_indexOffset;
 	}
 
-	for (unsigned int i = 0; i < m_numModules; ++i)
-	{
-		if (moduleSize[i] == 0)
-			throw InputDomainError(io::Str() << "Module " << (i + 1) << " is empty.");
-	}
-
-	Log() << "done! " << std::flush;
+	nodeIndex -= m_indexOffset; // Get zero-based indexing
+	m_clusters[nodeIndex] = clusterIndex;
+	m_maxNodeIndex = std::max(m_maxNodeIndex, nodeIndex);
+	++m_numParsedRows;
 }
 
 #ifdef NS_INFOMAP

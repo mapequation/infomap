@@ -29,7 +29,7 @@
 #define CLUSTERREADER_H_
 
 #include <string>
-#include <vector>
+#include <map>
 
 #ifdef NS_INFOMAP
 namespace infomap
@@ -41,32 +41,38 @@ using std::string;
 class ClusterReader
 {
 public:
-	ClusterReader(unsigned int numNodes, bool zeroBasedIndexing = false)
-	: m_numNodes(numNodes),
-	  m_numModules(0),
-	  m_indexOffset(zeroBasedIndexing? 0 : 1),
-	  m_clusters(numNodes)
+	ClusterReader(bool zeroBasedIndexing = false)
+	: m_indexOffset(zeroBasedIndexing? 0 : 1),
+	  m_maxNodeIndex(0),
+	  m_numParsedRows(0)
 	{}
 
 	virtual ~ClusterReader() {}
 
-	void readData(const string filename);
+	virtual void readData(const string filename);
 
-	const std::vector<unsigned int>& clusters() const
+	const std::map<unsigned int, unsigned int>& clusters() const
 	{
 		return m_clusters;
 	}
 
-	unsigned int numModules() const
+	unsigned int maxNodeIndex() const
 	{
-		return m_numModules;
+		return m_maxNodeIndex;
 	}
 
-private:
-	unsigned int m_numNodes;
-	unsigned int m_numModules;
+	unsigned int numParsedRows() const
+	{
+		return m_numParsedRows;
+	}
+
+protected:
+	virtual void parseClusterLine(std::string line);
+
 	unsigned int m_indexOffset;
-	std::vector<unsigned int> m_clusters;
+	unsigned int m_maxNodeIndex;
+	unsigned int m_numParsedRows;
+	std::map<unsigned int, unsigned int> m_clusters;
 };
 
 #ifdef NS_INFOMAP
