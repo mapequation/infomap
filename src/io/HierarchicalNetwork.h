@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -365,14 +365,20 @@ class LeafIterator
 public:
 
 	LeafIterator()
-	:	m_current(NULL),
-	 	m_depth(0)
+	:	m_root(NULL),
+  	m_current(NULL),
+	 	m_depth(0),
+		m_clusterIndex(0),
+		m_clusterIndexLevel(-1)
 	{}
 
 	explicit
-	LeafIterator(SNode* nodePointer)
-	:	m_current(nodePointer),
-	 	m_depth(0)
+	LeafIterator(SNode* nodePointer, int clusterIndexLevel = -1)
+	:	m_root(nodePointer),
+	  m_current(nodePointer),
+	 	m_depth(0),
+		m_clusterIndex(0),
+		m_clusterIndexLevel(clusterIndexLevel)
 	{
 		if (m_current != 0)
 		{
@@ -385,14 +391,20 @@ public:
 	}
 
 	LeafIterator(const LeafIterator& other)
-	:	m_current(other.m_current),
-	 	m_depth(other.m_depth)
+	: m_root(other.m_root),
+    m_current(other.m_current),
+    m_depth(other.m_depth),
+    m_clusterIndex(other.m_clusterIndex),
+    m_clusterIndexLevel(other.m_clusterIndexLevel)
 	{}
 
 	LeafIterator & operator= (const LeafIterator& other)
 	{
+    m_root = other.m_root;
 		m_current = other.m_current;
 		m_depth = other.m_depth;
+    m_clusterIndex = other.m_clusterIndex;
+    m_clusterIndexLevel = other.m_clusterIndexLevel;
 		return *this;
 	}
 
@@ -426,8 +438,17 @@ public:
 		{
 			m_current = m_current->parentNode;
 			--m_depth;
-			if(m_current == NULL)
+      if(m_current == m_root || m_current == NULL) // NULL if no children in first place
+			{
+				m_current = NULL;
 				return *this;
+			}
+      if (m_clusterIndexLevel < 0) {
+         if (m_current->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
+           ++m_clusterIndex;
+      }
+      else if (static_cast<unsigned int>(m_clusterIndexLevel) == m_depth)
+        ++m_clusterIndex;
 		}
 
 		m_current = m_current->nextSibling();
@@ -462,6 +483,11 @@ public:
 		return m_depth;
 	}
 
+	unsigned int clusterIndex() const
+	{
+		return m_clusterIndex;
+	}
+
 	bool operator==(const LeafIterator& rhs) const
 	{
 		return m_current == rhs.m_current;
@@ -473,8 +499,11 @@ public:
 	}
 
 private:
+	SNode* m_root;
 	SNode* m_current;
 	unsigned int m_depth;
+  unsigned int m_clusterIndex;
+  int m_clusterIndexLevel;
 };
 
 class TreeIterator
@@ -775,7 +804,7 @@ public:
 
 	unsigned int numTopModules() { return m_rootNode.childDegree(); }
 
-	LeafIterator leafIter() { return LeafIterator(&m_rootNode); }
+	LeafIterator leafIter(int clusterIndexLevel = -1) { return LeafIterator(&m_rootNode, clusterIndexLevel); }
 
 	TreeIterator treeIter(int clusterIndexLevel = -1) { return TreeIterator(&m_rootNode, clusterIndexLevel); }
 

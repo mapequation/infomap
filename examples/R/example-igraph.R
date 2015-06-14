@@ -29,10 +29,10 @@ leafIt <- tree$leafIter()
 
 modules <- integer(length = network$numNodes())
 
-cat("Partitioned network in", tree$getRootNode()$childDegree(), "modules with codelength", tree$codelength(), "bits:\n")
+cat("Partitioned network in", tree$numTopModules(), "modules with codelength", tree$codelength(), "bits:\n")
 
 while (!leafIt$isEnd()) {
-	modules[leafIt$base()$originalLeafIndex + 1] = leafIt$base()$parentNode$parentIndex + 1
+	modules[leafIt$originalLeafIndex + 1] = leafIt$clusterIndex() + 1
 	leafIt$stepForward()
 }
 
@@ -43,6 +43,3 @@ print(comm)
 
 # Plot communities and network
 plot(comm, g)
-
-
-

@@ -27,15 +27,16 @@ def findCommunities(G):
 		network.addLink(*e)
 
 	network.finalizeAndCheckNetwork(True, nx.number_of_nodes(G));
-	
+
 	# Cluster network
 	infomap.run(network, tree);
-	codelength = tree.codelength()
-	print "Codelength:", codelength
+
+	print "Found %d top modules with codelength: %f" % (tree.numTopModules(), tree.codelength())
 
 	communities = {}
-	for leaf in tree.leafIter():
-		communities[leaf.originalLeafIndex] = leaf.parentNode.parentIndex
+	clusterIndexLevel = 1 # 1, 2 or 3 for top, second and lowest cluster level
+	for node in tree.leafIter(clusterIndexLevel):
+		communities[node.originalLeafIndex] = node.clusterIndex()
 
 	nx.set_node_attributes(G, 'community', communities)
 	return tree.numTopModules()

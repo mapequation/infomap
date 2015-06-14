@@ -2,6 +2,8 @@
 source("load-infomap.R")
 
 conf <- init("--two-level --silent")
+# Add output directory (and output name) to automatically write result to file
+# conf <- init("--two-level --silent . --out-name test")
 
 network <- Network(conf);
 
@@ -28,11 +30,11 @@ tree <- HierarchicalNetwork(conf)
 
 run(network, tree);
 
-leafIt <- tree$leafIter()
+clusterIndexLevel <- 1 # 1, 2 or 3 for top, second and lowest cluster level
+leafIt <- tree$leafIter(clusterIndexLevel)
 
-cat("Partitioned network in", tree$getRootNode()$childDegree(), "modules with codelength", tree$codelength(), "bits:\n")
+cat("Partitioned network in", tree$numTopModules(), "modules with codelength", tree$codelength(), "bits:\n")
 while (!leafIt$isEnd()) {
-	cat("Node:", leafIt$base()$data$name, "module:", leafIt$base()$parentNode$parentIndex, '\n')
+	cat("Node:", leafIt$data$name, "module:", leafIt$clusterIndex(), '\n')
 	leafIt$stepForward()
 }
-

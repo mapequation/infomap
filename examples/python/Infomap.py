@@ -5,6 +5,8 @@
 from infomap import infomap
 
 conf = infomap.init("--two-level -v -N2")
+# Add output directory (and output name) to automatically write result to file
+# conf = infomap.init("--two-level -v -N2 . --out-name test")
 
 print "Creating network..."
 network = infomap.Network(conf)
@@ -35,19 +37,16 @@ tree = infomap.HierarchicalNetwork(conf)
 
 infomap.run(network, tree)
 
-codelength = tree.codelength()
-
-print "Codelength:", codelength
+print "Found %d top modules with codelength: %f" % (tree.numTopModules(), tree.codelength())
 
 communities = {}
-for leaf in tree.leafIter():
-	communities[leaf.originalLeafIndex] = {'module': leaf.parentNode.parentIndex, 'name': leaf.data.name}
+clusterIndexLevel = 1 # 1, 2 or 3 for top, second and lowest cluster level
+print "Tree:"
+for node in tree.treeIter(clusterIndexLevel):
+	print node.clusterIndex(), "  " * node.depth(), node.data.flow, '"%s"' % node.data.name
+	if node.isLeafNode():
+	    communities[node.originalLeafIndex] = node.clusterIndex()
 
 print "Communities:", communities
 
-print "Tree:"
-for leaf in tree.treeIter(1):
-	print leaf.clusterIndex(), "  " * leaf.depth(), leaf.data.flow, '"%s"' % leaf.data.name
-
 print "Done!"
-

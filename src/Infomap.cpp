@@ -74,7 +74,7 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 				"More network layers for multiplex.", true);
 	}
 	else
-		conf.networkFile = "no-file";
+		conf.networkFile = "no-name";
 
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
 			"Specify input format ('pajek', 'link-list', '3gram', 'multiplex' or 'bipartite') to override format possibly implied by file extension.", "s");
@@ -269,6 +269,8 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	{
 		if (!optionalOutputDir.empty())
 			conf.outDirectory = optionalOutputDir[0];
+		else
+			conf.noFileOutput = true;
 	}
 
 	// Some checks

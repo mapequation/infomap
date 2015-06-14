@@ -1843,12 +1843,13 @@ void InfomapBase::printNetworkData(HierarchicalNetwork& output, std::string file
 		output.clear(m_config);
 		saveHierarchicalNetwork(output, filename, writeEdges);
 
-		if (!m_config.noFileOutput && !m_externalOutput)
+		if (!m_config.noFileOutput)
 		{
 			printHierarchicalData(output, filename);
 
-			// Clear the data
-			output.clear();
+			// Clear the data after written to file, if not used as a library
+			if (!m_externalOutput)
+				output.clear();
 		}
 
 	}
