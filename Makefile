@@ -51,6 +51,29 @@ noomp: Infomap
 
 
 ##################################################
+# JavaScript through Emscripten
+##################################################
+
+js: build/js/Infomap.js
+	@echo "Built $^"
+
+js-worker: build/js/Infomap-worker.js
+	@echo "Built $^"
+
+# em++ -O0 -s PROXY_TO_WORKER=1 -s PROXY_TO_WORKER_FILENAME='Infomap.js' -o Infomap.js $^
+# em++ -O0 -s PROXY_TO_WORKER=1 -s EXPORT_NAME='Infomap' -s MODULARIZE=1 -o Infomap.js $^
+build/js/Infomap-worker.js: $(SOURCES)
+	@echo "Compiling Infomap to run in a worker in the browser..."
+	@mkdir -p $(dir $@)
+	em++ -O0 --pre-js interfaces/js/pre-worker-module.js -o build/js/Infomap-worker.js $^
+
+build/js/Infomap.js: $(SOURCES)
+	@echo "Compiling Infomap for Node.js..."
+	@mkdir -p $(dir $@)
+	em++ -O0 -o build/js/Infomap.js $^
+
+
+##################################################
 # Static C++ library
 ##################################################
 

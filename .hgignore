@@ -27,3 +27,5 @@ syntax: regexp
 ^examples/python/infomap$
 ^examples/R/infomap$
 ^examples/R/\.Rhistory$
+^examples/js/Infomap-worker.js$
+^examples/js/Infomap.js$

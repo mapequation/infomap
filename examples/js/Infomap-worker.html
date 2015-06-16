@@ -1,0 +1,116 @@
+<html>
+  <head>
+    <style type="text/css">
+      .io > * {
+        display: inline-block;
+        vertical-align: middle;
+      }
+      #arguments {
+        width: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="io">
+      <div class="input">
+        <form id="network-form">
+          <textarea id="network" rows="30" cols="20">#source target [weight]
+0 1
+0 2
+0 3
+1 0
+1 2
+2 1
+2 0
+3 0
+3 4
+3 5
+4 3
+4 5
+5 4
+5 3
+</textarea>
+        </form>
+      </div>
+
+      <div class="action">
+        <input type="text" id="arguments" value="-z --clu">
+        <button id="btnCluster">Cluster...</button>
+        <div class="console">
+          <textarea id="console" rows="30" cols="100" readonly="true"></textarea>
+        </div>
+      </div>
+
+      <div class="output">
+        <textarea id="output" rows="30" cols="20" readonly="true"></textarea>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+
+      document.getElementById('btnCluster').addEventListener('click', cluster);
+
+      function cluster() {
+        clearOutput();
+        var networkData = document.getElementById('network').value;
+        var args = document.getElementById('arguments').value;
+        args = args? args.split(" ") : [];
+
+        console.log("Creating worker...");
+        var worker = new Worker('Infomap-worker.js');
+
+        setTimeout(function() {
+          console.log("Init Infomap worker with args:", args);
+          worker.postMessage({
+            target: 'Infomap',
+            inputFilename: 'network.txt',
+            inputData: networkData,
+            arguments: args
+          });
+        }, 0); // delay til next frame, to make sure html is ready
+
+        worker.onmessage = function worker_onmessage(event) {
+          //dump('\nclient got ' + JSON.stringify(event.data).substr(0, 150) + '\n');
+          var data = event.data;
+          switch (data.target) {
+            case 'stdout': {
+              printLine(data.content);
+              break;
+            }
+            case 'stderr': {
+              printLine("Error: " + data.content);
+              break;
+            }
+            case 'finished': {
+              onFinished(data.output);
+              console.log("Terminating worker...");
+              worker.terminate();
+              break;
+            }
+            default: throw 'Unknown target on message from worker: ' + data;
+          }
+        };
+
+      }
+
+      function printLine(line) {
+        document.getElementById('console').value += line + '\n';
+      }
+
+      function clearOutput() {
+        document.getElementById('console').value = "";
+        document.getElementById('output').value = "";
+      }
+
+      function onFinished(output) {
+        console.log("Worker finished!");
+        if (output.clu)
+          document.getElementById('output').value += "clu:\n" + output.clu;
+        if (output.tree)
+          document.getElementById('output').value += "tree:\n" + output.tree;
+      }
+
+    </script>
+  </body>
+</html>
