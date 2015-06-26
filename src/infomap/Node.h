@@ -53,6 +53,41 @@ struct SubStructure
 	bool exploredWithoutImprovement;
 };
 
+struct M2Node
+{
+	unsigned int priorState;
+	unsigned int physIndex;
+	M2Node() :
+		priorState(0), physIndex(0)
+	{}
+	M2Node(unsigned int priorState, unsigned int physIndex) :
+		priorState(priorState), physIndex(physIndex)
+	{}
+	M2Node(const M2Node& other) :
+		priorState(other.priorState), physIndex(other.physIndex)
+	{}
+
+	bool operator<(M2Node other) const
+	{
+		return priorState == other.priorState ? physIndex < other.physIndex : priorState < other.priorState;
+	}
+
+	bool operator==(M2Node other) const
+	{
+		return priorState == other.priorState && physIndex == other.physIndex;
+	}
+
+	bool operator!=(M2Node other) const
+	{
+		return priorState != other.priorState || physIndex != other.physIndex;
+	}
+
+	friend std::ostream& operator<<(std::ostream& out, const M2Node& node)
+	{
+		return out << "(" << node.priorState << "-" << node.physIndex << ")";
+	}
+};
+
 class NodeBase
 {
 public:
@@ -265,6 +300,11 @@ public:
 //		m_subStructure.subInfomap = subInfomap;
 //	}
 
+	// Dummy node for non-memory nodes
+	virtual M2Node getM2Node()
+	{
+		return M2Node();
+	}
 
 private:
 	void calcChildDegree();
@@ -539,6 +579,8 @@ public:
 	{}
 	Node(const node_type& other) : NodeBase(), data(other.data)
 	{}
+	virtual ~Node()
+	{}
 
 	friend std::ostream& operator<<(std::ostream& out, const node_type& node)
 	{
@@ -566,42 +608,6 @@ struct PhysData
 };
 
 
-
-struct M2Node
-{
-	unsigned int priorState;
-	unsigned int physIndex;
-	M2Node() :
-		priorState(0), physIndex(0)
-	{}
-	M2Node(unsigned int priorState, unsigned int physIndex) :
-		priorState(priorState), physIndex(physIndex)
-	{}
-	M2Node(const M2Node& other) :
-		priorState(other.priorState), physIndex(other.physIndex)
-	{}
-
-	bool operator<(M2Node other) const
-	{
-		return priorState == other.priorState ? physIndex < other.physIndex : priorState < other.priorState;
-	}
-
-	bool operator==(M2Node other) const
-	{
-		return priorState == other.priorState && physIndex == other.physIndex;
-	}
-
-	bool operator!=(M2Node other) const
-	{
-		return priorState != other.priorState || physIndex != other.physIndex;
-	}
-
-	friend std::ostream& operator<<(std::ostream& out, const M2Node& node)
-	{
-		return out << "(" << node.priorState << "-" << node.physIndex << ")";
-	}
-};
-
 template <typename T>
 class MemNode : public Node<T>
 {
@@ -620,9 +626,17 @@ public:
 	MemNode(const node_type& other) : node_base_type(other.data), m2Node(other.m2Node), physicalNodes(other.physicalNodes)
 	{}
 
+	virtual ~MemNode()
+	{}
+
 	friend std::ostream& operator<<(std::ostream& out, const node_type& node)
 	{
 		return out << "(name: " << node.name << ", flow: " << node.data.flow << ", phys: " << node.m2Node << ")";
+	}
+
+	virtual M2Node getM2Node()
+	{
+		return m2Node;
 	}
 
 	M2Node m2Node;

@@ -47,12 +47,12 @@ public:
 	{};
 	virtual ~NetworkAdapter() {};
 
-	bool readExternalHierarchy(std::string filename);
+	virtual bool readExternalHierarchy(std::string filename);
 
 protected:
-	void readClu(std::string filename);
-	void readBipartiteClu(std::string filename);
-	void readHumanReadableTree(std::string filename);
+	virtual void readClu(std::string filename);
+	virtual void readBipartiteClu(std::string filename);
+	virtual void readHumanReadableTree(std::string filename);
 
 
 protected:

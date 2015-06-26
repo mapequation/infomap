@@ -44,6 +44,7 @@
 #include "MemNetwork.h"
 #include "MultiplexNetwork.h"
 #include "NetworkAdapter.h"
+#include "MemoryNetworkAdapter.h"
 #ifdef _OPENMP
 #include <omp.h>
 #include <stdio.h>
@@ -1760,9 +1761,13 @@ bool InfomapBase::consolidateExternalClusterData(bool printResults)
 {
 	Log() << "Build hierarchical structure from external cluster data... " << std::flush;
 
-	NetworkAdapter adapter(m_config, m_treeData);
+	std::auto_ptr<NetworkAdapter> adapter;
+	if (m_config.isMemoryNetwork())
+		adapter = std::auto_ptr<NetworkAdapter>(new MemoryNetworkAdapter(m_config, m_treeData));
+	else
+		adapter = std::auto_ptr<NetworkAdapter>(new NetworkAdapter(m_config, m_treeData));
 
-	bool isModulesLoaded = adapter.readExternalHierarchy(m_config.clusterDataFile);
+	bool isModulesLoaded = adapter->readExternalHierarchy(m_config.clusterDataFile);
 
 	if (!isModulesLoaded)
 		return false;
