@@ -265,10 +265,14 @@ void HierarchicalNetwork::writeClu(const std::string& fileName, int clusterIndex
 	out << "partitioned in " << m_config.elapsedTime() << " from codelength " <<
 		io::toPrecision(m_oneLevelCodelength, 9, true) << " in one level to codelength " <<
 		io::toPrecision(m_codelength, 9, true) << " in " << m_maxDepth << " levels.\n";
-	if (m_config.printExpanded)
-		out << "# priorId physicalId clusterId flow:\n";
+	if (m_config.printExpanded) {
+		if (m_config.isMultiplexNetwork())
+			out << "# layer node cluster flow:\n";
+		else
+			out << "# prior_node node cluster flow:\n";
+	}
 	else
-		out << "# nodeId clusterId flow:\n";
+		out << "# node cluster flow:\n";
 
 	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
 	for (TreeIterator it(&m_rootNode, clusterIndexLevel); !it.isEnd(); ++it) {
@@ -371,10 +375,14 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 		io::toPrecision(m_oneLevelCodelength, 9, true) << " in one level to codelength " <<
 		io::toPrecision(m_codelength, 9, true) << " in " << m_maxDepth << " levels.\n";
 
-	if (m_config.printExpanded)
-		out << "# path flow name priorId physicalId:\n";
+	if (m_config.printExpanded) {
+		if (m_config.isMultiplexNetwork())
+			out << "# path flow name layer node:\n";
+		else
+			out << "# path flow name prior_node node:\n";
+	}
 	else
-		out << "# path flow name nodeId:\n";
+		out << "# path flow name node:\n";
 
 	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
 	for (TreeIterator it(&m_rootNode, 2); !it.isEnd(); ++it) {
