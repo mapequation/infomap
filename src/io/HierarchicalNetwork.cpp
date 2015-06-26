@@ -76,7 +76,8 @@ SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitF
 	return addLeafNode(parent, flow, exitFlow, name, leafIndex, leafIndex);
 }
 
-SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex, unsigned int originalIndex)
+SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex,
+		unsigned int originalIndex, bool isMemoryNode, unsigned int priorIndex, unsigned int physIndex)
 {
 	if (leafIndex > m_leafNodes.size())
 		throw std::range_error("In HierarchicalNetwork::addLeafNode(), leaf index out of range or missed calling prepare method.");
@@ -84,6 +85,9 @@ SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitF
 	n.data.name = name;
 	n.isLeaf = true;
 	n.originalLeafIndex = originalIndex;
+	n.isMemoryNode = isMemoryNode;
+	n.priorIndex = priorIndex;
+	n.physIndex = physIndex;
 	m_leafNodes[leafIndex] = &n;
 	propagateNodeNameUpInHierarchy(n);
 	if (n.depth > m_maxDepth)
@@ -261,7 +265,10 @@ void HierarchicalNetwork::writeClu(const std::string& fileName, int clusterIndex
 	out << "partitioned in " << m_config.elapsedTime() << " from codelength " <<
 		io::toPrecision(m_oneLevelCodelength, 9, true) << " in one level to codelength " <<
 		io::toPrecision(m_codelength, 9, true) << " in " << m_maxDepth << " levels.\n";
-	out << "# nodeId clusterIndex flow:\n";
+	if (m_config.printExpanded)
+		out << "# priorId physicalId clusterId flow:\n";
+	else
+		out << "# nodeId clusterId flow:\n";
 
 	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
 	for (TreeIterator it(&m_rootNode, clusterIndexLevel); !it.isEnd(); ++it) {
@@ -274,7 +281,10 @@ void HierarchicalNetwork::writeClu(const std::string& fileName, int clusterIndex
 					out << 'f' << node.originalLeafIndex + indexOffset - m_config.minBipartiteNodeIndex << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
 			}
 			else {
-				 out << node.originalLeafIndex + indexOffset << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
+				if (m_config.printExpanded && node.isMemoryNode)
+					out << node.priorIndex + indexOffset << " " << node.physIndex + indexOffset << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
+				else
+					out << node.originalLeafIndex + indexOffset << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
 			}
 		}
 	}
@@ -361,6 +371,11 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 		io::toPrecision(m_oneLevelCodelength, 9, true) << " in one level to codelength " <<
 		io::toPrecision(m_codelength, 9, true) << " in " << m_maxDepth << " levels.\n";
 
+	if (m_config.printExpanded)
+		out << "# path flow name priorId physicalId:\n";
+	else
+		out << "# path flow name nodeId:\n";
+
 	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
 	for (TreeIterator it(&m_rootNode, 2); !it.isEnd(); ++it) {
 		SNode &node = *it;
@@ -372,8 +387,12 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 				else
 					out << 'f' << node.originalLeafIndex + indexOffset - m_config.minBipartiteNodeIndex;
 			}
-			else
-				out << node.originalLeafIndex + indexOffset;
+			else {
+				if (m_config.printExpanded && node.isMemoryNode)
+					out << node.priorIndex + indexOffset << " " << node.physIndex + indexOffset;
+				else
+					out << node.originalLeafIndex + indexOffset;
+			}
 			out << "\n";
 		}
 	}
