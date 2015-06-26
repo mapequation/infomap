@@ -139,6 +139,9 @@ public:
 	virtual ~InfomapGreedyTypeSpecialized() {}
 
 protected:
+
+	virtual bool preClusterMultiplexNetwork(bool printResults = false);
+
 	virtual double calcCodelengthOnRootOfLeafNodes(const NodeBase& parent);
 	virtual double calcCodelengthOnModuleOfModules(const NodeBase& parent);
 	virtual double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent);
@@ -194,6 +197,91 @@ private:
 
 };
 
+
+template<typename FlowType>
+inline bool InfomapGreedyTypeSpecialized<FlowType, WithMemory>::preClusterMultiplexNetwork(bool printResults)
+{
+	if (!m_config.isMultiplexNetwork())
+		return false;
+
+	Log() << "Pre-cluster multiplex network layer by layer... " << std::endl;
+
+	unsigned int memNodeIndex = 0;
+	std::map<M2Node, unsigned int> memNodeToIndex;
+	std::map<unsigned int, Network> networks;
+	for (TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt, ++memNodeIndex)
+	{
+		NodeType& source = getNode(**leafIt);
+		// Map from m2 id to single index
+		memNodeToIndex[source.m2Node] = memNodeIndex;
+		unsigned int layer = source.m2Node.priorState;
+		for (NodeBase::edge_iterator outEdgeIt(source.begin_outEdge()), endIt(source.end_outEdge());
+				outEdgeIt != endIt; ++outEdgeIt)
+		{
+			const EdgeType& edge = **outEdgeIt;
+			NodeType& target = getNode(edge.target);
+			if (target.m2Node.priorState == layer)
+			{
+				networks[layer].addLink(source.m2Node.physIndex, target.m2Node.physIndex);
+			}
+		}
+	}
+
+	Config perLayerConfig;
+	perLayerConfig.twoLevel = true;
+	perLayerConfig.zeroBasedNodeNumbers = true;
+	perLayerConfig.noFileOutput = true;
+	perLayerConfig.adaptDefaults();
+	bool isSilent = Log::isSilent();
+	unsigned int moduleIndexOffset = 0;
+	std::vector<unsigned int> modules(Super::numLeafNodes());
+
+	for (std::map<unsigned int, Network>::iterator networkIt(networks.begin()); networkIt != networks.end(); ++networkIt)
+	{
+		unsigned int layer = networkIt->first;
+		Network& network = networkIt->second;
+		network.setConfig(perLayerConfig);
+		network.finalizeAndCheckNetwork(false);
+		Log() << "  Layer " << layer << ": Cluster " << network.numNodes() << " nodes and " << network.numLinks() << " links... ";
+
+		Log::setSilent(true);
+		InfomapGreedyTypeSpecialized<FlowUndirected, WithoutMemory> infomap(perLayerConfig);
+		HierarchicalNetwork tree(perLayerConfig);
+		infomap.run(network, tree);
+		Log::setSilent(isSilent);
+
+		Log() << "-> Codelength " << tree.codelength() << " in " << tree.numTopModules() << " modules.\n";
+
+		for (LeafIterator leafIt(tree.leafIter()); !leafIt.isEnd(); ++leafIt)
+		{
+			unsigned int memNodeIndex = memNodeToIndex[M2Node(layer, leafIt->originalLeafIndex)];
+			modules[memNodeIndex] = leafIt.clusterIndex() + moduleIndexOffset;
+		}
+
+		moduleIndexOffset += tree.numTopModules();
+	}
+
+	unsigned int numModules = moduleIndexOffset;
+
+	std::vector<NodeBase*> moduleNodes(numModules, 0);
+	for (unsigned int i = 0; i < modules.size(); ++i) {
+		unsigned int moduleIndex = modules[i];
+		if (moduleNodes[moduleIndex] == 0)
+			moduleNodes[moduleIndex] = Super::m_treeData.nodeFactory().createNode("", 0.0, 0.0);
+		// Set child pointers from the module nodes to all leaf nodes
+		moduleNodes[moduleIndex]->addChild(&Super::m_treeData.getLeafNode(i));
+	}
+
+	// Set the modules as children to the root node instead of the current leaf nodes
+	Super::m_treeData.root()->releaseChildren();
+	for (unsigned int i = 0; i < numModules; ++i)
+		Super::m_treeData.root()->addChild(moduleNodes[i]);
+
+	Log() << "\n -> Generated " << numModules << " modules." << std::endl;
+
+	Super::initPreClustering(printResults);
+	return true;
+}
 
 template<typename FlowType>
 inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelengthOnRootOfLeafNodes(const NodeBase& parent)

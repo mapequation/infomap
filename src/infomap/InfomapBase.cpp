@@ -99,6 +99,9 @@ void InfomapBase::run()
 		hierarchicalCodelength = codelength = moduleCodelength = oneLevelCodelength;
 		indexCodelength = 0.0;
 
+		if (m_config.preClusterMultiplex && m_config.isMultiplexNetwork())
+			preClusterMultiplexNetwork();
+
 		if (m_config.clusterDataFile != "")
 			consolidateExternalClusterData();
 
@@ -218,6 +221,9 @@ void InfomapBase::run(Network& input, HierarchicalNetwork& output)
 
 		hierarchicalCodelength = codelength = moduleCodelength = oneLevelCodelength;
 		indexCodelength = 0.0;
+
+		if (m_config.preClusterMultiplex && m_config.isMultiplexNetwork())
+			preClusterMultiplexNetwork();
 
 		if (m_config.clusterDataFile != "")
 			consolidateExternalClusterData();
@@ -1772,6 +1778,18 @@ bool InfomapBase::consolidateExternalClusterData(bool printResults)
 	if (!isModulesLoaded)
 		return false;
 
+	initPreClustering(printResults);
+	return true;
+}
+
+bool InfomapBase::preClusterMultiplexNetwork(bool printResults)
+{
+	// overridden
+	return false;
+}
+
+void InfomapBase::initPreClustering(bool printResults)
+{
 	unsigned int numLevels = aggregateFlowValuesFromLeafToRoot();
 
 	m_initialMaxNumberOfModularLevels = numLevels - 1;
@@ -1786,7 +1804,7 @@ bool InfomapBase::consolidateExternalClusterData(bool printResults)
 			" = " << io::toPrecision(hierarchicalCodelength) << std::endl;
 
 	if (!printResults)
-		return true;
+		return;
 
 	if (oneLevelCodelength < hierarchicalCodelength - m_config.minimumCodelengthImprovement)
 	{
@@ -1800,7 +1818,7 @@ bool InfomapBase::consolidateExternalClusterData(bool printResults)
 	Log() << "Hierarchical solution in " << numLevels << " levels:\n";
 	Log() << solutionStatistics.str() << std::endl;
 
-	return true;
+	return;
 }
 
 bool InfomapBase::checkAndConvertBinaryTree()

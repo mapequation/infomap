@@ -57,6 +57,7 @@ struct Config
 		includeSelfLinks(false),
 		ignoreEdgeWeights(false),
 		nodeLimit(0),
+		preClusterMultiplex(false),
 	 	clusterDataFile(""),
 	 	noInfomap(false),
 	 	twoLevel(false),
@@ -128,6 +129,7 @@ struct Config
 		includeSelfLinks(other.includeSelfLinks),
 		ignoreEdgeWeights(other.ignoreEdgeWeights),
 		nodeLimit(other.nodeLimit),
+		preClusterMultiplex(other.preClusterMultiplex),
 	 	clusterDataFile(other.clusterDataFile),
 	 	noInfomap(other.noInfomap),
 	 	twoLevel(other.twoLevel),
@@ -200,6 +202,7 @@ struct Config
 		includeSelfLinks = other.includeSelfLinks;
 		ignoreEdgeWeights = other.ignoreEdgeWeights;
 		nodeLimit = other.nodeLimit;
+		preClusterMultiplex = other.preClusterMultiplex;
 	 	clusterDataFile = other.clusterDataFile;
 	 	noInfomap = other.noInfomap;
 	 	twoLevel = other.twoLevel;
@@ -336,6 +339,8 @@ struct Config
 
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 
+	void setUndirected() { directed = undirdir = outdirdir = rawdir = false; }
+
 	bool isUndirectedFlow() const { return !directed && !outdirdir && !rawdir; } // isUndirected() || undirdir
 
 	bool printAsUndirected() const { return originallyUndirected; }
@@ -387,6 +392,7 @@ struct Config
 	bool includeSelfLinks;
 	bool ignoreEdgeWeights;
 	unsigned int nodeLimit;
+	bool preClusterMultiplex;
 	std::string clusterDataFile;
 	bool noInfomap;
 
