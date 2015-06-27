@@ -371,12 +371,24 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 
 	for (unsigned int nodeIndex = 0; nodeIndex < m_numNodes; ++nodeIndex)
 	{
+
+		unsigned int layer2from = 0;
+		unsigned int layer2to = m_networks.size();
 		double sumOutLinkWeightAllLayers = 0.0;
-		for (unsigned int i = 0; i< m_networks.size(); ++i)
+		for (unsigned int i = layer2from; i < layer2to; ++i)
 			sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
 
 		for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1)
 		{
+
+			if(m_config.multiplexRelaxLimit >= 0){
+				layer2from = ((int)layer1-m_config.multiplexRelaxLimit) < 0 ? 0 : layer1-m_config.multiplexRelaxLimit;
+				layer2to = (layer1+m_config.multiplexRelaxLimit) > m_networks.size() ? m_networks.size() : layer1+m_config.multiplexRelaxLimit;
+				sumOutLinkWeightAllLayers = 0.0;
+				for (unsigned int i = layer2from; i < layer2to; ++i)
+					sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
+			}
+			
 			M2Node m2Source(layer1, nodeIndex);
 
 			const LinkMap& layer1LinkMap = m_networks[layer1].linkMap();
@@ -392,7 +404,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 //			if (m2SourceIt == m_m2Links.end() || m2SourceIt->first != m2Source)
 //				m2SourceIt = m_m2Links.insert(m2SourceIt, std::make_pair(m2Source, std::map<M2Node, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
 
-			for (unsigned int layer2 = 0; layer2 < m_networks.size(); ++layer2)
+			for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2)
 			{
 				// Distribute inter-link to the outgoing intra-links of the node in the inter-linked layer
 				bool isIntra = layer2 == layer1;

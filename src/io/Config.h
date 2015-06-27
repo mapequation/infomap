@@ -72,6 +72,7 @@ struct Config
 		markovTime(1.0),
 		preferredNumberOfModules(0),
 		multiplexRelaxRate(-1),
+		multiplexRelaxLimit(-1),
 		seedToRandomNumberGenerator(123),
 		numTrials(1),
 		minimumCodelengthImprovement(1.0e-10),
@@ -144,6 +145,7 @@ struct Config
 		markovTime(other.markovTime),
 		preferredNumberOfModules(other.preferredNumberOfModules),
 		multiplexRelaxRate(other.multiplexRelaxRate),
+		multiplexRelaxLimit(other.multiplexRelaxLimit),
 		seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
 		numTrials(other.numTrials),
 		minimumCodelengthImprovement(other.minimumCodelengthImprovement),
@@ -217,6 +219,7 @@ struct Config
 	 	markovTime = other.markovTime;
 	 	preferredNumberOfModules = other.preferredNumberOfModules;
 		multiplexRelaxRate = other.multiplexRelaxRate;
+		multiplexRelaxLimit = other.multiplexRelaxLimit;
 		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
 		numTrials = other.numTrials;
 		minimumCodelengthImprovement = other.minimumCodelengthImprovement;
@@ -409,6 +412,7 @@ struct Config
 	double markovTime;
 	unsigned int preferredNumberOfModules;
 	double multiplexRelaxRate;
+	int multiplexRelaxLimit;
 	unsigned long seedToRandomNumberGenerator;
 
 	// Performance and accuracy

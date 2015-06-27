@@ -197,6 +197,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.multiplexRelaxRate, "multiplex-relax-rate",
 			"The probability to relax the constraint to move only in the current layer. If negative, the inter-links have to be provided.", "f", true);
 
+	api.addOptionArgument(conf.multiplexRelaxLimit, "multiplex-relax-limit",
+			"The number of neighboring layers in each direction to relax to. If negative, relax to any layer.", "n", true);
+
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
 			"A seed (integer) to the random number generator.", "n");
 
