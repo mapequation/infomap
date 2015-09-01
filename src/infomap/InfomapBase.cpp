@@ -44,6 +44,7 @@
 #include "MemNetwork.h"
 #include "MultiplexNetwork.h"
 #include "NetworkAdapter.h"
+#include "MemoryNetworkAdapter.h"
 #ifdef _OPENMP
 #include <omp.h>
 #include <stdio.h>
@@ -97,6 +98,9 @@ void InfomapBase::run()
 
 		hierarchicalCodelength = codelength = moduleCodelength = oneLevelCodelength;
 		indexCodelength = 0.0;
+
+		if (m_config.preClusterMultiplex && m_config.isMultiplexNetwork())
+			preClusterMultiplexNetwork();
 
 		if (m_config.clusterDataFile != "")
 			consolidateExternalClusterData();
@@ -217,6 +221,9 @@ void InfomapBase::run(Network& input, HierarchicalNetwork& output)
 
 		hierarchicalCodelength = codelength = moduleCodelength = oneLevelCodelength;
 		indexCodelength = 0.0;
+
+		if (m_config.preClusterMultiplex && m_config.isMultiplexNetwork())
+			preClusterMultiplexNetwork();
 
 		if (m_config.clusterDataFile != "")
 			consolidateExternalClusterData();
@@ -1760,13 +1767,29 @@ bool InfomapBase::consolidateExternalClusterData(bool printResults)
 {
 	Log() << "Build hierarchical structure from external cluster data... " << std::flush;
 
-	NetworkAdapter adapter(m_config, m_treeData);
+	std::auto_ptr<NetworkAdapter> adapter;
+	if (m_config.isMemoryNetwork())
+		adapter = std::auto_ptr<NetworkAdapter>(new MemoryNetworkAdapter(m_config, m_treeData));
+	else
+		adapter = std::auto_ptr<NetworkAdapter>(new NetworkAdapter(m_config, m_treeData));
 
-	bool isModulesLoaded = adapter.readExternalHierarchy(m_config.clusterDataFile);
+	bool isModulesLoaded = adapter->readExternalHierarchy(m_config.clusterDataFile);
 
 	if (!isModulesLoaded)
 		return false;
 
+	initPreClustering(printResults);
+	return true;
+}
+
+bool InfomapBase::preClusterMultiplexNetwork(bool printResults)
+{
+	// overridden
+	return false;
+}
+
+void InfomapBase::initPreClustering(bool printResults)
+{
 	unsigned int numLevels = aggregateFlowValuesFromLeafToRoot();
 
 	m_initialMaxNumberOfModularLevels = numLevels - 1;
@@ -1781,7 +1804,7 @@ bool InfomapBase::consolidateExternalClusterData(bool printResults)
 			" = " << io::toPrecision(hierarchicalCodelength) << std::endl;
 
 	if (!printResults)
-		return true;
+		return;
 
 	if (oneLevelCodelength < hierarchicalCodelength - m_config.minimumCodelengthImprovement)
 	{
@@ -1795,7 +1818,7 @@ bool InfomapBase::consolidateExternalClusterData(bool printResults)
 	Log() << "Hierarchical solution in " << numLevels << " levels:\n";
 	Log() << solutionStatistics.str() << std::endl;
 
-	return true;
+	return;
 }
 
 bool InfomapBase::checkAndConvertBinaryTree()

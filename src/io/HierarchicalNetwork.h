@@ -135,7 +135,10 @@ public:
 		isLeaf(false),
 		originalLeafIndex(0),
 		id(id),
-		skip(false)
+		skip(false),
+		isMemoryNode(false),
+		priorIndex(0),
+		physIndex(0)
 	{
 	}
 
@@ -146,10 +149,13 @@ public:
 		depthBelow(other.depthBelow),
 		parentNode(other.parentNode),
 		parentIndex(other.parentIndex),
-		isLeaf(false),
-		originalLeafIndex(0),
+		isLeaf(other.isLeaf),
+		originalLeafIndex(other.originalLeafIndex),
 		id(other.id),
-		skip(other.skip)
+		skip(other.skip),
+		isMemoryNode(other.isMemoryNode),
+		priorIndex(other.priorIndex),
+		physIndex(other.physIndex)
 	{
 	}
 
@@ -157,6 +163,17 @@ public:
 	SNode& operator= (SNode const& other)
 	{
 		data = other.data;
+		depth = other.depth;
+		depthBelow = other.depthBelow;
+		parentNode = other.parentNode;
+		parentIndex = other.parentIndex;
+		isLeaf = other.isLeaf;
+		originalLeafIndex = other.originalLeafIndex;
+		id = other.id;
+		skip = other.skip;
+		isMemoryNode = other.isMemoryNode;
+		priorIndex = other.priorIndex;
+		physIndex = other.physIndex;
 		return *this;
 	}
 
@@ -207,6 +224,9 @@ public:
 	ChildEdgeList childEdges;
 	bool skip; // Skip in output
 
+	bool isMemoryNode;
+	unsigned int priorIndex;
+	unsigned int physIndex;
 
 public:
 
@@ -811,7 +831,8 @@ public:
 	SNode& addNode(SNode& parent, double flow, double exitFlow);
 
 	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex);
-	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex, unsigned int originalIndex);
+	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex,
+		unsigned int originalIndex, bool isMemoryNode = false, unsigned int priorIndex = 0, unsigned int physIndex = 0);
 
 	void prepareAddLeafNodes(unsigned int numLeafNodes);
 

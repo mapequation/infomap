@@ -34,7 +34,7 @@ def findCommunities(G):
 	print "Found %d top modules with codelength: %f" % (tree.numTopModules(), tree.codelength())
 
 	communities = {}
-	clusterIndexLevel = 1 # 1, 2 or 3 for top, second and lowest cluster level
+	clusterIndexLevel = 1 # 1, 2, ... or -1 for top, second, ... or lowest cluster level
 	for node in tree.leafIter(clusterIndexLevel):
 		communities[node.originalLeafIndex] = node.clusterIndex()
 

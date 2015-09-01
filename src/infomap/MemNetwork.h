@@ -141,6 +141,8 @@ public:
 	double totalM2LinkWeight() const { return m_totM2LinkWeight; }
 	double totalMemorySelfLinkWeight() const { return m_totalMemorySelfLinkWeight; }
 
+	const map<M2Node, double>& m2Nodes() const { return m_m2Nodes; }
+
 	virtual void printNetworkAsPajek(std::string filename) const;
 
 	virtual void disposeLinks();

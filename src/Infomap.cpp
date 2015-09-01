@@ -92,7 +92,7 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 			"Let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the memoryless dynamics with memory nodes.");
 
 	api.addOptionArgument(conf.hardPartitions, "hard-partitions",
-			"Don't allow overlapping modules in memory networks by keeping the memory nodes constrained into their physical nodes.");
+			"Don't allow overlapping modules in memory networks by keeping the memory nodes constrained into their physical nodes.", true);
 
 	api.addOptionArgument(conf.nonBacktracking, "non-backtracking",
 			"Use non-backtracking dynamics and let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the non-backtracking dynamics with memory nodes.", true);
@@ -109,8 +109,11 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.nodeLimit, 'O', "node-limit",
 			"Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", "n", true);
 
+	api.addOptionArgument(conf.preClusterMultiplex, "pre-cluster-multiplex",
+			"Pre-cluster multiplex networks layer by layer.", true);
+
 	api.addOptionArgument(conf.clusterDataFile, 'c', "cluster-data",
-			"Provide an initial two-level solution (.clu format).", "p", true);
+			"Provide an initial two-level (.clu format) or multi-layer (.tree format) solution.", "p", true);
 
 	api.addOptionArgument(conf.noInfomap, "no-infomap",
 			"Don't run Infomap. Useful if initial cluster data should be preserved or non-modular data printed.", true);
@@ -193,6 +196,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 
 	api.addOptionArgument(conf.multiplexRelaxRate, "multiplex-relax-rate",
 			"The probability to relax the constraint to move only in the current layer. If negative, the inter-links have to be provided.", "f", true);
+
+	api.addOptionArgument(conf.multiplexRelaxLimit, "multiplex-relax-limit",
+			"The number of neighboring layers in each direction to relax to. If negative, relax to any layer.", "n", true);
 
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
 			"A seed (integer) to the random number generator.", "n");

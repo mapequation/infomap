@@ -25,17 +25,16 @@ tree <- HierarchicalNetwork(conf)
 
 run(network, tree);
 
-leafIt <- tree$leafIter()
-
-modules <- integer(length = network$numNodes())
-
 cat("Partitioned network in", tree$numTopModules(), "modules with codelength", tree$codelength(), "bits:\n")
+
+clusterIndexLevel <- 1 # 1, 2, ... or -1 for top, second, ... or lowest cluster level
+leafIt <- tree$leafIter(clusterIndexLevel)
+modules <- integer(length = network$numNodes())
 
 while (!leafIt$isEnd()) {
 	modules[leafIt$originalLeafIndex + 1] = leafIt$clusterIndex() + 1
 	leafIt$stepForward()
 }
-
 
 # Create igraph community data
 comm <- create.communities(modules, algorithm = 'Infomap')

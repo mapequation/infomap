@@ -57,6 +57,7 @@ struct Config
 		includeSelfLinks(false),
 		ignoreEdgeWeights(false),
 		nodeLimit(0),
+		preClusterMultiplex(false),
 	 	clusterDataFile(""),
 	 	noInfomap(false),
 	 	twoLevel(false),
@@ -71,6 +72,7 @@ struct Config
 		markovTime(1.0),
 		preferredNumberOfModules(0),
 		multiplexRelaxRate(-1),
+		multiplexRelaxLimit(-1),
 		seedToRandomNumberGenerator(123),
 		numTrials(1),
 		minimumCodelengthImprovement(1.0e-10),
@@ -128,6 +130,7 @@ struct Config
 		includeSelfLinks(other.includeSelfLinks),
 		ignoreEdgeWeights(other.ignoreEdgeWeights),
 		nodeLimit(other.nodeLimit),
+		preClusterMultiplex(other.preClusterMultiplex),
 	 	clusterDataFile(other.clusterDataFile),
 	 	noInfomap(other.noInfomap),
 	 	twoLevel(other.twoLevel),
@@ -142,6 +145,7 @@ struct Config
 		markovTime(other.markovTime),
 		preferredNumberOfModules(other.preferredNumberOfModules),
 		multiplexRelaxRate(other.multiplexRelaxRate),
+		multiplexRelaxLimit(other.multiplexRelaxLimit),
 		seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
 		numTrials(other.numTrials),
 		minimumCodelengthImprovement(other.minimumCodelengthImprovement),
@@ -200,6 +204,7 @@ struct Config
 		includeSelfLinks = other.includeSelfLinks;
 		ignoreEdgeWeights = other.ignoreEdgeWeights;
 		nodeLimit = other.nodeLimit;
+		preClusterMultiplex = other.preClusterMultiplex;
 	 	clusterDataFile = other.clusterDataFile;
 	 	noInfomap = other.noInfomap;
 	 	twoLevel = other.twoLevel;
@@ -214,6 +219,7 @@ struct Config
 	 	markovTime = other.markovTime;
 	 	preferredNumberOfModules = other.preferredNumberOfModules;
 		multiplexRelaxRate = other.multiplexRelaxRate;
+		multiplexRelaxLimit = other.multiplexRelaxLimit;
 		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
 		numTrials = other.numTrials;
 		minimumCodelengthImprovement = other.minimumCodelengthImprovement;
@@ -336,6 +342,8 @@ struct Config
 
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 
+	void setUndirected() { directed = undirdir = outdirdir = rawdir = false; }
+
 	bool isUndirectedFlow() const { return !directed && !outdirdir && !rawdir; } // isUndirected() || undirdir
 
 	bool printAsUndirected() const { return originallyUndirected; }
@@ -387,6 +395,7 @@ struct Config
 	bool includeSelfLinks;
 	bool ignoreEdgeWeights;
 	unsigned int nodeLimit;
+	bool preClusterMultiplex;
 	std::string clusterDataFile;
 	bool noInfomap;
 
@@ -403,6 +412,7 @@ struct Config
 	double markovTime;
 	unsigned int preferredNumberOfModules;
 	double multiplexRelaxRate;
+	int multiplexRelaxLimit;
 	unsigned long seedToRandomNumberGenerator;
 
 	// Performance and accuracy

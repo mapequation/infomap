@@ -87,6 +87,8 @@ public:
 
 	bool consolidateExternalClusterData(bool printResults = false);
 
+	virtual bool preClusterMultiplexNetwork(bool printResults = false);
+
 	// Cannot be protected as they are called from inherited class through pointer to this class.
 	const NodeBase* root() const { return m_treeData.root(); }
 
@@ -101,6 +103,8 @@ protected:
 	virtual FlowDummy getNodeData(NodeBase& node) = 0;
 	virtual std::vector<PhysData>& getPhysicalMembers(NodeBase& node) = 0;
 	virtual M2Node& getMemoryNode(NodeBase& node) = 0;
+
+	void initPreClustering(bool printResults = false);
 
 	/**
 	 * Set the exit (and enter) flow on the nodes.

@@ -30,7 +30,7 @@ tree <- HierarchicalNetwork(conf)
 
 run(network, tree);
 
-clusterIndexLevel <- 1 # 1, 2 or 3 for top, second and lowest cluster level
+clusterIndexLevel <- 1 # 1, 2, ... or -1 for top, second, ... or lowest cluster level
 leafIt <- tree$leafIter(clusterIndexLevel)
 
 cat("Partitioned network in", tree$numTopModules(), "modules with codelength", tree$codelength(), "bits:\n")
