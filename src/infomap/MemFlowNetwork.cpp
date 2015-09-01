@@ -126,8 +126,34 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		}
 	}
 
+// Other ways to complete dangling nodes...
+	// for (unsigned int i = 0; i < numM2Nodes; ++i)
+	// {
+	// 	const M2Node& m2node = m_m2nodes[i];
+	// 	PhysToMemWeightMap& physMap = netPhysToMem[m2node.priorState];
+	// 	double m2weight = network.m2Nodes().find(m2node)->second;
+	// 	physMap.insert(std::make_pair(m2weight, i));
+	// }
+
+	// for (map<M2Node, double>::const_iterator m2it = network.m2Nodes.begin(); m2it != network.m2Nodes.end(); ++m2it)
+	// {
+	// 	const M2Node& m2node = m2it->first;
+	// 	double weight = m2it->second;
+	// 	PhysToMemWeightMap& physMap = netPhysToMem[m2node.priorState];
+	// 	physMap.insert(std::make_pair(weight, m2nodeIndex));
+	// }
+
+	// for (unsigned int i = 0; i < m_flowLinks.size(); ++i)
+	// {
+	// 	const Link& link = m_flowLinks[i];
+	// 	const M2Node& m2node = m_m2nodes[link.target];
+	// 	PhysToMemWeightMap& physMap = netPhysToMem[m2node.priorState];
+	// 	physMap.insert(std::make_pair(link.weight, link.target));
+	// }
+
 	// Add M1 flow to dangling M2 nodes
 	unsigned int numDanglingM2Nodes = 0;
+	unsigned int numDanglingM2NodesCompleted = 0;
 	unsigned int numSelfLinks = 0;
 	double sumExtraLinkWeight = 0.0;
 	for (unsigned int i = 0; i < numM2Nodes; ++i)
@@ -148,6 +174,9 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 						++numSelfLinks;
 					}
 					else {
+						if (nodeOutDegree[from] == 0) {
+							++numDanglingM2NodesCompleted;
+						}
 						++nodeOutDegree[from];
 						sumLinkOutWeight[from] += linkWeight;
 						sumExtraLinkWeight += linkWeight;
@@ -171,7 +200,8 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	}
 	if (m_flowLinks.size() - numLinks != 0)
 		Log() << "\n  -> Added " << (m_flowLinks.size() - numLinks) << " links to " <<
-			numDanglingM2Nodes << " dangling memory nodes -> " << m_flowLinks.size() << " links" << std::flush;
+			numDanglingM2NodesCompleted << " dangling memory nodes -> " << m_flowLinks.size() << " links" <<
+			"\n  -> " << (numDanglingM2Nodes - numDanglingM2NodesCompleted) << " dangling nodes left" << std::flush;
 
 	totalM2LinkWeight += sumExtraLinkWeight;
 	sumUndirLinkWeight = 2 * totalM2LinkWeight - network.totalMemorySelfLinkWeight();

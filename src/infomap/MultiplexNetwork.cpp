@@ -41,7 +41,7 @@
 namespace infomap
 {
 #endif
-	
+
 using std::make_pair;
 
 void MultiplexNetwork::readInputData(std::string filename)
@@ -109,12 +109,12 @@ void MultiplexNetwork::readInputData(std::string filename)
  * 2 4 2 2
  * 2 4 1 1
  *
- * Note: 
+ * Note:
  * *Inter links define unrecorded movements:
  * Each inter-link (layer1 node1 layer2) is expanded to a set of
- * multiplex links {layer1 node1 layer2 node2} for all node2 that 
+ * multiplex links {layer1 node1 layer2 node2} for all node2 that
  * node1 points to in the second layer.
- * 
+ *
  */
 void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 {
@@ -147,7 +147,7 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 	Log() << "done!\n";
 
 	finalizeParser();
-	
+
 }
 
 void MultiplexNetwork::finalizeParser(){
@@ -311,13 +311,16 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 		}
 	}
 
+	unsigned int numInterLinksIgnored = 0;
 	// Then generate memory links from inter links (links between nodes in different layers)
 	for (std::map<M2Node, InterLinkMap>::const_iterator m2NodeIt(m_interLinks.begin()); m2NodeIt != m_interLinks.end(); ++m2NodeIt)
 	{
 		const M2Node& m2Node = m2NodeIt->first;
 		M2LinkMap::iterator m2SourceIt = m_m2Links.lower_bound(m2Node);
+		// Find source iterator to re-use in the loop below
 		if (m2SourceIt == m_m2Links.end() || m2SourceIt->first != m2Node)
 			m2SourceIt = m_m2Links.insert(m2SourceIt, std::make_pair(m2Node, std::map<M2Node, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
+		bool m2SourceNodeAdded = false;
 		unsigned int layer1 = m2Node.priorState;
 		unsigned int nodeIndex = m2Node.physIndex;
 		const InterLinkMap& interLinkMap = m2NodeIt->second;
@@ -335,6 +338,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 				if (nonPhysicalSwitch)
 				{
 					addM2Link(m2SourceIt, layer2, nodeIndex, scaledInterLinkWeight, 0.0, 0.0);
+					m2SourceNodeAdded = true;
 				}
 				else
 				{
@@ -353,13 +357,24 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 							double interIntraLinkWeight = scaledInterLinkWeight * otherLayerLinkWeight / sumOutWeights[layer2][nodeIndex];
 
 							addM2Link(m2SourceIt, layer2, otherLayerTargetNodeIndex, interIntraLinkWeight, 0.0, 0.0);
+							m2SourceNodeAdded = true;
 						}
 					}
 				}
 			}
+			else {
+				++numInterLinksIgnored;
+			}
+		}
+		if (!m2SourceNodeAdded) {
+			// The added source was not used, remove it
+			m_m2Links.erase(m2SourceIt);
 		}
 	}
 	Log() << "done!" << std::endl;
+	if (numInterLinksIgnored > 0) {
+		Log() << "  -> Warning: " << numInterLinksIgnored << " links defined as inter-layer links was same-layer links and ignored.\n";
+	}
 }
 
 void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
@@ -388,7 +403,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 				for (unsigned int i = layer2from; i < layer2to; ++i)
 					sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
 			}
-			
+
 			M2Node m2Source(layer1, nodeIndex);
 
 			const LinkMap& layer1LinkMap = m_networks[layer1].linkMap();
@@ -536,7 +551,7 @@ std::string MultiplexNetwork::parseMultiplexLinks(std::ifstream& file)
 		parseMultiplexLink(line, layer1, node1, layer2, node2, weight);
 
 		addMultiplexLink(layer1, node1, layer2, node2, weight);
-		
+
 	}
 	return line;
 }
