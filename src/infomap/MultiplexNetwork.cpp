@@ -364,6 +364,9 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 			}
 			else {
 				++numInterLinksIgnored;
+				throw FileFormatError(io::Str() << "\nLink '" <<
+					(layer1 + m_indexOffset) << ", " << (nodeIndex + m_indexOffset) << ", " << (layer2 + m_indexOffset) <<
+					"' is declared as an inter-layer link (layer1, node, layer2) but is not.");
 			}
 		}
 		if (!m2SourceNodeAdded) {
