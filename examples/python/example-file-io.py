@@ -8,22 +8,22 @@ conf = infomap.init("--silent -N5")
 
 filename = "../../ninetriangles.net"
 name = os.path.splitext(os.path.basename(filename))[0]
-print "Loading network from '%s'..." % filename
+print("Loading network from '%s'..." % filename)
 network = infomap.Network(conf)
 network.readInputData(filename)
 
-print "Running Infomap..."
+print("Running Infomap...")
 tree = infomap.HierarchicalNetwork(conf)
 infomap.run(network, tree)
 
-print "Found %d top modules with codelength: %f" % (tree.numTopModules(), tree.codelength())
+print("Found %d top modules with codelength: %f" % (tree.numTopModules(), tree.codelength()))
 
-print "Writing top level clusters to %s_level1.clu..." % name
+print("Writing top level clusters to %s_level1.clu..." % name)
 tree.writeClu("%s_level1.clu" % name, 1)
-print "Writing second level clusters to %s_level2.clu..." % name
+print("Writing second level clusters to %s_level2.clu..." % name)
 tree.writeClu("%s_level2.clu" % name, 2)
 
-print "Writing tree to %s.tree..." % name
+print("Writing tree to %s.tree..." % name)
 tree.writeHumanReadableTree("%s.tree" % name)
 
-print "Done!"
+print("Done!")

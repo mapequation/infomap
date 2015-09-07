@@ -22,7 +22,7 @@ def findCommunities(G):
 	# Output data
 	tree = infomap.HierarchicalNetwork(conf)
 
-	print "Building network..."
+	print("Building network...")
 	for e in G.edges_iter():
 		network.addLink(*e)
 
@@ -31,7 +31,7 @@ def findCommunities(G):
 	# Cluster network
 	infomap.run(network, tree);
 
-	print "Found %d top modules with codelength: %f" % (tree.numTopModules(), tree.codelength())
+	print("Found %d top modules with codelength: %f" % (tree.numTopModules(), tree.codelength()))
 
 	communities = {}
 	clusterIndexLevel = 1 # 1, 2, ... or -1 for top, second, ... or lowest cluster level
@@ -85,6 +85,6 @@ G=nx.karate_club_graph()
 
 numCommunities = findCommunities(G)
 
-print "Number of communities found:", numCommunities
+print("Number of communities found: %d" % numCommunities)
 
 drawNetwork(G)
