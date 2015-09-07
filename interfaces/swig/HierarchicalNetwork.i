@@ -37,6 +37,9 @@ namespace std {
 				raise StopIteration
 
 			return self
+
+		def __next__(self):
+			return self.next()
 	%}
 }
 
@@ -60,6 +63,9 @@ namespace std {
 				raise StopIteration
 
 			return self
+
+		def __next__(self):
+			return self.next()
 	%}
 }
 #endif
