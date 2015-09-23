@@ -152,14 +152,14 @@ void MemNetwork::parseTrigram(std::string filename)
 		int n1;
 		unsigned int n2, n3;
 		double weight;
-		parseM2Link(line, n1, n2, n3, weight);
+		parseStateLink(line, n1, n2, n3, weight);
 
 		if (n1 + static_cast<int>(m_indexOffset) == -1)
 		{
-			addIncompleteM2Link(n2, n3, weight);
+			addIncompleteStateLink(n2, n3, weight);
 		}
 		else
-			addM2Link(n1, n2, n2, n3, weight);
+			addStateLink(n1, n2, n2, n3, weight);
 
 		if (n2 != n3 || m_config.includeSelfLinks)
 			insertLink(n2, n3, weight);
@@ -224,7 +224,7 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 					double linkWeight = secondSubIt->second;
 
 					if(!m_config.nonBacktracking || (n1 != n3))
-						addM2Link(n1, n2, n2, n3, linkWeight, firstLinkWeight / secondLinkSubMap.size(), 0.0);
+						addStateLink(n1, n2, n2, n3, linkWeight, firstLinkWeight / secondLinkSubMap.size(), 0.0);
 
 				}
 			}
@@ -232,7 +232,7 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 			{
 				// No chainable link found, create a dangling memory node (or remove need for existence in MemFlowNetwork?)
 //				addStateNode(n1, n2, firstLinkWeight);
-				addM2Link(n1, n1, n1, n2, firstLinkWeight);
+				addStateLink(n1, n1, n1, n2, firstLinkWeight);
 			}
 		}
 	}
@@ -242,18 +242,18 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 
 void MemNetwork::simulateMemoryToIncompleteData()
 {
-	if (m_numIncompleteM2Links == 0)
+	if (m_numIncompleteStateLinks == 0)
 		return;
 
-	Log() << "\n  -> Found " << m_numM2LinksFound << " trigrams with " <<
-			m_numIncompleteM2LinksFound << " incomplete trigrams.";
-	Log() << "\n  -> Patching " << m_numIncompleteM2Links << " incomplete trigrams.." << std::flush;
+	Log() << "\n  -> Found " << m_numStateLinksFound << " trigrams with " <<
+			m_numIncompleteStateLinksFound << " incomplete trigrams.";
+	Log() << "\n  -> Patching " << m_numIncompleteStateLinks << " incomplete trigrams.." << std::flush;
 
 	// Store all incomplete data on a compact array, with fast mapping from incomplete link source index to the compact index
-	std::vector<std::deque<ComplementaryData> > complementaryData(m_numIncompleteM2Links);
+	std::vector<std::deque<ComplementaryData> > complementaryData(m_numIncompleteStateLinks);
 	std::vector<int> incompleteSourceMapping(m_numNodes, -1);
 	int compactIndex = 0;
-	for (LinkMap::const_iterator linkIt(m_incompleteM2Links.begin()); linkIt != m_incompleteM2Links.end(); ++linkIt, ++compactIndex)
+	for (LinkMap::const_iterator linkIt(m_incompleteStateLinks.begin()); linkIt != m_incompleteStateLinks.end(); ++linkIt, ++compactIndex)
 	{
 		unsigned int n1 = linkIt->first;
 		incompleteSourceMapping[n1] = compactIndex;
@@ -274,7 +274,7 @@ void MemNetwork::simulateMemoryToIncompleteData()
 	unsigned int numExactMatches = 0;
 	unsigned int numPartialMatches = 0;
 	unsigned int numShiftedMatches = 0;
-	for (M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
+	for (StateLinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
 	{
 		const StateNode& m2source = linkIt->first;
 		const std::map<StateNode, double>& subLinks = linkIt->second;
@@ -320,7 +320,7 @@ void MemNetwork::simulateMemoryToIncompleteData()
 			}
 
 			++linkCount;
-			unsigned int progress = linkCount * 1000 / m_numM2Links; // 0.1% resolution
+			unsigned int progress = linkCount * 1000 / m_numStateLinks; // 0.1% resolution
 			if (progress != lastProgress) {
 				Log() << "\r    -> Collecting matches... (" << progress * 0.1 << "%)      " << std::flush;
 				lastProgress = progress;
@@ -332,10 +332,10 @@ void MemNetwork::simulateMemoryToIncompleteData()
 	Log() << "\r    -> Found " << numExactMatches << " exact, " << numPartialMatches << " partial and " <<
 			numShiftedMatches << " shifted matches.\n" << std::flush;
 	linkCount = 0;
-	unsigned int numM2LinksBefore = m_numM2Links;
-	unsigned int tempNumM2LinksBefore = 0;
-	unsigned int tempNumM2LinksAggregatedBefore = 0;
-	unsigned int numAggregatedLinksBefore = m_numAggregatedM2Links;
+	unsigned int numStateLinksBefore = m_numStateLinks;
+	unsigned int tempNumStateLinksBefore = 0;
+	unsigned int tempNumStateLinksAggregatedBefore = 0;
+	unsigned int numAggregatedLinksBefore = m_numAggregatedStateLinks;
 	unsigned int numExactLinksAdded = 0;
 	unsigned int numPartialLinksAdded = 0;
 	unsigned int numShiftedLinksAdded = 0;
@@ -357,38 +357,38 @@ void MemNetwork::simulateMemoryToIncompleteData()
 
 			if (data.exactMatch.size() > 0)
 			{
-				tempNumM2LinksBefore = m_numM2Links;
-				tempNumM2LinksAggregatedBefore = m_numAggregatedM2Links;
+				tempNumStateLinksBefore = m_numStateLinks;
+				tempNumStateLinksAggregatedBefore = m_numAggregatedStateLinks;
 				for (ComplementaryData::MapType::const_iterator linkIt(data.exactMatch.begin()); linkIt != data.exactMatch.end(); ++linkIt)
-					addM2Link(linkIt->first, data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->second / data.sumWeightExactMatch);
-				numExactLinksAdded += m_numM2Links - tempNumM2LinksBefore;
-				numExactAggregations += m_numAggregatedM2Links - tempNumM2LinksAggregatedBefore;
+					addStateLink(linkIt->first, data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->second / data.sumWeightExactMatch);
+				numExactLinksAdded += m_numStateLinks - tempNumStateLinksBefore;
+				numExactAggregations += m_numAggregatedStateLinks - tempNumStateLinksAggregatedBefore;
 				++numIncompleteLinksWithExactMatches;
 			}
 			else if (data.partialMatch.size() > 0)
 			{
-				tempNumM2LinksBefore = m_numM2Links;
-				tempNumM2LinksAggregatedBefore = m_numAggregatedM2Links;
+				tempNumStateLinksBefore = m_numStateLinks;
+				tempNumStateLinksAggregatedBefore = m_numAggregatedStateLinks;
 				for (ComplementaryData::MapType::const_iterator linkIt(data.partialMatch.begin()); linkIt != data.partialMatch.end(); ++linkIt)
-					addM2Link(linkIt->first, data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->second / data.sumWeightPartialMatch);
-				numPartialLinksAdded += m_numM2Links - tempNumM2LinksBefore;
-				numPartialAggregations += m_numAggregatedM2Links - tempNumM2LinksAggregatedBefore;
+					addStateLink(linkIt->first, data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->second / data.sumWeightPartialMatch);
+				numPartialLinksAdded += m_numStateLinks - tempNumStateLinksBefore;
+				numPartialAggregations += m_numAggregatedStateLinks - tempNumStateLinksAggregatedBefore;
 				++numIncompleteLinksWithPartialMatches;
 			}
 			else if (data.shiftedMatch.size() > 0)
 			{
-				tempNumM2LinksBefore = m_numM2Links;
-				tempNumM2LinksAggregatedBefore = m_numAggregatedM2Links;
+				tempNumStateLinksBefore = m_numStateLinks;
+				tempNumStateLinksAggregatedBefore = m_numAggregatedStateLinks;
 				for (ComplementaryData::MapType::const_iterator linkIt(data.shiftedMatch.begin()); linkIt != data.shiftedMatch.end(); ++linkIt)
-					addM2Link(linkIt->first, data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->second / data.sumWeightShiftedMatch);
-				numShiftedLinksAdded += m_numM2Links - tempNumM2LinksBefore;
-				numShiftedAggregations += m_numAggregatedM2Links - tempNumM2LinksAggregatedBefore;
+					addStateLink(linkIt->first, data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight * linkIt->second / data.sumWeightShiftedMatch);
+				numShiftedLinksAdded += m_numStateLinks - tempNumStateLinksBefore;
+				numShiftedAggregations += m_numAggregatedStateLinks - tempNumStateLinksAggregatedBefore;
 				++numIncompleteLinksWithShiftedMatches;
 			}
 			else
 			{
 				// No matching data to complement, create self-memory link
-				addM2Link(data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight);
+				addStateLink(data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n1, data.incompleteLink.n2, data.incompleteLink.weight);
 				++numIncompleteLinksWithNoMatches;
 			}
 		}
@@ -400,8 +400,8 @@ void MemNetwork::simulateMemoryToIncompleteData()
 		}
 	}
 
-	Log() << "\n  -> " << m_numM2Links - numM2LinksBefore << " memory links added and " <<
-		m_numAggregatedM2Links - numAggregatedLinksBefore << " updated:" <<
+	Log() << "\n  -> " << m_numStateLinks - numStateLinksBefore << " memory links added and " <<
+		m_numAggregatedStateLinks - numAggregatedLinksBefore << " updated:" <<
 		"\n    -> " << numIncompleteLinksWithExactMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithExactMatches) << " patched by " <<
 			numExactAggregations << " updates and " << numExactLinksAdded << " new links from exact matches." <<
 		"\n    -> " << numIncompleteLinksWithPartialMatches << " incomplete " << io::toPlural("link", numIncompleteLinksWithPartialMatches) << " patched by " <<
@@ -413,7 +413,7 @@ void MemNetwork::simulateMemoryToIncompleteData()
 
 }
 
-void MemNetwork::parseM2Link(const std::string& line, int& n1, unsigned int& n2, unsigned int& n3, double& weight)
+void MemNetwork::parseStateLink(const std::string& line, int& n1, unsigned int& n2, unsigned int& n3, double& weight)
 {
 	m_extractor.clear();
 	m_extractor.str(line);
@@ -426,7 +426,7 @@ void MemNetwork::parseM2Link(const std::string& line, int& n1, unsigned int& n2,
 	n3 -= m_indexOffset;
 }
 
-void MemNetwork::parseM2Link(char line[], int& n1, unsigned int& n2, unsigned int& n3, double& weight)
+void MemNetwork::parseStateLink(char line[], int& n1, unsigned int& n2, unsigned int& n3, double& weight)
 {
 	char *cptr;
 	cptr = strtok(line, " \t"); // Get first non-whitespace character position
@@ -452,9 +452,9 @@ void MemNetwork::parseM2Link(char line[], int& n1, unsigned int& n2, unsigned in
 	n3 -= m_indexOffset;
 }
 
-bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight)
+bool MemNetwork::addStateLink(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight)
 {
-	++m_numM2LinksFound;
+	++m_numStateLinksFound;
 
 	if (m_config.nodeLimit > 0 && (n1 >= m_config.nodeLimit || n2 >= m_config.nodeLimit))
 		return false;
@@ -467,7 +467,7 @@ bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned 
 			m_totalMemorySelfLinkWeight += weight;
 		}
 
-		insertM2Link(n1PriorState, n1, n2PriorState, n2, weight);
+		insertStateLink(n1PriorState, n1, n2PriorState, n2, weight);
 		addStateNode(n1PriorState, n1, firstStateNodeWeight);
 		addStateNode(n2PriorState, n2, secondStateNodeWeight);
 	}
@@ -475,7 +475,7 @@ bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned 
 	{
 		if(n1PriorState != n1)
 		{
-			insertM2Link(n1PriorState, n1, n2PriorState, n2, weight);
+			insertStateLink(n1PriorState, n1, n2PriorState, n2, weight);
 			addStateNode(n1PriorState, n1, firstStateNodeWeight);
 			addStateNode(n2PriorState, n2, secondStateNodeWeight);
 		}
@@ -486,9 +486,9 @@ bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned 
 	return true;
 }
 
-bool MemNetwork::addM2Link(M2LinkMap::iterator firstStateNode, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight)
+bool MemNetwork::addStateLink(StateLinkMap::iterator firstStateNode, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight)
 {
-	++m_numM2LinksFound;
+	++m_numStateLinksFound;
 
 	if (m_config.nodeLimit > 0 && (n2 >= m_config.nodeLimit))
 		return false;
@@ -505,7 +505,7 @@ bool MemNetwork::addM2Link(M2LinkMap::iterator firstStateNode, unsigned int n2Pr
 			m_totalMemorySelfLinkWeight += weight;
 		}
 
-		insertM2Link(firstStateNode, n2PriorState, n2, weight);
+		insertStateLink(firstStateNode, n2PriorState, n2, weight);
 		addStateNode(n1PriorState, n1, firstStateNodeWeight);
 		addStateNode(n2PriorState, n2, secondStateNodeWeight);
 	}
@@ -513,7 +513,7 @@ bool MemNetwork::addM2Link(M2LinkMap::iterator firstStateNode, unsigned int n2Pr
 	{
 		if(n1PriorState != n1)
 		{
-			insertM2Link(firstStateNode, n2PriorState, n2, weight);
+			insertStateLink(firstStateNode, n2PriorState, n2, weight);
 			addStateNode(n1PriorState, n1, firstStateNodeWeight);
 			addStateNode(n2PriorState, n2, secondStateNodeWeight);
 		}
@@ -524,24 +524,24 @@ bool MemNetwork::addM2Link(M2LinkMap::iterator firstStateNode, unsigned int n2Pr
 	return true;
 }
 
-bool MemNetwork::insertM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight)
+bool MemNetwork::insertStateLink(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight)
 {
 	StateNode m1(n1PriorState, n1);
 	StateNode m2(n2PriorState, n2);
 
-	++m_numM2Links;
-	m_totM2LinkWeight += weight;
+	++m_numStateLinks;
+	m_totStateLinkWeight += weight;
 
 	// Aggregate link weights if they are definied more than once
-	M2LinkMap::iterator firstIt = m_m2Links.lower_bound(m1);
+	StateLinkMap::iterator firstIt = m_m2Links.lower_bound(m1);
 	if (firstIt != m_m2Links.end() && firstIt->first == m1) // First node already exists, check second node
 	{
 		std::pair<std::map<StateNode, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(m2, weight));
 		if (!ret2.second)
 		{
 			ret2.first->second += weight;
-			++m_numAggregatedM2Links;
-			--m_numM2Links;
+			++m_numAggregatedStateLinks;
+			--m_numStateLinks;
 			return false;
 		}
 	}
@@ -553,48 +553,48 @@ bool MemNetwork::insertM2Link(unsigned int n1PriorState, unsigned int n1, unsign
 	return true;
 }
 
-bool MemNetwork::insertM2Link(M2LinkMap::iterator firstStateNode, unsigned int n2PriorState, unsigned int n2, double weight)
+bool MemNetwork::insertStateLink(StateLinkMap::iterator firstStateNode, unsigned int n2PriorState, unsigned int n2, double weight)
 {
-	m_totM2LinkWeight += weight;
+	m_totStateLinkWeight += weight;
 	std::pair<std::map<StateNode, double>::iterator, bool> ret2 = firstStateNode->second.insert(std::make_pair(StateNode(n2PriorState, n2), weight));
 	if (!ret2.second)
 	{
 		ret2.first->second += weight;
-		++m_numAggregatedM2Links;
+		++m_numAggregatedStateLinks;
 		return false;
 	}
 	else
 	{
-		++m_numM2Links;
+		++m_numStateLinks;
 		return true;
 	}
 }
 
-bool MemNetwork::addIncompleteM2Link(unsigned int n1, unsigned int n2, double weight)
+bool MemNetwork::addIncompleteStateLink(unsigned int n1, unsigned int n2, double weight)
 {
-	++m_numIncompleteM2LinksFound;
+	++m_numIncompleteStateLinksFound;
 
 	if (m_config.nodeLimit > 0 && (n1 >= m_config.nodeLimit || n2 >= m_config.nodeLimit))
 		return false;
 
-	++m_numIncompleteM2Links;
+	++m_numIncompleteStateLinks;
 
 	// Aggregate link weights if they are definied more than once
-	LinkMap::iterator firstIt = m_incompleteM2Links.lower_bound(n1);
-	if (firstIt != m_incompleteM2Links.end() && firstIt->first == n1) // First linkEnd already exists, check second linkEnd
+	LinkMap::iterator firstIt = m_incompleteStateLinks.lower_bound(n1);
+	if (firstIt != m_incompleteStateLinks.end() && firstIt->first == n1) // First linkEnd already exists, check second linkEnd
 	{
 		std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(n2, weight));
 		if (!ret2.second)
 		{
 			ret2.first->second += weight;
-			++m_numAggregatedIncompleteM2Links;
-			--m_numIncompleteM2Links;
+			++m_numAggregatedIncompleteStateLinks;
+			--m_numIncompleteStateLinks;
 			return false;
 		}
 	}
 	else
 	{
-		m_incompleteM2Links.insert(firstIt, std::make_pair(n1, std::map<unsigned int, double>()))->second.insert(std::make_pair(n2, weight));
+		m_incompleteStateLinks.insert(firstIt, std::make_pair(n1, std::map<unsigned int, double>()))->second.insert(std::make_pair(n2, weight));
 	}
 
 	return true;
@@ -673,7 +673,7 @@ void MemNetwork::initNodeDegrees()
 	m_outDegree.assign(m_stateNodes.size(), 0.0);
 	m_sumLinkOutWeight.assign(m_stateNodes.size(), 0.0);
 
-	for (MemNetwork::M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
+	for (MemNetwork::StateLinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
 	{
 		const StateNode& m2source = linkIt->first;
 		const std::map<StateNode, double>& subLinks = linkIt->second;
@@ -681,7 +681,7 @@ void MemNetwork::initNodeDegrees()
 		// Get the index for the m2 source node
 		MemNetwork::StateNodeMap::const_iterator nodeMapIt = m_stateNodeMap.find(m2source);
 		if (nodeMapIt == m_stateNodeMap.end())
-			throw InputDomainError(io::Str() << "Couldn't find mapped index for source M2 node " << m2source);
+			throw InputDomainError(io::Str() << "Couldn't find mapped index for source State node " << m2source);
 		unsigned int sourceIndex = nodeMapIt->second;
 
 		for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
@@ -690,7 +690,7 @@ void MemNetwork::initNodeDegrees()
 			double linkWeight = subIt->second;
 //			nodeMapIt = m_stateNodeMap.find(m2target);
 //			if (nodeMapIt == m_stateNodeMap.end())
-//				throw InputDomainError(io::Str() << "Couldn't find mapped index for target M2 node " << m2target);
+//				throw InputDomainError(io::Str() << "Couldn't find mapped index for target State node " << m2target);
 //			unsigned int targetIndex = nodeMapIt->second;
 
 			++m_outDegree[sourceIndex];
@@ -725,10 +725,10 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 		Log() << "-------------------\n";
 	}
 
-	Log() << "  -> Found " << m_numNodesFound << " nodes and " << m_numM2LinksFound << " memory links.\n";
-	Log() << "  -> Generated " << m_stateNodes.size() << " memory nodes and " << m_numM2Links << " memory links.\n";
-	if (m_numAggregatedM2Links > 0)
-		Log() << "  -> Aggregated " << m_numAggregatedM2Links << " memory links.\n";
+	Log() << "  -> Found " << m_numNodesFound << " nodes and " << m_numStateLinksFound << " memory links.\n";
+	Log() << "  -> Generated " << m_stateNodes.size() << " memory nodes and " << m_numStateLinks << " memory links.\n";
+	if (m_numAggregatedStateLinks > 0)
+		Log() << "  -> Aggregated " << m_numAggregatedStateLinks << " memory links.\n";
 	Log() << std::flush;
 }
 
@@ -740,8 +740,8 @@ void MemNetwork::printNetworkAsPajek(std::string filename) const
 	for (unsigned int i = 0; i < m_numNodes; ++i)
 		out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
 
-	out << "*3grams " << m_numM2Links << "\n";
-	for (M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
+	out << "*3grams " << m_numStateLinks << "\n";
+	for (StateLinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
 	{
 		const StateNode& m2source = linkIt->first;
 		const std::map<StateNode, double>& subLinks = linkIt->second;
@@ -758,7 +758,7 @@ void MemNetwork::disposeLinks()
 {
 	Network::disposeLinks();
 	m_m2Links.clear();
-	m_incompleteM2Links.clear();
+	m_incompleteStateLinks.clear();
 }
 
 #ifdef NS_INFOMAP

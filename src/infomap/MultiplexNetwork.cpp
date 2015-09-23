@@ -284,7 +284,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 				double linkWeight = subIt->second;
 
 				sumOutWeights[layerIndex][n1] += linkWeight;
-				addM2Link(layerIndex, n1, layerIndex, n2, linkWeight);
+				addStateLink(layerIndex, n1, layerIndex, n2, linkWeight);
 			}
 		}
 	}
@@ -316,7 +316,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 	for (std::map<StateNode, InterLinkMap>::const_iterator stateNodeIt(m_interLinks.begin()); stateNodeIt != m_interLinks.end(); ++stateNodeIt)
 	{
 		const StateNode& stateNode = stateNodeIt->first;
-		M2LinkMap::iterator m2SourceIt = m_m2Links.lower_bound(stateNode);
+		StateLinkMap::iterator m2SourceIt = m_m2Links.lower_bound(stateNode);
 		// Find source iterator to re-use in the loop below
 		if (m2SourceIt == m_m2Links.end() || m2SourceIt->first != stateNode)
 			m2SourceIt = m_m2Links.insert(m2SourceIt, std::make_pair(stateNode, std::map<StateNode, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
@@ -337,7 +337,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 				bool nonPhysicalSwitch = false;
 				if (nonPhysicalSwitch)
 				{
-					addM2Link(m2SourceIt, layer2, nodeIndex, scaledInterLinkWeight, 0.0, 0.0);
+					addStateLink(m2SourceIt, layer2, nodeIndex, scaledInterLinkWeight, 0.0, 0.0);
 					m2SourceNodeAdded = true;
 				}
 				else
@@ -356,7 +356,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 
 							double interIntraLinkWeight = scaledInterLinkWeight * otherLayerLinkWeight / sumOutWeights[layer2][nodeIndex];
 
-							addM2Link(m2SourceIt, layer2, otherLayerTargetNodeIndex, interIntraLinkWeight, 0.0, 0.0);
+							addStateLink(m2SourceIt, layer2, otherLayerTargetNodeIndex, interIntraLinkWeight, 0.0, 0.0);
 							m2SourceNodeAdded = true;
 						}
 					}
@@ -418,7 +418,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 
 			double sumOutLinkWeightLayer1 = m_networks[layer1].sumLinkOutWeight()[nodeIndex];
 
-//			M2LinkMap::iterator m2SourceIt = m_m2Links.lower_bound(m2Source);
+//			StateLinkMap::iterator m2SourceIt = m_m2Links.lower_bound(m2Source);
 //			if (m2SourceIt == m_m2Links.end() || m2SourceIt->first != m2Source)
 //				m2SourceIt = m_m2Links.insert(m2SourceIt, std::make_pair(m2Source, std::map<StateNode, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
 
@@ -449,7 +449,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 
 					double aggregatedLinkWeight = relaxRate * linkWeight / sumOutLinkWeightAllLayers  + (1.0 - relaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
 
-					addM2Link(layer1, nodeIndex, layer2, n2, aggregatedLinkWeight, intraLinkWeight, 0.0);
+					addStateLink(layer1, nodeIndex, layer2, n2, aggregatedLinkWeight, intraLinkWeight, 0.0);
 				}
 			}
 		}
@@ -471,7 +471,7 @@ void MultiplexNetwork::addMemoryNetworkFromMultiplexLinks()
 		{
 			const StateNode& target(subIt->first);
 			double linkWeight = subIt->second;
-			addM2Link(source.layer(), source.physIndex, target.layer(), target.physIndex, linkWeight);
+			addStateLink(source.layer(), source.physIndex, target.layer(), target.physIndex, linkWeight);
 		}
 	}
 	Log() << "done!" << std::endl;

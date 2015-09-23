@@ -96,22 +96,22 @@ struct ComplementaryData
 class MemNetwork: public Network
 {
 public:
-	// typedef map<pair<StateNode, StateNode>, double> M2LinkMap;
-	typedef map<StateNode, map<StateNode, double> > M2LinkMap; // Main key is first m2-node, sub-key is second m2-node
+	// typedef map<pair<StateNode, StateNode>, double> StateLinkMap;
+	typedef map<StateNode, map<StateNode, double> > StateLinkMap; // Main key is first m2-node, sub-key is second m2-node
 	typedef map<StateNode, unsigned int> StateNodeMap;
 
 	MemNetwork(const Config& config) :
 		Network(config),
 		m_totStateNodeWeight(0.0),
-		m_numM2LinksFound(0),
-		m_numM2Links(0),
-		m_totM2LinkWeight(0.0),
-		m_numAggregatedM2Links(0),
+		m_numStateLinksFound(0),
+		m_numStateLinks(0),
+		m_totStateLinkWeight(0.0),
+		m_numAggregatedStateLinks(0),
 		m_numMemorySelfLinks(0),
 		m_totalMemorySelfLinkWeight(0.0),
-		m_numIncompleteM2LinksFound(0),
-		m_numIncompleteM2Links(0),
-		m_numAggregatedIncompleteM2Links(0)
+		m_numIncompleteStateLinksFound(0),
+		m_numIncompleteStateLinks(0),
+		m_numAggregatedIncompleteStateLinks(0)
 	{}
 	virtual ~MemNetwork() {}
 
@@ -121,9 +121,9 @@ public:
 	 * Add a weighted link between two memory nodes.
 	 * @return true if a new link was inserted, false if skipped due to cutoff limit or aggregated to existing link
 	 */
-	bool addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight);
-	bool addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight);
-	bool addM2Link(M2LinkMap::iterator firstStateNode, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight);
+	bool addStateLink(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight);
+	bool addStateLink(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight);
+	bool addStateLink(StateLinkMap::iterator firstStateNode, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight);
 
 	void addStateNode(unsigned int priorState, unsigned int nodeIndex, double weight);
 	void addStateNode(StateNode m2node, double weight);
@@ -136,9 +136,9 @@ public:
 	const StateNodeMap& stateNodeMap() const { return m_stateNodeMap; }
 	const std::vector<double>& stateNodeWeights() const { return m_stateNodeWeights; }
 	double totalStateNodeWeight() const { return m_totStateNodeWeight; }
-	const M2LinkMap& m2LinkMap() const { return m_m2Links; }
-	unsigned int numM2Links() const { return m_numM2Links; }
-	double totalM2LinkWeight() const { return m_totM2LinkWeight; }
+	const StateLinkMap& m2LinkMap() const { return m_m2Links; }
+	unsigned int numStateLinks() const { return m_numStateLinks; }
+	double totalStateLinkWeight() const { return m_totStateLinkWeight; }
 	double totalMemorySelfLinkWeight() const { return m_totalMemorySelfLinkWeight; }
 
 	const map<StateNode, double>& stateNodes() const { return m_stateNodes; }
@@ -219,17 +219,17 @@ protected:
 	 * information is missing.
 	 * @throws an error if not both node numbers can be extracted.
 	 */
-	void parseM2Link(const std::string& line, int& n1, unsigned int& n2, unsigned int& n3, double& weight);
-	void parseM2Link(char line[], int& n1, unsigned int& n2, unsigned int& n3, double& weight);
+	void parseStateLink(const std::string& line, int& n1, unsigned int& n2, unsigned int& n3, double& weight);
+	void parseStateLink(char line[], int& n1, unsigned int& n2, unsigned int& n3, double& weight);
 
 	/**
 	 * Insert memory link, indexed on first m2-node and aggregated if exist
-	 * @note Called by addM2Link
+	 * @note Called by addStateLink
 	 * @return true if a new link was inserted, false if aggregated
 	 */
-	bool insertM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight);
-	bool insertM2Link(M2LinkMap::iterator firstStateNode, unsigned int n2PriorState, unsigned int n2, double weight);
-	bool addIncompleteM2Link(unsigned int n1, unsigned int n2, double weight);
+	bool insertStateLink(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight);
+	bool insertStateLink(StateLinkMap::iterator firstStateNode, unsigned int n2PriorState, unsigned int n2, double weight);
+	bool addIncompleteStateLink(unsigned int n1, unsigned int n2, double weight);
 
 	unsigned int addMissingPhysicalNodes();
 
@@ -239,27 +239,27 @@ protected:
 	StateNodeMap m_stateNodeMap;
 	std::vector<double> m_stateNodeWeights; // out weights on memory nodes
 	double m_totStateNodeWeight;
-	LinkMap m_incompleteM2Links;
+	LinkMap m_incompleteStateLinks;
 
-	unsigned int m_numM2LinksFound;
-	unsigned int m_numM2Links;
-	M2LinkMap m_m2Links; // Raw data from file
+	unsigned int m_numStateLinksFound;
+	unsigned int m_numStateLinks;
+	StateLinkMap m_m2Links; // Raw data from file
 
-	double m_totM2LinkWeight;
-	unsigned int m_numAggregatedM2Links;
+	double m_totStateLinkWeight;
+	unsigned int m_numAggregatedStateLinks;
 	unsigned int m_numMemorySelfLinks;
 	double m_totalMemorySelfLinkWeight;
 
-	unsigned int m_numIncompleteM2LinksFound;
-	unsigned int m_numIncompleteM2Links;
-	unsigned int m_numAggregatedIncompleteM2Links;
+	unsigned int m_numIncompleteStateLinksFound;
+	unsigned int m_numIncompleteStateLinks;
+	unsigned int m_numAggregatedIncompleteStateLinks;
 
 };
 
 inline
-bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight)
+bool MemNetwork::addStateLink(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight)
 {
-	return addM2Link(n1PriorState, n1, n2PriorState, n2, weight, weight, 0.0);
+	return addStateLink(n1PriorState, n1, n2PriorState, n2, weight, weight, 0.0);
 }
 
 inline

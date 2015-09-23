@@ -1657,14 +1657,14 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 			Log() << "Printing physical flow to " << outName << "... " << std::flush;
 			SafeOutFile out(outName.c_str());
 			double sumFlow = 0.0;
-			double sumM2flow = 0.0;
+			double sumStateflow = 0.0;
 			std::vector<double> m1Flow(network.numNodes(), 0.0);
 			for (unsigned int i = 0; i < network.numStateNodes(); ++i)
 			{
 				const PhysData& physData = getPhysicalMembers(m_treeData.getLeafNode(i))[0];
 				m1Flow[physData.physNodeIndex] += physData.sumFlowFromStateNode;
 				sumFlow += physData.sumFlowFromStateNode;
-				sumM2flow += nodeFlow[i];
+				sumStateflow += nodeFlow[i];
 			}
 			for (unsigned int i = 0; i < m1Flow.size(); ++i)
 			{

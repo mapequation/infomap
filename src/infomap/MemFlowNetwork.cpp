@@ -61,15 +61,15 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	m_nodeFlow.assign(numStateNodes, 0.0);
 	m_nodeTeleportRates.assign(numStateNodes, 0.0);
 
-	const MemNetwork::M2LinkMap& linkMap = network.m2LinkMap();
-	unsigned int numLinks = network.numM2Links();
+	const MemNetwork::StateLinkMap& linkMap = network.m2LinkMap();
+	unsigned int numLinks = network.numStateLinks();
 	m_flowLinks.resize(numLinks);
-	double totalM2LinkWeight = network.totalM2LinkWeight();
-	double sumUndirLinkWeight = 2 * totalM2LinkWeight - network.totalMemorySelfLinkWeight();
+	double totalStateLinkWeight = network.totalStateLinkWeight();
+	double sumUndirLinkWeight = 2 * totalStateLinkWeight - network.totalMemorySelfLinkWeight();
 	unsigned int linkIndex = 0;
 	const MemNetwork::StateNodeMap& nodeMap = network.stateNodeMap();
 
-	for (MemNetwork::M2LinkMap::const_iterator linkIt(linkMap.begin()); linkIt != linkMap.end(); ++linkIt)
+	for (MemNetwork::StateLinkMap::const_iterator linkIt(linkMap.begin()); linkIt != linkMap.end(); ++linkIt)
 	{
 		const StateNode& m2source = linkIt->first;
 		const std::map<StateNode, double>& subLinks = linkIt->second;
@@ -81,11 +81,11 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 			// Get the indices for the m2 nodes
 			MemNetwork::StateNodeMap::const_iterator nodeMapIt = nodeMap.find(m2source);
 			if (nodeMapIt == nodeMap.end())
-				throw InputDomainError(io::Str() << "Couldn't find mapped index for source M2 node " << m2source);
+				throw InputDomainError(io::Str() << "Couldn't find mapped index for source State node " << m2source);
 			unsigned int sourceIndex = nodeMapIt->second;
 			nodeMapIt = nodeMap.find(m2target);
 			if (nodeMapIt == nodeMap.end())
-				throw InputDomainError(io::Str() << "Couldn't find mapped index for target M2 node " << m2target);
+				throw InputDomainError(io::Str() << "Couldn't find mapped index for target State node " << m2target);
 			unsigned int targetIndex = nodeMapIt->second;
 
 			m_nodeFlow[sourceIndex] += linkWeight;// / sumUndirLinkWeight;
@@ -151,7 +151,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	// 	physMap.insert(std::make_pair(link.weight, link.target));
 	// }
 
-	// Add M1 flow to dangling M2 nodes
+	// Add M1 flow to dangling State nodes
 	unsigned int numDanglingStateNodes = 0;
 	unsigned int numDanglingStateNodesCompleted = 0;
 	unsigned int numSelfLinks = 0;
@@ -203,8 +203,8 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 			numDanglingStateNodesCompleted << " dangling memory nodes -> " << m_flowLinks.size() << " links" <<
 			"\n  -> " << (numDanglingStateNodes - numDanglingStateNodesCompleted) << " dangling nodes left" << std::flush;
 
-	totalM2LinkWeight += sumExtraLinkWeight;
-	sumUndirLinkWeight = 2 * totalM2LinkWeight - network.totalMemorySelfLinkWeight();
+	totalStateLinkWeight += sumExtraLinkWeight;
+	sumUndirLinkWeight = 2 * totalStateLinkWeight - network.totalMemorySelfLinkWeight();
 	numLinks = m_flowLinks.size();
 
 	// Normalize node flow
@@ -220,7 +220,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 		{
 			Link& link = *linkIt;
-			link.flow /= totalM2LinkWeight;
+			link.flow /= totalStateLinkWeight;
 			m_nodeFlow[link.target] += link.flow;
 		}
 		//Normalize node flow
@@ -230,7 +230,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		for (unsigned int i = 0; i < numStateNodes; ++i)
 			m_nodeFlow[i] /= sumNodeRank;
 		Log() << "\n  -> Using directed links with raw flow.";
-		Log() << "\n  -> Total link weight: " << totalM2LinkWeight << ".";
+		Log() << "\n  -> Total link weight: " << totalStateLinkWeight << ".";
 		Log() << std::endl;
 		return;
 	}
@@ -291,7 +291,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	{
 		const std::vector<double>& nodeWeights = network.stateNodeWeights();
 		for (unsigned int i = 0; i < numStateNodes; ++i) {
-//			m_nodeTeleportRates[i] = sumLinkOutWeight[i] / totalM2LinkWeight;
+//			m_nodeTeleportRates[i] = sumLinkOutWeight[i] / totalStateLinkWeight;
 			// Use original m2 weights (without m1-completed weights for dangling m2 nodes)
 			m_nodeTeleportRates[i] = nodeWeights[i] / network.totalStateNodeWeight();
 		}
@@ -302,7 +302,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 		{
 			unsigned int toNode = config.recordedTeleportation ? linkIt->target : linkIt->source;
-			m_nodeTeleportRates[toNode] += linkIt->flow / totalM2LinkWeight;
+			m_nodeTeleportRates[toNode] += linkIt->flow / totalStateLinkWeight;
 		}
 	}
 
