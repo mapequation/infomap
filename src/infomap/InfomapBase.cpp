@@ -1596,8 +1596,13 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 	}
 
 	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();
-	for (unsigned int i = 0; i < links.size(); ++i)
+
+	for (unsigned int i = 0; i < links.size(); ++i) {
+		// Ignore self-links
+//		if (links[i].source == links[i].target)
+//			continue;
 		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow);
+	}
 
 //	std::vector<double> m1Flow(network.numNodes(), 0.0);
 

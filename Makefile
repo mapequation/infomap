@@ -54,6 +54,8 @@ noomp: Infomap
 # JavaScript through Emscripten
 ##################################################
 
+.PHONY: js js-worker
+
 js: build/js/Infomap.js
 	@echo "Built $^"
 
@@ -65,7 +67,7 @@ js-worker: build/js/Infomap-worker.js
 build/js/Infomap-worker.js: $(SOURCES)
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
-	em++ -O0 --pre-js interfaces/js/pre-worker-module.js -o build/js/Infomap-worker.js $^
+	em++ -O0 -s ALLOW_MEMORY_GROWTH=1 --pre-js interfaces/js/pre-worker-module.js -o build/js/Infomap-worker.js $^
 
 build/js/Infomap.js: $(SOURCES)
 	@echo "Compiling Infomap for Node.js..."
