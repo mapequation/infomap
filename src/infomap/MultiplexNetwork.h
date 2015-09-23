@@ -43,7 +43,7 @@ class MultiplexNetwork : public MemNetwork
 {
 public:
 	typedef std::map<unsigned int, double> InterLinkMap;
-	typedef std::map<M2Node, std::map<M2Node, double> > MultiplexLinkMap;
+	typedef std::map<StateNode, std::map<StateNode, double> > MultiplexLinkMap;
 
 	MultiplexNetwork(const Config& config) :
 		MemNetwork(config),
@@ -126,7 +126,7 @@ protected:
 	std::deque<Network> m_networks;
 
 	unsigned int m_numInterLinksFound;
-	std::map<M2Node, InterLinkMap> m_interLinks; // {(layer,node)} -> ({linkedLayer} -> {weight})
+	std::map<StateNode, InterLinkMap> m_interLinks; // {(layer,node)} -> ({linkedLayer} -> {weight})
 	std::map<unsigned int, unsigned int> m_interLinkLayers;
 
 	unsigned int m_numMultiplexLinksFound;

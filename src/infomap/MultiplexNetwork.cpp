@@ -294,12 +294,12 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 
 	// Extract the self-layer links to be able to scale the inter-layer links correctly. Use the sum of intra out weights as default.
 	std::vector<std::vector<double> > selfLayerWeights(sumOutWeights);
-	for (std::map<M2Node, InterLinkMap>::const_iterator m2NodeIt(m_interLinks.begin()); m2NodeIt != m_interLinks.end(); ++m2NodeIt)
+	for (std::map<StateNode, InterLinkMap>::const_iterator stateNodeIt(m_interLinks.begin()); stateNodeIt != m_interLinks.end(); ++stateNodeIt)
 	{
-		const M2Node& m2Node = m2NodeIt->first;
-		unsigned int layer1 = m2Node.priorState;
-		unsigned int nodeIndex = m2Node.physIndex;
-		const InterLinkMap& interLinkMap = m2NodeIt->second;
+		const StateNode& stateNode = stateNodeIt->first;
+		unsigned int layer1 = stateNode.layer();
+		unsigned int nodeIndex = stateNode.physIndex;
+		const InterLinkMap& interLinkMap = stateNodeIt->second;
 		for (InterLinkMap::const_iterator interLinkIt(interLinkMap.begin()); interLinkIt != interLinkMap.end(); ++interLinkIt)
 		{
 			unsigned int layer2 = interLinkIt->first;
@@ -313,17 +313,17 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 
 	unsigned int numInterLinksIgnored = 0;
 	// Then generate memory links from inter links (links between nodes in different layers)
-	for (std::map<M2Node, InterLinkMap>::const_iterator m2NodeIt(m_interLinks.begin()); m2NodeIt != m_interLinks.end(); ++m2NodeIt)
+	for (std::map<StateNode, InterLinkMap>::const_iterator stateNodeIt(m_interLinks.begin()); stateNodeIt != m_interLinks.end(); ++stateNodeIt)
 	{
-		const M2Node& m2Node = m2NodeIt->first;
-		M2LinkMap::iterator m2SourceIt = m_m2Links.lower_bound(m2Node);
+		const StateNode& stateNode = stateNodeIt->first;
+		M2LinkMap::iterator m2SourceIt = m_m2Links.lower_bound(stateNode);
 		// Find source iterator to re-use in the loop below
-		if (m2SourceIt == m_m2Links.end() || m2SourceIt->first != m2Node)
-			m2SourceIt = m_m2Links.insert(m2SourceIt, std::make_pair(m2Node, std::map<M2Node, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
+		if (m2SourceIt == m_m2Links.end() || m2SourceIt->first != stateNode)
+			m2SourceIt = m_m2Links.insert(m2SourceIt, std::make_pair(stateNode, std::map<StateNode, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
 		bool m2SourceNodeAdded = false;
-		unsigned int layer1 = m2Node.priorState;
-		unsigned int nodeIndex = m2Node.physIndex;
-		const InterLinkMap& interLinkMap = m2NodeIt->second;
+		unsigned int layer1 = stateNode.layer();
+		unsigned int nodeIndex = stateNode.physIndex;
+		const InterLinkMap& interLinkMap = stateNodeIt->second;
 		for (InterLinkMap::const_iterator interLinkIt(interLinkMap.begin()); interLinkIt != interLinkMap.end(); ++interLinkIt)
 		{
 			unsigned int layer2 = interLinkIt->first;
@@ -407,7 +407,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 					sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
 			}
 
-			M2Node m2Source(layer1, nodeIndex);
+			StateNode m2Source(layer1, nodeIndex);
 
 			const LinkMap& layer1LinkMap = m_networks[layer1].linkMap();
 			LinkMap::const_iterator layer1OutLinksIt = layer1LinkMap.find(nodeIndex);
@@ -420,7 +420,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 
 //			M2LinkMap::iterator m2SourceIt = m_m2Links.lower_bound(m2Source);
 //			if (m2SourceIt == m_m2Links.end() || m2SourceIt->first != m2Source)
-//				m2SourceIt = m_m2Links.insert(m2SourceIt, std::make_pair(m2Source, std::map<M2Node, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
+//				m2SourceIt = m_m2Links.insert(m2SourceIt, std::make_pair(m2Source, std::map<StateNode, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
 
 			for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2)
 			{
@@ -465,13 +465,13 @@ void MultiplexNetwork::addMemoryNetworkFromMultiplexLinks()
 
 	for (MultiplexLinkMap::const_iterator it(m_multiplexLinks.begin()); it != m_multiplexLinks.end(); ++it)
 	{
-		const M2Node& source(it->first);
-		const std::map<M2Node, double>& subLinks(it->second);
-		for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		const StateNode& source(it->first);
+		const std::map<StateNode, double>& subLinks(it->second);
+		for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
-			const M2Node& target(subIt->first);
+			const StateNode& target(subIt->first);
 			double linkWeight = subIt->second;
-			addM2Link(source.priorState, source.physIndex, target.priorState, target.physIndex, linkWeight);
+			addM2Link(source.layer(), source.physIndex, target.layer(), target.physIndex, linkWeight);
 		}
 	}
 	Log() << "done!" << std::endl;
@@ -519,7 +519,7 @@ std::string MultiplexNetwork::parseInterLinks(std::ifstream& file)
 
 		parseInterLink(line, layer1, nodeIndex, layer2, weight);
 
-		m_interLinks[M2Node(layer1, nodeIndex)][layer2] += weight;
+		m_interLinks[StateNode(layer1, nodeIndex)][layer2] += weight;
 
 		++m_numInterLinksFound;
 		++m_interLinkLayers[layer1];
@@ -529,7 +529,7 @@ std::string MultiplexNetwork::parseInterLinks(std::ifstream& file)
 }
 
 void MultiplexNetwork::addMultiplexLink(int layer1, int node1, int layer2, int node2, double weight){
-	m_multiplexLinks[M2Node(layer1, node1)][M2Node(layer2, node2)] += weight;
+	m_multiplexLinks[StateNode(layer1, node1)][StateNode(layer2, node2)] += weight;
 
 	++m_numMultiplexLinksFound;
 	++m_multiplexLinkLayers[layer1];

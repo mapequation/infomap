@@ -231,7 +231,7 @@ void MemNetwork::simulateMemoryFromOrdinaryNetwork()
 			else
 			{
 				// No chainable link found, create a dangling memory node (or remove need for existence in MemFlowNetwork?)
-//				addM2Node(n1, n2, firstLinkWeight);
+//				addStateNode(n1, n2, firstLinkWeight);
 				addM2Link(n1, n1, n1, n2, firstLinkWeight);
 			}
 		}
@@ -276,11 +276,11 @@ void MemNetwork::simulateMemoryToIncompleteData()
 	unsigned int numShiftedMatches = 0;
 	for (M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
 	{
-		const M2Node& m2source = linkIt->first;
-		const std::map<M2Node, double>& subLinks = linkIt->second;
-		for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		const StateNode& m2source = linkIt->first;
+		const std::map<StateNode, double>& subLinks = linkIt->second;
+		for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
-			const M2Node& m2target = subIt->first;
+			const StateNode& m2target = subIt->first;
 			double weight = subIt->second;
 
 			// Check physical source index for exact and partial match
@@ -292,13 +292,13 @@ void MemNetwork::simulateMemoryToIncompleteData()
 				{
 					ComplementaryData& data = matchedComplementaryData[i];
 					if (data.incompleteLink.n2 == m2target.physIndex) {
-						data.addExactMatch(m2source.priorState, weight);
+						data.addExactMatch(m2source.getPriorState(), weight);
 						++numExactMatches;
 					}
 					else {
 						// Partial matches not used if exact matches available
 						if (data.exactMatch.empty())
-							data.addPartialMatch(m2source.priorState, weight);
+							data.addPartialMatch(m2source.getPriorState(), weight);
 						++numPartialMatches;
 					}
 				}
@@ -314,7 +314,7 @@ void MemNetwork::simulateMemoryToIncompleteData()
 					ComplementaryData& data = matchedComplementaryData[i];
 					// Shifted match only used if no better match
 					if (data.exactMatch.empty() && data.partialMatch.empty())
-						data.addShiftedMatch(m2target.priorState, weight);
+						data.addShiftedMatch(m2target.getPriorState(), weight);
 					++numShiftedMatches;
 				}
 			}
@@ -452,7 +452,7 @@ void MemNetwork::parseM2Link(char line[], int& n1, unsigned int& n2, unsigned in
 	n3 -= m_indexOffset;
 }
 
-bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstM2NodeWeight, double secondM2NodeWeight)
+bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight)
 {
 	++m_numM2LinksFound;
 
@@ -468,34 +468,34 @@ bool MemNetwork::addM2Link(unsigned int n1PriorState, unsigned int n1, unsigned 
 		}
 
 		insertM2Link(n1PriorState, n1, n2PriorState, n2, weight);
-		addM2Node(n1PriorState, n1, firstM2NodeWeight);
-		addM2Node(n2PriorState, n2, secondM2NodeWeight);
+		addStateNode(n1PriorState, n1, firstStateNodeWeight);
+		addStateNode(n2PriorState, n2, secondStateNodeWeight);
 	}
 	else if (n1 != n2)
 	{
 		if(n1PriorState != n1)
 		{
 			insertM2Link(n1PriorState, n1, n2PriorState, n2, weight);
-			addM2Node(n1PriorState, n1, firstM2NodeWeight);
-			addM2Node(n2PriorState, n2, secondM2NodeWeight);
+			addStateNode(n1PriorState, n1, firstStateNodeWeight);
+			addStateNode(n2PriorState, n2, secondStateNodeWeight);
 		}
 		else
-			addM2Node(n2PriorState, n2, weight);
+			addStateNode(n2PriorState, n2, weight);
 	}
 
 	return true;
 }
 
-bool MemNetwork::addM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight, double firstM2NodeWeight, double secondM2NodeWeight)
+bool MemNetwork::addM2Link(M2LinkMap::iterator firstStateNode, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight)
 {
 	++m_numM2LinksFound;
 
 	if (m_config.nodeLimit > 0 && (n2 >= m_config.nodeLimit))
 		return false;
 
-	const M2Node& m2Source = firstM2Node->first;
+	const StateNode& m2Source = firstStateNode->first;
 	unsigned int n1 = m2Source.physIndex;
-	unsigned int n1PriorState = m2Source.priorState;
+	unsigned int n1PriorState = m2Source.getPriorState();
 
 	if(m_config.includeSelfLinks)
 	{
@@ -505,20 +505,20 @@ bool MemNetwork::addM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2Prior
 			m_totalMemorySelfLinkWeight += weight;
 		}
 
-		insertM2Link(firstM2Node, n2PriorState, n2, weight);
-		addM2Node(n1PriorState, n1, firstM2NodeWeight);
-		addM2Node(n2PriorState, n2, secondM2NodeWeight);
+		insertM2Link(firstStateNode, n2PriorState, n2, weight);
+		addStateNode(n1PriorState, n1, firstStateNodeWeight);
+		addStateNode(n2PriorState, n2, secondStateNodeWeight);
 	}
 	else if (n1 != n2)
 	{
 		if(n1PriorState != n1)
 		{
-			insertM2Link(firstM2Node, n2PriorState, n2, weight);
-			addM2Node(n1PriorState, n1, firstM2NodeWeight);
-			addM2Node(n2PriorState, n2, secondM2NodeWeight);
+			insertM2Link(firstStateNode, n2PriorState, n2, weight);
+			addStateNode(n1PriorState, n1, firstStateNodeWeight);
+			addStateNode(n2PriorState, n2, secondStateNodeWeight);
 		}
 		else
-			addM2Node(n2PriorState, n2, weight);
+			addStateNode(n2PriorState, n2, weight);
 	}
 
 	return true;
@@ -526,8 +526,8 @@ bool MemNetwork::addM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2Prior
 
 bool MemNetwork::insertM2Link(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight)
 {
-	M2Node m1(n1PriorState, n1);
-	M2Node m2(n2PriorState, n2);
+	StateNode m1(n1PriorState, n1);
+	StateNode m2(n2PriorState, n2);
 
 	++m_numM2Links;
 	m_totM2LinkWeight += weight;
@@ -536,7 +536,7 @@ bool MemNetwork::insertM2Link(unsigned int n1PriorState, unsigned int n1, unsign
 	M2LinkMap::iterator firstIt = m_m2Links.lower_bound(m1);
 	if (firstIt != m_m2Links.end() && firstIt->first == m1) // First node already exists, check second node
 	{
-		std::pair<std::map<M2Node, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(m2, weight));
+		std::pair<std::map<StateNode, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(m2, weight));
 		if (!ret2.second)
 		{
 			ret2.first->second += weight;
@@ -547,16 +547,16 @@ bool MemNetwork::insertM2Link(unsigned int n1PriorState, unsigned int n1, unsign
 	}
 	else
 	{
-		m_m2Links.insert(firstIt, std::make_pair(m1, std::map<M2Node, double>()))->second.insert(std::make_pair(m2, weight));
+		m_m2Links.insert(firstIt, std::make_pair(m1, std::map<StateNode, double>()))->second.insert(std::make_pair(m2, weight));
 	}
 
 	return true;
 }
 
-bool MemNetwork::insertM2Link(M2LinkMap::iterator firstM2Node, unsigned int n2PriorState, unsigned int n2, double weight)
+bool MemNetwork::insertM2Link(M2LinkMap::iterator firstStateNode, unsigned int n2PriorState, unsigned int n2, double weight)
 {
 	m_totM2LinkWeight += weight;
-	std::pair<std::map<M2Node, double>::iterator, bool> ret2 = firstM2Node->second.insert(std::make_pair(M2Node(n2PriorState, n2), weight));
+	std::pair<std::map<StateNode, double>::iterator, bool> ret2 = firstStateNode->second.insert(std::make_pair(StateNode(n2PriorState, n2), weight));
 	if (!ret2.second)
 	{
 		ret2.first->second += weight;
@@ -632,15 +632,15 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 
 	addMissingPhysicalNodes();
 
-	m_m2NodeWeights.resize(m_m2Nodes.size());
-	m_totM2NodeWeight = 0.0;
-	unsigned int m2NodeIndex = 0;
+	m_stateNodeWeights.resize(m_stateNodes.size());
+	m_totStateNodeWeight = 0.0;
+	unsigned int stateNodeIndex = 0;
 	std::vector<unsigned int> existingPhysicalNodes(m_numNodes);
-	for(std::map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it, ++m2NodeIndex)
+	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it, ++stateNodeIndex)
 	{
-		m_m2NodeMap[it->first] = m2NodeIndex;
-		m_m2NodeWeights[m2NodeIndex] += it->second;
-		m_totM2NodeWeight += it->second;
+		m_stateNodeMap[it->first] = stateNodeIndex;
+		m_stateNodeWeights[stateNodeIndex] += it->second;
+		m_totStateNodeWeight += it->second;
 	}
 
 	initNodeDegrees();
@@ -652,7 +652,7 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 unsigned int MemNetwork::addMissingPhysicalNodes()
 {
 	std::vector<unsigned int> existingPhysicalNodes(m_numNodes);
-	for(std::map<M2Node,double>::iterator it = m_m2Nodes.begin(); it != m_m2Nodes.end(); ++it)
+	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it)
 	{
 		++existingPhysicalNodes[it->first.physIndex];
 	}
@@ -662,7 +662,7 @@ unsigned int MemNetwork::addMissingPhysicalNodes()
 		if (existingPhysicalNodes[i] == 0)
 		{
 			++numMissingPhysicalNodes;
-			addM2Node(i, i, 0.0);
+			addStateNode(i, i, 0.0);
 		}
 	}
 	return numMissingPhysicalNodes;
@@ -670,26 +670,26 @@ unsigned int MemNetwork::addMissingPhysicalNodes()
 
 void MemNetwork::initNodeDegrees()
 {
-	m_outDegree.assign(m_m2Nodes.size(), 0.0);
-	m_sumLinkOutWeight.assign(m_m2Nodes.size(), 0.0);
+	m_outDegree.assign(m_stateNodes.size(), 0.0);
+	m_sumLinkOutWeight.assign(m_stateNodes.size(), 0.0);
 
 	for (MemNetwork::M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
 	{
-		const M2Node& m2source = linkIt->first;
-		const std::map<M2Node, double>& subLinks = linkIt->second;
+		const StateNode& m2source = linkIt->first;
+		const std::map<StateNode, double>& subLinks = linkIt->second;
 
 		// Get the index for the m2 source node
-		MemNetwork::M2NodeMap::const_iterator nodeMapIt = m_m2NodeMap.find(m2source);
-		if (nodeMapIt == m_m2NodeMap.end())
+		MemNetwork::StateNodeMap::const_iterator nodeMapIt = m_stateNodeMap.find(m2source);
+		if (nodeMapIt == m_stateNodeMap.end())
 			throw InputDomainError(io::Str() << "Couldn't find mapped index for source M2 node " << m2source);
 		unsigned int sourceIndex = nodeMapIt->second;
 
-		for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
-//			const M2Node& m2target = subIt->first;
+//			const StateNode& m2target = subIt->first;
 			double linkWeight = subIt->second;
-//			nodeMapIt = m_m2NodeMap.find(m2target);
-//			if (nodeMapIt == m_m2NodeMap.end())
+//			nodeMapIt = m_stateNodeMap.find(m2target);
+//			if (nodeMapIt == m_stateNodeMap.end())
 //				throw InputDomainError(io::Str() << "Couldn't find mapped index for target M2 node " << m2target);
 //			unsigned int targetIndex = nodeMapIt->second;
 
@@ -726,7 +726,7 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 	}
 
 	Log() << "  -> Found " << m_numNodesFound << " nodes and " << m_numM2LinksFound << " memory links.\n";
-	Log() << "  -> Generated " << m_m2Nodes.size() << " memory nodes and " << m_numM2Links << " memory links.\n";
+	Log() << "  -> Generated " << m_stateNodes.size() << " memory nodes and " << m_numM2Links << " memory links.\n";
 	if (m_numAggregatedM2Links > 0)
 		Log() << "  -> Aggregated " << m_numAggregatedM2Links << " memory links.\n";
 	Log() << std::flush;
@@ -743,13 +743,13 @@ void MemNetwork::printNetworkAsPajek(std::string filename) const
 	out << "*3grams " << m_numM2Links << "\n";
 	for (M2LinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
 	{
-		const M2Node& m2source = linkIt->first;
-		const std::map<M2Node, double>& subLinks = linkIt->second;
-		for (std::map<M2Node, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		const StateNode& m2source = linkIt->first;
+		const std::map<StateNode, double>& subLinks = linkIt->second;
+		for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
-			const M2Node& m2target = subIt->first;
+			const StateNode& m2target = subIt->first;
 			double linkWeight = subIt->second;
-			out << (m2source.priorState + 1) << " " << (m2source.physIndex + 1) << " " << (m2target.physIndex + 1) << " " << linkWeight << "\n";
+			out << m2source.print(1) << " " << (m2target.physIndex + 1) << " " << linkWeight << "\n";
 		}
 	}
 }

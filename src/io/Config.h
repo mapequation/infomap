@@ -352,7 +352,7 @@ struct Config
 
 	bool useTeleportation() const { return 	directed; }
 
-	bool isMemoryInput() const { return inputFormat == "3gram" || inputFormat == "multiplex" || additionalInput.size() > 0; }
+	bool isMemoryInput() const { return inputFormat == "states" || inputFormat == "3gram" || inputFormat == "multiplex" || additionalInput.size() > 0; }
 
 	bool isMemoryNetwork() const { return withMemory || nonBacktracking || isMemoryInput(); }
 

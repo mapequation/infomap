@@ -210,6 +210,14 @@ public:
 		return SerialTypes::numeric_cast<SerialTypes::edgeSize_t>(childEdges.size());
 	}
 
+	std::string printState(unsigned int indexOffset = 0)
+	{
+		std::ostringstream out;
+		for (unsigned int i = 0; i < priorIndex.size(); ++i)
+			out << priorIndex[i] + indexOffset << (i == priorIndex.size() - 1 ? "" : "-");
+		out << " " << physIndex + indexOffset;
+		return out.str();
+	}
 
 	NodeData data;
 
@@ -225,7 +233,7 @@ public:
 	bool skip; // Skip in output
 
 	bool isMemoryNode;
-	unsigned int priorIndex;
+	std::vector<unsigned int> priorIndex;
 	unsigned int physIndex;
 
 public:
@@ -830,9 +838,10 @@ public:
 
 	SNode& addNode(SNode& parent, double flow, double exitFlow);
 
-	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex);
-	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex,
-		unsigned int originalIndex, bool isMemoryNode = false, unsigned int priorIndex = 0, unsigned int physIndex = 0);
+	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, const std::string& name, unsigned int leafIndex);
+	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, const std::string& name, unsigned int leafIndex, unsigned int originalIndex);
+	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, const std::string& name, unsigned int leafIndex,
+		unsigned int originalIndex, bool isMemoryNode, const std::vector<unsigned int>& priorIndex, unsigned int physIndex);
 
 	void prepareAddLeafNodes(unsigned int numLeafNodes);
 

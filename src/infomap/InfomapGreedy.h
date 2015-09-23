@@ -246,9 +246,9 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(Hierar
 		if (node.isLeaf())
 		{
 			if (m_config.isMemoryNetwork()) {
-				const M2Node& m2Node = getMemoryNode(*childIt);
+				const StateNode& stateNode = getMemoryNode(*childIt);
 				hierarchicalNetwork.addLeafNode(parent, node.data.flow, node.data.exitFlow, leafNodeNames[node.originalIndex],
-						node.originalIndex, node.originalIndex, true, m2Node.priorState, m2Node.physIndex);
+						node.originalIndex, node.originalIndex, true, stateNode.priorState, stateNode.physIndex);
 
 			}
 			else
