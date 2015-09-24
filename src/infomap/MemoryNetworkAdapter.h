@@ -32,7 +32,7 @@ protected:
 
 	void generateMemoryNodeMap();
 
-	std::map<M2Node, unsigned int> m_memNodeToIndex;
+	std::map<StateNode, unsigned int> m_memNodeToIndex;
 };
 
 

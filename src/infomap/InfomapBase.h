@@ -102,7 +102,7 @@ protected:
 
 	virtual FlowDummy getNodeData(NodeBase& node) = 0;
 	virtual std::vector<PhysData>& getPhysicalMembers(NodeBase& node) = 0;
-	virtual M2Node& getMemoryNode(NodeBase& node) = 0;
+	virtual StateNode& getMemoryNode(NodeBase& node) = 0;
 
 	void initPreClustering(bool printResults = false);
 

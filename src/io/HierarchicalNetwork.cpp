@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -71,13 +71,12 @@ SNode& HierarchicalNetwork::addNode(SNode& parent, double flow, double exitFlow)
 	return *n;
 }
 
-SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex)
+SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitFlow, const std::string& name, unsigned int leafIndex)
 {
 	return addLeafNode(parent, flow, exitFlow, name, leafIndex, leafIndex);
 }
 
-SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitFlow, std::string name, unsigned int leafIndex,
-		unsigned int originalIndex, bool isMemoryNode, unsigned int priorIndex, unsigned int physIndex)
+SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitFlow, const std::string& name, unsigned int leafIndex, unsigned int originalIndex)
 {
 	if (leafIndex > m_leafNodes.size())
 		throw std::range_error("In HierarchicalNetwork::addLeafNode(), leaf index out of range or missed calling prepare method.");
@@ -85,9 +84,6 @@ SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitF
 	n.data.name = name;
 	n.isLeaf = true;
 	n.originalLeafIndex = originalIndex;
-	n.isMemoryNode = isMemoryNode;
-	n.priorIndex = priorIndex;
-	n.physIndex = physIndex;
 	m_leafNodes[leafIndex] = &n;
 	propagateNodeNameUpInHierarchy(n);
 	if (n.depth > m_maxDepth)
@@ -100,6 +96,16 @@ SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitF
 		node = node->parentNode;
 	}
 
+	return n;
+}
+
+SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitFlow, const std::string& name, unsigned int leafIndex,
+		unsigned int originalIndex, bool isMemoryNode, const std::vector<unsigned int>& priorIndex, unsigned int physIndex)
+{
+	SNode& n = addLeafNode(parent, flow, exitFlow, name, leafIndex, originalIndex);
+	n.isMemoryNode = isMemoryNode;
+	n.priorIndex = priorIndex;
+	n.physIndex = physIndex;
 	return n;
 }
 
@@ -286,7 +292,7 @@ void HierarchicalNetwork::writeClu(const std::string& fileName, int clusterIndex
 			}
 			else {
 				if (m_config.printExpanded && node.isMemoryNode)
-					out << node.priorIndex + indexOffset << " " << node.physIndex + indexOffset << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
+					out << node.printState(indexOffset) << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
 				else
 					out << node.originalLeafIndex + indexOffset << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
 			}
@@ -397,7 +403,7 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 			}
 			else {
 				if (m_config.printExpanded && node.isMemoryNode)
-					out << node.priorIndex + indexOffset << " " << node.physIndex + indexOffset;
+					out << node.printState(indexOffset);
 				else
 					out << node.originalLeafIndex + indexOffset;
 			}
