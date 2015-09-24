@@ -92,10 +92,10 @@ void MemoryNetworkAdapter::readClu(std::string filename)
 		nodeIndex -= m_indexOffset;
 		maxNodeIndex = std::max(maxNodeIndex, std::max(priorIndex, nodeIndex));
 
-		M2Node m2Node(priorIndex, nodeIndex);
-		std::map<M2Node, unsigned int>::iterator memIt = m_memNodeToIndex.find(m2Node);
+		StateNode stateNode(priorIndex, nodeIndex);
+		std::map<StateNode, unsigned int>::iterator memIt = m_memNodeToIndex.find(stateNode);
 		if (memIt == m_memNodeToIndex.end())
-			throw MisMatchError(io::Str() << "The memory node '" << m2Node << "' in line '" << line << "' is not found in the network.");
+			throw MisMatchError(io::Str() << "The memory node '" << stateNode << "' in line '" << line << "' is not found in the network.");
 
 		unsigned int memNodeIndex = memIt->second;
 
@@ -220,10 +220,10 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 
 		priorId -= indexOffset;
 		nodeId -= indexOffset;
-		M2Node m2Node(priorId, nodeId);
-		std::map<M2Node, unsigned int>::iterator memIt = m_memNodeToIndex.find(m2Node);
+		StateNode stateNode(priorId, nodeId);
+		std::map<StateNode, unsigned int>::iterator memIt = m_memNodeToIndex.find(stateNode);
 		if (memIt == m_memNodeToIndex.end())
-			throw MisMatchError(io::Str() << "The memory node '" << m2Node << "' in line " << lineNr << " is not found in the network.");
+			throw MisMatchError(io::Str() << "The memory node '" << stateNode << "' in line " << lineNr << " is not found in the network.");
 
 		unsigned int originalIndex = memIt->second;
 
@@ -294,8 +294,8 @@ void MemoryNetworkAdapter::generateMemoryNodeMap()
 	unsigned int nodeIndex = 0;
 	for (TreeData::const_leafIterator leafIt(m_treeData.begin_leaf()); leafIt != m_treeData.end_leaf(); ++leafIt, ++nodeIndex)
 	{
-		M2Node m2Node = (**leafIt).getM2Node();
-		m_memNodeToIndex[m2Node] = nodeIndex;
+		StateNode stateNode = (**leafIt).getStateNode();
+		m_memNodeToIndex[stateNode] = nodeIndex;
 	}
 }
 

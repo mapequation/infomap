@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -53,38 +53,91 @@ struct SubStructure
 	bool exploredWithoutImprovement;
 };
 
-struct M2Node
+struct StateNode
 {
-	unsigned int priorState;
+	unsigned int stateIndex;
+	std::vector<unsigned int> priorState;
 	unsigned int physIndex;
-	M2Node() :
-		priorState(0), physIndex(0)
+	StateNode() :
+		physIndex(0)
 	{}
-	M2Node(unsigned int priorState, unsigned int physIndex) :
-		priorState(priorState), physIndex(physIndex)
+	StateNode(unsigned int physIndex) :
+		physIndex(physIndex)
 	{}
-	M2Node(const M2Node& other) :
+	StateNode(unsigned int priorPhysIndex, unsigned int physIndex) :
+		physIndex(physIndex)
+	{ priorState.push_back(priorPhysIndex); }
+	StateNode(const StateNode& other) :
 		priorState(other.priorState), physIndex(other.physIndex)
 	{}
 
-	bool operator<(M2Node other) const
+	void pushState(unsigned int physIndex)
+	{
+		priorState.push_back(physIndex);
+	}
+
+	unsigned int getPriorState() const
+	{
+		return priorState.at(0);
+	}
+
+	unsigned int getPriorState(unsigned int index) const
+	{
+		return priorState.at(index);
+	}
+
+	unsigned int layer() const
+	{
+		return priorState.at(0);
+	}
+
+	void subtractIndexOffset(unsigned int indexOffset)
+	{
+		for (unsigned int i = 0; i < priorState.size(); ++i)
+			priorState[i] -= indexOffset;
+		physIndex -= indexOffset;
+	}
+
+	bool operator<(StateNode other) const
 	{
 		return priorState == other.priorState ? physIndex < other.physIndex : priorState < other.priorState;
 	}
 
-	bool operator==(M2Node other) const
+	bool operator==(StateNode other) const
 	{
 		return priorState == other.priorState && physIndex == other.physIndex;
 	}
 
-	bool operator!=(M2Node other) const
+	bool operator!=(StateNode other) const
 	{
 		return priorState != other.priorState || physIndex != other.physIndex;
 	}
 
-	friend std::ostream& operator<<(std::ostream& out, const M2Node& node)
+	friend std::ostream& operator<<(std::ostream& out, const StateNode& node)
 	{
-		return out << "(" << node.priorState << "-" << node.physIndex << ")";
+		out << "(";
+		for (unsigned int i = 0; i < node.priorState.size(); ++i)
+			out << node.priorState[i] << "-";
+		out << node.physIndex << ")";
+		return out;
+	}
+
+	std::string print(unsigned int indexOffset = 0) const
+	{
+		std::ostringstream out;
+		for (unsigned int i = 0; i < priorState.size(); ++i)
+			out << priorState[i] + indexOffset << (i == priorState.size() - 1 ? "" : "-");
+		out << " " << physIndex + indexOffset;
+		return out.str();
+	}
+
+	std::string print(const std::vector<std::string>& names) const
+	{
+		std::ostringstream out;
+		for (unsigned int i = 0; i < priorState.size(); ++i)
+			out << names[priorState[i]] << " -> ";
+		out << names[physIndex];
+		return out.str();
 	}
 };
 
@@ -301,9 +354,9 @@ public:
 //	}
 
 	// Dummy node for non-memory nodes
-	virtual M2Node getM2Node()
+	virtual StateNode getStateNode()
 	{
-		return M2Node();
+		return StateNode();
 	}
 
 private:
@@ -599,12 +652,12 @@ public:
 
 struct PhysData
 {
-	PhysData(unsigned int physNodeIndex, double sumFlowFromM2Node = 0.0)
-	: physNodeIndex(physNodeIndex), sumFlowFromM2Node(sumFlowFromM2Node)
+	PhysData(unsigned int physNodeIndex, double sumFlowFromStateNode = 0.0)
+	: physNodeIndex(physNodeIndex), sumFlowFromStateNode(sumFlowFromStateNode)
 	{}
-	PhysData(const PhysData& other) : physNodeIndex(other.physNodeIndex), sumFlowFromM2Node(other.sumFlowFromM2Node) {}
+	PhysData(const PhysData& other) : physNodeIndex(other.physNodeIndex), sumFlowFromStateNode(other.sumFlowFromStateNode) {}
 	unsigned int physNodeIndex;
-	double sumFlowFromM2Node; // The amount of flow from the memory node in this physical node
+	double sumFlowFromStateNode; // The amount of flow from the memory node in this physical node
 };
 
 
@@ -623,7 +676,7 @@ public:
 	{}
 	MemNode(T data) : node_base_type(data)
 	{}
-	MemNode(const node_type& other) : node_base_type(other.data), m2Node(other.m2Node), physicalNodes(other.physicalNodes)
+	MemNode(const node_type& other) : node_base_type(other.data), stateNode(other.stateNode), physicalNodes(other.physicalNodes)
 	{}
 
 	virtual ~MemNode()
@@ -631,15 +684,15 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& out, const node_type& node)
 	{
-		return out << "(name: " << node.name << ", flow: " << node.data.flow << ", phys: " << node.m2Node << ")";
+		return out << "(name: " << node.name << ", flow: " << node.data.flow << ", phys: " << node.stateNode << ")";
 	}
 
-	virtual M2Node getM2Node()
+	virtual StateNode getStateNode()
 	{
-		return m2Node;
+		return stateNode;
 	}
 
-	M2Node m2Node;
+	StateNode stateNode;
 
 	std::vector<PhysData> physicalNodes;
 };

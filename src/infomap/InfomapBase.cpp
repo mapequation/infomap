@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -1584,15 +1584,14 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 //	const std::vector<std::string>& nodeNames = network.nodeNames();
 	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
 	const std::vector<double>& nodeTeleportWeights = flowNetwork.getNodeTeleportRates();
-	m_treeData.reserveNodeCount(network.numM2Nodes());
-	const std::vector<M2Node>& m2Nodes = flowNetwork.getM2Nodes();
+	m_treeData.reserveNodeCount(network.numStateNodes());
+	const std::vector<StateNode>& stateNodes = flowNetwork.getStateNodes();
 
-	for (unsigned int i = 0; i < network.numM2Nodes(); ++i) {
-//		m_treeData.addNewNode((io::Str() << i << "_(" << (m2Nodes[i].priorState+1) << "-" << (m2Nodes[i].physIndex+1) << ")"), nodeFlow[i], nodeTeleportWeights[i]);
+	for (unsigned int i = 0; i < network.numStateNodes(); ++i) {
 		m_treeData.addNewNode("", nodeFlow[i], nodeTeleportWeights[i]);
-		M2Node& m2Node = getMemoryNode(m_treeData.getLeafNode(i));
-		m2Node.priorState = m2Nodes[i].priorState;
-		m2Node.physIndex = m2Nodes[i].physIndex;
+		StateNode& stateNode = getMemoryNode(m_treeData.getLeafNode(i));
+		stateNode.priorState = stateNodes[i].priorState;
+		stateNode.physIndex = stateNodes[i].physIndex;
 	}
 
 	const FlowNetwork::LinkVec& links = flowNetwork.getFlowLinks();
@@ -1607,12 +1606,12 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 //	std::vector<double> m1Flow(network.numNodes(), 0.0);
 
 	// Add physical nodes
-	const MemNetwork::M2NodeMap& nodeMap = network.m2NodeMap();
-	for (MemNetwork::M2NodeMap::const_iterator m2nodeIt(nodeMap.begin()); m2nodeIt != nodeMap.end(); ++m2nodeIt)
+	const MemNetwork::StateNodeMap& nodeMap = network.stateNodeMap();
+	for (MemNetwork::StateNodeMap::const_iterator statenodeIt(nodeMap.begin()); statenodeIt != nodeMap.end(); ++statenodeIt)
 	{
-		unsigned int nodeIndex = m2nodeIt->second;
-		getPhysicalMembers(m_treeData.getLeafNode(nodeIndex)).push_back(PhysData(m2nodeIt->first.physIndex, nodeFlow[nodeIndex]));
-//		m1Flow[m2nodeIt->first.physIndex] += nodeFlow[nodeIndex];
+		unsigned int nodeIndex = statenodeIt->second;
+		getPhysicalMembers(m_treeData.getLeafNode(nodeIndex)).push_back(PhysData(statenodeIt->first.physIndex, nodeFlow[nodeIndex]));
+//		m1Flow[statenodeIt->first.physIndex] += nodeFlow[nodeIndex];
 	}
 
 	double sumNodeFlow = 0.0;
@@ -1633,17 +1632,17 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 			Log() << "Printing node flow to " << outName << "... " << std::flush;
 			SafeOutFile out(outName.c_str());
 
-			// Sort the m2 nodes on flow
-			std::multimap<double, M2Node, std::greater<double> > sortedMemNodes;
-			for (unsigned int i = 0; i < m2Nodes.size(); ++i)
-				sortedMemNodes.insert(std::make_pair(nodeFlow[i], m2Nodes[i]));
+			// Sort the state nodes on flow
+			std::multimap<double, StateNode, std::greater<double> > sortedMemNodes;
+			for (unsigned int i = 0; i < stateNodes.size(); ++i)
+				sortedMemNodes.insert(std::make_pair(nodeFlow[i], stateNodes[i]));
 
-			out << "# m2state nodeIndex flow teleportationWeight\n";
-			std::multimap<double, M2Node, std::greater<double> >::const_iterator it(sortedMemNodes.begin());
-			for (unsigned int i = 0; i < m2Nodes.size(); ++i, ++it)
+			out << "# statestate nodeIndex flow teleportationWeight\n";
+			std::multimap<double, StateNode, std::greater<double> >::const_iterator it(sortedMemNodes.begin());
+			for (unsigned int i = 0; i < stateNodes.size(); ++i, ++it)
 			{
-				const M2Node& m2Node = it->second;
-				out << m2Node.priorState + indexOffset << " " << m2Node.physIndex + indexOffset << " " <<
+				const StateNode& stateNode = it->second;
+				out << stateNode.print(indexOffset) << " " <<
 						it->first << " " << nodeTeleportWeights[i] << "\n";
 
 			}
@@ -1658,14 +1657,14 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 			Log() << "Printing physical flow to " << outName << "... " << std::flush;
 			SafeOutFile out(outName.c_str());
 			double sumFlow = 0.0;
-			double sumM2flow = 0.0;
+			double sumStateflow = 0.0;
 			std::vector<double> m1Flow(network.numNodes(), 0.0);
-			for (unsigned int i = 0; i < network.numM2Nodes(); ++i)
+			for (unsigned int i = 0; i < network.numStateNodes(); ++i)
 			{
 				const PhysData& physData = getPhysicalMembers(m_treeData.getLeafNode(i))[0];
-				m1Flow[physData.physNodeIndex] += physData.sumFlowFromM2Node;
-				sumFlow += physData.sumFlowFromM2Node;
-				sumM2flow += nodeFlow[i];
+				m1Flow[physData.physNodeIndex] += physData.sumFlowFromStateNode;
+				sumFlow += physData.sumFlowFromStateNode;
+				sumStateflow += nodeFlow[i];
 			}
 			for (unsigned int i = 0; i < m1Flow.size(); ++i)
 			{
