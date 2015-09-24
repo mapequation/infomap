@@ -1607,11 +1607,11 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 
 	// Add physical nodes
 	const MemNetwork::StateNodeMap& nodeMap = network.stateNodeMap();
-	for (MemNetwork::StateNodeMap::const_iterator m2nodeIt(nodeMap.begin()); m2nodeIt != nodeMap.end(); ++m2nodeIt)
+	for (MemNetwork::StateNodeMap::const_iterator statenodeIt(nodeMap.begin()); statenodeIt != nodeMap.end(); ++statenodeIt)
 	{
-		unsigned int nodeIndex = m2nodeIt->second;
-		getPhysicalMembers(m_treeData.getLeafNode(nodeIndex)).push_back(PhysData(m2nodeIt->first.physIndex, nodeFlow[nodeIndex]));
-//		m1Flow[m2nodeIt->first.physIndex] += nodeFlow[nodeIndex];
+		unsigned int nodeIndex = statenodeIt->second;
+		getPhysicalMembers(m_treeData.getLeafNode(nodeIndex)).push_back(PhysData(statenodeIt->first.physIndex, nodeFlow[nodeIndex]));
+//		m1Flow[statenodeIt->first.physIndex] += nodeFlow[nodeIndex];
 	}
 
 	double sumNodeFlow = 0.0;
@@ -1632,12 +1632,12 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 			Log() << "Printing node flow to " << outName << "... " << std::flush;
 			SafeOutFile out(outName.c_str());
 
-			// Sort the m2 nodes on flow
+			// Sort the state nodes on flow
 			std::multimap<double, StateNode, std::greater<double> > sortedMemNodes;
 			for (unsigned int i = 0; i < stateNodes.size(); ++i)
 				sortedMemNodes.insert(std::make_pair(nodeFlow[i], stateNodes[i]));
 
-			out << "# m2state nodeIndex flow teleportationWeight\n";
+			out << "# statestate nodeIndex flow teleportationWeight\n";
 			std::multimap<double, StateNode, std::greater<double> >::const_iterator it(sortedMemNodes.begin());
 			for (unsigned int i = 0; i < stateNodes.size(); ++i, ++it)
 			{

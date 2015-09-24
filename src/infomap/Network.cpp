@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -79,7 +79,7 @@ unsigned int Network::addNodes(const std::vector<std::string>& names)
 	m_numNodes = names.size();
 	if (m_config.nodeLimit > 0 && m_config.nodeLimit < m_numNodes)
 		m_numNodes = m_config.nodeLimit;
-	
+
 	m_nodeNames.resize(m_numNodes);
 	m_nodeWeights.assign(m_numNodes, 1.0);
 	for (unsigned int i = 0; i < m_numNodes; ++i)
@@ -391,14 +391,15 @@ std::string Network::parseVertices(std::ifstream& file)
 {
 	std::string line;
 
+	// First skip lines until header
 	while(!std::getline(file, line).fail())
 	{
 		if (line.length() == 0 || line[0] == '#')
 			continue;
 		if (line[0] == '*')
 			break;
-
 	}
+
 	if (line.length() == 0 || line[0] != '*')
 		throw FileFormatError("No matching header for vertices found.");
 
@@ -485,6 +486,9 @@ std::string Network::parseVertices(std::ifstream& file, std::string header)
 	}
 	// Return the line after the vertices
 	std::getline(file, line);
+	// Continue past commented lines
+	while (line.length() > 0 && line[0] == '#')
+		std::getline(file, line);
 	return line;
 }
 

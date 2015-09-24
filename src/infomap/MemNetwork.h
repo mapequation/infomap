@@ -97,7 +97,7 @@ class MemNetwork: public Network
 {
 public:
 	// typedef map<pair<StateNode, StateNode>, double> StateLinkMap;
-	typedef map<StateNode, map<StateNode, double> > StateLinkMap; // Main key is first m2-node, sub-key is second m2-node
+	typedef map<StateNode, map<StateNode, double> > StateLinkMap; // Main key is first state-node, sub-key is second state-node
 	typedef map<StateNode, unsigned int> StateNodeMap;
 
 	MemNetwork(const Config& config) :
@@ -111,7 +111,8 @@ public:
 		m_totalMemorySelfLinkWeight(0.0),
 		m_numIncompleteStateLinksFound(0),
 		m_numIncompleteStateLinks(0),
-		m_numAggregatedIncompleteStateLinks(0)
+		m_numAggregatedIncompleteStateLinks(0),
+		m_numStateNodesFound(0)
 	{}
 	virtual ~MemNetwork() {}
 
@@ -124,9 +125,10 @@ public:
 	bool addStateLink(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight);
 	bool addStateLink(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight);
 	bool addStateLink(StateLinkMap::iterator firstStateNode, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight);
+	bool addStateLink(const StateNode& s1, const StateNode& s2, double weight);
 
 	void addStateNode(unsigned int priorState, unsigned int nodeIndex, double weight);
-	void addStateNode(StateNode m2node, double weight);
+	void addStateNode(StateNode& stateNode, double weight = 1.0);
 
 	virtual void finalizeAndCheckNetwork(bool printSummary = true);
 
@@ -136,7 +138,7 @@ public:
 	const StateNodeMap& stateNodeMap() const { return m_stateNodeMap; }
 	const std::vector<double>& stateNodeWeights() const { return m_stateNodeWeights; }
 	double totalStateNodeWeight() const { return m_totStateNodeWeight; }
-	const StateLinkMap& m2LinkMap() const { return m_m2Links; }
+	const StateLinkMap& stateLinkMap() const { return m_stateLinks; }
 	unsigned int numStateLinks() const { return m_numStateLinks; }
 	double totalStateLinkWeight() const { return m_totStateLinkWeight; }
 	double totalMemorySelfLinkWeight() const { return m_totalMemorySelfLinkWeight; }
@@ -150,6 +152,12 @@ public:
 protected:
 
 	void parseTrigram(std::string filename);
+
+	void parseStateNetwork(std::string filename);
+
+	std::string parseStateNodes(std::ifstream& file);
+
+	std::string parseStateLinks(std::ifstream& file);
 
 	/**
 	 * Create trigrams from first order data by chaining pair of overlapping links.
@@ -212,6 +220,9 @@ protected:
 	void simulateMemoryToIncompleteData();
 
 	// Helper methods
+
+	void parseStateNode(const std::string& line, StateNode& stateNode);
+
 	/**
 	 * Parse a string of link data.
 	 * If no weight data can be extracted, the default value 1.0 will be used.
@@ -223,12 +234,14 @@ protected:
 	void parseStateLink(char line[], int& n1, unsigned int& n2, unsigned int& n3, double& weight);
 
 	/**
-	 * Insert memory link, indexed on first m2-node and aggregated if exist
+	 * Insert memory link, indexed on first state-node and aggregated if exist
 	 * @note Called by addStateLink
 	 * @return true if a new link was inserted, false if aggregated
 	 */
 	bool insertStateLink(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight);
+	bool insertStateLink(const StateNode& s1, const StateNode& s2, double weight);
 	bool insertStateLink(StateLinkMap::iterator firstStateNode, unsigned int n2PriorState, unsigned int n2, double weight);
+
 	bool addIncompleteStateLink(unsigned int n1, unsigned int n2, double weight);
 
 	unsigned int addMissingPhysicalNodes();
@@ -243,7 +256,7 @@ protected:
 
 	unsigned int m_numStateLinksFound;
 	unsigned int m_numStateLinks;
-	StateLinkMap m_m2Links; // Raw data from file
+	StateLinkMap m_stateLinks; // Raw data from file
 
 	double m_totStateLinkWeight;
 	unsigned int m_numAggregatedStateLinks;
@@ -254,6 +267,8 @@ protected:
 	unsigned int m_numIncompleteStateLinks;
 	unsigned int m_numAggregatedIncompleteStateLinks;
 
+	unsigned int m_numStateNodesFound;
+	// std::deque<StateNode> m_stateNodes;
 };
 
 inline
@@ -273,7 +288,7 @@ void MemNetwork::addStateNode(unsigned int previousState, unsigned int nodeIndex
 }
 
 inline
-void MemNetwork::addStateNode(StateNode stateNode, double weight)
+void MemNetwork::addStateNode(StateNode& stateNode, double weight)
 {
 	m_stateNodes[stateNode] += weight;
 	m_totStateNodeWeight += weight;

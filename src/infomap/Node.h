@@ -55,6 +55,7 @@ struct SubStructure
 
 struct StateNode
 {
+	unsigned int stateIndex;
 	std::vector<unsigned int> priorState;
 	unsigned int physIndex;
 	StateNode() :
@@ -88,6 +89,13 @@ struct StateNode
 	unsigned int layer() const
 	{
 		return priorState.at(0);
+	}
+
+	void subtractIndexOffset(unsigned int indexOffset)
+	{
+		for (unsigned int i = 0; i < priorState.size(); ++i)
+			priorState[i] -= indexOffset;
+		physIndex -= indexOffset;
 	}
 
 	bool operator<(StateNode other) const

@@ -43,10 +43,10 @@ public:
 
 	virtual void calculateFlow(const Network& network, const Config& config);
 
-	const std::vector<StateNode>& getStateNodes() const { return m_m2nodes; }
+	const std::vector<StateNode>& getStateNodes() const { return m_statenodes; }
 
 protected:
-	std::vector<StateNode> m_m2nodes;
+	std::vector<StateNode> m_statenodes;
 };
 
 #ifdef NS_INFOMAP

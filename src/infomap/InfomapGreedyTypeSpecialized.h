@@ -212,7 +212,7 @@ inline bool InfomapGreedyTypeSpecialized<FlowType, WithMemory>::preClusterMultip
 	for (TreeData::leafIterator leafIt(Super::m_treeData.begin_leaf()); leafIt != Super::m_treeData.end_leaf(); ++leafIt, ++memNodeIndex)
 	{
 		NodeType& source = getNode(**leafIt);
-		// Map from m2 id to single index
+		// Map from state id to single index
 		memNodeToIndex[source.stateNode] = memNodeIndex;
 		unsigned int layer = source.stateNode.layer();
 		for (NodeBase::edge_iterator outEdgeIt(source.begin_outEdge()), endIt(source.end_outEdge());
@@ -930,15 +930,15 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::printFlowNetwork(std::o
 					edgeIt != endEdgeIt; ++edgeIt)
 			{
 				EdgeType& edge = **edgeIt;
-				StateNode& m2Target = getNode(edge.target).stateNode;
-				out << "  --> " << "(" << m2Target.print(indexOffset) << ") (" << edge.data.flow << ")\n";
+				StateNode& stateTarget = getNode(edge.target).stateNode;
+				out << "  --> " << "(" << stateTarget.print(indexOffset) << ") (" << edge.data.flow << ")\n";
 			}
 			for (NodeBase::edge_iterator edgeIt(node.begin_inEdge()), endEdgeIt(node.end_inEdge());
 					edgeIt != endEdgeIt; ++edgeIt)
 			{
 				EdgeType& edge = **edgeIt;
-				StateNode& m2Source = getNode(edge.source).stateNode;
-				out << "  <-- " << "(" << m2Source.print(indexOffset) << ") (" << edge.data.flow << ")\n";
+				StateNode& stateSource = getNode(edge.source).stateNode;
+				out << "  <-- " << "(" << stateSource.print(indexOffset) << ") (" << edge.data.flow << ")\n";
 			}
 		}
 		return;

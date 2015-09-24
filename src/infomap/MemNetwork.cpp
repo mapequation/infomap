@@ -49,6 +49,8 @@ void MemNetwork::readInputData(std::string filename)
 		filename = m_config.networkFile;
 	if (m_config.inputFormat == "3gram")
 		parseTrigram(filename);
+	else if (m_config.inputFormat == "states")
+		parseStateNetwork(filename);
 	else
 	{
 		Network::readInputData(filename);
@@ -143,7 +145,7 @@ void MemNetwork::parseTrigram(std::string filename)
 
 	m_totalLinkWeight = 0.0;
 
-	// Read links in format "from through to weight", for example "1 2 3 2" (all integers) and each undirected link only ones (weight is optional).
+	// Read links in format "from through to [weight = 1.0]", for example "1 2 3 1.0"
 	while(!std::getline(input, line).fail())
 	{
 		if (line.length() == 0)
@@ -161,6 +163,7 @@ void MemNetwork::parseTrigram(std::string filename)
 		else
 			addStateLink(n1, n2, n2, n3, weight);
 
+		// Also add first order link to be able to complete dangling state nodes
 		if (n2 != n3 || m_config.includeSelfLinks)
 			insertLink(n2, n3, weight);
 	}
@@ -169,6 +172,89 @@ void MemNetwork::parseTrigram(std::string filename)
 
 	finalizeAndCheckNetwork();
 
+}
+
+void MemNetwork::parseStateNetwork(std::string filename)
+{
+	Log() << "Parsing state network from file '" <<
+			filename << "'... " << std::flush;
+
+	SafeInFile input(filename.c_str());
+
+	// Parse the vertices and return the line after
+	std::string line = parseVertices(input);
+
+	while (line.length() > 0 && line[0] == '*')
+	{
+		std::string header = io::firstWord(line);
+		if (header == "*States" || header == "*states") {
+			line = parseStateNodes(input);
+		}
+		else if (header == "*Edges" || header == "*edges") {
+			if (!m_config.parseAsUndirected())
+				Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
+			line = parseStateLinks(input);
+		}
+		else if (header == "*Arcs" || header == "*arcs") {
+			line = parseStateLinks(input);
+		}
+		else
+			throw FileFormatError(io::Str() << "Unrecognized header in network file: '" << line << "'.");
+	}
+
+	Log() << "done!" << std::endl;
+
+	finalizeAndCheckNetwork();
+}
+
+std::string MemNetwork::parseStateNodes(std::ifstream& file)
+{
+	std::string line;
+	while(!std::getline(file, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+
+		if (line[0] == '*')
+			break;
+
+		StateNode stateNode;
+		parseStateNode(line, stateNode);
+
+		addStateNode(stateNode);
+
+		++m_numStateNodesFound;
+	}
+	return line;
+}
+
+std::string MemNetwork::parseStateLinks(std::ifstream& file)
+{
+	// First index the state nodes
+	std::vector<const StateNode*> stateNodes;
+	stateNodes.reserve(m_stateNodes.size());
+	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it)
+	{
+		stateNodes.push_back(&(it->first));
+	}
+
+	// Parse state links
+	std::string line;
+	while(!std::getline(file, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+
+		if (line[0] == '*')
+			break;
+
+		unsigned int s1, s2;
+		double weight;
+		parseLink(line, s1, s2, weight);
+
+		addStateLink(*stateNodes[s1], *stateNodes[s2], weight);
+	}
+	return line;
 }
 
 void MemNetwork::simulateMemoryFromOrdinaryNetwork()
@@ -270,42 +356,42 @@ void MemNetwork::simulateMemoryToIncompleteData()
 	unsigned int lastProgress = 0;
 	unsigned int linkCount = 0;
 
-	// Loop through all m2 links and store all feasible chainable links to the incomplete data
+	// Loop through all state links and store all feasible chainable links to the incomplete data
 	unsigned int numExactMatches = 0;
 	unsigned int numPartialMatches = 0;
 	unsigned int numShiftedMatches = 0;
-	for (StateLinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
+	for (StateLinkMap::const_iterator linkIt(m_stateLinks.begin()); linkIt != m_stateLinks.end(); ++linkIt)
 	{
-		const StateNode& m2source = linkIt->first;
+		const StateNode& statesource = linkIt->first;
 		const std::map<StateNode, double>& subLinks = linkIt->second;
 		for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
-			const StateNode& m2target = subIt->first;
+			const StateNode& statetarget = subIt->first;
 			double weight = subIt->second;
 
 			// Check physical source index for exact and partial match
-			int compactIndex = incompleteSourceMapping[m2source.physIndex];
+			int compactIndex = incompleteSourceMapping[statesource.physIndex];
 			if (compactIndex != -1)
 			{
 				std::deque<ComplementaryData>& matchedComplementaryData = complementaryData[compactIndex];
 				for (unsigned int i = 0; i < matchedComplementaryData.size(); ++i)
 				{
 					ComplementaryData& data = matchedComplementaryData[i];
-					if (data.incompleteLink.n2 == m2target.physIndex) {
-						data.addExactMatch(m2source.getPriorState(), weight);
+					if (data.incompleteLink.n2 == statetarget.physIndex) {
+						data.addExactMatch(statesource.getPriorState(), weight);
 						++numExactMatches;
 					}
 					else {
 						// Partial matches not used if exact matches available
 						if (data.exactMatch.empty())
-							data.addPartialMatch(m2source.getPriorState(), weight);
+							data.addPartialMatch(statesource.getPriorState(), weight);
 						++numPartialMatches;
 					}
 				}
 			}
 
 			// Check target index for shifted match (using the physical source as memory data)
-			compactIndex = incompleteSourceMapping[m2target.physIndex];
+			compactIndex = incompleteSourceMapping[statetarget.physIndex];
 			if (compactIndex != -1)
 			{
 				std::deque<ComplementaryData>& matchedComplementaryData = complementaryData[compactIndex];
@@ -314,7 +400,7 @@ void MemNetwork::simulateMemoryToIncompleteData()
 					ComplementaryData& data = matchedComplementaryData[i];
 					// Shifted match only used if no better match
 					if (data.exactMatch.empty() && data.partialMatch.empty())
-						data.addShiftedMatch(m2target.getPriorState(), weight);
+						data.addShiftedMatch(statetarget.getPriorState(), weight);
 					++numShiftedMatches;
 				}
 			}
@@ -413,6 +499,19 @@ void MemNetwork::simulateMemoryToIncompleteData()
 
 }
 
+void MemNetwork::parseStateNode(const std::string& line, StateNode& stateNode)
+{
+	m_extractor.clear();
+	m_extractor.str(line);
+	if (!(m_extractor >> stateNode.stateIndex >> stateNode.physIndex))
+		throw FileFormatError(io::Str() << "Can't parse any state node from line '" << line << "'");
+	unsigned int priorIndex;
+	while (m_extractor >> priorIndex) {
+		stateNode.pushState(priorIndex);
+	}
+	stateNode.subtractIndexOffset(m_indexOffset);
+}
+
 void MemNetwork::parseStateLink(const std::string& line, int& n1, unsigned int& n2, unsigned int& n3, double& weight)
 {
 	m_extractor.clear();
@@ -493,9 +592,9 @@ bool MemNetwork::addStateLink(StateLinkMap::iterator firstStateNode, unsigned in
 	if (m_config.nodeLimit > 0 && (n2 >= m_config.nodeLimit))
 		return false;
 
-	const StateNode& m2Source = firstStateNode->first;
-	unsigned int n1 = m2Source.physIndex;
-	unsigned int n1PriorState = m2Source.getPriorState();
+	const StateNode& stateSource = firstStateNode->first;
+	unsigned int n1 = stateSource.physIndex;
+	unsigned int n1PriorState = stateSource.getPriorState();
 
 	if(m_config.includeSelfLinks)
 	{
@@ -524,19 +623,45 @@ bool MemNetwork::addStateLink(StateLinkMap::iterator firstStateNode, unsigned in
 	return true;
 }
 
+bool MemNetwork::addStateLink(const StateNode& s1, const StateNode& s2, double weight)
+{
+	++m_numStateLinksFound;
+
+	if(m_config.includeSelfLinks)
+	{
+		if (s1 == s2)
+		{
+			++m_numMemorySelfLinks;
+			m_totalMemorySelfLinkWeight += weight;
+		}
+
+		insertStateLink(s1, s2, weight);
+	}
+	else if (s1 != s2)
+	{
+		insertStateLink(s1, s2, weight);
+	}
+
+	return true;
+}
+
 bool MemNetwork::insertStateLink(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight)
 {
-	StateNode m1(n1PriorState, n1);
-	StateNode m2(n2PriorState, n2);
+	StateNode s1(n1PriorState, n1);
+	StateNode s2(n2PriorState, n2);
+	return insertStateLink(s1, s2, weight);
+}
 
+bool MemNetwork::insertStateLink(const StateNode& s1, const StateNode& s2, double weight)
+{
 	++m_numStateLinks;
 	m_totStateLinkWeight += weight;
 
 	// Aggregate link weights if they are definied more than once
-	StateLinkMap::iterator firstIt = m_m2Links.lower_bound(m1);
-	if (firstIt != m_m2Links.end() && firstIt->first == m1) // First node already exists, check second node
+	StateLinkMap::iterator firstIt = m_stateLinks.lower_bound(s1);
+	if (firstIt != m_stateLinks.end() && firstIt->first == s1) // First node already exists, check second node
 	{
-		std::pair<std::map<StateNode, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(m2, weight));
+		std::pair<std::map<StateNode, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(s2, weight));
 		if (!ret2.second)
 		{
 			ret2.first->second += weight;
@@ -547,7 +672,7 @@ bool MemNetwork::insertStateLink(unsigned int n1PriorState, unsigned int n1, uns
 	}
 	else
 	{
-		m_m2Links.insert(firstIt, std::make_pair(m1, std::map<StateNode, double>()))->second.insert(std::make_pair(m2, weight));
+		m_stateLinks.insert(firstIt, std::make_pair(s1, std::map<StateNode, double>()))->second.insert(std::make_pair(s2, weight));
 	}
 
 	return true;
@@ -604,7 +729,7 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 {
 	simulateMemoryToIncompleteData();
 
-	if (m_m2Links.empty())
+	if (m_stateLinks.empty())
 	{
 		if (m_numLinks > 0)
 			simulateMemoryFromOrdinaryNetwork();
@@ -630,7 +755,9 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
 		Log() << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.) ";
 
-	addMissingPhysicalNodes();
+	unsigned int numMissingPhysicalNodesAdded = addMissingPhysicalNodes();
+	if (numMissingPhysicalNodesAdded)
+		Log() << "  -> Added " << numMissingPhysicalNodesAdded << " self-memory nodes for missing physical nodes.\n";
 
 	m_stateNodeWeights.resize(m_stateNodes.size());
 	m_totStateNodeWeight = 0.0;
@@ -673,24 +800,24 @@ void MemNetwork::initNodeDegrees()
 	m_outDegree.assign(m_stateNodes.size(), 0.0);
 	m_sumLinkOutWeight.assign(m_stateNodes.size(), 0.0);
 
-	for (MemNetwork::StateLinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
+	for (MemNetwork::StateLinkMap::const_iterator linkIt(m_stateLinks.begin()); linkIt != m_stateLinks.end(); ++linkIt)
 	{
-		const StateNode& m2source = linkIt->first;
+		const StateNode& statesource = linkIt->first;
 		const std::map<StateNode, double>& subLinks = linkIt->second;
 
-		// Get the index for the m2 source node
-		MemNetwork::StateNodeMap::const_iterator nodeMapIt = m_stateNodeMap.find(m2source);
+		// Get the index for the state source node
+		MemNetwork::StateNodeMap::const_iterator nodeMapIt = m_stateNodeMap.find(statesource);
 		if (nodeMapIt == m_stateNodeMap.end())
-			throw InputDomainError(io::Str() << "Couldn't find mapped index for source State node " << m2source);
+			throw InputDomainError(io::Str() << "Couldn't find mapped index for source State node " << statesource);
 		unsigned int sourceIndex = nodeMapIt->second;
 
 		for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
-//			const StateNode& m2target = subIt->first;
+//			const StateNode& statetarget = subIt->first;
 			double linkWeight = subIt->second;
-//			nodeMapIt = m_stateNodeMap.find(m2target);
+//			nodeMapIt = m_stateNodeMap.find(statetarget);
 //			if (nodeMapIt == m_stateNodeMap.end())
-//				throw InputDomainError(io::Str() << "Couldn't find mapped index for target State node " << m2target);
+//				throw InputDomainError(io::Str() << "Couldn't find mapped index for target State node " << statetarget);
 //			unsigned int targetIndex = nodeMapIt->second;
 
 			++m_outDegree[sourceIndex];
@@ -741,15 +868,15 @@ void MemNetwork::printNetworkAsPajek(std::string filename) const
 		out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
 
 	out << "*3grams " << m_numStateLinks << "\n";
-	for (StateLinkMap::const_iterator linkIt(m_m2Links.begin()); linkIt != m_m2Links.end(); ++linkIt)
+	for (StateLinkMap::const_iterator linkIt(m_stateLinks.begin()); linkIt != m_stateLinks.end(); ++linkIt)
 	{
-		const StateNode& m2source = linkIt->first;
+		const StateNode& statesource = linkIt->first;
 		const std::map<StateNode, double>& subLinks = linkIt->second;
 		for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
-			const StateNode& m2target = subIt->first;
+			const StateNode& statetarget = subIt->first;
 			double linkWeight = subIt->second;
-			out << m2source.print(1) << " " << (m2target.physIndex + 1) << " " << linkWeight << "\n";
+			out << statesource.print(1) << " " << (statetarget.physIndex + 1) << " " << linkWeight << "\n";
 		}
 	}
 }
@@ -757,7 +884,7 @@ void MemNetwork::printNetworkAsPajek(std::string filename) const
 void MemNetwork::disposeLinks()
 {
 	Network::disposeLinks();
-	m_m2Links.clear();
+	m_stateLinks.clear();
 	m_incompleteStateLinks.clear();
 }
 

@@ -1402,13 +1402,13 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::consolidateModules(b
 
 			if (otherParent != parent)
 			{
-				NodeBase *m1 = parent, *m2 = otherParent;
+				NodeBase *m1 = parent, *state = otherParent;
 				// If undirected, the order may be swapped to aggregate the edge on an opposite one
-				if (!IsDirectedType() && m1->index > m2->index)
-					std::swap(m1, m2);
+				if (!IsDirectedType() && m1->index > state->index)
+					std::swap(m1, state);
 				// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
 				std::pair<EdgeMap::iterator, bool> ret = \
-						moduleLinks.insert(std::make_pair(NodePair(m1, m2), edge->data.flow));
+						moduleLinks.insert(std::make_pair(NodePair(m1, state), edge->data.flow));
 				if (!ret.second)
 					ret.first->second += edge->data.flow;
 			}

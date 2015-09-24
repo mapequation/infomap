@@ -61,7 +61,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	m_nodeFlow.assign(numStateNodes, 0.0);
 	m_nodeTeleportRates.assign(numStateNodes, 0.0);
 
-	const MemNetwork::StateLinkMap& linkMap = network.m2LinkMap();
+	const MemNetwork::StateLinkMap& linkMap = network.stateLinkMap();
 	unsigned int numLinks = network.numStateLinks();
 	m_flowLinks.resize(numLinks);
 	double totalStateLinkWeight = network.totalStateLinkWeight();
@@ -71,21 +71,21 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 
 	for (MemNetwork::StateLinkMap::const_iterator linkIt(linkMap.begin()); linkIt != linkMap.end(); ++linkIt)
 	{
-		const StateNode& m2source = linkIt->first;
+		const StateNode& statesource = linkIt->first;
 		const std::map<StateNode, double>& subLinks = linkIt->second;
 		for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt, ++linkIndex)
 		{
-			const StateNode& m2target = subIt->first;
+			const StateNode& statetarget = subIt->first;
 			double linkWeight = subIt->second;
 
-			// Get the indices for the m2 nodes
-			MemNetwork::StateNodeMap::const_iterator nodeMapIt = nodeMap.find(m2source);
+			// Get the indices for the state nodes
+			MemNetwork::StateNodeMap::const_iterator nodeMapIt = nodeMap.find(statesource);
 			if (nodeMapIt == nodeMap.end())
-				throw InputDomainError(io::Str() << "Couldn't find mapped index for source State node " << m2source);
+				throw InputDomainError(io::Str() << "Couldn't find mapped index for source State node " << statesource);
 			unsigned int sourceIndex = nodeMapIt->second;
-			nodeMapIt = nodeMap.find(m2target);
+			nodeMapIt = nodeMap.find(statetarget);
 			if (nodeMapIt == nodeMap.end())
-				throw InputDomainError(io::Str() << "Couldn't find mapped index for target State node " << m2target);
+				throw InputDomainError(io::Str() << "Couldn't find mapped index for target State node " << statetarget);
 			unsigned int targetIndex = nodeMapIt->second;
 
 			m_nodeFlow[sourceIndex] += linkWeight;// / sumUndirLinkWeight;
@@ -97,10 +97,10 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		}
 	}
 
-	m_m2nodes.resize(numStateNodes);
-	for (MemNetwork::StateNodeMap::const_iterator m2nodeIt(nodeMap.begin()); m2nodeIt != nodeMap.end(); ++m2nodeIt)
+	m_statenodes.resize(numStateNodes);
+	for (MemNetwork::StateNodeMap::const_iterator statenodeIt(nodeMap.begin()); statenodeIt != nodeMap.end(); ++statenodeIt)
 	{
-		m_m2nodes[m2nodeIt->second] = m2nodeIt->first;
+		m_statenodes[statenodeIt->second] = statenodeIt->first;
 	}
 
 	unsigned int numM1Nodes = network.numNodes();
@@ -108,7 +108,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 	std::vector<PhysToMemWeightMap> netPhysToMem(numM1Nodes);
 
 	const LinkMap& m1LinkMap = network.linkMap();
-	// Map middle column in trigrams to target m2 nodes (source to link for m1 links)
+	// Map middle column in trigrams to target state nodes (source to link for m1 links)
 	for (LinkMap::const_iterator linkIt(m1LinkMap.begin()); linkIt != m1LinkMap.end(); ++linkIt)
 	{
 		unsigned int linkEnd1 = linkIt->first;
@@ -117,37 +117,37 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		{
 			unsigned int linkEnd2 = subIt->first;
 			double linkWeight = subIt->second;
-			MemNetwork::StateNodeMap::const_iterator m2it = nodeMap.find(StateNode(linkEnd1, linkEnd2));
-			if (m2it == nodeMap.end())
+			MemNetwork::StateNodeMap::const_iterator stateit = nodeMap.find(StateNode(linkEnd1, linkEnd2));
+			if (stateit == nodeMap.end())
 				throw InputDomainError(io::Str() << "Memory node (" << linkEnd1 << ", " << linkEnd2 << ") not indexed!");
-			unsigned int m2nodeIndex = m2it->second;
+			unsigned int statenodeIndex = stateit->second;
 			PhysToMemWeightMap& physMap = netPhysToMem[linkEnd1];
-			physMap.insert(std::make_pair(linkWeight, m2nodeIndex));
+			physMap.insert(std::make_pair(linkWeight, statenodeIndex));
 		}
 	}
 
 // Other ways to complete dangling nodes...
 	// for (unsigned int i = 0; i < numStateNodes; ++i)
 	// {
-	// 	const StateNode& m2node = m_m2nodes[i];
-	// 	PhysToMemWeightMap& physMap = netPhysToMem[m2node.priorState];
-	// 	double m2weight = network.stateNodes().find(m2node)->second;
-	// 	physMap.insert(std::make_pair(m2weight, i));
+	// 	const StateNode& statenode = m_statenodes[i];
+	// 	PhysToMemWeightMap& physMap = netPhysToMem[statenode.priorState];
+	// 	double stateweight = network.stateNodes().find(statenode)->second;
+	// 	physMap.insert(std::make_pair(stateweight, i));
 	// }
 
-	// for (map<StateNode, double>::const_iterator m2it = network.stateNodes.begin(); m2it != network.stateNodes.end(); ++m2it)
+	// for (map<StateNode, double>::const_iterator stateit = network.stateNodes.begin(); stateit != network.stateNodes.end(); ++stateit)
 	// {
-	// 	const StateNode& m2node = m2it->first;
-	// 	double weight = m2it->second;
-	// 	PhysToMemWeightMap& physMap = netPhysToMem[m2node.priorState];
-	// 	physMap.insert(std::make_pair(weight, m2nodeIndex));
+	// 	const StateNode& statenode = stateit->first;
+	// 	double weight = stateit->second;
+	// 	PhysToMemWeightMap& physMap = netPhysToMem[statenode.priorState];
+	// 	physMap.insert(std::make_pair(weight, statenodeIndex));
 	// }
 
 	// for (unsigned int i = 0; i < m_flowLinks.size(); ++i)
 	// {
 	// 	const Link& link = m_flowLinks[i];
-	// 	const StateNode& m2node = m_m2nodes[link.target];
-	// 	PhysToMemWeightMap& physMap = netPhysToMem[m2node.priorState];
+	// 	const StateNode& statenode = m_statenodes[link.target];
+	// 	PhysToMemWeightMap& physMap = netPhysToMem[statenode.priorState];
 	// 	physMap.insert(std::make_pair(link.weight, link.target));
 	// }
 
@@ -163,7 +163,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 			++numDanglingStateNodes;
 			// We are in physIndex, lookup all mem nodes in that physical node
 			// and add a link to the target node of those mem nodes (pre-mapped above)
-			const PhysToMemWeightMap& physToMem = netPhysToMem[m_m2nodes[i].physIndex];
+			const PhysToMemWeightMap& physToMem = netPhysToMem[m_statenodes[i].physIndex];
 			for(PhysToMemWeightMap::const_iterator it = physToMem.begin(); it != physToMem.end(); it++)
 			{
 				unsigned int from = i;
@@ -292,7 +292,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		const std::vector<double>& nodeWeights = network.stateNodeWeights();
 		for (unsigned int i = 0; i < numStateNodes; ++i) {
 //			m_nodeTeleportRates[i] = sumLinkOutWeight[i] / totalStateLinkWeight;
-			// Use original m2 weights (without m1-completed weights for dangling m2 nodes)
+			// Use original state weights (without m1-completed weights for dangling state nodes)
 			m_nodeTeleportRates[i] = nodeWeights[i] / network.totalStateNodeWeight();
 		}
 	}

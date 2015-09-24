@@ -316,11 +316,11 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 	for (std::map<StateNode, InterLinkMap>::const_iterator stateNodeIt(m_interLinks.begin()); stateNodeIt != m_interLinks.end(); ++stateNodeIt)
 	{
 		const StateNode& stateNode = stateNodeIt->first;
-		StateLinkMap::iterator m2SourceIt = m_m2Links.lower_bound(stateNode);
+		StateLinkMap::iterator stateSourceIt = m_stateLinks.lower_bound(stateNode);
 		// Find source iterator to re-use in the loop below
-		if (m2SourceIt == m_m2Links.end() || m2SourceIt->first != stateNode)
-			m2SourceIt = m_m2Links.insert(m2SourceIt, std::make_pair(stateNode, std::map<StateNode, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
-		bool m2SourceNodeAdded = false;
+		if (stateSourceIt == m_stateLinks.end() || stateSourceIt->first != stateNode)
+			stateSourceIt = m_stateLinks.insert(stateSourceIt, std::make_pair(stateNode, std::map<StateNode, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
+		bool stateSourceNodeAdded = false;
 		unsigned int layer1 = stateNode.layer();
 		unsigned int nodeIndex = stateNode.physIndex;
 		const InterLinkMap& interLinkMap = stateNodeIt->second;
@@ -337,8 +337,8 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 				bool nonPhysicalSwitch = false;
 				if (nonPhysicalSwitch)
 				{
-					addStateLink(m2SourceIt, layer2, nodeIndex, scaledInterLinkWeight, 0.0, 0.0);
-					m2SourceNodeAdded = true;
+					addStateLink(stateSourceIt, layer2, nodeIndex, scaledInterLinkWeight, 0.0, 0.0);
+					stateSourceNodeAdded = true;
 				}
 				else
 				{
@@ -356,8 +356,8 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 
 							double interIntraLinkWeight = scaledInterLinkWeight * otherLayerLinkWeight / sumOutWeights[layer2][nodeIndex];
 
-							addStateLink(m2SourceIt, layer2, otherLayerTargetNodeIndex, interIntraLinkWeight, 0.0, 0.0);
-							m2SourceNodeAdded = true;
+							addStateLink(stateSourceIt, layer2, otherLayerTargetNodeIndex, interIntraLinkWeight, 0.0, 0.0);
+							stateSourceNodeAdded = true;
 						}
 					}
 				}
@@ -369,9 +369,9 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 					"' is declared as an inter-layer link (layer1, node, layer2) but is not.");
 			}
 		}
-		if (!m2SourceNodeAdded) {
+		if (!stateSourceNodeAdded) {
 			// The added source was not used, remove it
-			m_m2Links.erase(m2SourceIt);
+			m_stateLinks.erase(stateSourceIt);
 		}
 	}
 	Log() << "done!" << std::endl;
@@ -407,7 +407,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 					sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
 			}
 
-			StateNode m2Source(layer1, nodeIndex);
+			StateNode stateSource(layer1, nodeIndex);
 
 			const LinkMap& layer1LinkMap = m_networks[layer1].linkMap();
 			LinkMap::const_iterator layer1OutLinksIt = layer1LinkMap.find(nodeIndex);
@@ -418,9 +418,9 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 
 			double sumOutLinkWeightLayer1 = m_networks[layer1].sumLinkOutWeight()[nodeIndex];
 
-//			StateLinkMap::iterator m2SourceIt = m_m2Links.lower_bound(m2Source);
-//			if (m2SourceIt == m_m2Links.end() || m2SourceIt->first != m2Source)
-//				m2SourceIt = m_m2Links.insert(m2SourceIt, std::make_pair(m2Source, std::map<StateNode, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
+//			StateLinkMap::iterator stateSourceIt = m_stateLinks.lower_bound(stateSource);
+//			if (stateSourceIt == m_stateLinks.end() || stateSourceIt->first != stateSource)
+//				stateSourceIt = m_stateLinks.insert(stateSourceIt, std::make_pair(stateSource, std::map<StateNode, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
 
 			for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2)
 			{
@@ -433,7 +433,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 					layer2OutLinksIt = layer2LinkMap.find(nodeIndex);
 					if (layer2OutLinksIt == layer2LinkMap.end())
 					{
-//						Log() << "\n  No mirror to node " << m2Source << " on layer " << layer2;
+//						Log() << "\n  No mirror to node " << stateSource << " on layer " << layer2;
 						continue;
 					}
 				}
