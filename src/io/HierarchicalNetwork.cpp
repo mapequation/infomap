@@ -100,11 +100,11 @@ SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitF
 }
 
 SNode& HierarchicalNetwork::addLeafNode(SNode& parent, double flow, double exitFlow, const std::string& name, unsigned int leafIndex,
-		unsigned int originalIndex, bool isMemoryNode, const std::vector<unsigned int>& priorIndex, unsigned int physIndex)
+		unsigned int originalIndex, bool isMemoryNode, unsigned int stateIndex, unsigned int physIndex)
 {
 	SNode& n = addLeafNode(parent, flow, exitFlow, name, leafIndex, originalIndex);
 	n.isMemoryNode = isMemoryNode;
-	n.priorIndex = priorIndex;
+	n.stateIndex = stateIndex;
 	n.physIndex = physIndex;
 	return n;
 }
@@ -275,7 +275,7 @@ void HierarchicalNetwork::writeClu(const std::string& fileName, int clusterIndex
 		if (m_config.isMultiplexNetwork())
 			out << "# layer node cluster flow:\n";
 		else
-			out << "# prior_node node cluster flow:\n";
+			out << "# state_node node cluster flow:\n";
 	}
 	else
 		out << "# node cluster flow:\n";
@@ -385,7 +385,7 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 		if (m_config.isMultiplexNetwork())
 			out << "# path flow name layer node:\n";
 		else
-			out << "# path flow name prior_node node:\n";
+			out << "# path flow name state_node node:\n";
 	}
 	else
 		out << "# path flow name node:\n";
