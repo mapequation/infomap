@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -248,7 +248,7 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(Hierar
 			if (m_config.isMemoryNetwork()) {
 				const StateNode& stateNode = getMemoryNode(*childIt);
 				hierarchicalNetwork.addLeafNode(parent, node.data.flow, node.data.exitFlow, leafNodeNames[node.originalIndex],
-						node.originalIndex, node.originalIndex, true, stateNode.priorState, stateNode.physIndex);
+						node.originalIndex, node.originalIndex, true, stateNode.stateIndex, stateNode.physIndex);
 
 			}
 			else

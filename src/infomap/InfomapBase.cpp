@@ -1590,7 +1590,7 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 	for (unsigned int i = 0; i < network.numStateNodes(); ++i) {
 		m_treeData.addNewNode("", nodeFlow[i], nodeTeleportWeights[i]);
 		StateNode& stateNode = getMemoryNode(m_treeData.getLeafNode(i));
-		stateNode.priorState = stateNodes[i].priorState;
+		stateNode.stateIndex = stateNodes[i].stateIndex;
 		stateNode.physIndex = stateNodes[i].physIndex;
 	}
 

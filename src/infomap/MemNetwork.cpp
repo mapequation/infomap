@@ -184,6 +184,12 @@ void MemNetwork::parseStateNetwork(std::string filename)
 	// Parse the vertices and return the line after
 	std::string line = parseVertices(input);
 
+	// Add the physical nodes also as state nodes
+	for (unsigned int i = 0; i < m_numNodes; ++i) {
+		StateNode s(i, i);
+		addStateNode(s);
+	}
+
 	while (line.length() > 0 && line[0] == '*')
 	{
 		std::string header = io::firstWord(line);
@@ -195,7 +201,7 @@ void MemNetwork::parseStateNetwork(std::string filename)
 				Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
 			line = parseStateLinks(input);
 		}
-		else if (header == "*Arcs" || header == "*arcs") {
+		else if (header == "*Links" || header == "*links") {
 			line = parseStateLinks(input);
 		}
 		else
@@ -230,12 +236,13 @@ std::string MemNetwork::parseStateNodes(std::ifstream& file)
 
 std::string MemNetwork::parseStateLinks(std::ifstream& file)
 {
-	// First index the state nodes
+	// First index the state nodes on state index
 	std::vector<const StateNode*> stateNodes;
 	stateNodes.reserve(m_stateNodes.size());
 	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it)
 	{
-		stateNodes.push_back(&(it->first));
+		const StateNode& s = it->first;
+		stateNodes[s.stateIndex] = &s;
 	}
 
 	// Parse state links
@@ -248,11 +255,11 @@ std::string MemNetwork::parseStateLinks(std::ifstream& file)
 		if (line[0] == '*')
 			break;
 
-		unsigned int s1, s2;
+		unsigned int s1Index, s2Index;
 		double weight;
-		parseLink(line, s1, s2, weight);
+		parseLink(line, s1Index, s2Index, weight);
 
-		addStateLink(*stateNodes[s1], *stateNodes[s2], weight);
+		addStateLink(*stateNodes[s1Index], *stateNodes[s2Index], weight);
 	}
 	return line;
 }
@@ -505,10 +512,6 @@ void MemNetwork::parseStateNode(const std::string& line, StateNode& stateNode)
 	m_extractor.str(line);
 	if (!(m_extractor >> stateNode.stateIndex >> stateNode.physIndex))
 		throw FileFormatError(io::Str() << "Can't parse any state node from line '" << line << "'");
-	unsigned int priorIndex;
-	while (m_extractor >> priorIndex) {
-		stateNode.pushState(priorIndex);
-	}
 	stateNode.subtractIndexOffset(m_indexOffset);
 }
 
@@ -852,8 +855,12 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 		Log() << "-------------------\n";
 	}
 
-	Log() << "  -> Found " << m_numNodesFound << " nodes and " << m_numStateLinksFound << " memory links.\n";
-	Log() << "  -> Generated " << m_stateNodes.size() << " memory nodes and " << m_numStateLinks << " memory links.\n";
+	if (m_numStateNodesFound > 0)
+		Log() << "  -> Found " << m_numNodesFound << " physical nodes, " << m_numStateNodesFound << " state nodes and " << m_numStateLinksFound << " links.\n";
+	else {
+		Log() << "  -> Found " << m_numNodesFound << " nodes and " << m_numStateLinksFound << " memory links.\n";
+		Log() << "  -> Generated " << m_stateNodes.size() << " memory nodes and " << m_numStateLinks << " memory links.\n";
+	}
 	if (m_numAggregatedStateLinks > 0)
 		Log() << "  -> Aggregated " << m_numAggregatedStateLinks << " memory links.\n";
 	Log() << std::flush;

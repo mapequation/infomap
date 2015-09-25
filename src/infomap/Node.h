@@ -56,87 +56,67 @@ struct SubStructure
 struct StateNode
 {
 	unsigned int stateIndex;
-	std::vector<unsigned int> priorState;
 	unsigned int physIndex;
 	StateNode() :
-		physIndex(0)
+		stateIndex(0), physIndex(0)
 	{}
 	StateNode(unsigned int physIndex) :
-		physIndex(physIndex)
+		stateIndex(0), physIndex(physIndex)
 	{}
-	StateNode(unsigned int priorPhysIndex, unsigned int physIndex) :
-		physIndex(physIndex)
-	{ priorState.push_back(priorPhysIndex); }
+	StateNode(unsigned int stateIndex, unsigned int physIndex) :
+		stateIndex(stateIndex), physIndex(physIndex)
+	{}
 	StateNode(const StateNode& other) :
-		priorState(other.priorState), physIndex(other.physIndex)
+		stateIndex(other.stateIndex), physIndex(other.physIndex)
 	{}
-
-	void pushState(unsigned int physIndex)
-	{
-		priorState.push_back(physIndex);
-	}
 
 	unsigned int getPriorState() const
 	{
-		return priorState.at(0);
-	}
-
-	unsigned int getPriorState(unsigned int index) const
-	{
-		return priorState.at(index);
+		return stateIndex;
 	}
 
 	unsigned int layer() const
 	{
-		return priorState.at(0);
+		return stateIndex;
 	}
 
 	void subtractIndexOffset(unsigned int indexOffset)
 	{
-		for (unsigned int i = 0; i < priorState.size(); ++i)
-			priorState[i] -= indexOffset;
+		stateIndex -= indexOffset;
 		physIndex -= indexOffset;
 	}
 
 	bool operator<(StateNode other) const
 	{
-		return priorState == other.priorState ? physIndex < other.physIndex : priorState < other.priorState;
+		return stateIndex == other.stateIndex ? physIndex < other.physIndex : stateIndex < other.stateIndex;
 	}
 
 	bool operator==(StateNode other) const
 	{
-		return priorState == other.priorState && physIndex == other.physIndex;
+		return stateIndex == other.stateIndex && physIndex == other.physIndex;
 	}
 
 	bool operator!=(StateNode other) const
 	{
-		return priorState != other.priorState || physIndex != other.physIndex;
+		return stateIndex != other.stateIndex || physIndex != other.physIndex;
 	}
 
 	friend std::ostream& operator<<(std::ostream& out, const StateNode& node)
 	{
-		out << "(";
-		for (unsigned int i = 0; i < node.priorState.size(); ++i)
-			out << node.priorState[i] << "-";
-		out << node.physIndex << ")";
-		return out;
+		return out << "(" << node.stateIndex << "-" << node.physIndex << ")";
 	}
 
 	std::string print(unsigned int indexOffset = 0) const
 	{
 		std::ostringstream out;
-		for (unsigned int i = 0; i < priorState.size(); ++i)
-			out << priorState[i] + indexOffset << (i == priorState.size() - 1 ? "" : "-");
-		out << " " << physIndex + indexOffset;
+		out << stateIndex + indexOffset << " " << physIndex + indexOffset;
 		return out.str();
 	}
 
 	std::string print(const std::vector<std::string>& names) const
 	{
 		std::ostringstream out;
-		for (unsigned int i = 0; i < priorState.size(); ++i)
-			out << names[priorState[i]] << " -> ";
-		out << names[physIndex];
+		out << stateIndex << " -> " << names.at(physIndex);
 		return out.str();
 	}
 };
