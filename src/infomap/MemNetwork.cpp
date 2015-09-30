@@ -201,7 +201,7 @@ void MemNetwork::parseStateNetwork(std::string filename)
 				Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
 			line = parseStateLinks(input);
 		}
-		else if (header == "*Links" || header == "*links") {
+		else if (header == "*Arcs" || header == "*arcs") {
 			line = parseStateLinks(input);
 		}
 		else
