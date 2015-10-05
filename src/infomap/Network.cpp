@@ -387,7 +387,7 @@ void Network::parseBipartiteNetwork(std::string filename)
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
-std::string Network::parseVertices(std::ifstream& file)
+std::string Network::parseVertices(std::ifstream& file, bool required)
 {
 	std::string line;
 
@@ -403,10 +403,10 @@ std::string Network::parseVertices(std::ifstream& file)
 	if (line.length() == 0 || line[0] != '*')
 		throw FileFormatError("No matching header for vertices found.");
 
-	return parseVertices(file, line);
+	return parseVertices(file, line, required);
 }
 
-std::string Network::parseVertices(std::ifstream& file, std::string header)
+std::string Network::parseVertices(std::ifstream& file, std::string header, bool required)
 {
 	std::istringstream ss;
 	std::string buf;
@@ -418,6 +418,8 @@ std::string Network::parseVertices(std::ifstream& file, std::string header)
 					"' as the number of nodes.");
 	}
 	else {
+		if (!required)
+			return header;
 		throw FileFormatError(io::Str() << "The header '" << header << "' doesn't match *Vertices (case insensitive).");
 	}
 

@@ -237,13 +237,13 @@ protected:
 	 * Parse vertices
 	 * @return The line after the vertices
 	 */
-	std::string parseVertices(std::ifstream& file);
+	std::string parseVertices(std::ifstream& file, bool required = true);
 
 	/**
 	 * Parse vertices under the heading
 	 * @return The line after the vertices
 	 */
-	std::string parseVertices(std::ifstream& file, std::string heading);
+	std::string parseVertices(std::ifstream& file, std::string heading, bool required = true);
 
 
 	Config m_config;
