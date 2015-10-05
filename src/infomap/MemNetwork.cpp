@@ -182,12 +182,14 @@ void MemNetwork::parseStateNetwork(std::string filename)
 	SafeInFile input(filename.c_str());
 
 	// Parse the vertices and return the line after
-	std::string line = parseVertices(input);
+	std::string line = parseVertices(input, false);
 
-	// Add the physical nodes also as state nodes
-	for (unsigned int i = 0; i < m_numNodes; ++i) {
-		StateNode s(i, i);
-		addStateNode(s);
+	if (m_numNodes > 0) {
+		// Add the physical nodes also as state nodes
+		for (unsigned int i = 0; i < m_numNodes; ++i) {
+			StateNode s(i, i);
+			addStateNode(s);
+		}
 	}
 
 	while (line.length() > 0 && line[0] == '*')
@@ -237,11 +239,16 @@ std::string MemNetwork::parseStateNodes(std::ifstream& file)
 std::string MemNetwork::parseStateLinks(std::ifstream& file)
 {
 	// First index the state nodes on state index
-	std::vector<const StateNode*> stateNodes;
-	stateNodes.reserve(m_stateNodes.size());
+	std::vector<const StateNode*> stateNodes(m_stateNodes.size(), nullptr);
+	unsigned int zeroMinusOne = 0;
+	--zeroMinusOne;
 	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it)
 	{
 		const StateNode& s = it->first;
+		if (s.stateIndex == zeroMinusOne)
+			throw InputDomainError(io::Str() << "Integer overflow on state node indices, be sure to specify zero-based node numbering if the node numbers start from zero.");
+		if (s.stateIndex >= stateNodes.size() || stateNodes[s.stateIndex] != nullptr)
+			throw InputDomainError(io::Str() << "Gaps or duplicates in state node indices detected on state node (" << s.print(m_indexOffset) << ")");
 		stateNodes[s.stateIndex] = &s;
 	}
 
@@ -259,6 +266,12 @@ std::string MemNetwork::parseStateLinks(std::ifstream& file)
 		double weight;
 		parseLink(line, s1Index, s2Index, weight);
 
+		if (s1Index >= stateNodes.size() || s2Index >= stateNodes.size()) {
+			if (s1Index == zeroMinusOne || s2Index == zeroMinusOne)
+				throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
+			throw InputDomainError(io::Str() << "At least one link is defined with state node numbers that exceeds the number of nodes.");
+
+		}
 		addStateLink(*stateNodes[s1Index], *stateNodes[s2Index], weight);
 	}
 	return line;
