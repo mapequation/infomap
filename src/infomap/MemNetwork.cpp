@@ -206,6 +206,9 @@ void MemNetwork::parseStateNetwork(std::string filename)
 		else if (header == "*Arcs" || header == "*arcs") {
 			line = parseStateLinks(input);
 		}
+		else if (header == "*MemoryNodes" || header == "*memorynodes") {
+			line = parseStateMemoryNodes(input);
+		}
 		else
 			throw FileFormatError(io::Str() << "Unrecognized header in network file: '" << line << "'.");
 	}
@@ -233,6 +236,24 @@ std::string MemNetwork::parseStateNodes(std::ifstream& file)
 
 		++m_numStateNodesFound;
 	}
+	return line;
+}
+
+std::string MemNetwork::parseStateMemoryNodes(std::ifstream& file)
+{
+	std::string line;
+	unsigned int numStateMemoryNodesFound = 0;
+	while(!std::getline(file, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+
+		if (line[0] == '*')
+			break;
+
+		++numStateMemoryNodesFound;
+	}
+	Log() << "(Warning: Ignored content under *MemoryNodes) ";
 	return line;
 }
 

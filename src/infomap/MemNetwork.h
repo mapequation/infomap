@@ -157,6 +157,8 @@ protected:
 
 	std::string parseStateNodes(std::ifstream& file);
 
+	std::string parseStateMemoryNodes(std::ifstream& file);
+
 	std::string parseStateLinks(std::ifstream& file);
 
 	/**
