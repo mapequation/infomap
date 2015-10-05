@@ -790,7 +790,7 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 	if (m_maxNodeIndex >= m_numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
-		Log() << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.) ";
+		Log() << "(Warning: minimum physical node index is one, check that you don't use zero based numbering if it's not true.)\n";
 
 	unsigned int numMissingPhysicalNodesAdded = addMissingPhysicalNodes();
 	if (numMissingPhysicalNodesAdded)
