@@ -260,7 +260,7 @@ std::string MemNetwork::parseStateMemoryNodes(std::ifstream& file)
 std::string MemNetwork::parseStateLinks(std::ifstream& file)
 {
 	// First index the state nodes on state index
-	std::vector<const StateNode*> stateNodes(m_stateNodes.size(), nullptr);
+	std::vector<const StateNode*> stateNodes(m_stateNodes.size(), NULL);
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
 	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it)
@@ -268,7 +268,7 @@ std::string MemNetwork::parseStateLinks(std::ifstream& file)
 		const StateNode& s = it->first;
 		if (s.stateIndex == zeroMinusOne)
 			throw InputDomainError(io::Str() << "Integer overflow on state node indices, be sure to specify zero-based node numbering if the node numbers start from zero.");
-		if (s.stateIndex >= stateNodes.size() || stateNodes[s.stateIndex] != nullptr)
+		if (s.stateIndex >= stateNodes.size() || stateNodes[s.stateIndex] != NULL)
 			throw InputDomainError(io::Str() << "Gaps or duplicates in state node indices detected on state node (" << s.print(m_indexOffset) << ")");
 		stateNodes[s.stateIndex] = &s;
 	}
