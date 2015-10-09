@@ -63,7 +63,7 @@ bool NetworkAdapter::readExternalHierarchy(std::string filename)
 	}
 	catch (std::exception& err)
 	{
-		std::cerr << "Error: \"" << err.what() << "\"\n";
+		std::cerr << "Error: \"" << err.what() << "\" Ignoring external cluster data.\n";
 		ok = false;
 	}
 
