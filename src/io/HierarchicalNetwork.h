@@ -137,7 +137,7 @@ public:
 		id(id),
 		skip(false),
 		isMemoryNode(false),
-		priorIndex(0),
+		stateIndex(0),
 		physIndex(0)
 	{
 	}
@@ -154,7 +154,7 @@ public:
 		id(other.id),
 		skip(other.skip),
 		isMemoryNode(other.isMemoryNode),
-		priorIndex(other.priorIndex),
+		stateIndex(other.stateIndex),
 		physIndex(other.physIndex)
 	{
 	}
@@ -172,7 +172,7 @@ public:
 		id = other.id;
 		skip = other.skip;
 		isMemoryNode = other.isMemoryNode;
-		priorIndex = other.priorIndex;
+		stateIndex = other.stateIndex;
 		physIndex = other.physIndex;
 		return *this;
 	}
@@ -213,9 +213,7 @@ public:
 	std::string printState(unsigned int indexOffset = 0)
 	{
 		std::ostringstream out;
-		for (unsigned int i = 0; i < priorIndex.size(); ++i)
-			out << priorIndex[i] + indexOffset << (i == priorIndex.size() - 1 ? "" : "-");
-		out << " " << physIndex + indexOffset;
+		out << stateIndex + indexOffset << " " << physIndex + indexOffset;
 		return out.str();
 	}
 
@@ -233,7 +231,7 @@ public:
 	bool skip; // Skip in output
 
 	bool isMemoryNode;
-	std::vector<unsigned int> priorIndex;
+	unsigned int stateIndex;
 	unsigned int physIndex;
 
 public:
@@ -841,7 +839,7 @@ public:
 	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, const std::string& name, unsigned int leafIndex);
 	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, const std::string& name, unsigned int leafIndex, unsigned int originalIndex);
 	SNode& addLeafNode(SNode& parent, double flow, double exitFlow, const std::string& name, unsigned int leafIndex,
-		unsigned int originalIndex, bool isMemoryNode, const std::vector<unsigned int>& priorIndex, unsigned int physIndex);
+		unsigned int originalIndex, bool isMemoryNode, unsigned int stateIndex, unsigned int physIndex);
 
 	void prepareAddLeafNodes(unsigned int numLeafNodes);
 

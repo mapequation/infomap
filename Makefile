@@ -1,14 +1,18 @@
 CXXFLAGS = -Wall -pipe
 LDFLAGS =
 CXX_CLANG := $(shell $(CXX) --version 2>/dev/null | grep clang)
-ifeq "$(CXX_CLANG)" ""
-	CXXFLAGS += -O4
-	ifneq "$(findstring noomp, $(MAKECMDGOALS))" "noomp"
-		CXXFLAGS += -fopenmp
-		LDFLAGS += -fopenmp
-	endif
+ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"
+	CXXFLAGS += -O0 -g
 else
-	CXXFLAGS += -O3
+	ifeq "$(CXX_CLANG)" ""
+		CXXFLAGS += -O4
+		ifneq "$(findstring noomp, $(MAKECMDGOALS))" "noomp"
+			CXXFLAGS += -fopenmp
+			LDFLAGS += -fopenmp
+		endif
+	else
+		CXXFLAGS += -O3
+	endif
 endif
 
 ##################################################
@@ -27,7 +31,7 @@ OBJECTS := $(SOURCES:src/%.cpp=build/Infomap/%.o)
 
 INFORMATTER_OBJECTS = $(OBJECTS:Infomap.o=Informatter.o)
 
-.PHONY: all noomp test
+.PHONY: all noomp test debug
 
 Infomap: $(OBJECTS)
 	@echo "Linking object files to target $@..."
@@ -47,6 +51,9 @@ build/Infomap/%.o : src/%.cpp $(HEADERS) Makefile
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 noomp: Infomap
+	@true
+	
+debug: Infomap
 	@true
 
 

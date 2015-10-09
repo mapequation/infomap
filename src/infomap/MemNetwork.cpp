@@ -182,7 +182,15 @@ void MemNetwork::parseStateNetwork(std::string filename)
 	SafeInFile input(filename.c_str());
 
 	// Parse the vertices and return the line after
-	std::string line = parseVertices(input);
+	std::string line = parseVertices(input, false);
+
+	if (m_numNodes > 0) {
+		// Add the physical nodes also as state nodes
+		for (unsigned int i = 0; i < m_numNodes; ++i) {
+			StateNode s(i, i);
+			addStateNode(s);
+		}
+	}
 
 	while (line.length() > 0 && line[0] == '*')
 	{
@@ -197,6 +205,9 @@ void MemNetwork::parseStateNetwork(std::string filename)
 		}
 		else if (header == "*Arcs" || header == "*arcs") {
 			line = parseStateLinks(input);
+		}
+		else if (header == "*MemoryNodes" || header == "*memorynodes") {
+			line = parseStateMemoryNodes(input);
 		}
 		else
 			throw FileFormatError(io::Str() << "Unrecognized header in network file: '" << line << "'.");
@@ -228,14 +239,38 @@ std::string MemNetwork::parseStateNodes(std::ifstream& file)
 	return line;
 }
 
+std::string MemNetwork::parseStateMemoryNodes(std::ifstream& file)
+{
+	std::string line;
+	unsigned int numStateMemoryNodesFound = 0;
+	while(!std::getline(file, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+
+		if (line[0] == '*')
+			break;
+
+		++numStateMemoryNodesFound;
+	}
+	Log() << "(Warning: Ignored content under *MemoryNodes) ";
+	return line;
+}
+
 std::string MemNetwork::parseStateLinks(std::ifstream& file)
 {
-	// First index the state nodes
-	std::vector<const StateNode*> stateNodes;
-	stateNodes.reserve(m_stateNodes.size());
+	// First index the state nodes on state index
+	std::vector<const StateNode*> stateNodes(m_stateNodes.size(), NULL);
+	unsigned int zeroMinusOne = 0;
+	--zeroMinusOne;
 	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it)
 	{
-		stateNodes.push_back(&(it->first));
+		const StateNode& s = it->first;
+		if (s.stateIndex == zeroMinusOne)
+			throw InputDomainError(io::Str() << "Integer overflow on state node indices, be sure to specify zero-based node numbering if the node numbers start from zero.");
+		if (s.stateIndex >= stateNodes.size() || stateNodes[s.stateIndex] != NULL)
+			throw InputDomainError(io::Str() << "Gaps or duplicates in state node indices detected on state node (" << s.print(m_indexOffset) << ")");
+		stateNodes[s.stateIndex] = &s;
 	}
 
 	// Parse state links
@@ -248,11 +283,17 @@ std::string MemNetwork::parseStateLinks(std::ifstream& file)
 		if (line[0] == '*')
 			break;
 
-		unsigned int s1, s2;
+		unsigned int s1Index, s2Index;
 		double weight;
-		parseLink(line, s1, s2, weight);
+		parseLink(line, s1Index, s2Index, weight);
 
-		addStateLink(*stateNodes[s1], *stateNodes[s2], weight);
+		if (s1Index >= stateNodes.size() || s2Index >= stateNodes.size()) {
+			if (s1Index == zeroMinusOne || s2Index == zeroMinusOne)
+				throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
+			throw InputDomainError(io::Str() << "At least one link is defined with state node numbers that exceeds the number of nodes.");
+
+		}
+		addStateLink(*stateNodes[s1Index], *stateNodes[s2Index], weight);
 	}
 	return line;
 }
@@ -505,10 +546,6 @@ void MemNetwork::parseStateNode(const std::string& line, StateNode& stateNode)
 	m_extractor.str(line);
 	if (!(m_extractor >> stateNode.stateIndex >> stateNode.physIndex))
 		throw FileFormatError(io::Str() << "Can't parse any state node from line '" << line << "'");
-	unsigned int priorIndex;
-	while (m_extractor >> priorIndex) {
-		stateNode.pushState(priorIndex);
-	}
 	stateNode.subtractIndexOffset(m_indexOffset);
 }
 
@@ -753,7 +790,7 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 	if (m_maxNodeIndex >= m_numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
-		Log() << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.) ";
+		Log() << "(Warning: minimum physical node index is one, check that you don't use zero based numbering if it's not true.)\n";
 
 	unsigned int numMissingPhysicalNodesAdded = addMissingPhysicalNodes();
 	if (numMissingPhysicalNodesAdded)
@@ -852,8 +889,12 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 		Log() << "-------------------\n";
 	}
 
-	Log() << "  -> Found " << m_numNodesFound << " nodes and " << m_numStateLinksFound << " memory links.\n";
-	Log() << "  -> Generated " << m_stateNodes.size() << " memory nodes and " << m_numStateLinks << " memory links.\n";
+	if (m_numStateNodesFound > 0)
+		Log() << "  -> Found " << m_numNodesFound << " physical nodes, " << m_numStateNodesFound << " state nodes and " << m_numStateLinksFound << " links.\n";
+	else {
+		Log() << "  -> Found " << m_numNodesFound << " nodes and " << m_numStateLinksFound << " memory links.\n";
+		Log() << "  -> Generated " << m_stateNodes.size() << " memory nodes and " << m_numStateLinks << " memory links.\n";
+	}
 	if (m_numAggregatedStateLinks > 0)
 		Log() << "  -> Aggregated " << m_numAggregatedStateLinks << " memory links.\n";
 	Log() << std::flush;
