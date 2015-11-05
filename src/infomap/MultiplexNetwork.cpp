@@ -244,6 +244,13 @@ unsigned int MultiplexNetwork::adjustForDifferentNumberOfNodes()
 		}
 	}
 
+	if (m_nodeNames.size() > 0 && m_nodeNames.size() < maxNumNodes) {
+		m_nodeNames.reserve(maxNumNodes);
+		for (unsigned int i = m_nodeNames.size(); i < maxNumNodes; ++i) {
+			m_nodeNames.push_back(io::Str() << "_completion_node_" << (i + 1));
+		}
+	}
+
 	if (differentNodeCount)
 	{
 		Log() << "Adjusting for equal number of nodes... " << std::flush;
