@@ -666,8 +666,13 @@ void Network::finalizeAndCheckNetwork(bool printSummary, unsigned int desiredNum
 
 	if (desiredNumberOfNodes != 0)
 	{
-		if (!m_nodeNames.empty() && desiredNumberOfNodes != m_nodeNames.size())
-			throw InputDomainError("Can't change the number of nodes in networks with a specified number of nodes.");
+		if (!m_nodeNames.empty() && desiredNumberOfNodes != m_nodeNames.size()) {
+			// throw InputDomainError("Can't change the number of nodes in networks with a specified number of nodes.");
+			m_nodeNames.reserve(desiredNumberOfNodes);
+			for (unsigned int i = m_nodeNames.size(); i < desiredNumberOfNodes; ++i) {
+				m_nodeNames.push_back(io::Str() << "_completion_node_" << (i + 1));
+			}
+		}
 		m_numNodes = desiredNumberOfNodes;
 	}
 

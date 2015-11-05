@@ -82,9 +82,10 @@ void NetworkAdapter::readClu(std::string filename)
 	cluReader.readData(filename);
 	const std::map<unsigned int, unsigned int>& clusters = cluReader.clusters();
 
-	if (cluReader.maxNodeIndex() >= m_numNodes)
-		throw InputDomainError(io::Str() << "Max node index in cluster file is " << cluReader.maxNodeIndex() <<
-				" but there are only " << m_numNodes << " in the network.");
+	// Handle non-existent nodes with a warning instead
+	// if (cluReader.maxNodeIndex() >= m_numNodes)
+	// 	throw InputDomainError(io::Str() << "Max node index in cluster file is " << cluReader.maxNodeIndex() <<
+	// 			" but there are only " << m_numNodes << " in the network.");
 
 	Log() << "done!";
 
@@ -109,12 +110,21 @@ void NetworkAdapter::readClu(std::string filename)
 	// Store the parsed cluster indices in a vector
 	std::vector<unsigned int> modules(m_numNodes);
 	std::vector<unsigned int> selectedNodes(m_numNodes, 0);
+	unsigned int numNodesNotFound = 0;
 	for (std::map<unsigned int, unsigned int>::const_iterator it(clusters.begin()); it != clusters.end(); ++it) {
 		unsigned int nodeIndex = it->first;
-		unsigned int moduleIndex = clusterIdToNumber[it->second] - 1; // To zero-based indexing
-		++selectedNodes[nodeIndex];
-		modules[nodeIndex] = moduleIndex;
+		if (nodeIndex >= m_numNodes) {
+			++numNodesNotFound;
+		}
+		else {
+			unsigned int moduleIndex = clusterIdToNumber[it->second] - 1; // To zero-based indexing
+			++selectedNodes[nodeIndex];
+			modules[nodeIndex] = moduleIndex;
+		}
 	}
+
+	if (numNodesNotFound > 0)
+		Log() << "\n -> Warning: " << numNodesNotFound << " nodes not found in network.";
 
 	// Put non-selected nodes (if any) in its own module
 	unsigned int numNonSelectedNodes = 0;
