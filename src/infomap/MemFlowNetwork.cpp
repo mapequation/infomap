@@ -103,109 +103,112 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		m_statenodes[statenodeIt->second] = statenodeIt->first;
 	}
 
-	unsigned int numM1Nodes = network.numNodes();
-	typedef std::multimap<double, unsigned int> PhysToMemWeightMap;
-	std::vector<PhysToMemWeightMap> netPhysToMem(numM1Nodes);
-
-	const LinkMap& m1LinkMap = network.linkMap();
-	// Map middle column in trigrams to target state nodes (source to link for m1 links)
-	for (LinkMap::const_iterator linkIt(m1LinkMap.begin()); linkIt != m1LinkMap.end(); ++linkIt)
+	if (!config.skipCompleteDanglingMemoryNodes)
 	{
-		unsigned int linkEnd1 = linkIt->first;
-		const std::map<unsigned int, double>& subLinks = linkIt->second;
-		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		unsigned int numM1Nodes = network.numNodes();
+		typedef std::multimap<double, unsigned int> PhysToMemWeightMap;
+		std::vector<PhysToMemWeightMap> netPhysToMem(numM1Nodes);
+
+		const LinkMap& m1LinkMap = network.linkMap();
+		// Map middle column in trigrams to target state nodes (source to link for m1 links)
+		for (LinkMap::const_iterator linkIt(m1LinkMap.begin()); linkIt != m1LinkMap.end(); ++linkIt)
 		{
-			unsigned int linkEnd2 = subIt->first;
-			double linkWeight = subIt->second;
-			MemNetwork::StateNodeMap::const_iterator stateit = nodeMap.find(StateNode(linkEnd1, linkEnd2));
-			if (stateit == nodeMap.end())
-				throw InputDomainError(io::Str() << "Memory node (" << linkEnd1 << ", " << linkEnd2 << ") not indexed!");
-			unsigned int statenodeIndex = stateit->second;
-			PhysToMemWeightMap& physMap = netPhysToMem[linkEnd1];
-			physMap.insert(std::make_pair(linkWeight, statenodeIndex));
-		}
-	}
-
-// Other ways to complete dangling nodes...
-	// for (unsigned int i = 0; i < numStateNodes; ++i)
-	// {
-	// 	const StateNode& statenode = m_statenodes[i];
-	// 	PhysToMemWeightMap& physMap = netPhysToMem[statenode.priorState];
-	// 	double stateweight = network.stateNodes().find(statenode)->second;
-	// 	physMap.insert(std::make_pair(stateweight, i));
-	// }
-
-	// for (map<StateNode, double>::const_iterator stateit = network.stateNodes.begin(); stateit != network.stateNodes.end(); ++stateit)
-	// {
-	// 	const StateNode& statenode = stateit->first;
-	// 	double weight = stateit->second;
-	// 	PhysToMemWeightMap& physMap = netPhysToMem[statenode.priorState];
-	// 	physMap.insert(std::make_pair(weight, statenodeIndex));
-	// }
-
-	// for (unsigned int i = 0; i < m_flowLinks.size(); ++i)
-	// {
-	// 	const Link& link = m_flowLinks[i];
-	// 	const StateNode& statenode = m_statenodes[link.target];
-	// 	PhysToMemWeightMap& physMap = netPhysToMem[statenode.priorState];
-	// 	physMap.insert(std::make_pair(link.weight, link.target));
-	// }
-
-	// Add M1 flow to dangling State nodes
-	unsigned int numDanglingStateNodes = 0;
-	unsigned int numDanglingStateNodesCompleted = 0;
-	unsigned int numSelfLinks = 0;
-	double sumExtraLinkWeight = 0.0;
-	for (unsigned int i = 0; i < numStateNodes; ++i)
-	{
-		if (nodeOutDegree[i] == 0)
-		{
-			++numDanglingStateNodes;
-			// We are in physIndex, lookup all mem nodes in that physical node
-			// and add a link to the target node of those mem nodes (pre-mapped above)
-			const PhysToMemWeightMap& physToMem = netPhysToMem[m_statenodes[i].physIndex];
-			for(PhysToMemWeightMap::const_iterator it = physToMem.begin(); it != physToMem.end(); it++)
+			unsigned int linkEnd1 = linkIt->first;
+			const std::map<unsigned int, double>& subLinks = linkIt->second;
+			for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 			{
-				unsigned int from = i;
-				unsigned int to = it->second;
-				double linkWeight = it->first;
-				if(linkWeight > 0.0) {
-					if(from == to) {
-						++numSelfLinks;
-					}
-					else {
-						if (nodeOutDegree[from] == 0) {
-							++numDanglingStateNodesCompleted;
+				unsigned int linkEnd2 = subIt->first;
+				double linkWeight = subIt->second;
+				MemNetwork::StateNodeMap::const_iterator stateit = nodeMap.find(StateNode(linkEnd1, linkEnd2));
+				if (stateit == nodeMap.end())
+					throw InputDomainError(io::Str() << "Memory node (" << linkEnd1 << ", " << linkEnd2 << ") not indexed!");
+				unsigned int statenodeIndex = stateit->second;
+				PhysToMemWeightMap& physMap = netPhysToMem[linkEnd1];
+				physMap.insert(std::make_pair(linkWeight, statenodeIndex));
+			}
+		}
+
+	// Other ways to complete dangling nodes...
+		// for (unsigned int i = 0; i < numStateNodes; ++i)
+		// {
+		// 	const StateNode& statenode = m_statenodes[i];
+		// 	PhysToMemWeightMap& physMap = netPhysToMem[statenode.priorState];
+		// 	double stateweight = network.stateNodes().find(statenode)->second;
+		// 	physMap.insert(std::make_pair(stateweight, i));
+		// }
+
+		// for (map<StateNode, double>::const_iterator stateit = network.stateNodes.begin(); stateit != network.stateNodes.end(); ++stateit)
+		// {
+		// 	const StateNode& statenode = stateit->first;
+		// 	double weight = stateit->second;
+		// 	PhysToMemWeightMap& physMap = netPhysToMem[statenode.priorState];
+		// 	physMap.insert(std::make_pair(weight, statenodeIndex));
+		// }
+
+		// for (unsigned int i = 0; i < m_flowLinks.size(); ++i)
+		// {
+		// 	const Link& link = m_flowLinks[i];
+		// 	const StateNode& statenode = m_statenodes[link.target];
+		// 	PhysToMemWeightMap& physMap = netPhysToMem[statenode.priorState];
+		// 	physMap.insert(std::make_pair(link.weight, link.target));
+		// }
+
+		// Add M1 flow to dangling State nodes
+		unsigned int numDanglingStateNodes = 0;
+		unsigned int numDanglingStateNodesCompleted = 0;
+		unsigned int numSelfLinks = 0;
+		double sumExtraLinkWeight = 0.0;
+		for (unsigned int i = 0; i < numStateNodes; ++i)
+		{
+			if (nodeOutDegree[i] == 0)
+			{
+				++numDanglingStateNodes;
+				// We are in physIndex, lookup all mem nodes in that physical node
+				// and add a link to the target node of those mem nodes (pre-mapped above)
+				const PhysToMemWeightMap& physToMem = netPhysToMem[m_statenodes[i].physIndex];
+				for(PhysToMemWeightMap::const_iterator it = physToMem.begin(); it != physToMem.end(); it++)
+				{
+					unsigned int from = i;
+					unsigned int to = it->second;
+					double linkWeight = it->first;
+					if(linkWeight > 0.0) {
+						if(from == to) {
+							++numSelfLinks;
 						}
-						++nodeOutDegree[from];
-						sumLinkOutWeight[from] += linkWeight;
-						sumExtraLinkWeight += linkWeight;
-						m_nodeFlow[from] += linkWeight;
-						if (config.isUndirected()) {
-							++nodeOutDegree[to];
-							sumLinkOutWeight[to] += linkWeight;
+						else {
+							if (nodeOutDegree[from] == 0) {
+								++numDanglingStateNodesCompleted;
+							}
+							++nodeOutDegree[from];
+							sumLinkOutWeight[from] += linkWeight;
+							sumExtraLinkWeight += linkWeight;
+							m_nodeFlow[from] += linkWeight;
+							if (config.isUndirected()) {
+								++nodeOutDegree[to];
+								sumLinkOutWeight[to] += linkWeight;
+							}
+							if (!config.outdirdir) {
+								m_nodeFlow[to] += linkWeight;
+							}
+							if (from >= numStateNodes || to >= numStateNodes) {
+								Log() << "\nRange error adding dangling links " << from << " " << to << " !!!";
+							}
+							m_flowLinks.push_back(Link(from, to, linkWeight));
 						}
-						if (!config.outdirdir) {
-							m_nodeFlow[to] += linkWeight;
-						}
-						if (from >= numStateNodes || to >= numStateNodes) {
-							Log() << "\nRange error adding dangling links " << from << " " << to << " !!!";
-						}
-						m_flowLinks.push_back(Link(from, to, linkWeight));
 					}
 				}
+
 			}
-
 		}
-	}
-	if (m_flowLinks.size() - numLinks != 0)
-		Log() << "\n  -> Added " << (m_flowLinks.size() - numLinks) << " links to " <<
-			numDanglingStateNodesCompleted << " dangling memory nodes -> " << m_flowLinks.size() << " links" <<
-			"\n  -> " << (numDanglingStateNodes - numDanglingStateNodesCompleted) << " dangling nodes left" << std::flush;
+		if (m_flowLinks.size() - numLinks != 0)
+			Log() << "\n  -> Added " << (m_flowLinks.size() - numLinks) << " links to " <<
+				numDanglingStateNodesCompleted << " dangling memory nodes -> " << m_flowLinks.size() << " links" <<
+				"\n  -> " << (numDanglingStateNodes - numDanglingStateNodesCompleted) << " dangling nodes left" << std::flush;
 
-	totalStateLinkWeight += sumExtraLinkWeight;
-	sumUndirLinkWeight = 2 * totalStateLinkWeight - network.totalMemorySelfLinkWeight();
-	numLinks = m_flowLinks.size();
+		totalStateLinkWeight += sumExtraLinkWeight;
+		sumUndirLinkWeight = 2 * totalStateLinkWeight - network.totalMemorySelfLinkWeight();
+		numLinks = m_flowLinks.size();
+	}
 
 	// Normalize node flow
 	for (unsigned int i = 0; i < numStateNodes; ++i)
