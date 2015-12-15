@@ -1483,11 +1483,19 @@ bool InfomapBase::initNetwork(Network& network)
  	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
 
+	std::string outname = m_config.outName;
  	if (m_config.printPajekNetwork)
  	{
- 		std::string outName = io::Str() << m_config.outDirectory << m_config.outName << ".net";
+ 		std::string outName = io::Str() << m_config.outDirectory << outname << ".net";
  		Log() << "Printing network to " << outName << "... " << std::flush;
  		network.printNetworkAsPajek(outName);
+		Log() << "done!\n";
+ 	}
+	if (m_config.printStateNetwork)
+ 	{
+ 		std::string outName = io::Str() << m_config.outDirectory << outname << "_states.net";
+ 		Log() << "Printing state network to " << outName << "... " << std::flush;
+ 		network.printStateNetwork(outName);
 		Log() << "done!\n";
  	}
 
@@ -1518,7 +1526,6 @@ bool InfomapBase::initNetwork(Network& network)
  	initEnterExitFlow();
 
 
- 	std::string outname = m_config.outName;
 	if (m_config.printNodeRanks)
 	{
 		//TODO: Split printNetworkData to printNetworkData and printModuleData, and move this to first
@@ -1570,6 +1577,13 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
  		std::string outName = io::Str() << m_config.outDirectory << outname << ".net";
  		Log() << "Printing network to " << outName << "... " << std::flush;
  		network.printNetworkAsPajek(outName);
+		Log() << "done!\n";
+ 	}
+	if (m_config.printStateNetwork)
+ 	{
+ 		std::string outName = io::Str() << m_config.outDirectory << outname << "_states.net";
+ 		Log() << "Printing state network to " << outName << "... " << std::flush;
+ 		network.printStateNetwork(outName);
 		Log() << "done!\n";
  	}
 

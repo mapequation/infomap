@@ -147,6 +147,8 @@ public:
 
 	virtual void printNetworkAsPajek(std::string filename) const;
 
+	virtual void printStateNetwork(std::string filename) const;
+
 	virtual void disposeLinks();
 
 protected:
@@ -158,6 +160,8 @@ protected:
 	std::string parseStateNodes(std::ifstream& file);
 
 	std::string parseStateMemoryNodes(std::ifstream& file);
+
+	std::string parseDanglingStates(std::ifstream& file);
 
 	std::string parseStateLinks(std::ifstream& file);
 

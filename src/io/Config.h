@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -56,6 +56,7 @@ struct Config
 		zeroBasedNodeNumbers(false),
 		includeSelfLinks(false),
 		ignoreEdgeWeights(false),
+		skipCompleteDanglingMemoryNodes(false),
 		nodeLimit(0),
 		preClusterMultiplex(false),
 	 	clusterDataFile(""),
@@ -99,6 +100,7 @@ struct Config
 		printNodeRanks(false),
 		printFlowNetwork(false),
 		printPajekNetwork(false),
+		printStateNetwork(false),
 		printBinaryTree(false),
 		printBinaryFlowTree(false),
 		printExpanded(false),
@@ -129,6 +131,7 @@ struct Config
 		zeroBasedNodeNumbers(other.zeroBasedNodeNumbers),
 		includeSelfLinks(other.includeSelfLinks),
 		ignoreEdgeWeights(other.ignoreEdgeWeights),
+		skipCompleteDanglingMemoryNodes(other.skipCompleteDanglingMemoryNodes),
 		nodeLimit(other.nodeLimit),
 		preClusterMultiplex(other.preClusterMultiplex),
 	 	clusterDataFile(other.clusterDataFile),
@@ -172,6 +175,7 @@ struct Config
 		printNodeRanks(other.printNodeRanks),
 		printFlowNetwork(other.printFlowNetwork),
 		printPajekNetwork(other.printPajekNetwork),
+		printStateNetwork(other.printStateNetwork),
 		printBinaryTree(other.printBinaryTree),
 		printBinaryFlowTree(other.printBinaryFlowTree),
 		printExpanded(other.printExpanded),
@@ -203,6 +207,7 @@ struct Config
 		zeroBasedNodeNumbers = other.zeroBasedNodeNumbers;
 		includeSelfLinks = other.includeSelfLinks;
 		ignoreEdgeWeights = other.ignoreEdgeWeights;
+		skipCompleteDanglingMemoryNodes = other.skipCompleteDanglingMemoryNodes;
 		nodeLimit = other.nodeLimit;
 		preClusterMultiplex = other.preClusterMultiplex;
 	 	clusterDataFile = other.clusterDataFile;
@@ -246,6 +251,7 @@ struct Config
 		printNodeRanks = other.printNodeRanks;
 		printFlowNetwork = other.printFlowNetwork;
 		printPajekNetwork = other.printPajekNetwork;
+		printStateNetwork = other.printStateNetwork;
 		printBinaryTree = other.printBinaryTree;
 		printBinaryFlowTree = other.printBinaryFlowTree;
 		printExpanded = other.printExpanded;
@@ -394,6 +400,7 @@ struct Config
 	bool zeroBasedNodeNumbers;
 	bool includeSelfLinks;
 	bool ignoreEdgeWeights;
+	bool skipCompleteDanglingMemoryNodes;
 	unsigned int nodeLimit;
 	bool preClusterMultiplex;
 	std::string clusterDataFile;
@@ -443,6 +450,7 @@ struct Config
 	bool printNodeRanks;
 	bool printFlowNetwork;
 	bool printPajekNetwork;
+	bool printStateNetwork;
 	bool printBinaryTree;
 	bool printBinaryFlowTree; // tree including horizontal links (hierarchical network)
 	bool printExpanded; // Print the expanded network of memory nodes if possible

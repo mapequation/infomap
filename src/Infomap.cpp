@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -44,7 +44,7 @@
 namespace infomap
 {
 #endif
-	
+
 void runInfomap(Config const& config)
 {
 	InfomapContext context(config);
@@ -106,6 +106,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.includeSelfLinks, 'k', "include-self-links",
 			"Include links with the same source and target node. (Ignored by default.)");
 
+	api.addOptionArgument(conf.skipCompleteDanglingMemoryNodes, "skip-complete-dangling-memory-nodes",
+			"Skip add first order links to complete dangling memory nodes.");
+
 	api.addOptionArgument(conf.nodeLimit, 'O', "node-limit",
 			"Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", "n", true);
 
@@ -152,6 +155,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 
 	api.addOptionArgument(conf.printPajekNetwork, "pajek",
 			"Print the parsed network in Pajek format.", true);
+
+	api.addOptionArgument(conf.printStateNetwork, "print-state-network",
+			"Print the internal state network.", true);
 
 	api.addOptionArgument(conf.printExpanded, "expanded",
 			"Print the expanded network of memory nodes if possible.", true);
