@@ -895,6 +895,34 @@ void Network::printNetworkAsPajek(std::string filename) const
 	}
 }
 
+void Network::printStateNetwork(std::string filename) const
+{
+	SafeOutFile out(filename.c_str());
+
+	out << "*States " << m_numNodes << "\n";
+	if (m_nodeNames.empty()) {
+		for (unsigned int i = 0; i < m_numNodes; ++i)
+			out << (i+1) << " \"" << i + 1 << "\"\n";
+	}
+	else {
+		for (unsigned int i = 0; i < m_numNodes; ++i)
+			out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
+	}
+
+	out << (m_config.isUndirected() ? "*Edges " : "*Arcs ") << m_links.size() << "\n";
+	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
+	{
+		unsigned int linkEnd1 = linkIt->first;
+		const std::map<unsigned int, double>& subLinks = linkIt->second;
+		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			unsigned int linkEnd2 = subIt->first;
+			double linkWeight = subIt->second;
+			out << (linkEnd1 + 1) << " " << (linkEnd2 + 1) << " " << linkWeight << "\n";
+		}
+	}
+}
+
 #ifdef NS_INFOMAP
 }
 #endif

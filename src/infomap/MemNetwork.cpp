@@ -209,6 +209,9 @@ void MemNetwork::parseStateNetwork(std::string filename)
 		else if (header == "*MemoryNodes" || header == "*memorynodes") {
 			line = parseStateMemoryNodes(input);
 		}
+		else if (header == "*DanglingStates" || header == "*danglingstates") {
+			line = parseDanglingStates(input);
+		}
 		else
 			throw FileFormatError(io::Str() << "Unrecognized header in network file: '" << line << "'.");
 	}
@@ -254,6 +257,24 @@ std::string MemNetwork::parseStateMemoryNodes(std::ifstream& file)
 		++numStateMemoryNodesFound;
 	}
 	Log() << "(Warning: Ignored content under *MemoryNodes) ";
+	return line;
+}
+
+std::string MemNetwork::parseDanglingStates(std::ifstream& file)
+{
+	std::string line;
+	unsigned int numDanglingStates = 0;
+	while(!std::getline(file, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+
+		if (line[0] == '*')
+			break;
+
+		++numDanglingStates;
+	}
+	Log() << "(Warning: Ignored content under *DanglingStates) ";
 	return line;
 }
 
@@ -918,6 +939,33 @@ void MemNetwork::printNetworkAsPajek(std::string filename) const
 			const StateNode& statetarget = subIt->first;
 			double linkWeight = subIt->second;
 			out << statesource.print(1) << " " << (statetarget.physIndex + 1) << " " << linkWeight << "\n";
+		}
+	}
+}
+
+void MemNetwork::printStateNetwork(std::string filename) const
+{
+	SafeOutFile out(filename.c_str());
+
+	out << "*States " << m_stateNodeMap.size() << "\n";
+	for (StateNodeMap::const_iterator it(m_stateNodeMap.begin()); it != m_stateNodeMap.end(); ++it) {
+		const StateNode& stateNode = it->first;
+		unsigned int stateIndex = it->second;
+		out << stateIndex << " " << stateNode.physIndex << "\n";
+	}
+
+	out << "*Arcs " << m_numStateLinks << "\n";
+	for (StateLinkMap::const_iterator linkIt(m_stateLinks.begin()); linkIt != m_stateLinks.end(); ++linkIt)
+	{
+		const StateNode& statesource = linkIt->first;
+		unsigned int sourceIndex = m_stateNodeMap.find(statesource)->second;
+		const std::map<StateNode, double>& subLinks = linkIt->second;
+		for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+		{
+			const StateNode& statetarget = subIt->first;
+			unsigned int targetIndex = m_stateNodeMap.find(statetarget)->second;
+			double linkWeight = subIt->second;
+			out << sourceIndex << " " << targetIndex << " " << linkWeight << "\n";
 		}
 	}
 }
