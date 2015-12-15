@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -451,17 +451,17 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 		// If no links connecting this node with other nodes, it won't move into others,
 		// and others won't move into this. TODO: Always best leave it alone?
 //		if (current.degree() == 0)
-		if (current.degree() == 0 ||
-			(Super::m_config.includeSelfLinks &&
-			(current.outDegree() == 1 && current.inDegree() == 1) &&
-			(**current.begin_outEdge()).target == current))
-		{
-			DEBUG_OUT("SKIPPING isolated node " << current << "\n");
-			//TODO: If not skipping self-links, this yields different results from moveNodesToPredefinedModules!!
-			ASSERT(!m_config.includeSelfLinks);
-			current.dirty = false;
-			continue;
-		}
+		// if (current.degree() == 0 ||
+		// 	(Super::m_config.includeSelfLinks &&
+		// 	(current.outDegree() == 1 && current.inDegree() == 1) &&
+		// 	(**current.begin_outEdge()).target == current))
+		// {
+		// 	DEBUG_OUT("SKIPPING isolated node " << current << "\n");
+		// 	//TODO: If not skipping self-links, this yields different results from moveNodesToPredefinedModules!!
+		// 	ASSERT(!m_config.includeSelfLinks);
+		// 	current.dirty = false;
+		// 	continue;
+		// }
 
 		// Create vector with module links
 
