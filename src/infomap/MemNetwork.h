@@ -286,21 +286,8 @@ bool MemNetwork::addStateLink(unsigned int n1PriorState, unsigned int n1, unsign
 inline
 void MemNetwork::addStateNode(unsigned int previousState, unsigned int nodeIndex, double weight)
 {
-	m_stateNodes[StateNode(previousState, nodeIndex)] += weight;
-	m_totStateNodeWeight += weight;
-
-	m_maxNodeIndex = std::max(m_maxNodeIndex, nodeIndex);
-	m_minNodeIndex = std::min(m_minNodeIndex, nodeIndex);
-}
-
-inline
-void MemNetwork::addStateNode(StateNode& stateNode, double weight)
-{
-	m_stateNodes[stateNode] += weight;
-	m_totStateNodeWeight += weight;
-
-	m_maxNodeIndex = std::max(m_maxNodeIndex, stateNode.physIndex);
-	m_minNodeIndex = std::min(m_minNodeIndex, stateNode.physIndex);
+	StateNode stateNode(previousState, nodeIndex);
+	addStateNode(stateNode, weight);
 }
 
 #ifdef NS_INFOMAP

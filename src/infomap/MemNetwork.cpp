@@ -609,6 +609,20 @@ void MemNetwork::parseStateLink(char line[], int& n1, unsigned int& n2, unsigned
 	n3 -= m_indexOffset;
 }
 
+void MemNetwork::addStateNode(StateNode& stateNode, double weight)
+{
+	map<StateNode, double>::iterator nodeIt = m_stateNodes.lower_bound(stateNode);
+	if (nodeIt != m_stateNodes.end() && nodeIt->first == stateNode)
+		throw InputDomainError(io::Str() << "Duplicate state node: " << stateNode.print(m_indexOffset));
+
+	m_stateNodes.insert(nodeIt, std::make_pair(stateNode, weight));
+	// m_stateNodes[stateNode] += weight;
+	m_totStateNodeWeight += weight;
+
+	m_maxNodeIndex = std::max(m_maxNodeIndex, stateNode.physIndex);
+	m_minNodeIndex = std::min(m_minNodeIndex, stateNode.physIndex);
+}
+
 bool MemNetwork::addStateLink(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight)
 {
 	++m_numStateLinksFound;
