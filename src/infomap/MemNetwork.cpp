@@ -620,7 +620,7 @@ void MemNetwork::addStateNode(StateNode& stateNode, double weight)
 	// if (nodeIt != m_stateNodes.end() && nodeIt->first == stateNode)
 	// 	throw InputDomainError(io::Str() << "Duplicate state node: " << stateNode.print(m_indexOffset));
 	// m_stateNodes.insert(nodeIt, std::make_pair(stateNode, weight));
-	
+
 	m_stateNodes[stateNode] += weight;
 	m_totStateNodeWeight += weight;
 
@@ -832,9 +832,11 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
 		Log() << "(Warning: minimum physical node index is one, check that you don't use zero based numbering if it's not true.)\n";
 
-	unsigned int numMissingPhysicalNodesAdded = addMissingPhysicalNodes();
-	if (numMissingPhysicalNodesAdded)
-		Log() << "  -> Added " << numMissingPhysicalNodesAdded << " self-memory nodes for missing physical nodes.\n";
+	if (!m_config.isStateNetwork()) {
+		unsigned int numMissingPhysicalNodesAdded = addMissingPhysicalNodes();
+		if (numMissingPhysicalNodesAdded)
+			Log() << "  -> Added " << numMissingPhysicalNodesAdded << " self-memory nodes for missing physical nodes.\n";
+	}
 
 	m_stateNodeWeights.resize(m_stateNodes.size());
 	m_totStateNodeWeight = 0.0;
