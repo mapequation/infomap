@@ -184,13 +184,13 @@ void MemNetwork::parseStateNetwork(std::string filename)
 	// Parse the vertices and return the line after
 	std::string line = parseVertices(input, false);
 
-	if (m_numNodes > 0) {
-		// Add the physical nodes also as state nodes
-		for (unsigned int i = 0; i < m_numNodes; ++i) {
-			StateNode s(i, i);
-			addStateNode(s);
-		}
-	}
+	// if (m_numNodes > 0) {
+	// 	// Add the physical nodes also as state nodes
+	// 	for (unsigned int i = 0; i < m_numNodes; ++i) {
+	// 		StateNode s(i, i);
+	// 		addStateNode(s);
+	// 	}
+	// }
 
 	while (line.length() > 0 && line[0] == '*')
 	{
@@ -281,7 +281,12 @@ std::string MemNetwork::parseDanglingStates(std::ifstream& file)
 std::string MemNetwork::parseStateLinks(std::ifstream& file)
 {
 	// First index the state nodes on state index
-	std::vector<const StateNode*> stateNodes(m_stateNodes.size(), NULL);
+	// Check max state index to index in vector
+	unsigned int maxStateIndex = 0;
+	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it) {
+		maxStateIndex = std::max(maxStateIndex, it->first.stateIndex);
+	}
+	std::vector<const StateNode*> stateNodes(maxStateIndex + 1, NULL);
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
 	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it)
@@ -289,8 +294,8 @@ std::string MemNetwork::parseStateLinks(std::ifstream& file)
 		const StateNode& s = it->first;
 		if (s.stateIndex == zeroMinusOne)
 			throw InputDomainError(io::Str() << "Integer overflow on state node indices, be sure to specify zero-based node numbering if the node numbers start from zero.");
-		if (s.stateIndex >= stateNodes.size() || stateNodes[s.stateIndex] != NULL)
-			throw InputDomainError(io::Str() << "Gaps or duplicates in state node indices detected on state node (" << s.print(m_indexOffset) << ")");
+		if (stateNodes[s.stateIndex] != NULL)
+			throw InputDomainError(io::Str() << "Duplicates in state node indices detected on state node (" << s.print(m_indexOffset) << ")");
 		stateNodes[s.stateIndex] = &s;
 	}
 
