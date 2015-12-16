@@ -968,11 +968,17 @@ void MemNetwork::printStateNetwork(std::string filename) const
 {
 	SafeOutFile out(filename.c_str());
 
+	// Write names under *Vertices if exist
+	if (!m_nodeNames.empty()) {
+		out << "*Vertices " << m_nodeNames.size() << "\n";
+		for (unsigned int i = 0; i < m_numNodes; ++i)
+			out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
+	}
+
 	out << "*States " << m_stateNodeMap.size() << "\n";
 	for (StateNodeMap::const_iterator it(m_stateNodeMap.begin()); it != m_stateNodeMap.end(); ++it) {
 		const StateNode& stateNode = it->first;
-		unsigned int stateIndex = it->second;
-		out << stateIndex << " " << stateNode.physIndex << "\n";
+		out << stateNode.print(m_indexOffset) << "\n";
 	}
 
 	out << "*Arcs " << m_numStateLinks << "\n";
@@ -986,7 +992,7 @@ void MemNetwork::printStateNetwork(std::string filename) const
 			const StateNode& statetarget = subIt->first;
 			unsigned int targetIndex = m_stateNodeMap.find(statetarget)->second;
 			double linkWeight = subIt->second;
-			out << sourceIndex << " " << targetIndex << " " << linkWeight << "\n";
+			out << sourceIndex + m_indexOffset << " " << targetIndex + m_indexOffset << " " << linkWeight << "\n";
 		}
 	}
 }
