@@ -95,7 +95,7 @@ void MemoryNetworkAdapter::readClu(std::string filename)
 		StateNode stateNode(priorIndex, nodeIndex);
 		std::map<StateNode, unsigned int>::iterator memIt = m_memNodeToIndex.find(stateNode);
 		if (memIt == m_memNodeToIndex.end())
-			throw MisMatchError(io::Str() << "The memory node '" << stateNode << "' in line '" << line << "' is not found in the network.");
+			throw MisMatchError(io::Str() << "The memory node '" << stateNode.print(m_indexOffset) << "' in line '" << line << "' is not found in the network.");
 
 		unsigned int memNodeIndex = memIt->second;
 
@@ -223,7 +223,7 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 		StateNode stateNode(priorId, nodeId);
 		std::map<StateNode, unsigned int>::iterator memIt = m_memNodeToIndex.find(stateNode);
 		if (memIt == m_memNodeToIndex.end())
-			throw MisMatchError(io::Str() << "The memory node '" << stateNode << "' in line " << lineNr << " is not found in the network.");
+			throw MisMatchError(io::Str() << "The memory node '" << stateNode.print(m_indexOffset) << "' in line " << lineNr << " is not found in the network.");
 
 		unsigned int originalIndex = memIt->second;
 
