@@ -383,7 +383,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		}
 
 		numIterations++;
-	}  while((numIterations < 200) && (sqdiff > 1.0e-15 || numIterations < 50));
+	}  while((numIterations < 300) && (sqdiff > 1.0e-15 || numIterations < 50));
 
 	double sumNodeRank = 1.0;
 
