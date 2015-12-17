@@ -286,14 +286,14 @@ std::string MemNetwork::parseStateLinks(std::ifstream& file)
 	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it) {
 		maxStateIndex = std::max(maxStateIndex, it->first.stateIndex);
 	}
-	std::vector<const StateNode*> stateNodes(maxStateIndex + 1, NULL);
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
+	if (maxStateIndex == zeroMinusOne)
+		throw InputDomainError(io::Str() << "Integer overflow on state node indices, be sure to specify zero-based node numbering if the node numbers start from zero.");
+	std::vector<const StateNode*> stateNodes(maxStateIndex + 1, NULL);
 	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it)
 	{
 		const StateNode& s = it->first;
-		if (s.stateIndex == zeroMinusOne)
-			throw InputDomainError(io::Str() << "Integer overflow on state node indices, be sure to specify zero-based node numbering if the node numbers start from zero.");
 		if (stateNodes[s.stateIndex] != NULL)
 			throw InputDomainError(io::Str() << "Duplicates in state node indices detected on state node (" << s.print(m_indexOffset) << ")");
 		stateNodes[s.stateIndex] = &s;
@@ -624,6 +624,9 @@ void MemNetwork::addStateNode(StateNode& stateNode, double weight)
 	m_stateNodes[stateNode] += weight;
 	m_totStateNodeWeight += weight;
 
+	m_maxStateIndex = std::max(m_maxStateIndex, stateNode.stateIndex);
+	m_minStateIndex = std::min(m_minStateIndex, stateNode.stateIndex);
+
 	m_maxNodeIndex = std::max(m_maxNodeIndex, stateNode.physIndex);
 	m_minNodeIndex = std::min(m_minNodeIndex, stateNode.physIndex);
 }
@@ -825,7 +828,7 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
-	if (m_maxNodeIndex == zeroMinusOne)
+	if (m_maxNodeIndex == zeroMinusOne || m_maxStateIndex == zeroMinusOne)
 		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
 	if (m_maxNodeIndex >= m_numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");

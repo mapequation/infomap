@@ -248,7 +248,6 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 			node = node->lastChild;
 			++depth;
 		}
-		std::cout << originalIndex << ", ";
 		node->name = name;
 		node->originalIndex = originalIndex;;
 		flowValues[originalIndex] = flow;

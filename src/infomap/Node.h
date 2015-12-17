@@ -113,10 +113,10 @@ struct StateNode
 		return out.str();
 	}
 
-	std::string print(const std::vector<std::string>& names) const
+	std::string print(const std::vector<std::string>& names, unsigned int indexOffset = 0) const
 	{
 		std::ostringstream out;
-		out << stateIndex << " -> " << names.at(physIndex);
+		out << stateIndex + indexOffset << " " << names.at(physIndex);
 		return out.str();
 	}
 };

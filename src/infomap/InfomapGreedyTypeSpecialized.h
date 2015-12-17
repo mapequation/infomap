@@ -739,6 +739,8 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 
 	ioNetwork.init(rootName, Super::hierarchicalCodelength, Super::oneLevelCodelength);
 
+	unsigned int indexOffset = m_config.zeroBasedNodeNumbers ? 0 : 1;
+
 	if (Super::m_config.printExpanded)
 	{
 		// Create vector of node names for memory nodes
@@ -750,9 +752,9 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 			NodeType& node = getNode(**leafIt);
 			StateNode& stateNode = node.stateNode;
 			if (Super::m_config.isMultiplexNetwork())
-				stateNodeNames[i] = io::Str() << physicalNames[stateNode.physIndex] << " | " << (stateNode.layer() + (Super::m_config.zeroBasedNodeNumbers? 0 : 1));
+				stateNodeNames[i] = io::Str() << physicalNames[stateNode.physIndex] << " | " << (stateNode.layer() + indexOffset);
 			else
-				stateNodeNames[i] = stateNode.print(physicalNames);
+				stateNodeNames[i] = stateNode.print(physicalNames, indexOffset);
 		}
 
 		ioNetwork.prepareAddLeafNodes(Super::m_treeData.numLeafNodes());
