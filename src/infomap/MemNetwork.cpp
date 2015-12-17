@@ -978,21 +978,23 @@ void MemNetwork::printStateNetwork(std::string filename) const
 	out << "*States " << m_stateNodeMap.size() << "\n";
 	for (StateNodeMap::const_iterator it(m_stateNodeMap.begin()); it != m_stateNodeMap.end(); ++it) {
 		const StateNode& stateNode = it->first;
-		out << stateNode.print(m_indexOffset) << "\n";
+		unsigned int stateId = m_config.isStateNetwork()? stateNode.stateIndex : it->second;
+		stateId += m_indexOffset;
+		out << stateId << " " << stateNode.physIndex + m_indexOffset << "\n";
 	}
 
 	out << "*Arcs " << m_numStateLinks << "\n";
 	for (StateLinkMap::const_iterator linkIt(m_stateLinks.begin()); linkIt != m_stateLinks.end(); ++linkIt)
 	{
-		const StateNode& statesource = linkIt->first;
-		unsigned int sourceIndex = m_stateNodeMap.find(statesource)->second;
+		const StateNode& stateSource = linkIt->first;
+		unsigned int sourceId = m_config.isStateNetwork()? stateSource.stateIndex : m_stateNodeMap.find(stateSource)->second;
 		const std::map<StateNode, double>& subLinks = linkIt->second;
 		for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
-			const StateNode& statetarget = subIt->first;
-			unsigned int targetIndex = m_stateNodeMap.find(statetarget)->second;
+			const StateNode& stateTarget = subIt->first;
+			unsigned int targetId = m_config.isStateNetwork()? stateTarget.stateIndex : m_stateNodeMap.find(stateTarget)->second;
 			double linkWeight = subIt->second;
-			out << sourceIndex + m_indexOffset << " " << targetIndex + m_indexOffset << " " << linkWeight << "\n";
+			out << sourceId + m_indexOffset << " " << targetId + m_indexOffset << " " << linkWeight << "\n";
 		}
 	}
 }
