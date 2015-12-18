@@ -344,7 +344,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 				bool nonPhysicalSwitch = false;
 				if (nonPhysicalSwitch)
 				{
-					addStateLink(stateSourceIt, layer2, nodeIndex, scaledInterLinkWeight, 0.0, 0.0);
+					addStateLink(stateSourceIt, layer2, nodeIndex, scaledInterLinkWeight, scaledInterLinkWeight, 0.0);
 					stateSourceNodeAdded = true;
 				}
 				else
@@ -363,7 +363,8 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 
 							double interIntraLinkWeight = scaledInterLinkWeight * otherLayerLinkWeight / sumOutWeights[layer2][nodeIndex];
 
-							addStateLink(stateSourceIt, layer2, otherLayerTargetNodeIndex, interIntraLinkWeight, 0.0, 0.0);
+							// Add weight also as teleportation weight to first state node
+							addStateLink(stateSourceIt, layer2, otherLayerTargetNodeIndex, interIntraLinkWeight, interIntraLinkWeight, 0.0);
 							stateSourceNodeAdded = true;
 						}
 					}
