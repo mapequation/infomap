@@ -356,10 +356,7 @@ inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelength
 template<typename FlowType>
 inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelengthOnModuleOfModules(const NodeBase& parent)
 {
-	return calcCodelengthOnModuleOfLeafNodes(parent);
-	// return Super::calcCodelengthOnModuleOfModules(parent);
-	//TODO: In above indexLength -= infomath::plogp(physNodes[i].sumFlowFromStateNode / totalParentFlow),
-	// shouldn't sum of enterFlow be used instead of flow even for the memory nodes?
+	return Super::calcCodelengthOnModuleOfModules(parent);
 }
 
 template<typename FlowType, typename NetworkType>
