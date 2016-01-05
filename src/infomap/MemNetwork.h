@@ -167,7 +167,7 @@ public:
 	bool addStateLink(const StateNode& s1, const StateNode& s2, double weight);
 
 	void addStateNode(unsigned int priorState, unsigned int nodeIndex, double weight);
-	void addStateNode(StateNode& stateNode, double weight = 1.0);
+	void addStateNode(StateNode& stateNode);
 
 	virtual void finalizeAndCheckNetwork(bool printSummary = true);
 
@@ -329,8 +329,8 @@ bool MemNetwork::addStateLink(unsigned int n1PriorState, unsigned int n1, unsign
 inline
 void MemNetwork::addStateNode(unsigned int previousState, unsigned int nodeIndex, double weight)
 {
-	StateNode stateNode(previousState, nodeIndex);
-	addStateNode(stateNode, weight);
+	StateNode stateNode(previousState, nodeIndex, weight);
+	addStateNode(stateNode);
 }
 
 #ifdef NS_INFOMAP

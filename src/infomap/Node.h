@@ -57,18 +57,26 @@ struct StateNode
 {
 	unsigned int stateIndex;
 	unsigned int physIndex;
+	double weight;
 	StateNode() :
-		stateIndex(0), physIndex(0)
+		stateIndex(0), physIndex(0), weight(0.0)
 	{}
 	StateNode(unsigned int physIndex) :
-		stateIndex(0), physIndex(physIndex)
+		stateIndex(0), physIndex(physIndex), weight(0.0)
 	{}
-	StateNode(unsigned int stateIndex, unsigned int physIndex) :
-		stateIndex(stateIndex), physIndex(physIndex)
+	StateNode(unsigned int stateIndex, unsigned int physIndex, double weight = 0.0) :
+		stateIndex(stateIndex), physIndex(physIndex), weight(weight)
 	{}
 	StateNode(const StateNode& other) :
-		stateIndex(other.stateIndex), physIndex(other.physIndex)
+		stateIndex(other.stateIndex), physIndex(other.physIndex), weight(other.weight)
 	{}
+	StateNode& operator=(const StateNode& other)
+	{
+		stateIndex = other.stateIndex;
+		physIndex = other.physIndex;
+		weight = other.weight;
+		return *this;
+	}
 
 	unsigned int getPriorState() const
 	{

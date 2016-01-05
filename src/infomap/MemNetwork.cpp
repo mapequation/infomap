@@ -572,6 +572,8 @@ void MemNetwork::parseStateNode(const std::string& line, StateNode& stateNode)
 	m_extractor.str(line);
 	if (!(m_extractor >> stateNode.stateIndex >> stateNode.physIndex))
 		throw FileFormatError(io::Str() << "Can't parse any state node from line '" << line << "'");
+	(m_extractor >> stateNode.weight) || (stateNode.weight = 1.0);
+
 	stateNode.subtractIndexOffset(m_indexOffset);
 }
 
@@ -614,15 +616,15 @@ void MemNetwork::parseStateLink(char line[], int& n1, unsigned int& n2, unsigned
 	n3 -= m_indexOffset;
 }
 
-void MemNetwork::addStateNode(StateNode& stateNode, double weight)
+void MemNetwork::addStateNode(StateNode& stateNode)
 {
 	// map<StateNode, double>::iterator nodeIt = m_stateNodes.lower_bound(stateNode);
 	// if (nodeIt != m_stateNodes.end() && nodeIt->first == stateNode)
 	// 	throw InputDomainError(io::Str() << "Duplicate state node: " << stateNode.print(m_indexOffset));
 	// m_stateNodes.insert(nodeIt, std::make_pair(stateNode, weight));
 
-	m_stateNodes[stateNode] += weight;
-	m_totStateNodeWeight += weight;
+	m_stateNodes[stateNode] += stateNode.weight;
+	m_totStateNodeWeight += stateNode.weight;
 
 	m_maxStateIndex = std::max(m_maxStateIndex, stateNode.stateIndex);
 	m_minStateIndex = std::min(m_minStateIndex, stateNode.stateIndex);
@@ -848,8 +850,9 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it, ++stateNodeIndex)
 	{
 		m_stateNodeMap[it->first] = stateNodeIndex;
-		m_stateNodeWeights[stateNodeIndex] += it->second;
-		m_totStateNodeWeight += it->second;
+		double weight = it->first.weight;
+		m_stateNodeWeights[stateNodeIndex] += weight;
+		m_totStateNodeWeight += weight;
 	}
 
 	initNodeDegrees();
@@ -983,7 +986,7 @@ void MemNetwork::printStateNetwork(std::string filename) const
 		const StateNode& stateNode = it->first;
 		unsigned int stateId = m_config.isStateNetwork()? stateNode.stateIndex : it->second;
 		stateId += m_indexOffset;
-		out << stateId << " " << stateNode.physIndex + m_indexOffset << "\n";
+		out << stateId << " " << stateNode.physIndex + m_indexOffset << " " << stateNode.weight << "\n";
 	}
 
 	out << "*Arcs " << m_numStateLinks << "\n";
