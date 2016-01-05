@@ -142,6 +142,8 @@ protected:
 
 	virtual bool preClusterMultiplexNetwork(bool printResults = false);
 
+	virtual unsigned int aggregateFlowValuesFromLeafToRoot();
+
 	virtual double calcCodelengthOnRootOfLeafNodes(const NodeBase& parent);
 	virtual double calcCodelengthOnModuleOfModules(const NodeBase& parent);
 	virtual double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent);
@@ -284,6 +286,43 @@ inline bool InfomapGreedyTypeSpecialized<FlowType, WithMemory>::preClusterMultip
 }
 
 template<typename FlowType>
+inline unsigned int InfomapGreedyTypeSpecialized<FlowType, WithMemory>::aggregateFlowValuesFromLeafToRoot()
+{
+	unsigned int numLevels = Super::aggregateFlowValuesFromLeafToRoot();
+	// Also aggregate physical nodes
+	for (NodeBase::post_depth_first_iterator it(Super::root()); !it.isEnd(); ++it)
+	{
+		NodeType& node = getNode(*it);
+		if (!node.isRoot()) {
+			NodeType& parent = getNode(*node.parent);
+			for (unsigned int i = 0; i < node.physicalNodes.size(); ++i)
+			{
+				unsigned int isAggregated = false;
+				for (unsigned int j = 0; j < parent.physicalNodes.size(); ++j) {
+					if (parent.physicalNodes[j].physNodeIndex == node.physicalNodes[i].physNodeIndex) {
+						parent.physicalNodes[j].sumFlowFromStateNode += node.physicalNodes[i].sumFlowFromStateNode;
+						isAggregated = true;
+						break;
+					}
+				}
+				if (!isAggregated)
+					parent.physicalNodes.push_back(node.physicalNodes[i]);
+			}
+		}
+	}
+	// Check correct aggregation
+	const std::vector<PhysData>& rootPhysNodes = getNode(*Super::root()).physicalNodes;
+	double sumRootFlow = 0.0;
+	for (unsigned int i = 0; i < rootPhysNodes.size(); ++i) {
+		sumRootFlow += rootPhysNodes[i].sumFlowFromStateNode;
+	}
+	if (std::abs(sumRootFlow - 1.0) > 1e-10)
+		Log() << "Warning, aggregated physical flow is not exactly 1.0, but " << sumRootFlow << ".\n";
+
+	return numLevels;
+}
+
+template<typename FlowType>
 inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelengthOnRootOfLeafNodes(const NodeBase& parent)
 {
 	return Super::calcCodelengthOnModuleOfLeafNodes(parent);
@@ -292,6 +331,7 @@ inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelength
 template<typename FlowType>
 inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent)
 {
+	// return Super::calcCodelengthOnModuleOfLeafNodes(parent);
 	const FlowType& parentData = getNode(parent).data;
 	double parentFlow = parentData.flow;
 	double parentExit = parentData.exitFlow;
@@ -317,6 +357,7 @@ template<typename FlowType>
 inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelengthOnModuleOfModules(const NodeBase& parent)
 {
 	return calcCodelengthOnModuleOfLeafNodes(parent);
+	// return Super::calcCodelengthOnModuleOfModules(parent);
 	//TODO: In above indexLength -= infomath::plogp(physNodes[i].sumFlowFromStateNode / totalParentFlow),
 	// shouldn't sum of enterFlow be used instead of flow even for the memory nodes?
 }
