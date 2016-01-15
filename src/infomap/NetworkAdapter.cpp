@@ -271,6 +271,7 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	std::istringstream ss;
 	unsigned int nodeCount = 0;
 	unsigned int maxDepth = 0;
+	unsigned int numNodesNotFound = 0;
 
 	while(!std::getline(input, line).fail())
 	{
@@ -284,8 +285,6 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 			}
 			continue;
 		}
-		if (nodeCount > m_numNodes)
-			throw MisMatchError("There are more nodes in the tree than in the network.");
 
 		ss.clear();
 		ss.str(line);
@@ -305,6 +304,11 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 		gotOriginalIndex = !!(ss >> originalIndex);
 
 		originalIndex -= indexOffset;
+
+		if (originalIndex >= m_numNodes) {
+			++numNodesNotFound;
+			continue;
+		}
 
 		// Analyze the path and build up the tree
 		ss.clear(); // Clear the eofbit from last extraction!
@@ -341,6 +345,9 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 
 	if (maxDepth < 2)
 		throw InputDomainError("No modular solution found in file.");
+
+	if (numNodesNotFound > 0)
+		Log() << "\n -> Warning: " << numNodesNotFound << " nodes not found in network.";
 
 	// Re-root loaded tree
 	m_treeData.root()->releaseChildren();

@@ -68,6 +68,7 @@ void MemoryNetworkAdapter::readClu(std::string filename)
 	std::map<unsigned int, unsigned int> clusters;
 	unsigned int maxNodeIndex = 0;
 	unsigned int numParsedNodes = 0;
+	unsigned int numNodesNotFound = 0;
 
 	// # [prior_node | layer] node cluster flow
 	while(!std::getline(input, line).fail())
@@ -84,18 +85,19 @@ void MemoryNetworkAdapter::readClu(std::string filename)
 			throw FileFormatError(io::Str() << "Couldn't parse [state_node, node, cluster] from line '" << line << "'");
 
 		++numParsedNodes;
-		if (numParsedNodes > m_numNodes)
-			throw InputDomainError("There are more nodes in the .clu file than in the network.");
 
 		// Get zero-based indexing
 		priorIndex -= m_indexOffset;
 		nodeIndex -= m_indexOffset;
-		maxNodeIndex = std::max(maxNodeIndex, std::max(priorIndex, nodeIndex));
 
 		StateNode stateNode(priorIndex, nodeIndex);
 		std::map<StateNode, unsigned int>::iterator memIt = m_memNodeToIndex.find(stateNode);
-		if (memIt == m_memNodeToIndex.end())
-			throw MisMatchError(io::Str() << "The memory node '" << stateNode.print(m_indexOffset) << "' in line '" << line << "' is not found in the network.");
+		if (memIt == m_memNodeToIndex.end()) {
+			++numNodesNotFound;
+			continue;
+		}
+
+		maxNodeIndex = std::max(maxNodeIndex, std::max(priorIndex, nodeIndex));
 
 		unsigned int memNodeIndex = memIt->second;
 
@@ -107,8 +109,8 @@ void MemoryNetworkAdapter::readClu(std::string filename)
 	if (maxNodeIndex == zeroMinusOne)
 		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
 
-	if (numParsedNodes > clusters.size())
-		Log() << "\n -> Warning: " << (numParsedNodes - clusters.size()) << " duplicate node indices!";
+	if (numNodesNotFound > 0)
+		Log() << "\n -> Warning: " << numNodesNotFound << " memory nodes not found in network.";
 
 
 	// Re-map cluster id:s to zero-based compact indices
@@ -262,7 +264,7 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 		throw InputDomainError("No modular solution found in file.");
 
 	if (numNodesNotFound > 0) {
-		Log() << "\n -> Warning: " << numNodesNotFound << " nodes not found in network.";
+		Log() << "\n -> Warning: " << numNodesNotFound << " memory nodes not found in network.";
 	}
 
 	// Re-root loaded tree
