@@ -183,6 +183,7 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 	std::istringstream ss;
 	unsigned int nodeCount = 0;
 	unsigned int maxDepth = 0;
+	unsigned int numNodesNotFound = 0; // Ignore nodes that doesn't exist in network
 
 	while(!std::getline(input, line).fail())
 	{
@@ -196,8 +197,6 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 			}
 			continue;
 		}
-		if (nodeCount >= m_numNodes)
-			throw InputDomainError("There are more nodes in the tree than in the network.");
 
 		ss.clear();
 		ss.str(line);
@@ -222,8 +221,10 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 		nodeId -= indexOffset;
 		StateNode stateNode(priorId, nodeId);
 		std::map<StateNode, unsigned int>::iterator memIt = m_memNodeToIndex.find(stateNode);
-		if (memIt == m_memNodeToIndex.end())
-			throw MisMatchError(io::Str() << "The memory node '" << stateNode.print(m_indexOffset) << "' in line " << lineNr << " is not found in the network.");
+		if (memIt == m_memNodeToIndex.end()) {
+			++numNodesNotFound;
+			continue;
+		}
 
 		unsigned int originalIndex = memIt->second;
 
@@ -259,6 +260,10 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 
 	if (maxDepth < 2)
 		throw InputDomainError("No modular solution found in file.");
+
+	if (numNodesNotFound > 0) {
+		Log() << "\n -> Warning: " << numNodesNotFound << " nodes not found in network.";
+	}
 
 	// Re-root loaded tree
 	m_treeData.root()->releaseChildren();
