@@ -257,11 +257,15 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 		++nodeCount;
 		maxDepth = std::max(maxDepth, depth);
 	}
-	if (nodeCount < m_numNodes)
-		throw MisMatchError("There are less nodes in the tree than in the network.");
 
 	if (maxDepth < 2)
 		throw InputDomainError("No modular solution found in file.");
+
+	if (nodeCount < m_numNodes) {
+		// Add unassigned nodes to their own modules
+		unsigned int numUnassignedNodes = m_numNodes - nodeCount;
+		Log() << "\n -> Warning: " << numUnassignedNodes << " unassigned nodes are put in their own modules.";
+	}
 
 	if (numNodesNotFound > 0) {
 		Log() << "\n -> Warning: " << numNodesNotFound << " memory nodes not found in network.";
@@ -275,6 +279,8 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 
 	root->releaseChildren();
 
+	std::vector<unsigned int> assignedNodes(m_numNodes, 0);
+
 	// Replace externally loaded leaf nodes with network nodes
 	for (NodeBase::leaf_module_iterator leafModuleIt(m_treeData.root()); !leafModuleIt.isEnd(); ++leafModuleIt)
 	{
@@ -283,10 +289,22 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 		for (NodeBase::sibling_iterator nodeIt(leafModuleIt->begin_child()); !nodeIt.isEnd(); ++nodeIt, ++childIndex)
 		{
 			leafNodes[childIndex] = &m_treeData.getLeafNode(nodeIt->originalIndex);
+			++assignedNodes[nodeIt->originalIndex];
 		}
 		leafModuleIt->deleteChildren();
 		for (childIndex = 0; childIndex < leafNodes.size(); ++childIndex)
 			leafModuleIt->addChild(leafNodes[childIndex]);
+	}
+
+	// Put unassigned nodes in their own modules
+	if (nodeCount < m_numNodes) {
+		for (unsigned int i = 0; i < m_numNodes; ++i) {
+			if (assignedNodes[i] == 0) {
+				NodeBase* module = m_treeData.nodeFactory().createNode("", 0.0, 0.0);
+				m_treeData.root()->addChild(module);
+				module->addChild(&m_treeData.getLeafNode(i));
+			}
+		}
 	}
 
 	Log() << "done! Found " << maxDepth << " levels." << std::endl;
