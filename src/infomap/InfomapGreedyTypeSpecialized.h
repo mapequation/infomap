@@ -392,8 +392,22 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::initModuleOptimization(
 	Super::m_emptyModules.clear();
 	Super::m_emptyModules.reserve(numNodes);
 
-	if (m_numPhysicalNodes == 0)
-		m_numPhysicalNodes = numNodes;
+	if (m_numPhysicalNodes == 0) {
+		// Get max physical index (may be more than numNodes if non-contiguous indexing)
+		unsigned int maxPhysIndex = 0;
+		for (typename Super::activeNetwork_iterator it(Super::m_activeNetwork.begin()), itEnd(Super::m_activeNetwork.end());
+				it != itEnd; ++it)
+		{
+			NodeType& node = getNode(**it);
+			unsigned int numPhysicalMembers = node.physicalNodes.size();
+			for(unsigned int j = 0; j < numPhysicalMembers; ++j)
+			{
+				PhysData& physData = node.physicalNodes[j];
+				maxPhysIndex = std::max(maxPhysIndex, physData.physNodeIndex);
+			}
+		}
+		m_numPhysicalNodes = maxPhysIndex + 1;
+	}
 	m_physToModuleToMemNodes.clear();
 	m_physToModuleToMemNodes.resize(m_numPhysicalNodes);
 
