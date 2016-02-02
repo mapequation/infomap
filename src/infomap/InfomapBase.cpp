@@ -533,7 +533,8 @@ void InfomapBase::tryIndexingIteratively()
 			Log(3) << std::endl;
 		}
 
-		std::auto_ptr<InfomapBase> superInfomap(getNewInfomapInstance());
+		// std::auto_ptr<InfomapBase> superInfomap(getNewInfomapInstance());
+		std::auto_ptr<InfomapBase> superInfomap(getNewInfomapInstanceWithoutMemory());
 		superInfomap->reseed(getSeedFromCodelength(minHierarchicalCodelength));
 		superInfomap->m_subLevel = m_subLevel + m_TOP_LEVEL_ADDITION;
 		superInfomap->initSuperNetwork(*root());
@@ -918,8 +919,8 @@ void InfomapBase::sortPartitionQueue(PartitionQueue& queue)
 void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceConsolidation)
 {
 	bool verbose = (m_subLevel == 0 && m_config.verbosity != 0) ||
-			(isSuperLevelOnTopLevel() && m_config.verbosity == 2);
-	verbose = m_subLevel == 0;
+			(isSuperLevelOnTopLevel() && m_config.verbosity > 2);
+	// verbose = m_subLevel == 0;
 //	verbose = m_subLevel == 0 || (m_subLevel == 1 && m_config.verbosity > 2);
 
 	bool initiatedWithModules = haveModules();
@@ -1734,15 +1735,12 @@ void InfomapBase::initSubNetwork(NodeBase& parent, bool recalculateFlow)
 	DEBUG_OUT("InfomapBase::initSubNetwork()..." << std::endl);
 	cloneFlowData(parent, *root());
 	generateNetworkFromChildren(parent); // Updates the exitNetworkFlow for the nodes
-	root()->setChildDegree(numLeafNodes());
 }
 
 void InfomapBase::initSuperNetwork(NodeBase& parent)
 {
 	DEBUG_OUT("InfomapBase::initSuperNetwork()..." << std::endl);
 	generateNetworkFromChildren(parent);
-	root()->setChildDegree(numLeafNodes());
-
 	transformNodeFlowToEnterFlow(root());
 }
 

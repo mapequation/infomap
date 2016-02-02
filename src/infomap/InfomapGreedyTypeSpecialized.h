@@ -56,6 +56,8 @@ public:
 
 protected:
 
+	virtual std::auto_ptr<InfomapBase> getNewInfomapInstanceWithoutMemory();
+
 	virtual void initModuleOptimization();
 
 	void calculateNodeFlow_log_nodeFlowForMemoryNetwork() {}
@@ -140,6 +142,8 @@ public:
 
 protected:
 
+	virtual std::auto_ptr<InfomapBase> getNewInfomapInstanceWithoutMemory();
+
 	virtual bool preClusterMultiplexNetwork(bool printResults = false);
 
 	virtual unsigned int aggregateFlowValuesFromLeafToRoot();
@@ -198,6 +202,22 @@ private:
 
 
 };
+
+
+
+template<typename FlowType, typename NetworkType>
+inline
+std::auto_ptr<InfomapBase> InfomapGreedyTypeSpecialized<FlowType, NetworkType>::getNewInfomapInstanceWithoutMemory()
+{
+	return std::auto_ptr<InfomapBase>(new InfomapGreedyTypeSpecialized<FlowType, WithoutMemory>(Super::m_config));
+}
+
+template<typename FlowType>
+inline
+std::auto_ptr<InfomapBase> InfomapGreedyTypeSpecialized<FlowType, WithMemory>::getNewInfomapInstanceWithoutMemory()
+{
+	return std::auto_ptr<InfomapBase>(new InfomapGreedyTypeSpecialized<FlowType, WithoutMemory>(Super::m_config));
+}
 
 
 template<typename FlowType>
@@ -669,6 +689,7 @@ void InfomapGreedyTypeSpecialized<FlowType, NetworkType>::generateNetworkFromChi
 		childIt->index = i; // Set index to its place in this subnetwork to be able to find edge target below
 		node->index = i;
 	}
+	Super::root()->setChildDegree(Super::numLeafNodes());
 
 	NodeBase* parentPtr = &parent;
 	// Clone edges
@@ -737,6 +758,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::generateNetworkFromChil
 			setOfPhysicalNodes.insert(physData.physNodeIndex);
 		}
 	}
+	Super::root()->setChildDegree(Super::numLeafNodes());
 
 	// Re-index physical nodes
 	std::map<unsigned int, unsigned int> subPhysIndexMap;
