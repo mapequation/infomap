@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -56,6 +56,9 @@ public:
 
 	InfomapGreedySpecialized(const Config& conf, NodeFactoryBase* nodeFactory) :
 		InfomapGreedy<SelfType>(conf, nodeFactory),
+		m_sumDanglingFlow(0.0) {}
+	InfomapGreedySpecialized(const InfomapBase& infomap, NodeFactoryBase* nodeFactory) :
+		InfomapGreedy<SelfType>(infomap, nodeFactory),
 		m_sumDanglingFlow(0.0) {}
 	virtual ~InfomapGreedySpecialized() {}
 

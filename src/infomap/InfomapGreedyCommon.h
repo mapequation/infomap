@@ -58,6 +58,10 @@ public:
 		InfomapGreedySpecialized<FlowType>(conf, nodeFactory),
 		m_coreLoopCount(0)
 		{}
+	InfomapGreedyCommon(const InfomapBase& infomap, NodeFactoryBase* nodeFactory) :
+		InfomapGreedySpecialized<FlowType>(infomap, nodeFactory),
+		m_coreLoopCount(0)
+		{}
 	virtual ~InfomapGreedyCommon() {}
 
 
@@ -119,7 +123,7 @@ template<typename InfomapGreedyDerivedType>
 inline
 std::auto_ptr<InfomapBase> InfomapGreedyCommon<InfomapGreedyDerivedType>::getNewInfomapInstance()
 {
-	return std::auto_ptr<InfomapBase>(new InfomapGreedyDerivedType(Super::m_config));
+	return std::auto_ptr<InfomapBase>(new InfomapGreedyDerivedType(*this));
 }
 
 template<typename InfomapGreedyDerivedType>
@@ -452,17 +456,17 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 		// If no links connecting this node with other nodes, it won't move into others,
 		// and others won't move into this. TODO: Always best leave it alone?
 //		if (current.degree() == 0)
-		if (current.degree() == 0 ||
-			(Super::m_config.includeSelfLinks &&
-			(current.outDegree() == 1 && current.inDegree() == 1) &&
-			(**current.begin_outEdge()).target == current))
-		{
-			DEBUG_OUT("SKIPPING isolated node " << current << "\n");
-			//TODO: If not skipping self-links, this yields different results from moveNodesToPredefinedModules!!
-			ASSERT(!m_config.includeSelfLinks);
-			current.dirty = false;
-			continue;
-		}
+		// if (current.degree() == 0 ||
+		// 	(Super::m_config.includeSelfLinks &&
+		// 	(current.outDegree() == 1 && current.inDegree() == 1) &&
+		// 	(**current.begin_outEdge()).target == current))
+		// {
+		// 	DEBUG_OUT("SKIPPING isolated node " << current << "\n");
+		// 	//TODO: If not skipping self-links, this yields different results from moveNodesToPredefinedModules!!
+		// 	ASSERT(!m_config.includeSelfLinks);
+		// 	current.dirty = false;
+		// 	continue;
+		// }
 
 		// Create vector with module links
 

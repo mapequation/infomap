@@ -184,13 +184,13 @@ void MemNetwork::parseStateNetwork(std::string filename)
 	// Parse the vertices and return the line after
 	std::string line = parseVertices(input, false);
 
-	if (m_numNodes > 0) {
-		// Add the physical nodes also as state nodes
-		for (unsigned int i = 0; i < m_numNodes; ++i) {
-			StateNode s(i, i);
-			addStateNode(s);
-		}
-	}
+	// if (m_numNodes > 0) {
+	// 	// Add the physical nodes also as state nodes
+	// 	for (unsigned int i = 0; i < m_numNodes; ++i) {
+	// 		StateNode s(i, i);
+	// 		addStateNode(s);
+	// 	}
+	// }
 
 	while (line.length() > 0 && line[0] == '*')
 	{
@@ -281,16 +281,21 @@ std::string MemNetwork::parseDanglingStates(std::ifstream& file)
 std::string MemNetwork::parseStateLinks(std::ifstream& file)
 {
 	// First index the state nodes on state index
-	std::vector<const StateNode*> stateNodes(m_stateNodes.size(), NULL);
+	// Check max state index to index in vector
+	unsigned int maxStateIndex = 0;
+	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it) {
+		maxStateIndex = std::max(maxStateIndex, it->first.stateIndex);
+	}
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
+	if (maxStateIndex == zeroMinusOne)
+		throw InputDomainError(io::Str() << "Integer overflow on state node indices, be sure to specify zero-based node numbering if the node numbers start from zero.");
+	std::vector<const StateNode*> stateNodes(maxStateIndex + 1, NULL);
 	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it)
 	{
 		const StateNode& s = it->first;
-		if (s.stateIndex == zeroMinusOne)
-			throw InputDomainError(io::Str() << "Integer overflow on state node indices, be sure to specify zero-based node numbering if the node numbers start from zero.");
-		if (s.stateIndex >= stateNodes.size() || stateNodes[s.stateIndex] != NULL)
-			throw InputDomainError(io::Str() << "Gaps or duplicates in state node indices detected on state node (" << s.print(m_indexOffset) << ")");
+		if (stateNodes[s.stateIndex] != NULL)
+			throw InputDomainError(io::Str() << "Duplicates in state node indices detected on state node (" << s.print(m_indexOffset) << ")");
 		stateNodes[s.stateIndex] = &s;
 	}
 
@@ -567,6 +572,8 @@ void MemNetwork::parseStateNode(const std::string& line, StateNode& stateNode)
 	m_extractor.str(line);
 	if (!(m_extractor >> stateNode.stateIndex >> stateNode.physIndex))
 		throw FileFormatError(io::Str() << "Can't parse any state node from line '" << line << "'");
+	(m_extractor >> stateNode.weight) || (stateNode.weight = 1.0);
+
 	stateNode.subtractIndexOffset(m_indexOffset);
 }
 
@@ -607,6 +614,23 @@ void MemNetwork::parseStateLink(char line[], int& n1, unsigned int& n2, unsigned
 	n1 -= m_indexOffset;
 	n2 -= m_indexOffset;
 	n3 -= m_indexOffset;
+}
+
+void MemNetwork::addStateNode(StateNode& stateNode)
+{
+	// map<StateNode, double>::iterator nodeIt = m_stateNodes.lower_bound(stateNode);
+	// if (nodeIt != m_stateNodes.end() && nodeIt->first == stateNode)
+	// 	throw InputDomainError(io::Str() << "Duplicate state node: " << stateNode.print(m_indexOffset));
+	// m_stateNodes.insert(nodeIt, std::make_pair(stateNode, weight));
+
+	m_stateNodes[stateNode] += stateNode.weight;
+	m_totStateNodeWeight += stateNode.weight;
+
+	m_maxStateIndex = std::max(m_maxStateIndex, stateNode.stateIndex);
+	m_minStateIndex = std::min(m_minStateIndex, stateNode.stateIndex);
+
+	m_maxNodeIndex = std::max(m_maxNodeIndex, stateNode.physIndex);
+	m_minNodeIndex = std::min(m_minNodeIndex, stateNode.physIndex);
 }
 
 bool MemNetwork::addStateLink(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight)
@@ -806,16 +830,18 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 
 	unsigned int zeroMinusOne = 0;
 	--zeroMinusOne;
-	if (m_maxNodeIndex == zeroMinusOne)
+	if (m_maxNodeIndex == zeroMinusOne || m_maxStateIndex == zeroMinusOne)
 		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
 	if (m_maxNodeIndex >= m_numNodes)
 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
 	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
 		Log() << "(Warning: minimum physical node index is one, check that you don't use zero based numbering if it's not true.)\n";
 
-	unsigned int numMissingPhysicalNodesAdded = addMissingPhysicalNodes();
-	if (numMissingPhysicalNodesAdded)
-		Log() << "  -> Added " << numMissingPhysicalNodesAdded << " self-memory nodes for missing physical nodes.\n";
+	if (!m_config.isStateNetwork()) {
+		unsigned int numMissingPhysicalNodesAdded = addMissingPhysicalNodes();
+		if (numMissingPhysicalNodesAdded)
+			Log() << "  -> Added " << numMissingPhysicalNodesAdded << " self-memory nodes for missing physical nodes.\n";
+	}
 
 	m_stateNodeWeights.resize(m_stateNodes.size());
 	m_totStateNodeWeight = 0.0;
@@ -824,8 +850,9 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it, ++stateNodeIndex)
 	{
 		m_stateNodeMap[it->first] = stateNodeIndex;
-		m_stateNodeWeights[stateNodeIndex] += it->second;
-		m_totStateNodeWeight += it->second;
+		double weight = it->first.weight;
+		m_stateNodeWeights[stateNodeIndex] += weight;
+		m_totStateNodeWeight += weight;
 	}
 
 	initNodeDegrees();
@@ -947,25 +974,33 @@ void MemNetwork::printStateNetwork(std::string filename) const
 {
 	SafeOutFile out(filename.c_str());
 
+	// Write names under *Vertices if exist
+	if (!m_nodeNames.empty()) {
+		out << "*Vertices " << m_nodeNames.size() << "\n";
+		for (unsigned int i = 0; i < m_numNodes; ++i)
+			out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
+	}
+
 	out << "*States " << m_stateNodeMap.size() << "\n";
 	for (StateNodeMap::const_iterator it(m_stateNodeMap.begin()); it != m_stateNodeMap.end(); ++it) {
 		const StateNode& stateNode = it->first;
-		unsigned int stateIndex = it->second;
-		out << stateIndex << " " << stateNode.physIndex << "\n";
+		unsigned int stateId = m_config.isStateNetwork()? stateNode.stateIndex : it->second;
+		stateId += m_indexOffset;
+		out << stateId << " " << stateNode.physIndex + m_indexOffset << " " << stateNode.weight << "\n";
 	}
 
 	out << "*Arcs " << m_numStateLinks << "\n";
 	for (StateLinkMap::const_iterator linkIt(m_stateLinks.begin()); linkIt != m_stateLinks.end(); ++linkIt)
 	{
-		const StateNode& statesource = linkIt->first;
-		unsigned int sourceIndex = m_stateNodeMap.find(statesource)->second;
+		const StateNode& stateSource = linkIt->first;
+		unsigned int sourceId = m_config.isStateNetwork()? stateSource.stateIndex : m_stateNodeMap.find(stateSource)->second;
 		const std::map<StateNode, double>& subLinks = linkIt->second;
 		for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
 		{
-			const StateNode& statetarget = subIt->first;
-			unsigned int targetIndex = m_stateNodeMap.find(statetarget)->second;
+			const StateNode& stateTarget = subIt->first;
+			unsigned int targetId = m_config.isStateNetwork()? stateTarget.stateIndex : m_stateNodeMap.find(stateTarget)->second;
 			double linkWeight = subIt->second;
-			out << sourceIndex << " " << targetIndex << " " << linkWeight << "\n";
+			out << sourceId + m_indexOffset << " " << targetId + m_indexOffset << " " << linkWeight << "\n";
 		}
 	}
 }

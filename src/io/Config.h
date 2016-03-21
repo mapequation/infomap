@@ -368,6 +368,8 @@ struct Config
 
 	bool isBipartite() const { return inputFormat == "bipartite"; }
 
+	bool isStateNetwork() const { return inputFormat == "states"; }
+
 	bool haveOutput() const
 	{
 		return !noFileOutput;

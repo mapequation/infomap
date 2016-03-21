@@ -89,6 +89,7 @@ void InfomapBase::run()
 	{
 		Log() << "\nAttempt " << (iTrial+1) << "/" << m_config.numTrials <<	" at " << Date();
 		Log() << std::endl;
+		m_trialIndex = iTrial;
 
 		// First clear existing modular structure
 		while ((*m_treeData.begin_leaf())->parent != root())
@@ -533,9 +534,12 @@ void InfomapBase::tryIndexingIteratively()
 			Log(3) << std::endl;
 		}
 
-		std::auto_ptr<InfomapBase> superInfomap(getNewInfomapInstance());
-		superInfomap->reseed(getSeedFromCodelength(minHierarchicalCodelength));
+		// std::auto_ptr<InfomapBase> superInfomap(getNewInfomapInstance());
+		std::auto_ptr<InfomapBase> superInfomap(getNewInfomapInstanceWithoutMemory());
+		superInfomap->m_trialIndex = m_trialIndex;
+
 		superInfomap->m_subLevel = m_subLevel + m_TOP_LEVEL_ADDITION;
+		superInfomap->reseed(numIndexingCompleted);
 		superInfomap->initSuperNetwork(*root());
 		superInfomap->partition();
 
@@ -830,6 +834,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 
 		std::auto_ptr<InfomapBase> subInfomap(getNewInfomapInstance());
 		subInfomap->m_subLevel = m_subLevel + 1;
+		subInfomap->reseed(moduleIndex + m_subLevel);
 
 		subInfomap->initSubNetwork(module, false);
 
@@ -918,8 +923,8 @@ void InfomapBase::sortPartitionQueue(PartitionQueue& queue)
 void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceConsolidation)
 {
 	bool verbose = (m_subLevel == 0 && m_config.verbosity != 0) ||
-			(isSuperLevelOnTopLevel() && m_config.verbosity == 2);
-	verbose = m_subLevel == 0;
+			(isSuperLevelOnTopLevel() && m_config.verbosity > 2);
+	// verbose = m_subLevel == 0;
 //	verbose = m_subLevel == 0 || (m_subLevel == 1 && m_config.verbosity > 2);
 
 	bool initiatedWithModules = haveModules();
@@ -991,8 +996,10 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 	mergeAndConsolidateRepeatedly(forceConsolidation, fast);
 
 	ASSERT(codelength <= initialCodelength + 1e-10);
-	if (codelength > initialCodelength)
+	if (codelength > initialCodelength + 1e-10) {
 		Log() << "*"; //TODO: Check how much and why!
+		// Log() << "(" << initialCodelength << " + " << (codelength - initialCodelength) << ")";
+	}
 
 	double oldCodelength = oneLevelCodelength;
 	double compression = (oldCodelength - codelength)/oldCodelength;
@@ -1337,9 +1344,9 @@ void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)
 
 		std::auto_ptr<InfomapBase> subInfomap(getNewInfomapInstance());
 		// To not happen to get back the same network with the same seed
-		subInfomap->reseed(getSeedFromCodelength(codelength));
 		subInfomap->m_subLevel = m_subLevel + 1;
 		subInfomap->initSubNetwork(*moduleIt, false);
+		subInfomap->reseed(getSeedFromCodelength(codelength));
 		//		if (hierarchical)
 		//			subInfomap->hierarchicalPartition();
 		//		else
@@ -1405,8 +1412,8 @@ void InfomapBase::partitionEachModuleParallel(unsigned int recursiveCount, bool 
 		if (module.childDegree() > 1)
 		{
 			std::auto_ptr<InfomapBase> subInfomap(getNewInfomapInstance());
-			subInfomap->reseed(getSeedFromCodelength(codelength));
 			subInfomap->m_subLevel = m_subLevel + 1;
+			subInfomap->reseed(getSeedFromCodelength(codelength));
 			subInfomap->initSubNetwork(module, false);
 			subInfomap->partition(recursiveCount, fast);
 
@@ -1702,6 +1709,7 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 void InfomapBase::initNodeNames(Network& network)
 {
 	network.swapNodeNames(m_nodeNames);
+	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
 	if (m_nodeNames.size() < network.numNodes())
 	{
 		// Define nodes
@@ -1714,14 +1722,14 @@ void InfomapBase::initNodeNames(Network& network)
 			char line[NAME_BUFFER_SIZE];
 			for (unsigned int i = oldSize; i < network.numNodes(); ++i)
 			{
-				int length = snprintf(line, NAME_BUFFER_SIZE, "%d", i+1);
+				int length = snprintf(line, NAME_BUFFER_SIZE, "%d", i + indexOffset);
 				m_nodeNames[i] = std::string(line, length);
 			}
 		}
 		else
 		{
 			for (unsigned int i = oldSize; i < network.numNodes(); ++i)
-				m_nodeNames[i] = io::stringify(i+1);
+				m_nodeNames[i] = io::stringify(i + indexOffset);
 		}
 	}
 }
@@ -1731,15 +1739,12 @@ void InfomapBase::initSubNetwork(NodeBase& parent, bool recalculateFlow)
 	DEBUG_OUT("InfomapBase::initSubNetwork()..." << std::endl);
 	cloneFlowData(parent, *root());
 	generateNetworkFromChildren(parent); // Updates the exitNetworkFlow for the nodes
-	root()->setChildDegree(numLeafNodes());
 }
 
 void InfomapBase::initSuperNetwork(NodeBase& parent)
 {
 	DEBUG_OUT("InfomapBase::initSuperNetwork()..." << std::endl);
 	generateNetworkFromChildren(parent);
-	root()->setChildDegree(numLeafNodes());
-
 	transformNodeFlowToEnterFlow(root());
 }
 

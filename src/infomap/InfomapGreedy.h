@@ -82,6 +82,21 @@ public:
 		rootData.flow = 1.0;
 		rootData.exitFlow = 0.0;
 	}
+	InfomapGreedy(const InfomapBase& infomap, NodeFactoryBase* nodeFactory)
+	:	InfomapBase(infomap, nodeFactory),
+	 	nodeFlow_log_nodeFlow(0.0),
+		flow_log_flow(0.0),
+		exit_log_exit(0.0),
+		enter_log_enter(0.0),
+		enterFlow(0.0),
+		enterFlow_log_enterFlow(0.0),
+	 	exitNetworkFlow(0.0),
+	 	exitNetworkFlow_log_exitNetworkFlow(0.0)
+	{
+		FlowType& rootData = getNode(*root()).data;
+		rootData.flow = 1.0;
+		rootData.exitFlow = 0.0;
+	}
 	virtual ~InfomapGreedy() {}
 
 protected:

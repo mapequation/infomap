@@ -52,9 +52,13 @@ public:
 	typedef FlowType																		flow_type;
 	InfomapGreedyTypeSpecialized(const Config& conf) :
 		InfomapGreedyCommon<InfomapGreedyTypeSpecialized<FlowType, NetworkType> >(conf, new NodeFactory<FlowType>()) {}
+	InfomapGreedyTypeSpecialized(const InfomapBase& infomap) :
+		InfomapGreedyCommon<InfomapGreedyTypeSpecialized<FlowType, NetworkType> >(infomap, new NodeFactory<FlowType>()) {}
 	virtual ~InfomapGreedyTypeSpecialized() {}
 
 protected:
+
+	virtual std::auto_ptr<InfomapBase> getNewInfomapInstanceWithoutMemory();
 
 	virtual void initModuleOptimization();
 
@@ -135,12 +139,19 @@ public:
 	typedef FlowType																		flow_type;
 	InfomapGreedyTypeSpecialized(const Config& conf) :
 			InfomapGreedyCommon<InfomapGreedyTypeSpecialized<FlowType, WithMemory> >(conf, new MemNodeFactory<FlowType>()),
-		m_numPhysicalNodes(0) {}
+			m_numPhysicalNodes(0) {}
+	InfomapGreedyTypeSpecialized(const InfomapBase& infomap) :
+			InfomapGreedyCommon<InfomapGreedyTypeSpecialized<FlowType, WithMemory> >(infomap, new MemNodeFactory<FlowType>()),
+			m_numPhysicalNodes(0) {}
 	virtual ~InfomapGreedyTypeSpecialized() {}
 
 protected:
 
+	virtual std::auto_ptr<InfomapBase> getNewInfomapInstanceWithoutMemory();
+
 	virtual bool preClusterMultiplexNetwork(bool printResults = false);
+
+	virtual unsigned int aggregateFlowValuesFromLeafToRoot();
 
 	virtual double calcCodelengthOnRootOfLeafNodes(const NodeBase& parent);
 	virtual double calcCodelengthOnModuleOfModules(const NodeBase& parent);
@@ -196,6 +207,22 @@ private:
 
 
 };
+
+
+
+template<typename FlowType, typename NetworkType>
+inline
+std::auto_ptr<InfomapBase> InfomapGreedyTypeSpecialized<FlowType, NetworkType>::getNewInfomapInstanceWithoutMemory()
+{
+	return std::auto_ptr<InfomapBase>(new InfomapGreedyTypeSpecialized<FlowType, WithoutMemory>(Super::m_config));
+}
+
+template<typename FlowType>
+inline
+std::auto_ptr<InfomapBase> InfomapGreedyTypeSpecialized<FlowType, WithMemory>::getNewInfomapInstanceWithoutMemory()
+{
+	return std::auto_ptr<InfomapBase>(new InfomapGreedyTypeSpecialized<FlowType, WithoutMemory>(Super::m_config));
+}
 
 
 template<typename FlowType>
@@ -284,6 +311,43 @@ inline bool InfomapGreedyTypeSpecialized<FlowType, WithMemory>::preClusterMultip
 }
 
 template<typename FlowType>
+inline unsigned int InfomapGreedyTypeSpecialized<FlowType, WithMemory>::aggregateFlowValuesFromLeafToRoot()
+{
+	unsigned int numLevels = Super::aggregateFlowValuesFromLeafToRoot();
+	// Also aggregate physical nodes
+	for (NodeBase::post_depth_first_iterator it(Super::root()); !it.isEnd(); ++it)
+	{
+		NodeType& node = getNode(*it);
+		if (!node.isRoot()) {
+			NodeType& parent = getNode(*node.parent);
+			for (unsigned int i = 0; i < node.physicalNodes.size(); ++i)
+			{
+				unsigned int isAggregated = false;
+				for (unsigned int j = 0; j < parent.physicalNodes.size(); ++j) {
+					if (parent.physicalNodes[j].physNodeIndex == node.physicalNodes[i].physNodeIndex) {
+						parent.physicalNodes[j].sumFlowFromStateNode += node.physicalNodes[i].sumFlowFromStateNode;
+						isAggregated = true;
+						break;
+					}
+				}
+				if (!isAggregated)
+					parent.physicalNodes.push_back(node.physicalNodes[i]);
+			}
+		}
+	}
+	// Check correct aggregation
+	const std::vector<PhysData>& rootPhysNodes = getNode(*Super::root()).physicalNodes;
+	double sumRootFlow = 0.0;
+	for (unsigned int i = 0; i < rootPhysNodes.size(); ++i) {
+		sumRootFlow += rootPhysNodes[i].sumFlowFromStateNode;
+	}
+	if (std::abs(sumRootFlow - 1.0) > 1e-10)
+		Log() << "Warning, aggregated physical flow is not exactly 1.0, but " << sumRootFlow << ".\n";
+
+	return numLevels;
+}
+
+template<typename FlowType>
 inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelengthOnRootOfLeafNodes(const NodeBase& parent)
 {
 	return Super::calcCodelengthOnModuleOfLeafNodes(parent);
@@ -292,6 +356,7 @@ inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelength
 template<typename FlowType>
 inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent)
 {
+	// return Super::calcCodelengthOnModuleOfLeafNodes(parent);
 	const FlowType& parentData = getNode(parent).data;
 	double parentFlow = parentData.flow;
 	double parentExit = parentData.exitFlow;
@@ -316,9 +381,7 @@ inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelength
 template<typename FlowType>
 inline double InfomapGreedyTypeSpecialized<FlowType, WithMemory>::calcCodelengthOnModuleOfModules(const NodeBase& parent)
 {
-	return calcCodelengthOnModuleOfLeafNodes(parent);
-	//TODO: In above indexLength -= infomath::plogp(physNodes[i].sumFlowFromStateNode / totalParentFlow),
-	// shouldn't sum of enterFlow be used instead of flow even for the memory nodes?
+	return Super::calcCodelengthOnModuleOfModules(parent);
 }
 
 template<typename FlowType, typename NetworkType>
@@ -354,8 +417,22 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::initModuleOptimization(
 	Super::m_emptyModules.clear();
 	Super::m_emptyModules.reserve(numNodes);
 
-	if (m_numPhysicalNodes == 0)
-		m_numPhysicalNodes = numNodes;
+	if (m_numPhysicalNodes == 0) {
+		// Get max physical index (may be more than numNodes if non-contiguous indexing)
+		unsigned int maxPhysIndex = 0;
+		for (typename Super::activeNetwork_iterator it(Super::m_activeNetwork.begin()), itEnd(Super::m_activeNetwork.end());
+				it != itEnd; ++it)
+		{
+			NodeType& node = getNode(**it);
+			unsigned int numPhysicalMembers = node.physicalNodes.size();
+			for(unsigned int j = 0; j < numPhysicalMembers; ++j)
+			{
+				PhysData& physData = node.physicalNodes[j];
+				maxPhysIndex = std::max(maxPhysIndex, physData.physNodeIndex);
+			}
+		}
+		m_numPhysicalNodes = maxPhysIndex + 1;
+	}
 	m_physToModuleToMemNodes.clear();
 	m_physToModuleToMemNodes.resize(m_numPhysicalNodes);
 
@@ -617,6 +694,7 @@ void InfomapGreedyTypeSpecialized<FlowType, NetworkType>::generateNetworkFromChi
 		childIt->index = i; // Set index to its place in this subnetwork to be able to find edge target below
 		node->index = i;
 	}
+	Super::root()->setChildDegree(Super::numLeafNodes());
 
 	NodeBase* parentPtr = &parent;
 	// Clone edges
@@ -685,6 +763,7 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::generateNetworkFromChil
 			setOfPhysicalNodes.insert(physData.physNodeIndex);
 		}
 	}
+	Super::root()->setChildDegree(Super::numLeafNodes());
 
 	// Re-index physical nodes
 	std::map<unsigned int, unsigned int> subPhysIndexMap;
@@ -739,6 +818,8 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 
 	ioNetwork.init(rootName, Super::hierarchicalCodelength, Super::oneLevelCodelength);
 
+	unsigned int indexOffset = m_config.zeroBasedNodeNumbers ? 0 : 1;
+
 	if (Super::m_config.printExpanded)
 	{
 		// Create vector of node names for memory nodes
@@ -750,9 +831,9 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 			NodeType& node = getNode(**leafIt);
 			StateNode& stateNode = node.stateNode;
 			if (Super::m_config.isMultiplexNetwork())
-				stateNodeNames[i] = io::Str() << physicalNames[stateNode.physIndex] << " | " << (stateNode.layer() + (Super::m_config.zeroBasedNodeNumbers? 0 : 1));
+				stateNodeNames[i] = io::Str() << physicalNames[stateNode.physIndex] << " | " << (stateNode.layer() + indexOffset);
 			else
-				stateNodeNames[i] = stateNode.print(physicalNames);
+				stateNodeNames[i] = stateNode.print(physicalNames, indexOffset);
 		}
 
 		ioNetwork.prepareAddLeafNodes(Super::m_treeData.numLeafNodes());

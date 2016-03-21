@@ -68,6 +68,7 @@ void MemoryNetworkAdapter::readClu(std::string filename)
 	std::map<unsigned int, unsigned int> clusters;
 	unsigned int maxNodeIndex = 0;
 	unsigned int numParsedNodes = 0;
+	unsigned int numNodesNotFound = 0;
 
 	// # [prior_node | layer] node cluster flow
 	while(!std::getline(input, line).fail())
@@ -84,18 +85,19 @@ void MemoryNetworkAdapter::readClu(std::string filename)
 			throw FileFormatError(io::Str() << "Couldn't parse [state_node, node, cluster] from line '" << line << "'");
 
 		++numParsedNodes;
-		if (numParsedNodes > m_numNodes)
-			throw InputDomainError("There are more nodes in the .clu file than in the network.");
 
 		// Get zero-based indexing
 		priorIndex -= m_indexOffset;
 		nodeIndex -= m_indexOffset;
-		maxNodeIndex = std::max(maxNodeIndex, std::max(priorIndex, nodeIndex));
 
 		StateNode stateNode(priorIndex, nodeIndex);
 		std::map<StateNode, unsigned int>::iterator memIt = m_memNodeToIndex.find(stateNode);
-		if (memIt == m_memNodeToIndex.end())
-			throw MisMatchError(io::Str() << "The memory node '" << stateNode << "' in line '" << line << "' is not found in the network.");
+		if (memIt == m_memNodeToIndex.end()) {
+			++numNodesNotFound;
+			continue;
+		}
+
+		maxNodeIndex = std::max(maxNodeIndex, std::max(priorIndex, nodeIndex));
 
 		unsigned int memNodeIndex = memIt->second;
 
@@ -107,8 +109,8 @@ void MemoryNetworkAdapter::readClu(std::string filename)
 	if (maxNodeIndex == zeroMinusOne)
 		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
 
-	if (numParsedNodes > clusters.size())
-		Log() << "\n -> Warning: " << (numParsedNodes - clusters.size()) << " duplicate node indices!";
+	if (numNodesNotFound > 0)
+		Log() << "\n -> Warning: " << numNodesNotFound << " memory nodes not found in network.";
 
 
 	// Re-map cluster id:s to zero-based compact indices
@@ -183,6 +185,7 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 	std::istringstream ss;
 	unsigned int nodeCount = 0;
 	unsigned int maxDepth = 0;
+	unsigned int numNodesNotFound = 0; // Ignore nodes that doesn't exist in network
 
 	while(!std::getline(input, line).fail())
 	{
@@ -196,8 +199,6 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 			}
 			continue;
 		}
-		if (nodeCount >= m_numNodes)
-			throw InputDomainError("There are more nodes in the tree than in the network.");
 
 		ss.clear();
 		ss.str(line);
@@ -222,8 +223,10 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 		nodeId -= indexOffset;
 		StateNode stateNode(priorId, nodeId);
 		std::map<StateNode, unsigned int>::iterator memIt = m_memNodeToIndex.find(stateNode);
-		if (memIt == m_memNodeToIndex.end())
-			throw MisMatchError(io::Str() << "The memory node '" << stateNode << "' in line " << lineNr << " is not found in the network.");
+		if (memIt == m_memNodeToIndex.end()) {
+			++numNodesNotFound;
+			continue;
+		}
 
 		unsigned int originalIndex = memIt->second;
 
@@ -248,18 +251,25 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 			node = node->lastChild;
 			++depth;
 		}
-		std::cout << originalIndex << ", ";
 		node->name = name;
 		node->originalIndex = originalIndex;;
 		flowValues[originalIndex] = flow;
 		++nodeCount;
 		maxDepth = std::max(maxDepth, depth);
 	}
-	if (nodeCount < m_numNodes)
-		throw MisMatchError("There are less nodes in the tree than in the network.");
 
 	if (maxDepth < 2)
 		throw InputDomainError("No modular solution found in file.");
+
+	if (nodeCount < m_numNodes) {
+		// Add unassigned nodes to their own modules
+		unsigned int numUnassignedNodes = m_numNodes - nodeCount;
+		Log() << "\n -> Warning: " << numUnassignedNodes << " unassigned nodes are put in their own modules.";
+	}
+
+	if (numNodesNotFound > 0) {
+		Log() << "\n -> Warning: " << numNodesNotFound << " memory nodes not found in network.";
+	}
 
 	// Re-root loaded tree
 	m_treeData.root()->releaseChildren();
@@ -269,6 +279,8 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 
 	root->releaseChildren();
 
+	std::vector<unsigned int> assignedNodes(m_numNodes, 0);
+
 	// Replace externally loaded leaf nodes with network nodes
 	for (NodeBase::leaf_module_iterator leafModuleIt(m_treeData.root()); !leafModuleIt.isEnd(); ++leafModuleIt)
 	{
@@ -277,10 +289,22 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 		for (NodeBase::sibling_iterator nodeIt(leafModuleIt->begin_child()); !nodeIt.isEnd(); ++nodeIt, ++childIndex)
 		{
 			leafNodes[childIndex] = &m_treeData.getLeafNode(nodeIt->originalIndex);
+			++assignedNodes[nodeIt->originalIndex];
 		}
 		leafModuleIt->deleteChildren();
 		for (childIndex = 0; childIndex < leafNodes.size(); ++childIndex)
 			leafModuleIt->addChild(leafNodes[childIndex]);
+	}
+
+	// Put unassigned nodes in their own modules
+	if (nodeCount < m_numNodes) {
+		for (unsigned int i = 0; i < m_numNodes; ++i) {
+			if (assignedNodes[i] == 0) {
+				NodeBase* module = m_treeData.nodeFactory().createNode("", 0.0, 0.0);
+				m_treeData.root()->addChild(module);
+				module->addChild(&m_treeData.getLeafNode(i));
+			}
+		}
 	}
 
 	Log() << "done! Found " << maxDepth << " levels." << std::endl;
