@@ -52,6 +52,8 @@ public:
 	typedef FlowType																		flow_type;
 	InfomapGreedyTypeSpecialized(const Config& conf) :
 		InfomapGreedyCommon<InfomapGreedyTypeSpecialized<FlowType, NetworkType> >(conf, new NodeFactory<FlowType>()) {}
+	InfomapGreedyTypeSpecialized(const InfomapBase& infomap) :
+		InfomapGreedyCommon<InfomapGreedyTypeSpecialized<FlowType, NetworkType> >(infomap, new NodeFactory<FlowType>()) {}
 	virtual ~InfomapGreedyTypeSpecialized() {}
 
 protected:
@@ -137,7 +139,10 @@ public:
 	typedef FlowType																		flow_type;
 	InfomapGreedyTypeSpecialized(const Config& conf) :
 			InfomapGreedyCommon<InfomapGreedyTypeSpecialized<FlowType, WithMemory> >(conf, new MemNodeFactory<FlowType>()),
-		m_numPhysicalNodes(0) {}
+			m_numPhysicalNodes(0) {}
+	InfomapGreedyTypeSpecialized(const InfomapBase& infomap) :
+			InfomapGreedyCommon<InfomapGreedyTypeSpecialized<FlowType, WithMemory> >(infomap, new MemNodeFactory<FlowType>()),
+			m_numPhysicalNodes(0) {}
 	virtual ~InfomapGreedyTypeSpecialized() {}
 
 protected:

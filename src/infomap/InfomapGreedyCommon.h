@@ -57,6 +57,10 @@ public:
 		InfomapGreedySpecialized<FlowType>(conf, nodeFactory),
 		m_coreLoopCount(0)
 		{}
+	InfomapGreedyCommon(const InfomapBase& infomap, NodeFactoryBase* nodeFactory) :
+		InfomapGreedySpecialized<FlowType>(infomap, nodeFactory),
+		m_coreLoopCount(0)
+		{}
 	virtual ~InfomapGreedyCommon() {}
 
 
@@ -118,7 +122,7 @@ template<typename InfomapGreedyDerivedType>
 inline
 std::auto_ptr<InfomapBase> InfomapGreedyCommon<InfomapGreedyDerivedType>::getNewInfomapInstance()
 {
-	return std::auto_ptr<InfomapBase>(new InfomapGreedyDerivedType(Super::m_config));
+	return std::auto_ptr<InfomapBase>(new InfomapGreedyDerivedType(*this));
 }
 
 template<typename InfomapGreedyDerivedType>

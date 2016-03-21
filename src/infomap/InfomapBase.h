@@ -55,6 +55,7 @@ public:
 		m_treeData(nodeFactory),
 	 	m_activeNetwork(m_nonLeafActiveNetwork),
 	 	m_isCoarseTune(false),
+	 	m_trialIndex(0),
 	 	m_tuneIterationIndex(0),
 	 	m_aggregationLevel(0),
 	 	m_numNonTrivialTopModules(0),
@@ -69,6 +70,30 @@ public:
 	 	bestIntermediateCodelength(std::numeric_limits<double>::max()),
 		m_initialMaxNumberOfModularLevels(0),
 		m_ioNetwork(conf),
+		m_externalOutput(false)
+	{}
+
+	InfomapBase(const InfomapBase& infomap, NodeFactoryBase* nodeFactory)
+	:	m_config(infomap.m_config),
+	 	m_rand(infomap.m_config.seedToRandomNumberGenerator + 1),
+		m_treeData(nodeFactory),
+	 	m_activeNetwork(m_nonLeafActiveNetwork),
+	 	m_isCoarseTune(false),
+	 	m_trialIndex(infomap.m_trialIndex),
+	 	m_tuneIterationIndex(0),
+	 	m_aggregationLevel(0),
+	 	m_numNonTrivialTopModules(0),
+	 	m_subLevel(infomap.m_subLevel),
+	 	m_TOP_LEVEL_ADDITION(1 << 20),
+	 	oneLevelCodelength(0.0),
+	 	codelength(0.0),
+	 	indexCodelength(0.0),
+	 	moduleCodelength(0.0),
+	 	hierarchicalCodelength(0.0),
+		bestHierarchicalCodelength(std::numeric_limits<double>::max()),
+	 	bestIntermediateCodelength(std::numeric_limits<double>::max()),
+		m_initialMaxNumberOfModularLevels(0),
+		m_ioNetwork(infomap.m_config),
 		m_externalOutput(false)
 	{}
 
@@ -245,7 +270,9 @@ protected:
 		return static_cast<unsigned long int>(value/m_config.minimumCodelengthImprovement);
 	}
 
-	void reseed(unsigned long int seed) { m_rand.seed(seed); }
+	void reseed(unsigned long int seed) {
+		m_rand.seed((seed + 1) * (m_trialIndex + 1) + m_config.seedToRandomNumberGenerator);
+	}
 
 private:
 	void runPartition();
@@ -300,6 +327,7 @@ protected:
 	std::vector<NodeBase*>& m_activeNetwork; // Points either to m_nonLeafActiveNetwork or m_treeData.m_leafNodes
 	std::vector<unsigned int> m_moveTo;
 	bool m_isCoarseTune;
+	unsigned int m_trialIndex;
 	unsigned int m_tuneIterationIndex;
 	unsigned int m_aggregationLevel;
 	unsigned int m_numNonTrivialTopModules;

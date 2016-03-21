@@ -89,6 +89,7 @@ void InfomapBase::run()
 	{
 		Log() << "\nAttempt " << (iTrial+1) << "/" << m_config.numTrials <<	" at " << Date();
 		Log() << std::endl;
+		m_trialIndex = iTrial;
 
 		// First clear existing modular structure
 		while ((*m_treeData.begin_leaf())->parent != root())
@@ -535,8 +536,10 @@ void InfomapBase::tryIndexingIteratively()
 
 		// std::auto_ptr<InfomapBase> superInfomap(getNewInfomapInstance());
 		std::auto_ptr<InfomapBase> superInfomap(getNewInfomapInstanceWithoutMemory());
-		superInfomap->reseed(getSeedFromCodelength(minHierarchicalCodelength));
+		superInfomap->m_trialIndex = m_trialIndex;
+
 		superInfomap->m_subLevel = m_subLevel + m_TOP_LEVEL_ADDITION;
+		superInfomap->reseed(numIndexingCompleted);
 		superInfomap->initSuperNetwork(*root());
 		superInfomap->partition();
 
@@ -831,6 +834,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 
 		std::auto_ptr<InfomapBase> subInfomap(getNewInfomapInstance());
 		subInfomap->m_subLevel = m_subLevel + 1;
+		subInfomap->reseed(moduleIndex + m_subLevel);
 
 		subInfomap->initSubNetwork(module, false);
 
@@ -1340,9 +1344,9 @@ void InfomapBase::partitionEachModule(unsigned int recursiveCount, bool fast)
 
 		std::auto_ptr<InfomapBase> subInfomap(getNewInfomapInstance());
 		// To not happen to get back the same network with the same seed
-		subInfomap->reseed(getSeedFromCodelength(codelength));
 		subInfomap->m_subLevel = m_subLevel + 1;
 		subInfomap->initSubNetwork(*moduleIt, false);
+		subInfomap->reseed(getSeedFromCodelength(codelength));
 		//		if (hierarchical)
 		//			subInfomap->hierarchicalPartition();
 		//		else
@@ -1408,8 +1412,8 @@ void InfomapBase::partitionEachModuleParallel(unsigned int recursiveCount, bool 
 		if (module.childDegree() > 1)
 		{
 			std::auto_ptr<InfomapBase> subInfomap(getNewInfomapInstance());
-			subInfomap->reseed(getSeedFromCodelength(codelength));
 			subInfomap->m_subLevel = m_subLevel + 1;
+			subInfomap->reseed(getSeedFromCodelength(codelength));
 			subInfomap->initSubNetwork(module, false);
 			subInfomap->partition(recursiveCount, fast);
 
