@@ -30,6 +30,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <cstdlib>
+#include <fenv.h>
 #include "utils/Logger.h"
 #include "io/Config.h"
 #include "infomap/InfomapContext.h"
@@ -420,7 +421,26 @@ int main(int argc, char* argv[])
 	for (int i = 1; i < argc; ++i)
 		args << argv[i] << (i + 1 == argc? "" : " ");
 
-	return run(args.str());
+	int ret = run(args.str());
+
+  if(fetestexcept(FE_DIVBYZERO))
+		std::cout << "Warning: division by zero reported" << std::endl;
+
+  // if(fetestexcept(FE_INEXACT))
+	// 	std::cout << "Warning: inexact result reported" << std::endl;
+	// Raised on trivial double arithmetics
+
+  if(fetestexcept(FE_INVALID))
+		std::cout << "Warning: invalid result reported" << std::endl;
+
+  if(fetestexcept(FE_OVERFLOW))
+		std::cout << "Warning: overflow result reported" << std::endl;
+
+	if(fetestexcept(FE_UNDERFLOW))
+		std::cout << "Warning: underflow result reported" << std::endl;
+
+	// feclearexcept(FE_ALL_EXCEPT);
+	return ret;
 }
 #endif
 
