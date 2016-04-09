@@ -370,6 +370,8 @@ void InfomapBase::runPartition()
 		"\nTrying to find deeper structure under current modules recursively... \n";
 
 	double sumConsolidatedCodelength = hierarchicalCodelength - partitionQueue.moduleCodelength;
+	// Log(1) << "Consolidated codelength: " << hierarchicalCodelength << " - " << partitionQueue.moduleCodelength <<
+	// 	" = " << sumConsolidatedCodelength << "\n";
 
 
 //	double t0 = omp_get_wtime();
@@ -377,7 +379,8 @@ void InfomapBase::runPartition()
 	while (partitionQueue.size() > 0)
 	{
 		Log(1) << "Level " << partitionQueue.level << ": " << (partitionQueue.flow*100) <<
-				"% of the flow in " << partitionQueue.size() << " modules. Partitioning... " <<
+				"% of the flow in " << partitionQueue.size() << " modules with consolidated codelength " <<
+				sumConsolidatedCodelength << ". Partitioning... " <<
 				std::setprecision(6) << std::flush;
 
 		PartitionQueue nextLevelQueue;
@@ -390,7 +393,7 @@ void InfomapBase::runPartition()
 
 		Log(0,0) << ((hierarchicalCodelength - limitCodelength) / hierarchicalCodelength) * 100 <<
 			"% " << std::flush;
-		Log(1) << "done! Codelength: " << partitionQueue.indexCodelength << " + " <<
+		Log(1) << "done!\n  -> " << nextLevelQueue.size() << " sub-modules with codelength " << partitionQueue.indexCodelength << " + " <<
 					partitionQueue.leafCodelength << " (+ " << leftToImprove << " left to improve)" <<
 					" -> limit: " << io::toPrecision(limitCodelength) << " bits.\n";
 
@@ -400,7 +403,7 @@ void InfomapBase::runPartition()
 	}
 	Log(0,0) << ". Found " << partitionQueue.level << " levels with codelength " <<
 		io::toPrecision(hierarchicalCodelength) << "\n";
-	Log(1) << "  -> Found " << partitionQueue.level << " levels with codelength " <<
+	Log(1) << "  ==> Found " << partitionQueue.level << " levels with codelength " <<
 		io::toPrecision(hierarchicalCodelength) << "\n";
 //	double t1 = omp_get_wtime();
 }
@@ -629,14 +632,8 @@ void InfomapBase::tryIndexingIteratively()
  */
 unsigned int InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partitionQueue)
 {
-	bool verbose = m_subLevel == 0;
-
-	if (verbose)
-	{
-		Log(0,1) << "Index module compression: " << std::setprecision(2) << std::flush;
-		Log(2) << "Trying to find fast hierarchy... " << std::endl;
-	}
-
+	Log(0,1) << "Index module compression: " << std::setprecision(2) << std::flush;
+	Log(2) << "Trying to find fast hierarchy... " << std::endl;
 
 	unsigned int networkLevel = 0;
 	unsigned int numLevelsCreated = 0;
@@ -664,11 +661,8 @@ unsigned int InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partit
 		initConstantInfomapTerms();
 		initModuleOptimization();
 
-		if (verbose)
-		{
-			Log(2) << "Level " << ++networkLevel << ", moving " << m_activeNetwork.size() <<
-								" " << nodesLabel << "... " << std::flush;
-		}
+		Log(2) << "Level " << ++networkLevel << ", moving " << m_activeNetwork.size() <<
+							" " << nodesLabel << "... " << std::flush;
 
 		unsigned int numOptimizationLoops = optimizeModules();
 
@@ -680,16 +674,13 @@ unsigned int InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partit
 
 		workingHierarchicalCodelength += codelength - oldIndexLength;
 
-		if (verbose)
-		{
-			Log(0,1) << hideIf(!acceptSolution) << ((hierarchicalCodelength - workingHierarchicalCodelength) \
-					/ hierarchicalCodelength * 100) << "% " << std::flush;
-			Log(2) << "found " << numDynamicModules() << " modules in " << numOptimizationLoops <<
-						" loops with hierarchical codelength " << indexCodelength << " + " <<
-						(workingHierarchicalCodelength - indexCodelength) << " = " <<
-						workingHierarchicalCodelength << (acceptSolution ? "\n" :
-								", discarding the solution.\n") << std::flush;
-		}
+		Log(0,1) << hideIf(!acceptSolution) << ((hierarchicalCodelength - workingHierarchicalCodelength) \
+				/ hierarchicalCodelength * 100) << "% " << std::flush;
+		Log(2) << "found " << numDynamicModules() << " modules in " << numOptimizationLoops <<
+					" loops with hierarchical codelength " << indexCodelength << " + " <<
+					(workingHierarchicalCodelength - indexCodelength) << " = " <<
+					workingHierarchicalCodelength << (acceptSolution ? "\n" :
+							", discarding the solution.\n") << std::flush;
 
 		if (!acceptSolution)
 		{
@@ -721,15 +712,15 @@ unsigned int InfomapBase::findSuperModulesIterativelyFast(PartitionQueue& partit
 
 	} while (m_numNonTrivialTopModules != 1);
 
-	if (verbose)
-	{
-		Log() << std::setprecision(m_config.verboseNumberPrecision);
-		Log(0,0) << "to codelength " << io::toPrecision(hierarchicalCodelength) << " in " <<
-					numTopModules() << " top modules. ";
-		Log(1) << "done! Added " << numLevelsCreated << " levels with " <<
-					numTopModules() << " top modules to codelength: " <<
-					io::toPrecision(hierarchicalCodelength) << " ";
-	}
+	codelength = hierarchicalCodelength;
+	moduleCodelength = codelength - indexCodelength;
+
+	Log() << std::setprecision(m_config.verboseNumberPrecision);
+	Log(0,0) << "to codelength " << io::toPrecision(hierarchicalCodelength) << " in " <<
+				numTopModules() << " top modules. ";
+	Log(1) << "done! Added " << numLevelsCreated << " levels with " <<
+				numTopModules() << " top modules to codelength: " <<
+				io::toPrecision(hierarchicalCodelength) << " ";
 
 	return numLevelsCreated;
 }
