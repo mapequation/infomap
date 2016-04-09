@@ -78,18 +78,19 @@ struct Config
 		numTrials(1),
 		minimumCodelengthImprovement(1.0e-10),
 		minimumSingleNodeCodelengthImprovement(1.0e-16),
-		randomizeCoreLoopLimit(false),
-		coreLoopLimit(0),
+		randomizeCoreLoopLimit(true),
+		coreLoopLimit(10),
 		levelAggregationLimit(0),
 		tuneIterationLimit(0),
 		minimumRelativeTuneIterationImprovement(1.0e-5),
-		fastCoarseTunePartition(false),
+		fastCoarseTunePartition(true),
 		alternateCoarseTuneLevel(false),
 		coarseTuneLevel(1),
 		fastHierarchicalSolution(0),
 		fastFirstIteration(false),
 		lowMemoryPriority(0),
 		innerParallelization(false),
+		resetConfigBeforeRecursion(false),
 		outDirectory("."),
 		outName(""),
 		originallyUndirected(false),
@@ -114,7 +115,6 @@ struct Config
 		minBipartiteNodeIndex(0),
 		version(INFOMAP_VERSION)
 	{
-		setOptimizationLevel(1);
 	}
 
 	Config(const Config& other)
@@ -165,6 +165,7 @@ struct Config
 		fastFirstIteration(other.fastFirstIteration),
 		lowMemoryPriority(other.lowMemoryPriority),
 		innerParallelization(other.innerParallelization),
+		resetConfigBeforeRecursion(other.resetConfigBeforeRecursion),
 		outDirectory(other.outDirectory),
 		outName(other.outName),
 		originallyUndirected(other.originallyUndirected),
@@ -241,6 +242,7 @@ struct Config
 		fastFirstIteration = other.fastFirstIteration;
 		lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
+		resetConfigBeforeRecursion = other.resetConfigBeforeRecursion;
 		outDirectory = other.outDirectory;
 		outName = other.outName;
 		originallyUndirected = other.originallyUndirected;
@@ -346,6 +348,24 @@ struct Config
 		}
 	}
 
+	void reset()
+	{
+		minimumCodelengthImprovement = 1.0e-10;
+		minimumSingleNodeCodelengthImprovement = 1.0e-16;
+		randomizeCoreLoopLimit = false;
+		coreLoopLimit = 0;
+		levelAggregationLimit = 0;
+		tuneIterationLimit = 0;
+		minimumRelativeTuneIterationImprovement = 1.0e-5;
+		fastCoarseTunePartition = false;
+		alternateCoarseTuneLevel = false;
+		coarseTuneLevel = 1;
+		fastHierarchicalSolution = 0;
+		fastFirstIteration = false;
+		lowMemoryPriority = 0;
+		innerParallelization = false;
+	}
+
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 
 	void setUndirected() { directed = undirdir = outdirdir = rawdir = false; }
@@ -440,6 +460,7 @@ struct Config
 	bool fastFirstIteration;
 	unsigned int lowMemoryPriority; // Prioritize memory efficient algorithms before fast if > 0
 	bool innerParallelization;
+	bool resetConfigBeforeRecursion; // If true, flags only affect building up super modules.
 
 	// Output
 	std::string outDirectory;

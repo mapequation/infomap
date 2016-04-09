@@ -373,6 +373,9 @@ void InfomapBase::runPartition()
 	// Log(1) << "Consolidated codelength: " << hierarchicalCodelength << " - " << partitionQueue.moduleCodelength <<
 	// 	" = " << sumConsolidatedCodelength << "\n";
 
+	if (m_config.resetConfigBeforeRecursion) {
+		m_config.reset();
+	}
 
 //	double t0 = omp_get_wtime();
 

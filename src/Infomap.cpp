@@ -248,10 +248,13 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 			"Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.");
 
 	api.addIncrementalOptionArgument(conf.lowMemoryPriority, 'l', "low-memory",
-			"Prioritize memory efficient algorithms before fast. Use -ll to optimize even more, but this may give approximate results.");
+			"Prioritize memory efficient algorithms before fast. Use -ll to optimize even more, but this may give approximate results.", true);
 
 	api.addOptionArgument(conf.innerParallelization, "inner-parallelization",
 			"Parallelize the innermost loop for greater speed. Note that this may give some accuracy tradeoff.");
+
+	api.addOptionArgument(conf.resetConfigBeforeRecursion, "reset-options-before-recursion",
+			"Reset options tuning the speed and accuracy before the recursive part.", true);
 
 	api.addOptionArgument(conf.showBiNodes, "show-bipartite-nodes",
 			"Include the bipartite nodes in the output.", true);
