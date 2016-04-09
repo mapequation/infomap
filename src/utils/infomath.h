@@ -70,14 +70,14 @@ namespace infomath
 	inline
 	bool isBetween(T value, U lowerLimit, U higherLimit)
 	{
-		return value >= lowerLimit && value <= higherLimit;
+		return value >= static_cast<T>(lowerLimit) && value <= static_cast<T>(higherLimit);
 	}
 
 	template<typename T, typename U>
 	inline
 	bool isBetweenStrict(T value, U lowerLimit, U higherLimit)
 	{
-		return value > lowerLimit && value < higherLimit;
+		return value > static_cast<T>(lowerLimit) && value < static_cast<T>(higherLimit);
 	}
 }
 
