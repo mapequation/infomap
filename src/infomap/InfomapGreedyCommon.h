@@ -361,8 +361,9 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModules()
 	m_coreLoopCount = 0;
 	double oldCodelength = Super::codelength;
 	unsigned int loopLimit = Super::m_config.coreLoopLimit;
-	if (Super::m_config.coreLoopLimit > 0 && Super::m_config.randomizeCoreLoopLimit)
-		loopLimit = static_cast<unsigned int>(Super::m_rand() * Super::m_config.coreLoopLimit) + 1;
+	unsigned int minRandLoop = 2;
+	if (loopLimit >= minRandLoop && Super::m_config.randomizeCoreLoopLimit)
+		loopLimit = static_cast<unsigned int>(Super::m_rand() * (loopLimit - minRandLoop)) + minRandLoop;
 	unsigned int loopLimitOnAggregationLevels = 20;
 
 	// Iterate while the optimization loop moves some nodes within the dynamic modular structure
@@ -387,8 +388,9 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::optimizeModulesCrude
 	m_coreLoopCount = 0;
 	// double oldCodelength = Super::codelength;
 	unsigned int loopLimit = Super::m_config.coreLoopLimit;
-	if (Super::m_config.coreLoopLimit > 0 && Super::m_config.randomizeCoreLoopLimit)
-		loopLimit = static_cast<unsigned int>(Super::m_rand() * Super::m_config.coreLoopLimit) + 1;
+	unsigned int minRandLoop = 3;
+	if (loopLimit >= minRandLoop && Super::m_config.randomizeCoreLoopLimit)
+		loopLimit = static_cast<unsigned int>(Super::m_rand() * (loopLimit - minRandLoop)) + minRandLoop;
 	// unsigned int loopLimitOnAggregationLevels = -1;
 	unsigned int numMoved = 0;
 

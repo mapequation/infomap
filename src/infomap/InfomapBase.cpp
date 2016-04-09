@@ -989,11 +989,11 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 	// First optimization iteration
 	mergeAndConsolidateRepeatedly(forceConsolidation, fast);
 
-	ASSERT(codelength <= initialCodelength + 1e-10);
-	if (codelength > initialCodelength + 1e-10) {
+	double diffInitial = codelength - initialCodelength;
+	if (diffInitial > 1e-10) {
 		Log() << "*"; //TODO: Check how much and why!
-		if (codelength > initialCodelength + 1e-5)
-			Log() << "(" << initialCodelength << " -> " << (codelength - initialCodelength) << ")";
+		if (diffInitial > 1e-6)
+			Log() << "(warning: codelength " << initialCodelength << " -> " << codelength << ") ";
 	}
 
 	double oldCodelength = oneLevelCodelength;
