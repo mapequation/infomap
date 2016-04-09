@@ -378,10 +378,11 @@ void InfomapBase::runPartition()
 
 	while (partitionQueue.size() > 0)
 	{
-		Log(1) << "Level " << partitionQueue.level << ": " << (partitionQueue.flow*100) <<
+		Log(1,1) << "Level " << partitionQueue.level << ": " << (partitionQueue.flow*100) <<
+				"% of the flow in " << partitionQueue.size() << " modules. Finding sub-modules... " << std::setprecision(6) << std::flush;
+		Log(2) << "Level " << partitionQueue.level << ": " << (partitionQueue.flow*100) <<
 				"% of the flow in " << partitionQueue.size() << " modules with consolidated codelength " <<
-				sumConsolidatedCodelength << ". Partitioning... " <<
-				std::setprecision(6) << std::flush;
+				sumConsolidatedCodelength << ". Finding sub-modules... " << std::setprecision(6) << std::flush;
 
 		PartitionQueue nextLevelQueue;
 		// Partition all modules in the queue and fill up the next level queue
@@ -393,7 +394,10 @@ void InfomapBase::runPartition()
 
 		Log(0,0) << ((hierarchicalCodelength - limitCodelength) / hierarchicalCodelength) * 100 <<
 			"% " << std::flush;
-		Log(1) << "done!\n  -> " << nextLevelQueue.size() << " sub-modules with codelength " << partitionQueue.indexCodelength << " + " <<
+		Log(1,1) << "done! Codelength " << partitionQueue.indexCodelength << " + " <<
+					partitionQueue.leafCodelength << " (+ " << leftToImprove << " left to improve)" <<
+					" -> limit: " << io::toPrecision(limitCodelength) << " bits.\n";
+		Log(2) << "done!\n      -> " << nextLevelQueue.size() << " sub-modules with codelength " << partitionQueue.indexCodelength << " + " <<
 					partitionQueue.leafCodelength << " (+ " << leftToImprove << " left to improve)" <<
 					" -> limit: " << io::toPrecision(limitCodelength) << " bits.\n";
 
@@ -403,7 +407,7 @@ void InfomapBase::runPartition()
 	}
 	Log(0,0) << ". Found " << partitionQueue.level << " levels with codelength " <<
 		io::toPrecision(hierarchicalCodelength) << "\n";
-	Log(1) << "  ==> Found " << partitionQueue.level << " levels with codelength " <<
+	Log(1) << "==> Found " << partitionQueue.level << " levels with codelength " <<
 		io::toPrecision(hierarchicalCodelength) << "\n";
 //	double t1 = omp_get_wtime();
 }
@@ -913,8 +917,7 @@ void InfomapBase::sortPartitionQueue(PartitionQueue& queue)
 
 void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceConsolidation)
 {
-	bool verbose = (m_subLevel == 0 && m_config.verbosity != 0) ||
-			(isSuperLevelOnTopLevel() && m_config.verbosity > 2);
+	bool verbose = m_subLevel == 0 || (isSuperLevelOnTopLevel() && m_config.verbosity > 2);
 	// verbose = m_subLevel == 0;
 //	verbose = m_subLevel == 0 || (m_subLevel == 1 && m_config.verbosity > 2);
 
