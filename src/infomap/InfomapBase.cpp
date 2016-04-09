@@ -992,7 +992,8 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 	ASSERT(codelength <= initialCodelength + 1e-10);
 	if (codelength > initialCodelength + 1e-10) {
 		Log() << "*"; //TODO: Check how much and why!
-		// Log() << "(" << initialCodelength << " + " << (codelength - initialCodelength) << ")";
+		if (codelength > initialCodelength + 1e-5)
+			Log() << "(" << initialCodelength << " -> " << (codelength - initialCodelength) << ")";
 	}
 
 	double oldCodelength = oneLevelCodelength;
