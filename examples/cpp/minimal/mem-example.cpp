@@ -60,6 +60,7 @@ int main(int argc, char** argv)
 
 	infomap::MemNetwork network(config);
 
+	// from (state physical) to (state physical) weight
 	network.addStateLink(2, 1, 1, 2, 1.0);
 	network.addStateLink(1, 2, 2, 1, 1.0);
 
