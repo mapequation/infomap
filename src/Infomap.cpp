@@ -78,8 +78,8 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
 			"Specify input format ('pajek', 'link-list', 'states', '3gram', 'multiplex' or 'bipartite') to override format possibly implied by file extension.", "s");
 
-	// api.addOptionArgument(conf.withMemory, "with-memory",
-	// 		"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.", true);
+	api.addOptionArgument(conf.withMemory, "with-memory",
+			"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.", true);
 
 //	api.addOptionArgument(conf.bipartite, "bipartite",
 //			"Let the source id of a link belong to a different kind of nodes and ignore that set in the output.");

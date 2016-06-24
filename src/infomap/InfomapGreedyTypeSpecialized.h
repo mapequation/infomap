@@ -908,7 +908,8 @@ void InfomapGreedyTypeSpecialized<FlowType, WithMemory>::saveHierarchicalNetwork
 		{
 			CondensedIterator& condensedIt(it->second);
 			IndexedFlow& nodeData = condensedIt->second;
-			ioNetwork.addLeafNode(*parent, nodeData.flowData.flow, nodeData.flowData.exitFlow, Super::m_nodeNames[nodeData.index], sortedNodeIndex, nodeData.index);
+			unsigned int physIndex = condensedIt->first;
+			ioNetwork.addLeafNode(*parent, nodeData.flowData.flow, nodeData.flowData.exitFlow, Super::m_nodeNames[nodeData.index], sortedNodeIndex, nodeData.index, false, 0, physIndex);
 			// Remap to sorted indices to help link creation
 			nodeData.index = sortedNodeIndex;
 			++sortedNodeIndex;
