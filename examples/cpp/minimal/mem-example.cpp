@@ -40,8 +40,8 @@ void parseM2ClusterInfo(std::string line, int &n1, int &n2){
 	m_extractor.clear();
     m_extractor.str(line);
     std::string tmpString;
-    if (!(m_extractor >> n1 >> tmpString >> n2)) {
-        std::cout << "error" << std::endl;
+    if (!(m_extractor >> n1 >> n2)) {
+        std::cout << "error parsing m2 nodes from " << line << << std::endl;
     }
 }
 
@@ -50,7 +50,7 @@ void printClusters(infomap::HierarchicalNetwork & tree) {
     std::cout << "\nClusters:\n#from to clusterIndex:\n";
     for (infomap::LeafIterator leafIt(&tree.getRootNode()); !leafIt.isEnd(); ++leafIt) {
     	parseM2ClusterInfo(leafIt->data.name, n1, n2);
-        std::cout << n1 << " " << n2 << " " << leafIt->parentNode->parentIndex << '\n';
+        std::cout << n1 << " " << n2 << " " << leafIt.clusterIndex() << '\n';
     }
 }
 
@@ -60,8 +60,8 @@ int main(int argc, char** argv)
 
 	infomap::MemNetwork network(config);
 
-	network.addM2Link(2, 1, 1, 2, 1.0);
-	network.addM2Link(1, 2, 2, 1, 1.0);
+	network.addStateLink(2, 1, 1, 2, 1.0);
+	network.addStateLink(1, 2, 2, 1, 1.0);
 
 	infomap::HierarchicalNetwork resultNetwork(config);
 
