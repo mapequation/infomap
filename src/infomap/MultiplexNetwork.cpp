@@ -146,53 +146,8 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 
 	Log() << "done!\n";
 
-	finalizeParser();
-
-}
-
-void MultiplexNetwork::finalizeParser(){
-	if (!m_networks.empty())
-		Log() << " --> Found " << m_numIntraLinksFound << " intra-network links in " << m_networks.size() << " layers.\n";
-	if (!m_interLinkLayers.empty())
-		Log() << " --> Found " << m_numInterLinksFound << " inter-network links in " << m_interLinkLayers.size() << " layers.\n";
-	if (!m_multiplexLinkLayers.empty())
-		Log() << " --> Found " << m_numMultiplexLinksFound << " multiplex links in " << m_multiplexLinkLayers.size() << " layers.\n";
-
-	if (!m_interLinkLayers.empty())
-	{
-//		throw InputDomainError("Need at least two layers of network data for multiplex network.");
-		unsigned int maxInterLinkLayer = (--m_interLinkLayers.end())->first + 1;
-		if (m_networks.size() < maxInterLinkLayer)
-			throw InputDomainError(io::Str() << "No intra-network data for inter-network links at layer " << maxInterLinkLayer << ".");
-	}
-
-	if (!m_networks.empty())
-	{
-		bool printLayerSummary = m_networks.size() <= 10 ||
-				(m_networks.size() < 20 && infomath::isBetween(m_config.verbosity, 1, 2)) ||
-				(m_networks.size() < 50 && infomath::isBetween(m_config.verbosity, 1, 3));
-		// Finalize and check each layer of intra-network links
-		for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
-		{
-			if (printLayerSummary)
-				Log() << "Intra-network links on layer " << (layerIndex + 1) << ": " << std::flush;
-			m_networks[layerIndex].finalizeAndCheckNetwork(false);
-			if (printLayerSummary)
-				m_networks[layerIndex].printParsingResult(m_config.verbosity <= 1);
-		}
-
-		m_numNodes = adjustForDifferentNumberOfNodes();
-	}
-
-	bool simulateInterLayerLinks = m_config.multiplexRelaxRate >= 0.0 || m_numInterLinksFound == 0;
-	if (simulateInterLayerLinks)
-		generateMemoryNetworkWithSimulatedInterLayerLinks();
-	else
-		generateMemoryNetworkWithInterLayerLinksFromData();
-
-	addMemoryNetworkFromMultiplexLinks();
-
 	finalizeAndCheckNetwork();
+
 }
 
 void MultiplexNetwork::parseMultipleNetworks()
@@ -621,7 +576,48 @@ void MultiplexNetwork::parseMultiplexLink(const std::string& line, unsigned int&
 
 void MultiplexNetwork::finalizeAndCheckNetwork(bool printSummary)
 {
-	// First dispose intermediate data structures to clear memory
+	if (!m_networks.empty())
+		Log() << " --> Found " << m_numIntraLinksFound << " intra-network links in " << m_networks.size() << " layers.\n";
+	if (!m_interLinkLayers.empty())
+		Log() << " --> Found " << m_numInterLinksFound << " inter-network links in " << m_interLinkLayers.size() << " layers.\n";
+	if (!m_multiplexLinkLayers.empty())
+		Log() << " --> Found " << m_numMultiplexLinksFound << " multiplex links in " << m_multiplexLinkLayers.size() << " layers.\n";
+
+	if (!m_interLinkLayers.empty())
+	{
+//		throw InputDomainError("Need at least two layers of network data for multiplex network.");
+		unsigned int maxInterLinkLayer = (--m_interLinkLayers.end())->first + 1;
+		if (m_networks.size() < maxInterLinkLayer)
+			throw InputDomainError(io::Str() << "No intra-network data for inter-network links at layer " << maxInterLinkLayer << ".");
+	}
+
+	if (!m_networks.empty())
+	{
+		bool printLayerSummary = m_networks.size() <= 10 ||
+				(m_networks.size() < 20 && infomath::isBetween(m_config.verbosity, 1, 2)) ||
+				(m_networks.size() < 50 && infomath::isBetween(m_config.verbosity, 1, 3));
+		// Finalize and check each layer of intra-network links
+		for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
+		{
+			if (printLayerSummary)
+				Log() << "Intra-network links on layer " << (layerIndex + 1) << ": " << std::flush;
+			m_networks[layerIndex].finalizeAndCheckNetwork(false);
+			if (printLayerSummary)
+				m_networks[layerIndex].printParsingResult(m_config.verbosity <= 1);
+		}
+
+		m_numNodes = adjustForDifferentNumberOfNodes();
+	}
+
+	bool simulateInterLayerLinks = m_config.multiplexRelaxRate >= 0.0 || m_numInterLinksFound == 0;
+	if (simulateInterLayerLinks)
+		generateMemoryNetworkWithSimulatedInterLayerLinks();
+	else
+		generateMemoryNetworkWithInterLayerLinksFromData();
+
+	addMemoryNetworkFromMultiplexLinks();
+
+	// Dispose intermediate data structures to clear memory
 	m_interLinks.clear();
 	m_networks.clear();
 

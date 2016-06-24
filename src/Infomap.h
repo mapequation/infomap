@@ -29,6 +29,8 @@
 #define SRC_INFOMAP_H_
 
 #include <string>
+#include "io/Config.h"
+#include "infomap/InfomapContext.h"
 #include "io/HierarchicalNetwork.h"
 #include "infomap/MultiplexNetwork.h"
 
@@ -48,6 +50,38 @@ int run(const std::string& flags);
 Config init(const std::string& flags);
 
 int run(Network& input, HierarchicalNetwork& output);
+
+
+class Infomap {
+
+    public:
+    Infomap(const std::string flags)
+    : config(init(flags)), network(config), tree(config) {}
+
+    bool addLink(unsigned int n1, unsigned int n2, double weight = 1.0) {
+        return network.addLink(n1, n2, weight);
+    }
+
+    int run() {
+        try
+        {
+            InfomapContext context(config);
+            context.getInfomap()->run(network, tree);
+        }
+        catch (std::exception& e)
+        {
+            std::cerr << e.what() << std::endl;
+            return 1;
+        }
+        return 0;
+    }
+
+    Config config;
+    Network network;
+    HierarchicalNetwork tree;
+};
+
+
 
 #ifdef NS_INFOMAP
 }

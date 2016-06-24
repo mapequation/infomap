@@ -1485,6 +1485,11 @@ bool InfomapBase::initNetwork(Network& network)
 		return true;
 	}
 
+	if (!network.isFinalized()) {
+		Log() << "Finalizing network...\n";
+		network.finalizeAndCheckNetwork();
+	}
+
  	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
 
@@ -1573,6 +1578,11 @@ void InfomapBase::initMemoryNetwork()
 
 void InfomapBase::initMemoryNetwork(MemNetwork& network)
 {
+	if (!network.isFinalized()) {
+		Log() << "Finalizing network...\n";
+		network.finalizeAndCheckNetwork();
+	}
+
 	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
 

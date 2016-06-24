@@ -809,6 +809,8 @@ bool MemNetwork::addIncompleteStateLink(unsigned int n1, unsigned int n2, double
 
 void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 {
+	m_isFinalized = true;
+	
 	simulateMemoryToIncompleteData();
 
 	if (m_stateLinks.empty())

@@ -63,8 +63,6 @@ int main(int argc, char** argv)
 	network.addM2Link(2, 1, 1, 2, 1.0);
 	network.addM2Link(1, 2, 2, 1, 1.0);
 
-	network.finalizeAndCheckNetwork();
-
 	infomap::HierarchicalNetwork resultNetwork(config);
 
 	infomap::run(network, resultNetwork);

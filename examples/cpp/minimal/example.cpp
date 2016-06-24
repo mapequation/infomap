@@ -25,73 +25,36 @@
 **********************************************************************************/
 
 #include <iostream>
-#include <sstream>
-#include <vector>
-#include <string>
-
 #include <Infomap.h>
-
-using std::vector;
-using std::string;
-
-void printTreeHelper(std::ostream& out, infomap::SNode& node, std::string prefix = "")
-{
-	for (unsigned int i = 0; i < node.children.size(); ++i)
-	{
-		infomap::SNode& child = *node.children[i];
-		if (child.isLeaf)
-			out << prefix << (i+1) << " " << child.data.flow <<" \"" << child.data.name << "\" " << child.originalLeafIndex << "\n";
-		else {
-			std::ostringstream oss(prefix);
-			oss << (i + 1) << ":";
-			std::string subPrefix = oss.str();
-			printTreeHelper(out, child, subPrefix);
-		}
-	}
-}
-
-void printTree(infomap::HierarchicalNetwork& tree)
-{
-	std::cout << "\nResult tree:\n";
-	printTreeHelper(std::cout, tree.getRootNode());
-}
 
 void printClusters(infomap::HierarchicalNetwork& tree)
 {
 	std::cout << "\nClusters:\n#originalIndex clusterIndex:\n";
 
 	for (infomap::LeafIterator leafIt(&tree.getRootNode()); !leafIt.isEnd(); ++leafIt)
-		std::cout << leafIt->originalLeafIndex << " " << leafIt->parentNode->parentIndex << '\n';
+		std::cout << leafIt->originalLeafIndex << " " << leafIt.clusterIndex() << '\n';
 }
 
 int main(int argc, char** argv)
 {
-	infomap::Config config = infomap::init("--two-level -N2");
+	infomap::Infomap infomapWrapper("--two-level -N2");
 
-	infomap::Network network(config);
+	infomapWrapper.addLink(0, 1);
+	infomapWrapper.addLink(0, 2);
+	infomapWrapper.addLink(0, 3);
+	infomapWrapper.addLink(1, 0);
+	infomapWrapper.addLink(1, 2);
+	infomapWrapper.addLink(2, 1);
+	infomapWrapper.addLink(2, 0);
+	infomapWrapper.addLink(3, 0);
+	infomapWrapper.addLink(3, 4);
+	infomapWrapper.addLink(3, 5);
+	infomapWrapper.addLink(4, 3);
+	infomapWrapper.addLink(4, 5);
+	infomapWrapper.addLink(5, 4);
+	infomapWrapper.addLink(5, 3);
 
-	network.addLink(0, 1);
-	network.addLink(0, 2);
-	network.addLink(0, 3);
-	network.addLink(1, 0);
-	network.addLink(1, 2);
-	network.addLink(2, 1);
-	network.addLink(2, 0);
-	network.addLink(3, 0);
-	network.addLink(3, 4);
-	network.addLink(3, 5);
-	network.addLink(4, 3);
-	network.addLink(4, 5);
-	network.addLink(5, 4);
-	network.addLink(5, 3);
-
-	network.finalizeAndCheckNetwork();
-
-	infomap::HierarchicalNetwork resultNetwork(config);
-
-	infomap::run(network, resultNetwork);
+	infomapWrapper.run();
 	
-	printTree(resultNetwork);
-
-	printClusters(resultNetwork);
+	printClusters(infomapWrapper.tree);
 }

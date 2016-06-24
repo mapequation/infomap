@@ -68,7 +68,8 @@ public:
 	 	m_maxNodeIndex(std::numeric_limits<unsigned int>::min()),
 	 	m_minNodeIndex(std::numeric_limits<unsigned int>::max()),
 	 	m_indexOffset(m_config.zeroBasedNodeNumbers ? 0 : 1),
-		m_numBipartiteNodes(0)
+		m_numBipartiteNodes(0),
+		m_isFinalized(false)
 	{}
 	Network(const Config& config)
 	:	m_config(config),
@@ -89,7 +90,8 @@ public:
 	 	m_maxNodeIndex(std::numeric_limits<unsigned int>::min()),
 	 	m_minNodeIndex(std::numeric_limits<unsigned int>::max()),
 	 	m_indexOffset(m_config.zeroBasedNodeNumbers ? 0 : 1),
-		m_numBipartiteNodes(0)
+		m_numBipartiteNodes(0),
+		m_isFinalized(false)
 	{}
 	Network(const Network& other)
 	:	m_config(other.m_config),
@@ -110,7 +112,8 @@ public:
 	 	m_maxNodeIndex(other.m_maxNodeIndex),
 	 	m_minNodeIndex(other.m_minNodeIndex),
 	 	m_indexOffset(other.m_indexOffset),
-		m_numBipartiteNodes(other.m_numBipartiteNodes)
+		m_numBipartiteNodes(other.m_numBipartiteNodes),
+		m_isFinalized(other.m_isFinalized)
 	{}
 	Network& operator=(const Network& other)
 	{
@@ -133,6 +136,7 @@ public:
 	 	m_minNodeIndex = other.m_minNodeIndex;
 	 	m_indexOffset = other.m_indexOffset;
 	 	m_numBipartiteNodes = other.m_numBipartiteNodes;
+		m_isFinalized = other.m_isFinalized;
 	 	return *this;
 	}
 
@@ -190,6 +194,8 @@ public:
 
 	const Config& config() { return m_config; }
 
+	bool isFinalized() { return m_isFinalized; }
+	
 protected:
 
 	void parsePajekNetwork(std::string filename);
@@ -284,6 +290,9 @@ protected:
 	// Bipartite
 	std::map<BipartiteLink, Weight> m_bipartiteLinks;
 	unsigned int m_numBipartiteNodes;
+
+	// Other
+	bool m_isFinalized;
 
 };
 

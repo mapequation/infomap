@@ -50,7 +50,7 @@ void printClusters(infomap::HierarchicalNetwork & tree) {
     std::cout << "\nClusters:\n#layer node clusterIndex:\n";
     for (infomap::LeafIterator leafIt(&tree.getRootNode()); !leafIt.isEnd(); ++leafIt) {
     	parseM2ClusterInfo(leafIt->data.name, n1, n2);
-        std::cout << n1 << " " << n2 << " " << leafIt->parentNode->parentIndex << '\n';
+        std::cout << n1 << " " << n2 << " " << leafIt.clusterIndex() << '\n';
     }
 }
 
@@ -60,15 +60,14 @@ int main(int argc, char** argv)
 
 	infomap::MultiplexNetwork network(config);
 
-	network.addM2Link(2, 1, 1, 2, 1.0);
-	network.addM2Link(1, 2, 2, 1, 1.0);
-	network.addM2Link(3, 2, 2, 3, 1.0);
-
-	network.finalizeAndCheckNetwork();
+	network.addMultiplexLink(2, 1, 1, 2, 1.0);
+	network.addMultiplexLink(1, 2, 2, 1, 1.0);
+	network.addMultiplexLink(3, 2, 2, 3, 1.0);
 
 	infomap::HierarchicalNetwork resultNetwork(config);
 
-	infomap::run(network, resultNetwork);
+	int exitCode = infomap::run(network, resultNetwork);
 
-	printClusters(resultNetwork);
+	if (exitCode == 0)
+		printClusters(resultNetwork);
 }

@@ -660,6 +660,7 @@ bool Network::insertLink(unsigned int n1, unsigned int n2, double weight)
 
 void Network::finalizeAndCheckNetwork(bool printSummary, unsigned int desiredNumberOfNodes)
 {
+	m_isFinalized = true;
 	// If no nodes defined
 	if (m_numNodes == 0)
 		m_numNodes = m_numNodesFound = m_maxNodeIndex + 1;
