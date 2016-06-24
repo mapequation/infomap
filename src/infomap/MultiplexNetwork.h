@@ -45,6 +45,12 @@ public:
 	typedef std::map<unsigned int, double> InterLinkMap;
 	typedef std::map<StateNode, std::map<StateNode, double> > MultiplexLinkMap;
 
+	MultiplexNetwork() :
+		MemNetwork(),
+		m_numIntraLinksFound(0),
+		m_numInterLinksFound(0),
+		m_numMultiplexLinksFound(0)
+	{}
 	MultiplexNetwork(const Config& config) :
 		MemNetwork(config),
 		m_numIntraLinksFound(0),

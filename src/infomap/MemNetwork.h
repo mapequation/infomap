@@ -100,6 +100,23 @@ public:
 	typedef map<StateNode, map<StateNode, double> > StateLinkMap; // Main key is first state-node, sub-key is second state-node
 	typedef map<StateNode, unsigned int> StateNodeMap;
 
+	MemNetwork() :
+		Network(),
+		m_totStateNodeWeight(0.0),
+		m_numStateLinksFound(0),
+		m_numStateLinks(0),
+		m_totStateLinkWeight(0.0),
+		m_numAggregatedStateLinks(0),
+		m_numMemorySelfLinks(0),
+		m_totalMemorySelfLinkWeight(0.0),
+		m_numIncompleteStateLinksFound(0),
+		m_numIncompleteStateLinks(0),
+		m_numAggregatedIncompleteStateLinks(0),
+		m_numStateNodesFound(0),
+	 	m_maxStateIndex(std::numeric_limits<unsigned int>::min()),
+	 	m_minStateIndex(std::numeric_limits<unsigned int>::max())
+	{}
+
 	MemNetwork(const Config& config) :
 		Network(config),
 		m_totStateNodeWeight(0.0),

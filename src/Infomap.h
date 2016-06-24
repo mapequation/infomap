@@ -56,6 +56,10 @@ class Infomap {
     public:
     Infomap(const std::string flags)
     : config(init(flags)), network(config), tree(config) {}
+	
+    void readInputData(std::string filename) {
+        network.readInputData(filename);
+    }
 
     bool addLink(unsigned int n1, unsigned int n2, double weight = 1.0) {
         return network.addLink(n1, n2, weight);
@@ -90,6 +94,10 @@ class MemInfomap {
     public:
     MemInfomap(const std::string flags)
     : config(init(MemInfomap::flagsWithMemory(flags))), network(config), tree(config) {}
+
+    void readInputData(std::string filename) {
+        network.readInputData(filename);
+    }
 
     bool addTrigram(unsigned int n1, unsigned int n2, unsigned int n3, double weight = 1.0){
         return network.addStateLink(n1, n2, n2, n3, weight);
