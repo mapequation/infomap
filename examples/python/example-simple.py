@@ -2,6 +2,7 @@ from infomap import infomap
 
 infomapWrapper = infomap.Infomap("--two-level")
 
+# Add weight as an optional third argument
 infomapWrapper.addLink(0, 1)
 infomapWrapper.addLink(0, 2)
 infomapWrapper.addLink(0, 3)
