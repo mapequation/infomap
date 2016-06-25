@@ -267,7 +267,8 @@ void InfomapGreedy<InfomapImplementation>::buildHierarchicalNetworkHelper(Hierar
 
 			}
 			else
-				hierarchicalNetwork.addLeafNode(parent, node.data.flow, node.data.exitFlow, leafNodeNames[node.originalIndex], node.originalIndex);
+				hierarchicalNetwork.addLeafNode(parent, node.data.flow, node.data.exitFlow, leafNodeNames[node.originalIndex],
+				node.originalIndex, node.originalIndex, false, 0, node.originalIndex);
 		}
 		else
 		{
