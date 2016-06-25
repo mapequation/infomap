@@ -1,10 +1,9 @@
 # Infomap Software Package
 
 Infomap is a network clustering algorithm based on the
-Map equation.
+[Map equation](http://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation).
 
-For more info, see [www.mapequation.org](http://www.mapequation.org)
-and [The map equation](http://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation).
+For more info, see [www.mapequation.org](http://www.mapequation.org).
 
 
 Getting started:
