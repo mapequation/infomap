@@ -24,7 +24,7 @@ print("Found %d modules with codelength: %f" % (tree.numTopModules(), tree.codel
 
 print("\n#node module")
 for node in tree.leafIter():
-	print("%d %d" % (node.physIndex, node.clusterIndex()))
+	print("%d %d" % (node.physIndex, node.moduleIndex()))
 
 """
 Output:

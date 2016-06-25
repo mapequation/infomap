@@ -35,6 +35,6 @@ leafIt <- tree$leafIter(clusterIndexLevel)
 
 cat("Partitioned network in", tree$numTopModules(), "modules with codelength", tree$codelength(), "bits:\n")
 while (!leafIt$isEnd()) {
-	cat("Node:", leafIt$data$name, "module:", leafIt$clusterIndex(), '\n')
+	cat("Node:", leafIt$data$name, "module:", leafIt$moduleIndex(), '\n')
 	leafIt$stepForward()
 }

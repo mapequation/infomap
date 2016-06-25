@@ -259,7 +259,7 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 }
 
 
-void HierarchicalNetwork::writeClu(const std::string& fileName, int clusterIndexLevel)
+void HierarchicalNetwork::writeClu(const std::string& fileName, int moduleIndexDepth)
 {
 	markNodesToSkip();
 
@@ -281,20 +281,20 @@ void HierarchicalNetwork::writeClu(const std::string& fileName, int clusterIndex
 		out << "# node cluster flow:\n";
 
 	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
-	for (TreeIterator it(&m_rootNode, clusterIndexLevel); !it.isEnd(); ++it) {
+	for (TreeIterator it(&m_rootNode, moduleIndexDepth); !it.isEnd(); ++it) {
 		SNode &node = *it;
 		if (node.isLeafNode()) {
 			if (m_config.isBipartite()) {
 				if (node.originalLeafIndex < m_config.minBipartiteNodeIndex)
-					out << 'n' << node.originalLeafIndex + indexOffset << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
+					out << 'n' << node.originalLeafIndex + indexOffset << " " << it.moduleIndex() + 1 << " " << node.data.flow << "\n";
 				else
-					out << 'f' << node.originalLeafIndex + indexOffset - m_config.minBipartiteNodeIndex << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
+					out << 'f' << node.originalLeafIndex + indexOffset - m_config.minBipartiteNodeIndex << " " << it.moduleIndex() + 1 << " " << node.data.flow << "\n";
 			}
 			else {
 				if (m_config.printExpanded && node.isMemoryNode)
-					out << node.printState(indexOffset) << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
+					out << node.printState(indexOffset) << " " << it.moduleIndex() + 1 << " " << node.data.flow << "\n";
 				else
-					out << node.originalLeafIndex + indexOffset << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
+					out << node.originalLeafIndex + indexOffset << " " << it.moduleIndex() + 1 << " " << node.data.flow << "\n";
 			}
 		}
 	}
@@ -320,9 +320,9 @@ void HierarchicalNetwork::writeMap(const std::string& fileName)
 	unsigned int numNodes = 0;
 	for (TreeIterator it(&m_rootNode, 1); !it.isEnd(); ++it) {
 		if (it->isLeafNode()) {
-			if (it.clusterIndex() >= nodeMaps.size())
+			if (it.moduleIndex() >= nodeMaps.size())
 				nodeMaps.push_back(NodeMap());
-			 nodeMaps[it.clusterIndex()].insert(std::make_pair(it->data.flow, it.base()));
+			 nodeMaps[it.moduleIndex()].insert(std::make_pair(it->data.flow, it.base()));
 			 ++numNodes;
 		}
 	}

@@ -282,7 +282,7 @@ inline bool InfomapGreedyTypeSpecialized<FlowType, WithMemory>::preClusterMultip
 		for (LeafIterator leafIt(tree.leafIter()); !leafIt.isEnd(); ++leafIt)
 		{
 			unsigned int memNodeIndex = memNodeToIndex[StateNode(layer, leafIt->originalLeafIndex)];
-			modules[memNodeIndex] = leafIt.clusterIndex() + moduleIndexOffset;
+			modules[memNodeIndex] = leafIt.moduleIndex() + moduleIndexOffset;
 		}
 
 		moduleIndexOffset += tree.numTopModules();

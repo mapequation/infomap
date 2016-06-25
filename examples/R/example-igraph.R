@@ -32,7 +32,7 @@ leafIt <- tree$leafIter(clusterIndexLevel)
 modules <- integer(length = network$numNodes())
 
 while (!leafIt$isEnd()) {
-	modules[leafIt$originalLeafIndex + 1] = leafIt$clusterIndex() + 1
+	modules[leafIt$originalLeafIndex + 1] = leafIt$moduleIndex() + 1
 	leafIt$stepForward()
 }
 

@@ -32,7 +32,7 @@ void printClusters(infomap::HierarchicalNetwork& tree)
 	std::cout << "\nClusters:\n#originalIndex clusterIndex:\n";
 
 	for (infomap::LeafIterator leafIt(&tree.getRootNode()); !leafIt.isEnd(); ++leafIt)
-		std::cout << leafIt->originalLeafIndex << " " << leafIt.clusterIndex() << '\n';
+		std::cout << leafIt->originalLeafIndex << " " << leafIt.moduleIndex() << '\n';
 }
 
 int main(int argc, char** argv)

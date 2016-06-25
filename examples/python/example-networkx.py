@@ -32,7 +32,7 @@ def findCommunities(G):
 
 	communities = {}
 	for node in tree.leafIter():
-		communities[node.originalLeafIndex] = node.clusterIndex()
+		communities[node.originalLeafIndex] = node.moduleIndex()
 
 	nx.set_node_attributes(G, 'community', communities)
 	return tree.numTopModules()
