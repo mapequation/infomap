@@ -24,3 +24,4 @@
 /examples/js/Infomap-worker.js
 /examples/js/Infomap.js
 .vscode
+.ipynb_checkpoints
