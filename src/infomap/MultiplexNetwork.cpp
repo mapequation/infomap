@@ -52,8 +52,10 @@ void MultiplexNetwork::readInputData(std::string filename)
 		parseMultiplexNetwork(m_config.networkFile);
 	else if (m_config.additionalInput.size() > 0)
 		parseMultipleNetworks();
-	else
-		throw ImplementationError("No multiplex identified.");
+	else {
+		// throw ImplementationError("No multiplex identified.");
+		MemNetwork::readInputData(filename);
+	}
 }
 
 /**
