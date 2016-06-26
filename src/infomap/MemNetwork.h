@@ -33,7 +33,6 @@
 #include <map>
 #include <vector>
 #include <utility>
-#include <deque>
 
 #include "../io/Config.h"
 #include "../utils/types.h"

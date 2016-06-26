@@ -35,6 +35,7 @@
 #include <cstring>
 #include <cstdio>
 #include <set>
+#include <deque>
 
 #ifdef NS_INFOMAP
 namespace infomap

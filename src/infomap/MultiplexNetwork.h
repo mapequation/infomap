@@ -67,8 +67,6 @@ public:
 
 	void addMemoryNetworkFromMultiplexLinks();
 
-	void finalizeParser();
-
 protected:
 
 	void parseMultiplexNetwork(std::string filename);
