@@ -520,6 +520,11 @@ std::string MultiplexNetwork::parseMultiplexLinks(std::ifstream& file)
 
 		addMultiplexLink(layer1, node1, layer2, node2, weight);
 
+		if(layer1 == layer2)
+			++m_numIntraLinksFound;
+		else
+			++m_numInterLinksFound;
+
 	}
 	return line;
 }
