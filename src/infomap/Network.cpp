@@ -387,6 +387,22 @@ void Network::parseBipartiteNetwork(std::string filename)
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
+std::string Network::skipUntilHeader(std::ifstream& file)
+{
+	std::string line;
+
+	// First skip lines until header
+	while(!std::getline(file, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+		if (line[0] == '*')
+			break;
+	}
+
+	return line;
+}
+
 std::string Network::parseVertices(std::ifstream& file, bool required)
 {
 	std::string line;

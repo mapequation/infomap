@@ -242,6 +242,12 @@ protected:
 	virtual void initNodeDegrees();
 
 	/**
+	* Read lines from file until it starts with '*'
+	* and return that line.
+	*/
+	std::string skipUntilHeader(std::ifstream& file);
+
+	/**
 	 * Parse vertices
 	 * @return The line after the vertices
 	 */

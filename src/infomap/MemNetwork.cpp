@@ -199,19 +199,28 @@ void MemNetwork::parseStateNetwork(std::string filename)
 		if (header == "*States" || header == "*states") {
 			line = parseStateNodes(input);
 		}
-		else if (header == "*Edges" || header == "*edges") {
-			if (!m_config.parseAsUndirected())
-				Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
+		else if (header == "*Links" || header == "*links") {
 			line = parseStateLinks(input);
 		}
 		else if (header == "*Arcs" || header == "*arcs") {
 			line = parseStateLinks(input);
 		}
+		else if (header == "*Edges" || header == "*edges") {
+			if (!m_config.parseAsUndirected())
+				Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
+			line = parseStateLinks(input);
+		}
 		else if (header == "*MemoryNodes" || header == "*memorynodes") {
-			line = parseStateMemoryNodes(input);
+			Log() << "\n --> Notice: Skip content under " << header << ". ";
+			line = Network::skipUntilHeader(input);
 		}
 		else if (header == "*DanglingStates" || header == "*danglingstates") {
-			line = parseDanglingStates(input);
+			Log() << "\n --> Notice: Skip content under " << header << ". ";
+			line = Network::skipUntilHeader(input);
+		}
+		else if (header == "*Contexts" || header == "*contexts") {
+			Log() << "\n --> Notice: Skip content under " << header << ". ";
+			line = Network::skipUntilHeader(input);
 		}
 		else
 			throw FileFormatError(io::Str() << "Unrecognized header in network file: '" << line << "'.");
@@ -240,42 +249,6 @@ std::string MemNetwork::parseStateNodes(std::ifstream& file)
 
 		++m_numStateNodesFound;
 	}
-	return line;
-}
-
-std::string MemNetwork::parseStateMemoryNodes(std::ifstream& file)
-{
-	std::string line;
-	unsigned int numStateMemoryNodesFound = 0;
-	while(!std::getline(file, line).fail())
-	{
-		if (line.length() == 0 || line[0] == '#')
-			continue;
-
-		if (line[0] == '*')
-			break;
-
-		++numStateMemoryNodesFound;
-	}
-	Log() << "(Warning: Ignored content under *MemoryNodes) ";
-	return line;
-}
-
-std::string MemNetwork::parseDanglingStates(std::ifstream& file)
-{
-	std::string line;
-	unsigned int numDanglingStates = 0;
-	while(!std::getline(file, line).fail())
-	{
-		if (line.length() == 0 || line[0] == '#')
-			continue;
-
-		if (line[0] == '*')
-			break;
-
-		++numDanglingStates;
-	}
-	Log() << "(Warning: Ignored content under *DanglingStates) ";
 	return line;
 }
 
