@@ -294,9 +294,11 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 			if (layer2 != layer1)
 			{
 				double interLinkWeight = interLinkIt->second;
+				double scaledInterLinkWeight = interLinkWeight;
 	//			//Rescale with self-layer weight if possible
-				double scaledInterLinkWeight = sumOutWeights[layer1][nodeIndex] / selfLayerWeights[layer1][nodeIndex] * interLinkWeight;
-
+				if (selfLayerWeights[layer1][nodeIndex] > 1e-10) {
+					scaledInterLinkWeight *= sumOutWeights[layer1][nodeIndex] / selfLayerWeights[layer1][nodeIndex];
+				}
 				// Switch to same physical node within other layer
 				bool nonPhysicalSwitch = false;
 				if (nonPhysicalSwitch)
