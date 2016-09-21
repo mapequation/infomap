@@ -825,6 +825,34 @@ void Network::initNodeDegrees()
 	}
 }
 
+
+void Network::initNodeNames()
+{
+	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
+	if (m_nodeNames.size() < numNodes())
+	{
+		// Define nodes
+		unsigned int oldSize = m_nodeNames.size();
+		m_nodeNames.resize(numNodes());
+
+		if (m_config.parseWithoutIOStreams)
+		{
+			const int NAME_BUFFER_SIZE = 32;
+			char line[NAME_BUFFER_SIZE];
+			for (unsigned int i = oldSize; i < numNodes(); ++i)
+			{
+				int length = snprintf(line, NAME_BUFFER_SIZE, "%d", i + indexOffset);
+				m_nodeNames[i] = std::string(line, length);
+			}
+		}
+		else
+		{
+			for (unsigned int i = oldSize; i < numNodes(); ++i)
+				m_nodeNames[i] = io::stringify(i + indexOffset);
+		}
+	}
+}
+
 void Network::printParsingResult(bool onlySummary)
 {
 	bool dataModified = m_numNodesFound != m_numNodes || m_numLinksFound != m_numLinks;

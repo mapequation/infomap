@@ -1493,6 +1493,9 @@ bool InfomapBase::initNetwork(Network& network)
  	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
 
+
+ 	network.initNodeNames();
+
 	std::string outname = m_config.outName;
  	if (m_config.printPajekNetwork)
  	{
@@ -1513,8 +1516,7 @@ bool InfomapBase::initNetwork(Network& network)
  	flowNetwork.calculateFlow(network, m_config);
 
  	network.disposeLinks();
-
- 	initNodeNames(network);
+	network.swapNodeNames(m_nodeNames);
 
  	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
  	const std::vector<double>& nodeTeleportWeights = flowNetwork.getNodeTeleportRates();
@@ -1586,6 +1588,8 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 	if (network.numNodes() == 0)
 		throw InternalOrderError("Zero nodes or missing finalization of network.");
 
+	network.initNodeNames();
+
 	std::string outname = m_config.outName;
 	if (m_config.printPajekNetwork)
  	{
@@ -1607,8 +1611,7 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 	flowNetwork.calculateFlow(network, m_config);
 
 	network.disposeLinks();
-
-	initNodeNames(network);
+	network.swapNodeNames(m_nodeNames);
 
 //	const std::vector<std::string>& nodeNames = network.nodeNames();
 	const std::vector<double>& nodeFlow = flowNetwork.getNodeFlow();
@@ -1711,34 +1714,6 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 		Log() << "Printing flow network to " << outName << "... " << std::flush;
 		printFlowNetwork(flowOut);
 		Log() << "done!\n";
-	}
-}
-
-void InfomapBase::initNodeNames(Network& network)
-{
-	network.swapNodeNames(m_nodeNames);
-	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
-	if (m_nodeNames.size() < network.numNodes())
-	{
-		// Define nodes
-		unsigned int oldSize = m_nodeNames.size();
-		m_nodeNames.resize(network.numNodes());
-
-		if (m_config.parseWithoutIOStreams)
-		{
-			const int NAME_BUFFER_SIZE = 32;
-			char line[NAME_BUFFER_SIZE];
-			for (unsigned int i = oldSize; i < network.numNodes(); ++i)
-			{
-				int length = snprintf(line, NAME_BUFFER_SIZE, "%d", i + indexOffset);
-				m_nodeNames[i] = std::string(line, length);
-			}
-		}
-		else
-		{
-			for (unsigned int i = oldSize; i < network.numNodes(); ++i)
-				m_nodeNames[i] = io::stringify(i + indexOffset);
-		}
 	}
 }
 

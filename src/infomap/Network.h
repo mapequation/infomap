@@ -188,6 +188,7 @@ public:
 	bool isBipartite() const { return m_numBipartiteNodes > 0; }
 	unsigned int numBipartiteNodes() const { return m_numBipartiteNodes; }
 
+	void initNodeNames();
 	void swapNodeNames(std::vector<std::string>& target) { target.swap(m_nodeNames); }
 
 	virtual void disposeLinks() { m_links.clear(); }
