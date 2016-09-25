@@ -41,12 +41,6 @@ namespace infomath
 {
 
 	inline
-	double log2(double p)
-	{
-		return std::log(p) * M_LOG2E; // M_LOG2E == 1 / M_LN2
-	}
-
-	inline
 	double plogp(double p)
 	{
 		return p > 0.0 ? p * log2(p) : 0.0;
