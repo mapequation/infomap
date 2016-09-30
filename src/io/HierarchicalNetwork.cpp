@@ -418,7 +418,7 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 	{
 		SNode &node = *it;
 		if (node.isLeafNode())
-			return;
+			continue;
 
 		// Write edges after the last child of the parent node
 		const SNode::ChildEdgeList& edges = node.childEdges;
