@@ -248,12 +248,18 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 				double linkWeight = subIt->second;
 
 				sumOutWeights[layerIndex][n1] += linkWeight;
+				if (m_config.isUndirected()) {
+					sumOutWeights[layerIndex][n2] += linkWeight;
+				}
 				addStateLink(layerIndex, n1, layerIndex, n2, linkWeight);
 			}
 		}
 	}
 
 	Log() << "connecting layers... " << std::flush;
+	if (m_config.isUndirected()) {
+		Log() << "using undirected intra-layer links... " << std::flush;
+	}
 
 
 	// Extract the self-layer links to be able to scale the inter-layer links correctly. Use the sum of intra out weights as default.
@@ -274,7 +280,6 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 			}
 		}
 	}
-
 	unsigned int numInterLinksIgnored = 0;
 	// Then generate memory links from inter links (links between nodes in different layers)
 	for (std::map<StateNode, InterLinkMap>::const_iterator stateNodeIt(m_interLinks.begin()); stateNodeIt != m_interLinks.end(); ++stateNodeIt)
@@ -309,22 +314,48 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 				else
 				{
 					const LinkMap& otherLayerLinks = m_networks[layer2].linkMap();
-					// Distribute inter-link to the outgoing intra-links of the node in the inter-linked layer
-					LinkMap::const_iterator otherLayerOutLinkIt = otherLayerLinks.find(nodeIndex);
+					if (m_config.isUndirected()) {
+						// Distribute inter-link to the neighbouring nodes in the inter-linked layer
+						for (LinkMap::const_iterator otherLayerOutLinkIt(otherLayerLinks.begin()); otherLayerOutLinkIt != otherLayerLinks.end(); ++otherLayerOutLinkIt) {
+							unsigned int otherLayerSourceNodeIndex = otherLayerOutLinkIt->first;
+							const std::map<unsigned int, double>& otherLayerOutLinks = otherLayerOutLinkIt->second;
+							for (std::map<unsigned int, double>::const_iterator interIntraIt(otherLayerOutLinks.begin()); interIntraIt != otherLayerOutLinks.end(); ++interIntraIt)
+							{
+								unsigned int otherLayerTargetNodeIndex = interIntraIt->first;
+								double otherLayerLinkWeight = interIntraIt->second;
+								double interIntraLinkWeight = scaledInterLinkWeight * otherLayerLinkWeight / sumOutWeights[layer2][nodeIndex];
 
-					if (otherLayerOutLinkIt != otherLayerLinks.end())
-					{
-						const std::map<unsigned int, double>& otherLayerOutLinks = otherLayerOutLinkIt->second;
-						for (std::map<unsigned int, double>::const_iterator interIntraIt(otherLayerOutLinks.begin()); interIntraIt != otherLayerOutLinks.end(); ++interIntraIt)
+								if (otherLayerSourceNodeIndex == nodeIndex) {
+									// Add to outgoing node (same as directed)
+									addStateLink(stateSourceIt, layer2, otherLayerTargetNodeIndex, interIntraLinkWeight, interIntraLinkWeight, 0.0);
+									stateSourceNodeAdded = true;
+								}
+								else if (otherLayerTargetNodeIndex == nodeIndex) {
+									// Add to incoming node
+									addStateLink(stateSourceIt, layer2, otherLayerSourceNodeIndex, interIntraLinkWeight, interIntraLinkWeight, 0.0);
+									stateSourceNodeAdded = true;
+								}
+							}
+						}
+					}
+					else {
+						// Distribute inter-link to the outgoing intra-links of the node in the inter-linked layer
+						LinkMap::const_iterator otherLayerOutLinkIt = otherLayerLinks.find(nodeIndex);
+
+						if (otherLayerOutLinkIt != otherLayerLinks.end())
 						{
-							unsigned int otherLayerTargetNodeIndex = interIntraIt->first;
-							double otherLayerLinkWeight = interIntraIt->second;
+							const std::map<unsigned int, double>& otherLayerOutLinks = otherLayerOutLinkIt->second;
+							for (std::map<unsigned int, double>::const_iterator interIntraIt(otherLayerOutLinks.begin()); interIntraIt != otherLayerOutLinks.end(); ++interIntraIt)
+							{
+								unsigned int otherLayerTargetNodeIndex = interIntraIt->first;
+								double otherLayerLinkWeight = interIntraIt->second;
 
-							double interIntraLinkWeight = scaledInterLinkWeight * otherLayerLinkWeight / sumOutWeights[layer2][nodeIndex];
+								double interIntraLinkWeight = scaledInterLinkWeight * otherLayerLinkWeight / sumOutWeights[layer2][nodeIndex];
 
-							// Add weight also as teleportation weight to first state node
-							addStateLink(stateSourceIt, layer2, otherLayerTargetNodeIndex, interIntraLinkWeight, interIntraLinkWeight, 0.0);
-							stateSourceNodeAdded = true;
+								// Add weight also as teleportation weight to first state node
+								addStateLink(stateSourceIt, layer2, otherLayerTargetNodeIndex, interIntraLinkWeight, interIntraLinkWeight, 0.0);
+								stateSourceNodeAdded = true;
+							}
 						}
 					}
 				}
