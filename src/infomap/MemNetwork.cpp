@@ -930,18 +930,34 @@ void MemNetwork::printNetworkAsPajek(std::string filename) const
 
 	out << "*Vertices " << m_numNodes << "\n";
 	for (unsigned int i = 0; i < m_numNodes; ++i)
-		out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
+		out << (i+m_indexOffset) << " \"" << m_nodeNames[i] << "\"\n";
 
-	out << "*3grams " << m_numStateLinks << "\n";
-	for (StateLinkMap::const_iterator linkIt(m_stateLinks.begin()); linkIt != m_stateLinks.end(); ++linkIt)
-	{
-		const StateNode& statesource = linkIt->first;
-		const std::map<StateNode, double>& subLinks = linkIt->second;
-		for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+	if (m_config.isMultiplexNetwork()) {
+		out << "*multiplex " << m_numStateLinks << "\n";
+		for (StateLinkMap::const_iterator linkIt(m_stateLinks.begin()); linkIt != m_stateLinks.end(); ++linkIt)
 		{
-			const StateNode& statetarget = subIt->first;
-			double linkWeight = subIt->second;
-			out << statesource.print(1) << " " << (statetarget.physIndex + 1) << " " << linkWeight << "\n";
+			const StateNode& statesource = linkIt->first;
+			const std::map<StateNode, double>& subLinks = linkIt->second;
+			for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+			{
+				const StateNode& statetarget = subIt->first;
+				double linkWeight = subIt->second;
+				out << statesource.print(m_indexOffset) << " " << statetarget.print(m_indexOffset) << " " << linkWeight << "\n";
+			}
+		}
+	}
+	else {
+		out << "*3grams " << m_numStateLinks << "\n";
+		for (StateLinkMap::const_iterator linkIt(m_stateLinks.begin()); linkIt != m_stateLinks.end(); ++linkIt)
+		{
+			const StateNode& statesource = linkIt->first;
+			const std::map<StateNode, double>& subLinks = linkIt->second;
+			for (std::map<StateNode, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
+			{
+				const StateNode& statetarget = subIt->first;
+				double linkWeight = subIt->second;
+				out << statesource.print(m_indexOffset) << " " << (statetarget.physIndex + m_indexOffset) << " " << linkWeight << "\n";
+			}
 		}
 	}
 }
@@ -954,7 +970,7 @@ void MemNetwork::printStateNetwork(std::string filename) const
 	if (!m_nodeNames.empty()) {
 		out << "*Vertices " << m_nodeNames.size() << "\n";
 		for (unsigned int i = 0; i < m_numNodes; ++i)
-			out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
+			out << (i+m_indexOffset) << " \"" << m_nodeNames[i] << "\"\n";
 	}
 
 	out << "*States " << m_stateNodeMap.size() << "\n";
