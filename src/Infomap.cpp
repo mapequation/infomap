@@ -200,7 +200,10 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 			"Stop merge or split modules if preferred number of modules is reached.", "n", true);
 
 	api.addOptionArgument(conf.multiplexRelaxRate, "multiplex-relax-rate",
-			"The probability to relax the constraint to move only in the current layer. If negative, the inter-links have to be provided.", "f", true);
+			"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present. If negative, the inter-links have to be provided.", "f", true);
+
+	api.addOptionArgument(conf.multiplexJSRelaxRate, "multiplex-js-relax-rate",
+			"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence. If negative, the inter-links have to be provided.", "f", true);
 
 	api.addOptionArgument(conf.multiplexRelaxLimit, "multiplex-relax-limit",
 			"The number of neighboring layers in each direction to relax to. If negative, relax to any layer.", "n", true);

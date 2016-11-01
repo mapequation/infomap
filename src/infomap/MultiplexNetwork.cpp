@@ -478,6 +478,96 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 	Log() << "done!" << std::endl;
 }
 
+void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayerLinks()
+{
+	// Simulate inter-layer links
+	double jsrelaxRate = m_config.multiplexJSRelaxRate < 0 ? 0.15 : m_config.multiplexJSRelaxRate; //TODO: Set default in config and use separate bool
+
+	Log() << "Generating memory network with Jensen-Shannon-weigthed multiplex relax rate " << relaxRate << "... " << std::flush;
+
+	for (unsigned int nodeIndex = 0; nodeIndex < m_numNodes; ++nodeIndex)
+	{
+
+		unsigned int layer2from = 0;
+		unsigned int layer2to = m_networks.size();
+		double sumOutLinkWeightAllLayers = 0.0;
+		for (unsigned int i = layer2from; i < layer2to; ++i)
+			sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
+
+		for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1)
+		{
+
+			if(m_config.multiplexRelaxLimit >= 0){
+				layer2from = ((int)layer1-m_config.multiplexRelaxLimit) < 0 ? 0 : layer1-m_config.multiplexRelaxLimit;
+				layer2to = (layer1+m_config.multiplexRelaxLimit) > m_networks.size() ? m_networks.size() : layer1+m_config.multiplexRelaxLimit;
+				sumOutLinkWeightAllLayers = 0.0;
+				for (unsigned int i = layer2from; i < layer2to; ++i)
+					sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
+			}
+
+
+			StateNode stateSource(layer1, nodeIndex);
+
+			const LinkMap& layer1LinkMap = m_networks[layer1].linkMap();
+			LinkMap::const_iterator layer1OutLinksIt = layer1LinkMap.find(nodeIndex);
+
+			// Skip dangling nodes
+			if (layer1OutLinksIt == layer1LinkMap.end())
+				continue;
+
+			// Calculate Jensen-Shannon similarity between layer1 and all layer2s
+			int NinterconnectedLayers = layer2to-layer2from+1;
+			vector<double> jssimilarity(NinterconnectedLayers);
+			for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2){
+				const LinkMap& layer2LinkMap = m_networks[layer2].linkMap();
+				LinkMap::const_iterator layer2OutLinksIt = layer2LinkMap.find(nodeIndex);
+
+
+
+			}
+
+
+			double sumOutLinkWeightLayer1 = m_networks[layer1].sumLinkOutWeight()[nodeIndex];
+
+//			StateLinkMap::iterator stateSourceIt = m_stateLinks.lower_bound(stateSource);
+//			if (stateSourceIt == m_stateLinks.end() || stateSourceIt->first != stateSource)
+//				stateSourceIt = m_stateLinks.insert(stateSourceIt, std::make_pair(stateSource, std::map<StateNode, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
+
+			for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2)
+			{
+				// Distribute inter-link to the outgoing intra-links of the node in the inter-linked layer
+				bool isIntra = layer2 == layer1;
+				LinkMap::const_iterator layer2OutLinksIt = layer1OutLinksIt;
+				if (!isIntra)
+				{
+					const LinkMap& layer2LinkMap = m_networks[layer2].linkMap();
+					layer2OutLinksIt = layer2LinkMap.find(nodeIndex);
+					if (layer2OutLinksIt == layer2LinkMap.end())
+					{
+//						Log() << "\n  No mirror to node " << stateSource << " on layer " << layer2;
+						continue;
+					}
+				}
+
+				const std::map<unsigned int, double>& layer2OutLinks = layer2OutLinksIt->second;
+
+				for (std::map<unsigned int, double>::const_iterator outLinkIt(layer2OutLinks.begin()); outLinkIt != layer2OutLinks.end(); ++outLinkIt)
+				{
+					unsigned int n2 = outLinkIt->first;
+					double linkWeight = outLinkIt->second;
+
+					double intraLinkWeight = isIntra ? linkWeight : 0.0;
+
+					double aggregatedLinkWeight = jsrelaxRate * linkWeight / sumOutLinkWeightAllLayers  + (1.0 - jsrelaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
+
+					addStateLink(layer1, nodeIndex, layer2, n2, aggregatedLinkWeight, intraLinkWeight, 0.0);
+				}
+			}
+		}
+	}
+	Log() << "done!" << std::endl;
+}
+
 void MultiplexNetwork::addMemoryNetworkFromMultiplexLinks()
 {
 	if (m_multiplexLinks.empty())

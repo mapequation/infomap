@@ -165,6 +165,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& args)
 	api.addOptionArgument(conf.multiplexRelaxRate, "multiplex-aggregation-rate",
 			"The probability of following a link as if the layers where completely aggregated. Zero means completely disconnected layers.", "f", true);
 
+		api.addOptionArgument(conf.multiplexJSRelaxRate, "multiplex-js-aggregation-rate",
+			"The probability of following a link as if the layers where completely aggregated, weighting by the Jensen-Shannon divergence between the out-links. Zero means completely disconnected layers.", "f", true);
+
 	api.addOptionArgument(conf.multiplexRelaxLimit, "multiplex-aggregation-limit",
 			"The number of neighboring layers in each direction to relax to. If negative, relax to any layer.", "n", true);
 

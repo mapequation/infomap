@@ -79,6 +79,7 @@ protected:
 
 	void generateMemoryNetworkWithSimulatedInterLayerLinks();
 
+	void generateMemoryNetworkWithJensenShannonSimulatedInterLayerLinks();
 
 
 	// Helper methods
