@@ -428,13 +428,12 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 					sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
 			}
 
-			StateNode stateSource(layer1, nodeIndex);
-
 			const LinkMap& layer1LinkMap = m_networks[layer1].linkMap();
 			LinkMap::const_iterator layer1OutLinksIt = layer1LinkMap.find(nodeIndex);
 
 			double sumOutLinkWeightLayer1 = m_networks[layer1].sumLinkOutWeight()[nodeIndex];
 
+			// StateNode stateSource(layer1, nodeIndex);
 //			StateLinkMap::iterator stateSourceIt = m_stateLinks.lower_bound(stateSource);
 //			if (stateSourceIt == m_stateLinks.end() || stateSourceIt->first != stateSource)
 //				stateSourceIt = m_stateLinks.insert(stateSourceIt, std::make_pair(stateSource, std::map<StateNode, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
@@ -443,20 +442,14 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 			{
 				// Distribute inter-link to the outgoing intra-links of the node in the inter-linked layer
 				bool isIntra = layer2 == layer1;
-				LinkMap::const_iterator layer2OutLinksIt = layer1OutLinksIt;
-				if (!isIntra)
+				const LinkMap& layer2LinkMap = isIntra ? layer1LinkMap : m_networks[layer2].linkMap();
+				LinkMap::const_iterator layer2OutLinksIt = isIntra ? layer1OutLinksIt :
+					layer2LinkMap.find(nodeIndex);
+				
+				if (layer2OutLinksIt == layer2LinkMap.end())
 				{
-					const LinkMap& layer2LinkMap = m_networks[layer2].linkMap();
-					layer2OutLinksIt = layer2LinkMap.find(nodeIndex);
-					if (layer2OutLinksIt == layer2LinkMap.end())
-					{
 //						Log() << "\n  No mirror to node " << stateSource << " on layer " << layer2;
-						// No outgoing intra-links in second layer
-						continue;
-					}
-				}
-				else if (layer1OutLinksIt == layer1LinkMap.end()) {
-					// No outgoing intra-links in second (=first) layer
+					// No outgoing intra-links in second layer
 					continue;
 				}
 
@@ -469,7 +462,10 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 
 					double intraLinkWeight = isIntra ? linkWeight : 0.0;
 
-					double aggregatedLinkWeight = relaxRate * linkWeight / sumOutLinkWeightAllLayers  + (1.0 - relaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
+					double aggregatedLinkWeight = relaxRate * linkWeight / sumOutLinkWeightAllLayers;
+					if (isIntra) {
+						aggregatedLinkWeight += (1.0 - relaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
+					}
 
 					addStateLink(layer1, nodeIndex, layer2, n2, aggregatedLinkWeight, intraLinkWeight, 0.0);
 				}
