@@ -433,10 +433,6 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 			const LinkMap& layer1LinkMap = m_networks[layer1].linkMap();
 			LinkMap::const_iterator layer1OutLinksIt = layer1LinkMap.find(nodeIndex);
 
-			// Skip dangling nodes
-			if (layer1OutLinksIt == layer1LinkMap.end())
-				continue;
-
 			double sumOutLinkWeightLayer1 = m_networks[layer1].sumLinkOutWeight()[nodeIndex];
 
 //			StateLinkMap::iterator stateSourceIt = m_stateLinks.lower_bound(stateSource);
@@ -455,8 +451,13 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 					if (layer2OutLinksIt == layer2LinkMap.end())
 					{
 //						Log() << "\n  No mirror to node " << stateSource << " on layer " << layer2;
+						// No outgoing intra-links in second layer
 						continue;
 					}
+				}
+				else if (layer1OutLinksIt == layer1LinkMap.end()) {
+					// No outgoing intra-links in second (=first) layer
+					continue;
 				}
 
 				const std::map<unsigned int, double>& layer2OutLinks = layer2OutLinksIt->second;
