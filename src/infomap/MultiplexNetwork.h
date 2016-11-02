@@ -81,6 +81,8 @@ protected:
 
 	void generateMemoryNetworkWithJensenShannonSimulatedInterLayerLinks();
 
+	double calculateJensenShannonDivergence(LinkMap::const_iterator layer1OutLinksIt, double sumOutLinkWeightLayer1, LinkMap::const_iterator layer2OutLinksIt, double sumOutLinkWeightLayer2);
+
 
 	// Helper methods
 
