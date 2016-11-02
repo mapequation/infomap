@@ -1632,7 +1632,7 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 		// Ignore self-links
 //		if (links[i].source == links[i].target)
 //			continue;
-		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow);
+		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow * m_config.markovTime);
 	}
 
 //	std::vector<double> m1Flow(network.numNodes(), 0.0);

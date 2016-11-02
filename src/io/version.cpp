@@ -32,7 +32,7 @@ namespace infomap
 {
 #endif
 
-const char* INFOMAP_VERSION = "0.18.17";
+const char* INFOMAP_VERSION = "0.18.21";
 
 #ifdef NS_INFOMAP
 }

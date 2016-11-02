@@ -423,7 +423,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 
 		for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1)
 		{
-
+			// Limit possible jumps to close layers
 			if(m_config.multiplexRelaxLimit >= 0){
 				layer2from = ((int)layer1-m_config.multiplexRelaxLimit) < 0 ? 0 : layer1-m_config.multiplexRelaxLimit;
 				layer2to = (layer1+m_config.multiplexRelaxLimit) > m_networks.size() ? m_networks.size() : layer1+m_config.multiplexRelaxLimit;
@@ -442,36 +442,68 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 //			if (stateSourceIt == m_stateLinks.end() || stateSourceIt->first != stateSource)
 //				stateSourceIt = m_stateLinks.insert(stateSourceIt, std::make_pair(stateSource, std::map<StateNode, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
 
+			// Create inter-links to the intra-connected nodes in other layers
 			for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2)
 			{
-				// Distribute inter-link to the outgoing intra-links of the node in the inter-linked layer
 				bool isIntra = layer2 == layer1;
 				const LinkMap& layer2LinkMap = isIntra ? layer1LinkMap : m_networks[layer2].linkMap();
-				LinkMap::const_iterator layer2OutLinksIt = isIntra ? layer1OutLinksIt :
-					layer2LinkMap.find(nodeIndex);
-				
-				if (layer2OutLinksIt == layer2LinkMap.end())
-				{
-//						Log() << "\n  No mirror to node " << stateSource << " on layer " << layer2;
-					// No outgoing intra-links in second layer
-					continue;
+
+				if (m_config.isUndirected()) {
+					// Create inter-links to the neighbouring nodes in the target layer
+					for (LinkMap::const_iterator targetLayerOutLinkIt(layer2LinkMap.begin()); targetLayerOutLinkIt != layer2LinkMap.end(); ++targetLayerOutLinkIt) {
+						unsigned int targetLayerSourceNodeIndex = targetLayerOutLinkIt->first;
+						const std::map<unsigned int, double>& targetLayerOutLinks = targetLayerOutLinkIt->second;
+						for (std::map<unsigned int, double>::const_iterator interIntraIt(targetLayerOutLinks.begin()); interIntraIt != targetLayerOutLinks.end(); ++interIntraIt)
+						{
+							unsigned int targetLayerTargetNodeIndex = interIntraIt->first;
+							double targetLayerLinkWeight = interIntraIt->second;
+
+							double intraLinkWeight = isIntra ? targetLayerLinkWeight : 0.0;
+
+							double aggregatedLinkWeight = relaxRate * targetLayerLinkWeight / sumOutLinkWeightAllLayers;
+							if (isIntra) {
+								aggregatedLinkWeight += (1.0 - relaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
+							}
+
+							if (targetLayerSourceNodeIndex == nodeIndex) {
+								// Add to outgoing node (same as directed)
+								addStateLink(layer1, nodeIndex, layer2, targetLayerTargetNodeIndex, aggregatedLinkWeight, intraLinkWeight, 0.0);
+							}
+							else if (targetLayerTargetNodeIndex == nodeIndex) {
+								// Add to incoming node
+								addStateLink(layer1, nodeIndex, layer2, targetLayerSourceNodeIndex, aggregatedLinkWeight, intraLinkWeight, 0.0);
+							}
+						}
+					}
 				}
-
-				const std::map<unsigned int, double>& layer2OutLinks = layer2OutLinksIt->second;
-
-				for (std::map<unsigned int, double>::const_iterator outLinkIt(layer2OutLinks.begin()); outLinkIt != layer2OutLinks.end(); ++outLinkIt)
-				{
-					unsigned int n2 = outLinkIt->first;
-					double linkWeight = outLinkIt->second;
-
-					double intraLinkWeight = isIntra ? linkWeight : 0.0;
-
-					double aggregatedLinkWeight = relaxRate * linkWeight / sumOutLinkWeightAllLayers;
-					if (isIntra) {
-						aggregatedLinkWeight += (1.0 - relaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
+				else {
+					// Directed links
+					LinkMap::const_iterator layer2OutLinksIt = isIntra ? layer1OutLinksIt :
+						layer2LinkMap.find(nodeIndex);
+					
+					if (layer2OutLinksIt == layer2LinkMap.end())
+					{
+	//						Log() << "\n  No mirror to node " << stateSource << " on layer " << layer2;
+						// No outgoing intra-links in second layer
+						continue;
 					}
 
-					addStateLink(layer1, nodeIndex, layer2, n2, aggregatedLinkWeight, intraLinkWeight, 0.0);
+					const std::map<unsigned int, double>& layer2OutLinks = layer2OutLinksIt->second;
+
+					for (std::map<unsigned int, double>::const_iterator outLinkIt(layer2OutLinks.begin()); outLinkIt != layer2OutLinks.end(); ++outLinkIt)
+					{
+						unsigned int n2 = outLinkIt->first;
+						double linkWeight = outLinkIt->second;
+
+						double intraLinkWeight = isIntra ? linkWeight : 0.0;
+
+						double aggregatedLinkWeight = relaxRate * linkWeight / sumOutLinkWeightAllLayers;
+						if (isIntra) {
+							aggregatedLinkWeight += (1.0 - relaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
+						}
+
+						addStateLink(layer1, nodeIndex, layer2, n2, aggregatedLinkWeight, intraLinkWeight, 0.0);
+					}
 				}
 			}
 		}
@@ -507,14 +539,8 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 					sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
 			}
 
-
-
 			const LinkMap& layer1LinkMap = m_networks[layer1].linkMap();
 			LinkMap::const_iterator layer1OutLinksIt = layer1LinkMap.find(nodeIndex);
-
-			// Skip dangling nodes
-			if (layer1OutLinksIt == layer1LinkMap.end())
-				continue;
 
 			double sumOutLinkWeightLayer1 = m_networks[layer1].sumLinkOutWeight()[nodeIndex];
 
@@ -541,34 +567,69 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 			}
 
 			// Add intra-layer and simulated inter-layer links
+
+			// Create inter-links to the intra-connected nodes in other layers
 			for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2)
 			{
-				// Distribute inter-link to the outgoing intra-links of the node in the inter-linked layer
 				bool isIntra = layer2 == layer1;
-				LinkMap::const_iterator layer2OutLinksIt = layer1OutLinksIt;
-				if (!isIntra)
-				{
-					const LinkMap& layer2LinkMap = m_networks[layer2].linkMap();
-					layer2OutLinksIt = layer2LinkMap.find(nodeIndex);
-					if (layer2OutLinksIt == layer2LinkMap.end())
-					{
-//						Log() << "\n  No mirror to node " << stateSource << " on layer " << layer2;
-						continue;
+				const LinkMap& layer2LinkMap = isIntra ? layer1LinkMap : m_networks[layer2].linkMap();
+
+				if (m_config.isUndirected()) {
+					// Create inter-links to the neighbouring nodes in the target layer
+					for (LinkMap::const_iterator targetLayerOutLinkIt(layer2LinkMap.begin()); targetLayerOutLinkIt != layer2LinkMap.end(); ++targetLayerOutLinkIt) {
+						unsigned int targetLayerSourceNodeIndex = targetLayerOutLinkIt->first;
+						const std::map<unsigned int, double>& targetLayerOutLinks = targetLayerOutLinkIt->second;
+						for (std::map<unsigned int, double>::const_iterator interIntraIt(targetLayerOutLinks.begin()); interIntraIt != targetLayerOutLinks.end(); ++interIntraIt)
+						{
+							unsigned int targetLayerTargetNodeIndex = interIntraIt->first;
+							double targetLayerLinkWeight = interIntraIt->second;
+
+							double intraLinkWeight = isIntra ? targetLayerLinkWeight : 0.0;
+
+							double aggregatedLinkWeight = relaxRate * targetLayerLinkWeight / sumOutLinkWeightAllLayers;
+							if (isIntra) {
+								aggregatedLinkWeight += (1.0 - relaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
+							}
+
+							if (targetLayerSourceNodeIndex == nodeIndex) {
+								// Add to outgoing node (same as directed)
+								addStateLink(layer1, nodeIndex, layer2, targetLayerTargetNodeIndex, aggregatedLinkWeight, intraLinkWeight, 0.0);
+							}
+							else if (targetLayerTargetNodeIndex == nodeIndex) {
+								// Add to incoming node
+								addStateLink(layer1, nodeIndex, layer2, targetLayerSourceNodeIndex, aggregatedLinkWeight, intraLinkWeight, 0.0);
+							}
+						}
 					}
 				}
+				else {
+					// Directed links
+					LinkMap::const_iterator layer2OutLinksIt = isIntra ? layer1OutLinksIt :
+						layer2LinkMap.find(nodeIndex);
+					
+					if (layer2OutLinksIt == layer2LinkMap.end())
+					{
+	//						Log() << "\n  No mirror to node " << stateSource << " on layer " << layer2;
+						// No outgoing intra-links in second layer
+						continue;
+					}
 
-				const std::map<unsigned int, double>& layer2OutLinks = layer2OutLinksIt->second;
+					const std::map<unsigned int, double>& layer2OutLinks = layer2OutLinksIt->second;
 
-				for (std::map<unsigned int, double>::const_iterator outLinkIt(layer2OutLinks.begin()); outLinkIt != layer2OutLinks.end(); ++outLinkIt)
-				{
-					unsigned int n2 = outLinkIt->first;
-					double linkWeight = outLinkIt->second;
+					for (std::map<unsigned int, double>::const_iterator outLinkIt(layer2OutLinks.begin()); outLinkIt != layer2OutLinks.end(); ++outLinkIt)
+					{
+						unsigned int n2 = outLinkIt->first;
+						double linkWeight = outLinkIt->second;
 
-					double intraLinkWeight = isIntra ? linkWeight : 0.0;
+						double intraLinkWeight = isIntra ? linkWeight : 0.0;
 
-					double aggregatedLinkWeight = jsrelaxRate * linkWeight / jsRelaxWeightsLayer1toLayer2[layer2]  + (1.0 - jsrelaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
+						double aggregatedLinkWeight = relaxRate * linkWeight / sumOutLinkWeightAllLayers;
+						if (isIntra) {
+							aggregatedLinkWeight += (1.0 - relaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
+						}
 
-					addStateLink(layer1, nodeIndex, layer2, n2, aggregatedLinkWeight, intraLinkWeight, 0.0);
+						addStateLink(layer1, nodeIndex, layer2, n2, aggregatedLinkWeight, intraLinkWeight, 0.0);
+					}
 				}
 			}
 		}
