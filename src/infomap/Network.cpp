@@ -853,6 +853,35 @@ void Network::initNodeNames()
 	}
 }
 
+void Network::generateOppositeLinkMap(LinkMap& oppositeLinks)
+{
+
+	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
+	{
+		unsigned int sourceIndex = linkIt->first;
+		const std::map<unsigned int, double>& outLinks = linkIt->second;
+		for (std::map<unsigned int, double>::const_iterator outLinkIt(outLinks.begin()); outLinkIt != outLinks.end(); ++outLinkIt)
+		{
+			unsigned int targetIndex = outLinkIt->first;
+			double weight = outLinkIt->second;
+			// Insert opposite link, aggregate link weights if they are definied more than once
+			LinkMap::iterator firstIt = oppositeLinks.lower_bound(targetIndex);
+			if (firstIt != oppositeLinks.end() && firstIt->first == targetIndex) // First linkEnd already exists, check second linkEnd
+			{
+				std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(sourceIndex, weight));
+				if (!ret2.second)
+				{
+					ret2.first->second += weight;
+				}
+			}
+			else
+			{
+				oppositeLinks.insert(firstIt, std::make_pair(targetIndex, std::map<unsigned int, double>()))->second.insert(std::make_pair(sourceIndex, weight));
+			}
+		}
+	}
+}
+
 void Network::printParsingResult(bool onlySummary)
 {
 	bool dataModified = m_numNodesFound != m_numNodes || m_numLinksFound != m_numLinks;

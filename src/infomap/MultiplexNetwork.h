@@ -78,11 +78,17 @@ protected:
 	void generateMemoryNetworkWithInterLayerLinksFromData();
 
 	void generateMemoryNetworkWithSimulatedInterLayerLinks();
-
+    
 	void generateMemoryNetworkWithJensenShannonSimulatedInterLayerLinks();
 
 	double calculateJensenShannonDivergence(LinkMap::const_iterator layer1OutLinksIt, double sumOutLinkWeightLayer1, LinkMap::const_iterator layer2OutLinksIt, double sumOutLinkWeightLayer2);
 
+	bool createIntraLinksToNeighbouringNodesInTargetLayer(StateLinkMap::iterator stateSourceIt,
+	unsigned int nodeIndex, unsigned int targetLayer, const LinkMap& targetLayerLinks,
+	double linkWeightNormalizationFactor, double stateNodeWeightNormalizationFactor);
+	bool createIntraLinksToNeighbouringNodesInTargetLayer(unsigned int sourceLayer,
+	unsigned int nodeIndex, unsigned int targetLayer, const LinkMap& targetLayerLinks,
+	double linkWeightNormalizationFactor, double stateNodeWeightNormalizationFactor);
 
 	// Helper methods
 

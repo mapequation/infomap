@@ -191,6 +191,8 @@ public:
 	void initNodeNames();
 	void swapNodeNames(std::vector<std::string>& target) { target.swap(m_nodeNames); }
 
+	void generateOppositeLinkMap(LinkMap& oppositeLinks);
+
 	virtual void disposeLinks() { m_links.clear(); }
 
 	const Config& config() { return m_config; }
