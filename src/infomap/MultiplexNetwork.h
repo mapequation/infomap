@@ -79,7 +79,12 @@ protected:
 
 	void generateMemoryNetworkWithSimulatedInterLayerLinks();
 
-
+	bool createIntraLinksToNeighbouringNodesInTargetLayer(StateLinkMap::iterator stateSourceIt,
+	unsigned int nodeIndex, unsigned int targetLayer, const LinkMap& targetLayerLinks,
+	double linkWeightNormalizationFactor, double stateNodeWeightNormalizationFactor);
+	bool createIntraLinksToNeighbouringNodesInTargetLayer(unsigned int sourceLayer,
+	unsigned int nodeIndex, unsigned int targetLayer, const LinkMap& targetLayerLinks,
+	double linkWeightNormalizationFactor, double stateNodeWeightNormalizationFactor);
 
 	// Helper methods
 
