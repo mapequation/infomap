@@ -586,9 +586,9 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 
 							double intraLinkWeight = isIntra ? targetLayerLinkWeight : 0.0;
 
-							double aggregatedLinkWeight = relaxRate * targetLayerLinkWeight / sumOutLinkWeightAllLayers;
+							double aggregatedLinkWeight = jsrelaxRate * targetLayerLinkWeight / sumOutLinkWeightAllLayers;
 							if (isIntra) {
-								aggregatedLinkWeight += (1.0 - relaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
+								aggregatedLinkWeight += (1.0 - jsrelaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
 							}
 
 							if (targetLayerSourceNodeIndex == nodeIndex) {
@@ -623,9 +623,9 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 
 						double intraLinkWeight = isIntra ? linkWeight : 0.0;
 
-						double aggregatedLinkWeight = relaxRate * linkWeight / sumOutLinkWeightAllLayers;
+						double aggregatedLinkWeight = jsrelaxRate * linkWeight / sumOutLinkWeightAllLayers;
 						if (isIntra) {
-							aggregatedLinkWeight += (1.0 - relaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
+							aggregatedLinkWeight += (1.0 - jsrelaxRate) * intraLinkWeight / sumOutLinkWeightLayer1;
 						}
 
 						addStateLink(layer1, nodeIndex, layer2, n2, aggregatedLinkWeight, intraLinkWeight, 0.0);
