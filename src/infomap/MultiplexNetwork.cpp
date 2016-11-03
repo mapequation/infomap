@@ -536,9 +536,11 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 			double jsTotWeight = 0.0;
 
 			if(m_config.isUndirected()){
-
+ 				
 				// Create complete LinkMap for undirected links
-				std::map<unsigned int, double> layer1UndirLinks = layer1OutLinksIt->second;
+				std::map<unsigned int, double> layer1UndirLinks;
+				if (layer1OutLinksIt != layer1LinkMap.end())
+					layer1UndirLinks = layer1OutLinksIt->second;
 				const LinkMap& layer1OppositeLinkMap = oppositeLinkMaps[layer1];
 				LinkMap::const_iterator layer1OppositeOutLinksIt = layer1OppositeLinkMap.find(nodeIndex);
 				if(layer1OppositeOutLinksIt != layer1OppositeLinkMap.end())
@@ -550,11 +552,11 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 				for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2){
 					const LinkMap& layer2LinkMap = m_networks[layer2].linkMap();
 					LinkMap::const_iterator layer2OutLinksIt = layer2LinkMap.find(nodeIndex);
-					
-					double sumOutLinkWeightLayer2 = m_networks[layer2].sumLinkOutWeight()[nodeIndex];
-	
+						
 					// Create complete LinkMap for undirected links
-					std::map<unsigned int, double> layer2UndirLinks = layer2OutLinksIt->second;
+					std::map<unsigned int, double> layer2UndirLinks;
+					if (layer2OutLinksIt != layer2LinkMap.end())
+						layer2UndirLinks = layer2OutLinksIt->second;
 					const LinkMap& layer2OppositeLinkMap = oppositeLinkMaps[layer2];
 					LinkMap::const_iterator layer2OppositeOutLinksIt = layer2OppositeLinkMap.find(nodeIndex);
 					if(layer2OppositeOutLinksIt != layer2OppositeLinkMap.end())
@@ -563,13 +565,13 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 					if (layer2UndirLinks.empty()) // Will not link to dangling node (similarity 0)
 						continue;
 
-					Log() << ".";
+					double sumOutLinkWeightLayer2 = m_networks[layer2].sumLinkOutWeight()[nodeIndex];
 
-					double jsSim = 1.0;// - calculateJensenShannonDivergence(layer1UndirLinks,sumOutLinkWeightLayer1,layer2UndirLinks,sumOutLinkWeightLayer2);
+					// double jsSim = 1.0 - calculateJensenShannonDivergence(layer1OutLinksIt->second,sumOutLinkWeightLayer1,layer2OutLinksIt->second,sumOutLinkWeightLayer2);
+
+					double jsSim = 1.0 - calculateJensenShannonDivergence(layer1UndirLinks,sumOutLinkWeightLayer1,layer2UndirLinks,sumOutLinkWeightLayer2);
 					
-					Log() << ".";
-
-					Log() << "\n  " << nodeIndex << " " << layer1 << " " << layer2 << " " << jsSim;
+					// Log() << "\n  " << nodeIndex << " " << layer1 << " " << layer2 << " " << jsSim;
 	
 					double jsWeight = sumOutLinkWeightLayer2*jsSim;
 					jsTotWeight += jsWeight;
