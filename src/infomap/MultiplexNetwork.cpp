@@ -250,10 +250,11 @@ bool MultiplexNetwork::createIntraLinksToNeighbouringNodesInTargetLayer(StateLin
 			double interIntraLinkWeight = linkWeightNormalizationFactor * targetLayerLinkWeight;
 			double stateNodeWeight = stateNodeWeightNormalizationFactor * targetLayerLinkWeight;
 
-			// Add weight also as teleportation weight to first state node
-			addStateLink(stateSourceIt, targetLayer, targetLayerTargetNodeIndex, interIntraLinkWeight, stateNodeWeight, 0.0);
-
-			linkAdded = true;
+			if(interIntraLinkWeight > 1e-10){
+				// Add weight also as teleportation weight to first state node
+				addStateLink(stateSourceIt, targetLayer, targetLayerTargetNodeIndex, interIntraLinkWeight, stateNodeWeight, 0.0);
+				linkAdded = true;
+			}
 		}
 	}
 	return linkAdded;
@@ -276,9 +277,11 @@ bool MultiplexNetwork::createIntraLinksToNeighbouringNodesInTargetLayer(unsigned
 			double interIntraLinkWeight = linkWeightNormalizationFactor * targetLayerLinkWeight;
 			double stateNodeWeight = stateNodeWeightNormalizationFactor * targetLayerLinkWeight;
 
-			// Add weight also as teleportation weight to first state node
-			addStateLink(sourceLayer, nodeIndex, targetLayer, targetLayerTargetNodeIndex, interIntraLinkWeight, stateNodeWeight, 0.0);
-			linkAdded = true;
+			if(interIntraLinkWeight > 1e-10){
+				// Add weight also as teleportation weight to first state node
+				addStateLink(sourceLayer, nodeIndex, targetLayer, targetLayerTargetNodeIndex, interIntraLinkWeight, stateNodeWeight, 0.0);
+				linkAdded = true;
+			}
 		}
 	}
 	return linkAdded;
