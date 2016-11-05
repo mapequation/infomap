@@ -81,7 +81,7 @@ protected:
     
 	void generateMemoryNetworkWithJensenShannonSimulatedInterLayerLinks();
 
-	double calculateJensenShannonDivergence(const std::map<unsigned int, double> &layer1OutLinks, double sumOutLinkWeightLayer1, const std::map<unsigned int, double> &layer2OutLinks, double sumOutLinkWeightLayer2);
+	double calculateJensenShannonDivergence(bool &intersect, const std::map<unsigned int, double> &layer1OutLinks, double sumOutLinkWeightLayer1, const std::map<unsigned int, double> &layer2OutLinks, double sumOutLinkWeightLayer2);
 
 	bool createIntraLinksToNeighbouringNodesInTargetLayer(StateLinkMap::iterator stateSourceIt,
 	unsigned int nodeIndex, unsigned int targetLayer, const LinkMap& targetLayerLinks,
