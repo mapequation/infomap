@@ -43,6 +43,7 @@ class MultiplexNetwork : public MemNetwork
 {
 public:
 	typedef std::map<unsigned int, double> InterLinkMap;
+	typedef std::map<unsigned int, double> IntraLinkMap;
 	typedef std::map<StateNode, std::map<StateNode, double> > MultiplexLinkMap;
 
 	MultiplexNetwork() :
@@ -81,7 +82,12 @@ protected:
     
 	void generateMemoryNetworkWithJensenShannonSimulatedInterLayerLinks();
 
-	double calculateJensenShannonDivergence(bool &intersect, const std::map<unsigned int, double> &layer1OutLinks, double sumOutLinkWeightLayer1, const std::map<unsigned int, double> &layer2OutLinks, double sumOutLinkWeightLayer2);
+	double calculateJensenShannonDivergence(bool &intersect, const IntraLinkMap &layer1OutLinks, double sumOutLinkWeightLayer1, const IntraLinkMap &layer2OutLinks, double sumOutLinkWeightLayer2);
+	double calculateJensenShannonDivergence(bool &intersect, const IntraLinkMap &layer1OutLinks, const IntraLinkMap &layer1OppositeOutLinks, double sumOutLinkWeightLayer1, const IntraLinkMap &layer2OutLinks, const IntraLinkMap &layer2OppositeOutLinks, double sumOutLinkWeightLayer2);
+	double calculateJensenShannonDivergence(bool &intersect, std::vector<const IntraLinkMap *> &layer1LinksVec, double sumOutLinkWeightLayer1, std::vector<const IntraLinkMap *> &layer2LinksVec, double sumOutLinkWeightLayer2);
+	IntraLinkMap::const_iterator *getUndirLinkItPtr(std::vector<pair<IntraLinkMap::const_iterator,IntraLinkMap::const_iterator> > &outLinkItVec);
+	bool undirLinkRemains(std::vector<pair<IntraLinkMap::const_iterator,IntraLinkMap::const_iterator> > &outLinkItVec);
+
 
 	bool createIntraLinksToNeighbouringNodesInTargetLayer(StateLinkMap::iterator stateSourceIt,
 	unsigned int nodeIndex, unsigned int targetLayer, const LinkMap& targetLayerLinks,
