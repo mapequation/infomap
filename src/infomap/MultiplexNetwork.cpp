@@ -566,11 +566,11 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 					bool intersect;
 					double div = calculateJensenShannonDivergence(intersect,layer1LinksVec,sumOutLinkWeightLayer1,layer2LinksVec,sumOutLinkWeightLayer2);
 					if(intersect){
-						double jsWeight = sumOutLinkWeightLayer2*(1.0-div);
+						double jsWeight = 1.0 - div;
 						jsTotWeight[layer1] += jsWeight;
 						jsRelaxWeights[layer1][layer2] = jsWeight;
 						if(layer1 != layer2){
-							jsWeight = sumOutLinkWeightLayer1*(1.0-div);
+							jsWeight = 1.0 - div;
 							jsTotWeight[layer2] += jsWeight;
 							jsRelaxWeights[layer2][layer1] = jsWeight;
 						}
@@ -595,11 +595,11 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 					bool intersect;
 					double div = calculateJensenShannonDivergence(intersect,layer1OutLinksIt->second,sumOutLinkWeightLayer1,layer2OutLinksIt->second,sumOutLinkWeightLayer2);
 					if(intersect){
-						double jsWeight = sumOutLinkWeightLayer2*(1.0-div);
+						double jsWeight = 1.0 - div;
 						jsTotWeight[layer1] += jsWeight;
 						jsRelaxWeights[layer1][layer2] = jsWeight;
 						if(layer1 != layer2){
-							jsWeight = sumOutLinkWeightLayer1*(1.0-div);
+							jsWeight = 1.0 - div;
 							jsTotWeight[layer2] += jsWeight;
 							jsRelaxWeights[layer2][layer1] = jsWeight;
 						}
@@ -621,12 +621,12 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 
 			double sumOutLinkWeightLayer1 = m_networks[layer1].sumLinkOutWeight()[nodeIndex];
 
+			std::map<unsigned int,std::map<unsigned int,double> >::iterator jsRelaxWeightsLayer1It = jsRelaxWeights.find(layer1);
+			std::map<unsigned int,double>::iterator jsTotWeightIt = jsTotWeight.find(layer1);
+
 			// Create inter-links to the intra-connected nodes in other layers
 			for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2)
 			{
-
-				std::map<unsigned int,std::map<unsigned int,double> >::iterator jsRelaxWeightsLayer1It = jsRelaxWeights.find(layer1);
-				std::map<unsigned int,double>::iterator jsTotWeightIt = jsTotWeight.find(layer1);
 				if(jsRelaxWeightsLayer1It != jsRelaxWeights.end()){
 					std::map<unsigned int,double>::iterator jsRelaxWeightsIt = jsRelaxWeightsLayer1It->second.find(layer2);
 					if(jsRelaxWeightsIt != jsRelaxWeightsLayer1It->second.end()){
@@ -634,9 +634,11 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 						bool isIntra = layer2 == layer1;
 		
 						// Create inter-links to the outgoing nodes in the target layer
-						double linkWeightNormalizationFactor = jsrelaxRate*jsRelaxWeightsIt->second / jsTotWeightIt->second;
+						double linkWeightNormalizationFactor;
 						if (isIntra) {
-							linkWeightNormalizationFactor += (1.0 - jsrelaxRate) / sumOutLinkWeightLayer1;
+							linkWeightNormalizationFactor = jsRelaxWeightsIt->second * (jsrelaxRate / (jsTotWeightIt->second + sumOutLinkWeightLayer1) + (1.0 - jsrelaxRate) / sumOutLinkWeightLayer1);
+						} else {
+							linkWeightNormalizationFactor = jsRelaxWeightsIt->second * (jsrelaxRate / (jsTotWeightIt->second + sumOutLinkWeightLayer1));
 						}
 						double stateNodeWeightNormalizationFactor = 1.0;
 						
