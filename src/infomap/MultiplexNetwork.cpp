@@ -566,13 +566,12 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 					bool intersect;
 					double div = calculateJensenShannonDivergence(intersect,layer1LinksVec,sumOutLinkWeightLayer1,layer2LinksVec,sumOutLinkWeightLayer2);
 					if(intersect){
-						double jsWeight = 1.0 - div;
-						jsTotWeight[layer1] += jsWeight;
+						double jsWeight = 1.0 - div;						
 						jsRelaxWeights[layer1][layer2] = jsWeight;
+						jsTotWeight[layer1] += jsWeight*sumOutLinkWeightLayer2;
 						if(layer1 != layer2){
-							jsWeight = 1.0 - div;
-							jsTotWeight[layer2] += jsWeight;
 							jsRelaxWeights[layer2][layer1] = jsWeight;
+							jsTotWeight[layer2] += jsWeight*sumOutLinkWeightLayer1;
 						}
 					}
 				}
@@ -599,7 +598,6 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 						jsTotWeight[layer1] += jsWeight;
 						jsRelaxWeights[layer1][layer2] = jsWeight;
 						if(layer1 != layer2){
-							jsWeight = 1.0 - div;
 							jsTotWeight[layer2] += jsWeight;
 							jsRelaxWeights[layer2][layer1] = jsWeight;
 						}
@@ -634,12 +632,11 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 						bool isIntra = layer2 == layer1;
 		
 						// Create inter-links to the outgoing nodes in the target layer
-						double linkWeightNormalizationFactor;
+						double linkWeightNormalizationFactor = jsrelaxRate*jsRelaxWeightsIt->second / jsTotWeightIt->second;
 						if (isIntra) {
-							linkWeightNormalizationFactor = jsRelaxWeightsIt->second * (jsrelaxRate / (jsTotWeightIt->second + sumOutLinkWeightLayer1) + (1.0 - jsrelaxRate) / sumOutLinkWeightLayer1);
-						} else {
-							linkWeightNormalizationFactor = jsRelaxWeightsIt->second * (jsrelaxRate / (jsTotWeightIt->second + sumOutLinkWeightLayer1));
+							linkWeightNormalizationFactor += (1.0 - jsrelaxRate) / sumOutLinkWeightLayer1);
 						}
+						
 						double stateNodeWeightNormalizationFactor = 1.0;
 						
 						createIntraLinksToNeighbouringNodesInTargetLayer(layer1, nodeIndex, layer2, m_networks[layer2].linkMap(), linkWeightNormalizationFactor, stateNodeWeightNormalizationFactor);
