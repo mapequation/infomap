@@ -74,6 +74,7 @@ struct Config
 		preferredNumberOfModules(0),
 		multiplexRelaxRate(-1),
 		multiplexJSRelaxRate(-1),
+		multiplexJSRelaxLimit(-1),
 		multiplexRelaxLimit(-1),
 		seedToRandomNumberGenerator(123),
 		numTrials(1),
@@ -150,6 +151,7 @@ struct Config
 		preferredNumberOfModules(other.preferredNumberOfModules),
 		multiplexRelaxRate(other.multiplexRelaxRate),
 		multiplexJSRelaxRate(other.multiplexJSRelaxRate),
+		multiplexJSRelaxLimit(other.multiplexJSRelaxLimit),
 		multiplexRelaxLimit(other.multiplexRelaxLimit),
 		seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
 		numTrials(other.numTrials),
@@ -228,6 +230,7 @@ struct Config
 	 	preferredNumberOfModules = other.preferredNumberOfModules;
 		multiplexRelaxRate = other.multiplexRelaxRate;
 		multiplexJSRelaxRate = other.multiplexJSRelaxRate;
+		multiplexJSRelaxLimit = other.multiplexJSRelaxLimit;
 		multiplexRelaxLimit = other.multiplexRelaxLimit;
 		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
 		numTrials = other.numTrials;
@@ -445,6 +448,7 @@ struct Config
 	unsigned int preferredNumberOfModules;
 	double multiplexRelaxRate;
 	double multiplexJSRelaxRate;
+	double multiplexJSRelaxLimit;
 	int multiplexRelaxLimit;
 	unsigned long seedToRandomNumberGenerator;
 

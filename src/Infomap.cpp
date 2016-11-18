@@ -205,6 +205,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.multiplexJSRelaxRate, "multiplex-js-relax-rate",
 			"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence. If negative, the inter-links have to be provided.", "f", true);
 
+	api.addOptionArgument(conf.multiplexJSRelaxLimit, "multiplex-js-relax-limit",
+			"The minimum out-link similarity measured by the Jensen-Shannon divergence to relax to other layer. From 0 to 1. No limit if negative.", "f", true);
+
 	api.addOptionArgument(conf.multiplexRelaxLimit, "multiplex-relax-limit",
 			"The number of neighboring layers in each direction to relax to. If negative, relax to any layer.", "n", true);
 

@@ -565,8 +565,8 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 
 					bool intersect;
 					double div = calculateJensenShannonDivergence(intersect,layer1LinksVec,sumOutLinkWeightLayer1,layer2LinksVec,sumOutLinkWeightLayer2);
-					if(intersect){
-						double jsWeight = 1.0 - div;						
+					double jsWeight = 1.0 - div;
+					if(intersect && (jsWeight >= m_config.multiplexRelaxLimit)){						
 						jsRelaxWeights[layer1][layer2] = jsWeight;
 						jsTotWeight[layer1] += jsWeight*sumOutLinkWeightLayer2;
 						if(layer1 != layer2){
@@ -593,8 +593,8 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 	
 					bool intersect;
 					double div = calculateJensenShannonDivergence(intersect,layer1OutLinksIt->second,sumOutLinkWeightLayer1,layer2OutLinksIt->second,sumOutLinkWeightLayer2);
-					if(intersect){
-						double jsWeight = 1.0 - div;
+					double jsWeight = 1.0 - div;
+					if(intersect && (jsWeight >= m_config.multiplexRelaxLimit)){	
 						jsTotWeight[layer1] += jsWeight;
 						jsRelaxWeights[layer1][layer2] = jsWeight;
 						if(layer1 != layer2){
@@ -633,8 +633,8 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 		
 						// Create inter-links to the outgoing nodes in the target layer
 						double linkWeightNormalizationFactor = jsrelaxRate*jsRelaxWeightsIt->second / jsTotWeightIt->second;
-						if (isIntra) {
-							linkWeightNormalizationFactor += (1.0 - jsrelaxRate) / sumOutLinkWeightLayer1);
+						if (isIntra){
+							linkWeightNormalizationFactor += (1.0 - jsrelaxRate) / sumOutLinkWeightLayer1;
 						}
 						
 						double stateNodeWeightNormalizationFactor = 1.0;
