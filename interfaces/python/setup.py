@@ -5,6 +5,8 @@ setup.py file for compiling Infomap module
 """
 
 from distutils.core import setup, Extension
+from distutils.file_util import copy_file
+import sysconfig
 import fnmatch
 import os
 import re
@@ -36,3 +38,7 @@ setup (name = 'infomap',
     ext_modules = [infomap_module],
     py_modules = ["infomap"],
     )
+
+# Clean ABI Version Tagged .so Files
+libFilename = '_infomap{}'.format(sysconfig.get_config_var('EXT_SUFFIX'))
+copy_file(libFilename, '_infomap.so')
