@@ -632,9 +632,11 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 						bool isIntra = layer2 == layer1;
 		
 						// Create inter-links to the outgoing nodes in the target layer
-						double linkWeightNormalizationFactor = jsrelaxRate*jsRelaxWeightsIt->second / jsTotWeightIt->second;
+						double linkWeightNormalizationFactor;
 						if (isIntra){
-							linkWeightNormalizationFactor += (1.0 - jsrelaxRate) / sumOutLinkWeightLayer1;
+							linkWeightNormalizationFactor = 1;
+						} else {
+							linkWeightNormalizationFactor = jsRelaxWeightsIt->second * jsrelaxRate / (1.0 - jsrelaxRate) * sumOutLinkWeightLayer1 / jsTotWeightIt->second;
 						}
 						
 						double stateNodeWeightNormalizationFactor = 1.0;
