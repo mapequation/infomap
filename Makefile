@@ -142,7 +142,7 @@ python: py-build Makefile
 
 python3: py3-build Makefile
 	@cp -a interfaces/python/setup.py $(PY3_BUILD_DIR)/
-	cd $(PY3_BUILD_DIR) && python setup.py build_ext --inplace
+	cd $(PY3_BUILD_DIR) && python3 setup.py build_ext --inplace
 	@true
 
 # Generate wrapper files from source and interface files
