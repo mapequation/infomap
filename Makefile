@@ -137,12 +137,12 @@ PY3_SOURCES := $(SOURCES:src/%.cpp=$(PY3_BUILD_DIR)/src/%.cpp)
 # Use python distutils to compile the module
 python: py-build Makefile
 	@cp -a interfaces/python/setup.py $(PY_BUILD_DIR)/
-	cd $(PY_BUILD_DIR) && python setup.py build_ext --inplace
+	cd $(PY_BUILD_DIR) && python setup.py install
 	@true
 
 python3: py3-build Makefile
 	@cp -a interfaces/python/setup.py $(PY3_BUILD_DIR)/
-	cd $(PY3_BUILD_DIR) && python3 setup.py build_ext --inplace
+	cd $(PY3_BUILD_DIR) && python3 setup.py install
 	@true
 
 # Generate wrapper files from source and interface files
