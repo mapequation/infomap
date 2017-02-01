@@ -212,9 +212,9 @@ unsigned int MultiplexNetwork::adjustForDifferentNumberOfNodes()
 		}
 	}
 
-	if (differentNodeCount)
+	if (differentNodeCount && m_config.multiplexAddMissingNodes)
 	{
-		Log() << "Adjusting for equal number of nodes... " << std::flush;
+		Log() << "Adjusting to same set of physical nodes in each layer... " << std::flush;
 		unsigned int numAdjusted = 0;
 		for (unsigned int layerIndex = 0; layerIndex < m_networks.size(); ++layerIndex)
 		{

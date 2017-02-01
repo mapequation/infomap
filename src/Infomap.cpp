@@ -84,6 +84,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 //	api.addOptionArgument(conf.bipartite, "bipartite",
 //			"Let the source id of a link belong to a different kind of nodes and ignore that set in the output.");
 
+	api.addOptionArgument(conf.multiplexAddMissingNodes, "multiplex-add-missing-nodes",
+			"Adjust multiplex network so that the same set of physical nodes exist in all layers.", true);
+
 	api.addOptionArgument(conf.skipAdjustBipartiteFlow, "skip-adjust-bipartite-flow",
 			"Skip distributing all flow from the bipartite nodes (first column) to the ordinary nodes (second column).", true);
 

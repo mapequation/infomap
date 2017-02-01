@@ -50,6 +50,7 @@ struct Config
 	 	withMemory(false),
 		bipartite(false),
 		skipAdjustBipartiteFlow(false),
+		multiplexAddMissingNodes(false),
 		hardPartitions(false),
 	 	nonBacktracking(false),
 	 	parseWithoutIOStreams(false),
@@ -127,6 +128,7 @@ struct Config
 	 	withMemory(other.withMemory),
 		bipartite(other.bipartite),
 		skipAdjustBipartiteFlow(other.skipAdjustBipartiteFlow),
+		multiplexAddMissingNodes(other.multiplexAddMissingNodes),
 		hardPartitions(other.hardPartitions),
 	 	nonBacktracking(other.nonBacktracking),
 	 	parseWithoutIOStreams(other.parseWithoutIOStreams),
@@ -206,6 +208,7 @@ struct Config
 	 	withMemory = other.withMemory;
 	 	bipartite = other.bipartite;
 	 	skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;
+	 	multiplexAddMissingNodes = other.multiplexAddMissingNodes;
 	 	hardPartitions = other.hardPartitions;
 	 	nonBacktracking = other.nonBacktracking;
 	 	parseWithoutIOStreams = other.parseWithoutIOStreams;
@@ -422,6 +425,7 @@ struct Config
 	bool withMemory;
 	bool bipartite;
 	bool skipAdjustBipartiteFlow;
+	bool multiplexAddMissingNodes;
 	bool hardPartitions;
 	bool nonBacktracking;
 	bool parseWithoutIOStreams;
