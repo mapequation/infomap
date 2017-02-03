@@ -25,3 +25,5 @@
 /examples/js/Infomap.js
 .vscode
 .ipynb_checkpoints
+Infomap.dSym
+callgrind.*
