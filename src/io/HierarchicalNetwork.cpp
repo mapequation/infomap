@@ -413,6 +413,8 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 
 	if (!writeHierarchicalNetworkEdges)
 		return;
+	
+	out << "#*Edges numEdges path numChildren\n";
 
 	for (TreeIterator it(&m_rootNode); !it.isEnd(); ++it)
 	{
@@ -423,10 +425,10 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 		// Write edges after the last child of the parent node
 		const SNode::ChildEdgeList& edges = node.childEdges;
 		if (it.path().empty())
-			out << "*Edges " << edges.size() << ", module 'root':(" << node.children.size() << ")\n";
+			out << "*Edges " << edges.size() << " root " << node.children.size() << "\n";
 		else
-			out << "*Edges " << edges.size() << ", module " << io::stringify(it.path(), ":", 1) <<
-				"(" << node.children.size() << ")\n";
+			out << "*Edges " << edges.size() << " " << io::stringify(it.path(), ":", 1) <<
+				" " << node.children.size() << "\n";
 
 		// Print sorted edges
 		std::multimap<double, ChildEdge, std::greater<double> > sortedEdges;

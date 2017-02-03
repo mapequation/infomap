@@ -272,6 +272,7 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 	unsigned int nodeCount = 0;
 	unsigned int maxDepth = 0;
 	unsigned int numNodesNotFound = 0;
+	std::string section = "";
 
 	while(!std::getline(input, line).fail())
 	{
@@ -284,6 +285,11 @@ void NetworkAdapter::readHumanReadableTree(std::string filename)
 				header = line; // e.g. '# Codelength = 8.45977 bits.'
 			}
 			continue;
+		}
+		if (line[0] == '*') {
+			// New section, abort tree parsing.
+			section = line;
+			break;
 		}
 
 		ss.clear();
