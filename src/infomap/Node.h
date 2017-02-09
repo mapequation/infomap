@@ -324,6 +324,8 @@ public:
 
 	void deleteChildren();
 
+	void deleteEdgesOnChildren();
+
 	EdgeType* addOutEdge(NodeBase& target, double weight, double flow = 0.0)
 	{
 		EdgeType* edge = new EdgeType(*this, target, weight, flow);

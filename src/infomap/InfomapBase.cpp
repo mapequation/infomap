@@ -852,13 +852,22 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 //						improvements[moduleIndex] = module.codelength - subInfomap->hierarchicalCodelength;
 			module.getSubStructure().subInfomap = subInfomap;
 			//				nextLevelSize += subQueue.size();
+			if (m_config.lowMemoryPriority >= 1) {
+				// module.deleteChildren();
+				module.deleteEdgesOnChildren();
+				// Log() << "-";
+			}
 		}
 		else
 		{
+			// Else use the codelength from the flat substructure
 			leafCodelengths[moduleIndex] = module.codelength;
 			module.getSubStructure().exploredWithoutImprovement = true;
 			subQueue.skip = true;
-			// Else use the codelength from the flat substructure
+			if (m_config.lowMemoryPriority >= 2) {
+				module.deleteEdgesOnChildren();
+				// Log() << "=";
+			}
 		}
 
 	}

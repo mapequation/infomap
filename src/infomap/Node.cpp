@@ -147,6 +147,35 @@ void NodeBase::deleteChildren()
 	m_childDegree = 0;
 }
 
+void NodeBase::deleteEdgesOnChildren()
+{
+	for (NodeBase::sibling_iterator childIt(begin_child()), endIt(end_child());
+		childIt != endIt; ++childIt)
+	{
+		NodeBase& child(*childIt);
+		for (NodeBase::edge_iterator outEdgeIt(child.begin_outEdge());
+			outEdgeIt != child.end_outEdge(); ++outEdgeIt)
+		{
+			EdgeType* edge = *outEdgeIt;
+			// Delete the edge if within the same parent
+			// if (edge->target.parent == this)
+			// {
+			// 	// Log() << "-";
+			// 	delete edge;
+			// }
+			delete edge;
+		}
+	}
+	// Clear vector memory too
+	for (NodeBase::sibling_iterator childIt(begin_child()), endIt(end_child());
+		childIt != endIt; ++childIt)
+	{
+		NodeBase& child(*childIt);
+		std::vector<EdgeType*>().swap(child.m_outEdges);
+		std::vector<EdgeType*>().swap(child.m_inEdges);
+	}
+}
+
 void NodeBase::calcChildDegree()
 {
 	m_childrenChanged = false;
