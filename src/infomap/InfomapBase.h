@@ -315,6 +315,7 @@ private:
 	void aggregatePerLevelCodelength(NodeBase& root, std::vector<PerLevelStat>& perLevelStat, unsigned int level);
 	DepthStat calcMaxAndAverageDepth();
 	void calcMaxAndAverageDepthHelper(NodeBase& root, unsigned int& maxDepth, double& sumLeafDepth,	unsigned int currentDepth);
+	void printRSS(unsigned int minVerboseLevel = 0);
 
 	std::vector<NodeBase*> m_nonLeafActiveNetwork;
 

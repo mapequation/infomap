@@ -40,6 +40,7 @@
 #include "../io/convert.h"
 #include "../utils/Stopwatch.h"
 #include "../utils/Date.h"
+#include "../utils/getRSS.h"
 #include "MemFlowNetwork.h"
 #include "MemNetwork.h"
 #include "MultiplexNetwork.h"
@@ -77,6 +78,8 @@ void InfomapBase::run()
 		return;
 
 	calcOneLevelCodelength();
+	
+	printRSS();
 
 	if (m_config.benchmark)
 		Logger::benchmark("calcFlow", root()->codelength, 1, 1, 1);
@@ -115,6 +118,7 @@ void InfomapBase::run()
 		}
 
 		codelengths[iTrial] = hierarchicalCodelength;
+		printRSS();
 
 		if (hierarchicalCodelength < bestHierarchicalCodelength)
 		{
@@ -160,6 +164,7 @@ void InfomapBase::run()
 	Log() << ":" << std::endl;
 	Log() << bestSolutionStatistics.str() << std::endl;
 
+	printRSS();
 
 	//TODO: Test recursive search only one step further each time to be able to show progress
 	//	if (m_subLevel == 0)
@@ -378,6 +383,7 @@ void InfomapBase::runPartition()
 	}
 
 //	double t0 = omp_get_wtime();
+	printRSS(1);
 
 	while (partitionQueue.size() > 0)
 	{
@@ -407,6 +413,8 @@ void InfomapBase::runPartition()
 		hierarchicalCodelength = limitCodelength;
 
 		partitionQueue.swap(nextLevelQueue);
+		printRSS(1);
+
 	}
 	Log(0,0) << ". Found " << partitionQueue.level << " levels with codelength " <<
 		io::toPrecision(hierarchicalCodelength) << "\n";
@@ -2151,6 +2159,13 @@ void InfomapBase::calcMaxAndAverageDepthHelper(NodeBase& root, unsigned int& max
 			sumLeafDepth += currentDepth;
 			maxDepth = std::max(maxDepth, currentDepth);
 		}
+	}
+}
+
+void InfomapBase::printRSS(unsigned int minVerboseLevel)
+{
+	if (m_config.verbosity >= minVerboseLevel) {
+		Log() << "[Current/peak RSS: " << getCurrentRSS() << "/" << getPeakRSS() << " bytes]\n";
 	}
 }
 
