@@ -80,6 +80,7 @@ void InfomapBase::run()
 	calcOneLevelCodelength();
 	
 	printRSS();
+	printArchitecture();
 
 	if (m_config.benchmark)
 		Logger::benchmark("calcFlow", root()->codelength, 1, 1, 1);
@@ -2167,6 +2168,25 @@ void InfomapBase::printRSS(unsigned int minVerboseLevel)
 	if (m_config.verbosity >= minVerboseLevel) {
 		Log() << "[Current/peak RSS: " << getCurrentRSS() << "/" << getPeakRSS() << " bytes]\n";
 	}
+}
+
+void InfomapBase::printArchitecture()
+{
+	if (m_config.verbosity < 1) {
+		Log() << "\n";
+	}
+	NodeBase node;
+	Log() << "=========================\n";
+	Log() << "Size of:\n";
+	Log() << "  char " << sizeof(char) << "\n";
+	Log() << "  int " << sizeof(int) << "\n";
+	Log() << "  int* " << sizeof(int*) << "\n";
+	Log() << "  unsigned int " << sizeof(unsigned int) << "\n";
+	Log() << "  long " << sizeof(long) << "\n";
+	Log() << "  float " << sizeof(float) << "\n";
+	Log() << "  double " << sizeof(double) << "\n";
+	Log() << "  node " << sizeof(node) << "\n";
+	Log() << "=========================\n";
 }
 
 #ifdef NS_INFOMAP
