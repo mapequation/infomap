@@ -441,6 +441,8 @@ double InfomapBase::partitionAndQueueNextLevel(PartitionQueue& partitionQueue, b
 
 	partition();
 
+	printRSS();
+
 	// Instead of a flat codelength, use the two-level structure found.
 	hierarchicalCodelength = codelength;
 
@@ -983,6 +985,8 @@ void InfomapBase::partition(unsigned int recursiveCount, bool fast, bool forceCo
 
 		if (m_config.benchmark)
 			Logger::benchmark("init", codelength, numTopModules(), numNonTrivialTopModules(), 2);
+
+		printRSS();
 	}
 
 	double initialCodelength = codelength;
@@ -2165,7 +2169,7 @@ void InfomapBase::calcMaxAndAverageDepthHelper(NodeBase& root, unsigned int& max
 
 void InfomapBase::printRSS(unsigned int minVerboseLevel)
 {
-	if (m_config.verbosity >= minVerboseLevel) {
+	if (m_config.verbosity >= minVerboseLevel && isTopLevel()) {
 		Log() << "[Current/peak RSS: " << getCurrentRSS() << "/" << getPeakRSS() << " bytes]\n";
 	}
 }
@@ -2175,9 +2179,6 @@ void InfomapBase::printArchitecture()
 	if (m_config.verbosity < 1) {
 		Log() << "\n";
 	}
-	// NodeBase node;
-	// SubStructure subStructure;
-	// std::vector<NodeBase*> nodes;
 	Log() << "=========================\n";
 	Log() << "Size of:\n";
 	Log() << "  char " << sizeof(char) << "\n";
