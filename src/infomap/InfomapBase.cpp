@@ -2175,7 +2175,9 @@ void InfomapBase::printArchitecture()
 	if (m_config.verbosity < 1) {
 		Log() << "\n";
 	}
-	NodeBase node;
+	// NodeBase node;
+	// SubStructure subStructure;
+	// std::vector<NodeBase*> nodes;
 	Log() << "=========================\n";
 	Log() << "Size of:\n";
 	Log() << "  char " << sizeof(char) << "\n";
@@ -2185,7 +2187,10 @@ void InfomapBase::printArchitecture()
 	Log() << "  long " << sizeof(long) << "\n";
 	Log() << "  float " << sizeof(float) << "\n";
 	Log() << "  double " << sizeof(double) << "\n";
-	Log() << "  node " << sizeof(node) << "\n";
+	Log() << "  NodeBase " << sizeof(NodeBase) << "\n";
+	Log() << "  std::vector<NodeBase*> " << sizeof(std::vector<NodeBase*>) << "\n";
+	Log() << "  std::string " << sizeof(std::string) << "\n";
+	Log() << "  SubStructure " << sizeof(SubStructure) << "\n";
 	Log() << "=========================\n";
 }
 
