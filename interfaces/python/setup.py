@@ -40,5 +40,8 @@ setup (name = 'infomap',
     )
 
 # Clean ABI Version Tagged .so Files
-libFilename = '_infomap{}'.format(sysconfig.get_config_var('EXT_SUFFIX'))
-copy_file(libFilename, '_infomap.so')
+ext_suffix = sysconfig.get_config_var('EXT_SUFFIX')
+if ext_suffix is None:
+    ext_suffix = sysconfig.get_config_var('SO')
+if ext_suffix is not None:
+    copy_file('_infomap{}'.format(ext_suffix), '_infomap.so')
