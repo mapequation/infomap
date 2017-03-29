@@ -29,7 +29,7 @@ Daniel Edler
 Martin Rosvall
 
 For contact information, see 
-http://www.mapequation.org/about
+http://www.mapequation.org/about.html
 
 For a list of recent feature updates, see
 CHANGES.txt in the source directory.
