@@ -10,7 +10,7 @@
 
 // Instantiate templates used
 namespace std {
-   %template(IntDeque) deque<int>;
+   %template(UIntDeque) deque<unsigned int>;
 }
 
 /* Parse the header file to generate wrappers */

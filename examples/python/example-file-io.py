@@ -34,5 +34,10 @@ print("\nModules at lowest level:\n#node module")
 for node in tree.leafIter(-1): # default -1
 	print("%d %d" % (node.physIndex, node.moduleIndex()))
 
+print("\nModules at all levels:\n#node path")
+for node in tree.treeIter():
+	if node.isLeaf:
+		print("%d %s" % (node.physIndex, node.path()))
+
 
 print("Done!")
