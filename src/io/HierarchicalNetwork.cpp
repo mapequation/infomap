@@ -29,12 +29,9 @@
 #include <map>
 #include <stdexcept>
 #include "convert.h"
-#include "../utils/Logger.h"
+#include "../utils/Log.h"
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+namespace infomap {
 
 void HierarchicalNetwork::init(std::string networkName, double codelength, double oneLevelCodelength)
 {
@@ -259,7 +256,7 @@ void HierarchicalNetwork::readStreamableTree(const std::string& fileName)
 }
 
 
-void HierarchicalNetwork::writeClu(const std::string& fileName, int moduleIndexDepth)
+void HierarchicalNetwork::writeClu(const std::string& fileName, int clusterIndexLevel)
 {
 	markNodesToSkip();
 
@@ -281,20 +278,20 @@ void HierarchicalNetwork::writeClu(const std::string& fileName, int moduleIndexD
 		out << "# node cluster flow:\n";
 
 	unsigned int indexOffset = m_config.zeroBasedNodeNumbers? 0 : 1;
-	for (TreeIterator it(&m_rootNode, moduleIndexDepth); !it.isEnd(); ++it) {
+	for (TreeIterator it(&m_rootNode, clusterIndexLevel); !it.isEnd(); ++it) {
 		SNode &node = *it;
 		if (node.isLeafNode()) {
 			if (m_config.isBipartite()) {
 				if (node.originalLeafIndex < m_config.minBipartiteNodeIndex)
-					out << 'n' << node.originalLeafIndex + indexOffset << " " << it.moduleIndex() + 1 << " " << node.data.flow << "\n";
+					out << 'n' << node.originalLeafIndex + indexOffset << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
 				else
-					out << 'f' << node.originalLeafIndex + indexOffset - m_config.minBipartiteNodeIndex << " " << it.moduleIndex() + 1 << " " << node.data.flow << "\n";
+					out << 'f' << node.originalLeafIndex + indexOffset - m_config.minBipartiteNodeIndex << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
 			}
 			else {
 				if (m_config.printExpanded && node.isMemoryNode)
-					out << node.printState(indexOffset) << " " << it.moduleIndex() + 1 << " " << node.data.flow << "\n";
+					out << node.printState(indexOffset) << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
 				else
-					out << node.originalLeafIndex + indexOffset << " " << it.moduleIndex() + 1 << " " << node.data.flow << "\n";
+					out << node.originalLeafIndex + indexOffset << " " << it.clusterIndex() + 1 << " " << node.data.flow << "\n";
 			}
 		}
 	}
@@ -320,9 +317,9 @@ void HierarchicalNetwork::writeMap(const std::string& fileName)
 	unsigned int numNodes = 0;
 	for (TreeIterator it(&m_rootNode, 1); !it.isEnd(); ++it) {
 		if (it->isLeafNode()) {
-			if (it.moduleIndex() >= nodeMaps.size())
+			if (it.clusterIndex() >= nodeMaps.size())
 				nodeMaps.push_back(NodeMap());
-			 nodeMaps[it.moduleIndex()].insert(std::make_pair(it->data.flow, it.base()));
+			 nodeMaps[it.clusterIndex()].insert(std::make_pair(it->data.flow, it.base()));
 			 ++numNodes;
 		}
 	}
@@ -413,32 +410,24 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 
 	if (!writeHierarchicalNetworkEdges)
 		return;
-	
-	// out << "#*Links numEdges path numChildren exitFlow\n";
-	out << "*Links " << (m_directedEdges ? "directed" : "undirected") << "\n";
-	out << "#*Links path exitFlow numEdges numChildren\n";
 
 	for (TreeIterator it(&m_rootNode); !it.isEnd(); ++it)
 	{
 		SNode &node = *it;
 		if (node.isLeafNode())
-			continue;
+			return;
 
 		// Write edges after the last child of the parent node
 		const SNode::ChildEdgeList& edges = node.childEdges;
-		if (it.path().empty())
-			// out << "*Links " << edges.size() << " root " << node.children.size() << " 0.0\n";
-			out << "*Links root 0.0 " << edges.size() << " " << node.children.size() << "\n";
-		else
-			// out << "*Links " << edges.size() << " " << io::stringify(it.path(), ":", 1) <<
-			// 	" " << node.children.size() << " " << node.data.exitFlow << "\n";
-			out << "*Links " << io::stringify(it.path(), ":", 1) << " " << node.data.exitFlow << " " <<
-				edges.size() <<	" " << node.children.size() << "\n";
-
-		// Print sorted edges
+		// First sort the edges
 		std::multimap<double, ChildEdge, std::greater<double> > sortedEdges;
 		for (SNode::ChildEdgeList::const_iterator it = edges.begin(); it != edges.end(); ++it)
 			sortedEdges.insert(std::make_pair(it->flow, *it));
+		if (it.path().empty())
+			out << "*Edges " << edges.size() << ", module 'root':(" << node.children.size() << ")\n";
+		else
+			out << "*Edges " << edges.size() << ", module " << io::stringify(it.path(), ":", 1) <<
+				"(" << node.children.size() << ")\n";
 
 		std::multimap<double, ChildEdge, std::greater<double> >::const_iterator edgeIt(sortedEdges.begin());
 		for (unsigned int i = 0; i < edges.size(); ++i, ++edgeIt)
@@ -542,6 +531,4 @@ void HierarchicalNetwork::readHumanReadableTree(const std::string& fileName)
 	Log() << "done!" << std::endl;
 }
 
-#ifdef NS_INFOMAP
 }
-#endif

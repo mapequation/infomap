@@ -31,12 +31,9 @@
 #include <map>
 #include <utility>
 #include "../io/convert.h"
-#include "../utils/Logger.h"
+#include "../utils/Log.h"
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+namespace infomap {
 
 ProgramInterface::ProgramInterface(std::string name, std::string shortDescription, std::string version)
 : m_programName(name),
@@ -289,6 +286,4 @@ std::vector<ParsedOption> ProgramInterface::getUsedOptionArguments()
 	return opts;
 }
 
-#ifdef NS_INFOMAP
 }
-#endif

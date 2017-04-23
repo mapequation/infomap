@@ -9,10 +9,7 @@
 #include <sstream>
 #include "convert.h"
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+namespace infomap {
 
 
 /**
@@ -53,6 +50,4 @@ void BipartiteClusterReader::parseClusterLine(std::string line)
 	++m_numParsedRows;
 }
 
-#ifdef NS_INFOMAP
-} /* namespace infomap */
-#endif
+}

@@ -27,13 +27,8 @@
 
 #include "version.h"
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+namespace infomap {
 
-const char* INFOMAP_VERSION = "0.18.27";
+const char* INFOMAP_VERSION = "1.0.0-beta";
 
-#ifdef NS_INFOMAP
 }
-#endif

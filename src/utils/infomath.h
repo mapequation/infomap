@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
-
+ 
  For more information, see <http://www.mapequation.org>
-
+ 
 
  This file is part of Infomap software package.
 
@@ -30,15 +30,20 @@
 
 #include <cmath>
 #include <vector>
-#include "MersenneTwister.h"
-
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+#include <random>
 
 namespace infomath
 {
+
+	typedef std::mt19937 RandGen;
+	typedef std::uniform_int_distribution<unsigned int> uniform_uint_dist;
+	typedef uniform_uint_dist::param_type uniform_param_t;
+
+	inline
+	double log2(double p)
+	{
+		return std::log(p) * M_LOG2E; // M_LOG2E == 1 / M_LN2
+	}
 
 	inline
 	double plogp(double p)
@@ -51,32 +56,29 @@ namespace infomath
 	 * Get a random permutation of indices of the size of the input vector
 	 */
 	inline
-	void getRandomizedIndexVector(std::vector<unsigned int>& randomOrder, MTRand& randGen)
+	void getRandomizedIndexVector(std::vector<unsigned int>& randomOrder, RandGen& randGen)
 	{
 		unsigned int size = randomOrder.size();
+		uniform_uint_dist uniform;
 		for(unsigned int i = 0; i < size; ++i)
 			randomOrder[i] = i;
 		for(unsigned int i = 0; i < size; ++i)
-			std::swap(randomOrder[i], randomOrder[i + randGen.randInt(size - i - 1)]);
+			std::swap(randomOrder[i], randomOrder[i + uniform(randGen, uniform_param_t(0, size - i - 1))]);
 	}
 
 	template<typename T, typename U>
 	inline
 	bool isBetween(T value, U lowerLimit, U higherLimit)
 	{
-		return value >= static_cast<T>(lowerLimit) && value <= static_cast<T>(higherLimit);
+		return value >= lowerLimit && value <= higherLimit;
 	}
 
 	template<typename T, typename U>
 	inline
 	bool isBetweenStrict(T value, U lowerLimit, U higherLimit)
 	{
-		return value > static_cast<T>(lowerLimit) && value < static_cast<T>(higherLimit);
+		return value > lowerLimit && value < higherLimit;
 	}
 }
-
-#ifdef NS_INFOMAP
-}
-#endif
 
 #endif /* INFOMAPTH_H_ */

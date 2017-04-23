@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -30,57 +30,10 @@
 
 #include <iomanip>
 #include <sstream>
-#include <stdexcept>
 #include <string>
+#include "../utils/exceptions.h"
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
-
-class AbortAndHelp : public std::runtime_error {
-public:
-	AbortAndHelp(std::string const& s) : std::runtime_error(s) { }
-};
-
-class InputSyntaxError : public std::runtime_error {
-public:
-	InputSyntaxError(std::string const& s) : std::runtime_error(s) { }
-};
-
-class UnknownFileTypeError : public std::runtime_error {
-public:
-	UnknownFileTypeError(std::string const& s) : std::runtime_error(s) { }
-};
-
-class FileFormatError : public std::runtime_error {
-public:
-	FileFormatError(std::string const& s) : std::runtime_error(s) { }
-};
-
-class InputDomainError : public std::runtime_error {
-public:
-	InputDomainError(std::string const& s) : std::runtime_error(s) { }
-};
-
-class BadConversionError : public std::runtime_error {
-public:
-	BadConversionError(std::string const& s) : std::runtime_error(s) { }
-};
-
-class MisMatchError : public std::runtime_error {
-public:
-	MisMatchError(std::string const& s) : std::runtime_error(s) { }
-};
-
-class InternalOrderError : public std::logic_error {
-public:
-	InternalOrderError(std::string const& s) : std::logic_error(s) { }
-};
-
-struct ImplementationError : public std::runtime_error {
-	ImplementationError(std::string const& s) : std::runtime_error(s) {}
-};
+namespace infomap {
 
 template<typename T>
 struct TypeInfo {
@@ -268,8 +221,6 @@ inline std::string toPlural(std::string object, unsigned int num)
 
 }
 
-#ifdef NS_INFOMAP
 }
-#endif
 
 #endif /* CONVERT_H_ */

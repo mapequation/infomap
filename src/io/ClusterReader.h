@@ -31,10 +31,7 @@
 #include <string>
 #include <map>
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+namespace infomap {
 
 using std::string;
 
@@ -75,8 +72,6 @@ protected:
 	std::map<unsigned int, unsigned int> m_clusters;
 };
 
-#ifdef NS_INFOMAP
 }
-#endif
 
 #endif /* CLUSTERREADER_H_ */

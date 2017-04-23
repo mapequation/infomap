@@ -10,10 +10,7 @@
 
 #include "ClusterReader.h"
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+namespace infomap {
 
 class BipartiteClusterReader : public ClusterReader {
 public:
@@ -41,8 +38,6 @@ protected:
 };
 
 
-#ifdef NS_INFOMAP
-} /* namespace infomap */
-#endif
+}
 
 #endif /* SRC_IO_BIPARTITECLUSTERREADER_H_ */

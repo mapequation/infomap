@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -34,10 +34,7 @@
 #include "convert.h"
 #include <cstdio>
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+namespace infomap {
 
 using std::ifstream;
 using std::ofstream;
@@ -66,7 +63,7 @@ public:
 class SafeInFile : public ifstream
 {
 public:
-	SafeInFile(const char* filename, ios_base::openmode mode = ios_base::in)
+	SafeInFile(const std::string filename, ios_base::openmode mode = ios_base::in)
 	: ifstream(filename, mode)
 	{
 		if (fail())
@@ -84,7 +81,7 @@ public:
 class SafeOutFile : public ofstream
 {
 public:
-	SafeOutFile(const char* filename, ios_base::openmode mode = ios_base::out)
+	SafeOutFile(const std::string filename, ios_base::openmode mode = ios_base::out)
 	: ofstream(filename, mode)
 	{
 		if (fail())
@@ -145,7 +142,7 @@ struct BinaryHelper<std::string> {
 class ofstream_binary : public ofstream
 {
 public:
-	ofstream_binary(const char* filename)
+	ofstream_binary(const std::string filename)
 		: ofstream(filename, ios_base::out | ios_base::trunc | ios_base::binary), m_size(0) {}
 
 	template<typename T>
@@ -170,7 +167,7 @@ protected:
 class ifstream_binary : public ifstream
 {
 public:
-	ifstream_binary(const char* filename)
+	ifstream_binary(const std::string filename)
 		: ifstream(filename, ios_base::in | ios_base::binary), m_sizeRead(0) {}
 
 	template<typename T>
@@ -237,7 +234,7 @@ private:
 class SafeOutFileBinary : public ofstream_binary
 {
 public:
-	SafeOutFileBinary(const char* filename)
+	SafeOutFileBinary(const std::string filename)
 	: ofstream_binary(filename)
 	{
 		if (fail())
@@ -255,7 +252,7 @@ public:
 class SafeBinaryInFile : public ifstream_binary
 {
 public:
-	SafeBinaryInFile(const char* filename)
+	SafeBinaryInFile(const std::string filename)
 	: ifstream_binary(filename)
 	{
 		if (fail())
@@ -286,8 +283,6 @@ bool isDirectoryWritable(const std::string& dir)
 	return ok;
 }
 
-#ifdef NS_INFOMAP
 }
-#endif
 
 #endif /* SAFEFILE_H_ */

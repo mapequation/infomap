@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -26,14 +26,11 @@
 
 
 #include "ClusterReader.h"
-#include "../utils/Logger.h"
+#include "../utils/Log.h"
 #include "convert.h"
 #include "SafeFile.h"
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+namespace infomap {
 
 /**
  * Read cluster data
@@ -120,6 +117,4 @@ void ClusterReader::parseClusterLine(std::string line)
 	++m_numParsedRows;
 }
 
-#ifdef NS_INFOMAP
 }
-#endif

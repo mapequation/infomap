@@ -29,10 +29,7 @@
 
 #include <ctime>
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+namespace infomap {
 
 class Stopwatch
 {
@@ -94,8 +91,6 @@ private:
     bool m_running;
 };
 
-#ifdef NS_INFOMAP
 }
-#endif
 
 #endif /* STOPWATCH_H_ */

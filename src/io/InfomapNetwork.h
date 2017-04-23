@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -25,15 +25,28 @@
 **********************************************************************************/
 
 
-#ifndef TYPES_H_
-#define TYPES_H_
+#ifndef STATE_NETWORK_H_
+#define STATE_NETWORK_H_
+#include <string>
+#include <map>
+#include <vector>
+#include "../core/InfomapConfig.h"
 
 namespace infomap {
 
-typedef unsigned int uint;
-typedef float number;
-//typedef double number;
+class InfomapNetwork
+{
+public:
+	InfomapNetwork(const Config& config) : m_config(config) {}
+
+	void setConfig(const Config& config) { m_config = config; }
+
+	std::vector<StateNode> m_nodes;
+	std::vector<Link> m_links;
+
+};
+
 
 }
 
-#endif /* TYPES_H_ */
+#endif /* INFOMAP_NETWORK_H_ */

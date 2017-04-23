@@ -36,88 +36,102 @@
 #include "../utils/Date.h"
 #include "version.h"
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+namespace infomap {
 
 struct Config
 {
+	// Input
+	std::string parsedArgs = "";
+	std::string networkFile = "";
+	std::vector<std::string> additionalInput;
+	std::string inputFormat = ""; // 'pajek', 'link-list', '3gram' or 'multiplex'
+	bool withMemory = false;
+	bool bipartite = false;
+	bool skipAdjustBipartiteFlow = false;
+	bool hardPartitions = false;
+	bool nonBacktracking = false;
+	bool parseWithoutIOStreams = false;
+	bool zeroBasedNodeNumbers = false;
+	bool includeSelfLinks = false;
+	bool ignoreEdgeWeights = false;
+	bool skipCompleteDanglingMemoryNodes = false;
+	unsigned int nodeLimit = 0;
+	bool preClusterMultiplex = false;
+	std::string clusterDataFile = "";
+	bool clusterDataIsHard = false;
+	bool noInfomap = false;
+
+	// Flow models, collapse one-hot encoded values to ENUM?
+	bool directed = false;
+	bool undirdir = false;
+	bool outdirdir = false;
+	bool rawdir = false;
+	bool teleportToNodes = false;
+	double selfTeleportationProbability = -1;
+	double markovTime = 1.0;
+	double multiplexRelaxRate = 0.15;
+	int multiplexRelaxLimit = -1;
+	
+	// Clustering
+	bool twoLevel = false;
+	bool noCoarseTune = false;
+	bool directedEdges = false; // For clustering
+	bool recordedTeleportation = false;
+	double teleportationProbability = 0.15;
+	unsigned int preferredNumberOfModules = 0;
+	unsigned long seedToRandomNumberGenerator = 123;
+
+	// Performance and accuracy
+	unsigned int numTrials = 1;
+	double minimumCodelengthImprovement = 1e-10;
+	double minimumSingleNodeCodelengthImprovement = 1e-10;
+	bool randomizeCoreLoopLimit = false;
+	unsigned int coreLoopLimit = 10;
+	unsigned int levelAggregationLimit = 0;
+	unsigned int tuneIterationLimit = 0; // num iterations of fine-tune/coarse-tune in two-level partition)
+	double minimumRelativeTuneIterationImprovement = 1e-5;
+	bool fastCoarseTunePartition = false;
+	bool alternateCoarseTuneLevel = false;
+	unsigned int coarseTuneLevel = 1;
+	int superLevelLimit = -1; // Max super level iterations
+	bool onlySuperModules = false;
+	unsigned int fastHierarchicalSolution = 0;
+	bool fastFirstIteration = false;
+	unsigned int lowMemoryPriority = false; // Prioritize memory efficient algorithms before fast if > 0
+	bool innerParallelization = false;
+
+	// Output
+	std::string outDirectory = "";
+	std::string outName = "";
+	bool originallyUndirected = false;
+	bool printTree = false;
+	bool printFlowTree = false;
+	bool printMap = false;
+	bool printClu = false;
+	bool printNodeRanks = false;
+	bool printFlowNetwork = false;
+	bool printPajekNetwork = false;
+	bool printStateNetwork = false;
+	bool printBinaryTree = false;
+	bool printBinaryFlowTree = false; // tree including horizontal links (hierarchical network)
+	bool printExpanded = false; // Print the expanded network of memory nodes if possible
+	bool noFileOutput = false;
+	unsigned int verbosity = 0;
+	unsigned int verboseNumberPrecision = 6;
+	bool silent = false;
+	bool benchmark = false;
+
+	unsigned int maxNodeIndexVisible = 0;
+	bool showBiNodes = false;
+	unsigned int minBipartiteNodeIndex = 0;
+
+	// Other
+	Date startDate;
+	std::string version = INFOMAP_VERSION;
+
 	Config()
-	:	parsedArgs(""),
-		networkFile(""),
-	 	inputFormat(""),
-	 	withMemory(false),
-		bipartite(false),
-		skipAdjustBipartiteFlow(false),
-		multiplexAddMissingNodes(false),
-		hardPartitions(false),
-	 	nonBacktracking(false),
-	 	parseWithoutIOStreams(false),
-		zeroBasedNodeNumbers(false),
-		includeSelfLinks(false),
-		ignoreEdgeWeights(false),
-		skipCompleteDanglingMemoryNodes(false),
-		nodeLimit(0),
-		preClusterMultiplex(false),
-	 	clusterDataFile(""),
-	 	noInfomap(false),
-	 	twoLevel(false),
-		directed(false),
-		undirdir(false),
-		outdirdir(false),
-		rawdir(false),
-		recordedTeleportation(false),
-		teleportToNodes(false),
-		teleportationProbability(0.15),
-		selfTeleportationProbability(-1),
-		markovTime(1.0),
-		preferredNumberOfModules(0),
-		multiplexRelaxRate(-1),
-		multiplexJSRelaxRate(-1),
-		multiplexJSRelaxLimit(-1),
-		multiplexRelaxLimit(-1),
-		seedToRandomNumberGenerator(123),
-		numTrials(1),
-		minimumCodelengthImprovement(1.0e-10),
-		minimumSingleNodeCodelengthImprovement(1.0e-16),
-		randomizeCoreLoopLimit(true),
-		coreLoopLimit(10),
-		levelAggregationLimit(0),
-		tuneIterationLimit(0),
-		minimumRelativeTuneIterationImprovement(1.0e-5),
-		fastCoarseTunePartition(true),
-		alternateCoarseTuneLevel(false),
-		coarseTuneLevel(1),
-		fastHierarchicalSolution(0),
-		fastFirstIteration(false),
-		lowMemoryPriority(0),
-		innerParallelization(false),
-		resetConfigBeforeRecursion(false),
-		outDirectory("."),
-		outName(""),
-		originallyUndirected(false),
-		printTree(false),
-		printFlowTree(false),
-		printMap(false),
-		printClu(false),
-		printNodeRanks(false),
-		printFlowNetwork(false),
-		printPajekNetwork(false),
-		printStateNetwork(false),
-		printBinaryTree(false),
-		printBinaryFlowTree(false),
-		printExpanded(false),
-		noFileOutput(false),
-		verbosity(0),
-		verboseNumberPrecision(6),
-		silent(false),
-		benchmark(false),
-		maxNodeIndexVisible(0),
-		showBiNodes(false),
-		minBipartiteNodeIndex(0),
-		version(INFOMAP_VERSION)
 	{
+		setOptimizationLevel(1);
 	}
 
 	Config(const Config& other)
@@ -128,7 +142,6 @@ struct Config
 	 	withMemory(other.withMemory),
 		bipartite(other.bipartite),
 		skipAdjustBipartiteFlow(other.skipAdjustBipartiteFlow),
-		multiplexAddMissingNodes(other.multiplexAddMissingNodes),
 		hardPartitions(other.hardPartitions),
 	 	nonBacktracking(other.nonBacktracking),
 	 	parseWithoutIOStreams(other.parseWithoutIOStreams),
@@ -139,22 +152,23 @@ struct Config
 		nodeLimit(other.nodeLimit),
 		preClusterMultiplex(other.preClusterMultiplex),
 	 	clusterDataFile(other.clusterDataFile),
+	 	clusterDataIsHard(other.clusterDataIsHard),
 	 	noInfomap(other.noInfomap),
-	 	twoLevel(other.twoLevel),
 		directed(other.directed),
 		undirdir(other.undirdir),
 		outdirdir(other.outdirdir),
 		rawdir(other.rawdir),
-		recordedTeleportation(other.recordedTeleportation),
 		teleportToNodes(other.teleportToNodes),
-		teleportationProbability(other.teleportationProbability),
 		selfTeleportationProbability(other.selfTeleportationProbability),
 		markovTime(other.markovTime),
-		preferredNumberOfModules(other.preferredNumberOfModules),
 		multiplexRelaxRate(other.multiplexRelaxRate),
-		multiplexJSRelaxRate(other.multiplexJSRelaxRate),
-		multiplexJSRelaxLimit(other.multiplexJSRelaxLimit),
 		multiplexRelaxLimit(other.multiplexRelaxLimit),
+	 	twoLevel(other.twoLevel),
+		noCoarseTune(other.noCoarseTune),
+		directedEdges(other.directedEdges),
+		recordedTeleportation(other.recordedTeleportation),
+		teleportationProbability(other.teleportationProbability),
+		preferredNumberOfModules(other.preferredNumberOfModules),
 		seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
 		numTrials(other.numTrials),
 		minimumCodelengthImprovement(other.minimumCodelengthImprovement),
@@ -167,11 +181,12 @@ struct Config
 		fastCoarseTunePartition(other.fastCoarseTunePartition),
 		alternateCoarseTuneLevel(other.alternateCoarseTuneLevel),
 		coarseTuneLevel(other.coarseTuneLevel),
+		superLevelLimit(other.superLevelLimit),
+		onlySuperModules(other.onlySuperModules),
 		fastHierarchicalSolution(other.fastHierarchicalSolution),
 		fastFirstIteration(other.fastFirstIteration),
 		lowMemoryPriority(other.lowMemoryPriority),
 		innerParallelization(other.innerParallelization),
-		resetConfigBeforeRecursion(other.resetConfigBeforeRecursion),
 		outDirectory(other.outDirectory),
 		outName(other.outName),
 		originallyUndirected(other.originallyUndirected),
@@ -208,7 +223,6 @@ struct Config
 	 	withMemory = other.withMemory;
 	 	bipartite = other.bipartite;
 	 	skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;
-	 	multiplexAddMissingNodes = other.multiplexAddMissingNodes;
 	 	hardPartitions = other.hardPartitions;
 	 	nonBacktracking = other.nonBacktracking;
 	 	parseWithoutIOStreams = other.parseWithoutIOStreams;
@@ -219,22 +233,23 @@ struct Config
 		nodeLimit = other.nodeLimit;
 		preClusterMultiplex = other.preClusterMultiplex;
 	 	clusterDataFile = other.clusterDataFile;
+	 	clusterDataIsHard = other.clusterDataIsHard;
 	 	noInfomap = other.noInfomap;
-	 	twoLevel = other.twoLevel;
 		directed = other.directed;
 		undirdir = other.undirdir;
 		outdirdir = other.outdirdir;
 		rawdir = other.rawdir;
-		recordedTeleportation = other.recordedTeleportation;
 		teleportToNodes = other.teleportToNodes;
-		teleportationProbability = other.teleportationProbability;
 		selfTeleportationProbability = other.selfTeleportationProbability;
 	 	markovTime = other.markovTime;
-	 	preferredNumberOfModules = other.preferredNumberOfModules;
 		multiplexRelaxRate = other.multiplexRelaxRate;
-		multiplexJSRelaxRate = other.multiplexJSRelaxRate;
-		multiplexJSRelaxLimit = other.multiplexJSRelaxLimit;
 		multiplexRelaxLimit = other.multiplexRelaxLimit;
+	 	twoLevel = other.twoLevel;
+		noCoarseTune = other.noCoarseTune;
+		directedEdges = other.directedEdges;
+		recordedTeleportation = other.recordedTeleportation;
+		teleportationProbability = other.teleportationProbability;
+	 	preferredNumberOfModules = other.preferredNumberOfModules;
 		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
 		numTrials = other.numTrials;
 		minimumCodelengthImprovement = other.minimumCodelengthImprovement;
@@ -247,11 +262,93 @@ struct Config
 		fastCoarseTunePartition = other.fastCoarseTunePartition;
 		alternateCoarseTuneLevel = other.alternateCoarseTuneLevel;
 		coarseTuneLevel = other.coarseTuneLevel;
+		superLevelLimit = other.superLevelLimit;
+		onlySuperModules = other.onlySuperModules;
 		fastHierarchicalSolution = other.fastHierarchicalSolution;
 		fastFirstIteration = other.fastFirstIteration;
 		lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
-		resetConfigBeforeRecursion = other.resetConfigBeforeRecursion;
+		outDirectory = other.outDirectory;
+		outName = other.outName;
+		originallyUndirected = other.originallyUndirected;
+		printTree = other.printTree;
+		printFlowTree = other.printFlowTree;
+		printMap = other.printMap;
+		printClu = other.printClu;
+		printNodeRanks = other.printNodeRanks;
+		printFlowNetwork = other.printFlowNetwork;
+		printPajekNetwork = other.printPajekNetwork;
+		printStateNetwork = other.printStateNetwork;
+		printBinaryTree = other.printBinaryTree;
+		printBinaryFlowTree = other.printBinaryFlowTree;
+		printExpanded = other.printExpanded;
+		noFileOutput = other.noFileOutput;
+		verbosity = other.verbosity;
+		verboseNumberPrecision = other.verboseNumberPrecision;
+		silent = other.silent;
+		benchmark = other.benchmark;
+	 	maxNodeIndexVisible = other.maxNodeIndexVisible;
+	 	showBiNodes = other.showBiNodes;
+	 	minBipartiteNodeIndex = other.minBipartiteNodeIndex;
+		startDate = other.startDate;
+		version = other.version;
+		return *this;
+	}
+
+	Config& cloneAsNonMain(const Config& other)
+	{
+		parsedArgs = other.parsedArgs;
+		networkFile = other.networkFile;
+	 	additionalInput = other.additionalInput;
+	 	inputFormat = other.inputFormat;
+	 	withMemory = other.withMemory;
+	 	bipartite = other.bipartite;
+	 	skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;
+	 	hardPartitions = other.hardPartitions;
+	 	nonBacktracking = other.nonBacktracking;
+	 	parseWithoutIOStreams = other.parseWithoutIOStreams;
+		zeroBasedNodeNumbers = other.zeroBasedNodeNumbers;
+		includeSelfLinks = other.includeSelfLinks;
+		ignoreEdgeWeights = other.ignoreEdgeWeights;
+		skipCompleteDanglingMemoryNodes = other.skipCompleteDanglingMemoryNodes;
+		nodeLimit = other.nodeLimit;
+		preClusterMultiplex = other.preClusterMultiplex;
+	 	// clusterDataFile = other.clusterDataFile;
+	 	// clusterDataIsHard = other.clusterDataIsHard;
+	 	noInfomap = other.noInfomap;
+		directed = other.directed;
+		undirdir = other.undirdir;
+		outdirdir = other.outdirdir;
+		rawdir = other.rawdir;
+		teleportToNodes = other.teleportToNodes;
+		selfTeleportationProbability = other.selfTeleportationProbability;
+	 	markovTime = other.markovTime;
+		multiplexRelaxRate = other.multiplexRelaxRate;
+		multiplexRelaxLimit = other.multiplexRelaxLimit;
+	 	twoLevel = other.twoLevel;
+		noCoarseTune = other.noCoarseTune;
+		directedEdges = other.directedEdges;
+		recordedTeleportation = other.recordedTeleportation;
+		teleportationProbability = other.teleportationProbability;
+	 	// preferredNumberOfModules = other.preferredNumberOfModules;
+		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
+		numTrials = other.numTrials;
+		minimumCodelengthImprovement = other.minimumCodelengthImprovement;
+		minimumSingleNodeCodelengthImprovement = other.minimumSingleNodeCodelengthImprovement;
+		randomizeCoreLoopLimit = other.randomizeCoreLoopLimit;
+		// coreLoopLimit = other.coreLoopLimit;
+		// levelAggregationLimit = other.levelAggregationLimit;
+		// tuneIterationLimit = other.tuneIterationLimit;
+		minimumRelativeTuneIterationImprovement = other.minimumRelativeTuneIterationImprovement;
+		fastCoarseTunePartition = other.fastCoarseTunePartition;
+		alternateCoarseTuneLevel = other.alternateCoarseTuneLevel;
+		coarseTuneLevel = other.coarseTuneLevel;
+		// superLevelLimit = other.superLevelLimit;
+		// onlySuperModules = other.onlySuperModules;
+		// fastHierarchicalSolution = other.fastHierarchicalSolution;
+		// fastFirstIteration = other.fastFirstIteration;
+		lowMemoryPriority = other.lowMemoryPriority;
+		innerParallelization = other.innerParallelization;
 		outDirectory = other.outDirectory;
 		outName = other.outName;
 		originallyUndirected = other.originallyUndirected;
@@ -355,24 +452,8 @@ struct Config
 		{
 			bipartite = true;
 		}
-	}
 
-	void reset()
-	{
-		minimumCodelengthImprovement = 1.0e-10;
-		minimumSingleNodeCodelengthImprovement = 1.0e-16;
-		randomizeCoreLoopLimit = false;
-		coreLoopLimit = 0;
-		levelAggregationLimit = 0;
-		tuneIterationLimit = 0;
-		minimumRelativeTuneIterationImprovement = 1.0e-5;
-		fastCoarseTunePartition = false;
-		alternateCoarseTuneLevel = false;
-		coarseTuneLevel = 1;
-		fastHierarchicalSolution = 0;
-		fastFirstIteration = false;
-		lowMemoryPriority = 0;
-		innerParallelization = false;
+		directedEdges = !isUndirected();
 	}
 
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
@@ -416,96 +497,8 @@ struct Config
 
 	ElapsedTime elapsedTime() const { return Date() - startDate; }
 
-
-	// Input
-	std::string parsedArgs;
-	std::string networkFile;
-	std::vector<std::string> additionalInput;
-	std::string inputFormat; // 'pajek', 'link-list', '3gram' or 'multiplex'
-	bool withMemory;
-	bool bipartite;
-	bool skipAdjustBipartiteFlow;
-	bool multiplexAddMissingNodes;
-	bool hardPartitions;
-	bool nonBacktracking;
-	bool parseWithoutIOStreams;
-	bool zeroBasedNodeNumbers;
-	bool includeSelfLinks;
-	bool ignoreEdgeWeights;
-	bool skipCompleteDanglingMemoryNodes;
-	unsigned int nodeLimit;
-	bool preClusterMultiplex;
-	std::string clusterDataFile;
-	bool noInfomap;
-
-	// Core algorithm
-	bool twoLevel;
-	bool directed;
-	bool undirdir;
-	bool outdirdir;
-	bool rawdir;
-	bool recordedTeleportation;
-	bool teleportToNodes;
-	double teleportationProbability;
-	double selfTeleportationProbability;
-	double markovTime;
-	unsigned int preferredNumberOfModules;
-	double multiplexRelaxRate;
-	double multiplexJSRelaxRate;
-	double multiplexJSRelaxLimit;
-	int multiplexRelaxLimit;
-	unsigned long seedToRandomNumberGenerator;
-
-	// Performance and accuracy
-	unsigned int numTrials;
-	double minimumCodelengthImprovement;
-	double minimumSingleNodeCodelengthImprovement;
-	bool randomizeCoreLoopLimit;
-	unsigned int coreLoopLimit;
-	unsigned int levelAggregationLimit;
-	unsigned int tuneIterationLimit; // num iterations of fine-tune/coarse-tune in two-level partition)
-	double minimumRelativeTuneIterationImprovement;
-	bool fastCoarseTunePartition;
-	bool alternateCoarseTuneLevel;
-	unsigned int coarseTuneLevel;
-	unsigned int fastHierarchicalSolution;
-	bool fastFirstIteration;
-	unsigned int lowMemoryPriority; // Prioritize memory efficient algorithms before fast if > 0
-	bool innerParallelization;
-	bool resetConfigBeforeRecursion; // If true, flags only affect building up super modules.
-
-	// Output
-	std::string outDirectory;
-	std::string outName;
-	bool originallyUndirected;
-	bool printTree;
-	bool printFlowTree;
-	bool printMap;
-	bool printClu;
-	bool printNodeRanks;
-	bool printFlowNetwork;
-	bool printPajekNetwork;
-	bool printStateNetwork;
-	bool printBinaryTree;
-	bool printBinaryFlowTree; // tree including horizontal links (hierarchical network)
-	bool printExpanded; // Print the expanded network of memory nodes if possible
-	bool noFileOutput;
-	unsigned int verbosity;
-	unsigned int verboseNumberPrecision;
-	bool silent;
-	bool benchmark;
-
-	unsigned int maxNodeIndexVisible;
-	bool showBiNodes;
-	unsigned int minBipartiteNodeIndex;
-
-	// Other
-	Date startDate;
-	std::string version;
 };
 
-#ifdef NS_INFOMAP
 }
-#endif
 
 #endif /* CONFIG_H_ */

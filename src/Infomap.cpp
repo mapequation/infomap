@@ -30,30 +30,77 @@
 #include <fstream>
 #include <stdexcept>
 #include <cstdlib>
-// #include <fenv.h>
-#include "utils/Logger.h"
+#include "utils/Log.h"
+#include "io/Config.h"
+// #include "core/InfomapContext.h"
 #include "utils/Stopwatch.h"
 #include "io/ProgramInterface.h"
 #include "io/convert.h"
 #include "utils/FileURI.h"
 #include "utils/Date.h"
 #include "io/version.h"
+#include "core/InfoNode.h"
+#include "io/Network.h"
+#include "core/StateNetwork.h"
+#include "io/SafeFile.h"
+#include "utils/FlowCalculator.h"
+#include <string>
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+namespace infomap {
 
-void runInfomap(Config const& config)
+void runInfomap(const Config& config)
 {
-	InfomapContext context(config);
-	context.getInfomap()->run();
+	std::string filename = config.networkFile;
+	Network network(config);
+	network.readInputData(filename);
+
+	// Log() << "Calculate flow..." << std::endl;
+	network.calculateFlow();
+
+	// Log() << "Create info root node..." << std::endl;
+	InfoNode root;
+
+	// Log() << "Get Infomap..." << std::endl;
+	auto& infomap = root.getInfomap().setConfig(config);
+	
+	// Log() << "Init Infomap network..." << std::endl;
+	infomap.initNetwork(network);
+
+	// for (auto& node : root.infomapTree()) {
+	// 	Log() << "Node " << node.uid << ": " << node.data << "\n";
+	// }
+
+	// Log() << "Run Infomap..." << std::endl;
+	infomap.run();
+
+	std::string outputFilename = config.outDirectory + config.outName + ".tree";
+	Log() << "Write tree to " << outputFilename << "..." << std::endl;
+
+	SafeOutFile outFile(outputFilename);
+	outFile << "# Codelength = " << infomap.getCodelength() << " bits.\n";
+	// auto it = root.begin_infomapDepthFirst();
+	// it++;
+	// for (; !it.isEnd(); ++it) {
+	// for (auto& it : root.infomapTree()) {
+	for (auto it = infomap.root().begin_infomapDepthFirst(); !it.isEnd(); ++it) {
+		InfoNodeBase &node = *it;
+		if (node.isLeaf()) {
+			auto &path = it.path();
+			outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.uid << "\" " <<
+					node.physicalId << "\n";
+		}
+	}
+	
+	std::cout << "   -> Writed tree to file " << outputFilename + "\n";
+    
+	
+	Log() << "Done!" << std::endl;
 }
 
-void runInfomap(Config const& config, Network& input, HierarchicalNetwork& output)
+void runMemInfomap(const Config& config)
 {
-	InfomapContext context(config);
-	context.getInfomap()->run(input, output);
+	// StateInfoNode root;
+	// root.getInfomap().setConfig(conf).initNetwork(network).run();
 }
 
 std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool noFileIO = false)
@@ -78,14 +125,11 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
 			"Specify input format ('pajek', 'link-list', 'states', '3gram', 'multiplex' or 'bipartite') to override format possibly implied by file extension.", "s");
 
-	api.addOptionArgument(conf.withMemory, "with-memory",
-			"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.", true);
+	// api.addOptionArgument(conf.withMemory, "with-memory",
+	// 		"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.", true);
 
 //	api.addOptionArgument(conf.bipartite, "bipartite",
 //			"Let the source id of a link belong to a different kind of nodes and ignore that set in the output.");
-
-	api.addOptionArgument(conf.multiplexAddMissingNodes, "multiplex-add-missing-nodes",
-			"Adjust multiplex network so that the same set of physical nodes exist in all layers.", true);
 
 	api.addOptionArgument(conf.skipAdjustBipartiteFlow, "skip-adjust-bipartite-flow",
 			"Skip distributing all flow from the bipartite nodes (first column) to the ordinary nodes (second column).", true);
@@ -203,13 +247,7 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 			"Stop merge or split modules if preferred number of modules is reached.", "n", true);
 
 	api.addOptionArgument(conf.multiplexRelaxRate, "multiplex-relax-rate",
-			"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present. If negative, the inter-links have to be provided.", "f", true);
-
-	api.addOptionArgument(conf.multiplexJSRelaxRate, "multiplex-js-relax-rate",
-			"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence. If negative, the inter-links have to be provided.", "f", true);
-
-	api.addOptionArgument(conf.multiplexJSRelaxLimit, "multiplex-js-relax-limit",
-			"The minimum out-link similarity measured by the Jensen-Shannon divergence to relax to other layer. From 0 to 1. No limit if negative.", "f", true);
+			"The probability to relax the constraint to move only in the current layer. If negative, the inter-links have to be provided.", "f", true);
 
 	api.addOptionArgument(conf.multiplexRelaxLimit, "multiplex-relax-limit",
 			"The number of neighboring layers in each direction to relax to. If negative, relax to any layer.", "n", true);
@@ -255,13 +293,10 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 			"Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.");
 
 	api.addIncrementalOptionArgument(conf.lowMemoryPriority, 'l', "low-memory",
-			"Prioritize memory efficient algorithms before fast. Use -ll to optimize even more, but this may give approximate results.", true);
+			"Prioritize memory efficient algorithms before fast. Use -ll to optimize even more, but this may give approximate results.");
 
 	api.addOptionArgument(conf.innerParallelization, "inner-parallelization",
 			"Parallelize the innermost loop for greater speed. Note that this may give some accuracy tradeoff.");
-
-	api.addOptionArgument(conf.resetConfigBeforeRecursion, "reset-options-before-recursion",
-			"Reset options tuning the speed and accuracy before the recursive part.", true);
 
 	api.addOptionArgument(conf.showBiNodes, "show-bipartite-nodes",
 			"Include the bipartite nodes in the output.", true);
@@ -310,67 +345,6 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	return api.getUsedOptionArguments();
 }
 
-void initBenchmark(const Config& conf, const std::string& flags)
-{
-	std::string networkName = FileURI(conf.networkFile).getName();
-	std::string logFilename = io::Str() << conf.outDirectory << networkName << ".tsv";
-	Logger::setBenchmarkFilename(logFilename);
-	std::ostringstream logInfo;
-	logInfo << "#benchmark for '" << flags << "'";
-	Logger::benchmark(logInfo.str(), 0, 0, 0, 0, true);
-	Logger::benchmark("elapsedSeconds\ttag\tcodelength\tnumTopModules\tnumNonTrivialTopModules\ttreeDepth",
-			0, 0, 0, 0, true);
-	// (todo: fix problem with initializing same static file from different functions to simplify above)
-	Log() << "(Writing benchmark log to '" << logFilename << "'...)\n";
-}
-
-Config init(const std::string& flags)
-{
-	Config conf;
-	try
-	{
-		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags, true);
-
-		Log::init(conf.verbosity, conf.silent, conf.verboseNumberPrecision);
-
-		Log() << "=======================================================\n";
-		Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
-		if (!parsedFlags.empty()) {
-			for (unsigned int i = 0; i < parsedFlags.size(); ++i)
-				Log() << (i == 0 ? "  -> Configuration: " : "                    ") << parsedFlags[i] << "\n";
-		}
-		Log() << "  -> Use " << (conf.isUndirected()? "undirected" : "directed") << " flow and " <<
-			(conf.isMemoryNetwork()? "2nd" : "1st") << " order Markov dynamics";
-		if (conf.useTeleportation())
-			Log() << " with " << (conf.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
-			(conf.teleportToNodes ? "nodes" : "links");
-		Log() << "\n";
-		Log() << "=======================================================\n";
-
-		conf.adaptDefaults();
-	}
-	catch (std::exception& e)
-	{
-		std::cerr << e.what() << std::endl;
-	}
-
-	return conf;
-}
-
-int run(Network& input, HierarchicalNetwork& output)
-{
-	try
-	{
-		runInfomap(input.config(), input, output);
-	}
-	catch (std::exception& e)
-	{
-		std::cerr << e.what() << std::endl;
-		return 1;
-	}
-	return 0;
-}
-
 int run(const std::string& flags)
 {
 	Date startDate;
@@ -397,9 +371,6 @@ int run(const std::string& flags)
 		Log() << "\n";
 		Log() << "=======================================================\n";
 
-		if (conf.benchmark)
-			initBenchmark(conf, flags);
-
 		conf.adaptDefaults();
 
 		runInfomap(conf);
@@ -411,17 +382,14 @@ int run(const std::string& flags)
 		return EXIT_FAILURE;
 	}
 
-	ASSERT(NodeBase::nodeCount() == 0); //TODO: Not working with OpenMP
-//	if (NodeBase::nodeCount() != 0)
-//		Log() << "Warning: " << NodeBase::nodeCount() << " nodes not deleted!\n";
-
-
 	Log() << "===================================================\n";
 	Log() << "  Infomap ends at " << Date() << "\n";
 	Log() << "  (Elapsed time: " << (Date() - startDate) << ")\n";
 	Log() << "===================================================\n";
 
 	return 0;
+}
+
 }
 
 #ifndef AS_LIB
@@ -431,29 +399,6 @@ int main(int argc, char* argv[])
 	for (int i = 1; i < argc; ++i)
 		args << argv[i] << (i + 1 == argc? "" : " ");
 
-	int ret = run(args.str());
-
-//   if(fetestexcept(FE_DIVBYZERO))
-// 		std::cout << "Warning: division by zero reported" << std::endl;
-
-//   // if(fetestexcept(FE_INEXACT))
-// 	// 	std::cout << "Warning: inexact result reported" << std::endl;
-// 	// Raised on trivial double arithmetics
-
-//   if(fetestexcept(FE_INVALID))
-// 		std::cout << "Warning: invalid result reported" << std::endl;
-
-//   if(fetestexcept(FE_OVERFLOW))
-// 		std::cout << "Warning: overflow result reported" << std::endl;
-
-// 	if(fetestexcept(FE_UNDERFLOW))
-// 		std::cout << "Warning: underflow result reported" << std::endl;
-
-	// feclearexcept(FE_ALL_EXCEPT);
-	return ret;
-}
-#endif
-
-#ifdef NS_INFOMAP
+	return infomap::run(args.str());
 }
 #endif

@@ -28,15 +28,10 @@
 #ifndef VERSION_H_
 #define VERSION_H_
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+namespace infomap {
 
 extern const char* INFOMAP_VERSION;
 
-#ifdef NS_INFOMAP
 }
-#endif
 
 #endif /* VERSION_H_ */

@@ -39,15 +39,12 @@
 #include <set>
 #include <functional>   // std::greater
 #include <limits>
-#include "../utils/Logger.h"
+#include "../utils/Log.h"
 
 #include "../io/Config.h"
 #include "SafeFile.h"
 
-#ifdef NS_INFOMAP
-namespace infomap
-{
-#endif
+namespace infomap {
 
 enum EdgeAggregationPolicy { NONE, PARTIAL, FULL };
 
@@ -394,17 +391,17 @@ public:
 	:	m_root(NULL),
   	m_current(NULL),
 	 	m_depth(0),
-		m_moduleIndex(0),
-		m_moduleIndexDepth(-1)
+		m_clusterIndex(0),
+		m_clusterIndexLevel(-1)
 	{}
 
 	explicit
-	LeafIterator(SNode* nodePointer, int moduleIndexDepth = -1)
+	LeafIterator(SNode* nodePointer, int clusterIndexLevel = -1)
 	:	m_root(nodePointer),
 	  m_current(nodePointer),
 	 	m_depth(0),
-		m_moduleIndex(0),
-		m_moduleIndexDepth(moduleIndexDepth)
+		m_clusterIndex(0),
+		m_clusterIndexLevel(clusterIndexLevel)
 	{
 		if (m_current != 0)
 		{
@@ -420,8 +417,8 @@ public:
 	: m_root(other.m_root),
     m_current(other.m_current),
     m_depth(other.m_depth),
-    m_moduleIndex(other.m_moduleIndex),
-    m_moduleIndexDepth(other.m_moduleIndexDepth)
+    m_clusterIndex(other.m_clusterIndex),
+    m_clusterIndexLevel(other.m_clusterIndexLevel)
 	{}
 
 	LeafIterator & operator= (const LeafIterator& other)
@@ -429,8 +426,8 @@ public:
     m_root = other.m_root;
 		m_current = other.m_current;
 		m_depth = other.m_depth;
-    m_moduleIndex = other.m_moduleIndex;
-    m_moduleIndexDepth = other.m_moduleIndexDepth;
+    m_clusterIndex = other.m_clusterIndex;
+    m_clusterIndexLevel = other.m_clusterIndexLevel;
 		return *this;
 	}
 
@@ -469,12 +466,12 @@ public:
 				m_current = NULL;
 				return *this;
 			}
-      if (m_moduleIndexDepth < 0) {
+      if (m_clusterIndexLevel < 0) {
          if (m_current->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
-           ++m_moduleIndex;
+           ++m_clusterIndex;
       }
-      else if (static_cast<unsigned int>(m_moduleIndexDepth) == m_depth)
-        ++m_moduleIndex;
+      else if (static_cast<unsigned int>(m_clusterIndexLevel) == m_depth)
+        ++m_clusterIndex;
 		}
 
 		m_current = m_current->nextSibling();
@@ -509,9 +506,9 @@ public:
 		return m_depth;
 	}
 
-	unsigned int moduleIndex() const
+	unsigned int clusterIndex() const
 	{
-		return m_moduleIndex;
+		return m_clusterIndex;
 	}
 
 	bool operator==(const LeafIterator& rhs) const
@@ -528,8 +525,8 @@ private:
 	SNode* m_root;
 	SNode* m_current;
 	unsigned int m_depth;
-  unsigned int m_moduleIndex;
-  int m_moduleIndexDepth;
+  unsigned int m_clusterIndex;
+  int m_clusterIndexLevel;
 };
 
 class TreeIterator
@@ -540,17 +537,17 @@ public:
 	:	m_root(NULL),
 		m_current(NULL),
 	 	m_depth(0),
-		m_moduleIndex(0),
-		m_moduleIndexDepth(-1)
+		m_clusterIndex(0),
+		m_clusterIndexLevel(-1)
 	{}
 
 	explicit
-	TreeIterator(SNode* nodePointer, int moduleIndexDepth = -1)
+	TreeIterator(SNode* nodePointer, int clusterIndexLevel = -1)
 	:	m_root(nodePointer),
 		m_current(nodePointer),
 	 	m_depth(0),
-		m_moduleIndex(0),
-		m_moduleIndexDepth(moduleIndexDepth)
+		m_clusterIndex(0),
+		m_clusterIndexLevel(clusterIndexLevel)
 	{
 		if (m_current->skip)
 			m_current = NULL;
@@ -561,8 +558,8 @@ public:
 		m_current(other.m_current),
 	 	m_depth(other.m_depth),
 		m_path(other.m_path),
-		m_moduleIndex(other.m_moduleIndex),
-		m_moduleIndexDepth(other.m_moduleIndexDepth)
+		m_clusterIndex(other.m_clusterIndex),
+		m_clusterIndexLevel(other.m_clusterIndexLevel)
 	{}
 
 	TreeIterator & operator= (const TreeIterator& other)
@@ -571,8 +568,8 @@ public:
 		m_current = other.m_current;
 		m_depth = other.m_depth;
 		m_path = other.m_path;
-		m_moduleIndex = other.m_moduleIndex;
-		m_moduleIndexDepth = other.m_moduleIndexDepth;
+		m_clusterIndex = other.m_clusterIndex;
+		m_clusterIndexLevel = other.m_clusterIndexLevel;
 		return *this;
 	}
 
@@ -625,12 +622,12 @@ public:
 					m_current = 0;
 					return *this;
 				}
-				if (m_moduleIndexDepth < 0) {
+				if (m_clusterIndexLevel < 0) {
 					 if (m_current->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
-						 ++m_moduleIndex;
+						 ++m_clusterIndex;
 				}
-				else if (static_cast<unsigned int>(m_moduleIndexDepth) == m_depth)
-					++m_moduleIndex;
+				else if (static_cast<unsigned int>(m_clusterIndexLevel) == m_depth)
+					++m_clusterIndex;
 			}
 			m_current = m_current->nextSibling();
 			if (m_current->skip) {
@@ -660,9 +657,9 @@ public:
 		return m_depth;
 	}
 
-	unsigned int moduleIndex() const
+	unsigned int clusterIndex() const
 	{
-		return m_moduleIndex;
+		return m_clusterIndex;
 	}
 
 	const std::deque<unsigned int>& path() const
@@ -686,8 +683,8 @@ private:
 	unsigned int m_depth;
 
 	std::deque<unsigned int> m_path; // The child index path to current node
-	unsigned int m_moduleIndex;
-	int m_moduleIndexDepth;
+	unsigned int m_clusterIndex;
+	int m_clusterIndexLevel;
 };
 
 class ChildIterator
@@ -830,9 +827,9 @@ public:
 
 	unsigned int numTopModules() { return m_rootNode.childDegree(); }
 
-	LeafIterator leafIter(int moduleIndexDepth = -1) { return LeafIterator(&m_rootNode, moduleIndexDepth); }
+	LeafIterator leafIter(int clusterIndexLevel = -1) { return LeafIterator(&m_rootNode, clusterIndexLevel); }
 
-	TreeIterator treeIter(int moduleIndexDepth = -1) { return TreeIterator(&m_rootNode, moduleIndexDepth); }
+	TreeIterator treeIter(int clusterIndexLevel = -1) { return TreeIterator(&m_rootNode, clusterIndexLevel); }
 
 	SNode& addNode(SNode& parent, double flow, double exitFlow);
 
@@ -905,7 +902,7 @@ public:
 	 * Default cluster level 1 corresponds to top modules
 	 * Set to -1 for leaf modules.
 	 */
-	void writeClu(const std::string& fileName, int moduleIndexDepth = 1);
+	void writeClu(const std::string& fileName, int clusterIndexLevel = 1);
 
 	void readHumanReadableTree(const std::string& fileName);
 
@@ -950,8 +947,6 @@ private:
 
 };
 
-#ifdef NS_INFOMAP
 }
-#endif
 
 #endif /* HIERARCHICALNETWORK_H_ */

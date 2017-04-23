@@ -1,4 +1,4 @@
-CXXFLAGS = -Wall -pipe -std=gnu++98
+CXXFLAGS = -Wall -std=c++11
 LDFLAGS =
 CXX_CLANG := $(shell $(CXX) --version 2>/dev/null | grep clang)
 ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"
@@ -21,29 +21,21 @@ endif
 
 HEADERS := $(shell find src -name "*.h")
 SOURCES := $(shell find src -name "*.cpp")
-# Only one main
-SOURCES := $(filter-out src/Informatter.cpp,$(SOURCES))
 OBJECTS := $(SOURCES:src/%.cpp=build/Infomap/%.o)
 
 ##################################################
 # Stand-alone C++ targets
 ##################################################
 
-INFORMATTER_OBJECTS = $(OBJECTS:Infomap.o=Informatter.o)
-
 .PHONY: all noomp test debug
+
+all: Infomap
+	@true
 
 Infomap: $(OBJECTS)
 	@echo "Linking object files to target $@..."
 	$(CXX) $(LDFLAGS) -o $@ $^
 	@echo "-- Link finished --"
-
-Infomap-formatter: $(INFORMATTER_OBJECTS)
-	@echo "Making Informatter..."
-	$(CXX) $(LDFLAGS) -o $@ $^
-
-all: Infomap Infomap-formatter
-	@true
 
 ## Generic compilation rule for object files from cpp files
 build/Infomap/%.o : src/%.cpp $(HEADERS) Makefile
@@ -132,7 +124,7 @@ PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
 PY3_HEADERS := $(HEADERS:src/%.h=$(PY3_BUILD_DIR)/src/%.h)
 PY3_SOURCES := $(SOURCES:src/%.cpp=$(PY3_BUILD_DIR)/src/%.cpp)
 
-.PHONY: python py-build
+.PHONY: python python3 py-build py3-build
 
 # Use python distutils to compile the module
 python: py-build Makefile
@@ -198,4 +190,4 @@ $(R_BUILD_DIR)/src/%: src/%
 ##################################################
 
 clean:
-	$(RM) -r Infomap Infomap-formatter build lib include
+	$(RM) -r Infomap build lib include
