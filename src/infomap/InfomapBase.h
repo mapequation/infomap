@@ -48,6 +48,8 @@ class PartitionQueue;
 
 class InfomapBase
 {
+protected:
+	typedef Edge<NodeBase>												EdgeType;
 public:
 	InfomapBase(const Config& conf, NodeFactoryBase* nodeFactory)
 	:	m_config(conf),

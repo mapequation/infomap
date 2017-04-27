@@ -1528,6 +1528,73 @@ bool InfomapBase::initNetwork(Network& network)
  	for (unsigned int i = 0; i < links.size(); ++i)
  		m_treeData.addEdge(links[i].source, links[i].target, links[i].weight, links[i].flow * m_config.markovTime);
 
+	
+	if (m_config.variableMarkovTime)
+	{
+		// Adjust flow for constant entropy
+		bool useWeightedEntropy = true;
+		double averageNodeFlow = 1.0 / network.numNodes();
+		
+		double sumEntropy = 0.0;
+		for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
+				it != itEnd; ++it)
+		{
+			NodeBase& node = **it;
+			double sumOutFlow = 0.0;
+			double entropy = 0.0;
+			for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), edgeEnd(node.end_outEdge());
+					edgeIt != edgeEnd; ++edgeIt)
+			{
+				EdgeType& edge = **edgeIt;
+				sumOutFlow += edge.data.flow;
+				// entropy += -infomath::plogp(edge.data.flow);
+			}
+			for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), edgeEnd(node.end_outEdge());
+					edgeIt != edgeEnd; ++edgeIt)
+			{
+				EdgeType& edge = **edgeIt;
+				entropy += -infomath::plogp(edge.data.flow / sumOutFlow);
+			}
+			entropy *= useWeightedEntropy ? getNodeData(node).flow : averageNodeFlow;
+			sumEntropy += entropy;
+
+			// Log() << " " << entropy << ", ";
+			
+		}
+		double averageEntropyPerNode = sumEntropy;
+		Log() << "  -> Adjust variable markov time (current weighted average node entropy: " << averageEntropyPerNode << ")\n";
+		// double entropyFactor = m_config.constantEntropy / sumEntropy;
+		for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
+				it != itEnd; ++it)
+		{
+			NodeBase& node = **it;
+			double sumOutFlow = 0.0;
+			double entropy = 0.0;
+			for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), edgeEnd(node.end_outEdge());
+					edgeIt != edgeEnd; ++edgeIt)
+			{
+				EdgeType& edge = **edgeIt;
+				sumOutFlow += edge.data.flow;
+			}
+			for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), edgeEnd(node.end_outEdge());
+					edgeIt != edgeEnd; ++edgeIt)
+			{
+				EdgeType& edge = **edgeIt;
+				entropy += -infomath::plogp(edge.data.flow / sumOutFlow);
+			}
+			// entropy *= useWeightedEntropy ? getNodeData(node).flow : averageNodeFlow;
+			for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), edgeEnd(node.end_outEdge());
+					edgeIt != edgeEnd; ++edgeIt)
+			{
+				EdgeType& edge = **edgeIt;
+				edge.data.flow *= entropy < 1e-10 ? 1000 : averageEntropyPerNode / entropy;
+			}
+
+			// Log() << " " << (entropy < 1e-10 ? 1000 : m_config.constantEntropy / entropy) << ", ";
+			
+		}
+	}
+
 
  	double sumNodeFlow = 0.0;
 	for (unsigned int i = 0; i < nodeFlow.size(); ++i)

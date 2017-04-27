@@ -72,6 +72,7 @@ struct Config
 		teleportationProbability(0.15),
 		selfTeleportationProbability(-1),
 		markovTime(1.0),
+		variableMarkovTime(false),
 		preferredNumberOfModules(0),
 		multiplexRelaxRate(-1),
 		multiplexJSRelaxRate(-1),
@@ -150,6 +151,7 @@ struct Config
 		teleportationProbability(other.teleportationProbability),
 		selfTeleportationProbability(other.selfTeleportationProbability),
 		markovTime(other.markovTime),
+		variableMarkovTime(other.variableMarkovTime),
 		preferredNumberOfModules(other.preferredNumberOfModules),
 		multiplexRelaxRate(other.multiplexRelaxRate),
 		multiplexJSRelaxRate(other.multiplexJSRelaxRate),
@@ -230,6 +232,7 @@ struct Config
 		teleportationProbability = other.teleportationProbability;
 		selfTeleportationProbability = other.selfTeleportationProbability;
 	 	markovTime = other.markovTime;
+	 	variableMarkovTime = other.variableMarkovTime;
 	 	preferredNumberOfModules = other.preferredNumberOfModules;
 		multiplexRelaxRate = other.multiplexRelaxRate;
 		multiplexJSRelaxRate = other.multiplexJSRelaxRate;
@@ -449,6 +452,7 @@ struct Config
 	double teleportationProbability;
 	double selfTeleportationProbability;
 	double markovTime;
+	bool variableMarkovTime;
 	unsigned int preferredNumberOfModules;
 	double multiplexRelaxRate;
 	double multiplexJSRelaxRate;
