@@ -199,6 +199,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.markovTime, "markov-time",
 			"Scale link flow with this value to change the cost of moving between modules. Higher for less modules.", "f", true);
 
+	api.addOptionArgument(conf.variableMarkovTime, "variable-markov-time",
+			"Scale link flow per node inversely proportional to the node exit entropy to easier split connected hubs and keep long chains together.", true);
+
 	api.addOptionArgument(conf.preferredNumberOfModules, "preferred-number-of-modules",
 			"Stop merge or split modules if preferred number of modules is reached.", "n", true);
 
