@@ -72,26 +72,6 @@ void runInfomap(const Config& config)
 
 	// Log() << "Run Infomap..." << std::endl;
 	infomap.run();
-
-	std::string outputFilename = config.outDirectory + config.outName + ".tree";
-	Log() << "Write tree to " << outputFilename << "..." << std::endl;
-
-	SafeOutFile outFile(outputFilename);
-	outFile << "# Codelength = " << infomap.getCodelength() << " bits.\n";
-	// auto it = root.begin_infomapDepthFirst();
-	// it++;
-	// for (; !it.isEnd(); ++it) {
-	// for (auto& it : root.infomapTree()) {
-	for (auto it = infomap.root().begin_infomapDepthFirst(); !it.isEnd(); ++it) {
-		InfoNodeBase &node = *it;
-		if (node.isLeaf()) {
-			auto &path = it.path();
-			outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.uid << "\" " <<
-					node.physicalId << "\n";
-		}
-	}
-	
-	std::cout << "   -> Writed tree to file " << outputFilename + "\n";
     
 	
 	Log() << "Done!" << std::endl;

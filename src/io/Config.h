@@ -117,7 +117,7 @@ struct Config
 	bool printExpanded = false; // Print the expanded network of memory nodes if possible
 	bool noFileOutput = false;
 	unsigned int verbosity = 0;
-	unsigned int verboseNumberPrecision = 6;
+	unsigned int verboseNumberPrecision = 9;
 	bool silent = false;
 	bool benchmark = false;
 
