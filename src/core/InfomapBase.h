@@ -51,9 +51,7 @@ public:
 	template<typename Infomap>
 	InfomapBase(InfomapConfig<Infomap>& conf) :
 		InfomapConfig<Infomap>(conf)
-	{
-		Log::precision(this->verboseNumberPrecision);
-	}
+	{}
 	virtual ~InfomapBase() {}
 
 	// ===================================================
@@ -313,6 +311,7 @@ protected:
 	unsigned int m_numNonTrivialTopModules = 0;
 	unsigned int m_iterationCount = 0;
 	bool m_isCoarseTune = false;
+	unsigned int m_aggregationLevel = 0;
 
 	double m_hierarchicalCodelength = 0.0;
 };
@@ -1072,6 +1071,7 @@ void InfomapBase<Node>::findTopModulesRepeatedly(unsigned int maxLevels)
 {
 	Log(1,2) << "Iteration " << m_iterationCount << ", moving ";
 	Log(3) << "\nIteration " << m_iterationCount << ":\n";
+	m_aggregationLevel = 0;
 	unsigned int numLevelsConsolidated = numLevels() - 1;
 	if (maxLevels == 0)
 		maxLevels = std::numeric_limits<unsigned int>::max();
@@ -1106,7 +1106,7 @@ void InfomapBase<Node>::findTopModulesRepeatedly(unsigned int maxLevels)
 		bool replaceExistingModules = haveModules();
 		consolidateModules(replaceExistingModules);
 		++numLevelsConsolidated;
-
+		++m_aggregationLevel;
 	}
 
 	calculateNumNonTrivialTopModules();

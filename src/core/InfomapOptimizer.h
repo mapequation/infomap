@@ -103,6 +103,8 @@ protected:
 
 	using Base::m_oneLevelCodelength;
 	using Base::m_rand;
+	using Base::m_aggregationLevel;
+	using Base::m_isCoarseTune;
 
 	Objective m_objective;
 	Objective m_consolidatedObjective;
@@ -281,7 +283,6 @@ void InfomapOptimizer<Node, Objective>::moveActiveNodesToPredifinedModules(std::
 	}
 }
 
-
 template<typename Node, typename Objective>
 inline
 unsigned int InfomapOptimizer<Node, Objective>::optimizeActiveNetwork()
@@ -289,13 +290,20 @@ unsigned int InfomapOptimizer<Node, Objective>::optimizeActiveNetwork()
 	unsigned int coreLoopCount = 0;
 	double oldCodelength = m_objective.codelength;
 	unsigned int numEffectiveLoops = 0;
+	unsigned int loopLimit = this->coreLoopLimit;
+	unsigned int minRandLoop = 2;
+	if (loopLimit >= minRandLoop && this->randomizeCoreLoopLimit)
+		loopLimit = static_cast<unsigned int>(m_rand() * (loopLimit - minRandLoop)) + minRandLoop;
+	if (m_aggregationLevel > 0 || m_isCoarseTune) {
+		loopLimit = 20;
+	}
 
-	while (coreLoopCount != this->coreLoopLimit)
+	while (coreLoopCount != loopLimit)
 	{
 		++coreLoopCount;
 		unsigned int numNodesMoved = tryMoveEachNodeIntoBestModule();
 		// Break if not enough improvement
-		if (numNodesMoved == 0 || m_objective.codelength > oldCodelength - this->minimumCodelengthImprovement)
+		if (numNodesMoved == 0 || m_objective.codelength >= oldCodelength - this->minimumCodelengthImprovement)
 			break;
 		++numEffectiveLoops;
 		oldCodelength = m_objective.codelength;

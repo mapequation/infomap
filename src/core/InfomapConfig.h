@@ -114,7 +114,9 @@ public:
 	InfomapConfig(const Config& conf) :
 		Config(conf),
 		m_rand(infomath::RandGen(conf.seedToRandomNumberGenerator))
-	{}
+	{
+		Log::precision(conf.verboseNumberPrecision);
+	}
 	virtual ~InfomapConfig() {}
 
 private:
@@ -129,6 +131,7 @@ public:
 	Infomap& setConfig(const Config& conf) {
 		*this = conf;
 		m_rand.seed(conf.seedToRandomNumberGenerator);
+		Log::precision(conf.verboseNumberPrecision);
 		return get();
 	}
 
