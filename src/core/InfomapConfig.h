@@ -111,18 +111,24 @@ template<typename Infomap>
 class InfomapConfig : public Config {
 public:
 	InfomapConfig() {}
-	InfomapConfig(const Config& conf) : Config(conf) {}
+	InfomapConfig(const Config& conf) :
+		Config(conf),
+		m_rand(infomath::RandGen(conf.seedToRandomNumberGenerator))
+	{}
 	virtual ~InfomapConfig() {}
 
 private:
 	Infomap& get() {
 		return static_cast<Infomap&>(*this);
 	}
+protected:
+	infomath::RandGen m_rand = infomath::RandGen(123);
 
 public:
 
 	Infomap& setConfig(const Config& conf) {
 		*this = conf;
+		m_rand.seed(conf.seedToRandomNumberGenerator);
 		return get();
 	}
 

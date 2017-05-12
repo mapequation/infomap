@@ -45,11 +45,15 @@ protected:
 	using EdgeType = Edge<InfoNodeBase>;
 
 public:
-	InfomapBase() {
+	InfomapBase()
+	{}
+
+	template<typename Infomap>
+	InfomapBase(InfomapConfig<Infomap>& conf) :
+		InfomapConfig<Infomap>(conf)
+	{
 		Log::precision(this->verboseNumberPrecision);
 	}
-	template<typename Infomap>
-	InfomapBase(InfomapConfig<Infomap>& conf) : InfomapConfig<Infomap>(conf) {}
 	virtual ~InfomapBase() {}
 
 	// ===================================================
@@ -151,7 +155,7 @@ protected:
 
 	bool haveHardPartition() const;
 
-	std::vector<InfoNodeBase*>& activeNetwork();
+	std::vector<InfoNodeBase*>& activeNetwork() const;
 
 	// ===================================================
 	// Run(...): *
@@ -472,7 +476,7 @@ bool InfomapBase<Node>::haveHardPartition() const
 
 
 template<typename Node>
-std::vector<InfoNodeBase*>& InfomapBase<Node>::activeNetwork()
+std::vector<InfoNodeBase*>& InfomapBase<Node>::activeNetwork() const
 {
 	return *m_activeNetwork;
 }
