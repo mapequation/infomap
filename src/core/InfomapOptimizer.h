@@ -58,6 +58,8 @@ protected:
 
 	using Base::isMainInfomap;
 
+	using Base::isFirstLoop;
+
 	virtual unsigned int numActiveModules() const;
 
 	using Base::activeNetwork;
@@ -332,8 +334,9 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 		if (!current.dirty)
 			continue;
 
-//		if (m_moduleMembers[current.index] > 1 && isFirstLoop())
-//			continue;
+		// If other nodes have moved here, don't move away on first loop
+		if (m_moduleMembers[current.index] > 1 && isFirstLoop())
+			continue;
 
 		// If no links connecting this node with other nodes, it won't move into others,
 		// and others won't move into this. TODO: Always best leave it alone?

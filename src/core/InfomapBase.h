@@ -135,6 +135,9 @@ public:
 
 protected:
 
+	bool isFullNetwork() { return m_isMain && m_aggregationLevel == 0; }
+	bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
+
 	Node& get(InfoNodeBase& node);
 	const Node& get(const InfoNodeBase& node) const;
 
@@ -309,7 +312,7 @@ protected:
 
 	double m_oneLevelCodelength = 0.0;
 	unsigned int m_numNonTrivialTopModules = 0;
-	unsigned int m_iterationCount = 0;
+	unsigned int m_tuneIterationIndex = 0;
 	bool m_isCoarseTune = false;
 	unsigned int m_aggregationLevel = 0;
 
@@ -431,7 +434,9 @@ InfomapBase<Node>& InfomapBase<Node>::getInfomap(InfoNodeBase& node) {
 template<typename Node>
 inline
 InfomapBase<Node>& InfomapBase<Node>::getNonMainInfomap(InfoNodeBase& node) {
-	return getInfomap(node).setIsMain(false);
+	return getInfomap(node)
+		.setIsMain(false)
+		.setNonMainConfig(*this);
 }
 
 template<typename Node>
@@ -867,7 +872,7 @@ void InfomapBase<Node>::partition()
 	Log(1) << "Trying to find modular structure... \n";
 	double oldCodelength = m_oneLevelCodelength;
 
-	++m_iterationCount;
+	m_tuneIterationIndex = 0;
 	findTopModulesRepeatedly(this->levelAggregationLimit);
 
 	double newCodelength = getCodelength();
@@ -877,9 +882,9 @@ void InfomapBase<Node>::partition()
 
 	bool doFineTune = true;
 	bool coarseTuned = false;
-	while (numTopModules() > 1 && this->tuneIterationLimit != m_iterationCount)
+	while (numTopModules() > 1 && (m_tuneIterationIndex + 1) != this->tuneIterationLimit)
 	{
-		++m_iterationCount;
+		++m_tuneIterationIndex;
 		if (doFineTune)
 		{
 			Log(3) << "\n";
@@ -1069,8 +1074,8 @@ void InfomapBase<Node>::setActiveNetworkFromChildrenOfRoot()
 template<typename Node>
 void InfomapBase<Node>::findTopModulesRepeatedly(unsigned int maxLevels)
 {
-	Log(1,2) << "Iteration " << m_iterationCount << ", moving ";
-	Log(3) << "\nIteration " << m_iterationCount << ":\n";
+	Log(1,2) << "Iteration " << (m_tuneIterationIndex + 1) << ", moving ";
+	Log(3) << "\nIteration " << (m_tuneIterationIndex + 1) << ":\n";
 	m_aggregationLevel = 0;
 	unsigned int numLevelsConsolidated = numLevels() - 1;
 	if (maxLevels == 0)
@@ -1186,7 +1191,9 @@ unsigned int InfomapBase<Node>::coarseTune()
 		}
 		else {
 
-			InfomapBase<Node>& subInfomap = getNonMainInfomap(node).setNonMainConfig(*this).setTwoLevel(true).setNoCoarseTune(true);
+			InfomapBase<Node>& subInfomap = getNonMainInfomap(node)
+				.setTwoLevel(true)
+				.setNoCoarseTune(true);
 			subInfomap.initNetwork(get(node)).run();
 
 			auto originalLeafIt = node.begin_child();
@@ -1378,7 +1385,10 @@ unsigned int InfomapBase<Node>::findHierarchicalSuperModules(int levelLimit)
 			Log::setSilent(true);
 		}
 		Node tmp(m_root.data); // Temporary owner for the super Infomap instance
-		auto& superInfomap = get(tmp).getInfomap().setIsMain(false).setConfig(*this).setTwoLevel(true);
+		auto& superInfomap = get(tmp).getInfomap()
+			.setIsMain(false)
+			.setConfig(*this)
+			.setTwoLevel(true);
 		superInfomap.initNetwork(m_root, true);//.initSuperNetwork();
 		superInfomap.run();
 		if (isMainInfomap()) {
@@ -1710,7 +1720,8 @@ bool InfomapBase<Node>::processPartitionQueue(PartitionQueue& queue, PartitionQu
 //		std::cout << "\n\n\nSubInfomap partition network with " << module.childDegree() << " nodes (module codelength: " <<
 //				module.codelength << ")...:\n" << std::endl;
 
-		auto& subInfomap = getNonMainInfomap(module).setNonMainConfig(*this).initNetwork(module);
+		auto& subInfomap = getNonMainInfomap(module)
+			.initNetwork(module);
 		// Run two-level partition + find hierarchically super modules (skip recursion)
 		subInfomap.setOnlySuperModules(true).run();
 //		subInfomap.setTwoLevel(true).run();
