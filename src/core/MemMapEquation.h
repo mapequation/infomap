@@ -74,7 +74,7 @@ public:
 
 	double calcCodelength(const InfoNodeBase& parent) const;
 
-	void addMemoryContributions(InfoNodeBase& current, DeltaFlowDataType& oldModuleDelta, std::map<unsigned int, DeltaFlowDataType>& moduleDeltaFlow);
+	void addMemoryContributions(InfoNodeBase& current, DeltaFlowDataType& oldModuleDelta, std::vector<DeltaFlowDataType>& moduleDeltaFlow);
 
 	double getDeltaCodelengthOnMovingNode(InfoNodeBase& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData);
@@ -369,7 +369,7 @@ double MemMapEquation<Node>::calcCodelength(const InfoNodeBase& parent) const
 template<typename Node>
 inline
 void MemMapEquation<Node>::addMemoryContributions(InfoNodeBase& current,
-	DeltaFlowDataType& oldModuleDelta, std::map<unsigned int, DeltaFlowDataType>& moduleDeltaFlow)
+	DeltaFlowDataType& oldModuleDelta, std::vector<DeltaFlowDataType>& moduleDeltaFlow)
 {
 	// Overlapping modules
 	/**
@@ -406,6 +406,7 @@ void MemMapEquation<Node>::addMemoryContributions(InfoNodeBase& current,
 				otherDeltaFlow.module = moduleIndex; // Make sure module index is correct if created new module link
 				otherDeltaFlow.sumDeltaPlogpPhysFlow = infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
 				otherDeltaFlow.sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
+				++otherDeltaFlow.count;
 			}
 		}
 	}

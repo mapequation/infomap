@@ -94,6 +94,19 @@ struct DeltaFlow
 		return *this;
 	}
 
+	bool operator==(const DeltaFlow& other)
+	{
+		return module == other.module;
+	}
+
+	void reset()
+	{
+		module = 0;
+		deltaExit = 0.0;
+		deltaEnter = 0.0;
+		count = 0;
+	}
+
 	friend void swap(DeltaFlow& first, DeltaFlow& second)
 	{
 		std::swap(first.module, second.module);
@@ -101,10 +114,10 @@ struct DeltaFlow
 		std::swap(first.deltaEnter, second.deltaEnter);
 		std::swap(first.count, second.count);
 	}
-	unsigned int module;
-	double deltaExit;
-	double deltaEnter;
-	unsigned int count;
+	unsigned int module = 0;
+	double deltaExit = 0.0;
+	double deltaEnter = 0.0;
+	unsigned int count = 0;
 };
 
 struct MemDeltaFlow : DeltaFlow
@@ -130,6 +143,18 @@ struct MemDeltaFlow : DeltaFlow
 		return *this;
 	}
 
+	bool operator==(const MemDeltaFlow& other)
+	{
+		return module == other.module;
+	}
+
+	void reset()
+	{
+		DeltaFlow::reset();
+		sumDeltaPlogpPhysFlow = 0.0;
+		sumPlogpPhysFlow = 0.0;
+	}
+
 	friend void swap(MemDeltaFlow& first, MemDeltaFlow& second)
 	{
 		std::swap(first.module, second.module);
@@ -140,8 +165,8 @@ struct MemDeltaFlow : DeltaFlow
 		std::swap(first.sumPlogpPhysFlow, second.sumPlogpPhysFlow);
 	}
 
-	double sumDeltaPlogpPhysFlow;
-	double sumPlogpPhysFlow;
+	double sumDeltaPlogpPhysFlow = 0.0;
+	double sumPlogpPhysFlow = 0.0;
 };
 
 

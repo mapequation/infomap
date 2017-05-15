@@ -10,6 +10,8 @@
 
 #include "InfomapBase.h"
 #include <set>
+#include <unordered_map>
+// #include "../utils/ReusableVector.h"
 
 namespace infomap {
 
@@ -335,6 +337,8 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 	unsigned int numNodes = nodeEnumeration.size();
 	unsigned int numMoved = 0;
 
+	// Create map with module links
+	std::vector<DeltaFlowData> deltaFlow(numNodes);
 	Stopwatch timer(false);
 	double t = 0.0;
 	double tCount = 0;
@@ -362,7 +366,11 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 		// }
 
 		// Create map with module links
-		std::map<unsigned int, DeltaFlowData> deltaFlow;
+		// std::unordered_map<unsigned int, DeltaFlowData> deltaFlow;
+		// deltaFlow.rehash(numNodes);
+		for (auto& d : deltaFlow) {
+			d.reset();
+		}
 
 		// For all outlinks
 		for (auto& e : current.outEdges())
@@ -385,6 +393,8 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 		// For not moving
 		DeltaFlowData& oldModuleDelta = deltaFlow[current.index];
 		oldModuleDelta.module = current.index; // Make sure index is correct if created new
+		// ++oldModuleDelta.count;
+		oldModuleDelta += DeltaFlowData(current.index, 0.0, 0.0);
 
 		// Option to move to empty module (if node not already alone)
 		if (m_moduleMembers[current.index] > 1 && m_emptyModules.size() > 0) {
@@ -394,24 +404,33 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 		// For memory networks
 		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
-		// Collect the move options to a vector
-		std::vector<DeltaFlowData> moduleDeltaEnterExit(deltaFlow.size());
-		unsigned int numModuleLinks = 0;
-		for (auto& it : deltaFlow)
-		{
-			moduleDeltaEnterExit[numModuleLinks] = it.second;
-			++numModuleLinks;
-		}
-		// timer.start();
-		// Randomize link order for optimized search
-		infomath::uniform_uint_dist uniform;
-		for (unsigned int j = 0; j < numModuleLinks - 1; ++j)
-		{
-			unsigned int randPos = j + uniform(m_rand, infomath::uniform_param_t(0, numModuleLinks - j - 1));
-			swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
-		}
+		// // Collect the move options to a vector
+		// std::vector<DeltaFlowData> moduleDeltaEnterExit(deltaFlow.size());
+		// unsigned int numModuleLinks = 0;
+		// for (auto& it : deltaFlow)
+		// {
+		// 	moduleDeltaEnterExit[numModuleLinks] = it.second;
+		// 	++numModuleLinks;
+		// }
+		// // timer.start();
+		// // Randomize link order for optimized search
+		// infomath::uniform_uint_dist uniform;
+		// for (unsigned int j = 0; j < numModuleLinks - 1; ++j)
+		// {
+		// 	unsigned int randPos = j + uniform(m_rand, infomath::uniform_param_t(0, numModuleLinks - j - 1));
+		// 	swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+		// }
 		// t += timer.getElapsedTimeInMilliSec();
 		// ++tCount;
+		auto& moduleDeltaEnterExit = deltaFlow;
+		
+		// Randomize link order for optimized search
+		// infomath::uniform_uint_dist uniform;
+		// for (unsigned int j = 0; j < numNodes - 1; ++j)
+		// {
+		// 	unsigned int randPos = j + uniform(m_rand, infomath::uniform_param_t(0, numNodes - j - 1));
+		// 	swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+		// }
 
 		DeltaFlowData bestDeltaModule(oldModuleDelta);
 		double bestDeltaCodelength = 0.0;
@@ -420,8 +439,11 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 
 		// Log(5) << "Move node " << current << " in module " << current.index << "...\n";
 		// Find the move that minimizes the description length
-		for (unsigned int j = 0; j < numModuleLinks; ++j)
+		for (unsigned int j = 0; j < numNodes; ++j)
 		{
+			if (moduleDeltaEnterExit[j].count == 0) {
+				continue;
+			}
 			unsigned int otherModule = moduleDeltaEnterExit[j].module;
 			if(otherModule != current.index)
 			{

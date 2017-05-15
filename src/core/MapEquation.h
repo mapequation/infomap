@@ -92,7 +92,7 @@ public:
 
 	void addMemoryContributions(InfoNodeBase& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) {}
 
-	void addMemoryContributions(InfoNodeBase& current, DeltaFlowDataType& oldModuleDelta, std::map<unsigned int, DeltaFlowDataType>& moduleDeltaFlow) {}
+	void addMemoryContributions(InfoNodeBase& current, DeltaFlowDataType& oldModuleDelta, std::vector<DeltaFlowDataType>& moduleDeltaFlow) {}
 
 	double getDeltaCodelengthOnMovingNode(InfoNodeBase& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData);
