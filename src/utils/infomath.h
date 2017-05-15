@@ -51,6 +51,12 @@ namespace infomath
 		return p > 0.0 ? p * log2(p) : 0.0;
 	}
 
+	inline
+	unsigned int randInt(RandGen& randGen, unsigned int min, unsigned int max)
+	{
+		uniform_uint_dist uniform;
+		return uniform(randGen, uniform_param_t(min, max));
+	}
 
 	/**
 	 * Get a random permutation of indices of the size of the input vector

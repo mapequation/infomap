@@ -290,26 +290,36 @@ inline
 unsigned int InfomapOptimizer<Node, Objective>::optimizeActiveNetwork()
 {
 	unsigned int coreLoopCount = 0;
-	double oldCodelength = m_objective.codelength;
 	unsigned int numEffectiveLoops = 0;
+	double oldCodelength = m_objective.codelength;
 	unsigned int loopLimit = this->coreLoopLimit;
 	unsigned int minRandLoop = 2;
 	if (loopLimit >= minRandLoop && this->randomizeCoreLoopLimit)
-		loopLimit = static_cast<unsigned int>(m_rand() * (loopLimit - minRandLoop)) + minRandLoop;
+		loopLimit = infomath::randInt(m_rand, minRandLoop, loopLimit);
+		// loopLimit = static_cast<unsigned int>(m_rand() * (loopLimit - minRandLoop)) + minRandLoop;
 	if (m_aggregationLevel > 0 || m_isCoarseTune) {
 		loopLimit = 20;
 	}
 
+	Stopwatch timer(true), timerAll(true);
+	unsigned int numMovedTotal = 0;
+
 	while (coreLoopCount != loopLimit)
 	{
+		timer.start();
 		++coreLoopCount;
 		unsigned int numNodesMoved = tryMoveEachNodeIntoBestModule();
+		numMovedTotal += numNodesMoved;
+		Log() << " [[" << numNodesMoved << ": " << timer.getElapsedTimeInMilliSec() << "]] ";
 		// Break if not enough improvement
 		if (numNodesMoved == 0 || m_objective.codelength >= oldCodelength - this->minimumCodelengthImprovement)
 			break;
 		++numEffectiveLoops;
 		oldCodelength = m_objective.codelength;
 	}
+	double t = timerAll.getElapsedTimeInMilliSec();
+	Log() << " >>> TIME_PER_MOVE: " << t * 1.0 / numMovedTotal <<
+		", TIME_PER_LOOP: " << t / coreLoopCount << " <<< ";
 
 	return numEffectiveLoops;
 }
@@ -324,6 +334,10 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 	auto& network = activeNetwork();
 	unsigned int numNodes = nodeEnumeration.size();
 	unsigned int numMoved = 0;
+
+	Stopwatch timer(false);
+	double t = 0.0;
+	double tCount = 0;
 
 	for (unsigned int i = 0; i < numNodes; ++i)
 	{
@@ -362,7 +376,10 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 		{
 			auto& edge = *e;
 			InfoNodeBase& neighbour = edge.source;
+			timer.start();
 			deltaFlow[neighbour.index] += DeltaFlowData(neighbour.index, 0.0, edge.data.flow);
+			t += timer.getElapsedTimeInMilliSec();
+			++tCount;
 		}
 
 		// For not moving
@@ -373,7 +390,6 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 		if (m_moduleMembers[current.index] > 1 && m_emptyModules.size() > 0) {
 			deltaFlow[m_emptyModules.back()] += DeltaFlowData(m_emptyModules.back(), 0.0, 0.0);
 		}
-
 
 		// For memory networks
 		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
@@ -386,7 +402,7 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 			moduleDeltaEnterExit[numModuleLinks] = it.second;
 			++numModuleLinks;
 		}
-
+		// timer.start();
 		// Randomize link order for optimized search
 		infomath::uniform_uint_dist uniform;
 		for (unsigned int j = 0; j < numModuleLinks - 1; ++j)
@@ -394,13 +410,15 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 			unsigned int randPos = j + uniform(m_rand, infomath::uniform_param_t(0, numModuleLinks - j - 1));
 			swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
 		}
+		// t += timer.getElapsedTimeInMilliSec();
+		// ++tCount;
 
 		DeltaFlowData bestDeltaModule(oldModuleDelta);
 		double bestDeltaCodelength = 0.0;
 		DeltaFlowData strongestConnectedModule(oldModuleDelta);
 		double deltaCodelengthOnStrongestConnectedModule = 0.0;
 
-		Log(5) << "Move node " << current << " in module " << current.index << "...\n";
+		// Log(5) << "Move node " << current << " in module " << current.index << "...\n";
 		// Find the move that minimizes the description length
 		for (unsigned int j = 0; j < numModuleLinks; ++j)
 		{
@@ -410,10 +428,10 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 				double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
 						oldModuleDelta, moduleDeltaEnterExit[j], m_moduleFlowData);
 
-				Log(5) << " Move to module " << otherModule << " -> deltaCodelength: " << deltaCodelength <<
-						", deltaEnter: " << moduleDeltaEnterExit[j].deltaEnter << ", deltaExit: " << moduleDeltaEnterExit[j].deltaExit <<
-						", module enter/exit: " << m_moduleFlowData[otherModule].enterFlow << " / " << m_moduleFlowData[otherModule].exitFlow <<
-						", OLD delta enter/exit: " << oldModuleDelta.deltaEnter << " / " << oldModuleDelta.deltaExit << "\n";
+				// Log(5) << " Move to module " << otherModule << " -> deltaCodelength: " << deltaCodelength <<
+				// 		", deltaEnter: " << moduleDeltaEnterExit[j].deltaEnter << ", deltaExit: " << moduleDeltaEnterExit[j].deltaExit <<
+				// 		", module enter/exit: " << m_moduleFlowData[otherModule].enterFlow << " / " << m_moduleFlowData[otherModule].exitFlow <<
+				// 		", OLD delta enter/exit: " << oldModuleDelta.deltaEnter << " / " << oldModuleDelta.deltaExit << "\n";
 				if (deltaCodelength < bestDeltaCodelength - this->minimumSingleNodeCodelengthImprovement)
 				{
 					bestDeltaModule = moduleDeltaEnterExit[j];
@@ -450,15 +468,17 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 				m_emptyModules.push_back(current.index);
 			}
 
-			double oldCodelength = m_objective.codelength;
-
+			// timer.start();
 			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData);
+			// t += timer.getElapsedTimeInMilliSec();
+			// ++tCount;
 
 			m_moduleMembers[current.index] -= 1;
 			m_moduleMembers[bestModuleIndex] += 1;
 
-			Log(5) << " --> Moved to module " << bestModuleIndex << " -> codelength: " << oldCodelength << " + " <<
-					bestDeltaCodelength << " (" << (m_objective.codelength - oldCodelength) << ") = " << m_objective << "\n";
+			// double oldCodelength = m_objective.codelength;
+			// Log(5) << " --> Moved to module " << bestModuleIndex << " -> codelength: " << oldCodelength << " + " <<
+			// 		bestDeltaCodelength << " (" << (m_objective.codelength - oldCodelength) << ") = " << m_objective << "\n";
 
 //			unsigned int oldModuleIndex = current.index;
 			current.index = bestModuleIndex;
@@ -478,6 +498,8 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 //			Log(5) << " --> Didn't move!\n";
 
 	}
+
+	Log() << " !!! " << t << "/" << tCount << " = " << t / tCount << " !!! ";
 
 	return numMoved;
 }

@@ -20,6 +20,7 @@
 #include "../utils/Log.h"
 #include "../utils/infomath.h"
 #include "../utils/Date.h"
+#include "../utils/Stopwatch.h"
 #include <iomanip>
 #include <limits>
 #include "InfomapConfig.h"
@@ -1081,9 +1082,12 @@ void InfomapBase<Node>::findTopModulesRepeatedly(unsigned int maxLevels)
 	if (maxLevels == 0)
 		maxLevels = std::numeric_limits<unsigned int>::max();
 
+	Stopwatch timerAll(true);
+	Stopwatch timer(false);
 	// Reapply core algorithm on modular network, replacing modules with super modules
 	while (numTopModules() > 1 && numLevelsConsolidated != maxLevels)
 	{
+		timer.start();
 		if (haveModules())
 			setActiveNetworkFromChildrenOfRoot();
 		else
@@ -1093,12 +1097,14 @@ void InfomapBase<Node>::findTopModulesRepeatedly(unsigned int maxLevels)
 		Log(1,2) << activeNetwork().size() << "*" << std::flush;
 		Log(3) << "Level " << (numLevelsConsolidated+1) << " (codelength: " << *this << "): Moving " <<
 						activeNetwork().size() << " nodes... " << std::flush;
-
+		Log() << "{{ INIT TIME: " << timer.getElapsedTimeInMilliSec() << "ms }} ";
+		timer.start();
 		// Core loop, merging modules
 		unsigned int numOptimizationLoops = optimizeActiveNetwork();
 
 		Log(1,2) << numOptimizationLoops << ", " << std::flush;
 		Log(3) << "done! -> codelength " << *this << " in " << numActiveModules() << " modules." << std::endl;
+		Log() << "{{ MOVE TIME: " << timer.getElapsedTimeInMilliSec() << "ms }} ";
 
 		// If no improvement, revert codelength terms to the last consolidated state
 		if (haveModules() && restoreConsolidatedOptimizationPointIfNoImprovement())
@@ -1106,20 +1112,22 @@ void InfomapBase<Node>::findTopModulesRepeatedly(unsigned int maxLevels)
 			Log(3) << "-> Restored to codelength " << *this << " in " << numTopModules() << " modules." << std::endl;
 			break;
 		}
-
+		timer.start();
 		// Consolidate modules
 		bool replaceExistingModules = haveModules();
 		consolidateModules(replaceExistingModules);
+		Log() << "{{ CONSOLIDATE TIME: " << timer.getElapsedTimeInMilliSec() << "ms }} ";
 		++numLevelsConsolidated;
 		++m_aggregationLevel;
 	}
+	m_aggregationLevel = 0;
 
 	calculateNumNonTrivialTopModules();
 
 	Log(1,2) << (m_isCoarseTune ? "modules" : "nodes") << "*loops to codelength " << *this <<
 			" in " << numTopModules() << " modules. (" << m_numNonTrivialTopModules <<
 			" non-trivial modules)" << std::endl;
-
+	Log() << "{{ TIME: " << timerAll.getElapsedTimeInMilliSec() << "ms }}\n";
 }
 
 template<typename Node>
@@ -1385,9 +1393,7 @@ unsigned int InfomapBase<Node>::findHierarchicalSuperModules(int levelLimit)
 			Log::setSilent(true);
 		}
 		Node tmp(m_root.data); // Temporary owner for the super Infomap instance
-		auto& superInfomap = get(tmp).getInfomap()
-			.setIsMain(false)
-			.setConfig(*this)
+		auto& superInfomap = getNonMainInfomap(tmp)
 			.setTwoLevel(true);
 		superInfomap.initNetwork(m_root, true);//.initSuperNetwork();
 		superInfomap.run();

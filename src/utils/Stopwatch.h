@@ -27,15 +27,20 @@
 #ifndef STOPWATCH_H_
 #define STOPWATCH_H_
 
-#include <ctime>
+#include <chrono>
+#include <ratio>
 
 namespace infomap {
+
 
 class Stopwatch
 {
 public:
+    using Clock = std::chrono::high_resolution_clock;
+    using TimeType = std::chrono::time_point<Clock>;
+
 	explicit Stopwatch(bool startImmediately)
-        : m_start(0), m_stop(0), m_running(false)
+        : m_start(now()), m_stop(now()), m_running(false)
     {
         if (startImmediately)
         {
@@ -45,49 +50,59 @@ public:
 
     void start()
     {
-    	m_start = std::clock();
+    	m_start = Clock::now();
     	m_running = true;
     }
 
     void reset()
     {
     	if (m_running)
-    		m_start = std::clock();
+    		m_start = Clock::now();
     }
 
     void stop()
     {
         if (m_running)
         {
-            m_stop = std::clock();
+            m_stop = Clock::now();
             m_running = false;
         }
     }
 
+    TimeType getCurrentTimePoint() const
+    {
+        return m_running ? Clock::now() : m_stop;
+    }
+
     double getElapsedTimeInSec() const
     {
-    	clock_t ticks = (m_running ? std::clock() : m_stop) - m_start;
-    	return (double)ticks / CLOCKS_PER_SEC;
+    	std::chrono::duration<double> diff = getCurrentTimePoint() - m_start;
+    	return diff.count();
     }
 
     double getElapsedTimeInMilliSec() const
     {
-    	clock_t ticks = (m_running ? std::clock() : m_stop) - m_start;
-    	return ticks * 1000.0 / CLOCKS_PER_SEC;
+    	std::chrono::duration<double, std::milli> diff = getCurrentTimePoint() - m_start;
+    	return diff.count();
     }
 
-    static double getElapsedTimeSinceProgramStartInSec()
+    static TimeType now()
     {
-    	return (double)std::clock() / CLOCKS_PER_SEC;
+        return Clock::now();
     }
 
-    static double getElapsedTimeSinceProgramStartInMilliSec()
-    {
-    	return std::clock() * 1000.0 / CLOCKS_PER_SEC;
-    }
+    // static double getElapsedTimeSinceProgramStartInSec()
+    // {
+    // 	return (double)Clock::now() / CLOCKS_PER_SEC;
+    // }
+
+    // static double getElapsedTimeSinceProgramStartInMilliSec()
+    // {
+    // 	return Clock::now() * 1000.0 / CLOCKS_PER_SEC;
+    // }
 
 private:
-    std::clock_t m_start, m_stop;
+    TimeType m_start, m_stop;
     bool m_running;
 };
 
