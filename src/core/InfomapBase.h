@@ -763,6 +763,7 @@ void InfomapBase<Node>::run()
 	{
 		removeModules();
 		auto startDate = Date();
+		Stopwatch timer(true);
 
 		if (isMainInfomap())
 		{
@@ -786,7 +787,7 @@ void InfomapBase<Node>::run()
 		if (isMainInfomap()) {
 			auto endDate = Date();
 			Log() << "\n=> Trial " << (i + 1) << "/" << numTrials <<
-				" finished in " << (endDate - startDate) << " with codelength " << m_hierarchicalCodelength << "\n";
+				" finished in " << timer.getElapsedTimeInMilliSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
 			codelengths.push_back(m_hierarchicalCodelength);
 			if (m_hierarchicalCodelength < bestHierarchicalCodelength - 1e-10) {
 				bestSolutionStatistics.clear();

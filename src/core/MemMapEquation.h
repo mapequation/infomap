@@ -74,7 +74,7 @@ public:
 
 	double calcCodelength(const InfoNodeBase& parent) const;
 
-	void addMemoryContributions(InfoNodeBase& current, DeltaFlowDataType& oldModuleDelta, std::vector<DeltaFlowDataType>& moduleDeltaFlow);
+	void addMemoryContributions(InfoNodeBase& current, DeltaFlowDataType& oldModuleDelta, ReusableVector<DeltaFlowDataType>& moduleDeltaFlow);
 
 	double getDeltaCodelengthOnMovingNode(InfoNodeBase& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData);
@@ -369,7 +369,7 @@ double MemMapEquation<Node>::calcCodelength(const InfoNodeBase& parent) const
 template<typename Node>
 inline
 void MemMapEquation<Node>::addMemoryContributions(InfoNodeBase& current,
-	DeltaFlowDataType& oldModuleDelta, std::vector<DeltaFlowDataType>& moduleDeltaFlow)
+	DeltaFlowDataType& oldModuleDelta, ReusableVector<DeltaFlowDataType>& moduleDeltaFlow)
 {
 	// Overlapping modules
 	/**
@@ -402,11 +402,14 @@ void MemMapEquation<Node>::addMemoryContributions(InfoNodeBase& current,
 				double oldPhysFlow = memNodeSet.sumFlow;
 				double newPhysFlow = memNodeSet.sumFlow + physData.sumFlowFromM2Node;
 
-				DeltaFlowDataType& otherDeltaFlow = moduleDeltaFlow[moduleIndex];
-				otherDeltaFlow.module = moduleIndex; // Make sure module index is correct if created new module link
-				otherDeltaFlow.sumDeltaPlogpPhysFlow = infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
-				otherDeltaFlow.sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
-				++otherDeltaFlow.count;
+				// DeltaFlowDataType& otherDeltaFlow = moduleDeltaFlow[moduleIndex];
+				// otherDeltaFlow.module = moduleIndex; // Make sure module index is correct if created new module link
+				// otherDeltaFlow.sumDeltaPlogpPhysFlow = infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
+				// otherDeltaFlow.sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
+				// ++otherDeltaFlow.count;
+				double sumDeltaPlogpPhysFlow = infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
+				double sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
+				moduleDeltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, 0.0, sumDeltaPlogpPhysFlow, sumPlogpPhysFlow));
 			}
 		}
 	}

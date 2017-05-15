@@ -37,29 +37,66 @@ class ReusableVector
 {
 public:
     
-	ReusableVector(unsigned int size = 0) :
-        values(size),
-        redirect(size, 0),
-        maxOffset(std::numeric_limits<unsigned int>::max() - 1 - size)
+	ReusableVector(unsigned int capacity = 0) :
+        m_capacity(capacity),
+        m_values(capacity),
+        m_redirect(capacity, 0),
+        m_maxOffset(std::numeric_limits<unsigned int>::max() - 1 - capacity)
     {}
 
     void startRound() {
-        if (offset > maxOffset)
+        if (m_size > 0) {
+            m_offset += m_capacity;
+            m_size = 0;
+        }
+        if (m_offset > m_maxOffset)
 		{
-			redirect.assign(numNodes, 0);
-			offset = 1;
+			m_redirect.assign(m_capacity, 0);
+			m_offset = 1;
 		}
     }
 
-    void add(T value) {
+    void add(unsigned int index, T value) 
+    {
+        if (isSet(index))
+        {
+            m_values[m_redirect[index] - m_offset] += value;
+        }
+        else
+        {
+            m_redirect[index] = m_offset + m_size;
+            m_values[m_size] = value;
+            ++m_size;
+        }
+    }
 
+    bool isSet(unsigned int index)
+    {
+        return m_redirect[index] >= m_offset;
+    }
+
+    unsigned int size()
+    {
+        return m_size;
+    }
+
+    T& operator[](unsigned int index)
+    {
+        return m_values[m_redirect[index] - m_offset];
+    }
+
+    std::vector<T>& values()
+    {
+        return m_values;
     }
 
 private:
-    std::vector<T> values;
-	std::vector<unsigned int> redirect;
-	unsigned int maxOffset = std::numeric_limits<unsigned int>::max() - 1;
-	unsigned int offset = 1;
+    unsigned int m_capacity = 0;
+    std::vector<T> m_values;
+	std::vector<unsigned int> m_redirect;
+	unsigned int m_maxOffset = std::numeric_limits<unsigned int>::max() - 1;
+	unsigned int m_offset = 1;
+    unsigned int m_size = 0;
 };
 
 }
