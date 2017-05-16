@@ -1083,12 +1083,12 @@ void InfomapBase<Node>::findTopModulesRepeatedly(unsigned int maxLevels)
 	if (maxLevels == 0)
 		maxLevels = std::numeric_limits<unsigned int>::max();
 
-	Stopwatch timerAll(true);
-	Stopwatch timer(false);
+	// Stopwatch timerAll(true);
+	// Stopwatch timer(false);
 	// Reapply core algorithm on modular network, replacing modules with super modules
 	while (numTopModules() > 1 && numLevelsConsolidated != maxLevels)
 	{
-		timer.start();
+		// timer.start();
 		if (haveModules())
 			setActiveNetworkFromChildrenOfRoot();
 		else
@@ -1098,14 +1098,14 @@ void InfomapBase<Node>::findTopModulesRepeatedly(unsigned int maxLevels)
 		Log(1,2) << activeNetwork().size() << "*" << std::flush;
 		Log(3) << "Level " << (numLevelsConsolidated+1) << " (codelength: " << *this << "): Moving " <<
 						activeNetwork().size() << " nodes... " << std::flush;
-		Log() << "{{ INIT TIME: " << timer.getElapsedTimeInMilliSec() << "ms }} ";
-		timer.start();
+		// Log() << "{{ INIT TIME: " << timer.getElapsedTimeInMilliSec() << "ms }} ";
+		// timer.start();
 		// Core loop, merging modules
 		unsigned int numOptimizationLoops = optimizeActiveNetwork();
 
 		Log(1,2) << numOptimizationLoops << ", " << std::flush;
 		Log(3) << "done! -> codelength " << *this << " in " << numActiveModules() << " modules." << std::endl;
-		Log() << "{{ MOVE TIME: " << timer.getElapsedTimeInMilliSec() << "ms }} ";
+		// Log() << "{{ MOVE TIME: " << timer.getElapsedTimeInMilliSec() << "ms }} ";
 
 		// If no improvement, revert codelength terms to the last consolidated state
 		if (haveModules() && restoreConsolidatedOptimizationPointIfNoImprovement())
@@ -1113,11 +1113,11 @@ void InfomapBase<Node>::findTopModulesRepeatedly(unsigned int maxLevels)
 			Log(3) << "-> Restored to codelength " << *this << " in " << numTopModules() << " modules." << std::endl;
 			break;
 		}
-		timer.start();
+		// timer.start();
 		// Consolidate modules
 		bool replaceExistingModules = haveModules();
 		consolidateModules(replaceExistingModules);
-		Log() << "{{ CONSOLIDATE TIME: " << timer.getElapsedTimeInMilliSec() << "ms }} ";
+		// Log() << "{{ CONSOLIDATE TIME: " << timer.getElapsedTimeInMilliSec() << "ms }} ";
 		++numLevelsConsolidated;
 		++m_aggregationLevel;
 	}
@@ -1128,7 +1128,7 @@ void InfomapBase<Node>::findTopModulesRepeatedly(unsigned int maxLevels)
 	Log(1,2) << (m_isCoarseTune ? "modules" : "nodes") << "*loops to codelength " << *this <<
 			" in " << numTopModules() << " modules. (" << m_numNonTrivialTopModules <<
 			" non-trivial modules)" << std::endl;
-	Log() << "{{ TIME: " << timerAll.getElapsedTimeInMilliSec() << "ms }}\n";
+	// Log() << "{{ TIME: " << timerAll.getElapsedTimeInMilliSec() << "ms }}\n";
 }
 
 template<typename Node>

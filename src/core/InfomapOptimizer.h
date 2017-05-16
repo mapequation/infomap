@@ -303,25 +303,25 @@ unsigned int InfomapOptimizer<Node, Objective>::optimizeActiveNetwork()
 		loopLimit = 20;
 	}
 
-	Stopwatch timer(true), timerAll(true);
-	unsigned int numMovedTotal = 0;
+	// Stopwatch timer(true), timerAll(true);
+	// unsigned int numMovedTotal = 0;
 
 	while (coreLoopCount != loopLimit)
 	{
-		timer.start();
+		// timer.start();
 		++coreLoopCount;
 		unsigned int numNodesMoved = tryMoveEachNodeIntoBestModule();
-		numMovedTotal += numNodesMoved;
-		Log() << " [[" << numNodesMoved << ": " << timer.getElapsedTimeInMilliSec() << "]] ";
+		// numMovedTotal += numNodesMoved;
+		// Log() << " [[" << numNodesMoved << ": " << timer.getElapsedTimeInMilliSec() << "]] ";
 		// Break if not enough improvement
 		if (numNodesMoved == 0 || m_objective.codelength >= oldCodelength - this->minimumCodelengthImprovement)
 			break;
 		++numEffectiveLoops;
 		oldCodelength = m_objective.codelength;
 	}
-	double t = timerAll.getElapsedTimeInMilliSec();
-	Log() << " >>> TIME_PER_MOVE: " << t * 1.0 / numMovedTotal <<
-		", TIME_PER_LOOP: " << t / coreLoopCount << " <<< ";
+	// double t = timerAll.getElapsedTimeInMilliSec();
+	// Log() << " >>> TIME_PER_MOVE: " << t * 1.0 / numMovedTotal <<
+	// 	", TIME_PER_LOOP: " << t / coreLoopCount << " <<< ";
 
 	return numEffectiveLoops;
 }
@@ -340,9 +340,9 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 	// Create map with module links
 	// std::vector<DeltaFlowData> deltaFlow(numNodes);
 	ReusableVector<DeltaFlowData> deltaFlow(numNodes);
-	Stopwatch timer(false);
-	double t = 0.0;
-	double tCount = 0;
+	// Stopwatch timer(false);
+	// double t = 0.0;
+	// double tCount = 0;
 
 	for (unsigned int i = 0; i < numNodes; ++i)
 	{
@@ -387,11 +387,11 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 		{
 			auto& edge = *e;
 			InfoNodeBase& neighbour = edge.source;
-			timer.start();
+			// timer.start();
 			// deltaFlow[neighbour.index] += DeltaFlowData(neighbour.index, 0.0, edge.data.flow);
 			deltaFlow.add(neighbour.index, DeltaFlowData(neighbour.index, 0.0, edge.data.flow));
-			t += timer.getElapsedTimeInMilliSec();
-			++tCount;
+			// t += timer.getElapsedTimeInMilliSec();
+			// ++tCount;
 		}
 
 		// For not moving
@@ -410,25 +410,18 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 		// For memory networks
 		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
-		// // Collect the move options to a vector
-		// std::vector<DeltaFlowData> moduleDeltaEnterExit(deltaFlow.size());
-		// unsigned int numModuleLinks = 0;
-		// for (auto& it : deltaFlow)
-		// {
-		// 	moduleDeltaEnterExit[numModuleLinks] = it.second;
-		// 	++numModuleLinks;
-		// }
-		// // timer.start();
-		// // Randomize link order for optimized search
+		auto& moduleDeltaEnterExit = deltaFlow.values();
+
+		// Randomize link order for optimized search
 		// infomath::uniform_uint_dist uniform;
-		// for (unsigned int j = 0; j < numModuleLinks - 1; ++j)
+		// for (unsigned int j = 0; j < deltaFlow.size() - 1; ++j)
 		// {
-		// 	unsigned int randPos = j + uniform(m_rand, infomath::uniform_param_t(0, numModuleLinks - j - 1));
+		// 	// unsigned int randPos = j + uniform(m_rand, infomath::uniform_param_t(0, deltaFlow.size() - j - 1));
+		// 	unsigned int randPos = infomath::randInt(m_rand, j, deltaFlow.size() - 1);
 		// 	swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
 		// }
 		// t += timer.getElapsedTimeInMilliSec();
 		// ++tCount;
-		auto& moduleDeltaEnterExit = deltaFlow.values();
 
 		DeltaFlowData bestDeltaModule(oldModuleDelta);
 		double bestDeltaCodelength = 0.0;
@@ -519,7 +512,7 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 
 	}
 
-	Log() << " !!! " << t << "/" << tCount << " = " << t / tCount << " !!! ";
+	// Log() << " !!! " << t << "/" << tCount << " = " << t / tCount << " !!! ";
 
 	return numMoved;
 }
