@@ -1,4 +1,4 @@
-CXXFLAGS = -Wall -std=c++11
+CXXFLAGS = -Wall -std=c++14
 LDFLAGS =
 CXX_CLANG := $(shell $(CXX) --version 2>/dev/null | grep clang)
 ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"

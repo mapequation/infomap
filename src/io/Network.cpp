@@ -66,122 +66,95 @@ void Network::readInputData(std::string filename)
 		parseLinkList(filename);
 	else if (format == "bipartite")
 		parseBipartiteNetwork(filename);
-	else
+	else if (format == "states")
+		parseStateNetwork(filename);
+	else 
 		parseGeneralNetwork(filename);
 //		throw UnknownFileTypeError("No known input format specified.");
 }
 
 void Network::parsePajekNetwork(std::string filename)
 {
-	Log() << "Parsing " << (m_config.isUndirected() ? "undirected" : "directed") << " network from file '" <<
+	Log() << "Parsing " << (m_config.isUndirected() ? "undirected" : "directed") << " pajek network from file '" <<
 			filename << "'... " << std::flush;
 
-	SafeInFile input(filename.c_str());
-
-	// Parse the vertices and return the line after
-	std::string line = parseVertices(input);
-
-	std::istringstream ss;
-	std::string buf;
-	ss.str(line);
-	ss >> buf;
-	if(buf != "*Edges" && buf != "*edges" && buf != "*Arcs" && buf != "*arcs") {
-		throw FileFormatError("The first line (to lower cases) after the nodes doesn't match *edges or *arcs.");
-	}
-	if (m_config.parseAsUndirected() && (buf == "*Arcs" || buf == "*arcs"))
-		Log() << "\n --> Notice: Links marked as directed in pajek file but parsed as undirected.\n";
-
-	// Read links in format "from to weight", for example "1 3 2" (all integers) and each undirected link only ones (weight is optional).
-	while(!std::getline(input, line).fail())
-	{
-		if (line.length() == 0)
-			continue;
-
-		unsigned int n1, n2;
-		double weight;
-		parseLink(line, n1, n2, weight);
-
-		addLink(n1, n2, weight);
-	}
-
+	parseNetwork(filename, {"*Vertices", "*Edges", "*Arcs"});
 	Log() << "done!" << std::endl;
 }
 
 void Network::parseLinkList(std::string filename)
 {
-	SafeInFile input(filename.c_str());
 	Log() << "Parsing " << (m_config.directed ? "directed" : "undirected") << " link list from file '" <<
 			filename << "'... " << std::flush;
 
-	parseLinks(input);
+	parseNetwork(filename, {"*Links"});
+	Log() << "done!" << std::endl;
+}
+void Network::parseBipartiteNetwork(std::string filename)
+{
+	Log() << "Parsing bipartite network from file '" <<
+			filename << "'... " << std::flush;
+
+	parseNetwork(filename, {"*Vertices", "*Bipartite"});
 	Log() << "done!" << std::endl;
 }
 
+void Network::parseStateNetwork(std::string filename)
+{
+	Log() << "Parsing state network from file '" <<
+			filename << "'... " << std::flush;
+	
+	parseNetwork(filename);
+	Log() << "done!" << std::endl;
+}
 
 void Network::parseGeneralNetwork(std::string filename)
 {
 	Log() << "Parsing " << (m_config.isUndirected() ? "undirected" : "directed") << " network from file '" <<
-			filename << "'... " << std::flush;
+				filename << "'... " << std::flush;
+	
+	parseNetwork(filename);
+	Log() << "done!" << std::endl;
+}
 
+void Network::parseNetwork(std::string filename, InsensitiveStringSet validHeadings)
+{
 	SafeInFile input(filename.c_str());
 
 	std::string line = parseLinks(input);
 
 	while (line.length() > 0 && line[0] == '*')
 	{
-		std::string header = io::firstWord(line);
-		if (header == "*Vertices" || header == "*vertices") {
+		std::string heading = io::firstWord(line);
+		if (validHeadings.count(heading) == 0) {
+			throw FileFormatError(io::Str() << "Unrecognized heading in network file: '" << heading << "'.");
+		}
+		else if (heading == "*Vertices" || heading == "*vertices") {
 			line = parseVertices(input, line);
 		}
-		else if (header == "*Edges" || header == "*edges") {
+		else if (heading == "*States" || heading == "*states") {
+			line = parseStateNodes(input, line);
+		}
+		else if (heading == "*Edges" || heading == "*edges") {
 			if (!m_config.parseAsUndirected())
 				Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
 			line = parseLinks(input);
 		}
-		else if (header == "*Arcs" || header == "*arcs") {
+		else if (heading == "*Arcs" || heading == "*arcs") {
 			if (m_config.parseAsUndirected())
 				Log() << "\n --> Notice: Links marked as directed but parsed as undirected.\n";
 			line = parseLinks(input);
 		}
-		else
-			throw FileFormatError(io::Str() << "Unrecognized header in network file: '" << line << "'.");
-	}
-
-	Log() << "done!" << std::endl;
-}
-
-void Network::parseBipartiteNetwork(std::string filename)
-{
-	Log() << "Parsing bipartite network from file '" <<
-			filename << "'... " << std::flush;
-
-	SafeInFile input(filename.c_str());
-
-	std::string line = parseBipartiteLinks(input);
-
-	while (line.length() > 0 && line[0] == '*')
-	{
-		std::string header = io::firstWord(line);
-		if (header == "*Vertices" || header == "*vertices") {
-			line = parseVertices(input, line);
+		else if (heading == "*Links" || heading == "*links") {
+			line = parseLinks(input);
 		}
-		else if (header == "*Edges" || header == "*edges") {
-			if (!m_config.parseAsUndirected())
-				Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
+		else if (heading == "*Bipartite" || heading == "*bipartite") {
 			line = parseBipartiteLinks(input);
 		}
-		else if (header == "*Arcs" || header == "*arcs") {
-			if (m_config.parseAsUndirected())
-				Log() << "\n --> Notice: Links marked as directed but parsed as undirected.\n";
-			line = parseBipartiteLinks(input);
+		else {
+			line = ignoreSection(input, heading);
 		}
-		else
-			throw FileFormatError(io::Str() << "Unrecognized header in bipartite network file: '" << line << "'.");
 	}
-
-	Log() << "done!" << std::endl;
-
-	m_config.bipartite = true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -190,26 +163,7 @@ void Network::parseBipartiteNetwork(std::string filename)
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
-std::string Network::parseVertices(std::ifstream& file, bool required)
-{
-	std::string line;
-
-	// First skip lines until header
-	while(!std::getline(file, line).fail())
-	{
-		if (line.length() == 0 || line[0] == '#')
-			continue;
-		if (line[0] == '*')
-			break;
-	}
-
-	if (line.length() == 0 || line[0] != '*')
-		throw FileFormatError("No matching header for vertices found.");
-
-	return parseVertices(file, line, required);
-}
-
-std::string Network::parseVertices(std::ifstream& file, std::string header, bool required)
+std::string Network::parseVertices(std::ifstream& file, std::string heading)
 {
 	std::string line;
 	while(!std::getline(file, line).fail())
@@ -250,78 +204,26 @@ std::string Network::parseVertices(std::ifstream& file, std::string header, bool
 	return line;
 }
 
-// 	std::istringstream ss;
-// 	std::string buf;
-// 	ss.str(header);
-// 	ss >> buf;
-// 	unsigned int numNodesStated = 0;
-// 	if(buf == "*Vertices" || buf == "*vertices" || buf == "*VERTICES") {
-// 		if (!(ss >> numNodesStated))
-// 			throw BadConversionError(io::Str() << "Can't parse an integer after '" << buf <<
-// 					"' as the number of nodes.");
-// 	}
-// 	else {
-// 		if (!required)
-// 			return header;
-// 		throw FileFormatError(io::Str() << "The header '" << header << "' doesn't match *Vertices (case insensitive).");
-// 	}
+std::string Network::parseStateNodes(std::ifstream& file, std::string heading)
+{
+	std::string line;
+	while(!std::getline(file, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
 
-// 	if (numNodesStated == 0)
-// 		throw FileFormatError("The number of vertices cannot be zero.");
+		if (line[0] == '*')
+			break;
 
-// 	m_sumNodeWeights = 0.0;
+		StateNode stateNode;
+		parseStateNode(line, stateNode);
 
-// 	std::string line;
-// 	char next = file.peek();
-// 	if (next == '*') // Short pajek version (no nodes defined), set node number as name
-// 	{
-// 		// for (unsigned int i = 0; i < m_numNodes; ++i)
-// 		// {
-// 		// 	m_nodeNames[i] = io::stringify(i+1);
-// 		// }
-// 	}
-// 	else
-// 	{
-// 		// Read node ids and names, assuming format 'id "name"'
-// 		for (unsigned int i = 0; i < m_numNodes; ++i)
-// 		{
-// 			unsigned int id = 0;
-// 			if (!(file >> id) || id != static_cast<unsigned int>(i + m_indexOffset))
-// 			{
-// 				throw BadConversionError(io::Str() << "Couldn't parse line " << (i + m_indexOffset + 1) << ". Should begin with node number " << (i + m_indexOffset) <<
-// 						((m_indexOffset == 1 && id == i)? ".\nBe sure to use zero-based node numbering if the node numbers start from zero." : "."));
-// 			}
-// 			// Read the rest of the line
-// 			std::getline(file,line);
-// 			unsigned int nameStart = line.find_first_of("\"");
-// 			unsigned int nameEnd = line.find_last_of("\"");
-// 			string name;
-// 			double nodeWeight = 1.0;
-// 			if(nameStart < nameEnd) {
-// 				name = string(line.begin() + nameStart + 1, line.begin() + nameEnd);
-// 				line = line.substr(nameEnd + 1);
-// 				ss.clear();
-// 				ss.str(line);
-// 			}
-// 			else {
-// 				ss.clear();
-// 				ss.str(line);
-// 				ss >> buf; // Take away the index from the stream
-// 				ss >> name; // Extract the next token as the name assuming no spaces
-// 			}
-// 			ss >> nodeWeight; // Extract the next token as node weight. If failed, the old value (1.0) is kept.
-// 			m_sumNodeWeights += nodeWeight;
-// 			m_nodeWeights[i] = nodeWeight;
-// 			m_nodeNames[i] = name;
-// 		}
-// 	}
-// 	// Return the line after the vertices
-// 	std::getline(file, line);
-// 	// Continue past commented lines
-// 	while (line.length() > 0 && line[0] == '#')
-// 		std::getline(file, line);
-// 	return line;
-// }
+		addStateNode(stateNode);
+
+		++m_numStateNodesFound;
+	}
+	return line;
+}
 
 std::string Network::parseLinks(std::ifstream& file)
 {
@@ -345,6 +247,7 @@ std::string Network::parseLinks(std::ifstream& file)
 
 std::string Network::parseBipartiteLinks(std::ifstream& file)
 {
+	m_config.bipartite = true;
 	std::string line;
 	while(!std::getline(file, line).fail())
 	{
@@ -363,6 +266,18 @@ std::string Network::parseBipartiteLinks(std::ifstream& file)
 	return line;
 }
 
+std::string Network::ignoreSection(std::ifstream& file, std::string heading)
+{
+	Log() << "(Ignoring section " << heading << ") ";
+	std::string line;
+	while(!std::getline(file, line).fail())
+	{
+		if (line[0] == '*')
+			break;
+	}
+	return line;
+}
+
 // void Network::parseVertice(const std::string& line, unsigned int& id, std::string& name, double& weight)
 // {
 // 	m_extractor.clear();
@@ -371,6 +286,15 @@ std::string Network::parseBipartiteLinks(std::ifstream& file)
 // 		throw FileFormatError(io::Str() << "Can't parse link data from line '" << line << "'");
 // 	(m_extractor >> weight) || (weight = 1.0);
 // }
+
+void Network::parseStateNode(const std::string& line, StateNetwork::StateNode& stateNode)
+{
+	m_extractor.clear();
+	m_extractor.str(line);
+	if (!(m_extractor >> stateNode.id >> stateNode.physicalId))
+		throw FileFormatError(io::Str() << "Can't parse any state node from line '" << line << "'");
+	(m_extractor >> stateNode.weight) || (stateNode.weight = 1.0);
+}
 
 void Network::parseLink(const std::string& line, unsigned int& n1, unsigned int& n2, double& weight)
 {

@@ -43,25 +43,44 @@ public:
 
 	struct StateNode
 	{
-		unsigned int id;
-		unsigned int physicalId;
+		unsigned int id = 0;
+		unsigned int physicalId = 0;
 		double weight = 1.0;
 		double flow = 0.0;
 		double enterFlow = 0.0;
 		double exitFlow = 0.0;
 		
+		StateNode() {}
 		StateNode(unsigned int id) :
 			id(id), physicalId(id)
 		{}
 		StateNode(unsigned int id, unsigned int physicalId) :
 			id(id), physicalId(physicalId)
 		{}
+		StateNode(const StateNode& other) :
+			id(other.id),
+			physicalId(other.physicalId),
+			weight(other.weight),
+			flow(other.flow),
+			enterFlow(other.enterFlow),
+			exitFlow(other.exitFlow)
+		{}
+		StateNode& operator=(const StateNode& other)
+		{
+			id = other.id;
+			physicalId = other.physicalId;
+			weight = other.weight;
+			flow = other.flow;
+			enterFlow = other.enterFlow;
+			exitFlow = other.exitFlow;
+			return *this;
+		}
 
 		bool operator ==(const StateNode& rhs) const
-		{ return this == &rhs; }
+		{ return id == rhs.id; }
 
 		bool operator !=(const StateNode& rhs) const
-		{ return this != &rhs; }
+		{ return id != rhs.id; }
 
 		bool operator <(const StateNode& rhs) const
 		{ return id < rhs.id; }
@@ -131,6 +150,7 @@ protected:
 	NodeMap m_nodes;
 	NodeLinkMap m_nodeLinkMap;
 	unsigned int m_numNodesFound = 0;
+	unsigned int m_numStateNodesFound = 0;
 	unsigned int m_numLinksFound = 0;
 	unsigned int m_numLinks = 0;
 	unsigned int m_numSelfLinksFound = 0;
@@ -156,10 +176,12 @@ public:
 	const Config& getConfig() { return m_config; }
 
 	// Mutators
-	bool addNode(unsigned int id);
-	bool addNode(unsigned int id, std::string name);
-	bool addNode(unsigned int id, double weight);
-	bool addNode(unsigned int id, std::string, double weight);
+	std::pair<NodeMap::iterator, bool> addStateNode(unsigned int id, unsigned int physId);
+	std::pair<NodeMap::iterator, bool> addStateNode(StateNode node);
+	std::pair<NodeMap::iterator, bool> addNode(unsigned int id);
+	std::pair<NodeMap::iterator, bool> addNode(unsigned int id, std::string name);
+	std::pair<NodeMap::iterator, bool> addNode(unsigned int id, double weight);
+	std::pair<NodeMap::iterator, bool> addNode(unsigned int id, std::string, double weight);
 	bool addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0);
 	
 	void calculateFlow();

@@ -31,26 +31,35 @@
 
 namespace infomap {
 
-bool StateNetwork::addNode(unsigned int id)
+std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(unsigned int id, unsigned int physId)
 {
-	return m_nodes.emplace(id, StateNode(id)).second;
+	return m_nodes.emplace(id, StateNode(id, physId));
+}
+std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(StateNode node)
+{
+	return m_nodes.emplace(node.id, node);
 }
 
-bool StateNetwork::addNode(unsigned int id, double weight)
+std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned int id)
 {
-	auto ret = m_nodes.emplace(id, StateNode(id));
+	return m_nodes.emplace(id, StateNode(id));
+}
+
+std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned int id, double weight)
+{
+	auto ret = addNode(id);
 	auto& node = ret.first->second;
 	node.weight = weight;
-	return ret.second;
+	return ret;
 }
 
-bool StateNetwork::addNode(unsigned int id, std::string name)
+std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned int id, std::string name)
 {
 	m_names[id] = name;
 	return addNode(id);
 }
 
-bool StateNetwork::addNode(unsigned int id, std::string name, double weight)
+std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned int id, std::string name, double weight)
 {
 	m_names[id] = name;
 	return addNode(id, weight);
@@ -67,8 +76,10 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
 	}
 	// const auto& sourceNode = m_nodes.emplace(sourceId, StateNode(sourceId)).first;
 	// const auto& targetNode = m_nodes.emplace(targetId, StateNode(targetId)).first;
-	m_nodes.emplace(sourceId, StateNode(sourceId));
-	m_nodes.emplace(targetId, StateNode(targetId));
+	// m_nodes.emplace(sourceId, StateNode(sourceId));
+	// m_nodes.emplace(targetId, StateNode(targetId));
+	addNode(sourceId);
+	addNode(targetId);
 
 	++m_numLinks;
 	m_sumLinkWeight += weight;

@@ -30,11 +30,13 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <set>
 #include <utility>
 #include "Config.h"
 #include <limits>
 #include <sstream>
 #include "../core/StateNetwork.h"
+#include <locale>
 
 namespace infomap {
 
@@ -52,6 +54,26 @@ protected:
 	// Bipartite
 	std::map<BipartiteLink, Weight> m_bipartiteLinks;
 	unsigned int m_numBipartiteNodes;
+
+	struct InsensitiveCompare {
+		bool operator() (const std::string& a, const std::string& b) const {
+			auto lhs = a.begin();
+			auto rhs = b.begin();
+
+			std::locale loc;
+			for (; lhs != a.end() && rhs != b.end(); ++lhs,++rhs)
+			{
+				auto lhs_val = std::tolower(*lhs, loc);
+				auto rhs_val = std::tolower(*rhs, loc);
+
+				if (lhs_val != rhs_val)
+					return lhs_val < rhs_val;
+			}
+
+			return (rhs != b.end());
+		}
+	};
+	using InsensitiveStringSet = std::set<std::string, InsensitiveCompare>;
 public:
 
 	Network()
@@ -71,27 +93,30 @@ protected:
 
 	void parsePajekNetwork(std::string filename);
 	void parseLinkList(std::string filename);
-	void parseSparseLinkList(std::string filename);
+	void parseStateNetwork(std::string filename);
 	void parseGeneralNetwork(std::string filename);
+	void parseNetwork(std::string filename, InsensitiveStringSet validHeadings = {
+		"*Vertices", "*States", "*Edges", "*Arcs", "*Links", "*Context"
+	});
 	void parseBipartiteNetwork(std::string filename);
 
 	// Helper methods
 
 	/**
-	 * Parse vertices
-	 * @return The line after the vertices
-	 */
-	std::string parseVertices(std::ifstream& file, bool required = true);
-
-	/**
 	 * Parse vertices under the heading
 	 * @return The line after the vertices
 	 */
-	std::string parseVertices(std::ifstream& file, std::string heading, bool required = true);
+	std::string parseVertices(std::ifstream& file, std::string heading);
+	std::string parseStateNodes(std::ifstream& file, std::string heading);
 
 	std::string parseLinks(std::ifstream& file);
 
 	std::string parseBipartiteLinks(std::ifstream& file);
+
+	std::string ignoreSection(std::ifstream& file, std::string heading);
+
+
+	void parseStateNode(const std::string& line, StateNetwork::StateNode& stateNode);
 
 	/**
 	 * Parse a string of link data.
