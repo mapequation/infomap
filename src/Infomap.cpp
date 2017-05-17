@@ -45,6 +45,9 @@
 #include "io/SafeFile.h"
 #include "utils/FlowCalculator.h"
 #include <string>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 namespace infomap {
 
@@ -349,6 +352,13 @@ int run(const std::string& flags)
 			Log() << " with " << (conf.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
 			(conf.teleportToNodes ? "nodes" : "links");
 		Log() << "\n";
+		#ifdef _OPENMP
+		#pragma omp parallel
+			#pragma omp master
+			{
+				Log() << "  OpenMP " << _OPENMP << " detected with " << omp_get_num_threads() << " threads...\n";
+			}
+		#endif
 		Log() << "=======================================================\n";
 
 		conf.adaptDefaults();

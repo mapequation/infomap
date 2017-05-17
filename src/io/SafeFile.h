@@ -30,21 +30,16 @@
 #include <iostream>
 #include <fstream>
 #include <ios>
-#include <stdexcept>
-#include "convert.h"
 #include <cstdio>
+#include "convert.h"
+#include "../utils/exceptions.h"
 
 namespace infomap {
 
 using std::ifstream;
 using std::ofstream;
 
-class FileOpenError : public std::runtime_error {
-public:
-	FileOpenError(std::string const& s)
-	: std::runtime_error(s)
-	{ }
-};
+
 
 /**
  * A wrapper for the C++ file stream class that automatically closes
@@ -198,7 +193,7 @@ public:
 	: m_file(std::fopen(filename, "w"))
 	{
         if (!m_file)
-            throw std::runtime_error("file open failure");
+            throw FileOpenError("file open failure");
     }
 
     ~SafeBinaryOutFile() {

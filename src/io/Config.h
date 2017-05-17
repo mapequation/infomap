@@ -32,6 +32,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <limits>
 
 #include "../utils/Date.h"
 #include "version.h"
@@ -93,7 +94,7 @@ struct Config
 	bool fastCoarseTunePartition = false;
 	bool alternateCoarseTuneLevel = false;
 	unsigned int coarseTuneLevel = 1;
-	int superLevelLimit = -1; // Max super level iterations
+	unsigned int superLevelLimit = std::numeric_limits<unsigned int>::max(); // Max super level iterations
 	bool onlySuperModules = false;
 	unsigned int fastHierarchicalSolution = 0;
 	bool fastFirstIteration = false;

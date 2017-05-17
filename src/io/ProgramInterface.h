@@ -33,16 +33,11 @@
 #include <deque>
 #include <string>
 #include <sstream>
-#include <stdexcept>
 #include <iostream>
 #include "convert.h"
+#include "../utils/exceptions.h"
 
 namespace infomap {
-
-struct OptionConflictError : std::logic_error
-{
-	OptionConflictError(std::string const& s) : std::logic_error(s) {}
-};
 
 struct Option
 {

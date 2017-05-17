@@ -33,6 +33,9 @@
 #include <cstdlib> // abs
 #include <limits>
 #include "StateNetwork.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 namespace infomap {
 
@@ -144,13 +147,17 @@ protected:
 
 	virtual InfomapBase<Node>& getInfomap(InfoNodeBase& node);
 
-	InfomapBase<Node>& getNonMainInfomap(InfoNodeBase& node);
+	InfomapBase<Node>& getSubInfomap(InfoNodeBase& node);
+	InfomapBase<Node>& getSuperInfomap(InfoNodeBase& node);
 
 	/**
 	* Only the main infomap reads an external cluster file if exist
 	*/
 	InfomapBase<Node>& setIsMain(bool isMain);
+	InfomapBase<Node>& setSubLevel(unsigned int level);
 
+	bool isTopLevel() const;
+	bool isSuperLevelOnTopLevel() const;
 	bool isMainInfomap() const;
 
 	bool haveMemory() const;
@@ -249,14 +256,14 @@ protected:
 	 * @param levelLimit The maximum number of super module levels allowed
 	 * @return number of levels created
 	 */
-	virtual unsigned int findHierarchicalSuperModules(int levelLimit = -1);
+	virtual unsigned int findHierarchicalSuperModules(unsigned int superLevelLimit = std::numeric_limits<unsigned int>::max());
 
 	/**
 	 * Find super modules fast by merge and consolidate top modules iteratively
 	 * @param levelLimit The maximum number of super module levels allowed
 	 * @return number of levels created
 	 */
-	virtual unsigned int findHierarchicalSuperModulesFast(int levelLimit = -1);
+	virtual unsigned int findHierarchicalSuperModulesFast(unsigned int superLevelLimit = std::numeric_limits<unsigned int>::max());
 
 	virtual void transformNodeFlowToEnterFlow(InfoNodeBase& parent);
 
@@ -307,7 +314,9 @@ protected:
 
 	std::vector<InfoNodeBase*> m_originalLeafNodes;
 
+	const unsigned int SUPER_LEVEL_ADDITION = 1 << 20;
 	bool m_isMain = true;
+	unsigned int m_subLevel = 0;
 
 	bool m_calculateEnterExitFlow = false;
 
@@ -434,9 +443,19 @@ InfomapBase<Node>& InfomapBase<Node>::getInfomap(InfoNodeBase& node) {
 
 template<typename Node>
 inline
-InfomapBase<Node>& InfomapBase<Node>::getNonMainInfomap(InfoNodeBase& node) {
+InfomapBase<Node>& InfomapBase<Node>::getSubInfomap(InfoNodeBase& node) {
 	return getInfomap(node)
 		.setIsMain(false)
+		.setSubLevel(m_subLevel + 1)
+		.setNonMainConfig(*this);
+}
+
+template<typename Node>
+inline
+InfomapBase<Node>& InfomapBase<Node>::getSuperInfomap(InfoNodeBase& node) {
+	return getInfomap(node)
+		.setIsMain(false)
+		.setSubLevel(m_subLevel + SUPER_LEVEL_ADDITION)
 		.setNonMainConfig(*this);
 }
 
@@ -447,6 +466,27 @@ InfomapBase<Node>& InfomapBase<Node>::setIsMain(bool isMain) {
 	return *this;
 }
 
+template<typename Node>
+inline
+InfomapBase<Node>& InfomapBase<Node>::setSubLevel(unsigned int level) {
+	m_subLevel = level;
+	return *this;
+}
+
+
+template<typename Node>
+inline
+bool InfomapBase<Node>::isTopLevel() const
+{
+	return (m_subLevel & (SUPER_LEVEL_ADDITION - 1)) == 0;
+}
+
+template<typename Node>
+inline
+bool InfomapBase<Node>::isSuperLevelOnTopLevel() const
+{
+	return m_subLevel == SUPER_LEVEL_ADDITION;
+}
 
 template<typename Node>
 inline
@@ -847,8 +887,7 @@ void InfomapBase<Node>::hierarchicalPartition()
 		return;
 	}
 
-	int superLevelLimit = isMainInfomap() ? this->superLevelLimit : -1;
-	findHierarchicalSuperModules(superLevelLimit);
+	findHierarchicalSuperModules();
 //	findHierarchicalSuperModulesFast(superLevelLimit);
 
 	if (this->onlySuperModules) {
@@ -1200,7 +1239,7 @@ unsigned int InfomapBase<Node>::coarseTune()
 		}
 		else {
 
-			InfomapBase<Node>& subInfomap = getNonMainInfomap(node)
+			InfomapBase<Node>& subInfomap = getSubInfomap(node)
 				.setTwoLevel(true)
 				.setNoCoarseTune(true);
 			subInfomap.initNetwork(get(node)).run();
@@ -1272,9 +1311,9 @@ void InfomapBase<Node>::calculateNumNonTrivialTopModules()
 }
 
 template<typename Node>
-unsigned int InfomapBase<Node>::findHierarchicalSuperModulesFast(int levelLimit)
+unsigned int InfomapBase<Node>::findHierarchicalSuperModulesFast(unsigned int superLevelLimit)
 {
-	if (levelLimit == 0)
+	if (superLevelLimit == 0)
 		return 0;
 
 	unsigned int numLevelsCreated = 0;
@@ -1348,7 +1387,7 @@ unsigned int InfomapBase<Node>::findHierarchicalSuperModulesFast(int levelLimit)
 				++m_numNonTrivialTopModules;
 		}
 
-	} while (m_numNonTrivialTopModules > 1 && numLevelsCreated != this->superLevelLimit);
+	} while (m_numNonTrivialTopModules > 1 && numLevelsCreated != superLevelLimit);
 
 	// Restore the temporary transformation of flow to enter flow on super modules
 	resetFlowOnModules();
@@ -1366,9 +1405,9 @@ unsigned int InfomapBase<Node>::findHierarchicalSuperModulesFast(int levelLimit)
 }
 
 template<typename Node>
-unsigned int InfomapBase<Node>::findHierarchicalSuperModules(int levelLimit)
+unsigned int InfomapBase<Node>::findHierarchicalSuperModules(unsigned int superLevelLimit)
 {
-	if (levelLimit == 0)
+	if (superLevelLimit == 0)
 		return 0;
 
 	unsigned int numLevelsCreated = 0;
@@ -1394,7 +1433,7 @@ unsigned int InfomapBase<Node>::findHierarchicalSuperModules(int levelLimit)
 			Log::setSilent(true);
 		}
 		Node tmp(m_root.data); // Temporary owner for the super Infomap instance
-		auto& superInfomap = getNonMainInfomap(tmp)
+		auto& superInfomap = getSuperInfomap(tmp)
 			.setTwoLevel(true);
 		superInfomap.initNetwork(m_root, true);//.initSuperNetwork();
 		superInfomap.run();
@@ -1456,7 +1495,7 @@ unsigned int InfomapBase<Node>::findHierarchicalSuperModules(int levelLimit)
 				++m_numNonTrivialTopModules;
 		}
 
-	} while (m_numNonTrivialTopModules > 1 && numLevelsCreated != this->superLevelLimit);
+	} while (m_numNonTrivialTopModules > 1 && numLevelsCreated != superLevelLimit);
 
 	// Restore the temporary transformation of flow to enter flow on super modules
 	resetFlowOnModules();
@@ -1727,7 +1766,7 @@ bool InfomapBase<Node>::processPartitionQueue(PartitionQueue& queue, PartitionQu
 //		std::cout << "\n\n\nSubInfomap partition network with " << module.childDegree() << " nodes (module codelength: " <<
 //				module.codelength << ")...:\n" << std::endl;
 
-		auto& subInfomap = getNonMainInfomap(module)
+		auto& subInfomap = getSubInfomap(module)
 			.initNetwork(module);
 		// Run two-level partition + find hierarchically super modules (skip recursion)
 		subInfomap.setOnlySuperModules(true).run();

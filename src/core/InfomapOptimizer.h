@@ -10,7 +10,6 @@
 
 #include "InfomapBase.h"
 #include <set>
-// #include <unordered_map>
 #include "../utils/ReusableVector.h"
 
 namespace infomap {
@@ -58,6 +57,7 @@ protected:
 
 	virtual InfomapBase<Node>& getInfomap(InfoNodeBase& node);
 
+	using Base::isTopLevel;
 	using Base::isMainInfomap;
 
 	using Base::isFirstLoop;
@@ -90,6 +90,8 @@ protected:
 	virtual unsigned int optimizeActiveNetwork();
 	
 	unsigned int tryMoveEachNodeIntoBestModule();
+
+	unsigned int tryMoveEachNodeIntoBestModuleInParallel();
 
 	virtual void consolidateModules(bool replaceExistingModules = true);
 
@@ -298,30 +300,22 @@ unsigned int InfomapOptimizer<Node, Objective>::optimizeActiveNetwork()
 	unsigned int minRandLoop = 2;
 	if (loopLimit >= minRandLoop && this->randomizeCoreLoopLimit)
 		loopLimit = infomath::randInt(m_rand, minRandLoop, loopLimit);
-		// loopLimit = static_cast<unsigned int>(m_rand() * (loopLimit - minRandLoop)) + minRandLoop;
 	if (m_aggregationLevel > 0 || m_isCoarseTune) {
 		loopLimit = 20;
 	}
 
-	// Stopwatch timer(true), timerAll(true);
-	// unsigned int numMovedTotal = 0;
-
 	while (coreLoopCount != loopLimit)
 	{
-		// timer.start();
 		++coreLoopCount;
-		unsigned int numNodesMoved = tryMoveEachNodeIntoBestModule();
-		// numMovedTotal += numNodesMoved;
-		// Log() << " [[" << numNodesMoved << ": " << timer.getElapsedTimeInMilliSec() << "]] ";
+		unsigned int numNodesMoved = this->innerParallelization ?
+			tryMoveEachNodeIntoBestModuleInParallel() :
+			tryMoveEachNodeIntoBestModule();
 		// Break if not enough improvement
 		if (numNodesMoved == 0 || m_objective.codelength >= oldCodelength - this->minimumCodelengthImprovement)
 			break;
 		++numEffectiveLoops;
 		oldCodelength = m_objective.codelength;
 	}
-	// double t = timerAll.getElapsedTimeInMilliSec();
-	// Log() << " >>> TIME_PER_MOVE: " << t * 1.0 / numMovedTotal <<
-	// 	", TIME_PER_LOOP: " << t / coreLoopCount << " <<< ";
 
 	return numEffectiveLoops;
 }
@@ -516,6 +510,313 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 
 	return numMoved;
 }
+
+
+
+/**
+ * Minimize the codelength by trying to move each node into best module, in parallel.
+ *
+ * For each node:
+ * 1. Calculate the change in codelength for a move to each of its neighbouring modules or to an empty module
+ * 2. Move to the one that reduces the codelength the most, if any.
+ *
+ * @return The number of nodes moved.
+ */
+template<typename Node, typename Objective>
+unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModuleInParallel()
+{
+	// Get random enumeration of nodes
+	std::vector<unsigned int> nodeEnumeration(activeNetwork().size());
+	infomath::getRandomizedIndexVector(nodeEnumeration, m_rand);
+
+	auto& network = activeNetwork();
+	unsigned int numNodes = nodeEnumeration.size();
+	unsigned int numMoved = 0;
+	unsigned int numInvalidMoves = 0;
+	double diffSerialParallelCodelength = 0.0;
+
+	// Create map with module links
+	// std::vector<DeltaFlowData> deltaFlow(numNodes);
+	// ReusableVector<DeltaFlowData> deltaFlow(numNodes);
+	// Stopwatch timer(false);
+	// double t = 0.0;
+	// double tCount = 0;
+
+#pragma omp parallel for schedule(dynamic) // Use dynamic scheduling as some threads could end early
+	for (unsigned int i = 0; i < numNodes; ++i)
+	{
+//		printf("Node %d processed by thread %d\n", i, omp_get_thread_num());
+		// Pick nodes in random order
+		InfoNodeBase& current = *network[nodeEnumeration[i]];
+
+//		Log(5) << "Trying to move node " << current << " from module " << current.index << "...\n";
+
+		if (!current.dirty)
+			continue;
+
+		// If other nodes have moved here, don't move away on first loop
+		if (m_moduleMembers[current.index] > 1 && isFirstLoop())
+			continue;
+
+		// If no links connecting this node with other nodes, it won't move into others,
+		// and others won't move into this. TODO: Always best leave it alone?
+		// For memory networks, don't skip try move to same physical node!
+		// if (current.degree() == 0)
+		// {
+		// 	current.dirty = false;
+		// 	continue;
+		// }
+
+		// Create map with module links
+		// std::unordered_map<unsigned int, DeltaFlowData> deltaFlow;
+		// deltaFlow.rehash(numNodes);
+		ReusableVector<DeltaFlowData> deltaFlow(numNodes);
+
+		// For all outlinks
+		for (auto& e : current.outEdges())
+		{
+			auto& edge = *e;
+			InfoNodeBase& neighbour = edge.target;
+			// deltaFlow[neighbour.index] += DeltaFlowData(neighbour.index, edge.data.flow, 0.0);
+			deltaFlow.add(neighbour.index, DeltaFlowData(neighbour.index, edge.data.flow, 0.0));
+		}
+		// For all inlinks
+		for (auto& e : current.inEdges())
+		{
+			auto& edge = *e;
+			InfoNodeBase& neighbour = edge.source;
+			// timer.start();
+			// deltaFlow[neighbour.index] += DeltaFlowData(neighbour.index, 0.0, edge.data.flow);
+			deltaFlow.add(neighbour.index, DeltaFlowData(neighbour.index, 0.0, edge.data.flow));
+			// t += timer.getElapsedTimeInMilliSec();
+			// ++tCount;
+		}
+
+		// For not moving
+		deltaFlow.add(current.index, DeltaFlowData(current.index, 0.0, 0.0));
+		DeltaFlowData& oldModuleDelta = deltaFlow[current.index];
+		oldModuleDelta.module = current.index; // Make sure index is correct if created new
+		// ++oldModuleDelta.count;
+		// oldModuleDelta += DeltaFlowData(current.index, 0.0, 0.0);
+
+		// Option to move to empty module (if node not already alone)
+		if (m_moduleMembers[current.index] > 1 && m_emptyModules.size() > 0) {
+			// deltaFlow[m_emptyModules.back()] += DeltaFlowData(m_emptyModules.back(), 0.0, 0.0);
+			deltaFlow.add(m_emptyModules.back(), DeltaFlowData(m_emptyModules.back(), 0.0, 0.0));
+		}
+
+		// For memory networks
+		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+
+		auto& moduleDeltaEnterExit = deltaFlow.values();
+
+		// Randomize link order for optimized search
+		// infomath::uniform_uint_dist uniform;
+		// for (unsigned int j = 0; j < deltaFlow.size() - 1; ++j)
+		// {
+		// 	// unsigned int randPos = j + uniform(m_rand, infomath::uniform_param_t(0, deltaFlow.size() - j - 1));
+		// 	unsigned int randPos = infomath::randInt(m_rand, j, deltaFlow.size() - 1);
+		// 	swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+		// }
+		// t += timer.getElapsedTimeInMilliSec();
+		// ++tCount;
+
+		DeltaFlowData bestDeltaModule(oldModuleDelta);
+		double bestDeltaCodelength = 0.0;
+		DeltaFlowData strongestConnectedModule(oldModuleDelta);
+		double deltaCodelengthOnStrongestConnectedModule = 0.0;
+
+		// Log(5) << "Move node " << current << " in module " << current.index << "...\n";
+		// Find the move that minimizes the description length
+		for (unsigned int j = 0; j < deltaFlow.size(); ++j)
+		{
+			unsigned int otherModule = moduleDeltaEnterExit[j].module;
+			if(otherModule != current.index)
+			{
+				double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
+						oldModuleDelta, moduleDeltaEnterExit[j], m_moduleFlowData);
+
+				if (deltaCodelength < bestDeltaCodelength - this->minimumSingleNodeCodelengthImprovement)
+				{
+					bestDeltaModule = moduleDeltaEnterExit[j];
+					bestDeltaCodelength = deltaCodelength;
+				}
+
+				// Save strongest connected module to prefer if codelength improvement equal
+				if (moduleDeltaEnterExit[j].deltaExit > strongestConnectedModule.deltaExit)
+				{
+					strongestConnectedModule = moduleDeltaEnterExit[j];
+					deltaCodelengthOnStrongestConnectedModule = deltaCodelength;
+				}
+			}
+		}
+
+		// Prefer strongest connected module if equal delta codelength
+		if (strongestConnectedModule.module != bestDeltaModule.module &&
+				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + this->minimumSingleNodeCodelengthImprovement)
+		{
+			bestDeltaModule = strongestConnectedModule;
+		}
+
+		// Make best possible move
+// 		if(bestDeltaModule.module != current.index)
+// 		{
+// 			unsigned int bestModuleIndex = bestDeltaModule.module;
+// 			//Update empty module vector
+// 			if(m_moduleMembers[bestModuleIndex] == 0)
+// 			{
+// 				m_emptyModules.pop_back();
+// 			}
+// 			if(m_moduleMembers[current.index] == 1)
+// 			{
+// 				m_emptyModules.push_back(current.index);
+// 			}
+
+// 			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData);
+
+// 			m_moduleMembers[current.index] -= 1;
+// 			m_moduleMembers[bestModuleIndex] += 1;
+
+// 			// double oldCodelength = m_objective.codelength;
+// 			// Log(5) << " --> Moved to module " << bestModuleIndex << " -> codelength: " << oldCodelength << " + " <<
+// 			// 		bestDeltaCodelength << " (" << (m_objective.codelength - oldCodelength) << ") = " << m_objective << "\n";
+
+// //			unsigned int oldModuleIndex = current.index;
+// 			current.index = bestModuleIndex;
+
+// 			++numMoved;
+
+// 			// Mark neighbours as dirty
+// 			for (auto& e : current.outEdges())
+// 				e->target.dirty = true;
+// 			for (auto& e : current.inEdges())
+// 				e->source.dirty = true;
+// 		}
+// 		else
+// 			current.dirty = false;
+
+		// Make best possible move
+		if(bestDeltaModule.module == current.index)
+		{
+			current.dirty = false;
+			continue;
+		}
+		else
+		{
+#pragma omp critical (moveUpdate)
+			{
+				unsigned int bestModuleIndex = bestDeltaModule.module;
+				unsigned int oldModuleIndex = current.index;
+
+				bool validMove = true;
+				if (bestModuleIndex == m_emptyModules.back()) {
+					// Check validity of move to empty target
+					validMove = m_moduleMembers[oldModuleIndex] > 1 && m_emptyModules.size() > 0;
+				}
+				else
+				{
+					// Not valid if the best module is empty now but not when decided
+					validMove = m_moduleMembers[bestModuleIndex] > 0;
+				}
+
+				if (validMove)
+				{
+
+					// Recalculate delta codelength for proposed move to see if still an improvement
+
+					DeltaFlowData oldModuleDelta(oldModuleIndex, 0.0, 0.0);
+					DeltaFlowData newModuleDelta(bestModuleIndex, 0.0, 0.0);
+
+
+					// For all outlinks
+					for (auto& e : current.outEdges())
+					{
+						auto& edge = *e;
+						unsigned int otherModule = edge.target.index;
+						if (otherModule == oldModuleIndex)
+							oldModuleDelta.deltaExit += edge.data.flow;
+						else if (otherModule == bestModuleIndex)
+							newModuleDelta.deltaExit += edge.data.flow;
+					}
+					// For all inlinks
+					for (auto& e : current.inEdges())
+					{
+						auto& edge = *e;
+						unsigned int otherModule = edge.source.index;
+						if (otherModule == oldModuleIndex)
+							oldModuleDelta.deltaEnter += edge.data.flow;
+						else if (otherModule == bestModuleIndex)
+							newModuleDelta.deltaEnter += edge.data.flow;
+					}
+
+					// For memory networks
+					m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+
+					double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
+						oldModuleDelta, newModuleDelta, m_moduleFlowData);
+
+
+					if (deltaCodelength < 0.0 - this->minimumSingleNodeCodelengthImprovement)
+					{
+						//Update empty module vector
+						if(m_moduleMembers[bestModuleIndex] == 0)
+						{
+							m_emptyModules.pop_back();
+						}
+						if(m_moduleMembers[oldModuleIndex] == 1)
+						{
+							m_emptyModules.push_back(oldModuleIndex);
+						}
+
+						m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData);
+
+						m_moduleMembers[oldModuleIndex] -= 1;
+						m_moduleMembers[bestModuleIndex] += 1;
+
+						// double oldCodelength = m_objective.codelength;
+						// Log(5) << " --> Moved to module " << bestModuleIndex << " -> codelength: " << oldCodelength << " + " <<
+						// 		bestDeltaCodelength << " (" << (m_objective.codelength - oldCodelength) << ") = " << m_objective << "\n";
+
+			//			unsigned int oldModuleIndex = current.index;
+						current.index = bestModuleIndex;
+						diffSerialParallelCodelength += bestDeltaCodelength - deltaCodelength;
+
+						++numMoved;
+
+						// Mark neighbours as dirty
+						for (auto& e : current.outEdges())
+							e->target.dirty = true;
+						for (auto& e : current.inEdges())
+							e->source.dirty = true;
+					}
+					else
+					{
+						++numInvalidMoves;
+					}
+				}
+				else
+				{
+					++numInvalidMoves;
+				}
+			}
+		}
+
+//		if (!current.dirty)
+//			Log(5) << " --> Didn't move!\n";
+
+	}
+
+	// Log() << " !!! " << t << "/" << tCount << " = " << t / tCount << " !!! ";
+
+	// Log() << "\n(#invalidMoves: " << numInvalidMoves <<
+	// 		", diffSerialParallelCodelength: " << diffSerialParallelCodelength << ") ";
+
+//	return numMoved;
+	return numMoved + numInvalidMoves;
+}
+
+
+
 
 template<typename Node, typename Objective>
 inline

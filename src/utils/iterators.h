@@ -1,3 +1,5 @@
+#ifndef ITERATORS_H_
+#define ITERATORS_H_
 
 namespace infomap {
 
@@ -23,3 +25,5 @@ public:
 };
 
 }
+
+#endif //ITERATORS_H_

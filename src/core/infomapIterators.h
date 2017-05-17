@@ -91,7 +91,7 @@ public:
 						 if (curr->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
 							 ++m_clusterIndex;
 					}
-					else if (m_clusterIndexLevel == m_depth)
+					else if (static_cast<unsigned int>(m_clusterIndexLevel) == m_depth)
 						++m_clusterIndex;
 				}
 				else
@@ -222,7 +222,7 @@ public:
 						 if (curr->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
 							 ++m_clusterIndex;
 					}
-					else if (m_clusterIndexLevel == m_depth)
+					else if (static_cast<unsigned int>(m_clusterIndexLevel) == m_depth)
 						++m_clusterIndex;
 				}
 				else
