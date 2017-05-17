@@ -1734,17 +1734,9 @@ bool InfomapBase<Node>::processPartitionQueue(PartitionQueue& queue, PartitionQu
 	std::vector<double> leafCodelengths(numModules, 0.0);
 	std::vector<PartitionQueue> subQueues(numModules);
 
-#ifdef _OPENMP
-	int numModulesInt = static_cast<int>(numModules);
-	int iModule;
 #pragma omp parallel for schedule(dynamic)
-	for(iModule = 0; iModule < numModulesInt; ++iModule)
+	for(PartitionQueue::size_t moduleIndex = 0; moduleIndex < numModules; ++moduleIndex)
 	{
-		unsigned int moduleIndex = static_cast<unsigned int>(iModule);
-#else
-	for (PartitionQueue::size_t moduleIndex = 0; moduleIndex < numModules; ++moduleIndex)
-	{
-#endif
 		InfoNodeBase& module = *queue[moduleIndex];
 
 		// Delete former sub-structure if exists

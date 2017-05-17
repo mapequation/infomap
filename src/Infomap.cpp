@@ -331,6 +331,7 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 int run(const std::string& flags)
 {
 	Date startDate;
+	Stopwatch timer(true);
 	Config conf;
 	try
 	{
@@ -374,7 +375,8 @@ int run(const std::string& flags)
 
 	Log() << "===================================================\n";
 	Log() << "  Infomap ends at " << Date() << "\n";
-	Log() << "  (Elapsed time: " << (Date() - startDate) << ")\n";
+	// Log() << "  (Elapsed time: " << (Date() - startDate) << ")\n";
+	Log() << "  (Elapsed time: " << timer << ")\n";
 	Log() << "===================================================\n";
 
 	return 0;
