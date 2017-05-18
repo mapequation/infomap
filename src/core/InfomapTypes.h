@@ -12,20 +12,19 @@
 #include "MapEquation.h"
 #include "MemMapEquation.h"
 
+
 namespace infomap {
 
-template<typename Node>
-class M1Infomap : public InfomapOptimizer<Node, MapEquation<Node>>
+class M1Infomap : public InfomapOptimizer<MapEquation>
 {
 public:
-	M1Infomap() : InfomapOptimizer<Node, MapEquation<Node>>() {}
+	M1Infomap() : InfomapOptimizer<MapEquation>() {}
 };
 
-template<typename Node>
-class M2Infomap : public InfomapOptimizer<Node, MemMapEquation<Node>>
+class M2Infomap : public InfomapOptimizer<MemMapEquation>
 {
 public:
-	M2Infomap() : InfomapOptimizer<Node, MemMapEquation<Node>>() {}
+	M2Infomap() : InfomapOptimizer<MemMapEquation>() {}
 };
 
 }

@@ -10,6 +10,8 @@
 
 #include "../io/Config.h"
 #include <string>
+#include "../utils/infomath.h"
+#include "../utils/Log.h"
 
 namespace infomap {
 
@@ -33,6 +35,10 @@ protected:
 	infomath::RandGen m_rand = infomath::RandGen(123);
 
 public:
+
+	Config& getConfig() {
+		return *this;
+	}
 
 	Infomap& setConfig(const Config& conf) {
 		*this = conf;

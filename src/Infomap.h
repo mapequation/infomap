@@ -29,13 +29,32 @@
 #define SRC_INFOMAP_H_
 
 #include <string>
+#include "core/InfomapTypes.h"
+#include "core/InfoNode.h"
+#include "io/Config.h"
 
 namespace infomap {
 
 /**
- * Run as stand-alone
- */
+* Run as stand-alone
+*/
 int run(const std::string& flags);
+
+/**
+ * Run from other C++ code
+ */
+Config init(const std::string& flags);
+
+class Infomap : public M1Infomap {
+    public:
+    // Infomap(std::string flags) : M1Infomap<InfoNode>(init(flags)) {}
+    Infomap(std::string flags) {}
+
+};
+
+// class MemInfomap : public M2Infomap<InfoNode> {
+
+// }
 
 }
 

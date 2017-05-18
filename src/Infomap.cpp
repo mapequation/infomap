@@ -328,7 +328,7 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	return api.getUsedOptionArguments();
 }
 
-int run(const std::string& flags)
+Config init(const std::string& flags)
 {
 	Date startDate;
 	Stopwatch timer(true);
@@ -363,15 +363,37 @@ int run(const std::string& flags)
 		Log() << "=======================================================\n";
 
 		conf.adaptDefaults();
-
-		runInfomap(conf);
-
 	}
 	catch (std::exception& e)
 	{
 		std::cerr << e.what() << std::endl;
-		return EXIT_FAILURE;
+		conf.setError(e.what());
 	}
+
+	return conf;
+}
+
+int run(const std::string& flags)
+{
+
+	// Infomap infomap(flags);
+	// Network& network = infomap.network();
+	
+	// std::string filename = infomap.getConfig().networkFile;
+	// // std::string filename = infomap.networkFile;
+	// network.readInputData(filename);
+
+	// // Log() << "Calculate flow..." << std::endl;
+	// network.calculateFlow();
+
+	// infomap.run();
+
+
+	Date startDate;
+	Stopwatch timer(true);
+	Config conf = init(flags);
+	
+	runInfomap(conf);
 
 	Log() << "===================================================\n";
 	Log() << "  Infomap ends at " << Date() << "\n";
@@ -392,5 +414,7 @@ int main(int argc, char* argv[])
 		args << argv[i] << (i + 1 == argc? "" : " ");
 
 	return infomap::run(args.str());
+
+	return 0;
 }
 #endif

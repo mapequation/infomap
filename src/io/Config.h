@@ -127,6 +127,8 @@ struct Config
 	unsigned int minBipartiteNodeIndex = 0;
 
 	// Other
+	std::string error = "";
+	bool haveError = false;
 	Date startDate;
 	std::string version = INFOMAP_VERSION;
 
@@ -498,6 +500,11 @@ struct Config
 
 	ElapsedTime elapsedTime() const { return Date() - startDate; }
 
+	void setError(const std::string& err)
+	{
+		error = err;
+		haveError = true;
+	}
 };
 
 }

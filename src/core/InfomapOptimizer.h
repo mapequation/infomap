@@ -11,23 +11,22 @@
 #include "InfomapBase.h"
 #include <set>
 #include "../utils/ReusableVector.h"
+#include "InfoNode.h"
 
 namespace infomap {
 
-template<typename Node, typename Objective>
-class InfomapOptimizer : public InfomapBase<Node> {
-	using Base = InfomapBase<Node>;
-	template<typename InfoNode>
-	using ThisInfomapType = InfomapOptimizer<InfoNode, Objective>;
+template<typename Objective>
+class InfomapOptimizer : public InfomapBase {
+	using Base = InfomapBase;
 	using FlowData = typename Objective::FlowDataType;
 	using DeltaFlowData = typename Objective::DeltaFlowDataType;
 
 protected:
 //	using Base::EdgeType;
 //	using EdgeType = Base::EdgeType;
-	using EdgeType = Edge<InfoNodeBase>;
+	using EdgeType = Edge<InfoNode>;
 public:
-	InfomapOptimizer() : InfomapBase<Node>() {}
+	InfomapOptimizer() : InfomapBase() {}
 	virtual ~InfomapOptimizer() {}
 
 	// ===================================================
@@ -53,9 +52,8 @@ public:
 	virtual double getModuleCodelength() const;
 
 protected:
-	using Base::get;
 
-	virtual InfomapBase<Node>& getInfomap(InfoNodeBase& node);
+	virtual InfomapBase& getInfomap(InfoNode& node);
 
 	using Base::isTopLevel;
 	using Base::isMainInfomap;
@@ -77,7 +75,7 @@ protected:
 
 	virtual void initSuperNetwork();
 
-	virtual double calcCodelength(const InfoNodeBase& parent) const;
+	virtual double calcCodelength(const InfoNode& parent) const;
 
 	// ===================================================
 	// Run: Partition: *
@@ -124,38 +122,37 @@ protected:
 // Getters
 // ===================================================
 
-template<typename Node, typename Objective>
+template<typename Objective>
 inline
-InfomapBase<Node>& InfomapOptimizer<Node, Objective>::getInfomap(InfoNodeBase& node) {
-	// return get(node).template getInfomap<ThisInfomapType>();
-	return get(node).getInfomap();
+InfomapBase& InfomapOptimizer<Objective>::getInfomap(InfoNode& node) {
+	return node.getInfomap();
 }
 
 
-template<typename Node, typename Objective>
+template<typename Objective>
 inline
-double InfomapOptimizer<Node, Objective>::getCodelength() const
+double InfomapOptimizer<Objective>::getCodelength() const
 {
 	return m_objective.codelength;
 }
 
-template<typename Node, typename Objective>
+template<typename Objective>
 inline
-double InfomapOptimizer<Node, Objective>::getIndexCodelength() const
+double InfomapOptimizer<Objective>::getIndexCodelength() const
 {
 	return m_objective.indexCodelength;
 }
 
-template<typename Node, typename Objective>
+template<typename Objective>
 inline
-double InfomapOptimizer<Node, Objective>::getModuleCodelength() const
+double InfomapOptimizer<Objective>::getModuleCodelength() const
 {
 	return m_objective.moduleCodelength;
 }
 
-template<typename Node, typename Objective>
+template<typename Objective>
 inline
-unsigned int InfomapOptimizer<Node, Objective>::numActiveModules() const
+unsigned int InfomapOptimizer<Objective>::numActiveModules() const
 {
 	return activeNetwork().size() - m_emptyModules.size();
 }
@@ -165,9 +162,9 @@ unsigned int InfomapOptimizer<Node, Objective>::numActiveModules() const
 // Run: Init: *
 // ===================================================
 
-template<typename Node, typename Objective>
+template<typename Objective>
 inline
-void InfomapOptimizer<Node, Objective>::initNetwork()
+void InfomapOptimizer<Objective>::initNetwork()
 {
 	Log(4) << "InfomapOptimizer::initNetwork()...\n";
 	m_objective.initNetwork(root());
@@ -176,17 +173,17 @@ void InfomapOptimizer<Node, Objective>::initNetwork()
 		m_objective.initSubNetwork(root());
 }
 
-template<typename Node, typename Objective>
+template<typename Objective>
 inline
-void InfomapOptimizer<Node, Objective>::initSuperNetwork()
+void InfomapOptimizer<Objective>::initSuperNetwork()
 {
 	Log(4) << "InfomapOptimizer::initSuperNetwork()...\n";
 	m_objective.initSuperNetwork(root());
 }
 
-template<typename Node, typename Objective>
+template<typename Objective>
 inline
-double InfomapOptimizer<Node, Objective>::calcCodelength(const InfoNodeBase& parent) const
+double InfomapOptimizer<Objective>::calcCodelength(const InfoNode& parent) const
 {
 	return m_objective.calcCodelength(parent);
 }
@@ -196,8 +193,8 @@ double InfomapOptimizer<Node, Objective>::calcCodelength(const InfoNodeBase& par
 // Run: Partition: *
 // ===================================================
 
-template<typename Node, typename Objective>
-void InfomapOptimizer<Node, Objective>::initPartition()
+template<typename Objective>
+void InfomapOptimizer<Objective>::initPartition()
 {
 	auto& network = activeNetwork();
 	Log(4) << "InfomapOptimizer::initPartition() with " << network.size() << " nodes..." << std::endl;
@@ -212,7 +209,7 @@ void InfomapOptimizer<Node, Objective>::initPartition()
 	unsigned int i = 0;
 	for (auto& nodePtr : network)
 	{
-		InfoNodeBase& node = *nodePtr;
+		InfoNode& node = *nodePtr;
 		node.index = i; // Unique module index for each node
 		m_moduleFlowData[i] = node.data;
 		node.dirty = true;
@@ -221,12 +218,12 @@ void InfomapOptimizer<Node, Objective>::initPartition()
 
 	m_objective.initPartition(network);
 
-	Log(2) << "Initiated to codelength " << *this << " in " << numActiveModules() << " modules." << std::endl;
+	Log(2) << "Initiated to codelength " << m_objective << " in " << numActiveModules() << " modules." << std::endl;
 }
 
 
-template<typename Node, typename Objective>
-void InfomapOptimizer<Node, Objective>::moveActiveNodesToPredifinedModules(std::vector<unsigned int>& modules)
+template<typename Objective>
+void InfomapOptimizer<Objective>::moveActiveNodesToPredifinedModules(std::vector<unsigned int>& modules)
 {
 	auto& network = activeNetwork();
 	unsigned int numNodes = network.size();
@@ -236,7 +233,7 @@ void InfomapOptimizer<Node, Objective>::moveActiveNodesToPredifinedModules(std::
 
 	for (unsigned int i = 0; i < numNodes; ++i)
 	{
-		InfoNodeBase& current = *network[i];
+		InfoNode& current = *network[i];
 		unsigned int oldM = current.index;
 		unsigned int newM = modules[i];
 
@@ -289,9 +286,9 @@ void InfomapOptimizer<Node, Objective>::moveActiveNodesToPredifinedModules(std::
 	}
 }
 
-template<typename Node, typename Objective>
+template<typename Objective>
 inline
-unsigned int InfomapOptimizer<Node, Objective>::optimizeActiveNetwork()
+unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 {
 	unsigned int coreLoopCount = 0;
 	unsigned int numEffectiveLoops = 0;
@@ -320,8 +317,8 @@ unsigned int InfomapOptimizer<Node, Objective>::optimizeActiveNetwork()
 	return numEffectiveLoops;
 }
 
-template<typename Node, typename Objective>
-unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
+template<typename Objective>
+unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 {
 	// Get random enumeration of nodes
 	std::vector<unsigned int> nodeEnumeration(activeNetwork().size());
@@ -340,7 +337,7 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 
 	for (unsigned int i = 0; i < numNodes; ++i)
 	{
-		InfoNodeBase& current = *network[nodeEnumeration[i]];
+		InfoNode& current = *network[nodeEnumeration[i]];
 
 //		Log(5) << "Trying to move node " << current << " from module " << current.index << "...\n";
 
@@ -372,7 +369,7 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 		for (auto& e : current.outEdges())
 		{
 			auto& edge = *e;
-			InfoNodeBase& neighbour = edge.target;
+			InfoNode& neighbour = edge.target;
 			// deltaFlow[neighbour.index] += DeltaFlowData(neighbour.index, edge.data.flow, 0.0);
 			deltaFlow.add(neighbour.index, DeltaFlowData(neighbour.index, edge.data.flow, 0.0));
 		}
@@ -380,7 +377,7 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
 		for (auto& e : current.inEdges())
 		{
 			auto& edge = *e;
-			InfoNodeBase& neighbour = edge.source;
+			InfoNode& neighbour = edge.source;
 			// timer.start();
 			// deltaFlow[neighbour.index] += DeltaFlowData(neighbour.index, 0.0, edge.data.flow);
 			deltaFlow.add(neighbour.index, DeltaFlowData(neighbour.index, 0.0, edge.data.flow));
@@ -522,8 +519,8 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModule()
  *
  * @return The number of nodes moved.
  */
-template<typename Node, typename Objective>
-unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModuleInParallel()
+template<typename Objective>
+unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParallel()
 {
 	// Get random enumeration of nodes
 	std::vector<unsigned int> nodeEnumeration(activeNetwork().size());
@@ -547,7 +544,7 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModuleInP
 	{
 //		printf("Node %d processed by thread %d\n", i, omp_get_thread_num());
 		// Pick nodes in random order
-		InfoNodeBase& current = *network[nodeEnumeration[i]];
+		InfoNode& current = *network[nodeEnumeration[i]];
 
 //		Log(5) << "Trying to move node " << current << " from module " << current.index << "...\n";
 
@@ -576,7 +573,7 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModuleInP
 		for (auto& e : current.outEdges())
 		{
 			auto& edge = *e;
-			InfoNodeBase& neighbour = edge.target;
+			InfoNode& neighbour = edge.target;
 			// deltaFlow[neighbour.index] += DeltaFlowData(neighbour.index, edge.data.flow, 0.0);
 			deltaFlow.add(neighbour.index, DeltaFlowData(neighbour.index, edge.data.flow, 0.0));
 		}
@@ -584,7 +581,7 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModuleInP
 		for (auto& e : current.inEdges())
 		{
 			auto& edge = *e;
-			InfoNodeBase& neighbour = edge.source;
+			InfoNode& neighbour = edge.source;
 			// timer.start();
 			// deltaFlow[neighbour.index] += DeltaFlowData(neighbour.index, 0.0, edge.data.flow);
 			deltaFlow.add(neighbour.index, DeltaFlowData(neighbour.index, 0.0, edge.data.flow));
@@ -818,19 +815,19 @@ unsigned int InfomapOptimizer<Node, Objective>::tryMoveEachNodeIntoBestModuleInP
 
 
 
-template<typename Node, typename Objective>
+template<typename Objective>
 inline
-void InfomapOptimizer<Node, Objective>::consolidateModules(bool replaceExistingModules)
+void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules)
 {
 //	Log(1) << "Consolidate modules to codelength " << m_optimizer << "..." << std::endl;
 
 	auto& network = activeNetwork();
 	unsigned int numNodes = network.size();
-	std::vector<InfoNodeBase*> modules(numNodes, 0);
+	std::vector<InfoNode*> modules(numNodes, 0);
 
 	auto& moduleFlowData = getModuleFlowData();
 
-	InfoNodeBase& firstActiveNode = *network[0];
+	InfoNode& firstActiveNode = *network[0];
 	unsigned int level = firstActiveNode.depth();
 	unsigned int leafLevel = numLevels();
 
@@ -839,18 +836,18 @@ void InfomapOptimizer<Node, Objective>::consolidateModules(bool replaceExistingM
 
 
 	// Release children pointers on current parent(s) to put new modules between
-	for (InfoNodeBase* n : network) {
+	for (InfoNode* n : network) {
 		n->parent->releaseChildren(); // Safe to call multiple times
 	}
 
 	// Create the new module nodes and re-parent the active network from its common parent to the new module level
 	for (unsigned int i = 0; i < numNodes; ++i)
 	{
-		InfoNodeBase* node = network[i];
+		InfoNode* node = network[i];
 		unsigned int moduleIndex = node->index;
 		if (modules[moduleIndex] == 0)
 		{
-			modules[moduleIndex] = new Node(moduleFlowData[moduleIndex]);
+			modules[moduleIndex] = new InfoNode(moduleFlowData[moduleIndex]);
 			node->parent->addChild(modules[moduleIndex]);
 			modules[moduleIndex]->index = moduleIndex;
 		}
@@ -859,20 +856,20 @@ void InfomapOptimizer<Node, Objective>::consolidateModules(bool replaceExistingM
 
 
 	// Aggregate links from lower level to the new modular level
-	typedef std::pair<InfoNodeBase*, InfoNodeBase*> NodePair;
+	typedef std::pair<InfoNode*, InfoNode*> NodePair;
 	typedef std::map<NodePair, double> EdgeMap;
 	EdgeMap moduleLinks;
 
 	for (auto& node : network)
 	{
-		InfoNodeBase* parent = node->parent;
+		InfoNode* parent = node->parent;
 		for (auto& e : node->outEdges())
 		{
 			EdgeType& edge = *e;
-			InfoNodeBase* otherParent = edge.target.parent;
+			InfoNode* otherParent = edge.target.parent;
 			if (otherParent != parent)
 			{
-				InfoNodeBase *m1 = parent, *m2 = otherParent;
+				InfoNode *m1 = parent, *m2 = otherParent;
 				// If undirected, the order may be swapped to aggregate the edge on an opposite one
 				if (!this->directedEdges && m1->index > m2->index)
 					std::swap(m1, m2);
@@ -902,7 +899,7 @@ void InfomapOptimizer<Node, Objective>::consolidateModules(bool replaceExistingM
 		else if (level == 2) {
 			Log(4) << "Consolidated sub-modules, removing modules..." << std::endl;
 			unsigned int moduleIndex = 0;
-			for (InfoNodeBase& module : root()) {
+			for (InfoNode& module : root()) {
 				// Store current modular structure on the sub-modules
 				for (auto& subModule : module)
 					subModule.index = moduleIndex;
@@ -924,9 +921,9 @@ void InfomapOptimizer<Node, Objective>::consolidateModules(bool replaceExistingM
 	m_consolidatedObjective = m_objective;
 }
 
-template<typename Node, typename Objective>
+template<typename Objective>
 inline
-bool InfomapOptimizer<Node, Objective>::restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore)
+bool InfomapOptimizer<Objective>::restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore)
 {
 	if (forceRestore || m_objective.codelength >= m_consolidatedObjective.codelength - this->minimumSingleNodeCodelengthImprovement)
 	{
@@ -941,8 +938,8 @@ bool InfomapOptimizer<Node, Objective>::restoreConsolidatedOptimizationPointIfNo
 // IO
 // ===================================================
 
-template<typename Node, typename Objective>
-std::ostream& InfomapOptimizer<Node, Objective>::toString(std::ostream& out) const
+template<typename Objective>
+std::ostream& InfomapOptimizer<Objective>::toString(std::ostream& out) const
 {
 	return out << m_objective;
 }
@@ -952,14 +949,14 @@ std::ostream& InfomapOptimizer<Node, Objective>::toString(std::ostream& out) con
 // Debug: *
 // ===================================================
 
-template<typename Node, typename Objective>
+template<typename Objective>
 inline
-void InfomapOptimizer<Node, Objective>::printDebug()
+void InfomapOptimizer<Objective>::printDebug()
 {
 	m_objective.printDebug();
 }
 
 
-} /* namespace ClusteringModule */
+} /* namespace infomap */
 
 #endif /* INFOMAP_OPTIMIZER_H_ */
