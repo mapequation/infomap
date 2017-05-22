@@ -43,16 +43,17 @@ int run(const std::string& flags);
 /**
  * Run from other C++ code
  */
-Config init(const std::string& flags);
+Config init(const std::string& flags, bool requireFileInput = false);
 
 class Infomap : public M1Infomap {
     public:
-    // Infomap(std::string flags) : M1Infomap<InfoNode>(init(flags)) {}
-    Infomap(std::string flags) {}
+    Infomap(std::string flags, bool requireFileInput = false) :
+        M1Infomap(::infomap::init(flags, requireFileInput))
+    {}
 
 };
 
-// class MemInfomap : public M2Infomap<InfoNode> {
+// class MemInfomap : public M2Infomap {
 
 // }
 

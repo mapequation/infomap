@@ -36,66 +36,19 @@ protected:
 	using EdgeType = Edge<InfoNode>;
 
 public:
-	InfomapBase()
-	{}
+	InfomapBase() : InfomapConfig<InfomapBase>() {}
 
 	// template<typename Infomap>
 	// InfomapBase(InfomapConfig<Infomap>& conf) :
 	// 	InfomapConfig<Infomap>(conf),
 	// 	m_network(conf)
 	// {}
-	InfomapBase(InfomapConfig<InfomapBase>& conf) :
+	InfomapBase(const Config& conf) :
 		InfomapConfig<InfomapBase>(conf),
 		m_network(conf)
 	{}
 	virtual ~InfomapBase() {}
 
-	// ===================================================
-	// IO
-	// ===================================================
-
-	virtual std::ostream& toString(std::ostream& out) const;
-
-	// ===================================================
-	// Init
-	// ===================================================
-
-	// template<typename NetNode, typename Key>
-	InfomapBase& initNetwork(StateNetwork& network);
-	InfomapBase& initNetwork(InfoNode& parent, bool asSuperNetwork = false);
-
-	/**
-	 * Provide an initial partition of the network.
-	 *
-	 * @param clusterDataFile A .clu file containing cluster data.
-	 * @param hard If true, the provided clusters will not be splitted. This reduces the
-	 * effective network size during the optimization phase but the hard partitions are
-	 * after that replaced by the original nodes.
-	 */
-	InfomapBase& initPartition(std::string clusterDataFile, bool hard = false);
-
-	/**
-	 * Provide an initial partition of the network.
-	 *
-	 * @param clusters Each sub-vector contain node IDs for all nodes that should be merged.
-	 * @param hard If true, the provided clusters will not be splitted. This reduces the
-	 * effective network size during the optimization phase but the hard partitions are
-	 * after that replaced by the original nodes.
-	 */
-	InfomapBase& initPartition(std::vector<std::vector<unsigned int>>& clusters, bool hard = false);
-
-	/**
-	 * Provide an initial partition of the network.
-	 *
-	 * @param modules Module indices for each node
-	 */
-	InfomapBase& initPartition(std::vector<unsigned int>& modules, bool hard = false);
-
-	// ===================================================
-	// Run
-	// ===================================================
-
-	virtual void run();
 
 	// ===================================================
 	// Getters
@@ -133,8 +86,6 @@ public:
 
 	double getHierarchicalCodelength() const;
 
-protected:
-
 	bool isFullNetwork() { return m_isMain && m_aggregationLevel == 0; }
 	bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 
@@ -160,31 +111,83 @@ protected:
 	std::vector<InfoNode*>& activeNetwork() const;
 
 	// ===================================================
-	// Run(...): *
+	// IO
 	// ===================================================
 
-	// template<typename NetNode, typename Key>
-	void generateSubNetwork(StateNetwork& network);
-	virtual void generateSubNetwork(InfoNode& parent);
+	virtual std::ostream& toString(std::ostream& out) const;
+
+
+	// ===================================================
+	// Run
+	// ===================================================
+
+	virtual void run();
+
+	virtual void run(Network& network);
 
 	// ===================================================
 	// Run: *
 	// ===================================================
 
+	InfomapBase& initNetwork(StateNetwork& network);
+	InfomapBase& initNetwork(InfoNode& parent, bool asSuperNetwork = false);
+
+
+	void generateSubNetwork(StateNetwork& network);
+	virtual void generateSubNetwork(InfoNode& parent);
+
+
+	/**
+	 * Provide an initial partition of the network.
+	 *
+	 * @param clusterDataFile A .clu file containing cluster data.
+	 * @param hard If true, the provided clusters will not be splitted. This reduces the
+	 * effective network size during the optimization phase but the hard partitions are
+	 * after that replaced by the original nodes.
+	 */
+	InfomapBase& initPartition(std::string clusterDataFile, bool hard = false);
+
+	/**
+	 * Provide an initial partition of the network.
+	 *
+	 * @param clusters Each sub-vector contain node IDs for all nodes that should be merged.
+	 * @param hard If true, the provided clusters will not be splitted. This reduces the
+	 * effective network size during the optimization phase but the hard partitions are
+	 * after that replaced by the original nodes.
+	 */
+	InfomapBase& initPartition(std::vector<std::vector<unsigned int>>& clusters, bool hard = false);
+
+	/**
+	 * Provide an initial partition of the network.
+	 *
+	 * @param modules Module indices for each node
+	 */
+	InfomapBase& initPartition(std::vector<unsigned int>& modules, bool hard = false);
+
 	virtual void init();
 
-	virtual void hierarchicalPartition();
-
-	virtual void partition();
+	virtual void runPartition();
 
 	virtual void restoreHardPartition();
 
 	virtual void writeResult();
 
 	// ===================================================
-	// Run: Init: *
+	// runPartition: *
 	// ===================================================
 
+	virtual void hierarchicalPartition();
+
+	virtual void partition();
+
+
+	// ===================================================
+	// runPartition: init: *
+	// ===================================================
+
+	/**
+	* Done in network?
+	*/
 	virtual void initEnterExitFlow();
 
 	// Init terms that is constant for the whole network

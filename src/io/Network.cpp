@@ -46,6 +46,9 @@ void Network::readInputData(std::string filename)
 {
 	if (filename.empty())
 		filename = m_config.networkFile;
+	if (filename == "") {
+		throw InputSyntaxError("No input file to read network");
+	}
 	FileURI networkFilename(filename, false);
 	std::string format = m_config.inputFormat;
 

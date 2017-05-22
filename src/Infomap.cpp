@@ -51,59 +51,27 @@
 
 namespace infomap {
 
-void runInfomap(const Config& config)
-{
-	std::string filename = config.networkFile;
-	Network network(config);
-	network.readInputData(filename);
-
-	// Log() << "Calculate flow..." << std::endl;
-	network.calculateFlow();
-
-	// Log() << "Create info root node..." << std::endl;
-	InfoNode root;
-
-	// Log() << "Get Infomap..." << std::endl;
-	auto& infomap = root.getInfomap().setConfig(config);
-	
-	// Log() << "Init Infomap network..." << std::endl;
-	infomap.initNetwork(network);
-
-	// for (auto& node : root.infomapTree()) {
-	// 	Log() << "Node " << node.uid << ": " << node.data << "\n";
-	// }
-
-	// Log() << "Run Infomap..." << std::endl;
-	infomap.run();
-    
-	
-	Log() << "Done!" << std::endl;
-}
-
-void runMemInfomap(const Config& config)
-{
-	// StateInfoNode root;
-	// root.getInfomap().setConfig(conf).initNetwork(network).run();
-}
-
-std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool noFileIO = false)
+std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool requireFileInput = false)
 {
 	ProgramInterface api("Infomap",
 			"Implementation of the Infomap clustering algorithm based on the Map Equation (see www.mapequation.org)",
 			INFOMAP_VERSION);
 
-	std::vector<std::string> optionalOutputDir; // Used if noFileIO
+	std::vector<std::string> optionalOutputDir; // Used if !requireFileInput
 	// --------------------- Input options ---------------------
-	if (!noFileIO)
+	if (requireFileInput)
 	{
 		api.addNonOptionArgument(conf.networkFile, "network_file",
-				"The file containing the network data. Accepted formats: Pajek (implied by .net) and link list (.txt)");
+			"The file containing the network data. Accepted formats: Pajek (implied by .net) and link list (.txt)");
 
-		api.addOptionalNonOptionArguments(conf.additionalInput, "[additional input]",
-				"More network layers for multiplex.", true);
+		// api.addOptionalNonOptionArguments(conf.additionalInput, "[additional input]",
+		// 		"More network layers for multiplex.", true);
 	}
 	else
-		conf.networkFile = "no-name";
+	{
+		api.addOptionArgument(conf.networkFile, "input",
+			"The file containing the network data. Accepted formats: Pajek (implied by .net) and link list (.txt)", "p");
+	}
 
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
 			"Specify input format ('pajek', 'link-list', 'states', '3gram', 'multiplex' or 'bipartite') to override format possibly implied by file extension.", "s");
@@ -285,16 +253,19 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 			"Include the bipartite nodes in the output.", true);
 
 	// --------------------- Output options ---------------------
-	if (!noFileIO)
-	{
-		api.addNonOptionArgument(conf.outDirectory, "out_directory",
-				"The directory to write the results to");
-	}
-	else
-	{
-		api.addOptionalNonOptionArguments(optionalOutputDir, "[out_directory]",
-				"The directory to write the results to.");
-	}
+	// if (requireFileInput)
+	// {
+	// 	api.addNonOptionArgument(conf.outDirectory, "out_directory",
+	// 			"The directory to write the results to");
+	// }
+	// else
+	// {
+	// 	api.addOptionalNonOptionArguments(optionalOutputDir, "[out_directory]",
+	// 			"The directory to write the results to.");
+	// }
+	
+	api.addOptionalNonOptionArguments(optionalOutputDir, "[out_directory]",
+			"The directory to write the results to.");
 
 	api.addIncrementalOptionArgument(conf.verbosity, 'v', "verbose",
 			"Verbose output on the console. Add additional 'v' flags to increase verbosity up to -vvv.");
@@ -306,12 +277,15 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 
 	conf.parsedArgs = flags;
 
-	if (noFileIO)
+	if (!optionalOutputDir.empty())
+		conf.outDirectory = optionalOutputDir[0];
+	
+	if (!requireFileInput && conf.outDirectory == "")
+		conf.noFileOutput = true;
+
+	if (!conf.noFileOutput && conf.outDirectory == "" && requireFileInput)
 	{
-		if (!optionalOutputDir.empty())
-			conf.outDirectory = optionalOutputDir[0];
-		else
-			conf.noFileOutput = true;
+		throw InputDomainError("Missing out_directory");
 	}
 
 	// Some checks
@@ -320,29 +294,36 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 
 	if (conf.haveOutput() && !isDirectoryWritable(conf.outDirectory))
 		throw FileOpenError(io::Str() << "Can't write to directory '" <<
-				conf.outDirectory << "'. Check that the directory exists and that you have write permissions.");
+			conf.outDirectory << "'. Check that the directory exists and that you have write permissions.");
 
-	if (conf.outName.empty())
-		conf.outName = FileURI(conf.networkFile).getName();
+	if (conf.outName.empty()) {
+		if (conf.networkFile != "")
+			conf.outName = FileURI(conf.networkFile).getName();
+		else
+			conf.outName = "no-name";
+	}
 
 	return api.getUsedOptionArguments();
 }
 
-Config init(const std::string& flags)
+Config init(const std::string& flags, bool requireFileInput)
 {
 	Date startDate;
 	Stopwatch timer(true);
 	Config conf;
 	try
 	{
-		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags);
+		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags, requireFileInput);
 
 		Log::init(conf.verbosity, conf.silent, conf.verboseNumberPrecision);
 
 		Log() << "=======================================================\n";
 		Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
 		Log() << "  -> Input network: " << conf.networkFile << "\n";
-		Log() << "  -> Output path:   " << conf.outDirectory << "\n";
+		if (conf.noFileOutput)
+			Log() << "  -> No file output!\n";
+		else
+			Log() << "  -> Output path:   " << conf.outDirectory << "\n";
 		if (!parsedFlags.empty()) {
 			for (unsigned int i = 0; i < parsedFlags.size(); ++i)
 				Log() << (i == 0 ? "  -> Configuration: " : "                    ") << parsedFlags[i] << "\n";
@@ -366,8 +347,8 @@ Config init(const std::string& flags)
 	}
 	catch (std::exception& e)
 	{
-		std::cerr << e.what() << std::endl;
 		conf.setError(e.what());
+		throw;
 	}
 
 	return conf;
@@ -375,31 +356,25 @@ Config init(const std::string& flags)
 
 int run(const std::string& flags)
 {
+	try
+	{
+		Stopwatch timer(true);
 
-	// Infomap infomap(flags);
-	// Network& network = infomap.network();
-	
-	// std::string filename = infomap.getConfig().networkFile;
-	// // std::string filename = infomap.networkFile;
-	// network.readInputData(filename);
+		Infomap infomap(flags, true);
 
-	// // Log() << "Calculate flow..." << std::endl;
-	// network.calculateFlow();
+		infomap.run();
 
-	// infomap.run();
-
-
-	Date startDate;
-	Stopwatch timer(true);
-	Config conf = init(flags);
-	
-	runInfomap(conf);
-
-	Log() << "===================================================\n";
-	Log() << "  Infomap ends at " << Date() << "\n";
-	// Log() << "  (Elapsed time: " << (Date() - startDate) << ")\n";
-	Log() << "  (Elapsed time: " << timer << ")\n";
-	Log() << "===================================================\n";
+		Log() << "===================================================\n";
+		Log() << "  Infomap ends at " << Date() << "\n";
+		// Log() << "  (Elapsed time: " << (Date() - startDate) << ")\n";
+		Log() << "  (Elapsed time: " << timer << ")\n";
+		Log() << "===================================================\n";
+	}
+	catch (std::exception& e)
+	{
+		std::cerr << "Error: " << e.what() << std::endl;
+		return 1;
+	}
 
 	return 0;
 }

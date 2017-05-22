@@ -182,10 +182,118 @@ std::vector<InfoNode*>& InfomapBase::activeNetwork() const
 }
 
 // ===================================================
-// Init
+// Run
 // ===================================================
 
-// template<typename NetNode, typename Key>
+void InfomapBase::run()
+{
+	if (!isMainInfomap()) {
+		runPartition();
+		return;
+	}
+	
+	Network network(*this);
+
+	std::string filename = this->networkFile;
+
+	network.readInputData(filename);
+
+	network.calculateFlow();
+
+	run(network);
+}
+
+void InfomapBase::run(Network& network)
+{
+	initNetwork(network);
+
+	if (numLeafNodes() == 0)
+		throw DataDomainError("No nodes to partition");
+	
+	if (haveMemory())
+		Log(2) << "Run Infomap with memory..." << std::endl;
+	else
+		Log(2) << "Run Infomap..." << std::endl;
+	
+	std::ostringstream bestSolutionStatistics;
+	unsigned int bestNumLevels = 0;
+	double bestHierarchicalCodelength = std::numeric_limits<double>::max();
+	std::deque<double> codelengths;
+
+	unsigned int numTrials = this->numTrials;
+
+	for (unsigned int i = 0; i < numTrials; ++i)
+	{
+		removeModules();
+		auto startDate = Date();
+		Stopwatch timer(true);
+
+		if (isMainInfomap())
+		{
+			Log() << "\n";
+			Log() << "================================================\n";
+			Log() << "Trial " << (i + 1) << "/" << numTrials << " starting at" << startDate << "\n";
+			Log() << "================================================\n";
+
+			if (this->clusterDataFile != "")
+				initPartition(this->clusterDataFile, this->clusterDataIsHard);
+		}
+
+		runPartition();
+
+		if (haveHardPartition())
+			restoreHardPartition();
+		
+		if (isMainInfomap()) {
+			auto endDate = Date();
+			Log() << "\n=> Trial " << (i + 1) << "/" << numTrials <<
+				" finished in " << timer.getElapsedTimeInMilliSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
+			codelengths.push_back(m_hierarchicalCodelength);
+			if (m_hierarchicalCodelength < bestHierarchicalCodelength - 1e-10) {
+				bestSolutionStatistics.clear();
+				bestSolutionStatistics.str("");
+				bestNumLevels = printPerLevelCodelength(bestSolutionStatistics);
+				bestHierarchicalCodelength = m_hierarchicalCodelength;
+				writeResult();
+			}
+		}
+	}
+	if (isMainInfomap())
+	{
+		Log() << "\n\n";
+		Log() << "================================================\n";
+		Log() << "Summary after " << numTrials << (numTrials > 1 ? " trials\n" : " trial\n");
+		Log() << "================================================\n";
+		if (codelengths.size() > 1) {
+			double averageCodelength = 0.0;
+			double minCodelength = codelengths[0];
+			double maxCodelength = codelengths[0];
+			Log() << "Codelengths: [";
+			for (auto codelength : codelengths) {
+				Log() << codelength << ", ";
+				averageCodelength += codelength;
+				minCodelength = std::min(minCodelength, codelength);
+				maxCodelength = std::max(maxCodelength, codelength);
+			}
+			averageCodelength /= numTrials;
+			Log() << "\b\b]\n";
+			Log() << "[min, average, max] codelength: [" <<
+					minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n\n";
+		}
+
+		Log() << "Best end modular solution in " << bestNumLevels << " levels";
+		if (bestHierarchicalCodelength > m_oneLevelCodelength)
+			Log() << " (warning: worse than one-level solution)";
+		Log() << ":" << std::endl;
+		Log() << bestSolutionStatistics.str() << std::endl;
+	}
+}
+
+
+// ===================================================
+// Run: Init: *
+// ===================================================
+
 InfomapBase& InfomapBase::initNetwork(StateNetwork& network)
 {
 	if (network.numNodes() == 0)
@@ -316,11 +424,6 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
 	return *this;
 }
 
-// ===================================================
-// InitNetwork: *
-// ===================================================
-
-// template<typename NetNode, typename Key>
 void InfomapBase::generateSubNetwork(StateNetwork& network)
 {
 	unsigned int numNodes = network.numNodes();
@@ -422,104 +525,18 @@ void InfomapBase::init()
 	Log() << "done!\n -> One-level codelength: " << m_oneLevelCodelength << std::endl;
 }
 
-// ===================================================
-// Run
-// ===================================================
-
-void InfomapBase::run()
-{
-	if (numLeafNodes() == 0)
-		throw DataDomainError("No nodes to partition");
-	
-	if (isMainInfomap())
-	{
-		if (haveMemory())
-			Log(2) << "Run Infomap with memory..." << std::endl;
-		else
-			Log(2) << "Run Infomap..." << std::endl;
-	}
-	std::ostringstream bestSolutionStatistics;
-	unsigned int bestNumLevels = 0;
-	double bestHierarchicalCodelength = std::numeric_limits<double>::max();
-	std::deque<double> codelengths;
-
-	unsigned int numTrials = isMainInfomap() ? this->numTrials : 1;
-
-	for (unsigned int i = 0; i < numTrials; ++i)
-	{
-		removeModules();
-		auto startDate = Date();
-		Stopwatch timer(true);
-
-		if (isMainInfomap())
-		{
-			Log() << "\n";
-			Log() << "================================================\n";
-			Log() << "Trial " << (i + 1) << "/" << numTrials << " starting at" << startDate << "\n";
-			Log() << "================================================\n";
-
-			if (this->clusterDataFile != "")
-				initPartition(this->clusterDataFile, this->clusterDataIsHard);
-		}
-
-		if (this->twoLevel)
-			partition();
-		else
-			hierarchicalPartition();
-
-		if (haveHardPartition())
-			restoreHardPartition();
-		
-		if (isMainInfomap()) {
-			auto endDate = Date();
-			Log() << "\n=> Trial " << (i + 1) << "/" << numTrials <<
-				" finished in " << timer.getElapsedTimeInMilliSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
-			codelengths.push_back(m_hierarchicalCodelength);
-			if (m_hierarchicalCodelength < bestHierarchicalCodelength - 1e-10) {
-				bestSolutionStatistics.clear();
-				bestSolutionStatistics.str("");
-				bestNumLevels = printPerLevelCodelength(bestSolutionStatistics);
-				bestHierarchicalCodelength = m_hierarchicalCodelength;
-				writeResult();
-			}
-		}
-	}
-	if (isMainInfomap())
-	{
-		Log() << "\n\n";
-		Log() << "================================================\n";
-		Log() << "Summary after " << numTrials << (numTrials > 1 ? " trials\n" : " trial\n");
-		Log() << "================================================\n";
-		if (codelengths.size() > 1) {
-			double averageCodelength = 0.0;
-			double minCodelength = codelengths[0];
-			double maxCodelength = codelengths[0];
-			Log() << "Codelengths: [";
-			for (auto codelength : codelengths) {
-				Log() << codelength << ", ";
-				averageCodelength += codelength;
-				minCodelength = std::min(minCodelength, codelength);
-				maxCodelength = std::max(maxCodelength, codelength);
-			}
-			averageCodelength /= numTrials;
-			Log() << "\b\b]\n";
-			Log() << "[min, average, max] codelength: [" <<
-					minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n\n";
-		}
-
-		Log() << "Best end modular solution in " << bestNumLevels << " levels";
-		if (bestHierarchicalCodelength > m_oneLevelCodelength)
-			Log() << " (warning: worse than one-level solution)";
-		Log() << ":" << std::endl;
-		Log() << bestSolutionStatistics.str() << std::endl;
-	}
-}
-
-
 
 // ===================================================
 // Run: *
 // ===================================================
+
+void InfomapBase::runPartition()
+{
+	if (this->twoLevel)
+		partition();
+	else
+		hierarchicalPartition();
+}
 
 void InfomapBase::hierarchicalPartition()
 {
@@ -663,6 +680,9 @@ void InfomapBase::restoreHardPartition()
 
 void InfomapBase::writeResult()
 {
+	if (this->noFileOutput)
+		return;
+	
 	std::string outputFilename = this->outDirectory + this->outName + ".tree";
 	Log() << "Write tree to " << outputFilename << "... ";
 

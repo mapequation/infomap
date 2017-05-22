@@ -12,6 +12,7 @@
 #include <set>
 #include "../utils/ReusableVector.h"
 #include "InfoNode.h"
+#include <utility>
 
 namespace infomap {
 
@@ -26,7 +27,8 @@ protected:
 //	using EdgeType = Base::EdgeType;
 	using EdgeType = Edge<InfoNode>;
 public:
-	InfomapOptimizer() : InfomapBase() {}
+	template<typename... Args>
+	InfomapOptimizer(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
 	virtual ~InfomapOptimizer() {}
 
 	// ===================================================
