@@ -30,61 +30,36 @@
 
 #include <cmath>
 #include <vector>
-#include <random>
 
-namespace infomath
+namespace infomap
 {
-
-	typedef std::mt19937 RandGen;
-	typedef std::uniform_int_distribution<unsigned int> uniform_uint_dist;
-	typedef uniform_uint_dist::param_type uniform_param_t;
-
-	inline
-	double log2(double p)
+	namespace infomath
 	{
-		return std::log(p) * M_LOG2E; // M_LOG2E == 1 / M_LN2
-	}
+		inline
+		double log2(double p)
+		{
+			return std::log(p) * M_LOG2E; // M_LOG2E == 1 / M_LN2
+		}
 
-	inline
-	double plogp(double p)
-	{
-		return p > 0.0 ? p * log2(p) : 0.0;
-	}
+		inline
+		double plogp(double p)
+		{
+			return p > 0.0 ? p * log2(p) : 0.0;
+		}
 
-	inline
-	unsigned int randInt(RandGen& randGen, unsigned int min, unsigned int max)
-	{
-		uniform_uint_dist uniform;
-		return uniform(randGen, uniform_param_t(min, max));
-	}
+		template<typename T, typename U>
+		inline
+		bool isBetween(T value, U lowerLimit, U higherLimit)
+		{
+			return value >= lowerLimit && value <= higherLimit;
+		}
 
-	/**
-	 * Get a random permutation of indices of the size of the input vector
-	 */
-	inline
-	void getRandomizedIndexVector(std::vector<unsigned int>& randomOrder, RandGen& randGen)
-	{
-		unsigned int size = randomOrder.size();
-		uniform_uint_dist uniform;
-		for(unsigned int i = 0; i < size; ++i)
-			randomOrder[i] = i;
-		for(unsigned int i = 0; i < size; ++i)
-			std::swap(randomOrder[i], randomOrder[i + uniform(randGen, uniform_param_t(0, size - i - 1))]);
-	}
-
-	template<typename T, typename U>
-	inline
-	bool isBetween(T value, U lowerLimit, U higherLimit)
-	{
-		return value >= lowerLimit && value <= higherLimit;
-	}
-
-	template<typename T, typename U>
-	inline
-	bool isBetweenStrict(T value, U lowerLimit, U higherLimit)
-	{
-		return value > lowerLimit && value < higherLimit;
+		template<typename T, typename U>
+		inline
+		bool isBetweenStrict(T value, U lowerLimit, U higherLimit)
+		{
+			return value > lowerLimit && value < higherLimit;
+		}
 	}
 }
-
 #endif /* INFOMAPTH_H_ */

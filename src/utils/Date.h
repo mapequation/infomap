@@ -44,7 +44,7 @@ public:
 		SECONDS_IN_A_DAY = 86400 // 3600*24
 	};
 
-	ElapsedTime(double elapsedTime) : m_elapsedTime(elapsedTime) {}
+	ElapsedTime(double elapsedTime = 0.0) : m_elapsedTime(elapsedTime) {}
 	~ElapsedTime() {}
 
 	double getSeconds() const { return m_elapsedTime; }

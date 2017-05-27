@@ -8,7 +8,7 @@
 #include "../utils/infomath.h"
 #include "../io/convert.h"
 #include "../utils/Log.h"
-#include "../utils/ReusableVector.h"
+#include "../utils/VectorMap.h"
 #include "InfoNode.h"
 #include "FlowData.h"
 #include <vector>

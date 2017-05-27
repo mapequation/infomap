@@ -2,11 +2,11 @@
 
 %{
 /* Includes the header in the wrapper code */
-#include "src/io/Config.h"
+#include "src/core/MemMapEquation.h"
 %}
 
-%include "std_string.i"
-%include "ProgramInterface.i"
+%include "MapEquation.i"
+%include "InfoNode.i"
 
 /* Parse the header file to generate wrappers */
-%include "src/io/Config.h"
+%include "src/core/MemMapEquation.h"

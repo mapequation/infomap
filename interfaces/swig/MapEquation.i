@@ -2,8 +2,10 @@
 
 %{
 /* Includes the header in the wrapper code */
-#include "src/utils/Date.h"
+#include "src/core/MapEquation.h"
 %}
 
+%include "InfoNode.i"
+
 /* Parse the header file to generate wrappers */
-%include "src/utils/Date.h"
+%include "src/core/MapEquation.h"

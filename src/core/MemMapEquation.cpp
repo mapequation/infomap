@@ -193,7 +193,7 @@ double MemMapEquation::calcCodelength(const InfoNode& parent) const
 }
 
 void MemMapEquation::addMemoryContributions(InfoNode& current,
-	DeltaFlowDataType& oldModuleDelta, ReusableVector<DeltaFlowDataType>& moduleDeltaFlow)
+	DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow)
 {
 	// Overlapping modules
 	/**

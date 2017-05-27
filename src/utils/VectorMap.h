@@ -24,8 +24,8 @@
 
 **********************************************************************************/
 
-#ifndef REUSABLE_VECTOR_H_
-#define REUSABLE_VECTOR_H_
+#ifndef VECTOR_MAP_H_
+#define VECTOR_MAP_H_
 
 #include <vector>
 #include <limits>
@@ -33,11 +33,11 @@
 namespace infomap {
 
 template<typename T>
-class ReusableVector
+class VectorMap
 {
 public:
     
-	ReusableVector(unsigned int capacity = 0) :
+	VectorMap(unsigned int capacity = 0) :
         m_capacity(capacity),
         m_values(capacity),
         m_redirect(capacity, 0),
@@ -101,4 +101,4 @@ private:
 
 }
 
-#endif /* REUSABLE_VECTOR_H_ */
+#endif /* VECTOR_MAP_H_ */

@@ -2,7 +2,7 @@ CXXFLAGS = -Wall -O3
 
 # Set INFOMAP_DIR to your Infomap directory
 INFOMAP_DIR = ../..
-PY_BUILD_DIR = $(INFOMAP_DIR)/build/py
+PY_BUILD_DIR = $(INFOMAP_DIR)/build/py3
 PY_WRAPPER = $(PY_BUILD_DIR)/infomap.py
 INFOMAP_LIB = $(PY_BUILD_DIR)/_infomap.so
 
@@ -15,7 +15,7 @@ infomap/infomap.py: $(PY_WRAPPER) Makefile
 	touch infomap/__init__.py
 
 $(PY_WRAPPER):
-	cd $(INFOMAP_DIR) && $(MAKE) python
+	cd $(INFOMAP_DIR) && $(MAKE) python3
 
 clean:
 	$(RM) -r infomap

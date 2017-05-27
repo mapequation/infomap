@@ -176,8 +176,8 @@ public:
 	const Config& getConfig() { return m_config; }
 
 	// Mutators
-	std::pair<NodeMap::iterator, bool> addStateNode(unsigned int id, unsigned int physId);
 	std::pair<NodeMap::iterator, bool> addStateNode(StateNode node);
+	std::pair<NodeMap::iterator, bool> addStateNode(unsigned int id, unsigned int physId);
 	std::pair<NodeMap::iterator, bool> addNode(unsigned int id);
 	std::pair<NodeMap::iterator, bool> addNode(unsigned int id, std::string name);
 	std::pair<NodeMap::iterator, bool> addNode(unsigned int id, double weight);

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """
 setup.py file for compiling Infomap module
 """
@@ -22,22 +21,22 @@ for root, dirnames, filenames in os.walk('.'):
 infomapVersion = ''
 with open(os.path.join('src', 'io', 'version.cpp')) as f:
     for line in f:
-        m = re.match( r'.+INFOMAP_VERSION = \"(.+)\"', line)
+        m = re.match(r'.+INFOMAP_VERSION = \"(.+)\"', line)
         if m: infomapVersion = m.groups()[0]
 
-infomap_module = Extension('_infomap',
+infomap_module = Extension(
+    '_infomap',
     sources=cppSources,
-    extra_compile_args=['-DAS_LIB']
-    )
+    extra_compile_args=['-DAS_LIB', '-DPYTHON', '-Wno-deprecated-register', '-std=c++14'])
 
-setup (name = 'infomap',
-    version = infomapVersion,
-    author      = "Team at mapequation.org",
-    description = """Infomap clustering algorithm""",
-    url         = "www.mapequation.org",
-    ext_modules = [infomap_module],
-    py_modules = ["infomap"],
-    )
+setup(
+    name='infomap',
+    version=infomapVersion,
+    author="Team at mapequation.org",
+    description="""Infomap clustering algorithm""",
+    url="www.mapequation.org",
+    ext_modules=[infomap_module],
+    py_modules=["infomap"])
 
 # Clean ABI Version Tagged .so Files
 ext_suffix = sysconfig.get_config_var('EXT_SUFFIX')

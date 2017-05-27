@@ -30,7 +30,7 @@
 #include <cstdlib>
 #include <map>
 #include <utility>
-#include "../io/convert.h"
+#include "convert.h"
 #include "../utils/Log.h"
 
 namespace infomap {

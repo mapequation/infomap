@@ -42,6 +42,31 @@ namespace infomap {
 
 using std::make_pair;
 
+void Network::initValidHeadings()
+{
+	auto& headingsPajek = m_validHeadings["pajek"];
+	headingsPajek.insert("*Vertices");
+	headingsPajek.insert("*Edges");
+	headingsPajek.insert("*Arcs");
+	
+	auto& headingsLinklist = m_validHeadings["link-list"];
+	headingsLinklist.insert("*Links");
+	headingsLinklist.insert("*Edges");
+	headingsLinklist.insert("*Arcs");
+	
+	auto& headingsBipartite = m_validHeadings["bipartite"];
+	headingsBipartite.insert("*Vertices");
+	headingsBipartite.insert("*Bipartite");
+	
+	auto& headingsGeneral = m_validHeadings["general"];
+	headingsGeneral.insert("*Vertices");
+	headingsGeneral.insert("*States");
+	headingsGeneral.insert("*Edges");
+	headingsGeneral.insert("*Arcs");
+	headingsGeneral.insert("*Links");
+	headingsGeneral.insert("*Context");
+}
+
 void Network::readInputData(std::string filename)
 {
 	if (filename.empty())
@@ -72,7 +97,7 @@ void Network::readInputData(std::string filename)
 	else if (format == "states")
 		parseStateNetwork(filename);
 	else 
-		parseGeneralNetwork(filename);
+		parseNetwork(filename);
 //		throw UnknownFileTypeError("No known input format specified.");
 }
 
@@ -81,7 +106,7 @@ void Network::parsePajekNetwork(std::string filename)
 	Log() << "Parsing " << (m_config.isUndirected() ? "undirected" : "directed") << " pajek network from file '" <<
 			filename << "'... " << std::flush;
 
-	parseNetwork(filename, {"*Vertices", "*Edges", "*Arcs"});
+	parseNetwork(filename, m_validHeadings["pajek"]);
 	Log() << "done!" << std::endl;
 }
 
@@ -90,7 +115,7 @@ void Network::parseLinkList(std::string filename)
 	Log() << "Parsing " << (m_config.directed ? "directed" : "undirected") << " link list from file '" <<
 			filename << "'... " << std::flush;
 
-	parseNetwork(filename, {"*Links"});
+	parseNetwork(filename, m_validHeadings["link-list"]);
 	Log() << "done!" << std::endl;
 }
 void Network::parseBipartiteNetwork(std::string filename)
@@ -98,7 +123,7 @@ void Network::parseBipartiteNetwork(std::string filename)
 	Log() << "Parsing bipartite network from file '" <<
 			filename << "'... " << std::flush;
 
-	parseNetwork(filename, {"*Vertices", "*Bipartite"});
+	parseNetwork(filename, m_validHeadings["bipartite"]);
 	Log() << "done!" << std::endl;
 }
 
@@ -111,16 +136,16 @@ void Network::parseStateNetwork(std::string filename)
 	Log() << "done!" << std::endl;
 }
 
-void Network::parseGeneralNetwork(std::string filename)
+void Network::parseNetwork(std::string filename)
 {
 	Log() << "Parsing " << (m_config.isUndirected() ? "undirected" : "directed") << " network from file '" <<
 				filename << "'... " << std::flush;
 	
-	parseNetwork(filename);
+	parseNetwork(filename, m_validHeadings["general"]);
 	Log() << "done!" << std::endl;
 }
 
-void Network::parseNetwork(std::string filename, InsensitiveStringSet validHeadings)
+void Network::parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings)
 {
 	SafeInFile input(filename.c_str());
 

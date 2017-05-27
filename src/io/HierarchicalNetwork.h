@@ -812,7 +812,7 @@ public:
 		m_codelength(0.0),
 		m_oneLevelCodelength(0.0),
 		m_infomapVersion(conf.version),
-		m_infomapOptions(conf.parsedArgs)
+		m_infomapOptions(conf.parsedString)
 		{}
 
 	virtual ~HierarchicalNetwork() {}

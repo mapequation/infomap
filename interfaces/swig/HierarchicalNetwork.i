@@ -14,7 +14,7 @@ namespace std {
 }
 
 /* Parse the header file to generate wrappers */
-#include "src/io/HierarchicalNetwork.h"
+%include "src/io/HierarchicalNetwork.h"
 
 #ifdef SWIGPYTHON
 %extend LeafIterator

@@ -284,6 +284,12 @@ void InfoNode::replaceWithChildrenDebug()
 	delete this;
 }
 
+void InfoNode::remove(bool removeChildren)
+{
+	firstChild = removeChildren ? 0 : firstChild;
+	delete this;
+}
+
 void InfoNode::deleteChildren()
 {
 	if (firstChild == nullptr)

@@ -26,7 +26,7 @@
 #include "ClusterMap.h"
 #include <map>
 #include <set>
-#include <type_traits>
+// #include <type_traits>
 #include "PartitionQueue.h"
 #include <cstdlib> // abs
 #include <limits>
@@ -205,6 +205,9 @@ void InfomapBase::run()
 
 void InfomapBase::run(Network& network)
 {
+	if (!isMainInfomap())
+		throw InternalOrderError("Can't run a non-main Infomap with an input network");
+	
 	initNetwork(network);
 
 	if (numLeafNodes() == 0)

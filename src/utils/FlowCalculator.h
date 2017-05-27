@@ -27,6 +27,7 @@
 
 #ifndef FLOWCALCULATOR_H_
 #define FLOWCALCULATOR_H_
+
 #include <map>
 #include <vector>
 #include <utility>
@@ -62,8 +63,7 @@ public:
 		double flow;
 	};
 
-	typedef StateNetwork::LinkMap									LinkMap;
-	typedef std::vector<Link>										LinkVec;
+	using LinkVec = std::vector<Link>;
 
 	FlowCalculator() {}
 	virtual ~FlowCalculator() {}

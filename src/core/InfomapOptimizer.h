@@ -10,7 +10,7 @@
 
 #include "InfomapBase.h"
 #include <set>
-#include "../utils/ReusableVector.h"
+#include "../utils/VectorMap.h"
 #include "InfoNode.h"
 #include <utility>
 
@@ -27,8 +27,10 @@ protected:
 //	using EdgeType = Base::EdgeType;
 	using EdgeType = Edge<InfoNode>;
 public:
-	template<typename... Args>
-	InfomapOptimizer(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
+	// template<typename... Args>
+	// InfomapOptimizer(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
+	InfomapOptimizer() : InfomapBase() {}
+	InfomapOptimizer(const Config& conf) : InfomapBase(conf) {}
 	virtual ~InfomapOptimizer() {}
 
 	// ===================================================
@@ -66,7 +68,7 @@ protected:
 
 	using Base::activeNetwork;
 
-	auto getModuleFlowData() -> std::vector<FlowData>& { return m_moduleFlowData; }
+	std::vector<FlowData>& getModuleFlowData() { return m_moduleFlowData; }
 
 	// ===================================================
 	// Run: Init: *
@@ -298,7 +300,7 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 	unsigned int loopLimit = this->coreLoopLimit;
 	unsigned int minRandLoop = 2;
 	if (loopLimit >= minRandLoop && this->randomizeCoreLoopLimit)
-		loopLimit = infomath::randInt(m_rand, minRandLoop, loopLimit);
+		loopLimit = m_rand.randInt(minRandLoop, loopLimit);
 	if (m_aggregationLevel > 0 || m_isCoarseTune) {
 		loopLimit = 20;
 	}
@@ -324,7 +326,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 {
 	// Get random enumeration of nodes
 	std::vector<unsigned int> nodeEnumeration(activeNetwork().size());
-	infomath::getRandomizedIndexVector(nodeEnumeration, m_rand);
+	m_rand.getRandomizedIndexVector(nodeEnumeration);
 
 	auto& network = activeNetwork();
 	unsigned int numNodes = nodeEnumeration.size();
@@ -332,7 +334,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
 	// Create map with module links
 	// std::vector<DeltaFlowData> deltaFlow(numNodes);
-	ReusableVector<DeltaFlowData> deltaFlow(numNodes);
+	VectorMap<DeltaFlowData> deltaFlow(numNodes);
 	// Stopwatch timer(false);
 	// double t = 0.0;
 	// double tCount = 0;
@@ -526,7 +528,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 {
 	// Get random enumeration of nodes
 	std::vector<unsigned int> nodeEnumeration(activeNetwork().size());
-	infomath::getRandomizedIndexVector(nodeEnumeration, m_rand);
+	m_rand.getRandomizedIndexVector(nodeEnumeration);
 
 	auto& network = activeNetwork();
 	unsigned int numNodes = nodeEnumeration.size();
@@ -536,7 +538,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 
 	// Create map with module links
 	// std::vector<DeltaFlowData> deltaFlow(numNodes);
-	// ReusableVector<DeltaFlowData> deltaFlow(numNodes);
+	// VectorMap<DeltaFlowData> deltaFlow(numNodes);
 	// Stopwatch timer(false);
 	// double t = 0.0;
 	// double tCount = 0;
@@ -569,7 +571,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 		// Create map with module links
 		// std::unordered_map<unsigned int, DeltaFlowData> deltaFlow;
 		// deltaFlow.rehash(numNodes);
-		ReusableVector<DeltaFlowData> deltaFlow(numNodes);
+		VectorMap<DeltaFlowData> deltaFlow(numNodes);
 
 		// For all outlinks
 		for (auto& e : current.outEdges())

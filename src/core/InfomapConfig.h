@@ -10,7 +10,7 @@
 
 #include "../io/Config.h"
 #include <string>
-#include "../utils/infomath.h"
+#include "../utils/Random.h"
 #include "../utils/Log.h"
 
 namespace infomap {
@@ -21,7 +21,7 @@ public:
 	InfomapConfig() {}
 	InfomapConfig(const Config& conf) :
 		Config(conf),
-		m_rand(infomath::RandGen(conf.seedToRandomNumberGenerator))
+		m_rand(conf.seedToRandomNumberGenerator)
 	{
 		Log::precision(conf.verboseNumberPrecision);
 	}
@@ -32,7 +32,7 @@ private:
 		return static_cast<Infomap&>(*this);
 	}
 protected:
-	infomath::RandGen m_rand = infomath::RandGen(123);
+	Random m_rand;
 
 public:
 

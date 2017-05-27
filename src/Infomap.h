@@ -29,9 +29,15 @@
 #define SRC_INFOMAP_H_
 
 #include <string>
-#include "core/InfomapTypes.h"
-#include "core/InfoNode.h"
 #include "io/Config.h"
+#include "core/InfomapTypes.h"
+
+class Asdf {
+    public:
+    Asdf() {}
+    ~Asdf() {}
+    int asdf() { return 4; }
+};
 
 namespace infomap {
 
@@ -40,16 +46,18 @@ namespace infomap {
 */
 int run(const std::string& flags);
 
-/**
- * Run from other C++ code
- */
-Config init(const std::string& flags, bool requireFileInput = false);
 
 class Infomap : public M1Infomap {
     public:
     Infomap(std::string flags, bool requireFileInput = false) :
-        M1Infomap(::infomap::init(flags, requireFileInput))
+        M1Infomap(Config::fromString(flags, requireFileInput))
     {}
+
+    using M1Infomap::run;
+
+    void asdf() {
+        run();
+    }
 
 };
 

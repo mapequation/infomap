@@ -27,6 +27,7 @@
 
 #ifndef NETWORK_H_
 #define NETWORK_H_
+
 #include <string>
 #include <map>
 #include <vector>
@@ -74,12 +75,20 @@ protected:
 		}
 	};
 	using InsensitiveStringSet = std::set<std::string, InsensitiveCompare>;
+
+	std::map<std::string, InsensitiveStringSet> m_validHeadings;// {
+	// 	{ "pajek", {"*Vertices", "*Edges", "*Arcs"} },
+	// 	{ "link-list", {"*Links"} },
+	// 	{ "bipartite", {"*Vertices", "*Bipartite"} },
+	// 	{ "general", {"*Vertices", "*States", "*Edges", "*Arcs", "*Links", "*Context"} }
+	// };
+
 public:
 
 	Network()
-	:	StateNetwork() {}
+	:	StateNetwork() { initValidHeadings(); }
 	Network(const Config& config)
-	:	StateNetwork(config) {}
+	:	StateNetwork(config) { initValidHeadings(); }
 	virtual ~Network() {}
 
 
@@ -90,14 +99,16 @@ public:
 	// std::string getParsingResultSummary();
 
 protected:
+	void initValidHeadings();
 
 	void parsePajekNetwork(std::string filename);
 	void parseLinkList(std::string filename);
 	void parseStateNetwork(std::string filename);
-	void parseGeneralNetwork(std::string filename);
-	void parseNetwork(std::string filename, InsensitiveStringSet validHeadings = {
-		"*Vertices", "*States", "*Edges", "*Arcs", "*Links", "*Context"
-	});
+	void parseNetwork(std::string filename);
+	void parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings);
+	// void parseNetwork(std::string filename, InsensitiveStringSet&& validHeadings = {
+	// 	"*Vertices", "*States", "*Edges", "*Arcs", "*Links", "*Context"
+	// });
 	void parseBipartiteNetwork(std::string filename);
 
 	// Helper methods

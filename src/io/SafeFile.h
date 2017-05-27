@@ -27,6 +27,7 @@
 
 #ifndef SAFEFILE_H_
 #define SAFEFILE_H_
+
 #include <iostream>
 #include <fstream>
 #include <ios>
@@ -58,8 +59,8 @@ using std::ofstream;
 class SafeInFile : public ifstream
 {
 public:
-	SafeInFile(const std::string filename, ios_base::openmode mode = ios_base::in)
-	: ifstream(filename, mode)
+	SafeInFile(std::string filename, ios_base::openmode mode = ios_base::in)
+	: ifstream(filename.c_str(), mode)
 	{
 		if (fail())
 			throw FileOpenError(io::Str() << "Error opening file '" << filename <<
@@ -76,8 +77,8 @@ public:
 class SafeOutFile : public ofstream
 {
 public:
-	SafeOutFile(const std::string filename, ios_base::openmode mode = ios_base::out)
-	: ofstream(filename, mode)
+	SafeOutFile(std::string filename, ios_base::openmode mode = ios_base::out)
+	: ofstream(filename.c_str(), mode)
 	{
 		if (fail())
 			throw FileOpenError(io::Str() << "Error opening file '" << filename <<
@@ -137,8 +138,8 @@ struct BinaryHelper<std::string> {
 class ofstream_binary : public ofstream
 {
 public:
-	ofstream_binary(const std::string filename)
-		: ofstream(filename, ios_base::out | ios_base::trunc | ios_base::binary), m_size(0) {}
+	ofstream_binary(std::string filename)
+		: ofstream(filename.c_str(), ios_base::out | ios_base::trunc | ios_base::binary), m_size(0) {}
 
 	template<typename T>
 	ofstream_binary& operator<<(T value)
@@ -162,8 +163,8 @@ protected:
 class ifstream_binary : public ifstream
 {
 public:
-	ifstream_binary(const std::string filename)
-		: ifstream(filename, ios_base::in | ios_base::binary), m_sizeRead(0) {}
+	ifstream_binary(std::string filename)
+		: ifstream(filename.c_str(), ios_base::in | ios_base::binary), m_sizeRead(0) {}
 
 	template<typename T>
 	ifstream_binary& operator>>(T& value)
@@ -189,8 +190,8 @@ protected:
  */
 class SafeBinaryOutFile {
 public:
-	SafeBinaryOutFile (const char* filename)
-	: m_file(std::fopen(filename, "w"))
+	SafeBinaryOutFile (std::string filename)
+	: m_file(std::fopen(filename.c_str(), "w"))
 	{
         if (!m_file)
             throw FileOpenError("file open failure");
@@ -229,8 +230,8 @@ private:
 class SafeOutFileBinary : public ofstream_binary
 {
 public:
-	SafeOutFileBinary(const std::string filename)
-	: ofstream_binary(filename)
+	SafeOutFileBinary(std::string filename)
+	: ofstream_binary(filename.c_str())
 	{
 		if (fail())
 			throw FileOpenError(io::Str() << "Error opening file '" << filename << "'");
@@ -247,8 +248,8 @@ public:
 class SafeBinaryInFile : public ifstream_binary
 {
 public:
-	SafeBinaryInFile(const std::string filename)
-	: ifstream_binary(filename)
+	SafeBinaryInFile(std::string filename)
+	: ifstream_binary(filename.c_str())
 	{
 		if (fail())
 			throw FileOpenError(io::Str() << "Error opening file '" << filename << "'");

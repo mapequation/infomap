@@ -72,7 +72,7 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 			++nodeOutDegree[sourceIndex];
 			sumLinkOutWeight[sourceIndex] += linkWeight;
 			m_nodeFlow[sourceIndex] += linkWeight / sumUndirLinkWeight;
-			m_flowLinks.emplace_back(sourceIndex, targetIndex, linkWeight);
+			m_flowLinks.push_back(Link(sourceIndex, targetIndex, linkWeight));
 
             // Log() << linkSourceId << " (" << sourceIndex << ") -> " << linkTargetId << " (" << targetIndex << ")"
 			// 	<< ", weight: " << linkWeight << "\n";

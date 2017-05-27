@@ -36,13 +36,13 @@
 
 #include "../utils/Date.h"
 #include "version.h"
+#include "ProgramInterface.h"
 
 namespace infomap {
 
 struct Config
 {
 	// Input
-	std::string parsedArgs = "";
 	std::string networkFile = "";
 	std::vector<std::string> additionalInput;
 	std::string inputFormat = ""; // 'pajek', 'link-list', '3gram' or 'multiplex'
@@ -127,18 +127,23 @@ struct Config
 	unsigned int minBipartiteNodeIndex = 0;
 
 	// Other
-	std::string error = "";
-	bool haveError = false;
 	Date startDate;
 	std::string version = INFOMAP_VERSION;
+	std::string parsedString = "";
+	std::vector<ParsedOption> parsedOptions;
+	std::string error = "";
 
 	Config()
 	{
 		setOptimizationLevel(1);
 	}
 
-	Config(const Config& other)
-	:	parsedArgs(other.parsedArgs),
+	Config(std::string flags)
+	{
+		*this = Config::fromString(flags);
+	}
+
+	Config(const Config& other) :
 		networkFile(other.networkFile),
 	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
@@ -213,13 +218,16 @@ struct Config
 		showBiNodes(other.showBiNodes),
 		minBipartiteNodeIndex(other.minBipartiteNodeIndex),
 		startDate(other.startDate),
-		version(other.version)
+		version(other.version),
+		parsedString(other.parsedString),
+		parsedOptions(other.parsedOptions),
+		error(other.error)
+
 	{
 	}
 
 	Config& operator=(const Config& other)
 	{
-		parsedArgs = other.parsedArgs;
 		networkFile = other.networkFile;
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
@@ -295,12 +303,14 @@ struct Config
 	 	minBipartiteNodeIndex = other.minBipartiteNodeIndex;
 		startDate = other.startDate;
 		version = other.version;
+		parsedString = other.parsedString;
+		parsedOptions = other.parsedOptions;
+		error = other.error;
 		return *this;
 	}
 
 	Config& cloneAsNonMain(const Config& other)
 	{
-		parsedArgs = other.parsedArgs;
 		networkFile = other.networkFile;
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
@@ -335,7 +345,7 @@ struct Config
 		teleportationProbability = other.teleportationProbability;
 	 	// preferredNumberOfModules = other.preferredNumberOfModules;
 		seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
-		numTrials = other.numTrials;
+		// numTrials = other.numTrials;
 		minimumCodelengthImprovement = other.minimumCodelengthImprovement;
 		minimumSingleNodeCodelengthImprovement = other.minimumSingleNodeCodelengthImprovement;
 		randomizeCoreLoopLimit = other.randomizeCoreLoopLimit;
@@ -376,6 +386,9 @@ struct Config
 	 	minBipartiteNodeIndex = other.minBipartiteNodeIndex;
 		startDate = other.startDate;
 		version = other.version;
+		// parsedString = other.parsedString;
+		// parsedOptions = other.parsedOptions;
+		// error = other.error;
 		return *this;
 	}
 
@@ -503,8 +516,14 @@ struct Config
 	void setError(const std::string& err)
 	{
 		error = err;
-		haveError = true;
 	}
+
+	bool haveError() const
+	{
+		return error != "";
+	}
+
+	static Config fromString(std::string flags, bool requireFileInput = false);
 };
 
 }

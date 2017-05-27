@@ -31,18 +31,20 @@
 
 namespace infomap {
 
-std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(unsigned int id, unsigned int physId)
-{
-	return m_nodes.emplace(id, StateNode(id, physId));
-}
 std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(StateNode node)
 {
-	return m_nodes.emplace(node.id, node);
+	// return m_nodes.emplace(node.id, node);
+	return m_nodes.insert(StateNetwork::NodeMap::value_type(node.id, node));
+}
+
+std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(unsigned int id, unsigned int physId)
+{
+	return addStateNode(StateNode(id, physId));
 }
 
 std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned int id)
 {
-	return m_nodes.emplace(id, StateNode(id));
+	return addStateNode(StateNode(id));
 }
 
 std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned int id, double weight)

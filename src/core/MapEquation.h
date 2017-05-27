@@ -11,7 +11,7 @@
 #include "../utils/infomath.h"
 #include "../io/convert.h"
 #include "../utils/Log.h"
-#include "../utils/ReusableVector.h"
+#include "../utils/VectorMap.h"
 // #include "InfoNode.h"
 #include "FlowData.h"
 #include <vector>
@@ -93,7 +93,7 @@ public:
 
 	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) {}
 
-	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, ReusableVector<DeltaFlowDataType>& moduleDeltaFlow) {}
+	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
 
 	double getDeltaCodelengthOnMovingNode(InfoNode& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData);

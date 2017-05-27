@@ -11,6 +11,7 @@
 #include "InfomapOptimizer.h"
 #include "MapEquation.h"
 #include "MemMapEquation.h"
+#include "../io/Config.h"
 #include <utility>
 
 
@@ -19,15 +20,15 @@ namespace infomap {
 class M1Infomap : public InfomapOptimizer<MapEquation>
 {
 public:
-	template<typename... Args>
-	M1Infomap(Args&&... args) : InfomapOptimizer<MapEquation>(std::forward<Args>(args)...) {}
+	M1Infomap() : InfomapOptimizer<MapEquation>() {}
+	M1Infomap(const Config& conf) : InfomapOptimizer<MapEquation>(conf) {}
 };
 
 class M2Infomap : public InfomapOptimizer<MemMapEquation>
 {
 public:
-	template<typename... Args>
-	M2Infomap(Args&&... args) : InfomapOptimizer<MemMapEquation>(std::forward<Args>(args)...) {}
+	M2Infomap() : InfomapOptimizer<MemMapEquation>() {}
+	M2Infomap(const Config& conf) : InfomapOptimizer<MemMapEquation>(conf) {}
 };
 
 }
