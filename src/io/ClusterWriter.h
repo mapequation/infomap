@@ -12,7 +12,7 @@ namespace infomap {
     static void printTree(InfoNode &root, std::ostream &out = std::cout) {
     	auto* infomapRoot = root.getInfomapRoot();
         out << "# Codelength = " << (infomapRoot != nullptr? infomapRoot->codelength : root.codelength) << " bits.\n";
-        auto it = root.begin_infomapDepthFirst();
+        auto it = root.begin_treePath();
         it++;
         for (; !it.isEnd(); ++it) {
             InfoNode &node = *it;
@@ -27,7 +27,7 @@ namespace infomap {
     static void printClu(InfoNode &root, std::ostream &out = std::cout) {
         out << "# Codelength = " << root.codelength << " bits.\n";
         out << "# key clusterIndex flow:.\n";
-        for (auto it(root.begin_infomapDepthFirst()); !it.isEnd(); ++it) {
+        for (auto it(root.begin_treePath()); !it.isEnd(); ++it) {
             InfoNode &node = *it;
             if (node.isLeaf()) {
             	 out << node.stateId << " " << it.clusterIndex() << " " << node.data.flow << "\n";

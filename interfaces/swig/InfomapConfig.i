@@ -6,6 +6,7 @@
 %}
 
 %include "Config.i"
+%include "std_string.i"
 
 /* Parse the header file to generate wrappers */
 %include "src/core/InfomapConfig.h"

@@ -25,7 +25,7 @@ class InfoNode;
 class MapEquation {
 public:
 	using FlowDataType = FlowData;
-	using DeltaFlowDataType = DeltaFlow;
+	using DeltaFlowDataType = MemDeltaFlow;
 
 	MapEquation() {}
 

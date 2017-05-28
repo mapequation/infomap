@@ -11,11 +11,11 @@
 // #include "InfomapBase.h"
 #include <memory>
 #include <iostream>
-#include "treeIterators.h"
 #include <vector>
 #include "FlowData.h"
 #include "InfoEdge.h"
 #include "infomapIterators.h"
+#include "treeIterators.h"
 #include "../utils/iterators.h"
 #include <limits>
 #include "../utils/exceptions.h"
@@ -148,6 +148,8 @@ public:
 
 	InfoNode* getInfomapRoot();
 
+	InfoNode const* getInfomapRoot() const;
+
 	/**
 	 * Dispose the Infomap instance if it exists
 	 * @return true if an existing Infomap instance was deleted
@@ -207,14 +209,26 @@ public:
 	infomap_cluster_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
 	{ return infomap_cluster_iterator(this, maxClusterLevel); }
 
+	infomap_cluster_iterator end_tree()
+	{ return infomap_cluster_iterator(nullptr); }
+
 	const_infomap_cluster_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const
 	{ return const_infomap_cluster_iterator(this, maxClusterLevel); }
 
-	infomap_depth_first_iterator begin_infomapDepthFirst(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
+	const_infomap_cluster_iterator end_tree() const
+	{ return const_infomap_cluster_iterator(nullptr); }
+
+	infomap_depth_first_iterator begin_treePath(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
 	{ return infomap_depth_first_iterator(this, maxClusterLevel); }
 
-	const_infomap_depth_first_iterator begin_infomapDepthFirst(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const
+	infomap_depth_first_iterator end_treePath()
+	{ return infomap_depth_first_iterator(nullptr); }
+
+	const_infomap_depth_first_iterator begin_treePath(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const
 	{ return const_infomap_depth_first_iterator(this, maxClusterLevel); }
+
+	const_infomap_depth_first_iterator end_treePath() const
+	{ return const_infomap_depth_first_iterator(nullptr); }
 
 	infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) {
 		return infomap_iterator_wrapper(infomap_cluster_iterator(this, maxClusterLevel), infomap_cluster_iterator(nullptr));

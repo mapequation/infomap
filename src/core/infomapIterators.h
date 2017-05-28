@@ -135,6 +135,13 @@ public:
 		return ++copy;
 	}
 
+	InfomapClusterIterator&
+	stepForward()
+	{
+		++(*this);
+		return *this;
+	}
+
 	unsigned int clusterIndex() const
 	{
 		return m_clusterIndex;
@@ -265,6 +272,13 @@ public:
 	{
 		InfomapDepthFirstIterator copy(*this);
 		return ++copy;
+	}
+
+	InfomapDepthFirstIterator&
+	stepForward()
+	{
+		++(*this);
+		return *this;
 	}
 
 	const std::deque<unsigned int>& path() const

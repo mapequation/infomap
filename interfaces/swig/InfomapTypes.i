@@ -10,10 +10,9 @@
 %include "MemMapEquation.i"
 %include "InfomapOptimizer.i"
 
-// Instantiate templates used
 namespace infomap {
-%template(MapEquationInfomapOptimizer) InfomapOptimizer<MapEquation>;
-%template(MemMapEquationInfomapOptimizer) InfomapOptimizer<MemMapEquation>;
+    %template(InfomapOptimizerMapEquation) InfomapOptimizer<MapEquation>;
+    %template(InfomapOptimizerMemMapEquation) InfomapOptimizer<MemMapEquation>;
 }
 
 /* Parse the header file to generate wrappers */

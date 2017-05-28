@@ -32,13 +32,6 @@
 #include "io/Config.h"
 #include "core/InfomapTypes.h"
 
-class Asdf {
-    public:
-    Asdf() {}
-    ~Asdf() {}
-    int asdf() { return 4; }
-};
-
 namespace infomap {
 
 /**
@@ -49,15 +42,13 @@ int run(const std::string& flags);
 
 class Infomap : public M1Infomap {
     public:
-    Infomap(std::string flags, bool requireFileInput = false) :
-        M1Infomap(Config::fromString(flags, requireFileInput))
+    Infomap() : M1Infomap()
     {}
-
-    using M1Infomap::run;
-
-    void asdf() {
-        run();
-    }
+    Infomap(const Config& conf) : M1Infomap(conf)
+    {}
+    Infomap(std::string flags, bool requireFileInput = false) :
+        Infomap(Config::fromString(flags, requireFileInput))
+    {}
 
 };
 

@@ -7,9 +7,10 @@
 using namespace infomap;
 %}
 
+%include "std_string.i"
+%include "InfomapTypes.i"
 %include "Config.i"
-//%include "InfomapTypes.i"
-%include "InfomapOptimizer.i"
+%include "InfomapIterator.i"
 
 /* Parse the header file to generate wrappers */
 %include "src/Infomap.h"

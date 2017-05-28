@@ -86,6 +86,10 @@ InfoNode* InfoNode::getInfomapRoot() {
 	return m_infomap != nullptr? &m_infomap->root() : nullptr;
 }
 
+InfoNode const* InfoNode::getInfomapRoot() const {
+	return m_infomap != nullptr? &m_infomap->root() : nullptr;
+}
+
 bool InfoNode::disposeInfomap()
 {
 	if (m_infomap != nullptr) {

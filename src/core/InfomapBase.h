@@ -22,7 +22,7 @@
 // #include "StateNetwork.h"
 #include "../io/Network.h"
 #include "InfoNode.h"
-
+#include "InfomapIterator.h"
 
 namespace infomap {
 
@@ -36,6 +36,7 @@ protected:
 	using EdgeType = Edge<InfoNode>;
 
 public:
+	
 	InfomapBase() : InfomapConfig<InfomapBase>() {}
 
 	// template<typename Infomap>
@@ -61,6 +62,15 @@ public:
 	InfoNode& root();
 	const InfoNode& root() const;
 
+	InfomapIterator tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
+	{ return InfomapIterator(&root(), maxClusterLevel); }
+
+	InfomapIterator begin(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
+	{ return InfomapIterator(&root(), maxClusterLevel); }
+
+	InfomapIterator end()
+	{ return InfomapIterator(nullptr); }
+
 	unsigned int numLeafNodes() const;
 
 	const std::vector<InfoNode*>& leafNodes() const;
@@ -79,6 +89,8 @@ public:
 	unsigned int numLevels() const;
 
 	virtual double getCodelength() const = 0;
+
+	virtual double codelength() { return m_hierarchicalCodelength; }
 
 	virtual double getIndexCodelength() const = 0;
 

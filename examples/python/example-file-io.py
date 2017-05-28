@@ -3,14 +3,22 @@ from infomap import infomap as im
 name = "ninetriangles"
 filename = "../../{}.net".format(name)
 
-
 myInfomap = im.Infomap("--input {}".format(filename))
 
 print(dir(myInfomap))
-myInfomap.asdf()
 
-# print("Found %d top modules with codelength: %f" % (myInfomap.numTopModules(), myInfomap.getCodelength()))
-# print("Found %d top modules with codelength: %f" % (tree.numTopModules(), tree.codelength()))
+myInfomap.run()
+
+print("Found %d top modules with codelength: %f" % (myInfomap.numTopModules(), myInfomap.codelength()))
+
+print("Tree:")
+for it in myInfomap.tree():
+    node = it.current()
+    if node.isLeaf():
+        print("{}: {} {}".format(it.path(), node.data.flow, node.physicalId))
+    else:
+        print("{}: {}".format(it.path(), node.data.flow))
+
 
 # print("Writing top level modules to %s_level1.clu..." % name)
 # tree.writeClu("%s_level1.clu" % name, 1)

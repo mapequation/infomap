@@ -1,30 +1,32 @@
 from infomap import infomap
 
-infomapWrapper = infomap.Infomap("--two-level")
+myInfomap = infomap.Infomap("--two-level --verbose")
 
 # Add weight as an optional third argument
-infomapWrapper.addLink(0, 1)
-infomapWrapper.addLink(0, 2)
-infomapWrapper.addLink(0, 3)
-infomapWrapper.addLink(1, 0)
-infomapWrapper.addLink(1, 2)
-infomapWrapper.addLink(2, 1)
-infomapWrapper.addLink(2, 0)
-infomapWrapper.addLink(3, 0)
-infomapWrapper.addLink(3, 4)
-infomapWrapper.addLink(3, 5)
-infomapWrapper.addLink(4, 3)
-infomapWrapper.addLink(4, 5)
-infomapWrapper.addLink(5, 4)
-infomapWrapper.addLink(5, 3)
+network = infomap.Network()
+network.addLink(0, 1)
+network.addLink(0, 2)
+network.addLink(0, 3)
+network.addLink(1, 0)
+network.addLink(1, 2)
+network.addLink(2, 1)
+network.addLink(2, 0)
+network.addLink(3, 0)
+network.addLink(3, 4)
+network.addLink(3, 5)
+network.addLink(4, 3)
+network.addLink(4, 5)
+network.addLink(5, 4)
+network.addLink(5, 3)
 
-infomapWrapper.run()
+myInfomap.run(network)
 
-tree = infomapWrapper.tree
-
-print("Found %d modules with codelength: %f" % (tree.numTopModules(), tree.codelength()))
+print("Found %d modules with codelength: %f" % (myInfomap.numTopModules(), myInfomap.codelength()))
 
 print("\n#node module")
-for node in tree.leafIter():
-	print("%d %d" % (node.physIndex, node.moduleIndex()))
 
+print("Tree:")
+for it in myInfomap.tree():
+	node = it.current()
+	if node.isLeaf():
+		print("{} {}".format(node.physicalId, it.moduleIndex()))

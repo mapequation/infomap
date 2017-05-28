@@ -691,11 +691,11 @@ void InfomapBase::writeResult()
 
 	SafeOutFile outFile(outputFilename);
 	outFile << "# Codelength = " << getCodelength() << " bits.\n";
-	// auto it = root.begin_infomapDepthFirst();
+	// auto it = root.begin_treePath();
 	// it++;
 	// for (; !it.isEnd(); ++it) {
 	// for (auto& it : root.infomapTree()) {
-	for (auto it = root().begin_infomapDepthFirst(); !it.isEnd(); ++it) {
+	for (auto it = root().begin_treePath(); !it.isEnd(); ++it) {
 		InfoNode &node = *it;
 		if (node.isLeaf()) {
 			auto &path = it.path();

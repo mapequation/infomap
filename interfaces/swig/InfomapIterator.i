@@ -2,27 +2,23 @@
 
 %{
 /* Includes the header in the wrapper code */
-#include "src/core/infomapIterators.h"
+#include "src/core/InfomapIterator.h"
 %}
 
-%include "treeIterators.i"
 %include "std_deque.i"
 
-%template(deque_uint) std::deque<unsigned int>;
-
-%import "InfoNode.i"
-
-/* Parse the header file to generate wrappers */
-%include "src/core/infomapIterators.h"
-
-
-namespace infomap {
-    %template(InfomapDepthFirstIteratorInfoNode) InfomapDepthFirstIterator<InfoNode*>;
-    %template(InfomapDepthFirstIteratorInfoNodeConst) InfomapDepthFirstIterator<InfoNode const*>;
+namespace std {
+    %template(deque_uint) std::deque<unsigned int>;
 }
 
+%include "InfoNode.i"
+
+/* Parse the header file to generate wrappers */
+%include "src/core/InfomapIterator.h"
+
+
 #ifdef SWIGPYTHON
-%extend InfomapDepthFirstIterator
+%extend infomap::InfomapIterator
 {
 
 	// Make the class iterable, and wait until

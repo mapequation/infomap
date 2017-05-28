@@ -7,9 +7,12 @@
 
 %include "InfomapConfig.i"
 %include "Config.i"
+%include "InfoNode.i"
+%include "InfomapIterator.i"
+%include "Network.i"
 
 namespace infomap {
-%template(InfomapBaseInfomapConfig) InfomapConfig<InfomapBase>;
+    %template(InfomapConfigInfomapBase) InfomapConfig<InfomapBase>;
 }
 
 /* Parse the header file to generate wrappers */
