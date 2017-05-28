@@ -33,9 +33,10 @@
 #include <utility>
 #include "./Log.h"
 #include "../io/Config.h"
-#include "../core/StateNetwork.h"
 
 namespace infomap {
+
+class StateNetwork;
 	
 /**
  * Calculate flow on network based on different flow models

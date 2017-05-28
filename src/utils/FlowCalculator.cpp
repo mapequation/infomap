@@ -29,6 +29,7 @@
 #include <iostream>
 #include <cmath>
 #include "../utils/Log.h"
+#include "../core/StateNetwork.h"
 
 namespace infomap {
 

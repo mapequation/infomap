@@ -198,8 +198,6 @@ void InfomapBase::run()
 
 	network.readInputData(filename);
 
-	network.calculateFlow();
-
 	run(network);
 }
 
@@ -207,6 +205,8 @@ void InfomapBase::run(Network& network)
 {
 	if (!isMainInfomap())
 		throw InternalOrderError("Can't run a non-main Infomap with an input network");
+
+	network.calculateFlow();
 	
 	initNetwork(network);
 
