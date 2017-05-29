@@ -58,13 +58,25 @@ void Network::initValidHeadings()
 	headingsBipartite.insert("*Vertices");
 	headingsBipartite.insert("*Bipartite");
 	
+	auto& headingsStates = m_validHeadings["states"];
+	headingsStates.insert("*Vertices");
+	headingsStates.insert("*States");
+	headingsStates.insert("*Edges");
+	headingsStates.insert("*Arcs");
+	headingsStates.insert("*Links");
+	headingsStates.insert("*Contexts");
+	auto& ignoreHeadingsStates = m_ignoreHeadings["states"];
+	ignoreHeadingsStates.insert("*Arcs");
+	ignoreHeadingsStates.insert("*Edges");
+	ignoreHeadingsStates.insert("*Contexts");
+	
 	auto& headingsGeneral = m_validHeadings["general"];
 	headingsGeneral.insert("*Vertices");
 	headingsGeneral.insert("*States");
 	headingsGeneral.insert("*Edges");
 	headingsGeneral.insert("*Arcs");
 	headingsGeneral.insert("*Links");
-	headingsGeneral.insert("*Context");
+	headingsGeneral.insert("*Contexts");
 }
 
 void Network::readInputData(std::string filename)
@@ -106,7 +118,7 @@ void Network::parsePajekNetwork(std::string filename)
 	Log() << "Parsing " << (m_config.isUndirected() ? "undirected" : "directed") << " pajek network from file '" <<
 			filename << "'... " << std::flush;
 
-	parseNetwork(filename, m_validHeadings["pajek"]);
+	parseNetwork(filename, m_validHeadings["pajek"], m_ignoreHeadings["pajek"]);
 	Log() << "done!" << std::endl;
 }
 
@@ -115,7 +127,7 @@ void Network::parseLinkList(std::string filename)
 	Log() << "Parsing " << (m_config.directed ? "directed" : "undirected") << " link list from file '" <<
 			filename << "'... " << std::flush;
 
-	parseNetwork(filename, m_validHeadings["link-list"]);
+	parseNetwork(filename, m_validHeadings["link-list"], m_ignoreHeadings["link-list"]);
 	Log() << "done!" << std::endl;
 }
 void Network::parseBipartiteNetwork(std::string filename)
@@ -123,7 +135,7 @@ void Network::parseBipartiteNetwork(std::string filename)
 	Log() << "Parsing bipartite network from file '" <<
 			filename << "'... " << std::flush;
 
-	parseNetwork(filename, m_validHeadings["bipartite"]);
+	parseNetwork(filename, m_validHeadings["bipartite"], m_ignoreHeadings["bipartite"]);
 	Log() << "done!" << std::endl;
 }
 
@@ -132,7 +144,7 @@ void Network::parseStateNetwork(std::string filename)
 	Log() << "Parsing state network from file '" <<
 			filename << "'... " << std::flush;
 	
-	parseNetwork(filename);
+	parseNetwork(filename, m_validHeadings["states"], m_ignoreHeadings["states"]);
 	Log() << "done!" << std::endl;
 }
 
@@ -141,11 +153,11 @@ void Network::parseNetwork(std::string filename)
 	Log() << "Parsing " << (m_config.isUndirected() ? "undirected" : "directed") << " network from file '" <<
 				filename << "'... " << std::flush;
 	
-	parseNetwork(filename, m_validHeadings["general"]);
+	parseNetwork(filename, m_validHeadings["general"], m_ignoreHeadings["general"]);
 	Log() << "done!" << std::endl;
 }
 
-void Network::parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings)
+void Network::parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings)
 {
 	SafeInFile input(filename.c_str());
 
@@ -156,6 +168,9 @@ void Network::parseNetwork(std::string filename, const InsensitiveStringSet& val
 		std::string heading = io::firstWord(line);
 		if (validHeadings.count(heading) == 0) {
 			throw FileFormatError(io::Str() << "Unrecognized heading in network file: '" << heading << "'.");
+		}
+		if (ignoreHeadings.count(heading) > 0) {
+			line = ignoreSection(input, heading);
 		}
 		else if (heading == "*Vertices" || heading == "*vertices") {
 			line = parseVertices(input, line);

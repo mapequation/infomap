@@ -76,6 +76,7 @@ protected:
 	};
 	using InsensitiveStringSet = std::set<std::string, InsensitiveCompare>;
 
+	std::map<std::string, InsensitiveStringSet> m_ignoreHeadings;
 	std::map<std::string, InsensitiveStringSet> m_validHeadings;// {
 	// 	{ "pajek", {"*Vertices", "*Edges", "*Arcs"} },
 	// 	{ "link-list", {"*Links"} },
@@ -105,7 +106,7 @@ protected:
 	void parseLinkList(std::string filename);
 	void parseStateNetwork(std::string filename);
 	void parseNetwork(std::string filename);
-	void parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings);
+	void parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings);
 	// void parseNetwork(std::string filename, InsensitiveStringSet&& validHeadings = {
 	// 	"*Vertices", "*States", "*Edges", "*Arcs", "*Links", "*Context"
 	// });
