@@ -73,7 +73,7 @@ namespace io
 {
 
 template<typename T>
-inline std::string stringify(T x)
+inline std::string stringify(T& x)
 {
 	std::ostringstream o;
 	if (!(o << x))
@@ -81,6 +81,11 @@ inline std::string stringify(T x)
 	return o.str();
 }
 
+template<>
+inline std::string stringify(bool& b)
+{
+	return b? "true" : "false";
+}
 
 template<typename Container>
 inline std::string stringify(const Container& cont, std::string delimiter)
@@ -114,12 +119,6 @@ inline std::string stringify(const Container& cont, std::string delimiter, unsig
 	if (!(o << (cont[maxIndex] + offset)))
 		throw BadConversionError((o << "stringify(container[" << maxIndex << "])", o.str()));
 	return o.str();
-}
-
-template<>
-inline std::string stringify(bool b)
-{
-	return b? "true" : "false";
 }
 
 class Str {

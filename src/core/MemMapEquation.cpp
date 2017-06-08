@@ -168,8 +168,22 @@ void MemMapEquation::calculateNodeFlow_log_nodeFlow()
 
 double MemMapEquation::calcCodelength(const InfoNode& parent) const
 {
-	if (parent.numPhysicalNodes() == 0)
-		return Base::calcCodelength(parent); // Infomap root node
+	return parent.isLeafModule() ?
+		( parent.isRoot() ?
+			// Use first-order model for one-level codebook
+			MapEquation::calcCodelengthOnModuleOfLeafNodes(parent) :
+			calcCodelengthOnModuleOfLeafNodes(parent)
+		) :
+		// Use first-order model on index codebook
+		MapEquation::calcCodelengthOnModuleOfModules(parent);
+}
+
+double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
+{
+	if (parent.numPhysicalNodes() == 0) {
+		std::cout << "(*)";
+		return MapEquation::calcCodelength(parent); // Infomap root node
+	}
 
 	//TODO: For ordinary networks, flow should be used instead of enter flow
 	// for leaf nodes, what about memory networks? sumFlowFromM2Node vs sumEnterFlowFromM2Node?

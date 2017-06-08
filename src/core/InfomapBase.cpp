@@ -781,6 +781,8 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 	unsigned int numLevelsConsolidated = numLevels() - 1;
 	if (maxLevels == 0)
 		maxLevels = std::numeric_limits<unsigned int>::max();
+	
+	std::string initialCodelength;
 
 	// Stopwatch timerAll(true);
 	// Stopwatch timer(false);
@@ -793,6 +795,9 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 		else
 			setActiveNetworkFromLeafs();
 		initPartition();
+		if (m_aggregationLevel == 0) {
+			initialCodelength = io::Str() << "" << *this;
+		}
 
 		Log(1,2) << activeNetwork().size() << "*" << std::flush;
 		Log(3) << "Level " << (numLevelsConsolidated+1) << " (codelength: " << *this << "): Moving " <<
@@ -824,9 +829,10 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 
 	calculateNumNonTrivialTopModules();
 
-	Log(1,2) << (m_isCoarseTune ? "modules" : "nodes") << "*loops to codelength " << *this <<
-			" in " << numTopModules() << " modules. (" << m_numNonTrivialTopModules <<
-			" non-trivial modules)" << std::endl;
+	Log(1,2) << (m_isCoarseTune ? "modules" : "nodes") << "*loops from codelength " <<
+		initialCodelength << " to codelength " << *this <<
+		" in " << numTopModules() << " modules. (" << m_numNonTrivialTopModules <<
+		" non-trivial modules)" << std::endl;
 	// Log() << "{{ TIME: " << timerAll.getElapsedTimeInMilliSec() << "ms }}\n";
 }
 

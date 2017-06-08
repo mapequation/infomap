@@ -67,6 +67,12 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned 
 	return addNode(id, weight);
 }
 
+std::pair<std::map<unsigned int, std::string>::iterator, bool> StateNetwork::addName(unsigned int id, std::string name)
+{
+	// m_names[id] = name;
+	return m_names.insert(std::make_pair(id, name));
+}
+
 bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double weight)
 {
 	if (sourceId == targetId) {

@@ -138,9 +138,9 @@ struct Config
 		setOptimizationLevel(1);
 	}
 
-	Config(std::string flags)
+	Config(std::string flags, bool requireFileInput = false)
 	{
-		*this = Config::fromString(flags);
+		*this = Config::fromString(flags, requireFileInput);
 	}
 
 	Config(const Config& other) :

@@ -32,6 +32,7 @@
 #include "utils/Date.h"
 #include "io/version.h"
 #include <string>
+#include <memory>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -44,7 +45,16 @@ int run(const std::string& flags)
 	{
 		Stopwatch timer(true);
 
-		Infomap infomap(flags, true);
+		Config conf(flags, true);
+
+		std::unique_ptr<InfomapBase> myInfomap;
+		if (conf.isMemoryNetwork())
+			myInfomap = std::unique_ptr<InfomapBase>(new MemInfomap(conf));
+		else
+			myInfomap = std::unique_ptr<InfomapBase>(new Infomap(conf));
+
+		InfomapBase& infomap = *myInfomap;
+		// Infomap infomap(flags, true);
 
 		Log::init(infomap.verbosity, infomap.silent, infomap.verboseNumberPrecision);
 
@@ -86,6 +96,10 @@ int run(const std::string& flags)
 	{
 		std::cerr << "Error: " << e.what() << std::endl;
 		return 1;
+	}
+	catch(char const* e)
+	{
+		std::cerr << "Str error: " << e << std::endl;
 	}
 
 	return 0;

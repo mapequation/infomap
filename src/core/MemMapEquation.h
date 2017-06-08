@@ -98,6 +98,7 @@ protected:
 	// ===================================================
 	// Protected member functions
 	// ===================================================
+	double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
 
 	// ===================================================
 	// Init

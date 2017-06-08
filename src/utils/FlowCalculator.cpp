@@ -152,20 +152,15 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 	// Calculate the teleport rate distribution
 	if (config.teleportToNodes)
 	{
-        // Log() << "network.nodeWeights not rewritten!" << std::endl;
-        throw "teleportToNodes not implemented";
-		// const std::vector<double>& nodeWeights = network.nodeWeights();
-		// if (nodeWeights.empty())
-		// {
-		// 	double rate = 1.0 / numNodes;
-		// 	for (unsigned int i = 0; i < numNodes; ++i)
-		// 		m_nodeTeleportRates[i] = rate;
-		// }
-		// else
-		// {
-		// 	for (unsigned int i = 0; i < numNodes; ++i)
-		// 		m_nodeTeleportRates[i] = nodeWeights[i] / network.sumNodeWeights();
-		// }
+		double sumNodeWeights = 0.0;
+        for (auto& nodeIt : network.nodes()) {
+			auto& networkNode = nodeIt.second;
+			m_nodeTeleportRates[m_nodeIndexMap[networkNode.id]] = networkNode.weight;
+			sumNodeWeights += networkNode.weight;
+		}
+		for (auto& weight : m_nodeTeleportRates) {
+			weight /= sumNodeWeights;
+		}
 	}
 	else // Teleport to nodes
 	{

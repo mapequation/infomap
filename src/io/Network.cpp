@@ -66,7 +66,7 @@ void Network::initValidHeadings()
 	headingsStates.insert("*Links");
 	headingsStates.insert("*Contexts");
 	auto& ignoreHeadingsStates = m_ignoreHeadings["states"];
-	ignoreHeadingsStates.insert("*Arcs");
+	// ignoreHeadingsStates.insert("*Arcs"); //TODO: Old allows this but what if both specified?
 	ignoreHeadingsStates.insert("*Edges");
 	ignoreHeadingsStates.insert("*Contexts");
 	
@@ -77,6 +77,9 @@ void Network::initValidHeadings()
 	headingsGeneral.insert("*Arcs");
 	headingsGeneral.insert("*Links");
 	headingsGeneral.insert("*Contexts");
+	auto& ignoreHeadingsGeneral = m_ignoreHeadings["general"];
+	// ignoreHeadingsGeneral.insert("*States");
+	ignoreHeadingsGeneral.insert("*Contexts");
 }
 
 void Network::readInputData(std::string filename)
@@ -240,9 +243,15 @@ std::string Network::parseVertices(std::ifstream& file, std::string heading)
 		}
 		double weight = 1.0;
 		if ((m_extractor >> weight)) {
-			// TODO: Check valid weight here?
+			if (weight < 0)
+				throw FileFormatError(io::Str() << "Negative node weight (" << weight << ") from line '" << line << "'");
 		}
-		addNode(id, name, weight);
+		if (m_config.isMemoryInput()) {
+			addName(id, name);
+		}
+		else {
+			addNode(id, name, weight);
+		}
 	}
 	return line;
 }

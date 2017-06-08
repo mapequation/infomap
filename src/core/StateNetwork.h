@@ -182,6 +182,7 @@ public:
 	std::pair<NodeMap::iterator, bool> addNode(unsigned int id, std::string name);
 	std::pair<NodeMap::iterator, bool> addNode(unsigned int id, double weight);
 	std::pair<NodeMap::iterator, bool> addNode(unsigned int id, std::string, double weight);
+	std::pair<std::map<unsigned int, std::string>::iterator, bool> addName(unsigned int id, std::string);
 	bool addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0);
 	
 	void calculateFlow();

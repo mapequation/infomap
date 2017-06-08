@@ -225,7 +225,7 @@ void InfomapOptimizer<Objective>::initPartition()
 
 	m_objective.initPartition(network);
 
-	Log(2) << "Initiated to codelength " << m_objective << " in " << numActiveModules() << " modules." << std::endl;
+	// Log(3) << "Initiated to codelength " << m_objective << " in " << numActiveModules() << " modules." << std::endl;
 }
 
 
@@ -308,6 +308,8 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 		loopLimit = 20;
 	}
 
+	// Log() << "\nOptimize, initial codelength: " << m_objective.codelength;
+
 	while (coreLoopCount != loopLimit)
 	{
 		++coreLoopCount;
@@ -315,6 +317,8 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 			tryMoveEachNodeIntoBestModuleInParallel() :
 			tryMoveEachNodeIntoBestModule();
 		// Break if not enough improvement
+		// Log() << "\nLoop " << coreLoopCount << "/" << loopLimit << ", numNodesMoved: " <<
+		// 	numNodesMoved << ", -> codelength: " << m_objective.codelength << "\n";
 		if (numNodesMoved == 0 || m_objective.codelength >= oldCodelength - this->minimumCodelengthImprovement)
 			break;
 		++numEffectiveLoops;

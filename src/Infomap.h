@@ -49,7 +49,17 @@ class Infomap : public M1Infomap {
     Infomap(std::string flags, bool requireFileInput = false) :
         Infomap(Config::fromString(flags, requireFileInput))
     {}
+};
 
+class MemInfomap : public M2Infomap {
+    public:
+    MemInfomap() : M2Infomap()
+    {}
+    MemInfomap(const Config& conf) : M2Infomap(conf)
+    {}
+    MemInfomap(std::string flags, bool requireFileInput = false) :
+        M2Infomap(Config::fromString(flags, requireFileInput))
+    {}
 };
 
 // class MemInfomap : public M2Infomap {
