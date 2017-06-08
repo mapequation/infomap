@@ -57,7 +57,7 @@ struct Config
 		zeroBasedNodeNumbers(false),
 		includeSelfLinks(false),
 		ignoreEdgeWeights(false),
-		skipCompleteDanglingMemoryNodes(false),
+		completeDanglingMemoryNodes(false),
 		nodeLimit(0),
 		preClusterMultiplex(false),
 	 	clusterDataFile(""),
@@ -136,7 +136,7 @@ struct Config
 		zeroBasedNodeNumbers(other.zeroBasedNodeNumbers),
 		includeSelfLinks(other.includeSelfLinks),
 		ignoreEdgeWeights(other.ignoreEdgeWeights),
-		skipCompleteDanglingMemoryNodes(other.skipCompleteDanglingMemoryNodes),
+		completeDanglingMemoryNodes(other.completeDanglingMemoryNodes),
 		nodeLimit(other.nodeLimit),
 		preClusterMultiplex(other.preClusterMultiplex),
 	 	clusterDataFile(other.clusterDataFile),
@@ -217,7 +217,7 @@ struct Config
 		zeroBasedNodeNumbers = other.zeroBasedNodeNumbers;
 		includeSelfLinks = other.includeSelfLinks;
 		ignoreEdgeWeights = other.ignoreEdgeWeights;
-		skipCompleteDanglingMemoryNodes = other.skipCompleteDanglingMemoryNodes;
+		completeDanglingMemoryNodes = other.completeDanglingMemoryNodes;
 		nodeLimit = other.nodeLimit;
 		preClusterMultiplex = other.preClusterMultiplex;
 	 	clusterDataFile = other.clusterDataFile;
@@ -435,7 +435,7 @@ struct Config
 	bool zeroBasedNodeNumbers;
 	bool includeSelfLinks;
 	bool ignoreEdgeWeights;
-	bool skipCompleteDanglingMemoryNodes;
+	bool completeDanglingMemoryNodes;
 	unsigned int nodeLimit;
 	bool preClusterMultiplex;
 	std::string clusterDataFile;

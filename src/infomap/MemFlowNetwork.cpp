@@ -103,7 +103,7 @@ void MemFlowNetwork::calculateFlow(const Network& net, const Config& config)
 		m_statenodes[statenodeIt->second] = statenodeIt->first;
 	}
 
-	if (!config.isStateNetwork() && !config.skipCompleteDanglingMemoryNodes)
+	if (!config.isStateNetwork() && config.completeDanglingMemoryNodes)
 	{
 		unsigned int numM1Nodes = network.numNodes();
 		typedef std::multimap<double, unsigned int> PhysToMemWeightMap;
