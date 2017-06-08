@@ -450,9 +450,65 @@ std::string Network::parseVertices(std::ifstream& file, std::string header, bool
 	m_sumNodeWeights = 0.0;
 
 	std::string line;
-	char next = file.peek();
-	if (next == '*') // Short pajek version (no nodes defined), set node number as name
+	unsigned int numNodesParsed = 0;
+	bool didEarlyBreak = false;
+
+	// Read node names and optional weight, assuming id 1, 2, 3, ... (or 0, 1, 2, ... if zero-based node numbering)
+	while(!std::getline(file, line).fail())
 	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+
+		if (line[0] == '*')
+			break;
+
+		if (m_config.nodeLimit > 0 && numNodesParsed == m_config.nodeLimit) {
+			didEarlyBreak = true;
+			break;
+		}
+
+		// parseVertice(line, id, name, weight);
+		ss.clear();
+		ss.str(line);
+
+		unsigned int id = 0;
+		if (!(ss >> id))
+			throw FileFormatError(io::Str() << "Can't parse node id from line '" << line << "'");
+
+		unsigned int nameStart = line.find_first_of("\"");
+		unsigned int nameEnd = line.find_last_of("\"");
+		std::string name("");
+		if(nameStart < nameEnd) {
+			name = std::string(line.begin() + nameStart + 1, line.begin() + nameEnd);
+			line = line.substr(nameEnd + 1);
+			ss.clear();
+			ss.str(line);
+		}
+		else {
+			if (!(ss >> name))
+				throw FileFormatError(io::Str() << "Can't parse node name from line '" << line << "'");
+		}
+		double weight = 1.0;
+		if ((ss >> weight)) {
+			// TODO: Check valid weight here?
+		}
+		unsigned int nodeIndex = static_cast<unsigned int>(id - m_indexOffset);
+		if (nodeIndex != numNodesParsed)
+		{
+			throw BadConversionError(io::Str() << "The node id from line '" << line <<
+				"' doesn't follow a consequitive order" <<
+				((m_indexOffset == 1 && id == 0)? ".\nBe sure to use zero-based node numbering if the node numbers start from zero." : "."));
+		}
+
+		m_sumNodeWeights += weight;
+		m_nodeWeights[nodeIndex] = weight;
+		m_nodeNames[nodeIndex] = name;
+		++numNodesParsed;
+	}
+
+	if (line[0] == '*' && numNodesParsed == 0)
+	{
+		// Short pajek version (no nodes defined), set node number as name
 		for (unsigned int i = 0; i < m_numNodes; ++i)
 		{
 			m_nodeWeights[i] = 1.0;
@@ -460,53 +516,12 @@ std::string Network::parseVertices(std::ifstream& file, std::string header, bool
 		}
 		m_sumNodeWeights = m_numNodes * 1.0;
 	}
-	else
-	{
-		// Read node names, assuming order 1, 2, 3, ... (or 0, 1, 2, ... if zero-based node numbering)
-		for (unsigned int i = 0; i < m_numNodes; ++i)
-		{
-			unsigned int id = 0;
-			if (!(file >> id) || id != static_cast<unsigned int>(i + m_indexOffset))
-			{
-				throw BadConversionError(io::Str() << "Couldn't parse line " << (i + m_indexOffset + 1) << ". Should begin with node number " << (i + m_indexOffset) <<
-						((m_indexOffset == 1 && id == i)? ".\nBe sure to use zero-based node numbering if the node numbers start from zero." : "."));
-			}
-			// Read the rest of the line
-			std::getline(file,line);
-			unsigned int nameStart = line.find_first_of("\"");
-			unsigned int nameEnd = line.find_last_of("\"");
-			string name;
-			double nodeWeight = 1.0;
-			if(nameStart < nameEnd) {
-				name = string(line.begin() + nameStart + 1, line.begin() + nameEnd);
-				line = line.substr(nameEnd + 1);
-				ss.clear();
-				ss.str(line);
-			}
-			else {
-				ss.clear();
-				ss.str(line);
-				ss >> buf; // Take away the index from the stream
-				ss >> name; // Extract the next token as the name assuming no spaces
-			}
-			ss >> nodeWeight; // Extract the next token as node weight. If failed, the old value (1.0) is kept.
-			m_sumNodeWeights += nodeWeight;
-			m_nodeWeights[i] = nodeWeight;
-			m_nodeNames[i] = name;
-		}
 
-		if (m_config.nodeLimit > 0 && m_numNodes < m_numNodesFound)
-		{
-			unsigned int surplus = m_numNodesFound - m_numNodes;
-			for (unsigned int i = 0; i < surplus; ++i)
-				std::getline(file, line);
-		}
+	if (didEarlyBreak)
+	{
+		line = skipUntilHeader(file);
 	}
-	// Return the line after the vertices
-	std::getline(file, line);
-	// Continue past commented lines
-	while (line.length() > 0 && line[0] == '#')
-		std::getline(file, line);
+
 	return line;
 }
 
