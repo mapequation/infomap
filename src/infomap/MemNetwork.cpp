@@ -65,92 +65,33 @@ void MemNetwork::parseTrigram(std::string filename)
 	string line;
 	string buf;
 	SafeInFile input(filename.c_str());
+	
+	// Parse the vertices and return the line after
+	line = parseVertices(input, true);
 
-	std::getline(input,line);
-	if (!input.good())
-		throw FileFormatError("Can't read first line of pajek file.");
 
-	unsigned int numNodes = 0;
+	if (line.length() == 0 || line[0] == '#') {
+		line = Network::skipUntilHeader(input);
+	}
+
 	std::istringstream ss;
 	ss.str(line);
 	ss >> buf;
-	if(buf == "*Vertices" || buf == "*vertices" || buf == "*VERTICES") {
-		if (!(ss >> numNodes))
-			throw BadConversionError(io::Str() << "Can't parse an integer after \"" << buf <<
-					"\" as the number of nodes.");
-	}
-	else {
-		throw FileFormatError("The first line (to lower cases) doesn't match *vertices.");
+	if (buf != "*3grams") {
+		throw FileFormatError("The first non-commented line after vertices doesn't match *3grams.");
 	}
 
-	if (numNodes == 0)
-		throw FileFormatError("The number of vertices cannot be zero.");
-
-	unsigned int specifiedNumNodes = numNodes;
-	bool checkNodeLimit = m_config.nodeLimit > 0;
-	if (checkNodeLimit)
-		numNodes = m_config.nodeLimit;
-
-	m_numNodes = numNodes;
-	m_nodeNames.resize(numNodes);
-	m_nodeWeights.assign(numNodes, 1.0);
-	m_sumNodeWeights = 0.0;
-
-	// Read node names, assuming order 1, 2, 3, ...
-	for (unsigned int i = 0; i < numNodes; ++i)
-	{
-		unsigned int id = 0;
-		if (!(input >> id) || id != static_cast<unsigned int>(i+1))
-		{
-			throw BadConversionError(io::Str() << "Couldn't parse node number " << (i+1) << " from line " << (i+2) << ".");
-		}
-		std::getline(input,line);
-		unsigned int nameStart = line.find_first_of("\"");
-		unsigned int nameEnd = line.find_last_of("\"");
-		string name;
-		double nodeWeight = 1.0;
-		if(nameStart < nameEnd) {
-			name = string(line.begin() + nameStart + 1, line.begin() + nameEnd);
-			line = line.substr(nameEnd + 1);
-			ss.clear();
-			ss.str(line);
-		}
-		else {
-			ss.clear();
-			ss.str(line);
-			ss >> buf; // Take away the index from the stream
-			ss >> name; // Extract the next token as the name assuming no spaces
-		}
-		ss >> nodeWeight; // Extract the next token as node weight. If failed, the old value (1.0) is kept.
-		m_sumNodeWeights += nodeWeight;
-		m_nodeWeights[i] = nodeWeight;
-		//		m_nodeMap.insert(make_pair(name, i));
-		m_nodeNames[i] = name;
-	}
-
-	if (m_config.nodeLimit > 0 && numNodes < specifiedNumNodes)
-	{
-		unsigned int surplus = specifiedNumNodes - numNodes;
-		for (unsigned int i = 0; i < surplus; ++i)
-			std::getline(input, line);
-	}
-
-	// Read the number of links in the network
-	getline(input, line);
-	ss.clear();
-	ss.str(line);
-	ss >> buf;
-	if(buf != "*Arcs" && buf != "*arcs" && buf != "*3grams") {
-		throw FileFormatError("The first line (to lower cases) after the nodes doesn't match *arcs or *3grams.");
-	}
 
 	m_totalLinkWeight = 0.0;
 
 	// Read links in format "from through to [weight = 1.0]", for example "1 2 3 1.0"
 	while(!std::getline(input, line).fail())
 	{
-		if (line.length() == 0)
+		if (line.length() == 0 || line[0] == '#')
 			continue;
+		
+		if (line[0] == '*')
+			break;
 
 		int n1;
 		unsigned int n2, n3;
