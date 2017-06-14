@@ -34,6 +34,7 @@
 #include "../io/Config.h"
 #include <limits>
 #include <sstream>
+#include <set>
 
 #ifdef NS_INFOMAP
 namespace infomap
@@ -179,6 +180,7 @@ public:
 	double sumNodeWeights() const { return m_sumNodeWeights; }
 	const std::vector<double>& outDegree() const { return m_outDegree; }
 	const std::vector<double>& sumLinkOutWeight() const { return m_sumLinkOutWeight; }
+	bool haveNode(unsigned int nodeIndex) const { return m_nodes.count(nodeIndex) != 0; }
 
 	const LinkMap& linkMap() const { return m_links; }
 	unsigned int numLinks() const { return m_numLinks; }
@@ -242,6 +244,11 @@ protected:
 	 */
 	bool insertLink(unsigned int n1, unsigned int n2, double weight);
 
+	/**
+	* Insert node if not exist
+	*/
+	bool insertNode(unsigned int nodeIndex);
+
 	virtual void initNodeDegrees();
 
 	/**
@@ -273,6 +280,7 @@ protected:
 	std::vector<double> m_outDegree;
 	std::vector<double> m_sumLinkOutWeight;
 	unsigned int m_numDanglingNodes;
+	std::set<unsigned int> m_nodes;
 
 	LinkMap m_links;
 	unsigned int m_numLinksFound;

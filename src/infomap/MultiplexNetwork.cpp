@@ -264,6 +264,7 @@ bool MultiplexNetwork::createIntraLinksToNeighbouringNodesInTargetLayer(unsigned
 	// Distribute inter-links to outgoing intra-links in the target layer
 	LinkMap::const_iterator targetLayerOutLinkIt = targetLayerLinks.find(nodeIndex);
 	bool linkAdded = false;
+	// Log() << "    -> add state link between (" << sourceLayer << "," << nodeIndex << ") to (" << targetLayer << ", *)\n";
 	if (targetLayerOutLinkIt != targetLayerLinks.end())
 	{
 		const std::map<unsigned int, double>& targetLayerOutLinks = targetLayerOutLinkIt->second;
@@ -277,6 +278,7 @@ bool MultiplexNetwork::createIntraLinksToNeighbouringNodesInTargetLayer(unsigned
 
 			// Add weight also as teleportation weight to first state node
 			addStateLink(sourceLayer, nodeIndex, targetLayer, targetLayerTargetNodeIndex, interIntraLinkWeight, stateNodeWeight, 0.0);
+			// Log() << "      -> added state link (" << sourceLayer << "," << nodeIndex << ") to (" << targetLayer << "," << targetLayerTargetNodeIndex << "), interIntraLinkWeight: " << interIntraLinkWeight << ", stateNodeWeight: " << stateNodeWeight << "\n";
 			linkAdded = true;
 		}
 	}
@@ -437,14 +439,16 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 		}
 	}
 
+
 	for (unsigned int nodeIndex = 0; nodeIndex < m_numNodes; ++nodeIndex)
 	{
-
 		unsigned int layer2from = 0;
 		unsigned int layer2to = m_networks.size();
 		double sumOutLinkWeightAllLayers = 0.0;
 		for (unsigned int i = layer2from; i < layer2to; ++i)
 			sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
+		// Log() << "\n===== Node index: " << nodeIndex << " / " << (m_numNodes - 1) << " ======" <<
+		// "  sumOutLinkWeightAllLayers: " << sumOutLinkWeightAllLayers << "\n";
 
 		for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1)
 		{
@@ -457,9 +461,15 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 					sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
 			}
 
-			// const LinkMap& layer1LinkMap = m_networks[layer1].linkMap();
+			if (!m_networks[layer1].haveNode(nodeIndex)) {
+				// Log() << "  SKIP layer " << layer1 << ", no node " << nodeIndex << "!\n";
+				continue;
+			}
+
 
 			double sumOutLinkWeightLayer1 = m_networks[layer1].sumLinkOutWeight()[nodeIndex];
+
+			// Log() << "  Layer " << layer1 << ", sumOutLinkWeight: " << sumOutLinkWeightLayer1 << "\n";
 
 			// StateNode stateSource(layer1, nodeIndex);
 //			StateLinkMap::iterator stateSourceIt = m_stateLinks.lower_bound(stateSource);
@@ -477,6 +487,8 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 					linkWeightNormalizationFactor += (1.0 - relaxRate) / sumOutLinkWeightLayer1;
 				}
 				double stateNodeWeightNormalizationFactor = 1.0;
+
+				// Log() << "    -> Layer " << layer2 << ", linkWeightNormalizationFactor: " << linkWeightNormalizationFactor << "\n";
 				
 				createIntraLinksToNeighbouringNodesInTargetLayer(layer1, nodeIndex, layer2, m_networks[layer2].linkMap(), linkWeightNormalizationFactor, stateNodeWeightNormalizationFactor);
 				

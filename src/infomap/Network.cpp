@@ -667,6 +667,8 @@ bool Network::insertLink(unsigned int n1, unsigned int n2, double weight)
 {
 	++m_numLinks;
 	m_totalLinkWeight += weight;
+	insertNode(n1);
+	insertNode(n2);
 
 	// Aggregate link weights if they are definied more than once
 	LinkMap::iterator firstIt = m_links.lower_bound(n1);
@@ -687,6 +689,11 @@ bool Network::insertLink(unsigned int n1, unsigned int n2, double weight)
 	}
 
 	return true;
+}
+
+bool Network::insertNode(unsigned int nodeIndex)
+{
+	return m_nodes.insert(nodeIndex).second;
 }
 
 void Network::finalizeAndCheckNetwork(bool printSummary, unsigned int desiredNumberOfNodes)
