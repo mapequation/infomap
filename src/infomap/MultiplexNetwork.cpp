@@ -48,8 +48,8 @@ void MultiplexNetwork::readInputData(std::string filename)
 {
 	if (filename.empty())
 		filename = m_config.networkFile;
-	if (m_config.inputFormat == "multiplex")
-		parseMultiplexNetwork(m_config.networkFile);
+	if (m_config.inputFormat == "multilayer" || m_config.inputFormat == "multiplex")
+		parseMultiplexNetwork(filename);
 	else if (m_config.additionalInput.size() > 0)
 		parseMultipleNetworks();
 	else {
@@ -59,14 +59,14 @@ void MultiplexNetwork::readInputData(std::string filename)
 }
 
 /**
- * Example of general multiplex network:
+ * Example of general multilayer network:
  *
  * *Vertices 4
  * 1 "Node 1"
  * 2 "Node 2"
  * 3 "Node 3"
  * 4 "Node 4"
- * *Multiplex
+ * *Multilayer
  * # layer node layer node [weight]
  * 1 1 1 2 2
  * 1 1 2 2 1
@@ -77,7 +77,7 @@ void MultiplexNetwork::readInputData(std::string filename)
  * 2 4 2 1 2
  * 2 4 1 2 1
  *
- * The *Vertices section and the *Multiplex line can be omitted.
+ * The *Vertices section and the *Multilayer line can be omitted.
  * More compact sections can be defined for intra-network links
  * and inter-network links by adding *Intra and *Inter lines
  * like below:
@@ -114,17 +114,17 @@ void MultiplexNetwork::readInputData(std::string filename)
  * Note:
  * *Inter links define unrecorded movements:
  * Each inter-link (layer1 node1 layer2) is expanded to a set of
- * multiplex links {layer1 node1 layer2 node2} for all node2 that
+ * multilayer links {layer1 node1 layer2 node2} for all node2 that
  * node1 points to in the second layer.
  *
  */
 void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 {
-	Log() << "Parsing multiplex network from file '" << filename << "'... " << std::flush;
+	Log() << "Parsing multilayer network from file '" << filename << "'... " << std::flush;
 
 	SafeInFile input(filename.c_str());
 
-	// Assume general multiplex links
+	// Assume general multilayer links
 	string line = parseMultiplexLinks(input);
 
 	while (line.length() > 0 && line[0] == '*')
@@ -139,11 +139,15 @@ void MultiplexNetwork::parseMultiplexNetwork(std::string filename)
 		else if (header == "*Inter" || header == "*inter") {
 			line = parseInterLinks(input);
 		}
+		else if (header == "*Multilayer" || header == "*multilayer") {
+			line = parseMultiplexLinks(input);
+		}
 		else if (header == "*Multiplex" || header == "*multiplex") {
+			Log() << "\nWarning: Header '*Multiplex' has been deprecated, use *Multilayer\n";
 			line = parseMultiplexLinks(input);
 		}
 		else
-			throw FileFormatError(io::Str() << "Unrecognized header in multiplex network file: '" << line << "'.");
+			throw FileFormatError(io::Str() << "Unrecognized header in multilayer network file: '" << line << "'.");
 	}
 
 	Log() << "done!\n";
@@ -429,7 +433,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 	// Simulate inter-layer links
 	double relaxRate = m_config.multiplexRelaxRate < 0 ? 0.15 : m_config.multiplexRelaxRate; //TODO: Set default in config and use separate bool
 
-	Log() << "Generating memory network with multiplex relax rate " << relaxRate << "... " << std::flush;
+	Log() << "Generating memory network with multilayer relax rate " << relaxRate << "... " << std::flush;
 	
 	std::vector<LinkMap> oppositeLinkMaps;
 	if (m_config.isUndirected()) {
@@ -507,7 +511,7 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 	// Simulate inter-layer links
 	double jsrelaxRate = m_config.multiplexJSRelaxRate < 0 ? 0.15 : m_config.multiplexJSRelaxRate; //TODO: Set default in config and use separate bool
 
-	Log() << "Generating memory network with Jensen-Shannon-weighted multiplex relax rate " << jsrelaxRate << "... " << std::flush;
+	Log() << "Generating memory network with Jensen-Shannon-weighted multilayer relax rate " << jsrelaxRate << "... " << std::flush;
 	
 	std::vector<LinkMap> oppositeLinkMaps;
 	if (m_config.isUndirected()) {
@@ -884,7 +888,7 @@ void MultiplexNetwork::addMemoryNetworkFromMultiplexLinks()
 {
 	if (m_multiplexLinks.empty())
 		return;
-	Log() << "Adding memory network from multiplex links... " << std::flush;
+	Log() << "Adding memory network from multilayer links... " << std::flush;
 
 	for (MultiplexLinkMap::const_iterator it(m_multiplexLinks.begin()); it != m_multiplexLinks.end(); ++it)
 	{
@@ -997,7 +1001,7 @@ void MultiplexNetwork::parseIntraLink(const std::string& line, unsigned int& lay
 	m_extractor.clear();
 	m_extractor.str(line);
 	if (!(m_extractor >> layerIndex >> n1 >> n2))
-		throw FileFormatError(io::Str() << "Can't parse multiplex intra link data (layer node1 node2) from line '" << line << "'");
+		throw FileFormatError(io::Str() << "Can't parse multilayer intra link data (layer node1 node2) from line '" << line << "'");
 	(m_extractor >> weight) || (weight = 1.0);
 	layerIndex -= m_indexOffset;
 	n1 -= m_indexOffset;
@@ -1014,7 +1018,7 @@ void MultiplexNetwork::parseInterLink(const std::string& line, unsigned int& lay
 	m_extractor.clear();
 	m_extractor.str(line);
 	if (!(m_extractor >> layer1 >> node >> layer2))
-		throw FileFormatError(io::Str() << "Can't parse multiplex inter link data (layer1 node layer2) from line '" << line << "'");
+		throw FileFormatError(io::Str() << "Can't parse multilayer inter link data (layer1 node layer2) from line '" << line << "'");
 	(m_extractor >> weight) || (weight = 1.0);
 	layer1 -= m_indexOffset;
 	node -= m_indexOffset;
@@ -1031,7 +1035,7 @@ void MultiplexNetwork::parseMultiplexLink(const std::string& line, unsigned int&
 	m_extractor.clear();
 	m_extractor.str(line);
 	if (!(m_extractor >> layer1 >> node1 >> layer2 >> node2))
-		throw FileFormatError(io::Str() << "Can't parse multiplex link data (layer1 node1 layer2 node2) from line '" << line << "'");
+		throw FileFormatError(io::Str() << "Can't parse multilayer link data (layer1 node1 layer2 node2) from line '" << line << "'");
 	(m_extractor >> weight) || (weight = 1.0);
 	layer1 -= m_indexOffset;
 	node1 -= m_indexOffset;
@@ -1046,7 +1050,7 @@ void MultiplexNetwork::finalizeAndCheckNetwork(bool printSummary)
 	if (!m_interLinkLayers.empty())
 		Log() << " --> Found " << m_numInterLinksFound << " inter-network links in " << m_interLinkLayers.size() << " layers.\n";
 	if (!m_multiplexLinkLayers.empty())
-		Log() << " --> Found " << m_numMultiplexLinksFound << " multiplex links in " << m_multiplexLinkLayers.size() << " layers.\n";
+		Log() << " --> Found " << m_numMultiplexLinksFound << " multilayer links in " << m_multiplexLinkLayers.size() << " layers.\n";
 
 	if (!m_interLinkLayers.empty())
 	{

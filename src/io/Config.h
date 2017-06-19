@@ -390,13 +390,13 @@ struct Config
 
 	bool useTeleportation() const { return 	directed; }
 
-	bool isMemoryInput() const { return inputFormat == "states" || inputFormat == "3gram" || inputFormat == "multiplex" || additionalInput.size() > 0; }
+	bool isMemoryInput() const { return inputFormat == "states" || inputFormat == "3gram" || inputFormat == "multilayer" || inputFormat == "multiplex" || additionalInput.size() > 0; }
 
 	bool isMemoryNetwork() const { return withMemory || nonBacktracking || isMemoryInput(); }
 
 	bool isSimulatedMemoryNetwork() const { return (withMemory || nonBacktracking) && !isMemoryInput(); }
 
-	bool isMultiplexNetwork() const { return inputFormat == "multiplex" || additionalInput.size() > 0; }
+	bool isMultiplexNetwork() const { return inputFormat == "multilayer" || inputFormat == "multiplex" || additionalInput.size() > 0; }
 
 	bool isBipartite() const { return inputFormat == "bipartite"; }
 

@@ -70,13 +70,13 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 				"The file containing the network data. Accepted formats: Pajek (implied by .net) and link list (.txt)");
 
 		api.addOptionalNonOptionArguments(conf.additionalInput, "[additional input]",
-				"More network layers for multiplex.", true);
+				"More network layers for multilayer networks.", true);
 	}
 	else
 		conf.networkFile = "no-name";
 
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
-			"Specify input format ('pajek', 'link-list', 'states', '3gram', 'multiplex' or 'bipartite') to override format possibly implied by file extension.", "s");
+			"Specify input format ('pajek', 'link-list', 'states', '3gram', 'multilayer' or 'bipartite') to override format possibly implied by file extension.", "s");
 
 	api.addOptionArgument(conf.withMemory, "with-memory",
 			"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.", true);
@@ -84,8 +84,11 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 //	api.addOptionArgument(conf.bipartite, "bipartite",
 //			"Let the source id of a link belong to a different kind of nodes and ignore that set in the output.");
 
+	api.addOptionArgument(conf.multiplexAddMissingNodes, "multilayer-add-missing-nodes",
+			"Adjust multilayer network so that the same set of physical nodes exist in all layers.", true);
+
 	api.addOptionArgument(conf.multiplexAddMissingNodes, "multiplex-add-missing-nodes",
-			"Adjust multiplex network so that the same set of physical nodes exist in all layers.", true);
+			"[Deprecated, use multilayer-add-missing-nodes] Adjust multilayer network so that the same set of physical nodes exist in all layers.", true);
 
 	api.addOptionArgument(conf.skipAdjustBipartiteFlow, "skip-adjust-bipartite-flow",
 			"Skip distributing all flow from the bipartite nodes (first column) to the ordinary nodes (second column).", true);
@@ -205,17 +208,29 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.preferredNumberOfModules, "preferred-number-of-modules",
 			"Stop merge or split modules if preferred number of modules is reached.", "n", true);
 
-	api.addOptionArgument(conf.multiplexRelaxRate, "multiplex-relax-rate",
+	api.addOptionArgument(conf.multiplexRelaxRate, "multilayer-relax-rate",
 			"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present. If negative, the inter-links have to be provided.", "f", true);
 
-	api.addOptionArgument(conf.multiplexJSRelaxRate, "multiplex-js-relax-rate",
+	api.addOptionArgument(conf.multiplexJSRelaxRate, "multilayer-js-relax-rate",
 			"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence. If negative, the inter-links have to be provided.", "f", true);
 
-	api.addOptionArgument(conf.multiplexJSRelaxLimit, "multiplex-js-relax-limit",
+	api.addOptionArgument(conf.multiplexJSRelaxLimit, "multilayer-js-relax-limit",
 			"The minimum out-link similarity measured by the Jensen-Shannon divergence to relax to other layer. From 0 to 1. No limit if negative.", "f", true);
 
-	api.addOptionArgument(conf.multiplexRelaxLimit, "multiplex-relax-limit",
+	api.addOptionArgument(conf.multiplexRelaxLimit, "multilayer-relax-limit",
 			"The number of neighboring layers in each direction to relax to. If negative, relax to any layer.", "n", true);
+
+	api.addOptionArgument(conf.multiplexRelaxRate, "multiplex-relax-rate",
+			"[Deprecated, use multilayer-relax-rate] The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present. If negative, the inter-links have to be provided.", "f", true);
+
+	api.addOptionArgument(conf.multiplexJSRelaxRate, "multiplex-js-relax-rate",
+			"[Deprecated, use multilayer-js-relax-rate] The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence. If negative, the inter-links have to be provided.", "f", true);
+
+	api.addOptionArgument(conf.multiplexJSRelaxLimit, "multiplex-js-relax-limit",
+			"[Deprecated, use multilayer-js-relax-limit] The minimum out-link similarity measured by the Jensen-Shannon divergence to relax to other layer. From 0 to 1. No limit if negative.", "f", true);
+
+	api.addOptionArgument(conf.multiplexRelaxLimit, "multiplex-relax-limit",
+			"[Deprecated, use multilayer-relax-limit] The number of neighboring layers in each direction to relax to. If negative, relax to any layer.", "n", true);
 
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
 			"A seed (integer) to the random number generator.", "n");

@@ -58,7 +58,14 @@ class Infomap {
     : config(init(flags)), network(config), tree(config) {}
 	
     void readInputData(std::string filename) {
-        network.readInputData(filename);
+        try
+        {
+            network.readInputData(filename);
+        }
+        catch (std::exception& e)
+        {
+            std::cerr << e.what() << std::endl;
+        }
     }
 
     bool addLink(unsigned int n1, unsigned int n2, double weight = 1.0) {
@@ -96,7 +103,14 @@ class MemInfomap {
     : config(init(MemInfomap::flagsWithMemory(flags))), network(config), tree(config) {}
 
     void readInputData(std::string filename) {
-        network.readInputData(filename);
+        try
+        {
+            network.readInputData(filename);
+        }
+        catch (std::exception& e)
+        {
+            std::cerr << e.what() << std::endl;
+        }
     }
 
     bool addTrigram(unsigned int n1, unsigned int n2, unsigned int n3, double weight = 1.0){
