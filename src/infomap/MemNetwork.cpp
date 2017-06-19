@@ -767,7 +767,7 @@ void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 	for(std::map<StateNode,double>::iterator it = m_stateNodes.begin(); it != m_stateNodes.end(); ++it, ++stateNodeIndex)
 	{
 		m_stateNodeMap[it->first] = stateNodeIndex;
-		double weight = it->first.weight;
+		double weight = it->second;
 		m_stateNodeWeights[stateNodeIndex] += weight;
 		m_totStateNodeWeight += weight;
 	}
