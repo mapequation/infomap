@@ -67,7 +67,7 @@ struct DeltaFlow
 		deltaEnter(0.0),
 		count(0) {}
 
-	DeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow = 0.0, double sumPlogpPhysFlow = 0.0)
+	DeltaFlow(unsigned int module, double deltaExit, double deltaEnter)
 	:	module(module),
 		deltaExit(deltaExit),
 		deltaEnter(deltaEnter),
@@ -79,9 +79,18 @@ struct DeltaFlow
 		deltaEnter(other.deltaEnter),
 		count(other.count) {}
 
-	DeltaFlow& operator=(DeltaFlow other) // Assignment operator (copy-and-swap idiom)
+	// DeltaFlow& operator=(DeltaFlow other) // Assignment operator (copy-and-swap idiom)
+	// {
+	// 	swap(*this, other);
+	// 	return *this;
+	// }
+		
+	DeltaFlow& operator=(const DeltaFlow& other) // Assignment operator
 	{
-		swap(*this, other);
+		module = other.module;
+		deltaExit = other.deltaExit;
+		deltaEnter = other.deltaEnter;
+		count = other.count;
 		return *this;
 	}
 
@@ -94,10 +103,10 @@ struct DeltaFlow
 		return *this;
 	}
 
-	bool operator==(const DeltaFlow& other)
-	{
-		return module == other.module;
-	}
+	// bool operator==(const DeltaFlow& other)
+	// {
+	// 	return module == other.module;
+	// }
 
 	void reset()
 	{
@@ -114,6 +123,12 @@ struct DeltaFlow
 		std::swap(first.deltaEnter, second.deltaEnter);
 		std::swap(first.count, second.count);
 	}
+
+	friend std::ostream& operator<<(std::ostream& out, const DeltaFlow& data)
+	{
+		return out << "module: " << data.module << ", deltaEnter: " << data.deltaEnter << ", deltaExit: " << data.deltaExit << ", count: " << data.count;
+	}
+
 	unsigned int module = 0;
 	double deltaExit = 0.0;
 	double deltaEnter = 0.0;

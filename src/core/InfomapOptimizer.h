@@ -21,9 +21,9 @@ template<typename Objective>
 class InfomapOptimizer : public InfomapBase {
 	using Base = InfomapBase;
 	using FlowDataType = FlowData;
-	using DeltaFlowDataType = MemDeltaFlow;
+	// using DeltaFlowDataType = MemDeltaFlow;
 	// using FlowDataType = typename Objective::FlowDataType;
-	// using DeltaFlowDataType = typename Objective::DeltaFlowDataType;
+	using DeltaFlowDataType = typename Objective::DeltaFlowDataType;
 
 protected:
 //	using Base::EdgeType;
@@ -95,6 +95,8 @@ protected:
 	virtual unsigned int optimizeActiveNetwork();
 	
 	unsigned int tryMoveEachNodeIntoBestModule();
+	
+	unsigned int tryMoveEachNodeIntoBestModuleLocal();
 
 	unsigned int tryMoveEachNodeIntoBestModuleInParallel();
 
@@ -315,6 +317,7 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 		++coreLoopCount;
 		unsigned int numNodesMoved = this->innerParallelization ?
 			tryMoveEachNodeIntoBestModuleInParallel() :
+			// tryMoveEachNodeIntoBestModuleLocal();
 			tryMoveEachNodeIntoBestModule();
 		// Break if not enough improvement
 		// Log() << "\nLoop " << coreLoopCount << "/" << loopLimit << ", numNodesMoved: " <<
@@ -329,7 +332,7 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 }
 
 template<typename Objective>
-unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
+unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleLocal()
 {
 	// Get random enumeration of nodes
 	std::vector<unsigned int> nodeEnumeration(activeNetwork().size());
@@ -341,7 +344,210 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
 	// Create map with module links
 	// std::vector<DeltaFlowData> deltaFlow(numNodes);
-	VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
+	// VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
+	// Stopwatch timer(false);
+	// double t = 0.0;
+	// double tCount = 0;
+
+	for (unsigned int i = 0; i < numNodes; ++i)
+	{
+		InfoNode& current = *network[nodeEnumeration[i]];
+
+//		Log(5) << "Trying to move node " << current << " from module " << current.index << "...\n";
+
+		if (!current.dirty)
+			continue;
+
+		// If other nodes have moved here, don't move away on first loop
+		if (m_moduleMembers[current.index] > 1 && isFirstLoop())
+			continue;
+
+		// If no links connecting this node with other nodes, it won't move into others,
+		// and others won't move into this. TODO: Always best leave it alone?
+		// For memory networks, don't skip try move to same physical node!
+		// if (current.degree() == 0)
+		// {
+		// 	current.dirty = false;
+		// 	continue;
+		// }
+
+		// Create map with module links
+		std::map<unsigned int, DeltaFlowDataType> deltaFlow;
+		// std::unordered_map<unsigned int, DeltaFlowDataType> deltaFlow;
+		// deltaFlow.rehash(numNodes);
+		// for (auto& d : deltaFlow) {
+		// 	d.reset();
+		// }
+		// deltaFlow.startRound();
+
+		// For all outlinks
+		for (auto& e : current.outEdges())
+		{
+			auto& edge = *e;
+			InfoNode& neighbour = edge.target;
+			deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0);
+			// deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0));
+		}
+		// For all inlinks
+		for (auto& e : current.inEdges())
+		{
+			auto& edge = *e;
+			InfoNode& neighbour = edge.source;
+			// timer.start();
+			deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow);
+			// deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow));
+			// t += timer.getElapsedTimeInMilliSec();
+			// ++tCount;
+		}
+
+		// For not moving
+		// deltaFlow.add(current.index, DeltaFlowDataType(current.index, 0.0, 0.0));
+		DeltaFlowDataType& oldModuleDelta = deltaFlow[current.index];
+		oldModuleDelta.module = current.index; // Make sure index is correct if created new
+		// ++oldModuleDelta.count;
+		oldModuleDelta += DeltaFlowDataType(current.index, 0.0, 0.0);
+
+		// Option to move to empty module (if node not already alone)
+		if (m_moduleMembers[current.index] > 1 && m_emptyModules.size() > 0) {
+			deltaFlow[m_emptyModules.back()] += DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0);
+			// deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
+		}
+
+		// For memory networks
+		// m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+
+		// Collect the move options to a vector
+		std::vector<DeltaFlowDataType> moduleDeltaEnterExit(deltaFlow.size());
+		unsigned int numModuleLinks = 0;
+		for (auto& it : deltaFlow)
+		{
+			moduleDeltaEnterExit[numModuleLinks] = it.second;
+			++numModuleLinks;
+		}
+		// auto& moduleDeltaEnterExit = deltaFlow.values();
+
+		// Randomize link order for optimized search
+		// infomath::uniform_uint_dist uniform;
+		// for (unsigned int j = 0; j < deltaFlow.size() - 1; ++j)
+		// {
+		// 	// unsigned int randPos = j + uniform(m_rand, infomath::uniform_param_t(0, deltaFlow.size() - j - 1));
+		// 	unsigned int randPos = infomath::randInt(m_rand, j, deltaFlow.size() - 1);
+		// 	swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+		// }
+		// t += timer.getElapsedTimeInMilliSec();
+		// ++tCount;
+
+		DeltaFlowDataType bestDeltaModule(oldModuleDelta);
+		double bestDeltaCodelength = 0.0;
+		DeltaFlowDataType strongestConnectedModule(oldModuleDelta);
+		double deltaCodelengthOnStrongestConnectedModule = 0.0;
+
+		// Log(5) << "Move node " << current << " in module " << current.index << "...\n";
+		// Find the move that minimizes the description length
+		for (unsigned int j = 0; j < numModuleLinks; ++j)
+		{
+			// if (moduleDeltaEnterExit[j].count == 0) {
+			// 	continue;
+			// }
+			unsigned int otherModule = moduleDeltaEnterExit[j].module;
+			if(otherModule != current.index)
+			{
+				double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
+						oldModuleDelta, moduleDeltaEnterExit[j], m_moduleFlowData);
+
+				// Log(5) << " Move to module " << otherModule << " -> deltaCodelength: " << deltaCodelength <<
+				// 		", deltaEnter: " << moduleDeltaEnterExit[j].deltaEnter << ", deltaExit: " << moduleDeltaEnterExit[j].deltaExit <<
+				// 		", module enter/exit: " << m_moduleFlowData[otherModule].enterFlow << " / " << m_moduleFlowData[otherModule].exitFlow <<
+				// 		", OLD delta enter/exit: " << oldModuleDelta.deltaEnter << " / " << oldModuleDelta.deltaExit << "\n";
+				if (deltaCodelength < bestDeltaCodelength - this->minimumSingleNodeCodelengthImprovement)
+				{
+					bestDeltaModule = moduleDeltaEnterExit[j];
+					bestDeltaCodelength = deltaCodelength;
+				}
+
+				// Save strongest connected module to prefer if codelength improvement equal
+				if (moduleDeltaEnterExit[j].deltaExit > strongestConnectedModule.deltaExit)
+				{
+					strongestConnectedModule = moduleDeltaEnterExit[j];
+					deltaCodelengthOnStrongestConnectedModule = deltaCodelength;
+				}
+			}
+		}
+
+		// Prefer strongest connected module if equal delta codelength
+		if (strongestConnectedModule.module != bestDeltaModule.module &&
+				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + this->minimumSingleNodeCodelengthImprovement)
+		{
+			bestDeltaModule = strongestConnectedModule;
+		}
+
+		// Make best possible move
+		if(bestDeltaModule.module != current.index)
+		{
+			unsigned int bestModuleIndex = bestDeltaModule.module;
+			//Update empty module vector
+			if(m_moduleMembers[bestModuleIndex] == 0)
+			{
+				m_emptyModules.pop_back();
+			}
+			if(m_moduleMembers[current.index] == 1)
+			{
+				m_emptyModules.push_back(current.index);
+			}
+
+			// timer.start();
+			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData);
+			// t += timer.getElapsedTimeInMilliSec();
+			// ++tCount;
+
+			m_moduleMembers[current.index] -= 1;
+			m_moduleMembers[bestModuleIndex] += 1;
+
+			// double oldCodelength = m_objective.codelength;
+			// Log(5) << " --> Moved to module " << bestModuleIndex << " -> codelength: " << oldCodelength << " + " <<
+			// 		bestDeltaCodelength << " (" << (m_objective.codelength - oldCodelength) << ") = " << m_objective << "\n";
+
+//			unsigned int oldModuleIndex = current.index;
+			current.index = bestModuleIndex;
+
+			++numMoved;
+
+			// Mark neighbours as dirty
+			for (auto& e : current.outEdges())
+				e->target.dirty = true;
+			for (auto& e : current.inEdges())
+				e->source.dirty = true;
+		}
+		else
+			current.dirty = false;
+
+//		if (!current.dirty)
+//			Log(5) << " --> Didn't move!\n";
+
+	}
+
+	// Log() << " !!! " << t << "/" << tCount << " = " << t / tCount << " !!! ";
+
+	return numMoved;
+}
+
+template<typename Objective>
+unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
+{
+	// m_rand.seed(123);
+	// Get random enumeration of nodes
+	std::vector<unsigned int> nodeEnumeration(activeNetwork().size());
+	m_rand.getRandomizedIndexVector(nodeEnumeration);
+
+	auto& network = activeNetwork();
+	unsigned int numNodes = nodeEnumeration.size();
+	unsigned int numMoved = 0;
+
+	// Create map with module links
+	// std::vector<DeltaFlowData> deltaFlow(numNodes);
+	// VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
+	SimpleMap<DeltaFlowDataType> deltaFlow(numNodes);
+	// SimpleMap<DeltaFlowDataType> deltaFlow2(numNodes);
 	// Stopwatch timer(false);
 	// double t = 0.0;
 	// double tCount = 0;
@@ -410,9 +616,11 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 		}
 
 		// For memory networks
-		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+		//TODO: Uncomment after fix!!
+		// m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
 		auto& moduleDeltaEnterExit = deltaFlow.values();
+		unsigned int numModuleLinks = deltaFlow.size();
 
 		// Randomize link order for optimized search
 		// infomath::uniform_uint_dist uniform;
@@ -424,6 +632,45 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 		// }
 		// t += timer.getElapsedTimeInMilliSec();
 		// ++tCount;
+		for (unsigned int j = 0; j < deltaFlow.size() - 1; ++j)
+		{
+			unsigned int randPos = m_rand.randInt(j+1, deltaFlow.size() - 1);
+			swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+		}
+		// for (unsigned int j = 0; j < deltaFlow.size() - 1; ++j)
+		// {
+		// 	// unsigned int randPos = m_rand.randInt(j+1, deltaFlow.size() - 1);
+		// 	unsigned int randPos = j+1;
+		// 	// swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+		// 	auto tmp = moduleDeltaEnterExit[j];
+		// 	moduleDeltaEnterExit[j] = moduleDeltaEnterExit[randPos];
+		// 	moduleDeltaEnterExit[randPos] = tmp;
+		// }
+		// for (unsigned int j = 0; j < deltaFlow.size(); ++j)
+		// {
+		// 	moduleDeltaEnterExit[j] = moduleDeltaEnterExit[j];
+		// }
+
+		// if (numModuleLinks > 1) {
+		// 	auto m0 = moduleDeltaEnterExit[0].module;
+		// 	auto e0 = moduleDeltaEnterExit[0].deltaEnter;
+		// 	auto x0 = moduleDeltaEnterExit[0].deltaExit;
+		// 	auto c0 = moduleDeltaEnterExit[0].count;
+		// 	auto m1 = moduleDeltaEnterExit[1].module;
+		// 	auto e1 = moduleDeltaEnterExit[1].deltaEnter;
+		// 	auto x1 = moduleDeltaEnterExit[1].deltaExit;
+		// 	auto c1 = moduleDeltaEnterExit[1].count;
+
+		// 	moduleDeltaEnterExit[0].module = m1;
+		// 	moduleDeltaEnterExit[0].deltaEnter = e1;
+		// 	moduleDeltaEnterExit[0].deltaExit = x1;
+		// 	moduleDeltaEnterExit[0].count = c1;
+			
+		// 	moduleDeltaEnterExit[1].module = m0;
+		// 	moduleDeltaEnterExit[1].deltaEnter = e0;
+		// 	moduleDeltaEnterExit[1].deltaExit = x0;
+		// 	moduleDeltaEnterExit[1].count = c0;
+		// }
 
 		DeltaFlowDataType bestDeltaModule(oldModuleDelta);
 		double bestDeltaCodelength = 0.0;
@@ -432,7 +679,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
 		// Log(5) << "Move node " << current << " in module " << current.index << "...\n";
 		// Find the move that minimizes the description length
-		for (unsigned int j = 0; j < deltaFlow.size(); ++j)
+		for (unsigned int j = 0; j < numModuleLinks; ++j)
 		{
 			// if (moduleDeltaEnterExit[j].count == 0) {
 			// 	continue;
