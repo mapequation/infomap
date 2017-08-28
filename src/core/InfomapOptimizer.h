@@ -604,7 +604,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
 		// For not moving
 		deltaFlow.add(current.index, DeltaFlowDataType(current.index, 0.0, 0.0));
-		DeltaFlowDataType& oldModuleDelta = deltaFlow[current.index];
+		DeltaFlowDataType oldModuleDelta = deltaFlow[current.index];
 		oldModuleDelta.module = current.index; // Make sure index is correct if created new
 		// ++oldModuleDelta.count;
 		// oldModuleDelta += DeltaFlowDataType(current.index, 0.0, 0.0);
