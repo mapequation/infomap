@@ -1,4 +1,15 @@
-CXXFLAGS = -Wall -O3
+CXXFLAGS = -Wall
+
+CXX_CLANG := $(shell $(CXX) --version 2>/dev/null | grep clang)
+ifeq "$(CXX_CLANG)" ""
+	CXXFLAGS += -O4
+	ifneq "$(findstring noomp, $(MAKECMDGOALS))" "noomp"
+		CXXFLAGS += -fopenmp
+		LDFLAGS += -fopenmp
+	endif
+else
+	CXXFLAGS += -O3
+endif
 
 # Set INFOMAP_DIR to your Infomap directory
 INFOMAP_DIR = ../../..
