@@ -114,6 +114,7 @@ void Network::readInputData(std::string filename)
 	else 
 		parseNetwork(filename);
 //		throw UnknownFileTypeError("No known input format specified.");
+	printSummary();
 }
 
 void Network::parsePajekNetwork(std::string filename)
@@ -247,7 +248,7 @@ std::string Network::parseVertices(std::ifstream& file, std::string heading)
 				throw FileFormatError(io::Str() << "Negative node weight (" << weight << ") from line '" << line << "'");
 		}
 		if (m_config.isMemoryInput()) {
-			addName(id, name);
+			addPhysicalNode(id, name);
 		}
 		else {
 			addNode(id, name, weight);
@@ -271,6 +272,7 @@ std::string Network::parseStateNodes(std::ifstream& file, std::string heading)
 		parseStateNode(line, stateNode);
 
 		addStateNode(stateNode);
+		addPhysicalNode(stateNode.physicalId);
 
 		++m_numStateNodesFound;
 	}
@@ -378,6 +380,11 @@ bool Network::parseBipartiteLink(const std::string& line, unsigned int& featureN
 	return swappedOrder;
 }
 
+void Network::printSummary()
+{
+	Log() << " -> " << numNodes() << " state nodes\n";
+	Log() << " -> " << numPhysicalNodes() << " physical nodes\n";
+}
 
 
 // bool Network::addLink(unsigned int n1, unsigned int n2, double weight)

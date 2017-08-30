@@ -67,6 +67,35 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned 
 	return addNode(id, weight);
 }
 
+StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId)
+{
+	auto& physNode = m_physNodes[physId];
+	return physNode;
+}
+
+StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, double weight)
+{
+	auto& physNode = m_physNodes[physId];
+	physNode.weight = weight;
+	return physNode;
+}
+
+StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, const std::string& name)
+{
+	auto& physNode = m_physNodes[physId];
+	physNode.name = name;
+	return physNode;
+}
+
+StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, double weight, const std::string& name)
+{
+	auto& physNode = m_physNodes[physId];
+	physNode.weight = weight;
+	physNode.name = name;
+	return physNode;
+}
+
+
 std::pair<std::map<unsigned int, std::string>::iterator, bool> StateNetwork::addName(unsigned int id, std::string name)
 {
 	// m_names[id] = name;

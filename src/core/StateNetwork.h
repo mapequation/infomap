@@ -87,6 +87,18 @@ public:
 
 	};
 
+	struct PhysNode
+	{
+		unsigned int physId = 0;
+		double weight = 1.0;
+		std::string name = "";
+		PhysNode() {}
+		PhysNode(unsigned int physId) : physId(physId) {}
+		PhysNode(unsigned int physId, double weight) : physId(physId), weight(weight) {}
+		PhysNode(double weight) : weight(weight) {}
+		PhysNode(unsigned int physId, std::string name) : physId(physId), name(name) {}
+		PhysNode(std::string name) : name(name) {}
+	};
 
 	struct LinkData
 	{
@@ -159,6 +171,7 @@ protected:
 	unsigned int m_numAggregatedLinks = 0;
 	// Attributes
 	std::map<unsigned int, std::string> m_names;
+	std::map<unsigned int, PhysNode> m_physNodes;
 
 	// Infomap
 	// InfoNode m_root;
@@ -182,6 +195,10 @@ public:
 	std::pair<NodeMap::iterator, bool> addNode(unsigned int id, std::string name);
 	std::pair<NodeMap::iterator, bool> addNode(unsigned int id, double weight);
 	std::pair<NodeMap::iterator, bool> addNode(unsigned int id, std::string, double weight);
+	PhysNode& addPhysicalNode(unsigned int physId);
+	PhysNode& addPhysicalNode(unsigned int physId, double weight);
+	PhysNode& addPhysicalNode(unsigned int physId, const std::string& name);
+	PhysNode& addPhysicalNode(unsigned int physId, double weight, const std::string& name);
 	std::pair<std::map<unsigned int, std::string>::iterator, bool> addName(unsigned int id, std::string);
 	bool addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0);
 	
@@ -190,6 +207,7 @@ public:
 	// Getters
 	const NodeMap& nodes() const { return m_nodes; }
 	unsigned int numNodes() const { return m_nodes.size(); }
+	unsigned int numPhysicalNodes() const { return m_physNodes.size(); }
 	const NodeLinkMap& nodeLinkMap() const { return m_nodeLinkMap; }
 	// const LinkMap& links() const { return m_links; }
 	unsigned int numLinks() const { return m_numLinks; }

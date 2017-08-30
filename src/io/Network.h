@@ -147,6 +147,7 @@ protected:
 	 */
 	bool parseBipartiteLink(const std::string& line, unsigned int& featureNode, unsigned int& node, double& weight);
 
+	void printSummary();
 
 };
 
