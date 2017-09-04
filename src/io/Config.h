@@ -59,6 +59,7 @@ struct Config
 		ignoreEdgeWeights(false),
 		completeDanglingMemoryNodes(false),
 		nodeLimit(0),
+		weightThreshold(0),
 		preClusterMultiplex(false),
 	 	clusterDataFile(""),
 	 	noInfomap(false),
@@ -138,6 +139,7 @@ struct Config
 		ignoreEdgeWeights(other.ignoreEdgeWeights),
 		completeDanglingMemoryNodes(other.completeDanglingMemoryNodes),
 		nodeLimit(other.nodeLimit),
+		weightThreshold(other.weightThreshold),
 		preClusterMultiplex(other.preClusterMultiplex),
 	 	clusterDataFile(other.clusterDataFile),
 	 	noInfomap(other.noInfomap),
@@ -219,6 +221,7 @@ struct Config
 		ignoreEdgeWeights = other.ignoreEdgeWeights;
 		completeDanglingMemoryNodes = other.completeDanglingMemoryNodes;
 		nodeLimit = other.nodeLimit;
+		weightThreshold = other.weightThreshold;
 		preClusterMultiplex = other.preClusterMultiplex;
 	 	clusterDataFile = other.clusterDataFile;
 	 	noInfomap = other.noInfomap;
@@ -440,6 +443,7 @@ struct Config
 	bool ignoreEdgeWeights;
 	bool completeDanglingMemoryNodes;
 	unsigned int nodeLimit;
+	double weightThreshold;
 	bool preClusterMultiplex;
 	std::string clusterDataFile;
 	bool noInfomap;

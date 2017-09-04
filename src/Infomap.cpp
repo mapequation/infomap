@@ -116,6 +116,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 
 	api.addOptionArgument(conf.nodeLimit, 'O', "node-limit",
 			"Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", "n", true);
+	
+	api.addOptionArgument(conf.weightThreshold, "weight-threshold",
+			"Limit the number of links to read from the network. Ignore links with less weight than the threshold.", "n", true);
 
 	api.addOptionArgument(conf.preClusterMultiplex, "pre-cluster-multiplex",
 			"Pre-cluster multiplex networks layer by layer.", true);

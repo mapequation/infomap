@@ -98,6 +98,12 @@ void MemNetwork::parseTrigram(std::string filename)
 		double weight;
 		parseStateLink(line, n1, n2, n3, weight);
 
+		if (weight < m_config.weightThreshold) {
+			++m_numLinksIgnoredByWeightThreshold;
+			m_totalLinkWeightIgnored += weight;
+			continue;
+		}
+
 		if (n1 + static_cast<int>(m_indexOffset) == -1)
 		{
 			addIncompleteStateLink(n2, n3, weight);
@@ -227,6 +233,12 @@ std::string MemNetwork::parseStateLinks(std::ifstream& file)
 		unsigned int s1Index, s2Index;
 		double weight;
 		parseLink(line, s1Index, s2Index, weight);
+
+		if (weight < m_config.weightThreshold) {
+			++m_numLinksIgnoredByWeightThreshold;
+			m_totalLinkWeightIgnored += weight;
+			continue;
+		}
 
 		if (s1Index >= stateNodes.size() || s2Index >= stateNodes.size()) {
 			if (s1Index == zeroMinusOne || s2Index == zeroMinusOne)
@@ -843,7 +855,7 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 			Log() << "\n  -> " << m_numSelfLinks << " self-links was ignored. ";
 		if (m_config.nodeLimit > 0)
 			Log() << "\n  -> " << (m_numNodesFound - m_numNodes) << "/" << m_numNodesFound << " last nodes ignored due to limit. ";
-
+		
 		Log() << "\n  -> Resulting size: " << m_numNodes << " nodes";
 		if (!m_nodeWeights.empty() && std::abs(m_sumNodeWeights / m_numNodes - 1.0) > 1e-9)
 			Log() << " (with total weight " << m_sumNodeWeights << ")";
@@ -854,6 +866,8 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 		Log() << "-------------------\n";
 	}
 
+	if (m_numLinksIgnoredByWeightThreshold > 0)
+		Log() << "  -> Ignored " << m_numLinksIgnoredByWeightThreshold << io::toPlural(" link", m_numLinksIgnoredByWeightThreshold) << " with average weight " << m_totalLinkWeightIgnored / m_numLinksIgnoredByWeightThreshold << ".\n";
 	if (m_numStateNodesFound > 0)
 		Log() << "  -> Found " << m_numNodesFound << " physical nodes, " << m_numStateNodesFound << " state nodes and " << m_numStateLinksFound << " links.\n";
 	else {

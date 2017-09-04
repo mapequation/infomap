@@ -627,6 +627,12 @@ bool Network::addLink(unsigned int n1, unsigned int n2, double weight)
 
 	if (m_config.nodeLimit > 0 && (n1 >= m_config.nodeLimit || n2 >= m_config.nodeLimit))
 		return false;
+	
+	if (weight < m_config.weightThreshold) {
+		++m_numLinksIgnoredByWeightThreshold;
+		m_totalLinkWeightIgnored += weight;
+		return false;
+	}
 
 	if (n2 == n1)
 	{
@@ -925,6 +931,8 @@ void Network::printParsingResult(bool onlySummary)
 		Log() << "\n --> Aggregated " << m_numAggregatedLinks << io::toPlural(" link", m_numAggregatedLinks) << " to existing links.";
 	if (m_numSelfLinksFound > 0 && !m_config.includeSelfLinks)
 		Log() << "\n --> Ignored " << m_numSelfLinksFound << io::toPlural(" self-link", m_numSelfLinksFound) << ".";
+	if (m_numLinksIgnoredByWeightThreshold > 0)
+		Log() << "\n --> Ignored " << m_numLinksIgnoredByWeightThreshold << io::toPlural(" link", m_numLinksIgnoredByWeightThreshold) << " with total weight " << m_totalLinkWeightIgnored << ".";
 	unsigned int numNodesIgnored = m_numNodesFound - m_numNodes;
 	if (m_config.nodeLimit > 0)
 		Log() << "\n --> Ignored " << numNodesIgnored << io::toPlural(" node", numNodesIgnored) << " due to specified limit.";
