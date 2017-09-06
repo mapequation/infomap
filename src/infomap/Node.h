@@ -347,6 +347,11 @@ public:
 		return StateNode();
 	}
 
+	virtual unsigned int getPhysicalIndex()
+	{
+		return originalIndex;
+	}
+
 private:
 	void calcChildDegree();
 
@@ -678,6 +683,11 @@ public:
 	virtual StateNode getStateNode()
 	{
 		return stateNode;
+	}
+
+	virtual unsigned int getPhysicalIndex()
+	{
+		return stateNode.physIndex;
 	}
 
 	StateNode stateNode;

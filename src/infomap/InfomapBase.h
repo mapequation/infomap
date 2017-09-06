@@ -112,6 +112,8 @@ public:
 
 	void calcOneLevelCodelength();
 
+	void calcEntropyRate();
+
 	bool consolidateExternalClusterData(bool printResults = false);
 
 	virtual bool preClusterMultiplexNetwork(bool printResults = false);

@@ -77,6 +77,7 @@ void InfomapBase::run()
 		return;
 
 	calcOneLevelCodelength();
+	calcEntropyRate();
 
 	if (m_config.benchmark)
 		Logger::benchmark("calcFlow", root()->codelength, 1, 1, 1);
@@ -201,6 +202,7 @@ void InfomapBase::run(Network& input, HierarchicalNetwork& output)
 		return;
 
 	calcOneLevelCodelength();
+	calcEntropyRate();
 
 	if (m_config.benchmark)
 		Logger::benchmark("calcFlow", root()->codelength, 1, 1, 1);
@@ -290,6 +292,54 @@ void InfomapBase::calcOneLevelCodelength()
 	Log() << "Calculating one-level codelength... " << std::flush;
 	oneLevelCodelength = indexCodelength = root()->codelength = calcCodelengthOnRootOfLeafNodes(*root());
 	Log() << "done!\n  -> One-level codelength: " << io::toPrecision(indexCodelength) << std::endl;
+}
+
+void InfomapBase::calcEntropyRate()
+{
+	Log() << "Calculating entropy rate... " << std::flush;
+	double entropyRate = 0.0;
+	double physEntropyRate = 0.0;
+
+	for (TreeData::leafIterator it(m_treeData.begin_leaf()), itEnd(m_treeData.end_leaf());
+		it != itEnd; ++it)
+	{
+		NodeBase& node = **it;
+		double sumOutFlow = 0.0;
+		double entropy = 0.0;
+		double physEntropy = 0.0;
+		std::map<unsigned int, double> physOutFlow;
+		for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), edgeEnd(node.end_outEdge());
+				edgeIt != edgeEnd; ++edgeIt)
+		{
+			EdgeType& edge = **edgeIt;
+			sumOutFlow += edge.data.flow;
+			physOutFlow[edge.target.getPhysicalIndex()] += edge.data.flow;
+		}
+		for (NodeBase::edge_iterator edgeIt(node.begin_outEdge()), edgeEnd(node.end_outEdge());
+				edgeIt != edgeEnd; ++edgeIt)
+		{
+			EdgeType& edge = **edgeIt;
+			entropy += -infomath::plogp(edge.data.flow / sumOutFlow);
+		}
+		if (m_config.isMemoryNetwork()) {
+			for (std::map<unsigned int, double>::iterator physIt(physOutFlow.begin()); physIt != physOutFlow.end(); ++physIt)
+			{
+				double physFlow = physIt->second;
+				physEntropy += -infomath::plogp(physFlow / sumOutFlow);
+			}
+			physEntropyRate += getNodeData(node).flow * physEntropy;
+		}
+		entropyRate += getNodeData(node).flow * entropy;
+	}
+
+	Log() << "done!\n";
+	if (m_config.isMemoryNetwork()) {
+		Log() << "  -> State entropy rate:    " << io::toPrecision(entropyRate) << std::endl;
+		Log() << "  -> Physical entropy rate: " << io::toPrecision(physEntropyRate) << std::endl;
+	}
+	else {
+		Log() << "  -> Entropy rate: " << io::toPrecision(entropyRate) << std::endl;
+	}
 }
 
 void InfomapBase::runPartition()
