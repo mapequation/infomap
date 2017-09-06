@@ -268,6 +268,7 @@ void InfomapBase::run(Network& network)
 		Log() << "Summary after " << numTrials << (numTrials > 1 ? " trials\n" : " trial\n");
 		Log() << "================================================\n";
 		if (codelengths.size() > 1) {
+			Log() << std::fixed << std::setprecision(9);
 			double averageCodelength = 0.0;
 			double minCodelength = codelengths[0];
 			double maxCodelength = codelengths[0];
