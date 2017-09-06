@@ -560,8 +560,11 @@ void InfomapBase::hierarchicalPartition()
 		return;
 	}
 
-	if (this->fastHierarchicalSolution >= 2)
+	if (this->fastHierarchicalSolution >= 2) {
+		// Calculate individual module codelengths and store on the modules
+		calcCodelengthOnTree(false);
 		return;
+	}
 
 	if (this->fastHierarchicalSolution == 0) {
 		removeSubModules(true);
