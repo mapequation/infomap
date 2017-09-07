@@ -558,6 +558,8 @@ void MemNetwork::addStateNode(StateNode& stateNode)
 
 	m_maxNodeIndex = std::max(m_maxNodeIndex, stateNode.physIndex);
 	m_minNodeIndex = std::min(m_minNodeIndex, stateNode.physIndex);
+
+	m_physNodes.insert(stateNode.physIndex);
 }
 
 bool MemNetwork::addStateLink(unsigned int n1PriorState, unsigned int n1, unsigned int n2PriorState, unsigned int n2, double weight, double firstStateNodeWeight, double secondStateNodeWeight)
@@ -869,7 +871,7 @@ void MemNetwork::printParsingResult(bool includeFirstOrderData)
 	if (m_numLinksIgnoredByWeightThreshold > 0)
 		Log() << "  -> Ignored " << m_numLinksIgnoredByWeightThreshold << io::toPlural(" link", m_numLinksIgnoredByWeightThreshold) << " with average weight " << m_totalLinkWeightIgnored / m_numLinksIgnoredByWeightThreshold << ".\n";
 	if (m_numStateNodesFound > 0)
-		Log() << "  -> Found " << m_numNodesFound << " physical nodes, " << m_numStateNodesFound << " state nodes and " << m_numStateLinksFound << " links.\n";
+		Log() << "  -> Found " << numPhysicalNodes() << " physical nodes, " << m_numStateNodesFound << " state nodes and " << m_numStateLinksFound << " links.\n";
 	else {
 		Log() << "  -> Found " << m_numNodesFound << " nodes and " << m_numStateLinksFound << " memory links.\n";
 		Log() << "  -> Generated " << m_stateNodes.size() << " memory nodes and " << m_numStateLinks << " memory links.\n";

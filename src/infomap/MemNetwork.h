@@ -33,6 +33,7 @@
 #include <map>
 #include <vector>
 #include <utility>
+#include <set>
 
 #include "../io/Config.h"
 #include "../utils/types.h"
@@ -190,6 +191,7 @@ public:
 	virtual void printParsingResult(bool includeFirstOrderData = false);
 
 	unsigned int numStateNodes() const { return m_stateNodes.size(); }
+	unsigned int numPhysicalNodes() const { return m_physNodes.size(); }
 	const StateNodeMap& stateNodeMap() const { return m_stateNodeMap; }
 	const std::vector<double>& stateNodeWeights() const { return m_stateNodeWeights; }
 	double totalStateNodeWeight() const { return m_totStateNodeWeight; }
@@ -310,6 +312,7 @@ protected:
 	std::vector<double> m_stateNodeWeights; // out weights on memory nodes
 	double m_totStateNodeWeight;
 	LinkMap m_incompleteStateLinks;
+	std::set<unsigned int> m_physNodes;
 
 	unsigned int m_numStateLinksFound;
 	unsigned int m_numStateLinks;
