@@ -447,7 +447,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			continue;
 
 		// Don't move out from previous merge on first loop
-		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop())
+		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop() && m_config.tuneIterationLimit != 1)
 			continue;
 
 		// Don't decrease the number of modules if already equal the preferred number
@@ -669,7 +669,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 		if (!current.dirty)
 			continue;
 
-		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop())
+		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop() && m_config.tuneIterationLimit != 1)
 			continue;
 
 		// If no links connecting this node with other nodes, it won't move into others,
@@ -867,7 +867,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoB
 			continue;
 
 		// If other nodes have moved here, don't move away on first loop
-		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop())
+		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop() && m_config.tuneIterationLimit != 1)
 			continue;
 
 		// Don't decrease the number of modules if already equal the preferred number
@@ -1133,7 +1133,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::tryMoveEachNodeIntoS
 		if (!current.dirty) //TODO: Only skip stable nodes until converged, then start over as a fine tune?
 			continue;
 
-		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop())
+		if (Super::m_moduleMembers[current.index] > 1 && Super::isFirstLoop() && m_config.tuneIterationLimit != 1)
 			continue;
 
 		unsigned int strongestConnectedModule = current.index;
