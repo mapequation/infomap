@@ -18,6 +18,7 @@
 /examples/cpp/Infomap-igraph-interface-library/build
 /examples/cpp/Infomap-igraph-interface-library/include
 /examples/cpp/Infomap-igraph-interface-library/lib
+/examples/cpp/minimal/example.dSym
 /examples/python/infomap
 /examples/R/infomap
 /examples/R/\.Rhistory
