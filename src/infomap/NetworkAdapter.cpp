@@ -97,6 +97,11 @@ void NetworkAdapter::readClu(std::string filename)
 	std::map<unsigned int, unsigned int> clusterIdToNumber;
 	unsigned int clusterNumber = 1; // Start from 1 and use default int() (0) as indicating not assigned
 	for (std::map<unsigned int, unsigned int>::const_iterator it(clusters.begin()); it != clusters.end(); ++it) {
+		unsigned int nodeIndex = it->first;
+		if (nodeIndex >= m_numNodes) {
+			// Skip re-map cluster id:s for non-existent nodes
+			continue;
+		}
 		unsigned int clusterId = it->second;
 		unsigned int& n = clusterIdToNumber[clusterId];
 		if (n == 0) {
