@@ -27,10 +27,10 @@ multi-example: multi-example.cpp $(INFOMAP_LIB) Makefile
 	$(CXX) $(CXXFLAGS) -DNS_INFOMAP $< -o $@ -I$(INFOMAP_DIR)/include -L$(INFOMAP_DIR)/lib -lInfomap
 
 $(INFOMAP_LIB):
-	cd $(INFOMAP_DIR) && $(MAKE) lib
+	$(MAKE) -C $(INFOMAP_DIR) lib
 
 clean:
 	$(RM) example
 
 distclean:
-	cd $(INFOMAP_DIR) && $(MAKE) clean
+	$(MAKE) -C $(INFOMAP_DIR) clean

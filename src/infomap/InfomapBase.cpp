@@ -28,6 +28,7 @@
 #include "InfomapBase.h"
 #include "../utils/Logger.h"
 #include <algorithm>
+#include <numeric>
 #include "../utils/FileURI.h"
 #include "../io/SafeFile.h"
 #include "../io/TreeDataWriter.h"
@@ -35,6 +36,7 @@
 #include "../io/ClusterReader.h"
 #include <limits>
 #include <sstream>
+#include <ios>
 #include <iomanip>
 #include "../utils/infomath.h"
 #include "../io/convert.h"
@@ -76,19 +78,49 @@ void InfomapBase::run()
 	if (!initNetwork())
 		return;
 
+	run(m_ioNetwork);
+}
+
+void InfomapBase::run(Network& input, HierarchicalNetwork& output)
+{
+
+#ifdef _OPENMP
+#pragma omp parallel
+	#pragma omp master
+	{
+		Log() << "(OpenMP " << _OPENMP << " detected, trying to parallelize the recursive part on " <<
+				omp_get_num_threads() << " threads...)\n" << std::flush;
+	}
+#endif
+
+	m_externalOutput = true;
+
+	if (!initNetwork(input))
+		return;
+	
+	run(output);
+}
+
+void InfomapBase::run(HierarchicalNetwork& output)
+{
 	calcOneLevelCodelength();
 	calcEntropyRate();
 
 	if (m_config.benchmark)
 		Logger::benchmark("calcFlow", root()->codelength, 1, 1, 1);
 
-	std::vector<double> codelengths(m_config.numTrials);
+	unsigned int numTrials = m_config.numTrials;
+	m_iterationStats.resize(numTrials);
+	// std::vector<double> codelengths(numTrials);
+	// std::vector<double> modulePerplexity(numTrials);
+	// std::vector<double> moduleAssignments(numTrials);
+	// std::vector<unsigned int> topModules(numTrials);
 	std::ostringstream bestSolutionStatistics;
 	unsigned int bestNumLevels = 0;
 
-	for (unsigned int iTrial = 0; iTrial < m_config.numTrials; ++iTrial)
+	for (unsigned int iTrial = 0; iTrial < numTrials; ++iTrial)
 	{
-		Log() << "\nAttempt " << (iTrial+1) << "/" << m_config.numTrials <<	" at " << Date();
+		Log() << "\nAttempt " << (iTrial+1) << "/" << numTrials <<	" at " << Date();
 		Log() << std::endl;
 		m_trialIndex = iTrial;
 
@@ -114,163 +146,166 @@ void InfomapBase::run()
 		{
 			Log() << "Warning: No codelength improvement in modular solution over one-level solution!\n";
 		}
-
-		codelengths[iTrial] = hierarchicalCodelength;
-
-		if (hierarchicalCodelength < bestHierarchicalCodelength)
+		
+		double perplexity = 0.0;
+		for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
+		moduleIt != endIt; ++moduleIt)
 		{
-			bestHierarchicalCodelength = hierarchicalCodelength;
-			bestSolutionStatistics.str("");
-			printNetworkData();
-			bestNumLevels = printPerLevelCodelength(bestSolutionStatistics);
+			perplexity += -infomath::plogp(getNodeData(*moduleIt).flow);
 		}
-	}
-
-	Log() << "\n\n";
-	if (m_config.numTrials > 1)
-	{
-		double averageCodelength = 0.0;
-		double minCodelength = codelengths[0];
-		double maxCodelength = 0.0;
-		Log() << std::fixed << std::setprecision(9);
-		Log() << "Codelengths for " << m_config.numTrials << " trials: [";
-		for (std::vector<double>::const_iterator it(codelengths.begin()); it != codelengths.end(); ++it)
-		{
-			double mdl = *it;
-			Log() << mdl << ", ";
-			averageCodelength += mdl;
-			minCodelength = std::min(minCodelength, mdl);
-			maxCodelength = std::max(maxCodelength, mdl);
+		perplexity = std::pow(2, perplexity);
+		
+		// physicalId -> (moduleId -> flow)
+		std::map<unsigned int, std::map<unsigned int, double> > modulesPerPhysicalNode;
+		for (InfomapIterator it(root(), 1); !it.isEnd(); ++it) {
+			if (it->isLeaf()) {
+				// for (unsigned int i = 0; i < it.path().size(); ++i) {
+				// 	Log() << it.path()[i] << ":";
+				// }
+				// Log() << " " << it.moduleIndex() << " " << getNodeData(*it).flow << " (" << it->getPhysicalIndex() << ")\n";
+				modulesPerPhysicalNode[it->getPhysicalIndex()][it.moduleIndex()] += getNodeData(*it).flow;
+			}
 		}
-		averageCodelength /= m_config.numTrials;
-		Log() << "\b\b]\n";
-		Log() << "[min, average, max] codelength: [" <<
-				minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n\n";
-		Log() << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
-	}
-
-	if (bestIntermediateStatistics.str() != "")
-	{
-		Log() << "Best intermediate solution:" << std::endl;
-		Log() << bestIntermediateStatistics.str() << std::endl << std::endl;
-	}
-
-	Log() << "Best end modular solution in " << bestNumLevels << " levels";
-	if (bestHierarchicalCodelength > oneLevelCodelength)
-		Log() << " (warning: worse than one-level solution)";
-	Log() << ":" << std::endl;
-	Log() << bestSolutionStatistics.str() << std::endl;
-
-
-	//TODO: Test recursive search only one step further each time to be able to show progress
-	//	if (m_subLevel == 0)
-	//	{
-	//		Log() << "\nTest:" << std::endl;
-	////		for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-	////				moduleIt != endIt; ++moduleIt)
-	////		{
-	////			moduleIt->getSubStructure().subInfomap.reset(0);
-	////		}
-	////		subCodelength = generateSubInfomapInstancesToLevel(3, true);
-	//
-	//		double testSubCodelength = findHierarchicalSubstructures(7, true);
-	//		double testHierCodelength = indexCodelength + testSubCodelength;
-	//
-	//		Log() << "done! Codelength: " << indexCodelength << " + " << testSubCodelength << " = " <<
-	//				testHierCodelength << std::endl;
-	//
-	//		printPerLevelCodelength();
-	//	}
-
-}
-
-void InfomapBase::run(Network& input, HierarchicalNetwork& output)
-{
-
-#ifdef _OPENMP
-#pragma omp parallel
-	#pragma omp master
-	{
-		Log() << "(OpenMP " << _OPENMP << " detected, trying to parallelize the recursive part on " <<
-				omp_get_num_threads() << " threads...)\n" << std::flush;
-	}
-#endif
-
-	m_externalOutput = true;
-
-	if (!initNetwork(input))
-		return;
-
-	calcOneLevelCodelength();
-	calcEntropyRate();
-
-	if (m_config.benchmark)
-		Logger::benchmark("calcFlow", root()->codelength, 1, 1, 1);
-
-	std::vector<double> codelengths(m_config.numTrials);
-	std::ostringstream bestSolutionStatistics;
-	unsigned int bestNumLevels = 0;
-
-	for (unsigned int iTrial = 0; iTrial < m_config.numTrials; ++iTrial)
-	{
-		Log() << "\nAttempt " << (iTrial+1) << "/" << m_config.numTrials <<	" at " << Date();
-		Log() << std::endl;
-
-		// First clear existing modular structure
-		while ((*m_treeData.begin_leaf())->parent != root())
-		{
-			root()->replaceChildrenWithGrandChildren();
+		double overlap = 0.0;
+		for (std::map<unsigned int, std::map<unsigned int, double> >::iterator it(modulesPerPhysicalNode.begin()); it != modulesPerPhysicalNode.end(); ++it) {
+			std::map<unsigned int, double>& moduleFlow = it->second;
+			double flow = std::accumulate(moduleFlow.begin(), moduleFlow.end(), 0.0, AddMapValues());
+			double overlapPerplexityPerNode = 0.0;
+			for (std::map<unsigned int, double>::iterator itModuleFlow(moduleFlow.begin()); itModuleFlow != moduleFlow.end(); ++itModuleFlow) {
+				overlapPerplexityPerNode += -infomath::plogp(itModuleFlow->second / flow);
+			}
+			overlapPerplexityPerNode = std::pow(2, overlapPerplexityPerNode);
+			// Log() << it->first << ": " << flow << " (" << moduleFlow.size() << ")\n";
+			// overlap += moduleFlow.size();
+			overlap += flow * overlapPerplexityPerNode;
 		}
+		// overlap /= modulesPerPhysicalNode.size();
+		// Log() << "\nnumPhysicalNodes: " << modulesPerPhysicalNode.size() << ", overlap: " << overlap << "\n";
 
-		hierarchicalCodelength = codelength = moduleCodelength = oneLevelCodelength;
-		indexCodelength = 0.0;
+		m_iterationStats[iTrial].iterationIndex = iTrial;
+		m_iterationStats[iTrial].codelength = hierarchicalCodelength;
+		m_iterationStats[iTrial].numTopModules = numTopModules();
+		m_iterationStats[iTrial].perplexity = perplexity;
+		m_iterationStats[iTrial].overlap = overlap;
 
-		if (m_config.preClusterMultiplex && m_config.isMultiplexNetwork())
-			preClusterMultiplexNetwork();
-
-		if (m_config.clusterDataFile != "")
-			consolidateExternalClusterData();
-
-		if (!m_config.noInfomap)
-			runPartition();
-
-		if (oneLevelCodelength < hierarchicalCodelength - m_config.minimumCodelengthImprovement)
-		{
-			Log() << "Warning: No codelength improvement in modular solution over one-level solution!\n";
-		}
-
-		codelengths[iTrial] = hierarchicalCodelength;
-
+		
 		if (hierarchicalCodelength < bestHierarchicalCodelength)
 		{
 			bestHierarchicalCodelength = hierarchicalCodelength;
 			bestSolutionStatistics.str("");
 			printNetworkData(output);
 			bestNumLevels = printPerLevelCodelength(bestSolutionStatistics);
+			m_iterationStats[iTrial].isMinimum = true;
 		}
 	}
 
 	Log() << "\n\n";
-	if (m_config.numTrials > 1)
+
+	
+	if (numTrials > 1)
 	{
-		double averageCodelength = 0.0;
-		double minCodelength = codelengths[0];
-		double maxCodelength = 0.0;
 		Log() << std::fixed << std::setprecision(9);
-		Log() << "Codelengths for " << m_config.numTrials << " trials: [";
-		for (std::vector<double>::const_iterator it(codelengths.begin()); it != codelengths.end(); ++it)
-		{
-			double mdl = *it;
-			Log() << mdl << ", ";
-			averageCodelength += mdl;
-			minCodelength = std::min(minCodelength, mdl);
-			maxCodelength = std::max(maxCodelength, mdl);
+		Log() << "Finished " << numTrials << " trials with:\n";
+		Log() << std::setw(12) << "Iteration";
+		Log() << " ";
+		Log() << std::setw(12) << "Modules";
+		Log() << " ";
+		Log() << std::setw(12) << "Perplexity";
+		Log() << " ";
+		Log() << std::setw(12) << "Overlap";
+		Log() << " ";
+		Log() << std::setw(12) << "Codelength";
+		Log() << " ";
+		Log() << std::setw(12) << "Minimum";
+		Log() << "\n";
+		for (unsigned int i = 0; i < numTrials; ++i) {
+			PerIterationStats& s = m_iterationStats[i];
+			Log() << std::setw(12) << s.iterationIndex + 1;
+			Log() << " ";
+			Log() << std::setw(12) << s.numTopModules;
+			Log() << " ";
+			Log() << std::setw(12) << s.perplexity;
+			Log() << " ";
+			Log() << std::setw(12) << s.overlap;
+			Log() << " ";
+			Log() << std::setw(12) << s.codelength;
+			Log() << " ";
+			Log() << std::setw(12) << (s.isMinimum ? '*' : ' ');
+			Log() << "\n";
 		}
-		averageCodelength /= m_config.numTrials;
-		Log() << "\b\b]\n";
-		Log() << "[min, average, max] codelength: [" <<
-				minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n\n";
-		Log() << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
+		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortNumTopModules());
+		unsigned int iLast = numTrials - 1;
+		unsigned int numTopModulesMin = m_iterationStats[0].numTopModules;
+		unsigned int numTopModulesMax = m_iterationStats[iLast].numTopModules;
+		unsigned int numTopModulesMedian = m_iterationStats[numTrials / 2].numTopModules;
+		double numTopModulesAverage = std::accumulate(m_iterationStats.begin(),
+			m_iterationStats.end(), 0.0, IterationStatsAddNumTopModules()) / numTrials;
+		
+		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortPerplexity());
+		double perplexityMin = m_iterationStats[0].perplexity;
+		double perplexityMax = m_iterationStats[iLast].perplexity;
+		double perplexityMedian = m_iterationStats[numTrials / 2].perplexity;
+		double perplexityAverage = std::accumulate(m_iterationStats.begin(),
+			m_iterationStats.end(), 0.0, IterationStatsAddPerplexity()) / numTrials;
+		
+		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortOverlap());
+		double overlapMin = m_iterationStats[0].overlap;
+		double overlapMax = m_iterationStats[iLast].overlap;
+		double overlapMedian = m_iterationStats[numTrials / 2].overlap;
+		double overlapAverage = std::accumulate(m_iterationStats.begin(),
+			m_iterationStats.end(), 0.0, IterationStatsAddOverlap()) / numTrials;
+		
+		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortCodelength());
+		double codelengthMin = m_iterationStats[0].codelength;
+		double codelengthMax = m_iterationStats[iLast].codelength;
+		double codelengthMedian = m_iterationStats[numTrials / 2].codelength;
+		double codelengthAverage = std::accumulate(m_iterationStats.begin(),
+		m_iterationStats.end(), 0.0, IterationStatsAddCodelength()) / numTrials;
+		
+
+		Log() << std::setfill('-') << std::setw(12*5 + 5) << "\n" << std::setfill(' ');
+		Log() << std::left << std::setw(12) << "Min:" << std::right;
+		Log() << " ";
+		Log() << std::setw(12) << numTopModulesMin;
+		Log() << " ";
+		Log() << std::setw(12) << perplexityMin;
+		Log() << " ";
+		Log() << std::setw(12) << overlapMin;
+		Log() << " ";
+		Log() << std::setw(12) << codelengthMin;
+		Log() << "\n";
+		Log() << std::left << std::setw(12) << "Median:" << std::right;
+		Log() << " ";
+		Log() << std::setw(12) << numTopModulesMedian;
+		Log() << " ";
+		Log() << std::setw(12) << perplexityMedian;
+		Log() << " ";
+		Log() << std::setw(12) << overlapMedian;
+		Log() << " ";
+		Log() << std::setw(12) << codelengthMedian;
+		Log() << "\n";
+		Log() << std::left << std::setw(12) << "Average:" << std::right;
+		Log() << " ";
+		Log() << std::setw(12) << std::defaultfloat << numTopModulesAverage << std::fixed;
+		Log() << " ";
+		Log() << std::setw(12) << perplexityAverage;
+		Log() << " ";
+		Log() << std::setw(12) << overlapAverage;
+		Log() << " ";
+		Log() << std::setw(12) << codelengthAverage;
+		Log() << "\n";
+		Log() << std::left << std::setw(12) << "Max:" << std::right;
+		Log() << " ";
+		Log() << std::setw(12) << numTopModulesMax;
+		Log() << " ";
+		Log() << std::setw(12) << perplexityMax;
+		Log() << " ";
+		Log() << std::setw(12) << overlapMax;
+		Log() << " ";
+		Log() << std::setw(12) << codelengthMax;
+		Log() << "\n";
+		
+		Log() << "\n\n";
 	}
 
 	if (bestIntermediateStatistics.str() != "")
@@ -1698,7 +1733,7 @@ void InfomapBase::initMemoryNetwork()
 void InfomapBase::initMemoryNetwork(MemNetwork& network)
 {
 	if (!network.isFinalized()) {
-		Log() << "Finalizing network...\n";
+		Log() << "Finalizing memory network...\n";
 		network.finalizeAndCheckNetwork();
 	}
 
@@ -1837,6 +1872,7 @@ void InfomapBase::initMemoryNetwork(MemNetwork& network)
 void InfomapBase::initSubNetwork(NodeBase& parent, bool recalculateFlow)
 {
 	DEBUG_OUT("InfomapBase::initSubNetwork()..." << std::endl);
+	root()->owner = &parent;
 	cloneFlowData(parent, *root());
 	generateNetworkFromChildren(parent); // Updates the exitNetworkFlow for the nodes
 }
@@ -1844,6 +1880,7 @@ void InfomapBase::initSubNetwork(NodeBase& parent, bool recalculateFlow)
 void InfomapBase::initSuperNetwork(NodeBase& parent)
 {
 	DEBUG_OUT("InfomapBase::initSuperNetwork()..." << std::endl);
+	root()->owner = &parent;
 	generateNetworkFromChildren(parent);
 	transformNodeFlowToEnterFlow(root());
 }

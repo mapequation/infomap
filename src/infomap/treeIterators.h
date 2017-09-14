@@ -30,6 +30,7 @@
 #include <cstddef>
 #include <iterator>
 #include "../utils/Logger.h"
+#include <deque>
 
 #ifdef NS_INFOMAP
 namespace infomap
@@ -72,6 +73,9 @@ struct node_iterator_base
 	}
 
 	pointer base() const
+	{ return m_current; }
+
+	pointer current() const
 	{ return m_current; }
 
 	reference
@@ -523,8 +527,183 @@ public:
 		--(*this);
 		return copy;
 	}
-
 };
+
+
+
+template <typename NodePointerType>
+class InfomapIteratorBase : public node_iterator_base<NodePointerType>
+{
+	typedef node_iterator_base<NodePointerType>		Base;
+protected:
+	NodePointerType m_root;
+	// NodePointerType m_current;
+	using Base::m_current;
+	int m_moduleIndexLevel;
+	unsigned int m_moduleIndex;
+	std::deque<unsigned int> m_path; // The child index path to current node
+	unsigned int m_depth;
+
+public:
+
+	InfomapIteratorBase()
+	:	Base(),
+		m_root(0),
+		m_moduleIndexLevel(-1),
+		m_moduleIndex(0),
+		m_depth(0) {}
+
+	explicit
+	InfomapIteratorBase(NodePointerType nodePointer, int moduleIndexLevel = -1)
+	:	Base(nodePointer),
+		m_root(nodePointer),
+		m_moduleIndexLevel(moduleIndexLevel),
+		m_moduleIndex(0),
+		m_depth(0)
+	{}
+
+	InfomapIteratorBase(const InfomapIteratorBase& other)
+	:	Base(other),
+		m_root(other.m_root),
+		m_moduleIndexLevel(other.m_moduleIndexLevel),
+		m_moduleIndex(other.m_moduleIndex),
+		m_path(other.m_path),
+		m_depth(other.m_depth)
+	{}
+
+	virtual ~InfomapIteratorBase() {}
+
+	InfomapIteratorBase& operator= (const InfomapIteratorBase& other)
+	{
+		Base::operator=(other);
+		m_root = other.m_root;
+		m_moduleIndexLevel = other.m_moduleIndexLevel;
+		m_moduleIndex = other.m_moduleIndex;
+		m_path = other.m_path;
+		m_depth = other.m_depth;
+		return *this;
+	}
+
+	// NodePointerType current() const
+	// {
+	// 	return m_current;
+	// }
+
+	// NodePointerType& operator*() const
+	// {
+	// 	return *m_current;
+	// }
+
+	// NodePointerType operator->() const
+	// {
+	// 	return m_current;
+	// }
+
+	InfomapIteratorBase& operator++();
+
+	InfomapIteratorBase operator++(int)
+	{
+		InfomapIteratorBase copy(*this);
+		++(*this);
+		return copy;
+	}
+
+	InfomapIteratorBase& stepForward()
+	{
+		++(*this);
+		return *this;
+	}
+
+	const std::deque<unsigned int>& path() const
+	{
+		return m_path;
+	}
+
+	unsigned int moduleIndex() const
+	{
+		return m_moduleIndex;
+	}
+
+	unsigned int depth() const
+	{
+		return m_depth;
+	}
+
+	bool isEnd() const
+	{
+		return m_current == nullptr;
+	}
+};
+
+template<typename NodePointerType>
+InfomapIteratorBase<NodePointerType>& InfomapIteratorBase<NodePointerType>::operator++()
+{
+	NodePointerType curr = m_current;
+	NodePointerType infomapRoot = curr->getSubInfomapRoot();
+	if (infomapRoot != 0)
+	{
+		curr = infomapRoot;
+	}
+
+	if(curr->firstChild != 0)
+	{
+		curr = curr->firstChild;
+		++m_depth;
+		m_path.push_back(0);
+	}
+	else
+	{
+		// Current node is a leaf
+		// Presupposes that the next pointer can't reach out from the current parent.
+		tryNext:
+		while(curr->next == 0)
+		{
+			if (curr->parent != 0)
+			{
+				curr = curr->parent;
+				--m_depth;
+				m_path.pop_back();
+				if(curr == m_root) // Check if back to beginning
+				{
+					m_current = 0;
+					return *this;
+				}
+				if (m_moduleIndexLevel < 0) {
+					 if (curr->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
+						 ++m_moduleIndex;
+				}
+				else if (static_cast<unsigned int>(m_moduleIndexLevel) == m_depth)
+					++m_moduleIndex;
+			}
+			else
+			{
+				NodePointerType infomapOwner = curr->owner;
+				if (infomapOwner != 0)
+				{
+					curr = infomapOwner;
+					if(curr == m_root) // Check if back to beginning
+					{
+						m_current = 0;
+						return *this;
+					}
+					goto tryNext;
+				}
+				else // null also if no children in first place
+				{
+					m_current = 0;
+					return *this;
+				}
+			}
+		}
+		curr = curr->next;
+		++m_path.back();
+	}
+	m_current = curr;
+	return *this;
+}
+
+class NodeBase;
+typedef InfomapIteratorBase<NodeBase*> InfomapIterator;
 
 #ifdef NS_INFOMAP
 }

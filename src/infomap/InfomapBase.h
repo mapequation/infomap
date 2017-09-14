@@ -44,6 +44,7 @@ namespace infomap
 
 struct DepthStat;
 struct PerLevelStat;
+struct PerIterationStats;
 class PartitionQueue;
 
 class InfomapBase
@@ -106,6 +107,8 @@ public:
 
 	void run(Network& input, HierarchicalNetwork& output);
 
+	void run(HierarchicalNetwork& output);
+
 	bool initNetwork();
 
 	bool initNetwork(Network& input);
@@ -120,6 +123,7 @@ public:
 
 	// Cannot be protected as they are called from inherited class through pointer to this class.
 	const NodeBase* root() const { return m_treeData.root(); }
+	NodeBase* root() { return m_treeData.root(); }
 
 	void sortTree();
 
@@ -247,8 +251,6 @@ protected:
 
 	virtual void sortTree(NodeBase& parent) = 0;
 
-	NodeBase* root() { return m_treeData.root(); }
-
 	unsigned int numNonTrivialTopModules() { return m_numNonTrivialTopModules; }
 	unsigned int numTopModules() { return m_treeData.root()->childDegree(); }
 
@@ -348,6 +350,7 @@ protected:
 	unsigned int m_initialMaxNumberOfModularLevels;
 	HierarchicalNetwork m_ioNetwork;
 	bool m_externalOutput; // Write to external HierarchicalNetwork
+	std::vector<PerIterationStats> m_iterationStats;
 
 };
 
@@ -432,6 +435,95 @@ struct PerLevelStat
 	unsigned int numLeafNodes;
 	double indexLength;
 	double leafLength;
+};
+
+struct PerIterationStats
+{
+	PerIterationStats()
+	:	iterationIndex(0),
+		numTopModules(0),
+		perplexity(0.0),
+		overlap(0.0),
+		codelength(0.0),
+		isMinimum(false) {}
+	unsigned int iterationIndex;
+	unsigned int numTopModules;
+	double perplexity; // Perplexity of top module flow distribution
+	double overlap; // Average number of modules per physical node
+	double codelength;
+	bool isMinimum;
+};
+
+struct IterationStatsSortIterationIndex {
+	bool operator()(const PerIterationStats& a, const PerIterationStats& b)
+	{   
+		return a.iterationIndex < b.iterationIndex;
+	}
+};
+
+struct IterationStatsSortNumTopModules {
+	bool operator()(const PerIterationStats& a, const PerIterationStats& b)
+	{   
+		return a.numTopModules < b.numTopModules;
+	}
+};
+
+struct IterationStatsSortPerplexity {
+	bool operator()(const PerIterationStats& a, const PerIterationStats& b)
+	{   
+		return a.perplexity < b.perplexity;
+	}
+};
+
+struct IterationStatsSortOverlap {
+	bool operator()(const PerIterationStats& a, const PerIterationStats& b)
+	{   
+		return a.overlap < b.overlap;
+	}
+};
+
+struct IterationStatsSortCodelength {
+	bool operator()(const PerIterationStats& a, const PerIterationStats& b)
+	{   
+		return a.codelength < b.codelength;
+	}
+};
+
+struct IterationStatsAddNumTopModules {
+	unsigned int operator()(double result, const PerIterationStats& s)
+	{   
+		return result + s.numTopModules;
+	}
+};
+
+struct IterationStatsAddPerplexity {
+	double operator()(double result, const PerIterationStats& s)
+	{   
+		return result + s.perplexity;
+	}
+};
+
+struct IterationStatsAddOverlap {
+	double operator()(double result, const PerIterationStats& s)
+	{   
+		return result + s.overlap;
+	}
+};
+
+struct IterationStatsAddCodelength {
+	double operator()(double result, const PerIterationStats& s)
+	{   
+		return result + s.codelength;
+	}
+};
+
+struct AddMapValues
+{
+  template<class Value, class Pair> 
+  Value operator()(Value value, const Pair& pair) const
+  {
+    return value + pair.second;
+  }
 };
 
 #ifdef NS_INFOMAP

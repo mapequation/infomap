@@ -51,6 +51,7 @@ NodeBase::NodeBase()
 	next(0),
 	firstChild(0),
 	lastChild(0),
+	owner(0),
 	codelength(0.0),
 	dirty(false),
 	m_subStructure(),
@@ -71,6 +72,7 @@ NodeBase::NodeBase(std::string name)
 	next(0),
 	firstChild(0),
 	lastChild(0),
+	owner(0),
 	codelength(0.0),
 	dirty(false),
 	m_subStructure(),
@@ -91,6 +93,7 @@ NodeBase::NodeBase(const NodeBase& other)
 	next(0),
 	firstChild(0),
 	lastChild(0),
+	owner(0),
 	codelength(0.0),
 	dirty(false),
 	m_subStructure(),
@@ -161,6 +164,18 @@ void NodeBase::calcChildDegree()
 				childIt != endIt; ++childIt, ++m_childDegree);
 	}
 }
+
+
+const NodeBase* NodeBase::getSubInfomapRoot() const
+{
+	return getSubInfomap() ? getSubInfomap()->root() : 0;
+}
+
+NodeBase* NodeBase::getSubInfomapRoot()
+{
+	return getSubInfomap() ? getSubInfomap()->root() : 0;
+}
+
 
 #ifdef NS_INFOMAP
 }

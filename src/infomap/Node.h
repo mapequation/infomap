@@ -247,6 +247,10 @@ public:
 	const SubStructure& getSubStructure() const
 	{ return m_subStructure; }
 
+	const NodeBase* getSubInfomapRoot() const;
+
+	NodeBase* getSubInfomapRoot();
+
 	// ---------------------------- Order ----------------------------
 	bool isFirst() const
 	{ return !parent || parent->firstChild == this; }
@@ -366,6 +370,7 @@ public:
 	NodeBase* next; // sibling
 	NodeBase* firstChild;
 	NodeBase* lastChild;
+	NodeBase* owner; // Infomap owner (if this is an Infomap root)
 	double codelength; //TODO: Better design for hierarchical stuff!?
 	bool dirty;
 
