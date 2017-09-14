@@ -311,8 +311,8 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 	}
 
 	// Log() << "\nOptimize, initial codelength: " << m_objective.codelength;
-
-	while (coreLoopCount != loopLimit)
+	
+	do
 	{
 		++coreLoopCount;
 		unsigned int numNodesMoved = this->innerParallelization ?
@@ -327,6 +327,7 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 		++numEffectiveLoops;
 		oldCodelength = m_objective.codelength;
 	}
+	while (coreLoopCount != loopLimit);
 
 	return numEffectiveLoops;
 }

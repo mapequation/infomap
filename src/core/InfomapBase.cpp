@@ -629,15 +629,17 @@ void InfomapBase::partition()
 			}
 		}
 		newCodelength = getCodelength();
+		compression = (oldCodelength - newCodelength)/oldCodelength;
 		bool isImprovement = newCodelength <= oldCodelength - this->minimumCodelengthImprovement;
 		if (!isImprovement) {
 			// Make sure coarse-tuning have been tried
 			if (coarseTuned)
 				break;
 		}
-		compression = (oldCodelength - newCodelength)/oldCodelength;
+		else {
+			oldCodelength = newCodelength;
+		}
 		Log(0,0) << (compression * 100) << "% " << std::flush;
-		oldCodelength = newCodelength;
 		doFineTune = !doFineTune;
 	}
 
