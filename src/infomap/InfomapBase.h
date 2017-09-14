@@ -445,12 +445,14 @@ struct PerIterationStats
 		perplexity(0.0),
 		overlap(0.0),
 		codelength(0.0),
+		seconds(0.0),
 		isMinimum(false) {}
 	unsigned int iterationIndex;
 	unsigned int numTopModules;
 	double perplexity; // Perplexity of top module flow distribution
 	double overlap; // Average number of modules per physical node
 	double codelength;
+	double seconds;
 	bool isMinimum;
 };
 
@@ -489,6 +491,13 @@ struct IterationStatsSortCodelength {
 	}
 };
 
+struct IterationStatsSortSeconds {
+	bool operator()(const PerIterationStats& a, const PerIterationStats& b)
+	{   
+		return a.seconds < b.seconds;
+	}
+};
+
 struct IterationStatsAddNumTopModules {
 	unsigned int operator()(double result, const PerIterationStats& s)
 	{   
@@ -514,6 +523,13 @@ struct IterationStatsAddCodelength {
 	double operator()(double result, const PerIterationStats& s)
 	{   
 		return result + s.codelength;
+	}
+};
+
+struct IterationStatsAddSeconds {
+	double operator()(double result, const PerIterationStats& s)
+	{   
+		return result + s.seconds;
 	}
 };
 

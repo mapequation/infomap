@@ -118,11 +118,14 @@ void InfomapBase::run(HierarchicalNetwork& output)
 	std::ostringstream bestSolutionStatistics;
 	unsigned int bestNumLevels = 0;
 
+	Log() << "Initiating done in " << Stopwatch::getElapsedTimeSinceProgramStartInSec() << "s\n";
+
 	for (unsigned int iTrial = 0; iTrial < numTrials; ++iTrial)
 	{
 		Log() << "\nAttempt " << (iTrial+1) << "/" << numTrials <<	" at " << Date();
 		Log() << std::endl;
 		m_trialIndex = iTrial;
+		Stopwatch timer(true);
 
 		// First clear existing modular structure
 		while ((*m_treeData.begin_leaf())->parent != root())
@@ -187,6 +190,7 @@ void InfomapBase::run(HierarchicalNetwork& output)
 		m_iterationStats[iTrial].numTopModules = numTopModules();
 		m_iterationStats[iTrial].perplexity = perplexity;
 		m_iterationStats[iTrial].overlap = overlap;
+		m_iterationStats[iTrial].seconds = timer.getElapsedTimeInSec();
 
 		
 		if (hierarchicalCodelength < bestHierarchicalCodelength)
@@ -206,7 +210,9 @@ void InfomapBase::run(HierarchicalNetwork& output)
 	{
 		Log() << std::fixed << std::setprecision(9);
 		Log() << "Finished " << numTrials << " trials with:\n";
-		Log() << std::setw(12) << "Iteration";
+		Log() << std::left << std::setw(12) << "Iteration" << std::right;
+		Log() << " ";
+		Log() << std::setw(12) << "Seconds";
 		Log() << " ";
 		Log() << std::setw(12) << "Modules";
 		Log() << " ";
@@ -216,11 +222,13 @@ void InfomapBase::run(HierarchicalNetwork& output)
 		Log() << " ";
 		Log() << std::setw(12) << "Codelength";
 		Log() << " ";
-		Log() << std::setw(12) << "Minimum";
+		// Log() << std::left << std::setw(12) << "Minimum" << std::right;
 		Log() << "\n";
 		for (unsigned int i = 0; i < numTrials; ++i) {
 			PerIterationStats& s = m_iterationStats[i];
-			Log() << std::setw(12) << s.iterationIndex + 1;
+			Log() << std::left << std::setw(12) << s.iterationIndex + 1 << std::right;
+			Log() << " ";
+			Log() << std::setw(12) << s.seconds;
 			Log() << " ";
 			Log() << std::setw(12) << s.numTopModules;
 			Log() << " ";
@@ -230,11 +238,19 @@ void InfomapBase::run(HierarchicalNetwork& output)
 			Log() << " ";
 			Log() << std::setw(12) << s.codelength;
 			Log() << " ";
-			Log() << std::setw(12) << (s.isMinimum ? '*' : ' ');
+			Log() << std::left << std::setw(12) << (s.isMinimum ? '*' : ' ') << std::right;
 			Log() << "\n";
 		}
-		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortNumTopModules());
 		unsigned int iLast = numTrials - 1;
+
+		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortSeconds());
+		double secondsMin = m_iterationStats[0].seconds;
+		double secondsMax = m_iterationStats[iLast].seconds;
+		double secondsMedian = m_iterationStats[numTrials / 2].seconds;
+		double secondsAverage = std::accumulate(m_iterationStats.begin(),
+			m_iterationStats.end(), 0.0, IterationStatsAddSeconds()) / numTrials;
+		
+		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortNumTopModules());
 		unsigned int numTopModulesMin = m_iterationStats[0].numTopModules;
 		unsigned int numTopModulesMax = m_iterationStats[iLast].numTopModules;
 		unsigned int numTopModulesMedian = m_iterationStats[numTrials / 2].numTopModules;
@@ -263,8 +279,10 @@ void InfomapBase::run(HierarchicalNetwork& output)
 		m_iterationStats.end(), 0.0, IterationStatsAddCodelength()) / numTrials;
 		
 
-		Log() << std::setfill('-') << std::setw(12*5 + 5) << "\n" << std::setfill(' ');
+		Log() << std::setfill('-') << std::setw(12*6 + 6) << "\n" << std::setfill(' ');
 		Log() << std::left << std::setw(12) << "Min:" << std::right;
+		Log() << " ";
+		Log() << std::setw(12) << secondsMin;
 		Log() << " ";
 		Log() << std::setw(12) << numTopModulesMin;
 		Log() << " ";
@@ -276,6 +294,8 @@ void InfomapBase::run(HierarchicalNetwork& output)
 		Log() << "\n";
 		Log() << std::left << std::setw(12) << "Median:" << std::right;
 		Log() << " ";
+		Log() << std::setw(12) << secondsMedian;
+		Log() << " ";
 		Log() << std::setw(12) << numTopModulesMedian;
 		Log() << " ";
 		Log() << std::setw(12) << perplexityMedian;
@@ -286,7 +306,9 @@ void InfomapBase::run(HierarchicalNetwork& output)
 		Log() << "\n";
 		Log() << std::left << std::setw(12) << "Average:" << std::right;
 		Log() << " ";
-		Log() << std::setw(12) << std::defaultfloat << numTopModulesAverage << std::fixed;
+		Log() << std::setw(12) << secondsAverage;
+		Log() << " ";
+		Log() << std::setw(12) << int(numTopModulesAverage + 0.5);
 		Log() << " ";
 		Log() << std::setw(12) << perplexityAverage;
 		Log() << " ";
@@ -295,6 +317,8 @@ void InfomapBase::run(HierarchicalNetwork& output)
 		Log() << std::setw(12) << codelengthAverage;
 		Log() << "\n";
 		Log() << std::left << std::setw(12) << "Max:" << std::right;
+		Log() << " ";
+		Log() << std::setw(12) << secondsMax;
 		Log() << " ";
 		Log() << std::setw(12) << numTopModulesMax;
 		Log() << " ";
