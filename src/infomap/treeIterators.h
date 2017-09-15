@@ -631,7 +631,7 @@ public:
 
 	bool isEnd() const
 	{
-		return m_current == nullptr;
+		return m_current == 0;
 	}
 };
 
