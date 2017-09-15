@@ -37,7 +37,7 @@ while (!leafIt$isEnd()) {
 }
 
 # Create igraph community data
-comm <- create.communities(modules, algorithm = 'Infomap')
+comm <- make_clusters(g, membership = modules, algorithm = 'Infomap')
 print(comm)
 
 # Plot communities and network
