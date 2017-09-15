@@ -125,6 +125,10 @@ public:
 	const NodeBase* root() const { return m_treeData.root(); }
 	NodeBase* root() { return m_treeData.root(); }
 
+	unsigned int maxDepth();
+
+	unsigned int numBottomModules();
+
 	void sortTree();
 
 	virtual void saveHierarchicalNetwork(HierarchicalNetwork& output, std::string rootName, bool includeLinks) = 0;
@@ -442,16 +446,26 @@ struct PerIterationStats
 	PerIterationStats()
 	:	iterationIndex(0),
 		numTopModules(0),
-		perplexity(0.0),
-		overlap(0.0),
+		numBottomModules(0),
+		topPerplexity(0.0),
+		bottomPerplexity(0.0),
+		topOverlap(0.0),
+		bottomOverlap(0.0),
 		codelength(0.0),
+		maxDepth(0),
+		weightedDepth(0.0),
 		seconds(0.0),
 		isMinimum(false) {}
 	unsigned int iterationIndex;
 	unsigned int numTopModules;
-	double perplexity; // Perplexity of top module flow distribution
-	double overlap; // Average number of modules per physical node
+	unsigned int numBottomModules;
+	double topPerplexity; // Perplexity of top module flow distribution
+	double bottomPerplexity;
+	double topOverlap; // Average number of modules per physical node
+	double bottomOverlap;
 	double codelength;
+	unsigned int maxDepth;
+	double weightedDepth;
 	double seconds;
 	bool isMinimum;
 };
@@ -470,17 +484,52 @@ struct IterationStatsSortNumTopModules {
 	}
 };
 
-struct IterationStatsSortPerplexity {
+struct IterationStatsSortNumBottomModules {
 	bool operator()(const PerIterationStats& a, const PerIterationStats& b)
 	{   
-		return a.perplexity < b.perplexity;
+		return a.numBottomModules < b.numBottomModules;
 	}
 };
 
-struct IterationStatsSortOverlap {
+struct IterationStatsSortTopPerplexity {
 	bool operator()(const PerIterationStats& a, const PerIterationStats& b)
 	{   
-		return a.overlap < b.overlap;
+		return a.topPerplexity < b.topPerplexity;
+	}
+};
+
+struct IterationStatsSortBottomPerplexity {
+	bool operator()(const PerIterationStats& a, const PerIterationStats& b)
+	{   
+		return a.bottomPerplexity < b.bottomPerplexity;
+	}
+};
+
+struct IterationStatsSortTopOverlap {
+	bool operator()(const PerIterationStats& a, const PerIterationStats& b)
+	{   
+		return a.topOverlap < b.topOverlap;
+	}
+};
+
+struct IterationStatsSortBottomOverlap {
+	bool operator()(const PerIterationStats& a, const PerIterationStats& b)
+	{   
+		return a.bottomOverlap < b.bottomOverlap;
+	}
+};
+
+struct IterationStatsSortMaxDepth {
+	bool operator()(const PerIterationStats& a, const PerIterationStats& b)
+	{   
+		return a.maxDepth < b.maxDepth;
+	}
+};
+
+struct IterationStatsSortWeightedDepth {
+	bool operator()(const PerIterationStats& a, const PerIterationStats& b)
+	{   
+		return a.weightedDepth < b.weightedDepth;
 	}
 };
 
@@ -505,17 +554,38 @@ struct IterationStatsAddNumTopModules {
 	}
 };
 
-struct IterationStatsAddPerplexity {
-	double operator()(double result, const PerIterationStats& s)
+struct IterationStatsAddNumBottomModules {
+	unsigned int operator()(double result, const PerIterationStats& s)
 	{   
-		return result + s.perplexity;
+		return result + s.numBottomModules;
 	}
 };
 
-struct IterationStatsAddOverlap {
+struct IterationStatsAddTopPerplexity {
 	double operator()(double result, const PerIterationStats& s)
 	{   
-		return result + s.overlap;
+		return result + s.topPerplexity;
+	}
+};
+
+struct IterationStatsAddBottomPerplexity {
+	double operator()(double result, const PerIterationStats& s)
+	{   
+		return result + s.bottomPerplexity;
+	}
+};
+
+struct IterationStatsAddTopOverlap {
+	double operator()(double result, const PerIterationStats& s)
+	{   
+		return result + s.topOverlap;
+	}
+};
+
+struct IterationStatsAddBottomOverlap {
+	double operator()(double result, const PerIterationStats& s)
+	{   
+		return result + s.bottomOverlap;
 	}
 };
 
@@ -523,6 +593,20 @@ struct IterationStatsAddCodelength {
 	double operator()(double result, const PerIterationStats& s)
 	{   
 		return result + s.codelength;
+	}
+};
+
+struct IterationStatsAddMaxDepth {
+	double operator()(double result, const PerIterationStats& s)
+	{   
+		return result + s.maxDepth;
+	}
+};
+
+struct IterationStatsAddWeightedDepth {
+	double operator()(double result, const PerIterationStats& s)
+	{   
+		return result + s.weightedDepth;
 	}
 };
 

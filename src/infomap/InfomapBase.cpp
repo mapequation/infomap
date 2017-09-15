@@ -150,46 +150,69 @@ void InfomapBase::run(HierarchicalNetwork& output)
 			Log() << "Warning: No codelength improvement in modular solution over one-level solution!\n";
 		}
 		
-		double perplexity = 0.0;
+		double topPerplexity = 0.0;
+		double bottomPerplexity = 0.0;
 		for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
 		moduleIt != endIt; ++moduleIt)
 		{
-			perplexity += -infomath::plogp(getNodeData(*moduleIt).flow);
+			topPerplexity += -infomath::plogp(getNodeData(*moduleIt).flow);
 		}
-		perplexity = std::pow(2, perplexity);
+		topPerplexity = std::pow(2, topPerplexity);
+		for (InfomapIterator it(root(), 1); !it.isEnd(); ++it) {
+			if (it->isLeafModule()) {
+				bottomPerplexity += -infomath::plogp(getNodeData(*it).flow);
+			}
+		}
+		bottomPerplexity = std::pow(2, bottomPerplexity);
 		
 		// physicalId -> (moduleId -> flow)
-		std::map<unsigned int, std::map<unsigned int, double> > modulesPerPhysicalNode;
+		std::map<unsigned int, std::map<unsigned int, double> > topModulesPerPhysicalNode;
+		std::map<unsigned int, std::map<unsigned int, double> > bottomModulesPerPhysicalNode;
+		double weightedDepth = 0.0;
 		for (InfomapIterator it(root(), 1); !it.isEnd(); ++it) {
 			if (it->isLeaf()) {
-				// for (unsigned int i = 0; i < it.path().size(); ++i) {
-				// 	Log() << it.path()[i] << ":";
-				// }
-				// Log() << " " << it.moduleIndex() << " " << getNodeData(*it).flow << " (" << it->getPhysicalIndex() << ")\n";
-				modulesPerPhysicalNode[it->getPhysicalIndex()][it.moduleIndex()] += getNodeData(*it).flow;
+				topModulesPerPhysicalNode[it->getPhysicalIndex()][it.moduleIndex()] += getNodeData(*it).flow;
+				weightedDepth += it.depth() * getNodeData(*it).flow;
 			}
 		}
-		double overlap = 0.0;
-		for (std::map<unsigned int, std::map<unsigned int, double> >::iterator it(modulesPerPhysicalNode.begin()); it != modulesPerPhysicalNode.end(); ++it) {
+		for (InfomapIterator it(root(), -1); !it.isEnd(); ++it) {
+			if (it->isLeaf()) {
+				bottomModulesPerPhysicalNode[it->getPhysicalIndex()][it.moduleIndex()] += getNodeData(*it).flow;
+			}
+		}
+		double topOverlap = 0.0;
+		for (std::map<unsigned int, std::map<unsigned int, double> >::iterator it(topModulesPerPhysicalNode.begin()); it != topModulesPerPhysicalNode.end(); ++it) {
 			std::map<unsigned int, double>& moduleFlow = it->second;
 			double flow = std::accumulate(moduleFlow.begin(), moduleFlow.end(), 0.0, AddMapValues());
-			double overlapPerplexityPerNode = 0.0;
+			double topOverlapPerplexityPerNode = 0.0;
 			for (std::map<unsigned int, double>::iterator itModuleFlow(moduleFlow.begin()); itModuleFlow != moduleFlow.end(); ++itModuleFlow) {
-				overlapPerplexityPerNode += -infomath::plogp(itModuleFlow->second / flow);
+				topOverlapPerplexityPerNode += -infomath::plogp(itModuleFlow->second / flow);
 			}
-			overlapPerplexityPerNode = std::pow(2, overlapPerplexityPerNode);
-			// Log() << it->first << ": " << flow << " (" << moduleFlow.size() << ")\n";
-			// overlap += moduleFlow.size();
-			overlap += flow * overlapPerplexityPerNode;
+			topOverlapPerplexityPerNode = std::pow(2, topOverlapPerplexityPerNode);
+			topOverlap += flow * topOverlapPerplexityPerNode;
 		}
-		// overlap /= modulesPerPhysicalNode.size();
-		// Log() << "\nnumPhysicalNodes: " << modulesPerPhysicalNode.size() << ", overlap: " << overlap << "\n";
+		double bottomOverlap = 0.0;
+		for (std::map<unsigned int, std::map<unsigned int, double> >::iterator it(bottomModulesPerPhysicalNode.begin()); it != bottomModulesPerPhysicalNode.end(); ++it) {
+			std::map<unsigned int, double>& moduleFlow = it->second;
+			double flow = std::accumulate(moduleFlow.begin(), moduleFlow.end(), 0.0, AddMapValues());
+			double bottomOverlapPerplexityPerNode = 0.0;
+			for (std::map<unsigned int, double>::iterator itModuleFlow(moduleFlow.begin()); itModuleFlow != moduleFlow.end(); ++itModuleFlow) {
+				bottomOverlapPerplexityPerNode += -infomath::plogp(itModuleFlow->second / flow);
+			}
+			bottomOverlapPerplexityPerNode = std::pow(2, bottomOverlapPerplexityPerNode);
+			bottomOverlap += flow * bottomOverlapPerplexityPerNode;
+		}
 
 		m_iterationStats[iTrial].iterationIndex = iTrial;
 		m_iterationStats[iTrial].codelength = hierarchicalCodelength;
+		m_iterationStats[iTrial].maxDepth = maxDepth();
+		m_iterationStats[iTrial].weightedDepth = weightedDepth;
 		m_iterationStats[iTrial].numTopModules = numTopModules();
-		m_iterationStats[iTrial].perplexity = perplexity;
-		m_iterationStats[iTrial].overlap = overlap;
+		m_iterationStats[iTrial].numBottomModules = numBottomModules();
+		m_iterationStats[iTrial].topPerplexity = topPerplexity;
+		m_iterationStats[iTrial].bottomPerplexity = bottomPerplexity;
+		m_iterationStats[iTrial].topOverlap = topOverlap;
+		m_iterationStats[iTrial].bottomOverlap = bottomOverlap;
 		m_iterationStats[iTrial].seconds = timer.getElapsedTimeInSec();
 
 		
@@ -205,43 +228,88 @@ void InfomapBase::run(HierarchicalNetwork& output)
 
 	Log() << "\n\n";
 
+	unsigned int fieldWidth = 16;
+	Log() << std::fixed << std::setprecision(9);
+	Log() << "Finished clustering '" << m_config.outName << "' in " << numTrials << (
+		numTrials == 1 ? " trial with:\n" : " trials with:\n");
+	Log() << std::left << std::setw(fieldWidth) << "Iteration" << std::right;
+	Log() << " ";
+	Log() << std::setw(fieldWidth) << "Seconds";
+	Log() << " ";
+	if (m_config.twoLevel) {
+		Log() << std::setw(fieldWidth) << "Modules";
+		Log() << " ";
+		Log() << std::setw(fieldWidth) << "Perplexity";
+		Log() << " ";
+		if (m_config.isMemoryNetwork()) {
+			Log() << std::setw(fieldWidth) << "Overlap";
+			Log() << " ";
+		}
+	} else {
+		Log() << std::setw(fieldWidth) << "TopModules";
+		Log() << " ";
+		Log() << std::setw(fieldWidth) << "TopPerplexity";
+		Log() << " ";
+		if (m_config.isMemoryNetwork()) {
+			Log() << std::setw(fieldWidth) << "TopOverlap";
+			Log() << " ";
+		}
+		Log() << std::setw(fieldWidth) << "BottomModules";
+		Log() << " ";
+		Log() << std::setw(fieldWidth) << "BottomPerplexity";
+		Log() << " ";
+		if (m_config.isMemoryNetwork()) {
+			Log() << std::setw(fieldWidth) << "BottomOverlap";
+			Log() << " ";
+		}
+	}
+	Log() << std::setw(fieldWidth) << "maxDepth";
+	Log() << " ";
+	Log() << std::setw(fieldWidth) << "weightedDepth";
+	Log() << " ";
+	Log() << std::setw(fieldWidth) << "Codelength";
+	Log() << " ";
+	// Log() << std::left << std::setw(fieldWidth) << "Minimum" << std::right;
+	Log() << "\n";
+	for (unsigned int i = 0; i < numTrials; ++i) {
+		PerIterationStats& s = m_iterationStats[i];
+		Log() << std::left << std::setw(fieldWidth) << s.iterationIndex + 1 << std::right;
+		Log() << " ";
+		Log() << std::setw(fieldWidth) << s.seconds;
+		Log() << " ";
+		Log() << std::setw(fieldWidth) << s.numTopModules;
+		Log() << " ";
+		Log() << std::setw(fieldWidth) << s.topPerplexity;
+		Log() << " ";
+		if (m_config.isMemoryNetwork()) {
+			Log() << std::setw(fieldWidth) << s.topOverlap;
+			Log() << " ";
+		}
+		if (!m_config.twoLevel) {
+			Log() << std::setw(fieldWidth) << s.numBottomModules;
+			Log() << " ";
+			Log() << std::setw(fieldWidth) << s.bottomPerplexity;
+			Log() << " ";
+			if (m_config.isMemoryNetwork()) {
+				Log() << std::setw(fieldWidth) << s.bottomOverlap;
+				Log() << " ";
+			}
+		}
+		Log() << std::setw(fieldWidth) << s.maxDepth;
+		Log() << " ";
+		Log() << std::setw(fieldWidth) << s.weightedDepth;
+		Log() << " ";
+		Log() << std::setw(fieldWidth) << s.codelength;
+		Log() << " ";
+		Log() << (s.isMinimum ? '*' : ' ');
+		Log() << "\n";
+	}
 	
 	if (numTrials > 1)
 	{
-		Log() << std::fixed << std::setprecision(9);
-		Log() << "Finished " << numTrials << " trials with:\n";
-		Log() << std::left << std::setw(12) << "Iteration" << std::right;
-		Log() << " ";
-		Log() << std::setw(12) << "Seconds";
-		Log() << " ";
-		Log() << std::setw(12) << "Modules";
-		Log() << " ";
-		Log() << std::setw(12) << "Perplexity";
-		Log() << " ";
-		Log() << std::setw(12) << "Overlap";
-		Log() << " ";
-		Log() << std::setw(12) << "Codelength";
-		Log() << " ";
-		// Log() << std::left << std::setw(12) << "Minimum" << std::right;
-		Log() << "\n";
-		for (unsigned int i = 0; i < numTrials; ++i) {
-			PerIterationStats& s = m_iterationStats[i];
-			Log() << std::left << std::setw(12) << s.iterationIndex + 1 << std::right;
-			Log() << " ";
-			Log() << std::setw(12) << s.seconds;
-			Log() << " ";
-			Log() << std::setw(12) << s.numTopModules;
-			Log() << " ";
-			Log() << std::setw(12) << s.perplexity;
-			Log() << " ";
-			Log() << std::setw(12) << s.overlap;
-			Log() << " ";
-			Log() << std::setw(12) << s.codelength;
-			Log() << " ";
-			Log() << std::left << std::setw(12) << (s.isMinimum ? '*' : ' ') << std::right;
-			Log() << "\n";
-		}
 		unsigned int iLast = numTrials - 1;
+		unsigned int numFields = 5 + ((2 + (m_config.isMemoryNetwork() ? 1 : 0)) * (m_config.twoLevel ? 1 : 2));
+		// Log() << "numFields: " << numFields << "\n";
 
 		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortSeconds());
 		double secondsMin = m_iterationStats[0].seconds;
@@ -257,19 +325,54 @@ void InfomapBase::run(HierarchicalNetwork& output)
 		double numTopModulesAverage = std::accumulate(m_iterationStats.begin(),
 			m_iterationStats.end(), 0.0, IterationStatsAddNumTopModules()) / numTrials;
 		
-		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortPerplexity());
-		double perplexityMin = m_iterationStats[0].perplexity;
-		double perplexityMax = m_iterationStats[iLast].perplexity;
-		double perplexityMedian = m_iterationStats[numTrials / 2].perplexity;
-		double perplexityAverage = std::accumulate(m_iterationStats.begin(),
-			m_iterationStats.end(), 0.0, IterationStatsAddPerplexity()) / numTrials;
+		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortTopPerplexity());
+		double topPerplexityMin = m_iterationStats[0].topPerplexity;
+		double topPerplexityMax = m_iterationStats[iLast].topPerplexity;
+		double topPerplexityMedian = m_iterationStats[numTrials / 2].topPerplexity;
+		double topPerplexityAverage = std::accumulate(m_iterationStats.begin(),
+			m_iterationStats.end(), 0.0, IterationStatsAddTopPerplexity()) / numTrials;
 		
-		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortOverlap());
-		double overlapMin = m_iterationStats[0].overlap;
-		double overlapMax = m_iterationStats[iLast].overlap;
-		double overlapMedian = m_iterationStats[numTrials / 2].overlap;
-		double overlapAverage = std::accumulate(m_iterationStats.begin(),
-			m_iterationStats.end(), 0.0, IterationStatsAddOverlap()) / numTrials;
+		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortTopOverlap());
+		double topOverlapMin = m_iterationStats[0].topOverlap;
+		double topOverlapMax = m_iterationStats[iLast].topOverlap;
+		double topOverlapMedian = m_iterationStats[numTrials / 2].topOverlap;
+		double topOverlapAverage = std::accumulate(m_iterationStats.begin(),
+			m_iterationStats.end(), 0.0, IterationStatsAddTopOverlap()) / numTrials;
+		
+		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortNumBottomModules());
+		unsigned int numBottomModulesMin = m_iterationStats[0].numBottomModules;
+		unsigned int numBottomModulesMax = m_iterationStats[iLast].numBottomModules;
+		unsigned int numBottomModulesMedian = m_iterationStats[numTrials / 2].numBottomModules;
+		double numBottomModulesAverage = std::accumulate(m_iterationStats.begin(),
+			m_iterationStats.end(), 0.0, IterationStatsAddNumBottomModules()) / numTrials;
+		
+		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortBottomPerplexity());
+		double bottomPerplexityMin = m_iterationStats[0].bottomPerplexity;
+		double bottomPerplexityMax = m_iterationStats[iLast].bottomPerplexity;
+		double bottomPerplexityMedian = m_iterationStats[numTrials / 2].bottomPerplexity;
+		double bottomPerplexityAverage = std::accumulate(m_iterationStats.begin(),
+			m_iterationStats.end(), 0.0, IterationStatsAddBottomPerplexity()) / numTrials;
+		
+		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortBottomOverlap());
+		double bottomOverlapMin = m_iterationStats[0].bottomOverlap;
+		double bottomOverlapMax = m_iterationStats[iLast].bottomOverlap;
+		double bottomOverlapMedian = m_iterationStats[numTrials / 2].bottomOverlap;
+		double bottomOverlapAverage = std::accumulate(m_iterationStats.begin(),
+			m_iterationStats.end(), 0.0, IterationStatsAddBottomOverlap()) / numTrials;
+		
+		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortMaxDepth());
+		unsigned int maxDepthMin = m_iterationStats[0].maxDepth;
+		unsigned int maxDepthMax = m_iterationStats[iLast].maxDepth;
+		unsigned int maxDepthMedian = m_iterationStats[numTrials / 2].maxDepth;
+		double maxDepthAverage = std::accumulate(m_iterationStats.begin(),
+			m_iterationStats.end(), 0.0, IterationStatsAddMaxDepth()) / numTrials;
+		
+		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortWeightedDepth());
+		double weightedDepthMin = m_iterationStats[0].weightedDepth;
+		double weightedDepthMax = m_iterationStats[iLast].weightedDepth;
+		double weightedDepthMedian = m_iterationStats[numTrials / 2].weightedDepth;
+		double weightedDepthAverage = std::accumulate(m_iterationStats.begin(),
+			m_iterationStats.end(), 0.0, IterationStatsAddWeightedDepth()) / numTrials;
 		
 		std::sort(m_iterationStats.begin(), m_iterationStats.end(), IterationStatsSortCodelength());
 		double codelengthMin = m_iterationStats[0].codelength;
@@ -279,58 +382,123 @@ void InfomapBase::run(HierarchicalNetwork& output)
 		m_iterationStats.end(), 0.0, IterationStatsAddCodelength()) / numTrials;
 		
 
-		Log() << std::setfill('-') << std::setw(12*6 + 6) << "\n" << std::setfill(' ');
-		Log() << std::left << std::setw(12) << "Min:" << std::right;
+		Log() << std::setfill('-') << std::setw(fieldWidth * numFields + numFields) << "\n" << std::setfill(' ');
+		Log() << std::left << std::setw(fieldWidth) << "Min:" << std::right;
 		Log() << " ";
-		Log() << std::setw(12) << secondsMin;
+		Log() << std::setw(fieldWidth) << secondsMin;
 		Log() << " ";
-		Log() << std::setw(12) << numTopModulesMin;
+		Log() << std::setw(fieldWidth) << numTopModulesMin;
 		Log() << " ";
-		Log() << std::setw(12) << perplexityMin;
+		Log() << std::setw(fieldWidth) << topPerplexityMin;
 		Log() << " ";
-		Log() << std::setw(12) << overlapMin;
+		if (m_config.isMemoryNetwork()) {
+			Log() << std::setw(fieldWidth) << topOverlapMin;
+			Log() << " ";
+		}
+		if (!m_config.twoLevel) {
+			Log() << std::setw(fieldWidth) << numBottomModulesMin;
+			Log() << " ";
+			Log() << std::setw(fieldWidth) << bottomPerplexityMin;
+			Log() << " ";
+			if (m_config.isMemoryNetwork()) {
+				Log() << std::setw(fieldWidth) << bottomOverlapMin;
+				Log() << " ";
+			}
+		}
+		Log() << std::setw(fieldWidth) << maxDepthMin;
 		Log() << " ";
-		Log() << std::setw(12) << codelengthMin;
+		Log() << std::setw(fieldWidth) << weightedDepthMin;
+		Log() << " ";
+		Log() << std::setw(fieldWidth) << codelengthMin;
 		Log() << "\n";
-		Log() << std::left << std::setw(12) << "Median:" << std::right;
+		Log() << std::left << std::setw(fieldWidth) << "Median:" << std::right;
 		Log() << " ";
-		Log() << std::setw(12) << secondsMedian;
+		Log() << std::setw(fieldWidth) << secondsMedian;
 		Log() << " ";
-		Log() << std::setw(12) << numTopModulesMedian;
+		Log() << std::setw(fieldWidth) << numTopModulesMedian;
 		Log() << " ";
-		Log() << std::setw(12) << perplexityMedian;
+		Log() << std::setw(fieldWidth) << topPerplexityMedian;
 		Log() << " ";
-		Log() << std::setw(12) << overlapMedian;
+		if (m_config.isMemoryNetwork()) {
+			Log() << std::setw(fieldWidth) << topOverlapMedian;
+			Log() << " ";
+		}
+		if (!m_config.twoLevel) {
+			Log() << std::setw(fieldWidth) << numBottomModulesMedian;
+			Log() << " ";
+			Log() << std::setw(fieldWidth) << bottomPerplexityMedian;
+			Log() << " ";
+			if (m_config.isMemoryNetwork()) {
+				Log() << std::setw(fieldWidth) << bottomOverlapMedian;
+				Log() << " ";
+			}
+		}
+		Log() << std::setw(fieldWidth) << maxDepthMedian;
 		Log() << " ";
-		Log() << std::setw(12) << codelengthMedian;
+		Log() << std::setw(fieldWidth) << weightedDepthMedian;
+		Log() << " ";
+		Log() << std::setw(fieldWidth) << codelengthMedian;
 		Log() << "\n";
-		Log() << std::left << std::setw(12) << "Average:" << std::right;
+		Log() << std::left << std::setw(fieldWidth) << "Average:" << std::right;
 		Log() << " ";
-		Log() << std::setw(12) << secondsAverage;
+		Log() << std::setw(fieldWidth) << secondsAverage;
 		Log() << " ";
-		Log() << std::setw(12) << int(numTopModulesAverage + 0.5);
+		Log() << std::setw(fieldWidth) << int(numTopModulesAverage + 0.5);
 		Log() << " ";
-		Log() << std::setw(12) << perplexityAverage;
+		Log() << std::setw(fieldWidth) << topPerplexityAverage;
 		Log() << " ";
-		Log() << std::setw(12) << overlapAverage;
+		if (m_config.isMemoryNetwork()) {
+			Log() << std::setw(fieldWidth) << topOverlapAverage;
+			Log() << " ";
+		}
+		if (!m_config.twoLevel) {
+			Log() << std::setw(fieldWidth) << int(numBottomModulesAverage + 0.5);
+			Log() << " ";
+			Log() << std::setw(fieldWidth) << bottomPerplexityAverage;
+			Log() << " ";
+			if (m_config.isMemoryNetwork()) {
+				Log() << std::setw(fieldWidth) << bottomOverlapAverage;
+				Log() << " ";
+			}
+		}
+		Log() << std::setw(fieldWidth) << maxDepthAverage;
 		Log() << " ";
-		Log() << std::setw(12) << codelengthAverage;
+		Log() << std::setw(fieldWidth) << weightedDepthAverage;
+		Log() << " ";
+		Log() << std::setw(fieldWidth) << codelengthAverage;
 		Log() << "\n";
-		Log() << std::left << std::setw(12) << "Max:" << std::right;
+		Log() << std::left << std::setw(fieldWidth) << "Max:" << std::right;
 		Log() << " ";
-		Log() << std::setw(12) << secondsMax;
+		Log() << std::setw(fieldWidth) << secondsMax;
 		Log() << " ";
-		Log() << std::setw(12) << numTopModulesMax;
+		Log() << std::setw(fieldWidth) << numTopModulesMax;
 		Log() << " ";
-		Log() << std::setw(12) << perplexityMax;
+		Log() << std::setw(fieldWidth) << topPerplexityMax;
 		Log() << " ";
-		Log() << std::setw(12) << overlapMax;
+		if (m_config.isMemoryNetwork()) {
+			Log() << std::setw(fieldWidth) << topOverlapMax;
+			Log() << " ";
+		}
+		if (!m_config.twoLevel) {
+			Log() << std::setw(fieldWidth) << numBottomModulesMax;
+			Log() << " ";
+			Log() << std::setw(fieldWidth) << bottomPerplexityMax;
+			Log() << " ";
+			if (m_config.isMemoryNetwork()) {
+				Log() << std::setw(fieldWidth) << bottomOverlapMax;
+				Log() << " ";
+			}
+		}
+		Log() << std::setw(fieldWidth) << maxDepthMax;
 		Log() << " ";
-		Log() << std::setw(12) << codelengthMax;
+		Log() << std::setw(fieldWidth) << weightedDepthMax;
+		Log() << " ";
+		Log() << std::setw(fieldWidth) << codelengthMax;
 		Log() << "\n";
-		
-		Log() << "\n\n";
 	}
+	
+	Log() << "\n\n";
+	
 
 	if (bestIntermediateStatistics.str() != "")
 	{
@@ -2016,6 +2184,31 @@ bool InfomapBase::checkAndConvertBinaryTree()
 	printHierarchicalData(m_ioNetwork);
 
 	return true;
+}
+
+
+unsigned int InfomapBase::maxDepth()
+{
+	unsigned int maxDepth = 0;
+	for (InfomapIterator it(root()); !it.isEnd(); ++it) {
+		if (it->isLeaf()) {
+			maxDepth = std::max(maxDepth, it.depth());
+		}
+	}
+	return maxDepth;
+}
+
+unsigned int InfomapBase::numBottomModules()
+{
+	unsigned int numBottomModules = 0;
+	for (InfomapIterator it(root(), -1); !it.isEnd(); ++it) {
+		if (it->isLeafModule()) {
+			// numBottomModules = it.moduleIndex();
+			++numBottomModules;
+		}
+	}
+	// ++numBottomModules;
+	return numBottomModules;
 }
 
 void InfomapBase::printNetworkData(std::string filename)
