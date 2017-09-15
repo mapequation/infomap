@@ -396,6 +396,8 @@ int run(const std::string& flags)
 {
 	Date startDate;
 	Config conf;
+	Stopwatch timer(true);
+
 	try
 	{
 		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags);
@@ -439,7 +441,7 @@ int run(const std::string& flags)
 
 	Log() << "===================================================\n";
 	Log() << "  Infomap ends at " << Date() << "\n";
-	Log() << "  (Elapsed time: " << (Date() - startDate) << ")\n";
+	Log() << "  Elapsed time: " << (Date() - startDate) << " (" << timer.getElapsedTimeInSec() << "s)\n";
 	Log() << "===================================================\n";
 
 	return 0;
