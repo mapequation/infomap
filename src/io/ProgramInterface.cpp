@@ -118,7 +118,7 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
 void ProgramInterface::exitWithVersionInformation()
 {
 	Log() << m_programName << " version " << m_programVersion << std::endl;
-	Log() << "See www.mapequation.org for terms of use." << std::endl;
+	Log() << "See www.mapequation.org for more info." << std::endl;
 	std::exit(0);
 }
 
