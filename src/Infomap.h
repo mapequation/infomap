@@ -87,7 +87,7 @@ class Infomap {
     }
 
     Config config;
-    Network network;
+    MultiplexNetwork network;
     HierarchicalNetwork tree;
 };
 
