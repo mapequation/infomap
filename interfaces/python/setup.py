@@ -10,10 +10,6 @@ import fnmatch
 import os
 import re
 
-
-# if root == 'src': cppSources.append(os.path.join(root, 'Infomap.cpp'))
-# else:
-
 cppSources = []
 for root, dirnames, filenames in os.walk('src'):
     for filename in fnmatch.filter(filenames, '*.cpp'):
