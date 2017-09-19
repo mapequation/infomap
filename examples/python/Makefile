@@ -15,10 +15,10 @@ infomap/infomap.py: $(PY_WRAPPER) Makefile
 	touch infomap/__init__.py
 
 $(PY_WRAPPER):
-	cd $(INFOMAP_DIR) && $(MAKE) python3
+	$(MAKE) -C $(INFOMAP_DIR) python3
 
 clean:
 	$(RM) -r infomap
 
 distclean:
-	cd $(INFOMAP_DIR) && $(MAKE) clean
+	$(MAKE) -C $(INFOMAP_DIR) clean
