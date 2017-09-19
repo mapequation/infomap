@@ -11,7 +11,7 @@ import os
 import re
 
 cppSources = []
-for root, dirnames, filenames in os.walk('src'):
+for root, dirnames, filenames in os.walk('.'):
     for filename in fnmatch.filter(filenames, '*.cpp'):
         cppSources.append(os.path.join('.', root, filename))
 
