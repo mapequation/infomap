@@ -17,7 +17,7 @@ import re
 cppSources = []
 for root, dirnames, filenames in os.walk('src'):
     for filename in fnmatch.filter(filenames, '*.cpp'):
-        cppSources.append(os.path.join(root, filename))
+        cppSources.append(os.path.join('.', root, filename))
 
 # Extract Infomap version
 infomapVersion = ''
@@ -33,11 +33,8 @@ infomap_module = Extension(
         '-DAS_LIB',
         '-DPYTHON',
         '-Wno-deprecated-register',
-        '-std=c++14',
-        '-stdlib=libc++'
+        '-std=c++14'
     ])
-# clang: error: invalid deployment target for -stdlib=libc++ (requires OS X 10.7 or later)
-# Solve above with `export MACOSX_DEPLOYMENT_TARGET=10.10`
 
 setup(
     name='infomap',
