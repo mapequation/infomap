@@ -19,10 +19,11 @@
 #include "../utils/infomath.h"
 #include "../utils/Date.h"
 #include "../utils/Stopwatch.h"
+#include "../utils/exceptions.h"
+#include "../io/version.h"
 #include <iomanip>
 #include <limits>
 #include "InfomapConfig.h"
-#include "../utils/exceptions.h"
 #include "ClusterMap.h"
 #include <map>
 #include <set>
@@ -191,6 +192,36 @@ void InfomapBase::run()
 		runPartition();
 		return;
 	}
+
+	Log::init(this->verbosity, this->silent, this->verboseNumberPrecision);
+	Stopwatch timer(true);
+
+	Log() << "=======================================================\n";
+	Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
+	Log() << "  -> Input network: " << this->networkFile << "\n";
+	if (this->noFileOutput)
+		Log() << "  -> No file output!\n";
+	else
+		Log() << "  -> Output path:   " << this->outDirectory << "\n";
+	if (!this->parsedOptions.empty()) {
+		for (unsigned int i = 0; i < this->parsedOptions.size(); ++i)
+			Log() << (i == 0 ? "  -> Configuration: " : "                    ") << this->parsedOptions[i] << "\n";
+	}
+	Log() << "  -> Use " << (this->isUndirected()? "undirected" : "directed") << " flow and " <<
+		(this->isMemoryNetwork()? "2nd" : "1st") << " order Markov dynamics";
+	if (this->useTeleportation())
+		Log() << " with " << (this->recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
+		(this->teleportToNodes ? "nodes" : "links");
+	Log() << "\n";
+	#ifdef _OPENMP
+	#pragma omp parallel
+		#pragma omp master
+		{
+			Log() << "  OpenMP " << _OPENMP << " detected with " << omp_get_num_threads() << " threads...\n";
+		}
+	#endif
+	Log() << "=======================================================\n";
+
 	
 	Network network(*this);
 
@@ -199,6 +230,13 @@ void InfomapBase::run()
 	network.readInputData(filename);
 
 	run(network);
+
+
+	Log() << "===================================================\n";
+	Log() << "  Infomap ends at " << Date() << "\n";
+	// Log() << "  (Elapsed time: " << (Date() - startDate) << ")\n";
+	Log() << "  (Elapsed time: " << timer << ")\n";
+	Log() << "===================================================\n";
 }
 
 void InfomapBase::run(Network& network)
@@ -206,6 +244,8 @@ void InfomapBase::run(Network& network)
 	if (!isMainInfomap())
 		throw InternalOrderError("Can't run a non-main Infomap with an input network");
 
+	Log::init(this->verbosity, this->silent, this->verboseNumberPrecision);
+		
 	network.calculateFlow();
 	
 	initNetwork(network);

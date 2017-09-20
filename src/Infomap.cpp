@@ -28,9 +28,6 @@
 #include <iostream>
 #include "utils/Log.h"
 #include "io/Config.h"
-#include "utils/Stopwatch.h"
-#include "utils/Date.h"
-#include "io/version.h"
 #include <string>
 #include <memory>
 #ifdef _OPENMP
@@ -43,8 +40,6 @@ int run(const std::string& flags)
 {
 	try
 	{
-		Stopwatch timer(true);
-
 		Config conf(flags, true);
 
 		std::unique_ptr<InfomapBase> myInfomap;
@@ -56,41 +51,7 @@ int run(const std::string& flags)
 		InfomapBase& infomap = *myInfomap;
 		// Infomap infomap(flags, true);
 
-		Log::init(infomap.verbosity, infomap.silent, infomap.verboseNumberPrecision);
-
-		Log() << "=======================================================\n";
-		Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
-		Log() << "  -> Input network: " << infomap.networkFile << "\n";
-		if (infomap.noFileOutput)
-			Log() << "  -> No file output!\n";
-		else
-			Log() << "  -> Output path:   " << infomap.outDirectory << "\n";
-		if (!infomap.parsedOptions.empty()) {
-			for (unsigned int i = 0; i < infomap.parsedOptions.size(); ++i)
-				Log() << (i == 0 ? "  -> Configuration: " : "                    ") << infomap.parsedOptions[i] << "\n";
-		}
-		Log() << "  -> Use " << (infomap.isUndirected()? "undirected" : "directed") << " flow and " <<
-			(infomap.isMemoryNetwork()? "2nd" : "1st") << " order Markov dynamics";
-		if (infomap.useTeleportation())
-			Log() << " with " << (infomap.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
-			(infomap.teleportToNodes ? "nodes" : "links");
-		Log() << "\n";
-		#ifdef _OPENMP
-		#pragma omp parallel
-			#pragma omp master
-			{
-				Log() << "  OpenMP " << _OPENMP << " detected with " << omp_get_num_threads() << " threads...\n";
-			}
-		#endif
-		Log() << "=======================================================\n";
-
 		infomap.run();
-
-		Log() << "===================================================\n";
-		Log() << "  Infomap ends at " << Date() << "\n";
-		// Log() << "  (Elapsed time: " << (Date() - startDate) << ")\n";
-		Log() << "  (Elapsed time: " << timer << ")\n";
-		Log() << "===================================================\n";
 	}
 	catch (std::exception& e)
 	{
