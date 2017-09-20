@@ -1,25 +1,20 @@
 from infomap import infomap
 import sys
 import argparse
-import subprocess
-import re
 
 def run(input, count, infomapArgs):
 
     firstCodelength = 0.0
 
     for i in range(1, count + 1):
-        
+
         print("\nStarting run {}...".format(i))
+        infomapWrapper = infomap.Infomap("{} {}".format(input, infomapArgs), True)
 
-        res = subprocess.run(['./Infomap', input, infomapArgs], stdout=subprocess.PIPE)
+        infomapWrapper.run()
 
-        stdout = res.stdout.decode('utf-8')
-        match = re.search('Per level codelength total:.*\(sum: (\d+\.\d+)\)', stdout)
-        if not match:
-            sys.exit("No match for codelength from Infomap output '{}'".format(stdout))
+        codelength = infomapWrapper.codelength()
 
-        codelength = float(match.group(1))
         print("****************************************************************")
         print("{}: Found codelength: {}".format(i, codelength))
         if i == 1:
