@@ -1,4 +1,3 @@
-from infomap import infomap
 import sys
 import argparse
 import subprocess
