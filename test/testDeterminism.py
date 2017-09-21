@@ -32,15 +32,16 @@ def runInfomapAsLibrary(input, infomapArgs):
 
 def run(input, count, infomapArgs, asLibrary = False):
 
-    print("\n== Starting at {} ==".format(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())))
-    print("Running Infomap as {}".format("library" if asLibrary else "standalone binary"))
+    # print("\n== Starting at {} ==".format(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())))
+    # print("Running Infomap as {}".format("library" if asLibrary else "standalone binary"))
     t0clock, t0proc = time.perf_counter(), time.process_time()
 
     firstCodelength = 0.0
 
     for i in range(1, count + 1):
         
-        print("\nStarting run {} at {}...".format(i, time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())))
+        print("=" * 120)
+        print("{}: Run Infomap ({}) on '{}' with options '{}', starting at {}...".format(i, "library" if asLibrary else "standalone", input, infomapArgs, time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())))
         t1clock, t1proc = time.perf_counter(), time.process_time()
 
         if asLibrary:
@@ -48,20 +49,20 @@ def run(input, count, infomapArgs, asLibrary = False):
         else:
             codelength = runInfomapAsSubProcess(input, infomapArgs)
         
-        print("****************************************************************")
-        print("{}: Found codelength: {}".format(i, codelength))
+        print("Finished in {:.2e}s (process time {:.2e}) with codelength: {}".format(
+            time.perf_counter() - t1clock, time.process_time() - t1proc, codelength))
         if i == 1:
             firstCodelength = codelength
         elif codelength != firstCodelength:
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print("{} != {}".format(codelength, firstCodelength))
+            print("Codelength differ from first codelength {} with {:.2e}".format(
+                firstCodelength, codelength - firstCodelength))
             if abs(codelength - firstCodelength) > 1e-10:
                 print("Found non-deterministic behavior!")
                 return 1
             print("Less than 1e-10, continue...")
-        print("Clock time:          {:.2e}s".format(time.perf_counter() - t1clock))
-        print("Process time:        {:.2e}s".format(time.process_time() - t1proc))
-        print("****************************************************************")
+        print("=" * 120)
+        print("")
 
     print("Done! No non-deterministic behaviour found!")
 
