@@ -29,7 +29,12 @@ infomap_module = Extension(
         '-DAS_LIB',
         '-DPYTHON',
         '-Wno-deprecated-register',
-        '-std=c++14'
+        '-std=c++14',
+        '-stdlib=libc++', # Fix error: no member named 'unique_ptr' in namespace 'std'
+        '-mmacosx-version-min=10.10' # Fix clang: error: invalid deployment target for -stdlib=libc++ (requires OS X 10.7 or later)
+    ],
+    extra_link_args=[
+        '-mmacosx-version-min=10.10'
     ])
 
 setup(
