@@ -193,7 +193,6 @@ void InfomapBase::run()
 		return;
 	}
 
-	Log::init(this->verbosity, this->silent, this->verboseNumberPrecision);
 	Stopwatch timer(true);
 
 	Log() << "=======================================================\n";
@@ -222,14 +221,13 @@ void InfomapBase::run()
 	#endif
 	Log() << "=======================================================\n";
 
-	
-	Network network(*this);
 
-	std::string filename = this->networkFile;
+	if (m_network.numNodes() == 0) {
+		std::string filename = this->networkFile;
+		m_network.readInputData(filename);
+	}
 
-	network.readInputData(filename);
-
-	run(network);
+	run(m_network);
 
 
 	Log() << "===================================================\n";
@@ -243,8 +241,6 @@ void InfomapBase::run(Network& network)
 {
 	if (!isMainInfomap())
 		throw InternalOrderError("Can't run a non-main Infomap with an input network");
-
-	Log::init(this->verbosity, this->silent, this->verboseNumberPrecision);
 		
 	network.calculateFlow();
 	
@@ -342,7 +338,7 @@ InfomapBase& InfomapBase::initNetwork(StateNetwork& network)
 {
 	if (network.numNodes() == 0)
 		throw DataDomainError("No nodes in network");
-	this->setConfig(network.getConfig());
+	// this->setConfig(network.getConfig());
 	Log() << "Init " << (this->directedEdges ? "directed" : "undirected") << " network...\n";
 	generateSubNetwork(network);
 
@@ -731,7 +727,7 @@ void InfomapBase::writeResult()
 {
 	if (this->noFileOutput)
 		return;
-	
+		
 	std::string outputFilename = this->outDirectory + this->outName + ".tree";
 	Log() << "Write tree to " << outputFilename << "... ";
 

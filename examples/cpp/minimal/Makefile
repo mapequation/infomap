@@ -1,4 +1,4 @@
-CXXFLAGS = -Wall -O3
+CXXFLAGS = -Wall -O3 -std=c++14
 
 # Set INFOMAP_DIR to your Infomap directory
 INFOMAP_DIR = ../../..
@@ -15,11 +15,14 @@ mem-example: mem-example.cpp $(INFOMAP_LIB) Makefile
 multi-example: multi-example.cpp $(INFOMAP_LIB) Makefile
 	$(CXX) $(CXXFLAGS) -DNS_INFOMAP $< -o $@ -I$(INFOMAP_DIR)/include -L$(INFOMAP_DIR)/lib -lInfomap
 
+file-example: file-example.cpp $(INFOMAP_LIB) Makefile
+	$(CXX) $(CXXFLAGS) -DNS_INFOMAP $< -o $@ -I$(INFOMAP_DIR)/include -L$(INFOMAP_DIR)/lib -lInfomap
+
 $(INFOMAP_LIB):
-	cd $(INFOMAP_DIR) && $(MAKE) lib
+	$(MAKE) -C $(INFOMAP_DIR) lib
 
 clean:
 	$(RM) example
 
 distclean:
-	cd $(INFOMAP_DIR) && $(MAKE) clean
+	$(MAKE) -C $(INFOMAP_DIR) clean

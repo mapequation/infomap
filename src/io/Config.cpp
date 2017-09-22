@@ -5,6 +5,7 @@
 #include "SafeFile.h"
 #include "../utils/exceptions.h"
 #include "../utils/FileURI.h"
+#include "../utils/Log.h"
 
 namespace infomap {
 
@@ -263,7 +264,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	conf.parsedString = flags;
     conf.parsedOptions = api.getUsedOptionArguments();
 
-    conf.adaptDefaults();
+	conf.adaptDefaults();
+	
+	Log::init(conf.verbosity, conf.silent, conf.verboseNumberPrecision);
 
     return conf;
 }

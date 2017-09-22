@@ -70,15 +70,15 @@ public:
 		return m_current;
 	}
 
-	// InfoNode* operator->()
-	// {
-	// 	return m_current;
-	// }
+	InfoNode* operator->()
+	{
+		return m_current;
+	}
 
-	// const InfoNode* operator->() const
-	// {
-	// 	return m_current;
-	// }
+	const InfoNode* operator->() const
+	{
+		return m_current;
+	}
 
 	// InfoNode& operator*();
 

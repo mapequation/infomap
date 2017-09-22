@@ -30,30 +30,46 @@
 
 #include <Infomap.h>
 
-void printClusters(infomap::HierarchicalNetwork & tree) {
-    std::cout << "\nClusters:\n#physIndex clusterIndex:\n";
-    for (infomap::LeafIterator leafIt(&tree.getRootNode()); !leafIt.isEnd(); ++leafIt) {
-        std::cout << leafIt->physIndex << " " << leafIt.moduleIndex() << '\n';
-    }
+void printClusters(infomap::MemInfomap& infomap)
+{
+	std::cout << "\nClusters:\n#originalIndex clusterIndex:\n";
+
+	for (auto it = infomap.tree(); !it.isEnd(); ++it) {
+		if (it->isLeaf())
+			std::cout << it->physicalId << " " << it.moduleIndex() << '\n';
+	}
 }
 
 int main(int argc, char** argv)
 {
-	infomap::MemInfomap infomapWrapper("--two-level");
+	//TODO: Config not aware of MemInfomap
+	// -> infer from less physical nodes than state nodes
+	infomap::MemInfomap infomapWrapper("--two-level -v -i states");
 
-	infomapWrapper.addTrigram(0, 2, 0);
-	infomapWrapper.addTrigram(0, 2, 1);
-	infomapWrapper.addTrigram(1, 2, 1);
-	infomapWrapper.addTrigram(1, 2, 0);
-	infomapWrapper.addTrigram(1, 2, 3);
-	infomapWrapper.addTrigram(3, 2, 3);
-	infomapWrapper.addTrigram(2, 3, 4);
-	infomapWrapper.addTrigram(3, 2, 4);
-	infomapWrapper.addTrigram(4, 2, 4);
-	infomapWrapper.addTrigram(4, 2, 3);
-	infomapWrapper.addTrigram(4, 3, 3);
+	auto& network = infomapWrapper.network();
+	network.addStateNode(0, 0);
+	network.addStateNode(1, 0);
+	network.addStateNode(2, 0);
+	network.addStateNode(3, 1);
+	network.addStateNode(4, 1);
+	network.addStateNode(5, 1);
+
+	network.addLink(0, 1);
+	network.addLink(0, 2);
+	network.addLink(0, 3);
+	network.addLink(1, 0);
+	network.addLink(1, 2);
+	network.addLink(2, 1);
+	network.addLink(2, 0);
+	network.addLink(3, 0);
+	network.addLink(3, 4);
+	network.addLink(3, 5);
+	network.addLink(4, 3);
+	network.addLink(4, 5);
+	network.addLink(5, 4);
+	network.addLink(5, 3);
 
 	infomapWrapper.run();
 	
-	printClusters(infomapWrapper.tree);
+	printClusters(infomapWrapper);
 }
