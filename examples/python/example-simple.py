@@ -3,7 +3,8 @@ from infomap import infomap
 myInfomap = infomap.Infomap("--two-level --verbose")
 
 # Add weight as an optional third argument
-network = infomap.Network()
+network = myInfomap.network()
+
 network.addLink(0, 1)
 network.addLink(0, 2)
 network.addLink(0, 3)
@@ -19,9 +20,9 @@ network.addLink(4, 5)
 network.addLink(5, 4)
 network.addLink(5, 3)
 
-myInfomap.run(network)
+myInfomap.run()
 
-print("Found %d modules with codelength: %f" % (myInfomap.numTopModules(), myInfomap.codelength()))
+print("Found {} modules with codelength: {}".format(myInfomap.numTopModules(), myInfomap.codelength()))
 
 print("\n#node module")
 
