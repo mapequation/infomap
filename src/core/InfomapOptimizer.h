@@ -546,8 +546,8 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
 	// Create map with module links
 	// std::vector<DeltaFlowData> deltaFlow(numNodes);
-	// VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
-	SimpleMap<DeltaFlowDataType> deltaFlow(numNodes);
+	VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
+	// SimpleMap<DeltaFlowDataType> deltaFlow(numNodes);
 	// SimpleMap<DeltaFlowDataType> deltaFlow2(numNodes);
 	// Stopwatch timer(false);
 	// double t = 0.0;
@@ -622,6 +622,11 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
 		auto& moduleDeltaEnterExit = deltaFlow.values();
 		unsigned int numModuleLinks = deltaFlow.size();
+
+
+		std::sort(moduleDeltaEnterExit.begin(), moduleDeltaEnterExit.begin() + numModuleLinks, [](auto& a, auto&b) {
+			return a.module < b.module;
+		});
 
 		// Randomize link order for optimized search
 		// infomath::uniform_uint_dist uniform;

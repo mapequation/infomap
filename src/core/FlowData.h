@@ -79,12 +79,20 @@ struct DeltaFlow
 		deltaEnter(other.deltaEnter),
 		count(other.count) {}
 
+	DeltaFlow(const DeltaFlow&& other) // Move constructor
+	:	module(other.module),
+		deltaExit(other.deltaExit),
+		deltaEnter(other.deltaEnter),
+		count(other.count) {
+			// Log() << "**MOVE DeltaFlow(" << other << ")**";
+		}
+
 	// DeltaFlow& operator=(DeltaFlow other) // Assignment operator (copy-and-swap idiom)
 	// {
 	// 	swap(*this, other);
 	// 	return *this;
 	// }
-		
+
 	DeltaFlow& operator=(const DeltaFlow& other) // Assignment operator
 	{
 		module = other.module;
@@ -93,8 +101,19 @@ struct DeltaFlow
 		count = other.count;
 		return *this;
 	}
+		
+	DeltaFlow& operator=(const DeltaFlow&& other) // Move assignment operator
+	{
+		// swap(*this, other);
+		module = other.module;
+		deltaExit = other.deltaExit;
+		deltaEnter = other.deltaEnter;
+		count = other.count;
+		// Log() << "** =MOVE DeltaFlow(" << other << ") => count: " << count << "**";
+		return *this;
+	}
 
-	DeltaFlow& operator +=(const DeltaFlow& other)
+	DeltaFlow& operator+=(const DeltaFlow& other)
 	{
 		module = other.module;
 		deltaExit += other.deltaExit;
