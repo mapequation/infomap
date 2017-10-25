@@ -73,6 +73,12 @@ namespace infomath
 	{
 		return value > static_cast<T>(lowerLimit) && value < static_cast<T>(higherLimit);
 	}
+
+	inline
+	bool isEqualWithinThreshold(double v1, double v2, double epsilon = 1e-10)
+	{
+		return std::abs(v2 - v1) < epsilon;
+	}
 }
 
 #ifdef NS_INFOMAP

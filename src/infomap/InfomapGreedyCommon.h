@@ -40,6 +40,13 @@ namespace infomap
 {
 #endif
 
+
+struct CompNodePair {
+	bool operator() (const std::pair<NodeBase*, NodeBase*>& first, const std::pair<NodeBase*, NodeBase*>& second) const {
+		return first.first->index == second.first->index ? (first.second->index < second.second->index) : (first.first->index < second.first->index);
+	}
+};
+
 template<typename InfomapGreedyDerivedType>
 class InfomapGreedyCommon : public InfomapGreedySpecialized<typename derived_traits<InfomapGreedyDerivedType>::flow_type>
 {
@@ -1392,7 +1399,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::consolidateModules(b
 
 	// Aggregate links from lower level to the new modular level
 	typedef std::pair<NodeBase*, NodeBase*> NodePair;
-	typedef std::map<NodePair, double> EdgeMap;
+	typedef std::map<NodePair, double, CompNodePair> EdgeMap;
 	EdgeMap moduleLinks;
 
 	for (typename Super::activeNetwork_iterator nodeIt(Super::m_activeNetwork.begin()), nodeEnd(Super::m_activeNetwork.end());
@@ -1409,13 +1416,13 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::consolidateModules(b
 
 			if (otherParent != parent)
 			{
-				NodeBase *m1 = parent, *state = otherParent;
+				NodeBase *m1 = parent, *m2 = otherParent;
 				// If undirected, the order may be swapped to aggregate the edge on an opposite one
-				if (!IsDirectedType() && m1->index > state->index)
-					std::swap(m1, state);
+				if (!IsDirectedType() && m1->index > m2->index)
+					std::swap(m1, m2);
 				// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
-				std::pair<EdgeMap::iterator, bool> ret = \
-						moduleLinks.insert(std::make_pair(NodePair(m1, state), edge->data.flow));
+				std::pair<typename EdgeMap::iterator, bool> ret = \
+					moduleLinks.insert(std::make_pair(NodePair(m1, m2), edge->data.flow));
 				if (!ret.second)
 					ret.first->second += edge->data.flow;
 			}
