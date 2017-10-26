@@ -491,6 +491,11 @@ std::string Network::parseVertices(std::ifstream& file, std::string header, bool
 		double weight = 1.0;
 		if ((ss >> weight)) {
 			// TODO: Check valid weight here?
+			if (weight < 0.0) {
+				throw FileFormatError(io::Str() << "Parsed a negative value (" <<
+				weight << ") as weight to node " << id << " from line '" <<
+				line << "'.");
+			}
 		}
 		unsigned int nodeIndex = static_cast<unsigned int>(id - m_indexOffset);
 		if (nodeIndex != numNodesParsed)
@@ -513,6 +518,15 @@ std::string Network::parseVertices(std::ifstream& file, std::string header, bool
 		{
 			m_nodeWeights[i] = 1.0;
 			m_nodeNames[i] = io::stringify(i+1);
+		}
+		m_sumNodeWeights = m_numNodes * 1.0;
+	}
+	
+	if (m_sumNodeWeights < 1e-10) {
+		Log() << " (Warning: All node weights zero, changing to one) ";
+		for (unsigned int i = 0; i < m_numNodes; ++i)
+		{
+			m_nodeWeights[i] = 1.0;
 		}
 		m_sumNodeWeights = m_numNodes * 1.0;
 	}

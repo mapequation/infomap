@@ -147,7 +147,7 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 				m_nodeTeleportRates[i] = nodeWeights[i] / network.sumNodeWeights();
 		}
 	}
-	else // Teleport to nodes
+	else
 	{
 		// Teleport proportionally to out-degree, or in-degree if recorded teleportation.
 		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
@@ -160,7 +160,8 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 	// Normalize link weights with respect to its source nodes total out-link weight;
 	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 	{
-		linkIt->flow /= sumLinkOutWeight[linkIt->source];
+		if (sumLinkOutWeight[linkIt->source] > 0)
+			linkIt->flow /= sumLinkOutWeight[linkIt->source];
 	}
 
 	// Collect dangling nodes
@@ -182,9 +183,9 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 	{
 		// Calculate dangling rank
 		danglingRank = 0.0;
-		for (std::vector<unsigned int>::iterator danglingIt(danglings.begin()); danglingIt != danglings.end(); ++danglingIt)
+		for (unsigned int i = 0; i < danglings.size(); ++i)
 		{
-			danglingRank += m_nodeFlow[*danglingIt];
+			danglingRank += m_nodeFlow[danglings[i]];
 		}
 
 		// Flow from teleportation
