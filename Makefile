@@ -1,4 +1,6 @@
-CXXFLAGS = -Wall -std=c++14
+# CXXFLAGS = -Wall -std=c++14
+# http://www.network-theory.co.uk/docs/gccintro/gccintro_70.html -msse2 -mfpmath=sse -DDOUBLE
+CXXFLAGS = -Wall -std=c++14 -DPYTHON -Wno-deprecated-register
 LDFLAGS =
 CXX_CLANG := $(shell $(CXX) --version 2>/dev/null | grep clang)
 ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"

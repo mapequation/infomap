@@ -229,7 +229,6 @@ void InfomapBase::run()
 
 	run(m_network);
 
-
 	Log() << "===================================================\n";
 	Log() << "  Infomap ends at " << Date() << "\n";
 	// Log() << "  (Elapsed time: " << (Date() - startDate) << ")\n";

@@ -86,6 +86,11 @@ public:
 		markovTime = codeRate;
 		return get();
 	}
+
+	Infomap& reseed(unsigned int seed) {
+		m_rand.seed(seed);
+		return get();
+	}
 };
 
 }
