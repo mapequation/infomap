@@ -362,7 +362,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleLocal()
 			continue;
 
 		// If other nodes have moved here, don't move away on first loop
-		if (m_moduleMembers[current.index] > 1 && isFirstLoop())
+		if (m_moduleMembers[current.index] > 1 && isFirstLoop() && this->tuneIterationLimit != 1)
 			continue;
 
 		// If no links connecting this node with other nodes, it won't move into others,
@@ -565,7 +565,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 			continue;
 
 		// If other nodes have moved here, don't move away on first loop
-		if (m_moduleMembers[current.index] > 1 && isFirstLoop())
+		if (m_moduleMembers[current.index] > 1 && isFirstLoop() && this->tuneIterationLimit != 1)
 			continue;
 
 		// If no links connecting this node with other nodes, it won't move into others,
@@ -773,7 +773,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 			continue;
 
 		// If other nodes have moved here, don't move away on first loop
-		if (m_moduleMembers[current.index] > 1 && isFirstLoop())
+		if (m_moduleMembers[current.index] > 1 && isFirstLoop() && this->tuneIterationLimit != 1)
 			continue;
 
 		// If no links connecting this node with other nodes, it won't move into others,
