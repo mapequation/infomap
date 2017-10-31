@@ -946,7 +946,7 @@ unsigned int InfomapBase::coarseTune()
 
 			InfomapBase& subInfomap = getSubInfomap(node)
 				.setTwoLevel(true)
-				.setNoCoarseTune(true);
+				.setTuneIterationLimit(1);
 			subInfomap.initNetwork(node).run();
 
 			auto originalLeafIt = node.begin_child();

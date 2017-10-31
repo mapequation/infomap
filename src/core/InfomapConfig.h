@@ -62,6 +62,11 @@ public:
 		return get();
 	}
 
+	Infomap& setTuneIterationLimit(unsigned int value) {
+		tuneIterationLimit = value;
+		return get();
+	}
+
 	Infomap& setFastHierarchicalSolution(unsigned int level) {
 		fastHierarchicalSolution = level;
 		return get();
