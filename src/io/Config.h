@@ -135,7 +135,7 @@ struct Config
 
 	Config()
 	{
-		setOptimizationLevel(1);
+		// setOptimizationLevel(1);
 	}
 
 	Config(std::string flags, bool requireFileInput = false)
@@ -365,25 +365,25 @@ struct Config
 		outDirectory = other.outDirectory;
 		outName = other.outName;
 		originallyUndirected = other.originallyUndirected;
-		printTree = other.printTree;
-		printFlowTree = other.printFlowTree;
-		printMap = other.printMap;
-		printClu = other.printClu;
-		printNodeRanks = other.printNodeRanks;
-		printFlowNetwork = other.printFlowNetwork;
-		printPajekNetwork = other.printPajekNetwork;
-		printStateNetwork = other.printStateNetwork;
-		printBinaryTree = other.printBinaryTree;
-		printBinaryFlowTree = other.printBinaryFlowTree;
-		printExpanded = other.printExpanded;
-		noFileOutput = other.noFileOutput;
+		// printTree = other.printTree;
+		// printFlowTree = other.printFlowTree;
+		// printMap = other.printMap;
+		// printClu = other.printClu;
+		// printNodeRanks = other.printNodeRanks;
+		// printFlowNetwork = other.printFlowNetwork;
+		// printPajekNetwork = other.printPajekNetwork;
+		// printStateNetwork = other.printStateNetwork;
+		// printBinaryTree = other.printBinaryTree;
+		// printBinaryFlowTree = other.printBinaryFlowTree;
+		// printExpanded = other.printExpanded;
+		// noFileOutput = other.noFileOutput;
 		verbosity = other.verbosity;
 		verboseNumberPrecision = other.verboseNumberPrecision;
-		silent = other.silent;
-		benchmark = other.benchmark;
-	 	maxNodeIndexVisible = other.maxNodeIndexVisible;
-	 	showBiNodes = other.showBiNodes;
-	 	minBipartiteNodeIndex = other.minBipartiteNodeIndex;
+		// silent = other.silent;
+		// benchmark = other.benchmark;
+	 	// maxNodeIndexVisible = other.maxNodeIndexVisible;
+	 	// showBiNodes = other.showBiNodes;
+	 	// minBipartiteNodeIndex = other.minBipartiteNodeIndex;
 		startDate = other.startDate;
 		version = other.version;
 		// parsedString = other.parsedString;
