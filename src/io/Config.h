@@ -85,7 +85,7 @@ struct Config
 	// Performance and accuracy
 	unsigned int numTrials = 1;
 	double minimumCodelengthImprovement = 1e-10;
-	double minimumSingleNodeCodelengthImprovement = 1e-10;
+	double minimumSingleNodeCodelengthImprovement = 1e-16;
 	bool randomizeCoreLoopLimit = false;
 	unsigned int coreLoopLimit = 10;
 	unsigned int levelAggregationLimit = 0;
