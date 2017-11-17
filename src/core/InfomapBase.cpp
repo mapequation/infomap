@@ -282,7 +282,8 @@ void InfomapBase::run(Network& network)
 				initPartition(this->clusterDataFile, this->clusterDataIsHard);
 		}
 
-		runPartition();
+		if (!this->noInfomap)
+			runPartition();
 
 		if (haveHardPartition())
 			restoreHardPartition();
