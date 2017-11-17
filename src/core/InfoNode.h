@@ -276,6 +276,8 @@ public:
 
 	unsigned int depth() const;
 
+	unsigned int firstDepthBelow() const;
+
 	unsigned int numLeafMembers()
 	{ return m_numLeafMembers; }
 
@@ -358,6 +360,13 @@ public:
 	void addChild(InfoNode* child);
 
 	void releaseChildren();
+
+	/**
+	 * If not already having a single child, replace children
+	 * with a single new node, assuming grandchildren.
+	 * @return the single child
+	 */
+	InfoNode& replaceChildrenWithOneNode();
 
 	/**
 	 * @return 1 if the node is removed, otherwise 0

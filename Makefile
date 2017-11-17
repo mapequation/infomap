@@ -47,7 +47,7 @@ build/Infomap/%.o : src/%.cpp $(HEADERS) Makefile
 noomp: Infomap
 	@true
 
-debug: Infomap
+debug: clean Infomap
 	@true
 
 

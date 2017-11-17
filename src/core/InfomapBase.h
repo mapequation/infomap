@@ -83,6 +83,8 @@ public:
 
 	bool haveModules() const;
 
+	bool haveNonTrivialModules() const;
+
 	/**
 	 * Number of node levels below the root in current Infomap instance, 1 if no modules
 	 */
@@ -97,6 +99,8 @@ public:
 	virtual double getModuleCodelength() const = 0;
 
 	double getHierarchicalCodelength() const;
+
+	double getOneLevelCodelength() const { return m_oneLevelCodelength; }
 
 	bool isFullNetwork() { return m_isMain && m_aggregationLevel == 0; }
 	bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
@@ -349,6 +353,35 @@ struct PerLevelStat
 	unsigned int numLeafNodes = 0;
 	double indexLength = 0.0;
 	double leafLength = 0.0;
+};
+
+struct PerIterationStats
+{
+	PerIterationStats()
+	:	iterationIndex(0),
+		numTopModules(0),
+		numBottomModules(0),
+		topPerplexity(0.0),
+		bottomPerplexity(0.0),
+		topOverlap(0.0),
+		bottomOverlap(0.0),
+		codelength(0.0),
+		maxDepth(0),
+		weightedDepth(0.0),
+		seconds(0.0),
+		isMinimum(false) {}
+	unsigned int iterationIndex;
+	unsigned int numTopModules;
+	unsigned int numBottomModules;
+	double topPerplexity; // Perplexity of top module flow distribution
+	double bottomPerplexity;
+	double topOverlap; // Average number of modules per physical node
+	double bottomOverlap;
+	double codelength;
+	unsigned int maxDepth;
+	double weightedDepth;
+	double seconds;
+	bool isMinimum;
 };
 
 }

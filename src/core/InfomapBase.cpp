@@ -98,6 +98,11 @@ bool InfomapBase::haveModules() const
 	return !m_root.isLeaf() && !m_root.firstChild->isLeaf();
 }
 
+bool InfomapBase::haveNonTrivialModules() const
+{
+	return numNonTrivialTopModules() > 0;
+}
+
 unsigned int InfomapBase::numLevels() const
 {
 	unsigned int depth = 0;
@@ -614,7 +619,8 @@ void InfomapBase::partition()
 	auto oldPrecision = Log::precision();
 	Log(0,0) << "Two-level compression: " << std::setprecision(2) << std::flush;
 	Log(1) << "Trying to find modular structure... \n";
-	double oldCodelength = m_oneLevelCodelength;
+	double initialCodelength = m_oneLevelCodelength;
+	double oldCodelength = initialCodelength;
 
 	m_tuneIterationIndex = 0;
 	findTopModulesRepeatedly(this->levelAggregationLimit);
@@ -665,7 +671,8 @@ void InfomapBase::partition()
 		}
 		newCodelength = getCodelength();
 		compression = (oldCodelength - newCodelength)/oldCodelength;
-		bool isImprovement = newCodelength <= oldCodelength - this->minimumCodelengthImprovement;
+		bool isImprovement = newCodelength <= oldCodelength - this->minimumCodelengthImprovement &&
+			newCodelength < oldCodelength - initialCodelength * this->minimumRelativeTuneIterationImprovement;
 		if (!isImprovement) {
 			// Make sure coarse-tuning have been tried
 			if (coarseTuned)
@@ -683,16 +690,32 @@ void InfomapBase::partition()
 	if (m_numNonTrivialTopModules != numTopModules())
 		Log() << " (" << m_numNonTrivialTopModules << " non-trivial)";
 	Log() << " modules." << std::endl;
+	
+	if (!this->skipReplaceToOneModuleIfBetter && haveNonTrivialModules() && getCodelength() > getOneLevelCodelength()) {
+		Log() << "Worse codelength than one-level codelength, putting all nodes in one module... ";
 
-	// Set consolidated cluster index on nodes and modules
-	for (auto clusterIt = m_root.begin_tree(); !clusterIt.isEnd(); ++clusterIt) {
-		clusterIt->index = clusterIt.clusterIndex();
+		// Create new single module between modules and root
+		auto& module = root().replaceChildrenWithOneNode();
+		module.data = m_root.data;
+		module.index = 0;
+		for (auto& node : module) {
+			node.index = 0;
+		}
+		module.codelength = getOneLevelCodelength();
+		m_hierarchicalCodelength = getOneLevelCodelength();
+
 	}
+	else {
+		// Set consolidated cluster index on nodes and modules
+		for (auto clusterIt = m_root.begin_tree(); !clusterIt.isEnd(); ++clusterIt) {
+			clusterIt->index = clusterIt.clusterIndex();
+		}
 
-	// Calculate individual module codelengths and store on the modules
-	calcCodelengthOnTree(false);
-	m_root.codelength = getIndexCodelength();
-	m_hierarchicalCodelength = getCodelength();
+		// Calculate individual module codelengths and store on the modules
+		calcCodelengthOnTree(false);
+		m_root.codelength = getIndexCodelength();
+		m_hierarchicalCodelength = getCodelength();
+	}
 }
 
 
@@ -1008,8 +1031,10 @@ unsigned int InfomapBase::coarseTune()
 void InfomapBase::calculateNumNonTrivialTopModules()
 {
 	m_numNonTrivialTopModules = 0;
+	if (root().childDegree() == 1)
+		return;
 	for (auto& module : m_root) {
-		if (module.childDegree() != 1)
+		if (module.childDegree() > 1)
 			++m_numNonTrivialTopModules;
 	}
 }
@@ -1084,11 +1109,7 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
 
 		++numLevelsCreated;
 
-		m_numNonTrivialTopModules = 0;
-		for (auto& module : m_root) {
-			if (module.childDegree() != 1)
-				++m_numNonTrivialTopModules;
-		}
+		calculateNumNonTrivialTopModules();
 
 	} while (m_numNonTrivialTopModules > 1 && numLevelsCreated != superLevelLimit);
 
@@ -1191,11 +1212,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
 
 		++numLevelsCreated;
 
-		m_numNonTrivialTopModules = 0;
-		for (auto& module : m_root) {
-			if (module.childDegree() != 1)
-				++m_numNonTrivialTopModules;
-		}
+		calculateNumNonTrivialTopModules();
 
 	} while (m_numNonTrivialTopModules > 1 && numLevelsCreated != superLevelLimit);
 
@@ -1218,10 +1235,13 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
 
 void InfomapBase::transformNodeFlowToEnterFlow(InfoNode& parent)
 {
+	double sumFlow = 0.0;
 	for (auto& module : m_root)
 	{
 		module.data.flow = module.data.enterFlow;
+		sumFlow += module.data.flow;
 	}
+	parent.data.flow = sumFlow;
 }
 
 void InfomapBase::resetFlowOnModules()

@@ -98,6 +98,7 @@ struct Config
 	bool onlySuperModules = false;
 	unsigned int fastHierarchicalSolution = 0;
 	bool fastFirstIteration = false;
+	bool skipReplaceToOneModuleIfBetter = false;
 	unsigned int lowMemoryPriority = false; // Prioritize memory efficient algorithms before fast if > 0
 	bool innerParallelization = false;
 
@@ -193,6 +194,7 @@ struct Config
 		onlySuperModules(other.onlySuperModules),
 		fastHierarchicalSolution(other.fastHierarchicalSolution),
 		fastFirstIteration(other.fastFirstIteration),
+		skipReplaceToOneModuleIfBetter(other.skipReplaceToOneModuleIfBetter),
 		lowMemoryPriority(other.lowMemoryPriority),
 		innerParallelization(other.innerParallelization),
 		outDirectory(other.outDirectory),
@@ -277,6 +279,7 @@ struct Config
 		onlySuperModules = other.onlySuperModules;
 		fastHierarchicalSolution = other.fastHierarchicalSolution;
 		fastFirstIteration = other.fastFirstIteration;
+		skipReplaceToOneModuleIfBetter = other.skipReplaceToOneModuleIfBetter;
 		lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
 		outDirectory = other.outDirectory;
@@ -360,6 +363,7 @@ struct Config
 		// onlySuperModules = other.onlySuperModules;
 		// fastHierarchicalSolution = other.fastHierarchicalSolution;
 		// fastFirstIteration = other.fastFirstIteration;
+		skipReplaceToOneModuleIfBetter = other.skipReplaceToOneModuleIfBetter;
 		lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
 		outDirectory = other.outDirectory;

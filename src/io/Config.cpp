@@ -203,6 +203,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addIncrementalOptionArgument(conf.fastHierarchicalSolution, 'F', "fast-hierarchical-solution",
 			"Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.");
 
+	api.addOptionArgument(conf.skipReplaceToOneModuleIfBetter, "skip-replace-to-one-module",
+			"Keep modular solutions even if not better than all nodes in one module", true);
+
 	api.addIncrementalOptionArgument(conf.lowMemoryPriority, 'l', "low-memory",
 			"Prioritize memory efficient algorithms before fast. Use -ll to optimize even more, but this may give approximate results.");
 

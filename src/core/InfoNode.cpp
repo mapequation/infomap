@@ -127,6 +127,17 @@ unsigned int InfoNode::depth() const
 	return depth;
 }
 
+unsigned int InfoNode::firstDepthBelow() const
+{
+	unsigned int depthBelow = 0;
+	InfoNode* child = firstChild;
+	while (child != nullptr) {
+		++depthBelow;
+		child = child->firstChild;
+	}
+	return depthBelow;
+}
+
 unsigned int InfoNode::childIndex() const
 {
 	unsigned int childIndex = 0;
@@ -172,6 +183,33 @@ void InfoNode::releaseChildren()
 	firstChild = nullptr;
 	lastChild = nullptr;
 	m_childDegree = 0;
+}
+
+InfoNode& InfoNode::replaceChildrenWithOneNode()
+{
+	if (childDegree() == 1)
+		return *firstChild;
+	if (firstChild == nullptr)
+		throw InternalOrderError("replaceChildrenWithOneNode called on a node without any children.");
+	if (firstChild->firstChild == nullptr)
+		throw InternalOrderError("replaceChildrenWithOneNode called on a node without any grandchildren.");
+	InfoNode* middleNode = new InfoNode();
+	InfoNode::sibling_iterator nodeIt = begin_child();
+	unsigned int numOriginalChildrenLeft = m_childDegree;
+	auto d0 = m_childDegree;
+	do
+	{
+		InfoNode* n = nodeIt.base();
+		++nodeIt;
+		middleNode->addChild(n);
+	}
+	while (--numOriginalChildrenLeft != 0);
+	releaseChildren();
+	addChild(middleNode);
+	auto d1 = middleNode->replaceChildrenWithGrandChildren();
+	if (d1 != d0)
+		throw InternalOrderError("replaceChildrenWithOneNode replaced different number of children as having before");
+	return *middleNode;
 }
 
 unsigned int InfoNode::replaceChildrenWithGrandChildren()

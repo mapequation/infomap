@@ -417,7 +417,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleLocal()
 		}
 
 		// For memory networks
-		// m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
 		// Collect the move options to a vector
 		std::vector<DeltaFlowDataType> moduleDeltaEnterExit(deltaFlow.size());
@@ -620,7 +620,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
 		// For memory networks
 		//TODO: Uncomment after fix!!
-		// m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
 		auto& moduleDeltaEnterExit = deltaFlow.values();
 		unsigned int numModuleLinks = deltaFlow.size();
