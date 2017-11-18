@@ -61,57 +61,25 @@ struct FlowData
 
 struct DeltaFlow
 {
-	DeltaFlow()
-	:	module(0),
-		deltaExit(0.0),
-		deltaEnter(0.0),
-		count(0) {}
+	unsigned int module = 0;
+	double deltaExit = 0.0;
+	double deltaEnter = 0.0;
+	unsigned int count = 0;
 
-	DeltaFlow(unsigned int module, double deltaExit, double deltaEnter)
+	virtual ~DeltaFlow() = default;
+
+	DeltaFlow() {}
+
+	explicit DeltaFlow(unsigned int module, double deltaExit, double deltaEnter)
 	:	module(module),
 		deltaExit(deltaExit),
 		deltaEnter(deltaEnter),
 		count(0) {}
 
-	DeltaFlow(const DeltaFlow& other) // Copy constructor
-	:	module(other.module),
-		deltaExit(other.deltaExit),
-		deltaEnter(other.deltaEnter),
-		count(other.count) {}
-
-	DeltaFlow(const DeltaFlow&& other) // Move constructor
-	:	module(other.module),
-		deltaExit(other.deltaExit),
-		deltaEnter(other.deltaEnter),
-		count(other.count) {
-			// Log() << "**MOVE DeltaFlow(" << other << ")**";
-		}
-
-	// DeltaFlow& operator=(DeltaFlow other) // Assignment operator (copy-and-swap idiom)
-	// {
-	// 	swap(*this, other);
-	// 	return *this;
-	// }
-
-	DeltaFlow& operator=(const DeltaFlow& other) // Assignment operator
-	{
-		module = other.module;
-		deltaExit = other.deltaExit;
-		deltaEnter = other.deltaEnter;
-		count = other.count;
-		return *this;
-	}
-		
-	DeltaFlow& operator=(const DeltaFlow&& other) // Move assignment operator
-	{
-		// swap(*this, other);
-		module = other.module;
-		deltaExit = other.deltaExit;
-		deltaEnter = other.deltaEnter;
-		count = other.count;
-		// Log() << "** =MOVE DeltaFlow(" << other << ") => count: " << count << "**";
-		return *this;
-	}
+	DeltaFlow(const DeltaFlow&) = default;
+    DeltaFlow& operator=(const DeltaFlow&) = default;
+    DeltaFlow(DeltaFlow&&) = default;
+    DeltaFlow& operator=(DeltaFlow&&) = default;
 
 	DeltaFlow& operator+=(const DeltaFlow& other)
 	{
@@ -121,11 +89,6 @@ struct DeltaFlow
 		++count;
 		return *this;
 	}
-
-	// bool operator==(const DeltaFlow& other)
-	// {
-	// 	return module == other.module;
-	// }
 
 	void reset()
 	{
@@ -147,39 +110,26 @@ struct DeltaFlow
 	{
 		return out << "module: " << data.module << ", deltaEnter: " << data.deltaEnter << ", deltaExit: " << data.deltaExit << ", count: " << data.count;
 	}
-
-	unsigned int module = 0;
-	double deltaExit = 0.0;
-	double deltaEnter = 0.0;
-	unsigned int count = 0;
 };
 
 struct MemDeltaFlow : DeltaFlow
 {
-	MemDeltaFlow()
-	:	DeltaFlow(),
-		sumDeltaPlogpPhysFlow(0.0),
-		sumPlogpPhysFlow(0.0) {}
+	double sumDeltaPlogpPhysFlow = 0.0;
+	double sumPlogpPhysFlow = 0.0;
+	
+	MemDeltaFlow() : DeltaFlow() {}
 
-	MemDeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow = 0.0, double sumPlogpPhysFlow = 0.0)
+	explicit MemDeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow = 0.0, double sumPlogpPhysFlow = 0.0)
 	:	DeltaFlow(module, deltaExit, deltaEnter),
 		sumDeltaPlogpPhysFlow(sumDeltaPlogpPhysFlow),
 		sumPlogpPhysFlow(sumPlogpPhysFlow) {}
 
-	MemDeltaFlow(const MemDeltaFlow& other) // Copy constructor
-	:	DeltaFlow(other),
-		sumDeltaPlogpPhysFlow(other.sumDeltaPlogpPhysFlow),
-		sumPlogpPhysFlow(other.sumPlogpPhysFlow) {}
-
-	MemDeltaFlow& operator=(MemDeltaFlow other) // Assignment operator (copy-and-swap idiom)
+	MemDeltaFlow& operator+=(const MemDeltaFlow& other)
 	{
-		swap(*this, other);
+		DeltaFlow::operator+=(other);
+		sumDeltaPlogpPhysFlow += other.sumDeltaPlogpPhysFlow;
+		sumPlogpPhysFlow += other.sumPlogpPhysFlow;
 		return *this;
-	}
-
-	bool operator==(const MemDeltaFlow& other)
-	{
-		return module == other.module;
 	}
 
 	void reset()
@@ -191,16 +141,18 @@ struct MemDeltaFlow : DeltaFlow
 
 	friend void swap(MemDeltaFlow& first, MemDeltaFlow& second)
 	{
-		std::swap(first.module, second.module);
-		std::swap(first.deltaExit, second.deltaExit);
-		std::swap(first.deltaEnter, second.deltaEnter);
-		std::swap(first.count, second.count);
+        swap(static_cast<DeltaFlow&>(first), static_cast<DeltaFlow&>(second));
 		std::swap(first.sumDeltaPlogpPhysFlow, second.sumDeltaPlogpPhysFlow);
 		std::swap(first.sumPlogpPhysFlow, second.sumPlogpPhysFlow);
 	}
 
-	double sumDeltaPlogpPhysFlow = 0.0;
-	double sumPlogpPhysFlow = 0.0;
+	friend std::ostream& operator<<(std::ostream& out, const MemDeltaFlow& data)
+	{
+		return out << "module: " << data.module << ", deltaEnter: " << data.deltaEnter <<
+		", deltaExit: " << data.deltaExit << ", count: " << data.count <<
+		", sumDeltaPlogpPhysFlow: " << data.sumDeltaPlogpPhysFlow <<
+		", sumPlogpPhysFlow: " << data.sumPlogpPhysFlow;
+	}
 };
 
 
@@ -212,6 +164,12 @@ struct PhysData
 	PhysData(const PhysData& other) : physNodeIndex(other.physNodeIndex), sumFlowFromM2Node(other.sumFlowFromM2Node) {}
 	unsigned int physNodeIndex;
 	double sumFlowFromM2Node; // The amount of flow from the memory node in this physical node
+	
+	friend std::ostream& operator<<(std::ostream& out, const PhysData& data)
+	{
+		return out << "physNodeIndex: " << data.physNodeIndex <<
+		", sumFlowFromM2Node: " << data.sumFlowFromM2Node;
+	}
 };
 
 
