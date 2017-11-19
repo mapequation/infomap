@@ -142,9 +142,9 @@ public:
 
 
 	// ---------------------------- Infomap ----------------------------
-	InfomapBase& getInfomap(bool reset = false);
+	InfomapBase& getInfomap();
 
-	InfomapBase& getMemInfomap(bool reset = false);
+	InfomapBase& setInfomap(InfomapBase*);
 
 	InfoNode* getInfomapRoot();
 

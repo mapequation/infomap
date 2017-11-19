@@ -66,19 +66,33 @@ InfoNode::~InfoNode()
 // 	return false;
 // }
 
-InfomapBase& InfoNode::getInfomap(bool reset) {
-	if (!m_infomap || reset) {
-		disposeInfomap();
-		m_infomap = new M1Infomap();
-	}
+// InfomapBase& InfoNode::getInfomap(bool reset) {
+// 	if (!m_infomap || reset || m_infomap->isHigherOrder()) {
+// 		disposeInfomap();
+// 		m_infomap = new M1Infomap();
+// 	}
+// 	return *m_infomap;
+// }
+
+// InfomapBase& InfoNode::getMemInfomap(bool reset) {
+// 	if (!m_infomap || reset || !m_infomap->isHigherOrder()) {
+// 		disposeInfomap();
+// 		m_infomap = new M2Infomap();
+// 	}
+// 	return *m_infomap;
+// }
+
+InfomapBase& InfoNode::setInfomap(InfomapBase* infomap) {
+	disposeInfomap();
+	m_infomap = infomap;
+	if (infomap == nullptr)
+		throw InternalOrderError("InfoNode::setInfomap(...) called with null infomap");
 	return *m_infomap;
 }
 
-InfomapBase& InfoNode::getMemInfomap(bool reset) {
-	if (!m_infomap || reset) {
-		disposeInfomap();
-		m_infomap = new M2Infomap();
-	}
+InfomapBase& InfoNode::getInfomap() {
+	if (m_infomap == nullptr)
+		throw InternalOrderError("InfoNode::getInfomap() called but infomap is null");
 	return *m_infomap;
 }
 

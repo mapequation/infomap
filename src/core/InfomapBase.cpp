@@ -119,19 +119,19 @@ double InfomapBase::getHierarchicalCodelength() const
 	return m_hierarchicalCodelength;
 }
 
-InfomapBase& InfomapBase::getInfomap(InfoNode& node) {
-	return node.getInfomap();
-}
+// InfomapBase& InfomapBase::getInfomap(InfoNode& node) {
+// 	return node.getInfomap();
+// }
 
 InfomapBase& InfomapBase::getSubInfomap(InfoNode& node) {
-	return getInfomap(node)
+	return node.setInfomap(getNewInfomapInstance())
 		.setIsMain(false)
 		.setSubLevel(m_subLevel + 1)
 		.setNonMainConfig(*this);
 }
 
 InfomapBase& InfomapBase::getSuperInfomap(InfoNode& node) {
-	return getInfomap(node)
+	return node.setInfomap(getNewInfomapInstanceWithoutMemory())
 		.setIsMain(false)
 		.setSubLevel(m_subLevel + SUPER_LEVEL_ADDITION)
 		.setNonMainConfig(*this);
@@ -163,18 +163,6 @@ bool InfomapBase::isMainInfomap() const
 	// return m_root.owner == nullptr || m_root.owner->isRoot();
 	return m_isMain;
 }
-
-bool InfomapBase::haveMemory() const
-{
-//	return std::is_base_of<M2InfoNode<Node>, Node>::value;
-	return false;
-}
-
-// template<>
-// bool InfomapBase<M1InfoNode>::haveMemory() const { return false; }
-//
-// template<>
-// bool InfomapBase<M2InfoNode>::haveMemory() const { return true; }
 
 bool InfomapBase::haveHardPartition() const
 {
@@ -756,16 +744,13 @@ void InfomapBase::writeResult()
 
 	SafeOutFile outFile(outputFilename);
 	outFile << "# Codelength = " << getCodelength() << " bits.\n";
-	// auto it = root.begin_treePath();
-	// it++;
-	// for (; !it.isEnd(); ++it) {
-	// for (auto& it : root.infomapTree()) {
 	for (auto it = root().begin_treePath(); !it.isEnd(); ++it) {
 		InfoNode &node = *it;
 		if (node.isLeaf()) {
 			auto &path = it.path();
 			outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.uid << "\" " <<
 					node.physicalId << "\n";
+					// node.uid << " " << node.physicalId << "\n";
 		}
 	}
 	

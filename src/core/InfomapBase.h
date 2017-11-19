@@ -105,7 +105,10 @@ public:
 	bool isFullNetwork() { return m_isMain && m_aggregationLevel == 0; }
 	bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 
-	virtual InfomapBase& getInfomap(InfoNode& node);
+	// virtual InfomapBase& getInfomap(InfoNode& node);
+
+	virtual InfomapBase* getNewInfomapInstance() const = 0;
+	virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const = 0;
 
 	InfomapBase& getSubInfomap(InfoNode& node);
 	InfomapBase& getSuperInfomap(InfoNode& node);
@@ -120,7 +123,7 @@ public:
 	bool isSuperLevelOnTopLevel() const;
 	bool isMainInfomap() const;
 
-	bool haveMemory() const;
+	virtual bool haveMemory() const = 0;
 
 	bool haveHardPartition() const;
 

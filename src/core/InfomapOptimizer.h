@@ -16,6 +16,7 @@
 #include "FlowData.h"
 #include <utility>
 #include <tuple>
+#include "./MapEquation.h"
 
 namespace infomap {
 
@@ -60,9 +61,13 @@ public:
 
 	virtual double getModuleCodelength() const;
 
-protected:
+	bool haveMemory() const;
 
-	virtual InfomapBase& getInfomap(InfoNode& node);
+protected:
+	
+	// virtual InfomapBase& getInfomap(InfoNode& node);
+	virtual InfomapBase* getNewInfomapInstance() const;
+	virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const;
 
 	using Base::isTopLevel;
 	using Base::isMainInfomap;
@@ -135,10 +140,21 @@ protected:
 
 template<typename Objective>
 inline
-InfomapBase& InfomapOptimizer<Objective>::getInfomap(InfoNode& node) {
-	return node.getInfomap();
+bool InfomapOptimizer<Objective>::haveMemory() const {
+	return Objective::haveMemory();
 }
 
+template<typename Objective>
+inline
+InfomapBase* InfomapOptimizer<Objective>::getNewInfomapInstance() const {
+	return new InfomapOptimizer<Objective>();
+}
+
+template<typename Objective>
+inline
+InfomapBase* InfomapOptimizer<Objective>::getNewInfomapInstanceWithoutMemory() const {
+	return new InfomapOptimizer<MapEquation>();
+}
 
 template<typename Objective>
 inline

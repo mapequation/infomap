@@ -79,7 +79,7 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 			// 	<< ", weight: " << linkWeight << "\n";
 
 			if (sourceIndex != targetIndex) {
-				if (config.parseAsUndirected()) {
+				if (!config.directedEdges) {
 					++nodeOutDegree[targetIndex];
 					sumLinkOutWeight[targetIndex] += linkWeight;
 				}
