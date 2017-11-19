@@ -738,8 +738,10 @@ void InfomapBase::writeResult()
 {
 	if (this->noFileOutput)
 		return;
-		
-	std::string outputFilename = this->outDirectory + this->outName + ".tree";
+	
+	
+	std::string outputFilename = this->outDirectory + this->outName +
+		(haveMemory() ? "_expanded.tree" : ".tree");
 	Log() << "Write tree to " << outputFilename << "... ";
 
 	SafeOutFile outFile(outputFilename);
@@ -748,9 +750,11 @@ void InfomapBase::writeResult()
 		InfoNode &node = *it;
 		if (node.isLeaf()) {
 			auto &path = it.path();
-			outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.uid << "\" " <<
-					node.physicalId << "\n";
-					// node.uid << " " << node.physicalId << "\n";
+			outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.uid << "\" ";
+			if (haveMemory())
+				outFile << node.uid << " " << node.physicalId << "\n";
+			else
+				outFile << node.physicalId << "\n";
 		}
 	}
 	
@@ -1462,7 +1466,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 			.initNetwork(module);
 		// Run two-level partition + find hierarchically super modules (skip recursion)
 		subInfomap.setOnlySuperModules(true).run();
-//		subInfomap.setTwoLevel(true).run();
+		// subInfomap.setTwoLevel(true).run();
 
 		double subCodelength = subInfomap.getHierarchicalCodelength();
 		double subIndexCodelength = subInfomap.getIndexCodelength();
