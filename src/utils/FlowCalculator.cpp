@@ -176,7 +176,8 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 	// Normalize link weights with respect to its source nodes total out-link weight;
 	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 	{
-		linkIt->flow /= sumLinkOutWeight[linkIt->source];
+		if (sumLinkOutWeight[linkIt->source] > 0)
+			linkIt->flow /= sumLinkOutWeight[linkIt->source];
 		sumLinkFlow += linkIt->flow;
 	}
 
