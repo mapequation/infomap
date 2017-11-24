@@ -122,7 +122,7 @@ bool InfoNode::isLeaf() const
 bool InfoNode::isLeafModule() const
 {
 	//TODO: Safe to assume all children are leaves if first child is leaf?
-	return firstChild != nullptr && firstChild->firstChild == nullptr;
+	return m_infomap == nullptr && firstChild != nullptr && firstChild->firstChild == nullptr;
 }
 
 bool InfoNode::isRoot() const

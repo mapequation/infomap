@@ -251,6 +251,8 @@ public:
 
 	void calculateNumNonTrivialTopModules();
 
+	unsigned int calculateMaxDepth();
+
 	// ===================================================
 	// Partition: findTopModulesRepeatedly: *
 	// ===================================================

@@ -584,22 +584,24 @@ void InfomapBase::hierarchicalPartition()
 
 	findHierarchicalSuperModules();
 //	findHierarchicalSuperModulesFast(superLevelLimit);
-
+	
 	if (this->onlySuperModules) {
 		removeSubModules(true);
+		m_hierarchicalCodelength = calcCodelengthOnTree(true); // FIX?
 		return;
 	}
 
 	if (this->fastHierarchicalSolution >= 2) {
 		// Calculate individual module codelengths and store on the modules
-		calcCodelengthOnTree(false);
+		// calcCodelengthOnTree(false);
 		return;
 	}
 
 	if (this->fastHierarchicalSolution == 0) {
 		removeSubModules(true);
+		m_hierarchicalCodelength = calcCodelengthOnTree(true);
 	}
-
+	
 	recursivePartition();
 }
 
@@ -705,6 +707,7 @@ void InfomapBase::partition()
 		m_root.codelength = getIndexCodelength();
 		m_hierarchicalCodelength = getCodelength();
 	}
+	m_hierarchicalCodelength = calcCodelengthOnTree(true);
 }
 
 
@@ -1029,6 +1032,17 @@ void InfomapBase::calculateNumNonTrivialTopModules()
 	}
 }
 
+unsigned int InfomapBase::calculateMaxDepth()
+{
+	unsigned int maxDepth = 0;
+	for (auto it(m_root.begin_treePath()); !it.isEnd(); ++it) {
+		if (it->isLeaf()) {
+			maxDepth = std::max(maxDepth, it.depth());
+		}
+	}
+	return maxDepth;
+}
+
 unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLevelLimit)
 {
 	if (superLevelLimit == 0)
@@ -1112,8 +1126,9 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
 			io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules." << std::endl;
 
 	// Calculate and store hierarchical codelengths
-	calcCodelengthOnTree();
-	m_hierarchicalCodelength = hierarchicalCodelength;
+	// calcCodelengthOnTree();
+	// m_hierarchicalCodelength = hierarchicalCodelength;
+	m_hierarchicalCodelength = calcCodelengthOnTree(true);
 
 	return numLevelsCreated;
 }
@@ -1215,11 +1230,10 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
 			io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules." << std::endl;
 
 	// Calculate and store hierarchical codelengths
-	m_hierarchicalCodelength = hierarchicalCodelength;
+	// m_hierarchicalCodelength = hierarchicalCodelength;
+	m_hierarchicalCodelength = calcCodelengthOnTree(true);
 
 	return numLevelsCreated;
-
-
 }
 
 
@@ -1287,7 +1301,7 @@ unsigned int InfomapBase::recursivePartition()
 	double indexCodelength = getIndexCodelength();
 	double hierarchicalCodelength = m_hierarchicalCodelength;
 
-	calcCodelengthOnTree(true);
+	// calcCodelengthOnTree(true);
 
 	Log(0,0) << "\nRecursive sub-structure compression: " << std::flush;
 
@@ -1353,6 +1367,7 @@ unsigned int InfomapBase::recursivePartition()
 		io::toPrecision(hierarchicalCodelength) << "\n";
 	Log(1) << "  -> Found " << partitionQueue.level << " levels with codelength " <<
 		io::toPrecision(hierarchicalCodelength) << "\n";
+	
 
 	return partitionQueue.level;
 }
@@ -1442,7 +1457,8 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 	for(PartitionQueue::size_t moduleIndex = 0; moduleIndex < numModules; ++moduleIndex)
 	{
 		InfoNode& module = *queue[moduleIndex];
-
+		
+		module.codelength = calcCodelength(module);
 		// Delete former sub-structure if exists
 		if (module.disposeInfomap())
 			module.codelength = calcCodelength(module);
@@ -1468,8 +1484,12 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 		subInfomap.setOnlySuperModules(true).run();
 		// subInfomap.setTwoLevel(true).run();
 
+		// double subCodelength = subInfomap.getCodelength(); // wrong codelength
 		double subCodelength = subInfomap.getHierarchicalCodelength();
-		double subIndexCodelength = subInfomap.getIndexCodelength();
+		// double subCodelength = subInfomap.root().codelength;
+		// double subCodelength = subInfomap.calcCodelengthOnTree(true);
+		// double subIndexCodelength = subInfomap.getIndexCodelength();
+		double subIndexCodelength = subInfomap.root().codelength;
 		double subModuleCodelength = subCodelength - subIndexCodelength;
 		InfoNode& subRoot = *module.getInfomapRoot();
 		unsigned int numSubModules = subRoot.childDegree();
@@ -1644,7 +1664,7 @@ void InfomapBase::aggregatePerLevelCodelength(InfoNode& parent, std::vector<PerL
 	}
 
 	perLevelStat[level].numModules += parent.childDegree();
-	perLevelStat[level].indexLength += parent.isRoot() ? getIndexCodelength() : parent.codelength;
+	perLevelStat[level].indexLength += parent.codelength;
 
 	for (auto& module : parent)
 	{

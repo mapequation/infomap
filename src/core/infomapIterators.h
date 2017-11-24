@@ -47,6 +47,22 @@ public:
 		m_clusterIndex(other.m_clusterIndex),
 		m_clusterIndexLevel(other.m_clusterIndexLevel)
 	{}
+	
+	virtual void init()
+	{
+		moveToInfomapRootIfExist();
+	}
+
+	void moveToInfomapRootIfExist()
+	{
+		if (m_current != nullptr) {
+			NodePointerType infomapRoot = m_current->getInfomapRoot();
+			if (infomapRoot != nullptr)
+			{
+				m_current = infomapRoot;
+			}
+		}
+	}
 
 	InfomapClusterIterator& operator= (const InfomapClusterIterator& other)
 	{
@@ -60,11 +76,6 @@ public:
 	operator++()
 	{
 		NodePointerType curr = Base::m_current;
-		NodePointerType infomapRoot = curr->getInfomapRoot();
-		if (infomapRoot != nullptr)
-		{
-			curr = infomapRoot;
-		}
 
 		if(curr->firstChild != nullptr)
 		{
@@ -117,6 +128,7 @@ public:
 			curr = curr->next;
 		}
 		m_current = curr;
+		moveToInfomapRootIfExist();
 		return *this;
 	}
 
@@ -192,15 +204,26 @@ public:
 		return *this;
 	}
 
+	virtual void init()
+	{
+		moveToInfomapRootIfExist();
+	}
+
+	void moveToInfomapRootIfExist()
+	{
+		if (m_current != nullptr) {
+			NodePointerType infomapRoot = m_current->getInfomapRoot();
+			if (infomapRoot != nullptr)
+			{
+				m_current = infomapRoot;
+			}
+		}
+	}
+
 	InfomapDepthFirstIterator&
 	operator++()
 	{
 		NodePointerType curr = Base::m_current;
-		NodePointerType infomapRoot = curr->getInfomapRoot();
-		if (infomapRoot != nullptr)
-		{
-			curr = infomapRoot;
-		}
 
 		if(curr->firstChild != nullptr)
 		{
@@ -256,6 +279,7 @@ public:
 			++m_path.back();
 		}
 		m_current = curr;
+		moveToInfomapRootIfExist();
 		return *this;
 	}
 
