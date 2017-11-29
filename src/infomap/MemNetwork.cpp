@@ -738,6 +738,9 @@ bool MemNetwork::addIncompleteStateLink(unsigned int n1, unsigned int n2, double
 
 void MemNetwork::finalizeAndCheckNetwork(bool printSummary)
 {
+	if (!m_config.isMemoryNetwork()) {
+		return Network::finalizeAndCheckNetwork(printSummary);
+	}
 	m_isFinalized = true;
 	
 	simulateMemoryToIncompleteData();
@@ -813,6 +816,9 @@ unsigned int MemNetwork::addMissingPhysicalNodes()
 
 void MemNetwork::initNodeDegrees()
 {
+	if (!m_config.isMemoryNetwork()) {
+		return Network::initNodeDegrees();
+	}
 	m_outDegree.assign(m_stateNodes.size(), 0.0);
 	m_sumLinkOutWeight.assign(m_stateNodes.size(), 0.0);
 
