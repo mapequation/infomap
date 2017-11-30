@@ -204,6 +204,8 @@ public:
 	
 	void calculateFlow();
 
+	void dispose();
+
 	// Getters
 	const NodeMap& nodes() const { return m_nodes; }
 	unsigned int numNodes() const { return m_nodes.size(); }

@@ -505,6 +505,8 @@ void InfomapBase::generateSubNetwork(StateNetwork& network)
 //		Log(1) << numLinksIgnored << " links with ~0 flow ignored -> " << network.getFlowLinks().size() - numLinksIgnored << " links." << std::endl;
 		Log() << numLinksIgnored << " self-links ignored -> " << network.numLinks() - numLinksIgnored << " links." << std::endl;
 	}
+
+	network.dispose();
 }
 
 void InfomapBase::generateSubNetwork(InfoNode& parent)

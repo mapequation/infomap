@@ -193,6 +193,13 @@ void StateNetwork::calculateFlow()
 	flowCalculator.calculateFlow(*this, m_config);
 }
 
+void StateNetwork::dispose()
+{
+	m_nodeLinkMap.clear();
+	m_physNodes.clear();
+	m_nodes.clear();
+}
+
 void StateNetwork::printNetwork() const
 {
 	Log() << "----------------\n";
