@@ -157,6 +157,8 @@ public:
 
 	unsigned int addNodes(const std::vector<std::string>& names);
 
+	bool addNode(unsigned int nodeIndex);
+
 	/**
 	 * Add a weighted link between two nodes.
 	 * @return true if a new link was inserted, false if skipped due to cutoff limit or aggregated to existing link

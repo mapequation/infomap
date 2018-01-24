@@ -682,6 +682,12 @@ bool Network::addBipartiteLink(unsigned int featureNode, unsigned int node, bool
 	return true;
 }
 
+bool Network::addNode(unsigned int nodeIndex)
+{
+	m_maxNodeIndex = std::max(m_maxNodeIndex, nodeIndex);
+	m_minNodeIndex = std::min(m_minNodeIndex, nodeIndex);
+	return insertNode(nodeIndex);
+}
 
 bool Network::insertLink(unsigned int n1, unsigned int n2, double weight)
 {
