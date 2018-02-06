@@ -634,9 +634,16 @@ bool Network::parseBipartiteLink(const std::string& line, unsigned int& featureN
 }
 
 
+void Network::setBipartiteNodesFrom(unsigned int bipartiteStartIndex)
+{
+	m_bipartiteStartIndex = bipartiteStartIndex;
+}
 
 bool Network::addLink(unsigned int n1, unsigned int n2, double weight)
 {
+	if (isBipartite()) {
+		return addBipartiteLink(n1, n2, weight);
+	}
 	++m_numLinksFound;
 
 	if (m_config.nodeLimit > 0 && (n1 >= m_config.nodeLimit || n2 >= m_config.nodeLimit))
@@ -667,6 +674,19 @@ bool Network::addLink(unsigned int n1, unsigned int n2, double weight)
 	return true;
 }
 
+bool Network::addBipartiteLink(unsigned int n1, unsigned int n2, double weight)
+{
+	bool n1IsBipartite = n1 >= m_bipartiteStartIndex;
+	bool n2IsBipartite = n2 >= m_bipartiteStartIndex;
+	if ((!n1IsBipartite && !n2IsBipartite) || (n1IsBipartite && n2IsBipartite))
+		throw InputDomainError(io::Str() << "Link between " << n1 << " and " << n2 <<
+		" is not bipartite according to bipartite start index " << m_bipartiteStartIndex << ".");
+	if (n1IsBipartite)
+		return addBipartiteLink(n1, n2, false, weight);
+	else
+		return addBipartiteLink(n2, n1, true, weight);
+}
+
 bool Network::addBipartiteLink(unsigned int featureNode, unsigned int node, bool swapOrder, double weight)
 {
 	++m_numLinksFound;
@@ -676,6 +696,7 @@ bool Network::addBipartiteLink(unsigned int featureNode, unsigned int node, bool
 
 	m_maxNodeIndex = std::max(m_maxNodeIndex, node);
 	m_minNodeIndex = std::min(m_minNodeIndex, node);
+	m_minFeatureIndex = std::min(m_minFeatureIndex, featureNode);
 
 	m_bipartiteLinks[BipartiteLink(featureNode, node, swapOrder)] += weight;
 
@@ -754,11 +775,17 @@ void Network::finalizeAndCheckNetwork(bool printSummary, unsigned int desiredNum
 	{
 		if (m_numLinks > 0)
 			throw InputDomainError("Can't add bipartite links together with ordinary links.");
+		if (m_bipartiteStartIndex == std::numeric_limits<unsigned int>::max())
+			m_bipartiteStartIndex = m_maxNodeIndex + 1;
+		unsigned int featureIndexOffset = 0;
+		if (m_minFeatureIndex < m_bipartiteStartIndex) {
+			featureIndexOffset = m_bipartiteStartIndex;
+		}
 		for (std::map<BipartiteLink, Weight>::iterator it(m_bipartiteLinks.begin()); it != m_bipartiteLinks.end(); ++it)
 		{
 			const BipartiteLink& link = it->first;
 			// Offset feature nodes by the number of ordinary nodes to make them unique
-			unsigned int featureNodeIndex = link.featureNode + m_numNodes;
+			unsigned int featureNodeIndex = link.featureNode + featureIndexOffset;
 			m_maxNodeIndex = std::max(m_maxNodeIndex, featureNodeIndex);
 			if (link.swapOrder)
 				insertLink(link.node, featureNodeIndex, it->second.weight);

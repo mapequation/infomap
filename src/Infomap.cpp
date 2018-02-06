@@ -285,7 +285,10 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 			"Reset options tuning the speed and accuracy before the recursive part.", true);
 
 	api.addOptionArgument(conf.showBiNodes, "show-bipartite-nodes",
-			"Include the bipartite nodes in the output.", true);
+			"[Deprecated, see --hide-bipartite-nodes] Include the bipartite nodes in the output (now default).", true);
+
+	api.addOptionArgument(conf.hideBipartiteNodes, "hide-bipartite-nodes",
+			"Hide the bipartite nodes in the output.", true);
 
 	// --------------------- Output options ---------------------
 	if (!noFileIO)
