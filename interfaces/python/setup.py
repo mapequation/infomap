@@ -27,7 +27,7 @@ with open(os.path.join('src', 'io', 'version.cpp')) as f:
 
 infomap_module = Extension('_infomap',
     sources=cppSources,
-    extra_compile_args=['-DAS_LIB']
+    extra_compile_args=['-DAS_LIB', '-Wno-deprecated-declarations']
     )
 
 setup (name = 'infomap',

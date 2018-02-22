@@ -29,3 +29,4 @@
 Infomap.dSym
 callgrind.*
 tmp
+.rstudio

@@ -31,7 +31,7 @@ OBJECTS := $(SOURCES:src/%.cpp=build/Infomap/%.o)
 
 INFORMATTER_OBJECTS = $(OBJECTS:Infomap.o=Informatter.o)
 
-.PHONY: all noomp test debug
+.PHONY: noomp test debug
 
 Infomap: $(OBJECTS)
 	@echo "Linking object files to target $@..."
@@ -41,9 +41,6 @@ Infomap: $(OBJECTS)
 Infomap-formatter: $(INFORMATTER_OBJECTS)
 	@echo "Making Informatter..."
 	$(CXX) $(LDFLAGS) -o $@ $^
-
-all: Infomap Infomap-formatter
-	@true
 
 ## Generic compilation rule for object files from cpp files
 build/Infomap/%.o : src/%.cpp $(HEADERS) Makefile
@@ -192,6 +189,33 @@ $(R_BUILD_DIR)/src/%: src/%
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 
+
+##################################################
+# General
+##################################################
+
+.PHONY: examples all
+
+# Make other language examples
+examples: Makefile python3 R
+	$(MAKE) -C examples/python python3
+	$(MAKE) -C examples/R
+
+all: Infomap examples
+	@true
+
+##################################################
+# Docker
+##################################################
+
+.PHONY: docker-build
+
+docker-build: Makefile
+	docker build -t infomap .
+
+# docker-run:
+# 	docker run -it --rm -v $(pwd):/home/rstudio infomap \
+	ninetriangles.net output
 
 ##################################################
 # Clean

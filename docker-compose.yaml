@@ -1,0 +1,8 @@
+version: '3'
+services:
+  rstudio:
+    build: .
+    ports:
+      - "8787:8787" # With username:password as rstudio:rstudio
+    volumes:
+     - .:/home/rstudio

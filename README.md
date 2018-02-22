@@ -18,9 +18,8 @@ for a list of available options.
 Infomap can be used both as a standalone program and as a library.
 See the `examples` folder for examples.
 
-We also include an [IPython notebook](examples/python/infomap-examples.ipynb)
+We also include a [Jupyter notebook](examples/python/infomap-examples.ipynb)
 with the examples that can be viewed online.
-
 
 
 Authors:
