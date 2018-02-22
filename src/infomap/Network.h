@@ -70,6 +70,8 @@ public:
 		m_sumAdditionalLinkWeight(0.0),
 	 	m_maxNodeIndex(std::numeric_limits<unsigned int>::min()),
 	 	m_minNodeIndex(std::numeric_limits<unsigned int>::max()),
+	 	m_minFeatureIndex(std::numeric_limits<unsigned int>::max()),
+	 	m_bipartiteStartIndex(std::numeric_limits<unsigned int>::max()),
 	 	m_indexOffset(m_config.zeroBasedNodeNumbers ? 0 : 1),
 		m_numBipartiteNodes(0),
 		m_isFinalized(false)
@@ -94,6 +96,8 @@ public:
 		m_sumAdditionalLinkWeight(0.0),
 	 	m_maxNodeIndex(std::numeric_limits<unsigned int>::min()),
 	 	m_minNodeIndex(std::numeric_limits<unsigned int>::max()),
+	 	m_minFeatureIndex(std::numeric_limits<unsigned int>::max()),
+	 	m_bipartiteStartIndex(std::numeric_limits<unsigned int>::max()),
 	 	m_indexOffset(m_config.zeroBasedNodeNumbers ? 0 : 1),
 		m_numBipartiteNodes(0),
 		m_isFinalized(false)
@@ -118,6 +122,8 @@ public:
 		m_sumAdditionalLinkWeight(other.m_sumAdditionalLinkWeight),
 	 	m_maxNodeIndex(other.m_maxNodeIndex),
 	 	m_minNodeIndex(other.m_minNodeIndex),
+	 	m_minFeatureIndex(other.m_minFeatureIndex),
+	 	m_bipartiteStartIndex(other.m_bipartiteStartIndex),
 	 	m_indexOffset(other.m_indexOffset),
 		m_numBipartiteNodes(other.m_numBipartiteNodes),
 		m_isFinalized(other.m_isFinalized)
@@ -143,6 +149,8 @@ public:
 		m_sumAdditionalLinkWeight = other.m_sumAdditionalLinkWeight;
 	 	m_maxNodeIndex = other.m_maxNodeIndex;
 	 	m_minNodeIndex = other.m_minNodeIndex;
+	 	m_minFeatureIndex = other.m_minFeatureIndex;
+	 	m_bipartiteStartIndex = other.m_bipartiteStartIndex;
 	 	m_indexOffset = other.m_indexOffset;
 	 	m_numBipartiteNodes = other.m_numBipartiteNodes;
 		m_isFinalized = other.m_isFinalized;
@@ -157,13 +165,23 @@ public:
 
 	unsigned int addNodes(const std::vector<std::string>& names);
 
+	bool addNode(unsigned int nodeIndex);
+
 	/**
 	 * Add a weighted link between two nodes.
 	 * @return true if a new link was inserted, false if skipped due to cutoff limit or aggregated to existing link
 	 */
 	bool addLink(unsigned int n1, unsigned int n2, double weight = 1.0);
+	
+	bool addBipartiteLink(unsigned int n1, unsigned int n2, double weight = 1.0);
 
 	bool addBipartiteLink(unsigned int featureNode, unsigned int node, bool swapOrder, double weight = 1.0);
+
+	/**
+	 * Change this network to a bipartite network
+	 * @param bipartiteStartIndex Nodes equal to or above this index are treated as feature nodes
+	 */
+	void setBipartiteNodesFrom(unsigned int bipartiteStartIndex);
 
 	/**
 	 * Run after adding links to check for non-feasible values and set the
@@ -195,7 +213,8 @@ public:
 	double totalLinkWeight() const { return m_totalLinkWeight; }
 	double totalSelfLinkWeight() const { return m_totalSelfLinkWeight; }
 
-	bool isBipartite() const { return m_numBipartiteNodes > 0; }
+	bool isBipartite() const { return m_bipartiteStartIndex < std::numeric_limits<unsigned int>::max(); }
+	// bool isBipartite() const { return m_numBipartiteNodes > 0; }
 	unsigned int numBipartiteNodes() const { return m_numBipartiteNodes; }
 
 	void initNodeNames();
@@ -309,6 +328,8 @@ protected:
 	// Checkers
 	unsigned int m_maxNodeIndex; // On links
 	unsigned int m_minNodeIndex; // On links
+	unsigned int m_minFeatureIndex; // On bipartite links
+	unsigned int m_bipartiteStartIndex;
 
 	// Helpers
 	std::istringstream m_extractor;
@@ -343,6 +364,9 @@ struct BipartiteLink
 
 	bool operator<(const BipartiteLink other) const
 	{
+		if (swapOrder != other.swapOrder)
+			return other.swapOrder;
+		
 		return featureNode == other.featureNode ? node < other.node : featureNode < other.featureNode;
 	}
 };

@@ -1744,9 +1744,9 @@ bool InfomapBase::initNetwork()
 
 	network.readInputData();
 
-	if (m_config.isBipartite() && !m_config.showBiNodes) {
+	if (m_config.isBipartite() && m_config.hideBipartiteNodes) {
 		m_config.maxNodeIndexVisible = network.numNodes() - network.numBipartiteNodes() - 1;
-		Log(1) << "Skip " << network.numBipartiteNodes() << " bipartites nodes in output, limit to " <<
+		Log() << "Skip " << network.numBipartiteNodes() << " bipartites nodes in output, limit to " <<
 				m_config.maxNodeIndexVisible + 1 << " ordinary nodes.\n";
 	}
 	m_config.minBipartiteNodeIndex = network.numNodes() - network.numBipartiteNodes();

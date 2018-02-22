@@ -20,7 +20,7 @@ def findCommunities(G):
 	infomapWrapper = infomap.Infomap("--two-level")
 
 	print("Building Infomap network from a NetworkX graph...")
-	for e in G.edges_iter():
+	for e in G.edges():
 		infomapWrapper.addLink(*e)
 
 	print("Find communities with Infomap...")
@@ -34,7 +34,7 @@ def findCommunities(G):
 	for node in tree.leafIter():
 		communities[node.originalLeafIndex] = node.moduleIndex()
 
-	nx.set_node_attributes(G, 'community', communities)
+	nx.set_node_attributes(G, name='community', values=communities)
 	return tree.numTopModules()
 
 
@@ -62,7 +62,7 @@ def drawNetwork(G):
 	nodeCollection.set_edgecolor(darkColors)
 
 	# Print node labels separately instead
-	for n in G.nodes_iter():
+	for n in G.nodes():
 		plt.annotate(n,
 			xy = pos[n],
 			textcoords = 'offset points',

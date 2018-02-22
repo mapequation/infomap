@@ -10,20 +10,15 @@ source("load-infomap.R")
 g <- graph.famous("Zachary")
 
 # Init Infomap network
-conf <- init("--two-level --silent")
-network <- Network(conf);
+infomap <- Infomap("--two-level --silent")
 
 # Add links to Infomap network from igraph data
 edgelist <- get.edgelist(g)
-apply(edgelist, 1, function(e) network$addLink(e[1] - 1, e[2] - 1))
+apply(edgelist, 1, function(e) infomap$addLink(e[1] - 1, e[2] - 1))
 
-network$finalizeAndCheckNetwork(TRUE, vcount(g))
+infomap$run()
 
-cat("Created network with", network$numNodes(), "nodes and", network$numLinks(), "links.\n")
-
-tree <- HierarchicalNetwork(conf)
-
-run(network, tree);
+tree <- infomap$tree
 
 cat("Partitioned network in", tree$numTopModules(), "modules with codelength", tree$codelength(), "bits:\n")
 

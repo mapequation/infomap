@@ -72,6 +72,14 @@ class Infomap {
         return network.addLink(n1, n2, weight);
     }
 
+    /**
+	 * Change this network to a bipartite network
+	 * @param bipartiteStartIndex Nodes equal to or above this index are treated as feature nodes
+	 */
+	void setBipartiteNodesFrom(unsigned int bipartiteStartIndex) {
+        network.setBipartiteNodesFrom(bipartiteStartIndex);
+    }
+
     int run() {
         try
         {

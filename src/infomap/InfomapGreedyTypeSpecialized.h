@@ -242,14 +242,24 @@ inline bool InfomapGreedyTypeSpecialized<FlowType, WithMemory>::preClusterMultip
 		// Map from state id to single index
 		memNodeToIndex[source.stateNode] = memNodeIndex;
 		unsigned int layer = source.stateNode.layer();
-		for (NodeBase::edge_iterator outEdgeIt(source.begin_outEdge()), endIt(source.end_outEdge());
-				outEdgeIt != endIt; ++outEdgeIt)
-		{
-			const EdgeType& edge = **outEdgeIt;
-			NodeType& target = getNode(edge.target);
-			if (target.stateNode.layer() == layer)
+		if (source.isDangling()) {
+			networks[layer].addNode(source.stateNode.physIndex);
+		}
+		else {
+			bool isDanglingInLayer = true;
+			for (NodeBase::edge_iterator outEdgeIt(source.begin_outEdge()), endIt(source.end_outEdge());
+					outEdgeIt != endIt; ++outEdgeIt)
 			{
-				networks[layer].addLink(source.stateNode.physIndex, target.stateNode.physIndex);
+				const EdgeType& edge = **outEdgeIt;
+				NodeType& target = getNode(edge.target);
+				if (target.stateNode.layer() == layer)
+				{
+					isDanglingInLayer = false;
+					networks[layer].addLink(source.stateNode.physIndex, target.stateNode.physIndex);
+				}
+			}
+			if (isDanglingInLayer) {
+				networks[layer].addNode(source.stateNode.physIndex);
 			}
 		}
 	}
@@ -261,6 +271,7 @@ inline bool InfomapGreedyTypeSpecialized<FlowType, WithMemory>::preClusterMultip
 	perLayerConfig.adaptDefaults();
 	bool isSilent = Log::isSilent();
 	unsigned int moduleIndexOffset = 0;
+	unsigned int numNodesInFirstOrderNetworks = 0;
 	std::vector<unsigned int> modules(Super::numLeafNodes());
 
 	for (std::map<unsigned int, Network>::iterator networkIt(networks.begin()); networkIt != networks.end(); ++networkIt)
@@ -270,6 +281,7 @@ inline bool InfomapGreedyTypeSpecialized<FlowType, WithMemory>::preClusterMultip
 		network.setConfig(perLayerConfig);
 		network.finalizeAndCheckNetwork(false);
 		Log() << "  Layer " << layer << ": Cluster " << network.numNodes() << " nodes and " << network.numLinks() << " links... ";
+		numNodesInFirstOrderNetworks += network.numNodes();
 
 		Log::setSilent(true);
 		InfomapGreedyTypeSpecialized<FlowUndirected, WithoutMemory> infomap(perLayerConfig);
@@ -279,16 +291,50 @@ inline bool InfomapGreedyTypeSpecialized<FlowType, WithMemory>::preClusterMultip
 
 		Log() << "-> Codelength " << tree.codelength() << " in " << tree.numTopModules() << " modules.\n";
 
-		for (LeafIterator leafIt(tree.leafIter()); !leafIt.isEnd(); ++leafIt)
+		unsigned int negativeModuleOffsetDueToMissingAllNodesInAModule = 0;
+		bool potentialMissing = true;
+		bool lastModuleIndex = 0;
+		unsigned int i = 0;
+		for (LeafIterator leafIt(tree.leafIter()); !leafIt.isEnd(); ++leafIt, ++i)
 		{
-			unsigned int memNodeIndex = memNodeToIndex[StateNode(layer, leafIt->originalLeafIndex)];
-			modules[memNodeIndex] = leafIt.moduleIndex() + moduleIndexOffset;
+			unsigned int moduleIndex = leafIt.moduleIndex();
+			std::map<StateNode, unsigned int>::iterator it = memNodeToIndex.find(StateNode(layer, leafIt->originalLeafIndex));
+			if (it != memNodeToIndex.end()) {
+				if (moduleIndex != lastModuleIndex && potentialMissing) {
+					// Last node's module is missing!
+					++negativeModuleOffsetDueToMissingAllNodesInAModule;
+				}
+				unsigned int adjustedGlobalModuleIndex = moduleIndex + moduleIndexOffset - negativeModuleOffsetDueToMissingAllNodesInAModule;
+				modules[it->second] = adjustedGlobalModuleIndex;
+				potentialMissing = false;
+			}
+			else {
+				if (moduleIndex != lastModuleIndex) {
+					// New module with missing node
+					if (potentialMissing) {
+						// Last missing!
+						++negativeModuleOffsetDueToMissingAllNodesInAModule;
+					}
+					potentialMissing = true;
+				}
+				// Node doesn't exist in state network
+				// Skip module if all nodes in this module doesn't exist
+			}
+			lastModuleIndex = moduleIndex;
+		}
+		if (potentialMissing) {
+			// All nodes in last module missing
+			++negativeModuleOffsetDueToMissingAllNodesInAModule;
+			potentialMissing = false;
 		}
 
-		moduleIndexOffset += tree.numTopModules();
+		moduleIndexOffset += tree.numTopModules() - negativeModuleOffsetDueToMissingAllNodesInAModule;
 	}
 
 	unsigned int numModules = moduleIndexOffset;
+
+	Log() << "Clustered " << numNodesInFirstOrderNetworks << " nodes in " <<
+		networks.size() << " networks into " << numModules << " modules.\n";
 
 	std::vector<NodeBase*> moduleNodes(numModules, 0);
 	for (unsigned int i = 0; i < modules.size(); ++i) {
@@ -301,8 +347,14 @@ inline bool InfomapGreedyTypeSpecialized<FlowType, WithMemory>::preClusterMultip
 
 	// Set the modules as children to the root node instead of the current leaf nodes
 	Super::m_treeData.root()->releaseChildren();
-	for (unsigned int i = 0; i < numModules; ++i)
-		Super::m_treeData.root()->addChild(moduleNodes[i]);
+	for (unsigned int i = 0; i < numModules; ++i) {
+		if (moduleNodes[i] != 0) {
+			Super::m_treeData.root()->addChild(moduleNodes[i]);
+		}
+		else {
+			throw std::length_error("Implementation error in pre-cluster multiplex network. Please contact authors.");
+		}
+	}
 
 	Log() << "\n -> Generated " << numModules << " modules." << std::endl;
 
