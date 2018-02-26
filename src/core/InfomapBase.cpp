@@ -469,6 +469,7 @@ void InfomapBase::generateSubNetwork(StateNetwork& network)
 	for (auto& nodeIt : network.nodes()) {
 		auto& networkNode = nodeIt.second;
 		InfoNode* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId);
+		node->layerId = networkNode.layerId;
 		sumNodeFlow += networkNode.flow;
 		m_root.addChild(node);
 		nodeIndexMap[networkNode.id] = m_leafNodes.size();
@@ -755,9 +756,9 @@ void InfomapBase::writeResult()
 		InfoNode &node = *it;
 		if (node.isLeaf()) {
 			auto &path = it.path();
-			outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.uid << "\" ";
+			outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.stateId << "\" ";
 			if (haveMemory())
-				outFile << node.uid << " " << node.physicalId << "\n";
+				outFile << node.stateId << " " << node.physicalId << "\n";
 			else
 				outFile << node.physicalId << "\n";
 		}
@@ -811,6 +812,13 @@ double InfomapBase::calcCodelengthOnTree(bool includeRoot)
 		totalCodelength += node.codelength;
 	}
 	return totalCodelength;
+}
+
+void preClusterMultilayerNetwork()
+{
+	Log() << "Calculate pre-clustering on multilayer networks...\n");
+
+	
 }
 
 

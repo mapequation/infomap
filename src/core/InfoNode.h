@@ -65,9 +65,9 @@ public:
 	FlowData data;
 	unsigned int index = 0; // Temporary index used in finding best module
 //	unsigned int originalIndex = 0; // Index in the original network (for leaf nodes)
-	const unsigned int uid = 0; // Unique id for the leaf nodes
-	const unsigned int physicalId = 0; // Physical id equals uid for first order networks, otherwise can be non-unique
-	const unsigned int stateId = 0; // State id for second order networks (prior physical node / multiplex level etc)
+	const unsigned int stateId = 0; // Unique state node id for the leaf nodes
+	const unsigned int physicalId = 0; // Physical id equals stateId for first order networks, otherwise can be non-unique
+	const unsigned int layerId = 0; // Layer id for multilayer networks
 
 	InfoNode* owner = nullptr; // Infomap owner (if this is an Infomap root)
 	InfoNode* parent = nullptr;
@@ -100,24 +100,24 @@ public:
 	InfoNode(const FlowData& flowData)
 	: data(flowData) {};
 
-	// For first order nodes, physicalId equals uid
-	InfoNode(const FlowData& flowData, unsigned int uid)
-	: data(flowData), uid(uid), physicalId(uid) {};
+	// For first order nodes, physicalId equals stateId
+	InfoNode(const FlowData& flowData, unsigned int stateId)
+	: data(flowData), stateId(stateId), physicalId(stateId) {};
 
-	InfoNode(const FlowData& flowData, unsigned int uid, unsigned int physicalId)
-	: data(flowData), uid(uid), physicalId(physicalId) {};
+	InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId)
+	: data(flowData), stateId(stateId), physicalId(physicalId) {};
 
-	InfoNode(const FlowData& flowData, unsigned int uid, unsigned int physicalId, unsigned int stateId)
-	: data(flowData), uid(uid), physicalId(physicalId), stateId(stateId) {};
+	InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId, unsigned int layerId)
+	: data(flowData), stateId(stateId), physicalId(physicalId), layerId(layerId) {};
 
 	InfoNode() {};
 
 	InfoNode(const InfoNode& other)
 	:	data(other.data),
 		index(other.index),
-		uid(other.uid),
-		physicalId(other.physicalId),
 		stateId(other.stateId),
+		physicalId(other.physicalId),
+		layerId(other.layerId),
 		parent(other.parent),
 		previous(other.previous),
 		next(other.next),

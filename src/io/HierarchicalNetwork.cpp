@@ -269,7 +269,7 @@ void HierarchicalNetwork::writeClu(const std::string& fileName, int clusterIndex
 		io::toPrecision(m_oneLevelCodelength, 9, true) << " in one level to codelength " <<
 		io::toPrecision(m_codelength, 9, true) << " in " << m_maxDepth << " levels.\n";
 	if (m_config.printExpanded) {
-		if (m_config.isMultiplexNetwork())
+		if (m_config.isMultilayerNetwork())
 			out << "# layer node cluster flow:\n";
 		else
 			out << "# state_node node cluster flow:\n";
@@ -379,7 +379,7 @@ void HierarchicalNetwork::writeHumanReadableTree(const std::string& fileName, bo
 		io::toPrecision(m_codelength, 9, true) << " in " << m_maxDepth << " levels.\n";
 
 	if (m_config.printExpanded) {
-		if (m_config.isMultiplexNetwork())
+		if (m_config.isMultilayerNetwork())
 			out << "# path flow name layer node:\n";
 		else
 			out << "# path flow name state_node node:\n";

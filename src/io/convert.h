@@ -32,6 +32,7 @@
 #include <sstream>
 #include <string>
 #include "../utils/exceptions.h"
+#include <locale> // std::locale, std::tolower
 
 namespace infomap {
 
@@ -71,6 +72,14 @@ struct TypeInfo<double> {
 
 namespace io
 {
+
+inline std::string tolower(std::string str)
+{
+	std::locale loc;
+	for (std::string::size_type i=0; i < str.length(); ++i)
+    str[i] = std::tolower(str[i], loc);
+	return str;
+}
 
 template<typename T>
 inline std::string stringify(T& x)
@@ -120,6 +129,25 @@ inline std::string stringify(const Container& cont, std::string delimiter, unsig
 		throw BadConversionError((o << "stringify(container[" << maxIndex << "])", o.str()));
 	return o.str();
 }
+
+struct InsensitiveCompare {
+	bool operator() (const std::string& a, const std::string& b) const {
+		auto lhs = a.begin();
+		auto rhs = b.begin();
+
+		std::locale loc;
+		for (; lhs != a.end() && rhs != b.end(); ++lhs,++rhs)
+		{
+			auto lhs_val = std::tolower(*lhs, loc);
+			auto rhs_val = std::tolower(*rhs, loc);
+
+			if (lhs_val != rhs_val)
+				return lhs_val < rhs_val;
+		}
+
+		return (rhs != b.end());
+	}
+};
 
 class Str {
 public:

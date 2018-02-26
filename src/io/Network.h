@@ -41,6 +41,7 @@
 
 namespace infomap {
 
+struct LayerNode;
 struct Bigram;
 struct Weight;
 struct BipartiteLink;
@@ -52,29 +53,24 @@ protected:
 	// Helpers
 	std::istringstream m_extractor;
 
+	// Multilayer
+	std::map<unsigned int, Network> m_networks; // intra-layer links
+	std::map<LayerNode, std::map<unsigned int, double >> m_interLinks;
+	// std::map<LayerNode, unsigned int> m_layerNodeToStateId;
+	// { layer -> { physId -> stateId }}
+	std::map<unsigned int, std::map<unsigned int, unsigned int> > m_layerNodeToStateId;
+	// std::map<LayerNode, double> m_sumIntraOutWeight;
+	std::map<unsigned int, std::map<unsigned int, double> > m_sumIntraOutWeight;
+	//asdf m_sumIntraOutWeight
+	std::set<unsigned int> m_layers;
+	unsigned int m_numInterLayerLinks = 0;
+	unsigned int m_numIntraLayerLinks = 0;
+
 	// Bipartite
 	std::map<BipartiteLink, Weight> m_bipartiteLinks;
 	unsigned int m_numBipartiteNodes;
 
-	struct InsensitiveCompare {
-		bool operator() (const std::string& a, const std::string& b) const {
-			auto lhs = a.begin();
-			auto rhs = b.begin();
-
-			std::locale loc;
-			for (; lhs != a.end() && rhs != b.end(); ++lhs,++rhs)
-			{
-				auto lhs_val = std::tolower(*lhs, loc);
-				auto rhs_val = std::tolower(*rhs, loc);
-
-				if (lhs_val != rhs_val)
-					return lhs_val < rhs_val;
-			}
-
-			return (rhs != b.end());
-		}
-	};
-	using InsensitiveStringSet = std::set<std::string, InsensitiveCompare>;
+	using InsensitiveStringSet = std::set<std::string, io::InsensitiveCompare>;
 
 	std::map<std::string, InsensitiveStringSet> m_ignoreHeadings;
 	std::map<std::string, InsensitiveStringSet> m_validHeadings;// {
@@ -99,6 +95,25 @@ public:
 
 	// std::string getParsingResultSummary();
 
+	void generateStateNetworkFromMultilayer();
+	void generateStateNetworkFromMultilayerWithInterLinks();
+	void generateStateNetworkFromMultilayerWithSimulatedInterLinks();
+	void simulateInterLayerLinks();
+
+	void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight);
+
+	/**
+	 * Create an intra-layer link
+	 */
+	void addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsigned int n2, double weight);
+
+	/**
+	 * Create links between (layer1,n) and (layer2,m) for all m connected to n in layer 2.
+	 * The weight is distributed proportionally.
+	 * TODO: This is done later..
+	 */
+	void addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight);
+
 protected:
 	void initValidHeadings();
 
@@ -111,6 +126,7 @@ protected:
 	// 	"*Vertices", "*States", "*Edges", "*Arcs", "*Links", "*Context"
 	// });
 	void parseBipartiteNetwork(std::string filename);
+	void parseMultilayerNetwork(std::string filename);
 
 	// Helper methods
 
@@ -123,6 +139,21 @@ protected:
 
 	std::string parseLinks(std::ifstream& file);
 
+	/**
+	 * Parse multilayer links from a *multilayer section
+	 */
+	std::string parseMultilayerLinks(std::ifstream& file);
+
+	/**
+	 * Parse multilayer links from an *intra section
+	 */
+	std::string parseMultilayerIntraLinks(std::ifstream& file);
+
+	/**
+	 * Parse multilayer links from an *inter section
+	 */
+	std::string parseMultilayerInterLinks(std::ifstream& file);
+
 	std::string parseBipartiteLinks(std::ifstream& file);
 
 	std::string ignoreSection(std::ifstream& file, std::string heading);
@@ -133,9 +164,30 @@ protected:
 	/**
 	 * Parse a string of link data.
 	 * If no weight data can be extracted, the default value 1.0 will be used.
-	 * @throws an error if not both node numbers can be extracted.
+	 * @throws an error if not both node ids can be extracted.
 	 */
 	void parseLink(const std::string& line, unsigned int& n1, unsigned int& n2, double& weight);
+
+	/**
+	 * Parse a string of multilayer link data.
+	 * If no weight data can be extracted, the default value 1.0 will be used.
+	 * @throws an error if not both node and layer ids can be extracted.
+	 */
+	void parseMultilayerLink(const std::string& line, unsigned int& layer1, unsigned int& n1, unsigned int& layer2, unsigned int& n2, double& weight);
+
+	/**
+	 * Parse a string of intra-multilayer link data.
+	 * If no weight data can be extracted, the default value 1.0 will be used.
+	 * @throws an error if not both node and layer ids can be extracted.
+	 */
+	void parseMultilayerIntraLink(const std::string& line, unsigned int& layer, unsigned int& n1, unsigned int& n2, double& weight);
+
+	/**
+	 * Parse a string of inter-multilayer link data.
+	 * If no weight data can be extracted, the default value 1.0 will be used.
+	 * @throws an error if not both node and layer ids can be extracted.
+	 */
+	void parseMultilayerInterLink(const std::string& line, unsigned int& layer1, unsigned int& n, unsigned int& layer2, double& weight);
 
 	/**
 	 * Parse a bipartite link of format "f1 n1 1.0" for a link between
@@ -147,8 +199,25 @@ protected:
 	 */
 	bool parseBipartiteLink(const std::string& line, unsigned int& featureNode, unsigned int& node, double& weight);
 
+	/**
+	 * Create state node corresponding to this multilayer node if not already exist
+	 * @return state node id
+	 */
+	unsigned int addMultilayerNode(unsigned int layerId, unsigned int physicalId);
+
 	void printSummary();
 
+};
+
+struct LayerNode
+{
+	unsigned int layer, node;
+	LayerNode(unsigned int layer = 0, unsigned int node = 0) : layer(layer), node(node) {}
+
+	bool operator<(const LayerNode other) const
+	{
+		return layer == other.layer ? node < other.node : layer < other.layer;
+	}
 };
 
 struct Bigram

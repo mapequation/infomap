@@ -223,6 +223,11 @@ public:
 	 */
 	virtual double calcCodelengthOnTree(bool includeRoot = true);
 
+	/**
+	 * Partition layer by layer and
+	 */
+	void preClusterMultilayerNetwork();
+
 
 	// ===================================================
 	// Run: Partition: *
