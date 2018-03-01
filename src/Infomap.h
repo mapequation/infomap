@@ -108,7 +108,7 @@ class MemInfomap {
 
     public:
     MemInfomap(const std::string flags)
-    : config(init(MemInfomap::flagsWithMemory(flags))), network(config), tree(config) {}
+    : config(init(flags)), network(config), tree(config) {}
 
     void readInputData(std::string filename) {
         try

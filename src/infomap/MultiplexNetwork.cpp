@@ -1045,6 +1045,10 @@ void MultiplexNetwork::parseMultiplexLink(const std::string& line, unsigned int&
 
 void MultiplexNetwork::finalizeAndCheckNetwork(bool printSummary)
 {
+	if (!m_config.isMultiplexNetwork()) {
+		return MemNetwork::finalizeAndCheckNetwork(printSummary);
+	}
+	
 	if (!m_networks.empty())
 		Log() << " --> Found " << m_numIntraLinksFound << " intra-network links in " << m_networks.size() << " layers.\n";
 	if (!m_interLinkLayers.empty())
