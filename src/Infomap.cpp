@@ -356,6 +356,7 @@ Config init(const std::string& flags)
 		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags, true);
 
 		Log::init(conf.verbosity, conf.silent, conf.verboseNumberPrecision);
+		conf.adaptDefaults();
 
 		Log() << "=======================================================\n";
 		Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
@@ -370,8 +371,6 @@ Config init(const std::string& flags)
 			(conf.teleportToNodes ? "nodes" : "links");
 		Log() << "\n";
 		Log() << "=======================================================\n";
-
-		conf.adaptDefaults();
 	}
 	catch (std::exception& e)
 	{
@@ -406,6 +405,7 @@ int run(const std::string& flags)
 		std::vector<ParsedOption> parsedFlags = getConfig(conf, flags);
 
 		Log::init(conf.verbosity, conf.silent, conf.verboseNumberPrecision);
+		conf.adaptDefaults();
 
 		Log() << "=======================================================\n";
 		Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
@@ -425,8 +425,6 @@ int run(const std::string& flags)
 
 		if (conf.benchmark)
 			initBenchmark(conf, flags);
-
-		conf.adaptDefaults();
 
 		runInfomap(conf);
 
