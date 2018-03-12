@@ -114,6 +114,20 @@ unsigned int InfomapBase::numLevels() const
 	return depth;
 }
 
+unsigned int InfomapBase::maxTreeDepth() const
+{
+	unsigned int maxDepth = 0;
+	for (auto it = root().begin_tree(); !it.isEnd(); ++it) {
+		const InfoNode &node = *it;
+		if (node.isLeaf()) {
+			if (it.depth() > maxDepth) {
+				maxDepth = it.depth();
+			}
+		}
+	}
+	return maxDepth;
+}
+
 double InfomapBase::getHierarchicalCodelength() const
 {
 	return m_hierarchicalCodelength;
@@ -468,8 +482,7 @@ void InfomapBase::generateSubNetwork(StateNetwork& network)
 	std::map<unsigned int, unsigned int> nodeIndexMap;
 	for (auto& nodeIt : network.nodes()) {
 		auto& networkNode = nodeIt.second;
-		InfoNode* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId);
-		node->layerId = networkNode.layerId;
+		InfoNode* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
 		sumNodeFlow += networkNode.flow;
 		m_root.addChild(node);
 		nodeIndexMap[networkNode.id] = m_leafNodes.size();
@@ -702,7 +715,7 @@ void InfomapBase::partition()
 	else {
 		// Set consolidated cluster index on nodes and modules
 		for (auto clusterIt = m_root.begin_tree(); !clusterIt.isEnd(); ++clusterIt) {
-			clusterIt->index = clusterIt.clusterIndex();
+			clusterIt->index = clusterIt.moduleIndex();
 		}
 
 		// Calculate individual module codelengths and store on the modules
@@ -745,26 +758,52 @@ void InfomapBase::writeResult()
 	if (this->noFileOutput)
 		return;
 	
-	
-	std::string outputFilename = this->outDirectory + this->outName +
-		(haveMemory() ? "_expanded.tree" : ".tree");
-	Log() << "Write tree to " << outputFilename << "... ";
+	if (this->printTree || true) {
+		std::string outputFilename = this->outDirectory + this->outName +
+			(haveMemory() ? "_expanded.tree" : ".tree");
+		Log() << "Write tree to " << outputFilename << "... ";
 
-	SafeOutFile outFile(outputFilename);
-	outFile << "# Codelength = " << getCodelength() << " bits.\n";
-	for (auto it = root().begin_treePath(); !it.isEnd(); ++it) {
-		InfoNode &node = *it;
-		if (node.isLeaf()) {
-			auto &path = it.path();
-			outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.stateId << "\" ";
-			if (haveMemory())
-				outFile << node.stateId << " " << node.physicalId << "\n";
-			else
-				outFile << node.physicalId << "\n";
+		SafeOutFile outFile(outputFilename);
+		outFile << "# Codelength = " << getCodelength() << " bits.\n";
+		for (auto it = root().begin_treePath(); !it.isEnd(); ++it) {
+			InfoNode &node = *it;
+			if (node.isLeaf()) {
+				auto &path = it.path();
+				outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.stateId << "\" ";
+				if (haveMemory())
+					outFile << node.stateId << " " << node.physicalId << "\n";
+				else
+					outFile << node.physicalId << "\n";
+			}
 		}
+		Log() << "done!\n";
+	}
+
+	if (this->printClu) {
+		// unsigned int maxModuleLevel = maxTreeDepth();
+		std::string outputFilename = this->outDirectory + this->outName +
+		(haveMemory() ? "_expanded.clu" : ".clu");
+		Log() << "Write bottom modules to " << outputFilename << "... ";
+		SafeOutFile outFile(outputFilename);
+		outFile << "# Codelength = " << getCodelength() << " bits.\n";
+		if (haveMemory()) {
+			outFile << "# stateId module flow physicalId\n";
+		}
+		else {
+			outFile << "# node module flow\n";
+		}
+		for (auto it = root().begin_tree(-1); !it.isEnd(); ++it) {
+			InfoNode &node = *it;
+			if (node.isLeaf()) {
+				if (haveMemory())
+					outFile << node.stateId << " " << it.moduleIndex() << " " << node.data.flow << " " << node.physicalId << "\n";
+				else
+					outFile << node.stateId << " " << it.moduleIndex() << " " << node.data.flow << "\n";
+			}
+		}
+		Log() << "done!\n";
 	}
 	
-	Log() << "done!\n";
 }
 
 // ===================================================
@@ -816,8 +855,7 @@ double InfomapBase::calcCodelengthOnTree(bool includeRoot)
 
 void preClusterMultilayerNetwork()
 {
-	Log() << "Calculate pre-clustering on multilayer networks...\n");
-
+	Log() << "Calculate pre-clustering on multilayer networks (not implemented yet)...\n";
 	
 }
 

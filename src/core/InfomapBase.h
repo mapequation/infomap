@@ -90,6 +90,11 @@ public:
 	 */
 	unsigned int numLevels() const;
 
+	/**
+	 * Get maximum depth of any child in the tree, following possible sub Infomap instances
+	 */
+	unsigned int maxTreeDepth() const;
+
 	virtual double getCodelength() const = 0;
 
 	virtual double codelength() { return m_hierarchicalCodelength; }
