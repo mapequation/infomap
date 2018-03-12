@@ -215,6 +215,10 @@ void InfomapBase::run(HierarchicalNetwork& output)
 		m_iterationStats[iTrial].bottomOverlap = bottomOverlap;
 		m_iterationStats[iTrial].seconds = timer.getElapsedTimeInSec();
 
+		if (numTrials > 1 && m_config.printAllTrials) {
+			std::string outName = io::Str() << m_config.outName << "_" << (iTrial+1);
+			printNetworkData(outName);
+		}
 		
 		if (hierarchicalCodelength < bestHierarchicalCodelength)
 		{
