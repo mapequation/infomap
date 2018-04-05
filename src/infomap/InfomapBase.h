@@ -73,7 +73,8 @@ public:
 	 	bestIntermediateCodelength(std::numeric_limits<double>::max()),
 		m_initialMaxNumberOfModularLevels(0),
 		m_ioNetwork(conf),
-		m_externalOutput(false)
+		m_externalOutput(false),
+		bestNumLevels(0)
 	{}
 
 	InfomapBase(const InfomapBase& infomap, NodeFactoryBase* nodeFactory)
@@ -97,7 +98,8 @@ public:
 	 	bestIntermediateCodelength(std::numeric_limits<double>::max()),
 		m_initialMaxNumberOfModularLevels(0),
 		m_ioNetwork(infomap.m_config),
-		m_externalOutput(false)
+		m_externalOutput(false),
+		bestNumLevels(0)
 	{}
 
 	virtual ~InfomapBase()
@@ -287,7 +289,7 @@ protected:
 private:
 	void runPartition();
 	double partitionAndQueueNextLevel(PartitionQueue& partitionQueue, bool tryIndexing = true);
-	void tryIndexingIteratively();
+	void tryIndexingIteratively(bool replaceExistingModules = true);
 	unsigned int findSuperModulesIterativelyFast(PartitionQueue& partitionQueue);
 	unsigned int deleteSubLevels();
 	void queueTopModules(PartitionQueue& partitionQueue);
@@ -355,6 +357,9 @@ protected:
 	HierarchicalNetwork m_ioNetwork;
 	bool m_externalOutput; // Write to external HierarchicalNetwork
 	std::vector<PerIterationStats> m_iterationStats;
+
+	std::ostringstream bestSolutionStatistics;
+	unsigned int bestNumLevels;
 
 };
 

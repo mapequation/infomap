@@ -115,8 +115,8 @@ void InfomapBase::run(HierarchicalNetwork& output)
 	// std::vector<double> modulePerplexity(numTrials);
 	// std::vector<double> moduleAssignments(numTrials);
 	// std::vector<unsigned int> topModules(numTrials);
-	std::ostringstream bestSolutionStatistics;
-	unsigned int bestNumLevels = 0;
+	// std::ostringstream bestSolutionStatistics;
+	// unsigned int bestNumLevels = 0;
 
 	Log() << "Initiating done in " << Stopwatch::getElapsedTimeSinceProgramStartInSec() << "s\n";
 
@@ -576,6 +576,12 @@ void InfomapBase::calcEntropyRate()
 void InfomapBase::runPartition()
 {
 	m_tuneIterationIndex = 0;
+
+	if (numLeafNodes() == 1)
+	{
+		hierarchicalCodelength = codelength = root()->codelength;
+	}
+
 	if (m_config.twoLevel)
 	{
 		partition();
@@ -636,7 +642,33 @@ void InfomapBase::runPartition()
 	}
 	else
 	{
-		partitionAndQueueNextLevel(partitionQueue);
+		// partitionAndQueueNextLevel(partitionQueue);
+
+		// Two-level partition --> index codebook + module codebook
+		partition();
+		hierarchicalCodelength = codelength;
+
+		if (numTopModules() == 1)
+		{
+			root()->firstChild->codelength = codelength;
+		}
+		else
+		{
+			tryIndexingIteratively(false);
+
+			// In case starting over from super modules gives worse codelength
+			if (hierarchicalCodelength < bestHierarchicalCodelength)
+			{
+				bestHierarchicalCodelength = hierarchicalCodelength;
+				bestSolutionStatistics.str("");
+				// printNetworkData(m_config.outName);
+				printNetworkData(m_ioNetwork); //TODO: Doesn't write to output tree from library
+				bestNumLevels = printPerLevelCodelength(bestSolutionStatistics);
+				m_iterationStats[m_trialIndex].isMinimum = true;
+			}
+			deleteSubLevels();
+			queueTopModules(partitionQueue);
+		}
 	}
 
 	if (m_config.fastHierarchicalSolution > 2 || partitionQueue.size() == 0)
@@ -650,9 +682,12 @@ void InfomapBase::runPartition()
 		io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " modules\n" <<
 		"\nTrying to find deeper structure under current modules recursively... \n";
 
-	double sumConsolidatedCodelength = hierarchicalCodelength - partitionQueue.moduleCodelength;
+	// double sumConsolidatedCodelength = hierarchicalCodelength - partitionQueue.moduleCodelength;
+	double sumConsolidatedCodelength = partitionQueue.indexCodelength;
 	// Log(1) << "Consolidated codelength: " << hierarchicalCodelength << " - " << partitionQueue.moduleCodelength <<
 	// 	" = " << sumConsolidatedCodelength << "\n";
+	// Log(1) << "partitionQueue.indexCodelength: " << partitionQueue.indexCodelength << "\n";
+	// Log(1) << "indexCodelength: " << indexCodelength << "\n";
 
 	if (m_config.resetConfigBeforeRecursion) {
 		m_config.reset();
@@ -800,7 +835,7 @@ void InfomapBase::queueLeafModules(PartitionQueue& partitionQueue)
 	partitionQueue.level = maxDepth;
 }
 
-void InfomapBase::tryIndexingIteratively()
+void InfomapBase::tryIndexingIteratively(bool replaceExistingModules)
 {
 //	return indexCodelength;//TODO: DEBUG!!
 	unsigned int numIndexingCompleted = 0;
@@ -815,8 +850,8 @@ void InfomapBase::tryIndexingIteratively()
 	double minHierarchicalCodelength = hierarchicalCodelength;
 	// Add index codebooks as long as the code gets shorter (and collapse each iteration)
 	bool tryIndexing = true;
-	bool replaceExistingModules = m_config.fastHierarchicalSolution == 0;
-	replaceExistingModules = true; // Uses leaf network below
+	// bool replaceExistingModules = m_config.fastHierarchicalSolution == 0;
+	// replaceExistingModules = true; // Uses leaf network below
 	while(tryIndexing)
 	{
 		if (verbose)
@@ -866,31 +901,37 @@ void InfomapBase::tryIndexingIteratively()
 		}
 
 		// Replace current module structure with the super structure
-		setActiveNetworkFromLeafs();
-//		setActiveNetworkFromChildrenOfRoot();
+		// setActiveNetworkFromLeafs();
+		setActiveNetworkFromChildrenOfRoot();
 		initModuleOptimization();
 
 		unsigned int i = 0;
-		for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()), leafEnd(m_treeData.end_leaf());
-				leafIt != leafEnd; ++leafIt, ++i)
+		for (NodeBase::sibling_iterator nodeIt(root()->begin_child()), endIt(root()->end_child());
+				nodeIt != endIt; ++nodeIt, ++i)
 		{
-			(**leafIt).index = i;
+			nodeIt->index = i;
 		}
+		// for (TreeData::leafIterator leafIt(m_treeData.begin_leaf()), leafEnd(m_treeData.end_leaf());
+		// 		leafIt != leafEnd; ++leafIt, ++i)
+		// {
+		// 	(**leafIt).index = i;
+		// }
 
 
 		// Collect the super module indices on the leaf nodes
 		TreeData& superTree = superInfomap->m_treeData;
 		TreeData::leafIterator superLeafIt(superTree.begin_leaf());
-		unsigned int leafIndex = 0;
-		for (NodeBase::sibling_iterator moduleIt(root()->begin_child()), endIt(root()->end_child());
-				moduleIt != endIt; ++moduleIt, ++superLeafIt)
+		// unsigned int leafIndex = 0;
+		for (NodeBase::sibling_iterator nodeIt(root()->begin_child()), endIt(root()->end_child());
+				nodeIt != endIt; ++nodeIt, ++superLeafIt)
 		{
 			unsigned int superModuleIndex = (*superLeafIt)->parent->index;
-			for (NodeBase::sibling_iterator nodeIt(moduleIt->begin_child()), nodeEndIt(moduleIt->end_child());
-					nodeIt != nodeEndIt; ++nodeIt, ++leafIndex)
-			{
-				m_moveTo[nodeIt->index] = superModuleIndex;
-			}
+			m_moveTo[nodeIt->index] = superModuleIndex;
+			// for (NodeBase::sibling_iterator nodeIt(moduleIt->begin_child()), nodeEndIt(moduleIt->end_child());
+			// 		nodeIt != nodeEndIt; ++nodeIt, ++leafIndex)
+			// {
+			// 	m_moveTo[nodeIt->index] = superModuleIndex;
+			// }
 		}
 
 		// Move the leaf nodes to the modules collected above
