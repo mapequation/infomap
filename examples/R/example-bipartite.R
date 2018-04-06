@@ -3,15 +3,16 @@ source("load-infomap.R")
 
 infomap <- Infomap("--two-level")
 
-# Set the start index for bipartite nodes
+# Set the start index for the feature nodes
 infomap$setBipartiteNodesFrom(5)
-# Add weight as an optional third argument
-infomap$addLink(5, 0)
-infomap$addLink(5, 1)
-infomap$addLink(5, 2)
-infomap$addLink(6, 2)
-infomap$addLink(6, 3)
-infomap$addLink(6, 4)
+
+features <- c(5,5,5,6,6,6)
+nodes <- c(0,1,2,2,3,4)
+weights <- c(1,1,1,1,1,1)
+
+edgelist <- cbind(features, nodes, weights)
+
+apply(edgelist, 1, function(e) infomap$addLink(e[1], e[2], e[3]))
 
 infomap$run()
 
@@ -22,7 +23,7 @@ leafIt <- tree$leafIter(clusterIndexLevel)
 
 cat("Partitioned network in", tree$numTopModules(), "modules with codelength", tree$codelength(), "bits:\n")
 while (!leafIt$isEnd()) {
-	cat("Node:", leafIt$data$name, "module:", leafIt$moduleIndex(), '\n')
+	cat("Node:", leafIt$originalLeafIndex, "module:", leafIt$moduleIndex(), '\n')
 	leafIt$stepForward()
 }
 
