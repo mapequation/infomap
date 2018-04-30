@@ -446,13 +446,13 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleLocal()
 		// auto& moduleDeltaEnterExit = deltaFlow.values();
 
 		// Randomize link order for optimized search
-		// infomath::uniform_uint_dist uniform;
-		// for (unsigned int j = 0; j < deltaFlow.size() - 1; ++j)
-		// {
-		// 	// unsigned int randPos = j + uniform(m_rand, infomath::uniform_param_t(0, deltaFlow.size() - j - 1));
-		// 	unsigned int randPos = infomath::randInt(m_rand, j, deltaFlow.size() - 1);
-		// 	swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
-		// }
+		if (numModuleLinks > 2) {
+			for (unsigned int j = 0; j < numModuleLinks - 2; ++j)
+			{
+				unsigned int randPos = m_rand.randInt(j+1, numModuleLinks - 1);
+				swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+			}
+		}
 		// t += timer.getElapsedTimeInMilliSec();
 		// ++tCount;
 
@@ -635,7 +635,6 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 		}
 
 		// For memory networks
-		//TODO: Uncomment after fix!!
 		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
 		auto& moduleDeltaEnterExit = deltaFlow.values();
@@ -845,15 +844,13 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 		auto& moduleDeltaEnterExit = deltaFlow.values();
 
 		// Randomize link order for optimized search
-		// infomath::uniform_uint_dist uniform;
-		// for (unsigned int j = 0; j < deltaFlow.size() - 1; ++j)
-		// {
-		// 	// unsigned int randPos = j + uniform(m_rand, infomath::uniform_param_t(0, deltaFlow.size() - j - 1));
-		// 	unsigned int randPos = infomath::randInt(m_rand, j, deltaFlow.size() - 1);
-		// 	swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
-		// }
-		// t += timer.getElapsedTimeInMilliSec();
-		// ++tCount;
+		if (numModuleLinks > 2) {
+			for (unsigned int j = 0; j < numModuleLinks - 2; ++j)
+			{
+				unsigned int randPos = m_rand.randInt(j+1, numModuleLinks - 1);
+				swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+			}
+		}
 
 		DeltaFlowDataType bestDeltaModule(oldModuleDelta);
 		double bestDeltaCodelength = 0.0;
