@@ -11,9 +11,12 @@
 #include "InfomapBase.h"
 #include <set>
 #include "../utils/VectorMap.h"
+#include "../utils/infomath.h"
 #include "InfoNode.h"
 #include "FlowData.h"
 #include <utility>
+#include <tuple>
+#include "./MapEquation.h"
 
 namespace infomap {
 
@@ -58,9 +61,13 @@ public:
 
 	virtual double getModuleCodelength() const;
 
-protected:
+	bool haveMemory() const;
 
-	virtual InfomapBase& getInfomap(InfoNode& node);
+protected:
+	
+	// virtual InfomapBase& getInfomap(InfoNode& node);
+	virtual InfomapBase* getNewInfomapInstance() const;
+	virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const;
 
 	using Base::isTopLevel;
 	using Base::isMainInfomap;
@@ -133,10 +140,21 @@ protected:
 
 template<typename Objective>
 inline
-InfomapBase& InfomapOptimizer<Objective>::getInfomap(InfoNode& node) {
-	return node.getInfomap();
+bool InfomapOptimizer<Objective>::haveMemory() const {
+	return Objective::haveMemory();
 }
 
+template<typename Objective>
+inline
+InfomapBase* InfomapOptimizer<Objective>::getNewInfomapInstance() const {
+	return new InfomapOptimizer<Objective>();
+}
+
+template<typename Objective>
+inline
+InfomapBase* InfomapOptimizer<Objective>::getNewInfomapInstanceWithoutMemory() const {
+	return new InfomapOptimizer<MapEquation>();
+}
 
 template<typename Objective>
 inline
@@ -360,7 +378,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleLocal()
 			continue;
 
 		// If other nodes have moved here, don't move away on first loop
-		if (m_moduleMembers[current.index] > 1 && isFirstLoop())
+		if (m_moduleMembers[current.index] > 1 && isFirstLoop() && this->tuneIterationLimit != 1)
 			continue;
 
 		// If no links connecting this node with other nodes, it won't move into others,
@@ -415,7 +433,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleLocal()
 		}
 
 		// For memory networks
-		// m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
 		// Collect the move options to a vector
 		std::vector<DeltaFlowDataType> moduleDeltaEnterExit(deltaFlow.size());
@@ -546,8 +564,8 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
 	// Create map with module links
 	// std::vector<DeltaFlowData> deltaFlow(numNodes);
-	// VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
-	SimpleMap<DeltaFlowDataType> deltaFlow(numNodes);
+	VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
+	// SimpleMap<DeltaFlowDataType> deltaFlow(numNodes);
 	// SimpleMap<DeltaFlowDataType> deltaFlow2(numNodes);
 	// Stopwatch timer(false);
 	// double t = 0.0;
@@ -563,7 +581,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 			continue;
 
 		// If other nodes have moved here, don't move away on first loop
-		if (m_moduleMembers[current.index] > 1 && isFirstLoop())
+		if (m_moduleMembers[current.index] > 1 && isFirstLoop() && this->tuneIterationLimit != 1)
 			continue;
 
 		// If no links connecting this node with other nodes, it won't move into others,
@@ -618,60 +636,20 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
 		// For memory networks
 		//TODO: Uncomment after fix!!
-		// m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
 		auto& moduleDeltaEnterExit = deltaFlow.values();
 		unsigned int numModuleLinks = deltaFlow.size();
 
+
 		// Randomize link order for optimized search
-		// infomath::uniform_uint_dist uniform;
-		// for (unsigned int j = 0; j < deltaFlow.size() - 1; ++j)
-		// {
-		// 	// unsigned int randPos = j + uniform(m_rand, infomath::uniform_param_t(0, deltaFlow.size() - j - 1));
-		// 	unsigned int randPos = infomath::randInt(m_rand, j, deltaFlow.size() - 1);
-		// 	swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
-		// }
-		// t += timer.getElapsedTimeInMilliSec();
-		// ++tCount;
-		for (unsigned int j = 0; j < deltaFlow.size() - 1; ++j)
-		{
-			unsigned int randPos = m_rand.randInt(j+1, deltaFlow.size() - 1);
-			swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+		if (numModuleLinks > 2) {
+			for (unsigned int j = 0; j < numModuleLinks - 2; ++j)
+			{
+				unsigned int randPos = m_rand.randInt(j+1, numModuleLinks - 1);
+				swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+			}
 		}
-		// for (unsigned int j = 0; j < deltaFlow.size() - 1; ++j)
-		// {
-		// 	// unsigned int randPos = m_rand.randInt(j+1, deltaFlow.size() - 1);
-		// 	unsigned int randPos = j+1;
-		// 	// swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
-		// 	auto tmp = moduleDeltaEnterExit[j];
-		// 	moduleDeltaEnterExit[j] = moduleDeltaEnterExit[randPos];
-		// 	moduleDeltaEnterExit[randPos] = tmp;
-		// }
-		// for (unsigned int j = 0; j < deltaFlow.size(); ++j)
-		// {
-		// 	moduleDeltaEnterExit[j] = moduleDeltaEnterExit[j];
-		// }
-
-		// if (numModuleLinks > 1) {
-		// 	auto m0 = moduleDeltaEnterExit[0].module;
-		// 	auto e0 = moduleDeltaEnterExit[0].deltaEnter;
-		// 	auto x0 = moduleDeltaEnterExit[0].deltaExit;
-		// 	auto c0 = moduleDeltaEnterExit[0].count;
-		// 	auto m1 = moduleDeltaEnterExit[1].module;
-		// 	auto e1 = moduleDeltaEnterExit[1].deltaEnter;
-		// 	auto x1 = moduleDeltaEnterExit[1].deltaExit;
-		// 	auto c1 = moduleDeltaEnterExit[1].count;
-
-		// 	moduleDeltaEnterExit[0].module = m1;
-		// 	moduleDeltaEnterExit[0].deltaEnter = e1;
-		// 	moduleDeltaEnterExit[0].deltaExit = x1;
-		// 	moduleDeltaEnterExit[0].count = c1;
-			
-		// 	moduleDeltaEnterExit[1].module = m0;
-		// 	moduleDeltaEnterExit[1].deltaEnter = e0;
-		// 	moduleDeltaEnterExit[1].deltaExit = x0;
-		// 	moduleDeltaEnterExit[1].count = c0;
-		// }
 
 		DeltaFlowDataType bestDeltaModule(oldModuleDelta);
 		double bestDeltaCodelength = 0.0;
@@ -811,7 +789,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 			continue;
 
 		// If other nodes have moved here, don't move away on first loop
-		if (m_moduleMembers[current.index] > 1 && isFirstLoop())
+		if (m_moduleMembers[current.index] > 1 && isFirstLoop() && this->tuneIterationLimit != 1)
 			continue;
 
 		// If no links connecting this node with other nodes, it won't move into others,
@@ -1082,7 +1060,7 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 
 	auto& network = activeNetwork();
 	unsigned int numNodes = network.size();
-	std::vector<InfoNode*> modules(numNodes, 0);
+	std::vector<InfoNode*> modules(numNodes, nullptr);
 
 	auto& moduleFlowData = getModuleFlowData();
 
@@ -1095,7 +1073,7 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 
 
 	// Release children pointers on current parent(s) to put new modules between
-	for (InfoNode* n : network) {
+	for (auto& n : network) {
 		n->parent->releaseChildren(); // Safe to call multiple times
 	}
 
@@ -1104,39 +1082,80 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 	{
 		InfoNode* node = network[i];
 		unsigned int moduleIndex = node->index;
-		if (modules[moduleIndex] == 0)
+		if (modules[moduleIndex] == nullptr)
 		{
 			modules[moduleIndex] = new InfoNode(moduleFlowData[moduleIndex]);
-			node->parent->addChild(modules[moduleIndex]);
 			modules[moduleIndex]->index = moduleIndex;
+			node->parent->addChild(modules[moduleIndex]);
 		}
 		modules[moduleIndex]->addChild(node);
 	}
 
 
 	// Aggregate links from lower level to the new modular level
-	typedef std::pair<InfoNode*, InfoNode*> NodePair;
-	typedef std::map<NodePair, double> EdgeMap;
+	// struct CompareNodePairDeterministically {
+	// 	bool operator() (const std::pair<InfoNode*, InfoNode*>& x, const std::pair<InfoNode*, InfoNode*>& y) const {
+	// 		return x.first->index < y.first->index || (!(y.first->index < x.first->index) && x.second->index < y.second->index);
+	// 	}
+	// };
+	// using NodePair = std::pair<InfoNode*, InfoNode*>;
+	// using EdgeMap = std::map<NodePair, double, CompareNodePairDeterministically>;
+	// EdgeMap moduleLinks;
+
+	// for (auto& node : network)
+	// {
+	// 	InfoNode* module1 = node->parent;
+	// 	for (auto& e : node->outEdges())
+	// 	{
+	// 		EdgeType& edge = *e;
+	// 		InfoNode* module2 = edge.target.parent;
+	// 		if (module1 != module2)
+	// 		{
+	// 			// Use new pointers to not swap module1
+	// 			InfoNode* m1 = module1;
+	// 			InfoNode* m2 = module2;
+	// 			if (!this->directedEdges && m1->index > m2->index)
+	// 				std::swap(m1, m2);
+	// 			// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
+	// 			auto ret = moduleLinks.emplace(
+	// 				std::piecewise_construct,
+	// 				std::forward_as_tuple(m1, m2),
+	// 				std::forward_as_tuple(edge.data.flow)
+	// 			);
+	// 			if (!ret.second) {
+	// 				ret.first->second += edge.data.flow;
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+	using NodePair = std::pair<unsigned int, unsigned int>;
+	using EdgeMap = std::map<NodePair, double>;
 	EdgeMap moduleLinks;
 
 	for (auto& node : network)
 	{
-		InfoNode* parent = node->parent;
+		unsigned int module1 = node->index;
 		for (auto& e : node->outEdges())
 		{
 			EdgeType& edge = *e;
-			InfoNode* otherParent = edge.target.parent;
-			if (otherParent != parent)
+			unsigned int module2 = edge.target.index;
+			if (module1 != module2)
 			{
-				InfoNode *m1 = parent, *m2 = otherParent;
+				// Use new variables to not swap module1
+				unsigned int m1 = module1, m2 = module2;
 				// If undirected, the order may be swapped to aggregate the edge on an opposite one
-				if (!this->directedEdges && m1->index > m2->index)
+				if (!this->directedEdges && m1 > m2)
 					std::swap(m1, m2);
 				// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
-				std::pair<EdgeMap::iterator, bool> ret = \
-						moduleLinks.insert(std::make_pair(NodePair(m1, m2), edge.data.flow));
-				if (!ret.second)
+				auto ret = moduleLinks.emplace(
+					std::piecewise_construct,
+					std::forward_as_tuple(m1, m2),
+					std::forward_as_tuple(edge.data.flow)
+				);
+				if (!ret.second) {
 					ret.first->second += edge.data.flow;
+				}
 			}
 		}
 	}
@@ -1144,8 +1163,9 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 	// Add the aggregated edge flow structure to the new modules
 	for (auto& e : moduleLinks)
 	{
-		const NodePair& nodePair = e.first;
-		nodePair.first->addOutEdge(*nodePair.second, 0.0, e.second);
+		const auto& nodePair = e.first;
+		// nodePair.first->addOutEdge(*nodePair.second, 0.0, e.second);
+		modules[nodePair.first]->addOutEdge(*modules[nodePair.second], 0.0, e.second);
 	}
 
 	if (replaceExistingModules)

@@ -45,7 +45,7 @@ struct Config
 	// Input
 	std::string networkFile = "";
 	std::vector<std::string> additionalInput;
-	std::string inputFormat = ""; // 'pajek', 'link-list', '3gram' or 'multiplex'
+	std::string inputFormat = ""; // 'pajek', 'link-list', '3gram' or 'multilayer'
 	bool withMemory = false;
 	bool bipartite = false;
 	bool skipAdjustBipartiteFlow = false;
@@ -57,7 +57,7 @@ struct Config
 	bool ignoreEdgeWeights = false;
 	bool skipCompleteDanglingMemoryNodes = false;
 	unsigned int nodeLimit = 0;
-	bool preClusterMultiplex = false;
+	bool preClusterMultilayer = false;
 	std::string clusterDataFile = "";
 	bool clusterDataIsHard = false;
 	bool noInfomap = false;
@@ -70,8 +70,8 @@ struct Config
 	bool teleportToNodes = false;
 	double selfTeleportationProbability = -1;
 	double markovTime = 1.0;
-	double multiplexRelaxRate = 0.15;
-	int multiplexRelaxLimit = -1;
+	double multilayerRelaxRate = 0.15;
+	int multilayerRelaxLimit = -1;
 	
 	// Clustering
 	bool twoLevel = false;
@@ -85,7 +85,7 @@ struct Config
 	// Performance and accuracy
 	unsigned int numTrials = 1;
 	double minimumCodelengthImprovement = 1e-10;
-	double minimumSingleNodeCodelengthImprovement = 1e-10;
+	double minimumSingleNodeCodelengthImprovement = 1e-16;
 	bool randomizeCoreLoopLimit = false;
 	unsigned int coreLoopLimit = 10;
 	unsigned int levelAggregationLimit = 0;
@@ -98,6 +98,7 @@ struct Config
 	bool onlySuperModules = false;
 	unsigned int fastHierarchicalSolution = 0;
 	bool fastFirstIteration = false;
+	bool skipReplaceToOneModuleIfBetter = false;
 	unsigned int lowMemoryPriority = false; // Prioritize memory efficient algorithms before fast if > 0
 	bool innerParallelization = false;
 
@@ -135,7 +136,7 @@ struct Config
 
 	Config()
 	{
-		setOptimizationLevel(1);
+		// setOptimizationLevel(1);
 	}
 
 	Config(std::string flags, bool requireFileInput = false)
@@ -158,7 +159,7 @@ struct Config
 		ignoreEdgeWeights(other.ignoreEdgeWeights),
 		skipCompleteDanglingMemoryNodes(other.skipCompleteDanglingMemoryNodes),
 		nodeLimit(other.nodeLimit),
-		preClusterMultiplex(other.preClusterMultiplex),
+		preClusterMultilayer(other.preClusterMultilayer),
 	 	clusterDataFile(other.clusterDataFile),
 	 	clusterDataIsHard(other.clusterDataIsHard),
 	 	noInfomap(other.noInfomap),
@@ -169,8 +170,8 @@ struct Config
 		teleportToNodes(other.teleportToNodes),
 		selfTeleportationProbability(other.selfTeleportationProbability),
 		markovTime(other.markovTime),
-		multiplexRelaxRate(other.multiplexRelaxRate),
-		multiplexRelaxLimit(other.multiplexRelaxLimit),
+		multilayerRelaxRate(other.multilayerRelaxRate),
+		multilayerRelaxLimit(other.multilayerRelaxLimit),
 	 	twoLevel(other.twoLevel),
 		noCoarseTune(other.noCoarseTune),
 		directedEdges(other.directedEdges),
@@ -193,6 +194,7 @@ struct Config
 		onlySuperModules(other.onlySuperModules),
 		fastHierarchicalSolution(other.fastHierarchicalSolution),
 		fastFirstIteration(other.fastFirstIteration),
+		skipReplaceToOneModuleIfBetter(other.skipReplaceToOneModuleIfBetter),
 		lowMemoryPriority(other.lowMemoryPriority),
 		innerParallelization(other.innerParallelization),
 		outDirectory(other.outDirectory),
@@ -242,7 +244,7 @@ struct Config
 		ignoreEdgeWeights = other.ignoreEdgeWeights;
 		skipCompleteDanglingMemoryNodes = other.skipCompleteDanglingMemoryNodes;
 		nodeLimit = other.nodeLimit;
-		preClusterMultiplex = other.preClusterMultiplex;
+		preClusterMultilayer = other.preClusterMultilayer;
 	 	clusterDataFile = other.clusterDataFile;
 	 	clusterDataIsHard = other.clusterDataIsHard;
 	 	noInfomap = other.noInfomap;
@@ -253,8 +255,8 @@ struct Config
 		teleportToNodes = other.teleportToNodes;
 		selfTeleportationProbability = other.selfTeleportationProbability;
 	 	markovTime = other.markovTime;
-		multiplexRelaxRate = other.multiplexRelaxRate;
-		multiplexRelaxLimit = other.multiplexRelaxLimit;
+		multilayerRelaxRate = other.multilayerRelaxRate;
+		multilayerRelaxLimit = other.multilayerRelaxLimit;
 	 	twoLevel = other.twoLevel;
 		noCoarseTune = other.noCoarseTune;
 		directedEdges = other.directedEdges;
@@ -277,6 +279,7 @@ struct Config
 		onlySuperModules = other.onlySuperModules;
 		fastHierarchicalSolution = other.fastHierarchicalSolution;
 		fastFirstIteration = other.fastFirstIteration;
+		skipReplaceToOneModuleIfBetter = other.skipReplaceToOneModuleIfBetter;
 		lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
 		outDirectory = other.outDirectory;
@@ -325,7 +328,7 @@ struct Config
 		ignoreEdgeWeights = other.ignoreEdgeWeights;
 		skipCompleteDanglingMemoryNodes = other.skipCompleteDanglingMemoryNodes;
 		nodeLimit = other.nodeLimit;
-		preClusterMultiplex = other.preClusterMultiplex;
+		preClusterMultilayer = other.preClusterMultilayer;
 	 	// clusterDataFile = other.clusterDataFile;
 	 	// clusterDataIsHard = other.clusterDataIsHard;
 	 	noInfomap = other.noInfomap;
@@ -336,8 +339,8 @@ struct Config
 		teleportToNodes = other.teleportToNodes;
 		selfTeleportationProbability = other.selfTeleportationProbability;
 	 	markovTime = other.markovTime;
-		multiplexRelaxRate = other.multiplexRelaxRate;
-		multiplexRelaxLimit = other.multiplexRelaxLimit;
+		multilayerRelaxRate = other.multilayerRelaxRate;
+		multilayerRelaxLimit = other.multilayerRelaxLimit;
 	 	twoLevel = other.twoLevel;
 		noCoarseTune = other.noCoarseTune;
 		directedEdges = other.directedEdges;
@@ -360,30 +363,31 @@ struct Config
 		// onlySuperModules = other.onlySuperModules;
 		// fastHierarchicalSolution = other.fastHierarchicalSolution;
 		// fastFirstIteration = other.fastFirstIteration;
+		skipReplaceToOneModuleIfBetter = other.skipReplaceToOneModuleIfBetter;
 		lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
 		outDirectory = other.outDirectory;
 		outName = other.outName;
 		originallyUndirected = other.originallyUndirected;
-		printTree = other.printTree;
-		printFlowTree = other.printFlowTree;
-		printMap = other.printMap;
-		printClu = other.printClu;
-		printNodeRanks = other.printNodeRanks;
-		printFlowNetwork = other.printFlowNetwork;
-		printPajekNetwork = other.printPajekNetwork;
-		printStateNetwork = other.printStateNetwork;
-		printBinaryTree = other.printBinaryTree;
-		printBinaryFlowTree = other.printBinaryFlowTree;
-		printExpanded = other.printExpanded;
-		noFileOutput = other.noFileOutput;
+		// printTree = other.printTree;
+		// printFlowTree = other.printFlowTree;
+		// printMap = other.printMap;
+		// printClu = other.printClu;
+		// printNodeRanks = other.printNodeRanks;
+		// printFlowNetwork = other.printFlowNetwork;
+		// printPajekNetwork = other.printPajekNetwork;
+		// printStateNetwork = other.printStateNetwork;
+		// printBinaryTree = other.printBinaryTree;
+		// printBinaryFlowTree = other.printBinaryFlowTree;
+		// printExpanded = other.printExpanded;
+		// noFileOutput = other.noFileOutput;
 		verbosity = other.verbosity;
 		verboseNumberPrecision = other.verboseNumberPrecision;
-		silent = other.silent;
-		benchmark = other.benchmark;
-	 	maxNodeIndexVisible = other.maxNodeIndexVisible;
-	 	showBiNodes = other.showBiNodes;
-	 	minBipartiteNodeIndex = other.minBipartiteNodeIndex;
+		// silent = other.silent;
+		// benchmark = other.benchmark;
+	 	// maxNodeIndexVisible = other.maxNodeIndexVisible;
+	 	// showBiNodes = other.showBiNodes;
+	 	// minBipartiteNodeIndex = other.minBipartiteNodeIndex;
 		startDate = other.startDate;
 		version = other.version;
 		// parsedString = other.parsedString;
@@ -446,9 +450,9 @@ struct Config
 		originallyUndirected = isUndirected();
 		if (isMemoryNetwork())
 		{
-			if (isMultiplexNetwork())
+			if (isMultilayerNetwork())
 			{
-				// Include self-links in multiplex networks as layer and node numbers are unrelated
+				// Include self-links in multilayer networks as layer and node numbers are unrelated
 				includeSelfLinks = true;
 				if (!isUndirected())
 				{
@@ -489,11 +493,11 @@ struct Config
 	bool useTeleportation() const { return 	directed; }
 
 	bool is3gram() const { return inputFormat == "3gram"; }
-	bool isMultiplexNetwork() const { return inputFormat == "multilayer" || inputFormat == "multiplex" || additionalInput.size() > 0; }
+	bool isMultilayerNetwork() const { return inputFormat == "multilayer" || inputFormat == "multiplex" || additionalInput.size() > 0; }
 	bool isStateNetwork() const { return inputFormat == "states"; }
 	bool isBipartite() const { return inputFormat == "bipartite"; }
 
-	bool isMemoryInput() const { return isStateNetwork() || is3gram() || isMultiplexNetwork(); }
+	bool isMemoryInput() const { return isStateNetwork() || is3gram() || isMultilayerNetwork(); }
 
 	bool isMemoryNetwork() const { return withMemory || nonBacktracking || isMemoryInput(); }
 	

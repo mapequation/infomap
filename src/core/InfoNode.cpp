@@ -66,19 +66,33 @@ InfoNode::~InfoNode()
 // 	return false;
 // }
 
-InfomapBase& InfoNode::getInfomap(bool reset) {
-	if (!m_infomap || reset) {
-		disposeInfomap();
-		m_infomap = new M1Infomap();
-	}
+// InfomapBase& InfoNode::getInfomap(bool reset) {
+// 	if (!m_infomap || reset || m_infomap->isHigherOrder()) {
+// 		disposeInfomap();
+// 		m_infomap = new M1Infomap();
+// 	}
+// 	return *m_infomap;
+// }
+
+// InfomapBase& InfoNode::getMemInfomap(bool reset) {
+// 	if (!m_infomap || reset || !m_infomap->isHigherOrder()) {
+// 		disposeInfomap();
+// 		m_infomap = new M2Infomap();
+// 	}
+// 	return *m_infomap;
+// }
+
+InfomapBase& InfoNode::setInfomap(InfomapBase* infomap) {
+	disposeInfomap();
+	m_infomap = infomap;
+	if (infomap == nullptr)
+		throw InternalOrderError("InfoNode::setInfomap(...) called with null infomap");
 	return *m_infomap;
 }
 
-InfomapBase& InfoNode::getMemInfomap(bool reset) {
-	if (!m_infomap || reset) {
-		disposeInfomap();
-		m_infomap = new M2Infomap();
-	}
+InfomapBase& InfoNode::getInfomap() {
+	if (m_infomap == nullptr)
+		throw InternalOrderError("InfoNode::getInfomap() called but infomap is null");
 	return *m_infomap;
 }
 
@@ -108,7 +122,7 @@ bool InfoNode::isLeaf() const
 bool InfoNode::isLeafModule() const
 {
 	//TODO: Safe to assume all children are leaves if first child is leaf?
-	return firstChild != nullptr && firstChild->firstChild == nullptr;
+	return m_infomap == nullptr && firstChild != nullptr && firstChild->firstChild == nullptr;
 }
 
 bool InfoNode::isRoot() const
@@ -125,6 +139,17 @@ unsigned int InfoNode::depth() const
 		n = n->parent;
 	}
 	return depth;
+}
+
+unsigned int InfoNode::firstDepthBelow() const
+{
+	unsigned int depthBelow = 0;
+	InfoNode* child = firstChild;
+	while (child != nullptr) {
+		++depthBelow;
+		child = child->firstChild;
+	}
+	return depthBelow;
 }
 
 unsigned int InfoNode::childIndex() const
@@ -172,6 +197,33 @@ void InfoNode::releaseChildren()
 	firstChild = nullptr;
 	lastChild = nullptr;
 	m_childDegree = 0;
+}
+
+InfoNode& InfoNode::replaceChildrenWithOneNode()
+{
+	if (childDegree() == 1)
+		return *firstChild;
+	if (firstChild == nullptr)
+		throw InternalOrderError("replaceChildrenWithOneNode called on a node without any children.");
+	if (firstChild->firstChild == nullptr)
+		throw InternalOrderError("replaceChildrenWithOneNode called on a node without any grandchildren.");
+	InfoNode* middleNode = new InfoNode();
+	InfoNode::sibling_iterator nodeIt = begin_child();
+	unsigned int numOriginalChildrenLeft = m_childDegree;
+	auto d0 = m_childDegree;
+	do
+	{
+		InfoNode* n = nodeIt.base();
+		++nodeIt;
+		middleNode->addChild(n);
+	}
+	while (--numOriginalChildrenLeft != 0);
+	releaseChildren();
+	addChild(middleNode);
+	auto d1 = middleNode->replaceChildrenWithGrandChildren();
+	if (d1 != d0)
+		throw InternalOrderError("replaceChildrenWithOneNode replaced different number of children as having before");
+	return *middleNode;
 }
 
 unsigned int InfoNode::replaceChildrenWithGrandChildren()

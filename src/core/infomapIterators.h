@@ -26,8 +26,8 @@ class InfomapClusterIterator : public DepthFirstIteratorBase<NodePointerType>
 protected:
 	typedef DepthFirstIteratorBase<NodePointerType>		Base;
 
-	unsigned int m_clusterIndex = 0;
-	int m_clusterIndexLevel = -1;
+	unsigned int m_moduleIndex = 0;
+	int m_moduleIndexLevel = -1;
 
 	using Base::m_depth;
 	using Base::m_current;
@@ -37,22 +37,38 @@ public:
 	InfomapClusterIterator() : Base() {}
 
 	explicit
-	InfomapClusterIterator(const NodePointerType& nodePointer, int clusterIndexLevel = -1)
+	InfomapClusterIterator(const NodePointerType& nodePointer, int moduleIndexLevel = -1)
 	:	Base(nodePointer),
-		m_clusterIndexLevel(clusterIndexLevel)
+		m_moduleIndexLevel(moduleIndexLevel)
 	{}
 
 	InfomapClusterIterator(const InfomapClusterIterator& other)
 	:	Base(other),
-		m_clusterIndex(other.m_clusterIndex),
-		m_clusterIndexLevel(other.m_clusterIndexLevel)
+		m_moduleIndex(other.m_moduleIndex),
+		m_moduleIndexLevel(other.m_moduleIndexLevel)
 	{}
+	
+	virtual void init()
+	{
+		moveToInfomapRootIfExist();
+	}
+
+	void moveToInfomapRootIfExist()
+	{
+		if (m_current != nullptr) {
+			NodePointerType infomapRoot = m_current->getInfomapRoot();
+			if (infomapRoot != nullptr)
+			{
+				m_current = infomapRoot;
+			}
+		}
+	}
 
 	InfomapClusterIterator& operator= (const InfomapClusterIterator& other)
 	{
 		Base::operator=(other);
-		m_clusterIndex = other.m_clusterIndex;
-		m_clusterIndexLevel = other.m_clusterIndexLevel;
+		m_moduleIndex = other.m_moduleIndex;
+		m_moduleIndexLevel = other.m_moduleIndexLevel;
 		return *this;
 	}
 
@@ -60,11 +76,6 @@ public:
 	operator++()
 	{
 		NodePointerType curr = Base::m_current;
-		NodePointerType infomapRoot = curr->getInfomapRoot();
-		if (infomapRoot != nullptr)
-		{
-			curr = infomapRoot;
-		}
 
 		if(curr->firstChild != nullptr)
 		{
@@ -87,12 +98,12 @@ public:
 						m_current = nullptr;
 						return *this;
 					}
-					if (m_clusterIndexLevel < 0) {
+					if (m_moduleIndexLevel < 0) {
 						 if (curr->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
-							 ++m_clusterIndex;
+							 ++m_moduleIndex;
 					}
-					else if (static_cast<unsigned int>(m_clusterIndexLevel) == m_depth)
-						++m_clusterIndex;
+					else if (static_cast<unsigned int>(m_moduleIndexLevel) == m_depth)
+						++m_moduleIndex;
 				}
 				else
 				{
@@ -117,6 +128,7 @@ public:
 			curr = curr->next;
 		}
 		m_current = curr;
+		moveToInfomapRootIfExist();
 		return *this;
 	}
 
@@ -142,9 +154,9 @@ public:
 		return *this;
 	}
 
-	unsigned int clusterIndex() const
+	unsigned int moduleIndex() const
 	{
-		return m_clusterIndex;
+		return m_moduleIndex;
 	}
 };
 
@@ -160,8 +172,8 @@ protected:
 	typedef DepthFirstIteratorBase<NodePointerType>		Base;
 
 	std::deque<unsigned int> m_path; // The child index path to current node
-	unsigned int m_clusterIndex = 0;
-	int m_clusterIndexLevel = -1;
+	unsigned int m_moduleIndex = 0;
+	int m_moduleIndexLevel = -1;
 
 	using Base::m_depth;
 	using Base::m_current;
@@ -171,36 +183,47 @@ public:
 	InfomapDepthFirstIterator() : Base() {}
 
 	explicit
-	InfomapDepthFirstIterator(const NodePointerType& nodePointer, int clusterIndexLevel = -1)
+	InfomapDepthFirstIterator(const NodePointerType& nodePointer, int moduleIndexLevel = -1)
 	:	Base(nodePointer),
-		m_clusterIndexLevel(clusterIndexLevel)
+		m_moduleIndexLevel(moduleIndexLevel)
 	{}
 
 	InfomapDepthFirstIterator(const InfomapDepthFirstIterator& other)
 	:	Base(other),
 		m_path(other.m_path),
-		m_clusterIndex(other.m_clusterIndex),
-		m_clusterIndexLevel(other.m_clusterIndexLevel)
+		m_moduleIndex(other.m_moduleIndex),
+		m_moduleIndexLevel(other.m_moduleIndexLevel)
 	{}
 
 	InfomapDepthFirstIterator& operator= (const InfomapDepthFirstIterator& other)
 	{
 		Base::operator=(other);
 		m_path = other.m_path;
-		m_clusterIndex = other.m_clusterIndex;
-		m_clusterIndexLevel = other.m_clusterIndexLevel;
+		m_moduleIndex = other.m_moduleIndex;
+		m_moduleIndexLevel = other.m_moduleIndexLevel;
 		return *this;
+	}
+
+	virtual void init()
+	{
+		moveToInfomapRootIfExist();
+	}
+
+	void moveToInfomapRootIfExist()
+	{
+		if (m_current != nullptr) {
+			NodePointerType infomapRoot = m_current->getInfomapRoot();
+			if (infomapRoot != nullptr)
+			{
+				m_current = infomapRoot;
+			}
+		}
 	}
 
 	InfomapDepthFirstIterator&
 	operator++()
 	{
 		NodePointerType curr = Base::m_current;
-		NodePointerType infomapRoot = curr->getInfomapRoot();
-		if (infomapRoot != nullptr)
-		{
-			curr = infomapRoot;
-		}
 
 		if(curr->firstChild != nullptr)
 		{
@@ -225,12 +248,12 @@ public:
 						m_current = nullptr;
 						return *this;
 					}
-					if (m_clusterIndexLevel < 0) {
+					if (m_moduleIndexLevel < 0) {
 						 if (curr->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
-							 ++m_clusterIndex;
+							 ++m_moduleIndex;
 					}
-					else if (static_cast<unsigned int>(m_clusterIndexLevel) == m_depth)
-						++m_clusterIndex;
+					else if (static_cast<unsigned int>(m_moduleIndexLevel) == m_depth)
+						++m_moduleIndex;
 				}
 				else
 				{
@@ -256,6 +279,7 @@ public:
 			++m_path.back();
 		}
 		m_current = curr;
+		moveToInfomapRootIfExist();
 		return *this;
 	}
 
@@ -286,9 +310,9 @@ public:
 		return m_path;
 	}
 
-	unsigned int clusterIndex() const
+	unsigned int moduleIndex() const
 	{
-		return m_clusterIndex;
+		return m_moduleIndex;
 	}
 };
 

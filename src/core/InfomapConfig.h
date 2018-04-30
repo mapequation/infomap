@@ -62,6 +62,11 @@ public:
 		return get();
 	}
 
+	Infomap& setTuneIterationLimit(unsigned int value) {
+		tuneIterationLimit = value;
+		return get();
+	}
+
 	Infomap& setFastHierarchicalSolution(unsigned int level) {
 		fastHierarchicalSolution = level;
 		return get();
@@ -84,6 +89,11 @@ public:
 
 	Infomap& setMarkovTime(double codeRate) {
 		markovTime = codeRate;
+		return get();
+	}
+
+	Infomap& reseed(unsigned int seed) {
+		m_rand.seed(seed);
 		return get();
 	}
 };

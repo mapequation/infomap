@@ -25,7 +25,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 			"The file containing the network data. Accepted formats: Pajek (implied by .net) and link list (.txt)");
 
 		// api.addOptionalNonOptionArguments(conf.additionalInput, "[additional input]",
-		// 		"More network layers for multiplex.", true);
+		// 		"More network layers for multilayer.", true);
 	}
 	else
 	{
@@ -34,7 +34,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	}
 
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
-			"Specify input format ('pajek', 'link-list', 'states', '3gram', 'multiplex' or 'bipartite') to override format possibly implied by file extension.", "s");
+			"Specify input format ('pajek', 'link-list', 'states', '3gram', 'multilayer' or 'bipartite') to override format possibly implied by file extension.", "s");
 
 	// api.addOptionArgument(conf.withMemory, "with-memory",
 	// 		"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.", true);
@@ -69,8 +69,8 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.nodeLimit, 'O', "node-limit",
 			"Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", "n", true);
 
-	api.addOptionArgument(conf.preClusterMultiplex, "pre-cluster-multiplex",
-			"Pre-cluster multiplex networks layer by layer.", true);
+	api.addOptionArgument(conf.preClusterMultilayer, "pre-cluster-multilayer",
+			"Pre-cluster multilayer networks layer by layer.", true);
 
 	api.addOptionArgument(conf.clusterDataFile, 'c', "cluster-data",
 			"Provide an initial two-level (.clu format) or multi-layer (.tree format) solution.", "p", true);
@@ -157,10 +157,10 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.preferredNumberOfModules, "preferred-number-of-modules",
 			"Stop merge or split modules if preferred number of modules is reached.", "n", true);
 
-	api.addOptionArgument(conf.multiplexRelaxRate, "multiplex-relax-rate",
+	api.addOptionArgument(conf.multilayerRelaxRate, "multilayer-relax-rate",
 			"The probability to relax the constraint to move only in the current layer. If negative, the inter-links have to be provided.", "f", true);
 
-	api.addOptionArgument(conf.multiplexRelaxLimit, "multiplex-relax-limit",
+	api.addOptionArgument(conf.multilayerRelaxLimit, "multilayer-relax-limit",
 			"The number of neighboring layers in each direction to relax to. If negative, relax to any layer.", "n", true);
 
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
@@ -202,6 +202,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 
 	api.addIncrementalOptionArgument(conf.fastHierarchicalSolution, 'F', "fast-hierarchical-solution",
 			"Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.");
+
+	api.addOptionArgument(conf.skipReplaceToOneModuleIfBetter, "skip-replace-to-one-module",
+			"Keep modular solutions even if not better than all nodes in one module", true);
 
 	api.addIncrementalOptionArgument(conf.lowMemoryPriority, 'l', "low-memory",
 			"Prioritize memory efficient algorithms before fast. Use -ll to optimize even more, but this may give approximate results.");

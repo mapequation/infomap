@@ -60,6 +60,12 @@ namespace infomap
 		{
 			return value > lowerLimit && value < higherLimit;
 		}
+		
+		inline
+		bool isEqualWithinThreshold(double v1, double v2, double epsilon = 1e-10)
+		{
+			return std::abs(v2 - v1) < epsilon;
+		}
 	}
 }
 #endif /* INFOMAPTH_H_ */

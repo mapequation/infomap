@@ -56,12 +56,16 @@ struct node_iterator_base
 
 	node_iterator_base()
 	:	m_current(nullptr)
-	{}
+	{
+		init();
+	}
 
 	explicit
 	node_iterator_base(const NodePointerType& nodePointer)
 	:	m_current(nodePointer)
-	{}
+	{
+		init();
+	}
 
 	node_iterator_base(const node_iterator_base& other)
 	:	m_current(other.m_current)
@@ -72,6 +76,8 @@ struct node_iterator_base
 		m_current = other.m_current;
 		return *this;
 	}
+
+	virtual void init() {}
 
 	pointer base() const
 	{ return m_current; }
@@ -176,7 +182,7 @@ public:
 	operator++()
 	{
 		NodePointerType curr = Base::m_current;
-		if(curr->firstChild != 0)
+		if(curr->firstChild != nullptr)
 		{
 			curr = curr->firstChild;
 			++Base::m_depth;
@@ -184,13 +190,13 @@ public:
 		else
 		{
 			// Presupposes that the next pointer can't reach out from the current parent.
-			while(curr->next == 0)
+			while(curr->next == nullptr)
 			{
 				curr = curr->parent;
 				--Base::m_depth;
-				if(curr == Base::m_root || curr == 0) // 0 if no children in first place
+				if(curr == Base::m_root || curr == nullptr) // 0 if no children in first place
 				{
-					Base::m_current = 0;
+					Base::m_current = nullptr;
 					return *this;
 				}
 			}
@@ -231,22 +237,21 @@ public:
 	DepthFirstIterator() : Base() {}
 
 	explicit
-	DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
+	DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) {}
 
-	DepthFirstIterator(const DepthFirstIterator& other) : Base(other) { init(); }
+	DepthFirstIterator(const DepthFirstIterator& other) : Base(other) {}
 
 	DepthFirstIterator& operator= (const DepthFirstIterator& other)
 	{
 		Base::operator=(other);
-		init();
 		return *this;
 	}
 
-	void init()
+	virtual void init()
 	{
-		if (Base::m_current != 0)
+		if (Base::m_current != nullptr)
 		{
-			while(Base::m_current->firstChild != 0)
+			while(Base::m_current->firstChild != nullptr)
 			{
 				Base::m_current = Base::m_current->firstChild;
 				++Base::m_depth;
@@ -260,15 +265,15 @@ public:
 		// The root should be the last node
 		if(Base::m_current == Base::m_root)
 		{
-			Base::m_current = 0;
+			Base::m_current = nullptr;
 			return *this;
 		}
 
 		NodePointerType curr = Base::m_current;
-		if (curr->next != 0)
+		if (curr->next != nullptr)
 		{
 			curr = curr->next;
-			while (curr->firstChild != 0)
+			while (curr->firstChild != nullptr)
 			{
 				curr = curr->firstChild;
 				++Base::m_depth;
@@ -314,22 +319,21 @@ public:
 	LeafNodeIterator() : Base() {}
 
 	explicit
-	LeafNodeIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
+	LeafNodeIterator(const NodePointerType& nodePointer) : Base(nodePointer) {}
 
-	LeafNodeIterator(const LeafNodeIterator& other) : Base(other) { init(); }
+	LeafNodeIterator(const LeafNodeIterator& other) : Base(other) {}
 
 	LeafNodeIterator& operator= (const LeafNodeIterator& other)
 	{
 		Base::operator=(other);
-		init();
 		return *this;
 	}
 
-	void init()
+	virtual void init()
 	{
-		if (Base::m_current != 0)
+		if (Base::m_current != nullptr)
 		{
-			while(Base::m_current->firstChild != 0)
+			while(Base::m_current->firstChild != nullptr)
 			{
 				Base::m_current = Base::m_current->firstChild;
 				++Base::m_depth;
@@ -340,20 +344,20 @@ public:
 	LeafNodeIterator&
 	operator++()
 	{
-		ASSERT(Base::m_current!=0);
-		while(Base::m_current->next == 0 || Base::m_current->next->parent != Base::m_current->parent)
+		ASSERT(Base::m_current != nullptr);
+		while(Base::m_current->next == nullptr || Base::m_current->next->parent != Base::m_current->parent)
 		{
 			Base::m_current = Base::m_current->parent;
 			--Base::m_depth;
-			if(Base::m_current == 0)
+			if(Base::m_current == nullptr)
 				return *this;
 		}
 
 		Base::m_current = Base::m_current->next;
 
-		if (Base::m_current != 0)
+		if (Base::m_current != nullptr)
 		{
-			while(Base::m_current->firstChild != 0)
+			while(Base::m_current->firstChild != nullptr)
 			{
 				Base::m_current = Base::m_current->firstChild;
 				++Base::m_depth;
@@ -391,9 +395,9 @@ public:
 	LeafModuleIterator() : Base() {}
 
 	explicit
-	LeafModuleIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
+	LeafModuleIterator(const NodePointerType& nodePointer) : Base(nodePointer) {}
 
-	LeafModuleIterator(const LeafModuleIterator& other) : Base(other) { init(); }
+	LeafModuleIterator(const LeafModuleIterator& other) : Base(other) {}
 
 	LeafModuleIterator& operator= (const LeafModuleIterator& other)
 	{
@@ -402,17 +406,17 @@ public:
 		return *this;
 	}
 
-	void init()
+	virtual void init()
 	{
-		if (Base::m_current != 0)
+		if (Base::m_current != nullptr)
 		{
-			if (Base::m_current->firstChild == 0)
+			if (Base::m_current->firstChild == nullptr)
 			{
-				Base::m_current = 0; // End directly if no module
+				Base::m_current = nullptr; // End directly if no module
 			}
 			else
 			{
-				while(Base::m_current->firstChild->firstChild != 0)
+				while(Base::m_current->firstChild->firstChild != nullptr)
 				{
 					Base::m_current = Base::m_current->firstChild;
 					++Base::m_depth;
@@ -424,26 +428,26 @@ public:
 	LeafModuleIterator&
 	operator++()
 	{
-		ASSERT(Base::m_current!=0);
-		while(Base::m_current->next == 0 || Base::m_current->next->parent != Base::m_current->parent)
+		ASSERT(Base::m_current != nullptr);
+		while(Base::m_current->next == nullptr || Base::m_current->next->parent != Base::m_current->parent)
 		{
 			Base::m_current = Base::m_current->parent;
 			--Base::m_depth;
-			if(Base::m_current == 0)
+			if(Base::m_current == nullptr)
 				return *this;
 		}
 
 		Base::m_current = Base::m_current->next;
 
-		if (Base::m_current != 0)
+		if (Base::m_current != nullptr)
 		{
-			if (Base::m_current->firstChild == 0)
+			if (Base::m_current->firstChild == nullptr)
 			{
 				Base::m_current = Base::m_current->parent;
 			}
 			else
 			{
-				while(Base::m_current->firstChild->firstChild != 0)
+				while(Base::m_current->firstChild->firstChild != nullptr)
 				{
 					Base::m_current = Base::m_current->firstChild;
 					++Base::m_depth;
@@ -498,7 +502,7 @@ public:
 	SiblingIterator&
 	operator++()
 	{
-		ASSERT(Base::m_current != 0);
+		ASSERT(Base::m_current != nullptr);
 		Base::m_current = Base::m_current->next;
 		return *this;
 	}
@@ -514,7 +518,7 @@ public:
 	SiblingIterator&
 	operator--()
 	{
-		ASSERT(Base::m_current != 0);
+		ASSERT(Base::m_current != nullptr);
 		Base::m_current = Base::m_current->previous;
 		return *this;
 	}
