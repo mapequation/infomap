@@ -120,42 +120,42 @@ SWIG_FILES := $(shell find interfaces/swig -name "*.i")
 ##################################################
 
 PY_BUILD_DIR = build/py
-PY3_BUILD_DIR = build/py3
+PY2_BUILD_DIR = build/py
 PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
 PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
-PY3_HEADERS := $(HEADERS:src/%.h=$(PY3_BUILD_DIR)/src/%.h)
-PY3_SOURCES := $(SOURCES:src/%.cpp=$(PY3_BUILD_DIR)/src/%.cpp)
+PY2_HEADERS := $(HEADERS:src/%.h=$(PY2_BUILD_DIR)/src/%.h)
+PY2_SOURCES := $(SOURCES:src/%.cpp=$(PY2_BUILD_DIR)/src/%.cpp)
 
-.PHONY: python python3 py-build py3-build
+.PHONY: python2 python py2-build py-build
 
 # Use python distutils to compile the module
-python: py-build Makefile
-	@cp -a interfaces/python/setup.py $(PY_BUILD_DIR)/
-	cd $(PY_BUILD_DIR) && CC=$(CXX) python setup.py build_ext --inplace
+python2: py2-build Makefile
+	@cp -a interfaces/python/setup.py $(PY2_BUILD_DIR)/
+	cd $(PY2_BUILD_DIR) && CC=$(CXX) python setup.py build_ext --inplace
 	@true
 
-python3: py3-build Makefile
-	@cp -a interfaces/python/setup.py $(PY3_BUILD_DIR)/
-	cd $(PY3_BUILD_DIR) && CC=$(CXX) python3 setup.py build_ext --inplace
+python: py-build Makefile
+	@cp -a interfaces/python/setup.py $(PY_BUILD_DIR)/
+	cd $(PY_BUILD_DIR) && CC=$(CXX) python3 setup.py build_ext --inplace
 	@true
 
 # Generate wrapper files from source and interface files
 py-build: $(PY_HEADERS) $(PY_SOURCES)
 	@mkdir -p $(PY_BUILD_DIR)
 	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/
-	swig -c++ -python -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
+	swig -c++ -python -py3 -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
 
-py3-build: $(PY3_HEADERS) $(PY3_SOURCES)
-	@mkdir -p $(PY3_BUILD_DIR)
-	@cp -a $(SWIG_FILES) $(PY3_BUILD_DIR)/
-	swig -c++ -python -py3 -outdir $(PY3_BUILD_DIR) -o $(PY3_BUILD_DIR)/infomap_wrap.cpp $(PY3_BUILD_DIR)/Infomap.i
+py2-build: $(PY2_HEADERS) $(PY2_SOURCES)
+	@mkdir -p $(PY2_BUILD_DIR)
+	@cp -a $(SWIG_FILES) $(PY2_BUILD_DIR)/
+	swig -c++ -python -outdir $(PY2_BUILD_DIR) -o $(PY2_BUILD_DIR)/infomap_wrap.cpp $(PY2_BUILD_DIR)/Infomap.i
 
 # Rule for $(PY_HEADERS) and $(PY_SOURCES)
 $(PY_BUILD_DIR)/src/%: src/%
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 
-$(PY3_BUILD_DIR)/src/%: src/%
+$(PY2_BUILD_DIR)/src/%: src/%
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 
