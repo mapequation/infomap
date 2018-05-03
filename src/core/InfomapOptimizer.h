@@ -842,6 +842,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
 		auto& moduleDeltaEnterExit = deltaFlow.values();
+		unsigned int numModuleLinks = deltaFlow.size();
 
 		// Randomize link order for optimized search
 		if (numModuleLinks > 2) {
