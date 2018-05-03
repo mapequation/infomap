@@ -327,7 +327,7 @@ public:
 	// ===================================================
 
 	virtual void printDebug() {}
-
+	void printRSS(unsigned int minVerboseLevel = 0);
 
 	// ===================================================
 	// Members

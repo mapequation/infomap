@@ -8,6 +8,7 @@
 #ifndef SRC_CLUSTERING_MAPEQUATION_H_
 #define SRC_CLUSTERING_MAPEQUATION_H_
 
+#include "IMapEquation.h"
 #include "../utils/infomath.h"
 #include "../io/convert.h"
 #include "../utils/Log.h"
@@ -22,11 +23,12 @@ namespace infomap {
 
 class InfoNode;
 
+// class MapEquation : public IMapEquation {
 class MapEquation {
 public:
 	using FlowDataType = FlowData;
-	// using DeltaFlowDataType = MemDeltaFlow;
-	using DeltaFlowDataType = DeltaFlow;
+	using DeltaFlowDataType = MemDeltaFlow;
+	// using DeltaFlowDataType = DeltaFlow;
 
 	MapEquation() {}
 
@@ -61,17 +63,21 @@ public:
 
 	virtual ~MapEquation() {}
 
+	virtual MapEquation* clone() {
+		return new MapEquation(*this);
+	}
+
 	// ===================================================
 	// Getters
 	// ===================================================
 
-	static bool haveMemory() { return false; }
+	virtual bool haveMemory() { return false; }
 
 	// ===================================================
 	// IO
 	// ===================================================
 
-	std::ostream& print(std::ostream&) const;
+	virtual std::ostream& print(std::ostream&) const;
 
 	// friend std::ostream& operator<<(std::ostream&, const MapEquation&);
 
@@ -80,35 +86,34 @@ public:
 	// Init
 	// ===================================================
 
-	void initNetwork(InfoNode& root);
+	virtual void initNetwork(InfoNode& root);
 
-	void initSuperNetwork(InfoNode& root);
+	virtual void initSuperNetwork(InfoNode& root);
 
-	void initSubNetwork(InfoNode& root);
+	virtual void initSubNetwork(InfoNode& root);
 
-	void initPartition(std::vector<InfoNode*>& nodes);
+	virtual void initPartition(std::vector<InfoNode*>& nodes);
 
 	// ===================================================
 	// Codelength
 	// ===================================================
 
-	double calcCodelength(const InfoNode& parent) const;
+	virtual double calcCodelength(const InfoNode& parent) const;
+	virtual void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) {}
 
-	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) {}
+	virtual void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
 
-	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
-
-	double getDeltaCodelengthOnMovingNode(InfoNode& current,
+	virtual double getDeltaCodelengthOnMovingNode(InfoNode& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData);
 
 	// ===================================================
 	// Consolidation
 	// ===================================================
 
-	void updateCodelengthOnMovingNode(InfoNode& current,
+	virtual void updateCodelengthOnMovingNode(InfoNode& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData);
 
-	void consolidateModules(std::vector<InfoNode*>& modules) {}
+	virtual void consolidateModules(std::vector<InfoNode*>& modules) {}
 
 	// ===================================================
 	// Debug
