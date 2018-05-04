@@ -22,7 +22,7 @@ namespace infomap {
 class InfoNode;
 struct MemNodeSet;
 
-class MemMapEquation : public MapEquation {
+class MemMapEquation : protected MapEquation {
 	using Base = MapEquation;
 public:
 	using FlowDataType = FlowData;
@@ -43,55 +43,51 @@ public:
 
 	virtual ~MemMapEquation() {}
 
-	virtual MapEquation* clone() {
-		return new MemMapEquation(*this);
-	}
-
 	// ===================================================
 	// Getters
 	// ===================================================
 
-	virtual bool haveMemory() { return true; }
+	static bool haveMemory() { return true; }
 
 	// ===================================================
 	// IO
 	// ===================================================
 
 	// using Base::print;
-	virtual std::ostream& print(std::ostream& out) const;
+	std::ostream& print(std::ostream& out) const;
 	// friend std::ostream& operator<<(std::ostream&, const MemMapEquation&);
 
 	// ===================================================
 	// Init
 	// ===================================================
 
-	virtual void initNetwork(InfoNode& root);
+	void initNetwork(InfoNode& root);
 
-	virtual void initSuperNetwork(InfoNode& root);
+	void initSuperNetwork(InfoNode& root);
 
-	virtual void initSubNetwork(InfoNode& root);
+	void initSubNetwork(InfoNode& root);
 
-	virtual void initPartition(std::vector<InfoNode*>& nodes);
+	void initPartition(std::vector<InfoNode*>& nodes);
 
 	// ===================================================
 	// Codelength
 	// ===================================================
 
-	virtual double calcCodelength(const InfoNode& parent) const;
+	double calcCodelength(const InfoNode& parent) const;
 
-	virtual void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
+	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
 
-	virtual double getDeltaCodelengthOnMovingNode(InfoNode& current,
+	double getDeltaCodelengthOnMovingNode(InfoNode& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData);
 
 	// ===================================================
 	// Consolidation
 	// ===================================================
 
-	virtual void updateCodelengthOnMovingNode(InfoNode& current,
+	void updateCodelengthOnMovingNode(InfoNode& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData);
 
-	virtual void consolidateModules(std::vector<InfoNode*>& modules);
+	void consolidateModules(std::vector<InfoNode*>& modules);
 
 	// ===================================================
 	// Debug

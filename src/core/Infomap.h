@@ -19,131 +19,150 @@
 #include "MapEquation.h"
 #include "MemMapEquation.h"
 #include <memory>
+#include "InfomapOptimizer.h"
 
 namespace infomap {
 
 class Infomap : public InfomapBase {
-	using Base = InfomapBase;
-	using FlowDataType = FlowData;
-	using DeltaFlowDataType = MemDeltaFlow;
+	// using Base = InfomapBase;
+	// using FlowDataType = FlowData;
+	// using DeltaFlowDataType = MemDeltaFlow;
 	// using FlowDataType = typename Objective::FlowDataType;
 	// using DeltaFlowDataType = typename Objective::DeltaFlowDataType;
 	// template<typename T>
 	// using ptr = std::shared_ptr<T>;
-	using MapEquationPtr = std::unique_ptr<MapEquation>;
+	// using MapEquationPtr = std::unique_ptr<MapEquation>;
+	using OptimizerPtr = std::unique_ptr<InfomapOptimizerBase>;
 
 protected:
 //	using Base::EdgeType;
 //	using EdgeType = Base::EdgeType;
-	using EdgeType = Edge<InfoNode>;
+	// using EdgeType = Edge<InfoNode>;
 public:
 	// template<typename... Args>
 	// Infomap(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
-	Infomap(bool forceNoMemory = false) : InfomapBase() { initMapEquation(forceNoMemory); }
-	Infomap(const Config& conf) : InfomapBase(conf) { initMapEquation(); }
+	Infomap(bool forceNoMemory = false) : InfomapBase() { initOptimizer(forceNoMemory); }
+	Infomap(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
 	virtual ~Infomap() {}
 
 	// ===================================================
 	// IO
 	// ===================================================
 
-	virtual std::ostream& toString(std::ostream& out) const;
+	virtual std::ostream& toString(std::ostream& out) const {
+    return m_optimizer->toString(out);
+  }
 
 	// ===================================================
 	// Getters
 	// ===================================================
 
-	using Base::root;
-	using Base::numLeafNodes;
-	using Base::numTopModules;
-	using Base::m_numNonTrivialTopModules;
-	using Base::numLevels;
+	virtual double getCodelength() const {
+    return m_optimizer->getCodelength();  
+  }
 
-	virtual double getCodelength() const;
+	virtual double getIndexCodelength() const {
+    return m_optimizer->getIndexCodelength();  
+  }
 
-	virtual double getIndexCodelength() const;
+	virtual double getModuleCodelength() const {
+    return m_optimizer->getModuleCodelength();  
+  }
 
-	virtual double getModuleCodelength() const;
-
-	bool haveMemory() const;
+	bool haveMemory() const {
+    // return m_optimizer->haveMemory();
+    return this->isMemoryInput();
+  }
 
 protected:
-	Infomap& initMapEquation(bool forceNoMemory = false)
+	Infomap& initOptimizer(bool forceNoMemory = false)
 	{
 		if (haveMemory() && !forceNoMemory) {
-			m_objective = MapEquationPtr(new MemMapEquation());
+			m_optimizer = OptimizerPtr(new InfomapOptimizer<MemMapEquation>());
 		} else {
-			m_objective = MapEquationPtr(new MapEquation());
+			m_optimizer = OptimizerPtr(new InfomapOptimizer<MapEquation>());
 		}
+    m_optimizer->init(this);
 		return *this;
 	}
 
 	// virtual InfomapBase& getInfomap(InfoNode& node);
-	virtual InfomapBase* getNewInfomapInstance() const;
-	virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const;
+	virtual InfomapBase* getNewInfomapInstance() const {
+    return new Infomap();
+  }
+	virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const {
+    return new Infomap(true);
+  }
 
-	using Base::isTopLevel;
-	using Base::isMainInfomap;
-
-	using Base::isFirstLoop;
-
-	virtual unsigned int numActiveModules() const;
-
-	using Base::activeNetwork;
-
-	std::vector<FlowDataType>& getModuleFlowData() { return m_moduleFlowData; }
+	virtual unsigned int numActiveModules() const {
+    return m_optimizer->numActiveModules();
+  }
 
 	// ===================================================
 	// Run: Init: *
 	// ===================================================
 
 	// Init terms that is constant for the whole network
-	virtual void initNetwork();
+	virtual void initNetwork() {
+    return m_optimizer->initNetwork();
+  }
 
-	virtual void initSuperNetwork();
+	virtual void initSuperNetwork() {
+    return m_optimizer->initSuperNetwork();
+  }
 
-	virtual double calcCodelength(const InfoNode& parent) const;
+	virtual double calcCodelength(const InfoNode& parent) const {
+    return m_optimizer->calcCodelength(parent);
+  }
 
 	// ===================================================
 	// Run: Partition: *
 	// ===================================================
 
-	virtual void initPartition();
+	virtual void initPartition() {
+    return m_optimizer->initPartition();
+  }
 
-	virtual void moveActiveNodesToPredifinedModules(std::vector<unsigned int>& modules);
+	virtual void moveActiveNodesToPredifinedModules(std::vector<unsigned int>& modules) {
+    return m_optimizer->moveActiveNodesToPredifinedModules(modules);
+  }
 
-	virtual unsigned int optimizeActiveNetwork();
+	virtual unsigned int optimizeActiveNetwork() {
+    return m_optimizer->optimizeActiveNetwork();
+  }
 	
-	unsigned int tryMoveEachNodeIntoBestModule();
+	virtual unsigned int tryMoveEachNodeIntoBestModule() {
+    return m_optimizer->tryMoveEachNodeIntoBestModule();
+  }
 	
-	// unsigned int tryMoveEachNodeIntoBestModuleLocal();
+	// unsigned int tryMoveEachNodeIntoBestModuleLocal() {
+  // }
 
-	unsigned int tryMoveEachNodeIntoBestModuleInParallel();
+	virtual unsigned int tryMoveEachNodeIntoBestModuleInParallel() {
+    return m_optimizer->tryMoveEachNodeIntoBestModuleInParallel();
+  }
 
-	virtual void consolidateModules(bool replaceExistingModules = true);
+	virtual void consolidateModules(bool replaceExistingModules = true) {
+    return m_optimizer->consolidateModules(replaceExistingModules);
+  }
 
-	virtual bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false);
+	virtual bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false) {
+    return m_optimizer->restoreConsolidatedOptimizationPointIfNoImprovement(forceRestore);
+  }
 
 	// ===================================================
 	// Debug: *
 	// ===================================================
 
-	virtual void printDebug();
+	virtual void printDebug() {
+    return m_optimizer->printDebug();
+  }
 
 	// ===================================================
 	// Protected members
 	// ===================================================
 
-	using Base::m_oneLevelCodelength;
-	using Base::m_rand;
-	using Base::m_aggregationLevel;
-	using Base::m_isCoarseTune;
-
-	MapEquationPtr m_objective;
-	MapEquationPtr m_consolidatedObjective;
-	std::vector<FlowDataType> m_moduleFlowData;
-	std::vector<unsigned int> m_moduleMembers;
-	std::vector<unsigned int> m_emptyModules;
+  OptimizerPtr m_optimizer;
 };
 
 
