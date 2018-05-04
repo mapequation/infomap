@@ -32,6 +32,8 @@ struct PerLevelStat;
 //template<typename Node, template<typename,typename> class Optimizer = GreedyOptimizer<Node, MapEquation>>
 class InfomapBase : public InfomapConfig<InfomapBase>
 {
+	template<typename Objective>
+	friend class InfomapOptimizer;
 protected:
 	using EdgeType = Edge<InfoNode>;
 
@@ -327,7 +329,7 @@ public:
 	// ===================================================
 
 	virtual void printDebug() {}
-
+	void printRSS(unsigned int minVerboseLevel = 0);
 
 	// ===================================================
 	// Members

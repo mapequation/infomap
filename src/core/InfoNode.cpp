@@ -5,7 +5,7 @@
  *      Author: Daniel
  */
 #include "InfoNode.h"
-#include "InfomapTypes.h"
+#include "Infomap.h"
 
 namespace infomap {
 

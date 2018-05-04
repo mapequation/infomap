@@ -8,6 +8,7 @@
 #ifndef INFOMAP_OPTIMIZER_H_
 #define INFOMAP_OPTIMIZER_H_
 
+#include "InfomapOptimizerBase.h"
 #include "InfomapBase.h"
 #include <set>
 #include "../utils/VectorMap.h"
@@ -16,28 +17,25 @@
 #include "FlowData.h"
 #include <utility>
 #include <tuple>
-#include "./MapEquation.h"
+#include "MapEquation.h"
 
 namespace infomap {
 
 template<typename Objective>
-class InfomapOptimizer : public InfomapBase {
-	using Base = InfomapBase;
+class InfomapOptimizer : public InfomapOptimizerBase {
 	using FlowDataType = FlowData;
 	// using DeltaFlowDataType = MemDeltaFlow;
 	// using FlowDataType = typename Objective::FlowDataType;
 	using DeltaFlowDataType = typename Objective::DeltaFlowDataType;
 
 protected:
-//	using Base::EdgeType;
-//	using EdgeType = Base::EdgeType;
 	using EdgeType = Edge<InfoNode>;
 public:
-	// template<typename... Args>
-	// InfomapOptimizer(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
-	InfomapOptimizer() : InfomapBase() {}
-	InfomapOptimizer(const Config& conf) : InfomapBase(conf) {}
+	InfomapOptimizer() {}
+	
 	virtual ~InfomapOptimizer() {}
+
+	virtual void init(InfomapBase* infomap);
 
 	// ===================================================
 	// IO
@@ -49,36 +47,26 @@ public:
 	// Getters
 	// ===================================================
 
-	using Base::root;
-	using Base::numLeafNodes;
-	using Base::numTopModules;
-	using Base::m_numNonTrivialTopModules;
-	using Base::numLevels;
-
 	virtual double getCodelength() const;
 
 	virtual double getIndexCodelength() const;
 
 	virtual double getModuleCodelength() const;
 
-	bool haveMemory() const;
+	virtual bool haveMemory() const;
 
 protected:
 	
 	// virtual InfomapBase& getInfomap(InfoNode& node);
-	virtual InfomapBase* getNewInfomapInstance() const;
-	virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const;
+	// virtual InfomapBase* getNewInfomapInstance() const;
+	// virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const;
 
-	using Base::isTopLevel;
-	using Base::isMainInfomap;
+	// using Base::isTopLevel;
+	// using Base::isMainInfomap;
 
-	using Base::isFirstLoop;
+	// using Base::isFirstLoop;
 
 	virtual unsigned int numActiveModules() const;
-
-	using Base::activeNetwork;
-
-	std::vector<FlowDataType>& getModuleFlowData() { return m_moduleFlowData; }
 
 	// ===================================================
 	// Run: Init: *
@@ -101,11 +89,11 @@ protected:
 
 	virtual unsigned int optimizeActiveNetwork();
 	
-	unsigned int tryMoveEachNodeIntoBestModule();
+	virtual unsigned int tryMoveEachNodeIntoBestModule();
 	
-	unsigned int tryMoveEachNodeIntoBestModuleLocal();
+	// virtual unsigned int tryMoveEachNodeIntoBestModuleLocal();
 
-	unsigned int tryMoveEachNodeIntoBestModuleInParallel();
+	virtual unsigned int tryMoveEachNodeIntoBestModuleInParallel();
 
 	virtual void consolidateModules(bool replaceExistingModules = true);
 
@@ -121,10 +109,7 @@ protected:
 	// Protected members
 	// ===================================================
 
-	using Base::m_oneLevelCodelength;
-	using Base::m_rand;
-	using Base::m_aggregationLevel;
-	using Base::m_isCoarseTune;
+	InfomapBase* m_infomap;
 
 	Objective m_objective;
 	Objective m_consolidatedObjective;
@@ -133,6 +118,23 @@ protected:
 	std::vector<unsigned int> m_emptyModules;
 };
 
+
+template<typename Objective>
+inline
+void InfomapOptimizer<Objective>::init(InfomapBase* infomap)
+{
+	m_infomap = infomap;
+}
+
+// ===================================================
+// IO
+// ===================================================
+
+template<typename Objective>
+inline
+std::ostream& InfomapOptimizer<Objective>::toString(std::ostream& out) const {
+	return out << m_objective;
+}
 
 // ===================================================
 // Getters
@@ -144,17 +146,17 @@ bool InfomapOptimizer<Objective>::haveMemory() const {
 	return Objective::haveMemory();
 }
 
-template<typename Objective>
-inline
-InfomapBase* InfomapOptimizer<Objective>::getNewInfomapInstance() const {
-	return new InfomapOptimizer<Objective>();
-}
+// template<typename Objective>
+// inline
+// InfomapBase* InfomapOptimizer<Objective>::getNewInfomapInstance() const {
+// 	return new InfomapOptimizer<Objective>();
+// }
 
-template<typename Objective>
-inline
-InfomapBase* InfomapOptimizer<Objective>::getNewInfomapInstanceWithoutMemory() const {
-	return new InfomapOptimizer<MapEquation>();
-}
+// template<typename Objective>
+// inline
+// InfomapBase* InfomapOptimizer<Objective>::getNewInfomapInstanceWithoutMemory() const {
+// 	return new InfomapOptimizer<MapEquation>();
+// }
 
 template<typename Objective>
 inline
@@ -181,7 +183,7 @@ template<typename Objective>
 inline
 unsigned int InfomapOptimizer<Objective>::numActiveModules() const
 {
-	return activeNetwork().size() - m_emptyModules.size();
+	return m_infomap->activeNetwork().size() - m_emptyModules.size();
 }
 
 
@@ -194,10 +196,10 @@ inline
 void InfomapOptimizer<Objective>::initNetwork()
 {
 	Log(4) << "InfomapOptimizer::initNetwork()...\n";
-	m_objective.initNetwork(root());
+	m_objective.initNetwork(m_infomap->root());
 
-	if (!isMainInfomap())
-		m_objective.initSubNetwork(root());
+	if (!m_infomap->isMainInfomap())
+		m_objective.initSubNetwork(m_infomap->root());
 }
 
 template<typename Objective>
@@ -205,7 +207,7 @@ inline
 void InfomapOptimizer<Objective>::initSuperNetwork()
 {
 	Log(4) << "InfomapOptimizer::initSuperNetwork()...\n";
-	m_objective.initSuperNetwork(root());
+	m_objective.initSuperNetwork(m_infomap->root());
 }
 
 template<typename Objective>
@@ -223,7 +225,7 @@ double InfomapOptimizer<Objective>::calcCodelength(const InfoNode& parent) const
 template<typename Objective>
 void InfomapOptimizer<Objective>::initPartition()
 {
-	auto& network = activeNetwork();
+	auto& network = m_infomap->activeNetwork();
 	Log(4) << "InfomapOptimizer::initPartition() with " << network.size() << " nodes..." << std::endl;
 
 	// Init one module for each node
@@ -252,7 +254,7 @@ void InfomapOptimizer<Objective>::initPartition()
 template<typename Objective>
 void InfomapOptimizer<Objective>::moveActiveNodesToPredifinedModules(std::vector<unsigned int>& modules)
 {
-	auto& network = activeNetwork();
+	auto& network = m_infomap->activeNetwork();
 	unsigned int numNodes = network.size();
 	if (modules.size() != numNodes)
 		throw std::length_error("Size of predefined modules differ from size of active network.");
@@ -320,11 +322,11 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 	unsigned int coreLoopCount = 0;
 	unsigned int numEffectiveLoops = 0;
 	double oldCodelength = m_objective.codelength;
-	unsigned int loopLimit = this->coreLoopLimit;
+	unsigned int loopLimit = m_infomap->coreLoopLimit;
 	unsigned int minRandLoop = 2;
-	if (loopLimit >= minRandLoop && this->randomizeCoreLoopLimit)
-		loopLimit = m_rand.randInt(minRandLoop, loopLimit);
-	if (m_aggregationLevel > 0 || m_isCoarseTune) {
+	if (loopLimit >= minRandLoop && m_infomap->randomizeCoreLoopLimit)
+		loopLimit = m_infomap->m_rand.randInt(minRandLoop, loopLimit);
+	if (m_infomap->m_aggregationLevel > 0 || m_infomap->m_isCoarseTune) {
 		loopLimit = 20;
 	}
 
@@ -333,14 +335,14 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 	do
 	{
 		++coreLoopCount;
-		unsigned int numNodesMoved = this->innerParallelization ?
+		unsigned int numNodesMoved = m_infomap->innerParallelization ?
 			tryMoveEachNodeIntoBestModuleInParallel() :
 			// tryMoveEachNodeIntoBestModuleLocal();
 			tryMoveEachNodeIntoBestModule();
 		// Break if not enough improvement
 		// Log() << "\nLoop " << coreLoopCount << "/" << loopLimit << ", numNodesMoved: " <<
 		// 	numNodesMoved << ", -> codelength: " << m_objective.codelength << "\n";
-		if (numNodesMoved == 0 || m_objective.codelength >= oldCodelength - this->minimumCodelengthImprovement)
+		if (numNodesMoved == 0 || m_objective.codelength >= oldCodelength - m_infomap->minimumCodelengthImprovement)
 			break;
 		++numEffectiveLoops;
 		oldCodelength = m_objective.codelength;
@@ -350,215 +352,215 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 	return numEffectiveLoops;
 }
 
-template<typename Objective>
-unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleLocal()
-{
-	// Get random enumeration of nodes
-	std::vector<unsigned int> nodeEnumeration(activeNetwork().size());
-	m_rand.getRandomizedIndexVector(nodeEnumeration);
+// template<typename Objective>
+// unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleLocal()
+// {
+// 	// Get random enumeration of nodes
+// 	auto& network = m_infomap->activeNetwork();
+// 	std::vector<unsigned int> nodeEnumeration(network.size());
+// 	m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
-	auto& network = activeNetwork();
-	unsigned int numNodes = nodeEnumeration.size();
-	unsigned int numMoved = 0;
+// 	unsigned int numNodes = nodeEnumeration.size();
+// 	unsigned int numMoved = 0;
 
-	// Create map with module links
-	// std::vector<DeltaFlowData> deltaFlow(numNodes);
-	// VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
-	// Stopwatch timer(false);
-	// double t = 0.0;
-	// double tCount = 0;
+// 	// Create map with module links
+// 	// std::vector<DeltaFlowData> deltaFlow(numNodes);
+// 	// VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
+// 	// Stopwatch timer(false);
+// 	// double t = 0.0;
+// 	// double tCount = 0;
 
-	for (unsigned int i = 0; i < numNodes; ++i)
-	{
-		InfoNode& current = *network[nodeEnumeration[i]];
+// 	for (unsigned int i = 0; i < numNodes; ++i)
+// 	{
+// 		InfoNode& current = *network[nodeEnumeration[i]];
 
-//		Log(5) << "Trying to move node " << current << " from module " << current.index << "...\n";
+// //		Log(5) << "Trying to move node " << current << " from module " << current.index << "...\n";
 
-		if (!current.dirty)
-			continue;
+// 		if (!current.dirty)
+// 			continue;
 
-		// If other nodes have moved here, don't move away on first loop
-		if (m_moduleMembers[current.index] > 1 && isFirstLoop() && this->tuneIterationLimit != 1)
-			continue;
+// 		// If other nodes have moved here, don't move away on first loop
+// 		if (m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
+// 			continue;
 
-		// If no links connecting this node with other nodes, it won't move into others,
-		// and others won't move into this. TODO: Always best leave it alone?
-		// For memory networks, don't skip try move to same physical node!
-		// if (current.degree() == 0)
-		// {
-		// 	current.dirty = false;
-		// 	continue;
-		// }
+// 		// If no links connecting this node with other nodes, it won't move into others,
+// 		// and others won't move into this. TODO: Always best leave it alone?
+// 		// For memory networks, don't skip try move to same physical node!
+// 		// if (current.degree() == 0)
+// 		// {
+// 		// 	current.dirty = false;
+// 		// 	continue;
+// 		// }
 
-		// Create map with module links
-		std::map<unsigned int, DeltaFlowDataType> deltaFlow;
-		// std::unordered_map<unsigned int, DeltaFlowDataType> deltaFlow;
-		// deltaFlow.rehash(numNodes);
-		// for (auto& d : deltaFlow) {
-		// 	d.reset();
-		// }
-		// deltaFlow.startRound();
+// 		// Create map with module links
+// 		std::map<unsigned int, DeltaFlowDataType> deltaFlow;
+// 		// std::unordered_map<unsigned int, DeltaFlowDataType> deltaFlow;
+// 		// deltaFlow.rehash(numNodes);
+// 		// for (auto& d : deltaFlow) {
+// 		// 	d.reset();
+// 		// }
+// 		// deltaFlow.startRound();
 
-		// For all outlinks
-		for (auto& e : current.outEdges())
-		{
-			auto& edge = *e;
-			InfoNode& neighbour = edge.target;
-			deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0);
-			// deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0));
-		}
-		// For all inlinks
-		for (auto& e : current.inEdges())
-		{
-			auto& edge = *e;
-			InfoNode& neighbour = edge.source;
-			// timer.start();
-			deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow);
-			// deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow));
-			// t += timer.getElapsedTimeInMilliSec();
-			// ++tCount;
-		}
+// 		// For all outlinks
+// 		for (auto& e : current.outEdges())
+// 		{
+// 			auto& edge = *e;
+// 			InfoNode& neighbour = edge.target;
+// 			deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0);
+// 			// deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0));
+// 		}
+// 		// For all inlinks
+// 		for (auto& e : current.inEdges())
+// 		{
+// 			auto& edge = *e;
+// 			InfoNode& neighbour = edge.source;
+// 			// timer.start();
+// 			deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow);
+// 			// deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow));
+// 			// t += timer.getElapsedTimeInMilliSec();
+// 			// ++tCount;
+// 		}
 
-		// For not moving
-		// deltaFlow.add(current.index, DeltaFlowDataType(current.index, 0.0, 0.0));
-		DeltaFlowDataType& oldModuleDelta = deltaFlow[current.index];
-		oldModuleDelta.module = current.index; // Make sure index is correct if created new
-		// ++oldModuleDelta.count;
-		oldModuleDelta += DeltaFlowDataType(current.index, 0.0, 0.0);
+// 		// For not moving
+// 		// deltaFlow.add(current.index, DeltaFlowDataType(current.index, 0.0, 0.0));
+// 		DeltaFlowDataType& oldModuleDelta = deltaFlow[current.index];
+// 		oldModuleDelta.module = current.index; // Make sure index is correct if created new
+// 		// ++oldModuleDelta.count;
+// 		oldModuleDelta += DeltaFlowDataType(current.index, 0.0, 0.0);
 
-		// Option to move to empty module (if node not already alone)
-		if (m_moduleMembers[current.index] > 1 && m_emptyModules.size() > 0) {
-			deltaFlow[m_emptyModules.back()] += DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0);
-			// deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
-		}
+// 		// Option to move to empty module (if node not already alone)
+// 		if (m_moduleMembers[current.index] > 1 && m_emptyModules.size() > 0) {
+// 			deltaFlow[m_emptyModules.back()] += DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0);
+// 			// deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
+// 		}
 
-		// For memory networks
-		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+// 		// For memory networks
+// 		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
-		// Collect the move options to a vector
-		std::vector<DeltaFlowDataType> moduleDeltaEnterExit(deltaFlow.size());
-		unsigned int numModuleLinks = 0;
-		for (auto& it : deltaFlow)
-		{
-			moduleDeltaEnterExit[numModuleLinks] = it.second;
-			++numModuleLinks;
-		}
-		// auto& moduleDeltaEnterExit = deltaFlow.values();
+// 		// Collect the move options to a vector
+// 		std::vector<DeltaFlowDataType> moduleDeltaEnterExit(deltaFlow.size());
+// 		unsigned int numModuleLinks = 0;
+// 		for (auto& it : deltaFlow)
+// 		{
+// 			moduleDeltaEnterExit[numModuleLinks] = it.second;
+// 			++numModuleLinks;
+// 		}
+// 		// auto& moduleDeltaEnterExit = deltaFlow.values();
 
-		// Randomize link order for optimized search
-		if (numModuleLinks > 2) {
-			for (unsigned int j = 0; j < numModuleLinks - 2; ++j)
-			{
-				unsigned int randPos = m_rand.randInt(j+1, numModuleLinks - 1);
-				swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
-			}
-		}
-		// t += timer.getElapsedTimeInMilliSec();
-		// ++tCount;
+// 		// Randomize link order for optimized search
+// 		if (numModuleLinks > 2) {
+// 			for (unsigned int j = 0; j < numModuleLinks - 2; ++j)
+// 			{
+// 				unsigned int randPos = m_infomap->m_rand.randInt(j+1, numModuleLinks - 1);
+// 				swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+// 			}
+// 		}
+// 		// t += timer.getElapsedTimeInMilliSec();
+// 		// ++tCount;
 
-		DeltaFlowDataType bestDeltaModule(oldModuleDelta);
-		double bestDeltaCodelength = 0.0;
-		DeltaFlowDataType strongestConnectedModule(oldModuleDelta);
-		double deltaCodelengthOnStrongestConnectedModule = 0.0;
+// 		DeltaFlowDataType bestDeltaModule(oldModuleDelta);
+// 		double bestDeltaCodelength = 0.0;
+// 		DeltaFlowDataType strongestConnectedModule(oldModuleDelta);
+// 		double deltaCodelengthOnStrongestConnectedModule = 0.0;
 
-		// Log(5) << "Move node " << current << " in module " << current.index << "...\n";
-		// Find the move that minimizes the description length
-		for (unsigned int j = 0; j < numModuleLinks; ++j)
-		{
-			// if (moduleDeltaEnterExit[j].count == 0) {
-			// 	continue;
-			// }
-			unsigned int otherModule = moduleDeltaEnterExit[j].module;
-			if(otherModule != current.index)
-			{
-				double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
-						oldModuleDelta, moduleDeltaEnterExit[j], m_moduleFlowData);
+// 		// Log(5) << "Move node " << current << " in module " << current.index << "...\n";
+// 		// Find the move that minimizes the description length
+// 		for (unsigned int j = 0; j < numModuleLinks; ++j)
+// 		{
+// 			// if (moduleDeltaEnterExit[j].count == 0) {
+// 			// 	continue;
+// 			// }
+// 			unsigned int otherModule = moduleDeltaEnterExit[j].module;
+// 			if(otherModule != current.index)
+// 			{
+// 				double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
+// 						oldModuleDelta, moduleDeltaEnterExit[j], m_moduleFlowData);
 
-				// Log(5) << " Move to module " << otherModule << " -> deltaCodelength: " << deltaCodelength <<
-				// 		", deltaEnter: " << moduleDeltaEnterExit[j].deltaEnter << ", deltaExit: " << moduleDeltaEnterExit[j].deltaExit <<
-				// 		", module enter/exit: " << m_moduleFlowData[otherModule].enterFlow << " / " << m_moduleFlowData[otherModule].exitFlow <<
-				// 		", OLD delta enter/exit: " << oldModuleDelta.deltaEnter << " / " << oldModuleDelta.deltaExit << "\n";
-				if (deltaCodelength < bestDeltaCodelength - this->minimumSingleNodeCodelengthImprovement)
-				{
-					bestDeltaModule = moduleDeltaEnterExit[j];
-					bestDeltaCodelength = deltaCodelength;
-				}
+// 				// Log(5) << " Move to module " << otherModule << " -> deltaCodelength: " << deltaCodelength <<
+// 				// 		", deltaEnter: " << moduleDeltaEnterExit[j].deltaEnter << ", deltaExit: " << moduleDeltaEnterExit[j].deltaExit <<
+// 				// 		", module enter/exit: " << m_moduleFlowData[otherModule].enterFlow << " / " << m_moduleFlowData[otherModule].exitFlow <<
+// 				// 		", OLD delta enter/exit: " << oldModuleDelta.deltaEnter << " / " << oldModuleDelta.deltaExit << "\n";
+// 				if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement)
+// 				{
+// 					bestDeltaModule = moduleDeltaEnterExit[j];
+// 					bestDeltaCodelength = deltaCodelength;
+// 				}
 
-				// Save strongest connected module to prefer if codelength improvement equal
-				if (moduleDeltaEnterExit[j].deltaExit > strongestConnectedModule.deltaExit)
-				{
-					strongestConnectedModule = moduleDeltaEnterExit[j];
-					deltaCodelengthOnStrongestConnectedModule = deltaCodelength;
-				}
-			}
-		}
+// 				// Save strongest connected module to prefer if codelength improvement equal
+// 				if (moduleDeltaEnterExit[j].deltaExit > strongestConnectedModule.deltaExit)
+// 				{
+// 					strongestConnectedModule = moduleDeltaEnterExit[j];
+// 					deltaCodelengthOnStrongestConnectedModule = deltaCodelength;
+// 				}
+// 			}
+// 		}
 
-		// Prefer strongest connected module if equal delta codelength
-		if (strongestConnectedModule.module != bestDeltaModule.module &&
-				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + this->minimumSingleNodeCodelengthImprovement)
-		{
-			bestDeltaModule = strongestConnectedModule;
-		}
+// 		// Prefer strongest connected module if equal delta codelength
+// 		if (strongestConnectedModule.module != bestDeltaModule.module &&
+// 				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + m_infomap->minimumSingleNodeCodelengthImprovement)
+// 		{
+// 			bestDeltaModule = strongestConnectedModule;
+// 		}
 
-		// Make best possible move
-		if(bestDeltaModule.module != current.index)
-		{
-			unsigned int bestModuleIndex = bestDeltaModule.module;
-			//Update empty module vector
-			if(m_moduleMembers[bestModuleIndex] == 0)
-			{
-				m_emptyModules.pop_back();
-			}
-			if(m_moduleMembers[current.index] == 1)
-			{
-				m_emptyModules.push_back(current.index);
-			}
+// 		// Make best possible move
+// 		if(bestDeltaModule.module != current.index)
+// 		{
+// 			unsigned int bestModuleIndex = bestDeltaModule.module;
+// 			//Update empty module vector
+// 			if(m_moduleMembers[bestModuleIndex] == 0)
+// 			{
+// 				m_emptyModules.pop_back();
+// 			}
+// 			if(m_moduleMembers[current.index] == 1)
+// 			{
+// 				m_emptyModules.push_back(current.index);
+// 			}
 
-			// timer.start();
-			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData);
-			// t += timer.getElapsedTimeInMilliSec();
-			// ++tCount;
+// 			// timer.start();
+// 			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData);
+// 			// t += timer.getElapsedTimeInMilliSec();
+// 			// ++tCount;
 
-			m_moduleMembers[current.index] -= 1;
-			m_moduleMembers[bestModuleIndex] += 1;
+// 			m_moduleMembers[current.index] -= 1;
+// 			m_moduleMembers[bestModuleIndex] += 1;
 
-			// double oldCodelength = m_objective.codelength;
-			// Log(5) << " --> Moved to module " << bestModuleIndex << " -> codelength: " << oldCodelength << " + " <<
-			// 		bestDeltaCodelength << " (" << (m_objective.codelength - oldCodelength) << ") = " << m_objective << "\n";
+// 			// double oldCodelength = m_objective.codelength;
+// 			// Log(5) << " --> Moved to module " << bestModuleIndex << " -> codelength: " << oldCodelength << " + " <<
+// 			// 		bestDeltaCodelength << " (" << (m_objective.codelength - oldCodelength) << ") = " << m_objective << "\n";
 
-//			unsigned int oldModuleIndex = current.index;
-			current.index = bestModuleIndex;
+// //			unsigned int oldModuleIndex = current.index;
+// 			current.index = bestModuleIndex;
 
-			++numMoved;
+// 			++numMoved;
 
-			// Mark neighbours as dirty
-			for (auto& e : current.outEdges())
-				e->target.dirty = true;
-			for (auto& e : current.inEdges())
-				e->source.dirty = true;
-		}
-		else
-			current.dirty = false;
+// 			// Mark neighbours as dirty
+// 			for (auto& e : current.outEdges())
+// 				e->target.dirty = true;
+// 			for (auto& e : current.inEdges())
+// 				e->source.dirty = true;
+// 		}
+// 		else
+// 			current.dirty = false;
 
-//		if (!current.dirty)
-//			Log(5) << " --> Didn't move!\n";
+// //		if (!current.dirty)
+// //			Log(5) << " --> Didn't move!\n";
 
-	}
+// 	}
 
-	// Log() << " !!! " << t << "/" << tCount << " = " << t / tCount << " !!! ";
+// 	// Log() << " !!! " << t << "/" << tCount << " = " << t / tCount << " !!! ";
 
-	return numMoved;
-}
+// 	return numMoved;
+// }
 
 template<typename Objective>
 unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 {
 	// m_rand.seed(123);
 	// Get random enumeration of nodes
-	std::vector<unsigned int> nodeEnumeration(activeNetwork().size());
-	m_rand.getRandomizedIndexVector(nodeEnumeration);
+	auto& network = m_infomap->activeNetwork();
+	std::vector<unsigned int> nodeEnumeration(network.size());
+	m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
-	auto& network = activeNetwork();
 	unsigned int numNodes = nodeEnumeration.size();
 	unsigned int numMoved = 0;
 
@@ -581,7 +583,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 			continue;
 
 		// If other nodes have moved here, don't move away on first loop
-		if (m_moduleMembers[current.index] > 1 && isFirstLoop() && this->tuneIterationLimit != 1)
+		if (m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
 			continue;
 
 		// If no links connecting this node with other nodes, it won't move into others,
@@ -645,7 +647,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 		if (numModuleLinks > 2) {
 			for (unsigned int j = 0; j < numModuleLinks - 2; ++j)
 			{
-				unsigned int randPos = m_rand.randInt(j+1, numModuleLinks - 1);
+				unsigned int randPos = m_infomap->m_rand.randInt(j+1, numModuleLinks - 1);
 				swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
 			}
 		}
@@ -672,7 +674,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 				// 		", deltaEnter: " << moduleDeltaEnterExit[j].deltaEnter << ", deltaExit: " << moduleDeltaEnterExit[j].deltaExit <<
 				// 		", module enter/exit: " << m_moduleFlowData[otherModule].enterFlow << " / " << m_moduleFlowData[otherModule].exitFlow <<
 				// 		", OLD delta enter/exit: " << oldModuleDelta.deltaEnter << " / " << oldModuleDelta.deltaExit << "\n";
-				if (deltaCodelength < bestDeltaCodelength - this->minimumSingleNodeCodelengthImprovement)
+				if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement)
 				{
 					bestDeltaModule = moduleDeltaEnterExit[j];
 					bestDeltaCodelength = deltaCodelength;
@@ -689,7 +691,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
 		// Prefer strongest connected module if equal delta codelength
 		if (strongestConnectedModule.module != bestDeltaModule.module &&
-				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + this->minimumSingleNodeCodelengthImprovement)
+				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + m_infomap->minimumSingleNodeCodelengthImprovement)
 		{
 			bestDeltaModule = strongestConnectedModule;
 		}
@@ -759,10 +761,10 @@ template<typename Objective>
 unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParallel()
 {
 	// Get random enumeration of nodes
-	std::vector<unsigned int> nodeEnumeration(activeNetwork().size());
-	m_rand.getRandomizedIndexVector(nodeEnumeration);
+	auto& network = m_infomap->activeNetwork();
+	std::vector<unsigned int> nodeEnumeration(network.size());
+	m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
-	auto& network = activeNetwork();
 	unsigned int numNodes = nodeEnumeration.size();
 	unsigned int numMoved = 0;
 	unsigned int numInvalidMoves = 0;
@@ -788,7 +790,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 			continue;
 
 		// If other nodes have moved here, don't move away on first loop
-		if (m_moduleMembers[current.index] > 1 && isFirstLoop() && this->tuneIterationLimit != 1)
+		if (m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
 			continue;
 
 		// If no links connecting this node with other nodes, it won't move into others,
@@ -848,7 +850,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 		if (numModuleLinks > 2) {
 			for (unsigned int j = 0; j < numModuleLinks - 2; ++j)
 			{
-				unsigned int randPos = m_rand.randInt(j+1, numModuleLinks - 1);
+				unsigned int randPos = m_infomap->m_rand.randInt(j+1, numModuleLinks - 1);
 				swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
 			}
 		}
@@ -868,7 +870,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 				double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
 						oldModuleDelta, moduleDeltaEnterExit[j], m_moduleFlowData);
 
-				if (deltaCodelength < bestDeltaCodelength - this->minimumSingleNodeCodelengthImprovement)
+				if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement)
 				{
 					bestDeltaModule = moduleDeltaEnterExit[j];
 					bestDeltaCodelength = deltaCodelength;
@@ -885,7 +887,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 
 		// Prefer strongest connected module if equal delta codelength
 		if (strongestConnectedModule.module != bestDeltaModule.module &&
-				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + this->minimumSingleNodeCodelengthImprovement)
+				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + m_infomap->minimumSingleNodeCodelengthImprovement)
 		{
 			bestDeltaModule = strongestConnectedModule;
 		}
@@ -988,7 +990,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 						oldModuleDelta, newModuleDelta, m_moduleFlowData);
 
 
-					if (deltaCodelength < 0.0 - this->minimumSingleNodeCodelengthImprovement)
+					if (deltaCodelength < 0.0 - m_infomap->minimumSingleNodeCodelengthImprovement)
 					{
 						//Update empty module vector
 						if(m_moduleMembers[bestModuleIndex] == 0)
@@ -1056,15 +1058,13 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 {
 //	Log(1) << "Consolidate modules to codelength " << m_optimizer << "..." << std::endl;
 
-	auto& network = activeNetwork();
+	auto& network = m_infomap->activeNetwork();
 	unsigned int numNodes = network.size();
 	std::vector<InfoNode*> modules(numNodes, nullptr);
 
-	auto& moduleFlowData = getModuleFlowData();
-
 	InfoNode& firstActiveNode = *network[0];
 	unsigned int level = firstActiveNode.depth();
-	unsigned int leafLevel = numLevels();
+	unsigned int leafLevel = m_infomap->numLevels();
 
 	if (leafLevel == 1)
 		replaceExistingModules = false;
@@ -1082,7 +1082,7 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 		unsigned int moduleIndex = node->index;
 		if (modules[moduleIndex] == nullptr)
 		{
-			modules[moduleIndex] = new InfoNode(moduleFlowData[moduleIndex]);
+			modules[moduleIndex] = new InfoNode(m_moduleFlowData[moduleIndex]);
 			modules[moduleIndex]->index = moduleIndex;
 			node->parent->addChild(modules[moduleIndex]);
 		}
@@ -1112,7 +1112,7 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 	// 			// Use new pointers to not swap module1
 	// 			InfoNode* m1 = module1;
 	// 			InfoNode* m2 = module2;
-	// 			if (!this->directedEdges && m1->index > m2->index)
+	// 			if (!m_infomap->directedEdges && m1->index > m2->index)
 	// 				std::swap(m1, m2);
 	// 			// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
 	// 			auto ret = moduleLinks.emplace(
@@ -1143,7 +1143,7 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 				// Use new variables to not swap module1
 				unsigned int m1 = module1, m2 = module2;
 				// If undirected, the order may be swapped to aggregate the edge on an opposite one
-				if (!this->directedEdges && m1 > m2)
+				if (!m_infomap->directedEdges && m1 > m2)
 					std::swap(m1, m2);
 				// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
 				auto ret = moduleLinks.emplace(
@@ -1176,22 +1176,22 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 		else if (level == 2) {
 			Log(4) << "Consolidated sub-modules, removing modules..." << std::endl;
 			unsigned int moduleIndex = 0;
-			for (InfoNode& module : root()) {
+			for (InfoNode& module : m_infomap->root()) {
 				// Store current modular structure on the sub-modules
 				for (auto& subModule : module)
 					subModule.index = moduleIndex;
 				++moduleIndex;
 			}
-			root().replaceChildrenWithGrandChildren();
+			m_infomap->root().replaceChildrenWithGrandChildren();
 		}
 	}
 
 	// Calculate the number of non-trivial modules
-	m_numNonTrivialTopModules = 0;
-	for (auto& module : root())
+	m_infomap->m_numNonTrivialTopModules = 0;
+	for (auto& module : m_infomap->root())
 	{
 		if (module.childDegree() != 1)
-			++m_numNonTrivialTopModules;
+			++m_infomap->m_numNonTrivialTopModules;
 	}
 
 	m_objective.consolidateModules(modules);
@@ -1202,23 +1202,12 @@ template<typename Objective>
 inline
 bool InfomapOptimizer<Objective>::restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore)
 {
-	if (forceRestore || m_objective.codelength >= m_consolidatedObjective.codelength - this->minimumSingleNodeCodelengthImprovement)
+	if (forceRestore || m_objective.codelength >= m_consolidatedObjective.codelength - m_infomap->minimumSingleNodeCodelengthImprovement)
 	{
 		m_objective = m_consolidatedObjective;
 		return true;
 	}
 	return false;
-}
-
-
-// ===================================================
-// IO
-// ===================================================
-
-template<typename Objective>
-std::ostream& InfomapOptimizer<Objective>::toString(std::ostream& out) const
-{
-	return out << m_objective;
 }
 
 
