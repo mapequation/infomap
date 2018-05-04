@@ -24,12 +24,11 @@
 
 **********************************************************************************/
 
-#include "Infomap.h"
 #include <iostream>
 #include "utils/Log.h"
 #include "io/Config.h"
 #include <string>
-#include <memory>
+#include "core/Infomap.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -42,13 +41,7 @@ int run(const std::string& flags)
 	{
 		Config conf(flags, true);
 
-		std::unique_ptr<InfomapBase> myInfomap;
-		if (conf.isMemoryNetwork())
-			myInfomap = std::unique_ptr<InfomapBase>(new MemInfomap(conf));
-		else
-			myInfomap = std::unique_ptr<InfomapBase>(new Infomap(conf));
-
-		InfomapBase& infomap = *myInfomap;
+		Infomap infomap(conf);
 		// Infomap infomap(flags, true);
 
 		infomap.run();

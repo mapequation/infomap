@@ -36,6 +36,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+#include "../utils/RSS.h"
 
 namespace infomap {
 
@@ -279,6 +280,7 @@ void InfomapBase::run(Network& network)
 			Log() << "================================================\n";
 			Log() << "Trial " << (i + 1) << "/" << numTrials << " starting at" << startDate << "\n";
 			Log() << "================================================\n";
+			printRSS();
 
 			if (this->clusterDataFile != "")
 				initPartition(this->clusterDataFile, this->clusterDataIsHard);
@@ -334,6 +336,7 @@ void InfomapBase::run(Network& network)
 		Log() << ":" << std::endl;
 		Log() << bestSolutionStatistics.str() << std::endl;
 	}
+	printRSS();
 }
 
 
@@ -601,6 +604,8 @@ void InfomapBase::hierarchicalPartition()
 	findHierarchicalSuperModules();
 //	findHierarchicalSuperModulesFast(superLevelLimit);
 	
+	printRSS();
+
 	if (this->onlySuperModules) {
 		removeSubModules(true);
 		m_hierarchicalCodelength = calcCodelengthOnTree(true); // FIX?
@@ -619,6 +624,7 @@ void InfomapBase::hierarchicalPartition()
 	}
 	
 	recursivePartition();
+	printRSS();
 }
 
 void InfomapBase::partition()
@@ -1720,6 +1726,13 @@ void InfomapBase::aggregatePerLevelCodelength(InfoNode& parent, std::vector<PerL
 			module.getInfomap().aggregatePerLevelCodelength(perLevelStat, level+1);
 		else
 			aggregatePerLevelCodelength(module, perLevelStat, level+1);
+	}
+}
+
+void InfomapBase::printRSS(unsigned int minVerboseLevel)
+{
+	if (this->verbosity >= minVerboseLevel && !Log::isSilent()) {
+		Log(minVerboseLevel) << "[Current/peak RSS: " << getCurrentRSS() << "/" << getPeakRSS() << " bytes]\n";
 	}
 }
 
