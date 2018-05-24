@@ -25,8 +25,6 @@ myInfomap.run()
 print("Found {} modules with codelength: {}".format(myInfomap.numTopModules(), myInfomap.codelength()))
 
 print("\n#node module")
-
-print("Tree:")
 for it in myInfomap.tree():
 	node = it.current()
 	if node.isLeaf():

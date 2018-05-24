@@ -77,6 +77,8 @@ struct node_iterator_base
 		return *this;
 	}
 
+	virtual ~node_iterator_base() {}
+
 	virtual void init() {}
 
 	pointer base() const

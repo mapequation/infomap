@@ -28,7 +28,7 @@ namespace std {
 			self._firstYielded = False
 			return self
 
-		def next(self):
+		def __next__(self):
 			if not self._firstYielded:
 				self._firstYielded = True
 			else:
@@ -38,9 +38,6 @@ namespace std {
 				raise StopIteration
 
 			return self
-
-		def __next__(self):
-			return self.next()
 	%}
 }
 #endif

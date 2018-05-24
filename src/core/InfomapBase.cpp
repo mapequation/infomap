@@ -859,11 +859,11 @@ double InfomapBase::calcCodelengthOnTree(bool includeRoot)
 	return totalCodelength;
 }
 
-void preClusterMultilayerNetwork()
-{
-	Log() << "Calculate pre-clustering on multilayer networks (not implemented yet)...\n";
+// void preClusterMultilayerNetwork()
+// {
+// 	Log() << "Calculate pre-clustering on multilayer networks (not implemented yet)...\n";
 	
-}
+// }
 
 
 // ===================================================

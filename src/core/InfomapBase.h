@@ -50,6 +50,11 @@ public:
 		InfomapConfig<InfomapBase>(conf),
 		m_network(conf)
 	{}
+	InfomapBase(const std::string& flags) :
+		InfomapConfig<InfomapBase>(flags)
+	{
+		m_network.setConfig(*this);
+	}
 	virtual ~InfomapBase() {}
 
 
@@ -233,7 +238,7 @@ public:
 	/**
 	 * Partition layer by layer and
 	 */
-	void preClusterMultilayerNetwork();
+	// virtual void preClusterMultilayerNetwork();
 
 
 	// ===================================================

@@ -9,6 +9,7 @@
 #define INFOMAP_H_
 
 #include "InfomapBase.h"
+#include "../io/Config.h"
 #include <set>
 #include "../utils/VectorMap.h"
 #include "../utils/infomath.h"
@@ -43,6 +44,7 @@ public:
 	// Infomap(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
 	Infomap(bool forceNoMemory = false) : InfomapBase() { initOptimizer(forceNoMemory); }
 	Infomap(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
+	Infomap(const std::string& flags) : InfomapBase(flags) { initOptimizer(); }
 	virtual ~Infomap() {}
 
 	// ===================================================
