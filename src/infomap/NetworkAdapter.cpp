@@ -56,7 +56,7 @@ bool NetworkAdapter::readExternalHierarchy(std::string filename)
 		FileURI file(filename);
 		if (file.getExtension() == "clu")
 			readClu(filename);
-		else if (file.getExtension() == "tree")
+		else if (file.getExtension() == "tree" || file.getExtension() == "ftree")
 			readHumanReadableTree(filename);
 		else
 			throw std::invalid_argument("Extension to external cluster data not recognized.");
