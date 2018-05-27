@@ -45,7 +45,7 @@ bool MemoryNetworkAdapter::readExternalHierarchy(std::string filename)
 		FileURI file(filename);
 		if (file.getExtension() == "clu")
 			readClu(filename);
-		else if (file.getExtension() == "tree")
+		else if (file.getExtension() == "tree" || file.getExtension() == "ftree")
 			readHumanReadableTree(filename);
 		else
 			throw std::invalid_argument("Extension to external cluster data not recognized.");
@@ -198,6 +198,10 @@ void MemoryNetworkAdapter::readHumanReadableTree(std::string filename)
 				header = line; // e.g. '# Codelength = 8.45977 bits.'
 			}
 			continue;
+		}
+		if (line[0] == '*') {
+			// New section, abort tree parsing.
+			break;
 		}
 
 		ss.clear();
