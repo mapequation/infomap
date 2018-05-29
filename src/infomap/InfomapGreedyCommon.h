@@ -228,7 +228,7 @@ inline double InfomapGreedyCommon<InfomapGreedyDerivedType>::calcCodelengthOnAll
 		NodeBase& node = *it;
 		if (node.isLeaf())
 			node.codelength = 0.0;
-		else if (node.isLeafModule())
+		else if (node.isDirectLeafModule())
 			node.codelength = calcCodelengthOnModuleOfLeafNodes(node);
 		else
 			node.codelength = calcCodelengthOnModuleOfModules(node);

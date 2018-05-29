@@ -217,7 +217,7 @@ public:
 	unsigned int childDegree() const;
 
 	bool isLeaf() const;
-	bool isLeafModule() const;
+	bool isDirectLeafModule() const;
 	bool isRoot() const;
 
 	unsigned int numLeafMembers()
@@ -397,10 +397,19 @@ bool NodeBase::isLeaf() const
 }
 
 inline
-bool NodeBase::isLeafModule() const
+bool NodeBase::isDirectLeafModule() const
 {
+	// const_pre_depth_first_iterator it(this);
+	// return it.isDirectLeafModule();
 	return firstChild != 0 && firstChild->firstChild == 0;
 }
+
+// inline
+// bool NodeBase::isLeafModule() const
+// {
+// 	const_pre_depth_first_iterator it(this);
+// 	return it.isDirectLeafModule();
+// }
 
 inline
 bool NodeBase::isRoot() const

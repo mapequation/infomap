@@ -143,6 +143,8 @@ public:
 		return m_depth;
 	}
 
+	bool isLeafModule() const;
+
 protected:
 	NodePointerType m_root;
 	unsigned int m_depth;
@@ -165,7 +167,7 @@ public:
 	explicit
 	DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) {}
 
-	DepthFirstIterator(const DepthFirstIterator& other) : Base(other) {}
+	DepthFirstIterator(const Base& other) : Base(other) {}
 
 	DepthFirstIterator& operator= (const DepthFirstIterator& other)
 	{
@@ -217,6 +219,15 @@ public:
 	}
 };
 
+template <typename NodePointerType>
+bool DepthFirstIteratorBase<NodePointerType>::isLeafModule() const
+{
+	DepthFirstIterator<NodePointerType, true> nextIt(*this);
+	return !Base::isEnd() && \
+	!(++nextIt).isEnd() && \
+	(nextIt.depth() == m_depth + 1) && \
+	((++nextIt).depth() != m_depth + 2);
+}
 
 /**
  * Post processing depth first iterator
@@ -629,6 +640,15 @@ public:
 		return m_depth;
 	}
 
+	bool isLeafModule() const
+	{
+		InfomapIteratorBase<NodePointerType> nextIt(*this);
+		return !Base::isEnd() && \
+		!(++nextIt).isEnd() && \
+		(nextIt.depth() == m_depth + 1) && \
+		((++nextIt).depth() != m_depth + 2);
+	}
+
 	bool isEnd() const
 	{
 		return m_current == 0;
@@ -669,7 +689,9 @@ InfomapIteratorBase<NodePointerType>& InfomapIteratorBase<NodePointerType>::oper
 					return *this;
 				}
 				if (m_moduleIndexLevel < 0) {
-					 if (curr->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
+					// TODO: Generalize to -2 for second level to bottom
+					//  if (curr->isDirectLeafModule())
+					 if (DepthFirstIteratorBase<NodePointerType>(curr).isLeafModule())
 						 ++m_moduleIndex;
 				}
 				else if (static_cast<unsigned int>(m_moduleIndexLevel) == m_depth)

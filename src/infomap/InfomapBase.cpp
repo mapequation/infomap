@@ -159,7 +159,7 @@ void InfomapBase::run(HierarchicalNetwork& output)
 		}
 		topPerplexity = std::pow(2, topPerplexity);
 		for (InfomapIterator it(root(), 1); !it.isEnd(); ++it) {
-			if (it->isLeafModule()) {
+			if (it.isLeafModule()) {
 				bottomPerplexity += -infomath::plogp(getNodeData(*it).flow);
 			}
 		}
@@ -1066,7 +1066,7 @@ unsigned int InfomapBase::deleteSubLevels()
 			moduleIt != endIt; ++moduleIt)
 	{
 		unsigned int numLevelsRemoved = 0;
-		while (!moduleIt->isLeafModule())
+		while (!moduleIt->isDirectLeafModule())
 		{
 			numSubModulesRemoved += moduleIt->replaceChildrenWithGrandChildren();
 			if (numSubModulesRemoved > 0)
@@ -2247,7 +2247,7 @@ unsigned int InfomapBase::numBottomModules()
 {
 	unsigned int numBottomModules = 0;
 	for (InfomapIterator it(root(), -1); !it.isEnd(); ++it) {
-		if (it->isLeafModule()) {
+		if (it.isLeafModule()) {
 			// numBottomModules = it.moduleIndex();
 			++numBottomModules;
 		}

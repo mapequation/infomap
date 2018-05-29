@@ -20,6 +20,7 @@
 /examples/cpp/Infomap-igraph-interface-library/lib
 /examples/cpp/minimal/example.dSym
 /examples/python/infomap
+/examples/python/ninetriangles*
 /examples/R/infomap
 /examples/R/\.Rhistory
 /examples/js/Infomap-worker.js
