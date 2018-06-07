@@ -33,12 +33,15 @@ namespace infomap {
 
 std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(StateNode node)
 {
-	addPhysicalNode(node.physicalId);
-	if (node.id != node.physicalId) {
-		m_haveMemoryInput = true;
-	}
 	// return m_nodes.emplace(node.id, node);
 	auto ret = m_nodes.insert(StateNetwork::NodeMap::value_type(node.id, node));
+	if (ret.second) {
+		// If state node didn't exist, also create the associated physical node
+		addPhysicalNode(node.physicalId);
+		if (node.id != node.physicalId) {
+			m_haveMemoryInput = true;
+		}
+	}
 	return ret;
 }
 
