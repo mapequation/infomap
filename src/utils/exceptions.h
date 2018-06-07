@@ -45,6 +45,10 @@ struct DataDomainError : public std::domain_error {
 	DataDomainError(std::string const &s) : std::domain_error(s) {}
 };
 
+struct ArgumentOutOfRangeError : public std::out_of_range {
+	ArgumentOutOfRangeError(std::string const &s) : std::out_of_range(s) {}
+};
+
 struct TypeError : public std::logic_error {
 	TypeError(std::string const &s) : std::logic_error(s) {}
 };

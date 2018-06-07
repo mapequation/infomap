@@ -119,6 +119,7 @@ protected:
 
 	void parsePajekNetwork(std::string filename);
 	void parseLinkList(std::string filename);
+	void parsePathData(std::string filename);
 	void parseStateNetwork(std::string filename);
 	void parseNetwork(std::string filename);
 	void parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings);
@@ -138,6 +139,11 @@ protected:
 	std::string parseStateNodes(std::ifstream& file, std::string heading);
 
 	std::string parseLinks(std::ifstream& file);
+
+	/**
+	 * Parse paths and generate state nodes of choosen order
+	 */
+	std::string parsePaths(std::ifstream& file);
 
 	/**
 	 * Parse multilayer links from a *multilayer section
@@ -167,6 +173,13 @@ protected:
 	 * @throws an error if not both node ids can be extracted.
 	 */
 	void parseLink(const std::string& line, unsigned int& n1, unsigned int& n2, double& weight);
+
+	/**
+	 * Parse an n-gram as a string of node ids and optionally a weight as the last item.
+	 * @return weight as parsed from the last column if <code>weighted</code> is true, else default 1.0.
+	 * @throws an error if not at least two nodes can be extracted.
+	 */
+	double parsePath(const std::string& line, std::vector<unsigned int>& nodes, bool weighted);
 
 	/**
 	 * Parse a string of multilayer link data.

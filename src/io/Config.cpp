@@ -34,7 +34,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	}
 
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
-			"Specify input format ('pajek', 'link-list', 'states', '3gram', 'multilayer' or 'bipartite') to override format possibly implied by file extension.", "s");
+			"Specify input format ('pajek', 'link-list', 'states', 'path', 'multilayer' or 'bipartite') to override format possibly implied by file extension.", "s");
 
 	// api.addOptionArgument(conf.withMemory, "with-memory",
 	// 		"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.", true);
@@ -48,8 +48,11 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.withMemory, "overlapping",
 			"Let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the memoryless dynamics with memory nodes.");
 
-	api.addOptionArgument(conf.hardPartitions, "hard-partitions",
-			"Don't allow overlapping modules in memory networks by keeping the memory nodes constrained into their physical nodes.", true);
+	api.addOptionArgument(conf.weightedPaths, "weighted-paths",
+			"Assume last value in a path is the weight.", true);
+
+	api.addOptionArgument(conf.pathMarkovOrder, "path-markov-order",
+			"Markov order of the network generated from paths.", "n", true);
 
 	api.addOptionArgument(conf.nonBacktracking, "non-backtracking",
 			"Use non-backtracking dynamics and let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the non-backtracking dynamics with memory nodes.", true);

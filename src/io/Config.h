@@ -45,8 +45,10 @@ struct Config
 	// Input
 	std::string networkFile = "";
 	std::vector<std::string> additionalInput;
-	std::string inputFormat = ""; // 'pajek', 'link-list', '3gram' or 'multilayer'
+	std::string inputFormat = ""; // 'pajek', 'link-list', '3gram', 'path' or 'multilayer'
 	bool withMemory = false;
+	bool weightedPaths = false;
+	unsigned int pathMarkovOrder = 1;
 	bool bipartite = false;
 	bool skipAdjustBipartiteFlow = false;
 	bool hardPartitions = false;
@@ -149,6 +151,8 @@ struct Config
 	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
 	 	withMemory(other.withMemory),
+		weightedPaths(other.weightedPaths),
+		pathMarkovOrder(other.pathMarkovOrder),
 		bipartite(other.bipartite),
 		skipAdjustBipartiteFlow(other.skipAdjustBipartiteFlow),
 		hardPartitions(other.hardPartitions),
@@ -234,6 +238,8 @@ struct Config
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
 	 	withMemory = other.withMemory;
+		weightedPaths = other.weightedPaths;
+		pathMarkovOrder = other.pathMarkovOrder;
 	 	bipartite = other.bipartite;
 	 	skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;
 	 	hardPartitions = other.hardPartitions;
@@ -318,6 +324,8 @@ struct Config
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
 	 	withMemory = other.withMemory;
+		weightedPaths = other.weightedPaths;
+		pathMarkovOrder = other.pathMarkovOrder;
 	 	bipartite = other.bipartite;
 	 	skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;
 	 	hardPartitions = other.hardPartitions;
@@ -493,11 +501,12 @@ struct Config
 	bool useTeleportation() const { return 	directed; }
 
 	bool is3gram() const { return inputFormat == "3gram"; }
+	bool isPath() const { return inputFormat == "path"; }
 	bool isMultilayerNetwork() const { return inputFormat == "multilayer" || inputFormat == "multiplex" || additionalInput.size() > 0; }
 	bool isStateNetwork() const { return inputFormat == "states"; }
 	bool isBipartite() const { return inputFormat == "bipartite"; }
 
-	bool isMemoryInput() const { return isStateNetwork() || is3gram() || isMultilayerNetwork(); }
+	bool isMemoryInput() const { return isStateNetwork() || is3gram() || isPath() || isMultilayerNetwork(); }
 
 	bool isMemoryNetwork() const { return withMemory || nonBacktracking || isMemoryInput(); }
 	

@@ -33,6 +33,7 @@
 #include <string>
 #include "../utils/exceptions.h"
 #include <locale> // std::locale, std::tolower
+#include <iostream>
 
 namespace infomap {
 
@@ -127,6 +128,26 @@ inline std::string stringify(const Container& cont, std::string delimiter, unsig
 	}
 	if (!(o << (cont[maxIndex] + offset)))
 		throw BadConversionError((o << "stringify(container[" << maxIndex << "])", o.str()));
+	return o.str();
+}
+
+template<typename Container>
+inline std::string stringifyContainer(const Container& cont, std::string delimiter, unsigned int startIndex = 0, unsigned int length = 0)
+{
+	std::ostringstream o;
+	if (cont.empty())
+		return "";
+	if (startIndex >= cont.size())
+		throw ArgumentOutOfRangeError("stringifyContainer called with startIndex out of range");
+	unsigned int stopIndex = length == 0 || (startIndex + length > cont.size()) ? cont.size() : (startIndex + length);
+	unsigned int endIndex = stopIndex - 1;
+	for (unsigned int i = startIndex; i < endIndex; ++i) {
+		if (!(o << (cont[i])))
+			throw BadConversionError((o << "stringifyContainer(container[" << i << "])", o.str()));
+		o << delimiter;
+	}
+	if (!(o << (cont[endIndex])))
+		throw BadConversionError((o << "stringifyContainer(container[" << endIndex << "])", o.str()));
 	return o.str();
 }
 

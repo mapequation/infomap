@@ -28,12 +28,12 @@
 #include "StateNetwork.h"
 #include "../utils/FlowCalculator.h"
 #include "../utils/Log.h"
+#include "../utils/exceptions.h"
 
 namespace infomap {
 
 std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(StateNode node)
 {
-	// return m_nodes.emplace(node.id, node);
 	auto ret = m_nodes.insert(StateNetwork::NodeMap::value_type(node.id, node));
 	if (ret.second) {
 		// If state node didn't exist, also create the associated physical node
@@ -195,6 +195,37 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
 	// }
 
 	// return true;
+}
+
+bool StateNetwork::addStateNodesAndLinksFromPath(const std::vector<unsigned int>& path, unsigned int markovOrder, double weight)
+{
+	if (markovOrder == 0) {
+		throw DataDomainError("Trying to add state nodoes from path with markov order 0, must be 1 or more.");
+	}
+	if (path.size() <= markovOrder) {
+		++m_numSkippedPaths;
+		return false;
+	}
+	unsigned int lastStateId;
+	bool createLink = false;
+	// std::cout << "Add state node and links from path " << io::stringify(path, " ") << "\n";
+	for (unsigned int i = markovOrder - 1; i < path.size(); ++i) {
+		std::string id = io::stringifyContainer(path, " ", i - (markovOrder - 1), markovOrder);
+		auto ret = m_pathToStateId.insert(std::make_pair(id, m_pathToStateId.size()));
+		unsigned int stateId = ret.first->second;
+		unsigned int physId = path[i];
+		addStateNode(stateId, physId);
+		// std::cout << " -> add State node '" << id << "' (" << stateId << "," << physId << ")\n";
+		if (!createLink) {
+			createLink = true;
+		} else {
+			// std::cout << "   -> add link " << lastStateId << " - " << stateId << " with weight " << weight << "\n";
+			addLink(lastStateId, stateId, weight);
+		}
+		// std::cout << "   => " << m_physNodes.size() << " physical nodes\n";
+		lastStateId = stateId;
+	}
+	return true;
 }
 
 void StateNetwork::calculateFlow()

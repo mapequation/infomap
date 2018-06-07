@@ -214,8 +214,7 @@ void InfomapBase::run()
 		for (unsigned int i = 0; i < this->parsedOptions.size(); ++i)
 			Log() << (i == 0 ? "  -> Configuration: " : "                    ") << this->parsedOptions[i] << "\n";
 	}
-	Log() << "  -> Use " << (this->isUndirected()? "undirected" : "directed") << " flow and " <<
-		(this->isMemoryNetwork()? "2nd" : "1st") << " order Markov dynamics";
+	Log() << "  -> Use " << (this->isUndirected()? "undirected" : "directed") << " flow";
 	if (this->useTeleportation())
 		Log() << " with " << (this->recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
 		(this->teleportToNodes ? "nodes" : "links");
@@ -227,14 +226,18 @@ void InfomapBase::run()
 			Log() << "  OpenMP " << _OPENMP << " detected with " << omp_get_num_threads() << " threads...\n";
 		}
 	#endif
-	Log() << "=======================================================\n";
 
 
 	if (m_network.numNodes() == 0) {
 		std::string filename = this->networkFile;
 		m_network.readInputData(filename);
 	}
-
+	if (m_network.haveMemoryInput())
+		Log() << "  -> Found memory nodes, use 2nd order Markov dynamics\n";
+	else
+		Log() << "  -> Found no memory nodes, use 1st order Markov dynamics\n";
+	Log() << "=======================================================\n";
+	
 	run(m_network);
 
 	Log() << "===================================================\n";
