@@ -1143,7 +1143,7 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 				// Use new variables to not swap module1
 				unsigned int m1 = module1, m2 = module2;
 				// If undirected, the order may be swapped to aggregate the edge on an opposite one
-				if (!m_infomap->directedEdges && m1 > m2)
+				if (m_infomap->isUndirectedClustering() && m1 > m2)
 					std::swap(m1, m2);
 				// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
 				auto ret = moduleLinks.emplace(

@@ -135,7 +135,9 @@ public:
 	bool isSuperLevelOnTopLevel() const;
 	bool isMainInfomap() const;
 
-	virtual bool haveMemory() const = 0;
+	virtual bool haveMemory() const {
+		return this->isMemoryNetwork();
+	}
 
 	bool haveHardPartition() const;
 

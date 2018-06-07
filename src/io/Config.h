@@ -37,8 +37,39 @@
 #include "../utils/Date.h"
 #include "version.h"
 #include "ProgramInterface.h"
+#include "../utils/exceptions.h"
 
 namespace infomap {
+
+// enum class FlowModel {
+// 	undirected,
+// 	directed,
+// 	undirdir,
+// 	outdirdir,
+// 	rawdir
+// };
+
+// struct FlowModel {
+// 	static const std::string undirected;
+// 	static const std::string directed;
+// 	static const std::string undirdir;
+// 	static const std::string outdirdir;
+// 	static const std::string rawdir;
+// };
+// const std::string FlowModel::undirected = "undirected";
+// const std::string FlowModel::directed = "directed";
+// const std::string FlowModel::undirdir = "undirdir";
+// const std::string FlowModel::outdirdir = "outdirdir";
+// const std::string FlowModel::rawdir = "rawdir";
+
+struct FlowModel {
+	static constexpr const char* undirected = "undirected";
+	static constexpr const char* directed = "directed";
+	static constexpr const char* undirdir = "undirdir";
+	static constexpr const char* outdirdir = "outdirdir";
+	static constexpr const char* rawdir = "rawdir";
+};
+
 
 struct Config
 {
@@ -46,6 +77,7 @@ struct Config
 	std::string networkFile = "";
 	std::vector<std::string> additionalInput;
 	std::string inputFormat = ""; // 'pajek', 'link-list', '3gram', 'path' or 'multilayer'
+	bool flowModelChangedByData = false;
 	bool withMemory = false;
 	bool weightedPaths = false;
 	unsigned int pathMarkovOrder = 1;
@@ -64,7 +96,9 @@ struct Config
 	bool clusterDataIsHard = false;
 	bool noInfomap = false;
 
-	// Flow models, collapse one-hot encoded values to ENUM?
+	// FlowModel flowModel = FlowModel::undirected;
+	std::string flowModel = FlowModel::undirected;
+	// TODO: Remove variables for 'one-hot encoded' flow models
 	bool directed = false;
 	bool undirdir = false;
 	bool outdirdir = false;
@@ -150,6 +184,7 @@ struct Config
 		networkFile(other.networkFile),
 	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
+	 	flowModelChangedByData(other.flowModelChangedByData),
 	 	withMemory(other.withMemory),
 		weightedPaths(other.weightedPaths),
 		pathMarkovOrder(other.pathMarkovOrder),
@@ -167,6 +202,7 @@ struct Config
 	 	clusterDataFile(other.clusterDataFile),
 	 	clusterDataIsHard(other.clusterDataIsHard),
 	 	noInfomap(other.noInfomap),
+		flowModel(other.flowModel),
 		directed(other.directed),
 		undirdir(other.undirdir),
 		outdirdir(other.outdirdir),
@@ -237,6 +273,7 @@ struct Config
 		networkFile = other.networkFile;
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
+	 	flowModelChangedByData = other.flowModelChangedByData;
 	 	withMemory = other.withMemory;
 		weightedPaths = other.weightedPaths;
 		pathMarkovOrder = other.pathMarkovOrder;
@@ -254,6 +291,7 @@ struct Config
 	 	clusterDataFile = other.clusterDataFile;
 	 	clusterDataIsHard = other.clusterDataIsHard;
 	 	noInfomap = other.noInfomap;
+		flowModel = other.flowModel;
 		directed = other.directed;
 		undirdir = other.undirdir;
 		outdirdir = other.outdirdir;
@@ -323,6 +361,7 @@ struct Config
 		networkFile = other.networkFile;
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
+	 	flowModelChangedByData = other.flowModelChangedByData;
 	 	withMemory = other.withMemory;
 		weightedPaths = other.weightedPaths;
 		pathMarkovOrder = other.pathMarkovOrder;
@@ -340,6 +379,7 @@ struct Config
 	 	// clusterDataFile = other.clusterDataFile;
 	 	// clusterDataIsHard = other.clusterDataIsHard;
 	 	noInfomap = other.noInfomap;
+		flowModel = other.flowModel;
 		directed = other.directed;
 		undirdir = other.undirdir;
 		outdirdir = other.outdirdir;
@@ -452,51 +492,78 @@ struct Config
 
 	void adaptDefaults()
 	{
+		if (flowModel != FlowModel::undirected && \
+			flowModel != FlowModel::undirdir && \
+			flowModel != FlowModel::directed && \
+			flowModel != FlowModel::outdirdir && \
+			flowModel != FlowModel::rawdir)
+		{
+			throw InputDomainError("Unrecognized flow model");
+		}
+
+		if (undirdir) {
+			flowModel = FlowModel::undirdir;
+		} else if (directed) {
+			flowModel = FlowModel::directed;
+		} else if (outdirdir) {
+			flowModel = FlowModel::outdirdir;
+		} else if (rawdir) {
+			flowModel = FlowModel::rawdir;
+		}
+
 		if (!haveModularResultOutput())
 			printTree = true;
 
-		originallyUndirected = isUndirected();
-		if (isMemoryNetwork())
-		{
-			if (isMultilayerNetwork())
-			{
+		originallyUndirected = isUndirectedFlow();
+		// if (isMemoryNetwork())
+		// {
+			// if (isMultilayerNetwork())
+			// {
 				// Include self-links in multilayer networks as layer and node numbers are unrelated
-				includeSelfLinks = true;
-				if (!isUndirected())
-				{
-					// teleportToNodes = true;
-					recordedTeleportation = false;
-				}
-			}
-			else
-			{
+				// includeSelfLinks = true;
+				// if (!isUndirectedFlow())
+				// {
+				// 	// teleportToNodes = true;
+				// 	recordedTeleportation = false;
+				// }
+			// }
+			// else
+			// {
 				// teleportToNodes = true;
-				recordedTeleportation = false;
-				if (isUndirected())
-					directed = true;
-			}
-			if (is3gram()) {
-				// Teleport to start of physical chains
-				teleportToNodes = true;
-			}
-		}
-		if (isBipartite())
-		{
-			bipartite = true;
-		}
+				// recordedTeleportation = false;
+				// if (isUndirectedFlow()) {
+				// 	flowModel = FlowModel::directed;
+				// }
+			// }
+			// if (is3gram()) {
+			// 	// Teleport to start of physical chains
+			// 	teleportToNodes = true;
+			// }
+		// }
+		// if (isBipartite())
+		// {
+		// 	bipartite = true;
+		// }
 
-		directedEdges = !isUndirected();
+		// directedEdges = !isUndirected();
 	}
 
-	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
+	bool setDirectedInput() {
+		if (flowModel == FlowModel::undirected || flowModel == FlowModel::undirdir) {
+			flowModel = FlowModel::directed;
+			flowModelChangedByData = true;
+			return true;
+		}
+		return false;
+	}
 
-	void setUndirected() { directed = undirdir = outdirdir = rawdir = false; }
+	// bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
+	bool isUndirectedClustering() const { return flowModel == FlowModel::undirected; }
 
-	bool isUndirectedFlow() const { return !directed && !outdirdir && !rawdir; } // isUndirected() || undirdir
+	bool isUndirectedFlow() const { return flowModel == FlowModel::undirected || flowModel == FlowModel::undirdir; }
 
-	bool printAsUndirected() const { return originallyUndirected; }
-
-	bool parseAsUndirected() const { return originallyUndirected; }
+	// bool printAsUndirected() const { return originallyUndirected; }
+	bool printAsUndirected() const { return isUndirectedClustering(); }
 
 	bool useTeleportation() const { return 	directed; }
 
@@ -504,9 +571,9 @@ struct Config
 	bool isPath() const { return inputFormat == "path"; }
 	bool isMultilayerNetwork() const { return inputFormat == "multilayer" || inputFormat == "multiplex" || additionalInput.size() > 0; }
 	bool isStateNetwork() const { return inputFormat == "states"; }
-	bool isBipartite() const { return inputFormat == "bipartite"; }
+	bool isBipartite() const { return inputFormat == "bipartite" || bipartite; }
 
-	bool isMemoryInput() const { return isStateNetwork() || is3gram() || isPath() || isMultilayerNetwork(); }
+	bool isMemoryInput() const { return isStateNetwork() || is3gram() || isPath() || isMultilayerNetwork() || flowModelChangedByData; }
 
 	bool isMemoryNetwork() const { return withMemory || nonBacktracking || isMemoryInput(); }
 	

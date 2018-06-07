@@ -35,7 +35,9 @@ namespace infomap {
 
 void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 {
-	Log() << "Calculating global flow... " << std::flush;
+	Log() << "Calculating global network flow using flow model '" << config.flowModel << "'... " << std::flush;
+	if (config.flowModelChangedByData)
+		Log() << "\n  -> Notice: Changed from undirected due to directed input data.";
 
 	// Prepare data in sequence containers for fast access of individual elements
     // Map to zero-based dense indexing
@@ -79,17 +81,17 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 			// 	<< ", weight: " << linkWeight << "\n";
 
 			if (sourceIndex != targetIndex) {
-				if (!config.directedEdges) {
+				if (config.isUndirectedFlow()) {
 					++nodeOutDegree[targetIndex];
 					sumLinkOutWeight[targetIndex] += linkWeight;
 				}
-				if (!config.outdirdir)
+				if (config.flowModel != FlowModel::outdirdir)
 					m_nodeFlow[targetIndex] += linkWeight / sumUndirLinkWeight;
 			}
 		}
 	}
 
-	if (config.rawdir)
+	if (config.flowModel == FlowModel::rawdir)
 	{
 		// Treat the link weights as flow (after global normalization) and
 		// do one power iteration to set the node flow
@@ -106,16 +108,16 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 		return;
 	}
 
-	if (!config.directed)
+	if (config.flowModel != FlowModel::directed)
 	{
-		if (config.outdirdir)
+		if (config.flowModel == FlowModel::outdirdir)
 			Log() << "\n  -> Counting only ingoing links.";
 		else
 			Log() << "\n  -> Using undirected links" << (config.undirdir? ", switching to directed after steady state." :
 					".");
 		Log() << std::endl;
 
-		if (config.undirdir || config.outdirdir)
+		if (config.flowModel == FlowModel::undirdir || config.flowModel == FlowModel::outdirdir)
 		{
 			//Take one last power iteration
 			std::vector<double> nodeFlowSteadyState(m_nodeFlow);

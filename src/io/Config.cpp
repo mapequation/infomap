@@ -36,6 +36,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
 			"Specify input format ('pajek', 'link-list', 'states', 'path', 'multilayer' or 'bipartite') to override format possibly implied by file extension.", "s");
 
+	api.addOptionArgument(conf.flowModel, 'f', "flow-model",
+			"Specify flow model ('undirected', 'undirdir', 'directed', 'outdirdir', 'rawdir')", "s");
+
 	// api.addOptionArgument(conf.withMemory, "with-memory",
 	// 		"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.", true);
 

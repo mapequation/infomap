@@ -71,11 +71,6 @@ public:
     return m_optimizer->getModuleCodelength();  
   }
 
-	bool haveMemory() const {
-    // return m_optimizer->haveMemory();
-    return this->isMemoryInput();
-  }
-
 protected:
 	Infomap& initOptimizer(bool forceNoMemory = false)
 	{

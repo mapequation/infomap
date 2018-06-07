@@ -214,11 +214,12 @@ void InfomapBase::run()
 		for (unsigned int i = 0; i < this->parsedOptions.size(); ++i)
 			Log() << (i == 0 ? "  -> Configuration: " : "                    ") << this->parsedOptions[i] << "\n";
 	}
-	Log() << "  -> Use " << (this->isUndirected()? "undirected" : "directed") << " flow";
-	if (this->useTeleportation())
-		Log() << " with " << (this->recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
-		(this->teleportToNodes ? "nodes" : "links");
-	Log() << "\n";
+	// Log() << "  -> Use " << (this->isUndirected()? "undirected" : "directed") << " flow";
+	// if (this->useTeleportation())
+	// 	Log() << " with " << (this->recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
+	// 	(this->teleportToNodes ? "nodes" : "links");
+	// Log() << "\n";
+	Log() << "=======================================================\n";
 	#ifdef _OPENMP
 	#pragma omp parallel
 		#pragma omp master
@@ -232,11 +233,6 @@ void InfomapBase::run()
 		std::string filename = this->networkFile;
 		m_network.readInputData(filename);
 	}
-	if (m_network.haveMemoryInput())
-		Log() << "  -> Found memory nodes, use 2nd order Markov dynamics\n";
-	else
-		Log() << "  -> Found no memory nodes, use 1st order Markov dynamics\n";
-	Log() << "=======================================================\n";
 	
 	run(m_network);
 
@@ -251,7 +247,12 @@ void InfomapBase::run(Network& network)
 {
 	if (!isMainInfomap())
 		throw InternalOrderError("Can't run a non-main Infomap with an input network");
-		
+	
+	// if (m_network.haveMemoryInput())
+	// 	Log() << "  -> Have memory nodes, use 2nd order Markov dynamics\n";
+	// else
+	// 	Log() << "  -> Have no memory nodes, use 1st order Markov dynamics\n";
+	
 	network.calculateFlow();
 	
 	initNetwork(network);
@@ -352,7 +353,7 @@ InfomapBase& InfomapBase::initNetwork(StateNetwork& network)
 	if (network.numNodes() == 0)
 		throw DataDomainError("No nodes in network");
 	// this->setConfig(network.getConfig());
-	Log() << "Init " << (this->directedEdges ? "directed" : "undirected") << " network...\n";
+	Log() << "Build internal network...\n";
 	generateSubNetwork(network);
 
 	init();
@@ -642,7 +643,7 @@ void InfomapBase::partition()
 	findTopModulesRepeatedly(this->levelAggregationLimit);
 
 	double newCodelength = getCodelength();
-	double compression = (oldCodelength - newCodelength)/oldCodelength;
+	double compression = oldCodelength < 1e-16 ? 0.0 : (oldCodelength - newCodelength)/oldCodelength;
 	Log(0,0) << (compression * 100) << "% " << std::flush;
 	oldCodelength = newCodelength;
 
@@ -686,7 +687,7 @@ void InfomapBase::partition()
 			}
 		}
 		newCodelength = getCodelength();
-		compression = (oldCodelength - newCodelength)/oldCodelength;
+		compression = oldCodelength < 1e-16 ? 0.0 : (oldCodelength - newCodelength)/oldCodelength;
 		bool isImprovement = newCodelength <= oldCodelength - this->minimumCodelengthImprovement &&
 			newCodelength < oldCodelength - initialCodelength * this->minimumRelativeTuneIterationImprovement;
 		if (!isImprovement) {
@@ -825,7 +826,7 @@ void InfomapBase::initEnterExitFlow()
 	for (auto* n : m_leafNodes) {
 		n->data.enterFlow = n->data.exitFlow = 0.0;
 	}
-    if (this->directedEdges) {
+    if (!this->isUndirectedClustering()) {
         for (auto *n : m_leafNodes) {
             for (EdgeType *e : n->outEdges()) {
                 EdgeType &edge = *e;

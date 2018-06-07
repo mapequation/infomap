@@ -82,10 +82,10 @@ public:
 		return get();
 	}
 
-	Infomap& setDirected(bool directed) {
-		directedEdges = directed;
-		return get();
-	}
+	// Infomap& setDirected(bool directed) {
+	// 	directedEdges = directed;
+	// 	return get();
+	// }
 
 	Infomap& setMarkovTime(double codeRate) {
 		markovTime = codeRate;
