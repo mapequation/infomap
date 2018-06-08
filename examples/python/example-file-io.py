@@ -1,23 +1,30 @@
-from infomap import infomap as im
+from infomap import infomap
 
 name = "ninetriangles"
 filename = "../../{}.net".format(name)
 
-myInfomap = im.Infomap("--input {}".format(filename))
-
-print(dir(myInfomap))
+myInfomap = infomap.Infomap("-v --input {}".format(filename))
 
 myInfomap.run()
 
 print("Found %d top modules with codelength: %f" % (myInfomap.numTopModules(), myInfomap.codelength()))
 
 print("Tree:")
-for it in myInfomap.tree():
-    node = it.current()
+for node in myInfomap.iterTree():
     if node.isLeaf():
-        print("{}: {} {}".format(it.path(), node.data.flow, node.physicalId))
+        print("{}: {} {}".format(node.path(), node.data.flow, node.physicalId))
+    elif node.isLeafModule():
+        print("{}: {} *".format(node.path(), node.data.flow))
     else:
-        print("{}: {}".format(it.path(), node.data.flow))
+        print("{}: {}".format(node.path(), node.data.flow))
+
+print("Leaf modules:")
+for module in myInfomap.iterLeafModules():
+    print("{}: {}".format(module.path(), module.data.flow))
+
+print("Leaf nodes:")
+for node in myInfomap.iterLeafNodes():
+    print("{}: {} {}".format(node.path(), node.data.flow, node.physicalId))
 
 
 # print("Writing top level modules to %s_level1.clu..." % name)

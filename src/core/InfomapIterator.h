@@ -31,7 +31,6 @@ public:
 
 	InfomapIterator() {}
 
-	explicit
 	InfomapIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
 	:	m_root(nodePointer),
 		m_current(nodePointer),
@@ -82,16 +81,16 @@ public:
 
 	// InfoNode& operator*();
 
-	InfomapIterator& operator++();
+	virtual InfomapIterator& operator++();
 
-	InfomapIterator operator++(int)
+	virtual InfomapIterator operator++(int)
 	{
 		InfomapIterator copy(*this);
 		++(*this);
 		return copy;
 	}
 
-	InfomapIterator& stepForward()
+	virtual InfomapIterator& stepForward()
 	{
 		++(*this);
 		return *this;
@@ -116,6 +115,64 @@ public:
 	{
 		return m_current == nullptr;
 	}
+};
+
+class InfomapLeafModuleIterator : public InfomapIterator
+{
+public:
+	InfomapLeafModuleIterator() { init(); }
+
+	InfomapLeafModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
+	:	InfomapIterator(nodePointer, moduleIndexLevel)
+	{ init(); }
+
+	InfomapLeafModuleIterator(const InfomapLeafModuleIterator& other)
+	:	InfomapIterator(other)
+	{ init(); }
+
+	/**
+	 * Iterate to first leaf module
+	 */
+	void init();
+
+	virtual InfomapIterator& operator++();
+
+	virtual InfomapIterator operator++(int)
+	{
+		InfomapLeafModuleIterator copy(*this);
+		++(*this);
+		return copy;
+	}
+
+};
+
+class InfomapLeafIterator : public InfomapIterator
+{
+public:
+	InfomapLeafIterator() { init(); }
+
+	InfomapLeafIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
+	:	InfomapIterator(nodePointer, moduleIndexLevel)
+	{ init(); }
+
+	InfomapLeafIterator(const InfomapLeafIterator& other)
+	:	InfomapIterator(other)
+	{ init(); }
+
+	/**
+	 * Iterate to first leaf module
+	 */
+	void init();
+
+	virtual InfomapIterator& operator++();
+
+	virtual InfomapIterator operator++(int)
+	{
+		InfomapLeafIterator copy(*this);
+		++(*this);
+		return copy;
+	}
+
 };
 
 }

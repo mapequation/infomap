@@ -83,4 +83,44 @@ namespace infomap {
 		m_current = curr;
 		return *this;
 	}
+
+	// -------------------------------------
+	// InfomapLeafModuleIterator
+	// -------------------------------------
+
+	void InfomapLeafModuleIterator::init()
+	{
+		while (!isEnd() && !m_current->isLeafModule()) {
+			InfomapIterator::operator++();
+		}
+	}
+
+	InfomapIterator& InfomapLeafModuleIterator::operator++()
+	{
+		InfomapIterator::operator++();
+		while (!isEnd() && !m_current->isLeafModule()) {
+			InfomapIterator::operator++();
+		}
+		return *this;
+	}
+
+	// -------------------------------------
+	// InfomapLeafIterator
+	// -------------------------------------
+
+	void InfomapLeafIterator::init()
+	{
+		while (!isEnd() && !m_current->isLeaf()) {
+			InfomapIterator::operator++();
+		}
+	}
+
+	InfomapIterator& InfomapLeafIterator::operator++()
+	{
+		InfomapIterator::operator++();
+		while (!isEnd() && !m_current->isLeaf()) {
+			InfomapIterator::operator++();
+		}
+		return *this;
+	}
 }

@@ -37,7 +37,7 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 {
 	Log() << "Calculating global network flow using flow model '" << config.flowModel << "'... " << std::flush;
 	if (config.flowModelChangedByData)
-		Log() << "\n  -> Notice: Changed from undirected due to directed input data.";
+		Log() << "\n  -> Notice: Changed from undirected to directed flow model due to directed input data.";
 
 	// Prepare data in sequence containers for fast access of individual elements
     // Map to zero-based dense indexing
@@ -239,6 +239,7 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 			{
 				m_nodeFlow[i] /= sum;
 			}
+			break;
 		}
 
 		// Perturb the system if equilibrium

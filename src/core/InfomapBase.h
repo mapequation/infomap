@@ -69,8 +69,17 @@ public:
 	InfoNode& root();
 	const InfoNode& root() const;
 
-	InfomapIterator tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
+	// InfomapIterator tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
+	// { return InfomapIterator(&root(), maxClusterLevel); }
+
+	InfomapIterator iterTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
 	{ return InfomapIterator(&root(), maxClusterLevel); }
+	
+	InfomapLeafModuleIterator iterLeafModules(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
+	{ return InfomapLeafModuleIterator(&root(), maxClusterLevel); }
+	
+	InfomapLeafIterator iterLeafNodes(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
+	{ return InfomapLeafIterator(&root(), maxClusterLevel); }
 
 	InfomapIterator begin(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
 	{ return InfomapIterator(&root(), maxClusterLevel); }
