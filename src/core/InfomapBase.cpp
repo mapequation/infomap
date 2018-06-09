@@ -261,10 +261,11 @@ void InfomapBase::run(Network& network)
 		Log() << "  -> Ordinary network input, using the Map Equation for first order network flows\n";
 	}
 	
-	if (m_network.haveDirectedInput() && !this->isUndirectedFlow()) {
+	if (m_network.haveDirectedInput() && this->isUndirectedFlow()) {
 		Log() << "  -> Warning: Undirected flow model specified but directed input found. Changing flow model to 'directed'\n";
 		this->flowModel = FlowModel::directed;
 	}
+	network.setConfig(*this);
 	
 	network.calculateFlow();
 	
