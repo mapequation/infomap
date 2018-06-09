@@ -227,6 +227,8 @@ public:
 	double sumSelfLinkWeight() const { return m_sumSelfLinkWeight; }
 	// const std::map<unsigned int, double>& outWeights() const { return m_outWeights; }
 	std::map<unsigned int, double>& outWeights() { return m_outWeights; }
+	std::map<unsigned int, std::string>& names() { return m_names; }
+	const std::map<unsigned int, std::string>& names() const { return m_names; }
 
 	bool haveDirectedInput() const { return m_haveDirectedInput; }
 	bool haveMemoryInput() const { return m_haveMemoryInput; }

@@ -198,4 +198,25 @@ namespace infomap {
 		}
 		return *this;
 	}
+
+	// -------------------------------------
+	// InfomapLeafIteratorPhysical
+	// -------------------------------------
+
+	void InfomapLeafIteratorPhysical::init()
+	{
+		while (!isEnd() && !m_current->isLeaf()) {
+			InfomapIterator::operator++();
+		}
+	}
+
+	InfomapIterator& InfomapLeafIteratorPhysical::operator++()
+	{
+		InfomapIteratorPhysical::operator++();
+		while (!isEnd() && !m_current->isLeaf()) {
+			InfomapIterator::operator++();
+		}
+		return *this;
+	}
+
 }

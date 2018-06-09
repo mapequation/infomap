@@ -798,7 +798,7 @@ void InfomapBase::writeResult()
 			Log() << "done!\n";
 		}
 		else {
-			// Print both state tree and physical tree
+			// Write both physical and state level
 			Log() << "Write physical tree to " << filename << "... ";
 			writeTree(filename);
 			Log() << "done!\n";
@@ -818,13 +818,32 @@ void InfomapBase::writeResult()
 			Log() << "done!\n";
 		}
 		else {
-			// Print both state tree and physical tree
+			// Write both physical and state level
 			Log() << "Write physical node modules to " << filename << "... ";
 			writeClu(filename);
 			Log() << "done!\n";
 			std::string filenameStates = this->outDirectory + this->outName + "_states.clu";
 			Log() << "Write state node modules to " << filenameStates << "... ";
 			writeClu(filenameStates, true);
+			Log() << "done!\n";
+		}
+	}
+
+	if (this->printMap) {
+		std::string filename = this->outDirectory + this->outName + ".map";
+		if (!haveMemory()) {
+			Log() << "Write modular network to " << filename << "... ";
+			writeMap(filename);
+			Log() << "done!\n";
+		}
+		else {
+			// Write both physical and state level
+			Log() << "Write physical modular network to " << filename << "... ";
+			writeMap(filename);
+			Log() << "done!\n";
+			std::string filenameStates = this->outDirectory + this->outName + "_states.map";
+			Log() << "Write state modular network to " << filenameStates << "... ";
+			writeMap(filenameStates, true);
 			Log() << "done!\n";
 		}
 	}
@@ -1694,6 +1713,106 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 					outFile << node.physicalId << " " << it.moduleIndex() << " " << node.data.flow << "\n";
 			}
 		}
+	}
+	return outputFilename;
+}
+
+std::string InfomapBase::writeMap(std::string filename, bool states, int moduleIndexLevel)
+{
+	//TODO: Support moduleIndexLevel other than default -1
+	if (moduleIndexLevel != -1) {
+		Log() << "\nWarning: writeMap currently only supports default moduleIndexLevel -1\n";
+	}
+	// unsigned int maxModuleLevel = maxTreeDepth();
+	std::string outputFilename = filename.empty() ? this->outDirectory + this->outName +
+	(haveMemory() && states ? "_states.map" : ".map") : filename;
+
+	// Collect modules
+	std::vector<InfoNode*> modules;
+	for (auto it(iterLeafModules()); !it.isEnd(); ++it) {
+		modules.push_back(it.current());
+	}
+
+	// Sort modules on flow descending order
+	std::sort(modules.begin(), modules.end(), [=](InfoNode* a, InfoNode* b)
+	{
+			return a->data.flow >= b->data.flow;
+	});
+
+	// Store id on modules to simplify link aggregation
+	for (unsigned int i = 0; i < modules.size(); ++i) {
+		modules[i]->index = i + 1;
+	}
+
+	// Copy node data to seperate structure as physical nodes may be ephemeral
+	struct MapNode {
+		unsigned int id;
+		double flow;
+		std::string name = "";
+		MapNode(unsigned int id, double flow, std::string name = "")
+		: id(id), flow(flow), name(name) { initName(); }
+		void initName() {
+			if (name.empty()) {
+				name = io::stringify(id);
+			}
+		}
+	};
+
+	// Collect nodes
+	std::vector<std::vector<MapNode> > nodes(modules.size());
+	for (unsigned int i = 0; i < modules.size(); ++i) {
+		if (haveModules() && !states) {
+			for (InfomapLeafIteratorPhysical it(modules[i]); !it.isEnd(); ++it) {
+				// Use physicalId as node id for (aggregated) physical nodes
+				nodes[i].push_back(MapNode(it->physicalId, it->data.flow, m_network.names()[it->physicalId]));
+			}
+		} else {
+			// State nodes
+			for (auto& node : *modules[i]) {
+				nodes[i].push_back(MapNode(node.stateId, node.data.flow, m_network.names()[node.stateId]));
+			}
+		}
+	}
+
+	// Collect links
+	std::map<std::pair<unsigned int, unsigned int>, double> moduleLinks;
+	for (auto& module : modules) {
+		for (auto& node : *module) {
+			for (auto& link : node.outEdges()) {
+				if (link->source != link->target) {
+					moduleLinks[std::make_pair(link->source.index + 1, link->target.index + 1)] += link->data.weight;
+				}
+			}
+		}
+	}
+
+	SafeOutFile outFile(outputFilename);
+	outFile << "# modules: " << modules.size() << "\n";
+	outFile << "# modulelinks: " << moduleLinks.size() << "\n";
+	outFile << "# nodes: " << nodes.size() << "\n";
+	outFile << "# links: " << 0 << "\n";
+	outFile << "# codelength: " << getCodelength() << "\n";
+	if (!this->isUndirectedClustering()) {
+		outFile << "*Directed\n";
+	}
+	outFile << "*Modules " << modules.size() << "\n";
+	for (auto& module : modules) {
+		outFile << module->index << " \"module " << module->index << "\" " << module->data.flow << "\n"; 
+	}
+	outFile << "*Nodes " << nodes.size() << "\n";
+	for (unsigned int i = 0; i < nodes.size(); ++i) {
+		auto& siblings = nodes[i];
+		for (unsigned int j = 0; j < siblings.size(); ++j) {
+			auto& n = siblings[j];
+			outFile << i + 1 << ":" << j + 1 << " \"" << n.name << "\" " << n.flow;// << "\n";
+			outFile << " " << n.id << "\n";
+		}
+	}
+	outFile << "*Links " << moduleLinks.size() << "\n";
+	for (auto& linkIt : moduleLinks) {
+		auto& link = linkIt.first;
+		auto& weight = linkIt.second;
+		outFile << link.first << " " << link.second << " " << weight << "\n";
 	}
 	return outputFilename;
 }

@@ -236,6 +236,10 @@ public:
 		m_physIter(other.m_physIter),
 		m_oldIter(other.m_oldIter)
 	{}
+
+	InfomapIteratorPhysical(const InfomapIterator& other)
+	:	InfomapIterator(other)
+	{}
 	
 	InfomapIteratorPhysical& operator= (const InfomapIteratorPhysical& other)
 	{
@@ -257,6 +261,40 @@ public:
 	virtual InfomapIterator operator++(int)
 	{
 		InfomapIteratorPhysical copy(*this);
+		++(*this);
+		return copy;
+	}
+
+};
+
+/**
+ * Iterate over all physical leaf nodes, joining physical nodes within same leaf modules
+ * Note: The physical nodes are created when entering the parent module and removed
+ * when leaving the module. The tree will not be modified.
+ */
+class InfomapLeafIteratorPhysical : public InfomapIteratorPhysical
+{
+public:
+	InfomapLeafIteratorPhysical() { init(); }
+
+	InfomapLeafIteratorPhysical(InfoNode* nodePointer, int moduleIndexLevel = -1)
+	:	InfomapIteratorPhysical(nodePointer, moduleIndexLevel)
+	{ init(); }
+
+	InfomapLeafIteratorPhysical(const InfomapLeafIteratorPhysical& other)
+	:	InfomapIteratorPhysical(other)
+	{ init(); }
+
+	/**
+	 * Iterate to first leaf node
+	 */
+	void init();
+
+	virtual InfomapIterator& operator++();
+
+	virtual InfomapIterator operator++(int)
+	{
+		InfomapLeafIteratorPhysical copy(*this);
 		++(*this);
 		return copy;
 	}
