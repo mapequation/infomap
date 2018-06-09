@@ -776,79 +776,6 @@ void InfomapBase::restoreHardPartition()
 	Log(1) << "Expanded " << numExpandedNodes << " hard modules to " << numExpandedChildren << " original nodes." << std::endl;
 }
 
-void InfomapBase::writeResult()
-{
-	if (this->noFileOutput)
-		return;
-	
-	// Log() << "\nPhysical tree:\n";
-	// for (InfomapIteratorPhysical it(&root()); !it.isEnd(); ++it) {
-	// 	Log() << io::stringify(it.path(), ":") << " moduleIndex: " << it.moduleIndex() << ", stateId: " << it->stateId <<
-	// 	", physId: " << it->physicalId << ", data: " << it->data << "\n";
-	// }
-	// Log() << std::string(10, '-') << "\n";
-	
-	
-	if (this->printTree || true) {
-		std::string filename = this->outDirectory + this->outName + ".tree";
-
-		if (!haveMemory()) {
-			Log() << "Write tree to " << filename << "... ";
-			writeTree(filename);
-			Log() << "done!\n";
-		}
-		else {
-			// Write both physical and state level
-			Log() << "Write physical tree to " << filename << "... ";
-			writeTree(filename);
-			Log() << "done!\n";
-			std::string filenameStates = this->outDirectory + this->outName + "_states.tree";
-			Log() << "Write state tree to " << filenameStates << "... ";
-			writeTree(filenameStates, true);
-			Log() << "done!\n";
-		}
-	}
-
-
-	if (this->printClu) {
-		std::string filename = this->outDirectory + this->outName + ".clu";
-		if (!haveMemory()) {
-			Log() << "Write node modules to " << filename << "... ";
-			writeClu(filename);
-			Log() << "done!\n";
-		}
-		else {
-			// Write both physical and state level
-			Log() << "Write physical node modules to " << filename << "... ";
-			writeClu(filename);
-			Log() << "done!\n";
-			std::string filenameStates = this->outDirectory + this->outName + "_states.clu";
-			Log() << "Write state node modules to " << filenameStates << "... ";
-			writeClu(filenameStates, true);
-			Log() << "done!\n";
-		}
-	}
-
-	if (this->printMap) {
-		std::string filename = this->outDirectory + this->outName + ".map";
-		if (!haveMemory()) {
-			Log() << "Write modular network to " << filename << "... ";
-			writeMap(filename);
-			Log() << "done!\n";
-		}
-		else {
-			// Write both physical and state level
-			Log() << "Write physical modular network to " << filename << "... ";
-			writeMap(filename);
-			Log() << "done!\n";
-			std::string filenameStates = this->outDirectory + this->outName + "_states.map";
-			Log() << "Write state modular network to " << filenameStates << "... ";
-			writeMap(filenameStates, true);
-			Log() << "done!\n";
-		}
-	}
-	
-}
 
 // ===================================================
 // Run: Init: *
@@ -1646,6 +1573,84 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 }
 
 
+// ===================================================
+// Write output
+// ===================================================
+
+void InfomapBase::writeResult()
+{
+	if (this->noFileOutput)
+		return;
+	
+	// Log() << "\nPhysical tree:\n";
+	// for (InfomapIteratorPhysical it(&root()); !it.isEnd(); ++it) {
+	// 	Log() << io::stringify(it.path(), ":") << " moduleIndex: " << it.moduleIndex() << ", stateId: " << it->stateId <<
+	// 	", physId: " << it->physicalId << ", data: " << it->data << "\n";
+	// }
+	// Log() << std::string(10, '-') << "\n";
+	
+	
+	if (this->printTree || true) {
+		std::string filename = this->outDirectory + this->outName + ".tree";
+
+		if (!haveMemory()) {
+			Log() << "Write tree to " << filename << "... ";
+			writeTree(filename);
+			Log() << "done!\n";
+		}
+		else {
+			// Write both physical and state level
+			Log() << "Write physical tree to " << filename << "... ";
+			writeTree(filename);
+			Log() << "done!\n";
+			std::string filenameStates = this->outDirectory + this->outName + "_states.tree";
+			Log() << "Write state tree to " << filenameStates << "... ";
+			writeTree(filenameStates, true);
+			Log() << "done!\n";
+		}
+	}
+
+
+	if (this->printClu) {
+		std::string filename = this->outDirectory + this->outName + ".clu";
+		if (!haveMemory()) {
+			Log() << "Write node modules to " << filename << "... ";
+			writeClu(filename);
+			Log() << "done!\n";
+		}
+		else {
+			// Write both physical and state level
+			Log() << "Write physical node modules to " << filename << "... ";
+			writeClu(filename);
+			Log() << "done!\n";
+			std::string filenameStates = this->outDirectory + this->outName + "_states.clu";
+			Log() << "Write state node modules to " << filenameStates << "... ";
+			writeClu(filenameStates, true);
+			Log() << "done!\n";
+		}
+	}
+
+	if (this->printMap) {
+		std::string filename = this->outDirectory + this->outName + ".map";
+		if (!haveMemory()) {
+			Log() << "Write modular network to " << filename << "... ";
+			writeMap(filename);
+			Log() << "done!\n";
+		}
+		else {
+			// Write both physical and state level
+			Log() << "Write physical modular network to " << filename << "... ";
+			writeMap(filename);
+			Log() << "done!\n";
+			std::string filenameStates = this->outDirectory + this->outName + "_states.map";
+			Log() << "Write state modular network to " << filenameStates << "... ";
+			writeMap(filenameStates, true);
+			Log() << "done!\n";
+		}
+	}
+	
+}
+
 std::string InfomapBase::writeTree(std::string filename, bool states)
 {
 	std::string outputFilename = filename.empty() ? this->outDirectory + this->outName +
@@ -1734,9 +1739,8 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 	}
 
 	// Sort modules on flow descending order
-	std::sort(modules.begin(), modules.end(), [=](InfoNode* a, InfoNode* b)
-	{
-			return a->data.flow >= b->data.flow;
+	std::sort(modules.begin(), modules.end(), [=](InfoNode* a, InfoNode* b) {
+			return a->data.flow > b->data.flow;
 	});
 
 	// Store id on modules to simplify link aggregation
@@ -1759,9 +1763,10 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 	};
 
 	// Collect nodes
+	unsigned int numNodes = 0;
 	std::vector<std::vector<MapNode> > nodes(modules.size());
 	for (unsigned int i = 0; i < modules.size(); ++i) {
-		if (haveModules() && !states) {
+		if (haveMemory() && !states) {
 			for (InfomapLeafIteratorPhysical it(modules[i]); !it.isEnd(); ++it) {
 				// Use physicalId as node id for (aggregated) physical nodes
 				nodes[i].push_back(MapNode(it->physicalId, it->data.flow, m_network.names()[it->physicalId]));
@@ -1772,6 +1777,11 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 				nodes[i].push_back(MapNode(node.stateId, node.data.flow, m_network.names()[node.stateId]));
 			}
 		}
+		// Sort nodes on flow descending order
+		std::sort(nodes[i].begin(), nodes[i].end(), [=](MapNode& a, MapNode& b) {
+				return a.flow > b.flow;
+		});
+		numNodes += nodes[i].size();
 	}
 
 	// Collect links
@@ -1789,17 +1799,19 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 	SafeOutFile outFile(outputFilename);
 	outFile << "# modules: " << modules.size() << "\n";
 	outFile << "# modulelinks: " << moduleLinks.size() << "\n";
-	outFile << "# nodes: " << nodes.size() << "\n";
+	outFile << "# nodes: " << numNodes << "\n";
 	outFile << "# links: " << 0 << "\n";
 	outFile << "# codelength: " << getCodelength() << "\n";
 	if (!this->isUndirectedClustering()) {
 		outFile << "*Directed\n";
 	}
 	outFile << "*Modules " << modules.size() << "\n";
-	for (auto& module : modules) {
-		outFile << module->index << " \"module " << module->index << "\" " << module->data.flow << "\n"; 
+	for (unsigned int i = 0; i < modules.size(); ++i) {
+		auto& module = *modules[i];
+		// Name the module from the biggest child
+		outFile << module.index << " \"" << nodes[i][0].name << ",...\" " << module.data.flow << "\n"; 
 	}
-	outFile << "*Nodes " << nodes.size() << "\n";
+	outFile << "*Nodes " << numNodes << "\n";
 	for (unsigned int i = 0; i < nodes.size(); ++i) {
 		auto& siblings = nodes[i];
 		for (unsigned int j = 0; j < siblings.size(); ++j) {

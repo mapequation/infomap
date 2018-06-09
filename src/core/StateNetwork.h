@@ -92,13 +92,13 @@ public:
 	{
 		unsigned int physId = 0;
 		double weight = 1.0;
-		std::string name = "";
+		// std::string name = "";
 		PhysNode() {}
 		PhysNode(unsigned int physId) : physId(physId) {}
 		PhysNode(unsigned int physId, double weight) : physId(physId), weight(weight) {}
 		PhysNode(double weight) : weight(weight) {}
-		PhysNode(unsigned int physId, std::string name) : physId(physId), name(name) {}
-		PhysNode(std::string name) : name(name) {}
+		// PhysNode(unsigned int physId, std::string name) : physId(physId), name(name) {}
+		// PhysNode(std::string name) : name(name) {}
 	};
 
 	struct LinkData
@@ -229,6 +229,7 @@ public:
 	std::map<unsigned int, double>& outWeights() { return m_outWeights; }
 	std::map<unsigned int, std::string>& names() { return m_names; }
 	const std::map<unsigned int, std::string>& names() const { return m_names; }
+	// std::string getName(unsigned int physId);
 
 	bool haveDirectedInput() const { return m_haveDirectedInput; }
 	bool haveMemoryInput() const { return m_haveMemoryInput; }

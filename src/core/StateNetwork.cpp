@@ -92,7 +92,8 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
 StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, const std::string& name)
 {
 	auto& physNode = addPhysicalNode(physId);
-	physNode.name = name;
+	// physNode.name = name;
+	m_names[physId] = name;
 	return physNode;
 }
 
@@ -100,7 +101,8 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
 {
 	auto& physNode = addPhysicalNode(physId);
 	physNode.weight = weight;
-	physNode.name = name;
+	// physNode.name = name;
+	m_names[physId] = name;
 	return physNode;
 }
 
