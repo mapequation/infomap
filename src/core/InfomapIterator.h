@@ -7,10 +7,12 @@
 #define INFOMAP_ITERATOR_H_
 
 #include <deque>
+#include <map>
+#include "InfoNode.h"
 
 namespace infomap {
 
-class InfoNode;
+// class InfoNode;
 
 /**
  * Pre processing depth first iterator that explores sub-Infomap instances
@@ -69,6 +71,16 @@ public:
 		return m_current;
 	}
 
+	InfoNode& operator*()
+	{
+		return *m_current;
+	}
+
+	const InfoNode& operator*() const
+	{
+		return *m_current;
+	}
+
 	InfoNode* operator->()
 	{
 		return m_current;
@@ -117,6 +129,30 @@ public:
 	}
 };
 
+class InfomapModuleIterator : public InfomapIterator
+{
+public:
+	InfomapModuleIterator() {}
+
+	InfomapModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
+	:	InfomapIterator(nodePointer, moduleIndexLevel)
+	{}
+
+	InfomapModuleIterator(const InfomapModuleIterator& other)
+	:	InfomapIterator(other)
+	{}
+
+	virtual InfomapIterator& operator++();
+
+	virtual InfomapIterator operator++(int)
+	{
+		InfomapModuleIterator copy(*this);
+		++(*this);
+		return copy;
+	}
+
+};
+
 class InfomapLeafModuleIterator : public InfomapIterator
 {
 public:
@@ -160,7 +196,7 @@ public:
 	{ init(); }
 
 	/**
-	 * Iterate to first leaf module
+	 * Iterate to first leaf node
 	 */
 	void init();
 
@@ -169,6 +205,58 @@ public:
 	virtual InfomapIterator operator++(int)
 	{
 		InfomapLeafIterator copy(*this);
+		++(*this);
+		return copy;
+	}
+
+};
+
+/**
+ * Iterate over the whole tree, collecting physical nodes within same leaf modules
+ * Note: The physical nodes are created when entering the parent module and removed
+ * when leaving the module. The tree will not be modified.
+ */
+class InfomapIteratorPhysical : public InfomapIterator
+{
+protected:
+	std::map<unsigned int, InfoNode> m_physNodes;
+	std::map<unsigned int, InfoNode>::iterator m_physIter;
+	InfomapIterator m_oldIter;
+
+public:
+	InfomapIteratorPhysical() {}
+
+	InfomapIteratorPhysical(InfoNode* nodePointer, int moduleIndexLevel = -1)
+	:	InfomapIterator(nodePointer, moduleIndexLevel)
+	{}
+
+	InfomapIteratorPhysical(const InfomapIteratorPhysical& other)
+	:	InfomapIterator(other),
+		m_physNodes(other.m_physNodes),
+		m_physIter(other.m_physIter),
+		m_oldIter(other.m_oldIter)
+	{}
+	
+	InfomapIteratorPhysical& operator= (const InfomapIteratorPhysical& other)
+	{
+		InfomapIterator::operator=(other);
+		m_physNodes = other.m_physNodes;
+		m_physIter = other.m_physIter;
+		m_oldIter = other.m_oldIter;
+		return *this;
+	}
+	
+	InfomapIteratorPhysical& operator= (const InfomapIterator& other)
+	{
+		InfomapIterator::operator=(other);
+		return *this;
+	}
+
+	virtual InfomapIterator& operator++();
+
+	virtual InfomapIterator operator++(int)
+	{
+		InfomapIteratorPhysical copy(*this);
 		++(*this);
 		return copy;
 	}

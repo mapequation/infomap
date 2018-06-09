@@ -1,22 +1,9 @@
 #include "InfomapIterator.h"
 #include "InfoNode.h"
+#include <utility> // std::pair
+#include "../utils/Log.h"
 
 namespace infomap {
-
-	// InfoNode* InfomapIterator::current()
-	// {
-	// 	return m_current;
-	// }
-
-	// InfoNode* InfomapIterator::operator->()
-	// {
-	// 	return m_current;
-	// }
-
-	// InfoNode& InfomapIterator::operator*()
-	// {
-	// 	return *m_current;
-	// }
 
 	InfomapIterator& InfomapIterator::operator++()
 	{
@@ -85,6 +72,20 @@ namespace infomap {
 	}
 
 	// -------------------------------------
+	// InfomapModuleIterator
+	// -------------------------------------
+
+	InfomapIterator& InfomapModuleIterator::operator++()
+	{
+		InfomapIterator::operator++();
+		if (m_current->isLeaf())
+		while (!isEnd() && m_current->isLeaf()) {
+			InfomapIterator::operator++();
+		}
+		return *this;
+	}
+
+	// -------------------------------------
 	// InfomapLeafModuleIterator
 	// -------------------------------------
 
@@ -120,6 +121,80 @@ namespace infomap {
 		InfomapIterator::operator++();
 		while (!isEnd() && !m_current->isLeaf()) {
 			InfomapIterator::operator++();
+		}
+		return *this;
+	}
+
+	// -------------------------------------
+	// InfomapIteratorPhysical
+	// -------------------------------------
+
+	InfomapIterator& InfomapIteratorPhysical::operator++()
+	{
+		if (m_physNodes.empty()) {
+			// Iterate modules
+			Log(1) << "\n++modules" << std::flush;
+			InfomapIterator::operator++();
+			if (m_current->isLeaf()) {
+				// Copy current iterator to restart after iterating through the leaf nodes
+				auto firstLeafIt = *this;
+				Log(1) << " -> first leaf node among " << m_current->parent->childDegree() << std::flush;
+				// If on a leaf node, loop through and aggregate to physical nodes
+				while (!isEnd() && m_current->isLeaf()) {
+					Log(1) << "\n  ++isLeaf -> stateId: " << m_current->stateId << ", physId: " << m_current->physicalId << std::flush;
+					auto ret = m_physNodes.insert(std::make_pair(m_current->physicalId, InfoNode(*m_current)));
+					auto& physNode = ret.first->second;
+					if (ret.second) {
+						// New physical node, use same parent as the state leaf node
+						physNode.parent = m_current->parent;
+						Log(1) << " -> save new phys node: " << m_current->data << std::flush;
+					}
+					else {
+						// Not inserted, add flow to existing physical node
+						//TODO: If exitFlow should be correct, flow between memory nodes within same physical node should be subtracted.
+						Log(1) << " -> += " << m_current->data << std::flush;
+						physNode.data += m_current->data;
+					}
+					InfomapIterator::operator++();
+				}
+				// Store current iterator to continue with after iterating physical leaf nodes
+				m_oldIter = *this;
+				// Reset path/depth/moduleIndex to values for first leaf node
+				// *this = firstLeafIt;
+				m_path = firstLeafIt.m_path;
+				m_depth = firstLeafIt.m_depth;
+				m_moduleIndex = firstLeafIt.m_moduleIndex;
+				Log(1) << "\n => Aggregated " << m_physNodes.size() << " physical nodes" << std::flush;
+				Log(1) << ", oldIter path size: " << m_oldIter.path().size();
+				if (m_oldIter.path().size() > 0) Log(1) << " (" << m_oldIter.path().back() << ")";
+				// Set current node to the first physical node
+				m_physIter = m_physNodes.begin();
+				m_current = &m_physIter->second;
+				Log(1) << " -> set currrent node to first physical node " << m_current->physicalId << ": " << m_current->data << std::flush;
+			}
+		}
+		else {
+			// Iterate physical nodes instead of leaf state nodes
+			++m_physIter;
+			++m_path.back();
+			Log(1) << "\n++physIter" << std::flush;
+			if (m_physIter == m_physNodes.end()) {
+				// End of leaf nodes
+				Log(1) << " -> end -> clearing " << m_physNodes.size() << " phys nodes" << std::flush;
+				m_physNodes.clear();
+				m_path.pop_back();
+				// reset iterator to the one after the leaf nodes
+				*this = m_oldIter;
+				Log(1) << ", reset to old iter at depth " << depth() << " path.size: " << m_path.size() << " ";
+				if (m_path.size() > 0) Log(1) << " (" << m_path.back() << ") ";
+				if (!isEnd()) { Log(1) << ", data: " << m_current->data << std::flush; }
+			}
+			else {
+				Log(1) << " -> stateId: " << m_current->stateId << ", physId: " << m_current->physicalId
+				<< ", data: " << m_current->data << std::flush;
+				// Set iterator node to the currently iterated physical node
+				m_current = &m_physIter->second;
+			}
 		}
 		return *this;
 	}

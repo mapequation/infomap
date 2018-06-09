@@ -248,10 +248,23 @@ void InfomapBase::run(Network& network)
 	if (!isMainInfomap())
 		throw InternalOrderError("Can't run a non-main Infomap with an input network");
 	
-	// if (m_network.haveMemoryInput())
-	// 	Log() << "  -> Have memory nodes, use 2nd order Markov dynamics\n";
-	// else
-	// 	Log() << "  -> Have no memory nodes, use 1st order Markov dynamics\n";
+	if (m_network.haveMemoryInput()) {
+		Log() << "  -> Found higher order network input, using the Map Equation for higher order network flows\n";
+		if (!this->isMemoryNetwork()) {
+			this->memoryInput = true;
+		}
+	}
+	else {
+		if (this->isMemoryNetwork()) {
+			Log() << "  -> Warning: Higher order network specified but no higher order input found.\n";
+		}
+		Log() << "  -> Ordinary network input, using the Map Equation for first order network flows\n";
+	}
+	
+	if (m_network.haveDirectedInput() && !this->isUndirectedFlow()) {
+		Log() << "  -> Warning: Undirected flow model specified but directed input found. Changing flow model to 'directed'\n";
+		this->flowModel = FlowModel::directed;
+	}
 	
 	network.calculateFlow();
 	
@@ -768,50 +781,52 @@ void InfomapBase::writeResult()
 	if (this->noFileOutput)
 		return;
 	
+	// Log() << "\nPhysical tree:\n";
+	// for (InfomapIteratorPhysical it(&root()); !it.isEnd(); ++it) {
+	// 	Log() << io::stringify(it.path(), ":") << " moduleIndex: " << it.moduleIndex() << ", stateId: " << it->stateId <<
+	// 	", physId: " << it->physicalId << ", data: " << it->data << "\n";
+	// }
+	// Log() << std::string(10, '-') << "\n";
+	
+	
 	if (this->printTree || true) {
-		std::string outputFilename = this->outDirectory + this->outName +
-			(haveMemory() ? "_expanded.tree" : ".tree");
-		Log() << "Write tree to " << outputFilename << "... ";
+		std::string filename = this->outDirectory + this->outName + ".tree";
 
-		SafeOutFile outFile(outputFilename);
-		outFile << "# Codelength = " << getCodelength() << " bits.\n";
-		for (auto it = root().begin_treePath(); !it.isEnd(); ++it) {
-			InfoNode &node = *it;
-			if (node.isLeaf()) {
-				auto &path = it.path();
-				outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.stateId << "\" ";
-				if (haveMemory())
-					outFile << node.stateId << " " << node.physicalId << "\n";
-				else
-					outFile << node.physicalId << "\n";
-			}
-		}
-		Log() << "done!\n";
-	}
-
-	if (this->printClu) {
-		// unsigned int maxModuleLevel = maxTreeDepth();
-		std::string outputFilename = this->outDirectory + this->outName +
-		(haveMemory() ? "_expanded.clu" : ".clu");
-		Log() << "Write bottom modules to " << outputFilename << "... ";
-		SafeOutFile outFile(outputFilename);
-		outFile << "# Codelength = " << getCodelength() << " bits.\n";
-		if (haveMemory()) {
-			outFile << "# stateId module flow physicalId\n";
+		if (!haveMemory()) {
+			Log() << "Write tree to " << filename << "... ";
+			writeTree(filename);
+			Log() << "done!\n";
 		}
 		else {
-			outFile << "# node module flow\n";
+			// Print both state tree and physical tree
+			Log() << "Write physical tree to " << filename << "... ";
+			writeTree(filename);
+			Log() << "done!\n";
+			std::string filenameStates = this->outDirectory + this->outName + "_states.tree";
+			Log() << "Write state tree to " << filenameStates << "... ";
+			writeTree(filenameStates, true);
+			Log() << "done!\n";
 		}
-		for (auto it = root().begin_tree(-1); !it.isEnd(); ++it) {
-			InfoNode &node = *it;
-			if (node.isLeaf()) {
-				if (haveMemory())
-					outFile << node.stateId << " " << it.moduleIndex() << " " << node.data.flow << " " << node.physicalId << "\n";
-				else
-					outFile << node.stateId << " " << it.moduleIndex() << " " << node.data.flow << "\n";
-			}
+	}
+
+
+	if (this->printClu) {
+		std::string filename = this->outDirectory + this->outName + ".clu";
+		if (!haveMemory()) {
+			Log() << "Write node modules to " << filename << "... ";
+			writeClu(filename);
+			Log() << "done!\n";
 		}
-		Log() << "done!\n";
+		else {
+			// Print both state tree and physical tree
+			Log() << "Write physical node modules to " << filename << "... ";
+			writeClu(filename);
+			Log() << "done!\n";
+			std::string filenameStates = this->outDirectory + this->outName + "_states.clu";
+			Log() << "Write state node modules to " << filenameStates << "... ";
+			writeClu(filenameStates, true);
+			Log() << "done!\n";
+		}
 	}
 	
 }
@@ -1611,6 +1626,77 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 	return nextLevelSize > 0;
 }
 
+
+std::string InfomapBase::writeTree(std::string filename, bool states)
+{
+	std::string outputFilename = filename.empty() ? this->outDirectory + this->outName +
+		(haveMemory() && states ? "_states.tree" : ".tree") : filename;
+
+	SafeOutFile outFile(outputFilename);
+	outFile << "# Codelength = " << getCodelength() << " bits.\n";
+	if (states)
+		outFile << "# path flow name stateId physicalId\n";
+	else
+		outFile << "# path flow name physicalId\n";
+	// TODO: Make a general iterator where merging physical nodes depend on a parameter rather than type to be able to DRY here
+	if (haveMemory() && !states) {
+		for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
+			InfoNode &node = *it;
+			if (node.isLeaf()) {
+				auto &path = it.path();
+				outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.stateId << "\" " << node.physicalId << "\n";
+			}
+		}
+	} else {
+		for (auto it(iterTree()); !it.isEnd(); ++it) {
+			InfoNode &node = *it;
+			if (node.isLeaf()) {
+				auto &path = it.path();
+				outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.stateId << "\" ";
+				if (states)
+					outFile << node.stateId << " " << node.physicalId << "\n";
+				else
+					outFile << node.physicalId << "\n";
+			}
+		}
+	}
+	return outputFilename;
+}
+
+std::string InfomapBase::writeClu(std::string filename, bool states, int moduleIndexLevel)
+{
+	// unsigned int maxModuleLevel = maxTreeDepth();
+	std::string outputFilename = filename.empty() ? this->outDirectory + this->outName +
+	(haveMemory() && states ? "_states.clu" : ".clu") : filename;
+	SafeOutFile outFile(outputFilename);
+	outFile << "# Codelength = " << getCodelength() << " bits.\n";
+	if (states) {
+		outFile << "# stateId module flow physicalId\n";
+	}
+	else {
+		outFile << "# node module flow\n";
+	}
+	// auto it = haveMemory() && !states ? iterTreePhysical(moduleIndexLevel) : iterTree(moduleIndexLevel); 
+	if (haveMemory() && !states) {
+		for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
+			InfoNode &node = *it;
+			if (node.isLeaf()) {
+				outFile << node.physicalId << " " << it.moduleIndex() << " " << node.data.flow << "\n";
+			}
+		}
+	} else {
+		for (auto it(iterTree()); !it.isEnd(); ++it) {
+			InfoNode &node = *it;
+			if (node.isLeaf()) {
+				if (states)
+					outFile << node.stateId << " " << it.moduleIndex() << " " << node.data.flow << " " << node.physicalId << "\n";
+				else
+					outFile << node.physicalId << " " << it.moduleIndex() << " " << node.data.flow << "\n";
+			}
+		}
+	}
+	return outputFilename;
+}
 
 
 unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)

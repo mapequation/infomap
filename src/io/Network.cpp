@@ -152,7 +152,7 @@ void Network::parseLinkList(std::string filename)
 
 void Network::parsePathData(std::string filename)
 {
-	setDirectedInput();
+	m_haveDirectedInput = true;
 	Log() << "Parsing " << (m_config.directed ? "directed" : "undirected") << " paths from file '" <<
 			filename << "'... " << std::endl;
 
@@ -366,7 +366,7 @@ std::string Network::parseLinks(std::ifstream& file)
 std::string Network::parsePaths(std::ifstream& file)
 {
 	Log() << "   Parsing paths...\n" << std::flush;
-	setDirectedInput();
+	m_haveDirectedInput = true;
 	std::string line;
 	while(!std::getline(file, line).fail())
 	{

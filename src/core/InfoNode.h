@@ -65,9 +65,9 @@ public:
 	FlowData data;
 	unsigned int index = 0; // Temporary index used in finding best module
 //	unsigned int originalIndex = 0; // Index in the original network (for leaf nodes)
-	const unsigned int stateId = 0; // Unique state node id for the leaf nodes
-	const unsigned int physicalId = 0; // Physical id equals stateId for first order networks, otherwise can be non-unique
-	const unsigned int layerId = 0; // Layer id for multilayer networks
+	/*const*/ unsigned int stateId = 0; // Unique state node id for the leaf nodes
+	/*const*/ unsigned int physicalId = 0; // Physical id equals stateId for first order networks, otherwise can be non-unique
+	/*const*/ unsigned int layerId = 0; // Layer id for multilayer networks
 
 	InfoNode* owner = nullptr; // Infomap owner (if this is an Infomap root)
 	InfoNode* parent = nullptr;
@@ -127,7 +127,6 @@ public:
 		collapsedLastChild(other.collapsedLastChild),
 		codelength(other.codelength),
 		dirty(other.dirty),
-//		m_subStructure(other.m_subStructure),
 		m_childDegree(other.m_childDegree),
 		m_childrenChanged(other.m_childrenChanged),
 		m_numLeafMembers(other.m_numLeafMembers)
@@ -136,7 +135,28 @@ public:
 
 	~InfoNode();
 
-	//TODO: Copy ctor
+	
+	InfoNode& operator=(const InfoNode& other)
+	{
+		data = other.data;
+		index = other.index;
+		stateId = other.stateId;
+		physicalId = other.physicalId;
+		layerId = other.layerId;
+		parent = other.parent;
+		previous = other.previous;
+		next = other.next;
+		firstChild = other.firstChild;
+		lastChild = other.lastChild;
+		collapsedFirstChild = other.collapsedFirstChild;
+		collapsedLastChild = other.collapsedLastChild;
+		codelength = other.codelength;
+		dirty = other.dirty;
+		m_childDegree = other.m_childDegree;
+		m_childrenChanged = other.m_childrenChanged;
+		m_numLeafMembers = other.m_numLeafMembers;
+		return *this;
+	}
 
 	// ---------------------------- Getters ----------------------------
 

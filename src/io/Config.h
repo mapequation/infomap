@@ -77,7 +77,7 @@ struct Config
 	std::string networkFile = "";
 	std::vector<std::string> additionalInput;
 	std::string inputFormat = ""; // 'pajek', 'link-list', '3gram', 'path' or 'multilayer'
-	bool flowModelChangedByData = false;
+	bool memoryInput = false;
 	bool withMemory = false;
 	bool weightedPaths = false;
 	unsigned int pathMarkovOrder = 1;
@@ -184,7 +184,7 @@ struct Config
 		networkFile(other.networkFile),
 	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
-	 	flowModelChangedByData(other.flowModelChangedByData),
+	 	memoryInput(other.memoryInput),
 	 	withMemory(other.withMemory),
 		weightedPaths(other.weightedPaths),
 		pathMarkovOrder(other.pathMarkovOrder),
@@ -273,7 +273,7 @@ struct Config
 		networkFile = other.networkFile;
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
-	 	flowModelChangedByData = other.flowModelChangedByData;
+	 	memoryInput = other.memoryInput;
 	 	withMemory = other.withMemory;
 		weightedPaths = other.weightedPaths;
 		pathMarkovOrder = other.pathMarkovOrder;
@@ -361,7 +361,7 @@ struct Config
 		networkFile = other.networkFile;
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
-	 	flowModelChangedByData = other.flowModelChangedByData;
+	 	memoryInput = other.memoryInput;
 	 	withMemory = other.withMemory;
 		weightedPaths = other.weightedPaths;
 		pathMarkovOrder = other.pathMarkovOrder;
@@ -551,10 +551,13 @@ struct Config
 	bool setDirectedInput() {
 		if (flowModel == FlowModel::undirected || flowModel == FlowModel::undirdir) {
 			flowModel = FlowModel::directed;
-			flowModelChangedByData = true;
 			return true;
 		}
 		return false;
+	}
+
+	void setMemoryInput() {
+		memoryInput = true;
 	}
 
 	// bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
@@ -573,11 +576,9 @@ struct Config
 	bool isStateNetwork() const { return inputFormat == "states"; }
 	bool isBipartite() const { return inputFormat == "bipartite" || bipartite; }
 
-	bool isMemoryInput() const { return isStateNetwork() || is3gram() || isPath() || isMultilayerNetwork() || flowModelChangedByData; }
+	bool isMemoryNetwork() const { return isStateNetwork() || is3gram() || isPath() || isMultilayerNetwork() || withMemory || nonBacktracking || memoryInput; }
 
-	bool isMemoryNetwork() const { return withMemory || nonBacktracking || isMemoryInput(); }
-	
-	bool isSimulatedMemoryNetwork() const { return (withMemory || nonBacktracking) && !isMemoryInput(); }
+	// bool isSimulatedMemoryNetwork() const { return (withMemory || nonBacktracking) && !isMemoryInput(); }
 
 	bool haveOutput() const
 	{

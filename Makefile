@@ -120,7 +120,7 @@ SWIG_FILES := $(shell find interfaces/swig -name "*.i")
 ##################################################
 
 PY_BUILD_DIR = build/py
-PY2_BUILD_DIR = build/py
+PY2_BUILD_DIR = build/py2
 PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
 PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
 PY2_HEADERS := $(HEADERS:src/%.h=$(PY2_BUILD_DIR)/src/%.h)
