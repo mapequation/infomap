@@ -251,7 +251,21 @@ void InfomapBase::run(Network& network)
 	if (this->printStateNetwork) {
 		std::string filename = this->outDirectory + this->outName + "_states.net";
 		Log() << "Writing state network to '" << filename << "'... ";
-		m_network.writeNetwork(filename);
+		m_network.writeStateNetwork(filename);
+		Log() << "done!\n";
+	}
+	
+	if (this->printPajekNetwork) {
+		std::string filename;
+		if (m_network.haveMemoryInput()) {
+			filename = this->outDirectory + this->outName + "_states_as_physical.net";
+			Log() << "Writing state network as first order Pajek network to '" << filename << "'... ";
+		} else {
+			// Non-memory input
+			filename = this->outDirectory + this->outName + ".net";
+			Log() << "Writing Pajek network to '" << filename << "'... ";
+		}
+		m_network.writePajekNetwork(filename);
 		Log() << "done!\n";
 	}
 	

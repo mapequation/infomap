@@ -253,30 +253,24 @@ void StateNetwork::dispose()
 	m_nodes.clear();
 }
 
-void StateNetwork::writeNetwork(std::string filename) const
+void StateNetwork::writeStateNetwork(std::string filename) const
 {
 	if (filename.empty())
-		throw BadArgumentError("writeNetwork called with empty filename");
+		throw BadArgumentError("writeStateNetwork called with empty filename");
 
 	SafeOutFile outFile(filename);
 
-	if (!m_physNodes.empty()) {
+	if (!m_names.empty()) {
 		outFile << "*Vertices\n";
-		for (auto& physIt : m_physNodes) {
-			auto& physId = physIt.first;
-			outFile << physId << " \"";
-			// Name, default to physId
-			const auto& nameIt = m_names.find(physId);
-			if (nameIt != m_names.end())
-				outFile << nameIt->second;
-			else
-				outFile << physId;
-			outFile << "\"\n";
+		for (auto& nameIt : m_names) {
+			auto& physId = nameIt.first;
+			auto& name = nameIt.second;
+			outFile << physId << " \"" << name << "\"\n";
 		}
 	}
 
 	outFile << "*States\n";
-	outFile << "# stateId physicalId name\n";
+	outFile << "# stateId physicalId\n";
 	for (const auto& nodeIt : nodes()) {
 		const auto& node = nodeIt.second;
 		outFile << node.id << " " << node.physicalId;
@@ -284,6 +278,35 @@ void StateNetwork::writeNetwork(std::string filename) const
 		if (!node.name.empty())
 			outFile << " \"" << node.name << "\"";
 		outFile << "\n";
+	}
+
+	outFile << "*Links\n";
+	for (auto& linkIt : m_nodeLinkMap) {
+		for (auto& subIt : linkIt.second)
+		{
+			outFile << linkIt.first.id << " " << subIt.first.id << " " << subIt.second.weight << "\n";
+		}
+	}
+}
+
+void StateNetwork::writePajekNetwork(std::string filename) const
+{
+	if (filename.empty())
+		throw BadArgumentError("writePajekNetwork called with empty filename");
+
+	SafeOutFile outFile(filename);
+
+	outFile << "*Vertices\n";
+	for (const auto& nodeIt : nodes()) {
+		const auto& node = nodeIt.second;
+		outFile << node.id << " \"";
+		// Name, default to id
+		const auto& nameIt = m_names.find(node.id);
+		if (nameIt != m_names.end())
+			outFile << nameIt->second;
+		else
+			outFile << node.id;
+		outFile << "\"\n";
 	}
 
 	outFile << "*Links\n";

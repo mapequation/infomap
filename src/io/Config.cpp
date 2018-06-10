@@ -122,8 +122,8 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.printFlowNetwork, "flow-network",
 			"Print the network with calculated flow values.", true);
 
-	api.addOptionArgument(conf.printPajekNetwork, "pajek",
-			"Print the parsed network in Pajek format.", true);
+	api.addOptionArgument(conf.printPajekNetwork, "print-pajek-network",
+			"Print the parsed state network as first order Pajek network.", true);
 
 	api.addOptionArgument(conf.printStateNetwork, "print-state-network",
 			"Print the internal state network.", true);
