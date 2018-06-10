@@ -505,6 +505,15 @@ void Network::parseStateNode(const std::string& line, StateNetwork::StateNode& s
 	m_extractor.str(line);
 	if (!(m_extractor >> stateNode.id >> stateNode.physicalId))
 		throw FileFormatError(io::Str() << "Can't parse any state node from line '" << line << "'");
+	
+	// Optional name enclosed in double quotes
+	unsigned int nameStart = line.find_first_of("\"", m_extractor.tellg());
+	unsigned int nameEnd = line.find_last_of("\"");
+	if(nameStart < nameEnd) {
+		stateNode.name = std::string(line.begin() + nameStart + 1, line.begin() + nameEnd);
+		m_extractor.seekg(nameEnd + 1);
+	}
+	// Optional weight, default to 1.0
 	(m_extractor >> stateNode.weight) || (stateNode.weight = 1.0);
 }
 

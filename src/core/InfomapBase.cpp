@@ -248,6 +248,13 @@ void InfomapBase::run(Network& network)
 	if (!isMainInfomap())
 		throw InternalOrderError("Can't run a non-main Infomap with an input network");
 	
+	if (this->printStateNetwork) {
+		std::string filename = this->outDirectory + this->outName + "_states.net";
+		Log() << "Writing state network to '" << filename << "'... ";
+		m_network.writeNetwork(filename);
+		Log() << "done!\n";
+	}
+	
 	if (m_network.haveMemoryInput()) {
 		Log() << "  -> Found higher order network input, using the Map Equation for higher order network flows\n";
 		if (!this->isMemoryNetwork()) {
