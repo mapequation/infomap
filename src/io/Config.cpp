@@ -9,6 +9,12 @@
 
 namespace infomap {
 
+const std::string FlowModel::undirected = "undirected";
+const std::string FlowModel::directed = "directed";
+const std::string FlowModel::undirdir = "undirdir";
+const std::string FlowModel::outdirdir = "outdirdir";
+const std::string FlowModel::rawdir = "rawdir";
+
 Config Config::fromString(std::string flags, bool requireFileInput)
 {
     Config conf;

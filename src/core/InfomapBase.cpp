@@ -262,7 +262,7 @@ void InfomapBase::run(Network& network)
 	}
 	
 	if (m_network.haveDirectedInput() && this->isUndirectedFlow()) {
-		Log() << "  -> Warning: Undirected flow model specified but directed input found. Changing flow model to 'directed'\n";
+		Log() << "  -> Notice: Directed input found, changing flow model from '" << this->flowModel << "' to '" << FlowModel::directed << "'\n";
 		this->flowModel = FlowModel::directed;
 	}
 	network.setConfig(*this);
@@ -1703,14 +1703,14 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 	}
 	// auto it = haveMemory() && !states ? iterTreePhysical(moduleIndexLevel) : iterTree(moduleIndexLevel); 
 	if (haveMemory() && !states) {
-		for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
+		for (auto it(iterTreePhysical(moduleIndexLevel)); !it.isEnd(); ++it) {
 			InfoNode &node = *it;
 			if (node.isLeaf()) {
 				outFile << node.physicalId << " " << it.moduleIndex() << " " << node.data.flow << "\n";
 			}
 		}
 	} else {
-		for (auto it(iterTree()); !it.isEnd(); ++it) {
+		for (auto it(iterTree(moduleIndexLevel)); !it.isEnd(); ++it) {
 			InfoNode &node = *it;
 			if (node.isLeaf()) {
 				if (states)

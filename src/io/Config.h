@@ -49,26 +49,26 @@ namespace infomap {
 // 	rawdir
 // };
 
-// struct FlowModel {
-// 	static const std::string undirected;
-// 	static const std::string directed;
-// 	static const std::string undirdir;
-// 	static const std::string outdirdir;
-// 	static const std::string rawdir;
-// };
+struct FlowModel {
+	static const std::string undirected;
+	static const std::string directed;
+	static const std::string undirdir;
+	static const std::string outdirdir;
+	static const std::string rawdir;
+};
 // const std::string FlowModel::undirected = "undirected";
 // const std::string FlowModel::directed = "directed";
 // const std::string FlowModel::undirdir = "undirdir";
 // const std::string FlowModel::outdirdir = "outdirdir";
 // const std::string FlowModel::rawdir = "rawdir";
 
-struct FlowModel {
-	static constexpr const char* undirected = "undirected";
-	static constexpr const char* directed = "directed";
-	static constexpr const char* undirdir = "undirdir";
-	static constexpr const char* outdirdir = "outdirdir";
-	static constexpr const char* rawdir = "rawdir";
-};
+// struct FlowModel {
+// 	static constexpr const char* undirected = "undirected";
+// 	static constexpr const char* directed = "directed";
+// 	static constexpr const char* undirdir = "undirdir";
+// 	static constexpr const char* outdirdir = "outdirdir";
+// 	static constexpr const char* rawdir = "rawdir";
+// };
 
 
 struct Config

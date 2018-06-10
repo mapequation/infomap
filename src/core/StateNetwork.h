@@ -211,7 +211,7 @@ public:
 	PhysNode& addPhysicalNode(unsigned int physId, double weight, const std::string& name);
 	std::pair<std::map<unsigned int, std::string>::iterator, bool> addName(unsigned int id, std::string);
 	bool addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0);
-	bool addStateNodesAndLinksFromPath(const std::vector<unsigned int>& nodes, unsigned int markovOrder, double weight = 1.0);
+	bool addPath(const std::vector<unsigned int>& nodes, unsigned int markovOrder, double weight = 1.0);
 	
 	void calculateFlow();
 

@@ -208,7 +208,7 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
 	// return true;
 }
 
-bool StateNetwork::addStateNodesAndLinksFromPath(const std::vector<unsigned int>& path, unsigned int markovOrder, double weight)
+bool StateNetwork::addPath(const std::vector<unsigned int>& path, unsigned int markovOrder, double weight)
 {
 	if (markovOrder == 0) {
 		throw DataDomainError("Trying to add state nodoes from path with markov order 0, must be 1 or more.");

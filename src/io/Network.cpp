@@ -365,7 +365,7 @@ std::string Network::parseLinks(std::ifstream& file)
 
 std::string Network::parsePaths(std::ifstream& file)
 {
-	Log() << "   Parsing paths...\n" << std::flush;
+	Log() << "   Parsing paths using markov order " << m_config.pathMarkovOrder << "...\n" << std::flush;
 	m_haveDirectedInput = true;
 	std::string line;
 	while(!std::getline(file, line).fail())
@@ -379,7 +379,7 @@ std::string Network::parsePaths(std::ifstream& file)
 		std::vector<unsigned int> nodes;
 		double weight = parsePath(line, nodes, m_config.weightedPaths);
 
-		addStateNodesAndLinksFromPath(nodes, m_config.pathMarkovOrder, weight);
+		addPath(nodes, m_config.pathMarkovOrder, weight);
 	}
 	Log() << "   -> " << m_numLinks << " links\n";
 	return line;
