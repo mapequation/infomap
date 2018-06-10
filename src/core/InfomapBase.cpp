@@ -1784,13 +1784,15 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 		numNodes += nodes[i].size();
 	}
 
-	// Collect links
+	// Collect links and module exit flow
 	std::map<std::pair<unsigned int, unsigned int>, double> moduleLinks;
+	std::map<unsigned int, double> moduleExitFlow;
 	for (auto& module : modules) {
 		for (auto& node : *module) {
 			for (auto& link : node.outEdges()) {
-				if (link->source != link->target) {
-					moduleLinks[std::make_pair(link->source.index + 1, link->target.index + 1)] += link->data.weight;
+				if (link->source.parent != link->target.parent) {
+					moduleLinks[std::make_pair(link->source.parent->index + 1, link->target.parent->index + 1)] += link->data.flow;
+					moduleExitFlow[module->index + 1] += link->data.flow;
 				}
 			}
 		}
@@ -1808,8 +1810,8 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 	outFile << "*Modules " << modules.size() << "\n";
 	for (unsigned int i = 0; i < modules.size(); ++i) {
 		auto& module = *modules[i];
-		// Name the module from the biggest child
-		outFile << module.index << " \"" << nodes[i][0].name << ",...\" " << module.data.flow << "\n"; 
+		//# id name flow exitFlow (Name the module from the biggest child)
+		outFile << module.index << " \"" << nodes[i][0].name << ",...\" " << module.data.flow << " " << moduleExitFlow[module.index] << "\n"; 
 	}
 	outFile << "*Nodes " << numNodes << "\n";
 	for (unsigned int i = 0; i < nodes.size(); ++i) {
