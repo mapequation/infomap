@@ -129,6 +129,7 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
 	addNode(sourceId);
 	addNode(targetId);
 
+
 	++m_numLinks;
 	m_sumLinkWeight += weight;
 
@@ -145,9 +146,17 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
 		// auto& ret = outLinks.emplace(targetNode, weight);
 		// if (!ret.second)
 			// auto& linkData = ret.first;
-		auto& linkData = outLinks[targetId];
-		++linkData.count;
-		if (linkData.count != 1) {
+		// Log() << " " << outLinks.size() << " outlinks exist: ";
+		// for (auto& it : outLinks) {
+		// 	Log() << "\n  " << it.first.id << ": weight: " << it.second.weight << ", count: " << it.second.count << ".. ";
+		// }
+		// auto& linkData = outLinks[targetId];
+		auto ret = outLinks.insert(std::make_pair(StateNode(targetId), LinkData(weight)));
+		// ++linkData.count;
+		// Log() << "\n ++count -> weight: " << linkData.weight << ", count: " << linkData.count << ".. ";
+		auto& linkData = ret.first->second;
+		// if (linkData.count != 1) {
+		if (!ret.second) {
 			// Log() << "  -> existing weight: " << linkData.weight;
 			linkData.weight += weight;
 			// Log() << " -> weight: " << linkData.weight << "\n";

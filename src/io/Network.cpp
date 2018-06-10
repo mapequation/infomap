@@ -602,6 +602,7 @@ void Network::printSummary()
 	Log() << "-------------------------------------\n";
 	Log() << "  -> " << numNodes() << " state nodes\n";
 	Log() << "  -> " << numPhysicalNodes() << " physical nodes\n";
+	Log() << "  -> " << numLinks() << " links\n";
 }
 
 void Network::addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight)

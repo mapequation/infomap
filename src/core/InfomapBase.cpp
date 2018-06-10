@@ -1762,7 +1762,6 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 			}
 		}
 	};
-
 	// Collect nodes
 	unsigned int numNodes = 0;
 	std::vector<std::vector<MapNode> > nodes(modules.size());

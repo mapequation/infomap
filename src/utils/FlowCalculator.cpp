@@ -75,8 +75,8 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 			m_nodeFlow[sourceIndex] += linkWeight / sumUndirLinkWeight;
 			m_flowLinks.push_back(Link(sourceIndex, targetIndex, linkWeight));
 
-            // Log() << linkSourceId << " (" << sourceIndex << ") -> " << linkTargetId << " (" << targetIndex << ")"
-			// 	<< ", weight: " << linkWeight << "\n";
+			// Log() << "\n" << linkSourceId << " (" << sourceIndex << ") -> " << linkTargetId << " (" << targetIndex << ")"
+			// 	<< ", weight: " << linkWeight << ". ";
 
 			if (sourceIndex != targetIndex) {
 				if (config.isUndirectedFlow()) {
@@ -148,7 +148,15 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 	Log() << "\n  -> Using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
 			(config.teleportToNodes ? "nodes" : "links") << ". " << std::flush;
 
+	// Log() << "\nnode flow: ";
+	// double sum1 = 0.0;
+	// for (auto& f : m_nodeFlow) {
+	// 	Log() << f << ", ";
+	// 	sum1 += f;
+	// }
+	// Log() << "\n => sum node flow: " << sum1;
 
+	// Log() << "\nTeleport rates: ";
 	// Calculate the teleport rate distribution
 	if (config.teleportToNodes)
 	{
@@ -162,23 +170,36 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 			weight /= sumNodeWeights;
 		}
 	}
-	else // Teleport to nodes
+	else // Teleport to links
 	{
 		// Teleport proportionally to out-degree, or in-degree if recorded teleportation.
 		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 		{
 			unsigned int toNode = config.recordedTeleportation ? linkIt->target : linkIt->source;
 			m_nodeTeleportRates[toNode] += linkIt->flow / sumLinkWeight;
+			// Log() << "\nrate[" << toNode << "] += " << linkIt->flow << " / " << sumLinkWeight << " = " << linkIt->flow / sumLinkWeight << " => " << m_nodeTeleportRates[toNode];
 		}
 	}
 
+	// double sumTeleportRates = 0.0;
+	// Log() << "\n=> ";
+	// for (auto& r : m_nodeTeleportRates) {
+	// 	sumTeleportRates += r;
+	// 	Log() << r << ", ";
+	// }
+	// Log() << "\n=> Sum: " << sumTeleportRates;
+
 	double sumLinkFlow = 0.0;
+	// Log() << "\nLinks:";
 	// Normalize link weights with respect to its source nodes total out-link weight;
 	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 	{
+		// Log() << "\n" << linkIt->source << " -> " << linkIt->target << ": " <<  linkIt->flow;
+		// Log() << ", sumLinkOutWeight[" << linkIt->source << "]: " << sumLinkOutWeight[linkIt->source];
 		if (sumLinkOutWeight[linkIt->source] > 0)
 			linkIt->flow /= sumLinkOutWeight[linkIt->source];
 		sumLinkFlow += linkIt->flow;
+		// Log() << " => sumLinkFlow += " << linkIt->flow << " = " << sumLinkFlow;
 	}
 
 	// Collect dangling nodes
@@ -188,6 +209,13 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 		if (nodeOutDegree[i] == 0)
 			danglings.push_back(i);
 	}
+
+	// Log() << "\nsumLinkFlow: " << sumLinkFlow;
+
+	// Log() << "\nDanglings: ";
+	// for (auto& d : danglings) {
+	// 	Log() << d << ", ";
+	// }
 
 	// Calculate PageRank
 	std::vector<double> nodeFlowTmp(numNodes, 0.0);
@@ -237,7 +265,7 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 			{
 				m_nodeFlow[i] /= sum;
 			}
-			break;
+			// break;
 		}
 
 		// Perturb the system if equilibrium

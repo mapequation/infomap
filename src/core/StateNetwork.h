@@ -112,12 +112,14 @@ public:
 		{}
 		LinkData(const LinkData& other) :
 			weight(other.weight),
-			flow(other.flow)
+			flow(other.flow),
+			count(other.count)
 		{}
 		LinkData& operator=(const LinkData& other)
 		{
 			weight = other.weight;
 			flow = other.flow;
+			count = other.count;
 			return *this;
 		}
 		LinkData& operator+=(double weight)
@@ -152,7 +154,7 @@ public:
 	// typedef Network::StateLinkMap										StateLinkMap;
 	typedef std::vector<StateLink>										LinkVec;
 	typedef std::map<unsigned int, std::map<unsigned int, double> >	LinkMap;
-	typedef std::map<StateNode, std::map<StateNode, LinkData> >	NodeLinkMap;
+	typedef std::map<StateNode, std::map<StateNode, LinkData> >	NodeLinkMap; //TODO: Why LinkData and not just double?
 
 protected:
 	friend class FlowCalculator;
