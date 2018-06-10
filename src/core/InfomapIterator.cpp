@@ -135,10 +135,13 @@ namespace infomap {
 			// Iterate modules
 			Log(1) << "\n++modules" << std::flush;
 			InfomapIterator::operator++();
+			if (isEnd()) {
+				return *this;
+			}
 			if (m_current->isLeaf()) {
 				// Copy current iterator to restart after iterating through the leaf nodes
-				auto firstLeafIt = *this;
 				Log(1) << " -> first leaf node among " << m_current->parent->childDegree() << std::flush;
+				auto firstLeafIt = *this;
 				// If on a leaf node, loop through and aggregate to physical nodes
 				while (!isEnd() && m_current->isLeaf()) {
 					Log(1) << "\n  ++isLeaf -> stateId: " << m_current->stateId << ", physId: " << m_current->physicalId << std::flush;
