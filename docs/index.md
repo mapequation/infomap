@@ -2,15 +2,24 @@
 
 Infomap is a network clustering algorithm based on the
 [Map equation](http://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation).
- 
-For more info, see [www.mapequation.org](http://www.mapequation.org).
 
-Note: This is the page for the Infomap v1.0, which is currently in a beta testing phase. For the 0.x version, checkout [www.mapequation.org](http://www.mapequation.org)
+Note: This is the page for the Infomap v1.0, which is currently in a beta testing phase. For the 0.x version and for more info, see [www.mapequation.org/code.html](http://www.mapequation.org/code.html).
 
-## Getting started
+## Installation
 
-### Command line version
-To download and install, run
+Infomap can be downloaded [here](https://github.com/mapequation/infomap/zipball/master). Then do:
+
+```
+cd [path/to/Infomap]
+unzip Infomap.zip
+cd Infomap
+make
+```
+Substitute `[path/to/Infomap]` to the folder where Infomap was downloaded, such as `~/Downloads`.
+Note that these download links currently points to the 0.x version of Infomap. For the v1 beta, please check below.
+
+### Using git
+To download and install the v1 beta version, run
 ```
 git clone git@github.com:mapequation/infomap.git
 cd infomap
@@ -25,15 +34,29 @@ Infomap can be used both as a standalone program and as a library.
 See the `examples` folder for examples.
 
 We also include a [Jupyter notebook](examples/python/infomap-examples.ipynb)
-with the examples that can be viewed online.
+with examples that can be viewed online.
 
 
-### Python:
-Infomap v1.0.0-beta.1 is available on the Python Package Index PyPi. To install, run
+### Using Python:
+Infomap v1 will be available on the Python Package Index PyPi. To install, run
 
 ```
 pip install infomap
 ```
+
+
+## Usage
+
+### Command line
+In the Infomap path, run
+
+```
+./Infomap [options] network_data destination
+```
+
+The optional arguments can be put anywhere, see the [Options](http://www.mapequation.org/code.html#Options) section for the available options. The `network_data` should point to a valid network file (see [Input](http://www.mapequation.org/code.html#Input) section) and `destination` to a directory where the Infomap should write its output files.
+
+### Python
 
 #### Simple example
 
@@ -78,8 +101,8 @@ for node in myInfomap.iterTree():
 
 #### Infomap
 
-Create
-```
+##### Create an Infomap instance
+```python
 """
 Create an Infomap instance.
 
@@ -97,17 +120,31 @@ Infomap
 myInfomap = infomap.Infomap(flags)
 ```
 
-Run
+##### network()
+```python
+"""
+Access default underlying network.
+
+Returns
+-------
+Network
+    The underlying network, configured as the infomap instance it belongs to
+
+"""
+network = myInfomap.network()
 ```
+See [Network](#network) for more information.
+
+##### run()
+```python
 """
 Run default search algorithm to find modules.
 """
 myInfomap.run()
 ```
 
-Iterate result tree
-
-```
+##### iterTree()
+```python
 """
 Tree node iterator
 
@@ -129,27 +166,23 @@ myInfomap.iterTree(moduleIndexLevel = -1)
 for node in myInfomap.iterTree():
   print("{} {}".format(node.path(), node.physicalId))
 ```
+See [InfomapIterator](#infomapiterator) for more information.
 
+##### iterModules()
 
-Network
-```
-"""
-Access default underlying network.
+##### iterLeafModules()
 
-Returns
--------
-Network
-    The underlying network, configured as the infomap instance it belongs to
+##### iterLeafNodes()
 
-"""
-network = myInfomap.network()
-```
+##### iterTreePhysical()
+
+##### iterLeafNodesPhysical()
 
 
 #### Network
 
-Add nodes
-```
+##### addNode()
+```python
 """
 Add node.
 
@@ -168,9 +201,8 @@ network.addNode(id, weight)
 network.addNode(id, name, weight)
 ```
 
-Add links
-```
-
+##### addLink()
+```python
 """
 Add node.
 
@@ -189,7 +221,9 @@ network.addLink(source, target, weight)
 
 
 #### InfomapIterator
-```
+
+##### path()
+```python
 
 """
 The tree path for the iterator as a tuple of child node indices taken from the root to arrive at current node
@@ -203,7 +237,8 @@ tuple
 node.path()
 ```
 
-```
+##### moduleIndex()
+```python
 """
 Module index of the node collected by the iterator, default finest level (see `InfomapIterator`).
 
@@ -217,7 +252,8 @@ node.moduleIndex()
 
 ```
 
-```
+##### depth()
+```python
 """
 The current depth from the start node in the iterator
 
@@ -233,8 +269,9 @@ node.depth()
 
 
 #### InfoNode
-```
 
+##### stateId
+```python
 """
 The state node id, equals physicalId for ordinary networks
 
@@ -247,7 +284,8 @@ unsigned int
 node.stateId
 ```
 
-```
+##### physicalId
+```python
 """
 The physical node id
 
@@ -260,7 +298,8 @@ unsigned int
 node.physicalId
 ```
 
-```
+##### data
+```python
 """
 The flow data of the node that defines:
 node.data.flow
