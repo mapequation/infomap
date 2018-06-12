@@ -167,7 +167,7 @@ protected:
 	// Config
 	Config m_config;
 	// Network
-	bool m_haveDirectedInput = true;
+	bool m_haveDirectedInput = false;
 	bool m_haveMemoryInput = false;
 	// LinkMap m_links;
 	NodeMap m_nodes; // Nodes indexed by state id (equal physical id for first-order networks)

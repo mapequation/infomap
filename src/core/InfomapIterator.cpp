@@ -78,7 +78,6 @@ namespace infomap {
 	InfomapIterator& InfomapModuleIterator::operator++()
 	{
 		InfomapIterator::operator++();
-		if (m_current->isLeaf())
 		while (!isEnd() && m_current->isLeaf()) {
 			InfomapIterator::operator++();
 		}
@@ -193,7 +192,7 @@ namespace infomap {
 	void InfomapLeafIteratorPhysical::init()
 	{
 		while (!isEnd() && !m_current->isLeaf()) {
-			InfomapIterator::operator++();
+			InfomapIteratorPhysical::operator++();
 		}
 	}
 
@@ -201,7 +200,22 @@ namespace infomap {
 	{
 		InfomapIteratorPhysical::operator++();
 		while (!isEnd() && !m_current->isLeaf()) {
-			InfomapIterator::operator++();
+			InfomapIteratorPhysical::operator++();
+		}
+		return *this;
+	}
+
+
+
+	// -------------------------------------
+	// InfomapUpIterator
+	// -------------------------------------
+
+	InfomapUpIterator& InfomapUpIterator::operator++()
+	{
+		m_current = m_current->parent;
+		if (m_current != nullptr && m_current->owner != nullptr) {
+			m_current = m_current->owner;
 		}
 		return *this;
 	}

@@ -312,6 +312,8 @@ public:
 	unsigned int size() { return m_size; }
 	unsigned int numAggregations() { return m_numAggregations; }
 	value_t sumValue() { return m_sumValue; }
+	map_t& data() { return m_data; }
+	const map_t& data() const { return m_data; }
 
 
 private:

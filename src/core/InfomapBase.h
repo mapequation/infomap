@@ -78,6 +78,9 @@ public:
 	InfomapIteratorPhysical iterTreePhysical(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
 	{ return InfomapIteratorPhysical(&root(), maxClusterLevel); }
 	
+	InfomapModuleIterator iterModules(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
+	{ return InfomapModuleIterator(&root(), maxClusterLevel); }
+	
 	InfomapLeafModuleIterator iterLeafModules(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
 	{ return InfomapLeafModuleIterator(&root(), maxClusterLevel); }
 	
@@ -346,6 +349,17 @@ public:
 	std::string writeTree(std::string filename = "", bool states = false);
 
 	/**
+	 * Write flow tree to a .ftree file.
+	 * This is the same as a .tree file but appended with links aggregated
+	 * within modules on all levels in the tree
+	 * @param filename the filename for the output file. If empty, use default 
+	 * based on output directory and input file name
+	 * @param states if memory network, print the state-level network without merging physical nodes within modules
+	 * @return the filename written to
+	 */
+	std::string writeFlowTree(std::string filename = "", bool states = false);
+
+	/**
 	 * Write tree to a .clu file.
 	 * @param filename the filename for the output file. If empty, use default 
 	 * based on output directory and input file name
@@ -391,6 +405,18 @@ public:
 	// ===================================================
 
 protected:
+
+	/**
+	 * Write tree to output stream
+	 * @param states, write state-level tree, else aggregate physical nodes within modules
+	 */
+	void printTree(std::ostream& outStream, bool states = false);
+
+	/**
+	 * Write tree links to output stream
+	 */
+	void printTreeLinks(std::ostream& outStream);
+
 	InfoNode m_root;
 	std::vector<InfoNode*> m_leafNodes;
 	std::vector<InfoNode*> m_moduleNodes;

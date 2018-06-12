@@ -46,8 +46,15 @@ myInfomap.run()
 
 print("Found {} modules with codelength: {}".format(myInfomap.numTopModules(), myInfomap.codelength()))
 
-print("\n#node module")
-for it in myInfomap.tree():
-	node = it.current()
+print("\nState nodes:")
+print("#stateId physicalId module")
+for node in myInfomap.iterTree():
 	if node.isLeaf():
-		print("{} {}".format(node.physicalId, it.moduleIndex()))
+		print("{} {} {}".format(node.stateId, node.physicalId, node.moduleIndex()))
+
+print("\nPhysical nodes:")
+print("#physicalId module")
+for node in myInfomap.iterTreePhysical():
+    if node.isLeaf():
+        print("{} {}".format(node.physicalId, node.moduleIndex()))
+

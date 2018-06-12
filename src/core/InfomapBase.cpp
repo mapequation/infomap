@@ -1610,9 +1610,13 @@ void InfomapBase::writeResult()
 	// 	", physId: " << it->physicalId << ", data: " << it->data << "\n";
 	// }
 	// Log() << std::string(10, '-') << "\n";
+
+	// printTree(std::cout, true);
+	// printTreeLinks(std::cout);
+
 	
-	
-	if (this->printTree || true) {
+	// if (this->printTree) { // error: reference to non-static member function must be called
+	if (true) {
 		std::string filename = this->outDirectory + this->outName + ".tree";
 
 		if (!haveMemory()) {
@@ -1628,6 +1632,27 @@ void InfomapBase::writeResult()
 			std::string filenameStates = this->outDirectory + this->outName + "_states.tree";
 			Log() << "Write state tree to " << filenameStates << "... ";
 			writeTree(filenameStates, true);
+			Log() << "done!\n";
+		}
+	}
+
+	
+	if (this->printFlowTree) {
+		std::string filename = this->outDirectory + this->outName + ".ftree";
+
+		if (!haveMemory()) {
+			Log() << "Write flow tree to " << filename << "... ";
+			writeFlowTree(filename);
+			Log() << "done!\n";
+		}
+		else {
+			// Write both physical and state level
+			Log() << "Write physical flow tree to " << filename << "... ";
+			writeFlowTree(filename, false);
+			Log() << "done!\n";
+			std::string filenameStates = this->outDirectory + this->outName + "_states.ftree";
+			Log() << "Write state flow tree to " << filenameStates << "... ";
+			writeFlowTree(filenameStates, true);
 			Log() << "done!\n";
 		}
 	}
@@ -1679,33 +1704,20 @@ std::string InfomapBase::writeTree(std::string filename, bool states)
 		(haveMemory() && states ? "_states.tree" : ".tree") : filename;
 
 	SafeOutFile outFile(outputFilename);
-	outFile << "# Codelength = " << getCodelength() << " bits.\n";
-	if (states)
-		outFile << "# path flow name stateId physicalId\n";
-	else
-		outFile << "# path flow name physicalId\n";
-	// TODO: Make a general iterator where merging physical nodes depend on a parameter rather than type to be able to DRY here
-	if (haveMemory() && !states) {
-		for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
-			InfoNode &node = *it;
-			if (node.isLeaf()) {
-				auto &path = it.path();
-				outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.stateId << "\" " << node.physicalId << "\n";
-			}
-		}
-	} else {
-		for (auto it(iterTree()); !it.isEnd(); ++it) {
-			InfoNode &node = *it;
-			if (node.isLeaf()) {
-				auto &path = it.path();
-				outFile << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.stateId << "\" ";
-				if (states)
-					outFile << node.stateId << " " << node.physicalId << "\n";
-				else
-					outFile << node.physicalId << "\n";
-			}
-		}
-	}
+	printTree(outFile, states);
+	
+	return outputFilename;
+}
+
+std::string InfomapBase::writeFlowTree(std::string filename, bool states)
+{
+	std::string outputFilename = filename.empty() ? this->outDirectory + this->outName +
+		(haveMemory() && states ? "_states.ftree" : ".ftree") : filename;
+
+	SafeOutFile outFile(outputFilename);
+	printTree(outFile, states);
+	printTreeLinks(outFile);
+	
 	return outputFilename;
 }
 
@@ -1850,6 +1862,102 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 		outFile << link.first << " " << link.second << " " << weight << "\n";
 	}
 	return outputFilename;
+}
+
+void InfomapBase::printTree(std::ostream& outStream, bool states)
+{
+	outStream << "# Codelength = " << getCodelength() << " bits.\n";
+	if (states)
+		outStream << "# path flow name stateId physicalId\n";
+	else
+		outStream << "# path flow name physicalId\n";
+	// TODO: Make a general iterator where merging physical nodes depend on a parameter rather than type to be able to DRY here
+	if (haveMemory() && !states) {
+		for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
+			InfoNode &node = *it;
+			if (node.isLeaf()) {
+				auto &path = it.path();
+				outStream << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.stateId << "\" " << node.physicalId << "\n";
+			}
+		}
+	} else {
+		for (auto it(iterTree()); !it.isEnd(); ++it) {
+			InfoNode &node = *it;
+			if (node.isLeaf()) {
+				auto &path = it.path();
+				outStream << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.stateId << "\" ";
+				if (states)
+					outStream << node.stateId << " " << node.physicalId << "\n";
+				else
+					outStream << node.physicalId << "\n";
+			}
+		}
+	}
+}
+
+void InfomapBase::printTreeLinks(std::ostream& outStream)
+{
+	outStream << "*Links " << (this->isUndirectedFlow() ? "undirected" : "directed") << "\n";
+	outStream << "#*Links path exitFlow numEdges numChildren\n";
+
+	// Use stateId to store depth on modules to optimize link aggregation
+	for (auto it(iterModules()); !it.isEnd(); ++it) {
+		it->stateId = it.depth();
+	}
+
+	using LinkMap = MapMap<unsigned int, unsigned int, double>;
+
+	// Print aggregated flow links for each module
+	// out << "#*Links numEdges path numChildren exitFlow\n";
+	for (auto it(iterModules()); !it.isEnd(); ++it) {
+		InfoNode* module = it.current();
+		// Set child index to use as link index
+		unsigned int childIndex = 0;
+		for (auto& child : *module) {
+			child.index = childIndex++;
+		}
+		LinkMap moduleLinks;
+		double exitFlow = 0.0;
+		// Start finding leaf nodes from child level to know link source index within module
+		for (auto& child : *module) {
+			child.index = childIndex++;
+
+			// Aggregate links between the module. Rest is aggregated as exit flow
+			for (InfomapLeafIterator leafIt(module); !leafIt.isEnd(); ++leafIt) {
+				auto& node = *leafIt;
+				for (auto& link : node.outEdges()) {
+					// stateId stores depth for now
+					// Iterate up from target link
+					InfomapUpIterator upIt(&link->target);
+					while (upIt->parent != module && upIt->stateId > it.depth() + 1) {
+						++upIt;
+					}
+					if (upIt->parent == module) {
+						moduleLinks.insert(child.index, upIt->index, link->data.flow);
+					} else {
+						exitFlow += link->data.flow;
+					}
+				}
+			}
+		}
+
+		// Write aggregated links
+		std::string path = io::stringify(it.path(), ":", 1);
+		outStream << "*Links " << (path.empty() ? "root" : path) << " " << exitFlow <<
+			" " << moduleLinks.size() << " " << module->childDegree() << "\n";
+		for (auto itSource : moduleLinks.data()) {
+			unsigned int sourceId = itSource.first;
+			const auto& subLinks = itSource.second;
+			for (auto itTarget : subLinks) {
+				unsigned int targetId = itTarget.first;
+				double flow = itTarget.second;
+				outStream << sourceId << " " << targetId << " " << flow << "\n";
+			}
+		}
+		if (moduleLinks.size() == 0) {
+			outStream << "1 1 0.1\n";
+		}
+	}
 }
 
 
