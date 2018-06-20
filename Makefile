@@ -121,6 +121,7 @@ SWIG_FILES := $(shell find interfaces/swig -name "*.i")
 
 PY_BUILD_DIR = build/py
 PY2_BUILD_DIR = build/py2
+PY_ONLY_HEADERS := $(HEADERS:%.h=$(PY_BUILD_DIR)/headers/%.h)
 PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
 PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
 PY2_HEADERS := $(HEADERS:src/%.h=$(PY2_BUILD_DIR)/src/%.h)
@@ -129,18 +130,18 @@ PY2_SOURCES := $(SOURCES:src/%.cpp=$(PY2_BUILD_DIR)/src/%.cpp)
 .PHONY: python2 python py2-build py-build
 
 # Use python distutils to compile the module
-python2: py2-build Makefile
-	@cp -a interfaces/python/setup.py $(PY2_BUILD_DIR)/
-	cd $(PY2_BUILD_DIR) && CC=$(CXX) python setup.py build_ext --inplace
-	@true
-
 python: py-build Makefile
 	@cp -a interfaces/python/setup.py $(PY_BUILD_DIR)/
 	cd $(PY_BUILD_DIR) && CC=$(CXX) python3 setup.py build_ext --inplace
 	@true
 
+python2: py2-build Makefile
+	@cp -a interfaces/python/setup.py $(PY2_BUILD_DIR)/
+	cd $(PY2_BUILD_DIR) && CC=$(CXX) python setup.py build_ext --inplace
+	@true
+
 # Generate wrapper files from source and interface files
-py-build: $(PY_HEADERS) $(PY_SOURCES)
+py-build: $(PY_HEADERS) $(PY_SOURCES) $(PY_ONLY_HEADERS)
 	@mkdir -p $(PY_BUILD_DIR)
 	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/
 	swig -c++ -python -py3 -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
@@ -159,6 +160,40 @@ $(PY2_BUILD_DIR)/src/%: src/%
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 
+$(PY_BUILD_DIR)/headers/%: %
+	@echo "mkdir $(dir $@) and cp -a $^ $@..."
+	ls $(PY_BUILD_DIR)/headers/
+	@mkdir -p $(dir $@)
+	@cp -a $^ $@
+
+.PHONY: pypi_prepare pypitest_publish pypi_publish
+PYPI_DIR = $(PY_BUILD_DIR)/pypi/infomap
+
+pypi_prepare: py-build Makefile
+	@mkdir -p $(PYPI_DIR)
+	# @mkdir -p $(PYPI_DIR)/infomap
+	$(RM) -r $(PYPI_DIR)/dist $(PYPI_DIR)/infomap.egg-info
+	# @echo "from .infomap import *" > $(PYPI_DIR)/infomap/__init__.py
+	# @cp -a $(PY_BUILD_DIR)/infomap.py $(PYPI_DIR)/infomap/
+	@cp -a $(PY_BUILD_DIR)/infomap.py $(PYPI_DIR)/
+	@cp -a $(PY_BUILD_DIR)/infomap_wrap.cpp $(PYPI_DIR)/
+	@cp -a $(PY_BUILD_DIR)/src $(PYPI_DIR)/
+	@cp -a $(PY_BUILD_DIR)/headers $(PYPI_DIR)/
+	@cp -a interfaces/python/setup_pypi.py $(PYPI_DIR)/setup.py
+	@cp -a interfaces/python/MANIFEST.in $(PYPI_DIR)/
+	@cp -a README.md $(PYPI_DIR)/
+	@cp -a LICENSE_AGPLv3.txt $(PYPI_DIR)/LICENSE
+
+pypitest_publish: pypi_prepare
+	cd $(PYPI_DIR) && python setup.py sdist upload -r testpypi
+
+pypi_publish: pypi_prepare
+	cd $(PYPI_DIR) && python setup.py sdist upload
+
+# pypi-build: $(PY_HEADERS) $(PY_SOURCES)
+# 	@mkdir -p $(PY_BUILD_DIR)/pypi/build
+# 	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/pypi/build
+# 	swig -c++ -python -py3 -outdir $(PY_BUILD_DIR)/pypi/build -o $(PY_BUILD_DIR)/pypi/build/infomap_wrap.cpp $(PY_BUILD_DIR)/pypi/build/Infomap.i
 
 ##################################################
 # R module

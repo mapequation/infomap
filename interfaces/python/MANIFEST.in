@@ -1,0 +1,7 @@
+include infomap/*.py
+recursive-include infomap *
+recursive-include headers *.h
+recursive-exclude dist *
+exclude dist/*
+global-exclude dist/*
+prune dist
