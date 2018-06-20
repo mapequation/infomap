@@ -171,11 +171,8 @@ PYPI_DIR = $(PY_BUILD_DIR)/pypi/infomap
 
 pypi_prepare: py-build Makefile
 	@mkdir -p $(PYPI_DIR)
-	# @mkdir -p $(PYPI_DIR)/infomap
 	$(RM) -r $(PYPI_DIR)/dist $(PYPI_DIR)/infomap.egg-info
-	# @echo "from .infomap import *" > $(PYPI_DIR)/infomap/__init__.py
-	# @cp -a $(PY_BUILD_DIR)/infomap.py $(PYPI_DIR)/infomap/
-	@cp -a $(PY_BUILD_DIR)/infomap.py $(PYPI_DIR)/
+	cat $(PY_BUILD_DIR)/infomap.py interfaces/python/infomap_cli.py > $(PYPI_DIR)/infomap.py
 	@cp -a $(PY_BUILD_DIR)/infomap_wrap.cpp $(PYPI_DIR)/
 	@cp -a $(PY_BUILD_DIR)/src $(PYPI_DIR)/
 	@cp -a $(PY_BUILD_DIR)/headers $(PYPI_DIR)/
@@ -190,10 +187,6 @@ pypitest_publish: pypi_prepare
 pypi_publish: pypi_prepare
 	cd $(PYPI_DIR) && python setup.py sdist upload
 
-# pypi-build: $(PY_HEADERS) $(PY_SOURCES)
-# 	@mkdir -p $(PY_BUILD_DIR)/pypi/build
-# 	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/pypi/build
-# 	swig -c++ -python -py3 -outdir $(PY_BUILD_DIR)/pypi/build -o $(PY_BUILD_DIR)/pypi/build/infomap_wrap.cpp $(PY_BUILD_DIR)/pypi/build/Infomap.i
 
 ##################################################
 # R module
