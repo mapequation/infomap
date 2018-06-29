@@ -218,7 +218,7 @@ bool StateNetwork::addPath(const std::vector<unsigned int>& path, unsigned int m
 		++m_numSkippedPaths;
 		return false;
 	}
-	unsigned int lastStateId;
+	unsigned int lastStateId = 0;
 	bool createLink = false;
 	// std::cout << "Add state node and links from path " << io::stringify(path, " ") << "\n";
 	for (unsigned int i = markovOrder - 1; i < path.size(); ++i) {

@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages, Extension
 # To use a consistent encoding
 from codecs import open
-from os import path, walk
+from os import path, walk, environ
 import fnmatch
 import sys
 import re
@@ -32,6 +32,8 @@ with open(path.join('src', 'io', 'version.cpp')) as f:
         m = re.match(r'.+INFOMAP_VERSION = \"(.+)\"', line)
         if m: infomapVersion = m.groups()[0]
 
+environ['MACOSX_DEPLOYMENT_TARGET'] = "10.10"
+
 infomap_module = Extension(
     '_infomap',
     sources=cppSources,
@@ -43,11 +45,6 @@ infomap_module = Extension(
         '-DPYTHON',
         '-Wno-deprecated-register',
         '-std=c++14',
-        '-stdlib=libc++', # Fix error: no member named 'unique_ptr' in namespace 'std'
-        '-mmacosx-version-min=10.10' # Fix clang: error: invalid deployment target for -stdlib=libc++ (requires OS X 10.7 or later)
-    ],
-    extra_link_args=[
-        '-mmacosx-version-min=10.10'
     ])
 
 setup(
@@ -70,7 +67,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    # version='1.0.0-beta.31',  # Required
+    # version='1.0.0-beta.33',  # Required
     version=infomapVersion,  # Required
 
     # This is a one-line description or tagline of what your project does. This

@@ -31,6 +31,7 @@
 #include "PartitionQueue.h"
 #include <cstdlib> // abs
 #include <limits>
+#include <algorithm> // std::sort
 // #include "StateNetwork.h"
 #include "../io/Network.h"
 #ifdef _OPENMP

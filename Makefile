@@ -181,6 +181,8 @@ pypi_prepare: py-build Makefile
 	@cp -a README.md $(PYPI_DIR)/
 	@cp -a LICENSE_AGPLv3.txt $(PYPI_DIR)/LICENSE
 
+# pip -vvv --no-cache-dir install --upgrade -I --index-url https://test.pypi.org/simple/ infomap
+# pip install -e build/py/pypi/infomap/
 pypitest_publish: pypi_prepare
 	cd $(PYPI_DIR) && python setup.py sdist upload -r testpypi
 
@@ -214,6 +216,19 @@ $(R_BUILD_DIR)/src/%: src/%
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 
+
+##################################################
+# Docker
+##################################################
+
+.PHONY: docker-build
+
+docker-build: Makefile
+	docker build -f docker/ubuntu.Dockerfile -t infomap .
+
+# docker-run:
+# 	docker run -it --rm -v $(pwd):/home/rstudio infomap \
+	ninetriangles.net output
 
 ##################################################
 # Clean
