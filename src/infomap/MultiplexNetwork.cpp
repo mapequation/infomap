@@ -582,7 +582,7 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 					bool intersect;
 					double div = calculateJensenShannonDivergence(intersect,layer1LinksVec,sumOutLinkWeightLayer1,layer2LinksVec,sumOutLinkWeightLayer2);
 					double jsWeight = 1.0 - div;
-					if(intersect && (jsWeight >= m_config.multiplexRelaxLimit)){						
+					if(intersect && (jsWeight >= m_config.multiplexJSRelaxLimit)){						
 						jsRelaxWeights[layer1][layer2] = jsWeight;
 						jsTotWeight[layer1] += jsWeight*sumOutLinkWeightLayer2;
 						if(layer1 != layer2){
