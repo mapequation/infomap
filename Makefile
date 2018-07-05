@@ -144,7 +144,7 @@ python2: py2-build Makefile
 py-build: $(PY_HEADERS) $(PY_SOURCES) $(PY_ONLY_HEADERS)
 	@mkdir -p $(PY_BUILD_DIR)
 	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/
-	swig -c++ -python -py3 -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
+	swig -c++ -python -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
 
 py2-build: $(PY2_HEADERS) $(PY2_SOURCES)
 	@mkdir -p $(PY2_BUILD_DIR)
