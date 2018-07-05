@@ -13,7 +13,7 @@ WORKDIR /infomap
 
 RUN make all
 
-RUN pip3 install --index-url https://test.pypi.org/simple/ infomap
+RUN pip3 --no-cache-dir install --index-url https://test.pypi.org/simple/ infomap
 
 ENTRYPOINT ["/infomap/Infomap"]
 CMD ["--help"]

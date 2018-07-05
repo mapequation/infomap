@@ -1,11 +1,12 @@
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages, Extension
-# To use a consistent encoding
+from pkg_resources import parse_version
 from codecs import open
 from os import path, walk, environ
 import fnmatch
 import sys
 import re
+from sysconfig import get_config_var
 
 here = path.abspath(path.dirname(__file__))
 
@@ -32,7 +33,23 @@ with open(path.join('src', 'io', 'version.cpp')) as f:
         m = re.match(r'.+INFOMAP_VERSION = \"(.+)\"', line)
         if m: infomapVersion = m.groups()[0]
 
-environ['MACOSX_DEPLOYMENT_TARGET'] = "10.10"
+# Set minimum Mac OS X version to 10.9 to pick up C++ standard library
+if get_config_var('MACOSX_DEPLOYMENT_TARGET') and not 'MACOSX_DEPLOYMENT_TARGET' in environ:
+    if parse_version(get_config_var('MACOSX_DEPLOYMENT_TARGET')) < parse_version("10.9"):
+        environ['MACOSX_DEPLOYMENT_TARGET'] = "10.9"
+    else:
+        environ['MACOSX_DEPLOYMENT_TARGET'] = get_config_var('MACOSX_DEPLOYMENT_TARGET')
+
+# environ['CXX'] = "g++"
+# environ['CC'] = "g++"
+compiler_args = [
+    '-DAS_LIB',
+    '-DPYTHON',
+    '-Wno-deprecated-register',
+    '-std=c++14',
+]
+# if sys.platform.startswith("darwin"):
+#     compiler_args.append('-stdlib=libc++')
 
 infomap_module = Extension(
     '_infomap',
@@ -40,12 +57,7 @@ infomap_module = Extension(
     include_dirs=['headers', 'headers/src', 'headers/src/core', 'headers/src/io', 'headers/src/utils'],
     # include_dirs=[path.join(here, 'headers')],
     language='c++',
-    extra_compile_args=[
-        '-DAS_LIB',
-        '-DPYTHON',
-        '-Wno-deprecated-register',
-        '-std=c++14',
-    ])
+    extra_compile_args=compiler_args)
 
 setup(
     # This is the name of your project. The first time you publish this
@@ -67,7 +79,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    # version='1.0.0-beta.33',  # Required
+    # version='1.0.0-beta.38',  # Required
     version=infomapVersion,  # Required
 
     # This is a one-line description or tagline of what your project does. This
