@@ -37,7 +37,7 @@ public:
 	:	m_root(nodePointer),
 		m_current(nodePointer),
 		m_moduleIndexLevel(moduleIndexLevel)
-	{ init(); }
+	{}
 
 	InfomapIterator(const InfomapIterator& other)
 	:	m_root(other.m_root),
@@ -46,7 +46,7 @@ public:
 		m_moduleIndex(other.m_moduleIndex),
 		m_path(other.m_path),
 		m_depth(other.m_depth)
-	{ init(); }
+	{}
 
 	virtual ~InfomapIterator() {}
 
@@ -60,8 +60,6 @@ public:
 		m_depth = other.m_depth;
 		return *this;
 	}
-
-	virtual void init() {}
 
 	InfoNode* current()
 	{
@@ -168,11 +166,11 @@ public:
 
 	InfomapLeafModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
 	:	InfomapIterator(nodePointer, moduleIndexLevel)
-	{}
+	{ init(); }
 
 	InfomapLeafModuleIterator(const InfomapLeafModuleIterator& other)
 	:	InfomapIterator(other)
-	{}
+	{ init(); }
 	
 	InfomapLeafModuleIterator& operator= (const InfomapLeafModuleIterator& other)
 	{
@@ -183,7 +181,7 @@ public:
 	/**
 	 * Iterate to first leaf module
 	 */
-	virtual void init();
+	void init();
 
 	virtual InfomapIterator& operator++();
 
@@ -203,11 +201,11 @@ public:
 
 	InfomapLeafIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
 	:	InfomapIterator(nodePointer, moduleIndexLevel)
-	{}
+	{ init(); }
 
 	InfomapLeafIterator(const InfomapLeafIterator& other)
 	:	InfomapIterator(other)
-	{}
+	{ init(); }
 	
 	InfomapLeafIterator& operator= (const InfomapLeafIterator& other)
 	{
@@ -218,7 +216,7 @@ public:
 	/**
 	 * Iterate to first leaf node
 	 */
-	virtual void init();
+	void init();
 
 	virtual InfomapIterator& operator++();
 
@@ -301,11 +299,11 @@ public:
 
 	InfomapLeafIteratorPhysical(InfoNode* nodePointer, int moduleIndexLevel = -1)
 	:	InfomapIteratorPhysical(nodePointer, moduleIndexLevel)
-	{}
+	{ init(); }
 
 	InfomapLeafIteratorPhysical(const InfomapLeafIteratorPhysical& other)
 	:	InfomapIteratorPhysical(other)
-	{}
+	{ init(); }
 	
 	InfomapLeafIteratorPhysical& operator= (const InfomapLeafIteratorPhysical& other)
 	{
@@ -316,7 +314,7 @@ public:
 	/**
 	 * Iterate to first leaf node
 	 */
-	virtual void init();
+	void init();
 
 	virtual InfomapIterator& operator++();
 
@@ -337,12 +335,12 @@ public:
 class InfomapUpIterator
 {
 protected:
-	InfoNode* m_root = nullptr;
+	// InfoNode* m_root = nullptr;
 	InfoNode* m_current = nullptr;
-	int m_moduleIndexLevel = -1;
-	unsigned int m_moduleIndex = 0;
-	std::deque<unsigned int> m_path; // The child index path to current node
-	unsigned int m_depth = 0;
+	// int m_moduleIndexLevel = -1;
+	// unsigned int m_moduleIndex = 0;
+	// std::deque<unsigned int> m_path; // The child index path to current node
+	// unsigned int m_depth = 0;
 
 public:
 
