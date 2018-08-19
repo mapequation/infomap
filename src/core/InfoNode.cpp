@@ -6,6 +6,7 @@
  */
 #include "InfoNode.h"
 #include "Infomap.h"
+#include <algorithm>
 
 namespace infomap {
 
@@ -161,6 +162,21 @@ unsigned int InfoNode::childIndex() const
 		++childIndex;
 	}
 	return childIndex;
+}
+
+std::vector<unsigned int> InfoNode::calculatePath() const
+{
+	const InfoNode* current = this;
+	std::vector<unsigned int> path;
+	while (current->parent != nullptr) {
+		path.push_back(current->childIndex());
+		current = current->parent;
+		if (current->owner != nullptr) {
+			current = current->owner;
+		}
+	}
+	std::reverse(path.begin(), path.end());
+	return path;
 }
 
 unsigned int InfoNode::childDegree() const

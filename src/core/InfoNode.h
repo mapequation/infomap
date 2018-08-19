@@ -334,6 +334,8 @@ public:
 
 	unsigned int childIndex() const;
 
+	std::vector<unsigned int> calculatePath() const;
+
 	// ---------------------------- Operators ----------------------------
 
 	bool operator ==(const InfoNode& rhs) const
