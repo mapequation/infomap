@@ -1728,7 +1728,7 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 	std::string outputFilename = filename.empty() ? this->outDirectory + this->outName +
 	(haveMemory() && states ? "_states.clu" : ".clu") : filename;
 	SafeOutFile outFile(outputFilename);
-	outFile << "# Codelength = " << getCodelength() << " bits.\n";
+	outFile << "# Codelength = " << m_hierarchicalCodelength << " bits.\n";
 	if (states) {
 		outFile << "# stateId module flow physicalId\n";
 	}
@@ -1837,7 +1837,7 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 	outFile << "# modulelinks: " << moduleLinks.size() << "\n";
 	outFile << "# nodes: " << numNodes << "\n";
 	outFile << "# links: " << 0 << "\n";
-	outFile << "# codelength: " << getCodelength() << "\n";
+	outFile << "# codelength: " << m_hierarchicalCodelength << "\n";
 	if (!this->isUndirectedClustering()) {
 		outFile << "*Directed\n";
 	}
@@ -1867,7 +1867,7 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 
 void InfomapBase::printTree(std::ostream& outStream, bool states)
 {
-	outStream << "# Codelength = " << getCodelength() << " bits.\n";
+	outStream << "# Codelength = " << m_hierarchicalCodelength << " bits.\n";
 	if (states)
 		outStream << "# path flow name stateId physicalId\n";
 	else
