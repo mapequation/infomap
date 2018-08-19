@@ -551,7 +551,7 @@ void InfomapBase::generateSubNetwork(StateNetwork& network)
 			}
 			else {
 				auto& linkData = subIt.second;
-				m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.flow);
+				m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.flow * this->markovTime);
 				// Log() << linkSourceId << " (" << sourceIndex << ") -> " << linkTargetId << " (" << targetIndex << ")"
 				// << ", weight: " << linkData.weight << ", flow: " << linkData.flow << "\n";
 			}
