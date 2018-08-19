@@ -30,6 +30,7 @@
 
 #include <cstddef>
 #include <iterator>
+#include <deque>
 
 namespace infomap {
 
@@ -39,6 +40,281 @@ namespace infomap {
 #endif
 
 using std::iterator_traits;
+
+
+
+
+/**
+ * Child iterator.
+ */
+template <typename NodePointerType> // pointer or const pointer
+class ChildIterator
+{
+	typedef std::bidirectional_iterator_tag										iterator_category;
+	typedef typename iterator_traits<NodePointerType>::value_type  			value_type;
+	typedef typename iterator_traits<NodePointerType>::difference_type		difference_type;
+	typedef typename iterator_traits<NodePointerType>::reference			reference;
+	typedef typename iterator_traits<NodePointerType>::pointer				pointer;
+protected:
+	NodePointerType m_root = nullptr;
+	NodePointerType m_current = nullptr;
+
+public:
+	ChildIterator() {}
+
+	explicit
+	ChildIterator(const NodePointerType& nodePointer)
+	: m_root(nodePointer), m_current(nodePointer == nullptr ? nullptr : nodePointer->firstChild) {}
+
+	ChildIterator(const ChildIterator& other)
+	: m_root(other.m_root), m_current(other.m_current) {}
+
+	ChildIterator& operator= (const ChildIterator& other)
+	{
+		m_root = other.m_root;
+		m_current = other.m_current;
+		return *this;
+	}
+
+	pointer current() const
+	{ return m_current; }
+
+	reference
+	operator*() const
+	{ return *m_current; }
+
+	pointer
+	operator->() const
+	{ return m_current; }
+
+	bool operator==(const ChildIterator& rhs) const
+	{
+		return m_current == rhs.m_current;
+	}
+
+	bool operator!=(const ChildIterator& rhs) const
+	{
+		return !(m_current == rhs.m_current);
+	}
+
+	bool isEnd() const
+	{
+		return m_current == nullptr;
+	}
+
+	ChildIterator&
+	operator++()
+	{
+		m_current = m_current->next;
+		if (m_current != nullptr && m_current->parent != m_root) {
+			m_current = nullptr;
+		}
+		return *this;
+	}
+
+	ChildIterator
+	operator++(int)
+	{
+		ChildIterator copy(*this);
+		++(*this);
+		return copy;
+	}
+
+	ChildIterator&
+	operator--()
+	{
+		m_current = m_current->previous;
+		if (m_current != nullptr && m_current->parent != m_root) {
+			m_current = nullptr;
+		}
+		return *this;
+	}
+
+	ChildIterator
+	operator--(int)
+	{
+		ChildIterator copy(*this);
+		--(*this);
+		return copy;
+	}
+
+};
+
+/**
+ * Tree iterator.
+ */
+template <typename NodePointerType> // pointer or const pointer
+class TreeIterator
+{
+	typedef std::forward_iterator_tag										iterator_category;
+	typedef typename iterator_traits<NodePointerType>::value_type  			value_type;
+	typedef typename iterator_traits<NodePointerType>::difference_type		difference_type;
+	typedef typename iterator_traits<NodePointerType>::reference			reference;
+	typedef typename iterator_traits<NodePointerType>::pointer				pointer;
+protected:
+	NodePointerType m_root = nullptr;
+	NodePointerType m_current = nullptr;
+	int m_moduleIndexLevel = -1;
+	unsigned int m_moduleIndex = 0;
+	std::deque<unsigned int> m_path; // The child index path to current node
+	unsigned int m_depth = 0;
+
+public:
+	TreeIterator() {}
+
+	TreeIterator(NodePointerType nodePointer, int moduleIndexLevel = -1)
+	:	m_root(nodePointer),
+		m_current(nodePointer),
+		m_moduleIndexLevel(moduleIndexLevel)
+	{}
+
+	TreeIterator(const TreeIterator& other)
+	:	m_root(other.m_root),
+		m_current(other.m_current),
+		m_moduleIndexLevel(other.m_moduleIndexLevel),
+		m_moduleIndex(other.m_moduleIndex),
+		m_path(other.m_path),
+		m_depth(other.m_depth)
+	{}
+
+	virtual ~TreeIterator() {}
+
+	TreeIterator& operator= (const TreeIterator& other)
+	{
+		m_root = other.m_root;
+		m_current = other.m_current;
+		m_moduleIndexLevel = other.m_moduleIndexLevel;
+		m_moduleIndex = other.m_moduleIndex;
+		m_path = other.m_path;
+		m_depth = other.m_depth;
+		return *this;
+	}
+
+
+	pointer current() const
+	{ return m_current; }
+
+	reference
+	operator*() const
+	{ return *m_current; }
+
+	pointer
+	operator->() const
+	{ return m_current; }
+
+	bool operator==(const TreeIterator& rhs) const
+	{
+		return m_current == rhs.m_current;
+	}
+
+	bool operator!=(const TreeIterator& rhs) const
+	{
+		return !(m_current == rhs.m_current);
+	}
+
+	const std::deque<unsigned int>& path() const
+	{
+		return m_path;
+	}
+
+	unsigned int moduleIndex() const
+	{
+		return m_moduleIndex;
+	}
+
+	unsigned int depth() const
+	{
+		return m_depth;
+	}
+
+	bool isEnd() const
+	{
+		return m_current == nullptr;
+	}
+
+	TreeIterator& operator++()
+	{
+		NodePointerType curr = m_current;
+		NodePointerType infomapRoot = curr->getInfomapRoot();
+		if (infomapRoot != nullptr)
+		{
+			curr = infomapRoot;
+		}
+
+		if(curr->firstChild != nullptr)
+		{
+			curr = curr->firstChild;
+			++m_depth;
+			m_path.push_back(0);
+		}
+		else
+		{
+			// Current node is a leaf
+			// Presupposes that the next pointer can't reach out from the current parent.
+			tryNext:
+			while(curr->next == nullptr)
+			{
+				if (curr->parent != nullptr)
+				{
+					curr = curr->parent;
+					--m_depth;
+					m_path.pop_back();
+					if(curr == m_root) // Check if back to beginning
+					{
+						m_current = nullptr;
+						return *this;
+					}
+					if (m_moduleIndexLevel < 0) {
+						 if (curr->isLeafModule()) // TODO: Generalize to -2 for second level to bottom
+							 ++m_moduleIndex;
+					}
+					else if (static_cast<unsigned int>(m_moduleIndexLevel) == m_depth)
+						++m_moduleIndex;
+				}
+				else
+				{
+					NodePointerType infomapOwner = curr->owner;
+					if (infomapOwner != nullptr)
+					{
+						curr = infomapOwner;
+						if(curr == m_root) // Check if back to beginning
+						{
+							m_current = nullptr;
+							return *this;
+						}
+						goto tryNext;
+					}
+					else // null also if no children in first place
+					{
+						m_current = nullptr;
+						return *this;
+					}
+				}
+			}
+			curr = curr->next;
+			++m_path.back();
+		}
+		m_current = curr;
+		return *this;
+	}
+
+	TreeIterator
+	operator++(int)
+	{
+		TreeIterator copy(*this);
+		++(*this);
+		return copy;
+	}
+
+	TreeIterator& stepForward()
+	{
+		++(*this);
+		return *this;
+	}
+
+};
+
+
 
 /**
  * Base node iterator.

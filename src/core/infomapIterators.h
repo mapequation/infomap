@@ -15,6 +15,118 @@
 namespace infomap {
 
 
+
+/**
+ * Child iterator.
+ */
+template <typename NodePointerType> // pointer or const pointer
+class InfomapChildIterator
+{
+	typedef std::bidirectional_iterator_tag										iterator_category;
+	typedef typename iterator_traits<NodePointerType>::value_type  			value_type;
+	typedef typename iterator_traits<NodePointerType>::difference_type		difference_type;
+	typedef typename iterator_traits<NodePointerType>::reference			reference;
+	typedef typename iterator_traits<NodePointerType>::pointer				pointer;
+protected:
+	NodePointerType m_root = nullptr;
+	NodePointerType m_current = nullptr;
+
+public:
+	InfomapChildIterator() {}
+
+	explicit
+	InfomapChildIterator(const NodePointerType& nodePointer)
+	: m_root(nodePointer), m_current(nodePointer) { init(); }
+
+	InfomapChildIterator(const InfomapChildIterator& other)
+	: m_root(other.m_root), m_current(other.m_current) {}
+
+	InfomapChildIterator& operator= (const InfomapChildIterator& other)
+	{
+		m_root = other.m_root;
+		m_current = other.m_current;
+		return *this;
+	}
+
+	void init()
+	{
+		if (m_root != nullptr) {
+			NodePointerType infomapRoot = m_root->getInfomapRoot();
+			if (infomapRoot != nullptr)
+			{
+				m_root = infomapRoot;
+			}
+		}
+		m_current = m_root == nullptr ? nullptr : m_root->firstChild;
+	}
+
+	pointer current() const
+	{ return m_current; }
+
+	reference
+	operator*() const
+	{ return *m_current; }
+
+	pointer
+	operator->() const
+	{ return m_current; }
+
+	bool operator==(const InfomapChildIterator& rhs) const
+	{
+		return m_current == rhs.m_current;
+	}
+
+	bool operator!=(const InfomapChildIterator& rhs) const
+	{
+		return !(m_current == rhs.m_current);
+	}
+
+	bool isEnd() const
+	{
+		return m_current == nullptr;
+	}
+
+	InfomapChildIterator&
+	operator++()
+	{
+		m_current = m_current->next;
+		if (m_current != nullptr && m_current->parent != m_root) {
+			m_current = nullptr;
+		}
+		return *this;
+	}
+
+	InfomapChildIterator
+	operator++(int)
+	{
+		InfomapChildIterator copy(*this);
+		++(*this);
+		return copy;
+	}
+
+	InfomapChildIterator&
+	operator--()
+	{
+		m_current = m_current->previous;
+		if (m_current != nullptr && m_current->parent != m_root) {
+			m_current = nullptr;
+		}
+		return *this;
+	}
+
+	InfomapChildIterator
+	operator--(int)
+	{
+		InfomapChildIterator copy(*this);
+		--(*this);
+		return copy;
+	}
+
+};
+
+
+
+
 /**
  * Pre processing depth first iterator that explores sub-Infomap instances
  * Note:
@@ -40,7 +152,9 @@ public:
 	InfomapClusterIterator(const NodePointerType& nodePointer, int moduleIndexLevel = -1)
 	:	Base(nodePointer),
 		m_moduleIndexLevel(moduleIndexLevel)
-	{}
+	{
+		init();
+	}
 
 	InfomapClusterIterator(const InfomapClusterIterator& other)
 	:	Base(other),
@@ -186,7 +300,9 @@ public:
 	InfomapDepthFirstIterator(const NodePointerType& nodePointer, int moduleIndexLevel = -1)
 	:	Base(nodePointer),
 		m_moduleIndexLevel(moduleIndexLevel)
-	{}
+	{
+		init();
+	}
 
 	InfomapDepthFirstIterator(const InfomapDepthFirstIterator& other)
 	:	Base(other),

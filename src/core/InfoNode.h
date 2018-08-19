@@ -14,6 +14,7 @@
 #include <vector>
 #include "FlowData.h"
 #include "InfoEdge.h"
+// #include "InfomapIterator.h"
 #include "infomapIterators.h"
 #include "treeIterators.h"
 #include "../utils/iterators.h"
@@ -30,23 +31,31 @@ public:
 	typedef Edge<InfoNode>								EdgeType;
 
 	// Iterators
-	typedef SiblingIterator<InfoNode*>					sibling_iterator;
-	typedef SiblingIterator<InfoNode const*>			const_sibling_iterator;
-	typedef LeafNodeIterator<InfoNode*>					leaf_iterator;
-	typedef LeafNodeIterator<InfoNode const*>			const_leaf_iterator;
-	typedef LeafModuleIterator<InfoNode*>				leaf_module_iterator;
-	typedef LeafModuleIterator<InfoNode const*>			const_leaf_module_iterator;
+	typedef ChildIterator<InfoNode*>					child_iterator;
+	typedef ChildIterator<InfoNode const*>			const_child_iterator;
+	typedef InfomapChildIterator<InfoNode*>					infomap_child_iterator;
+	typedef InfomapChildIterator<InfoNode const*>			const_infomap_child_iterator;
 
-	typedef DepthFirstIterator<InfoNode*, true>			pre_depth_first_iterator;
-	typedef DepthFirstIterator<InfoNode const*, true>	const_pre_depth_first_iterator;
-	typedef DepthFirstIterator<InfoNode*, false>		post_depth_first_iterator;
-	typedef DepthFirstIterator<InfoNode const*, false>	const_post_depth_first_iterator;
+	typedef TreeIterator<InfoNode*>					tree_iterator;
+	typedef TreeIterator<InfoNode const*>			const_tree_iterator;
 
-	typedef InfomapDepthFirstIterator<InfoNode*>		infomap_depth_first_iterator;
-	typedef InfomapDepthFirstIterator<InfoNode const*>	const_infomap_depth_first_iterator;
+	// typedef SiblingIterator<InfoNode*>					sibling_iterator;
+	// typedef SiblingIterator<InfoNode const*>			const_sibling_iterator;
+	// typedef LeafNodeIterator<InfoNode*>					leaf_iterator;
+	// typedef LeafNodeIterator<InfoNode const*>			const_leaf_iterator;
+	// typedef LeafModuleIterator<InfoNode*>				leaf_module_iterator;
+	// typedef LeafModuleIterator<InfoNode const*>			const_leaf_module_iterator;
 
-	typedef InfomapClusterIterator<InfoNode*>			infomap_cluster_iterator;
-	typedef InfomapClusterIterator<InfoNode const*>		const_infomap_cluster_iterator;
+	// typedef DepthFirstIterator<InfoNode*, true>			pre_depth_first_iterator;
+	// typedef DepthFirstIterator<InfoNode const*, true>	const_pre_depth_first_iterator;
+	// typedef DepthFirstIterator<InfoNode*, false>		post_depth_first_iterator;
+	// typedef DepthFirstIterator<InfoNode const*, false>	const_post_depth_first_iterator;
+
+	// typedef InfomapDepthFirstIterator<InfoNode*>		infomap_depth_first_iterator;
+	// typedef InfomapDepthFirstIterator<InfoNode const*>	const_infomap_depth_first_iterator;
+
+	// typedef InfomapClusterIterator<InfoNode*>			infomap_cluster_iterator;
+	// typedef InfomapClusterIterator<InfoNode const*>		const_infomap_cluster_iterator;
 
 	typedef std::vector<EdgeType*>::iterator				edge_iterator;
 	typedef std::vector<EdgeType*>::const_iterator			const_edge_iterator;
@@ -54,11 +63,15 @@ public:
 	typedef IterWrapper<edge_iterator> 						edge_iterator_wrapper;
 	typedef IterWrapper<const_edge_iterator> 				const_edge_iterator_wrapper;
 
-//	typedef IterWrapper<infomap_depth_first_iterator> 		infomap_iterator_wrapper;
-//	typedef IterWrapper<const_infomap_depth_first_iterator> const_infomap_iterator_wrapper;
+	typedef IterWrapper<tree_iterator> 		infomap_iterator_wrapper;
+	typedef IterWrapper<const_tree_iterator> const_infomap_iterator_wrapper;
 
-	typedef IterWrapper<infomap_cluster_iterator> 			infomap_iterator_wrapper;
-	typedef IterWrapper<const_infomap_cluster_iterator> 	const_infomap_iterator_wrapper;
+	// typedef IterWrapper<InfomapIterator> 			infomap_iterator_wrapper;
+	typedef IterWrapper<child_iterator> 			child_iterator_wrapper;
+	typedef IterWrapper<const_child_iterator> 			const_child_iterator_wrapper;
+
+	typedef IterWrapper<infomap_child_iterator> 			infomap_child_iterator_wrapper;
+	typedef IterWrapper<const_infomap_child_iterator> 			const_infomap_child_iterator_wrapper;
 
 public:
 
@@ -183,79 +196,71 @@ public:
 
 	// ---------------------------- Tree iterators ----------------------------
 
-	sibling_iterator begin_child()
-	{ return sibling_iterator(firstChild); }
-
-	sibling_iterator end_child()
-	{ return sibling_iterator(nullptr); }
-
 	// Default iteration on children
-	sibling_iterator begin()
-	{ return sibling_iterator(firstChild); }
+	child_iterator begin()
+	{ return child_iterator(this); }
 
-	sibling_iterator end()
-	{ return sibling_iterator(nullptr); }
+	child_iterator end()
+	{ return child_iterator(nullptr); }
 
-	const_sibling_iterator begin() const
-	{ return const_sibling_iterator(firstChild); }
+	const_child_iterator begin() const
+	{ return const_child_iterator(this); }
 
-	const_sibling_iterator end() const
-	{ return const_sibling_iterator(nullptr); }
+	const_child_iterator end() const
+	{ return const_child_iterator(nullptr); }
 
-	const_sibling_iterator begin_child() const
-	{ return const_sibling_iterator(firstChild); }
+	child_iterator begin_child()
+	{ return child_iterator(this); }
 
-	const_sibling_iterator end_child() const
-	{ return const_sibling_iterator(nullptr); }
+	child_iterator end_child()
+	{ return child_iterator(nullptr); }
 
-	leaf_iterator begin_leaf()
-	{ return leaf_iterator(firstChild); }
+	const_child_iterator begin_child() const
+	{ return const_child_iterator(this); }
 
-	leaf_iterator end_leaf()
-	{ return leaf_iterator(nullptr); }
+	const_child_iterator end_child() const
+	{ return const_child_iterator(nullptr); }
 
-	pre_depth_first_iterator begin_depthFirst()
-	{ return pre_depth_first_iterator(this); }
-
-	pre_depth_first_iterator end_depthFirst()
-	{ return pre_depth_first_iterator(nullptr); }
-
-	const_pre_depth_first_iterator begin_depthFirst() const
-	{ return const_pre_depth_first_iterator(this); }
-
-	const_pre_depth_first_iterator end_depthFirst() const
-	{ return const_pre_depth_first_iterator(nullptr); }
-
-	infomap_cluster_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
-	{ return infomap_cluster_iterator(this, maxClusterLevel); }
-
-	infomap_cluster_iterator end_tree()
-	{ return infomap_cluster_iterator(nullptr); }
-
-	const_infomap_cluster_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const
-	{ return const_infomap_cluster_iterator(this, maxClusterLevel); }
-
-	const_infomap_cluster_iterator end_tree() const
-	{ return const_infomap_cluster_iterator(nullptr); }
-
-	infomap_depth_first_iterator begin_treePath(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
-	{ return infomap_depth_first_iterator(this, maxClusterLevel); }
-
-	infomap_depth_first_iterator end_treePath()
-	{ return infomap_depth_first_iterator(nullptr); }
-
-	const_infomap_depth_first_iterator begin_treePath(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const
-	{ return const_infomap_depth_first_iterator(this, maxClusterLevel); }
-
-	const_infomap_depth_first_iterator end_treePath() const
-	{ return const_infomap_depth_first_iterator(nullptr); }
-
-	infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) {
-		return infomap_iterator_wrapper(infomap_cluster_iterator(this, maxClusterLevel), infomap_cluster_iterator(nullptr));
+	child_iterator_wrapper children() {
+		return child_iterator_wrapper(child_iterator(this), child_iterator(nullptr));
 	}
 
+	const_child_iterator_wrapper children() const {
+		return const_child_iterator_wrapper(const_child_iterator(this), const_child_iterator(nullptr));
+	}
+
+	infomap_child_iterator_wrapper infomap_children() {
+		return infomap_child_iterator_wrapper(infomap_child_iterator(this), infomap_child_iterator(nullptr));
+	}
+
+	const_infomap_child_iterator_wrapper infomap_children() const {
+		return const_infomap_child_iterator_wrapper(const_infomap_child_iterator(this), const_infomap_child_iterator(nullptr));
+	}
+
+	// InfomapLeafIterator begin_leaf()
+	// { return InfomapLeafIterator(this); }
+
+	// InfomapLeafIterator end_leaf()
+	// { return InfomapLeafIterator(nullptr); }
+
+	tree_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
+	{ return tree_iterator(this, maxClusterLevel); }
+
+	tree_iterator end_tree()
+	{ return tree_iterator(nullptr); }
+
+	const_tree_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const
+	{ return const_tree_iterator(this, maxClusterLevel); }
+
+	const_tree_iterator end_tree() const
+	{ return const_tree_iterator(nullptr); }
+	
+	infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) {
+		return infomap_iterator_wrapper(tree_iterator(this, maxClusterLevel), tree_iterator(nullptr));
+	}
+	
 	const_infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const {
-		return const_infomap_iterator_wrapper(const_infomap_cluster_iterator(this, maxClusterLevel), const_infomap_cluster_iterator(nullptr));
+		return const_infomap_iterator_wrapper(const_tree_iterator(this, maxClusterLevel), const_tree_iterator(nullptr));
 	}
 
 	// ---------------------------- Graph iterators ----------------------------
@@ -335,6 +340,8 @@ public:
 	unsigned int childIndex() const;
 
 	std::vector<unsigned int> calculatePath() const;
+
+	unsigned int infomapChildDegree() const;
 
 	// ---------------------------- Operators ----------------------------
 

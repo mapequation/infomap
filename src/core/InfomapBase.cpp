@@ -252,13 +252,13 @@ void InfomapBase::run(Network& network)
 	if (this->printStateNetwork) {
 		std::string filename = this->outDirectory + this->outName + "_states.net";
 		Log() << "Writing state network to '" << filename << "'... ";
-		m_network.writeStateNetwork(filename);
+		network.writeStateNetwork(filename);
 		Log() << "done!\n";
 	}
 	
 	if (this->printPajekNetwork) {
 		std::string filename;
-		if (m_network.haveMemoryInput()) {
+		if (network.haveMemoryInput()) {
 			filename = this->outDirectory + this->outName + "_states_as_physical.net";
 			Log() << "Writing state network as first order Pajek network to '" << filename << "'... ";
 		} else {
@@ -266,11 +266,11 @@ void InfomapBase::run(Network& network)
 			filename = this->outDirectory + this->outName + ".net";
 			Log() << "Writing Pajek network to '" << filename << "'... ";
 		}
-		m_network.writePajekNetwork(filename);
+		network.writePajekNetwork(filename);
 		Log() << "done!\n";
 	}
 	
-	if (m_network.haveMemoryInput()) {
+	if (network.haveMemoryInput()) {
 		Log() << "  -> Found higher order network input, using the Map Equation for higher order network flows\n";
 		if (!this->isMemoryNetwork()) {
 			this->memoryInput = true;
@@ -283,7 +283,7 @@ void InfomapBase::run(Network& network)
 		Log() << "  -> Ordinary network input, using the Map Equation for first order network flows\n";
 	}
 	
-	if (m_network.haveDirectedInput() && this->isUndirectedFlow()) {
+	if (network.haveDirectedInput() && this->isUndirectedFlow()) {
 		Log() << "  -> Notice: Directed input found, changing flow model from '" << this->flowModel << "' to '" << FlowModel::directed << "'\n";
 		this->flowModel = FlowModel::directed;
 	}
@@ -1077,7 +1077,7 @@ void InfomapBase::calculateNumNonTrivialTopModules()
 unsigned int InfomapBase::calculateMaxDepth()
 {
 	unsigned int maxDepth = 0;
-	for (auto it(m_root.begin_treePath()); !it.isEnd(); ++it) {
+	for (auto it(m_root.begin_tree()); !it.isEnd(); ++it) {
 		if (it->isLeaf()) {
 			maxDepth = std::max(maxDepth, it.depth());
 		}
@@ -1466,7 +1466,7 @@ void InfomapBase::queueLeafModules(PartitionQueue& partitionQueue)
 	for (auto it = m_root.begin_tree(); !it.isEnd(); ++it) {
 		if (it->isLeafModule()) {
 			auto& module = *it;
-			partitionQueue[moduleIndex] = it.base();
+			partitionQueue[moduleIndex] = it.current();
 			sumFlow += module.data.flow;
 			sumModuleCodelength += module.codelength;
 			if (module.childDegree() > 1)
@@ -1898,65 +1898,88 @@ void InfomapBase::printTree(std::ostream& outStream, bool states)
 
 void InfomapBase::printTreeLinks(std::ostream& outStream)
 {
-	outStream << "*Links " << (this->isUndirectedFlow() ? "undirected" : "directed") << "\n";
-	outStream << "#*Links path exitFlow numEdges numChildren\n";
+	// Aggregate links between each module. Rest is aggregated as exit flow
 
-	// Use stateId to store depth on modules to optimize link aggregation
-	for (auto it(iterModules()); !it.isEnd(); ++it) {
-		it->stateId = it.depth();
+	// Links on nodes within sub infomap instances doesn't have links outside the root
+	// so iterate over links on main instance and map to infomap tree iterator
+
+	// Map state id to infomap tree iterator
+	std::map<unsigned int, InfomapIterator> nodeIdToTreeIterator;
+	for (auto it(iterTree()); !it.isEnd(); ++it) {
+		if (it->isLeaf()) {
+			nodeIdToTreeIterator[it->stateId] = it;
+		}
+		else {
+			// Use stateId to store depth on modules to simplify link aggregation
+			it->stateId = it.depth();
+			it->index = it.childIndex();
+		}
 	}
 
-	using LinkMap = MapMap<unsigned int, unsigned int, double>;
+	using LinkMap = std::map<std::pair<unsigned int, unsigned int>, double>;
 
-	// Print aggregated flow links for each module
-	// out << "#*Links numEdges path numChildren exitFlow\n";
-	for (auto it(iterModules()); !it.isEnd(); ++it) {
-		InfoNode* module = it.current();
-		// Set child index to use as link index
-		unsigned int childIndex = 0;
-		for (auto& child : *module) {
-			child.index = childIndex++;
-		}
-		LinkMap moduleLinks;
-		double exitFlow = 0.0;
-		// Start finding leaf nodes from child level to know link source index within module
-		for (auto& child : *module) {
-			child.index = childIndex++;
+	std::map<std::string, double> exitFlow;
+	std::map<std::string, LinkMap> moduleLinks;
 
-			// Aggregate links between the module. Rest is aggregated as exit flow
-			for (InfomapLeafIterator leafIt(module); !leafIt.isEnd(); ++leafIt) {
-				auto& node = *leafIt;
-				for (auto& link : node.outEdges()) {
-					// stateId stores depth for now
-					// Iterate up from target link
-					InfomapUpIterator upIt(&link->target);
-					while (upIt->parent != module && upIt->stateId > it.depth() + 1) {
-						++upIt;
-					}
-					if (upIt->parent == module) {
-						moduleLinks.insert(child.index, upIt->index, link->data.flow);
-					} else {
-						exitFlow += link->data.flow;
+	for (auto& leaf : m_leafNodes) {
+		for (auto& link : leaf->outEdges()) {
+			// Log() << link->source.stateId << " " << link->target.stateId << " " << link->data.flow << "\n";
+			double flow = link->data.flow;
+			auto& sourceIt = nodeIdToTreeIterator[link->source.stateId];
+			auto& targetIt = nodeIdToTreeIterator[link->target.stateId];
+			auto sourceDepth = sourceIt.depth();
+			auto targetDepth = targetIt.depth();
+			auto sourceParentIt = InfomapParentIterator(sourceIt.current());
+			auto targetParentIt = InfomapParentIterator(targetIt.current());
+			// Log() << io::stringify(sourceIt.path(), ":", 1) << " (" << link->source.stateId << ") -> " << io::stringify(targetIt.path(), ":", 1) << " (" << link->target.stateId << "), flow: " << flow << "\n";
+			// Iterate to same depth
+			// First raise target
+			while (targetDepth > sourceDepth) {
+				++targetParentIt;
+				--targetDepth;
+			}
+			// Raise source to same depth, adding exit flow on the way
+			while (sourceDepth > targetDepth) {
+				exitFlow[io::stringify(sourceIt.path(), ":", 1)] += flow;
+				++sourceParentIt;
+				--sourceDepth;
+			}
+			auto currentDepth = sourceDepth;
+			// Add link if same parent, else add exit flow
+			while (currentDepth > 0) {
+				auto sourceItCurrent = sourceParentIt++;
+				auto targetItCurrent = targetParentIt++;
+				if (sourceParentIt == targetParentIt) {
+					// Skip self-links
+					if (sourceItCurrent != targetItCurrent) {
+						auto parentId = io::stringify(sourceParentIt->calculatePath(), ":", 1);
+						auto& linkMap = moduleLinks[parentId];
+						auto sourceChildIndex = sourceItCurrent->index;
+						auto targetChildIndex = targetItCurrent->index;
+						linkMap[std::make_pair(sourceChildIndex + 1, targetChildIndex + 1)] += flow;
 					}
 				}
+				else {
+					exitFlow[io::stringify(sourceParentIt->calculatePath(), ":", 1)] += flow;
+				}
+				--currentDepth;
 			}
 		}
+	}
 
-		// Write aggregated links
-		std::string path = io::stringify(it.path(), ":", 1);
-		outStream << "*Links " << (path.empty() ? "root" : path) << " " << exitFlow <<
-			" " << moduleLinks.size() << " " << module->childDegree() << "\n";
-		for (auto itSource : moduleLinks.data()) {
-			unsigned int sourceId = itSource.first;
-			const auto& subLinks = itSource.second;
-			for (auto itTarget : subLinks) {
-				unsigned int targetId = itTarget.first;
-				double flow = itTarget.second;
-				outStream << sourceId << " " << targetId << " " << flow << "\n";
-			}
-		}
-		if (moduleLinks.size() == 0) {
-			outStream << "1 1 0.1\n";
+	outStream << "*Links " << (this->isUndirectedFlow() ? "undirected" : "directed") << "\n";
+	outStream << "#*Links path exitFlow numEdges numChildren\n";
+	
+	// Use stateId to store depth on modules to optimize link aggregation
+	for (auto it(iterModules()); !it.isEnd(); ++it) {
+		auto parentId = io::stringify(it.path(), ":", 1);
+		auto& links = moduleLinks[parentId];
+		outStream << "*Links " << (parentId == "" ? "root" : parentId) << " " << exitFlow[parentId] << " " << links.size() << " " << it->infomapChildDegree() << "\n";
+		for (auto itLink : links) {
+			unsigned int sourceId = itLink.first.first;
+			unsigned int targetId = itLink.first.second;
+			double flow = itLink.second;
+			outStream << sourceId << " " << targetId << " " << flow << "\n";
 		}
 	}
 }

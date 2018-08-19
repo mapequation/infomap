@@ -14,6 +14,7 @@ namespace infomap {
 
 // class InfoNode;
 
+
 /**
  * Pre processing depth first iterator that explores sub-Infomap instances
  * Note:
@@ -93,6 +94,16 @@ public:
 
 	// InfoNode& operator*();
 
+	bool operator==(const InfomapIterator& other) const
+	{
+		return m_current == other.m_current;
+	}
+
+	bool operator!=(const InfomapIterator& other) const
+	{
+		return m_current != other.m_current;
+	}
+
 	virtual InfomapIterator& operator++();
 
 	virtual InfomapIterator operator++(int)
@@ -116,6 +127,11 @@ public:
 	unsigned int moduleIndex() const
 	{
 		return m_moduleIndex;
+	}
+
+	unsigned int childIndex() const
+	{
+		return m_path.empty() ? 0 : m_path.back();
 	}
 
 	unsigned int depth() const
@@ -332,7 +348,7 @@ public:
  * moving up through possible sub infomap instances
  * on the way
  */
-class InfomapUpIterator
+class InfomapParentIterator
 {
 protected:
 	// InfoNode* m_root = nullptr;
@@ -344,19 +360,19 @@ protected:
 
 public:
 
-	InfomapUpIterator() {}
+	InfomapParentIterator() {}
 
-	InfomapUpIterator(InfoNode* nodePointer)
+	InfomapParentIterator(InfoNode* nodePointer)
 	: m_current(nodePointer)
 	{}
 
-	InfomapUpIterator(const InfomapUpIterator& other)
+	InfomapParentIterator(const InfomapParentIterator& other)
 	:	m_current(other.m_current)
 	{}
 
-	virtual ~InfomapUpIterator() {}
+	virtual ~InfomapParentIterator() {}
 
-	InfomapUpIterator& operator= (const InfomapUpIterator& other)
+	InfomapParentIterator& operator= (const InfomapParentIterator& other)
 	{
 		m_current = other.m_current;
 		return *this;
@@ -394,16 +410,26 @@ public:
 
 	// InfoNode& operator*();
 
-	virtual InfomapUpIterator& operator++();
-
-	virtual InfomapUpIterator operator++(int)
+	bool operator==(const InfomapParentIterator& other) const
 	{
-		InfomapUpIterator copy(*this);
+		return m_current == other.m_current;
+	}
+
+	bool operator!=(const InfomapParentIterator& other) const
+	{
+		return m_current != other.m_current;
+	}
+
+	virtual InfomapParentIterator& operator++();
+
+	virtual InfomapParentIterator operator++(int)
+	{
+		InfomapParentIterator copy(*this);
 		++(*this);
 		return copy;
 	}
 
-	virtual InfomapUpIterator& stepForward()
+	virtual InfomapParentIterator& stepForward()
 	{
 		++(*this);
 		return *this;

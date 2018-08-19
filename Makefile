@@ -161,8 +161,6 @@ $(PY2_BUILD_DIR)/src/%: src/%
 	@cp -a $^ $@
 
 $(PY_BUILD_DIR)/headers/%: %
-	@echo "mkdir $(dir $@) and cp -a $^ $@..."
-	ls $(PY_BUILD_DIR)/headers/
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 

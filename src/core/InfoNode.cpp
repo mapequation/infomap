@@ -187,6 +187,11 @@ unsigned int InfoNode::childDegree() const
 //	return m_childDegree;
 }
 
+unsigned int InfoNode::infomapChildDegree() const
+{
+	return m_infomap == nullptr ? childDegree() : m_infomap->root().childDegree();
+}
+
 void InfoNode::addChild(InfoNode* child)
 {
 //	m_childrenChanged = true;
@@ -224,12 +229,12 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
 	if (firstChild->firstChild == nullptr)
 		throw InternalOrderError("replaceChildrenWithOneNode called on a node without any grandchildren.");
 	InfoNode* middleNode = new InfoNode();
-	InfoNode::sibling_iterator nodeIt = begin_child();
+	InfoNode::child_iterator nodeIt = begin_child();
 	unsigned int numOriginalChildrenLeft = m_childDegree;
 	auto d0 = m_childDegree;
 	do
 	{
-		InfoNode* n = nodeIt.base();
+		InfoNode* n = nodeIt.current();
 		++nodeIt;
 		middleNode->addChild(n);
 	}
@@ -246,12 +251,12 @@ unsigned int InfoNode::replaceChildrenWithGrandChildren()
 {
 	if (firstChild == nullptr)
 		return 0;
-	InfoNode::sibling_iterator nodeIt = begin_child();
+	InfoNode::child_iterator nodeIt = begin_child();
 	unsigned int numOriginalChildrenLeft = m_childDegree;
 	unsigned int numChildrenReplaced = 0;
 	do
 	{
-		InfoNode* n = nodeIt.base();
+		InfoNode* n = nodeIt.current();
 		++nodeIt;
 		numChildrenReplaced += n->replaceWithChildren();
 	}
@@ -304,11 +309,11 @@ void InfoNode::replaceChildrenWithGrandChildrenDebug()
 {
 	if (firstChild == 0)
 		return;
-	InfoNode::sibling_iterator nodeIt = begin_child();
+	InfoNode::child_iterator nodeIt = begin_child();
 	unsigned int numOriginalChildrenLeft = m_childDegree;
 	do
 	{
-		InfoNode* n = nodeIt.base();
+		InfoNode* n = nodeIt.current();
 		++nodeIt;
 		n->replaceWithChildrenDebug();
 	}
@@ -368,14 +373,14 @@ void InfoNode::deleteChildren()
 	if (firstChild == nullptr)
 		return;
 
-	sibling_iterator nodeIt = begin_child();
+	child_iterator nodeIt = begin_child();
 	do
 	{
-		InfoNode* n = nodeIt.base();
+		InfoNode* n = nodeIt.current();
 		++nodeIt;
 		delete n;
 	}
-	while (nodeIt.base() != nullptr);
+	while (nodeIt.current() != nullptr);
 
 	firstChild = nullptr;
 	lastChild = nullptr;
@@ -392,8 +397,9 @@ void InfoNode::calcChildDegree()
 	else
 	{
 		m_childDegree = 0;
-		for (sibling_iterator childIt(begin_child()), endIt(end_child());
-				childIt != endIt; ++childIt, ++m_childDegree);
+		for (auto child : children()) {
+			++m_childDegree;
+		}
 	}
 }
 

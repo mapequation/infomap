@@ -208,10 +208,10 @@ namespace infomap {
 
 
 	// -------------------------------------
-	// InfomapUpIterator
+	// InfomapParentIterator
 	// -------------------------------------
 
-	InfomapUpIterator& InfomapUpIterator::operator++()
+	InfomapParentIterator& InfomapParentIterator::operator++()
 	{
 		m_current = m_current->parent;
 		if (m_current != nullptr && m_current->owner != nullptr) {
