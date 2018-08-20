@@ -302,6 +302,7 @@ void InfomapBase::run(Network& network)
 		Log(2) << "Run Infomap..." << std::endl;
 	
 	std::ostringstream bestSolutionStatistics;
+	// InfoNode bestTree; //TODO: Store best tree and swap back later
 	unsigned int bestNumLevels = 0;
 	double bestHierarchicalCodelength = std::numeric_limits<double>::max();
 	std::deque<double> codelengths;
@@ -343,6 +344,7 @@ void InfomapBase::run(Network& network)
 				bestNumLevels = printPerLevelCodelength(bestSolutionStatistics);
 				bestHierarchicalCodelength = m_hierarchicalCodelength;
 				writeResult();
+				// m_root.storeModulesIn(bestTree);
 			}
 		}
 	}
@@ -1878,7 +1880,10 @@ void InfomapBase::printTree(std::ostream& outStream, bool states)
 			InfoNode &node = *it;
 			if (node.isLeaf()) {
 				auto &path = it.path();
-				outStream << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.stateId << "\" " << node.physicalId << "\n";
+				auto name = m_network.names()[node.physicalId];
+				if (name.empty())
+					name = io::stringify(node.physicalId);
+				outStream << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << name << "\" " << node.physicalId << "\n";
 			}
 		}
 	} else {
@@ -1886,7 +1891,10 @@ void InfomapBase::printTree(std::ostream& outStream, bool states)
 			InfoNode &node = *it;
 			if (node.isLeaf()) {
 				auto &path = it.path();
-				outStream << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.stateId << "\" ";
+				auto name = haveMemory() ? io::stringify(node.stateId) : m_network.names()[node.physicalId];
+				if (name.empty())
+					name = io::stringify(node.physicalId);
+				outStream << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << name << "\" ";
 				if (states)
 					outStream << node.stateId << " " << node.physicalId << "\n";
 				else

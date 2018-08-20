@@ -362,6 +362,35 @@ void InfoNode::replaceWithChildrenDebug()
 	delete this;
 }
 
+// void InfoNode::storeModulesIn(InfoNode& otherRoot)
+// {
+// 	// Move root links to otherRoot
+// 	otherRoot.firstChild = firstChild;
+// 	otherRoot.lastChild = lastChild;
+// 	otherRoot.m_childDegree = m_childDegree;
+// 	firstChild->parent = &otherRoot;
+// 	lastChild->parent = &otherRoot;
+	
+// 	// Link directly to leaf nodes in curren node instead
+// 	// Reparent leaf nodes within same infomap instance
+// 	InfoNode* leaf = this;
+// 	// Walk down to leaf
+//TODO: Use leaf module iteartor and clone each leaf node to
+// otherRoot and reparent leaf node to current node.
+// 	while (leaf->firstChild != nullptr)
+// 	{
+// 		leaf = leaf->firstChild;
+// 	}
+// 	unsigned int numLeafNodes = 0;
+// 	// Walk horisontally through all siblings and copy leaf nodes (without edges)
+// 	while (leaf != nullptr) {
+// 		++numLeafNodes;
+// 		leaf->parent = this;
+// 		leaf = leaf->next;
+// 	}
+// 	m_childDegree = numLeafNodes;
+// }
+
 void InfoNode::remove(bool removeChildren)
 {
 	firstChild = removeChildren ? 0 : firstChild;

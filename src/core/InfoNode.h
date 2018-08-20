@@ -404,6 +404,9 @@ public:
 
 	void replaceWithChildrenDebug();
 
+	// void storeModulesIn(InfoNode& other);
+	// void restoreModulesTo(InfoNode& other);
+
 	/**
 	 * @return The number of children removed
 	 */
