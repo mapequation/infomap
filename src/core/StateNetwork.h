@@ -160,7 +160,7 @@ public:
 	// typedef Network::StateLinkMap										StateLinkMap;
 	// typedef std::vector<StateLink>										LinkVec;
 	// typedef std::map<unsigned int, std::map<unsigned int, double> >	LinkMap;
-	typedef std::map<StateNode, std::map<StateNode, LinkData> >	NodeLinkMap; //TODO: Why LinkData and not just double?
+	using NodeLinkMap = std::map<StateNode, std::map<StateNode, LinkData> >;
 
 protected:
 	friend class FlowCalculator;

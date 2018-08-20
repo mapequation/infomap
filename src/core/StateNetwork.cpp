@@ -223,9 +223,12 @@ bool StateNetwork::addPath(const std::vector<unsigned int>& path, unsigned int m
 	// std::cout << "Add state node and links from path " << io::stringify(path, " ") << "\n";
 	for (unsigned int i = markovOrder - 1; i < path.size(); ++i) {
 		std::string id = io::stringifyContainer(path, " ", i - (markovOrder - 1), markovOrder);
-		auto ret = m_pathToStateId.insert(std::make_pair(id, m_pathToStateId.size()));
-		unsigned int stateId = ret.first->second;
 		unsigned int physId = path[i];
+		unsigned int stateId = physId;
+		if (markovOrder > 1) {
+			auto ret = m_pathToStateId.insert(std::make_pair(id, m_pathToStateId.size()));
+			stateId = ret.first->second;
+		}
 		addStateNode(stateId, physId);
 		// std::cout << " -> add State node '" << id << "' (" << stateId << "," << physId << ")\n";
 		if (!createLink) {
