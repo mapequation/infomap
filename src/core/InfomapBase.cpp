@@ -321,7 +321,7 @@ void InfomapBase::run(Network& network)
 			Log() << "================================================\n";
 			Log() << "Trial " << (i + 1) << "/" << numTrials << " starting at" << startDate << "\n";
 			Log() << "================================================\n";
-			printRSS();
+			// printRSS();
 
 			if (this->clusterDataFile != "")
 				initPartition(this->clusterDataFile, this->clusterDataIsHard);
@@ -378,7 +378,7 @@ void InfomapBase::run(Network& network)
 		Log() << ":" << std::endl;
 		Log() << bestSolutionStatistics.str() << std::endl;
 	}
-	printRSS();
+	// printRSS();
 }
 
 
@@ -646,7 +646,7 @@ void InfomapBase::hierarchicalPartition()
 	findHierarchicalSuperModules();
 //	findHierarchicalSuperModulesFast(superLevelLimit);
 	
-	printRSS();
+	// printRSS();
 
 	if (this->onlySuperModules) {
 		removeSubModules(true);
@@ -666,7 +666,7 @@ void InfomapBase::hierarchicalPartition()
 	}
 	
 	recursivePartition();
-	printRSS();
+	// printRSS();
 }
 
 void InfomapBase::partition()
@@ -1827,7 +1827,7 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 		for (auto& node : *module) {
 			for (auto& link : node.outEdges()) {
 				if (link->source.parent != link->target.parent) {
-					moduleLinks[std::make_pair(link->source.parent->index + 1, link->target.parent->index + 1)] += link->data.flow;
+					moduleLinks[std::make_pair(link->source.parent->index, link->target.parent->index)] += link->data.flow;
 					moduleExitFlow[module->index + 1] += link->data.flow;
 				}
 			}
@@ -1840,9 +1840,7 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 	outFile << "# nodes: " << numNodes << "\n";
 	outFile << "# links: " << 0 << "\n";
 	outFile << "# codelength: " << m_hierarchicalCodelength << "\n";
-	if (!this->isUndirectedClustering()) {
-		outFile << "*Directed\n";
-	}
+	outFile << (this->isUndirectedClustering() ? "*Undirected\n" : "*Directed\n");
 	outFile << "*Modules " << modules.size() << "\n";
 	for (unsigned int i = 0; i < modules.size(); ++i) {
 		auto& module = *modules[i];
@@ -1854,8 +1852,8 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 		auto& siblings = nodes[i];
 		for (unsigned int j = 0; j < siblings.size(); ++j) {
 			auto& n = siblings[j];
-			outFile << i + 1 << ":" << j + 1 << " \"" << n.name << "\" " << n.flow;// << "\n";
-			outFile << " " << n.id << "\n";
+			outFile << i + 1 << ":" << j + 1 << " \"" << n.name << "\" " << n.flow << "\n";
+			// outFile << " " << n.id << "\n";
 		}
 	}
 	outFile << "*Links " << moduleLinks.size() << "\n";
