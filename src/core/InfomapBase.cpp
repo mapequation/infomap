@@ -1719,7 +1719,7 @@ std::string InfomapBase::writeFlowTree(std::string filename, bool states)
 
 	SafeOutFile outFile(outputFilename);
 	printTree(outFile, states);
-	printTreeLinks(outFile);
+	printTreeLinks(outFile, states);
 	
 	return outputFilename;
 }
@@ -1902,23 +1902,43 @@ void InfomapBase::printTree(std::ostream& outStream, bool states)
 	}
 }
 
-void InfomapBase::printTreeLinks(std::ostream& outStream)
+void InfomapBase::printTreeLinks(std::ostream& outStream, bool states)
 {
 	// Aggregate links between each module. Rest is aggregated as exit flow
 
 	// Links on nodes within sub infomap instances doesn't have links outside the root
 	// so iterate over links on main instance and map to infomap tree iterator
+	bool mergePhysicalNodes = haveMemory() && !states;
 
-	// Map state id to infomap tree iterator
-	std::map<unsigned int, InfomapIterator> nodeIdToTreeIterator;
-	for (auto it(iterTree()); !it.isEnd(); ++it) {
-		if (it->isLeaf()) {
-			nodeIdToTreeIterator[it->stateId] = it;
+	// Map state id to parent in infomap tree iterator
+	std::map<unsigned int, InfoNode*> stateIdToParent;
+	std::map<unsigned int, unsigned int> stateIdToChildIndex;
+	if (mergePhysicalNodes) {
+		for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
+			if (it->isLeaf()) {
+				for (auto stateId : it->stateNodes) {
+					stateIdToParent[stateId] = it->parent;
+					stateIdToChildIndex[stateId] = it.childIndex();
+				}
+			}
+			else {
+				// Use stateId to store depth on modules to simplify link aggregation
+				it->stateId = it.depth();
+				it->index = it.childIndex();
+			}
 		}
-		else {
-			// Use stateId to store depth on modules to simplify link aggregation
-			it->stateId = it.depth();
-			it->index = it.childIndex();
+	}
+	else {
+		for (auto it(iterTree()); !it.isEnd(); ++it) {
+			if (it->isLeaf()) {
+				stateIdToParent[it->stateId] = it->parent;
+				stateIdToChildIndex[it->stateId] = it.childIndex();
+			}
+			else {
+				// Use stateId to store depth on modules to simplify link aggregation
+				it->stateId = it.depth();
+				it->index = it.childIndex();
+			}
 		}
 	}
 
@@ -1931,12 +1951,16 @@ void InfomapBase::printTreeLinks(std::ostream& outStream)
 		for (auto& link : leaf->outEdges()) {
 			// Log() << link->source.stateId << " " << link->target.stateId << " " << link->data.flow << "\n";
 			double flow = link->data.flow;
-			auto& sourceIt = nodeIdToTreeIterator[link->source.stateId];
-			auto& targetIt = nodeIdToTreeIterator[link->target.stateId];
-			auto sourceDepth = sourceIt.depth();
-			auto targetDepth = targetIt.depth();
-			auto sourceParentIt = InfomapParentIterator(sourceIt.current());
-			auto targetParentIt = InfomapParentIterator(targetIt.current());
+			// auto& sourceIt = stateIdToParent[link->source.stateId];
+			// auto& targetIt = stateIdToParent[link->target.stateId];
+			InfoNode* sourceParent = stateIdToParent[link->source.stateId];
+			InfoNode* targetParent = stateIdToParent[link->target.stateId];
+			auto sourceDepth = sourceParent->calculatePath().size() + 1;
+			auto targetDepth = targetParent->calculatePath().size() + 1;
+			auto sourceChildIndex = stateIdToChildIndex[link->source.stateId];
+			auto targetChildIndex = stateIdToChildIndex[link->target.stateId];
+			auto sourceParentIt = InfomapParentIterator(sourceParent);
+			auto targetParentIt = InfomapParentIterator(targetParent);
 			// Log() << io::stringify(sourceIt.path(), ":", 1) << " (" << link->source.stateId << ") -> " << io::stringify(targetIt.path(), ":", 1) << " (" << link->target.stateId << "), flow: " << flow << "\n";
 			// Iterate to same depth
 			// First raise target
@@ -1946,28 +1970,28 @@ void InfomapBase::printTreeLinks(std::ostream& outStream)
 			}
 			// Raise source to same depth, adding exit flow on the way
 			while (sourceDepth > targetDepth) {
-				exitFlow[io::stringify(sourceIt.path(), ":", 1)] += flow;
+				exitFlow[io::stringify(sourceParent->calculatePath(), ":", 1)] += flow;
 				++sourceParentIt;
 				--sourceDepth;
 			}
 			auto currentDepth = sourceDepth;
 			// Add link if same parent, else add exit flow
 			while (currentDepth > 0) {
-				auto sourceItCurrent = sourceParentIt++;
-				auto targetItCurrent = targetParentIt++;
 				if (sourceParentIt == targetParentIt) {
 					// Skip self-links
-					if (sourceItCurrent != targetItCurrent) {
+					if (sourceChildIndex != targetChildIndex) {
 						auto parentId = io::stringify(sourceParentIt->calculatePath(), ":", 1);
 						auto& linkMap = moduleLinks[parentId];
-						auto sourceChildIndex = sourceItCurrent->index;
-						auto targetChildIndex = targetItCurrent->index;
 						linkMap[std::make_pair(sourceChildIndex + 1, targetChildIndex + 1)] += flow;
 					}
 				}
 				else {
 					exitFlow[io::stringify(sourceParentIt->calculatePath(), ":", 1)] += flow;
 				}
+				sourceChildIndex = sourceParentIt->index;
+				targetChildIndex = targetParentIt->index;
+				++sourceParentIt;
+				++targetParentIt;
 				--currentDepth;
 			}
 		}
@@ -1980,6 +2004,10 @@ void InfomapBase::printTreeLinks(std::ostream& outStream)
 	for (auto it(iterModules()); !it.isEnd(); ++it) {
 		auto parentId = io::stringify(it.path(), ":", 1);
 		auto& links = moduleLinks[parentId];
+		// if (it->isLeafModule() && mergePhysicalNodes) {
+		// 	outStream << "*Links " << parentId << " " << exitFlow[parentId] << " " << 0 << " " << 0 << "\n";
+		// 	continue;
+		// }
 		outStream << "*Links " << (parentId == "" ? "root" : parentId) << " " << exitFlow[parentId] << " " << links.size() << " " << it->infomapChildDegree() << "\n";
 		for (auto itLink : links) {
 			unsigned int sourceId = itLink.first.first;

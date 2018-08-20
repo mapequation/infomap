@@ -94,6 +94,7 @@ public:
 	bool dirty = false;
 
 	std::vector<PhysData> physicalNodes;
+	std::vector<unsigned int> stateNodes; // For physically aggregated nodes
 
 protected:
 //	SubStructure m_subStructure;

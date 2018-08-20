@@ -415,7 +415,7 @@ protected:
 	/**
 	 * Write tree links to output stream
 	 */
-	void printTreeLinks(std::ostream& outStream);
+	void printTreeLinks(std::ostream& outStream, bool states = false);
 
 	InfoNode m_root;
 	std::vector<InfoNode*> m_leafNodes;

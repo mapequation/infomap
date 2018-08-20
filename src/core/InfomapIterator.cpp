@@ -152,6 +152,7 @@ namespace infomap {
 						//TODO: If exitFlow should be correct, flow between memory nodes within same physical node should be subtracted.
 						physNode.data += m_current->data;
 					}
+					physNode.stateNodes.push_back(m_current->stateId);
 					InfomapIterator::operator++();
 				}
 				// Store current iterator to continue with after iterating physical leaf nodes
