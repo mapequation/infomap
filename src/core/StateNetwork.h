@@ -180,6 +180,9 @@ protected:
 	double m_sumLinkWeight = 0.0;
 	double m_sumSelfLinkWeight = 0.0;
 	unsigned int m_numAggregatedLinks = 0;
+	double m_totalLinkWeightAdded = 0.0;
+	unsigned int m_numLinksIgnoredByWeightThreshold = 0;
+	double m_totalLinkWeightIgnored = 0.0;
 	std::map<unsigned int, double> m_outWeights;
 	// Attributes
 	std::map<unsigned int, std::string> m_names;

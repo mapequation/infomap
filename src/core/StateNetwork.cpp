@@ -116,6 +116,13 @@ std::pair<std::map<unsigned int, std::string>::iterator, bool> StateNetwork::add
 
 bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double weight)
 {
+	if (weight < m_config.weightThreshold) {
+		++m_numLinksIgnoredByWeightThreshold;
+		m_totalLinkWeightIgnored += weight;
+		return false;
+	}
+	m_totalLinkWeightAdded += weight;
+
 	if (sourceId == targetId) {
 		++m_numSelfLinksFound;
 		if (!m_config.includeSelfLinks) {

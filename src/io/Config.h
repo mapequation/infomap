@@ -79,6 +79,7 @@ struct Config
 	std::string inputFormat = ""; // 'pajek', 'link-list', '3gram', 'path' or 'multilayer'
 	bool memoryInput = false;
 	bool withMemory = false;
+	double weightThreshold = 0.0;
 	bool weightedPaths = false;
 	unsigned int pathMarkovOrder = 1;
 	bool bipartite = false;
@@ -186,6 +187,7 @@ struct Config
 	 	inputFormat(other.inputFormat),
 	 	memoryInput(other.memoryInput),
 	 	withMemory(other.withMemory),
+		weightThreshold(other.weightThreshold),
 		weightedPaths(other.weightedPaths),
 		pathMarkovOrder(other.pathMarkovOrder),
 		bipartite(other.bipartite),
@@ -275,6 +277,7 @@ struct Config
 	 	inputFormat = other.inputFormat;
 	 	memoryInput = other.memoryInput;
 	 	withMemory = other.withMemory;
+		weightThreshold = other.weightThreshold;
 		weightedPaths = other.weightedPaths;
 		pathMarkovOrder = other.pathMarkovOrder;
 	 	bipartite = other.bipartite;
@@ -363,6 +366,7 @@ struct Config
 	 	inputFormat = other.inputFormat;
 	 	memoryInput = other.memoryInput;
 	 	withMemory = other.withMemory;
+		weightThreshold = other.weightThreshold;
 		weightedPaths = other.weightedPaths;
 		pathMarkovOrder = other.pathMarkovOrder;
 	 	bipartite = other.bipartite;

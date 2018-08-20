@@ -611,7 +611,11 @@ void Network::printSummary()
 	Log() << "-------------------------------------\n";
 	Log() << "  -> " << numNodes() << " state nodes\n";
 	Log() << "  -> " << numPhysicalNodes() << " physical nodes\n";
-	Log() << "  -> " << numLinks() << " links\n";
+	Log() << "  -> " << numLinks() << " links with total weight " << m_totalLinkWeightAdded << "\n";
+	if (m_numLinksIgnoredByWeightThreshold > 0) {
+		Log() << "  -> " << m_numLinksIgnoredByWeightThreshold << " links ignored by weight threshold with total weight " <<
+		m_totalLinkWeightIgnored << " (" << io::toPrecision(m_totalLinkWeightIgnored / (m_totalLinkWeightIgnored + m_totalLinkWeightAdded) * 100, 1, true) << "%)\n";
+	}
 }
 
 void Network::addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight)

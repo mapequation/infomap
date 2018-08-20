@@ -57,6 +57,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.withMemory, "overlapping",
 			"Let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the memoryless dynamics with memory nodes.");
 
+	api.addOptionArgument(conf.weightThreshold, "weight-threshold",
+			"Limit the number of links to read from the network. Ignore links with less weight than the threshold. (Default: 0)", "f", true);
+
 	api.addOptionArgument(conf.weightedPaths, "weighted-paths",
 			"Assume last value in a path is the weight.", true);
 
@@ -277,13 +280,13 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	}
 
 	conf.parsedString = flags;
-    conf.parsedOptions = api.getUsedOptionArguments();
+	conf.parsedOptions = api.getUsedOptionArguments();
 
 	conf.adaptDefaults();
 	
 	Log::init(conf.verbosity, conf.silent, conf.verboseNumberPrecision);
 
-    return conf;
+	return conf;
 }
 
 }
