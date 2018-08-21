@@ -171,9 +171,9 @@ struct Config
 	std::vector<ParsedOption> parsedOptions;
 	std::string error = "";
 
-	Config()
+	Config() : noFileOutput(true)
 	{
-		// setOptimizationLevel(1);
+		// adaptDefaults();
 	}
 
 	Config(std::string flags, bool requireFileInput = false)

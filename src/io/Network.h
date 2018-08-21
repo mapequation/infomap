@@ -86,6 +86,8 @@ public:
 	:	StateNetwork() { initValidHeadings(); }
 	Network(const Config& config)
 	:	StateNetwork(config) { initValidHeadings(); }
+	Network(std::string flags)
+	:	StateNetwork(flags) { initValidHeadings(); }
 	virtual ~Network() {}
 
 

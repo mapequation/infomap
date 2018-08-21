@@ -256,7 +256,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	if (!optionalOutputDir.empty())
 		conf.outDirectory = optionalOutputDir[0];
 	
-	if (!requireFileInput && conf.outDirectory == "")
+	if (requireFileInput)
+		conf.noFileOutput = false;
+	else if (conf.outDirectory == "")
 		conf.noFileOutput = true;
 
 	if (!conf.noFileOutput && conf.outDirectory == "" && requireFileInput)
