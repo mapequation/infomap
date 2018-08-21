@@ -1,5 +1,7 @@
 %module infomap
 
+%include "exceptions.i"
+
 %{
 /* Includes the header in the wrapper code */
 #include "src/core/Infomap.h"

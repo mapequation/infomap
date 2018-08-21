@@ -377,7 +377,7 @@ std::string Network::parsePaths(std::ifstream& file)
 			break;
 
 		std::vector<unsigned int> nodes;
-		double weight = parsePath(line, nodes, m_config.weightedPaths);
+		double weight = parsePath(line, nodes, !m_config.unweightedPaths);
 
 		addPath(nodes, m_config.pathMarkovOrder, weight);
 	}

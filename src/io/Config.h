@@ -80,7 +80,7 @@ struct Config
 	bool memoryInput = false;
 	bool withMemory = false;
 	double weightThreshold = 0.0;
-	bool weightedPaths = false;
+	bool unweightedPaths = false;
 	unsigned int pathMarkovOrder = 1;
 	bool bipartite = false;
 	bool skipAdjustBipartiteFlow = false;
@@ -188,7 +188,7 @@ struct Config
 	 	memoryInput(other.memoryInput),
 	 	withMemory(other.withMemory),
 		weightThreshold(other.weightThreshold),
-		weightedPaths(other.weightedPaths),
+		unweightedPaths(other.unweightedPaths),
 		pathMarkovOrder(other.pathMarkovOrder),
 		bipartite(other.bipartite),
 		skipAdjustBipartiteFlow(other.skipAdjustBipartiteFlow),
@@ -278,7 +278,7 @@ struct Config
 	 	memoryInput = other.memoryInput;
 	 	withMemory = other.withMemory;
 		weightThreshold = other.weightThreshold;
-		weightedPaths = other.weightedPaths;
+		unweightedPaths = other.unweightedPaths;
 		pathMarkovOrder = other.pathMarkovOrder;
 	 	bipartite = other.bipartite;
 	 	skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;
@@ -367,7 +367,7 @@ struct Config
 	 	memoryInput = other.memoryInput;
 	 	withMemory = other.withMemory;
 		weightThreshold = other.weightThreshold;
-		weightedPaths = other.weightedPaths;
+		unweightedPaths = other.unweightedPaths;
 		pathMarkovOrder = other.pathMarkovOrder;
 	 	bipartite = other.bipartite;
 	 	skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;

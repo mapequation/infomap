@@ -18,6 +18,6 @@ print("Generated state network with {} nodes and {} links".format(network.numNod
 print("Run Infomap on network...")
 myInfomap.run()
 
-print("Found %d top modules with codelength: %f" % (myInfomap.numTopModules(), myInfomap.codelength()))
+print("Found {} top modules with codelength: {}".format(myInfomap.numTopModules(), myInfomap.codelength()))
 
 print("Done!")
