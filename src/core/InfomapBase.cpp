@@ -527,6 +527,7 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
 	else {
 		Log(1) << "\n -> Initiated to codelength " << *this << " in " << numTopModules() << " top modules." << std::endl;
 	}
+	m_hierarchicalCodelength = getCodelength();
 
 	return *this;
 }
