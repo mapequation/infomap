@@ -20,6 +20,7 @@
 #include "../utils/Date.h"
 #include "../utils/Stopwatch.h"
 #include "../utils/exceptions.h"
+#include "../utils/FileURI.h"
 #include "../io/version.h"
 #include <iomanip>
 #include <limits>
@@ -411,48 +412,56 @@ InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
 
 InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard)
 {
-	// using NodeKey = typename std::remove_cv<decltype(std::declval<Node>().key)>::type;
-	// ClusterMap<NodeKey> clusterMap;
-	// clusterMap.readClusterData(clusterDataFile);
+	FileURI file(clusterDataFile);
+	if (file.getExtension() != "clu") {
+		throw ImplementationError("Input cluster data only supports .clu files currently, will be general soon!");
+	}
+	ClusterMap clusterMap;
+	clusterMap.readClusterData(clusterDataFile);
 
-	// std::map<NodeKey, unsigned int> clusterIds = clusterMap.clusterIds();
+	auto& clusterIds = clusterMap.clusterIds();
 
-	// // Group on cluster id
-	// std::map<unsigned int, std::set<NodeKey>> keysGroupedOnClusterId;
-	// for (auto it = clusterIds.begin(); it != clusterIds.end(); ++it){
-	// 	keysGroupedOnClusterId[it->second].insert(it->first);
-	// }
+	// Log() << "\n\n.clu\n#stateId moduleId\n";
+	std::map<unsigned int, std::set<unsigned int>> stateIdsGroupedOnClusterIds;
+	for (auto it : clusterIds){
+		// Log() << it.first << " " << it.second << "\n";
+		stateIdsGroupedOnClusterIds[it.second].insert(it.first);
+	}
 
-	// // Create map from key to leaf node index
-	// std::map<NodeKey, unsigned int> keyToNodeIndex;
-	// for (unsigned int i = 0; i < m_leafNodes.size(); ++i) {
-	// 	keyToNodeIndex[get(*m_leafNodes[i]).key] = i;
-	// }
+	// Create map from stateId to leaf node index
+	std::map<unsigned int, unsigned int> stateIdToLeafNodeIndex;
+	for (unsigned int i = 0; i < m_leafNodes.size(); ++i) {
+		stateIdToLeafNodeIndex[m_leafNodes[i]->stateId] = i;
+	}
 
-	// // Create vectors of clusters
-	// std::vector<std::vector<unsigned int>> clusters(keysGroupedOnClusterId.size());
-	// unsigned int numNodesNotFound = 0;
-	// unsigned int clusterIndex = 0;
-	// for (auto& clusterToKeys : keysGroupedOnClusterId) {
-	// 	auto& keys = clusterToKeys.second;
-	// 	clusters[clusterIndex].reserve(keys.size());
-	// 	for (auto& key : keys) {
-	// 		auto it = keyToNodeIndex.find(key);
-	// 		if (it == keyToNodeIndex.end()) {
-	// 			++numNodesNotFound;
-	// 		}
-	// 		else {
-	// 			unsigned int nodeIndex = it->second;
-	// 			clusters[clusterIndex].push_back(nodeIndex);
-	// 		}
-	// 	}
-	// 	++clusterIndex;
-	// }
-	// if (numNodesNotFound > 0)
-	// 	Log() << "(Warning: " << numNodesNotFound << " nodes not found in network.) ";
+	// Create vectors of clusters
+	std::vector<std::vector<unsigned int>> clusters(stateIdsGroupedOnClusterIds.size());
+	unsigned int numNodesNotFound = 0;
+	unsigned int clusterIndex = 0;
+	// Log() << "\nGroup by cluster..\n";
+	for (auto& clusterToStateIds : stateIdsGroupedOnClusterIds) {
+		auto& stateIds = clusterToStateIds.second;
+		clusters[clusterIndex].reserve(stateIds.size());
+		// Log() << "Cluster " << clusterToStateIds.first << " (-> clusterIndex: " << clusterIndex << "):\n";
+		for (auto stateId : stateIds) {
+			auto it = stateIdToLeafNodeIndex.find(stateId);
+			// Log() << "  " << stateId << ": ";
+			if (it == stateIdToLeafNodeIndex.end()) {
+				++numNodesNotFound;
+				// Log() << "not in network!\n";
+			}
+			else {
+				unsigned int nodeIndex = it->second;
+				clusters[clusterIndex].push_back(nodeIndex);
+				// Log() << "-> leaf index " << nodeIndex << "\n";
+			}
+		}
+		if (clusters[clusterIndex].size() > 0)
+			++clusterIndex;
+	}
+	if (numNodesNotFound > 0)
+		Log() << "(Warning: " << numNodesNotFound << " nodes not found in network.) ";
 
-	// return initPartition(clusters, hard);
-	std::vector<std::vector<unsigned int>> clusters;
 	return initPartition(clusters, hard);
 }
 
@@ -464,17 +473,23 @@ InfomapBase& InfomapBase::initPartition(std::vector<std::vector<unsigned int>>& 
 	std::vector<unsigned int> modules(numNodes);
 	std::vector<unsigned int> selectedNodes(numNodes, 0);
 	unsigned int moduleIndex = 0;
+	// Log() << "\nInit selected clusters:\n";
 	for (auto& cluster : clusters) {
+		if (cluster.empty())
+			continue;
 		for (auto id : cluster) {
 			++selectedNodes[id];
 			modules[id] = moduleIndex;
+			// Log() << "  modules[" << id << "] = " << moduleIndex << "\n";
 		}
 		++moduleIndex;
 	}
+	// Log() << "\nAdd non-selected in own clusters...\n";
 	// Put non-selected nodes in its own module
 	for (unsigned int i = 0; i < numNodes; ++i) {
 		if (selectedNodes[i] == 0) {
 			modules[i] = moduleIndex;
+			// Log() << "  modules[" << i << "] = " << moduleIndex << "\n";
 			++moduleIndex;
 		}
 	}

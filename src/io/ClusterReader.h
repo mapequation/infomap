@@ -31,6 +31,8 @@
 #include <string>
 #include <map>
 
+#include "../core/InfoNode.h"
+// class InfoNode;
 namespace infomap {
 
 using std::string;
@@ -47,6 +49,8 @@ public:
 	virtual ~ClusterReader() {}
 
 	virtual void readData(const string filename);
+
+	virtual void readTree(const string filename, InfoNode& infomapRoot);
 
 	const std::map<unsigned int, unsigned int>& clusters() const
 	{

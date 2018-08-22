@@ -15,7 +15,6 @@
 
 namespace infomap {
 
-template<typename Key>
 class ClusterMap
 {
 public:
@@ -23,26 +22,25 @@ public:
 
 	void readClusterData(std::string filename, bool includeFlow = false);
 
-	std::map<Key, unsigned int>& clusterIds() {
+	std::map<unsigned int, unsigned int>& clusterIds() {
 		return m_clusterIds;
 	}
-	std::map<Key, double > & getFlow(){
+	std::map<unsigned int, double > & getFlow(){
 		return m_flowData;
 	}
 
 private:
-	std::map<Key, unsigned int> m_clusterIds;
-	std::map<Key, double> m_flowData;
+	std::map<unsigned int, unsigned int> m_clusterIds;
+	std::map<unsigned int, double> m_flowData;
 };
 
-template<typename Key>
-void ClusterMap<Key>::readClusterData(std::string filename, bool includeFlow)
+void ClusterMap::readClusterData(std::string filename, bool includeFlow)
 {
 	Log() << "Read initial partition from '" << filename << "'... " << std::flush;
 	SafeInFile input(filename.c_str());
 	std::string line;
 	std::istringstream lineStream;
-	std::map<Key, unsigned int> clusterData;
+	std::map<unsigned int, unsigned int> clusterData;
 
 	while(!std::getline(input, line).fail())
 	{
@@ -52,15 +50,15 @@ void ClusterMap<Key>::readClusterData(std::string filename, bool includeFlow)
 		lineStream.clear();
 		lineStream.str(line);
 
-		Key nodeKey;
+		unsigned int nodeId;
 		unsigned int clusterId;
-		if (!(lineStream >> nodeKey >> clusterId))
+		if (!(lineStream >> nodeId >> clusterId))
 			throw FileFormatError(io::Str() << "Couldn't parse node key and cluster id from line '" << line << "'");
-		m_clusterIds[nodeKey] = clusterId;
+		m_clusterIds[nodeId] = clusterId;
 
 		auto flow = 0.0;
 		if(includeFlow && lineStream >> flow){
-			m_flowData[nodeKey] = flow;
+			m_flowData[nodeId] = flow;
 		}
 
 	}
