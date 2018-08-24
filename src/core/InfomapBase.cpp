@@ -330,6 +330,8 @@ void InfomapBase::run(Network& network)
 
 		if (!this->noInfomap)
 			runPartition();
+		else
+			m_hierarchicalCodelength = calcCodelengthOnTree(true);
 
 		if (haveHardPartition())
 			restoreHardPartition();
@@ -460,7 +462,7 @@ InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard)
 			++clusterIndex;
 	}
 	if (numNodesNotFound > 0)
-		Log() << "(Warning: " << numNodesNotFound << " nodes not found in network.) ";
+		Log() << "\n -> " << numNodesNotFound << " nodes in cluster file not found in network are ignored. ";
 
 	return initPartition(clusters, hard);
 }
@@ -486,13 +488,17 @@ InfomapBase& InfomapBase::initPartition(std::vector<std::vector<unsigned int>>& 
 	}
 	// Log() << "\nAdd non-selected in own clusters...\n";
 	// Put non-selected nodes in its own module
+	unsigned int numNodesWithoutClusterInfo = 0;
 	for (unsigned int i = 0; i < numNodes; ++i) {
 		if (selectedNodes[i] == 0) {
 			modules[i] = moduleIndex;
 			// Log() << "  modules[" << i << "] = " << moduleIndex << "\n";
 			++moduleIndex;
+			++numNodesWithoutClusterInfo;
 		}
 	}
+	if (numNodesWithoutClusterInfo > 0)
+		Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into separate modules. ";
 	return initPartition(modules, hard);
 }
 
