@@ -1885,7 +1885,7 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 	return outputFilename;
 }
 
-void InfomapBase::writeTree(std::ostream &outStream, bool states)
+void InfomapBase::writeTree(std::ostream& outStream, bool states)
 {
 	outStream << "# Codelength = " << m_hierarchicalCodelength << " bits.\n";
 	if (states)
