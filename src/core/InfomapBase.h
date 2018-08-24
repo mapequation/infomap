@@ -410,7 +410,7 @@ protected:
 	 * Write tree to output stream
 	 * @param states, write state-level tree, else aggregate physical nodes within modules
 	 */
-	void printTree(std::ostream& outStream, bool states = false);
+	void writeTree(std::ostream &outStream, bool states = false);
 
 	/**
 	 * Write tree links to output stream

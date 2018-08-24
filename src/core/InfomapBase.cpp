@@ -1636,12 +1636,10 @@ void InfomapBase::writeResult()
 	// }
 	// Log() << std::string(10, '-') << "\n";
 
-	// printTree(std::cout, true);
+	// writeTree(std::cout, true);
 	// printTreeLinks(std::cout);
-
 	
-	// if (this->printTree) { // error: reference to non-static member function must be called
-	if (true) {
+	if (this->printTree) {
 		std::string filename = this->outDirectory + this->outName + ".tree";
 
 		if (!haveMemory()) {
@@ -1729,7 +1727,7 @@ std::string InfomapBase::writeTree(std::string filename, bool states)
 		(haveMemory() && states ? "_states.tree" : ".tree") : filename;
 
 	SafeOutFile outFile(outputFilename);
-	printTree(outFile, states);
+	writeTree(outFile, states);
 	
 	return outputFilename;
 }
@@ -1740,7 +1738,7 @@ std::string InfomapBase::writeFlowTree(std::string filename, bool states)
 		(haveMemory() && states ? "_states.ftree" : ".ftree") : filename;
 
 	SafeOutFile outFile(outputFilename);
-	printTree(outFile, states);
+	writeTree(outFile, states);
 	printTreeLinks(outFile, states);
 	
 	return outputFilename;
@@ -1887,7 +1885,7 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 	return outputFilename;
 }
 
-void InfomapBase::printTree(std::ostream& outStream, bool states)
+void InfomapBase::writeTree(std::ostream &outStream, bool states)
 {
 	outStream << "# Codelength = " << m_hierarchicalCodelength << " bits.\n";
 	if (states)
