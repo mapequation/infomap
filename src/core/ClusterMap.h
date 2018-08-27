@@ -11,21 +11,22 @@
 #include <string>
 #include "../io/SafeFile.h"
 #include "../io/convert.h"
+#include "../utils/Log.h"
 #include <sstream>
+#include <map>
 
 namespace infomap {
 
 class ClusterMap
 {
 public:
-	ClusterMap() {}
+	void readClusterData(const std::string& filename, bool includeFlow = false);
 
-	void readClusterData(std::string filename, bool includeFlow = false);
-
-	std::map<unsigned int, unsigned int>& clusterIds() {
+	const std::map<unsigned int, unsigned int>& clusterIds() const {
 		return m_clusterIds;
 	}
-	std::map<unsigned int, double > & getFlow(){
+
+	const std::map<unsigned int, double>& getFlow() const {
 		return m_flowData;
 	}
 
@@ -34,10 +35,10 @@ private:
 	std::map<unsigned int, double> m_flowData;
 };
 
-void ClusterMap::readClusterData(std::string filename, bool includeFlow)
+void ClusterMap::readClusterData(const std::string& filename, bool includeFlow)
 {
 	Log() << "Read initial partition from '" << filename << "'... " << std::flush;
-	SafeInFile input(filename.c_str());
+	SafeInFile input(filename);
 	std::string line;
 	std::istringstream lineStream;
 	std::map<unsigned int, unsigned int> clusterData;
