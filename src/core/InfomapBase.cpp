@@ -320,7 +320,7 @@ void InfomapBase::run(Network& network)
 		{
 			Log() << "\n";
 			Log() << "================================================\n";
-			Log() << "Trial " << (i + 1) << "/" << numTrials << " starting at" << startDate << "\n";
+			Log() << "Trial " << (i + 1) << "/" << numTrials << " starting at " << startDate << "\n";
 			Log() << "================================================\n";
 			// printRSS();
 
@@ -339,7 +339,7 @@ void InfomapBase::run(Network& network)
 		if (isMainInfomap()) {
 			auto endDate = Date();
 			Log() << "\n=> Trial " << (i + 1) << "/" << numTrials <<
-				" finished in " << timer.getElapsedTimeInMilliSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
+				" finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
 			codelengths.push_back(m_hierarchicalCodelength);
 			if (m_hierarchicalCodelength < bestHierarchicalCodelength - 1e-10) {
 				bestSolutionStatistics.clear();
