@@ -18,38 +18,45 @@ namespace infomap {
 			// Current node is a leaf
 			// Presupposes that the next pointer can't reach out from the current parent.
 
-			tryNext:
-			while (!current->next) {
-				if (current->parent) {
-					current = current->parent;
-					--m_depth;
-					m_path.pop_back();
+			bool tryNext = true;
 
-					if (current == m_root) { // Check if back to beginning
-						m_current = nullptr;
-						return *this;
-					}
+			while (tryNext) {
+				tryNext = false;
 
-					if (m_moduleIndexLevel < 0) {
-						if (current->isLeafModule()) { // TODO: Generalize to -2 for second level to bottom
-							++m_moduleIndex;
-						}
-					} else if (static_cast<unsigned int>(m_moduleIndexLevel) == m_depth) {
-						++m_moduleIndex;
-					}
-				} else {
-					if (current->owner) {
-						current = current->owner;
+				while (!current->next) {
+					if (current->parent) {
+						current = current->parent;
+						--m_depth;
+						m_path.pop_back();
 
 						if (current == m_root) { // Check if back to beginning
 							m_current = nullptr;
 							return *this;
 						}
 
-						goto tryNext;
-					} else { // null also if no children in first place
-						m_current = nullptr;
-						return *this;
+						if (m_moduleIndexLevel < 0) {
+							if (current->isLeafModule()) { // TODO: Generalize to -2 for second level to bottom
+								++m_moduleIndex;
+							}
+						} else if (static_cast<unsigned int>(m_moduleIndexLevel) == m_depth) {
+							++m_moduleIndex;
+						}
+					} else {
+						if (current->owner) {
+							current = current->owner;
+
+							if (current == m_root) { // Check if back to beginning
+								m_current = nullptr;
+								return *this;
+							}
+
+							tryNext = true;
+							break;
+
+						} else { // null also if no children in first place
+							m_current = nullptr;
+							return *this;
+						}
 					}
 				}
 			}
