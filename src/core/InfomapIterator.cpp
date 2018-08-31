@@ -5,7 +5,8 @@
 
 namespace infomap {
 
-	InfomapIterator& InfomapIterator::operator++() {
+	InfomapIterator& InfomapIterator::operator++()
+	{
 		const auto root = m_current->getInfomapRoot();
 		auto current = root ? root : m_current;
 
@@ -13,43 +14,40 @@ namespace infomap {
 			current = current->firstChild;
 			++m_depth;
 			m_path.push_back(0);
-
 		} else {
 			// Current node is a leaf
-			// Presupposes that the 'next' pointer can't reach out from the current parent.
+			// Presupposes that the next pointer can't reach out from the current parent.
 
-			auto tryNext = true;
-			while (tryNext) {
-				tryNext = false;
+			tryNext:
+			while (!current->next) {
+				if (current->parent) {
+					current = current->parent;
+					--m_depth;
+					m_path.pop_back();
 
-				while (!current->next) {
-					if (current->parent) {
-						current = current->parent != m_root ? current->parent : nullptr;
-						--m_depth;
-						m_path.pop_back();
+					if (current == m_root) { // Check if back to beginning
+						m_current = nullptr;
+						return *this;
+					}
 
-						if (!current) { // Back at beginning?
+					if (m_moduleIndexLevel < 0) {
+						if (current->isLeafModule()) { // TODO: Generalize to -2 for second level to bottom
+							++m_moduleIndex;
+						}
+					} else if (static_cast<unsigned int>(m_moduleIndexLevel) == m_depth) {
+						++m_moduleIndex;
+					}
+				} else {
+					if (current->owner) {
+						current = current->owner;
+
+						if (current == m_root) { // Check if back to beginning
 							m_current = nullptr;
 							return *this;
 						}
 
-						if (m_moduleIndexLevel < 0) {
-							if (current->isLeafModule()) { // TODO: Generalize to -2 for second level to bottom
-								++m_moduleIndex;
-							}
-						} else if (static_cast<unsigned int>(m_moduleIndexLevel) == m_depth) {
-							++m_moduleIndex;
-						}
-
-					} else if (current->owner && current->owner != m_root) {
-						current = current->owner;
-
-						tryNext = true;
-						break;
-
-					} else {
-						// Null if no children in first place
-						// OR back at beginning
+						goto tryNext;
+					} else { // null also if no children in first place
 						m_current = nullptr;
 						return *this;
 					}
