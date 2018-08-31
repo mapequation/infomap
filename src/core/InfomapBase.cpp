@@ -1784,7 +1784,7 @@ void InfomapBase::writeResult()
 	// Log() << std::string(10, '-') << "\n";
 
 	// writeTree(std::cout, true);
-	// printTreeLinks(std::cout);
+	// writeTreeLinks(std::cout);
 	
 	if (this->printTree) {
 		std::string filename = this->outDirectory + this->outName + ".tree";
@@ -1886,7 +1886,7 @@ std::string InfomapBase::writeFlowTree(std::string filename, bool states)
 
 	SafeOutFile outFile(outputFilename);
 	writeTree(outFile, states);
-	printTreeLinks(outFile, states);
+	writeTreeLinks(outFile, states);
 	
 	return outputFilename;
 }
@@ -2069,7 +2069,7 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 	}
 }
 
-void InfomapBase::printTreeLinks(std::ostream& outStream, bool states)
+void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
 {
 	// Aggregate links between each module. Rest is aggregated as exit flow
 
