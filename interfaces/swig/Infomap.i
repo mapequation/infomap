@@ -14,6 +14,7 @@ using namespace infomap;
 %include "Config.i"
 %include "MapEquation.i"
 %include "MemMapEquation.i"
+%include "MetaMapEquation.i"
 
 /* Parse the header file to generate wrappers */
 %include "src/core/Infomap.h"

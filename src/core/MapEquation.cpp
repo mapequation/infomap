@@ -7,6 +7,7 @@
 #include "MapEquation.h"
 #include "../utils/infomath.h"
 #include "../io/convert.h"
+#include "../io/Config.h"
 #include "../utils/Log.h"
 #include "../utils/VectorMap.h"
 #include "InfoNode.h"
@@ -38,6 +39,11 @@ std::ostream& MapEquation::print(std::ostream& out) const {
 // ===================================================
 // Init
 // ===================================================
+
+void MapEquation::init(const Config& config)
+{
+	Log(3) << "MapEquation::init()...\n";
+}
 
 void MapEquation::initNetwork(InfoNode& root)
 {

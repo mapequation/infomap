@@ -20,6 +20,7 @@
 #include "../utils/iterators.h"
 #include <limits>
 #include "../utils/exceptions.h"
+#include "../utils/MetaCollection.h"
 
 namespace infomap {
 
@@ -81,6 +82,7 @@ public:
 	/*const*/ unsigned int stateId = 0; // Unique state node id for the leaf nodes
 	/*const*/ unsigned int physicalId = 0; // Physical id equals stateId for first order networks, otherwise can be non-unique
 	/*const*/ unsigned int layerId = 0; // Layer id for multilayer networks
+	std::vector<int> metaData; // Categorical value for each meta data dimension
 
 	InfoNode* owner = nullptr; // Infomap owner (if this is an Infomap root)
 	InfoNode* parent = nullptr;
@@ -94,6 +96,7 @@ public:
 	bool dirty = false;
 
 	std::vector<PhysData> physicalNodes;
+	MetaCollection metaCollection; // For modules
 	std::vector<unsigned int> stateNodes; // For physically aggregated nodes
 
 protected:
@@ -132,6 +135,7 @@ public:
 		stateId(other.stateId),
 		physicalId(other.physicalId),
 		layerId(other.layerId),
+		metaData(other.metaData),
 		parent(other.parent),
 		previous(other.previous),
 		next(other.next),
@@ -141,6 +145,7 @@ public:
 		collapsedLastChild(other.collapsedLastChild),
 		codelength(other.codelength),
 		dirty(other.dirty),
+		metaCollection(other.metaCollection),
 		m_childDegree(other.m_childDegree),
 		m_childrenChanged(other.m_childrenChanged),
 		m_numLeafMembers(other.m_numLeafMembers)
@@ -157,6 +162,7 @@ public:
 		stateId = other.stateId;
 		physicalId = other.physicalId;
 		layerId = other.layerId;
+		metaData = other.metaData;
 		parent = other.parent;
 		previous = other.previous;
 		next = other.next;
@@ -166,6 +172,7 @@ public:
 		collapsedLastChild = other.collapsedLastChild;
 		codelength = other.codelength;
 		dirty = other.dirty;
+		metaCollection = other.metaCollection;
 		m_childDegree = other.m_childDegree;
 		m_childrenChanged = other.m_childrenChanged;
 		m_numLeafMembers = other.m_numLeafMembers;

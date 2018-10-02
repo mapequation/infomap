@@ -259,6 +259,40 @@ void Network::parseNetwork(std::string filename, const InsensitiveStringSet& val
 	Log() << "Done!\n";
 }
 
+
+void Network::readMetaData(std::string filename)
+{
+	Log() << "Parsing meta data from '" << filename << "'..." << std::endl;
+	SafeInFile input(filename.c_str());
+	std::string line;
+	while(!std::getline(input, line).fail())
+	{
+		if (line.length() == 0 || line[0] == '#')
+			continue;
+
+		if (line[0] == '*')
+			break;
+
+		// parseVertice(line, id, name, weight);
+		m_extractor.clear();
+		m_extractor.str(line);
+
+		unsigned int nodeId;
+		if (!(m_extractor >> nodeId))
+			throw FileFormatError(io::Str() << "Can't parse node id from line '" << line << "'");
+
+		std::vector<int> metaData;
+		unsigned int metaId;
+		while (m_extractor >> metaId) {
+			metaData.push_back(metaId);
+		}
+		if (metaData.empty())
+			throw FileFormatError(io::Str() << "Can't parse any meta data from line '" << line << "'");
+		
+		addMetaData(nodeId, metaData);
+	}
+	Log() << " -> Parsed " << m_numMetaDataColumns << " columns of meta data for " << m_metaData.size() << " nodes." << std::endl;
+}
 //////////////////////////////////////////////////////////////////////////////////////////
 //
 //  HELPER METHODS
@@ -861,6 +895,24 @@ unsigned int Network::addMultilayerNode(unsigned int layerId, unsigned int physi
 	m_layerNodeToStateId[layerId][physicalId] = stateNode.id;
 	m_layers.insert(layerId);
 	return stateNode.id;
+}
+
+
+void Network::addMetaData(unsigned int nodeId, int meta)
+{
+	std::vector<int> metaData(1, meta);
+	addMetaData(nodeId, metaData);
+}
+
+void Network::addMetaData(unsigned int nodeId, const std::vector<int>& metaData)
+{
+	m_metaData[nodeId] = metaData;
+	if (m_numMetaDataColumns == 0) {
+		m_numMetaDataColumns = metaData.size();
+	} else if (metaData.size() != m_numMetaDataColumns) {
+		throw FileFormatError(io::Str() << "Must have same number of dimensions in meta data, error trying to add meta data '" <<
+			io::stringify(metaData, ",") << "' on node " << nodeId << ".");
+	}
 }
 
 // bool Network::addLink(unsigned int n1, unsigned int n2, double weight)

@@ -94,6 +94,9 @@ struct Config
 	unsigned int nodeLimit = 0;
 	bool preClusterMultilayer = false;
 	std::string clusterDataFile = "";
+	std::string metaDataFile = "";
+	double metaDataRate = 1.0;
+	unsigned int numMetaDataDimensions = 0;
 	bool clusterDataIsHard = false;
 	bool noInfomap = false;
 
@@ -202,6 +205,9 @@ struct Config
 		nodeLimit(other.nodeLimit),
 		preClusterMultilayer(other.preClusterMultilayer),
 	 	clusterDataFile(other.clusterDataFile),
+	 	metaDataFile(other.metaDataFile),
+	 	metaDataRate(other.metaDataRate),
+	 	numMetaDataDimensions(other.numMetaDataDimensions),
 	 	clusterDataIsHard(other.clusterDataIsHard),
 	 	noInfomap(other.noInfomap),
 		flowModel(other.flowModel),
@@ -292,6 +298,9 @@ struct Config
 		nodeLimit = other.nodeLimit;
 		preClusterMultilayer = other.preClusterMultilayer;
 	 	clusterDataFile = other.clusterDataFile;
+	 	metaDataFile = other.metaDataFile;
+	 	metaDataRate = other.metaDataRate;
+	 	numMetaDataDimensions = other.numMetaDataDimensions;
 	 	clusterDataIsHard = other.clusterDataIsHard;
 	 	noInfomap = other.noInfomap;
 		flowModel = other.flowModel;
@@ -381,6 +390,9 @@ struct Config
 		nodeLimit = other.nodeLimit;
 		preClusterMultilayer = other.preClusterMultilayer;
 	 	// clusterDataFile = other.clusterDataFile;
+	 	// metaDataFile = other.metaDataFile;
+	 	metaDataRate = other.metaDataRate;
+	 	numMetaDataDimensions = other.numMetaDataDimensions;
 	 	// clusterDataIsHard = other.clusterDataIsHard;
 	 	noInfomap = other.noInfomap;
 		flowModel = other.flowModel;
@@ -583,6 +595,8 @@ struct Config
 	bool isMemoryNetwork() const { return isStateNetwork() || is3gram() || isPath() || isMultilayerNetwork() || withMemory || nonBacktracking || memoryInput; }
 
 	// bool isSimulatedMemoryNetwork() const { return (withMemory || nonBacktracking) && !isMemoryInput(); }
+
+	bool haveMetaData() const { return metaDataFile != "" || numMetaDataDimensions != 0; }
 
 	bool haveOutput() const
 	{

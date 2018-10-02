@@ -18,6 +18,9 @@ multi-example: multi-example.cpp $(INFOMAP_LIB) Makefile
 file-example: file-example.cpp $(INFOMAP_LIB) Makefile
 	$(CXX) $(CXXFLAGS) -DNS_INFOMAP $< -o $@ -I$(INFOMAP_DIR)/include -L$(INFOMAP_DIR)/lib -lInfomap
 
+meta-example: meta-example.cpp $(INFOMAP_LIB) Makefile
+	$(CXX) $(CXXFLAGS) -DNS_INFOMAP $< -o $@ -I$(INFOMAP_DIR)/include -L$(INFOMAP_DIR)/lib -lInfomap
+
 $(INFOMAP_LIB):
 	$(MAKE) -C $(INFOMAP_DIR) lib
 

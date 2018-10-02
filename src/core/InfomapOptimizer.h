@@ -124,6 +124,9 @@ inline
 void InfomapOptimizer<Objective>::init(InfomapBase* infomap)
 {
 	m_infomap = infomap;
+	// m_objective.init(infomap->getConfig());
+	Config& conf = infomap->getConfig();
+	m_objective.init(conf);
 }
 
 // ===================================================
@@ -162,21 +165,21 @@ template<typename Objective>
 inline
 double InfomapOptimizer<Objective>::getCodelength() const
 {
-	return m_objective.codelength;
+	return m_objective.getCodelength();
 }
 
 template<typename Objective>
 inline
 double InfomapOptimizer<Objective>::getIndexCodelength() const
 {
-	return m_objective.indexCodelength;
+	return m_objective.getIndexCodelength();
 }
 
 template<typename Objective>
 inline
 double InfomapOptimizer<Objective>::getModuleCodelength() const
 {
-	return m_objective.moduleCodelength;
+	return m_objective.getModuleCodelength();
 }
 
 template<typename Objective>
@@ -321,7 +324,7 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 {
 	unsigned int coreLoopCount = 0;
 	unsigned int numEffectiveLoops = 0;
-	double oldCodelength = m_objective.codelength;
+	double oldCodelength = m_objective.getCodelength();
 	unsigned int loopLimit = m_infomap->coreLoopLimit;
 	unsigned int minRandLoop = 2;
 	if (loopLimit >= minRandLoop && m_infomap->randomizeCoreLoopLimit)
@@ -330,7 +333,7 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 		loopLimit = 20;
 	}
 
-	// Log() << "\nOptimize, initial codelength: " << m_objective.codelength;
+	// Log() << "\nOptimize, initial codelength: " << m_objective.getCodelength();
 	
 	do
 	{
@@ -341,11 +344,11 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 			tryMoveEachNodeIntoBestModule();
 		// Break if not enough improvement
 		// Log() << "\nLoop " << coreLoopCount << "/" << loopLimit << ", numNodesMoved: " <<
-		// 	numNodesMoved << ", -> codelength: " << m_objective.codelength << "\n";
-		if (numNodesMoved == 0 || m_objective.codelength >= oldCodelength - m_infomap->minimumCodelengthImprovement)
+		// 	numNodesMoved << ", -> codelength: " << m_objective.getCodelength() << "\n";
+		if (numNodesMoved == 0 || m_objective.getCodelength() >= oldCodelength - m_infomap->minimumCodelengthImprovement)
 			break;
 		++numEffectiveLoops;
-		oldCodelength = m_objective.codelength;
+		oldCodelength = m_objective.getCodelength();
 	}
 	while (coreLoopCount != loopLimit);
 
@@ -524,9 +527,9 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 // 			m_moduleMembers[current.index] -= 1;
 // 			m_moduleMembers[bestModuleIndex] += 1;
 
-// 			// double oldCodelength = m_objective.codelength;
+// 			// double oldCodelength = m_objective.getCodelength();
 // 			// Log(5) << " --> Moved to module " << bestModuleIndex << " -> codelength: " << oldCodelength << " + " <<
-// 			// 		bestDeltaCodelength << " (" << (m_objective.codelength - oldCodelength) << ") = " << m_objective << "\n";
+// 			// 		bestDeltaCodelength << " (" << (m_objective.getCodelength() - oldCodelength) << ") = " << m_objective << "\n";
 
 // //			unsigned int oldModuleIndex = current.index;
 // 			current.index = bestModuleIndex;
@@ -718,9 +721,9 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 			m_moduleMembers[current.index] -= 1;
 			m_moduleMembers[bestModuleIndex] += 1;
 
-			// double oldCodelength = m_objective.codelength;
+			// double oldCodelength = m_objective.getCodelength();
 			// Log(5) << " --> Moved to module " << bestModuleIndex << " -> codelength: " << oldCodelength << " + " <<
-			// 		bestDeltaCodelength << " (" << (m_objective.codelength - oldCodelength) << ") = " << m_objective << "\n";
+			// 		bestDeltaCodelength << " (" << (m_objective.getCodelength() - oldCodelength) << ") = " << m_objective << "\n";
 
 //			unsigned int oldModuleIndex = current.index;
 			current.index = bestModuleIndex;
@@ -911,9 +914,9 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 // 			m_moduleMembers[current.index] -= 1;
 // 			m_moduleMembers[bestModuleIndex] += 1;
 
-// 			// double oldCodelength = m_objective.codelength;
+// 			// double oldCodelength = m_objective.getCodelength();
 // 			// Log(5) << " --> Moved to module " << bestModuleIndex << " -> codelength: " << oldCodelength << " + " <<
-// 			// 		bestDeltaCodelength << " (" << (m_objective.codelength - oldCodelength) << ") = " << m_objective << "\n";
+// 			// 		bestDeltaCodelength << " (" << (m_objective.getCodelength() - oldCodelength) << ") = " << m_objective << "\n";
 
 // //			unsigned int oldModuleIndex = current.index;
 // 			current.index = bestModuleIndex;
@@ -1007,9 +1010,9 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 						m_moduleMembers[oldModuleIndex] -= 1;
 						m_moduleMembers[bestModuleIndex] += 1;
 
-						// double oldCodelength = m_objective.codelength;
+						// double oldCodelength = m_objective.getCodelength();
 						// Log(5) << " --> Moved to module " << bestModuleIndex << " -> codelength: " << oldCodelength << " + " <<
-						// 		bestDeltaCodelength << " (" << (m_objective.codelength - oldCodelength) << ") = " << m_objective << "\n";
+						// 		bestDeltaCodelength << " (" << (m_objective.getCodelength() - oldCodelength) << ") = " << m_objective << "\n";
 
 			//			unsigned int oldModuleIndex = current.index;
 						current.index = bestModuleIndex;
@@ -1202,7 +1205,7 @@ template<typename Objective>
 inline
 bool InfomapOptimizer<Objective>::restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore)
 {
-	if (forceRestore || m_objective.codelength >= m_consolidatedObjective.codelength - m_infomap->minimumSingleNodeCodelengthImprovement)
+	if (forceRestore || m_objective.getCodelength() >= m_consolidatedObjective.codelength - m_infomap->minimumSingleNodeCodelengthImprovement)
 	{
 		m_objective = m_consolidatedObjective;
 		return true;

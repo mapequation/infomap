@@ -90,6 +90,12 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.clusterDataFile, 'c', "cluster-data",
 			"Provide an initial two-level (.clu format) or multi-layer (.tree format) solution.", "p", true);
 
+	api.addOptionArgument(conf.metaDataFile, "meta-data",
+			"Provide meta data (.clu format) that should be encoded.", "p", true);
+
+	api.addOptionArgument(conf.metaDataRate, "meta-data-rate",
+			"The encoding rate of metadata. Default 1.0 means in each step.", "f", true);
+
 	api.addOptionArgument(conf.noInfomap, "no-infomap",
 			"Don't run Infomap. Useful if initial cluster data should be preserved or non-modular data printed.", true);
 

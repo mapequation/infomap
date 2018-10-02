@@ -40,6 +40,10 @@ public:
 		return *this;
 	}
 
+	const Config& getConfig() const {
+		return *this;
+	}
+
 	Infomap& setConfig(const Config& conf) {
 		*this = conf;
 		m_rand.seed(conf.seedToRandomNumberGenerator);

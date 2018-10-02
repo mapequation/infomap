@@ -10,6 +10,7 @@
 
 #include "../utils/infomath.h"
 #include "../io/convert.h"
+#include "../io/Config.h"
 #include "../utils/Log.h"
 #include "../utils/VectorMap.h"
 // #include "InfoNode.h"
@@ -21,6 +22,7 @@
 namespace infomap {
 
 class InfoNode;
+// struct Config;
 
 class MapEquation {
 public:
@@ -67,6 +69,12 @@ public:
 
 	static bool haveMemory() { return false; }
 
+	double getIndexCodelength() const { return indexCodelength; }
+
+	double getModuleCodelength() const { return moduleCodelength; }
+
+	double getCodelength() const { return codelength; }
+
 	// ===================================================
 	// IO
 	// ===================================================
@@ -79,6 +87,8 @@ public:
 	// ===================================================
 	// Init
 	// ===================================================
+
+	void init(const Config& config);
 
 	void initNetwork(InfoNode& root);
 

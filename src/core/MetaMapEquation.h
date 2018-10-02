@@ -1,47 +1,43 @@
 /*
- * MemMapEquation.h
- *
- *  Created on: 4 mar 2015
- *      Author: Daniel
+ * MetaMapEquation.h
  */
 
-#ifndef MODULES_CLUSTERING_CLUSTERING_MEMMAPEQUATION_H_
-#define MODULES_CLUSTERING_CLUSTERING_MEMMAPEQUATION_H_
+#ifndef _METAMAPEQUATION_H_
+#define _METAMAPEQUATION_H_
 
-#include "MapEquation.h"
-#include "FlowData.h"
-// #include "InfoNode.h"
-#include "../utils/Log.h"
 #include <vector>
 #include <set>
 #include <map>
 #include <utility>
+#include "MapEquation.h"
+#include "FlowData.h"
+// #include "InfoNode.h"
+#include "../utils/Log.h"
+#include "../utils/MetaCollection.h"
 
 namespace infomap {
 
 class InfoNode;
-struct MemNodeSet;
 
-class MemMapEquation : protected MapEquation {
+class MetaMapEquation : protected MapEquation {
 	using Base = MapEquation;
 public:
 	using FlowDataType = FlowData;
-	using DeltaFlowDataType = MemDeltaFlow;
+	using DeltaFlowDataType = DeltaFlow;
 
-	MemMapEquation() : MapEquation() {}
+	MetaMapEquation() : MapEquation() {}
 
-	MemMapEquation(const MemMapEquation& other)
+	MetaMapEquation(const MetaMapEquation& other)
 	:	MapEquation(other),
-		m_physToModuleToMemNodes(other.m_physToModuleToMemNodes),
-		m_numPhysicalNodes(other.m_numPhysicalNodes)
+		m_moduleToMetaCollection(other.m_moduleToMetaCollection)
 	{}
 
-	MemMapEquation& operator=(const MemMapEquation& other) {
+	MetaMapEquation& operator=(const MetaMapEquation& other) {
 		Base::operator =(other);
 		return *this;
 	}
 
-	virtual ~MemMapEquation() {}
+	virtual ~MetaMapEquation() {}
 
 	// ===================================================
 	// Getters
@@ -51,9 +47,11 @@ public:
 
 	using Base::getIndexCodelength;
 
-	using Base::getModuleCodelength;
+	// double getModuleCodelength() const { return moduleCodelength + metaCodelength; };
+	double getModuleCodelength() const;
 
-	using Base::getCodelength;
+	// double getCodelength() const { return codelength + metaCodelength; };
+	double getCodelength() const;
 
 	// ===================================================
 	// IO
@@ -61,7 +59,7 @@ public:
 
 	// using Base::print;
 	std::ostream& print(std::ostream& out) const;
-	// friend std::ostream& operator<<(std::ostream&, const MemMapEquation&);
+	// friend std::ostream& operator<<(std::ostream&, const MetaMapEquation&);
 
 	// ===================================================
 	// Init
@@ -82,8 +80,8 @@ public:
 	// ===================================================
 
 	double calcCodelength(const InfoNode& parent) const;
-
-	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
+	
+	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
 
 	double getDeltaCodelengthOnMovingNode(InfoNode& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData);
@@ -113,9 +111,9 @@ protected:
 	// Init
 	// ===================================================
 
-	void initPhysicalNodes(InfoNode& root);
+	void initMetaNodes(InfoNode& root);
 
-	void initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes);
+	void initPartitionOfMetaNodes(std::vector<InfoNode*>& nodes);
 
 	// ===================================================
 	// Codelength
@@ -127,15 +125,11 @@ protected:
 
 	using Base::calculateCodelengthFromCodelengthTerms;
 
-	void calculateNodeFlow_log_nodeFlow();
-
 	// ===================================================
 	// Consolidation
 	// ===================================================
 
-	void updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
-
-	void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
+	void updateMetaData(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
 public:
 	// ===================================================
@@ -147,6 +141,17 @@ public:
 	using Base::moduleCodelength;
 
 protected:
+	// ===================================================
+	// Protected member functions
+	// ===================================================
+
+	/**
+	 *  Get meta codelength of module of current node
+	 * @param addRemoveOrNothing +1, -1 or 0 to calculate codelength
+	 * as ifcurrent node was added, removed or untouched in current module
+	 */
+	double getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing);
+
 	// ===================================================
 	// Protected member variables
 	// ===================================================
@@ -162,23 +167,19 @@ protected:
 	using Base::exitNetworkFlow;
 	using Base::exitNetworkFlow_log_exitNetworkFlow;
 
-	using ModuleToMemNodes = std::map<unsigned int, MemNodeSet>;
+	// For meta data
+	using ModuleMetaMap = std::map<unsigned int, MetaCollection>; // moduleId -> (metaId -> count)
 
-	std::vector<ModuleToMemNodes> m_physToModuleToMemNodes; // vector[physicalNodeID] map<moduleID, {#memNodes, sumFlow}>
-	unsigned int m_numPhysicalNodes = 0;
-	bool m_memoryContributionsAdded = false;
+	ModuleMetaMap m_moduleToMetaCollection;
+
+	unsigned int numMetaDataDimensions = 0;
+	double metaDataRate = 1.0;
+	bool weightByFlow = false;
+	double metaCodelength = 0.0;
 };
 
-struct MemNodeSet
-{
-	MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) {}
-	MemNodeSet(const MemNodeSet& other) : numMemNodes(other.numMemNodes), sumFlow(other.sumFlow) {}
-	MemNodeSet& operator=(const MemNodeSet& other) { numMemNodes = other.numMemNodes; sumFlow = other.sumFlow; return *this; }
-	unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
-	double sumFlow;
-};
 
 
 }
 
-#endif /* MODULES_CLUSTERING_CLUSTERING_MEMMAPEQUATION_H_ */
+#endif /* _METAMAPEQUATION_H_ */

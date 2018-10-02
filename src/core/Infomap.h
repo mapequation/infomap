@@ -19,6 +19,7 @@
 #include <tuple>
 #include "MapEquation.h"
 #include "MemMapEquation.h"
+#include "MetaMapEquation.h"
 #include <memory>
 #include "InfomapOptimizer.h"
 
@@ -44,6 +45,7 @@ public:
 	// Infomap(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
 	Infomap(bool forceNoMemory = false) : InfomapBase() { initOptimizer(forceNoMemory); }
 	Infomap(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
+	Infomap(const Config& conf, bool forceNoMemory) : InfomapBase(conf) { initOptimizer(forceNoMemory); }
 	Infomap(const std::string& flags) : InfomapBase(flags) { initOptimizer(); }
 	virtual ~Infomap() {}
 
@@ -74,7 +76,9 @@ public:
 protected:
 	Infomap& initOptimizer(bool forceNoMemory = false)
 	{
-		if (haveMemory() && !forceNoMemory) {
+		if (this->haveMetaData()) {
+			m_optimizer = OptimizerPtr(new InfomapOptimizer<MetaMapEquation>());
+		} else if (haveMemory() && !forceNoMemory) {
 			m_optimizer = OptimizerPtr(new InfomapOptimizer<MemMapEquation>());
 		} else {
 			m_optimizer = OptimizerPtr(new InfomapOptimizer<MapEquation>());
@@ -85,10 +89,10 @@ protected:
 
 	// virtual InfomapBase& getInfomap(InfoNode& node);
 	virtual InfomapBase* getNewInfomapInstance() const {
-    return new Infomap();
+    return new Infomap(this->getConfig());
   }
 	virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const {
-    return new Infomap(true);
+    return new Infomap(this->getConfig(), true);
   }
 
 	virtual unsigned int numActiveModules() const {

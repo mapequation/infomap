@@ -70,6 +70,10 @@ protected:
 	std::map<BipartiteLink, Weight> m_bipartiteLinks;
 	unsigned int m_numBipartiteNodes;
 
+	// Meta data
+	std::map<unsigned int, std::vector<int>> m_metaData;
+	unsigned int m_numMetaDataColumns = 0;
+
 	using InsensitiveStringSet = std::set<std::string, io::InsensitiveCompare>;
 
 	std::map<std::string, InsensitiveStringSet> m_ignoreHeadings;
@@ -93,6 +97,13 @@ public:
 
 	virtual void readInputData(std::string filename = "");
 
+	virtual void readMetaData(std::string filename);
+
+
+
+	unsigned int numMetaDataColumns() const { return m_numMetaDataColumns; }
+	const std::map<unsigned int, std::vector<int>>& metaData() const { return m_metaData; }
+
 	// void printParsingResult(bool onlySummary = false);
 
 	// std::string getParsingResultSummary();
@@ -115,6 +126,10 @@ public:
 	 * TODO: This is done later..
 	 */
 	void addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight);
+
+	void addMetaData(unsigned int nodeId, int meta);
+
+	void addMetaData(unsigned int nodeId, const std::vector<int>& metaData);
 
 protected:
 	void initValidHeadings();

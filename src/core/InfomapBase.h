@@ -180,13 +180,24 @@ public:
 	// Run: *
 	// ===================================================
 
-	InfomapBase& initNetwork(StateNetwork& network);
+	InfomapBase& initNetwork(Network& network);
 	InfomapBase& initNetwork(InfoNode& parent, bool asSuperNetwork = false);
 
 
-	void generateSubNetwork(StateNetwork& network);
+	void generateSubNetwork(Network& network);
 	virtual void generateSubNetwork(InfoNode& parent);
 
+	/**
+	 * Init categorical meta data on all nodes from a file with the following format:
+	 * # nodeId metaData
+	 * 1 1
+	 * 2 1
+	 * 3 2
+	 * 4 2
+	 * 5 3
+	 * 
+	 */
+	InfomapBase& initMetaData(std::string metaDataFile);
 
 	/**
 	 * Provide an initial partition of the network.

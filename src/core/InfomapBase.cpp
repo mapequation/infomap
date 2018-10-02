@@ -232,8 +232,11 @@ void InfomapBase::run()
 
 
 	if (m_network.numNodes() == 0) {
-		std::string filename = this->networkFile;
-		m_network.readInputData(filename);
+		m_network.readInputData(this->networkFile);
+	}
+
+	if (this->metaDataFile != "") {
+		m_network.readMetaData(this->metaDataFile);
 	}
 	
 	run(m_network);
@@ -389,7 +392,7 @@ void InfomapBase::run(Network& network)
 // Run: Init: *
 // ===================================================
 
-InfomapBase& InfomapBase::initNetwork(StateNetwork& network)
+InfomapBase& InfomapBase::initNetwork(Network& network)
 {
 	if (network.numNodes() == 0)
 		throw DataDomainError("No nodes in network");
@@ -421,6 +424,7 @@ InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard)
 	ClusterMap clusterMap;
 	clusterMap.readClusterData(clusterDataFile);
 
+	// nodeId -> clusterId
 	auto& clusterIds = clusterMap.clusterIds();
 
 	// Log() << "\n\n.clu\n#stateId moduleId\n";
@@ -538,9 +542,12 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
 	return *this;
 }
 
-void InfomapBase::generateSubNetwork(StateNetwork& network)
+void InfomapBase::generateSubNetwork(Network& network)
 {
 	unsigned int numNodes = network.numNodes();
+	auto& metaData = network.metaData();
+	this->numMetaDataDimensions = network.numMetaDataColumns();
+
 
 	Log() << "Generate network with " << numNodes << " nodes and " << network.numLinks() << " links..." << std::endl;
 
@@ -550,6 +557,14 @@ void InfomapBase::generateSubNetwork(StateNetwork& network)
 	for (auto& nodeIt : network.nodes()) {
 		auto& networkNode = nodeIt.second;
 		InfoNode* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
+		if (this->haveMetaData()) {
+			auto meta = metaData.find(networkNode.id);
+			if (meta != metaData.end()) {
+				node->metaData = meta->second;
+			} else {
+				node->metaData = std::vector<int>(this->numMetaDataDimensions, -1);
+			}
+		}
 		sumNodeFlow += networkNode.flow;
 		m_root.addChild(node);
 		nodeIndexMap[networkNode.id] = m_leafNodes.size();
@@ -1025,7 +1040,6 @@ unsigned int InfomapBase::coarseTune()
 			continue;
 		}
 		else {
-
 			InfomapBase& subInfomap = getSubInfomap(node)
 				.setTwoLevel(true)
 				.setTuneIterationLimit(1);

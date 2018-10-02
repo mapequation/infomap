@@ -1,8 +1,5 @@
 /*
  * FlowData.h
- *
- *  Created on: 24 feb 2015
- *      Author: Daniel
  */
 
 #ifndef SRC_CLUSTERING_FLOWDATA_H_

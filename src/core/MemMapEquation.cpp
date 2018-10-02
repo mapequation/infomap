@@ -33,6 +33,11 @@ std::ostream& MemMapEquation::print(std::ostream& out) const {
 // Init
 // ===================================================
 
+void MemMapEquation::init(const Config& config)
+{
+	Log(3) << "MemMapEquation::init()...\n";
+}
+
 
 void MemMapEquation::initNetwork(InfoNode& root)
 {
