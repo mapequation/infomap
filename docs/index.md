@@ -38,10 +38,16 @@ with examples that can be viewed online.
 
 
 ### Using Python:
-Infomap v1 will be available on the Python Package Index PyPi. To install, run
+Infomap v1 beta is available on the [Python Package Index PyPi](https://pypi.org/project/infomap/). To install, run
 
 ```
 pip install infomap
+```
+
+To upgrade, run
+
+```
+pip install --upgrade infomap
 ```
 
 
@@ -56,7 +62,19 @@ In the Infomap path, run
 
 The optional arguments can be put anywhere, see the [Options](http://www.mapequation.org/code.html#Options) section for the available options. The `network_data` should point to a valid network file (see [Input](http://www.mapequation.org/code.html#Input) section) and `destination` to a directory where the Infomap should write its output files.
 
-### Python
+#### Python binary
+If the python infomap package is installed, a binary called `infomap` is available on the command line from any directory. In that case, you can run
+
+```
+infomap [options] network_data destination
+```
+
+### Python interface
+
+The python package can be imported with
+```
+import infomap
+```
 
 #### Simple example
 

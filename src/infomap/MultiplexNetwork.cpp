@@ -449,8 +449,11 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 		unsigned int layer2from = 0;
 		unsigned int layer2to = m_networks.size();
 		double sumOutLinkWeightAllLayers = 0.0;
-		for (unsigned int i = layer2from; i < layer2to; ++i)
-			sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
+		for (unsigned int i = layer2from; i < layer2to; ++i) {
+			const std::vector<double>& sumLinkOutWeight = m_networks[i].sumLinkOutWeight();
+			if (nodeIndex < sumLinkOutWeight.size())
+				sumOutLinkWeightAllLayers += sumLinkOutWeight[nodeIndex];
+		}
 		// Log() << "\n===== Node index: " << nodeIndex << " / " << (m_numNodes - 1) << " ======" <<
 		// "  sumOutLinkWeightAllLayers: " << sumOutLinkWeightAllLayers << "\n";
 
@@ -461,8 +464,11 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 				layer2from = ((int)layer1-m_config.multiplexRelaxLimit) < 0 ? 0 : layer1-m_config.multiplexRelaxLimit;
 				layer2to = (layer1+m_config.multiplexRelaxLimit) > m_networks.size() ? m_networks.size() : layer1+m_config.multiplexRelaxLimit;
 				sumOutLinkWeightAllLayers = 0.0;
-				for (unsigned int i = layer2from; i < layer2to; ++i)
-					sumOutLinkWeightAllLayers += m_networks[i].sumLinkOutWeight()[nodeIndex];
+				for (unsigned int i = layer2from; i < layer2to; ++i) {
+					const std::vector<double>& sumLinkOutWeight = m_networks[i].sumLinkOutWeight();
+					if (nodeIndex < sumLinkOutWeight.size())
+						sumOutLinkWeightAllLayers += sumLinkOutWeight[nodeIndex];
+				}
 			}
 
 			if (!m_networks[layer1].haveNode(nodeIndex)) {
@@ -851,7 +857,7 @@ double MultiplexNetwork::calculateJensenShannonDivergence(bool &intersect, std::
 MultiplexNetwork::IntraLinkMap::const_iterator *MultiplexNetwork::getUndirLinkItPtr(std::vector<pair<IntraLinkMap::const_iterator,IntraLinkMap::const_iterator> > &outLinkItVec){
 
 	bool assigned = false;
-	IntraLinkMap::const_iterator *linkIt;
+	IntraLinkMap::const_iterator *linkIt = 0;
 
 	for(std::vector<pair<IntraLinkMap::const_iterator,IntraLinkMap::const_iterator> >::iterator outLinkItVecIts = outLinkItVec.begin(); outLinkItVecIts != outLinkItVec.end(); outLinkItVecIts++){
 		if(outLinkItVecIts->first != outLinkItVecIts->second){
