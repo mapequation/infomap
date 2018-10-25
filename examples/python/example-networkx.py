@@ -24,7 +24,7 @@ def findCommunities(G):
 		infomapWrapper.addLink(*e)
 
 	print("Find communities with Infomap...")
-	infomapWrapper.run();
+	infomapWrapper.run()
 
 	tree = infomapWrapper.tree
 

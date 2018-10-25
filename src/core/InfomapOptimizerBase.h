@@ -13,7 +13,7 @@
 namespace infomap {
 
 class InfomapOptimizerBase {
-  friend class Infomap;
+  friend class InfomapCore;
 	using FlowDataType = FlowData;
 
 protected:

@@ -27,13 +27,68 @@
 #include <iostream>
 #include "utils/Log.h"
 #include "io/Config.h"
+#include "io/convert.h"
 #include <string>
-#include "core/Infomap.h"
+#include "Infomap.h"
+#include "utils/exceptions.h"
+#include <algorithm>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
 namespace infomap {
+
+
+std::map<unsigned int, unsigned int> Infomap::getModules(unsigned int level, bool states)
+{
+	unsigned int maxDepth = maxTreeDepth();
+	if (level >= maxDepth)
+		throw InputDomainError(io::Str() << "Maximum module level is " << maxDepth - 1 << ".");
+	std::map<unsigned int, unsigned int> modules;
+	if (haveMemory() && !states) {
+		for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
+			InfoNode &node = *it;
+			if (node.isLeaf()) {
+				modules[node.physicalId] = it.moduleIndex();
+			}
+		}
+	} else {
+		for (auto it(iterTree(level)); !it.isEnd(); ++it) {
+			InfoNode &node = *it;
+			if (node.isLeaf()) {
+				auto nodeId = states ? node.stateId : node.physicalId;
+				modules[nodeId] = it.moduleIndex();
+			}
+		}
+	}
+	return modules;
+}
+
+std::map<unsigned int, std::vector<unsigned int>> Infomap::getMultilevelModules(bool states)
+{
+	unsigned int maxDepth = maxTreeDepth();
+	unsigned int numModuleLevels = maxDepth - 1;
+	std::map<unsigned int, std::vector<unsigned int>> modules;
+	for (unsigned int level = 1; level <= numModuleLevels; ++level) {
+		if (haveMemory() && !states) {
+			for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
+				InfoNode &node = *it;
+				if (node.isLeaf()) {
+					modules[node.physicalId].push_back(it.moduleIndex());
+				}
+			}
+		} else {
+			for (auto it(iterTree(level)); !it.isEnd(); ++it) {
+				InfoNode &node = *it;
+				if (node.isLeaf()) {
+					auto nodeId = states ? node.stateId : node.physicalId;
+					modules[nodeId].push_back(it.moduleIndex());
+				}
+			}
+		}
+	}
+	return modules;
+}
 
 int run(const std::string& flags)
 {
