@@ -33,11 +33,14 @@ public:
 	
 	void addName(unsigned int id, std::string name) { m_network.addName(id, name); }
 
+	void addPhysicalNode(unsigned int id, std::string name = "") { m_network.addPhysicalNode(id, name); }
 	void addStateNode(unsigned int id, unsigned int physId) { m_network.addStateNode(id, physId); }
 	
 	void addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0) { m_network.addLink(sourceId, targetId, weight); }
+	void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight = 1.0) { m_network.addMultilayerLink(layer1, n1, layer2, n2, weight); }
+	void addPath(const std::vector<unsigned int>& nodes, unsigned int markovOrder, double weight = 1.0) { m_network.addPath(nodes, markovOrder, weight); }
 
-	std::map<unsigned int, unsigned int> getModules(unsigned int level = 1, bool states = false);
+	std::map<unsigned int, unsigned int> getModules(int level = 1, bool states = false);
 	std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false);
 };
 

@@ -39,11 +39,13 @@
 namespace infomap {
 
 
-std::map<unsigned int, unsigned int> Infomap::getModules(unsigned int level, bool states)
+std::map<unsigned int, unsigned int> Infomap::getModules(int level, bool states)
 {
-	unsigned int maxDepth = maxTreeDepth();
-	if (level >= maxDepth)
-		throw InputDomainError(io::Str() << "Maximum module level is " << maxDepth - 1 << ".");
+	// int maxDepth = maxTreeDepth();
+	// if (level >= maxDepth)
+	// 	throw InputDomainError(io::Str() << "Maximum module level is " << maxDepth - 1 << ".");
+	// if (level < -1)
+	// 	throw InputDomainError(io::Str() << "Minimum module level is -1, meaning finest module level starting from bottom of the tree.");
 	std::map<unsigned int, unsigned int> modules;
 	if (haveMemory() && !states) {
 		for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
