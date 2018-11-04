@@ -3,6 +3,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+import pathlib
 
 from infomap import infomap
 
@@ -14,28 +15,22 @@ according to the community structure found by Infomap.
 def findCommunities(G):
 	"""
 	Partition network with the Infomap algorithm.
-	Annotates nodes with 'community' id and return number of communities found.
+	Annotates nodes with 'community' id.
 	"""
 	
-	infomapWrapper = infomap.Infomap("--two-level")
+	myInfomap = infomap.Infomap("--two-level")
 
 	print("Building Infomap network from a NetworkX graph...")
-	for e in G.edges_iter():
-		infomapWrapper.addLink(*e)
+	for (source, target) in G.edges:
+		myInfomap.addLink(source, target)
 
 	print("Find communities with Infomap...")
-	infomapWrapper.run();
+	myInfomap.run()
 
-	tree = infomapWrapper.tree
+	print(f"Found {myInfomap.numTopModules()} modules with codelength: {myInfomap.codelength()}")
 
-	print("Found %d top modules with codelength: %f" % (tree.numTopModules(), tree.codelength()))
-
-	communities = {}
-	for node in tree.leafIter():
-		communities[node.originalLeafIndex] = node.moduleIndex()
-
-	nx.set_node_attributes(G, 'community', communities)
-	return tree.numTopModules()
+	communities = dict(myInfomap.getModules())
+	nx.set_node_attributes(G, communities, 'community')
 
 
 def drawNetwork(G):
@@ -62,7 +57,7 @@ def drawNetwork(G):
 	nodeCollection.set_edgecolor(darkColors)
 
 	# Print node labels separately instead
-	for n in G.nodes_iter():
+	for n in G.nodes:
 		plt.annotate(n,
 			xy = pos[n],
 			textcoords = 'offset points',
@@ -73,12 +68,13 @@ def drawNetwork(G):
 		)
 
 	plt.axis('off')
-	# plt.savefig("karate.png")
-	plt.show()
+	pathlib.Path("output").mkdir(exist_ok=True)
+	print("Writing network figure to output/karate.png")
+	plt.savefig("output/karate.png")
+	# plt.show()
 
 
 G=nx.karate_club_graph()
 
 findCommunities(G)
-
 drawNetwork(G)

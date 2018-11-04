@@ -1,8 +1,4 @@
 /*
- * Infomap.h
- *
- *  Created on: 4 mar 2015
- *      Author: Daniel
  */
 
 #ifndef INFOMAP_OPTIMIZER_H_
@@ -17,7 +13,6 @@
 #include "FlowData.h"
 #include <utility>
 #include <tuple>
-#include "MapEquation.h"
 
 namespace infomap {
 
@@ -148,18 +143,6 @@ inline
 bool InfomapOptimizer<Objective>::haveMemory() const {
 	return Objective::haveMemory();
 }
-
-// template<typename Objective>
-// inline
-// InfomapBase* InfomapOptimizer<Objective>::getNewInfomapInstance() const {
-// 	return new InfomapOptimizer<Objective>();
-// }
-
-// template<typename Objective>
-// inline
-// InfomapBase* InfomapOptimizer<Objective>::getNewInfomapInstanceWithoutMemory() const {
-// 	return new InfomapOptimizer<MapEquation>();
-// }
 
 template<typename Objective>
 inline

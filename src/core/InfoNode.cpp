@@ -5,7 +5,7 @@
  *      Author: Daniel
  */
 #include "InfoNode.h"
-#include "Infomap.h"
+#include "InfomapCore.h"
 #include <algorithm>
 
 namespace infomap {

@@ -5,18 +5,11 @@
  *      Author: Daniel
  */
 
-#ifndef INFOMAP_H_
-#define INFOMAP_H_
+#ifndef INFOMAP_CORE_H_
+#define INFOMAP_CORE_H_
 
 #include "InfomapBase.h"
 #include "../io/Config.h"
-#include <set>
-#include "../utils/VectorMap.h"
-#include "../utils/infomath.h"
-#include "InfoNode.h"
-#include "FlowData.h"
-#include <utility>
-#include <tuple>
 #include "MapEquation.h"
 #include "MemMapEquation.h"
 #include "MetaMapEquation.h"
@@ -25,15 +18,7 @@
 
 namespace infomap {
 
-class Infomap : public InfomapBase {
-	// using Base = InfomapBase;
-	// using FlowDataType = FlowData;
-	// using DeltaFlowDataType = MemDeltaFlow;
-	// using FlowDataType = typename Objective::FlowDataType;
-	// using DeltaFlowDataType = typename Objective::DeltaFlowDataType;
-	// template<typename T>
-	// using ptr = std::shared_ptr<T>;
-	// using MapEquationPtr = std::unique_ptr<MapEquation>;
+class InfomapCore : public InfomapBase {
 	using OptimizerPtr = std::unique_ptr<InfomapOptimizerBase>;
 
 protected:
@@ -42,12 +27,11 @@ protected:
 	// using EdgeType = Edge<InfoNode>;
 public:
 	// template<typename... Args>
-	// Infomap(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
-	Infomap(bool forceNoMemory = false) : InfomapBase() { initOptimizer(forceNoMemory); }
-	Infomap(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
-	Infomap(const Config& conf, bool forceNoMemory) : InfomapBase(conf) { initOptimizer(forceNoMemory); }
-	Infomap(const std::string& flags) : InfomapBase(flags) { initOptimizer(); }
-	virtual ~Infomap() {}
+	// InfomapCore(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
+	InfomapCore(bool forceNoMemory = false) : InfomapBase() { initOptimizer(forceNoMemory); }
+	InfomapCore(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
+	InfomapCore(const std::string& flags) : InfomapBase(flags) { initOptimizer(); }
+	virtual ~InfomapCore() {}
 
 	// ===================================================
 	// IO
@@ -74,7 +58,7 @@ public:
   }
 
 protected:
-	Infomap& initOptimizer(bool forceNoMemory = false)
+	InfomapCore& initOptimizer(bool forceNoMemory = false)
 	{
 		if (this->haveMetaData()) {
 			m_optimizer = OptimizerPtr(new InfomapOptimizer<MetaMapEquation>());
@@ -87,12 +71,11 @@ protected:
 		return *this;
 	}
 
-	// virtual InfomapBase& getInfomap(InfoNode& node);
 	virtual InfomapBase* getNewInfomapInstance() const {
-    return new Infomap(this->getConfig());
+    return new InfomapCore();
   }
 	virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const {
-    return new Infomap(this->getConfig(), true);
+    return new InfomapCore(true);
   }
 
 	virtual unsigned int numActiveModules() const {
@@ -169,4 +152,4 @@ protected:
 
 } /* namespace infomap */
 
-#endif /* INFOMAP_H_ */
+#endif /* INFOMAP_CORE_H_ */
