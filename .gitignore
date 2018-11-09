@@ -20,6 +20,7 @@ examples/cpp/Infomap-igraph-interface-library/build
 examples/cpp/Infomap-igraph-interface-library/include
 examples/cpp/Infomap-igraph-interface-library/lib
 examples/python/infomap
+examples/python/test.ipynb
 examples/R/infomap
 examples/R/\.Rhistory
 examples/js/Infomap-worker.js

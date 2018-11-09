@@ -221,11 +221,20 @@ $(R_BUILD_DIR)/src/%: src/%
 
 .PHONY: docker-build
 
-docker-build: Makefile
+# notebook
+docker-build-notebook: Makefile
 	docker build -f docker/notebook.Dockerfile -t infomap:notebook .
 
 docker-run-notebook: Makefile
 	docker run --rm -p 10000:8888 -v `pwd`:/me/pwd -v `pwd`/tmp:/me/tmp -v `readlink networks`:/me/networks -v `readlink output`:/me/output infomap:notebook start.sh jupyter lab --LabApp.token=''
+
+# swig python
+docker-build-swig-python: Makefile
+	docker build -f docker/swig.python.Dockerfile -t infomap:python .
+
+docker-run-swig-python: Makefile
+	docker run --rm infomap:python
+
 # docker-run:
 # 	docker run -it --rm -v $(pwd):/home/rstudio infomap \
 	ninetriangles.net output
