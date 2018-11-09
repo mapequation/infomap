@@ -174,7 +174,11 @@ public:
 
 	virtual void run();
 
+	virtual void run(const std::map<unsigned int, unsigned int>& clusterIds);
+
 	virtual void run(Network& network);
+
+	virtual void run(Network& network, const std::map<unsigned int, unsigned int>& clusterIds);
 
 	// ===================================================
 	// Run: *
@@ -208,6 +212,16 @@ public:
 	 * after that replaced by the original nodes.
 	 */
 	InfomapBase& initPartition(std::string clusterDataFile, bool hard = false);
+
+	/**
+	 * Provide an initial partition of the network.
+	 *
+	 * @param clusterIds map from nodeId to clusterId, doesn't have to be complete
+	 * @param hard If true, the provided clusters will not be splitted. This reduces the
+	 * effective network size during the optimization phase but the hard partitions are
+	 * after that replaced by the original nodes.
+	 */
+	InfomapBase& initPartition(const std::map<unsigned int, unsigned int>& clusterIds, bool hard = false);
 
 	/**
 	 * Provide an initial partition of the network.

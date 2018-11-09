@@ -98,6 +98,7 @@ struct Config
 	double metaDataRate = 1.0;
 	unsigned int numMetaDataDimensions = 0;
 	bool clusterDataIsHard = false;
+	bool setUnidentifiedNodesToClosestModule = false;
 	bool noInfomap = false;
 
 	// FlowModel flowModel = FlowModel::undirected;
@@ -209,6 +210,7 @@ struct Config
 	 	metaDataRate(other.metaDataRate),
 	 	numMetaDataDimensions(other.numMetaDataDimensions),
 	 	clusterDataIsHard(other.clusterDataIsHard),
+	 	setUnidentifiedNodesToClosestModule(other.setUnidentifiedNodesToClosestModule),
 	 	noInfomap(other.noInfomap),
 		flowModel(other.flowModel),
 		directed(other.directed),
@@ -302,6 +304,7 @@ struct Config
 	 	metaDataRate = other.metaDataRate;
 	 	numMetaDataDimensions = other.numMetaDataDimensions;
 	 	clusterDataIsHard = other.clusterDataIsHard;
+	 	setUnidentifiedNodesToClosestModule = other.setUnidentifiedNodesToClosestModule;
 	 	noInfomap = other.noInfomap;
 		flowModel = other.flowModel;
 		directed = other.directed;
@@ -394,6 +397,7 @@ struct Config
 	 	metaDataRate = other.metaDataRate;
 	 	numMetaDataDimensions = other.numMetaDataDimensions;
 	 	// clusterDataIsHard = other.clusterDataIsHard;
+	 	// setUnidentifiedNodesToClosestModule = other.setUnidentifiedNodesToClosestModule;
 	 	noInfomap = other.noInfomap;
 		flowModel = other.flowModel;
 		directed = other.directed;

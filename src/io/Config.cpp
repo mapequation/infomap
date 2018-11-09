@@ -89,6 +89,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 
 	api.addOptionArgument(conf.clusterDataFile, 'c', "cluster-data",
 			"Provide an initial two-level (.clu format) or multi-layer (.tree format) solution.", "p", true);
+			
+	api.addOptionArgument(conf.setUnidentifiedNodesToClosestModule, "set-unidentified-nodes-to-closest-module",
+			"Merge unidentified nodes in cluster data to closest existing modules if possible.", true);
 
 	api.addOptionArgument(conf.metaDataFile, "meta-data",
 			"Provide meta data (.clu format) that should be encoded.", "p", true);

@@ -203,6 +203,12 @@ void InfomapBase::run()
 		return;
 	}
 
+	const std::map<unsigned int, unsigned int> clusterIds = {};
+	run(clusterIds);
+}
+
+void InfomapBase::run(const std::map<unsigned int, unsigned int>& clusterIds)
+{
 	Stopwatch timer(true);
 
 	Log() << "=======================================================\n";
@@ -215,6 +221,9 @@ void InfomapBase::run()
 	if (!this->parsedOptions.empty()) {
 		for (unsigned int i = 0; i < this->parsedOptions.size(); ++i)
 			Log() << (i == 0 ? "  -> Configuration: " : "                    ") << this->parsedOptions[i] << "\n";
+	}
+	if (!clusterIds.empty()) {
+		Log() << "  -> " << clusterIds.size() << " cluster ids provided\n";
 	}
 	// Log() << "  -> Use " << (this->isUndirected()? "undirected" : "directed") << " flow";
 	// if (this->useTeleportation())
@@ -239,7 +248,7 @@ void InfomapBase::run()
 		initMetaData(this->metaDataFile);
 	}
 	
-	run(m_network);
+	run(m_network, clusterIds);
 
 	Log() << "===================================================\n";
 	Log() << "  Infomap ends at " << Date() << "\n";
@@ -249,6 +258,12 @@ void InfomapBase::run()
 }
 
 void InfomapBase::run(Network& network)
+{
+	const std::map<unsigned int, unsigned int> clusterIds = {};
+	run(network, clusterIds);
+}
+
+void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned int>& clusterIds)
 {
 	if (!isMainInfomap())
 		throw InternalOrderError("Can't run a non-main Infomap with an input network");
@@ -329,6 +344,8 @@ void InfomapBase::run(Network& network)
 
 			if (this->clusterDataFile != "")
 				initPartition(this->clusterDataFile, this->clusterDataIsHard);
+			else if (!clusterIds.empty())
+				initPartition(clusterIds, this->clusterDataIsHard);
 		}
 
 		if (!this->noInfomap)
@@ -435,49 +452,139 @@ InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard)
 
 	// nodeId -> clusterId
 	auto& clusterIds = clusterMap.clusterIds();
+	return initPartition(clusterIds, hard);
+}
 
-	// Log() << "\n\n.clu\n#stateId moduleId\n";
-	std::map<unsigned int, std::set<unsigned int>> stateIdsGroupedOnClusterIds;
-	for (auto it : clusterIds){
-		// Log() << it.first << " " << it.second << "\n";
-		stateIdsGroupedOnClusterIds[it.second].insert(it.first);
+InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned int>& clusterIds, bool hard)
+{
+	// Generate map from node id to index in leaf node vector
+	std::map<unsigned int, unsigned int> nodeIdToIndex;
+	unsigned int leafIndex = 0;
+	for (auto& nodePtr : m_leafNodes) {
+		auto& leafNode = *nodePtr;
+		nodeIdToIndex[leafNode.stateId] = leafIndex;
+		++leafIndex;
 	}
 
-	// Create map from stateId to leaf node index
-	std::map<unsigned int, unsigned int> stateIdToLeafNodeIndex;
-	for (unsigned int i = 0; i < m_leafNodes.size(); ++i) {
-		stateIdToLeafNodeIndex[m_leafNodes[i]->stateId] = i;
+	// Remap clusterIds to vector from leaf node index to module index instead of nodeId -> clusterId
+	std::map<unsigned int, std::set<unsigned int>> clusterIdToNodeIds;
+	for (auto it : clusterIds) {
+		clusterIdToNodeIds[it.second].insert(it.first);
+	}
+	unsigned int numNodes = numLeafNodes();
+	std::vector<unsigned int> modules(numNodes);
+	std::vector<unsigned int> selectedNodes(numNodes, 0);
+	unsigned int moduleIndex = 0;
+	for (auto it : clusterIdToNodeIds) {
+		auto& nodes = it.second;
+		for (auto& nodeId : nodes) {
+			auto nodeIndex = nodeIdToIndex[nodeId];
+			modules[nodeIndex] = moduleIndex;
+			++selectedNodes[nodeIndex];
+		}
+		++moduleIndex;
 	}
 
-	// Create vectors of clusters
-	std::vector<std::vector<unsigned int>> clusters(stateIdsGroupedOnClusterIds.size());
-	unsigned int numNodesNotFound = 0;
-	unsigned int clusterIndex = 0;
-	// Log() << "\nGroup by cluster..\n";
-	for (auto& clusterToStateIds : stateIdsGroupedOnClusterIds) {
-		auto& stateIds = clusterToStateIds.second;
-		clusters[clusterIndex].reserve(stateIds.size());
-		// Log() << "Cluster " << clusterToStateIds.first << " (-> clusterIndex: " << clusterIndex << "):\n";
-		for (auto stateId : stateIds) {
-			auto it = stateIdToLeafNodeIndex.find(stateId);
-			// Log() << "  " << stateId << ": ";
-			if (it == stateIdToLeafNodeIndex.end()) {
-				++numNodesNotFound;
-				// Log() << "not in network!\n";
-			}
-			else {
-				unsigned int nodeIndex = it->second;
-				clusters[clusterIndex].push_back(nodeIndex);
-				// Log() << "-> leaf index " << nodeIndex << "\n";
+	unsigned int numNodesWithoutClusterInfo = 0;
+	for (auto& count : selectedNodes) {
+		if (count == 0) {
+			++numNodesWithoutClusterInfo;
+		}
+	}
+
+	if (numNodesWithoutClusterInfo == 0) {
+		return initPartition(modules, hard);
+	}
+
+	if (this->setUnidentifiedNodesToClosestModule) {
+		Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into closest modules. ";
+		for (unsigned int i = 0; i < numNodes; ++i) {
+			if (selectedNodes[i] == 0) {
+				// Check out edges greedily for connected modules
+				auto& node = *m_leafNodes[i];
+				for (auto& e : node.outEdges())
+				{
+					auto& edge = *e;
+					auto targetNodeIndex = nodeIdToIndex[edge.target.stateId];
+					if (selectedNodes[targetNodeIndex] != 0) {
+						selectedNodes[i] = 1;
+						modules[i] = modules[targetNodeIndex];
+						break;
+					}
+				}
+				if (selectedNodes[i] == 0) {
+					// Check in edges greedily for connected modules
+					for (auto& e : node.inEdges())
+					{
+						auto& edge = *e;
+						auto sourceNodeIndex = nodeIdToIndex[edge.source.stateId];
+						if (selectedNodes[sourceNodeIndex] != 0) {
+							selectedNodes[i] = 1;
+							modules[i] = modules[sourceNodeIndex];
+							break;
+						}
+					}
+				}
+				if (selectedNodes[i] == 0) {
+					// No connected node with a module index, fall back to create new module
+					selectedNodes[i] = 1;
+					modules[i] = moduleIndex;
+					++moduleIndex;
+				}
 			}
 		}
-		if (clusters[clusterIndex].size() > 0)
-			++clusterIndex;
 	}
-	if (numNodesNotFound > 0)
-		Log() << "\n -> " << numNodesNotFound << " nodes in cluster file not found in network are ignored. ";
+	else {
+		Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into separate modules. ";
+		// Put non-selected nodes in its own module
+		for (unsigned int i = 0; i < numNodes; ++i) {
+			if (selectedNodes[i] == 0) {
+				modules[i] = moduleIndex;
+				++moduleIndex;
+			}
+		}
+	}
 
-	return initPartition(clusters, hard);
+	return initPartition(modules);
+	
+
+	// // Log() << "\n\n.clu\n#stateId moduleId\n";
+
+	// // Create map from stateId to leaf node index
+	// std::map<unsigned int, unsigned int> stateIdToLeafNodeIndex;
+	// for (unsigned int i = 0; i < m_leafNodes.size(); ++i) {
+	// 	stateIdToLeafNodeIndex[m_leafNodes[i]->stateId] = i;
+	// }
+
+	// // Create vectors of clusters
+	// std::vector<std::vector<unsigned int>> clusters(stateIdsGroupedOnClusterIds.size());
+	// unsigned int numNodesNotFound = 0;
+	// unsigned int clusterIndex = 0;
+	// // Log() << "\nGroup by cluster..\n";
+	// for (auto& clusterToStateIds : stateIdsGroupedOnClusterIds) {
+	// 	auto& stateIds = clusterToStateIds.second;
+	// 	clusters[clusterIndex].reserve(stateIds.size());
+	// 	// Log() << "Cluster " << clusterToStateIds.first << " (-> clusterIndex: " << clusterIndex << "):\n";
+	// 	for (auto stateId : stateIds) {
+	// 		auto it = stateIdToLeafNodeIndex.find(stateId);
+	// 		// Log() << "  " << stateId << ": ";
+	// 		if (it == stateIdToLeafNodeIndex.end()) {
+	// 			++numNodesNotFound;
+	// 			// Log() << "not in network!\n";
+	// 		}
+	// 		else {
+	// 			unsigned int nodeIndex = it->second;
+	// 			clusters[clusterIndex].push_back(nodeIndex);
+	// 			// Log() << "-> leaf index " << nodeIndex << "\n";
+	// 		}
+	// 	}
+	// 	if (clusters[clusterIndex].size() > 0)
+	// 		++clusterIndex;
+	// }
+	// if (numNodesNotFound > 0)
+	// 	Log() << "\n -> " << numNodesNotFound << " nodes in cluster file not found in network are ignored. ";
+
+	// return initPartition(clusters, hard);
 }
 
 InfomapBase& InfomapBase::initPartition(std::vector<std::vector<unsigned int>>& clusters, bool hard)
