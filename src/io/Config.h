@@ -95,6 +95,7 @@ struct Config
 	bool preClusterMultilayer = false;
 	std::string clusterDataFile = "";
 	bool clusterDataIsHard = false;
+	bool setUnidentifiedNodesToClosestModule = false;
 	bool noInfomap = false;
 
 	// FlowModel flowModel = FlowModel::undirected;
@@ -203,6 +204,7 @@ struct Config
 		preClusterMultilayer(other.preClusterMultilayer),
 	 	clusterDataFile(other.clusterDataFile),
 	 	clusterDataIsHard(other.clusterDataIsHard),
+	 	setUnidentifiedNodesToClosestModule(other.setUnidentifiedNodesToClosestModule),
 	 	noInfomap(other.noInfomap),
 		flowModel(other.flowModel),
 		directed(other.directed),
@@ -293,6 +295,7 @@ struct Config
 		preClusterMultilayer = other.preClusterMultilayer;
 	 	clusterDataFile = other.clusterDataFile;
 	 	clusterDataIsHard = other.clusterDataIsHard;
+	 	setUnidentifiedNodesToClosestModule = other.setUnidentifiedNodesToClosestModule;
 	 	noInfomap = other.noInfomap;
 		flowModel = other.flowModel;
 		directed = other.directed;
@@ -382,6 +385,7 @@ struct Config
 		preClusterMultilayer = other.preClusterMultilayer;
 	 	// clusterDataFile = other.clusterDataFile;
 	 	// clusterDataIsHard = other.clusterDataIsHard;
+	 	// setUnidentifiedNodesToClosestModule = other.setUnidentifiedNodesToClosestModule;
 	 	noInfomap = other.noInfomap;
 		flowModel = other.flowModel;
 		directed = other.directed;
