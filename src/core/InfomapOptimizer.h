@@ -12,7 +12,7 @@
 #include "InfoNode.h"
 #include "FlowData.h"
 #include <utility>
-#include <tuple>
+// #include <tuple>
 
 namespace infomap {
 
@@ -1132,11 +1132,12 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 				if (m_infomap->isUndirectedClustering() && m1 > m2)
 					std::swap(m1, m2);
 				// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
-				auto ret = moduleLinks.emplace(
-					std::piecewise_construct,
-					std::forward_as_tuple(m1, m2),
-					std::forward_as_tuple(edge.data.flow)
-				);
+				// auto ret = moduleLinks.emplace(
+				// 	std::piecewise_construct,
+				// 	std::forward_as_tuple(m1, m2),
+				// 	std::forward_as_tuple(edge.data.flow)
+				// );
+				auto ret = moduleLinks.insert(std::make_pair(NodePair(m1, m2), edge.data.flow));
 				if (!ret.second) {
 					ret.first->second += edge.data.flow;
 				}

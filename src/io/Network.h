@@ -97,6 +97,16 @@ public:
 
 	virtual void readInputData(std::string filename = "");
 
+	/**
+	 * Init categorical meta data on all nodes from a file with the following format:
+	 * # nodeId metaData
+	 * 1 1
+	 * 2 1
+	 * 3 2
+	 * 4 2
+	 * 5 3
+	 * @param filename input filename for metadata
+	 */
 	virtual void readMetaData(std::string filename);
 
 

@@ -417,6 +417,8 @@ public:
 
 protected:
 
+	virtual void initOptimizer(bool forceNoMemory = false) = 0;
+
 	/**
 	 * Write tree to output stream
 	 * @param states, write state-level tree, else aggregate physical nodes within modules

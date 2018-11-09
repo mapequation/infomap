@@ -58,7 +58,7 @@ public:
   }
 
 protected:
-	InfomapCore& initOptimizer(bool forceNoMemory = false)
+	void initOptimizer(bool forceNoMemory = false)
 	{
 		if (this->haveMetaData()) {
 			m_optimizer = OptimizerPtr(new InfomapOptimizer<MetaMapEquation>());
@@ -68,7 +68,6 @@ protected:
 			m_optimizer = OptimizerPtr(new InfomapOptimizer<MapEquation>());
 		}
     m_optimizer->init(this);
-		return *this;
 	}
 
 	virtual InfomapBase* getNewInfomapInstance() const {

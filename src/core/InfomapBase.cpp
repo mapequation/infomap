@@ -236,7 +236,7 @@ void InfomapBase::run()
 	}
 
 	if (this->metaDataFile != "") {
-		m_network.readMetaData(this->metaDataFile);
+		initMetaData(this->metaDataFile);
 	}
 	
 	run(m_network);
@@ -392,6 +392,13 @@ void InfomapBase::run(Network& network)
 // Run: Init: *
 // ===================================================
 
+
+InfomapBase& InfomapBase::initMetaData(std::string metaDataFile)
+{
+	m_network.readMetaData(this->metaDataFile);
+	return *this;
+}
+
 InfomapBase& InfomapBase::initNetwork(Network& network)
 {
 	if (network.numNodes() == 0)
@@ -399,6 +406,8 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
 	// this->setConfig(network.getConfig());
 	Log() << "Build internal network...\n";
 	generateSubNetwork(network);
+
+	initOptimizer();
 
 	init();
 	return *this;
@@ -548,8 +557,10 @@ void InfomapBase::generateSubNetwork(Network& network)
 	auto& metaData = network.metaData();
 	this->numMetaDataDimensions = network.numMetaDataColumns();
 
-
 	Log() << "Generate network with " << numNodes << " nodes and " << network.numLinks() << " links..." << std::endl;
+	if (!metaData.empty()) {
+		Log() << "and " << metaData.size() << " meta-data records in " << this->numMetaDataDimensions << " dimensions\n";
+	}
 
 	m_leafNodes.reserve(numNodes);
 	double sumNodeFlow = 0.0;

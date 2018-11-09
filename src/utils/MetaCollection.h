@@ -6,7 +6,8 @@
 #define _META_COLLECTION_H
 
 #include <ostream>
-#include <unordered_map>
+// #include <unordered_map>
+#include <map>
 #include "infomath.h"
 
 namespace infomap {
@@ -54,7 +55,8 @@ struct FlowCount
 	unsigned int count = 0;
 };
 
-using MetaToFlowCount = std::unordered_map<unsigned int, FlowCount>; // metaId -> (flow,count)
+// using MetaToFlowCount = std::unordered_map<unsigned int, FlowCount>; // metaId -> (flow,count)
+using MetaToFlowCount = std::map<unsigned int, FlowCount>; // metaId -> (flow,count)
 
 class MetaCollection
 {
