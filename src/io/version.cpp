@@ -29,7 +29,6 @@
 
 namespace infomap {
 
-const char* INFOMAP_VERSION = "1.0.0-beta.15"; // latest on pypi
-// const char* INFOMAP_VERSION = "1.0.0-beta.40"; // latest on test pypi
+const char* INFOMAP_VERSION = "1.0.0-beta.42";
 
 }
