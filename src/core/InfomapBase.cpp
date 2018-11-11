@@ -411,6 +411,10 @@ InfomapBase& InfomapBase::initNetwork(StateNetwork& network)
 	if (network.numNodes() == 0)
 		throw DataDomainError("No nodes in network");
 	// this->setConfig(network.getConfig());
+	if (m_root.childDegree() > 0) {
+		m_root.deleteChildren();
+		m_leafNodes.clear();
+	}
 	Log() << "Build internal network...\n";
 	generateSubNetwork(network);
 
@@ -695,7 +699,10 @@ void InfomapBase::generateSubNetwork(StateNetwork& network)
 		Log() << numLinksIgnored << " self-links ignored -> " << network.numLinks() - numLinksIgnored << " links." << std::endl;
 	}
 
+	// Used as a library, we may want to reuse the instance
+	#ifndef AS_LIB
 	network.dispose();
+	#endif
 }
 
 void InfomapBase::generateSubNetwork(InfoNode& parent)
