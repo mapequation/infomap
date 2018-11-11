@@ -23,5 +23,16 @@ namespace std {
     %template(map_uint_vector_uint) std::map<unsigned int, std::vector<unsigned int>>;
 }
 
+#ifdef SWIGPYTHON
+%extend infomap::Infomap
+{
+	// overwrite getModules to convert swig map proxy object to pure dict
+	%insert("python") %{
+        def getModules(self, level=1, states=False):
+            return dict(_infomap.Infomap_getModules(self, level, states))
+    %}
+}
+#endif
+
 /* Parse the header file to generate wrappers */
 %include "src/Infomap.h"
