@@ -38,6 +38,11 @@ namespace std {
 				raise StopIteration
 
 			return self
+		
+		@property
+		def id(self):
+			"""Get the 'stateId' property."""
+			return self.stateId
 	%}
 }
 
@@ -61,6 +66,11 @@ namespace std {
 				raise StopIteration
 
 			return self
+		
+		@property
+		def id(self):
+			"""Get the 'stateId' property."""
+			return self.stateId
 	%}
 }
 
@@ -84,6 +94,11 @@ namespace std {
 				raise StopIteration
 
 			return self
+		
+		@property
+		def id(self):
+			"""Get the 'stateId' property."""
+			return self.stateId
 	%}
 }
 
@@ -107,6 +122,11 @@ namespace std {
 				raise StopIteration
 
 			return self
+		
+		@property
+		def id(self):
+			"""Get the 'stateId' property."""
+			return self.stateId
 	%}
 }
 
@@ -130,6 +150,11 @@ namespace std {
 				raise StopIteration
 
 			return self
+		
+		@property
+		def id(self):
+			"""Get the 'stateId' property."""
+			return self.stateId
 	%}
 }
 #endif

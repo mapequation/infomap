@@ -29,7 +29,7 @@ def findCommunities(G):
 
 	print(f"Found {myInfomap.numTopModules()} modules with codelength: {myInfomap.codelength()}")
 
-	communities = dict(myInfomap.getModules())
+	communities = myInfomap.getModules()
 	nx.set_node_attributes(G, communities, 'community')
 
 
