@@ -4,7 +4,12 @@ import pathlib
 name = "ninetriangles"
 filename = f"../../{name}.net"
 
-myInfomap = infomap.Infomap(f"-v -N2 --input {filename}")
+# Use the --input flag to read network from file directly
+myInfomap = infomap.Infomap(f"--input {filename}")
+
+# You can also read a network with the method below, which by default will accumulate to existing network data
+# accumulate = False
+# myInfomap.readInputData(filename, accumulate)
 
 myInfomap.run()
 

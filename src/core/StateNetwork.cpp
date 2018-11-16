@@ -256,11 +256,30 @@ void StateNetwork::calculateFlow()
 	flowCalculator.calculateFlow(*this, m_config);
 }
 
-void StateNetwork::dispose()
+void StateNetwork::clear()
 {
+	m_nodes.clear();
 	m_nodeLinkMap.clear();
 	m_physNodes.clear();
-	m_nodes.clear();
+	m_outWeights.clear();
+	m_names.clear();
+	m_physNodes.clear();
+
+	m_haveDirectedInput = false;
+	m_haveMemoryInput = false;
+	m_numNodesFound = 0;
+	m_numStateNodesFound = 0;
+	m_numLinksFound = 0;
+	m_numLinks = 0;
+	m_numSelfLinksFound = 0;
+	m_sumLinkWeight = 0.0;
+	m_sumSelfLinkWeight = 0.0;
+	m_numAggregatedLinks = 0;
+	m_totalLinkWeightAdded = 0.0;
+	m_numLinksIgnoredByWeightThreshold = 0;
+	m_totalLinkWeightIgnored = 0.0;
+	m_numSkippedPaths = 0;
+	m_pathToStateId.clear();
 }
 
 void StateNetwork::writeStateNetwork(std::string filename) const

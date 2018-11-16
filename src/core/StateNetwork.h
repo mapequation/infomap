@@ -224,7 +224,10 @@ public:
 	
 	void calculateFlow();
 
-	void dispose();
+	/**
+	 * Clear all network data and reset to default state.
+	 */
+	virtual void clear();
 
 	// Getters
 	const NodeMap& nodes() const { return m_nodes; }

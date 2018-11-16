@@ -314,6 +314,12 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 
 	if (numLeafNodes() == 0)
 		throw DataDomainError("No nodes to partition");
+
+	// If used as a library, we may want to reuse the network instance, else clear to use less memory
+	// TODO: May have to use some meta data for output?
+	#ifndef AS_LIB
+	network.clear();
+	#endif
 	
 	if (haveMemory())
 		Log(2) << "Run Infomap with memory..." << std::endl;
@@ -723,11 +729,6 @@ void InfomapBase::generateSubNetwork(Network& network)
 //		Log(1) << numLinksIgnored << " links with ~0 flow ignored -> " << network.getFlowLinks().size() - numLinksIgnored << " links." << std::endl;
 		Log() << numLinksIgnored << " self-links ignored -> " << network.numLinks() - numLinksIgnored << " links." << std::endl;
 	}
-
-	// Used as a library, we may want to reuse the instance
-	#ifndef AS_LIB
-	network.dispose();
-	#endif
 }
 
 void InfomapBase::generateSubNetwork(InfoNode& parent)
