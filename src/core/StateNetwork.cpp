@@ -216,6 +216,44 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
 	// return true;
 }
 
+bool StateNetwork::removeLink(unsigned int sourceId, unsigned int targetId)
+{	
+	auto itSource = m_nodeLinkMap.find(sourceId);
+	if (itSource == m_nodeLinkMap.end()) {
+		return false;
+	}
+
+	auto& targetMap = itSource->second;
+	auto itTarget = targetMap.find(targetId);
+
+	if (itTarget == targetMap.end()) {
+		return false;
+	}
+
+	double weight = itTarget->second.weight;
+
+	targetMap.erase(itTarget);
+	if (targetMap.empty()) {
+		m_nodeLinkMap.erase(itSource);
+	} else {
+		--m_numAggregatedLinks;
+	}
+	
+
+	--m_numLinks;
+	m_sumLinkWeight -= weight;
+	m_totalLinkWeightAdded -= weight;
+
+	if (sourceId == targetId) {
+		--m_numSelfLinksFound;
+		m_sumSelfLinkWeight -= weight;
+	}
+
+	m_outWeights[sourceId] -= weight;
+
+	return true;
+}
+
 bool StateNetwork::addPath(const std::vector<unsigned int>& path, unsigned int markovOrder, double weight)
 {
 	if (markovOrder == 0) {
@@ -263,7 +301,6 @@ void StateNetwork::clear()
 	m_physNodes.clear();
 	m_outWeights.clear();
 	m_names.clear();
-	m_physNodes.clear();
 
 	m_haveDirectedInput = false;
 	m_haveMemoryInput = false;
