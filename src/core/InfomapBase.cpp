@@ -211,6 +211,8 @@ void InfomapBase::run(const std::map<unsigned int, unsigned int>& clusterIds)
 {
 	Stopwatch timer(true);
 
+	Log::init(this->verbosity, this->silent, this->verboseNumberPrecision);
+
 	Log() << "=======================================================\n";
 	Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
 	Log() << "  -> Input network: " << this->networkFile << "\n";
