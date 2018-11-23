@@ -26,6 +26,8 @@ public:
 	// Wrapper methods
 	// ===================================================
 
+	void readInputData(std::string filename = "", bool accumulate = true) { m_network.readInputData(filename, accumulate); }
+
 	void addNode(unsigned int id) { m_network.addNode(id); }
 	void addNode(unsigned int id, std::string name) { m_network.addNode(id, name); }
 	void addNode(unsigned int id, double weight) { m_network.addNode(id, weight); }

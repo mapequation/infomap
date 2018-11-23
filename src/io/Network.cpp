@@ -95,8 +95,31 @@ void Network::initValidHeadings()
 	ignoreHeadingsGeneral.insert("*contexts");
 }
 
-void Network::readInputData(std::string filename)
+void Network::clear()
 {
+	StateNetwork::clear();
+	m_networks.clear();
+	m_interLinks.clear();
+	m_layerNodeToStateId.clear();
+	m_sumIntraOutWeight.clear();
+	m_layers.clear();
+	m_numInterLayerLinks = 0;
+	m_numIntraLayerLinks = 0;
+
+	// Bipartite
+	m_bipartiteLinks.clear();
+	m_numBipartiteNodes = 0;
+
+	// Meta data
+	m_metaData.clear();
+	m_numMetaDataColumns = 0;
+}
+
+void Network::readInputData(std::string filename, bool accumulate)
+{
+	if (!accumulate) {
+		clear();
+	}
 	if (filename.empty())
 		filename = m_config.networkFile;
 	if (filename == "") {

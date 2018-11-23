@@ -61,6 +61,11 @@ public:
 		return get();
 	}
 
+	Infomap& setVerbosity(unsigned int level) {
+		verbosity = level;
+		return get();
+	}
+
 	Infomap& setTwoLevel(bool value) {
 		twoLevel = value;
 		return get();
@@ -83,6 +88,11 @@ public:
 
 	Infomap& setNoCoarseTune(bool value) {
 		noCoarseTune = value;
+		return get();
+	}
+
+	Infomap& setNoInfomap(bool value = true) {
+		noInfomap = value;
 		return get();
 	}
 

@@ -68,7 +68,7 @@ protected:
 
 	// Bipartite
 	std::map<BipartiteLink, Weight> m_bipartiteLinks;
-	unsigned int m_numBipartiteNodes;
+	unsigned int m_numBipartiteNodes = 0;
 
 	// Meta data
 	std::map<unsigned int, std::vector<int>> m_metaData;
@@ -94,8 +94,14 @@ public:
 	:	StateNetwork(flags) { initValidHeadings(); }
 	virtual ~Network() {}
 
+	virtual void clear();
 
-	virtual void readInputData(std::string filename = "");
+	/**
+	 * Parse network data from file and generate network
+	 * @param filename input network
+	 * @param accumulate add to possibly existing network data (default), else clear before.
+	 */
+	virtual void readInputData(std::string filename = "", bool accumulate = true);
 
 	/**
 	 * Init categorical meta data on all nodes from a file with the following format:

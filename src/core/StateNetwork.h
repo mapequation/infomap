@@ -220,11 +220,19 @@ public:
 	PhysNode& addPhysicalNode(unsigned int physId, double weight, const std::string& name);
 	std::pair<std::map<unsigned int, std::string>::iterator, bool> addName(unsigned int id, std::string);
 	bool addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0);
+	/**
+	 * Remove link
+	 * Note: It will not remove nodes if they become dangling
+	 */
+	bool removeLink(unsigned int sourceId, unsigned int targetId);
 	bool addPath(const std::vector<unsigned int>& nodes, unsigned int markovOrder, double weight = 1.0);
 	
 	void calculateFlow();
 
-	void dispose();
+	/**
+	 * Clear all network data and reset to default state.
+	 */
+	virtual void clear();
 
 	// Getters
 	const NodeMap& nodes() const { return m_nodes; }
