@@ -805,8 +805,10 @@ void InfomapBase::hierarchicalPartition()
 		return;
 	}
 
-	findHierarchicalSuperModules();
+	if (numTopModules() > this->preferredNumberOfModules) {
+		findHierarchicalSuperModules();
 //	findHierarchicalSuperModulesFast(superLevelLimit);
+	}
 	
 	// printRSS();
 
@@ -908,7 +910,7 @@ void InfomapBase::partition()
 		Log() << " (" << m_numNonTrivialTopModules << " non-trivial)";
 	Log() << " modules." << std::endl;
 	
-	if (!this->skipReplaceToOneModuleIfBetter && haveNonTrivialModules() && getCodelength() > getOneLevelCodelength()) {
+	if (!this->skipReplaceToOneModuleIfBetter && this->preferredNumberOfModules == 0 && haveNonTrivialModules() && getCodelength() > getOneLevelCodelength()) {
 		Log() << "Worse codelength than one-level codelength, putting all nodes in one module... ";
 
 		// Create new single module between modules and root

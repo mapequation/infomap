@@ -176,7 +176,7 @@ double MapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent) cons
 
 
 double MapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
-		DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData)
+		DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers)
 {
 	using infomath::plogp;
 	unsigned int oldModule = oldModuleDelta.module;
@@ -211,7 +211,7 @@ double MapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 }
 
 void MapEquation::updateCodelengthOnMovingNode(InfoNode& current,
-		DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData)
+		DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers)
 {
 	using infomath::plogp;
 	unsigned int oldModule = oldModuleDelta.module;

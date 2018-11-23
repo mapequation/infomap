@@ -1,9 +1,9 @@
 /*
- * MetaMapEquation.h
+ * BiasedMapEquation.h
  */
 
-#ifndef _METAMAPEQUATION_H_
-#define _METAMAPEQUATION_H_
+#ifndef _BIASEDMAPEQUATION_H_
+#define _BIASEDMAPEQUATION_H_
 
 #include <vector>
 #include <set>
@@ -13,40 +13,35 @@
 #include "FlowData.h"
 // #include "InfoNode.h"
 #include "../utils/Log.h"
-#include "../utils/MetaCollection.h"
 
 namespace infomap {
 
 class InfoNode;
 
-class MetaMapEquation : protected MapEquation {
+class BiasedMapEquation : protected MapEquation {
 	using Base = MapEquation;
 public:
 	using FlowDataType = FlowData;
 	using DeltaFlowDataType = DeltaFlow;
 
-	MetaMapEquation() : MapEquation() {}
+	BiasedMapEquation() : MapEquation() {}
 
-	MetaMapEquation(const MetaMapEquation& other)
+	BiasedMapEquation(const BiasedMapEquation& other)
 	:	MapEquation(other),
-		m_moduleToMetaCollection(other.m_moduleToMetaCollection),
-		numMetaDataDimensions(other.numMetaDataDimensions),
-		metaDataRate(other.metaDataRate),
-		weightByFlow(other.weightByFlow),
-		metaCodelength(other.metaCodelength)
+		preferredNumModules(other.preferredNumModules),
+		currentNumModules(other.currentNumModules),
+		biasedCost(other.biasedCost)
 	{}
 
-	MetaMapEquation& operator=(const MetaMapEquation& other) {
+	BiasedMapEquation& operator=(const BiasedMapEquation& other) {
 		Base::operator =(other);
-		m_moduleToMetaCollection = other.m_moduleToMetaCollection;
-		numMetaDataDimensions = other.numMetaDataDimensions;
-		metaDataRate = other.metaDataRate;
-		weightByFlow = other.weightByFlow;
-		metaCodelength = other.metaCodelength;
+		preferredNumModules = other.preferredNumModules;
+		currentNumModules = other.currentNumModules;
+		biasedCost = other.biasedCost;
 		return *this;
 	}
 
-	virtual ~MetaMapEquation() {}
+	virtual ~BiasedMapEquation() {}
 
 	// ===================================================
 	// Getters
@@ -68,7 +63,7 @@ public:
 
 	// using Base::print;
 	std::ostream& print(std::ostream& out) const;
-	// friend std::ostream& operator<<(std::ostream&, const MetaMapEquation&);
+	// friend std::ostream& operator<<(std::ostream&, const BiasedMapEquation&);
 
 	// ===================================================
 	// Init
@@ -134,6 +129,8 @@ protected:
 
 	using Base::calculateCodelengthFromCodelengthTerms;
 
+	double calcNumModuleCost(unsigned int numModules) const;
+
 	// ===================================================
 	// Consolidation
 	// ===================================================
@@ -176,19 +173,14 @@ protected:
 	using Base::exitNetworkFlow;
 	using Base::exitNetworkFlow_log_exitNetworkFlow;
 
-	// For meta data
-	using ModuleMetaMap = std::map<unsigned int, MetaCollection>; // moduleId -> (metaId -> count)
-
-	ModuleMetaMap m_moduleToMetaCollection;
-
-	unsigned int numMetaDataDimensions = 0;
-	double metaDataRate = 1.0;
-	bool weightByFlow = false;
-	double metaCodelength = 0.0;
+	// For biased
+	unsigned int preferredNumModules = 0;
+	unsigned int currentNumModules = 0;
+	double biasedCost = 0.0;
 };
 
 
 
 }
 
-#endif /* _METAMAPEQUATION_H_ */
+#endif /* _BIASEDMAPEQUATION_H_ */

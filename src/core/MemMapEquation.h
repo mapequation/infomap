@@ -33,11 +33,15 @@ public:
 	MemMapEquation(const MemMapEquation& other)
 	:	MapEquation(other),
 		m_physToModuleToMemNodes(other.m_physToModuleToMemNodes),
-		m_numPhysicalNodes(other.m_numPhysicalNodes)
+		m_numPhysicalNodes(other.m_numPhysicalNodes),
+		m_memoryContributionsAdded(other.m_memoryContributionsAdded)
 	{}
 
 	MemMapEquation& operator=(const MemMapEquation& other) {
 		Base::operator =(other);
+		m_physToModuleToMemNodes = other.m_physToModuleToMemNodes;
+		m_numPhysicalNodes = other.m_numPhysicalNodes;
+		m_memoryContributionsAdded = other.m_memoryContributionsAdded;
 		return *this;
 	}
 
@@ -86,14 +90,14 @@ public:
 	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
 
 	double getDeltaCodelengthOnMovingNode(InfoNode& current,
-			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData);
+			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
 
 	// ===================================================
 	// Consolidation
 	// ===================================================
 
 	void updateCodelengthOnMovingNode(InfoNode& current,
-			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData);
+			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
 
 	void consolidateModules(std::vector<InfoNode*>& modules);
 

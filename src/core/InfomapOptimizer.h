@@ -290,7 +290,7 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredifinedModules(std::vector
 				m_emptyModules.push_back(oldM);
 			}
 
-			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, m_moduleFlowData);
+			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, m_moduleFlowData, m_moduleMembers);
 
 			m_moduleMembers[oldM] -= 1;
 			m_moduleMembers[newM] += 1;
@@ -460,7 +460,7 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 // 			if(otherModule != current.index)
 // 			{
 // 				double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
-// 						oldModuleDelta, moduleDeltaEnterExit[j], m_moduleFlowData);
+// 						oldModuleDelta, moduleDeltaEnterExit[j], m_moduleFlowData, m_moduleMembers);
 
 // 				// Log(5) << " Move to module " << otherModule << " -> deltaCodelength: " << deltaCodelength <<
 // 				// 		", deltaEnter: " << moduleDeltaEnterExit[j].deltaEnter << ", deltaExit: " << moduleDeltaEnterExit[j].deltaExit <<
@@ -503,7 +503,7 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 // 			}
 
 // 			// timer.start();
-// 			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData);
+// 			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
 // 			// t += timer.getElapsedTimeInMilliSec();
 // 			// ++tCount;
 
@@ -654,7 +654,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 			if(otherModule != current.index)
 			{
 				double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
-						oldModuleDelta, moduleDeltaEnterExit[j], m_moduleFlowData);
+						oldModuleDelta, moduleDeltaEnterExit[j], m_moduleFlowData, m_moduleMembers);
 
 				// Log(5) << " Move to module " << otherModule << " -> deltaCodelength: " << deltaCodelength <<
 				// 		", deltaEnter: " << moduleDeltaEnterExit[j].deltaEnter << ", deltaExit: " << moduleDeltaEnterExit[j].deltaExit <<
@@ -697,7 +697,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 			}
 
 			// timer.start();
-			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData);
+			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
 			// t += timer.getElapsedTimeInMilliSec();
 			// ++tCount;
 
@@ -854,7 +854,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 			if(otherModule != current.index)
 			{
 				double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
-						oldModuleDelta, moduleDeltaEnterExit[j], m_moduleFlowData);
+						oldModuleDelta, moduleDeltaEnterExit[j], m_moduleFlowData, m_moduleMembers);
 
 				if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement)
 				{
@@ -892,7 +892,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 // 				m_emptyModules.push_back(current.index);
 // 			}
 
-// 			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData);
+// 			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
 
 // 			m_moduleMembers[current.index] -= 1;
 // 			m_moduleMembers[bestModuleIndex] += 1;
@@ -973,7 +973,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 					m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
 					double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
-						oldModuleDelta, newModuleDelta, m_moduleFlowData);
+						oldModuleDelta, newModuleDelta, m_moduleFlowData, m_moduleMembers);
 
 
 					if (deltaCodelength < 0.0 - m_infomap->minimumSingleNodeCodelengthImprovement)
@@ -988,7 +988,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 							m_emptyModules.push_back(oldModuleIndex);
 						}
 
-						m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData);
+						m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
 
 						m_moduleMembers[oldModuleIndex] -= 1;
 						m_moduleMembers[bestModuleIndex] += 1;
@@ -1189,7 +1189,7 @@ template<typename Objective>
 inline
 bool InfomapOptimizer<Objective>::restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore)
 {
-	if (forceRestore || m_objective.getCodelength() >= m_consolidatedObjective.codelength - m_infomap->minimumSingleNodeCodelengthImprovement)
+	if (forceRestore || m_objective.getCodelength() >= m_consolidatedObjective.getCodelength() - m_infomap->minimumSingleNodeCodelengthImprovement)
 	{
 		m_objective = m_consolidatedObjective;
 		return true;
