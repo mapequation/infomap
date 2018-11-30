@@ -111,6 +111,9 @@ protected:
 	// ===================================================
 	double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
 
+	int getDeltaNumModulesIfMoving(InfoNode& current,
+			unsigned int oldModule, unsigned int newModule, std::vector<unsigned int>& moduleMembers) const;
+
 	// ===================================================
 	// Init
 	// ===================================================

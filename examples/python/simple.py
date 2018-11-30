@@ -26,3 +26,8 @@ print("\n#node module")
 for node,module in myInfomap.getModules().items():
 	print(f"{node} {module}")
 	
+
+print("\n#path flow node module:")
+for node in myInfomap.iterLeafNodes():
+	print(node.path(), node.data.flow, node.id, node.moduleIndex())
+
