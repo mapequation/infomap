@@ -66,10 +66,6 @@ protected:
 	unsigned int m_numInterLayerLinks = 0;
 	unsigned int m_numIntraLayerLinks = 0;
 
-	// Bipartite
-	std::map<BipartiteLink, Weight> m_bipartiteLinks;
-	unsigned int m_numBipartiteNodes = 0;
-
 	// Meta data
 	std::map<unsigned int, std::vector<int>> m_metaData;
 	unsigned int m_numMetaDataColumns = 0;
@@ -156,9 +152,23 @@ protected:
 	void parseStateNetwork(std::string filename);
 	void parseNetwork(std::string filename);
 	void parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings);
-	// void parseNetwork(std::string filename, InsensitiveStringSet&& validHeadings = {
-	// 	"*Vertices", "*States", "*Edges", "*Arcs", "*Links", "*Context"
-	// });
+
+	/**
+	 * Parse a bipartite network with the following format
+# A bipartite network with node names
+*Vertices 5
+1 "Node 1"
+2 "Node 2"
+3 "Node 3"
+4 "Feature 1"
+5 "Feature 2"
+*Bipartite 4
+# set bipartite start id in heading above
+4 1
+4 2
+5 2
+5 3
+	 */
 	void parseBipartiteNetwork(std::string filename);
 	void parseMultilayerNetwork(std::string filename);
 
@@ -193,7 +203,7 @@ protected:
 	 */
 	std::string parseMultilayerInterLinks(std::ifstream& file);
 
-	std::string parseBipartiteLinks(std::ifstream& file);
+	std::string parseBipartiteLinks(std::ifstream& file, std::string heading);
 
 	std::string ignoreSection(std::ifstream& file, std::string heading);
 
@@ -234,16 +244,6 @@ protected:
 	 * @throws an error if not both node and layer ids can be extracted.
 	 */
 	void parseMultilayerInterLink(const std::string& line, unsigned int& layer1, unsigned int& n, unsigned int& layer2, double& weight);
-
-	/**
-	 * Parse a bipartite link of format "f1 n1 1.0" for a link between
-	 * feature node 1 to ordinary node 1 with weight 1.0.
-	 * The order of the feature nodes and ordinary nodes can be swapped.
-	 * Store the numberical id (minus possible indexOffset for non-zerobased indexing)
-	 * on the referenced uints.
-	 * @return true if the input order was swapped
-	 */
-	bool parseBipartiteLink(const std::string& line, unsigned int& featureNode, unsigned int& node, double& weight);
 
 	/**
 	 * Create state node corresponding to this multilayer node if not already exist

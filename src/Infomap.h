@@ -41,6 +41,8 @@ public:
 	void addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0) { m_network.addLink(sourceId, targetId, weight); }
 	void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight = 1.0) { m_network.addMultilayerLink(layer1, n1, layer2, n2, weight); }
 	void addPath(const std::vector<unsigned int>& nodes, unsigned int markovOrder, double weight = 1.0) { m_network.addPath(nodes, markovOrder, weight); }
+	
+	void setBipartiteStartId(unsigned int startId) { m_network.setBipartiteStartId(startId); }
 
 	std::map<unsigned int, unsigned int> getModules(int level = 1, bool states = false);
 	std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false);

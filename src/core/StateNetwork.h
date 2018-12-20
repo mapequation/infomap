@@ -192,6 +192,9 @@ protected:
 	unsigned int m_numSkippedPaths = 0;
 	std::map<std::string, unsigned int> m_pathToStateId;
 
+	// Bipartite
+	unsigned int m_bipartiteStartId = 0;
+
 	// Infomap
 	// InfoNode m_root;
 
@@ -252,6 +255,10 @@ public:
 
 	bool haveDirectedInput() const { return m_haveDirectedInput; }
 	bool haveMemoryInput() const { return m_haveMemoryInput; }
+	// Bipartite
+	bool isBipartite() const { return m_bipartiteStartId > 0; }
+	unsigned int bipartiteStartId() const { return m_bipartiteStartId; }
+	void setBipartiteStartId(unsigned int value) { m_bipartiteStartId = value; }
 
 	/**
 	 * Write state network to file.

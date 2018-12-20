@@ -311,6 +311,10 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 	network.setConfig(*this);
 	
 	network.calculateFlow();
+
+	if (network.isBipartite()) {
+		this->bipartite = true;
+	}
 	
 	initNetwork(network);
 
@@ -433,7 +437,6 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
 		m_root.deleteChildren();
 		m_leafNodes.clear();
 	}
-	Log() << "Build internal network...\n";
 	generateSubNetwork(network);
 
 	initOptimizer();
@@ -676,7 +679,7 @@ void InfomapBase::generateSubNetwork(Network& network)
 	auto& metaData = network.metaData();
 	this->numMetaDataDimensions = network.numMetaDataColumns();
 
-	Log() << "Generate network with " << numNodes << " nodes and " << network.numLinks() << " links..." << std::endl;
+	Log() << "Build internal network with " << numNodes << " nodes and " << network.numLinks() << " links..." << std::endl;
 	if (!metaData.empty()) {
 		Log() << "and " << metaData.size() << " meta-data records in " << this->numMetaDataDimensions << " dimensions\n";
 	}

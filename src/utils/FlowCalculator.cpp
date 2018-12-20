@@ -47,11 +47,11 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 	std::vector<unsigned int> nodeOutDegree(numNodes, 0);
 	std::vector<double> sumLinkOutWeight(numNodes, 0.0);
     
-    unsigned int nodeIndex = 0;
-    for (auto& nodeIt : network.nodes()) {
+	unsigned int nodeIndex = 0;
+	for (auto& nodeIt : network.nodes()) {
 		auto& networkNode = nodeIt.second;
 		m_nodeIndexMap[networkNode.id] = nodeIndex;
-        ++nodeIndex;
+		++nodeIndex;
 	}
 
 	unsigned int numLinks = network.numLinks();
@@ -67,7 +67,7 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 		for (auto& subIt : subLinks)
 		{
 			unsigned int linkTargetId = subIt.first.id;
-		    unsigned int targetIndex = m_nodeIndexMap[linkTargetId];
+			unsigned int targetIndex = m_nodeIndexMap[linkTargetId];
 			double linkWeight = subIt.second.weight;
 
 			++nodeOutDegree[sourceIndex];
@@ -101,7 +101,6 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 		}
 		Log() << "\n  -> Using directed links with raw flow.";
 		Log() << "\n  -> Total link weight: " << sumLinkWeight << ".";
-		Log() << std::endl;
 		finalize(network, config, true);
 		return;
 	}
@@ -113,25 +112,22 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 		else
 			Log() << "\n  -> Using undirected links" << (config.undirdir? ", switching to directed after steady state." :
 					".");
-		Log() << std::endl;
 
 		if (config.flowModel == FlowModel::undirdir || config.flowModel == FlowModel::outdirdir)
 		{
 			//Take one last power iteration
 			std::vector<double> nodeFlowSteadyState(m_nodeFlow);
 			m_nodeFlow.assign(numNodes, 0.0);
-			for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
+			for (auto& link : m_flowLinks)
 			{
-				Link& link = *linkIt;
 				m_nodeFlow[link.target] += nodeFlowSteadyState[link.source] * link.flow / sumLinkOutWeight[link.source];
 			}
 			double sumNodeFlow = 0.0;
 			for (unsigned int i = 0; i < m_nodeFlow.size(); ++i)
 				sumNodeFlow += m_nodeFlow[i];
 			// Update link data to represent flow instead of weight
-			for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
+			for (auto& link : m_flowLinks)
 			{
-				Link& link = *linkIt;
 				link.flow *= nodeFlowSteadyState[link.source] / sumLinkOutWeight[link.source] / sumNodeFlow;
 			}
 			finalize(network, config, true);
@@ -161,7 +157,7 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 	if (config.teleportToNodes)
 	{
 		double sumNodeWeights = 0.0;
-        for (auto& nodeIt : network.nodes()) {
+		for (auto& nodeIt : network.nodes()) {
 			auto& networkNode = nodeIt.second;
 			m_nodeTeleportRates[m_nodeIndexMap[networkNode.id]] = networkNode.weight;
 			sumNodeWeights += networkNode.weight;
@@ -173,11 +169,11 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 	else // Teleport to links
 	{
 		// Teleport proportionally to out-degree, or in-degree if recorded teleportation.
-		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
+		for (auto& link : m_flowLinks)
 		{
-			unsigned int toNode = config.recordedTeleportation ? linkIt->target : linkIt->source;
-			m_nodeTeleportRates[toNode] += linkIt->flow / sumLinkWeight;
-			// Log() << "\nrate[" << toNode << "] += " << linkIt->flow << " / " << sumLinkWeight << " = " << linkIt->flow / sumLinkWeight << " => " << m_nodeTeleportRates[toNode];
+			unsigned int toNode = config.recordedTeleportation ? link.target : link.source;
+			m_nodeTeleportRates[toNode] += link.flow / sumLinkWeight;
+			// Log() << "\nrate[" << toNode << "] += " << link.flow << " / " << sumLinkWeight << " = " << link.flow / sumLinkWeight << " => " << m_nodeTeleportRates[toNode];
 		}
 	}
 
@@ -192,13 +188,13 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 	double sumLinkFlow = 0.0;
 	// Log() << "\nLinks:";
 	// Normalize link weights with respect to its source nodes total out-link weight;
-	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
+	for (auto& link : m_flowLinks)
 	{
 		// Log() << "\n" << linkIt->source << " -> " << linkIt->target << ": " <<  linkIt->flow;
 		// Log() << ", sumLinkOutWeight[" << linkIt->source << "]: " << sumLinkOutWeight[linkIt->source];
-		if (sumLinkOutWeight[linkIt->source] > 0)
-			linkIt->flow /= sumLinkOutWeight[linkIt->source];
-		sumLinkFlow += linkIt->flow;
+		if (sumLinkOutWeight[link.source] > 0)
+			link.flow /= sumLinkOutWeight[link.source];
+		sumLinkFlow += link.flow;
 		// Log() << " => sumLinkFlow += " << linkIt->flow << " = " << sumLinkFlow;
 	}
 
@@ -228,9 +224,9 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 	{
 		// Calculate dangling rank
 		danglingRank = 0.0;
-		for (std::vector<unsigned int>::iterator danglingIt(danglings.begin()); danglingIt != danglings.end(); ++danglingIt)
+		for (auto& danglingIndex : danglings)
 		{
-			danglingRank += m_nodeFlow[*danglingIt];
+			danglingRank += m_nodeFlow[danglingIndex];
 		}
 
 		// Flow from teleportation
@@ -240,9 +236,8 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 		}
 
 		// Flow from links
-		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
+		for (auto& link : m_flowLinks)
 		{
-			Link& link = *linkIt;
 			nodeFlowTmp[link.target] += beta * link.flow * m_nodeFlow[link.source];
 		}
 
@@ -285,9 +280,8 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 		//Take one last power iteration excluding the teleportation (and normalize node flow to sum 1.0)
 		sumNodeRank = 1.0 - danglingRank;
 		m_nodeFlow.assign(numNodes, 0.0);
-		for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
+		for (auto& link : m_flowLinks)
 		{
-			Link& link = *linkIt;
 			m_nodeFlow[link.target] += link.flow * nodeFlowTmp[link.source] / sumNodeRank;
 		}
 		beta = 1.0;
@@ -295,9 +289,9 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 
 
 	// Update the links with their global flow from the PageRank values. (Note: beta is set to 1 if unrec)
-	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
+	for (auto& link : m_flowLinks)
 	{
-		linkIt->flow *= beta * nodeFlowTmp[linkIt->source] / sumNodeRank;
+		link.flow *= beta * nodeFlowTmp[link.source] / sumNodeRank;
 	}
 
 	Log() << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
@@ -306,29 +300,32 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 
 void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow)
 {
-	// // TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
-	// if (network.isBipartite() && !config.skipAdjustBipartiteFlow)
-	// {
-	// 	// Only links between ordinary nodes and feature nodes in bipartite network
-	// 	// Don't code feature nodes -> distribute all flow from those to ordinary nodes
-	// 	unsigned int minBipartiteNodeIndex = network.numNodes() - network.numBipartiteNodes();
+	// TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
+	if (network.isBipartite() && !config.skipAdjustBipartiteFlow)
+	{
+		Log() << "\n  -> Using bipartite links.";
+		// Only links between ordinary nodes and feature nodes in bipartite network
+		// Don't code feature nodes -> distribute all flow from those to ordinary nodes
+		unsigned int bipartiteStartId = network.bipartiteStartId();
 
-	// 	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
-	// 	{
-	// 		Link& link = *linkIt;
-	// 		link.flow *= 2; // Markov time 2 on the full network will correspond to markov time 1 between the real nodes.
+		for (auto& link : m_flowLinks)
+		{
+			unsigned int sourceIsFeature = link.source >= bipartiteStartId;
 
-	// 		if (link.source >= minBipartiteNodeIndex) {
-	// 			m_nodeFlow[link.target] += link.flow;
-	// 			m_nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
-	// 		}
-	// 		else if (config.parseAsUndirected()) {
-	// 			m_nodeFlow[link.source] += link.flow;
-	// 			m_nodeFlow[link.target] = 0.0; // Doesn't matter if done multiple times on each node.
-	// 		}
-	// 	}
-	// 	normalizeNodeFlow = true;
-	// }
+			if (sourceIsFeature) {
+				m_nodeFlow[link.target] += link.flow;
+				m_nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
+			}
+			else { // if (config.parseAsUndirected()) {
+				m_nodeFlow[link.source] += link.flow;
+				m_nodeFlow[link.target] = 0.0; // Doesn't matter if done multiple times on each node.
+			}
+			//TODO: Should flow double before moving to nodes, does it cancel out in normalization?
+			link.flow *= 2; // Markov time 2 on the full network will correspond to markov time 1 between the real nodes.
+		}
+
+		normalizeNodeFlow = true;
+	}
 
 	if (normalizeNodeFlow)
 	{
@@ -339,29 +336,29 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 			m_nodeFlow[i] /= sumNodeFlow;
 	}
 
-    // Write back flow to network
-    //TODO: Add enter/exit flow
+	// Write back flow to network
+	//TODO: Add enter/exit flow
 	double sumNodeFlow = 0.0;
-    unsigned int nodeIndex = 0;
-    for (auto& nodeIt : network.m_nodes) {
+	unsigned int nodeIndex = 0;
+	for (auto& nodeIt : network.m_nodes) {
 		auto& networkNode = nodeIt.second;
-        networkNode.flow = m_nodeFlow[nodeIndex];
+		networkNode.flow = m_nodeFlow[nodeIndex];
 		sumNodeFlow += networkNode.flow;
-        ++nodeIndex;
+		++nodeIndex;
 	}
 
 	double sumLinkFlow = 0.0;
 	unsigned int linkIndex = 0;
-    for (auto& linkIt : network.m_nodeLinkMap) {
+	for (auto& linkIt : network.m_nodeLinkMap) {
 		for (auto& subIt : linkIt.second)
 		{
 			auto& linkData = subIt.second;
-            linkData.flow = m_flowLinks[linkIndex].flow;
+			linkData.flow = m_flowLinks[linkIndex].flow;
 			sumLinkFlow += linkData.flow;
-            ++linkIndex;
-        }
-    }
-	Log() << "  => Sum node flow: " << sumNodeFlow << ", sumLinkFlow: " << sumLinkFlow << "\n";
+			++linkIndex;
+		}
+	}
+	Log() << "\n  => Sum node flow: " << sumNodeFlow << ", sumLinkFlow: " << sumLinkFlow << "\n";
 }
 
 }
