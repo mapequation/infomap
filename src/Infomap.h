@@ -51,4 +51,19 @@ public:
 
 } /* namespace infomap */
 
+#ifndef SWIG
+// C bindings
+#ifdef __cplusplus
+extern "C" {
+#endif
+  typedef void* Im;
+  Im ImInit(void);
+  void ImFree(Im);
+  void ImAddLink(Im, unsigned int, unsigned int, double);
+	void ImRun(Im);
+#ifdef __cplusplus
+}
+#endif
+#endif // SWIG
+
 #endif /* INFOMAP_H_ */

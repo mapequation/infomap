@@ -116,6 +116,33 @@ int run(const std::string& flags)
 	return 0;
 }
 
+////////////////////////////////
+// Implementation of c bindings
+////////////////////////////////
+
+#ifndef SWIG
+Im ImInit()
+{
+  Infomap * ret = new Infomap();
+  return (void*)ret;
+}
+void ImFree(Im imPtr)
+{
+  Infomap * im = (Infomap*)imPtr;
+  delete im;
+}
+void ImRun(Im imPtr)
+{
+  Infomap * im = (Infomap*)imPtr;
+  im->run();
+}
+void ImAddLink(Im imPtr, unsigned int source, unsigned int target, double weight)
+{
+  Infomap * im = (Infomap*)imPtr;
+  im->addLink(source, target, weight);
+}
+#endif
+
 }
 
 #ifndef AS_LIB

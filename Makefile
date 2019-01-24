@@ -109,6 +109,25 @@ build/lib/%.o: src/%.cpp
 
 
 ##################################################
+# C bindings
+##################################################
+
+C_BUILD_DIR = build/c/infomap
+
+.PHONY: c
+
+c: Makefile
+	# Put all C++ files in a flat directory
+	# rsync src/* src/core/* src/io/* src/utils/* $(C_BUILD_DIR)/ &&\
+	# cd $(C_BUILD_DIR) &&\
+	# find . -type f -name "*.h" -or -name "*.cpp" -or -name "*.cxx" | xargs sed -i '' -E 's|(#include \")(.*/)*(.+)|\1\3 |'
+	@mkdir -p $(C_BUILD_DIR)
+	rsync src/* src/core/* src/io/* src/utils/* $(C_BUILD_DIR)/
+	find $(C_BUILD_DIR) -type f -name "*.h" -or -name "*.cpp" -or -name "*.cxx" | xargs sed -i '' -E 's|(#include \")(.*/)*(.+)|\1\3 |'
+	@true
+
+
+##################################################
 # General SWIG helpers
 ##################################################
 
