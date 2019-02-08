@@ -430,6 +430,8 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 
 void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 {
+	if (m_numNodes == 0)
+		return;
 	// Simulate inter-layer links
 	double relaxRate = m_config.multiplexRelaxRate < 0 ? 0.15 : m_config.multiplexRelaxRate; //TODO: Set default in config and use separate bool
 
