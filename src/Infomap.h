@@ -28,6 +28,8 @@
 #ifndef SRC_INFOMAP_H_
 #define SRC_INFOMAP_H_
 
+#ifdef __cplusplus
+
 #include <string>
 #include "io/Config.h"
 #include "infomap/InfomapContext.h"
@@ -152,10 +154,25 @@ class MemInfomap {
     HierarchicalNetwork tree;
 };
 
+extern "C" {
+#else
+#include <stdint.h>
+struct Infomap;
+#endif
 
+struct Infomap *NewInfomap(const char *flags);
 
+void DestroyInfomap(struct Infomap *im);
+
+void InfomapAddLink(struct Infomap *im, unsigned int sourceId,  unsigned int targetId, double weight);
+
+void InfomapRun(struct Infomap *im);
+
+#ifdef __cplusplus
+}
 #ifdef NS_INFOMAP
 }
+#endif
 #endif
 
 #endif /* SRC_INFOMAP_H_ */
