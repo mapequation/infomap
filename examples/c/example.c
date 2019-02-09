@@ -21,7 +21,16 @@ int main(int argc, char** argv)
 
     InfomapRun(im);
 
-    printf("TODO: Show results.\n");
+
+    struct LeafIterator* it = NewIter(im);
+
+    printf("#node module flow\n");
+    while (HaveNext(it)) {
+        printf("%d %d %f\n", NodeIndex(it), ModuleIndex(it), Flow(it));
+        Next(it);
+    }
+
+    DestroyIter(it);
 
     DestroyInfomap(im);
 }

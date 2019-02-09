@@ -19,6 +19,8 @@
 /examples/cpp/Infomap-igraph-interface-library/include
 /examples/cpp/Infomap-igraph-interface-library/lib
 /examples/cpp/minimal/example.dSym
+/examples/c/example
+/examples/c/example.o
 /examples/python/infomap
 /examples/python/ninetriangles*
 /examples/R/infomap

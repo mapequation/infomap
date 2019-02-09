@@ -12,4 +12,18 @@ namespace infomap {
 
     void InfomapRun(struct Infomap* im) { im->run(); };
 
+    struct LeafIterator *NewIter(struct Infomap *im) { return new LeafIterator(&(im->tree.getRootNode())); }
+    void DestroyIter(struct LeafIterator *it) { it->~LeafIterator(); }
+
+    bool HaveNext(struct LeafIterator *it) { return !it->isEnd(); }
+
+    void Next(struct LeafIterator *it) { it->stepForward(); }
+
+    unsigned int Depth(struct LeafIterator *it) { return it->base()->originalLeafIndex; }
+
+    unsigned int NodeIndex(struct LeafIterator *it) { return it->base()->originalLeafIndex; }
+
+    unsigned int ModuleIndex(struct LeafIterator *it) { return it->moduleIndex(); }
+
+    double Flow(struct LeafIterator *it) { return it->base()->data.flow; }
 }

@@ -157,7 +157,9 @@ class MemInfomap {
 extern "C" {
 #else
 #include <stdint.h>
+#include <stdbool.h>
 struct Infomap;
+struct LeafIterator;
 #endif
 
 struct Infomap *NewInfomap(const char *flags);
@@ -167,6 +169,22 @@ void DestroyInfomap(struct Infomap *im);
 void InfomapAddLink(struct Infomap *im, unsigned int sourceId,  unsigned int targetId, double weight);
 
 void InfomapRun(struct Infomap *im);
+
+struct LeafIterator *NewIter(struct Infomap *im);
+
+void DestroyIter(struct LeafIterator *it);
+
+bool HaveNext(struct LeafIterator *it);
+
+void Next(struct LeafIterator *it);
+
+unsigned int Depth(struct LeafIterator *it);
+
+unsigned int NodeIndex(struct LeafIterator *it);
+
+unsigned int ModuleIndex(struct LeafIterator *it);
+
+double Flow(struct LeafIterator *it);
 
 #ifdef __cplusplus
 }
