@@ -10,12 +10,17 @@ namespace infomap {
         im->addLink(sourceId, targetId, weight);
     };
 
-    void InfomapRun(struct Infomap* im) { im->run(); };
+    void InfomapRun(struct Infomap *im) { im->run(); };
+
+    double Codelength(struct Infomap *im) { im->tree.codelength(); }
+
+    unsigned int NumModules(struct Infomap *im) { im->tree.numTopModules(); }
 
     struct LeafIterator *NewIter(struct Infomap *im) { return new LeafIterator(&(im->tree.getRootNode())); }
+
     void DestroyIter(struct LeafIterator *it) { it->~LeafIterator(); }
 
-    bool HaveNext(struct LeafIterator *it) { return !it->isEnd(); }
+    bool IsEnd(struct LeafIterator *it) { return it->isEnd(); }
 
     void Next(struct LeafIterator *it) { it->stepForward(); }
 

@@ -129,7 +129,14 @@ public:
 
 	unsigned int maxDepth();
 
+	unsigned int numNonTrivialTopModules() { return m_numNonTrivialTopModules; }
+	unsigned int numTopModules() { return m_treeData.root()->childDegree(); }
+
 	unsigned int numBottomModules();
+
+	unsigned int numLeafNodes() { return m_treeData.numLeafNodes(); }
+
+	double getHierarchicalCodelength() { return hierarchicalCodelength; }
 
 	void sortTree();
 
@@ -256,11 +263,6 @@ protected:
 	virtual void printFlowNetwork(std::ostream& out) = 0;
 
 	virtual void sortTree(NodeBase& parent) = 0;
-
-	unsigned int numNonTrivialTopModules() { return m_numNonTrivialTopModules; }
-	unsigned int numTopModules() { return m_treeData.root()->childDegree(); }
-
-	unsigned int numLeafNodes() { return m_treeData.numLeafNodes(); }
 
 	virtual unsigned int numDynamicModules() = 0;
 

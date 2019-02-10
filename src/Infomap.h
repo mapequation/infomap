@@ -170,11 +170,15 @@ void InfomapAddLink(struct Infomap *im, unsigned int sourceId,  unsigned int tar
 
 void InfomapRun(struct Infomap *im);
 
+double Codelength(struct Infomap *im);
+
+unsigned int NumModules(struct Infomap *im);
+
 struct LeafIterator *NewIter(struct Infomap *im);
 
 void DestroyIter(struct LeafIterator *it);
 
-bool HaveNext(struct LeafIterator *it);
+bool IsEnd(struct LeafIterator *it);
 
 void Next(struct LeafIterator *it);
 

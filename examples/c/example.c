@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv)
 {
-    struct Infomap* im = NewInfomap("--two-level -N2");
+    struct Infomap* im = NewInfomap("--two-level");
 
     InfomapAddLink(im, 0, 2, 1.0);
     InfomapAddLink(im, 0, 3, 1.0);
@@ -21,11 +21,12 @@ int main(int argc, char** argv)
 
     InfomapRun(im);
 
+    printf("Found %d modules with codelength %f\n", NumModules(im), Codelength(im));
 
     struct LeafIterator* it = NewIter(im);
 
     printf("#node module flow\n");
-    while (HaveNext(it)) {
+    while (!IsEnd(it)) {
         printf("%d %d %f\n", NodeIndex(it), ModuleIndex(it), Flow(it));
         Next(it);
     }
