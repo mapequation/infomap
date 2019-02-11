@@ -121,29 +121,39 @@ int run(const std::string& flags)
 ////////////////////////////////
 
 #ifndef SWIG
-Im ImInit()
-{
-  Infomap * ret = new Infomap();
-  return (void*)ret;
-}
-void ImFree(Im imPtr)
-{
-  Infomap * im = (Infomap*)imPtr;
-  delete im;
-}
-void ImRun(Im imPtr)
-{
-  Infomap * im = (Infomap*)imPtr;
-  im->run();
-}
-void ImAddLink(Im imPtr, unsigned int source, unsigned int target, double weight)
-{
-  Infomap * im = (Infomap*)imPtr;
-  im->addLink(source, target, weight);
-}
+
+	Infomap *NewInfomap(const char *flags) { return new Infomap(flags); };
+
+	void DestroyInfomap(Infomap *im) { im->~Infomap(); };
+
+	void InfomapAddLink(Infomap *im, unsigned int sourceId, unsigned int targetId, double weight) {
+			im->addLink(sourceId, targetId, weight);
+	};
+
+	void InfomapRun(struct Infomap *im) { im->run(); };
+
+	double Codelength(struct Infomap *im) { return im->getHierarchicalCodelength(); }
+
+	unsigned int NumModules(struct Infomap *im) { return im->numTopModules(); }
+
+	struct InfomapLeafIterator *NewIter(struct Infomap *im) { return new InfomapLeafIterator(&(im->root())); }
+
+	void DestroyIter(struct InfomapLeafIterator *it) { it->~InfomapLeafIterator(); }
+
+	bool IsEnd(struct InfomapLeafIterator *it) { return it->isEnd(); }
+
+	void Next(struct InfomapLeafIterator *it) { it->stepForward(); }
+
+	unsigned int Depth(struct InfomapLeafIterator *it) { return it->depth(); }
+
+	unsigned int NodeId(struct InfomapLeafIterator *it) { return it->current()->id(); }
+
+	unsigned int ModuleIndex(struct InfomapLeafIterator *it) { return it->moduleIndex(); }
+
+	double Flow(struct InfomapLeafIterator *it) { return it->current()->data.flow; }
 #endif
 
-}
+} // namespace infomap
 
 #ifndef AS_LIB
 int main(int argc, char* argv[])

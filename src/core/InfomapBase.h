@@ -41,20 +41,17 @@ public:
 	
 	InfomapBase() : InfomapConfig<InfomapBase>() {}
 
-	// template<typename Infomap>
-	// InfomapBase(InfomapConfig<Infomap>& conf) :
-	// 	InfomapConfig<Infomap>(conf),
-	// 	m_network(conf)
-	// {}
 	InfomapBase(const Config& conf) :
 		InfomapConfig<InfomapBase>(conf),
 		m_network(conf)
 	{}
-	InfomapBase(const std::string& flags) :
+
+	InfomapBase(const std::string flags) :
 		InfomapConfig<InfomapBase>(flags)
 	{
 		m_network.setConfig(*this);
 	}
+	
 	virtual ~InfomapBase() {}
 
 

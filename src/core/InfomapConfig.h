@@ -19,6 +19,12 @@ template<typename Infomap>
 class InfomapConfig : public Config {
 public:
 	InfomapConfig() {}
+	InfomapConfig(const std::string flags) :
+		Config(flags)
+	{
+		m_rand.seed(this->seedToRandomNumberGenerator);
+		Log::precision(this->verboseNumberPrecision);
+	}
 	InfomapConfig(const Config& conf) :
 		Config(conf),
 		m_rand(conf.seedToRandomNumberGenerator)

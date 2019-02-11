@@ -351,6 +351,8 @@ public:
 
 	unsigned int infomapChildDegree() const;
 
+	unsigned int id() const { return stateId; }
+
 	// ---------------------------- Operators ----------------------------
 
 	bool operator ==(const InfoNode& rhs) const

@@ -19,6 +19,8 @@ examples/cpp/igraph/example-igraph
 examples/cpp/Infomap-igraph-interface-library/build
 examples/cpp/Infomap-igraph-interface-library/include
 examples/cpp/Infomap-igraph-interface-library/lib
+examples/c/example
+examples/c/example.o
 examples/python/infomap
 examples/python/test.ipynb
 examples/R/infomap

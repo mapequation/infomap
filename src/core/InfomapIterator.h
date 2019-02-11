@@ -12,15 +12,12 @@
 
 namespace infomap {
 
-// class InfoNode;
-
-
 /**
  * Pre processing depth first iterator that explores sub-Infomap instances
  * Note:
  * This iterator presupposes that the next pointer of a node can't reach a node with a different parent.
  */
-class InfomapIterator
+struct InfomapIterator
 {
 protected:
 	InfoNode* m_root = nullptr;
@@ -145,7 +142,7 @@ public:
 	}
 };
 
-class InfomapModuleIterator : public InfomapIterator
+struct InfomapModuleIterator : public InfomapIterator
 {
 public:
 	InfomapModuleIterator() : InfomapIterator() {}
@@ -175,7 +172,7 @@ public:
 
 };
 
-class InfomapLeafModuleIterator : public InfomapIterator
+struct InfomapLeafModuleIterator : public InfomapIterator
 {
 public:
 	InfomapLeafModuleIterator() : InfomapIterator() {}
@@ -210,7 +207,7 @@ public:
 
 };
 
-class InfomapLeafIterator : public InfomapIterator
+struct InfomapLeafIterator : public InfomapIterator
 {
 public:
 	InfomapLeafIterator() : InfomapIterator() {}
@@ -250,7 +247,7 @@ public:
  * Note: The physical nodes are created when entering the parent module and removed
  * when leaving the module. The tree will not be modified.
  */
-class InfomapIteratorPhysical : public InfomapIterator
+struct InfomapIteratorPhysical : public InfomapIterator
 {
 protected:
 	std::map<unsigned int, InfoNode> m_physNodes;
@@ -306,7 +303,7 @@ public:
  * Note: The physical nodes are created when entering the parent module and removed
  * when leaving the module. The tree will not be modified.
  */
-class InfomapLeafIteratorPhysical : public InfomapIteratorPhysical
+struct InfomapLeafIteratorPhysical : public InfomapIteratorPhysical
 {
 public:
 	InfomapLeafIteratorPhysical()
@@ -348,7 +345,7 @@ public:
  * moving up through possible sub infomap instances
  * on the way
  */
-class InfomapParentIterator
+struct InfomapParentIterator
 {
 protected:
 	// InfoNode* m_root = nullptr;

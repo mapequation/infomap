@@ -8,18 +8,19 @@
 #ifndef INFOMAP_H_
 #define INFOMAP_H_
 
+#ifdef __cplusplus
+
 #include "core/InfomapCore.h"
 #include "io/Config.h"
 #include <string>
 
 namespace infomap {
 
-class Infomap : public InfomapCore {
+struct Infomap : public InfomapCore {
 public:
 
-	Infomap(bool forceNoMemory = false) : InfomapCore(forceNoMemory) {}
 	Infomap(const Config& conf) : InfomapCore(conf) {}
-	Infomap(const std::string& flags) : InfomapCore(flags) {}
+	Infomap(const std::string flags) : InfomapCore(flags) {}
 	virtual ~Infomap() {}
 
 	// ===================================================
@@ -48,22 +49,50 @@ public:
 	std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false);
 };
 
+extern "C" {
+#else
+#include <stdint.h>
+#include <stdbool.h>
+struct Infomap;
+struct InfomapLeafIterator;
+#endif // __cplusplus
 
-} /* namespace infomap */
 
 #ifndef SWIG
-// C bindings
-#ifdef __cplusplus
-extern "C" {
-#endif
-  typedef void* Im;
-  Im ImInit(void);
-  void ImFree(Im);
-  void ImAddLink(Im, unsigned int, unsigned int, double);
-	void ImRun(Im);
-#ifdef __cplusplus
-}
-#endif
+
+struct Infomap *NewInfomap(const char *flags);
+
+void DestroyInfomap(struct Infomap *im);
+
+void InfomapAddLink(struct Infomap *im, unsigned int sourceId,  unsigned int targetId, double weight);
+
+void InfomapRun(struct Infomap *im);
+
+double Codelength(struct Infomap *im);
+
+unsigned int NumModules(struct Infomap *im);
+
+struct InfomapLeafIterator *NewIter(struct Infomap *im);
+
+void DestroyIter(struct InfomapLeafIterator *it);
+
+bool IsEnd(struct InfomapLeafIterator *it);
+
+void Next(struct InfomapLeafIterator *it);
+
+unsigned int Depth(struct InfomapLeafIterator *it);
+
+unsigned int NodeId(struct InfomapLeafIterator *it);
+
+unsigned int ModuleIndex(struct InfomapLeafIterator *it);
+
+double Flow(struct InfomapLeafIterator *it);
+
 #endif // SWIG
+#ifdef __cplusplus
+} // extern "C"
+} /* namespace infomap */
+#endif
+
 
 #endif /* INFOMAP_H_ */
