@@ -461,10 +461,16 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 
 		for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1)
 		{
+
+			if (!m_networks[layer1].haveNode(nodeIndex)) {
+				// Log() << "  SKIP layer " << layer1 << ", no node " << nodeIndex << "!\n";
+				continue;
+			}
+
 			// Limit possible jumps to close by layers
 			if(m_config.multiplexRelaxLimit >= 0){
-				layer2from = ((int)layer1-m_config.multiplexRelaxLimit) < 0 ? 0 : layer1-m_config.multiplexRelaxLimit;
-				layer2to = (layer1+m_config.multiplexRelaxLimit) > m_networks.size() ? m_networks.size() : layer1+m_config.multiplexRelaxLimit;
+				layer2from = ((int)layer1 - m_config.multiplexRelaxLimit) < 0 ? 0 : layer1 - m_config.multiplexRelaxLimit;
+				layer2to = (layer1 + m_config.multiplexRelaxLimit) > m_networks.size() ? m_networks.size() : layer1 + m_config.multiplexRelaxLimit + 1;
 				sumOutLinkWeightAllLayers = 0.0;
 				for (unsigned int i = layer2from; i < layer2to; ++i) {
 					const std::vector<double>& sumLinkOutWeight = m_networks[i].sumLinkOutWeight();
@@ -472,12 +478,6 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 						sumOutLinkWeightAllLayers += sumLinkOutWeight[nodeIndex];
 				}
 			}
-
-			if (!m_networks[layer1].haveNode(nodeIndex)) {
-				// Log() << "  SKIP layer " << layer1 << ", no node " << nodeIndex << "!\n";
-				continue;
-			}
-
 
 			double sumOutLinkWeightLayer1 = m_networks[layer1].sumLinkOutWeight()[nodeIndex];
 
@@ -491,6 +491,7 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 			// Create inter-links to the intra-connected nodes in other layers
 			for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2)
 			{
+				// Log() << "  -> Connecting layer " << layer1 << " and " << layer2 << " (diff " << ((int)layer2 - (int)layer1) << ")...\n";
 				bool isIntra = layer2 == layer1;
 
 				// Create inter-links to the outgoing nodes in the target layer
