@@ -829,6 +829,10 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 	Log() << "-> " << m_networks.size() << " networks\n";
 	Log() << "-> Relax rate: " << relaxRate << "\n";
 
+	auto withinRelaxLimit = [](auto& a, auto& b, auto& limit) {
+		return limit < 0 || (a >= b ? (a - b) : (b - a)) <= (unsigned int)limit;
+	};
+
 	for (auto& it1 : m_networks) {
 		auto layer1 = it1.first;
 		auto& network1 = it1.second;
@@ -841,8 +845,12 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 
 			double sumOutLinkWeightLayer1 = network1.outWeights()[n1];
 			double sumOutWeightAllLayers = 0.0;
+
 			for (auto& it2 : m_networks) {
-				// auto layer2 = it2.first;
+				auto layer2 = it2.first;
+				if (!withinRelaxLimit(layer1, layer2, m_config.multilayerRelaxLimit)) {
+					continue;
+				}
 				auto& network2 = it2.second;
 				sumOutWeightAllLayers += network2.outWeights()[n1];
 			}
@@ -853,6 +861,9 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 			}
 			for (auto& it2 : m_networks) {
 				auto layer2 = it2.first;
+				if (!withinRelaxLimit(layer1, layer2, m_config.multilayerRelaxLimit)) {
+					continue;
+				}
 				auto& network2 = it2.second;
 				// Log() << "     Layer " << layer2 << "\n";
 				bool isIntra = layer2 == layer1;
