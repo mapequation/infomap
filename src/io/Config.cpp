@@ -187,6 +187,12 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.multilayerRelaxLimit, "multilayer-relax-limit",
 			"The number of neighboring layers in each direction to relax to. If negative, relax to any layer.", "n", true);
 
+	api.addOptionArgument(conf.multilayerJSRelaxRate, "multilayer-js-relax-rate",
+			"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence. If negative, the inter-links have to be provided.", "f", true);
+
+	api.addOptionArgument(conf.multilayerJSRelaxLimit, "multilayer-js-relax-limit",
+			"The minimum out-link similarity measured by the Jensen-Shannon divergence to relax to other layer. From 0 to 1. No limit if negative.", "f", true);
+
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
 			"A seed (integer) to the random number generator.", "n");
 

@@ -288,6 +288,29 @@ bool StateNetwork::addPath(const std::vector<unsigned int>& path, unsigned int m
 	return true;
 }
 
+bool StateNetwork::undirectedToDirected()
+{
+	// Collect links in separate data structure to not risk iterating newly added links
+	if (!m_config.isUndirectedFlow()) {
+		return false;
+	}
+	std::deque<StateLink> oppositeLinks;
+	for (auto& linkIt : m_nodeLinkMap) {
+			unsigned int sourceId = linkIt.first.id;
+			const auto& subLinks = linkIt.second;
+			for (auto& subIt : subLinks)
+			{
+				unsigned int targetId = subIt.first.id;
+				double weight = subIt.second.weight;
+				oppositeLinks.push_back(StateLink(targetId, sourceId, weight));
+			}
+	}
+	for (auto& link : oppositeLinks) {
+		addLink(link.source, link.target, link.weight);
+	}
+	return true;
+}
+
 void StateNetwork::calculateFlow()
 {
 	FlowCalculator flowCalculator;

@@ -31,8 +31,8 @@ public:
 	// InfomapCore(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
 	InfomapCore() : InfomapBase() { initOptimizer(); }
 	// InfomapCore(bool forceNoMemory = false) : InfomapBase() { initOptimizer(forceNoMemory); }
-	InfomapCore(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
 	InfomapCore(const std::string flags) : InfomapBase(flags) { initOptimizer(); }
+	InfomapCore(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
 	virtual ~InfomapCore() {}
 
 	// ===================================================

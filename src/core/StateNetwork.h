@@ -229,6 +229,9 @@ public:
 	 */
 	bool removeLink(unsigned int sourceId, unsigned int targetId);
 	bool addPath(const std::vector<unsigned int>& nodes, unsigned int markovOrder, double weight = 1.0);
+
+	// Expand each undirected link to two opposite directed links
+	bool undirectedToDirected();
 	
 	void calculateFlow();
 

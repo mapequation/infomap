@@ -458,6 +458,7 @@ std::string Network::parseMultilayerLinks(std::ifstream& file)
 		double weight;
 		parseMultilayerLink(line, layer1, n1, layer2, n2, weight);
 
+		//TODO: This explicit multilayer format can allow undirected but not the inter/intra format, clear?
 		addMultilayerLink(layer1, n1, layer2, n2, weight);
 	}
 	Log() << "  -> " << (m_numIntraLayerLinks + m_numInterLayerLinks) <<
@@ -683,7 +684,7 @@ void Network::addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned i
 
 	if (layer1 == layer2) {
 		++m_numIntraLayerLinks;
-		m_sumIntraOutWeight[layer1][n1] += weight;
+		m_sumIntraOutWeight[layer1][n1] += weight; // TODO: Not used? Add on target also if undirected (not inter/intra format)?
 	} else {
 		++m_numInterLayerLinks;
 	}
@@ -697,6 +698,19 @@ void Network::addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned i
 
 void Network::generateStateNetworkFromMultilayer()
 {
+	// As inter-layer links is directed to neighbouring nodes in target layer,
+	// the symmetry is broken so we need directed links for inter-layer flow
+	m_haveDirectedInput = true;
+	if (m_config.isUndirectedFlow()) {
+		// TODO: Don't allow undirdir/outdirdir/rawdir?
+		// Expand each undirected intra-layer link to two opposite directed links
+		Log() << "  -> Expanding undirected links to directed...\n";
+		for (auto& layerIt : m_networks) {
+			auto& network = layerIt.second;
+			network.undirectedToDirected();
+		}
+	}
+
 	if (!m_interLinks.empty()) {
 		generateStateNetworkFromMultilayerWithInterLinks();
 	}
@@ -709,6 +723,7 @@ void Network::generateStateNetworkFromMultilayer()
 void Network::generateStateNetworkFromMultilayerWithInterLinks()
 {
 	Log() << "Generating state network from multilayer networks with inter-layer links...\n" << std::flush;
+	// First add intra-layer links
 	for (auto& layerIt : m_networks) {
 		unsigned int layer1 = layerIt.first;
 		auto& network = layerIt.second;
@@ -761,6 +776,45 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
 				
 				addLink(stateId1, stateId2i, weight);
 				++m_numInterLayerLinks; // TODO: Count all as one?
+			}
+		}
+	}
+	if (m_config.isUndirectedFlow()) {
+		// For undirected inter-layer links, expand and add in other direction too
+		for (auto& it : m_interLinks) {
+			auto& layerNode = it.first;
+			unsigned int layer2 = layerNode.layer;
+			unsigned int physId = layerNode.node;
+			// Log() << "From layer: " << layer1 << ", phys: " << physId << "\n";
+			// unsigned int stateId1 = addMultilayerNode(layer1, physId);
+			auto& targetNetwork = m_networks[layer2];
+			std::map<StateNode, std::map<StateNode, LinkData> >& targetLinks = targetNetwork.nodeLinkMap();
+			auto& outlinks = targetLinks[StateNode(physId)];
+			if (outlinks.empty()) {
+				// Log() << "  Dangling\n";
+				continue;
+			}
+			auto& targetOutWeights = targetNetwork.outWeights();
+			double sumIntraOutWeightTargetLayer = targetOutWeights[physId];
+			for (auto& it2 : it.second) {
+				unsigned int layer1 = it2.first;
+				double interWeight = it2.second;
+				// Log() << "  -> layer: " << layer2 << ", weight: " << interWeight << "\n";
+				unsigned int stateId1 = addMultilayerNode(layer1, physId);
+
+				// Log() << "    -> " << outlinks.size() << " outlinks:\n";
+				for (auto& outLink : outlinks) {
+					auto& targetPhysId = outLink.first.physicalId;
+					auto& linkData = outLink.second;
+					double intraWeight = linkData.weight;
+					unsigned int stateId2i = addMultilayerNode(layer2, targetPhysId);
+
+					// Log() << "      -> " << targetPhysId << "\n";
+					double weight = interWeight * intraWeight / sumIntraOutWeightTargetLayer;
+					
+					addLink(stateId1, stateId2i, weight);
+					++m_numInterLayerLinks; // TODO: Count all as one?
+				}
 			}
 		}
 	}

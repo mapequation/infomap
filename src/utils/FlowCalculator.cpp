@@ -59,7 +59,7 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 	double sumLinkWeight = network.sumLinkWeight();
 	double sumUndirLinkWeight = 2 * sumLinkWeight - network.sumSelfLinkWeight();
 
-    for (auto& linkIt : network.nodeLinkMap()) {
+  for (auto& linkIt : network.nodeLinkMap()) {
 		unsigned int linkSourceId = linkIt.first.id;
 		unsigned int sourceIndex = m_nodeIndexMap[linkSourceId];
 

@@ -113,6 +113,8 @@ struct Config
 	double markovTime = 1.0;
 	double multilayerRelaxRate = 0.15;
 	int multilayerRelaxLimit = -1;
+	double multilayerJSRelaxRate = 0.15;
+	int multilayerJSRelaxLimit = -1;
 	
 	// Clustering
 	bool twoLevel = false;
@@ -222,6 +224,8 @@ struct Config
 		markovTime(other.markovTime),
 		multilayerRelaxRate(other.multilayerRelaxRate),
 		multilayerRelaxLimit(other.multilayerRelaxLimit),
+		multilayerJSRelaxRate(other.multilayerJSRelaxRate),
+		multilayerJSRelaxLimit(other.multilayerJSRelaxLimit),
 	 	twoLevel(other.twoLevel),
 		noCoarseTune(other.noCoarseTune),
 		directedEdges(other.directedEdges),
@@ -316,6 +320,8 @@ struct Config
 	 	markovTime = other.markovTime;
 		multilayerRelaxRate = other.multilayerRelaxRate;
 		multilayerRelaxLimit = other.multilayerRelaxLimit;
+		multilayerJSRelaxRate = other.multilayerJSRelaxRate;
+		multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
 	 	twoLevel = other.twoLevel;
 		noCoarseTune = other.noCoarseTune;
 		directedEdges = other.directedEdges;
@@ -409,6 +415,8 @@ struct Config
 	 	markovTime = other.markovTime;
 		multilayerRelaxRate = other.multilayerRelaxRate;
 		multilayerRelaxLimit = other.multilayerRelaxLimit;
+		multilayerJSRelaxRate = other.multilayerJSRelaxRate;
+		multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
 	 	twoLevel = other.twoLevel;
 		noCoarseTune = other.noCoarseTune;
 		directedEdges = other.directedEdges;

@@ -19,8 +19,9 @@ namespace infomap {
 struct Infomap : public InfomapCore {
 public:
 
-	Infomap(const Config& conf) : InfomapCore(conf) {}
+	Infomap() : InfomapCore() {}
 	Infomap(const std::string flags) : InfomapCore(flags) {}
+	Infomap(const Config& conf) : InfomapCore(conf) {}
 	virtual ~Infomap() {}
 
 	// ===================================================
