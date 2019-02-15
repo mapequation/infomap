@@ -12,9 +12,9 @@ namespace infomap {
 
     void InfomapRun(struct Infomap *im) { im->run(); };
 
-    double Codelength(struct Infomap *im) { im->tree.codelength(); }
+    double Codelength(struct Infomap *im) { return im->tree.codelength(); }
 
-    unsigned int NumModules(struct Infomap *im) { im->tree.numTopModules(); }
+    unsigned int NumModules(struct Infomap *im) { return im->tree.numTopModules(); }
 
     struct LeafIterator *NewIter(struct Infomap *im) { return new LeafIterator(&(im->tree.getRootNode())); }
 
