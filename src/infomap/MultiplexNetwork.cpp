@@ -354,8 +354,10 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 		const StateNode& stateNode = stateNodeIt->first;
 		StateLinkMap::iterator stateSourceIt = m_stateLinks.lower_bound(stateNode);
 		// Find source iterator to re-use in the loop below
+		bool emptyMapInserted = false;
 		if (stateSourceIt == m_stateLinks.end() || stateSourceIt->first != stateNode) {
 			stateSourceIt = m_stateLinks.insert(stateSourceIt, std::make_pair(stateNode, std::map<StateNode, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
+			emptyMapInserted = true;
 		}
 		bool stateSourceNodeAdded = false;
 		unsigned int layer1 = stateNode.layer();
@@ -421,7 +423,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 					"' is declared as an inter-layer link (layer1, node, layer2) but is not.");
 			}
 		}
-		if (!stateSourceNodeAdded) {
+		if (!stateSourceNodeAdded && emptyMapInserted) {
 			// The added source was not used, remove it
 			m_stateLinks.erase(stateSourceIt);
 		}
