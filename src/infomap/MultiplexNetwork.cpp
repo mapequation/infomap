@@ -295,8 +295,9 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 	// First generate memory links from intra links (from ordinary links within each network)
 	std::vector<std::vector<double> > sumOutWeights(m_networks.size());
 
+	bool oldUndirected = m_config.isUndirected();
 	std::vector<LinkMap> oppositeLinkMaps;
-	if (m_config.isUndirected()) {
+	if (oldUndirected) {
 		oppositeLinkMaps.resize(m_networks.size());
 		for (unsigned int i = 0; i < m_networks.size(); ++i) {
 			m_networks[i].generateOppositeLinkMap(oppositeLinkMaps[i]);
@@ -317,7 +318,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 				double linkWeight = subIt->second;
 
 				sumOutWeights[layerIndex][n1] += linkWeight;
-				if (m_config.isUndirected()) {
+				if (oldUndirected) {
 					sumOutWeights[layerIndex][n2] += linkWeight;
 				}
 				addStateLink(layerIndex, n1, layerIndex, n2, linkWeight);
@@ -326,9 +327,6 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 	}
 
 	Log() << "connecting layers... " << std::flush;
-	if (m_config.isUndirected()) {
-		Log() << "using undirected intra-layer links... " << std::flush;
-	}
 
 
 	// Extract the self-layer links to be able to scale the inter-layer links correctly. Use the sum of intra out weights as default.
@@ -356,8 +354,9 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 		const StateNode& stateNode = stateNodeIt->first;
 		StateLinkMap::iterator stateSourceIt = m_stateLinks.lower_bound(stateNode);
 		// Find source iterator to re-use in the loop below
-		if (stateSourceIt == m_stateLinks.end() || stateSourceIt->first != stateNode)
+		if (stateSourceIt == m_stateLinks.end() || stateSourceIt->first != stateNode) {
 			stateSourceIt = m_stateLinks.insert(stateSourceIt, std::make_pair(stateNode, std::map<StateNode, double>())); // TODO: Use C++11 for optimized insertion with hint from lower_bound
+		}
 		bool stateSourceNodeAdded = false;
 		unsigned int layer1 = stateNode.layer();
 		unsigned int nodeIndex = stateNode.physIndex;
@@ -388,7 +387,7 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 				{
 					// Jump to state note in target layer and distribute inter link to connected intra links
 					double weightNormalizationFactor = scaledInterLinkWeight / sumOutWeights[layer2][nodeIndex];
-					if (m_config.isUndirected()) {
+					if (oldUndirected) {
 						// Distribute inter-links to outgoing intra-links in the target layer
 						bool add1 = createIntraLinksToNeighbouringNodesInTargetLayer(stateSourceIt, nodeIndex, layer2, m_networks[layer2].linkMap(), weightNormalizationFactor, weightNormalizationFactor);
 						
@@ -407,6 +406,11 @@ void MultiplexNetwork::generateMemoryNetworkWithInterLayerLinksFromData()
 					else {
 						// Distribute inter-link to the outgoing intra-links in the target layer
 						stateSourceNodeAdded = createIntraLinksToNeighbouringNodesInTargetLayer(stateSourceIt, nodeIndex, layer2, m_networks[layer2].linkMap(), weightNormalizationFactor, weightNormalizationFactor);
+						if (m_config.parseAsUndirected()) {
+							// Treat inter-link as undirected and distribute to outgoing intra-links in the source layer too
+							double oppositeWeightNormalizationFactor = scaledOppositeInterLinkWeight / sumOutWeights[layer1][nodeIndex];
+							createIntraLinksToNeighbouringNodesInTargetLayer(layer2, nodeIndex, layer1, m_networks[layer1].linkMap(), oppositeWeightNormalizationFactor, oppositeWeightNormalizationFactor);
+						}
 					}
 				}
 			}
@@ -437,14 +441,14 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 
 	Log() << "Generating memory network with multilayer relax rate " << relaxRate << "... " << std::flush;
 	
+	bool oldUndirected = m_config.isUndirected();
 	std::vector<LinkMap> oppositeLinkMaps;
-	if (m_config.isUndirected()) {
+	if (oldUndirected) {
 		oppositeLinkMaps.resize(m_networks.size());
 		for (unsigned int i = 0; i < m_networks.size(); ++i) {
 			m_networks[i].generateOppositeLinkMap(oppositeLinkMaps[i]);
 		}
 	}
-
 
 	for (unsigned int nodeIndex = 0; nodeIndex < m_numNodes; ++nodeIndex)
 	{
@@ -504,8 +508,8 @@ void MultiplexNetwork::generateMemoryNetworkWithSimulatedInterLayerLinks()
 				// Log() << "    -> Layer " << layer2 << ", linkWeightNormalizationFactor: " << linkWeightNormalizationFactor << "\n";
 				
 				createIntraLinksToNeighbouringNodesInTargetLayer(layer1, nodeIndex, layer2, m_networks[layer2].linkMap(), linkWeightNormalizationFactor, stateNodeWeightNormalizationFactor);
-				
-				if (m_config.isUndirected()) {
+					
+				if (oldUndirected) {
 					// Create inter-links to the incoming nodes in the target layer too					
 					createIntraLinksToNeighbouringNodesInTargetLayer(layer1, nodeIndex, layer2, oppositeLinkMaps[layer2], linkWeightNormalizationFactor, stateNodeWeightNormalizationFactor);
 				}
@@ -523,7 +527,8 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 	Log() << "Generating memory network with Jensen-Shannon-weighted multilayer relax rate " << jsrelaxRate << "... " << std::flush;
 	
 	std::vector<LinkMap> oppositeLinkMaps;
-	if (m_config.isUndirected()) {
+	bool oldUndirected = m_config.isUndirected();
+	if (oldUndirected) {
 		oppositeLinkMaps.resize(m_networks.size());
 		for (unsigned int i = 0; i < m_networks.size(); ++i) {
 			m_networks[i].generateOppositeLinkMap(oppositeLinkMaps[i]);
@@ -552,7 +557,7 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 			LinkMap::const_iterator layer1OutLinksIt = layer1LinkMap.find(nodeIndex);
 			double sumOutLinkWeightLayer1 = m_networks[layer1].sumLinkOutWeight()[nodeIndex];
 
-			if(m_config.isUndirected()){
+			if(oldUndirected){
  				
 				const LinkMap& layer1OppositeLinkMap = oppositeLinkMaps[layer1];
 				LinkMap::const_iterator layer1OppositeOutLinksIt = layer1OppositeLinkMap.find(nodeIndex);
@@ -667,7 +672,7 @@ void MultiplexNetwork::generateMemoryNetworkWithJensenShannonSimulatedInterLayer
 						
 						createIntraLinksToNeighbouringNodesInTargetLayer(layer1, nodeIndex, layer2, m_networks[layer2].linkMap(), linkWeightNormalizationFactor, stateNodeWeightNormalizationFactor);
 						
-						if (m_config.isUndirected()) {
+						if (oldUndirected) {
 							// Create inter-links to the incoming nodes in the target layer too					
 							createIntraLinksToNeighbouringNodesInTargetLayer(layer1, nodeIndex, layer2, oppositeLinkMaps[layer2], linkWeightNormalizationFactor, stateNodeWeightNormalizationFactor);
 						}
@@ -1063,6 +1068,8 @@ void MultiplexNetwork::finalizeAndCheckNetwork(bool printSummary)
 		Log() << " --> Found " << m_numInterLinksFound << " inter-network links in " << m_interLinkLayers.size() << " layers.\n";
 	if (!m_multiplexLinkLayers.empty())
 		Log() << " --> Found " << m_numMultiplexLinksFound << " multilayer links in " << m_multiplexLinkLayers.size() << " layers.\n";
+	if (m_config.isOriginallyUndirected())
+		Log() << "Notice: Multilayer input require directed links, so each undirected link is expanded to two directed opposite links.\n";
 
 	if (!m_interLinkLayers.empty())
 	{

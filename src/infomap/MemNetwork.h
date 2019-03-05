@@ -47,15 +47,6 @@ namespace infomap
 using std::map;
 using std::pair;
 
-struct Link
-{
-	Link() : n1(0), n2(0), weight(0.0) {}
-	Link(unsigned int n1, unsigned int n2, double weight) : n1(n1), n2(n2), weight(weight) {}
-
-	unsigned int n1;
-	unsigned int n2;
-	double weight;
-};
 
 struct ComplementaryData
 {

@@ -238,6 +238,9 @@ std::vector<ParsedOption> getConfig(Config& conf, const std::string& flags, bool
 	api.addOptionArgument(conf.multiplexRelaxLimit, "multiplex-relax-limit",
 			"[Deprecated, use multilayer-relax-limit] The number of neighboring layers in each direction to relax to. If negative, relax to any layer.", "n", true);
 
+	api.addOptionArgument(conf.undirectedMultilayer, "undirected-multilayer",
+			"Allow undirected multilayer networks (only correct for full multilayer format).", true);
+
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
 			"A seed (integer) to the random number generator.", "n");
 

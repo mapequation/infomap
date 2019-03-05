@@ -32,6 +32,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <deque>
 
 #include "../io/convert.h"
 #include "../io/SafeFile.h"
@@ -670,6 +671,8 @@ bool Network::addLink(unsigned int n1, unsigned int n2, double weight)
 	m_minNodeIndex = std::min(m_minNodeIndex, std::min(n1, n2));
 
 	insertLink(n1, n2, weight);
+	if (m_config.expandUndirectedToDirected)
+		insertLink(n2, n1, weight);
 
 	return true;
 }
@@ -925,6 +928,28 @@ void Network::initNodeNames()
 			for (unsigned int i = oldSize; i < numNodes(); ++i)
 				m_nodeNames[i] = io::stringify(i + indexOffset);
 		}
+	}
+}
+
+void Network::generateOppositeLinks()
+{
+	// First collect all links to not insert while iterating, which may lead to duplication of existing links
+	std::deque<Link> links;
+	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
+	{
+		unsigned int sourceIndex = linkIt->first;
+		const std::map<unsigned int, double>& outLinks = linkIt->second;
+		for (std::map<unsigned int, double>::const_iterator outLinkIt(outLinks.begin()); outLinkIt != outLinks.end(); ++outLinkIt)
+		{
+			unsigned int targetIndex = outLinkIt->first;
+			double weight = outLinkIt->second;
+			links.push_back(Link(sourceIndex, targetIndex, weight));
+		}
+	}
+	for (std::deque<Link>::const_iterator it(links.begin()); it != links.end(); ++it) {
+		const Link& link = *it;
+		// Create link in opposite direction
+		addLink(link.n2, link.n1, link.weight);
 	}
 }
 

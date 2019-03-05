@@ -74,6 +74,7 @@ public:
 	 	m_bipartiteStartIndex(std::numeric_limits<unsigned int>::max()),
 	 	m_indexOffset(m_config.zeroBasedNodeNumbers ? 0 : 1),
 		m_numBipartiteNodes(0),
+		m_gotDirected(false),
 		m_isFinalized(false)
 	{}
 	Network(const Config& config)
@@ -100,6 +101,7 @@ public:
 	 	m_bipartiteStartIndex(std::numeric_limits<unsigned int>::max()),
 	 	m_indexOffset(m_config.zeroBasedNodeNumbers ? 0 : 1),
 		m_numBipartiteNodes(0),
+		m_gotDirected(false),
 		m_isFinalized(false)
 	{}
 	Network(const Network& other)
@@ -126,6 +128,7 @@ public:
 	 	m_bipartiteStartIndex(other.m_bipartiteStartIndex),
 	 	m_indexOffset(other.m_indexOffset),
 		m_numBipartiteNodes(other.m_numBipartiteNodes),
+		m_gotDirected(other.m_gotDirected),
 		m_isFinalized(other.m_isFinalized)
 	{}
 	Network& operator=(const Network& other)
@@ -153,6 +156,7 @@ public:
 	 	m_bipartiteStartIndex = other.m_bipartiteStartIndex;
 	 	m_indexOffset = other.m_indexOffset;
 	 	m_numBipartiteNodes = other.m_numBipartiteNodes;
+	 	m_gotDirected = other.m_gotDirected;
 		m_isFinalized = other.m_isFinalized;
 	 	return *this;
 	}
@@ -220,11 +224,14 @@ public:
 	void initNodeNames();
 	void swapNodeNames(std::vector<std::string>& target) { target.swap(m_nodeNames); }
 
+	void generateOppositeLinks();
 	void generateOppositeLinkMap(LinkMap& oppositeLinks);
 
 	virtual void disposeLinks() { m_links.clear(); }
 
 	const Config& config() { return m_config; }
+
+	bool gotDirected() { return m_gotDirected; }
 
 	bool isFinalized() { return m_isFinalized; }
 	
@@ -340,6 +347,7 @@ protected:
 	unsigned int m_numBipartiteNodes;
 
 	// Other
+	bool m_gotDirected;
 	bool m_isFinalized;
 
 };
@@ -475,6 +483,16 @@ struct Triple
 	unsigned int n1;
 	unsigned int n2;
 	unsigned int n3;
+};
+
+struct Link
+{
+	Link() : n1(0), n2(0), weight(0.0) {}
+	Link(unsigned int n1, unsigned int n2, double weight) : n1(n1), n2(n2), weight(weight) {}
+
+	unsigned int n1;
+	unsigned int n2;
+	double weight;
 };
 
 #ifdef NS_INFOMAP

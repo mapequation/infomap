@@ -63,6 +63,8 @@ struct Config
 		preClusterMultiplex(false),
 	 	clusterDataFile(""),
 	 	noInfomap(false),
+	 	undirectedMultilayer(false),
+	 	expandUndirectedToDirected(false),
 	 	twoLevel(false),
 		directed(false),
 		undirdir(false),
@@ -145,6 +147,8 @@ struct Config
 		preClusterMultiplex(other.preClusterMultiplex),
 	 	clusterDataFile(other.clusterDataFile),
 	 	noInfomap(other.noInfomap),
+	 	undirectedMultilayer(other.undirectedMultilayer),
+	 	expandUndirectedToDirected(other.expandUndirectedToDirected),
 	 	twoLevel(other.twoLevel),
 		directed(other.directed),
 		undirdir(other.undirdir),
@@ -229,6 +233,8 @@ struct Config
 		preClusterMultiplex = other.preClusterMultiplex;
 	 	clusterDataFile = other.clusterDataFile;
 	 	noInfomap = other.noInfomap;
+	 	undirectedMultilayer = other.undirectedMultilayer;
+	 	expandUndirectedToDirected = other.expandUndirectedToDirected;
 	 	twoLevel = other.twoLevel;
 		directed = other.directed;
 		undirdir = other.undirdir;
@@ -349,16 +355,13 @@ struct Config
 			{
 				// Include self-links in multiplex networks as layer and node numbers are unrelated
 				includeSelfLinks = true;
-				if (!isUndirected())
-				{
-					// teleportToNodes = true;
-					recordedTeleportation = false;
+				if (isUndirected() && !undirectedMultilayer) {
+					directed = true;
+					expandUndirectedToDirected = true;
 				}
 			}
 			else
 			{
-				// teleportToNodes = true;
-				recordedTeleportation = false;
 				if (isUndirected())
 					directed = true;
 			}
@@ -391,13 +394,15 @@ struct Config
 		innerParallelization = false;
 	}
 
+	bool isOriginallyUndirected() const { return originallyUndirected; }
+
 	bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 
 	void setUndirected() { directed = undirdir = outdirdir = rawdir = false; }
 
 	bool isUndirectedFlow() const { return !directed && !outdirdir && !rawdir; } // isUndirected() || undirdir
 
-	bool printAsUndirected() const { return originallyUndirected; }
+	bool printAsUndirected() const { return originallyUndirected && !expandUndirectedToDirected; }
 
 	bool parseAsUndirected() const { return originallyUndirected; }
 
@@ -453,6 +458,8 @@ struct Config
 	bool preClusterMultiplex;
 	std::string clusterDataFile;
 	bool noInfomap;
+	bool undirectedMultilayer;
+	bool expandUndirectedToDirected;
 
 	// Core algorithm
 	bool twoLevel;
