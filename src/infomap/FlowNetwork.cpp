@@ -251,7 +251,8 @@ void FlowNetwork::calculateFlow(const Network& network, const Config& config)
 	// Update the links with their global flow from the PageRank values. (Note: beta is set to 1 if unrec)
 	for (LinkVec::iterator linkIt(m_flowLinks.begin()); linkIt != m_flowLinks.end(); ++linkIt)
 	{
-		linkIt->flow *= beta * nodeFlowTmp[linkIt->source] / sumNodeRank;
+		unsigned int toNode = config.recordedTeleportation ? linkIt->target : linkIt->source;
+		linkIt->flow *= beta * nodeFlowTmp[toNode] / sumNodeRank;
 	}
 
 	Log() << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
