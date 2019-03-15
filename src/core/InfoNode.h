@@ -77,6 +77,7 @@ public:
 public:
 
 	FlowData data;
+	FlowDataInt dataInt;
 	unsigned int index = 0; // Temporary index used in finding best module
 //	unsigned int originalIndex = 0; // Index in the original network (for leaf nodes)
 	/*const*/ unsigned int stateId = 0; // Unique state node id for the leaf nodes
@@ -317,13 +318,13 @@ public:
 	bool isDangling()
 	{ return m_outEdges.empty(); }
 
-	unsigned int outDegree()
+	unsigned int outDegree() const
 	{ return m_outEdges.size(); }
 
-	unsigned int inDegree()
+	unsigned int inDegree() const
 	{ return m_inEdges.size(); }
 
-	unsigned int degree()
+	unsigned int degree() const
 	{ return outDegree() + inDegree(); }
 
 //	InfomapBase* getSubInfomap()

@@ -55,6 +55,46 @@ struct FlowData
 	}
 };
 
+struct FlowDataInt
+{
+	FlowDataInt(unsigned int flow = 0) :
+		flow(flow),
+		enterExitFlow(0)
+	{}
+	FlowDataInt(const FlowDataInt& other) :
+		flow(other.flow),
+		enterExitFlow(other.enterExitFlow)
+	{}
+	FlowDataInt& operator=(const FlowDataInt& other)
+	{
+		flow = other.flow;
+		enterExitFlow = other.enterExitFlow;
+		return *this;
+	}
+
+	unsigned int flow;
+	unsigned int enterExitFlow;
+
+	FlowDataInt& operator+=(const FlowDataInt& other)
+	{
+		flow += other.flow;
+		enterExitFlow += other.enterExitFlow;
+		return *this;
+	}
+
+	FlowDataInt& operator-=(const FlowDataInt& other)
+	{
+		flow -= other.flow;
+		enterExitFlow -= other.enterExitFlow;
+		return *this;
+	}
+
+	friend std::ostream& operator<<(std::ostream& out, const FlowDataInt& data)
+	{
+		return out << "flow: " << data.flow << ", enter/exit: " << data.enterExitFlow;
+	}
+};
+
 
 struct DeltaFlow
 {
@@ -104,6 +144,59 @@ struct DeltaFlow
 	}
 
 	friend std::ostream& operator<<(std::ostream& out, const DeltaFlow& data)
+	{
+		return out << "module: " << data.module << ", deltaEnter: " << data.deltaEnter << ", deltaExit: " << data.deltaExit << ", count: " << data.count;
+	}
+};
+
+struct DeltaFlowInt
+{
+	unsigned int module = 0;
+	unsigned int deltaExit = 0;
+	unsigned int deltaEnter = 0;
+	unsigned int count = 0;
+
+	virtual ~DeltaFlowInt() = default;
+
+	DeltaFlowInt() {}
+
+	explicit DeltaFlowInt(unsigned int module, unsigned int deltaExit, unsigned int deltaEnter)
+	:	module(module),
+		deltaExit(deltaExit),
+		deltaEnter(deltaEnter),
+		count(0) {}
+
+	DeltaFlowInt(const DeltaFlowInt&) = default;
+    DeltaFlowInt& operator=(const DeltaFlowInt&) = default;
+    DeltaFlowInt(DeltaFlowInt&&) = default;
+    DeltaFlowInt& operator=(DeltaFlowInt&&) = default;
+
+	DeltaFlowInt& operator+=(const DeltaFlowInt& other)
+	{
+		module = other.module;
+		deltaExit += other.deltaExit;
+		deltaEnter += other.deltaEnter;
+		++count;
+		return *this;
+	}
+
+	void reset()
+	{
+		module = 0;
+		deltaExit = 0;
+		deltaEnter = 0;
+		count = 0;
+	}
+
+	friend void swap(DeltaFlowInt& first, DeltaFlowInt& second)
+	{
+		std::swap(first.module, second.module);
+		std::swap(first.deltaExit, second.deltaExit);
+		std::swap(first.deltaEnter, second.deltaEnter);
+		std::swap(first.count, second.count);
+	}
+
+	friend std::ostream& operator<<(std::ostream& out, const DeltaFlowInt& data)
 	{
 		return out << "module: " << data.module << ", deltaEnter: " << data.deltaEnter << ", deltaExit: " << data.deltaExit << ", count: " << data.count;
 	}

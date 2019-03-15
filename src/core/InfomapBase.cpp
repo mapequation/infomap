@@ -686,6 +686,7 @@ void InfomapBase::generateSubNetwork(Network& network)
 
 	m_leafNodes.reserve(numNodes);
 	double sumNodeFlow = 0.0;
+	unsigned int sumNodeFlowInt = 0;
 	std::map<unsigned int, unsigned int> nodeIndexMap;
 	for (auto& nodeIt : network.nodes()) {
 		auto& networkNode = nodeIt.second;
@@ -729,6 +730,12 @@ void InfomapBase::generateSubNetwork(Network& network)
 			}
 		}
 	}
+
+	for (InfoNode& node : m_root) {
+		node.dataInt.flow = node.degree();
+		sumNodeFlowInt += node.dataInt.flow;
+	}
+	m_root.dataInt.flow = sumNodeFlowInt;
 	
 	if (numLinksIgnored > 0) {
 //		Log(1) << numLinksIgnored << " links with ~0 flow ignored -> " << network.getFlowLinks().size() - numLinksIgnored << " links." << std::endl;
@@ -770,6 +777,10 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
 				m_leafNodes[edge.source.index]->addOutEdge(*m_leafNodes[edge.target.index], edge.data.weight, edge.data.flow);
 			}
 		}
+	}
+
+	for (InfoNode& node : m_root) {
+		node.dataInt.flow = node.degree();
 	}
 }
 
@@ -981,6 +992,7 @@ void InfomapBase::initEnterExitFlow()
 	// Calculate enter/exit
 	for (auto* n : m_leafNodes) {
 		n->data.enterFlow = n->data.exitFlow = 0.0;
+		n->dataInt.enterExitFlow = 0;
 	}
     if (!this->isUndirectedClustering()) {
         for (auto *n : m_leafNodes) {
@@ -1001,6 +1013,9 @@ void InfomapBase::initEnterExitFlow()
                 edge.target.data.exitFlow += halfFlow;
                 edge.source.data.enterFlow += halfFlow;
                 edge.target.data.enterFlow += halfFlow;
+								// int
+								edge.source.dataInt.enterExitFlow += 1; // TODO: edge.data.weight;
+								edge.target.dataInt.enterExitFlow += 1; // TODO: edge.data.weight;
             }
         }
     }

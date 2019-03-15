@@ -21,8 +21,8 @@ class InfoNode;
 class GrassbergerMapEquation : protected MapEquation {
 	using Base = MapEquation;
 public:
-	using FlowDataType = FlowData;
-	using DeltaFlowDataType = DeltaFlow;
+	using FlowDataType = FlowDataInt;
+	using DeltaFlowDataType = DeltaFlowInt;
 
 	GrassbergerMapEquation() : MapEquation() {}
 
@@ -106,6 +106,7 @@ protected:
 	// Protected member functions
 	// ===================================================
 	double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+	double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
 
 	int getDeltaNumModulesIfMoving(InfoNode& current,
 			unsigned int oldModule, unsigned int newModule, std::vector<unsigned int>& moduleMembers) const;
@@ -122,11 +123,14 @@ protected:
 	// Codelength
 	// ===================================================
 
+	// Integer version, normalized using m_totalDegree
+	double plogp(unsigned int d) const;
+
 	void calculateCodelength(std::vector<InfoNode*>& nodes);
 
-	using Base::calculateCodelengthTerms;
+	void calculateCodelengthTerms(std::vector<InfoNode*>& nodes);
 
-	using Base::calculateCodelengthFromCodelengthTerms;
+	void calculateCodelengthFromCodelengthTerms();
 
 	// ===================================================
 	// Consolidation
@@ -165,6 +169,15 @@ protected:
 	using Base::exitNetworkFlow_log_exitNetworkFlow;
 
 	// For Grassberger
+	unsigned int m_totalDegree = 0;
+	double m_nodeFlow_log_nodeFlow = 0.0; // constant while the leaf network is the same
+	double m_flow_log_flow = 0.0; // node.(flow + exitFlow)
+	double m_exit_log_exit = 0.0;
+	double m_enter_log_enter = 0.0;
+	double m_enterFlow = 0.0;
+	double m_enterFlow_log_enterFlow = 0.0;
+	double m_exitNetworkFlow = 0.0;
+	double m_exitNetworkFlow_log_exitNetworkFlow = 0.0;
 };
 
 
