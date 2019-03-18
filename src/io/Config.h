@@ -108,6 +108,7 @@ struct Config
 	bool undirdir = false;
 	bool outdirdir = false;
 	bool rawdir = false;
+	bool integerFlow = false;
 	bool teleportToNodes = false;
 	double selfTeleportationProbability = -1;
 	double markovTime = 1.0;
@@ -217,6 +218,7 @@ struct Config
 		undirdir(other.undirdir),
 		outdirdir(other.outdirdir),
 		rawdir(other.rawdir),
+		integerFlow(other.integerFlow),
 		teleportToNodes(other.teleportToNodes),
 		selfTeleportationProbability(other.selfTeleportationProbability),
 		markovTime(other.markovTime),
@@ -311,6 +313,7 @@ struct Config
 		undirdir = other.undirdir;
 		outdirdir = other.outdirdir;
 		rawdir = other.rawdir;
+		integerFlow = other.integerFlow;
 		teleportToNodes = other.teleportToNodes;
 		selfTeleportationProbability = other.selfTeleportationProbability;
 	 	markovTime = other.markovTime;
@@ -404,6 +407,7 @@ struct Config
 		undirdir = other.undirdir;
 		outdirdir = other.outdirdir;
 		rawdir = other.rawdir;
+		integerFlow = other.integerFlow;
 		teleportToNodes = other.teleportToNodes;
 		selfTeleportationProbability = other.selfTeleportationProbability;
 	 	markovTime = other.markovTime;
@@ -535,6 +539,11 @@ struct Config
 			printTree = true;
 
 		originallyUndirected = isUndirectedFlow();
+
+		if (isIntegerFlow() && !isUndirectedClustering()) {
+			throw InputDomainError("Can't use integer flow with directed links");
+		}
+
 		// if (isMemoryNetwork())
 		// {
 			// if (isMultilayerNetwork())
@@ -582,6 +591,8 @@ struct Config
 
 	// bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 	bool isUndirectedClustering() const { return flowModel == FlowModel::undirected; }
+
+	bool isIntegerFlow() const { return integerFlow; }
 
 	bool isUndirectedFlow() const { return flowModel == FlowModel::undirected || flowModel == FlowModel::undirdir; }
 

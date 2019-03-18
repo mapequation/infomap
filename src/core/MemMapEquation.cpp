@@ -7,7 +7,8 @@
 
 #include "MemMapEquation.h"
 #include "FlowData.h"
-#include "InfoNode.h"
+#include "NodeBase.h"
+#include "Node.h"
 #include "../utils/Log.h"
 #include <vector>
 #include <set>
@@ -15,6 +16,8 @@
 #include <utility>
 
 namespace infomap {
+
+	using NodeType = Node<FlowData>;
 
 // ===================================================
 // IO
@@ -39,29 +42,29 @@ void MemMapEquation::init(const Config& config)
 }
 
 
-void MemMapEquation::initNetwork(InfoNode& root)
+void MemMapEquation::initNetwork(NodeBase& root)
 {
 	initPhysicalNodes(root);
 }
 
-void MemMapEquation::initSuperNetwork(InfoNode& root)
+void MemMapEquation::initSuperNetwork(NodeBase& root)
 {
 	//TODO: How use enterFlow instead of flow
 }
 
-void MemMapEquation::initSubNetwork(InfoNode& root)
+void MemMapEquation::initSubNetwork(NodeBase& root)
 {
 //	Base::initSubNetwork(root);
 }
 
-void MemMapEquation::initPartition(std::vector<InfoNode*>& nodes)
+void MemMapEquation::initPartition(std::vector<NodeBase*>& nodes)
 {
 	initPartitionOfPhysicalNodes(nodes);
 
 	calculateCodelength(nodes);
 }
 
-void MemMapEquation::initPhysicalNodes(InfoNode& root)
+void MemMapEquation::initPhysicalNodes(NodeBase& root)
 {
 	bool notInitiated = root.firstChild->physicalNodes.empty();
 	if (notInitiated)
@@ -69,7 +72,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
 		Log(3) << "MemMapEquation::initPhysicalNodesOnOriginalNetwork()...\n";
 		std::set<unsigned int> setOfPhysicalNodes;
 		// Collect all physical nodes in this network
-		for (InfoNode& node : root)
+		for (NodeBase& node : root)
 		{
 			setOfPhysicalNodes.insert(node.physicalId);
 		}
@@ -84,10 +87,10 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
 			toZeroBasedIndex.insert(std::make_pair(physIndex, zeroBasedPhysicalId++));
 		}
 
-		for (InfoNode& node : root)
+		for (NodeBase& node : root)
 		{
 			unsigned int zeroBasedIndex = toZeroBasedIndex[node.physicalId];
-			node.physicalNodes.push_back(PhysData(zeroBasedIndex, node.data.flow));
+			node.physicalNodes.push_back(PhysData(zeroBasedIndex, node.getFlow()));
 		}
 	}
 	else
@@ -96,7 +99,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
 		std::set<unsigned int> setOfPhysicalNodes;
 
 		// Collect all physical nodes in this sub network
-		for (InfoNode& node : root)
+		for (NodeBase& node : root)
 		{
 			for (PhysData& physData : node.physicalNodes)
 			{
@@ -114,7 +117,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
 			toZeroBasedIndex.insert(std::make_pair(physIndex, zeroBasedPhysicalId++));
 		}
 
-		for (InfoNode& node : root)
+		for (NodeBase& node : root)
 		{
 			for (PhysData& physData : node.physicalNodes)
 			{
@@ -124,7 +127,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
 	}
 }
 
-void MemMapEquation::initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes)
+void MemMapEquation::initPartitionOfPhysicalNodes(std::vector<NodeBase*>& nodes)
 {
 	Log(4) << "MemMapEquation::initPartitionOfPhysicalNodes()...\n";
 	m_physToModuleToMemNodes.clear();
@@ -132,7 +135,7 @@ void MemMapEquation::initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes)
 
 	for (auto& n : nodes)
 	{
-		InfoNode& node = *n;
+		NodeBase& node = *n;
 		unsigned int moduleIndex = node.index; // Assume unique module index for all nodes in this initiation phase
 
 		for(PhysData& physData : node.physicalNodes)
@@ -151,7 +154,7 @@ void MemMapEquation::initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes)
 // Codelength
 // ===================================================
 
-void MemMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
+void MemMapEquation::calculateCodelength(std::vector<NodeBase*>& nodes)
 {
 	calculateCodelengthTerms(nodes);
 
@@ -171,7 +174,7 @@ void MemMapEquation::calculateNodeFlow_log_nodeFlow()
 	}
 }
 
-double MemMapEquation::calcCodelength(const InfoNode& parent) const
+double MemMapEquation::calcCodelength(const NodeBase& parent) const
 {
 	return parent.isLeafModule() ?
 		( parent.isRoot() ?
@@ -183,8 +186,9 @@ double MemMapEquation::calcCodelength(const InfoNode& parent) const
 		MapEquation::calcCodelengthOnModuleOfModules(parent);
 }
 
-double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
+double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const NodeBase& p) const
 {
+	auto& parent = getNode(p);
 	if (parent.numPhysicalNodes() == 0) {
 		std::cout << "(*)";
 		return MapEquation::calcCodelength(parent); // Infomap root node
@@ -211,7 +215,7 @@ double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent)
 	return indexLength;
 }
 
-void MemMapEquation::addMemoryContributions(InfoNode& current,
+void MemMapEquation::addMemoryContributions(NodeBase& current,
 	DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow)
 {
 	// Overlapping modules
@@ -260,7 +264,7 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
 }
 
 
-double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
+double MemMapEquation::getDeltaCodelengthOnMovingNode(NodeBase& current,
 		DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers)
 {
 	double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
@@ -277,7 +281,7 @@ double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 // Consolidation
 // ===================================================
 
-void MemMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
+void MemMapEquation::updateCodelengthOnMovingNode(NodeBase& current,
 		DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers)
 {
 	Base::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
@@ -294,7 +298,7 @@ void MemMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 }
 
 
-void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex)
+void MemMapEquation::updatePhysicalNodes(NodeBase& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex)
 {
 	// For all multiple assigned nodes
 	for (unsigned int i = 0; i < current.physicalNodes.size(); ++i)
@@ -323,7 +327,7 @@ void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModu
 	}
 }
 
-void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta)
+void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(NodeBase& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta)
 {
 	unsigned int oldModuleIndex = oldModuleDelta.module;
 	unsigned int bestModuleIndex = newModuleDelta.module;
@@ -373,7 +377,7 @@ void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& curr
 }
 
 
-void MemMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
+void MemMapEquation::consolidateModules(std::vector<NodeBase*>& modules)
 {
 	std::map<unsigned int, std::map<unsigned int, unsigned int> > validate;
 
@@ -391,6 +395,25 @@ void MemMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 }
 
 
+NodeBase* MemMapEquation::createNode() const
+{
+	return new NodeType();
+}
+
+NodeBase* MemMapEquation::createNode(const NodeBase& other) const
+{
+	return new NodeType(static_cast<const NodeType&>(other));
+}
+
+NodeBase* MemMapEquation::createNode(FlowDataType flowData) const
+{
+	return new NodeType(flowData);
+}
+
+const NodeType& MemMapEquation::getNode(const NodeBase& other) const
+{
+	return static_cast<const NodeType&>(other);
+}
 
 // ===================================================
 // Debug

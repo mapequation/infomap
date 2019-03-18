@@ -13,7 +13,7 @@
 #include "../io/Config.h"
 #include "../utils/Log.h"
 #include "../utils/VectorMap.h"
-// #include "InfoNode.h"
+// #include "NodeBase.h"
 #include "FlowData.h"
 #include <vector>
 #include <map>
@@ -21,14 +21,17 @@
 
 namespace infomap {
 
-class InfoNode;
+class NodeBase;
 // struct Config;
+template<class FlowDataType>
+class Node;
 
 class MapEquation {
 public:
 	using FlowDataType = FlowData;
 	// using DeltaFlowDataType = MemDeltaFlow;
 	using DeltaFlowDataType = DeltaFlow;
+	using NodeType = Node<FlowDataType>;
 
 	MapEquation() {}
 
@@ -90,35 +93,40 @@ public:
 
 	void init(const Config& config);
 
-	void initNetwork(InfoNode& root);
+	void initNetwork(NodeBase& root);
 
-	void initSuperNetwork(InfoNode& root);
+	void initSuperNetwork(NodeBase& root);
 
-	void initSubNetwork(InfoNode& root);
+	void initSubNetwork(NodeBase& root);
 
-	void initPartition(std::vector<InfoNode*>& nodes);
+	void initPartition(std::vector<NodeBase*>& nodes);
 
 	// ===================================================
 	// Codelength
 	// ===================================================
 
-	double calcCodelength(const InfoNode& parent) const;
+	double calcCodelength(const NodeBase& parent) const;
 
-	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) {}
+	void addMemoryContributions(NodeBase& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) {}
 
-	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
+	void addMemoryContributions(NodeBase& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
 
-	double getDeltaCodelengthOnMovingNode(InfoNode& current,
+	double getDeltaCodelengthOnMovingNode(NodeBase& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
 
 	// ===================================================
 	// Consolidation
 	// ===================================================
 
-	void updateCodelengthOnMovingNode(InfoNode& current,
+	NodeBase* createNode() const;
+	NodeBase* createNode(const NodeBase&) const;
+	NodeBase* createNode(FlowDataType) const;
+	const NodeType& getNode(const NodeBase&) const;
+
+	void updateCodelengthOnMovingNode(NodeBase& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
 
-	void consolidateModules(std::vector<InfoNode*>& modules) {}
+	void consolidateModules(std::vector<NodeBase*>& modules) {}
 
 	// ===================================================
 	// Debug
@@ -132,13 +140,13 @@ protected:
 	// Protected member functions
 	// ===================================================
 
-	double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+	double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent) const;
 
-	double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
+	double calcCodelengthOnModuleOfModules(const NodeBase& parent) const;
 
-	void calculateCodelength(std::vector<InfoNode*>& nodes);
+	void calculateCodelength(std::vector<NodeBase*>& nodes);
 
-	void calculateCodelengthTerms(std::vector<InfoNode*>& nodes);
+	void calculateCodelengthTerms(std::vector<NodeBase*>& nodes);
 
 	void calculateCodelengthFromCodelengthTerms();
 

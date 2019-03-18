@@ -7,7 +7,7 @@
 
 %include "InfomapConfig.i"
 %include "Config.i"
-%include "InfoNode.i"
+%include "NodeBase.i"
 %include "InfomapIterator.i"
 %include "Network.i"
 

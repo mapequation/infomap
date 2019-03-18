@@ -31,8 +31,8 @@
 #include <string>
 #include <map>
 
-#include "../core/InfoNode.h"
-// class InfoNode;
+#include "../core/NodeBase.h"
+// class NodeBase;
 namespace infomap {
 
 using std::string;
@@ -50,7 +50,7 @@ public:
 
 	virtual void readData(const string filename);
 
-	virtual void readTree(const string filename, InfoNode& infomapRoot);
+	virtual void readTree(const string filename, NodeBase& infomapRoot);
 
 	const std::map<unsigned int, unsigned int>& clusters() const
 	{

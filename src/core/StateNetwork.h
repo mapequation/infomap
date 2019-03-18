@@ -196,7 +196,7 @@ protected:
 	unsigned int m_bipartiteStartId = 0;
 
 	// Infomap
-	// InfoNode m_root;
+	// NodeBase m_root;
 
 public:
 

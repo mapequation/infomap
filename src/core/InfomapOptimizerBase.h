@@ -7,7 +7,7 @@
 
 #include "InfomapBase.h"
 #include <vector>
-#include "InfoNode.h"
+#include "NodeBase.h"
 #include "FlowData.h"
 
 namespace infomap {
@@ -17,13 +17,16 @@ class InfomapOptimizerBase {
 	using FlowDataType = FlowData;
 
 protected:
-	using EdgeType = Edge<InfoNode>;
+	using EdgeType = Edge<NodeBase>;
 public:
 	InfomapOptimizerBase() {}
 	
 	virtual ~InfomapOptimizerBase() {}
 
 	virtual void init(InfomapBase* infomap) = 0;
+
+	virtual NodeBase* createNode() const = 0;
+	virtual NodeBase* createNode(const NodeBase&) const = 0;
 
 	// ===================================================
 	// IO
@@ -56,7 +59,7 @@ protected:
 
 	virtual void initSuperNetwork() = 0;
 
-	virtual double calcCodelength(const InfoNode& parent) const = 0;
+	virtual double calcCodelength(const NodeBase& parent) const = 0;
 
 	// ===================================================
 	// Run: Partition: *

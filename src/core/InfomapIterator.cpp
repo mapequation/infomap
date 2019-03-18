@@ -1,5 +1,5 @@
 #include "InfomapIterator.h"
-#include "InfoNode.h"
+#include "Node.h"
 #include <utility> // std::pair
 #include "../utils/Log.h"
 
@@ -139,16 +139,18 @@ namespace infomap {
 				auto firstLeafIt = *this;
 				// If on a leaf node, loop through and aggregate to physical nodes
 				while (!isEnd() && m_current->isLeaf()) {
-					auto ret = m_physNodes.insert(std::make_pair(m_current->physicalId, InfoNode(*m_current)));
+					// auto ret = m_physNodes.insert(std::make_pair(m_current->physicalId, PhysNode(*m_current)));
+					auto ret = m_physNodes.insert(std::make_pair(m_current->physicalId, PhysNode()));
 					auto& physNode = ret.first->second;
 					if (ret.second) {
 						// New physical node, use same parent as the state leaf node
 						physNode.parent = m_current->parent;
+						physNode.copyData(*m_current);
 					}
 					else {
 						// Not inserted, add flow to existing physical node
 						//TODO: If exitFlow should be correct, flow between memory nodes within same physical node should be subtracted.
-						physNode.data += m_current->data;
+						physNode.data += m_current->getFlowData();
 					}
 					physNode.stateNodes.push_back(m_current->stateId);
 					InfomapIterator::operator++();

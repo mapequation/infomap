@@ -10,7 +10,7 @@
 
 #include "MapEquation.h"
 #include "FlowData.h"
-// #include "InfoNode.h"
+// #include "NodeBase.h"
 #include "../utils/Log.h"
 #include <vector>
 #include <set>
@@ -19,7 +19,9 @@
 
 namespace infomap {
 
-class InfoNode;
+class NodeBase;
+template<class FlowDataType>
+class Node;
 struct MemNodeSet;
 
 class MemMapEquation : protected MapEquation {
@@ -27,6 +29,7 @@ class MemMapEquation : protected MapEquation {
 public:
 	using FlowDataType = FlowData;
 	using DeltaFlowDataType = MemDeltaFlow;
+	using NodeType = Node<FlowDataType>;
 
 	MemMapEquation() : MapEquation() {}
 
@@ -73,33 +76,33 @@ public:
 
 	void init(const Config& config);
 
-	void initNetwork(InfoNode& root);
+	void initNetwork(NodeBase& root);
 
-	void initSuperNetwork(InfoNode& root);
+	void initSuperNetwork(NodeBase& root);
 
-	void initSubNetwork(InfoNode& root);
+	void initSubNetwork(NodeBase& root);
 
-	void initPartition(std::vector<InfoNode*>& nodes);
+	void initPartition(std::vector<NodeBase*>& nodes);
 
 	// ===================================================
 	// Codelength
 	// ===================================================
 
-	double calcCodelength(const InfoNode& parent) const;
+	double calcCodelength(const NodeBase& parent) const;
 
-	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
+	void addMemoryContributions(NodeBase& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
 
-	double getDeltaCodelengthOnMovingNode(InfoNode& current,
+	double getDeltaCodelengthOnMovingNode(NodeBase& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
 
 	// ===================================================
 	// Consolidation
 	// ===================================================
 
-	void updateCodelengthOnMovingNode(InfoNode& current,
+	void updateCodelengthOnMovingNode(NodeBase& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
 
-	void consolidateModules(std::vector<InfoNode*>& modules);
+	void consolidateModules(std::vector<NodeBase*>& modules);
 
 	// ===================================================
 	// Debug
@@ -111,21 +114,21 @@ protected:
 	// ===================================================
 	// Protected member functions
 	// ===================================================
-	double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+	double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent) const;
 
 	// ===================================================
 	// Init
 	// ===================================================
 
-	void initPhysicalNodes(InfoNode& root);
+	void initPhysicalNodes(NodeBase& root);
 
-	void initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes);
+	void initPartitionOfPhysicalNodes(std::vector<NodeBase*>& nodes);
 
 	// ===================================================
 	// Codelength
 	// ===================================================
 
-	void calculateCodelength(std::vector<InfoNode*>& nodes);
+	void calculateCodelength(std::vector<NodeBase*>& nodes);
 
 	using Base::calculateCodelengthTerms;
 
@@ -137,11 +140,17 @@ protected:
 	// Consolidation
 	// ===================================================
 
-	void updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
+	void updatePhysicalNodes(NodeBase& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
-	void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
+	void addMemoryContributionsAndUpdatePhysicalNodes(NodeBase& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
+
+	const NodeType& getNode(const NodeBase&) const;
 
 public:
+	NodeBase* createNode() const;
+	NodeBase* createNode(const NodeBase&) const;
+	NodeBase* createNode(FlowDataType) const;
+
 	// ===================================================
 	// Public member variables
 	// ===================================================

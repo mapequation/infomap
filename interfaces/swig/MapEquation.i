@@ -5,7 +5,7 @@
 #include "src/core/MapEquation.h"
 %}
 
-%include "InfoNode.i"
+%include "NodeBase.i"
 
 /* Parse the header file to generate wrappers */
 %include "src/core/MapEquation.h"

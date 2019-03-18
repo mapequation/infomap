@@ -6,7 +6,7 @@
 %}
 
 %include "MapEquation.i"
-%include "InfoNode.i"
+%include "NodeBase.i"
 
 /* Parse the header file to generate wrappers */
 %include "src/core/MemMapEquation.h"

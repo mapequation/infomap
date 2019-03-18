@@ -1,5 +1,5 @@
 /*
- * InfoNode.h
+ * NodeBase.h
  *
  *  Created on: 19 feb 2015
  *      Author: Daniel
@@ -26,37 +26,37 @@ namespace infomap {
 
 class InfomapBase;
 
-class InfoNode
+class NodeBase
 {
 public:
-	typedef Edge<InfoNode>								EdgeType;
+	typedef Edge<NodeBase>								EdgeType;
 
 	// Iterators
-	typedef ChildIterator<InfoNode*>					child_iterator;
-	typedef ChildIterator<InfoNode const*>			const_child_iterator;
-	typedef InfomapChildIterator<InfoNode*>					infomap_child_iterator;
-	typedef InfomapChildIterator<InfoNode const*>			const_infomap_child_iterator;
+	typedef ChildIterator<NodeBase*>					child_iterator;
+	typedef ChildIterator<NodeBase const*>			const_child_iterator;
+	typedef InfomapChildIterator<NodeBase*>					infomap_child_iterator;
+	typedef InfomapChildIterator<NodeBase const*>			const_infomap_child_iterator;
 
-	typedef TreeIterator<InfoNode*>					tree_iterator;
-	typedef TreeIterator<InfoNode const*>			const_tree_iterator;
+	typedef TreeIterator<NodeBase*>					tree_iterator;
+	typedef TreeIterator<NodeBase const*>			const_tree_iterator;
 
-	// typedef SiblingIterator<InfoNode*>					sibling_iterator;
-	// typedef SiblingIterator<InfoNode const*>			const_sibling_iterator;
-	// typedef LeafNodeIterator<InfoNode*>					leaf_iterator;
-	// typedef LeafNodeIterator<InfoNode const*>			const_leaf_iterator;
-	// typedef LeafModuleIterator<InfoNode*>				leaf_module_iterator;
-	// typedef LeafModuleIterator<InfoNode const*>			const_leaf_module_iterator;
+	// typedef SiblingIterator<NodeBase*>					sibling_iterator;
+	// typedef SiblingIterator<NodeBase const*>			const_sibling_iterator;
+	// typedef LeafNodeIterator<NodeBase*>					leaf_iterator;
+	// typedef LeafNodeIterator<NodeBase const*>			const_leaf_iterator;
+	// typedef LeafModuleIterator<NodeBase*>				leaf_module_iterator;
+	// typedef LeafModuleIterator<NodeBase const*>			const_leaf_module_iterator;
 
-	// typedef DepthFirstIterator<InfoNode*, true>			pre_depth_first_iterator;
-	// typedef DepthFirstIterator<InfoNode const*, true>	const_pre_depth_first_iterator;
-	// typedef DepthFirstIterator<InfoNode*, false>		post_depth_first_iterator;
-	// typedef DepthFirstIterator<InfoNode const*, false>	const_post_depth_first_iterator;
+	// typedef DepthFirstIterator<NodeBase*, true>			pre_depth_first_iterator;
+	// typedef DepthFirstIterator<NodeBase const*, true>	const_pre_depth_first_iterator;
+	// typedef DepthFirstIterator<NodeBase*, false>		post_depth_first_iterator;
+	// typedef DepthFirstIterator<NodeBase const*, false>	const_post_depth_first_iterator;
 
-	// typedef InfomapDepthFirstIterator<InfoNode*>		infomap_depth_first_iterator;
-	// typedef InfomapDepthFirstIterator<InfoNode const*>	const_infomap_depth_first_iterator;
+	// typedef InfomapDepthFirstIterator<NodeBase*>		infomap_depth_first_iterator;
+	// typedef InfomapDepthFirstIterator<NodeBase const*>	const_infomap_depth_first_iterator;
 
-	// typedef InfomapClusterIterator<InfoNode*>			infomap_cluster_iterator;
-	// typedef InfomapClusterIterator<InfoNode const*>		const_infomap_cluster_iterator;
+	// typedef InfomapClusterIterator<NodeBase*>			infomap_cluster_iterator;
+	// typedef InfomapClusterIterator<NodeBase const*>		const_infomap_cluster_iterator;
 
 	typedef std::vector<EdgeType*>::iterator				edge_iterator;
 	typedef std::vector<EdgeType*>::const_iterator			const_edge_iterator;
@@ -76,8 +76,8 @@ public:
 
 public:
 
-	FlowData data;
-	FlowDataInt dataInt;
+	// FlowData data; // In derived classes
+	
 	unsigned int index = 0; // Temporary index used in finding best module
 //	unsigned int originalIndex = 0; // Index in the original network (for leaf nodes)
 	/*const*/ unsigned int stateId = 0; // Unique state node id for the leaf nodes
@@ -85,14 +85,14 @@ public:
 	/*const*/ unsigned int layerId = 0; // Layer id for multilayer networks
 	std::vector<int> metaData; // Categorical value for each meta data dimension
 
-	InfoNode* owner = nullptr; // Infomap owner (if this is an Infomap root)
-	InfoNode* parent = nullptr;
-	InfoNode* previous = nullptr; // sibling
-	InfoNode* next = nullptr; // sibling
-	InfoNode* firstChild = nullptr;
-	InfoNode* lastChild = nullptr;
-	InfoNode* collapsedFirstChild = nullptr;
-	InfoNode* collapsedLastChild = nullptr;
+	NodeBase* owner = nullptr; // Infomap owner (if this is an Infomap root)
+	NodeBase* parent = nullptr;
+	NodeBase* previous = nullptr; // sibling
+	NodeBase* next = nullptr; // sibling
+	NodeBase* firstChild = nullptr;
+	NodeBase* lastChild = nullptr;
+	NodeBase* collapsedFirstChild = nullptr;
+	NodeBase* collapsedLastChild = nullptr;
 	double codelength = 0.0; //TODO: Better design for hierarchical stuff!?
 	bool dirty = false;
 
@@ -115,24 +115,20 @@ protected:
 
 public:
 
-	InfoNode(const FlowData& flowData)
-	: data(flowData) {};
+	NodeBase() {};
 
 	// For first order nodes, physicalId equals stateId
-	InfoNode(const FlowData& flowData, unsigned int stateId)
-	: data(flowData), stateId(stateId), physicalId(stateId) {};
+	NodeBase(unsigned int stateId)
+	: stateId(stateId), physicalId(stateId) {};
 
-	InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId)
-	: data(flowData), stateId(stateId), physicalId(physicalId) {};
+	NodeBase(unsigned int stateId, unsigned int physicalId)
+	: stateId(stateId), physicalId(physicalId) {};
 
-	InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId, unsigned int layerId)
-	: data(flowData), stateId(stateId), physicalId(physicalId), layerId(layerId) {};
+	NodeBase(unsigned int stateId, unsigned int physicalId, unsigned int layerId)
+	: stateId(stateId), physicalId(physicalId), layerId(layerId) {};
 
-	InfoNode() {};
-
-	InfoNode(const InfoNode& other)
-	:	data(other.data),
-		index(other.index),
+	NodeBase(const NodeBase& other)
+	:	index(other.index),
 		stateId(other.stateId),
 		physicalId(other.physicalId),
 		layerId(other.layerId),
@@ -153,12 +149,11 @@ public:
 	{}
 
 
-	~InfoNode();
+	virtual ~NodeBase();
 
 	
-	InfoNode& operator=(const InfoNode& other)
+	NodeBase& operator=(const NodeBase& other)
 	{
-		data = other.data;
 		index = other.index;
 		stateId = other.stateId;
 		physicalId = other.physicalId;
@@ -182,15 +177,36 @@ public:
 
 	// ---------------------------- Getters ----------------------------
 
+	// ---------------------------- Data ----------------------------
+
+	virtual void copyData(NodeBase& other) {}
+
+	virtual void resetFlow() {}
+	virtual void setFlow(double flow) {}
+	virtual void setFlow(unsigned int flow) {}
+	virtual void addFlow(double flow) {}
+	virtual void addFlow(unsigned int flow) {}
+	virtual void setEnterFlow(double flow) {}
+	virtual void setExitFlow(double flow) {}
+	virtual void setEnterExitFlow(unsigned int flow) {}
+	virtual void addEnterFlow(double flow) {}
+	virtual void addExitFlow(double flow) {}
+	virtual void addEnterExitFlow(unsigned int flow) {}
+	virtual double getFlow() const { return 0; };
+	virtual double getEnterFlow() const { return 0; };
+	virtual double getExitFlow() const { return 0; };
+	virtual unsigned int getFlowInt() const { return 0; };
+	virtual unsigned int getEnterExitFlow() const { return 0; };
+	virtual FlowData getFlowData() const { return 0; };
 
 	// ---------------------------- Infomap ----------------------------
 	InfomapBase& getInfomap();
 
 	InfomapBase& setInfomap(InfomapBase*);
 
-	InfoNode* getInfomapRoot();
+	NodeBase* getInfomapRoot();
 
-	InfoNode const* getInfomapRoot() const;
+	NodeBase const* getInfomapRoot() const;
 
 	/**
 	 * Dispose the Infomap instance if it exists
@@ -354,14 +370,14 @@ public:
 
 	// ---------------------------- Operators ----------------------------
 
-	bool operator ==(const InfoNode& rhs) const
+	bool operator ==(const NodeBase& rhs) const
 	{ return this == &rhs; }
 
-	bool operator !=(const InfoNode& rhs) const
+	bool operator !=(const NodeBase& rhs) const
 	{ return this != &rhs; }
 
 
-	friend std::ostream& operator<<(std::ostream& out, const InfoNode& node) {
+	friend std::ostream& operator<<(std::ostream& out, const NodeBase& node) {
 		if (node.isLeaf())
 			out << "[" << node.physicalId << "]";
 		else
@@ -395,7 +411,7 @@ public:
 
 	void setNumLeafNodes(unsigned int value);
 
-	void addChild(InfoNode* child);
+	void addChild(NodeBase* child);
 
 	void releaseChildren();
 
@@ -404,7 +420,7 @@ public:
 	 * with a single new node, assuming grandchildren.
 	 * @return the single child
 	 */
-	InfoNode& replaceChildrenWithOneNode();
+	NodeBase& replaceChildrenWithOneNode();
 
 	/**
 	 * @return 1 if the node is removed, otherwise 0
@@ -413,8 +429,8 @@ public:
 
 	void replaceWithChildrenDebug();
 
-	// void storeModulesIn(InfoNode& other);
-	// void restoreModulesTo(InfoNode& other);
+	// void storeModulesIn(NodeBase& other);
+	// void restoreModulesTo(NodeBase& other);
 
 	/**
 	 * @return The number of children removed
@@ -427,7 +443,7 @@ public:
 
 	void deleteChildren();
 
-	EdgeType* addOutEdge(InfoNode& target, double weight, double flow = 0.0)
+	EdgeType* addOutEdge(NodeBase& target, double weight, double flow = 0.0)
 	{
 		EdgeType* edge = new EdgeType(*this, target, weight, flow);
 		m_outEdges.push_back(edge);

@@ -11,19 +11,22 @@
 #include <utility>
 #include "MapEquation.h"
 #include "FlowData.h"
-// #include "InfoNode.h"
+// #include "NodeBase.h"
 #include "../utils/Log.h"
 #include "../utils/MetaCollection.h"
 
 namespace infomap {
 
-class InfoNode;
+class NodeBase;
+template<class FlowDataType>
+class Node;
 
 class MetaMapEquation : protected MapEquation {
 	using Base = MapEquation;
 public:
 	using FlowDataType = FlowData;
 	using DeltaFlowDataType = DeltaFlow;
+	using NodeBaseType = Node<FlowDataType>;
 
 	MetaMapEquation() : MapEquation() {}
 
@@ -76,33 +79,37 @@ public:
 
 	void init(const Config& config);
 
-	void initNetwork(InfoNode& root);
+	void initNetwork(NodeBase& root);
 
-	void initSuperNetwork(InfoNode& root);
+	void initSuperNetwork(NodeBase& root);
 
-	void initSubNetwork(InfoNode& root);
+	void initSubNetwork(NodeBase& root);
 
-	void initPartition(std::vector<InfoNode*>& nodes);
+	void initPartition(std::vector<NodeBase*>& nodes);
 
 	// ===================================================
 	// Codelength
 	// ===================================================
 
-	double calcCodelength(const InfoNode& parent) const;
+	double calcCodelength(const NodeBase& parent) const;
 	
-	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
+	void addMemoryContributions(NodeBase& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
 
-	double getDeltaCodelengthOnMovingNode(InfoNode& current,
+	double getDeltaCodelengthOnMovingNode(NodeBase& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
 
 	// ===================================================
 	// Consolidation
 	// ===================================================
 
-	void updateCodelengthOnMovingNode(InfoNode& current,
+	void updateCodelengthOnMovingNode(NodeBase& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
 
-	void consolidateModules(std::vector<InfoNode*>& modules);
+	void consolidateModules(std::vector<NodeBase*>& modules);
+
+	using Base::createNode;
+	using Base::getNode;
+	// const NodeBaseType& getNode(const NodeBase&) const;
 
 	// ===================================================
 	// Debug
@@ -114,21 +121,21 @@ protected:
 	// ===================================================
 	// Protected member functions
 	// ===================================================
-	double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+	double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent) const;
 
 	// ===================================================
 	// Init
 	// ===================================================
 
-	void initMetaNodes(InfoNode& root);
+	void initMetaNodes(NodeBase& root);
 
-	void initPartitionOfMetaNodes(std::vector<InfoNode*>& nodes);
+	void initPartitionOfMetaNodes(std::vector<NodeBase*>& nodes);
 
 	// ===================================================
 	// Codelength
 	// ===================================================
 
-	void calculateCodelength(std::vector<InfoNode*>& nodes);
+	void calculateCodelength(std::vector<NodeBase*>& nodes);
 
 	using Base::calculateCodelengthTerms;
 
@@ -138,7 +145,7 @@ protected:
 	// Consolidation
 	// ===================================================
 
-	void updateMetaData(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
+	void updateMetaData(NodeBase& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
 public:
 	// ===================================================
@@ -159,7 +166,7 @@ protected:
 	 * @param addRemoveOrNothing +1, -1 or 0 to calculate codelength
 	 * as ifcurrent node was added, removed or untouched in current module
 	 */
-	double getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing);
+	double getCurrentModuleMetaCodelength(unsigned int module, NodeBase& current, int addRemoveOrNothing);
 
 	// ===================================================
 	// Protected member variables

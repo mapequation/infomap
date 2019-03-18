@@ -10,13 +10,16 @@
 #include "../io/Config.h"
 #include "../utils/Log.h"
 #include "../utils/VectorMap.h"
-#include "InfoNode.h"
+#include "NodeBase.h"
+#include "Node.h"
 #include "FlowData.h"
 #include <vector>
 #include <map>
 #include <iostream>
 
 namespace infomap {
+
+	using NodeType = Node<FlowData>;
 
 // ===================================================
 // Getters
@@ -45,36 +48,36 @@ void MapEquation::init(const Config& config)
 	Log(3) << "MapEquation::init()...\n";
 }
 
-void MapEquation::initNetwork(InfoNode& root)
+void MapEquation::initNetwork(NodeBase& root)
 {
 	Log(3) << "MapEquation::initNetwork()...\n";
 
 	nodeFlow_log_nodeFlow = 0.0;
-	for (InfoNode& node : root)
+	for (NodeBase& node : root)
 	{
-		nodeFlow_log_nodeFlow += infomath::plogp(node.data.flow);
+		nodeFlow_log_nodeFlow += infomath::plogp(getNode(node).data.flow);
 	}
 	initSubNetwork(root);
 }
 
-void MapEquation::initSuperNetwork(InfoNode& root)
+void MapEquation::initSuperNetwork(NodeBase& root)
 {
 	Log(3) << "MapEquation::initSuperNetwork()...\n";
 
 	nodeFlow_log_nodeFlow = 0.0;
-	for (InfoNode& node : root)
+	for (NodeBase& node : root)
 	{
-		nodeFlow_log_nodeFlow += infomath::plogp(node.data.enterFlow);
+		nodeFlow_log_nodeFlow += infomath::plogp(getNode(node).data.enterFlow);
 	}
 }
 
-void MapEquation::initSubNetwork(InfoNode& root)
+void MapEquation::initSubNetwork(NodeBase& root)
 {
-	exitNetworkFlow = root.data.exitFlow;
+	exitNetworkFlow = getNode(root).data.exitFlow;
 	exitNetworkFlow_log_exitNetworkFlow = infomath::plogp(exitNetworkFlow);
 }
 
-void MapEquation::initPartition(std::vector<InfoNode*>& nodes)
+void MapEquation::initPartition(std::vector<NodeBase*>& nodes)
 {
 	calculateCodelength(nodes);
 }
@@ -84,14 +87,14 @@ void MapEquation::initPartition(std::vector<InfoNode*>& nodes)
 // Codelength
 // ===================================================
 
-void MapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
+void MapEquation::calculateCodelength(std::vector<NodeBase*>& nodes)
 {
 	calculateCodelengthTerms(nodes);
 
 	calculateCodelengthFromCodelengthTerms();
 }
 
-void MapEquation::calculateCodelengthTerms(std::vector<InfoNode*>& nodes)
+void MapEquation::calculateCodelengthTerms(std::vector<NodeBase*>& nodes)
 {
 	enter_log_enter = 0.0;
 	flow_log_flow = 0.0;
@@ -99,9 +102,9 @@ void MapEquation::calculateCodelengthTerms(std::vector<InfoNode*>& nodes)
 	enterFlow = 0.0;
 
 	// For each module
-	for (InfoNode* n : nodes)
+	for (NodeBase* n : nodes)
 	{
-		InfoNode& node = *n;
+		const NodeType& node = getNode(*n);
 		// own node/module codebook
 		flow_log_flow += infomath::plogp(node.data.flow + node.data.exitFlow);
 
@@ -121,13 +124,14 @@ void MapEquation::calculateCodelengthFromCodelengthTerms()
 	codelength = indexCodelength + moduleCodelength;
 }
 
-double MapEquation::calcCodelength(const InfoNode& parent) const
+double MapEquation::calcCodelength(const NodeBase& parent) const
 {
 	return parent.isLeafModule()? calcCodelengthOnModuleOfLeafNodes(parent) : calcCodelengthOnModuleOfModules(parent);
 }
 
-double MapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
+double MapEquation::calcCodelengthOnModuleOfLeafNodes(const NodeBase& p) const
 {
+	auto& parent = getNode(p);
 	double parentFlow = parent.data.flow;
 	double parentExit = parent.data.exitFlow;
 	double totalParentFlow = parentFlow + parentExit;
@@ -137,7 +141,7 @@ double MapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) co
 	double indexLength = 0.0;
 	for (const auto& node : parent)
 	{
-		indexLength -= infomath::plogp(node.data.flow / totalParentFlow);
+		indexLength -= infomath::plogp(getNode(node).data.flow / totalParentFlow);
 	}
 	indexLength -= infomath::plogp(parentExit / totalParentFlow);
 
@@ -146,8 +150,9 @@ double MapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) co
 	return indexLength;
 }
 
-double MapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent) const
+double MapEquation::calcCodelengthOnModuleOfModules(const NodeBase& p) const
 {
+	auto& parent = getNode(p);
 	double parentFlow = parent.data.flow;
 	double parentExit = parent.data.exitFlow;
 	if (parentFlow < 1e-16)
@@ -164,8 +169,9 @@ double MapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent) cons
 	// As T is not known, use expanded format to avoid two loops
 	double sumEnter = 0.0;
 	double sumEnterLogEnter = 0.0;
-	for (const auto& node : parent)
+	for (const auto& n : parent)
 	{
+		auto& node = getNode(n);
 		sumEnter += node.data.enterFlow; // rate of enter to finer level
 		sumEnterLogEnter += infomath::plogp(node.data.enterFlow);
 	}
@@ -176,10 +182,11 @@ double MapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent) cons
 }
 
 
-double MapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
+double MapEquation::getDeltaCodelengthOnMovingNode(NodeBase& curr,
 		DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers)
 {
 	using infomath::plogp;
+	auto& current = getNode(curr);
 	unsigned int oldModule = oldModuleDelta.module;
 	unsigned int newModule = newModuleDelta.module;
 	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
@@ -211,10 +218,11 @@ double MapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 	return deltaL;
 }
 
-void MapEquation::updateCodelengthOnMovingNode(InfoNode& current,
+void MapEquation::updateCodelengthOnMovingNode(NodeBase& curr,
 		DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers)
 {
 	using infomath::plogp;
+	auto& current = getNode(curr);
 	unsigned int oldModule = oldModuleDelta.module;
 	unsigned int newModule = newModuleDelta.module;
 	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
@@ -262,6 +270,25 @@ void MapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 	codelength = indexCodelength + moduleCodelength;
 }
 
+NodeBase* MapEquation::createNode() const
+{
+	return new NodeType();
+}
+
+NodeBase* MapEquation::createNode(const NodeBase& other) const
+{
+	return new NodeType(static_cast<const NodeType&>(other));
+}
+
+NodeBase* MapEquation::createNode(FlowDataType flowData) const
+{
+	return new NodeType(static_cast<const NodeType&>(flowData));
+}
+
+const NodeType& MapEquation::getNode(const NodeBase& other) const
+{
+	return static_cast<const NodeType&>(other);
+}
 
 // ===================================================
 // Debug

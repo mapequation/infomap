@@ -49,14 +49,14 @@ std::map<unsigned int, unsigned int> Infomap::getModules(int level, bool states)
 	std::map<unsigned int, unsigned int> modules;
 	if (haveMemory() && !states) {
 		for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
-			InfoNode &node = *it;
+			NodeBase &node = *it;
 			if (node.isLeaf()) {
 				modules[node.physicalId] = it.moduleIndex();
 			}
 		}
 	} else {
 		for (auto it(iterTree(level)); !it.isEnd(); ++it) {
-			InfoNode &node = *it;
+			NodeBase &node = *it;
 			if (node.isLeaf()) {
 				auto nodeId = states ? node.stateId : node.physicalId;
 				modules[nodeId] = it.moduleIndex();
@@ -74,14 +74,14 @@ std::map<unsigned int, std::vector<unsigned int>> Infomap::getMultilevelModules(
 	for (unsigned int level = 1; level <= numModuleLevels; ++level) {
 		if (haveMemory() && !states) {
 			for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
-				InfoNode &node = *it;
+				NodeBase &node = *it;
 				if (node.isLeaf()) {
 					modules[node.physicalId].push_back(it.moduleIndex());
 				}
 			}
 		} else {
 			for (auto it(iterTree(level)); !it.isEnd(); ++it) {
-				InfoNode &node = *it;
+				NodeBase &node = *it;
 				if (node.isLeaf()) {
 					auto nodeId = states ? node.stateId : node.physicalId;
 					modules[nodeId].push_back(it.moduleIndex());

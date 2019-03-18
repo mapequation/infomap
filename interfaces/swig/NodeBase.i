@@ -2,7 +2,7 @@
 
 %{
 /* Includes the header in the wrapper code */
-#include "src/core/InfoNode.h"
+#include "src/core/NodeBase.h"
 %}
 
 %include "FlowData.i"
@@ -14,4 +14,4 @@ namespace std {
 }
 
 /* Parse the header file to generate wrappers */
-%include "src/core/InfoNode.h"
+%include "src/core/NodeBase.h"

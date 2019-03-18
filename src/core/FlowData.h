@@ -11,10 +11,14 @@ namespace infomap {
 
 struct FlowData
 {
-	FlowData(double flow = 1.0) :
+	double flow;
+	double enterFlow;
+	double exitFlow;
+
+	FlowData(double flow = 1.0, double enterFlow = 0.0, double exitFlow = 0.0) :
 		flow(flow),
-		enterFlow(0.0),
-		exitFlow(0.0)
+		enterFlow(enterFlow),
+		exitFlow(exitFlow)
 	{}
 	FlowData(const FlowData& other) :
 		flow(other.flow),
@@ -28,10 +32,6 @@ struct FlowData
 		exitFlow = other.exitFlow;
 		return *this;
 	}
-
-	double flow;
-	double enterFlow;
-	double exitFlow;
 
 	FlowData& operator+=(const FlowData& other)
 	{
@@ -49,6 +49,24 @@ struct FlowData
 		return *this;
 	}
 
+	void resetFlow() { flow = 0; }
+	void setFlow(double f) { flow = f; }
+	void setFlow(unsigned int f) {}
+	void addFlow(double f) { flow += f; }
+	void addFlow(unsigned int f) {}
+	void setEnterFlow(double f) { enterFlow = f; }
+	void setExitFlow(double f) { exitFlow = f; }
+	void setEnterExitFlow(unsigned int f) {}
+	void addEnterFlow(double f) { enterFlow += f; }
+	void addExitFlow(double f) { exitFlow += f; }
+	void addEnterExitFlow(unsigned int f) {}
+	double getFlow() const { return flow; }
+	double getEnterFlow() const { return enterFlow; }
+	double getExitFlow() const { return exitFlow; }
+	unsigned int getFlowInt() const { return 0; }
+	unsigned int getEnterExitFlow() const { return 0; }
+	FlowData getFlowData() const { return *this; }
+
 	friend std::ostream& operator<<(std::ostream& out, const FlowData& data)
 	{
 		return out << "flow: " << data.flow << ", enter: " << data.enterFlow << ", exit: " << data.exitFlow;
@@ -57,6 +75,9 @@ struct FlowData
 
 struct FlowDataInt
 {
+	unsigned int flow;
+	unsigned int enterExitFlow;
+
 	FlowDataInt(unsigned int flow = 0) :
 		flow(flow),
 		enterExitFlow(0)
@@ -72,9 +93,6 @@ struct FlowDataInt
 		return *this;
 	}
 
-	unsigned int flow;
-	unsigned int enterExitFlow;
-
 	FlowDataInt& operator+=(const FlowDataInt& other)
 	{
 		flow += other.flow;
@@ -88,6 +106,24 @@ struct FlowDataInt
 		enterExitFlow -= other.enterExitFlow;
 		return *this;
 	}
+
+	void resetFlow() { flow = 0; }
+	void setFlow(double f) { }
+	void setFlow(unsigned int f) { flow = f; }
+	void addFlow(double f) {}
+	void addFlow(unsigned int f) { flow += f; }
+	void setEnterFlow(double f) { }
+	void setExitFlow(double f) { }
+	void setEnterExitFlow(unsigned int f) { enterExitFlow = f; }
+	void addEnterFlow(double f) { }
+	void addExitFlow(double f) { }
+	void addEnterExitFlow(unsigned int f) { enterExitFlow += f; }
+	double getFlow() const { return flow; }
+	double getEnterFlow() const { return enterExitFlow; }
+	double getExitFlow() const { return enterExitFlow; }
+	unsigned int getFlowInt() const { return flow; }
+	unsigned int getEnterExitFlow() const { return enterExitFlow; }
+	FlowData getFlowData() const { return FlowData(flow, enterExitFlow, enterExitFlow); }
 
 	friend std::ostream& operator<<(std::ostream& out, const FlowDataInt& data)
 	{

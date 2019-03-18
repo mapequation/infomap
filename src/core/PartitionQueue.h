@@ -8,16 +8,16 @@
 #ifndef SRC_CLUSTERING_CLUSTERING_PARTITIONQUEUE_H_
 #define SRC_CLUSTERING_CLUSTERING_PARTITIONQUEUE_H_
 
-#include "InfoNode.h"
+#include "NodeBase.h"
 
 namespace infomap {
 
 struct PendingModule
 {
 	PendingModule() : module(nullptr) {}
-	PendingModule(InfoNode* m) : module(m) {}
-	InfoNode& operator*() { return *module; }
-	InfoNode* module;
+	PendingModule(NodeBase* m) : module(m) {}
+	NodeBase& operator*() { return *module; }
+	NodeBase* module;
 };
 
 #include <deque>

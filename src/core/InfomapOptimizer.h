@@ -9,29 +9,37 @@
 #include <set>
 #include "../utils/VectorMap.h"
 #include "../utils/infomath.h"
-#include "InfoNode.h"
+#include "Node.h"
 #include "FlowData.h"
 #include <utility>
-#include "GrassbergerMapEquation.h"
 // #include <tuple>
 
 namespace infomap {
 
 template<typename Objective>
 class InfomapOptimizer : public InfomapOptimizerBase {
+public:
 	// using FlowDataType = FlowData;
 	// using DeltaFlowDataType = MemDeltaFlow;
 	using FlowDataType = typename Objective::FlowDataType;
 	using DeltaFlowDataType = typename Objective::DeltaFlowDataType;
+	using EdgeType = Edge<NodeBase>;
+	using NodeType = Node<FlowDataType>;
 
-protected:
-	using EdgeType = Edge<InfoNode>;
-public:
 	InfomapOptimizer() {}
 	
 	virtual ~InfomapOptimizer() {}
 
 	virtual void init(InfomapBase* infomap);
+
+	virtual NodeBase* createNode() const;
+	virtual NodeBase* createNode(const NodeBase&) const;
+	NodeType& getNode(NodeBase& node) const {
+		return static_cast<NodeType&>(node);
+	}
+	const NodeType& getNode(const NodeBase& node) const {
+		return static_cast<const NodeType&>(node);
+	}
 
 	// ===================================================
 	// IO
@@ -53,7 +61,7 @@ public:
 
 protected:
 	
-	// virtual InfomapBase& getInfomap(InfoNode& node);
+	// virtual InfomapBase& getInfomap(NodeBase& node);
 	// virtual InfomapBase* getNewInfomapInstance() const;
 	// virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const;
 
@@ -73,7 +81,7 @@ protected:
 
 	virtual void initSuperNetwork();
 
-	virtual double calcCodelength(const InfoNode& parent) const;
+	virtual double calcCodelength(const NodeBase& parent) const;
 
 	// ===================================================
 	// Run: Partition: *
@@ -123,6 +131,20 @@ void InfomapOptimizer<Objective>::init(InfomapBase* infomap)
 	// m_objective.init(infomap->getConfig());
 	Config& conf = infomap->getConfig();
 	m_objective.init(conf);
+}
+
+template<typename Objective>
+inline
+NodeBase* InfomapOptimizer<Objective>::createNode() const
+{
+	return m_objective.createNode();
+}
+
+template<typename Objective>
+inline
+NodeBase* InfomapOptimizer<Objective>::createNode(const NodeBase& other) const
+{
+	return m_objective.createNode(other);
 }
 
 // ===================================================
@@ -199,7 +221,7 @@ void InfomapOptimizer<Objective>::initSuperNetwork()
 
 template<typename Objective>
 inline
-double InfomapOptimizer<Objective>::calcCodelength(const InfoNode& parent) const
+double InfomapOptimizer<Objective>::calcCodelength(const NodeBase& parent) const
 {
 	return m_objective.calcCodelength(parent);
 }
@@ -226,7 +248,7 @@ void InfomapOptimizer<Objective>::initPartition()
 	unsigned int i = 0;
 	for (auto& nodePtr : network)
 	{
-		InfoNode& node = *nodePtr;
+		auto& node = getNode(*nodePtr);
 		node.index = i; // Unique module index for each node
 		m_moduleFlowData[i] = node.data;
 		node.dirty = true;
@@ -237,36 +259,6 @@ void InfomapOptimizer<Objective>::initPartition()
 
 	// Log(3) << "Initiated to codelength " << m_objective << " in " << numActiveModules() << " modules." << std::endl;
 }
-
-template<>
-inline
-void InfomapOptimizer<GrassbergerMapEquation>::initPartition()
-{
-	auto& network = m_infomap->activeNetwork();
-	Log(4) << "InfomapOptimizer::initPartition() with " << network.size() << " nodes..." << std::endl;
-
-	// Init one module for each node
-	unsigned int numNodes = network.size();
-	m_moduleFlowData.resize(numNodes);
-	m_moduleMembers.assign(numNodes, 1);
-	m_emptyModules.clear();
-	m_emptyModules.reserve(numNodes);
-
-	unsigned int i = 0;
-	for (auto& nodePtr : network)
-	{
-		InfoNode& node = *nodePtr;
-		node.index = i; // Unique module index for each node
-		m_moduleFlowData[i] = node.dataInt;
-		node.dirty = true;
-		++i;
-	}
-
-	m_objective.initPartition(network);
-
-	// Log(3) << "Initiated to codelength " << m_objective << " in " << numActiveModules() << " modules." << std::endl;
-}
-
 
 template<typename Objective>
 inline
@@ -280,14 +272,14 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredifinedModules(std::vector
 
 	for (unsigned int i = 0; i < numNodes; ++i)
 	{
-		InfoNode& current = *network[i];
+		NodeBase& current = *network[i];
 		unsigned int oldM = current.index;
 		unsigned int newM = modules[i];
 
 		if (newM != oldM)
 		{
-			DeltaFlowDataType oldModuleDelta(oldM, 0.0, 0.0);
-			DeltaFlowDataType newModuleDelta(newM, 0.0, 0.0);
+			DeltaFlowDataType oldModuleDelta(oldM, 0, 0);
+			DeltaFlowDataType newModuleDelta(newM, 0, 0);
 
 
 			// For all outlinks
@@ -309,71 +301,6 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredifinedModules(std::vector
 					oldModuleDelta.deltaEnter += edge.data.flow;
 				else if (otherModule == newM)
 					newModuleDelta.deltaEnter += edge.data.flow;
-			}
-
-
-			//Update empty module vector
-			if(m_moduleMembers[newM] == 0)
-			{
-				m_emptyModules.pop_back();
-			}
-			if(m_moduleMembers[current.index] == 1)
-			{
-				m_emptyModules.push_back(oldM);
-			}
-
-			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, m_moduleFlowData, m_moduleMembers);
-
-			m_moduleMembers[oldM] -= 1;
-			m_moduleMembers[newM] += 1;
-
-			current.index = newM;
-			++numMoved;
-		}
-	}
-}
-
-template<>
-inline
-void InfomapOptimizer<GrassbergerMapEquation>::moveActiveNodesToPredifinedModules(std::vector<unsigned int>& modules)
-{
-	auto& network = m_infomap->activeNetwork();
-	unsigned int numNodes = network.size();
-	if (modules.size() != numNodes)
-		throw std::length_error("Size of predefined modules differ from size of active network.");
-	unsigned int numMoved = 0;
-
-	for (unsigned int i = 0; i < numNodes; ++i)
-	{
-		InfoNode& current = *network[i];
-		unsigned int oldM = current.index;
-		unsigned int newM = modules[i];
-
-		if (newM != oldM)
-		{
-			DeltaFlowDataType oldModuleDelta(oldM, 0, 0);
-			DeltaFlowDataType newModuleDelta(newM, 0, 0);
-
-
-			// For all outlinks
-			for (auto& e : current.outEdges())
-			{
-				auto& edge = *e;
-				unsigned int otherModule = edge.target.index;
-				if (otherModule == oldM)
-					oldModuleDelta.deltaExit += 1; // TODO: edge.data.weight;
-				else if (otherModule == newM)
-					newModuleDelta.deltaExit += 1; // TODO: edge.data.weight;
-			}
-			// For all inlinks
-			for (auto& e : current.inEdges())
-			{
-				auto& edge = *e;
-				unsigned int otherModule = edge.source.index;
-				if (otherModule == oldM)
-					oldModuleDelta.deltaEnter += 1; // TODO: edge.data.weight;
-				else if (otherModule == newM)
-					newModuleDelta.deltaEnter += 1; // TODO: edge.data.weight;
 			}
 
 
@@ -455,7 +382,7 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 
 // 	for (unsigned int i = 0; i < numNodes; ++i)
 // 	{
-// 		InfoNode& current = *network[nodeEnumeration[i]];
+// 		NodeBase& current = *network[nodeEnumeration[i]];
 
 // //		Log(5) << "Trying to move node " << current << " from module " << current.index << "...\n";
 
@@ -488,7 +415,7 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 // 		for (auto& e : current.outEdges())
 // 		{
 // 			auto& edge = *e;
-// 			InfoNode& neighbour = edge.target;
+// 			NodeBase& neighbour = edge.target;
 // 			deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0);
 // 			// deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0));
 // 		}
@@ -496,7 +423,7 @@ unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 // 		for (auto& e : current.inEdges())
 // 		{
 // 			auto& edge = *e;
-// 			InfoNode& neighbour = edge.source;
+// 			NodeBase& neighbour = edge.source;
 // 			// timer.start();
 // 			deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow);
 // 			// deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow));
@@ -659,7 +586,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
 	for (unsigned int i = 0; i < numNodes; ++i)
 	{
-		InfoNode& current = *network[nodeEnumeration[i]];
+		NodeBase& current = *network[nodeEnumeration[i]];
 
 //		Log(5) << "Trying to move node " << current << " from module " << current.index << "...\n";
 
@@ -691,214 +618,18 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 		for (auto& e : current.outEdges())
 		{
 			auto& edge = *e;
-			InfoNode& neighbour = edge.target;
-			// deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0);
-			deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0));
+			NodeBase& neighbour = edge.target;
+			// deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, edge.data.flow, 0);
+			deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0));
 		}
 		// For all inlinks
 		for (auto& e : current.inEdges())
 		{
 			auto& edge = *e;
-			InfoNode& neighbour = edge.source;
+			NodeBase& neighbour = edge.source;
 			// timer.start();
-			// deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow);
-			deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow));
-			// t += timer.getElapsedTimeInMilliSec();
-			// ++tCount;
-		}
-
-		// For not moving
-		deltaFlow.add(current.index, DeltaFlowDataType(current.index, 0.0, 0.0));
-		DeltaFlowDataType oldModuleDelta = deltaFlow[current.index];
-		oldModuleDelta.module = current.index; // Make sure index is correct if created new
-		// ++oldModuleDelta.count;
-		// oldModuleDelta += DeltaFlowDataType(current.index, 0.0, 0.0);
-
-		// Option to move to empty module (if node not already alone)
-		if (m_moduleMembers[current.index] > 1 && m_emptyModules.size() > 0) {
-			// deltaFlow[m_emptyModules.back()] += DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0);
-			deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
-		}
-
-		// For memory networks
-		m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
-
-		auto& moduleDeltaEnterExit = deltaFlow.values();
-		unsigned int numModuleLinks = deltaFlow.size();
-
-
-		// Randomize link order for optimized search
-		if (numModuleLinks > 2) {
-			for (unsigned int j = 0; j < numModuleLinks - 2; ++j)
-			{
-				unsigned int randPos = m_infomap->m_rand.randInt(j+1, numModuleLinks - 1);
-				swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
-			}
-		}
-
-		DeltaFlowDataType bestDeltaModule(oldModuleDelta);
-		double bestDeltaCodelength = 0.0;
-		DeltaFlowDataType strongestConnectedModule(oldModuleDelta);
-		double deltaCodelengthOnStrongestConnectedModule = 0.0;
-
-		// Log(5) << "Move node " << current << " in module " << current.index << "...\n";
-		// Find the move that minimizes the description length
-		for (unsigned int j = 0; j < numModuleLinks; ++j)
-		{
-			// if (moduleDeltaEnterExit[j].count == 0) {
-			// 	continue;
-			// }
-			unsigned int otherModule = moduleDeltaEnterExit[j].module;
-			if(otherModule != current.index)
-			{
-				double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
-						oldModuleDelta, moduleDeltaEnterExit[j], m_moduleFlowData, m_moduleMembers);
-
-				// Log(5) << " Move to module " << otherModule << " -> deltaCodelength: " << deltaCodelength <<
-				// 		", deltaEnter: " << moduleDeltaEnterExit[j].deltaEnter << ", deltaExit: " << moduleDeltaEnterExit[j].deltaExit <<
-				// 		", module enter/exit: " << m_moduleFlowData[otherModule].enterFlow << " / " << m_moduleFlowData[otherModule].exitFlow <<
-				// 		", OLD delta enter/exit: " << oldModuleDelta.deltaEnter << " / " << oldModuleDelta.deltaExit << "\n";
-				if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement)
-				{
-					bestDeltaModule = moduleDeltaEnterExit[j];
-					bestDeltaCodelength = deltaCodelength;
-				}
-
-				// Save strongest connected module to prefer if codelength improvement equal
-				if (moduleDeltaEnterExit[j].deltaExit > strongestConnectedModule.deltaExit)
-				{
-					strongestConnectedModule = moduleDeltaEnterExit[j];
-					deltaCodelengthOnStrongestConnectedModule = deltaCodelength;
-				}
-			}
-		}
-
-		// Prefer strongest connected module if equal delta codelength
-		if (strongestConnectedModule.module != bestDeltaModule.module &&
-				deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + m_infomap->minimumSingleNodeCodelengthImprovement)
-		{
-			bestDeltaModule = strongestConnectedModule;
-		}
-
-		// Make best possible move
-		if(bestDeltaModule.module != current.index)
-		{
-			unsigned int bestModuleIndex = bestDeltaModule.module;
-			//Update empty module vector
-			if(m_moduleMembers[bestModuleIndex] == 0)
-			{
-				m_emptyModules.pop_back();
-			}
-			if(m_moduleMembers[current.index] == 1)
-			{
-				m_emptyModules.push_back(current.index);
-			}
-
-			// timer.start();
-			m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
-			// t += timer.getElapsedTimeInMilliSec();
-			// ++tCount;
-
-			m_moduleMembers[current.index] -= 1;
-			m_moduleMembers[bestModuleIndex] += 1;
-
-			// double oldCodelength = m_objective.getCodelength();
-			// Log(5) << " --> Moved to module " << bestModuleIndex << " -> codelength: " << oldCodelength << " + " <<
-			// 		bestDeltaCodelength << " (" << (m_objective.getCodelength() - oldCodelength) << ") = " << m_objective << "\n";
-
-//			unsigned int oldModuleIndex = current.index;
-			current.index = bestModuleIndex;
-
-			++numMoved;
-
-			// Mark neighbours as dirty
-			for (auto& e : current.outEdges())
-				e->target.dirty = true;
-			for (auto& e : current.inEdges())
-				e->source.dirty = true;
-		}
-		else
-			current.dirty = false;
-
-//		if (!current.dirty)
-//			Log(5) << " --> Didn't move!\n";
-
-	}
-
-	// Log() << " !!! " << t << "/" << tCount << " = " << t / tCount << " !!! ";
-
-	return numMoved;
-}
-
-template<>
-inline
-unsigned int InfomapOptimizer<GrassbergerMapEquation>::tryMoveEachNodeIntoBestModule()
-{
-	// m_rand.seed(123);
-	// Get random enumeration of nodes
-	auto& network = m_infomap->activeNetwork();
-	std::vector<unsigned int> nodeEnumeration(network.size());
-	m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
-
-	unsigned int numNodes = nodeEnumeration.size();
-	unsigned int numMoved = 0;
-
-	// Create map with module links
-	// std::vector<DeltaFlowData> deltaFlow(numNodes);
-	VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
-	// SimpleMap<DeltaFlowDataType> deltaFlow(numNodes);
-	// SimpleMap<DeltaFlowDataType> deltaFlow2(numNodes);
-	// Stopwatch timer(false);
-	// double t = 0.0;
-	// double tCount = 0;
-
-	for (unsigned int i = 0; i < numNodes; ++i)
-	{
-		InfoNode& current = *network[nodeEnumeration[i]];
-
-//		Log(5) << "Trying to move node " << current << " from module " << current.index << "...\n";
-
-		if (!current.dirty)
-			continue;
-
-		// If other nodes have moved here, don't move away on first loop
-		if (m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
-			continue;
-
-		// If no links connecting this node with other nodes, it won't move into others,
-		// and others won't move into this. TODO: Always best leave it alone?
-		// For memory networks, don't skip try move to same physical node!
-		// if (current.degree() == 0)
-		// {
-		// 	current.dirty = false;
-		// 	continue;
-		// }
-
-		// Create map with module links
-		// std::unordered_map<unsigned int, DeltaFlowDataType> deltaFlow;
-		// deltaFlow.rehash(numNodes);
-		// for (auto& d : deltaFlow) {
-		// 	d.reset();
-		// }
-		deltaFlow.startRound();
-
-		//TODO: Support edge.data.weight instead of 1 for edge weights
-		// For all outlinks
-		for (auto& e : current.outEdges())
-		{
-			auto& edge = *e;
-			InfoNode& neighbour = edge.target;
-			// deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, 1, 0);
-			deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 1, 0));
-		}
-		// For all inlinks
-		for (auto& e : current.inEdges())
-		{
-			auto& edge = *e;
-			InfoNode& neighbour = edge.source;
-			// timer.start();
-			// deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, 0, 1);
-			deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0, 1));
+			// deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, 0, edge.data.flow);
+			deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0, edge.data.flow));
 			// t += timer.getElapsedTimeInMilliSec();
 			// ++tCount;
 		}
@@ -1062,7 +793,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 	{
 //		printf("Node %d processed by thread %d\n", i, omp_get_thread_num());
 		// Pick nodes in random order
-		InfoNode& current = *network[nodeEnumeration[i]];
+		NodeBase& current = *network[nodeEnumeration[i]];
 
 //		Log(5) << "Trying to move node " << current << " from module " << current.index << "...\n";
 
@@ -1091,7 +822,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 		for (auto& e : current.outEdges())
 		{
 			auto& edge = *e;
-			InfoNode& neighbour = edge.target;
+			NodeBase& neighbour = edge.target;
 			// deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0);
 			deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0));
 		}
@@ -1099,7 +830,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 		for (auto& e : current.inEdges())
 		{
 			auto& edge = *e;
-			InfoNode& neighbour = edge.source;
+			NodeBase& neighbour = edge.source;
 			// timer.start();
 			// deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow);
 			deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow));
@@ -1340,9 +1071,9 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 
 	auto& network = m_infomap->activeNetwork();
 	unsigned int numNodes = network.size();
-	std::vector<InfoNode*> modules(numNodes, nullptr);
+	std::vector<NodeBase*> modules(numNodes, nullptr);
 
-	InfoNode& firstActiveNode = *network[0];
+	NodeBase& firstActiveNode = *network[0];
 	unsigned int level = firstActiveNode.depth();
 	unsigned int leafLevel = m_infomap->numLevels();
 
@@ -1358,11 +1089,11 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 	// Create the new module nodes and re-parent the active network from its common parent to the new module level
 	for (unsigned int i = 0; i < numNodes; ++i)
 	{
-		InfoNode* node = network[i];
+		NodeBase* node = network[i];
 		unsigned int moduleIndex = node->index;
 		if (modules[moduleIndex] == nullptr)
 		{
-			modules[moduleIndex] = new InfoNode(m_moduleFlowData[moduleIndex]);
+			modules[moduleIndex] = m_objective.createNode(m_moduleFlowData[moduleIndex]);
 			modules[moduleIndex]->index = moduleIndex;
 			node->parent->addChild(modules[moduleIndex]);
 		}
@@ -1372,26 +1103,26 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 
 	// Aggregate links from lower level to the new modular level
 	// struct CompareNodePairDeterministically {
-	// 	bool operator() (const std::pair<InfoNode*, InfoNode*>& x, const std::pair<InfoNode*, InfoNode*>& y) const {
+	// 	bool operator() (const std::pair<NodeBase*, NodeBase*>& x, const std::pair<NodeBase*, NodeBase*>& y) const {
 	// 		return x.first->index < y.first->index || (!(y.first->index < x.first->index) && x.second->index < y.second->index);
 	// 	}
 	// };
-	// using NodePair = std::pair<InfoNode*, InfoNode*>;
+	// using NodePair = std::pair<NodeBase*, NodeBase*>;
 	// using EdgeMap = std::map<NodePair, double, CompareNodePairDeterministically>;
 	// EdgeMap moduleLinks;
 
 	// for (auto& node : network)
 	// {
-	// 	InfoNode* module1 = node->parent;
+	// 	NodeBase* module1 = node->parent;
 	// 	for (auto& e : node->outEdges())
 	// 	{
 	// 		EdgeType& edge = *e;
-	// 		InfoNode* module2 = edge.target.parent;
+	// 		NodeBase* module2 = edge.target.parent;
 	// 		if (module1 != module2)
 	// 		{
 	// 			// Use new pointers to not swap module1
-	// 			InfoNode* m1 = module1;
-	// 			InfoNode* m2 = module2;
+	// 			NodeBase* m1 = module1;
+	// 			NodeBase* m2 = module2;
 	// 			if (!m_infomap->directedEdges && m1->index > m2->index)
 	// 				std::swap(m1, m2);
 	// 			// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
@@ -1457,156 +1188,7 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 		else if (level == 2) {
 			Log(4) << "Consolidated sub-modules, removing modules..." << std::endl;
 			unsigned int moduleIndex = 0;
-			for (InfoNode& module : m_infomap->root()) {
-				// Store current modular structure on the sub-modules
-				for (auto& subModule : module)
-					subModule.index = moduleIndex;
-				++moduleIndex;
-			}
-			m_infomap->root().replaceChildrenWithGrandChildren();
-		}
-	}
-
-	// Calculate the number of non-trivial modules
-	m_infomap->m_numNonTrivialTopModules = 0;
-	for (auto& module : m_infomap->root())
-	{
-		if (module.childDegree() != 1)
-			++m_infomap->m_numNonTrivialTopModules;
-	}
-
-	m_objective.consolidateModules(modules);
-	m_consolidatedObjective = m_objective;
-}
-
-template<>
-inline
-void InfomapOptimizer<GrassbergerMapEquation>::consolidateModules(bool replaceExistingModules)
-{
-//	Log(1) << "Consolidate modules to codelength " << m_optimizer << "..." << std::endl;
-
-	auto& network = m_infomap->activeNetwork();
-	unsigned int numNodes = network.size();
-	std::vector<InfoNode*> modules(numNodes, nullptr);
-
-	InfoNode& firstActiveNode = *network[0];
-	unsigned int level = firstActiveNode.depth();
-	unsigned int leafLevel = m_infomap->numLevels();
-
-	if (leafLevel == 1)
-		replaceExistingModules = false;
-
-
-	// Release children pointers on current parent(s) to put new modules between
-	for (auto& n : network) {
-		n->parent->releaseChildren(); // Safe to call multiple times
-	}
-
-	// Create the new module nodes and re-parent the active network from its common parent to the new module level
-	for (unsigned int i = 0; i < numNodes; ++i)
-	{
-		InfoNode* node = network[i];
-		unsigned int moduleIndex = node->index;
-		if (modules[moduleIndex] == nullptr)
-		{
-			// modules[moduleIndex] = new InfoNode(m_moduleFlowData[moduleIndex]);
-			modules[moduleIndex] = new InfoNode();
-			modules[moduleIndex]->dataInt = m_moduleFlowData[moduleIndex];
-			modules[moduleIndex]->index = moduleIndex;
-			node->parent->addChild(modules[moduleIndex]);
-		}
-		modules[moduleIndex]->addChild(node);
-	}
-
-
-	// Aggregate links from lower level to the new modular level
-	// struct CompareNodePairDeterministically {
-	// 	bool operator() (const std::pair<InfoNode*, InfoNode*>& x, const std::pair<InfoNode*, InfoNode*>& y) const {
-	// 		return x.first->index < y.first->index || (!(y.first->index < x.first->index) && x.second->index < y.second->index);
-	// 	}
-	// };
-	// using NodePair = std::pair<InfoNode*, InfoNode*>;
-	// using EdgeMap = std::map<NodePair, double, CompareNodePairDeterministically>;
-	// EdgeMap moduleLinks;
-
-	// for (auto& node : network)
-	// {
-	// 	InfoNode* module1 = node->parent;
-	// 	for (auto& e : node->outEdges())
-	// 	{
-	// 		EdgeType& edge = *e;
-	// 		InfoNode* module2 = edge.target.parent;
-	// 		if (module1 != module2)
-	// 		{
-	// 			// Use new pointers to not swap module1
-	// 			InfoNode* m1 = module1;
-	// 			InfoNode* m2 = module2;
-	// 			if (!m_infomap->directedEdges && m1->index > m2->index)
-	// 				std::swap(m1, m2);
-	// 			// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
-	// 			auto ret = moduleLinks.emplace(
-	// 				std::piecewise_construct,
-	// 				std::forward_as_tuple(m1, m2),
-	// 				std::forward_as_tuple(edge.data.flow)
-	// 			);
-	// 			if (!ret.second) {
-	// 				ret.first->second += edge.data.flow;
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	using NodePair = std::pair<unsigned int, unsigned int>;
-	using EdgeMap = std::map<NodePair, double>;
-	EdgeMap moduleLinks;
-
-	for (auto& node : network)
-	{
-		unsigned int module1 = node->index;
-		for (auto& e : node->outEdges())
-		{
-			EdgeType& edge = *e;
-			unsigned int module2 = edge.target.index;
-			if (module1 != module2)
-			{
-				// Use new variables to not swap module1
-				unsigned int m1 = module1, m2 = module2;
-				// If undirected, the order may be swapped to aggregate the edge on an opposite one
-				if (m_infomap->isUndirectedClustering() && m1 > m2)
-					std::swap(m1, m2);
-				// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
-				// auto ret = moduleLinks.emplace(
-				// 	std::piecewise_construct,
-				// 	std::forward_as_tuple(m1, m2),
-				// 	std::forward_as_tuple(edge.data.flow)
-				// );
-				auto ret = moduleLinks.insert(std::make_pair(NodePair(m1, m2), edge.data.flow));
-				if (!ret.second) {
-					ret.first->second += edge.data.flow;
-				}
-			}
-		}
-	}
-
-	// Add the aggregated edge flow structure to the new modules
-	for (auto& e : moduleLinks)
-	{
-		const auto& nodePair = e.first;
-		// nodePair.first->addOutEdge(*nodePair.second, 0.0, e.second);
-		modules[nodePair.first]->addOutEdge(*modules[nodePair.second], 0.0, e.second);
-	}
-
-	if (replaceExistingModules)
-	{
-		if (level == 1) {
-			Log(4) << "Consolidated super modules, removing old modules..." << std::endl;
-			for (auto& node : network)
-				node->replaceWithChildren();
-		}
-		else if (level == 2) {
-			Log(4) << "Consolidated sub-modules, removing modules..." << std::endl;
-			unsigned int moduleIndex = 0;
-			for (InfoNode& module : m_infomap->root()) {
+			for (NodeBase& module : m_infomap->root()) {
 				// Store current modular structure on the sub-modules
 				for (auto& subModule : module)
 					subModule.index = moduleIndex;

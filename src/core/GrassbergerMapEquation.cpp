@@ -4,7 +4,8 @@
 
 #include "GrassbergerMapEquation.h"
 #include "FlowData.h"
-#include "InfoNode.h"
+#include "NodeBase.h"
+#include "Node.h"
 #include "../utils/Log.h"
 #include "../io/Config.h"
 #include <vector>
@@ -15,6 +16,7 @@
 
 namespace infomap {
 
+	using NodeType = Node<FlowDataInt>;
 
 // ===================================================
 // IO
@@ -40,39 +42,39 @@ void GrassbergerMapEquation::init(const Config& config)
 }
 
 
-void GrassbergerMapEquation::initNetwork(InfoNode& root)
+void GrassbergerMapEquation::initNetwork(NodeBase& root)
 {
 	Log(3) << "GrassbergerMapEquation::initNetwork()...\n";
 	
 	nodeFlow_log_nodeFlow = 0.0;
 	m_totalDegree = 0;
-	for (InfoNode& node : root)
+	for (NodeBase& node : root)
 	{
-		m_totalDegree += node.dataInt.flow;
+		m_totalDegree += getNode(node).data.flow;
 	}
-	for (InfoNode& node : root)
+	for (NodeBase& node : root)
 	{
-		nodeFlow_log_nodeFlow += plogp(node.dataInt.flow);
+		nodeFlow_log_nodeFlow += plogp(getNode(node).data.flow);
 	}
 	initSubNetwork(root);
 }
 
-void GrassbergerMapEquation::initSuperNetwork(InfoNode& root)
+void GrassbergerMapEquation::initSuperNetwork(NodeBase& root)
 {
 	nodeFlow_log_nodeFlow = 0.0;
-	for (InfoNode& node : root)
+	for (NodeBase& node : root)
 	{
-		nodeFlow_log_nodeFlow += plogp(node.dataInt.enterExitFlow);
+		nodeFlow_log_nodeFlow += plogp(getNode(node).data.enterExitFlow);
 	}
 }
 
-void GrassbergerMapEquation::initSubNetwork(InfoNode& root)
+void GrassbergerMapEquation::initSubNetwork(NodeBase& root)
 {
-	exitNetworkFlow = root.dataInt.enterExitFlow;
+	exitNetworkFlow = getNode(root).data.enterExitFlow;
 	exitNetworkFlow_log_exitNetworkFlow = plogp(m_exitNetworkFlow);
 }
 
-void GrassbergerMapEquation::initPartition(std::vector<InfoNode*>& nodes)
+void GrassbergerMapEquation::initPartition(std::vector<NodeBase*>& nodes)
 {
 	calculateCodelength(nodes);
 }
@@ -88,14 +90,14 @@ double GrassbergerMapEquation::plogp(unsigned int d) const
 	return infomath::plogp(p);
 }
 
-void GrassbergerMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
+void GrassbergerMapEquation::calculateCodelength(std::vector<NodeBase*>& nodes)
 {
 	calculateCodelengthTerms(nodes);
 
 	calculateCodelengthFromCodelengthTerms();
 }
 
-void GrassbergerMapEquation::calculateCodelengthTerms(std::vector<InfoNode*>& nodes)
+void GrassbergerMapEquation::calculateCodelengthTerms(std::vector<NodeBase*>& nodes)
 {
 	enter_log_enter = 0.0;
 	flow_log_flow = 0.0;
@@ -103,16 +105,16 @@ void GrassbergerMapEquation::calculateCodelengthTerms(std::vector<InfoNode*>& no
 	enterFlow = 0.0;
 
 	// For each module
-	for (InfoNode* n : nodes)
+	for (NodeBase* n : nodes)
 	{
-		InfoNode& node = *n;
+		auto& node = getNode(*n);
 		// own node/module codebook
-		flow_log_flow += plogp(node.dataInt.flow + node.dataInt.enterExitFlow);
+		flow_log_flow += plogp(node.data.flow + node.data.enterExitFlow);
 
 		// use of index codebook
-		enter_log_enter += plogp(node.dataInt.enterExitFlow);
-		exit_log_exit += plogp(node.dataInt.enterExitFlow);
-		enterFlow += node.dataInt.enterExitFlow;
+		enter_log_enter += plogp(node.data.enterExitFlow);
+		exit_log_exit += plogp(node.data.enterExitFlow);
+		enterFlow += node.data.enterExitFlow;
 	}
 	enterFlow += exitNetworkFlow;
 	enterFlow_log_enterFlow = plogp(enterFlow);
@@ -127,17 +129,18 @@ void GrassbergerMapEquation::calculateCodelengthFromCodelengthTerms()
 	codelength = indexCodelength + moduleCodelength;
 }
 
-double GrassbergerMapEquation::calcCodelength(const InfoNode& parent) const
+double GrassbergerMapEquation::calcCodelength(const NodeBase& parent) const
 {
 	return parent.isLeafModule() ?
 		calcCodelengthOnModuleOfLeafNodes(parent) :
 		calcCodelengthOnModuleOfModules(parent);
 }
 
-double GrassbergerMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
+double GrassbergerMapEquation::calcCodelengthOnModuleOfLeafNodes(const NodeBase& p) const
 {
-	unsigned int parentFlow = parent.dataInt.flow;
-	unsigned int parentExit = parent.dataInt.enterExitFlow;
+	auto& parent = getNode(p);
+	unsigned int parentFlow = parent.data.flow;
+	unsigned int parentExit = parent.data.enterExitFlow;
 	unsigned int totalParentFlow = parentFlow + parentExit;
 	if (totalParentFlow == 0)
 		return 0.0;
@@ -145,7 +148,7 @@ double GrassbergerMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode&
 	double indexLength = 0.0;
 	for (const auto& node : parent)
 	{
-		indexLength -= infomath::plogpN(node.dataInt.flow, totalParentFlow);
+		indexLength -= infomath::plogpN(getNode(node).data.flow, totalParentFlow);
 	}
 	indexLength -= infomath::plogpN(parentExit, totalParentFlow);
 
@@ -154,10 +157,11 @@ double GrassbergerMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode&
 	return indexLength;
 }
 
-double GrassbergerMapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent) const
+double GrassbergerMapEquation::calcCodelengthOnModuleOfModules(const NodeBase& p) const
 {
-	unsigned int parentFlow = parent.dataInt.flow;
-	unsigned int parentExit = parent.dataInt.enterExitFlow;
+	auto& parent = getNode(p);
+	unsigned int parentFlow = parent.data.flow;
+	unsigned int parentExit = parent.data.enterExitFlow;
 	// unsigned int totalParentFlow = parentFlow + parentExit;
 	if (parentFlow == 0)
 		return 0.0;
@@ -173,10 +177,11 @@ double GrassbergerMapEquation::calcCodelengthOnModuleOfModules(const InfoNode& p
 	// As T is not known, use expanded format to avoid two loops
 	double sumEnter = 0.0;
 	double sumEnterLogEnter = 0.0;
-	for (const auto& node : parent)
+	for (const auto& n : parent)
 	{
-		sumEnter += node.dataInt.enterExitFlow; // rate of enter to finer level
-		sumEnterLogEnter += plogp(node.dataInt.enterExitFlow);
+		auto& node = getNode(n);
+		sumEnter += node.data.enterExitFlow; // rate of enter to finer level
+		sumEnterLogEnter += plogp(node.data.enterExitFlow);
 	}
 	// The possibilities from this module: Either exit to coarser level or enter one of its children
 	unsigned int totalCodewordUse = parentExit + sumEnter;
@@ -188,9 +193,10 @@ double GrassbergerMapEquation::calcCodelengthOnModuleOfModules(const InfoNode& p
 	return L;
 }
 
-double GrassbergerMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
+double GrassbergerMapEquation::getDeltaCodelengthOnMovingNode(NodeBase& curr,
 		DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers)
 {
+	auto& current = getNode(curr);
 	// double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 	// using infomath::plogp;
 	unsigned int oldModule = oldModuleDelta.module;
@@ -203,24 +209,27 @@ double GrassbergerMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 	double delta_enter_log_enter = \
 			- plogp(moduleFlowData[oldModule].enterExitFlow) \
 			- plogp(moduleFlowData[newModule].enterExitFlow) \
-			+ plogp(moduleFlowData[oldModule].enterExitFlow - current.dataInt.enterExitFlow + deltaEnterExitOldModule) \
-			+ plogp(moduleFlowData[newModule].enterExitFlow + current.dataInt.enterExitFlow - deltaEnterExitNewModule);
+			+ plogp(moduleFlowData[oldModule].enterExitFlow - current.data.enterExitFlow + deltaEnterExitOldModule) \
+			+ plogp(moduleFlowData[newModule].enterExitFlow + current.data.enterExitFlow - deltaEnterExitNewModule);
 
 	double delta_exit_log_exit = \
 			- plogp(moduleFlowData[oldModule].enterExitFlow) \
 			- plogp(moduleFlowData[newModule].enterExitFlow) \
-			+ plogp(moduleFlowData[oldModule].enterExitFlow - current.dataInt.enterExitFlow + deltaEnterExitOldModule) \
-			+ plogp(moduleFlowData[newModule].enterExitFlow + current.dataInt.enterExitFlow - deltaEnterExitNewModule);
+			+ plogp(moduleFlowData[oldModule].enterExitFlow - current.data.enterExitFlow + deltaEnterExitOldModule) \
+			+ plogp(moduleFlowData[newModule].enterExitFlow + current.data.enterExitFlow - deltaEnterExitNewModule);
 
 	double delta_flow_log_flow = \
 			- plogp(moduleFlowData[oldModule].enterExitFlow + moduleFlowData[oldModule].flow) \
 			- plogp(moduleFlowData[newModule].enterExitFlow + moduleFlowData[newModule].flow) \
 			+ plogp(moduleFlowData[oldModule].enterExitFlow + moduleFlowData[oldModule].flow \
-					- current.dataInt.enterExitFlow - current.data.flow + deltaEnterExitOldModule) \
+					- current.data.enterExitFlow - current.data.flow + deltaEnterExitOldModule) \
 			+ plogp(moduleFlowData[newModule].enterExitFlow + moduleFlowData[newModule].flow \
-					+ current.dataInt.enterExitFlow + current.data.flow - deltaEnterExitNewModule);
+					+ current.data.enterExitFlow + current.data.flow - deltaEnterExitNewModule);
 
 	double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
+
+	// Log() << "\ndeltaL = " << delta_enter << " - " << delta_enter_log_enter << " - " <<
+	// delta_exit_log_exit << " + " << delta_flow_log_flow << " = " << deltaL;
 	return deltaL;
 }
 
@@ -229,9 +238,10 @@ double GrassbergerMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 // Consolidation
 // ===================================================
 
-void GrassbergerMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
+void GrassbergerMapEquation::updateCodelengthOnMovingNode(NodeBase& curr,
 		DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers)
 {
+	auto& current = getNode(curr);
 	// using infomath::plogp;
 	unsigned int oldModule = oldModuleDelta.module;
 	unsigned int newModule = newModuleDelta.module;
@@ -252,8 +262,8 @@ void GrassbergerMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 			plogp(moduleFlowData[newModule].enterExitFlow + moduleFlowData[newModule].flow);
 
 
-	moduleFlowData[oldModule] -= current.dataInt;
-	moduleFlowData[newModule] += current.dataInt;
+	moduleFlowData[oldModule] -= current.data;
+	moduleFlowData[newModule] += current.data;
 
 	moduleFlowData[oldModule].enterExitFlow += deltaEnterExitOldModule;
 	moduleFlowData[oldModule].enterExitFlow += deltaEnterExitOldModule;
@@ -285,11 +295,29 @@ void GrassbergerMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 }
 
 
-void GrassbergerMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
+void GrassbergerMapEquation::consolidateModules(std::vector<NodeBase*>& modules)
 {
 }
 
+NodeBase* GrassbergerMapEquation::createNode() const
+{
+	return new NodeType();
+}
 
+NodeBase* GrassbergerMapEquation::createNode(const NodeBase& other) const
+{
+	return new NodeType(static_cast<const NodeType&>(other));
+}
+
+NodeBase* GrassbergerMapEquation::createNode(FlowDataType flowData) const
+{
+	return new NodeType(flowData);
+}
+
+const NodeType& GrassbergerMapEquation::getNode(const NodeBase& other) const
+{
+	return static_cast<const NodeType&>(other);
+}
 
 // ===================================================
 // Debug

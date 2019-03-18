@@ -6,7 +6,7 @@
 %}
 
 %include "InfomapBase.i"
-%include "InfoNode.i"
+%include "NodeBase.i"
 %include "Config.i"
 
 /* Parse the header file to generate wrappers */

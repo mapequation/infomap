@@ -11,7 +11,7 @@ namespace std {
     %template(deque_uint) std::deque<unsigned int>;
 }
 
-%include "InfoNode.i"
+%include "NodeBase.i"
 
 /* Parse the header file to generate wrappers */
 %include "src/core/InfomapIterator.h"

@@ -21,13 +21,13 @@
 #include <limits>
 // #include "StateNetwork.h"
 #include "../io/Network.h"
-#include "InfoNode.h"
+#include "NodeBase.h"
 #include "InfomapIterator.h"
 
 namespace infomap {
 
 struct PerLevelStat;
-// class InfoNode;
+// class NodeBase;
 
 //template<typename Node, template<typename,typename> class Optimizer = GreedyOptimizer<Node, MapEquation>>
 class InfomapBase : public InfomapConfig<InfomapBase>
@@ -35,11 +35,11 @@ class InfomapBase : public InfomapConfig<InfomapBase>
 	template<typename Objective>
 	friend class InfomapOptimizer;
 protected:
-	using EdgeType = Edge<InfoNode>;
+	using EdgeType = Edge<NodeBase>;
 
 public:
 	
-	InfomapBase() : InfomapConfig<InfomapBase>() {}
+	InfomapBase() : InfomapConfig<InfomapBase>() { }
 
 	// template<typename Infomap>
 	// InfomapBase(InfomapConfig<Infomap>& conf) :
@@ -49,7 +49,7 @@ public:
 	InfomapBase(const Config& conf) :
 		InfomapConfig<InfomapBase>(conf),
 		m_network(conf)
-	{}
+	{ }
 	InfomapBase(const std::string& flags) :
 		InfomapConfig<InfomapBase>(flags)
 	{
@@ -66,8 +66,9 @@ public:
 
 	Network& network();
 	
-	InfoNode& root();
-	const InfoNode& root() const;
+	NodeBase& root();
+	const NodeBase& root() const;
+
 
 	// InfomapIterator tree(int maxClusterLevel = std::numeric_limits<unsigned int>::max())
 	// { return InfomapIterator(&root(), maxClusterLevel); }
@@ -98,7 +99,7 @@ public:
 
 	unsigned int numLeafNodes() const;
 
-	const std::vector<InfoNode*>& leafNodes() const;
+	const std::vector<NodeBase*>& leafNodes() const;
 
 	unsigned int numTopModules() const;
 
@@ -135,13 +136,14 @@ public:
 	bool isFullNetwork() { return m_isMain && m_aggregationLevel == 0; }
 	bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 
-	// virtual InfomapBase& getInfomap(InfoNode& node);
+	// virtual InfomapBase& getInfomap(NodeBase& node);
 
 	virtual InfomapBase* getNewInfomapInstance() const = 0;
 	virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const = 0;
 
-	InfomapBase& getSubInfomap(InfoNode& node);
-	InfomapBase& getSuperInfomap(InfoNode& node);
+	InfomapBase& getSubInfomap(NodeBase& node);
+	InfomapBase& getSuperInfomap(NodeBase& node);
+	InfomapBase& getSuperInfomap();
 
 	/**
 	* Only the main infomap reads an external cluster file if exist
@@ -159,7 +161,7 @@ public:
 
 	bool haveHardPartition() const;
 
-	std::vector<InfoNode*>& activeNetwork() const;
+	std::vector<NodeBase*>& activeNetwork() const;
 
 	// ===================================================
 	// IO
@@ -185,11 +187,11 @@ public:
 	// ===================================================
 
 	InfomapBase& initNetwork(Network& network);
-	InfomapBase& initNetwork(InfoNode& parent, bool asSuperNetwork = false);
+	InfomapBase& initNetwork(NodeBase& parent, bool asSuperNetwork = false);
 
 
 	void generateSubNetwork(Network& network);
-	virtual void generateSubNetwork(InfoNode& parent);
+	virtual void generateSubNetwork(NodeBase& parent);
 
 	/**
 	 * Init categorical meta data on all nodes from a file with the following format:
@@ -271,7 +273,7 @@ public:
 
 	virtual void initSuperNetwork() = 0;
 
-	virtual double calcCodelength(const InfoNode& parent) const = 0;
+	virtual double calcCodelength(const NodeBase& parent) const = 0;
 
 	/**
 	 * Calculate and store codelength on all modules in the tree
@@ -344,7 +346,7 @@ public:
 	 */
 	virtual unsigned int findHierarchicalSuperModulesFast(unsigned int superLevelLimit = std::numeric_limits<unsigned int>::max());
 
-	virtual void transformNodeFlowToEnterFlow(InfoNode& parent);
+	virtual void transformNodeFlowToEnterFlow(NodeBase& parent);
 
 	virtual void resetFlowOnModules();
 
@@ -416,7 +418,7 @@ public:
 
 	void aggregatePerLevelCodelength(std::vector<PerLevelStat>& perLevelStat, unsigned int level = 0);
 
-	void aggregatePerLevelCodelength(InfoNode& parent, std::vector<PerLevelStat>& perLevelStat, unsigned int level);
+	void aggregatePerLevelCodelength(NodeBase& parent, std::vector<PerLevelStat>& perLevelStat, unsigned int level);
 
 	// ===================================================
 	// Debug: *
@@ -431,6 +433,12 @@ public:
 
 protected:
 
+	void initRoot() {
+		m_root.reset(createNode());
+	}
+	virtual NodeBase* createNode() const = 0;
+	virtual NodeBase* createNode(const NodeBase&) const = 0;
+
 	virtual void initOptimizer(bool forceNoMemory = false) = 0;
 
 	/**
@@ -444,12 +452,12 @@ protected:
 	 */
 	void printTreeLinks(std::ostream& outStream, bool states = false);
 
-	InfoNode m_root;
-	std::vector<InfoNode*> m_leafNodes;
-	std::vector<InfoNode*> m_moduleNodes;
-	std::vector<InfoNode*>* m_activeNetwork = nullptr;
+	std::unique_ptr<NodeBase> m_root;
+	std::vector<NodeBase*> m_leafNodes;
+	std::vector<NodeBase*> m_moduleNodes;
+	std::vector<NodeBase*>* m_activeNetwork = nullptr;
 
-	std::vector<InfoNode*> m_originalLeafNodes;
+	std::vector<NodeBase*> m_originalLeafNodes;
 
 	Network m_network;	
 

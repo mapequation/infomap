@@ -10,15 +10,15 @@
 
 %template(deque_uint) std::deque<unsigned int>;
 
-%import "InfoNode.i"
+%import "NodeBase.i"
 
 /* Parse the header file to generate wrappers */
 %include "src/core/infomapIterators.h"
 
 
 namespace infomap {
-    %template(InfomapDepthFirstIteratorInfoNode) InfomapDepthFirstIterator<InfoNode*>;
-    %template(InfomapDepthFirstIteratorInfoNodeConst) InfomapDepthFirstIterator<InfoNode const*>;
+    %template(InfomapDepthFirstIteratorNodeBase) InfomapDepthFirstIterator<NodeBase*>;
+    %template(InfomapDepthFirstIteratorNodeBaseConst) InfomapDepthFirstIterator<NodeBase const*>;
 }
 
 #ifdef SWIGPYTHON

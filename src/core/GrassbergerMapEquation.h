@@ -11,18 +11,21 @@
 #include <utility>
 #include "MapEquation.h"
 #include "FlowData.h"
-// #include "InfoNode.h"
+// #include "NodeBase.h"
 #include "../utils/Log.h"
 
 namespace infomap {
 
-class InfoNode;
+class NodeBase;
+template<class FlowDataType>
+class Node;
 
 class GrassbergerMapEquation : protected MapEquation {
 	using Base = MapEquation;
 public:
 	using FlowDataType = FlowDataInt;
 	using DeltaFlowDataType = DeltaFlowInt;
+	using NodeType = Node<FlowDataType>;
 
 	GrassbergerMapEquation() : MapEquation() {}
 
@@ -67,33 +70,38 @@ public:
 
 	void init(const Config& config);
 
-	void initNetwork(InfoNode& root);
+	void initNetwork(NodeBase& root);
 
-	void initSuperNetwork(InfoNode& root);
+	void initSuperNetwork(NodeBase& root);
 
-	void initSubNetwork(InfoNode& root);
+	void initSubNetwork(NodeBase& root);
 
-	void initPartition(std::vector<InfoNode*>& nodes);
+	void initPartition(std::vector<NodeBase*>& nodes);
 
 	// ===================================================
 	// Codelength
 	// ===================================================
 
-	double calcCodelength(const InfoNode& parent) const;
+	double calcCodelength(const NodeBase& parent) const;
 	
-	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
+	void addMemoryContributions(NodeBase& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
 
-	double getDeltaCodelengthOnMovingNode(InfoNode& current,
+	double getDeltaCodelengthOnMovingNode(NodeBase& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
 
 	// ===================================================
 	// Consolidation
 	// ===================================================
 
-	void updateCodelengthOnMovingNode(InfoNode& current,
+	void updateCodelengthOnMovingNode(NodeBase& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
 
-	void consolidateModules(std::vector<InfoNode*>& modules);
+	void consolidateModules(std::vector<NodeBase*>& modules);
+
+	NodeBase* createNode() const;
+	NodeBase* createNode(const NodeBase&) const;
+	NodeBase* createNode(FlowDataType) const;
+	const NodeType& getNode(const NodeBase&) const;
 
 	// ===================================================
 	// Debug
@@ -105,19 +113,19 @@ protected:
 	// ===================================================
 	// Protected member functions
 	// ===================================================
-	double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
-	double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
+	double calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent) const;
+	double calcCodelengthOnModuleOfModules(const NodeBase& parent) const;
 
-	int getDeltaNumModulesIfMoving(InfoNode& current,
+	int getDeltaNumModulesIfMoving(NodeBase& current,
 			unsigned int oldModule, unsigned int newModule, std::vector<unsigned int>& moduleMembers) const;
 
 	// ===================================================
 	// Init
 	// ===================================================
 
-	// void initGrassbergerNodes(InfoNode& root);
+	// void initGrassbergerNodes(NodeBase& root);
 
-	// void initPartitionOfGrassbergerNodes(std::vector<InfoNode*>& nodes);
+	// void initPartitionOfGrassbergerNodes(std::vector<NodeBase*>& nodes);
 
 	// ===================================================
 	// Codelength
@@ -126,9 +134,9 @@ protected:
 	// Integer version, normalized using m_totalDegree
 	double plogp(unsigned int d) const;
 
-	void calculateCodelength(std::vector<InfoNode*>& nodes);
+	void calculateCodelength(std::vector<NodeBase*>& nodes);
 
-	void calculateCodelengthTerms(std::vector<InfoNode*>& nodes);
+	void calculateCodelengthTerms(std::vector<NodeBase*>& nodes);
 
 	void calculateCodelengthFromCodelengthTerms();
 
@@ -136,7 +144,7 @@ protected:
 	// Consolidation
 	// ===================================================
 
-	// void updateGrassbergerData(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
+	// void updateGrassbergerData(NodeBase& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
 public:
 	// ===================================================

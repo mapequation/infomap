@@ -26,7 +26,7 @@ class InfomapCore : public InfomapBase {
 protected:
 //	using Base::EdgeType;
 //	using EdgeType = Base::EdgeType;
-	// using EdgeType = Edge<InfoNode>;
+	// using EdgeType = Edge<NodeBase>;
 public:
 	// template<typename... Args>
 	// InfomapCore(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
@@ -60,16 +60,27 @@ public:
   }
 
 protected:
+
+	virtual NodeBase* createNode() const
+	{
+		return m_optimizer->createNode();
+	}
+	virtual NodeBase* createNode(const NodeBase& other) const
+	{
+		return m_optimizer->createNode(other);
+	}
+
 	void initOptimizer(bool forceNoMemory = false)
 	{
 		if (this->haveMetaData()) {
 			m_optimizer = OptimizerPtr(new InfomapOptimizer<MetaMapEquation>());
 		} else if (haveMemory() && !forceNoMemory) {
 			m_optimizer = OptimizerPtr(new InfomapOptimizer<MemMapEquation>());
+		} else if (this->isIntegerFlow()) {
+			m_optimizer = OptimizerPtr(new InfomapOptimizer<GrassbergerMapEquation>());
 		} else {
 			// m_optimizer = OptimizerPtr(new InfomapOptimizer<MapEquation>());
-			// m_optimizer = OptimizerPtr(new InfomapOptimizer<BiasedMapEquation>());
-			m_optimizer = OptimizerPtr(new InfomapOptimizer<GrassbergerMapEquation>());
+			m_optimizer = OptimizerPtr(new InfomapOptimizer<BiasedMapEquation>());
 		}
     m_optimizer->init(this);
 	}
@@ -98,7 +109,7 @@ protected:
     return m_optimizer->initSuperNetwork();
   }
 
-	virtual double calcCodelength(const InfoNode& parent) const {
+	virtual double calcCodelength(const NodeBase& parent) const {
     return m_optimizer->calcCodelength(parent);
   }
 

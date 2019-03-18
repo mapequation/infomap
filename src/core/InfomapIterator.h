@@ -8,11 +8,12 @@
 
 #include <deque>
 #include <map>
-#include "InfoNode.h"
+#include "Node.h"
+#include "FlowData.h"
 
 namespace infomap {
 
-// class InfoNode;
+// class NodeBase;
 
 
 /**
@@ -23,8 +24,8 @@ namespace infomap {
 class InfomapIterator
 {
 protected:
-	InfoNode* m_root = nullptr;
-	InfoNode* m_current = nullptr;
+	NodeBase* m_root = nullptr;
+	NodeBase* m_current = nullptr;
 	int m_moduleIndexLevel = -1;
 	unsigned int m_moduleIndex = 0;
 	std::deque<unsigned int> m_path; // The child index path to current node
@@ -34,7 +35,7 @@ public:
 
 	InfomapIterator() {}
 
-	InfomapIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
+	InfomapIterator(NodeBase* nodePointer, int moduleIndexLevel = -1)
 	:	m_root(nodePointer),
 		m_current(nodePointer),
 		m_moduleIndexLevel(moduleIndexLevel)
@@ -62,37 +63,37 @@ public:
 		return *this;
 	}
 
-	InfoNode* current()
+	NodeBase* current()
 	{
 		return m_current;
 	}
 
-	const InfoNode* current() const
+	const NodeBase* current() const
 	{
 		return m_current;
 	}
 
-	InfoNode& operator*()
+	NodeBase& operator*()
 	{
 		return *m_current;
 	}
 
-	const InfoNode& operator*() const
+	const NodeBase& operator*() const
 	{
 		return *m_current;
 	}
 
-	InfoNode* operator->()
+	NodeBase* operator->()
 	{
 		return m_current;
 	}
 
-	const InfoNode* operator->() const
+	const NodeBase* operator->() const
 	{
 		return m_current;
 	}
 
-	// InfoNode& operator*();
+	// NodeBase& operator*();
 
 	bool operator==(const InfomapIterator& other) const
 	{
@@ -150,7 +151,7 @@ class InfomapModuleIterator : public InfomapIterator
 public:
 	InfomapModuleIterator() : InfomapIterator() {}
 
-	InfomapModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
+	InfomapModuleIterator(NodeBase* nodePointer, int moduleIndexLevel = -1)
 	:	InfomapIterator(nodePointer, moduleIndexLevel)
 	{}
 
@@ -180,7 +181,7 @@ class InfomapLeafModuleIterator : public InfomapIterator
 public:
 	InfomapLeafModuleIterator() : InfomapIterator() {}
 
-	InfomapLeafModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
+	InfomapLeafModuleIterator(NodeBase* nodePointer, int moduleIndexLevel = -1)
 	:	InfomapIterator(nodePointer, moduleIndexLevel)
 	{ init(); }
 
@@ -215,7 +216,7 @@ class InfomapLeafIterator : public InfomapIterator
 public:
 	InfomapLeafIterator() : InfomapIterator() {}
 
-	InfomapLeafIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
+	InfomapLeafIterator(NodeBase* nodePointer, int moduleIndexLevel = -1)
 	:	InfomapIterator(nodePointer, moduleIndexLevel)
 	{ init(); }
 
@@ -253,14 +254,15 @@ public:
 class InfomapIteratorPhysical : public InfomapIterator
 {
 protected:
-	std::map<unsigned int, InfoNode> m_physNodes;
-	std::map<unsigned int, InfoNode>::iterator m_physIter;
+	using PhysNode = Node<FlowData>;
+	std::map<unsigned int, PhysNode> m_physNodes;
+	std::map<unsigned int, PhysNode>::iterator m_physIter;
 	InfomapIterator m_oldIter;
 
 public:
 	InfomapIteratorPhysical() : InfomapIterator() {}
 
-	InfomapIteratorPhysical(InfoNode* nodePointer, int moduleIndexLevel = -1)
+	InfomapIteratorPhysical(NodeBase* nodePointer, int moduleIndexLevel = -1)
 	:	InfomapIterator(nodePointer, moduleIndexLevel)
 	{}
 
@@ -313,7 +315,7 @@ public:
 	: InfomapIteratorPhysical()
 	{}
 
-	InfomapLeafIteratorPhysical(InfoNode* nodePointer, int moduleIndexLevel = -1)
+	InfomapLeafIteratorPhysical(NodeBase* nodePointer, int moduleIndexLevel = -1)
 	:	InfomapIteratorPhysical(nodePointer, moduleIndexLevel)
 	{ init(); }
 
@@ -351,8 +353,8 @@ public:
 class InfomapParentIterator
 {
 protected:
-	// InfoNode* m_root = nullptr;
-	InfoNode* m_current = nullptr;
+	// NodeBase* m_root = nullptr;
+	NodeBase* m_current = nullptr;
 	// int m_moduleIndexLevel = -1;
 	// unsigned int m_moduleIndex = 0;
 	// std::deque<unsigned int> m_path; // The child index path to current node
@@ -362,7 +364,7 @@ public:
 
 	InfomapParentIterator() {}
 
-	InfomapParentIterator(InfoNode* nodePointer)
+	InfomapParentIterator(NodeBase* nodePointer)
 	: m_current(nodePointer)
 	{}
 
@@ -378,37 +380,37 @@ public:
 		return *this;
 	}
 
-	InfoNode* current()
+	NodeBase* current()
 	{
 		return m_current;
 	}
 
-	const InfoNode* current() const
+	const NodeBase* current() const
 	{
 		return m_current;
 	}
 
-	InfoNode& operator*()
+	NodeBase& operator*()
 	{
 		return *m_current;
 	}
 
-	const InfoNode& operator*() const
+	const NodeBase& operator*() const
 	{
 		return *m_current;
 	}
 
-	InfoNode* operator->()
+	NodeBase* operator->()
 	{
 		return m_current;
 	}
 
-	const InfoNode* operator->() const
+	const NodeBase* operator->() const
 	{
 		return m_current;
 	}
 
-	// InfoNode& operator*();
+	// NodeBase& operator*();
 
 	bool operator==(const InfomapParentIterator& other) const
 	{

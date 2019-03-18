@@ -99,7 +99,7 @@ void ClusterReader::readData(const string filename)
 
 }
 
-void ClusterReader::readTree(std::string filename, InfoNode& infomapRoot)
+void ClusterReader::readTree(std::string filename, NodeBase& infomapRoot)
 {
 	// Check infomap root
 	unsigned int numLeafNodes = infomapRoot.childDegree();
@@ -114,7 +114,7 @@ void ClusterReader::readTree(std::string filename, InfoNode& infomapRoot)
 	SafeInFile input(filename.c_str());
 	Log() << "Parsing tree '" << filename << "'... " << std::flush;
 
-	InfoNode root(1.0);
+	NodeBase root(1.0);
 	std::string header = "";
 	unsigned int lineNr = 0;
 	std::istringstream ss;
@@ -164,7 +164,7 @@ void ClusterReader::readTree(std::string filename, InfoNode& infomapRoot)
 		ss.clear(); // Clear the eofbit from last extraction!
 		ss.str(treePath);
 		unsigned int childIndex;
-		InfoNode* node = &root;
+		NodeBase* node = &root;
 		unsigned int depth = 0;
 		while (ss >> childIndex)
 		{
@@ -175,7 +175,7 @@ void ClusterReader::readTree(std::string filename, InfoNode& infomapRoot)
 			// Create new node if path doesn't exist
 			if (node->childDegree() <= childIndex)
 			{
-				InfoNode* child = new InfoNode();
+				NodeBase* child = new NodeBase();
 				node->addChild(child);
 			}
 			node = node->lastChild;

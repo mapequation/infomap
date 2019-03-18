@@ -4,7 +4,7 @@
 
 #include "BiasedMapEquation.h"
 #include "FlowData.h"
-#include "InfoNode.h"
+#include "NodeBase.h"
 #include "../utils/Log.h"
 #include "../io/Config.h"
 #include <vector>
@@ -50,23 +50,23 @@ void BiasedMapEquation::init(const Config& config)
 }
 
 
-void BiasedMapEquation::initNetwork(InfoNode& root)
+void BiasedMapEquation::initNetwork(NodeBase& root)
 {
 	Log(3) << "BiasedMapEquation::initNetwork()...\n";
 	Base::initNetwork(root);
 }
 
-void BiasedMapEquation::initSuperNetwork(InfoNode& root)
+void BiasedMapEquation::initSuperNetwork(NodeBase& root)
 {
 	Base::initSuperNetwork(root);
 }
 
-void BiasedMapEquation::initSubNetwork(InfoNode& root)
+void BiasedMapEquation::initSubNetwork(NodeBase& root)
 {
 	Base::initSubNetwork(root);
 }
 
-void BiasedMapEquation::initPartition(std::vector<InfoNode*>& nodes)
+void BiasedMapEquation::initPartition(std::vector<NodeBase*>& nodes)
 {
 	calculateCodelength(nodes);
 }
@@ -83,7 +83,7 @@ double BiasedMapEquation::calcNumModuleCost(unsigned int numModules) const
 	return 1 * std::abs(deltaNumModules);
 }
 
-void BiasedMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
+void BiasedMapEquation::calculateCodelength(std::vector<NodeBase*>& nodes)
 {
 	calculateCodelengthTerms(nodes);
 
@@ -94,7 +94,7 @@ void BiasedMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
 	biasedCost = calcNumModuleCost(currentNumModules);
 }
 
-double BiasedMapEquation::calcCodelength(const InfoNode& parent) const
+double BiasedMapEquation::calcCodelength(const NodeBase& parent) const
 {
 	return parent.isLeafModule() ?
 		calcCodelengthOnModuleOfLeafNodes(parent) :
@@ -102,7 +102,7 @@ double BiasedMapEquation::calcCodelength(const InfoNode& parent) const
 		MapEquation::calcCodelengthOnModuleOfModules(parent);
 }
 
-double BiasedMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
+double BiasedMapEquation::calcCodelengthOnModuleOfLeafNodes(const NodeBase& parent) const
 {
 	double indexLength = MapEquation::calcCodelength(parent);
 
@@ -113,7 +113,7 @@ double BiasedMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& pare
 	return indexLength;
 }
 
-int BiasedMapEquation::getDeltaNumModulesIfMoving(InfoNode& current,
+int BiasedMapEquation::getDeltaNumModulesIfMoving(NodeBase& current,
 			unsigned int oldModule, unsigned int newModule, std::vector<unsigned int>& moduleMembers) const
 {
 	bool removeOld = moduleMembers[oldModule] == 1;
@@ -122,7 +122,7 @@ int BiasedMapEquation::getDeltaNumModulesIfMoving(InfoNode& current,
 	return deltaNumModules;
 }
 
-double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
+double BiasedMapEquation::getDeltaCodelengthOnMovingNode(NodeBase& current,
 		DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers)
 {
 	double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
@@ -148,7 +148,7 @@ double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 // Consolidation
 // ===================================================
 
-void BiasedMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
+void BiasedMapEquation::updateCodelengthOnMovingNode(NodeBase& current,
 		DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers)
 {
 	Base::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
@@ -174,7 +174,7 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 }
 
 
-void BiasedMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
+void BiasedMapEquation::consolidateModules(std::vector<NodeBase*>& modules)
 {
 	unsigned int numModules = 0;
 	for (auto& module : modules) {

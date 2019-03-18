@@ -1,17 +1,17 @@
 /*
- * InfoNode.cpp
+ * NodeBase.cpp
  *
  *  Created on: 19 feb 2015
  *      Author: Daniel
  */
-#include "InfoNode.h"
+#include "NodeBase.h"
 #include "InfomapCore.h"
 #include <algorithm>
 
 namespace infomap {
 
 
-InfoNode::~InfoNode()
+NodeBase::~NodeBase()
 {
 	if (m_infomap != nullptr) {
 		delete m_infomap;
@@ -42,23 +42,23 @@ InfoNode::~InfoNode()
 }
 
 
-// InfomapBase& InfoNode::getInfomap(bool reset) {
+// InfomapBase& NodeBase::getInfomap(bool reset) {
 // 	if (!m_infomap || reset)
 // 		m_infomap = std::unique_ptr<InfomapBase>(new M1Infomap());
 // 	return *m_infomap;
 // }
 
-// InfomapBase& InfoNode::getMemInfomap(bool reset) {
+// InfomapBase& NodeBase::getMemInfomap(bool reset) {
 // 	if (!m_infomap || reset)
 // 		m_infomap = std::unique_ptr<InfomapBase>(new M2Infomap());
 // 	return *m_infomap;
 // }
 
-// InfoNode* InfoNode::getInfomapRoot() {
+// NodeBase* NodeBase::getInfomapRoot() {
 // 	return m_infomap? &m_infomap->root() : nullptr;
 // }
 
-// bool InfoNode::disposeInfomap()
+// bool NodeBase::disposeInfomap()
 // {
 // 	if (m_infomap) {
 // 		m_infomap.reset();
@@ -67,7 +67,7 @@ InfoNode::~InfoNode()
 // 	return false;
 // }
 
-// InfomapBase& InfoNode::getInfomap(bool reset) {
+// InfomapBase& NodeBase::getInfomap(bool reset) {
 // 	if (!m_infomap || reset || m_infomap->isHigherOrder()) {
 // 		disposeInfomap();
 // 		m_infomap = new M1Infomap();
@@ -75,7 +75,7 @@ InfoNode::~InfoNode()
 // 	return *m_infomap;
 // }
 
-// InfomapBase& InfoNode::getMemInfomap(bool reset) {
+// InfomapBase& NodeBase::getMemInfomap(bool reset) {
 // 	if (!m_infomap || reset || !m_infomap->isHigherOrder()) {
 // 		disposeInfomap();
 // 		m_infomap = new M2Infomap();
@@ -83,29 +83,29 @@ InfoNode::~InfoNode()
 // 	return *m_infomap;
 // }
 
-InfomapBase& InfoNode::setInfomap(InfomapBase* infomap) {
+InfomapBase& NodeBase::setInfomap(InfomapBase* infomap) {
 	disposeInfomap();
 	m_infomap = infomap;
 	if (infomap == nullptr)
-		throw InternalOrderError("InfoNode::setInfomap(...) called with null infomap");
+		throw InternalOrderError("NodeBase::setInfomap(...) called with null infomap");
 	return *m_infomap;
 }
 
-InfomapBase& InfoNode::getInfomap() {
+InfomapBase& NodeBase::getInfomap() {
 	if (m_infomap == nullptr)
-		throw InternalOrderError("InfoNode::getInfomap() called but infomap is null");
+		throw InternalOrderError("NodeBase::getInfomap() called but infomap is null");
 	return *m_infomap;
 }
 
-InfoNode* InfoNode::getInfomapRoot() {
+NodeBase* NodeBase::getInfomapRoot() {
 	return m_infomap != nullptr? &m_infomap->root() : nullptr;
 }
 
-InfoNode const* InfoNode::getInfomapRoot() const {
+NodeBase const* NodeBase::getInfomapRoot() const {
 	return m_infomap != nullptr? &m_infomap->root() : nullptr;
 }
 
-bool InfoNode::disposeInfomap()
+bool NodeBase::disposeInfomap()
 {
 	if (m_infomap != nullptr) {
 		delete m_infomap;
@@ -115,26 +115,26 @@ bool InfoNode::disposeInfomap()
 	return false;
 }
 
-bool InfoNode::isLeaf() const
+bool NodeBase::isLeaf() const
 {
 	return firstChild == nullptr;
 }
 
-bool InfoNode::isLeafModule() const
+bool NodeBase::isLeafModule() const
 {
 	//TODO: Safe to assume all children are leaves if first child is leaf?
 	return m_infomap == nullptr && firstChild != nullptr && firstChild->firstChild == nullptr;
 }
 
-bool InfoNode::isRoot() const
+bool NodeBase::isRoot() const
 {
 	return parent == nullptr;
 }
 
-unsigned int InfoNode::depth() const
+unsigned int NodeBase::depth() const
 {
 	unsigned int depth = 0;
-	InfoNode* n = parent;
+	NodeBase* n = parent;
 	while (n != nullptr) {
 		++depth;
 		n = n->parent;
@@ -142,10 +142,10 @@ unsigned int InfoNode::depth() const
 	return depth;
 }
 
-unsigned int InfoNode::firstDepthBelow() const
+unsigned int NodeBase::firstDepthBelow() const
 {
 	unsigned int depthBelow = 0;
-	InfoNode* child = firstChild;
+	NodeBase* child = firstChild;
 	while (child != nullptr) {
 		++depthBelow;
 		child = child->firstChild;
@@ -153,10 +153,10 @@ unsigned int InfoNode::firstDepthBelow() const
 	return depthBelow;
 }
 
-unsigned int InfoNode::childIndex() const
+unsigned int NodeBase::childIndex() const
 {
 	unsigned int childIndex = 0;
-	const InfoNode* n(this);
+	const NodeBase* n(this);
 	while (n->previous) {
 		n = n->previous;
 		++childIndex;
@@ -164,9 +164,9 @@ unsigned int InfoNode::childIndex() const
 	return childIndex;
 }
 
-std::vector<unsigned int> InfoNode::calculatePath() const
+std::vector<unsigned int> NodeBase::calculatePath() const
 {
-	const InfoNode* current = this;
+	const NodeBase* current = this;
 	std::vector<unsigned int> path;
 	while (current->parent != nullptr) {
 		path.push_back(current->childIndex());
@@ -179,7 +179,7 @@ std::vector<unsigned int> InfoNode::calculatePath() const
 	return path;
 }
 
-unsigned int InfoNode::childDegree() const
+unsigned int NodeBase::childDegree() const
 {
 //	if (!m_childrenChanged)
 		return m_childDegree;
@@ -187,12 +187,12 @@ unsigned int InfoNode::childDegree() const
 //	return m_childDegree;
 }
 
-unsigned int InfoNode::infomapChildDegree() const
+unsigned int NodeBase::infomapChildDegree() const
 {
 	return m_infomap == nullptr ? childDegree() : m_infomap->root().childDegree();
 }
 
-void InfoNode::addChild(InfoNode* child)
+void NodeBase::addChild(NodeBase* child)
 {
 //	m_childrenChanged = true;
 	if (firstChild == 0)
@@ -213,14 +213,14 @@ void InfoNode::addChild(InfoNode* child)
 	++m_childDegree;
 }
 
-void InfoNode::releaseChildren()
+void NodeBase::releaseChildren()
 {
 	firstChild = nullptr;
 	lastChild = nullptr;
 	m_childDegree = 0;
 }
 
-InfoNode& InfoNode::replaceChildrenWithOneNode()
+NodeBase& NodeBase::replaceChildrenWithOneNode()
 {
 	if (childDegree() == 1)
 		return *firstChild;
@@ -228,13 +228,13 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
 		throw InternalOrderError("replaceChildrenWithOneNode called on a node without any children.");
 	if (firstChild->firstChild == nullptr)
 		throw InternalOrderError("replaceChildrenWithOneNode called on a node without any grandchildren.");
-	InfoNode* middleNode = new InfoNode();
-	InfoNode::child_iterator nodeIt = begin_child();
+	NodeBase* middleNode = new NodeBase();
+	NodeBase::child_iterator nodeIt = begin_child();
 	unsigned int numOriginalChildrenLeft = m_childDegree;
 	auto d0 = m_childDegree;
 	do
 	{
-		InfoNode* n = nodeIt.current();
+		NodeBase* n = nodeIt.current();
 		++nodeIt;
 		middleNode->addChild(n);
 	}
@@ -247,16 +247,16 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
 	return *middleNode;
 }
 
-unsigned int InfoNode::replaceChildrenWithGrandChildren()
+unsigned int NodeBase::replaceChildrenWithGrandChildren()
 {
 	if (firstChild == nullptr)
 		return 0;
-	InfoNode::child_iterator nodeIt = begin_child();
+	NodeBase::child_iterator nodeIt = begin_child();
 	unsigned int numOriginalChildrenLeft = m_childDegree;
 	unsigned int numChildrenReplaced = 0;
 	do
 	{
-		InfoNode* n = nodeIt.current();
+		NodeBase* n = nodeIt.current();
 		++nodeIt;
 		numChildrenReplaced += n->replaceWithChildren();
 	}
@@ -264,14 +264,14 @@ unsigned int InfoNode::replaceChildrenWithGrandChildren()
 	return numChildrenReplaced;
 }
 
-unsigned int InfoNode::replaceWithChildren()
+unsigned int NodeBase::replaceWithChildren()
 {
 	if (isLeaf() || isRoot())
 		return 0;
 
 	// Reparent children
 	unsigned int deltaChildDegree = 0;
-	InfoNode* child = firstChild;
+	NodeBase* child = firstChild;
 	do
 	{
 		child->parent = parent;
@@ -305,15 +305,15 @@ unsigned int InfoNode::replaceWithChildren()
 	return 1;
 }
 
-void InfoNode::replaceChildrenWithGrandChildrenDebug()
+void NodeBase::replaceChildrenWithGrandChildrenDebug()
 {
 	if (firstChild == 0)
 		return;
-	InfoNode::child_iterator nodeIt = begin_child();
+	NodeBase::child_iterator nodeIt = begin_child();
 	unsigned int numOriginalChildrenLeft = m_childDegree;
 	do
 	{
-		InfoNode* n = nodeIt.current();
+		NodeBase* n = nodeIt.current();
 		++nodeIt;
 		n->replaceWithChildrenDebug();
 	}
@@ -321,7 +321,7 @@ void InfoNode::replaceChildrenWithGrandChildrenDebug()
 }
 
 
-void InfoNode::replaceWithChildrenDebug()
+void NodeBase::replaceWithChildrenDebug()
 {
 	if (isLeaf() || isRoot())
 		return;
@@ -329,7 +329,7 @@ void InfoNode::replaceWithChildrenDebug()
 
 	// Reparent children
 	unsigned int deltaChildDegree = 0;
-	InfoNode* child = firstChild;
+	NodeBase* child = firstChild;
 	do
 	{
 		child->parent = parent;
@@ -362,7 +362,7 @@ void InfoNode::replaceWithChildrenDebug()
 	delete this;
 }
 
-// void InfoNode::storeModulesIn(InfoNode& otherRoot)
+// void NodeBase::storeModulesIn(NodeBase& otherRoot)
 // {
 // 	// Move root links to otherRoot
 // 	otherRoot.firstChild = firstChild;
@@ -373,7 +373,7 @@ void InfoNode::replaceWithChildrenDebug()
 	
 // 	// Link directly to leaf nodes in curren node instead
 // 	// Reparent leaf nodes within same infomap instance
-// 	InfoNode* leaf = this;
+// 	NodeBase* leaf = this;
 // 	// Walk down to leaf
 //TODO: Use leaf module iteartor and clone each leaf node to
 // otherRoot and reparent leaf node to current node.
@@ -391,13 +391,13 @@ void InfoNode::replaceWithChildrenDebug()
 // 	m_childDegree = numLeafNodes;
 // }
 
-void InfoNode::remove(bool removeChildren)
+void NodeBase::remove(bool removeChildren)
 {
 	firstChild = removeChildren ? 0 : firstChild;
 	delete this;
 }
 
-void InfoNode::deleteChildren()
+void NodeBase::deleteChildren()
 {
 	if (firstChild == nullptr)
 		return;
@@ -405,7 +405,7 @@ void InfoNode::deleteChildren()
 	child_iterator nodeIt = begin_child();
 	do
 	{
-		InfoNode* n = nodeIt.current();
+		NodeBase* n = nodeIt.current();
 		++nodeIt;
 		delete n;
 	}
@@ -416,7 +416,7 @@ void InfoNode::deleteChildren()
 	m_childDegree = 0;
 }
 
-void InfoNode::calcChildDegree()
+void NodeBase::calcChildDegree()
 {
 	m_childrenChanged = false;
 	if (firstChild == nullptr)
@@ -432,18 +432,18 @@ void InfoNode::calcChildDegree()
 	}
 }
 
-void InfoNode::setChildDegree(unsigned int value)
+void NodeBase::setChildDegree(unsigned int value)
 {
 	m_childDegree = value;
 	m_childrenChanged = false;
 }
 
-void InfoNode::setNumLeafNodes(unsigned int value)
+void NodeBase::setNumLeafNodes(unsigned int value)
 {
 	m_numLeafMembers = value;
 }
 
-void InfoNode::initClean()
+void NodeBase::initClean()
 {
 	releaseChildren();
 	previous = next = parent = nullptr;
@@ -451,7 +451,7 @@ void InfoNode::initClean()
 	physicalNodes.clear();
 }
 
-unsigned int InfoNode::collapseChildren()
+unsigned int NodeBase::collapseChildren()
 {
 	std::swap(collapsedFirstChild, firstChild);
 	std::swap(collapsedLastChild, lastChild);
@@ -460,7 +460,7 @@ unsigned int InfoNode::collapseChildren()
 	return numCollapsedChildren;
 }
 
-unsigned int InfoNode::expandChildren()
+unsigned int NodeBase::expandChildren()
 {
 	bool haveCollapsedChildren = collapsedFirstChild != nullptr;
 	if (haveCollapsedChildren) {

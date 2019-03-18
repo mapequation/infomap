@@ -163,6 +163,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.rawdir, 'w', "rawdir",
 			"Two-mode dynamics: Assume directed links and let the raw link weights be the flow.", true);
 
+	api.addOptionArgument(conf.integerFlow, "integer-flow",
+			"Use integer flow (only valid for undirected networks)", true);
+
 	api.addOptionArgument(conf.recordedTeleportation, 'e', "recorded-teleportation",
 			"If teleportation is used to calculate the flow, also record it when minimizing codelength.", true);
 
