@@ -707,10 +707,13 @@ void InfomapBase::generateSubNetwork(Network& network)
 		auto& networkNode = nodeIt.second;
 		// NodeBase* node = new NodeBase(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
 		NodeBase* node;
-		if (this->isIntegerFlow())
-			node = new Node<FlowDataInt>(networkNode.id, networkNode.physicalId, networkNode.layerId);
-		else
+		if (this->isIntegerFlow()) {
+			node = new Node<FlowDataInt>(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
+			// Log() << node->stateId << " " << node->physicalId << " " << node->getFlow() << "\n";
+		}
+		else {
 			node = new Node<FlowData>(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
+		}
 		if (this->haveMetaData()) {
 			auto meta = metaData.find(networkNode.id);
 			if (meta != metaData.end()) {
@@ -744,7 +747,12 @@ void InfomapBase::generateSubNetwork(Network& network)
 			}
 			else {
 				auto& linkData = subIt.second;
-				m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.flow * this->markovTime);
+				if (this->isIntegerFlow()) {
+					//TODO: Use integer weight on edges for integer nodes
+					m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, 1);
+				} else {
+					m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.flow * this->markovTime);
+				}
 				// Log() << linkSourceId << " (" << sourceIndex << ") -> " << linkTargetId << " (" << targetIndex << ")"
 				// << ", weight: " << linkData.weight << ", flow: " << linkData.flow << "\n";
 			}
@@ -1968,14 +1976,13 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 			}
 		}
 	} else {
-		for (auto it(iterTree(moduleIndexLevel)); !it.isEnd(); ++it) {
+		for (auto it(iterLeafNodes(moduleIndexLevel)); !it.isEnd(); ++it) {
 			NodeBase &node = *it;
-			if (node.isLeaf()) {
-				if (states)
-					outFile << node.stateId << " " << it.moduleIndex() << " " << node.getFlow() << " " << node.physicalId << "\n";
-				else
-					outFile << node.physicalId << " " << it.moduleIndex() << " " << node.getFlow() << "\n";
-			}
+			outFile << node.stateId << " " << it.moduleIndex() << " " << node.getFlow();
+			if (states)
+				outFile << " " << node.physicalId << "\n";
+			else
+				outFile << "\n";
 		}
 	}
 	return outputFilename;

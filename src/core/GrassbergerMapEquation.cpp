@@ -203,6 +203,8 @@ double GrassbergerMapEquation::getDeltaCodelengthOnMovingNode(NodeBase& curr,
 	unsigned int newModule = newModuleDelta.module;
 	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
 	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+	// Log() << "\nold delta enter/exit: " << oldModuleDelta.deltaEnter << "/" << oldModuleDelta.deltaExit;
+	// Log() << "\nnew delta enter/exit: " << newModuleDelta.deltaEnter << "/" << newModuleDelta.deltaExit;
 
 	double delta_enter = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
 

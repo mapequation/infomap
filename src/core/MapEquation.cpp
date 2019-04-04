@@ -215,6 +215,8 @@ double MapEquation::getDeltaCodelengthOnMovingNode(NodeBase& curr,
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
 	double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
+	// Log() << "\ndeltaL = " << delta_enter << " - " << delta_enter_log_enter << " - " <<
+	// delta_exit_log_exit << " + " << delta_flow_log_flow << " = " << deltaL;
 	return deltaL;
 }
 

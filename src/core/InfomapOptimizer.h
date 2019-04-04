@@ -621,6 +621,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 			NodeBase& neighbour = edge.target;
 			// deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, edge.data.flow, 0);
 			deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0));
+			// Log() << "\n--> " << DeltaFlowDataType(neighbour.index, edge.data.flow, 0);
 		}
 		// For all inlinks
 		for (auto& e : current.inEdges())
@@ -630,6 +631,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 			// timer.start();
 			// deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, 0, edge.data.flow);
 			deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0, edge.data.flow));
+			// Log() << "\n<-- " << DeltaFlowDataType(neighbour.index, 0, edge.data.flow);
 			// t += timer.getElapsedTimeInMilliSec();
 			// ++tCount;
 		}
