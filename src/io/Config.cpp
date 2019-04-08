@@ -166,6 +166,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.integerFlow, "integer-flow",
 			"Use integer flow (only valid for undirected networks)", true);
 
+	api.addOptionArgument(conf.grassberger, "grassberger",
+			"Use Grassberger entropy estimator (implies integer-flow)", true);
+
 	api.addOptionArgument(conf.recordedTeleportation, 'e', "recorded-teleportation",
 			"If teleportation is used to calculate the flow, also record it when minimizing codelength.", true);
 

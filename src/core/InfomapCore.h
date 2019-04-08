@@ -15,6 +15,7 @@
 #include "MetaMapEquation.h"
 #include "BiasedMapEquation.h"
 #include "GrassbergerMapEquation.h"
+#include "IntegerMapEquation.h"
 #include <memory>
 #include "InfomapOptimizer.h"
 
@@ -77,7 +78,10 @@ protected:
 		} else if (haveMemory() && !forceNoMemory) {
 			m_optimizer = OptimizerPtr(new InfomapOptimizer<MemMapEquation>());
 		} else if (this->isIntegerFlow()) {
-			m_optimizer = OptimizerPtr(new InfomapOptimizer<GrassbergerMapEquation>());
+			if (this->grassberger)
+				m_optimizer = OptimizerPtr(new InfomapOptimizer<GrassbergerMapEquation>());
+			else
+				m_optimizer = OptimizerPtr(new InfomapOptimizer<IntegerMapEquation>());
 		} else {
 			// m_optimizer = OptimizerPtr(new InfomapOptimizer<MapEquation>());
 			m_optimizer = OptimizerPtr(new InfomapOptimizer<BiasedMapEquation>());

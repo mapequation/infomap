@@ -54,9 +54,11 @@ namespace infomap
 		}
 
 		inline
-		double plogpN(unsigned int p, unsigned int N)
+		double plogpN(unsigned int d, unsigned int N)
 		{
-			return p > 0 ? 1.0 / N * (plogp(p) - plogq(p, N)) : 0.0;
+			// return d > 0 ? 1.0 / N * (plogp(d) - plogq(d, N)) : 0.0;
+			// return d > 0 ? d * 1.0 / N * (log2(d) - log2(N)) : 0.0;
+			return d > 0 ? plogp(d * 1.0 / N) : 0.0;
 		}
 
 		template<typename T, typename U>

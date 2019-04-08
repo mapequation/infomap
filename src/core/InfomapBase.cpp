@@ -449,6 +449,9 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
 	}
 	generateSubNetwork(network);
 
+	if (this->grassberger) {
+		Log() << "Using Grassberger entropy estimation...\n";
+	}
 	initOptimizer();
 
 	init();

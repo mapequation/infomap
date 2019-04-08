@@ -143,6 +143,7 @@ struct Config
 	bool skipReplaceToOneModuleIfBetter = false;
 	unsigned int lowMemoryPriority = false; // Prioritize memory efficient algorithms before fast if > 0
 	bool innerParallelization = false;
+	bool grassberger = false;
 
 	// Output
 	std::string outDirectory = "";
@@ -249,6 +250,7 @@ struct Config
 		skipReplaceToOneModuleIfBetter(other.skipReplaceToOneModuleIfBetter),
 		lowMemoryPriority(other.lowMemoryPriority),
 		innerParallelization(other.innerParallelization),
+		grassberger(other.grassberger),
 		outDirectory(other.outDirectory),
 		outName(other.outName),
 		originallyUndirected(other.originallyUndirected),
@@ -344,6 +346,7 @@ struct Config
 		skipReplaceToOneModuleIfBetter = other.skipReplaceToOneModuleIfBetter;
 		lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
+		grassberger = other.grassberger;
 		outDirectory = other.outDirectory;
 		outName = other.outName;
 		originallyUndirected = other.originallyUndirected;
@@ -438,6 +441,7 @@ struct Config
 		skipReplaceToOneModuleIfBetter = other.skipReplaceToOneModuleIfBetter;
 		lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
+		grassberger = other.grassberger;
 		outDirectory = other.outDirectory;
 		outName = other.outName;
 		originallyUndirected = other.originallyUndirected;
@@ -592,7 +596,7 @@ struct Config
 	// bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 	bool isUndirectedClustering() const { return flowModel == FlowModel::undirected; }
 
-	bool isIntegerFlow() const { return integerFlow; }
+	bool isIntegerFlow() const { return integerFlow || grassberger; }
 
 	bool isUndirectedFlow() const { return flowModel == FlowModel::undirected || flowModel == FlowModel::undirdir; }
 
