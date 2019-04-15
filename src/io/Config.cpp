@@ -99,6 +99,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.metaDataRate, "meta-data-rate",
 			"The encoding rate of metadata. Default 1.0 means in each step.", "f", true);
 
+	api.addOptionArgument(conf.unweightedMetaData, "unweighted-meta-data",
+			"Don't weight meta data by node flow.", true);
+
 	api.addOptionArgument(conf.noInfomap, "no-infomap",
 			"Don't run Infomap. Useful if initial cluster data should be preserved or non-modular data printed.", true);
 

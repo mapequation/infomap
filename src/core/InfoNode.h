@@ -181,6 +181,12 @@ public:
 
 	// ---------------------------- Getters ----------------------------
 
+	unsigned int getMetaData(unsigned int dimension = 0) {
+		if (dimension >= metaData.size()) {
+			return 0;
+		}
+		return metaData[dimension];
+	}
 
 	// ---------------------------- Infomap ----------------------------
 	InfomapBase& getInfomap();

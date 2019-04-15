@@ -62,6 +62,10 @@ public:
 	// double getCodelength() const { return codelength + metaCodelength; };
 	double getCodelength() const;
 
+	double getMetaCodelength(bool unweighted = false) const {
+		return unweighted ? metaCodelength : metaDataRate * metaCodelength;
+	};
+
 	// ===================================================
 	// IO
 	// ===================================================
@@ -183,8 +187,9 @@ protected:
 
 	unsigned int numMetaDataDimensions = 0;
 	double metaDataRate = 1.0;
-	bool weightByFlow = false;
+	bool weightByFlow = true;
 	double metaCodelength = 0.0;
+	double m_unweightedNodeFlow = 0.0;
 };
 
 

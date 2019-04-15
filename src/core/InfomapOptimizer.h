@@ -48,6 +48,8 @@ public:
 
 	virtual double getModuleCodelength() const;
 
+	virtual double getMetaCodelength(bool unweighted = false) const;
+
 	virtual bool haveMemory() const;
 
 protected:
@@ -163,6 +165,20 @@ inline
 double InfomapOptimizer<Objective>::getModuleCodelength() const
 {
 	return m_objective.getModuleCodelength();
+}
+
+template<>
+inline
+double InfomapOptimizer<MetaMapEquation>::getMetaCodelength(bool unweighted) const
+{
+	return m_objective.getMetaCodelength(unweighted);
+}
+
+template<typename Objective>
+inline
+double InfomapOptimizer<Objective>::getMetaCodelength(bool unweighted) const
+{
+	return 0.0;
 }
 
 template<typename Objective>

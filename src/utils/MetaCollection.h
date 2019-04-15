@@ -125,7 +125,7 @@ public:
     for (auto& it : m_metaToFlowCount) {
       metaCodelength -= infomath::plogp(it.second.flow / m_total.flow);
     }
-    return metaCodelength;
+    return m_total.flow * metaCodelength;
   }
 
   void clear() {

@@ -16,8 +16,6 @@ class InfomapOptimizerBase {
   friend class InfomapCore;
 	using FlowDataType = FlowData;
 
-protected:
-	using EdgeType = Edge<InfoNode>;
 public:
 	InfomapOptimizerBase() {}
 	
@@ -40,6 +38,8 @@ public:
 	virtual double getIndexCodelength() const = 0;
 
 	virtual double getModuleCodelength() const = 0;
+
+	virtual double getMetaCodelength(bool unweighted = false) const { return 0.0; }
 
 	virtual bool haveMemory() const = 0;
 

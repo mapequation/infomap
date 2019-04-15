@@ -59,6 +59,10 @@ public:
     return m_optimizer->getModuleCodelength();  
   }
 
+	virtual double getMetaCodelength(bool unweighted = false) const { 
+		return m_optimizer->getMetaCodelength(unweighted);
+	}
+
 protected:
 	void initOptimizer(bool forceNoMemory = false)
 	{

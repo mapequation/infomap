@@ -96,6 +96,7 @@ struct Config
 	std::string clusterDataFile = "";
 	std::string metaDataFile = "";
 	double metaDataRate = 1.0;
+	bool unweightedMetaData = false;
 	unsigned int numMetaDataDimensions = 0;
 	bool clusterDataIsHard = false;
 	bool setUnidentifiedNodesToClosestModule = false;
@@ -208,6 +209,7 @@ struct Config
 	 	clusterDataFile(other.clusterDataFile),
 	 	metaDataFile(other.metaDataFile),
 	 	metaDataRate(other.metaDataRate),
+	 	unweightedMetaData(other.unweightedMetaData),
 	 	numMetaDataDimensions(other.numMetaDataDimensions),
 	 	clusterDataIsHard(other.clusterDataIsHard),
 	 	setUnidentifiedNodesToClosestModule(other.setUnidentifiedNodesToClosestModule),
@@ -302,6 +304,7 @@ struct Config
 	 	clusterDataFile = other.clusterDataFile;
 	 	metaDataFile = other.metaDataFile;
 	 	metaDataRate = other.metaDataRate;
+	 	unweightedMetaData = other.unweightedMetaData;
 	 	numMetaDataDimensions = other.numMetaDataDimensions;
 	 	clusterDataIsHard = other.clusterDataIsHard;
 	 	setUnidentifiedNodesToClosestModule = other.setUnidentifiedNodesToClosestModule;
@@ -395,6 +398,7 @@ struct Config
 	 	// clusterDataFile = other.clusterDataFile;
 	 	// metaDataFile = other.metaDataFile;
 	 	metaDataRate = other.metaDataRate;
+	 	unweightedMetaData = other.unweightedMetaData;
 	 	numMetaDataDimensions = other.numMetaDataDimensions;
 	 	// clusterDataIsHard = other.clusterDataIsHard;
 	 	// setUnidentifiedNodesToClosestModule = other.setUnidentifiedNodesToClosestModule;
