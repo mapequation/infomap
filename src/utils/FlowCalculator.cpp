@@ -358,7 +358,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 			++linkIndex;
 		}
 	}
-	Log() << "\n  => Sum node flow: " << sumNodeFlow << ", sumLinkFlow: " << sumLinkFlow << "\n";
+	Log() << "\n  => Sum node flow: " << sumNodeFlow << ", sum link flow: " << sumLinkFlow << "\n";
 }
 
 }
