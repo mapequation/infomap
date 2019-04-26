@@ -45,7 +45,7 @@ void IntegerMapEquation::init(const Config& config)
 void IntegerMapEquation::initNetwork(NodeBase& root)
 {
 	Log(3) << "IntegerMapEquation::initNetwork()...\n";
-	
+
 	nodeFlow_log_nodeFlow = 0.0;
 	m_totalDegree = 0;
 	for (NodeBase& node : root)
@@ -177,7 +177,7 @@ double IntegerMapEquation::calcCodelengthOnModuleOfModules(const NodeBase& p) co
 	// Compact format
 	// L = T * ( H(q/T) + SUM( H(p/T) ) )
 	// Expanded format
-	// L = q * -log(q) - q * -log(T) + SUM( p * -log(p) - p * -log(T) ) 
+	// L = q * -log(q) - q * -log(T) + SUM( p * -log(p) - p * -log(T) )
 	//   = T * log(T) - q*log(q) - SUM( p*log(p) )
 	// As T is not known, use expanded format to avoid two loops
 	double sumEnter = 0.0;
@@ -208,8 +208,10 @@ double IntegerMapEquation::getDeltaCodelengthOnMovingNode(NodeBase& curr,
 	unsigned int newModule = newModuleDelta.module;
 	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
 	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
-	// Log() << "\nold delta enter/exit: " << oldModuleDelta.deltaEnter << "/" << oldModuleDelta.deltaExit;
-	// Log() << "\nnew delta enter/exit: " << newModuleDelta.deltaEnter << "/" << newModuleDelta.deltaExit;
+
+	// add to both enter and exit flow
+	deltaEnterExitOldModule *= 2;
+	deltaEnterExitNewModule *= 2;
 
 	double delta_enter = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
 
@@ -298,7 +300,7 @@ void IntegerMapEquation::updateCodelengthOnMovingNode(NodeBase& curr,
 	// Log() << "\nL_index = " << enterFlow_log_enterFlow << " - " << enter_log_enter << " = " << indexCodelength;
 	// Log() << "\nL_mod = " << exit_log_exit << " + " << flow_log_flow << " - " << nodeFlow_log_nodeFlow << " = " << moduleCodelength;
 	// Log() << "\n=> L = " << codelength << "\n============= ";
-	return;	
+	return;
 }
 
 

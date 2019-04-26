@@ -6,6 +6,7 @@
 #include "../utils/infomath.h"
 #include "../utils/Log.h"
 #include "Node.h"
+#include <cmath>
 
 namespace infomap {
 
@@ -21,12 +22,12 @@ namespace infomap {
 		double log2 = 0.6931471805599453;
 		m_grassbergerLog2.resize(m_totalDegree + 1);
 		m_grassbergerLog2[0] = 0;
-		m_grassbergerLog2[1] = -gamma - log2;
-		m_grassbergerLog2[2] = 2.0 - gamma - log2;
+		m_grassbergerLog2[1] = (-gamma - log2) * M_LOG2E;
+		m_grassbergerLog2[2] = (2.0 - gamma - log2) * M_LOG2E;
 
 		for (unsigned int i = 3; i < m_totalDegree + 1; i += 2) {
 			m_grassbergerLog2[i] = m_grassbergerLog2[i - 1];
-			m_grassbergerLog2[i + 1] = m_grassbergerLog2[i - 1] + 2.0 / i;
+			m_grassbergerLog2[i + 1] = (m_grassbergerLog2[i - 1] + 2.0 / i * M_LOG2E);
 		}
 
 		IntegerMapEquation::initNetwork(root);
@@ -34,6 +35,7 @@ namespace infomap {
 
 	double GrassbergerMapEquation::log2(unsigned int d) const
 	{
+		// return infomath::log2(1.0 * d / m_totalDegree);
 		return m_grassbergerLog2[d];
 	}
 
