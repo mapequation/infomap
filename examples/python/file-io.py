@@ -1,4 +1,4 @@
-from infomap import infomap
+import infomap
 import pathlib
 
 name = "ninetriangles"

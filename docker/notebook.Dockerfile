@@ -16,4 +16,5 @@ RUN make all
 
 WORKDIR /me
 
-RUN pip -vvv --no-cache-dir install --upgrade -I --index-url https://test.pypi.org/simple/ infomap
+# RUN pip -vvv --no-cache-dir install --upgrade -I --index-url https://test.pypi.org/simple/ infomap
+RUN pip -vvv install infomap

@@ -1,4 +1,4 @@
-from infomap import infomap
+import infomap
 
 eta = 0.3
 im = infomap.Infomap(f"--two-level --meta-data-rate {eta}")
@@ -41,4 +41,4 @@ print(f" - Meta codelength = eta ({eta}) * meta entropy ({Hmeta})")
 print("\n#node module meta")
 for node in im.iterLeafNodes():
 	print(f"{node.id} {node.moduleIndex()} {node.getMetaData()}")
-	
+

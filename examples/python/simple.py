@@ -1,4 +1,4 @@
-from infomap import infomap
+import infomap
 
 myInfomap = infomap.Infomap("--two-level --verbose")
 
@@ -25,7 +25,7 @@ print(f"Found {myInfomap.numTopModules()} modules with codelength: {myInfomap.co
 print("\n#node module")
 for node,module in myInfomap.getModules().items():
 	print(f"{node} {module}")
-	
+
 
 print("\n#path flow node module:")
 for node in myInfomap.iterLeafNodes():
