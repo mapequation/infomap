@@ -72,7 +72,7 @@ public:
 
 	// using Base::print;
 	std::ostream& print(std::ostream& out) const;
-	// friend std::ostream& operator<<(std::ostream&, const MetaMapEquation&);
+	friend std::ostream& operator<<(std::ostream&, const MetaMapEquation&);
 
 	// ===================================================
 	// Init
@@ -93,7 +93,7 @@ public:
 	// ===================================================
 
 	double calcCodelength(const InfoNode& parent) const;
-	
+
 	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
 
 	double getDeltaCodelengthOnMovingNode(InfoNode& current,

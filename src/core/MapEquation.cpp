@@ -31,9 +31,9 @@ std::ostream& MapEquation::print(std::ostream& out) const {
 	return out << indexCodelength << " + " << moduleCodelength << " = " <<	io::toPrecision(codelength);
 }
 
-// std::ostream& operator<<(std::ostream& out, const MapEquation& mapEq) {
-// 	return mapEq.print(out);
-// }
+std::ostream& operator<<(std::ostream& out, const MapEquation& mapEq) {
+	return mapEq.print(out);
+}
 
 
 // ===================================================

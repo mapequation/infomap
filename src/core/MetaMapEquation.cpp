@@ -33,9 +33,9 @@ std::ostream& MetaMapEquation::print(std::ostream& out) const {
 		" + " << metaCodelength << " = " <<	io::toPrecision(getCodelength());
 }
 
-// std::ostream& operator<<(std::ostream& out, const MetaMapEquation& mapEq) {
-// 	return out << indexCodelength << " + " << moduleCodelength << " = " <<	io::toPrecision(codelength);
-// }
+std::ostream& operator<<(std::ostream& out, const MetaMapEquation& mapEq) {
+	return mapEq.print(out);
+}
 
 
 // ===================================================
@@ -144,7 +144,7 @@ void MetaMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
 
 	// moduleCodelength += metaCodelength;
 	// codelength += metaCodelength;
-	
+
 	// std::cout << "\n!!!!! calculateCodelength(nodes) -> meta: " << metaCodelength << "\n";
 }
 
@@ -171,7 +171,7 @@ double MetaMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent
 	}
 
 	double metaCodelength = metaCollection.calculateEntropy();
-	
+
 	// std::cout << "\n!!!!! calcCodelengthOnModuleOfLeafNodes(parent) -> meta: " << metaCodelength << "\n";
 
 	return indexLength + metaDataRate * metaCodelength;
@@ -253,7 +253,7 @@ void MetaMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 
 	// Update meta data from moving node
 	updateMetaData(current, oldModuleIndex, newModuleIndex);
-	
+
 	// Add codelength of old and new module after changes
 	deltaMetaL += getCurrentModuleMetaCodelength(oldModuleIndex, current, 0);
 	deltaMetaL += getCurrentModuleMetaCodelength(newModuleIndex, current, 0);
@@ -263,7 +263,7 @@ void MetaMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 	// 	", metaCodelength: " << metaCodelength << " -> " << (metaCodelength + deltaMetaL) << "\n";
 
 	metaCodelength += deltaMetaL;
-	
+
 	// moduleCodelength += deltaMetaL;
 	// codelength += deltaMetaL;
 }
@@ -274,7 +274,7 @@ void MetaMapEquation::updateMetaData(InfoNode& current, unsigned int oldModuleIn
 	// Remove meta id from old module (can be a set of meta ids when moving submodules in coarse tune)
 	auto& oldMetaCollection = m_moduleToMetaCollection[oldModuleIndex];
 	oldMetaCollection.remove(current.metaCollection);
-	
+
 	// Add meta id to new module
 	auto& newMetaCollection = m_moduleToMetaCollection[bestModuleIndex];
 	newMetaCollection.add(current.metaCollection);

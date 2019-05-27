@@ -68,7 +68,7 @@ js-worker: build/js/Infomap-worker.js
 build/js/Infomap-worker.js: $(SOURCES)
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
-	em++ -O0 -s ALLOW_MEMORY_GROWTH=1 --pre-js interfaces/js/pre-worker-module.js -o build/js/Infomap-worker.js $^
+	em++ -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 --pre-js interfaces/js/pre-worker-module.js -o build/js/Infomap-worker.js $^
 
 build/js/Infomap.js: $(SOURCES)
 	@echo "Compiling Infomap for Node.js..."

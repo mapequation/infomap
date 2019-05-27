@@ -24,9 +24,9 @@ std::ostream& MemMapEquation::print(std::ostream& out) const {
 	return out << indexCodelength << " + " << moduleCodelength << " = " <<	io::toPrecision(codelength);
 }
 
-// std::ostream& operator<<(std::ostream& out, const MemMapEquation& mapEq) {
-// 	return out << indexCodelength << " + " << moduleCodelength << " = " <<	io::toPrecision(codelength);
-// }
+std::ostream& operator<<(std::ostream& out, const MemMapEquation& mapEq) {
+	return mapEq.print(out);
+}
 
 
 // ===================================================

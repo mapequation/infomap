@@ -63,7 +63,7 @@ public:
 
 	// using Base::print;
 	std::ostream& print(std::ostream& out) const;
-	// friend std::ostream& operator<<(std::ostream&, const BiasedMapEquation&);
+	friend std::ostream& operator<<(std::ostream&, const BiasedMapEquation&);
 
 	// ===================================================
 	// Init
@@ -84,7 +84,7 @@ public:
 	// ===================================================
 
 	double calcCodelength(const InfoNode& parent) const;
-	
+
 	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
 
 	double getDeltaCodelengthOnMovingNode(InfoNode& current,
