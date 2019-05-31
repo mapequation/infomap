@@ -114,7 +114,7 @@ struct Config
 	double markovTime = 1.0;
 	double multilayerRelaxRate = 0.15;
 	int multilayerRelaxLimit = -1;
-	
+
 	// Clustering
 	bool twoLevel = false;
 	bool noCoarseTune = false;
