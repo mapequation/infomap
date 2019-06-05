@@ -110,13 +110,13 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 			"Print the top two-level modular network in the .map format.", "Output", true);
 
 	api.addOptionArgument(conf.printClu, "clu",
-			"Print the top cluster indices for each node.", "Output");
+			"Print a .clu file with the top cluster ids for each node.", "Output");
 
 	api.addOptionArgument(conf.printTree, "tree",
-			"Print the hierarchy in .tree format. (included in default .ftree output)", "Output", true);
+			"Print a .tree file with the modular hierarchy. (True by default)", "Output", true);
 
 	api.addOptionArgument(conf.printFlowTree, "ftree",
-			"Print the hierarchy in .tree format and include aggregated links between (nested) modules. (True by default)", "Output", true);
+			"Print a .ftree file with the modular hierarchy including aggregated links between (nested) modules. (Used by Network Navigator)", "Output", true);
 
 	// api.addOptionArgument(conf.printBinaryTree, "btree",
 	// 		"Print the tree in a streamable binary format.", "Output", true);

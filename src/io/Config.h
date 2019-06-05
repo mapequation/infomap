@@ -148,7 +148,7 @@ struct Config
 	std::string outDirectory = "";
 	std::string outName = "";
 	bool originallyUndirected = false;
-	bool printTree = false;
+	bool printTree = true;
 	bool printFlowTree = false;
 	bool printMap = false;
 	bool printClu = false;
@@ -535,8 +535,8 @@ struct Config
 			flowModel = FlowModel::rawdir;
 		}
 
-		if (!haveModularResultOutput())
-			printTree = true;
+		// if (!haveModularResultOutput())
+		// 	printTree = true;
 
 		originallyUndirected = isUndirectedFlow();
 		// if (isMemoryNetwork())
