@@ -34,7 +34,7 @@ public:
 
 protected:
 
-	double log2(unsigned int d) const;
+	double log2(unsigned int d) const; 
 	virtual double plogp(unsigned int d) const;
 	virtual double plogpN(unsigned int d, unsigned int N) const;
 

@@ -132,9 +132,9 @@ protected:
 	// ===================================================
 
 	// Integer version, normalized using p = d/m_totalDegree
-	virtual double plogp(unsigned int d) const;
+	virtual double plogp(double d) const;
 	// p = d/N
-	virtual double plogpN(unsigned int d, unsigned int N) const;
+	virtual double plogpN(double d, double N) const;
 
 	void calculateCodelength(std::vector<NodeBase*>& nodes);
 
@@ -178,8 +178,10 @@ protected:
 	using Base::exitNetworkFlow;
 	using Base::exitNetworkFlow_log_exitNetworkFlow;
 
-	// For Grassberger
-	unsigned int m_totalDegree = 0;
+	// For Grassberger and Bayes
+	double m_totalDegree = 0.0;
+	unsigned int m_totalNodes = 0.0;
+	double m_prior = 0.0;
 	double m_nodeFlow_log_nodeFlow = 0.0; // constant while the leaf network is the same
 	double m_flow_log_flow = 0.0; // node.(flow + exitFlow)
 	double m_exit_log_exit = 0.0;

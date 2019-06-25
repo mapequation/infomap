@@ -192,11 +192,14 @@ public:
 	virtual void addEnterFlow(double flow) {}
 	virtual void addExitFlow(double flow) {}
 	virtual void addEnterExitFlow(unsigned int flow) {}
+	virtual void setModuleSize(unsigned int moduleSize) {}
+	virtual void addModuleSize(unsigned int moduleSize) {}
 	virtual double getFlow() const { return 0; };
 	virtual double getEnterFlow() const { return 0; };
 	virtual double getExitFlow() const { return 0; };
 	virtual unsigned int getFlowInt() const { return 0; };
 	virtual unsigned int getEnterExitFlow() const { return 0; };
+	virtual unsigned int getModuleSize() const { return 0; };
 	virtual FlowData getFlowData() const { return 0; };
 
 	// ---------------------------- Infomap ----------------------------

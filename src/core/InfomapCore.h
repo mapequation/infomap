@@ -15,6 +15,7 @@
 #include "MetaMapEquation.h"
 #include "BiasedMapEquation.h"
 #include "GrassbergerMapEquation.h"
+#include "BayesMapEquation.h"
 #include "IntegerMapEquation.h"
 #include <memory>
 #include "InfomapOptimizer.h"
@@ -80,6 +81,8 @@ protected:
 		} else if (this->isIntegerFlow()) {
 			if (this->grassberger)
 				m_optimizer = OptimizerPtr(new InfomapOptimizer<GrassbergerMapEquation>());
+			else if (this->bayes)
+				m_optimizer = OptimizerPtr(new InfomapOptimizer<BayesMapEquation>());
 			else
 				m_optimizer = OptimizerPtr(new InfomapOptimizer<IntegerMapEquation>());
 		} else {

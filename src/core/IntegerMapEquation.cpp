@@ -13,6 +13,7 @@
 #include <map>
 #include <utility>
 #include <cstdlib>
+#include <cmath>
 
 namespace infomap {
 
@@ -47,14 +48,18 @@ void IntegerMapEquation::initNetwork(NodeBase& root)
 	Log(3) << "IntegerMapEquation::initNetwork()...\n";
 
 	nodeFlow_log_nodeFlow = 0.0;
-	m_totalDegree = 0;
+	m_totalDegree = 0.0;
+	m_totalNodes = 0;
 	for (NodeBase& node : root)
 	{
 		m_totalDegree += getNode(node).data.flow;
+		m_totalNodes++;
 	}
+	m_prior = log(m_totalNodes);
+
 	for (NodeBase& node : root)
 	{
-		nodeFlow_log_nodeFlow += plogp(getNode(node).data.flow);
+		nodeFlow_log_nodeFlow += plogp(getNode(node).data.flow + m_prior);
 	}
 	initSubNetwork(root);
 }
@@ -84,13 +89,13 @@ void IntegerMapEquation::initPartition(std::vector<NodeBase*>& nodes)
 // Codelength
 // ===================================================
 
-double IntegerMapEquation::plogp(unsigned int d) const
+double IntegerMapEquation::plogp(double d) const
 {
 	double p = d * 1.0 / m_totalDegree;
 	return infomath::plogp(p);
 }
 
-double IntegerMapEquation::plogpN(unsigned int d, unsigned int N) const
+double IntegerMapEquation::plogpN(double d, double N) const
 {
 	return infomath::plogpN(d, N);
 }
@@ -113,15 +118,17 @@ void IntegerMapEquation::calculateCodelengthTerms(std::vector<NodeBase*>& nodes)
 	for (NodeBase* n : nodes)
 	{
 		auto& node = getNode(*n);
+		unsigned int moduleSize = node.data.moduleSize;
+		double eta = moduleSize * (m_totalNodes - moduleSize) / (m_totalNodes - 1.0);
 		// own node/module codebook
-		flow_log_flow += plogp(node.data.flow + node.data.enterExitFlow);
+		flow_log_flow += plogp(node.data.flow + node.data.enterExitFlow + m_prior * (moduleSize + eta));
 
 		// use of index codebook
-		enter_log_enter += plogp(node.data.enterExitFlow);
-		exit_log_exit += plogp(node.data.enterExitFlow);
-		enterFlow += node.data.enterExitFlow;
+		enter_log_enter += plogp(node.data.enterExitFlow + m_prior * eta);
+		exit_log_exit += plogp(node.data.enterExitFlow + m_prior * eta);
+		enterFlow += node.data.enterExitFlow + m_prior * eta;
 	}
-	enterFlow += exitNetworkFlow;
+	//enterFlow += exitNetworkFlow; ????
 	enterFlow_log_enterFlow = plogp(enterFlow);
 }
 
@@ -144,8 +151,12 @@ double IntegerMapEquation::calcCodelength(const NodeBase& parent) const
 double IntegerMapEquation::calcCodelengthOnModuleOfLeafNodes(const NodeBase& p) const
 {
 	auto& parent = getNode(p);
-	unsigned int parentFlow = parent.data.flow;
-	unsigned int parentExit = parent.data.enterExitFlow;
+
+	unsigned int moduleSize = parent.data.moduleSize;
+	double eta = moduleSize * (m_totalNodes - moduleSize) / (m_totalNodes - 1.0);
+
+	unsigned int parentFlow = parent.data.flow + m_prior * moduleSize;
+	unsigned int parentExit = parent.data.enterExitFlow + m_prior * eta;
 	unsigned int totalParentFlow = parentFlow + parentExit;
 	if (totalParentFlow == 0)
 		return 0.0;
@@ -153,11 +164,11 @@ double IntegerMapEquation::calcCodelengthOnModuleOfLeafNodes(const NodeBase& p) 
 	double indexLength = 0.0;
 	for (const auto& node : parent)
 	{
-		indexLength -= plogpN(getNode(node).data.flow, totalParentFlow);
+		indexLength -= plogpN(getNode(node).data.flow + m_prior, totalParentFlow);
 	}
 	indexLength -= plogpN(parentExit, totalParentFlow);
 
-	indexLength *= totalParentFlow * 1.0 / m_totalDegree;
+	indexLength *= totalParentFlow * 1.0 / (m_totalDegree + m_prior * m_totalNodes);
 
 	return indexLength;
 }
@@ -166,7 +177,8 @@ double IntegerMapEquation::calcCodelengthOnModuleOfModules(const NodeBase& p) co
 {
 	auto& parent = getNode(p);
 	unsigned int parentFlow = parent.data.flow;
-	unsigned int parentExit = parent.data.enterExitFlow;
+	double parentExit = parent.data.enterExitFlow;
+	unsigned int parentModuleSize = parent.data.moduleSize;
 	// unsigned int totalParentFlow = parentFlow + parentExit;
 	if (parentFlow == 0)
 		return 0.0;
@@ -182,14 +194,19 @@ double IntegerMapEquation::calcCodelengthOnModuleOfModules(const NodeBase& p) co
 	// As T is not known, use expanded format to avoid two loops
 	double sumEnter = 0.0;
 	double sumEnterLogEnter = 0.0;
+
 	for (const auto& n : parent)
 	{
 		auto& node = getNode(n);
-		sumEnter += node.data.enterExitFlow; // rate of enter to finer level
-		sumEnterLogEnter += plogp(node.data.enterExitFlow);
+		unsigned int moduleSize = node.data.moduleSize;
+		double eta = moduleSize * (m_totalNodes - moduleSize) / (m_totalNodes - 1.0);
+		sumEnter += node.data.enterExitFlow + m_prior * eta; // rate of enter to finer level
+		sumEnterLogEnter += plogp(node.data.enterExitFlow + m_prior * eta);
 	}
+	double parentEta = parentModuleSize * (m_totalNodes - parentModuleSize) / (m_totalNodes - 1.0);
+	parentExit += m_prior * parentEta;
 	// The possibilities from this module: Either exit to coarser level or enter one of its children
-	unsigned int totalCodewordUse = parentExit + sumEnter;
+	double totalCodewordUse = parentExit + sumEnter;
 
 	// return plogp(totalCodewordUse) - sumEnterLogEnter - plogp(parentExit);
 	double L = plogp(totalCodewordUse) - sumEnterLogEnter - plogp(parentExit);
@@ -205,35 +222,42 @@ double IntegerMapEquation::getDeltaCodelengthOnMovingNode(NodeBase& curr,
 	// double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 	// using infomath::plogp;
 	unsigned int oldModule = oldModuleDelta.module;
-	unsigned int newModule = newModuleDelta.module;
+	unsigned int sizeOldModule = moduleMembers[oldModule];
+	double etaOldModule = sizeOldModule * (m_totalNodes - sizeOldModule) / (m_totalNodes - 1.0);
+	double deltaEtaOldModule = (2.0 * sizeOldModule - m_totalNodes - 1.0) / (m_totalNodes - 1.0);
 	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+
+	unsigned int newModule = newModuleDelta.module;
+	unsigned int sizeNewModule = moduleMembers[newModule];
+	double etaNewModule = sizeNewModule * (m_totalNodes - sizeNewModule) / (m_totalNodes - 1.0);
+	double deltaEtaNewModule = (m_totalNodes - 2.0 * sizeNewModule - 1.0) / (m_totalNodes - 1.0);
 	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
 	// add to both enter and exit flow
 	deltaEnterExitOldModule *= 2;
 	deltaEnterExitNewModule *= 2;
 
-	double delta_enter = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
+	double delta_enter = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule + m_prior * (deltaEtaOldModule + deltaEtaNewModule)) - enterFlow_log_enterFlow; //??????
 
 	double delta_enter_log_enter = \
-			- plogp(moduleFlowData[oldModule].enterExitFlow) \
-			- plogp(moduleFlowData[newModule].enterExitFlow) \
-			+ plogp(moduleFlowData[oldModule].enterExitFlow - current.data.enterExitFlow + deltaEnterExitOldModule) \
-			+ plogp(moduleFlowData[newModule].enterExitFlow + current.data.enterExitFlow - deltaEnterExitNewModule);
+			- plogp(moduleFlowData[oldModule].enterExitFlow + m_prior * etaOldModule) \
+			- plogp(moduleFlowData[newModule].enterExitFlow + m_prior * etaNewModule) \
+			+ plogp(moduleFlowData[oldModule].enterExitFlow - current.data.enterExitFlow + deltaEnterExitOldModule + m_prior * (etaOldModule + deltaEtaOldModule)) \
+			+ plogp(moduleFlowData[newModule].enterExitFlow + current.data.enterExitFlow - deltaEnterExitNewModule + m_prior * (etaNewModule + deltaEtaNewModule));
 
 	double delta_exit_log_exit = \
-			- plogp(moduleFlowData[oldModule].enterExitFlow) \
-			- plogp(moduleFlowData[newModule].enterExitFlow) \
-			+ plogp(moduleFlowData[oldModule].enterExitFlow - current.data.enterExitFlow + deltaEnterExitOldModule) \
-			+ plogp(moduleFlowData[newModule].enterExitFlow + current.data.enterExitFlow - deltaEnterExitNewModule);
+			- plogp(moduleFlowData[oldModule].enterExitFlow + m_prior * etaOldModule) \
+			- plogp(moduleFlowData[newModule].enterExitFlow + m_prior * etaNewModule) \
+			+ plogp(moduleFlowData[oldModule].enterExitFlow - current.data.enterExitFlow + deltaEnterExitOldModule + m_prior * (etaOldModule + deltaEtaOldModule)) \
+			+ plogp(moduleFlowData[newModule].enterExitFlow + current.data.enterExitFlow - deltaEnterExitNewModule + m_prior * (etaNewModule + deltaEtaNewModule));
 
 	double delta_flow_log_flow = \
-			- plogp(moduleFlowData[oldModule].enterExitFlow + moduleFlowData[oldModule].flow) \
-			- plogp(moduleFlowData[newModule].enterExitFlow + moduleFlowData[newModule].flow) \
+			- plogp(moduleFlowData[oldModule].enterExitFlow + moduleFlowData[oldModule].flow + m_prior * (sizeOldModule + etaOldModule)) \
+			- plogp(moduleFlowData[newModule].enterExitFlow + moduleFlowData[newModule].flow + m_prior * (sizeNewModule + etaNewModule)) \
 			+ plogp(moduleFlowData[oldModule].enterExitFlow + moduleFlowData[oldModule].flow \
-					- current.data.enterExitFlow - current.data.flow + deltaEnterExitOldModule) \
+					- current.data.enterExitFlow - current.data.flow + deltaEnterExitOldModule + m_prior * (sizeOldModule - 1.0 + etaOldModule + deltaEtaOldModule)) \
 			+ plogp(moduleFlowData[newModule].enterExitFlow + moduleFlowData[newModule].flow \
-					+ current.data.enterExitFlow + current.data.flow - deltaEnterExitNewModule);
+					+ current.data.enterExitFlow + current.data.flow - deltaEnterExitNewModule + m_prior * (sizeNewModule + 1.0 + etaNewModule + deltaEtaNewModule));
 
 	double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
 
@@ -253,22 +277,29 @@ void IntegerMapEquation::updateCodelengthOnMovingNode(NodeBase& curr,
 	auto& current = getNode(curr);
 	// using infomath::plogp;
 	unsigned int oldModule = oldModuleDelta.module;
-	unsigned int newModule = newModuleDelta.module;
+	unsigned int sizeOldModule = moduleMembers[oldModule];
+	double etaOldModule = sizeOldModule * (m_totalNodes - sizeOldModule) / (m_totalNodes - 1.0);
+	double deltaEtaOldModule = (2.0 * sizeOldModule - m_totalNodes - 1.0) / (m_totalNodes - 1.0);
 	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+
+	unsigned int newModule = newModuleDelta.module;
+	unsigned int sizeNewModule = moduleMembers[newModule];
+	double etaNewModule = sizeNewModule * (m_totalNodes - sizeNewModule) / (m_totalNodes - 1.0);
+	double deltaEtaNewModule = (m_totalNodes - 2.0 * sizeNewModule - 1.0) / (m_totalNodes - 1.0);
 	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
 	enterFlow -= \
-			moduleFlowData[oldModule].enterExitFlow + \
-			moduleFlowData[newModule].enterExitFlow;
+			moduleFlowData[oldModule].enterExitFlow + m_prior * etaOldModule + \
+			moduleFlowData[newModule].enterExitFlow + m_prior * etaNewModule;
 	enter_log_enter -= \
-			plogp(moduleFlowData[oldModule].enterExitFlow) + \
-			plogp(moduleFlowData[newModule].enterExitFlow);
+			plogp(moduleFlowData[oldModule].enterExitFlow + m_prior * etaOldModule) + \
+			plogp(moduleFlowData[newModule].enterExitFlow + m_prior * etaNewModule);
 	exit_log_exit -= \
-			plogp(moduleFlowData[oldModule].enterExitFlow) + \
-			plogp(moduleFlowData[newModule].enterExitFlow);
+			plogp(moduleFlowData[oldModule].enterExitFlow + m_prior * etaOldModule) + \
+			plogp(moduleFlowData[newModule].enterExitFlow + m_prior * etaNewModule);
 	flow_log_flow -= \
-			plogp(moduleFlowData[oldModule].enterExitFlow + moduleFlowData[oldModule].flow) + \
-			plogp(moduleFlowData[newModule].enterExitFlow + moduleFlowData[newModule].flow);
+			plogp(moduleFlowData[oldModule].enterExitFlow + moduleFlowData[oldModule].flow + m_prior * (sizeOldModule + etaOldModule)) + \
+			plogp(moduleFlowData[newModule].enterExitFlow + moduleFlowData[newModule].flow + m_prior * (sizeNewModule + etaNewModule));
 
 
 	moduleFlowData[oldModule] -= current.data;
@@ -279,18 +310,21 @@ void IntegerMapEquation::updateCodelengthOnMovingNode(NodeBase& curr,
 	moduleFlowData[newModule].enterExitFlow -= deltaEnterExitNewModule;
 	moduleFlowData[newModule].enterExitFlow -= deltaEnterExitNewModule;
 
+	moduleFlowData[oldModule].moduleSize -= 1;
+	moduleFlowData[newModule].moduleSize += 1;
+
 	enterFlow += \
-			moduleFlowData[oldModule].enterExitFlow + \
-			moduleFlowData[newModule].enterExitFlow;
+			moduleFlowData[oldModule].enterExitFlow + m_prior * (etaOldModule + deltaEtaOldModule) + \
+			moduleFlowData[newModule].enterExitFlow + m_prior * (etaNewModule + deltaEtaNewModule);
 	enter_log_enter += \
-			plogp(moduleFlowData[oldModule].enterExitFlow) + \
-			plogp(moduleFlowData[newModule].enterExitFlow);
+			plogp(moduleFlowData[oldModule].enterExitFlow + m_prior * (etaOldModule + deltaEtaOldModule)) + \
+			plogp(moduleFlowData[newModule].enterExitFlow + m_prior * (etaNewModule + deltaEtaNewModule));
 	exit_log_exit += \
-			plogp(moduleFlowData[oldModule].enterExitFlow) + \
-			plogp(moduleFlowData[newModule].enterExitFlow);
+			plogp(moduleFlowData[oldModule].enterExitFlow + m_prior * (etaOldModule + deltaEtaOldModule)) + \
+			plogp(moduleFlowData[newModule].enterExitFlow + m_prior * (etaNewModule + deltaEtaNewModule));
 	flow_log_flow += \
-			plogp(moduleFlowData[oldModule].enterExitFlow + moduleFlowData[oldModule].flow) + \
-			plogp(moduleFlowData[newModule].enterExitFlow + moduleFlowData[newModule].flow);
+			plogp(moduleFlowData[oldModule].enterExitFlow + moduleFlowData[oldModule].flow + m_prior * (sizeOldModule - 1.0 + etaOldModule + deltaEtaOldModule)) + \
+			plogp(moduleFlowData[newModule].enterExitFlow + moduleFlowData[newModule].flow + m_prior * (sizeNewModule + 1.0 + etaNewModule + deltaEtaNewModule));
 
 	enterFlow_log_enterFlow = plogp(enterFlow);
 

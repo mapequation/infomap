@@ -144,6 +144,7 @@ struct Config
 	unsigned int lowMemoryPriority = false; // Prioritize memory efficient algorithms before fast if > 0
 	bool innerParallelization = false;
 	bool grassberger = false;
+	bool bayes = false;
 
 	// Output
 	std::string outDirectory = "";
@@ -251,6 +252,7 @@ struct Config
 		lowMemoryPriority(other.lowMemoryPriority),
 		innerParallelization(other.innerParallelization),
 		grassberger(other.grassberger),
+		bayes(other.bayes),
 		outDirectory(other.outDirectory),
 		outName(other.outName),
 		originallyUndirected(other.originallyUndirected),
@@ -347,6 +349,7 @@ struct Config
 		lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
 		grassberger = other.grassberger;
+		bayes = other.bayes;
 		outDirectory = other.outDirectory;
 		outName = other.outName;
 		originallyUndirected = other.originallyUndirected;
@@ -442,6 +445,7 @@ struct Config
 		lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
 		grassberger = other.grassberger;
+		bayes = other.bayes;
 		outDirectory = other.outDirectory;
 		outName = other.outName;
 		originallyUndirected = other.originallyUndirected;
@@ -596,7 +600,7 @@ struct Config
 	// bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 	bool isUndirectedClustering() const { return flowModel == FlowModel::undirected; }
 
-	bool isIntegerFlow() const { return integerFlow || grassberger; }
+	bool isIntegerFlow() const { return integerFlow || grassberger || bayes; }
 
 	bool isUndirectedFlow() const { return flowModel == FlowModel::undirected || flowModel == FlowModel::undirdir; }
 

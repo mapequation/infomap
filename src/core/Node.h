@@ -87,6 +87,12 @@ public:
 	virtual void addEnterExitFlow(unsigned int flow) {
 		data.addEnterExitFlow(flow);
 	}
+	virtual void setModuleSize(unsigned int moduleSize) {
+		data.setModuleSize(moduleSize);
+	}
+	virtual void addModuleSize(unsigned int moduleSize) {
+		data.addModuleSize(moduleSize);
+	}
 	virtual double getFlow() const {
 		return data.getFlow();
 	}
@@ -101,6 +107,9 @@ public:
 	}
 	virtual unsigned int getEnterExitFlow() const {
 		return data.getEnterExitFlow();
+	}
+	virtual unsigned int getModuleSize() const {
+		return data.getModuleSize();
 	}
 
 	virtual FlowData getFlowData() const {

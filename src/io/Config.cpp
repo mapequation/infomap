@@ -89,7 +89,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 
 	api.addOptionArgument(conf.clusterDataFile, 'c', "cluster-data",
 			"Provide an initial two-level (.clu format) or multi-layer (.tree format) solution.", "p", true);
-			
+
 	api.addOptionArgument(conf.setUnidentifiedNodesToClosestModule, "set-unidentified-nodes-to-closest-module",
 			"Merge unidentified nodes in cluster data to closest existing modules if possible.", true);
 
@@ -168,6 +168,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 
 	api.addOptionArgument(conf.grassberger, "grassberger",
 			"Use Grassberger entropy estimator (implies integer-flow)", true);
+
+	api.addOptionArgument(conf.bayes, "bayes",
+			"Use Bayesian entropy estimator (implies integer-flow)", true);
 
 	api.addOptionArgument(conf.recordedTeleportation, 'e', "recorded-teleportation",
 			"If teleportation is used to calculate the flow, also record it when minimizing codelength.", true);
@@ -256,7 +259,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	// 	api.addOptionalNonOptionArguments(optionalOutputDir, "[out_directory]",
 	// 			"The directory to write the results to.");
 	// }
-	
+
 	api.addOptionalNonOptionArguments(optionalOutputDir, "[out_directory]",
 			"The directory to write the results to.");
 
@@ -270,7 +273,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 
 	if (!optionalOutputDir.empty())
 		conf.outDirectory = optionalOutputDir[0];
-	
+
 	if (requireFileInput)
 		conf.noFileOutput = false;
 	else if (conf.outDirectory == "")
@@ -300,7 +303,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	conf.parsedOptions = api.getUsedOptionArguments();
 
 	conf.adaptDefaults();
-	
+
 	Log::init(conf.verbosity, conf.silent, conf.verboseNumberPrecision);
 
 	return conf;

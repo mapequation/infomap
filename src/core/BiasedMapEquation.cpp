@@ -131,7 +131,7 @@ double BiasedMapEquation::getDeltaCodelengthOnMovingNode(NodeBase& current,
 		return deltaL;
 
 	int deltaNumModules = getDeltaNumModulesIfMoving(current, oldModuleDelta.module, newModuleDelta.module, moduleMembers);
-	
+
 	double deltaBiasedCost = calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
 
 	// std::cout << "\n!!!!! getDeltaCodelengthOnMovingNode(" << current.stateId << ") from " <<
@@ -155,9 +155,9 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(NodeBase& current,
 
 	if (preferredNumModules == 0)
 		return;
-	
+
 	int deltaNumModules = getDeltaNumModulesIfMoving(current, oldModuleDelta.module, newModuleDelta.module, moduleMembers);
-	
+
 	// double deltaBiasedCost = calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
 
 	// std::cout << "\n!!!!! updateCodelengthOnMovingNode(" << current.stateId << ") from " <<
@@ -165,12 +165,12 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(NodeBase& current,
 	// 	newModule << " (" << moduleMembers[newModule] << ") -> currentNumModules = " <<
 	// 	currentNumModules << " + " << deltaNumModules << " => cost: " <<
 	// 	biasedCost << " + " << deltaBiasedCost << " = " << (biasedCost + deltaBiasedCost) << "\n";
-	
+
 	// biasedCost += deltaBiasedCost;
 
 	currentNumModules += deltaNumModules;
 	biasedCost = calcNumModuleCost(currentNumModules);
-	
+
 }
 
 

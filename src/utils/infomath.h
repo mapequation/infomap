@@ -54,7 +54,7 @@ namespace infomap
 		}
 
 		inline
-		double plogpN(unsigned int d, unsigned int N)
+		double plogpN(double d, double N)
 		{
 			// return d > 0 ? 1.0 / N * (plogp(d) - plogq(d, N)) : 0.0;
 			// return d > 0 ? d * 1.0 / N * (log2(d) - log2(N)) : 0.0;
