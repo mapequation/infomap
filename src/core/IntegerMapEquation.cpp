@@ -257,6 +257,10 @@ void IntegerMapEquation::updateCodelengthOnMovingNode(NodeBase& curr,
 	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
 	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
+	// add to both enter and exit flow
+	deltaEnterExitOldModule *= 2;
+	deltaEnterExitNewModule *= 2;
+
 	enterFlow -= \
 			moduleFlowData[oldModule].enterExitFlow + \
 			moduleFlowData[newModule].enterExitFlow;
@@ -275,8 +279,6 @@ void IntegerMapEquation::updateCodelengthOnMovingNode(NodeBase& curr,
 	moduleFlowData[newModule] += current.data;
 
 	moduleFlowData[oldModule].enterExitFlow += deltaEnterExitOldModule;
-	moduleFlowData[oldModule].enterExitFlow += deltaEnterExitOldModule;
-	moduleFlowData[newModule].enterExitFlow -= deltaEnterExitNewModule;
 	moduleFlowData[newModule].enterExitFlow -= deltaEnterExitNewModule;
 
 	enterFlow += \
