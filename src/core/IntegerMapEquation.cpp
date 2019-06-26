@@ -49,6 +49,7 @@ void IntegerMapEquation::initNetwork(NodeBase& root)
 
 	nodeFlow_log_nodeFlow = 0.0;
 	m_totalDegree = 0.0;
+        m_totalDegreePrior = 0.0;
 	m_totalNodes = 0;
 	for (NodeBase& node : root)
 	{
@@ -56,6 +57,7 @@ void IntegerMapEquation::initNetwork(NodeBase& root)
 		m_totalNodes++;
 	}
 	m_prior = log(m_totalNodes);
+        m_totalDegreePrior = m_totalDegree + m_totalNodes * m_prior;
 
 	for (NodeBase& node : root)
 	{
@@ -168,7 +170,7 @@ double IntegerMapEquation::calcCodelengthOnModuleOfLeafNodes(const NodeBase& p) 
 	}
 	indexLength -= plogpN(parentExit, totalParentFlow);
 
-	indexLength *= totalParentFlow * 1.0 / (m_totalDegree + m_prior * m_totalNodes);
+	indexLength *= totalParentFlow * 1.0 / (m_totalDegreePrior);
 
 	return indexLength;
 }

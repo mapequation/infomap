@@ -38,7 +38,7 @@ namespace infomap {
 		// double p = d * 1.0 / m_totalDegree;
 		// Log() << " (plogp(" << d << "/" << m_totalDegree << ") ";
 		// return infomath::plogpN(d, m_totalDegree);
-		return d == 0 ? 0 : d * 1.0 / m_totalDegree * ( log2(d) - log2(m_totalDegree) );// * M_LOG2E;
+		return d == 0 ? 0 : d * 1.0 / m_totalDegreePrior * ( log2(d) - log2(m_totalDegreePrior) );// * M_LOG2E;
 	}
 	double BayesMapEquation::plogpN(double d, double N) const
 	{

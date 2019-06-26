@@ -180,6 +180,7 @@ protected:
 
 	// For Grassberger and Bayes
 	double m_totalDegree = 0.0;
+	double m_totalDegreePrior = 0.0;
 	unsigned int m_totalNodes = 0.0;
 	double m_prior = 0.0;
 	double m_nodeFlow_log_nodeFlow = 0.0; // constant while the leaf network is the same
