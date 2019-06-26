@@ -118,7 +118,7 @@ void IntegerMapEquation::calculateCodelengthTerms(std::vector<NodeBase*>& nodes)
 	for (NodeBase* n : nodes)
 	{
 		auto& node = getNode(*n);
-		unsigned int moduleSize = node.data.moduleSize;
+		unsigned int moduleSize = node.childDegree();
 		double eta = moduleSize * (m_totalNodes - moduleSize) / (m_totalNodes - 1.0);
 		// own node/module codebook
 		flow_log_flow += plogp(node.data.flow + node.data.enterExitFlow + m_prior * (moduleSize + eta));
@@ -152,12 +152,12 @@ double IntegerMapEquation::calcCodelengthOnModuleOfLeafNodes(const NodeBase& p) 
 {
 	auto& parent = getNode(p);
 
-	unsigned int moduleSize = parent.data.moduleSize;
+	unsigned int moduleSize = parent.childDegree();
 	double eta = moduleSize * (m_totalNodes - moduleSize) / (m_totalNodes - 1.0);
 
-	unsigned int parentFlow = parent.data.flow + m_prior * moduleSize;
-	unsigned int parentExit = parent.data.enterExitFlow + m_prior * eta;
-	unsigned int totalParentFlow = parentFlow + parentExit;
+	double parentFlow = parent.data.flow + m_prior * moduleSize;
+	double parentExit = parent.data.enterExitFlow + m_prior * eta;
+	double totalParentFlow = parentFlow + parentExit;
 	if (totalParentFlow == 0)
 		return 0.0;
 
@@ -178,8 +178,7 @@ double IntegerMapEquation::calcCodelengthOnModuleOfModules(const NodeBase& p) co
 	auto& parent = getNode(p);
 	unsigned int parentFlow = parent.data.flow;
 	double parentExit = parent.data.enterExitFlow;
-	unsigned int parentModuleSize = parent.data.moduleSize;
-	// unsigned int totalParentFlow = parentFlow + parentExit;
+	//unsigned int parentModuleSize = parent.childDegree();
 	if (parentFlow == 0)
 		return 0.0;
 
@@ -198,13 +197,13 @@ double IntegerMapEquation::calcCodelengthOnModuleOfModules(const NodeBase& p) co
 	for (const auto& n : parent)
 	{
 		auto& node = getNode(n);
-		unsigned int moduleSize = node.data.moduleSize;
+		unsigned int moduleSize = node.childDegree();
 		double eta = moduleSize * (m_totalNodes - moduleSize) / (m_totalNodes - 1.0);
 		sumEnter += node.data.enterExitFlow + m_prior * eta; // rate of enter to finer level
 		sumEnterLogEnter += plogp(node.data.enterExitFlow + m_prior * eta);
 	}
-	double parentEta = parentModuleSize * (m_totalNodes - parentModuleSize) / (m_totalNodes - 1.0);
-	parentExit += m_prior * parentEta;
+	//double parentEta = parentModuleSize * (m_totalNodes - parentModuleSize) / (m_totalNodes - 1.0);
+	//parentExit += m_prior * parentEta;
 	// The possibilities from this module: Either exit to coarser level or enter one of its children
 	double totalCodewordUse = parentExit + sumEnter;
 
