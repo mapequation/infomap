@@ -690,9 +690,11 @@ void InfomapBase::generateSubNetwork(Network& network)
 {
 	if(this->isIntegerFlow()) {
 		m_root->setFlow(network.numNodes());
+                m_root->setModuleSize(network.numNodes());
 	}
 	else {
 		m_root->setFlow(1.0);
+                m_root->setModuleSize(network.numNodes());
 	}
 	unsigned int numNodes = network.numNodes();
 	auto& metaData = network.metaData();
@@ -731,6 +733,7 @@ void InfomapBase::generateSubNetwork(Network& network)
 		m_leafNodes.push_back(node);
 	}
 	root().setFlow(sumNodeFlow);
+        root().setModuleSize(numNodes);
 	m_calculateEnterExitFlow = true;
 
 	if (std::abs(sumNodeFlow - 1.0) > 1e-10)
@@ -764,9 +767,11 @@ void InfomapBase::generateSubNetwork(Network& network)
 
 	if (this->isIntegerFlow()) {
 		unsigned int sumNodeFlowInt = 0;
+                root().setModuleSize(0);
 		for (NodeBase& node : root()) {
 			node.setFlow(node.degree());
 			sumNodeFlowInt += node.getFlowInt();
+                        root().addModuleSize(1);
 		}
 		root().setFlow(sumNodeFlowInt);
 	}
@@ -1027,6 +1032,7 @@ void InfomapBase::initEnterExitFlow()
 		// n->dataInt.enterExitFlow = 0;
 		n->setEnterFlow(0.0);
 		n->setExitFlow(0.0);
+                n->setModuleSize(1);
 	}
     if (!this->isUndirectedClustering()) {
         for (auto *n : m_leafNodes) {
@@ -1041,7 +1047,6 @@ void InfomapBase::initEnterExitFlow()
     }
     else {
         for (auto *n : m_leafNodes) {
-			n->addModuleSize(1);
             for (EdgeType *e : n->outEdges()) {
                 EdgeType &edge = *e;
                 double halfFlow = edge.data.flow / 2;

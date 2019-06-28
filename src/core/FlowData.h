@@ -14,22 +14,26 @@ struct FlowData
 	double flow;
 	double enterFlow;
 	double exitFlow;
+	int moduleSize;
 
 	FlowData(double flow = 1.0, double enterFlow = 0.0, double exitFlow = 0.0) :
 		flow(flow),
 		enterFlow(enterFlow),
-		exitFlow(exitFlow)
+		exitFlow(exitFlow),
+		moduleSize(0)
 	{}
 	FlowData(const FlowData& other) :
 		flow(other.flow),
 		enterFlow(other.enterFlow),
-		exitFlow(other.exitFlow)
+		exitFlow(other.exitFlow),
+		moduleSize(other.moduleSize)
 	{}
 	FlowData& operator=(const FlowData& other)
 	{
 		flow = other.flow;
 		enterFlow = other.enterFlow;
 		exitFlow = other.exitFlow;
+		moduleSize = other.moduleSize;
 		return *this;
 	}
 
@@ -38,6 +42,7 @@ struct FlowData
 		flow += other.flow;
 		enterFlow += other.enterFlow;
 		exitFlow += other.exitFlow;
+		moduleSize += other.moduleSize;
 		return *this;
 	}
 
@@ -46,6 +51,7 @@ struct FlowData
 		flow -= other.flow;
 		enterFlow -= other.enterFlow;
 		exitFlow -= other.exitFlow;
+		moduleSize -= other.moduleSize;
 		return *this;
 	}
 
@@ -65,15 +71,15 @@ struct FlowData
 	void addExitFlow(double f) { exitFlow += f; }
 	void addEnterExitFlow(unsigned int f) {}
 
-	void setModuleSize(unsigned int f) {}
-	void addModuleSize(unsigned int f) {}
+	void setModuleSize(int f) { moduleSize = f; }
+	void addModuleSize(int f) { moduleSize += f; }
 
 	double getFlow() const { return flow; }
 	double getEnterFlow() const { return enterFlow; }
 	double getExitFlow() const { return exitFlow; }
 	unsigned int getFlowInt() const { return 0; }
 	unsigned int getEnterExitFlow() const { return 0; }
-	unsigned int getModuleSize() const { return 0; }
+	int getModuleSize() const { return moduleSize; }
 
 	FlowData getFlowData() const { return *this; }
 
@@ -87,7 +93,7 @@ struct FlowDataInt
 {
 	unsigned int flow;
 	unsigned int enterExitFlow;
-	unsigned int moduleSize;
+	int moduleSize;
 
 	FlowDataInt(unsigned int flow = 0) :
 		flow(flow),
@@ -139,15 +145,15 @@ struct FlowDataInt
 	void addExitFlow(double f) { }
 	void addEnterExitFlow(unsigned int f) { enterExitFlow += f; }
 
-	void setModuleSize(unsigned int f) { moduleSize = f; }
-	void addModuleSize(unsigned int f) { moduleSize += f; }
+	void setModuleSize(int f) { moduleSize = f; }
+	void addModuleSize(int f) { moduleSize += f; }
 
 	double getFlow() const { return flow; }
 	double getEnterFlow() const { return enterExitFlow; }
 	double getExitFlow() const { return enterExitFlow; }
 	unsigned int getFlowInt() const { return flow; }
 	unsigned int getEnterExitFlow() const { return enterExitFlow; }
-	unsigned int getModuleSize() const { return moduleSize; }
+	int getModuleSize() const { return moduleSize; }
 	FlowData getFlowData() const { return FlowData(flow, enterExitFlow, enterExitFlow); }
 
 	friend std::ostream& operator<<(std::ostream& out, const FlowDataInt& data)
