@@ -75,6 +75,7 @@ void MapEquation::initSubNetwork(NodeBase& root)
 {
 	exitNetworkFlow = getNode(root).data.exitFlow;
 	exitNetworkFlow_log_exitNetworkFlow = infomath::plogp(exitNetworkFlow);
+	// Debug() << "\ninitSubNetwork() exitNetworkFlow: " << exitNetworkFlow << ", exitNetworkFlow_log_exitNetworkFlow: " << exitNetworkFlow_log_exitNetworkFlow << "\n";
 }
 
 void MapEquation::initPartition(std::vector<NodeBase*>& nodes)
@@ -115,6 +116,7 @@ void MapEquation::calculateCodelengthTerms(std::vector<NodeBase*>& nodes)
 	}
 	enterFlow += exitNetworkFlow;
 	enterFlow_log_enterFlow = infomath::plogp(enterFlow);
+	// Debug() << "\nexitNetworkFlow: " << exitNetworkFlow << ", exit_log_exit: " << exit_log_exit << ", enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << ", flow_log_flow: " << flow_log_flow << "\n";
 }
 
 void MapEquation::calculateCodelengthFromCodelengthTerms()
@@ -122,6 +124,7 @@ void MapEquation::calculateCodelengthFromCodelengthTerms()
 	indexCodelength = enterFlow_log_enterFlow - enter_log_enter - exitNetworkFlow_log_exitNetworkFlow;
 	moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
 	codelength = indexCodelength + moduleCodelength;
+	// Debug() << "\n=> indexCodelength = " << enterFlow_log_enterFlow << " - " << enter_log_enter << " - " << exitNetworkFlow_log_exitNetworkFlow << "\n";
 }
 
 double MapEquation::calcCodelength(const NodeBase& parent) const
@@ -139,14 +142,17 @@ double MapEquation::calcCodelengthOnModuleOfLeafNodes(const NodeBase& p) const
 		return 0.0;
 
 	double indexLength = 0.0;
+	double sumFlow = 0.0;
 	for (const auto& node : parent)
 	{
+		sumFlow += getNode(node).data.flow;
 		indexLength -= infomath::plogp(getNode(node).data.flow / totalParentFlow);
 	}
 	indexLength -= infomath::plogp(parentExit / totalParentFlow);
 
 	indexLength *= totalParentFlow;
 
+	// Debug() << "calcCodelengthOnModuleOfLeafNodes(): " << indexLength/totalParentFlow << " * " << totalParentFlow << " = " << indexLength << "\n";
 	return indexLength;
 }
 
@@ -164,7 +170,7 @@ double MapEquation::calcCodelengthOnModuleOfModules(const NodeBase& p) const
 	// Compact format
 	// L = T * ( H(q/T) + SUM( H(p/T) ) )
 	// Expanded format
-	// L = q * -log(q) - q * -log(T) + SUM( p * -log(p) - p * -log(T) ) 
+	// L = q * -log(q) - q * -log(T) + SUM( p * -log(p) - p * -log(T) )
 	//   = T * log(T) - q*log(q) - SUM( p*log(p) )
 	// As T is not known, use expanded format to avoid two loops
 	double sumEnter = 0.0;
@@ -177,8 +183,11 @@ double MapEquation::calcCodelengthOnModuleOfModules(const NodeBase& p) const
 	}
 	// The possibilities from this module: Either exit to coarser level or enter one of its children
 	double totalCodewordUse = parentExit + sumEnter;
+	double L = infomath::plogp(totalCodewordUse) - sumEnterLogEnter - infomath::plogp(parentExit);
 
-	return infomath::plogp(totalCodewordUse) - sumEnterLogEnter - infomath::plogp(parentExit);
+	// Debug() << "\ncalcCodelengthOnModuleOfModules(): " << infomath::plogp(totalCodewordUse) << " - " << sumEnterLogEnter << " - " << infomath::plogp(parentExit) << " = " << L;
+	// return infomath::plogp(totalCodewordUse) - sumEnterLogEnter - infomath::plogp(parentExit);
+	return L;
 }
 
 
@@ -215,7 +224,7 @@ double MapEquation::getDeltaCodelengthOnMovingNode(NodeBase& curr,
 					+ current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
 	double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
-	// Log() << "\ndeltaL = " << delta_enter << " - " << delta_enter_log_enter << " - " <<
+	// Debug() << "\ndeltaL = " << delta_enter << " - " << delta_enter_log_enter << " - " <<
 	// delta_exit_log_exit << " + " << delta_flow_log_flow << " = " << deltaL;
 	return deltaL;
 }
@@ -298,13 +307,13 @@ const NodeType& MapEquation::getNode(const NodeBase& other) const
 
 void MapEquation::printDebug()
 {
-	std::cout << "(enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << ", " <<
+	Debug() << "(enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << ", " <<
 			"enter_log_enter: " << enter_log_enter << ", " <<
 			"exitNetworkFlow_log_exitNetworkFlow: " << exitNetworkFlow_log_exitNetworkFlow << ") ";
-//	std::cout << "enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << "\n" <<
+//	Debug() << "enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << "\n" <<
 //			"enter_log_enter: " << enter_log_enter << "\n" <<
 //			"exitNetworkFlow_log_exitNetworkFlow: " << exitNetworkFlow_log_exitNetworkFlow << "\n";
-//	std::cout << "exit_log_exit: " << exit_log_exit << "\n" <<
+//	Debug() << "exit_log_exit: " << exit_log_exit << "\n" <<
 //			"flow_log_flow: " << flow_log_flow << "\n" <<
 //			"nodeFlow_log_nodeFlow: " << nodeFlow_log_nodeFlow << "\n";
 }

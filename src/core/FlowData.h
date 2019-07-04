@@ -11,9 +11,9 @@ namespace infomap {
 
 struct FlowData
 {
-	double flow;
-	double enterFlow;
-	double exitFlow;
+	double flow = 1;
+	double enterFlow = 0;
+	double exitFlow = 0;
 
 	FlowData(double flow = 1.0, double enterFlow = 0.0, double exitFlow = 0.0) :
 		flow(flow),
@@ -51,7 +51,7 @@ struct FlowData
 
 	void resetFlow() { flow = 0; }
 	void setFlow(double f) { flow = f; }
-	void setFlow(unsigned int f) {}
+	void setFlow(unsigned int f) { }
 	void addFlow(double f) { flow += f; }
 	void addFlow(unsigned int f) {}
 	void setEnterFlow(double f) { enterFlow = f; }
@@ -75,8 +75,8 @@ struct FlowData
 
 struct FlowDataInt
 {
-	unsigned int flow;
-	unsigned int enterExitFlow;
+	unsigned int flow = 0;
+	unsigned int enterExitFlow = 0;
 
 	FlowDataInt(unsigned int flow = 0) :
 		flow(flow),
@@ -242,7 +242,7 @@ struct MemDeltaFlow : DeltaFlow
 {
 	double sumDeltaPlogpPhysFlow = 0.0;
 	double sumPlogpPhysFlow = 0.0;
-	
+
 	MemDeltaFlow() : DeltaFlow() {}
 
 	explicit MemDeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow = 0.0, double sumPlogpPhysFlow = 0.0)
@@ -290,7 +290,7 @@ struct PhysData
 	PhysData(const PhysData& other) : physNodeIndex(other.physNodeIndex), sumFlowFromM2Node(other.sumFlowFromM2Node) {}
 	unsigned int physNodeIndex;
 	double sumFlowFromM2Node; // The amount of flow from the memory node in this physical node
-	
+
 	friend std::ostream& operator<<(std::ostream& out, const PhysData& data)
 	{
 		return out << "physNodeIndex: " << data.physNodeIndex <<

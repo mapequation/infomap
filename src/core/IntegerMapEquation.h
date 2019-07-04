@@ -83,7 +83,7 @@ public:
 	// ===================================================
 
 	double calcCodelength(const NodeBase& parent) const;
-	
+
 	void addMemoryContributions(NodeBase& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
 
 	double getDeltaCodelengthOnMovingNode(NodeBase& current,
@@ -178,16 +178,8 @@ protected:
 	using Base::exitNetworkFlow;
 	using Base::exitNetworkFlow_log_exitNetworkFlow;
 
-	// For Grassberger
+	// For Integer version
 	unsigned int m_totalDegree = 0;
-	double m_nodeFlow_log_nodeFlow = 0.0; // constant while the leaf network is the same
-	double m_flow_log_flow = 0.0; // node.(flow + exitFlow)
-	double m_exit_log_exit = 0.0;
-	double m_enter_log_enter = 0.0;
-	double m_enterFlow = 0.0;
-	double m_enterFlow_log_enterFlow = 0.0;
-	double m_exitNetworkFlow = 0.0;
-	double m_exitNetworkFlow_log_exitNetworkFlow = 0.0;
 };
 
 

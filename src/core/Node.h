@@ -36,7 +36,7 @@ public:
 
 
 	virtual ~Node() {}
-	
+
 	Node& operator=(const Node& other)
 	{
 		NodeBase::operator=(other);
@@ -56,7 +56,7 @@ public:
 
 	virtual void resetFlow() {
 		data.resetFlow();
-	}	
+	}
 	virtual void setFlow(double flow) {
 		data.setFlow(flow);
 	}

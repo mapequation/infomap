@@ -39,6 +39,7 @@ std::ostream& IntegerMapEquation::print(std::ostream& out) const {
 void IntegerMapEquation::init(const Config& config)
 {
 	Log(3) << "IntegerMapEquation::init()...\n";
+	m_totalDegree = config.maxFlow;
 }
 
 
@@ -47,11 +48,6 @@ void IntegerMapEquation::initNetwork(NodeBase& root)
 	Log(3) << "IntegerMapEquation::initNetwork()...\n";
 
 	nodeFlow_log_nodeFlow = 0.0;
-	m_totalDegree = 0;
-	for (NodeBase& node : root)
-	{
-		m_totalDegree += getNode(node).data.flow;
-	}
 	for (NodeBase& node : root)
 	{
 		nodeFlow_log_nodeFlow += plogp(getNode(node).data.flow);
@@ -71,7 +67,8 @@ void IntegerMapEquation::initSuperNetwork(NodeBase& root)
 void IntegerMapEquation::initSubNetwork(NodeBase& root)
 {
 	exitNetworkFlow = getNode(root).data.enterExitFlow;
-	exitNetworkFlow_log_exitNetworkFlow = plogp(m_exitNetworkFlow);
+	exitNetworkFlow_log_exitNetworkFlow = plogp(exitNetworkFlow);
+	// Debug() << "\n!!!!!!!! initSubNetwork() exitNetworkFlow: " << exitNetworkFlow << ", exitNetworkFlow_log_exitNetworkFlow: " << exitNetworkFlow_log_exitNetworkFlow << "\n";
 }
 
 void IntegerMapEquation::initPartition(std::vector<NodeBase*>& nodes)
@@ -123,6 +120,7 @@ void IntegerMapEquation::calculateCodelengthTerms(std::vector<NodeBase*>& nodes)
 	}
 	enterFlow += exitNetworkFlow;
 	enterFlow_log_enterFlow = plogp(enterFlow);
+	// Debug() << "\nexitNetworkFlow: " << exitNetworkFlow * 1.0 / m_totalDegree << ", exit_log_exit: " << exit_log_exit << ", enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << ", flow_log_flow: " << flow_log_flow << "\n";
 }
 
 void IntegerMapEquation::calculateCodelengthFromCodelengthTerms()
@@ -132,6 +130,7 @@ void IntegerMapEquation::calculateCodelengthFromCodelengthTerms()
 	// indexCodelength = 1.0 / m_totalDegree * (m_enterFlow_log_enterFlow - m_enter_log_enter);
 	// moduleCodelength = 1.0 / m_totalDegree * (-m_exit_log_exit + m_flow_log_flow - m_nodeFlow_log_nodeFlow);
 	codelength = indexCodelength + moduleCodelength;
+	// Debug() << "\n=> indexCodelength = " << enterFlow_log_enterFlow << " - " << enter_log_enter << " - " << exitNetworkFlow_log_exitNetworkFlow << "\n";
 }
 
 double IntegerMapEquation::calcCodelength(const NodeBase& parent) const
@@ -151,14 +150,19 @@ double IntegerMapEquation::calcCodelengthOnModuleOfLeafNodes(const NodeBase& p) 
 		return 0.0;
 
 	double indexLength = 0.0;
+	double sumFlow = 0.0;
+	unsigned int sumFlowInt = 0;
 	for (const auto& node : parent)
 	{
+		sumFlowInt += getNode(node).data.flow;
+		sumFlow += getNode(node).data.flow * 1.0 / m_totalDegree;
 		indexLength -= plogpN(getNode(node).data.flow, totalParentFlow);
 	}
 	indexLength -= plogpN(parentExit, totalParentFlow);
 
 	indexLength *= totalParentFlow * 1.0 / m_totalDegree;
 
+	// Debug() << "calcCodelengthOnModuleOfLeafNodes(): " << indexLength*1.0*m_totalDegree/totalParentFlow << " * " << totalParentFlow * 1.0 / m_totalDegree << " = " << indexLength << "\n";
 	return indexLength;
 }
 
@@ -194,7 +198,7 @@ double IntegerMapEquation::calcCodelengthOnModuleOfModules(const NodeBase& p) co
 	// return plogp(totalCodewordUse) - sumEnterLogEnter - plogp(parentExit);
 	double L = plogp(totalCodewordUse) - sumEnterLogEnter - plogp(parentExit);
 
-	// Log() << "\nL: " << plogp(totalCodewordUse) << " - " << sumEnterLogEnter << " - " << plogp(parentExit) << " = " << L;
+	// Debug() << "\ncalcCodelengthOnModuleOfModules(): " << infomath::plogp(totalCodewordUse) << " - " << sumEnterLogEnter << " - " << infomath::plogp(parentExit) << " = " << L;
 	return L;
 }
 

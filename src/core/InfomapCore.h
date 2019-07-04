@@ -31,8 +31,8 @@ protected:
 public:
 	// template<typename... Args>
 	// InfomapCore(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
-	InfomapCore(bool forceNoMemory = false) : InfomapBase() { initOptimizer(forceNoMemory); }
-	InfomapCore(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
+	InfomapCore() : InfomapBase() { initOptimizer(); }
+	InfomapCore(const Config& conf, bool forceNoMemory = false) : InfomapBase(conf) { initOptimizer(forceNoMemory); }
 	InfomapCore(const std::string& flags) : InfomapBase(flags) { initOptimizer(); }
 	virtual ~InfomapCore() {}
 
@@ -89,11 +89,11 @@ protected:
     m_optimizer->init(this);
 	}
 
-	virtual InfomapBase* getNewInfomapInstance() const {
-    return new InfomapCore();
+	virtual InfomapBase* getNewInfomapInstance(const Config& conf) const {
+    return new InfomapCore(conf);
   }
-	virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const {
-    return new InfomapCore(true);
+	virtual InfomapBase* getNewInfomapInstanceWithoutMemory(const Config& conf) const {
+    return new InfomapCore(conf, true);
   }
 
 	virtual unsigned int numActiveModules() const {

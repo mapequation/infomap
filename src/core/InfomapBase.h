@@ -138,8 +138,8 @@ public:
 
 	// virtual InfomapBase& getInfomap(NodeBase& node);
 
-	virtual InfomapBase* getNewInfomapInstance() const = 0;
-	virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const = 0;
+	virtual InfomapBase* getNewInfomapInstance(const Config&) const = 0;
+	virtual InfomapBase* getNewInfomapInstanceWithoutMemory(const Config&) const = 0;
 
 	InfomapBase& getSubInfomap(NodeBase& node);
 	InfomapBase& getSuperInfomap(NodeBase& node);
@@ -433,8 +433,9 @@ public:
 
 protected:
 
-	void initRoot() {
+	InfomapBase& initRoot() {
 		m_root.reset(createNode());
+		return *this;
 	}
 	virtual NodeBase* createNode() const = 0;
 	virtual NodeBase* createNode(const NodeBase&) const = 0;
@@ -452,7 +453,7 @@ protected:
 	 */
 	void printTreeLinks(std::ostream& outStream, bool states = false);
 
-	std::unique_ptr<NodeBase> m_root;
+	std::unique_ptr<NodeBase> m_root = nullptr;
 	std::vector<NodeBase*> m_leafNodes;
 	std::vector<NodeBase*> m_moduleNodes;
 	std::vector<NodeBase*>* m_activeNetwork = nullptr;

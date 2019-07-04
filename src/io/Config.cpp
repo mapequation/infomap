@@ -60,6 +60,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.weightThreshold, "weight-threshold",
 			"Limit the number of links to read from the network. Ignore links with less weight than the threshold. (Default: 0)", "f", true);
 
+	api.addOptionArgument(conf.unweightedLinks, "unweighted",
+			"Ignore possible weights in input network, use default weight 1.0 on all links.", true);
+
 	api.addOptionArgument(conf.unweightedPaths, "unweighted-paths",
 			"Assume last value in a path is a node instead of default a weight of the path.", true);
 
@@ -89,7 +92,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 
 	api.addOptionArgument(conf.clusterDataFile, 'c', "cluster-data",
 			"Provide an initial two-level (.clu format) or multi-layer (.tree format) solution.", "p", true);
-			
+
 	api.addOptionArgument(conf.setUnidentifiedNodesToClosestModule, "set-unidentified-nodes-to-closest-module",
 			"Merge unidentified nodes in cluster data to closest existing modules if possible.", true);
 
@@ -256,7 +259,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	// 	api.addOptionalNonOptionArguments(optionalOutputDir, "[out_directory]",
 	// 			"The directory to write the results to.");
 	// }
-	
+
 	api.addOptionalNonOptionArguments(optionalOutputDir, "[out_directory]",
 			"The directory to write the results to.");
 
@@ -270,7 +273,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 
 	if (!optionalOutputDir.empty())
 		conf.outDirectory = optionalOutputDir[0];
-	
+
 	if (requireFileInput)
 		conf.noFileOutput = false;
 	else if (conf.outDirectory == "")
@@ -300,7 +303,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	conf.parsedOptions = api.getUsedOptionArguments();
 
 	conf.adaptDefaults();
-	
+
 	Log::init(conf.verbosity, conf.silent, conf.verboseNumberPrecision);
 
 	return conf;

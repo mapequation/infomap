@@ -147,6 +147,22 @@ struct hideIf
 	bool hide;
 };
 
+struct Debug
+{
+	template<typename T>
+	Debug& operator<< (const T& data)
+	{
+		std::cout << data;
+		return *this;
+	}
+
+	Debug& operator<<( std::ostream& (*f) (std::ostream&) )
+	{
+		std::cout << f;
+		return *this;
+	}
+};
+
 }
 
 #endif /* SRC_IO_LOG_H_ */
