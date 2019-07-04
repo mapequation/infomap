@@ -62,6 +62,12 @@
 
         setTimeout(function() {
           console.log("Init Infomap worker with args:", args);
+          console.log({
+            target: 'Infomap',
+            inputFilename: 'network.txt',
+            inputData: networkData,
+            arguments: args
+          })
           worker.postMessage({
             target: 'Infomap',
             inputFilename: 'network.txt',
