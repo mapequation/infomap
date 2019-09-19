@@ -2,6 +2,7 @@ CXXFLAGS = -Wall -Wextra -Wno-unused-parameter -std=c++14
 # http://www.network-theory.co.uk/docs/gccintro/gccintro_70.html -msse2 -mfpmath=sse -DDOUBLE
 # CXXFLAGS = -Wall -std=c++14 -DPYTHON -Wno-deprecated-register
 LDFLAGS =
+LIBS = -lgsl -lgslcblas
 CXX_CLANG := $(shell $(CXX) --version 2>/dev/null | grep clang)
 ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"
 	CXXFLAGS += -O0 -g
@@ -36,13 +37,13 @@ all: Infomap
 
 Infomap: $(OBJECTS)
 	@echo "Linking object files to target $@..."
-	$(CXX) $(LDFLAGS) -o $@ $^
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LIBS)
 	@echo "-- Link finished --"
 
 ## Generic compilation rule for object files from cpp files
 build/Infomap/%.o : src/%.cpp $(HEADERS) Makefile
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@ $(LIBS)
 
 noomp: Infomap
 	@true
@@ -105,7 +106,7 @@ include/%.h: src/%.h
 # Rule for $(LIB_OBJECTS)
 build/lib/%.o: src/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -DNS_INFOMAP -DAS_LIB -c $< -o $@
+	$(CXX) $(CXXFLAGS) -DNS_INFOMAP -DAS_LIB -c $< -o $@ $(LIBS)
 
 
 ##################################################

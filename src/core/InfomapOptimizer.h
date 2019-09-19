@@ -572,8 +572,11 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 	std::vector<unsigned int> nodeEnumeration(network.size());
 	m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
-	unsigned int numNodes = nodeEnumeration.size();
+	unsigned int numNodes = nodeEnumeration.size();    
 	unsigned int numMoved = 0;
+    
+    unsigned int numRandTries = numNodes / 5 + 1;
+    std::vector<bool> neighbourPtr(numNodes);
 
 	// Create map with module links
 	// std::vector<DeltaFlowData> deltaFlow(numNodes);
@@ -613,6 +616,9 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 		// 	d.reset();
 		// }
 		deltaFlow.startRound();
+        
+                for (unsigned int j = 0; j < numNodes; ++j)
+                    neighbourPtr[j] = false;
 
 		// For all outlinks
 		for (auto& e : current.outEdges())
@@ -622,6 +628,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 			// deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, edge.data.flow, 0);
 			deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0));
 			// Log() << "\n--> " << DeltaFlowDataType(neighbour.index, edge.data.flow, 0);
+                neighbourPtr[neighbour.index] = true;
 		}
 		// For all inlinks
 		for (auto& e : current.inEdges())
@@ -634,7 +641,22 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 			// Log() << "\n<-- " << DeltaFlowDataType(neighbour.index, 0, edge.data.flow);
 			// t += timer.getElapsedTimeInMilliSec();
 			// ++tCount;
+                neighbourPtr[neighbour.index] = true;
 		}
+		
+		// If node is disconnected, try to move to random module
+		//if (current.degree() == 0)
+        //{
+            for (unsigned int j = 0; j < numRandTries; ++j)
+            {
+                unsigned int randPos = m_infomap->m_rand.randInt(0, numNodes - 1);
+                NodeBase& neighbour = *network[nodeEnumeration[randPos]];
+                if (neighbourPtr[neighbour.index])
+                    continue;                
+                deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0, 0));
+                neighbourPtr[neighbour.index] = true;
+            }
+        //}
 
 		// For not moving
 		deltaFlow.add(current.index, DeltaFlowDataType(current.index, 0, 0));

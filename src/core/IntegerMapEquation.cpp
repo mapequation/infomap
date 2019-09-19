@@ -32,7 +32,6 @@ std::ostream& IntegerMapEquation::print(std::ostream& out) const {
 // 	return out << indexCodelength << " + " << moduleCodelength << " = " <<	io::toPrecision(codelength);
 // }
 
-
 // ===================================================
 // Init
 // ===================================================
@@ -93,7 +92,7 @@ void IntegerMapEquation::initPartition(std::vector<NodeBase*>& nodes)
 
 double IntegerMapEquation::plogp(double d) const
 {
-	double p = d * 1.0 / m_totalDegree;
+	double p = d * 1.0 / m_totalDegreePrior;
 	return infomath::plogp(p);
 }
 
@@ -178,7 +177,7 @@ double IntegerMapEquation::calcCodelengthOnModuleOfLeafNodes(const NodeBase& p) 
 double IntegerMapEquation::calcCodelengthOnModuleOfModules(const NodeBase& p) const
 {
 	auto& parent = getNode(p);
-	unsigned int parentFlow = parent.data.flow;
+	double parentFlow = parent.data.flow;
 	double parentExit = parent.data.enterExitFlow;
 	unsigned int parentModuleSize = parent.data.moduleSize;
 	if (parentFlow == 0)
@@ -227,13 +226,13 @@ double IntegerMapEquation::getDeltaCodelengthOnMovingNode(NodeBase& curr,
 	int sizeOldModule = moduleFlowData[oldModule].moduleSize;
 	double etaOldModule = sizeOldModule * (m_totalNodes - sizeOldModule) / (m_totalNodes - 1.0);
 	double updatedEtaOldModule = (sizeOldModule - nodeSize) * (m_totalNodes - sizeOldModule + nodeSize) / (m_totalNodes - 1.0);
-	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+	int deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
 
 	unsigned int newModule = newModuleDelta.module;
 	int sizeNewModule = moduleFlowData[newModule].moduleSize;
 	double etaNewModule = sizeNewModule * (m_totalNodes - sizeNewModule) / (m_totalNodes - 1.0);
 	double updatedEtaNewModule = (sizeNewModule + nodeSize) * (m_totalNodes - sizeNewModule - nodeSize) / (m_totalNodes - 1.0);
-	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+	int deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
 	// add to both enter and exit flow
 	deltaEnterExitOldModule *= 2;
@@ -283,13 +282,13 @@ void IntegerMapEquation::updateCodelengthOnMovingNode(NodeBase& curr,
 	int sizeOldModule = moduleFlowData[oldModule].moduleSize;//moduleMembers[oldModule];
 	double etaOldModule = sizeOldModule * (m_totalNodes - sizeOldModule) / (m_totalNodes - 1.0);
 	double updatedEtaOldModule = (sizeOldModule - nodeSize) * (m_totalNodes - sizeOldModule + nodeSize) / (m_totalNodes - 1.0);
-	double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+	int deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
 
 	unsigned int newModule = newModuleDelta.module;
 	int sizeNewModule = moduleFlowData[newModule].moduleSize;//moduleMembers[newModule];
 	double etaNewModule = sizeNewModule * (m_totalNodes - sizeNewModule) / (m_totalNodes - 1.0);
 	double updatedEtaNewModule = (sizeNewModule + nodeSize) * (m_totalNodes - sizeNewModule - nodeSize) / (m_totalNodes - 1.0);
-	double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+	int deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
 	enterFlow -= \
 			moduleFlowData[oldModule].enterExitFlow + m_prior * etaOldModule + \

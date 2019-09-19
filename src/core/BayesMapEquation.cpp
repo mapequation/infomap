@@ -21,16 +21,16 @@ namespace infomap {
 			m_totalDegree += getNode(node).data.flow;
 			//m_totalNodes++;
 		}
-		//m_totalDegree += m_totalNodes * log(m_totalNodes);
+		//m_totalDegreePrior += m_totalNodes * log(m_totalNodes);
 
 		IntegerMapEquation::initNetwork(root);
 	}
 
 	double BayesMapEquation::log2(double d) const
 	{
-		// return infomath::log2(1.0 * d / m_totalDegree);
+		return infomath::log2(1.0 * d / m_totalDegreePrior);
 		//return gsl_sf_psi(d + 1.0);
-                return infomath::log2(d);
+		//return infomath::log2(d);
 	}
 
 	double BayesMapEquation::plogp(double d) const
