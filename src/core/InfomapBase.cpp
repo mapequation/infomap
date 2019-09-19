@@ -465,7 +465,6 @@ InfomapBase& InfomapBase::initNetwork(NodeBase& parent, bool asSuperNetwork)
 	if (asSuperNetwork)
 		transformNodeFlowToEnterFlow(root());
 
-	initOptimizer();
 	init();
 	return *this;
 }
