@@ -77,7 +77,7 @@ void IntegerMapEquation::initSuperNetwork(NodeBase& root)
 void IntegerMapEquation::initSubNetwork(NodeBase& root)
 {
 	exitNetworkFlow = getNode(root).data.enterExitFlow;
-	exitNetworkFlow_log_exitNetworkFlow = plogp(m_exitNetworkFlow);
+	exitNetworkFlow_log_exitNetworkFlow = plogp(exitNetworkFlow);
 }
 
 void IntegerMapEquation::initPartition(std::vector<NodeBase*>& nodes)
