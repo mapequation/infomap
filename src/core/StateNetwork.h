@@ -51,7 +51,7 @@ public:
 		double flow = 0.0;
 		double enterFlow = 0.0;
 		double exitFlow = 0.0;
-		
+
 		StateNode() {}
 		StateNode(unsigned int id) :
 			id(id), physicalId(id)
@@ -205,7 +205,7 @@ public:
 	StateNetwork(const Config& config)
 	:	m_config(config) {}
 	virtual ~StateNetwork() {}
-	
+
 	// Config
 	void setConfig(const Config& config) { m_config = config; }
 	const Config& getConfig() { return m_config; }
@@ -229,13 +229,17 @@ public:
 	 */
 	bool removeLink(unsigned int sourceId, unsigned int targetId);
 	bool addPath(const std::vector<unsigned int>& nodes, unsigned int markovOrder, double weight = 1.0);
-	
+
 	void calculateFlow();
 
 	/**
 	 * Clear all network data and reset to default state.
 	 */
 	virtual void clear();
+	/**
+	 * Clear link data but keep node data.
+	 */
+	virtual void clearLinks();
 
 	// Getters
 	const NodeMap& nodes() const { return m_nodes; }

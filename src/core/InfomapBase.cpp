@@ -324,7 +324,7 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 	// If used as a library, we may want to reuse the network instance, else clear to use less memory
 	// TODO: May have to use some meta data for output?
 	#ifndef AS_LIB
-	network.clear();
+	network.clearLinks();
 	#endif
 
 	if (haveMemory())
