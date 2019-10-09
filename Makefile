@@ -254,6 +254,13 @@ docker-build-swig-python: Makefile
 docker-run-swig-python: Makefile
 	docker run --rm infomap:python
 
+# ubuntu test python
+docker-build-ubuntu-test-python: Makefile
+	docker build -f docker/ubuntu.Dockerfile -t infomap:python-test .
+
+docker-run-ubuntu-test-python: Makefile
+	docker run --rm infomap:python-test
+
 # docker-run:
 # 	docker run -it --rm -v $(pwd):/home/rstudio infomap \
 	ninetriangles.net output

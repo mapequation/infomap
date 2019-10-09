@@ -45,7 +45,6 @@ if get_config_var('MACOSX_DEPLOYMENT_TARGET') and not 'MACOSX_DEPLOYMENT_TARGET'
 compiler_args = [
     '-DAS_LIB',
     '-DPYTHON',
-    '-Wno-deprecated-register',
     '-std=c++14',
 ]
 # if sys.platform.startswith("darwin"):
@@ -125,7 +124,7 @@ setup(
 
     # Choose your license
     license='AGPL-3.0+',
-    
+
     # Classifiers help users find your project by categorizing it.
     #
     # For a list of valid classifiers, see https://pypi.org/classifiers/
