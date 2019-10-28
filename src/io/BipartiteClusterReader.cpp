@@ -8,6 +8,7 @@
 #include "BipartiteClusterReader.h"
 #include <sstream>
 #include "convert.h"
+#include <algorithm>
 
 namespace infomap {
 

@@ -203,6 +203,9 @@ pypi_prepare: py-build Makefile
 pypitest_publish: pypi_prepare
 	cd $(PYPI_DIR) && python setup.py sdist upload -r testpypi
 
+pypi_dist: pypi_prepare
+	cd $(PYPI_DIR) && python setup.py sdist bdist_wheel
+
 pypi_publish: pypi_prepare
 	cd $(PYPI_DIR) && python setup.py sdist upload
 

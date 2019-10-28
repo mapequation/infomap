@@ -45,8 +45,16 @@ if get_config_var('MACOSX_DEPLOYMENT_TARGET') and not 'MACOSX_DEPLOYMENT_TARGET'
 compiler_args = [
     '-DAS_LIB',
     '-DPYTHON',
+    '-Wno-deprecated-register',
     '-std=c++14',
 ]
+if sys.platform == 'win32':
+    compiler_args = [
+        '/DAS_LIB',
+        '/DPYTHON',
+        '/DNOMINMAX',
+        # '/Qstd=c++14',
+    ]
 # if sys.platform.startswith("darwin"):
 #     compiler_args.append('-stdlib=libc++')
 
