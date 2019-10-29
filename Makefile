@@ -185,6 +185,7 @@ $(PY_BUILD_DIR)/headers/%: %
 
 .PHONY: pypi_prepare pypitest_publish pypi_publish
 PYPI_DIR = $(PY_BUILD_DIR)/pypi/infomap
+PYPI_SDIST = $(shell find $(PYPI_DIR) -name "*.tar.gz" 2>/dev/null)
 
 pypi_prepare: py-build Makefile
 	@mkdir -p $(PYPI_DIR)
@@ -198,16 +199,19 @@ pypi_prepare: py-build Makefile
 	@cp -a README.md $(PYPI_DIR)/
 	@cp -a LICENSE_AGPLv3.txt $(PYPI_DIR)/LICENSE
 
-# pip -vvv --no-cache-dir install --upgrade -I --index-url https://test.pypi.org/simple/ infomap
-# pip install -e build/py/pypi/infomap/
-pypitest_publish: pypi_prepare
-	cd $(PYPI_DIR) && python setup.py sdist upload -r testpypi
-
 pypi_dist: pypi_prepare
 	cd $(PYPI_DIR) && python setup.py sdist bdist_wheel
 
-pypi_publish: pypi_prepare
-	cd $(PYPI_DIR) && python setup.py sdist upload
+# pip -vvv --no-cache-dir install --upgrade -I --index-url https://test.pypi.org/simple/ infomap
+# pip install -e build/py/pypi/infomap/
+pypitest_publish:
+	# cd $(PYPI_DIR) && python setup.py sdist upload -r testpypi
+	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
+	cd $(PYPI_DIR) && python -m twine upload -r testpypi dist/*
+
+pypi_publish:
+	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
+	cd $(PYPI_DIR) && python -m twine upload dist/*
 
 
 ##################################################
