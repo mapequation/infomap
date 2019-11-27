@@ -70,8 +70,9 @@ Network& InfomapBase::network() {
 }
 
 NodeBase& InfomapBase::root() {
-	if (!m_root)
-		m_root.reset(createNode());
+	if (!m_root) {
+		initRoot();
+	}
 	return *m_root;
 }
 
@@ -144,24 +145,37 @@ double InfomapBase::getHierarchicalCodelength() const
 // }
 
 InfomapBase& InfomapBase::getSubInfomap(NodeBase& node) {
-	return node.setInfomap(getNewInfomapInstance())
-		.setIsMain(false)
+	auto& subInfomap = node.setInfomap(getNewInfomapInstance(*this))
 		.setSubLevel(m_subLevel + 1)
-		.setNonMainConfig(*this);
+		.setIsMain(false)
+		// .setNonMainConfig(*this);
+		.setNonMainConfig();
+
+	// subInfomap.root().copyData(root());
+
+	if (this->isIntegerFlow()) {
+		subInfomap.root().setFlow(root().getFlowInt());
+	} else {
+		subInfomap.root().setFlow(root().getFlow());
+	}
+
+	return subInfomap;
 }
 
 InfomapBase& InfomapBase::getSuperInfomap(NodeBase& node) {
-	return node.setInfomap(getNewInfomapInstanceWithoutMemory())
-		.setIsMain(false)
+	return node.setInfomap(getNewInfomapInstanceWithoutMemory(*this))
 		.setSubLevel(m_subLevel + SUPER_LEVEL_ADDITION)
-		.setNonMainConfig(*this);
+		.setIsMain(false)
+		// .setNonMainConfig(*this);
+		.setNonMainConfig();
 }
 
 InfomapBase& InfomapBase::getSuperInfomap() {
-	return (*getNewInfomapInstanceWithoutMemory())
-		.setIsMain(false)
+	return (*getNewInfomapInstanceWithoutMemory(*this))
 		.setSubLevel(m_subLevel + SUPER_LEVEL_ADDITION)
-		.setNonMainConfig(*this);
+		.setIsMain(false)
+		// .setNonMainConfig(*this);
+		.setNonMainConfig();
 }
 
 InfomapBase& InfomapBase::setIsMain(bool isMain) {
@@ -689,14 +703,15 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
 void InfomapBase::generateSubNetwork(Network& network)
 {
 	if(this->isIntegerFlow()) {
-		m_root->setFlow(network.numNodes());
-                m_root->setModuleSize(network.numNodes());
+		root().setFlow(network.numNodes());
+        root().setModuleSize(network.numNodes());
 	}
 	else {
-		m_root->setFlow(1.0);
-                m_root->setModuleSize(network.numNodes());
-	}
-	unsigned int numNodes = network.numNodes();
+		root().setFlow(1.0);
+        root().setModuleSize(network.numNodes());
+	}    
+
+	unsigned int numNodes = network.numNodes();    
 	auto& metaData = network.metaData();
 	this->numMetaDataDimensions = network.numMetaDataColumns();
 
@@ -707,6 +722,7 @@ void InfomapBase::generateSubNetwork(Network& network)
 
 	m_leafNodes.reserve(numNodes);
 	double sumNodeFlow = 0.0;
+    unsigned int modSize = 0;
 	std::map<unsigned int, unsigned int> nodeIndexMap;
 	for (auto& nodeIt : network.nodes()) {
 		auto& networkNode = nodeIt.second;
@@ -728,12 +744,13 @@ void InfomapBase::generateSubNetwork(Network& network)
 			}
 		}
 		sumNodeFlow += networkNode.flow;
+        ++modSize;
 		root().addChild(node);
 		nodeIndexMap[networkNode.id] = m_leafNodes.size();
 		m_leafNodes.push_back(node);
 	}
 	root().setFlow(sumNodeFlow);
-        root().setModuleSize(numNodes);
+    root().setModuleSize(modSize);    
 	m_calculateEnterExitFlow = true;
 
 	if (std::abs(sumNodeFlow - 1.0) > 1e-10)
@@ -766,14 +783,17 @@ void InfomapBase::generateSubNetwork(Network& network)
 	}
 
 	if (this->isIntegerFlow()) {
-		unsigned int sumNodeFlowInt = 0;
-                root().setModuleSize(0);
+		double sumNodeFlowInt = 0.0;
+        root().setModuleSize(0);
 		for (NodeBase& node : root()) {
 			node.setFlow(node.degree());
+            node.setModuleSize(1);
 			sumNodeFlowInt += node.getFlowInt();
-                        root().addModuleSize(1);
+            root().addModuleSize(1);
 		}
 		root().setFlow(sumNodeFlowInt);
+        this->maxFlow = sumNodeFlowInt;
+        this->networkSize = numLeafNodes();
 	}
 
 	if (numLinksIgnored > 0) {
@@ -1032,7 +1052,7 @@ void InfomapBase::initEnterExitFlow()
 		// n->dataInt.enterExitFlow = 0;
 		n->setEnterFlow(0.0);
 		n->setExitFlow(0.0);
-                n->setModuleSize(1);
+        n->setModuleSize(1);
 	}
     if (!this->isUndirectedClustering()) {
         for (auto *n : m_leafNodes) {
@@ -1042,8 +1062,8 @@ void InfomapBase::initEnterExitFlow()
                 // edge.target.data.enterFlow += edge.data.flow;
                 edge.source.addExitFlow(edge.data.flow);
                 edge.target.addEnterFlow(edge.data.flow);
-            }
-        }
+            }            
+        }        
     }
     else {
         for (auto *n : m_leafNodes) {
@@ -1245,8 +1265,8 @@ unsigned int InfomapBase::coarseTune()
 
 			node.disposeInfomap();
 		}
-	}
-
+	}	
+	
 	if (isMainInfomap())
 		Log::setSilent(isSilent);
 
@@ -1511,14 +1531,27 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
 
 void InfomapBase::transformNodeFlowToEnterFlow(NodeBase& parent)
 {
-	double sumFlow = 0.0;
-	for (auto& module : root())
-	{
-		// module.data.flow = module.data.enterFlow;
-		module.setFlow(module.getEnterFlow());
-		sumFlow += module.getFlow();
+	if (this->isIntegerFlow()) {
+		double sumFlow = 0.0;
+		for (auto& module : root())
+		{
+			auto flow = module.getEnterExitFlow();
+			module.setFlow(flow);
+			sumFlow += flow;
+		}
+		parent.setFlow(sumFlow);
 	}
-	parent.setFlow(sumFlow);
+	else {
+		double sumFlow = 0.0;
+		for (auto& module : root())
+		{
+			// module.data.flow = module.data.enterFlow;
+			auto flow = module.getEnterFlow();
+			module.setFlow(flow);
+			sumFlow += flow;
+		}
+		parent.setFlow(sumFlow);
+	}
 }
 
 void InfomapBase::resetFlowOnModules()
@@ -1526,7 +1559,10 @@ void InfomapBase::resetFlowOnModules()
 	// Reset flow on all modules
 	for (auto& module : root().infomapTree()) {
 		if (!module.isLeaf())
+        {
 			module.resetFlow();
+            module.setModuleSize(0);            
+        }
 	}
 	// Aggregate flow from leaf nodes up in the tree
 	if (this->isIntegerFlow()) {
@@ -1535,6 +1571,7 @@ void InfomapBase::resetFlowOnModules()
 			NodeBase* module = n->parent;
 			do {
 				module->addFlow(leafNodeFlow);
+                module->addModuleSize(1);                
 				module = module->parent;
 			} while (module != nullptr);
 		}
@@ -1545,6 +1582,7 @@ void InfomapBase::resetFlowOnModules()
 			NodeBase* module = n->parent;
 			do {
 				module->addFlow(leafNodeFlow);
+                module->addModuleSize(1);                
 				module = module->parent;
 			} while (module != nullptr);
 		}

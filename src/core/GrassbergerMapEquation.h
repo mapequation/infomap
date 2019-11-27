@@ -34,9 +34,9 @@ public:
 
 protected:
 
-	double log2(unsigned int d) const; 
-	virtual double plogp(unsigned int d) const;
-	virtual double plogpN(unsigned int d, unsigned int N) const;
+	double log2(double d) const; 
+	virtual double plogp(double d) const;
+	virtual double plogpN(double d, double N) const;
 
 	std::vector<double> m_grassbergerLog2;
 

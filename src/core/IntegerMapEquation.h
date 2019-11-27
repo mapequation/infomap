@@ -46,9 +46,13 @@ public:
 
 	static bool haveMemory() { return true; }
 
-	using Base::getIndexCodelength;
+	/*using Base::getIndexCodelength;
 	using Base::getModuleCodelength;
-	using Base::getCodelength;
+	using Base::getCodelength;*/
+
+	double getIndexCodelength() const { return indexCodelength; }
+	double getModuleCodelength() const { return moduleCodelength; }
+	double getCodelength() const { return codelength; }
 
 	// double getModuleCodelength() const { return moduleCodelength; };
 	// double getModuleCodelength() const;

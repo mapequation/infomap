@@ -39,7 +39,7 @@ std::ostream& IntegerMapEquation::print(std::ostream& out) const {
 void IntegerMapEquation::init(const Config& config)
 {
 	Log(3) << "IntegerMapEquation::init()...\n";
-	m_totalDegree = config.maxFlow;
+    m_totalDegree = config.maxFlow;
 	m_totalNodes = config.networkSize;
 	m_prior = log(m_totalNodes);
 	m_totalDegreePrior = m_totalDegree + m_totalNodes * m_prior;    

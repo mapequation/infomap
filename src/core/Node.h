@@ -60,22 +60,22 @@ public:
 	virtual void setFlow(double flow) {
 		data.setFlow(flow);
 	}
-	virtual void setFlow(unsigned int flow) {
+	/*virtual void setFlow(unsigned int flow) {
 		data.setFlow(flow);
-	}
+	}*/
 	virtual void addFlow(double flow) {
 		data.addFlow(flow);
 	}
-	virtual void addFlow(unsigned int flow) {
+	/*virtual void addFlow(unsigned int flow) {
 		data.addFlow(flow);
-	}
+	}*/
 	virtual void setEnterFlow(double flow) {
 		data.setEnterFlow(flow);
 	}
 	virtual void setExitFlow(double flow) {
 		data.setExitFlow(flow);
 	}
-	virtual void setEnterExitFlow(unsigned int flow) {
+	virtual void setEnterExitFlow(double flow) {
 		data.setEnterExitFlow(flow);
 	}
 	virtual void addEnterFlow(double flow) {
@@ -84,7 +84,7 @@ public:
 	virtual void addExitFlow(double flow) {
 		data.addExitFlow(flow);
 	}
-	virtual void addEnterExitFlow(unsigned int flow) {
+	virtual void addEnterExitFlow(double flow) {
 		data.addEnterExitFlow(flow);
 	}
 	virtual void setModuleSize(int moduleSize) {
@@ -102,10 +102,10 @@ public:
 	virtual double getExitFlow() const {
 		return data.getExitFlow();
 	}
-	virtual unsigned int getFlowInt() const {
+	virtual double getFlowInt() const {
 		return data.getFlowInt();
 	}
-	virtual unsigned int getEnterExitFlow() const {
+	virtual double getEnterExitFlow() const {
 		return data.getEnterExitFlow();
 	}
 	virtual int getModuleSize() const {

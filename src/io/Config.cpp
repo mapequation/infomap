@@ -59,6 +59,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 
 	api.addOptionArgument(conf.weightThreshold, "weight-threshold",
 			"Limit the number of links to read from the network. Ignore links with less weight than the threshold. (Default: 0)", "f", true);
+    
+	api.addOptionArgument(conf.unweightedLinks, "unweighted",
+			"Ignore possible weights in input network, use default weight 1.0 on all links.", true);    
 
 	api.addOptionArgument(conf.unweightedPaths, "unweighted-paths",
 			"Assume last value in a path is a node instead of default a weight of the path.", true);

@@ -80,6 +80,7 @@ struct Config
 	bool memoryInput = false;
 	bool withMemory = false;
 	double weightThreshold = 0.0;
+	bool unweightedLinks = false;
 	bool unweightedPaths = false;
 	unsigned int pathMarkovOrder = 1;
 	bool bipartite = false;
@@ -114,6 +115,9 @@ struct Config
 	double markovTime = 1.0;
 	double multilayerRelaxRate = 0.15;
 	int multilayerRelaxLimit = -1;
+
+	unsigned int maxFlow = 1;
+    unsigned int networkSize = 1;
 	
 	// Clustering
 	bool twoLevel = false;
@@ -195,6 +199,7 @@ struct Config
 	 	memoryInput(other.memoryInput),
 	 	withMemory(other.withMemory),
 		weightThreshold(other.weightThreshold),
+		unweightedLinks(other.unweightedLinks),	
 		unweightedPaths(other.unweightedPaths),
 		pathMarkovOrder(other.pathMarkovOrder),
 		bipartite(other.bipartite),
@@ -226,6 +231,8 @@ struct Config
 		markovTime(other.markovTime),
 		multilayerRelaxRate(other.multilayerRelaxRate),
 		multilayerRelaxLimit(other.multilayerRelaxLimit),
+		maxFlow(other.maxFlow),	
+		networkSize(other.networkSize),		
 	 	twoLevel(other.twoLevel),
 		noCoarseTune(other.noCoarseTune),
 		directedEdges(other.directedEdges),
@@ -292,6 +299,7 @@ struct Config
 	 	memoryInput = other.memoryInput;
 	 	withMemory = other.withMemory;
 		weightThreshold = other.weightThreshold;
+		unweightedLinks = other.unweightedLinks;        
 		unweightedPaths = other.unweightedPaths;
 		pathMarkovOrder = other.pathMarkovOrder;
 	 	bipartite = other.bipartite;
@@ -323,6 +331,8 @@ struct Config
 	 	markovTime = other.markovTime;
 		multilayerRelaxRate = other.multilayerRelaxRate;
 		multilayerRelaxLimit = other.multilayerRelaxLimit;
+		maxFlow = other.maxFlow;   
+        networkSize = other.networkSize;
 	 	twoLevel = other.twoLevel;
 		noCoarseTune = other.noCoarseTune;
 		directedEdges = other.directedEdges;
@@ -388,6 +398,7 @@ struct Config
 	 	memoryInput = other.memoryInput;
 	 	withMemory = other.withMemory;
 		weightThreshold = other.weightThreshold;
+		unweightedLinks = other.unweightedLinks;       
 		unweightedPaths = other.unweightedPaths;
 		pathMarkovOrder = other.pathMarkovOrder;
 	 	bipartite = other.bipartite;
@@ -419,6 +430,8 @@ struct Config
 	 	markovTime = other.markovTime;
 		multilayerRelaxRate = other.multilayerRelaxRate;
 		multilayerRelaxLimit = other.multilayerRelaxLimit;
+		maxFlow = other.maxFlow;      
+        networkSize = other.networkSize;
 	 	twoLevel = other.twoLevel;
 		noCoarseTune = other.noCoarseTune;
 		directedEdges = other.directedEdges;

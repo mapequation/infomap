@@ -183,22 +183,22 @@ public:
 
 	virtual void resetFlow() {}
 	virtual void setFlow(double flow) {}
-	virtual void setFlow(unsigned int flow) {}
+//	virtual void setFlow(unsigned int flow) {}
 	virtual void addFlow(double flow) {}
-	virtual void addFlow(unsigned int flow) {}
+//	virtual void addFlow(unsigned int flow) {}
 	virtual void setEnterFlow(double flow) {}
 	virtual void setExitFlow(double flow) {}
-	virtual void setEnterExitFlow(unsigned int flow) {}
+	virtual void setEnterExitFlow(double flow) {}
 	virtual void addEnterFlow(double flow) {}
 	virtual void addExitFlow(double flow) {}
-	virtual void addEnterExitFlow(unsigned int flow) {}
+	virtual void addEnterExitFlow(double flow) {}
 	virtual void setModuleSize(int moduleSize) {}
 	virtual void addModuleSize(int moduleSize) {}
 	virtual double getFlow() const { return 0; };
 	virtual double getEnterFlow() const { return 0; };
 	virtual double getExitFlow() const { return 0; };
-	virtual unsigned int getFlowInt() const { return 0; };
-	virtual unsigned int getEnterExitFlow() const { return 0; };
+	virtual double getFlowInt() const { return 0; };
+	virtual double getEnterExitFlow() const { return 0; };
 	virtual int getModuleSize() const { return 0; };
 	virtual FlowData getFlowData() const { return 0; };
 

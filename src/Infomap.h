@@ -17,8 +17,8 @@ namespace infomap {
 class Infomap : public InfomapCore {
 public:
 
-	Infomap(bool forceNoMemory = false) : InfomapCore(forceNoMemory) {}
-	Infomap(const Config& conf) : InfomapCore(conf) {}
+	Infomap() : InfomapCore() {}
+	Infomap(const Config& conf, bool forceNoMemory = false) : InfomapCore(conf, forceNoMemory) {}
 	Infomap(const std::string& flags) : InfomapCore(flags) {}
 	virtual ~Infomap() {}
 

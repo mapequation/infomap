@@ -11,10 +11,10 @@ namespace infomap {
 
 struct FlowData
 {
-	double flow;
-	double enterFlow;
-	double exitFlow;
-	int moduleSize;
+	double flow = 1;
+	double enterFlow = 0;
+	double exitFlow = 0;
+	int moduleSize = 0;
 
 	FlowData(double flow = 1.0, double enterFlow = 0.0, double exitFlow = 0.0) :
 		flow(flow),
@@ -58,10 +58,10 @@ struct FlowData
 	void resetFlow() { flow = 0; }
 
 	void setFlow(double f) { flow = f; }
-	void setFlow(unsigned int f) {}
+	//void setFlow(unsigned int f) {}
 
 	void addFlow(double f) { flow += f; }
-	void addFlow(unsigned int f) {}
+	//void addFlow(unsigned int f) {}
 
 	void setEnterFlow(double f) { enterFlow = f; }
 	void setExitFlow(double f) { exitFlow = f; }
@@ -91,11 +91,11 @@ struct FlowData
 
 struct FlowDataInt
 {
-	unsigned int flow;
-	unsigned int enterExitFlow;
+	double flow;
+	double enterExitFlow;
 	int moduleSize;
 
-	FlowDataInt(unsigned int flow = 0) :
+	FlowDataInt(double flow = 0) :
 		flow(flow),
 		enterExitFlow(0),
 		moduleSize(0)
@@ -131,19 +131,19 @@ struct FlowDataInt
 
 	void resetFlow() { flow = 0; }
 
-	void setFlow(double f) { }
-	void setFlow(unsigned int f) { flow = f; }
+//	void setFlow(double f) { }
+	void setFlow(double f) { flow = f; }
 
-	void addFlow(double f) {}
-	void addFlow(unsigned int f) { flow += f; }
+//	void addFlow(double f) {}
+	void addFlow(double f) { flow += f; }
 
 	void setEnterFlow(double f) { }
 	void setExitFlow(double f) { }
-	void setEnterExitFlow(unsigned int f) { enterExitFlow = f; }
+	void setEnterExitFlow(double f) { enterExitFlow = f; }
 
 	void addEnterFlow(double f) { }
 	void addExitFlow(double f) { }
-	void addEnterExitFlow(unsigned int f) { enterExitFlow += f; }
+	void addEnterExitFlow(double f) { enterExitFlow += f; }
 
 	void setModuleSize(int f) { moduleSize = f; }
 	void addModuleSize(int f) { moduleSize += f; }
@@ -151,8 +151,8 @@ struct FlowDataInt
 	double getFlow() const { return flow; }
 	double getEnterFlow() const { return enterExitFlow; }
 	double getExitFlow() const { return enterExitFlow; }
-	unsigned int getFlowInt() const { return flow; }
-	unsigned int getEnterExitFlow() const { return enterExitFlow; }
+	double getFlowInt() const { return flow; }
+	double getEnterExitFlow() const { return enterExitFlow; }
 	int getModuleSize() const { return moduleSize; }
 	FlowData getFlowData() const { return FlowData(flow, enterExitFlow, enterExitFlow); }
 
@@ -219,15 +219,15 @@ struct DeltaFlow
 struct DeltaFlowInt
 {
 	unsigned int module = 0;
-	unsigned int deltaExit = 0;
-	unsigned int deltaEnter = 0;
+	double deltaExit = 0;
+	double deltaEnter = 0;
 	unsigned int count = 0;
 
 	virtual ~DeltaFlowInt() = default;
 
 	DeltaFlowInt() {}
 
-	explicit DeltaFlowInt(unsigned int module, unsigned int deltaExit, unsigned int deltaEnter)
+	explicit DeltaFlowInt(unsigned int module, double deltaExit, double deltaEnter)
 	:	module(module),
 		deltaExit(deltaExit),
 		deltaEnter(deltaEnter),

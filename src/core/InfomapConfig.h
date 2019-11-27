@@ -51,6 +51,14 @@ public:
 		return get();
 	}
 
+	Infomap& setNonMainConfig() {
+		Config tmp(*this);
+		Config newConfig;
+		newConfig.cloneAsNonMain(tmp);
+		*this = newConfig;
+		return get();
+	}
+
 	Infomap& setNonMainConfig(const Config& conf) {
 		cloneAsNonMain(conf);
 		return get();
