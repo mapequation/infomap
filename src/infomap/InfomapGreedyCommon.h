@@ -1398,27 +1398,27 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::consolidateModules(b
 
 
 	// Aggregate links from lower level to the new modular level
-	typedef std::pair<NodeBase*, NodeBase*> NodePair;
-	typedef std::map<NodePair, double, CompNodePair> EdgeMap;
+	typedef std::pair<unsigned int, unsigned int> NodePair;
+	typedef std::map<NodePair, double> EdgeMap;
 	EdgeMap moduleLinks;
 
 	for (typename Super::activeNetwork_iterator nodeIt(Super::m_activeNetwork.begin()), nodeEnd(Super::m_activeNetwork.end());
 			nodeIt != nodeEnd; ++nodeIt)
 	{
 		NodeBase* node = *nodeIt;
+		unsigned int module1 = node->index;
 
-		NodeBase* parent = node->parent;
 		for (NodeBase::edge_iterator edgeIt(node->begin_outEdge()), edgeEnd(node->end_outEdge());
 				edgeIt != edgeEnd; ++edgeIt)
 		{
 			EdgeType* edge = *edgeIt;
-			NodeBase* otherParent = edge->target.parent;
+			unsigned int module2 = edge->target.index;
 
-			if (otherParent != parent)
+			if (module1 != module2)
 			{
-				NodeBase *m1 = parent, *m2 = otherParent;
+				unsigned int m1 = module1, m2 = module2;
 				// If undirected, the order may be swapped to aggregate the edge on an opposite one
-				if (!IsDirectedType() && m1->index > m2->index)
+				if (!IsDirectedType() && m1 > m2)
 					std::swap(m1, m2);
 				// Insert the node pair in the edge map. If not inserted, add the flow value to existing node pair.
 				std::pair<typename EdgeMap::iterator, bool> ret = \
@@ -1434,7 +1434,7 @@ unsigned int InfomapGreedyCommon<InfomapGreedyDerivedType>::consolidateModules(b
 			edgeIt != edgeEnd; ++edgeIt)
 	{
 		const NodePair& nodePair = edgeIt->first;
-		nodePair.first->addOutEdge(*nodePair.second, 0.0, edgeIt->second);
+		modules[nodePair.first]->addOutEdge(*modules[nodePair.second], 0.0, edgeIt->second);
 	}
 
 	// Replace active network with its children if not at leaf level.
