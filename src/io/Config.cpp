@@ -61,6 +61,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 
 	api.addOptionArgument(conf.unweightedPaths, "unweighted-paths",
 			"Assume last value in a path is a node instead of default a weight of the path.", "Input", true);
+	
+	api.addOptionArgument(conf.zeroBasedNodeNumbers, 'z', "zero-based-numbering",
+			"Assume node numbers start from zero in the input file instead of one.");
 
 	api.addOptionArgument(conf.pathMarkovOrder, "path-markov-order",
 			"Markov order of the network generated from paths.", "n", "Input", true);
