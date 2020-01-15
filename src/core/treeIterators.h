@@ -332,16 +332,12 @@ struct node_iterator_base
 
 	node_iterator_base()
 	:	m_current(nullptr)
-	{
-		init();
-	}
+	{}
 
 	explicit
 	node_iterator_base(const NodePointerType& nodePointer)
 	:	m_current(nodePointer)
-	{
-		init();
-	}
+	{}
 
 	node_iterator_base(const node_iterator_base& other)
 	:	m_current(other.m_current)
@@ -354,8 +350,6 @@ struct node_iterator_base
 	}
 
 	virtual ~node_iterator_base() {}
-
-	virtual void init() {}
 
 	pointer base() const
 	{ return m_current; }
@@ -515,7 +509,7 @@ public:
 	DepthFirstIterator() : Base() {}
 
 	explicit
-	DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) {}
+	DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
 
 	DepthFirstIterator(const DepthFirstIterator& other) : Base(other) {}
 
@@ -525,7 +519,7 @@ public:
 		return *this;
 	}
 
-	virtual void init()
+	void init()
 	{
 		if (Base::m_current != nullptr)
 		{
@@ -597,7 +591,7 @@ public:
 	LeafNodeIterator() : Base() {}
 
 	explicit
-	LeafNodeIterator(const NodePointerType& nodePointer) : Base(nodePointer) {}
+	LeafNodeIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
 
 	LeafNodeIterator(const LeafNodeIterator& other) : Base(other) {}
 
@@ -607,7 +601,7 @@ public:
 		return *this;
 	}
 
-	virtual void init()
+	void init()
 	{
 		if (Base::m_current != nullptr)
 		{
@@ -673,7 +667,7 @@ public:
 	LeafModuleIterator() : Base() {}
 
 	explicit
-	LeafModuleIterator(const NodePointerType& nodePointer) : Base(nodePointer) {}
+	LeafModuleIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
 
 	LeafModuleIterator(const LeafModuleIterator& other) : Base(other) {}
 
@@ -684,7 +678,7 @@ public:
 		return *this;
 	}
 
-	virtual void init()
+	void init()
 	{
 		if (Base::m_current != nullptr)
 		{

@@ -49,8 +49,8 @@ public:
 
 	// typedef DepthFirstIterator<InfoNode*, true>			pre_depth_first_iterator;
 	// typedef DepthFirstIterator<InfoNode const*, true>	const_pre_depth_first_iterator;
-	// typedef DepthFirstIterator<InfoNode*, false>		post_depth_first_iterator;
-	// typedef DepthFirstIterator<InfoNode const*, false>	const_post_depth_first_iterator;
+	typedef DepthFirstIterator<InfoNode*, false>		post_depth_first_iterator;
+	typedef DepthFirstIterator<InfoNode const*, false>	const_post_depth_first_iterator;
 
 	// typedef InfomapDepthFirstIterator<InfoNode*>		infomap_depth_first_iterator;
 	// typedef InfomapDepthFirstIterator<InfoNode const*>	const_infomap_depth_first_iterator;
@@ -154,7 +154,7 @@ public:
 
 	~InfoNode();
 
-	
+
 	InfoNode& operator=(const InfoNode& other)
 	{
 		data = other.data;
@@ -257,6 +257,9 @@ public:
 	// InfomapLeafIterator end_leaf()
 	// { return InfomapLeafIterator(nullptr); }
 
+	post_depth_first_iterator begin_post_depth_first()
+	{ return post_depth_first_iterator(this); }
+
 	tree_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
 	{ return tree_iterator(this, maxClusterLevel); }
 
@@ -268,11 +271,11 @@ public:
 
 	const_tree_iterator end_tree() const
 	{ return const_tree_iterator(nullptr); }
-	
+
 	infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) {
 		return infomap_iterator_wrapper(tree_iterator(this, maxClusterLevel), tree_iterator(nullptr));
 	}
-	
+
 	const_infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const {
 		return const_infomap_iterator_wrapper(const_tree_iterator(this, maxClusterLevel), const_tree_iterator(nullptr));
 	}

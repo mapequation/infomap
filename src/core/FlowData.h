@@ -11,7 +11,7 @@ namespace infomap {
 
 struct FlowData
 {
-	FlowData(double flow = 1.0) :
+	FlowData(double flow = 0.0) :
 		flow(flow),
 		enterFlow(0.0),
 		exitFlow(0.0)
@@ -113,7 +113,7 @@ struct MemDeltaFlow : DeltaFlow
 {
 	double sumDeltaPlogpPhysFlow = 0.0;
 	double sumPlogpPhysFlow = 0.0;
-	
+
 	MemDeltaFlow() : DeltaFlow() {}
 
 	explicit MemDeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow = 0.0, double sumPlogpPhysFlow = 0.0)
@@ -161,7 +161,7 @@ struct PhysData
 	PhysData(const PhysData& other) : physNodeIndex(other.physNodeIndex), sumFlowFromM2Node(other.sumFlowFromM2Node) {}
 	unsigned int physNodeIndex;
 	double sumFlowFromM2Node; // The amount of flow from the memory node in this physical node
-	
+
 	friend std::ostream& operator<<(std::ostream& out, const PhysData& data)
 	{
 		return out << "physNodeIndex: " << data.physNodeIndex <<
