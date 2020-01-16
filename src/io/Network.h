@@ -151,7 +151,7 @@ protected:
 	void parsePathData(std::string filename);
 	void parseStateNetwork(std::string filename);
 	void parseNetwork(std::string filename);
-	void parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings);
+	void parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings, std::string startHeading = "");
 
 	/**
 	 * Parse a bipartite network with the following format

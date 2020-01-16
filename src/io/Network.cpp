@@ -195,7 +195,7 @@ void Network::parseMultilayerNetwork(std::string filename)
 	Log() << "Parsing multilayer network from file '" <<
 			filename << "'... " << std::endl;
 
-	parseNetwork(filename, m_validHeadings["multilayer"], m_ignoreHeadings["multilayer"]);
+	parseNetwork(filename, m_validHeadings["multilayer"], m_ignoreHeadings["multilayer"], "*multilayer");
 }
 
 void Network::parseStateNetwork(std::string filename)
@@ -214,57 +214,58 @@ void Network::parseNetwork(std::string filename)
 	parseNetwork(filename, m_validHeadings["general"], m_ignoreHeadings["general"]);
 }
 
-void Network::parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings)
+void Network::parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings, std::string startHeading)
 {
 	SafeInFile input(filename.c_str());
 
-	std::string line = parseLinks(input);
+	// Parse standard links by default until possible heading is reached
+	std::string heading = startHeading.length() > 0 ? startHeading : parseLinks(input);
 
-	while (line.length() > 0 && line[0] == '*')
+	while (heading.length() > 0 && heading[0] == '*')
 	{
-		std::string heading = io::tolower(io::firstWord(line));
-		if (validHeadings.count(heading) == 0) {
-			throw FileFormatError(io::Str() << "Unrecognized heading in network file: '" << heading << "'.");
+		std::string headingLowerCase = io::tolower(io::firstWord(heading));
+		if (validHeadings.count(headingLowerCase) == 0) {
+			throw FileFormatError(io::Str() << "Unrecognized heading in network file: '" << headingLowerCase << "'.");
 		}
-		if (ignoreHeadings.count(heading) > 0) {
-			line = ignoreSection(input, heading);
+		if (ignoreHeadings.count(headingLowerCase) > 0) {
+			heading = ignoreSection(input, headingLowerCase);
 		}
-		else if (heading == "*vertices") {
-			line = parseVertices(input, line);
+		else if (headingLowerCase == "*vertices") {
+			heading = parseVertices(input, heading);
 		}
-		else if (heading == "*states") {
-			line = parseStateNodes(input, line);
+		else if (headingLowerCase == "*states") {
+			heading = parseStateNodes(input, heading);
 		}
-		else if (heading == "*edges") {
+		else if (headingLowerCase == "*edges") {
 			if (!m_config.isUndirectedFlow())
 				Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
-			line = parseLinks(input);
+			heading = parseLinks(input);
 		}
-		else if (heading == "*arcs") {
+		else if (headingLowerCase == "*arcs") {
 			if (m_config.isUndirectedFlow())
 				Log() << "\n --> Notice: Links marked as directed but parsed as undirected.\n";
-			line = parseLinks(input);
+			heading = parseLinks(input);
 		}
-		else if (heading == "*links") {
-			line = parseLinks(input);
+		else if (headingLowerCase == "*links") {
+			heading = parseLinks(input);
 		}
-		else if (heading == "*paths") {
-			line = parsePaths(input);
+		else if (headingLowerCase == "*paths") {
+			heading = parsePaths(input);
 		}
-		else if (heading == "*multilayer" || heading == "*multiplex") {
-			line = parseMultilayerLinks(input);
+		else if (headingLowerCase == "*multilayer" || headingLowerCase == "*multiplex") {
+			heading = parseMultilayerLinks(input);
 		}
-		else if (heading == "*intra") {
-			line = parseMultilayerIntraLinks(input);
+		else if (headingLowerCase == "*intra") {
+			heading = parseMultilayerIntraLinks(input);
 		}
-		else if (heading == "*inter") {
-			line = parseMultilayerInterLinks(input);
+		else if (headingLowerCase == "*inter") {
+			heading = parseMultilayerInterLinks(input);
 		}
-		else if (heading == "*bipartite") {
-			line = parseBipartiteLinks(input, line);
+		else if (headingLowerCase == "*bipartite") {
+			heading = parseBipartiteLinks(input, heading);
 		}
 		else {
-			line = ignoreSection(input, heading);
+			heading = ignoreSection(input, headingLowerCase);
 		}
 	}
 
