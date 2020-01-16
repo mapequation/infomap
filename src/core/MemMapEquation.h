@@ -65,7 +65,7 @@ public:
 
 	// using Base::print;
 	std::ostream& print(std::ostream& out) const;
-	// friend std::ostream& operator<<(std::ostream&, const MemMapEquation&);
+	friend std::ostream& operator<<(std::ostream&, const MemMapEquation&);
 
 	// ===================================================
 	// Init

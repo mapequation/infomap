@@ -96,6 +96,7 @@ struct Config
 	std::string clusterDataFile = "";
 	std::string metaDataFile = "";
 	double metaDataRate = 1.0;
+	bool unweightedMetaData = false;
 	unsigned int numMetaDataDimensions = 0;
 	bool clusterDataIsHard = false;
 	bool setUnidentifiedNodesToClosestModule = false;
@@ -115,7 +116,7 @@ struct Config
 	int multilayerRelaxLimit = -1;
 	double multilayerJSRelaxRate = 0.15;
 	int multilayerJSRelaxLimit = -1;
-	
+
 	// Clustering
 	bool twoLevel = false;
 	bool noCoarseTune = false;
@@ -149,7 +150,7 @@ struct Config
 	std::string outDirectory = "";
 	std::string outName = "";
 	bool originallyUndirected = false;
-	bool printTree = false;
+	bool printTree = true;
 	bool printFlowTree = false;
 	bool printMap = false;
 	bool printClu = false;
@@ -210,6 +211,7 @@ struct Config
 	 	clusterDataFile(other.clusterDataFile),
 	 	metaDataFile(other.metaDataFile),
 	 	metaDataRate(other.metaDataRate),
+	 	unweightedMetaData(other.unweightedMetaData),
 	 	numMetaDataDimensions(other.numMetaDataDimensions),
 	 	clusterDataIsHard(other.clusterDataIsHard),
 	 	setUnidentifiedNodesToClosestModule(other.setUnidentifiedNodesToClosestModule),
@@ -306,6 +308,7 @@ struct Config
 	 	clusterDataFile = other.clusterDataFile;
 	 	metaDataFile = other.metaDataFile;
 	 	metaDataRate = other.metaDataRate;
+	 	unweightedMetaData = other.unweightedMetaData;
 	 	numMetaDataDimensions = other.numMetaDataDimensions;
 	 	clusterDataIsHard = other.clusterDataIsHard;
 	 	setUnidentifiedNodesToClosestModule = other.setUnidentifiedNodesToClosestModule;
@@ -401,6 +404,7 @@ struct Config
 	 	// clusterDataFile = other.clusterDataFile;
 	 	// metaDataFile = other.metaDataFile;
 	 	metaDataRate = other.metaDataRate;
+	 	unweightedMetaData = other.unweightedMetaData;
 	 	numMetaDataDimensions = other.numMetaDataDimensions;
 	 	// clusterDataIsHard = other.clusterDataIsHard;
 	 	// setUnidentifiedNodesToClosestModule = other.setUnidentifiedNodesToClosestModule;
@@ -539,8 +543,8 @@ struct Config
 			flowModel = FlowModel::rawdir;
 		}
 
-		if (!haveModularResultOutput())
-			printTree = true;
+		// if (!haveModularResultOutput())
+		// 	printTree = true;
 
 		originallyUndirected = isUndirectedFlow();
 		// if (isMemoryNetwork())

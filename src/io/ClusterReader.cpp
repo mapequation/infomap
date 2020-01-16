@@ -29,6 +29,7 @@
 #include "../utils/Log.h"
 #include "convert.h"
 #include "SafeFile.h"
+#include <algorithm>
 
 namespace infomap {
 

@@ -23,6 +23,7 @@
 #include "../io/Network.h"
 #include "InfoNode.h"
 #include "InfomapIterator.h"
+#include "./ClusterMap.h"
 
 namespace infomap {
 
@@ -38,7 +39,7 @@ protected:
 	using EdgeType = Edge<InfoNode>;
 
 public:
-	
+
 	InfomapBase() : InfomapConfig<InfomapBase>() {}
 
 	InfomapBase(const Config& conf) :
@@ -51,7 +52,7 @@ public:
 	{
 		m_network.setConfig(*this);
 	}
-	
+
 	virtual ~InfomapBase() {}
 
 
@@ -62,7 +63,7 @@ public:
 	const Network& network() const;
 
 	Network& network();
-	
+
 	InfoNode& root();
 	const InfoNode& root() const;
 
@@ -74,16 +75,16 @@ public:
 
 	InfomapIteratorPhysical iterTreePhysical(int maxClusterLevel = -1)
 	{ return InfomapIteratorPhysical(&root(), maxClusterLevel); }
-	
+
 	InfomapModuleIterator iterModules(int maxClusterLevel = -1)
 	{ return InfomapModuleIterator(&root(), maxClusterLevel); }
-	
+
 	InfomapLeafModuleIterator iterLeafModules(int maxClusterLevel = -1)
 	{ return InfomapLeafModuleIterator(&root(), maxClusterLevel); }
-	
+
 	InfomapLeafIterator iterLeafNodes(int maxClusterLevel = -1)
 	{ return InfomapLeafIterator(&root(), maxClusterLevel); }
-	
+
 	InfomapLeafIteratorPhysical iterLeafNodesPhysical(int maxClusterLevel = -1)
 	{ return InfomapLeafIteratorPhysical(&root(), maxClusterLevel); }
 
@@ -118,6 +119,8 @@ public:
 	unsigned int maxTreeDepth() const;
 
 	virtual double getCodelength() const = 0;
+
+	virtual double getMetaCodelength(bool unweighted = false) const { return 0.0; }
 
 	virtual double codelength() { return m_hierarchicalCodelength; }
 
@@ -196,7 +199,7 @@ public:
 	 * 3 2
 	 * 4 2
 	 * 5 3
-	 * 
+	 *
 	 */
 	InfomapBase& initMetaData(std::string metaDataFile);
 
@@ -237,6 +240,13 @@ public:
 	 */
 	InfomapBase& initPartition(std::vector<unsigned int>& modules, bool hard = false);
 
+	/**
+	 * Provide an initial hierarchical partition of the network
+	 *
+	 * @param tree A tree path for each node
+	 */
+	InfomapBase& initTree(const NodePaths& tree);
+
 	virtual void init();
 
 	virtual void runPartition();
@@ -262,6 +272,8 @@ public:
 	* Done in network?
 	*/
 	virtual void initEnterExitFlow();
+
+	virtual void aggregateFlowValuesFromLeafToRoot();
 
 	// Init terms that is constant for the whole network
 	virtual void initNetwork() = 0;
@@ -363,7 +375,7 @@ public:
 
 	/**
 	 * Write tree to a .tree file.
-	 * @param filename the filename for the output file. If empty, use default 
+	 * @param filename the filename for the output file. If empty, use default
 	 * based on output directory and input file name
 	 * @param states if memory network, print the state-level network without merging physical nodes within modules
 	 * @return the filename written to
@@ -374,7 +386,7 @@ public:
 	 * Write flow tree to a .ftree file.
 	 * This is the same as a .tree file but appended with links aggregated
 	 * within modules on all levels in the tree
-	 * @param filename the filename for the output file. If empty, use default 
+	 * @param filename the filename for the output file. If empty, use default
 	 * based on output directory and input file name
 	 * @param states if memory network, print the state-level network without merging physical nodes within modules
 	 * @return the filename written to
@@ -383,7 +395,7 @@ public:
 
 	/**
 	 * Write tree to a .clu file.
-	 * @param filename the filename for the output file. If empty, use default 
+	 * @param filename the filename for the output file. If empty, use default
 	 * based on output directory and input file name
 	 * @param states if memory network, print the state-level network without merging physical nodes within modules
 	 * @param moduleIndexLevel the depth from the root on which to advance module index.
@@ -395,7 +407,7 @@ public:
 
 	/**
 	 * Write modular network to a .map file.
-	 * @param filename the filename for the output file. If empty, use default 
+	 * @param filename the filename for the output file. If empty, use default
 	 * based on output directory and input file name
 	 * @param states if memory network, print the state-level network without merging physical nodes within modules
 	 * @param moduleIndexLevel the depth from the root on which to advance module index.
@@ -439,7 +451,7 @@ protected:
 	/**
 	 * Write tree links to output stream
 	 */
-	void printTreeLinks(std::ostream& outStream, bool states = false);
+	void writeTreeLinks(std::ostream& outStream, bool states = false);
 
 	InfoNode m_root;
 	std::vector<InfoNode*> m_leafNodes;
@@ -448,7 +460,7 @@ protected:
 
 	std::vector<InfoNode*> m_originalLeafNodes;
 
-	Network m_network;	
+	Network m_network;
 
 	const unsigned int SUPER_LEVEL_ADDITION = 1 << 20;
 	bool m_isMain = true;

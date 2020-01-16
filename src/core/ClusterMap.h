@@ -9,13 +9,37 @@
 #define SRC_CLUSTERING_CLUSTERING_CLUSTERMAP_H_
 
 #include <string>
-#include "../io/SafeFile.h"
-#include "../io/convert.h"
-#include "../utils/Log.h"
-#include <sstream>
 #include <map>
+#include <vector>
+#include <deque>
 
 namespace infomap {
+
+using Path = std::deque<unsigned int>;
+struct NodePath
+{
+	NodePath(unsigned int nodeId, const Path& path)
+	: nodeId(nodeId), path(path) {}
+	unsigned int nodeId;
+	Path path;
+};
+
+// using NodePaths = std::vector<NodePath>;
+
+struct NodePaths
+{
+	NodePaths(unsigned int size = 0) { reserve(size); }
+	void reserve(unsigned int size) { nodePaths.reserve(size); }
+	unsigned int size() { return nodePaths.size(); }
+	void clear() { nodePaths.clear(); }
+	void add(unsigned int nodeId, const Path& path) {
+		add(NodePath(nodeId, path));
+	}
+	void add(NodePath&& path) {
+		nodePaths.push_back(path);
+	}
+	std::vector<NodePath> nodePaths;
+};
 
 class ClusterMap
 {
@@ -30,40 +54,23 @@ public:
 		return m_flowData;
 	}
 
+	const NodePaths& nodePaths() const { return m_nodePaths; }
+
+	const std::string& extension() const { return m_extension; }
+
+	bool isHigherOrder() const { return m_isHigherOrder; }
+
+protected:
+	void readTree(const std::string& filename, bool includeFlow);
+	void readClu(const std::string& filename, bool includeFlow);
+
 private:
 	std::map<unsigned int, unsigned int> m_clusterIds;
 	std::map<unsigned int, double> m_flowData;
+	NodePaths m_nodePaths;
+	std::string m_extension;
+	bool m_isHigherOrder = false;
 };
-
-void ClusterMap::readClusterData(const std::string& filename, bool includeFlow)
-{
-	Log() << "Read initial partition from '" << filename << "'... " << std::flush;
-	SafeInFile input(filename);
-	std::string line;
-	std::istringstream lineStream;
-	std::map<unsigned int, unsigned int> clusterData;
-
-	while(!std::getline(input, line).fail())
-	{
-		if (line.length() == 0 || line[0] == '#' || line[0] == '*')
-			continue;
-
-		lineStream.clear();
-		lineStream.str(line);
-
-		unsigned int nodeId;
-		unsigned int clusterId;
-		if (!(lineStream >> nodeId >> clusterId))
-			throw FileFormatError(io::Str() << "Couldn't parse node key and cluster id from line '" << line << "'");
-		m_clusterIds[nodeId] = clusterId;
-
-		auto flow = 0.0;
-		if(includeFlow && lineStream >> flow){
-			m_flowData[nodeId] = flow;
-		}
-
-	}
-}
 
 }
 

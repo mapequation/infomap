@@ -81,7 +81,7 @@ public:
 
 	std::ostream& print(std::ostream&) const;
 
-	// friend std::ostream& operator<<(std::ostream&, const MapEquation&);
+	friend std::ostream& operator<<(std::ostream&, const MapEquation&);
 
 
 	// ===================================================

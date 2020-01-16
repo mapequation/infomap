@@ -62,13 +62,17 @@ public:
 	// double getCodelength() const { return codelength + metaCodelength; };
 	double getCodelength() const;
 
+	double getMetaCodelength(bool unweighted = false) const {
+		return unweighted ? metaCodelength : metaDataRate * metaCodelength;
+	};
+
 	// ===================================================
 	// IO
 	// ===================================================
 
 	// using Base::print;
 	std::ostream& print(std::ostream& out) const;
-	// friend std::ostream& operator<<(std::ostream&, const MetaMapEquation&);
+	friend std::ostream& operator<<(std::ostream&, const MetaMapEquation&);
 
 	// ===================================================
 	// Init
@@ -89,7 +93,7 @@ public:
 	// ===================================================
 
 	double calcCodelength(const InfoNode& parent) const;
-	
+
 	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
 
 	double getDeltaCodelengthOnMovingNode(InfoNode& current,
@@ -183,8 +187,9 @@ protected:
 
 	unsigned int numMetaDataDimensions = 0;
 	double metaDataRate = 1.0;
-	bool weightByFlow = false;
+	bool weightByFlow = true;
 	double metaCodelength = 0.0;
+	double m_unweightedNodeFlow = 0.0;
 };
 
 

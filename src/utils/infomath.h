@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -30,6 +30,10 @@
 
 #include <cmath>
 #include <vector>
+
+#ifndef M_LOG2E
+#define M_LOG2E 1.44269504088896340736
+#endif
 
 namespace infomap
 {
@@ -60,7 +64,7 @@ namespace infomap
 		{
 			return value > lowerLimit && value < higherLimit;
 		}
-		
+
 		inline
 		bool isEqualWithinThreshold(double v1, double v2, double epsilon = 1e-10)
 		{

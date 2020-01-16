@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -46,9 +46,9 @@ ProgramInterface::ProgramInterface(std::string name, std::string shortDescriptio
   m_negateNextOption(false),
   m_numOptionalNonOptionArguments(0)
 {
-	addIncrementalOptionArgument(m_displayHelp, 'h', "help", "Prints this help message. Use -hh to show advanced options.");
-	addOptionArgument(m_displayVersion, 'V', "version", "Display program version information.");
-	addOptionArgument(m_negateNextOption, 'n', "negate-next", "Set the next (no-argument) option to false.", true);
+	addIncrementalOptionArgument(m_displayHelp, 'h', "help", "Prints this help message. Use -hh to show advanced options.", "About");
+	addOptionArgument(m_displayVersion, 'V', "version", "Display program version information.", "About");
+	// addOptionArgument(m_negateNextOption, 'n', "negate-next", "Set the next (no-argument) option to false.", true);
 }
 
 ProgramInterface::~ProgramInterface()
@@ -97,15 +97,31 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
 			maxLength = optionStrings[i].length();
 	}
 
-	for (unsigned int i = 0; i < m_optionArguments.size(); ++i)
-	{
-		Option& opt = *m_optionArguments[i];
-		std::string::size_type numSpaces = maxLength + 3 - optionStrings[i].length();
-		if (showAdvanced || !opt.isAdvanced) {
-			Log() << optionStrings[i] << std::string(numSpaces, ' ') << opt.description;
-			if (!opt.printNumericValue().empty())
-				Log() << " (Default: " << opt.printNumericValue() << ")";
-			Log() << "\n";
+	std::vector<std::string> groups { "About" };
+	for (auto& group : m_groups) {
+		if (group != "About")
+			groups.push_back(group);
+	}
+	if (m_groups.empty())
+		groups.push_back("All");
+
+	for (auto group : groups) {
+		if (group != "All") {
+			Log() << "\n" << group << "\n";
+			Log() << std::string(group.length(), '-') << "\n";
+		}
+		for (unsigned int i = 0; i < m_optionArguments.size(); ++i)
+		{
+			Option& opt = *m_optionArguments[i];
+			if (group == "All" || opt.group == group) {
+				std::string::size_type numSpaces = maxLength + 3 - optionStrings[i].length();
+				if (showAdvanced || !opt.isAdvanced) {
+					Log() << optionStrings[i] << std::string(numSpaces, ' ') << opt.description;
+					if (!opt.printNumericValue().empty())
+						Log() << " (Default: " << opt.printNumericValue() << ")";
+					Log() << "\n";
+				}
+			}
 		}
 	}
 	Log() << std::endl;
@@ -169,6 +185,7 @@ void ProgramInterface::parseArgs(const std::string& args)
 		{
 			bool negate = m_negateNextOption;
 			m_negateNextOption = false;
+			bool flagValue = true;
 			unsigned int numArgsLeft = flags.size() - i - 1;
 
 			const std::string& arg = flags[i];
@@ -190,11 +207,19 @@ void ProgramInterface::parseArgs(const std::string& args)
 						throw InputSyntaxError("Illegal argument '--'");
 					std::string longOpt = arg.substr(2);
 					std::map<std::string, Option*>::iterator it = longOptionMap.find(longOpt);
-					if (it == longOptionMap.end())
-						throw InputDomainError(io::Str() << "Unrecognized option: '--" << longOpt << "'");
+					if (it == longOptionMap.end()) {
+						// Unrecognized option, check if it negates a recognised option with the '--no-' prefix
+						if (longOpt.compare(0, 3, "no-") == 0 && longOptionMap.find(std::string(longOpt, 3)) != longOptionMap.end()) {
+							longOpt = std::string(longOpt, 3);
+							it = longOptionMap.find(longOpt);
+							flagValue = false;
+						} else {
+							throw InputDomainError(io::Str() << "Unrecognized option: '--" << longOpt << "'");
+						}
+					}
 					Option& opt = *it->second;
 					if (!opt.requireArgument || opt.incrementalArgument)
-						opt.set(!negate);
+						opt.set(flagValue);
 					else
 					{
 						if (numArgsLeft == 0)
@@ -219,7 +244,7 @@ void ProgramInterface::parseArgs(const std::string& args)
 							throw InputDomainError(io::Str() << "Unrecognized option: '-" << o << "'");
 						Option& opt = *it->second;
 						if (!opt.requireArgument || opt.incrementalArgument)
-							opt.set(!negate);
+							opt.set(flagValue);
 						else
 						{
 							std::string optArg;

@@ -1,4 +1,4 @@
-from infomap import infomap
+import infomap
 
 im = infomap.Infomap("--two-level --verbose")
 

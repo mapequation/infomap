@@ -34,9 +34,9 @@ std::ostream& BiasedMapEquation::print(std::ostream& out) const {
 		" + " << biasedCost << " = " <<	io::toPrecision(getCodelength());
 }
 
-// std::ostream& operator<<(std::ostream& out, const BiasedMapEquation& mapEq) {
-// 	return out << indexCodelength << " + " << moduleCodelength << " = " <<	io::toPrecision(codelength);
-// }
+std::ostream& operator<<(std::ostream& out, const BiasedMapEquation& mapEq) {
+	return mapEq.print(out);
+}
 
 
 // ===================================================
@@ -131,7 +131,7 @@ double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 		return deltaL;
 
 	int deltaNumModules = getDeltaNumModulesIfMoving(current, oldModuleDelta.module, newModuleDelta.module, moduleMembers);
-	
+
 	double deltaBiasedCost = calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
 
 	// std::cout << "\n!!!!! getDeltaCodelengthOnMovingNode(" << current.stateId << ") from " <<
@@ -155,9 +155,9 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 
 	if (preferredNumModules == 0)
 		return;
-	
+
 	int deltaNumModules = getDeltaNumModulesIfMoving(current, oldModuleDelta.module, newModuleDelta.module, moduleMembers);
-	
+
 	// double deltaBiasedCost = calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
 
 	// std::cout << "\n!!!!! updateCodelengthOnMovingNode(" << current.stateId << ") from " <<
@@ -165,12 +165,12 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 	// 	newModule << " (" << moduleMembers[newModule] << ") -> currentNumModules = " <<
 	// 	currentNumModules << " + " << deltaNumModules << " => cost: " <<
 	// 	biasedCost << " + " << deltaBiasedCost << " = " << (biasedCost + deltaBiasedCost) << "\n";
-	
+
 	// biasedCost += deltaBiasedCost;
 
 	currentNumModules += deltaNumModules;
 	biasedCost = calcNumModuleCost(currentNumModules);
-	
+
 }
 
 

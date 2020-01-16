@@ -48,6 +48,13 @@ compiler_args = [
     '-Wno-deprecated-register',
     '-std=c++14',
 ]
+if sys.platform == 'win32':
+    compiler_args = [
+        '/DAS_LIB',
+        '/DPYTHON',
+        '/DNOMINMAX',
+        # '/Qstd=c++14',
+    ]
 # if sys.platform.startswith("darwin"):
 #     compiler_args.append('-stdlib=libc++')
 
@@ -125,7 +132,7 @@ setup(
 
     # Choose your license
     license='AGPL-3.0+',
-    
+
     # Classifiers help users find your project by categorizing it.
     #
     # For a list of valid classifiers, see https://pypi.org/classifiers/

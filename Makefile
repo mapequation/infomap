@@ -68,7 +68,7 @@ js-worker: build/js/Infomap-worker.js
 build/js/Infomap-worker.js: $(SOURCES)
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
-	em++ -O0 -s ALLOW_MEMORY_GROWTH=1 --pre-js interfaces/js/pre-worker-module.js -o build/js/Infomap-worker.js $^
+	em++ -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 --pre-js interfaces/js/pre-worker-module.js -o build/js/Infomap-worker.js $^
 
 build/js/Infomap.js: $(SOURCES)
 	@echo "Compiling Infomap for Node.js..."
@@ -185,6 +185,7 @@ $(PY_BUILD_DIR)/headers/%: %
 
 .PHONY: pypi_prepare pypitest_publish pypi_publish
 PYPI_DIR = $(PY_BUILD_DIR)/pypi/infomap
+PYPI_SDIST = $(shell find $(PYPI_DIR) -name "*.tar.gz" 2>/dev/null)
 
 pypi_prepare: py-build Makefile
 	@mkdir -p $(PYPI_DIR)
@@ -198,13 +199,19 @@ pypi_prepare: py-build Makefile
 	@cp -a README.md $(PYPI_DIR)/
 	@cp -a LICENSE_AGPLv3.txt $(PYPI_DIR)/LICENSE
 
+pypi_dist: pypi_prepare
+	cd $(PYPI_DIR) && python setup.py sdist bdist_wheel
+
 # pip -vvv --no-cache-dir install --upgrade -I --index-url https://test.pypi.org/simple/ infomap
 # pip install -e build/py/pypi/infomap/
-pypitest_publish: pypi_prepare
-	cd $(PYPI_DIR) && python setup.py sdist upload -r testpypi
+pypitest_publish:
+	# cd $(PYPI_DIR) && python setup.py sdist upload -r testpypi
+	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
+	cd $(PYPI_DIR) && python -m twine upload -r testpypi dist/*
 
-pypi_publish: pypi_prepare
-	cd $(PYPI_DIR) && python setup.py sdist upload
+pypi_publish:
+	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
+	cd $(PYPI_DIR) && python -m twine upload dist/*
 
 
 ##################################################
@@ -253,6 +260,13 @@ docker-build-swig-python: Makefile
 
 docker-run-swig-python: Makefile
 	docker run --rm infomap:python
+
+# ubuntu test python
+docker-build-ubuntu-test-python: Makefile
+	docker build -f docker/ubuntu.Dockerfile -t infomap:python-test .
+
+docker-run-ubuntu-test-python: Makefile
+	docker run --rm infomap:python-test
 
 # docker-run:
 # 	docker run -it --rm -v $(pwd):/home/rstudio infomap \

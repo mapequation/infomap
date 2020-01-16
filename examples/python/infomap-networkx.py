@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import pathlib
 
-from infomap import infomap
+import infomap
 
 """
 Generate and draw a network with NetworkX, colored
@@ -17,7 +17,7 @@ def findCommunities(G):
 	Partition network with the Infomap algorithm.
 	Annotates nodes with 'community' id.
 	"""
-	
+
 	myInfomap = infomap.Infomap("--two-level")
 
 	print("Building Infomap network from a NetworkX graph...")

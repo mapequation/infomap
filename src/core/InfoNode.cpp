@@ -232,13 +232,16 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
 	InfoNode::child_iterator nodeIt = begin_child();
 	unsigned int numOriginalChildrenLeft = m_childDegree;
 	auto d0 = m_childDegree;
+	double flow = 0.0;
 	do
 	{
 		InfoNode* n = nodeIt.current();
+		flow += n->data.flow;
 		++nodeIt;
 		middleNode->addChild(n);
 	}
 	while (--numOriginalChildrenLeft != 0);
+	// middleNode->data.flow = flow;
 	releaseChildren();
 	addChild(middleNode);
 	auto d1 = middleNode->replaceChildrenWithGrandChildren();
@@ -370,7 +373,7 @@ void InfoNode::replaceWithChildrenDebug()
 // 	otherRoot.m_childDegree = m_childDegree;
 // 	firstChild->parent = &otherRoot;
 // 	lastChild->parent = &otherRoot;
-	
+
 // 	// Link directly to leaf nodes in curren node instead
 // 	// Reparent leaf nodes within same infomap instance
 // 	InfoNode* leaf = this;

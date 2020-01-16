@@ -1,8 +1,12 @@
-from infomap import infomap
+import infomap
 
 myInfomap = infomap.Infomap("--two-level --verbose")
 
-# Add weight as an optional third argument
+# Optionally add nodes with names
+myInfomap.addNode(0, "Node 0")
+myInfomap.addNode(1, "Node 1")
+
+# Adding links automatically create nodes if not exist. Optionally add weight as third argument
 myInfomap.addLink(0, 1)
 myInfomap.addLink(0, 2)
 myInfomap.addLink(0, 3)
@@ -25,9 +29,9 @@ print(f"Found {myInfomap.numTopModules()} modules with codelength: {myInfomap.co
 print("\n#node module")
 for node,module in myInfomap.getModules().items():
 	print(f"{node} {module}")
-	
 
 print("\n#path flow node module:")
 for node in myInfomap.iterLeafNodes():
 	print(node.path(), node.data.flow, node.id, node.moduleIndex())
 
+print("\nDone!")

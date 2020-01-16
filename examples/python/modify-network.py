@@ -1,4 +1,4 @@
-from infomap import infomap
+import infomap
 
 
 myInfomap = infomap.Infomap("--two-level -v")

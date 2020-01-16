@@ -16,12 +16,12 @@ namespace infomap {
 
 double MetaMapEquation::getModuleCodelength() const {
 	// std::cout << "\n$$$$$ getModuleCodelength: " << moduleCodelength << " + " << metaCodelength << " = " << moduleCodelength + metaCodelength << "\n";
-	return moduleCodelength + metaCodelength;
+	return moduleCodelength + metaCodelength * metaDataRate;
 };
 
 double MetaMapEquation::getCodelength() const {
 	// std::cout << "\n$$$$$ getCodelength: " << codelength << " + " << metaCodelength << " = " << codelength + metaCodelength << "\n";
-	return codelength + metaCodelength;
+	return codelength + metaCodelength * metaDataRate;
 };
 
 // ===================================================
@@ -33,9 +33,9 @@ std::ostream& MetaMapEquation::print(std::ostream& out) const {
 		" + " << metaCodelength << " = " <<	io::toPrecision(getCodelength());
 }
 
-// std::ostream& operator<<(std::ostream& out, const MetaMapEquation& mapEq) {
-// 	return out << indexCodelength << " + " << moduleCodelength << " = " <<	io::toPrecision(codelength);
-// }
+std::ostream& operator<<(std::ostream& out, const MetaMapEquation& mapEq) {
+	return mapEq.print(out);
+}
 
 
 // ===================================================
@@ -47,6 +47,7 @@ void MetaMapEquation::init(const Config& config)
 	Log(3) << "MetaMapEquation::init()...\n";
 	numMetaDataDimensions = config.numMetaDataDimensions;
 	metaDataRate = config.metaDataRate;
+	weightByFlow = !config.unweightedMetaData;
 }
 
 
@@ -55,6 +56,7 @@ void MetaMapEquation::initNetwork(InfoNode& root)
 	Log(3) << "MetaMapEquation::initNetwork()...\n";
 	Base::initNetwork(root);
 	// initMetaNodes(root);
+	m_unweightedNodeFlow = 1.0 / root.childDegree();
 }
 
 void MetaMapEquation::initSuperNetwork(InfoNode& root)
@@ -85,7 +87,7 @@ void MetaMapEquation::initMetaNodes(InfoNode& root)
 			// Use only one meta dimension for now
 			if (!node.metaData.empty()) {
 				// std::cout << "\n@@@@@1 metaCollection.add(" << node.metaData[0] << ", " << (weightByFlow ? node.data.flow : 1) << ")\n";
-				node.metaCollection.add(node.metaData[0], weightByFlow ? node.data.flow : 1);
+				node.metaCollection.add(node.metaData[0], weightByFlow ? node.data.flow : m_unweightedNodeFlow);
 				// std::cout << " -> " << node.metaCollection << "\n";
 			}
 			else
@@ -105,7 +107,7 @@ void MetaMapEquation::initPartitionOfMetaNodes(std::vector<InfoNode*>& nodes)
 		unsigned int moduleIndex = node.index; // Assume unique module index for all nodes in this initiation phase
 		if (node.metaCollection.empty()) {
 			if (!node.metaData.empty()) {
-				double flow = weightByFlow ? node.data.flow : 1.0;
+				double flow = weightByFlow ? node.data.flow : m_unweightedNodeFlow;
 				// std::cout << "\n@@@@@2 metaCollection.add(" << node.metaData[0] << ", " << flow << ")\n";
 				node.metaCollection.add(node.metaData[0], flow);
 				// std::cout << "\n@@@@@2 -> " << node.metaCollection << "\n";
@@ -138,11 +140,11 @@ void MetaMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
 		metaCodelength += node.metaCollection.calculateEntropy();
 	}
 
-	metaCodelength *= metaDataRate;
+	// metaCodelength *= metaDataRate;
 
 	// moduleCodelength += metaCodelength;
 	// codelength += metaCodelength;
-	
+
 	// std::cout << "\n!!!!! calculateCodelength(nodes) -> meta: " << metaCodelength << "\n";
 }
 
@@ -165,11 +167,11 @@ double MetaMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent
 		if (!node.metaCollection.empty())
 			metaCollection.add(node.metaCollection);
 		else
-			metaCollection.add(node.metaData[0], node.data.flow); // TODO: Initiate to collection and use all dimensions
+			metaCollection.add(node.metaData[0], weightByFlow ? node.data.flow : m_unweightedNodeFlow); // TODO: Initiate to collection and use all dimensions
 	}
 
 	double metaCodelength = metaCollection.calculateEntropy();
-	
+
 	// std::cout << "\n!!!!! calcCodelengthOnModuleOfLeafNodes(parent) -> meta: " << metaCodelength << "\n";
 
 	return indexLength + metaDataRate * metaCodelength;
@@ -198,7 +200,7 @@ double MetaMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 	// 	m_moduleToMetaCollection[oldModuleIndex] << " to " << m_moduleToMetaCollection[newModuleIndex] <<
 	// 	" -> deltaMetaL: " << deltaMetaL << "\n";
 
-	return deltaL + deltaMetaL;
+	return deltaL + deltaMetaL * metaDataRate;
 }
 
 
@@ -226,7 +228,7 @@ double MetaMapEquation::getCurrentModuleMetaCodelength(unsigned int module, Info
 	// std::cout << "\n!!!!! getCurrentModuleMetaCodelength(module: " << module << ", node: " << current.stateId << ", meta: " << current.metaCollection << ", addRemove: " << addRemoveOrNothing << ") -> moduleMetaCodelength: " << moduleMetaCodelength << "\n";
 	// std::cout << "  " << currentMetaCollection << "\n";
 
-	return metaDataRate * moduleMetaCodelength;
+	return moduleMetaCodelength;
 }
 
 
@@ -251,7 +253,7 @@ void MetaMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 
 	// Update meta data from moving node
 	updateMetaData(current, oldModuleIndex, newModuleIndex);
-	
+
 	// Add codelength of old and new module after changes
 	deltaMetaL += getCurrentModuleMetaCodelength(oldModuleIndex, current, 0);
 	deltaMetaL += getCurrentModuleMetaCodelength(newModuleIndex, current, 0);
@@ -261,7 +263,7 @@ void MetaMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 	// 	", metaCodelength: " << metaCodelength << " -> " << (metaCodelength + deltaMetaL) << "\n";
 
 	metaCodelength += deltaMetaL;
-	
+
 	// moduleCodelength += deltaMetaL;
 	// codelength += deltaMetaL;
 }
@@ -272,7 +274,7 @@ void MetaMapEquation::updateMetaData(InfoNode& current, unsigned int oldModuleIn
 	// Remove meta id from old module (can be a set of meta ids when moving submodules in coarse tune)
 	auto& oldMetaCollection = m_moduleToMetaCollection[oldModuleIndex];
 	oldMetaCollection.remove(current.metaCollection);
-	
+
 	// Add meta id to new module
 	auto& newMetaCollection = m_moduleToMetaCollection[bestModuleIndex];
 	newMetaCollection.add(current.metaCollection);

@@ -15,6 +15,7 @@
 #include <deque>
 #include "FlowData.h"
 #include "MapEquation.h"
+#include "../io/SafeFile.h"
 #include "../utils/Log.h"
 #include "../utils/infomath.h"
 #include "../utils/Date.h"
@@ -249,7 +250,7 @@ void InfomapBase::run(const std::map<unsigned int, unsigned int>& clusterIds)
 	if (this->metaDataFile != "") {
 		initMetaData(this->metaDataFile);
 	}
-	
+
 	run(m_network, clusterIds);
 
 	Log() << "===================================================\n";
@@ -269,14 +270,14 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 {
 	if (!isMainInfomap())
 		throw InternalOrderError("Can't run a non-main Infomap with an input network");
-	
+
 	if (this->printStateNetwork) {
 		std::string filename = this->outDirectory + this->outName + "_states.net";
 		Log() << "Writing state network to '" << filename << "'... ";
 		network.writeStateNetwork(filename);
 		Log() << "done!\n";
 	}
-	
+
 	if (this->printPajekNetwork) {
 		std::string filename;
 		if (network.haveMemoryInput()) {
@@ -290,7 +291,7 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 		network.writePajekNetwork(filename);
 		Log() << "done!\n";
 	}
-	
+
 	if (network.haveMemoryInput()) {
 		Log() << "  -> Found higher order network input, using the Map Equation for higher order network flows\n";
 		if (!this->isMemoryNetwork()) {
@@ -303,19 +304,19 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 		}
 		Log() << "  -> Ordinary network input, using the Map Equation for first order network flows\n";
 	}
-	
+
 	if (network.haveDirectedInput() && this->isUndirectedFlow()) {
 		Log() << "  -> Notice: Directed input found, changing flow model from '" << this->flowModel << "' to '" << FlowModel::directed << "'\n";
 		this->flowModel = FlowModel::directed;
 	}
 	network.setConfig(*this);
-	
+
 	network.calculateFlow();
 
 	if (network.isBipartite()) {
 		this->bipartite = true;
 	}
-	
+
 	initNetwork(network);
 
 	if (numLeafNodes() == 0)
@@ -324,19 +325,20 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 	// If used as a library, we may want to reuse the network instance, else clear to use less memory
 	// TODO: May have to use some meta data for output?
 	#ifndef AS_LIB
-	network.clear();
+	network.clearLinks();
 	#endif
-	
+
 	if (haveMemory())
 		Log(2) << "Run Infomap with memory..." << std::endl;
 	else
 		Log(2) << "Run Infomap..." << std::endl;
-	
+
 	std::ostringstream bestSolutionStatistics;
-	// InfoNode bestTree; //TODO: Store best tree and swap back later
 	unsigned int bestNumLevels = 0;
 	double bestHierarchicalCodelength = std::numeric_limits<double>::max();
 	std::deque<double> codelengths;
+	NodePaths bestTree(numLeafNodes());
+	unsigned int bestTrialIndex = 0;
 
 	unsigned int numTrials = this->numTrials;
 
@@ -367,7 +369,7 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 
 		if (haveHardPartition())
 			restoreHardPartition();
-		
+
 		if (isMainInfomap()) {
 			auto endDate = Date();
 			Log() << "\n=> Trial " << (i + 1) << "/" << numTrials <<
@@ -378,8 +380,16 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 				bestSolutionStatistics.str("");
 				bestNumLevels = printPerLevelCodelength(bestSolutionStatistics);
 				bestHierarchicalCodelength = m_hierarchicalCodelength;
+				bestTrialIndex = i;
 				writeResult();
-				// m_root.storeModulesIn(bestTree);
+				#ifdef AS_LIB
+				if (numTrials > 1) {
+					bestTree.clear();
+					for (auto it(iterLeafNodes()); !it.isEnd(); ++it) {
+						bestTree.add(it->stateId, it.path());
+					}
+				}
+				#endif
 			}
 		}
 	}
@@ -389,7 +399,15 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 		Log() << "================================================\n";
 		Log() << "Summary after " << numTrials << (numTrials > 1 ? " trials\n" : " trial\n");
 		Log() << "================================================\n";
-		if (codelengths.size() > 1) {
+		if (numTrials > 1) {
+			#ifdef AS_LIB
+			if (bestTrialIndex < numTrials - 1) {
+				// Restore Infomap tree to best solution if used as a library
+				initTree(bestTree);
+			}
+			#endif
+
+
 			Log() << std::fixed << std::setprecision(9);
 			double averageCodelength = 0.0;
 			double minCodelength = codelengths[0];
@@ -459,17 +477,86 @@ InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
 InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard)
 {
 	FileURI file(clusterDataFile);
-	if (file.getExtension() != "clu") {
-		throw ImplementationError("Input cluster data only supports .clu files currently, will be general soon!");
-	}
 	ClusterMap clusterMap;
 	clusterMap.readClusterData(clusterDataFile);
 
-	// nodeId -> clusterId
-	auto& clusterIds = clusterMap.clusterIds();
-	return initPartition(clusterIds, hard);
+	Log() << "Init partition from file '" << clusterDataFile << "'... ";
+
+	if (clusterMap.extension() == "tree") {
+		initTree(clusterMap.nodePaths());
+		if (!this->noInfomap) {
+			this->noInfomap = true;
+			//TODO: implement continuing from tree
+			Log() << "\nNotice: Continuing clustering algorithm after reading input tree currently not supported, assuming --no-infomap for now.\n";
+		}
+	}
+	else if (clusterMap.extension() == "clu")
+		initPartition(clusterMap.clusterIds(), hard);
+
+	Log() << "done! Generated " << numLevels() << " levels with codelength " << m_hierarchicalCodelength << "\n";
+
+	return *this;
 }
 
+InfomapBase& InfomapBase::initTree(const NodePaths& tree)
+{
+	Log(4) << "Init tree... " << std::setprecision(9);
+	unsigned int maxDepth = 0;
+	std::map<unsigned int, unsigned int> nodeIdToIndex;
+	unsigned int leafIndex = 0;
+	for (auto& leafNode : m_leafNodes) {
+		// Also detach leaf nodes to delete all modules, safe to call multiple times
+		leafNode->parent->releaseChildren();
+		nodeIdToIndex[leafNode->stateId] = leafIndex;
+		++leafIndex;
+	}
+	m_root.deleteChildren();
+
+	for (auto& nodePath : tree.nodePaths)
+	{
+		InfoNode* node = &root();
+		unsigned int depth = 0;
+		auto& path = nodePath.path;
+		auto nodeId = nodePath.nodeId;
+		InfoNode* leafNode = nullptr;
+		try {
+			auto index = nodeIdToIndex.at(nodeId);
+			leafNode = m_leafNodes[index];
+		}
+		catch (std::exception& e)
+		{
+			continue;
+		}
+		for (unsigned int i = 0; i < path.size(); ++i)
+		{
+			auto childIndex = path[i];
+			// Create new node if path doesn't exist
+			// TODO: Check correct tree indexing?
+			if (node->childDegree() <= childIndex)
+			{
+				InfoNode* child = leafNode;
+				if (i + 1 < path.size()) {
+					child = new InfoNode();
+				}
+				node->addChild(child);
+			}
+			node = node->lastChild;
+			++depth;
+		}
+		maxDepth = std::max(maxDepth, depth);
+
+	}
+	aggregateFlowValuesFromLeafToRoot();
+
+	m_hierarchicalCodelength = calcCodelengthOnTree(true);
+	Log(4) << " => " << maxDepth << " levels with codelength: " << m_hierarchicalCodelength << "\n";
+	Log() << std::setprecision(6);
+	return *this;
+}
+
+/**
+ * clusterIds is a map from nodeId -> clusterId
+ */
 InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned int>& clusterIds, bool hard)
 {
 	// Generate map from node id to index in leaf node vector
@@ -561,7 +648,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
 	}
 
 	return initPartition(modules);
-	
+
 
 	// // Log() << "\n\n.clu\n#stateId moduleId\n";
 
@@ -729,7 +816,7 @@ void InfomapBase::generateSubNetwork(Network& network)
 			}
 		}
 	}
-	
+
 	if (numLinksIgnored > 0) {
 //		Log(1) << numLinksIgnored << " links with ~0 flow ignored -> " << network.getFlowLinks().size() - numLinksIgnored << " links." << std::endl;
 		Log() << numLinksIgnored << " self-links ignored -> " << network.numLinks() - numLinksIgnored << " links." << std::endl;
@@ -815,12 +902,12 @@ void InfomapBase::hierarchicalPartition()
 		findHierarchicalSuperModules();
 //	findHierarchicalSuperModulesFast(superLevelLimit);
 	}
-	
+
 	// printRSS();
 
 	if (this->onlySuperModules) {
 		removeSubModules(true);
-		m_hierarchicalCodelength = calcCodelengthOnTree(true); // FIX?
+		m_hierarchicalCodelength = calcCodelengthOnTree(true); // FIX? TODO: What needs to be fixed?
 		return;
 	}
 
@@ -834,7 +921,7 @@ void InfomapBase::hierarchicalPartition()
 		removeSubModules(true);
 		m_hierarchicalCodelength = calcCodelengthOnTree(true);
 	}
-	
+
 	recursivePartition();
 	// printRSS();
 }
@@ -915,7 +1002,7 @@ void InfomapBase::partition()
 	if (m_numNonTrivialTopModules != numTopModules())
 		Log() << " (" << m_numNonTrivialTopModules << " non-trivial)";
 	Log() << " modules." << std::endl;
-	
+
 	if (!this->skipReplaceToOneModuleIfBetter && this->preferredNumberOfModules == 0 && haveNonTrivialModules() && getCodelength() > getOneLevelCodelength()) {
 		Log() << "Worse codelength than one-level codelength, putting all nodes in one module... ";
 
@@ -1006,6 +1093,89 @@ void InfomapBase::initEnterExitFlow()
     }
 }
 
+// Aggregate node and enter/exit flow to all tree nodes
+void InfomapBase::aggregateFlowValuesFromLeafToRoot()
+{
+	// Aggregate flow from leaf nodes to root node
+	unsigned int numLevels = 0;
+	root().data.flow = 0.0;
+	for (auto it = root().begin_post_depth_first(); !it.isEnd(); ++it)
+	{
+		auto& node = *it;
+		if (!node.isRoot())
+			node.parent->data.flow += node.data.flow;
+		// Don't aggregate enter and exit flow
+		if (!node.isLeaf()) {
+			node.index = it.depth(); // Use index to store the depth on modules
+		}
+		else
+			numLevels = std::max(numLevels, it.depth());
+	}
+
+	if (std::abs(root().data.flow - 1.0) > 1e-10) {
+		Log() << "Warning, aggregated flow is not exactly 1.0, but " <<
+		std::setprecision(10) << root().data.flow << std::setprecision(9) << ".\n";
+		// root().data.flow = 1.0;
+	}
+
+	// Aggregate enter and exit flow between modules
+	for (auto& leafNode : m_leafNodes)
+	{
+		auto& leafNodeSource = *leafNode;
+		for (EdgeType *e : leafNodeSource.outEdges())
+		{
+			auto& edge = *e;
+			auto& leafNodeTarget = edge.target;
+			double linkFlow = edge.data.flow;
+			double halfFlow = linkFlow / 2;
+
+			InfoNode* node1 = leafNodeSource.parent;
+			InfoNode* node2 = leafNodeTarget.parent;
+
+			if (node1 == node2)
+				continue;
+
+			// First aggregate link flow until equal depth
+			while(node1->index > node2->index)
+			{
+				if (this->isUndirectedClustering()) {
+					node1->data.exitFlow += halfFlow;
+					node1->data.enterFlow += halfFlow;
+				} else {
+					node1->data.exitFlow += linkFlow;
+				}
+				node1 = node1->parent;
+			}
+			while(node2->index > node1->index)
+			{
+				if (this->isUndirectedClustering()) {
+					node2->data.enterFlow += halfFlow;
+					node2->data.exitFlow += halfFlow;
+				} else {
+					node2->data.enterFlow += linkFlow;
+				}
+				node2 = node2->parent;
+			}
+
+			// Then aggregate link flow until equal parent
+			while (node1 != node2)
+			{
+				if (this->isUndirectedClustering()) {
+					node1->data.exitFlow += halfFlow;
+					node1->data.enterFlow += halfFlow;
+					node2->data.enterFlow += halfFlow;
+					node2->data.exitFlow += halfFlow;
+				} else {
+					node1->data.exitFlow += linkFlow;
+					node2->data.enterFlow += linkFlow;
+				}
+				node1 = node1->parent;
+				node2 = node2->parent;
+			}
+		}
+	}
+}
+
 double InfomapBase::calcCodelengthOnTree(bool includeRoot)
 {
 	double totalCodelength = 0.0;
@@ -1022,7 +1192,7 @@ double InfomapBase::calcCodelengthOnTree(bool includeRoot)
 // void preClusterMultilayerNetwork()
 // {
 // 	Log() << "Calculate pre-clustering on multilayer networks (not implemented yet)...\n";
-	
+
 // }
 
 
@@ -1052,7 +1222,7 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 	unsigned int numLevelsConsolidated = numLevels() - 1;
 	if (maxLevels == 0)
 		maxLevels = std::numeric_limits<unsigned int>::max();
-	
+
 	std::string initialCodelength;
 
 	// Stopwatch timerAll(true);
@@ -1580,7 +1750,7 @@ unsigned int InfomapBase::recursivePartition()
 		io::toPrecision(hierarchicalCodelength) << "\n";
 	Log(1) << "  -> Found " << partitionQueue.level << " levels with codelength " <<
 		io::toPrecision(hierarchicalCodelength) << "\n";
-	
+
 
 	return partitionQueue.level;
 }
@@ -1670,7 +1840,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 	for(PartitionQueue::size_t moduleIndex = 0; moduleIndex < numModules; ++moduleIndex)
 	{
 		InfoNode& module = *queue[moduleIndex];
-		
+
 		module.codelength = calcCodelength(module);
 		// Delete former sub-structure if exists
 		if (module.disposeInfomap())
@@ -1775,7 +1945,7 @@ void InfomapBase::writeResult()
 {
 	if (this->noFileOutput)
 		return;
-	
+
 	// Log() << "\nPhysical tree:\n";
 	// for (InfomapIteratorPhysical it(&root()); !it.isEnd(); ++it) {
 	// 	Log() << io::stringify(it.path(), ":") << " moduleIndex: " << it.moduleIndex() << ", stateId: " << it->stateId <<
@@ -1784,8 +1954,8 @@ void InfomapBase::writeResult()
 	// Log() << std::string(10, '-') << "\n";
 
 	// writeTree(std::cout, true);
-	// printTreeLinks(std::cout);
-	
+	// writeTreeLinks(std::cout);
+
 	if (this->printTree) {
 		std::string filename = this->outDirectory + this->outName + ".tree";
 
@@ -1806,7 +1976,7 @@ void InfomapBase::writeResult()
 		}
 	}
 
-	
+
 	if (this->printFlowTree) {
 		std::string filename = this->outDirectory + this->outName + ".ftree";
 
@@ -1865,7 +2035,7 @@ void InfomapBase::writeResult()
 			Log() << "done!\n";
 		}
 	}
-	
+
 }
 
 std::string InfomapBase::writeTree(std::string filename, bool states)
@@ -1875,7 +2045,7 @@ std::string InfomapBase::writeTree(std::string filename, bool states)
 
 	SafeOutFile outFile(outputFilename);
 	writeTree(outFile, states);
-	
+
 	return outputFilename;
 }
 
@@ -1886,8 +2056,8 @@ std::string InfomapBase::writeFlowTree(std::string filename, bool states)
 
 	SafeOutFile outFile(outputFilename);
 	writeTree(outFile, states);
-	printTreeLinks(outFile, states);
-	
+	writeTreeLinks(outFile, states);
+
 	return outputFilename;
 }
 
@@ -1897,14 +2067,16 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 	std::string outputFilename = filename.empty() ? this->outDirectory + this->outName +
 	(haveMemory() && states ? "_states.clu" : ".clu") : filename;
 	SafeOutFile outFile(outputFilename);
+	outFile << std::setprecision(9);
 	outFile << "# Codelength = " << m_hierarchicalCodelength << " bits.\n";
+	outFile << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
 	if (states) {
 		outFile << "# stateId module flow physicalId\n";
 	}
 	else {
 		outFile << "# node module flow\n";
 	}
-	// auto it = haveMemory() && !states ? iterTreePhysical(moduleIndexLevel) : iterTree(moduleIndexLevel); 
+	// auto it = haveMemory() && !states ? iterTreePhysical(moduleIndexLevel) : iterTree(moduleIndexLevel);
 	if (haveMemory() && !states) {
 		for (auto it(iterTreePhysical(moduleIndexLevel)); !it.isEnd(); ++it) {
 			InfoNode &node = *it;
@@ -2006,13 +2178,15 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 	outFile << "# modulelinks: " << moduleLinks.size() << "\n";
 	outFile << "# nodes: " << numNodes << "\n";
 	outFile << "# links: " << 0 << "\n";
+	outFile << std::setprecision(9);
 	outFile << "# codelength: " << m_hierarchicalCodelength << "\n";
+	outFile << std::setprecision(6);
 	outFile << (this->isUndirectedClustering() ? "*Undirected\n" : "*Directed\n");
 	outFile << "*Modules " << modules.size() << "\n";
 	for (unsigned int i = 0; i < modules.size(); ++i) {
 		auto& module = *modules[i];
 		//# id name flow exitFlow (Name the module from the biggest child)
-		outFile << module.index << " \"" << nodes[i][0].name << ",...\" " << module.data.flow << " " << moduleExitFlow[module.index] << "\n"; 
+		outFile << module.index << " \"" << nodes[i][0].name << ",...\" " << module.data.flow << " " << moduleExitFlow[module.index] << "\n";
 	}
 	outFile << "*Nodes " << numNodes << "\n";
 	for (unsigned int i = 0; i < nodes.size(); ++i) {
@@ -2034,7 +2208,10 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 
 void InfomapBase::writeTree(std::ostream& outStream, bool states)
 {
+	auto oldPrecision = outStream.precision();
+	outStream << std::setprecision(9);
 	outStream << "# Codelength = " << m_hierarchicalCodelength << " bits.\n";
+	outStream << std::setprecision(6);
 	if (states)
 		outStream << "# path flow name stateId physicalId\n";
 	else
@@ -2067,10 +2244,13 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 			}
 		}
 	}
+	outStream << std::setprecision(oldPrecision);
 }
 
-void InfomapBase::printTreeLinks(std::ostream& outStream, bool states)
+void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
 {
+	auto oldPrecision = outStream.precision();
+	outStream << std::setprecision(6);
 	// Aggregate links between each module. Rest is aggregated as exit flow
 
 	// Links on nodes within sub infomap instances doesn't have links outside the root
@@ -2166,7 +2346,7 @@ void InfomapBase::printTreeLinks(std::ostream& outStream, bool states)
 
 	outStream << "*Links " << (this->isUndirectedFlow() ? "undirected" : "directed") << "\n";
 	outStream << "#*Links path exitFlow numEdges numChildren\n";
-	
+
 	// Use stateId to store depth on modules to optimize link aggregation
 	for (auto it(iterModules()); !it.isEnd(); ++it) {
 		auto parentId = io::stringify(it.path(), ":", 1);
@@ -2183,6 +2363,7 @@ void InfomapBase::printTreeLinks(std::ostream& outStream, bool states)
 			outStream << sourceId << " " << targetId << " " << flow << "\n";
 		}
 	}
+	outStream << std::setprecision(oldPrecision);
 }
 
 
@@ -2287,7 +2468,7 @@ void InfomapBase::aggregatePerLevelCodelength(InfoNode& parent, std::vector<PerL
 {
 	if (perLevelStat.size() < level+1)
 		perLevelStat.resize(level+1);
-	
+
 	if (parent.firstChild->isLeaf()) {
 		perLevelStat[level].numLeafNodes += parent.childDegree();
 		perLevelStat[level].leafLength += parent.codelength;
