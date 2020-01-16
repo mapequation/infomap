@@ -48,20 +48,20 @@ void Network::initValidHeadings()
 	headingsPajek.insert("*vertices");
 	headingsPajek.insert("*edges");
 	headingsPajek.insert("*arcs");
-	
+
 	auto& headingsLinklist = m_validHeadings["link-list"];
 	headingsLinklist.insert("*links");
 	headingsLinklist.insert("*edges");
 	headingsLinklist.insert("*arcs");
-	
+
 	auto& headingsPaths = m_validHeadings["path"];
 	headingsPaths.insert("*vertices");
 	headingsPaths.insert("*paths");
-	
+
 	auto& headingsBipartite = m_validHeadings["bipartite"];
 	headingsBipartite.insert("*vertices");
 	headingsBipartite.insert("*bipartite");
-	
+
 	auto& headingsStates = m_validHeadings["states"];
 	headingsStates.insert("*vertices");
 	headingsStates.insert("*states");
@@ -73,7 +73,7 @@ void Network::initValidHeadings()
 	// ignoreHeadingsStates.insert("*arcs"); //TODO: Old allows this but what if both specified?
 	ignoreHeadingsStates.insert("*edges");
 	ignoreHeadingsStates.insert("*contexts");
-	
+
 	auto& headingsMultilayer = m_validHeadings["multilayer"];
 	headingsMultilayer.insert("*vertices");
 	headingsMultilayer.insert("*multiplex");
@@ -81,7 +81,7 @@ void Network::initValidHeadings()
 	headingsMultilayer.insert("*intra");
 	headingsMultilayer.insert("*inter");
 	// auto& ignoreHeadingsMultilayer = m_ignoreHeadings["multilayer"];
-	
+
 	auto& headingsGeneral = m_validHeadings["general"];
 	headingsGeneral.insert("*vertices");
 	headingsGeneral.insert("*states");
@@ -151,7 +151,7 @@ void Network::readInputData(std::string filename, bool accumulate)
 		parseStateNetwork(filename);
 	else if (format == "multilayer")
 		parseMultilayerNetwork(filename);
-	else 
+	else
 		parseNetwork(filename);
 //		throw UnknownFileTypeError("No known input format specified.");
 	printSummary();
@@ -202,7 +202,7 @@ void Network::parseStateNetwork(std::string filename)
 {
 	Log() << "Parsing state network from file '" <<
 			filename << "'... " << std::endl;
-	
+
 	parseNetwork(filename, m_validHeadings["states"], m_ignoreHeadings["states"]);
 }
 
@@ -210,7 +210,7 @@ void Network::parseNetwork(std::string filename)
 {
 	Log() << "Parsing " << (m_config.isUndirectedFlow() ? "undirected" : "directed") << " network from file '" <<
 				filename << "'... " << std::endl;
-	
+
 	parseNetwork(filename, m_validHeadings["general"], m_ignoreHeadings["general"]);
 }
 
@@ -311,7 +311,7 @@ void Network::readMetaData(std::string filename)
 		}
 		if (metaData.empty())
 			throw FileFormatError(io::Str() << "Can't parse any meta data from line '" << line << "'");
-		
+
 		addMetaData(nodeId, metaData);
 	}
 	Log() << " -> Parsed " << m_numMetaDataColumns << " columns of meta data for " << m_metaData.size() << " nodes." << std::endl;
@@ -360,7 +360,7 @@ std::string Network::parseVertices(std::ifstream& file, std::string heading)
 			if (weight < 0)
 				throw FileFormatError(io::Str() << "Negative node weight (" << weight << ") from line '" << line << "'");
 		}
-		
+
 		addPhysicalNode(id, weight, name);
 	}
 	Log() << "  -> " << m_physNodes.size() << " physical nodes added\n";
@@ -403,7 +403,7 @@ std::string Network::parseLinks(std::ifstream& file)
 
 		if (line[0] == '*')
 			break;
-		
+
 		if (!parsingLinks) {
 			parsingLinks = true;
 			Log() << "  Parsing links...\n" << std::flush;
@@ -522,7 +522,7 @@ std::string Network::parseBipartiteLinks(std::ifstream& file, std::string headin
 	std::string tmp;
 	if (!(m_extractor >> tmp >> m_bipartiteStartId))
 		throw FileFormatError(io::Str() << "Can't parse bipartite start id from line '" << heading << "'");
-	
+
 	Log() << "  -> Using bipartite start id " << m_bipartiteStartId << "\n";
 	m_config.bipartite = true;
 	std::string line;
@@ -533,7 +533,7 @@ std::string Network::parseBipartiteLinks(std::ifstream& file, std::string headin
 
 		if (line[0] == '*')
 			break;
-		
+
 		unsigned int n1, n2;
 		double weight;
 		parseLink(line, n1, n2, weight);
@@ -574,7 +574,7 @@ void Network::parseStateNode(const std::string& line, StateNetwork::StateNode& s
 	m_extractor.str(line);
 	if (!(m_extractor >> stateNode.id >> stateNode.physicalId))
 		throw FileFormatError(io::Str() << "Can't parse any state node from line '" << line << "'");
-	
+
 	// Optional name enclosed in double quotes
 	unsigned int nameStart = line.find_first_of("\"", m_extractor.tellg());
 	unsigned int nameEnd = line.find_last_of("\"");
@@ -688,7 +688,7 @@ void Network::addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned i
 	} else {
 		++m_numInterLayerLinks;
 	}
-	
+
 	addLink(stateId1, stateId2, weight);
 }
 
@@ -773,7 +773,7 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
 
 				// Log() << "      -> " << targetPhysId << "\n";
 				double weight = interWeight * intraWeight / sumIntraOutWeightTargetLayer;
-				
+
 				addLink(stateId1, stateId2i, weight);
 				++m_numInterLayerLinks; // TODO: Count all as one?
 			}
@@ -811,7 +811,7 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
 
 					// Log() << "      -> " << targetPhysId << "\n";
 					double weight = interWeight * intraWeight / sumIntraOutWeightTargetLayer;
-					
+
 					addLink(stateId1, stateId2i, weight);
 					++m_numInterLayerLinks; // TODO: Count all as one?
 				}
@@ -873,7 +873,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 					linkWeightNormalizationFactor += (1.0 - relaxRate) / sumOutLinkWeightLayer1;
 				}
 				// double stateNodeWeightNormalizationFactor = 1.0;
-				
+
 				// createIntraLinksToNeighbouringNodesInTargetLayer(layer1, nodeIndex, layer2, m_networks[layer2].linkMap(), linkWeightNormalizationFactor, stateNodeWeightNormalizationFactor);
 				auto& targetLinks = network2.nodeLinkMap();
 				auto& targetOutlinks = targetLinks[StateNode(n1)];
@@ -889,11 +889,11 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 
 					// Log() << "      -> " << n2 << "\n";
 					double weight = linkWeightNormalizationFactor * intraWeight;
-					
+
 					addLink(stateId1, stateId2i, weight);
 					++m_numInterLayerLinks; // TODO: Count all as one?
 				}
-				
+
 			}
 
 		}
@@ -903,7 +903,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 
 void Network::simulateInterLayerLinks()
 {
-	
+
 }
 
 

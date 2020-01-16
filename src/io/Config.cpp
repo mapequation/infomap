@@ -23,7 +23,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 			"Implementation of the Infomap clustering algorithm based on the Map Equation (see www.mapequation.org)",
 			INFOMAP_VERSION);
 
-	api.setGroups({"Input", "Accuracy", "Output"});
+	api.setGroups({"Input", "Algorithm", "Accuracy", "Output"});
 
 	std::vector<std::string> optionalOutputDir; // Used if !requireFileInput
 	// --------------------- Input options ---------------------
@@ -187,17 +187,17 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 			"The number of neighboring layers in each direction to relax to. If negative, relax to any layer.", "n", "Algorithm", true);
 
 	api.addOptionArgument(conf.multilayerJSRelaxRate, "multilayer-js-relax-rate",
-			"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence. If negative, the inter-links have to be provided.", "f", true);
+			"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence. If negative, the inter-links have to be provided.", "f", "Algorithm", true);
 
 	api.addOptionArgument(conf.multilayerJSRelaxLimit, "multilayer-js-relax-limit",
-			"The minimum out-link similarity measured by the Jensen-Shannon divergence to relax to other layer. From 0 to 1. No limit if negative.", "f", true);
+			"The minimum out-link similarity measured by the Jensen-Shannon divergence to relax to other layer. From 0 to 1. No limit if negative.", "f", "Algorithm", true);
 
 	// --------------------- Performance and accuracy options ---------------------
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
-			"A seed (integer) to the random number generator for reproducible results.", "Accuracy", "n");
+			"A seed (integer) to the random number generator for reproducible results.", "n", "Accuracy");
 
 	api.addOptionArgument(conf.numTrials, 'N', "num-trials",
-			"The number of outer-most loops to run before picking the best solution.", "Accuracy", "n");
+			"The number of outer-most loops to run before picking the best solution.", "n", "Accuracy");
 
 	api.addOptionArgument(conf.minimumCodelengthImprovement, 'm', "min-improvement",
 			"Minimum codelength threshold for accepting a new solution.", "f", "Accuracy", true);
