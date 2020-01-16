@@ -78,6 +78,7 @@ struct Config
 	std::vector<std::string> additionalInput;
 	std::string inputFormat = ""; // 'pajek', 'link-list', '3gram', 'path' or 'multilayer'
 	bool memoryInput = false;
+	bool multilayerInput = false;
 	bool withMemory = false;
 	double weightThreshold = 0.0;
 	bool unweightedPaths = false;
@@ -193,6 +194,7 @@ struct Config
 	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
 	 	memoryInput(other.memoryInput),
+	 	multilayerInput(other.multilayerInput),
 	 	withMemory(other.withMemory),
 		weightThreshold(other.weightThreshold),
 		unweightedPaths(other.unweightedPaths),
@@ -290,6 +292,7 @@ struct Config
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
 	 	memoryInput = other.memoryInput;
+	 	multilayerInput = other.multilayerInput;
 	 	withMemory = other.withMemory;
 		weightThreshold = other.weightThreshold;
 		unweightedPaths = other.unweightedPaths;
@@ -386,6 +389,7 @@ struct Config
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
 	 	memoryInput = other.memoryInput;
+	 	multilayerInput = other.multilayerInput;
 	 	withMemory = other.withMemory;
 		weightThreshold = other.weightThreshold;
 		unweightedPaths = other.unweightedPaths;
@@ -592,6 +596,10 @@ struct Config
 		memoryInput = true;
 	}
 
+	void setMultilayerInput() {
+		multilayerInput = true;
+	}
+
 	// bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
 	bool isUndirectedClustering() const { return flowModel == FlowModel::undirected; }
 
@@ -604,7 +612,7 @@ struct Config
 
 	bool is3gram() const { return inputFormat == "3gram"; }
 	bool isPath() const { return inputFormat == "path"; }
-	bool isMultilayerNetwork() const { return inputFormat == "multilayer" || inputFormat == "multiplex" || additionalInput.size() > 0; }
+	bool isMultilayerNetwork() const { return multilayerInput || inputFormat == "multilayer" || inputFormat == "multiplex" || additionalInput.size() > 0; }
 	bool isStateNetwork() const { return inputFormat == "states"; }
 	bool isBipartite() const { return inputFormat == "bipartite" || bipartite; }
 

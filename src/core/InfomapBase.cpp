@@ -295,7 +295,10 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 	if (network.haveMemoryInput()) {
 		Log() << "  -> Found higher order network input, using the Map Equation for higher order network flows\n";
 		if (!this->isMemoryNetwork()) {
-			this->memoryInput = true;
+			this->setMemoryInput();
+		}
+		if (network.isMultilayerNetwork() && !this->isMultilayerNetwork()) {
+			this->setMultilayerInput();
 		}
 	}
 	else {
@@ -2071,7 +2074,10 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 	outFile << "# Codelength = " << m_hierarchicalCodelength << " bits.\n";
 	outFile << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
 	if (states) {
-		outFile << "# stateId module flow physicalId\n";
+		outFile << "# stateId module flow physicalId";
+		if (this->isMultilayerNetwork())
+			outFile << " layerId";
+		outFile << "\n";
 	}
 	else {
 		outFile << "# node module flow\n";
@@ -2088,8 +2094,12 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 		for (auto it(iterTree(moduleIndexLevel)); !it.isEnd(); ++it) {
 			InfoNode &node = *it;
 			if (node.isLeaf()) {
-				if (states)
-					outFile << node.stateId << " " << it.moduleIndex() << " " << node.data.flow << " " << node.physicalId << "\n";
+				if (states) {
+					outFile << node.stateId << " " << it.moduleIndex() << " " << node.data.flow << " " << node.physicalId;
+					if (this->isMultilayerNetwork())
+						outFile << " " << node.layerId;
+					outFile << "\n";
+				}
 				else
 					outFile << node.physicalId << " " << it.moduleIndex() << " " << node.data.flow << "\n";
 			}
@@ -2212,8 +2222,12 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 	outStream << std::setprecision(9);
 	outStream << "# Codelength = " << m_hierarchicalCodelength << " bits.\n";
 	outStream << std::setprecision(6);
-	if (states)
-		outStream << "# path flow name stateId physicalId\n";
+	if (states) {
+		outStream << "# path flow name stateId physicalId";
+		if (this->isMultilayerNetwork())
+			outStream << " layerId";
+		outStream << "\n";
+	}
 	else
 		outStream << "# path flow name physicalId\n";
 	// TODO: Make a general iterator where merging physical nodes depend on a parameter rather than type to be able to DRY here
@@ -2237,8 +2251,12 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 				if (name.empty())
 					name = io::stringify(node.physicalId);
 				outStream << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << name << "\" ";
-				if (states)
-					outStream << node.stateId << " " << node.physicalId << "\n";
+				if (states) {
+					outStream << node.stateId << " " << node.physicalId;
+					if (this->isMultilayerNetwork())
+						outStream << " " << node.layerId;
+					outStream << "\n";
+				}
 				else
 					outStream << node.physicalId << "\n";
 			}

@@ -116,6 +116,8 @@ public:
 	unsigned int numMetaDataColumns() const { return m_numMetaDataColumns; }
 	const std::map<unsigned int, std::vector<int>>& metaData() const { return m_metaData; }
 
+	bool isMultilayerNetwork() const { return !m_layerNodeToStateId.empty(); }
+
 	// void printParsingResult(bool onlySummary = false);
 
 	// std::string getParsingResultSummary();
