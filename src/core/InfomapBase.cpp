@@ -709,9 +709,9 @@ void InfomapBase::generateSubNetwork(Network& network)
 	else {
 		root().setFlow(1.0);
         root().setModuleSize(network.numNodes());
-	}    
+	}
 
-	unsigned int numNodes = network.numNodes();    
+	unsigned int numNodes = network.numNodes();
 	auto& metaData = network.metaData();
 	this->numMetaDataDimensions = network.numMetaDataColumns();
 
@@ -750,7 +750,7 @@ void InfomapBase::generateSubNetwork(Network& network)
 		m_leafNodes.push_back(node);
 	}
 	root().setFlow(sumNodeFlow);
-    root().setModuleSize(modSize);    
+    root().setModuleSize(modSize);
 	m_calculateEnterExitFlow = true;
 
 	if (std::abs(sumNodeFlow - 1.0) > 1e-10)
@@ -1007,9 +1007,10 @@ void InfomapBase::partition()
 		// Calculate individual module codelengths and store on the modules
 		calcCodelengthOnTree(false);
 		root().codelength = getIndexCodelength();
-		m_hierarchicalCodelength = getCodelength();
+		//m_hierarchicalCodelength = getCodelength();
+		m_hierarchicalCodelength = calcCodelengthOnTree(true);
 	}
-	m_hierarchicalCodelength = calcCodelengthOnTree(true);
+	//m_hierarchicalCodelength = calcCodelengthOnTree(true);
 }
 
 
@@ -1062,8 +1063,8 @@ void InfomapBase::initEnterExitFlow()
                 // edge.target.data.enterFlow += edge.data.flow;
                 edge.source.addExitFlow(edge.data.flow);
                 edge.target.addEnterFlow(edge.data.flow);
-            }            
-        }        
+            }
+        }
     }
     else {
         for (auto *n : m_leafNodes) {
@@ -1265,8 +1266,8 @@ unsigned int InfomapBase::coarseTune()
 
 			node.disposeInfomap();
 		}
-	}	
-	
+	}
+
 	if (isMainInfomap())
 		Log::setSilent(isSilent);
 
@@ -1561,7 +1562,7 @@ void InfomapBase::resetFlowOnModules()
 		if (!module.isLeaf())
         {
 			module.resetFlow();
-            module.setModuleSize(0);            
+            module.setModuleSize(0);
         }
 	}
 	// Aggregate flow from leaf nodes up in the tree
@@ -1571,7 +1572,7 @@ void InfomapBase::resetFlowOnModules()
 			NodeBase* module = n->parent;
 			do {
 				module->addFlow(leafNodeFlow);
-                module->addModuleSize(1);                
+                module->addModuleSize(1);
 				module = module->parent;
 			} while (module != nullptr);
 		}
@@ -1582,7 +1583,7 @@ void InfomapBase::resetFlowOnModules()
 			NodeBase* module = n->parent;
 			do {
 				module->addFlow(leafNodeFlow);
-                module->addModuleSize(1);                
+                module->addModuleSize(1);
 				module = module->parent;
 			} while (module != nullptr);
 		}

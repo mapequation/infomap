@@ -91,9 +91,9 @@ struct FlowData
 
 struct FlowDataInt
 {
-	double flow;
-	double enterExitFlow;
-	int moduleSize;
+	double flow = 0;
+	double enterExitFlow = 0;
+	int moduleSize = 0;
 
 	FlowDataInt(double flow = 0) :
 		flow(flow),
