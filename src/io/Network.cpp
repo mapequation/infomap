@@ -827,11 +827,24 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 	Log() << "Generating state network from multilayer networks with simulated inter-layer links...\n" << std::flush;
 	double relaxRate = m_config.multilayerRelaxRate;
 
+	int maxRelaxLimit = m_networks.size();
+	int relaxLimitSymmetric = m_config.multilayerRelaxLimit < 0 ? maxRelaxLimit : m_config.multilayerRelaxLimit;
+	int relaxLimitDown = m_config.multilayerRelaxLimitDown < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitDown);
+	int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
+	auto haveUpOrDownLimit = m_config.multilayerRelaxLimitDown >= 0 || m_config.multilayerRelaxLimitUp >= 0;
+
 	Log() << "-> " << m_networks.size() << " networks\n";
 	Log() << "-> Relax rate: " << relaxRate << "\n";
+	if (haveUpOrDownLimit) {
+		Log() << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
+		Log() << "-> Relax limit down: " << relaxLimitDown << (relaxLimitDown == maxRelaxLimit ? " (no limit)\n" : "\n");
+	} else if (m_config.multilayerRelaxLimit >= 0) {
+		Log() << "-> Relax limit: " << m_config.multilayerRelaxLimit << "\n";
+	}
 
-	auto withinRelaxLimit = [](auto& a, auto& b, auto& limit) {
-		return limit < 0 || (a >= b ? (a - b) : (b - a)) <= (unsigned int)limit;
+	auto withinRelaxLimit = [relaxLimitDown, relaxLimitUp](auto& layer1, auto& layer2) {
+		int diff = layer1 - layer2;
+		return layer1 >= layer2 ? diff <= relaxLimitDown : -diff <= relaxLimitUp;
 	};
 
 	for (auto& it1 : m_networks) {
@@ -849,7 +862,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 
 			for (auto& it2 : m_networks) {
 				auto layer2 = it2.first;
-				if (!withinRelaxLimit(layer1, layer2, m_config.multilayerRelaxLimit)) {
+				if (!withinRelaxLimit(layer1, layer2)) {
 					continue;
 				}
 				auto& network2 = it2.second;
@@ -862,7 +875,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 			}
 			for (auto& it2 : m_networks) {
 				auto layer2 = it2.first;
-				if (!withinRelaxLimit(layer1, layer2, m_config.multilayerRelaxLimit)) {
+				if (!withinRelaxLimit(layer1, layer2)) {
 					continue;
 				}
 				auto& network2 = it2.second;
