@@ -114,7 +114,9 @@ struct Config
 	double selfTeleportationProbability = -1;
 	double markovTime = 1.0;
 	double multilayerRelaxRate = 0.15;
-	int multilayerRelaxLimit = -1;
+	int multilayerRelaxLimit = -1; // Amount of layers allowed to jump up or down
+	int multilayerRelaxLimitUp = -1; // One-sided limit to higher layers
+	int multilayerRelaxLimitDown = -1; // One-sided limit to lower layers
 	double multilayerJSRelaxRate = 0.15;
 	int multilayerJSRelaxLimit = -1;
 
@@ -228,6 +230,8 @@ struct Config
 		markovTime(other.markovTime),
 		multilayerRelaxRate(other.multilayerRelaxRate),
 		multilayerRelaxLimit(other.multilayerRelaxLimit),
+		multilayerRelaxLimitUp(other.multilayerRelaxLimitUp),
+		multilayerRelaxLimitDown(other.multilayerRelaxLimitDown),
 		multilayerJSRelaxRate(other.multilayerJSRelaxRate),
 		multilayerJSRelaxLimit(other.multilayerJSRelaxLimit),
 	 	twoLevel(other.twoLevel),
@@ -326,6 +330,8 @@ struct Config
 	 	markovTime = other.markovTime;
 		multilayerRelaxRate = other.multilayerRelaxRate;
 		multilayerRelaxLimit = other.multilayerRelaxLimit;
+		multilayerRelaxLimitUp = other.multilayerRelaxLimitUp;
+		multilayerRelaxLimitDown = other.multilayerRelaxLimitDown;
 		multilayerJSRelaxRate = other.multilayerJSRelaxRate;
 		multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
 	 	twoLevel = other.twoLevel;
@@ -423,6 +429,8 @@ struct Config
 	 	markovTime = other.markovTime;
 		multilayerRelaxRate = other.multilayerRelaxRate;
 		multilayerRelaxLimit = other.multilayerRelaxLimit;
+		multilayerRelaxLimitUp = other.multilayerRelaxLimitUp;
+		multilayerRelaxLimitDown = other.multilayerRelaxLimitDown;
 		multilayerJSRelaxRate = other.multilayerJSRelaxRate;
 		multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
 	 	twoLevel = other.twoLevel;
@@ -608,7 +616,7 @@ struct Config
 	// bool printAsUndirected() const { return originallyUndirected; }
 	bool printAsUndirected() const { return isUndirectedClustering(); }
 
-	bool useTeleportation() const { return 	directed; }
+	// bool useTeleportation() const { return 	directed; }
 
 	bool is3gram() const { return inputFormat == "3gram"; }
 	bool isPath() const { return inputFormat == "path"; }

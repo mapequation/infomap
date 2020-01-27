@@ -181,13 +181,19 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 			"Optimize for the preferred number of modules by penalizing solutions the more they differ from the preferred number.", "n", "Algorithm", true);
 
 	api.addOptionArgument(conf.multilayerRelaxRate, "multilayer-relax-rate",
-			"The probability to relax the constraint to move only in the current layer. If negative, the inter-links have to be provided.", "f", "Algorithm", true);
+			"The probability to relax the constraint to move only in the current layer. Default 0.15", "f", "Algorithm", true);
 
 	api.addOptionArgument(conf.multilayerRelaxLimit, "multilayer-relax-limit",
 			"The number of neighboring layers in each direction to relax to. If negative, relax to any layer.", "n", "Algorithm", true);
 
+	api.addOptionArgument(conf.multilayerRelaxLimitUp, "multilayer-relax-limit-up",
+			"The number of neighboring layers with higher id to relax to. If negative, relax to any layer.", "n", "Algorithm", true);
+
+	api.addOptionArgument(conf.multilayerRelaxLimitDown, "multilayer-relax-limit-down",
+			"The number of neighboring layers with lower id to relax to. If negative, relax to any layer.", "n", "Algorithm", true);
+
 	api.addOptionArgument(conf.multilayerJSRelaxRate, "multilayer-js-relax-rate",
-			"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence. If negative, the inter-links have to be provided.", "f", "Algorithm", true);
+			"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence. Default 0.15", "f", "Algorithm", true);
 
 	api.addOptionArgument(conf.multilayerJSRelaxLimit, "multilayer-js-relax-limit",
 			"The minimum out-link similarity measured by the Jensen-Shannon divergence to relax to other layer. From 0 to 1. No limit if negative.", "f", "Algorithm", true);
