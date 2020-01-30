@@ -42,28 +42,13 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	}
 
 	api.addOptionArgument(conf.inputFormat, 'i', "input-format",
-			"Specify input format ('pajek', 'link-list', 'states', 'path', 'multilayer' or 'bipartite') to override automatically recognized type.", "s", "Input", true);
-
-	// api.addOptionArgument(conf.withMemory, "with-memory",
-	// 		"Use second order Markov dynamics and let nodes be part of different modules. Simulate memory from first-order data if not '3gram' input.", true);
-
-//	api.addOptionArgument(conf.bipartite, "bipartite",
-//			"Let the source id of a link belong to a different kind of nodes and ignore that set in the output.");
+			"Specify input format to override automatically recognized types.", "s", "Input", true);
 
 	api.addOptionArgument(conf.skipAdjustBipartiteFlow, "skip-adjust-bipartite-flow",
 			"Skip distributing all flow from the bipartite nodes (first column) to the ordinary nodes (second column).", "Input", true);
 
-	// api.addOptionArgument(conf.withMemory, "overlapping",
-	// 		"Let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the memoryless dynamics with memory nodes.", "Input");
-
 	api.addOptionArgument(conf.weightThreshold, "weight-threshold",
 			"Limit the number of links to read from the network. Ignore links with less weight than the threshold. (Default: 0)", "f", "Input", true);
-
-	api.addOptionArgument(conf.unweightedPaths, "unweighted-paths",
-			"Assume last value in a path is a node instead of default a weight of the path.", "Input", true);
-
-	api.addOptionArgument(conf.pathMarkovOrder, "path-markov-order",
-			"Markov order of the network generated from paths.", "n", "Input", true);
 
 	// api.addOptionArgument(conf.nonBacktracking, "non-backtracking",
 	// 		"Use non-backtracking dynamics and let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the non-backtracking dynamics with memory nodes.", "Input", true);
