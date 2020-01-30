@@ -34,6 +34,7 @@
 #include "../utils/exceptions.h"
 #include <locale> // std::locale, std::tolower
 #include <iostream>
+#include <vector>
 
 namespace infomap {
 
@@ -169,6 +170,24 @@ struct InsensitiveCompare {
 		return (rhs != b.end());
 	}
 };
+
+inline std::vector<std::string>& split(const std::string& s, char delim, std::vector<std::string>& items) {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        if (item.length() > 0) {
+            items.push_back(item);
+        }
+    }
+    return items;
+}
+
+
+inline std::vector<std::string> split(const std::string& s, char delim) {
+    std::vector<std::string> items;
+    split(s, delim, items);
+    return items;
+}
 
 class Str {
 public:
