@@ -72,7 +72,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.metaDataRate, "meta-data-rate",
 			"The encoding rate of metadata. Default 1.0 means in each step.", "f", "Input", true);
 
-	api.addOptionArgument(conf.unweightedMetaData, "unweighted-meta-data",
+	api.addOptionArgument(conf.unweightedMetaData, "meta-data-unweighted",
 			"Don't weight meta data by node flow.", "Input", true);
 
 	api.addOptionArgument(conf.noInfomap, "no-infomap",
@@ -86,9 +86,6 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.noFileOutput, '0', "no-file-output",
 			"Don't print any output to file.", "Output", true);
 
-	api.addOptionArgument(conf.printMap, "map",
-			"Print the top two-level modular network in the .map format.", "Output", true);
-
 	api.addOptionArgument(conf.printClu, "clu",
 			"Print a .clu file with the top cluster ids for each node.", "Output");
 
@@ -98,26 +95,13 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.printFlowTree, "ftree",
 			"Print a .ftree file with the modular hierarchy including aggregated links between (nested) modules. (Used by Network Navigator)", "Output", true);
 
-	// api.addOptionArgument(conf.printBinaryTree, "btree",
-	// 		"Print the tree in a streamable binary format.", "Output", true);
+	//TODO: Include in -o
+	// api.addOptionArgument(conf.printFlowNetwork, "print-flow-network",
+	// 		"Print the network with calculated flow values.", "Output", true);
 
-	// api.addOptionArgument(conf.printBinaryFlowTree, "bftree",
-	// 		"Print the tree including horizontal flow links in a streamable binary format.", "Output", true);
-
-	api.addOptionArgument(conf.printNodeRanks, "print-node-ranks",
-			"Print the calculated flow for each node to a file.", "Output", true);
-
-	api.addOptionArgument(conf.printFlowNetwork, "print-flow-network",
-			"Print the network with calculated flow values.", "Output", true);
-
-	api.addOptionArgument(conf.printPajekNetwork, "print-network",
-			"Print the parsed network in Pajek format.", "Output", true);
-
-	api.addOptionArgument(conf.printStateNetwork, "print-state-network",
-			"Print the internal state network.", "Output", true);
-
-	// api.addOptionArgument(conf.printExpanded, "expanded",
-	// 		"Print the expanded network of memory nodes if possible.", "Output", true);
+	// -o network,states,clu,ftree
+	api.addOptionArgument(conf.outputFormats, 'o', "output",
+			"Specify output formats as a comma-separated list without spaces, e.g. -o clu,tree,ftree,network,states", "s", "Output", true);
 
 	// --------------------- Core algorithm options ---------------------
 	api.addOptionArgument(conf.twoLevel, '2', "two-level",
@@ -145,7 +129,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.recordedTeleportation, 'e', "recorded-teleportation",
 			"If teleportation is used to calculate the flow, also record it when minimizing codelength.", "Algorithm", true);
 
-	api.addOptionArgument(conf.teleportToNodes, 'o', "to-nodes",
+	api.addOptionArgument(conf.teleportToNodes, "to-nodes",
 			"Teleport to nodes instead of to links, assuming uniform node weights if no such input data.", "Algorithm", true);
 
 	api.addOptionArgument(conf.teleportationProbability, 'p', "teleportation-probability",
@@ -256,9 +240,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	if (!optionalOutputDir.empty())
 		conf.outDirectory = optionalOutputDir[0];
 
-	if (requireFileInput)
-		conf.noFileOutput = false;
-	else if (conf.outDirectory == "")
+	if (!requireFileInput && conf.outDirectory == "")
 		conf.noFileOutput = true;
 
 	if (!conf.noFileOutput && conf.outDirectory == "" && requireFileInput)
@@ -289,6 +271,90 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	Log::init(conf.verbosity, conf.silent, conf.verboseNumberPrecision);
 
 	return conf;
+}
+
+
+void Config::adaptDefaults()
+{
+	if (flowModel != FlowModel::undirected && \
+		flowModel != FlowModel::undirdir && \
+		flowModel != FlowModel::directed && \
+		flowModel != FlowModel::outdirdir && \
+		flowModel != FlowModel::rawdir)
+	{
+		throw InputDomainError("Unrecognized flow model");
+	}
+
+	if (undirdir) {
+		flowModel = FlowModel::undirdir;
+	} else if (directed) {
+		flowModel = FlowModel::directed;
+	} else if (outdirdir) {
+		flowModel = FlowModel::outdirdir;
+	} else if (rawdir) {
+		flowModel = FlowModel::rawdir;
+	}
+
+	auto outputs = io::split(outputFormats, ',');
+	for (std::string& o : outputs) {
+		if (o == "clu") {
+			printClu = true;
+		} else if (o == "tree") {
+			printTree = true;
+		} else if (o == "ftree") {
+			printFlowTree = true;
+		} else if (o == "network") {
+			printPajekNetwork = true;
+		} else if (o == "states") {
+			printStateNetwork = true;
+		} else {
+			throw InputDomainError(io::Str() << "Unrecognized output format: '" << o << "'.");
+		}
+	}
+
+	#ifndef AS_LIB
+	// Of no output format specified, use tree as default (if not used as a library).
+	if (!haveModularResultOutput()) {
+		printTree = true;
+	}
+	#endif
+
+
+	// if (!haveModularResultOutput())
+	// 	printTree = true;
+
+	originallyUndirected = isUndirectedFlow();
+	// if (isMemoryNetwork())
+	// {
+		// if (isMultilayerNetwork())
+		// {
+			// Include self-links in multilayer networks as layer and node numbers are unrelated
+			// includeSelfLinks = true;
+			// if (!isUndirectedFlow())
+			// {
+			// 	// teleportToNodes = true;
+			// 	recordedTeleportation = false;
+			// }
+		// }
+		// else
+		// {
+			// teleportToNodes = true;
+			// recordedTeleportation = false;
+			// if (isUndirectedFlow()) {
+			// 	flowModel = FlowModel::directed;
+			// }
+		// }
+		// if (is3gram()) {
+		// 	// Teleport to start of physical chains
+		// 	teleportToNodes = true;
+		// }
+	// }
+	// if (isBipartite())
+	// {
+	// 	bipartite = true;
+	// }
+
+	// directedEdges = !isUndirected();
 }
 
 }

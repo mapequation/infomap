@@ -151,8 +151,9 @@ struct Config
 	// Output
 	std::string outDirectory = "";
 	std::string outName = "";
+	std::string outputFormats = "";
 	bool originallyUndirected = false;
-	bool printTree = true;
+	bool printTree = false;
 	bool printFlowTree = false;
 	bool printMap = false;
 	bool printClu = false;
@@ -180,7 +181,7 @@ struct Config
 	std::vector<ParsedOption> parsedOptions;
 	std::string error = "";
 
-	Config() : noFileOutput(true)
+	Config()
 	{
 		// adaptDefaults();
 	}
@@ -259,6 +260,7 @@ struct Config
 		innerParallelization(other.innerParallelization),
 		outDirectory(other.outDirectory),
 		outName(other.outName),
+		outputFormats(other.outputFormats),
 		originallyUndirected(other.originallyUndirected),
 		printTree(other.printTree),
 		printFlowTree(other.printFlowTree),
@@ -358,6 +360,7 @@ struct Config
 		innerParallelization = other.innerParallelization;
 		outDirectory = other.outDirectory;
 		outName = other.outName;
+		outputFormats = other.outputFormats;
 		originallyUndirected = other.originallyUndirected;
 		printTree = other.printTree;
 		printFlowTree = other.printFlowTree;
@@ -456,6 +459,7 @@ struct Config
 		innerParallelization = other.innerParallelization;
 		outDirectory = other.outDirectory;
 		outName = other.outName;
+		outputFormats = other.outputFormats;
 		originallyUndirected = other.originallyUndirected;
 		// printTree = other.printTree;
 		// printFlowTree = other.printFlowTree;
@@ -530,63 +534,7 @@ struct Config
 		}
 	}
 
-	void adaptDefaults()
-	{
-		if (flowModel != FlowModel::undirected && \
-			flowModel != FlowModel::undirdir && \
-			flowModel != FlowModel::directed && \
-			flowModel != FlowModel::outdirdir && \
-			flowModel != FlowModel::rawdir)
-		{
-			throw InputDomainError("Unrecognized flow model");
-		}
-
-		if (undirdir) {
-			flowModel = FlowModel::undirdir;
-		} else if (directed) {
-			flowModel = FlowModel::directed;
-		} else if (outdirdir) {
-			flowModel = FlowModel::outdirdir;
-		} else if (rawdir) {
-			flowModel = FlowModel::rawdir;
-		}
-
-		// if (!haveModularResultOutput())
-		// 	printTree = true;
-
-		originallyUndirected = isUndirectedFlow();
-		// if (isMemoryNetwork())
-		// {
-			// if (isMultilayerNetwork())
-			// {
-				// Include self-links in multilayer networks as layer and node numbers are unrelated
-				// includeSelfLinks = true;
-				// if (!isUndirectedFlow())
-				// {
-				// 	// teleportToNodes = true;
-				// 	recordedTeleportation = false;
-				// }
-			// }
-			// else
-			// {
-				// teleportToNodes = true;
-				// recordedTeleportation = false;
-				// if (isUndirectedFlow()) {
-				// 	flowModel = FlowModel::directed;
-				// }
-			// }
-			// if (is3gram()) {
-			// 	// Teleport to start of physical chains
-			// 	teleportToNodes = true;
-			// }
-		// }
-		// if (isBipartite())
-		// {
-		// 	bipartite = true;
-		// }
-
-		// directedEdges = !isUndirected();
-	}
+	void adaptDefaults();
 
 	bool setDirectedInput() {
 		if (flowModel == FlowModel::undirected || flowModel == FlowModel::undirdir) {
