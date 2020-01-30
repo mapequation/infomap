@@ -53,17 +53,18 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.includeSelfLinks, 'k', "include-self-links",
 			"Include links with the same source and target node. (Self-links not included by default)", "Input", true);
 
-	api.addOptionArgument(conf.nodeLimit, 'O', "node-limit",
+	api.addOptionArgument(conf.nodeLimit, "node-limit",
 			"Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", "n", "Input", true);
 
-	api.addOptionArgument(conf.preClusterMultilayer, "pre-cluster-multilayer",
-			"Pre-cluster multilayer networks layer by layer.", "Input", true);
+	// TODO: Support in v1.x
+	// api.addOptionArgument(conf.preClusterMultilayer, "pre-cluster-multilayer",
+	// 		"Pre-cluster multilayer networks layer by layer.", "Input", true);
 
 	api.addOptionArgument(conf.clusterDataFile, 'c', "cluster-data",
 			"Provide an initial two-level (.clu format) or multi-layer (.tree format) solution.", "p", "Input");
 
-	api.addOptionArgument(conf.setUnidentifiedNodesToClosestModule, "set-unidentified-nodes-to-closest-module",
-			"Merge unidentified nodes in cluster data to closest existing modules if possible.", "Input", true);
+	api.addOptionArgument(conf.assignToNeighbouringModule, "assign-to-neighbouring-module",
+			"Assign nodes without module assignments (from --cluster-data) to the module assignment of a neighbouring node if possible.", "Input", true);
 
 	api.addOptionArgument(conf.metaDataFile, "meta-data",
 			"Provide meta data (.clu format) that should be encoded.", "p", "Input", true);

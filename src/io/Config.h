@@ -99,7 +99,7 @@ struct Config
 	bool unweightedMetaData = false;
 	unsigned int numMetaDataDimensions = 0;
 	bool clusterDataIsHard = false;
-	bool setUnidentifiedNodesToClosestModule = false;
+	bool assignToNeighbouringModule = false;
 	bool noInfomap = false;
 
 	// FlowModel flowModel = FlowModel::undirected;
@@ -216,7 +216,7 @@ struct Config
 	 	unweightedMetaData(other.unweightedMetaData),
 	 	numMetaDataDimensions(other.numMetaDataDimensions),
 	 	clusterDataIsHard(other.clusterDataIsHard),
-	 	setUnidentifiedNodesToClosestModule(other.setUnidentifiedNodesToClosestModule),
+	 	assignToNeighbouringModule(other.assignToNeighbouringModule),
 	 	noInfomap(other.noInfomap),
 		flowModel(other.flowModel),
 		directed(other.directed),
@@ -315,7 +315,7 @@ struct Config
 	 	unweightedMetaData = other.unweightedMetaData;
 	 	numMetaDataDimensions = other.numMetaDataDimensions;
 	 	clusterDataIsHard = other.clusterDataIsHard;
-	 	setUnidentifiedNodesToClosestModule = other.setUnidentifiedNodesToClosestModule;
+	 	assignToNeighbouringModule = other.assignToNeighbouringModule;
 	 	noInfomap = other.noInfomap;
 		flowModel = other.flowModel;
 		directed = other.directed;
@@ -413,7 +413,7 @@ struct Config
 	 	unweightedMetaData = other.unweightedMetaData;
 	 	numMetaDataDimensions = other.numMetaDataDimensions;
 	 	// clusterDataIsHard = other.clusterDataIsHard;
-	 	// setUnidentifiedNodesToClosestModule = other.setUnidentifiedNodesToClosestModule;
+	 	assignToNeighbouringModule = other.assignToNeighbouringModule;
 	 	noInfomap = other.noInfomap;
 		flowModel = other.flowModel;
 		directed = other.directed;

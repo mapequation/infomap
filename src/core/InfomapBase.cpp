@@ -601,7 +601,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
 		return initPartition(modules, hard);
 	}
 
-	if (this->setUnidentifiedNodesToClosestModule) {
+	if (this->assignToNeighbouringModule) {
 		Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into closest modules. ";
 		for (unsigned int i = 0; i < numNodes; ++i) {
 			if (selectedNodes[i] == 0) {
