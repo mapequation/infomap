@@ -50,14 +50,8 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.weightThreshold, "weight-threshold",
 			"Limit the number of links to read from the network. Ignore links with less weight than the threshold. (Default: 0)", "f", "Input", true);
 
-	// api.addOptionArgument(conf.nonBacktracking, "non-backtracking",
-	// 		"Use non-backtracking dynamics and let nodes be part of different and overlapping modules. Applies to ordinary networks by first representing the non-backtracking dynamics with memory nodes.", "Input", true);
-
 	api.addOptionArgument(conf.includeSelfLinks, 'k', "include-self-links",
-			"Include links with the same source and target node. (Ignored by default.)", "Input", true);
-
-	api.addOptionArgument(conf.skipCompleteDanglingMemoryNodes, "skip-complete-dangling-memory-nodes",
-			"Skip add first order links to complete dangling memory nodes.", "Input", true);
+			"Include links with the same source and target node. (Self-links not included by default)", "Input", true);
 
 	api.addOptionArgument(conf.nodeLimit, 'O', "node-limit",
 			"Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", "n", "Input", true);
