@@ -254,40 +254,6 @@ bool StateNetwork::removeLink(unsigned int sourceId, unsigned int targetId)
 	return true;
 }
 
-bool StateNetwork::addPath(const std::vector<unsigned int>& path, unsigned int markovOrder, double weight)
-{
-	if (markovOrder == 0) {
-		throw DataDomainError("Trying to add state nodes from path with markov order 0, must be 1 or more.");
-	}
-	if (path.size() <= markovOrder) {
-		++m_numSkippedPaths;
-		return false;
-	}
-	unsigned int lastStateId = 0;
-	bool createLink = false;
-	// std::cout << "Add state node and links from path " << io::stringify(path, " ") << "\n";
-	for (unsigned int i = markovOrder - 1; i < path.size(); ++i) {
-		unsigned int physId = path[i];
-		unsigned int stateId = physId;
-		if (markovOrder > 1) {
-			std::string id = io::stringifyContainer(path, " ", i - (markovOrder - 1), markovOrder);
-			auto ret = m_pathToStateId.insert(std::make_pair(id, m_pathToStateId.size()));
-			stateId = ret.first->second;
-		}
-		addStateNode(stateId, physId);
-		// std::cout << " -> add State node '" << id << "' (" << stateId << "," << physId << ")\n";
-		if (!createLink) {
-			createLink = true;
-		} else {
-			// std::cout << "   -> add link " << lastStateId << " - " << stateId << " with weight " << weight << "\n";
-			addLink(lastStateId, stateId, weight);
-		}
-		// std::cout << "   => " << m_physNodes.size() << " physical nodes\n";
-		lastStateId = stateId;
-	}
-	return true;
-}
-
 bool StateNetwork::undirectedToDirected()
 {
 	// Collect links in separate data structure to not risk iterating newly added links
@@ -324,7 +290,6 @@ void StateNetwork::clearLinks()
 	// m_physNodes.clear();
 	// m_outWeights.clear();
 	// m_names.clear();
-	// m_pathToStateId.clear();
 }
 
 void StateNetwork::clear()
@@ -348,8 +313,6 @@ void StateNetwork::clear()
 	m_totalLinkWeightAdded = 0.0;
 	m_numLinksIgnoredByWeightThreshold = 0;
 	m_totalLinkWeightIgnored = 0.0;
-	m_numSkippedPaths = 0;
-	m_pathToStateId.clear();
 }
 
 void StateNetwork::writeStateNetwork(std::string filename) const

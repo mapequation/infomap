@@ -188,10 +188,6 @@ protected:
 	std::map<unsigned int, std::string> m_names;
 	std::map<unsigned int, PhysNode> m_physNodes;
 
-	// paths
-	unsigned int m_numSkippedPaths = 0;
-	std::map<std::string, unsigned int> m_pathToStateId;
-
 	// Bipartite
 	unsigned int m_bipartiteStartId = 0;
 
@@ -228,7 +224,6 @@ public:
 	 * Note: It will not remove nodes if they become dangling
 	 */
 	bool removeLink(unsigned int sourceId, unsigned int targetId);
-	bool addPath(const std::vector<unsigned int>& nodes, unsigned int markovOrder, double weight = 1.0);
 
 	// Expand each undirected link to two opposite directed links
 	bool undirectedToDirected();

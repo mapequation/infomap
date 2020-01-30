@@ -54,10 +54,6 @@ void Network::initValidHeadings()
 	headingsLinklist.insert("*edges");
 	headingsLinklist.insert("*arcs");
 
-	auto& headingsPaths = m_validHeadings["path"];
-	headingsPaths.insert("*vertices");
-	headingsPaths.insert("*paths");
-
 	auto& headingsBipartite = m_validHeadings["bipartite"];
 	headingsBipartite.insert("*vertices");
 	headingsBipartite.insert("*bipartite");
@@ -143,8 +139,6 @@ void Network::readInputData(std::string filename, bool accumulate)
 		parsePajekNetwork(filename);
 	else if (format == "link-list")
 		parseLinkList(filename);
-	else if (format == "path")
-		parsePathData(filename);
 	else if (format == "bipartite")
 		parseBipartiteNetwork(filename);
 	else if (format == "states")
@@ -171,15 +165,6 @@ void Network::parseLinkList(std::string filename)
 			filename << "'... " << std::endl;
 
 	parseNetwork(filename, m_validHeadings["link-list"], m_ignoreHeadings["link-list"]);
-}
-
-void Network::parsePathData(std::string filename)
-{
-	m_haveDirectedInput = true;
-	Log() << "Parsing " << (m_config.directed ? "directed" : "undirected") << " paths from file '" <<
-			filename << "'... " << std::endl;
-
-	parseNetwork(filename, m_validHeadings["path"], m_ignoreHeadings["path"]);
 }
 
 void Network::parseBipartiteNetwork(std::string filename)
@@ -248,9 +233,6 @@ void Network::parseNetwork(std::string filename, const InsensitiveStringSet& val
 		}
 		else if (headingLowerCase == "*links") {
 			heading = parseLinks(input);
-		}
-		else if (headingLowerCase == "*paths") {
-			heading = parsePaths(input);
 		}
 		else if (headingLowerCase == "*multilayer" || headingLowerCase == "*multiplex") {
 			heading = parseMultilayerLinks(input);
@@ -421,28 +403,6 @@ std::string Network::parseLinks(std::ifstream& file)
 	return line;
 }
 
-std::string Network::parsePaths(std::ifstream& file)
-{
-	Log() << "  Parsing paths using markov order " << m_config.pathMarkovOrder << "...\n" << std::flush;
-	m_haveDirectedInput = true;
-	std::string line;
-	while(!std::getline(file, line).fail())
-	{
-		if (line.length() == 0 || line[0] == '#')
-			continue;
-
-		if (line[0] == '*')
-			break;
-
-		std::vector<unsigned int> nodes;
-		double weight = parsePath(line, nodes, !m_config.unweightedPaths);
-
-		addPath(nodes, m_config.pathMarkovOrder, weight);
-	}
-	Log() << "  -> " << m_numLinks << " links\n";
-	return line;
-}
-
 std::string Network::parseMultilayerLinks(std::ifstream& file)
 {
 	Log() << "  Parsing multilayer links...\n" << std::flush;
@@ -594,34 +554,6 @@ void Network::parseLink(const std::string& line, unsigned int& n1, unsigned int&
 	if (!(m_extractor >> n1 >> n2))
 		throw FileFormatError(io::Str() << "Can't parse link data from line '" << line << "'");
 	(m_extractor >> weight) || (weight = 1.0);
-}
-
-double Network::parsePath(const std::string& line, std::vector<unsigned int>& nodes, bool weighted)
-{
-	m_extractor.clear();
-	double weight = 1.0;
-	if (weighted) {
-    auto const lastNonSpace = line.find_last_not_of(' ');
-    auto const lastSeparatingSpace = line.find_last_of(' ', lastNonSpace);
-		try
-		{
-			weight = std::stod(line.substr(lastSeparatingSpace + 1));
-		}
-		catch(std::invalid_argument)
-		{
-				throw FileFormatError(io::Str() << "Can't parse the weight from the last token (position" << lastSeparatingSpace << ") in the path '" << line << "'");
-		}
-    m_extractor.str(line.substr(0, lastSeparatingSpace));
-	}
-	else {
-		m_extractor.str(line);
-	}
-	unsigned int node;
-	while (m_extractor >> node)
-		nodes.push_back(node);
-	if (nodes.size() < 2)
-		throw FileFormatError(io::Str() << "Can't parse at least two nodes from path '" << line << "'");
-	return weight;
 }
 
 void Network::parseMultilayerLink(const std::string& line, unsigned int& layer1, unsigned int& n1, unsigned int& layer2, unsigned int& n2, double& weight)
