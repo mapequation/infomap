@@ -108,26 +108,16 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 			"Optimize a two-level partition of the network.", "Algorithm");
 
 	api.addOptionArgument(conf.flowModel, 'f', "flow-model",
-			"Specify flow model ('undirected', 'undirdir', 'directed', 'outdirdir', 'rawdir')", "s", "Algorithm");
-
-	// bool dummyUndirected;
-	// api.addOptionArgument(dummyUndirected, 'u', "undirected",
-	// 		"Assume undirected links. (default)", "Algorithm");
+			"Specify flow model among: 'undirected', 'undirdir', 'directed', 'outdirdir', 'rawdir'. (Default undirected)", "s", "Algorithm");
 
 	api.addOptionArgument(conf.directed, 'd', "directed",
 			"Assume directed links.", "Algorithm");
 
-	api.addOptionArgument(conf.undirdir, 't', "undirdir",
-			"Two-mode dynamics: Assume undirected links for calculating flow, but directed when minimizing codelength.", "Algorithm", true);
-
-	api.addOptionArgument(conf.outdirdir, "outdirdir",
-			"Two-mode dynamics: Count only ingoing links when calculating the flow, but all when minimizing codelength.", "Algorithm", true);
-
-	api.addOptionArgument(conf.rawdir, 'w', "rawdir",
+	api.addOptionArgument(conf.rawdir, "rawdir",
 			"Two-mode dynamics: Assume directed links and let the raw link weights be the flow.", "Algorithm", true);
 
-	api.addOptionArgument(conf.recordedTeleportation, 'e', "recorded-teleportation",
-			"If teleportation is used to calculate the flow, also record it when minimizing codelength.", "Algorithm", true);
+	// api.addOptionArgument(conf.recordedTeleportation, 'e', "recorded-teleportation",
+	// 		"If teleportation is used to calculate the flow, also record it when minimizing codelength.", "Algorithm", true);
 
 	api.addOptionArgument(conf.teleportToNodes, "to-nodes",
 			"Teleport to nodes instead of to links, assuming uniform node weights if no such input data.", "Algorithm", true);
@@ -156,11 +146,15 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.multilayerRelaxLimitDown, "multilayer-relax-limit-down",
 			"The number of neighboring layers with lower id to relax to. If negative, relax to any layer.", "n", "Algorithm", true);
 
-	api.addOptionArgument(conf.multilayerJSRelaxRate, "multilayer-js-relax-rate",
-			"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence. Default 0.15", "f", "Algorithm", true);
+	//TODO: Add for v1.x
+	// api.addOptionArgument(conf.multilayerRelaxByJensenShannonDivergence, "multilayer-relax-by-jsd",
+	// 		"Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence. Default 0.15", "f", "Algorithm", true);
 
-	api.addOptionArgument(conf.multilayerJSRelaxLimit, "multilayer-js-relax-limit",
-			"The minimum out-link similarity measured by the Jensen-Shannon divergence to relax to other layer. From 0 to 1. No limit if negative.", "f", "Algorithm", true);
+	// api.addOptionArgument(conf.multilayerJSRelaxRate, "multilayer-js-relax-rate",
+	// 		"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence. Default 0.15", "f", "Algorithm", true);
+
+	// api.addOptionArgument(conf.multilayerJSRelaxLimit, "multilayer-js-relax-limit",
+	// 		"The minimum out-link similarity measured by the Jensen-Shannon divergence to relax to other layer. From 0 to 1. No limit if negative.", "f", "Algorithm", true);
 
 	// --------------------- Performance and accuracy options ---------------------
 	api.addOptionArgument(conf.seedToRandomNumberGenerator, 's', "seed",
@@ -169,11 +163,8 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.numTrials, 'N', "num-trials",
 			"The number of outer-most loops to run before picking the best solution.", "n", "Accuracy");
 
-	api.addOptionArgument(conf.minimumCodelengthImprovement, 'm', "min-improvement",
-			"Minimum codelength threshold for accepting a new solution.", "f", "Accuracy", true);
-
-	api.addOptionArgument(conf.randomizeCoreLoopLimit, 'a', "random-loop-limit",
-			"Randomize the core loop limit from 1 to 'core-loop-limit'", "Accuracy", true);
+	// api.addOptionArgument(conf.randomizeCoreLoopLimit, "random-loop-limit",
+	// 		"Randomize the core loop limit from 1 to 'core-loop-limit'", "Accuracy", true);
 
 	api.addOptionArgument(conf.coreLoopLimit, 'M', "core-loop-limit",
 			"Limit the number of loops that tries to move each node into the best possible module", "n", "Accuracy", true);
@@ -184,14 +175,17 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.tuneIterationLimit, 'T', "tune-iteration-limit",
 			"Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.", "n", "Accuracy", true);
 
-	api.addOptionArgument(conf.minimumRelativeTuneIterationImprovement, 'U', "tune-iteration-threshold",
-			"Set a codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.", "f", "Accuracy", true);
+	api.addOptionArgument(conf.minimumCodelengthImprovement, "core-loop-codelength-threshold",
+			"Minimum codelength threshold for accepting a new solution in core loop. (Default 1e-10)", "f", "Accuracy", true);
 
-	api.addOptionArgument(conf.fastFirstIteration, "fast-first-iteration",
-			"Move nodes to strongest connected module in the first iteration instead of minimizing the map equation.", "Accuracy", true);
+	api.addOptionArgument(conf.minimumRelativeTuneIterationImprovement, "tune-iteration-relative-threshold",
+			"Set a codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength. (Default 1e-5)", "f", "Accuracy", true);
 
-	api.addOptionArgument(conf.fastCoarseTunePartition, 'C', "fast-coarse-tune",
-			"Try to find the quickest partition of each module when creating sub-modules for the coarse-tune part.", "Accuracy", true);
+	// api.addOptionArgument(conf.fastFirstIteration, "fast-first-iteration",
+	// 		"Move nodes to strongest connected module in the first iteration instead of minimizing the map equation.", "Accuracy", true);
+
+	// api.addOptionArgument(conf.fastCoarseTunePartition, 'C', "fast-coarse-tune",
+	// 		"Try to find the quickest partition of each module when creating sub-modules for the coarse-tune part.", "Accuracy", true);
 
 	// api.addOptionArgument(conf.alternateCoarseTuneLevel, 'A', "alternate-coarse-tune-level",
 	// 		"Try to find different levels of sub-modules to move in the coarse-tune part.", "Accuracy", true);
@@ -202,7 +196,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addIncrementalOptionArgument(conf.fastHierarchicalSolution, 'F', "fast-hierarchical-solution",
 			"Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.", "Accuracy");
 
-	api.addOptionArgument(conf.skipReplaceToOneModuleIfBetter, "skip-replace-to-one-module",
+	api.addOptionArgument(conf.preferModularSolution, "prefer-modular-solution",
 			"Keep modular solutions even if not better than all nodes in one module", "Accuracy", true);
 
 	// api.addIncrementalOptionArgument(conf.lowMemoryPriority, 'l', "low-memory",
@@ -232,8 +226,8 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.silent, "silent",
 			"No output on the console.", "Output");
 
-	api.addOptionArgument(conf.showBiNodes, "show-bipartite-nodes",
-			"Include the bipartite nodes in the output.", "Output", true);
+	// api.addOptionArgument(conf.showBiNodes, "show-bipartite-nodes",
+	// 		"Include the bipartite nodes in the output.", "Output", true);
 
 	api.parseArgs(flags);
 
