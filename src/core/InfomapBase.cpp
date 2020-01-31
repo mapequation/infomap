@@ -771,8 +771,7 @@ void InfomapBase::generateSubNetwork(Network& network)
 			else {
 				auto& linkData = subIt.second;
 				if (this->isIntegerFlow()) {
-					//TODO: Use integer weight on edges for integer nodes
-					m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, 1);
+					m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.weight);
 				} else {
 					m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.flow * this->markovTime);
 				}
@@ -786,7 +785,20 @@ void InfomapBase::generateSubNetwork(Network& network)
 		double sumNodeFlowInt = 0.0;
         root().setModuleSize(0);
 		for (NodeBase& node : root()) {
-			node.setFlow(node.degree());
+
+			double strength = 0.0;
+			for (EdgeType* e : node.outEdges())
+			{
+				EdgeType& edge = *e;
+				strength += edge.data.weight;
+			}
+			for (EdgeType* e : node.inEdges())
+			{
+				EdgeType& edge = *e;
+				strength += edge.data.weight;
+			}
+
+			node.setFlow(strength);
             node.setModuleSize(1);
 			sumNodeFlowInt += node.getFlowInt();
             root().addModuleSize(1);
@@ -1076,9 +1088,9 @@ void InfomapBase::initEnterExitFlow()
                 edge.target.addExitFlow(halfFlow);
                 edge.source.addEnterFlow(halfFlow);
                 edge.target.addEnterFlow(halfFlow);
-								// int
-								edge.source.addEnterExitFlow(1); // TODO: edge.data.weight;
-								edge.target.addEnterExitFlow(1); // TODO: edge.data.weight;
+				// int
+				edge.source.addEnterExitFlow(edge.data.weight);
+				edge.target.addEnterExitFlow(edge.data.weight);
             }
         }
     }
