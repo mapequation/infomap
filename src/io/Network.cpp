@@ -81,6 +81,9 @@ void Network::initValidHeadings()
 	auto& headingsGeneral = m_validHeadings["general"];
 	headingsGeneral.insert("*vertices");
 	headingsGeneral.insert("*states");
+	headingsGeneral.insert("*multilayer");
+	headingsGeneral.insert("*intra");
+	headingsGeneral.insert("*inter");
 	headingsGeneral.insert("*paths");
 	headingsGeneral.insert("*edges");
 	headingsGeneral.insert("*arcs");
