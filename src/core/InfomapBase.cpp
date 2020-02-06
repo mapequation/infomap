@@ -2247,7 +2247,7 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 			InfoNode &node = *it;
 			if (node.isLeaf()) {
 				auto &path = it.path();
-				auto name = haveMemory() ? io::stringify(node.stateId) : m_network.names()[node.physicalId];
+				auto name = m_network.names()[node.physicalId];
 				if (name.empty())
 					name = io::stringify(node.physicalId);
 				outStream << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << name << "\" ";
