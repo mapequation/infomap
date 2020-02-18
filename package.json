@@ -1,0 +1,25 @@
+{
+  "name": "infomap",
+  "version": "1.0.0",
+  "description": "",
+  "main": "interfaces/js/index.js",
+  "scripts": {
+    "release": "standard-version"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mapequation/infomap.git"
+  },
+  "keywords": [
+    "mapequation"
+  ],
+  "author": "MapEquation Team",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/mapequation/infomap/issues"
+  },
+  "homepage": "https://www.mapequation.org/infomap",
+  "devDependencies": {
+    "standard-version": "^7.1.0"
+  }
+}

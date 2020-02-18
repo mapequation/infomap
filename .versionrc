@@ -1,9 +1,0 @@
-{
-  "version": "1.0.0",
-  "bumpFiles": [
-    {
-      "filename": ".versionrc",
-      "type": "json"
-    }
-  ]
-}
