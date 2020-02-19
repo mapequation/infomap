@@ -22,4 +22,7 @@ function getCommitWriter(filename) {
   return commits => fsPromises.writeFile(filename, JSON.stringify(commits, null, 2));
 }
 
+getCommits("2d94e92")
+  .then(getCommitWriter("interfaces/js/src/commits.json"));
+
 module.exports = { getCommits, getCommitWriter };
