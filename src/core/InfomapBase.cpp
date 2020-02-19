@@ -2315,8 +2315,6 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
 	}
 
 	using LinkMap = std::map<std::pair<unsigned int, unsigned int>, double>;
-
-	std::map<std::string, double> exitFlow;
 	std::map<std::string, LinkMap> moduleLinks;
 
 	for (auto& leaf : m_leafNodes) {
@@ -2340,14 +2338,13 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
 				++targetParentIt;
 				--targetDepth;
 			}
-			// Raise source to same depth, adding exit flow on the way
+			// Raise source to same depth
 			while (sourceDepth > targetDepth) {
-				exitFlow[io::stringify(sourceParent->calculatePath(), ":", 1)] += flow;
 				++sourceParentIt;
 				--sourceDepth;
 			}
 			auto currentDepth = sourceDepth;
-			// Add link if same parent, else add exit flow
+			// Add link if same parent
 			while (currentDepth > 0) {
 				if (sourceParentIt == targetParentIt) {
 					// Skip self-links
@@ -2356,9 +2353,6 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
 						auto& linkMap = moduleLinks[parentId];
 						linkMap[std::make_pair(sourceChildIndex + 1, targetChildIndex + 1)] += flow;
 					}
-				}
-				else {
-					exitFlow[io::stringify(sourceParentIt->calculatePath(), ":", 1)] += flow;
 				}
 				sourceChildIndex = sourceParentIt->index;
 				targetChildIndex = targetParentIt->index;
@@ -2370,17 +2364,18 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
 	}
 
 	outStream << "*Links " << (this->isUndirectedFlow() ? "undirected" : "directed") << "\n";
-	outStream << "#*Links path exitFlow numEdges numChildren\n";
+	outStream << "#*Links path enterFlow exitFlow numEdges numChildren\n";
 
 	// Use stateId to store depth on modules to optimize link aggregation
 	for (auto it(iterModules()); !it.isEnd(); ++it) {
 		auto parentId = io::stringify(it.path(), ":", 1);
+		auto& module = *it;
 		auto& links = moduleLinks[parentId];
 		// if (it->isLeafModule() && mergePhysicalNodes) {
 		// 	outStream << "*Links " << parentId << " " << exitFlow[parentId] << " " << 0 << " " << 0 << "\n";
 		// 	continue;
 		// }
-		outStream << "*Links " << (parentId == "" ? "root" : parentId) << " " << exitFlow[parentId] << " " << links.size() << " " << it->infomapChildDegree() << "\n";
+		outStream << "*Links " << (parentId == "" ? "root" : parentId) << " " << module.data.enterFlow << " " << module.data.exitFlow << " " << links.size() << " " << module.infomapChildDegree() << "\n";
 		for (auto itLink : links) {
 			unsigned int sourceId = itLink.first.first;
 			unsigned int targetId = itLink.first.second;
