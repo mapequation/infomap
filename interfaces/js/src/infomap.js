@@ -14,7 +14,7 @@ class Infomap {
       target: "Infomap",
       inputFilename: filename,
       inputData: data,
-      args
+      arguments: args
     });
 
     worker.onmessage = this.onmessage;
