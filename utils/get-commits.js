@@ -1,7 +1,5 @@
-#!/usr/bin/env node
 "use strict";
 
-const fsPromises = require("fs").promises;
 const gitRawCommits = require("git-raw-commits");
 const conventionalCommitsParser = require("conventional-commits-parser");
 
@@ -18,8 +16,4 @@ function getCommits(from = "", to = "HEAD") {
       .on("error", reject));
 }
 
-function getCommitWriter(filename) {
-  return commits => fsPromises.writeFile(filename, JSON.stringify(commits, null, 2));
-}
-
-module.exports = { getCommits, getCommitWriter };
+module.exports = { getCommits };
