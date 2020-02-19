@@ -1,9 +1,11 @@
 class InfomapWorker {
-  _events = {
-    ondata: () => null,
-    onerror: () => null,
-    onfinished: () => null
-  };
+  constructor() {
+    this._events = {
+      ondata: () => null,
+      onerror: () => null,
+      onfinished: () => null
+    };
+  }
 
   run(filename, data, args) {
     const worker = this.worker = new Worker("Infomap-worker.js");
@@ -25,6 +27,8 @@ class InfomapWorker {
     if (event === "data") this._events.ondata = callback;
     if (event === "error") this._events.onerror = callback;
     if (event === "finished") this._events.onfinished = callback;
+
+    return this;
   }
 
   onmessage() {
