@@ -21,5 +21,17 @@
   "homepage": "https://www.mapequation.org/infomap",
   "devDependencies": {
     "standard-version": "^7.1.0"
+  },
+  "standard-version": {
+    "bumpFiles": [
+      {
+        "filename": "package.json",
+        "type": "json"
+      },
+      {
+        "filename": "src/io/version.cpp",
+        "updater": "utils/update-version-cpp.js"
+      }
+    ]
   }
 }
