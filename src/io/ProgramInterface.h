@@ -50,13 +50,12 @@ struct Option
 	  isAdvanced(isAdvanced),
 	  requireArgument(requireArgument),
 	  incrementalArgument(false),
-	  argumentName(argName),
-	  used(false),
-	  negated(false)
+	  argumentName(argName)
 	{}
 	virtual ~Option() {}
 	virtual bool parse(std::string const&) { used = true; return true; }
 	virtual void set(bool value) { used = true; negated = !value; };
+	Option& setHidden(bool value) { hidden = value; return *this; }
 	virtual std::ostream& printValue(std::ostream& out) const { return out; }
 	virtual std::string printValue() const { return ""; }
 	virtual std::string printNumericValue() const { return ""; }
@@ -77,8 +76,9 @@ struct Option
 	bool requireArgument;
 	bool incrementalArgument;
 	std::string argumentName;
-	bool used;
-	bool negated;
+	bool hidden = false;
+	bool used = false;
+	bool negated = false;
 };
 
 struct IncrementalOption : Option
@@ -244,43 +244,50 @@ public:
 		m_nonOptionArguments.push_back(t);
 	}
 
-	void addOptionArgument(char shortName, std::string longName, std::string description, std::string group, bool isAdvanced = false)
+	Option& addOptionArgument(char shortName, std::string longName, std::string description, std::string group, bool isAdvanced = false)
 	{
-		m_optionArguments.push_back(new Option(shortName, longName, description, group, isAdvanced));
+		Option* o = new Option(shortName, longName, description, group, isAdvanced);
+		m_optionArguments.push_back(o);
+		return *o;
 	}
 
-	void addIncrementalOptionArgument(unsigned int& target, char shortName, std::string longName, std::string description, std::string group, bool isAdvanced = false)
+	Option& addIncrementalOptionArgument(unsigned int& target, char shortName, std::string longName, std::string description, std::string group, bool isAdvanced = false)
 	{
 		Option* o = new IncrementalOption(target, shortName, longName, description, group, isAdvanced);
 		m_optionArguments.push_back(o);
+		return *o;
 	}
 
-	void addOptionArgument(bool& target, char shortName, std::string longName, std::string description, std::string group, bool isAdvanced = false)
+	Option& addOptionArgument(bool& target, char shortName, std::string longName, std::string description, std::string group, bool isAdvanced = false)
 	{
 		Option* o = new ArgumentOption<bool>(target, shortName, longName, description, group, isAdvanced);
 		m_optionArguments.push_back(o);
+		return *o;
 	}
 
 	// Without shortName
-	void addOptionArgument(bool& target, std::string longName, std::string description, std::string group, bool isAdvanced = false)
+	Option& addOptionArgument(bool& target, std::string longName, std::string description, std::string group, bool isAdvanced = false)
 	{
 		Option* o = new ArgumentOption<bool>(target, '\0', longName, description, group, isAdvanced);
 		m_optionArguments.push_back(o);
+		return *o;
 	}
 
 	template<typename T>
-	void addOptionArgument(T& target, char shortName, std::string longName, std::string description, std::string argumentName, std::string group, bool isAdvanced = false)
+	Option& addOptionArgument(T& target, char shortName, std::string longName, std::string description, std::string argumentName, std::string group, bool isAdvanced = false)
 	{
 		Option* o = new ArgumentOption<T>(target, shortName, longName, description, group, isAdvanced, argumentName);
 		m_optionArguments.push_back(o);
+		return *o;
 	}
 
 	// Without shortName
 	template<typename T>
-	void addOptionArgument(T& target, std::string longName, std::string description, std::string argumentName, std::string group, bool isAdvanced = false)
+	Option& addOptionArgument(T& target, std::string longName, std::string description, std::string argumentName, std::string group, bool isAdvanced = false)
 	{
 		Option* o = new ArgumentOption<T>(target, '\0', longName, description, group, isAdvanced, argumentName);
 		m_optionArguments.push_back(o);
+		return *o;
 	}
 
 	void parseArgs(const std::string& args);
@@ -293,21 +300,30 @@ private:
 	void exitWithUsage(bool showAdvanced);
 	void exitWithVersionInformation();
 	void exitWithError(std::string message);
+	void exitWithJsonParameters();
+
+	std::string toJson(std::string key, std::string value) const;
+	std::string toJson(std::string key, int value) const;
+	std::string toJson(std::string key, unsigned int value) const;
+	std::string toJson(std::string key, double value) const;
+	std::string toJson(std::string key, bool value) const;
+	std::string toJson(const Option& opt) const;
 
 	// std::vector<option> m_longOptions; // struct option defined in <getopt.h>
 	std::deque<Option*> m_optionArguments;
 	std::deque<TargetBase*> m_nonOptionArguments;
-	std::string m_programName;
-	std::string m_shortProgramDescription;
-	std::string m_programVersion;
-	std::string m_programDescription;
+	std::string m_programName = "Infomap";
+	std::string m_shortProgramDescription = "";
+	std::string m_programVersion = "";
+	std::string m_programDescription = "";
 	std::vector<std::string> m_groups;
-	std::string m_executableName;
-	unsigned int m_displayHelp;
-	bool m_displayVersion;
-	bool m_negateNextOption;
+	std::string m_executableName = "Infomap";
+	unsigned int m_displayHelp = 0;
+	bool m_displayVersion = false;
+	bool m_negateNextOption = false;
+	bool m_printJsonParameters = false;
 
-	unsigned int m_numOptionalNonOptionArguments;
+	unsigned int m_numOptionalNonOptionArguments = 0;
 };
 
 }

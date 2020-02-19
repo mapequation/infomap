@@ -38,17 +38,12 @@ namespace infomap {
 ProgramInterface::ProgramInterface(std::string name, std::string shortDescription, std::string version)
 : m_programName(name),
   m_shortProgramDescription(shortDescription),
-  m_programVersion(version),
-  m_programDescription(""),
-  m_executableName("Infomap"),
-  m_displayHelp(false),
-  m_displayVersion(false),
-  m_negateNextOption(false),
-  m_numOptionalNonOptionArguments(0)
+  m_programVersion(version)
 {
 	addIncrementalOptionArgument(m_displayHelp, 'h', "help", "Prints this help message. Use -hh to show advanced options.", "About");
 	addOptionArgument(m_displayVersion, 'V', "version", "Display program version information.", "About");
 	// addOptionArgument(m_negateNextOption, 'n', "negate-next", "Set the next (no-argument) option to false.", true);
+	addOptionArgument(m_printJsonParameters, "print-json-parameters", "Print Infomap parameters in JSON.", "About").setHidden(true);
 }
 
 ProgramInterface::~ProgramInterface()
@@ -148,6 +143,68 @@ void ProgramInterface::exitWithError(std::string message)
 	Log() << ". Run with option '-h' for more information." << std::endl;
 	std::exit(1);
 }
+
+void ProgramInterface::exitWithJsonParameters()
+{
+	Log() << "{\n  \"parameters\": [\n";
+
+	for (unsigned int i = 0; i < m_optionArguments.size(); ++i)
+	{
+		Option& opt = *m_optionArguments[i];
+		if (opt.hidden)
+			continue;
+		Log() << "    " << toJson(opt);
+		if (i < m_optionArguments.size() - 1) {
+			Log() << ",\n";
+		} else {
+			Log() << "\n";
+		}
+	}
+	Log() << "  ]\n}";
+
+	std::exit(0);
+}
+
+std::string ProgramInterface::toJson(std::string key, std::string value) const
+{
+	return io::Str() << "\"" << key << "\": \"" << value << "\"";
+}
+
+std::string ProgramInterface::toJson(std::string key, int value) const
+{
+	return io::Str() << "\"" << key << "\": " << value;
+}
+
+std::string ProgramInterface::toJson(std::string key, unsigned int value) const
+{
+	return io::Str() << "\"" << key << "\": " << value;
+}
+
+std::string ProgramInterface::toJson(std::string key, double value) const
+{
+	return io::Str() << "\"" << key << "\": " << value;
+}
+
+std::string ProgramInterface::toJson(std::string key, bool value) const
+{
+	return io::Str() << "\"" << key << "\": " << (value ? "true" : "false");
+}
+
+std::string ProgramInterface::toJson(const Option& opt) const
+{
+	return io::Str() << "{ " <<
+		toJson("longName", opt.longName) << ", " <<
+		toJson("shortName", opt.shortName == '\0' ? "" : std::string(1, opt.shortName)) << ", " <<
+		toJson("description", opt.description) << ", " <<
+		toJson("group", opt.group) << ", " <<
+		toJson("requireArgument", opt.requireArgument) << ", " <<
+		toJson("argumentName", opt.argumentName) << ", " <<
+		toJson("isAdvanced", opt.isAdvanced) << ", " <<
+		toJson("incrementalArgument", opt.incrementalArgument) << ", " <<
+		(opt.requireArgument ? toJson("default", opt.printValue()) : toJson("default", false)) <<
+		" }";
+}
+
 
 void ProgramInterface::parseArgs(const std::string& args)
 {
@@ -273,6 +330,8 @@ void ProgramInterface::parseArgs(const std::string& args)
 				exitWithUsage(m_displayHelp > 1);
 			if (m_displayVersion)
 				exitWithVersionInformation();
+			if (m_printJsonParameters)
+				exitWithJsonParameters();
 		}
 	}
 	catch (std::exception& e)

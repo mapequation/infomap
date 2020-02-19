@@ -2142,8 +2142,8 @@ std::string InfomapBase::writeMap(std::string filename, bool states, int moduleI
 	}
 
 	// Sort modules on flow descending order
-	std::sort(modules.begin(), modules.end(), [=](InfoNode* a, InfoNode* b) {
-			return a->data.flow > b->data.flow;
+	std::sort(modules.begin(), modules.end(), [](InfoNode* a, InfoNode* b) {
+		return a->data.flow > b->data.flow;
 	});
 
 	// Store id on modules to simplify link aggregation
