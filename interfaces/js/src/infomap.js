@@ -4,13 +4,11 @@ import { version } from "../../../package.json";
 class Infomap {
   static __version__ = version;
 
-  constructor() {
-    this._events = {
-      ondata: () => null,
-      onerror: () => null,
-      onfinished: () => null
-    };
-  }
+  _events = {
+    ondata: () => null,
+    onerror: () => null,
+    onfinished: () => null
+  };
 
   run(filename, data, args) {
     const worker = this.worker = new Worker("Infomap-worker.js");
