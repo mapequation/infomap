@@ -210,12 +210,13 @@ void InfomapBase::run()
 
 void InfomapBase::run(const std::map<unsigned int, unsigned int>& clusterIds)
 {
-	Stopwatch timer(true);
+	m_elapsedTime = Stopwatch(true);
+	m_startDate = Date();
 
 	Log::init(this->verbosity, this->silent, this->verboseNumberPrecision);
 
 	Log() << "=======================================================\n";
-	Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << Date() << "\n";
+	Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << m_startDate << "\n";
 	Log() << "  -> Input network: " << this->networkFile << "\n";
 	if (this->noFileOutput)
 		Log() << "  -> No file output!\n";
@@ -254,9 +255,9 @@ void InfomapBase::run(const std::map<unsigned int, unsigned int>& clusterIds)
 	run(m_network, clusterIds);
 
 	Log() << "===================================================\n";
-	Log() << "  Infomap ends at " << Date() << "\n";
-	// Log() << "  (Elapsed time: " << (Date() - startDate) << ")\n";
-	Log() << "  (Elapsed time: " << timer << ")\n";
+	Log() << "  Infomap ends at " << m_endDate << "\n";
+	// Log() << "  (Elapsed time: " << (m_endDate - m_startDate) << ")\n";
+	Log() << "  (Elapsed time: " << m_elapsedTime << ")\n";
 	Log() << "===================================================\n";
 }
 
@@ -386,30 +387,29 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 				bestTrialIndex = i;
 				sortTreeOnFlow();
 				writeResult();
-				#ifdef AS_LIB
 				if (numTrials > 1) {
 					bestTree.clear();
 					for (auto it(iterLeafNodes()); !it.isEnd(); ++it) {
 						bestTree.add(it->stateId, it.path());
 					}
 				}
-				#endif
 			}
 		}
 	}
 	if (isMainInfomap())
 	{
+		m_elapsedTime.stop();
+		m_endDate = Date();
 		Log() << "\n\n";
 		Log() << "================================================\n";
 		Log() << "Summary after " << numTrials << (numTrials > 1 ? " trials\n" : " trial\n");
 		Log() << "================================================\n";
 		if (numTrials > 1) {
-			#ifdef AS_LIB
 			if (bestTrialIndex < numTrials - 1) {
-				// Restore Infomap tree to best solution if used as a library
+				// Restore Infomap tree to best solution
 				initTree(bestTree);
+				writeResult(); // Overwrite result to get total elapsed time in output file header
 			}
-			#endif
 
 
 			Log() << std::fixed << std::setprecision(9);
@@ -2048,6 +2048,16 @@ void InfomapBase::writeResult()
 
 }
 
+std::string InfomapBase::getOutputFileHeader()
+{
+	return io::Str() << "# v" << INFOMAP_VERSION << "\n" <<
+		"# ./Infomap " << this->parsedString << "\n" <<
+		"# started at " << m_startDate << "\n" <<
+		"# completed in " << m_elapsedTime.getElapsedTimeInSec() << " s\n" <<
+		"# codelength " << codelength() << " bits\n" <<
+		"# relative codelength savings " << getRelativeCodelengthSavings() << "%";
+}
+
 std::string InfomapBase::writeTree(std::string filename, bool states)
 {
 	std::string outputFilename = filename.empty() ? this->outDirectory + this->outName +
@@ -2078,7 +2088,7 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 	(haveMemory() && states ? "_states.clu" : ".clu") : filename;
 	SafeOutFile outFile(outputFilename);
 	outFile << std::setprecision(9);
-	outFile << "# Codelength = " << m_hierarchicalCodelength << " bits.\n";
+	outFile << getOutputFileHeader() << "\n";
 	outFile << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
 	if (states) {
 		outFile << "# stateId module flow physicalId";
@@ -2227,7 +2237,7 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 {
 	auto oldPrecision = outStream.precision();
 	outStream << std::setprecision(9);
-	outStream << "# Codelength = " << m_hierarchicalCodelength << " bits.\n";
+	outStream << getOutputFileHeader() << "\n";
 	outStream << std::setprecision(6);
 	if (states) {
 		outStream << "# path flow name stateId physicalId";

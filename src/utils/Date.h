@@ -97,7 +97,7 @@ public:
 	friend std::ostream& operator<<(std::ostream& out, const Date& date)
 	{
 		struct std::tm t = *localtime(&date.m_timeOfCreation);
-		return out << "[" <<
+		return out << "" <<
 				(t.tm_year+1900) <<
 				(t.tm_mon < 9 ? "-0" : "-") <<
 				(t.tm_mon+1) <<
@@ -108,7 +108,7 @@ public:
 				(t.tm_min < 10 ? ":0" : ":") <<
 				t.tm_min <<
 				(t.tm_sec < 10 ? ":0" : ":") <<
-				t.tm_sec << "]";
+				t.tm_sec << "";
 	}
 
 	ElapsedTime operator-(const Date& date)
