@@ -1,4 +1,7 @@
 import commits from "./commits.json";
+import Infomap from "./worker.js";
 
-
-export { commits as infomapChangelog };
+export {
+  Infomap as default,
+  commits as infomapChangelog
+};
