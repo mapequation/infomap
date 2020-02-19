@@ -1,8 +1,5 @@
-import { version } from "../../../package.json";
-
-
 class Infomap {
-  static __version__ = version;
+  static __version__ = VERSION;
 
   _events = {
     ondata: () => null,

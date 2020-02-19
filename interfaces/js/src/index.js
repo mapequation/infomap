@@ -1,7 +1,9 @@
 import Infomap from "./infomap.js";
 
 
+const infomapChangelog = CHANGELOG;
+
 export {
   Infomap as default,
-  CHANGELOG as infomapChangelog
+  infomapChangelog
 };

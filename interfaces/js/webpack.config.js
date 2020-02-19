@@ -38,7 +38,7 @@ const webpackConfig = async () => {
     plugins: [
       new DefinePlugin({
         CHANGELOG: JSON.stringify(commits, null, 2),
-        VERSION: version,
+        VERSION: JSON.stringify(version),
       })
     ]
   }
