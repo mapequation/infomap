@@ -1,4 +1,9 @@
-class InfomapWorker {
+import { version } from "../../../package.json";
+
+
+class Infomap {
+  static __version__ = version;
+
   constructor() {
     this._events = {
       ondata: () => null,
@@ -60,4 +65,4 @@ class InfomapWorker {
 }
 
 
-export default InfomapWorker;
+export default Infomap;
