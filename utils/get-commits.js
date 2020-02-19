@@ -10,13 +10,12 @@ function getCommits(from = "", to = "HEAD") {
 
   const gitOpts = { from, to };
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) =>
     gitRawCommits(gitOpts)
       .pipe(conventionalCommitsParser())
       .on("data", (data) => commits.push(data))
       .on("finish", () => resolve(commits))
-      .on("error", reject);
-  });
+      .on("error", reject));
 }
 
 function getCommitWriter(filename) {
