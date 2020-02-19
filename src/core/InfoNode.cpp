@@ -429,7 +429,8 @@ void InfoNode::calcChildDegree()
 	else
 	{
 		m_childDegree = 0;
-		for (auto child : children()) {
+		for (auto& child : children()) {
+			(void)child;
 			++m_childDegree;
 		}
 	}
@@ -452,6 +453,40 @@ void InfoNode::initClean()
 	previous = next = parent = nullptr;
 
 	physicalNodes.clear();
+}
+
+void InfoNode::sortChildrenOnFlow(bool recurse)
+{
+	if (childDegree() == 0)
+		return;
+	std::vector<InfoNode*> nodes(childDegree());
+	double lastFlow = 1.0;
+	bool isSorted = true;
+	unsigned int i = 0;
+	for (InfoNode& child : children()) {
+		if (child.data.flow > lastFlow) {
+			isSorted = false;
+		}
+		nodes[i] = &child;
+		lastFlow = child.data.flow;
+		++i;
+	}
+	if (!isSorted) {
+		std::sort(nodes.begin(), nodes.end(), [](const InfoNode* a, const InfoNode* b) {
+			return b->data.flow < a->data.flow;
+		});
+		releaseChildren();
+		for (auto node : nodes) {
+			addChild(node);
+		}
+	}
+	if (recurse) {
+		for (InfoNode& child : children()) {
+			auto newRoot = child.getInfomapRoot();
+			InfoNode& node = newRoot ? *newRoot : child;
+			node.sortChildrenOnFlow(recurse);
+		}
+	}
 }
 
 unsigned int InfoNode::collapseChildren()

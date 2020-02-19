@@ -253,6 +253,8 @@ public:
 
 	virtual void restoreHardPartition();
 
+	void sortTreeOnFlow();
+
 	virtual void writeResult();
 
 	// ===================================================
