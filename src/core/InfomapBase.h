@@ -24,6 +24,8 @@
 #include "InfoNode.h"
 #include "InfomapIterator.h"
 #include "./ClusterMap.h"
+#include "../utils/Date.h"
+#include "../utils/Stopwatch.h"
 
 namespace infomap {
 
@@ -122,7 +124,7 @@ public:
 
 	virtual double getMetaCodelength(bool unweighted = false) const { return 0.0; }
 
-	virtual double codelength() { return m_hierarchicalCodelength; }
+	virtual double codelength() const { return m_hierarchicalCodelength; }
 
 	virtual double getIndexCodelength() const = 0;
 
@@ -131,6 +133,8 @@ public:
 	double getHierarchicalCodelength() const;
 
 	double getOneLevelCodelength() const { return m_oneLevelCodelength; }
+
+	double getRelativeCodelengthSavings() const { return 100 * (1.0 - codelength() / getOneLevelCodelength()); }
 
 	bool isFullNetwork() { return m_isMain && m_aggregationLevel == 0; }
 	bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
@@ -375,6 +379,8 @@ public:
 	// Output: *
 	// ===================================================
 
+	std::string getOutputFileHeader();
+
 	/**
 	 * Write tree to a .tree file.
 	 * @param filename the filename for the output file. If empty, use default
@@ -477,6 +483,10 @@ protected:
 	unsigned int m_aggregationLevel = 0;
 
 	double m_hierarchicalCodelength = 0.0;
+
+	Date m_startDate;
+	Date m_endDate;
+	Stopwatch m_elapsedTime = Stopwatch(false);
 };
 
 
