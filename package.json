@@ -30,7 +30,7 @@
       },
       {
         "filename": "src/io/version.cpp",
-        "updater": "update-version-cpp.js"
+        "updater": "utils/update-version-cpp.js"
       }
     ]
   }
