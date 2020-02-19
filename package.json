@@ -20,6 +20,8 @@
   },
   "homepage": "https://www.mapequation.org/infomap",
   "devDependencies": {
+    "conventional-commits-parser": "^3.0.8",
+    "git-raw-commits": "^2.0.3",
     "standard-version": "^7.1.0"
   },
   "standard-version": {
