@@ -48,9 +48,6 @@
         "filename": "src/io/version.cpp",
         "updater": "utils/update-version-cpp.js"
       }
-    ],
-    "scripts": {
-      "postbump": "node utils/get-commits.js"
-    }
+    ]
   }
 }
