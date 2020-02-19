@@ -22,7 +22,7 @@ class Infomap {
       args
     });
 
-    worker.onmessage = this.onmessage();
+    worker.onmessage = this.onmessage;
     worker.onerror = err => err.preventDefault();
 
     return this;
@@ -36,25 +36,23 @@ class Infomap {
     return this;
   }
 
-  onmessage() {
-    return (event) => {
-      const { ondata, onerror, onfinished } = this._events;
-      const { data } = event;
-      const { target } = data;
+  onmessage = (event) => {
+    const { ondata, onerror, onfinished } = this._events;
+    const { data } = event;
+    const { target } = data;
 
-      if (target === "stdout") {
-        ondata(data.content);
-      } else if (target === "stderr") {
-        this.worker = null;
-        onerror(data.content);
-      } else if (target === "finished") {
-        this.cleanup();
-        onfinished(data.output);
-      } else {
-        throw new Error(`Unknown target on message from worker: ${data}`);
-      }
-    };
-  }
+    if (target === "stdout") {
+      ondata(data.content);
+    } else if (target === "stderr") {
+      this.worker = null;
+      onerror(data.content);
+    } else if (target === "finished") {
+      this.cleanup();
+      onfinished(data.output);
+    } else {
+      throw new Error(`Unknown target on message from worker: ${data}`);
+    }
+  };
 
   cleanup() {
     if (this.worker && this.worker.terminate) {
