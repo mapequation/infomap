@@ -384,6 +384,7 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 				bestNumLevels = printPerLevelCodelength(bestSolutionStatistics);
 				bestHierarchicalCodelength = m_hierarchicalCodelength;
 				bestTrialIndex = i;
+				sortTreeOnFlow();
 				writeResult();
 				#ifdef AS_LIB
 				if (numTrials > 1) {
@@ -1943,6 +1944,12 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 // ===================================================
 // Write output
 // ===================================================
+
+void InfomapBase::sortTreeOnFlow()
+{
+	root().sortChildrenOnFlow();
+}
+
 
 void InfomapBase::writeResult()
 {

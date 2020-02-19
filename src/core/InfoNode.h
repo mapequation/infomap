@@ -386,6 +386,8 @@ public:
 	 */
 	void initClean();
 
+	void sortChildrenOnFlow(bool recurse = true);
+
 	/**
 	 * Release the children and store the child pointers for later expansion
 	 * @return the number of children collapsed
