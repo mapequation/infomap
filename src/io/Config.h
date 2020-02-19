@@ -163,7 +163,6 @@ struct Config
 	bool printStateNetwork = false;
 	bool printBinaryTree = false;
 	bool printBinaryFlowTree = false; // tree including horizontal links (hierarchical network)
-	bool printExpanded = false; // Print the expanded network of memory nodes if possible
 	bool noFileOutput = false;
 	unsigned int verbosity = 0;
 	unsigned int verboseNumberPrecision = 9;
@@ -272,7 +271,6 @@ struct Config
 		printStateNetwork(other.printStateNetwork),
 		printBinaryTree(other.printBinaryTree),
 		printBinaryFlowTree(other.printBinaryFlowTree),
-		printExpanded(other.printExpanded),
 		noFileOutput(other.noFileOutput),
 		verbosity(other.verbosity),
 		verboseNumberPrecision(other.verboseNumberPrecision),
@@ -372,7 +370,6 @@ struct Config
 		printStateNetwork = other.printStateNetwork;
 		printBinaryTree = other.printBinaryTree;
 		printBinaryFlowTree = other.printBinaryFlowTree;
-		printExpanded = other.printExpanded;
 		noFileOutput = other.noFileOutput;
 		verbosity = other.verbosity;
 		verboseNumberPrecision = other.verboseNumberPrecision;
@@ -471,7 +468,6 @@ struct Config
 		// printStateNetwork = other.printStateNetwork;
 		// printBinaryTree = other.printBinaryTree;
 		// printBinaryFlowTree = other.printBinaryFlowTree;
-		// printExpanded = other.printExpanded;
 		// noFileOutput = other.noFileOutput;
 		verbosity = other.verbosity;
 		verboseNumberPrecision = other.verboseNumberPrecision;
