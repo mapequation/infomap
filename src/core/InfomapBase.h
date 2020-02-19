@@ -401,11 +401,11 @@ public:
 	 * based on output directory and input file name
 	 * @param states if memory network, print the state-level network without merging physical nodes within modules
 	 * @param moduleIndexLevel the depth from the root on which to advance module index.
-	 * Value 1 will give the module index on the coarsest level, 2 the level below and so on. Default
-	 * value -1 will give the module index for the lowest level, i.e. the finest modular structure.
+	 * Value 1 (default) will give the module index on the coarsest level, 2 the level below and so on.
+	 * Value -1 will give the module index for the lowest level, i.e. the finest modular structure.
 	 * @return the filename written to
 	 */
-	std::string writeClu(std::string filename = "", bool states = false, int moduleIndexLevel = -1);
+	std::string writeClu(std::string filename = "", bool states = false, int moduleIndexLevel = 1);
 
 	/**
 	 * Write modular network to a .map file.
