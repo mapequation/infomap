@@ -1,11 +1,13 @@
 const path = require("path");
 const DefinePlugin = require("webpack").DefinePlugin;
 const { getCommits } = require("../../utils/get-commits.js");
+const { getParameters } = require("../../utils/get-parameters.js");
 const { version } = require("../../package.json");
 
 
 const webpackConfig = async () => {
   const commits = await getCommits("2d94e92");
+  const parameters = await getParameters("./Infomap");
 
   return {
     mode: "production",
@@ -39,6 +41,7 @@ const webpackConfig = async () => {
       new DefinePlugin({
         CHANGELOG: JSON.stringify(commits, null, 2),
         VERSION: JSON.stringify(version),
+        PARAMETERS: JSON.stringify(parameters, null, 2),
       })
     ]
   }
