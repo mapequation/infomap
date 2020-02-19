@@ -30,8 +30,9 @@ class Infomap {
 
   on(event, callback) {
     if (event === "data") this._events.ondata = callback;
-    if (event === "error") this._events.onerror = callback;
-    if (event === "finished") this._events.onfinished = callback;
+    else if (event === "error") this._events.onerror = callback;
+    else if (event === "finished") this._events.onfinished = callback;
+    else console.warn(`Unhandled event: ${event}`);
 
     return this;
   }
