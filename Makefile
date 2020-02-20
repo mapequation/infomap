@@ -65,14 +65,14 @@ js: build/js/Infomap.js
 
 js-worker: build/js/$(WORKER_FILENAME)
 	@echo "Built $^"
-	cp build/js/infomap.worker.* interfaces/js/src/worker/
+	cp build/js/* interfaces/js/src/worker/
 
 # em++ -O0 -s PROXY_TO_WORKER=1 -s PROXY_TO_WORKER_FILENAME='Infomap.js' -o Infomap.js $^
 # em++ -O0 -s PROXY_TO_WORKER=1 -s EXPORT_NAME='Infomap' -s MODULARIZE=1 -o Infomap.js $^
 build/js/infomap.worker.js: $(SOURCES) $(PRE_WORKER_MODULE)
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
-	em++ -std=c++14 -O0 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 -s ENVIRONMENT=web,worker --pre-js $(PRE_WORKER_MODULE) -o build/js/$(WORKER_FILENAME) $(SOURCES)
+	em++ -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 -s ENVIRONMENT=worker --pre-js $(PRE_WORKER_MODULE) -o build/js/$(WORKER_FILENAME) $(SOURCES)
 
 build/js/Infomap.js: $(SOURCES)
 	@echo "Compiling Infomap for Node.js..."
