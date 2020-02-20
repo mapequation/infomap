@@ -7,33 +7,33 @@ function readFile(filename) {
 }
 
 var Module = {};
+var id;
 
 Module["preRun"] = function infomap_preRun() {
-  console.log("Pre-run: adding 'filesReady' as run dependency...");
   addRunDependency("filesReady");
 };
 
 Module["postRun"] = function infomap_postRun() {
-  console.log("Post-run: Read result...");
-  var output = {};
+  var content = {};
   var clu = readFile("network.clu");
-  if (clu) output.clu = clu;
+  if (clu) content.clu = clu;
   var tree = readFile("network.tree");
-  if (tree) output.tree = tree;
+  if (tree) content.tree = tree;
   var ftree = readFile("network.ftree");
-  if (ftree) output.ftree = ftree;
-  postMessage({ target: "finished", output: output });
+  if (ftree) content.ftree = ftree;
+  postMessage({ type: "finished", content: content, id: id });
 };
 
 Module["print"] = function Module_print(x) {
-  postMessage({ target: "stdout", content: x });
+  postMessage({ type: "stdout", content: x, id: id });
 };
 Module["printErr"] = function Module_printErr(x) {
-  postMessage({ target: "stderr", content: x });
+  postMessage({ type: "stderr", content: x, id: id });
 };
 
 onmessage = function onmessage(message) {
   var data = message.data;
+  id = data.id;
   if (data.target === "Infomap") {
     var args = [data.inputFilename, "."];
     if (data.arguments) args = args.concat(data.arguments);
