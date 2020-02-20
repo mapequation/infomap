@@ -1,13 +1,14 @@
 {
-  "name": "infomap",
-  "version": "1.0.0",
+  "name": "@mapequation/infomap",
+  "version": "0.0.4",
   "description": "",
   "main": "interfaces/js/dist/index.js",
   "publishConfig": {
-    "access": "private"
+    "access": "public"
   },
   "files": [
-    "interfaces/js/dist/index.js"
+    "interfaces/js/dist/index.js",
+    "interfaces/js/dist/*.worker.js"
   ],
   "scripts": {
     "watch": "webpack --watch --config interfaces/js/webpack.config.js",
@@ -36,7 +37,8 @@
     "git-raw-commits": "^2.0.3",
     "standard-version": "^7.1.0",
     "webpack": "^4.41.6",
-    "webpack-cli": "^3.3.11"
+    "webpack-cli": "^3.3.11",
+    "worker-loader": "^2.0.0"
   },
   "standard-version": {
     "bumpFiles": [

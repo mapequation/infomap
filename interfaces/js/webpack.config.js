@@ -24,8 +24,14 @@ const webpackConfig = async () => {
     module: {
       rules: [
         {
+          test: /\.worker\.js$/,
+          use: {
+            loader: "worker-loader"
+          }
+        },
+        {
           test: /\.js$/,
-          exclude: /(node_modules)/,
+          exclude: /(node_modules|utils|worker)/,
           use: {
             loader: "babel-loader",
             options: {

@@ -1,3 +1,5 @@
+import InfomapWorker from "./worker/infomap.worker.js";
+
 class Infomap {
   static __version__ = VERSION;
 
@@ -19,7 +21,7 @@ class Infomap {
       throw new Error("args must be a string");
     }
 
-    const worker = new Worker("Infomap-worker.js");
+    const worker = new InfomapWorker();
     const id = this._workerId++;
     this._workers[id] = worker;
     const defaultFilename = "network.net";
@@ -33,7 +35,10 @@ class Infomap {
     });
 
     worker.onmessage = this.onmessage;
-    worker.onerror = err => err.preventDefault();
+    worker.onerror = err => {
+      err.preventDefault();
+      console.error(err.message);
+    };
 
     return id;
   }

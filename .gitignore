@@ -36,4 +36,5 @@ __pycache__
 .DS_Store
 node_modules
 interfaces/js/dist
+interfaces/js/src/worker
 
