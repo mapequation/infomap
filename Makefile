@@ -57,18 +57,21 @@ debug: clean Infomap
 
 .PHONY: js js-worker
 
+PRE_WORKER_MODULE := interfaces/js/pre-worker-module.js
+
 js: build/js/Infomap.js
 	@echo "Built $^"
 
 js-worker: build/js/Infomap-worker.js
 	@echo "Built $^"
+	cp build/js/Infomap-worker.* interfaces/js/dist/
 
 # em++ -O0 -s PROXY_TO_WORKER=1 -s PROXY_TO_WORKER_FILENAME='Infomap.js' -o Infomap.js $^
 # em++ -O0 -s PROXY_TO_WORKER=1 -s EXPORT_NAME='Infomap' -s MODULARIZE=1 -o Infomap.js $^
-build/js/Infomap-worker.js: $(SOURCES)
+build/js/Infomap-worker.js: $(SOURCES) $(PRE_WORKER_MODULE)
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
-	em++ -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 --pre-js interfaces/js/pre-worker-module.js -o build/js/Infomap-worker.js $^
+	em++ -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 --pre-js $(PRE_WORKER_MODULE) -o build/js/Infomap-worker.js $(SOURCES)
 
 build/js/Infomap.js: $(SOURCES)
 	@echo "Compiling Infomap for Node.js..."
