@@ -20,6 +20,8 @@ Module["postRun"] = function infomap_postRun() {
   if (clu) output.clu = clu;
   var tree = readFile("network.tree");
   if (tree) output.tree = tree;
+  var ftree = readFile("network.ftree");
+  if (ftree) output.ftree = ftree;
   postMessage({ target: "finished", output: output });
 };
 
