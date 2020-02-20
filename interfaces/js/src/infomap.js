@@ -80,5 +80,16 @@ class Infomap {
   }
 }
 
+function testInfomap() {
+  const network =
+    "#source target [weight]\n 1 2\n 1 3\n 1 4\n 2 1\n 2 3\n 3 2\n 3 1\n 4 1\n 4 5\n 4 6\n 5 4\n 5 6\n 6 5\n 6 4";
+
+  const infomap = new Infomap()
+    .on("data", data => console.log(data, i))
+    .on("error", err => console.warn(err))
+    .on("finished", data => console.log(data));
+
+  infomap.run(network);
+}
 
 export default Infomap;
