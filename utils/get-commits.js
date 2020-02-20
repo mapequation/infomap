@@ -17,4 +17,4 @@ function getCommits(from = "", to = "HEAD") {
   );
 }
 
-module.exports = { getCommits };
+module.exports = getCommits;

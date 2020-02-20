@@ -11,4 +11,4 @@ function getParameters(infomapBin) {
   });
 }
 
-module.exports = { getParameters };
+module.exports = getParameters;
