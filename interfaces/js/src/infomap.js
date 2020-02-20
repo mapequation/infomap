@@ -8,16 +8,16 @@ class Infomap {
   };
 
   run(network, args = "") {
-    const worker = (this.worker = new Worker("Infomap-worker.js"));
-    const defaultFilename = "network.net";
-
-    if (typeof(network) !== "string") {
+    if (typeof network !== "string") {
       throw new Error("network must be a string");
     }
 
-    if (typeof(args) !== "string") {
+    if (typeof args !== "string") {
       throw new Error("args must be a string");
     }
+
+    const worker = (this.worker = new Worker("Infomap-worker.js"));
+    const defaultFilename = "network.net";
 
     worker.postMessage({
       target: "Infomap",
@@ -28,8 +28,6 @@ class Infomap {
 
     worker.onmessage = this.onmessage;
     worker.onerror = err => err.preventDefault();
-
-    return this;
   }
 
   on(event, callback) {
@@ -44,18 +42,20 @@ class Infomap {
   onmessage = event => {
     const { ondata, onerror, onfinished } = this._events;
     const { data } = event;
-    const { target } = data;
+    const { type, content } = data;
 
-    if (target === "stdout") {
-      ondata(data.content);
-    } else if (target === "stderr") {
-      this.worker = null;
-      onerror(data.content);
-    } else if (target === "finished") {
+    if (type === "data") {
+      ondata(content);
+    } else if (type === "error") {
       this.cleanup();
-      onfinished(data.output);
+      onerror(content);
+    } else if (type === "finished") {
+      this.cleanup();
+      onfinished(content);
     } else {
-      throw new Error(`Unknown target on message from worker: ${data}`);
+      throw new Error(
+        `Unknown target on message from worker: ${JSON.stringify(data)}`
+      );
     }
   };
 
