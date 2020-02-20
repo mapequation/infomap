@@ -26,7 +26,11 @@ const webpackConfig = async () => {
         {
           test: /\.worker\.js$/,
           use: {
-            loader: "worker-loader"
+            loader: "worker-loader",
+            options: {
+              inline: true,
+              fallback: false
+            }
           }
         },
         {

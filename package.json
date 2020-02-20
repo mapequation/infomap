@@ -1,14 +1,13 @@
 {
   "name": "@mapequation/infomap",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "",
   "main": "interfaces/js/dist/index.js",
   "publishConfig": {
     "access": "public"
   },
   "files": [
-    "interfaces/js/dist/index.js",
-    "interfaces/js/dist/*.worker.js"
+    "interfaces/js/dist/index.js"
   ],
   "scripts": {
     "watch": "webpack --watch --config interfaces/js/webpack.config.js",
