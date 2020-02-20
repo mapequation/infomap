@@ -7,14 +7,23 @@ class Infomap {
     onfinished: () => null
   };
 
-  run(filename, data, args) {
+  run(network, args = "") {
     const worker = (this.worker = new Worker("Infomap-worker.js"));
+    const defaultFilename = "network.net";
+
+    if (typeof(network) !== "string") {
+      throw new Error("network must be a string");
+    }
+
+    if (typeof(args) !== "string") {
+      throw new Error("args must be a string");
+    }
 
     worker.postMessage({
       target: "Infomap",
-      inputFilename: filename,
-      inputData: data,
-      arguments: args
+      inputFilename: defaultFilename,
+      inputData: network,
+      arguments: args.split()
     });
 
     worker.onmessage = this.onmessage;
