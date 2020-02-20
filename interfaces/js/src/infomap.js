@@ -8,7 +8,7 @@ class Infomap {
   };
 
   run(filename, data, args) {
-    const worker = this.worker = new Worker("Infomap-worker.js");
+    const worker = (this.worker = new Worker("Infomap-worker.js"));
 
     worker.postMessage({
       target: "Infomap",
@@ -32,7 +32,7 @@ class Infomap {
     return this;
   }
 
-  onmessage = (event) => {
+  onmessage = event => {
     const { ondata, onerror, onfinished } = this._events;
     const { data } = event;
     const { target } = data;
