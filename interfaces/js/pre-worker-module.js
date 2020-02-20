@@ -6,16 +6,18 @@ function readFile(filename) {
   return content;
 }
 
+var infomapWorkerId = -1;
+
 var Module = {
   arguments: [],
   preRun: function() {
     addRunDependency("filesReady");
   },
   print: function(content) {
-    postMessage({ type: "data", content });
+    postMessage({ type: "data", content, id: infomapWorkerId });
   },
   printErr: function(content) {
-    postMessage({ type: "error", content });
+    postMessage({ type: "error", content, id: infomapWorkerId });
   },
   postRun: function() {
     var content = {};
@@ -25,7 +27,7 @@ var Module = {
     if (tree) content.tree = tree;
     var ftree = readFile("network.ftree");
     if (ftree) content.ftree = ftree;
-    postMessage({ type: "finished", content });
+    postMessage({ type: "finished", content, id: infomapWorkerId });
   }
 };
 
@@ -33,6 +35,7 @@ onmessage = function onmessage(message) {
   var data = message.data;
 
   if (data.target === "Infomap") {
+    infomapWorkerId = data.id;
     var args = [data.inputFilename, "."];
     if (data.arguments) args = args.concat(data.arguments);
     Module.arguments.push(...args);
