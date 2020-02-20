@@ -1,7 +1,7 @@
 const path = require("path");
 const DefinePlugin = require("webpack").DefinePlugin;
-const getCommits = require("../../utils/get-commits.js");
-const getParameters = require("../../utils/get-parameters.js");
+const getCommits = require("./get-commits.js");
+const getParameters = require("./get-parameters.js");
 const version = require("../../package.json").version;
 
 const webpackConfig = async () => {
