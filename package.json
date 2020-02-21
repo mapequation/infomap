@@ -1,9 +1,17 @@
 {
-  "name": "infomap",
-  "version": "1.0.0",
+  "name": "@mapequation/infomap",
+  "version": "1.0.0-beta.58",
   "description": "",
-  "main": "interfaces/js/index.js",
+  "browser": "dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist/index.js"
+  ],
   "scripts": {
+    "watch": "webpack --watch --config interfaces/js/webpack.config.js",
+    "build": "webpack --config interfaces/js/webpack.config.js",
     "release": "standard-version"
   },
   "repository": {
@@ -20,9 +28,17 @@
   },
   "homepage": "https://www.mapequation.org/infomap",
   "devDependencies": {
+    "@babel/core": "^7.8.4",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/preset-env": "^7.8.4",
+    "arraybuffer-loader": "^1.0.8",
+    "babel-loader": "^8.0.6",
     "conventional-commits-parser": "^3.0.8",
     "git-raw-commits": "^2.0.3",
-    "standard-version": "^7.1.0"
+    "raw-loader": "^4.0.0",
+    "standard-version": "^7.1.0",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11"
   },
   "standard-version": {
     "bumpFiles": [

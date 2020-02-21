@@ -55,26 +55,32 @@ debug: clean Infomap
 # JavaScript through Emscripten
 ##################################################
 
-.PHONY: js js-worker
+.PHONY: js js-worker js-clean
+
+WORKER_FILENAME := infomap.worker.js
+PRE_WORKER_MODULE := interfaces/js/pre-worker-module.js
 
 js: build/js/Infomap.js
 	@echo "Built $^"
 
-js-worker: build/js/Infomap-worker.js
+js-worker: build/js/$(WORKER_FILENAME) Infomap
 	@echo "Built $^"
+	@mkdir -p interfaces/js/src/worker
+	cp build/js/* interfaces/js/src/worker/
+	npm run build
 
-# em++ -O0 -s PROXY_TO_WORKER=1 -s PROXY_TO_WORKER_FILENAME='Infomap.js' -o Infomap.js $^
-# em++ -O0 -s PROXY_TO_WORKER=1 -s EXPORT_NAME='Infomap' -s MODULARIZE=1 -o Infomap.js $^
-build/js/Infomap-worker.js: $(SOURCES)
+build/js/infomap.worker.js: $(SOURCES) $(PRE_WORKER_MODULE)
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
-	em++ -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 --pre-js interfaces/js/pre-worker-module.js -o build/js/Infomap-worker.js $^
+	em++ -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 -s ENVIRONMENT=worker --pre-js $(PRE_WORKER_MODULE) -o build/js/$(WORKER_FILENAME) $(SOURCES)
 
 build/js/Infomap.js: $(SOURCES)
 	@echo "Compiling Infomap for Node.js..."
 	@mkdir -p $(dir $@)
 	em++ -O0 -o build/js/Infomap.js $^
 
+js-clean:
+	$(RM) -r build/js interfaces/js/src/worker/* dist/*
 
 ##################################################
 # Static C++ library
