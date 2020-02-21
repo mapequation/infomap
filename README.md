@@ -5,7 +5,7 @@ Infomap is a network clustering algorithm based on the
 
 For more info, see [www.mapequation.org](http://www.mapequation.org).
 
-For a list of recent feature updates, see CHANGELOG.md in the source directory.
+For a list of recent changes, see [CHANGELOG.md](CHANGELOG.md) in the source directory.
 
 ## Getting started
 
@@ -58,12 +58,12 @@ npm install @mapequation/infomap
 
 ## Authors
 
-Daniel Edler, Martin Rosvall
+Daniel Edler, Anton Eriksson, Martin Rosvall
 
 For contact information, see http://www.mapequation.org/about
 
 
-##Terms of use
+## Terms of use
 
 Infomap is released under a dual licence.
 
