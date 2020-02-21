@@ -1,6 +1,6 @@
 {
   "name": "@mapequation/infomap",
-  "version": "1.0.0-beta.58",
+  "version": "1.0.0-beta.59",
   "description": "",
   "browser": "dist/index.js",
   "publishConfig": {
