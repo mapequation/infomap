@@ -8,6 +8,16 @@ function readFile(filename) {
 
 var infomapWorkerId = -1;
 
+var memoryHackRequest = {
+  status: 200,
+  useRequest: null,
+  addEventListener: function(event, callback) {
+    if (event === "load") {
+      this.useRequest = callback;
+    }
+  }
+};
+
 var Module = {
   arguments: [],
   preRun: function() {
@@ -28,13 +38,16 @@ var Module = {
     var ftree = readFile("network.ftree");
     if (ftree) content.ftree = ftree;
     postMessage({ type: "finished", content, id: infomapWorkerId });
-  }
+  },
+  memoryInitializerRequest: memoryHackRequest
 };
 
 onmessage = function onmessage(message) {
   var data = message.data;
 
   if (data.target === "Infomap") {
+    memoryHackRequest.response = data.memBuffer;
+    memoryHackRequest.useRequest();
     infomapWorkerId = data.id;
     var args = [data.inputFilename, "."];
     if (data.arguments) args = args.concat(data.arguments);

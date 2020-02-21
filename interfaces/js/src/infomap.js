@@ -1,4 +1,5 @@
 import InfomapWorker from "./worker/infomap.worker.js";
+import MemFile from "./worker/infomap.worker.js.mem";
 
 class Infomap {
   static __version__ = VERSION;
@@ -12,6 +13,16 @@ class Infomap {
   _workerId = 0;
   _workers = {};
 
+  initWorkerUrl() {
+    if (this._workerUrl) return;
+    const blob = new Blob([InfomapWorker], { type: "application/javascript" });
+    this._workerUrl = URL.createObjectURL(blob);
+  }
+
+  revokeWorkerUrl() {
+    if (this._workerUrl) URL.revokeObjectURL(this._workerUrl);
+  }
+
   run(network, args = "") {
     if (typeof network !== "string") {
       throw new Error("network must be a string");
@@ -21,12 +32,18 @@ class Infomap {
       throw new Error("args must be a string");
     }
 
-    const worker = new InfomapWorker();
+    if (!this._workerUrl) {
+      this.initWorkerUrl();
+    }
+
+    const worker = new Worker(this._workerUrl);
+
     const id = this._workerId++;
     this._workers[id] = worker;
     const defaultFilename = "network.net";
 
     worker.postMessage({
+      memBuffer: new Uint8Array(MemFile),
       target: "Infomap",
       inputFilename: defaultFilename,
       inputData: network,
@@ -37,7 +54,7 @@ class Infomap {
     worker.onmessage = this.onmessage;
     worker.onerror = err => {
       err.preventDefault();
-      console.error(err.message);
+      _events.onerror(err.message, id);
     };
 
     return id;

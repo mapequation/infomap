@@ -1,6 +1,6 @@
 {
   "name": "@mapequation/infomap",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "",
   "main": "interfaces/js/dist/index.js",
   "publishConfig": {
@@ -31,13 +31,14 @@
     "@babel/core": "^7.8.4",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
     "@babel/preset-env": "^7.8.4",
+    "arraybuffer-loader": "^1.0.8",
     "babel-loader": "^8.0.6",
     "conventional-commits-parser": "^3.0.8",
     "git-raw-commits": "^2.0.3",
+    "raw-loader": "^4.0.0",
     "standard-version": "^7.1.0",
     "webpack": "^4.41.6",
-    "webpack-cli": "^3.3.11",
-    "worker-loader": "^2.0.0"
+    "webpack-cli": "^3.3.11"
   },
   "standard-version": {
     "bumpFiles": [

@@ -26,11 +26,13 @@ const webpackConfig = async () => {
         {
           test: /\.worker\.js$/,
           use: {
-            loader: "worker-loader",
-            options: {
-              inline: true,
-              fallback: false
-            }
+            loader: "raw-loader"
+          }
+        },
+        {
+          test: /\.mem$/,
+          use: {
+            loader: "arraybuffer-loader"
           }
         },
         {
