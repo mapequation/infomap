@@ -35,6 +35,6 @@ tmp
 __pycache__
 .DS_Store
 node_modules
-interfaces/js/dist
+dist
 interfaces/js/src/worker
 

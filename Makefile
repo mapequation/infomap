@@ -65,6 +65,7 @@ js: build/js/Infomap.js
 
 js-worker: build/js/$(WORKER_FILENAME)
 	@echo "Built $^"
+	@mkdir -p interfaces/js/src/worker
 	cp build/js/* interfaces/js/src/worker/
 
 # em++ -O0 -s PROXY_TO_WORKER=1 -s PROXY_TO_WORKER_FILENAME='Infomap.js' -o Infomap.js $^
@@ -80,7 +81,7 @@ build/js/Infomap.js: $(SOURCES)
 	em++ -O0 -o build/js/Infomap.js $^
 
 js-clean:
-	$(RM) -r build/js interfaces/js/src/worker/* interfaces/js/dist/*.js
+	$(RM) -r build/js interfaces/js/src/worker/* dist/*.js
 
 ##################################################
 # Static C++ library
