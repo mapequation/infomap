@@ -5,9 +5,10 @@ Infomap is a network clustering algorithm based on the
 
 For more info, see [www.mapequation.org](http://www.mapequation.org).
 
+For a list of recent feature updates, see CHANGELOG.md in the source directory.
 
-Getting started:
---------------------------------------------------------
+## Getting started
+
 In a terminal with the GNU Compiler Collection installed,
 just run `make` in the current directory to compile the
 code with the included `Makefile`. Call `./Infomap` to run.
@@ -21,26 +22,54 @@ See the `examples` folder for examples.
 We also include an [IPython notebook](examples/python/infomap-examples.ipynb)
 with the examples that can be viewed online.
 
+### Using Pip
+
+Infomap is available on the Python Package Index PyPi. To install, run
+```
+pip install infomap
+```
+
+To upgrade, run
+```
+pip install --upgrade infomap
+```
+
+When the Python infomap package is installed, a binary called `infomap` is
+available on the command line from any directory.
+
+### Using Git
+
+To download and compile the newest version from Github, clone the repository
+by running
+```
+git clone git@github.com:mapequation/infomap.git
+cd infomap
+make
+```
+
+### Using NPM
+
+An experimental web worker implementation is available on NPM.
+To install it, run
+```
+npm install @mapequation/infomap
+```
 
 
-Authors:
---------------------------------------------------------
-Daniel Edler
-Martin Rosvall
+## Authors
 
-For contact information, see 
-http://www.mapequation.org/about
+Daniel Edler, Martin Rosvall
 
-For a list of recent feature updates, see
-CHANGES.txt in the source directory.
+For contact information, see http://www.mapequation.org/about
 
-Terms of use:
---------------------------------------------------------
-The Infomap software is released under a dual licence.
 
-To give everyone maximum freedom to make use of Infomap 
-and derivative works, we make the code open source under 
-the GNU Affero General Public License version 3 or any 
+##Terms of use
+
+Infomap is released under a dual licence.
+
+To give everyone maximum freedom to make use of Infomap
+and derivative works, we make the code open source under
+the GNU Affero General Public License version 3 or any
 later version (see LICENSE_AGPLv3.txt.)
 
 For a non-copyleft license, please contact us.
