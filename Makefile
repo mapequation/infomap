@@ -63,13 +63,12 @@ PRE_WORKER_MODULE := interfaces/js/pre-worker-module.js
 js: build/js/Infomap.js
 	@echo "Built $^"
 
-js-worker: build/js/$(WORKER_FILENAME)
+js-worker: build/js/$(WORKER_FILENAME) Infomap
 	@echo "Built $^"
 	@mkdir -p interfaces/js/src/worker
 	cp build/js/* interfaces/js/src/worker/
+	npm run build
 
-# em++ -O0 -s PROXY_TO_WORKER=1 -s PROXY_TO_WORKER_FILENAME='Infomap.js' -o Infomap.js $^
-# em++ -O0 -s PROXY_TO_WORKER=1 -s EXPORT_NAME='Infomap' -s MODULARIZE=1 -o Infomap.js $^
 build/js/infomap.worker.js: $(SOURCES) $(PRE_WORKER_MODULE)
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
@@ -81,7 +80,7 @@ build/js/Infomap.js: $(SOURCES)
 	em++ -O0 -o build/js/Infomap.js $^
 
 js-clean:
-	$(RM) -r build/js interfaces/js/src/worker/* dist/*.js
+	$(RM) -r build/js interfaces/js/src/worker/* dist/*
 
 ##################################################
 # Static C++ library
