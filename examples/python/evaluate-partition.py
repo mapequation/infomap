@@ -19,26 +19,26 @@ im.add_link(6, 7)
 
 # Three modules, with the chain in it's own module
 partition1 = {
-	0: 0,
-	1: 0,
-	2: 0,
-	3: 1,
-	4: 1,
-	5: 2,
-	6: 2,
-	7: 2,
+    0: 0,
+    1: 0,
+    2: 0,
+    3: 1,
+    4: 1,
+    5: 2,
+    6: 2,
+    7: 2,
 }
 
 # Only two modules, splitting the chain in the middle
 partition2 = {
-	0: 0,
-	1: 0,
-	2: 0,
-	3: 0,
-	4: 2,
-	5: 2,
-	6: 2,
-	7: 2,
+    0: 0,
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 2,
+    5: 2,
+    6: 2,
+    7: 2,
 }
 
 im.set_initial_partition(partition1).run("--no-infomap")

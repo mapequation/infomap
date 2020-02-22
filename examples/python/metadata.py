@@ -39,5 +39,4 @@ print(f" - Meta codelength = eta ({eta}) * meta entropy ({Hmeta})")
 
 print("\n#node module meta")
 for node in im.leaf_nodes:
-	print(f"{node.node_id} {node.module_id} {node.meta_data}")
-
+    print(f"{node.node_id} {node.module_id} {node.meta_data}")

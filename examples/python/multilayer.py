@@ -13,5 +13,4 @@ print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
 
 print("\n#layer_id node_id module_id:")
 for node in im.leaf_nodes:
-	print(f"{node.layer_id} {node.node_id} {node.module_id}")
-
+    print(f"{node.layer_id} {node.node_id} {node.module_id}")

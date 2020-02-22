@@ -7,7 +7,8 @@ filename = f"../../{name}.net"
 # Use the --input flag to read network from file directly
 im = infomap.Infomap(f"--input {filename}")
 
-# You can also read a network with the method below, which by default will accumulate to existing network data
+# You can also read a network with the method below,
+# which by default will accumulate to existing network data
 # accumulate = False
 # im.read_file(filename, accumulate)
 
