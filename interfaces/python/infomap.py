@@ -55,11 +55,11 @@ class Infomap(InfomapWrapper):
   @property
   def initial_partition(self):
     return super().getInitialPartition()
-  
+
   @initial_partition.setter
   def initial_partition(self, module_ids):
     super().setInitialPartition(module_ids)
-  
+
   @contextmanager
   def _initial_partition(self, partition):
     old_partition = self.initial_partition
@@ -69,13 +69,18 @@ class Infomap(InfomapWrapper):
     finally:
         self.initial_partition = old_partition
 
-  def run(self, args="", initial_partition=None):
+  def run(self, args="", initial_partition=None, no_infomap=False):
+    old_no_infomap = self.no_infomap
+    self.no_infomap = no_infomap
+
     if initial_partition:
       with self._initial_partition(initial_partition):
         super().run(args)
     else:
       super().run(args)
-  
+
+    self.no_infomap = old_no_infomap
+
 
   def get_modules(self, depth_level=1, states=False):
     return super().getModules(depth_level, states)
@@ -161,5 +166,14 @@ class Infomap(InfomapWrapper):
   def write_flow_tree(self, filename = "", states = False):
     return self.writeFlowTree(filename, states)
 
-  def set_no_infomap(self, value=True):
-    return self.setNoInfomap(value)
+  @property
+  def no_infomap(self):
+      return self._no_infomap
+
+  @no_infomap.setter
+  def no_infomap(self, no_infomap):
+      self._no_infomap = no_infomap
+      return self.setNoInfomap(no_infomap)
+
+  def set_no_infomap(self, no_infomap=True):
+    self.no_infomap = no_infomap
