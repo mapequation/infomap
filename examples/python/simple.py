@@ -36,6 +36,6 @@ for node, module in im.modules:
 
 print("\n#node_id module_id path depth child_index flow:")
 for node in im.leaf_nodes:
-  print(node.node_id, node.module_id, node.path, node.depth, node.child_index, node.data.flow)
+  print(node.node_id, node.module_id, node.path, node.depth, node.child_index, node.flow)
 
 print("\nDone!")

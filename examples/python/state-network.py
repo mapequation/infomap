@@ -57,7 +57,7 @@ print("#node_id module_id")
 for node in im.physical_tree:
     if node.is_leaf:
         print(f"{node.node_id} {node.module_id}")
-        
+
 # for node in im.physical_leaf_nodes:
 #     print(f"{node.node_id} {node.module_id}")
 
