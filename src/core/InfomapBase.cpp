@@ -2091,9 +2091,9 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 	outFile << getOutputFileHeader() << "\n";
 	outFile << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
 	if (states) {
-		outFile << "# stateId module flow id";
+		outFile << "# state_id module flow node_id";
 		if (this->isMultilayerNetwork())
-			outFile << " layerId";
+			outFile << " layer_id";
 		outFile << "\n";
 	}
 	else {
@@ -2240,13 +2240,13 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 	outStream << getOutputFileHeader() << "\n";
 	outStream << std::setprecision(6);
 	if (states) {
-		outStream << "# path flow name stateId id";
+		outStream << "# path flow name state_id node_id";
 		if (this->isMultilayerNetwork())
-			outStream << " layerId";
+			outStream << " layer_id";
 		outStream << "\n";
 	}
 	else
-		outStream << "# path flow name id\n";
+		outStream << "# path flow name node_id\n";
 	// TODO: Make a general iterator where merging physical nodes depend on a parameter rather than type to be able to DRY here
 	if (haveMemory() && !states) {
 		for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {

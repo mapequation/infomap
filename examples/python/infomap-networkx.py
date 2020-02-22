@@ -12,28 +12,28 @@ Generate and draw a network with NetworkX, colored
 according to the community structure found by Infomap.
 """
 
-def findCommunities(G):
+def find_communities(G):
 	"""
 	Partition network with the Infomap algorithm.
 	Annotates nodes with 'community' id.
 	"""
 
-	myInfomap = infomap.Infomap("--two-level")
+	im = infomap.Infomap("--two-level")
 
 	print("Building Infomap network from a NetworkX graph...")
 	for (source, target) in G.edges:
-		myInfomap.addLink(source, target)
+		im.add_link(source, target)
 
 	print("Find communities with Infomap...")
-	myInfomap.run()
+	im.run()
 
-	print(f"Found {myInfomap.numTopModules()} modules with codelength: {myInfomap.codelength()}")
+	print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
 
-	communities = myInfomap.getModules()
+	communities = im.get_modules()
 	nx.set_node_attributes(G, communities, 'community')
 
 
-def drawNetwork(G):
+def draw_network(G):
 	# position map
 	pos = nx.spring_layout(G)
 	# community ids
@@ -76,5 +76,5 @@ def drawNetwork(G):
 
 G=nx.karate_club_graph()
 
-findCommunities(G)
-drawNetwork(G)
+find_communities(G)
+draw_network(G)

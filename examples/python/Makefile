@@ -13,15 +13,13 @@ INFOMAP_PY2_LIB = $(PY2_BUILD_DIR)/_infomap.so
 
 python: $(PY_WRAPPER) Makefile
 	@echo Copying Infomap library and the python wrapper to a local module folder...
-	@mkdir -p infomap
-	@cp -av $(PY_WRAPPER) $(INFOMAP_PY_LIB) infomap
-	touch infomap/__init__.py
+	@cp -av $(PY_WRAPPER) $(INFOMAP_PY_LIB) .
+	touch __init__.py
 
 python2: $(PY2_WRAPPER) Makefile
 	@echo Copying Infomap library and the python wrapper to a local module folder...
-	@mkdir -p infomap
-	@cp -av $(PY2_WRAPPER) $(INFOMAP_PY2_LIB) infomap
-	touch infomap/__init__.py
+	@cp -av $(PY2_WRAPPER) $(INFOMAP_PY2_LIB) .
+	touch __init__.py
 
 $(PY_WRAPPER):
 	$(MAKE) -C $(INFOMAP_DIR) python
@@ -31,7 +29,7 @@ $(PY2_WRAPPER):
 
 
 clean:
-	$(RM) -r infomap
+	$(RM) -r __init__.py infomap.py _infomap.so
 
 distclean:
 	$(MAKE) -C $(INFOMAP_DIR) clean

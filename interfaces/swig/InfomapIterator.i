@@ -38,13 +38,35 @@ namespace std {
 				raise StopIteration
 
 			return self
+
 		
 		@property
-		def id(self):
-			"""Get the 'stateId' property."""
-			return self.stateId
+		def module_id(self):
+			"""Get the module id of the node."""
+			return self.moduleIndex() + 1
+
+		_path = path
+		@property
+		def path(self):
+			return self._path()
+		
+		_depth = depth
+		@property
+		def depth(self):
+			return self._depth()
+		
+		@property
+		def child_index(self):
+			return self.childIndex()
+		
+		# Forward to the node it currently points to
+		def __getattr__(self, name):
+			return getattr(self.current(), name)
+
 	%}
 }
+
+
 
 %extend infomap::InfomapLeafModuleIterator
 {
@@ -68,11 +90,32 @@ namespace std {
 			return self
 		
 		@property
-		def id(self):
-			"""Get the 'stateId' property."""
-			return self.stateId
+		def module_id(self):
+			"""Get the module id of the node."""
+			return self.moduleIndex() + 1
+		
+		_path = path
+		@property
+		def path(self):
+			return self._path()
+		
+		_depth = depth
+		@property
+		def depth(self):
+			return self._depth()
+		
+		@property
+		def child_index(self):
+			return self.childIndex()
+		
+		# Forward to the node it currently points to
+		def __getattr__(self, name):
+			return getattr(self.current(), name)
+
 	%}
 }
+
+
 
 %extend infomap::InfomapLeafIterator
 {
@@ -95,12 +138,34 @@ namespace std {
 
 			return self
 		
+		
 		@property
-		def id(self):
-			"""Get the 'stateId' property."""
-			return self.stateId
+		def module_id(self):
+			"""Get the module id of the node."""
+			return self.moduleIndex() + 1
+
+		_path = path
+		@property
+		def path(self):
+			return self._path()
+		
+		_depth = depth
+		@property
+		def depth(self):
+			return self._depth()
+		
+		@property
+		def child_index(self):
+			return self.childIndex()
+		
+		# Forward to the node it currently points to
+		def __getattr__(self, name):
+			return getattr(self.current(), name)
+
 	%}
 }
+
+
 
 %extend infomap::InfomapIteratorPhysical
 {
@@ -123,12 +188,34 @@ namespace std {
 
 			return self
 		
+		
 		@property
-		def id(self):
-			"""Get the 'stateId' property."""
-			return self.stateId
+		def module_id(self):
+			"""Get the module id of the node."""
+			return self.moduleIndex() + 1
+		
+		_path = path
+		@property
+		def path(self):
+			return self._path()
+		
+		_depth = depth
+		@property
+		def depth(self):
+			return self._depth()
+		
+		@property
+		def child_index(self):
+			return self.childIndex()
+		
+		# Forward to the node it currently points to
+		def __getattr__(self, name):
+			return getattr(self.current(), name)
+
 	%}
 }
+
+
 
 %extend infomap::InfomapLeafIteratorPhysical
 {
@@ -151,10 +238,30 @@ namespace std {
 
 			return self
 		
+		
 		@property
-		def id(self):
-			"""Get the 'stateId' property."""
-			return self.stateId
+		def module_id(self):
+			"""Get the module id of the node."""
+			return self.moduleIndex() + 1
+
+		_path = path
+		@property
+		def path(self):
+			return self._path()
+		
+		_depth = depth
+		@property
+		def depth(self):
+			return self._depth()
+		
+		@property
+		def child_index(self):
+			return self.childIndex()
+		
+		# Forward to the node it currently points to
+		def __getattr__(self, name):
+			return getattr(self.current(), name)
+
 	%}
 }
 #endif

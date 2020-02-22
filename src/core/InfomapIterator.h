@@ -170,6 +170,10 @@ public:
 		return copy;
 	}
 
+	using InfomapIterator::current;
+	using InfomapIterator::path;
+	using InfomapIterator::childIndex;
+	using InfomapIterator::depth;
 };
 
 struct InfomapLeafModuleIterator : public InfomapIterator
@@ -205,6 +209,11 @@ public:
 		return copy;
 	}
 
+	using InfomapIterator::current;
+	using InfomapIterator::path;
+	using InfomapIterator::childIndex;
+	using InfomapIterator::depth;
+
 };
 
 struct InfomapLeafIterator : public InfomapIterator
@@ -239,6 +248,11 @@ public:
 		++(*this);
 		return copy;
 	}
+
+	using InfomapIterator::current;
+	using InfomapIterator::path;
+	using InfomapIterator::childIndex;
+	using InfomapIterator::depth;
 
 };
 
@@ -296,6 +310,11 @@ public:
 		return copy;
 	}
 
+	using InfomapIterator::current;
+	using InfomapIterator::path;
+	using InfomapIterator::childIndex;
+	using InfomapIterator::depth;
+
 };
 
 /**
@@ -337,6 +356,11 @@ public:
 		++(*this);
 		return copy;
 	}
+
+	using InfomapIteratorPhysical::current;
+	using InfomapIteratorPhysical::path;
+	using InfomapIteratorPhysical::childIndex;
+	using InfomapIteratorPhysical::depth;
 
 };
 

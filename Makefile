@@ -166,7 +166,7 @@ python2: py2-build Makefile
 	@true
 
 # Generate wrapper files from source and interface files
-py-build: $(PY_HEADERS) $(PY_SOURCES) $(PY_ONLY_HEADERS)
+py-build: $(PY_HEADERS) $(PY_SOURCES) $(PY_ONLY_HEADERS) interfaces/python/infomap.py
 	@mkdir -p $(PY_BUILD_DIR)
 	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/
 	swig -c++ -python -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i

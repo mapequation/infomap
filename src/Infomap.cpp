@@ -39,7 +39,7 @@
 namespace infomap {
 
 
-std::map<unsigned int, unsigned int> Infomap::getModules(int level, bool states)
+std::map<unsigned int, unsigned int> InfomapWrapper::getModules(int level, bool states)
 {
 	// int maxDepth = maxTreeDepth();
 	// if (level >= maxDepth)
@@ -66,7 +66,7 @@ std::map<unsigned int, unsigned int> Infomap::getModules(int level, bool states)
 	return modules;
 }
 
-std::map<unsigned int, std::vector<unsigned int>> Infomap::getMultilevelModules(bool states)
+std::map<unsigned int, std::vector<unsigned int>> InfomapWrapper::getMultilevelModules(bool states)
 {
 	unsigned int maxDepth = maxTreeDepth();
 	unsigned int numModuleLevels = maxDepth - 1;
@@ -98,8 +98,8 @@ int run(const std::string& flags)
 	{
 		Config conf(flags, true);
 
-		Infomap infomap(conf);
-		// Infomap infomap(flags, true);
+		InfomapWrapper infomap(conf);
+		// InfomapWrapper infomap(flags, true);
 
 		infomap.run();
 	}
@@ -122,21 +122,21 @@ int run(const std::string& flags)
 
 #ifndef SWIG
 
-	Infomap *NewInfomap(const char *flags) { return new Infomap(flags); };
+	InfomapWrapper *NewInfomap(const char *flags) { return new InfomapWrapper(flags); };
 
-	void DestroyInfomap(Infomap *im) { im->~Infomap(); };
+	void DestroyInfomap(InfomapWrapper *im) { im->~InfomapWrapper(); };
 
-	void InfomapAddLink(Infomap *im, unsigned int sourceId, unsigned int targetId, double weight) {
+	void InfomapAddLink(InfomapWrapper *im, unsigned int sourceId, unsigned int targetId, double weight) {
 			im->addLink(sourceId, targetId, weight);
 	};
 
-	void InfomapRun(struct Infomap *im) { im->run(); };
+	void InfomapRun(struct InfomapWrapper *im) { im->run(); };
 
-	double Codelength(struct Infomap *im) { return im->getHierarchicalCodelength(); }
+	double Codelength(struct InfomapWrapper *im) { return im->getHierarchicalCodelength(); }
 
-	unsigned int NumModules(struct Infomap *im) { return im->numTopModules(); }
+	unsigned int NumModules(struct InfomapWrapper *im) { return im->numTopModules(); }
 
-	struct InfomapLeafIterator *NewIter(struct Infomap *im) { return new InfomapLeafIterator(&(im->root())); }
+	struct InfomapLeafIterator *NewIter(struct InfomapWrapper *im) { return new InfomapLeafIterator(&(im->root())); }
 
 	void DestroyIter(struct InfomapLeafIterator *it) { it->~InfomapLeafIterator(); }
 

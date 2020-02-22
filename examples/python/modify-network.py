@@ -1,34 +1,34 @@
 import infomap
 
 
-myInfomap = infomap.Infomap("--two-level -v")
+im = infomap.Infomap("--two-level --silent")
 
 # Add weight as an optional third argument
-myInfomap.addLink(1, 2)
-myInfomap.addLink(1, 3)
-myInfomap.addLink(2, 3)
-myInfomap.addLink(3, 4)
-myInfomap.addLink(4, 5)
-myInfomap.addLink(4, 6)
-myInfomap.addLink(5, 6)
+im.add_link(1, 2)
+im.add_link(1, 3)
+im.add_link(2, 3)
+im.add_link(3, 4)
+im.add_link(4, 5)
+im.add_link(4, 6)
+im.add_link(5, 6)
 
-myInfomap.run()
+im.run()
 
-print(f"Found {myInfomap.numTopModules()} modules with codelength: {myInfomap.codelength()}")
+print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
 
-modules = myInfomap.getModules()
+modules = im.get_modules()
 
-print("\n\n\nModify the network and test partition...")
+print("Modify the network and test partition...")
 
 # Do some modification to the network
-myInfomap.network().addLink(1, 5)
+im.add_link(1, 5)
 # Note that removing links will not remove nodes if they become unconnected
-myInfomap.network().removeLink(5, 6)
+im.remove_link(5, 6)
 
 # Run again with the optimal partition from the original network as initial solution
 # Set no Infomap to skip optimization and just calculate the codelength
-myInfomap.setNoInfomap(True)
-myInfomap.run(modules)
+im.set_no_infomap()
+im.run(modules)
 
-print(f"Found {myInfomap.numTopModules()} modules with codelength: {myInfomap.codelength()}")
+print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
 

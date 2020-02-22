@@ -21,7 +21,9 @@ examples/cpp/Infomap-igraph-interface-library/include
 examples/cpp/Infomap-igraph-interface-library/lib
 examples/c/example
 examples/c/example.o
-examples/python/infomap
+examples/python/__init__.py
+examples/python/infomap.py
+examples/python/_infomap.so
 examples/python/test.ipynb
 examples/R/infomap
 examples/R/\.Rhistory

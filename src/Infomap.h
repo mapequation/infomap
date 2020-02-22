@@ -16,13 +16,13 @@
 
 namespace infomap {
 
-struct Infomap : public InfomapCore {
+struct InfomapWrapper : public InfomapCore {
 public:
 
-	Infomap() : InfomapCore() {}
-	Infomap(const std::string flags) : InfomapCore(flags) {}
-	Infomap(const Config& conf) : InfomapCore(conf) {}
-	virtual ~Infomap() {}
+	InfomapWrapper() : InfomapCore() {}
+	InfomapWrapper(const std::string flags) : InfomapCore(flags) {}
+	InfomapWrapper(const Config& conf) : InfomapCore(conf) {}
+	virtual ~InfomapWrapper() {}
 
 	// ===================================================
 	// Wrapper methods
@@ -60,19 +60,19 @@ struct InfomapLeafIterator;
 
 #ifndef SWIG
 
-struct Infomap *NewInfomap(const char *flags);
+struct InfomapWrapper *NewInfomap(const char *flags);
 
-void DestroyInfomap(struct Infomap *im);
+void DestroyInfomap(struct InfomapWrapper *im);
 
-void InfomapAddLink(struct Infomap *im, unsigned int sourceId,  unsigned int targetId, double weight);
+void InfomapAddLink(struct InfomapWrapper *im, unsigned int sourceId,  unsigned int targetId, double weight);
 
-void InfomapRun(struct Infomap *im);
+void InfomapRun(struct InfomapWrapper *im);
 
-double Codelength(struct Infomap *im);
+double Codelength(struct InfomapWrapper *im);
 
-unsigned int NumModules(struct Infomap *im);
+unsigned int NumModules(struct InfomapWrapper *im);
 
-struct InfomapLeafIterator *NewIter(struct Infomap *im);
+struct InfomapLeafIterator *NewIter(struct InfomapWrapper *im);
 
 void DestroyIter(struct InfomapLeafIterator *it);
 
