@@ -9,7 +9,7 @@ im = infomap.Infomap(f"--input {filename}")
 
 # You can also read a network with the method below, which by default will accumulate to existing network data
 # accumulate = False
-# im.readInputData(filename, accumulate)
+# im.read_file(filename, accumulate)
 
 im.run()
 
@@ -18,7 +18,6 @@ print(f"Found {im.max_depth} levels with {im.num_top_modules} top modules and co
 print("Tree:\n# path node_id flow")
 for node in im.leaf_nodes:
     print(f"{node.path} {node.node_id} {node.data.flow}")
-
 
 for module_level in range(1, im.max_depth):
     print(f"Modules at level {module_level}: {im.get_modules(module_level).values()}")
