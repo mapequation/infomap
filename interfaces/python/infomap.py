@@ -51,6 +51,9 @@ class Infomap(InfomapWrapper):
   def bipartite_start_id(self, start_id):
     super().setBipartiteStartId(start_id)
 
+  def set_initial_partition(self, module_ids):
+    return super().setInitialPartition(module_ids)
+
   def get_modules(self, depth_level=1, states=False):
     return super().getModules(depth_level, states)
 

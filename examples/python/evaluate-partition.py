@@ -4,8 +4,7 @@ import infomap
 # composed of two triangles {0,1,2} and {5,6,7} connected by a
 # chain of two nodes in the middle {3,4}.
 
-# Notice the '--no-infomap' flag, to not try to optimize the partition further
-im = infomap.Infomap("--two-level --verbose --no-infomap --silent")
+im = infomap.Infomap("--two-level")
 
 # Add weight as an optional third argument
 im.add_link(0, 1)
@@ -42,11 +41,11 @@ partition2 = {
 	7: 2,
 }
 
-im.run(partition1)
+im.set_initial_partition(partition1).run("--no-infomap")
 
 print(f"Partition one with {im.num_top_modules} modules -> codelength: {im.codelength}")
 
-im.run(partition2)
+im.set_initial_partition(partition2).run("--no-infomap")
 
 print(f"Partition two with {im.num_top_modules} modules -> codelength: {im.codelength}")
 

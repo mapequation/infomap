@@ -17,11 +17,12 @@ const std::string FlowModel::rawdir = "rawdir";
 
 Config Config::fromString(std::string flags, bool requireFileInput)
 {
-    Config conf;
+	Config conf;
+	conf.requireFileInput = requireFileInput;
 
-    ProgramInterface api("Infomap",
-			"Implementation of the Infomap clustering algorithm based on the Map Equation (see www.mapequation.org)",
-			INFOMAP_VERSION);
+	ProgramInterface api("Infomap",
+		"Implementation of the Infomap clustering algorithm based on the Map Equation (see www.mapequation.org)",
+		INFOMAP_VERSION);
 
 	api.setGroups({"Input", "Algorithm", "Accuracy", "Output"});
 

@@ -193,25 +193,32 @@ std::vector<InfoNode*>& InfomapBase::activeNetwork() const
 	return *m_activeNetwork;
 }
 
+InfomapBase& InfomapBase::setInitialPartition(const std::map<unsigned int, unsigned int>& moduleIds)
+{
+	m_initialModuleIds = moduleIds;
+	return *this;
+}
+
 // ===================================================
 // Run
 // ===================================================
 
-void InfomapBase::run()
+void InfomapBase::run(std::string parameters)
 {
 	if (!isMainInfomap()) {
 		runPartition();
 		return;
 	}
-
-	const std::map<unsigned int, unsigned int> clusterIds = {};
-	run(clusterIds);
-}
-
-void InfomapBase::run(const std::map<unsigned int, unsigned int>& clusterIds)
-{
+	
 	m_elapsedTime = Stopwatch(true);
 	m_startDate = Date();
+
+	std::string currentParameters = io::Str() << m_initialParameters << (parameters.empty() ? "" : " ") << parameters;
+	if (currentParameters != m_currentParameters) {
+		m_currentParameters = currentParameters;
+		this->setConfig(Config::fromString(m_currentParameters, this->requireFileInput));
+		m_network.setConfig(*this);
+	}
 
 	Log::init(this->verbosity, this->silent, this->verboseNumberPrecision);
 
@@ -226,8 +233,8 @@ void InfomapBase::run(const std::map<unsigned int, unsigned int>& clusterIds)
 		for (unsigned int i = 0; i < this->parsedOptions.size(); ++i)
 			Log() << (i == 0 ? "  -> Configuration: " : "                    ") << this->parsedOptions[i] << "\n";
 	}
-	if (!clusterIds.empty()) {
-		Log() << "  -> " << clusterIds.size() << " cluster ids provided\n";
+	if (!m_initialModuleIds.empty()) {
+		Log() << "  -> " << m_initialModuleIds.size() << " initial module ids provided\n";
 	}
 	// Log() << "  -> Use " << (this->isUndirected()? "undirected" : "directed") << " flow";
 	// if (this->useTeleportation())
@@ -252,7 +259,7 @@ void InfomapBase::run(const std::map<unsigned int, unsigned int>& clusterIds)
 		initMetaData(this->metaDataFile);
 	}
 
-	run(m_network, clusterIds);
+	run(m_network);
 
 	Log() << "===================================================\n";
 	Log() << "  Infomap ends at " << m_endDate << "\n";
@@ -262,12 +269,6 @@ void InfomapBase::run(const std::map<unsigned int, unsigned int>& clusterIds)
 }
 
 void InfomapBase::run(Network& network)
-{
-	const std::map<unsigned int, unsigned int> clusterIds = {};
-	run(network, clusterIds);
-}
-
-void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned int>& clusterIds)
 {
 	if (!isMainInfomap())
 		throw InternalOrderError("Can't run a non-main Infomap with an input network");
@@ -362,8 +363,8 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 
 			if (this->clusterDataFile != "")
 				initPartition(this->clusterDataFile, this->clusterDataIsHard);
-			else if (!clusterIds.empty())
-				initPartition(clusterIds, this->clusterDataIsHard);
+			else if (!m_initialModuleIds.empty())
+				initPartition(m_initialModuleIds, this->clusterDataIsHard);
 		}
 
 		if (!this->noInfomap)
