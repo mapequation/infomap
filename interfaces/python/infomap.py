@@ -1,4 +1,5 @@
 from collections import namedtuple
+from contextlib import contextmanager
 
 MultilayerNode = namedtuple("MultilayerNode", "layer_id, node_id")
 
@@ -51,8 +52,30 @@ class Infomap(InfomapWrapper):
   def bipartite_start_id(self, start_id):
     super().setBipartiteStartId(start_id)
 
-  def set_initial_partition(self, module_ids):
-    return super().setInitialPartition(module_ids)
+  @property
+  def initial_partition(self):
+    return super().getInitialPartition()
+  
+  @initial_partition.setter
+  def initial_partition(self, module_ids):
+    super().setInitialPartition(module_ids)
+  
+  @contextmanager
+  def _initial_partition(self, partition):
+    old_partition = self.initial_partition
+    try:
+      self.initial_partition = partition
+      yield
+    finally:
+        self.initial_partition = old_partition
+
+  def run(self, args="", initial_partition=None):
+    if initial_partition:
+      with self._initial_partition(initial_partition):
+        super().run(args)
+    else:
+      super().run(args)
+  
 
   def get_modules(self, depth_level=1, states=False):
     return super().getModules(depth_level, states)

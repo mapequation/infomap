@@ -195,7 +195,7 @@ std::vector<InfoNode*>& InfomapBase::activeNetwork() const
 
 InfomapBase& InfomapBase::setInitialPartition(const std::map<unsigned int, unsigned int>& moduleIds)
 {
-	m_initialModuleIds = moduleIds;
+	m_initialPartition = moduleIds;
 	return *this;
 }
 
@@ -233,8 +233,8 @@ void InfomapBase::run(std::string parameters)
 		for (unsigned int i = 0; i < this->parsedOptions.size(); ++i)
 			Log() << (i == 0 ? "  -> Configuration: " : "                    ") << this->parsedOptions[i] << "\n";
 	}
-	if (!m_initialModuleIds.empty()) {
-		Log() << "  -> " << m_initialModuleIds.size() << " initial module ids provided\n";
+	if (!m_initialPartition.empty()) {
+		Log() << "  -> " << m_initialPartition.size() << " initial module ids provided\n";
 	}
 	// Log() << "  -> Use " << (this->isUndirected()? "undirected" : "directed") << " flow";
 	// if (this->useTeleportation())
@@ -363,8 +363,8 @@ void InfomapBase::run(Network& network)
 
 			if (this->clusterDataFile != "")
 				initPartition(this->clusterDataFile, this->clusterDataIsHard);
-			else if (!m_initialModuleIds.empty())
-				initPartition(m_initialModuleIds, this->clusterDataIsHard);
+			else if (!m_initialPartition.empty())
+				initPartition(m_initialPartition, this->clusterDataIsHard);
 		}
 
 		if (!this->noInfomap)

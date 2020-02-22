@@ -173,6 +173,7 @@ public:
 
 	virtual std::ostream& toString(std::ostream& out) const;
 
+	const std::map<unsigned int, unsigned int>& getInitialPartition() const { return m_initialPartition; }
 
 	// ===================================================
 	// Init
@@ -473,7 +474,7 @@ protected:
 	std::vector<InfoNode*> m_originalLeafNodes;
 
 	Network m_network;
-	std::map<unsigned int, unsigned int> m_initialModuleIds = {};
+	std::map<unsigned int, unsigned int> m_initialPartition = {}; // nodeId -> moduleId
 
 	const unsigned int SUPER_LEVEL_ADDITION = 1 << 20;
 	bool m_isMain = true;

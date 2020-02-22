@@ -25,6 +25,7 @@ examples/python/__init__.py
 examples/python/infomap.py
 examples/python/_infomap.so
 examples/python/test.ipynb
+examples/python/test.py
 examples/R/infomap
 examples/R/\.Rhistory
 examples/js/Infomap-worker.js

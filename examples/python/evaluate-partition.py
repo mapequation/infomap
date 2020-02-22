@@ -4,7 +4,7 @@ import infomap
 # composed of two triangles {0,1,2} and {5,6,7} connected by a
 # chain of two nodes in the middle {3,4}.
 
-im = infomap.Infomap("--two-level")
+im = infomap.Infomap("--two-level --silent")
 
 # Add weight as an optional third argument
 im.add_link(0, 1)
@@ -41,11 +41,15 @@ partition2 = {
     7: 2,
 }
 
-im.set_initial_partition(partition1).run("--no-infomap")
+# Set initial partition on the Infomap instance to keep it during multiple runs
+im.initial_partition = partition1
+
+im.run("--no-infomap")
 
 print(f"Partition one with {im.num_top_modules} modules -> codelength: {im.codelength}")
 
-im.set_initial_partition(partition2).run("--no-infomap")
+# Set initial partition as run parameter to only use it for this run (will be restored to partition1 after)
+im.run("--no-infomap", initial_partition=partition2)
 
 print(f"Partition two with {im.num_top_modules} modules -> codelength: {im.codelength}")
 

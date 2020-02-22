@@ -32,10 +32,10 @@ namespace std {
 			"""Get the state id of the node."""
 			return self.stateId
 
-                @property
-                def flow(self):
-                        """Get the flow of the node."""
-                        return self.data.flow
+		@property
+		def flow(self):
+			"""Get the flow of the node."""
+			return self.data.flow
 
 		@property
 		def layer_id(self):
