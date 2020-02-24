@@ -678,12 +678,19 @@ class Infomap(InfomapWrapper):
         """
         return self.writeFlowTree(filename, states)
 
-    def set_no_infomap(self, no_infomap=True):
+    _no_infomap = False
+
+    @property
+    def no_infomap(self):
         """Set wether the optimizer should run or not.
 
         Parameters
         ----------
-        no_infomap : bool, optional
-            Default True
+        no_infomap : bool
         """
-        return self.setNoInfomap(no_infomap)
+        return self._no_infomap
+
+    @no_infomap.setter
+    def no_infomap(self, no_infomap):
+        self._no_infomap = no_infomap
+        super().setNoInfomap(no_infomap)
