@@ -240,8 +240,8 @@ class Infomap(InfomapWrapper):
         Using tuples
         >>> import infomap
         >>> im = infomap.Infomap()
-        >>> source_multilayer_node = (0, 1)
-        >>> target_multilayer_node = (1, 2)
+        >>> source_multilayer_node = (0, 1) # layer_id, node_id
+        >>> target_multilayer_node = (1, 2) # layer_id, node_id
         >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
         """
         source_layer_id, source_node_id = source_multilayer_node
@@ -371,7 +371,12 @@ class Infomap(InfomapWrapper):
 
     @property
     def nodes(self):
-        """Alias of leaf_nodes """
+        """Alias of leaf_nodes.
+
+        See Also
+        --------
+        leaf_nodes
+        """
         return self.leaf_nodes
 
     @property
@@ -396,27 +401,67 @@ class Infomap(InfomapWrapper):
 
     @property
     def codelength(self):
-        """Total (hierarchical) codelength"""
+        """Get the total (hierarchical) codelength.
+
+        Returns
+        -------
+        float
+            The codelength
+        """
         return super().codelength()
 
     @property
     def index_codelength(self):
-        """Two-level index codelength"""
+        """Get the two-level index codelength.
+
+        Returns
+        -------
+        float
+            The two-level index codelength
+        """
         return super().getIndexCodelength()
 
     @property
     def module_codelength(self):
-        """Two-level module codelength"""
+        """Get the two-level module codelength.
+
+        Returns
+        -------
+        float
+            The two-level module codelength
+        """
         return super().getModuleCodelength()
 
     @property
     def meta_codelength(self):
-        """Meta codelength (meta entropy times meta data rate)"""
+        """Get the meta codelength.
+
+        This is the meta entropy times the meta data rate.
+
+        See Also
+        --------
+        meta_entropy
+
+        Returns
+        -------
+        float
+            The meta codelength
+        """
         return super().getMetaCodelength()
 
     @property
     def meta_entropy(self):
-        """Meta entropy (unweighted by meta data rate)"""
+        """Get the meta entropy (unweighted by meta data rate).
+
+        See Also
+        --------
+        meta_codelength
+
+        Returns
+        -------
+        float
+            The meta entropy
+        """
         return super().getMetaCodelength(True)
 
     @property
