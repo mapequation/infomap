@@ -5,6 +5,31 @@ MultilayerNode = namedtuple("MultilayerNode", "layer_id, node_id")
 
 
 class Infomap(InfomapWrapper):
+    """Infomap
+
+    This class is a thin wrapper around Infomap C++ compiled with SWIG.
+
+    Examples
+    --------
+    Create a new instance and add nodes and links
+    >>> import infomap
+    >>> im = infomap.Infomap()
+    >>> im.add_node(1)
+    >>> im.add_node(2)
+    >>> im.add_link(1, 2)
+    >>> im.run()
+
+    Read a network file
+    >>> import infomap
+    >>> im = infomap.Infomap()
+    >>> im.read_file("ninetriangles.net")
+    >>> im.run()
+    >>> for node, module in im.modules:
+    >>>     print(f"Node {node} belongs to module {module}")
+
+    For more examples, see the `examples` directory.
+    """
+
     def __init__(self, parameters=""):
         super().__init__(parameters)
 
