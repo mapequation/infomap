@@ -27,10 +27,18 @@ class Infomap(InfomapWrapper):
     >>> for node, module in im.modules:
     >>>     print(f"Node {node} belongs to module {module}")
 
-    For more examples, see the `examples` directory.
+    For more examples, see the examples directory.
     """
 
-    def __init__(self, parameters=""):
+    def __init__(self, parameters=None):
+        """Create a new Infomap instance.
+
+        Parameters
+        ----------
+        parameters : str, optional
+        """
+        if parameters is None:
+            parameters = ""
         super().__init__(parameters)
 
     def read_file(self, filename, accumulate=True):
@@ -43,9 +51,9 @@ class Infomap(InfomapWrapper):
             If the network data should be accumulated to already added
             nodes and links (default True).
         """
-        super().readInputData(filename, accumulate)
+        return super().readInputData(filename, accumulate)
 
-    def add_node(self, node_id, name="", teleportation_weight=None):
+    def add_node(self, node_id, name=None, teleportation_weight=None):
         """Add a node.
 
         Parameters
@@ -55,27 +63,35 @@ class Infomap(InfomapWrapper):
         teleportation_weight : float, optional
             Used for teleporting between layers in multilayer networks.
         """
+        if name is None:
+            name = ""
+
         if (len(name) and teleportation_weight):
-            super().addNode(node_id, name, teleportation_weight)
+            return super().addNode(node_id, name, teleportation_weight)
         elif (len(name) and not teleportation_weight):
-            super().addNode(node_id, name)
+            return super().addNode(node_id, name)
         elif (teleportation_weight and not len(name)):
-            super().addNode(node_id, teleportation_weight)
+            return super().addNode(node_id, teleportation_weight)
         else:
-            super().addNode(node_id)
+            return super().addNode(node_id)
 
     def add_nodes(self, nodes):
         """Add several nodes.
 
-        See add_node
+        See Also
+        --------
+        add_node
 
         Parameters
         ----------
-        nodes : iterable
+        nodes : iterable of tuples or iterable of int
             Iterable of tuples on the form (node_id, [name], [teleportation_weight])
         """
         for node in nodes:
-            self.add_node(*node)
+            if instanceof(node, int):
+                self.add_node(node)
+            else:
+                self.add_node(*node)
 
     def set_name(self, node_id, name):
         """Set the name of a node.
@@ -88,17 +104,21 @@ class Infomap(InfomapWrapper):
         node_id : int
         name : str
         """
-        super().addName(node_id, name)
+        if name is None:
+            name = ""
+        return super().addName(node_id, name)
 
     def set_names(self, names):
         """Set names to several nodes at once.
 
-        See add_node.
+        See Also
+        --------
+        set_name
 
         Parameters
         ----------
-        names : dict
-            dict with node ids as keys and names as values
+        names : dict of str
+            Dict with node ids as keys and names as values
         """
         for node_id, name in names:
             self.set_name(node_id, name)
@@ -111,7 +131,7 @@ class Infomap(InfomapWrapper):
         node_id : int
         meta_category : int
         """
-        self.network.addMetaData(node_id, meta_category)
+        return self.network.addMetaData(node_id, meta_category)
 
     def add_state_node(self, state_id, node_id):
         """Add a state node.
@@ -122,16 +142,18 @@ class Infomap(InfomapWrapper):
         node_id : int
             Id of the physical node the state node should be added to.
         """
-        super().addStateNode(state_id, node_id)
+        return super().addStateNode(state_id, node_id)
 
     def add_state_nodes(self, state_nodes):
         """Add several state nodes.
 
-        See add_state_node
+        See Also
+        --------
+        add_state_node
 
         Parameters
         ----------
-        state_nodes : iterable
+        state_nodes : iterable of tuples
             Iterable of tuples of the form (state_id, node_id)
         """
         for node in state_nodes:
@@ -146,16 +168,18 @@ class Infomap(InfomapWrapper):
         target_id : int
         weight : float, optional
         """
-        super().addLink(source_id, target_id, weight)
+        return super().addLink(source_id, target_id, weight)
 
     def add_links(self, links):
         """Add several links.
 
-        See add_link
+        See Also
+        --------
+        add_link
 
         Parameters
         ----------
-        links : iterable
+        links : iterable of tuples
             Iterable of tuples of int of the form (source_id, target_id, [weight])
         """
         for link in links:
@@ -169,16 +193,18 @@ class Infomap(InfomapWrapper):
         source_id : int
         target_id : int
         """
-        self.network.removeLink(source_id, target_id)
+        return self.network.removeLink(source_id, target_id)
 
     def remove_links(self, links):
         """Remove several links.
 
-        See remove_link
+        See Also
+        --------
+        remove_link
 
         Parameters
         ----------
-        links : iterable
+        links : iterable of tuples
             Iterable of tuples of the form (source_id, target_id)
         """
         for link in links:
@@ -200,23 +226,41 @@ class Infomap(InfomapWrapper):
         target_multilayer_node : tuple of int, or MultilayerNode
             If passed a tuple, it should be of the format (layer_id, node_id).
         weight : float, optional
+
+        Examples
+        --------
+        Using MultilayerNode
+        >>> from infomap import Infomap, MultilayerNode
+        >>> im = Infomap()
+        >>> source_multilayer_node = MultilayerNode(layer_id=0, node_id=1)
+        >>> target_multilayer_node = MultilayerNode(layer_id=1, node_id=2)
+        >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
+
+        Using tuples
+        >>> import infomap
+        >>> im = infomap.Infomap()
+        >>> source_multilayer_node = (0, 1)
+        >>> target_multilayer_node = (1, 2)
+        >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
         """
         source_layer_id, source_node_id = source_multilayer_node
         target_layer_id, target_node_id = target_multilayer_node
-        super().addMultilayerLink(source_layer_id,
-                                  source_node_id,
-                                  target_layer_id,
-                                  target_node_id,
-                                  weight)
+        return super().addMultilayerLink(source_layer_id,
+                                         source_node_id,
+                                         target_layer_id,
+                                         target_node_id,
+                                         weight)
 
     def add_multilayer_links(self, links):
         """Add several multilayer links.
 
-        See add_multilayer_link
+        See Also
+        --------
+        add_multilayer_link
 
         Parameters
         ----------
-        links : iterable
+        links : iterable of tuples
             Iterable of tuples of the form (source_node, target_node, [weight])
         """
         for link in links:
@@ -224,7 +268,13 @@ class Infomap(InfomapWrapper):
 
     @property
     def bipartite_start_id(self):
-        """Get the bipartite start id."""
+        """Get the bipartite start id.
+
+        Returns
+        -------
+        int
+            The node id where the second category starts.
+        """
         return self.network.bipartiteStartId
 
     @bipartite_start_id.setter
@@ -236,11 +286,17 @@ class Infomap(InfomapWrapper):
         start_id : int
             The node id where the second category starts.
         """
-        super().setBipartiteStartId(start_id)
+        return super().setBipartiteStartId(start_id)
 
     @property
     def initial_partition(self):
-        """Get the initial partition."""
+        """Get the initial partition.
+
+        Returns
+        -------
+        dict of int
+            Dict with module id as keys and node ids as values.
+        """
         return super().getInitialPartition()
 
     @initial_partition.setter
@@ -252,13 +308,12 @@ class Infomap(InfomapWrapper):
 
         Parameters
         ----------
-        module_ids : dict
-            dict of module ids to node ids describing the module assignments
-            of each node.
+        module_ids : dict of int
+            Dict with module id as keys and node ids as values.
         """
         if module_ids is None:
             module_ids = {}
-        super().setInitialPartition(module_ids)
+        return super().setInitialPartition(module_ids)
 
     @contextmanager
     def _initial_partition(self, partition):
@@ -269,21 +324,28 @@ class Infomap(InfomapWrapper):
         finally:
             self.initial_partition = old_partition
 
-    def run(self, args="", initial_partition=None):
+    def run(self, args=None, initial_partition=None):
         """Run Infomap.
 
         Parameters
         ----------
-        args : string
+        args : str, optional
             Space delimited parameter list (see Infomap documentation).
         initial_partition : dict, optional
             Initial partition to start optimizer from (see initial_partition).
+
+        See Also
+        --------
+        initial_partition
         """
+        if args is None:
+            args = ""
+
         if initial_partition:
             with self._initial_partition(initial_partition):
-                super().run(args)
-        else:
-            super().run(args)
+                return super().run(args)
+
+        return super().run(args)
 
     def get_modules(self, depth_level=1, states=False):
         return super().getModules(depth_level, states)
@@ -308,7 +370,7 @@ class Infomap(InfomapWrapper):
 
     @property
     def nodes(self):
-        """ Alias of leaf_nodes """
+        """Alias of leaf_nodes """
         return self.leaf_nodes
 
     @property
