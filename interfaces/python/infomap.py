@@ -30,16 +30,16 @@ class Infomap(InfomapWrapper):
     For more examples, see the examples directory.
     """
 
-    def __init__(self, parameters=None):
+    def __init__(self, args=None):
         """Create a new Infomap instance.
 
         Parameters
         ----------
-        parameters : str, optional
+        args : str, optional
         """
-        if parameters is None:
-            parameters = ""
-        super().__init__(parameters)
+        if args is None:
+            args = ""
+        super().__init__(args)
 
     def read_file(self, filename, accumulate=True):
         """Read network data from file.
