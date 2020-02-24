@@ -43,14 +43,16 @@ class Infomap(InfomapWrapper):
     >>> im.add_node(2)
     >>> im.add_link(1, 2)
     >>> im.run()
+    >>> im.codelength
+    1.0
 
     Read a network file
     >>> import infomap
     >>> im = infomap.Infomap()
     >>> im.read_file("ninetriangles.net")
-    >>> im.run()
-    >>> for node, module in im.modules:
-    >>>     print(f"Node {node} belongs to module {module}")
+    >>> im.run("-N5")
+    >>> im.codelength
+    3.4841898804052187
 
     For more examples, see the examples directory.
     """
@@ -279,13 +281,15 @@ class Infomap(InfomapWrapper):
         >>> source_multilayer_node = MultilayerNode(layer_id=0, node_id=1)
         >>> target_multilayer_node = MultilayerNode(layer_id=1, node_id=2)
         >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
-
+        None
+        
         Using tuples
         >>> import infomap
         >>> im = infomap.Infomap()
         >>> source_multilayer_node = (0, 1) # layer_id, node_id
         >>> target_multilayer_node = (1, 2) # layer_id, node_id
         >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
+        None
         """
         source_layer_id, source_node_id = source_multilayer_node
         target_layer_id, target_node_id = target_multilayer_node
@@ -434,17 +438,49 @@ class Infomap(InfomapWrapper):
 
     @property
     def modules(self):
+        """A view of the (top-level) modules
+
+        See Also
+        --------
+        get_modules
+
+        Yields
+        -------
+        dict_items
+            An iterator of (node_id, module_id) pairs.
+        """
         return self.get_modules().items()
 
     def tree(self):
+        """A view of the tree
+
+        Yields
+        -------
+        InfomapIterator
+            An iterator over each node in the tree, depth first from the root
+        """
         return super().iterTree()
 
     @property
     def leaf_modules(self):
+        """A view of the leaf modules, i.e. the bottom modules containing leaf nodes.
+
+        Yields
+        -------
+        InfomapLeafIterator
+            An iterator over each leaf module in the tree, depth first from the root
+        """
         return super().iterLeafModules()
 
     @property
     def leaf_nodes(self):
+        """A view of the leaf nodes (network nodes)
+
+        Yields
+        -------
+        InfomapLeafIterator
+            An iterator over each leaf node in the tree, depth first from the root
+        """
         return super().iterLeafNodes()
 
     @property
@@ -459,22 +495,65 @@ class Infomap(InfomapWrapper):
 
     @property
     def physical_tree(self):
+        """A view of the tree where that state nodes of the same node_id
+        are merged to one physical node
+
+        Notes
+        -----
+        In a physical view, state nodes of the same physical node are merged to
+        a (partial) physical node if they belong to the same module. As state
+        nodes of the same physical node can be part of different modules, the
+        same physical node_id may exist on multiple tips of the tree. In that 
+        case, the flow value of each leaf node in the tree is the sum of the flow 
+        values of the state nodes with the same physical node_id.
+
+        Yields
+        -------
+        InfomapIteratorPhysical
+            An iterator over each physical node in the tree, depth first from the root
+        """
         return super().iterTreePhysical()
 
     @property
-    def physical_leaf_modules(self):
-        return super().iterLeafModulesPhysical()
-
-    @property
     def physical_leaf_nodes(self):
+        """A view of the physical leaf nodes (network nodes)
+
+        Notes
+        -----
+        In a physical view, state nodes of the same physical node are merged to
+        a (partial) physical node if they belong to the same module. As state
+        nodes of the same physical node can be part of different modules, the
+        same physical node_id may exist on multiple tips of the tree. In that 
+        case, the flow value of each leaf node in the tree is the sum of the flow 
+        values of the state nodes with the same physical node_id.
+
+        Yields
+        -------
+        InfomapLeafIteratorPhysical
+            An iterator over each physical leaf node in the tree, depth first from the root
+        """
         return super().iterLeafNodesPhysical()
 
     @property
     def num_top_modules(self):
+        """Get the number of top modules in the tree
+
+        Returns
+        -------
+        int
+            The number of top modules
+        """
         return super().numTopModules()
 
     @property
     def max_depth(self):
+        """Get the max depth of the hierarchical tree.
+        
+        Returns
+        -------
+        int
+            The max depth
+        """
         return super().maxTreeDepth()
 
     @property
