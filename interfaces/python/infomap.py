@@ -36,7 +36,8 @@ class Infomap(InfomapWrapper):
 
     Examples
     --------
-    Create a new instance and add nodes and links
+    Create an instance and add nodes and links:
+
     >>> import infomap
     >>> im = infomap.Infomap()
     >>> im.add_node(1)
@@ -46,13 +47,16 @@ class Infomap(InfomapWrapper):
     >>> im.codelength
     1.0
 
-    Read a network file
+
+    Create an instance and read a network file:
+
     >>> import infomap
     >>> im = infomap.Infomap()
     >>> im.read_file("ninetriangles.net")
     >>> im.run("-N5")
     >>> im.codelength
     3.4841898804052187
+
 
     For more examples, see the examples directory.
     """
@@ -279,21 +283,25 @@ class Infomap(InfomapWrapper):
 
         Examples
         --------
-        Using MultilayerNode
-        >>> from infomap import Infomap, MultilayerNode
-        >>> im = Infomap()
-        >>> source_multilayer_node = MultilayerNode(layer_id=0, node_id=1)
-        >>> target_multilayer_node = MultilayerNode(layer_id=1, node_id=2)
-        >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
-        None
-        
-        Using tuples
+        Usage with tuples:
+
         >>> import infomap
         >>> im = infomap.Infomap()
         >>> source_multilayer_node = (0, 1) # layer_id, node_id
         >>> target_multilayer_node = (1, 2) # layer_id, node_id
         >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
         None
+
+
+        Usage with MultilayerNode
+
+        >>> from infomap import Infomap, MultilayerNode
+        >>> im = Infomap()
+        >>> source_multilayer_node = MultilayerNode(layer_id=0, node_id=1)
+        >>> target_multilayer_node = MultilayerNode(layer_id=1, node_id=2)
+        >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
+        None
+
         """
         source_layer_id, source_node_id = source_multilayer_node
         target_layer_id, target_node_id = target_multilayer_node
