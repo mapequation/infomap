@@ -1,3 +1,28 @@
+"""Infomap Python API
+*********************
+
+To install Infomap, use
+
+```
+pip install infomap
+```
+
+If you already have Infomap installed, upgrade with
+
+```
+pip install --upgrade Infomap
+```
+
+Pip will also install an executable called `infomap` (with small i)
+which you can use as the command line version of Infomap from any path, without
+compilation. For help with the commands, run
+
+```
+infomap -h
+```
+
+"""
+
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -292,7 +317,7 @@ class Infomap(InfomapWrapper):
         Returns
         -------
         int
-            The node id where the second category starts.
+            The node id where the second node type starts.
         """
         return self.network.bipartiteStartId
 
@@ -303,7 +328,7 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         start_id : int
-            The node id where the second category starts.
+            The node id where the second node type starts.
         """
         return super().setBipartiteStartId(start_id)
 
@@ -314,7 +339,7 @@ class Infomap(InfomapWrapper):
         Returns
         -------
         dict of int
-            Dict with module id as keys and node ids as values.
+            Dict with node ids as keys and module ids as values.
         """
         return super().getInitialPartition()
 
@@ -325,10 +350,16 @@ class Infomap(InfomapWrapper):
         This is a initial configuration of nodes into modules where Infomap
         will start the optimizer.
 
+        Notes
+        -----
+        The initial partition is saved between runs.
+        If you want to use an initial partition for one run only,
+        use `run(initial_partition=partition)`.
+
         Parameters
         ----------
-        module_ids : dict of int
-            Dict with module id as keys and node ids as values.
+        module_ids : dict of int, or None
+            Dict with node ids as keys and module ids as values.
         """
         if module_ids is None:
             module_ids = {}
@@ -382,7 +413,7 @@ class Infomap(InfomapWrapper):
         Returns
         -------
         dict of int
-            Dict with module id as keys and node ids as values.
+            Dict with node ids as keys and module ids as values.
         """
         return super().getModules(depth_level, states)
 
