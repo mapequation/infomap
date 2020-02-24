@@ -21,7 +21,7 @@ To install Infomap, use::
 
 If you already have Infomap installed, upgrade with::
 
-    pip install --upgrade Infomap
+    pip install --upgrade infomap
 
 Pip will also install an executable called ``infomap`` (with small i)
 which you can use as the command line version of Infomap from any path, without
