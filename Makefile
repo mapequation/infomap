@@ -193,7 +193,7 @@ $(PY_BUILD_DIR)/headers/%: %
 SPHINX_SOURCE_DIR = interfaces/python/source
 SPHINX_TARGET_DIR = docs
 
-py-doc:
+py-doc: python
 	@mkdir -p $(SPHINX_TARGET_DIR)
 	@touch $(SPHINX_TARGET_DIR)/.nojekyll
 	sphinx-build -b html $(SPHINX_SOURCE_DIR) $(SPHINX_TARGET_DIR)
