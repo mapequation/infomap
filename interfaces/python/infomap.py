@@ -303,7 +303,12 @@ class Infomap(InfomapWrapper):
 
     @property
     def bipartite_start_id(self):
-        """Get the bipartite start id.
+        """Get or set the bipartite start id.
+
+        Parameters
+        ----------
+        start_id : int
+            The node id where the second node type starts.
 
         Returns
         -------
@@ -314,29 +319,11 @@ class Infomap(InfomapWrapper):
 
     @bipartite_start_id.setter
     def bipartite_start_id(self, start_id):
-        """Set the bipartite start id.
-
-        Parameters
-        ----------
-        start_id : int
-            The node id where the second node type starts.
-        """
         return super().setBipartiteStartId(start_id)
 
     @property
     def initial_partition(self):
-        """Get the initial partition.
-
-        Returns
-        -------
-        dict of int
-            Dict with node ids as keys and module ids as values.
-        """
-        return super().getInitialPartition()
-
-    @initial_partition.setter
-    def initial_partition(self, module_ids):
-        """Set the initial partition.
+        """Get or set the initial partition.
 
         This is a initial configuration of nodes into modules where Infomap
         will start the optimizer.
@@ -351,7 +338,16 @@ class Infomap(InfomapWrapper):
         ----------
         module_ids : dict of int, or None
             Dict with node ids as keys and module ids as values.
+
+        Returns
+        -------
+        dict of int
+            Dict with node ids as keys and module ids as values.
         """
+        return super().getInitialPartition()
+
+    @initial_partition.setter
+    def initial_partition(self, module_ids):
         if module_ids is None:
             module_ids = {}
         return super().setInitialPartition(module_ids)

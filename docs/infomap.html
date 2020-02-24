@@ -225,13 +225,16 @@ If you want to name the physical node, use <cite>set_name</cite>.</p>
 <dl class="method">
 <dt id="infomap.Infomap.bipartite_start_id">
 <em class="property">property </em><code class="sig-name descname">bipartite_start_id</code><a class="headerlink" href="#infomap.Infomap.bipartite_start_id" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the bipartite start id.</p>
+<dd><p>Get or set the bipartite start id.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>The node id where the second node type starts.</p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>start_id</strong> (<em>int</em>) – The node id where the second node type starts.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>int</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The node id where the second node type starts.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -312,13 +315,22 @@ If you want to name the physical node, use <cite>set_name</cite>.</p>
 <dl class="method">
 <dt id="infomap.Infomap.initial_partition">
 <em class="property">property </em><code class="sig-name descname">initial_partition</code><a class="headerlink" href="#infomap.Infomap.initial_partition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the initial partition.</p>
+<dd><p>Get or set the initial partition.</p>
+<p>This is a initial configuration of nodes into modules where Infomap
+will start the optimizer.</p>
+<p class="rubric">Notes</p>
+<p>The initial partition is saved between runs.
+If you want to use an initial partition for one run only,
+use <cite>run(initial_partition=partition)</cite>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>Dict with node ids as keys and module ids as values.</p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module_ids</strong> (<em>dict of int</em><em>, or </em><em>None</em>) – Dict with node ids as keys and module ids as values.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>dict of int</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dict with node ids as keys and module ids as values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict of int</p>
 </dd>
 </dl>
 </dd></dl>
