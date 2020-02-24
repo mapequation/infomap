@@ -22,7 +22,28 @@ class Infomap(InfomapWrapper):
             super().addNode(node_id)
 
     def set_name(self, node_id, name):
+        """
+        Set the name of a node.
+
+        Creates nodes if a node with the supplied node id does not exist.
+        This is useful to create empty physical node in a state network.
+
+        Parameters
+        ----------
+        node_id : int
+        name : str
+        """
         super().addName(node_id, name)
+
+    def set_names(self, names):
+        """
+        Parameters
+        ----------
+        names : dict
+            dict with node ids as keys and names as values
+        """
+        for node_id, name in names:
+            self.set_name(node_id, name)
 
     def set_meta_data(self, node_id, meta_category):
         self.network.addMetaData(node_id, meta_category)
