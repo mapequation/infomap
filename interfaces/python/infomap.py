@@ -1,28 +1,3 @@
-"""Infomap Python API
-*********************
-
-To install Infomap, use
-
-```
-pip install infomap
-```
-
-If you already have Infomap installed, upgrade with
-
-```
-pip install --upgrade Infomap
-```
-
-Pip will also install an executable called `infomap` (with small i)
-which you can use as the command line version of Infomap from any path, without
-compilation. For help with the commands, run
-
-```
-infomap -h
-```
-
-"""
-
 from collections import namedtuple
 from contextlib import contextmanager
 

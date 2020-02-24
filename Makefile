@@ -189,6 +189,15 @@ $(PY_BUILD_DIR)/headers/%: %
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 
+.PHONY: py-doc
+SPHINX_SOURCE_DIR = interfaces/python/source
+SPHINX_TARGET_DIR = docs
+
+py-doc:
+	@mkdir -p $(SPHINX_TARGET_DIR)
+	@touch $(SPHINX_TARGET_DIR)/.nojekyll
+	sphinx-build -b html $(SPHINX_SOURCE_DIR) $(SPHINX_TARGET_DIR)
+
 .PHONY: pypi_prepare pypitest_publish pypi_publish
 PYPI_DIR = $(PY_BUILD_DIR)/pypi/infomap
 PYPI_SDIST = $(shell find $(PYPI_DIR) -name "*.tar.gz" 2>/dev/null)
