@@ -336,6 +336,9 @@ class Infomap(InfomapWrapper):
 
     @contextmanager
     def _initial_partition(self, partition):
+        # Internal use only
+        # Store the possiply set initial partition
+        # and use the new initial partition for one run only.
         old_partition = self.initial_partition
         try:
             self.initial_partition = partition
@@ -367,9 +370,35 @@ class Infomap(InfomapWrapper):
         return super().run(args)
 
     def get_modules(self, depth_level=1, states=False):
+        """Get the modules for a given depth in the hierarchical tree.
+
+        Parameters
+        ----------
+        depth_level : int, optional
+            The level in the hierarchical tree (default 1).
+        states : bool, optional
+            Include state nodes (default False).
+
+        Returns
+        -------
+        dict of int
+            Dict with module id as keys and node ids as values.
+        """
         return super().getModules(depth_level, states)
 
     def get_multilevel_modules(self, states=False):
+        """Get all the modules.
+
+        Parameters
+        ----------
+        states : bool, optional
+            Include state nodes (default False).
+
+        Returns
+        -------
+        dict of list of int
+            Dict with node ids as keys and list of module ids as values.
+        """
         return super().getMultilevelModules(states)
 
     @property
@@ -557,7 +586,7 @@ class Infomap(InfomapWrapper):
 
         Parameters
         ----------
-        no_infomap : boolean, optional
+        no_infomap : bool, optional
             Default True
         """
         return self.setNoInfomap(no_infomap)
