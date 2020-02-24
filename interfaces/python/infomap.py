@@ -234,6 +234,10 @@ class Infomap(InfomapWrapper):
     def remove_link(self, source_id, target_id):
         """Remove a link.
 
+        Notes
+        -----
+        Removing links will not remove nodes if they become disconnected.
+
         Parameters
         ----------
         source_id : int
@@ -503,8 +507,8 @@ class Infomap(InfomapWrapper):
         In a physical view, state nodes of the same physical node are merged to
         a (partial) physical node if they belong to the same module. As state
         nodes of the same physical node can be part of different modules, the
-        same physical node_id may exist on multiple tips of the tree. In that 
-        case, the flow value of each leaf node in the tree is the sum of the flow 
+        same physical node_id may exist on multiple tips of the tree. In that
+        case, the flow value of each leaf node in the tree is the sum of the flow
         values of the state nodes with the same physical node_id.
 
         Yields
@@ -523,8 +527,8 @@ class Infomap(InfomapWrapper):
         In a physical view, state nodes of the same physical node are merged to
         a (partial) physical node if they belong to the same module. As state
         nodes of the same physical node can be part of different modules, the
-        same physical node_id may exist on multiple tips of the tree. In that 
-        case, the flow value of each leaf node in the tree is the sum of the flow 
+        same physical node_id may exist on multiple tips of the tree. In that
+        case, the flow value of each leaf node in the tree is the sum of the flow
         values of the state nodes with the same physical node_id.
 
         Yields
@@ -548,7 +552,7 @@ class Infomap(InfomapWrapper):
     @property
     def max_depth(self):
         """Get the max depth of the hierarchical tree.
-        
+
         Returns
         -------
         int
