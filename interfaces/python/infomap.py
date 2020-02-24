@@ -142,6 +142,11 @@ class Infomap(InfomapWrapper):
     def add_state_node(self, state_id, node_id):
         """Add a state node.
 
+        Notes
+        -----
+        If a physical node with id node_id does not exist, it will be created.
+        If you want to name the physical node, use `set_name`.
+
         Parameters
         ----------
         state_id : int
