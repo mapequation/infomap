@@ -98,6 +98,29 @@ class Infomap(InfomapWrapper):
         --------
         add_node
 
+        Examples
+        --------
+        Add nodes
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> im.add_nodes(range(4))
+        None
+
+
+        Add named nodes
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> nodes = (
+        ...     (1, "Node 1"),
+        ...     (2, "Node 2"),
+        ...     (3, "Node 3")
+        ... )
+        >>> im.add_nodes(nodes)
+        None
+
+
         Parameters
         ----------
         nodes : iterable of tuples or iterable of int
@@ -129,17 +152,30 @@ class Infomap(InfomapWrapper):
     def set_names(self, names):
         """Set names to several nodes at once.
 
+        Example
+        -------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> names = (
+        ...     (1, "Node 1"),
+        ...     (2, "Node 2")
+        ... )
+        >>> im.set_names(names)
+        None
+
+
         See Also
         --------
         set_name
 
         Parameters
         ----------
-        names : dict of str
-            Dict with node ids as keys and names as values
+        names : iterable of tuples
+            Iterable of tuples on the form (node_id, name).
         """
-        for node_id, name in names:
-            self.set_name(node_id, name)
+        for name in names:
+            self.set_name(*name)
 
     def set_meta_data(self, node_id, meta_category):
         """Set meta data to a node.
@@ -174,6 +210,20 @@ class Infomap(InfomapWrapper):
         --------
         add_state_node
 
+        Example
+        -------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> states = (
+        ...     (1, 1),
+        ...     (2, 1),
+        ...     (3, 2)
+        ... )
+        >>> im.add_state_nodes(states)
+        None
+
+
         Parameters
         ----------
         state_nodes : iterable of tuples
@@ -199,6 +249,19 @@ class Infomap(InfomapWrapper):
 
     def add_links(self, links):
         """Add several links.
+
+        Example
+        -------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> links = (
+        ...     (1, 2),
+        ...     (1, 3)
+        ... )
+        >>> im.add_links(links)
+        None
+
 
         See Also
         --------
@@ -228,6 +291,19 @@ class Infomap(InfomapWrapper):
 
     def remove_links(self, links):
         """Remove several links.
+
+        Example
+        -------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> links = (
+        ...     (1, 2),
+        ...     (1, 3)
+        ... )
+        >>> im.remove_links(links)
+        None
+
 
         See Also
         --------
@@ -262,8 +338,8 @@ class Infomap(InfomapWrapper):
         --------
         Usage with tuples:
 
-        >>> import infomap
-        >>> im = infomap.Infomap()
+        >>> from infomap import Infomap
+        >>> im = Infomap()
         >>> source_multilayer_node = (0, 1) # layer_id, node_id
         >>> target_multilayer_node = (1, 2) # layer_id, node_id
         >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
@@ -291,6 +367,19 @@ class Infomap(InfomapWrapper):
     def add_multilayer_links(self, links):
         """Add several multilayer links.
 
+        Example
+        -------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> links = (
+        ...     ((0, 1), (1, 2)),
+        ...     ((0, 3), (1, 2))
+        ... )
+        >>> im.add_multilayer_links(links)
+        None
+
+
         See Also
         --------
         add_multilayer_link
@@ -306,6 +395,23 @@ class Infomap(InfomapWrapper):
     @property
     def bipartite_start_id(self):
         """Get or set the bipartite start id.
+
+        Example
+        -------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> im.add_node(1, "Left 1")
+        >>> im.add_node(2, "Left 2")
+        >>> im.bipartite_start_id = 3
+        >>> im.add_node(3, "Right 3")
+        >>> im.add_node(4, "Right 4")
+        >>> im.add_link(1, 3)
+        >>> im.add_link(1, 4)
+        >>> im.add_link(2, 4)
+        >>> im.run()
+        None
+
 
         Parameters
         ----------
@@ -329,6 +435,29 @@ class Infomap(InfomapWrapper):
 
         This is a initial configuration of nodes into modules where Infomap
         will start the optimizer.
+
+        Example
+        -------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> im.add_node(1)
+        >>> im.add_node(2)
+        >>> im.add_node(3)
+        >>> im.add_node(4)
+        >>> im.add_link(1, 2)
+        >>> im.add_link(1, 3)
+        >>> im.add_link(2, 3)
+        >>> im.add_link(2, 4)
+        >>> im.initial_partition = {
+        ...     1: 0,
+        ...     2: 0,
+        ...     3: 1,
+        ...     4: 1
+        ... }
+        >>> im.run()
+        None
+
 
         Notes
         -----

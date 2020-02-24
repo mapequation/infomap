@@ -92,6 +92,17 @@
 <dt id="infomap.Infomap.add_links">
 <code class="sig-name descname">add_links</code><span class="sig-paren">(</span><em class="sig-param">links</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_links" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add several links.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">links</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_links</span><span class="p">(</span><span class="n">links</span><span class="p">)</span>
+<span class="go">None</span>
+</pre></div>
+</div>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.add_link" title="infomap.Infomap.add_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_link()</span></code></a></p>
@@ -119,8 +130,8 @@
 </dl>
 <p class="rubric">Examples</p>
 <p>Usage with tuples:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">infomap</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">Infomap</span><span class="p">()</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">source_multilayer_node</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># layer_id, node_id</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">target_multilayer_node</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c1"># layer_id, node_id</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_multilayer_link</span><span class="p">(</span><span class="n">source_multilayer_node</span><span class="p">,</span> <span class="n">target_multilayer_node</span><span class="p">)</span>
@@ -142,6 +153,17 @@
 <dt id="infomap.Infomap.add_multilayer_links">
 <code class="sig-name descname">add_multilayer_links</code><span class="sig-paren">(</span><em class="sig-param">links</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_multilayer_links" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add several multilayer links.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">links</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span>
+<span class="gp">... </span>    <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_multilayer_links</span><span class="p">(</span><span class="n">links</span><span class="p">)</span>
+<span class="go">None</span>
+</pre></div>
+</div>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.add_multilayer_link" title="infomap.Infomap.add_multilayer_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_multilayer_link()</span></code></a></p>
@@ -183,6 +205,26 @@ If you want to create empty named nodes, use <code class="docutils literal notra
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.add_node" title="infomap.Infomap.add_node"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_node()</span></code></a></p>
 </div>
+<p class="rubric">Examples</p>
+<p>Add nodes</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="go">None</span>
+</pre></div>
+</div>
+<p>Add named nodes</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nodes</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Node 1&quot;</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Node 2&quot;</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;Node 3&quot;</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+<span class="go">None</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>nodes</strong> (<em>iterable of tuples</em><em> or </em><em>iterable of int</em>) – Iterable of tuples on the form (node_id, [name], [teleportation_weight])</p>
@@ -215,6 +257,18 @@ If you want to name the physical node, use <code class="docutils literal notrans
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.add_state_node" title="infomap.Infomap.add_state_node"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_state_node()</span></code></a></p>
 </div>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">states</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_state_nodes</span><span class="p">(</span><span class="n">states</span><span class="p">)</span>
+<span class="go">None</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>state_nodes</strong> (<em>iterable of tuples</em>) – Iterable of tuples of the form (state_id, node_id)</p>
@@ -226,6 +280,21 @@ If you want to name the physical node, use <code class="docutils literal notrans
 <dt id="infomap.Infomap.bipartite_start_id">
 <em class="property">property </em><code class="sig-name descname">bipartite_start_id</code><a class="headerlink" href="#infomap.Infomap.bipartite_start_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get or set the bipartite start id.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Left 1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Left 2&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">bipartite_start_id</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;Right 3&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;Right 4&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="go">None</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>start_id</strong> (<em>int</em>) – The node id where the second node type starts.</p>
@@ -318,6 +387,27 @@ If you want to name the physical node, use <code class="docutils literal notrans
 <dd><p>Get or set the initial partition.</p>
 <p>This is a initial configuration of nodes into modules where Infomap
 will start the optimizer.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">initial_partition</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="mi">2</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="mi">3</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="mi">4</span><span class="p">:</span> <span class="mi">1</span>
+<span class="gp">... </span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="go">None</span>
+</pre></div>
+</div>
 <p class="rubric">Notes</p>
 <p>The initial partition is saved between runs.
 If you want to use an initial partition for one run only,
@@ -554,6 +644,17 @@ nodes and links (default True).</p></li>
 <dt id="infomap.Infomap.remove_links">
 <code class="sig-name descname">remove_links</code><span class="sig-paren">(</span><em class="sig-param">links</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.remove_links" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove several links.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">links</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">remove_links</span><span class="p">(</span><span class="n">links</span><span class="p">)</span>
+<span class="go">None</span>
+</pre></div>
+</div>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.remove_link" title="infomap.Infomap.remove_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">remove_link()</span></code></a></p>
@@ -618,13 +719,24 @@ This is useful to create empty physical node in a state network.</p>
 <dt id="infomap.Infomap.set_names">
 <code class="sig-name descname">set_names</code><span class="sig-paren">(</span><em class="sig-param">names</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.set_names" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set names to several nodes at once.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">names</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Node 1&quot;</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Node 2&quot;</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">set_names</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+<span class="go">None</span>
+</pre></div>
+</div>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.set_name" title="infomap.Infomap.set_name"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_name()</span></code></a></p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>names</strong> (<em>dict of str</em>) – Dict with node ids as keys and names as values</p>
+<dd class="field-odd"><p><strong>names</strong> (<em>iterable of tuples</em>) – Iterable of tuples on the form (node_id, name).</p>
 </dd>
 </dl>
 </dd></dl>
