@@ -89,7 +89,7 @@ class Infomap(InfomapWrapper):
             Iterable of tuples on the form (node_id, [name], [teleportation_weight])
         """
         for node in nodes:
-            if instanceof(node, int):
+            if isinstance(node, int):
                 self.add_node(node)
             else:
                 self.add_node(*node)
@@ -403,6 +403,11 @@ class Infomap(InfomapWrapper):
     def codelength(self):
         """Get the total (hierarchical) codelength.
 
+        See Also
+        --------
+        index_codelength
+        module_codelength
+
         Returns
         -------
         float
@@ -414,6 +419,11 @@ class Infomap(InfomapWrapper):
     def index_codelength(self):
         """Get the two-level index codelength.
 
+        See Also
+        --------
+        codelength
+        module_codelength
+
         Returns
         -------
         float
@@ -424,6 +434,11 @@ class Infomap(InfomapWrapper):
     @property
     def module_codelength(self):
         """Get the two-level module codelength.
+
+        See Also
+        --------
+        codelength
+        index_codelength
 
         Returns
         -------
@@ -466,15 +481,57 @@ class Infomap(InfomapWrapper):
 
     @property
     def network(self):
+        """Get the internal network."""
         return super().network()
 
     def write_clu(self, filename="", states=False, depth_level=1):
+        """Write result to a clu file.
+
+        See Also
+        --------
+        write_tree
+        write_flow_tree
+
+        Parameters
+        ----------
+        filename : str
+        states : bool, optional
+            If the state nodes should be included (default False).
+        depth_level : int, optional
+            The depth in the hierarchical tree to write.
+        """
         return self.writeClu(filename, states, depth_level)
 
     def write_tree(self, filename="", states=False):
+        """Write result to a tree file.
+
+        See Also
+        --------
+        write_clu
+        write_flow_tree
+
+        Parameters
+        ----------
+        filename : str
+        states : bool, optional
+            If the state nodes should be included (default False).
+        """
         return self.writeTree(filename, states)
 
     def write_flow_tree(self, filename="", states=False):
+        """Write result to a ftree file.
+
+        See Also
+        --------
+        write_clu
+        write_tree
+
+        Parameters
+        ----------
+        filename : str
+        states : bool, optional
+            If the state nodes should be included (default False).
+        """
         return self.writeFlowTree(filename, states)
 
     def set_no_infomap(self, no_infomap=True):
@@ -483,5 +540,6 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         no_infomap : boolean, optional
+            Default True
         """
         return self.setNoInfomap(no_infomap)
