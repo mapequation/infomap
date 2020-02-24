@@ -66,7 +66,7 @@ class Infomap(InfomapWrapper):
         Notes
         -----
         Creates a state node for internal use.
-        If you want to create empty named nodes, use `set_name` instead.
+        If you want to create empty named nodes, use ``set_name`` instead.
 
         See Also
         --------
@@ -112,6 +112,8 @@ class Infomap(InfomapWrapper):
     def set_name(self, node_id, name):
         """Set the name of a node.
 
+        Notes
+        -----
         Creates nodes if a node with the supplied node id does not exist.
         This is useful to create empty physical node in a state network.
 
@@ -155,7 +157,7 @@ class Infomap(InfomapWrapper):
         Notes
         -----
         If a physical node with id node_id does not exist, it will be created.
-        If you want to name the physical node, use `set_name`.
+        If you want to name the physical node, use ``set_name``.
 
         Parameters
         ----------
@@ -332,7 +334,7 @@ class Infomap(InfomapWrapper):
         -----
         The initial partition is saved between runs.
         If you want to use an initial partition for one run only,
-        use `run(initial_partition=partition)`.
+        use ``run(initial_partition=partition)``.
 
         Parameters
         ----------

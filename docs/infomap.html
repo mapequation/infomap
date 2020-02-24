@@ -159,7 +159,7 @@
 <dd><p>Add a node.</p>
 <p class="rubric">Notes</p>
 <p>Creates a state node for internal use.
-If you want to create empty named nodes, use <cite>set_name</cite> instead.</p>
+If you want to create empty named nodes, use <code class="docutils literal notranslate"><span class="pre">set_name</span></code> instead.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.set_name" title="infomap.Infomap.set_name"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_name()</span></code></a></p>
@@ -196,7 +196,7 @@ If you want to create empty named nodes, use <cite>set_name</cite> instead.</p>
 <dd><p>Add a state node.</p>
 <p class="rubric">Notes</p>
 <p>If a physical node with id node_id does not exist, it will be created.
-If you want to name the physical node, use <cite>set_name</cite>.</p>
+If you want to name the physical node, use <code class="docutils literal notranslate"><span class="pre">set_name</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -321,7 +321,7 @@ will start the optimizer.</p>
 <p class="rubric">Notes</p>
 <p>The initial partition is saved between runs.
 If you want to use an initial partition for one run only,
-use <cite>run(initial_partition=partition)</cite>.</p>
+use <code class="docutils literal notranslate"><span class="pre">run(initial_partition=partition)</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>module_ids</strong> (<em>dict of int</em><em>, or </em><em>None</em>) – Dict with node ids as keys and module ids as values.</p>
@@ -601,6 +601,7 @@ nodes and links (default True).</p></li>
 <dt id="infomap.Infomap.set_name">
 <code class="sig-name descname">set_name</code><span class="sig-paren">(</span><em class="sig-param">node_id</em>, <em class="sig-param">name</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.set_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the name of a node.</p>
+<p class="rubric">Notes</p>
 <p>Creates nodes if a node with the supplied node id does not exist.
 This is useful to create empty physical node in a state network.</p>
 <dl class="field-list simple">
