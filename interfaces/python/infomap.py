@@ -282,6 +282,11 @@ class Infomap(InfomapWrapper):
         return super().iterLeafNodes()
 
     @property
+    def nodes(self):
+        """ Alias of leaf_nodes """
+        return self.leaf_nodes
+
+    @property
     def physical_tree(self):
         return super().iterTreePhysical()
 
@@ -330,11 +335,6 @@ class Infomap(InfomapWrapper):
     def network(self):
         return super().network()
 
-    @property
-    def nodes(self):
-        """ Alias of leaf_nodes """
-        return self.leaf_nodes
-
     def write_clu(self, filename="", states=False, depth_level=1):
         return self.writeClu(filename, states, depth_level)
 
@@ -344,5 +344,11 @@ class Infomap(InfomapWrapper):
     def write_flow_tree(self, filename="", states=False):
         return self.writeFlowTree(filename, states)
 
-    def set_no_infomap(self, value=True):
-        return self.setNoInfomap(value)
+    def set_no_infomap(self, no_infomap=True):
+        """Set wether the optimizer should run or not.
+
+        Parameters
+        ----------
+        no_infomap : boolean, optional
+        """
+        return self.setNoInfomap(no_infomap)
