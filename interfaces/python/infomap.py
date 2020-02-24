@@ -36,6 +36,7 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         args : str, optional
+            Space delimited parameter list (see Infomap documentation).
         """
         if args is None:
             args = ""
@@ -66,14 +67,14 @@ class Infomap(InfomapWrapper):
         if name is None:
             name = ""
 
-        if (len(name) and teleportation_weight):
+        if (len(name) and teleportation_weight is not None):
             return super().addNode(node_id, name, teleportation_weight)
-        elif (len(name) and not teleportation_weight):
+        elif (len(name) and teleportation_weight is None):
             return super().addNode(node_id, name)
-        elif (teleportation_weight and not len(name)):
+        elif (not len(name) and teleportation_weight is not None):
             return super().addNode(node_id, teleportation_weight)
-        else:
-            return super().addNode(node_id)
+
+        return super().addNode(node_id)
 
     def add_nodes(self, nodes):
         """Add several nodes.
