@@ -62,6 +62,10 @@ class Infomap(InfomapWrapper):
         Creates a state node for internal use.
         If you want to create empty named nodes, use `set_name` instead.
 
+        See Also
+        --------
+        set_name
+
         Parameters
         ----------
         node_id : int
@@ -172,6 +176,10 @@ class Infomap(InfomapWrapper):
 
     def add_link(self, source_id, target_id, weight=1.0):
         """Add a link.
+
+        Notes
+        -----
+        If the source or target nodes does not exist, they will be created.
 
         Parameters
         ----------
