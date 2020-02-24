@@ -15,8 +15,8 @@ class Infomap(InfomapWrapper):
         ----------
         filename : str
         accumulate : bool, optional
-            True if the network data should be accumulated to already added
-            nodes and links.
+            If the network data should be accumulated to already added
+            nodes and links (default True).
         """
         super().readInputData(filename, accumulate)
 
@@ -95,7 +95,7 @@ class Infomap(InfomapWrapper):
         ----------
         state_id : int
         node_id : int
-            id of the physical node
+            Id of the physical node the state node should be added to.
         """
         super().addStateNode(state_id, node_id)
 
@@ -250,9 +250,9 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         args : string
-            Space delimited parameter list (see Infomap documentation)
-        initial_partition : dict
-            Initial partition to start optimizer from (see initial_partition)
+            Space delimited parameter list (see Infomap documentation).
+        initial_partition : dict, optional
+            Initial partition to start optimizer from (see initial_partition).
         """
         if initial_partition:
             with self._initial_partition(initial_partition):
