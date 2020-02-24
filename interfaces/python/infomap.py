@@ -239,6 +239,10 @@ class Infomap(InfomapWrapper):
         -----
         If the source or target nodes does not exist, they will be created.
 
+        See Also
+        --------
+        remove_link
+
         Parameters
         ----------
         source_id : int
@@ -266,6 +270,7 @@ class Infomap(InfomapWrapper):
         See Also
         --------
         add_link
+        remove_link
 
         Parameters
         ----------
@@ -281,6 +286,10 @@ class Infomap(InfomapWrapper):
         Notes
         -----
         Removing links will not remove nodes if they become disconnected.
+
+        See Also
+        --------
+        add_link
 
         Parameters
         ----------
@@ -495,6 +504,23 @@ class Infomap(InfomapWrapper):
         finally:
             self.initial_partition = old_partition
 
+    _no_infomap = False
+
+    @property
+    def no_infomap(self):
+        """Set wether the optimizer should run or not.
+
+        Parameters
+        ----------
+        no_infomap : bool
+        """
+        return self._no_infomap
+
+    @no_infomap.setter
+    def no_infomap(self, no_infomap):
+        self._no_infomap = no_infomap
+        super().setNoInfomap(no_infomap)
+
     def run(self, args=None, initial_partition=None):
         """Run Infomap.
 
@@ -554,17 +580,57 @@ class Infomap(InfomapWrapper):
     def modules(self):
         """A view of the (top-level) modules
 
+        Example
+        -------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> im.read_file("ninetriangles.net")
+        >>> im.run("-N5")
+        >>> for node_id, module_id in im.modules:
+        ...     print(node_id, module_id)
+        ...
+        1 1
+        2 1
+        3 1
+        4 1
+        5 1
+        6 1
+        7 1
+        8 1
+        9 1
+        10 2
+        11 2
+        12 2
+        13 2
+        14 2
+        15 2
+        16 2
+        17 2
+        18 2
+        19 0
+        20 0
+        21 0
+        22 0
+        23 0
+        24 0
+        25 0
+        26 0
+        27 0
+
+
         See Also
         --------
         get_modules
 
         Yields
         -------
-        dict_items
-            An iterator of (node_id, module_id) pairs.
+        tuple of int, int
+            An iterator of node_id, module_id pairs.
         """
         return self.get_modules().items()
 
+    @property
     def tree(self):
         """A view of the tree
 
@@ -573,6 +639,7 @@ class Infomap(InfomapWrapper):
         InfomapIterator
             An iterator over each node in the tree, depth first from the root
         """
+        # TODO improve documentation
         return super().iterTree()
 
     @property
@@ -584,6 +651,7 @@ class Infomap(InfomapWrapper):
         InfomapLeafIterator
             An iterator over each leaf module in the tree, depth first from the root
         """
+        # TODO improve documentation
         return super().iterLeafModules()
 
     @property
@@ -595,6 +663,7 @@ class Infomap(InfomapWrapper):
         InfomapLeafIterator
             An iterator over each leaf node in the tree, depth first from the root
         """
+        # TODO improve documentation
         return super().iterLeafNodes()
 
     @property
@@ -626,6 +695,7 @@ class Infomap(InfomapWrapper):
         InfomapIteratorPhysical
             An iterator over each physical node in the tree, depth first from the root
         """
+        # TODO improve documentation
         return super().iterTreePhysical()
 
     @property
@@ -646,6 +716,7 @@ class Infomap(InfomapWrapper):
         InfomapLeafIteratorPhysical
             An iterator over each physical leaf node in the tree, depth first from the root
         """
+        # TODO improve documentation
         return super().iterLeafNodesPhysical()
 
     @property
@@ -755,7 +826,7 @@ class Infomap(InfomapWrapper):
         """Get the internal network."""
         return super().network()
 
-    def write_clu(self, filename="", states=False, depth_level=1):
+    def write_clu(self, filename, states=False, depth_level=1):
         """Write result to a clu file.
 
         See Also
@@ -773,7 +844,7 @@ class Infomap(InfomapWrapper):
         """
         return self.writeClu(filename, states, depth_level)
 
-    def write_tree(self, filename="", states=False):
+    def write_tree(self, filename, states=False):
         """Write result to a tree file.
 
         See Also
@@ -789,7 +860,7 @@ class Infomap(InfomapWrapper):
         """
         return self.writeTree(filename, states)
 
-    def write_flow_tree(self, filename="", states=False):
+    def write_flow_tree(self, filename, states=False):
         """Write result to a ftree file.
 
         See Also
@@ -804,20 +875,3 @@ class Infomap(InfomapWrapper):
             If the state nodes should be included (default False).
         """
         return self.writeFlowTree(filename, states)
-
-    _no_infomap = False
-
-    @property
-    def no_infomap(self):
-        """Set wether the optimizer should run or not.
-
-        Parameters
-        ----------
-        no_infomap : bool
-        """
-        return self._no_infomap
-
-    @no_infomap.setter
-    def no_infomap(self, no_infomap):
-        self._no_infomap = no_infomap
-        super().setNoInfomap(no_infomap)

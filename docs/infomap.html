@@ -77,6 +77,10 @@
 <dd><p>Add a link.</p>
 <p class="rubric">Notes</p>
 <p>If the source or target nodes does not exist, they will be created.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.remove_link" title="infomap.Infomap.remove_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">remove_link()</span></code></a></p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -105,7 +109,7 @@
 </div>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p><a class="reference internal" href="#infomap.Infomap.add_link" title="infomap.Infomap.add_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_link()</span></code></a></p>
+<p><a class="reference internal" href="#infomap.Infomap.add_link" title="infomap.Infomap.add_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_link()</span></code></a>, <a class="reference internal" href="#infomap.Infomap.remove_link" title="infomap.Infomap.remove_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">remove_link()</span></code></a></p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -520,13 +524,50 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 <dt id="infomap.Infomap.modules">
 <em class="property">property </em><code class="sig-name descname">modules</code><a class="headerlink" href="#infomap.Infomap.modules" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the (top-level) modules</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;ninetriangles.net&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;-N5&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">module_id</span> <span class="ow">in</span> <span class="n">im</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">node_id</span><span class="p">,</span> <span class="n">module_id</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">1 1</span>
+<span class="go">2 1</span>
+<span class="go">3 1</span>
+<span class="go">4 1</span>
+<span class="go">5 1</span>
+<span class="go">6 1</span>
+<span class="go">7 1</span>
+<span class="go">8 1</span>
+<span class="go">9 1</span>
+<span class="go">10 2</span>
+<span class="go">11 2</span>
+<span class="go">12 2</span>
+<span class="go">13 2</span>
+<span class="go">14 2</span>
+<span class="go">15 2</span>
+<span class="go">16 2</span>
+<span class="go">17 2</span>
+<span class="go">18 2</span>
+<span class="go">19 0</span>
+<span class="go">20 0</span>
+<span class="go">21 0</span>
+<span class="go">22 0</span>
+<span class="go">23 0</span>
+<span class="go">24 0</span>
+<span class="go">25 0</span>
+<span class="go">26 0</span>
+<span class="go">27 0</span>
+</pre></div>
+</div>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.get_modules" title="infomap.Infomap.get_modules"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_modules</span></code></a></p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Yields</dt>
-<dd class="field-odd"><p><em>dict_items</em> – An iterator of (node_id, module_id) pairs.</p>
+<dd class="field-odd"><p><em>tuple of int, int</em> – An iterator of node_id, module_id pairs.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -630,6 +671,10 @@ nodes and links (default True).</p></li>
 <dd><p>Remove a link.</p>
 <p class="rubric">Notes</p>
 <p>Removing links will not remove nodes if they become disconnected.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.add_link" title="infomap.Infomap.add_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_link()</span></code></a></p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -743,7 +788,7 @@ This is useful to create empty physical node in a state network.</p>
 
 <dl class="method">
 <dt id="infomap.Infomap.tree">
-<code class="sig-name descname">tree</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.tree" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">tree</code><a class="headerlink" href="#infomap.Infomap.tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the tree</p>
 <dl class="field-list simple">
 <dt class="field-odd">Yields</dt>
@@ -754,7 +799,7 @@ This is useful to create empty physical node in a state network.</p>
 
 <dl class="method">
 <dt id="infomap.Infomap.write_clu">
-<code class="sig-name descname">write_clu</code><span class="sig-paren">(</span><em class="sig-param">filename=''</em>, <em class="sig-param">states=False</em>, <em class="sig-param">depth_level=1</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_clu" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">write_clu</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">states=False</em>, <em class="sig-param">depth_level=1</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_clu" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write result to a clu file.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
@@ -773,7 +818,7 @@ This is useful to create empty physical node in a state network.</p>
 
 <dl class="method">
 <dt id="infomap.Infomap.write_flow_tree">
-<code class="sig-name descname">write_flow_tree</code><span class="sig-paren">(</span><em class="sig-param">filename=''</em>, <em class="sig-param">states=False</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_flow_tree" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">write_flow_tree</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">states=False</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_flow_tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write result to a ftree file.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
@@ -791,7 +836,7 @@ This is useful to create empty physical node in a state network.</p>
 
 <dl class="method">
 <dt id="infomap.Infomap.write_tree">
-<code class="sig-name descname">write_tree</code><span class="sig-paren">(</span><em class="sig-param">filename=''</em>, <em class="sig-param">states=False</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_tree" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">write_tree</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">states=False</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write result to a tree file.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
