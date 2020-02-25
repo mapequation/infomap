@@ -401,6 +401,9 @@ class Infomap(InfomapWrapper):
         for link in links:
             self.add_multilayer_link(*link)
 
+    def remove_multilayer_link(self):
+        raise NotImplementedError
+
     @property
     def bipartite_start_id(self):
         """Get or set the bipartite start id.
