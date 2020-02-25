@@ -97,7 +97,7 @@
 <code class="sig-name descname">add_links</code><span class="sig-paren">(</span><em class="sig-param">links</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_links" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add several links.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">links</span> <span class="o">=</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
@@ -134,7 +134,7 @@
 </dl>
 <p class="rubric">Examples</p>
 <p>Usage with tuples:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">source_multilayer_node</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># layer_id, node_id</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">target_multilayer_node</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c1"># layer_id, node_id</span>
@@ -143,7 +143,7 @@
 </pre></div>
 </div>
 <p>Usage with MultilayerNode</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span><span class="p">,</span> <span class="n">MultilayerNode</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span><span class="p">,</span> <span class="n">MultilayerNode</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">source_multilayer_node</span> <span class="o">=</span> <span class="n">MultilayerNode</span><span class="p">(</span><span class="n">layer_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">node_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">target_multilayer_node</span> <span class="o">=</span> <span class="n">MultilayerNode</span><span class="p">(</span><span class="n">layer_id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">node_id</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -158,7 +158,7 @@
 <code class="sig-name descname">add_multilayer_links</code><span class="sig-paren">(</span><em class="sig-param">links</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_multilayer_links" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add several multilayer links.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">links</span> <span class="o">=</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span>
@@ -211,14 +211,14 @@ If you want to create empty named nodes, use <code class="docutils literal notra
 </div>
 <p class="rubric">Examples</p>
 <p>Add nodes</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
 <span class="go">None</span>
 </pre></div>
 </div>
 <p>Add named nodes</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nodes</span> <span class="o">=</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Node 1&quot;</span><span class="p">),</span>
@@ -262,7 +262,7 @@ If you want to name the physical node, use <code class="docutils literal notrans
 <p><a class="reference internal" href="#infomap.Infomap.add_state_node" title="infomap.Infomap.add_state_node"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_state_node()</span></code></a></p>
 </div>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">states</span> <span class="o">=</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
@@ -285,7 +285,7 @@ If you want to name the physical node, use <code class="docutils literal notrans
 <em class="property">property </em><code class="sig-name descname">bipartite_start_id</code><a class="headerlink" href="#infomap.Infomap.bipartite_start_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get or set the bipartite start id.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Left 1&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Left 2&quot;</span><span class="p">)</span>
@@ -337,8 +337,14 @@ If you want to name the physical node, use <code class="docutils literal notrans
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The level in the hierarchical tree (default 1).</p></li>
-<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – Include state nodes (default False).</p></li>
+<li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The level in the hierarchical tree. Set to 1 (default) to return the
+top modules (coarsest level), set to 2 for second coarsest level etc.
+Set to -1 to return the bottom level modules (finest level).</p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate over state nodes,
+otherwise it will iterate over physical nodes, merging state nodes with same
+<code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same module.
+Note that the same physical node may end up on different paths in the tree.
+See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -356,13 +362,87 @@ If you want to name the physical node, use <code class="docutils literal notrans
 <dd><p>Get all the modules.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – Include state nodes (default False).</p>
+<dd class="field-odd"><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate over state nodes,
+otherwise it will iterate over physical nodes, merging state nodes with same
+<code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same module.
+Note that the same physical node may end up on different paths in the tree.
+See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>Dict with node ids as keys and list of module ids as values.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>dict of list of int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.Infomap.get_nodes">
+<code class="sig-name descname">get_nodes</code><span class="sig-paren">(</span><em class="sig-param">depth_level=1</em>, <em class="sig-param">states=False</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>A view of the tree</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The module level returned by <code class="docutils literal notranslate"><span class="pre">iterator.module_id</span></code>. Set to 1 (default) to
+return the top modules (coarsest level), set to 2 for second coarsest level
+etc. Set to -1 to return the bottom level modules (finest level).</p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate over state nodes,
+otherwise it will iterate over physical nodes, merging state nodes with same
+<code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same module.
+Note that the same physical node may end up on different paths in the tree.
+See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For higher-order networks, each node is represented by a set of state nodes
+with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code>, where each state node represents a different memory
+constraining the random walker. This enables overlapping modules, where
+state nodes with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> end up in different modules. However,
+the state nodes with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> within each module are only visible
+as one (partial) physical node (if <code class="docutils literal notranslate"><span class="pre">states</span> <span class="pre">=</span> <span class="pre">False</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>An iterator over each node in the tree, depth first from the root</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapIterator" title="infomap.InfomapIterator">InfomapIterator</a> or <a class="reference internal" href="#infomap.InfomapIteratorPhysical" title="infomap.InfomapIteratorPhysical">InfomapIteratorPhysical</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.Infomap.get_tree">
+<code class="sig-name descname">get_tree</code><span class="sig-paren">(</span><em class="sig-param">depth_level=1</em>, <em class="sig-param">states=False</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_tree" title="Permalink to this definition">¶</a></dt>
+<dd><p>A view of the tree</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The module level returned by <code class="docutils literal notranslate"><span class="pre">iterator.module_id</span></code>. Set to 1 (default) to
+return the top modules (coarsest level), set to 2 for second coarsest level
+etc. Set to -1 to return the bottom level modules (finest level).</p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate over state nodes,
+otherwise it will iterate over physical nodes, merging state nodes with same
+<code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same module.
+Note that the same physical node may end up on different paths in the tree.
+See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For higher-order networks, each node is represented by a set of state nodes
+with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code>, where each state node represents a different memory
+constraining the random walker. This enables overlapping modules, where
+state nodes with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> end up in different modules. However,
+the state nodes with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> within each module are only visible
+as one (partial) physical node (if <code class="docutils literal notranslate"><span class="pre">states</span> <span class="pre">=</span> <span class="pre">False</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>An iterator over each node in the tree, depth first from the root</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapIterator" title="infomap.InfomapIterator">InfomapIterator</a> or <a class="reference internal" href="#infomap.InfomapIteratorPhysical" title="infomap.InfomapIteratorPhysical">InfomapIteratorPhysical</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -392,7 +472,7 @@ If you want to name the physical node, use <code class="docutils literal notrans
 <p>This is a initial configuration of nodes into modules where Infomap
 will start the optimizer.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
@@ -435,7 +515,7 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 <dd><p>A view of the leaf modules, i.e. the bottom modules containing leaf nodes.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p><a class="reference internal" href="#infomap.InfomapLeafModuleIterator" title="infomap.InfomapLeafModuleIterator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapLeafModuleIterator</span></code></a></p>
+<p><a class="reference internal" href="#infomap.Infomap.get_modules" title="infomap.Infomap.get_modules"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_modules</span></code></a>, <a class="reference internal" href="#infomap.InfomapLeafModuleIterator" title="infomap.InfomapLeafModuleIterator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapLeafModuleIterator</span></code></a></p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -443,24 +523,6 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapLeafModuleIterator" title="infomap.InfomapLeafModuleIterator">InfomapLeafModuleIterator</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="infomap.Infomap.leaf_nodes">
-<em class="property">property </em><code class="sig-name descname">leaf_nodes</code><a class="headerlink" href="#infomap.Infomap.leaf_nodes" title="Permalink to this definition">¶</a></dt>
-<dd><p>A view of the leaf nodes (network nodes)</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p><a class="reference internal" href="#infomap.InfomapLeafIterator" title="infomap.InfomapLeafIterator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapLeafIterator</span></code></a></p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>An iterator over each leaf node in the tree, depth first from the root</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapLeafIterator" title="infomap.InfomapLeafIterator">InfomapLeafIterator</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -539,7 +601,7 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 <em class="property">property </em><code class="sig-name descname">modules</code><a class="headerlink" href="#infomap.Infomap.modules" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the (top-level) modules</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;ninetriangles.net&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;-N5&quot;</span><span class="p">)</span>
@@ -606,11 +668,19 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 <dl class="method">
 <dt id="infomap.Infomap.nodes">
 <em class="property">property </em><code class="sig-name descname">nodes</code><a class="headerlink" href="#infomap.Infomap.nodes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Alias of leaf_nodes.</p>
+<dd><p>A view of the leaf nodes with the top level module ids</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p><a class="reference internal" href="#infomap.Infomap.leaf_nodes" title="infomap.Infomap.leaf_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">leaf_nodes</span></code></a></p>
+<p><a class="reference internal" href="#infomap.Infomap.get_nodes" title="infomap.Infomap.get_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_nodes</span></code></a>, <a class="reference internal" href="#infomap.InfomapLeafIterator" title="infomap.InfomapLeafIterator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapLeafIterator</span></code></a></p>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>An iterator over each leaf node in the tree, depth first from the root</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapLeafIterator" title="infomap.InfomapLeafIterator">InfomapLeafIterator</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -628,19 +698,12 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 </dd></dl>
 
 <dl class="method">
-<dt id="infomap.Infomap.physical_leaf_nodes">
-<em class="property">property </em><code class="sig-name descname">physical_leaf_nodes</code><a class="headerlink" href="#infomap.Infomap.physical_leaf_nodes" title="Permalink to this definition">¶</a></dt>
-<dd><p>A view of the physical leaf nodes (network nodes)</p>
-<p class="rubric">Notes</p>
-<p>In a physical view, state nodes of the same physical node are merged to
-a (partial) physical node if they belong to the same module. As state
-nodes of the same physical node can be part of different modules, the
-same physical node_id may exist on multiple tips of the tree. In that
-case, the flow value of each leaf node in the tree is the sum of the flow
-values of the state nodes with the same physical node_id.</p>
+<dt id="infomap.Infomap.physical_nodes">
+<em class="property">property </em><code class="sig-name descname">physical_nodes</code><a class="headerlink" href="#infomap.Infomap.physical_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>A view of the physical leaf nodes with the top level module ids</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p><a class="reference internal" href="#infomap.InfomapLeafIteratorPhysical" title="infomap.InfomapLeafIteratorPhysical"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapLeafIteratorPhysical</span></code></a></p>
+<p><a class="reference internal" href="#infomap.Infomap.get_nodes" title="infomap.Infomap.get_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_nodes</span></code></a>, <a class="reference internal" href="#infomap.InfomapLeafIteratorPhysical" title="infomap.InfomapLeafIteratorPhysical"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapLeafIteratorPhysical</span></code></a></p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -655,18 +718,11 @@ values of the state nodes with the same physical node_id.</p>
 <dl class="method">
 <dt id="infomap.Infomap.physical_tree">
 <em class="property">property </em><code class="sig-name descname">physical_tree</code><a class="headerlink" href="#infomap.Infomap.physical_tree" title="Permalink to this definition">¶</a></dt>
-<dd><p>A view of the tree where that state nodes of the same node_id
-are merged to one physical node</p>
-<p class="rubric">Notes</p>
-<p>In a physical view, state nodes of the same physical node are merged to
-a (partial) physical node if they belong to the same module. As state
-nodes of the same physical node can be part of different modules, the
-same physical node_id may exist on multiple tips of the tree. In that
-case, the flow value of each leaf node in the tree is the sum of the flow
-values of the state nodes with the same physical node_id.</p>
+<dd><p>A view of the tree where that state nodes of the same
+<code class="docutils literal notranslate"><span class="pre">node_id</span></code> are merged to one physical node</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p><a class="reference internal" href="#infomap.InfomapIteratorPhysical" title="infomap.InfomapIteratorPhysical"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapIteratorPhysical</span></code></a></p>
+<p><a class="reference internal" href="#infomap.Infomap.get_tree" title="infomap.Infomap.get_tree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_tree</span></code></a>, <a class="reference internal" href="#infomap.InfomapIteratorPhysical" title="infomap.InfomapIteratorPhysical"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapIteratorPhysical</span></code></a></p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -718,7 +774,7 @@ nodes and links (default True).</p></li>
 <code class="sig-name descname">remove_links</code><span class="sig-paren">(</span><em class="sig-param">links</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.remove_links" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove several links.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">links</span> <span class="o">=</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
@@ -793,7 +849,7 @@ This is useful to create empty physical node in a state network.</p>
 <code class="sig-name descname">set_names</code><span class="sig-paren">(</span><em class="sig-param">names</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.set_names" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set names to several nodes at once.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">names</span> <span class="o">=</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Node 1&quot;</span><span class="p">),</span>
@@ -820,7 +876,7 @@ This is useful to create empty physical node in a state network.</p>
 <dd><p>A view of the tree</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p><a class="reference internal" href="#infomap.InfomapIterator" title="infomap.InfomapIterator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapIterator</span></code></a></p>
+<p><a class="reference internal" href="#infomap.Infomap.get_tree" title="infomap.Infomap.get_tree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_tree</span></code></a>, <a class="reference internal" href="#infomap.InfomapIterator" title="infomap.InfomapIterator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapIterator</span></code></a></p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
