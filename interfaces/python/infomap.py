@@ -547,9 +547,15 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         depth_level : int, optional
-            The level in the hierarchical tree (default 1).
+            The level in the hierarchical tree. Set to 1 (default) to return the
+            top modules (coarsest level), set to 2 for second coarsest level etc.
+            Set to -1 to return the bottom level modules (finest level).
         states : bool, optional
-            Include state nodes (default False).
+            For higher-order networks, if ``states`` is True, it will iterate over state nodes,
+            otherwise it will iterate over physical nodes, merging state nodes with same
+            ``node_id`` if they are in the same module.
+            Note that the same physical node may end up on different paths in the tree.
+            See notes on ``physical_tree``.
 
         Returns
         -------
@@ -564,7 +570,11 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         states : bool, optional
-            Include state nodes (default False).
+            For higher-order networks, if ``states`` is True, it will iterate over state nodes,
+            otherwise it will iterate over physical nodes, merging state nodes with same
+            ``node_id`` if they are in the same module.
+            Note that the same physical node may end up on different paths in the tree.
+            See notes on ``physical_tree``.
 
         Returns
         -------
@@ -625,7 +635,75 @@ class Infomap(InfomapWrapper):
         tuple of int, int
             An iterator of node_id, module_id pairs.
         """
-        return self.get_modules().items()
+        return self.get_modules(depth_level=1, states=False).items()
+
+    def get_tree(self, depth_level=1, states=False):
+        """A view of the tree
+
+        Parameters
+        ----------
+        depth_level : int, optional
+            The module level returned by ``iterator.module_id``. Set to 1 (default) to
+            return the top modules (coarsest level), set to 2 for second coarsest level
+            etc. Set to -1 to return the bottom level modules (finest level).
+        states : bool, optional
+            For higher-order networks, if ``states`` is True, it will iterate over state nodes,
+            otherwise it will iterate over physical nodes, merging state nodes with same
+            ``node_id`` if they are in the same module.
+            Note that the same physical node may end up on different paths in the tree.
+            See notes on ``physical_tree``.
+        
+        Notes
+        ----
+        For higher-order networks, each node is represented by a set of state nodes
+        with the same ``node_id``, where each state node represents a different memory
+        constraining the random walker. This enables overlapping modules, where
+        state nodes with the same ``node_id`` end up in different modules. However,
+        the state nodes with the same ``node_id`` within each module are only visible
+        as one (partial) physical node (if ``states = False``).
+
+        Returns
+        -------
+        InfomapIterator or InfomapIteratorPhysical
+            An iterator over each node in the tree, depth first from the root
+        """
+        if states:
+            return super().iterTree(depth_level)
+        return super().iterTreePhysical(depth_level)
+
+    def get_nodes(self, depth_level=1, states=False):
+        """A view of the tree
+
+        Parameters
+        ----------
+        depth_level : int, optional
+            The module level returned by ``iterator.module_id``. Set to 1 (default) to
+            return the top modules (coarsest level), set to 2 for second coarsest level
+            etc. Set to -1 to return the bottom level modules (finest level).
+        states : bool, optional
+            For higher-order networks, if ``states`` is True, it will iterate over state nodes,
+            otherwise it will iterate over physical nodes, merging state nodes with same
+            ``node_id`` if they are in the same module.
+            Note that the same physical node may end up on different paths in the tree.
+            See notes on ``physical_tree``.
+        
+        Notes
+        ----
+        For higher-order networks, each node is represented by a set of state nodes
+        with the same ``node_id``, where each state node represents a different memory
+        constraining the random walker. This enables overlapping modules, where
+        state nodes with the same ``node_id`` end up in different modules. However,
+        the state nodes with the same ``node_id`` within each module are only visible
+        as one (partial) physical node (if ``states = False``).
+
+        Returns
+        -------
+        InfomapIterator or InfomapIteratorPhysical
+            An iterator over each node in the tree, depth first from the root
+        """
+        if states:
+            return super().iterLeafNodes(depth_level)
+        return super().iterLeafNodesPhysical(depth_level)
 
     @property
     def tree(self):
@@ -633,6 +711,7 @@ class Infomap(InfomapWrapper):
 
         See Also
         --------
+        get_tree
         InfomapIterator
 
         Returns
@@ -640,7 +719,24 @@ class Infomap(InfomapWrapper):
         InfomapIterator
             An iterator over each node in the tree, depth first from the root
         """
-        return super().iterTree()
+        return self.get_tree(depth_level=1, states=True)
+
+    @property
+    def physical_tree(self):
+        """A view of the tree where that state nodes of the same
+        ``node_id`` are merged to one physical node
+
+        See Also
+        --------
+        get_tree
+        InfomapIteratorPhysical
+
+        Returns
+        -------
+        InfomapIteratorPhysical
+            An iterator over each physical node in the tree, depth first from the root
+        """
+        return self.get_tree(depth_level=1, states=False)
 
     @property
     def leaf_modules(self):
@@ -648,6 +744,7 @@ class Infomap(InfomapWrapper):
 
         See Also
         --------
+        get_modules
         InfomapLeafModuleIterator
 
         Returns
@@ -658,11 +755,12 @@ class Infomap(InfomapWrapper):
         return super().iterLeafModules()
 
     @property
-    def leaf_nodes(self):
-        """A view of the leaf nodes (network nodes)
+    def nodes(self):
+        """A view of the leaf nodes with the top level module ids
 
         See Also
         --------
+        get_nodes
         InfomapLeafIterator
 
         Returns
@@ -670,58 +768,15 @@ class Infomap(InfomapWrapper):
         InfomapLeafIterator
             An iterator over each leaf node in the tree, depth first from the root
         """
-        return super().iterLeafNodes()
+        return self.get_nodes(depth_level=1, states=True)
 
     @property
-    def nodes(self):
-        """Alias of leaf_nodes.
+    def physical_nodes(self):
+        """A view of the physical leaf nodes with the top level module ids
 
         See Also
         --------
-        leaf_nodes
-        """
-        return self.leaf_nodes
-
-    @property
-    def physical_tree(self):
-        """A view of the tree where that state nodes of the same node_id
-        are merged to one physical node
-
-        Notes
-        -----
-        In a physical view, state nodes of the same physical node are merged to
-        a (partial) physical node if they belong to the same module. As state
-        nodes of the same physical node can be part of different modules, the
-        same physical node_id may exist on multiple tips of the tree. In that
-        case, the flow value of each leaf node in the tree is the sum of the flow
-        values of the state nodes with the same physical node_id.
-
-        See Also
-        --------
-        InfomapIteratorPhysical
-
-        Returns
-        -------
-        InfomapIteratorPhysical
-            An iterator over each physical node in the tree, depth first from the root
-        """
-        return super().iterTreePhysical()
-
-    @property
-    def physical_leaf_nodes(self):
-        """A view of the physical leaf nodes (network nodes)
-
-        Notes
-        -----
-        In a physical view, state nodes of the same physical node are merged to
-        a (partial) physical node if they belong to the same module. As state
-        nodes of the same physical node can be part of different modules, the
-        same physical node_id may exist on multiple tips of the tree. In that
-        case, the flow value of each leaf node in the tree is the sum of the flow
-        values of the state nodes with the same physical node_id.
-
-        See Also
-        --------
+        get_nodes
         InfomapLeafIteratorPhysical
 
         Returns
@@ -729,7 +784,7 @@ class Infomap(InfomapWrapper):
         InfomapLeafIteratorPhysical
             An iterator over each physical leaf node in the tree, depth first from the root
         """
-        return super().iterLeafNodesPhysical()
+        return self.get_nodes(depth_level=1, states=False)
 
     @property
     def num_top_modules(self):

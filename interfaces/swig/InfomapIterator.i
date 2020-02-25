@@ -49,7 +49,7 @@ namespace std {
 			int
 				The module id
 			"""
-			return self.moduleIndex() + 1
+			return self.moduleId()
 
 		_path = path
 		@property
@@ -125,7 +125,7 @@ namespace std {
 			int
 				The module id
 			"""
-			return self.moduleIndex() + 1
+			return self.moduleId()
 
 		_path = path
 		@property
@@ -202,7 +202,7 @@ namespace std {
 			int
 				The module id
 			"""
-			return self.moduleIndex() + 1
+			return self.moduleId()
 
 		_path = path
 		@property
@@ -279,7 +279,7 @@ namespace std {
 			int
 				The module id
 			"""
-			return self.moduleIndex() + 1
+			return self.moduleId()
 
 		_path = path
 		@property
@@ -356,7 +356,7 @@ namespace std {
 			int
 				The module id
 			"""
-			return self.moduleIndex() + 1
+			return self.moduleId()
 
 		_path = path
 		@property

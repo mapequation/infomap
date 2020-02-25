@@ -16,9 +16,9 @@ im.run()
 
 print(f"Found {im.max_depth} levels with {im.num_top_modules} top modules and codelength: {im.codelength}")
 
-print("Tree:\n# path node_id flow")
+print("Tree:\n# path node_id module_id flow")
 for node in im.leaf_nodes:
-    print(f"{node.path} {node.node_id} {node.flow}")
+    print(f"{node.path} {node.node_id} {node.module_id} {node.flow}")
 
 for module_level in range(1, im.max_depth):
     print(f"Modules at level {module_level}: {im.get_modules(module_level).values()}")
@@ -38,7 +38,7 @@ print(f"Writing tree to output/{name}.tree...")
 im.write_tree(f"output/{name}.tree")
 
 print("Read back .clu file and only calculate codelength...")
-im2 = infomap.Infomap(f"--input {filename} --no-infomap -c output/{name}.clu -vvv")
+im2 = infomap.Infomap(f"--input {filename} --no-infomap -c output/{name}.clu")
 im2.run()
 print(f"Found {im2.max_depth} levels with {im2.num_top_modules} top modules and codelength: {im2.codelength}")
 

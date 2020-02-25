@@ -2105,7 +2105,7 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 		for (auto it(iterTreePhysical(moduleIndexLevel)); !it.isEnd(); ++it) {
 			InfoNode &node = *it;
 			if (node.isLeaf()) {
-				outFile << node.physicalId << " " << (it.moduleIndex() + 1) << " " << node.data.flow << "\n";
+				outFile << node.physicalId << " " << it.moduleId() << " " << node.data.flow << "\n";
 			}
 		}
 	} else {
@@ -2113,13 +2113,13 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 			InfoNode &node = *it;
 			if (node.isLeaf()) {
 				if (states) {
-					outFile << node.stateId << " " << (it.moduleIndex() + 1) << " " << node.data.flow << " " << node.physicalId;
+					outFile << node.stateId << " " << it.moduleId() << " " << node.data.flow << " " << node.physicalId;
 					if (this->isMultilayerNetwork())
 						outFile << " " << node.layerId;
 					outFile << "\n";
 				}
 				else
-					outFile << node.physicalId << " " << (it.moduleIndex() + 1) << " " << node.data.flow << "\n";
+					outFile << node.physicalId << " " << it.moduleId() << " " << node.data.flow << "\n";
 			}
 		}
 	}

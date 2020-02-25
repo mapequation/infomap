@@ -74,25 +74,25 @@ public:
 	// InfomapIterator tree(int maxClusterLevel = std::numeric_limits<unsigned int>::max())
 	// { return InfomapIterator(&root(), maxClusterLevel); }
 
-	InfomapIterator iterTree(int maxClusterLevel = -1)
+	InfomapIterator iterTree(int maxClusterLevel = 1)
 	{ return InfomapIterator(&root(), maxClusterLevel); }
 
-	InfomapIteratorPhysical iterTreePhysical(int maxClusterLevel = -1)
+	InfomapIteratorPhysical iterTreePhysical(int maxClusterLevel = 1)
 	{ return InfomapIteratorPhysical(&root(), maxClusterLevel); }
 
-	InfomapModuleIterator iterModules(int maxClusterLevel = -1)
+	InfomapModuleIterator iterModules(int maxClusterLevel = 1)
 	{ return InfomapModuleIterator(&root(), maxClusterLevel); }
 
-	InfomapLeafModuleIterator iterLeafModules(int maxClusterLevel = -1)
+	InfomapLeafModuleIterator iterLeafModules(int maxClusterLevel = 1)
 	{ return InfomapLeafModuleIterator(&root(), maxClusterLevel); }
 
-	InfomapLeafIterator iterLeafNodes(int maxClusterLevel = -1)
+	InfomapLeafIterator iterLeafNodes(int maxClusterLevel = 1)
 	{ return InfomapLeafIterator(&root(), maxClusterLevel); }
 
-	InfomapLeafIteratorPhysical iterLeafNodesPhysical(int maxClusterLevel = -1)
+	InfomapLeafIteratorPhysical iterLeafNodesPhysical(int maxClusterLevel = 1)
 	{ return InfomapLeafIteratorPhysical(&root(), maxClusterLevel); }
 
-	InfomapIterator begin(int maxClusterLevel = -1)
+	InfomapIterator begin(int maxClusterLevel = 1)
 	{ return InfomapIterator(&root(), maxClusterLevel); }
 
 	InfomapIterator end()

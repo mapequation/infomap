@@ -126,6 +126,11 @@ public:
 		return m_moduleIndex;
 	}
 
+	unsigned int moduleId() const
+	{
+		return m_moduleIndex + 1;
+	}
+
 	unsigned int childIndex() const
 	{
 		return m_path.empty() ? 0 : m_path.back();
