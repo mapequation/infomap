@@ -59,3 +59,7 @@ html_static_path = ['_static']
 napoleon_numpy_docstring = True
 napoleon_google_docstring = False
 napoleon_include_init_with_doc = True
+
+autodoc_default_options = {
+    'exclude-members': 'thisown'
+}
