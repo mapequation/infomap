@@ -74,6 +74,7 @@ struct FlowModel {
 struct Config
 {
 	// Input
+	bool requireFileInput = false;
 	std::string networkFile = "";
 	std::vector<std::string> additionalInput;
 	std::string inputFormat = ""; // 'pajek', 'link-list', '3gram', 'path' or 'multilayer'
@@ -157,6 +158,7 @@ struct Config
 	bool printFlowTree = false;
 	bool printMap = false;
 	bool printClu = false;
+	int cluLevel = 1; // Write modules at specified depth from root. 1, 2, ... or -1 for bottom level
 	bool printNodeRanks = false;
 	bool printFlowNetwork = false;
 	bool printPajekNetwork = false;
@@ -191,6 +193,7 @@ struct Config
 	}
 
 	Config(const Config& other) :
+		requireFileInput(other.requireFileInput),
 		networkFile(other.networkFile),
 	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
@@ -290,6 +293,7 @@ struct Config
 
 	Config& operator=(const Config& other)
 	{
+		requireFileInput = other.requireFileInput;
 		networkFile = other.networkFile;
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
@@ -388,6 +392,7 @@ struct Config
 
 	Config& cloneAsNonMain(const Config& other)
 	{
+		requireFileInput = other.requireFileInput;
 		networkFile = other.networkFile;
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;

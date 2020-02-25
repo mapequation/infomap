@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Infomap Python API &#8212; Infomap 1.0.0-beta.59 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="infomap module" href="infomap.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="infomap-python-api">
+<h1>Infomap Python API<a class="headerlink" href="#infomap-python-api" title="Permalink to this headline">¶</a></h1>
+<p>Infomap is a network clustering algorithm based on the <a class="reference external" href="http://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation">Map equation</a>.</p>
+<p>The source code is available on <a class="reference external" href="http://www.github.com/mapequation/infomap">Github</a>. If you find any problems with
+the software, please create an issue on <a class="reference external" href="http://www.github.com/mapequation/infomap/issues">Github issues</a>.</p>
+<div class="section" id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="infomap.html">infomap module</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>Infomap is available on PyPI. To install, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">infomap</span>
+</pre></div>
+</div>
+<p>If you want to upgrade Infomap, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">infomap</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="command-line">
+<h3>Command line<a class="headerlink" href="#command-line" title="Permalink to this headline">¶</a></h3>
+<p>When the Python package is installed, an executable called <code class="docutils literal notranslate"><span class="pre">infomap</span></code> (with small i)
+is available from any directory. To verify your installation, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">infomap</span> <span class="o">-</span><span class="n">v</span>
+</pre></div>
+</div>
+<p>Command line usage is as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">infomap</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="n">network_data</span> <span class="n">destination</span>
+</pre></div>
+</div>
+<p>The various options are documented in the <a class="reference external" href="http://mapequation.org/code.html">Infomap documentation</a>.</p>
+</div>
+<div class="section" id="python-interface">
+<h3>Python interface<a class="headerlink" href="#python-interface" title="Permalink to this headline">¶</a></h3>
+<p>The Python package can be imported with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">infomap</span>
+</pre></div>
+</div>
+<p>A simple example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+
+<span class="c1"># Command line flags can be added as a string to Infomap</span>
+<span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="s2">&quot;--two-level --directed&quot;</span><span class="p">)</span>
+
+<span class="c1"># Add weight as optional third argument</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="c1"># Run the Infomap search algorithm to find optimal modules</span>
+<span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{im.num_top_modules}</span><span class="s2"> modules with codelength: </span><span class="si">{im.codelength}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Result&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">#node module&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">im</span><span class="o">.</span><span class="n">tree</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">node_id</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">module_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Please read the <a class="reference internal" href="infomap.html"><span class="doc">infomap module</span></a> reference to learn more.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">Infomap</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="infomap.html">infomap module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="infomap.html" title="next chapter">infomap module</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Daniel Edler, Anton Eriksson, Martin Rosvall.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

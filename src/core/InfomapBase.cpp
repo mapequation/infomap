@@ -193,25 +193,32 @@ std::vector<InfoNode*>& InfomapBase::activeNetwork() const
 	return *m_activeNetwork;
 }
 
+InfomapBase& InfomapBase::setInitialPartition(const std::map<unsigned int, unsigned int>& moduleIds)
+{
+	m_initialPartition = moduleIds;
+	return *this;
+}
+
 // ===================================================
 // Run
 // ===================================================
 
-void InfomapBase::run()
+void InfomapBase::run(std::string parameters)
 {
 	if (!isMainInfomap()) {
 		runPartition();
 		return;
 	}
-
-	const std::map<unsigned int, unsigned int> clusterIds = {};
-	run(clusterIds);
-}
-
-void InfomapBase::run(const std::map<unsigned int, unsigned int>& clusterIds)
-{
+	
 	m_elapsedTime = Stopwatch(true);
 	m_startDate = Date();
+
+	std::string currentParameters = io::Str() << m_initialParameters << (parameters.empty() ? "" : " ") << parameters;
+	if (currentParameters != m_currentParameters) {
+		m_currentParameters = currentParameters;
+		this->setConfig(Config::fromString(m_currentParameters, this->requireFileInput));
+		m_network.setConfig(*this);
+	}
 
 	Log::init(this->verbosity, this->silent, this->verboseNumberPrecision);
 
@@ -226,8 +233,8 @@ void InfomapBase::run(const std::map<unsigned int, unsigned int>& clusterIds)
 		for (unsigned int i = 0; i < this->parsedOptions.size(); ++i)
 			Log() << (i == 0 ? "  -> Configuration: " : "                    ") << this->parsedOptions[i] << "\n";
 	}
-	if (!clusterIds.empty()) {
-		Log() << "  -> " << clusterIds.size() << " cluster ids provided\n";
+	if (!m_initialPartition.empty()) {
+		Log() << "  -> " << m_initialPartition.size() << " initial module ids provided\n";
 	}
 	// Log() << "  -> Use " << (this->isUndirected()? "undirected" : "directed") << " flow";
 	// if (this->useTeleportation())
@@ -252,7 +259,7 @@ void InfomapBase::run(const std::map<unsigned int, unsigned int>& clusterIds)
 		initMetaData(this->metaDataFile);
 	}
 
-	run(m_network, clusterIds);
+	run(m_network);
 
 	Log() << "===================================================\n";
 	Log() << "  Infomap ends at " << m_endDate << "\n";
@@ -262,12 +269,6 @@ void InfomapBase::run(const std::map<unsigned int, unsigned int>& clusterIds)
 }
 
 void InfomapBase::run(Network& network)
-{
-	const std::map<unsigned int, unsigned int> clusterIds = {};
-	run(network, clusterIds);
-}
-
-void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned int>& clusterIds)
 {
 	if (!isMainInfomap())
 		throw InternalOrderError("Can't run a non-main Infomap with an input network");
@@ -362,8 +363,8 @@ void InfomapBase::run(Network& network, const std::map<unsigned int, unsigned in
 
 			if (this->clusterDataFile != "")
 				initPartition(this->clusterDataFile, this->clusterDataIsHard);
-			else if (!clusterIds.empty())
-				initPartition(clusterIds, this->clusterDataIsHard);
+			else if (!m_initialPartition.empty())
+				initPartition(m_initialPartition, this->clusterDataIsHard);
 		}
 
 		if (!this->noInfomap)
@@ -2012,17 +2013,17 @@ void InfomapBase::writeResult()
 		std::string filename = this->outDirectory + this->outName + ".clu";
 		if (!haveMemory()) {
 			Log() << "Write node modules to " << filename << "... ";
-			writeClu(filename);
+			writeClu(filename, false, this->cluLevel);
 			Log() << "done!\n";
 		}
 		else {
 			// Write both physical and state level
 			Log() << "Write physical node modules to " << filename << "... ";
-			writeClu(filename);
+			writeClu(filename, false, this->cluLevel);
 			Log() << "done!\n";
 			std::string filenameStates = this->outDirectory + this->outName + "_states.clu";
 			Log() << "Write state node modules to " << filenameStates << "... ";
-			writeClu(filenameStates, true);
+			writeClu(filenameStates, true, this->cluLevel);
 			Log() << "done!\n";
 		}
 	}
@@ -2089,22 +2090,23 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 	SafeOutFile outFile(outputFilename);
 	outFile << std::setprecision(9);
 	outFile << getOutputFileHeader() << "\n";
+	outFile << "# module level: " << moduleIndexLevel << "\n";
 	outFile << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
 	if (states) {
-		outFile << "# stateId module flow physicalId";
+		outFile << "# state_id module flow node_id";
 		if (this->isMultilayerNetwork())
-			outFile << " layerId";
+			outFile << " layer_id";
 		outFile << "\n";
 	}
 	else {
-		outFile << "# node module flow\n";
+		outFile << "# id module flow\n";
 	}
 	// auto it = haveMemory() && !states ? iterTreePhysical(moduleIndexLevel) : iterTree(moduleIndexLevel);
 	if (haveMemory() && !states) {
 		for (auto it(iterTreePhysical(moduleIndexLevel)); !it.isEnd(); ++it) {
 			InfoNode &node = *it;
 			if (node.isLeaf()) {
-				outFile << node.physicalId << " " << (it.moduleIndex() + 1) << " " << node.data.flow << "\n";
+				outFile << node.physicalId << " " << it.moduleId() << " " << node.data.flow << "\n";
 			}
 		}
 	} else {
@@ -2112,13 +2114,13 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 			InfoNode &node = *it;
 			if (node.isLeaf()) {
 				if (states) {
-					outFile << node.stateId << " " << (it.moduleIndex() + 1) << " " << node.data.flow << " " << node.physicalId;
+					outFile << node.stateId << " " << it.moduleId() << " " << node.data.flow << " " << node.physicalId;
 					if (this->isMultilayerNetwork())
 						outFile << " " << node.layerId;
 					outFile << "\n";
 				}
 				else
-					outFile << node.physicalId << " " << (it.moduleIndex() + 1) << " " << node.data.flow << "\n";
+					outFile << node.physicalId << " " << it.moduleId() << " " << node.data.flow << "\n";
 			}
 		}
 	}
@@ -2240,13 +2242,13 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 	outStream << getOutputFileHeader() << "\n";
 	outStream << std::setprecision(6);
 	if (states) {
-		outStream << "# path flow name stateId physicalId";
+		outStream << "# path flow name state_id node_id";
 		if (this->isMultilayerNetwork())
-			outStream << " layerId";
+			outStream << " layer_id";
 		outStream << "\n";
 	}
 	else
-		outStream << "# path flow name physicalId\n";
+		outStream << "# path flow name node_id\n";
 	// TODO: Make a general iterator where merging physical nodes depend on a parameter rather than type to be able to DRY here
 	if (haveMemory() && !states) {
 		for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
@@ -2256,7 +2258,7 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 				auto name = m_network.names()[node.physicalId];
 				if (name.empty())
 					name = io::stringify(node.physicalId);
-				outStream << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << name << "\" " << node.physicalId << "\n";
+				outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << name << "\" " << node.physicalId << "\n";
 			}
 		}
 	} else {
@@ -2267,7 +2269,7 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 				auto name = m_network.names()[node.physicalId];
 				if (name.empty())
 					name = io::stringify(node.physicalId);
-				outStream << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << name << "\" ";
+				outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << name << "\" ";
 				if (states) {
 					outStream << node.stateId << " " << node.physicalId;
 					if (this->isMultilayerNetwork())

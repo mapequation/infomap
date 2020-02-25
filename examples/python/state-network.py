@@ -1,6 +1,6 @@
 import infomap
 
-myInfomap = infomap.Infomap("--two-level --verbose")
+im = infomap.Infomap("--two-level --verbose")
 
 stateNetwork = """
 *Vertices 4
@@ -24,36 +24,39 @@ stateNetwork = """
 4 5
 """
 
-myInfomap.addPhysicalNode(1, "PRE")
-myInfomap.addPhysicalNode(2, "SCIENCE")
-myInfomap.addPhysicalNode(3, "PRL")
-myInfomap.addPhysicalNode(4, "BIO")
+im.set_name(1, "PRE")
+im.set_name(2, "SCIENCE")
+im.set_name(3, "PRL")
+im.set_name(4, "BIO")
 
-myInfomap.addStateNode(1, 2)
-myInfomap.addStateNode(2, 3)
-myInfomap.addStateNode(3, 2)
-myInfomap.addStateNode(4, 2)
-myInfomap.addStateNode(5, 4)
+im.add_state_node(1, 2)
+im.add_state_node(2, 3)
+im.add_state_node(3, 2)
+im.add_state_node(4, 2)
+im.add_state_node(5, 4)
 
-myInfomap.addLink(1, 2)
-myInfomap.addLink(3, 2)
-myInfomap.addLink(4, 5)
+im.add_link(1, 2)
+im.add_link(3, 2)
+im.add_link(4, 5)
 
-myInfomap.run()
+im.run()
 
-print(f"Found {myInfomap.numTopModules()} modules with codelength: {myInfomap.codelength()}")
+print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
 
-print("\n#node module")
-for node,module in myInfomap.getModules().items():
+print("\n#node_id module")
+for node, module in im.modules:
     print(f"{node} {module}")
 
 print("\nState nodes:")
-print("#stateId physicalId module")
-for node in myInfomap.iterLeafNodes():
-    print(f"{node.stateId} {node.physicalId} {node.moduleIndex()}")
+print("#state_id node_id module_id")
+for node in im.nodes:
+    print(f"{node.state_id} {node.node_id} {node.module_id}")
 
-print("\nPhysical nodes:")
-print("#physicalId module")
-for node in myInfomap.iterTreePhysical():
-    print(f"{node.physicalId} {node.moduleIndex()}")
+print("\nPhysical nodes (merging state nodes with same physical node id within modules):")
+print("#node_id module_id")
+for node in im.physical_tree:
+    if node.is_leaf:
+        print(f"{node.node_id} {node.module_id}")
 
+# for node in im.physical_nodes:
+#     print(f"{node.node_id} {node.module_id}")

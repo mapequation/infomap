@@ -24,7 +24,7 @@ protected:
 	InfoNode* m_current = nullptr;
 	int m_moduleIndexLevel = -1;
 	unsigned int m_moduleIndex = 0;
-	std::deque<unsigned int> m_path; // The child index path to current node
+	std::deque<unsigned int> m_path; // The tree path to current node (indexing starting from one!)
 	unsigned int m_depth = 0;
 
 public:
@@ -126,6 +126,11 @@ public:
 		return m_moduleIndex;
 	}
 
+	unsigned int moduleId() const
+	{
+		return m_moduleIndex + 1;
+	}
+
 	unsigned int childIndex() const
 	{
 		return m_path.empty() ? 0 : m_path.back();
@@ -170,6 +175,10 @@ public:
 		return copy;
 	}
 
+	using InfomapIterator::current;
+	using InfomapIterator::path;
+	using InfomapIterator::childIndex;
+	using InfomapIterator::depth;
 };
 
 struct InfomapLeafModuleIterator : public InfomapIterator
@@ -205,6 +214,11 @@ public:
 		return copy;
 	}
 
+	using InfomapIterator::current;
+	using InfomapIterator::path;
+	using InfomapIterator::childIndex;
+	using InfomapIterator::depth;
+
 };
 
 struct InfomapLeafIterator : public InfomapIterator
@@ -239,6 +253,11 @@ public:
 		++(*this);
 		return copy;
 	}
+
+	using InfomapIterator::current;
+	using InfomapIterator::path;
+	using InfomapIterator::childIndex;
+	using InfomapIterator::depth;
 
 };
 
@@ -296,6 +315,11 @@ public:
 		return copy;
 	}
 
+	using InfomapIterator::current;
+	using InfomapIterator::path;
+	using InfomapIterator::childIndex;
+	using InfomapIterator::depth;
+
 };
 
 /**
@@ -337,6 +361,11 @@ public:
 		++(*this);
 		return copy;
 	}
+
+	using InfomapIteratorPhysical::current;
+	using InfomapIteratorPhysical::path;
+	using InfomapIteratorPhysical::childIndex;
+	using InfomapIteratorPhysical::depth;
 
 };
 

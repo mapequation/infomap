@@ -3,20 +3,20 @@ import infomap
 im = infomap.Infomap("--two-level --verbose")
 
 # Set the start id for bipartite nodes
-im.setBipartiteStartId(5)
+im.bipartite_start_id = 5
+
 # Add weight as an optional third argument
-im.addLink(5, 0)
-im.addLink(5, 1)
-im.addLink(5, 2)
-im.addLink(6, 2)
-im.addLink(6, 3)
-im.addLink(6, 4)
+im.add_link(5, 0)
+im.add_link(5, 1)
+im.add_link(5, 2)
+im.add_link(6, 2)
+im.add_link(6, 3)
+im.add_link(6, 4)
 
 im.run()
 
-print(f"Found {im.numTopModules()} modules with codelength: {im.codelength()}")
+print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
 
 print("\n#node flow:")
-for node in im.iterLeafNodes():
-	print(node.id, node.data.flow)
-
+for node in im.nodes:
+    print(node.node_id, node.flow)

@@ -17,10 +17,8 @@ Run `./Infomap --help` or visit [options](http://www.mapequation.org/code.html#O
 for a list of available options.
 
 Infomap can be used both as a standalone program and as a library.
-See the `examples` folder for examples.
+See the [examples](examples) folder for examples.
 
-We also include an [IPython notebook](examples/python/infomap-examples.ipynb)
-with the examples that can be viewed online.
 
 ### Using Pip
 

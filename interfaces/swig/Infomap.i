@@ -23,15 +23,18 @@ namespace std {
 }
 
 #ifdef SWIGPYTHON
-%extend infomap::Infomap
+%extend infomap::InfomapWrapper
 {
 	// overwrite getModules to convert swig map proxy object to pure dict
 	%insert("python") %{
         def getModules(self, level=1, states=False):
-            return dict(_infomap.Infomap_getModules(self, level, states))
+            return dict(_infomap.InfomapWrapper_getModules(self, level, states))
     %}
 }
 #endif
 
 /* Parse the header file to generate wrappers */
 %include "src/Infomap.h"
+
+
+%pythoncode "interfaces/python/infomap.py"

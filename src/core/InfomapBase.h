@@ -15,6 +15,7 @@
 #include "InfoEdge.h"
 #include <vector>
 #include <deque>
+#include <map>
 #include "../utils/Log.h"
 #include <limits>
 #include "PartitionQueue.h"
@@ -53,6 +54,7 @@ public:
 		InfomapConfig<InfomapBase>(flags)
 	{
 		m_network.setConfig(*this);
+		m_initialParameters = m_currentParameters = flags;
 	}
 
 	virtual ~InfomapBase() {}
@@ -72,25 +74,25 @@ public:
 	// InfomapIterator tree(int maxClusterLevel = std::numeric_limits<unsigned int>::max())
 	// { return InfomapIterator(&root(), maxClusterLevel); }
 
-	InfomapIterator iterTree(int maxClusterLevel = -1)
+	InfomapIterator iterTree(int maxClusterLevel = 1)
 	{ return InfomapIterator(&root(), maxClusterLevel); }
 
-	InfomapIteratorPhysical iterTreePhysical(int maxClusterLevel = -1)
+	InfomapIteratorPhysical iterTreePhysical(int maxClusterLevel = 1)
 	{ return InfomapIteratorPhysical(&root(), maxClusterLevel); }
 
-	InfomapModuleIterator iterModules(int maxClusterLevel = -1)
+	InfomapModuleIterator iterModules(int maxClusterLevel = 1)
 	{ return InfomapModuleIterator(&root(), maxClusterLevel); }
 
-	InfomapLeafModuleIterator iterLeafModules(int maxClusterLevel = -1)
+	InfomapLeafModuleIterator iterLeafModules(int maxClusterLevel = 1)
 	{ return InfomapLeafModuleIterator(&root(), maxClusterLevel); }
 
-	InfomapLeafIterator iterLeafNodes(int maxClusterLevel = -1)
+	InfomapLeafIterator iterLeafNodes(int maxClusterLevel = 1)
 	{ return InfomapLeafIterator(&root(), maxClusterLevel); }
 
-	InfomapLeafIteratorPhysical iterLeafNodesPhysical(int maxClusterLevel = -1)
+	InfomapLeafIteratorPhysical iterLeafNodesPhysical(int maxClusterLevel = 1)
 	{ return InfomapLeafIteratorPhysical(&root(), maxClusterLevel); }
 
-	InfomapIterator begin(int maxClusterLevel = -1)
+	InfomapIterator begin(int maxClusterLevel = 1)
 	{ return InfomapIterator(&root(), maxClusterLevel); }
 
 	InfomapIterator end()
@@ -171,18 +173,21 @@ public:
 
 	virtual std::ostream& toString(std::ostream& out) const;
 
+	const std::map<unsigned int, unsigned int>& getInitialPartition() const { return m_initialPartition; }
+
+	// ===================================================
+	// Init
+	// ===================================================
+
+	InfomapBase& setInitialPartition(const std::map<unsigned int, unsigned int>& moduleIds);
 
 	// ===================================================
 	// Run
 	// ===================================================
 
-	virtual void run();
-
-	virtual void run(const std::map<unsigned int, unsigned int>& clusterIds);
+	virtual void run(std::string parameters = "");
 
 	virtual void run(Network& network);
-
-	virtual void run(Network& network, const std::map<unsigned int, unsigned int>& clusterIds);
 
 	// ===================================================
 	// Run: *
@@ -469,6 +474,7 @@ protected:
 	std::vector<InfoNode*> m_originalLeafNodes;
 
 	Network m_network;
+	std::map<unsigned int, unsigned int> m_initialPartition = {}; // nodeId -> moduleId
 
 	const unsigned int SUPER_LEVEL_ADDITION = 1 << 20;
 	bool m_isMain = true;
@@ -487,6 +493,8 @@ protected:
 	Date m_startDate;
 	Date m_endDate;
 	Stopwatch m_elapsedTime = Stopwatch(false);
+	std::string m_initialParameters = "";
+	std::string m_currentParameters = "";
 };
 
 
