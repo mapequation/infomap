@@ -40,4 +40,4 @@ __pycache__
 node_modules
 dist
 interfaces/js/src/worker
-
+docs/.*
