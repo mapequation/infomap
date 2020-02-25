@@ -631,36 +631,45 @@ class Infomap(InfomapWrapper):
     def tree(self):
         """A view of the tree
 
-        Yields
+        See Also
+        --------
+        InfomapIterator
+
+        Returns
         -------
         InfomapIterator
             An iterator over each node in the tree, depth first from the root
         """
-        # TODO improve documentation
         return super().iterTree()
 
     @property
     def leaf_modules(self):
         """A view of the leaf modules, i.e. the bottom modules containing leaf nodes.
 
-        Yields
+        See Also
+        --------
+        InfomapLeafModuleIterator
+
+        Returns
         -------
-        InfomapLeafIterator
+        InfomapLeafModuleIterator
             An iterator over each leaf module in the tree, depth first from the root
         """
-        # TODO improve documentation
         return super().iterLeafModules()
 
     @property
     def leaf_nodes(self):
         """A view of the leaf nodes (network nodes)
 
-        Yields
+        See Also
+        --------
+        InfomapLeafIterator
+
+        Returns
         -------
         InfomapLeafIterator
             An iterator over each leaf node in the tree, depth first from the root
         """
-        # TODO improve documentation
         return super().iterLeafNodes()
 
     @property
@@ -687,12 +696,15 @@ class Infomap(InfomapWrapper):
         case, the flow value of each leaf node in the tree is the sum of the flow
         values of the state nodes with the same physical node_id.
 
-        Yields
+        See Also
+        --------
+        InfomapIteratorPhysical
+
+        Returns
         -------
         InfomapIteratorPhysical
             An iterator over each physical node in the tree, depth first from the root
         """
-        # TODO improve documentation
         return super().iterTreePhysical()
 
     @property
@@ -708,12 +720,15 @@ class Infomap(InfomapWrapper):
         case, the flow value of each leaf node in the tree is the sum of the flow
         values of the state nodes with the same physical node_id.
 
-        Yields
+        See Also
+        --------
+        InfomapLeafIteratorPhysical
+
+        Returns
         -------
         InfomapLeafIteratorPhysical
             An iterator over each physical leaf node in the tree, depth first from the root
         """
-        # TODO improve documentation
         return super().iterLeafNodesPhysical()
 
     @property

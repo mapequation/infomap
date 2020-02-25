@@ -39,26 +39,53 @@ namespace std {
 
 			return self
 
-		
+
 		@property
 		def module_id(self):
-			"""Get the module id of the node."""
+			"""Get the module id of the node.
+
+			Returns
+			-------
+			int
+				The module id
+			"""
 			return self.moduleIndex() + 1
 
 		_path = path
 		@property
 		def path(self):
+			"""Get the path to the node in the tree.
+
+			Returns
+			-------
+			tuple of ints
+				The path
+			"""
 			return self._path()
-		
+
 		_depth = depth
 		@property
 		def depth(self):
+			"""Get the depth.
+
+			Returns
+			-------
+			int
+				The depth
+			"""
 			return self._depth()
-		
+
 		@property
 		def child_index(self):
+			"""Get the child index.
+
+			Returns
+			-------
+			int
+				The child index
+			"""
 			return self.childIndex()
-		
+
 		# Forward to the node it currently points to
 		def __getattr__(self, name):
 			return getattr(self.current(), name)
@@ -88,26 +115,53 @@ namespace std {
 				raise StopIteration
 
 			return self
-		
+
 		@property
 		def module_id(self):
-			"""Get the module id of the node."""
+			"""Get the module id of the node.
+
+			Returns
+			-------
+			int
+				The module id
+			"""
 			return self.moduleIndex() + 1
-		
+
 		_path = path
 		@property
 		def path(self):
+			"""Get the path to the node in the tree.
+
+			Returns
+			-------
+			tuple of ints
+				The path
+			"""
 			return self._path()
-		
+
 		_depth = depth
 		@property
 		def depth(self):
+			"""Get the depth.
+
+			Returns
+			-------
+			int
+				The depth
+			"""
 			return self._depth()
-		
+
 		@property
 		def child_index(self):
+			"""Get the child index.
+
+			Returns
+			-------
+			int
+				The child index
+			"""
 			return self.childIndex()
-		
+
 		# Forward to the node it currently points to
 		def __getattr__(self, name):
 			return getattr(self.current(), name)
@@ -137,27 +191,54 @@ namespace std {
 				raise StopIteration
 
 			return self
-		
-		
+
+
 		@property
 		def module_id(self):
-			"""Get the module id of the node."""
+			"""Get the module id of the node.
+
+			Returns
+			-------
+			int
+				The module id
+			"""
 			return self.moduleIndex() + 1
 
 		_path = path
 		@property
 		def path(self):
+			"""Get the path to the node in the tree.
+
+			Returns
+			-------
+			tuple of ints
+				The path
+			"""
 			return self._path()
-		
+
 		_depth = depth
 		@property
 		def depth(self):
+			"""Get the depth.
+
+			Returns
+			-------
+			int
+				The depth
+			"""
 			return self._depth()
-		
+
 		@property
 		def child_index(self):
+			"""Get the child index.
+
+			Returns
+			-------
+			int
+				The child index
+			"""
 			return self.childIndex()
-		
+
 		# Forward to the node it currently points to
 		def __getattr__(self, name):
 			return getattr(self.current(), name)
@@ -187,27 +268,54 @@ namespace std {
 				raise StopIteration
 
 			return self
-		
-		
+
+
 		@property
 		def module_id(self):
-			"""Get the module id of the node."""
+			"""Get the module id of the node.
+
+			Returns
+			-------
+			int
+				The module id
+			"""
 			return self.moduleIndex() + 1
-		
+
 		_path = path
 		@property
 		def path(self):
+			"""Get the path to the node in the tree.
+
+			Returns
+			-------
+			tuple of ints
+				The path
+			"""
 			return self._path()
-		
+
 		_depth = depth
 		@property
 		def depth(self):
+			"""Get the depth.
+
+			Returns
+			-------
+			int
+				The depth
+			"""
 			return self._depth()
-		
+
 		@property
 		def child_index(self):
+			"""Get the child index.
+
+			Returns
+			-------
+			int
+				The child index
+			"""
 			return self.childIndex()
-		
+
 		# Forward to the node it currently points to
 		def __getattr__(self, name):
 			return getattr(self.current(), name)
@@ -237,27 +345,54 @@ namespace std {
 				raise StopIteration
 
 			return self
-		
-		
+
+
 		@property
 		def module_id(self):
-			"""Get the module id of the node."""
+			"""Get the module id of the node.
+
+			Returns
+			-------
+			int
+				The module id
+			"""
 			return self.moduleIndex() + 1
 
 		_path = path
 		@property
 		def path(self):
+			"""Get the path to the node in the tree.
+
+			Returns
+			-------
+			tuple of ints
+				The path
+			"""
 			return self._path()
-		
+
 		_depth = depth
 		@property
 		def depth(self):
+			"""Get the depth.
+
+			Returns
+			-------
+			int
+				The depth
+			"""
 			return self._depth()
-		
+
 		@property
 		def child_index(self):
+			"""Get the child index.
+
+			Returns
+			-------
+			int
+				The child index
+			"""
 			return self.childIndex()
-		
+
 		# Forward to the node it currently points to
 		def __getattr__(self, name):
 			return getattr(self.current(), name)

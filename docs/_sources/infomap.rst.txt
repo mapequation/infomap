@@ -7,8 +7,18 @@ infomap module
 
 .. autoclass:: InfoNode
    :members:
-   :inherited-members:
 
 .. autoclass:: InfomapIterator
    :members:
-   :inherited-members:
+
+.. autoclass:: InfomapLeafModuleIterator
+   :members:
+
+.. autoclass:: InfomapLeafIterator
+   :members:
+
+.. autoclass:: InfomapIteratorPhysical
+   :members:
+
+.. autoclass:: InfomapLeafIteratorPhysical
+   :members:

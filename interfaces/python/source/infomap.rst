@@ -10,3 +10,15 @@ infomap module
 
 .. autoclass:: InfomapIterator
    :members:
+
+.. autoclass:: InfomapLeafModuleIterator
+   :members:
+
+.. autoclass:: InfomapLeafIterator
+   :members:
+
+.. autoclass:: InfomapIteratorPhysical
+   :members:
+
+.. autoclass:: InfomapLeafIteratorPhysical
+   :members:

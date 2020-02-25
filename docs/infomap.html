@@ -433,9 +433,16 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 <dt id="infomap.Infomap.leaf_modules">
 <em class="property">property </em><code class="sig-name descname">leaf_modules</code><a class="headerlink" href="#infomap.Infomap.leaf_modules" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the leaf modules, i.e. the bottom modules containing leaf nodes.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.InfomapLeafModuleIterator" title="infomap.InfomapLeafModuleIterator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapLeafModuleIterator</span></code></a></p>
+</div>
 <dl class="field-list simple">
-<dt class="field-odd">Yields</dt>
-<dd class="field-odd"><p><em>InfomapLeafIterator</em> – An iterator over each leaf module in the tree, depth first from the root</p>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>An iterator over each leaf module in the tree, depth first from the root</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapLeafModuleIterator" title="infomap.InfomapLeafModuleIterator">InfomapLeafModuleIterator</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -444,9 +451,16 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 <dt id="infomap.Infomap.leaf_nodes">
 <em class="property">property </em><code class="sig-name descname">leaf_nodes</code><a class="headerlink" href="#infomap.Infomap.leaf_nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the leaf nodes (network nodes)</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.InfomapLeafIterator" title="infomap.InfomapLeafIterator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapLeafIterator</span></code></a></p>
+</div>
 <dl class="field-list simple">
-<dt class="field-odd">Yields</dt>
-<dd class="field-odd"><p><em>InfomapLeafIterator</em> – An iterator over each leaf node in the tree, depth first from the root</p>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>An iterator over each leaf node in the tree, depth first from the root</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapLeafIterator" title="infomap.InfomapLeafIterator">InfomapLeafIterator</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -624,9 +638,16 @@ nodes of the same physical node can be part of different modules, the
 same physical node_id may exist on multiple tips of the tree. In that
 case, the flow value of each leaf node in the tree is the sum of the flow
 values of the state nodes with the same physical node_id.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.InfomapLeafIteratorPhysical" title="infomap.InfomapLeafIteratorPhysical"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapLeafIteratorPhysical</span></code></a></p>
+</div>
 <dl class="field-list simple">
-<dt class="field-odd">Yields</dt>
-<dd class="field-odd"><p><em>InfomapLeafIteratorPhysical</em> – An iterator over each physical leaf node in the tree, depth first from the root</p>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>An iterator over each physical leaf node in the tree, depth first from the root</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapLeafIteratorPhysical" title="infomap.InfomapLeafIteratorPhysical">InfomapLeafIteratorPhysical</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -643,9 +664,16 @@ nodes of the same physical node can be part of different modules, the
 same physical node_id may exist on multiple tips of the tree. In that
 case, the flow value of each leaf node in the tree is the sum of the flow
 values of the state nodes with the same physical node_id.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.InfomapIteratorPhysical" title="infomap.InfomapIteratorPhysical"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapIteratorPhysical</span></code></a></p>
+</div>
 <dl class="field-list simple">
-<dt class="field-odd">Yields</dt>
-<dd class="field-odd"><p><em>InfomapIteratorPhysical</em> – An iterator over each physical node in the tree, depth first from the root</p>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>An iterator over each physical node in the tree, depth first from the root</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapIteratorPhysical" title="infomap.InfomapIteratorPhysical">InfomapIteratorPhysical</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -790,9 +818,16 @@ This is useful to create empty physical node in a state network.</p>
 <dt id="infomap.Infomap.tree">
 <em class="property">property </em><code class="sig-name descname">tree</code><a class="headerlink" href="#infomap.Infomap.tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the tree</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.InfomapIterator" title="infomap.InfomapIterator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InfomapIterator</span></code></a></p>
+</div>
 <dl class="field-list simple">
-<dt class="field-odd">Yields</dt>
-<dd class="field-odd"><p><em>InfomapIterator</em> – An iterator over each node in the tree, depth first from the root</p>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>An iterator over each node in the tree, depth first from the root</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapIterator" title="infomap.InfomapIterator">InfomapIterator</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -878,61 +913,144 @@ This is useful to create empty physical node in a state network.</p>
 <dd><dl class="method">
 <dt id="infomap.InfoNode.child_degree">
 <em class="property">property </em><code class="sig-name descname">child_degree</code><a class="headerlink" href="#infomap.InfoNode.child_degree" title="Permalink to this definition">¶</a></dt>
-<dd><p>The number of children</p>
+<dd><p>The number of children.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Number of children</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="infomap.InfoNode.flow">
 <em class="property">property </em><code class="sig-name descname">flow</code><a class="headerlink" href="#infomap.InfoNode.flow" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the flow of the node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The flow</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="infomap.InfoNode.get_meta_data">
 <code class="sig-name descname">get_meta_data</code><span class="sig-paren">(</span><em class="sig-param">dimension=0</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfoNode.get_meta_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get meta data on a specific dimension</p>
+<dd><p>Get meta data on a specific dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dimension</strong> (<em>int</em>) – The dimension (default 0)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The meta data</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="infomap.InfoNode.is_leaf">
 <em class="property">property </em><code class="sig-name descname">is_leaf</code><a class="headerlink" href="#infomap.InfoNode.is_leaf" title="Permalink to this definition">¶</a></dt>
-<dd><p>True if the node has no children</p>
+<dd><p>True if the node has no children.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Is leaf node</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="infomap.InfoNode.is_leaf_module">
 <em class="property">property </em><code class="sig-name descname">is_leaf_module</code><a class="headerlink" href="#infomap.InfoNode.is_leaf_module" title="Permalink to this definition">¶</a></dt>
-<dd><p>True if the node has children but no grandchildren</p>
+<dd><p>True if the node has children but no grandchildren.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Is leaf module</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="infomap.InfoNode.is_root">
 <em class="property">property </em><code class="sig-name descname">is_root</code><a class="headerlink" href="#infomap.InfoNode.is_root" title="Permalink to this definition">¶</a></dt>
-<dd><p>True if the node has no parent</p>
+<dd><p>True if the node has no parent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Is root</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="infomap.InfoNode.layer_id">
 <em class="property">property </em><code class="sig-name descname">layer_id</code><a class="headerlink" href="#infomap.InfoNode.layer_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the layer id of a multilayer node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The layer id</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="infomap.InfoNode.meta_data">
 <em class="property">property </em><code class="sig-name descname">meta_data</code><a class="headerlink" href="#infomap.InfoNode.meta_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Meta data (on first dimension if more)</p>
+<dd><p>Meta data (on first dimension if more).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The meta data</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="infomap.InfoNode.node_id">
 <em class="property">property </em><code class="sig-name descname">node_id</code><a class="headerlink" href="#infomap.InfoNode.node_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the physical node id.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The node id</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="infomap.InfoNode.state_id">
 <em class="property">property </em><code class="sig-name descname">state_id</code><a class="headerlink" href="#infomap.InfoNode.state_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the state id of the node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The state id</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -947,14 +1065,332 @@ This is useful to create empty physical node in a state network.</p>
 <dt id="infomap.InfomapIterator">
 <em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapIterator</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapIterator" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
+<dt id="infomap.InfomapIterator.child_index">
+<em class="property">property </em><code class="sig-name descname">child_index</code><a class="headerlink" href="#infomap.InfomapIterator.child_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the child index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The child index</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapIterator.depth">
+<em class="property">property </em><code class="sig-name descname">depth</code><a class="headerlink" href="#infomap.InfomapIterator.depth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the depth.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The depth</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="infomap.InfomapIterator.module_id">
 <em class="property">property </em><code class="sig-name descname">module_id</code><a class="headerlink" href="#infomap.InfomapIterator.module_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the module id of the node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The module id</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapIterator.path">
+<em class="property">property </em><code class="sig-name descname">path</code><a class="headerlink" href="#infomap.InfomapIterator.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the path to the node in the tree.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The path</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tuple of ints</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="infomap.InfomapIterator.thisown">
 <em class="property">property </em><code class="sig-name descname">thisown</code><a class="headerlink" href="#infomap.InfomapIterator.thisown" title="Permalink to this definition">¶</a></dt>
+<dd><p>The membership flag</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="infomap.InfomapLeafModuleIterator">
+<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapLeafModuleIterator</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapLeafModuleIterator" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="infomap.InfomapLeafModuleIterator.child_index">
+<em class="property">property </em><code class="sig-name descname">child_index</code><a class="headerlink" href="#infomap.InfomapLeafModuleIterator.child_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the child index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The child index</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapLeafModuleIterator.depth">
+<em class="property">property </em><code class="sig-name descname">depth</code><a class="headerlink" href="#infomap.InfomapLeafModuleIterator.depth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the depth.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The depth</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapLeafModuleIterator.module_id">
+<em class="property">property </em><code class="sig-name descname">module_id</code><a class="headerlink" href="#infomap.InfomapLeafModuleIterator.module_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the module id of the node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The module id</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapLeafModuleIterator.path">
+<em class="property">property </em><code class="sig-name descname">path</code><a class="headerlink" href="#infomap.InfomapLeafModuleIterator.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the path to the node in the tree.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The path</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tuple of ints</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapLeafModuleIterator.thisown">
+<em class="property">property </em><code class="sig-name descname">thisown</code><a class="headerlink" href="#infomap.InfomapLeafModuleIterator.thisown" title="Permalink to this definition">¶</a></dt>
+<dd><p>The membership flag</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="infomap.InfomapLeafIterator">
+<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapLeafIterator</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapLeafIterator" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="infomap.InfomapLeafIterator.child_index">
+<em class="property">property </em><code class="sig-name descname">child_index</code><a class="headerlink" href="#infomap.InfomapLeafIterator.child_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the child index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The child index</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapLeafIterator.depth">
+<em class="property">property </em><code class="sig-name descname">depth</code><a class="headerlink" href="#infomap.InfomapLeafIterator.depth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the depth.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The depth</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapLeafIterator.module_id">
+<em class="property">property </em><code class="sig-name descname">module_id</code><a class="headerlink" href="#infomap.InfomapLeafIterator.module_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the module id of the node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The module id</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapLeafIterator.path">
+<em class="property">property </em><code class="sig-name descname">path</code><a class="headerlink" href="#infomap.InfomapLeafIterator.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the path to the node in the tree.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The path</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tuple of ints</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapLeafIterator.thisown">
+<em class="property">property </em><code class="sig-name descname">thisown</code><a class="headerlink" href="#infomap.InfomapLeafIterator.thisown" title="Permalink to this definition">¶</a></dt>
+<dd><p>The membership flag</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="infomap.InfomapIteratorPhysical">
+<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapIteratorPhysical</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapIteratorPhysical" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="infomap.InfomapIteratorPhysical.child_index">
+<em class="property">property </em><code class="sig-name descname">child_index</code><a class="headerlink" href="#infomap.InfomapIteratorPhysical.child_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the child index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The child index</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapIteratorPhysical.depth">
+<em class="property">property </em><code class="sig-name descname">depth</code><a class="headerlink" href="#infomap.InfomapIteratorPhysical.depth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the depth.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The depth</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapIteratorPhysical.module_id">
+<em class="property">property </em><code class="sig-name descname">module_id</code><a class="headerlink" href="#infomap.InfomapIteratorPhysical.module_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the module id of the node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The module id</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapIteratorPhysical.path">
+<em class="property">property </em><code class="sig-name descname">path</code><a class="headerlink" href="#infomap.InfomapIteratorPhysical.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the path to the node in the tree.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The path</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tuple of ints</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapIteratorPhysical.thisown">
+<em class="property">property </em><code class="sig-name descname">thisown</code><a class="headerlink" href="#infomap.InfomapIteratorPhysical.thisown" title="Permalink to this definition">¶</a></dt>
+<dd><p>The membership flag</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="infomap.InfomapLeafIteratorPhysical">
+<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapLeafIteratorPhysical</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapLeafIteratorPhysical" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="infomap.InfomapLeafIteratorPhysical.child_index">
+<em class="property">property </em><code class="sig-name descname">child_index</code><a class="headerlink" href="#infomap.InfomapLeafIteratorPhysical.child_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the child index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The child index</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapLeafIteratorPhysical.depth">
+<em class="property">property </em><code class="sig-name descname">depth</code><a class="headerlink" href="#infomap.InfomapLeafIteratorPhysical.depth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the depth.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The depth</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapLeafIteratorPhysical.module_id">
+<em class="property">property </em><code class="sig-name descname">module_id</code><a class="headerlink" href="#infomap.InfomapLeafIteratorPhysical.module_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the module id of the node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The module id</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapLeafIteratorPhysical.path">
+<em class="property">property </em><code class="sig-name descname">path</code><a class="headerlink" href="#infomap.InfomapLeafIteratorPhysical.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the path to the node in the tree.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The path</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tuple of ints</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="infomap.InfomapLeafIteratorPhysical.thisown">
+<em class="property">property </em><code class="sig-name descname">thisown</code><a class="headerlink" href="#infomap.InfomapLeafIteratorPhysical.thisown" title="Permalink to this definition">¶</a></dt>
 <dd><p>The membership flag</p>
 </dd></dl>
 
