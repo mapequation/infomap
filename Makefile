@@ -189,11 +189,19 @@ $(PY_BUILD_DIR)/headers/%: %
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 
-.PHONY: py-doc
+.PHONY: py-doc py-doc-prepare
 SPHINX_SOURCE_DIR = interfaces/python/source
 SPHINX_TARGET_DIR = docs
 
+py-doc-prepare:
+	# Run this to get 'import infomap' to always import the latest
+	# locally built version, so no need to run this multiple times.
+	pip install -e $(PY_BUILD_DIR)
+
 py-doc: python
+	# Uses docstrings from the infomap available with 'import infomap'.
+	# Run py-doc-prepare if you don't have pip installed it with -e
+	# and don't have the latest version installed
 	@mkdir -p $(SPHINX_TARGET_DIR)
 	@touch $(SPHINX_TARGET_DIR)/.nojekyll
 	sphinx-build -b html $(SPHINX_SOURCE_DIR) $(SPHINX_TARGET_DIR)
