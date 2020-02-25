@@ -18,5 +18,5 @@ im.run()
 print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
 
 print("\n#node flow:")
-for node in im.leaf_nodes:
+for node in im.nodes:
     print(node.node_id, node.flow)

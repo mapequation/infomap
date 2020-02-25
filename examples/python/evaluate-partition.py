@@ -44,12 +44,15 @@ partition2 = {
 # Set initial partition on the Infomap instance to keep it during multiple runs
 im.initial_partition = partition1
 
-im.run("--no-infomap")
+im.no_infomap = True
+
+im.run()
 
 print(f"Partition one with {im.num_top_modules} modules -> codelength: {im.codelength}")
 
+
 # Set initial partition as run parameter to only use it for this run (will be restored to partition1 after)
-im.run("--no-infomap", initial_partition=partition2)
+im.run(initial_partition=partition2)
 
 print(f"Partition two with {im.num_top_modules} modules -> codelength: {im.codelength}")
 

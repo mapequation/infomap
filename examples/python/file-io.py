@@ -4,13 +4,12 @@ import pathlib
 name = "ninetriangles"
 filename = f"../../{name}.net"
 
-# Use the --input flag to read network from file directly
-im = infomap.Infomap(f"--input {filename}")
+im = infomap.Infomap()
 
-# You can also read a network with the method below,
+# You can read a network with the method read_file,
 # which by default will accumulate to existing network data
-# accumulate = False
-# im.read_file(filename, accumulate)
+accumulate = False
+im.read_file(filename, accumulate)
 
 im.run("-N5")
 
