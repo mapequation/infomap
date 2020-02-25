@@ -4,3 +4,11 @@ infomap module
 .. automodule:: infomap
    :members:
    :show-inheritance:
+
+.. autoclass:: InfoNode
+   :members:
+   :inherited-members:
+
+.. autoclass:: InfomapIterator
+   :members:
+   :inherited-members:
