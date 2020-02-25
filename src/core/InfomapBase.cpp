@@ -2013,17 +2013,17 @@ void InfomapBase::writeResult()
 		std::string filename = this->outDirectory + this->outName + ".clu";
 		if (!haveMemory()) {
 			Log() << "Write node modules to " << filename << "... ";
-			writeClu(filename);
+			writeClu(filename, false, this->cluLevel);
 			Log() << "done!\n";
 		}
 		else {
 			// Write both physical and state level
 			Log() << "Write physical node modules to " << filename << "... ";
-			writeClu(filename);
+			writeClu(filename, false, this->cluLevel);
 			Log() << "done!\n";
 			std::string filenameStates = this->outDirectory + this->outName + "_states.clu";
 			Log() << "Write state node modules to " << filenameStates << "... ";
-			writeClu(filenameStates, true);
+			writeClu(filenameStates, true, this->cluLevel);
 			Log() << "done!\n";
 		}
 	}
@@ -2090,6 +2090,7 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 	SafeOutFile outFile(outputFilename);
 	outFile << std::setprecision(9);
 	outFile << getOutputFileHeader() << "\n";
+	outFile << "# module level: " << moduleIndexLevel << "\n";
 	outFile << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
 	if (states) {
 		outFile << "# state_id module flow node_id";

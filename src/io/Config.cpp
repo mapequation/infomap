@@ -87,14 +87,17 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	api.addOptionArgument(conf.noFileOutput, '0', "no-file-output",
 			"Don't print any output to file.", "Output", true);
 
-	api.addOptionArgument(conf.printClu, "clu",
-			"Print a .clu file with the top cluster ids for each node.", "Output");
-
 	api.addOptionArgument(conf.printTree, "tree",
 			"Print a .tree file with the modular hierarchy. (True by default)", "Output", true);
 
 	api.addOptionArgument(conf.printFlowTree, "ftree",
 			"Print a .ftree file with the modular hierarchy including aggregated links between (nested) modules. (Used by Network Navigator)", "Output", true);
+
+	api.addOptionArgument(conf.printClu, "clu",
+			"Print a .clu file with the top cluster ids for each node.", "Output");
+
+	api.addOptionArgument(conf.cluLevel, "clu-level",
+			"In clu file, print modules at specified depth from root. Use -1 for bottom level modules. (Default: 1)", "n", "Output", true);
 
 	//TODO: Include in -o
 	// api.addOptionArgument(conf.printFlowNetwork, "print-flow-network",

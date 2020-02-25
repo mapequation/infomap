@@ -158,6 +158,7 @@ struct Config
 	bool printFlowTree = false;
 	bool printMap = false;
 	bool printClu = false;
+	int cluLevel = 1; // Write modules at specified depth from root. 1, 2, ... or -1 for bottom level
 	bool printNodeRanks = false;
 	bool printFlowNetwork = false;
 	bool printPajekNetwork = false;
