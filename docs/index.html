@@ -33,6 +33,8 @@
   <div class="section" id="infomap-python-api">
 <h1>Infomap Python API<a class="headerlink" href="#infomap-python-api" title="Permalink to this headline">¶</a></h1>
 <p>Infomap is a network clustering algorithm based on the <a class="reference external" href="http://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation">Map equation</a>.</p>
+<p>The source code is available on <a class="reference external" href="http://www.github.com/mapequation/infomap">Github</a>. If you find any problems with
+the software, please create an issue on <a class="reference external" href="http://www.github.com/mapequation/infomap/issues">Github issues</a>.</p>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>Infomap is available on PyPI. To install, run:</p>
@@ -61,7 +63,45 @@ is available from any directory. To verify your installation, run:</p>
 </div>
 <div class="section" id="python-interface">
 <h3>Python interface<a class="headerlink" href="#python-interface" title="Permalink to this headline">¶</a></h3>
-<p><a class="reference internal" href="infomap.html"><span class="doc">infomap module</span></a></p>
+<p>The Python package can be imported with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">infomap</span>
+</pre></div>
+</div>
+<p>A simple example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+
+<span class="c1"># Command line flags can be added as a string to Infomap</span>
+<span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="s2">&quot;--two-level --directed&quot;</span><span class="p">)</span>
+
+<span class="c1"># Add weight as optional third argument</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="c1"># Run the Infomap search algorithm to find optimal modules</span>
+<span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{im.num_top_modules}</span><span class="s2"> modules with codelength: </span><span class="si">{im.codelength}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Result&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">#node module&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">im</span><span class="o">.</span><span class="n">tree</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">node_id</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">module_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Please read the <a class="reference internal" href="infomap.html"><span class="doc">infomap module</span></a> reference to learn more.</p>
 </div>
 </div>
 </div>
