@@ -12,12 +12,12 @@ im = infomap.Infomap(f"--input {filename}")
 # accumulate = False
 # im.read_file(filename, accumulate)
 
-im.run()
+im.run("-N5")
 
-print(f"Found {im.max_depth} levels with {im.num_top_modules} top modules and codelength: {im.codelength}")
+print(f"Found {im.max_depth} levels with {im.num_leaf_modules} leaf modules in {im.num_top_modules} top modules and codelength: {im.codelength}")
 
 print("Tree:\n# path node_id module_id flow")
-for node in im.leaf_nodes:
+for node in im.nodes:
     print(f"{node.path} {node.node_id} {node.module_id} {node.flow}")
 
 for module_level in range(1, im.max_depth):

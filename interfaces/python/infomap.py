@@ -652,7 +652,7 @@ class Infomap(InfomapWrapper):
             ``node_id`` if they are in the same module.
             Note that the same physical node may end up on different paths in the tree.
             See notes on ``physical_tree``.
-        
+
         Notes
         ----
         For higher-order networks, each node is represented by a set of state nodes
@@ -686,7 +686,7 @@ class Infomap(InfomapWrapper):
             ``node_id`` if they are in the same module.
             Note that the same physical node may end up on different paths in the tree.
             See notes on ``physical_tree``.
-        
+
         Notes
         ----
         For higher-order networks, each node is represented by a set of state nodes
@@ -796,6 +796,20 @@ class Infomap(InfomapWrapper):
             The number of top modules
         """
         return super().numTopModules()
+
+    @property
+    def num_leaf_modules(self):
+        """Get the number of leaf modules in the tree
+
+        Returns
+        -------
+        int
+            The number of leaf modules
+        """
+        num_leaf_modules = 0
+        for _ in self.leaf_modules:
+            num_leaf_modules += 1
+        return num_leaf_modules
 
     @property
     def max_depth(self):
