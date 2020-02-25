@@ -10,6 +10,13 @@ the software, please create an issue on `Github issues`_.
 .. _Github: http://www.github.com/mapequation/infomap
 .. _Github issues: http://www.github.com/mapequation/infomap/issues
 
+API Reference
+-------------
+.. toctree::
+   :maxdepth: 2
+
+   infomap
+
 Installation
 ------------
 Infomap is available on PyPI. To install, run::
