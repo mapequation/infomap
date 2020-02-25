@@ -24,7 +24,7 @@ protected:
 	InfoNode* m_current = nullptr;
 	int m_moduleIndexLevel = -1;
 	unsigned int m_moduleIndex = 0;
-	std::deque<unsigned int> m_path; // The child index path to current node
+	std::deque<unsigned int> m_path; // The tree path to current node (indexing starting from one!)
 	unsigned int m_depth = 0;
 
 public:

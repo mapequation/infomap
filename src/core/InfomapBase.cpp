@@ -2257,7 +2257,7 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 				auto name = m_network.names()[node.physicalId];
 				if (name.empty())
 					name = io::stringify(node.physicalId);
-				outStream << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << name << "\" " << node.physicalId << "\n";
+				outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << name << "\" " << node.physicalId << "\n";
 			}
 		}
 	} else {
@@ -2268,7 +2268,7 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 				auto name = m_network.names()[node.physicalId];
 				if (name.empty())
 					name = io::stringify(node.physicalId);
-				outStream << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << name << "\" ";
+				outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << name << "\" ";
 				if (states) {
 					outStream << node.stateId << " " << node.physicalId;
 					if (this->isMultilayerNetwork())

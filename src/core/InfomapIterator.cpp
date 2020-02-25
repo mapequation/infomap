@@ -13,7 +13,7 @@ namespace infomap {
 		if (current->firstChild) {
 			current = current->firstChild;
 			++m_depth;
-			m_path.push_back(0);
+			m_path.push_back(1);
 		} else {
 			// Current node is a leaf
 			// Presupposes that the next pointer can't reach out from the current parent.
@@ -24,6 +24,17 @@ namespace infomap {
 				tryNext = false;
 
 				while (!current->next) {
+					if (current->owner) {
+						current = current->owner;
+
+						if (current == m_root) { // Check if back to beginning
+							m_current = nullptr;
+							return *this;
+						}
+
+						tryNext = true;
+						break;
+					}
 					if (current->parent) {
 						current = current->parent;
 						--m_depth;
@@ -41,22 +52,9 @@ namespace infomap {
 						} else if (static_cast<unsigned int>(m_moduleIndexLevel) == m_depth) {
 							++m_moduleIndex;
 						}
-					} else {
-						if (current->owner) {
-							current = current->owner;
-
-							if (current == m_root) { // Check if back to beginning
-								m_current = nullptr;
-								return *this;
-							}
-
-							tryNext = true;
-							break;
-
-						} else { // null also if no children in first place
-							m_current = nullptr;
-							return *this;
-						}
+					} else { // null also if no children in first place
+						m_current = nullptr;
+						return *this;
 					}
 				}
 			}

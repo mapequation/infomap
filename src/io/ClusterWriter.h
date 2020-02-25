@@ -18,7 +18,7 @@ namespace infomap {
             InfoNode &node = *it;
             if (node.isLeaf()) {
                 auto &path = it.path();
-                out << io::stringify(path, ":", 1) << " " << node.data.flow << " \"" << node.stateId << "\" " <<
+                out << io::stringify(path, ":") << " " << node.data.flow << " \"" << node.stateId << "\" " <<
                 		node.physicalId << "\n";
             }
         }
