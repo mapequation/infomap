@@ -1,37 +1,46 @@
-.. Infomap documentation master file, created by
-   sphinx-quickstart on Mon Feb 24 16:05:11 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Infomap Python API
 ==================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+Infomap is a network clustering algorithm based on the `Map equation`_.
 
-   infomap
+.. _Map equation: http://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
 
 
 Installation
 ------------
-To install Infomap, use::
+Infomap is available on PyPI. To install, run::
 
     pip install infomap
 
-If you already have Infomap installed, upgrade with::
+If you want to upgrade Infomap, run::
 
     pip install --upgrade infomap
 
-Pip will also install an executable called ``infomap`` (with small i)
-which you can use as the command line version of Infomap from any path, without
-compilation. For help with the commands, run::
 
-    infomap -h
+Usage
+-----
+
+Command line
+^^^^^^^^^^^^
+
+When the Python package is installed, an executable called ``infomap`` (with small i)
+is available from any directory. To verify your installation, run::
+
+    infomap -v
+
+Command line usage is as follows::
+
+    infomap [options] network_data destination
+
+The various options are documented in the `Infomap documentation`_.
+
+.. _Infomap documentation: http://mapequation.org/code.html
+
+Python interface
+^^^^^^^^^^^^^^^^
+
+:doc:`/infomap`
 
 
-Indices and tables
-------------------
-
-* :ref:`genindex`
+.. * :ref:`genindex`
 

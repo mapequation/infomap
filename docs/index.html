@@ -14,7 +14,6 @@
     <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="infomap module" href="infomap.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -33,34 +32,37 @@
             
   <div class="section" id="infomap-python-api">
 <h1>Infomap Python API<a class="headerlink" href="#infomap-python-api" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="infomap.html">infomap module</a></li>
-</ul>
-</div>
+<p>Infomap is a network clustering algorithm based on the <a class="reference external" href="http://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation">Map equation</a>.</p>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>To install Infomap, use:</p>
+<p>Infomap is available on PyPI. To install, run:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">infomap</span>
 </pre></div>
 </div>
-<p>If you already have Infomap installed, upgrade with:</p>
+<p>If you want to upgrade Infomap, run:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">infomap</span>
 </pre></div>
 </div>
-<p>Pip will also install an executable called <code class="docutils literal notranslate"><span class="pre">infomap</span></code> (with small i)
-which you can use as the command line version of Infomap from any path, without
-compilation. For help with the commands, run:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">infomap</span> <span class="o">-</span><span class="n">h</span>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="command-line">
+<h3>Command line<a class="headerlink" href="#command-line" title="Permalink to this headline">¶</a></h3>
+<p>When the Python package is installed, an executable called <code class="docutils literal notranslate"><span class="pre">infomap</span></code> (with small i)
+is available from any directory. To verify your installation, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">infomap</span> <span class="o">-</span><span class="n">v</span>
 </pre></div>
 </div>
+<p>Command line usage is as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">infomap</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="n">network_data</span> <span class="n">destination</span>
+</pre></div>
 </div>
-<div class="section" id="indices-and-tables">
-<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
-</ul>
+<p>The various options are documented in the <a class="reference external" href="http://mapequation.org/code.html">Infomap documentation</a>.</p>
+</div>
+<div class="section" id="python-interface">
+<h3>Python interface<a class="headerlink" href="#python-interface" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference internal" href="infomap.html"><span class="doc">infomap module</span></a></p>
+</div>
 </div>
 </div>
 
@@ -81,16 +83,11 @@ compilation. For help with the commands, run:</p>
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="infomap.html">infomap module</a></li>
-</ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="#">Documentation overview</a><ul>
-      <li>Next: <a href="infomap.html" title="next chapter">infomap module</a></li>
   </ul></li>
 </ul>
 </div>
