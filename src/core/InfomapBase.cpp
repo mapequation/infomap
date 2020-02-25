@@ -877,6 +877,30 @@ void InfomapBase::init()
 	Log() << "Calculating one-level codelength... " << std::flush;
 	m_oneLevelCodelength = calcCodelength(m_root);
 	Log() << "done!\n -> One-level codelength: " << m_oneLevelCodelength << std::endl;
+
+	Log() << "Calculating entropy rate... " << std::flush;
+	double entropyRate = calcEntropyRate();
+	Log() << "done!\n  -> Entropy rate: " << io::toPrecision(entropyRate) << std::endl;
+
+}
+
+double InfomapBase::calcEntropyRate()
+{
+	double entropyRate = 0.0;
+	for (auto it(iterLeafNodes()); !it.isEnd(); ++it) {
+		InfoNode& node = *it;
+		double sumOutFlow = 0.0;
+		double entropy = 0.0;
+		for (EdgeType *e : node.outEdges()) {
+			EdgeType &edge = *e;
+			sumOutFlow += edge.data.flow;
+		}
+		for (EdgeType *e : node.outEdges()) {
+			entropy += -infomath::plogp(e->data.flow / sumOutFlow);
+		}
+		entropyRate += node.data.flow * entropy;
+	}
+	return entropyRate;
 }
 
 

@@ -179,6 +179,8 @@ public:
 	// Init
 	// ===================================================
 
+	double calcEntropyRate();
+
 	InfomapBase& setInitialPartition(const std::map<unsigned int, unsigned int>& moduleIds);
 
 	// ===================================================
