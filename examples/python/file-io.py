@@ -27,11 +27,14 @@ for node_id, modules in im.get_multilevel_modules().items():
     print(f"{node_id}: {modules}")
 
 pathlib.Path("output").mkdir(exist_ok=True)
-print(f"Writing bottom level modules to output/{name}.clu...")
+print(f"Writing top level modules to output/{name}.clu...")
 im.write_clu(f"output/{name}.clu")
 
-print(f"Writing top level modules to output/{name}_level1.clu...")
-im.write_clu(f"output/{name}_level1.clu", depth_level=2)
+print(f"Writing second level modules to output/{name}_level2.clu...")
+im.write_clu(f"output/{name}_level2.clu", depth_level=2)
+
+print(f"Writing bottom level modules to output/{name}_level-1.clu...")
+im.write_clu(f"output/{name}_level-1.clu", depth_level=-1)
 
 print(f"Writing tree to output/{name}.tree...")
 im.write_tree(f"output/{name}.tree")
