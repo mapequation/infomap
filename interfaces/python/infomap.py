@@ -504,8 +504,6 @@ class Infomap(InfomapWrapper):
         finally:
             self.initial_partition = old_partition
 
-    _no_infomap = False
-
     @property
     def no_infomap(self):
         """Set wether the optimizer should run or not.
@@ -514,11 +512,10 @@ class Infomap(InfomapWrapper):
         ----------
         no_infomap : bool
         """
-        return self._no_infomap
+        return super().noInfomap
 
     @no_infomap.setter
     def no_infomap(self, no_infomap):
-        self._no_infomap = no_infomap
         super().setNoInfomap(no_infomap)
 
     def run(self, args=None, initial_partition=None):
