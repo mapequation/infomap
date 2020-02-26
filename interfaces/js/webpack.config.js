@@ -2,12 +2,14 @@ const path = require("path");
 const DefinePlugin = require("webpack").DefinePlugin;
 const getCommits = require("./get-commits.js");
 const getParameters = require("./get-parameters.js");
+const getExampleNetworks = require("./get-example-networks.js");
 const version = require("../../package.json").version;
 
 const webpackConfig = async () => {
-  const v1beta56hash = "63de1fea1c05cf23bf469cf07e6c8b387b0cb520"
+  const v1beta56hash = "63de1fea1c05cf23bf469cf07e6c8b387b0cb520";
   const commits = await getCommits(v1beta56hash);
   const { parameters } = await getParameters("./Infomap");
+  const networks = await getExampleNetworks("./examples/networks");
 
   return {
     mode: "production",
@@ -53,7 +55,8 @@ const webpackConfig = async () => {
       new DefinePlugin({
         CHANGELOG: JSON.stringify(commits, null, 2),
         VERSION: JSON.stringify(version),
-        PARAMETERS: JSON.stringify(parameters, null, 2)
+        PARAMETERS: JSON.stringify(parameters, null, 2),
+        EXAMPLE_NETWORKS: JSON.stringify(networks, null, 2)
       })
     ]
   };
