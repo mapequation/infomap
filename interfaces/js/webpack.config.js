@@ -7,7 +7,7 @@ const version = require("../../package.json").version;
 const webpackConfig = async () => {
   const v1beta56hash = "63de1fea1c05cf23bf469cf07e6c8b387b0cb520"
   const commits = await getCommits(v1beta56hash);
-  const { parameters } = JSON.parse(await getParameters("./Infomap"));
+  const { parameters } = await getParameters("./Infomap");
 
   return {
     mode: "production",
