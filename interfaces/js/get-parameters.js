@@ -5,7 +5,7 @@ function getParameters(infomapBin) {
     exec(`${infomapBin} --print-json-parameters`, (err, stdout, stderr) => {
       if (err) reject(err);
 
-      if (stdout) resolve(stdout);
+      if (stdout) resolve(JSON.parse(stdout));
       if (stderr) reject(stderr);
     });
   });
