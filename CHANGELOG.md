@@ -2,11 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## 1.0.0-beta.59 (2020-02-21)
+## 1.0.0 (2020-02-26)
 
 
 ### ⚠ BREAKING CHANGES
 
+* **python:** Drop support for python 2
+* **python:** Rename physicalId to node_id.
+Remove initial partition as first argument to run, use initial_partition argument.
+Start InfomapIterator.path indexing from one.
 * Output header format has changed
 * Ftree output format has changed to include enter flow
 * Clu output now contains top modules instead of leaf modules
@@ -16,13 +20,17 @@ All notable changes to this project will be documented in this file. See [standa
 * Full multilayer format require the *multilayer heading
 * Remove undirdir and outdirdir, use --flow-model. Rename min-improment to --core-loop-codelength-thresh. Remove random-loop-limit. Rename tune-iteration-threshold to --tune-iteration-relative-threshold. Rename skip-replace-to-one-module to --prefer-modular-solution.
 * Removed --print-state-network, use -o states
-* Renamed --set-unidentified-nodes-to-closest-module to --assing-to-neighbouring-module
+* Renamed --set-unidentified-nodes-to-closest-module to
+--assing-to-neighbouring-module
 * No support for *path input
 
 ### Features
 
-* Add -o/--output option for comma-separated formats ([a255a18](https://github.com/mapequation/infomap/commit/a255a181f109b51eed3e1cbb82bb5f73f1894dd0))
+* **python:** Add meta info to infomap package ([a2caaf4](https://github.com/mapequation/infomap/commit/a2caaf4ff7f368c237c2752207b097028bacb900)), closes [#63](https://github.com/mapequation/infomap/issues/63)
 * Add enter flow to ftree output ([bd3255e](https://github.com/mapequation/infomap/commit/bd3255e61977ce8f1d9e0babb95ec8158710e3a8)), closes [#82](https://github.com/mapequation/infomap/issues/82)
+* Show entropy rate in the beginning ([f61692c](https://github.com/mapequation/infomap/commit/f61692c60c681d532f7a45b980f5041199b088b5))
+* **python:** Improve Python API ([#87](https://github.com/mapequation/infomap/issues/87)) ([c39cd9f](https://github.com/mapequation/infomap/commit/c39cd9f2a310a10a30e0de83dab95902e8c6aa91))
+* Add -o/--output option for comma-separated formats ([a255a18](https://github.com/mapequation/infomap/commit/a255a181f109b51eed3e1cbb82bb5f73f1894dd0))
 * Add meta data in output file header ([66ccc64](https://github.com/mapequation/infomap/commit/66ccc64fec74a47a92b053642d7ad5fb63b74df2))
 * Add option to print parameters in json ([3a2509d](https://github.com/mapequation/infomap/commit/3a2509d28dec022d5bdd2c8b8a4a5fd87448edab))
 * Allow multilayer formats without specifying -i. ([08e09f1](https://github.com/mapequation/infomap/commit/08e09f136321dcf917d0d131d57041d32c923e64))
@@ -36,3 +44,8 @@ All notable changes to this project will be documented in this file. See [standa
 * Simplify command line interface ([f537132](https://github.com/mapequation/infomap/commit/f5371328e63d761ccaf6ee1cdce543ced80fe25c))
 * Sort tree on flow ([6e27858](https://github.com/mapequation/infomap/commit/6e278584c45367145f57ce6323f6a8a9c2d64ffe)), closes [#71](https://github.com/mapequation/infomap/issues/71)
 * Write top modules to .clu, not bottom level ([1e16a3c](https://github.com/mapequation/infomap/commit/1e16a3ccdf15ee6155a22d8d0cd4bc6ebfdeb94f))
+
+
+### Bug Fixes
+
+* **js:** Add missing this in error handler ([7345cdf](https://github.com/mapequation/infomap/commit/7345cdff8aa2b362df9d6522960fb992f5634f6e))
