@@ -45,6 +45,16 @@ cd infomap
 make
 ```
 
+#### Migrating from v0.x to v1.0
+
+In v1.0 we have moved the old master branch to `v0.x`.
+If you have cloned Infomap before v1.0, get the master branch up-to-date by running
+```
+git checkout v0.x
+git branch -D master
+git checkout -b master origin/master
+```
+
 ### Using NPM
 
 An experimental web worker implementation is available on NPM.
