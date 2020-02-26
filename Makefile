@@ -145,24 +145,24 @@ SWIG_FILES := $(shell find interfaces/swig -name "*.i")
 ##################################################
 
 PY_BUILD_DIR = build/py
-PY2_BUILD_DIR = build/py2
 PY_ONLY_HEADERS := $(HEADERS:%.h=$(PY_BUILD_DIR)/headers/%.h)
 PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
 PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
-PY2_HEADERS := $(HEADERS:src/%.h=$(PY2_BUILD_DIR)/src/%.h)
-PY2_SOURCES := $(SOURCES:src/%.cpp=$(PY2_BUILD_DIR)/src/%.cpp)
 
-.PHONY: python2 python py2-build py-build
+.PHONY: python py-build
 
 # Use python distutils to compile the module
 python: py-build Makefile
 	@cp -a interfaces/python/setup.py $(PY_BUILD_DIR)/
+	python utils/create-python-package-meta.py
+	@cp -a interfaces/python/package_meta.py $(PY_BUILD_DIR)/
+	@touch $(PY_BUILD_DIR)/__init__.py
+	@cp -a $(PY_BUILD_DIR)/infomap.py $(PY_BUILD_DIR)/infomap_package.py
+	cat $(PY_BUILD_DIR)/package_meta.py $(PY_BUILD_DIR)/infomap_api.py interfaces/python/infomap_cli.py > $(PY_BUILD_DIR)/infomap.py
+	@cp -a interfaces/python/MANIFEST.in $(PY_BUILD_DIR)/
+	@cp -a README.md $(PY_BUILD_DIR)/
+	@cp -a LICENSE_AGPLv3.txt $(PY_BUILD_DIR)/LICENSE
 	cd $(PY_BUILD_DIR) && CC=$(CXX) python3 setup.py build_ext --inplace
-	@true
-
-python2: py2-build Makefile
-	@cp -a interfaces/python/setup.py $(PY2_BUILD_DIR)/
-	cd $(PY2_BUILD_DIR) && CC=$(CXX) python setup.py build_ext --inplace
 	@true
 
 # Generate wrapper files from source and interface files
@@ -170,18 +170,10 @@ py-build: $(PY_HEADERS) $(PY_SOURCES) $(PY_ONLY_HEADERS) interfaces/python/infom
 	@mkdir -p $(PY_BUILD_DIR)
 	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/
 	swig -c++ -python -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
-
-py2-build: $(PY2_HEADERS) $(PY2_SOURCES)
-	@mkdir -p $(PY2_BUILD_DIR)
-	@cp -a $(SWIG_FILES) $(PY2_BUILD_DIR)/
-	swig -c++ -python -outdir $(PY2_BUILD_DIR) -o $(PY2_BUILD_DIR)/infomap_wrap.cpp $(PY2_BUILD_DIR)/Infomap.i
+	@cp -a $(PY_BUILD_DIR)/infomap.py $(PY_BUILD_DIR)/infomap_api.py
 
 # Rule for $(PY_HEADERS) and $(PY_SOURCES)
 $(PY_BUILD_DIR)/src/%: src/%
-	@mkdir -p $(dir $@)
-	@cp -a $^ $@
-
-$(PY2_BUILD_DIR)/src/%: src/%
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 
@@ -189,50 +181,38 @@ $(PY_BUILD_DIR)/headers/%: %
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 
-.PHONY: py-doc py-doc-prepare
+.PHONY: py-doc py-local-install
 SPHINX_SOURCE_DIR = interfaces/python/source
 SPHINX_TARGET_DIR = docs
 
-py-doc-prepare:
+py-local-install:
 	# Run this to get 'import infomap' to always import the latest
 	# locally built version, so no need to run this multiple times.
 	pip install -e $(PY_BUILD_DIR)
 
 py-doc: python
 	# Uses docstrings from the infomap available with 'import infomap'.
-	# Run py-doc-prepare if you don't have pip installed it with -e
+	# Run py-local-install if you don't have pip installed it with -e
 	# and don't have the latest version installed
 	@mkdir -p $(SPHINX_TARGET_DIR)
 	@touch $(SPHINX_TARGET_DIR)/.nojekyll
 	sphinx-build -b html $(SPHINX_SOURCE_DIR) $(SPHINX_TARGET_DIR)
 
-.PHONY: pypi_prepare pypitest_publish pypi_publish
-PYPI_DIR = $(PY_BUILD_DIR)/pypi/infomap
+.PHONY: pypitest_publish pypi_publish
+PYPI_DIR = $(PY_BUILD_DIR)
 PYPI_SDIST = $(shell find $(PYPI_DIR) -name "*.tar.gz" 2>/dev/null)
 
-pypi_prepare: py-build Makefile
-	@mkdir -p $(PYPI_DIR)
-	$(RM) -r $(PYPI_DIR)/dist $(PYPI_DIR)/infomap.egg-info
-	cat $(PY_BUILD_DIR)/infomap.py interfaces/python/infomap_cli.py > $(PYPI_DIR)/infomap.py
-	@cp -a $(PY_BUILD_DIR)/infomap_wrap.cpp $(PYPI_DIR)/
-	@cp -a $(PY_BUILD_DIR)/src $(PYPI_DIR)/
-	@cp -a $(PY_BUILD_DIR)/headers $(PYPI_DIR)/
-	@cp -a interfaces/python/setup_pypi.py $(PYPI_DIR)/setup.py
-	@cp -a interfaces/python/MANIFEST.in $(PYPI_DIR)/
-	@cp -a README.md $(PYPI_DIR)/
-	@cp -a LICENSE_AGPLv3.txt $(PYPI_DIR)/LICENSE
-
-pypi_dist: pypi_prepare
-	cd $(PYPI_DIR) && python setup.py sdist bdist_wheel
+pypi_dist: python
+	cd $(PY_BUILD_DIR) && python setup.py sdist bdist_wheel
 
 # pip -vvv --no-cache-dir install --upgrade -I --index-url https://test.pypi.org/simple/ infomap
 # pip install -e build/py/pypi/infomap/
-pypitest_publish:
+pypitest_publish: pypi_dist
 	# cd $(PYPI_DIR) && python setup.py sdist upload -r testpypi
 	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
 	cd $(PYPI_DIR) && python -m twine upload -r testpypi dist/*
 
-pypi_publish:
+pypi_publish: pypi_dist
 	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
 	cd $(PYPI_DIR) && python -m twine upload dist/*
 

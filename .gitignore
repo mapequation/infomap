@@ -41,3 +41,4 @@ node_modules
 dist
 interfaces/js/src/worker
 docs/.*
+interfaces/python/package_meta.py

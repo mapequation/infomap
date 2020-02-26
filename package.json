@@ -1,7 +1,7 @@
 {
   "name": "@mapequation/infomap",
   "version": "1.0.0-beta.59",
-  "description": "",
+  "description": "Infomap network clustering algorithm",
   "browser": "dist/index.js",
   "publishConfig": {
     "access": "public"
@@ -16,12 +16,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mapequation/infomap.git"
+    "url": "https://github.com/mapequation/infomap.git"
   },
   "keywords": [
-    "mapequation"
+    "map equation",
+    "network analysis",
+    "community detection",
+    "clustering algorithm"
   ],
-  "author": "MapEquation Team",
+  "author": {
+    "name": "mapequation",
+    "email": "mapequation@gmail.com",
+    "url": "https://www.mapequation.org/about"
+  },
   "license": "AGPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/mapequation/infomap/issues"
@@ -50,6 +57,17 @@
         "filename": "src/io/version.cpp",
         "updater": "utils/update-version-cpp.js"
       }
+    ]
+  },
+  "python": {
+    "url": "https://pypi.org/project/infomap/",
+    "homepage": "https://mapequation.github.io/infomap/",
+    "classifiers": [
+      "Development Status :: 5 - Production/Stable",
+      "Intended Audience :: Science/Research",
+      "Topic :: Scientific/Engineering :: Information Analysis",
+      "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+      "Programming Language :: Python :: 3"
     ]
   }
 }
