@@ -6,7 +6,7 @@ const conventionalCommitsParser = require("conventional-commits-parser");
 function getCommits(from = "", to = "HEAD") {
   const commits = [];
 
-  const gitOpts = { from, to };
+  const gitOpts = { from, to, format: "%B%n-date-%n%aI" };
 
   return new Promise((resolve, reject) =>
     gitRawCommits(gitOpts)
