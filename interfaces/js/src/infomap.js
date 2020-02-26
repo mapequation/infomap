@@ -54,7 +54,7 @@ class Infomap {
     worker.onmessage = this.onmessage;
     worker.onerror = err => {
       err.preventDefault();
-      _events.onerror(err.message, id);
+      this._events.onerror(err.message, id);
     };
 
     return id;
