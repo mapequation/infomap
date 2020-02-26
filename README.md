@@ -35,6 +35,8 @@ pip install --upgrade infomap
 When the Python infomap package is installed, a binary called `infomap` is
 available on the command line from any directory.
 
+Check the [API documentation](https://mapequation.github.io/infomap/) to get started.
+
 ### Using Git
 
 To download and compile the newest version from Github, clone the repository
