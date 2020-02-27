@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.1](https://github.com/mapequation/infomap/compare/v1.0.0...v1.0.1) (2020-02-27)
+
+
+### Bug Fixes
+
+* **python:** Fix missing package_meta on pip install ([dd24b1d](https://github.com/mapequation/infomap/commit/dd24b1d8fa7aa0c0b276dd611c57ef8a110002b8)), closes [#95](https://github.com/mapequation/infomap/issues/95)
+
 ## 1.0.0 (2020-02-26)
 
 
