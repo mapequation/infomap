@@ -198,11 +198,14 @@ py-doc: python
 	@touch $(SPHINX_TARGET_DIR)/.nojekyll
 	sphinx-build -b html $(SPHINX_SOURCE_DIR) $(SPHINX_TARGET_DIR)
 
-.PHONY: pypitest_publish pypi_publish
+.PHONY: pypitest_publish pypi_publish py_clean
 PYPI_DIR = $(PY_BUILD_DIR)
 PYPI_SDIST = $(shell find $(PYPI_DIR) -name "*.tar.gz" 2>/dev/null)
 
-pypi_dist: python
+py_clean:
+	$(RM) -r $(PY_BUILD_DIR)/dist
+
+pypi_dist: py_clean python
 	cd $(PY_BUILD_DIR) && python setup.py sdist bdist_wheel
 
 # pip -vvv --no-cache-dir install --upgrade -I --index-url https://test.pypi.org/simple/ infomap

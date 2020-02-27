@@ -147,7 +147,7 @@ setup(
     #
     # packages=find_packages(exclude=['contrib', 'docs', 'tests']),  # Required
     # packages=['infomap'],
-    py_modules=["infomap"],
+    py_modules=["infomap", "package_meta"],
 
     # This field lists other packages that your project depends on to run.
     # Any package you put here will be installed by pip when your project is
