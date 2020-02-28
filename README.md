@@ -13,8 +13,7 @@ In a terminal with the GNU Compiler Collection installed,
 just run `make` in the current directory to compile the
 code with the included `Makefile`. Call `./Infomap` to run.
 
-Run `./Infomap --help` or visit [options](http://www.mapequation.org/code.html#Options)
-for a list of available options.
+Run `./Infomap --help` for a list of available options.
 
 Infomap can be used both as a standalone program and as a library.
 See the [examples](examples) folder for examples.
