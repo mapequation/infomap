@@ -139,7 +139,9 @@ void Network::readInputData(std::string filename, bool accumulate)
 	// if (format == "")
 	// 	throw UnknownFileTypeError("No known input format specified or implied by file extension.");
 
-	if (format == "pajek")
+	if (format == "")
+		parseNetwork(filename);
+	else if (format == "pajek")
 		parsePajekNetwork(filename);
 	else if (format == "link-list")
 		parseLinkList(filename);
@@ -150,8 +152,7 @@ void Network::readInputData(std::string filename, bool accumulate)
 	else if (format == "multilayer")
 		parseMultilayerNetwork(filename);
 	else
-		parseNetwork(filename);
-//		throw UnknownFileTypeError("No known input format specified.");
+		throw UnknownFileTypeError(io::Str() << "Unrecognised input format specified: '" << format << "'.");
 	printSummary();
 }
 

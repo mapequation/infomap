@@ -35,6 +35,24 @@
 
 namespace infomap {
 
+const std::string ArgType::integer = "integer";
+const std::string ArgType::number = "number";
+const std::string ArgType::string = "string";
+const std::string ArgType::path = "path";
+const std::string ArgType::probability = "probability";
+const std::string ArgType::option = "option";
+const std::string ArgType::list = "list";
+
+const std::unordered_map<std::string, char> ArgType::toShort = {
+	{ "integer", 'n' },
+	{ "number", 'f' },
+	{ "string", 's' },
+	{ "path", 'p' },
+	{ "probability", 'P' },
+	{ "option", 'o' },
+	{ "list", 'l' },
+};
+
 ProgramInterface::ProgramInterface(std::string name, std::string shortDescription, std::string version)
 : m_programName(name),
   m_shortProgramDescription(shortDescription),
@@ -84,10 +102,12 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
 	{
 		Option& opt = *m_optionArguments[i];
 		bool haveShort = opt.shortName != '\0';
-		std::string optArg = opt.requireArgument ? (io::Str() << "<" << opt.argumentName << ">") :
+		std::string optArgShort = opt.requireArgument ? (io::Str() << "<" << ArgType::toShort.at(opt.argumentName) << ">") :
 				opt.incrementalArgument? "[+]" : std::string(3, ' ');
-		std::string shortOption = haveShort ? (io::Str() <<  "  -" << opt.shortName << optArg) : std::string(7, ' ');
-		optionStrings[i] = io::Str() << shortOption << " --" << opt.longName << (opt.requireArgument? ' ' : ' ') << optArg;
+		std::string optArgLong = opt.requireArgument ? (io::Str() << "<" << opt.argumentName << ">") :
+				opt.incrementalArgument? "[+]" : std::string(3, ' ');
+		std::string shortOption = haveShort ? (io::Str() <<  "  -" << opt.shortName << optArgShort) : std::string(7, ' ');
+		optionStrings[i] = io::Str() << shortOption << " --" << opt.longName << (opt.requireArgument? ' ' : ' ') << optArgLong;
 		if (optionStrings[i].length() > maxLength)
 			maxLength = optionStrings[i].length();
 	}
@@ -193,15 +213,19 @@ std::string ProgramInterface::toJson(std::string key, bool value) const
 std::string ProgramInterface::toJson(const Option& opt) const
 {
 	return io::Str() << "{ " <<
-		toJson("longName", opt.longName) << ", " <<
-		toJson("shortName", opt.shortName == '\0' ? "" : std::string(1, opt.shortName)) << ", " <<
+		toJson("long", io::Str() << "--" << opt.longName) << ", " <<
+		toJson("short", opt.shortName != '\0' ? std::string(io::Str() << "-" << opt.shortName) : "") << ", " <<
 		toJson("description", opt.description) << ", " <<
 		toJson("group", opt.group) << ", " <<
-		toJson("requireArgument", opt.requireArgument) << ", " <<
-		toJson("argumentName", opt.argumentName) << ", " <<
-		toJson("isAdvanced", opt.isAdvanced) << ", " <<
-		toJson("incrementalArgument", opt.incrementalArgument) << ", " <<
-		(opt.requireArgument ? toJson("default", opt.printValue()) : toJson("default", false)) <<
+		toJson("required", opt.requireArgument) << ", " <<
+		toJson("advanced", opt.isAdvanced) << ", " <<
+		toJson("incremental", opt.incrementalArgument) << ", " <<
+		(opt.requireArgument
+			? (io::Str() <<
+				toJson("longType", opt.argumentName) << ", " <<
+				toJson("shortType", std::string(1, ArgType::toShort.at(opt.argumentName))) << ", " <<
+				toJson("default", opt.printValue()))
+			: toJson("default", false)) <<
 		" }";
 }
 

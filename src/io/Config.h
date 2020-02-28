@@ -41,14 +41,6 @@
 
 namespace infomap {
 
-// enum class FlowModel {
-// 	undirected,
-// 	directed,
-// 	undirdir,
-// 	outdirdir,
-// 	rawdir
-// };
-
 struct FlowModel {
 	static const std::string undirected;
 	static const std::string directed;
@@ -56,20 +48,6 @@ struct FlowModel {
 	static const std::string outdirdir;
 	static const std::string rawdir;
 };
-// const std::string FlowModel::undirected = "undirected";
-// const std::string FlowModel::directed = "directed";
-// const std::string FlowModel::undirdir = "undirdir";
-// const std::string FlowModel::outdirdir = "outdirdir";
-// const std::string FlowModel::rawdir = "rawdir";
-
-// struct FlowModel {
-// 	static constexpr const char* undirected = "undirected";
-// 	static constexpr const char* directed = "directed";
-// 	static constexpr const char* undirdir = "undirdir";
-// 	static constexpr const char* outdirdir = "outdirdir";
-// 	static constexpr const char* rawdir = "rawdir";
-// };
-
 
 struct Config
 {
@@ -77,7 +55,7 @@ struct Config
 	bool requireFileInput = false;
 	std::string networkFile = "";
 	std::vector<std::string> additionalInput;
-	std::string inputFormat = ""; // 'pajek', 'link-list', '3gram', 'path' or 'multilayer'
+	std::string inputFormat = "";
 	bool memoryInput = false;
 	bool multilayerInput = false;
 	bool withMemory = false;
@@ -103,7 +81,6 @@ struct Config
 	bool assignToNeighbouringModule = false;
 	bool noInfomap = false;
 
-	// FlowModel flowModel = FlowModel::undirected;
 	std::string flowModel = FlowModel::undirected;
 	// TODO: Remove variables for 'one-hot encoded' flow models
 	bool directed = false;
@@ -136,7 +113,7 @@ struct Config
 	bool randomizeCoreLoopLimit = false;
 	unsigned int coreLoopLimit = 10;
 	unsigned int levelAggregationLimit = 0;
-	unsigned int tuneIterationLimit = 0; // num iterations of fine-tune/coarse-tune in two-level partition)
+	unsigned int tuneIterationLimit = 0; // Iterations of fine-tune/coarse-tune in two-level partition
 	double minimumRelativeTuneIterationImprovement = 1e-5;
 	bool fastCoarseTunePartition = false;
 	bool alternateCoarseTuneLevel = false;
@@ -146,7 +123,7 @@ struct Config
 	unsigned int fastHierarchicalSolution = 0;
 	bool fastFirstIteration = false;
 	bool preferModularSolution = false;
-	unsigned int lowMemoryPriority = false; // Prioritize memory efficient algorithms before fast if > 0
+	// unsigned int lowMemoryPriority = false; // Prioritize memory efficient algorithms before fast if > 0
 	bool innerParallelization = false;
 
 	// Output
@@ -258,7 +235,7 @@ struct Config
 		fastHierarchicalSolution(other.fastHierarchicalSolution),
 		fastFirstIteration(other.fastFirstIteration),
 		preferModularSolution(other.preferModularSolution),
-		lowMemoryPriority(other.lowMemoryPriority),
+		//lowMemoryPriority(other.lowMemoryPriority),
 		innerParallelization(other.innerParallelization),
 		outDirectory(other.outDirectory),
 		outName(other.outName),
@@ -358,7 +335,7 @@ struct Config
 		fastHierarchicalSolution = other.fastHierarchicalSolution;
 		fastFirstIteration = other.fastFirstIteration;
 		preferModularSolution = other.preferModularSolution;
-		lowMemoryPriority = other.lowMemoryPriority;
+		//lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
 		outDirectory = other.outDirectory;
 		outName = other.outName;
@@ -457,7 +434,7 @@ struct Config
 		// fastHierarchicalSolution = other.fastHierarchicalSolution;
 		// fastFirstIteration = other.fastFirstIteration;
 		preferModularSolution = other.preferModularSolution;
-		lowMemoryPriority = other.lowMemoryPriority;
+		//lowMemoryPriority = other.lowMemoryPriority;
 		innerParallelization = other.innerParallelization;
 		outDirectory = other.outDirectory;
 		outName = other.outName;

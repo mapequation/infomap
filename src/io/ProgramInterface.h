@@ -34,10 +34,23 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <unordered_map>
 #include "convert.h"
 #include "../utils/exceptions.h"
 
 namespace infomap {
+
+struct ArgType {
+	static const std::string integer;
+	static const std::string number;
+	static const std::string string;
+	static const std::string path;
+	static const std::string probability;
+	static const std::string option;
+	static const std::string list;
+	static const std::unordered_map<std::string, char> toShort;
+};
+
 
 struct Option
 {
