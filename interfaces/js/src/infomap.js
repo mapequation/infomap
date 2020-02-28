@@ -12,11 +12,11 @@ class Infomap {
 
   _workerId = 0;
   _workers = {};
+  _workerBlob = new Blob([InfomapWorker], { type: "application/javascript" });
 
   initWorkerUrl() {
     if (this._workerUrl) return;
-    const blob = new Blob([InfomapWorker], { type: "application/javascript" });
-    this._workerUrl = URL.createObjectURL(blob);
+    this._workerUrl = URL.createObjectURL(this._workerBlob);
   }
 
   revokeWorkerUrl() {
@@ -95,10 +95,14 @@ class Infomap {
     const worker = this._workers[id];
 
     if (worker.terminate) {
-      worker.terminate();
+      setTimeout(() => worker.terminate(), 1000);
     }
 
     delete this._workers[id];
+
+    if (Object.keys(this._workers).length === 0) {
+      this.revokeWorkerUrl();
+    }
   }
 }
 

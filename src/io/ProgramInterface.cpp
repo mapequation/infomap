@@ -153,8 +153,8 @@ void ProgramInterface::exitWithVersionInformation()
 void ProgramInterface::exitWithError(std::string message)
 {
 	Log() << m_programName << " version " << m_programVersion << std::endl;
-	std::cerr << message;
-	Log() << "\nUsage: " << m_executableName;
+	std::cerr << message << std::endl;
+	Log() << "Usage: " << m_executableName;
 	for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
 		if (!m_nonOptionArguments[i]->isAdvanced)
 			Log() << " " << m_nonOptionArguments[i]->variableName;

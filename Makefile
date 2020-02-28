@@ -72,7 +72,7 @@ js-worker: build/js/$(WORKER_FILENAME) Infomap
 build/js/infomap.worker.js: $(SOURCES) $(PRE_WORKER_MODULE)
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
-	em++ -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 -s ENVIRONMENT=worker --pre-js $(PRE_WORKER_MODULE) -o build/js/$(WORKER_FILENAME) $(SOURCES)
+	em++ -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=worker --pre-js $(PRE_WORKER_MODULE) -o build/js/$(WORKER_FILENAME) $(SOURCES)
 
 build/js/Infomap.js: $(SOURCES)
 	@echo "Compiling Infomap for Node.js..."
