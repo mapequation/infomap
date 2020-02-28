@@ -51,7 +51,7 @@ std::map<unsigned int, unsigned int> InfomapWrapper::getModules(int level, bool 
 		for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
 			InfoNode &node = *it;
 			if (node.isLeaf()) {
-				modules[node.physicalId] = it.moduleIndex();
+				modules[node.physicalId] = it.moduleId();
 			}
 		}
 	} else {
@@ -59,7 +59,7 @@ std::map<unsigned int, unsigned int> InfomapWrapper::getModules(int level, bool 
 			InfoNode &node = *it;
 			if (node.isLeaf()) {
 				auto nodeId = states ? node.stateId : node.physicalId;
-				modules[nodeId] = it.moduleIndex();
+				modules[nodeId] = it.moduleId();
 			}
 		}
 	}
@@ -76,7 +76,7 @@ std::map<unsigned int, std::vector<unsigned int>> InfomapWrapper::getMultilevelM
 			for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
 				InfoNode &node = *it;
 				if (node.isLeaf()) {
-					modules[node.physicalId].push_back(it.moduleIndex());
+					modules[node.physicalId].push_back(it.moduleId());
 				}
 			}
 		} else {
@@ -84,7 +84,7 @@ std::map<unsigned int, std::vector<unsigned int>> InfomapWrapper::getMultilevelM
 				InfoNode &node = *it;
 				if (node.isLeaf()) {
 					auto nodeId = states ? node.stateId : node.physicalId;
-					modules[nodeId].push_back(it.moduleIndex());
+					modules[nodeId].push_back(it.moduleId());
 				}
 			}
 		}
