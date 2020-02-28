@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.3](https://github.com/mapequation/infomap/compare/v1.0.2...v1.0.3) (2020-02-28)
+
+
+### Bug Fixes
+
+* **js:** Handle Infomap exceptions in js ([7a641f9](https://github.com/mapequation/infomap/commit/7a641f94ddae3df99c2065e77e3a1bc78922e174)), closes [#99](https://github.com/mapequation/infomap/issues/99)
+* **python:** Start module id from 1 in get_[multilevel_]modules ([9419798](https://github.com/mapequation/infomap/commit/94197982597df86ae315dd9520ae24c27f67c552))
+
 ### [1.0.2](https://github.com/mapequation/infomap/compare/v1.0.1...v1.0.2) (2020-02-28)
 
 
