@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.4](https://github.com/mapequation/infomap/compare/v1.0.3...v1.0.4) (2020-02-28)
+
+
+### Bug Fixes
+
+* **js:** Revert attempted worker blob optimization ([c521373](https://github.com/mapequation/infomap/commit/c521373fadaf741a34792ea27cd2efba6813cff9))
+
 ### [1.0.3](https://github.com/mapequation/infomap/compare/v1.0.2...v1.0.3) (2020-02-28)
 
 
