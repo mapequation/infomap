@@ -2,7 +2,7 @@ networks
 output
 Debug
 Release
-Infomap
+/Infomap
 Informatter
 Infomap-formatter
 build

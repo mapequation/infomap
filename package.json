@@ -1,6 +1,6 @@
 {
   "name": "@mapequation/infomap",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Infomap network clustering algorithm",
   "browser": "dist/index.js",
   "publishConfig": {
@@ -49,10 +49,8 @@
   },
   "standard-version": {
     "bumpFiles": [
-      {
-        "filename": "package.json",
-        "type": "json"
-      },
+      "package.json",
+      "package-lock.json",
       {
         "filename": "src/io/version.cpp",
         "updater": "utils/update-version-cpp.js"
