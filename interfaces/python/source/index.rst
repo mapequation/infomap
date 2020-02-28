@@ -43,9 +43,10 @@ Command line usage is as follows::
 
     infomap [options] network_data destination
 
-The various options are documented in the `Infomap documentation`_.
+For a list of available options, run::
 
-.. _Infomap documentation: http://mapequation.org/code.html
+    infomap --help
+
 
 Python interface
 ^^^^^^^^^^^^^^^^
