@@ -17,12 +17,12 @@ namespace infomap {
 double MetaMapEquation::getModuleCodelength() const {
 	// std::cout << "\n$$$$$ getModuleCodelength: " << moduleCodelength << " + " << metaCodelength << " = " << moduleCodelength + metaCodelength << "\n";
 	return moduleCodelength + metaCodelength * metaDataRate;
-};
+}
 
 double MetaMapEquation::getCodelength() const {
 	// std::cout << "\n$$$$$ getCodelength: " << codelength << " + " << metaCodelength << " = " << codelength + metaCodelength << "\n";
 	return codelength + metaCodelength * metaDataRate;
-};
+}
 
 // ===================================================
 // IO

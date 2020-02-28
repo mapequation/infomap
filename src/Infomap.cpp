@@ -122,15 +122,15 @@ int run(const std::string& flags)
 
 #ifndef SWIG
 
-	InfomapWrapper *NewInfomap(const char *flags) { return new InfomapWrapper(flags); };
+	InfomapWrapper *NewInfomap(const char *flags) { return new InfomapWrapper(flags); }
 
-	void DestroyInfomap(InfomapWrapper *im) { im->~InfomapWrapper(); };
+	void DestroyInfomap(InfomapWrapper *im) { im->~InfomapWrapper(); }
 
 	void InfomapAddLink(InfomapWrapper *im, unsigned int sourceId, unsigned int targetId, double weight) {
 			im->addLink(sourceId, targetId, weight);
-	};
+	}
 
-	void InfomapRun(struct InfomapWrapper *im) { im->run(); };
+	void InfomapRun(struct InfomapWrapper *im) { im->run(); }
 
 	double Codelength(struct InfomapWrapper *im) { return im->getHierarchicalCodelength(); }
 

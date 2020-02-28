@@ -264,7 +264,7 @@ void ProgramInterface::parseArgs(const std::string& args)
 	{
 		for (unsigned int i = 0; i < flags.size(); ++i)
 		{
-			bool negate = m_negateNextOption;
+			//bool negate = m_negateNextOption;
 			m_negateNextOption = false;
 			bool flagValue = true;
 			unsigned int numArgsLeft = flags.size() - i - 1;
@@ -316,7 +316,7 @@ void ProgramInterface::parseArgs(const std::string& args)
 					// Short option(s)
 					for (unsigned int j = 1; j < arg.length(); ++j)
 					{
-						negate = m_negateNextOption;
+						//negate = m_negateNextOption;
 						m_negateNextOption = false;
 						char o = arg[j];
 						unsigned int numCharsLeft = arg.length() - j - 1;

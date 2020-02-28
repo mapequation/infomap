@@ -18,12 +18,12 @@ namespace infomap {
 double BiasedMapEquation::getModuleCodelength() const {
 	// std::cout << "\n$$$$$ getModuleCodelength: " << moduleCodelength << " + " << biasedCost << " = " << moduleCodelength + biasedCost << "\n";
 	return moduleCodelength + biasedCost;
-};
+}
 
 double BiasedMapEquation::getCodelength() const {
 	// std::cout << "\n$$$$$ getCodelength: " << codelength << " + " << biasedCost << " = " << codelength + biasedCost << "\n";
 	return codelength + biasedCost;
-};
+}
 
 // ===================================================
 // IO

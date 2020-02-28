@@ -330,8 +330,8 @@ std::string Network::parseVertices(std::ifstream& file, std::string heading)
 		if (!(m_extractor >> id))
 			throw FileFormatError(io::Str() << "Can't parse node id from line '" << line << "'");
 
-		unsigned int nameStart = line.find_first_of("\"");
-		unsigned int nameEnd = line.find_last_of("\"");
+		auto nameStart = line.find_first_of("\"");
+		auto nameEnd = line.find_last_of("\"");
 		std::string name("");
 		if(nameStart < nameEnd) {
 			name = std::string(line.begin() + nameStart + 1, line.begin() + nameEnd);
