@@ -88,13 +88,13 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 			"Don't write output to file.", "Output", true);
 
 	api.addOptionArgument(conf.printTree, "tree",
-			"Print a tree file with the modular hierarchy. Automatically enabled if no other output is specified.", "Output", true);
+			"Write a tree file with the modular hierarchy. Automatically enabled if no other output is specified.", "Output");
 
 	api.addOptionArgument(conf.printFlowTree, "ftree",
-			"Print a ftree file with the modular hierarchy including aggregated links between (nested) modules. (Used by Network Navigator)", "Output", true);
+			"Write a ftree file with the modular hierarchy including aggregated links between (nested) modules. (Used by Network Navigator)", "Output");
 
 	api.addOptionArgument(conf.printClu, "clu",
-			"Print a clu file with the top cluster ids for each node.", "Output");
+			"Write a clu file with the top cluster ids for each node.", "Output");
 
 	api.addOptionArgument(conf.cluLevel, "clu-level",
 			"For clu output, print modules at specified depth from root. Use -1 for bottom level modules.", ArgType::integer, "Output", true);
@@ -115,7 +115,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 			"Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.", ArgType::option, "Algorithm");
 
 	api.addOptionArgument(conf.directed, 'd', "directed",
-			"Assume directed links.", "Algorithm");
+			"Assume directed links. Shorthand for '--flow-model directed'.", "Algorithm");
 
 	// api.addOptionArgument(conf.recordedTeleportation, 'e', "recorded-teleportation",
 	// 		"If teleportation is used to calculate the flow, also record it when minimizing codelength.", "Algorithm", true);
@@ -195,7 +195,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	// 		"Set the recursion limit when searching for sub-modules. A level of 1 will find sub-sub-modules.", ArgType::integer, "Accuracy", true);
 
 	api.addIncrementalOptionArgument(conf.fastHierarchicalSolution, 'F', "fast-hierarchical-solution",
-			"Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.", "Accuracy");
+			"Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.", "Accuracy", true);
 
 	api.addOptionArgument(conf.preferModularSolution, "prefer-modular-solution",
 			"Prefer modular solutions even if they are worse than putting all nodes in one module.", "Accuracy", true);
@@ -204,7 +204,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	// 		"Prioritize memory efficient algorithms before fast. Use -ll to optimize even more, but this may give approximate results.");
 
 	api.addOptionArgument(conf.innerParallelization, "inner-parallelization",
-			"Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.", "Accuracy");
+			"Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.", "Accuracy", true);
 
 	// --------------------- Output options ---------------------
 	// if (requireFileInput)
