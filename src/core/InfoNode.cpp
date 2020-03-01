@@ -169,7 +169,7 @@ std::vector<unsigned int> InfoNode::calculatePath() const
 	const InfoNode* current = this;
 	std::vector<unsigned int> path;
 	while (current->parent != nullptr) {
-		path.push_back(current->childIndex());
+		path.push_back(current->childIndex() + 1);
 		current = current->parent;
 		if (current->owner != nullptr) {
 			current = current->owner;

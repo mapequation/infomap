@@ -133,7 +133,7 @@ public:
 
 	unsigned int childIndex() const
 	{
-		return m_path.empty() ? 0 : m_path.back();
+		return m_path.empty() ? 0 : m_path.back() - 1;
 	}
 
 	unsigned int depth() const

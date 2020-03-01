@@ -356,6 +356,7 @@ public:
 
 	unsigned int childIndex() const;
 
+	// Generate 1-based tree path
 	std::vector<unsigned int> calculatePath() const;
 
 	unsigned int infomapChildDegree() const;
