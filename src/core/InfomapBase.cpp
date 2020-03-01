@@ -2404,7 +2404,7 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
 
 	// Use stateId to store depth on modules to optimize link aggregation
 	for (auto it(iterModules()); !it.isEnd(); ++it) {
-		auto parentId = io::stringify(it.path(), ":", 1);
+		auto parentId = io::stringify(it.path(), ":");
 		auto& module = *it;
 		auto& links = moduleLinks[parentId];
 		// if (it->isLeafModule() && mergePhysicalNodes) {
