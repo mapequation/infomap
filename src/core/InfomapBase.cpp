@@ -534,10 +534,10 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 		}
 		for (unsigned int i = 0; i < path.size(); ++i)
 		{
-			auto childIndex = path[i];
+			auto childNumber = path[i]; // 1-based indexing
 			// Create new node if path doesn't exist
 			// TODO: Check correct tree indexing?
-			if (node->childDegree() <= childIndex)
+			if (node->childDegree() < childNumber)
 			{
 				InfoNode* child = leafNode;
 				if (i + 1 < path.size()) {
@@ -2385,7 +2385,7 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
 				if (sourceParentIt == targetParentIt) {
 					// Skip self-links
 					if (sourceChildIndex != targetChildIndex) {
-						auto parentId = io::stringify(sourceParentIt->calculatePath(), ":", 1);
+						auto parentId = io::stringify(sourceParentIt->calculatePath(), ":");
 						auto& linkMap = moduleLinks[parentId];
 						linkMap[std::make_pair(sourceChildIndex + 1, targetChildIndex + 1)] += flow;
 					}

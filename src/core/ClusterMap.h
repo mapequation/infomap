@@ -15,7 +15,7 @@
 
 namespace infomap {
 
-using Path = std::deque<unsigned int>;
+using Path = std::deque<unsigned int>; // 1-based indexing
 struct NodePath
 {
 	NodePath(unsigned int nodeId, const Path& path)
@@ -33,6 +33,7 @@ struct NodePaths
 	unsigned int size() { return nodePaths.size(); }
 	void clear() { nodePaths.clear(); }
 	void add(unsigned int nodeId, const Path& path) {
+		// path should use 1-based indexing
 		add(NodePath(nodeId, path));
 	}
 	void add(NodePath&& path) {

@@ -95,15 +95,14 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow)
 
 		pathStream.clear();
 		pathStream.str(pathString);
-		unsigned int childIndex;
+		unsigned int childNumber;
 		Path path;
-		while (pathStream >> childIndex)
+		while (pathStream >> childNumber)
 		{
 			pathStream.get(); // Extract the delimiting character also
-			if (childIndex == 0)
+			if (childNumber == 0)
 				throw FileFormatError("There is a '0' in the tree path, lowest allowed integer is 1.");
-			--childIndex;
-			path.push_back(childIndex);
+			path.push_back(childNumber); // Keep 1-based indexing in path
 		}
 		m_nodePaths.add(nodeId, path);
 	}
