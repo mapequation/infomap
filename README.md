@@ -53,7 +53,7 @@ If you have cloned Infomap before v1.0, get the master branch up-to-date by runn
 ```
 git checkout v0.x
 git branch -D master
-git checkout -b master origin/master
+git checkout master
 ```
 
 ### Using NPM
