@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.5](https://github.com/mapequation/infomap/compare/v1.0.4...v1.0.5) (2020-03-02)
+
+
+### Bug Fixes
+
+* Common parameters should not be advanced ([#101](https://github.com/mapequation/infomap/issues/101)) ([2907c86](https://github.com/mapequation/infomap/commit/2907c8605313d60fc7c74e36d7a841b2f96c7b1d)), closes [#100](https://github.com/mapequation/infomap/issues/100)
+* consistently use 1-based indexing for paths and 0 for indexes ([f283818](https://github.com/mapequation/infomap/commit/f2838189771cfc118ee20152d96694b438168ca8)), closes [#103](https://github.com/mapequation/infomap/issues/103)
+* Fix ftree links since remapping path from 1 ([f447b48](https://github.com/mapequation/infomap/commit/f447b4872cb29b651747c08cd919e837353b4354)), closes [#102](https://github.com/mapequation/infomap/issues/102)
+
 ### [1.0.4](https://github.com/mapequation/infomap/compare/v1.0.3...v1.0.4) (2020-02-28)
 
 
