@@ -14,15 +14,20 @@ For a list of recent changes, see `CHANGELOG.md`_ in the source directory.
 Getting started
 ---------------
 
-Installing Infomap requires a working ``gcc`` or ``clang`` compiler.
-
 Infomap can be installed either from `PyPI`_ using ``pip`` or by
 compiling from source.
+
+An experimental Javascript version for browsers is available on `NPM`_.
 
 .. _PyPI: https://pypi.org/project/infomap/
 
 Using pip
 ---------
+
+A pre-compiled version is available for macOS users.
+
+Installing on other operating systems requires a
+working ``gcc`` or ``clang`` compiler.
 
 To install, run::
 
@@ -35,7 +40,7 @@ To upgrade, run::
 
 
 When the Python package is installed, an executable called
-``infomap`` (with small i) is available from any directory.
+``infomap`` (with lowercase i) is available from any directory.
 
 To get started, read `Infomap Python API`_.
 
@@ -43,6 +48,8 @@ To get started, read `Infomap Python API`_.
 
 Compiling from source
 ---------------------
+
+Installing Infomap from source requires a working ``gcc`` or ``clang`` compiler.
 
 To download and compile the newest version from `Github`_, clone the repository
 by running::
@@ -67,7 +74,7 @@ Read `the documentation`_ to learn more about the different options.
 Npm package
 -----------
 
-An experimental web worker implementation is available on `NPM`_.
+An experimental Javascript web worker is available on `NPM`_.
 
 To install it, run::
 
