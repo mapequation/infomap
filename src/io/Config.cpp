@@ -15,10 +15,10 @@ const std::string FlowModel::undirdir = "undirdir";
 const std::string FlowModel::outdirdir = "outdirdir";
 const std::string FlowModel::rawdir = "rawdir";
 
-Config Config::fromString(std::string flags, bool requireFileInput)
+Config Config::fromString(std::string flags, bool isCLI)
 {
 	Config conf;
-	conf.requireFileInput = requireFileInput;
+	conf.isCLI = isCLI;
 
 	ProgramInterface api("Infomap",
 		"Implementation of the Infomap clustering algorithm based on the Map Equation (see www.mapequation.org)",
@@ -26,9 +26,9 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 
 	api.setGroups({"Input", "Algorithm", "Accuracy", "Output"});
 
-	std::vector<std::string> optionalOutputDir; // Used if !requireFileInput
+	std::vector<std::string> optionalOutputDir; // Used if !isCLI
 	// --------------------- Input options ---------------------
-	if (requireFileInput)
+	if (isCLI)
 	{
 		api.addNonOptionArgument(conf.networkFile, "network_file",
 			"File containing the network data. Assumes a link list format if no Pajek formatted heading.", "Input");
@@ -207,7 +207,7 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 			"Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.", "Accuracy", true);
 
 	// --------------------- Output options ---------------------
-	// if (requireFileInput)
+	// if (isCLI)
 	// {
 	// 	api.addNonOptionArgument(conf.outDirectory, "out_directory",
 	// 			"The directory to write the results to");
@@ -235,10 +235,10 @@ Config Config::fromString(std::string flags, bool requireFileInput)
 	if (!optionalOutputDir.empty())
 		conf.outDirectory = optionalOutputDir[0];
 
-	if (!requireFileInput && conf.outDirectory == "")
+	if (!isCLI && conf.outDirectory == "")
 		conf.noFileOutput = true;
 
-	if (!conf.noFileOutput && conf.outDirectory == "" && requireFileInput)
+	if (!conf.noFileOutput && conf.outDirectory == "" && isCLI)
 	{
 		throw InputDomainError("Missing out_directory");
 	}
@@ -307,12 +307,10 @@ void Config::adaptDefaults()
 		}
 	}
 
-	#ifndef AS_LIB
 	// Of no output format specified, use tree as default (if not used as a library).
-	if (!haveModularResultOutput()) {
+	if (isCLI && !haveModularResultOutput()) {
 		printTree = true;
 	}
-	#endif
 
 
 	// if (!haveModularResultOutput())

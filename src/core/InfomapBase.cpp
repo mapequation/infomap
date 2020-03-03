@@ -216,7 +216,7 @@ void InfomapBase::run(std::string parameters)
 	std::string currentParameters = io::Str() << m_initialParameters << (parameters.empty() ? "" : " ") << parameters;
 	if (currentParameters != m_currentParameters) {
 		m_currentParameters = currentParameters;
-		this->setConfig(Config::fromString(m_currentParameters, this->requireFileInput));
+		this->setConfig(Config::fromString(m_currentParameters, this->isCLI));
 		m_network.setConfig(*this);
 	}
 
@@ -329,9 +329,9 @@ void InfomapBase::run(Network& network)
 
 	// If used as a library, we may want to reuse the network instance, else clear to use less memory
 	// TODO: May have to use some meta data for output?
-	#ifndef AS_LIB
-	network.clearLinks();
-	#endif
+	if (this->isCLI) {
+		network.clearLinks();
+	}
 
 	if (haveMemory())
 		Log(2) << "Run Infomap with memory..." << std::endl;

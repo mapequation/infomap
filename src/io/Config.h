@@ -52,7 +52,7 @@ struct FlowModel {
 struct Config
 {
 	// Input
-	bool requireFileInput = false;
+	bool isCLI = false;
 	std::string networkFile = "";
 	std::vector<std::string> additionalInput;
 	std::string inputFormat = "";
@@ -164,13 +164,13 @@ struct Config
 		// adaptDefaults();
 	}
 
-	Config(std::string flags, bool requireFileInput = false)
+	Config(std::string flags, bool isCLI = false)
 	{
-		*this = Config::fromString(flags, requireFileInput);
+		*this = Config::fromString(flags, isCLI);
 	}
 
 	Config(const Config& other) :
-		requireFileInput(other.requireFileInput),
+		isCLI(other.isCLI),
 		networkFile(other.networkFile),
 	 	additionalInput(other.additionalInput),
 	 	inputFormat(other.inputFormat),
@@ -270,7 +270,7 @@ struct Config
 
 	Config& operator=(const Config& other)
 	{
-		requireFileInput = other.requireFileInput;
+		isCLI = other.isCLI;
 		networkFile = other.networkFile;
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
@@ -369,7 +369,7 @@ struct Config
 
 	Config& cloneAsNonMain(const Config& other)
 	{
-		requireFileInput = other.requireFileInput;
+		isCLI = other.isCLI;
 		networkFile = other.networkFile;
 	 	additionalInput = other.additionalInput;
 	 	inputFormat = other.inputFormat;
@@ -579,7 +579,7 @@ struct Config
 		return error != "";
 	}
 
-	static Config fromString(std::string flags, bool requireFileInput = false);
+	static Config fromString(std::string flags, bool isCLI = false);
 };
 
 }
