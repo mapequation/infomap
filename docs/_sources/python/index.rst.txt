@@ -33,7 +33,7 @@ Command line
 ^^^^^^^^^^^^
 
 When the Python package is installed, an executable called
-``infomap`` (with small i) is available from any directory.
+``infomap`` is available from any directory.
 To verify your installation, run::
 
     infomap -v
