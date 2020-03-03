@@ -221,6 +221,23 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, unsigne
 	return addLink(sourceId, targetId, static_cast<double>(weight));
 }
 
+size_t StateNetwork::addLinks(const std::vector<std::tuple<unsigned int, unsigned int, double>> &links)
+{
+	size_t num_added = 0;
+
+	unsigned int source;
+	unsigned int target;
+	double weight;
+	for (auto& link : links) {
+		std::tie(source, target, weight) = link;
+		if (addLink(source, target, weight)) {
+			++num_added;
+		}
+	}
+
+	return num_added;
+}
+
 bool StateNetwork::removeLink(unsigned int sourceId, unsigned int targetId)
 {
 	auto itSource = m_nodeLinkMap.find(sourceId);
