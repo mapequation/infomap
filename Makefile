@@ -68,6 +68,7 @@ js-worker: build/js/$(WORKER_FILENAME) Infomap
 	@mkdir -p interfaces/js/src/worker
 	cp build/js/* interfaces/js/src/worker/
 	npm run build
+	cp interfaces/js/README.md .
 
 build/js/infomap.worker.js: $(SOURCES) $(PRE_WORKER_MODULE)
 	@echo "Compiling Infomap to run in a worker in the browser..."
@@ -80,7 +81,8 @@ build/js/Infomap.js: $(SOURCES)
 	em++ -O0 -o build/js/Infomap.js $^
 
 js-clean:
-	$(RM) -r build/js interfaces/js/src/worker/* dist/*
+	$(RM) -r build/js interfaces/js/src/worker/* dist/* README.md
+
 
 ##################################################
 # Static C++ library

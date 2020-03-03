@@ -46,3 +46,4 @@ interfaces/js/src/worker
 docs/.*
 interfaces/python/package_meta.py
 interfaces/python/source/index.rst
+/README.md
