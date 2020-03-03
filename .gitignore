@@ -11,6 +11,9 @@ lib
 .project
 .cproject
 .settings
+.idea
+CMakeLists.txt
+cmake-build-debug
 examples/cpp/minimal/example
 examples/cpp/minimal/mem-example
 examples/cpp/minimal/multi-example
@@ -42,3 +45,4 @@ dist
 interfaces/js/src/worker
 docs/.*
 interfaces/python/package_meta.py
+interfaces/python/source/index.rst

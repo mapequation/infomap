@@ -3,35 +3,28 @@ Infomap
 
 Infomap is a network clustering algorithm based on the `Map equation`_.
 
-For more info, see `mapequation.org/infomap`_.
+For detailed documentation, see `mapequation.org/infomap`_.
 
 For a list of recent changes, see `CHANGELOG.md`_ in the source directory.
 
 .. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
-.. _mapequation.org/infomap: https://www.mapequation.org/infomap
-.. _Github: https://www.github.com/mapequation/infomap
-.. _CHANGELOG.md: https://github.com/mapequation/infomap/blob/master/CHANGELOG.md
-.. _Github issues: https://www.github.com/mapequation/infomap/issues
+.. _`mapequation.org/infomap`: https://www.mapequation.org/infomap
+.. _`CHANGELOG.md`: https://github.com/mapequation/infomap/blob/master/CHANGELOG.md
 
 Getting started
 ---------------
 
-In a terminal with the GNU Compiler Collection installed,
-just run ``make`` in the current directory to compile the
-code with the included ``Makefile``.
+Installing Infomap requires a working ``gcc`` or ``clang`` compiler.
 
-Call ``./Infomap`` to run.
+Infomap can be installed either from `PyPI`_ using ``pip`` or by
+compiling from source.
 
-Run ``./Infomap --help`` for a list of available options.
+.. _PyPI: https://pypi.org/project/infomap/
 
-Infomap can be used both as a standalone program and as a library.
-See the examples folder for examples.
-
-
-Using Pip
+Using pip
 ---------
 
-Infomap is available on the Python Package Index PyPi. To install, run::
+To install, run::
 
     pip install infomap
 
@@ -41,43 +34,54 @@ To upgrade, run::
     pip install --upgrade infomap
 
 
-When the Python infomap package is installed, a binary called ``infomap`` is
-available on the command line from any directory.
+When the Python package is installed, an executable called
+``infomap`` (with small i) is available from any directory.
 
-Check the `API documentation`_ to get started.
+To get started, read `Infomap Python API`_.
 
-.. _API documentation: https://mapequation.github.io/infomap/
+.. _`Infomap Python API`: https://mapequation.github.io/infomap/python/
 
-Using Git
----------
+Compiling from source
+---------------------
 
-To download and compile the newest version from Github, clone the repository
+To download and compile the newest version from `Github`_, clone the repository
 by running::
 
     git clone git@github.com:mapequation/infomap.git
     cd infomap
     make
 
+This creates the binary ``Infomap``, run it using::
 
-Migrating from v0.x to v1.0
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ./Infomap [options] network_data destination
 
-In v1.0 we have moved the old master branch to ``v0.x``.
-If you have cloned Infomap before v1.0, get the master branch up-to-date by running::
+For a list of options, run::
 
-    git checkout v0.x
-    git branch -D master
-    git checkout master
+    ./Infomap --help
 
+Read `the documentation`_ to learn more about the different options.
 
-Using NPM
----------
+.. _Github: https://www.github.com/mapequation/infomap
+.. _the documentation: https://www.mapequation.org/infomap
 
-An experimental web worker implementation is available on NPM.
+Npm package
+-----------
+
+An experimental web worker implementation is available on `NPM`_.
+
 To install it, run::
 
     npm install @mapequation/infomap
 
+.. _NPM: https://www.npmjs.com/package/@mapequation/infomap
+
+Feedback
+--------
+
+If you have any questions, suggestions or issues regarding the software,
+please add them to `GitHub issues`_.
+
+.. _Github issues: http://www.github.com/mapequation/infomap/issues
 
 Authors
 -------
@@ -86,7 +90,7 @@ Daniel Edler, Anton Eriksson, Martin Rosvall
 
 For contact information, see `mapequation.org/about.html`_.
 
-.. _mapequation.org/about.html: https://www.mapequation.org/about.html
+.. _`mapequation.org/about.html`: https://www.mapequation.org/about.html
 
 Terms of use
 ------------
@@ -101,4 +105,3 @@ later version (see `LICENSE_AGPLv3.txt`_).
 For a non-copyleft license, please contact us.
 
 .. _LICENSE_AGPLv3.txt: https://github.com/mapequation/infomap/blob/master/LICENSE_AGPLv3.txt
-

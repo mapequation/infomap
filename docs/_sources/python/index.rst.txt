@@ -1,14 +1,11 @@
+:orphan:
+
 Infomap Python API
 ==================
 
 Infomap is a network clustering algorithm based on the `Map equation`_.
 
-The source code is available on `Github`_. If you find any problems with
-the software, please create an issue on `Github issues`_.
-
 .. _Map equation: http://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
-.. _Github: http://www.github.com/mapequation/infomap
-.. _Github issues: http://www.github.com/mapequation/infomap/issues
 
 API Reference
 -------------
@@ -19,7 +16,7 @@ API Reference
 
 Installation
 ------------
-Infomap is available on PyPI. To install, run::
+Infomap is available on `PyPI`_. To install, run::
 
     pip install infomap
 
@@ -27,6 +24,7 @@ If you want to upgrade Infomap, run::
 
     pip install --upgrade infomap
 
+.. _PyPI: https://pypi.org/project/infomap/
 
 Usage
 -----
@@ -34,8 +32,9 @@ Usage
 Command line
 ^^^^^^^^^^^^
 
-When the Python package is installed, an executable called ``infomap`` (with small i)
-is available from any directory. To verify your installation, run::
+When the Python package is installed, an executable called
+``infomap`` (with small i) is available from any directory.
+To verify your installation, run::
 
     infomap -v
 
@@ -48,8 +47,8 @@ For a list of available options, run::
     infomap --help
 
 
-Python interface
-^^^^^^^^^^^^^^^^
+Python package
+^^^^^^^^^^^^^^
 
 The Python package can be imported with::
 
@@ -91,7 +90,7 @@ A simple example:
         if node.is_leaf:
             print(node.node_id, node.module_id)
 
-Please read the :doc:`/infomap` reference to learn more.
+Please read the :doc:`/python/infomap` reference to learn more.
 
 .. * :ref:`genindex`
 
