@@ -2,9 +2,9 @@
 
 This is Infomap compiled as a web worker with Emscripten.
 
-Infomap is a network clustering algorithm based on the [Map equation](http://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation).
+Infomap is a network clustering algorithm based on the [Map equation](//www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation).
 
-To see a demo where this package is used, see [mapequation.org/infomap](https://www.mapequation.org/infomap/).
+To see a demo where this package is used, see [mapequation.org/infomap](//www.mapequation.org/infomap/).
 
 ## Installing
 
@@ -70,13 +70,13 @@ For example:
 
 ## Feedback
 
-If you have any questions, suggestions or issues regarding the software, please add them to [GitHub issues](https://github.com/mapequation/infomap/issues).
+If you have any questions, suggestions or issues regarding the software, please add them to [GitHub issues](//github.com/mapequation/infomap/issues).
 
 ## Authors
 
 Daniel Edler, Anton Eriksson, Martin Rosvall
 
-For contact information, see [mapequation.org/about.html](mapequation.org/about.html).
+For contact information, see [mapequation.org/about.html](//www.mapequation.org/about.html).
 
 ## Terms of use
 
