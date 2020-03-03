@@ -20,6 +20,22 @@ If you use ES modules, import the package like this
 ``` javascript
 import Infomap from "@mapequation/infomap";
 
+let network = `#source target [weight]
+0 1
+0 2
+0 3
+1 0
+1 2
+2 1
+2 0
+3 0
+3 4
+3 5
+4 3
+4 5
+5 4
+5 3`;
+
 let infomap = new Infomap()
   .on("data", data => console.log(data))
   .on("error", err => console.warn(err))
