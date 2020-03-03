@@ -13,6 +13,11 @@ For a list of recent changes, see `CHANGELOG.md`_ in the source directory.
 .. _CHANGELOG.md: https://github.com/mapequation/infomap/blob/master/CHANGELOG.md
 .. _Github issues: https://www.github.com/mapequation/infomap/issues
 
+.. toctree::
+    :maxdepth: 2
+
+    python
+
 Getting started
 ---------------
 
