@@ -160,7 +160,7 @@ python: py-build Makefile
 	@cp -a $(PY_BUILD_DIR)/infomap.py $(PY_BUILD_DIR)/infomap_package.py
 	cat $(PY_BUILD_DIR)/package_meta.py $(PY_BUILD_DIR)/infomap_api.py interfaces/python/infomap_cli.py > $(PY_BUILD_DIR)/infomap.py
 	@cp -a interfaces/python/MANIFEST.in $(PY_BUILD_DIR)/
-	@cp -a README.md $(PY_BUILD_DIR)/
+	@cp -a README.rst $(PY_BUILD_DIR)/
 	@cp -a LICENSE_AGPLv3.txt $(PY_BUILD_DIR)/LICENSE
 	cd $(PY_BUILD_DIR) && CC=$(CXX) python3 setup.py build_ext --inplace
 	@true

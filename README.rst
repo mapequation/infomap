@@ -84,9 +84,9 @@ Authors
 
 Daniel Edler, Anton Eriksson, Martin Rosvall
 
-For contact information, see `mapequation.org/about`_.
+For contact information, see `mapequation.org/about.html`_.
 
-.. _mapequation.org/about: https://www.mapequation.org/about
+.. _mapequation.org/about.html: https://www.mapequation.org/about.html
 
 Terms of use
 ------------
