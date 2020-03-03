@@ -52,7 +52,9 @@ Compiling from source
 Installing Infomap from source requires a working ``gcc`` or ``clang`` compiler.
 
 To download and compile the newest version from `Github`_, clone the repository
-by running::
+by running
+
+.. code-block:: shell
 
     git clone git@github.com:mapequation/infomap.git
     cd infomap
@@ -76,7 +78,9 @@ Npm package
 
 An experimental Javascript web worker is available on `NPM`_.
 
-To install it, run::
+To install it, run
+
+.. code-block:: shell
 
     npm install @mapequation/infomap
 
