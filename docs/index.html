@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Infomap Python API &#8212; Infomap 1.0.0-beta.59 documentation</title>
+    <title>Infomap &#8212; Infomap 1.0.5 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -14,7 +14,6 @@
     <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="infomap module" href="infomap.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -31,90 +30,76 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="infomap-python-api">
-<h1>Infomap Python API<a class="headerlink" href="#infomap-python-api" title="Permalink to this headline">¶</a></h1>
-<p>Infomap is a network clustering algorithm based on the <a class="reference external" href="http://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation">Map equation</a>.</p>
-<p>The source code is available on <a class="reference external" href="http://www.github.com/mapequation/infomap">Github</a>. If you find any problems with
-the software, please create an issue on <a class="reference external" href="http://www.github.com/mapequation/infomap/issues">Github issues</a>.</p>
-<div class="section" id="api-reference">
-<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h2>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="infomap.html">infomap module</a></li>
-</ul>
+  <div class="section" id="infomap">
+<h1>Infomap<a class="headerlink" href="#infomap" title="Permalink to this headline">¶</a></h1>
+<p>Infomap is a network clustering algorithm based on the <a class="reference external" href="https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation">Map equation</a>.</p>
+<p>For detailed documentation, see <a class="reference external" href="https://www.mapequation.org/infomap">mapequation.org/infomap</a>.</p>
+<p>For a list of recent changes, see <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/CHANGELOG.md">CHANGELOG.md</a> in the source directory.</p>
+<div class="section" id="getting-started">
+<h2>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<p>Installing Infomap requires a working <code class="docutils literal notranslate"><span class="pre">gcc</span></code> or <code class="docutils literal notranslate"><span class="pre">clang</span></code> compiler.</p>
+<p>Infomap can be installed either from <a class="reference external" href="https://pypi.org/project/infomap/">PyPI</a> using <code class="docutils literal notranslate"><span class="pre">pip</span></code> or by
+compiling from source.</p>
 </div>
-</div>
-<div class="section" id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>Infomap is available on PyPI. To install, run:</p>
+<div class="section" id="using-pip">
+<h2>Using pip<a class="headerlink" href="#using-pip" title="Permalink to this headline">¶</a></h2>
+<p>To install, run:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">infomap</span>
 </pre></div>
 </div>
-<p>If you want to upgrade Infomap, run:</p>
+<p>To upgrade, run:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">infomap</span>
 </pre></div>
 </div>
+<p>When the Python package is installed, an executable called
+<code class="docutils literal notranslate"><span class="pre">infomap</span></code> (with small i) is available from any directory.</p>
+<p>To get started, read <a class="reference external" href="https://mapequation.github.io/infomap/python/">Infomap Python API</a>.</p>
 </div>
-<div class="section" id="usage">
-<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="command-line">
-<h3>Command line<a class="headerlink" href="#command-line" title="Permalink to this headline">¶</a></h3>
-<p>When the Python package is installed, an executable called <code class="docutils literal notranslate"><span class="pre">infomap</span></code> (with small i)
-is available from any directory. To verify your installation, run:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">infomap</span> <span class="o">-</span><span class="n">v</span>
+<div class="section" id="compiling-from-source">
+<h2>Compiling from source<a class="headerlink" href="#compiling-from-source" title="Permalink to this headline">¶</a></h2>
+<p>To download and compile the newest version from <a class="reference external" href="https://www.github.com/mapequation/infomap">Github</a>, clone the repository
+by running:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">git</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="n">mapequation</span><span class="o">/</span><span class="n">infomap</span><span class="o">.</span><span class="n">git</span>
+<span class="n">cd</span> <span class="n">infomap</span>
+<span class="n">make</span>
 </pre></div>
 </div>
-<p>Command line usage is as follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">infomap</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="n">network_data</span> <span class="n">destination</span>
+<p>This creates the binary <code class="docutils literal notranslate"><span class="pre">Infomap</span></code>, run it using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">Infomap</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="n">network_data</span> <span class="n">destination</span>
 </pre></div>
 </div>
-<p>For a list of available options, run:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">infomap</span> <span class="o">--</span><span class="n">help</span>
+<p>For a list of options, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">Infomap</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<p>Read <a class="reference external" href="https://www.mapequation.org/infomap">the documentation</a> to learn more about the different options.</p>
+</div>
+<div class="section" id="npm-package">
+<h2>Npm package<a class="headerlink" href="#npm-package" title="Permalink to this headline">¶</a></h2>
+<p>An experimental web worker implementation is available on <a class="reference external" href="https://www.npmjs.com/package/&#64;mapequation/infomap">NPM</a>.</p>
+<p>To install it, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">npm</span> <span class="n">install</span> <span class="nd">@mapequation</span><span class="o">/</span><span class="n">infomap</span>
 </pre></div>
 </div>
 </div>
-<div class="section" id="python-interface">
-<h3>Python interface<a class="headerlink" href="#python-interface" title="Permalink to this headline">¶</a></h3>
-<p>The Python package can be imported with:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">infomap</span>
-</pre></div>
+<div class="section" id="feedback">
+<h2>Feedback<a class="headerlink" href="#feedback" title="Permalink to this headline">¶</a></h2>
+<p>If you have any questions, suggestions or issues regarding the software,
+please add them to <a class="reference external" href="http://www.github.com/mapequation/infomap/issues">GitHub issues</a>.</p>
 </div>
-<p>A simple example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
-
-<span class="c1"># Command line flags can be added as a string to Infomap</span>
-<span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="s2">&quot;--two-level --directed&quot;</span><span class="p">)</span>
-
-<span class="c1"># Add weight as optional third argument</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-
-<span class="c1"># Run the Infomap search algorithm to find optimal modules</span>
-<span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{im.num_top_modules}</span><span class="s2"> modules with codelength: </span><span class="si">{im.codelength}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Result&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">#node module&quot;</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">im</span><span class="o">.</span><span class="n">tree</span><span class="p">:</span>
-    <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">node_id</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">module_id</span><span class="p">)</span>
-</pre></div>
+<div class="section" id="authors">
+<h2>Authors<a class="headerlink" href="#authors" title="Permalink to this headline">¶</a></h2>
+<p>Daniel Edler, Anton Eriksson, Martin Rosvall</p>
+<p>For contact information, see <a class="reference external" href="https://www.mapequation.org/about.html">mapequation.org/about.html</a>.</p>
 </div>
-<p>Please read the <a class="reference internal" href="infomap.html"><span class="doc">infomap module</span></a> reference to learn more.</p>
-</div>
+<div class="section" id="terms-of-use">
+<h2>Terms of use<a class="headerlink" href="#terms-of-use" title="Permalink to this headline">¶</a></h2>
+<p>Infomap is released under a dual licence.</p>
+<p>To give everyone maximum freedom to make use of Infomap
+and derivative works, we make the code open source under
+the GNU Affero General Public License version 3 or any
+later version (see <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/LICENSE_AGPLv3.txt">LICENSE_AGPLv3.txt</a>).</p>
+<p>For a non-copyleft license, please contact us.</p>
 </div>
 </div>
 
@@ -135,15 +120,11 @@ is available from any directory. To verify your installation, run:</p>
 
 
 <h3>Navigation</h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="infomap.html">infomap module</a></li>
-</ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="#">Documentation overview</a><ul>
-      <li>Next: <a href="infomap.html" title="next chapter">infomap module</a></li>
   </ul></li>
 </ul>
 </div>

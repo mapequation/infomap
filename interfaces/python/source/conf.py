@@ -22,7 +22,12 @@ copyright = '2020, Daniel Edler, Anton Eriksson, Martin Rosvall'
 author = 'Daniel Edler, Anton Eriksson, Martin Rosvall'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0.0-beta.59'
+#release = '1.0.0-beta.59'
+import json
+
+with open('../../../package.json', 'r') as fp:
+    pkg = json.load(fp)
+    release = pkg.get('version')
 
 
 # -- General configuration ---------------------------------------------------
