@@ -1,6 +1,6 @@
 {
   "name": "@mapequation/infomap",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Infomap network clustering algorithm",
   "browser": "dist/index.js",
   "publishConfig": {

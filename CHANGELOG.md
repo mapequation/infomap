@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.6](https://github.com/mapequation/infomap/compare/v1.0.5...v1.0.6) (2020-03-03)
+
+
+### Bug Fixes
+
+* **python:** Enable numpy.int64 in link weights ([8d91206](https://github.com/mapequation/infomap/commit/8d9120681f932bd0cfad37cc4740f719f2acb358)), closes [#107](https://github.com/mapequation/infomap/issues/107)
+* **python:** Print tree by default with python cli ([1565cab](https://github.com/mapequation/infomap/commit/1565cab1f3afec8c555180dd620379557709d3d0)), closes [#106](https://github.com/mapequation/infomap/issues/106)
+
 ### [1.0.5](https://github.com/mapequation/infomap/compare/v1.0.4...v1.0.5) (2020-03-02)
 
 
