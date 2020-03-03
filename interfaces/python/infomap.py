@@ -277,8 +277,9 @@ class Infomap(InfomapWrapper):
         links : iterable of tuples
             Iterable of tuples of int of the form (source_id, target_id, [weight])
         """
-        for link in links:
-            self.add_link(*link)
+        #for link in links:
+        #    self.add_link(*link)
+        return super().addLinks(links)
 
     def remove_link(self, source_id, target_id):
         """Remove a link.

@@ -221,7 +221,23 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, unsigne
 	return addLink(sourceId, targetId, static_cast<double>(weight));
 }
 
-size_t StateNetwork::addLinks(const std::vector<std::tuple<unsigned int, unsigned int, double>> &links)
+size_t StateNetwork::addLinks(const std::vector<std::pair<unsigned int, unsigned int>>& 	links)
+{
+	size_t num_added = 0;
+
+	unsigned int source;
+	unsigned int target;
+	for (auto& link : links) {
+		std::tie(source, target) = link;
+		if (addLink(source, target)) {
+			++num_added;
+		}
+	}
+
+	return num_added;
+}
+
+size_t StateNetwork::addLinks(const std::vector<std::tuple<unsigned int, unsigned int, double>>& links)
 {
 	size_t num_added = 0;
 
@@ -231,6 +247,23 @@ size_t StateNetwork::addLinks(const std::vector<std::tuple<unsigned int, unsigne
 	for (auto& link : links) {
 		std::tie(source, target, weight) = link;
 		if (addLink(source, target, weight)) {
+			++num_added;
+		}
+	}
+
+	return num_added;
+}
+
+size_t StateNetwork::addLinks(const std::vector<std::tuple<unsigned int, unsigned int, unsigned long>>& links)
+{
+	size_t num_added = 0;
+
+	unsigned int source;
+	unsigned int target;
+	unsigned long weight;
+	for (auto& link : links) {
+		std::tie(source, target, weight) = link;
+		if (addLink(source, target, static_cast<double>(weight))) {
 			++num_added;
 		}
 	}
