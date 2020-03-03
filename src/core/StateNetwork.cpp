@@ -216,6 +216,11 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
 	// return true;
 }
 
+bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, unsigned long weight)
+{
+	return addLink(sourceId, targetId, static_cast<double>(weight));
+}
+
 bool StateNetwork::removeLink(unsigned int sourceId, unsigned int targetId)
 {
 	auto itSource = m_nodeLinkMap.find(sourceId);

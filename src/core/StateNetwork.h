@@ -219,6 +219,7 @@ public:
 	PhysNode& addPhysicalNode(unsigned int physId, double weight, const std::string& name);
 	std::pair<std::map<unsigned int, std::string>::iterator, bool> addName(unsigned int id, std::string);
 	bool addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0);
+	bool addLink(unsigned int sourceId, unsigned int targetId, unsigned long weight);
 	/**
 	 * Remove link
 	 * Note: It will not remove nodes if they become dangling

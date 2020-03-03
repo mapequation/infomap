@@ -66,7 +66,7 @@ def draw_network(G):
                      horizontalalignment='center',
                      verticalalignment='center',
                      xytext=[0, 2],
-                     color=cmapDark(communities[n]))
+                     color=cmap_dark(communities[n]))
 
     plt.axis('off')
     pathlib.Path("output").mkdir(exist_ok=True)

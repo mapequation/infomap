@@ -9,6 +9,11 @@
 using namespace infomap;
 %}
 
+// Makes it possible to use for example numpy.int64 as link weights
+%begin %{
+#define SWIG_PYTHON_CAST_MODE
+%}
+
 %include "std_string.i"
 %include "Config.i"
 %include "InfomapCore.i"
