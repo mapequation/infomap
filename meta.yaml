@@ -1,0 +1,34 @@
+package:
+        name: infomap
+        version: 0.21.0
+source:
+        url: https://github.com/vinisalazar/infomap/archive/0.21.0.tar.gz
+        sha256: 900d6201bf477869c890de67bfd65f03d9ff2956f2fac93901c663d0534bb7f8
+
+build:
+        noarch: python
+        #        osx: python
+        number: 0
+        
+requirements:
+        build:
+                - {{ compiler('c') }}
+        host:
+        run:
+
+about:
+        home: https://github.com/mapequation/infomap
+        license: AGPLv3
+        license_family: GPL
+        license_file: LICENSE_AGPLv3.txt
+        summary: 'Multi-level network clustering based on the Map Equation'
+
+description: |
+        Multi-level network clustering based on the Map Equation.
+doc_url: https://github.com/mapequation/infomap/tree/master/docs
+dev_url: https://github.com/mapequation/infomap
+
+extra:
+        recipe-maintainers:
+                - vinisalazar
+
