@@ -1,20 +1,23 @@
+{% set version = "1.0.6" %}
+
 package:
         name: infomap
-        version: 0.21.0
+        version: {{ version }}
 source:
-        url: https://github.com/vinisalazar/infomap/archive/0.21.0.tar.gz
-        sha256: 900d6201bf477869c890de67bfd65f03d9ff2956f2fac93901c663d0534bb7f8
+        url: https://github.com/mapequation/infomap/archive/v{{ version }}.tar.gz
+        sha256: 18e72bc58c3a8e485890f81cda16af9af8bc1c88113934ad88e8b830e64ba9ff
 
 build:
-        noarch: python
-        #        osx: python
         number: 0
         
 requirements:
         build:
-                - {{ compiler('c') }}
-        host:
+                - {{ compiler('cxx') }}
         run:
+
+test:
+        commands:
+                - ./Infomap -h
 
 about:
         home: https://github.com/mapequation/infomap
@@ -27,8 +30,4 @@ description: |
         Multi-level network clustering based on the Map Equation.
 doc_url: https://github.com/mapequation/infomap/tree/master/docs
 dev_url: https://github.com/mapequation/infomap
-
-extra:
-        recipe-maintainers:
-                - vinisalazar
 

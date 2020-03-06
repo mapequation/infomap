@@ -1,2 +1,3 @@
 make
-cp build/Infomap $CONDA_PREFIX/bin/
+mkdir -p $PREFIX/bin
+cp ./Infomap $PREFIX/bin
