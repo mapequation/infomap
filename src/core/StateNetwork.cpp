@@ -327,6 +327,9 @@ void StateNetwork::writeStateNetwork(std::string filename) const
 
 	SafeOutFile outFile(filename);
 
+	outFile << "# v" << INFOMAP_VERSION << "\n" <<
+		"# ./Infomap " << m_config.parsedString << "\n";
+
 	if (!m_names.empty()) {
 		outFile << "*Vertices\n";
 		for (auto& nameIt : m_names) {
@@ -362,6 +365,11 @@ void StateNetwork::writePajekNetwork(std::string filename) const
 		throw BadArgumentError("writePajekNetwork called with empty filename");
 
 	SafeOutFile outFile(filename);
+
+	outFile << "# v" << INFOMAP_VERSION << "\n" <<
+		"# ./Infomap " << m_config.parsedString << "\n";
+	if (m_config.isMemoryNetwork())
+		outFile << "# State network as physical network\n";
 
 	outFile << "*Vertices\n";
 	for (const auto& nodeIt : nodes()) {
