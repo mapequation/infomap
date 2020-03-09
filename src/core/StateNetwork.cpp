@@ -384,7 +384,7 @@ void StateNetwork::writePajekNetwork(std::string filename) const
 		outFile << "\"\n";
 	}
 
-	outFile << "*Links\n";
+	outFile << (m_config.printAsUndirected() ? "*Edges" : "*Arcs") << "\n";
 	for (auto& linkIt : m_nodeLinkMap) {
 		for (auto& subIt : linkIt.second)
 		{
