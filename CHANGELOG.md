@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.7](https://github.com/mapequation/infomap/compare/v1.0.6...v1.0.7) (2020-03-09)
+
+
+### Bug Fixes
+
+* Add header in network and states output ([c415a4b](https://github.com/mapequation/infomap/commit/c415a4bf05625eaa2330e6e9e3c9b1e2797895c5))
+* Use *Edges/*Arcs instead of *Links in pajek output ([ff3a98e](https://github.com/mapequation/infomap/commit/ff3a98e18c119a64b8324018920452b6611b77d2))
+* Use node_id instead of id in clu output ([39cd4e4](https://github.com/mapequation/infomap/commit/39cd4e4d866ee03c1d701946225a2bd76a0a9790))
+* **js:** Fix support for all file io in Infomap.js ([ea9d899](https://github.com/mapequation/infomap/commit/ea9d899bdebdd361f0ff90e673471f92bc46cfaa))
+
 ### [1.0.6](https://github.com/mapequation/infomap/compare/v1.0.5...v1.0.6) (2020-03-03)
 
 
