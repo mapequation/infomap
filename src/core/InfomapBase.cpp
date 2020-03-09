@@ -2123,7 +2123,7 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 		outFile << "\n";
 	}
 	else {
-		outFile << "# id module flow\n";
+		outFile << "# node_id module flow\n";
 	}
 	// auto it = haveMemory() && !states ? iterTreePhysical(moduleIndexLevel) : iterTree(moduleIndexLevel);
 	if (haveMemory() && !states) {
