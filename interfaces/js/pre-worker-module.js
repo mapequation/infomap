@@ -1,5 +1,5 @@
 function readFile(filename) {
-  var content = "";
+  let content = undefined;
   try {
     content = FS.readFile(filename, { encoding: "utf8" });
   } catch (e) {}
@@ -7,6 +7,7 @@ function readFile(filename) {
 }
 
 var infomapWorkerId = -1;
+var outName = "Untitled";
 
 var memoryHackRequest = {
   status: 200,
@@ -30,32 +31,34 @@ var Module = {
     postMessage({ type: "error", content, id: infomapWorkerId });
   },
   postRun: function() {
-    var content = {};
-    var clu = readFile("network.clu");
-    if (clu) content.clu = clu;
-    var tree = readFile("network.tree");
-    if (tree) content.tree = tree;
-    var ftree = readFile("network.ftree");
-    if (ftree) content.ftree = ftree;
+    const content = {
+      clu: readFile(`${outName}.clu`), // -o clu
+      clu_states: readFile(`${outName}_states.clu`), // -o clu (for state networks)
+      tree: readFile(`${outName}.tree`), // -o tree
+      tree_states: readFile(`${outName}_states.tree`), // -o tree (for state networks)
+      ftree: readFile(`${outName}.ftree`), // -o ftree
+      ftree_states: readFile(`${outName}_states.ftree`), // -o ftree (for state networks)
+      net: readFile(`${outName}.net`), // -o network (for state networks)
+      states_as_physical: readFile(`${outName}_states_as_physical.net`), // -o network (for state networks)
+      states: readFile(`${outName}_states.net`), // -o states
+    };
     postMessage({ type: "finished", content, id: infomapWorkerId });
   },
   memoryInitializerRequest: memoryHackRequest
 };
 
 onmessage = function onmessage(message) {
-  var data = message.data;
+  const data = message.data;
 
-  if (data.target === "Infomap") {
-    memoryHackRequest.response = data.memBuffer;
-    memoryHackRequest.useRequest();
-    infomapWorkerId = data.id;
-    var args = [data.inputFilename, "."];
-    if (data.arguments) args = args.concat(data.arguments);
-    Module.arguments.push(...args);
-    FS.writeFile(data.inputFilename, data.inputData);
-    removeRunDependency("filesReady");
-  } else {
-    throw "Unknown target on message to worker: " +
-      JSON.stringify(data).substr(0, 150);
+  memoryHackRequest.response = data.memBuffer;
+  memoryHackRequest.useRequest();
+  infomapWorkerId = data.id;
+  outName = data.outName;
+  const args = [data.inputFilename, ".", ...data.arguments];
+  Module.arguments.push(...args);
+  FS.writeFile(data.inputFilename, data.inputData);
+  for (let filename of Object.keys(data.files)) {
+    FS.writeFile(filename, data.files[filename]);
   }
+  removeRunDependency("filesReady");
 };

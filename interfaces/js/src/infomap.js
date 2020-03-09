@@ -7,7 +7,7 @@ class Infomap {
   _events = {
     ondata: () => null,
     onerror: () => null,
-    onfinished: () => null
+    onfinished: () => null,
   };
 
   _workerId = 0;
@@ -23,9 +23,31 @@ class Infomap {
     if (this._workerUrl) URL.revokeObjectURL(this._workerUrl);
   }
 
-  run(network, args = "") {
-    if (typeof network !== "string") {
-      throw new Error("network must be a string");
+  /*
+    run("1 2\n2 3")
+    run("1 2\n2 3", "-N 3")
+    run("1 2\n2 3", "-N 3 --cluster-data clusters.clu", { "clusters.clu": "1 1\n2 1\n3 2" })
+    run({ filename: "mynetwork.txt", content: "..." })
+  */
+  run(network = "", args = "", files = {}) {
+    let filename = "network.net";
+    let content = "";
+
+    if (typeof network === "string") {
+      content = network;
+    } else if (
+      typeof network === "object" &&
+      network.filename &&
+      typeof network.filename === "string" &&
+      network.content &&
+      typeof network.content === "string"
+    ) {
+      filename = network.filename;
+      content = network.content;
+    } else {
+      throw new Error(
+        "network must be a string or object of shape { filename: String, content: String }"
+      );
     }
 
     if (typeof args !== "string") {
@@ -40,15 +62,20 @@ class Infomap {
 
     const id = this._workerId++;
     this._workers[id] = worker;
-    const defaultFilename = "network.net";
+    
+    const index = filename.lastIndexOf(".");
+    const networkName = index > 0 ? filename.slice(0, index) : filename;
+    const outNameMatch = args.match(/--out-name\s(\S+)/);
+    const outName = outNameMatch && outNameMatch[1] ? outNameMatch[1] : networkName;
 
     worker.postMessage({
+      id,
       memBuffer: new Uint8Array(MemFile),
-      target: "Infomap",
-      inputFilename: defaultFilename,
-      inputData: network,
+      inputFilename: filename,
+      inputData: content,
       arguments: args.split(),
-      id
+      outName,
+      files,
     });
 
     worker.onmessage = this.onmessage;
