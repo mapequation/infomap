@@ -186,7 +186,6 @@ double MemMapEquation::calcCodelength(const InfoNode& parent) const
 double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
 {
 	if (parent.numPhysicalNodes() == 0) {
-		std::cout << "(*)";
 		return MapEquation::calcCodelength(parent); // Infomap root node
 	}
 
