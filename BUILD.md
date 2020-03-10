@@ -30,8 +30,8 @@ We use the scopes `js` and `python`, for example
 
 ## Releasing new versions
 
-- Commit everything with conventional commit messages
-- Run `npm run release -- --dry-run` to run [standard-version](https://github.com/conventional-changelog/standard-version)
+0. Commit everything with conventional commit messages
+1. Run `npm run release -- --dry-run` to run [standard-version](https://github.com/conventional-changelog/standard-version)
     - Double check the output and that the `bumpFiles` has been updated
     - Run `npm run release` (note: do not amend the release commit, the tag will point to the wrong commit!)
     - Run `git push --follow-tags`
@@ -55,13 +55,13 @@ We also need Infomap to extract the command line arguments for Infomap Online.
 
 To build:
 
-- Follow the [release workflow](#releasing-new-versions) before building
-- Run `make js-worker`
+0. Follow the [release workflow](#releasing-new-versions) before building
+1. Run `make js-worker`
     - This creates `build/js/infomap.worker.js`
     - Copies the worker to `interfaces/js/src/worker`
     - Runs `npm run build` which bundles the worker with the js source files and copies them to `dist`
     - Copies the js README.md to the root
-- Run `npm publish`
+2. Run `npm publish`
     - Optionally run `make js-clean`
 
 To test:
@@ -78,15 +78,15 @@ On macOS, install with `brew install swig` and `brew install sphinx-doc`.
 
 To build:
 
-- Follow the [release workflow](#releasing-new-versions) before building
-- Run `make python`
+0. Follow the [release workflow](#releasing-new-versions) before building
+1. Run `make python`
     - Runs `swig`
     - Creates `package-meta.py`
     - Copies python package files to `build/py`
-- Generate documentation and test
+2. Generate documentation and test
     - Run `make py-local-install` and try `python -c "import infomap; print(infomap.__version__)"`
     - Run `make py-doc` which generates the documentation for Github pages. The front page is generated from `README.rst`
     - Commit the documentation with a `docs(python)` scoped commit.
-- Test publish with `make pypitest_publish`
+3. Test publish with `make pypitest_publish`
     - Install in a clean environment `pip3 --no-cache-dir install --index-url https://test.pypi.org/simple/ infomap`
-- Publish with `make pypi_publish`
+4. Publish with `make pypi_publish`
