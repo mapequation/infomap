@@ -285,5 +285,5 @@ docker-run-ubuntu-test-python: Makefile
 # Clean
 ##################################################
 
-clean:
-	$(RM) -r Infomap build lib include
+clean: js-clean
+	$(RM) -r Infomap build lib include	
