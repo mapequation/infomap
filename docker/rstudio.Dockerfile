@@ -1,5 +1,4 @@
-ARG BASE_CONTAINER=rocker/tidyverse:3.6.3-ubuntu18.04
-FROM $BASE_CONTAINER
+FROM rocker/rstudio:3
 
 RUN apt-get update && apt-get install -y -q \
     build-essential \
@@ -14,19 +13,22 @@ RUN apt-get update && apt-get install -y -q \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-RUN wget https://github.com/swig/swig/archive/rel-3.0.12.tar.gz \
-  && tar -zxf rel-3.0.12.tar.gz \
-  && rm -f rel-3.0.12.tar.gz \
-  && cd swig-rel-3.0.12 \
-  && ./autogen.sh \
-  && ./configure \
-  && make \
-  && make install
+RUN wget https://github.com/swig/swig/archive/rel-4.0.1.tar.gz \
+&& tar -zxf rel-4.0.1.tar.gz \
+&& cd swig-rel-4.0.1 \
+&& rm -f ../rel-4.0.1.tar.gz \
+&& ./autogen.sh \
+&& ./configure \
+&& make \
+&& make install
 
-RUN mkdir -p /infomap
+COPY . /home/rstudio/
 
-COPY . /infomap/
-
-WORKDIR /infomap
+WORKDIR /home/rstudio
 
 RUN make R
+
+WORKDIR /home/rstudio/build/R/Infomap
+
+# ENTRYPOINT ["/home/rstudio/Infomap"]
+# CMD ["--help"]
