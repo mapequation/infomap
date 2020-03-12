@@ -200,6 +200,7 @@ py-doc: python
 	@touch $(SPHINX_TARGET_DIR)/.nojekyll
 	@cp -a README.rst ${SPHINX_SOURCE_DIR}/index.rst
 	sphinx-build -b html $(SPHINX_SOURCE_DIR) $(SPHINX_TARGET_DIR)
+	@npm run py-doc-prettier
 
 .PHONY: pypitest_publish pypi_publish py_clean
 PYPI_DIR = $(PY_BUILD_DIR)

@@ -12,6 +12,7 @@
   "scripts": {
     "watch": "webpack --watch --config interfaces/js/webpack.config.js",
     "build": "webpack --config interfaces/js/webpack.config.js",
+    "py-doc-prettier": "prettier --write docs/searchindex.js",
     "release": "standard-version"
   },
   "repository": {
@@ -42,6 +43,7 @@
     "babel-loader": "^8.0.6",
     "conventional-commits-parser": "^3.0.8",
     "git-raw-commits": "^2.0.3",
+    "prettier": "^1.19.1",
     "raw-loader": "^4.0.0",
     "standard-version": "^7.1.0",
     "webpack": "^4.41.6",
