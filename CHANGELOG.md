@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.8](https://github.com/mapequation/infomap/compare/v1.0.7...v1.0.8) (2020-03-12)
+
+
+### Bug Fixes
+
+* Fix reconstruct physically merged state nodes ([dc91e1a](https://github.com/mapequation/infomap/commit/dc91e1ad93fe150c58994c9dd2ab3aebefd84ef8)), closes [#118](https://github.com/mapequation/infomap/issues/118)
+* Remove debug output ([#117](https://github.com/mapequation/infomap/issues/117)) ([60e7ab3](https://github.com/mapequation/infomap/commit/60e7ab346f50d3cedff06a6b7a12ef106b296f5a))
+
 ### [1.0.7](https://github.com/mapequation/infomap/compare/v1.0.6...v1.0.7) (2020-03-09)
 
 
