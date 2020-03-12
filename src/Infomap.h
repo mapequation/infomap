@@ -49,6 +49,11 @@ public:
 
   std::map<unsigned int, unsigned int> getModules(int level = 1, bool states = false);
   std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false);
+	using InfomapCore::run;
+	using InfomapCore::codelength;
+	using InfomapCore::iterTree;
+	using InfomapCore::iterLeafNodes;
+
 };
 
 extern "C" {
