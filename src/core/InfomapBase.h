@@ -128,6 +128,8 @@ public:
 
 	virtual double codelength() const { return m_hierarchicalCodelength; }
 
+	const std::vector<double>& codelengths() const { return m_codelengths; }
+
 	virtual double getIndexCodelength() const = 0;
 
 	virtual double getModuleCodelength() const = 0;
@@ -491,6 +493,7 @@ protected:
 	unsigned int m_aggregationLevel = 0;
 
 	double m_hierarchicalCodelength = 0.0;
+	std::vector<double> m_codelengths;
 
 	Date m_startDate;
 	Date m_endDate;

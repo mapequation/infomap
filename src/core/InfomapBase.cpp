@@ -341,7 +341,7 @@ void InfomapBase::run(Network& network)
 	std::ostringstream bestSolutionStatistics;
 	unsigned int bestNumLevels = 0;
 	double bestHierarchicalCodelength = std::numeric_limits<double>::max();
-	std::deque<double> codelengths;
+	m_codelengths.clear();
 	NodePaths bestTree(numLeafNodes());
 	unsigned int bestTrialIndex = 0;
 
@@ -379,7 +379,7 @@ void InfomapBase::run(Network& network)
 			auto endDate = Date();
 			Log() << "\n=> Trial " << (i + 1) << "/" << numTrials <<
 				" finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
-			codelengths.push_back(m_hierarchicalCodelength);
+			m_codelengths.push_back(m_hierarchicalCodelength);
 			if (m_hierarchicalCodelength < bestHierarchicalCodelength - 1e-10) {
 				bestSolutionStatistics.clear();
 				bestSolutionStatistics.str("");
@@ -415,10 +415,10 @@ void InfomapBase::run(Network& network)
 
 			Log() << std::fixed << std::setprecision(9);
 			double averageCodelength = 0.0;
-			double minCodelength = codelengths[0];
-			double maxCodelength = codelengths[0];
+			double minCodelength = m_codelengths[0];
+			double maxCodelength = m_codelengths[0];
 			Log() << "Codelengths: [";
-			for (auto codelength : codelengths) {
+			for (auto codelength : m_codelengths) {
 				Log() << codelength << ", ";
 				averageCodelength += codelength;
 				minCodelength = std::min(minCodelength, codelength);

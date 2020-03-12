@@ -855,6 +855,21 @@ class Infomap(InfomapWrapper):
         return super().codelength()
 
     @property
+    def codelengths(self):
+        """Get the total (hierarchical) codelength for each trial.
+
+        See Also
+        --------
+        codelength
+
+        Returns
+        -------
+        tuple of float
+            The codelengths for each trial
+        """
+        return super().codelengths()
+
+    @property
     def index_codelength(self):
         """Get the two-level index codelength.
 
