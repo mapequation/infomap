@@ -874,6 +874,45 @@ class Infomap(InfomapWrapper):
         return super().getModuleCodelength()
 
     @property
+    def one_level_codelength(self):
+        """Get the one-level codelength.
+
+        See Also
+        --------
+        codelength
+
+        Returns
+        -------
+        float
+            The one-level codelength
+        """
+        return super().getOneLevelCodelength()
+
+    @property
+    def relative_codelength_savings(self):
+        """Get the relative codelength savings.
+
+        This is defined as the reduction in codelength
+        relative to the non-modular one-level solution::
+
+            S_L = 1 - L / L_1
+
+        where ``L`` is the ``codelength`` and ``L_1``
+        the ``one_level_codelength``.
+
+        See Also
+        --------
+        codelength
+        one_level_codelength
+
+        Returns
+        -------
+        float
+            The relative codelength savings
+        """
+        return super().getRelativeCodelengthSavings()
+        
+    @property
     def meta_codelength(self):
         """Get the meta codelength.
 

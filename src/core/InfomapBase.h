@@ -136,7 +136,7 @@ public:
 
 	double getOneLevelCodelength() const { return m_oneLevelCodelength; }
 
-	double getRelativeCodelengthSavings() const { return 100 * (1.0 - codelength() / getOneLevelCodelength()); }
+	double getRelativeCodelengthSavings() const { return 1.0 - codelength() / getOneLevelCodelength(); }
 
 	bool isFullNetwork() { return m_isMain && m_aggregationLevel == 0; }
 	bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }

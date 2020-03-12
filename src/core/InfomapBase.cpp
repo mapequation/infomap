@@ -2081,7 +2081,7 @@ std::string InfomapBase::getOutputFileHeader()
 		"# started at " << m_startDate << "\n" <<
 		"# completed in " << m_elapsedTime.getElapsedTimeInSec() << " s\n" <<
 		"# codelength " << codelength() << " bits\n" <<
-		"# relative codelength savings " << getRelativeCodelengthSavings() << "%";
+		"# relative codelength savings " << getRelativeCodelengthSavings() * 100 << "%";
 }
 
 std::string InfomapBase::writeTree(std::string filename, bool states)
