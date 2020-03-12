@@ -254,7 +254,12 @@ R_SOURCES := $(SOURCES:src/%.cpp=$(R_BUILD_DIR)/src/%.cpp)
 
 # Use R to compile the module
 R: R-build Makefile
+	@mkdir -p $(R_BUILD_DIR)/Infomap
+	@cp -a examples/R/load-infomap.R $(R_BUILD_DIR)/Infomap/
 	cd $(R_BUILD_DIR) && CXX="$(CXX)" PKG_CPPFLAGS="$(CXXFLAGS) -DAS_LIB" PKG_LIBS="$(LDFLAGS)" R CMD SHLIB infomap_wrap.cpp $(SOURCES)
+	@cp -a $(R_BUILD_DIR)/infomap.R $(R_BUILD_DIR)/Infomap/
+	@cp -a $(R_BUILD_DIR)/infomap_wrap.so $(R_BUILD_DIR)/Infomap/infomap.so
+	@cp -a examples/R/example-minimal.R $(R_BUILD_DIR)/Infomap/
 	@true
 
 # Generate wrapper files from source and interface files
@@ -310,6 +315,17 @@ docker-build-ubuntu-test-python: Makefile
 
 docker-run-ubuntu-test-python: Makefile
 	docker run --rm infomap:python-test
+
+# R with RStudio
+docker-build-r: Makefile
+	docker build -f docker/rstudio.Dockerfile -t infomap:r .
+
+docker-run-r: Makefile
+	docker run --rm -p 8787:8787 -e PASSWORD=InfomapR infomap:r
+
+# docker-run:
+# 	docker run -it --rm -v $(pwd):/home/rstudio infomap \
+	ninetriangles.net output
 
 ##################################################
 # Clean
