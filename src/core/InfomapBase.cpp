@@ -552,6 +552,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 
 	}
 	aggregateFlowValuesFromLeafToRoot();
+	initNetwork();
 
 	m_hierarchicalCodelength = calcCodelengthOnTree(true);
 	Log(4) << " => " << maxDepth << " levels with codelength: " << m_hierarchicalCodelength << "\n";

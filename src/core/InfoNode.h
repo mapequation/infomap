@@ -42,10 +42,10 @@ public:
 
 	// typedef SiblingIterator<InfoNode*>					sibling_iterator;
 	// typedef SiblingIterator<InfoNode const*>			const_sibling_iterator;
-	// typedef LeafNodeIterator<InfoNode*>					leaf_iterator;
-	// typedef LeafNodeIterator<InfoNode const*>			const_leaf_iterator;
-	// typedef LeafModuleIterator<InfoNode*>				leaf_module_iterator;
-	// typedef LeafModuleIterator<InfoNode const*>			const_leaf_module_iterator;
+	typedef LeafNodeIterator<InfoNode*>					leaf_node_iterator;
+	typedef LeafNodeIterator<InfoNode const*>			const_leaf_node_iterator;
+	typedef LeafModuleIterator<InfoNode*>				leaf_module_iterator;
+	typedef LeafModuleIterator<InfoNode const*>			const_leaf_module_iterator;
 
 	// typedef DepthFirstIterator<InfoNode*, true>			pre_depth_first_iterator;
 	// typedef DepthFirstIterator<InfoNode const*, true>	const_pre_depth_first_iterator;
@@ -259,6 +259,12 @@ public:
 
 	post_depth_first_iterator begin_post_depth_first()
 	{ return post_depth_first_iterator(this); }
+
+	leaf_node_iterator begin_leaf_nodes()
+	{ return leaf_node_iterator(this); }
+
+	leaf_module_iterator begin_leaf_modules()
+	{ return leaf_module_iterator(this); }
 
 	tree_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
 	{ return tree_iterator(this, maxClusterLevel); }

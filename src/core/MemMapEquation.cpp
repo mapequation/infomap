@@ -63,62 +63,130 @@ void MemMapEquation::initPartition(std::vector<InfoNode*>& nodes)
 
 void MemMapEquation::initPhysicalNodes(InfoNode& root)
 {
-	bool notInitiated = root.firstChild->physicalNodes.empty();
-	if (notInitiated)
+	// bool notInitiated = root.firstChild->physicalNodes.empty();
+	auto firstLeafIt = root.begin_leaf_nodes();
+	auto depth = firstLeafIt.depth();
+	bool notInitiatedOnLeafNodes = firstLeafIt->physicalNodes.empty();
+	if (notInitiatedOnLeafNodes)
 	{
 		Log(3) << "MemMapEquation::initPhysicalNodesOnOriginalNetwork()...\n";
 		std::set<unsigned int> setOfPhysicalNodes;
-		// Collect all physical nodes in this network
-		for (InfoNode& node : root)
-		{
+		unsigned int maxPhysicalId = 0;
+		unsigned int minPhysicalId = std::numeric_limits<unsigned int>::max();
+		for (auto it(root.begin_leaf_nodes()); !it.isEnd(); ++it) {
+			InfoNode& node = *it;
 			setOfPhysicalNodes.insert(node.physicalId);
+			maxPhysicalId = std::max(maxPhysicalId, node.physicalId);
+			minPhysicalId = std::min(minPhysicalId, node.physicalId);
 		}
 
 		m_numPhysicalNodes = setOfPhysicalNodes.size();
 
-		// Re-index physical nodes
+		// Re-index physical nodes if necessary
 		std::map<unsigned int, unsigned int> toZeroBasedIndex;
-		unsigned int zeroBasedPhysicalId = 0;
-		for (unsigned int physIndex : setOfPhysicalNodes)
-		{
-			toZeroBasedIndex.insert(std::make_pair(physIndex, zeroBasedPhysicalId++));
+		if (maxPhysicalId - minPhysicalId + 1 > m_numPhysicalNodes) {
+			unsigned int zeroBasedPhysicalId = 0;
+			for (unsigned int physIndex : setOfPhysicalNodes)
+			{
+				toZeroBasedIndex.insert(std::make_pair(physIndex, zeroBasedPhysicalId++));
+			}
 		}
 
-		for (InfoNode& node : root)
+		for (auto it(root.begin_leaf_nodes()); !it.isEnd(); ++it)
 		{
-			unsigned int zeroBasedIndex = toZeroBasedIndex[node.physicalId];
+			InfoNode& node = *it;
+			// Log() << "Leaf node " << node.stateId << " (phys " << node.physicalId << ") physicalNodes: ";
+			// unsigned int zeroBasedIndex = toZeroBasedIndex[node.physicalId];
+			// unsigned int zeroBasedIndex = getPhysIndex[node.physicalId];
+			unsigned int zeroBasedIndex = !toZeroBasedIndex.empty() ? toZeroBasedIndex[node.physicalId] : (node.physicalId - minPhysicalId);
 			node.physicalNodes.push_back(PhysData(zeroBasedIndex, node.data.flow));
+			// Log() << "(" << zeroBasedIndex << ", " << node.data.flow << "), length: " << node.physicalNodes.size() << "\n";
+		}
+
+		// If leaf nodes was not directly under root, make sure leaf modules have
+		// physical nodes defined also
+		if (depth > 1) {
+			for (auto it(root.begin_leaf_modules()); !it.isEnd(); ++it)
+			{
+				InfoNode& module = *it;
+				std::map<unsigned int, double> physToFlow;
+				for (auto& node : module)
+				{
+					for (PhysData& physData : node.physicalNodes)
+					{
+						physToFlow[physData.physNodeIndex] += physData.sumFlowFromM2Node;
+					}
+				}
+				for (auto& physFlow : physToFlow)
+				{
+					module.physicalNodes.push_back(PhysData(physFlow.first, physFlow.second));
+				}
+			}
 		}
 	}
 	else
 	{
-		Log(3) << "MemMapEquation::initPhysicalNodesOnSubNetwork()...\n";
-		std::set<unsigned int> setOfPhysicalNodes;
-
-		// Collect all physical nodes in this sub network
-		for (InfoNode& node : root)
+		// Either a sub-network (without modules) or the whole network with reconstructed tree
+		if (depth == 1)
 		{
-			for (PhysData& physData : node.physicalNodes)
+			// new sub-network
+			Log(3) << "MemMapEquation::initPhysicalNodesOnSubNetwork()...\n";
+			std::set<unsigned int> setOfPhysicalNodes;
+			// std::cout << "_*!|!*_";
+			unsigned int maxPhysNodeIndex = 0;
+			unsigned int minPhysNodeIndex = std::numeric_limits<unsigned int>::max();
+
+			// Collect all physical nodes in this sub network
+			for (InfoNode& node : root)
 			{
-				setOfPhysicalNodes.insert(physData.physNodeIndex);
+				for (PhysData& physData : node.physicalNodes)
+				{
+					setOfPhysicalNodes.insert(physData.physNodeIndex);
+					maxPhysNodeIndex = std::max(maxPhysNodeIndex, physData.physNodeIndex);
+					minPhysNodeIndex = std::min(minPhysNodeIndex, physData.physNodeIndex);
+				}
+			}
+
+			m_numPhysicalNodes = setOfPhysicalNodes.size();
+
+			// Re-index physical nodes if needed (not required when reconstructing tree)
+			if (maxPhysNodeIndex >= m_numPhysicalNodes) {
+				std::map<unsigned int, unsigned int> toZeroBasedIndex;
+				if (maxPhysNodeIndex - minPhysNodeIndex + 1 > m_numPhysicalNodes) {
+					unsigned int zeroBasedPhysicalId = 0;
+					for (unsigned int physIndex : setOfPhysicalNodes)
+					{
+						toZeroBasedIndex.insert(std::make_pair(physIndex, zeroBasedPhysicalId++));
+					}
+				}
+
+				for (InfoNode& node : root)
+				{
+					for (PhysData& physData : node.physicalNodes)
+					{
+						unsigned int zeroBasedIndex = !toZeroBasedIndex.empty() ? toZeroBasedIndex[physData.physNodeIndex] : (physData.physNodeIndex - minPhysNodeIndex);
+						physData.physNodeIndex = zeroBasedIndex;
+					}
+				}
 			}
 		}
-
-		m_numPhysicalNodes = setOfPhysicalNodes.size();
-
-		// Re-index physical nodes
-		std::map<unsigned int, unsigned int> toZeroBasedIndex;
-		unsigned int zeroBasedPhysicalId = 0;
-		for (unsigned int physIndex : setOfPhysicalNodes)
-		{
-			toZeroBasedIndex.insert(std::make_pair(physIndex, zeroBasedPhysicalId++));
-		}
-
-		for (InfoNode& node : root)
-		{
-			for (PhysData& physData : node.physicalNodes)
+		else {
+			// whole network with reconstructed tree
+			for (auto it(root.begin_leaf_modules()); !it.isEnd(); ++it)
 			{
-				physData.physNodeIndex = toZeroBasedIndex[physData.physNodeIndex];
+				InfoNode& module = *it;
+				std::map<unsigned int, double> physToFlow;
+				for (auto& node : module)
+				{
+					for (PhysData& physData : node.physicalNodes)
+					{
+						physToFlow[physData.physNodeIndex] += physData.sumFlowFromM2Node;
+					}
+				}
+				for (auto& physFlow : physToFlow)
+				{
+					module.physicalNodes.push_back(PhysData(physFlow.first, physFlow.second));
+				}
 			}
 		}
 	}
