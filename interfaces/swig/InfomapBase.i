@@ -15,6 +15,7 @@
 
 namespace std {
     %template(map_uint_uint) std::map<unsigned int, unsigned int>;
+    %template(vector_double) std::vector<double>;
 }
 namespace infomap {
     %template(InfomapConfigInfomapBase) InfomapConfig<InfomapBase>;

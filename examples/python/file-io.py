@@ -14,6 +14,7 @@ im.read_file(filename, accumulate)
 im.run("-N5")
 
 print(f"Found {im.max_depth} levels with {im.num_leaf_modules} leaf modules in {im.num_top_modules} top modules and codelength: {im.codelength}")
+print(f"All codelengths: {im.codelengths}")
 
 print("Tree:\n# path node_id module_id flow")
 for node in im.nodes:
