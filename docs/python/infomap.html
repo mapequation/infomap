@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>infomap module &#8212; Infomap 1.0.8 documentation</title>
+    <title>infomap module &#8212; Infomap 1.0.9 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -598,7 +598,18 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 <dl class="method">
 <dt id="infomap.Infomap.modules">
 <em class="property">property </em><code class="sig-name descname">modules</code><a class="headerlink" href="#infomap.Infomap.modules" title="Permalink to this definition">¶</a></dt>
-<dd><p>A view of the (top-level) modules</p>
+<dd><p>A view of the (top-level) modules, mapping
+<code class="docutils literal notranslate"><span class="pre">node_id</span></code> to <code class="docutils literal notranslate"><span class="pre">module_id</span></code>.</p>
+<p class="rubric">Notes</p>
+<p>In a higher-order network, a physical node (defined by node_id)
+may partially exist in multiple modules. However, the node_id
+can not exist multiple times as a key in the node-to-module map,
+so only one occurrence of a physical node will be retrieved.
+To get all states, use <code class="docutils literal notranslate"><span class="pre">get_modules(states=True)</span></code>.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.get_modules" title="infomap.Infomap.get_modules"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_modules</span></code></a></p>
+</div>
 <p class="rubric">Example</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
@@ -1525,7 +1536,7 @@ This is useful to create empty physical node in a state network.</p>
       &copy;2020, Daniel Edler, Anton Eriksson, Martin Rosvall.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

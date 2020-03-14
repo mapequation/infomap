@@ -192,7 +192,7 @@ py-local-install:
 	# locally built version, so no need to run this multiple times.
 	pip install -e $(PY_BUILD_DIR)
 
-py-doc: python
+py-doc:
 	# Uses docstrings from the infomap available with 'import infomap'.
 	# Run py-local-install if you don't have pip installed it with -e
 	# and don't have the latest version installed
