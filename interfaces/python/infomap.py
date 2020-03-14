@@ -588,7 +588,20 @@ class Infomap(InfomapWrapper):
 
     @property
     def modules(self):
-        """A view of the (top-level) modules
+        """A view of the (top-level) modules, mapping
+        ``node_id`` to ``module_id``.
+
+        Notes
+        -----
+        In a higher-order network, a physical node (defined by node_id)
+        may partially exist in multiple modules. However, the node_id
+        can not exist multiple times as a key in the node-to-module map,
+        so only one occurrence of a physical node will be retrieved.
+        To get all states, use ``get_modules(states=True)``.
+
+        See Also
+        --------
+        get_modules
 
         Example
         -------
