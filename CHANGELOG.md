@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.9](https://github.com/mapequation/infomap/compare/v1.0.8...v1.0.9) (2020-03-14)
+
+
+### Bug Fixes
+
+* **windows:** compilation error on std::min ([b6c1a41](https://github.com/mapequation/infomap/commit/b6c1a419ad7f732520723a5df621eaed4bb5d2da))
+
 ### [1.0.8](https://github.com/mapequation/infomap/compare/v1.0.7...v1.0.8) (2020-03-12)
 
 
