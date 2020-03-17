@@ -506,30 +506,36 @@ InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard)
 InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 {
 	Log(4) << "Init tree... " << std::setprecision(9);
-	unsigned int maxDepth = 0;
+	unsigned int maxDepth = 2;
 	std::map<unsigned int, unsigned int> nodeIdToIndex;
 	unsigned int leafIndex = 0;
 	for (auto& leafNode : m_leafNodes) {
 		// Also detach leaf nodes to delete all modules, safe to call multiple times
 		leafNode->parent->releaseChildren();
+		// Set parent to nullptr to be able to collect any orphaned nodes in the end
+		leafNode->parent = nullptr;
 		nodeIdToIndex[leafNode->stateId] = leafIndex;
 		++leafIndex;
 	}
 	m_root.deleteChildren();
 
+	unsigned int numNodesFound = 0;
+	unsigned int numNodesNotInNetwork = 0;
 	for (auto& nodePath : tree.nodePaths)
 	{
+		++numNodesFound;
 		InfoNode* node = &root();
 		unsigned int depth = 0;
 		auto& path = nodePath.path;
 		auto nodeId = nodePath.nodeId;
 		InfoNode* leafNode = nullptr;
 		try {
-			auto index = nodeIdToIndex.at(nodeId);
-			leafNode = m_leafNodes[index];
+			auto nodeIndex = nodeIdToIndex.at(nodeId);
+			leafNode = m_leafNodes[nodeIndex];
 		}
 		catch (std::exception& e)
 		{
+			++numNodesNotInNetwork;
 			continue;
 		}
 		for (unsigned int i = 0; i < path.size(); ++i)
@@ -549,13 +555,64 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 			++depth;
 		}
 		maxDepth = std::max(maxDepth, depth);
-
 	}
+	if (numNodesNotInNetwork > 0) {
+		Log(1) << "\n -> " << numNodesNotInNetwork << "/" << numNodesFound << " nodes in tree not found in network.";
+	}
+	unsigned int numNodesAddedToNeighbouringModules = 0;
+	unsigned int numNodesWithoutClusterInfo = 0;
+	// Set orphaned nodes to their own or neighbouring module
+	for (auto& leafNode : m_leafNodes) {
+		if (leafNode->parent != nullptr) {
+			continue;
+		}
+		++numNodesWithoutClusterInfo;
+		if (this->assignToNeighbouringModule) {
+			// Take first neighbour that has a module assigned
+			for (auto& edge : leafNode->outEdges()) {
+				if (edge->target.parent != nullptr) {
+					edge->target.parent->addChild(leafNode);
+					++numNodesAddedToNeighbouringModules;
+					break;
+				}
+			}
+			// Check incoming links if still orphan
+			if (leafNode->parent == nullptr) {
+				for (auto& edge : leafNode->inEdges()) {
+					if (edge->source.parent != nullptr) {
+						edge->source.parent->addChild(leafNode);
+						++numNodesAddedToNeighbouringModules;
+						break;
+					}
+				}
+			}
+			// Set to own module if no neighbour module available
+			if (leafNode->parent == nullptr) {
+				auto module = new InfoNode();
+				root().addChild(module);
+				module->addChild(leafNode);
+			}
+		}
+		else {
+			// Set to own module if no neighbour module available
+			auto module = new InfoNode();
+			root().addChild(module);
+			module->addChild(leafNode);
+		}
+	}
+	if (numNodesWithoutClusterInfo > 0) {
+		if (this->assignToNeighbouringModule) {
+			Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in tree are put into neighbouring modules if possible.";
+		} else {
+			Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in tree are put into separate modules.";
+		}
+	}
+
 	aggregateFlowValuesFromLeafToRoot();
 	initNetwork();
 
 	m_hierarchicalCodelength = calcCodelengthOnTree(true);
-	Log(4) << " => " << maxDepth << " levels with codelength: " << m_hierarchicalCodelength << "\n";
+	Log() << "\n -> Initiated to codelength " << m_hierarchicalCodelength << " in " << maxDepth << " levels with " << numTopModules() << " top modules." << std::endl;
 	Log() << std::setprecision(6);
 	return *this;
 }
@@ -605,7 +662,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
 	}
 
 	if (this->assignToNeighbouringModule) {
-		Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into closest modules. ";
+		Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into neighbouring modules if possible. ";
 		for (unsigned int i = 0; i < numNodes; ++i) {
 			if (selectedNodes[i] == 0) {
 				// Check out edges greedily for connected modules
