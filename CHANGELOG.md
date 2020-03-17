@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.10](https://github.com/mapequation/infomap/compare/v1.0.9...v1.0.10) (2020-03-17)
+
+
+### Bug Fixes
+
+* Handle unassigned nodes after input tree ([d337535](https://github.com/mapequation/infomap/commit/d33753500939912035e30db4b4dfaf38beeb3eb1)), closes [#119](https://github.com/mapequation/infomap/issues/119)
+
 ### [1.0.9](https://github.com/mapequation/infomap/compare/v1.0.8...v1.0.9) (2020-03-14)
 
 
