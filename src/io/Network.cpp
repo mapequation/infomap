@@ -710,7 +710,7 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
 				unsigned int stateId2i = addMultilayerNode(layer2, targetPhysId);
 
 				// Log() << "      -> " << targetPhysId << "\n";
-				double weight = interWeight * intraWeight / sumIntraOutWeightTargetLayer;
+				double weight = sumIntraOutWeightTargetLayer == 0.0 ? 0.0 : interWeight * intraWeight / sumIntraOutWeightTargetLayer;
 
 				addLink(stateId1, stateId2i, weight);
 				++m_numInterLayerLinks; // TODO: Count all as one?
@@ -748,7 +748,7 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
 					unsigned int stateId2i = addMultilayerNode(layer2, targetPhysId);
 
 					// Log() << "      -> " << targetPhysId << "\n";
-					double weight = interWeight * intraWeight / sumIntraOutWeightTargetLayer;
+					double weight = sumIntraOutWeightTargetLayer == 0.0 ? 0.0 : interWeight * intraWeight / sumIntraOutWeightTargetLayer;
 
 					addLink(stateId1, stateId2i, weight);
 					++m_numInterLayerLinks; // TODO: Count all as one?
@@ -839,8 +839,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 					unsigned int stateId2i = addMultilayerNode(layer2, n2);
 
 					// Log() << "      -> " << n2 << "\n";
-					double weight = linkWeightNormalizationFactor * intraWeight;
-
+					double weight = intraWeight == 0.0 ? 0.0 : linkWeightNormalizationFactor * intraWeight;
 					addLink(stateId1, stateId2i, weight);
 					++m_numInterLayerLinks; // TODO: Count all as one?
 				}
