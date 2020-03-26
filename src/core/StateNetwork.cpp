@@ -368,7 +368,7 @@ void StateNetwork::writePajekNetwork(std::string filename) const
 
 	outFile << "# v" << INFOMAP_VERSION << "\n" <<
 		"# ./Infomap " << m_config.parsedString << "\n";
-	if (m_config.isMemoryNetwork())
+	if (haveMemoryInput())
 		outFile << "# State network as physical network\n";
 
 	outFile << "*Vertices\n";
@@ -376,7 +376,7 @@ void StateNetwork::writePajekNetwork(std::string filename) const
 		const auto& node = nodeIt.second;
 		outFile << node.id << " \"";
 		// Name, default to id
-		const auto& nameIt = m_names.find(node.id);
+		const auto& nameIt = haveMemoryInput() ? m_names.end() : m_names.find(node.id);
 		if (nameIt != m_names.end())
 			outFile << nameIt->second;
 		else
