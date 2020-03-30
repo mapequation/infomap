@@ -2137,6 +2137,7 @@ std::string InfomapBase::getOutputFileHeader()
 		"# ./Infomap " << this->parsedString << "\n" <<
 		"# started at " << m_startDate << "\n" <<
 		"# completed in " << m_elapsedTime.getElapsedTimeInSec() << " s\n" <<
+		"# partitioned into " << maxTreeDepth() << " levels with " << numTopModules() << " top modules\n" <<
 		"# codelength " << codelength() << " bits\n" <<
 		"# relative codelength savings " << getRelativeCodelengthSavings() * 100 << "%";
 }
