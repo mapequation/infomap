@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/mapequation/infomap/compare/v1.0.11...v1.1.0) (2020-03-31)
+
+
+### Features
+
+* Show num levels and modules in file output ([0b70cd8](https://github.com/mapequation/infomap/commit/0b70cd82030693faaf24a318d45b7e929dc61c77))
+* **python:** Expose codelengths for all trials ([eab7ae8](https://github.com/mapequation/infomap/commit/eab7ae861b2d93a9aea640994b53a80f4a52030c))
+
+
+### Bug Fixes
+
+* Don't use physical names in _states_as_physical.net ([5889fb1](https://github.com/mapequation/infomap/commit/5889fb17b13a38b1ce7a3b5ae714810bba1406c2))
+
 ### [1.0.11](https://github.com/mapequation/infomap/compare/v1.0.10...v1.0.11) (2020-03-31)
 
 
