@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.11](https://github.com/mapequation/infomap/compare/v1.0.10...v1.0.11) (2020-03-31)
+
+
+### Bug Fixes
+
+* Handle zero weights in intra-layer links ([ddc5a3d](https://github.com/mapequation/infomap/commit/ddc5a3d827013cc006bdfa4b3518c32aef2ec722))
+
 ### [1.0.10](https://github.com/mapequation/infomap/compare/v1.0.9...v1.0.10) (2020-03-17)
 
 
