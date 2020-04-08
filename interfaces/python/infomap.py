@@ -177,8 +177,11 @@ class Infomap(InfomapWrapper):
         for name in names:
             self.set_name(*name)
 
-    def get_name(self, node_id):
-        return super().getName(node_id)
+    def get_name(self, node_id, default=None):
+        name = super().getName(node_id)
+        if name == "":
+            return default
+        return name
 
     def get_names(self):
         return super().getNames()
