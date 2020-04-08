@@ -39,7 +39,7 @@
 namespace infomap {
 
 
-const std::map<unsigned int, unsigned int>& InfomapWrapper::getModules(int level, bool states)
+std::map<unsigned int, unsigned int> InfomapWrapper::getModules(int level, bool states)
 {
 	// int maxDepth = maxTreeDepth();
 	// if (level >= maxDepth)
@@ -66,7 +66,7 @@ const std::map<unsigned int, unsigned int>& InfomapWrapper::getModules(int level
 	return modules;
 }
 
-const std::map<unsigned int, std::vector<unsigned int>>& InfomapWrapper::getMultilevelModules(bool states)
+std::map<unsigned int, std::vector<unsigned int>> InfomapWrapper::getMultilevelModules(bool states)
 {
 	unsigned int maxDepth = maxTreeDepth();
 	unsigned int numModuleLevels = maxDepth - 1;
