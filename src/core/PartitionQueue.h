@@ -15,10 +15,10 @@ namespace infomap {
 
 struct PendingModule
 {
-	PendingModule() : module(nullptr) {}
+	PendingModule() = default;
 	PendingModule(InfoNode* m) : module(m) {}
 	InfoNode& operator*() { return *module; }
-	InfoNode* module;
+	InfoNode* module = nullptr;
 };
 
 #include <deque>

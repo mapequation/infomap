@@ -65,7 +65,7 @@ struct Option
 	  incrementalArgument(false),
 	  argumentName(argName)
 	{}
-	virtual ~Option() {}
+	virtual ~Option() = default;
 	virtual bool parse(std::string const&) { used = true; return true; }
 	virtual void set(bool value) { used = true; negated = !value; };
 	Option& setHidden(bool value) { hidden = value; return *this; }
@@ -179,7 +179,7 @@ struct TargetBase
 	TargetBase(std::string variableName, std::string desc, std::string group, bool isAdvanced)
 	: variableName(variableName), description(desc), group(group), isOptionalVector(false), isAdvanced(isAdvanced)
 	{}
-	virtual ~TargetBase() {}
+	virtual ~TargetBase() = default;
 	virtual bool parse(std::string const& value) = 0;
 
 	std::string variableName;
@@ -195,7 +195,7 @@ struct Target : TargetBase
 	Target(T& target, std::string variableName, std::string desc, std::string group, bool isAdvanced)
 	: TargetBase(variableName, desc, group, isAdvanced), target(target)
 	{}
-	virtual ~Target() {}
+	virtual ~Target() = default;
 
 	virtual bool parse(std::string const&  value)
 	{
@@ -211,7 +211,7 @@ struct OptionalTargets : TargetBase
 	OptionalTargets(std::vector<T>& target, std::string variableName, std::string desc, std::string group, bool isAdvanced)
 	: TargetBase(variableName, desc, group, isAdvanced), targets(target)
 	{ isOptionalVector = true; }
-	virtual ~OptionalTargets() {}
+	virtual ~OptionalTargets() = default;
 
 	virtual bool parse(std::string const&  value)
 	{

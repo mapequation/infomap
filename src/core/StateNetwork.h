@@ -52,8 +52,7 @@ public:
 		double enterFlow = 0.0;
 		double exitFlow = 0.0;
 
-		StateNode() {}
-		StateNode(unsigned int id) :
+		StateNode(unsigned int id = 0) :
 			id(id), physicalId(id)
 		{}
 		StateNode(unsigned int id, unsigned int physicalId) :
@@ -62,26 +61,6 @@ public:
 		StateNode(unsigned int id, unsigned int physicalId, const std::string& name) :
 			id(id), physicalId(physicalId), name(name)
 		{}
-		StateNode(const StateNode& other) :
-			id(other.id),
-			physicalId(other.physicalId),
-			name(other.name),
-			weight(other.weight),
-			flow(other.flow),
-			enterFlow(other.enterFlow),
-			exitFlow(other.exitFlow)
-		{}
-		StateNode& operator=(const StateNode& other)
-		{
-			id = other.id;
-			physicalId = other.physicalId;
-			name = other.name;
-			weight = other.weight;
-			flow = other.flow;
-			enterFlow = other.enterFlow;
-			exitFlow = other.exitFlow;
-			return *this;
-		}
 
 		bool operator ==(const StateNode& rhs) const
 		{ return id == rhs.id; }
@@ -99,12 +78,11 @@ public:
 		unsigned int physId = 0;
 		double weight = 1.0;
 		// std::string name = "";
-		PhysNode() {}
 		PhysNode(unsigned int physId) : physId(physId) {}
 		PhysNode(unsigned int physId, double weight) : physId(physId), weight(weight) {}
-		PhysNode(double weight) : weight(weight) {}
 		// PhysNode(unsigned int physId, std::string name) : physId(physId), name(name) {}
 		// PhysNode(std::string name) : name(name) {}
+		PhysNode(double weight = 1.0) : weight(weight) {}
 	};
 
 	struct LinkData
@@ -112,25 +90,12 @@ public:
 		double weight = 1.0;
 		double flow = 0.0;
 		unsigned int count = 0;
+		
+		LinkData(double weight = 1.0) : weight(weight) {}
 
-		LinkData(double weight = 1.0) :
-			weight(weight)
-		{}
-		LinkData(const LinkData& other) :
-			weight(other.weight),
-			flow(other.flow),
-			count(other.count)
-		{}
-		LinkData& operator=(const LinkData& other)
+		LinkData& operator+=(double w)
 		{
-			weight = other.weight;
-			flow = other.flow;
-			count = other.count;
-			return *this;
-		}
-		LinkData& operator+=(double weight)
-		{
-			weight += weight;
+			weight += w;
 			return *this;
 		}
 	};
@@ -142,12 +107,6 @@ public:
 			target(targetIndex),
 			weight(weight),
 			flow(weight)
-		{}
-		StateLink(const StateLink& other) :
-			source(other.source),
-			target(other.target),
-			weight(other.weight),
-			flow(other.flow)
 		{}
 		unsigned int source;
 		unsigned int target;
@@ -196,11 +155,9 @@ protected:
 
 public:
 
-	StateNetwork()
-	:	m_config(Config()) {}
-	StateNetwork(const Config& config)
-	:	m_config(config) {}
-	virtual ~StateNetwork() {}
+	StateNetwork() : m_config(Config()) {}
+	StateNetwork(const Config& config) : m_config(config) {}
+	virtual ~StateNetwork() = default;
 
 	// Config
 	void setConfig(const Config& config) { m_config = config; }
