@@ -92,6 +92,12 @@ std::map<unsigned int, std::vector<unsigned int>> InfomapWrapper::getMultilevelM
 	return modules;
 }
 
+std::string InfomapWrapper::getName(unsigned int id) const {
+	auto& names = m_network.names();
+	auto it = names.find(id);
+	return it != names.end() ? it->second : "";
+}
+
 int run(const std::string& flags)
 {
 	try
