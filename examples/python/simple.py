@@ -37,9 +37,9 @@ print("\n#node_id module_id")
 for node, module in im.modules:
     print(f"{node} {module}")
 
-print("\n#node_id module_id path depth child_index flow:")
+print("\n#node_id module_id path depth child_index flow [name]:")
 for node in im.nodes:
     print(node.node_id, node.module_id, node.path,
-          node.depth, node.child_index, node.flow)
+          node.depth, node.child_index, node.flow, im.get_name(node.node_id))
 
 print("\nDone!")

@@ -177,6 +177,9 @@ class Infomap(InfomapWrapper):
         for name in names:
             self.set_name(*name)
 
+    def get_name(self, node_id):
+        return super().getName(node_id)
+
     def set_meta_data(self, node_id, meta_category):
         """Set meta data to a node.
 
