@@ -108,7 +108,7 @@ class Log
 		return s_silent;
 	}
 
-	static std::ostream& getOutputStream(unsigned int level, unsigned int maxLevel)
+	static std::ostream& getOutputStream(/* [[maybe_unused]] */ unsigned int level, /* [[maybe_unused]] */ unsigned int maxLevel)
 	{
 		return std::cout;
 	}

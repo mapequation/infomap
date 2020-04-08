@@ -355,7 +355,7 @@ std::string Network::parseVertices(std::ifstream& file, std::string heading)
 	return line;
 }
 
-std::string Network::parseStateNodes(std::ifstream& file, std::string heading)
+std::string Network::parseStateNodes(std::ifstream& file, /* [[maybe_unused]] */ std::string heading)
 {
 	Log() << "  Parsing state nodes...\n" << std::flush;
 	std::string line;

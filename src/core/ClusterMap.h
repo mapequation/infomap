@@ -62,7 +62,7 @@ public:
 	bool isHigherOrder() const { return m_isHigherOrder; }
 
 protected:
-	void readTree(const std::string& filename, bool includeFlow);
+	void readTree(const std::string& filename, /* [[maybe_unused]] */ bool includeFlow);
 	void readClu(const std::string& filename, bool includeFlow);
 
 private:
