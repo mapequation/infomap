@@ -25,15 +25,19 @@ namespace std {
     %template(vector_uint) std::vector<unsigned int>;
     %template(map_uint_uint) std::map<unsigned int, unsigned int>;
     %template(map_uint_vector_uint) std::map<unsigned int, std::vector<unsigned int>>;
+    %template(map_uint_string) std::map<unsigned int, std::string>;
 }
 
 #ifdef SWIGPYTHON
 %extend infomap::InfomapWrapper
 {
-	// overwrite getModules to convert swig map proxy object to pure dict
+	// overrides to convert swig map proxy object to pure dict
 	%insert("python") %{
         def getModules(self, level=1, states=False):
             return dict(_infomap.InfomapWrapper_getModules(self, level, states))
+
+        def getNames(self):
+            return dict(_infomap.InfomapWrapper_getNames(self))
     %}
 }
 #endif

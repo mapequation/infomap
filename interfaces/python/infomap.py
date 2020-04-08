@@ -180,6 +180,13 @@ class Infomap(InfomapWrapper):
     def get_name(self, node_id):
         return super().getName(node_id)
 
+    def get_names(self):
+        return super().getNames()
+
+    @property
+    def names(self):
+        return super().getNames()
+
     def set_meta_data(self, node_id, meta_category):
         """Set meta data to a node.
 
