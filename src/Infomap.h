@@ -38,7 +38,8 @@ public:
 	void addName(unsigned int id, std::string name) { m_network.addName(id, name); }
 	std::string getName(unsigned int id) {
 		auto& names = m_network.names();
-		return names.count(id) > 0 ? names[id] : "";
+		auto it = names.find(id);
+		return it != names.end() ? it->second : "";
 	}
 	std::map<unsigned int, std::string> getNames() { return m_network.names(); }
 
