@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.1](https://github.com/mapequation/infomap/compare/v1.1.0...v1.1.1) (2020-04-08)
+
+
+### Bug Fixes
+
+* Remove implied link direction from --skip-adjust-bipartite-flow ([05c3eba](https://github.com/mapequation/infomap/commit/05c3eba891521e6833292802c9c9671dee1303f7))
+
 ## [1.1.0](https://github.com/mapequation/infomap/compare/v1.0.11...v1.1.0) (2020-03-31)
 
 
