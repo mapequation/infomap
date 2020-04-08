@@ -793,7 +793,7 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
 	removeModules();
 	setActiveNetworkFromLeafs();
 	initPartition(); //TODO: confusing same name, should be able to init default without arguments here too
-	moveActiveNodesToPredifinedModules(modules);
+	moveActiveNodesToPredefinedModules(modules);
 	consolidateModules(false);
 
 	if (hard) {
@@ -1383,7 +1383,7 @@ unsigned int InfomapBase::fineTune()
 	for (unsigned int i = 0; i < numLeafNodes(); ++i) {
 		modules[i] = m_leafNodes[i]->parent->index;
 	}
-	moveActiveNodesToPredifinedModules(modules);
+	moveActiveNodesToPredefinedModules(modules);
 
 	Log(3) << " -> moved to codelength " << *this << " in " << numActiveModules() << " existing modules. Try tuning..." << std::endl;
 
@@ -1459,7 +1459,7 @@ unsigned int InfomapBase::coarseTune()
 
 	setActiveNetworkFromLeafs();
 	initPartition();
-	moveActiveNodesToPredifinedModules(subModules);
+	moveActiveNodesToPredefinedModules(subModules);
 
 	Log(4) << "Moved to " << numActiveModules() << " modules..." << std::endl;
 
@@ -1479,7 +1479,7 @@ unsigned int InfomapBase::coarseTune()
 	setActiveNetworkFromChildrenOfRoot();
 	initPartition();
 	// Move sub-modules to former modular structure
-	moveActiveNodesToPredifinedModules(modules);
+	moveActiveNodesToPredefinedModules(modules);
 
 	Log(4) << "Tune sub-modules from codelength " << *this << " in " << numActiveModules() << " modules... " << std::endl;
 	// Continue to optimize from there to tune sub-modules
@@ -1675,7 +1675,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
 		setActiveNetworkFromChildrenOfRoot();
 		initPartition();
 		// Move top modules to super modules
-		moveActiveNodesToPredifinedModules(modules);
+		moveActiveNodesToPredefinedModules(modules);
 
 		// Consolidate the dynamic modules without replacing any existing ones.
 		consolidateModules(false);
