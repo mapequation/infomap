@@ -64,7 +64,7 @@ protected:
 
 	virtual void initPartition() = 0;
 
-	virtual void moveActiveNodesToPredifinedModules(std::vector<unsigned int>& modules) = 0;
+	virtual void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules) = 0;
 
 	virtual unsigned int optimizeActiveNetwork() = 0;
 	

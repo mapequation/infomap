@@ -116,7 +116,7 @@ protected:
   }
 
 	virtual void moveActiveNodesToPredifinedModules(std::vector<unsigned int>& modules) {
-    return m_optimizer->moveActiveNodesToPredifinedModules(modules);
+    return m_optimizer->moveActiveNodesToPredefinedModules(modules);
   }
 
 	virtual unsigned int optimizeActiveNetwork() {
