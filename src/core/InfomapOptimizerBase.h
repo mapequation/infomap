@@ -17,9 +17,9 @@ class InfomapOptimizerBase {
 	using FlowDataType = FlowData;
 
 public:
-	InfomapOptimizerBase() {}
+	InfomapOptimizerBase() = default;
 	
-	virtual ~InfomapOptimizerBase() {}
+	virtual ~InfomapOptimizerBase() = default;
 
 	virtual void init(InfomapBase* infomap) = 0;
 
