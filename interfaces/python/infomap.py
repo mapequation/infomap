@@ -182,7 +182,7 @@ class Infomap(InfomapWrapper):
 
         Notes
         -----
-        If a node name is net to an empty string,
+        If the node name is an empty string,
         the ``default`` will be returned.
 
         See Also
