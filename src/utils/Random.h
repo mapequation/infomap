@@ -33,6 +33,7 @@
 
 #ifndef PYTHON
 #include <random>
+#include <utility>
 
 namespace infomap
 {
@@ -71,7 +72,7 @@ namespace infomap
     };
 }
 
-#else
+#else // PYTHON
 
 #include "MersenneTwister.h"
 

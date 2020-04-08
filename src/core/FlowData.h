@@ -6,6 +6,7 @@
 #define SRC_CLUSTERING_FLOWDATA_H_
 
 #include <ostream>
+#include <utility>
 
 namespace infomap {
 

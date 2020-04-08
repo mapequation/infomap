@@ -9,6 +9,7 @@
 #define SRC_CLUSTERING_CLUSTERING_PARTITIONQUEUE_H_
 
 #include "InfoNode.h"
+#include <utility>
 
 namespace infomap {
 
