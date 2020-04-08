@@ -36,7 +36,10 @@ public:
 	void addNode(unsigned int id, std::string name, double weight) { m_network.addNode(id, name, weight); }
 
 	void addName(unsigned int id, std::string name) { m_network.addName(id, name); }
-	std::string getName(unsigned int id) { return m_network.names()[id]; }
+	std::string getName(unsigned int id) {
+		auto& names = m_network.names();
+		return names.count(id) > 0 ? names[id] : "";
+	}
 	std::map<unsigned int, std::string> getNames() { return m_network.names(); }
 
 	void addPhysicalNode(unsigned int id, std::string name = "") { m_network.addPhysicalNode(id, name); }
