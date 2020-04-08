@@ -104,59 +104,6 @@ private:
     unsigned int m_size = 0;
 };
 
-
-template<typename T>
-class SimpleMap
-{
-public:
-    
-    SimpleMap(unsigned int capacity = 0) :
-        m_capacity(capacity)
-    {}
-
-    void startRound() {
-        m_map.clear();
-        // m_map.rehash(m_capacity);
-        m_dirty = true;
-    }
-
-    void add(unsigned int index, T value) 
-    {
-        m_map[index] += value;
-        m_dirty = true;
-    }
-
-    unsigned int size()
-    {
-        return m_map.size();
-    }
-
-    T& operator[](unsigned int index)
-    {
-        return m_map[index];
-    }
-
-    std::vector<T>& values()
-    {
-        if (m_dirty) {
-            m_values.resize(m_map.size());
-            unsigned int i = 0;
-            for (auto& it : m_map) {
-                m_values[i++] = it.second;
-            }
-            m_dirty = false;
-        }
-        return m_values;
-    }
-
-private:
-    // std::unordered_map<unsigned int, T> m_map;
-    std::map<unsigned int, T> m_map;
-    unsigned int m_capacity = 0;
-    std::vector<T> m_values;
-    bool m_dirty = true;
-};
-
 }
 
 #endif /* VECTOR_MAP_H_ */
