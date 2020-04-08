@@ -185,7 +185,8 @@ public:
 		if (dimension >= metaData.size()) {
 			return 0;
 		}
-		return metaData[dimension];
+		auto meta = metaData[dimension];
+		return meta < 0 ? 0 : static_cast<unsigned int>(meta);
 	}
 
 	// ---------------------------- Infomap ----------------------------
@@ -206,7 +207,7 @@ public:
 	/**
 	 * Number of physical nodes in memory nodes
 	 */
-	unsigned int numPhysicalNodes() const { return physicalNodes.size(); }
+	auto numPhysicalNodes() const { return physicalNodes.size(); }
 
 	// ---------------------------- Tree iterators ----------------------------
 
@@ -326,19 +327,19 @@ public:
 
 	unsigned int firstDepthBelow() const;
 
-	unsigned int numLeafMembers()
+	auto numLeafMembers()
 	{ return m_numLeafMembers; }
 
 	bool isDangling()
 	{ return m_outEdges.empty(); }
 
-	unsigned int outDegree()
+	auto outDegree()
 	{ return m_outEdges.size(); }
 
-	unsigned int inDegree()
+	auto inDegree()
 	{ return m_inEdges.size(); }
 
-	unsigned int degree()
+	auto degree()
 	{ return outDegree() + inDegree(); }
 
 //	InfomapBase* getSubInfomap()

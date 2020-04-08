@@ -130,7 +130,7 @@ class Log
 	std::ostream& m_ostream;
 
 	static unsigned int s_verboseLevel;
-	static unsigned int s_silent;
+	static bool s_silent;
 };
 
 struct hideIf

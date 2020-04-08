@@ -481,7 +481,7 @@ public:
 	DepthFirstIterator
 	operator++(int)
 	{
-		DepthFirstIterator copy(*this);
+		auto copy(*this);
 		++(*this);
 		return copy;
 	}
@@ -489,7 +489,7 @@ public:
 	DepthFirstIterator
 	next()
 	{
-		DepthFirstIterator copy(*this);
+		auto copy(*this);
 		return ++copy;
 	}
 };
