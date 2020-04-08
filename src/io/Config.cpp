@@ -46,7 +46,7 @@ Config Config::fromString(std::string flags, bool isCLI)
 			"Override automatically recognized types. Options: pajek, link-list, bipartite, multilayer, states.", ArgType::option, "Input", true);
 
 	api.addOptionArgument(conf.skipAdjustBipartiteFlow, "skip-adjust-bipartite-flow",
-			"Skip distributing all flow from the bipartite nodes (first column) to the ordinary nodes (second column).", "Input", true);
+			"Skip distributing all flow from the bipartite nodes to the primary nodes.", "Input", true);
 
 	api.addOptionArgument(conf.weightThreshold, "weight-threshold",
 			"Limit the number of links to read from the network. Ignore links with less weight than the threshold.", ArgType::number, "Input", true);
