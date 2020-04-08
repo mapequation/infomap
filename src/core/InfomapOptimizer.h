@@ -231,7 +231,7 @@ void InfomapOptimizer<Objective>::initPartition()
 	Log(4) << "InfomapOptimizer::initPartition() with " << network.size() << " nodes..." << std::endl;
 
 	// Init one module for each node
-	unsigned int numNodes = network.size();
+	auto numNodes = network.size();
 	m_moduleFlowData.resize(numNodes);
 	m_moduleMembers.assign(numNodes, 1);
 	m_emptyModules.clear();
@@ -257,7 +257,7 @@ template<typename Objective>
 void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
 {
 	auto& network = m_infomap->activeNetwork();
-	unsigned int numNodes = network.size();
+	auto numNodes = network.size();
 	if (modules.size() != numNodes)
 		throw std::length_error("Size of predefined modules differ from size of active network.");
 	unsigned int numMoved = 0;
@@ -563,7 +563,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 	std::vector<unsigned int> nodeEnumeration(network.size());
 	m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
-	unsigned int numNodes = nodeEnumeration.size();
+	auto numNodes = nodeEnumeration.size();
 	unsigned int numMoved = 0;
 
 	// Create map with module links
@@ -767,7 +767,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 	std::vector<unsigned int> nodeEnumeration(network.size());
 	m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
-	unsigned int numNodes = nodeEnumeration.size();
+	auto numNodes = nodeEnumeration.size();
 	unsigned int numMoved = 0;
 	unsigned int numInvalidMoves = 0;
 	double diffSerialParallelCodelength = 0.0;
@@ -1061,12 +1061,12 @@ void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules
 //	Log(1) << "Consolidate modules to codelength " << m_optimizer << "..." << std::endl;
 
 	auto& network = m_infomap->activeNetwork();
-	unsigned int numNodes = network.size();
+	auto numNodes = network.size();
 	std::vector<InfoNode*> modules(numNodes, nullptr);
 
 	InfoNode& firstActiveNode = *network[0];
-	unsigned int level = firstActiveNode.depth();
-	unsigned int leafLevel = m_infomap->numLevels();
+	auto level = firstActiveNode.depth();
+	auto leafLevel = m_infomap->numLevels();
 
 	if (leafLevel == 1)
 		replaceExistingModules = false;
