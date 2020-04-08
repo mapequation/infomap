@@ -57,10 +57,10 @@ public:
 	using Base::getIndexCodelength;
 
 	// double getModuleCodelength() const { return moduleCodelength + metaCodelength; };
-	double getModuleCodelength() const;
+	double getModuleCodelength() const override;
 
 	// double getCodelength() const { return codelength + metaCodelength; };
-	double getCodelength() const;
+	double getCodelength() const override;
 
 	double getMetaCodelength(bool unweighted = false) const {
 		return unweighted ? metaCodelength : metaDataRate * metaCodelength;
@@ -71,54 +71,61 @@ public:
 	// ===================================================
 
 	// using Base::print;
-	std::ostream& print(std::ostream& out) const;
+	std::ostream& print(std::ostream& out) const override;
 	friend std::ostream& operator<<(std::ostream&, const MetaMapEquation&);
 
 	// ===================================================
 	// Init
 	// ===================================================
 
-	void init(const Config& config);
+	void init(const Config& config) override;
 
-	void initNetwork(InfoNode& root);
+	void initNetwork(InfoNode& root) override;
 
-	void initSuperNetwork(InfoNode& root);
+	void initSuperNetwork(InfoNode& root) override;
 
-	void initSubNetwork(InfoNode& root);
+	void initSubNetwork(InfoNode& root) override;
 
-	void initPartition(std::vector<InfoNode*>& nodes);
+	void initPartition(std::vector<InfoNode*>& nodes) override;
 
 	// ===================================================
 	// Codelength
 	// ===================================================
 
-	double calcCodelength(const InfoNode& parent) const;
+	double calcCodelength(const InfoNode& parent) const override;
 
 	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
 
+public:
 	double getDeltaCodelengthOnMovingNode(InfoNode& current,
-			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
+			DeltaFlowDataType& oldModuleDelta,
+			DeltaFlowDataType& newModuleDelta,
+			std::vector<FlowDataType>& moduleFlowData,
+			std::vector<unsigned int>& moduleMembers);
 
 	// ===================================================
 	// Consolidation
 	// ===================================================
 
 	void updateCodelengthOnMovingNode(InfoNode& current,
-			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
+			DeltaFlowDataType& oldModuleDelta,
+			DeltaFlowDataType& newModuleDelta,
+			std::vector<FlowDataType>& moduleFlowData,
+			std::vector<unsigned int>& moduleMembers);
 
-	void consolidateModules(std::vector<InfoNode*>& modules);
+	void consolidateModules(std::vector<InfoNode*>& modules) override;
 
 	// ===================================================
 	// Debug
 	// ===================================================
 
-	void printDebug();
+	void printDebug() override;
 
 protected:
 	// ===================================================
 	// Protected member functions
 	// ===================================================
-	double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+	double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const override;
 
 	// ===================================================
 	// Init
@@ -132,7 +139,7 @@ protected:
 	// Codelength
 	// ===================================================
 
-	void calculateCodelength(std::vector<InfoNode*>& nodes);
+	void calculateCodelength(std::vector<InfoNode*>& nodes) override;
 
 	using Base::calculateCodelengthTerms;
 
