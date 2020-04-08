@@ -122,19 +122,19 @@ inline MTRand::MTRand()
 	{ seed(); }
 
 inline double MTRand::rand()
-    { return double(randInt()) * 2.3283064370807974e-10; }
+    { return static_cast<double>(randInt()) * 2.3283064370807974e-10; }
 
 inline double MTRand::rand( const double& n )
 	{ return rand() * n; }
 
 inline double MTRand::randExc()
-	{ return double(randInt()) * 2.3283064365386963e-10; }
+	{ return static_cast<double>(randInt()) * 2.3283064365386963e-10; }
 
 inline double MTRand::randExc( const double& n )
 	{ return randExc() * n; }
 
 inline double MTRand::randDblExc()
-	{ return double( 1.0 + randInt() ) * 2.3283064359965952e-10; }
+	{ return 1.0 + static_cast<double>(randInt()) * 2.3283064359965952e-10; }
 
 inline double MTRand::randDblExc( const double& n )
 	{ return randDblExc() * n; }
@@ -213,7 +213,7 @@ inline void MTRand::seed()
 		register bool success = true;
 		while( success && i-- )
 		{
-			success = fread( s, sizeof(uint32), 1, urandom );
+			success = static_cast<bool>(fread( s, sizeof(uint32), 1, urandom ));
 			*s++ &= 0xffffffff;  // filter in case uint32 > 32 bits
 		}
 		fclose(urandom);

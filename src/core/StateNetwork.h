@@ -77,11 +77,8 @@ public:
 	{
 		unsigned int physId = 0;
 		double weight = 1.0;
-		// std::string name = "";
 		PhysNode(unsigned int physId) : physId(physId) {}
 		PhysNode(unsigned int physId, double weight) : physId(physId), weight(weight) {}
-		// PhysNode(unsigned int physId, std::string name) : physId(physId), name(name) {}
-		// PhysNode(std::string name) : name(name) {}
 		PhysNode(double weight = 1.0) : weight(weight) {}
 	};
 
@@ -199,8 +196,8 @@ public:
 
 	// Getters
 	const NodeMap& nodes() const { return m_nodes; }
-	unsigned int numNodes() const { return m_nodes.size(); }
-	unsigned int numPhysicalNodes() const { return m_physNodes.size(); }
+	auto numNodes() const { return m_nodes.size(); }
+	auto numPhysicalNodes() const { return m_physNodes.size(); }
 	const NodeLinkMap& nodeLinkMap() const { return m_nodeLinkMap; }
 	NodeLinkMap& nodeLinkMap() { return m_nodeLinkMap; }
 	// const LinkMap& links() const { return m_links; }
