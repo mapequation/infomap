@@ -48,7 +48,7 @@ public:
 
 	virtual ~InfomapIterator() {}
 
-	InfomapIterator& operator= (const InfomapIterator& other)
+	virtual InfomapIterator& operator= (const InfomapIterator& other)
 	{
 		m_root = other.m_root;
 		m_current = other.m_current;
