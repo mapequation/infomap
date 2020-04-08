@@ -159,10 +159,7 @@ struct Config
 	std::vector<ParsedOption> parsedOptions;
 	std::string error = "";
 
-	Config()
-	{
-		// adaptDefaults();
-	}
+	Config() = default;
 
 	Config(std::string flags, bool isCLI = false)
 	{

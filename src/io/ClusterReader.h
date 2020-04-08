@@ -46,7 +46,7 @@ public:
 	  m_numParsedRows(0)
 	{}
 
-	virtual ~ClusterReader() {}
+	virtual ~ClusterReader() = default;
 
 	virtual void readData(const string filename);
 

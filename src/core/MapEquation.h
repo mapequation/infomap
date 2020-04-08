@@ -30,7 +30,7 @@ public:
 	// using DeltaFlowDataType = MemDeltaFlow;
 	using DeltaFlowDataType = DeltaFlow;
 
-	MapEquation() {}
+	MapEquation() = default;
 
 	MapEquation(const MapEquation& other)
 	:	codelength(other.codelength),
@@ -61,7 +61,7 @@ public:
 		return *this;
 	}
 
-	virtual ~MapEquation() {}
+	virtual ~MapEquation() = default;
 
 	// ===================================================
 	// Getters

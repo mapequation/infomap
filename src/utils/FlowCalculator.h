@@ -52,12 +52,7 @@ public:
 			weight(weight),
 			flow(weight)
 		{}
-		Link(const Link& other) :
-			source(other.source),
-			target(other.target),
-			weight(other.weight),
-			flow(other.flow)
-		{}
+		Link(const Link& other) = default;
 		unsigned int source;
 		unsigned int target;
 		double weight;
@@ -66,8 +61,8 @@ public:
 
 	using LinkVec = std::vector<Link>;
 
-	FlowCalculator() {}
-	virtual ~FlowCalculator() {}
+	FlowCalculator() = default;
+	virtual ~FlowCalculator() = default;
 
 	virtual void calculateFlow(StateNetwork& network, const Config& config);
 

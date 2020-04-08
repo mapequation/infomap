@@ -25,7 +25,7 @@ public:
 	using FlowDataType = FlowData;
 	using DeltaFlowDataType = DeltaFlow;
 
-	MetaMapEquation() : MapEquation() {}
+	MetaMapEquation() = default;
 
 	MetaMapEquation(const MetaMapEquation& other)
 	:	MapEquation(other),
@@ -46,7 +46,7 @@ public:
 		return *this;
 	}
 
-	virtual ~MetaMapEquation() {}
+	virtual ~MetaMapEquation() = default;
 
 	// ===================================================
 	// Getters
