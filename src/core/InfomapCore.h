@@ -115,7 +115,7 @@ protected:
     return m_optimizer->initPartition();
   }
 
-	virtual void moveActiveNodesToPredifinedModules(std::vector<unsigned int>& modules) {
+	virtual void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules) {
     return m_optimizer->moveActiveNodesToPredefinedModules(modules);
   }
 

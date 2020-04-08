@@ -331,7 +331,7 @@ public:
 	 */
 	virtual unsigned int optimizeActiveNetwork() = 0;
 
-	virtual void moveActiveNodesToPredifinedModules(std::vector<unsigned int>& modules) = 0;
+	virtual void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules) = 0;
 
 	virtual void consolidateModules(bool replaceExistingModules = true) = 0;
 
