@@ -272,7 +272,7 @@ unsigned int InfoNode::replaceWithChildren()
 	if (isLeaf() || isRoot())
 		return 0;
 
-	// Reparent children
+	// Re-parent children
 	unsigned int deltaChildDegree = 0;
 	InfoNode* child = firstChild;
 	do
@@ -330,7 +330,7 @@ void InfoNode::replaceWithChildrenDebug()
 		return;
 
 
-	// Reparent children
+	// Re-parent children
 	unsigned int deltaChildDegree = 0;
 	InfoNode* child = firstChild;
 	do
@@ -374,18 +374,18 @@ void InfoNode::replaceWithChildrenDebug()
 // 	firstChild->parent = &otherRoot;
 // 	lastChild->parent = &otherRoot;
 
-// 	// Link directly to leaf nodes in curren node instead
-// 	// Reparent leaf nodes within same infomap instance
+// 	// Link directly to leaf nodes in current node instead
+// 	// Re-parent leaf nodes within same infomap instance
 // 	InfoNode* leaf = this;
 // 	// Walk down to leaf
-//TODO: Use leaf module iteartor and clone each leaf node to
-// otherRoot and reparent leaf node to current node.
+//TODO: Use leaf module iterator and clone each leaf node to
+// otherRoot and re-parent leaf node to current node.
 // 	while (leaf->firstChild != nullptr)
 // 	{
 // 		leaf = leaf->firstChild;
 // 	}
 // 	unsigned int numLeafNodes = 0;
-// 	// Walk horisontally through all siblings and copy leaf nodes (without edges)
+// 	// Walk horizontally through all siblings and copy leaf nodes (without edges)
 // 	while (leaf != nullptr) {
 // 		++numLeafNodes;
 // 		leaf->parent = this;
