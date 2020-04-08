@@ -161,7 +161,7 @@ protected:
 	/**
 	 *  Get meta codelength of module of current node
 	 * @param addRemoveOrNothing +1, -1 or 0 to calculate codelength
-	 * as ifcurrent node was added, removed or untouched in current module
+	 * as if current node was added, removed or untouched in current module
 	 */
 	double getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing);
 

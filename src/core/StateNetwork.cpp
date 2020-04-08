@@ -144,7 +144,7 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
 	bool addedNewLink = true;
 
 	// Log() << "Add link " << sourceId << " -> " << targetId << ", weight: " << weight << "\n";
-	// Aggregate link weights if they are definied more than once
+	// Aggregate link weights if they are defined more than once
 	auto& outLinks = m_nodeLinkMap[sourceId];
 	if (outLinks.empty()) {
 		outLinks[targetId] = weight;
