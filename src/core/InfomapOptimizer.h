@@ -960,7 +960,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 
 					// Recalculate delta codelength for proposed move to see if still an improvement
 
-					oldModuleDelta(oldModuleIndex, 0.0, 0.0);
+					DeltaFlowDataType oldModuleDelta(oldModuleIndex, 0.0, 0.0);
 					DeltaFlowDataType newModuleDelta(bestModuleIndex, 0.0, 0.0);
 
 
