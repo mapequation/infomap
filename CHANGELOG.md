@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.2](https://github.com/mapequation/infomap/compare/v1.1.1...v1.1.2) (2020-04-08)
+
+
+### Bug Fixes
+
+* **python:** Expose node names with get_name and get_names ([#125](https://github.com/mapequation/infomap/issues/125)) ([b8cb409](https://github.com/mapequation/infomap/commit/b8cb409eec171d63f60634ce3a19cc01bc3a6eef)), closes [#52](https://github.com/mapequation/infomap/issues/52)
+
 ### [1.1.1](https://github.com/mapequation/infomap/compare/v1.1.0...v1.1.1) (2020-04-08)
 
 
