@@ -177,6 +177,68 @@ class Infomap(InfomapWrapper):
         for name in names:
             self.set_name(*name)
 
+    def get_name(self, node_id, default=None):
+        """Get the name of a node.
+
+        Notes
+        -----
+        If a node name is net to an empty string,
+        the ``default`` will be returned.
+
+        See Also
+        --------
+        set_name
+        names
+
+        Parameters
+        ----------
+        node_id : int
+        default : any
+            The return value if the node name is missing.
+
+        Returns
+        -------
+        string or any
+            The node name if it exists, else the default which is ``None``
+        """
+        name = super().getName(node_id)
+        if name == "":
+            return default
+        return name
+
+    def get_names(self):
+        """Get all node names.
+
+        See Also
+        --------
+        names
+        get_name
+
+        Returns
+        -------
+        dict of string
+            A dict with node ids as keys and node names as values.
+        """
+        return super().getNames()
+
+    @property
+    def names(self):
+        """Get all node names.
+
+        Short-hand for ``get_names``.
+
+        See Also
+        --------
+        get_names
+        get_name
+
+        Returns
+        -------
+        dict of string
+            A dict with node ids as keys and node names as values.
+        """
+        return super().getNames()
+
     def set_meta_data(self, node_id, meta_category):
         """Set meta data to a node.
 
