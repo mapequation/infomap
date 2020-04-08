@@ -82,7 +82,7 @@ protected:
 
 	virtual void initPartition();
 
-	virtual void moveActiveNodesToPredifinedModules(std::vector<unsigned int>& modules);
+	virtual void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules);
 
 	virtual unsigned int optimizeActiveNetwork();
 	
@@ -254,7 +254,7 @@ void InfomapOptimizer<Objective>::initPartition()
 
 
 template<typename Objective>
-void InfomapOptimizer<Objective>::moveActiveNodesToPredifinedModules(std::vector<unsigned int>& modules)
+void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
 {
 	auto& network = m_infomap->activeNetwork();
 	auto numNodes = network.size();
