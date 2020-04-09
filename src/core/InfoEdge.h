@@ -10,65 +10,53 @@
 
 namespace infomap {
 
-struct EdgeData
-{
+struct EdgeData {
 public:
-	EdgeData() :
-		weight(0.0),
-		flow(0.0)
-	{}
+  EdgeData() : weight(0.0), flow(0.0) {}
 
-	EdgeData(double weight) :
-		weight (weight),
-		flow(weight)
-	{}
+  EdgeData(double weight) : weight(weight), flow(weight) {}
 
-	EdgeData(double weight, double flow) :
-		weight (weight),
-		flow(flow)
-	{}
+  EdgeData(double weight, double flow) : weight(weight), flow(flow) {}
 
-	double weight;
-	double flow;
+  double weight;
+  double flow;
 };
 
 template <typename node_type>
-class Edge
-{
+class Edge {
 public:
-	Edge(node_type& source, node_type& target, double weight, double flow)
-	:	source(source),
-	 	target(target),
-	 	data(weight, flow)
-	{}
-	Edge(Edge const & edge)
-	:	source(edge.source),
-	 	target(edge.target),
-	 	data(edge.data)
-	{}
+  Edge(node_type& source, node_type& target, double weight, double flow)
+      : source(source),
+        target(target),
+        data(weight, flow) {}
 
-	node_type& other(node_type& node)
-	{
-		return (node == source) ? target : source;
-	}
+  Edge(Edge const& edge)
+      : source(edge.source),
+        target(edge.target),
+        data(edge.data) {}
 
-	bool isSelfPointing()
-	{
-		return source == target;
-	}
+  node_type& other(node_type& node)
+  {
+    return (node == source) ? target : source;
+  }
 
-	friend std::ostream& operator<<(std::ostream& out, const Edge& edge)
-	{
-		return out << "(" << edge.source << ") -> (" << edge.target << "), flow: "
-				<< edge.data.flow;
-	}
+  bool isSelfPointing()
+  {
+    return source == target;
+  }
 
-	node_type& source;
-	node_type& target;
-	EdgeData data;
+  friend std::ostream& operator<<(std::ostream& out, const Edge& edge)
+  {
+    return out << "(" << edge.source << ") -> (" << edge.target << "), flow: "
+               << edge.data.flow;
+  }
+
+  node_type& source;
+  node_type& target;
+  EdgeData data;
 };
 
-}
+} // namespace infomap
 
 
 #endif /* MODULES_CLUSTERING_CLUSTERING_INFOEDGE_H_ */

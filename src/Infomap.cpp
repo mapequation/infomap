@@ -41,85 +41,81 @@ namespace infomap {
 
 std::map<unsigned int, unsigned int> InfomapWrapper::getModules(int level, bool states)
 {
-	// int maxDepth = maxTreeDepth();
-	// if (level >= maxDepth)
-	// 	throw InputDomainError(io::Str() << "Maximum module level is " << maxDepth - 1 << ".");
-	// if (level < -1)
-	// 	throw InputDomainError(io::Str() << "Minimum module level is -1, meaning finest module level starting from bottom of the tree.");
-	std::map<unsigned int, unsigned int> modules;
-	if (haveMemory() && !states) {
-		for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
-			InfoNode &node = *it;
-			if (node.isLeaf()) {
-				modules[node.physicalId] = it.moduleId();
-			}
-		}
-	} else {
-		for (auto it(iterTree(level)); !it.isEnd(); ++it) {
-			InfoNode &node = *it;
-			if (node.isLeaf()) {
-				auto nodeId = states ? node.stateId : node.physicalId;
-				modules[nodeId] = it.moduleId();
-			}
-		}
-	}
-	return modules;
+  // int maxDepth = maxTreeDepth();
+  // if (level >= maxDepth)
+  // 	throw InputDomainError(io::Str() << "Maximum module level is " << maxDepth - 1 << ".");
+  // if (level < -1)
+  // 	throw InputDomainError(io::Str() << "Minimum module level is -1, meaning finest module level starting from bottom of the tree.");
+  std::map<unsigned int, unsigned int> modules;
+  if (haveMemory() && !states) {
+    for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
+      InfoNode& node = *it;
+      if (node.isLeaf()) {
+        modules[node.physicalId] = it.moduleId();
+      }
+    }
+  } else {
+    for (auto it(iterTree(level)); !it.isEnd(); ++it) {
+      InfoNode& node = *it;
+      if (node.isLeaf()) {
+        auto nodeId = states ? node.stateId : node.physicalId;
+        modules[nodeId] = it.moduleId();
+      }
+    }
+  }
+  return modules;
 }
 
 std::map<unsigned int, std::vector<unsigned int>> InfomapWrapper::getMultilevelModules(bool states)
 {
-	unsigned int maxDepth = maxTreeDepth();
-	unsigned int numModuleLevels = maxDepth - 1;
-	std::map<unsigned int, std::vector<unsigned int>> modules;
-	for (unsigned int level = 1; level <= numModuleLevels; ++level) {
-		if (haveMemory() && !states) {
-			for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
-				InfoNode &node = *it;
-				if (node.isLeaf()) {
-					modules[node.physicalId].push_back(it.moduleId());
-				}
-			}
-		} else {
-			for (auto it(iterTree(level)); !it.isEnd(); ++it) {
-				InfoNode &node = *it;
-				if (node.isLeaf()) {
-					auto nodeId = states ? node.stateId : node.physicalId;
-					modules[nodeId].push_back(it.moduleId());
-				}
-			}
-		}
-	}
-	return modules;
+  unsigned int maxDepth = maxTreeDepth();
+  unsigned int numModuleLevels = maxDepth - 1;
+  std::map<unsigned int, std::vector<unsigned int>> modules;
+  for (unsigned int level = 1; level <= numModuleLevels; ++level) {
+    if (haveMemory() && !states) {
+      for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
+        InfoNode& node = *it;
+        if (node.isLeaf()) {
+          modules[node.physicalId].push_back(it.moduleId());
+        }
+      }
+    } else {
+      for (auto it(iterTree(level)); !it.isEnd(); ++it) {
+        InfoNode& node = *it;
+        if (node.isLeaf()) {
+          auto nodeId = states ? node.stateId : node.physicalId;
+          modules[nodeId].push_back(it.moduleId());
+        }
+      }
+    }
+  }
+  return modules;
 }
 
-std::string InfomapWrapper::getName(unsigned int id) const {
-	auto& names = m_network.names();
-	auto it = names.find(id);
-	return it != names.end() ? it->second : "";
+std::string InfomapWrapper::getName(unsigned int id) const
+{
+  auto& names = m_network.names();
+  auto it = names.find(id);
+  return it != names.end() ? it->second : "";
 }
 
 int run(const std::string& flags)
 {
-	try
-	{
-		Config conf(flags, true);
+  try {
+    Config conf(flags, true);
 
-		InfomapWrapper infomap(conf);
-		// InfomapWrapper infomap(flags, true);
+    InfomapWrapper infomap(conf);
+    // InfomapWrapper infomap(flags, true);
 
-		infomap.run();
-	}
-	catch (std::exception& e)
-	{
-		std::cerr << "Error: " << e.what() << std::endl;
-		return 1;
-	}
-	catch(char const* e)
-	{
-		std::cerr << "Str error: " << e << std::endl;
-	}
+    infomap.run();
+  } catch (std::exception& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+    return 1;
+  } catch (char const* e) {
+    std::cerr << "Str error: " << e << std::endl;
+  }
 
-	return 0;
+  return 0;
 }
 
 ////////////////////////////////
@@ -128,35 +124,39 @@ int run(const std::string& flags)
 
 #ifndef SWIG
 
-	InfomapWrapper *NewInfomap(const char *flags) { return new InfomapWrapper(flags); }
+InfomapWrapper* NewInfomap(const char* flags)
+{
+  return new InfomapWrapper(flags);
+}
 
-	void DestroyInfomap(InfomapWrapper *im) { im->~InfomapWrapper(); }
+void DestroyInfomap(InfomapWrapper* im) { im->~InfomapWrapper(); }
 
-	void InfomapAddLink(InfomapWrapper *im, unsigned int sourceId, unsigned int targetId, double weight) {
-			im->addLink(sourceId, targetId, weight);
-	}
+void InfomapAddLink(InfomapWrapper* im, unsigned int sourceId, unsigned int targetId, double weight)
+{
+  im->addLink(sourceId, targetId, weight);
+}
 
-	void InfomapRun(struct InfomapWrapper *im) { im->run(); }
+void InfomapRun(struct InfomapWrapper* im) { im->run(); }
 
-	double Codelength(struct InfomapWrapper *im) { return im->getHierarchicalCodelength(); }
+double Codelength(struct InfomapWrapper* im) { return im->getHierarchicalCodelength(); }
 
-	unsigned int NumModules(struct InfomapWrapper *im) { return im->numTopModules(); }
+unsigned int NumModules(struct InfomapWrapper* im) { return im->numTopModules(); }
 
-	struct InfomapLeafIterator *NewIter(struct InfomapWrapper *im) { return new InfomapLeafIterator(&(im->root())); }
+struct InfomapLeafIterator* NewIter(struct InfomapWrapper* im) { return new InfomapLeafIterator(&(im->root())); }
 
-	void DestroyIter(struct InfomapLeafIterator *it) { it->~InfomapLeafIterator(); }
+void DestroyIter(struct InfomapLeafIterator* it) { it->~InfomapLeafIterator(); }
 
-	bool IsEnd(struct InfomapLeafIterator *it) { return it->isEnd(); }
+bool IsEnd(struct InfomapLeafIterator* it) { return it->isEnd(); }
 
-	void Next(struct InfomapLeafIterator *it) { it->stepForward(); }
+void Next(struct InfomapLeafIterator* it) { it->stepForward(); }
 
-	unsigned int Depth(struct InfomapLeafIterator *it) { return it->depth(); }
+unsigned int Depth(struct InfomapLeafIterator* it) { return it->depth(); }
 
-	unsigned int NodeId(struct InfomapLeafIterator *it) { return it->current()->id(); }
+unsigned int NodeId(struct InfomapLeafIterator* it) { return it->current()->id(); }
 
-	unsigned int ModuleIndex(struct InfomapLeafIterator *it) { return it->moduleIndex(); }
+unsigned int ModuleIndex(struct InfomapLeafIterator* it) { return it->moduleIndex(); }
 
-	double Flow(struct InfomapLeafIterator *it) { return it->current()->data.flow; }
+double Flow(struct InfomapLeafIterator* it) { return it->current()->data.flow; }
 #endif
 
 } // namespace infomap
@@ -164,10 +164,10 @@ int run(const std::string& flags)
 #ifndef AS_LIB
 int main(int argc, char* argv[])
 {
-	std::ostringstream args("");
-	for (int i = 1; i < argc; ++i)
-		args << argv[i] << (i + 1 == argc? "" : " ");
+  std::ostringstream args("");
+  for (int i = 1; i < argc; ++i)
+    args << argv[i] << (i + 1 == argc ? "" : " ");
 
-	return infomap::run(args.str());
+  return infomap::run(args.str());
 }
 #endif

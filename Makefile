@@ -29,7 +29,7 @@ OBJECTS := $(SOURCES:src/%.cpp=build/Infomap/%.o)
 # Stand-alone C++ targets
 ##################################################
 
-.PHONY: all noomp test debug
+.PHONY: all noomp test debug format
 
 all: Infomap
 	@true
@@ -49,6 +49,9 @@ noomp: Infomap
 
 debug: clean Infomap
 	@true
+
+format:
+	clang-format -i $(HEADERS) $(SOURCES)
 
 
 ##################################################

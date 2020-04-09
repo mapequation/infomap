@@ -26,150 +26,156 @@ class InfoNode;
 
 class MapEquation {
 public:
-	using FlowDataType = FlowData;
-	// using DeltaFlowDataType = MemDeltaFlow;
-	using DeltaFlowDataType = DeltaFlow;
+  using FlowDataType = FlowData;
+  // using DeltaFlowDataType = MemDeltaFlow;
+  using DeltaFlowDataType = DeltaFlow;
 
-	MapEquation() = default;
+  MapEquation() = default;
 
-	MapEquation(const MapEquation& other)
-	:	codelength(other.codelength),
-		indexCodelength(other.indexCodelength),
-		moduleCodelength(other.moduleCodelength),
-		nodeFlow_log_nodeFlow(other.nodeFlow_log_nodeFlow),
-		flow_log_flow(other.flow_log_flow),
-		exit_log_exit(other.exit_log_exit),
-		enter_log_enter(other.enter_log_enter),
-		enterFlow(other.enterFlow),
-		enterFlow_log_enterFlow(other.enterFlow_log_enterFlow),
-		exitNetworkFlow(other.exitNetworkFlow),
-		exitNetworkFlow_log_exitNetworkFlow(other.exitNetworkFlow_log_exitNetworkFlow)
-	{}
+  MapEquation(const MapEquation& other)
+      : codelength(other.codelength),
+        indexCodelength(other.indexCodelength),
+        moduleCodelength(other.moduleCodelength),
+        nodeFlow_log_nodeFlow(other.nodeFlow_log_nodeFlow),
+        flow_log_flow(other.flow_log_flow),
+        exit_log_exit(other.exit_log_exit),
+        enter_log_enter(other.enter_log_enter),
+        enterFlow(other.enterFlow),
+        enterFlow_log_enterFlow(other.enterFlow_log_enterFlow),
+        exitNetworkFlow(other.exitNetworkFlow),
+        exitNetworkFlow_log_exitNetworkFlow(other.exitNetworkFlow_log_exitNetworkFlow) {}
 
-	MapEquation& operator=(const MapEquation& other) {
-		codelength = other.codelength;
-		indexCodelength = other.indexCodelength;
-		moduleCodelength = other.moduleCodelength;
-		nodeFlow_log_nodeFlow = other.nodeFlow_log_nodeFlow;
-		flow_log_flow = other.flow_log_flow;
-		exit_log_exit = other.exit_log_exit;
-		enter_log_enter = other.enter_log_enter;
-		enterFlow = other.enterFlow;
-		enterFlow_log_enterFlow = other.enterFlow_log_enterFlow;
-		exitNetworkFlow = other.exitNetworkFlow;
-		exitNetworkFlow_log_exitNetworkFlow = other.exitNetworkFlow_log_exitNetworkFlow;
-		return *this;
-	}
+  MapEquation& operator=(const MapEquation& other)
+  {
+    codelength = other.codelength;
+    indexCodelength = other.indexCodelength;
+    moduleCodelength = other.moduleCodelength;
+    nodeFlow_log_nodeFlow = other.nodeFlow_log_nodeFlow;
+    flow_log_flow = other.flow_log_flow;
+    exit_log_exit = other.exit_log_exit;
+    enter_log_enter = other.enter_log_enter;
+    enterFlow = other.enterFlow;
+    enterFlow_log_enterFlow = other.enterFlow_log_enterFlow;
+    exitNetworkFlow = other.exitNetworkFlow;
+    exitNetworkFlow_log_exitNetworkFlow = other.exitNetworkFlow_log_exitNetworkFlow;
+    return *this;
+  }
 
-	virtual ~MapEquation() = default;
+  virtual ~MapEquation() = default;
 
-	// ===================================================
-	// Getters
-	// ===================================================
+  // ===================================================
+  // Getters
+  // ===================================================
 
-	static bool haveMemory() { return false; }
+  static bool haveMemory() { return false; }
 
-	double getIndexCodelength() const { return indexCodelength; }
+  double getIndexCodelength() const { return indexCodelength; }
 
-	double getModuleCodelength() const { return moduleCodelength; }
+  double getModuleCodelength() const { return moduleCodelength; }
 
-	double getCodelength() const { return codelength; }
+  double getCodelength() const { return codelength; }
 
-	// ===================================================
-	// IO
-	// ===================================================
+  // ===================================================
+  // IO
+  // ===================================================
 
-	std::ostream& print(std::ostream&) const;
+  std::ostream& print(std::ostream&) const;
 
-	friend std::ostream& operator<<(std::ostream&, const MapEquation&);
+  friend std::ostream& operator<<(std::ostream&, const MapEquation&);
 
 
-	// ===================================================
-	// Init
-	// ===================================================
+  // ===================================================
+  // Init
+  // ===================================================
 
-	void init(const Config& config);
+  void init(const Config& config);
 
-	void initNetwork(InfoNode& root);
+  void initNetwork(InfoNode& root);
 
-	void initSuperNetwork(InfoNode& root);
+  void initSuperNetwork(InfoNode& root);
 
-	void initSubNetwork(InfoNode& root);
+  void initSubNetwork(InfoNode& root);
 
-	void initPartition(std::vector<InfoNode*>& nodes);
+  void initPartition(std::vector<InfoNode*>& nodes);
 
-	// ===================================================
-	// Codelength
-	// ===================================================
+  // ===================================================
+  // Codelength
+  // ===================================================
 
-	double calcCodelength(const InfoNode& parent) const;
+  double calcCodelength(const InfoNode& parent) const;
 
-	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) {}
+  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) {}
 
-	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
+  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
 
-	double getDeltaCodelengthOnMovingNode(InfoNode& current,
-			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
+  double getDeltaCodelengthOnMovingNode(InfoNode& current,
+                                        DeltaFlowDataType& oldModuleDelta,
+                                        DeltaFlowDataType& newModuleDelta,
+                                        std::vector<FlowDataType>& moduleFlowData,
+                                        std::vector<unsigned int>& moduleMembers);
 
-	// ===================================================
-	// Consolidation
-	// ===================================================
+  // ===================================================
+  // Consolidation
+  // ===================================================
 
-	void updateCodelengthOnMovingNode(InfoNode& current,
-			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
+  void updateCodelengthOnMovingNode(InfoNode& current,
+                                    DeltaFlowDataType& oldModuleDelta,
+                                    DeltaFlowDataType& newModuleDelta,
+                                    std::vector<FlowDataType>& moduleFlowData,
+                                    std::vector<unsigned int>& moduleMembers);
 
-	void consolidateModules(std::vector<InfoNode*>& modules) {}
+  void consolidateModules(std::vector<InfoNode*>& modules) {}
 
-	// ===================================================
-	// Debug
-	// ===================================================
+  // ===================================================
+  // Debug
+  // ===================================================
 
-	void printDebug();
+  void printDebug();
 
 
 protected:
-	// ===================================================
-	// Protected member functions
-	// ===================================================
+  // ===================================================
+  // Protected member functions
+  // ===================================================
 
-	double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
 
-	double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
+  double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
 
-	void calculateCodelength(std::vector<InfoNode*>& nodes);
+  void calculateCodelength(std::vector<InfoNode*>& nodes);
 
-	void calculateCodelengthTerms(std::vector<InfoNode*>& nodes);
+  void calculateCodelengthTerms(std::vector<InfoNode*>& nodes);
 
-	void calculateCodelengthFromCodelengthTerms();
+  void calculateCodelengthFromCodelengthTerms();
 
 
 public:
-	// ===================================================
-	// Public member variables
-	// ===================================================
+  // ===================================================
+  // Public member variables
+  // ===================================================
 
-	double codelength = 0.0;
-	double indexCodelength = 0.0;
-	double moduleCodelength = 0.0;
+  double codelength = 0.0;
+  double indexCodelength = 0.0;
+  double moduleCodelength = 0.0;
 
 protected:
-	// ===================================================
-	// Protected member variables
-	// ===================================================
+  // ===================================================
+  // Protected member variables
+  // ===================================================
 
-	double nodeFlow_log_nodeFlow = 0.0; // constant while the leaf network is the same
-	double flow_log_flow = 0.0; // node.(flow + exitFlow)
-	double exit_log_exit = 0.0;
-	double enter_log_enter = 0.0;
-	double enterFlow = 0.0;
-	double enterFlow_log_enterFlow = 0.0;
+  double nodeFlow_log_nodeFlow = 0.0; // constant while the leaf network is the same
+  double flow_log_flow = 0.0; // node.(flow + exitFlow)
+  double exit_log_exit = 0.0;
+  double enter_log_enter = 0.0;
+  double enterFlow = 0.0;
+  double enterFlow_log_enterFlow = 0.0;
 
-	// For hierarchical
-	double exitNetworkFlow = 0.0;
-	double exitNetworkFlow_log_exitNetworkFlow = 0.0;
+  // For hierarchical
+  double exitNetworkFlow = 0.0;
+  double exitNetworkFlow_log_exitNetworkFlow = 0.0;
 };
 
-}
+} // namespace infomap
 
 
 #endif /* SRC_CLUSTERING_MAPEQUATION_H_ */
