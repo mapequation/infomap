@@ -30,7 +30,7 @@ struct NodePaths
 {
 	NodePaths(unsigned int size = 0) { reserve(size); }
 	void reserve(unsigned int size) { nodePaths.reserve(size); }
-	unsigned int size() { return nodePaths.size(); }
+	auto size() { return nodePaths.size(); }
 	void clear() { nodePaths.clear(); }
 	void add(unsigned int nodeId, const Path& path) {
 		// path should use 1-based indexing
