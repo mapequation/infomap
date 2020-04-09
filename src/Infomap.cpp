@@ -163,7 +163,5 @@ int main(int argc, char* argv[])
 		args << argv[i] << (i + 1 == argc? "" : " ");
 
 	return infomap::run(args.str());
-
-	return 0;
 }
 #endif

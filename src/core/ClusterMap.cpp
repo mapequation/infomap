@@ -37,11 +37,10 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow)
 	std::istringstream lineStream;
 	std::istringstream pathStream;
 	m_nodePaths.clear();
-	unsigned int numNodes = 0;
 
-	std::string header = "";
+	std::string header;
 	unsigned int lineNr = 0;
-	std::string section = "";
+	std::string section;
 
 	while(!std::getline(input, line).fail())
 	{
@@ -86,9 +85,6 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow)
 			throw FileFormatError(io::Str() << "Couldn't parse node id from line '" << line << "'");
 		if (lineStream >> physId) {
 			m_isHigherOrder = true;
-			if (numNodes != 0) {
-				throw FileFormatError(io::Str() << "Found higher-order node on line '" << line << "' but it's not the first node.");
-			}
 		} else if (m_isHigherOrder) {
 			throw FileFormatError(io::Str() << "Missing stateId for node on line '" << line << "'.");
 		}
