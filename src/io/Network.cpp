@@ -542,8 +542,8 @@ void Network::parseStateNode(const std::string& line, StateNetwork::StateNode& s
 		throw FileFormatError(io::Str() << "Can't parse any state node from line '" << line << "'");
 
 	// Optional name enclosed in double quotes
-	unsigned int nameStart = line.find_first_of("\"", m_extractor.tellg());
-	unsigned int nameEnd = line.find_last_of("\"");
+	auto nameStart = line.find_first_of("\"", m_extractor.tellg());
+	auto nameEnd = line.find_last_of("\"");
 	if(nameStart < nameEnd) {
 		stateNode.name = std::string(line.begin() + nameStart + 1, line.begin() + nameEnd);
 		m_extractor.seekg(nameEnd + 1);
@@ -764,7 +764,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 	Log() << "Generating state network from multilayer networks with simulated inter-layer links...\n" << std::flush;
 	double relaxRate = m_config.multilayerRelaxRate;
 
-	int maxRelaxLimit = m_networks.size();
+	auto maxRelaxLimit = m_networks.size();
 	int relaxLimitSymmetric = m_config.multilayerRelaxLimit < 0 ? maxRelaxLimit : m_config.multilayerRelaxLimit;
 	int relaxLimitDown = m_config.multilayerRelaxLimitDown < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitDown);
 	int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
