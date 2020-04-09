@@ -506,6 +506,8 @@ struct Config
 			alternateCoarseTuneLevel = false;
 			coarseTuneLevel = 1;
 			break;
+		default:
+			break;
 		}
 	}
 
