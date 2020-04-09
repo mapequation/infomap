@@ -37,15 +37,8 @@ namespace infomap {
 class ElapsedTime
 {
 public:
-	enum InSeconds
-	{
-		SECONDS_IN_A_MINUTE = 60,
-		SECONDS_IN_AN_HOUR = 3600,
-		SECONDS_IN_A_DAY = 86400 // 3600*24
-	};
-
 	ElapsedTime(double elapsedTime = 0.0) : m_elapsedTime(elapsedTime) {}
-	~ElapsedTime() {}
+	~ElapsedTime() = default;
 
 	double getSeconds() const { return m_elapsedTime; }
 	double getMinutes() const { return m_elapsedTime / 60; }
@@ -92,7 +85,7 @@ public:
 		return *this;
 	}
 
-	virtual ~Date() {}
+	virtual ~Date() = default;
 
 	friend std::ostream& operator<<(std::ostream& out, const Date& date)
 	{
