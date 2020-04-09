@@ -196,8 +196,8 @@ public:
 
 	// Getters
 	const NodeMap& nodes() const { return m_nodes; }
-	auto numNodes() const { return m_nodes.size(); }
-	auto numPhysicalNodes() const { return m_physNodes.size(); }
+	unsigned int numNodes() const { return m_nodes.size(); }
+	unsigned int numPhysicalNodes() const { return m_physNodes.size(); }
 	const NodeLinkMap& nodeLinkMap() const { return m_nodeLinkMap; }
 	NodeLinkMap& nodeLinkMap() { return m_nodeLinkMap; }
 	// const LinkMap& links() const { return m_links; }

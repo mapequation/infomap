@@ -207,7 +207,7 @@ public:
 	/**
 	 * Number of physical nodes in memory nodes
 	 */
-	auto numPhysicalNodes() const { return physicalNodes.size(); }
+	unsigned int numPhysicalNodes() const { return physicalNodes.size(); }
 
 	// ---------------------------- Tree iterators ----------------------------
 
@@ -327,19 +327,19 @@ public:
 
 	unsigned int firstDepthBelow() const;
 
-	auto numLeafMembers()
+	unsigned int numLeafMembers()
 	{ return m_numLeafMembers; }
 
 	bool isDangling()
 	{ return m_outEdges.empty(); }
 
-	auto outDegree()
+	unsigned int outDegree()
 	{ return m_outEdges.size(); }
 
-	auto inDegree()
+	unsigned int inDegree()
 	{ return m_inEdges.size(); }
 
-	auto degree()
+	unsigned int degree()
 	{ return outDegree() + inDegree(); }
 
 //	InfomapBase* getSubInfomap()
