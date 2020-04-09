@@ -31,24 +31,24 @@ namespace infomap {
 
 void BipartiteClusterReader::parseClusterLine(std::string line)
 {
-	std::istringstream lineStream(line);
+  std::istringstream lineStream(line);
 
-	std::string nodeId;
-	unsigned int clusterId;
-	if (!(lineStream >> nodeId >> clusterId))
-		throw FileFormatError(io::Str() << "Can't parse bipartite cluster data from line '" << line << "'");
-	unsigned int nodeIndex;
-	if ((nodeId[0] != 'n' && nodeId[0] != 'f') || nodeId.length() == 1 || !(std::istringstream( nodeId.substr(1) ) >> nodeIndex)) {
-		throw FileFormatError(io::Str() << "Can't parse bipartite node id (a numerical id prefixed by 'n' or 'f') from line '" << line << "'");
-	}
+  std::string nodeId;
+  unsigned int clusterId;
+  if (!(lineStream >> nodeId >> clusterId))
+    throw FileFormatError(io::Str() << "Can't parse bipartite cluster data from line '" << line << "'");
+  unsigned int nodeIndex;
+  if ((nodeId[0] != 'n' && nodeId[0] != 'f') || nodeId.length() == 1 || !(std::istringstream(nodeId.substr(1)) >> nodeIndex)) {
+    throw FileFormatError(io::Str() << "Can't parse bipartite node id (a numerical id prefixed by 'n' or 'f') from line '" << line << "'");
+  }
 
-	nodeIndex -= m_indexOffset; // Get zero-based indexing
-	if (nodeId[0] == 'n')
-		m_clusters[nodeIndex] = clusterId;
-	else
-		m_featureClusters[nodeIndex] = clusterId;
-	m_maxNodeIndex = std::max(m_maxNodeIndex, nodeIndex);
-	++m_numParsedRows;
+  nodeIndex -= m_indexOffset; // Get zero-based indexing
+  if (nodeId[0] == 'n')
+    m_clusters[nodeIndex] = clusterId;
+  else
+    m_featureClusters[nodeIndex] = clusterId;
+  m_maxNodeIndex = std::max(m_maxNodeIndex, nodeIndex);
+  ++m_numParsedRows;
 }
 
-}
+} // namespace infomap

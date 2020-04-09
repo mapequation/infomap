@@ -23,166 +23,179 @@ class InfoNode;
 struct MemNodeSet;
 
 class MemMapEquation : protected MapEquation {
-	using Base = MapEquation;
-public:
-	using FlowDataType = FlowData;
-	using DeltaFlowDataType = MemDeltaFlow;
+  using Base = MapEquation;
 
-	MemMapEquation() : MapEquation() {}
+  public:
+  using FlowDataType = FlowData;
+  using DeltaFlowDataType = MemDeltaFlow;
 
-	MemMapEquation(const MemMapEquation& other)
-	:	MapEquation(other),
-		m_physToModuleToMemNodes(other.m_physToModuleToMemNodes),
-		m_numPhysicalNodes(other.m_numPhysicalNodes),
-		m_memoryContributionsAdded(other.m_memoryContributionsAdded)
-	{}
+  MemMapEquation() : MapEquation() {}
 
-	MemMapEquation& operator=(const MemMapEquation& other) {
-		Base::operator =(other);
-		m_physToModuleToMemNodes = other.m_physToModuleToMemNodes;
-		m_numPhysicalNodes = other.m_numPhysicalNodes;
-		m_memoryContributionsAdded = other.m_memoryContributionsAdded;
-		return *this;
-	}
+  MemMapEquation(const MemMapEquation& other)
+      : MapEquation(other),
+        m_physToModuleToMemNodes(other.m_physToModuleToMemNodes),
+        m_numPhysicalNodes(other.m_numPhysicalNodes),
+        m_memoryContributionsAdded(other.m_memoryContributionsAdded)
+  {
+  }
 
-	virtual ~MemMapEquation() {}
+  MemMapEquation& operator=(const MemMapEquation& other)
+  {
+    Base::operator=(other);
+    m_physToModuleToMemNodes = other.m_physToModuleToMemNodes;
+    m_numPhysicalNodes = other.m_numPhysicalNodes;
+    m_memoryContributionsAdded = other.m_memoryContributionsAdded;
+    return *this;
+  }
 
-	// ===================================================
-	// Getters
-	// ===================================================
+  virtual ~MemMapEquation() {}
 
-	static bool haveMemory() { return true; }
+  // ===================================================
+  // Getters
+  // ===================================================
 
-	using Base::getIndexCodelength;
+  static bool haveMemory() { return true; }
 
-	using Base::getModuleCodelength;
+  using Base::getIndexCodelength;
 
-	using Base::getCodelength;
+  using Base::getModuleCodelength;
 
-	// ===================================================
-	// IO
-	// ===================================================
+  using Base::getCodelength;
 
-	// using Base::print;
-	std::ostream& print(std::ostream& out) const;
-	friend std::ostream& operator<<(std::ostream&, const MemMapEquation&);
+  // ===================================================
+  // IO
+  // ===================================================
 
-	// ===================================================
-	// Init
-	// ===================================================
+  // using Base::print;
+  std::ostream& print(std::ostream& out) const;
+  friend std::ostream& operator<<(std::ostream&, const MemMapEquation&);
 
-	void init(const Config& config);
+  // ===================================================
+  // Init
+  // ===================================================
 
-	void initNetwork(InfoNode& root);
+  void init(const Config& config);
 
-	void initSuperNetwork(InfoNode& root);
+  void initNetwork(InfoNode& root);
 
-	void initSubNetwork(InfoNode& root);
+  void initSuperNetwork(InfoNode& root);
 
-	void initPartition(std::vector<InfoNode*>& nodes);
+  void initSubNetwork(InfoNode& root);
 
-	// ===================================================
-	// Codelength
-	// ===================================================
+  void initPartition(std::vector<InfoNode*>& nodes);
 
-	double calcCodelength(const InfoNode& parent) const;
+  // ===================================================
+  // Codelength
+  // ===================================================
 
-	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
+  double calcCodelength(const InfoNode& parent) const;
 
-	double getDeltaCodelengthOnMovingNode(InfoNode& current,
-			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
+  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
 
-	// ===================================================
-	// Consolidation
-	// ===================================================
+  double getDeltaCodelengthOnMovingNode(InfoNode& current,
+                                        DeltaFlowDataType& oldModuleDelta,
+                                        DeltaFlowDataType& newModuleDelta,
+                                        std::vector<FlowDataType>& moduleFlowData,
+                                        std::vector<unsigned int>& moduleMembers);
 
-	void updateCodelengthOnMovingNode(InfoNode& current,
-			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
+  // ===================================================
+  // Consolidation
+  // ===================================================
 
-	void consolidateModules(std::vector<InfoNode*>& modules);
+  void updateCodelengthOnMovingNode(InfoNode& current,
+                                    DeltaFlowDataType& oldModuleDelta,
+                                    DeltaFlowDataType& newModuleDelta,
+                                    std::vector<FlowDataType>& moduleFlowData,
+                                    std::vector<unsigned int>& moduleMembers);
 
-	// ===================================================
-	// Debug
-	// ===================================================
+  void consolidateModules(std::vector<InfoNode*>& modules);
 
-	void printDebug();
+  // ===================================================
+  // Debug
+  // ===================================================
 
-protected:
-	// ===================================================
-	// Protected member functions
-	// ===================================================
-	double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+  void printDebug();
 
-	// ===================================================
-	// Init
-	// ===================================================
+  protected:
+  // ===================================================
+  // Protected member functions
+  // ===================================================
+  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
 
-	void initPhysicalNodes(InfoNode& root);
+  // ===================================================
+  // Init
+  // ===================================================
 
-	void initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes);
+  void initPhysicalNodes(InfoNode& root);
 
-	// ===================================================
-	// Codelength
-	// ===================================================
+  void initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes);
 
-	void calculateCodelength(std::vector<InfoNode*>& nodes);
+  // ===================================================
+  // Codelength
+  // ===================================================
 
-	using Base::calculateCodelengthTerms;
+  void calculateCodelength(std::vector<InfoNode*>& nodes);
 
-	using Base::calculateCodelengthFromCodelengthTerms;
+  using Base::calculateCodelengthTerms;
 
-	void calculateNodeFlow_log_nodeFlow();
+  using Base::calculateCodelengthFromCodelengthTerms;
 
-	// ===================================================
-	// Consolidation
-	// ===================================================
+  void calculateNodeFlow_log_nodeFlow();
 
-	void updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
+  // ===================================================
+  // Consolidation
+  // ===================================================
 
-	void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
+  void updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
-public:
-	// ===================================================
-	// Public member variables
-	// ===================================================
+  void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
 
-	using Base::codelength;
-	using Base::indexCodelength;
-	using Base::moduleCodelength;
+  public:
+  // ===================================================
+  // Public member variables
+  // ===================================================
 
-protected:
-	// ===================================================
-	// Protected member variables
-	// ===================================================
+  using Base::codelength;
+  using Base::indexCodelength;
+  using Base::moduleCodelength;
 
-	using Base::nodeFlow_log_nodeFlow; // constant while the leaf network is the same
-	using Base::flow_log_flow; // node.(flow + exitFlow)
-	using Base::exit_log_exit;
-	using Base::enter_log_enter;
-	using Base::enterFlow;
-	using Base::enterFlow_log_enterFlow;
+  protected:
+  // ===================================================
+  // Protected member variables
+  // ===================================================
 
-	// For hierarchical
-	using Base::exitNetworkFlow;
-	using Base::exitNetworkFlow_log_exitNetworkFlow;
+  using Base::enter_log_enter;
+  using Base::enterFlow;
+  using Base::enterFlow_log_enterFlow;
+  using Base::exit_log_exit;
+  using Base::flow_log_flow; // node.(flow + exitFlow)
+  using Base::nodeFlow_log_nodeFlow; // constant while the leaf network is the same
 
-	using ModuleToMemNodes = std::map<unsigned int, MemNodeSet>;
+  // For hierarchical
+  using Base::exitNetworkFlow;
+  using Base::exitNetworkFlow_log_exitNetworkFlow;
 
-	std::vector<ModuleToMemNodes> m_physToModuleToMemNodes; // vector[physicalNodeID] map<moduleID, {#memNodes, sumFlow}>
-	unsigned int m_numPhysicalNodes = 0;
-	bool m_memoryContributionsAdded = false;
+  using ModuleToMemNodes = std::map<unsigned int, MemNodeSet>;
+
+  std::vector<ModuleToMemNodes> m_physToModuleToMemNodes; // vector[physicalNodeID] map<moduleID, {#memNodes, sumFlow}>
+  unsigned int m_numPhysicalNodes = 0;
+  bool m_memoryContributionsAdded = false;
 };
 
-struct MemNodeSet
-{
-	MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) {}
-	MemNodeSet(const MemNodeSet& other) : numMemNodes(other.numMemNodes), sumFlow(other.sumFlow) {}
-	MemNodeSet& operator=(const MemNodeSet& other) { numMemNodes = other.numMemNodes; sumFlow = other.sumFlow; return *this; }
-	unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
-	double sumFlow;
+struct MemNodeSet {
+  MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) {}
+  MemNodeSet(const MemNodeSet& other) : numMemNodes(other.numMemNodes), sumFlow(other.sumFlow) {}
+  MemNodeSet& operator=(const MemNodeSet& other)
+  {
+    numMemNodes = other.numMemNodes;
+    sumFlow = other.sumFlow;
+    return *this;
+  }
+  unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
+  double sumFlow;
 };
 
 
-}
+} // namespace infomap
 
 #endif /* MODULES_CLUSTERING_CLUSTERING_MEMMAPEQUATION_H_ */

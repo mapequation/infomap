@@ -34,85 +34,69 @@
 
 namespace infomap {
 
-class ElapsedTime
-{
-public:
-	ElapsedTime(double elapsedTime = 0.0) : m_elapsedTime(elapsedTime) {}
-	~ElapsedTime() = default;
+class ElapsedTime {
+  public:
+  ElapsedTime(double elapsedTime = 0.0) : m_elapsedTime(elapsedTime) {}
+  ~ElapsedTime() = default;
 
-	double getSeconds() const { return m_elapsedTime; }
-	double getMinutes() const { return m_elapsedTime / 60; }
-	double getHours() const { return m_elapsedTime / 3600; }
-	double getDays() const { return m_elapsedTime / 86400; }
+  double getSeconds() const { return m_elapsedTime; }
+  double getMinutes() const { return m_elapsedTime / 60; }
+  double getHours() const { return m_elapsedTime / 3600; }
+  double getDays() const { return m_elapsedTime / 86400; }
 
 
-	friend std::ostream& operator<<(std::ostream& out, const ElapsedTime& elapsedTime)
-	{
-		unsigned int temp = static_cast<unsigned int>(std::floor(elapsedTime.getSeconds()));
-		if (temp > 60)
-		{
-			if (temp > 3600)
-			{
-				if (temp > 86400)
-				{
-					out << temp / 86400 << "d ";
-					temp %= 86400;
-				}
-				out << temp / 3600 << "h ";
-				temp %= 3600;
-			}
-			out << temp / 60 << "m ";
-			temp %= 60;
-			out << temp << "s";
-		}
-		else
-		{
-			out << temp << "s";
-		}
-		return out;
-	}
-private:
-	double m_elapsedTime;
+  friend std::ostream& operator<<(std::ostream& out, const ElapsedTime& elapsedTime)
+  {
+    unsigned int temp = static_cast<unsigned int>(std::floor(elapsedTime.getSeconds()));
+    if (temp > 60) {
+      if (temp > 3600) {
+        if (temp > 86400) {
+          out << temp / 86400 << "d ";
+          temp %= 86400;
+        }
+        out << temp / 3600 << "h ";
+        temp %= 3600;
+      }
+      out << temp / 60 << "m ";
+      temp %= 60;
+      out << temp << "s";
+    } else {
+      out << temp << "s";
+    }
+    return out;
+  }
+
+  private:
+  double m_elapsedTime;
 };
 
-class Date
-{
-public:
-	Date() : m_timeOfCreation(time(NULL)) {}
-	Date(const Date& other) : m_timeOfCreation(other.m_timeOfCreation) {}
-	Date& operator=(Date other) {
-		m_timeOfCreation = other.m_timeOfCreation;
-		return *this;
-	}
+class Date {
+  public:
+  Date() : m_timeOfCreation(time(NULL)) {}
+  Date(const Date& other) : m_timeOfCreation(other.m_timeOfCreation) {}
+  Date& operator=(Date other)
+  {
+    m_timeOfCreation = other.m_timeOfCreation;
+    return *this;
+  }
 
-	virtual ~Date() = default;
+  virtual ~Date() = default;
 
-	friend std::ostream& operator<<(std::ostream& out, const Date& date)
-	{
-		struct std::tm t = *localtime(&date.m_timeOfCreation);
-		return out << "" <<
-				(t.tm_year+1900) <<
-				(t.tm_mon < 9 ? "-0" : "-") <<
-				(t.tm_mon+1) <<
-				(t.tm_mday < 10 ? "-0" : "-") <<
-				t.tm_mday <<
-				(t.tm_hour < 10 ? " 0" : " ") <<
-				t.tm_hour <<
-				(t.tm_min < 10 ? ":0" : ":") <<
-				t.tm_min <<
-				(t.tm_sec < 10 ? ":0" : ":") <<
-				t.tm_sec << "";
-	}
+  friend std::ostream& operator<<(std::ostream& out, const Date& date)
+  {
+    struct std::tm t = *localtime(&date.m_timeOfCreation);
+    return out << "" << (t.tm_year + 1900) << (t.tm_mon < 9 ? "-0" : "-") << (t.tm_mon + 1) << (t.tm_mday < 10 ? "-0" : "-") << t.tm_mday << (t.tm_hour < 10 ? " 0" : " ") << t.tm_hour << (t.tm_min < 10 ? ":0" : ":") << t.tm_min << (t.tm_sec < 10 ? ":0" : ":") << t.tm_sec << "";
+  }
 
-	ElapsedTime operator-(const Date& date)
-	{
-		return ElapsedTime(difftime(m_timeOfCreation, date.m_timeOfCreation));
-	}
+  ElapsedTime operator-(const Date& date)
+  {
+    return ElapsedTime(difftime(m_timeOfCreation, date.m_timeOfCreation));
+  }
 
-private:
-	std::time_t m_timeOfCreation;
+  private:
+  std::time_t m_timeOfCreation;
 };
 
-}
+} // namespace infomap
 
 #endif /* DATE_H_ */

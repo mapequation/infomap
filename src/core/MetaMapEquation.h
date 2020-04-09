@@ -20,180 +20,189 @@ namespace infomap {
 class InfoNode;
 
 class MetaMapEquation : protected MapEquation {
-	using Base = MapEquation;
-public:
-	using FlowDataType = FlowData;
-	using DeltaFlowDataType = DeltaFlow;
+  using Base = MapEquation;
 
-	MetaMapEquation() = default;
+  public:
+  using FlowDataType = FlowData;
+  using DeltaFlowDataType = DeltaFlow;
 
-	MetaMapEquation(const MetaMapEquation& other)
-	:	MapEquation(other),
-		m_moduleToMetaCollection(other.m_moduleToMetaCollection),
-		numMetaDataDimensions(other.numMetaDataDimensions),
-		metaDataRate(other.metaDataRate),
-		weightByFlow(other.weightByFlow),
-		metaCodelength(other.metaCodelength)
-	{}
+  MetaMapEquation() = default;
 
-	MetaMapEquation& operator=(const MetaMapEquation& other) {
-		Base::operator =(other);
-		m_moduleToMetaCollection = other.m_moduleToMetaCollection;
-		numMetaDataDimensions = other.numMetaDataDimensions;
-		metaDataRate = other.metaDataRate;
-		weightByFlow = other.weightByFlow;
-		metaCodelength = other.metaCodelength;
-		return *this;
-	}
+  MetaMapEquation(const MetaMapEquation& other)
+      : MapEquation(other),
+        m_moduleToMetaCollection(other.m_moduleToMetaCollection),
+        numMetaDataDimensions(other.numMetaDataDimensions),
+        metaDataRate(other.metaDataRate),
+        weightByFlow(other.weightByFlow),
+        metaCodelength(other.metaCodelength)
+  {
+  }
 
-	virtual ~MetaMapEquation() = default;
+  MetaMapEquation& operator=(const MetaMapEquation& other)
+  {
+    Base::operator=(other);
+    m_moduleToMetaCollection = other.m_moduleToMetaCollection;
+    numMetaDataDimensions = other.numMetaDataDimensions;
+    metaDataRate = other.metaDataRate;
+    weightByFlow = other.weightByFlow;
+    metaCodelength = other.metaCodelength;
+    return *this;
+  }
 
-	// ===================================================
-	// Getters
-	// ===================================================
+  virtual ~MetaMapEquation() = default;
 
-	static bool haveMemory() { return true; }
+  // ===================================================
+  // Getters
+  // ===================================================
 
-	using Base::getIndexCodelength;
+  static bool haveMemory() { return true; }
 
-	// double getModuleCodelength() const { return moduleCodelength + metaCodelength; };
-	double getModuleCodelength() const;
+  using Base::getIndexCodelength;
 
-	// double getCodelength() const { return codelength + metaCodelength; };
-	double getCodelength() const;
+  // double getModuleCodelength() const { return moduleCodelength + metaCodelength; };
+  double getModuleCodelength() const;
 
-	double getMetaCodelength(bool unweighted = false) const {
-		return unweighted ? metaCodelength : metaDataRate * metaCodelength;
-	};
+  // double getCodelength() const { return codelength + metaCodelength; };
+  double getCodelength() const;
 
-	// ===================================================
-	// IO
-	// ===================================================
+  double getMetaCodelength(bool unweighted = false) const
+  {
+    return unweighted ? metaCodelength : metaDataRate * metaCodelength;
+  };
 
-	// using Base::print;
-	std::ostream& print(std::ostream& out) const;
-	friend std::ostream& operator<<(std::ostream&, const MetaMapEquation&);
+  // ===================================================
+  // IO
+  // ===================================================
 
-	// ===================================================
-	// Init
-	// ===================================================
+  // using Base::print;
+  std::ostream& print(std::ostream& out) const;
+  friend std::ostream& operator<<(std::ostream&, const MetaMapEquation&);
 
-	void init(const Config& config);
+  // ===================================================
+  // Init
+  // ===================================================
 
-	void initNetwork(InfoNode& root);
+  void init(const Config& config);
 
-	void initSuperNetwork(InfoNode& root);
+  void initNetwork(InfoNode& root);
 
-	void initSubNetwork(InfoNode& root);
+  void initSuperNetwork(InfoNode& root);
 
-	void initPartition(std::vector<InfoNode*>& nodes);
+  void initSubNetwork(InfoNode& root);
 
-	// ===================================================
-	// Codelength
-	// ===================================================
+  void initPartition(std::vector<InfoNode*>& nodes);
 
-	double calcCodelength(const InfoNode& parent) const;
+  // ===================================================
+  // Codelength
+  // ===================================================
 
-	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
+  double calcCodelength(const InfoNode& parent) const;
 
-	double getDeltaCodelengthOnMovingNode(InfoNode& current,
-			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
+  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
 
-	// ===================================================
-	// Consolidation
-	// ===================================================
+  double getDeltaCodelengthOnMovingNode(InfoNode& current,
+                                        DeltaFlowDataType& oldModuleDelta,
+                                        DeltaFlowDataType& newModuleDelta,
+                                        std::vector<FlowDataType>& moduleFlowData,
+                                        std::vector<unsigned int>& moduleMembers);
 
-	void updateCodelengthOnMovingNode(InfoNode& current,
-			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
+  // ===================================================
+  // Consolidation
+  // ===================================================
 
-	void consolidateModules(std::vector<InfoNode*>& modules);
+  void updateCodelengthOnMovingNode(InfoNode& current,
+                                    DeltaFlowDataType& oldModuleDelta,
+                                    DeltaFlowDataType& newModuleDelta,
+                                    std::vector<FlowDataType>& moduleFlowData,
+                                    std::vector<unsigned int>& moduleMembers);
 
-	// ===================================================
-	// Debug
-	// ===================================================
+  void consolidateModules(std::vector<InfoNode*>& modules);
 
-	void printDebug();
+  // ===================================================
+  // Debug
+  // ===================================================
 
-protected:
-	// ===================================================
-	// Protected member functions
-	// ===================================================
-	double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+  void printDebug();
 
-	// ===================================================
-	// Init
-	// ===================================================
+  protected:
+  // ===================================================
+  // Protected member functions
+  // ===================================================
+  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
 
-	void initMetaNodes(InfoNode& root);
+  // ===================================================
+  // Init
+  // ===================================================
 
-	void initPartitionOfMetaNodes(std::vector<InfoNode*>& nodes);
+  void initMetaNodes(InfoNode& root);
 
-	// ===================================================
-	// Codelength
-	// ===================================================
+  void initPartitionOfMetaNodes(std::vector<InfoNode*>& nodes);
 
-	void calculateCodelength(std::vector<InfoNode*>& nodes);
+  // ===================================================
+  // Codelength
+  // ===================================================
 
-	using Base::calculateCodelengthTerms;
+  void calculateCodelength(std::vector<InfoNode*>& nodes);
 
-	using Base::calculateCodelengthFromCodelengthTerms;
+  using Base::calculateCodelengthTerms;
 
-	// ===================================================
-	// Consolidation
-	// ===================================================
+  using Base::calculateCodelengthFromCodelengthTerms;
 
-	void updateMetaData(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
+  // ===================================================
+  // Consolidation
+  // ===================================================
 
-public:
-	// ===================================================
-	// Public member variables
-	// ===================================================
+  void updateMetaData(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
-	using Base::codelength;
-	using Base::indexCodelength;
-	using Base::moduleCodelength;
+  public:
+  // ===================================================
+  // Public member variables
+  // ===================================================
 
-protected:
-	// ===================================================
-	// Protected member functions
-	// ===================================================
+  using Base::codelength;
+  using Base::indexCodelength;
+  using Base::moduleCodelength;
 
-	/**
+  protected:
+  // ===================================================
+  // Protected member functions
+  // ===================================================
+
+  /**
 	 *  Get meta codelength of module of current node
 	 * @param addRemoveOrNothing +1, -1 or 0 to calculate codelength
 	 * as if current node was added, removed or untouched in current module
 	 */
-	double getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing);
+  double getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing);
 
-	// ===================================================
-	// Protected member variables
-	// ===================================================
+  // ===================================================
+  // Protected member variables
+  // ===================================================
 
-	using Base::nodeFlow_log_nodeFlow; // constant while the leaf network is the same
-	using Base::flow_log_flow; // node.(flow + exitFlow)
-	using Base::exit_log_exit;
-	using Base::enter_log_enter;
-	using Base::enterFlow;
-	using Base::enterFlow_log_enterFlow;
+  using Base::enter_log_enter;
+  using Base::enterFlow;
+  using Base::enterFlow_log_enterFlow;
+  using Base::exit_log_exit;
+  using Base::flow_log_flow; // node.(flow + exitFlow)
+  using Base::nodeFlow_log_nodeFlow; // constant while the leaf network is the same
 
-	// For hierarchical
-	using Base::exitNetworkFlow;
-	using Base::exitNetworkFlow_log_exitNetworkFlow;
+  // For hierarchical
+  using Base::exitNetworkFlow;
+  using Base::exitNetworkFlow_log_exitNetworkFlow;
 
-	// For meta data
-	using ModuleMetaMap = std::map<unsigned int, MetaCollection>; // moduleId -> (metaId -> count)
+  // For meta data
+  using ModuleMetaMap = std::map<unsigned int, MetaCollection>; // moduleId -> (metaId -> count)
 
-	ModuleMetaMap m_moduleToMetaCollection;
+  ModuleMetaMap m_moduleToMetaCollection;
 
-	unsigned int numMetaDataDimensions = 0;
-	double metaDataRate = 1.0;
-	bool weightByFlow = true;
-	double metaCodelength = 0.0;
-	double m_unweightedNodeFlow = 0.0;
+  unsigned int numMetaDataDimensions = 0;
+  double metaDataRate = 1.0;
+  bool weightByFlow = true;
+  double metaCodelength = 0.0;
+  double m_unweightedNodeFlow = 0.0;
 };
 
 
-
-}
+} // namespace infomap
 
 #endif /* _METAMAPEQUATION_H_ */

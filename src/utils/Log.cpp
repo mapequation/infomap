@@ -12,4 +12,4 @@ namespace infomap {
 unsigned int Log::s_verboseLevel = 0;
 bool Log::s_silent = false;
 
-}
+} // namespace infomap

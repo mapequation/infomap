@@ -37,45 +37,45 @@ namespace infomap {
 
 using std::string;
 
-class ClusterReader
-{
-public:
-	ClusterReader(bool zeroBasedIndexing = false)
-	: m_indexOffset(zeroBasedIndexing? 0 : 1),
-	  m_maxNodeIndex(0),
-	  m_numParsedRows(0)
-	{}
+class ClusterReader {
+  public:
+  ClusterReader(bool zeroBasedIndexing = false)
+      : m_indexOffset(zeroBasedIndexing ? 0 : 1),
+        m_maxNodeIndex(0),
+        m_numParsedRows(0)
+  {
+  }
 
-	virtual ~ClusterReader() = default;
+  virtual ~ClusterReader() = default;
 
-	virtual void readData(const string filename);
+  virtual void readData(const string filename);
 
-	virtual void readTree(const string filename, InfoNode& infomapRoot);
+  virtual void readTree(const string filename, InfoNode& infomapRoot);
 
-	const std::map<unsigned int, unsigned int>& clusters() const
-	{
-		return m_clusters;
-	}
+  const std::map<unsigned int, unsigned int>& clusters() const
+  {
+    return m_clusters;
+  }
 
-	unsigned int maxNodeIndex() const
-	{
-		return m_maxNodeIndex;
-	}
+  unsigned int maxNodeIndex() const
+  {
+    return m_maxNodeIndex;
+  }
 
-	unsigned int numParsedRows() const
-	{
-		return m_numParsedRows;
-	}
+  unsigned int numParsedRows() const
+  {
+    return m_numParsedRows;
+  }
 
-protected:
-	virtual void parseClusterLine(std::string line);
+  protected:
+  virtual void parseClusterLine(std::string line);
 
-	unsigned int m_indexOffset;
-	unsigned int m_maxNodeIndex;
-	unsigned int m_numParsedRows;
-	std::map<unsigned int, unsigned int> m_clusters;
+  unsigned int m_indexOffset;
+  unsigned int m_maxNodeIndex;
+  unsigned int m_numParsedRows;
+  std::map<unsigned int, unsigned int> m_clusters;
 };
 
-}
+} // namespace infomap
 
 #endif /* CLUSTERREADER_H_ */

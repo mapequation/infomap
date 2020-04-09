@@ -37,50 +37,46 @@
 namespace infomap {
 
 class StateNetwork;
-	
+
 /**
  * Calculate flow on network based on different flow models
  */
-class FlowCalculator
-{
-public:
-   struct Link
-	{
-		Link(unsigned int sourceIndex = 0, unsigned int targetIndex = 0, double weight = 0.0) :
-			source(sourceIndex),
-			target(targetIndex),
-			weight(weight),
-			flow(weight)
-		{}
-		Link(const Link& other) = default;
-		unsigned int source;
-		unsigned int target;
-		double weight;
-		double flow;
-	};
+class FlowCalculator {
+  public:
+  struct Link {
+    Link(unsigned int sourceIndex = 0, unsigned int targetIndex = 0, double weight = 0.0) : source(sourceIndex),
+                                                                                            target(targetIndex),
+                                                                                            weight(weight),
+                                                                                            flow(weight)
+    {
+    }
+    Link(const Link& other) = default;
+    unsigned int source;
+    unsigned int target;
+    double weight;
+    double flow;
+  };
 
-	using LinkVec = std::vector<Link>;
+  using LinkVec = std::vector<Link>;
 
-	FlowCalculator() = default;
-	virtual ~FlowCalculator() = default;
+  FlowCalculator() = default;
+  virtual ~FlowCalculator() = default;
 
-	virtual void calculateFlow(StateNetwork& network, const Config& config);
+  virtual void calculateFlow(StateNetwork& network, const Config& config);
 
-	const std::vector<double>& getNodeFlow() const { return m_nodeFlow; }
-	const std::vector<double>& getNodeTeleportRates() const { return m_nodeTeleportRates; }
-	const LinkVec& getFlowLinks() const { return m_flowLinks; }
+  const std::vector<double>& getNodeFlow() const { return m_nodeFlow; }
+  const std::vector<double>& getNodeTeleportRates() const { return m_nodeTeleportRates; }
+  const LinkVec& getFlowLinks() const { return m_flowLinks; }
 
-protected:
+  protected:
+  void finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow = false);
 
-	void finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow = false);
-    
-    std::map<unsigned int, unsigned int> m_nodeIndexMap;
-	std::vector<double> m_nodeFlow;
-	std::vector<double> m_nodeTeleportRates;
-	LinkVec m_flowLinks;
-
+  std::map<unsigned int, unsigned int> m_nodeIndexMap;
+  std::vector<double> m_nodeFlow;
+  std::vector<double> m_nodeTeleportRates;
+  LinkVec m_flowLinks;
 };
 
-}
+} // namespace infomap
 
 #endif /* FLOWCALCULATOR_H_ */

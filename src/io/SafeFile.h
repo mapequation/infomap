@@ -41,7 +41,6 @@ using std::ifstream;
 using std::ofstream;
 
 
-
 /**
  * A wrapper for the C++ file stream class that automatically closes
  * the file stream when the destructor is called. Allocate it on the
@@ -56,40 +55,36 @@ using std::ofstream;
  * called Resource Acquisition Is Initialization (RAII).
  *
  */
-class SafeInFile : public ifstream
-{
-public:
-	SafeInFile(std::string filename, ios_base::openmode mode = ios_base::in)
-	: ifstream(filename.c_str(), mode)
-	{
-		if (fail())
-			throw FileOpenError(io::Str() << "Error opening file '" << filename <<
-					"'. Check that the path points to a file and that you have read permissions.");
-	}
+class SafeInFile : public ifstream {
+  public:
+  SafeInFile(std::string filename, ios_base::openmode mode = ios_base::in)
+      : ifstream(filename.c_str(), mode)
+  {
+    if (fail())
+      throw FileOpenError(io::Str() << "Error opening file '" << filename << "'. Check that the path points to a file and that you have read permissions.");
+  }
 
-	~SafeInFile()
-	{
-		if (is_open())
-			close();
-	}
+  ~SafeInFile()
+  {
+    if (is_open())
+      close();
+  }
 };
 
-class SafeOutFile : public ofstream
-{
-public:
-	SafeOutFile(std::string filename, ios_base::openmode mode = ios_base::out)
-	: ofstream(filename.c_str(), mode)
-	{
-		if (fail())
-			throw FileOpenError(io::Str() << "Error opening file '" << filename <<
-					"'. Check that the directory you are writing to exists and that you have write permissions.");
-	}
+class SafeOutFile : public ofstream {
+  public:
+  SafeOutFile(std::string filename, ios_base::openmode mode = ios_base::out)
+      : ofstream(filename.c_str(), mode)
+  {
+    if (fail())
+      throw FileOpenError(io::Str() << "Error opening file '" << filename << "'. Check that the directory you are writing to exists and that you have write permissions.");
+  }
 
-	~SafeOutFile()
-	{
-		if (is_open())
-			close();
-	}
+  ~SafeOutFile()
+  {
+    if (is_open())
+      close();
+  }
 };
 
 
@@ -263,22 +258,20 @@ public:
 
 // };
 
-inline
-bool isDirectoryWritable(const std::string& dir)
+inline bool isDirectoryWritable(const std::string& dir)
 {
-	std::string path = io::Str() << dir << "_1nf0m4p_.tmp";
-	bool ok = true;
-	try {
-		SafeOutFile out(path.c_str());
-	}
-	catch(const FileOpenError&) {
-		ok = false;
-	}
-	if (ok)
-		std::remove(path.c_str());
-	return ok;
+  std::string path = io::Str() << dir << "_1nf0m4p_.tmp";
+  bool ok = true;
+  try {
+    SafeOutFile out(path.c_str());
+  } catch (const FileOpenError&) {
+    ok = false;
+  }
+  if (ok)
+    std::remove(path.c_str());
+  return ok;
 }
 
-}
+} // namespace infomap
 
 #endif /* SAFEFILE_H_ */

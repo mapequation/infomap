@@ -17,40 +17,38 @@
 namespace infomap {
 
 struct InfomapWrapper : public InfomapCore {
-public:
+  public:
+  InfomapWrapper() : InfomapCore() {}
+  InfomapWrapper(const std::string flags) : InfomapCore(flags) {}
+  InfomapWrapper(const Config& conf) : InfomapCore(conf) {}
+  virtual ~InfomapWrapper() {}
 
-	InfomapWrapper() : InfomapCore() {}
-	InfomapWrapper(const std::string flags) : InfomapCore(flags) {}
-	InfomapWrapper(const Config& conf) : InfomapCore(conf) {}
-	virtual ~InfomapWrapper() {}
+  // ===================================================
+  // Wrapper methods
+  // ===================================================
 
-	// ===================================================
-	// Wrapper methods
-	// ===================================================
+  void readInputData(std::string filename = "", bool accumulate = true) { m_network.readInputData(filename, accumulate); }
 
-	void readInputData(std::string filename = "", bool accumulate = true) { m_network.readInputData(filename, accumulate); }
+  void addNode(unsigned int id) { m_network.addNode(id); }
+  void addNode(unsigned int id, std::string name) { m_network.addNode(id, name); }
+  void addNode(unsigned int id, double weight) { m_network.addNode(id, weight); }
+  void addNode(unsigned int id, std::string name, double weight) { m_network.addNode(id, name, weight); }
 
-	void addNode(unsigned int id) { m_network.addNode(id); }
-	void addNode(unsigned int id, std::string name) { m_network.addNode(id, name); }
-	void addNode(unsigned int id, double weight) { m_network.addNode(id, weight); }
-	void addNode(unsigned int id, std::string name, double weight) { m_network.addNode(id, name, weight); }
+  void addName(unsigned int id, std::string name) { m_network.addName(id, name); }
+  std::string getName(unsigned int id) const;
+  const std::map<unsigned int, std::string>& getNames() const { return m_network.names(); }
 
-	void addName(unsigned int id, std::string name) { m_network.addName(id, name); }
-	std::string getName(unsigned int id) const;
-	const std::map<unsigned int, std::string>& getNames() const { return m_network.names(); }
+  void addPhysicalNode(unsigned int id, std::string name = "") { m_network.addPhysicalNode(id, name); }
+  void addStateNode(unsigned int id, unsigned int physId) { m_network.addStateNode(id, physId); }
 
-	void addPhysicalNode(unsigned int id, std::string name = "") { m_network.addPhysicalNode(id, name); }
-	void addStateNode(unsigned int id, unsigned int physId) { m_network.addStateNode(id, physId); }
+  void addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0) { m_network.addLink(sourceId, targetId, weight); }
+  void addLink(unsigned int sourceId, unsigned int targetId, unsigned long weight) { m_network.addLink(sourceId, targetId, weight); }
+  void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight = 1.0) { m_network.addMultilayerLink(layer1, n1, layer2, n2, weight); }
 
-	void addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0) { m_network.addLink(sourceId, targetId, weight); }
-	void addLink(unsigned int sourceId, unsigned int targetId, unsigned long weight) { m_network.addLink(sourceId, targetId, weight); }
-	void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight = 1.0) { m_network.addMultilayerLink(layer1, n1, layer2, n2, weight); }
+  void setBipartiteStartId(unsigned int startId) { m_network.setBipartiteStartId(startId); }
 
-	void setBipartiteStartId(unsigned int startId) { m_network.setBipartiteStartId(startId); }
-
-	std::map<unsigned int, unsigned int> getModules(int level = 1, bool states = false);
-	std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false);
-
+  std::map<unsigned int, unsigned int> getModules(int level = 1, bool states = false);
+  std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false);
 };
 
 extern "C" {
@@ -64,33 +62,33 @@ struct InfomapLeafIterator;
 
 #ifndef SWIG
 
-struct InfomapWrapper *NewInfomap(const char *flags);
+struct InfomapWrapper* NewInfomap(const char* flags);
 
-void DestroyInfomap(struct InfomapWrapper *im);
+void DestroyInfomap(struct InfomapWrapper* im);
 
-void InfomapAddLink(struct InfomapWrapper *im, unsigned int sourceId,  unsigned int targetId, double weight);
+void InfomapAddLink(struct InfomapWrapper* im, unsigned int sourceId, unsigned int targetId, double weight);
 
-void InfomapRun(struct InfomapWrapper *im);
+void InfomapRun(struct InfomapWrapper* im);
 
-double Codelength(struct InfomapWrapper *im);
+double Codelength(struct InfomapWrapper* im);
 
-unsigned int NumModules(struct InfomapWrapper *im);
+unsigned int NumModules(struct InfomapWrapper* im);
 
-struct InfomapLeafIterator *NewIter(struct InfomapWrapper *im);
+struct InfomapLeafIterator* NewIter(struct InfomapWrapper* im);
 
-void DestroyIter(struct InfomapLeafIterator *it);
+void DestroyIter(struct InfomapLeafIterator* it);
 
-bool IsEnd(struct InfomapLeafIterator *it);
+bool IsEnd(struct InfomapLeafIterator* it);
 
-void Next(struct InfomapLeafIterator *it);
+void Next(struct InfomapLeafIterator* it);
 
-unsigned int Depth(struct InfomapLeafIterator *it);
+unsigned int Depth(struct InfomapLeafIterator* it);
 
-unsigned int NodeId(struct InfomapLeafIterator *it);
+unsigned int NodeId(struct InfomapLeafIterator* it);
 
-unsigned int ModuleIndex(struct InfomapLeafIterator *it);
+unsigned int ModuleIndex(struct InfomapLeafIterator* it);
 
-double Flow(struct InfomapLeafIterator *it);
+double Flow(struct InfomapLeafIterator* it);
 
 #endif // SWIG
 #ifdef __cplusplus

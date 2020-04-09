@@ -20,139 +20,158 @@
 namespace infomap {
 
 class InfomapCore : public InfomapBase {
-	using OptimizerPtr = std::unique_ptr<InfomapOptimizerBase>;
+  using OptimizerPtr = std::unique_ptr<InfomapOptimizerBase>;
 
-protected:
-//	using Base::EdgeType;
-//	using EdgeType = Base::EdgeType;
-	// using EdgeType = Edge<InfoNode>;
-public:
-	// template<typename... Args>
-	// InfomapCore(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
-	InfomapCore() : InfomapBase() { initOptimizer(); }
-	// InfomapCore(bool forceNoMemory = false) : InfomapBase() { initOptimizer(forceNoMemory); }
-	InfomapCore(const std::string flags) : InfomapBase(flags) { initOptimizer(); }
-	InfomapCore(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
-	virtual ~InfomapCore() {}
+  protected:
+  //	using Base::EdgeType;
+  //	using EdgeType = Base::EdgeType;
+  // using EdgeType = Edge<InfoNode>;
+  public:
+  // template<typename... Args>
+  // InfomapCore(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
+  InfomapCore() : InfomapBase() { initOptimizer(); }
+  // InfomapCore(bool forceNoMemory = false) : InfomapBase() { initOptimizer(forceNoMemory); }
+  InfomapCore(const std::string flags) : InfomapBase(flags) { initOptimizer(); }
+  InfomapCore(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
+  virtual ~InfomapCore() {}
 
-	// ===================================================
-	// IO
-	// ===================================================
+  // ===================================================
+  // IO
+  // ===================================================
 
-	virtual std::ostream& toString(std::ostream& out) const {
+  virtual std::ostream& toString(std::ostream& out) const
+  {
     return m_optimizer->toString(out);
   }
 
-	// ===================================================
-	// Getters
-	// ===================================================
+  // ===================================================
+  // Getters
+  // ===================================================
 
-	virtual double getCodelength() const {
-    return m_optimizer->getCodelength();  
+  virtual double getCodelength() const
+  {
+    return m_optimizer->getCodelength();
   }
 
-	virtual double getIndexCodelength() const {
-    return m_optimizer->getIndexCodelength();  
+  virtual double getIndexCodelength() const
+  {
+    return m_optimizer->getIndexCodelength();
   }
 
-	virtual double getModuleCodelength() const {
-    return m_optimizer->getModuleCodelength();  
+  virtual double getModuleCodelength() const
+  {
+    return m_optimizer->getModuleCodelength();
   }
 
-	virtual double getMetaCodelength(bool unweighted = false) const { 
-		return m_optimizer->getMetaCodelength(unweighted);
-	}
+  virtual double getMetaCodelength(bool unweighted = false) const
+  {
+    return m_optimizer->getMetaCodelength(unweighted);
+  }
 
-protected:
-	void initOptimizer(bool forceNoMemory = false)
-	{
-		if (this->haveMetaData()) {
-			m_optimizer = OptimizerPtr(new InfomapOptimizer<MetaMapEquation>());
-		} else if (haveMemory() && !forceNoMemory) {
-			m_optimizer = OptimizerPtr(new InfomapOptimizer<MemMapEquation>());
-		} else {
-			// m_optimizer = OptimizerPtr(new InfomapOptimizer<MapEquation>());
-			m_optimizer = OptimizerPtr(new InfomapOptimizer<BiasedMapEquation>());
-		}
+  protected:
+  void initOptimizer(bool forceNoMemory = false)
+  {
+    if (this->haveMetaData()) {
+      m_optimizer = OptimizerPtr(new InfomapOptimizer<MetaMapEquation>());
+    } else if (haveMemory() && !forceNoMemory) {
+      m_optimizer = OptimizerPtr(new InfomapOptimizer<MemMapEquation>());
+    } else {
+      // m_optimizer = OptimizerPtr(new InfomapOptimizer<MapEquation>());
+      m_optimizer = OptimizerPtr(new InfomapOptimizer<BiasedMapEquation>());
+    }
     m_optimizer->init(this);
-	}
+  }
 
-	virtual InfomapBase* getNewInfomapInstance() const {
+  virtual InfomapBase* getNewInfomapInstance() const
+  {
     return new InfomapCore();
   }
-	virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const {
+  virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const
+  {
     auto im = new InfomapCore();
-		im->initOptimizer(true);
-		return im;
+    im->initOptimizer(true);
+    return im;
   }
 
-	virtual unsigned int numActiveModules() const {
+  virtual unsigned int numActiveModules() const
+  {
     return m_optimizer->numActiveModules();
   }
 
-	// ===================================================
-	// Run: Init: *
-	// ===================================================
+  // ===================================================
+  // Run: Init: *
+  // ===================================================
 
-	// Init terms that is constant for the whole network
-	virtual void initNetwork() {
+  // Init terms that is constant for the whole network
+  virtual void initNetwork()
+  {
     return m_optimizer->initNetwork();
   }
 
-	virtual void initSuperNetwork() {
+  virtual void initSuperNetwork()
+  {
     return m_optimizer->initSuperNetwork();
   }
 
-	virtual double calcCodelength(const InfoNode& parent) const {
+  virtual double calcCodelength(const InfoNode& parent) const
+  {
     return m_optimizer->calcCodelength(parent);
   }
 
-	// ===================================================
-	// Run: Partition: *
-	// ===================================================
+  // ===================================================
+  // Run: Partition: *
+  // ===================================================
 
-	virtual void initPartition() {
+  virtual void initPartition()
+  {
     return m_optimizer->initPartition();
   }
 
-	virtual void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules) {
+  virtual void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
+  {
     return m_optimizer->moveActiveNodesToPredefinedModules(modules);
   }
 
-	virtual unsigned int optimizeActiveNetwork() {
+  virtual unsigned int optimizeActiveNetwork()
+  {
     return m_optimizer->optimizeActiveNetwork();
   }
-	
-	virtual unsigned int tryMoveEachNodeIntoBestModule() {
+
+  virtual unsigned int tryMoveEachNodeIntoBestModule()
+  {
     return m_optimizer->tryMoveEachNodeIntoBestModule();
   }
-	
-	// unsigned int tryMoveEachNodeIntoBestModuleLocal() {
+
+  // unsigned int tryMoveEachNodeIntoBestModuleLocal() {
   // }
 
-	virtual unsigned int tryMoveEachNodeIntoBestModuleInParallel() {
+  virtual unsigned int tryMoveEachNodeIntoBestModuleInParallel()
+  {
     return m_optimizer->tryMoveEachNodeIntoBestModuleInParallel();
   }
 
-	virtual void consolidateModules(bool replaceExistingModules = true) {
+  virtual void consolidateModules(bool replaceExistingModules = true)
+  {
     return m_optimizer->consolidateModules(replaceExistingModules);
   }
 
-	virtual bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false) {
+  virtual bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false)
+  {
     return m_optimizer->restoreConsolidatedOptimizationPointIfNoImprovement(forceRestore);
   }
 
-	// ===================================================
-	// Debug: *
-	// ===================================================
+  // ===================================================
+  // Debug: *
+  // ===================================================
 
-	virtual void printDebug() {
+  virtual void printDebug()
+  {
     return m_optimizer->printDebug();
   }
 
-	// ===================================================
-	// Protected members
-	// ===================================================
+  // ===================================================
+  // Protected members
+  // ===================================================
 
   OptimizerPtr m_optimizer;
 };
