@@ -3,6 +3,7 @@ BasedOnStyle: WebKit
 AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AlignAfterOpenBracket: Align
+AccessModifierOffset: -2
 BinPackArguments: 'false'
 BinPackParameters: 'false'
 BreakConstructorInitializers: BeforeColon
