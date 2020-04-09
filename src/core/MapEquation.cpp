@@ -155,11 +155,13 @@ double MapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent) cons
 
 	// H(x) = -xlog(x), T = q + SUM(p), q = exitFlow, p = enterFlow
 	// Normal format
-	// L = q * -log(q/T) + p * SUM(-log(p/T))
+	// L = q * -log(q/T) + SUM(p * -log(p/T))
 	// Compact format
 	// L = T * ( H(q/T) + SUM( H(p/T) ) )
 	// Expanded format
-	// L = q * -log(q) - q * -log(T) + SUM( p * -log(p) - p * -log(T) ) = T * log(T) - q*log(q) - SUM( p*log(p) )
+	// L = q * -log(q) - q * -log(T) + SUM( p * -log(p) - p * -log(T) ) 
+	// = T * log(T) - q*log(q) - SUM( p*log(p) )
+	// = -H(T) + H(q) + SUM(H(p))
 	// As T is not known, use expanded format to avoid two loops
 	double sumEnter = 0.0;
 	double sumEnterLogEnter = 0.0;
