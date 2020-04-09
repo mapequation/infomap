@@ -370,7 +370,7 @@ public:
 
   unsigned int firstDepthBelow() const;
 
-  auto numLeafMembers()
+  unsigned int numLeafMembers()
   {
     return m_numLeafMembers;
   }
@@ -380,17 +380,17 @@ public:
     return m_outEdges.empty();
   }
 
-  auto outDegree()
+  unsigned int outDegree()
   {
     return m_outEdges.size();
   }
 
-  auto inDegree()
+  unsigned int inDegree()
   {
     return m_inEdges.size();
   }
 
-  auto degree()
+  unsigned int degree()
   {
     return outDegree() + inDegree();
   }
