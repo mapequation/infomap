@@ -118,9 +118,9 @@ protected:
 	// Init
 	// ===================================================
 
-	void initMetaNodes(InfoNode& root);
+	// void initMetaNodes(InfoNode& root);
 
-	void initPartitionOfMetaNodes(std::vector<InfoNode*>& nodes);
+	// void initPartitionOfMetaNodes(std::vector<InfoNode*>& nodes);
 
 	// ===================================================
 	// Codelength
@@ -138,7 +138,7 @@ protected:
 	// Consolidation
 	// ===================================================
 
-	void updateMetaData(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
+	// void updateMetaData(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
 public:
 	// ===================================================
@@ -157,9 +157,9 @@ protected:
 	/**
 	 *  Get meta codelength of module of current node
 	 * @param addRemoveOrNothing +1, -1 or 0 to calculate codelength
-	 * as ifcurrent node was added, removed or untouched in current module
+	 * as if current node was added, removed or untouched in current module
 	 */
-	double getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing);
+	// double getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing);
 
 	// ===================================================
 	// Protected member variables
