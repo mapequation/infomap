@@ -27,7 +27,7 @@ namespace infomap {
 class InfomapBase;
 
 class InfoNode {
-  public:
+public:
   typedef Edge<InfoNode> EdgeType;
 
   // Iterators
@@ -73,7 +73,7 @@ class InfoNode {
   typedef IterWrapper<infomap_child_iterator> infomap_child_iterator_wrapper;
   typedef IterWrapper<const_infomap_child_iterator> const_infomap_child_iterator_wrapper;
 
-  public:
+public:
   FlowData data;
   unsigned int index = 0; // Temporary index used in finding best module
   //	unsigned int originalIndex = 0; // Index in the original network (for leaf nodes)
@@ -97,7 +97,7 @@ class InfoNode {
   MetaCollection metaCollection; // For modules
   std::vector<unsigned int> stateNodes; // For physically aggregated nodes
 
-  protected:
+protected:
   //	SubStructure m_subStructure;
   // std::unique_ptr<InfomapBase> m_infomap;
   unsigned int m_childDegree = 0;
@@ -110,7 +110,7 @@ class InfoNode {
   // std::unique_ptr<InfomapBase> m_infomap;
   InfomapBase* m_infomap = nullptr;
 
-  public:
+public:
   InfoNode(const FlowData& flowData)
       : data(flowData) {};
 
@@ -145,9 +145,7 @@ class InfoNode {
         metaCollection(other.metaCollection),
         m_childDegree(other.m_childDegree),
         m_childrenChanged(other.m_childrenChanged),
-        m_numLeafMembers(other.m_numLeafMembers)
-  {
-  }
+        m_numLeafMembers(other.m_numLeafMembers) {}
 
 
   ~InfoNode();
@@ -519,7 +517,7 @@ class InfoNode {
     return edge;
   }
 
-  private:
+private:
   void calcChildDegree();
 };
 

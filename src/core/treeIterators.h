@@ -53,11 +53,11 @@ class ChildIterator {
   typedef typename iterator_traits<NodePointerType>::reference reference;
   typedef typename iterator_traits<NodePointerType>::pointer pointer;
 
-  protected:
+protected:
   NodePointerType m_root = nullptr;
   NodePointerType m_current = nullptr;
 
-  public:
+public:
   ChildIterator() {}
 
   explicit ChildIterator(const NodePointerType& nodePointer)
@@ -153,7 +153,7 @@ class TreeIterator {
   typedef typename iterator_traits<NodePointerType>::reference reference;
   typedef typename iterator_traits<NodePointerType>::pointer pointer;
 
-  protected:
+protected:
   NodePointerType m_root = nullptr;
   NodePointerType m_current = nullptr;
   int m_moduleIndexLevel = -1;
@@ -161,7 +161,7 @@ class TreeIterator {
   std::deque<unsigned int> m_path; // The child index path to current node
   unsigned int m_depth = 0;
 
-  public:
+public:
   TreeIterator() {}
 
   TreeIterator(NodePointerType nodePointer, int moduleIndexLevel = -1)
@@ -381,7 +381,7 @@ struct node_iterator_base {
     return m_current == nullptr;
   }
 
-  protected:
+protected:
   NodePointerType m_current;
 };
 
@@ -389,7 +389,7 @@ template <typename NodePointerType>
 class DepthFirstIteratorBase : public node_iterator_base<NodePointerType> {
   typedef node_iterator_base<NodePointerType> Base;
 
-  public:
+public:
   DepthFirstIteratorBase()
       : Base(),
         m_root(nullptr),
@@ -424,7 +424,7 @@ class DepthFirstIteratorBase : public node_iterator_base<NodePointerType> {
     return m_depth;
   }
 
-  protected:
+protected:
   NodePointerType m_root;
   unsigned int m_depth;
   using Base::m_current;
@@ -440,7 +440,7 @@ template <typename NodePointerType, bool pre_t = true>
 class DepthFirstIterator : public DepthFirstIteratorBase<NodePointerType> {
   typedef DepthFirstIteratorBase<NodePointerType> Base;
 
-  public:
+public:
   DepthFirstIterator() : Base() {}
 
   explicit DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) {}
@@ -503,7 +503,7 @@ template <typename NodePointerType>
 class DepthFirstIterator<NodePointerType, false> : public DepthFirstIteratorBase<NodePointerType> {
   typedef DepthFirstIteratorBase<NodePointerType> Base;
 
-  public:
+public:
   DepthFirstIterator() : Base() {}
 
   explicit DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
@@ -576,7 +576,7 @@ template <typename NodePointerType>
 class LeafNodeIterator : public DepthFirstIteratorBase<NodePointerType> {
   typedef DepthFirstIteratorBase<NodePointerType> Base;
 
-  public:
+public:
   LeafNodeIterator() : Base() {}
 
   explicit LeafNodeIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
@@ -645,7 +645,7 @@ template <typename NodePointerType>
 class LeafModuleIterator : public DepthFirstIteratorBase<NodePointerType> {
   typedef DepthFirstIteratorBase<NodePointerType> Base;
 
-  public:
+public:
   LeafModuleIterator() : Base() {}
 
   explicit LeafModuleIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
@@ -723,7 +723,7 @@ template <typename NodePointerType> // pointer or const pointer
 class SiblingIterator : public node_iterator_base<NodePointerType> {
   typedef node_iterator_base<NodePointerType> Base;
 
-  public:
+public:
   typedef SiblingIterator<NodePointerType> self_type;
 
   SiblingIterator() : Base() {}

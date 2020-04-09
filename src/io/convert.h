@@ -191,8 +191,8 @@ namespace io {
   }
 
   class Str {
-public:
-    Str() {}
+  public:
+    Str() = default;
     template <class T>
     Str& operator<<(const T& t)
     {
@@ -209,7 +209,7 @@ public:
       return m_oss.str();
     }
 
-private:
+  private:
     std::ostringstream m_oss;
   };
 

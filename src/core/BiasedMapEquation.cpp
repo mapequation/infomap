@@ -99,9 +99,9 @@ void BiasedMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
 
 double BiasedMapEquation::calcCodelength(const InfoNode& parent) const
 {
-  return parent.isLeafModule() ? calcCodelengthOnModuleOfLeafNodes(parent) :
-                               // Use first-order model on index codebook
-      MapEquation::calcCodelengthOnModuleOfModules(parent);
+  return parent.isLeafModule()
+      ? calcCodelengthOnModuleOfLeafNodes(parent)
+      : MapEquation::calcCodelengthOnModuleOfModules(parent); // Use first-order model on index codebook
 }
 
 double BiasedMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const

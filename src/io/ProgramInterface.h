@@ -61,28 +61,32 @@ struct Option {
         isAdvanced(isAdvanced),
         requireArgument(requireArgument),
         incrementalArgument(false),
-        argumentName(argName)
-  {
-  }
+        argumentName(argName) {}
+
   virtual ~Option() = default;
+
   virtual bool parse(std::string const&)
   {
     used = true;
     return true;
   }
+
   virtual void set(bool value)
   {
     used = true;
     negated = !value;
   };
+
   Option& setHidden(bool value)
   {
     hidden = value;
     return *this;
   }
+
   virtual std::ostream& printValue(std::ostream& out) const { return out; }
   virtual std::string printValue() const { return ""; }
   virtual std::string printNumericValue() const { return ""; }
+
   friend std::ostream& operator<<(std::ostream& out, const Option& option)
   {
     out << option.longName;
@@ -92,6 +96,7 @@ struct Option {
     }
     return out;
   }
+
   char shortName;
   std::string longName;
   std::string description;
@@ -111,11 +116,13 @@ struct IncrementalOption : Option {
   {
     incrementalArgument = true;
   }
+
   virtual bool parse(std::string const& value)
   {
     Option::parse(value);
     return ++target;
   }
+
   virtual void set(bool value)
   {
     Option::set(value);
@@ -125,6 +132,7 @@ struct IncrementalOption : Option {
       --target;
     }
   }
+
   virtual std::ostream& printValue(std::ostream& out) const { return out << target; }
   virtual std::string printValue() const { return io::Str() << target; }
   virtual std::string printNumericValue() const { return ""; }
@@ -135,14 +143,14 @@ struct IncrementalOption : Option {
 template <typename T>
 struct ArgumentOption : Option {
   ArgumentOption(T& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced, std::string argName)
-      : Option(shortName, longName, desc, group, isAdvanced, true, argName), target(target)
-  {
-  }
+      : Option(shortName, longName, desc, group, isAdvanced, true, argName), target(target) {}
+
   virtual bool parse(std::string const& value)
   {
     Option::parse(value);
     return io::stringToValue(value, target);
   }
+
   virtual std::string printValue() const { return io::Str() << target; }
   virtual std::ostream& printValue(std::ostream& out) const { return out << target; }
   virtual std::string printNumericValue() const { return TypeInfo<T>::isNumeric() ? printValue() : ""; }
@@ -153,19 +161,20 @@ struct ArgumentOption : Option {
 template <>
 struct ArgumentOption<bool> : Option {
   ArgumentOption(bool& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced)
-      : Option(shortName, longName, desc, group, isAdvanced, false), target(target)
-  {
-  }
+      : Option(shortName, longName, desc, group, isAdvanced, false), target(target) {}
+
   virtual bool parse(std::string const& value)
   {
     Option::parse(value);
     return target = true;
   }
+
   virtual void set(bool value)
   {
     Option::set(value);
     target = value;
   }
+
   virtual std::ostream& printValue(std::ostream& out) const { return out << target; }
   virtual std::string printValue() const { return io::Str() << target; }
   virtual std::string printNumericValue() const { return ""; }
@@ -174,18 +183,17 @@ struct ArgumentOption<bool> : Option {
 };
 
 struct ParsedOption {
-  ParsedOption(const Option& opt) : shortName(opt.shortName),
-                                    longName(opt.longName),
-                                    description(opt.description),
-                                    group(opt.group),
-                                    isAdvanced(opt.isAdvanced),
-                                    requireArgument(opt.requireArgument),
-                                    incrementalArgument(opt.incrementalArgument),
-                                    argumentName(opt.argumentName),
-                                    negated(opt.negated),
-                                    value(opt.printValue())
-  {
-  }
+  ParsedOption(const Option& opt)
+      : shortName(opt.shortName),
+        longName(opt.longName),
+        description(opt.description),
+        group(opt.group),
+        isAdvanced(opt.isAdvanced),
+        requireArgument(opt.requireArgument),
+        incrementalArgument(opt.incrementalArgument),
+        argumentName(opt.argumentName),
+        negated(opt.negated),
+        value(opt.printValue()) {}
 
   friend std::ostream& operator<<(std::ostream& out, const ParsedOption& option)
   {
@@ -211,10 +219,10 @@ struct ParsedOption {
 
 struct TargetBase {
   TargetBase(std::string variableName, std::string desc, std::string group, bool isAdvanced)
-      : variableName(variableName), description(desc), group(group), isOptionalVector(false), isAdvanced(isAdvanced)
-  {
-  }
+      : variableName(variableName), description(desc), group(group), isOptionalVector(false), isAdvanced(isAdvanced) {}
+
   virtual ~TargetBase() = default;
+
   virtual bool parse(std::string const& value) = 0;
 
   std::string variableName;
@@ -227,9 +235,8 @@ struct TargetBase {
 template <typename T>
 struct Target : TargetBase {
   Target(T& target, std::string variableName, std::string desc, std::string group, bool isAdvanced)
-      : TargetBase(variableName, desc, group, isAdvanced), target(target)
-  {
-  }
+      : TargetBase(variableName, desc, group, isAdvanced), target(target) {}
+
   virtual ~Target() = default;
 
   virtual bool parse(std::string const& value)
@@ -247,6 +254,7 @@ struct OptionalTargets : TargetBase {
   {
     isOptionalVector = true;
   }
+
   virtual ~OptionalTargets() = default;
 
   virtual bool parse(std::string const& value)
@@ -257,11 +265,12 @@ struct OptionalTargets : TargetBase {
       targets.push_back(target);
     return ok;
   }
+
   std::vector<T>& targets;
 };
 
 class ProgramInterface {
-  public:
+public:
   ProgramInterface(std::string name, std::string shortDescription, std::string version);
   virtual ~ProgramInterface();
 
@@ -344,7 +353,7 @@ class ProgramInterface {
 
   unsigned int numRequiredArguments() { return m_nonOptionArguments.size() - m_numOptionalNonOptionArguments; }
 
-  private:
+private:
   void exitWithUsage(bool showAdvanced);
   void exitWithVersionInformation();
   void exitWithError(std::string message);

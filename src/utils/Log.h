@@ -17,24 +17,22 @@ namespace infomap {
 struct hideIf;
 
 class Log {
-  public:
+public:
   /**
-	 * Log when level is below or equal Log::verboseLevel()
-	 * and maxLevel is above or equal Log::verboseLevel()
-	 */
-  explicit Log(unsigned int level = 0, unsigned int maxLevel = std::numeric_limits<unsigned int>::max()) : m_level(level),
-                                                                                                           m_maxLevel(maxLevel),
-                                                                                                           m_visible(levelVisible(m_level, m_maxLevel)),
-                                                                                                           m_ostream(getOutputStream(m_level, m_maxLevel))
-  {
-  }
+   * Log when level is below or equal Log::verboseLevel()
+   * and maxLevel is above or equal Log::verboseLevel()
+   */
+  explicit Log(unsigned int level = 0, unsigned int maxLevel = std::numeric_limits<unsigned int>::max())
+      : m_level(level),
+        m_maxLevel(maxLevel),
+        m_visible(levelVisible(m_level, m_maxLevel)),
+        m_ostream(getOutputStream(m_level, m_maxLevel)) {}
 
-  explicit Log(const Log& other) : m_level(other.m_level),
-                                   m_maxLevel(other.m_maxLevel),
-                                   m_visible(other.m_visible),
-                                   m_ostream(other.m_ostream)
-  {
-  }
+  explicit Log(const Log& other)
+      : m_level(other.m_level),
+        m_maxLevel(other.m_maxLevel),
+        m_visible(other.m_visible),
+        m_ostream(other.m_ostream) {}
 
   Log& operator=(const Log& other)
   {
@@ -44,20 +42,11 @@ class Log {
     return *this;
   }
 
-  bool levelVisible()
-  {
-    return levelVisible(m_level, m_maxLevel);
-  }
+  bool levelVisible() const { return levelVisible(m_level, m_maxLevel); }
 
-  void hide(bool value)
-  {
-    m_visible = !value && levelVisible();
-  }
+  void hide(bool value) { m_visible = !value && levelVisible(); }
 
-  Log& operator<<(const hideIf& manip)
-  {
-    return *this;
-  }
+  Log& operator<<(const hideIf& manip) { return *this; }
 
   template <typename T>
   Log& operator<<(const T& data)
@@ -91,37 +80,25 @@ class Log {
     s_verboseLevel = level;
   }
 
-  static unsigned int verboseLevel()
-  {
-    return s_verboseLevel;
-  }
+  static unsigned int verboseLevel() { return s_verboseLevel; }
 
-  static void setSilent(bool silent)
-  {
-    s_silent = silent;
-  }
+  static void setSilent(bool silent) { s_silent = silent; }
 
-  static bool isSilent()
-  {
-    return s_silent;
-  }
+  static bool isSilent() { return s_silent; }
 
   static std::ostream& getOutputStream(/* [[maybe_unused]] */ unsigned int level, /* [[maybe_unused]] */ unsigned int maxLevel)
   {
     return std::cout;
   }
 
-  static std::streamsize precision()
-  {
-    return std::cout.precision();
-  }
+  static std::streamsize precision() { return std::cout.precision(); }
 
   static std::streamsize precision(std::streamsize precision)
   {
     return std::cout.precision(precision);
   }
 
-  private:
+private:
   unsigned int m_level;
   unsigned int m_maxLevel;
   bool m_visible;
@@ -132,7 +109,7 @@ class Log {
 };
 
 struct hideIf {
-  hideIf(bool value) : hide(value) {}
+  explicit hideIf(bool value) : hide(value) {}
 
   friend Log& operator<<(Log& out, const hideIf& manip)
   {

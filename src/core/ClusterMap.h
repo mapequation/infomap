@@ -26,9 +26,9 @@ struct NodePath {
 // using NodePaths = std::vector<NodePath>;
 
 struct NodePaths {
-  NodePaths(unsigned int size = 0) { reserve(size); }
+  explicit NodePaths(unsigned int size = 0) { reserve(size); }
   void reserve(unsigned int size) { nodePaths.reserve(size); }
-  auto size() { return nodePaths.size(); }
+  auto size() const { return nodePaths.size(); }
   void clear() { nodePaths.clear(); }
   void add(unsigned int nodeId, const Path& path)
   {
@@ -43,7 +43,7 @@ struct NodePaths {
 };
 
 class ClusterMap {
-  public:
+public:
   void readClusterData(const std::string& filename, bool includeFlow = false);
 
   const std::map<unsigned int, unsigned int>& clusterIds() const
@@ -62,11 +62,11 @@ class ClusterMap {
 
   bool isHigherOrder() const { return m_isHigherOrder; }
 
-  protected:
+protected:
   void readTree(const std::string& filename, /* [[maybe_unused]] */ bool includeFlow);
   void readClu(const std::string& filename, bool includeFlow);
 
-  private:
+private:
   std::map<unsigned int, unsigned int> m_clusterIds;
   std::map<unsigned int, double> m_flowData;
   NodePaths m_nodePaths;

@@ -44,7 +44,7 @@ class Random {
   RandGen m_randGen;
   uniform_uint_dist uniform;
 
-  public:
+public:
   Random(unsigned int seed = 123) : m_randGen(seed) {}
 
   void seed(unsigned int seedValue)
@@ -80,7 +80,7 @@ namespace infomap {
 class Random {
   MTRand m_randGen;
 
-  public:
+public:
   Random(unsigned int seed = 123) : m_randGen(seed) {}
 
   void seed(unsigned int seedValue)

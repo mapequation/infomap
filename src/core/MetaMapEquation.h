@@ -22,7 +22,7 @@ class InfoNode;
 class MetaMapEquation : protected MapEquation {
   using Base = MapEquation;
 
-  public:
+public:
   using FlowDataType = FlowData;
   using DeltaFlowDataType = DeltaFlow;
 
@@ -34,9 +34,7 @@ class MetaMapEquation : protected MapEquation {
         numMetaDataDimensions(other.numMetaDataDimensions),
         metaDataRate(other.metaDataRate),
         weightByFlow(other.weightByFlow),
-        metaCodelength(other.metaCodelength)
-  {
-  }
+        metaCodelength(other.metaCodelength) {}
 
   MetaMapEquation& operator=(const MetaMapEquation& other)
   {
@@ -124,7 +122,7 @@ class MetaMapEquation : protected MapEquation {
 
   void printDebug();
 
-  protected:
+protected:
   // ===================================================
   // Protected member functions
   // ===================================================
@@ -154,7 +152,7 @@ class MetaMapEquation : protected MapEquation {
 
   void updateMetaData(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
-  public:
+public:
   // ===================================================
   // Public member variables
   // ===================================================
@@ -163,7 +161,7 @@ class MetaMapEquation : protected MapEquation {
   using Base::indexCodelength;
   using Base::moduleCodelength;
 
-  protected:
+protected:
   // ===================================================
   // Protected member functions
   // ===================================================

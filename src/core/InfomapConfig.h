@@ -17,30 +17,31 @@ namespace infomap {
 
 template <typename Infomap>
 class InfomapConfig : public Config {
-  public:
-  InfomapConfig() {}
+public:
+  InfomapConfig() = default;
   InfomapConfig(const std::string flags) : Config(flags)
   {
-    m_rand.seed(this->seedToRandomNumberGenerator);
-    Log::precision(this->verboseNumberPrecision);
+    m_rand.seed(seedToRandomNumberGenerator);
+    Log::precision(verboseNumberPrecision);
   }
-  InfomapConfig(const Config& conf) : Config(conf),
-                                      m_rand(conf.seedToRandomNumberGenerator)
+  InfomapConfig(const Config& conf)
+      : Config(conf),
+        m_rand(conf.seedToRandomNumberGenerator)
   {
     Log::precision(conf.verboseNumberPrecision);
   }
-  virtual ~InfomapConfig() {}
+  virtual ~InfomapConfig() = default;
 
-  private:
+private:
   Infomap& get()
   {
     return static_cast<Infomap&>(*this);
   }
 
-  protected:
+protected:
   Random m_rand;
 
-  public:
+public:
   Config& getConfig()
   {
     return *this;

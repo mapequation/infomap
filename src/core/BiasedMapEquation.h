@@ -21,7 +21,7 @@ class InfoNode;
 class BiasedMapEquation : protected MapEquation {
   using Base = MapEquation;
 
-  public:
+public:
   using FlowDataType = FlowData;
   using DeltaFlowDataType = DeltaFlow;
 
@@ -44,7 +44,7 @@ class BiasedMapEquation : protected MapEquation {
     return *this;
   }
 
-  virtual ~BiasedMapEquation() {}
+  virtual ~BiasedMapEquation() = default;
 
   // ===================================================
   // Getters
@@ -114,7 +114,7 @@ class BiasedMapEquation : protected MapEquation {
 
   void printDebug();
 
-  protected:
+protected:
   // ===================================================
   // Protected member functions
   // ===================================================
@@ -151,7 +151,7 @@ class BiasedMapEquation : protected MapEquation {
 
   // void updateMetaData(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
-  public:
+public:
   // ===================================================
   // Public member variables
   // ===================================================
@@ -160,7 +160,7 @@ class BiasedMapEquation : protected MapEquation {
   using Base::indexCodelength;
   using Base::moduleCodelength;
 
-  protected:
+protected:
   // ===================================================
   // Protected member functions
   // ===================================================

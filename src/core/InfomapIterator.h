@@ -18,7 +18,7 @@ namespace infomap {
  * This iterator presupposes that the next pointer of a node can't reach a node with a different parent.
  */
 struct InfomapIterator {
-  protected:
+protected:
   InfoNode* m_root = nullptr;
   InfoNode* m_current = nullptr;
   int m_moduleIndexLevel = -1;
@@ -26,8 +26,8 @@ struct InfomapIterator {
   std::deque<unsigned int> m_path; // The tree path to current node (indexing starting from one!)
   unsigned int m_depth = 0;
 
-  public:
-  InfomapIterator() {}
+public:
+  InfomapIterator() = default;
 
   InfomapIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
       : m_root(nodePointer),
@@ -46,7 +46,7 @@ struct InfomapIterator {
   {
   }
 
-  virtual ~InfomapIterator() {}
+  virtual ~InfomapIterator() = default;
 
   virtual InfomapIterator& operator=(const InfomapIterator& other)
   {
@@ -148,18 +148,14 @@ struct InfomapIterator {
 };
 
 struct InfomapModuleIterator : public InfomapIterator {
-  public:
+public:
   InfomapModuleIterator() : InfomapIterator() {}
 
   InfomapModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
-      : InfomapIterator(nodePointer, moduleIndexLevel)
-  {
-  }
+      : InfomapIterator(nodePointer, moduleIndexLevel) {}
 
   InfomapModuleIterator(const InfomapModuleIterator& other)
-      : InfomapIterator(other)
-  {
-  }
+      : InfomapIterator(other) {}
 
   InfomapModuleIterator& operator=(const InfomapModuleIterator& other)
   {
@@ -183,7 +179,7 @@ struct InfomapModuleIterator : public InfomapIterator {
 };
 
 struct InfomapLeafModuleIterator : public InfomapIterator {
-  public:
+public:
   InfomapLeafModuleIterator() : InfomapIterator() {}
 
   InfomapLeafModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
@@ -205,8 +201,8 @@ struct InfomapLeafModuleIterator : public InfomapIterator {
   }
 
   /**
-	 * Iterate to first leaf module
-	 */
+   * Iterate to first leaf module
+   */
   void init();
 
   virtual InfomapIterator& operator++();
@@ -225,7 +221,7 @@ struct InfomapLeafModuleIterator : public InfomapIterator {
 };
 
 struct InfomapLeafIterator : public InfomapIterator {
-  public:
+public:
   InfomapLeafIterator() : InfomapIterator() {}
 
   InfomapLeafIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
@@ -247,8 +243,8 @@ struct InfomapLeafIterator : public InfomapIterator {
   }
 
   /**
-	 * Iterate to first leaf node
-	 */
+   * Iterate to first leaf node
+   */
   void init();
 
   virtual InfomapIterator& operator++();
@@ -272,31 +268,25 @@ struct InfomapLeafIterator : public InfomapIterator {
  * when leaving the module. The tree will not be modified.
  */
 struct InfomapIteratorPhysical : public InfomapIterator {
-  protected:
+protected:
   std::map<unsigned int, InfoNode> m_physNodes;
   std::map<unsigned int, InfoNode>::iterator m_physIter;
   InfomapIterator m_oldIter;
 
-  public:
+public:
   InfomapIteratorPhysical() : InfomapIterator() {}
 
   InfomapIteratorPhysical(InfoNode* nodePointer, int moduleIndexLevel = -1)
-      : InfomapIterator(nodePointer, moduleIndexLevel)
-  {
-  }
+      : InfomapIterator(nodePointer, moduleIndexLevel) {}
 
   InfomapIteratorPhysical(const InfomapIteratorPhysical& other)
       : InfomapIterator(other),
         m_physNodes(other.m_physNodes),
         m_physIter(other.m_physIter),
-        m_oldIter(other.m_oldIter)
-  {
-  }
+        m_oldIter(other.m_oldIter) {}
 
   InfomapIteratorPhysical(const InfomapIterator& other)
-      : InfomapIterator(other)
-  {
-  }
+      : InfomapIterator(other) {}
 
   InfomapIteratorPhysical& operator=(const InfomapIteratorPhysical& other)
   {
@@ -334,11 +324,9 @@ struct InfomapIteratorPhysical : public InfomapIterator {
  * when leaving the module. The tree will not be modified.
  */
 struct InfomapLeafIteratorPhysical : public InfomapIteratorPhysical {
-  public:
+public:
   InfomapLeafIteratorPhysical()
-      : InfomapIteratorPhysical()
-  {
-  }
+      : InfomapIteratorPhysical() {}
 
   InfomapLeafIteratorPhysical(InfoNode* nodePointer, int moduleIndexLevel = -1)
       : InfomapIteratorPhysical(nodePointer, moduleIndexLevel)
@@ -359,8 +347,8 @@ struct InfomapLeafIteratorPhysical : public InfomapIteratorPhysical {
   }
 
   /**
-	 * Iterate to first leaf node
-	 */
+   * Iterate to first leaf node
+   */
   void init();
 
   virtual InfomapIterator& operator++();
@@ -384,7 +372,7 @@ struct InfomapLeafIteratorPhysical : public InfomapIteratorPhysical {
  * on the way
  */
 struct InfomapParentIterator {
-  protected:
+protected:
   // InfoNode* m_root = nullptr;
   InfoNode* m_current = nullptr;
   // int m_moduleIndexLevel = -1;
@@ -392,20 +380,16 @@ struct InfomapParentIterator {
   // std::deque<unsigned int> m_path; // The child index path to current node
   // unsigned int m_depth = 0;
 
-  public:
-  InfomapParentIterator() {}
+public:
+  InfomapParentIterator() = default;
 
   InfomapParentIterator(InfoNode* nodePointer)
-      : m_current(nodePointer)
-  {
-  }
+      : m_current(nodePointer) {}
 
   InfomapParentIterator(const InfomapParentIterator& other)
-      : m_current(other.m_current)
-  {
-  }
+      : m_current(other.m_current) {}
 
-  virtual ~InfomapParentIterator() {}
+  virtual ~InfomapParentIterator() = default;
 
   InfomapParentIterator& operator=(const InfomapParentIterator& other)
   {

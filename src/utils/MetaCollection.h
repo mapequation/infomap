@@ -14,16 +14,20 @@ namespace infomap {
 
 struct FlowCount {
   FlowCount() = default;
+
   explicit FlowCount(double flow)
       : flow(flow), count(1) {}
+
   FlowCount(const FlowCount& other)
       : flow(other.flow), count(other.count) {}
+
   FlowCount& operator=(const FlowCount& other)
   {
     flow = other.flow;
     count = other.count;
     return *this;
   }
+
   FlowCount& operator+=(const FlowCount& o)
   {
     // std::cout << " [[FlowCount " << *this << " += " << o << " --> ";
@@ -32,6 +36,7 @@ struct FlowCount {
     // std::cout << *this << "]] ";
     return *this;
   }
+
   FlowCount& operator+=(double f)
   {
     // std::cout << " [FlowCount " << *this << " += " << f << " --> ";
@@ -40,27 +45,32 @@ struct FlowCount {
     // std::cout << *this << "] ";
     return *this;
   }
+
   FlowCount& operator-=(const FlowCount& o)
   {
     flow -= o.flow;
     count -= o.count;
     return *this;
   }
+
   FlowCount& operator-=(double f)
   {
     flow -= f;
     --count;
     return *this;
   }
+
   friend std::ostream& operator<<(std::ostream& out, const FlowCount& o)
   {
     return out << o.flow << "/" << o.count;
   }
+
   void reset()
   {
     flow = 0.0;
     count = 0;
   }
+
   bool empty() const { return count == 0; }
   double flow = 0.0;
   unsigned int count = 0;
@@ -70,20 +80,14 @@ struct FlowCount {
 using MetaToFlowCount = std::map<unsigned int, FlowCount>; // metaId -> (flow,count)
 
 class MetaCollection {
-  protected:
+protected:
   FlowCount m_total;
   MetaToFlowCount m_metaToFlowCount;
 
-  public:
-  unsigned int size() const
-  {
-    return m_metaToFlowCount.size();
-  }
+public:
+  unsigned int size() const { return m_metaToFlowCount.size(); }
 
-  bool empty() const
-  {
-    return m_metaToFlowCount.empty();
-  }
+  bool empty() const { return m_metaToFlowCount.empty(); }
 
   MetaToFlowCount::iterator begin() { return m_metaToFlowCount.begin(); }
   MetaToFlowCount::iterator end() { return m_metaToFlowCount.end(); }

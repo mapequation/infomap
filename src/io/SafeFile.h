@@ -56,7 +56,7 @@ using std::ofstream;
  *
  */
 class SafeInFile : public ifstream {
-  public:
+public:
   SafeInFile(std::string filename, ios_base::openmode mode = ios_base::in)
       : ifstream(filename.c_str(), mode)
   {
@@ -72,7 +72,7 @@ class SafeInFile : public ifstream {
 };
 
 class SafeOutFile : public ofstream {
-  public:
+public:
   SafeOutFile(std::string filename, ios_base::openmode mode = ios_base::out)
       : ofstream(filename.c_str(), mode)
   {

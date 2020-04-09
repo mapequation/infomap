@@ -25,7 +25,7 @@ class InfoNode;
 // struct Config;
 
 class MapEquation {
-  public:
+public:
   using FlowDataType = FlowData;
   // using DeltaFlowDataType = MemDeltaFlow;
   using DeltaFlowDataType = DeltaFlow;
@@ -43,9 +43,7 @@ class MapEquation {
         enterFlow(other.enterFlow),
         enterFlow_log_enterFlow(other.enterFlow_log_enterFlow),
         exitNetworkFlow(other.exitNetworkFlow),
-        exitNetworkFlow_log_exitNetworkFlow(other.exitNetworkFlow_log_exitNetworkFlow)
-  {
-  }
+        exitNetworkFlow_log_exitNetworkFlow(other.exitNetworkFlow_log_exitNetworkFlow) {}
 
   MapEquation& operator=(const MapEquation& other)
   {
@@ -135,7 +133,7 @@ class MapEquation {
   void printDebug();
 
 
-  protected:
+protected:
   // ===================================================
   // Protected member functions
   // ===================================================
@@ -151,7 +149,7 @@ class MapEquation {
   void calculateCodelengthFromCodelengthTerms();
 
 
-  public:
+public:
   // ===================================================
   // Public member variables
   // ===================================================
@@ -160,7 +158,7 @@ class MapEquation {
   double indexCodelength = 0.0;
   double moduleCodelength = 0.0;
 
-  protected:
+protected:
   // ===================================================
   // Protected member variables
   // ===================================================

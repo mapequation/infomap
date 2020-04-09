@@ -22,18 +22,18 @@ struct PendingModule {
 
 #include <deque>
 class PartitionQueue {
-  public:
+public:
   typedef std::deque<PendingModule>::size_type size_t;
-  PartitionQueue() : level(1),
-                     numNonTrivialModules(0),
-                     flow(0.0),
-                     nonTrivialFlow(0.0),
-                     skip(false),
-                     indexCodelength(0.0),
-                     leafCodelength(0.0),
-                     moduleCodelength(0.0)
-  {
-  }
+
+  PartitionQueue()
+      : level(1),
+        numNonTrivialModules(0),
+        flow(0.0),
+        nonTrivialFlow(0.0),
+        skip(false),
+        indexCodelength(0.0),
+        leafCodelength(0.0),
+        moduleCodelength(0.0) {}
 
   void swap(PartitionQueue& other)
   {
@@ -61,7 +61,7 @@ class PartitionQueue {
   double leafCodelength; // Consolidated
   double moduleCodelength; // Left to improve on next level
 
-  private:
+private:
   std::deque<PendingModule> m_queue;
 };
 

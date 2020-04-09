@@ -35,7 +35,7 @@ namespace infomap {
 
 
 class Stopwatch {
-  public:
+public:
   using Clock = std::chrono::high_resolution_clock;
   using TimeType = std::chrono::time_point<Clock>;
 
@@ -120,7 +120,7 @@ class Stopwatch {
   // 	return Clock::now() * 1000.0 / CLOCKS_PER_SEC;
   // }
 
-  private:
+private:
   TimeType m_start, m_stop;
   bool m_running;
 };
@@ -134,7 +134,7 @@ class Stopwatch {
 namespace infomap {
 
 class Stopwatch {
-  public:
+public:
   explicit Stopwatch(bool startImmediately)
       : m_start(0), m_stop(0), m_running(false)
   {
@@ -206,7 +206,7 @@ class Stopwatch {
     return out;
   }
 
-  private:
+private:
   std::clock_t m_start, m_stop;
   bool m_running;
 };

@@ -25,7 +25,7 @@ struct MemNodeSet;
 class MemMapEquation : protected MapEquation {
   using Base = MapEquation;
 
-  public:
+public:
   using FlowDataType = FlowData;
   using DeltaFlowDataType = MemDeltaFlow;
 
@@ -35,9 +35,7 @@ class MemMapEquation : protected MapEquation {
       : MapEquation(other),
         m_physToModuleToMemNodes(other.m_physToModuleToMemNodes),
         m_numPhysicalNodes(other.m_numPhysicalNodes),
-        m_memoryContributionsAdded(other.m_memoryContributionsAdded)
-  {
-  }
+        m_memoryContributionsAdded(other.m_memoryContributionsAdded) {}
 
   MemMapEquation& operator=(const MemMapEquation& other)
   {
@@ -116,7 +114,7 @@ class MemMapEquation : protected MapEquation {
 
   void printDebug();
 
-  protected:
+protected:
   // ===================================================
   // Protected member functions
   // ===================================================
@@ -150,7 +148,7 @@ class MemMapEquation : protected MapEquation {
 
   void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
 
-  public:
+public:
   // ===================================================
   // Public member variables
   // ===================================================
@@ -159,7 +157,7 @@ class MemMapEquation : protected MapEquation {
   using Base::indexCodelength;
   using Base::moduleCodelength;
 
-  protected:
+protected:
   // ===================================================
   // Protected member variables
   // ===================================================

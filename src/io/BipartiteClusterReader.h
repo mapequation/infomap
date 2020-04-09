@@ -13,12 +13,11 @@
 namespace infomap {
 
 class BipartiteClusterReader : public ClusterReader {
-  public:
+public:
   BipartiteClusterReader(bool zeroBasedIndexing = false)
       : ClusterReader(zeroBasedIndexing),
-        m_maxFeatureNodeIndex(0)
-  {
-  }
+        m_maxFeatureNodeIndex(0) {}
+
   virtual ~BipartiteClusterReader() {}
 
   const std::map<unsigned int, unsigned int>& featureClusters() const
@@ -31,7 +30,7 @@ class BipartiteClusterReader : public ClusterReader {
     return m_maxFeatureNodeIndex;
   }
 
-  protected:
+protected:
   virtual void parseClusterLine(std::string line);
 
   std::map<unsigned int, unsigned int> m_featureClusters;

@@ -47,7 +47,7 @@ struct Weight;
 struct BipartiteLink;
 
 class Network : public StateNetwork {
-  protected:
+protected:
   // Helpers
   std::istringstream m_extractor;
 
@@ -78,34 +78,31 @@ class Network : public StateNetwork {
   // 	{ "general", {"*Vertices", "*States", "*Edges", "*Arcs", "*Links", "*Context"} }
   // };
 
-  public:
-  Network()
-      : StateNetwork() { initValidHeadings(); }
-  Network(const Config& config)
-      : StateNetwork(config) { initValidHeadings(); }
-  Network(std::string flags)
-      : StateNetwork(flags) { initValidHeadings(); }
-  virtual ~Network() {}
+public:
+  Network() : StateNetwork() { initValidHeadings(); }
+  explicit Network(const Config& config) : StateNetwork(config) { initValidHeadings(); }
+  explicit Network(std::string flags) : StateNetwork(flags) { initValidHeadings(); }
+  virtual ~Network() = default;
 
   virtual void clear();
 
   /**
-	 * Parse network data from file and generate network
-	 * @param filename input network
-	 * @param accumulate add to possibly existing network data (default), else clear before.
-	 */
+    * Parse network data from file and generate network
+    * @param filename input network
+    * @param accumulate add to possibly existing network data (default), else clear before.
+    */
   virtual void readInputData(std::string filename = "", bool accumulate = true);
 
   /**
-	 * Init categorical meta data on all nodes from a file with the following format:
-	 * # nodeId metaData
-	 * 1 1
-	 * 2 1
-	 * 3 2
-	 * 4 2
-	 * 5 3
-	 * @param filename input filename for metadata
-	 */
+   * Init categorical meta data on all nodes from a file with the following format:
+   * # nodeId metaData
+   * 1 1
+   * 2 1
+   * 3 2
+   * 4 2
+   * 5 3
+   * @param filename input filename for metadata
+   */
   virtual void readMetaData(std::string filename);
 
 
@@ -126,22 +123,22 @@ class Network : public StateNetwork {
   void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight);
 
   /**
-	 * Create an intra-layer link
-	 */
+   * Create an intra-layer link
+   */
   void addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsigned int n2, double weight);
 
   /**
-	 * Create links between (layer1,n) and (layer2,m) for all m connected to n in layer 2.
-	 * The weight is distributed proportionally.
-	 * TODO: This is done later..
-	 */
+   * Create links between (layer1,n) and (layer2,m) for all m connected to n in layer 2.
+   * The weight is distributed proportionally.
+   * TODO: This is done later..
+   */
   void addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight);
 
   void addMetaData(unsigned int nodeId, int meta);
 
   void addMetaData(unsigned int nodeId, const std::vector<int>& metaData);
 
-  protected:
+protected:
   void initValidHeadings();
 
   void parsePajekNetwork(std::string filename);
@@ -151,7 +148,7 @@ class Network : public StateNetwork {
   void parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings, std::string startHeading = "");
 
   /**
-	 * Parse a bipartite network with the following format
+   * Parse a bipartite network with the following format
 # A bipartite network with node names
 *Vertices 5
 1 "Node 1"
@@ -165,34 +162,34 @@ class Network : public StateNetwork {
 4 2
 5 2
 5 3
-	 */
+   */
   void parseBipartiteNetwork(std::string filename);
   void parseMultilayerNetwork(std::string filename);
 
   // Helper methods
 
   /**
-	 * Parse vertices under the heading
-	 * @return The line after the vertices
-	 */
+   * Parse vertices under the heading
+   * @return The line after the vertices
+   */
   std::string parseVertices(std::ifstream& file, std::string heading);
   std::string parseStateNodes(std::ifstream& file, std::string heading);
 
   std::string parseLinks(std::ifstream& file);
 
   /**
-	 * Parse multilayer links from a *multilayer section
-	 */
+   * Parse multilayer links from a *multilayer section
+   */
   std::string parseMultilayerLinks(std::ifstream& file);
 
   /**
-	 * Parse multilayer links from an *intra section
-	 */
+   * Parse multilayer links from an *intra section
+   */
   std::string parseMultilayerIntraLinks(std::ifstream& file);
 
   /**
-	 * Parse multilayer links from an *inter section
-	 */
+   * Parse multilayer links from an *inter section
+   */
   std::string parseMultilayerInterLinks(std::ifstream& file);
 
   std::string parseBipartiteLinks(std::ifstream& file, std::string heading);
@@ -203,37 +200,37 @@ class Network : public StateNetwork {
   void parseStateNode(const std::string& line, StateNetwork::StateNode& stateNode);
 
   /**
-	 * Parse a string of link data.
-	 * If no weight data can be extracted, the default value 1.0 will be used.
-	 * @throws an error if not both node ids can be extracted.
-	 */
+   * Parse a string of link data.
+   * If no weight data can be extracted, the default value 1.0 will be used.
+   * @throws an error if not both node ids can be extracted.
+   */
   void parseLink(const std::string& line, unsigned int& n1, unsigned int& n2, double& weight);
 
   /**
-	 * Parse a string of multilayer link data.
-	 * If no weight data can be extracted, the default value 1.0 will be used.
-	 * @throws an error if not both node and layer ids can be extracted.
-	 */
+   * Parse a string of multilayer link data.
+   * If no weight data can be extracted, the default value 1.0 will be used.
+   * @throws an error if not both node and layer ids can be extracted.
+   */
   void parseMultilayerLink(const std::string& line, unsigned int& layer1, unsigned int& n1, unsigned int& layer2, unsigned int& n2, double& weight);
 
   /**
-	 * Parse a string of intra-multilayer link data.
-	 * If no weight data can be extracted, the default value 1.0 will be used.
-	 * @throws an error if not both node and layer ids can be extracted.
-	 */
+   * Parse a string of intra-multilayer link data.
+   * If no weight data can be extracted, the default value 1.0 will be used.
+   * @throws an error if not both node and layer ids can be extracted.
+   */
   void parseMultilayerIntraLink(const std::string& line, unsigned int& layer, unsigned int& n1, unsigned int& n2, double& weight);
 
   /**
-	 * Parse a string of inter-multilayer link data.
-	 * If no weight data can be extracted, the default value 1.0 will be used.
-	 * @throws an error if not both node and layer ids can be extracted.
-	 */
+   * Parse a string of inter-multilayer link data.
+   * If no weight data can be extracted, the default value 1.0 will be used.
+   * @throws an error if not both node and layer ids can be extracted.
+   */
   void parseMultilayerInterLink(const std::string& line, unsigned int& layer1, unsigned int& n, unsigned int& layer2, double& weight);
 
   /**
-	 * Create state node corresponding to this multilayer node if not already exist
-	 * @return state node id
-	 */
+   * Create state node corresponding to this multilayer node if not already exist
+   * @return state node id
+   */
   unsigned int addMultilayerNode(unsigned int layerId, unsigned int physicalId);
 
   void printSummary();
@@ -241,7 +238,7 @@ class Network : public StateNetwork {
 
 struct LayerNode {
   unsigned int layer, node;
-  LayerNode(unsigned int layer = 0, unsigned int node = 0) : layer(layer), node(node) {}
+  explicit LayerNode(unsigned int layer = 0, unsigned int node = 0) : layer(layer), node(node) {}
 
   bool operator<(const LayerNode other) const
   {
@@ -251,7 +248,7 @@ struct LayerNode {
 
 struct Bigram {
   unsigned int first, second;
-  Bigram(unsigned int first = 0, unsigned int second = 0) : first(first), second(second) {}
+  explicit Bigram(unsigned int first = 0, unsigned int second = 0) : first(first), second(second) {}
 
   bool operator<(const Bigram other) const
   {
@@ -262,7 +259,7 @@ struct Bigram {
 struct BipartiteLink {
   unsigned int featureNode, node;
   bool swapOrder;
-  BipartiteLink(unsigned int featureNode = 0, unsigned int node = 0, bool swapOrder = false)
+  explicit BipartiteLink(unsigned int featureNode = 0, unsigned int node = 0, bool swapOrder = false)
       : featureNode(featureNode), node(node), swapOrder(swapOrder) {}
 
   bool operator<(const BipartiteLink other) const
@@ -274,7 +271,7 @@ struct BipartiteLink {
 // Struct to make the weight initialized to zero by default in a map
 struct Weight {
   double weight;
-  Weight(double weight = 0) : weight(weight) {}
+  explicit Weight(double weight = 0) : weight(weight) {}
 
   Weight& operator+=(double w)
   {
@@ -285,15 +282,11 @@ struct Weight {
 
 template <typename key_t, typename subkey_t, typename value_t>
 class MapMap {
-  public:
+public:
   typedef std::map<subkey_t, value_t> submap_t;
   typedef std::map<key_t, submap_t> map_t;
-  MapMap() : m_size(0),
-             m_numAggregations(0),
-             m_sumValue(0)
-  {
-  }
-  virtual ~MapMap() {}
+  MapMap() : m_size(0), m_numAggregations(0), m_sumValue(0) {}
+  virtual ~MapMap() = default;
 
   bool insert(key_t key1, subkey_t key2, value_t value)
   {
@@ -317,14 +310,14 @@ class MapMap {
     return true;
   }
 
-  unsigned int size() { return m_size; }
-  unsigned int numAggregations() { return m_numAggregations; }
-  value_t sumValue() { return m_sumValue; }
+  unsigned int size() const { return m_size; }
+  unsigned int numAggregations() const { return m_numAggregations; }
+  value_t sumValue() const { return m_sumValue; }
   map_t& data() { return m_data; }
   const map_t& data() const { return m_data; }
 
 
-  private:
+private:
   map_t m_data;
   unsigned int m_size;
   unsigned int m_numAggregations;
@@ -335,12 +328,12 @@ typedef MapMap<unsigned int, unsigned int, double> LinkMapMap;
 
 template <typename key_t, typename value_t>
 class EasyMap : public std::map<key_t, value_t> {
-  public:
+public:
   typedef std::map<key_t, value_t> map_t;
   typedef EasyMap<key_t, value_t> self_t;
   value_t& getOrSet(const key_t& key, value_t defaultValue = 0)
   {
-    typename self_t::iterator it = this->lower_bound(key);
+    typename self_t::iterator it = lower_bound(key);
     if (it != this->end() && it->first == key)
       return it->second;
     return this->insert(it, std::make_pair(key, defaultValue))->second;
@@ -350,8 +343,7 @@ class EasyMap : public std::map<key_t, value_t> {
 struct Triple {
   Triple() : n1(0), n2(0), n3(0) {}
   Triple(unsigned int value1, unsigned int value2, unsigned int value3) : n1(value1), n2(value2), n3(value3) {}
-  Triple(const Triple& other) : n1(other.n1), n2(other.n2), n3(other.n3) {}
-  ~Triple() {}
+  Triple(const Triple& other) = default;
 
   bool operator<(const Triple& other) const
   {

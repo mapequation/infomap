@@ -11,16 +11,16 @@
 namespace infomap {
 
 struct FlowData {
-  FlowData(double flow = 0.0) : flow(flow),
-                                enterFlow(0.0),
-                                exitFlow(0.0)
-  {
-  }
-  FlowData(const FlowData& other) : flow(other.flow),
-                                    enterFlow(other.enterFlow),
-                                    exitFlow(other.exitFlow)
-  {
-  }
+  FlowData(double flow = 0.0)
+      : flow(flow),
+        enterFlow(0.0),
+        exitFlow(0.0) {}
+
+  FlowData(const FlowData& other)
+      : flow(other.flow),
+        enterFlow(other.enterFlow),
+        exitFlow(other.exitFlow) {}
+
   FlowData& operator=(const FlowData& other)
   {
     flow = other.flow;
@@ -64,7 +64,7 @@ struct DeltaFlow {
 
   virtual ~DeltaFlow() = default;
 
-  DeltaFlow() {}
+  DeltaFlow() = default;
 
   explicit DeltaFlow(unsigned int module, double deltaExit, double deltaEnter)
       : module(module),
@@ -149,11 +149,11 @@ struct MemDeltaFlow : DeltaFlow {
 
 
 struct PhysData {
-  PhysData(unsigned int physNodeIndex, double sumFlowFromM2Node = 0.0)
-      : physNodeIndex(physNodeIndex), sumFlowFromM2Node(sumFlowFromM2Node)
-  {
-  }
-  PhysData(const PhysData& other) : physNodeIndex(other.physNodeIndex), sumFlowFromM2Node(other.sumFlowFromM2Node) {}
+  explicit PhysData(unsigned int physNodeIndex, double sumFlowFromM2Node = 0.0)
+      : physNodeIndex(physNodeIndex), sumFlowFromM2Node(sumFlowFromM2Node) {}
+
+  PhysData(const PhysData& other) = default;
+
   unsigned int physNodeIndex;
   double sumFlowFromM2Node; // The amount of flow from the memory node in this physical node
 

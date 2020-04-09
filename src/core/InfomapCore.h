@@ -22,11 +22,11 @@ namespace infomap {
 class InfomapCore : public InfomapBase {
   using OptimizerPtr = std::unique_ptr<InfomapOptimizerBase>;
 
-  protected:
+protected:
   //	using Base::EdgeType;
   //	using EdgeType = Base::EdgeType;
   // using EdgeType = Edge<InfoNode>;
-  public:
+public:
   // template<typename... Args>
   // InfomapCore(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
   InfomapCore() : InfomapBase() { initOptimizer(); }
@@ -68,10 +68,10 @@ class InfomapCore : public InfomapBase {
     return m_optimizer->getMetaCodelength(unweighted);
   }
 
-  protected:
+protected:
   void initOptimizer(bool forceNoMemory = false)
   {
-    if (this->haveMetaData()) {
+    if (haveMetaData()) {
       m_optimizer = OptimizerPtr(new InfomapOptimizer<MetaMapEquation>());
     } else if (haveMemory() && !forceNoMemory) {
       m_optimizer = OptimizerPtr(new InfomapOptimizer<MemMapEquation>());

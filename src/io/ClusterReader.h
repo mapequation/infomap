@@ -38,13 +38,11 @@ namespace infomap {
 using std::string;
 
 class ClusterReader {
-  public:
+public:
   ClusterReader(bool zeroBasedIndexing = false)
       : m_indexOffset(zeroBasedIndexing ? 0 : 1),
         m_maxNodeIndex(0),
-        m_numParsedRows(0)
-  {
-  }
+        m_numParsedRows(0) {}
 
   virtual ~ClusterReader() = default;
 
@@ -67,7 +65,7 @@ class ClusterReader {
     return m_numParsedRows;
   }
 
-  protected:
+protected:
   virtual void parseClusterLine(std::string line);
 
   unsigned int m_indexOffset;

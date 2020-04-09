@@ -17,7 +17,7 @@
 namespace infomap {
 
 struct InfomapWrapper : public InfomapCore {
-  public:
+public:
   InfomapWrapper() : InfomapCore() {}
   InfomapWrapper(const std::string flags) : InfomapCore(flags) {}
   InfomapWrapper(const Config& conf) : InfomapCore(conf) {}

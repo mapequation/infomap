@@ -23,13 +23,13 @@ class InfomapOptimizer : public InfomapOptimizerBase {
   // using FlowDataType = typename Objective::FlowDataType;
   using DeltaFlowDataType = typename Objective::DeltaFlowDataType;
 
-  protected:
+protected:
   using EdgeType = Edge<InfoNode>;
 
-  public:
-  InfomapOptimizer() {}
+public:
+  InfomapOptimizer() = default;
 
-  virtual ~InfomapOptimizer() {}
+  virtual ~InfomapOptimizer() = default;
 
   virtual void init(InfomapBase* infomap);
 
@@ -53,7 +53,7 @@ class InfomapOptimizer : public InfomapOptimizerBase {
 
   virtual bool haveMemory() const;
 
-  protected:
+protected:
   // virtual InfomapBase& getInfomap(InfoNode& node);
   // virtual InfomapBase* getNewInfomapInstance() const;
   // virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const;

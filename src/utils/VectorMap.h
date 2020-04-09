@@ -36,13 +36,12 @@ namespace infomap {
 
 template <typename T>
 class VectorMap {
-  public:
-  VectorMap(unsigned int capacity = 0) : m_capacity(capacity),
-                                         m_values(capacity),
-                                         m_redirect(capacity, 0),
-                                         m_maxOffset(std::numeric_limits<unsigned int>::max() - 1 - capacity)
-  {
-  }
+public:
+  VectorMap(unsigned int capacity = 0)
+      : m_capacity(capacity),
+        m_values(capacity),
+        m_redirect(capacity, 0),
+        m_maxOffset(std::numeric_limits<unsigned int>::max() - 1 - capacity) {}
 
   void startRound()
   {
@@ -90,7 +89,7 @@ class VectorMap {
     return m_values;
   }
 
-  private:
+private:
   unsigned int m_capacity = 0;
   std::vector<T> m_values;
   std::vector<unsigned int> m_redirect;

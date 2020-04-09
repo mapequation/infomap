@@ -7,7 +7,7 @@ template <typename Iter>
 class IterWrapper {
   Iter m_begin, m_end;
 
-  public:
+public:
   IterWrapper(Iter begin, Iter end) : m_begin(begin), m_end(end)
   {
   }

@@ -16,7 +16,7 @@ class InfomapOptimizerBase {
   friend class InfomapCore;
   using FlowDataType = FlowData;
 
-  public:
+public:
   InfomapOptimizerBase() = default;
 
   virtual ~InfomapOptimizerBase() = default;
@@ -43,7 +43,7 @@ class InfomapOptimizerBase {
 
   virtual bool haveMemory() const = 0;
 
-  protected:
+protected:
   virtual unsigned int numActiveModules() const = 0;
 
   // ===================================================

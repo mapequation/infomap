@@ -35,7 +35,7 @@
 namespace infomap {
 
 class ElapsedTime {
-  public:
+public:
   ElapsedTime(double elapsedTime = 0.0) : m_elapsedTime(elapsedTime) {}
   ~ElapsedTime() = default;
 
@@ -66,14 +66,16 @@ class ElapsedTime {
     return out;
   }
 
-  private:
+private:
   double m_elapsedTime;
 };
 
 class Date {
-  public:
+public:
   Date() : m_timeOfCreation(time(NULL)) {}
+
   Date(const Date& other) : m_timeOfCreation(other.m_timeOfCreation) {}
+
   Date& operator=(Date other)
   {
     m_timeOfCreation = other.m_timeOfCreation;
@@ -93,7 +95,7 @@ class Date {
     return ElapsedTime(difftime(m_timeOfCreation, date.m_timeOfCreation));
   }
 
-  private:
+private:
   std::time_t m_timeOfCreation;
 };
 

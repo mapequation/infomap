@@ -165,101 +165,101 @@ struct Config {
     *this = Config::fromString(flags, isCLI);
   }
 
-  Config(const Config& other) : isCLI(other.isCLI),
-                                networkFile(other.networkFile),
-                                additionalInput(other.additionalInput),
-                                inputFormat(other.inputFormat),
-                                memoryInput(other.memoryInput),
-                                multilayerInput(other.multilayerInput),
-                                withMemory(other.withMemory),
-                                weightThreshold(other.weightThreshold),
-                                unweightedPaths(other.unweightedPaths),
-                                pathMarkovOrder(other.pathMarkovOrder),
-                                bipartite(other.bipartite),
-                                skipAdjustBipartiteFlow(other.skipAdjustBipartiteFlow),
-                                hardPartitions(other.hardPartitions),
-                                nonBacktracking(other.nonBacktracking),
-                                parseWithoutIOStreams(other.parseWithoutIOStreams),
-                                zeroBasedNodeNumbers(other.zeroBasedNodeNumbers),
-                                includeSelfLinks(other.includeSelfLinks),
-                                ignoreEdgeWeights(other.ignoreEdgeWeights),
-                                nodeLimit(other.nodeLimit),
-                                preClusterMultilayer(other.preClusterMultilayer),
-                                clusterDataFile(other.clusterDataFile),
-                                metaDataFile(other.metaDataFile),
-                                metaDataRate(other.metaDataRate),
-                                unweightedMetaData(other.unweightedMetaData),
-                                numMetaDataDimensions(other.numMetaDataDimensions),
-                                clusterDataIsHard(other.clusterDataIsHard),
-                                assignToNeighbouringModule(other.assignToNeighbouringModule),
-                                noInfomap(other.noInfomap),
-                                flowModel(other.flowModel),
-                                directed(other.directed),
-                                undirdir(other.undirdir),
-                                outdirdir(other.outdirdir),
-                                rawdir(other.rawdir),
-                                teleportToNodes(other.teleportToNodes),
-                                selfTeleportationProbability(other.selfTeleportationProbability),
-                                markovTime(other.markovTime),
-                                multilayerRelaxRate(other.multilayerRelaxRate),
-                                multilayerRelaxLimit(other.multilayerRelaxLimit),
-                                multilayerRelaxLimitUp(other.multilayerRelaxLimitUp),
-                                multilayerRelaxLimitDown(other.multilayerRelaxLimitDown),
-                                multilayerJSRelaxRate(other.multilayerJSRelaxRate),
-                                multilayerJSRelaxLimit(other.multilayerJSRelaxLimit),
-                                twoLevel(other.twoLevel),
-                                noCoarseTune(other.noCoarseTune),
-                                directedEdges(other.directedEdges),
-                                recordedTeleportation(other.recordedTeleportation),
-                                teleportationProbability(other.teleportationProbability),
-                                preferredNumberOfModules(other.preferredNumberOfModules),
-                                seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
-                                numTrials(other.numTrials),
-                                minimumCodelengthImprovement(other.minimumCodelengthImprovement),
-                                minimumSingleNodeCodelengthImprovement(other.minimumSingleNodeCodelengthImprovement),
-                                randomizeCoreLoopLimit(other.randomizeCoreLoopLimit),
-                                coreLoopLimit(other.coreLoopLimit),
-                                levelAggregationLimit(other.levelAggregationLimit),
-                                tuneIterationLimit(other.tuneIterationLimit),
-                                minimumRelativeTuneIterationImprovement(other.minimumRelativeTuneIterationImprovement),
-                                fastCoarseTunePartition(other.fastCoarseTunePartition),
-                                alternateCoarseTuneLevel(other.alternateCoarseTuneLevel),
-                                coarseTuneLevel(other.coarseTuneLevel),
-                                superLevelLimit(other.superLevelLimit),
-                                onlySuperModules(other.onlySuperModules),
-                                fastHierarchicalSolution(other.fastHierarchicalSolution),
-                                fastFirstIteration(other.fastFirstIteration),
-                                preferModularSolution(other.preferModularSolution),
-                                //lowMemoryPriority(other.lowMemoryPriority),
-                                innerParallelization(other.innerParallelization),
-                                outDirectory(other.outDirectory),
-                                outName(other.outName),
-                                outputFormats(other.outputFormats),
-                                originallyUndirected(other.originallyUndirected),
-                                printTree(other.printTree),
-                                printFlowTree(other.printFlowTree),
-                                printMap(other.printMap),
-                                printClu(other.printClu),
-                                printNodeRanks(other.printNodeRanks),
-                                printFlowNetwork(other.printFlowNetwork),
-                                printPajekNetwork(other.printPajekNetwork),
-                                printStateNetwork(other.printStateNetwork),
-                                printBinaryTree(other.printBinaryTree),
-                                printBinaryFlowTree(other.printBinaryFlowTree),
-                                noFileOutput(other.noFileOutput),
-                                verbosity(other.verbosity),
-                                verboseNumberPrecision(other.verboseNumberPrecision),
-                                silent(other.silent),
-                                benchmark(other.benchmark),
-                                maxNodeIndexVisible(other.maxNodeIndexVisible),
-                                showBiNodes(other.showBiNodes),
-                                minBipartiteNodeIndex(other.minBipartiteNodeIndex),
-                                startDate(other.startDate),
-                                version(other.version),
-                                parsedString(other.parsedString),
-                                parsedOptions(other.parsedOptions),
-                                error(other.error)
-
+  Config(const Config& other)
+      : isCLI(other.isCLI),
+        networkFile(other.networkFile),
+        additionalInput(other.additionalInput),
+        inputFormat(other.inputFormat),
+        memoryInput(other.memoryInput),
+        multilayerInput(other.multilayerInput),
+        withMemory(other.withMemory),
+        weightThreshold(other.weightThreshold),
+        unweightedPaths(other.unweightedPaths),
+        pathMarkovOrder(other.pathMarkovOrder),
+        bipartite(other.bipartite),
+        skipAdjustBipartiteFlow(other.skipAdjustBipartiteFlow),
+        hardPartitions(other.hardPartitions),
+        nonBacktracking(other.nonBacktracking),
+        parseWithoutIOStreams(other.parseWithoutIOStreams),
+        zeroBasedNodeNumbers(other.zeroBasedNodeNumbers),
+        includeSelfLinks(other.includeSelfLinks),
+        ignoreEdgeWeights(other.ignoreEdgeWeights),
+        nodeLimit(other.nodeLimit),
+        preClusterMultilayer(other.preClusterMultilayer),
+        clusterDataFile(other.clusterDataFile),
+        metaDataFile(other.metaDataFile),
+        metaDataRate(other.metaDataRate),
+        unweightedMetaData(other.unweightedMetaData),
+        numMetaDataDimensions(other.numMetaDataDimensions),
+        clusterDataIsHard(other.clusterDataIsHard),
+        assignToNeighbouringModule(other.assignToNeighbouringModule),
+        noInfomap(other.noInfomap),
+        flowModel(other.flowModel),
+        directed(other.directed),
+        undirdir(other.undirdir),
+        outdirdir(other.outdirdir),
+        rawdir(other.rawdir),
+        teleportToNodes(other.teleportToNodes),
+        selfTeleportationProbability(other.selfTeleportationProbability),
+        markovTime(other.markovTime),
+        multilayerRelaxRate(other.multilayerRelaxRate),
+        multilayerRelaxLimit(other.multilayerRelaxLimit),
+        multilayerRelaxLimitUp(other.multilayerRelaxLimitUp),
+        multilayerRelaxLimitDown(other.multilayerRelaxLimitDown),
+        multilayerJSRelaxRate(other.multilayerJSRelaxRate),
+        multilayerJSRelaxLimit(other.multilayerJSRelaxLimit),
+        twoLevel(other.twoLevel),
+        noCoarseTune(other.noCoarseTune),
+        directedEdges(other.directedEdges),
+        recordedTeleportation(other.recordedTeleportation),
+        teleportationProbability(other.teleportationProbability),
+        preferredNumberOfModules(other.preferredNumberOfModules),
+        seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
+        numTrials(other.numTrials),
+        minimumCodelengthImprovement(other.minimumCodelengthImprovement),
+        minimumSingleNodeCodelengthImprovement(other.minimumSingleNodeCodelengthImprovement),
+        randomizeCoreLoopLimit(other.randomizeCoreLoopLimit),
+        coreLoopLimit(other.coreLoopLimit),
+        levelAggregationLimit(other.levelAggregationLimit),
+        tuneIterationLimit(other.tuneIterationLimit),
+        minimumRelativeTuneIterationImprovement(other.minimumRelativeTuneIterationImprovement),
+        fastCoarseTunePartition(other.fastCoarseTunePartition),
+        alternateCoarseTuneLevel(other.alternateCoarseTuneLevel),
+        coarseTuneLevel(other.coarseTuneLevel),
+        superLevelLimit(other.superLevelLimit),
+        onlySuperModules(other.onlySuperModules),
+        fastHierarchicalSolution(other.fastHierarchicalSolution),
+        fastFirstIteration(other.fastFirstIteration),
+        preferModularSolution(other.preferModularSolution),
+        //lowMemoryPriority(other.lowMemoryPriority),
+        innerParallelization(other.innerParallelization),
+        outDirectory(other.outDirectory),
+        outName(other.outName),
+        outputFormats(other.outputFormats),
+        originallyUndirected(other.originallyUndirected),
+        printTree(other.printTree),
+        printFlowTree(other.printFlowTree),
+        printMap(other.printMap),
+        printClu(other.printClu),
+        printNodeRanks(other.printNodeRanks),
+        printFlowNetwork(other.printFlowNetwork),
+        printPajekNetwork(other.printPajekNetwork),
+        printStateNetwork(other.printStateNetwork),
+        printBinaryTree(other.printBinaryTree),
+        printBinaryFlowTree(other.printBinaryFlowTree),
+        noFileOutput(other.noFileOutput),
+        verbosity(other.verbosity),
+        verboseNumberPrecision(other.verboseNumberPrecision),
+        silent(other.silent),
+        benchmark(other.benchmark),
+        maxNodeIndexVisible(other.maxNodeIndexVisible),
+        showBiNodes(other.showBiNodes),
+        minBipartiteNodeIndex(other.minBipartiteNodeIndex),
+        startDate(other.startDate),
+        version(other.version),
+        parsedString(other.parsedString),
+        parsedOptions(other.parsedOptions),
+        error(other.error)
   {
   }
 
@@ -519,15 +519,9 @@ struct Config {
     return false;
   }
 
-  void setMemoryInput()
-  {
-    memoryInput = true;
-  }
+  void setMemoryInput() { memoryInput = true; }
 
-  void setMultilayerInput()
-  {
-    multilayerInput = true;
-  }
+  void setMultilayerInput() { multilayerInput = true; }
 
   // bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
   bool isUndirectedClustering() const { return flowModel == FlowModel::undirected; }
@@ -551,10 +545,7 @@ struct Config {
 
   bool haveMetaData() const { return metaDataFile != "" || numMetaDataDimensions != 0; }
 
-  bool haveOutput() const
-  {
-    return !noFileOutput;
-  }
+  bool haveOutput() const { return !noFileOutput; }
 
   bool haveModularResultOutput() const
   {
@@ -563,15 +554,9 @@ struct Config {
 
   ElapsedTime elapsedTime() const { return Date() - startDate; }
 
-  void setError(const std::string& err)
-  {
-    error = err;
-  }
+  void setError(const std::string& err) { error = err; }
 
-  bool haveError() const
-  {
-    return error != "";
-  }
+  bool haveError() const { return error != ""; }
 
   static Config fromString(std::string flags, bool isCLI = false);
 };

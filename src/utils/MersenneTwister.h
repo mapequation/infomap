@@ -53,13 +53,13 @@
 
 class MTRand {
   // Data
-  public:
+public:
   typedef unsigned long uint32; // unsigned integer type, at least 32 bits
 
   enum { N = 624 }; // length of state vector
   enum { SAVE = N + 1 }; // length of array for save()
 
-  protected:
+protected:
   enum { M = 397 }; // period parameter
   enum { MAGIC = 0x9908b0dfU }; // magic constant
 
@@ -69,7 +69,7 @@ class MTRand {
 
 
   //Methods
-  public:
+public:
   MTRand(const uint32& oneSeed); // initialize with a simple uint32
   MTRand(uint32* const bigSeed); // initialize with an array of N uint32's
   MTRand(); // auto-initialize with /dev/urandom or time() and clock()
@@ -99,7 +99,7 @@ class MTRand {
   friend std::ostream& operator<<(std::ostream& os, const MTRand& mtrand);
   friend std::istream& operator>>(std::istream& is, MTRand& mtrand);
 
-  protected:
+protected:
   void reload();
   uint32 hiBit(const uint32& u) const { return u & 0x80000000U; }
   uint32 loBit(const uint32& u) const { return u & 0x00000001U; }

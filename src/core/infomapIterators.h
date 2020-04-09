@@ -26,11 +26,11 @@ class InfomapChildIterator {
   typedef typename iterator_traits<NodePointerType>::reference reference;
   typedef typename iterator_traits<NodePointerType>::pointer pointer;
 
-  protected:
+protected:
   NodePointerType m_root = nullptr;
   NodePointerType m_current = nullptr;
 
-  public:
+public:
   InfomapChildIterator() {}
 
   explicit InfomapChildIterator(const NodePointerType& nodePointer)
@@ -134,7 +134,7 @@ class InfomapChildIterator {
  */
 template <typename NodePointerType>
 class InfomapClusterIterator : public DepthFirstIteratorBase<NodePointerType> {
-  protected:
+protected:
   typedef DepthFirstIteratorBase<NodePointerType> Base;
 
   unsigned int m_moduleIndex = 0;
@@ -143,7 +143,7 @@ class InfomapClusterIterator : public DepthFirstIteratorBase<NodePointerType> {
   using Base::m_current;
   using Base::m_depth;
 
-  public:
+public:
   InfomapClusterIterator() : Base() {}
 
   explicit InfomapClusterIterator(const NodePointerType& nodePointer, int moduleIndexLevel = -1)
@@ -156,9 +156,7 @@ class InfomapClusterIterator : public DepthFirstIteratorBase<NodePointerType> {
   InfomapClusterIterator(const InfomapClusterIterator& other)
       : Base(other),
         m_moduleIndex(other.m_moduleIndex),
-        m_moduleIndexLevel(other.m_moduleIndexLevel)
-  {
-  }
+        m_moduleIndexLevel(other.m_moduleIndexLevel) {}
 
   virtual void init()
   {
@@ -183,8 +181,7 @@ class InfomapClusterIterator : public DepthFirstIteratorBase<NodePointerType> {
     return *this;
   }
 
-  InfomapClusterIterator&
-  operator++()
+  InfomapClusterIterator& operator++()
   {
     NodePointerType curr = Base::m_current;
 
@@ -233,23 +230,20 @@ class InfomapClusterIterator : public DepthFirstIteratorBase<NodePointerType> {
     return *this;
   }
 
-  InfomapClusterIterator
-  operator++(int)
+  InfomapClusterIterator operator++(int)
   {
     InfomapClusterIterator copy(*this);
     ++(*this);
     return copy;
   }
 
-  InfomapClusterIterator
-  next()
+  InfomapClusterIterator next()
   {
     InfomapClusterIterator copy(*this);
     return ++copy;
   }
 
-  InfomapClusterIterator&
-  stepForward()
+  InfomapClusterIterator& stepForward()
   {
     ++(*this);
     return *this;
@@ -268,7 +262,7 @@ class InfomapClusterIterator : public DepthFirstIteratorBase<NodePointerType> {
  */
 template <typename NodePointerType>
 class InfomapDepthFirstIterator : public DepthFirstIteratorBase<NodePointerType> {
-  protected:
+protected:
   typedef DepthFirstIteratorBase<NodePointerType> Base;
 
   std::deque<unsigned int> m_path; // The child index path to current node
@@ -278,7 +272,7 @@ class InfomapDepthFirstIterator : public DepthFirstIteratorBase<NodePointerType>
   using Base::m_current;
   using Base::m_depth;
 
-  public:
+public:
   InfomapDepthFirstIterator() : Base() {}
 
   explicit InfomapDepthFirstIterator(const NodePointerType& nodePointer, int moduleIndexLevel = -1)
@@ -320,8 +314,7 @@ class InfomapDepthFirstIterator : public DepthFirstIteratorBase<NodePointerType>
     }
   }
 
-  InfomapDepthFirstIterator&
-  operator++()
+  InfomapDepthFirstIterator& operator++()
   {
     NodePointerType curr = Base::m_current;
 
@@ -373,23 +366,20 @@ class InfomapDepthFirstIterator : public DepthFirstIteratorBase<NodePointerType>
     return *this;
   }
 
-  InfomapDepthFirstIterator
-  operator++(int)
+  InfomapDepthFirstIterator operator++(int)
   {
     InfomapDepthFirstIterator copy(*this);
     ++(*this);
     return copy;
   }
 
-  InfomapDepthFirstIterator
-  next()
+  InfomapDepthFirstIterator next()
   {
     InfomapDepthFirstIterator copy(*this);
     return ++copy;
   }
 
-  InfomapDepthFirstIterator&
-  stepForward()
+  InfomapDepthFirstIterator& stepForward()
   {
     ++(*this);
     return *this;
