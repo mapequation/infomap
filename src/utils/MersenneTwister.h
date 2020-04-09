@@ -144,7 +144,7 @@ inline MTRand::uint32 MTRand::randInt()
 	if( left == 0 ) reload();
 	--left;
 
-	register uint32 s1;
+	uint32 s1;
 	s1 = *pNext++;
 	s1 ^= (s1 >> 11);
 	s1 ^= (s1 <<  7) & 0x9d2c5680U;
@@ -172,8 +172,8 @@ inline MTRand::uint32 MTRand::randInt( const uint32& n )
 inline void MTRand::seed( uint32 oneSeed )
 {
 	// Seed the generator with a simple uint32
-	register uint32 *s;
-	register int i;
+	uint32 *s;
+	int i;
 	for( i = N, s = state;
 	     i--;
 		 *s    = oneSeed & 0xffff0000,
@@ -192,8 +192,8 @@ inline void MTRand::seed( uint32 *const bigSeed )
 	// above the lower 32 in each element are also discarded.  Theoretically,
 	// the rest of the array can contain any values except all zeroes.
 	// Just call seed() if you want to get array from /dev/urandom
-	register uint32 *s = state, *b = bigSeed;
-	register int i = N;
+	uint32 *s = state, *b = bigSeed;
+	int i = N;
 	for( ; i--; *s++ = *b++ & 0xffffffff ) {}
 	reload();
 }
@@ -208,9 +208,9 @@ inline void MTRand::seed()
 	FILE* urandom = fopen( "/dev/urandom", "rb" );
 	if( urandom )
 	{
-		register uint32 *s = state;
-		register int i = N;
-		register bool success = true;
+		uint32 *s = state;
+		int i = N;
+		bool success = true;
 		while( success && i-- )
 		{
 			success = static_cast<bool>(fread( s, sizeof(uint32), 1, urandom ));
@@ -236,8 +236,8 @@ inline void MTRand::reload()
 {
 	// Generate N new values in state
 	// Made clearer and faster by Matthew Bellew (matthew.bellew@home.com)
-	register uint32 *p = state;
-	register int i;
+	uint32 *p = state;
+	int i;
 	for( i = N - M; i--; ++p )
 		*p = twist( p[M], p[0], p[1] );
 	for( i = M; --i; ++p )
@@ -276,9 +276,9 @@ inline MTRand::uint32 MTRand::hash( time_t t, clock_t c )
 
 inline void MTRand::save( uint32* saveArray ) const
 {
-	register uint32 *sa = saveArray;
-	register const uint32 *s = state;
-	register int i = N;
+	uint32 *sa = saveArray;
+	const uint32 *s = state;
+	int i = N;
 	for( ; i--; *sa++ = *s++ ) {}
 	*sa = left;
 }
@@ -286,9 +286,9 @@ inline void MTRand::save( uint32* saveArray ) const
 
 inline void MTRand::load( uint32 *const loadArray )
 {
-	register uint32 *s = state;
-	register uint32 *la = loadArray;
-	register int i = N;
+	uint32 *s = state;
+	uint32 *la = loadArray;
+	int i = N;
 	for( ; i--; *s++ = *la++ ) {}
 	left = *la;
 	pNext = &state[N-left];
@@ -297,8 +297,8 @@ inline void MTRand::load( uint32 *const loadArray )
 
 inline std::ostream& operator<<( std::ostream& os, const MTRand& mtrand )
 {
-	register const MTRand::uint32 *s = mtrand.state;
-	register int i = mtrand.N;
+	const MTRand::uint32 *s = mtrand.state;
+	int i = mtrand.N;
 	for( ; i--; os << *s++ << "\t" ) {}
 	return os << mtrand.left;
 }
@@ -306,8 +306,8 @@ inline std::ostream& operator<<( std::ostream& os, const MTRand& mtrand )
 
 inline std::istream& operator>>( std::istream& is, MTRand& mtrand )
 {
-	register MTRand::uint32 *s = mtrand.state;
-	register int i = mtrand.N;
+	MTRand::uint32 *s = mtrand.state;
+	int i = mtrand.N;
 	for( ; i--; is >> *s++ ) {}
 	is >> mtrand.left;
 	mtrand.pNext = &mtrand.state[mtrand.N-mtrand.left];
