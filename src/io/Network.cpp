@@ -764,7 +764,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 	Log() << "Generating state network from multilayer networks with simulated inter-layer links...\n" << std::flush;
 	double relaxRate = m_config.multilayerRelaxRate;
 
-	auto maxRelaxLimit = m_networks.size();
+	int maxRelaxLimit = m_networks.size();
 	int relaxLimitSymmetric = m_config.multilayerRelaxLimit < 0 ? maxRelaxLimit : m_config.multilayerRelaxLimit;
 	int relaxLimitDown = m_config.multilayerRelaxLimitDown < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitDown);
 	int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
