@@ -196,14 +196,14 @@ public:
   InfoNode const* getInfomapRoot() const;
 
   /**
-	 * Dispose the Infomap instance if it exists
-	 * @return true if an existing Infomap instance was deleted
-	 */
+   * Dispose the Infomap instance if it exists
+   * @return true if an existing Infomap instance was deleted
+   */
   bool disposeInfomap();
 
   /**
-	 * Number of physical nodes in memory nodes
-	 */
+   * Number of physical nodes in memory nodes
+   */
   unsigned int numPhysicalNodes() const { return physicalNodes.size(); }
 
   // ---------------------------- Tree iterators ----------------------------
@@ -452,22 +452,22 @@ public:
   // ---------------------------- Mutators ----------------------------
 
   /**
-	 * Clear a cloned node to initial state
-	 */
+   * Clear a cloned node to initial state
+   */
   void initClean();
 
   void sortChildrenOnFlow(bool recurse = true);
 
   /**
-	 * Release the children and store the child pointers for later expansion
-	 * @return the number of children collapsed
-	 */
+   * Release the children and store the child pointers for later expansion
+   * @return the number of children collapsed
+   */
   unsigned int collapseChildren();
 
   /**
-	 * Expand collapsed children
-	 * @return the number of collapsed children expanded
-	 */
+   * Expand collapsed children
+   * @return the number of collapsed children expanded
+   */
   unsigned int expandChildren();
 
   // ------ OLD -----
@@ -482,15 +482,15 @@ public:
   void releaseChildren();
 
   /**
-	 * If not already having a single child, replace children
-	 * with a single new node, assuming grandchildren.
-	 * @return the single child
-	 */
+   * If not already having a single child, replace children
+   * with a single new node, assuming grandchildren.
+   * @return the single child
+   */
   InfoNode& replaceChildrenWithOneNode();
 
   /**
-	 * @return 1 if the node is removed, otherwise 0
-	 */
+   * @return 1 if the node is removed, otherwise 0
+   */
   unsigned int replaceWithChildren();
 
   void replaceWithChildrenDebug();
@@ -499,8 +499,8 @@ public:
   // void restoreModulesTo(InfoNode& other);
 
   /**
-	 * @return The number of children removed
-	 */
+   * @return The number of children removed
+   */
   unsigned int replaceChildrenWithGrandChildren();
 
   void replaceChildrenWithGrandChildrenDebug();

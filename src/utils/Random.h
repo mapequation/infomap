@@ -58,8 +58,8 @@ public:
   }
 
   /**
-        * Get a random permutation of indices of the size of the input vector
-        */
+    * Get a random permutation of indices of the size of the input vector
+    */
   void getRandomizedIndexVector(std::vector<unsigned int>& randomOrder)
   {
     unsigned int size = randomOrder.size();

@@ -260,14 +260,14 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
                                             VectorMap<DeltaFlowDataType>& moduleDeltaFlow)
 {
   // Overlapping modules
-  /**
-	 * delta = old.first + new.first + old.second - new.second.
-	 * Two cases: (p(x) = plogp(x))
-	 * Moving to a module that already have that physical node: (old: p1, p2, new p3, moving p2 -> old:p1, new p2,p3)
-	 * Then old.second = new.second = plogp(physicalNodeSize) -> cancelation -> delta = p(p1) - p(p1+p2) + p(p2+p3) - p(p3)
-	 * Moving to a module that not have that physical node: (old: p1, p2, new -, moving p2 -> old: p1, new: p2)
-	 * Then new.first = new.second = 0 -> delta = p(p1) - p(p1+p2) + p(p2).
-	 */
+  /*
+   * delta = old.first + new.first + old.second - new.second.
+   * Two cases: (p(x) = plogp(x))
+   * Moving to a module that already have that physical node: (old: p1, p2, new p3, moving p2 -> old:p1, new p2,p3)
+   * Then old.second = new.second = plogp(physicalNodeSize) -> cancelation -> delta = p(p1) - p(p1+p2) + p(p2+p3) - p(p3)
+   * Moving to a module that not have that physical node: (old: p1, p2, new -, moving p2 -> old: p1, new: p2)
+   * Then new.first = new.second = 0 -> delta = p(p1) - p(p1+p2) + p(p2).
+   */
   auto& physicalNodes = current.physicalNodes;
   unsigned int numPhysicalNodes = physicalNodes.size();
   for (unsigned int i = 0; i < numPhysicalNodes; ++i) {
