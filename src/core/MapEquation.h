@@ -69,17 +69,17 @@ public:
 
 	static bool haveMemory() { return false; }
 
-	virtual double getIndexCodelength() const { return indexCodelength; }
+	double getIndexCodelength() const { return indexCodelength; }
 
-	virtual double getModuleCodelength() const { return moduleCodelength; }
+	double getModuleCodelength() const { return moduleCodelength; }
 
-	virtual double getCodelength() const { return codelength; }
+	double getCodelength() const { return codelength; }
 
 	// ===================================================
 	// IO
 	// ===================================================
 
-	virtual std::ostream& print(std::ostream&) const;
+	std::ostream& print(std::ostream&) const;
 
 	friend std::ostream& operator<<(std::ostream&, const MapEquation&);
 
@@ -88,21 +88,21 @@ public:
 	// Init
 	// ===================================================
 
-	virtual void init(const Config& config);
+	void init(const Config& config);
 
-	virtual void initNetwork(InfoNode& root);
+	void initNetwork(InfoNode& root);
 
-	virtual void initSuperNetwork(InfoNode& root);
+	void initSuperNetwork(InfoNode& root);
 
-	virtual void initSubNetwork(InfoNode& root);
+	void initSubNetwork(InfoNode& root);
 
-	virtual void initPartition(std::vector<InfoNode*>& nodes);
+	void initPartition(std::vector<InfoNode*>& nodes);
 
 	// ===================================================
 	// Codelength
 	// ===================================================
 
-	virtual double calcCodelength(const InfoNode& parent) const;
+	double calcCodelength(const InfoNode& parent) const;
 
 	void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) {}
 
@@ -118,13 +118,13 @@ public:
 	void updateCodelengthOnMovingNode(InfoNode& current,
 			DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>& moduleMembers);
 
-	virtual void consolidateModules(std::vector<InfoNode*>& modules) {}
+	void consolidateModules(std::vector<InfoNode*>& modules) {}
 
 	// ===================================================
 	// Debug
 	// ===================================================
 
-	virtual void printDebug();
+	void printDebug();
 
 
 protected:
@@ -132,15 +132,15 @@ protected:
 	// Protected member functions
 	// ===================================================
 
-	virtual double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+	double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
 
-	virtual double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
+	double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
 
-	virtual void calculateCodelength(std::vector<InfoNode*>& nodes);
+	void calculateCodelength(std::vector<InfoNode*>& nodes);
 
-	virtual void calculateCodelengthTerms(std::vector<InfoNode*>& nodes);
+	void calculateCodelengthTerms(std::vector<InfoNode*>& nodes);
 
-	virtual void calculateCodelengthFromCodelengthTerms();
+	void calculateCodelengthFromCodelengthTerms();
 
 
 public:
