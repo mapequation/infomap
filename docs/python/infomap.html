@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>infomap module &#8212; Infomap 1.1.1 documentation</title>
+    <title>infomap module &#8212; Infomap 1.1.3 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -32,9 +32,9 @@
             
   <div class="section" id="module-infomap">
 <span id="infomap-module"></span><h1>infomap module<a class="headerlink" href="#module-infomap" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
+<dl class="py class">
 <dt id="infomap.Infomap">
-<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">Infomap</code><span class="sig-paren">(</span><em class="sig-param">args=None</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">Infomap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">infomap.InfomapWrapper</span></code></p>
 <p>This class is a thin wrapper around Infomap C++ compiled with SWIG.</p>
 <p class="rubric">Examples</p>
@@ -59,9 +59,9 @@
 </pre></div>
 </div>
 <p>For more examples, see the examples directory.</p>
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">args=None</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new Infomap instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -70,9 +70,9 @@
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.add_link">
-<code class="sig-name descname">add_link</code><span class="sig-paren">(</span><em class="sig-param">source_id</em>, <em class="sig-param">target_id</em>, <em class="sig-param">weight=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_link" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_link</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">source_id</span></em>, <em class="sig-param"><span class="n">target_id</span></em>, <em class="sig-param"><span class="n">weight</span><span class="o">=</span><span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_link" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a link.</p>
 <p class="rubric">Notes</p>
 <p>If the source or target nodes does not exist, they will be created.</p>
@@ -91,12 +91,12 @@
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.add_links">
-<code class="sig-name descname">add_links</code><span class="sig-paren">(</span><em class="sig-param">links</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_links" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_links</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">links</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_links" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add several links.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">links</span> <span class="o">=</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
@@ -117,9 +117,9 @@
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.add_multilayer_link">
-<code class="sig-name descname">add_multilayer_link</code><span class="sig-paren">(</span><em class="sig-param">source_multilayer_node</em>, <em class="sig-param">target_multilayer_node</em>, <em class="sig-param">weight=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_multilayer_link" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_multilayer_link</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">source_multilayer_node</span></em>, <em class="sig-param"><span class="n">target_multilayer_node</span></em>, <em class="sig-param"><span class="n">weight</span><span class="o">=</span><span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_multilayer_link" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a multilayer link.</p>
 <p>Adds a link between layers in a multilayer network.</p>
 <dl class="field-list simple">
@@ -133,7 +133,7 @@
 </dl>
 <p class="rubric">Examples</p>
 <p>Usage with tuples:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">source_multilayer_node</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># layer_id, node_id</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">target_multilayer_node</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c1"># layer_id, node_id</span>
@@ -142,7 +142,7 @@
 </pre></div>
 </div>
 <p>Usage with MultilayerNode</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span><span class="p">,</span> <span class="n">MultilayerNode</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span><span class="p">,</span> <span class="n">MultilayerNode</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">source_multilayer_node</span> <span class="o">=</span> <span class="n">MultilayerNode</span><span class="p">(</span><span class="n">layer_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">node_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">target_multilayer_node</span> <span class="o">=</span> <span class="n">MultilayerNode</span><span class="p">(</span><span class="n">layer_id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">node_id</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -152,12 +152,12 @@
 </div>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.add_multilayer_links">
-<code class="sig-name descname">add_multilayer_links</code><span class="sig-paren">(</span><em class="sig-param">links</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_multilayer_links" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_multilayer_links</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">links</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_multilayer_links" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add several multilayer links.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">links</span> <span class="o">=</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span>
@@ -178,9 +178,9 @@
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.add_node">
-<code class="sig-name descname">add_node</code><span class="sig-paren">(</span><em class="sig-param">node_id</em>, <em class="sig-param">name=None</em>, <em class="sig-param">teleportation_weight=None</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_node" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_node</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">node_id</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">teleportation_weight</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_node" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a node.</p>
 <p class="rubric">Notes</p>
 <p>Creates a state node for internal use.
@@ -200,9 +200,9 @@ If you want to create empty named nodes, use <code class="docutils literal notra
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.add_nodes">
-<code class="sig-name descname">add_nodes</code><span class="sig-paren">(</span><em class="sig-param">nodes</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_nodes" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_nodes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nodes</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add several nodes.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
@@ -210,14 +210,14 @@ If you want to create empty named nodes, use <code class="docutils literal notra
 </div>
 <p class="rubric">Examples</p>
 <p>Add nodes</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
 <span class="go">None</span>
 </pre></div>
 </div>
 <p>Add named nodes</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nodes</span> <span class="o">=</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Node 1&quot;</span><span class="p">),</span>
@@ -235,9 +235,9 @@ If you want to create empty named nodes, use <code class="docutils literal notra
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.add_state_node">
-<code class="sig-name descname">add_state_node</code><span class="sig-paren">(</span><em class="sig-param">state_id</em>, <em class="sig-param">node_id</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_state_node" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_state_node</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state_id</span></em>, <em class="sig-param"><span class="n">node_id</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_state_node" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a state node.</p>
 <p class="rubric">Notes</p>
 <p>If a physical node with id node_id does not exist, it will be created.
@@ -252,16 +252,16 @@ If you want to name the physical node, use <code class="docutils literal notrans
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.add_state_nodes">
-<code class="sig-name descname">add_state_nodes</code><span class="sig-paren">(</span><em class="sig-param">state_nodes</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_state_nodes" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_state_nodes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">state_nodes</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_state_nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add several state nodes.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.add_state_node" title="infomap.Infomap.add_state_node"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_state_node()</span></code></a></p>
 </div>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">states</span> <span class="o">=</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
@@ -279,12 +279,12 @@ If you want to name the physical node, use <code class="docutils literal notrans
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.bipartite_start_id">
 <em class="property">property </em><code class="sig-name descname">bipartite_start_id</code><a class="headerlink" href="#infomap.Infomap.bipartite_start_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get or set the bipartite start id.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Left 1&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Left 2&quot;</span><span class="p">)</span>
@@ -311,7 +311,7 @@ If you want to name the physical node, use <code class="docutils literal notrans
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.codelength">
 <em class="property">property </em><code class="sig-name descname">codelength</code><a class="headerlink" href="#infomap.Infomap.codelength" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the total (hierarchical) codelength.</p>
@@ -329,7 +329,7 @@ If you want to name the physical node, use <code class="docutils literal notrans
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.codelengths">
 <em class="property">property </em><code class="sig-name descname">codelengths</code><a class="headerlink" href="#infomap.Infomap.codelengths" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the total (hierarchical) codelength for each trial.</p>
@@ -347,9 +347,9 @@ If you want to name the physical node, use <code class="docutils literal notrans
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.get_modules">
-<code class="sig-name descname">get_modules</code><span class="sig-paren">(</span><em class="sig-param">depth_level=1</em>, <em class="sig-param">states=False</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_modules" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_modules</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">depth_level</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">states</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_modules" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the modules for a given depth in the hierarchical tree.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -373,9 +373,9 @@ See notes on <code class="docutils literal notranslate"><span class="pre">physic
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.get_multilevel_modules">
-<code class="sig-name descname">get_multilevel_modules</code><span class="sig-paren">(</span><em class="sig-param">states=False</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_multilevel_modules" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_multilevel_modules</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">states</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_multilevel_modules" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get all the modules.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -394,9 +394,54 @@ See notes on <code class="docutils literal notranslate"><span class="pre">physic
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
+<dt id="infomap.Infomap.get_name">
+<code class="sig-name descname">get_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">node_id</span></em>, <em class="sig-param"><span class="n">default</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the name of a node.</p>
+<p class="rubric">Notes</p>
+<p>If the node name is an empty string,
+the <code class="docutils literal notranslate"><span class="pre">default</span></code> will be returned.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.set_name" title="infomap.Infomap.set_name"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_name()</span></code></a>, <a class="reference internal" href="#infomap.Infomap.names" title="infomap.Infomap.names"><code class="xref py py-meth docutils literal notranslate"><span class="pre">names()</span></code></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node_id</strong> (<em>int</em>) – </p></li>
+<li><p><strong>default</strong> (<em>any</em>) – The return value if the node name is missing.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The node name if it exists, else the default which is <code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>string or any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="infomap.Infomap.get_names">
+<code class="sig-name descname">get_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all node names.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.names" title="infomap.Infomap.names"><code class="xref py py-meth docutils literal notranslate"><span class="pre">names()</span></code></a>, <a class="reference internal" href="#infomap.Infomap.get_name" title="infomap.Infomap.get_name"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_name()</span></code></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A dict with node ids as keys and node names as values.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict of string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="infomap.Infomap.get_nodes">
-<code class="sig-name descname">get_nodes</code><span class="sig-paren">(</span><em class="sig-param">depth_level=1</em>, <em class="sig-param">states=False</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_nodes" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_nodes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">depth_level</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">states</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the tree</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -429,9 +474,9 @@ as one (partial) physical node (if <code class="docutils literal notranslate"><s
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.get_tree">
-<code class="sig-name descname">get_tree</code><span class="sig-paren">(</span><em class="sig-param">depth_level=1</em>, <em class="sig-param">states=False</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_tree" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_tree</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">depth_level</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">states</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the tree</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -464,7 +509,7 @@ as one (partial) physical node (if <code class="docutils literal notranslate"><s
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.index_codelength">
 <em class="property">property </em><code class="sig-name descname">index_codelength</code><a class="headerlink" href="#infomap.Infomap.index_codelength" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the two-level index codelength.</p>
@@ -482,14 +527,14 @@ as one (partial) physical node (if <code class="docutils literal notranslate"><s
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.initial_partition">
 <em class="property">property </em><code class="sig-name descname">initial_partition</code><a class="headerlink" href="#infomap.Infomap.initial_partition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get or set the initial partition.</p>
 <p>This is a initial configuration of nodes into modules where Infomap
 will start the optimizer.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
@@ -526,7 +571,7 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.leaf_modules">
 <em class="property">property </em><code class="sig-name descname">leaf_modules</code><a class="headerlink" href="#infomap.Infomap.leaf_modules" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the leaf modules, i.e. the bottom modules containing leaf nodes.</p>
@@ -544,7 +589,7 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.max_depth">
 <em class="property">property </em><code class="sig-name descname">max_depth</code><a class="headerlink" href="#infomap.Infomap.max_depth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the max depth of the hierarchical tree.</p>
@@ -558,7 +603,7 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.meta_codelength">
 <em class="property">property </em><code class="sig-name descname">meta_codelength</code><a class="headerlink" href="#infomap.Infomap.meta_codelength" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the meta codelength.</p>
@@ -577,7 +622,7 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.meta_entropy">
 <em class="property">property </em><code class="sig-name descname">meta_entropy</code><a class="headerlink" href="#infomap.Infomap.meta_entropy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the meta entropy (unweighted by meta data rate).</p>
@@ -595,17 +640,21 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.module_codelength">
 <em class="property">property </em><code class="sig-name descname">module_codelength</code><a class="headerlink" href="#infomap.Infomap.module_codelength" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the two-level module codelength.</p>
+<dd><p>Get the total codelength of the modules.</p>
+<p>The module codelength is defined such that
+<code class="docutils literal notranslate"><span class="pre">codelength</span> <span class="pre">=</span> <span class="pre">index_codelength</span> <span class="pre">+</span> <span class="pre">module_codelength</span></code></p>
+<p>For a hierarchical solution, the module codelength
+is the sum of codelengths for each top module.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.codelength" title="infomap.Infomap.codelength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">codelength</span></code></a>, <a class="reference internal" href="#infomap.Infomap.index_codelength" title="infomap.Infomap.index_codelength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">index_codelength</span></code></a></p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>The two-level module codelength</p>
+<dd class="field-odd"><p>The module codelength</p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>float</p>
@@ -613,7 +662,7 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.modules">
 <em class="property">property </em><code class="sig-name descname">modules</code><a class="headerlink" href="#infomap.Infomap.modules" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the (top-level) modules, mapping
@@ -629,7 +678,7 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 <p><a class="reference internal" href="#infomap.Infomap.get_modules" title="infomap.Infomap.get_modules"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_modules</span></code></a></p>
 </div>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;ninetriangles.net&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;-N5&quot;</span><span class="p">)</span>
@@ -676,13 +725,32 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
+<dt id="infomap.Infomap.names">
+<em class="property">property </em><code class="sig-name descname">names</code><a class="headerlink" href="#infomap.Infomap.names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all node names.</p>
+<p>Short-hand for <code class="docutils literal notranslate"><span class="pre">get_names</span></code>.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.get_names" title="infomap.Infomap.get_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_names</span></code></a>, <a class="reference internal" href="#infomap.Infomap.get_name" title="infomap.Infomap.get_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_name</span></code></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A dict with node ids as keys and node names as values.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict of string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="infomap.Infomap.network">
 <em class="property">property </em><code class="sig-name descname">network</code><a class="headerlink" href="#infomap.Infomap.network" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the internal network.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.no_infomap">
 <em class="property">property </em><code class="sig-name descname">no_infomap</code><a class="headerlink" href="#infomap.Infomap.no_infomap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set wether the optimizer should run or not.</p>
@@ -693,7 +761,7 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.nodes">
 <em class="property">property </em><code class="sig-name descname">nodes</code><a class="headerlink" href="#infomap.Infomap.nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the leaf nodes with the top level module ids</p>
@@ -711,7 +779,7 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.num_leaf_modules">
 <em class="property">property </em><code class="sig-name descname">num_leaf_modules</code><a class="headerlink" href="#infomap.Infomap.num_leaf_modules" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the number of leaf modules in the tree</p>
@@ -725,7 +793,22 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
+<dt id="infomap.Infomap.num_non_trivial_top_modules">
+<em class="property">property </em><code class="sig-name descname">num_non_trivial_top_modules</code><a class="headerlink" href="#infomap.Infomap.num_non_trivial_top_modules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of non-trivial top modules in the tree</p>
+<p>A trivial module is a module with either one or all nodes within.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The number of non-trivial top modules</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="infomap.Infomap.num_top_modules">
 <em class="property">property </em><code class="sig-name descname">num_top_modules</code><a class="headerlink" href="#infomap.Infomap.num_top_modules" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the number of top modules in the tree</p>
@@ -739,7 +822,7 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.one_level_codelength">
 <em class="property">property </em><code class="sig-name descname">one_level_codelength</code><a class="headerlink" href="#infomap.Infomap.one_level_codelength" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the one-level codelength.</p>
@@ -757,7 +840,7 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.physical_nodes">
 <em class="property">property </em><code class="sig-name descname">physical_nodes</code><a class="headerlink" href="#infomap.Infomap.physical_nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the physical leaf nodes with the top level module ids</p>
@@ -775,7 +858,7 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.physical_tree">
 <em class="property">property </em><code class="sig-name descname">physical_tree</code><a class="headerlink" href="#infomap.Infomap.physical_tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the tree where that state nodes of the same
@@ -794,9 +877,9 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.read_file">
-<code class="sig-name descname">read_file</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">accumulate=True</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.read_file" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">read_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">accumulate</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.read_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read network data from file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -809,7 +892,7 @@ nodes and links (default True).</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.relative_codelength_savings">
 <em class="property">property </em><code class="sig-name descname">relative_codelength_savings</code><a class="headerlink" href="#infomap.Infomap.relative_codelength_savings" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the relative codelength savings.</p>
@@ -834,9 +917,9 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.remove_link">
-<code class="sig-name descname">remove_link</code><span class="sig-paren">(</span><em class="sig-param">source_id</em>, <em class="sig-param">target_id</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.remove_link" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">remove_link</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">source_id</span></em>, <em class="sig-param"><span class="n">target_id</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.remove_link" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove a link.</p>
 <p class="rubric">Notes</p>
 <p>Removing links will not remove nodes if they become disconnected.</p>
@@ -854,12 +937,12 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.remove_links">
-<code class="sig-name descname">remove_links</code><span class="sig-paren">(</span><em class="sig-param">links</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.remove_links" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">remove_links</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">links</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.remove_links" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove several links.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">links</span> <span class="o">=</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
@@ -880,9 +963,9 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.run">
-<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">args=None</em>, <em class="sig-param">initial_partition=None</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.run" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">initial_partition</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run Infomap.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -898,9 +981,9 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 </div>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.set_meta_data">
-<code class="sig-name descname">set_meta_data</code><span class="sig-paren">(</span><em class="sig-param">node_id</em>, <em class="sig-param">meta_category</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.set_meta_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_meta_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">node_id</span></em>, <em class="sig-param"><span class="n">meta_category</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.set_meta_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set meta data to a node.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -912,9 +995,9 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.set_name">
-<code class="sig-name descname">set_name</code><span class="sig-paren">(</span><em class="sig-param">node_id</em>, <em class="sig-param">name</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.set_name" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">node_id</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.set_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the name of a node.</p>
 <p class="rubric">Notes</p>
 <p>Creates nodes if a node with the supplied node id does not exist.
@@ -929,12 +1012,12 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.set_names">
-<code class="sig-name descname">set_names</code><span class="sig-paren">(</span><em class="sig-param">names</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.set_names" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_names</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">names</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.set_names" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set names to several nodes at once.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="k">import</span> <span class="n">Infomap</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">names</span> <span class="o">=</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Node 1&quot;</span><span class="p">),</span>
@@ -955,7 +1038,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.tree">
 <em class="property">property </em><code class="sig-name descname">tree</code><a class="headerlink" href="#infomap.Infomap.tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>A view of the tree</p>
@@ -973,9 +1056,9 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.write_clu">
-<code class="sig-name descname">write_clu</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">states=False</em>, <em class="sig-param">depth_level=1</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_clu" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">write_clu</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">states</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">depth_level</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_clu" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write result to a clu file.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
@@ -992,9 +1075,9 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.write_flow_tree">
-<code class="sig-name descname">write_flow_tree</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">states=False</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_flow_tree" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">write_flow_tree</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">states</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_flow_tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write result to a ftree file.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
@@ -1010,9 +1093,9 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.Infomap.write_tree">
-<code class="sig-name descname">write_tree</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">states=False</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_tree" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">write_tree</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">states</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write result to a tree file.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
@@ -1030,28 +1113,28 @@ This is useful to create empty physical node in a state network.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="infomap.MultilayerNode">
-<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">MultilayerNode</code><span class="sig-paren">(</span><em class="sig-param">layer_id</em>, <em class="sig-param">node_id</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.MultilayerNode" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">MultilayerNode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layer_id</span></em>, <em class="sig-param"><span class="n">node_id</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.MultilayerNode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
-<dl class="method">
+<dl class="py attribute">
 <dt id="infomap.MultilayerNode.layer_id">
-<em class="property">property </em><code class="sig-name descname">layer_id</code><a class="headerlink" href="#infomap.MultilayerNode.layer_id" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">layer_id</code><a class="headerlink" href="#infomap.MultilayerNode.layer_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 0</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py attribute">
 <dt id="infomap.MultilayerNode.node_id">
-<em class="property">property </em><code class="sig-name descname">node_id</code><a class="headerlink" href="#infomap.MultilayerNode.node_id" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">node_id</code><a class="headerlink" href="#infomap.MultilayerNode.node_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 1</p>
 </dd></dl>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="infomap.InfoNode">
-<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfoNode</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfoNode" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfoNode</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfoNode" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
 <dt id="infomap.InfoNode.child_degree">
 <em class="property">property </em><code class="sig-name descname">child_degree</code><a class="headerlink" href="#infomap.InfoNode.child_degree" title="Permalink to this definition">¶</a></dt>
 <dd><p>The number of children.</p>
@@ -1065,7 +1148,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfoNode.flow">
 <em class="property">property </em><code class="sig-name descname">flow</code><a class="headerlink" href="#infomap.InfoNode.flow" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the flow of the node.</p>
@@ -1079,9 +1162,9 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfoNode.get_meta_data">
-<code class="sig-name descname">get_meta_data</code><span class="sig-paren">(</span><em class="sig-param">dimension=0</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfoNode.get_meta_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_meta_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dimension</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfoNode.get_meta_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get meta data on a specific dimension.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1096,7 +1179,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfoNode.is_leaf">
 <em class="property">property </em><code class="sig-name descname">is_leaf</code><a class="headerlink" href="#infomap.InfoNode.is_leaf" title="Permalink to this definition">¶</a></dt>
 <dd><p>True if the node has no children.</p>
@@ -1110,7 +1193,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfoNode.is_leaf_module">
 <em class="property">property </em><code class="sig-name descname">is_leaf_module</code><a class="headerlink" href="#infomap.InfoNode.is_leaf_module" title="Permalink to this definition">¶</a></dt>
 <dd><p>True if the node has children but no grandchildren.</p>
@@ -1124,7 +1207,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfoNode.is_root">
 <em class="property">property </em><code class="sig-name descname">is_root</code><a class="headerlink" href="#infomap.InfoNode.is_root" title="Permalink to this definition">¶</a></dt>
 <dd><p>True if the node has no parent.</p>
@@ -1138,7 +1221,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfoNode.layer_id">
 <em class="property">property </em><code class="sig-name descname">layer_id</code><a class="headerlink" href="#infomap.InfoNode.layer_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the layer id of a multilayer node.</p>
@@ -1152,7 +1235,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfoNode.meta_data">
 <em class="property">property </em><code class="sig-name descname">meta_data</code><a class="headerlink" href="#infomap.InfoNode.meta_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Meta data (on first dimension if more).</p>
@@ -1166,7 +1249,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfoNode.node_id">
 <em class="property">property </em><code class="sig-name descname">node_id</code><a class="headerlink" href="#infomap.InfoNode.node_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the physical node id.</p>
@@ -1180,7 +1263,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfoNode.state_id">
 <em class="property">property </em><code class="sig-name descname">state_id</code><a class="headerlink" href="#infomap.InfoNode.state_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the state id of the node.</p>
@@ -1196,10 +1279,10 @@ This is useful to create empty physical node in a state network.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="infomap.InfomapIterator">
-<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapIterator</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapIterator" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapIterator</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapIterator" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
 <dt id="infomap.InfomapIterator.child_index">
 <em class="property">property </em><code class="sig-name descname">child_index</code><a class="headerlink" href="#infomap.InfomapIterator.child_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the child index.</p>
@@ -1213,7 +1296,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapIterator.depth">
 <em class="property">property </em><code class="sig-name descname">depth</code><a class="headerlink" href="#infomap.InfomapIterator.depth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the depth.</p>
@@ -1227,7 +1310,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapIterator.module_id">
 <em class="property">property </em><code class="sig-name descname">module_id</code><a class="headerlink" href="#infomap.InfomapIterator.module_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the module id of the node.</p>
@@ -1241,7 +1324,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapIterator.path">
 <em class="property">property </em><code class="sig-name descname">path</code><a class="headerlink" href="#infomap.InfomapIterator.path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the path to the node in the tree.</p>
@@ -1257,10 +1340,10 @@ This is useful to create empty physical node in a state network.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="infomap.InfomapLeafModuleIterator">
-<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapLeafModuleIterator</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapLeafModuleIterator" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapLeafModuleIterator</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapLeafModuleIterator" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
 <dt id="infomap.InfomapLeafModuleIterator.child_index">
 <em class="property">property </em><code class="sig-name descname">child_index</code><a class="headerlink" href="#infomap.InfomapLeafModuleIterator.child_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the child index.</p>
@@ -1274,7 +1357,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapLeafModuleIterator.depth">
 <em class="property">property </em><code class="sig-name descname">depth</code><a class="headerlink" href="#infomap.InfomapLeafModuleIterator.depth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the depth.</p>
@@ -1288,7 +1371,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapLeafModuleIterator.module_id">
 <em class="property">property </em><code class="sig-name descname">module_id</code><a class="headerlink" href="#infomap.InfomapLeafModuleIterator.module_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the module id of the node.</p>
@@ -1302,7 +1385,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapLeafModuleIterator.path">
 <em class="property">property </em><code class="sig-name descname">path</code><a class="headerlink" href="#infomap.InfomapLeafModuleIterator.path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the path to the node in the tree.</p>
@@ -1318,10 +1401,10 @@ This is useful to create empty physical node in a state network.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="infomap.InfomapLeafIterator">
-<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapLeafIterator</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapLeafIterator" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapLeafIterator</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapLeafIterator" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
 <dt id="infomap.InfomapLeafIterator.child_index">
 <em class="property">property </em><code class="sig-name descname">child_index</code><a class="headerlink" href="#infomap.InfomapLeafIterator.child_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the child index.</p>
@@ -1335,7 +1418,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapLeafIterator.depth">
 <em class="property">property </em><code class="sig-name descname">depth</code><a class="headerlink" href="#infomap.InfomapLeafIterator.depth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the depth.</p>
@@ -1349,7 +1432,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapLeafIterator.module_id">
 <em class="property">property </em><code class="sig-name descname">module_id</code><a class="headerlink" href="#infomap.InfomapLeafIterator.module_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the module id of the node.</p>
@@ -1363,7 +1446,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapLeafIterator.path">
 <em class="property">property </em><code class="sig-name descname">path</code><a class="headerlink" href="#infomap.InfomapLeafIterator.path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the path to the node in the tree.</p>
@@ -1379,10 +1462,10 @@ This is useful to create empty physical node in a state network.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="infomap.InfomapIteratorPhysical">
-<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapIteratorPhysical</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapIteratorPhysical" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapIteratorPhysical</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapIteratorPhysical" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
 <dt id="infomap.InfomapIteratorPhysical.child_index">
 <em class="property">property </em><code class="sig-name descname">child_index</code><a class="headerlink" href="#infomap.InfomapIteratorPhysical.child_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the child index.</p>
@@ -1396,7 +1479,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapIteratorPhysical.depth">
 <em class="property">property </em><code class="sig-name descname">depth</code><a class="headerlink" href="#infomap.InfomapIteratorPhysical.depth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the depth.</p>
@@ -1410,7 +1493,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapIteratorPhysical.module_id">
 <em class="property">property </em><code class="sig-name descname">module_id</code><a class="headerlink" href="#infomap.InfomapIteratorPhysical.module_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the module id of the node.</p>
@@ -1424,7 +1507,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapIteratorPhysical.path">
 <em class="property">property </em><code class="sig-name descname">path</code><a class="headerlink" href="#infomap.InfomapIteratorPhysical.path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the path to the node in the tree.</p>
@@ -1440,10 +1523,10 @@ This is useful to create empty physical node in a state network.</p>
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="infomap.InfomapLeafIteratorPhysical">
-<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapLeafIteratorPhysical</code><span class="sig-paren">(</span><em class="sig-param">*args</em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapLeafIteratorPhysical" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">InfomapLeafIteratorPhysical</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.InfomapLeafIteratorPhysical" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
 <dt id="infomap.InfomapLeafIteratorPhysical.child_index">
 <em class="property">property </em><code class="sig-name descname">child_index</code><a class="headerlink" href="#infomap.InfomapLeafIteratorPhysical.child_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the child index.</p>
@@ -1457,7 +1540,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapLeafIteratorPhysical.depth">
 <em class="property">property </em><code class="sig-name descname">depth</code><a class="headerlink" href="#infomap.InfomapLeafIteratorPhysical.depth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the depth.</p>
@@ -1471,7 +1554,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapLeafIteratorPhysical.module_id">
 <em class="property">property </em><code class="sig-name descname">module_id</code><a class="headerlink" href="#infomap.InfomapLeafIteratorPhysical.module_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the module id of the node.</p>
@@ -1485,7 +1568,7 @@ This is useful to create empty physical node in a state network.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="infomap.InfomapLeafIteratorPhysical.path">
 <em class="property">property </em><code class="sig-name descname">path</code><a class="headerlink" href="#infomap.InfomapLeafIteratorPhysical.path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the path to the node in the tree.</p>
@@ -1554,7 +1637,7 @@ This is useful to create empty physical node in a state network.</p>
       &copy;2020, Daniel Edler, Anton Eriksson, Martin Rosvall.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
