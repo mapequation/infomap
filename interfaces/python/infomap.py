@@ -876,6 +876,19 @@ class Infomap(InfomapWrapper):
         return super().numTopModules()
 
     @property
+    def num_non_trivial_top_modules(self):
+        """Get the number of non-trivial top modules in the tree
+
+        A trivial module is a module with either one or all nodes within.
+
+        Returns
+        -------
+        int
+            The number of non-trivial top modules
+        """
+        return super().numNonTrivialTopModules()
+
+    @property
     def num_leaf_modules(self):
         """Get the number of leaf modules in the tree
 

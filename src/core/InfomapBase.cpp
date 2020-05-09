@@ -604,6 +604,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 
   aggregateFlowValuesFromLeafToRoot();
   initNetwork();
+  calculateNumNonTrivialTopModules();
 
   m_hierarchicalCodelength = calcCodelengthOnTree(true);
   Log() << "\n -> Initiated to codelength " << m_hierarchicalCodelength << " in " << maxDepth << " levels with " << numTopModules() << " top modules." << std::endl;
