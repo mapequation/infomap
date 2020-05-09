@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.3](https://github.com/mapequation/infomap/compare/v1.1.2...v1.1.3) (2020-05-09)
+
+
+### Bug Fixes
+
+* **python:** Correct codelength terms after N > 1 ([146cee6](https://github.com/mapequation/infomap/commit/146cee6246e55fb9c4a711c1278bdc251b54fced))
+* **python:** Define module_codelength as L - L_index ([fa6eb94](https://github.com/mapequation/infomap/commit/fa6eb946acb22d808cd286bcfad6d76d3f2d4293))
+* **python:** Don't create empty node names if they didn't already exist ([#126](https://github.com/mapequation/infomap/issues/126)) ([4d1cd56](https://github.com/mapequation/infomap/commit/4d1cd565e356f5c4ac4e8ce1620ae128a0f9ad4c))
+* **python:** Expose num_non_trivial_top_modules ([6b91184](https://github.com/mapequation/infomap/commit/6b911842693f46546fdc89beb145394ed74dacdf))
+
 ### [1.1.2](https://github.com/mapequation/infomap/compare/v1.1.1...v1.1.2) (2020-04-08)
 
 
