@@ -37,8 +37,8 @@ def find_communities(G):
 def draw_network(G):
     # position map
     pos = nx.spring_layout(G)
-    # community ids
-    communities = list(nx.get_node_attributes(G, 'community').values())
+    # community index
+    communities = [c - 1 for c in nx.get_node_attributes(G, 'community').values()]
     num_communities = max(communities) + 1
 
     # color map from http://colorbrewer2.org/
