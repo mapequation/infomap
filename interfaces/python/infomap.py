@@ -962,7 +962,13 @@ class Infomap(InfomapWrapper):
 
     @property
     def module_codelength(self):
-        """Get the two-level module codelength.
+        """Get the total codelength of the modules.
+
+        The module codelength is defined such that
+        ``codelength = index_codelength + module_codelength``
+        
+        For a hierarchical solution, the module codelength
+        is the sum of codelengths for each top module.
 
         See Also
         --------
@@ -972,7 +978,7 @@ class Infomap(InfomapWrapper):
         Returns
         -------
         float
-            The two-level module codelength
+            The module codelength
         """
         return super().getModuleCodelength()
 

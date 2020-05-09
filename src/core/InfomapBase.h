@@ -146,7 +146,7 @@ public:
 
   virtual double getIndexCodelength() const = 0;
 
-  virtual double getModuleCodelength() const = 0;
+  virtual double getModuleCodelength() const = 0; // m_hierarchicalCodelength - getIndexCodelength()
 
   double getHierarchicalCodelength() const;
 

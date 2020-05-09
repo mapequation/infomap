@@ -60,7 +60,7 @@ public:
 
   virtual double getModuleCodelength() const
   {
-    return m_optimizer->getModuleCodelength();
+    return m_hierarchicalCodelength - m_optimizer->getIndexCodelength();
   }
 
   virtual double getMetaCodelength(bool unweighted = false) const
