@@ -142,14 +142,22 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
 
 void ProgramInterface::exitWithVersionInformation()
 {
-  Log() << m_programName << " version " << m_programVersion << std::endl;
+  Log() << m_programName << " version " << m_programVersion;
+#ifdef _OPENMP
+  Log() << " compiled with OpenMP";
+#endif
+  Log() << std::endl;
   Log() << "See www.mapequation.org for terms of use." << std::endl;
   std::exit(0);
 }
 
 void ProgramInterface::exitWithError(std::string message)
 {
-  Log() << m_programName << " version " << m_programVersion << std::endl;
+  Log() << m_programName << " version " << m_programVersion;
+#ifdef _OPENMP
+  Log() << " compiled with OpenMP";
+#endif
+  Log() << std::endl;
   std::cerr << message << std::endl;
   Log() << "Usage: " << m_executableName;
   for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
