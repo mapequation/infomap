@@ -2046,13 +2046,15 @@ void InfomapBase::writeResult()
 
 std::string InfomapBase::getOutputFileHeader()
 {
+  std::string bipartiteInfo = io::Str() << "\n# bipartite start id " << m_network.bipartiteStartId();
   return io::Str() << "# v" << INFOMAP_VERSION << "\n"
                    << "# ./Infomap " << parsedString << "\n"
                    << "# started at " << m_startDate << "\n"
                    << "# completed in " << m_elapsedTime.getElapsedTimeInSec() << " s\n"
                    << "# partitioned into " << maxTreeDepth() << " levels with " << numTopModules() << " top modules\n"
                    << "# codelength " << codelength() << " bits\n"
-                   << "# relative codelength savings " << getRelativeCodelengthSavings() * 100 << "%";
+                   << "# relative codelength savings " << getRelativeCodelengthSavings() * 100 << "%" <<
+                   (m_network.isBipartite() ? bipartiteInfo : "");
 }
 
 std::string InfomapBase::writeTree(std::string filename, bool states)
@@ -2083,7 +2085,7 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
   SafeOutFile outFile(outputFilename);
   outFile << std::setprecision(9);
   outFile << getOutputFileHeader() << "\n";
-  outFile << "# module level: " << moduleIndexLevel << "\n";
+  outFile << "# module level " << moduleIndexLevel << "\n";
   outFile << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
   if (states) {
     outFile << "# state_id module flow node_id";
