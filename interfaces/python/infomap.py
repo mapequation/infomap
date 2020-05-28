@@ -63,14 +63,10 @@ class Infomap(InfomapWrapper):
     def add_node(self, node_id, name=None, teleportation_weight=None):
         """Add a node.
 
-        Notes
-        -----
-        Creates a state node for internal use.
-        If you want to create empty named nodes, use ``set_name`` instead.
-
         See Also
         --------
         set_name
+        add_nodes
 
         Parameters
         ----------
@@ -134,11 +130,6 @@ class Infomap(InfomapWrapper):
 
     def set_name(self, node_id, name):
         """Set the name of a node.
-
-        Notes
-        -----
-        Creates nodes if a node with the supplied node id does not exist.
-        This is useful to create empty physical node in a state network.
 
         Parameters
         ----------
