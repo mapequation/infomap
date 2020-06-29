@@ -298,6 +298,15 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     normalizeNodeFlow = true;
   }
 
+  if (config.useNodeWeightsAsFlow) {
+    Log() << "\n  -> Using node weights as flow.";
+    for (auto& nodeIt : network.nodes()) {
+      auto& networkNode = nodeIt.second;
+      m_nodeFlow[m_nodeIndexMap[networkNode.id]] = networkNode.weight;
+    }
+    normalizeNodeFlow = true;
+  }
+
   if (normalizeNodeFlow) {
     double sumNodeFlow = 0.0;
     for (unsigned int i = 0; i < m_nodeFlow.size(); ++i)

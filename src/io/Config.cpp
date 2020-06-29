@@ -94,6 +94,8 @@ Config Config::fromString(std::string flags, bool isCLI)
   // api.addOptionArgument(conf.recordedTeleportation, 'e', "recorded-teleportation",
   // 		"If teleportation is used to calculate the flow, also record it when minimizing codelength.", "Algorithm", true);
 
+  api.addOptionArgument(conf.useNodeWeightsAsFlow, "use-node-weights-as-flow", "Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1", "Algorithm", true);
+  
   api.addOptionArgument(conf.teleportToNodes, "to-nodes", "Teleport to nodes instead of to links, assuming uniform node weights if no such input data.", "Algorithm", true);
 
   api.addOptionArgument(conf.teleportationProbability, 'p', "teleportation-probability", "Probability of teleporting to a random node or link.", ArgType::probability, "Algorithm", true);

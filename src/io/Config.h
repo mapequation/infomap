@@ -86,6 +86,7 @@ struct Config {
   bool undirdir = false;
   bool outdirdir = false;
   bool rawdir = false;
+  bool useNodeWeightsAsFlow = false;
   bool teleportToNodes = false;
   double selfTeleportationProbability = -1;
   double markovTime = 1.0;
@@ -199,6 +200,7 @@ struct Config {
         undirdir(other.undirdir),
         outdirdir(other.outdirdir),
         rawdir(other.rawdir),
+        useNodeWeightsAsFlow(other.useNodeWeightsAsFlow),
         teleportToNodes(other.teleportToNodes),
         selfTeleportationProbability(other.selfTeleportationProbability),
         markovTime(other.markovTime),
@@ -298,6 +300,7 @@ struct Config {
     undirdir = other.undirdir;
     outdirdir = other.outdirdir;
     rawdir = other.rawdir;
+    useNodeWeightsAsFlow = other.useNodeWeightsAsFlow;
     teleportToNodes = other.teleportToNodes;
     selfTeleportationProbability = other.selfTeleportationProbability;
     markovTime = other.markovTime;
@@ -397,6 +400,7 @@ struct Config {
     undirdir = other.undirdir;
     outdirdir = other.outdirdir;
     rawdir = other.rawdir;
+    useNodeWeightsAsFlow = other.useNodeWeightsAsFlow;
     teleportToNodes = other.teleportToNodes;
     selfTeleportationProbability = other.selfTeleportationProbability;
     markovTime = other.markovTime;

@@ -1957,6 +1957,16 @@ void InfomapBase::writeResult()
   if (noFileOutput)
     return;
 
+  // Log() << "\n\nNetwork flow:\n";
+  // for (auto& leafNode : m_leafNodes) {
+  //   auto& n = *leafNode;
+  //   Log() << n.stateId << " (" << n.data.flow << "):\n";
+  //   for (auto& edge : n.outEdges()) {
+  //     auto& target = edge->target;
+  //     Log() << " -> " << target.stateId << " (" << edge->data.flow << ")\n";
+  //   }
+  // }
+
   // Log() << "\nPhysical tree:\n";
   // for (InfomapIteratorPhysical it(&root()); !it.isEnd(); ++it) {
   // 	Log() << io::stringify(it.path(), ":") << " moduleIndex: " << it.moduleIndex() << ", stateId: " << it->stateId <<
