@@ -85,7 +85,7 @@ Config Config::fromString(std::string flags, bool isCLI)
   api.addOptionArgument(conf.outputFormats, 'o', "output", "Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, network, states.", ArgType::list, "Output", true);
 
   // --------------------- Core algorithm options ---------------------
-  api.addOptionArgument(conf.twoLevel, '2', "two-level", "Optimize a two-level partition of the network.", "Algorithm");
+  api.addOptionArgument(conf.twoLevel, '2', "two-level", "Optimize a two-level partition of the network. Default is multi-level.", "Algorithm");
 
   api.addOptionArgument(conf.flowModel, 'f', "flow-model", "Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.", ArgType::option, "Algorithm");
 
