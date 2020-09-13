@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.4](https://github.com/mapequation/infomap/compare/v1.1.3...v1.1.4) (2020-09-13)
+
+
+### Bug Fixes
+
+* Clarify that the algorithm searches for multi-level solutions by default ([47be4de](https://github.com/mapequation/infomap/commit/47be4defa349e3be99851105aff290cd488b9282))
+* **python:** Fix color indices in networkx example ([dcf5888](https://github.com/mapequation/infomap/commit/dcf588800faf7f5d1f9be13d0bcc5528a2c2cf18))
+
 ### [1.1.3](https://github.com/mapequation/infomap/compare/v1.1.2...v1.1.3) (2020-05-09)
 
 
