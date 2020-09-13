@@ -4,7 +4,7 @@ Search.setIndex({
     "sphinx.domains.c": 2,
     "sphinx.domains.changeset": 1,
     "sphinx.domains.citation": 1,
-    "sphinx.domains.cpp": 2,
+    "sphinx.domains.cpp": 3,
     "sphinx.domains.index": 1,
     "sphinx.domains.javascript": 2,
     "sphinx.domains.math": 2,
@@ -109,8 +109,8 @@ Search.setIndex({
       path: [2, 2, 1, ""]
     },
     "infomap.MultilayerNode": {
-      layer_id: [2, 3, 1, ""],
-      node_id: [2, 3, 1, ""]
+      layer_id: [2, 2, 1, ""],
+      node_id: [2, 2, 1, ""]
     },
     infomap: {
       InfoNode: [2, 1, 1, ""],
@@ -126,16 +126,11 @@ Search.setIndex({
   objnames: {
     "0": ["py", "module", "Python module"],
     "1": ["py", "class", "Python class"],
-    "2": ["py", "method", "Python method"],
-    "3": ["py", "attribute", "Python attribute"]
+    "2": ["py", "method", "Python method"]
   },
-  objtypes: {
-    "0": "py:module",
-    "1": "py:class",
-    "2": "py:method",
-    "3": "py:attribute"
-  },
+  objtypes: { "0": "py:module", "1": "py:class", "2": "py:method" },
   terms: {
+    "4841898804052187": 2,
     class: 2,
     default: 2,
     float: 2,
@@ -292,7 +287,6 @@ Search.setIndex({
     initial_partit: 2,
     instal: 0,
     instanc: 2,
-    instead: 2,
     intern: 2,
     is_leaf: [1, 2],
     is_leaf_modul: 2,
@@ -441,7 +435,6 @@ Search.setIndex({
     string: [1, 2],
     suggest: 0,
     sum: 2,
-    suppli: 2,
     swig: 2,
     system: 0,
     target: 2,
@@ -470,7 +463,6 @@ Search.setIndex({
     upgrad: [0, 1],
     usag: 2,
     use: 2,
-    useful: 2,
     user: 0,
     using: 0,
     valu: 2,
