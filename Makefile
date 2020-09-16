@@ -260,17 +260,20 @@ $(R_BUILD_DIR)/src/%: src/%
 
 .PHONY: docker-build
 
-INFOMAP_VERSION=`node -p -e "require('./package.json').version"`
-VCS_REF=`git rev-parse --short HEAD`
-VCS_URL="https://github.com/mapequation/infomap"
+INFOMAP_VERSION = $(shell node -p -e "require('./package.json').version")
+VCS_REF = $(shell git rev-parse --short HEAD)
+VCS_URL = "https://github.com/mapequation/infomap"
+BUILD_ARGS = \
+	--build-arg INFOMAP_VERSION=$(INFOMAP_VERSION) \
+	--build-arg VCS_REF=$(VCS_REF) \
+	--build-arg VCS_URL=$(VCS_URL)
+TAG_NAME = mapequation/infomap:$(INFOMAP_VERSION)
 
 docker-build-alpine: Makefile docker/alpine.Dockerfile
 	docker build \
-	--build-arg INFOMAP_VERSION=$(INFOMAP_VERSION) \
-	--build-arg VCS_REF=$(VCS_REF) \
-	--build-arg VCS_URL=$(VCS_URL) \
+	$(BUILD_ARGS) \
 	-f docker/alpine.Dockerfile \
-	-t mapequation/infomap:$(INFOMAP_VERSION)-alpine .
+	-t $(TAG_NAME)-alpine .
 
 # notebook
 docker-build-notebook: Makefile
