@@ -267,18 +267,20 @@ BUILD_ARGS = \
 	--build-arg INFOMAP_VERSION=$(INFOMAP_VERSION) \
 	--build-arg VCS_REF=$(VCS_REF) \
 	--build-arg VCS_URL=$(VCS_URL)
-TAG_NAME = mapequation/infomap:$(INFOMAP_VERSION)
+TAG_NAME = mapequation/infomap
 
 docker-build-alpine: Makefile docker/alpine.Dockerfile
 	docker build $(BUILD_ARGS) \
 	-f docker/alpine.Dockerfile \
-	-t $(TAG_NAME)-alpine .
+	-t $(TAG_NAME):$(INFOMAP_VERSION)-alpine \
+	-t $(TAG_NAME):$(INFOMAP_VERSION) \
+	-t $(TAG_NAME):latest .
 
 # notebook
 docker-build-notebook: Makefile docker/notebook.Dockerfile
 	docker build $(BUILD_ARGS) \
 	-f docker/notebook.Dockerfile \
-	-t $(TAG_NAME)-notebook .
+	-t $(TAG_NAME):$(INFOMAP_VERSION)-notebook .
 
 docker-run-notebook: Makefile
 	docker run --rm \
