@@ -270,17 +270,21 @@ BUILD_ARGS = \
 TAG_NAME = mapequation/infomap:$(INFOMAP_VERSION)
 
 docker-build-alpine: Makefile docker/alpine.Dockerfile
-	docker build \
-	$(BUILD_ARGS) \
+	docker build $(BUILD_ARGS) \
 	-f docker/alpine.Dockerfile \
 	-t $(TAG_NAME)-alpine .
 
 # notebook
-docker-build-notebook: Makefile
-	docker build -f docker/notebook.Dockerfile -t infomap:notebook .
+docker-build-notebook: Makefile docker/notebook.Dockerfile
+	docker build $(BUILD_ARGS) \
+	-f docker/notebook.Dockerfile \
+	-t $(TAG_NAME)-notebook .
 
 docker-run-notebook: Makefile
-	docker run --rm -p 10000:8888 -v `pwd`:/me/pwd -v `pwd`/tmp:/me/tmp -v `readlink networks`:/me/networks -v `readlink output`:/me/output infomap:notebook start.sh jupyter lab --LabApp.token=''
+	docker run --rm \
+	-p 8888:8888 \
+	-v $(shell pwd):/me \
+	$(TAG_NAME)-notebook
 
 # swig python
 docker-build-swig-python: Makefile
