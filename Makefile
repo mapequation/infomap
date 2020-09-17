@@ -278,30 +278,32 @@ docker-build: Makefile docker/alpine.Dockerfile
 docker-run: Makefile
 	docker run --rm \
 	-v $(shell pwd):/data \
-	$(TAG_NAME):$(INFOMAP_VERSION) \
+	$(TAG_NAME):latest \
 	ninetriangles.net .
 
 # notebook
 docker-build-notebook: Makefile docker/notebook.Dockerfile
 	docker build $(BUILD_ARGS) \
 	-f docker/notebook.Dockerfile \
-	-t $(TAG_NAME):$(INFOMAP_VERSION)-notebook .
+	-t $(TAG_NAME):$(INFOMAP_VERSION)-notebook \
+	-t $(TAG_NAME):notebook .
 
 docker-run-notebook: Makefile
 	docker run --rm \
 	-p 8888:8888 \
 	-v $(shell pwd):/me \
-	$(TAG_NAME):$(INFOMAP_VERSION)-notebook
+	$(TAG_NAME):notebook
 
 # rstudio
 docker-build-rstudio: Makefile docker/rstudio.Dockerfile
 	docker build $(BULID_ARGS) \
 	-f docker/rstudio.Dockerfile \
-	-t $(TAG_NAME):$(INFOMAP_VERSION)-rstudio .
+	-t $(TAG_NAME):$(INFOMAP_VERSION)-rstudio \
+	-t $(TAG_NAME):rstudio .
 
 docker-run-rstudio: Makefile
 	docker run --rm \
-	$(TAG_NAME):$(INFOMAP_VERSION)-rstudio
+	$(TAG_NAME):rstudio
 
 # swig python
 docker-build-swig-python: Makefile
