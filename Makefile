@@ -258,8 +258,6 @@ $(R_BUILD_DIR)/src/%: src/%
 # Docker
 ##################################################
 
-.PHONY: docker-build
-
 INFOMAP_VERSION = $(shell node -p -e "require('./package.json').version")
 VCS_REF = $(shell git rev-parse --short HEAD)
 VCS_URL = "https://github.com/mapequation/infomap"
@@ -293,7 +291,7 @@ docker-run-notebook: Makefile
 	docker run --rm \
 	-p 8888:8888 \
 	-v $(shell pwd):/me \
-	$(TAG_NAME)-notebook
+	$(TAG_NAME):$(INFOMAP_VERSION)-notebook
 
 # swig python
 docker-build-swig-python: Makefile
@@ -309,13 +307,9 @@ docker-build-ubuntu-test-python: Makefile
 docker-run-ubuntu-test-python: Makefile
 	docker run --rm infomap:python-test
 
-# docker-run:
-# 	docker run -it --rm -v $(pwd):/home/rstudio infomap \
-	ninetriangles.net output
-
 ##################################################
 # Clean
 ##################################################
 
 clean: js-clean
-	$(RM) -r Infomap build lib include	
+	$(RM) -r Infomap build lib include
