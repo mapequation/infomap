@@ -24,11 +24,13 @@ RUN apk add --no-cache \
         libstdc++ \
         libgomp
 
-WORKDIR /infomap
+RUN mkdir /infomap
 
-COPY --from=builder /infomap/Infomap .
+COPY --from=builder /infomap/Infomap /infomap
 
 VOLUME /data
+
+WORKDIR /data
 
 ENTRYPOINT ["/infomap/Infomap"]
 CMD ["--help"]

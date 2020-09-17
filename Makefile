@@ -269,12 +269,19 @@ BUILD_ARGS = \
 	--build-arg VCS_URL=$(VCS_URL)
 TAG_NAME = mapequation/infomap
 
-docker-build-alpine: Makefile docker/alpine.Dockerfile
+# base image
+docker-build: Makefile docker/alpine.Dockerfile
 	docker build $(BUILD_ARGS) \
 	-f docker/alpine.Dockerfile \
 	-t $(TAG_NAME):$(INFOMAP_VERSION)-alpine \
 	-t $(TAG_NAME):$(INFOMAP_VERSION) \
 	-t $(TAG_NAME):latest .
+
+docker-run: Makefile
+	docker run --rm \
+	-v $(shell pwd):/data \
+	$(TAG_NAME):$(INFOMAP_VERSION) \
+	ninetriangles.net .
 
 # notebook
 docker-build-notebook: Makefile docker/notebook.Dockerfile
