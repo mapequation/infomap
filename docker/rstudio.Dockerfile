@@ -1,6 +1,7 @@
-FROM rocker/rstudio
+ARG BASE_CONTAINER=rocker/tidyverse:3.6.3-ubuntu18.04
+FROM $BASE_CONTAINER
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y -q \
     build-essential \
     libpcre3-dev \
     autoconf \
@@ -14,19 +15,18 @@ RUN apt-get update && apt-get install -y \
   && rm -rf /var/lib/apt/lists/*
 
 RUN wget https://github.com/swig/swig/archive/rel-3.0.12.tar.gz \
-&& tar -zxf rel-3.0.12.tar.gz \
-&& cd swig-rel-3.0.12 \
-&& rm -f ../rel-3.0.12.tar.gz \
-&& ./autogen.sh \
-&& ./configure \
-&& make \
-&& make install
+  && tar -zxf rel-3.0.12.tar.gz \
+  && rm -f ../rel-3.0.12.tar.gz \
+  && cd swig-rel-3.0.12 \
+  && ./autogen.sh \
+  && ./configure \
+  && make \
+  && make install
 
-COPY . /home/rstudio/
+RUN mkdir -p /infomap
 
-WORKDIR /home/rstudio
+COPY . /infomap/
+
+WORKDIR /infomap
 
 RUN make R
-
-ENTRYPOINT ["/home/rstudio/Infomap"]
-CMD ["--help"]

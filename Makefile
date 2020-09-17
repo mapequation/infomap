@@ -293,6 +293,16 @@ docker-run-notebook: Makefile
 	-v $(shell pwd):/me \
 	$(TAG_NAME):$(INFOMAP_VERSION)-notebook
 
+# rstudio
+docker-build-rstudio: Makefile docker/rstudio.Dockerfile
+	docker build $(BULID_ARGS) \
+	-f docker/rstudio.Dockerfile \
+	-t $(TAG_NAME):$(INFOMAP_VERSION)-rstudio .
+
+docker-run-rstudio: Makefile
+	docker run --rm \
+	$(TAG_NAME):$(INFOMAP_VERSION)-rstudio
+
 # swig python
 docker-build-swig-python: Makefile
 	docker build -f docker/swig.python.Dockerfile -t infomap:python .
