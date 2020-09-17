@@ -1,0 +1,15 @@
+version: '3.3'
+
+services:
+    infomap:
+        volumes:
+            - .:/data
+        image: mapequation/infomap
+
+    notebook:
+        ports:
+            - 8888:8888
+        volumes:
+            - .:/me
+        image: mapequation/infomap:notebook
+
