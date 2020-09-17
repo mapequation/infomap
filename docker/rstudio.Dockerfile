@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y -q \
 
 RUN wget https://github.com/swig/swig/archive/rel-3.0.12.tar.gz \
   && tar -zxf rel-3.0.12.tar.gz \
-  && rm -f ../rel-3.0.12.tar.gz \
+  && rm -f rel-3.0.12.tar.gz \
   && cd swig-rel-3.0.12 \
   && ./autogen.sh \
   && ./configure \
