@@ -258,14 +258,51 @@ $(R_BUILD_DIR)/src/%: src/%
 # Docker
 ##################################################
 
-.PHONY: docker-build
+INFOMAP_VERSION = $(shell node -p -e "require('./package.json').version")
+VCS_REF = $(shell git rev-parse --short HEAD)
+VCS_URL = "https://github.com/mapequation/infomap"
+BUILD_ARGS = \
+	--build-arg INFOMAP_VERSION=$(INFOMAP_VERSION) \
+	--build-arg VCS_REF=$(VCS_REF) \
+	--build-arg VCS_URL=$(VCS_URL)
+TAG_NAME = mapequation/infomap
+
+# base image
+docker-build: Makefile docker/infomap.Dockerfile
+	docker build $(BUILD_ARGS) \
+	-f docker/infomap.Dockerfile \
+	-t $(TAG_NAME):$(INFOMAP_VERSION) \
+	-t $(TAG_NAME):latest .
+
+docker-run: Makefile
+	docker run --rm \
+	-v $(shell pwd):/data \
+	$(TAG_NAME):latest \
+	ninetriangles.net .
 
 # notebook
-docker-build-notebook: Makefile
-	docker build -f docker/notebook.Dockerfile -t infomap:notebook .
+docker-build-notebook: Makefile docker/notebook.Dockerfile
+	docker build $(BUILD_ARGS) \
+	-f docker/notebook.Dockerfile \
+	-t $(TAG_NAME):$(INFOMAP_VERSION)-notebook \
+	-t $(TAG_NAME):notebook .
 
 docker-run-notebook: Makefile
-	docker run --rm -p 10000:8888 -v `pwd`:/me/pwd -v `pwd`/tmp:/me/tmp -v `readlink networks`:/me/networks -v `readlink output`:/me/output infomap:notebook start.sh jupyter lab --LabApp.token=''
+	docker run --rm \
+	-p 8888:8888 \
+	-v $(shell pwd):/me \
+	$(TAG_NAME):notebook
+
+# rstudio
+docker-build-rstudio: Makefile docker/rstudio.Dockerfile
+	docker build $(BULID_ARGS) \
+	-f docker/rstudio.Dockerfile \
+	-t $(TAG_NAME):$(INFOMAP_VERSION)-rstudio \
+	-t $(TAG_NAME):rstudio .
+
+docker-run-rstudio: Makefile
+	docker run --rm \
+	$(TAG_NAME):rstudio
 
 # swig python
 docker-build-swig-python: Makefile
@@ -281,13 +318,9 @@ docker-build-ubuntu-test-python: Makefile
 docker-run-ubuntu-test-python: Makefile
 	docker run --rm infomap:python-test
 
-# docker-run:
-# 	docker run -it --rm -v $(pwd):/home/rstudio infomap \
-	ninetriangles.net output
-
 ##################################################
 # Clean
 ##################################################
 
 clean: js-clean
-	$(RM) -r Infomap build lib include	
+	$(RM) -r Infomap build lib include
