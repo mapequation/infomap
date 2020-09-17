@@ -268,9 +268,9 @@ BUILD_ARGS = \
 TAG_NAME = mapequation/infomap
 
 # base image
-docker-build: Makefile docker/alpine.Dockerfile
+docker-build: Makefile docker/infomap.Dockerfile
 	docker build $(BUILD_ARGS) \
-	-f docker/alpine.Dockerfile \
+	-f docker/infomap.Dockerfile \
 	-t $(TAG_NAME):$(INFOMAP_VERSION) \
 	-t $(TAG_NAME):latest .
 
