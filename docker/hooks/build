@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# $DOCKERFILE_PATH and $IMAGE_NAME are injected by docker hub
+
+docker build \
+    -f $DOCKERFILE_PATH \
+    --build-arg VCF_URL="https://github.com/mapequation/infomap" \
+    --build-arg VCF_REF=$SOURCE_COMMIT \
+    -t $IMAGE_NAME .
