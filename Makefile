@@ -272,7 +272,7 @@ docker-build: Makefile docker/infomap.Dockerfile
 	docker build $(BUILD_ARGS) \
 	-f docker/infomap.Dockerfile \
 	-t $(TAG_NAME):$(INFOMAP_VERSION) \
-	-t $(TAG_NAME):latest .
+	-t $(TAG_NAME) .
 
 docker-run: Makefile
 	docker run --rm \
