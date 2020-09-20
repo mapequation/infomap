@@ -258,33 +258,24 @@ $(R_BUILD_DIR)/src/%: src/%
 # Docker
 ##################################################
 
-INFOMAP_VERSION = $(shell node -p -e "require('./package.json').version")
-VCS_REF = $(shell git rev-parse --short HEAD)
-VCS_URL = "https://github.com/mapequation/infomap"
-BUILD_ARGS = \
-	--build-arg INFOMAP_VERSION=$(INFOMAP_VERSION) \
-	--build-arg VCS_REF=$(VCS_REF) \
-	--build-arg VCS_URL=$(VCS_URL)
 TAG_NAME = mapequation/infomap
 
 # base image
 docker-build: Makefile docker/infomap.Dockerfile
-	docker build $(BUILD_ARGS) \
+	docker build \
 	-f docker/infomap.Dockerfile \
-	-t $(TAG_NAME):$(INFOMAP_VERSION) \
 	-t $(TAG_NAME) .
 
 docker-run: Makefile
 	docker run --rm \
 	-v $(shell pwd):/data \
-	$(TAG_NAME):latest \
+	$(TAG_NAME) \
 	ninetriangles.net .
 
 # notebook
 docker-build-notebook: Makefile docker/notebook.Dockerfile
-	docker build $(BUILD_ARGS) \
+	docker build \
 	-f docker/notebook.Dockerfile \
-	-t $(TAG_NAME):$(INFOMAP_VERSION)-notebook \
 	-t $(TAG_NAME):notebook .
 
 docker-run-notebook: Makefile
@@ -295,9 +286,8 @@ docker-run-notebook: Makefile
 
 # rstudio
 docker-build-rstudio: Makefile docker/rstudio.Dockerfile
-	docker build $(BULID_ARGS) \
+	docker build \
 	-f docker/rstudio.Dockerfile \
-	-t $(TAG_NAME):$(INFOMAP_VERSION)-rstudio \
 	-t $(TAG_NAME):rstudio .
 
 docker-run-rstudio: Makefile
