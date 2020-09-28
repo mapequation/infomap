@@ -1,13 +1,16 @@
-ARG BASE_CONTAINER=jupyter/datascience-notebook
+ARG BASE_CONTAINER=jupyter/scipy-notebook:74b0a01aebb1
 FROM $BASE_CONTAINER
 
-RUN pip install infomap
+USER root
 
-VOLUME /me
+RUN apt-get update && apt-get install -y -q \
+        build-essential \
+        && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /me
+RUN pip install --no-cache infomap \
+        && fix-permissions $CONDA_DIR \
+        && fix-permissions /home/$NB_USER
 
 USER $NB_UID
 
-ENTRYPOINT ["jupyter"]
-CMD ["lab", "--LabApp.token=''"]
+VOLUME /home/jovyan/work
