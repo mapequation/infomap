@@ -260,29 +260,17 @@ $(R_BUILD_DIR)/src/%: src/%
 
 TAG_NAME = mapequation/infomap
 
-# base image
 docker-build: Makefile docker/infomap.Dockerfile
-	docker build \
-	-f docker/infomap.Dockerfile \
-	-t $(TAG_NAME) .
+	docker-compose build infomap
 
 docker-run: Makefile
-	docker run --rm \
-	-v $(shell pwd):/data \
-	$(TAG_NAME) \
-	ninetriangles.net .
+	docker-compose run --rm infomap
 
-# notebook
 docker-build-notebook: Makefile docker/notebook.Dockerfile
-	docker build \
-	-f docker/notebook.Dockerfile \
-	-t $(TAG_NAME):notebook .
+	docker-compose build notebook
 
 docker-run-notebook: Makefile
-	docker run --rm \
-	-p 8888:8888 \
-	-v $(shell pwd):/me \
-	$(TAG_NAME):notebook
+	docker-compose up notebook
 
 # rstudio
 docker-build-rstudio: Makefile docker/rstudio.Dockerfile
