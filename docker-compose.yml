@@ -18,4 +18,5 @@ services:
         ports:
             - 8888:8888
         volumes:
-            - .:/me
+            - .:/home/jovyan/work
+        entrypoint: start.sh jupyter lab
