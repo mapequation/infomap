@@ -63,13 +63,12 @@ To build:
     - Copies the worker to `interfaces/js/src/worker`
     - Runs `npm run build` which bundles the worker with the js source files and copies them to `dist`
     - Copies the js README.md to the root
-3. Run `npm publish`
+3. To test, run `make js-test`
+    - Runs `npm pack` and extracts the `tgz` file.
+    - Copies `packages/dist/index.js` to `examples/js/`.
+    - Replaces the script source from the CDN to the local `./index.js`.
+4. Run `npm publish`
     - Optionally run `make js-clean`
-
-To test:
-
-Instead of `npm publish`, run `npm pack` and extract the `tgz` file. Copy `packages/dist/index.js` to
-`examples/js/` and replace the script source from the CDN to the local `./index.js`.
 
 
 ### Python

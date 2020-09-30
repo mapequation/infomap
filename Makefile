@@ -58,7 +58,7 @@ format:
 # JavaScript through Emscripten
 ##################################################
 
-.PHONY: js js-worker js-clean
+.PHONY: js js-worker js-clean js-test
 
 WORKER_FILENAME := infomap.worker.js
 PRE_WORKER_MODULE := interfaces/js/pre-worker-module.js
@@ -72,6 +72,21 @@ js-worker: build/js/$(WORKER_FILENAME) Infomap
 	cp build/js/* interfaces/js/src/worker/
 	npm run build
 	cp interfaces/js/README.md .
+
+js-test:
+	$(RM) -r package mapequation-infomap-*.tgz
+	npm pack
+	tar -xzvf mapequation-infomap-*.tgz
+	cp package/dist/index.js examples/js
+	sed -i.'backup' -e 's/src=".*"/src="index.js"/' \
+		examples/js/infomap-worker.html
+	open examples/js/infomap-worker.html
+	sleep 5
+	$(RM) -r package
+	$(RM) -r mapequation-infomap-*.tgz
+	$(RM) -r examples/js/index.js
+	$(RM) -r examples/js/infomap-worker.html
+	mv examples/js/infomap-worker.html{.backup,}
 
 build/js/infomap.worker.js: $(SOURCES) $(PRE_WORKER_MODULE)
 	@echo "Compiling Infomap to run in a worker in the browser..."
