@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/mapequation/infomap/compare/v1.1.4...v1.2.0) (2020-09-30)
+
+
+### Features
+
+* Add option to --use-node-weights-as-flow ([0d75174](https://github.com/mapequation/infomap/commit/0d751745ba565e06f93dfad6feb79ac9c6794e1e))
+* Show bipartite start id in bipartite output ([f6e9233](https://github.com/mapequation/infomap/commit/f6e9233932f39f2dbe72b842fe2ddb259b725e08))
+
+
+### Bug Fixes
+
+* Fix flow calculator for bipartite networks ([b725b27](https://github.com/mapequation/infomap/commit/b725b27563e84092438839606aba294d7b993de5))
+* **python:** Fix bipartite_start_id getter ([d326298](https://github.com/mapequation/infomap/commit/d326298c22570ded7002a8ee9cc361a448d8e4c5))
+
 ### [1.1.4](https://github.com/mapequation/infomap/compare/v1.1.3...v1.1.4) (2020-09-13)
 
 
