@@ -28,6 +28,7 @@
 #include "FlowCalculator.h"
 #include <iostream>
 #include <cmath>
+#include <numeric>
 #include "../utils/Log.h"
 #include "../core/StateNetwork.h"
 
@@ -309,11 +310,10 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   }
 
   if (normalizeNodeFlow) {
-    double sumNodeFlow = 0.0;
-    for (unsigned int i = 0; i < m_nodeFlow.size(); ++i)
-      sumNodeFlow += m_nodeFlow[i];
-    for (unsigned int i = 0; i < m_nodeFlow.size(); ++i)
-      m_nodeFlow[i] /= sumNodeFlow;
+    double sumNodeFlow = std::accumulate(begin(m_nodeFlow), end(m_nodeFlow), 0.0);
+
+    for (double &flow : m_nodeFlow)
+      flow /= sumNodeFlow;
   }
 
   // Write back flow to network
