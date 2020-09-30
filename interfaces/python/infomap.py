@@ -488,7 +488,7 @@ class Infomap(InfomapWrapper):
         int
             The node id where the second node type starts.
         """
-        return self.network.bipartiteStartId
+        return self.network.bipartiteStartId()
 
     @bipartite_start_id.setter
     def bipartite_start_id(self, start_id):
