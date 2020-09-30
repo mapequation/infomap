@@ -28,6 +28,7 @@
 #include "FlowCalculator.h"
 #include <iostream>
 #include <cmath>
+#include <numeric>
 #include "../utils/Log.h"
 #include "../core/StateNetwork.h"
 
@@ -279,10 +280,11 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     Log() << "\n  -> Using bipartite links.";
     // Only links between ordinary nodes and feature nodes in bipartite network
     // Don't code feature nodes -> distribute all flow from those to ordinary nodes
-    unsigned int bipartiteStartId = network.bipartiteStartId();
+    auto bipartiteStartId = network.bipartiteStartId();
+    auto bipartiteStartIndex = m_nodeIndexMap[bipartiteStartId];
 
     for (auto& link : m_flowLinks) {
-      unsigned int sourceIsFeature = link.source >= bipartiteStartId;
+      auto sourceIsFeature = link.source >= bipartiteStartIndex;
 
       if (sourceIsFeature) {
         m_nodeFlow[link.target] += link.flow;
@@ -308,11 +310,10 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   }
 
   if (normalizeNodeFlow) {
-    double sumNodeFlow = 0.0;
-    for (unsigned int i = 0; i < m_nodeFlow.size(); ++i)
-      sumNodeFlow += m_nodeFlow[i];
-    for (unsigned int i = 0; i < m_nodeFlow.size(); ++i)
-      m_nodeFlow[i] /= sumNodeFlow;
+    double sumNodeFlow = std::accumulate(begin(m_nodeFlow), end(m_nodeFlow), 0.0);
+
+    for (double &flow : m_nodeFlow)
+      flow /= sumNodeFlow;
   }
 
   // Write back flow to network
