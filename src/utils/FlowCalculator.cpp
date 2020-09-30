@@ -280,9 +280,10 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     // Only links between ordinary nodes and feature nodes in bipartite network
     // Don't code feature nodes -> distribute all flow from those to ordinary nodes
     auto bipartiteStartId = network.bipartiteStartId();
+    auto bipartiteStartIndex = m_nodeIndexMap[bipartiteStartId];
 
     for (auto& link : m_flowLinks) {
-      auto sourceIsFeature = link.source >= bipartiteStartId - 1;
+      auto sourceIsFeature = link.source >= bipartiteStartIndex;
 
       if (sourceIsFeature) {
         m_nodeFlow[link.target] += link.flow;
