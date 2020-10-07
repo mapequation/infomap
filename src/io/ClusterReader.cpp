@@ -25,6 +25,7 @@
 **********************************************************************************/
 
 
+#include <algorithm>
 #include "ClusterReader.h"
 #include "../utils/Log.h"
 #include "convert.h"
