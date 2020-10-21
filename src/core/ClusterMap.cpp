@@ -11,7 +11,7 @@ void ClusterMap::readClusterData(const std::string& filename, bool includeFlow)
 {
   FileURI file(filename);
   m_extension = file.getExtension();
-  if (m_extension == "tree") {
+  if (m_extension == "tree" || m_extension == "ftree") {
     return readTree(filename, includeFlow);
   }
   if (m_extension == "clu") {

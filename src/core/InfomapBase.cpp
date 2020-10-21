@@ -488,15 +488,18 @@ InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard)
 
   Log() << "Init partition from file '" << clusterDataFile << "'... ";
 
-  if (clusterMap.extension() == "tree") {
+  const auto& ext = clusterMap.extension();
+
+  if (ext == "tree" || ext == "ftree") {
     initTree(clusterMap.nodePaths());
     if (!noInfomap) {
       noInfomap = true;
       //TODO: implement continuing from tree
       Log() << "\nNotice: Continuing clustering algorithm after reading input tree currently not supported, assuming --no-infomap for now.\n";
     }
-  } else if (clusterMap.extension() == "clu")
+  } else if (ext == "clu") {
     initPartition(clusterMap.clusterIds(), hard);
+  }
 
   Log() << "done! Generated " << numLevels() << " levels with codelength " << m_hierarchicalCodelength << "\n";
 
