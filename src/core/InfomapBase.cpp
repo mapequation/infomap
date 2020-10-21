@@ -509,9 +509,9 @@ InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard)
 InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 {
   Log(4) << "Init tree... " << std::setprecision(9);
-  unsigned int maxDepth = 2;
+  auto maxDepth = 2;
   std::map<unsigned int, unsigned int> nodeIdToIndex;
-  unsigned int leafIndex = 0;
+  auto leafIndex = 0;
   for (auto& leafNode : m_leafNodes) {
     // Also detach leaf nodes to delete all modules, safe to call multiple times
     leafNode->parent->releaseChildren();
@@ -522,15 +522,16 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
   }
   m_root.deleteChildren();
 
-  unsigned int numNodesFound = 0;
-  unsigned int numNodesNotInNetwork = 0;
-  for (auto& nodePath : tree.nodePaths) {
+  auto numNodesFound = 0;
+  auto numNodesNotInNetwork = 0;
+  for (const auto& nodePath : tree.nodePaths) {
     ++numNodesFound;
     InfoNode* node = &root();
-    unsigned int depth = 0;
-    auto& path = nodePath.path;
-    auto nodeId = nodePath.nodeId;
+    auto depth = 0;
+    const auto& path = nodePath.path;
+    const auto nodeId = nodePath.nodeId;
     InfoNode* leafNode = nullptr;
+
     try {
       auto nodeIndex = nodeIdToIndex.at(nodeId);
       leafNode = m_leafNodes[nodeIndex];
@@ -538,8 +539,10 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       ++numNodesNotInNetwork;
       continue;
     }
-    for (unsigned int i = 0; i < path.size(); ++i) {
+
+    for (size_t i = 0; i < path.size(); ++i) {
       auto childNumber = path[i]; // 1-based indexing
+
       // Create new node if path doesn't exist
       // TODO: Check correct tree indexing?
       if (node->childDegree() < childNumber) {
@@ -549,21 +552,26 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
         }
         node->addChild(child);
       }
+
       node = node->lastChild;
       ++depth;
     }
     maxDepth = std::max(maxDepth, depth);
   }
+
   if (numNodesNotInNetwork > 0) {
     Log(1) << "\n -> " << numNodesNotInNetwork << "/" << numNodesFound << " nodes in tree not found in network.";
   }
-  unsigned int numNodesAddedToNeighbouringModules = 0;
-  unsigned int numNodesWithoutClusterInfo = 0;
+
+  auto numNodesAddedToNeighbouringModules = 0;
+  auto numNodesWithoutClusterInfo = 0;
+
   // Set orphaned nodes to their own or neighbouring module
   for (auto& leafNode : m_leafNodes) {
     if (leafNode->parent != nullptr) {
       continue;
     }
+
     ++numNodesWithoutClusterInfo;
     if (assignToNeighbouringModule) {
       // Take first neighbour that has a module assigned
