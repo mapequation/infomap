@@ -590,6 +590,11 @@ void Network::printSummary()
 
 void Network::addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight)
 {
+  if (weight < m_config.weightThreshold) {
+    ++m_numLinksIgnoredByWeightThreshold;
+    m_totalLinkWeightIgnored += weight;
+    return;
+  }
   unsigned int stateId1 = addMultilayerNode(layer1, n1);
   unsigned int stateId2 = addMultilayerNode(layer2, n2);
 
