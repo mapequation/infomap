@@ -109,6 +109,7 @@ bool InfomapBase::haveNonTrivialModules() const
 
 unsigned int InfomapBase::numLevels() const
 {
+  // TODO: Make sure this is not called unless tree is guaranteed to have even depth!
   unsigned int depth = 0;
   InfoNode* n = m_root.firstChild;
   while (n != nullptr) {
@@ -972,14 +973,97 @@ void InfomapBase::hierarchicalPartition()
 {
   Log(1) << "Hierarchical partition..." << std::endl;
 
-  if (numLevels() > 2) {
-    Log(1) << "Continuing from a tree with " << numLevels() << " levels..." << std::endl;
+  auto depth = maxTreeDepth();
+  if (depth > 2) {
+    Log(1) << "Continuing from a tree with " << depth << " levels..." << std::endl;
 
     if (fastHierarchicalSolution == 0) {
       Log(1) << "Removing sub modules...\n";
       removeSubModules(true);
       m_hierarchicalCodelength = calcCodelengthOnTree(true);
     }
+    else if (fastHierarchicalSolution == 1) {
+      Log(1) << "Fine-tune bottom modules... ";
+      bool isSilent = false;
+      if (isMainInfomap()) {
+        isSilent = Log::isSilent();
+        // Log::setSilent(true);
+      }
+      double codelengthBefore = 0.0;
+      double codelengthAfter = 0.0;
+
+      for (InfoNode& module : m_root.infomapTree()) {
+        if (!module.isLeaf() && module.firstChild->isLeafModule()) {
+          codelengthBefore += module.codelength;
+          auto numLeafs = 0;
+          for (auto& leafModule : module) {
+            numLeafs += leafModule.childDegree();
+          }
+          // Log() << "\n  -> Tune module with " << numLeafs << " nodes in " << module.childDegree() << " sub modules... ";
+          std::vector<unsigned int> modules(numLeafs);
+          std::vector<InfoNode*> leafs(numLeafs);
+          auto i = 0;
+          for (auto it = module.begin_tree(); !it.isEnd(); ++it) {
+            if (it->isLeaf()) {
+              modules[i] = it.moduleIndex();
+              leafs[i] = it.current();
+              ++i;
+            }
+          }
+          
+          module.replaceChildrenWithGrandChildren();
+          
+          auto& subInfomap = getSubInfomap(module)
+            .initNetwork(module);
+          
+          subInfomap.initPartition(modules);
+
+          // Run two-level partition + find hierarchically super modules (skip recursion)
+          // subInfomap.run();
+          // subInfomap.partition();
+          subInfomap.setOnlySuperModules(true).run();
+          
+          // Collect sub Infomap modules
+          i = 0;
+          for (auto& subLeafPtr : subInfomap.leafNodes()) {
+            modules[i] = subLeafPtr->index;
+            ++i;
+          }
+
+          // Create new sub modules
+          std::vector<InfoNode*> subModules(numLeafs, nullptr);
+          module.releaseChildren();
+
+          for (auto i = 0; i < numLeafs; ++i) {
+            InfoNode* leaf = leafs[i];
+            unsigned int moduleIndex = modules[i];
+            if (subModules[moduleIndex] == nullptr) {
+              subModules[moduleIndex] = new InfoNode(subInfomap.leafNodes()[i]->parent->data);
+              subModules[moduleIndex]->index = moduleIndex;
+              module.addChild(subModules[moduleIndex]);
+            }
+            subModules[moduleIndex]->addChild(leaf);
+          }
+          module.disposeInfomap();
+          module.codelength = calcCodelength(module);
+          codelengthAfter += module.codelength;
+        }
+      }
+
+      if (isMainInfomap())
+        Log::setSilent(isSilent);
+      double diffCodelength = codelengthBefore - codelengthAfter;
+      Log() << "done! Codelength improvement " << (diffCodelength / codelengthBefore) * 100 << "% to codelength " << codelengthAfter << "\n";
+    }
+
+    // Log() << "\nNew tree before recursion:\n";
+    // for (auto it = root().begin_tree(); !it.isEnd(); ++it) {
+    //   if (it->isLeaf()) {
+    //     Log() << it->depth() << ": " << it->data.flow << " " << it->stateId << " " << it.moduleIndex() << '\n';
+    //   }
+    //   else
+    //     Log() << it->depth() << ": " << it->data.flow << "\n";
+    // }
 
     recursivePartition();
     return;
@@ -1408,6 +1492,7 @@ unsigned int InfomapBase::coarseTune()
       InfomapBase& subInfomap = getSubInfomap(node)
                                     .setTwoLevel(true)
                                     .setTuneIterationLimit(1);
+      // subInfomap.preferModularSolution = true;//TODO: Benchmark more
       subInfomap.initNetwork(node).run();
 
       auto originalLeafIt = node.begin_child();
