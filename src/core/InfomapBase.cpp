@@ -489,11 +489,6 @@ InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard)
 
   if (ext == "tree" || ext == "ftree") {
     initTree(clusterMap.nodePaths());
-    if (!noInfomap) {
-      noInfomap = true;
-      //TODO: implement continuing from tree
-      Log() << "\nNotice: Continuing clustering algorithm after reading input tree currently not supported, assuming --no-infomap for now.\n";
-    }
   } else if (ext == "clu") {
     initPartition(clusterMap.clusterIds(), hard);
   }
@@ -976,6 +971,19 @@ void InfomapBase::runPartition()
 void InfomapBase::hierarchicalPartition()
 {
   Log(1) << "Hierarchical partition..." << std::endl;
+
+  if (numLevels() > 2) {
+    Log(1) << "Continuing from a tree with " << numLevels() << " levels..." << std::endl;
+
+    if (fastHierarchicalSolution == 0) {
+      Log(1) << "Removing sub modules...\n";
+      removeSubModules(true);
+      m_hierarchicalCodelength = calcCodelengthOnTree(true);
+    }
+
+    recursivePartition();
+    return;
+  }
 
   partition();
 
