@@ -2101,6 +2101,26 @@ void InfomapBase::writeResult()
   }
 
 
+  if (printNewick) {
+    std::string filename = outDirectory + outName + ".tre";
+
+    if (!haveMemory()) {
+      Log() << "Write Newick tree to " << filename << "... ";
+      writeNewickTree(filename);
+      Log() << "done!\n";
+    } else {
+      // Write both physical and state level
+      Log() << "Write physical Newick tree to " << filename << "... ";
+      writeNewickTree(filename, false);
+      Log() << "done!\n";
+      std::string filenameStates = outDirectory + outName + "_states.tre";
+      Log() << "Write state Newick tree to " << filenameStates << "... ";
+      writeNewickTree(filenameStates, true);
+      Log() << "done!\n";
+    }
+  }
+
+
   if (printClu) {
     std::string filename = outDirectory + outName + ".clu";
     if (!haveMemory()) {
@@ -2149,6 +2169,16 @@ std::string InfomapBase::writeFlowTree(std::string filename, bool states)
   SafeOutFile outFile(outputFilename);
   writeTree(outFile, states);
   writeTreeLinks(outFile, states);
+
+  return outputFilename;
+}
+
+std::string InfomapBase::writeNewickTree(std::string filename, bool states)
+{
+  std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.tre" : ".tre") : filename;
+
+  SafeOutFile outFile(outputFilename);
+  writeNewickTree(outFile, states);
 
   return outputFilename;
 }
@@ -2399,6 +2429,60 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
   outStream << std::setprecision(oldPrecision);
 }
 
+
+void InfomapBase::writeNewickTree(std::ostream& outStream, bool states)
+{
+  auto oldPrecision = outStream.precision();
+  // outStream << std::setprecision(9);
+  // outStream << getOutputFileHeader() << "\n";
+  outStream << std::setprecision(6);
+
+  auto isRoot = true;
+  unsigned int lastDepth = 0;
+  std::vector<double> flowStack;
+
+  auto writeNewickNode = [&](std::ostream& o, const InfoNode& node, unsigned int depth) {
+    if (depth > lastDepth || isRoot) {
+      outStream << "(";
+      flowStack.push_back(node.data.flow);
+      if (node.isLeaf())
+        outStream << (states ? node.stateId : node.physicalId) << ":" << node.data.flow;
+    } else if (depth == lastDepth) {
+      outStream << ",";
+      flowStack[flowStack.size()-1] = node.data.flow;
+      if (node.isLeaf()) {
+        outStream << (states ? node.stateId : node.physicalId) << ":" << node.data.flow;
+      }
+    } else {
+      // depth < lastDepth
+      while (flowStack.size() > depth + 1) {
+        flowStack.pop_back();
+        outStream << "):" << flowStack.back();
+      }
+      flowStack[flowStack.size()-1] = node.data.flow;
+      outStream << ",";
+    }
+    lastDepth = depth;
+    isRoot = false;
+  };
+  
+  // TODO: Make a general iterator where merging physical nodes depend on a parameter rather than type to be able to DRY here
+  if (haveMemory() && !states) {
+    for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
+      writeNewickNode(outStream, *it, it.depth());
+    }
+  } else {
+    for (auto it(iterTree()); !it.isEnd(); ++it) {
+      writeNewickNode(outStream, *it, it.depth());
+    }
+  }
+  while (flowStack.size() > 1) {
+    flowStack.pop_back();
+    outStream << "):" << flowStack.back();
+  }
+  outStream << ");\n";
+  outStream << std::setprecision(oldPrecision);
+}
 
 unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
 {
