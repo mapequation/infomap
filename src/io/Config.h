@@ -142,6 +142,7 @@ struct Config {
   bool originallyUndirected = false;
   bool printTree = false;
   bool printFlowTree = false;
+  bool printNewick = false;
   bool printMap = false;
   bool printClu = false;
   int cluLevel = 1; // Write modules at specified depth from root. 1, 2, ... or -1 for bottom level
@@ -249,6 +250,7 @@ struct Config {
     originallyUndirected = other.originallyUndirected;
     // printTree = other.printTree;
     // printFlowTree = other.printFlowTree;
+    // printNewick = other.printNewick;
     // printMap = other.printMap;
     // printClu = other.printClu;
     // printNodeRanks = other.printNodeRanks;
@@ -345,7 +347,7 @@ struct Config {
 
   bool haveModularResultOutput() const
   {
-    return printTree || printFlowTree || printMap || printClu || printBinaryTree || printBinaryFlowTree;
+    return printTree || printFlowTree || printNewick || printMap || printClu || printBinaryTree || printBinaryFlowTree;
   }
 };
 
