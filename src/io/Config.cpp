@@ -79,7 +79,7 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
   // 		"Print the network with calculated flow values.", "Output", true);
 
   // -o network,states,clu,ftree
-  api.addOptionArgument(outputFormats, 'o', "output", "Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, network, states.", ArgType::list, "Output", true);
+  api.addOptionArgument(outputFormats, 'o', "output", "Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, network, states.", ArgType::list, "Output", true);
 
   api.addOptionArgument(hideBipartiteNodes, "hide-bipartite-nodes", "Project bipartite solution to unipartite.", "Output", true);
 
@@ -239,6 +239,8 @@ void Config::adaptDefaults()
       printTree = true;
     } else if (o == "ftree") {
       printFlowTree = true;
+    } else if (o == "newick") {
+      printNewick = true;
     } else if (o == "network") {
       printPajekNetwork = true;
     } else if (o == "states") {
