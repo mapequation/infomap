@@ -223,7 +223,7 @@ void InfomapBase::run(std::string parameters)
   std::string currentParameters = io::Str() << m_initialParameters << (parameters.empty() ? "" : " ") << parameters;
   if (currentParameters != m_currentParameters) {
     m_currentParameters = currentParameters;
-    setConfig(Config::fromString(m_currentParameters, isCLI));
+    setConfig(Config(m_currentParameters, isCLI));
     m_network.setConfig(*this);
   }
 

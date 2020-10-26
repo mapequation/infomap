@@ -169,13 +169,7 @@ struct Config {
 
   Config() = default;
 
-  Config(std::string flags, bool isCLI = false)
-  {
-    *this = Config::fromString(std::move(flags), isCLI);
-  }
-
-  Config(const Config& other) = default;
-
+  Config(std::string flags, bool isCLI = false);
 
   Config& cloneAsNonMain(const Config& other)
   {
@@ -352,8 +346,6 @@ struct Config {
   {
     return printTree || printFlowTree || printMap || printClu || printBinaryTree || printBinaryFlowTree;
   }
-
-  static Config fromString(std::string flags, bool isCLI = false);
 };
 
 } // namespace infomap
