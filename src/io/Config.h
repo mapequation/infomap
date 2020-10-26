@@ -31,6 +31,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
 #include <limits>
 
@@ -170,7 +171,7 @@ struct Config {
 
   Config(std::string flags, bool isCLI = false)
   {
-    *this = Config::fromString(flags, isCLI);
+    *this = Config::fromString(std::move(flags), isCLI);
   }
 
   Config(const Config& other)
