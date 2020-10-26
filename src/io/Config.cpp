@@ -95,7 +95,7 @@ Config Config::fromString(std::string flags, bool isCLI)
   // 		"If teleportation is used to calculate the flow, also record it when minimizing codelength.", "Algorithm", true);
 
   api.addOptionArgument(conf.useNodeWeightsAsFlow, "use-node-weights-as-flow", "Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1", "Algorithm", true);
-  
+
   api.addOptionArgument(conf.teleportToNodes, "to-nodes", "Teleport to nodes instead of to links, assuming uniform node weights if no such input data.", "Algorithm", true);
 
   api.addOptionArgument(conf.teleportationProbability, 'p', "teleportation-probability", "Probability of teleporting to a random node or link.", ArgType::probability, "Algorithm", true);
@@ -190,10 +190,10 @@ Config Config::fromString(std::string flags, bool isCLI)
   if (!optionalOutputDir.empty())
     conf.outDirectory = optionalOutputDir[0];
 
-  if (!isCLI && conf.outDirectory == "")
+  if (!isCLI && conf.outDirectory.empty())
     conf.noFileOutput = true;
 
-  if (!conf.noFileOutput && conf.outDirectory == "" && isCLI) {
+  if (!conf.noFileOutput && conf.outDirectory.empty() && isCLI) {
     throw InputDomainError("Missing out_directory");
   }
 
@@ -205,7 +205,7 @@ Config Config::fromString(std::string flags, bool isCLI)
     throw FileOpenError(io::Str() << "Can't write to directory '" << conf.outDirectory << "'. Check that the directory exists and that you have write permissions.");
 
   if (conf.outName.empty()) {
-    if (conf.networkFile != "")
+    if (!conf.networkFile.empty())
       conf.outName = FileURI(conf.networkFile).getName();
     else
       conf.outName = "no-name";
@@ -260,42 +260,7 @@ void Config::adaptDefaults()
     printTree = true;
   }
 
-
-  // if (!haveModularResultOutput())
-  // 	printTree = true;
-
   originallyUndirected = isUndirectedFlow();
-  // if (isMemoryNetwork())
-  // {
-  // if (isMultilayerNetwork())
-  // {
-  // Include self-links in multilayer networks as layer and node numbers are unrelated
-  // includeSelfLinks = true;
-  // if (!isUndirectedFlow())
-  // {
-  // 	// teleportToNodes = true;
-  // 	recordedTeleportation = false;
-  // }
-  // }
-  // else
-  // {
-  // teleportToNodes = true;
-  // recordedTeleportation = false;
-  // if (isUndirectedFlow()) {
-  // 	flowModel = FlowModel::directed;
-  // }
-  // }
-  // if (is3gram()) {
-  // 	// Teleport to start of physical chains
-  // 	teleportToNodes = true;
-  // }
-  // }
-  // if (isBipartite())
-  // {
-  // 	bipartite = true;
-  // }
-
-  // directedEdges = !isUndirected();
 }
 
 } // namespace infomap
