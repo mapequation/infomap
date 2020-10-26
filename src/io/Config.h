@@ -155,6 +155,7 @@ struct Config {
   unsigned int verboseNumberPrecision = 9;
   bool silent = false;
   bool benchmark = false;
+  bool hideBipartiteNodes = false;
 
   unsigned int maxNodeIndexVisible = 0;
   bool showBiNodes = false;
