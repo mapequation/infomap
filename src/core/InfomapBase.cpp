@@ -2045,24 +2045,6 @@ void InfomapBase::writeResult()
       Log() << "done!\n";
     }
   }
-
-  if (printMap) {
-    std::string filename = outDirectory + outName + ".map";
-    if (!haveMemory()) {
-      Log() << "Write modular network to " << filename << "... ";
-      writeMap(filename);
-      Log() << "done!\n";
-    } else {
-      // Write both physical and state level
-      Log() << "Write physical modular network to " << filename << "... ";
-      writeMap(filename);
-      Log() << "done!\n";
-      std::string filenameStates = outDirectory + outName + "_states.map";
-      Log() << "Write state modular network to " << filenameStates << "... ";
-      writeMap(filenameStates, true);
-      Log() << "done!\n";
-    }
-  }
 }
 
 std::string InfomapBase::getOutputFileHeader()
@@ -2137,114 +2119,6 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
           outFile << node.physicalId << " " << it.moduleId() << " " << node.data.flow << "\n";
       }
     }
-  }
-  return outputFilename;
-}
-
-std::string InfomapBase::writeMap(std::string filename, bool states, int moduleIndexLevel)
-{
-  //TODO: Support moduleIndexLevel other than default -1
-  if (moduleIndexLevel != -1) {
-    Log() << "\nWarning: writeMap currently only supports default moduleIndexLevel -1\n";
-  }
-  // unsigned int maxModuleLevel = maxTreeDepth();
-  std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.map" : ".map") : filename;
-
-  // Collect modules
-  std::vector<InfoNode*> modules;
-  for (auto it(iterLeafModules()); !it.isEnd(); ++it) {
-    modules.push_back(it.current());
-  }
-
-  // Sort modules on flow descending order
-  std::sort(modules.begin(), modules.end(), [](InfoNode* a, InfoNode* b) {
-    return a->data.flow > b->data.flow;
-  });
-
-  // Store id on modules to simplify link aggregation
-  for (unsigned int i = 0; i < modules.size(); ++i) {
-    modules[i]->index = i + 1;
-  }
-
-  // Copy node data to seperate structure as physical nodes may be ephemeral
-  struct MapNode {
-    unsigned int id;
-    double flow;
-    std::string name = "";
-    MapNode(unsigned int id, double flow, std::string name = "")
-        : id(id), flow(flow), name(name) { initName(); }
-    void initName()
-    {
-      if (name.empty()) {
-        name = io::stringify(id);
-      }
-    }
-  };
-  // Collect nodes
-  unsigned int numNodes = 0;
-  std::vector<std::vector<MapNode>> nodes(modules.size());
-  for (unsigned int i = 0; i < modules.size(); ++i) {
-    if (haveMemory() && !states) {
-      for (InfomapLeafIteratorPhysical it(modules[i]); !it.isEnd(); ++it) {
-        // Use physicalId as node id for (aggregated) physical nodes
-        nodes[i].push_back(MapNode(it->physicalId, it->data.flow, m_network.names()[it->physicalId]));
-      }
-    } else {
-      // State nodes
-      for (auto& node : *modules[i]) {
-        nodes[i].push_back(MapNode(node.stateId, node.data.flow, m_network.names()[node.stateId]));
-      }
-    }
-    // Sort nodes on flow descending order
-    std::sort(nodes[i].begin(), nodes[i].end(), [=](MapNode& a, MapNode& b) {
-      return a.flow > b.flow;
-    });
-    numNodes += nodes[i].size();
-  }
-
-  // Collect links and module exit flow
-  std::map<std::pair<unsigned int, unsigned int>, double> moduleLinks;
-  std::map<unsigned int, double> moduleExitFlow;
-  for (auto& module : modules) {
-    for (auto& node : *module) {
-      for (auto& link : node.outEdges()) {
-        if (link->source.parent != link->target.parent) {
-          moduleLinks[std::make_pair(link->source.parent->index, link->target.parent->index)] += link->data.flow;
-          moduleExitFlow[module->index + 1] += link->data.flow;
-        }
-      }
-    }
-  }
-
-  SafeOutFile outFile(outputFilename);
-  outFile << "# modules: " << modules.size() << "\n";
-  outFile << "# modulelinks: " << moduleLinks.size() << "\n";
-  outFile << "# nodes: " << numNodes << "\n";
-  outFile << "# links: " << 0 << "\n";
-  outFile << std::setprecision(9);
-  outFile << "# codelength: " << m_hierarchicalCodelength << "\n";
-  outFile << std::setprecision(6);
-  outFile << (isUndirectedClustering() ? "*Undirected\n" : "*Directed\n");
-  outFile << "*Modules " << modules.size() << "\n";
-  for (unsigned int i = 0; i < modules.size(); ++i) {
-    auto& module = *modules[i];
-    //# id name flow exitFlow (Name the module from the biggest child)
-    outFile << module.index << " \"" << nodes[i][0].name << ",...\" " << module.data.flow << " " << moduleExitFlow[module.index] << "\n";
-  }
-  outFile << "*Nodes " << numNodes << "\n";
-  for (unsigned int i = 0; i < nodes.size(); ++i) {
-    auto& siblings = nodes[i];
-    for (unsigned int j = 0; j < siblings.size(); ++j) {
-      auto& n = siblings[j];
-      outFile << i + 1 << ":" << j + 1 << " \"" << n.name << "\" " << n.flow << "\n";
-      // outFile << " " << n.id << "\n";
-    }
-  }
-  outFile << "*Links " << moduleLinks.size() << "\n";
-  for (auto& linkIt : moduleLinks) {
-    auto& link = linkIt.first;
-    auto& weight = linkIt.second;
-    outFile << link.first << " " << link.second << " " << weight << "\n";
   }
   return outputFilename;
 }
