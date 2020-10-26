@@ -549,7 +549,7 @@ struct Config {
 
   bool is3gram() const { return inputFormat == "3gram"; }
   bool isPath() const { return inputFormat == "path"; }
-  bool isMultilayerNetwork() const { return multilayerInput || inputFormat == "multilayer" || inputFormat == "multiplex" || additionalInput.size() > 0; }
+  bool isMultilayerNetwork() const { return multilayerInput || inputFormat == "multilayer" || inputFormat == "multiplex" || !additionalInput.empty(); }
   bool isStateNetwork() const { return inputFormat == "states"; }
   bool isBipartite() const { return inputFormat == "bipartite" || bipartite; }
 
@@ -557,7 +557,7 @@ struct Config {
 
   // bool isSimulatedMemoryNetwork() const { return (withMemory || nonBacktracking) && !isMemoryInput(); }
 
-  bool haveMetaData() const { return metaDataFile != "" || numMetaDataDimensions != 0; }
+  bool haveMetaData() const { return !metaDataFile.empty() || numMetaDataDimensions != 0; }
 
   bool haveOutput() const { return !noFileOutput; }
 
