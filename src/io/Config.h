@@ -169,7 +169,7 @@ struct Config {
 
   Config() = default;
 
-  Config(std::string flags, bool isCLI = false);
+  explicit Config(std::string flags, bool isCLI = false);
 
   Config& cloneAsNonMain(const Config& other)
   {
