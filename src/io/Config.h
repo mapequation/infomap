@@ -52,9 +52,9 @@ struct FlowModel {
 struct Config {
   // Input
   bool isCLI = false;
-  std::string networkFile = "";
+  std::string networkFile;
   std::vector<std::string> additionalInput;
-  std::string inputFormat = "";
+  std::string inputFormat;
   bool memoryInput = false;
   bool multilayerInput = false;
   bool withMemory = false;
@@ -71,8 +71,8 @@ struct Config {
   bool ignoreEdgeWeights = false;
   unsigned int nodeLimit = 0;
   bool preClusterMultilayer = false;
-  std::string clusterDataFile = "";
-  std::string metaDataFile = "";
+  std::string clusterDataFile;
+  std::string metaDataFile;
   double metaDataRate = 1.0;
   bool unweightedMetaData = false;
   unsigned int numMetaDataDimensions = 0;
@@ -127,9 +127,9 @@ struct Config {
   bool innerParallelization = false;
 
   // Output
-  std::string outDirectory = "";
-  std::string outName = "";
-  std::string outputFormats = "";
+  std::string outDirectory;
+  std::string outName;
+  std::string outputFormats;
   bool originallyUndirected = false;
   bool printTree = false;
   bool printFlowTree = false;
@@ -155,9 +155,9 @@ struct Config {
   // Other
   Date startDate;
   std::string version = INFOMAP_VERSION;
-  std::string parsedString = "";
+  std::string parsedString;
   std::vector<ParsedOption> parsedOptions;
-  std::string error = "";
+  std::string error;
 
   Config() = default;
 
