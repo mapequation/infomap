@@ -524,28 +524,15 @@ struct Config {
 
   void adaptDefaults();
 
-  bool setDirectedInput()
-  {
-    if (flowModel == FlowModel::undirected || flowModel == FlowModel::undirdir) {
-      flowModel = FlowModel::directed;
-      return true;
-    }
-    return false;
-  }
-
   void setMemoryInput() { memoryInput = true; }
 
   void setMultilayerInput() { multilayerInput = true; }
 
-  // bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
   bool isUndirectedClustering() const { return flowModel == FlowModel::undirected; }
 
   bool isUndirectedFlow() const { return flowModel == FlowModel::undirected || flowModel == FlowModel::undirdir; }
 
-  // bool printAsUndirected() const { return originallyUndirected; }
   bool printAsUndirected() const { return isUndirectedClustering(); }
-
-  // bool useTeleportation() const { return 	directed; }
 
   bool is3gram() const { return inputFormat == "3gram"; }
   bool isPath() const { return inputFormat == "path"; }
@@ -555,8 +542,6 @@ struct Config {
 
   bool isMemoryNetwork() const { return isStateNetwork() || is3gram() || isPath() || isMultilayerNetwork() || withMemory || nonBacktracking || memoryInput; }
 
-  // bool isSimulatedMemoryNetwork() const { return (withMemory || nonBacktracking) && !isMemoryInput(); }
-
   bool haveMetaData() const { return !metaDataFile.empty() || numMetaDataDimensions != 0; }
 
   bool haveOutput() const { return !noFileOutput; }
@@ -565,12 +550,6 @@ struct Config {
   {
     return printTree || printFlowTree || printMap || printClu || printBinaryTree || printBinaryFlowTree;
   }
-
-  ElapsedTime elapsedTime() const { return Date() - startDate; }
-
-  void setError(const std::string& err) { error = err; }
-
-  bool haveError() const { return error != ""; }
 
   static Config fromString(std::string flags, bool isCLI = false);
 };
