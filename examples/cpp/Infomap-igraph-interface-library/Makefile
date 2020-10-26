@@ -1,4 +1,4 @@
-CXXFLAGS = -Wall -O3
+CXXFLAGS = -Wall -O3 -std=c++14
 
 # Set INFOMAP_DIR to your Infomap directory
 INFOMAP_DIR = ../../..
