@@ -243,6 +243,7 @@ struct Config {
         printFlowTree(other.printFlowTree),
         printMap(other.printMap),
         printClu(other.printClu),
+        cluLevel(other.cluLevel),
         printNodeRanks(other.printNodeRanks),
         printFlowNetwork(other.printFlowNetwork),
         printPajekNetwork(other.printPajekNetwork),
@@ -343,6 +344,7 @@ struct Config {
     printFlowTree = other.printFlowTree;
     printMap = other.printMap;
     printClu = other.printClu;
+    cluLevel = other.cluLevel;
     printNodeRanks = other.printNodeRanks;
     printFlowNetwork = other.printFlowNetwork;
     printPajekNetwork = other.printPajekNetwork;
