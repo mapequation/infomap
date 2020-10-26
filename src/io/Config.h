@@ -31,6 +31,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
 #include <limits>
 
@@ -49,12 +50,19 @@ struct FlowModel {
   static const std::string rawdir;
 };
 
+enum class OptimizationLevel {
+  FullCoarseTune,
+  FastCoarseTune,
+  NoTune,
+  NoAggregationNoTune
+};
+
 struct Config {
   // Input
   bool isCLI = false;
-  std::string networkFile = "";
+  std::string networkFile;
   std::vector<std::string> additionalInput;
-  std::string inputFormat = "";
+  std::string inputFormat;
   bool memoryInput = false;
   bool multilayerInput = false;
   bool withMemory = false;
@@ -71,8 +79,8 @@ struct Config {
   bool ignoreEdgeWeights = false;
   unsigned int nodeLimit = 0;
   bool preClusterMultilayer = false;
-  std::string clusterDataFile = "";
-  std::string metaDataFile = "";
+  std::string clusterDataFile;
+  std::string metaDataFile;
   double metaDataRate = 1.0;
   bool unweightedMetaData = false;
   unsigned int numMetaDataDimensions = 0;
@@ -127,9 +135,9 @@ struct Config {
   bool innerParallelization = false;
 
   // Output
-  std::string outDirectory = "";
-  std::string outName = "";
-  std::string outputFormats = "";
+  std::string outDirectory;
+  std::string outName;
+  std::string outputFormats;
   bool originallyUndirected = false;
   bool printTree = false;
   bool printFlowTree = false;
@@ -155,217 +163,13 @@ struct Config {
   // Other
   Date startDate;
   std::string version = INFOMAP_VERSION;
-  std::string parsedString = "";
+  std::string parsedString;
   std::vector<ParsedOption> parsedOptions;
-  std::string error = "";
+  std::string error;
 
   Config() = default;
 
-  Config(std::string flags, bool isCLI = false)
-  {
-    *this = Config::fromString(flags, isCLI);
-  }
-
-  Config(const Config& other)
-      : isCLI(other.isCLI),
-        networkFile(other.networkFile),
-        additionalInput(other.additionalInput),
-        inputFormat(other.inputFormat),
-        memoryInput(other.memoryInput),
-        multilayerInput(other.multilayerInput),
-        withMemory(other.withMemory),
-        weightThreshold(other.weightThreshold),
-        unweightedPaths(other.unweightedPaths),
-        pathMarkovOrder(other.pathMarkovOrder),
-        bipartite(other.bipartite),
-        skipAdjustBipartiteFlow(other.skipAdjustBipartiteFlow),
-        hardPartitions(other.hardPartitions),
-        nonBacktracking(other.nonBacktracking),
-        parseWithoutIOStreams(other.parseWithoutIOStreams),
-        zeroBasedNodeNumbers(other.zeroBasedNodeNumbers),
-        includeSelfLinks(other.includeSelfLinks),
-        ignoreEdgeWeights(other.ignoreEdgeWeights),
-        nodeLimit(other.nodeLimit),
-        preClusterMultilayer(other.preClusterMultilayer),
-        clusterDataFile(other.clusterDataFile),
-        metaDataFile(other.metaDataFile),
-        metaDataRate(other.metaDataRate),
-        unweightedMetaData(other.unweightedMetaData),
-        numMetaDataDimensions(other.numMetaDataDimensions),
-        clusterDataIsHard(other.clusterDataIsHard),
-        assignToNeighbouringModule(other.assignToNeighbouringModule),
-        noInfomap(other.noInfomap),
-        flowModel(other.flowModel),
-        directed(other.directed),
-        undirdir(other.undirdir),
-        outdirdir(other.outdirdir),
-        rawdir(other.rawdir),
-        useNodeWeightsAsFlow(other.useNodeWeightsAsFlow),
-        teleportToNodes(other.teleportToNodes),
-        selfTeleportationProbability(other.selfTeleportationProbability),
-        markovTime(other.markovTime),
-        multilayerRelaxRate(other.multilayerRelaxRate),
-        multilayerRelaxLimit(other.multilayerRelaxLimit),
-        multilayerRelaxLimitUp(other.multilayerRelaxLimitUp),
-        multilayerRelaxLimitDown(other.multilayerRelaxLimitDown),
-        multilayerJSRelaxRate(other.multilayerJSRelaxRate),
-        multilayerJSRelaxLimit(other.multilayerJSRelaxLimit),
-        twoLevel(other.twoLevel),
-        noCoarseTune(other.noCoarseTune),
-        directedEdges(other.directedEdges),
-        recordedTeleportation(other.recordedTeleportation),
-        teleportationProbability(other.teleportationProbability),
-        preferredNumberOfModules(other.preferredNumberOfModules),
-        seedToRandomNumberGenerator(other.seedToRandomNumberGenerator),
-        numTrials(other.numTrials),
-        minimumCodelengthImprovement(other.minimumCodelengthImprovement),
-        minimumSingleNodeCodelengthImprovement(other.minimumSingleNodeCodelengthImprovement),
-        randomizeCoreLoopLimit(other.randomizeCoreLoopLimit),
-        coreLoopLimit(other.coreLoopLimit),
-        levelAggregationLimit(other.levelAggregationLimit),
-        tuneIterationLimit(other.tuneIterationLimit),
-        minimumRelativeTuneIterationImprovement(other.minimumRelativeTuneIterationImprovement),
-        fastCoarseTunePartition(other.fastCoarseTunePartition),
-        alternateCoarseTuneLevel(other.alternateCoarseTuneLevel),
-        coarseTuneLevel(other.coarseTuneLevel),
-        superLevelLimit(other.superLevelLimit),
-        onlySuperModules(other.onlySuperModules),
-        fastHierarchicalSolution(other.fastHierarchicalSolution),
-        fastFirstIteration(other.fastFirstIteration),
-        preferModularSolution(other.preferModularSolution),
-        //lowMemoryPriority(other.lowMemoryPriority),
-        innerParallelization(other.innerParallelization),
-        outDirectory(other.outDirectory),
-        outName(other.outName),
-        outputFormats(other.outputFormats),
-        originallyUndirected(other.originallyUndirected),
-        printTree(other.printTree),
-        printFlowTree(other.printFlowTree),
-        printMap(other.printMap),
-        printClu(other.printClu),
-        cluLevel(other.cluLevel),
-        printNodeRanks(other.printNodeRanks),
-        printFlowNetwork(other.printFlowNetwork),
-        printPajekNetwork(other.printPajekNetwork),
-        printStateNetwork(other.printStateNetwork),
-        printBinaryTree(other.printBinaryTree),
-        printBinaryFlowTree(other.printBinaryFlowTree),
-        noFileOutput(other.noFileOutput),
-        verbosity(other.verbosity),
-        verboseNumberPrecision(other.verboseNumberPrecision),
-        silent(other.silent),
-        benchmark(other.benchmark),
-        maxNodeIndexVisible(other.maxNodeIndexVisible),
-        showBiNodes(other.showBiNodes),
-        minBipartiteNodeIndex(other.minBipartiteNodeIndex),
-        startDate(other.startDate),
-        version(other.version),
-        parsedString(other.parsedString),
-        parsedOptions(other.parsedOptions),
-        error(other.error)
-  {
-  }
-
-  Config& operator=(const Config& other)
-  {
-    isCLI = other.isCLI;
-    networkFile = other.networkFile;
-    additionalInput = other.additionalInput;
-    inputFormat = other.inputFormat;
-    memoryInput = other.memoryInput;
-    multilayerInput = other.multilayerInput;
-    withMemory = other.withMemory;
-    weightThreshold = other.weightThreshold;
-    unweightedPaths = other.unweightedPaths;
-    pathMarkovOrder = other.pathMarkovOrder;
-    bipartite = other.bipartite;
-    skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;
-    hardPartitions = other.hardPartitions;
-    nonBacktracking = other.nonBacktracking;
-    parseWithoutIOStreams = other.parseWithoutIOStreams;
-    zeroBasedNodeNumbers = other.zeroBasedNodeNumbers;
-    includeSelfLinks = other.includeSelfLinks;
-    ignoreEdgeWeights = other.ignoreEdgeWeights;
-    nodeLimit = other.nodeLimit;
-    preClusterMultilayer = other.preClusterMultilayer;
-    clusterDataFile = other.clusterDataFile;
-    metaDataFile = other.metaDataFile;
-    metaDataRate = other.metaDataRate;
-    unweightedMetaData = other.unweightedMetaData;
-    numMetaDataDimensions = other.numMetaDataDimensions;
-    clusterDataIsHard = other.clusterDataIsHard;
-    assignToNeighbouringModule = other.assignToNeighbouringModule;
-    noInfomap = other.noInfomap;
-    flowModel = other.flowModel;
-    directed = other.directed;
-    undirdir = other.undirdir;
-    outdirdir = other.outdirdir;
-    rawdir = other.rawdir;
-    useNodeWeightsAsFlow = other.useNodeWeightsAsFlow;
-    teleportToNodes = other.teleportToNodes;
-    selfTeleportationProbability = other.selfTeleportationProbability;
-    markovTime = other.markovTime;
-    multilayerRelaxRate = other.multilayerRelaxRate;
-    multilayerRelaxLimit = other.multilayerRelaxLimit;
-    multilayerRelaxLimitUp = other.multilayerRelaxLimitUp;
-    multilayerRelaxLimitDown = other.multilayerRelaxLimitDown;
-    multilayerJSRelaxRate = other.multilayerJSRelaxRate;
-    multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
-    twoLevel = other.twoLevel;
-    noCoarseTune = other.noCoarseTune;
-    directedEdges = other.directedEdges;
-    recordedTeleportation = other.recordedTeleportation;
-    teleportationProbability = other.teleportationProbability;
-    preferredNumberOfModules = other.preferredNumberOfModules;
-    seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
-    numTrials = other.numTrials;
-    minimumCodelengthImprovement = other.minimumCodelengthImprovement;
-    minimumSingleNodeCodelengthImprovement = other.minimumSingleNodeCodelengthImprovement;
-    randomizeCoreLoopLimit = other.randomizeCoreLoopLimit;
-    coreLoopLimit = other.coreLoopLimit;
-    levelAggregationLimit = other.levelAggregationLimit;
-    tuneIterationLimit = other.tuneIterationLimit;
-    minimumRelativeTuneIterationImprovement = other.minimumRelativeTuneIterationImprovement;
-    fastCoarseTunePartition = other.fastCoarseTunePartition;
-    alternateCoarseTuneLevel = other.alternateCoarseTuneLevel;
-    coarseTuneLevel = other.coarseTuneLevel;
-    superLevelLimit = other.superLevelLimit;
-    onlySuperModules = other.onlySuperModules;
-    fastHierarchicalSolution = other.fastHierarchicalSolution;
-    fastFirstIteration = other.fastFirstIteration;
-    preferModularSolution = other.preferModularSolution;
-    //lowMemoryPriority = other.lowMemoryPriority;
-    innerParallelization = other.innerParallelization;
-    outDirectory = other.outDirectory;
-    outName = other.outName;
-    outputFormats = other.outputFormats;
-    originallyUndirected = other.originallyUndirected;
-    printTree = other.printTree;
-    printFlowTree = other.printFlowTree;
-    printMap = other.printMap;
-    printClu = other.printClu;
-    cluLevel = other.cluLevel;
-    printNodeRanks = other.printNodeRanks;
-    printFlowNetwork = other.printFlowNetwork;
-    printPajekNetwork = other.printPajekNetwork;
-    printStateNetwork = other.printStateNetwork;
-    printBinaryTree = other.printBinaryTree;
-    printBinaryFlowTree = other.printBinaryFlowTree;
-    noFileOutput = other.noFileOutput;
-    verbosity = other.verbosity;
-    verboseNumberPrecision = other.verboseNumberPrecision;
-    silent = other.silent;
-    benchmark = other.benchmark;
-    maxNodeIndexVisible = other.maxNodeIndexVisible;
-    showBiNodes = other.showBiNodes;
-    minBipartiteNodeIndex = other.minBipartiteNodeIndex;
-    startDate = other.startDate;
-    version = other.version;
-    parsedString = other.parsedString;
-    parsedOptions = other.parsedOptions;
-    error = other.error;
-    return *this;
-  }
+  explicit Config(std::string flags, bool isCLI = false);
 
   Config& cloneAsNonMain(const Config& other)
   {
@@ -468,10 +272,10 @@ struct Config {
   }
 
   // Set all optimization options at once with different accuracy to performance trade-off
-  void setOptimizationLevel(unsigned int level)
+  void setOptimizationLevel(OptimizationLevel level)
   {
     switch (level) {
-    case 0: // full coarse-tune
+    case OptimizationLevel::FullCoarseTune:
       randomizeCoreLoopLimit = false;
       coreLoopLimit = 0;
       levelAggregationLimit = 0;
@@ -481,7 +285,7 @@ struct Config {
       alternateCoarseTuneLevel = true;
       coarseTuneLevel = 3;
       break;
-    case 1: // fast coarse-tune
+    case OptimizationLevel::FastCoarseTune:
       randomizeCoreLoopLimit = true;
       coreLoopLimit = 10;
       levelAggregationLimit = 0;
@@ -491,7 +295,7 @@ struct Config {
       alternateCoarseTuneLevel = false;
       coarseTuneLevel = 1;
       break;
-    case 2: // no tuning
+    case OptimizationLevel::NoTune:
       randomizeCoreLoopLimit = true;
       coreLoopLimit = 10;
       levelAggregationLimit = 0;
@@ -500,7 +304,7 @@ struct Config {
       alternateCoarseTuneLevel = false;
       coarseTuneLevel = 1;
       break;
-    case 3: // no aggregation nor any tuning
+    case OptimizationLevel::NoAggregationNoTune:
       randomizeCoreLoopLimit = true;
       coreLoopLimit = 10;
       levelAggregationLimit = 1;
@@ -516,40 +320,25 @@ struct Config {
 
   void adaptDefaults();
 
-  bool setDirectedInput()
-  {
-    if (flowModel == FlowModel::undirected || flowModel == FlowModel::undirdir) {
-      flowModel = FlowModel::directed;
-      return true;
-    }
-    return false;
-  }
-
   void setMemoryInput() { memoryInput = true; }
 
   void setMultilayerInput() { multilayerInput = true; }
 
-  // bool isUndirected() const { return !directed && !undirdir && !outdirdir && !rawdir; }
   bool isUndirectedClustering() const { return flowModel == FlowModel::undirected; }
 
   bool isUndirectedFlow() const { return flowModel == FlowModel::undirected || flowModel == FlowModel::undirdir; }
 
-  // bool printAsUndirected() const { return originallyUndirected; }
   bool printAsUndirected() const { return isUndirectedClustering(); }
-
-  // bool useTeleportation() const { return 	directed; }
 
   bool is3gram() const { return inputFormat == "3gram"; }
   bool isPath() const { return inputFormat == "path"; }
-  bool isMultilayerNetwork() const { return multilayerInput || inputFormat == "multilayer" || inputFormat == "multiplex" || additionalInput.size() > 0; }
+  bool isMultilayerNetwork() const { return multilayerInput || inputFormat == "multilayer" || inputFormat == "multiplex" || !additionalInput.empty(); }
   bool isStateNetwork() const { return inputFormat == "states"; }
   bool isBipartite() const { return inputFormat == "bipartite" || bipartite; }
 
   bool isMemoryNetwork() const { return isStateNetwork() || is3gram() || isPath() || isMultilayerNetwork() || withMemory || nonBacktracking || memoryInput; }
 
-  // bool isSimulatedMemoryNetwork() const { return (withMemory || nonBacktracking) && !isMemoryInput(); }
-
-  bool haveMetaData() const { return metaDataFile != "" || numMetaDataDimensions != 0; }
+  bool haveMetaData() const { return !metaDataFile.empty() || numMetaDataDimensions != 0; }
 
   bool haveOutput() const { return !noFileOutput; }
 
@@ -557,14 +346,6 @@ struct Config {
   {
     return printTree || printFlowTree || printMap || printClu || printBinaryTree || printBinaryFlowTree;
   }
-
-  ElapsedTime elapsedTime() const { return Date() - startDate; }
-
-  void setError(const std::string& err) { error = err; }
-
-  bool haveError() const { return error != ""; }
-
-  static Config fromString(std::string flags, bool isCLI = false);
 };
 
 } // namespace infomap

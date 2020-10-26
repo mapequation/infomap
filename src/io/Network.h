@@ -30,6 +30,7 @@
 
 #include <string>
 #include <map>
+#include <utility>
 #include <vector>
 #include <set>
 #include <utility>
@@ -81,7 +82,7 @@ protected:
 public:
   Network() : StateNetwork() { initValidHeadings(); }
   explicit Network(const Config& config) : StateNetwork(config) { initValidHeadings(); }
-  explicit Network(std::string flags) : StateNetwork(flags) { initValidHeadings(); }
+  explicit Network(std::string flags) : StateNetwork(Config(std::move(flags))) { initValidHeadings(); }
   virtual ~Network() = default;
 
   virtual void clear();
