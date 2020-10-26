@@ -49,6 +49,13 @@ struct FlowModel {
   static const std::string rawdir;
 };
 
+enum class OptimizationLevel {
+  FullCoarseTune,
+  FastCoarseTune,
+  NoTune,
+  NoAggregationNoTune
+};
+
 struct Config {
   // Input
   bool isCLI = false;
@@ -468,10 +475,10 @@ struct Config {
   }
 
   // Set all optimization options at once with different accuracy to performance trade-off
-  void setOptimizationLevel(unsigned int level)
+  void setOptimizationLevel(OptimizationLevel level)
   {
     switch (level) {
-    case 0: // full coarse-tune
+    case OptimizationLevel::FullCoarseTune:
       randomizeCoreLoopLimit = false;
       coreLoopLimit = 0;
       levelAggregationLimit = 0;
@@ -481,7 +488,7 @@ struct Config {
       alternateCoarseTuneLevel = true;
       coarseTuneLevel = 3;
       break;
-    case 1: // fast coarse-tune
+    case OptimizationLevel::FastCoarseTune:
       randomizeCoreLoopLimit = true;
       coreLoopLimit = 10;
       levelAggregationLimit = 0;
@@ -491,7 +498,7 @@ struct Config {
       alternateCoarseTuneLevel = false;
       coarseTuneLevel = 1;
       break;
-    case 2: // no tuning
+    case OptimizationLevel::NoTune:
       randomizeCoreLoopLimit = true;
       coreLoopLimit = 10;
       levelAggregationLimit = 0;
@@ -500,7 +507,7 @@ struct Config {
       alternateCoarseTuneLevel = false;
       coarseTuneLevel = 1;
       break;
-    case 3: // no aggregation nor any tuning
+    case OptimizationLevel::NoAggregationNoTune:
       randomizeCoreLoopLimit = true;
       coreLoopLimit = 10;
       levelAggregationLimit = 1;
