@@ -622,6 +622,35 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     unsigned int numModuleLinks = deltaFlow.size();
 
 
+
+    // For recorded teleportation
+    if (m_infomap->recordedTeleportation) {
+      double alpha = m_infomap->teleportationProbability;
+      double beta = 1.0 - alpha;
+      for (unsigned int j = 0; j < numModuleLinks; ++j)
+      {
+        auto& deltaEnterExit = moduleDeltaEnterExit[j];
+        auto moduleIndex = deltaEnterExit.module;
+        if (moduleIndex == current.index) {
+          // addTeleportationDeltaFlowOnOldModuleIfMove(current, moduleDeltaExits[j]);
+          auto& oldModuleFlowData = m_moduleFlowData[moduleIndex];
+          double deltaEnterOld = (alpha*(oldModuleFlowData.teleportSourceFlow - current.data.teleportSourceFlow) + beta*(oldModuleFlowData.danglingFlow - current.data.danglingFlow)) * current.data.teleportWeight;
+          double deltaExitOld = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+          deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaEnterOld, 0.0));
+          deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, deltaExitOld));
+        }
+        else {
+          // addTeleportationDeltaFlowOnNewModuleIfMove(current, moduleDeltaExits[j]);
+          auto& newModuleFlowData = m_moduleFlowData[moduleIndex];
+          double deltaEnterNew = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * newModuleFlowData.teleportWeight;
+          double deltaExitNew = (alpha*newModuleFlowData.teleportSourceFlow +	beta*newModuleFlowData.danglingFlow) * current.data.teleportWeight;
+          deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaEnterNew, 0.0));
+          deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, deltaExitNew));
+        }
+      }
+    }
+
+
     // Randomize link order for optimized search
     if (numModuleLinks > 2) {
       for (unsigned int j = 0; j < numModuleLinks - 2; ++j) {

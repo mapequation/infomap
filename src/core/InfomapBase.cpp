@@ -1244,20 +1244,43 @@ void InfomapBase::restoreHardPartition()
 void InfomapBase::initEnterExitFlow()
 {
   // Calculate enter/exit
+  // TODO: Skip add self-links to enter/exit flow on initEnterExitFlow as in old Infomap or no effect in this implementation? 
+  // (Possible self-links should not add to enter and exit flow in its enclosing module)
+  double alpha = teleportationProbability;
+  double beta = 1.0 - alpha;
+  
   for (auto* n : m_leafNodes) {
     n->data.enterFlow = n->data.exitFlow = 0.0;
   }
   if (!isUndirectedClustering()) {
     for (auto* n : m_leafNodes) {
-      for (EdgeType* e : n->outEdges()) {
+      auto& node = *n;
+      node.data.teleportSourceFlow = node.data.flow;
+      if (node.isDangling()) {
+        node.data.danglingFlow = node.data.flow;
+        m_sumDanglingFlow += node.data.flow;
+      }
+    }
+    for (auto* n : m_leafNodes) {
+      auto& node = *n;
+      for (EdgeType* e : node.outEdges()) {
         EdgeType& edge = *e;
         edge.source.data.exitFlow += edge.data.flow;
         edge.target.data.enterFlow += edge.data.flow;
+        if (recordedTeleportation) {
+          // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
+          edge.source.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
+          edge.target.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
+        }
       }
     }
   } else {
     for (auto* n : m_leafNodes) {
-      for (EdgeType* e : n->outEdges()) {
+      auto& node = *n;
+      node.data.teleportSourceFlow = node.data.flow;
+      if (node.isDangling())
+        node.data.danglingFlow = node.data.flow;
+      for (EdgeType* e : node.outEdges()) {
         EdgeType& edge = *e;
         double halfFlow = edge.data.flow / 2;
         // double halfFlow = edge.data.flow;

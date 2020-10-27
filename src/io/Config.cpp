@@ -97,8 +97,8 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(directed, 'd', "directed", "Assume directed links. Shorthand for '--flow-model directed'.", "Algorithm");
 
-  // api.addOptionArgument(recordedTeleportation, 'e', "recorded-teleportation",
-  // 		"If teleportation is used to calculate the flow, also record it when minimizing codelength.", "Algorithm", true);
+  api.addOptionArgument(recordedTeleportation, 'e', "recorded-teleportation",
+  		"If teleportation is used to calculate the flow, also record it when minimizing codelength.", "Algorithm", true);
 
   api.addOptionArgument(useNodeWeightsAsFlow, "use-node-weights-as-flow", "Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1", "Algorithm", true);
 
