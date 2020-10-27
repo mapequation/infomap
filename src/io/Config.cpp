@@ -181,9 +181,6 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(silent, "silent", "No output on the console.", "Output");
 
-  // api.addOptionArgument(showBiNodes, "show-bipartite-nodes",
-  // 		"Include the bipartite nodes in the output.", "Output", true);
-
   api.parseArgs(flags);
 
   if (!optionalOutputDir.empty())

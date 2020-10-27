@@ -158,7 +158,6 @@ struct Config {
   bool hideBipartiteNodes = false;
 
   unsigned int maxNodeIndexVisible = 0;
-  bool showBiNodes = false;
   unsigned int minBipartiteNodeIndex = 0;
 
   // Other
@@ -262,7 +261,6 @@ struct Config {
     // silent = other.silent;
     // benchmark = other.benchmark;
     // maxNodeIndexVisible = other.maxNodeIndexVisible;
-    // showBiNodes = other.showBiNodes;
     // minBipartiteNodeIndex = other.minBipartiteNodeIndex;
     startDate = other.startDate;
     version = other.version;
