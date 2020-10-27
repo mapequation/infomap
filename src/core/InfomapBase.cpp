@@ -2107,6 +2107,9 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
     for (auto it(iterTreePhysical(moduleIndexLevel)); !it.isEnd(); ++it) {
       InfoNode& node = *it;
       if (node.isLeaf()) {
+        if (shouldHideBipartiteNodes && node.physicalId >= bipartiteStartId) {
+          continue;
+        }
 
         outFile << node.physicalId << " " << it.moduleId() << " " << node.data.flow << "\n";
       }
