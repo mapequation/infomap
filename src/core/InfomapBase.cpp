@@ -522,7 +522,7 @@ InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard)
     initPartition(clusterMap.clusterIds(), hard);
   }
 
-  Log() << "done! Generated " << numLevels() << " levels with codelength " << m_hierarchicalCodelength << "\n";
+  Log() << "done! Generated " << numLevels() << " levels with codelength " << getIndexCodelength() << " + " << (m_hierarchicalCodelength - getIndexCodelength()) << " = " << io::toPrecision(m_hierarchicalCodelength) << std::endl;
 
   return *this;
 }
@@ -870,6 +870,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   for (auto& nodeIt : network.nodes()) {
     auto& networkNode = nodeIt.second;
     InfoNode* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
+    node->data.teleportWeight = networkNode.weight;
     if (haveMetaData()) {
       auto meta = metaData.find(networkNode.id);
       if (meta != metaData.end()) {
@@ -1267,11 +1268,14 @@ void InfomapBase::initEnterExitFlow()
         EdgeType& edge = *e;
         edge.source.data.exitFlow += edge.data.flow;
         edge.target.data.enterFlow += edge.data.flow;
-        if (recordedTeleportation) {
-          // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
-          edge.source.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
-          edge.target.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
-        }
+      }
+      if (recordedTeleportation) {
+        // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
+        // Log() << node.physicalId << ": exitFlow += (" << alpha << " * " << node.data.flow << " + " << beta << " * " << node.data.danglingFlow << ") * (1.0 - " << node.data.teleportWeight << ")\n";
+        // Log() << node.physicalId << ": enterFlow += (" << alpha << " * (1.0 - " << node.data.flow << ") + " << beta << " * (" << m_sumDanglingFlow << " - " << node.data.danglingFlow << ")) * " << node.data.teleportWeight << "\n";
+        // Log() << "---------\n";
+        node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
+        node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
       }
     }
   } else {
@@ -1302,10 +1306,12 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
   for (auto it = root().begin_post_depth_first(); !it.isEnd(); ++it) {
     auto& node = *it;
     if (!node.isRoot())
-      node.parent->data.flow += node.data.flow;
+      node.parent->data += node.data;
     // Don't aggregate enter and exit flow
     if (!node.isLeaf()) {
       node.index = it.depth(); // Use index to store the depth on modules
+      node.data.enterFlow = 0.0;
+      node.data.exitFlow = 0.0;
     } else
       numLevels = std::max(numLevels, it.depth());
   }
@@ -1363,6 +1369,19 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
         }
         node1 = node1->parent;
         node2 = node2->parent;
+      }
+    }
+  }
+  if (recordedTeleportation) {
+    double alpha = teleportationProbability;
+    double beta = 1.0 - alpha;
+
+    for (auto& node : m_root.infomapTree()) {
+      if (!node.isLeaf())
+      {
+        // Don't code self-teleportation
+        node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
+        node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
       }
     }
   }

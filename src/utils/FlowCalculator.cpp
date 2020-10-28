@@ -542,6 +542,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     auto& node = nodeIt.second;
     const auto nodeIndex = nodeIndexMap[node.id];
     node.flow = nodeFlow[nodeIndex];
+    node.weight = nodeTeleportRates[nodeIndex];
     sumNodeFlow += node.flow;
   }
 
