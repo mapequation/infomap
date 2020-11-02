@@ -64,6 +64,7 @@ protected:
   std::set<unsigned int> m_layers;
   unsigned int m_numInterLayerLinks = 0;
   unsigned int m_numIntraLayerLinks = 0;
+  unsigned int m_maxNodeIdInIntraLayerNetworks = 0;
 
   // Meta data
   std::map<unsigned int, std::vector<int>> m_metaData;
@@ -232,7 +233,9 @@ protected:
    * Create state node corresponding to this multilayer node if not already exist
    * @return state node id
    */
-  unsigned int addMultilayerNode(unsigned int layerId, unsigned int physicalId);
+  unsigned int addMultilayerNode(unsigned int layerId, unsigned int physicalId, double weight = 1.0);
+
+  double calculateJensenShannonDivergence(bool &intersect, const OutLinkMap& layer1OutLinks, double sumOutLinkWeightLayer1, const OutLinkMap& layer2OutLinks, double sumOutLinkWeightLayer2);
 
   void printSummary();
 };
