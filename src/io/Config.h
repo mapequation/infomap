@@ -103,6 +103,7 @@ struct Config {
   int multilayerRelaxLimitUp = -1; // One-sided limit to higher layers
   int multilayerRelaxLimitDown = -1; // One-sided limit to lower layers
   double multilayerJSRelaxRate = 0.15;
+  bool multilayerRelaxByJensenShannonDivergence = false;
   int multilayerJSRelaxLimit = -1;
 
   // Clustering
@@ -215,6 +216,7 @@ struct Config {
     multilayerRelaxLimitUp = other.multilayerRelaxLimitUp;
     multilayerRelaxLimitDown = other.multilayerRelaxLimitDown;
     multilayerJSRelaxRate = other.multilayerJSRelaxRate;
+    multilayerRelaxByJensenShannonDivergence = other.multilayerRelaxByJensenShannonDivergence;
     multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
     twoLevel = other.twoLevel;
     noCoarseTune = other.noCoarseTune;
