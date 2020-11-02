@@ -97,7 +97,8 @@ public:
 
   // Unique state id to state node
   using NodeMap = std::map<unsigned int, StateNode>;
-  using NodeLinkMap = std::map<StateNode, std::map<StateNode, LinkData>>;
+  using OutLinkMap = std::map<StateNode, LinkData>;
+  using NodeLinkMap = std::map<StateNode, OutLinkMap>;
 
 protected:
   friend class FlowCalculator;
