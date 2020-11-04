@@ -43,7 +43,7 @@ public:
   // IO
   // ===================================================
 
-  std::ostream& print(std::ostream&) const;
+  virtual std::ostream& print(std::ostream&) const noexcept;
 
   friend std::ostream& operator<<(std::ostream&, const MapEquation&);
 
@@ -52,15 +52,15 @@ public:
   // Init
   // ===================================================
 
-  void init(const Config& config);
+  virtual void init(const Config& config) noexcept;
 
-  void initNetwork(InfoNode& root);
+  virtual void initNetwork(InfoNode& root) noexcept;
 
-  void initSuperNetwork(InfoNode& root);
+  virtual void initSuperNetwork(InfoNode& root) noexcept;
 
-  void initSubNetwork(InfoNode& root);
+  virtual void initSubNetwork(InfoNode& root) noexcept;
 
-  void initPartition(std::vector<InfoNode*>& nodes);
+  virtual void initPartition(std::vector<InfoNode*>& nodes) noexcept;
 
   // ===================================================
   // Codelength

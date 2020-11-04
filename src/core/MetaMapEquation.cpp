@@ -25,7 +25,7 @@ double MetaMapEquation::getCodelength() const noexcept
 // IO
 // ===================================================
 
-std::ostream& MetaMapEquation::print(std::ostream& out) const
+std::ostream& MetaMapEquation::print(std::ostream& out) const noexcept
 {
   return out << indexCodelength << " + " << moduleCodelength << " + " << metaCodelength << " = " << io::toPrecision(getCodelength());
 }
@@ -40,7 +40,7 @@ std::ostream& operator<<(std::ostream& out, const MetaMapEquation& mapEq)
 // Init
 // ===================================================
 
-void MetaMapEquation::init(const Config& config)
+void MetaMapEquation::init(const Config& config) noexcept
 {
   Log(3) << "MetaMapEquation::init()...\n";
   numMetaDataDimensions = config.numMetaDataDimensions;
@@ -49,24 +49,14 @@ void MetaMapEquation::init(const Config& config)
 }
 
 
-void MetaMapEquation::initNetwork(InfoNode& root)
+void MetaMapEquation::initNetwork(InfoNode& root) noexcept
 {
   Log(3) << "MetaMapEquation::initNetwork()...\n";
   Base::initNetwork(root);
   m_unweightedNodeFlow = 1.0 / root.childDegree();
 }
 
-void MetaMapEquation::initSuperNetwork(InfoNode& root)
-{
-  Base::initSuperNetwork(root);
-}
-
-void MetaMapEquation::initSubNetwork(InfoNode& root)
-{
-  Base::initSubNetwork(root);
-}
-
-void MetaMapEquation::initPartition(std::vector<InfoNode*>& nodes)
+void MetaMapEquation::initPartition(std::vector<InfoNode*>& nodes) noexcept
 {
   initPartitionOfMetaNodes(nodes);
 

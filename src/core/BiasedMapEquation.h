@@ -40,7 +40,7 @@ public:
   // IO
   // ===================================================
 
-  std::ostream& print(std::ostream& out) const;
+  std::ostream& print(std::ostream& out) const noexcept override;
 
   friend std::ostream& operator<<(std::ostream&, const BiasedMapEquation&);
 
@@ -48,15 +48,15 @@ public:
   // Init
   // ===================================================
 
-  void init(const Config& config);
+  void init(const Config& config) noexcept override;
 
-  void initNetwork(InfoNode& root);
+  using Base::initNetwork;
 
-  void initSuperNetwork(InfoNode& root);
+  using Base::initSuperNetwork;
 
-  void initSubNetwork(InfoNode& root);
+  using Base::initSubNetwork;
 
-  void initPartition(std::vector<InfoNode*>& nodes);
+  using Base::initPartition;
 
   // ===================================================
   // Codelength

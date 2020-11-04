@@ -25,7 +25,7 @@ double BiasedMapEquation::getCodelength() const noexcept
 // IO
 // ===================================================
 
-std::ostream& BiasedMapEquation::print(std::ostream& out) const
+std::ostream& BiasedMapEquation::print(std::ostream& out) const noexcept
 {
   return out << indexCodelength << " + " << moduleCodelength << " + " << biasedCost << " = " << io::toPrecision(getCodelength());
 }
@@ -40,32 +40,10 @@ std::ostream& operator<<(std::ostream& out, const BiasedMapEquation& mapEq)
 // Init
 // ===================================================
 
-void BiasedMapEquation::init(const Config& config)
+void BiasedMapEquation::init(const Config& config) noexcept
 {
   Log(3) << "BiasedMapEquation::init()...\n";
   preferredNumModules = config.preferredNumberOfModules;
-}
-
-
-void BiasedMapEquation::initNetwork(InfoNode& root)
-{
-  Log(3) << "BiasedMapEquation::initNetwork()...\n";
-  Base::initNetwork(root);
-}
-
-void BiasedMapEquation::initSuperNetwork(InfoNode& root)
-{
-  Base::initSuperNetwork(root);
-}
-
-void BiasedMapEquation::initSubNetwork(InfoNode& root)
-{
-  Base::initSubNetwork(root);
-}
-
-void BiasedMapEquation::initPartition(std::vector<InfoNode*>& nodes)
-{
-  calculateCodelength(nodes);
 }
 
 

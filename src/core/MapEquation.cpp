@@ -16,7 +16,7 @@ namespace infomap {
 // IO
 // ===================================================
 
-std::ostream& MapEquation::print(std::ostream& out) const
+std::ostream& MapEquation::print(std::ostream& out) const noexcept
 {
   return out << indexCodelength << " + " << moduleCodelength << " = " << io::toPrecision(codelength);
 }
@@ -31,12 +31,12 @@ std::ostream& operator<<(std::ostream& out, const MapEquation& mapEq)
 // Init
 // ===================================================
 
-void MapEquation::init(const Config& config)
+void MapEquation::init(const Config& config) noexcept
 {
   Log(3) << "MapEquation::init()...\n";
 }
 
-void MapEquation::initNetwork(InfoNode& root)
+void MapEquation::initNetwork(InfoNode& root) noexcept
 {
   Log(3) << "MapEquation::initNetwork()...\n";
 
@@ -47,7 +47,7 @@ void MapEquation::initNetwork(InfoNode& root)
   initSubNetwork(root);
 }
 
-void MapEquation::initSuperNetwork(InfoNode& root)
+void MapEquation::initSuperNetwork(InfoNode& root) noexcept
 {
   Log(3) << "MapEquation::initSuperNetwork()...\n";
 
@@ -57,13 +57,13 @@ void MapEquation::initSuperNetwork(InfoNode& root)
   }
 }
 
-void MapEquation::initSubNetwork(InfoNode& root)
+void MapEquation::initSubNetwork(InfoNode& root) noexcept
 {
   exitNetworkFlow = root.data.exitFlow;
   exitNetworkFlow_log_exitNetworkFlow = infomath::plogp(exitNetworkFlow);
 }
 
-void MapEquation::initPartition(std::vector<InfoNode*>& nodes)
+void MapEquation::initPartition(std::vector<InfoNode*>& nodes) noexcept
 {
   calculateCodelength(nodes);
 }
