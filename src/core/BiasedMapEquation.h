@@ -24,27 +24,6 @@ public:
   using Base::FlowDataType;
   using Base::DeltaFlowDataType;
 
-  BiasedMapEquation() : MapEquation() {}
-
-  BiasedMapEquation(const BiasedMapEquation& other)
-      : MapEquation(other),
-        preferredNumModules(other.preferredNumModules),
-        currentNumModules(other.currentNumModules),
-        biasedCost(other.biasedCost)
-  {
-  }
-
-  BiasedMapEquation& operator=(const BiasedMapEquation& other)
-  {
-    Base::operator=(other);
-    preferredNumModules = other.preferredNumModules;
-    currentNumModules = other.currentNumModules;
-    biasedCost = other.biasedCost;
-    return *this;
-  }
-
-  virtual ~BiasedMapEquation() = default;
-
   // ===================================================
   // Getters
   // ===================================================

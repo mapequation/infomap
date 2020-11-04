@@ -27,39 +27,6 @@ public:
   using FlowDataType = FlowData;
   using DeltaFlowDataType = DeltaFlow;
 
-  MapEquation() = default;
-
-  MapEquation(const MapEquation& other)
-      : codelength(other.codelength),
-        indexCodelength(other.indexCodelength),
-        moduleCodelength(other.moduleCodelength),
-        nodeFlow_log_nodeFlow(other.nodeFlow_log_nodeFlow),
-        flow_log_flow(other.flow_log_flow),
-        exit_log_exit(other.exit_log_exit),
-        enter_log_enter(other.enter_log_enter),
-        enterFlow(other.enterFlow),
-        enterFlow_log_enterFlow(other.enterFlow_log_enterFlow),
-        exitNetworkFlow(other.exitNetworkFlow),
-        exitNetworkFlow_log_exitNetworkFlow(other.exitNetworkFlow_log_exitNetworkFlow) { }
-
-  MapEquation& operator=(const MapEquation& other)
-  {
-    codelength = other.codelength;
-    indexCodelength = other.indexCodelength;
-    moduleCodelength = other.moduleCodelength;
-    nodeFlow_log_nodeFlow = other.nodeFlow_log_nodeFlow;
-    flow_log_flow = other.flow_log_flow;
-    exit_log_exit = other.exit_log_exit;
-    enter_log_enter = other.enter_log_enter;
-    enterFlow = other.enterFlow;
-    enterFlow_log_enterFlow = other.enterFlow_log_enterFlow;
-    exitNetworkFlow = other.exitNetworkFlow;
-    exitNetworkFlow_log_exitNetworkFlow = other.exitNetworkFlow_log_exitNetworkFlow;
-    return *this;
-  }
-
-  virtual ~MapEquation() = default;
-
   // ===================================================
   // Getters
   // ===================================================
