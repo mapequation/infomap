@@ -5,15 +5,14 @@
  *      Author: Daniel
  */
 
-#ifndef SRC_CLUSTERING_MAPEQUATION_H_
-#define SRC_CLUSTERING_MAPEQUATION_H_
+#ifndef _MAPEQUATION_H_
+#define _MAPEQUATION_H_
 
 #include "../utils/infomath.h"
 #include "../io/convert.h"
 #include "../io/Config.h"
 #include "../utils/Log.h"
 #include "../utils/VectorMap.h"
-// #include "InfoNode.h"
 #include "FlowData.h"
 #include <vector>
 #include <map>
@@ -22,12 +21,10 @@
 namespace infomap {
 
 class InfoNode;
-// struct Config;
 
 class MapEquation {
 public:
   using FlowDataType = FlowData;
-  // using DeltaFlowDataType = MemDeltaFlow;
   using DeltaFlowDataType = DeltaFlow;
 
   MapEquation() = default;
@@ -43,7 +40,7 @@ public:
         enterFlow(other.enterFlow),
         enterFlow_log_enterFlow(other.enterFlow_log_enterFlow),
         exitNetworkFlow(other.exitNetworkFlow),
-        exitNetworkFlow_log_exitNetworkFlow(other.exitNetworkFlow_log_exitNetworkFlow) {}
+        exitNetworkFlow_log_exitNetworkFlow(other.exitNetworkFlow_log_exitNetworkFlow) { }
 
   MapEquation& operator=(const MapEquation& other)
   {
@@ -104,9 +101,9 @@ public:
 
   double calcCodelength(const InfoNode& parent) const;
 
-  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) {}
+  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) { }
 
-  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
+  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) { }
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                         DeltaFlowDataType& oldModuleDelta,
@@ -124,7 +121,7 @@ public:
                                     std::vector<FlowDataType>& moduleFlowData,
                                     std::vector<unsigned int>& moduleMembers);
 
-  void consolidateModules(std::vector<InfoNode*>& modules) {}
+  void consolidateModules(std::vector<InfoNode*>& modules) { }
 
   // ===================================================
   // Debug
@@ -178,4 +175,4 @@ protected:
 } // namespace infomap
 
 
-#endif /* SRC_CLUSTERING_MAPEQUATION_H_ */
+#endif /* _MAPEQUATION_H_ */

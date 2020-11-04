@@ -11,7 +11,6 @@
 #include <utility>
 #include "MapEquation.h"
 #include "FlowData.h"
-// #include "InfoNode.h"
 #include "../utils/Log.h"
 
 namespace infomap {
@@ -22,8 +21,8 @@ class BiasedMapEquation : protected MapEquation {
   using Base = MapEquation;
 
 public:
-  using FlowDataType = FlowData;
-  using DeltaFlowDataType = DeltaFlow;
+  using Base::FlowDataType;
+  using Base::DeltaFlowDataType;
 
   BiasedMapEquation() : MapEquation() {}
 
