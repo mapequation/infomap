@@ -81,6 +81,8 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
   // -o network,states,clu,ftree
   api.addOptionArgument(outputFormats, 'o', "output", "Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, network, states.", ArgType::list, "Output", true);
 
+  api.addOptionArgument(hideBipartiteNodes, "hide-bipartite-nodes", "Project bipartite solution to unipartite.", "Output", true);
+
   // --------------------- Core algorithm options ---------------------
   api.addOptionArgument(twoLevel, '2', "two-level", "Optimize a two-level partition of the network. Default is multi-level.", "Algorithm");
 
@@ -178,9 +180,6 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
   api.addIncrementalOptionArgument(verbosity, 'v', "verbose", "Verbose output on the console. Add additional 'v' flags to increase verbosity up to -vvv.", "Output");
 
   api.addOptionArgument(silent, "silent", "No output on the console.", "Output");
-
-  // api.addOptionArgument(showBiNodes, "show-bipartite-nodes",
-  // 		"Include the bipartite nodes in the output.", "Output", true);
 
   api.parseArgs(flags);
 

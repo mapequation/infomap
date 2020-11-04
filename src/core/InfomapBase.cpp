@@ -2045,24 +2045,6 @@ void InfomapBase::writeResult()
       Log() << "done!\n";
     }
   }
-
-  if (printMap) {
-    std::string filename = outDirectory + outName + ".map";
-    if (!haveMemory()) {
-      Log() << "Write modular network to " << filename << "... ";
-      writeMap(filename);
-      Log() << "done!\n";
-    } else {
-      // Write both physical and state level
-      Log() << "Write physical modular network to " << filename << "... ";
-      writeMap(filename);
-      Log() << "done!\n";
-      std::string filenameStates = outDirectory + outName + "_states.map";
-      Log() << "Write state modular network to " << filenameStates << "... ";
-      writeMap(filenameStates, true);
-      Log() << "done!\n";
-    }
-  }
 }
 
 std::string InfomapBase::getOutputFileHeader()
@@ -2074,8 +2056,7 @@ std::string InfomapBase::getOutputFileHeader()
                    << "# completed in " << m_elapsedTime.getElapsedTimeInSec() << " s\n"
                    << "# partitioned into " << maxTreeDepth() << " levels with " << numTopModules() << " top modules\n"
                    << "# codelength " << codelength() << " bits\n"
-                   << "# relative codelength savings " << getRelativeCodelengthSavings() * 100 << "%" <<
-                   (m_network.isBipartite() ? bipartiteInfo : "");
+                   << "# relative codelength savings " << getRelativeCodelengthSavings() * 100 << "%" << (m_network.isBipartite() ? bipartiteInfo : "");
 }
 
 std::string InfomapBase::writeTree(std::string filename, bool states)
@@ -2104,23 +2085,32 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
   // unsigned int maxModuleLevel = maxTreeDepth();
   std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.clu" : ".clu") : filename;
   SafeOutFile outFile(outputFilename);
+
   outFile << std::setprecision(9);
   outFile << getOutputFileHeader() << "\n";
   outFile << "# module level " << moduleIndexLevel << "\n";
   outFile << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
+
   if (states) {
     outFile << "# state_id module flow node_id";
     if (isMultilayerNetwork())
       outFile << " layer_id";
-    outFile << "\n";
+    outFile << '\n';
   } else {
     outFile << "# node_id module flow\n";
   }
-  // auto it = haveMemory() && !states ? iterTreePhysical(moduleIndexLevel) : iterTree(moduleIndexLevel);
+
+  const auto shouldHideBipartiteNodes = isBipartite() && hideBipartiteNodes;
+  const auto bipartiteStartId = shouldHideBipartiteNodes ? m_network.bipartiteStartId() : 0;
+
   if (haveMemory() && !states) {
     for (auto it(iterTreePhysical(moduleIndexLevel)); !it.isEnd(); ++it) {
       InfoNode& node = *it;
       if (node.isLeaf()) {
+        if (shouldHideBipartiteNodes && node.physicalId >= bipartiteStartId) {
+          continue;
+        }
+
         outFile << node.physicalId << " " << it.moduleId() << " " << node.data.flow << "\n";
       }
     }
@@ -2128,6 +2118,10 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
     for (auto it(iterTree(moduleIndexLevel)); !it.isEnd(); ++it) {
       InfoNode& node = *it;
       if (node.isLeaf()) {
+        if (shouldHideBipartiteNodes && node.physicalId >= bipartiteStartId) {
+          continue;
+        }
+
         if (states) {
           outFile << node.stateId << " " << it.moduleId() << " " << node.data.flow << " " << node.physicalId;
           if (isMultilayerNetwork())
@@ -2141,158 +2135,73 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
   return outputFilename;
 }
 
-std::string InfomapBase::writeMap(std::string filename, bool states, int moduleIndexLevel)
-{
-  //TODO: Support moduleIndexLevel other than default -1
-  if (moduleIndexLevel != -1) {
-    Log() << "\nWarning: writeMap currently only supports default moduleIndexLevel -1\n";
-  }
-  // unsigned int maxModuleLevel = maxTreeDepth();
-  std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.map" : ".map") : filename;
-
-  // Collect modules
-  std::vector<InfoNode*> modules;
-  for (auto it(iterLeafModules()); !it.isEnd(); ++it) {
-    modules.push_back(it.current());
-  }
-
-  // Sort modules on flow descending order
-  std::sort(modules.begin(), modules.end(), [](InfoNode* a, InfoNode* b) {
-    return a->data.flow > b->data.flow;
-  });
-
-  // Store id on modules to simplify link aggregation
-  for (unsigned int i = 0; i < modules.size(); ++i) {
-    modules[i]->index = i + 1;
-  }
-
-  // Copy node data to seperate structure as physical nodes may be ephemeral
-  struct MapNode {
-    unsigned int id;
-    double flow;
-    std::string name = "";
-    MapNode(unsigned int id, double flow, std::string name = "")
-        : id(id), flow(flow), name(name) { initName(); }
-    void initName()
-    {
-      if (name.empty()) {
-        name = io::stringify(id);
-      }
-    }
-  };
-  // Collect nodes
-  unsigned int numNodes = 0;
-  std::vector<std::vector<MapNode>> nodes(modules.size());
-  for (unsigned int i = 0; i < modules.size(); ++i) {
-    if (haveMemory() && !states) {
-      for (InfomapLeafIteratorPhysical it(modules[i]); !it.isEnd(); ++it) {
-        // Use physicalId as node id for (aggregated) physical nodes
-        nodes[i].push_back(MapNode(it->physicalId, it->data.flow, m_network.names()[it->physicalId]));
-      }
-    } else {
-      // State nodes
-      for (auto& node : *modules[i]) {
-        nodes[i].push_back(MapNode(node.stateId, node.data.flow, m_network.names()[node.stateId]));
-      }
-    }
-    // Sort nodes on flow descending order
-    std::sort(nodes[i].begin(), nodes[i].end(), [=](MapNode& a, MapNode& b) {
-      return a.flow > b.flow;
-    });
-    numNodes += nodes[i].size();
-  }
-
-  // Collect links and module exit flow
-  std::map<std::pair<unsigned int, unsigned int>, double> moduleLinks;
-  std::map<unsigned int, double> moduleExitFlow;
-  for (auto& module : modules) {
-    for (auto& node : *module) {
-      for (auto& link : node.outEdges()) {
-        if (link->source.parent != link->target.parent) {
-          moduleLinks[std::make_pair(link->source.parent->index, link->target.parent->index)] += link->data.flow;
-          moduleExitFlow[module->index + 1] += link->data.flow;
-        }
-      }
-    }
-  }
-
-  SafeOutFile outFile(outputFilename);
-  outFile << "# modules: " << modules.size() << "\n";
-  outFile << "# modulelinks: " << moduleLinks.size() << "\n";
-  outFile << "# nodes: " << numNodes << "\n";
-  outFile << "# links: " << 0 << "\n";
-  outFile << std::setprecision(9);
-  outFile << "# codelength: " << m_hierarchicalCodelength << "\n";
-  outFile << std::setprecision(6);
-  outFile << (isUndirectedClustering() ? "*Undirected\n" : "*Directed\n");
-  outFile << "*Modules " << modules.size() << "\n";
-  for (unsigned int i = 0; i < modules.size(); ++i) {
-    auto& module = *modules[i];
-    //# id name flow exitFlow (Name the module from the biggest child)
-    outFile << module.index << " \"" << nodes[i][0].name << ",...\" " << module.data.flow << " " << moduleExitFlow[module.index] << "\n";
-  }
-  outFile << "*Nodes " << numNodes << "\n";
-  for (unsigned int i = 0; i < nodes.size(); ++i) {
-    auto& siblings = nodes[i];
-    for (unsigned int j = 0; j < siblings.size(); ++j) {
-      auto& n = siblings[j];
-      outFile << i + 1 << ":" << j + 1 << " \"" << n.name << "\" " << n.flow << "\n";
-      // outFile << " " << n.id << "\n";
-    }
-  }
-  outFile << "*Links " << moduleLinks.size() << "\n";
-  for (auto& linkIt : moduleLinks) {
-    auto& link = linkIt.first;
-    auto& weight = linkIt.second;
-    outFile << link.first << " " << link.second << " " << weight << "\n";
-  }
-  return outputFilename;
-}
-
 void InfomapBase::writeTree(std::ostream& outStream, bool states)
 {
   auto oldPrecision = outStream.precision();
   outStream << std::setprecision(9);
   outStream << getOutputFileHeader() << "\n";
   outStream << std::setprecision(6);
+
   if (states) {
     outStream << "# path flow name state_id node_id";
     if (isMultilayerNetwork())
       outStream << " layer_id";
-    outStream << "\n";
-  } else
+    outStream << '\n';
+  } else {
     outStream << "# path flow name node_id\n";
+  }
+
+  const auto nodeName = [this](const auto& node) {
+    auto name = m_network.names()[node.physicalId];
+
+    if (name.empty()) {
+      name = io::stringify(node.physicalId);
+    }
+
+    return name;
+  };
+
+  const auto shouldHideBipartiteNodes = !printFlowTree && isBipartite() && hideBipartiteNodes;
+  const auto bipartiteStartId = shouldHideBipartiteNodes ? m_network.bipartiteStartId() : 0;
+
   // TODO: Make a general iterator where merging physical nodes depend on a parameter rather than type to be able to DRY here
   if (haveMemory() && !states) {
     for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
       InfoNode& node = *it;
       if (node.isLeaf()) {
+        if (shouldHideBipartiteNodes && node.physicalId >= bipartiteStartId) {
+          continue;
+        }
+
         auto& path = it.path();
-        auto name = m_network.names()[node.physicalId];
-        if (name.empty())
-          name = io::stringify(node.physicalId);
-        outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << name << "\" " << node.physicalId << "\n";
+
+        outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << nodeName(node) << "\" " << node.physicalId << '\n';
       }
     }
   } else {
     for (auto it(iterTree()); !it.isEnd(); ++it) {
       InfoNode& node = *it;
       if (node.isLeaf()) {
+        if (shouldHideBipartiteNodes && node.physicalId >= bipartiteStartId) {
+          continue;
+        }
+
         auto& path = it.path();
-        auto name = m_network.names()[node.physicalId];
-        if (name.empty())
-          name = io::stringify(node.physicalId);
-        outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << name << "\" ";
+
+        outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << nodeName(node) << "\" ";
+
         if (states) {
           outStream << node.stateId << " " << node.physicalId;
           if (isMultilayerNetwork())
             outStream << " " << node.layerId;
-          outStream << "\n";
-        } else
-          outStream << node.physicalId << "\n";
+          outStream << '\n';
+        } else {
+          outStream << node.physicalId << '\n';
+        }
       }
     }
   }
+
   outStream << std::setprecision(oldPrecision);
 }
 
@@ -2309,28 +2218,31 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
   // Map state id to parent in infomap tree iterator
   std::map<unsigned int, InfoNode*> stateIdToParent;
   std::map<unsigned int, unsigned int> stateIdToChildIndex;
+
   if (mergePhysicalNodes) {
     for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
-      if (it->isLeaf()) {
-        for (auto stateId : it->stateNodes) {
-          stateIdToParent[stateId] = it->parent;
-          stateIdToChildIndex[stateId] = it.childIndex();
+      auto& node = *it;
+      if (node.isLeaf()) {
+        for (auto stateId : node.stateNodes) {
+          stateIdToParent[stateId] = node.parent;
+          stateIdToChildIndex[stateId] = node.childIndex();
         }
       } else {
         // Use stateId to store depth on modules to simplify link aggregation
-        it->stateId = it.depth();
-        it->index = it.childIndex();
+        node.stateId = node.depth();
+        node.index = node.childIndex();
       }
     }
   } else {
     for (auto it(iterTree()); !it.isEnd(); ++it) {
-      if (it->isLeaf()) {
-        stateIdToParent[it->stateId] = it->parent;
-        stateIdToChildIndex[it->stateId] = it.childIndex();
+      auto& node = *it;
+      if (node.isLeaf()) {
+        stateIdToParent[node.stateId] = node.parent;
+        stateIdToChildIndex[node.stateId] = node.childIndex();
       } else {
         // Use stateId to store depth on modules to simplify link aggregation
-        it->stateId = it.depth();
-        it->index = it.childIndex();
+        node.stateId = node.depth();
+        node.index = node.childIndex();
       }
     }
   }
