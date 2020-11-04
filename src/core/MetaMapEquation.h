@@ -11,7 +11,6 @@
 #include <utility>
 #include "MapEquation.h"
 #include "FlowData.h"
-// #include "InfoNode.h"
 #include "../utils/Log.h"
 #include "../utils/MetaCollection.h"
 
@@ -23,8 +22,8 @@ class MetaMapEquation : protected MapEquation {
   using Base = MapEquation;
 
 public:
-  using FlowDataType = FlowData;
-  using DeltaFlowDataType = DeltaFlow;
+  using Base::FlowDataType;
+  using Base::DeltaFlowDataType;
 
   MetaMapEquation() = default;
 

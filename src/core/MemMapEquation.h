@@ -5,12 +5,11 @@
  *      Author: Daniel
  */
 
-#ifndef MODULES_CLUSTERING_CLUSTERING_MEMMAPEQUATION_H_
-#define MODULES_CLUSTERING_CLUSTERING_MEMMAPEQUATION_H_
+#ifndef _MEMMAPEQUATION_H_
+#define _MEMMAPEQUATION_H_
 
 #include "MapEquation.h"
 #include "FlowData.h"
-// #include "InfoNode.h"
 #include "../utils/Log.h"
 #include <vector>
 #include <set>
@@ -26,16 +25,16 @@ class MemMapEquation : protected MapEquation {
   using Base = MapEquation;
 
 public:
-  using FlowDataType = FlowData;
+  using Base::FlowDataType;
   using DeltaFlowDataType = MemDeltaFlow;
 
-  MemMapEquation() : MapEquation() {}
+  MemMapEquation() : MapEquation() { }
 
   MemMapEquation(const MemMapEquation& other)
       : MapEquation(other),
         m_physToModuleToMemNodes(other.m_physToModuleToMemNodes),
         m_numPhysicalNodes(other.m_numPhysicalNodes),
-        m_memoryContributionsAdded(other.m_memoryContributionsAdded) {}
+        m_memoryContributionsAdded(other.m_memoryContributionsAdded) { }
 
   MemMapEquation& operator=(const MemMapEquation& other)
   {
@@ -46,7 +45,7 @@ public:
     return *this;
   }
 
-  virtual ~MemMapEquation() {}
+  virtual ~MemMapEquation() { }
 
   // ===================================================
   // Getters
@@ -64,7 +63,6 @@ public:
   // IO
   // ===================================================
 
-  // using Base::print;
   std::ostream& print(std::ostream& out) const;
   friend std::ostream& operator<<(std::ostream&, const MemMapEquation&);
 
@@ -181,8 +179,8 @@ protected:
 };
 
 struct MemNodeSet {
-  MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) {}
-  MemNodeSet(const MemNodeSet& other) : numMemNodes(other.numMemNodes), sumFlow(other.sumFlow) {}
+  MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) { }
+  MemNodeSet(const MemNodeSet& other) : numMemNodes(other.numMemNodes), sumFlow(other.sumFlow) { }
   MemNodeSet& operator=(const MemNodeSet& other)
   {
     numMemNodes = other.numMemNodes;
@@ -196,4 +194,4 @@ struct MemNodeSet {
 
 } // namespace infomap
 
-#endif /* MODULES_CLUSTERING_CLUSTERING_MEMMAPEQUATION_H_ */
+#endif /* _MEMMAPEQUATION_H_ */
