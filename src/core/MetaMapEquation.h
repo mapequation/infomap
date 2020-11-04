@@ -33,10 +33,8 @@ public:
 
   using Base::getIndexCodelength;
 
-  // double getModuleCodelength() const { return moduleCodelength + metaCodelength; };
   double getModuleCodelength() const;
 
-  // double getCodelength() const { return codelength + metaCodelength; };
   double getCodelength() const;
 
   double getMetaCodelength(bool unweighted = false) const
@@ -48,8 +46,8 @@ public:
   // IO
   // ===================================================
 
-  // using Base::print;
   std::ostream& print(std::ostream& out) const;
+
   friend std::ostream& operator<<(std::ostream&, const MetaMapEquation&);
 
   // ===================================================
@@ -96,7 +94,7 @@ public:
   // Debug
   // ===================================================
 
-  void printDebug();
+  void printDebug() const override;
 
 protected:
   // ===================================================
