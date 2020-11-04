@@ -29,15 +29,15 @@ public:
   // Getters
   // ===================================================
 
-  static bool haveMemory() { return true; }
+  static bool haveMemory() noexcept { return true; }
 
   using Base::getIndexCodelength;
 
-  double getModuleCodelength() const;
+  double getModuleCodelength() const noexcept override;
 
-  double getCodelength() const;
+  double getCodelength() const noexcept override;
 
-  double getMetaCodelength(bool unweighted = false) const
+  double getMetaCodelength(bool unweighted = false) const noexcept
   {
     return unweighted ? metaCodelength : metaDataRate * metaCodelength;
   };

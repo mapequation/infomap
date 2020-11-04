@@ -11,12 +11,12 @@
 
 namespace infomap {
 
-double MetaMapEquation::getModuleCodelength() const
+double MetaMapEquation::getModuleCodelength() const noexcept
 {
   return moduleCodelength + metaCodelength * metaDataRate;
 }
 
-double MetaMapEquation::getCodelength() const
+double MetaMapEquation::getCodelength() const noexcept
 {
   return codelength + metaCodelength * metaDataRate;
 }

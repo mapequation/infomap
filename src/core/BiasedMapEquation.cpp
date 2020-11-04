@@ -11,12 +11,12 @@
 
 namespace infomap {
 
-double BiasedMapEquation::getModuleCodelength() const
+double BiasedMapEquation::getModuleCodelength() const noexcept
 {
   return moduleCodelength + biasedCost;
 }
 
-double BiasedMapEquation::getCodelength() const
+double BiasedMapEquation::getCodelength() const noexcept
 {
   return codelength + biasedCost;
 }

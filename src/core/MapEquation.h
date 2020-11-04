@@ -31,13 +31,13 @@ public:
   // Getters
   // ===================================================
 
-  static bool haveMemory() { return false; }
+  static bool haveMemory() noexcept { return false; }
 
-  double getIndexCodelength() const { return indexCodelength; }
+  virtual double getIndexCodelength() const noexcept { return indexCodelength; }
 
-  double getModuleCodelength() const { return moduleCodelength; }
+  virtual double getModuleCodelength() const noexcept { return moduleCodelength; }
 
-  double getCodelength() const { return codelength; }
+  virtual double getCodelength() const noexcept { return codelength; }
 
   // ===================================================
   // IO
