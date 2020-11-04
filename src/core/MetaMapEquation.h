@@ -22,8 +22,8 @@ class MetaMapEquation : protected MapEquation {
   using Base = MapEquation;
 
 public:
-  using Base::FlowDataType;
   using Base::DeltaFlowDataType;
+  using Base::FlowDataType;
 
   // ===================================================
   // Getters
@@ -68,9 +68,9 @@ public:
   // Codelength
   // ===================================================
 
-  double calcCodelength(const InfoNode& parent) const;
+  double calcCodelength(const InfoNode& parent) const override;
 
-  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
+  using Base::addMemoryContributions;
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                         DeltaFlowDataType& oldModuleDelta,
