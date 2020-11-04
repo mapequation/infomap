@@ -73,10 +73,10 @@ public:
   void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) { }
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                DeltaFlowDataType& oldModuleDelta,
-                                                DeltaFlowDataType& newModuleDelta,
-                                                std::vector<FlowDataType>& moduleFlowData,
-                                                std::vector<unsigned int>& moduleMembers) const;
+                                        DeltaFlowDataType& oldModuleDelta,
+                                        DeltaFlowDataType& newModuleDelta,
+                                        std::vector<FlowDataType>& moduleFlowData,
+                                        std::vector<unsigned int>& moduleMembers) const;
 
   // ===================================================
   // Consolidation
