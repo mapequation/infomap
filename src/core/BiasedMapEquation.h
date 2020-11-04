@@ -95,49 +95,22 @@ protected:
   // Protected member functions
   // ===================================================
 
-  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
-
-  int getDeltaNumModulesIfMoving(InfoNode& current,
-                                 unsigned int oldModule,
-                                 unsigned int newModule,
-                                 std::vector<unsigned int>& moduleMembers) const;
+  static int getDeltaNumModulesIfMoving(InfoNode& current,
+                                        unsigned int oldModule,
+                                        unsigned int newModule,
+                                        std::vector<unsigned int>& moduleMembers);
 
   // ===================================================
   // Codelength
   // ===================================================
 
-  void calculateCodelength(std::vector<InfoNode*>& nodes);
-
-  using Base::calculateCodelengthTerms;
-
-  using Base::calculateCodelengthFromCodelengthTerms;
+  void calculateCodelength(std::vector<InfoNode*>& nodes) override;
 
   double calcNumModuleCost(unsigned int numModules) const;
 
-public:
-  // ===================================================
-  // Public member variables
-  // ===================================================
-
-  using Base::codelength;
-  using Base::indexCodelength;
-  using Base::moduleCodelength;
-
-protected:
   // ===================================================
   // Protected member variables
   // ===================================================
-
-  using Base::enter_log_enter;
-  using Base::enterFlow;
-  using Base::enterFlow_log_enterFlow;
-  using Base::exit_log_exit;
-  using Base::flow_log_flow; // node.(flow + exitFlow)
-  using Base::nodeFlow_log_nodeFlow; // constant while the leaf network is the same
-
-  // For hierarchical
-  using Base::exitNetworkFlow;
-  using Base::exitNetworkFlow_log_exitNetworkFlow;
 
   // For biased
   unsigned int preferredNumModules = 0;

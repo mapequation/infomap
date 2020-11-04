@@ -78,15 +78,10 @@ double BiasedMapEquation::calcCodelength(const InfoNode& parent) const
       : MapEquation::calcCodelengthOnModuleOfModules(parent); // Use first-order model on index codebook
 }
 
-double BiasedMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
-{
-  return MapEquation::calcCodelength(parent);
-}
-
 int BiasedMapEquation::getDeltaNumModulesIfMoving(InfoNode& current,
                                                   unsigned int oldModule,
                                                   unsigned int newModule,
-                                                  std::vector<unsigned int>& moduleMembers) const
+                                                  std::vector<unsigned int>& moduleMembers)
 {
   const bool removeOld = moduleMembers[oldModule] == 1;
   const bool createNew = moduleMembers[newModule] == 0;
