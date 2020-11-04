@@ -32,18 +32,16 @@ public:
 
   using Base::getIndexCodelength;
 
-  // double getModuleCodelength() const { return moduleCodelength + metaCodelength; };
   double getModuleCodelength() const;
 
-  // double getCodelength() const { return codelength + metaCodelength; };
   double getCodelength() const;
 
   // ===================================================
   // IO
   // ===================================================
 
-  // using Base::print;
   std::ostream& print(std::ostream& out) const;
+
   friend std::ostream& operator<<(std::ostream&, const BiasedMapEquation&);
 
   // ===================================================
@@ -90,26 +88,19 @@ public:
   // Debug
   // ===================================================
 
-  void printDebug();
+  void printDebug() const override;
 
 protected:
   // ===================================================
   // Protected member functions
   // ===================================================
+
   double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
 
   int getDeltaNumModulesIfMoving(InfoNode& current,
                                  unsigned int oldModule,
                                  unsigned int newModule,
                                  std::vector<unsigned int>& moduleMembers) const;
-
-  // ===================================================
-  // Init
-  // ===================================================
-
-  // void initMetaNodes(InfoNode& root);
-
-  // void initPartitionOfMetaNodes(std::vector<InfoNode*>& nodes);
 
   // ===================================================
   // Codelength
@@ -123,12 +114,6 @@ protected:
 
   double calcNumModuleCost(unsigned int numModules) const;
 
-  // ===================================================
-  // Consolidation
-  // ===================================================
-
-  // void updateMetaData(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
-
 public:
   // ===================================================
   // Public member variables
@@ -139,17 +124,6 @@ public:
   using Base::moduleCodelength;
 
 protected:
-  // ===================================================
-  // Protected member functions
-  // ===================================================
-
-  /**
-   *  Get meta codelength of module of current node
-   * @param addRemoveOrNothing +1, -1 or 0 to calculate codelength
-   * as if current node was added, removed or untouched in current module
-   */
-  // double getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing);
-
   // ===================================================
   // Protected member variables
   // ===================================================

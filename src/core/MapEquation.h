@@ -94,7 +94,7 @@ public:
   // Debug
   // ===================================================
 
-  void printDebug();
+  virtual void printDebug() const;
 
 
 protected:

@@ -45,6 +45,7 @@ public:
   // ===================================================
 
   std::ostream& print(std::ostream& out) const;
+
   friend std::ostream& operator<<(std::ostream&, const MemMapEquation&);
 
   // ===================================================
@@ -55,9 +56,9 @@ public:
 
   void initNetwork(InfoNode& root);
 
-  void initSuperNetwork(InfoNode& root);
+  void initSuperNetwork(InfoNode& root) {};
 
-  void initSubNetwork(InfoNode& root);
+  void initSubNetwork(InfoNode& root) {};
 
   void initPartition(std::vector<InfoNode*>& nodes);
 
@@ -91,7 +92,7 @@ public:
   // Debug
   // ===================================================
 
-  void printDebug();
+  void printDebug() const override;
 
 protected:
   // ===================================================
