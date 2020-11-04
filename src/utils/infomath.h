@@ -37,32 +37,17 @@
 
 namespace infomap {
 namespace infomath {
-  inline double log2(double p)
+
+  inline double log2(double p) noexcept
   {
     return std::log(p) * M_LOG2E; // M_LOG2E == 1 / M_LN2
   }
 
-  inline double plogp(double p)
+  inline double plogp(double p) noexcept
   {
     return p > 0.0 ? p * log2(p) : 0.0;
   }
 
-  template <typename T, typename U>
-  inline bool isBetween(T value, U lowerLimit, U higherLimit)
-  {
-    return value >= lowerLimit && value <= higherLimit;
-  }
-
-  template <typename T, typename U>
-  inline bool isBetweenStrict(T value, U lowerLimit, U higherLimit)
-  {
-    return value > lowerLimit && value < higherLimit;
-  }
-
-  inline bool isEqualWithinThreshold(double v1, double v2, double epsilon = 1e-10)
-  {
-    return std::abs(v2 - v1) < epsilon;
-  }
 } // namespace infomath
 } // namespace infomap
 #endif /* INFOMAPTH_H_ */

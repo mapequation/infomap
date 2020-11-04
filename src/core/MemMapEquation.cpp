@@ -20,7 +20,7 @@ namespace infomap {
 // IO
 // ===================================================
 
-std::ostream& MemMapEquation::print(std::ostream& out) const
+std::ostream& MemMapEquation::print(std::ostream& out) const noexcept
 {
   return out << indexCodelength << " + " << moduleCodelength << " = " << io::toPrecision(codelength);
 }
@@ -35,18 +35,18 @@ std::ostream& operator<<(std::ostream& out, const MemMapEquation& mapEq)
 // Init
 // ===================================================
 
-void MemMapEquation::init(const Config& config)
+void MemMapEquation::init(const Config& config) noexcept
 {
   Log(3) << "MemMapEquation::init()...\n";
 }
 
 
-void MemMapEquation::initNetwork(InfoNode& root)
+void MemMapEquation::initNetwork(InfoNode& root) noexcept
 {
   initPhysicalNodes(root);
 }
 
-void MemMapEquation::initPartition(std::vector<InfoNode*>& nodes)
+void MemMapEquation::initPartition(std::vector<InfoNode*>& nodes) noexcept
 {
   initPartitionOfPhysicalNodes(nodes);
 

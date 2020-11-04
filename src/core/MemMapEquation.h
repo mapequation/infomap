@@ -44,7 +44,7 @@ public:
   // IO
   // ===================================================
 
-  std::ostream& print(std::ostream& out) const;
+  std::ostream& print(std::ostream& out) const noexcept override;
 
   friend std::ostream& operator<<(std::ostream&, const MemMapEquation&);
 
@@ -52,15 +52,15 @@ public:
   // Init
   // ===================================================
 
-  void init(const Config& config);
+  void init(const Config& config) noexcept override;
 
-  void initNetwork(InfoNode& root);
+  void initNetwork(InfoNode& root) noexcept override;
 
-  void initSuperNetwork(InfoNode& root) {};
+  using Base::initSuperNetwork;
 
-  void initSubNetwork(InfoNode& root) {};
+  using Base::initSubNetwork;
 
-  void initPartition(std::vector<InfoNode*>& nodes);
+  void initPartition(std::vector<InfoNode*>& nodes) noexcept override;
 
   // ===================================================
   // Codelength
