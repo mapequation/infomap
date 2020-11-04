@@ -25,29 +25,6 @@ public:
   using Base::FlowDataType;
   using Base::DeltaFlowDataType;
 
-  MetaMapEquation() = default;
-
-  MetaMapEquation(const MetaMapEquation& other)
-      : MapEquation(other),
-        m_moduleToMetaCollection(other.m_moduleToMetaCollection),
-        numMetaDataDimensions(other.numMetaDataDimensions),
-        metaDataRate(other.metaDataRate),
-        weightByFlow(other.weightByFlow),
-        metaCodelength(other.metaCodelength) {}
-
-  MetaMapEquation& operator=(const MetaMapEquation& other)
-  {
-    Base::operator=(other);
-    m_moduleToMetaCollection = other.m_moduleToMetaCollection;
-    numMetaDataDimensions = other.numMetaDataDimensions;
-    metaDataRate = other.metaDataRate;
-    weightByFlow = other.weightByFlow;
-    metaCodelength = other.metaCodelength;
-    return *this;
-  }
-
-  virtual ~MetaMapEquation() = default;
-
   // ===================================================
   // Getters
   // ===================================================

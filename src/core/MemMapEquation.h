@@ -28,25 +28,6 @@ public:
   using Base::FlowDataType;
   using DeltaFlowDataType = MemDeltaFlow;
 
-  MemMapEquation() : MapEquation() { }
-
-  MemMapEquation(const MemMapEquation& other)
-      : MapEquation(other),
-        m_physToModuleToMemNodes(other.m_physToModuleToMemNodes),
-        m_numPhysicalNodes(other.m_numPhysicalNodes),
-        m_memoryContributionsAdded(other.m_memoryContributionsAdded) { }
-
-  MemMapEquation& operator=(const MemMapEquation& other)
-  {
-    Base::operator=(other);
-    m_physToModuleToMemNodes = other.m_physToModuleToMemNodes;
-    m_numPhysicalNodes = other.m_numPhysicalNodes;
-    m_memoryContributionsAdded = other.m_memoryContributionsAdded;
-    return *this;
-  }
-
-  virtual ~MemMapEquation() { }
-
   // ===================================================
   // Getters
   // ===================================================
