@@ -100,7 +100,7 @@ protected:
   // ===================================================
   // Protected member functions
   // ===================================================
-  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const override;
 
   // ===================================================
   // Init
@@ -114,31 +114,13 @@ protected:
   // Codelength
   // ===================================================
 
-  void calculateCodelength(std::vector<InfoNode*>& nodes);
-
-  using Base::calculateCodelengthTerms;
-
-  using Base::calculateCodelengthFromCodelengthTerms;
+  void calculateCodelength(std::vector<InfoNode*>& nodes) override;
 
   // ===================================================
   // Consolidation
   // ===================================================
 
   void updateMetaData(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
-
-public:
-  // ===================================================
-  // Public member variables
-  // ===================================================
-
-  using Base::codelength;
-  using Base::indexCodelength;
-  using Base::moduleCodelength;
-
-protected:
-  // ===================================================
-  // Protected member functions
-  // ===================================================
 
   /**
    *  Get meta codelength of module of current node
@@ -150,17 +132,6 @@ protected:
   // ===================================================
   // Protected member variables
   // ===================================================
-
-  using Base::enter_log_enter;
-  using Base::enterFlow;
-  using Base::enterFlow_log_enterFlow;
-  using Base::exit_log_exit;
-  using Base::flow_log_flow; // node.(flow + exitFlow)
-  using Base::nodeFlow_log_nodeFlow; // constant while the leaf network is the same
-
-  // For hierarchical
-  using Base::exitNetworkFlow;
-  using Base::exitNetworkFlow_log_exitNetworkFlow;
 
   // For meta data
   using ModuleMetaMap = std::map<unsigned int, MetaCollection>; // moduleId -> (metaId -> count)

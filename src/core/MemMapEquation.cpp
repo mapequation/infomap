@@ -222,7 +222,7 @@ double MemMapEquation::calcCodelength(const InfoNode& parent) const
 double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
 {
   if (parent.numPhysicalNodes() == 0) {
-    return MapEquation::calcCodelength(parent); // Infomap root node
+    return Base::calcCodelength(parent); // Infomap root node
   }
 
   //TODO: For ordinary networks, flow should be used instead of enter flow
@@ -339,11 +339,13 @@ void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModu
     if (overlapIt == moduleToMemNodes.end())
       throw std::length_error(io::Str() << "Couldn't find old module " << oldModuleIndex << " in physical node " << physData.physNodeIndex);
 
-    MemNodeSet& memNodeSet = overlapIt->second;
-    memNodeSet.sumFlow -= physData.sumFlowFromM2Node;
+    {
+      MemNodeSet& memNodeSet = overlapIt->second;
+      memNodeSet.sumFlow -= physData.sumFlowFromM2Node;
 
-    if (--memNodeSet.numMemNodes == 0)
-      moduleToMemNodes.erase(overlapIt);
+      if (--memNodeSet.numMemNodes == 0)
+        moduleToMemNodes.erase(overlapIt);
+    }
 
     // Add contribution to new module
     overlapIt = moduleToMemNodes.find(bestModuleIndex);
@@ -384,7 +386,6 @@ void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& curr
 
     if (--memNodeSet.numMemNodes == 0)
       moduleToMemNodes.erase(overlapIt);
-
 
     // Add contribution to new module
     overlapIt = moduleToMemNodes.find(bestModuleIndex);

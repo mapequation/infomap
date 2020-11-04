@@ -98,7 +98,7 @@ protected:
   // ===================================================
   // Protected member functions
   // ===================================================
-  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const override;
 
   // ===================================================
   // Init
@@ -112,11 +112,7 @@ protected:
   // Codelength
   // ===================================================
 
-  void calculateCodelength(std::vector<InfoNode*>& nodes);
-
-  using Base::calculateCodelengthTerms;
-
-  using Base::calculateCodelengthFromCodelengthTerms;
+  void calculateCodelength(std::vector<InfoNode*>& nodes) override;
 
   void calculateNodeFlow_log_nodeFlow();
 
@@ -128,30 +124,9 @@ protected:
 
   void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
 
-public:
-  // ===================================================
-  // Public member variables
-  // ===================================================
-
-  using Base::codelength;
-  using Base::indexCodelength;
-  using Base::moduleCodelength;
-
-protected:
   // ===================================================
   // Protected member variables
   // ===================================================
-
-  using Base::enter_log_enter;
-  using Base::enterFlow;
-  using Base::enterFlow_log_enterFlow;
-  using Base::exit_log_exit;
-  using Base::flow_log_flow; // node.(flow + exitFlow)
-  using Base::nodeFlow_log_nodeFlow; // constant while the leaf network is the same
-
-  // For hierarchical
-  using Base::exitNetworkFlow;
-  using Base::exitNetworkFlow_log_exitNetworkFlow;
 
   using ModuleToMemNodes = std::map<unsigned int, MemNodeSet>;
 
@@ -162,13 +137,7 @@ protected:
 
 struct MemNodeSet {
   MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) { }
-  MemNodeSet(const MemNodeSet& other) : numMemNodes(other.numMemNodes), sumFlow(other.sumFlow) { }
-  MemNodeSet& operator=(const MemNodeSet& other)
-  {
-    numMemNodes = other.numMemNodes;
-    sumFlow = other.sumFlow;
-    return *this;
-  }
+
   unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
   double sumFlow;
 };

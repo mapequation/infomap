@@ -102,30 +102,22 @@ protected:
   // Protected member functions
   // ===================================================
 
-  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+  virtual double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
 
-  double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
+  virtual double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
 
-  void calculateCodelength(std::vector<InfoNode*>& nodes);
+  virtual void calculateCodelength(std::vector<InfoNode*>& nodes);
 
-  void calculateCodelengthTerms(std::vector<InfoNode*>& nodes);
+  virtual void calculateCodelengthTerms(std::vector<InfoNode*>& nodes);
 
-  void calculateCodelengthFromCodelengthTerms();
+  virtual void calculateCodelengthFromCodelengthTerms();
 
-
-public:
-  // ===================================================
-  // Public member variables
-  // ===================================================
-
-  double codelength = 0.0;
-  double indexCodelength = 0.0;
-  double moduleCodelength = 0.0;
-
-protected:
   // ===================================================
   // Protected member variables
   // ===================================================
+  double codelength = 0.0;
+  double indexCodelength = 0.0;
+  double moduleCodelength = 0.0;
 
   double nodeFlow_log_nodeFlow = 0.0; // constant while the leaf network is the same
   double flow_log_flow = 0.0; // node.(flow + exitFlow)
