@@ -152,7 +152,7 @@ double MetaMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
                                                        DeltaFlowDataType& oldModuleDelta,
                                                        DeltaFlowDataType& newModuleDelta,
                                                        std::vector<FlowDataType>& moduleFlowData,
-                                                       std::vector<unsigned int>& moduleMembers)
+                                                       std::vector<unsigned int>& moduleMembers) const
 {
   const double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 
@@ -173,9 +173,9 @@ double MetaMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 }
 
 
-double MetaMapEquation::getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing)
+double MetaMapEquation::getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing) const
 {
-  auto& currentMetaCollection = m_moduleToMetaCollection[module];
+  auto& currentMetaCollection = m_moduleToMetaCollection.at(module);
 
   double moduleMetaCodelength;
 

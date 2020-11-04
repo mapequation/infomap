@@ -168,7 +168,7 @@ double MapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
                                                    DeltaFlowDataType& oldModuleDelta,
                                                    DeltaFlowDataType& newModuleDelta,
                                                    std::vector<FlowDataType>& moduleFlowData,
-                                                   std::vector<unsigned int>& moduleMembers)
+                                                   std::vector<unsigned int>& moduleMembers) const
 {
   using infomath::plogp;
   const auto oldModule = oldModuleDelta.module;

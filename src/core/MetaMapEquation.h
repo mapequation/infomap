@@ -76,7 +76,7 @@ public:
                                         DeltaFlowDataType& oldModuleDelta,
                                         DeltaFlowDataType& newModuleDelta,
                                         std::vector<FlowDataType>& moduleFlowData,
-                                        std::vector<unsigned int>& moduleMembers);
+                                        std::vector<unsigned int>& moduleMembers) const;
 
   // ===================================================
   // Consolidation
@@ -88,7 +88,7 @@ public:
                                     std::vector<FlowDataType>& moduleFlowData,
                                     std::vector<unsigned int>& moduleMembers);
 
-  void consolidateModules(std::vector<InfoNode*>& modules);
+  void consolidateModules(std::vector<InfoNode*>& modules) override;
 
   // ===================================================
   // Debug
@@ -145,7 +145,7 @@ protected:
    * @param addRemoveOrNothing +1, -1 or 0 to calculate codelength
    * as if current node was added, removed or untouched in current module
    */
-  double getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing);
+  double getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing) const;
 
   // ===================================================
   // Protected member variables
@@ -165,7 +165,8 @@ protected:
   // For meta data
   using ModuleMetaMap = std::map<unsigned int, MetaCollection>; // moduleId -> (metaId -> count)
 
-  ModuleMetaMap m_moduleToMetaCollection;
+  // Mutable to make getDeltaCodelengthOnMovingNode const
+  mutable ModuleMetaMap m_moduleToMetaCollection;
 
   unsigned int numMetaDataDimensions = 0;
   double metaDataRate = 1.0;
