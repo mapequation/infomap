@@ -28,13 +28,13 @@ public:
   // Getters
   // ===================================================
 
-  static bool haveMemory() { return true; }
+  static bool haveMemory() noexcept{ return true; }
 
   using Base::getIndexCodelength;
 
-  double getModuleCodelength() const;
+  double getModuleCodelength() const noexcept override;
 
-  double getCodelength() const;
+  double getCodelength() const noexcept override;
 
   // ===================================================
   // IO

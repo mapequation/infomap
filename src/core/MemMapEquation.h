@@ -32,7 +32,7 @@ public:
   // Getters
   // ===================================================
 
-  static bool haveMemory() { return true; }
+  static bool haveMemory() noexcept { return true; }
 
   using Base::getIndexCodelength;
 
