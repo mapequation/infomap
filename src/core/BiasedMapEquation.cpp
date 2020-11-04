@@ -76,7 +76,9 @@ void BiasedMapEquation::initPartition(std::vector<InfoNode*>& nodes)
 double BiasedMapEquation::calcNumModuleCost(unsigned int numModules) const
 {
   if (preferredNumModules == 0) return 0;
-  int deltaNumModules = numModules - preferredNumModules;
+
+  const int deltaNumModules = numModules - preferredNumModules;
+
   return 1 * std::abs(deltaNumModules);
 }
 
@@ -108,10 +110,9 @@ int BiasedMapEquation::getDeltaNumModulesIfMoving(InfoNode& current,
                                                   unsigned int newModule,
                                                   std::vector<unsigned int>& moduleMembers) const
 {
-  bool removeOld = moduleMembers[oldModule] == 1;
-  bool createNew = moduleMembers[newModule] == 0;
-  int deltaNumModules = removeOld && !createNew ? -1 : (!removeOld && createNew ? 1 : 0);
-  return deltaNumModules;
+  const bool removeOld = moduleMembers[oldModule] == 1;
+  const bool createNew = moduleMembers[newModule] == 0;
+  return removeOld && !createNew ? -1 : (!removeOld && createNew ? 1 : 0);
 }
 
 double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
@@ -120,14 +121,14 @@ double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
                                                          std::vector<FlowDataType>& moduleFlowData,
                                                          std::vector<unsigned int>& moduleMembers)
 {
-  double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
+  const double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 
   if (preferredNumModules == 0)
     return deltaL;
 
-  int deltaNumModules = getDeltaNumModulesIfMoving(current, oldModuleDelta.module, newModuleDelta.module, moduleMembers);
+  const int deltaNumModules = getDeltaNumModulesIfMoving(current, oldModuleDelta.module, newModuleDelta.module, moduleMembers);
 
-  double deltaBiasedCost = calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
+  const double deltaBiasedCost = calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
 
   return deltaL + deltaBiasedCost;
 }
@@ -148,7 +149,7 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
   if (preferredNumModules == 0)
     return;
 
-  int deltaNumModules = getDeltaNumModulesIfMoving(current, oldModuleDelta.module, newModuleDelta.module, moduleMembers);
+  const int deltaNumModules = getDeltaNumModulesIfMoving(current, oldModuleDelta.module, newModuleDelta.module, moduleMembers);
 
   currentNumModules += deltaNumModules;
   biasedCost = calcNumModuleCost(currentNumModules);
@@ -157,6 +158,7 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 void BiasedMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 {
   unsigned int numModules = 0;
+
   for (auto& module : modules) {
     if (module == nullptr)
       continue;
