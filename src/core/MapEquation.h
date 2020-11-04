@@ -66,7 +66,7 @@ public:
   // Codelength
   // ===================================================
 
-  double calcCodelength(const InfoNode& parent) const;
+  virtual double calcCodelength(const InfoNode& parent) const;
 
   void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) { }
 

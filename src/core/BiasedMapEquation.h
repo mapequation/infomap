@@ -21,14 +21,14 @@ class BiasedMapEquation : protected MapEquation {
   using Base = MapEquation;
 
 public:
-  using Base::FlowDataType;
   using Base::DeltaFlowDataType;
+  using Base::FlowDataType;
 
   // ===================================================
   // Getters
   // ===================================================
 
-  static bool haveMemory() noexcept{ return true; }
+  static bool haveMemory() noexcept { return true; }
 
   using Base::getIndexCodelength;
 
@@ -62,9 +62,9 @@ public:
   // Codelength
   // ===================================================
 
-  double calcCodelength(const InfoNode& parent) const;
+  double calcCodelength(const InfoNode& parent) const override;
 
-  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
+  using Base::addMemoryContributions;
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                         DeltaFlowDataType& oldModuleDelta,
