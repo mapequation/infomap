@@ -96,7 +96,7 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow)
         throw FileFormatError("There is a '0' in the tree path, lowest allowed integer is 1.");
       path.push_back(childNumber); // Keep 1-based indexing in path
     }
-    m_nodePaths.add(nodeId, path);
+    m_nodePaths.emplace_back(nodeId, path);
   }
 }
 
