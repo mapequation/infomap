@@ -66,6 +66,12 @@ public:
 
   double calcCodelength(const InfoNode& parent) const override;
 
+  // We need to insert the base class declarations so the derived class
+  // can over load them with different DeltaFlowDataTypes
+  using Base::addMemoryContributions;
+  using Base::getDeltaCodelengthOnMovingNode;
+  using Base::updateCodelengthOnMovingNode;
+
   void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,

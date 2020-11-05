@@ -72,7 +72,7 @@ public:
                                         DeltaFlowDataType& oldModuleDelta,
                                         DeltaFlowDataType& newModuleDelta,
                                         std::vector<FlowDataType>& moduleFlowData,
-                                        std::vector<unsigned int>& moduleMembers) const;
+                                        std::vector<unsigned int>& moduleMembers) const override;
 
   // ===================================================
   // Consolidation
@@ -82,7 +82,7 @@ public:
                                     DeltaFlowDataType& oldModuleDelta,
                                     DeltaFlowDataType& newModuleDelta,
                                     std::vector<FlowDataType>& moduleFlowData,
-                                    std::vector<unsigned int>& moduleMembers);
+                                    std::vector<unsigned int>& moduleMembers) override;
 
   void consolidateModules(std::vector<InfoNode*>& modules) override;
 

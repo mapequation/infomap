@@ -64,23 +64,23 @@ public:
 
   virtual double calcCodelength(const InfoNode& parent) const;
 
-  void addMemoryContributions(InfoNode&, DeltaFlowDataType&, VectorMap<DeltaFlowDataType>&) { }
+  virtual void addMemoryContributions(InfoNode&, DeltaFlowDataType&, VectorMap<DeltaFlowDataType>&) const noexcept { }
 
-  double getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                        DeltaFlowDataType& oldModuleDelta,
-                                        DeltaFlowDataType& newModuleDelta,
-                                        std::vector<FlowDataType>& moduleFlowData,
-                                        std::vector<unsigned int>& moduleMembers) const;
+  virtual double getDeltaCodelengthOnMovingNode(InfoNode& current,
+                                                DeltaFlowDataType& oldModuleDelta,
+                                                DeltaFlowDataType& newModuleDelta,
+                                                std::vector<FlowDataType>& moduleFlowData,
+                                                std::vector<unsigned int>& moduleMembers) const;
 
   // ===================================================
   // Consolidation
   // ===================================================
 
-  void updateCodelengthOnMovingNode(InfoNode& current,
-                                    DeltaFlowDataType& oldModuleDelta,
-                                    DeltaFlowDataType& newModuleDelta,
-                                    std::vector<FlowDataType>& moduleFlowData,
-                                    std::vector<unsigned int>& moduleMembers);
+  virtual void updateCodelengthOnMovingNode(InfoNode& current,
+                                            DeltaFlowDataType& oldModuleDelta,
+                                            DeltaFlowDataType& newModuleDelta,
+                                            std::vector<FlowDataType>& moduleFlowData,
+                                            std::vector<unsigned int>& moduleMembers);
 
   virtual void consolidateModules(std::vector<InfoNode*>& modules) { }
 
