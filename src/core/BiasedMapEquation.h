@@ -91,10 +91,7 @@ protected:
   // Protected member functions
   // ===================================================
 
-  static int getDeltaNumModulesIfMoving(InfoNode& current,
-                                        unsigned int oldModule,
-                                        unsigned int newModule,
-                                        std::vector<unsigned int>& moduleMembers);
+  static int getDeltaNumModulesIfMoving(unsigned int oldModule, unsigned int newModule, std::vector<unsigned int>& moduleMembers);
 
   // ===================================================
   // Codelength

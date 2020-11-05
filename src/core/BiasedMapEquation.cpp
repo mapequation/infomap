@@ -81,10 +81,7 @@ double BiasedMapEquation::calcCodelength(const InfoNode& parent) const
       : MapEquation::calcCodelengthOnModuleOfModules(parent); // Use first-order model on index codebook
 }
 
-int BiasedMapEquation::getDeltaNumModulesIfMoving(InfoNode& current,
-                                                  unsigned int oldModule,
-                                                  unsigned int newModule,
-                                                  std::vector<unsigned int>& moduleMembers)
+int BiasedMapEquation::getDeltaNumModulesIfMoving(unsigned int oldModule, unsigned int newModule, std::vector<unsigned int>& moduleMembers)
 {
   const bool removeOld = moduleMembers[oldModule] == 1;
   const bool createNew = moduleMembers[newModule] == 0;
@@ -102,7 +99,7 @@ double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
   if (preferredNumModules == 0)
     return deltaL;
 
-  const int deltaNumModules = getDeltaNumModulesIfMoving(current, oldModuleDelta.module, newModuleDelta.module, moduleMembers);
+  const int deltaNumModules = getDeltaNumModulesIfMoving(oldModuleDelta.module, newModuleDelta.module, moduleMembers);
 
   const double deltaBiasedCost = calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
 
@@ -125,7 +122,7 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
   if (preferredNumModules == 0)
     return;
 
-  const int deltaNumModules = getDeltaNumModulesIfMoving(current, oldModuleDelta.module, newModuleDelta.module, moduleMembers);
+  const int deltaNumModules = getDeltaNumModulesIfMoving(oldModuleDelta.module, newModuleDelta.module, moduleMembers);
 
   currentNumModules += deltaNumModules;
   biasedCost = calcNumModuleCost(currentNumModules);
