@@ -19,7 +19,8 @@
 namespace infomap {
 
 class InfoNode;
-struct MemNodeSet;
+
+namespace detail { struct MemNodeSet; }
 
 class MemMapEquation : protected MapEquation {
   using Base = MapEquation;
@@ -128,20 +129,23 @@ protected:
   // Protected member variables
   // ===================================================
 
-  using ModuleToMemNodes = std::map<unsigned int, MemNodeSet>;
+  using ModuleToMemNodes = std::map<unsigned int, detail::MemNodeSet>;
 
   std::vector<ModuleToMemNodes> m_physToModuleToMemNodes; // vector[physicalNodeID] map<moduleID, {#memNodes, sumFlow}>
   unsigned int m_numPhysicalNodes = 0;
   bool m_memoryContributionsAdded = false;
 };
 
-struct MemNodeSet {
-  MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) { }
+namespace detail {
 
-  unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
-  double sumFlow;
-};
+  struct MemNodeSet {
+    MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) { }
 
+    unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
+    double sumFlow;
+  };
+
+} // namespace detail
 
 } // namespace infomap
 
