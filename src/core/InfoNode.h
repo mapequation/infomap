@@ -5,8 +5,8 @@
  *      Author: Daniel
  */
 
-#ifndef SRC_CLUSTERING_INFONODE_H_
-#define SRC_CLUSTERING_INFONODE_H_
+#ifndef _INFONODE_H_
+#define _INFONODE_H_
 
 #include "FlowData.h"
 #include "InfoEdge.h"
@@ -62,7 +62,6 @@ public:
 public:
   FlowData data;
   unsigned int index = 0; // Temporary index used in finding best module
-  //	unsigned int originalIndex = 0; // Index in the original network (for leaf nodes)
   /*const*/ unsigned int stateId = 0; // Unique state node id for the leaf nodes
   /*const*/ unsigned int physicalId = 0; // Physical id equals stateId for first order networks, otherwise can be non-unique
   /*const*/ unsigned int layerId = 0; // Layer id for multilayer networks
@@ -84,8 +83,6 @@ public:
   std::vector<unsigned int> stateNodes; // For physically aggregated nodes
 
 protected:
-  //	SubStructure m_subStructure;
-  // std::unique_ptr<InfomapBase> m_infomap;
   unsigned int m_childDegree = 0;
   bool m_childrenChanged = false;
   unsigned int m_numLeafMembers = 0;
@@ -93,12 +90,10 @@ protected:
   std::vector<EdgeType*> m_outEdges;
   std::vector<EdgeType*> m_inEdges;
 
-  // std::unique_ptr<InfomapBase> m_infomap;
   InfomapBase* m_infomap = nullptr;
 
 public:
-  InfoNode(const FlowData& flowData)
-      : data(flowData) {};
+  explicit InfoNode(const FlowData& flowData) : data(flowData) {};
 
   // For first order nodes, physicalId equals stateId
   InfoNode(const FlowData& flowData, unsigned int stateId)
@@ -110,7 +105,9 @@ public:
   InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId, unsigned int layerId)
       : data(flowData), stateId(stateId), physicalId(physicalId), layerId(layerId) {};
 
-  InfoNode() {};
+  InfoNode() = default;
+
+  ~InfoNode();
 
   InfoNode(const InfoNode& other)
       : data(other.data),
@@ -132,10 +129,6 @@ public:
         m_childDegree(other.m_childDegree),
         m_childrenChanged(other.m_childrenChanged),
         m_numLeafMembers(other.m_numLeafMembers) {}
-
-
-  ~InfoNode();
-
 
   InfoNode& operator=(const InfoNode& other)
   {
@@ -237,29 +230,23 @@ public:
 
   child_iterator_wrapper children()
   {
-    return child_iterator_wrapper(child_iterator(this), child_iterator(nullptr));
+    return { child_iterator(this), child_iterator(nullptr) };
   }
 
   const_child_iterator_wrapper children() const
   {
-    return const_child_iterator_wrapper(const_child_iterator(this), const_child_iterator(nullptr));
+    return { const_child_iterator(this), const_child_iterator(nullptr) };
   }
 
   infomap_child_iterator_wrapper infomap_children()
   {
-    return infomap_child_iterator_wrapper(infomap_child_iterator(this), infomap_child_iterator(nullptr));
+    return { infomap_child_iterator(this), infomap_child_iterator(nullptr) };
   }
 
   const_infomap_child_iterator_wrapper infomap_children() const
   {
-    return const_infomap_child_iterator_wrapper(const_infomap_child_iterator(this), const_infomap_child_iterator(nullptr));
+    return { const_infomap_child_iterator(this), const_infomap_child_iterator(nullptr) };
   }
-
-  // InfomapLeafIterator begin_leaf()
-  // { return InfomapLeafIterator(this); }
-
-  // InfomapLeafIterator end_leaf()
-  // { return InfomapLeafIterator(nullptr); }
 
   post_depth_first_iterator begin_post_depth_first()
   {
@@ -328,20 +315,14 @@ public:
     return m_inEdges.end();
   }
 
-  //	inout_edge_iterator begin_inoutEdge()
-  //	{ return inout_edge_iterator(begin_inEdge(), end_inEdge(), begin_outEdge()); }
-  //
-  //	inout_edge_iterator	end_inoutEdge()
-  //	{ return inout_edge_iterator(end_outEdge()); }
-
   edge_iterator_wrapper outEdges()
   {
-    return edge_iterator_wrapper(m_outEdges);
+    return { m_outEdges };
   }
 
   edge_iterator_wrapper inEdges()
   {
-    return edge_iterator_wrapper(m_inEdges);
+    return { m_inEdges };
   }
 
   // ---------------------------- Capacity ----------------------------
@@ -349,49 +330,39 @@ public:
   unsigned int childDegree() const;
 
   bool isLeaf() const;
+
   bool isLeafModule() const;
+
   bool isRoot() const;
 
   unsigned int depth() const;
 
   unsigned int firstDepthBelow() const;
 
-  unsigned int numLeafMembers()
+  unsigned int numLeafMembers() const
   {
     return m_numLeafMembers;
   }
 
-  bool isDangling()
+  bool isDangling() const
   {
     return m_outEdges.empty();
   }
 
-  unsigned int outDegree()
+  unsigned int outDegree() const
   {
     return m_outEdges.size();
   }
 
-  unsigned int inDegree()
+  unsigned int inDegree() const
   {
     return m_inEdges.size();
   }
 
-  unsigned int degree()
+  unsigned int degree() const
   {
     return outDegree() + inDegree();
   }
-
-  //	InfomapBase* getSubInfomap()
-  //	{ return m_subStructure.subInfomap.get(); }
-  //
-  //	const InfomapBase* getSubInfomap() const
-  //	{ return m_subStructure.subInfomap.get(); }
-  //
-  //	SubStructure& getSubStructure()
-  //	{ return m_subStructure; }
-  //
-  //	const SubStructure& getSubStructure() const
-  //	{ return m_subStructure; }
 
   // ---------------------------- Order ----------------------------
   bool isFirst() const
@@ -456,13 +427,6 @@ public:
    */
   unsigned int expandChildren();
 
-  // ------ OLD -----
-
-  // After change, set the child degree if known instead of lazily computing it by traversing the linked list
-  void setChildDegree(unsigned int value);
-
-  void setNumLeafNodes(unsigned int value);
-
   void addChild(InfoNode* child);
 
   void releaseChildren();
@@ -479,17 +443,10 @@ public:
    */
   unsigned int replaceWithChildren();
 
-  void replaceWithChildrenDebug();
-
-  // void storeModulesIn(InfoNode& other);
-  // void restoreModulesTo(InfoNode& other);
-
   /**
    * @return The number of children removed
    */
   unsigned int replaceChildrenWithGrandChildren();
-
-  void replaceChildrenWithGrandChildrenDebug();
 
   void remove(bool removeChildren);
 
@@ -497,7 +454,7 @@ public:
 
   EdgeType* addOutEdge(InfoNode& target, double weight, double flow = 0.0)
   {
-    EdgeType* edge = new EdgeType(*this, target, weight, flow);
+    auto edge = new EdgeType(*this, target, weight, flow);
     m_outEdges.push_back(edge);
     target.m_inEdges.push_back(edge);
     return edge;
@@ -509,4 +466,4 @@ private:
 
 } // namespace infomap
 
-#endif /* SRC_CLUSTERING_INFONODE_H_ */
+#endif /* _INFONODE_H_ */
