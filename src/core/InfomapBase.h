@@ -9,32 +9,34 @@
 #define SRC_CLUSTERING_INFOMAPBASE_H_
 
 #include "InfomapConfig.h"
-#include <string>
-#include <iostream>
-#include <sstream>
 #include "InfoEdge.h"
+#include "InfoNode.h"
+#include "InfomapIterator.h"
+#include "ClusterMap.h"
+#include "../io/Network.h"
+#include "../utils/Log.h"
+#include "../utils/Date.h"
+#include "../utils/Stopwatch.h"
+
 #include <vector>
 #include <deque>
 #include <map>
-#include "../utils/Log.h"
 #include <limits>
-#include "PartitionQueue.h"
-#include <limits>
-// #include "StateNetwork.h"
-#include "../io/Network.h"
-#include "InfoNode.h"
-#include "InfomapIterator.h"
-#include "./ClusterMap.h"
-#include "../utils/Date.h"
-#include "../utils/Stopwatch.h"
+#include <string>
+#include <iostream>
+#include <sstream>
 
 namespace infomap {
 
 struct PerLevelStat;
-// class InfoNode;
 
-//template<typename Node, template<typename,typename> class Optimizer = GreedyOptimizer<Node, MapEquation>>
+namespace detail {
+  class PartitionQueue;
+} // namespace detail
+
 class InfomapBase : public InfomapConfig<InfomapBase> {
+  using PartitionQueue = detail::PartitionQueue;
+
   template <typename Objective>
   friend class InfomapOptimizer;
 
@@ -42,12 +44,9 @@ protected:
   using EdgeType = Edge<InfoNode>;
 
 public:
-  InfomapBase() : InfomapConfig<InfomapBase>() {}
+  InfomapBase() : InfomapConfig<InfomapBase>() { }
 
-  explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf),
-                                             m_network(conf)
-  {
-  }
+  explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { }
 
   explicit InfomapBase(const std::string flags) : InfomapConfig<InfomapBase>(flags)
   {
@@ -505,42 +504,58 @@ protected:
 
 
 struct PerLevelStat {
-  PerLevelStat() = default;
   double codelength() const { return indexLength + leafLength; }
+
   unsigned int numNodes() const { return numModules + numLeafNodes; }
+
   unsigned int numModules = 0;
   unsigned int numLeafNodes = 0;
   double indexLength = 0.0;
   double leafLength = 0.0;
 };
 
-struct PerIterationStats {
-  PerIterationStats()
-      : iterationIndex(0),
-        numTopModules(0),
-        numBottomModules(0),
-        topPerplexity(0.0),
-        bottomPerplexity(0.0),
-        topOverlap(0.0),
-        bottomOverlap(0.0),
-        codelength(0.0),
-        maxDepth(0),
-        weightedDepth(0.0),
-        seconds(0.0),
-        isMinimum(false) {}
-  unsigned int iterationIndex;
-  unsigned int numTopModules;
-  unsigned int numBottomModules;
-  double topPerplexity; // Perplexity of top module flow distribution
-  double bottomPerplexity;
-  double topOverlap; // Average number of modules per physical node
-  double bottomOverlap;
-  double codelength;
-  unsigned int maxDepth;
-  double weightedDepth;
-  double seconds;
-  bool isMinimum;
-};
+
+namespace detail {
+
+  class PartitionQueue {
+    using PendingModule = InfoNode*;
+
+  public:
+    using size_t = std::deque<PendingModule>::size_type;
+
+    void swap(PartitionQueue& other)
+    {
+      std::swap(level, other.level);
+      std::swap(numNonTrivialModules, other.numNonTrivialModules);
+      std::swap(flow, other.flow);
+      std::swap(nonTrivialFlow, other.nonTrivialFlow);
+      std::swap(skip, other.skip);
+      std::swap(indexCodelength, other.indexCodelength);
+      std::swap(leafCodelength, other.leafCodelength);
+      std::swap(moduleCodelength, other.moduleCodelength);
+      m_queue.swap(other.m_queue);
+    }
+
+    size_t size() const { return m_queue.size(); }
+
+    void resize(size_t size) { m_queue.resize(size); }
+
+    PendingModule& operator[](size_t i) { return m_queue[i]; }
+
+    unsigned int level = 1;
+    unsigned int numNonTrivialModules = 0;
+    double flow = 0.0;
+    double nonTrivialFlow = 0.0;
+    bool skip = false;
+    double indexCodelength = 0.0; // Consolidated
+    double leafCodelength = 0.0; // Consolidated
+    double moduleCodelength = 0.0; // Left to improve on next level
+
+  private:
+    std::deque<PendingModule> m_queue;
+  };
+
+} // namespace detail
 
 } // namespace infomap
 

@@ -6,41 +6,38 @@
  */
 
 #include "InfomapBase.h"
-#include <string>
-#include <iostream>
-#include <sstream>
+#include "InfomapConfig.h"
 #include "InfoNode.h"
 #include "InfoEdge.h"
-#include <vector>
-#include <deque>
 #include "FlowData.h"
 #include "MapEquation.h"
+#include "ClusterMap.h"
 #include "../io/SafeFile.h"
+#include "../io/version.h"
+#include "../io/Network.h"
 #include "../utils/Log.h"
 #include "../utils/infomath.h"
 #include "../utils/Date.h"
 #include "../utils/Stopwatch.h"
 #include "../utils/exceptions.h"
 #include "../utils/FileURI.h"
-#include "../io/version.h"
+
+#include <string>
+#include <vector>
 #include <iomanip>
 #include <limits>
-#include "InfomapConfig.h"
-#include "ClusterMap.h"
 #include <map>
 #include <set>
-// #include <type_traits>
-#include "PartitionQueue.h"
-#include <cstdlib> // abs
-#include <limits>
-#include <algorithm> // std::sort
-// #include "StateNetwork.h"
-#include "../io/Network.h"
+#include <cstdlib>
+#include <algorithm>
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
 namespace infomap {
+
+using detail::PartitionQueue;
 
 // ===================================================
 // IO

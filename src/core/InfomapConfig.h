@@ -9,9 +9,10 @@
 #define MODULES_CLUSTERING_CLUSTERING_INFOMAPCONFIG_H_
 
 #include "../io/Config.h"
-#include <string>
 #include "../utils/Random.h"
 #include "../utils/Log.h"
+
+#include <string>
 
 namespace infomap {
 
@@ -19,17 +20,14 @@ template <typename Infomap>
 class InfomapConfig : public Config {
 public:
   InfomapConfig() = default;
-  InfomapConfig(const std::string flags) : Config(flags)
-  {
-    m_rand.seed(seedToRandomNumberGenerator);
-    Log::precision(verboseNumberPrecision);
-  }
-  InfomapConfig(const Config& conf)
-      : Config(conf),
-        m_rand(conf.seedToRandomNumberGenerator)
+
+  InfomapConfig(const std::string flags) : InfomapConfig(Config(flags)) {}
+
+  InfomapConfig(const Config& conf) : Config(conf), m_rand(conf.seedToRandomNumberGenerator)
   {
     Log::precision(conf.verboseNumberPrecision);
   }
+
   virtual ~InfomapConfig() = default;
 
 private:
@@ -113,11 +111,6 @@ public:
     noInfomap = value;
     return get();
   }
-
-  // Infomap& setDirected(bool directed) {
-  // 	directedEdges = directed;
-  // 	return get();
-  // }
 
   Infomap& setMarkovTime(double codeRate)
   {
