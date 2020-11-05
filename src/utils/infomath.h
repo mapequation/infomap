@@ -29,19 +29,11 @@
 #define INFOMATH_H_
 
 #include <cmath>
-#include <vector>
-
-#ifndef M_LOG2E
-#define M_LOG2E 1.44269504088896340736
-#endif
 
 namespace infomap {
 namespace infomath {
 
-  inline double log2(double p) noexcept
-  {
-    return std::log(p) * M_LOG2E; // M_LOG2E == 1 / M_LN2
-  }
+  using std::log2;
 
   inline double plogp(double p) noexcept
   {
@@ -50,4 +42,5 @@ namespace infomath {
 
 } // namespace infomath
 } // namespace infomap
+
 #endif /* INFOMAPTH_H_ */
