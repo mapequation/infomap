@@ -8,19 +8,17 @@
 #ifndef SRC_CLUSTERING_INFONODE_H_
 #define SRC_CLUSTERING_INFONODE_H_
 
-// #include "InfomapBase.h"
-#include <memory>
-#include <iostream>
-#include <vector>
 #include "FlowData.h"
 #include "InfoEdge.h"
-// #include "InfomapIterator.h"
 #include "infomapIterators.h"
 #include "treeIterators.h"
 #include "../utils/iterators.h"
-#include <limits>
 #include "../utils/exceptions.h"
 #include "../utils/MetaCollection.h"
+#include <memory>
+#include <iostream>
+#include <vector>
+#include <limits>
 
 namespace infomap {
 
@@ -28,50 +26,38 @@ class InfomapBase;
 
 class InfoNode {
 public:
-  typedef Edge<InfoNode> EdgeType;
+  using EdgeType = Edge<InfoNode>;
 
-  // Iterators
-  typedef ChildIterator<InfoNode*> child_iterator;
-  typedef ChildIterator<InfoNode const*> const_child_iterator;
-  typedef InfomapChildIterator<InfoNode*> infomap_child_iterator;
-  typedef InfomapChildIterator<InfoNode const*> const_infomap_child_iterator;
+  using child_iterator = ChildIterator<InfoNode*>;
+  using const_child_iterator = ChildIterator<InfoNode const*>;
+  using infomap_child_iterator = InfomapChildIterator<InfoNode*>;
+  using const_infomap_child_iterator = InfomapChildIterator<InfoNode const*>;
 
-  typedef TreeIterator<InfoNode*> tree_iterator;
-  typedef TreeIterator<InfoNode const*> const_tree_iterator;
+  using tree_iterator = TreeIterator<InfoNode*>;
+  using const_tree_iterator = TreeIterator<InfoNode const*>;
 
-  // typedef SiblingIterator<InfoNode*>					sibling_iterator;
-  // typedef SiblingIterator<InfoNode const*>			const_sibling_iterator;
-  typedef LeafNodeIterator<InfoNode*> leaf_node_iterator;
-  typedef LeafNodeIterator<InfoNode const*> const_leaf_node_iterator;
-  typedef LeafModuleIterator<InfoNode*> leaf_module_iterator;
-  typedef LeafModuleIterator<InfoNode const*> const_leaf_module_iterator;
+  using leaf_node_iterator = LeafNodeIterator<InfoNode*>;
+  using const_leaf_node_iterator = LeafNodeIterator<InfoNode const*>;
+  using leaf_module_iterator = LeafModuleIterator<InfoNode*>;
+  using const_leaf_module_iterator = LeafModuleIterator<InfoNode const*>;
 
-  // typedef DepthFirstIterator<InfoNode*, true>			pre_depth_first_iterator;
-  // typedef DepthFirstIterator<InfoNode const*, true>	const_pre_depth_first_iterator;
-  typedef DepthFirstIterator<InfoNode*, false> post_depth_first_iterator;
-  typedef DepthFirstIterator<InfoNode const*, false> const_post_depth_first_iterator;
+  using post_depth_first_iterator = DepthFirstIterator<InfoNode*, false>;
+  using const_post_depth_first_iterator = DepthFirstIterator<InfoNode const*, false>;
 
-  // typedef InfomapDepthFirstIterator<InfoNode*>		infomap_depth_first_iterator;
-  // typedef InfomapDepthFirstIterator<InfoNode const*>	const_infomap_depth_first_iterator;
+  using edge_iterator = std::vector<EdgeType*>::iterator;
+  using const_edge_iterator = std::vector<EdgeType*>::const_iterator;
 
-  // typedef InfomapClusterIterator<InfoNode*>			infomap_cluster_iterator;
-  // typedef InfomapClusterIterator<InfoNode const*>		const_infomap_cluster_iterator;
+  using edge_iterator_wrapper = IterWrapper<edge_iterator>;
+  using const_edge_iterator_wrapper = IterWrapper<const_edge_iterator>;
 
-  typedef std::vector<EdgeType*>::iterator edge_iterator;
-  typedef std::vector<EdgeType*>::const_iterator const_edge_iterator;
-  //	typedef gap_iterator<edge_iterator>						inout_edge_iterator;
-  typedef IterWrapper<edge_iterator> edge_iterator_wrapper;
-  typedef IterWrapper<const_edge_iterator> const_edge_iterator_wrapper;
+  using infomap_iterator_wrapper = IterWrapper<tree_iterator>;
+  using const_infomap_iterator_wrapper = IterWrapper<const_tree_iterator>;
 
-  typedef IterWrapper<tree_iterator> infomap_iterator_wrapper;
-  typedef IterWrapper<const_tree_iterator> const_infomap_iterator_wrapper;
+  using child_iterator_wrapper = IterWrapper<child_iterator>;
+  using const_child_iterator_wrapper = IterWrapper<const_child_iterator>;
 
-  // typedef IterWrapper<InfomapIterator> 			infomap_iterator_wrapper;
-  typedef IterWrapper<child_iterator> child_iterator_wrapper;
-  typedef IterWrapper<const_child_iterator> const_child_iterator_wrapper;
-
-  typedef IterWrapper<infomap_child_iterator> infomap_child_iterator_wrapper;
-  typedef IterWrapper<const_infomap_child_iterator> const_infomap_child_iterator_wrapper;
+  using infomap_child_iterator_wrapper = IterWrapper<infomap_child_iterator>;
+  using const_infomap_child_iterator_wrapper = IterWrapper<const_infomap_child_iterator>;
 
 public:
   FlowData data;
