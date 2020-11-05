@@ -14,20 +14,15 @@ namespace infomap {
 
 class InfoNode;
 
-class MetaMapEquation : protected MapEquation {
+class MetaMapEquation : public MapEquation {
   using Base = MapEquation;
 
 public:
-  using Base::DeltaFlowDataType;
-  using Base::FlowDataType;
-
   // ===================================================
   // Getters
   // ===================================================
 
   static bool haveMemory() noexcept { return true; }
-
-  using Base::getIndexCodelength;
 
   double getModuleCodelength() const noexcept override;
 
@@ -54,10 +49,6 @@ public:
 
   void initNetwork(InfoNode& root) noexcept override;
 
-  using Base::initSuperNetwork;
-
-  using Base::initSubNetwork;
-
   void initPartition(std::vector<InfoNode*>& nodes) noexcept override;
 
   // ===================================================
@@ -65,8 +56,6 @@ public:
   // ===================================================
 
   double calcCodelength(const InfoNode& parent) const override;
-
-  using Base::addMemoryContributions;
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                         DeltaFlowDataType& oldModuleDelta,

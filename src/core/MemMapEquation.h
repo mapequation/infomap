@@ -19,11 +19,10 @@ struct MemDeltaFlow;
 
 namespace detail { struct MemNodeSet; }
 
-class MemMapEquation : protected MapEquation {
+class MemMapEquation : public MapEquation {
   using Base = MapEquation;
 
 public:
-  using Base::FlowDataType;
   using DeltaFlowDataType = MemDeltaFlow;
 
   // ===================================================
@@ -31,12 +30,6 @@ public:
   // ===================================================
 
   static bool haveMemory() noexcept { return true; }
-
-  using Base::getIndexCodelength;
-
-  using Base::getModuleCodelength;
-
-  using Base::getCodelength;
 
   // ===================================================
   // IO
@@ -53,10 +46,6 @@ public:
   void init(const Config& config) noexcept override;
 
   void initNetwork(InfoNode& root) noexcept override;
-
-  using Base::initSuperNetwork;
-
-  using Base::initSubNetwork;
 
   void initPartition(std::vector<InfoNode*>& nodes) noexcept override;
 

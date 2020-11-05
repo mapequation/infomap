@@ -13,20 +13,15 @@ namespace infomap {
 
 class InfoNode;
 
-class BiasedMapEquation : protected MapEquation {
+class BiasedMapEquation : public MapEquation {
   using Base = MapEquation;
 
 public:
-  using Base::DeltaFlowDataType;
-  using Base::FlowDataType;
-
   // ===================================================
   // Getters
   // ===================================================
 
   static bool haveMemory() noexcept { return true; }
-
-  using Base::getIndexCodelength;
 
   double getModuleCodelength() const noexcept override;
 
@@ -46,21 +41,11 @@ public:
 
   void init(const Config& config) noexcept override;
 
-  using Base::initNetwork;
-
-  using Base::initSuperNetwork;
-
-  using Base::initSubNetwork;
-
-  using Base::initPartition;
-
   // ===================================================
   // Codelength
   // ===================================================
 
   double calcCodelength(const InfoNode& parent) const override;
-
-  using Base::addMemoryContributions;
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                         DeltaFlowDataType& oldModuleDelta,
