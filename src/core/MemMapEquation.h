@@ -9,16 +9,13 @@
 #define _MEMMAPEQUATION_H_
 
 #include "MapEquation.h"
-#include "FlowData.h"
-#include "../utils/Log.h"
 #include <vector>
-#include <set>
 #include <map>
-#include <utility>
 
 namespace infomap {
 
 class InfoNode;
+struct MemDeltaFlow;
 
 namespace detail { struct MemNodeSet; }
 

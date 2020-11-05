@@ -7,6 +7,9 @@
 #include "MapEquation.h"
 #include "InfoNode.h"
 #include "FlowData.h"
+#include "../utils/Log.h"
+#include "../io/convert.h"
+#include "../io/Config.h"
 #include <vector>
 #include <iostream>
 
