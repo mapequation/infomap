@@ -391,7 +391,7 @@ void InfomapBase::run(Network& network)
         if (numTrials > 1) {
           bestTree.clear();
           for (auto it(iterLeafNodes()); !it.isEnd(); ++it) {
-            bestTree.add(it->stateId, it.path());
+            bestTree.emplace_back(it->stateId, it.path());
           }
         }
       }
@@ -521,12 +521,12 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 
   auto numNodesFound = 0;
   auto numNodesNotInNetwork = 0;
-  for (const auto& nodePath : tree.nodePaths) {
+  for (const auto& nodePath : tree) {
     ++numNodesFound;
     InfoNode* node = &root();
     auto depth = 0;
-    const auto& path = nodePath.path;
-    const auto nodeId = nodePath.nodeId;
+    const auto& path = nodePath.second;
+    const auto nodeId = nodePath.first;
     InfoNode* leafNode = nullptr;
 
     try {

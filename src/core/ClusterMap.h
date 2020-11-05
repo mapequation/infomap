@@ -5,8 +5,8 @@
  *      Author: Daniel
  */
 
-#ifndef SRC_CLUSTERING_CLUSTERING_CLUSTERMAP_H_
-#define SRC_CLUSTERING_CLUSTERING_CLUSTERMAP_H_
+#ifndef _CLUSTERMAP_H_
+#define _CLUSTERMAP_H_
 
 #include <string>
 #include <map>
@@ -16,51 +16,30 @@
 namespace infomap {
 
 using Path = std::deque<unsigned int>; // 1-based indexing
-struct NodePath {
-  NodePath(unsigned int nodeId, const Path& path)
-      : nodeId(nodeId), path(path) {}
-  unsigned int nodeId;
-  Path path;
-};
 
-// using NodePaths = std::vector<NodePath>;
+using NodePath = std::pair<unsigned int, Path>;
 
-struct NodePaths {
-  explicit NodePaths(unsigned int size = 0) { reserve(size); }
-  void reserve(unsigned int size) { nodePaths.reserve(size); }
-  auto size() const { return nodePaths.size(); }
-  void clear() { nodePaths.clear(); }
-  void add(unsigned int nodeId, const Path& path)
-  {
-    // path should use 1-based indexing
-    add(NodePath(nodeId, path));
-  }
-  void add(NodePath&& path)
-  {
-    nodePaths.push_back(path);
-  }
-  std::vector<NodePath> nodePaths;
-};
+using NodePaths = std::vector<NodePath>;
 
 class ClusterMap {
 public:
   void readClusterData(const std::string& filename, bool includeFlow = false);
 
-  const std::map<unsigned int, unsigned int>& clusterIds() const
+  const std::map<unsigned int, unsigned int>& clusterIds() const noexcept
   {
     return m_clusterIds;
   }
 
-  const std::map<unsigned int, double>& getFlow() const
+  const std::map<unsigned int, double>& getFlow() const noexcept
   {
     return m_flowData;
   }
 
-  const NodePaths& nodePaths() const { return m_nodePaths; }
+  const NodePaths& nodePaths() const noexcept { return m_nodePaths; }
 
-  const std::string& extension() const { return m_extension; }
+  const std::string& extension() const noexcept { return m_extension; }
 
-  bool isHigherOrder() const { return m_isHigherOrder; }
+  bool isHigherOrder() const noexcept { return m_isHigherOrder; }
 
 protected:
   void readTree(const std::string& filename, /* [[maybe_unused]] */ bool includeFlow);
@@ -76,4 +55,4 @@ private:
 
 } // namespace infomap
 
-#endif /* SRC_CLUSTERING_CLUSTERING_CLUSTERMAP_H_ */
+#endif /* _CLUSTERMAP_H_ */
