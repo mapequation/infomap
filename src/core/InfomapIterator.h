@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef INFOMAP_ITERATOR_H_
-#define INFOMAP_ITERATOR_H_
+#ifndef _ITERATOR_H_
+#define _ITERATOR_H_
 
 #include <deque>
 #include <map>
@@ -463,4 +463,4 @@ public:
 
 } // namespace infomap
 
-#endif /* INFOMAP_ITERATOR_H_ */
+#endif /* _ITERATOR_H_ */

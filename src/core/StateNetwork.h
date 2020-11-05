@@ -25,15 +25,15 @@
 **********************************************************************************/
 
 
-#ifndef STATENETWORK_H_
-#define STATENETWORK_H_
+#ifndef _STATENETWORK_H_
+#define _STATENETWORK_H_
 
 #include <string>
 #include <map>
+#include <utility>
 #include <vector>
 #include <utility>
 #include "../io/Config.h"
-// #include "../utils/FlowCalculator.h"
 
 namespace infomap {
 
@@ -53,7 +53,7 @@ public:
 
     StateNode(unsigned int id, unsigned int physicalId) : id(id), physicalId(physicalId) {}
 
-    StateNode(unsigned int id, unsigned int physicalId, const std::string& name) : id(id), physicalId(physicalId), name(name) {}
+    StateNode(unsigned int id, unsigned int physicalId, std::string  name) : id(id), physicalId(physicalId), name(std::move(name)) {}
 
     bool operator==(const StateNode& rhs) const { return id == rhs.id; }
     bool operator!=(const StateNode& rhs) const { return id != rhs.id; }
@@ -97,9 +97,6 @@ public:
 
   // Unique state id to state node
   using NodeMap = std::map<unsigned int, StateNode>;
-  // typedef Network::StateLinkMap										StateLinkMap;
-  // typedef std::vector<StateLink>										LinkVec;
-  // typedef std::map<unsigned int, std::map<unsigned int, double> >	LinkMap;
   using NodeLinkMap = std::map<StateNode, std::map<StateNode, LinkData>>;
 
 protected:
@@ -109,7 +106,6 @@ protected:
   // Network
   bool m_haveDirectedInput = false;
   bool m_haveMemoryInput = false;
-  // LinkMap m_links;
   NodeMap m_nodes; // Nodes indexed by state id (equal physical id for first-order networks)
   NodeLinkMap m_nodeLinkMap;
   unsigned int m_numNodesFound = 0;
@@ -221,4 +217,4 @@ protected:
 
 } // namespace infomap
 
-#endif /* STATENETWORK_H_ */
+#endif /* _STATENETWORK_H_ */

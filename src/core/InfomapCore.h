@@ -8,14 +8,14 @@
 #ifndef INFOMAP_CORE_H_
 #define INFOMAP_CORE_H_
 
-#include "InfomapBase.h"
 #include "../io/Config.h"
+#include "InfomapBase.h"
 #include "MapEquation.h"
 #include "MemMapEquation.h"
 #include "MetaMapEquation.h"
 #include "BiasedMapEquation.h"
-#include <memory>
 #include "InfomapOptimizer.h"
+#include <memory>
 
 namespace infomap {
 
@@ -23,14 +23,8 @@ class InfomapCore : public InfomapBase {
   using OptimizerPtr = std::unique_ptr<InfomapOptimizerBase>;
 
 protected:
-  //	using Base::EdgeType;
-  //	using EdgeType = Base::EdgeType;
-  // using EdgeType = Edge<InfoNode>;
 public:
-  // template<typename... Args>
-  // InfomapCore(Args&&... args) : InfomapBase(std::forward<Args>(args)...) {}
   InfomapCore() : InfomapBase() { initOptimizer(); }
-  // InfomapCore(bool forceNoMemory = false) : InfomapBase() { initOptimizer(forceNoMemory); }
   InfomapCore(const std::string flags) : InfomapBase(flags) { initOptimizer(); }
   InfomapCore(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
   virtual ~InfomapCore() {}
