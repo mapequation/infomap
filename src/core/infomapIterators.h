@@ -5,8 +5,8 @@
  *      Author: Daniel
  */
 
-#ifndef MODULES_CLUSTERING_CLUSTERING_INFOMAPITERATORS_H_
-#define MODULES_CLUSTERING_CLUSTERING_INFOMAPITERATORS_H_
+#ifndef _INFOMAPITERATORS_H_
+#define _INFOMAPITERATORS_H_
 
 #include "treeIterators.h"
 #include <deque>
@@ -20,18 +20,18 @@ namespace infomap {
  */
 template <typename NodePointerType> // pointer or const pointer
 class InfomapChildIterator {
-  typedef std::bidirectional_iterator_tag iterator_category;
-  typedef typename iterator_traits<NodePointerType>::value_type value_type;
-  typedef typename iterator_traits<NodePointerType>::difference_type difference_type;
-  typedef typename iterator_traits<NodePointerType>::reference reference;
-  typedef typename iterator_traits<NodePointerType>::pointer pointer;
+  using iterator_category = std::bidirectional_iterator_tag;
+  using value_type = typename iterator_traits<NodePointerType>::value_type;
+  using difference_type = typename iterator_traits<NodePointerType>::difference_type;
+  using reference = typename iterator_traits<NodePointerType>::reference;
+  using pointer = typename iterator_traits<NodePointerType>::pointer;
 
 protected:
   NodePointerType m_root = nullptr;
   NodePointerType m_current = nullptr;
 
 public:
-  InfomapChildIterator() {}
+  InfomapChildIterator() = default;
 
   explicit InfomapChildIterator(const NodePointerType& nodePointer)
       : m_root(nodePointer), m_current(nodePointer) { init(); }
@@ -57,40 +57,19 @@ public:
     m_current = m_root == nullptr ? nullptr : m_root->firstChild;
   }
 
-  pointer current() const
-  {
-    return m_current;
-  }
+  pointer current() const { return m_current; }
 
-  reference
-  operator*() const
-  {
-    return *m_current;
-  }
+  reference operator*() const { return *m_current; }
 
-  pointer
-  operator->() const
-  {
-    return m_current;
-  }
+  pointer operator->() const { return m_current; }
 
-  bool operator==(const InfomapChildIterator& rhs) const
-  {
-    return m_current == rhs.m_current;
-  }
+  bool operator==(const InfomapChildIterator& rhs) const { return m_current == rhs.m_current; }
 
-  bool operator!=(const InfomapChildIterator& rhs) const
-  {
-    return !(m_current == rhs.m_current);
-  }
+  bool operator!=(const InfomapChildIterator& rhs) const { return m_current != rhs.m_current; }
 
-  bool isEnd() const
-  {
-    return m_current == nullptr;
-  }
+  bool isEnd() const { return m_current == nullptr; }
 
-  InfomapChildIterator&
-  operator++()
+  InfomapChildIterator& operator++()
   {
     m_current = m_current->next;
     if (m_current != nullptr && m_current->parent != m_root) {
@@ -99,16 +78,14 @@ public:
     return *this;
   }
 
-  InfomapChildIterator
-  operator++(int)
+  InfomapChildIterator operator++(int)
   {
     InfomapChildIterator copy(*this);
     ++(*this);
     return copy;
   }
 
-  InfomapChildIterator&
-  operator--()
+  InfomapChildIterator& operator--()
   {
     m_current = m_current->previous;
     if (m_current != nullptr && m_current->parent != m_root) {
@@ -117,8 +94,7 @@ public:
     return *this;
   }
 
-  InfomapChildIterator
-  operator--(int)
+  InfomapChildIterator operator--(int)
   {
     InfomapChildIterator copy(*this);
     --(*this);
@@ -126,16 +102,14 @@ public:
   }
 };
 
-
 /**
  * Pre processing depth first iterator that explores sub-Infomap instances
- * Note:
- * This iterator presupposes that the next pointer of a node can't reach a node with a different parent.
+ * Note: This iterator presupposes that the next pointer of a node can't reach a node with a different parent.
  */
 template <typename NodePointerType>
 class InfomapClusterIterator : public DepthFirstIteratorBase<NodePointerType> {
 protected:
-  typedef DepthFirstIteratorBase<NodePointerType> Base;
+  using Base = DepthFirstIteratorBase<NodePointerType>;
 
   unsigned int m_moduleIndex = 0;
   int m_moduleIndexLevel = -1;
@@ -147,21 +121,15 @@ public:
   InfomapClusterIterator() : Base() {}
 
   explicit InfomapClusterIterator(const NodePointerType& nodePointer, int moduleIndexLevel = -1)
-      : Base(nodePointer),
-        m_moduleIndexLevel(moduleIndexLevel)
+      : Base(nodePointer), m_moduleIndexLevel(moduleIndexLevel)
   {
     init();
   }
 
   InfomapClusterIterator(const InfomapClusterIterator& other)
-      : Base(other),
-        m_moduleIndex(other.m_moduleIndex),
-        m_moduleIndexLevel(other.m_moduleIndexLevel) {}
+      : Base(other), m_moduleIndex(other.m_moduleIndex), m_moduleIndexLevel(other.m_moduleIndexLevel) {}
 
-  virtual void init()
-  {
-    moveToInfomapRootIfExist();
-  }
+  virtual void init() { moveToInfomapRootIfExist(); }
 
   void moveToInfomapRootIfExist()
   {
@@ -257,8 +225,7 @@ public:
 
 /**
  * Pre processing depth first iterator that explores sub-Infomap instances
- * Note:
- * This iterator presupposes that the next pointer of a node can't reach a node with a different parent.
+ * Note: This iterator presupposes that the next pointer of a node can't reach a node with a different parent.
  */
 template <typename NodePointerType>
 class InfomapDepthFirstIterator : public DepthFirstIteratorBase<NodePointerType> {
@@ -398,4 +365,4 @@ public:
 
 } // namespace infomap
 
-#endif /* MODULES_CLUSTERING_CLUSTERING_INFOMAPITERATORS_H_ */
+#endif /* _INFOMAPITERATORS_H_ */
