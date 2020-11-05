@@ -8,19 +8,15 @@
 #ifndef _MAPEQUATION_H_
 #define _MAPEQUATION_H_
 
-#include "../utils/infomath.h"
-#include "../io/convert.h"
-#include "../io/Config.h"
-#include "../utils/Log.h"
 #include "../utils/VectorMap.h"
-#include "FlowData.h"
 #include <vector>
-#include <map>
-#include <iostream>
 
 namespace infomap {
 
 class InfoNode;
+struct Config;
+struct FlowData;
+struct DeltaFlow;
 
 class MapEquation {
 public:

@@ -5,6 +5,9 @@
 #include "MetaMapEquation.h"
 #include "FlowData.h"
 #include "InfoNode.h"
+#include "../utils/Log.h"
+#include "../io/convert.h"
+#include "../io/Config.h"
 #include <vector>
 #include <set>
 #include <utility>

@@ -5,13 +5,9 @@
 #ifndef _BIASEDMAPEQUATION_H_
 #define _BIASEDMAPEQUATION_H_
 
-#include <vector>
-#include <set>
-#include <map>
-#include <utility>
 #include "MapEquation.h"
-#include "FlowData.h"
-#include "../utils/Log.h"
+#include <vector>
+#include <map>
 
 namespace infomap {
 

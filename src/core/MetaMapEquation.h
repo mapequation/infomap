@@ -5,14 +5,10 @@
 #ifndef _METAMAPEQUATION_H_
 #define _METAMAPEQUATION_H_
 
-#include <vector>
-#include <set>
-#include <map>
-#include <utility>
 #include "MapEquation.h"
-#include "FlowData.h"
-#include "../utils/Log.h"
 #include "../utils/MetaCollection.h"
+#include <vector>
+#include <map>
 
 namespace infomap {
 
