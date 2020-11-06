@@ -5,8 +5,8 @@
  *      Author: Daniel
  */
 
-#ifndef SRC_CLUSTERING_INFOMAPBASE_H_
-#define SRC_CLUSTERING_INFOMAPBASE_H_
+#ifndef _INFOMAPBASE_H_
+#define _INFOMAPBASE_H_
 
 #include "InfomapConfig.h"
 #include "InfoEdge.h"
@@ -46,15 +46,15 @@ public:
 
   InfomapBase() : InfomapConfig<InfomapBase>() { }
 
-  explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { }
+  InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { }
 
-  explicit InfomapBase(const std::string flags) : InfomapConfig<InfomapBase>(flags)
+  InfomapBase(const std::string flags) : InfomapConfig<InfomapBase>(flags)
   {
     m_network.setConfig(*this);
     m_initialParameters = m_currentParameters = flags;
   }
 
-  virtual ~InfomapBase() = default;
+  ~InfomapBase() override = default;
 
 
   // ===================================================
@@ -154,7 +154,7 @@ public:
   double getRelativeCodelengthSavings() const { return 1.0 - codelength() / getOneLevelCodelength(); }
 
   bool isFullNetwork() const { return m_isMain && m_aggregationLevel == 0; }
-  bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
+  bool isFirstLoop() const { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 
   // virtual InfomapBase& getInfomap(InfoNode& node);
 
@@ -424,14 +424,14 @@ public:
    */
   std::string writeFlowTree(std::string filename = "", bool states = false);
 
-	/**
-	 * Write Newick tree to a .tre file.
-	 * @param filename the filename for the output file. If empty, use default 
-	 * based on output directory and input file name
-	 * @param states if memory network, print the state-level network without merging physical nodes within modules
-	 * @return the filename written to
-	 */
-	std::string writeNewickTree(std::string filename = "", bool states = false);
+  /**
+   * Write Newick tree to a .tre file.
+   * @param filename the filename for the output file. If empty, use default
+   * based on output directory and input file name
+   * @param states if memory network, print the state-level network without merging physical nodes within modules
+   * @return the filename written to
+   */
+  std::string writeNewickTree(std::string filename = "", bool states = false);
 
   /**
    * Write tree to a .clu file.
@@ -459,7 +459,7 @@ public:
   // Debug: *
   // ===================================================
 
-  virtual void printDebug() {}
+  virtual void printDebug() const { }
 
   // ===================================================
   // Members
@@ -574,4 +574,4 @@ namespace detail {
 
 } // namespace infomap
 
-#endif /* SRC_CLUSTERING_INFOMAPBASE_H_ */
+#endif /* _INFOMAPBASE_H_ */

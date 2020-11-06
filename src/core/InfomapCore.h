@@ -5,8 +5,8 @@
  *      Author: Daniel
  */
 
-#ifndef INFOMAP_CORE_H_
-#define INFOMAP_CORE_H_
+#ifndef _INFOMAPCORE_H_
+#define _INFOMAPCORE_H_
 
 #include "../io/Config.h"
 #include "InfomapBase.h"
@@ -27,13 +27,13 @@ public:
   InfomapCore() : InfomapBase() { initOptimizer(); }
   InfomapCore(const std::string flags) : InfomapBase(flags) { initOptimizer(); }
   InfomapCore(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
-  virtual ~InfomapCore() {}
+  ~InfomapCore() override = default;
 
   // ===================================================
   // IO
   // ===================================================
 
-  virtual std::ostream& toString(std::ostream& out) const
+  std::ostream& toString(std::ostream& out) const final
   {
     return m_optimizer->toString(out);
   }
@@ -42,28 +42,28 @@ public:
   // Getters
   // ===================================================
 
-  virtual double getCodelength() const
+  double getCodelength() const final
   {
     return m_optimizer->getCodelength();
   }
 
-  virtual double getIndexCodelength() const
+  double getIndexCodelength() const final
   {
     return m_optimizer->getIndexCodelength();
   }
 
-  virtual double getModuleCodelength() const
+  double getModuleCodelength() const final
   {
     return m_hierarchicalCodelength - m_optimizer->getIndexCodelength();
   }
 
-  virtual double getMetaCodelength(bool unweighted = false) const
+  double getMetaCodelength(bool unweighted = false) const final
   {
     return m_optimizer->getMetaCodelength(unweighted);
   }
 
 protected:
-  void initOptimizer(bool forceNoMemory = false)
+  void initOptimizer(bool forceNoMemory = false) final
   {
     if (haveMetaData()) {
       m_optimizer = OptimizerPtr(new InfomapOptimizer<MetaMapEquation>());
@@ -76,18 +76,19 @@ protected:
     m_optimizer->init(this);
   }
 
-  virtual InfomapBase* getNewInfomapInstance() const
+  InfomapBase* getNewInfomapInstance() const final
   {
     return new InfomapCore();
   }
-  virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const
+
+  InfomapBase* getNewInfomapInstanceWithoutMemory() const final
   {
     auto im = new InfomapCore();
     im->initOptimizer(true);
     return im;
   }
 
-  virtual unsigned int numActiveModules() const
+  unsigned int numActiveModules() const final
   {
     return m_optimizer->numActiveModules();
   }
@@ -97,17 +98,17 @@ protected:
   // ===================================================
 
   // Init terms that is constant for the whole network
-  virtual void initNetwork()
+  void initNetwork() final
   {
     return m_optimizer->initNetwork();
   }
 
-  virtual void initSuperNetwork()
+  void initSuperNetwork() final
   {
     return m_optimizer->initSuperNetwork();
   }
 
-  virtual double calcCodelength(const InfoNode& parent) const
+  double calcCodelength(const InfoNode& parent) const final
   {
     return m_optimizer->calcCodelength(parent);
   }
@@ -116,40 +117,37 @@ protected:
   // Run: Partition: *
   // ===================================================
 
-  virtual void initPartition()
+  void initPartition() final
   {
     return m_optimizer->initPartition();
   }
 
-  virtual void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
+  void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules) final
   {
     return m_optimizer->moveActiveNodesToPredefinedModules(modules);
   }
 
-  virtual unsigned int optimizeActiveNetwork()
+  unsigned int optimizeActiveNetwork() final
   {
     return m_optimizer->optimizeActiveNetwork();
   }
 
-  virtual unsigned int tryMoveEachNodeIntoBestModule()
+  unsigned int tryMoveEachNodeIntoBestModule()
   {
     return m_optimizer->tryMoveEachNodeIntoBestModule();
   }
 
-  // unsigned int tryMoveEachNodeIntoBestModuleLocal() {
-  // }
-
-  virtual unsigned int tryMoveEachNodeIntoBestModuleInParallel()
+  unsigned int tryMoveEachNodeIntoBestModuleInParallel()
   {
     return m_optimizer->tryMoveEachNodeIntoBestModuleInParallel();
   }
 
-  virtual void consolidateModules(bool replaceExistingModules = true)
+  void consolidateModules(bool replaceExistingModules = true) final
   {
     return m_optimizer->consolidateModules(replaceExistingModules);
   }
 
-  virtual bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false)
+  bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false) final
   {
     return m_optimizer->restoreConsolidatedOptimizationPointIfNoImprovement(forceRestore);
   }
@@ -158,7 +156,7 @@ protected:
   // Debug: *
   // ===================================================
 
-  virtual void printDebug()
+  void printDebug() const final
   {
     return m_optimizer->printDebug();
   }
@@ -173,4 +171,4 @@ protected:
 
 } /* namespace infomap */
 
-#endif /* INFOMAP_CORE_H_ */
+#endif /* _INFOMAPCORE_H_ */

@@ -5,8 +5,8 @@
  *      Author: Daniel
  */
 
-#ifndef INFOMAP_H_
-#define INFOMAP_H_
+#ifndef _INFOMAP_H_
+#define _INFOMAP_H_
 
 #ifdef __cplusplus
 
@@ -16,12 +16,12 @@
 
 namespace infomap {
 
-struct InfomapWrapper : public InfomapCore {
+struct InfomapWrapper final : public InfomapCore {
 public:
   InfomapWrapper() : InfomapCore() {}
   InfomapWrapper(const std::string flags) : InfomapCore(flags) {}
   InfomapWrapper(const Config& conf) : InfomapCore(conf) {}
-  virtual ~InfomapWrapper() {}
+  ~InfomapWrapper() final = default;
 
   // ===================================================
   // Wrapper methods
@@ -97,4 +97,4 @@ double Flow(struct InfomapLeafIterator* it);
 #endif
 
 
-#endif /* INFOMAP_H_ */
+#endif /* _INFOMAP_H_ */
