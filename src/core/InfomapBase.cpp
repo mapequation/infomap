@@ -973,7 +973,7 @@ void InfomapBase::hierarchicalPartition()
 {
   Log(1) << "Hierarchical partition..." << std::endl;
 
-  auto depth = maxTreeDepth();
+  const auto depth = maxTreeDepth();
   if (depth > 2) {
     Log(1) << "Continuing from a tree with " << depth << " levels..." << std::endl;
 
@@ -982,13 +982,11 @@ void InfomapBase::hierarchicalPartition()
       removeSubModules(true);
       m_hierarchicalCodelength = calcCodelengthOnTree(true);
     }
+
     else if (fastHierarchicalSolution == 1) {
       Log(1) << "Fine-tune bottom modules... ";
-      bool isSilent = false;
-      if (isMainInfomap()) {
-        isSilent = Log::isSilent();
-        // Log::setSilent(true);
-      }
+      bool isSilent = isMainInfomap() && Log::isSilent();
+
       double codelengthBefore = 0.0;
       double codelengthAfter = 0.0;
 
@@ -999,9 +997,10 @@ void InfomapBase::hierarchicalPartition()
           for (auto& leafModule : module) {
             numLeafs += leafModule.childDegree();
           }
-          // Log() << "\n  -> Tune module with " << numLeafs << " nodes in " << module.childDegree() << " sub modules... ";
+
           std::vector<unsigned int> modules(numLeafs);
           std::vector<InfoNode*> leafs(numLeafs);
+
           auto i = 0;
           for (auto it = module.begin_tree(); !it.isEnd(); ++it) {
             if (it->isLeaf()) {
@@ -1013,14 +1012,11 @@ void InfomapBase::hierarchicalPartition()
           
           module.replaceChildrenWithGrandChildren();
           
-          auto& subInfomap = getSubInfomap(module)
-            .initNetwork(module);
+          auto& subInfomap = getSubInfomap(module).initNetwork(module);
           
           subInfomap.initPartition(modules);
 
           // Run two-level partition + find hierarchically super modules (skip recursion)
-          // subInfomap.run();
-          // subInfomap.partition();
           subInfomap.setOnlySuperModules(true).run();
           
           // Collect sub Infomap modules
@@ -1052,18 +1048,10 @@ void InfomapBase::hierarchicalPartition()
 
       if (isMainInfomap())
         Log::setSilent(isSilent);
-      double diffCodelength = codelengthBefore - codelengthAfter;
+
+      const double diffCodelength = codelengthBefore - codelengthAfter;
       Log() << "done! Codelength improvement " << (diffCodelength / codelengthBefore) * 100 << "% to codelength " << codelengthAfter << "\n";
     }
-
-    // Log() << "\nNew tree before recursion:\n";
-    // for (auto it = root().begin_tree(); !it.isEnd(); ++it) {
-    //   if (it->isLeaf()) {
-    //     Log() << it->depth() << ": " << it->data.flow << " " << it->stateId << " " << it.moduleIndex() << '\n';
-    //   }
-    //   else
-    //     Log() << it->depth() << ": " << it->data.flow << "\n";
-    // }
 
     recursivePartition();
     return;
@@ -1078,20 +1066,16 @@ void InfomapBase::hierarchicalPartition()
 
   if (numTopModules() > preferredNumberOfModules) {
     findHierarchicalSuperModules();
-    //	findHierarchicalSuperModulesFast(superLevelLimit);
   }
-
-  // printRSS();
 
   if (onlySuperModules) {
     removeSubModules(true);
-    m_hierarchicalCodelength = calcCodelengthOnTree(true); // FIX? TODO: What needs to be fixed?
+    m_hierarchicalCodelength = calcCodelengthOnTree(true);
     return;
   }
 
   if (fastHierarchicalSolution >= 2) {
-    // Calculate individual module codelengths and store on the modules
-    // calcCodelengthOnTree(false);
+    // FIXME Calculate individual module codelengths and store on the modules?
     return;
   }
 
@@ -1101,7 +1085,6 @@ void InfomapBase::hierarchicalPartition()
   }
 
   recursivePartition();
-  // printRSS();
 }
 
 void InfomapBase::partition()

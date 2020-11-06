@@ -35,8 +35,6 @@ namespace detail {
 } // namespace detail
 
 class InfomapBase : public InfomapConfig<InfomapBase> {
-  using PartitionQueue = detail::PartitionQueue;
-
   template <typename Objective>
   friend class InfomapOptimizer;
 
@@ -44,6 +42,8 @@ protected:
   using EdgeType = Edge<InfoNode>;
 
 public:
+  using PartitionQueue = detail::PartitionQueue;
+
   InfomapBase() : InfomapConfig<InfomapBase>() { }
 
   explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { }
