@@ -13,7 +13,7 @@ namespace infomap {
 
 class InfoNode;
 
-class BiasedMapEquation : public MapEquation {
+class BiasedMapEquation final : public MapEquation {
   using Base = MapEquation;
 
 public:
@@ -23,15 +23,15 @@ public:
 
   static bool haveMemory() noexcept { return true; }
 
-  double getModuleCodelength() const noexcept override;
+  double getModuleCodelength() const noexcept final;
 
-  double getCodelength() const noexcept override;
+  double getCodelength() const noexcept final;
 
   // ===================================================
   // IO
   // ===================================================
 
-  std::ostream& print(std::ostream& out) const noexcept override;
+  std::ostream& print(std::ostream& out) const noexcept final;
 
   friend std::ostream& operator<<(std::ostream&, const BiasedMapEquation&);
 
@@ -39,19 +39,19 @@ public:
   // Init
   // ===================================================
 
-  void init(const Config& config) noexcept override;
+  void init(const Config& config) noexcept final;
 
   // ===================================================
   // Codelength
   // ===================================================
 
-  double calcCodelength(const InfoNode& parent) const override;
+  double calcCodelength(const InfoNode& parent) const final;
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                         DeltaFlowDataType& oldModuleDelta,
                                         DeltaFlowDataType& newModuleDelta,
                                         std::vector<FlowDataType>& moduleFlowData,
-                                        std::vector<unsigned int>& moduleMembers) const override;
+                                        std::vector<unsigned int>& moduleMembers) const final;
 
   // ===================================================
   // Consolidation
@@ -61,15 +61,15 @@ public:
                                     DeltaFlowDataType& oldModuleDelta,
                                     DeltaFlowDataType& newModuleDelta,
                                     std::vector<FlowDataType>& moduleFlowData,
-                                    std::vector<unsigned int>& moduleMembers) override;
+                                    std::vector<unsigned int>& moduleMembers) final;
 
-  void consolidateModules(std::vector<InfoNode*>& modules) override;
+  void consolidateModules(std::vector<InfoNode*>& modules) final;
 
   // ===================================================
   // Debug
   // ===================================================
 
-  void printDebug() const override;
+  void printDebug() const final;
 
 protected:
   // ===================================================
@@ -82,7 +82,7 @@ protected:
   // Codelength
   // ===================================================
 
-  void calculateCodelength(std::vector<InfoNode*>& nodes) override;
+  void calculateCodelength(std::vector<InfoNode*>& nodes) final;
 
   double calcNumModuleCost(unsigned int numModules) const;
 

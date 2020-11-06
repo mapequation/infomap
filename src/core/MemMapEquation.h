@@ -19,7 +19,7 @@ struct MemDeltaFlow;
 
 namespace detail { struct MemNodeSet; }
 
-class MemMapEquation : public MapEquation {
+class MemMapEquation final : public MapEquation {
   using Base = MapEquation;
 
 public:
@@ -35,7 +35,7 @@ public:
   // IO
   // ===================================================
 
-  std::ostream& print(std::ostream& out) const noexcept override;
+  std::ostream& print(std::ostream& out) const noexcept final;
 
   friend std::ostream& operator<<(std::ostream&, const MemMapEquation&);
 
@@ -43,17 +43,17 @@ public:
   // Init
   // ===================================================
 
-  void init(const Config& config) noexcept override;
+  void init(const Config& config) noexcept final;
 
-  void initNetwork(InfoNode& root) noexcept override;
+  void initNetwork(InfoNode& root) noexcept final;
 
-  void initPartition(std::vector<InfoNode*>& nodes) noexcept override;
+  void initPartition(std::vector<InfoNode*>& nodes) noexcept final;
 
   // ===================================================
   // Codelength
   // ===================================================
 
-  double calcCodelength(const InfoNode& parent) const override;
+  double calcCodelength(const InfoNode& parent) const final;
 
   // We need to insert the base class declarations so the derived class
   // can over load them with different DeltaFlowDataTypes
@@ -79,19 +79,19 @@ public:
                                     std::vector<FlowDataType>& moduleFlowData,
                                     std::vector<unsigned int>& moduleMembers);
 
-  void consolidateModules(std::vector<InfoNode*>& modules) override;
+  void consolidateModules(std::vector<InfoNode*>& modules) final;
 
   // ===================================================
   // Debug
   // ===================================================
 
-  void printDebug() const override;
+  void printDebug() const final;
 
 protected:
   // ===================================================
   // Protected member functions
   // ===================================================
-  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const override;
+  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const final;
 
   // ===================================================
   // Init
@@ -105,7 +105,7 @@ protected:
   // Codelength
   // ===================================================
 
-  void calculateCodelength(std::vector<InfoNode*>& nodes) override;
+  void calculateCodelength(std::vector<InfoNode*>& nodes) final;
 
   void calculateNodeFlow_log_nodeFlow();
 
