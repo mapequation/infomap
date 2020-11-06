@@ -196,7 +196,7 @@ protected:
 
   std::string parseBipartiteLinks(std::ifstream& file, std::string heading);
 
-  std::string ignoreSection(std::ifstream& file, std::string heading);
+  static std::string ignoreSection(std::ifstream& file, std::string heading);
 
 
   void parseStateNode(const std::string& line, StateNetwork::StateNode& stateNode);
@@ -235,7 +235,7 @@ protected:
    */
   unsigned int addMultilayerNode(unsigned int layerId, unsigned int physicalId, double weight = 1.0);
 
-  double calculateJensenShannonDivergence(bool &intersect, const OutLinkMap& layer1OutLinks, double sumOutLinkWeightLayer1, const OutLinkMap& layer2OutLinks, double sumOutLinkWeightLayer2);
+  static double calculateJensenShannonDivergence(bool &intersect, const OutLinkMap& layer1OutLinks, double sumOutLinkWeightLayer1, const OutLinkMap& layer2OutLinks, double sumOutLinkWeightLayer2);
 
   void printSummary();
 };
