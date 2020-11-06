@@ -2233,6 +2233,7 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
   } else {
     for (auto it(iterTree()); !it.isEnd(); ++it) {
       auto& node = *it;
+
       if (node.isLeaf()) {
         stateIdToParent[node.stateId] = node.parent;
         stateIdToChildIndex[node.stateId] = node.childIndex();
@@ -2244,37 +2245,41 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
     }
   }
 
-  using LinkMap = std::map<std::pair<unsigned int, unsigned int>, double>;
+  using Link = std::pair<unsigned int, unsigned int>;
+  using LinkMap = std::map<Link, double>;
   std::map<std::string, LinkMap> moduleLinks;
 
   for (auto& leaf : m_leafNodes) {
     for (auto& link : leaf->outEdges()) {
-      // Log() << link->source.stateId << " " << link->target.stateId << " " << link->data.flow << "\n";
       double flow = link->data.flow;
-      // auto& sourceIt = stateIdToParent[link->source.stateId];
-      // auto& targetIt = stateIdToParent[link->target.stateId];
       InfoNode* sourceParent = stateIdToParent[link->source.stateId];
       InfoNode* targetParent = stateIdToParent[link->target.stateId];
+
       auto sourceDepth = sourceParent->calculatePath().size() + 1;
       auto targetDepth = targetParent->calculatePath().size() + 1;
+
       auto sourceChildIndex = stateIdToChildIndex[link->source.stateId];
       auto targetChildIndex = stateIdToChildIndex[link->target.stateId];
+
       auto sourceParentIt = InfomapParentIterator(sourceParent);
       auto targetParentIt = InfomapParentIterator(targetParent);
-      // Log() << io::stringify(sourceIt.path(), ":", 1) << " (" << link->source.stateId << ") -> " << io::stringify(targetIt.path(), ":", 1) << " (" << link->target.stateId << "), flow: " << flow << "\n";
+
       // Iterate to same depth
       // First raise target
       while (targetDepth > sourceDepth) {
         ++targetParentIt;
         --targetDepth;
       }
+
       // Raise source to same depth
       while (sourceDepth > targetDepth) {
         ++sourceParentIt;
         --sourceDepth;
       }
+
       auto currentDepth = sourceDepth;
       // Add link if same parent
+
       while (currentDepth > 0) {
         if (sourceParentIt == targetParentIt) {
           // Skip self-links
@@ -2284,10 +2289,13 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
             linkMap[std::make_pair(sourceChildIndex + 1, targetChildIndex + 1)] += flow;
           }
         }
+
         sourceChildIndex = sourceParentIt->index;
         targetChildIndex = targetParentIt->index;
+
         ++sourceParentIt;
         ++targetParentIt;
+
         --currentDepth;
       }
     }
@@ -2301,11 +2309,9 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
     auto parentId = io::stringify(it.path(), ":");
     auto& module = *it;
     auto& links = moduleLinks[parentId];
-    // if (it->isLeafModule() && mergePhysicalNodes) {
-    // 	outStream << "*Links " << parentId << " " << exitFlow[parentId] << " " << 0 << " " << 0 << "\n";
-    // 	continue;
-    // }
-    outStream << "*Links " << (parentId == "" ? "root" : parentId) << " " << module.data.enterFlow << " " << module.data.exitFlow << " " << links.size() << " " << module.infomapChildDegree() << "\n";
+
+    outStream << "*Links " << (parentId.empty() ? "root" : parentId) << " " << module.data.enterFlow << " " << module.data.exitFlow << " " << links.size() << " " << module.infomapChildDegree() << "\n";
+
     for (auto itLink : links) {
       unsigned int sourceId = itLink.first.first;
       unsigned int targetId = itLink.first.second;
@@ -2313,6 +2319,7 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
       outStream << sourceId << " " << targetId << " " << flow << "\n";
     }
   }
+
   outStream << std::setprecision(oldPrecision);
 }
 
