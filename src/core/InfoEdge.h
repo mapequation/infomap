@@ -5,21 +5,21 @@
  *      Author: Daniel
  */
 
-#ifndef MODULES_CLUSTERING_CLUSTERING_INFOEDGE_H_
-#define MODULES_CLUSTERING_CLUSTERING_INFOEDGE_H_
+#ifndef _INFOEDGE_H_
+#define _INFOEDGE_H_
 
 namespace infomap {
 
 struct EdgeData {
 public:
-  EdgeData() : weight(0.0), flow(0.0) {}
+  EdgeData() = default;
 
-  EdgeData(double weight) : weight(weight), flow(weight) {}
+  explicit EdgeData(double weight) : EdgeData(weight, weight) { }
 
-  EdgeData(double weight, double flow) : weight(weight), flow(flow) {}
+  EdgeData(double weight, double flow) : weight(weight), flow(flow) { }
 
-  double weight;
-  double flow;
+  double weight = 0.0;
+  double flow = 0.0;
 };
 
 template <typename node_type>
@@ -30,17 +30,17 @@ public:
         target(target),
         data(weight, flow) {}
 
-  Edge(Edge const& edge)
+  Edge(const Edge& edge)
       : source(edge.source),
         target(edge.target),
         data(edge.data) {}
 
-  node_type& other(node_type& node)
+  node_type& other(node_type& node) const
   {
     return (node == source) ? target : source;
   }
 
-  bool isSelfPointing()
+  bool isSelfPointing() const
   {
     return source == target;
   }
@@ -59,4 +59,4 @@ public:
 } // namespace infomap
 
 
-#endif /* MODULES_CLUSTERING_CLUSTERING_INFOEDGE_H_ */
+#endif /* _INFOEDGE_H_ */

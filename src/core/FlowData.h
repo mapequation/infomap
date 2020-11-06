@@ -2,8 +2,8 @@
  * FlowData.h
  */
 
-#ifndef SRC_CLUSTERING_FLOWDATA_H_
-#define SRC_CLUSTERING_FLOWDATA_H_
+#ifndef _FLOWDATA_H_
+#define _FLOWDATA_H_
 
 #include <ostream>
 #include <utility>
@@ -11,27 +11,13 @@
 namespace infomap {
 
 struct FlowData {
-  FlowData(double flow = 0.0)
-      : flow(flow),
-        enterFlow(0.0),
-        exitFlow(0.0) {}
+  FlowData() = default;
 
-  FlowData(const FlowData& other)
-      : flow(other.flow),
-        enterFlow(other.enterFlow),
-        exitFlow(other.exitFlow) {}
+  explicit FlowData(double flow) : flow(flow) {}
 
-  FlowData& operator=(const FlowData& other)
-  {
-    flow = other.flow;
-    enterFlow = other.enterFlow;
-    exitFlow = other.exitFlow;
-    return *this;
-  }
-
-  double flow;
-  double enterFlow;
-  double exitFlow;
+  double flow = 0.0;
+  double enterFlow = 0.0;
+  double exitFlow = 0.0;
 
   FlowData& operator+=(const FlowData& other)
   {
@@ -62,20 +48,16 @@ struct DeltaFlow {
   double deltaEnter = 0.0;
   unsigned int count = 0;
 
-  virtual ~DeltaFlow() = default;
-
   DeltaFlow() = default;
 
-  explicit DeltaFlow(unsigned int module, double deltaExit, double deltaEnter)
-      : module(module),
-        deltaExit(deltaExit),
-        deltaEnter(deltaEnter),
-        count(0) {}
+  DeltaFlow(unsigned int module, double deltaExit, double deltaEnter)
+      : module(module), deltaExit(deltaExit), deltaEnter(deltaEnter) {}
 
   DeltaFlow(const DeltaFlow&) = default;
   DeltaFlow& operator=(const DeltaFlow&) = default;
   DeltaFlow(DeltaFlow&&) = default;
   DeltaFlow& operator=(DeltaFlow&&) = default;
+  virtual ~DeltaFlow() = default;
 
   DeltaFlow& operator+=(const DeltaFlow& other)
   {
@@ -86,7 +68,7 @@ struct DeltaFlow {
     return *this;
   }
 
-  void reset()
+  virtual void reset()
   {
     module = 0;
     deltaExit = 0.0;
@@ -114,10 +96,8 @@ struct MemDeltaFlow : DeltaFlow {
 
   MemDeltaFlow() : DeltaFlow() {}
 
-  explicit MemDeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow = 0.0, double sumPlogpPhysFlow = 0.0)
-      : DeltaFlow(module, deltaExit, deltaEnter),
-        sumDeltaPlogpPhysFlow(sumDeltaPlogpPhysFlow),
-        sumPlogpPhysFlow(sumPlogpPhysFlow) {}
+  MemDeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow = 0.0, double sumPlogpPhysFlow = 0.0)
+      : DeltaFlow(module, deltaExit, deltaEnter), sumDeltaPlogpPhysFlow(sumDeltaPlogpPhysFlow), sumPlogpPhysFlow(sumPlogpPhysFlow) {}
 
   MemDeltaFlow& operator+=(const MemDeltaFlow& other)
   {
@@ -127,7 +107,7 @@ struct MemDeltaFlow : DeltaFlow {
     return *this;
   }
 
-  void reset()
+  void reset() override
   {
     DeltaFlow::reset();
     sumDeltaPlogpPhysFlow = 0.0;
@@ -152,8 +132,6 @@ struct PhysData {
   explicit PhysData(unsigned int physNodeIndex, double sumFlowFromM2Node = 0.0)
       : physNodeIndex(physNodeIndex), sumFlowFromM2Node(sumFlowFromM2Node) {}
 
-  PhysData(const PhysData& other) = default;
-
   unsigned int physNodeIndex;
   double sumFlowFromM2Node; // The amount of flow from the memory node in this physical node
 
@@ -167,4 +145,4 @@ struct PhysData {
 } // namespace infomap
 
 
-#endif /* SRC_CLUSTERING_FLOWDATA_H_ */
+#endif /* _FLOWDATA_H_ */

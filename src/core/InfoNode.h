@@ -93,17 +93,29 @@ protected:
   InfomapBase* m_infomap = nullptr;
 
 public:
+  explicit InfoNode(double flow) : InfoNode(FlowData(flow)) {};
+
   explicit InfoNode(const FlowData& flowData) : data(flowData) {};
 
   // For first order nodes, physicalId equals stateId
+  InfoNode(double flow, unsigned int stateId)
+      : InfoNode(FlowData(flow), stateId) {};
+
   InfoNode(const FlowData& flowData, unsigned int stateId)
-      : data(flowData), stateId(stateId), physicalId(stateId) {};
+      : InfoNode(flowData, stateId, 0) {};
+
+  InfoNode(double flow, unsigned int stateId, unsigned int physicalId)
+      : InfoNode(FlowData(flow), stateId, physicalId) {};
 
   InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId)
-      : data(flowData), stateId(stateId), physicalId(physicalId) {};
+      : InfoNode(flowData, stateId, physicalId, 0) {};
+
+  InfoNode(double flow, unsigned int stateId, unsigned int physicalId, unsigned int layerId)
+      : InfoNode(FlowData(flow), stateId, physicalId, layerId) {};
 
   InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId, unsigned int layerId)
       : data(flowData), stateId(stateId), physicalId(physicalId), layerId(layerId) {};
+
 
   InfoNode() = default;
 
