@@ -2,19 +2,18 @@
  * 
  */
 
-#ifndef INFOMAP_OPTIMIZER_BASE_H_
-#define INFOMAP_OPTIMIZER_BASE_H_
+#ifndef _INFOMAPOPTIMIZERBASE_H_
+#define _INFOMAPOPTIMIZERBASE_H_
 
 #include "InfomapBase.h"
-#include <vector>
 #include "InfoNode.h"
 #include "FlowData.h"
+#include <vector>
 
 namespace infomap {
 
 class InfomapOptimizerBase {
   friend class InfomapCore;
-  using FlowDataType = FlowData;
 
 public:
   InfomapOptimizerBase() = default;
@@ -81,9 +80,9 @@ protected:
   // Debug: *
   // ===================================================
 
-  virtual void printDebug() = 0;
+  virtual void printDebug() const = 0;
 };
 
 } /* namespace infomap */
 
-#endif /* INFOMAP_OPTIMIZER_BASE_H_ */
+#endif /* _INFOMAPOPTIMIZERBASE_H_ */
