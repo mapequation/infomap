@@ -10,7 +10,6 @@
 
 #include "FlowData.h"
 #include "InfoEdge.h"
-#include "infomapIterators.h"
 #include "TreeIterators.h"
 #include "../utils/exceptions.h"
 #include "../utils/MetaCollection.h"

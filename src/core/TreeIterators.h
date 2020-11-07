@@ -604,6 +604,93 @@ public:
   }
 };
 
+/**
+ * Child iterator.
+ */
+template <typename NodePointerType> // pointer or const pointer
+class InfomapChildIterator {
+  using iterator_category = std::bidirectional_iterator_tag;
+  using value_type = typename iterator_traits<NodePointerType>::value_type;
+  using difference_type = typename iterator_traits<NodePointerType>::difference_type;
+  using reference = typename iterator_traits<NodePointerType>::reference;
+  using pointer = typename iterator_traits<NodePointerType>::pointer;
+
+protected:
+  NodePointerType m_root = nullptr;
+  NodePointerType m_current = nullptr;
+
+public:
+  InfomapChildIterator() = default;
+
+  explicit InfomapChildIterator(const NodePointerType& nodePointer)
+      : m_root(nodePointer), m_current(nodePointer) { init(); }
+
+  InfomapChildIterator(const InfomapChildIterator& other)
+      : m_root(other.m_root), m_current(other.m_current) {}
+
+  InfomapChildIterator& operator=(const InfomapChildIterator& other)
+  {
+    m_root = other.m_root;
+    m_current = other.m_current;
+    return *this;
+  }
+
+  void init()
+  {
+    if (m_root != nullptr) {
+      NodePointerType infomapRoot = m_root->getInfomapRoot();
+      if (infomapRoot != nullptr) {
+        m_root = infomapRoot;
+      }
+    }
+    m_current = m_root == nullptr ? nullptr : m_root->firstChild;
+  }
+
+  pointer current() const { return m_current; }
+
+  reference operator*() const { return *m_current; }
+
+  pointer operator->() const { return m_current; }
+
+  bool operator==(const InfomapChildIterator& rhs) const { return m_current == rhs.m_current; }
+
+  bool operator!=(const InfomapChildIterator& rhs) const { return m_current != rhs.m_current; }
+
+  bool isEnd() const { return m_current == nullptr; }
+
+  InfomapChildIterator& operator++()
+  {
+    m_current = m_current->next;
+    if (m_current != nullptr && m_current->parent != m_root) {
+      m_current = nullptr;
+    }
+    return *this;
+  }
+
+  InfomapChildIterator operator++(int)
+  {
+    InfomapChildIterator copy(*this);
+    ++(*this);
+    return copy;
+  }
+
+  InfomapChildIterator& operator--()
+  {
+    m_current = m_current->previous;
+    if (m_current != nullptr && m_current->parent != m_root) {
+      m_current = nullptr;
+    }
+    return *this;
+  }
+
+  InfomapChildIterator operator--(int)
+  {
+    InfomapChildIterator copy(*this);
+    --(*this);
+    return copy;
+  }
+};
+
 } // namespace infomap
 
 #endif /* _TREEITERATORS_H_ */
