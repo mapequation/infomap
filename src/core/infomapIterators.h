@@ -8,7 +8,7 @@
 #ifndef _INFOMAPITERATORS_H_
 #define _INFOMAPITERATORS_H_
 
-#include "treeIterators.h"
+#include "TreeIterators.h"
 #include <deque>
 #include <limits>
 
