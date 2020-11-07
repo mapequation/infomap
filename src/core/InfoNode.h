@@ -12,7 +12,6 @@
 #include "InfoEdge.h"
 #include "infomapIterators.h"
 #include "treeIterators.h"
-#include "../utils/iterators.h"
 #include "../utils/exceptions.h"
 #include "../utils/MetaCollection.h"
 #include <memory>
@@ -24,42 +23,63 @@ namespace infomap {
 
 class InfomapBase;
 
+namespace detail {
+  template <typename It>
+  class IteratorWrapper {
+    It m_begin, m_end;
+
+  public:
+    template <typename Wrapped>
+    IteratorWrapper(Wrapped& wrapped) : IteratorWrapper(std::begin(wrapped), std::end(wrapped)) { }
+
+    IteratorWrapper(It begin, It end) : m_begin(begin), m_end(end) { }
+
+    It begin() { return m_begin; }
+
+    It begin() const { return m_begin; }
+
+    It end() { return m_end; }
+
+    It end() const { return m_end; }
+  };
+} // namespace detail
+
 class InfoNode {
 public:
   using EdgeType = Edge<InfoNode>;
 
   using child_iterator = ChildIterator<InfoNode*>;
-  using const_child_iterator = ChildIterator<InfoNode const*>;
+  using const_child_iterator = ChildIterator<const InfoNode*>;
+
   using infomap_child_iterator = InfomapChildIterator<InfoNode*>;
-  using const_infomap_child_iterator = InfomapChildIterator<InfoNode const*>;
+  using const_infomap_child_iterator = InfomapChildIterator<const InfoNode*>;
 
   using tree_iterator = TreeIterator<InfoNode*>;
-  using const_tree_iterator = TreeIterator<InfoNode const*>;
+  using const_tree_iterator = TreeIterator<const InfoNode*>;
 
   using leaf_node_iterator = LeafNodeIterator<InfoNode*>;
-  using const_leaf_node_iterator = LeafNodeIterator<InfoNode const*>;
+  using const_leaf_node_iterator = LeafNodeIterator<const InfoNode*>;
   using leaf_module_iterator = LeafModuleIterator<InfoNode*>;
-  using const_leaf_module_iterator = LeafModuleIterator<InfoNode const*>;
+  using const_leaf_module_iterator = LeafModuleIterator<const InfoNode*>;
 
   using post_depth_first_iterator = DepthFirstIterator<InfoNode*, false>;
-  using const_post_depth_first_iterator = DepthFirstIterator<InfoNode const*, false>;
+  using const_post_depth_first_iterator = DepthFirstIterator<const InfoNode*, false>;
 
   using edge_iterator = std::vector<EdgeType*>::iterator;
   using const_edge_iterator = std::vector<EdgeType*>::const_iterator;
 
-  using edge_iterator_wrapper = IterWrapper<edge_iterator>;
-  using const_edge_iterator_wrapper = IterWrapper<const_edge_iterator>;
+  using edge_iterator_wrapper = detail::IteratorWrapper<edge_iterator>;
+  using const_edge_iterator_wrapper = detail::IteratorWrapper<const_edge_iterator>;
 
-  using infomap_iterator_wrapper = IterWrapper<tree_iterator>;
-  using const_infomap_iterator_wrapper = IterWrapper<const_tree_iterator>;
+  using infomap_iterator_wrapper = detail::IteratorWrapper<tree_iterator>;
+  using const_infomap_iterator_wrapper = detail::IteratorWrapper<const_tree_iterator>;
 
-  using child_iterator_wrapper = IterWrapper<child_iterator>;
-  using const_child_iterator_wrapper = IterWrapper<const_child_iterator>;
+  using child_iterator_wrapper = detail::IteratorWrapper<child_iterator>;
+  using const_child_iterator_wrapper = detail::IteratorWrapper<const_child_iterator>;
 
-  using infomap_child_iterator_wrapper = IterWrapper<infomap_child_iterator>;
-  using const_infomap_child_iterator_wrapper = IterWrapper<const_infomap_child_iterator>;
+  using infomap_child_iterator_wrapper = detail::IteratorWrapper<infomap_child_iterator>;
+  using const_infomap_child_iterator_wrapper = detail::IteratorWrapper<const_infomap_child_iterator>;
 
-public:
   FlowData data;
   unsigned int index = 0; // Temporary index used in finding best module
   /*const*/ unsigned int stateId = 0; // Unique state node id for the leaf nodes
