@@ -327,26 +327,6 @@ public:
 
   // ---------------------------- Graph iterators ----------------------------
 
-  edge_iterator begin_outEdge()
-  {
-    return m_outEdges.begin();
-  }
-
-  edge_iterator end_outEdge()
-  {
-    return m_outEdges.end();
-  }
-
-  edge_iterator begin_inEdge()
-  {
-    return m_inEdges.begin();
-  }
-
-  edge_iterator end_inEdge()
-  {
-    return m_inEdges.end();
-  }
-
   edge_iterator_wrapper outEdges()
   {
     return { m_outEdges };

@@ -31,10 +31,8 @@ InfoNode::~InfoNode()
 
   // Delete outgoing edges.
   // TODO: Renders ingoing edges invalid. Assume or assert that all nodes on the same level are deleted?
-  for (edge_iterator outEdgeIt(begin_outEdge());
-       outEdgeIt != end_outEdge();
-       ++outEdgeIt) {
-    delete *outEdgeIt;
+  for (auto& edge : m_outEdges) {
+    delete edge;
   }
 }
 
