@@ -16,12 +16,12 @@
 
 namespace infomap {
 
-struct InfomapWrapper final : public InfomapCore {
+struct InfomapWrapper : public InfomapCore {
 public:
   InfomapWrapper() : InfomapCore() {}
   InfomapWrapper(const std::string flags) : InfomapCore(flags) {}
   InfomapWrapper(const Config& conf) : InfomapCore(conf) {}
-  ~InfomapWrapper() final = default;
+  ~InfomapWrapper() override = default;
 
   // ===================================================
   // Wrapper methods
