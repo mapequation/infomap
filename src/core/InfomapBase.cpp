@@ -990,7 +990,7 @@ void InfomapBase::hierarchicalPartition()
       double codelengthBefore = 0.0;
       double codelengthAfter = 0.0;
 
-      for (InfoNode& module : m_root.infomapTree()) {
+      for (InfoNode& module : m_root.infomap_tree()) {
         if (!module.isLeaf() && module.firstChild->isLeafModule()) {
           codelengthBefore += module.codelength;
           auto numLeafs = 0;
@@ -1186,7 +1186,7 @@ void InfomapBase::restoreHardPartition()
   // Collect all leaf nodes in a separate sequence to be able to iterate independent of tree structure
   std::vector<InfoNode*> leafNodes(numLeafNodes());
   unsigned int leafIndex = 0;
-  for (InfoNode& node : m_root.infomapTree()) {
+  for (InfoNode& node : m_root.infomap_tree()) {
     if (node.isLeaf()) {
       leafNodes[leafIndex] = &node;
       ++leafIndex;
@@ -1320,7 +1320,7 @@ double InfomapBase::calcCodelengthOnTree(bool includeRoot)
 {
   double totalCodelength = 0.0;
   // Calculate enter/exit flow (assuming 0 by default)
-  for (auto& node : m_root.infomapTree()) {
+  for (auto& node : m_root.infomap_tree()) {
     if (node.isLeaf() || (!includeRoot && node.isRoot()))
       continue;
     node.codelength = calcCodelength(node);
@@ -1743,7 +1743,7 @@ void InfomapBase::transformNodeFlowToEnterFlow(InfoNode& parent)
 void InfomapBase::resetFlowOnModules()
 {
   // Reset flow on all modules
-  for (auto& module : m_root.infomapTree()) {
+  for (auto& module : m_root.infomap_tree()) {
     if (!module.isLeaf())
       module.data.flow = 0.0;
   }
@@ -1886,7 +1886,7 @@ void InfomapBase::queueTopModules(PartitionQueue& partitionQueue)
 void InfomapBase::queueLeafModules(PartitionQueue& partitionQueue)
 {
   unsigned int numLeafModules = 0;
-  for (auto& node : m_root.infomapTree()) {
+  for (auto& node : m_root.infomap_tree()) {
     if (node.isLeafModule())
       ++numLeafModules;
   }

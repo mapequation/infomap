@@ -315,14 +315,14 @@ public:
     return const_tree_iterator(nullptr);
   }
 
-  infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
+  infomap_iterator_wrapper infomap_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
   {
-    return infomap_iterator_wrapper(tree_iterator(this, maxClusterLevel), tree_iterator(nullptr));
+    return { tree_iterator(this, maxClusterLevel), tree_iterator(nullptr) };
   }
 
-  const_infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const
+  const_infomap_iterator_wrapper infomap_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const
   {
-    return const_infomap_iterator_wrapper(const_tree_iterator(this, maxClusterLevel), const_tree_iterator(nullptr));
+    return { const_tree_iterator(this, maxClusterLevel), const_tree_iterator(nullptr) };
   }
 
   // ---------------------------- Graph iterators ----------------------------
