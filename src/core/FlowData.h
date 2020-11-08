@@ -11,13 +11,15 @@
 namespace infomap {
 
 struct FlowData {
+  using value_type = double;
+
   FlowData() = default;
 
-  explicit FlowData(double flow) : flow(flow) {}
+  explicit FlowData(value_type flow) : flow(flow) {}
 
-  double flow = 0.0;
-  double enterFlow = 0.0;
-  double exitFlow = 0.0;
+  value_type flow = 0.0;
+  value_type enterFlow = 0.0;
+  value_type exitFlow = 0.0;
 
   FlowData& operator+=(const FlowData& other)
   {
@@ -43,14 +45,16 @@ struct FlowData {
 
 
 struct DeltaFlow {
+  using value_type = double;
+
   unsigned int module = 0;
-  double deltaExit = 0.0;
-  double deltaEnter = 0.0;
+  value_type deltaExit = 0.0;
+  value_type deltaEnter = 0.0;
   unsigned int count = 0;
 
   DeltaFlow() = default;
 
-  DeltaFlow(unsigned int module, double deltaExit, double deltaEnter)
+  DeltaFlow(unsigned int module, value_type deltaExit, value_type deltaEnter)
       : module(module), deltaExit(deltaExit), deltaEnter(deltaEnter) {}
 
   DeltaFlow(const DeltaFlow&) = default;
@@ -91,12 +95,14 @@ struct DeltaFlow {
 };
 
 struct MemDeltaFlow : DeltaFlow {
-  double sumDeltaPlogpPhysFlow = 0.0;
-  double sumPlogpPhysFlow = 0.0;
+  using value_type = double;
+
+  value_type sumDeltaPlogpPhysFlow{};
+  value_type sumPlogpPhysFlow{};
 
   MemDeltaFlow() : DeltaFlow() {}
 
-  MemDeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow = 0.0, double sumPlogpPhysFlow = 0.0)
+  MemDeltaFlow(unsigned int module, value_type deltaExit, value_type deltaEnter, value_type sumDeltaPlogpPhysFlow = 0.0, value_type sumPlogpPhysFlow = 0.0)
       : DeltaFlow(module, deltaExit, deltaEnter), sumDeltaPlogpPhysFlow(sumDeltaPlogpPhysFlow), sumPlogpPhysFlow(sumPlogpPhysFlow) {}
 
   MemDeltaFlow& operator+=(const MemDeltaFlow& other)
@@ -129,11 +135,15 @@ struct MemDeltaFlow : DeltaFlow {
 
 
 struct PhysData {
-  explicit PhysData(unsigned int physNodeIndex, double sumFlowFromM2Node = 0.0)
+  using value_type = double;
+
+  explicit PhysData(unsigned int physNodeIndex) : physNodeIndex(physNodeIndex) {}
+
+  explicit PhysData(unsigned int physNodeIndex, value_type sumFlowFromM2Node)
       : physNodeIndex(physNodeIndex), sumFlowFromM2Node(sumFlowFromM2Node) {}
 
   unsigned int physNodeIndex;
-  double sumFlowFromM2Node; // The amount of flow from the memory node in this physical node
+  value_type sumFlowFromM2Node{}; // The amount of flow from the memory node in this physical node
 
   friend std::ostream& operator<<(std::ostream& out, const PhysData& data)
   {

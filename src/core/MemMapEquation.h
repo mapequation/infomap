@@ -9,21 +9,18 @@
 #define _MEMMAPEQUATION_H_
 
 #include "MapEquation.h"
+#include "FlowData.h"
 #include <vector>
 #include <map>
 
 namespace infomap {
 
-class InfoNode;
-struct MemDeltaFlow;
-
 namespace detail { struct MemNodeSet; }
 
-class MemMapEquation : public MapEquation {
-  using Base = MapEquation;
+class MemMapEquation : public MapEquation<FlowData, MemDeltaFlow> {
+  using Base = MapEquation<FlowData, MemDeltaFlow>;
 
 public:
-  using DeltaFlowDataType = MemDeltaFlow;
 
   // ===================================================
   // Getters
@@ -61,23 +58,23 @@ public:
   using Base::getDeltaCodelengthOnMovingNode;
   using Base::updateCodelengthOnMovingNode;
 
-  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
+  void addMemoryContributions(InfoNode& current, MemDeltaFlow& oldModuleDelta, VectorMap<MemDeltaFlow>& moduleDeltaFlow);
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                        DeltaFlowDataType& oldModuleDelta,
-                                        DeltaFlowDataType& newModuleDelta,
-                                        std::vector<FlowDataType>& moduleFlowData,
-                                        std::vector<unsigned int>& moduleMembers) const;
+                                        MemDeltaFlow& oldModuleDelta,
+                                        MemDeltaFlow& newModuleDelta,
+                                        std::vector<FlowData>& moduleFlowData,
+                                        std::vector<unsigned int>& moduleMembers) const override;
 
   // ===================================================
   // Consolidation
   // ===================================================
 
   void updateCodelengthOnMovingNode(InfoNode& current,
-                                    DeltaFlowDataType& oldModuleDelta,
-                                    DeltaFlowDataType& newModuleDelta,
-                                    std::vector<FlowDataType>& moduleFlowData,
-                                    std::vector<unsigned int>& moduleMembers);
+                                    MemDeltaFlow& oldModuleDelta,
+                                    MemDeltaFlow& newModuleDelta,
+                                    std::vector<FlowData>& moduleFlowData,
+                                    std::vector<unsigned int>& moduleMembers) override;
 
   void consolidateModules(std::vector<InfoNode*>& modules) override;
 
@@ -115,7 +112,7 @@ protected:
 
   void updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
-  void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
+  void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, MemDeltaFlow& oldModuleDelta, MemDeltaFlow& newModuleDelta);
 
   // ===================================================
   // Protected member variables

@@ -152,9 +152,9 @@ double MetaMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent
 
 
 double MetaMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                       DeltaFlowDataType& oldModuleDelta,
-                                                       DeltaFlowDataType& newModuleDelta,
-                                                       std::vector<FlowDataType>& moduleFlowData,
+                                                       DeltaFlow& oldModuleDelta,
+                                                       DeltaFlow& newModuleDelta,
+                                                       std::vector<FlowData>& moduleFlowData,
                                                        std::vector<unsigned int>& moduleMembers) const
 {
   const double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
@@ -205,9 +205,9 @@ double MetaMapEquation::getCurrentModuleMetaCodelength(unsigned int module, Info
 // ===================================================
 
 void MetaMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
-                                                   DeltaFlowDataType& oldModuleDelta,
-                                                   DeltaFlowDataType& newModuleDelta,
-                                                   std::vector<FlowDataType>& moduleFlowData,
+                                                   DeltaFlow& oldModuleDelta,
+                                                   DeltaFlow& newModuleDelta,
+                                                   std::vector<FlowData>& moduleFlowData,
                                                    std::vector<unsigned int>& moduleMembers)
 {
   Base::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);

@@ -6,15 +6,14 @@
 #define _BIASEDMAPEQUATION_H_
 
 #include "MapEquation.h"
+#include "FlowData.h"
 #include <vector>
 #include <map>
 
 namespace infomap {
 
-class InfoNode;
-
-class BiasedMapEquation : public MapEquation {
-  using Base = MapEquation;
+class BiasedMapEquation : public MapEquation<FlowData, DeltaFlow> {
+  using Base = MapEquation<FlowData, DeltaFlow>;
 
 public:
   // ===================================================
@@ -48,9 +47,9 @@ public:
   double calcCodelength(const InfoNode& parent) const override;
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                        DeltaFlowDataType& oldModuleDelta,
-                                        DeltaFlowDataType& newModuleDelta,
-                                        std::vector<FlowDataType>& moduleFlowData,
+                                        DeltaFlow& oldModuleDelta,
+                                        DeltaFlow& newModuleDelta,
+                                        std::vector<FlowData>& moduleFlowData,
                                         std::vector<unsigned int>& moduleMembers) const override;
 
   // ===================================================
@@ -58,9 +57,9 @@ public:
   // ===================================================
 
   void updateCodelengthOnMovingNode(InfoNode& current,
-                                    DeltaFlowDataType& oldModuleDelta,
-                                    DeltaFlowDataType& newModuleDelta,
-                                    std::vector<FlowDataType>& moduleFlowData,
+                                    DeltaFlow& oldModuleDelta,
+                                    DeltaFlow& newModuleDelta,
+                                    std::vector<FlowData>& moduleFlowData,
                                     std::vector<unsigned int>& moduleMembers) override;
 
   void consolidateModules(std::vector<InfoNode*>& modules) override;

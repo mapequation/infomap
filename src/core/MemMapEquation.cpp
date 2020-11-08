@@ -250,8 +250,8 @@ double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent)
 }
 
 void MemMapEquation::addMemoryContributions(InfoNode& current,
-                                            DeltaFlowDataType& oldModuleDelta,
-                                            VectorMap<DeltaFlowDataType>& moduleDeltaFlow)
+                                            MemDeltaFlow& oldModuleDelta,
+                                            VectorMap<MemDeltaFlow>& moduleDeltaFlow)
 {
   // Overlapping modules
   /*
@@ -285,7 +285,7 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
 
         const double sumDeltaPlogpPhysFlow = infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
         const double sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
-        moduleDeltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, 0.0, sumDeltaPlogpPhysFlow, sumPlogpPhysFlow));
+        moduleDeltaFlow.add(moduleIndex, MemDeltaFlow(moduleIndex, 0.0, 0.0, sumDeltaPlogpPhysFlow, sumPlogpPhysFlow));
       }
     }
   }
@@ -295,9 +295,9 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
 
 
 double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                      DeltaFlowDataType& oldModuleDelta,
-                                                      DeltaFlowDataType& newModuleDelta,
-                                                      std::vector<FlowDataType>& moduleFlowData,
+                                                      MemDeltaFlow& oldModuleDelta,
+                                                      MemDeltaFlow& newModuleDelta,
+                                                      std::vector<FlowData>& moduleFlowData,
                                                       std::vector<unsigned int>& moduleMembers) const
 {
   const double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
@@ -313,9 +313,9 @@ double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 // ===================================================
 
 void MemMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
-                                                  DeltaFlowDataType& oldModuleDelta,
-                                                  DeltaFlowDataType& newModuleDelta,
-                                                  std::vector<FlowDataType>& moduleFlowData,
+                                                  MemDeltaFlow& oldModuleDelta,
+                                                  MemDeltaFlow& newModuleDelta,
+                                                  std::vector<FlowData>& moduleFlowData,
                                                   std::vector<unsigned int>& moduleMembers)
 {
   Base::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
@@ -365,7 +365,7 @@ void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModu
   }
 }
 
-void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta)
+void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, MemDeltaFlow& oldModuleDelta, MemDeltaFlow& newModuleDelta)
 {
   const unsigned int oldModuleIndex = oldModuleDelta.module;
   const unsigned int bestModuleIndex = newModuleDelta.module;

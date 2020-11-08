@@ -17,8 +17,8 @@ namespace infomap {
 
 template <typename Objective>
 class InfomapOptimizer final : public InfomapOptimizerBase {
-  using FlowDataType = FlowData;
-  using DeltaFlowDataType = typename Objective::DeltaFlowDataType;
+  using FlowDataType = typename Objective::flow_data_type;
+  using DeltaFlowDataType = typename Objective::delta_flow_type;
 
 protected:
   using EdgeType = Edge<InfoNode>;

@@ -19,13 +19,13 @@ namespace infomap {
 
 class InfoNode;
 struct Config;
-struct FlowData;
-struct DeltaFlow;
 
+template <class FlowDataType, class DeltaFlowDataType>
 class MapEquation {
 public:
-  using FlowDataType = FlowData;
-  using DeltaFlowDataType = DeltaFlow;
+  using flow_type = typename FlowDataType::value_type;
+  using flow_data_type = FlowDataType;
+  using delta_flow_type = DeltaFlowDataType;
 
   // ===================================================
   // Getters
@@ -282,20 +282,20 @@ protected:
   // ===================================================
   // Protected member variables
   // ===================================================
-  double codelength = 0.0;
-  double indexCodelength = 0.0;
-  double moduleCodelength = 0.0;
+  flow_type codelength{};
+  flow_type indexCodelength{};
+  flow_type moduleCodelength{};
 
-  double nodeFlow_log_nodeFlow = 0.0; // constant while the leaf network is the same
-  double flow_log_flow = 0.0; // node.(flow + exitFlow)
-  double exit_log_exit = 0.0;
-  double enter_log_enter = 0.0;
-  double enterFlow = 0.0;
-  double enterFlow_log_enterFlow = 0.0;
+  flow_type nodeFlow_log_nodeFlow{}; // constant while the leaf network is the same
+  flow_type flow_log_flow{}; // node.(flow + exitFlow)
+  flow_type exit_log_exit{};
+  flow_type enter_log_enter{};
+  flow_type enterFlow{};
+  flow_type enterFlow_log_enterFlow{};
 
   // For hierarchical
-  double exitNetworkFlow = 0.0;
-  double exitNetworkFlow_log_exitNetworkFlow = 0.0;
+  flow_type exitNetworkFlow{};
+  flow_type exitNetworkFlow_log_exitNetworkFlow{};
 };
 
 } // namespace infomap
