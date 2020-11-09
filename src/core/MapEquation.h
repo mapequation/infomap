@@ -17,7 +17,6 @@
 
 namespace infomap {
 
-class InfoNode;
 struct Config;
 
 template <class FlowDataType, class DeltaFlowDataType>
@@ -62,7 +61,7 @@ public:
   virtual void initNetwork(InfoNode& root) noexcept
   {
     nodeFlow_log_nodeFlow = 0.0;
-    for (InfoNode& node : root) {
+    for (const auto& node : root) {
       nodeFlow_log_nodeFlow += infomath::plogp(node.data.flow);
     }
     initSubNetwork(root);
@@ -71,7 +70,7 @@ public:
   virtual void initSuperNetwork(InfoNode& root) noexcept
   {
     nodeFlow_log_nodeFlow = 0.0;
-    for (InfoNode& node : root) {
+    for (const auto& node : root) {
       nodeFlow_log_nodeFlow += infomath::plogp(node.data.enterFlow);
     }
   }
@@ -257,8 +256,8 @@ protected:
     enterFlow = 0.0;
 
     // For each module
-    for (InfoNode* n : nodes) {
-      InfoNode& node = *n;
+    for (const auto* n : nodes) {
+      const auto& node = *n;
       // own node/module codebook
       flow_log_flow += infomath::plogp(node.data.flow + node.data.exitFlow);
 

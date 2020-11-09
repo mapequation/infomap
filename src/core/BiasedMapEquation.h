@@ -6,11 +6,13 @@
 #define _BIASEDMAPEQUATION_H_
 
 #include "MapEquation.h"
-#include "FlowData.h"
 #include <vector>
 #include <map>
 
 namespace infomap {
+
+struct FlowData;
+struct DeltaFlow;
 
 class BiasedMapEquation : public MapEquation<FlowData, DeltaFlow> {
   using Base = MapEquation<FlowData, DeltaFlow>;

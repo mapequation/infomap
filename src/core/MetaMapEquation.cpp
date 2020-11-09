@@ -72,7 +72,7 @@ void MetaMapEquation::initMetaNodes(InfoNode& root)
 
   if (notInitiated) {
     Log(3) << "MetaMapEquation::initMetaNodesOnOriginalNetwork()...\n";
-    for (InfoNode& node : root) {
+    for (auto& node : root) {
       // Use only one meta dimension for now
       if (node.metaData.empty()) {
         throw std::length_error("A node is missing meta data using MetaMapEquation");
@@ -89,7 +89,7 @@ void MetaMapEquation::initPartitionOfMetaNodes(std::vector<InfoNode*>& nodes)
   m_moduleToMetaCollection.clear();
 
   for (auto& n : nodes) {
-    InfoNode& node = *n;
+    auto& node = *n;
     const unsigned int moduleIndex = node.index; // Assume unique module index for all nodes in this initiation phase
 
     if (node.metaCollection.empty()) {
@@ -118,17 +118,16 @@ void MetaMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
   metaCodelength = 0.0;
 
   // Treat each node as a single module
-  for (InfoNode* n : nodes) {
-    InfoNode& node = *n;
+  for (auto* n : nodes) {
+    auto& node = *n;
     metaCodelength += node.metaCollection.calculateEntropy();
   }
 }
 
 double MetaMapEquation::calcCodelength(const InfoNode& parent) const
 {
-  return parent.isLeafModule() ? calcCodelengthOnModuleOfLeafNodes(parent) :
-                               // Use first-order model on index codebook
-      MapEquation::calcCodelengthOnModuleOfModules(parent);
+  return parent.isLeafModule() ? calcCodelengthOnModuleOfLeafNodes(parent)
+                               : MapEquation::calcCodelengthOnModuleOfModules(parent);
 }
 
 double MetaMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
@@ -136,9 +135,9 @@ double MetaMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent
   const double indexLength = MapEquation::calcCodelength(parent);
 
   // Meta addition
-  MetaCollection metaCollection;
+  auto metaCollection = MetaCollection();
 
-  for (const InfoNode& node : parent) {
+  for (const auto& node : parent) {
     if (!node.metaCollection.empty())
       metaCollection.add(node.metaCollection);
     else

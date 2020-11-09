@@ -9,13 +9,15 @@
 #define _MEMMAPEQUATION_H_
 
 #include "MapEquation.h"
-#include "FlowData.h"
 #include <vector>
 #include <map>
 
 namespace infomap {
 
 namespace detail { struct MemNodeSet; }
+
+struct FlowData;
+struct MemDeltaFlow;
 
 class MemMapEquation : public MapEquation<FlowData, MemDeltaFlow> {
   using Base = MapEquation<FlowData, MemDeltaFlow>;

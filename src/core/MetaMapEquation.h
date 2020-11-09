@@ -6,12 +6,14 @@
 #define _METAMAPEQUATION_H_
 
 #include "MapEquation.h"
-#include "FlowData.h"
 #include "../utils/MetaCollection.h"
 #include <vector>
 #include <map>
 
 namespace infomap {
+
+struct FlowData;
+struct DeltaFlow;
 
 class MetaMapEquation : public MapEquation<FlowData, DeltaFlow> {
   using Base = MapEquation<FlowData, DeltaFlow>;

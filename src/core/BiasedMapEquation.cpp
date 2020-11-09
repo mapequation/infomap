@@ -132,7 +132,7 @@ void BiasedMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 {
   unsigned int numModules = 0;
 
-  for (auto& module : modules) {
+  for (const auto& module : modules) {
     if (module == nullptr)
       continue;
     ++numModules;

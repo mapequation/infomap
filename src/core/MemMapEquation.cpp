@@ -66,13 +66,13 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
 
   if (notInitiatedOnLeafNodes) {
     Log(3) << "MemMapEquation::initPhysicalNodesOnOriginalNetwork()...\n";
-    std::set<unsigned int> setOfPhysicalNodes;
+    auto setOfPhysicalNodes = std::set<unsigned int>();
 
     unsigned int maxPhysicalId = 0;
     unsigned int minPhysicalId = std::numeric_limits<unsigned int>::max();
 
     for (auto it(root.begin_leaf_nodes()); !it.isEnd(); ++it) {
-      InfoNode& node = *it;
+      auto& node = *it;
       setOfPhysicalNodes.insert(node.physicalId);
       maxPhysicalId = std::max(maxPhysicalId, node.physicalId);
       minPhysicalId = std::min(minPhysicalId, node.physicalId);
@@ -81,7 +81,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
     m_numPhysicalNodes = setOfPhysicalNodes.size();
 
     // Re-index physical nodes if necessary
-    std::map<unsigned int, unsigned int> toZeroBasedIndex;
+    auto toZeroBasedIndex = std::map<unsigned int, unsigned int>();
 
     if (maxPhysicalId - minPhysicalId + 1 > m_numPhysicalNodes) {
       unsigned int zeroBasedPhysicalId = 0;
@@ -91,7 +91,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
     }
 
     for (auto it(root.begin_leaf_nodes()); !it.isEnd(); ++it) {
-      InfoNode& node = *it;
+      auto& node = *it;
       unsigned int zeroBasedIndex = !toZeroBasedIndex.empty() ? toZeroBasedIndex[node.physicalId] : (node.physicalId - minPhysicalId);
       node.physicalNodes.emplace_back(zeroBasedIndex, node.data.flow);
     }
@@ -99,8 +99,8 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
     // If leaf nodes was not directly under root, make sure leaf modules have physical nodes defined also
     if (depth > 1) {
       for (auto it(root.begin_leaf_modules()); !it.isEnd(); ++it) {
-        InfoNode& module = *it;
-        std::map<unsigned int, double> physToFlow;
+        auto& module = *it;
+        auto physToFlow = std::map<unsigned int, double>();
 
         for (auto& node : module) {
           for (const auto& physData : node.physicalNodes) {
@@ -118,13 +118,13 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
     if (depth == 1) {
       // new sub-network
       Log(3) << "MemMapEquation::initPhysicalNodesOnSubNetwork()...\n";
-      std::set<unsigned int> setOfPhysicalNodes;
+      auto setOfPhysicalNodes = std::set<unsigned int>();
       unsigned int maxPhysNodeIndex = 0;
       unsigned int minPhysNodeIndex = std::numeric_limits<unsigned int>::max();
 
       // Collect all physical nodes in this sub network
-      for (InfoNode& node : root) {
-        for (PhysData& physData : node.physicalNodes) {
+      for (auto& node : root) {
+        for (auto& physData : node.physicalNodes) {
           setOfPhysicalNodes.insert(physData.physNodeIndex);
           maxPhysNodeIndex = std::max(maxPhysNodeIndex, physData.physNodeIndex);
           minPhysNodeIndex = std::min(minPhysNodeIndex, physData.physNodeIndex);
@@ -135,7 +135,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
 
       // Re-index physical nodes if needed (not required when reconstructing tree)
       if (maxPhysNodeIndex >= m_numPhysicalNodes) {
-        std::map<unsigned int, unsigned int> toZeroBasedIndex;
+        auto toZeroBasedIndex = std::map<unsigned int, unsigned int>();
 
         if (maxPhysNodeIndex - minPhysNodeIndex + 1 > m_numPhysicalNodes) {
           unsigned int zeroBasedPhysicalId = 0;
@@ -144,8 +144,8 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
           }
         }
 
-        for (InfoNode& node : root) {
-          for (PhysData& physData : node.physicalNodes) {
+        for (auto& node : root) {
+          for (auto& physData : node.physicalNodes) {
             const unsigned int zeroBasedIndex = !toZeroBasedIndex.empty() ? toZeroBasedIndex[physData.physNodeIndex] : (physData.physNodeIndex - minPhysNodeIndex);
             physData.physNodeIndex = zeroBasedIndex;
           }
@@ -154,11 +154,11 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
     } else {
       // whole network with reconstructed tree
       for (auto it(root.begin_leaf_modules()); !it.isEnd(); ++it) {
-        InfoNode& module = *it;
-        std::map<unsigned int, double> physToFlow;
+        auto& module = *it;
+        auto physToFlow = std::map<unsigned int, double>();
 
         for (auto& node : module) {
-          for (PhysData& physData : node.physicalNodes) {
+          for (auto& physData : node.physicalNodes) {
             physToFlow[physData.physNodeIndex] += physData.sumFlowFromM2Node;
           }
         }
@@ -177,10 +177,10 @@ void MemMapEquation::initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes)
   m_physToModuleToMemNodes.resize(m_numPhysicalNodes);
 
   for (auto& n : nodes) {
-    InfoNode& node = *n;
+    auto& node = *n;
     const auto moduleIndex = node.index; // Assume unique module index for all nodes in this initiation phase
 
-    for (PhysData& physData : node.physicalNodes) {
+    for (auto& physData : node.physicalNodes) {
       m_physToModuleToMemNodes[physData.physNodeIndex].insert(m_physToModuleToMemNodes[physData.physNodeIndex].end(),
                                                               std::make_pair(moduleIndex, MemNodeSet(1, physData.sumFlowFromM2Node)));
     }
@@ -207,7 +207,7 @@ void MemMapEquation::calculateNodeFlow_log_nodeFlow()
 {
   nodeFlow_log_nodeFlow = 0.0;
   for (unsigned int i = 0; i < m_numPhysicalNodes; ++i) {
-    const ModuleToMemNodes& moduleToMemNodes = m_physToModuleToMemNodes[i];
+    const auto& moduleToMemNodes = m_physToModuleToMemNodes[i];
     for (const auto & moduleToMemNode : moduleToMemNodes)
       nodeFlow_log_nodeFlow += infomath::plogp(moduleToMemNode.second.sumFlow);
   }
@@ -215,13 +215,8 @@ void MemMapEquation::calculateNodeFlow_log_nodeFlow()
 
 double MemMapEquation::calcCodelength(const InfoNode& parent) const
 {
-  return parent.isLeafModule() ? (parent.isRoot() ?
-                                                  // Use first-order model for one-level codebook
-                                      MapEquation::calcCodelengthOnModuleOfLeafNodes(parent)
-                                                  : calcCodelengthOnModuleOfLeafNodes(parent))
-                               :
-                               // Use first-order model on index codebook
-      MapEquation::calcCodelengthOnModuleOfModules(parent);
+  return parent.isLeafModule() ? (parent.isRoot() ? MapEquation::calcCodelengthOnModuleOfLeafNodes(parent) : calcCodelengthOnModuleOfLeafNodes(parent))
+                               : MapEquation::calcCodelengthOnModuleOfModules(parent);
 }
 
 double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
@@ -241,7 +236,7 @@ double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent)
 
   double indexLength = 0.0;
 
-  for (const PhysData& physData : parent.physicalNodes) {
+  for (const auto& physData : parent.physicalNodes) {
     indexLength -= infomath::plogp(physData.sumFlowFromM2Node / totalParentFlow);
   }
   indexLength -= infomath::plogp(parentExit / totalParentFlow);
@@ -265,12 +260,12 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
   auto& physicalNodes = current.physicalNodes;
   const unsigned int numPhysicalNodes = physicalNodes.size();
   for (unsigned int i = 0; i < numPhysicalNodes; ++i) {
-    PhysData& physData = physicalNodes[i];
-    ModuleToMemNodes& moduleToMemNodes = m_physToModuleToMemNodes[physData.physNodeIndex];
+    auto& physData = physicalNodes[i];
+    auto& moduleToMemNodes = m_physToModuleToMemNodes[physData.physNodeIndex];
 
     for (auto & moduleToMemNode : moduleToMemNodes) {
       const unsigned int moduleIndex = moduleToMemNode.first;
-      MemNodeSet& memNodeSet = moduleToMemNode.second;
+      auto& memNodeSet = moduleToMemNode.second;
 
       if (moduleIndex == current.index) // From where the multiple assigned node is moved
       {
@@ -319,6 +314,7 @@ void MemMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
                                                   std::vector<unsigned int>& moduleMembers)
 {
   Base::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
+
   if (m_memoryContributionsAdded)
     updatePhysicalNodes(current, oldModuleDelta.module, newModuleDelta.module);
   else
@@ -336,7 +332,7 @@ void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModu
 {
   // For all multiple assigned nodes
   for (const auto & physData : current.physicalNodes) {
-    ModuleToMemNodes& moduleToMemNodes = m_physToModuleToMemNodes[physData.physNodeIndex];
+    auto& moduleToMemNodes = m_physToModuleToMemNodes[physData.physNodeIndex];
 
     // Remove contribution to old module
     auto overlapIt = moduleToMemNodes.find(oldModuleIndex);
@@ -345,7 +341,7 @@ void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModu
       throw std::length_error(io::Str() << "Couldn't find old module " << oldModuleIndex << " in physical node " << physData.physNodeIndex);
 
     {
-      MemNodeSet& memNodeSet = overlapIt->second;
+      auto& memNodeSet = overlapIt->second;
       memNodeSet.sumFlow -= physData.sumFlowFromM2Node;
 
       if (--memNodeSet.numMemNodes == 0)
@@ -358,7 +354,7 @@ void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModu
     if (overlapIt == moduleToMemNodes.end())
       moduleToMemNodes.insert(std::make_pair(bestModuleIndex, MemNodeSet(1, physData.sumFlowFromM2Node)));
     else {
-      MemNodeSet& memNodeSet = overlapIt->second;
+      auto& memNodeSet = overlapIt->second;
       ++memNodeSet.numMemNodes;
       memNodeSet.sumFlow += physData.sumFlowFromM2Node;
     }
@@ -372,14 +368,14 @@ void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& curr
 
   // For all multiple assigned nodes
   for (auto & physData : current.physicalNodes) {
-    ModuleToMemNodes& moduleToMemNodes = m_physToModuleToMemNodes[physData.physNodeIndex];
+    auto& moduleToMemNodes = m_physToModuleToMemNodes[physData.physNodeIndex];
 
     // Remove contribution to old module
     auto overlapIt = moduleToMemNodes.find(oldModuleIndex);
     if (overlapIt == moduleToMemNodes.end())
       throw std::length_error("Couldn't find old module among physical node assignments.");
 
-    MemNodeSet& memNodeSet = overlapIt->second;
+    auto& memNodeSet = overlapIt->second;
 
     double oldPhysFlow = memNodeSet.sumFlow;
     double newPhysFlow = memNodeSet.sumFlow - physData.sumFlowFromM2Node;
@@ -404,7 +400,7 @@ void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& curr
       newModuleDelta.sumDeltaPlogpPhysFlow += infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
       newModuleDelta.sumPlogpPhysFlow += infomath::plogp(physData.sumFlowFromM2Node);
     } else {
-      MemNodeSet& memNodeSet = overlapIt->second;
+      auto& memNodeSet = overlapIt->second;
 
       oldPhysFlow = memNodeSet.sumFlow;
       newPhysFlow = memNodeSet.sumFlow + physData.sumFlowFromM2Node;
@@ -421,10 +417,10 @@ void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& curr
 
 void MemMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 {
-  std::map<unsigned int, std::map<unsigned int, unsigned int>> validate;
+  auto validate = std::map<unsigned int, std::map<unsigned int, unsigned int>>();
 
   for (unsigned int i = 0; i < m_numPhysicalNodes; ++i) {
-    ModuleToMemNodes& modToMemNodes = m_physToModuleToMemNodes[i];
+    auto& modToMemNodes = m_physToModuleToMemNodes[i];
     for (auto & modToMemNode : modToMemNodes) {
       if (++validate[modToMemNode.first][i] > 1)
         throw std::domain_error("[InfomapGreedy::consolidateModules] Error updating physical nodes: duplication error");
