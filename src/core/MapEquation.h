@@ -26,6 +26,8 @@ public:
   using flow_data_type = FlowDataType;
   using delta_flow_type = DeltaFlowDataType;
 
+  virtual ~MapEquation() = default;
+
   // ===================================================
   // Getters
   // ===================================================
