@@ -111,7 +111,7 @@ unsigned int InfomapBase::numLevels() const
 {
   // TODO: Make sure this is not called unless tree is guaranteed to have even depth!
   unsigned int depth = 0;
-  InfoNode* n = m_root.firstChild;
+  auto* n = m_root.firstChild;
   while (n != nullptr) {
     ++depth;
     n = n->firstChild;
@@ -123,7 +123,7 @@ unsigned int InfomapBase::maxTreeDepth() const
 {
   unsigned int maxDepth = 0;
   for (auto it = root().begin_tree(); !it.isEnd(); ++it) {
-    const InfoNode& node = *it;
+    const auto& node = *it;
     if (node.isLeaf()) {
       if (it.depth() > maxDepth) {
         maxDepth = it.depth();
@@ -137,10 +137,6 @@ double InfomapBase::getHierarchicalCodelength() const
 {
   return m_hierarchicalCodelength;
 }
-
-// InfomapBase& InfomapBase::getInfomap(InfoNode& node) {
-// 	return node.getInfomap();
-// }
 
 InfomapBase& InfomapBase::getSubInfomap(InfoNode& node)
 {
@@ -183,7 +179,6 @@ bool InfomapBase::isSuperLevelOnTopLevel() const
 
 bool InfomapBase::isMainInfomap() const
 {
-  // return m_root.owner == nullptr || m_root.owner->isRoot();
   return m_isMain;
 }
 
@@ -241,11 +236,6 @@ void InfomapBase::run(std::string parameters)
   if (!m_initialPartition.empty()) {
     Log() << "  -> " << m_initialPartition.size() << " initial module ids provided\n";
   }
-  // Log() << "  -> Use " << (isUndirected()? "undirected" : "directed") << " flow";
-  // if (useTeleportation())
-  // 	Log() << " with " << (recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " <<
-  // 	(teleportToNodes ? "nodes" : "links");
-  // Log() << "\n";
   Log() << "=======================================================\n";
 #ifdef _OPENMP
 #pragma omp parallel
@@ -268,7 +258,6 @@ void InfomapBase::run(std::string parameters)
 
   Log() << "===================================================\n";
   Log() << "  Infomap ends at " << m_endDate << "\n";
-  // Log() << "  (Elapsed time: " << (m_endDate - m_startDate) << ")\n";
   Log() << "  (Elapsed time: " << m_elapsedTime << ")\n";
   Log() << "===================================================\n";
 }
@@ -279,20 +268,18 @@ void InfomapBase::run(Network& network)
     throw InternalOrderError("Can't run a non-main Infomap with an input network");
 
   if (printStateNetwork) {
-    std::string filename = outDirectory + outName + "_states.net";
+    auto filename = outDirectory + outName + "_states.net";
     Log() << "Writing state network to '" << filename << "'... ";
     network.writeStateNetwork(filename);
     Log() << "done!\n";
   }
 
   if (printPajekNetwork) {
-    std::string filename;
+    auto filename = network.haveMemoryInput() ? outDirectory + outName + "_states_as_physical.net" : outDirectory + outName + ".net";
     if (network.haveMemoryInput()) {
-      filename = outDirectory + outName + "_states_as_physical.net";
       Log() << "Writing state network as first order Pajek network to '" << filename << "'... ";
     } else {
       // Non-memory input
-      filename = outDirectory + outName + ".net";
       Log() << "Writing Pajek network to '" << filename << "'... ";
     }
     network.writePajekNetwork(filename);
@@ -344,9 +331,9 @@ void InfomapBase::run(Network& network)
 
   std::ostringstream bestSolutionStatistics;
   unsigned int bestNumLevels = 0;
-  double bestHierarchicalCodelength = std::numeric_limits<double>::max();
+  auto bestHierarchicalCodelength = std::numeric_limits<double>::max();
   m_codelengths.clear();
-  NodePaths bestTree(numLeafNodes());
+  auto bestTree = NodePaths(numLeafNodes());
   unsigned int bestTrialIndex = 0;
 
   unsigned int numTrials = this->numTrials;
@@ -354,7 +341,7 @@ void InfomapBase::run(Network& network)
   for (unsigned int i = 0; i < numTrials; ++i) {
     removeModules();
     auto startDate = Date();
-    Stopwatch timer(true);
+    auto timer = Stopwatch(true);
 
     if (isMainInfomap()) {
       Log() << "\n";
@@ -435,7 +422,6 @@ void InfomapBase::run(Network& network)
     Log() << ":" << std::endl;
     Log() << bestSolutionStatistics.str() << std::endl;
   }
-  // printRSS();
 }
 
 
@@ -454,7 +440,6 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
 {
   if (network.numNodes() == 0)
     throw DataDomainError("No nodes in network");
-  // setConfig(network.getConfig());
   if (m_root.childDegree() > 0) {
     m_root.deleteChildren();
     m_leafNodes.clear();
@@ -480,7 +465,7 @@ InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
 
 InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard)
 {
-  FileURI file(clusterDataFile);
+  auto file = FileURI(clusterDataFile);
   ClusterMap clusterMap;
   clusterMap.readClusterData(clusterDataFile);
 
@@ -503,7 +488,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 {
   Log(4) << "Init tree... " << std::setprecision(9);
   auto maxDepth = 2;
-  std::map<unsigned int, unsigned int> nodeIdToIndex;
+  auto nodeIdToIndex = std::map<unsigned int, unsigned int>();
   auto leafIndex = 0;
   for (auto& leafNode : m_leafNodes) {
     // Also detach leaf nodes to delete all modules, safe to call multiple times
@@ -519,7 +504,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
   auto numNodesNotInNetwork = 0;
   for (const auto& nodePath : tree) {
     ++numNodesFound;
-    InfoNode* node = &root();
+    auto* node = &root();
     auto depth = 0;
     const auto& path = nodePath.second;
     const auto nodeId = nodePath.first;
@@ -539,7 +524,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       // Create new node if path doesn't exist
       // TODO: Check correct tree indexing?
       if (node->childDegree() < childNumber) {
-        InfoNode* child = leafNode;
+        auto* child = leafNode;
         if (i + 1 < path.size()) {
           child = new InfoNode();
         }
@@ -628,7 +613,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned int>& clusterIds, bool hard)
 {
   // Generate map from node id to index in leaf node vector
-  std::map<unsigned int, unsigned int> nodeIdToIndex;
+  auto nodeIdToIndex = std::map<unsigned int, unsigned int>();
   unsigned int leafIndex = 0;
   for (auto& nodePtr : m_leafNodes) {
     auto& leafNode = *nodePtr;
@@ -637,15 +622,15 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
   }
 
   // Remap clusterIds to vector from leaf node index to module index instead of nodeId -> clusterId
-  std::map<unsigned int, std::set<unsigned int>> clusterIdToNodeIds;
+  auto clusterIdToNodeIds = std::map<unsigned int, std::set<unsigned int>>();
   for (auto it : clusterIds) {
     clusterIdToNodeIds[it.second].insert(it.first);
   }
-  unsigned int numNodes = numLeafNodes();
-  std::vector<unsigned int> modules(numNodes);
-  std::vector<unsigned int> selectedNodes(numNodes, 0);
+  auto numNodes = numLeafNodes();
+  auto modules = std::vector<unsigned int>(numNodes);
+  auto selectedNodes = std::vector<unsigned int>(numNodes, 0);
   unsigned int moduleIndex = 0;
-  for (auto it : clusterIdToNodeIds) {
+  for (const auto& it : clusterIdToNodeIds) {
     auto& nodes = it.second;
     for (auto& nodeId : nodes) {
       auto nodeIndex = nodeIdToIndex[nodeId];
@@ -656,7 +641,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
   }
 
   unsigned int numNodesWithoutClusterInfo = 0;
-  for (auto& count : selectedNodes) {
+  for (const auto& count : selectedNodes) {
     if (count == 0) {
       ++numNodesWithoutClusterInfo;
     }
@@ -713,73 +698,32 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
   }
 
   return initPartition(modules);
-
-
-  // // Log() << "\n\n.clu\n#stateId moduleId\n";
-
-  // // Create map from stateId to leaf node index
-  // std::map<unsigned int, unsigned int> stateIdToLeafNodeIndex;
-  // for (unsigned int i = 0; i < m_leafNodes.size(); ++i) {
-  // 	stateIdToLeafNodeIndex[m_leafNodes[i]->stateId] = i;
-  // }
-
-  // // Create vectors of clusters
-  // std::vector<std::vector<unsigned int>> clusters(stateIdsGroupedOnClusterIds.size());
-  // unsigned int numNodesNotFound = 0;
-  // unsigned int clusterIndex = 0;
-  // // Log() << "\nGroup by cluster..\n";
-  // for (auto& clusterToStateIds : stateIdsGroupedOnClusterIds) {
-  // 	auto& stateIds = clusterToStateIds.second;
-  // 	clusters[clusterIndex].reserve(stateIds.size());
-  // 	// Log() << "Cluster " << clusterToStateIds.first << " (-> clusterIndex: " << clusterIndex << "):\n";
-  // 	for (auto stateId : stateIds) {
-  // 		auto it = stateIdToLeafNodeIndex.find(stateId);
-  // 		// Log() << "  " << stateId << ": ";
-  // 		if (it == stateIdToLeafNodeIndex.end()) {
-  // 			++numNodesNotFound;
-  // 			// Log() << "not in network!\n";
-  // 		}
-  // 		else {
-  // 			unsigned int nodeIndex = it->second;
-  // 			clusters[clusterIndex].push_back(nodeIndex);
-  // 			// Log() << "-> leaf index " << nodeIndex << "\n";
-  // 		}
-  // 	}
-  // 	if (clusters[clusterIndex].size() > 0)
-  // 		++clusterIndex;
-  // }
-  // if (numNodesNotFound > 0)
-  // 	Log() << "\n -> " << numNodesNotFound << " nodes in cluster file not found in network are ignored. ";
-
-  // return initPartition(clusters, hard);
 }
 
 InfomapBase& InfomapBase::initPartition(std::vector<std::vector<unsigned int>>& clusters, bool hard)
 {
   Log(3) << "\n -> Init " << (hard ? "hard" : "soft") << " partition... " << std::flush;
-  unsigned int numNodes = numLeafNodes();
+  auto numNodes = numLeafNodes();
   // Get module indices from the merge structure
-  std::vector<unsigned int> modules(numNodes);
-  std::vector<unsigned int> selectedNodes(numNodes, 0);
+  auto modules = std::vector<unsigned int>(numNodes);
+  auto selectedNodes = std::vector<unsigned int>(numNodes, 0);
   unsigned int moduleIndex = 0;
-  // Log() << "\nInit selected clusters:\n";
+
   for (auto& cluster : clusters) {
     if (cluster.empty())
       continue;
     for (auto id : cluster) {
       ++selectedNodes[id];
       modules[id] = moduleIndex;
-      // Log() << "  modules[" << id << "] = " << moduleIndex << "\n";
     }
     ++moduleIndex;
   }
-  // Log() << "\nAdd non-selected in own clusters...\n";
+
   // Put non-selected nodes in its own module
   unsigned int numNodesWithoutClusterInfo = 0;
   for (unsigned int i = 0; i < numNodes; ++i) {
     if (selectedNodes[i] == 0) {
       modules[i] = moduleIndex;
-      // Log() << "  modules[" << i << "] = " << moduleIndex << "\n";
       ++moduleIndex;
       ++numNodesWithoutClusterInfo;
     }
@@ -791,7 +735,6 @@ InfomapBase& InfomapBase::initPartition(std::vector<std::vector<unsigned int>>& 
 
 InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool hard)
 {
-  //	Log(3) << "Init " << (hard? "hard" : "soft") << " partition..." << std::endl;
   removeModules();
   setActiveNetworkFromLeafs();
   initPartition(); //TODO: confusing same name, should be able to init default without arguments here too
@@ -803,11 +746,11 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
     m_originalLeafNodes.swap(m_leafNodes);
 
     // Use the pre-partitioned network as the new leaf network
-    unsigned int numNodesInNewNetwork = numTopModules();
+    auto numNodesInNewNetwork = numTopModules();
     m_leafNodes.resize(numNodesInNewNetwork);
     unsigned int nodeIndex = 0;
     unsigned int numLinksInNewNetwork = 0;
-    for (InfoNode& node : m_root) {
+    for (auto& node : m_root) {
       m_leafNodes[nodeIndex] = &node;
       // Collapse children
       node.collapseChildren();
@@ -837,10 +780,10 @@ void InfomapBase::generateSubNetwork(Network& network)
 
   m_leafNodes.reserve(numNodes);
   double sumNodeFlow = 0.0;
-  std::map<unsigned int, unsigned int> nodeIndexMap;
+  auto nodeIndexMap = std::map<unsigned int, unsigned int>();
   for (auto& nodeIt : network.nodes()) {
     auto& networkNode = nodeIt.second;
-    InfoNode* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
+    auto* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
     if (haveMetaData()) {
       auto meta = metaData.find(networkNode.id);
       if (meta != metaData.end()) {
@@ -873,14 +816,11 @@ void InfomapBase::generateSubNetwork(Network& network)
       } else {
         auto& linkData = subIt.second;
         m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.flow * markovTime);
-        // Log() << linkSourceId << " (" << sourceIndex << ") -> " << linkTargetId << " (" << targetIndex << ")"
-        // << ", weight: " << linkData.weight << ", flow: " << linkData.flow << "\n";
       }
     }
   }
 
   if (numLinksIgnored > 0) {
-    //		Log(1) << numLinksIgnored << " links with ~0 flow ignored -> " << network.getFlowLinks().size() - numLinksIgnored << " links." << std::endl;
     Log() << numLinksIgnored << " self-links ignored -> " << network.numLinks() - numLinksIgnored << " links." << std::endl;
   }
 }
@@ -891,14 +831,14 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   m_root.owner = &parent;
   m_root.data = parent.data;
 
-  unsigned int numNodes = parent.childDegree();
+  auto numNodes = parent.childDegree();
   m_leafNodes.resize(numNodes);
 
   Log(1) << "Generate sub network with " << numNodes << " nodes..." << std::endl;
 
   unsigned int childIndex = 0;
-  for (InfoNode& node : parent) {
-    InfoNode* clonedNode = new InfoNode(node);
+  for (auto& node : parent) {
+    auto* clonedNode = new InfoNode(node);
     clonedNode->initClean();
     m_root.addChild(clonedNode);
     node.index = childIndex; // Set index to its place in this subnetwork to be able to find edge target below
@@ -906,11 +846,11 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
     ++childIndex;
   }
 
-  InfoNode* parentPtr = &parent;
+  auto* parentPtr = &parent;
   // Clone edges
-  for (InfoNode& node : parent) {
-    for (EdgeType* e : node.outEdges()) {
-      EdgeType& edge = *e;
+  for (auto& node : parent) {
+    for (auto* e : node.outEdges()) {
+      auto& edge = *e;
       // If neighbour node is within the same module, add the link to this subnetwork.
       if (edge.target.parent == parentPtr) {
         m_leafNodes[edge.source.index]->addOutEdge(*m_leafNodes[edge.target.index], edge.data.weight, edge.data.flow);
@@ -941,14 +881,14 @@ double InfomapBase::calcEntropyRate()
 {
   double entropyRate = 0.0;
   for (auto it(iterLeafNodes()); !it.isEnd(); ++it) {
-    InfoNode& node = *it;
+    auto& node = *it;
     double sumOutFlow = 0.0;
     double entropy = 0.0;
-    for (EdgeType* e : node.outEdges()) {
-      EdgeType& edge = *e;
+    for (auto* e : node.outEdges()) {
+      auto& edge = *e;
       sumOutFlow += edge.data.flow;
     }
-    for (EdgeType* e : node.outEdges()) {
+    for (auto* e : node.outEdges()) {
       entropy += -infomath::plogp(e->data.flow / sumOutFlow);
     }
     entropyRate += node.data.flow * entropy;
@@ -990,7 +930,7 @@ void InfomapBase::hierarchicalPartition()
       double codelengthBefore = 0.0;
       double codelengthAfter = 0.0;
 
-      for (InfoNode& module : m_root.infomap_tree()) {
+      for (auto& module : m_root.infomap_tree()) {
         if (!module.isLeaf() && module.firstChild->isLeafModule()) {
           codelengthBefore += module.codelength;
           auto numLeafs = 0;
@@ -998,8 +938,8 @@ void InfomapBase::hierarchicalPartition()
             numLeafs += leafModule.childDegree();
           }
 
-          std::vector<unsigned int> modules(numLeafs);
-          std::vector<InfoNode*> leafs(numLeafs);
+          auto modules = std::vector<unsigned int>(numLeafs);
+          auto leafs = std::vector<InfoNode*>(numLeafs);
 
           auto i = 0;
           for (auto it = module.begin_tree(); !it.isEnd(); ++it) {
@@ -1009,7 +949,7 @@ void InfomapBase::hierarchicalPartition()
               ++i;
             }
           }
-          
+
           module.replaceChildrenWithGrandChildren();
           
           auto& subInfomap = getSubInfomap(module).initNetwork(module);
@@ -1027,11 +967,11 @@ void InfomapBase::hierarchicalPartition()
           }
 
           // Create new sub modules
-          std::vector<InfoNode*> subModules(numLeafs, nullptr);
+          auto subModules = std::vector<InfoNode*>(numLeafs, nullptr);
           module.releaseChildren();
 
           for (auto i = 0; i < numLeafs; ++i) {
-            InfoNode* leaf = leafs[i];
+            auto* leaf = leafs[i];
             unsigned int moduleIndex = modules[i];
             if (subModules[moduleIndex] == nullptr) {
               subModules[moduleIndex] = new InfoNode(subInfomap.leafNodes()[i]->parent->data);
@@ -1098,7 +1038,7 @@ void InfomapBase::partition()
   m_tuneIterationIndex = 0;
   findTopModulesRepeatedly(levelAggregationLimit);
 
-  double newCodelength = getCodelength();
+  auto newCodelength = getCodelength();
   double compression = oldCodelength < 1e-16 ? 0.0 : (oldCodelength - newCodelength) / oldCodelength;
   Log(0, 0) << (compression * 100) << "% " << std::flush;
   oldCodelength = newCodelength;
@@ -1110,7 +1050,7 @@ void InfomapBase::partition()
     if (doFineTune) {
       Log(3) << "\n";
       Log(1, 3) << "Fine tune... " << std::flush;
-      unsigned int numEffectiveLoops = fineTune();
+      auto numEffectiveLoops = fineTune();
       if (numEffectiveLoops > 0) {
         Log(1, 3) << " -> done in " << numEffectiveLoops << " effective loops to codelength " << *this << " in " << numTopModules() << " modules." << std::endl;
         // Continue to merge fine-tuned modules
@@ -1123,7 +1063,7 @@ void InfomapBase::partition()
       if (!noCoarseTune) {
         Log(3) << "\n";
         Log(1, 3) << "Coarse tune... " << std::flush;
-        unsigned int numEffectiveLoops = coarseTune();
+        auto numEffectiveLoops = coarseTune();
         if (numEffectiveLoops > 0) {
           Log(1, 3) << "done in " << numEffectiveLoops << " effective loops to codelength " << *this << " in " << numTopModules() << " modules." << std::endl;
           // Continue to merge fine-tuned modules
@@ -1184,9 +1124,9 @@ void InfomapBase::partition()
 void InfomapBase::restoreHardPartition()
 {
   // Collect all leaf nodes in a separate sequence to be able to iterate independent of tree structure
-  std::vector<InfoNode*> leafNodes(numLeafNodes());
+  auto leafNodes = std::vector<InfoNode*>(numLeafNodes());
   unsigned int leafIndex = 0;
-  for (InfoNode& node : m_root.infomap_tree()) {
+  for (auto& node : m_root.infomap_tree()) {
     if (node.isLeaf()) {
       leafNodes[leafIndex] = &node;
       ++leafIndex;
@@ -1195,7 +1135,7 @@ void InfomapBase::restoreHardPartition()
   // Expand all children
   unsigned int numExpandedChildren = 0;
   unsigned int numExpandedNodes = 0;
-  for (InfoNode* node : leafNodes) {
+  for (auto* node : leafNodes) {
     ++numExpandedNodes;
     numExpandedChildren += node->expandChildren();
     node->replaceWithChildren();
@@ -1220,16 +1160,16 @@ void InfomapBase::initEnterExitFlow()
   }
   if (!isUndirectedClustering()) {
     for (auto* n : m_leafNodes) {
-      for (EdgeType* e : n->outEdges()) {
-        EdgeType& edge = *e;
+      for (auto* e : n->outEdges()) {
+        auto& edge = *e;
         edge.source.data.exitFlow += edge.data.flow;
         edge.target.data.enterFlow += edge.data.flow;
       }
     }
   } else {
     for (auto* n : m_leafNodes) {
-      for (EdgeType* e : n->outEdges()) {
-        EdgeType& edge = *e;
+      for (auto* e : n->outEdges()) {
+        auto& edge = *e;
         double halfFlow = edge.data.flow / 2;
         // double halfFlow = edge.data.flow;
         edge.source.data.exitFlow += halfFlow;
@@ -1260,20 +1200,19 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
 
   if (std::abs(root().data.flow - 1.0) > 1e-10) {
     Log() << "Warning, aggregated flow is not exactly 1.0, but " << std::setprecision(10) << root().data.flow << std::setprecision(9) << ".\n";
-    // root().data.flow = 1.0;
   }
 
   // Aggregate enter and exit flow between modules
   for (auto& leafNode : m_leafNodes) {
     auto& leafNodeSource = *leafNode;
-    for (EdgeType* e : leafNodeSource.outEdges()) {
+    for (auto* e : leafNodeSource.outEdges()) {
       auto& edge = *e;
       auto& leafNodeTarget = edge.target;
       double linkFlow = edge.data.flow;
       double halfFlow = linkFlow / 2;
 
-      InfoNode* node1 = leafNodeSource.parent;
-      InfoNode* node2 = leafNodeTarget.parent;
+      auto* node1 = leafNodeSource.parent;
+      auto* node2 = leafNodeTarget.parent;
 
       if (node1 == node2)
         continue;
@@ -1329,12 +1268,6 @@ double InfomapBase::calcCodelengthOnTree(bool includeRoot)
   return totalCodelength;
 }
 
-// void preClusterMultilayerNetwork()
-// {
-// 	Log() << "Calculate pre-clustering on multilayer networks (not implemented yet)...\n";
-
-// }
-
 
 // ===================================================
 // Run: Partition: *
@@ -1359,17 +1292,14 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
   Log(1, 2) << "Iteration " << (m_tuneIterationIndex + 1) << ", moving ";
   Log(3) << "\nIteration " << (m_tuneIterationIndex + 1) << ":\n";
   m_aggregationLevel = 0;
-  unsigned int numLevelsConsolidated = numLevels() - 1;
+  auto numLevelsConsolidated = numLevels() - 1;
   if (maxLevels == 0)
     maxLevels = std::numeric_limits<unsigned int>::max();
 
   std::string initialCodelength;
 
-  // Stopwatch timerAll(true);
-  // Stopwatch timer(false);
   // Reapply core algorithm on modular network, replacing modules with super modules
   while (numTopModules() > 1 && numLevelsConsolidated != maxLevels) {
-    // timer.start();
     if (haveModules())
       setActiveNetworkFromChildrenOfRoot();
     else
@@ -1381,25 +1311,22 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 
     Log(1, 2) << activeNetwork().size() << "*" << std::flush;
     Log(3) << "Level " << (numLevelsConsolidated + 1) << " (codelength: " << *this << "): Moving " << activeNetwork().size() << " nodes... " << std::flush;
-    // Log() << "{{ INIT TIME: " << timer.getElapsedTimeInMilliSec() << "ms }} ";
-    // timer.start();
+
     // Core loop, merging modules
-    unsigned int numOptimizationLoops = optimizeActiveNetwork();
+    auto numOptimizationLoops = optimizeActiveNetwork();
 
     Log(1, 2) << numOptimizationLoops << ", " << std::flush;
     Log(3) << "done! -> codelength " << *this << " in " << numActiveModules() << " modules." << std::endl;
-    // Log() << "{{ MOVE TIME: " << timer.getElapsedTimeInMilliSec() << "ms }} ";
 
     // If no improvement, revert codelength terms to the last consolidated state
     if (haveModules() && restoreConsolidatedOptimizationPointIfNoImprovement()) {
       Log(3) << "-> Restored to codelength " << *this << " in " << numTopModules() << " modules." << std::endl;
       break;
     }
-    // timer.start();
+
     // Consolidate modules
-    bool replaceExistingModules = haveModules();
+    auto replaceExistingModules = haveModules();
     consolidateModules(replaceExistingModules);
-    // Log() << "{{ CONSOLIDATE TIME: " << timer.getElapsedTimeInMilliSec() << "ms }} ";
     ++numLevelsConsolidated;
     ++m_aggregationLevel;
   }
@@ -1408,7 +1335,6 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
   calculateNumNonTrivialTopModules();
 
   Log(1, 2) << (m_isCoarseTune ? "modules" : "nodes") << "*loops from codelength " << initialCodelength << " to codelength " << *this << " in " << numTopModules() << " modules. (" << m_numNonTrivialTopModules << " non-trivial modules)" << std::endl;
-  // Log() << "{{ TIME: " << timerAll.getElapsedTimeInMilliSec() << "ms }}\n";
 }
 
 unsigned int InfomapBase::fineTune()
@@ -1426,7 +1352,7 @@ unsigned int InfomapBase::fineTune()
   }
 
   // Put leaf modules in existing modules
-  std::vector<unsigned int> modules(numLeafNodes());
+  auto modules = std::vector<unsigned int>(numLeafNodes());
   for (unsigned int i = 0; i < numLeafNodes(); ++i) {
     modules[i] = m_leafNodes[i]->parent->index;
   }
@@ -1435,7 +1361,7 @@ unsigned int InfomapBase::fineTune()
   Log(3) << " -> moved to codelength " << *this << " in " << numActiveModules() << " existing modules. Try tuning..." << std::endl;
 
   // Continue to optimize from there to tune leaf nodes
-  unsigned int numEffectiveLoops = optimizeActiveNetwork();
+  auto numEffectiveLoops = optimizeActiveNetwork();
   if (numEffectiveLoops == 0) {
     restoreConsolidatedOptimizationPointIfNoImprovement();
     Log(4) << "Fine-tune didn't improve solution, restoring last.\n";
@@ -1472,15 +1398,14 @@ unsigned int InfomapBase::coarseTune()
       moduleIndexOffset += 1;
       continue;
     } else {
-      InfomapBase& subInfomap = getSubInfomap(node)
-                                    .setTwoLevel(true)
-                                    .setTuneIterationLimit(1);
-      // subInfomap.preferModularSolution = true;//TODO: Benchmark more
+      auto& subInfomap = getSubInfomap(node)
+                             .setTwoLevel(true)
+                             .setTuneIterationLimit(1);
       subInfomap.initNetwork(node).run();
 
       auto originalLeafIt = node.begin_child();
       for (auto& subLeafPtr : subInfomap.leafNodes()) {
-        InfoNode& subLeaf = *subLeafPtr;
+        auto& subLeaf = *subLeafPtr;
         originalLeafIt->index = subLeaf.index + moduleIndexOffset;
         ++originalLeafIt;
       }
@@ -1495,7 +1420,7 @@ unsigned int InfomapBase::coarseTune()
 
   Log(4) << "Move leaf nodes to " << moduleIndexOffset << " sub-modules... " << std::endl;
   // Put leaf modules in the calculated sub-modules
-  std::vector<unsigned int> subModules(numLeafNodes());
+  auto subModules = std::vector<unsigned int>(numLeafNodes());
   for (unsigned int i = 0; i < numLeafNodes(); ++i) {
     subModules[i] = m_leafNodes[i]->index;
   }
@@ -1513,7 +1438,7 @@ unsigned int InfomapBase::coarseTune()
 
   Log(4) << "Move sub-modules to former modular structure... " << std::endl;
   // Put sub-modules in the former modular structure
-  std::vector<unsigned int> modules(numTopModules());
+  auto modules = std::vector<unsigned int>(numTopModules());
   unsigned int iModule = 0;
   for (auto& subModule : m_root) {
     modules[iModule++] = subModule.index;
@@ -1526,7 +1451,7 @@ unsigned int InfomapBase::coarseTune()
 
   Log(4) << "Tune sub-modules from codelength " << *this << " in " << numActiveModules() << " modules... " << std::endl;
   // Continue to optimize from there to tune sub-modules
-  unsigned int numEffectiveLoops = optimizeActiveNetwork();
+  auto numEffectiveLoops = optimizeActiveNetwork();
   Log(4) << "Tuned sub-modules in " << numEffectiveLoops << " effective loops to codelength " << *this << " in " << numActiveModules() << " modules." << std::endl;
   consolidateModules(true);
   Log(4) << "Consolidated tuned sub-modules to codelength " << *this << " in " << numTopModules() << " modules." << std::endl;
@@ -1561,8 +1486,8 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
     return 0;
 
   unsigned int numLevelsCreated = 0;
-  double oldIndexLength = getIndexCodelength();
-  double hierarchicalCodelength = getCodelength();
+  auto oldIndexLength = getIndexCodelength();
+  auto hierarchicalCodelength = getCodelength();
   double workingHierarchicalCodelength = hierarchicalCodelength;
 
   Log(1) << "\nFind hierarchical super modules iteratively..." << std::endl;
@@ -1582,11 +1507,11 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
 
     initPartition();
 
-    unsigned int numEffectiveLoops = optimizeActiveNetwork();
+    auto numEffectiveLoops = optimizeActiveNetwork();
 
-    double codelength = getCodelength();
-    double indexCodelength = getIndexCodelength();
-    unsigned int numSuperModules = numActiveModules();
+    auto codelength = getCodelength();
+    auto indexCodelength = getIndexCodelength();
+    auto numSuperModules = numActiveModules();
     bool trivialSolution = numSuperModules == 1 || numSuperModules == activeNetwork().size();
 
     bool acceptSolution = !trivialSolution && codelength < oldIndexLength - minimumCodelengthImprovement;
@@ -1625,8 +1550,6 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
   Log(1) << "Finding super modules done! Added " << numLevelsCreated << " levels with hierarchical codelength " << io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules." << std::endl;
 
   // Calculate and store hierarchical codelengths
-  // calcCodelengthOnTree();
-  // m_hierarchicalCodelength = hierarchicalCodelength;
   m_hierarchicalCodelength = calcCodelengthOnTree(true);
 
   return numLevelsCreated;
@@ -1638,8 +1561,8 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     return 0;
 
   unsigned int numLevelsCreated = 0;
-  double oldIndexLength = getIndexCodelength();
-  double hierarchicalCodelength = getCodelength();
+  auto oldIndexLength = getIndexCodelength();
+  auto hierarchicalCodelength = getCodelength();
   double workingHierarchicalCodelength = hierarchicalCodelength;
 
   if (!haveModules())
@@ -1651,13 +1574,12 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   // Add index codebooks as long as the code gets shorter
   do {
     Log(1) << "Iteration " << numLevelsCreated + 1 << ", finding super modules to " << numTopModules() << " modules... " << std::endl;
-    //		Log(1) << "\nTry indexing top modules with separate Infomap..." << std::endl;
     bool isSilent = false;
     if (isMainInfomap()) {
       isSilent = Log::isSilent();
       Log::setSilent(true);
     }
-    InfoNode tmp(m_root.data); // Temporary owner for the super Infomap instance
+    auto tmp = InfoNode(m_root.data); // Temporary owner for the super Infomap instance
     auto& superInfomap = getSuperInfomap(tmp)
                              .setTwoLevel(true);
     superInfomap.initNetwork(m_root, true); //.initSuperNetwork();
@@ -1665,7 +1587,6 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     if (isMainInfomap()) {
       Log::setSilent(isSilent);
     }
-    //		Log(1) << "============= Super infomap done with codelength " << superInfomap << "\n";
     double superCodelength = superInfomap.getCodelength();
     double superIndexCodelength = superInfomap.getIndexCodelength();
 
@@ -1691,9 +1612,9 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     Log(1) << "  -> Found " << numSuperModules << " super modules in with hierarchical codelength " << superIndexCodelength << " + " << (superCodelength - superIndexCodelength) << " + " << (workingHierarchicalCodelength - superCodelength) << " = " << workingHierarchicalCodelength << std::endl;
 
     // Merge current top modules to two-level solution found in the super Infomap instance.
-    std::vector<unsigned int> modules(numTopModules());
+    auto modules = std::vector<unsigned int>(numTopModules());
     unsigned int iModule = 0;
-    for (InfoNode* n : superInfomap.leafNodes()) {
+    for (auto* n : superInfomap.leafNodes()) {
       modules[iModule++] = n->index;
     }
 
@@ -1723,7 +1644,6 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   Log(1) << "Finding super modules done! Added " << numLevelsCreated << " levels with hierarchical codelength " << io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules." << std::endl;
 
   // Calculate and store hierarchical codelengths
-  // m_hierarchicalCodelength = hierarchicalCodelength;
   m_hierarchicalCodelength = calcCodelengthOnTree(true);
 
   return numLevelsCreated;
@@ -1748,9 +1668,9 @@ void InfomapBase::resetFlowOnModules()
       module.data.flow = 0.0;
   }
   // Aggregate flow from leaf nodes up in the tree
-  for (InfoNode* n : m_leafNodes) {
+  for (auto* n : m_leafNodes) {
     double leafNodeFlow = n->data.flow;
-    InfoNode* module = n->parent;
+    auto* module = n->parent;
     do {
       module->data.flow += leafNodeFlow;
       module = module->parent;
@@ -1775,7 +1695,7 @@ unsigned int InfomapBase::removeSubModules(bool recalculateCodelengthOnTree)
 {
   unsigned int numLevelsDeleted = 0;
   while (numLevels() > 2) {
-    for (InfoNode& module : m_root)
+    for (auto& module : m_root)
       module.replaceChildrenWithGrandChildren();
     ++numLevelsDeleted;
   }
@@ -1793,11 +1713,9 @@ unsigned int InfomapBase::recursivePartition()
   double indexCodelength = getIndexCodelength();
   double hierarchicalCodelength = m_hierarchicalCodelength;
 
-  // calcCodelengthOnTree(true);
-
   Log(0, 0) << "\nRecursive sub-structure compression: " << std::flush;
 
-  PartitionQueue partitionQueue;
+  auto partitionQueue = PartitionQueue();
   if (fastHierarchicalSolution > 0) {
     queueLeafModules(partitionQueue);
     Log(1) << "\nFind sub modules recursively from " << partitionQueue.size() << " sub modules on level " << numLevels() - 2;
@@ -1825,7 +1743,7 @@ unsigned int InfomapBase::recursivePartition()
       Log::setSilent(true);
 
     // Partition all modules in the queue and fill up the next level queue
-    PartitionQueue nextLevelQueue;
+    auto nextLevelQueue = PartitionQueue();
     processPartitionQueue(partitionQueue, nextLevelQueue);
 
     if (isMainInfomap())
@@ -1856,7 +1774,6 @@ unsigned int InfomapBase::recursivePartition()
 
 void InfomapBase::queueTopModules(PartitionQueue& partitionQueue)
 {
-  //	Log(3) << "Queue " << numTopModules() << " top modules..." << std::endl;
   // Add modules to partition queue
   unsigned int numNonTrivialModules = 0;
   partitionQueue.resize(numTopModules());
@@ -1873,7 +1790,6 @@ void InfomapBase::queueTopModules(PartitionQueue& partitionQueue)
       sumNonTrivialFlow += module.data.flow;
     }
     ++moduleIndex;
-    //		Log(3) << "  " << moduleIndex << ": Flow: " << module.data.flow << ", codelength: " << module.codelength << ", childDegree: " << module.childDegree() << std::endl;
   }
   partitionQueue.flow = sumFlow;
   partitionQueue.numNonTrivialModules = numNonTrivialModules;
@@ -1890,8 +1806,6 @@ void InfomapBase::queueLeafModules(PartitionQueue& partitionQueue)
     if (node.isLeafModule())
       ++numLeafModules;
   }
-
-  //	Log(3) << "Queue " << numLeafModules << " leaf modules..." << std::endl;
 
   // Add modules to partition queue
   partitionQueue.resize(numLeafModules);
@@ -1913,7 +1827,6 @@ void InfomapBase::queueLeafModules(PartitionQueue& partitionQueue)
       }
       maxDepth = std::max(maxDepth, it.depth());
       ++moduleIndex;
-      //			Log(3) << "  " << moduleIndex << ": Flow: " << module.data.flow << ", codelength: " << module.codelength << ", childDegree: " << module.childDegree() << std::endl;
     }
   }
   partitionQueue.flow = sumFlow;
@@ -1926,15 +1839,15 @@ void InfomapBase::queueLeafModules(PartitionQueue& partitionQueue)
 
 bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevelQueue)
 {
-  PartitionQueue::size_t numModules = queue.size();
-  std::vector<double> indexCodelengths(numModules, 0.0);
-  std::vector<double> moduleCodelengths(numModules, 0.0);
-  std::vector<double> leafCodelengths(numModules, 0.0);
-  std::vector<PartitionQueue> subQueues(numModules);
+  auto numModules = queue.size();
+  auto indexCodelengths = std::vector<double>(numModules, 0.0);
+  auto moduleCodelengths = std::vector<double>(numModules, 0.0);
+  auto leafCodelengths = std::vector<double>(numModules, 0.0);
+  auto subQueues = std::vector<PartitionQueue>(numModules);
 
 #pragma omp parallel for schedule(dynamic)
   for (PartitionQueue::size_t moduleIndex = 0; moduleIndex < numModules; ++moduleIndex) {
-    InfoNode& module = *queue[moduleIndex];
+    auto& module = *queue[moduleIndex];
 
     module.codelength = calcCodelength(module);
     // Delete former sub-structure if exists
@@ -1949,32 +1862,20 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
     }
 
     double oldModuleCodelength = module.codelength;
-    PartitionQueue& subQueue = subQueues[moduleIndex];
+    auto& subQueue = subQueues[moduleIndex];
     subQueue.level = queue.level + 1;
-
-    //		std::cout << "\n\n\nSubInfomap partition network with " << module.childDegree() << " nodes (module codelength: " <<
-    //				module.codelength << ")...:\n" << std::endl;
 
     auto& subInfomap = getSubInfomap(module)
                            .initNetwork(module);
     // Run two-level partition + find hierarchically super modules (skip recursion)
     subInfomap.setOnlySuperModules(true).run();
-    // subInfomap.setTwoLevel(true).run();
 
-    // double subCodelength = subInfomap.getCodelength(); // wrong codelength
     double subCodelength = subInfomap.getHierarchicalCodelength();
-    // double subCodelength = subInfomap.root().codelength;
-    // double subCodelength = subInfomap.calcCodelengthOnTree(true);
-    // double subIndexCodelength = subInfomap.getIndexCodelength();
     double subIndexCodelength = subInfomap.root().codelength;
     double subModuleCodelength = subCodelength - subIndexCodelength;
-    InfoNode& subRoot = *module.getInfomapRoot();
+    auto& subRoot = *module.getInfomapRoot();
     unsigned int numSubModules = subRoot.childDegree();
     bool trivialSubPartition = numSubModules == 1 || numSubModules == module.childDegree();
-    //		std::cout << "\nSubInfomap with " << module.childDegree() << " nodes (module codelength: " <<
-    //				module.codelength << ") partitioned to hierarchical codelength " <<
-    //				subInfomap.getHierarchicalCodelength() << " (" << subInfomap << ") in " <<
-    //				subInfomap.numTopModules() << " (" << numSubModules << ") top modules." << std::endl;
     bool improvedCodelength = subCodelength < oldModuleCodelength - minimumCodelengthImprovement;
 
     if (trivialSubPartition || !improvedCodelength) {
@@ -1994,7 +1895,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
   double sumLeafCodelength = 0.0;
   double sumIndexCodelength = 0.0;
   double sumModuleCodelengths = 0.0;
-  PartitionQueue::size_t nextLevelSize = 0;
+  auto nextLevelSize = 0;
   for (PartitionQueue::size_t moduleIndex = 0; moduleIndex < numModules; ++moduleIndex) {
     nextLevelSize += subQueues[moduleIndex].skip ? 0 : subQueues[moduleIndex].size();
     sumLeafCodelength += leafCodelengths[moduleIndex];
@@ -2009,9 +1910,9 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
   // Collect the sub-queues and build the next-level queue
   nextLevelQueue.level = queue.level + 1;
   nextLevelQueue.resize(nextLevelSize);
-  PartitionQueue::size_t nextLevelIndex = 0;
+  auto nextLevelIndex = 0;
   for (PartitionQueue::size_t moduleIndex = 0; moduleIndex < numModules; ++moduleIndex) {
-    PartitionQueue& subQueue = subQueues[moduleIndex];
+    auto& subQueue = subQueues[moduleIndex];
     if (!subQueue.skip) {
       for (PartitionQueue::size_t subIndex = 0; subIndex < subQueue.size(); ++subIndex) {
         nextLevelQueue[nextLevelIndex++] = subQueue[subIndex];
@@ -2041,28 +1942,8 @@ void InfomapBase::writeResult()
   if (noFileOutput)
     return;
 
-  // Log() << "\n\nNetwork flow:\n";
-  // for (auto& leafNode : m_leafNodes) {
-  //   auto& n = *leafNode;
-  //   Log() << n.stateId << " (" << n.data.flow << "):\n";
-  //   for (auto& edge : n.outEdges()) {
-  //     auto& target = edge->target;
-  //     Log() << " -> " << target.stateId << " (" << edge->data.flow << ")\n";
-  //   }
-  // }
-
-  // Log() << "\nPhysical tree:\n";
-  // for (InfomapIteratorPhysical it(&root()); !it.isEnd(); ++it) {
-  // 	Log() << io::stringify(it.path(), ":") << " moduleIndex: " << it.moduleIndex() << ", stateId: " << it->stateId <<
-  // 	", physId: " << it->physicalId << ", data: " << it->data << "\n";
-  // }
-  // Log() << std::string(10, '-') << "\n";
-
-  // writeTree(std::cout, true);
-  // writeTreeLinks(std::cout);
-
   if (printTree) {
-    std::string filename = outDirectory + outName + ".tree";
+    auto filename = outDirectory + outName + ".tree";
 
     if (!haveMemory()) {
       Log() << "Write tree to " << filename << "... ";
@@ -2073,7 +1954,7 @@ void InfomapBase::writeResult()
       Log() << "Write physical tree to " << filename << "... ";
       writeTree(filename);
       Log() << "done!\n";
-      std::string filenameStates = outDirectory + outName + "_states.tree";
+      auto filenameStates = outDirectory + outName + "_states.tree";
       Log() << "Write state tree to " << filenameStates << "... ";
       writeTree(filenameStates, true);
       Log() << "done!\n";
@@ -2082,7 +1963,7 @@ void InfomapBase::writeResult()
 
 
   if (printFlowTree) {
-    std::string filename = outDirectory + outName + ".ftree";
+    auto filename = outDirectory + outName + ".ftree";
 
     if (!haveMemory()) {
       Log() << "Write flow tree to " << filename << "... ";
@@ -2093,7 +1974,7 @@ void InfomapBase::writeResult()
       Log() << "Write physical flow tree to " << filename << "... ";
       writeFlowTree(filename, false);
       Log() << "done!\n";
-      std::string filenameStates = outDirectory + outName + "_states.ftree";
+      auto filenameStates = outDirectory + outName + "_states.ftree";
       Log() << "Write state flow tree to " << filenameStates << "... ";
       writeFlowTree(filenameStates, true);
       Log() << "done!\n";
@@ -2102,7 +1983,7 @@ void InfomapBase::writeResult()
 
 
   if (printNewick) {
-    std::string filename = outDirectory + outName + ".tre";
+    auto filename = outDirectory + outName + ".tre";
 
     if (!haveMemory()) {
       Log() << "Write Newick tree to " << filename << "... ";
@@ -2113,7 +1994,7 @@ void InfomapBase::writeResult()
       Log() << "Write physical Newick tree to " << filename << "... ";
       writeNewickTree(filename, false);
       Log() << "done!\n";
-      std::string filenameStates = outDirectory + outName + "_states.tre";
+      auto filenameStates = outDirectory + outName + "_states.tre";
       Log() << "Write state Newick tree to " << filenameStates << "... ";
       writeNewickTree(filenameStates, true);
       Log() << "done!\n";
@@ -2122,7 +2003,7 @@ void InfomapBase::writeResult()
 
 
   if (printClu) {
-    std::string filename = outDirectory + outName + ".clu";
+    auto filename = outDirectory + outName + ".clu";
     if (!haveMemory()) {
       Log() << "Write node modules to " << filename << "... ";
       writeClu(filename, false, cluLevel);
@@ -2132,7 +2013,7 @@ void InfomapBase::writeResult()
       Log() << "Write physical node modules to " << filename << "... ";
       writeClu(filename, false, cluLevel);
       Log() << "done!\n";
-      std::string filenameStates = outDirectory + outName + "_states.clu";
+      auto filenameStates = outDirectory + outName + "_states.clu";
       Log() << "Write state node modules to " << filenameStates << "... ";
       writeClu(filenameStates, true, cluLevel);
       Log() << "done!\n";
@@ -2154,7 +2035,7 @@ std::string InfomapBase::getOutputFileHeader()
 
 std::string InfomapBase::writeTree(std::string filename, bool states)
 {
-  std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.tree" : ".tree") : filename;
+  auto outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.tree" : ".tree") : filename;
 
   SafeOutFile outFile(outputFilename);
   writeTree(outFile, states);
@@ -2164,7 +2045,7 @@ std::string InfomapBase::writeTree(std::string filename, bool states)
 
 std::string InfomapBase::writeFlowTree(std::string filename, bool states)
 {
-  std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.ftree" : ".ftree") : filename;
+  auto outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.ftree" : ".ftree") : filename;
 
   SafeOutFile outFile(outputFilename);
   writeTree(outFile, states);
@@ -2175,7 +2056,7 @@ std::string InfomapBase::writeFlowTree(std::string filename, bool states)
 
 std::string InfomapBase::writeNewickTree(std::string filename, bool states)
 {
-  std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.tre" : ".tre") : filename;
+  auto outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.tre" : ".tre") : filename;
 
   SafeOutFile outFile(outputFilename);
   writeNewickTree(outFile, states);
@@ -2186,7 +2067,7 @@ std::string InfomapBase::writeNewickTree(std::string filename, bool states)
 std::string InfomapBase::writeClu(std::string filename, bool states, int moduleIndexLevel)
 {
   // unsigned int maxModuleLevel = maxTreeDepth();
-  std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.clu" : ".clu") : filename;
+  auto outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.clu" : ".clu") : filename;
   SafeOutFile outFile(outputFilename);
 
   outFile << std::setprecision(9);
@@ -2208,7 +2089,7 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
 
   if (haveMemory() && !states) {
     for (auto it(iterTreePhysical(moduleIndexLevel)); !it.isEnd(); ++it) {
-      InfoNode& node = *it;
+      auto& node = *it;
       if (node.isLeaf()) {
         if (shouldHideBipartiteNodes && node.physicalId >= bipartiteStartId) {
           continue;
@@ -2219,7 +2100,7 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
     }
   } else {
     for (auto it(iterTree(moduleIndexLevel)); !it.isEnd(); ++it) {
-      InfoNode& node = *it;
+      auto& node = *it;
       if (node.isLeaf()) {
         if (shouldHideBipartiteNodes && node.physicalId >= bipartiteStartId) {
           continue;
@@ -2270,7 +2151,7 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
   // TODO: Make a general iterator where merging physical nodes depend on a parameter rather than type to be able to DRY here
   if (haveMemory() && !states) {
     for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
-      InfoNode& node = *it;
+      auto& node = *it;
       if (node.isLeaf()) {
         if (shouldHideBipartiteNodes && node.physicalId >= bipartiteStartId) {
           continue;
@@ -2283,7 +2164,7 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
     }
   } else {
     for (auto it(iterTree()); !it.isEnd(); ++it) {
-      InfoNode& node = *it;
+      auto& node = *it;
       if (node.isLeaf()) {
         if (shouldHideBipartiteNodes && node.physicalId >= bipartiteStartId) {
           continue;
@@ -2319,8 +2200,8 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
   bool mergePhysicalNodes = haveMemory() && !states;
 
   // Map state id to parent in infomap tree iterator
-  std::map<unsigned int, InfoNode*> stateIdToParent;
-  std::map<unsigned int, unsigned int> stateIdToChildIndex;
+  auto stateIdToParent = std::map<unsigned int, InfoNode*>();
+  auto stateIdToChildIndex = std::map<unsigned int, unsigned int>();
 
   if (mergePhysicalNodes) {
     for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
@@ -2353,13 +2234,13 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
 
   using Link = std::pair<unsigned int, unsigned int>;
   using LinkMap = std::map<Link, double>;
-  std::map<std::string, LinkMap> moduleLinks;
+  auto moduleLinks = std::map<std::string, LinkMap>();
 
   for (auto& leaf : m_leafNodes) {
     for (auto& link : leaf->outEdges()) {
       double flow = link->data.flow;
-      InfoNode* sourceParent = stateIdToParent[link->source.stateId];
-      InfoNode* targetParent = stateIdToParent[link->target.stateId];
+      auto* sourceParent = stateIdToParent[link->source.stateId];
+      auto* targetParent = stateIdToParent[link->target.stateId];
 
       auto sourceDepth = sourceParent->calculatePath().size() + 1;
       auto targetDepth = targetParent->calculatePath().size() + 1;
@@ -2439,7 +2320,7 @@ void InfomapBase::writeNewickTree(std::ostream& outStream, bool states)
 
   auto isRoot = true;
   unsigned int lastDepth = 0;
-  std::vector<double> flowStack;
+  auto flowStack = std::vector<double>();
 
   auto writeNewickNode = [&](std::ostream& o, const InfoNode& node, unsigned int depth) {
     if (depth > lastDepth || isRoot) {
@@ -2486,7 +2367,7 @@ void InfomapBase::writeNewickTree(std::ostream& outStream, bool states)
 
 unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
 {
-  std::vector<PerLevelStat> perLevelStats;
+  auto perLevelStats = std::vector<PerLevelStat>();
   aggregatePerLevelCodelength(perLevelStats);
 
   unsigned int numLevels = perLevelStats.size();
@@ -2514,7 +2395,6 @@ unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
   for (unsigned int i = 0; i < numLevels; ++i)
     sumNumLeafNodes += perLevelStats[i].numLeafNodes;
   out << " (sum: " << sumNumLeafNodes << ")" << std::endl;
-
 
   out << "Per level average child degree:      [";
   double childDegree = perLevelStats[0].numNodes();
