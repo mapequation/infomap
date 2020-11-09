@@ -54,22 +54,21 @@ const std::unordered_map<std::string, char> ArgType::toShort = {
 };
 
 ProgramInterface::ProgramInterface(std::string name, std::string shortDescription, std::string version)
-    : m_programName(name),
-      m_shortProgramDescription(shortDescription),
-      m_programVersion(version)
+    : m_programName(std::move(name)),
+      m_shortProgramDescription(std::move(shortDescription)),
+      m_programVersion(std::move(version))
 {
   addIncrementalOptionArgument(m_displayHelp, 'h', "help", "Prints this help message. Use -hh to show advanced options.", "About");
   addOptionArgument(m_displayVersion, 'V', "version", "Display program version information.", "About");
-  // addOptionArgument(m_negateNextOption, 'n', "negate-next", "Set the next (no-argument) option to false.", true);
   addOptionArgument(m_printJsonParameters, "print-json-parameters", "Print Infomap parameters in JSON.", "About").setHidden(true);
 }
 
 ProgramInterface::~ProgramInterface()
 {
-  for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
-    delete m_nonOptionArguments[i];
-  for (unsigned int i = 0; i < m_optionArguments.size(); ++i)
-    delete m_optionArguments[i];
+  for (auto& arg : m_nonOptionArguments)
+    delete arg;
+  for (auto& arg : m_optionArguments)
+    delete arg;
 }
 
 void ProgramInterface::exitWithUsage(bool showAdvanced)
@@ -78,19 +77,19 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
   Log() << "        " << m_programName << " - " << m_shortProgramDescription << std::endl;
   Log() << "\nUsage:" << std::endl;
   Log() << "        " << m_executableName;
-  for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
-    if (showAdvanced || !m_nonOptionArguments[i]->isAdvanced)
-      Log() << " " << m_nonOptionArguments[i]->variableName;
+  for (auto& nonOptionArgument : m_nonOptionArguments)
+    if (showAdvanced || !nonOptionArgument->isAdvanced)
+      Log() << " " << nonOptionArgument->variableName;
   if (!m_optionArguments.empty())
     Log() << " [options]";
   Log() << std::endl;
 
-  if (m_programDescription != "")
+  if (!m_programDescription.empty())
     Log() << "\nDescription:\n        " << m_programDescription << std::endl;
 
-  for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
-    if (showAdvanced || !m_nonOptionArguments[i]->isAdvanced)
-      Log() << "\n[" << m_nonOptionArguments[i]->variableName << "]\n    " << m_nonOptionArguments[i]->description << std::endl;
+  for (auto& nonOptionArgument : m_nonOptionArguments)
+    if (showAdvanced || !nonOptionArgument->isAdvanced)
+      Log() << "\n[" << nonOptionArgument->variableName << "]\n    " << nonOptionArgument->description << std::endl;
 
   if (!m_optionArguments.empty())
     Log() << "\n[options]" << std::endl;
@@ -99,7 +98,7 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
   std::deque<std::string> optionStrings(m_optionArguments.size());
   std::string::size_type maxLength = 0;
   for (unsigned int i = 0; i < m_optionArguments.size(); ++i) {
-    Option& opt = *m_optionArguments[i];
+    auto& opt = *m_optionArguments[i];
     bool haveShort = opt.shortName != '\0';
     std::string optArgShort = opt.requireArgument ? (io::Str() << "<" << ArgType::toShort.at(opt.argumentName) << ">") : opt.incrementalArgument ? "[+]" : std::string(3, ' ');
     std::string optArgLong = opt.requireArgument ? (io::Str() << "<" << opt.argumentName << ">") : opt.incrementalArgument ? "[+]" : std::string(3, ' ');
@@ -115,16 +114,16 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
       groups.push_back(group);
   }
   if (m_groups.empty())
-    groups.push_back("All");
+    groups.emplace_back("All");
 
-  for (auto group : groups) {
+  for (const auto& group : groups) {
     if (group != "All") {
       Log() << "\n"
             << group << "\n";
       Log() << std::string(group.length(), '-') << "\n";
     }
     for (unsigned int i = 0; i < m_optionArguments.size(); ++i) {
-      Option& opt = *m_optionArguments[i];
+      auto& opt = *m_optionArguments[i];
       if (group == "All" || opt.group == group) {
         std::string::size_type numSpaces = maxLength + 3 - optionStrings[i].length();
         if (showAdvanced || !opt.isAdvanced) {
@@ -160,9 +159,9 @@ void ProgramInterface::exitWithError(std::string message)
   Log() << std::endl;
   std::cerr << message << std::endl;
   Log() << "Usage: " << m_executableName;
-  for (unsigned int i = 0; i < m_nonOptionArguments.size(); ++i)
-    if (!m_nonOptionArguments[i]->isAdvanced)
-      Log() << " " << m_nonOptionArguments[i]->variableName;
+  for (auto& nonOptionArgument : m_nonOptionArguments)
+    if (!nonOptionArgument->isAdvanced)
+      Log() << " " << nonOptionArgument->variableName;
   if (!m_optionArguments.empty())
     Log() << " [options]";
   Log() << ". Run with option '-h' for more information." << std::endl;
@@ -174,7 +173,7 @@ void ProgramInterface::exitWithJsonParameters()
   Log() << "{\n  \"parameters\": [\n";
 
   for (unsigned int i = 0; i < m_optionArguments.size(); ++i) {
-    Option& opt = *m_optionArguments[i];
+    auto& opt = *m_optionArguments[i];
     if (opt.hidden)
       continue;
     Log() << "    " << toJson(opt);
@@ -189,32 +188,32 @@ void ProgramInterface::exitWithJsonParameters()
   std::exit(0);
 }
 
-std::string ProgramInterface::toJson(std::string key, std::string value) const
+std::string ProgramInterface::toJson(const std::string& key, const std::string& value)
 {
   return io::Str() << "\"" << key << "\": \"" << value << "\"";
 }
 
-std::string ProgramInterface::toJson(std::string key, int value) const
+std::string ProgramInterface::toJson(const std::string& key, int value)
 {
   return io::Str() << "\"" << key << "\": " << value;
 }
 
-std::string ProgramInterface::toJson(std::string key, unsigned int value) const
+std::string ProgramInterface::toJson(const std::string& key, unsigned int value)
 {
   return io::Str() << "\"" << key << "\": " << value;
 }
 
-std::string ProgramInterface::toJson(std::string key, double value) const
+std::string ProgramInterface::toJson(const std::string& key, double value)
 {
   return io::Str() << "\"" << key << "\": " << value;
 }
 
-std::string ProgramInterface::toJson(std::string key, bool value) const
+std::string ProgramInterface::toJson(const std::string& key, bool value)
 {
   return io::Str() << "\"" << key << "\": " << (value ? "true" : "false");
 }
 
-std::string ProgramInterface::toJson(const Option& opt) const
+std::string ProgramInterface::toJson(const Option& opt)
 {
   return io::Str() << "{ " << toJson("long", io::Str() << "--" << opt.longName) << ", " << toJson("short", opt.shortName != '\0' ? std::string(io::Str() << "-" << opt.shortName) : "") << ", " << toJson("description", opt.description) << ", " << toJson("group", opt.group) << ", " << toJson("required", opt.requireArgument) << ", " << toJson("advanced", opt.isAdvanced) << ", " << toJson("incremental", opt.incrementalArgument) << ", " << (opt.requireArgument ? (io::Str() << toJson("longType", opt.argumentName) << ", " << toJson("shortType", std::string(1, ArgType::toShort.at(opt.argumentName))) << ", " << toJson("default", opt.printValue())) : toJson("default", false)) << " }";
 }
@@ -225,16 +224,16 @@ void ProgramInterface::parseArgs(const std::string& args)
   // Map the options on short and long name, and check for duplication
   std::map<char, Option*> shortOptionMap;
   std::map<std::string, Option*> longOptionMap;
-  for (unsigned int i = 0; i < m_optionArguments.size(); ++i) {
-    Option& opt = *m_optionArguments[i];
+  for (auto & optionArgument : m_optionArguments) {
+    auto& opt = *optionArgument;
     if (opt.shortName != '\0') {
-      std::map<char, Option*>::iterator it = shortOptionMap.find(opt.shortName);
+      auto it = shortOptionMap.find(opt.shortName);
       if (it != shortOptionMap.end())
         throw OptionConflictError(io::Str() << "Duplication of option '" << opt.shortName << "'");
       shortOptionMap.insert(std::make_pair(opt.shortName, &opt));
     }
 
-    std::map<std::string, Option*>::iterator it = longOptionMap.find(opt.longName);
+    auto it = longOptionMap.find(opt.longName);
     if (it != longOptionMap.end())
       throw OptionConflictError(io::Str() << "Duplication of option \"" << opt.longName << "\"");
     longOptionMap.insert(std::make_pair(opt.longName, &opt));
@@ -270,7 +269,7 @@ void ProgramInterface::parseArgs(const std::string& args)
           if (arg.length() < 3)
             throw InputSyntaxError("Illegal argument '--'");
           std::string longOpt = arg.substr(2);
-          std::map<std::string, Option*>::iterator it = longOptionMap.find(longOpt);
+          auto it = longOptionMap.find(longOpt);
           if (it == longOptionMap.end()) {
             // Unrecognized option, check if it negates a recognised option with the '--no-' prefix
             if (longOpt.compare(0, 3, "no-") == 0 && longOptionMap.find(std::string(longOpt, 3)) != longOptionMap.end()) {
@@ -281,7 +280,7 @@ void ProgramInterface::parseArgs(const std::string& args)
               throw InputDomainError(io::Str() << "Unrecognized option: '--" << longOpt << "'");
             }
           }
-          Option& opt = *it->second;
+          auto& opt = *it->second;
           if (!opt.requireArgument || opt.incrementalArgument)
             opt.set(flagValue);
           else {
@@ -298,10 +297,10 @@ void ProgramInterface::parseArgs(const std::string& args)
             m_negateNextOption = false;
             char o = arg[j];
             unsigned int numCharsLeft = arg.length() - j - 1;
-            std::map<char, Option*>::iterator it = shortOptionMap.find(o);
+            auto it = shortOptionMap.find(o);
             if (it == shortOptionMap.end())
               throw InputDomainError(io::Str() << "Unrecognized option: '-" << o << "'");
-            Option& opt = *it->second;
+            auto& opt = *it->second;
             if (!opt.requireArgument || opt.incrementalArgument)
               opt.set(flagValue);
             else {
@@ -354,9 +353,9 @@ std::vector<ParsedOption> ProgramInterface::getUsedOptionArguments()
   std::vector<ParsedOption> opts;
   unsigned int numFlags = m_optionArguments.size();
   for (unsigned int i = 0; i < numFlags; ++i) {
-    Option& opt = *m_optionArguments[i];
+    auto& opt = *m_optionArguments[i];
     if (opt.used && opt.longName != "negate-next")
-      opts.push_back(ParsedOption(opt));
+      opts.emplace_back(opt);
   }
   return opts;
 }
