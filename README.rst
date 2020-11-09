@@ -1,3 +1,5 @@
+.. image:: https://github.com/mapequation/infomap/workflows/C++%20CI/badge.svg
+
 Infomap
 =======
 
