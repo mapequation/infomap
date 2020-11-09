@@ -28,7 +28,7 @@
 #ifndef PROGRAMINTERFACE_H_
 #define PROGRAMINTERFACE_H_
 
-// #include <getopt.h>
+#include <utility>
 #include <vector>
 #include <deque>
 #include <string>
@@ -51,17 +51,16 @@ struct ArgType {
   static const std::unordered_map<std::string, char> toShort;
 };
 
-
 struct Option {
   Option(char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced, bool requireArgument = false, std::string argName = "")
       : shortName(shortName),
-        longName(longName),
-        description(desc),
-        group(group),
+        longName(std::move(longName)),
+        description(std::move(desc)),
+        group(std::move(group)),
         isAdvanced(isAdvanced),
         requireArgument(requireArgument),
         incrementalArgument(false),
-        argumentName(argName) {}
+        argumentName(std::move(argName)) {}
 
   virtual ~Option() = default;
 
@@ -112,18 +111,18 @@ struct Option {
 
 struct IncrementalOption : Option {
   IncrementalOption(unsigned int& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced)
-      : Option(shortName, longName, desc, group, isAdvanced, false), target(target)
+      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, false), target(target)
   {
     incrementalArgument = true;
   }
 
-  virtual bool parse(std::string const& value)
+  bool parse(std::string const& value) override
   {
     Option::parse(value);
     return ++target;
   }
 
-  virtual void set(bool value)
+  void set(bool value) override
   {
     Option::set(value);
     if (value) {
@@ -133,9 +132,8 @@ struct IncrementalOption : Option {
     }
   }
 
-  virtual std::ostream& printValue(std::ostream& out) const { return out << target; }
-  virtual std::string printValue() const { return io::Str() << target; }
-  virtual std::string printNumericValue() const { return ""; }
+  std::ostream& printValue(std::ostream& out) const override { return out << target; }
+  std::string printValue() const override { return io::Str() << target; }
 
   unsigned int& target;
 };
@@ -143,17 +141,17 @@ struct IncrementalOption : Option {
 template <typename T>
 struct ArgumentOption : Option {
   ArgumentOption(T& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced, std::string argName)
-      : Option(shortName, longName, desc, group, isAdvanced, true, argName), target(target) {}
+      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, true, std::move(argName)), target(target) {}
 
-  virtual bool parse(std::string const& value)
+  bool parse(std::string const& value) override
   {
     Option::parse(value);
     return io::stringToValue(value, target);
   }
 
-  virtual std::string printValue() const { return io::Str() << target; }
-  virtual std::ostream& printValue(std::ostream& out) const { return out << target; }
-  virtual std::string printNumericValue() const { return TypeInfo<T>::isNumeric() ? printValue() : ""; }
+  std::string printValue() const override { return io::Str() << target; }
+  std::ostream& printValue(std::ostream& out) const override { return out << target; }
+  std::string printNumericValue() const override { return TypeInfo<T>::isNumeric() ? printValue() : ""; }
 
   T& target;
 };
@@ -161,29 +159,29 @@ struct ArgumentOption : Option {
 template <>
 struct ArgumentOption<bool> : Option {
   ArgumentOption(bool& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced)
-      : Option(shortName, longName, desc, group, isAdvanced, false), target(target) {}
+      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, false), target(target) {}
 
-  virtual bool parse(std::string const& value)
+  bool parse(std::string const& value) override
   {
     Option::parse(value);
     return target = true;
   }
 
-  virtual void set(bool value)
+  void set(bool value) override
   {
     Option::set(value);
     target = value;
   }
 
-  virtual std::ostream& printValue(std::ostream& out) const { return out << target; }
-  virtual std::string printValue() const { return io::Str() << target; }
-  virtual std::string printNumericValue() const { return ""; }
+  std::ostream& printValue(std::ostream& out) const override { return out << target; }
+  std::string printValue() const override { return io::Str() << target; }
+  std::string printNumericValue() const override { return ""; }
 
   bool& target;
 };
 
 struct ParsedOption {
-  ParsedOption(const Option& opt)
+  explicit ParsedOption(const Option& opt)
       : shortName(opt.shortName),
         longName(opt.longName),
         description(opt.description),
@@ -228,18 +226,16 @@ struct TargetBase {
   std::string variableName;
   std::string description;
   std::string group;
-  bool isOptionalVector;
+  bool isOptionalVector = false;
   bool isAdvanced;
 };
 
 template <typename T>
 struct Target : TargetBase {
   Target(T& target, std::string variableName, std::string desc, std::string group, bool isAdvanced)
-      : TargetBase(variableName, desc, group, isAdvanced), target(target) {}
+      : TargetBase(std::move(variableName), std::move(desc), std::move(group), isAdvanced), target(target) {}
 
-  virtual ~Target() = default;
-
-  virtual bool parse(std::string const& value)
+  bool parse(std::string const& value) override
   {
     return io::stringToValue(value, target);
   }
@@ -250,14 +246,12 @@ struct Target : TargetBase {
 template <typename T>
 struct OptionalTargets : TargetBase {
   OptionalTargets(std::vector<T>& target, std::string variableName, std::string desc, std::string group, bool isAdvanced)
-      : TargetBase(variableName, desc, group, isAdvanced), targets(target)
+      : TargetBase(std::move(variableName), std::move(desc), std::move(group), isAdvanced), targets(target)
   {
     isOptionalVector = true;
   }
 
-  virtual ~OptionalTargets() = default;
-
-  virtual bool parse(std::string const& value)
+  bool parse(std::string const& value) override
   {
     T target;
     bool ok = io::stringToValue(value, target);
@@ -276,19 +270,18 @@ public:
 
   void addProgramDescription(std::string desc)
   {
-    m_programDescription = desc;
+    m_programDescription = std::move(desc);
   }
 
   void setGroups(std::vector<std::string> groups)
   {
-    m_groups = groups;
+    m_groups = std::move(groups);
   }
 
   template <typename T>
   void addNonOptionArgument(T& target, std::string variableName, std::string desc, std::string group, bool isAdvanced = false)
   {
-    TargetBase* t = new Target<T>(target, variableName, desc, group, isAdvanced);
-    m_nonOptionArguments.push_back(t);
+    m_nonOptionArguments.push_back(new Target<T>(target, std::move(variableName), std::move(desc), std::move(group), isAdvanced));
   }
 
   template <typename T>
@@ -297,27 +290,26 @@ public:
     if (m_numOptionalNonOptionArguments != 0)
       throw OptionConflictError("Can't have two non-option vector arguments");
     ++m_numOptionalNonOptionArguments;
-    TargetBase* t = new OptionalTargets<T>(target, variableName, desc, group, isAdvanced);
-    m_nonOptionArguments.push_back(t);
+    m_nonOptionArguments.push_back(new OptionalTargets<T>(target, std::move(variableName), std::move(desc), std::move(group), isAdvanced));
   }
 
   Option& addOptionArgument(char shortName, std::string longName, std::string description, std::string group, bool isAdvanced = false)
   {
-    Option* o = new Option(shortName, longName, description, group, isAdvanced);
+    auto* o = new Option(shortName, std::move(longName), std::move(description), std::move(group), isAdvanced);
     m_optionArguments.push_back(o);
     return *o;
   }
 
   Option& addIncrementalOptionArgument(unsigned int& target, char shortName, std::string longName, std::string description, std::string group, bool isAdvanced = false)
   {
-    Option* o = new IncrementalOption(target, shortName, longName, description, group, isAdvanced);
+    auto* o = new IncrementalOption(target, shortName, std::move(longName), std::move(description), std::move(group), isAdvanced);
     m_optionArguments.push_back(o);
     return *o;
   }
 
   Option& addOptionArgument(bool& target, char shortName, std::string longName, std::string description, std::string group, bool isAdvanced = false)
   {
-    Option* o = new ArgumentOption<bool>(target, shortName, longName, description, group, isAdvanced);
+    auto* o = new ArgumentOption<bool>(target, shortName, std::move(longName), std::move(description), std::move(group), isAdvanced);
     m_optionArguments.push_back(o);
     return *o;
   }
@@ -325,7 +317,7 @@ public:
   // Without shortName
   Option& addOptionArgument(bool& target, std::string longName, std::string description, std::string group, bool isAdvanced = false)
   {
-    Option* o = new ArgumentOption<bool>(target, '\0', longName, description, group, isAdvanced);
+    auto* o = new ArgumentOption<bool>(target, '\0', std::move(longName), std::move(description), std::move(group), isAdvanced);
     m_optionArguments.push_back(o);
     return *o;
   }
@@ -333,7 +325,7 @@ public:
   template <typename T>
   Option& addOptionArgument(T& target, char shortName, std::string longName, std::string description, std::string argumentName, std::string group, bool isAdvanced = false)
   {
-    Option* o = new ArgumentOption<T>(target, shortName, longName, description, group, isAdvanced, argumentName);
+    auto* o = new ArgumentOption<T>(target, shortName, std::move(longName), std::move(description), std::move(group), isAdvanced, std::move(argumentName));
     m_optionArguments.push_back(o);
     return *o;
   }
@@ -342,7 +334,7 @@ public:
   template <typename T>
   Option& addOptionArgument(T& target, std::string longName, std::string description, std::string argumentName, std::string group, bool isAdvanced = false)
   {
-    Option* o = new ArgumentOption<T>(target, '\0', longName, description, group, isAdvanced, argumentName);
+    auto* o = new ArgumentOption<T>(target, '\0', std::move(longName), std::move(description), std::move(group), isAdvanced, std::move(argumentName));
     m_optionArguments.push_back(o);
     return *o;
   }
@@ -359,20 +351,19 @@ private:
   void exitWithError(std::string message);
   void exitWithJsonParameters();
 
-  std::string toJson(std::string key, std::string value) const;
-  std::string toJson(std::string key, int value) const;
-  std::string toJson(std::string key, unsigned int value) const;
-  std::string toJson(std::string key, double value) const;
-  std::string toJson(std::string key, bool value) const;
-  std::string toJson(const Option& opt) const;
+  static std::string toJson(const std::string& key, const std::string& value) ;
+  static std::string toJson(const std::string& key, int value) ;
+  static std::string toJson(const std::string& key, unsigned int value) ;
+  static std::string toJson(const std::string& key, double value) ;
+  static std::string toJson(const std::string& key, bool value) ;
+  static std::string toJson(const Option& opt) ;
 
-  // std::vector<option> m_longOptions; // struct option defined in <getopt.h>
   std::deque<Option*> m_optionArguments;
   std::deque<TargetBase*> m_nonOptionArguments;
   std::string m_programName = "Infomap";
-  std::string m_shortProgramDescription = "";
-  std::string m_programVersion = "";
-  std::string m_programDescription = "";
+  std::string m_shortProgramDescription;
+  std::string m_programVersion;
+  std::string m_programDescription;
   std::vector<std::string> m_groups;
   std::string m_executableName = "Infomap";
   unsigned int m_displayHelp = 0;
