@@ -32,8 +32,6 @@
 
 namespace infomap {
 
-using std::string;
-
 /**
  * Filename class to simplify handling of parts of a filename.
  * If a path is path/to/file.ext, the member methods of this class give these parts:
@@ -45,30 +43,24 @@ using std::string;
  */
 class FileURI {
 public:
-  FileURI(); // Good to be able to have a Filename member in a class without require initialization in initialization list
-  explicit FileURI(const char* filename, bool requireExtension = false);
-  explicit FileURI(const string& filename, bool requireExtension = false);
-  FileURI(const FileURI& other);
-  FileURI& operator=(const FileURI& other);
+  FileURI() = default; // Allow FileURI member without initialization
 
-  const string& getFilename() const
-  {
-    return m_filename;
-  }
+  explicit FileURI(std::string filename, bool requireExtension = false);
+
+  const std::string& getFilename() const { return m_filename; }
 
   /**
    * Includes last '/' if non-empty.
    */
-  const string& getDirectory() const { return m_directory; }
+  const std::string& getDirectory() const { return m_directory; }
 
-  const string& getName() const { return m_name; }
+  const std::string& getName() const { return m_name; }
 
-  const string& getExtension() const { return m_extension; }
+  const std::string& getExtension() const { return m_extension; }
 
-  std::string getParts()
+  std::string getParts() const
   {
-    std::string out("['" + getDirectory() + "' + '" + getName() + "' + '" + getExtension() + "']");
-    return out;
+    return "['" + getDirectory() + "' + '" + getName() + "' + '" + getExtension() + "']";
   }
 
   friend std::ostream& operator<<(std::ostream& out, const FileURI& file)
@@ -77,15 +69,12 @@ public:
   }
 
 private:
-  void analyzeFilename();
-  string getErrorMessage();
+  std::string m_filename;
+  bool m_requireExtension = false;
 
-  string m_filename;
-  bool m_requireExtension;
-
-  string m_directory;
-  string m_name;
-  string m_extension;
+  std::string m_directory;
+  std::string m_name;
+  std::string m_extension;
 };
 
 } // namespace infomap
