@@ -6,7 +6,6 @@
 #define _META_COLLECTION_H
 
 #include <ostream>
-// #include <unordered_map>
 #include <map>
 #include "infomath.h"
 
@@ -85,7 +84,7 @@ protected:
   MetaToFlowCount m_metaToFlowCount;
 
 public:
-  unsigned int size() const { return m_metaToFlowCount.size(); }
+  MetaToFlowCount::size_type size() const { return m_metaToFlowCount.size(); }
 
   bool empty() const { return m_metaToFlowCount.empty(); }
 

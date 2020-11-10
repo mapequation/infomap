@@ -749,7 +749,7 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
     auto numNodesInNewNetwork = numTopModules();
     m_leafNodes.resize(numNodesInNewNetwork);
     unsigned int nodeIndex = 0;
-    unsigned int numLinksInNewNetwork = 0;
+    auto numLinksInNewNetwork = 0;
     for (auto& node : m_root) {
       m_leafNodes[nodeIndex] = &node;
       // Collapse children

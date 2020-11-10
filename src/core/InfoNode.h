@@ -97,17 +97,20 @@ public:
   double codelength = 0.0; //TODO: Better design for hierarchical stuff!?
   bool dirty = false;
 
-  std::vector<PhysData> physicalNodes;
+  using PhysicalNodes = std::vector<PhysData>;
+  PhysicalNodes physicalNodes;
   MetaCollection metaCollection; // For modules
-  std::vector<unsigned int> stateNodes; // For physically aggregated nodes
+  using StateNodes = std::vector<unsigned int>;
+  StateNodes stateNodes; // For physically aggregated nodes
 
+  using Edges = std::vector<EdgeType*>;
 protected:
   unsigned int m_childDegree = 0;
   bool m_childrenChanged = false;
   unsigned int m_numLeafMembers = 0;
 
-  std::vector<EdgeType*> m_outEdges;
-  std::vector<EdgeType*> m_inEdges;
+  Edges m_outEdges;
+  Edges m_inEdges;
 
   InfomapBase* m_infomap = nullptr;
 
@@ -214,7 +217,7 @@ public:
   /**
    * Number of physical nodes in memory nodes
    */
-  unsigned int numPhysicalNodes() const { return physicalNodes.size(); }
+  PhysicalNodes::size_type numPhysicalNodes() const { return physicalNodes.size(); }
 
   // ---------------------------- Tree iterators ----------------------------
 
@@ -360,17 +363,17 @@ public:
     return m_outEdges.empty();
   }
 
-  unsigned int outDegree() const
+  Edges::size_type outDegree() const
   {
     return m_outEdges.size();
   }
 
-  unsigned int inDegree() const
+  Edges::size_type inDegree() const
   {
     return m_inEdges.size();
   }
 
-  unsigned int degree() const
+  Edges::size_type degree() const
   {
     return outDegree() + inDegree();
   }
