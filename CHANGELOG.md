@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/mapequation/infomap/compare/v1.2.0...v1.2.1) (2020-11-10)
+
+
+### Bug Fixes
+
+* --clu-level was not respected in command line usage ([b82a0b1](https://github.com/mapequation/infomap/commit/b82a0b1a0582583b4552887650b0a6b92aba14fc)), closes [#153](https://github.com/mapequation/infomap/issues/153)
+* Allow ftree cluster data ([bfe3601](https://github.com/mapequation/infomap/commit/bfe3601a50675cf353379efdb940b184773fb2b2))
+* Apply weight-threshold also to multilayer nodes ([db2d781](https://github.com/mapequation/infomap/commit/db2d781c5257932ad5a4e5fe1976498b01985a39))
+* Remove ClusterReader/BipartiteClusterReader ([8e08309](https://github.com/mapequation/infomap/commit/8e0830915f47bd4460a1b1b4f3794d60919a429a)), closes [#162](https://github.com/mapequation/infomap/issues/162)
+* **windows:** Include algorithm header ([4f9ef88](https://github.com/mapequation/infomap/commit/4f9ef88409012ff00457291fc0ad8d0f33063c59)), closes [#150](https://github.com/mapequation/infomap/issues/150)
+
 ## [1.2.0](https://github.com/mapequation/infomap/compare/v1.1.4...v1.2.0) (2020-09-30)
 
 
