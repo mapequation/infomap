@@ -42,7 +42,7 @@ public:
   // Init
   // ===================================================
 
-  void init(const Config& config) noexcept override;
+  void init(const Config&) noexcept override;
 
   void initNetwork(InfoNode& root) noexcept override;
 

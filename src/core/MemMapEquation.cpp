@@ -40,7 +40,7 @@ std::ostream& operator<<(std::ostream& out, const MemMapEquation& mapEq)
 // Init
 // ===================================================
 
-void MemMapEquation::init(const Config& config) noexcept
+void MemMapEquation::init(const Config&) noexcept
 {
   Log(3) << "MemMapEquation::init()...\n";
 }
@@ -400,7 +400,7 @@ void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& curr
       newModuleDelta.sumDeltaPlogpPhysFlow += infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
       newModuleDelta.sumPlogpPhysFlow += infomath::plogp(physData.sumFlowFromM2Node);
     } else {
-      auto& memNodeSet = overlapIt->second;
+      memNodeSet = overlapIt->second;
 
       oldPhysFlow = memNodeSet.sumFlow;
       newPhysFlow = memNodeSet.sumFlow + physData.sumFlowFromM2Node;

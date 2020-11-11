@@ -75,9 +75,6 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
       m_nodeFlow[sourceIndex] += linkWeight / sumUndirLinkWeight;
       m_flowLinks.push_back(Link(sourceIndex, targetIndex, linkWeight));
 
-      // Log() << "\n" << linkSourceId << " (" << sourceIndex << ") -> " << linkTargetId << " (" << targetIndex << ")"
-      // 	<< ", weight: " << linkWeight << ". ";
-
       if (sourceIndex != targetIndex) {
         if (config.isUndirectedFlow()) {
           ++nodeOutDegree[targetIndex];
@@ -135,15 +132,6 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
 
   Log() << "\n  -> Using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " << (config.teleportToNodes ? "nodes" : "links") << ". " << std::flush;
 
-  // Log() << "\nnode flow: ";
-  // double sum1 = 0.0;
-  // for (auto& f : m_nodeFlow) {
-  // 	Log() << f << ", ";
-  // 	sum1 += f;
-  // }
-  // Log() << "\n => sum node flow: " << sum1;
-
-  // Log() << "\nTeleport rates: ";
   // Calculate the teleport rate distribution
   if (config.teleportToNodes) {
     double sumNodeWeights = 0.0;
@@ -161,28 +149,15 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
     for (auto& link : m_flowLinks) {
       unsigned int toNode = config.recordedTeleportation ? link.target : link.source;
       m_nodeTeleportRates[toNode] += link.flow / sumLinkWeight;
-      // Log() << "\nrate[" << toNode << "] += " << link.flow << " / " << sumLinkWeight << " = " << link.flow / sumLinkWeight << " => " << m_nodeTeleportRates[toNode];
     }
   }
 
-  // double sumTeleportRates = 0.0;
-  // Log() << "\n=> ";
-  // for (auto& r : m_nodeTeleportRates) {
-  // 	sumTeleportRates += r;
-  // 	Log() << r << ", ";
-  // }
-  // Log() << "\n=> Sum: " << sumTeleportRates;
-
   double sumLinkFlow = 0.0;
-  // Log() << "\nLinks:";
   // Normalize link weights with respect to its source nodes total out-link weight;
   for (auto& link : m_flowLinks) {
-    // Log() << "\n" << linkIt->source << " -> " << linkIt->target << ": " <<  linkIt->flow;
-    // Log() << ", sumLinkOutWeight[" << linkIt->source << "]: " << sumLinkOutWeight[linkIt->source];
     if (sumLinkOutWeight[link.source] > 0)
       link.flow /= sumLinkOutWeight[link.source];
     sumLinkFlow += link.flow;
-    // Log() << " => sumLinkFlow += " << linkIt->flow << " = " << sumLinkFlow;
   }
 
   // Collect dangling nodes
@@ -191,13 +166,6 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
     if (nodeOutDegree[i] == 0)
       danglings.push_back(i);
   }
-
-  // Log() << "\nsumLinkFlow: " << sumLinkFlow;
-
-  // Log() << "\nDanglings: ";
-  // for (auto& d : danglings) {
-  // 	Log() << d << ", ";
-  // }
 
   // Calculate PageRank
   std::vector<double> nodeFlowTmp(numNodes, 0.0);
@@ -239,11 +207,10 @@ void FlowCalculator::calculateFlow(StateNetwork& network, const Config& config)
       for (unsigned int i = 0; i < numNodes; ++i) {
         m_nodeFlow[i] /= sum;
       }
-      // break;
     }
 
     // Perturb the system if equilibrium
-    if (sqdiff == sqdiff_old) {
+    if (std::abs(sqdiff - sqdiff_old) < 1e-15) {
       alpha += 1.0e-10;
       beta = 1.0 - alpha;
     }

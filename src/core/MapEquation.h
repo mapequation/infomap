@@ -58,7 +58,7 @@ public:
   // Init
   // ===================================================
 
-  virtual void init(const Config& config) noexcept { }
+  virtual void init(const Config&) noexcept { }
 
   virtual void initNetwork(InfoNode& root) noexcept
   {
@@ -103,7 +103,7 @@ public:
                                                 DeltaFlowDataType& oldModuleDelta,
                                                 DeltaFlowDataType& newModuleDelta,
                                                 std::vector<FlowDataType>& moduleFlowData,
-                                                std::vector<unsigned int>& moduleMembers) const
+                                                std::vector<unsigned int>&) const
   {
     using infomath::plogp;
     const auto oldModule = oldModuleDelta.module;
@@ -142,7 +142,7 @@ public:
                                             DeltaFlowDataType& oldModuleDelta,
                                             DeltaFlowDataType& newModuleDelta,
                                             std::vector<FlowDataType>& moduleFlowData,
-                                            std::vector<unsigned int>& moduleMembers)
+                                            std::vector<unsigned int>&)
   {
     using infomath::plogp;
     const auto oldModule = oldModuleDelta.module;
@@ -177,7 +177,7 @@ public:
   }
 
 
-  virtual void consolidateModules(std::vector<InfoNode*>& modules) { }
+  virtual void consolidateModules(std::vector<InfoNode*>&) { }
 
   // ===================================================
   // Debug

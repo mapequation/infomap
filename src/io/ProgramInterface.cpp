@@ -254,21 +254,21 @@ void ProgramInterface::parseArgs(const std::string& args)
       bool flagValue = true;
       unsigned int numArgsLeft = flags.size() - i - 1;
 
-      const std::string& arg = flags[i];
-      if (arg.length() == 0)
+      auto& flag = flags[i];
+      if (flag.length() == 0)
         throw InputSyntaxError("Illegal argument ''");
 
-      if (arg[0] != '-') {
-        nonOpts.push_back(arg);
+      if (flag[0] != '-') {
+        nonOpts.push_back(flag);
       } else {
-        if (arg.length() < 2)
+        if (flag.length() < 2)
           throw InputSyntaxError("Illegal argument '-'");
 
-        if (arg[1] == '-') {
+        if (flag[1] == '-') {
           // Long option
-          if (arg.length() < 3)
+          if (flag.length() < 3)
             throw InputSyntaxError("Illegal argument '--'");
-          std::string longOpt = arg.substr(2);
+          std::string longOpt = flag.substr(2);
           auto it = longOptionMap.find(longOpt);
           if (it == longOptionMap.end()) {
             // Unrecognized option, check if it negates a recognised option with the '--no-' prefix
@@ -292,11 +292,11 @@ void ProgramInterface::parseArgs(const std::string& args)
           }
         } else {
           // Short option(s)
-          for (unsigned int j = 1; j < arg.length(); ++j) {
+          for (unsigned int j = 1; j < flag.length(); ++j) {
             //negate = m_negateNextOption;
             m_negateNextOption = false;
-            char o = arg[j];
-            unsigned int numCharsLeft = arg.length() - j - 1;
+            char o = flag[j];
+            unsigned int numCharsLeft = flag.length() - j - 1;
             auto it = shortOptionMap.find(o);
             if (it == shortOptionMap.end())
               throw InputDomainError(io::Str() << "Unrecognized option: '-" << o << "'");
@@ -306,8 +306,8 @@ void ProgramInterface::parseArgs(const std::string& args)
             else {
               std::string optArg;
               if (numCharsLeft > 0) {
-                optArg = arg.substr(j + 1);
-                j = arg.length() - 1;
+                optArg = flag.substr(j + 1);
+                j = flag.length() - 1;
               } else if (numArgsLeft) {
                 ++i;
                 optArg = flags[i];
@@ -337,11 +337,11 @@ void ProgramInterface::parseArgs(const std::string& args)
   unsigned int i = 0;
   unsigned int numVectorArguments = nonOpts.size() - (m_nonOptionArguments.size() - 1);
   while (!nonOpts.empty()) {
-    std::string arg = nonOpts.front();
+    auto nonOpt = nonOpts.front();
     nonOpts.pop_front();
     if (m_nonOptionArguments[i]->isOptionalVector && numVectorArguments == 0)
       ++i;
-    if (!m_nonOptionArguments[i]->parse(arg))
+    if (!m_nonOptionArguments[i]->parse(nonOpt))
       exitWithError("Argument error.");
     if (!m_nonOptionArguments[i]->isOptionalVector || --numVectorArguments == 0)
       ++i;
