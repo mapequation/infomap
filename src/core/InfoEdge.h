@@ -12,10 +12,6 @@ namespace infomap {
 
 struct EdgeData {
 public:
-  EdgeData() = default;
-
-  explicit EdgeData(double weight) : EdgeData(weight, weight) { }
-
   EdgeData(double weight, double flow) : weight(weight), flow(flow) { }
 
   double weight = 0.0;
