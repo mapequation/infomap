@@ -1,4 +1,5 @@
-CXXFLAGS = -Wall -Wextra -Wno-unused-parameter -std=c++14
+CXXFLAGS = -std=c++14 -Wall -Wextra -Wpedantic
+CXXFLAGS += -Wno-conversion -Wunreachable-code -Wuninitialized -Wold-style-cast -Wdouble-promotion
 # http://www.network-theory.co.uk/docs/gccintro/gccintro_70.html -msse2 -mfpmath=sse -DDOUBLE
 # CXXFLAGS = -Wall -std=c++14 -DPYTHON -Wno-deprecated-register
 LDFLAGS =
