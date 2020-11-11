@@ -38,13 +38,6 @@
 
 namespace infomap {
 
-// template<class T>
-// auto operator<<(std::ostream& os, const T& t) -> decltype(t.print(os), os)
-// {
-//     t.print(os);
-//     return os;
-// }
-
 template <typename T>
 struct TypeInfo {
   static std::string type() { return "undefined"; }
@@ -91,12 +84,6 @@ namespace io {
     return o.str();
   }
 
-  template <>
-  inline std::string stringify(bool& b)
-  {
-    return b ? "true" : "false";
-  }
-
   template <typename Container>
   inline std::string stringify(const Container& cont, std::string delimiter)
   {
@@ -105,12 +92,16 @@ namespace io {
       return "";
     unsigned int maxIndex = cont.size() - 1;
     for (unsigned int i = 0; i < maxIndex; ++i) {
-      if (!(o << cont[i]))
-        throw BadConversionError((o << "stringify(container[" << i << "])", o.str()));
+      if (!(o << cont[i])) {
+        o << "stringify(container[" << i << "])";
+        throw BadConversionError(o.str());
+      }
       o << delimiter;
     }
-    if (!(o << cont[maxIndex]))
-      throw BadConversionError((o << "stringify(container[" << maxIndex << "])", o.str()));
+    if (!(o << cont[maxIndex])) {
+      o << "stringify(container[" << maxIndex << "])";
+      throw BadConversionError(o.str());
+    }
     return o.str();
   }
 
@@ -122,32 +113,16 @@ namespace io {
       return "";
     unsigned int maxIndex = cont.size() - 1;
     for (unsigned int i = 0; i < maxIndex; ++i) {
-      if (!(o << (cont[i] + offset)))
-        throw BadConversionError((o << "stringify(container[" << i << "])", o.str()));
+      if (!(o << (cont[i] + offset))) {
+        o << "stringify(container[" << i << "])";
+        throw BadConversionError(o.str());
+      }
       o << delimiter;
     }
-    if (!(o << (cont[maxIndex] + offset)))
-      throw BadConversionError((o << "stringify(container[" << maxIndex << "])", o.str()));
-    return o.str();
-  }
-
-  template <typename Container>
-  inline std::string stringifyContainer(const Container& cont, std::string delimiter, unsigned int startIndex = 0, unsigned int length = 0)
-  {
-    std::ostringstream o;
-    if (cont.empty())
-      return "";
-    if (startIndex >= cont.size())
-      throw ArgumentOutOfRangeError("stringifyContainer called with startIndex out of range");
-    unsigned int stopIndex = length == 0 || (startIndex + length > cont.size()) ? cont.size() : (startIndex + length);
-    unsigned int endIndex = stopIndex - 1;
-    for (unsigned int i = startIndex; i < endIndex; ++i) {
-      if (!(o << (cont[i])))
-        throw BadConversionError((o << "stringifyContainer(container[" << i << "])", o.str()));
-      o << delimiter;
+    if (!(o << (cont[maxIndex] + offset))) {
+      o << "stringify(container[" << maxIndex << "])";
+      throw BadConversionError(o.str());
     }
-    if (!(o << (cont[endIndex])))
-      throw BadConversionError((o << "stringifyContainer(container[" << endIndex << "])", o.str()));
     return o.str();
   }
 
@@ -258,12 +233,6 @@ namespace io {
     return buf;
   }
 
-  inline void padString(std::string& str, const std::string::size_type newSize, const char paddingChar = ' ')
-  {
-    if (newSize > str.size())
-      str.append(newSize - str.size(), paddingChar);
-  }
-
   template <typename T>
   inline std::string padValue(T value, const std::string::size_type size, bool rightAligned = true, const char paddingChar = ' ')
   {
@@ -286,17 +255,11 @@ namespace io {
       o << std::fixed << std::setprecision(precision);
     else
       o << std::setprecision(precision);
-    if (!(o << value))
-      throw BadConversionError((o << "stringify(" << value << ")", o.str()));
+    if (!(o << value)) {
+      o << "stringify(" << value << ")";
+      throw BadConversionError(o.str());
+    }
     return o.str();
-  }
-
-
-  inline std::string toPlural(std::string object, unsigned int num)
-  {
-    if (num > 1 || num == 0)
-      object.push_back('s');
-    return object;
   }
 
 } // namespace io

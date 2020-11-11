@@ -5,10 +5,6 @@
 
 namespace infomap {
 
-struct AbortAndHelp : public std::runtime_error {
-  AbortAndHelp(std::string const& s) : std::runtime_error(s) {}
-};
-
 struct InputSyntaxError : public std::runtime_error {
   InputSyntaxError(std::string const& s) : std::runtime_error(s) {}
 };

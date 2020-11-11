@@ -38,7 +38,7 @@ public:
 
   virtual double getModuleCodelength() const = 0;
 
-  virtual double getMetaCodelength(bool unweighted = false) const { return 0.0; }
+  virtual double getMetaCodelength(bool) const { return 0.0; }
 
   virtual bool haveMemory() const = 0;
 

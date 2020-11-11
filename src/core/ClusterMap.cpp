@@ -29,7 +29,7 @@ void ClusterMap::readClusterData(const std::string& filename, bool includeFlow)
 1:1:3 0.0384615 "3" 3
 1:2:1 0.0384615 "4" 4
  */
-void ClusterMap::readTree(const std::string& filename, bool includeFlow)
+void ClusterMap::readTree(const std::string& filename, bool)
 {
   SafeInFile input(filename);
   std::string line;

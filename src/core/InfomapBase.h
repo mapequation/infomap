@@ -137,7 +137,7 @@ public:
 
   virtual double getCodelength() const = 0;
 
-  virtual double getMetaCodelength(bool unweighted = false) const { return 0.0; }
+  virtual double getMetaCodelength(bool) const { return 0.0; }
 
   virtual double codelength() const { return m_hierarchicalCodelength; }
 

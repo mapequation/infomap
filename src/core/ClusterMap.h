@@ -42,7 +42,7 @@ public:
   bool isHigherOrder() const noexcept { return m_isHigherOrder; }
 
 protected:
-  void readTree(const std::string& filename, /* [[maybe_unused]] */ bool includeFlow);
+  void readTree(const std::string& filename, bool);
   void readClu(const std::string& filename, bool includeFlow);
 
 private:

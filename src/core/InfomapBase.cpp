@@ -970,11 +970,11 @@ void InfomapBase::hierarchicalPartition()
           auto subModules = std::vector<InfoNode*>(numLeafs, nullptr);
           module.releaseChildren();
 
-          for (auto i = 0; i < numLeafs; ++i) {
-            auto* leaf = leafs[i];
-            unsigned int moduleIndex = modules[i];
+          for (auto j = 0; j < numLeafs; ++j) {
+            auto* leaf = leafs[j];
+            unsigned int moduleIndex = modules[j];
             if (subModules[moduleIndex] == nullptr) {
-              subModules[moduleIndex] = new InfoNode(subInfomap.leafNodes()[i]->parent->data);
+              subModules[moduleIndex] = new InfoNode(subInfomap.leafNodes()[j]->parent->data);
               subModules[moduleIndex]->index = moduleIndex;
               module.addChild(subModules[moduleIndex]);
             }
@@ -2322,7 +2322,7 @@ void InfomapBase::writeNewickTree(std::ostream& outStream, bool states)
   unsigned int lastDepth = 0;
   auto flowStack = std::vector<double>();
 
-  auto writeNewickNode = [&](std::ostream& o, const InfoNode& node, unsigned int depth) {
+  auto writeNewickNode = [&](const InfoNode& node, unsigned int depth) {
     if (depth > lastDepth || isRoot) {
       outStream << "(";
       flowStack.push_back(node.data.flow);
@@ -2350,11 +2350,11 @@ void InfomapBase::writeNewickTree(std::ostream& outStream, bool states)
   // TODO: Make a general iterator where merging physical nodes depend on a parameter rather than type to be able to DRY here
   if (haveMemory() && !states) {
     for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
-      writeNewickNode(outStream, *it, it.depth());
+      writeNewickNode(*it, it.depth());
     }
   } else {
     for (auto it(iterTree()); !it.isEnd(); ++it) {
-      writeNewickNode(outStream, *it, it.depth());
+      writeNewickNode(*it, it.depth());
     }
   }
   while (flowStack.size() > 1) {

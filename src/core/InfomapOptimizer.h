@@ -46,7 +46,7 @@ public:
 
   double getModuleCodelength() const final;
 
-  double getMetaCodelength(bool unweighted = false) const final;
+  double getMetaCodelength(bool) const final;
 
   bool haveMemory() const final;
 
@@ -156,7 +156,7 @@ inline double InfomapOptimizer<MetaMapEquation>::getMetaCodelength(bool unweight
 }
 
 template <typename Objective>
-inline double InfomapOptimizer<Objective>::getMetaCodelength(/* [[maybe_unused]] */ bool unweighted) const
+inline double InfomapOptimizer<Objective>::getMetaCodelength(bool) const
 {
   return 0.0;
 }
