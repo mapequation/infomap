@@ -281,8 +281,7 @@ bool StateNetwork::undirectedToDirected()
 
 void StateNetwork::calculateFlow()
 {
-  FlowCalculator flowCalculator;
-  flowCalculator.calculateFlow(*this, m_config);
+  FlowCalculator::calculateFlow(*this, m_config);
 }
 
 void StateNetwork::clearLinks()

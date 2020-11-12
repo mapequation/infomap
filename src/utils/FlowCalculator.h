@@ -30,52 +30,61 @@
 
 #include <map>
 #include <vector>
-#include <utility>
-#include "./Log.h"
-#include "../io/Config.h"
 
 namespace infomap {
 
+struct Config;
 class StateNetwork;
+enum class FlowModel;
 
-/**
- * Calculate flow on network based on different flow models
- */
-class FlowCalculator {
-public:
-  struct Link {
-    Link(unsigned int sourceIndex = 0, unsigned int targetIndex = 0, double weight = 0.0)
+namespace detail {
+  struct FlowLink {
+    explicit FlowLink(unsigned int sourceIndex = 0, unsigned int targetIndex = 0, double weight = 0.0)
         : source(sourceIndex),
           target(targetIndex),
           weight(weight),
-          flow(weight) {}
-
-    Link(const Link& other) = default;
+          flow(weight) { }
 
     unsigned int source;
     unsigned int target;
     double weight;
     double flow;
   };
+} // namespace detail
 
-  using LinkVec = std::vector<Link>;
-
-  FlowCalculator() = default;
-  virtual ~FlowCalculator() = default;
-
-  virtual void calculateFlow(StateNetwork& network, const Config& config);
-
-  const std::vector<double>& getNodeFlow() const { return m_nodeFlow; }
-  const std::vector<double>& getNodeTeleportRates() const { return m_nodeTeleportRates; }
-  const LinkVec& getFlowLinks() const { return m_flowLinks; }
+/**
+ * Calculate flow on network based on different flow models
+ */
+class FlowCalculator {
+public:
+  static void calculateFlow(StateNetwork& network, const Config &config) noexcept {
+    FlowCalculator f(network, config);
+  }
 
 protected:
-  void finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow = false);
+  FlowCalculator(StateNetwork& network, const Config& config);
+
+  using FlowLink = detail::FlowLink;
+
+  void calcUndirectedFlow() noexcept;
+  void calcDirectedFlow(const StateNetwork& network, const Config& config) noexcept;
+  void calcDirdirFlow(FlowModel flowModel) noexcept;
+  void calcRawdirFlow() noexcept;
+
+  void finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow) noexcept;
+
+  unsigned int numNodes;
+  unsigned int numLinks;
+
+  double sumLinkWeight;
+  double sumUndirLinkWeight;
 
   std::map<unsigned int, unsigned int> m_nodeIndexMap;
   std::vector<double> m_nodeFlow;
   std::vector<double> m_nodeTeleportRates;
-  LinkVec m_flowLinks;
+  std::vector<double> sumLinkOutWeight;
+  std::vector<unsigned int> nodeOutDegree;
+  std::vector<FlowLink> m_flowLinks;
 };
 
 } // namespace infomap
