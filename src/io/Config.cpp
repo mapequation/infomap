@@ -9,12 +9,6 @@
 
 namespace infomap {
 
-const std::string FlowModel::undirected = "undirected";
-const std::string FlowModel::directed = "directed";
-const std::string FlowModel::undirdir = "undirdir";
-const std::string FlowModel::outdirdir = "outdirdir";
-const std::string FlowModel::rawdir = "rawdir";
-
 Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 {
   ProgramInterface api("Infomap",
@@ -86,7 +80,9 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
   // --------------------- Core algorithm options ---------------------
   api.addOptionArgument(twoLevel, '2', "two-level", "Optimize a two-level partition of the network. Default is multi-level.", "Algorithm");
 
-  api.addOptionArgument(flowModel, 'f', "flow-model", "Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.", ArgType::option, "Algorithm");
+  std::string flowModelArg;
+
+  api.addOptionArgument(flowModelArg, 'f', "flow-model", "Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.", ArgType::option, "Algorithm");
 
   api.addOptionArgument(directed, 'd', "directed", "Assume directed links. Shorthand for '--flow-model directed'.", "Algorithm");
 
@@ -192,6 +188,18 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
     throw InputDomainError("Missing out_directory");
   }
 
+  if (flowModelArg == "undirected") {
+    flowModel = FlowModel::undirected;
+  } else if (flowModelArg == "directed") {
+    flowModel = FlowModel::directed;
+  } else if (flowModelArg == "undirdir") {
+    flowModel = FlowModel::undirdir;
+  } else if (flowModelArg == "outdirdir") {
+    flowModel = FlowModel::outdirdir;
+  } else if (flowModelArg == "rawdir") {
+    flowModel = FlowModel::rawdir;
+  }
+
   // Some checks
   if (*--outDirectory.end() != '/')
     outDirectory.append("/");
@@ -256,6 +264,27 @@ void Config::adaptDefaults()
   }
 
   originallyUndirected = isUndirectedFlow();
+}
+
+inline const char* flowModelToString(FlowModel flowModel)
+{
+  switch (flowModel) {
+  case FlowModel::undirected:
+    return "undirected";
+  case FlowModel::directed:
+    return "directed";
+  case FlowModel::undirdir:
+    return "undirdir";
+  case FlowModel::outdirdir:
+    return "outdirdir";
+  case FlowModel::rawdir:
+    return "rawdir";
+  }
+}
+
+std::ostream& operator<<(std::ostream& out, FlowModel f)
+{
+  return out << flowModelToString(f);
 }
 
 } // namespace infomap

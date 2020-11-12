@@ -42,13 +42,15 @@
 
 namespace infomap {
 
-struct FlowModel {
-  static const std::string undirected;
-  static const std::string directed;
-  static const std::string undirdir;
-  static const std::string outdirdir;
-  static const std::string rawdir;
+enum class FlowModel {
+  undirected,
+  directed,
+  undirdir,
+  outdirdir,
+  rawdir,
 };
+
+std::ostream& operator<<(std::ostream& out, FlowModel f);
 
 enum class OptimizationLevel {
   FullCoarseTune,
@@ -88,7 +90,7 @@ struct Config {
   bool assignToNeighbouringModule = false;
   bool noInfomap = false;
 
-  std::string flowModel = FlowModel::undirected;
+  FlowModel flowModel = FlowModel::undirected;
   // TODO: Remove variables for 'one-hot encoded' flow models
   bool directed = false;
   bool undirdir = false;
