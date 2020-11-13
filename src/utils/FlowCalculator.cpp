@@ -26,22 +26,27 @@
 
 
 #include "FlowCalculator.h"
+#include "../utils/Log.h"
+#include "../core/StateNetwork.h"
 #include <iostream>
 #include <cmath>
 #include <numeric>
-#include "../utils/Log.h"
-#include "../core/StateNetwork.h"
+#include <algorithm>
 
 namespace infomap {
 
-inline void normalize(std::vector<double>& v, double sum) noexcept {
+template <typename T>
+inline void normalize(std::vector<T>& v, const T sum) noexcept
+{
   for (auto& numerator : v) {
     numerator /= sum;
   }
 }
 
-inline void normalize(std::vector<double>& v) noexcept {
-  const auto sum = std::accumulate(begin(v), end(v), 0.0);
+template <typename T>
+inline void normalize(std::vector<T>& v) noexcept
+{
+  const auto sum = std::accumulate(cbegin(v), cend(v), T {});
   normalize(v, sum);
 }
 
@@ -53,38 +58,59 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   // Map to zero-based dense indexing
   numNodes = network.numNodes();
 
-  m_nodeFlow.assign(numNodes, 0.0);
-  m_nodeTeleportRates.assign(numNodes, 0.0);
+  nodeFlow.assign(numNodes, 0.0);
+  nodeTeleportRates.assign(numNodes, 0.0);
 
   nodeOutDegree.assign(numNodes, 0);
   sumLinkOutWeight.assign(numNodes, 0.0);
 
   unsigned int nodeIndex = 0;
+  const auto& nodeLinkMap = network.nodeLinkMap();
+
+  // Store dangling nodes out-of-order,
+  // with dangling nodes first to optimize calculation of dangilng rank
   for (const auto& node : network.nodes()) {
-    auto& nodeId = node.second.id;
-    m_nodeIndexMap[nodeId] = nodeIndex;
-    ++nodeIndex;
+    const auto isDangling = nodeLinkMap.find(node.second) == nodeLinkMap.end();
+    if (!isDangling) continue;
+
+    const auto& nodeId = node.second.id;
+    nodeIndexMap[nodeId] = nodeIndex++;
+  }
+
+  nonDanglingStartIndex = nodeIndex;
+
+  for (const auto& node : network.nodes()) {
+    const auto isDangling = nodeLinkMap.find(node.second) == nodeLinkMap.end();
+    if (isDangling) continue;
+
+    const auto& nodeId = node.second.id;
+    nodeIndexMap[nodeId] = nodeIndex++;
   }
 
   numLinks = network.numLinks();
-  m_flowLinks.reserve(numLinks);
+  flowLinks.resize(numLinks, { 0, 0, 0.0 });
   sumLinkWeight = network.sumLinkWeight();
   sumUndirLinkWeight = 2 * sumLinkWeight - network.sumSelfLinkWeight();
 
-  for (const auto& node : network.nodeLinkMap()) {
-    auto sourceId = node.first.id;
-    auto sourceIndex = m_nodeIndexMap[sourceId];
+  unsigned int linkIndex = 0;
 
-    const auto& links = node.second;
-    for (const auto& link : links) {
-      auto targetId = link.first.id;
-      auto targetIndex = m_nodeIndexMap[targetId];
-      auto linkWeight = link.second.weight;
+  for (const auto& node : nodeLinkMap) {
+    const auto sourceId = node.first.id;
+    const auto sourceIndex = nodeIndexMap[sourceId];
+
+    for (const auto& link : node.second) {
+      const auto targetId = link.first.id;
+      const auto targetIndex = nodeIndexMap[targetId];
+      const auto linkWeight = link.second.weight;
 
       ++nodeOutDegree[sourceIndex];
       sumLinkOutWeight[sourceIndex] += linkWeight;
-      m_nodeFlow[sourceIndex] += linkWeight / sumUndirLinkWeight;
-      m_flowLinks.emplace_back(sourceIndex, targetIndex, linkWeight);
+      nodeFlow[sourceIndex] += linkWeight / sumUndirLinkWeight;
+
+      flowLinks[linkIndex].source = sourceIndex;
+      flowLinks[linkIndex].target = targetIndex;
+      flowLinks[linkIndex].flow = linkWeight;
+      ++linkIndex;
 
       if (sourceIndex != targetIndex) {
         if (config.isUndirectedFlow()) {
@@ -92,7 +118,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
           sumLinkOutWeight[targetIndex] += linkWeight;
         }
         if (config.flowModel != FlowModel::outdirdir)
-          m_nodeFlow[targetIndex] += linkWeight / sumUndirLinkWeight;
+          nodeFlow[targetIndex] += linkWeight / sumUndirLinkWeight;
       }
     }
   }
@@ -108,7 +134,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     break;
   case FlowModel::undirdir:
   case FlowModel::outdirdir:
-    calcDirdirFlow(config.flowModel);
+    calcDirdirFlow(config);
     normalizeNodeFlow = true;
     break;
   case FlowModel::rawdir:
@@ -123,47 +149,78 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
 void FlowCalculator::calcUndirectedFlow() noexcept
 {
   Log() << "\n  -> Using undirected links.";
-  for (auto& link : m_flowLinks) {
-    link.flow /= sumUndirLinkWeight / 2;
+
+  const auto halfWeight = sumUndirLinkWeight / 2;
+  for (auto& link : flowLinks) {
+    link.flow /= halfWeight;
   }
 }
 
-void FlowCalculator::calcDirdirFlow(FlowModel flowModel) noexcept
+void FlowCalculator::calcDirdirFlow(const Config& config) noexcept
 {
-  if (flowModel == FlowModel::outdirdir)
+  if (config.flowModel == FlowModel::outdirdir)
     Log() << "\n  -> Counting only ingoing links.";
   else
     Log() << "\n  -> Using undirected links, switching to directed after steady state.";
 
   //Take one last power iteration
-  const auto nodeFlowSteadyState = std::vector<double>(m_nodeFlow);
-  m_nodeFlow.assign(numNodes, 0.0);
+  const auto nodeFlowSteadyState = std::vector<double>(nodeFlow);
+  nodeFlow.assign(numNodes, 0.0);
 
-  for (const auto& link : m_flowLinks) {
-    m_nodeFlow[link.target] += nodeFlowSteadyState[link.source] * link.flow / sumLinkOutWeight[link.source];
+  for (const auto& link : flowLinks) {
+    nodeFlow[link.target] += nodeFlowSteadyState[link.source] * link.flow / sumLinkOutWeight[link.source];
   }
 
-  double sumNodeFlow = std::accumulate(begin(m_nodeFlow), end(m_nodeFlow), 0.0);
+  double sumNodeFlow = std::accumulate(cbegin(nodeFlow), cend(nodeFlow), 0.0);
 
   // Update link data to represent flow instead of weight
-  for (auto& link : m_flowLinks) {
+  for (auto& link : flowLinks) {
     link.flow *= nodeFlowSteadyState[link.source] / sumLinkOutWeight[link.source] / sumNodeFlow;
   }
 }
 
 void FlowCalculator::calcRawdirFlow() noexcept
 {
-  // Treat the link weights as flow (after global normalization) and
-  // do one power iteration to set the node flow
-  m_nodeFlow.assign(numNodes, 0.0);
-
-  for (auto& link : m_flowLinks) {
-    link.flow /= sumLinkWeight;
-    m_nodeFlow[link.target] += link.flow;
-  }
-
   Log() << "\n  -> Using directed links with raw flow.";
   Log() << "\n  -> Total link weight: " << sumLinkWeight << ".";
+
+  // Treat the link weights as flow (after global normalization) and
+  // do one power iteration to set the node flow
+  nodeFlow.assign(numNodes, 0.0);
+
+  for (auto& link : flowLinks) {
+    link.flow /= sumLinkWeight;
+    nodeFlow[link.target] += link.flow;
+  }
+}
+
+struct IterationResult {
+  double alpha;
+  double beta;
+};
+
+template <typename Iteration>
+IterationResult powerIterate(double alpha, Iteration&& iter) {
+  unsigned int iterations = 0;
+  double beta = 1.0 - alpha;
+  double err = 0.0;
+
+  do {
+    double oldErr = err;
+    err = iter(iterations, alpha, beta);
+
+    // Perturb the system if equilibrium
+    if (std::abs(err - oldErr) < 1e-15) {
+      alpha += 1.0e-10;
+      beta = 1.0 - alpha;
+    }
+
+    ++iterations;
+  } while (iterations < 200 && (err > 1.0e-15 || iterations < 50));
+
+  Log() << "\n  -> PageRank calculation done in " << iterations << " iterations." << std::endl;
+
+  return { alpha, beta };
 }
 
 void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config& config) noexcept
@@ -176,112 +233,88 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
     for (const auto& nodeIt : network.nodes()) {
       auto& node = nodeIt.second;
-      m_nodeTeleportRates[m_nodeIndexMap[node.id]] = node.weight;
+      nodeTeleportRates[nodeIndexMap[node.id]] = node.weight;
       sumNodeWeights += node.weight;
     }
 
-    normalize(m_nodeTeleportRates, sumNodeWeights);
+    normalize(nodeTeleportRates, sumNodeWeights);
   } else {
     // Teleport to links
 
     // Teleport proportionally to out-degree, or in-degree if recorded teleportation.
-    for (const auto& link : m_flowLinks) {
+    for (const auto& link : flowLinks) {
       auto toNode = config.recordedTeleportation ? link.target : link.source;
-      m_nodeTeleportRates[toNode] += link.flow / sumLinkWeight;
+      nodeTeleportRates[toNode] += link.flow / sumLinkWeight;
     }
   }
 
   // Normalize link weights with respect to its source nodes total out-link weight;
-  for (auto& link : m_flowLinks) {
+  for (auto& link : flowLinks) {
     if (sumLinkOutWeight[link.source] > 0) {
       link.flow /= sumLinkOutWeight[link.source];
     }
   }
 
-  // Collect dangling nodes
-  auto danglings = std::vector<unsigned int>();
-  for (unsigned int i = 0; i < numNodes; ++i) {
-    if (nodeOutDegree[i] == 0) {
-      danglings.push_back(i);
-    }
-  }
+  auto nodeFlowTmp = std::vector<double>(numNodes, 0.0);
+  double danglingRank;
 
   // Calculate PageRank
-  auto nodeFlowTmp = std::vector<double>(numNodes, 0.0);
-  unsigned int numIterations = 0;
-  double alpha = config.teleportationProbability;
-  double beta = 1.0 - alpha;
-  double error = 1.0;
-  double danglingRank = 0.0;
-
-  do {
-    // Calculate dangling rank
-    danglingRank = 0.0;
-    for (const auto& danglingIndex : danglings) {
-      danglingRank += m_nodeFlow[danglingIndex];
-    }
+  const auto iteration = [&](const auto iteration, const double alpha, const double beta) {
+    danglingRank = std::accumulate(cbegin(nodeFlow), cbegin(nodeFlow) + nonDanglingStartIndex, 0.0);
 
     // Flow from teleportation
+    const auto teleportationFlow = alpha + beta * danglingRank;
     for (unsigned int i = 0; i < numNodes; ++i) {
-      nodeFlowTmp[i] = (alpha + beta * danglingRank) * m_nodeTeleportRates[i];
+      nodeFlowTmp[i] = teleportationFlow * nodeTeleportRates[i];
     }
 
     // Flow from links
-    for (const auto& link : m_flowLinks) {
-      nodeFlowTmp[link.target] += beta * link.flow * m_nodeFlow[link.source];
+    for (const auto& link : flowLinks) {
+      nodeFlowTmp[link.target] += beta * link.flow * nodeFlow[link.source];
     }
 
     // Update node flow from the power iteration above and check if converged
-    double sumNodeFlow = 0.0;
-    double oldError = error;
-    error = 0.0;
+    double nodeFlowDiff = -1.0; // Start with -1.0 so we don't have to subtract it later
+    double error = 0.0;
     for (unsigned int i = 0; i < numNodes; ++i) {
-      sumNodeFlow += nodeFlowTmp[i];
-      error += std::abs(nodeFlowTmp[i] - m_nodeFlow[i]);
-      m_nodeFlow[i] = nodeFlowTmp[i];
+      nodeFlowDiff += nodeFlowTmp[i];
+      error += std::abs(nodeFlowTmp[i] - nodeFlow[i]);
     }
+
+    nodeFlow = nodeFlowTmp;
 
     // Normalize if needed
-    if (std::abs(sumNodeFlow - 1.0) > 1.0e-10) {
-      Log() << "(Normalizing ranks after " << numIterations << " power iterations with error " << (sumNodeFlow - 1.0) << ") ";
-
-      for (unsigned int i = 0; i < numNodes; ++i) {
-        m_nodeFlow[i] /= sumNodeFlow;
-      }
+    if (std::abs(nodeFlowDiff) > 1.0e-10) {
+      Log() << "(Normalizing ranks after " << iteration << " power iterations with error " << nodeFlowDiff << ") ";
+      normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 
-    // Perturb the system if equilibrium
-    if (std::abs(error - oldError) < 1e-15) {
-      alpha += 1.0e-10;
-      beta = 1.0 - alpha;
-    }
+    return error;
+  };
 
-    numIterations++;
-  } while ((numIterations < 200) && (error > 1.0e-15 || numIterations < 50));
+  const auto result = powerIterate(config.teleportationProbability, iteration);
 
   double sumNodeRank = 1.0;
+  double beta = result.beta;
 
   if (!config.recordedTeleportation) {
     // Take one last power iteration excluding the teleportation
     // and normalize node flow
     sumNodeRank = 1.0 - danglingRank;
-    m_nodeFlow.assign(numNodes, 0.0);
+    nodeFlow.assign(numNodes, 0.0);
 
-    for (const auto& link : m_flowLinks) {
-      m_nodeFlow[link.target] += link.flow * nodeFlowTmp[link.source] / sumNodeRank;
+    for (const auto& link : flowLinks) {
+      nodeFlow[link.target] += link.flow * nodeFlowTmp[link.source] / sumNodeRank;
     }
 
     beta = 1.0;
   }
 
-
   // Update the links with their global flow from the PageRank values.
   // Note: beta is set to 1 if unrecorded teleportation
-  for (auto& link : m_flowLinks) {
+  for (auto& link : flowLinks) {
     link.flow *= beta * nodeFlowTmp[link.source] / sumNodeRank;
   }
-
-  Log() << "\n  -> PageRank calculation done in " << numIterations << " iterations." << std::endl;
 }
 
 void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow) noexcept
@@ -289,22 +322,21 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   // TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
   if (network.isBipartite() && !config.skipAdjustBipartiteFlow) {
     Log() << "\n  -> Using bipartite links.";
+
     // Only links between ordinary nodes and feature nodes in bipartite network
     // Don't code feature nodes -> distribute all flow from those to ordinary nodes
-    auto bipartiteStartId = network.bipartiteStartId();
-    auto bipartiteStartIndex = m_nodeIndexMap[bipartiteStartId];
-
-    for (auto& link : m_flowLinks) {
+    for (auto& link : flowLinks) {
+      auto bipartiteStartIndex = nodeIndexMap[network.bipartiteStartId()];
       auto sourceIsFeature = link.source >= bipartiteStartIndex;
 
       if (sourceIsFeature) {
-        m_nodeFlow[link.target] += link.flow;
-        m_nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
+        nodeFlow[link.target] += link.flow;
+        nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
       } else {
-        m_nodeFlow[link.source] += link.flow;
-        m_nodeFlow[link.target] = 0.0; // Doesn't matter if done multiple times on each node.
+        nodeFlow[link.source] += link.flow;
+        nodeFlow[link.target] = 0.0; // Doesn't matter if done multiple times on each node.
       }
-      //TODO: Should flow double before moving to nodes, does it cancel out in normalization?
+      // TODO: Should flow double before moving to nodes, does it cancel out in normalization?
 
       // Markov time 2 on the full network will correspond to markov time 1 between the real nodes.
       link.flow *= 2;
@@ -318,26 +350,25 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 
     for (auto& nodeIt : network.nodes()) {
       auto& node = nodeIt.second;
-      m_nodeFlow[m_nodeIndexMap[node.id]] = node.weight;
+      nodeFlow[nodeIndexMap[node.id]] = node.weight;
     }
 
     normalizeNodeFlow = true;
   }
 
   if (normalizeNodeFlow) {
-    normalize(m_nodeFlow);
+    normalize(nodeFlow);
   }
 
   // Write back flow to network
-  //TODO: Add enter/exit flow
+  // TODO: Add enter/exit flow
   double sumNodeFlow = 0.0;
-  unsigned int nodeIndex = 0;
 
   for (auto& nodeIt : network.m_nodes) {
     auto& node = nodeIt.second;
-    node.flow = m_nodeFlow[nodeIndex];
+    const auto nodeIndex = nodeIndexMap[node.id];
+    node.flow = nodeFlow[nodeIndex];
     sumNodeFlow += node.flow;
-    ++nodeIndex;
   }
 
   double sumLinkFlow = 0.0;
@@ -346,9 +377,8 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   for (auto& node : network.m_nodeLinkMap) {
     for (auto& link : node.second) {
       auto& linkData = link.second;
-      linkData.flow = m_flowLinks[linkIndex].flow;
+      linkData.flow = flowLinks[linkIndex++].flow;
       sumLinkFlow += linkData.flow;
-      ++linkIndex;
     }
   }
 
