@@ -32,6 +32,8 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(skipAdjustBipartiteFlow, "skip-adjust-bipartite-flow", "Skip distributing all flow from the bipartite nodes to the primary nodes.", "Input", true);
 
+  api.addOptionArgument(bipartiteTeleportation, "bipartite-teleportation", "Teleport like the bipartite flow instead of two-step (unipartite) teleportation.", "Input", true);
+
   api.addOptionArgument(weightThreshold, "weight-threshold", "Limit the number of links to read from the network. Ignore links with less weight than the threshold.", ArgType::number, "Input", true);
 
   api.addOptionArgument(includeSelfLinks, 'k', "include-self-links", "Include links with the same source and target node.", "Input", true);

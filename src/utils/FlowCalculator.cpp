@@ -67,24 +67,37 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   unsigned int nodeIndex = 0;
   const auto& nodeLinkMap = network.nodeLinkMap();
 
-  // Store dangling nodes out-of-order,
-  // with dangling nodes first to optimize calculation of dangilng rank
-  for (const auto& node : network.nodes()) {
-    const auto isDangling = nodeLinkMap.find(node.second) == nodeLinkMap.end();
-    if (!isDangling) continue;
+  if (network.isBipartite()) {
+    // Preserve node order
+    for (const auto& node : network.nodes()) {
+      const auto nodeId = node.second.id;
+      nodeIndexMap[nodeId] = nodeIndex++;
+    }
 
-    const auto& nodeId = node.second.id;
-    nodeIndexMap[nodeId] = nodeIndex++;
-  }
+    auto bipartiteStartId = network.bipartiteStartId();
+    bipartiteStartIndex = nodeIndexMap[bipartiteStartId];
 
-  nonDanglingStartIndex = nodeIndex;
+  } else {
+    // Store dangling nodes out-of-order,
+    // with dangling nodes first to optimize calculation of dangilng rank
 
-  for (const auto& node : network.nodes()) {
-    const auto isDangling = nodeLinkMap.find(node.second) == nodeLinkMap.end();
-    if (isDangling) continue;
+    for (const auto& node : network.nodes()) {
+      const auto isDangling = nodeLinkMap.find(node.second) == nodeLinkMap.end();
+      if (!isDangling) continue;
 
-    const auto& nodeId = node.second.id;
-    nodeIndexMap[nodeId] = nodeIndex++;
+      const auto& nodeId = node.second.id;
+      nodeIndexMap[nodeId] = nodeIndex++;
+    }
+
+    nonDanglingStartIndex = nodeIndex;
+
+    for (const auto& node : network.nodes()) {
+      const auto isDangling = nodeLinkMap.find(node.second) == nodeLinkMap.end();
+      if (isDangling) continue;
+
+      const auto& nodeId = node.second.id;
+      nodeIndexMap[nodeId] = nodeIndex++;
+    }
   }
 
   numLinks = network.numLinks();
@@ -92,7 +105,18 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   sumLinkWeight = network.sumLinkWeight();
   sumUndirLinkWeight = 2 * sumLinkWeight - network.sumSelfLinkWeight();
 
+  if (network.isBipartite()) {
+    const auto bipartiteStartId = network.bipartiteStartId();
+
+    for (const auto& node : nodeLinkMap) {
+      const auto sourceIsFeature = node.first.id >= bipartiteStartId;
+      if (sourceIsFeature) continue;
+      bipartiteLinkStartIndex += node.second.size();
+    }
+  }
+
   unsigned int linkIndex = 0;
+  unsigned int featureLinkIndex = bipartiteLinkStartIndex; // bipartite case
 
   for (const auto& node : nodeLinkMap) {
     const auto sourceId = node.first.id;
@@ -107,10 +131,19 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
       sumLinkOutWeight[sourceIndex] += linkWeight;
       nodeFlow[sourceIndex] += linkWeight / sumUndirLinkWeight;
 
-      flowLinks[linkIndex].source = sourceIndex;
-      flowLinks[linkIndex].target = targetIndex;
-      flowLinks[linkIndex].flow = linkWeight;
-      ++linkIndex;
+      if (network.isBipartite() && sourceId >= network.bipartiteStartId()) {
+        // Link from feature node to ordinary node
+        flowLinks[featureLinkIndex].source = sourceIndex;
+        flowLinks[featureLinkIndex].target = targetIndex;
+        flowLinks[featureLinkIndex].flow = linkWeight;
+        ++featureLinkIndex;
+      } else {
+        // Ordinary link, or unipartite
+        flowLinks[linkIndex].source = sourceIndex;
+        flowLinks[linkIndex].target = targetIndex;
+        flowLinks[linkIndex].flow = linkWeight;
+        ++linkIndex;
+      }
 
       if (sourceIndex != targetIndex) {
         if (config.isUndirectedFlow()) {
@@ -130,7 +163,11 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     calcUndirectedFlow();
     break;
   case FlowModel::directed:
-    calcDirectedFlow(network, config);
+    if (network.isBipartite() && config.bipartiteTeleportation) {
+      calcDirectedBipartiteFlow(network, config);
+    } else {
+      calcDirectedFlow(network, config);
+    }
     break;
   case FlowModel::undirdir:
   case FlowModel::outdirdir:
@@ -164,7 +201,7 @@ void FlowCalculator::calcDirdirFlow(const Config& config) noexcept
     Log() << "\n  -> Using undirected links, switching to directed after steady state.";
 
   //Take one last power iteration
-  const auto nodeFlowSteadyState = std::vector<double>(nodeFlow);
+  const std::vector<double> nodeFlowSteadyState(nodeFlow);
   nodeFlow.assign(numNodes, 0.0);
 
   for (const auto& link : flowLinks) {
@@ -200,7 +237,8 @@ struct IterationResult {
 };
 
 template <typename Iteration>
-IterationResult powerIterate(double alpha, Iteration&& iter) {
+IterationResult powerIterate(double alpha, Iteration&& iter)
+{
   unsigned int iterations = 0;
   double beta = 1.0 - alpha;
   double err = 0.0;
@@ -255,7 +293,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
     }
   }
 
-  auto nodeFlowTmp = std::vector<double>(numNodes, 0.0);
+  std::vector<double> nodeFlowTmp(numNodes, 0.0);
   double danglingRank;
 
   // Calculate PageRank
@@ -317,32 +355,168 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
   }
 }
 
+void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, const Config& config) noexcept
+{
+  Log() << "\n  -> Using bipartite " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " << (config.teleportToNodes ? "nodes" : "links") << ". " << std::flush;
+
+  const auto bipartiteStartId = network.bipartiteStartId();
+
+  if (config.teleportToNodes) {
+    for (const auto& nodeIt : network.nodes()) {
+      auto& node = nodeIt.second;
+      if (node.id < bipartiteStartId) {
+        nodeTeleportRates[nodeIndexMap[node.id]] = node.weight;
+      }
+    }
+  } else {
+    // Teleport proportionally to out-degree, or in-degree if recorded teleportation.
+    // Two-step degree: sum of products between incoming and outgoing links from bipartite nodes
+
+    if (config.recordedTeleportation) {
+      for (auto link = begin(flowLinks) + bipartiteLinkStartIndex; link != end(flowLinks); ++link) {
+        // target is an ordinary node
+        nodeTeleportRates[link->target] += link->flow;
+      }
+    } else {
+      // Unrecorded teleportation
+
+      for (auto link = begin(flowLinks); link != begin(flowLinks) + bipartiteLinkStartIndex; ++link) {
+        // source is an ordinary node
+        nodeTeleportRates[link->source] += link->flow;
+      }
+    }
+  }
+
+  normalize(nodeTeleportRates);
+
+  nodeFlow = nodeTeleportRates;
+
+  // Normalize link weights with respect to its source nodes total out-link weight;
+  for (auto& link : flowLinks) {
+    if (sumLinkOutWeight[link.source] > 0) {
+      link.flow /= sumLinkOutWeight[link.source];
+    }
+  }
+
+  std::vector<unsigned int> danglingIndices;
+  for (size_t i = 0; i < numNodes; ++i) {
+    if (nodeOutDegree[i] == 0) {
+      danglingIndices.push_back(i);
+    }
+  }
+
+  std::vector<double> nodeFlowTmp(numNodes, 0.0);
+  double danglingRank;
+
+  // Calculate two-step PageRank
+  const auto iteration = [&](const auto iteration, const double alpha, const double beta) {
+    danglingRank = 0.0;
+    for (const auto& i : danglingIndices) {
+      danglingRank += nodeFlow[i];
+    }
+
+    // Flow from teleportation
+    const auto teleportationFlow = alpha + beta * danglingRank;
+    for (unsigned int i = 0; i < bipartiteStartIndex; ++i) {
+      nodeFlowTmp[i] = teleportationFlow * nodeTeleportRates[i];
+    }
+
+    for (unsigned int i = bipartiteStartIndex; i < numNodes; ++i) {
+      nodeFlowTmp[i] = 0.0;
+    }
+
+    // Flow from links
+    // First step
+    for (auto link = begin(flowLinks); link != begin(flowLinks) + bipartiteLinkStartIndex; ++link) {
+      nodeFlow[link->target] += beta * link->flow * nodeFlow[link->source];
+    }
+
+    // Second step back to primary nodes
+    for (auto link = begin(flowLinks) + bipartiteLinkStartIndex; link != end(flowLinks); ++link) {
+      nodeFlowTmp[link->target] += link->flow * nodeFlow[link->source];
+    }
+
+    // Update node flow from the power iteration above and check if converged
+    double nodeFlowDiff = -1.0;
+    double error = 0.0;
+    for (unsigned int i = 0; i < bipartiteStartIndex; ++i) {
+      nodeFlowDiff += nodeFlowTmp[i];
+      error += std::abs(nodeFlowTmp[i] - nodeFlow[i]);
+    }
+
+    nodeFlow = nodeFlowTmp;
+
+    // Normalize if needed
+    if (std::abs(nodeFlowDiff) > 1.0e-10) {
+      Log() << "(Normalizing ranks after " << iteration << " power iterations with error " << nodeFlowDiff << ") ";
+      normalize(nodeFlow, nodeFlowDiff + 1.0);
+    }
+
+    return error;
+  };
+
+  const auto result = powerIterate(config.teleportationProbability, iteration);
+
+  double sumNodeRank = 1.0;
+  double beta = result.beta;
+
+  if (!config.recordedTeleportation) {
+    //Take one last power iteration excluding the teleportation (and normalize node flow to sum 1.0)
+    sumNodeRank = 1.0 - danglingRank;
+    nodeFlow.assign(numNodes, 0.0);
+
+    for (auto link = begin(flowLinks); link != begin(flowLinks) + bipartiteLinkStartIndex; ++link) {
+      nodeFlowTmp[link->target] += link->flow * nodeFlowTmp[link->source];
+    }
+    // Second step back to primary nodes
+    for (auto link = begin(flowLinks) + bipartiteLinkStartIndex; link != end(flowLinks); ++link) {
+      nodeFlow[link->target] += link->flow * nodeFlowTmp[link->source];
+    }
+
+    beta = 1.0;
+  }
+
+  // Update the links with their global flow from the PageRank values.
+  // Note: beta is set to 1 if unrecorded teleportation
+  for (auto& link : flowLinks) {
+    link.flow *= beta * nodeFlowTmp[link.source] / sumNodeRank;
+  }
+}
+
 void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow) noexcept
 {
   // TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
-  if (network.isBipartite() && !config.skipAdjustBipartiteFlow) {
+  if (network.isBipartite()) {
     Log() << "\n  -> Using bipartite links.";
 
-    // Only links between ordinary nodes and feature nodes in bipartite network
-    // Don't code feature nodes -> distribute all flow from those to ordinary nodes
-    for (auto& link : flowLinks) {
-      auto bipartiteStartIndex = nodeIndexMap[network.bipartiteStartId()];
-      auto sourceIsFeature = link.source >= bipartiteStartIndex;
+    if (!config.skipAdjustBipartiteFlow && !config.bipartiteTeleportation) {
+      // Only links between ordinary nodes and feature nodes in bipartite network
+      // Don't code feature nodes -> distribute all flow from those to ordinary nodes
+      for (auto& link : flowLinks) {
+        auto sourceIsFeature = link.source >= bipartiteStartIndex;
 
-      if (sourceIsFeature) {
-        nodeFlow[link.target] += link.flow;
-        nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
-      } else {
-        nodeFlow[link.source] += link.flow;
-        nodeFlow[link.target] = 0.0; // Doesn't matter if done multiple times on each node.
+        if (sourceIsFeature) {
+          nodeFlow[link.target] += link.flow;
+          nodeFlow[link.source] = 0.0; // Doesn't matter if done multiple times on each node.
+        } else {
+          nodeFlow[link.source] += link.flow;
+          nodeFlow[link.target] = 0.0; // Doesn't matter if done multiple times on each node.
+        }
+        // TODO: Should flow double before moving to nodes, does it cancel out in normalization?
+
+        // Markov time 2 on the full network will correspond to markov time 1 between the real nodes.
+        link.flow *= 2;
       }
       // TODO: Should flow double before moving to nodes, does it cancel out in normalization?
 
-      // Markov time 2 on the full network will correspond to markov time 1 between the real nodes.
-      link.flow *= 2;
-    }
+      normalizeNodeFlow = true;
 
-    normalizeNodeFlow = true;
+    } else if (config.bipartiteTeleportation) {
+      for (auto& link : flowLinks) {
+        // Markov time 2 on the full network will correspond to markov time 1 between the real nodes.
+        link.flow *= 2;
+      }
+    }
   }
 
   if (config.useNodeWeightsAsFlow) {
@@ -373,11 +547,16 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 
   double sumLinkFlow = 0.0;
   unsigned int linkIndex = 0;
+  auto featureLinkIndex = bipartiteLinkStartIndex;
 
   for (auto& node : network.m_nodeLinkMap) {
     for (auto& link : node.second) {
       auto& linkData = link.second;
-      linkData.flow = flowLinks[linkIndex++].flow;
+      if (network.isBipartite() && node.first.id >= network.bipartiteStartId()) {
+        linkData.flow = flowLinks[featureLinkIndex++].flow;
+      } else {
+        linkData.flow = flowLinks[linkIndex++].flow;
+      }
       sumLinkFlow += linkData.flow;
     }
   }
