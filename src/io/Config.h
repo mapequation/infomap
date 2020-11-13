@@ -73,6 +73,7 @@ struct Config {
   unsigned int pathMarkovOrder = 1;
   bool bipartite = false;
   bool skipAdjustBipartiteFlow = false;
+  bool bipartiteTeleportation = false;
   bool hardPartitions = false;
   bool nonBacktracking = false;
   bool parseWithoutIOStreams = false;
@@ -189,6 +190,7 @@ struct Config {
     pathMarkovOrder = other.pathMarkovOrder;
     bipartite = other.bipartite;
     skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;
+    bipartiteTeleportation = other.bipartiteTeleportation;
     hardPartitions = other.hardPartitions;
     nonBacktracking = other.nonBacktracking;
     parseWithoutIOStreams = other.parseWithoutIOStreams;
