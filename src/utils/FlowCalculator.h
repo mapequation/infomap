@@ -35,19 +35,11 @@ namespace infomap {
 
 struct Config;
 class StateNetwork;
-enum class FlowModel;
 
 namespace detail {
   struct FlowLink {
-    explicit FlowLink(unsigned int sourceIndex = 0, unsigned int targetIndex = 0, double weight = 0.0)
-        : source(sourceIndex),
-          target(targetIndex),
-          weight(weight),
-          flow(weight) { }
-
     unsigned int source;
     unsigned int target;
-    double weight;
     double flow;
   };
 } // namespace detail
@@ -62,29 +54,30 @@ public:
   }
 
 protected:
-  FlowCalculator(StateNetwork& network, const Config& config);
+  FlowCalculator(StateNetwork&, const Config&);
 
   using FlowLink = detail::FlowLink;
 
   void calcUndirectedFlow() noexcept;
-  void calcDirectedFlow(const StateNetwork& network, const Config& config) noexcept;
-  void calcDirdirFlow(FlowModel flowModel) noexcept;
+  void calcDirectedFlow(const StateNetwork&, const Config&) noexcept;
+  void calcDirdirFlow(const Config&) noexcept;
   void calcRawdirFlow() noexcept;
 
-  void finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow) noexcept;
+  void finalize(StateNetwork&, const Config&, bool) noexcept;
 
   unsigned int numNodes;
   unsigned int numLinks;
+  unsigned int nonDanglingStartIndex;
 
   double sumLinkWeight;
   double sumUndirLinkWeight;
 
-  std::map<unsigned int, unsigned int> m_nodeIndexMap;
-  std::vector<double> m_nodeFlow;
-  std::vector<double> m_nodeTeleportRates;
+  std::map<unsigned int, unsigned int> nodeIndexMap;
+  std::vector<double> nodeFlow;
+  std::vector<double> nodeTeleportRates;
   std::vector<double> sumLinkOutWeight;
   std::vector<unsigned int> nodeOutDegree;
-  std::vector<FlowLink> m_flowLinks;
+  std::vector<FlowLink> flowLinks;
 };
 
 } // namespace infomap
