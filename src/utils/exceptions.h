@@ -5,61 +5,17 @@
 
 namespace infomap {
 
-struct InputSyntaxError : public std::runtime_error {
-  InputSyntaxError(std::string const& s) : std::runtime_error(s) {}
-};
-
-struct UnknownFileTypeError : public std::runtime_error {
-  UnknownFileTypeError(std::string const& s) : std::runtime_error(s) {}
-};
-
-struct FileFormatError : public std::runtime_error {
-  FileFormatError(std::string const& s) : std::runtime_error(s) {}
-};
-
-struct InputDomainError : public std::runtime_error {
-  InputDomainError(std::string const& s) : std::runtime_error(s) {}
-};
-
-struct BadConversionError : public std::runtime_error {
-  BadConversionError(std::string const& s) : std::runtime_error(s) {}
-};
-
-struct MisMatchError : public std::runtime_error {
-  MisMatchError(std::string const& s) : std::runtime_error(s) {}
-};
-
-struct InternalOrderError : public std::logic_error {
-  InternalOrderError(std::string const& s) : std::logic_error(s) {}
-};
-
-struct ImplementationError : public std::runtime_error {
-  ImplementationError(std::string const& s) : std::runtime_error(s) {}
-};
-
-struct DataDomainError : public std::domain_error {
-  DataDomainError(std::string const& s) : std::domain_error(s) {}
-};
-
-struct ArgumentOutOfRangeError : public std::out_of_range {
-  ArgumentOutOfRangeError(std::string const& s) : std::out_of_range(s) {}
-};
-
-struct BadArgumentError : public std::runtime_error {
-  BadArgumentError(std::string const& s) : std::runtime_error(s) {}
-};
-
-struct TypeError : public std::logic_error {
-  TypeError(std::string const& s) : std::logic_error(s) {}
-};
-
-struct OptionConflictError : public std::logic_error {
-  OptionConflictError(std::string const& s) : std::logic_error(s) {}
-};
-
-struct FileOpenError : public std::runtime_error {
-  FileOpenError(std::string const& s) : std::runtime_error(s) {}
-};
+using InputSyntaxError = std::runtime_error;
+using UnknownFileTypeError = std::runtime_error;
+using FileFormatError = std::runtime_error;
+using InputDomainError = std::runtime_error;
+using BadConversionError = std::runtime_error;
+using InternalOrderError = std::logic_error;
+using ImplementationError = std::runtime_error;
+using DataDomainError = std::domain_error;
+using BadArgumentError = std::runtime_error;
+using OptionConflictError = std::runtime_error;
+using FileOpenError = std::runtime_error;
 
 } // namespace infomap
 
