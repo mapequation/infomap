@@ -60,6 +60,7 @@ protected:
 
   void calcUndirectedFlow() noexcept;
   void calcDirectedFlow(const StateNetwork&, const Config&) noexcept;
+  void calcDirectedBipartiteFlow(const StateNetwork&, const Config&) noexcept;
   void calcDirdirFlow(const Config&) noexcept;
   void calcRawdirFlow() noexcept;
 
@@ -67,7 +68,9 @@ protected:
 
   unsigned int numNodes;
   unsigned int numLinks;
-  unsigned int nonDanglingStartIndex;
+  unsigned int nonDanglingStartIndex = 0;
+  unsigned int bipartiteStartIndex = 0;
+  unsigned int bipartiteLinkStartIndex = 0;
 
   double sumLinkWeight;
   double sumUndirLinkWeight;
