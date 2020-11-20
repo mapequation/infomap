@@ -26,6 +26,7 @@ class InfomapBase;
 
 class InfoNode {
 public:
+  using FlowType = FlowData::FlowType;
   using EdgeType = Edge<InfoNode>;
 
   using child_iterator = ChildIterator<InfoNode*>;
@@ -495,7 +496,7 @@ public:
 
   void deleteChildren();
 
-  EdgeType* addOutEdge(InfoNode& target, double weight, double flow = 0.0)
+  EdgeType* addOutEdge(InfoNode& target, double weight, FlowType flow = {})
   {
     EdgeType* edge = new EdgeType(*this, target, weight, flow);
     m_outEdges.push_back(edge);

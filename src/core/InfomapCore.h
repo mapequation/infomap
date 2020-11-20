@@ -11,9 +11,9 @@
 #include "../io/Config.h"
 #include "InfomapBase.h"
 #include "MapEquation.h"
-#include "MemMapEquation.h"
-#include "MetaMapEquation.h"
-#include "BiasedMapEquation.h"
+//#include "MemMapEquation.h"
+//#include "MetaMapEquation.h"
+//#include "BiasedMapEquation.h"
 #include "InfomapOptimizer.h"
 #include <memory>
 
@@ -65,6 +65,7 @@ public:
 protected:
   void initOptimizer(bool forceNoMemory = false)
   {
+    /*
     if (haveMetaData()) {
       m_optimizer = OptimizerPtr(new InfomapOptimizer<MetaMapEquation>());
     } else if (haveMemory() && !forceNoMemory) {
@@ -73,6 +74,8 @@ protected:
       // m_optimizer = OptimizerPtr(new InfomapOptimizer<MapEquation>());
       m_optimizer = OptimizerPtr(new InfomapOptimizer<BiasedMapEquation>());
     }
+     */
+    m_optimizer = OptimizerPtr(new InfomapOptimizer<MapEquation>);
     m_optimizer->init(this);
   }
 

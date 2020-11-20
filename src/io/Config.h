@@ -71,7 +71,8 @@ struct Config {
   double weightThreshold = 0.0;
   bool unweightedPaths = false;
   unsigned int pathMarkovOrder = 1;
-  bool bipartite = false;
+  bool bipartite = true;
+  double nodeTypeFlippingRate = 0.0;
   bool skipAdjustBipartiteFlow = false;
   bool bipartiteTeleportation = false;
   bool hardPartitions = false;
@@ -189,6 +190,7 @@ struct Config {
     unweightedPaths = other.unweightedPaths;
     pathMarkovOrder = other.pathMarkovOrder;
     bipartite = other.bipartite;
+    nodeTypeFlippingRate = other.nodeTypeFlippingRate;
     skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;
     bipartiteTeleportation = other.bipartiteTeleportation;
     hardPartitions = other.hardPartitions;

@@ -324,6 +324,7 @@ void InfomapBase::run(Network& network)
 
   if (network.isBipartite()) {
     bipartite = true;
+    minBipartiteNodeIndex = network.bipartiteStartId();
   }
 
   initNetwork(network);
@@ -836,11 +837,19 @@ void InfomapBase::generateSubNetwork(Network& network)
   }
 
   m_leafNodes.reserve(numNodes);
-  double sumNodeFlow = 0.0;
+  FlowType sumNodeFlow{};
   std::map<unsigned int, unsigned int> nodeIndexMap;
   for (auto& nodeIt : network.nodes()) {
     auto& networkNode = nodeIt.second;
-    InfoNode* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
+
+    FlowType f;
+    if (networkNode.physicalId < minBipartiteNodeIndex)
+      f = { (1-nodeTypeFlippingRate) * networkNode.flow,    nodeTypeFlippingRate  * networkNode.flow };
+    else
+      f = {    nodeTypeFlippingRate  * networkNode.flow, (1-nodeTypeFlippingRate) * networkNode.flow };
+
+    //InfoNode* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
+    auto* node = new InfoNode(f, networkNode.id, networkNode.physicalId, networkNode.layerId);
     if (haveMetaData()) {
       auto meta = metaData.find(networkNode.id);
       if (meta != metaData.end()) {
@@ -849,7 +858,11 @@ void InfomapBase::generateSubNetwork(Network& network)
         node->metaData = std::vector<int>(numMetaDataDimensions, -1);
       }
     }
-    sumNodeFlow += networkNode.flow;
+    //sumNodeFlow += networkNode.flow;
+    if (networkNode.physicalId < minBipartiteNodeIndex)
+      sumNodeFlow.first += networkNode.flow;
+    else
+      sumNodeFlow.second += networkNode.flow;
     m_root.addChild(node);
     nodeIndexMap[networkNode.id] = m_leafNodes.size();
     m_leafNodes.push_back(node);
@@ -857,8 +870,8 @@ void InfomapBase::generateSubNetwork(Network& network)
   m_root.data.flow = sumNodeFlow;
   m_calculateEnterExitFlow = true;
 
-  if (std::abs(sumNodeFlow - 1.0) > 1e-10)
-    Log() << "Warning, total flow on nodes differs from 1.0 by " << sumNodeFlow - 1.0 << "." << std::endl;
+  if (std::abs(total(sumNodeFlow) - 1.0) > 1e-10)
+    Log() << "Warning, total flow on nodes differs from 1.0 by " << total(sumNodeFlow) - 1.0 << "." << std::endl;
 
   unsigned int numLinksIgnored = 0;
   for (auto& linkIt : network.nodeLinkMap()) {
@@ -872,7 +885,8 @@ void InfomapBase::generateSubNetwork(Network& network)
         ++numLinksIgnored;
       } else {
         auto& linkData = subIt.second;
-        m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.flow * markovTime);
+        //m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.flow * markovTime);
+        m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, { linkData.flow * markovTime / 2, linkData.flow * markovTime / 2 });
         // Log() << linkSourceId << " (" << sourceIndex << ") -> " << linkTargetId << " (" << targetIndex << ")"
         // << ", weight: " << linkData.weight << ", flow: " << linkData.flow << "\n";
       }
@@ -946,12 +960,12 @@ double InfomapBase::calcEntropyRate()
     double entropy = 0.0;
     for (EdgeType* e : node.outEdges()) {
       EdgeType& edge = *e;
-      sumOutFlow += edge.data.flow;
+      sumOutFlow += total(edge.data.flow);
     }
     for (EdgeType* e : node.outEdges()) {
-      entropy += -infomath::plogp(e->data.flow / sumOutFlow);
+      entropy += -infomath::plogp(total(e->data.flow) / sumOutFlow);
     }
-    entropyRate += node.data.flow * entropy;
+    entropyRate += total(node.data.flow) * entropy;
   }
   return entropyRate;
 }
@@ -1216,8 +1230,14 @@ void InfomapBase::initEnterExitFlow()
 {
   // Calculate enter/exit
   for (auto* n : m_leafNodes) {
-    n->data.enterFlow = n->data.exitFlow = 0.0;
+    //n->data.enterFlow = n->data.exitFlow = 0.0;
+    n->data.enterFlow = {};
+    n->data.exitFlow  = {};
   }
+
+  auto alpha = nodeTypeFlippingRate;
+  auto beta  = 1-alpha;
+
   if (!isUndirectedClustering()) {
     for (auto* n : m_leafNodes) {
       for (EdgeType* e : n->outEdges()) {
@@ -1230,12 +1250,40 @@ void InfomapBase::initEnterExitFlow()
     for (auto* n : m_leafNodes) {
       for (EdgeType* e : n->outEdges()) {
         EdgeType& edge = *e;
-        double halfFlow = edge.data.flow / 2;
+        //double halfFlow = edge.data.flow / 2;
         // double halfFlow = edge.data.flow;
-        edge.source.data.exitFlow += halfFlow;
-        edge.target.data.exitFlow += halfFlow;
-        edge.source.data.enterFlow += halfFlow;
-        edge.target.data.enterFlow += halfFlow;
+        //edge.source.data.exitFlow += halfFlow;
+        //edge.target.data.exitFlow += halfFlow;
+        //edge.source.data.enterFlow += halfFlow;
+        //edge.target.data.enterFlow += halfFlow;
+        if (edge.source.physicalId < minBipartiteNodeIndex)
+        {
+          edge.source.data.enterFlow.first  += beta  * edge.data.flow.first;
+          edge.source.data.enterFlow.second += alpha * edge.data.flow.second;
+
+          edge.source.data.exitFlow.first   += alpha * edge.data.flow.first;
+          edge.source.data.exitFlow.second  += beta  * edge.data.flow.second;
+
+          edge.target.data.enterFlow.first  += alpha * edge.data.flow.first;
+          edge.target.data.enterFlow.second += beta  * edge.data.flow.second;
+
+          edge.target.data.exitFlow.first   += beta  * edge.data.flow.first;
+          edge.target.data.exitFlow.second  += alpha * edge.data.flow.second;
+        }
+        else
+        {
+          edge.source.data.enterFlow.first  += alpha * edge.data.flow.first;
+          edge.source.data.enterFlow.second += beta  * edge.data.flow.second;
+
+          edge.source.data.exitFlow.first   += beta  * edge.data.flow.first;
+          edge.source.data.exitFlow.second  += alpha * edge.data.flow.second;
+
+          edge.target.data.enterFlow.first  += beta  * edge.data.flow.first;
+          edge.target.data.enterFlow.second += alpha * edge.data.flow.second;
+
+          edge.target.data.exitFlow.first   += alpha * edge.data.flow.first;
+          edge.target.data.exitFlow.second  += beta  * edge.data.flow.second;
+        }
       }
     }
   }
@@ -1246,7 +1294,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
 {
   // Aggregate flow from leaf nodes to root node
   unsigned int numLevels = 0;
-  root().data.flow = 0.0;
+  root().data.flow = {};
   for (auto it = root().begin_post_depth_first(); !it.isEnd(); ++it) {
     auto& node = *it;
     if (!node.isRoot())
@@ -1258,10 +1306,13 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
       numLevels = std::max(numLevels, it.depth());
   }
 
-  if (std::abs(root().data.flow - 1.0) > 1e-10) {
+  if (std::abs(total(root().data.flow) - 1.0) > 1e-10) {
     Log() << "Warning, aggregated flow is not exactly 1.0, but " << std::setprecision(10) << root().data.flow << std::setprecision(9) << ".\n";
     // root().data.flow = 1.0;
   }
+
+  auto alpha = nodeTypeFlippingRate;
+  auto beta  = 1-alpha;
 
   // Aggregate enter and exit flow between modules
   for (auto& leafNode : m_leafNodes) {
@@ -1269,8 +1320,8 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
     for (EdgeType* e : leafNodeSource.outEdges()) {
       auto& edge = *e;
       auto& leafNodeTarget = edge.target;
-      double linkFlow = edge.data.flow;
-      double halfFlow = linkFlow / 2;
+      //double linkFlow = edge.data.flow;
+      //double halfFlow = linkFlow / 2;
 
       InfoNode* node1 = leafNodeSource.parent;
       InfoNode* node2 = leafNodeTarget.parent;
@@ -1281,19 +1332,45 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
       // First aggregate link flow until equal depth
       while (node1->index > node2->index) {
         if (isUndirectedClustering()) {
-          node1->data.exitFlow += halfFlow;
-          node1->data.enterFlow += halfFlow;
+          //node1->data.exitFlow += halfFlow;
+          //node1->data.enterFlow += halfFlow;
+          if (edge.source.physicalId < minBipartiteNodeIndex)
+          {
+            node1->data.enterFlow.first  += beta  * edge.data.flow.first;
+            node1->data.enterFlow.second += alpha * edge.data.flow.second;
+
+            node1->data.exitFlow.first   += alpha * edge.data.flow.first;
+            node1->data.exitFlow.second  += beta  * edge.data.flow.second;
+          }
+          else
+          {
+            // doesn't happen
+          }
         } else {
-          node1->data.exitFlow += linkFlow;
+          // wo don't do this in the bipartite case, directed bipartite networks are funny
+          //node1->data.exitFlow += linkFlow;
         }
         node1 = node1->parent;
       }
       while (node2->index > node1->index) {
         if (isUndirectedClustering()) {
-          node2->data.enterFlow += halfFlow;
-          node2->data.exitFlow += halfFlow;
+          //node2->data.enterFlow += halfFlow;
+          //node2->data.exitFlow += halfFlow;
+          if (edge.source.physicalId < minBipartiteNodeIndex)
+          {
+            node2->data.enterFlow.first  += alpha * edge.data.flow.first;
+            node2->data.enterFlow.second += beta  * edge.data.flow.second;
+
+            node2->data.exitFlow.first   += beta  * edge.data.flow.first;
+            node2->data.exitFlow.second  += alpha * edge.data.flow.second;
+          }
+          else
+          {
+            // doesn't happen
+          }
         } else {
-          node2->data.enterFlow += linkFlow;
+          // wo don't do this in the bipartite case, directed bipartite networks are funny
+          //node2->data.enterFlow += linkFlow;
         }
         node2 = node2->parent;
       }
@@ -1301,13 +1378,32 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
       // Then aggregate link flow until equal parent
       while (node1 != node2) {
         if (isUndirectedClustering()) {
-          node1->data.exitFlow += halfFlow;
-          node1->data.enterFlow += halfFlow;
-          node2->data.enterFlow += halfFlow;
-          node2->data.exitFlow += halfFlow;
+          //node1->data.exitFlow += halfFlow;
+          //node1->data.enterFlow += halfFlow;
+          //node2->data.enterFlow += halfFlow;
+          //node2->data.exitFlow += halfFlow;
+          if (edge.source.physicalId < minBipartiteNodeIndex)
+          {
+            node1->data.enterFlow.first  += beta  * edge.data.flow.first;
+            node1->data.enterFlow.second += alpha * edge.data.flow.second;
+
+            node1->data.exitFlow.first   += alpha * edge.data.flow.first;
+            node1->data.exitFlow.second  += beta  * edge.data.flow.second;
+
+            node2->data.enterFlow.first  += alpha * edge.data.flow.first;
+            node2->data.enterFlow.second += beta  * edge.data.flow.second;
+
+            node2->data.exitFlow.first   += beta  * edge.data.flow.first;
+            node2->data.exitFlow.second  += alpha * edge.data.flow.second;
+          }
+          else
+          {
+            // doesn't happen
+          }
         } else {
-          node1->data.exitFlow += linkFlow;
-          node2->data.enterFlow += linkFlow;
+          // wo don't do this in the bipartite case, directed bipartite networks are funny
+          //node1->data.exitFlow += linkFlow;
+          //node2->data.enterFlow += linkFlow;
         }
         node1 = node1->parent;
         node2 = node2->parent;
@@ -1732,7 +1828,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
 
 void InfomapBase::transformNodeFlowToEnterFlow(InfoNode& parent)
 {
-  double sumFlow = 0.0;
+  FlowType sumFlow = {};
   for (auto& module : m_root) {
     module.data.flow = module.data.enterFlow;
     sumFlow += module.data.flow;
@@ -1745,11 +1841,11 @@ void InfomapBase::resetFlowOnModules()
   // Reset flow on all modules
   for (auto& module : m_root.infomapTree()) {
     if (!module.isLeaf())
-      module.data.flow = 0.0;
+      module.data.flow = {};
   }
   // Aggregate flow from leaf nodes up in the tree
   for (InfoNode* n : m_leafNodes) {
-    double leafNodeFlow = n->data.flow;
+    auto leafNodeFlow = n->data.flow;
     InfoNode* module = n->parent;
     do {
       module->data.flow += leafNodeFlow;
@@ -1860,8 +1956,8 @@ void InfomapBase::queueTopModules(PartitionQueue& partitionQueue)
   // Add modules to partition queue
   unsigned int numNonTrivialModules = 0;
   partitionQueue.resize(numTopModules());
-  double sumFlow = 0.0;
-  double sumNonTrivialFlow = 0.0;
+  FlowType sumFlow{};
+  FlowType sumNonTrivialFlow{};
   double sumModuleCodelength = 0.0;
   unsigned int moduleIndex = 0;
   for (auto& module : m_root) {
@@ -1896,8 +1992,8 @@ void InfomapBase::queueLeafModules(PartitionQueue& partitionQueue)
   // Add modules to partition queue
   partitionQueue.resize(numLeafModules);
   unsigned int numNonTrivialModules = 0;
-  double sumFlow = 0.0;
-  double sumNonTrivialFlow = 0.0;
+  FlowType sumFlow{};
+  FlowType sumNonTrivialFlow{};
   double sumModuleCodelength = 0.0;
   unsigned int moduleIndex = 0;
   unsigned int maxDepth = 0;
@@ -2278,7 +2374,7 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 
         auto& path = it.path();
 
-        outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << nodeName(node) << "\" " << node.physicalId << '\n';
+        outStream << io::stringify(path, ":") << " " << total(node.data.flow) << " \"" << nodeName(node) << "\" " << node.physicalId << '\n';
       }
     }
   } else {
@@ -2291,7 +2387,7 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 
         auto& path = it.path();
 
-        outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << nodeName(node) << "\" ";
+        outStream << io::stringify(path, ":") << " " << total(node.data.flow) << " \"" << nodeName(node) << "\" ";
 
         if (states) {
           outStream << node.stateId << " " << node.physicalId;
@@ -2352,12 +2448,12 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
   }
 
   using Link = std::pair<unsigned int, unsigned int>;
-  using LinkMap = std::map<Link, double>;
+  using LinkMap = std::map<Link, FlowType>;
   std::map<std::string, LinkMap> moduleLinks;
 
   for (auto& leaf : m_leafNodes) {
     for (auto& link : leaf->outEdges()) {
-      double flow = link->data.flow;
+      auto flow = link->data.flow;
       InfoNode* sourceParent = stateIdToParent[link->source.stateId];
       InfoNode* targetParent = stateIdToParent[link->target.stateId];
 
@@ -2421,7 +2517,7 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
     for (auto itLink : links) {
       unsigned int sourceId = itLink.first.first;
       unsigned int targetId = itLink.first.second;
-      double flow = itLink.second;
+      auto flow = itLink.second;
       outStream << sourceId << " " << targetId << " " << flow << "\n";
     }
   }
@@ -2439,7 +2535,7 @@ void InfomapBase::writeNewickTree(std::ostream& outStream, bool states)
 
   auto isRoot = true;
   unsigned int lastDepth = 0;
-  std::vector<double> flowStack;
+  std::vector<FlowType> flowStack;
 
   auto writeNewickNode = [&](std::ostream& o, const InfoNode& node, unsigned int depth) {
     if (depth > lastDepth || isRoot) {

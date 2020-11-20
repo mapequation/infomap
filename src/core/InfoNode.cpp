@@ -231,7 +231,7 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
   InfoNode::child_iterator nodeIt = begin_child();
   unsigned int numOriginalChildrenLeft = m_childDegree;
   auto d0 = m_childDegree;
-  double flow = 0.0;
+  FlowType flow = {};
   do {
     InfoNode* n = nodeIt.current();
     flow += n->data.flow;
@@ -448,7 +448,7 @@ void InfoNode::sortChildrenOnFlow(bool recurse)
   if (childDegree() == 0)
     return;
   std::vector<InfoNode*> nodes(childDegree());
-  double lastFlow = 1.0;
+  FlowType lastFlow = { 1.0, 1.0 }; // ToDo[Chris] what should this be?
   bool isSorted = true;
   unsigned int i = 0;
   for (InfoNode& child : children()) {

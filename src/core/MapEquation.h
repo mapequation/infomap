@@ -27,6 +27,7 @@ class InfoNode;
 class MapEquation {
 public:
   using FlowDataType = FlowData;
+  using FlowType = FlowData::FlowType;
   // using DeltaFlowDataType = MemDeltaFlow;
   using DeltaFlowDataType = DeltaFlow;
 
@@ -69,11 +70,11 @@ public:
 
   static bool haveMemory() { return false; }
 
-  double getIndexCodelength() const { return indexCodelength; }
+  FlowType getIndexCodelength() const { return indexCodelength; }
 
-  double getModuleCodelength() const { return moduleCodelength; }
+  FlowType getModuleCodelength() const { return moduleCodelength; }
 
-  double getCodelength() const { return codelength; }
+  FlowType getCodelength() const { return codelength; }
 
   // ===================================================
   // IO
@@ -102,7 +103,7 @@ public:
   // Codelength
   // ===================================================
 
-  double calcCodelength(const InfoNode& parent) const;
+  FlowType calcCodelength(const InfoNode& parent) const;
 
   void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) {}
 
@@ -138,9 +139,9 @@ protected:
   // Protected member functions
   // ===================================================
 
-  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+  FlowType calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
 
-  double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
+  FlowType calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
 
   void calculateCodelength(std::vector<InfoNode*>& nodes);
 
@@ -154,25 +155,25 @@ public:
   // Public member variables
   // ===================================================
 
-  double codelength = 0.0;
-  double indexCodelength = 0.0;
-  double moduleCodelength = 0.0;
+  FlowType codelength{};
+  FlowType indexCodelength{};
+  FlowType moduleCodelength{};
 
 protected:
   // ===================================================
   // Protected member variables
   // ===================================================
 
-  double nodeFlow_log_nodeFlow = 0.0; // constant while the leaf network is the same
-  double flow_log_flow = 0.0; // node.(flow + exitFlow)
-  double exit_log_exit = 0.0;
-  double enter_log_enter = 0.0;
-  double enterFlow = 0.0;
-  double enterFlow_log_enterFlow = 0.0;
+  FlowType nodeFlow_log_nodeFlow{}; // constant while the leaf network is the same
+  FlowType flow_log_flow{}; // node.(flow + exitFlow)
+  FlowType exit_log_exit{};
+  FlowType enter_log_enter{};
+  FlowType enterFlow{};
+  FlowType enterFlow_log_enterFlow{};
 
   // For hierarchical
-  double exitNetworkFlow = 0.0;
-  double exitNetworkFlow_log_exitNetworkFlow = 0.0;
+  FlowType exitNetworkFlow{};
+  FlowType exitNetworkFlow_log_exitNetworkFlow{};
 };
 
 } // namespace infomap

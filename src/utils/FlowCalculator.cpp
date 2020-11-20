@@ -486,6 +486,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
 void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow) noexcept
 {
   // TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
+  /* [chris]: don't do this, we want flow on both sides!
   if (network.isBipartite()) {
     Log() << "\n  -> Using bipartite links.";
 
@@ -518,6 +519,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
       }
     }
   }
+  */
 
   if (config.useNodeWeightsAsFlow) {
     Log() << "\n  -> Using node weights as flow.";

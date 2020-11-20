@@ -29,6 +29,7 @@
 #define INFOMATH_H_
 
 #include <cmath>
+#include <utility>
 
 namespace infomap {
 namespace infomath {
@@ -38,6 +39,11 @@ namespace infomath {
   inline double plogp(double p)
   {
     return p > 0.0 ? p * log2(p) : 0.0;
+  }
+
+  inline std::pair<double, double> plogp(std::pair<double, double> p)
+  {
+    return { plogp(p.first), plogp(p.second) };
   }
 
 } // namespace infomath

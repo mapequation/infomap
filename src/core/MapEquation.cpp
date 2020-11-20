@@ -29,7 +29,7 @@ namespace infomap {
 
 std::ostream& MapEquation::print(std::ostream& out) const
 {
-  return out << indexCodelength << " + " << moduleCodelength << " = " << io::toPrecision(codelength);
+  return out << indexCodelength << " + " << moduleCodelength << " = " << io::toPrecision(total(codelength));
 }
 
 std::ostream& operator<<(std::ostream& out, const MapEquation& mapEq)
@@ -51,7 +51,7 @@ void MapEquation::initNetwork(InfoNode& root)
 {
   Log(3) << "MapEquation::initNetwork()...\n";
 
-  nodeFlow_log_nodeFlow = 0.0;
+  nodeFlow_log_nodeFlow = {};
   for (InfoNode& node : root) {
     nodeFlow_log_nodeFlow += infomath::plogp(node.data.flow);
   }
@@ -62,7 +62,7 @@ void MapEquation::initSuperNetwork(InfoNode& root)
 {
   Log(3) << "MapEquation::initSuperNetwork()...\n";
 
-  nodeFlow_log_nodeFlow = 0.0;
+  nodeFlow_log_nodeFlow = {};
   for (InfoNode& node : root) {
     nodeFlow_log_nodeFlow += infomath::plogp(node.data.enterFlow);
   }
@@ -93,10 +93,10 @@ void MapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
 
 void MapEquation::calculateCodelengthTerms(std::vector<InfoNode*>& nodes)
 {
-  enter_log_enter = 0.0;
-  flow_log_flow = 0.0;
-  exit_log_exit = 0.0;
-  enterFlow = 0.0;
+  enter_log_enter = {};
+  flow_log_flow = {};
+  exit_log_exit = {};
+  enterFlow = {};
 
   // For each module
   for (InfoNode* n : nodes) {
@@ -120,20 +120,20 @@ void MapEquation::calculateCodelengthFromCodelengthTerms()
   codelength = indexCodelength + moduleCodelength;
 }
 
-double MapEquation::calcCodelength(const InfoNode& parent) const
+MapEquation::FlowType MapEquation::calcCodelength(const InfoNode& parent) const
 {
   return parent.isLeafModule() ? calcCodelengthOnModuleOfLeafNodes(parent) : calcCodelengthOnModuleOfModules(parent);
 }
 
-double MapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
+MapEquation::FlowType MapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
 {
-  double parentFlow = parent.data.flow;
-  double parentExit = parent.data.exitFlow;
-  double totalParentFlow = parentFlow + parentExit;
-  if (totalParentFlow < 1e-16)
-    return 0.0;
+  auto parentFlow = parent.data.flow;
+  auto parentExit = parent.data.exitFlow;
+  auto totalParentFlow = parentFlow + parentExit;
+  if (total(totalParentFlow) < 1e-16)
+    return {};
 
-  double indexLength = 0.0;
+  MapEquation::FlowType indexLength = {};
   for (const auto& node : parent) {
     indexLength -= infomath::plogp(node.data.flow / totalParentFlow);
   }
@@ -144,12 +144,12 @@ double MapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) co
   return indexLength;
 }
 
-double MapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent) const
+MapEquation::FlowType MapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent) const
 {
-  double parentFlow = parent.data.flow;
-  double parentExit = parent.data.exitFlow;
-  if (parentFlow < 1e-16)
-    return 0.0;
+  auto parentFlow = parent.data.flow;
+  auto parentExit = parent.data.exitFlow;
+  if (total(parentFlow) < 1e-16)
+    return {};
 
   // H(x) = -xlog(x), T = q + SUM(p), q = exitFlow, p = enterFlow
   // Normal format
@@ -161,14 +161,14 @@ double MapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent) cons
   // = T * log(T) - q*log(q) - SUM( p*log(p) )
   // = -H(T) + H(q) + SUM(H(p))
   // As T is not known, use expanded format to avoid two loops
-  double sumEnter = 0.0;
-  double sumEnterLogEnter = 0.0;
+  MapEquation::FlowType sumEnter = {};
+  MapEquation::FlowType sumEnterLogEnter = {};
   for (const auto& node : parent) {
     sumEnter += node.data.enterFlow; // rate of enter to finer level
     sumEnterLogEnter += infomath::plogp(node.data.enterFlow);
   }
   // The possibilities from this module: Either exit to coarser level or enter one of its children
-  double totalCodewordUse = parentExit + sumEnter;
+  auto totalCodewordUse = parentExit + sumEnter;
 
   return infomath::plogp(totalCodewordUse) - sumEnterLogEnter - infomath::plogp(parentExit);
 }
@@ -183,30 +183,30 @@ double MapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
   using infomath::plogp;
   unsigned int oldModule = oldModuleDelta.module;
   unsigned int newModule = newModuleDelta.module;
-  double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
-  double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+  auto deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+  auto deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
-  double delta_enter = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
+  auto delta_enter = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
 
-  double delta_enter_log_enter = -plogp(moduleFlowData[oldModule].enterFlow)
+  auto delta_enter_log_enter = -plogp(moduleFlowData[oldModule].enterFlow)
       - plogp(moduleFlowData[newModule].enterFlow)
       + plogp(moduleFlowData[oldModule].enterFlow - current.data.enterFlow + deltaEnterExitOldModule)
       + plogp(moduleFlowData[newModule].enterFlow + current.data.enterFlow - deltaEnterExitNewModule);
 
-  double delta_exit_log_exit = -plogp(moduleFlowData[oldModule].exitFlow)
+  auto delta_exit_log_exit = -plogp(moduleFlowData[oldModule].exitFlow)
       - plogp(moduleFlowData[newModule].exitFlow)
       + plogp(moduleFlowData[oldModule].exitFlow - current.data.exitFlow + deltaEnterExitOldModule)
       + plogp(moduleFlowData[newModule].exitFlow + current.data.exitFlow - deltaEnterExitNewModule);
 
-  double delta_flow_log_flow = -plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow)
+  auto delta_flow_log_flow = -plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow)
       - plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow)
       + plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow
               - current.data.exitFlow - current.data.flow + deltaEnterExitOldModule)
       + plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow
               + current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
 
-  double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
-  return deltaL;
+  auto deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
+  return total(deltaL);
 }
 
 void MapEquation::updateCodelengthOnMovingNode(InfoNode& current,
@@ -218,8 +218,8 @@ void MapEquation::updateCodelengthOnMovingNode(InfoNode& current,
   using infomath::plogp;
   unsigned int oldModule = oldModuleDelta.module;
   unsigned int newModule = newModuleDelta.module;
-  double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
-  double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
+  auto deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
+  auto deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
   enterFlow -= moduleFlowData[oldModule].enterFlow + moduleFlowData[newModule].enterFlow;
   enter_log_enter -= plogp(moduleFlowData[oldModule].enterFlow) + plogp(moduleFlowData[newModule].enterFlow);

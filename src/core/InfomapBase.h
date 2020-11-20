@@ -39,6 +39,7 @@ class InfomapBase : public InfomapConfig<InfomapBase> {
   friend class InfomapOptimizer;
 
 protected:
+  using FlowType = FlowData::FlowType;
   using EdgeType = Edge<InfoNode>;
 
 public:
@@ -534,6 +535,7 @@ namespace detail {
 
   class PartitionQueue {
     using PendingModule = InfoNode*;
+    using FlowType = InfoNode::FlowType;
 
   public:
     using size_t = std::deque<PendingModule>::size_type;
@@ -559,8 +561,8 @@ namespace detail {
 
     unsigned int level = 1;
     unsigned int numNonTrivialModules = 0;
-    double flow = 0.0;
-    double nonTrivialFlow = 0.0;
+    FlowType flow{};
+    FlowType nonTrivialFlow{};
     bool skip = false;
     double indexCodelength = 0.0; // Consolidated
     double leafCodelength = 0.0; // Consolidated

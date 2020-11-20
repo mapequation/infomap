@@ -156,7 +156,7 @@ unsigned int NodeId(struct InfomapLeafIterator* it) { return it->current()->id()
 
 unsigned int ModuleIndex(struct InfomapLeafIterator* it) { return it->moduleIndex(); }
 
-double Flow(struct InfomapLeafIterator* it) { return it->current()->data.flow; }
+double Flow(struct InfomapLeafIterator* it) { return total(it->current()->data.flow); }
 #endif
 
 } // namespace infomap

@@ -148,26 +148,28 @@ inline bool InfomapOptimizer<Objective>::haveMemory() const
 template <typename Objective>
 inline double InfomapOptimizer<Objective>::getCodelength() const
 {
-  return m_objective.getCodelength();
+  return total(m_objective.getCodelength());
 }
 
 template <typename Objective>
 inline double InfomapOptimizer<Objective>::getIndexCodelength() const
 {
-  return m_objective.getIndexCodelength();
+  return total(m_objective.getIndexCodelength());
 }
 
 template <typename Objective>
 inline double InfomapOptimizer<Objective>::getModuleCodelength() const
 {
-  return m_objective.getModuleCodelength();
+  return total(m_objective.getModuleCodelength());
 }
 
+/*
 template <>
 inline double InfomapOptimizer<MetaMapEquation>::getMetaCodelength(bool unweighted) const
 {
   return m_objective.getMetaCodelength(unweighted);
 }
+*/
 
 template <typename Objective>
 inline double InfomapOptimizer<Objective>::getMetaCodelength(/* [[maybe_unused]] */ bool unweighted) const
@@ -206,7 +208,7 @@ inline void InfomapOptimizer<Objective>::initSuperNetwork()
 template <typename Objective>
 inline double InfomapOptimizer<Objective>::calcCodelength(const InfoNode& parent) const
 {
-  return m_objective.calcCodelength(parent);
+  return total(m_objective.calcCodelength(parent));
 }
 
 
@@ -257,8 +259,8 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
     unsigned int newM = modules[i];
 
     if (newM != oldM) {
-      DeltaFlowDataType oldModuleDelta(oldM, 0.0, 0.0);
-      DeltaFlowDataType newModuleDelta(newM, 0.0, 0.0);
+      DeltaFlowDataType oldModuleDelta(oldM, {}, {});
+      DeltaFlowDataType newModuleDelta(newM, {}, {});
 
 
       // For all outlinks
@@ -305,7 +307,7 @@ inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 {
   unsigned int coreLoopCount = 0;
   unsigned int numEffectiveLoops = 0;
-  double oldCodelength = m_objective.getCodelength();
+  double oldCodelength = total(m_objective.getCodelength());
   unsigned int loopLimit = m_infomap->coreLoopLimit;
   unsigned int minRandLoop = 2;
   if (loopLimit >= minRandLoop && m_infomap->randomizeCoreLoopLimit)
@@ -324,10 +326,10 @@ inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
     // Break if not enough improvement
     // Log() << "\nLoop " << coreLoopCount << "/" << loopLimit << ", numNodesMoved: " <<
     // 	numNodesMoved << ", -> codelength: " << m_objective.getCodelength() << "\n";
-    if (numNodesMoved == 0 || m_objective.getCodelength() >= oldCodelength - m_infomap->minimumCodelengthImprovement)
+    if (numNodesMoved == 0 || total(m_objective.getCodelength()) >= oldCodelength - m_infomap->minimumCodelengthImprovement)
       break;
     ++numEffectiveLoops;
-    oldCodelength = m_objective.getCodelength();
+    oldCodelength = total(m_objective.getCodelength());
   } while (coreLoopCount != loopLimit);
 
   return numEffectiveLoops;
@@ -588,7 +590,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
       auto& edge = *e;
       InfoNode& neighbour = edge.target;
       // deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0);
-      deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0));
+      deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, {}));
     }
     // For all inlinks
     for (auto& e : current.inEdges()) {
@@ -596,13 +598,13 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
       InfoNode& neighbour = edge.source;
       // timer.start();
       // deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow);
-      deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow));
+      deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, {}, edge.data.flow));
       // t += timer.getElapsedTimeInMilliSec();
       // ++tCount;
     }
 
     // For not moving
-    deltaFlow.add(current.index, DeltaFlowDataType(current.index, 0.0, 0.0));
+    deltaFlow.add(current.index, DeltaFlowDataType(current.index, {}, {}));
     DeltaFlowDataType oldModuleDelta = deltaFlow[current.index];
     oldModuleDelta.module = current.index; // Make sure index is correct if created new
     // ++oldModuleDelta.count;
@@ -611,7 +613,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     // Option to move to empty module (if node not already alone)
     if (m_moduleMembers[current.index] > 1 && m_emptyModules.size() > 0) {
       // deltaFlow[m_emptyModules.back()] += DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0);
-      deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
+      deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), {}, {}));
     }
 
     // For memory networks
@@ -779,7 +781,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
       auto& edge = *e;
       InfoNode& neighbour = edge.target;
       // deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0);
-      deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0));
+      deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, {}));
     }
     // For all inlinks
     for (auto& e : current.inEdges()) {
@@ -787,13 +789,13 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
       InfoNode& neighbour = edge.source;
       // timer.start();
       // deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow);
-      deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow));
+      deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, {}, edge.data.flow));
       // t += timer.getElapsedTimeInMilliSec();
       // ++tCount;
     }
 
     // For not moving
-    deltaFlow.add(current.index, DeltaFlowDataType(current.index, 0.0, 0.0));
+    deltaFlow.add(current.index, DeltaFlowDataType(current.index, {}, {}));
     DeltaFlowDataType& oldModuleDelta = deltaFlow[current.index];
     oldModuleDelta.module = current.index; // Make sure index is correct if created new
     // ++oldModuleDelta.count;
@@ -802,7 +804,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
     // Option to move to empty module (if node not already alone)
     if (m_moduleMembers[current.index] > 1 && m_emptyModules.size() > 0) {
       // deltaFlow[m_emptyModules.back()] += DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0);
-      deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
+      deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), {}, {}));
     }
 
     // For memory networks
@@ -912,8 +914,8 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
         if (validMove) {
           // Recalculate delta codelength for proposed move to see if still an improvement
 
-          oldModuleDelta = DeltaFlowDataType(oldModuleIndex, 0.0, 0.0);
-          DeltaFlowDataType newModuleDelta(bestModuleIndex, 0.0, 0.0);
+          oldModuleDelta = DeltaFlowDataType(oldModuleIndex, {}, {});
+          DeltaFlowDataType newModuleDelta(bestModuleIndex, {}, {});
 
 
           // For all outlinks
@@ -1070,7 +1072,7 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
   // }
 
   using NodePair = std::pair<unsigned int, unsigned int>;
-  using EdgeMap = std::map<NodePair, double>;
+  using EdgeMap = std::map<NodePair, typename Objective::FlowType>;
   EdgeMap moduleLinks;
 
   for (auto& node : network) {
@@ -1137,7 +1139,7 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
 template <typename Objective>
 inline bool InfomapOptimizer<Objective>::restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore)
 {
-  if (forceRestore || m_objective.getCodelength() >= m_consolidatedObjective.getCodelength() - m_infomap->minimumSingleNodeCodelengthImprovement) {
+  if (forceRestore || total(m_objective.getCodelength()) >= total(m_consolidatedObjective.getCodelength()) - m_infomap->minimumSingleNodeCodelengthImprovement) {
     m_objective = m_consolidatedObjective;
     return true;
   }

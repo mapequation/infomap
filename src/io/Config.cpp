@@ -30,6 +30,10 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(inputFormat, 'i', "input-format", "Override automatically recognized types. Options: pajek, link-list, bipartite, multilayer, states.", ArgType::option, "Input", true);
 
+  api.addOptionArgument(bipartite, "bipartite", "Treat the network as bipartite", "Input");
+
+  api.addOptionArgument(nodeTypeFlippingRate, "node-type-flipping-rate", "The rate at which node types are flipped", ArgType::number, "Input", true);
+
   api.addOptionArgument(skipAdjustBipartiteFlow, "skip-adjust-bipartite-flow", "Skip distributing all flow from the bipartite nodes to the primary nodes.", "Input", true);
 
   api.addOptionArgument(bipartiteTeleportation, "bipartite-teleportation", "Teleport like the bipartite flow instead of two-step (unipartite) teleportation.", "Input", true);

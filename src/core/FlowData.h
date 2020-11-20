@@ -7,14 +7,17 @@
 
 #include <ostream>
 #include <utility>
+#include "DoublePair.h"
 
 namespace infomap {
 
 struct FlowData {
-  FlowData(double flow = 0.0)
+  using FlowType = std::pair<double, double>;
+
+  FlowData(FlowType flow = {})
       : flow(flow),
-        enterFlow(0.0),
-        exitFlow(0.0) {}
+        enterFlow({}),
+        exitFlow({}) {}
 
   FlowData(const FlowData& other)
       : flow(other.flow),
@@ -29,9 +32,9 @@ struct FlowData {
     return *this;
   }
 
-  double flow;
-  double enterFlow;
-  double exitFlow;
+  FlowType flow{};
+  FlowType enterFlow{};
+  FlowType exitFlow{};
 
   FlowData& operator+=(const FlowData& other)
   {
@@ -57,16 +60,18 @@ struct FlowData {
 
 
 struct DeltaFlow {
+  using FlowType = std::pair<double, double>;
+
   unsigned int module = 0;
-  double deltaExit = 0.0;
-  double deltaEnter = 0.0;
+  FlowType deltaExit{};
+  FlowType deltaEnter{};
   unsigned int count = 0;
 
   virtual ~DeltaFlow() = default;
 
   DeltaFlow() = default;
 
-  explicit DeltaFlow(unsigned int module, double deltaExit, double deltaEnter)
+  explicit DeltaFlow(unsigned int module, FlowType deltaExit, FlowType deltaEnter)
       : module(module),
         deltaExit(deltaExit),
         deltaEnter(deltaEnter),
@@ -89,8 +94,8 @@ struct DeltaFlow {
   void reset()
   {
     module = 0;
-    deltaExit = 0.0;
-    deltaEnter = 0.0;
+    deltaExit = {};
+    deltaEnter = {};
     count = 0;
   }
 
@@ -109,12 +114,14 @@ struct DeltaFlow {
 };
 
 struct MemDeltaFlow : DeltaFlow {
-  double sumDeltaPlogpPhysFlow = 0.0;
-  double sumPlogpPhysFlow = 0.0;
+  using FlowType = std::pair<double, double>;
+
+  FlowType sumDeltaPlogpPhysFlow{};
+  FlowType sumPlogpPhysFlow{};
 
   MemDeltaFlow() : DeltaFlow() {}
 
-  explicit MemDeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow = 0.0, double sumPlogpPhysFlow = 0.0)
+  explicit MemDeltaFlow(unsigned int module, FlowType deltaExit, FlowType deltaEnter, FlowType sumDeltaPlogpPhysFlow = {}, FlowType sumPlogpPhysFlow = {})
       : DeltaFlow(module, deltaExit, deltaEnter),
         sumDeltaPlogpPhysFlow(sumDeltaPlogpPhysFlow),
         sumPlogpPhysFlow(sumPlogpPhysFlow) {}
@@ -130,8 +137,8 @@ struct MemDeltaFlow : DeltaFlow {
   void reset()
   {
     DeltaFlow::reset();
-    sumDeltaPlogpPhysFlow = 0.0;
-    sumPlogpPhysFlow = 0.0;
+    sumDeltaPlogpPhysFlow = {};
+    sumPlogpPhysFlow = {};
   }
 
   friend void swap(MemDeltaFlow& first, MemDeltaFlow& second)

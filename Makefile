@@ -21,8 +21,8 @@ endif
 # General file dependencies
 ##################################################
 
-HEADERS := $(shell find src -name "*.h")
-SOURCES := $(shell find src -name "*.cpp")
+HEADERS := $(shell find src -name "*.h" | egrep -v "(Biased|Mem|Meta)MapEquation")
+SOURCES := $(shell find src -name "*.cpp" | egrep -v "(Biased|Mem|Meta)MapEquation")
 OBJECTS := $(SOURCES:src/%.cpp=build/Infomap/%.o)
 
 ##################################################

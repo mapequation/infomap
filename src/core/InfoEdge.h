@@ -11,21 +11,24 @@
 namespace infomap {
 
 struct EdgeData {
+  using FlowType = std::pair<double, double>;
 public:
-  EdgeData() : weight(0.0), flow(0.0) {}
+  EdgeData() : weight(0.0), flow({}) {}
 
-  EdgeData(double weight) : weight(weight), flow(weight) {}
+  // ToDo[chris] how should the init look like? is it even used?
+  //EdgeData(double weight) : weight(weight), flow(weight) {}
 
-  EdgeData(double weight, double flow) : weight(weight), flow(flow) {}
+  EdgeData(double weight, FlowType flow) : weight(weight), flow(flow) {}
 
   double weight;
-  double flow;
+  FlowType flow{};
 };
 
 template <typename node_type>
 class Edge {
+  using FlowType = std::pair<double, double>;
 public:
-  Edge(node_type& source, node_type& target, double weight, double flow)
+  Edge(node_type& source, node_type& target, double weight, FlowType flow)
       : source(source),
         target(target),
         data(weight, flow) {}
