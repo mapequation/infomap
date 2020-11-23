@@ -73,7 +73,7 @@ struct Config {
   unsigned int pathMarkovOrder = 1;
   bool bipartite = true;
   double nodeTypeFlippingRate = 0.0;
-  bool skipAdjustBipartiteFlow = false;
+  bool skipAdjustBipartiteFlow = true;
   bool bipartiteTeleportation = false;
   bool hardPartitions = false;
   bool nonBacktracking = false;
