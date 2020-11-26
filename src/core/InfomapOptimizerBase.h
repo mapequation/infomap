@@ -41,8 +41,6 @@ public:
 
   virtual double getMetaCodelength(bool unweighted = false) const { return 0.0; }
 
-  virtual bool haveMemory() const = 0;
-
 protected:
   virtual unsigned int numActiveModules() const = 0;
 

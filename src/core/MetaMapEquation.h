@@ -53,8 +53,6 @@ public:
   // Getters
   // ===================================================
 
-  static bool haveMemory() { return true; }
-
   using Base::getIndexCodelength;
 
   // double getModuleCodelength() const { return moduleCodelength + metaCodelength; };
