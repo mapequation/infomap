@@ -78,7 +78,7 @@ protected:
 
   virtual InfomapBase* getNewInfomapInstance() const
   {
-    return new InfomapCore();
+    return new InfomapCore(getConfig());
   }
   virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const
   {
