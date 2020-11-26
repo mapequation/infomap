@@ -67,7 +67,7 @@ struct Config {
   std::string inputFormat;
   bool memoryInput = false;
   bool multilayerInput = false;
-  bool withMemory = false;
+  //bool withMemory = false; // unused
   double weightThreshold = 0.0;
   bool unweightedPaths = false;
   unsigned int pathMarkovOrder = 1;
@@ -75,7 +75,7 @@ struct Config {
   bool skipAdjustBipartiteFlow = false;
   bool bipartiteTeleportation = false;
   bool hardPartitions = false;
-  bool nonBacktracking = false;
+  //bool nonBacktracking = false; // unused
   bool parseWithoutIOStreams = false;
   bool zeroBasedNodeNumbers = false;
   bool includeSelfLinks = false;
@@ -184,7 +184,7 @@ struct Config {
     inputFormat = other.inputFormat;
     memoryInput = other.memoryInput;
     multilayerInput = other.multilayerInput;
-    withMemory = other.withMemory;
+    //withMemory = other.withMemory;
     weightThreshold = other.weightThreshold;
     unweightedPaths = other.unweightedPaths;
     pathMarkovOrder = other.pathMarkovOrder;
@@ -192,7 +192,7 @@ struct Config {
     skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;
     bipartiteTeleportation = other.bipartiteTeleportation;
     hardPartitions = other.hardPartitions;
-    nonBacktracking = other.nonBacktracking;
+    //nonBacktracking = other.nonBacktracking;
     parseWithoutIOStreams = other.parseWithoutIOStreams;
     zeroBasedNodeNumbers = other.zeroBasedNodeNumbers;
     includeSelfLinks = other.includeSelfLinks;
@@ -343,7 +343,7 @@ struct Config {
   bool isStateNetwork() const { return inputFormat == "states"; }
   bool isBipartite() const { return inputFormat == "bipartite" || bipartite; }
 
-  bool isMemoryNetwork() const { return isStateNetwork() || is3gram() || isPath() || isMultilayerNetwork() || withMemory || nonBacktracking || memoryInput; }
+  bool haveMemory() const { return memoryInput; }
 
   bool haveMetaData() const { return !metaDataFile.empty() || numMetaDataDimensions != 0; }
 

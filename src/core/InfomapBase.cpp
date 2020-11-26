@@ -301,14 +301,14 @@ void InfomapBase::run(Network& network)
 
   if (network.haveMemoryInput()) {
     Log() << "  -> Found higher order network input, using the Map Equation for higher order network flows\n";
-    if (!isMemoryNetwork()) {
+    if (!haveMemory()) {
       setMemoryInput();
     }
     if (network.isMultilayerNetwork() && !isMultilayerNetwork()) {
       setMultilayerInput();
     }
   } else {
-    if (isMemoryNetwork()) {
+    if (haveMemory()) {
       Log() << "  -> Warning: Higher order network specified but no higher order input found.\n";
     }
     Log() << "  -> Ordinary network input, using the Map Equation for first order network flows\n";

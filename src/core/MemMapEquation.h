@@ -52,8 +52,6 @@ public:
   // Getters
   // ===================================================
 
-  static bool haveMemory() { return true; }
-
   using Base::getIndexCodelength;
 
   using Base::getModuleCodelength;

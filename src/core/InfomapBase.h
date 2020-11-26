@@ -174,11 +174,6 @@ public:
   bool isSuperLevelOnTopLevel() const;
   bool isMainInfomap() const;
 
-  virtual bool haveMemory() const
-  {
-    return isMemoryNetwork();
-  }
-
   bool haveHardPartition() const;
 
   std::vector<InfoNode*>& activeNetwork() const;

@@ -67,8 +67,6 @@ public:
   // Getters
   // ===================================================
 
-  static bool haveMemory() { return false; }
-
   double getIndexCodelength() const { return indexCodelength; }
 
   double getModuleCodelength() const { return moduleCodelength; }

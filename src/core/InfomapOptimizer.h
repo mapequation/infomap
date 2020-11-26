@@ -51,8 +51,6 @@ public:
 
   virtual double getMetaCodelength(bool unweighted = false) const;
 
-  virtual bool haveMemory() const;
-
 protected:
   // virtual InfomapBase& getInfomap(InfoNode& node);
   // virtual InfomapBase* getNewInfomapInstance() const;
@@ -138,12 +136,6 @@ inline std::ostream& InfomapOptimizer<Objective>::toString(std::ostream& out) co
 // ===================================================
 // Getters
 // ===================================================
-
-template <typename Objective>
-inline bool InfomapOptimizer<Objective>::haveMemory() const
-{
-  return Objective::haveMemory();
-}
 
 template <typename Objective>
 inline double InfomapOptimizer<Objective>::getCodelength() const
