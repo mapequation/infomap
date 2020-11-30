@@ -14,6 +14,10 @@ else
 		endif
 	else
 		CXXFLAGS += -O3
+		ifneq "$(findstring noomp, $(MAKECMDGOALS))" "noomp"
+			CXXFLAGS += -Xpreprocessor -fopenmp
+			LDFLAGS += -lomp
+		endif
 	endif
 endif
 
