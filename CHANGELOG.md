@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/mapequation/infomap/compare/v1.2.1...v1.3.0) (2020-12-03)
+
+
+### Features
+
+* Add --hide-bipartite-nodes ([#156](https://github.com/mapequation/infomap/issues/156)) ([f5e673c](https://github.com/mapequation/infomap/commit/f5e673c64efaf5ae825ee6b303e78389b8d594f9))
+* New optional flow model for bipartite input ([91f35fe](https://github.com/mapequation/infomap/commit/91f35fef9b1246b87cde46d8e36ad7a992291a28))
+* Support Newick tree format in output ([9749a05](https://github.com/mapequation/infomap/commit/9749a0535b9db47826c198b6f98b8fe2510eadc4))
+
+
+### Bug Fixes
+
+* Continue searching from input tree ([2199921](https://github.com/mapequation/infomap/commit/21999211ed822a8e46a8f1cd158185ce79b3075e))
+* Fine-tune bottom modules in input tree with -F ([c187718](https://github.com/mapequation/infomap/commit/c187718e49618e2dac6c060233c844ff9a40893f))
+* Implement missing multilayer relax by JSD ([95141bf](https://github.com/mapequation/infomap/commit/95141bf89452053a5f8f7bb2afbfc4048f066ee3)), closes [#154](https://github.com/mapequation/infomap/issues/154)
+* Use correct objective in coarse tune for memory and multilevel networks ([97db558](https://github.com/mapequation/infomap/commit/97db558f27a81994a09aa6834bff5d8810a93130)), closes [#174](https://github.com/mapequation/infomap/issues/174)
+
 ### [1.2.1](https://github.com/mapequation/infomap/compare/v1.2.0...v1.2.1) (2020-11-10)
 
 
