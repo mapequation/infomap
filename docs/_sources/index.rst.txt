@@ -1,3 +1,5 @@
+.. image:: https://github.com/mapequation/infomap/workflows/C++%20CI/badge.svg
+
 Infomap
 =======
 
@@ -45,6 +47,48 @@ When the Python package is installed, an executable called
 To get started, read `Infomap Python API`_.
 
 .. _`Infomap Python API`: https://mapequation.github.io/infomap/python/
+
+Using Docker
+------------
+
+There are currently two Docker images available on `Docker Hub`_.
+
+- ``mapequation/infomap``
+- ``mapequation/infomap:notebook`` based on ``jupyter/scipy-notebook``
+
+The image ``mapequation/infomap`` can be started with
+
+.. code-block:: bash
+
+    docker run -it --rm \
+        -v `pwd`:/data \
+        mapequation/infomap
+        [infomap arguments]
+
+You can also use the supplied `docker-compose.yml`_:
+
+.. code-block:: bash
+
+    docker-compose run --rm infomap
+
+The image ``mapequation/infomap:notebook`` can be started with
+
+.. code-block:: bash
+
+    docker run \
+        -v `pwd`:/home/jovyan/work \
+        -p 8888:8888 \
+        mapequation/infomap:notebook \
+        start.sh jupyter lab
+
+Or similarly, using docker-compose:
+
+.. code-block:: bash
+
+    docker-compose up notebook
+
+.. _`Docker Hub`: https://hub.docker.com/r/mapequation/infomap
+.. _`docker-compose.yml`: https://github.com/mapequation/infomap/blob/master/docker-compose.yml
 
 Compiling from source
 ---------------------
