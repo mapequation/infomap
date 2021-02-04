@@ -97,6 +97,10 @@ protected:
   // ===================================================
 
   // Init terms that is constant for the whole network
+  virtual void initTree()
+  {
+    return m_optimizer->initTree();
+  }
   virtual void initNetwork()
   {
     return m_optimizer->initNetwork();

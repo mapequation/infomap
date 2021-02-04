@@ -621,6 +621,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
   }
 
   aggregateFlowValuesFromLeafToRoot();
+  initTree();
   initNetwork();
   calculateNumNonTrivialTopModules();
   // Init partition to calculate indexCodelength and moduleCodelength

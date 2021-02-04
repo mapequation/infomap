@@ -68,6 +68,8 @@ protected:
   // ===================================================
 
   // Init terms that is constant for the whole network
+  virtual void initTree();
+
   virtual void initNetwork();
 
   virtual void initSuperNetwork();
@@ -179,13 +181,20 @@ inline unsigned int InfomapOptimizer<Objective>::numActiveModules() const
 // ===================================================
 
 template <typename Objective>
+inline void InfomapOptimizer<Objective>::initTree()
+{
+  Log(4) << "InfomapOptimizer::initTree()...\n";
+  m_objective.initTree(m_infomap->root());
+}
+
+template <typename Objective>
 inline void InfomapOptimizer<Objective>::initNetwork()
 {
   Log(4) << "InfomapOptimizer::initNetwork()...\n";
   m_objective.initNetwork(m_infomap->root());
 
   if (!m_infomap->isMainInfomap())
-    m_objective.initSubNetwork(m_infomap->root());
+    m_objective.initSubNetwork(m_infomap->root()); //TODO: Already called in initNetwork?
 }
 
 template <typename Objective>
