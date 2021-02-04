@@ -54,6 +54,12 @@ void MetaMapEquation::init(const Config& config)
 }
 
 
+void MetaMapEquation::initTree(InfoNode& root)
+{
+  Log(3) << "MetaMapEquation::initTree()...\n";
+  initMetaNodes(root);
+}
+
 void MetaMapEquation::initNetwork(InfoNode& root)
 {
   Log(3) << "MetaMapEquation::initNetwork()...\n";
@@ -83,15 +89,24 @@ void MetaMapEquation::initMetaNodes(InfoNode& root)
 {
   bool notInitiated = root.firstChild->metaCollection.empty();
   if (notInitiated) {
-    Log(3) << "MetaMapEquation::initMetaNodesOnOriginalNetwork()...\n";
-    for (InfoNode& node : root) {
-      // Use only one meta dimension for now
-      if (!node.metaData.empty()) {
-        // std::cout << "\n@@@@@1 metaCollection.add(" << node.metaData[0] << ", " << (weightByFlow ? node.data.flow : 1) << ")\n";
-        node.metaCollection.add(node.metaData[0], weightByFlow ? node.data.flow : m_unweightedNodeFlow);
-        // std::cout << " -> " << node.metaCollection << "\n";
-      } else
-        throw std::length_error("A node is missing meta data using MetaMapEquation");
+    Log(3) << "MetaMapEquation::initMetaNodes()...\n";
+
+    for (auto it = root.begin_post_depth_first(); !it.isEnd(); ++it) {
+      auto& node = *it;
+      if (node.isRoot()) {
+        break;
+      }
+      if (node.isLeaf()) {
+        if (!node.metaData.empty()) {
+          //TODO: Use flow here and move weightByFlow choice to metaCollection, using flowCount?
+          double flow = weightByFlow ? node.data.flow : m_unweightedNodeFlow;
+          node.parent->metaCollection.add(node.metaData[0], flow);
+        } else {
+          throw std::length_error("A node is missing meta data using MetaMapEquation");
+        }
+      } else {
+        node.parent->metaCollection.add(node.metaCollection);
+      }
     }
   }
 }

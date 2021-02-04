@@ -49,6 +49,8 @@ protected:
   // ===================================================
 
   // Init terms that is constant for the whole network
+  virtual void initTree() = 0;
+
   virtual void initNetwork() = 0;
 
   virtual void initSuperNetwork() = 0;
