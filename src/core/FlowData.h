@@ -15,6 +15,7 @@ struct FlowData {
       : flow(flow),
         enterFlow(0.0),
         exitFlow(0.0),
+        teleportFlow(0.0),
         teleportSourceFlow(0.0),
         teleportWeight(0.0),
         danglingFlow(0.0) {}
@@ -23,6 +24,7 @@ struct FlowData {
       : flow(other.flow),
         enterFlow(other.enterFlow),
         exitFlow(other.exitFlow),
+        teleportFlow(other.teleportFlow),
         teleportSourceFlow(other.teleportSourceFlow),
         teleportWeight(other.teleportWeight),
         danglingFlow(other.danglingFlow) {}
@@ -32,6 +34,7 @@ struct FlowData {
     flow = other.flow;
     enterFlow = other.enterFlow;
     exitFlow = other.exitFlow;
+    teleportFlow = other.teleportFlow;
     teleportSourceFlow = other.teleportSourceFlow;
     teleportWeight = other.teleportWeight;
     danglingFlow = other.danglingFlow;
@@ -41,6 +44,7 @@ struct FlowData {
   double flow;
   double enterFlow;
   double exitFlow;
+  double teleportFlow;
   double teleportSourceFlow;
   double teleportWeight;
   double danglingFlow;
@@ -50,6 +54,7 @@ struct FlowData {
     flow += other.flow;
     enterFlow += other.enterFlow;
     exitFlow += other.exitFlow;
+    teleportFlow += other.teleportFlow;
     teleportSourceFlow += other.teleportSourceFlow;
     teleportWeight += other.teleportWeight;
     danglingFlow += other.danglingFlow;
@@ -61,6 +66,7 @@ struct FlowData {
     flow -= other.flow;
     enterFlow -= other.enterFlow;
     exitFlow -= other.exitFlow;
+    teleportFlow -= other.teleportFlow;
     teleportSourceFlow -= other.teleportSourceFlow;
     teleportWeight -= other.teleportWeight;
     danglingFlow -= other.danglingFlow;

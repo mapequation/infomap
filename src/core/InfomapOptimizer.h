@@ -283,20 +283,24 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
 
        // For recorded teleportation
       if (m_infomap->recordedTeleportation) {
-        double alpha = m_infomap->teleportationProbability;
-        double beta = 1.0 - alpha;
+        // double alpha = m_infomap->teleportationProbability;
+        // double beta = 1.0 - alpha;
         
         // addTeleportationDeltaFlowOnOldModuleIfMove(current, moduleDeltaExits[j]);
         auto& oldModuleFlowData = m_moduleFlowData[oldM];
-        double deltaEnterOld = (alpha*(oldModuleFlowData.teleportSourceFlow - current.data.teleportSourceFlow) + beta*(oldModuleFlowData.danglingFlow - current.data.danglingFlow)) * current.data.teleportWeight;
-        double deltaExitOld = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+        // double deltaEnterOld = (alpha*(oldModuleFlowData.teleportSourceFlow - current.data.teleportSourceFlow) + beta*(oldModuleFlowData.danglingFlow - current.data.danglingFlow)) * current.data.teleportWeight;
+        double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
+        // double deltaExitOld = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+        double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
         oldModuleDelta.deltaEnter += deltaEnterOld;
         oldModuleDelta.deltaExit += deltaExitOld;
 
         // addTeleportationDeltaFlowOnNewModuleIfMove(current, moduleDeltaExits[j]);
         auto& newModuleFlowData = m_moduleFlowData[newM];
-        double deltaEnterNew = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * newModuleFlowData.teleportWeight;
-        double deltaExitNew = (alpha*newModuleFlowData.teleportSourceFlow +	beta*newModuleFlowData.danglingFlow) * current.data.teleportWeight;
+        // double deltaEnterNew = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * newModuleFlowData.teleportWeight;
+        double deltaEnterNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
+        // double deltaExitNew = (alpha*newModuleFlowData.teleportSourceFlow +	beta*newModuleFlowData.danglingFlow) * current.data.teleportWeight;
+        double deltaExitNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
         newModuleDelta.deltaEnter += deltaEnterNew;
         newModuleDelta.deltaExit += deltaExitNew;
         
@@ -654,8 +658,8 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
     // For recorded teleportation
     if (m_infomap->recordedTeleportation) {
-      double alpha = m_infomap->teleportationProbability;
-      double beta = 1.0 - alpha;
+      // double alpha = m_infomap->teleportationProbability;
+      // double beta = 1.0 - alpha;
       for (unsigned int j = 0; j < numModuleLinks; ++j)
       {
         auto& deltaEnterExit = moduleDeltaEnterExit[j];
@@ -663,8 +667,10 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
         if (moduleIndex == current.index) {
           // addTeleportationDeltaFlowOnOldModuleIfMove(current, moduleDeltaExits[j]);
           auto& oldModuleFlowData = m_moduleFlowData[moduleIndex];
-          double deltaEnterOld = (alpha*(oldModuleFlowData.teleportSourceFlow - current.data.teleportSourceFlow) + beta*(oldModuleFlowData.danglingFlow - current.data.danglingFlow)) * current.data.teleportWeight;
-          double deltaExitOld = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+          // double deltaEnterOld = (alpha*(oldModuleFlowData.teleportSourceFlow - current.data.teleportSourceFlow) + beta*(oldModuleFlowData.danglingFlow - current.data.danglingFlow)) * current.data.teleportWeight;
+          double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
+          // double deltaExitOld = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+          double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
           deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitOld, deltaEnterOld));
           // deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaEnterOld, 0.0));
           // deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, deltaExitOld));
@@ -674,8 +680,11 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
         else {
           // addTeleportationDeltaFlowOnNewModuleIfMove(current, moduleDeltaExits[j]);
           auto& newModuleFlowData = m_moduleFlowData[moduleIndex];
-          double deltaEnterNew = (alpha*newModuleFlowData.teleportSourceFlow +	beta*newModuleFlowData.danglingFlow) * current.data.teleportWeight;
-          double deltaExitNew = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * newModuleFlowData.teleportWeight;
+          // double deltaEnterNew = (alpha*newModuleFlowData.teleportSourceFlow +	beta*newModuleFlowData.danglingFlow) * current.data.teleportWeight;
+          double deltaEnterNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
+          // double deltaExitNew = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * newModuleFlowData.teleportWeight;
+          double deltaExitNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
+          //TODO: Why is deltaEnterNew and deltaExitNew switched compared to moveToPredefinedModule? Why doesn't it matter?
 
           // deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaEnterNew, 0.0));
           // deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, deltaExitNew));

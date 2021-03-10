@@ -1256,8 +1256,10 @@ void InfomapBase::initEnterExitFlow()
   if (!isUndirectedClustering()) {
     for (auto* n : m_leafNodes) {
       auto& node = *n;
+      node.data.teleportFlow = teleportationProbability * node.data.flow;
       node.data.teleportSourceFlow = node.data.flow;
       if (node.isDangling()) {
+        node.data.teleportFlow = node.data.flow;
         node.data.danglingFlow = node.data.flow;
         m_sumDanglingFlow += node.data.flow;
       }
@@ -1281,9 +1283,12 @@ void InfomapBase::initEnterExitFlow()
   } else {
     for (auto* n : m_leafNodes) {
       auto& node = *n;
+      node.data.teleportFlow = teleportationProbability * node.data.flow;
       node.data.teleportSourceFlow = node.data.flow;
-      if (node.isDangling())
+      if (node.isDangling()) {
+        node.data.teleportFlow = node.data.flow;
         node.data.danglingFlow = node.data.flow;
+      }
       for (EdgeType* e : node.outEdges()) {
         EdgeType& edge = *e;
         double halfFlow = edge.data.flow / 2;
