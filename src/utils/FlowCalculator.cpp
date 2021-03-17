@@ -166,7 +166,11 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     if (network.isBipartite() && config.bipartiteTeleportation) {
       calcDirectedBipartiteFlow(network, config);
     } else {
-      calcDirectedFlow(network, config);
+      if (config.bayesianPrior) {
+        calcDirectedFlowWithBayesianPrior(network, config);
+      } else {
+        calcDirectedFlow(network, config);
+      }
     }
     break;
   case FlowModel::undirdir:
@@ -353,6 +357,153 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
   for (auto& link : flowLinks) {
     link.flow *= beta * nodeFlowTmp[link.source] / sumNodeRank;
   }
+}
+
+void FlowCalculator::calcDirectedFlowWithBayesianPrior(const StateNetwork& network, const Config& config) noexcept
+{
+  Log() << "\n  -> Using recorded teleportation to nodes according to a fully connected Bayesian prior. " << std::flush;
+
+  // Calculate node weights w_i = s_i/k_i, where s_i is the node strength (weighted degree) and k_i the (unweighted) degree
+  unsigned int N = network.numNodes();
+  unsigned int E = network.numLinks();
+
+  std::vector<unsigned int> k_out(N, 0);
+  std::vector<unsigned int> k_in(N, 0);
+  std::vector<double> s_out(N, 0);
+  std::vector<double> s_in(N, 0);
+  double sum_s = 2 * sumLinkWeight; // TODO: sumUndirLinkWeight?
+  unsigned int sum_k = 2 * E;
+  double average_weight = sum_s / sum_k;
+
+  for (auto& link : flowLinks) {
+    k_out[link.source] += 1;
+    s_out[link.source] += link.flow;
+    k_in[link.target] += 1;
+    s_in[link.target] += link.flow;
+  }
+
+  auto s = [s_in, s_out](unsigned int i) { return s_in[i] + s_out[i]; };
+  auto k = [k_in, k_out](unsigned int i) { return k_in[i] + k_out[i]; };
+  auto u_out = [s_out, k_out](unsigned int i) { return k_out[i] == 0 ? 0 : s_out[i] / k_out[i]; };
+  auto u_in = [s_in, k_in](unsigned int i) { return k_in[i] == 0 ? 0 : s_in[i] / k_in[i]; };
+  auto u_ij = [u_in, u_out](unsigned int i, unsigned int j) { return u_out(i) * u_in(j); };
+  
+  double lambda = std::log(N) / N;
+  double u_t = average_weight;
+  // for (unsigned int i = 0; i < N; ++i) {
+  //   u_t += k(i) == 0 ? 0 : s(i) / k(i);
+  // }
+  double sum_u_in = 0.0;
+  for (unsigned int i = 0; i < N; ++i) {
+    sum_u_in += u_in(i);
+  }
+
+  auto t_ij = [lambda, u_t, u_ij](unsigned int i, unsigned int j) { return lambda/u_t * u_ij(i, j); };
+  auto t_out = [lambda, u_t, u_out, sum_u_in](unsigned int i) { return lambda/u_t * u_out(i) * sum_u_in; };
+
+  std::vector<double> alpha(N, 0);
+  Log() << "\nt_i (lambda: " << lambda << ", u_t: " << u_t << ", sum_u_in: " << sum_u_in << "): ";
+  for (unsigned int i = 0; i < N; ++i) {
+    if (k_out[i] == 0) {
+      alpha[i] = 1;
+      continue;
+    }
+    auto t_i = t_out(i);
+    alpha[i] = t_i / (s_out[i] + t_i);
+    // Log() << t_i << ", ";
+  }
+  Log() << "\n";
+  
+  // Normalize link weights with respect to its source nodes total out-link weight;
+  for (auto& link : flowLinks) {
+    if (sumLinkOutWeight[link.source] > 0) {
+      link.flow /= sumLinkOutWeight[link.source];
+    }
+  }
+
+  std::vector<double> nodeFlowTmp(numNodes, 0.0);
+
+  // Calculate PageRank
+  const auto iteration = [&](const auto iteration) {
+
+    // Flow from teleportation
+    double teleportationFlow = 0.0;
+    for (unsigned int i = 0; i < N; ++i) {
+      teleportationFlow += alpha[i] * nodeFlow[i];
+    }
+    double tmp1 = 0;
+    for (unsigned int i = 0; i < N; ++i) {
+      nodeFlowTmp[i] = u_in(i) / sum_u_in * teleportationFlow;
+      tmp1 += nodeFlowTmp[i];
+    }
+
+    // Flow from links
+    for (const auto& link : flowLinks) {
+      nodeFlowTmp[link.target] += (1 - alpha[link.source]) * link.flow * nodeFlow[link.source];
+    }
+
+    // Update node flow from the power iteration above and check if converged
+    double nodeFlowDiff = -1.0; // Start with -1.0 so we don't have to subtract it later
+    double error = 0.0;
+    for (unsigned int i = 0; i < numNodes; ++i) {
+      nodeFlowDiff += nodeFlowTmp[i];
+      error += std::abs(nodeFlowTmp[i] - nodeFlow[i]);
+    }
+    Log() << iteration << ": teleportFlow: " << teleportationFlow << ", tele nodeFlow: " << tmp1 <<
+    ", nodeFlowDiff: " << nodeFlowDiff << ", error: " << error << "\n";
+
+    nodeFlow = nodeFlowTmp;
+
+    // Normalize if needed
+    if (std::abs(nodeFlowDiff) > 1.0e-10) {
+      Log() << "(Normalizing ranks after " << iteration << " power iterations with error " << nodeFlowDiff << ") ";
+      normalize(nodeFlow, nodeFlowDiff + 1.0);
+    }
+
+    return error;
+  };
+
+  // Log() << "\nDo power iteration!\n";
+  // const auto result = powerIterate2(iteration);
+  unsigned int iterations = 0;
+  double err = 0.0;
+
+  do {
+    double oldErr = err;
+    err = iteration(iterations);
+
+    // Perturb the system if equilibrium
+    if (std::abs(err - oldErr) < 1e-15) {
+      
+    }
+
+    ++iterations;
+    if (iterations == 10) {
+      break;
+    }
+  } while (iterations < 200 && (err > 1.0e-15 || iterations < 50));
+
+  Log() << "\n  -> PageRank calculation done in " << iterations << " iterations." << std::endl;
+
+  double sumNodeRank = 1.0;
+  double tmpN = 0.0;
+  for (auto& flow : nodeFlowTmp) {
+    tmpN += flow;
+  }
+  double tmpE = 0;
+  // Update the links with their global flow from the PageRank values.
+  for (auto& link : flowLinks) {
+    link.flow *= (1 - alpha[link.source]) * nodeFlowTmp[link.source] / sumNodeRank;
+    tmpE += link.flow;
+  }
+  Log() << "\nSum node flow: " << tmpN << ", sum link flow: " << tmpE << "\n\n";
+  Log() << "Node flow (sum: " << tmpN << "):\n";
+  for (unsigned int i = 0; i < N; ++i)
+    Log() << "  " << nodeFlowTmp[i] << ", alpha: " << alpha[i] << ", t_out: " << t_out(i) << ", s_out: " << s_out[i] << ", k_out: " << k_out[i] << "\n";
+  Log() << "Link flow (sum: " << tmpE << "):\n";
+  for (auto& link : flowLinks)
+    Log() << "  " << link.flow << ", ";
+  Log() << "\n";
 }
 
 void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, const Config& config) noexcept
