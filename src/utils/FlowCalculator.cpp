@@ -399,10 +399,10 @@ void FlowCalculator::calcDirectedFlowWithBayesianPrior(const StateNetwork& netwo
   }
 
   auto t_ij = [lambda, u_t, u_ij](unsigned int i, unsigned int j) { return lambda/u_t * u_ij(i, j); };
-  auto t_out = [lambda, u_t, u_out, sum_u_in](unsigned int i) { return lambda/u_t * u_out(i) * sum_u_in; };
+  auto t_out = [lambda, u_t, u_out, u_in, sum_u_in](unsigned int i) { return lambda/u_t * u_out(i) * (sum_u_in - u_in(i)); };
 
   std::vector<double> alpha(N, 0);
-  Log() << "\nt_i (lambda: " << lambda << ", u_t: " << u_t << ", sum_u_in: " << sum_u_in << "): ";
+  // Log() << "\nt_i (lambda: " << lambda << ", u_t: " << u_t << ", sum_u_in: " << sum_u_in << "): ";
   for (unsigned int i = 0; i < N; ++i) {
     if (k_out[i] == 0) {
       alpha[i] = 1;
@@ -410,9 +410,13 @@ void FlowCalculator::calcDirectedFlowWithBayesianPrior(const StateNetwork& netwo
     }
     auto t_i = t_out(i);
     alpha[i] = t_i / (s_out[i] + t_i);
-    // Log() << t_i << ", ";
   }
   Log() << "\n";
+
+  // for (unsigned int i = 0; i < N; ++i) {
+  //   Log() << i << ": k_out: " << k_out[i] << ", k_in: " << k_in[i] << ", " <<
+  //   "s_out: " << s_out[i] << ", s_in: " << s_in[i] << ", t_out: " << t_out(i) << ", alpha: " << alpha[i] << "\n";
+  // }
   
   // Normalize link weights with respect to its source nodes total out-link weight;
   for (auto& link : flowLinks) {
@@ -426,14 +430,17 @@ void FlowCalculator::calcDirectedFlowWithBayesianPrior(const StateNetwork& netwo
   // Calculate PageRank
   const auto iteration = [&](const auto iteration) {
 
-    // Flow from teleportation
-    double teleportationFlow = 0.0;
+    // Flow from teleportation, remove self-teleportation
+    // double teleportationFlow = 0.0;
+    double teleTmp = 0.0;
     for (unsigned int i = 0; i < N; ++i) {
-      teleportationFlow += alpha[i] * nodeFlow[i];
+      // teleportationFlow += alpha[i] * nodeFlow[i];
+      teleTmp += alpha[i] * nodeFlow[i] / (sum_u_in - u_in(i));
     }
     double tmp1 = 0;
     for (unsigned int i = 0; i < N; ++i) {
-      nodeFlowTmp[i] = u_in(i) / sum_u_in * teleportationFlow;
+      // nodeFlowTmp[i] = u_in(i) / sum_u_in * (teleportationFlow - alpha[i] * nodeFlow[i]);
+      nodeFlowTmp[i] = u_in(i) * (teleTmp - alpha[i] * nodeFlow[i] / (sum_u_in - u_in(i)));
       tmp1 += nodeFlowTmp[i];
     }
 
@@ -449,8 +456,8 @@ void FlowCalculator::calcDirectedFlowWithBayesianPrior(const StateNetwork& netwo
       nodeFlowDiff += nodeFlowTmp[i];
       error += std::abs(nodeFlowTmp[i] - nodeFlow[i]);
     }
-    Log() << iteration << ": teleportFlow: " << teleportationFlow << ", tele nodeFlow: " << tmp1 <<
-    ", nodeFlowDiff: " << nodeFlowDiff << ", error: " << error << "\n";
+    // Log() << iteration << ": teleportFlow: " << teleportationFlow << ", tele nodeFlow: " << tmp1 <<
+    // ", nodeFlowDiff: " << nodeFlowDiff << ", error: " << error << "\n";
 
     nodeFlow = nodeFlowTmp;
 
@@ -478,9 +485,9 @@ void FlowCalculator::calcDirectedFlowWithBayesianPrior(const StateNetwork& netwo
     }
 
     ++iterations;
-    if (iterations == 10) {
-      break;
-    }
+    // if (iterations == 10) {
+    //   break;
+    // }
   } while (iterations < 200 && (err > 1.0e-15 || iterations < 50));
 
   Log() << "\n  -> PageRank calculation done in " << iterations << " iterations." << std::endl;
@@ -496,14 +503,14 @@ void FlowCalculator::calcDirectedFlowWithBayesianPrior(const StateNetwork& netwo
     link.flow *= (1 - alpha[link.source]) * nodeFlowTmp[link.source] / sumNodeRank;
     tmpE += link.flow;
   }
-  Log() << "\nSum node flow: " << tmpN << ", sum link flow: " << tmpE << "\n\n";
-  Log() << "Node flow (sum: " << tmpN << "):\n";
-  for (unsigned int i = 0; i < N; ++i)
-    Log() << "  " << nodeFlowTmp[i] << ", alpha: " << alpha[i] << ", t_out: " << t_out(i) << ", s_out: " << s_out[i] << ", k_out: " << k_out[i] << "\n";
-  Log() << "Link flow (sum: " << tmpE << "):\n";
-  for (auto& link : flowLinks)
-    Log() << "  " << link.flow << ", ";
-  Log() << "\n";
+  // Log() << "\nSum node flow: " << tmpN << ", sum link flow: " << tmpE << "\n\n";
+  // Log() << "Node flow (sum: " << tmpN << "):\n";
+  // for (unsigned int i = 0; i < N; ++i)
+  //   Log() << "  " << nodeFlowTmp[i] << ", alpha: " << alpha[i] << ", t_out: " << t_out(i) << ", s_out: " << s_out[i] << ", k_out: " << k_out[i] << "\n";
+  // Log() << "Link flow (sum: " << tmpE << "):\n";
+  // for (auto& link : flowLinks)
+  //   Log() << "  " << link.flow << ", ";
+  // Log() << "\n";
 }
 
 void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, const Config& config) noexcept
