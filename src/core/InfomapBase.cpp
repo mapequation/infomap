@@ -871,6 +871,9 @@ void InfomapBase::generateSubNetwork(Network& network)
     auto& networkNode = nodeIt.second;
     InfoNode* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
     node->data.teleportWeight = networkNode.weight;
+    node->data.teleportFlow = networkNode.teleFlow;
+    node->data.exitFlow = networkNode.exitFlow;
+    node->data.enterFlow = networkNode.enterFlow;
     if (haveMetaData()) {
       auto meta = metaData.find(networkNode.id);
       if (meta != metaData.end()) {
@@ -885,7 +888,10 @@ void InfomapBase::generateSubNetwork(Network& network)
     m_leafNodes.push_back(node);
   }
   m_root.data.flow = sumNodeFlow;
-  m_calculateEnterExitFlow = true;
+  // m_calculateEnterExitFlow = true; //TODO: Implement always in flow calculation
+  if (!this->bayesianPrior) {
+    m_calculateEnterExitFlow = true;
+  }
 
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Log() << "Warning, total flow on nodes differs from 1.0 by " << sumNodeFlow - 1.0 << "." << std::endl;

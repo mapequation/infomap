@@ -48,6 +48,7 @@ public:
     double flow = 0.0;
     double enterFlow = 0.0;
     double exitFlow = 0.0;
+    double teleFlow = 0.0;
 
     StateNode(unsigned int id = 0) : id(id), physicalId(id) {}
 
