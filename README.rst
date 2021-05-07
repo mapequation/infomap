@@ -11,7 +11,6 @@ In this branch, we implement the bipartite map equation with varying node-type m
 .. _`arXiv:2007.01666`: https://arxiv.org/abs/2007.01666
 
 
-
 Compiling from source
 ---------------------
 
@@ -26,16 +25,16 @@ To download and compile the newest version from `Github`_, clone the repository,
     git checkout feature/bipartite-mapequation
     make
 
-This creates the binary ``InfomapBipartite``, run it using::
+This creates the binary ``Infomap`` (you might want to rename it to InfomapBipartite or so), run it using::
 
-    ./InfomapBipartite [options] network_data destination
+    ./Infomap [options] network_data destination
 
 For a list of options, run::
 
-    ./InfomapBipartite --help
+    ./Infomap --help
 
 
-Quickstart:
+Running it:
 -----------
 To run the bipartite version of Infomap, you need to encode your network in the following format
 
@@ -61,7 +60,11 @@ where
   - ``y`` is a right node with ``y ≥ m``
   - ``42`` and ``3.14`` are carefully chosen random weights for the two edges ``(a,x)`` and ``(b,y)``
 
-Assuming your network is stored in a file called ``bipartite.net``, you can analyse it by running ``InfomapBipartite bipartite.net out`` where ``out`` is the folder where Infomap will place the result.
+Assuming your network is stored in a file called ``bipartite.net`` and you have renamed the binary to ``InfomapBipartite``, you can analyse it by running ``InfomapBipartite bipartite.net out`` where ``out`` is the folder where Infomap will place the result.
+
+You can set the rate at which node types are forgotten with ``--node-type-flipping-rate <number>`` where ``<number>`` is a value between ``0`` and ``1``.
+
+
 
 Feedback
 --------
