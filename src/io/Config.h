@@ -42,21 +42,35 @@
 
 namespace infomap {
 
-enum class FlowModel {
-  undirected,
-  directed,
-  undirdir,
-  outdirdir,
-  rawdir,
+struct FlowModel {
+  static constexpr int undirected = 0;
+  static constexpr int directed = 1;
+  static constexpr int undirdir = 2;
+  static constexpr int outdirdir = 3;
+  static constexpr int rawdir = 4;
+
+  int value = 0;
+
+  FlowModel(int val) : value(val) {}
+  FlowModel& operator=(int val) { value = val; return *this; }  
+
+
+  operator int&() { return value; }
+  operator int() const { return value; }
 };
 
 std::ostream& operator<<(std::ostream& out, FlowModel f);
 
-enum class OptimizationLevel {
-  FullCoarseTune,
-  FastCoarseTune,
-  NoTune,
-  NoAggregationNoTune
+struct OptimizationLevel {
+  static constexpr int FullCoarseTune = 0;
+  static constexpr int FastCoarseTune = 1;
+  static constexpr int NoTune = 2;
+  static constexpr int NoAggregationNoTune = 3;
+
+  int value = 0;
+
+  operator int&() { return value; }
+  operator int() const { return value; }
 };
 
 struct Config {

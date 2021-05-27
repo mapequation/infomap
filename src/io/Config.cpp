@@ -271,8 +271,6 @@ void Config::adaptDefaults()
 inline const char* flowModelToString(FlowModel flowModel)
 {
   switch (flowModel) {
-  case FlowModel::undirected:
-    return "undirected";
   case FlowModel::directed:
     return "directed";
   case FlowModel::undirdir:
@@ -281,6 +279,9 @@ inline const char* flowModelToString(FlowModel flowModel)
     return "outdirdir";
   case FlowModel::rawdir:
     return "rawdir";
+  case FlowModel::undirected:
+  default:
+    return "undirected";
   }
 }
 
