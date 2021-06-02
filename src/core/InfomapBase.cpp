@@ -322,6 +322,20 @@ void InfomapBase::run(Network& network)
 
   network.calculateFlow();
 
+  if (printFlowNetwork) {
+    std::string filename;
+    if (network.haveMemoryInput()) {
+      filename = outDirectory + outName + "_states_as_physical_flow.net";
+      Log() << "Writing flow state network as first order Pajek network to '" << filename << "'... ";
+    } else {
+      // Non-memory input
+      filename = outDirectory + outName + "_flow.net";
+      Log() << "Writing flow network to '" << filename << "'... ";
+    }
+    network.writePajekNetwork(filename, true);
+    Log() << "done!\n";
+  }
+
   if (network.isBipartite()) {
     bipartite = true;
   }
