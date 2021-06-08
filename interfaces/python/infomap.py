@@ -1,7 +1,29 @@
 from collections import namedtuple
 from contextlib import contextmanager
 
+try:
+    from math import log2
+except ImportError:
+    # Python < 3.3
+    from math import log
+
+    def log2(p):
+        return log(p, 2.0)
+
+
 MultilayerNode = namedtuple("MultilayerNode", "layer_id, node_id")
+
+
+def plogp(p):
+    return (x * log2(x) if x > 0 else 0 for x in p)
+
+
+def entropy(p):
+    return -sum(plogp(p))
+
+
+def perplexity(p):
+    return 2 ** entropy(p)
 
 
 class Infomap(InfomapWrapper):
@@ -1098,3 +1120,25 @@ class Infomap(InfomapWrapper):
             If the state nodes should be included (default False).
         """
         return self.writeFlowTree(filename, states)
+
+    @property
+    def effective_num_modules(self, depth_level=1):
+        """The flow weighted effective number of modules.
+
+        Measured as the perplexity of the module flow distribution.
+
+        Parameters
+        ----------
+        depth_level : int, optional
+            The module level returned by ``iterator.module_id``. Set to 1 (default) to
+            return the top modules (coarsest level), set to 2 for second coarsest level
+            etc. Set to -1 to return the bottom level modules (finest level).
+
+        Returns
+        -------
+        float
+            The effective number of modules
+        """
+
+        return perplexity([module.data.flow for module in self.get_tree(depth_level=depth_level)
+                           if module.depth == depth_level])
