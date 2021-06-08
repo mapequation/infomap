@@ -22,10 +22,8 @@ def find_communities(G):
     im = infomap.Infomap("--two-level")
 
     print("Building Infomap network from a NetworkX graph...")
-    im.add_nodes(G.nodes)
-    
-    for source, target in G.edges:
-        im.add_link(source, target)
+
+    im.add_networkx_graph(G)
 
     print("Find communities with Infomap...")
     im.run()

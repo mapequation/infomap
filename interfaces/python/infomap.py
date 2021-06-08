@@ -479,6 +479,53 @@ class Infomap(InfomapWrapper):
     def remove_multilayer_link(self):
         raise NotImplementedError
 
+    def add_networkx_graph(self, g, weight="weight"):
+        """Add NetworkX graph
+
+        Notes
+        -----
+        Transforms non-int labels to unique int ids.
+        Assumes that all nodes are of the same type.
+        If node type is string, they are added as names
+        to Infomap.
+
+        Parameters
+        ----------
+        g : nx.Graph
+            A NetworkX graph
+        weight : str
+            Key to lookup link weight in edge data if present
+
+        Returns
+        -------
+        dict
+            Dict with the node ids as keys and labels as values.
+        """
+        first = None
+        for node in g.nodes:
+            first = node
+            break
+
+        if first is None:
+            return dict()
+
+        is_int_id = isinstance(first, int)
+        is_string_id = isinstance(first, str)
+
+        if is_int_id:
+            node_map = {node: node for node in g.nodes}
+        else:
+            node_map = {label: node for node, label in enumerate(g.nodes)}
+
+        for label, node in node_map.items():
+            self.add_node(node, name=label if is_string_id else None)
+
+        for source, target, data in g.edges(data=True):
+            u, v = node_map[source], node_map[target]
+            self.add_link(u, v, data[weight] if weight is not None and weight in data else 1.0)
+        
+        return {node: label for label, node in node_map.items()}
+
     @property
     def bipartite_start_id(self):
         """Get or set the bipartite start id.
