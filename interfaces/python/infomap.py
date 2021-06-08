@@ -26,6 +26,210 @@ def perplexity(p):
     return 2 ** entropy(p)
 
 
+_DEFAULT_META_DATA_RATE = 1
+_DEFAULT_VERBOSITY_LEVEL = 1
+_DEFAULT_TELEPORTATION_PROB = 0.15
+_DEFAULT_MULTILAYER_RELAX_RATE = 0.15
+_DEFAULT_SEED = 123
+_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD = 1e-10
+_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD = 1e-5
+
+
+def _construct_args(args=None,
+                   # input
+                   cluster_data=None,
+                   no_infomap=False,
+                   input_format=None,
+                   skip_adjust_bipartite_flow=False,
+                   bipartite_teleportation=False,
+                   weight_threshold=None,
+                   include_self_links=False,
+                   node_limit=None,
+                   assign_to_neighbouring_module=False,
+                   meta_data=None,
+                   meta_data_rate=_DEFAULT_META_DATA_RATE,
+                   meta_data_unweighted=False,
+                   # output
+                   tree=False,
+                   ftree=False,
+                   clu=False,
+                   verbosity_level=_DEFAULT_VERBOSITY_LEVEL,
+                   silent=False,
+                   out_name=None,
+                   no_file_output=False,
+                   clu_level=None,
+                   output=None,
+                   hide_bipartite_nodes=False,
+                   # algorithm
+                   two_level=False,
+                   flow_model=None,
+                   directed=False,
+                   use_node_weights_as_flow=False,
+                   to_nodes=False,
+                   teleportation_probability=_DEFAULT_TELEPORTATION_PROB,
+                   markov_time=1,
+                   preferred_number_of_modules=None,
+                   multilayer_relax_rate=_DEFAULT_MULTILAYER_RELAX_RATE,
+                   multilayer_relax_limit=-1,
+                   multilayer_relax_limit_up=-1,
+                   multilayer_relax_limit_down=-1,
+                   multilayer_relax_by_jsd=False,
+                   # accuracy
+                   seed=_DEFAULT_SEED,
+                   num_trials=1,
+                   core_loop_limit=10,
+                   core_level_limit=None,
+                   tune_iteration_limit=None,
+                   core_loop_codelength_threshold=_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
+                   tune_iteration_relative_threshold=_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD,
+                   fast_hierarchical_solution=None,
+                   prefer_modular_solution=False,
+                   inner_parallelization=False):
+    if args is None:
+        args = ""
+
+    # input
+    if cluster_data is not None:
+        args += " --cluster-data {}".format(cluster_data)
+
+    if no_infomap:
+        args += " --no-infomap"
+
+    if input_format is not None:
+        args += " --input-format {}".format(input_format)
+
+    if skip_adjust_bipartite_flow:
+        args += " --skip-adjust-bipartite-flow"
+
+    if bipartite_teleportation:
+        args += " --bipartite-teleportation"
+
+    if weight_threshold is not None:
+        args += " --weight-threshold {}".format(weight_threshold)
+
+    if include_self_links:
+        args += " --include-self-links"
+
+    if node_limit is not None:
+        args += " --node-limit {}".format(node_limit)
+
+    if assign_to_neighbouring_module:
+        args += " --assign-to-neightbouring-module"
+
+    if meta_data is not None:
+        args += " --meta-data {}".format(meta_data)
+
+    if meta_data_rate != _DEFAULT_META_DATA_RATE:
+        args += " --meta-data-rate {}".format(meta_data_rate)
+
+    if meta_data_unweighted:
+        args += " --meta-data-unweighted"
+
+    # output
+    if tree:
+        args += " --tree"
+
+    if ftree:
+        args += " --ftree"
+
+    if clu:
+        args += " --clu"
+
+    if verbosity_level > 1:
+        args += " -{}".format("v" * verbosity_level)
+
+    if silent:
+        args += " --silent"
+
+    if out_name is not None:
+        args += " --out-name {}".format(out_name)
+
+    if no_file_output:
+        args += " --no-file-output"
+
+    if clu_level is not None:
+        args += " --clu-level {}".format(clu_level)
+
+    if output is not None:
+        args += " --output {}".format(",".join(output))
+
+    if hide_bipartite_nodes:
+        args += " --hide-bipartite-nodes"
+
+    # algorithm
+    if two_level:
+        args += " --two-level"
+
+    if flow_model is not None:
+        args += " --flow-model {}".format(flow_model)
+
+    if directed:
+        args += " --directed"
+
+    if use_node_weights_as_flow:
+        args += " --use-node-weights-as-flow"
+
+    if to_nodes:
+        args += " --to-nodes"
+
+    if teleportation_probability != _DEFAULT_TELEPORTATION_PROB:
+        args += " --teleportation-probability {}".format(teleportation_probability)
+
+    if markov_time != 1:
+        args += " --markov-time {}".format(markov_time)
+
+    if preferred_number_of_modules is not None:
+        args += " --preferred-number-of-modules {}".format(preferred_number_of_modules)
+
+    if multilayer_relax_rate != _DEFAULT_MULTILAYER_RELAX_RATE:
+        args += " --multilayer-relax-rate {}".format(multilayer_relax_rate)
+
+    if multilayer_relax_limit != -1:
+        args += " --multilayer-relax-limit {}".format(multilayer_relax_limit)
+
+    if multilayer_relax_limit_up != -1:
+        args += " --multilayer-relax-limit-up {}".format(multilayer_relax_limit_up)
+
+    if multilayer_relax_limit_down != -1:
+        args += " --multilayer-relax-limit-down {}".format(multilayer_relax_limit_down)
+
+    if multilayer_relax_by_jsd:
+        args += " --multilayer-relax-by-jsd"
+
+    # accuracy
+    if seed != _DEFAULT_SEED:
+        args += " --seed {}".format(seed)
+
+    if num_trials != 1:
+        args += " --num-trials {}".format(num_trials)
+
+    if core_loop_limit != 10:
+        args += " --core-loop-limit {}".format(core_loop_limit)
+
+    if core_level_limit is not None:
+        args += " --core-level-limit {}".format(core_level_limit)
+
+    if tune_iteration_limit is not None:
+        args += " --tune-iteration-limit {}".format(tune_iteration_limit)
+
+    if core_loop_codelength_threshold != _DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD:
+        args += " --core-loop-codelength-threshold {}".format(core_loop_codelength_threshold)
+
+    if tune_iteration_relative_threshold != _DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD:
+        args += " --tune-iteration-relative-threshold {}".format(tune_iteration_relative_threshold)
+
+    if fast_hierarchical_solution is not None:
+        args += " -{}".format("F" * fast_hierarchical_solution)
+
+    if prefer_modular_solution:
+        args += " --prefer-modular-solution"
+
+    if inner_parallelization:
+        args += " --inner-parallelization"
+
+    return args
+
+
 class Infomap(InfomapWrapper):
     """Infomap
 
@@ -58,17 +262,108 @@ class Infomap(InfomapWrapper):
     For more examples, see the examples directory.
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, **kwargs):
         """Create a new Infomap instance.
 
         Parameters
         ----------
         args : str, optional
-            Space delimited parameter list (see Infomap documentation).
+            String of Infomap arguments.
+
+        Keyword Arguments
+        -----------------
+        cluster_data : str, optional
+            Provide an initial two-level (clu format) or multi-layer (tree format) solution.
+        no_infomap : bool, optional
+            Don't run the optimizer. Useful to calculate codelength of provided cluster data or to print non-modular statistics.
+        input_format : str, optional
+            Override automatically recognized types. Options: pajek, link-list, bipartite, multilayer, states.
+        skip_adjust_bipartite_flow : bool, optional
+            Skip distributing all flow from the bipartite nodes to the primary nodes.
+        bipartite_teleportation : bool, optional
+            Teleport like the bipartite flow instead of two-step (unipartite) teleportation.
+        weight_threshold : float, optional
+            Limit the number of links to read from the network. Ignore links with less weight than the threshold.
+        include_self_links : bool, optional
+            Include links with the same source and target node.
+        node_limit : int, optional
+            Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.
+        assign_to_neighbouring_module : bool, optional
+            Assign nodes without module assignments (from --cluster-data) to the module assignment of a neighbouring node if possible.
+        meta_data : str, optional
+            Provide meta data (clu format) that should be encoded.
+        meta_data_rate : float, optional
+            Metadata encoding rate. Default is to encode each step.
+        meta_data_unweighted : bool, optional
+            Don't weight meta data by node flow.
+        tree : bool, optional
+            Write a tree file with the modular hierarchy. Automatically enabled if no other output is specified.
+        ftree : bool, optional
+            Write a ftree file with the modular hierarchy including aggregated links between (nested) modules.
+        clu : bool, optional
+            Write a clu file with the top cluster ids for each node.
+        verbosity_level : int, optional
+            Verbose output on the console.
+        silent : bool, optional
+            No output on the console.
+        out_name : str, optional
+            Name for the output files, e.g. [output_directory]/[out-name].tree
+        no_file_output : bool, optional
+            Don't write output to file.
+        clu_level : int, optional
+            For clu output, print modules at specified depth from root. Use -1 for bottom level modules.
+        output : list(str), optional
+            Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, network, states.
+        hide_bipartite_nodes : bool, optional
+            Project bipartite solution to unipartite.
+        two_level : bool, optional
+            Optimize a two-level partition of the network. Default is multi-level.
+        flow_model : str, optional
+            Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.
+        directed : bool, optional
+            Assume directed links. Shorthand for '--flow-model directed'.
+        use_node_weights_as_flow : bool, optional
+            Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1.
+        to_nodes : bool, optional
+            Teleport to nodes instead of to links, assuming uniform node weights if no such input data.
+        teleportation_probability : float, optional
+            Probability of teleporting to a random node or link.
+        markov_time : float, optional
+            Scales link flow to change the cost of moving between modules. Higher values results in fewer modules.
+        preferred_number_of_modules : int, optional
+            Penalize solutions the more they differ from this number.
+        multilayer_relax_rate : float, optional
+            Probability to relax the constraint to move only in the current layer.
+        multilayer_relax_limit : int, optional
+            Number of neighboring layers in each direction to relax to. If negative, relax to any layer.
+        multilayer_relax_limit_up : int, optional
+            Number of neighboring layers with higher id to relax to. If negative, relax to any layer.
+        multilayer_relax_limit_down : int, optional
+            Number of neighboring layers with lower id to relax to. If negative, relax to any layer.
+        multilayer_relax_by_jsd : bool, optional
+            Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.
+        seed : int, optional
+            A seed (integer) to the random number generator for reproducible results.
+        num_trials : int, optional
+            Number of outer-most loops to run before picking the best solution.
+        core_loop_limit : int, optional
+            Limit the number of loops that tries to move each node into the best possible module.
+        core_level_limit : int, optional
+            Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.
+        tune_iteration_limit : int, optional
+            Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.
+        core_loop_codelength_threshold : float, optional
+            Minimum codelength threshold for accepting a new solution in core loop.
+        tune_iteration_relative_threshold : float, optional
+            Set codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.
+        fast_hierarchical_solution : int, optional
+            Find top modules fast. Use 2 to keep all fast levels. Use 3 to skip recursive part.
+        prefer_modular_solution : bool, optional
+            Prefer modular solutions even if they are worse than putting all nodes in one module.
+        inner_parallelization : bool, optional
+            Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.
         """
-        if args is None:
-            args = ""
-        super().__init__(args)
+        super().__init__(_construct_args(args, **kwargs))
 
     def read_file(self, filename, accumulate=True):
         """Read network data from file.
@@ -643,7 +938,7 @@ class Infomap(InfomapWrapper):
     def no_infomap(self, no_infomap):
         super().setNoInfomap(no_infomap)
 
-    def run(self, args=None, initial_partition=None):
+    def run(self, args=None, initial_partition=None, **kwargs):
         """Run Infomap.
 
         Parameters
@@ -653,12 +948,80 @@ class Infomap(InfomapWrapper):
         initial_partition : dict, optional
             Initial partition to start optimizer from (see initial_partition).
 
+        Keyword Arguments
+        -----------------
+        tree : bool, optional
+            Write a tree file with the modular hierarchy. Automatically enabled if no other output is specified.
+        ftree : bool, optional
+            Write a ftree file with the modular hierarchy including aggregated links between (nested) modules.
+        clu : bool, optional
+            Write a clu file with the top cluster ids for each node.
+        verbosity_level : int, optional
+            Verbose output on the console.
+        silent : bool, optional
+            No output on the console.
+        out_name : str, optional
+            Name for the output files, e.g. [output_directory]/[out-name].tree
+        no_file_output : bool, optional
+            Don't write output to file.
+        clu_level : int, optional
+            For clu output, print modules at specified depth from root. Use -1 for bottom level modules.
+        output : list(str), optional
+            Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, network, states.
+        hide_bipartite_nodes : bool, optional
+            Project bipartite solution to unipartite.
+        two_level : bool, optional
+            Optimize a two-level partition of the network. Default is multi-level.
+        flow_model : str, optional
+            Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.
+        directed : bool, optional
+            Assume directed links. Shorthand for '--flow-model directed'.
+        use_node_weights_as_flow : bool, optional
+            Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1.
+        to_nodes : bool, optional
+            Teleport to nodes instead of to links, assuming uniform node weights if no such input data.
+        teleportation_probability : float, optional
+            Probability of teleporting to a random node or link.
+        markov_time : float, optional
+            Scales link flow to change the cost of moving between modules. Higher values results in fewer modules.
+        preferred_number_of_modules : int, optional
+            Penalize solutions the more they differ from this number.
+        multilayer_relax_rate : float, optional
+            Probability to relax the constraint to move only in the current layer.
+        multilayer_relax_limit : int, optional
+            Number of neighboring layers in each direction to relax to. If negative, relax to any layer.
+        multilayer_relax_limit_up : int, optional
+            Number of neighboring layers with higher id to relax to. If negative, relax to any layer.
+        multilayer_relax_limit_down : int, optional
+            Number of neighboring layers with lower id to relax to. If negative, relax to any layer.
+        multilayer_relax_by_jsd : bool, optional
+            Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.
+        seed : int, optional
+            A seed (integer) to the random number generator for reproducible results.
+        num_trials : int, optional
+            Number of outer-most loops to run before picking the best solution.
+        core_loop_limit : int, optional
+            Limit the number of loops that tries to move each node into the best possible module.
+        core_level_limit : int, optional
+            Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.
+        tune_iteration_limit : int, optional
+            Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.
+        core_loop_codelength_threshold : float, optional
+            Minimum codelength threshold for accepting a new solution in core loop.
+        tune_iteration_relative_threshold : float, optional
+            Set codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.
+        fast_hierarchical_solution : int, optional
+            Find top modules fast. Use 2 to keep all fast levels. Use 3 to skip recursive part.
+        prefer_modular_solution : bool, optional
+            Prefer modular solutions even if they are worse than putting all nodes in one module.
+        inner_parallelization : bool, optional
+            Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.
+
         See Also
         --------
         initial_partition
         """
-        if args is None:
-            args = ""
+        args = _construct_args(args, **kwargs)
 
         if initial_partition:
             with self._initial_partition(initial_partition):
