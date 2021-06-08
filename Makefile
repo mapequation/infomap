@@ -215,7 +215,6 @@ py-doc:
 	# Run py-local-install if you don't have pip installed it with -e
 	# and don't have the latest version installed
 	@mkdir -p $(SPHINX_TARGET_DIR)
-	@touch $(SPHINX_TARGET_DIR)/.nojekyll
 	@cp -a README.rst ${SPHINX_SOURCE_DIR}/index.rst
 	sphinx-build -b html $(SPHINX_SOURCE_DIR) $(SPHINX_TARGET_DIR)
 	@npm run py-doc-prettier
