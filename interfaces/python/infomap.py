@@ -856,7 +856,7 @@ class Infomap(InfomapWrapper):
 
     @bipartite_start_id.setter
     def bipartite_start_id(self, start_id):
-        return super().setBipartiteStartId(start_id)
+        super().setBipartiteStartId(start_id)
 
     @property
     def initial_partition(self):
@@ -910,7 +910,7 @@ class Infomap(InfomapWrapper):
     def initial_partition(self, module_ids):
         if module_ids is None:
             module_ids = {}
-        return super().setInitialPartition(module_ids)
+        super().setInitialPartition(module_ids)
 
     @contextmanager
     def _initial_partition(self, partition):
