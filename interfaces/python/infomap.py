@@ -1539,7 +1539,7 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         depth_level : int, optional
-            The module level returned by ``iterator.module_id``. Set to 1 (default) to
+            The module level returned by ``iterator.depth``. Set to 1 (default) to
             return the top modules (coarsest level), set to 2 for second coarsest level
             etc. Set to -1 to return the bottom level modules (finest level).
 
