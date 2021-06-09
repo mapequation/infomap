@@ -1288,6 +1288,47 @@ class Infomap(InfomapWrapper):
         return self.get_nodes(depth_level=1, states=False)
 
     @property
+    def num_nodes(self):
+        """The number of state nodes if we have a higher order network, or the number of physical nodes.
+
+        See Also
+        --------
+        num_physical_nodes
+
+        Returns
+        -------
+        int
+            The number of nodes
+        """
+        return self.network.numNodes()
+
+    @property
+    def num_physical_nodes(self):
+        """The number of physical nodes.
+
+        See Also
+        --------
+        num_nodes
+
+        Returns
+        -------
+        int
+            The number of nodes
+        """
+        return self.network.numPhysicalNodes()
+
+    @property
+    def num_links(self):
+        """The number of links.
+
+        Returns
+        -------
+        int
+            The number of links
+        """
+        return self.network.numLinks()
+
+    @property
     def num_top_modules(self):
         """Get the number of top modules in the tree
 
