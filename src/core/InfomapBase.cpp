@@ -2134,6 +2134,25 @@ void InfomapBase::writeResult()
     }
   }
 
+  if (printJson) {
+    std::string filename = outDirectory + outName + ".json";
+
+    if (!haveMemory()) {
+      Log() << "Write JSON tree to " << filename << "... ";
+      writeJsonTree(filename);
+      Log() << "done!\n";
+    } else {
+      // Write both physical and state level
+      Log() << "Write physical JSON tree to " << filename << "... ";
+      writeJsonTree(filename, false);
+      Log() << "done!\n";
+      std::string filenameStates = outDirectory + outName + "_states.json";
+      Log() << "Write state JSON tree to " << filenameStates << "... ";
+      writeJsonTree(filenameStates, true);
+      Log() << "done!\n";
+    }
+  }
+
 
   if (printClu) {
     std::string filename = outDirectory + outName + ".clu";
@@ -2193,6 +2212,16 @@ std::string InfomapBase::writeNewickTree(std::string filename, bool states)
 
   SafeOutFile outFile(outputFilename);
   writeNewickTree(outFile, states);
+
+  return outputFilename;
+}
+
+std::string InfomapBase::writeJsonTree(std::string filename, bool states)
+{
+  std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.json" : ".json") : filename;
+
+  SafeOutFile outFile(outputFilename);
+  writeJsonTree(outFile, states);
 
   return outputFilename;
 }
@@ -2497,6 +2526,107 @@ void InfomapBase::writeNewickTree(std::ostream& outStream, bool states)
   outStream << ");\n";
   outStream << std::setprecision(oldPrecision);
 }
+
+void InfomapBase::writeJsonTree(std::ostream& outStream, bool states)
+{
+  auto oldPrecision = outStream.precision();
+
+  outStream << "{\n";
+
+  outStream << "  \"version\": \"v" << INFOMAP_VERSION << "\",\n"
+            << "  \"args\": \"" << parsedString << "\",\n"
+            << "  \"startedAt\": \"" << m_startDate << "\",\n"
+            << "  \"completedIn\": " << m_elapsedTime.getElapsedTimeInSec() << ",\n"
+            << "  \"numLevels\": " << maxTreeDepth() << ",\n"
+            << "  \"numTopModules\": " << numTopModules() << ",\n"
+            << "  \"codelength\": " << codelength() << ",\n"
+            << "  \"relativeCodelengthSavings\": " << getRelativeCodelengthSavings() << ",\n";
+
+  if (isBipartite()) {
+    outStream << "  \"bipartiteStartId\": " << m_network.bipartiteStartId() << ",\n";
+  }
+
+  outStream << std::setprecision(6);
+
+  outStream << "  \"nodes\": [\n";
+
+  const auto nodeName = [this](const auto& node) {
+      auto name = m_network.names()[node.physicalId];
+
+      if (name.empty()) {
+        name = io::stringify(node.physicalId);
+      }
+
+      return name;
+  };
+
+  const auto shouldHideBipartiteNodes = isBipartite() && hideBipartiteNodes;
+  const auto bipartiteStartId = shouldHideBipartiteNodes ? m_network.bipartiteStartId() : 0;
+
+  // don't append a comma after the last entry
+  auto first = true;
+
+  if (haveMemory() && !states) {
+    for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
+      InfoNode& node = *it;
+      if (node.isLeaf()) {
+        if (shouldHideBipartiteNodes && node.physicalId >= bipartiteStartId) {
+          continue;
+        }
+
+        const auto path = io::stringify(it.path(), ", ");
+
+        if (first) {
+          first = false;
+        } else {
+          outStream << ",\n";
+        }
+
+        outStream << "    { ";
+        outStream << "\"path\": [" << path << "], ";
+        outStream << "\"name\": \"" << nodeName(node) << "\", ";
+        outStream << "\"flow\": " << node.data.flow << ", ";
+        outStream << "\"id\": " << node.physicalId << " }";
+      }
+    }
+  } else {
+    for (auto it(iterTree()); !it.isEnd(); ++it) {
+      InfoNode& node = *it;
+      if (node.isLeaf()) {
+        if (shouldHideBipartiteNodes && node.physicalId >= bipartiteStartId) {
+          continue;
+        }
+
+        if (first) {
+          first = false;
+        } else {
+          outStream << ",\n";
+        }
+
+        const auto path = io::stringify(it.path(), ", ");
+
+        outStream << "    { ";
+        outStream << "\"path\": [" << path << "], ";
+        outStream << "\"name\": \"" << nodeName(node) << "\", ";
+        outStream << "\"flow\": " << node.data.flow << ", ";
+
+        if (states) {
+          outStream << "\"stateId\": " << node.stateId << ", ";
+          if (isMultilayerNetwork())
+            outStream << "\"layerId\": " << node.layerId << ", ";
+        }
+
+        outStream << "\"id\": " << node.physicalId << " }";
+      }
+    }
+  }
+
+  outStream << "\n  ]\n"; // tree
+  outStream << '}';
+
+  outStream << std::setprecision(oldPrecision);
+}
+
 
 unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
 {
