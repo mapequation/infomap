@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>infomap module &#8212; Infomap 1.4.0 documentation</title>
+    <title>infomap module &#8212; Infomap 1.4.1 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -90,7 +90,7 @@
 <li><p><strong>out_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for the output files, e.g. [output_directory]/[out-name].tree</p></li>
 <li><p><strong>no_file_output</strong> (<em>bool</em><em>, </em><em>optional</em>) – Don’t write output to file.</p></li>
 <li><p><strong>clu_level</strong> (<em>int</em><em>, </em><em>optional</em>) – For clu output, print modules at specified depth from root. Use -1 for bottom level modules.</p></li>
-<li><p><strong>output</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, network, states.</p></li>
+<li><p><strong>output</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, network, states.</p></li>
 <li><p><strong>hide_bipartite_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Project bipartite solution to unipartite.</p></li>
 <li><p><strong>two_level</strong> (<em>bool</em><em>, </em><em>optional</em>) – Optimize a two-level partition of the network. Default is multi-level.</p></li>
 <li><p><strong>flow_model</strong> (<em>str</em><em>, </em><em>optional</em>) – Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.</p></li>
@@ -1285,6 +1285,42 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 <dt id="infomap.Infomap.write_flow_tree">
 <code class="sig-name descname">write_flow_tree</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">states</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_flow_tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write result to a ftree file.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.write_clu" title="infomap.Infomap.write_clu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_clu</span></code></a>, <a class="reference internal" href="#infomap.Infomap.write_tree" title="infomap.Infomap.write_tree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_tree</span></code></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – </p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included (default False).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="infomap.Infomap.write_json">
+<code class="sig-name descname">write_json</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">states</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write result to a JSON file.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.write_clu" title="infomap.Infomap.write_clu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_clu</span></code></a>, <a class="reference internal" href="#infomap.Infomap.write_tree" title="infomap.Infomap.write_tree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_tree</span></code></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – </p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included (default False).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="infomap.Infomap.write_newick">
+<code class="sig-name descname">write_newick</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">states</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_newick" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write result to a Newick file.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.write_clu" title="infomap.Infomap.write_clu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_clu</span></code></a>, <a class="reference internal" href="#infomap.Infomap.write_tree" title="infomap.Infomap.write_tree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_tree</span></code></a></p>

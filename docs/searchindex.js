@@ -83,6 +83,8 @@ Search.setIndex({
       tree: [2, 2, 1, ""],
       write_clu: [2, 2, 1, ""],
       write_flow_tree: [2, 2, 1, ""],
+      write_json: [2, 2, 1, ""],
+      write_newick: [2, 2, 1, ""],
       write_tree: [2, 2, 1, ""]
     },
     "infomap.InfomapIterator": {
@@ -371,6 +373,7 @@ Search.setIndex({
     javascript: 0,
     jensen: 2,
     jovyan: 0,
+    json: 2,
     jupyt: 0,
     keep: 2,
     kei: 2,
@@ -676,6 +679,8 @@ Search.setIndex({
     write: 2,
     write_clu: 2,
     write_flow_tre: 2,
+    write_json: 2,
+    write_newick: 2,
     write_tre: 2,
     yield: 2,
     yml: 0,
