@@ -419,14 +419,14 @@ public:
    */
   std::string writeFlowTree(std::string filename = "", bool states = false);
 
-	/**
-	 * Write Newick tree to a .tre file.
-	 * @param filename the filename for the output file. If empty, use default 
-	 * based on output directory and input file name
-	 * @param states if memory network, print the state-level network without merging physical nodes within modules
-	 * @return the filename written to
-	 */
-	std::string writeNewickTree(std::string filename = "", bool states = false);
+  /**
+   * Write Newick tree to a .tre file.
+   * @param filename the filename for the output file. If empty, use default
+   * based on output directory and input file name
+   * @param states if memory network, print the state-level network without merging physical nodes within modules
+   * @return the filename written to
+   */
+  std::string writeNewickTree(std::string filename = "", bool states = false);
 
   /**
    * Write tree to a .clu file.
@@ -474,11 +474,11 @@ protected:
    */
   void writeTreeLinks(std::ostream& outStream, bool states = false);
 
-	/**
-	 * Write Newick tree to output stream
-	 * @param states, write state-level tree, else aggregate physical nodes within modules
-	 */
-	void writeNewickTree(std::ostream& outStream, bool states = false);
+  /**
+   * Write Newick tree to output stream
+   * @param states, write state-level tree, else aggregate physical nodes within modules
+   */
+  void writeNewickTree(std::ostream& outStream, bool states = false);
 
   InfoNode m_root;
   std::vector<InfoNode*> m_leafNodes;
