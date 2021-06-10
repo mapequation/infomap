@@ -428,6 +428,8 @@ public:
    */
   std::string writeNewickTree(std::string filename = "", bool states = false);
 
+  std::string writeJsonTree(std::string filename = "", bool states = false);
+
   /**
    * Write tree to a .clu file.
    * @param filename the filename for the output file. If empty, use default
@@ -479,6 +481,12 @@ protected:
    * @param states, write state-level tree, else aggregate physical nodes within modules
    */
   void writeNewickTree(std::ostream& outStream, bool states = false);
+
+  /**
+   * Write JSON tree to output stream
+   * @param states, write state-level tree, else aggregate physical nodes within modules
+   */
+  void writeJsonTree(std::ostream& outStream, bool states = false);
 
   InfoNode m_root;
   std::vector<InfoNode*> m_leafNodes;
