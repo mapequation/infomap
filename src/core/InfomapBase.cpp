@@ -2116,7 +2116,7 @@ void InfomapBase::writeResult()
 
 
   if (printNewick) {
-    std::string filename = outDirectory + outName + ".tre";
+    std::string filename = outDirectory + outName + ".nwk";
 
     if (!haveMemory()) {
       Log() << "Write Newick tree to " << filename << "... ";
@@ -2127,7 +2127,7 @@ void InfomapBase::writeResult()
       Log() << "Write physical Newick tree to " << filename << "... ";
       writeNewickTree(filename, false);
       Log() << "done!\n";
-      std::string filenameStates = outDirectory + outName + "_states.tre";
+      std::string filenameStates = outDirectory + outName + "_states.nwk";
       Log() << "Write state Newick tree to " << filenameStates << "... ";
       writeNewickTree(filenameStates, true);
       Log() << "done!\n";
@@ -2208,7 +2208,7 @@ std::string InfomapBase::writeFlowTree(std::string filename, bool states)
 
 std::string InfomapBase::writeNewickTree(std::string filename, bool states)
 {
-  std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.tre" : ".tre") : filename;
+  std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.nwk" : ".nwk") : filename;
 
   SafeOutFile outFile(outputFilename);
   writeNewickTree(outFile, states);
