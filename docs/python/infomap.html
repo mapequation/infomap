@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>infomap module &#8212; Infomap 1.3.0 documentation</title>
+    <title>infomap module &#8212; Infomap 1.4.0 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -35,7 +35,7 @@
 <span id="infomap-module"></span><h1>infomap module<a class="headerlink" href="#module-infomap" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt id="infomap.Infomap">
-<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">Infomap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">infomap.</code><code class="sig-name descname">Infomap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">infomap.InfomapWrapper</span></code></p>
 <p>This class is a thin wrapper around Infomap C++ compiled with SWIG.</p>
 <p class="rubric">Examples</p>
@@ -62,11 +62,60 @@
 <p>For more examples, see the examples directory.</p>
 <dl class="py method">
 <dt id="infomap.Infomap.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new Infomap instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>args</strong> (<em>str</em><em>, </em><em>optional</em>) – Space delimited parameter list (see Infomap documentation).</p>
+<dd class="field-odd"><p><strong>args</strong> (<em>str</em><em>, </em><em>optional</em>) – String of Infomap arguments.</p>
+</dd>
+<dt class="field-even">Keyword Arguments</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>cluster_data</strong> (<em>str</em><em>, </em><em>optional</em>) – Provide an initial two-level (clu format) or multi-layer (tree format) solution.</p></li>
+<li><p><strong>no_infomap</strong> (<em>bool</em><em>, </em><em>optional</em>) – Don’t run the optimizer. Useful to calculate codelength of provided cluster data or to print non-modular statistics.</p></li>
+<li><p><strong>input_format</strong> (<em>str</em><em>, </em><em>optional</em>) – Override automatically recognized types. Options: pajek, link-list, bipartite, multilayer, states.</p></li>
+<li><p><strong>skip_adjust_bipartite_flow</strong> (<em>bool</em><em>, </em><em>optional</em>) – Skip distributing all flow from the bipartite nodes to the primary nodes.</p></li>
+<li><p><strong>bipartite_teleportation</strong> (<em>bool</em><em>, </em><em>optional</em>) – Teleport like the bipartite flow instead of two-step (unipartite) teleportation.</p></li>
+<li><p><strong>weight_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Limit the number of links to read from the network. Ignore links with less weight than the threshold.</p></li>
+<li><p><strong>include_self_links</strong> (<em>bool</em><em>, </em><em>optional</em>) – Include links with the same source and target node.</p></li>
+<li><p><strong>node_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.</p></li>
+<li><p><strong>assign_to_neighbouring_module</strong> (<em>bool</em><em>, </em><em>optional</em>) – Assign nodes without module assignments (from –cluster-data) to the module assignment of a neighbouring node if possible.</p></li>
+<li><p><strong>meta_data</strong> (<em>str</em><em>, </em><em>optional</em>) – Provide meta data (clu format) that should be encoded.</p></li>
+<li><p><strong>meta_data_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – Metadata encoding rate. Default is to encode each step.</p></li>
+<li><p><strong>meta_data_unweighted</strong> (<em>bool</em><em>, </em><em>optional</em>) – Don’t weight meta data by node flow.</p></li>
+<li><p><strong>tree</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a tree file with the modular hierarchy. Automatically enabled if no other output is specified.</p></li>
+<li><p><strong>ftree</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a ftree file with the modular hierarchy including aggregated links between (nested) modules.</p></li>
+<li><p><strong>clu</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a clu file with the top cluster ids for each node.</p></li>
+<li><p><strong>verbosity_level</strong> (<em>int</em><em>, </em><em>optional</em>) – Verbose output on the console.</p></li>
+<li><p><strong>silent</strong> (<em>bool</em><em>, </em><em>optional</em>) – No output on the console.</p></li>
+<li><p><strong>out_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for the output files, e.g. [output_directory]/[out-name].tree</p></li>
+<li><p><strong>no_file_output</strong> (<em>bool</em><em>, </em><em>optional</em>) – Don’t write output to file.</p></li>
+<li><p><strong>clu_level</strong> (<em>int</em><em>, </em><em>optional</em>) – For clu output, print modules at specified depth from root. Use -1 for bottom level modules.</p></li>
+<li><p><strong>output</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, network, states.</p></li>
+<li><p><strong>hide_bipartite_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Project bipartite solution to unipartite.</p></li>
+<li><p><strong>two_level</strong> (<em>bool</em><em>, </em><em>optional</em>) – Optimize a two-level partition of the network. Default is multi-level.</p></li>
+<li><p><strong>flow_model</strong> (<em>str</em><em>, </em><em>optional</em>) – Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.</p></li>
+<li><p><strong>directed</strong> (<em>bool</em><em>, </em><em>optional</em>) – Assume directed links. Shorthand for ‘–flow-model directed’.</p></li>
+<li><p><strong>use_node_weights_as_flow</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1.</p></li>
+<li><p><strong>to_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Teleport to nodes instead of to links, assuming uniform node weights if no such input data.</p></li>
+<li><p><strong>teleportation_probability</strong> (<em>float</em><em>, </em><em>optional</em>) – Probability of teleporting to a random node or link.</p></li>
+<li><p><strong>markov_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Scales link flow to change the cost of moving between modules. Higher values results in fewer modules.</p></li>
+<li><p><strong>preferred_number_of_modules</strong> (<em>int</em><em>, </em><em>optional</em>) – Penalize solutions the more they differ from this number.</p></li>
+<li><p><strong>multilayer_relax_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – Probability to relax the constraint to move only in the current layer.</p></li>
+<li><p><strong>multilayer_relax_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers in each direction to relax to. If negative, relax to any layer.</p></li>
+<li><p><strong>multilayer_relax_limit_up</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers with higher id to relax to. If negative, relax to any layer.</p></li>
+<li><p><strong>multilayer_relax_limit_down</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers with lower id to relax to. If negative, relax to any layer.</p></li>
+<li><p><strong>multilayer_relax_by_jsd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – A seed (integer) to the random number generator for reproducible results.</p></li>
+<li><p><strong>num_trials</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of outer-most loops to run before picking the best solution.</p></li>
+<li><p><strong>core_loop_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of loops that tries to move each node into the best possible module.</p></li>
+<li><p><strong>core_level_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.</p></li>
+<li><p><strong>tune_iteration_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.</p></li>
+<li><p><strong>core_loop_codelength_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum codelength threshold for accepting a new solution in core loop.</p></li>
+<li><p><strong>tune_iteration_relative_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Set codelength improvement threshold of each new tune iteration to ‘f’ times the initial two-level codelength.</p></li>
+<li><p><strong>fast_hierarchical_solution</strong> (<em>int</em><em>, </em><em>optional</em>) – Find top modules fast. Use 2 to keep all fast levels. Use 3 to skip recursive part.</p></li>
+<li><p><strong>prefer_modular_solution</strong> (<em>bool</em><em>, </em><em>optional</em>) – Prefer modular solutions even if they are worse than putting all nodes in one module.</p></li>
+<li><p><strong>inner_parallelization</strong> (<em>bool</em><em>, </em><em>optional</em>) – Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -175,6 +224,31 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>links</strong> (<em>iterable of tuples</em>) – Iterable of tuples of the form (source_node, target_node, [weight])</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="infomap.Infomap.add_networkx_graph">
+<code class="sig-name descname">add_networkx_graph</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">g</span></em>, <em class="sig-param"><span class="n">weight</span><span class="o">=</span><span class="default_value">'weight'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_networkx_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add NetworkX graph</p>
+<p class="rubric">Notes</p>
+<p>Transforms non-int labels to unique int ids.
+Assumes that all nodes are of the same type.
+If node type is string, they are added as names
+to Infomap.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>g</strong> (<em>nx.Graph</em>) – A NetworkX graph</p></li>
+<li><p><strong>weight</strong> (<em>str</em>) – Key to lookup link weight in edge data if present</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dict with the node ids as keys and labels as values.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -341,6 +415,56 @@ If you want to name the physical node, use <code class="docutils literal notrans
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>tuple of float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="infomap.Infomap.effective_num_leaf_modules">
+<em class="property">property </em><code class="sig-name descname">effective_num_leaf_modules</code><a class="headerlink" href="#infomap.Infomap.effective_num_leaf_modules" title="Permalink to this definition">¶</a></dt>
+<dd><p>The flow weighted effective number of leaf modules.</p>
+<p>Measured as the perplexity of the module flow distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The effective number of top modules</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="infomap.Infomap.effective_num_top_modules">
+<em class="property">property </em><code class="sig-name descname">effective_num_top_modules</code><a class="headerlink" href="#infomap.Infomap.effective_num_top_modules" title="Permalink to this definition">¶</a></dt>
+<dd><p>The flow weighted effective number of top modules.</p>
+<p>Measured as the perplexity of the module flow distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The effective number of top modules</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="infomap.Infomap.get_effective_num_modules">
+<code class="sig-name descname">get_effective_num_modules</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">depth_level</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_effective_num_modules" title="Permalink to this definition">¶</a></dt>
+<dd><p>The flow weighted effective number of modules.</p>
+<p>Measured as the perplexity of the module flow distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The module level returned by <code class="docutils literal notranslate"><span class="pre">iterator.depth</span></code>. Set to 1 (default) to
+return the top modules (coarsest level), set to 2 for second coarsest level
+etc. Set to -1 to return the bottom level modules (finest level).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The effective number of modules</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
 </dd>
 </dl>
 </dd></dl>
@@ -792,6 +916,38 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 </dd></dl>
 
 <dl class="py method">
+<dt id="infomap.Infomap.num_links">
+<em class="property">property </em><code class="sig-name descname">num_links</code><a class="headerlink" href="#infomap.Infomap.num_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of links.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The number of links</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="infomap.Infomap.num_nodes">
+<em class="property">property </em><code class="sig-name descname">num_nodes</code><a class="headerlink" href="#infomap.Infomap.num_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of state nodes if we have a higher order network, or the number of physical nodes.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.num_physical_nodes" title="infomap.Infomap.num_physical_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_physical_nodes</span></code></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The number of nodes</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="infomap.Infomap.num_non_trivial_top_modules">
 <em class="property">property </em><code class="sig-name descname">num_non_trivial_top_modules</code><a class="headerlink" href="#infomap.Infomap.num_non_trivial_top_modules" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the number of non-trivial top modules in the tree</p>
@@ -799,6 +955,24 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>The number of non-trivial top modules</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="infomap.Infomap.num_physical_nodes">
+<em class="property">property </em><code class="sig-name descname">num_physical_nodes</code><a class="headerlink" href="#infomap.Infomap.num_physical_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of physical nodes.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.num_nodes" title="infomap.Infomap.num_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_nodes</span></code></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The number of nodes</p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>int</p>
@@ -963,13 +1137,50 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 
 <dl class="py method">
 <dt id="infomap.Infomap.run">
-<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">initial_partition</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.run" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">initial_partition</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run Infomap.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>args</strong> (<em>str</em><em>, </em><em>optional</em>) – Space delimited parameter list (see Infomap documentation).</p></li>
 <li><p><strong>initial_partition</strong> (<em>dict</em><em>, </em><em>optional</em>) – Initial partition to start optimizer from (see initial_partition).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Keyword Arguments</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>tree</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a tree file with the modular hierarchy. Automatically enabled if no other output is specified.</p></li>
+<li><p><strong>ftree</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a ftree file with the modular hierarchy including aggregated links between (nested) modules.</p></li>
+<li><p><strong>clu</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a clu file with the top cluster ids for each node.</p></li>
+<li><p><strong>verbosity_level</strong> (<em>int</em><em>, </em><em>optional</em>) – Verbose output on the console.</p></li>
+<li><p><strong>silent</strong> (<em>bool</em><em>, </em><em>optional</em>) – No output on the console.</p></li>
+<li><p><strong>out_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for the output files, e.g. [output_directory]/[out-name].tree</p></li>
+<li><p><strong>no_file_output</strong> (<em>bool</em><em>, </em><em>optional</em>) – Don’t write output to file.</p></li>
+<li><p><strong>clu_level</strong> (<em>int</em><em>, </em><em>optional</em>) – For clu output, print modules at specified depth from root. Use -1 for bottom level modules.</p></li>
+<li><p><strong>output</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, network, states.</p></li>
+<li><p><strong>hide_bipartite_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Project bipartite solution to unipartite.</p></li>
+<li><p><strong>two_level</strong> (<em>bool</em><em>, </em><em>optional</em>) – Optimize a two-level partition of the network. Default is multi-level.</p></li>
+<li><p><strong>flow_model</strong> (<em>str</em><em>, </em><em>optional</em>) – Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.</p></li>
+<li><p><strong>directed</strong> (<em>bool</em><em>, </em><em>optional</em>) – Assume directed links. Shorthand for ‘–flow-model directed’.</p></li>
+<li><p><strong>use_node_weights_as_flow</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1.</p></li>
+<li><p><strong>to_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Teleport to nodes instead of to links, assuming uniform node weights if no such input data.</p></li>
+<li><p><strong>teleportation_probability</strong> (<em>float</em><em>, </em><em>optional</em>) – Probability of teleporting to a random node or link.</p></li>
+<li><p><strong>markov_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Scales link flow to change the cost of moving between modules. Higher values results in fewer modules.</p></li>
+<li><p><strong>preferred_number_of_modules</strong> (<em>int</em><em>, </em><em>optional</em>) – Penalize solutions the more they differ from this number.</p></li>
+<li><p><strong>multilayer_relax_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – Probability to relax the constraint to move only in the current layer.</p></li>
+<li><p><strong>multilayer_relax_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers in each direction to relax to. If negative, relax to any layer.</p></li>
+<li><p><strong>multilayer_relax_limit_up</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers with higher id to relax to. If negative, relax to any layer.</p></li>
+<li><p><strong>multilayer_relax_limit_down</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers with lower id to relax to. If negative, relax to any layer.</p></li>
+<li><p><strong>multilayer_relax_by_jsd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – A seed (integer) to the random number generator for reproducible results.</p></li>
+<li><p><strong>num_trials</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of outer-most loops to run before picking the best solution.</p></li>
+<li><p><strong>core_loop_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of loops that tries to move each node into the best possible module.</p></li>
+<li><p><strong>core_level_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.</p></li>
+<li><p><strong>tune_iteration_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.</p></li>
+<li><p><strong>core_loop_codelength_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum codelength threshold for accepting a new solution in core loop.</p></li>
+<li><p><strong>tune_iteration_relative_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Set codelength improvement threshold of each new tune iteration to ‘f’ times the initial two-level codelength.</p></li>
+<li><p><strong>fast_hierarchical_solution</strong> (<em>int</em><em>, </em><em>optional</em>) – Find top modules fast. Use 2 to keep all fast levels. Use 3 to skip recursive part.</p></li>
+<li><p><strong>prefer_modular_solution</strong> (<em>bool</em><em>, </em><em>optional</em>) – Prefer modular solutions even if they are worse than putting all nodes in one module.</p></li>
+<li><p><strong>inner_parallelization</strong> (<em>bool</em><em>, </em><em>optional</em>) – Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.</p></li>
 </ul>
 </dd>
 </dl>
