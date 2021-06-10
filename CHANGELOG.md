@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/mapequation/infomap/compare/v1.3.0...v1.4.0) (2021-06-10)
+
+
+### Features
+
+* Support printing JSON tree ([22116d6](https://github.com/mapequation/infomap/commit/22116d6a9077909c2e5eb2160feea913022752e8))
+* **python:** Accept named arguments ([5dabf4a](https://github.com/mapequation/infomap/commit/5dabf4abbaa90512d5a1ffd11c8986f8623ccb13))
+* **python:** Add 'add_networkx_graph' method to API ([4067d40](https://github.com/mapequation/infomap/commit/4067d40268c4b2726652b5ef47358ca049c58edd))
+* **python:** Add effective number of modules ([0f9a516](https://github.com/mapequation/infomap/commit/0f9a5169cacde5c9106bb6cf7dfa3b726a1c28d5))
+* **python:** Add shorthand for accessing number of nodes and links ([8808045](https://github.com/mapequation/infomap/commit/88080454e054c51516ee7047975baf480ce1bd42))
+* Add 'flow' to output options for node/edge flow ([d74a773](https://github.com/mapequation/infomap/commit/d74a773dd33102b85ff444158c958a8048c8cb02))
+
+
+### Bug Fixes
+
+* **python:** Also add nodes in networkx example ([3a88878](https://github.com/mapequation/infomap/commit/3a888789cc229521cffdf6da62fd0c239a5607eb))
+* **python:** Fix effective_num_modules ([f41827f](https://github.com/mapequation/infomap/commit/f41827fde6f30e914e73d8a141992c4363f14adc))
+* **R:** Expose base class methods to avoid c stack usage error ([47bdec0](https://github.com/mapequation/infomap/commit/47bdec0ab9a3d0e80cd7a77a7629ad9d9b400183))
+* **R:** Fix swig build by hiding python specifics ([6b8a67e](https://github.com/mapequation/infomap/commit/6b8a67e6f09a02daad8e85c8b9fcec0f632526e3))
+* **R:** Replace enum class with struct for R ([73c702f](https://github.com/mapequation/infomap/commit/73c702fd23e7a02ae8ccc3630f5713181cb842a9))
+* **R:** Update R example and build to Infomap v1 ([17e1cc0](https://github.com/mapequation/infomap/commit/17e1cc00bd789c8798bd0633a39285a4160854a4))
+* **R:** Update swig version in docker build ([74c4e86](https://github.com/mapequation/infomap/commit/74c4e86cfdd395ec1b335fc34dd5e0b34d7f6c1e))
+
 ## [1.3.0](https://github.com/mapequation/infomap/compare/v1.2.1...v1.3.0) (2020-12-03)
 
 
