@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.1](https://github.com/mapequation/infomap/compare/v1.4.0...v1.4.1) (2021-06-10)
+
+
+### Bug Fixes
+
+* **js:** Add newick and json to output from JS worker ([549ee84](https://github.com/mapequation/infomap/commit/549ee84858860680d2b9ed93e2d79a419c24e7d1))
+* **python:** Add missing write_newick and write_json methods ([62c2736](https://github.com/mapequation/infomap/commit/62c2736dfb048de432093313e19b3d67869d3138))
+* Change Newick output extention to .nwk ([f0e2e8e](https://github.com/mapequation/infomap/commit/f0e2e8ef8b6f5da6985c548b2f2b00521177cad8))
+
 ## [1.4.0](https://github.com/mapequation/infomap/compare/v1.3.0...v1.4.0) (2021-06-10)
 
 
