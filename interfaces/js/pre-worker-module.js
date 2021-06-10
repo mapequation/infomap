@@ -38,6 +38,10 @@ var Module = {
       tree_states: readFile(`${outName}_states.tree`), // -o tree (for state networks)
       ftree: readFile(`${outName}.ftree`), // -o ftree
       ftree_states: readFile(`${outName}_states.ftree`), // -o ftree (for state networks)
+      newick: readFile(`${outName}.nwk`), // -o newick
+      newick_states: readFile(`${outName}_states.nwk`), // -o newick (for state networks)
+      json: readFile(`${outName}.json`), // -o json
+      json_states: readFile(`${outName}_states.json`), // -o json (for state networks)
       net: readFile(`${outName}.net`), // -o network (for state networks)
       states_as_physical: readFile(`${outName}_states_as_physical.net`), // -o network (for state networks)
       states: readFile(`${outName}_states.net`), // -o states
