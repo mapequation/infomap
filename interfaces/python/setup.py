@@ -42,7 +42,7 @@ compiler_args = [
 ]
 
 if "darwin" not in sys.platform:
-	compiler_args.extend(['-fopenmp', '-Wno-strict-prototypes'])
+	compiler_args.extend(['-fopenmp'])
 else:
 	compiler_args.append('-Wno-deprecated-register')
     #compiler_args.append('-stdlib=libc++')
