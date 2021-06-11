@@ -1,8 +1,7 @@
 CXXFLAGS = -Wall -Wextra -Wno-unused-parameter -std=c++14
-# http://www.network-theory.co.uk/docs/gccintro/gccintro_70.html -msse2 -mfpmath=sse -DDOUBLE
-# CXXFLAGS = -Wall -std=c++14 -DPYTHON -Wno-deprecated-register
 LDFLAGS =
 CXX_CLANG := $(shell $(CXX) --version 2>/dev/null | grep clang)
+
 ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"
 	CXXFLAGS += -O0 -g
 else
@@ -169,10 +168,10 @@ PY_ONLY_HEADERS := $(HEADERS:%.h=$(PY_BUILD_DIR)/headers/%.h)
 PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
 PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
 
-.PHONY: python py-build
+.PHONY: python py-swig
 
 # Use python distutils to compile the module
-python: py-build Makefile
+python: py-swig Makefile
 	@cp -a interfaces/python/setup.py $(PY_BUILD_DIR)/
 	python utils/create-python-package-meta.py
 	@cp -a interfaces/python/package_meta.py $(PY_BUILD_DIR)/
@@ -186,7 +185,7 @@ python: py-build Makefile
 	@true
 
 # Generate wrapper files from source and interface files
-py-build: $(PY_HEADERS) $(PY_SOURCES) $(PY_ONLY_HEADERS) interfaces/python/infomap.py
+py-swig: $(PY_HEADERS) $(PY_SOURCES) $(PY_ONLY_HEADERS) interfaces/python/infomap.py
 	@mkdir -p $(PY_BUILD_DIR)
 	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/
 	swig -c++ -python -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
@@ -219,24 +218,23 @@ py-doc:
 	sphinx-build -b html $(SPHINX_SOURCE_DIR) $(SPHINX_TARGET_DIR)
 	@npm run py-doc-prettier
 
-.PHONY: pypitest_publish pypi_publish py_clean
+.PHONY: pypitest-publish pypi-publish py-clean
 PYPI_DIR = $(PY_BUILD_DIR)
 PYPI_SDIST = $(shell find $(PYPI_DIR) -name "*.tar.gz" 2>/dev/null)
 
-py_clean:
+py-clean:
 	$(RM) -r $(PY_BUILD_DIR)/dist
 
-pypi_dist: py_clean python
+pypi-dist: py-clean python
 	cd $(PY_BUILD_DIR) && python setup.py sdist bdist_wheel
 
 # pip -vvv --no-cache-dir install --upgrade -I --index-url https://test.pypi.org/simple/ infomap
 # pip install -e build/py/pypi/infomap/
-pypitest_publish: pypi_dist
-	# cd $(PYPI_DIR) && python setup.py sdist upload -r testpypi
+pypitest-publish: pypi-dist
 	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
 	cd $(PYPI_DIR) && python -m twine upload -r testpypi dist/*
 
-pypi_publish: pypi_dist
+pypi-publish: pypi-dist
 	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
 	cd $(PYPI_DIR) && python -m twine upload dist/*
 
