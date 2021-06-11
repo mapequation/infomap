@@ -37,7 +37,6 @@ if get_config_var('MACOSX_DEPLOYMENT_TARGET') and not 'MACOSX_DEPLOYMENT_TARGET'
 compiler_args = [
     '-DAS_LIB',
     '-DPYTHON',
-    '-Wno-deprecated-register',
     '-Wno-deprecated-declarations',
     '-std=c++14',
 ]
@@ -45,10 +44,11 @@ compiler_args = [
 link_args = []
 
 if "darwin" not in sys.platform:
-	compiler_args.append("-fopenmp")
+	compiler_args.extend(["-fopenmp", '-Wno-strict-prototypes'])
 	link_args.append("-lomp")
-# if sys.platform.startswith("darwin"):
-#     compiler_args.append('-stdlib=libc++')
+else:
+	compiler_args.append('-Wno-deprecated-register')
+    #compiler_args.append('-stdlib=libc++')
 
 if sys.platform == 'win32':
 	# Not executed if we are on WSL
