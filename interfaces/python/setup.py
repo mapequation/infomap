@@ -44,14 +44,14 @@ compiler_args = [
 link_args = []
 
 if "darwin" not in sys.platform:
-	compiler_args.append('-fopenmp')
-	link_args.append('-fopenmp')
+    compiler_args.append('-fopenmp')
+    link_args.append('-fopenmp')
 else:
-	compiler_args.append('-Wno-deprecated-register')
+    compiler_args.append('-Wno-deprecated-register')
     #compiler_args.append('-stdlib=libc++')
 
 if sys.platform == 'win32':
-	# Not executed if we are on WSL
+    # Not executed if we are on WSL
     compiler_args = [
         '/DAS_LIB',
         '/DPYTHON',
