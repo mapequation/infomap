@@ -41,15 +41,19 @@ compiler_args = [
     '-Wno-deprecated-declarations',
     '-std=c++14',
 ]
+
+if "darwin" not in sys.platform:
+	compiler_args.append("-fopenmp")
+# if sys.platform.startswith("darwin"):
+#     compiler_args.append('-stdlib=libc++')
+
 if sys.platform == 'win32':
+	# Not executed if we are on WSL
     compiler_args = [
         '/DAS_LIB',
         '/DPYTHON',
         '/DNOMINMAX',
-        # '/Qstd=c++14',
     ]
-# if sys.platform.startswith("darwin"):
-#     compiler_args.append('-stdlib=libc++')
 
 infomap_module = Extension(
     '_infomap',
