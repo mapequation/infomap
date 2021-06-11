@@ -44,7 +44,7 @@ compiler_args = [
 link_args = []
 
 if "darwin" not in sys.platform:
-	compiler_args.extend([-fopenmp, '-Wno-strict-prototypes'])
+	compiler_args.extend(['-fopenmp', '-Wno-strict-prototypes'])
 	link_args.append('-lomp')
 else:
 	compiler_args.append('-Wno-deprecated-register')
