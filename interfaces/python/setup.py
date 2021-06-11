@@ -41,9 +41,11 @@ compiler_args = [
     '-std=c++14',
 ]
 
+link_args = []
+
 if "darwin" not in sys.platform:
-	compiler_args.extend(['-fopenmp'])
-	environ['LDFLAGS'] = '-lomp'
+	compiler_args.append('-fopenmp')
+	link_args.append('-lopenmp')
 else:
 	compiler_args.append('-Wno-deprecated-register')
     #compiler_args.append('-stdlib=libc++')
@@ -62,7 +64,8 @@ infomap_module = Extension(
     include_dirs=['headers', 'headers/src', 'headers/src/core', 'headers/src/io', 'headers/src/utils'],
     # include_dirs=[path.join(here, 'headers')],
     language='c++',
-    extra_compile_args=compiler_args)
+    extra_compile_args=compiler_args,
+    extra_link_args=link_args)
 
 setup(
     # This is the name of your project. The first time you publish this
