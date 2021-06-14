@@ -777,6 +777,22 @@ class Infomap(InfomapWrapper):
     def add_networkx_graph(self, g, weight="weight"):
         """Add NetworkX graph
 
+        Example
+        -------
+        >>> import networkx as nx
+        >>> from infomap import Infomap
+        >>> G = nx.Graph([("a", "b"), ("a", "c")])
+        >>> im = Infomap()
+        >>> mapping = im.add_networkx_graph(G)
+        >>> mapping
+        {0: 'a', 1: 'b', 2: 'c'}
+        >>> im.run()
+        >>> for node in im.nodes:
+        ...     print(node.node_id, node.module_id, node.flow, im.get_name(node.node_id))
+        0 1 0.5 a
+        1 1 0.25 b
+        2 1 0.25 c
+
         Notes
         -----
         Transforms non-int labels to unique int ids.
