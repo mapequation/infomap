@@ -27,7 +27,8 @@ def have_openmp():
 
     # Attempt to compile a test script.
     # See http://openmp.org/wp/openmp-compilers/
-    with open("test_omp.c", 'w') as f:
+    filename = "test_omp.c"
+    with open(filename, 'w') as f:
         f.write(
             "#include <omp.h>\n"
             "#include <stdio.h>\n"
