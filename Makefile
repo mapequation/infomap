@@ -1,5 +1,5 @@
-CXXFLAGS = -Wall -Wextra -Wno-unused-parameter -std=c++14
-LDFLAGS =
+CXXFLAGS += -Wall -Wextra -Wno-unused-parameter -std=c++14
+LDFLAGS +=
 CXX_CLANG := $(shell $(CXX) --version 2>/dev/null | grep clang)
 
 ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"
@@ -13,6 +13,10 @@ else
 		endif
 	else
 		CXXFLAGS += -O3
+		ifneq "$(findstring noomp, $(MAKECMDGOALS))" "noomp"
+			CXXFLAGS += -Xpreprocessor -fopenmp
+			LDFLAGS += -lomp
+		endif
 	endif
 endif
 
