@@ -85,6 +85,8 @@ link_args = []
 if have_openmp():
     compiler_args.append('-fopenmp')
     link_args.append('-fopenmp')
+else:
+    print("Warning: building without OMP support")
 
 if sys.platform == 'win32':
     # Not executed if we are on WSL
