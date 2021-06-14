@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>infomap module &#8212; Infomap 1.4.1 documentation</title>
+    <title>infomap module &#8212; Infomap 1.4.2 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -232,6 +232,22 @@
 <dt id="infomap.Infomap.add_networkx_graph">
 <code class="sig-name descname">add_networkx_graph</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">g</span></em>, <em class="sig-param"><span class="n">weight</span><span class="o">=</span><span class="default_value">'weight'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_networkx_graph" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add NetworkX graph</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">([(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mapping</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">add_networkx_graph</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mapping</span>
+<span class="go">{0: &#39;a&#39;, 1: &#39;b&#39;, 2: &#39;c&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">im</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">node_id</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">module_id</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span> <span class="n">im</span><span class="o">.</span><span class="n">get_name</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">node_id</span><span class="p">))</span>
+<span class="go">0 1 0.5 a</span>
+<span class="go">1 1 0.25 b</span>
+<span class="go">2 1 0.25 c</span>
+</pre></div>
+</div>
 <p class="rubric">Notes</p>
 <p>Transforms non-int labels to unique int ids.
 Assumes that all nodes are of the same type.
