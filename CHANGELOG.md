@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.4](https://github.com/mapequation/infomap/compare/v1.4.3...v1.4.4) (2021-06-14)
+
+
+### Bug Fixes
+
+* **python:** Fix OpenMP detection ([27f9070](https://github.com/mapequation/infomap/commit/27f9070d4676aee859f14bbf0ba2e1de6a417636))
+
 ### [1.4.3](https://github.com/mapequation/infomap/compare/v1.4.2...v1.4.3) (2021-06-14)
 
 ### [1.4.2](https://github.com/mapequation/infomap/compare/v1.4.1...v1.4.2) (2021-06-14)
