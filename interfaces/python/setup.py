@@ -57,13 +57,11 @@ here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-cppSources = ['./infomap_wrap.cpp']
-for root, dirnames, filenames in os.walk('./src'):
-    for filename in fnmatch.filter(filenames, '*.cpp'):
-        cppSources.append(os.path.join(root, filename))
-
+sources = ['./infomap_wrap.cpp']
 headers = []
 for root, dirnames, filenames in os.walk('./src'):
+    for filename in fnmatch.filter(filenames, '*.cpp'):
+        sources.append(os.path.join(root, filename))
     for filename in fnmatch.filter(filenames, '*.h'):
         headers.append(os.path.join(root, filename))
 
@@ -100,7 +98,7 @@ if sys.platform == 'win32':
 
 infomap_module = Extension(
     '_infomap',
-    sources=cppSources,
+    sources=sources,
     include_dirs=['headers', 'headers/src', 'headers/src/core', 'headers/src/io', 'headers/src/utils'],
     language='c++',
     extra_compile_args=compiler_args,
