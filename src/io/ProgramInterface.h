@@ -351,12 +351,12 @@ private:
   void exitWithError(std::string message);
   void exitWithJsonParameters();
 
-  static std::string toJson(const std::string& key, const std::string& value) ;
-  static std::string toJson(const std::string& key, int value) ;
-  static std::string toJson(const std::string& key, unsigned int value) ;
-  static std::string toJson(const std::string& key, double value) ;
-  static std::string toJson(const std::string& key, bool value) ;
-  static std::string toJson(const Option& opt) ;
+  static std::string toJson(const std::string& key, const std::string& value);
+  static std::string toJson(const std::string& key, int value);
+  static std::string toJson(const std::string& key, unsigned int value);
+  static std::string toJson(const std::string& key, double value);
+  static std::string toJson(const std::string& key, bool value);
+  static std::string toJson(const Option& opt);
 
   std::deque<Option*> m_optionArguments;
   std::deque<TargetBase*> m_nonOptionArguments;

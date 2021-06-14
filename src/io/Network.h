@@ -235,7 +235,7 @@ protected:
    */
   unsigned int addMultilayerNode(unsigned int layerId, unsigned int physicalId, double weight = 1.0);
 
-  double calculateJensenShannonDivergence(bool &intersect, const OutLinkMap& layer1OutLinks, double sumOutLinkWeightLayer1, const OutLinkMap& layer2OutLinks, double sumOutLinkWeightLayer2);
+  double calculateJensenShannonDivergence(bool& intersect, const OutLinkMap& layer1OutLinks, double sumOutLinkWeightLayer1, const OutLinkMap& layer2OutLinks, double sumOutLinkWeightLayer2);
 
   void printSummary();
 };

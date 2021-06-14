@@ -1023,16 +1023,16 @@ void InfomapBase::hierarchicalPartition()
               ++i;
             }
           }
-          
+
           module.replaceChildrenWithGrandChildren();
-          
+
           auto& subInfomap = getSubInfomap(module).initNetwork(module);
-          
+
           subInfomap.initPartition(modules);
 
           // Run two-level partition + find hierarchically super modules (skip recursion)
           subInfomap.setOnlySuperModules(true).run();
-          
+
           // Collect sub Infomap modules
           i = 0;
           for (auto& subLeafPtr : subInfomap.leafNodes()) {
@@ -2492,7 +2492,7 @@ void InfomapBase::writeNewickTree(std::ostream& outStream, bool states)
         outStream << (states ? node.stateId : node.physicalId) << ":" << node.data.flow;
     } else if (depth == lastDepth) {
       outStream << ",";
-      flowStack[flowStack.size()-1] = node.data.flow;
+      flowStack[flowStack.size() - 1] = node.data.flow;
       if (node.isLeaf()) {
         outStream << (states ? node.stateId : node.physicalId) << ":" << node.data.flow;
       }
@@ -2502,13 +2502,13 @@ void InfomapBase::writeNewickTree(std::ostream& outStream, bool states)
         flowStack.pop_back();
         outStream << "):" << flowStack.back();
       }
-      flowStack[flowStack.size()-1] = node.data.flow;
+      flowStack[flowStack.size() - 1] = node.data.flow;
       outStream << ",";
     }
     lastDepth = depth;
     isRoot = false;
   };
-  
+
   // TODO: Make a general iterator where merging physical nodes depend on a parameter rather than type to be able to DRY here
   if (haveMemory() && !states) {
     for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
@@ -2551,13 +2551,13 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states)
   outStream << "  \"nodes\": [\n";
 
   const auto nodeName = [this](const auto& node) {
-      auto name = m_network.names()[node.physicalId];
+    auto name = m_network.names()[node.physicalId];
 
-      if (name.empty()) {
-        name = io::stringify(node.physicalId);
-      }
+    if (name.empty()) {
+      name = io::stringify(node.physicalId);
+    }
 
-      return name;
+    return name;
   };
 
   const auto shouldHideBipartiteNodes = isBipartite() && hideBipartiteNodes;

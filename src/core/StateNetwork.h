@@ -53,7 +53,7 @@ public:
 
     StateNode(unsigned int id, unsigned int physicalId) : id(id), physicalId(physicalId) {}
 
-    StateNode(unsigned int id, unsigned int physicalId, std::string  name) : id(id), physicalId(physicalId), name(std::move(name)) {}
+    StateNode(unsigned int id, unsigned int physicalId, std::string name) : id(id), physicalId(physicalId), name(std::move(name)) {}
 
     bool operator==(const StateNode& rhs) const { return id == rhs.id; }
     bool operator!=(const StateNode& rhs) const { return id != rhs.id; }

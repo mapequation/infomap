@@ -49,7 +49,8 @@ namespace detail {
  */
 class FlowCalculator {
 public:
-  static void calculateFlow(StateNetwork& network, const Config &config) noexcept {
+  static void calculateFlow(StateNetwork& network, const Config& config) noexcept
+  {
     FlowCalculator f(network, config);
   }
 

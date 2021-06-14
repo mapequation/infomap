@@ -44,9 +44,9 @@ protected:
 public:
   using PartitionQueue = detail::PartitionQueue;
 
-  InfomapBase() : InfomapConfig<InfomapBase>() { }
+  InfomapBase() : InfomapConfig<InfomapBase>() {}
 
-  explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { }
+  explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) {}
 
   explicit InfomapBase(const std::string flags) : InfomapConfig<InfomapBase>(flags)
   {

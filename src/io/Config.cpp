@@ -112,8 +112,7 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(multilayerRelaxLimitDown, "multilayer-relax-limit-down", "Number of neighboring layers with lower id to relax to. If negative, relax to any layer.", ArgType::integer, "Algorithm", true);
 
-  api.addOptionArgument(multilayerRelaxByJensenShannonDivergence, "multilayer-relax-by-jsd",
-  		"Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.", "Algorithm", true);
+  api.addOptionArgument(multilayerRelaxByJensenShannonDivergence, "multilayer-relax-by-jsd", "Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.", "Algorithm", true);
 
   // api.addOptionArgument(multilayerJSRelaxRate, "multilayer-js-relax-rate",
   // 		"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence.", ArgType::getprop, "Algorithm", true);

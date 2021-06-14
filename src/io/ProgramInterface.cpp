@@ -224,7 +224,7 @@ void ProgramInterface::parseArgs(const std::string& args)
   // Map the options on short and long name, and check for duplication
   std::map<char, Option*> shortOptionMap;
   std::map<std::string, Option*> longOptionMap;
-  for (auto & optionArgument : m_optionArguments) {
+  for (auto& optionArgument : m_optionArguments) {
     auto& opt = *optionArgument;
     if (opt.shortName != '\0') {
       auto it = shortOptionMap.find(opt.shortName);

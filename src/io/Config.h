@@ -52,7 +52,11 @@ struct FlowModel {
   int value = 0;
 
   FlowModel(int val) : value(val) {}
-  FlowModel& operator=(int val) { value = val; return *this; }  
+  FlowModel& operator=(int val)
+  {
+    value = val;
+    return *this;
+  }
 
 
   operator int&() { return value; }

@@ -737,7 +737,8 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
 
 void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 {
-  Log() << "Generating state network from multilayer networks with simulated inter-layer links...\n" << std::flush;
+  Log() << "Generating state network from multilayer networks with simulated inter-layer links...\n"
+        << std::flush;
   double relaxRate = m_config.multilayerRelaxRate;
 
   int maxRelaxLimit = m_networks.size();
@@ -763,23 +764,19 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
   if (m_config.multilayerRelaxByJensenShannonDivergence) {
     Log() << "-> Using Jensen-Shannon Divergence\n";
 
-    for (unsigned int nodeId = 0; nodeId <= m_maxNodeIdInIntraLayerNetworks; ++nodeId)
-    {
-
+    for (unsigned int nodeId = 0; nodeId <= m_maxNodeIdInIntraLayerNetworks; ++nodeId) {
       unsigned int layer2from = 0;
-      
+
       // Calculate Jensen-Shannon similarity between all layers such that layer1 >= layer2,
       // and then use its symmetry for layer2 > layer1
-      std::map<unsigned int,std::map<unsigned int,double> > jsRelaxWeights;
-      std::map<unsigned int,double> jsTotWeight;
+      std::map<unsigned int, std::map<unsigned int, double>> jsRelaxWeights;
+      std::map<unsigned int, double> jsTotWeight;
 
-      for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1)
-      {
-
-        unsigned int layer2to = layer1+1;
+      for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1) {
+        unsigned int layer2to = layer1 + 1;
         // Limit possible jumps to close by layers
-        if(m_config.multilayerRelaxLimit >= 0) {
-          layer2from = ((int)layer1-m_config.multilayerRelaxLimit) < 0 ? 0 : layer1-m_config.multilayerRelaxLimit;
+        if (m_config.multilayerRelaxLimit >= 0) {
+          layer2from = ((int)layer1 - m_config.multilayerRelaxLimit) < 0 ? 0 : layer1 - m_config.multilayerRelaxLimit;
         }
 
         auto& layer1LinkMap = m_networks[layer1].nodeLinkMap();
@@ -787,25 +784,25 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
         // Skip dangling nodes, because they have no information to calculate similarity
         if (layer1OutLinks.empty())
           continue;
-        
+
         double sumOutLinkWeightLayer1 = m_networks[layer1].outWeights()[nodeId];
 
 
-        for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2){
+        for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2) {
           auto& layer2LinkMap = m_networks[layer2].nodeLinkMap();
           auto& layer2OutLinks = layer2LinkMap[StateNode(nodeId)];
           if (layer2OutLinks.empty())
             continue;
 
           double sumOutLinkWeightLayer2 = m_networks[layer2].outWeights()[nodeId];
-  
+
           bool intersect;
-          double div = calculateJensenShannonDivergence(intersect,layer1OutLinks,sumOutLinkWeightLayer1,layer2OutLinks,sumOutLinkWeightLayer2);
+          double div = calculateJensenShannonDivergence(intersect, layer1OutLinks, sumOutLinkWeightLayer1, layer2OutLinks, sumOutLinkWeightLayer2);
           double jsWeight = 1.0 - div;
-          if(intersect && (jsWeight >= m_config.multilayerJSRelaxLimit)){
+          if (intersect && (jsWeight >= m_config.multilayerJSRelaxLimit)) {
             jsTotWeight[layer1] += jsWeight;
             jsRelaxWeights[layer1][layer2] = jsWeight;
-            if(layer1 != layer2){
+            if (layer1 != layer2) {
               jsTotWeight[layer2] += jsWeight;
               jsRelaxWeights[layer2][layer1] = jsWeight;
             }
@@ -816,36 +813,33 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
       // Second loop over all pairs of layers
       unsigned int layer2to = m_networks.size();
 
-      for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1)
-      {
+      for (unsigned int layer1 = 0; layer1 < m_networks.size(); ++layer1) {
         // Limit possible jumps to close by layers
-        if(m_config.multilayerRelaxLimit >= 0){
-          layer2from = ((int)layer1-m_config.multilayerRelaxLimit) < 0 ? 0 : layer1-m_config.multilayerRelaxLimit;
-          layer2to = (layer1+m_config.multilayerRelaxLimit) > m_networks.size() ? m_networks.size() : layer1+m_config.multilayerRelaxLimit;
+        if (m_config.multilayerRelaxLimit >= 0) {
+          layer2from = ((int)layer1 - m_config.multilayerRelaxLimit) < 0 ? 0 : layer1 - m_config.multilayerRelaxLimit;
+          layer2to = (layer1 + m_config.multilayerRelaxLimit) > m_networks.size() ? m_networks.size() : layer1 + m_config.multilayerRelaxLimit;
         }
 
         double sumOutLinkWeightLayer1 = m_networks[layer1].outWeights()[nodeId];
 
-        std::map<unsigned int,std::map<unsigned int,double> >::iterator jsRelaxWeightsLayer1It = jsRelaxWeights.find(layer1);
-        std::map<unsigned int,double>::iterator jsTotWeightIt = jsTotWeight.find(layer1);
+        std::map<unsigned int, std::map<unsigned int, double>>::iterator jsRelaxWeightsLayer1It = jsRelaxWeights.find(layer1);
+        std::map<unsigned int, double>::iterator jsTotWeightIt = jsTotWeight.find(layer1);
 
         // Create inter-links to the intra-connected nodes in other layers
-        for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2)
-        {
-          if(jsRelaxWeightsLayer1It != jsRelaxWeights.end()){
-            std::map<unsigned int,double>::iterator jsRelaxWeightsIt = jsRelaxWeightsLayer1It->second.find(layer2);
-            if(jsRelaxWeightsIt != jsRelaxWeightsLayer1It->second.end()){
-
+        for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2) {
+          if (jsRelaxWeightsLayer1It != jsRelaxWeights.end()) {
+            std::map<unsigned int, double>::iterator jsRelaxWeightsIt = jsRelaxWeightsLayer1It->second.find(layer2);
+            if (jsRelaxWeightsIt != jsRelaxWeightsLayer1It->second.end()) {
               bool isIntra = layer2 == layer1;
-      
+
               // Create inter-links to the outgoing nodes in the target layer
               double linkWeightNormalizationFactor;
-              if (isIntra){
+              if (isIntra) {
                 linkWeightNormalizationFactor = 1;
               } else {
                 linkWeightNormalizationFactor = jsRelaxWeightsIt->second * relaxRate / (1.0 - relaxRate) * sumOutLinkWeightLayer1 / jsTotWeightIt->second;
               }
-              
+
               // double stateNodeWeightNormalizationFactor = 1.0;
               // createIntraLinksToNeighbouringNodesInTargetLayer(layer1, nodeId, layer2, m_networks[layer2].nodeLinkMap(), linkWeightNormalizationFactor, stateNodeWeightNormalizationFactor);
 
@@ -867,7 +861,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
                 // Log() << "      -> " << n2 << "\n";
                 double weight = intraWeight == 0.0 ? 0.0 : linkWeightNormalizationFactor * intraWeight;
                 addLink(stateId1, stateId2i, weight);
-                ++m_numInterLayerLinks; 
+                ++m_numInterLayerLinks;
               }
             }
           }
@@ -943,84 +937,81 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
   }
 }
 
-double Network::calculateJensenShannonDivergence(bool &intersect, const OutLinkMap& layer1OutLinks, double sumOutLinkWeightLayer1, const OutLinkMap& layer2OutLinks, double sumOutLinkWeightLayer2)
+double Network::calculateJensenShannonDivergence(bool& intersect, const OutLinkMap& layer1OutLinks, double sumOutLinkWeightLayer1, const OutLinkMap& layer2OutLinks, double sumOutLinkWeightLayer2)
 {
-	intersect = false;
-	double h1 = 0.0; // The entropy rate of the node in the first layer
-	double h2 = 0.0; // The entropy rate of the node in the second layer
-	double h12 = 0.0; // The entropy rate of the lumped node
-	// The out-link weights of the nodes
-	double ow1 = sumOutLinkWeightLayer1;
-	double ow2 = sumOutLinkWeightLayer2;
-	// Normalized weights over node in layer 1 and 2
-	double pi1 = ow1 / (ow1 + ow2);
-	double pi2 = ow2 / (ow1 + ow2);
+  intersect = false;
+  double h1 = 0.0; // The entropy rate of the node in the first layer
+  double h2 = 0.0; // The entropy rate of the node in the second layer
+  double h12 = 0.0; // The entropy rate of the lumped node
+  // The out-link weights of the nodes
+  double ow1 = sumOutLinkWeightLayer1;
+  double ow2 = sumOutLinkWeightLayer2;
+  // Normalized weights over node in layer 1 and 2
+  double pi1 = ow1 / (ow1 + ow2);
+  double pi2 = ow2 / (ow1 + ow2);
 
-	auto layer1OutLinkIt = layer1OutLinks.begin();
-	auto layer2OutLinkIt = layer2OutLinks.begin();
-	auto layer1OutLinkItEnd = layer1OutLinks.end();
-	auto layer2OutLinkItEnd = layer2OutLinks.end();
-	while(layer1OutLinkIt != layer1OutLinkItEnd && layer2OutLinkIt != layer2OutLinkItEnd){
-		auto diff = layer1OutLinkIt->first.id - layer2OutLinkIt->first.id;		
-		if(diff < 0){
-		// If the first state node has a link that the second has not
-			double p1 = layer1OutLinkIt->second.weight/ow1;
-			h1 -= p1*log2(p1);
-			double p12 = pi1*layer1OutLinkIt->second.weight/ow1;
-			h12 -= p12*log2(p12);
-			layer1OutLinkIt++;
-		}
-		else if(diff > 0){
-		// If the second state node has a link that the second has not
-			double p2 = layer2OutLinkIt->second.weight/ow2;
-			h2 -= p2*log2(p2);
-			double p12 = pi2*layer2OutLinkIt->second.weight/ow2;
-			h12 -= p12*log2(p12);
-			layer2OutLinkIt++;
-		}
-		else{ // If both state nodes have the link
-			intersect = true;
-			double p1 = layer1OutLinkIt->second.weight/ow1;
-			h1 -= p1*log2(p1);
-			double p2 = layer2OutLinkIt->second.weight/ow2;
-			h2 -= p2*log2(p2);
-			double p12 = pi1*layer1OutLinkIt->second.weight/ow1 + pi2*layer2OutLinkIt->second.weight/ow2;
-			h12 -= p12*log2(p12);
-			layer1OutLinkIt++;
-			layer2OutLinkIt++;
-		}
-	}
+  auto layer1OutLinkIt = layer1OutLinks.begin();
+  auto layer2OutLinkIt = layer2OutLinks.begin();
+  auto layer1OutLinkItEnd = layer1OutLinks.end();
+  auto layer2OutLinkItEnd = layer2OutLinks.end();
+  while (layer1OutLinkIt != layer1OutLinkItEnd && layer2OutLinkIt != layer2OutLinkItEnd) {
+    auto diff = layer1OutLinkIt->first.id - layer2OutLinkIt->first.id;
+    if (diff < 0) {
+      // If the first state node has a link that the second has not
+      double p1 = layer1OutLinkIt->second.weight / ow1;
+      h1 -= p1 * log2(p1);
+      double p12 = pi1 * layer1OutLinkIt->second.weight / ow1;
+      h12 -= p12 * log2(p12);
+      layer1OutLinkIt++;
+    } else if (diff > 0) {
+      // If the second state node has a link that the second has not
+      double p2 = layer2OutLinkIt->second.weight / ow2;
+      h2 -= p2 * log2(p2);
+      double p12 = pi2 * layer2OutLinkIt->second.weight / ow2;
+      h12 -= p12 * log2(p12);
+      layer2OutLinkIt++;
+    } else { // If both state nodes have the link
+      intersect = true;
+      double p1 = layer1OutLinkIt->second.weight / ow1;
+      h1 -= p1 * log2(p1);
+      double p2 = layer2OutLinkIt->second.weight / ow2;
+      h2 -= p2 * log2(p2);
+      double p12 = pi1 * layer1OutLinkIt->second.weight / ow1 + pi2 * layer2OutLinkIt->second.weight / ow2;
+      h12 -= p12 * log2(p12);
+      layer1OutLinkIt++;
+      layer2OutLinkIt++;
+    }
+  }
 
-	while(layer1OutLinkIt != layer1OutLinkItEnd){
-		// If the first state node has a link that the second has not
-		double p1 = layer1OutLinkIt->second.weight/ow1;
-		h1 -= p1*log2(p1);
-		double p12 = pi1*layer1OutLinkIt->second.weight/ow1;
-		h12 -= p12*log2(p12);
-		layer1OutLinkIt++;
-	}
+  while (layer1OutLinkIt != layer1OutLinkItEnd) {
+    // If the first state node has a link that the second has not
+    double p1 = layer1OutLinkIt->second.weight / ow1;
+    h1 -= p1 * log2(p1);
+    double p12 = pi1 * layer1OutLinkIt->second.weight / ow1;
+    h12 -= p12 * log2(p12);
+    layer1OutLinkIt++;
+  }
 
-	while(layer2OutLinkIt != layer2OutLinkItEnd){
-		// If the second state node has a link that the second has not
-		double p2 = layer2OutLinkIt->second.weight/ow2;
-		h2 -= p2*log2(p2);
-		double p12 = pi2*layer2OutLinkIt->second.weight/ow2;
-		h12 -= p12*log2(p12);
-		layer2OutLinkIt++;
-	}	
-	
-	double div = (pi1+pi2)*h12 - pi1*h1 - pi2*h2;
+  while (layer2OutLinkIt != layer2OutLinkItEnd) {
+    // If the second state node has a link that the second has not
+    double p2 = layer2OutLinkIt->second.weight / ow2;
+    h2 -= p2 * log2(p2);
+    double p12 = pi2 * layer2OutLinkIt->second.weight / ow2;
+    h12 -= p12 * log2(p12);
+    layer2OutLinkIt++;
+  }
 
-	// Fix precision problems
-	if(div < 0.0)
-		div = 0.0;
-	else if(div > 1.0)
-		div = 1.0;
-	
-	// Log() << "\n" << div << " " << (pi1+pi2) << " " << h12 << " " << pi1 << " " << h1 << " " << pi2 << " " << h2;
+  double div = (pi1 + pi2) * h12 - pi1 * h1 - pi2 * h2;
 
-	return div;
+  // Fix precision problems
+  if (div < 0.0)
+    div = 0.0;
+  else if (div > 1.0)
+    div = 1.0;
 
+  // Log() << "\n" << div << " " << (pi1+pi2) << " " << h12 << " " << pi1 << " " << h1 << " " << pi2 << " " << h2;
+
+  return div;
 }
 
 void Network::simulateInterLayerLinks()
