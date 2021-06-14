@@ -1,39 +1,78 @@
-# Always prefer setuptools over distutils
-from setuptools import setup, find_packages, Extension
-from pkg_resources import parse_version
-from codecs import open
-from os import path, walk, environ
-import fnmatch
 import sys
-import re
+
+import codecs
+import fnmatch
+import os
+import shutil
+import subprocess
+import tempfile
+from pkg_resources import parse_version
+from setuptools import setup, Extension
 from sysconfig import get_config_var
+
 import package_meta
 
-here = path.abspath(path.dirname(__file__))
+
+def have_openmp():
+    # Create a temporary directory
+    tmpdir = tempfile.mkdtemp()
+    curdir = os.getcwd()
+    os.chdir(tmpdir)
+
+    # Get compiler invocation
+    compiler = os.environ.get('CC', get_config_var('CC'))
+
+    # make sure to use just the compiler name without flags
+    compiler = compiler.split()[0]
+
+    # Attempt to compile a test script.
+    # See http://openmp.org/wp/openmp-compilers/
+    with open("test_omp.c", 'w') as f:
+        f.write(
+            "#include <omp.h>\n"
+            "#include <stdio.h>\n"
+            "int main() {\n"
+            "#pragma omp parallel\n"
+            "printf(\"Hello from thread %d, nthreads %d\\n\", omp_get_thread_num(), omp_get_num_threads());\n"
+            "}"
+        )
+
+    try:
+        with open(os.devnull, 'w') as fnull:
+            exit_code = subprocess.call([compiler, '-fopenmp', filename], stdout=fnull, stderr=fnull)
+    except OSError:
+        exit_code = 1
+
+    # Clean up
+    os.chdir(curdir)
+    shutil.rmtree(tmpdir)
+
+    return exit_code == 0
+
+
+here = os.path.abspath(os.path.dirname(__file__))
 
 # Get the long description from the relevant file
-with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+with codecs.open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 cppSources = ['./infomap_wrap.cpp']
-for root, dirnames, filenames in walk('./src'):
+for root, dirnames, filenames in os.walk('./src'):
     for filename in fnmatch.filter(filenames, '*.cpp'):
-        cppSources.append(path.join(root, filename))
+        cppSources.append(os.path.join(root, filename))
 
 headers = []
-for root, dirnames, filenames in walk('./src'):
+for root, dirnames, filenames in os.walk('./src'):
     for filename in fnmatch.filter(filenames, '*.h'):
-        headers.append(path.join(root, filename))
+        headers.append(os.path.join(root, filename))
 
 # Set minimum Mac OS X version to 10.9 to pick up C++ standard library
-if get_config_var('MACOSX_DEPLOYMENT_TARGET') and not 'MACOSX_DEPLOYMENT_TARGET' in environ:
+if get_config_var('MACOSX_DEPLOYMENT_TARGET') and not 'MACOSX_DEPLOYMENT_TARGET' in os.environ:
     if parse_version(get_config_var('MACOSX_DEPLOYMENT_TARGET')) < parse_version("10.9"):
-        environ['MACOSX_DEPLOYMENT_TARGET'] = "10.9"
+        os.environ['MACOSX_DEPLOYMENT_TARGET'] = "10.9"
     else:
-        environ['MACOSX_DEPLOYMENT_TARGET'] = get_config_var('MACOSX_DEPLOYMENT_TARGET')
+        os.environ['MACOSX_DEPLOYMENT_TARGET'] = get_config_var('MACOSX_DEPLOYMENT_TARGET')
 
-# environ['CXX'] = "g++"
-# environ['CC'] = "g++"
 compiler_args = [
     '-DAS_LIB',
     '-DPYTHON',
@@ -43,12 +82,9 @@ compiler_args = [
 
 link_args = []
 
-if "darwin" not in sys.platform:
+if have_openmp():
     compiler_args.append('-fopenmp')
     link_args.append('-fopenmp')
-else:
-    compiler_args.append('-Wno-deprecated-register')
-    #compiler_args.append('-stdlib=libc++')
 
 if sys.platform == 'win32':
     # Not executed if we are on WSL
@@ -62,7 +98,6 @@ infomap_module = Extension(
     '_infomap',
     sources=cppSources,
     include_dirs=['headers', 'headers/src', 'headers/src/core', 'headers/src/io', 'headers/src/utils'],
-    # include_dirs=[path.join(here, 'headers')],
     language='c++',
     extra_compile_args=compiler_args,
     extra_link_args=link_args)
