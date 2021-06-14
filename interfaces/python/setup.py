@@ -77,6 +77,7 @@ if get_config_var('MACOSX_DEPLOYMENT_TARGET') and not 'MACOSX_DEPLOYMENT_TARGET'
 compiler_args = [
     '-DAS_LIB',
     '-DPYTHON',
+    '-Wno-deprecated-register',
     '-Wno-deprecated-declarations',
     '-std=c++14',
 ]
