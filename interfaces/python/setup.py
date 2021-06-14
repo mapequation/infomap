@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+from pathlib import Path
 from pkg_resources import parse_version
 from setuptools import setup, Extension
 from sysconfig import get_config_var
@@ -13,39 +14,38 @@ from sysconfig import get_config_var
 import package_meta
 
 
+def get_compiler():
+    return os.environ.get('CXX', get_config_var('CXX')).split()[0]
+
+
+def is_clang():
+    return b'clang' in subprocess.check_output([get_compiler(), '--version'])
+
+
 def have_openmp():
     # Create a temporary directory
     tmpdir = tempfile.mkdtemp()
-    curdir = os.getcwd()
+    cwd = Path.cwd()
+    filename = 'test-openmp.cpp'
+    shutil.copyfile(os.path.join(cwd.parent.parent, 'utils', filename), os.path.join(tmpdir, filename))
+
     os.chdir(tmpdir)
 
-    # Get compiler invocation
-    compiler = os.environ.get('CC', get_config_var('CC'))
+    compiler = get_compiler()
+    compile_args = ['-fopenmp']
 
-    # make sure to use just the compiler name without flags
-    compiler = compiler.split()[0]
-
-    # Attempt to compile a test script.
-    # See http://openmp.org/wp/openmp-compilers/
-    filename = "test_omp.c"
-    with open(filename, 'w') as f:
-        f.write(
-            "#include <omp.h>\n"
-            "#include <stdio.h>\n"
-            "int main() {\n"
-            "#pragma omp parallel\n"
-            "printf(\"Hello from thread %d, nthreads %d\\n\", omp_get_thread_num(), omp_get_num_threads());\n"
-            "}"
-        )
+    if is_clang():
+        compile_args.insert(0, '-Xpreprocessor')
+        compile_args.append('-lomp')
 
     try:
         with open(os.devnull, 'w') as fnull:
-            exit_code = subprocess.call([compiler, '-fopenmp', filename], stdout=fnull, stderr=fnull)
+            exit_code = subprocess.call([compiler, *compile_args, filename], stdout=fnull, stderr=fnull)
     except OSError:
         exit_code = 1
 
     # Clean up
-    os.chdir(curdir)
+    os.chdir(cwd)
     shutil.rmtree(tmpdir)
 
     return exit_code == 0
@@ -66,7 +66,7 @@ for root, dirnames, filenames in os.walk('./src'):
         headers.append(os.path.join(root, filename))
 
 # Set minimum Mac OS X version to 10.9 to pick up C++ standard library
-if get_config_var('MACOSX_DEPLOYMENT_TARGET') and not 'MACOSX_DEPLOYMENT_TARGET' in os.environ:
+if get_config_var('MACOSX_DEPLOYMENT_TARGET') and 'MACOSX_DEPLOYMENT_TARGET' not in os.environ:
     if parse_version(get_config_var('MACOSX_DEPLOYMENT_TARGET')) < parse_version("10.9"):
         os.environ['MACOSX_DEPLOYMENT_TARGET'] = "10.9"
     else:
@@ -83,8 +83,12 @@ compiler_args = [
 link_args = []
 
 if have_openmp():
+    if is_clang():
+        compiler_args.append('-Xpreprocessor')
+        link_args.append('-lomp')
+    else:
+        link_args.append('-fopenmp')
     compiler_args.append('-fopenmp')
-    link_args.append('-fopenmp')
 else:
     print("Warning: building without OMP support")
 
@@ -152,7 +156,7 @@ setup(
     #
     # This field corresponds to the "Description-Content-Type" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#description-content-type-optional
-    #long_description_content_type='text/markdown',  # Optional (see note above)
+    # long_description_content_type='text/markdown',  # Optional (see note above)
 
     # This should be a valid link to your project's main homepage.
     #
