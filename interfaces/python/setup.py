@@ -22,14 +22,25 @@ def is_clang():
     return b'clang' in subprocess.check_output([get_compiler(), '--version'])
 
 
+test_openmp = """#include <omp.h>
+#include <cstdio>
+
+int main() {
+#pragma omp parallel
+  printf("Hello from thread %d, nthreads %d\\n", omp_get_thread_num(), omp_get_num_threads());
+}
+"""
+
+
 def have_openmp():
     # Create a temporary directory
     tmpdir = tempfile.mkdtemp()
     cwd = Path.cwd()
-    filename = 'test-openmp.cpp'
-    shutil.copyfile(os.path.join(cwd.parent.parent, 'utils', filename), os.path.join(tmpdir, filename))
-
     os.chdir(tmpdir)
+
+    filename = 'test-openmp.cpp'
+    with open(os.path.join(tmpdir, filename), 'w') as f:
+        f.write(test_openmp)
 
     compiler = get_compiler()
     compile_args = ['-fopenmp']
