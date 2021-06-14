@@ -84,14 +84,13 @@ To build:
     - Runs `swig`
     - Creates `package-meta.py`
     - Copies python package files to `build/py`
-    - To test the build, run `make py-local-install` and run `python -c "import infomap; print(infomap.__version__)"`
-3. Test publish with `make pypitest_publish`
+    - To test the build, run `make py-local-install` and run `python -c "import infomap; im = Infomap()"`
+3. Test publish with `make pypitest-publish`
     - Install in a clean environment `pip3 --no-cache-dir install --index-url https://test.pypi.org/simple/ infomap`
-4. Publish with `make pypi_publish`
+4. Publish with `make pypi-publish`
 
 Generate documentation:
 
 0. Follow the [release workflow](#releasing-new-versions) before generating documentation
-1. Run `make py-local-install`. Sphinx needs to be able to `import infomap`.
-2. Run `make py-doc` which generates the documentation for Github pages. The front page is generated from `README.rst`
-3. Commit the documentation with a `docs(python)` scoped commit.
+1. Run `make py-doc` which generates the documentation for Github pages. The front page is generated from `README.rst`
+2. Commit the documentation with a `docs(python)` scoped commit.
