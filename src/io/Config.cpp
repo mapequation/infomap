@@ -108,6 +108,7 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(bayesianPrior, "bayesian-prior", "Add a fully connected Bayesian prior network to not overfit due to missing links. Implies recorded teleportation", "Algorithm", true);
 
+  api.addOptionArgument(bayesianPriorStrength, "bayesian-prior-strength", "Adjust default Bayesian prior constant with this factor", ArgType::number, "Algorithm", true);
 
 
   // api.addOptionArgument(selfTeleportationProbability, 'y', "self-link-teleportation-probability",
@@ -220,7 +221,7 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   if (bayesianPrior) {
     recordedTeleportation = true;
-    teleportToNodes = true;
+    // teleportToNodes = true;
   }
 
   // Some checks

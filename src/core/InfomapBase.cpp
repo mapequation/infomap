@@ -866,6 +866,7 @@ void InfomapBase::generateSubNetwork(Network& network)
 
   m_leafNodes.reserve(numNodes);
   double sumNodeFlow = 0.0;
+  double sumTeleFlow = 0.0;
   std::map<unsigned int, unsigned int> nodeIndexMap;
   for (auto& nodeIt : network.nodes()) {
     auto& networkNode = nodeIt.second;
@@ -883,11 +884,13 @@ void InfomapBase::generateSubNetwork(Network& network)
       }
     }
     sumNodeFlow += networkNode.flow;
+    sumTeleFlow += networkNode.teleFlow;
     m_root.addChild(node);
     nodeIndexMap[networkNode.id] = m_leafNodes.size();
     m_leafNodes.push_back(node);
   }
   m_root.data.flow = sumNodeFlow;
+  m_root.data.teleportFlow = sumTeleFlow;
   // m_calculateEnterExitFlow = true; //TODO: Implement always in flow calculation
   if (!this->bayesianPrior) {
     m_calculateEnterExitFlow = true;
@@ -1250,6 +1253,8 @@ void InfomapBase::restoreHardPartition()
 
 void InfomapBase::initEnterExitFlow()
 {
+  // Not done in Bayesian
+  // TODO: Skip this, always add enter/exit/tele flow from flow calculator
   // Calculate enter/exit
   // TODO: Skip add self-links to enter/exit flow on initEnterExitFlow as in old Infomap or no effect in this implementation? 
   // (Possible self-links should not add to enter and exit flow in its enclosing module)
@@ -1384,15 +1389,26 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
     }
   }
   if (recordedTeleportation) {
-    double alpha = teleportationProbability;
-    double beta = 1.0 - alpha;
+    // double alpha = teleportationProbability;
+    // double beta = 1.0 - alpha;
 
     for (auto& node : m_root.infomapTree()) {
       if (!node.isLeaf())
       {
         // Don't code self-teleportation
-        node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
-        node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
+        // node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
+        // node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
+
+        // Log() << "\nNode on depth " << node.depth() << ", childDegree: " << node.childDegree() << ", isLeafModule: " << node.isLeafModule() << ", data: " << node.data;
+
+        node.data.enterFlow += (m_root.data.teleportFlow - node.data.teleportFlow) * node.data.teleportWeight;
+        node.data.exitFlow += node.data.teleportFlow * (1.0 - node.data.teleportWeight);
+        // node.data.enterFlow += node.data.teleportFlow / (1.0 - node.data.teleportFlow) * node.data.teleportWeight;
+        // node.data.exitFlow += node.data.teleportFlow * node.data.teleportFlow / (1.0 - node.data.teleportWeight);
+
+        // node.data.enterFlow += (1.0 - node.data.teleportFlow) * node.data.teleportWeight;
+        // node.data.exitFlow += node.data.teleportFlow * (1.0 - node.data.teleportWeight);
+
       }
     }
   }

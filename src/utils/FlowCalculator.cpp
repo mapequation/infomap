@@ -59,7 +59,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   numNodes = network.numNodes();
 
   nodeFlow.assign(numNodes, 0.0);
-  nodeTeleportRates.assign(numNodes, 0.0); // Fraction of teleportation flow landing on node i
+  nodeTeleportWeights.assign(numNodes, 0.0); // Fraction of teleportation flow landing on node i
   // nodeTeleportFlow.assign(numNodes, 0.0); // Outgoing teleportation flow from node i
 
   nodeOutDegree.assign(numNodes, 0);
@@ -276,18 +276,18 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
     for (const auto& nodeIt : network.nodes()) {
       auto& node = nodeIt.second;
-      nodeTeleportRates[nodeIndexMap[node.id]] = node.weight;
+      nodeTeleportWeights[nodeIndexMap[node.id]] = node.weight;
       sumNodeWeights += node.weight;
     }
 
-    normalize(nodeTeleportRates, sumNodeWeights);
+    normalize(nodeTeleportWeights, sumNodeWeights);
   } else {
     // Teleport to links
 
     // Teleport proportionally to out-degree, or in-degree if recorded teleportation.
     for (const auto& link : flowLinks) {
       auto toNode = config.recordedTeleportation ? link.target : link.source;
-      nodeTeleportRates[toNode] += link.flow / sumLinkWeight;
+      nodeTeleportWeights[toNode] += link.flow / sumLinkWeight;
     }
   }
 
@@ -308,7 +308,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
     // Flow from teleportation
     const auto teleportationFlow = alpha + beta * danglingRank;
     for (unsigned int i = 0; i < numNodes; ++i) {
-      nodeFlowTmp[i] = teleportationFlow * nodeTeleportRates[i];
+      nodeFlowTmp[i] = teleportationFlow * nodeTeleportWeights[i];
     }
 
     // Flow from links
@@ -383,41 +383,50 @@ void FlowCalculator::calcDirectedFlowWithBayesianPrior(const StateNetwork& netwo
     s_in[link.target] += link.flow;
   }
 
-  auto s = [s_in, s_out](unsigned int i) { return s_in[i] + s_out[i]; };
-  auto k = [k_in, k_out](unsigned int i) { return k_in[i] + k_out[i]; };
-  auto u_out = [s_out, k_out](unsigned int i) { return k_out[i] == 0 ? 0 : s_out[i] / k_out[i]; };
-  auto u_in = [s_in, k_in](unsigned int i) { return k_in[i] == 0 ? 0 : s_in[i] / k_in[i]; };
-  auto u_ij = [u_in, u_out](unsigned int i, unsigned int j) { return u_out(i) * u_in(j); };
+  auto s = [s_in, s_out](auto i) { return s_in[i] + s_out[i]; };
+  auto k = [k_in, k_out](auto i) { return k_in[i] + k_out[i]; };
+  auto u_out = [s_out, k_out](auto i) { return k_out[i] == 0 ? 1 : s_out[i] / k_out[i]; };
+  auto u_in = [s_in, k_in](auto i) { return k_in[i] == 0 ? 1 : s_in[i] / k_in[i]; };
+  auto u_ij = [u_in, u_out](auto i, auto j) { return u_out(i) * u_in(j); };
   
-  double lambda = std::log(N) / N;
+  double lambda = config.bayesianPriorStrength * std::log(N) / (N - 1);
   double u_t = average_weight;
   // for (unsigned int i = 0; i < N; ++i) {
   //   u_t += k(i) == 0 ? 0 : s(i) / k(i);
   // }
   double sum_u_in = 0.0;
+  double sum_s_in = 0.0;
   for (unsigned int i = 0; i < N; ++i) {
     sum_u_in += u_in(i);
+    sum_s_in += s_in[i];
   }
 
-  // nodeTeleportRates is the fraction of teleportation flow landing on each node. This is proportional to u_in
+  // nodeTeleportWeights is the fraction of teleportation flow landing on each node. This is proportional to u_in
+  Log() << "\n\n Node tele weights:\n";
   for (unsigned int i = 0; i < N; ++i) {
-    nodeTeleportRates[i] = u_in(i) / sum_u_in;
+    nodeTeleportWeights[i] = u_in(i) / sum_u_in;
+    // nodeTeleportWeights[i] = s_in[i] / sum_s_in;
+    Log() << "  " << i << ": " << nodeTeleportWeights[i] << " (u_in: " << u_in(i) <<
+    ", k_in: " << k_in[i] << ", s_in: " << s_in[i] << ")\n";
   }
 
-  auto t_ij = [lambda, u_t, u_ij](unsigned int i, unsigned int j) { return lambda/u_t * u_ij(i, j); };
+  auto t_ij = [lambda, u_t, u_ij](auto i, auto j) { return lambda/u_t * u_ij(i, j); };
   auto t_out = [lambda, u_t, u_out, u_in, sum_u_in](unsigned int i) { return lambda/u_t * u_out(i) * (sum_u_in - u_in(i)); };
 
 
 
   std::vector<double> alpha(N, 0);
   // Log() << "\nt_i (lambda: " << lambda << ", u_t: " << u_t << ", sum_u_in: " << sum_u_in << "): ";
+  double sumAlpha = 0.0;
   for (unsigned int i = 0; i < N; ++i) {
     if (k_out[i] == 0) {
       alpha[i] = 1;
+      sumAlpha += 1;
       continue;
     }
     auto t_i = t_out(i);
     alpha[i] = t_i / (s_out[i] + t_i);
+    sumAlpha += alpha[i];
   }
   Log() << "\n";
 
@@ -443,14 +452,32 @@ void FlowCalculator::calcDirectedFlowWithBayesianPrior(const StateNetwork& netwo
     double teleTmp = 0.0;
     for (unsigned int i = 0; i < N; ++i) {
       // teleportationFlow += alpha[i] * nodeFlow[i];
-      teleTmp += alpha[i] * nodeFlow[i] / (sum_u_in - u_in(i));
+      // teleTmp += alpha[i] * nodeFlow[i] / (sum_u_in - u_in(i));
+      teleTmp += alpha[i] * nodeFlow[i];
     }
-    // double tmp1 = 0;
+    double tmp1 = 0;
     for (unsigned int i = 0; i < N; ++i) {
       // nodeFlowTmp[i] = u_in(i) / sum_u_in * (teleportationFlow - alpha[i] * nodeFlow[i]);
-      nodeFlowTmp[i] = u_in(i) * (teleTmp - alpha[i] * nodeFlow[i] / (sum_u_in - u_in(i)));
-      // tmp1 += nodeFlowTmp[i];
+      // nodeFlowTmp[i] = u_in(i) * (teleTmp - alpha[i] * nodeFlow[i] / (sum_u_in - u_in(i)));
+      nodeFlowTmp[i] = nodeTeleportWeights[i] * (teleTmp - alpha[i] * nodeFlow[i]);
+      tmp1 += nodeFlowTmp[i];
+      if (i == 0 && iteration < 2) {
+        Log() << "\nNode 0: u_in: " << u_in(i) << ", teleTmp: " << teleTmp << ", alpha: " << alpha[i] <<
+        ", nodeFlow: " << nodeFlow[i] << ", sum_u_in: " << sum_u_in << "\n";
+      }
     }
+    if (iteration < 2) {
+      Log() << "Sum tele tmp: " << tmp1 << ", teleTmp: " << teleTmp << ", sumAlpha: " << sumAlpha << "\n";
+    }
+    double tmp2 = 0.0;
+    for (unsigned int i = 0; i < N; ++i) {
+      nodeFlowTmp[i] /= tmp1/teleTmp;
+      tmp2 += nodeFlowTmp[i];
+    }
+    if (iteration < 2) {
+      Log() << "=> Sum 2: " << tmp2 << "\n";
+    }
+
 
     // Flow from links
     for (const auto& link : flowLinks) {
@@ -540,7 +567,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
     for (const auto& nodeIt : network.nodes()) {
       auto& node = nodeIt.second;
       if (node.id < bipartiteStartId) {
-        nodeTeleportRates[nodeIndexMap[node.id]] = node.weight;
+        nodeTeleportWeights[nodeIndexMap[node.id]] = node.weight;
       }
     }
   } else {
@@ -550,21 +577,21 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
     if (config.recordedTeleportation) {
       for (auto link = begin(flowLinks) + bipartiteLinkStartIndex; link != end(flowLinks); ++link) {
         // target is an ordinary node
-        nodeTeleportRates[link->target] += link->flow;
+        nodeTeleportWeights[link->target] += link->flow;
       }
     } else {
       // Unrecorded teleportation
 
       for (auto link = begin(flowLinks); link != begin(flowLinks) + bipartiteLinkStartIndex; ++link) {
         // source is an ordinary node
-        nodeTeleportRates[link->source] += link->flow;
+        nodeTeleportWeights[link->source] += link->flow;
       }
     }
   }
 
-  normalize(nodeTeleportRates);
+  normalize(nodeTeleportWeights);
 
-  nodeFlow = nodeTeleportRates;
+  nodeFlow = nodeTeleportWeights;
 
   // Normalize link weights with respect to its source nodes total out-link weight;
   for (auto& link : flowLinks) {
@@ -593,7 +620,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
     // Flow from teleportation
     const auto teleportationFlow = alpha + beta * danglingRank;
     for (unsigned int i = 0; i < bipartiteStartIndex; ++i) {
-      nodeFlowTmp[i] = teleportationFlow * nodeTeleportRates[i];
+      nodeFlowTmp[i] = teleportationFlow * nodeTeleportWeights[i];
     }
 
     for (unsigned int i = bipartiteStartIndex; i < numNodes; ++i) {
@@ -722,11 +749,12 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     auto& node = nodeIt.second;
     const auto nodeIndex = nodeIndexMap[node.id];
     node.flow = nodeFlow[nodeIndex];
-    node.weight = nodeTeleportRates[nodeIndex];
+    node.weight = nodeTeleportWeights[nodeIndex];
     node.teleFlow = !nodeTeleportFlow.empty() ? nodeTeleportFlow[nodeIndex] : nodeFlow[nodeIndex] * (nodeOutDegree[nodeIndex] == 0 ? 1 : config.teleportationProbability);
     node.enterFlow = node.flow;
     node.exitFlow = node.flow;
     sumNodeFlow += node.flow;
+    Log() << "\nNode " << node.id << ": flow: " << node.flow << ", weight: " << node.weight << ", teleFlow: " << node.teleFlow << " (=> alpha: " << (node.teleFlow / node.flow) << ")";
   }
 
   double sumLinkFlow = 0.0;
@@ -783,6 +811,14 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   }
 
   Log() << "\n  => Sum node flow: " << sumNodeFlow << ", sum link flow: " << sumLinkFlow << "\n";
+
+
+  Log() << "Node flow:\n";
+  for (auto& nodeIt : network.m_nodes) {
+    auto& node = nodeIt.second;
+    Log() << "  " << node.flow << " (enter: " << node.enterFlow << ", exit: " << node.exitFlow << ")\n";
+  }
+  Log() << "\n";
 }
 
 } // namespace infomap

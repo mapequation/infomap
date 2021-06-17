@@ -78,7 +78,7 @@ struct FlowData {
     // return out << "flow: " << data.flow << ", enter: " << data.enterFlow << ", exit: " << data.exitFlow;
     return out << "flow: " << data.flow << ", enter: " << data.enterFlow <<
 				", exit: " << data.exitFlow << ", teleWeight: " << data.teleportWeight <<
-				", danglingFlow: " << data.danglingFlow;
+				", danglingFlow: " << data.danglingFlow << ", teleFlow: " << data.teleportFlow;
   }
 };
 
