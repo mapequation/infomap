@@ -313,7 +313,7 @@ class Infomap(InfomapWrapper):
         clu_level : int, optional
             For clu output, print modules at specified depth from root. Use -1 for bottom level modules.
         output : list(str), optional
-            Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, network, states.
+            Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states.
         hide_bipartite_nodes : bool, optional
             Project bipartite solution to unipartite.
         two_level : bool, optional
@@ -1619,6 +1619,22 @@ class Infomap(InfomapWrapper):
             If the state nodes should be included (default False).
         """
         return self.writeJsonTree(filename, states)
+
+    def write_csv(self, filename, states=False):
+        """Write result to a CSV file.
+
+        See Also
+        --------
+        write_clu
+        write_tree
+
+        Parameters
+        ----------
+        filename : str
+        states : bool, optional
+            If the state nodes should be included (default False).
+        """
+        return self.writeCsvTree(filename, states)
 
     def get_effective_num_modules(self, depth_level=1):
         """The flow weighted effective number of modules.
