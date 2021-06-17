@@ -84,7 +84,7 @@ To build:
     - Runs `swig`
     - Creates `package-meta.py`
     - Copies python package files to `build/py`
-    - To test the build, run `make py-local-install` and run `python -c "import infomap; im = Infomap()"`
+2. To test the build, run `make py-test`
 3. Test publish with `make pypitest-publish`
     - Install in a clean environment `pip3 --no-cache-dir install --index-url https://test.pypi.org/simple/ infomap`
 4. Publish with `make pypi-publish`
