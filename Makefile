@@ -208,6 +208,10 @@ $(PY_BUILD_DIR)/headers/%: %
 SPHINX_SOURCE_DIR = interfaces/python/source
 SPHINX_TARGET_DIR = docs
 
+py-test:
+	@cp -r examples/networks/*.net $(PY_BUILD_DIR)
+	cd $(PY_BUILD_DIR) && python3 -m doctest infomap_api.py
+
 py-local-install:
 	# Run this to get 'import infomap' to always import the latest
 	# locally built version, so no need to run this multiple times.
