@@ -165,6 +165,7 @@ struct Config {
   bool printFlowTree = false;
   bool printNewick = false;
   bool printJson = false;
+  bool printCsv = false;
   bool printMap = false;
   bool printClu = false;
   int cluLevel = 1; // Write modules at specified depth from root. 1, 2, ... or -1 for bottom level
@@ -370,7 +371,7 @@ struct Config {
 
   bool haveModularResultOutput() const
   {
-    return printTree || printFlowTree || printNewick || printJson || printMap || printClu || printBinaryTree || printBinaryFlowTree;
+    return printTree || printFlowTree || printNewick || printJson || printCsv || printMap || printClu || printBinaryTree || printBinaryFlowTree;
   }
 };
 

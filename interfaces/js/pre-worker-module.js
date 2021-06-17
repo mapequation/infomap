@@ -42,6 +42,8 @@ var Module = {
       newick_states: readFile(`${outName}_states.nwk`), // -o newick (for state networks)
       json: readFile(`${outName}.json`), // -o json
       json_states: readFile(`${outName}_states.json`), // -o json (for state networks)
+      csv: readFile(`${outName}.csv`), // -o csv
+      csv_states: readFile(`${outName}_states.csv`), // -o csv (for state networks)
       net: readFile(`${outName}.net`), // -o network (for state networks)
       states_as_physical: readFile(`${outName}_states_as_physical.net`), // -o network (for state networks)
       states: readFile(`${outName}_states.net`), // -o states
