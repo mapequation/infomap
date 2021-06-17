@@ -45,10 +45,10 @@ im.run()
 
 os.remove(filename)
 
-print("source - target : weight")
-for (source, target), weight in im.links.items():
-    print(source, "-", target, ":", weight)
+print("source target weight")
+for source, target, weight in im.links:
+    print(source, target, weight)
 
-print("source - target : flow")
-for (source, target), flow in im.flow_links.items():
-    print(source, "-", target, ":", flow)
+print("source target flow")
+for source, target, flow in im.flow_links:
+    print(source, target, flow)

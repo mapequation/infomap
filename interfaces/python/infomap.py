@@ -1334,9 +1334,9 @@ class Infomap(InfomapWrapper):
 
     @property
     def links(self):
-        """Get the currently assigned links and their weights.
+        """A view of the currently assigned links and their weights.
 
-        The keys are state ids (source, target) when we have a
+        The sources and targets are state ids when we have a
         state or multilayer network.
 
         Examples
@@ -1345,14 +1345,14 @@ class Infomap(InfomapWrapper):
         >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> im.run()
-        >>> im.links
-        {(1, 2): 1.0,
-         (1, 3): 1.0,
-         (2, 3): 1.0,
-         (3, 4): 1.0,
-         (4, 5): 1.0,
-         (4, 6): 1.0,
-         (5, 6): 1.0}
+        >>> list(im.links)
+        [(1, 2, 1.0),
+         (1, 3, 1.0),
+         (2, 3, 1.0),
+         (3, 4, 1.0),
+         (4, 5, 1.0),
+         (4, 6, 1.0),
+         (5, 6, 1.0)]
 
         See Also
         --------
@@ -1360,16 +1360,17 @@ class Infomap(InfomapWrapper):
 
         Returns
         -------
-        dict
-            Dict of tuples as keys and weights as values
+        tuple of int, int, float
+            An iterator of source, target, weight tuples.
         """
-        return self.getLinks()
+        return ((source, target, weight)
+                for (source, target), weight in self.getLinks().items())
 
     @property
     def flow_links(self):
-        """Get the currently assigned links and their flow.
+        """A view of the currently assigned links and their flow.
 
-        The keys are state ids (source, target) when we have a
+        The sources and targets are state ids when we have a
         state or multilayer network.
 
         Examples
@@ -1378,14 +1379,14 @@ class Infomap(InfomapWrapper):
         >>> im = Infomap()
         >>> im.read_file("twotriangles.net")
         >>> im.run()
-        >>> im.flow_links
-        {(1, 2): 0.14285714285714285,
-         (1, 3): 0.14285714285714285,
-         (2, 3): 0.14285714285714285,
-         (3, 4): 0.14285714285714285,
-         (4, 5): 0.14285714285714285,
-         (4, 6): 0.14285714285714285,
-         (5, 6): 0.14285714285714285}
+        >>> list(im.flow_links)
+        [(1, 2, 0.14285714285714285),
+         (1, 3, 0.14285714285714285),
+         (2, 3, 0.14285714285714285),
+         (3, 4, 0.14285714285714285),
+         (4, 5, 0.14285714285714285),
+         (4, 6, 0.14285714285714285),
+         (5, 6, 0.14285714285714285)]
 
         See Also
         --------
@@ -1393,10 +1394,11 @@ class Infomap(InfomapWrapper):
 
         Returns
         -------
-        dict
-            Dict of tuples as keys as flows as values
+        tuple of int, int, float
+            An iterator of source, target, flow tuples.
         """
-        return self.getLinks(True)
+        return ((source, target, flow)
+                for (source, target), flow in self.getLinks(True).items())
 
     @property
     def num_links(self):
