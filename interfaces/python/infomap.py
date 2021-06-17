@@ -239,8 +239,8 @@ class Infomap(InfomapWrapper):
     --------
     Create an instance and add nodes and links:
 
-    >>> import infomap
-    >>> im = infomap.Infomap()
+    >>> from infomap import Infomap
+    >>> im = Infomap(silent=True)
     >>> im.add_node(1)
     >>> im.add_node(2)
     >>> im.add_link(1, 2)
@@ -251,12 +251,13 @@ class Infomap(InfomapWrapper):
 
     Create an instance and read a network file:
 
-    >>> import infomap
-    >>> im = infomap.Infomap()
+    >>> from infomap import Infomap
+    >>> im = Infomap(silent=True, num_trials=10)
     >>> im.read_file("ninetriangles.net")
-    >>> im.run("-N5")
-    >>> im.codelength
-    3.4841898804052187
+    >>> im.run()
+    >>> tol = 1e-4
+    >>> abs(im.codelength - 3.4622731375264144) < tol
+    True
 
 
     For more examples, see the examples directory.
@@ -418,7 +419,6 @@ class Infomap(InfomapWrapper):
         >>> from infomap import Infomap
         >>> im = Infomap()
         >>> im.add_nodes(range(4))
-        None
 
 
         Add named nodes
@@ -431,7 +431,6 @@ class Infomap(InfomapWrapper):
         ...     (3, "Node 3")
         ... )
         >>> im.add_nodes(nodes)
-        None
 
 
         Parameters
@@ -460,8 +459,8 @@ class Infomap(InfomapWrapper):
     def set_names(self, names):
         """Set names to several nodes at once.
 
-        Example
-        -------
+        Examples
+        --------
 
         >>> from infomap import Infomap
         >>> im = Infomap()
@@ -470,7 +469,6 @@ class Infomap(InfomapWrapper):
         ...     (2, "Node 2")
         ... )
         >>> im.set_names(names)
-        None
 
 
         See Also
@@ -501,13 +499,13 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         node_id : int
-        default : any
-            The return value if the node name is missing.
+        default : str, optional
+            The return value if the node name is missing, default ``None``
 
         Returns
         -------
-        string or any
-            The node name if it exists, else the default which is ``None``
+        str
+            The node name if it exists, else the ``default``.
         """
         name = super().getName(node_id)
         if name == "":
@@ -580,8 +578,8 @@ class Infomap(InfomapWrapper):
         --------
         add_state_node
 
-        Example
-        -------
+        Examples
+        --------
 
         >>> from infomap import Infomap
         >>> im = Infomap()
@@ -591,7 +589,6 @@ class Infomap(InfomapWrapper):
         ...     (3, 2)
         ... )
         >>> im.add_state_nodes(states)
-        None
 
 
         Parameters
@@ -624,8 +621,8 @@ class Infomap(InfomapWrapper):
     def add_links(self, links):
         """Add several links.
 
-        Example
-        -------
+        Examples
+        --------
 
         >>> from infomap import Infomap
         >>> im = Infomap()
@@ -634,7 +631,6 @@ class Infomap(InfomapWrapper):
         ...     (1, 3)
         ... )
         >>> im.add_links(links)
-        None
 
 
         See Also
@@ -671,8 +667,8 @@ class Infomap(InfomapWrapper):
     def remove_links(self, links):
         """Remove several links.
 
-        Example
-        -------
+        Examples
+        --------
 
         >>> from infomap import Infomap
         >>> im = Infomap()
@@ -680,8 +676,10 @@ class Infomap(InfomapWrapper):
         ...     (1, 2),
         ...     (1, 3)
         ... )
+        >>> im.add_links(links)
         >>> im.remove_links(links)
-        None
+        >>> im.num_links
+        0
 
 
         See Also
@@ -722,7 +720,6 @@ class Infomap(InfomapWrapper):
         >>> source_multilayer_node = (0, 1) # layer_id, node_id
         >>> target_multilayer_node = (1, 2) # layer_id, node_id
         >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
-        None
 
 
         Usage with MultilayerNode
@@ -732,7 +729,7 @@ class Infomap(InfomapWrapper):
         >>> source_multilayer_node = MultilayerNode(layer_id=0, node_id=1)
         >>> target_multilayer_node = MultilayerNode(layer_id=1, node_id=2)
         >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
-        None
+
 
         """
         source_layer_id, source_node_id = source_multilayer_node
@@ -746,8 +743,8 @@ class Infomap(InfomapWrapper):
     def add_multilayer_links(self, links):
         """Add several multilayer links.
 
-        Example
-        -------
+        Examples
+        --------
 
         >>> from infomap import Infomap
         >>> im = Infomap()
@@ -756,7 +753,6 @@ class Infomap(InfomapWrapper):
         ...     ((0, 3), (1, 2))
         ... )
         >>> im.add_multilayer_links(links)
-        None
 
 
         See Also
@@ -777,12 +773,13 @@ class Infomap(InfomapWrapper):
     def add_networkx_graph(self, g, weight="weight"):
         """Add NetworkX graph
 
-        Example
-        -------
+        Examples
+        --------
+
         >>> import networkx as nx
         >>> from infomap import Infomap
         >>> G = nx.Graph([("a", "b"), ("a", "c")])
-        >>> im = Infomap()
+        >>> im = Infomap(silent=True)
         >>> mapping = im.add_networkx_graph(G)
         >>> mapping
         {0: 'a', 1: 'b', 2: 'c'}
@@ -792,6 +789,7 @@ class Infomap(InfomapWrapper):
         0 1 0.5 a
         1 1 0.25 b
         2 1 0.25 c
+
 
         Notes
         -----
@@ -804,8 +802,8 @@ class Infomap(InfomapWrapper):
         ----------
         g : nx.Graph
             A NetworkX graph
-        weight : str
-            Key to lookup link weight in edge data if present
+        weight : str, optional
+            Key to lookup link weight in edge data if present, default ``"weight"``
 
         Returns
         -------
@@ -841,11 +839,11 @@ class Infomap(InfomapWrapper):
     def bipartite_start_id(self):
         """Get or set the bipartite start id.
 
-        Example
-        -------
+        Examples
+        --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap()
+        >>> im = Infomap(silent=True, num_trials=10)
         >>> im.add_node(1, "Left 1")
         >>> im.add_node(2, "Left 2")
         >>> im.bipartite_start_id = 3
@@ -855,7 +853,9 @@ class Infomap(InfomapWrapper):
         >>> im.add_link(1, 4)
         >>> im.add_link(2, 4)
         >>> im.run()
-        None
+        >>> tol = 1e-4
+        >>> abs(im.codelength - 0.9182958340544896) < tol
+        True
 
 
         Parameters
@@ -881,11 +881,11 @@ class Infomap(InfomapWrapper):
         This is a initial configuration of nodes into modules where Infomap
         will start the optimizer.
 
-        Example
-        -------
+        Examples
+        --------
 
         >>> from infomap import Infomap
-        >>> im = Infomap()
+        >>> im = Infomap(silent=True)
         >>> im.add_node(1)
         >>> im.add_node(2)
         >>> im.add_node(3)
@@ -900,8 +900,11 @@ class Infomap(InfomapWrapper):
         ...     3: 1,
         ...     4: 1
         ... }
+        >>> im.no_infomap = True
         >>> im.run()
-        None
+        >>> tol = 1e-4
+        >>> abs(im.codelength - 3.4056390622295662) < tol
+        True
 
 
         Notes
@@ -1053,13 +1056,13 @@ class Infomap(InfomapWrapper):
         depth_level : int, optional
             The level in the hierarchical tree. Set to 1 (default) to return the
             top modules (coarsest level), set to 2 for second coarsest level etc.
-            Set to -1 to return the bottom level modules (finest level).
+            Set to -1 to return the bottom level modules (finest level). Default ``1``.
         states : bool, optional
             For higher-order networks, if ``states`` is True, it will iterate over state nodes,
             otherwise it will iterate over physical nodes, merging state nodes with same
             ``node_id`` if they are in the same module.
             Note that the same physical node may end up on different paths in the tree.
-            See notes on ``physical_tree``.
+            See notes on ``physical_tree``. Default ``false``.
 
         Returns
         -------
@@ -1104,44 +1107,42 @@ class Infomap(InfomapWrapper):
         --------
         get_modules
 
-        Example
-        -------
-
+        Examples
+        --------
         >>> from infomap import Infomap
-        >>> im = Infomap()
+        >>> im = Infomap(silent=True, num_trials=5)
         >>> im.read_file("ninetriangles.net")
-        >>> im.run("-N5")
+        >>> im.run()
         >>> for node_id, module_id in im.modules:
         ...     print(node_id, module_id)
         ...
-        1 1
-        2 1
-        3 1
-        4 1
-        5 1
-        6 1
-        7 1
-        8 1
-        9 1
-        10 2
-        11 2
-        12 2
-        13 2
-        14 2
-        15 2
-        16 2
-        17 2
-        18 2
-        19 0
-        20 0
-        21 0
-        22 0
-        23 0
-        24 0
-        25 0
-        26 0
-        27 0
-
+        1 2
+        2 2
+        3 2
+        4 2
+        5 2
+        6 2
+        7 2
+        8 2
+        9 2
+        10 3
+        11 3
+        12 3
+        13 5
+        14 5
+        15 5
+        16 4
+        17 4
+        18 4
+        19 1
+        20 1
+        21 1
+        22 1
+        23 1
+        24 1
+        25 1
+        26 1
+        27 1
 
         See Also
         --------
@@ -1196,16 +1197,16 @@ class Infomap(InfomapWrapper):
         depth_level : int, optional
             The module level returned by ``iterator.module_id``. Set to 1 (default) to
             return the top modules (coarsest level), set to 2 for second coarsest level
-            etc. Set to -1 to return the bottom level modules (finest level).
+            etc. Set to -1 to return the bottom level modules (finest level). Default ``1``.
         states : bool, optional
             For higher-order networks, if ``states`` is True, it will iterate over state nodes,
             otherwise it will iterate over physical nodes, merging state nodes with same
             ``node_id`` if they are in the same module.
             Note that the same physical node may end up on different paths in the tree.
-            See notes on ``physical_tree``.
+            See notes on ``physical_tree``. Default ``false``.
 
         Notes
-        ----
+        -----
         For higher-order networks, each node is represented by a set of state nodes
         with the same ``node_id``, where each state node represents a different memory
         constraining the random walker. This enables overlapping modules, where
