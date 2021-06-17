@@ -1333,6 +1333,72 @@ class Infomap(InfomapWrapper):
         return self.network.numPhysicalNodes()
 
     @property
+    def links(self):
+        """Get the currently assigned links and their weights.
+
+        The keys are state ids (source, target) when we have a
+        state or multilayer network.
+
+        Examples
+        --------
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> im.read_file("twotriangles.net")
+        >>> im.run()
+        >>> im.links
+        {(1, 2): 1.0,
+         (1, 3): 1.0,
+         (2, 3): 1.0,
+         (3, 4): 1.0,
+         (4, 5): 1.0,
+         (4, 6): 1.0,
+         (5, 6): 1.0}
+
+        See Also
+        --------
+        flow_links
+
+        Returns
+        -------
+        dict
+            Dict of tuples as keys and weights as values
+        """
+        return self.getLinks()
+
+    @property
+    def flow_links(self):
+        """Get the currently assigned links and their flow.
+
+        The keys are state ids (source, target) when we have a
+        state or multilayer network.
+
+        Examples
+        --------
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> im.read_file("twotriangles.net")
+        >>> im.run()
+        >>> im.flow_links
+        {(1, 2): 0.14285714285714285,
+         (1, 3): 0.14285714285714285,
+         (2, 3): 0.14285714285714285,
+         (3, 4): 0.14285714285714285,
+         (4, 5): 0.14285714285714285,
+         (4, 6): 0.14285714285714285,
+         (5, 6): 0.14285714285714285}
+
+        See Also
+        --------
+        links
+
+        Returns
+        -------
+        dict
+            Dict of tuples as keys as flows as values
+        """
+        return self.getLinks(True)
+
+    @property
     def num_links(self):
         """The number of links.
 

@@ -99,6 +99,22 @@ std::string InfomapWrapper::getName(unsigned int id) const
   return it != names.end() ? it->second : "";
 }
 
+std::map<std::pair<unsigned int, unsigned int>, double> InfomapWrapper::getLinks(bool flow)
+{
+  std::map<std::pair<unsigned int, unsigned int>, double> links;
+
+  for (const auto& node : m_network.nodeLinkMap()) {
+    const auto sourceId = node.first.id;
+
+    for (const auto& link : node.second) {
+      const auto targetId = link.first.id;
+      links[{ sourceId, targetId }] = flow ? link.second.flow : link.second.weight;
+    }
+  }
+
+  return links;
+}
+
 int run(const std::string& flags)
 {
   try {

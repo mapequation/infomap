@@ -13,6 +13,8 @@
 #include "core/InfomapCore.h"
 #include "io/Config.h"
 #include <string>
+#include <utility>
+#include <map>
 
 namespace infomap {
 
@@ -46,6 +48,8 @@ public:
   void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight = 1.0) { m_network.addMultilayerLink(layer1, n1, layer2, n2, weight); }
 
   void setBipartiteStartId(unsigned int startId) { m_network.setBipartiteStartId(startId); }
+
+  std::map<std::pair<unsigned int, unsigned int>, double> getLinks(bool flow);
 
   std::map<unsigned int, unsigned int> getModules(int level = 1, bool states = false);
   std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false);
