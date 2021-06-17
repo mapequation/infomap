@@ -32,5 +32,5 @@ jobs:
         make python
     - name: Test installation
       run: |
-        make py-local-install
-        python -c "from infomap import Infomap; im = Infomap(); im.add_links([(1, 2), (2, 3), (3, 1), (3, 4), (4, 5), (5, 6), (6, 4)]); im.run(); exit(0 if im.num_top_modules == 2 else 1)"
+        pip install networkx
+        make py-test
