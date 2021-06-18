@@ -12,25 +12,25 @@ var outName = "Untitled";
 var memoryHackRequest = {
   status: 200,
   useRequest: null,
-  addEventListener: function(event, callback) {
+  addEventListener: function (event, callback) {
     if (event === "load") {
       this.useRequest = callback;
     }
-  }
+  },
 };
 
 var Module = {
   arguments: [],
-  preRun: function() {
+  preRun: function () {
     addRunDependency("filesReady");
   },
-  print: function(content) {
+  print: function (content) {
     postMessage({ type: "data", content, id: infomapWorkerId });
   },
-  printErr: function(content) {
+  printErr: function (content) {
     postMessage({ type: "error", content, id: infomapWorkerId });
   },
-  postRun: function() {
+  postRun: function () {
     const content = {
       clu: readFile(`${outName}.clu`), // -o clu
       clu_states: readFile(`${outName}_states.clu`), // -o clu (for state networks)
@@ -50,7 +50,7 @@ var Module = {
     };
     postMessage({ type: "finished", content, id: infomapWorkerId });
   },
-  memoryInitializerRequest: memoryHackRequest
+  memoryInitializerRequest: memoryHackRequest,
 };
 
 onmessage = function onmessage(message) {

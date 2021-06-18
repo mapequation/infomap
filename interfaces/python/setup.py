@@ -51,7 +51,8 @@ def have_openmp():
 
     try:
         with open(os.devnull, 'w') as fnull:
-            exit_code = subprocess.call([compiler, *compile_args, filename], stdout=fnull, stderr=fnull)
+            exit_code = subprocess.call(
+                [compiler, *compile_args, filename], stdout=fnull, stderr=fnull)
     except OSError:
         exit_code = 1
 
@@ -114,7 +115,12 @@ if sys.platform == 'win32':
 infomap_module = Extension(
     '_infomap',
     sources=sources,
-    include_dirs=['headers', 'headers/src', 'headers/src/core', 'headers/src/io', 'headers/src/utils'],
+    include_dirs=[
+        'headers',
+        'headers/src',
+        'headers/src/core',
+        'headers/src/io',
+        'headers/src/utils'],
     language='c++',
     extra_compile_args=compiler_args,
     extra_link_args=link_args)

@@ -62,11 +62,12 @@ class Infomap {
 
     const id = this._workerId++;
     this._workers[id] = worker;
-    
+
     const index = filename.lastIndexOf(".");
     const networkName = index > 0 ? filename.slice(0, index) : filename;
     const outNameMatch = args.match(/--out-name\s(\S+)/);
-    const outName = outNameMatch && outNameMatch[1] ? outNameMatch[1] : networkName;
+    const outName =
+      outNameMatch && outNameMatch[1] ? outNameMatch[1] : networkName;
 
     worker.postMessage({
       id,
@@ -79,7 +80,7 @@ class Infomap {
     });
 
     worker.onmessage = this.onmessage;
-    worker.onerror = err => {
+    worker.onerror = (err) => {
       err.preventDefault();
       this._events.onerror(err.message, id);
     };
@@ -96,7 +97,7 @@ class Infomap {
     return this;
   }
 
-  onmessage = event => {
+  onmessage = (event) => {
     const { ondata, onerror, onfinished } = this._events;
     const { data } = event;
     const { type, content, id } = data;
@@ -134,9 +135,9 @@ function testInfomap() {
     "#source target [weight]\n 1 2\n 1 3\n 1 4\n 2 1\n 2 3\n 3 2\n 3 1\n 4 1\n 4 5\n 4 6\n 5 4\n 5 6\n 6 5\n 6 4";
 
   const infomap = new Infomap()
-    .on("data", data => console.log(data))
-    .on("error", err => console.warn(err))
-    .on("finished", data => console.log(data));
+    .on("data", (data) => console.log(data))
+    .on("error", (err) => console.warn(err))
+    .on("finished", (data) => console.log(data));
 
   infomap.run(network);
 }

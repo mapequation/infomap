@@ -10,14 +10,15 @@ This package is used in [Infomap Online](//www.mapequation.org/infomap/).
 
 To install, run
 
-``` shell
+```shell
 npm install @mapequation/infomap
 ```
 
 ## Usage
+
 If you use ES modules, import the package like this
 
-``` javascript
+```javascript
 import Infomap from "@mapequation/infomap";
 
 let network = `#source target [weight]
@@ -37,9 +38,9 @@ let network = `#source target [weight]
 5 3`;
 
 let infomap = new Infomap()
-  .on("data", data => console.log(data))
-  .on("error", err => console.warn(err))
-  .on("finished", data => console.log(data));
+  .on("data", (data) => console.log(data))
+  .on("error", (err) => console.warn(err))
+  .on("finished", (data) => console.log(data));
 
 infomap.run(network, "--two-level");
 ```
@@ -48,7 +49,7 @@ If you use a CDN, for example JSDelivr, `Infomap` is exported as `window.infomap
 
 For example:
 
-``` html
+```html
 <!doctype html>
 <html>
     <head>

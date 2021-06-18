@@ -11,7 +11,7 @@ function getCommits(from = "", to = "HEAD") {
   return new Promise((resolve, reject) =>
     gitRawCommits(gitOpts)
       .pipe(conventionalCommitsParser())
-      .on("data", data => commits.push(data))
+      .on("data", (data) => commits.push(data))
       .on("finish", () => resolve(commits))
       .on("error", reject)
   );

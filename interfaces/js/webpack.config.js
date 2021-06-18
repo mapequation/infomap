@@ -5,7 +5,7 @@ const getParameters = require("./get-parameters.js");
 const version = require("../../package.json").version;
 
 const webpackConfig = async () => {
-  const v1beta56hash = "63de1fea1c05cf23bf469cf07e6c8b387b0cb520"
+  const v1beta56hash = "63de1fea1c05cf23bf469cf07e6c8b387b0cb520";
   const commits = await getCommits(v1beta56hash);
   const { parameters } = await getParameters("./Infomap");
 
@@ -14,27 +14,27 @@ const webpackConfig = async () => {
     entry: "./interfaces/js/src/index.js",
     devtool: "inline-source-map",
     devServer: {
-      contentBase: "../../dist"
+      contentBase: "../../dist",
     },
     output: {
       filename: "index.js",
       path: path.resolve(__dirname, "../../dist"),
       library: "infomap",
-      libraryTarget: "umd"
+      libraryTarget: "umd",
     },
     module: {
       rules: [
         {
           test: /\.worker\.js$/,
           use: {
-            loader: "raw-loader"
-          }
+            loader: "raw-loader",
+          },
         },
         {
           test: /\.mem$/,
           use: {
-            loader: "arraybuffer-loader"
-          }
+            loader: "arraybuffer-loader",
+          },
         },
         {
           test: /\.js$/,
@@ -43,19 +43,19 @@ const webpackConfig = async () => {
             loader: "babel-loader",
             options: {
               presets: ["@babel/preset-env"],
-              plugins: ["@babel/plugin-proposal-class-properties"]
-            }
-          }
-        }
-      ]
+              plugins: ["@babel/plugin-proposal-class-properties"],
+            },
+          },
+        },
+      ],
     },
     plugins: [
       new DefinePlugin({
         CHANGELOG: JSON.stringify(commits, null, 2),
         VERSION: JSON.stringify(version),
-        PARAMETERS: JSON.stringify(parameters, null, 2)
-      })
-    ]
+        PARAMETERS: JSON.stringify(parameters, null, 2),
+      }),
+    ],
   };
 };
 
