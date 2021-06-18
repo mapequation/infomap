@@ -1,5 +1,6 @@
 import json
 
+
 def create_package_meta(package_json, meta_file):
     with open(package_json, 'r') as fp:
         pkg = json.load(fp)
@@ -24,4 +25,9 @@ def create_package_meta(package_json, meta_file):
 
 
 if __name__ == '__main__':
-    create_package_meta('./package.json', './interfaces/python/package_meta.py')
+    import sys
+
+    if len(sys.argv) < 2:
+        raise RuntimeError("missing argument: outfile")
+
+    create_package_meta('./package.json', sys.argv[1])
