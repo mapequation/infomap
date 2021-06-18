@@ -7,7 +7,6 @@ except ImportError:
     # Python < 3.3
     from math import log
 
-
     def log2(p):
         return log(p, 2.0)
 
@@ -1446,7 +1445,7 @@ class Infomap(InfomapWrapper):
 
         The module codelength is defined such that
         ``codelength = index_codelength + module_codelength``
-        
+
         For a hierarchical solution, the module codelength
         is the sum of codelengths for each top module.
 
@@ -1653,8 +1652,8 @@ class Infomap(InfomapWrapper):
         float
             The effective number of modules
         """
-        return perplexity([module.flow for module in self.get_tree(depth_level)
-                           if depth_level == -1 and module.is_leaf_module or module.depth == depth_level])
+        return perplexity([module.flow for module in self.get_tree(
+            depth_level) if depth_level == -1 and module.is_leaf_module or module.depth == depth_level])
 
     @property
     def effective_num_top_modules(self):
@@ -1681,3 +1680,16 @@ class Infomap(InfomapWrapper):
             The effective number of top modules
         """
         return self.get_effective_num_modules(depth_level=-1)
+
+
+def main():
+    import sys
+
+    args = " ".join(sys.argv[1:])
+    conf = Config(args, True)
+    im = Infomap(conf)
+    im.run()
+
+
+if __name__ == '__main__':
+    main()

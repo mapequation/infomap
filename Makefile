@@ -177,15 +177,14 @@ PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
 # Use python distutils to compile the module
 python: py-swig Makefile
 	@cp -a interfaces/python/setup.py $(PY_BUILD_DIR)/
-	python utils/create-python-package-meta.py
-	@cp -a interfaces/python/package_meta.py $(PY_BUILD_DIR)/
 	@touch $(PY_BUILD_DIR)/__init__.py
-	@cp -a $(PY_BUILD_DIR)/infomap.py $(PY_BUILD_DIR)/infomap_package.py
-	cat $(PY_BUILD_DIR)/package_meta.py $(PY_BUILD_DIR)/infomap_api.py interfaces/python/infomap_cli.py > $(PY_BUILD_DIR)/infomap.py
+	@python utils/create-python-package-meta.py $(PY_BUILD_DIR)/package_meta.py
+	@cat $(PY_BUILD_DIR)/package_meta.py $(PY_BUILD_DIR)/infomap.py > $(PY_BUILD_DIR)/temp.py
+	@mv $(PY_BUILD_DIR)/temp.py $(PY_BUILD_DIR)/infomap.py
 	@cp -a interfaces/python/MANIFEST.in $(PY_BUILD_DIR)/
 	@cp -a README.rst $(PY_BUILD_DIR)/
 	@cp -a LICENSE_AGPLv3.txt $(PY_BUILD_DIR)/LICENSE
-	cd $(PY_BUILD_DIR) && CC=$(CXX) python3 setup.py build_ext --inplace
+	@cd $(PY_BUILD_DIR) && CC=$(CXX) python3 setup.py build_ext --inplace
 	@true
 
 # Generate wrapper files from source and interface files
@@ -193,7 +192,6 @@ py-swig: $(PY_HEADERS) $(PY_SOURCES) $(PY_ONLY_HEADERS) interfaces/python/infoma
 	@mkdir -p $(PY_BUILD_DIR)
 	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/
 	swig -c++ -python -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
-	@cp -a $(PY_BUILD_DIR)/infomap.py $(PY_BUILD_DIR)/infomap_api.py
 
 # Rule for $(PY_HEADERS) and $(PY_SOURCES)
 $(PY_BUILD_DIR)/src/%: src/%
@@ -210,7 +208,7 @@ SPHINX_TARGET_DIR = docs
 
 py-test:
 	@cp -r examples/networks/*.net $(PY_BUILD_DIR)
-	cd $(PY_BUILD_DIR) && python3 -m doctest infomap_api.py
+	cd $(PY_BUILD_DIR) && python3 -m doctest infomap.py
 
 py-local-install:
 	# Run this to get 'import infomap' to always import the latest
@@ -224,7 +222,8 @@ py-doc: py-local-install
 	@mkdir -p $(SPHINX_TARGET_DIR)
 	@cp -a README.rst ${SPHINX_SOURCE_DIR}/index.rst
 	sphinx-build -b html $(SPHINX_SOURCE_DIR) $(SPHINX_TARGET_DIR)
-	@npm run py-doc-prettier
+	@rm -r ${SPHINX_SOURCE_DIR}/index.rst
+	prettier --write docs/searchindex.js
 
 .PHONY: pypitest-publish pypi-publish py-clean
 PYPI_DIR = $(PY_BUILD_DIR)
