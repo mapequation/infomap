@@ -1332,6 +1332,132 @@ class Infomap(InfomapWrapper):
         """
         return self.network.numPhysicalNodes()
 
+    def get_links(self, data="weight"):
+        """A view of the currently assigned links and their weights or flow.
+
+        The sources and targets are state ids when we have a
+        state or multilayer network.
+
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap(silent=True)
+        >>> im.read_file("twotriangles.net")
+        >>> im.run()
+        >>> for link in im.get_links():
+        ...     print(link)
+        (1, 2, 1.0)
+        (1, 3, 1.0)
+        (2, 3, 1.0)
+        (3, 4, 1.0)
+        (4, 5, 1.0)
+        (4, 6, 1.0)
+        (5, 6, 1.0)
+        >>> for link in im.get_links(data="flow"):
+        ...     print(link)
+        (1, 2, 0.14285714285714285)
+        (1, 3, 0.14285714285714285)
+        (2, 3, 0.14285714285714285)
+        (3, 4, 0.14285714285714285)
+        (4, 5, 0.14285714285714285)
+        (4, 6, 0.14285714285714285)
+        (5, 6, 0.14285714285714285)
+
+
+        See Also
+        --------
+        links
+        flow_links
+
+        Parameters
+        ----------
+        data : str
+            The kind of data to return, one of "weight" or "flow", default "weight".
+
+        Returns
+        -------
+        tuple of int, int, float
+            An iterator of source, target, weight/flow tuples.
+        """
+        if data not in ("weight", "flow"):
+            raise RuntimeError("data must one of \"weight\" or \"flow\"")
+
+        return ((source, target, value)
+                for (source, target), value in self.getLinks(data != "weight").items())
+
+    @property
+    def links(self):
+        """A view of the currently assigned links and their weights.
+
+        The sources and targets are state ids when we have a
+        state or multilayer network.
+
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap(silent=True)
+        >>> im.read_file("twotriangles.net")
+        >>> im.run()
+        >>> for link in im.links:
+        ...     print(link)
+        (1, 2, 1.0)
+        (1, 3, 1.0)
+        (2, 3, 1.0)
+        (3, 4, 1.0)
+        (4, 5, 1.0)
+        (4, 6, 1.0)
+        (5, 6, 1.0)
+
+
+        See Also
+        --------
+        flow_links
+
+        Returns
+        -------
+        tuple of int, int, float
+            An iterator of source, target, weight tuples.
+        """
+        return self.get_links()
+
+    @property
+    def flow_links(self):
+        """A view of the currently assigned links and their flow.
+
+        The sources and targets are state ids when we have a
+        state or multilayer network.
+
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap(silent=True)
+        >>> im.read_file("twotriangles.net")
+        >>> im.run()
+        >>> for link in im.flow_links:
+        ...     print(link)
+        (1, 2, 0.14285714285714285)
+        (1, 3, 0.14285714285714285)
+        (2, 3, 0.14285714285714285)
+        (3, 4, 0.14285714285714285)
+        (4, 5, 0.14285714285714285)
+        (4, 6, 0.14285714285714285)
+        (5, 6, 0.14285714285714285)
+
+
+        See Also
+        --------
+        links
+
+        Returns
+        -------
+        tuple of int, int, float
+            An iterator of source, target, flow tuples.
+        """
+        return self.get_links(data="flow")
+
     @property
     def num_links(self):
         """The number of links.

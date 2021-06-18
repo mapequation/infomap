@@ -20,12 +20,15 @@ using namespace infomap;
 
 %include "std_map.i"
 %include "std_vector.i"
+%include "std_pair.i"
 
 namespace std {
     %template(vector_uint) std::vector<unsigned int>;
     %template(map_uint_uint) std::map<unsigned int, unsigned int>;
     %template(map_uint_vector_uint) std::map<unsigned int, std::vector<unsigned int>>;
     %template(map_uint_string) std::map<unsigned int, std::string>;
+    %template(pair_uint_uint) std::pair<unsigned int, unsigned int>;
+    %template(map_pair_uint_uint_double) std::map<std::pair<unsigned int, unsigned int>, double>;
 }
 
 #ifdef SWIGPYTHON
@@ -38,6 +41,9 @@ namespace std {
 
         def getNames(self):
             return dict(_infomap.InfomapWrapper_getNames(self))
+
+        def getLinks(self, flow=False):
+            return dict(_infomap.InfomapWrapper_getLinks(self, flow))
     %}
 }
 #endif
