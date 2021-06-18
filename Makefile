@@ -82,7 +82,7 @@ js-test:
 	$(RM) -r package mapequation-infomap-*.tgz
 	npm pack
 	tar -xzvf mapequation-infomap-*.tgz
-	cp package/dist/index.js examples/js
+	cp package/index.js examples/js
 	sed -i.'backup' -e 's/src=".*"/src="index.js"/' \
 		examples/js/infomap-worker.html
 	open examples/js/infomap-worker.html
@@ -104,7 +104,7 @@ build/js/Infomap.js: $(SOURCES)
 	em++ -O0 -o build/js/Infomap.js $^
 
 js-clean:
-	$(RM) -r build/js interfaces/js/src/worker dist README.md
+	$(RM) -r build/js interfaces/js/src/worker index.js index.d.ts README.md
 
 
 ##################################################

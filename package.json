@@ -2,13 +2,17 @@
   "name": "@mapequation/infomap",
   "version": "1.4.4",
   "description": "Infomap network clustering algorithm",
-  "browser": "dist/index.js",
+  "browser": "index.js",
   "publishConfig": {
     "access": "public"
   },
   "files": [
-    "dist/index.js"
+    "index.js",
+    "index.d.ts",
+    "LICENSE_AGPLv3.txt"
   ],
+  "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "watch": "webpack --watch --config interfaces/js/webpack.config.js",
     "build": "webpack --config interfaces/js/webpack.config.js",
@@ -29,24 +33,33 @@
     "email": "mapequation@gmail.com",
     "url": "https://www.mapequation.org/about.html"
   },
+  "maintainers": [
+    {
+      "name": "Daniel Edler"
+    },
+    {
+      "name": "Anton Eriksson"
+    },
+    {
+      "name": "Martin Rosvall"
+    }
+  ],
   "license": "AGPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/mapequation/infomap/issues"
   },
   "homepage": "https://www.mapequation.org/infomap",
   "devDependencies": {
-    "@babel/core": "^7.11.6",
-    "@babel/plugin-proposal-class-properties": "^7.10.4",
-    "@babel/preset-env": "^7.11.5",
     "arraybuffer-loader": "^1.0.8",
-    "babel-loader": "^8.1.0",
     "conventional-commits-parser": "^3.1.0",
     "git-raw-commits": "^2.0.7",
     "prettier": "^1.19.1",
     "raw-loader": "^4.0.1",
     "standard-version": "^8.0.2",
-    "webpack": "^4.44.2",
-    "webpack-cli": "^3.3.12"
+    "ts-loader": "^9.2.3",
+    "typescript": "^4.3.4",
+    "webpack": "^5.39.1",
+    "webpack-cli": "^4.7.2"
   },
   "standard-version": {
     "bumpFiles": [

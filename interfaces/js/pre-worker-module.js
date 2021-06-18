@@ -6,10 +6,9 @@ function readFile(filename) {
   return content;
 }
 
-var infomapWorkerId = -1;
-var outName = "Untitled";
+let outName = "Untitled";
 
-var memoryHackRequest = {
+let memoryHackRequest = {
   status: 200,
   useRequest: null,
   addEventListener: function (event, callback) {
@@ -25,12 +24,18 @@ var Module = {
     addRunDependency("filesReady");
   },
   print: function (content) {
-    postMessage({ type: "data", content, id: infomapWorkerId });
+    postMessage({ type: "data", content });
   },
   printErr: function (content) {
-    postMessage({ type: "error", content, id: infomapWorkerId });
+    postMessage({ type: "error", content });
   },
   postRun: function () {
+    let json = readFile(`${outName}.json`); // -o json
+    let json_states = readFile(`${outName}_states.json`); // -o json (for state networks)
+
+    if (json) json = JSON.parse(json);
+    if (json_states) json_states = JSON.parse(json_states);
+
     const content = {
       clu: readFile(`${outName}.clu`), // -o clu
       clu_states: readFile(`${outName}_states.clu`), // -o clu (for state networks)
@@ -40,15 +45,15 @@ var Module = {
       ftree_states: readFile(`${outName}_states.ftree`), // -o ftree (for state networks)
       newick: readFile(`${outName}.nwk`), // -o newick
       newick_states: readFile(`${outName}_states.nwk`), // -o newick (for state networks)
-      json: readFile(`${outName}.json`), // -o json
-      json_states: readFile(`${outName}_states.json`), // -o json (for state networks)
+      json,
+      json_states,
       csv: readFile(`${outName}.csv`), // -o csv
       csv_states: readFile(`${outName}_states.csv`), // -o csv (for state networks)
       net: readFile(`${outName}.net`), // -o network (for state networks)
       states_as_physical: readFile(`${outName}_states_as_physical.net`), // -o network (for state networks)
       states: readFile(`${outName}_states.net`), // -o states
     };
-    postMessage({ type: "finished", content, id: infomapWorkerId });
+    postMessage({ type: "finished", content });
   },
   memoryInitializerRequest: memoryHackRequest,
 };
@@ -58,11 +63,9 @@ onmessage = function onmessage(message) {
 
   memoryHackRequest.response = data.memBuffer;
   memoryHackRequest.useRequest();
-  infomapWorkerId = data.id;
   outName = data.outName;
-  const args = [data.inputFilename, ".", ...data.arguments];
-  Module.arguments.push(...args);
-  FS.writeFile(data.inputFilename, data.inputData);
+  Module.arguments.push(...[data.filename, ".", ...data.arguments]);
+  FS.writeFile(data.filename, data.content);
   for (let filename of Object.keys(data.files)) {
     FS.writeFile(filename, data.files[filename]);
   }

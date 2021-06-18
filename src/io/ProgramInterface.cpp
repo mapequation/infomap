@@ -215,7 +215,20 @@ std::string ProgramInterface::toJson(const std::string& key, bool value)
 
 std::string ProgramInterface::toJson(const Option& opt)
 {
-  return io::Str() << "{ " << toJson("long", io::Str() << "--" << opt.longName) << ", " << toJson("short", opt.shortName != '\0' ? std::string(io::Str() << "-" << opt.shortName) : "") << ", " << toJson("description", opt.description) << ", " << toJson("group", opt.group) << ", " << toJson("required", opt.requireArgument) << ", " << toJson("advanced", opt.isAdvanced) << ", " << toJson("incremental", opt.incrementalArgument) << ", " << (opt.requireArgument ? (io::Str() << toJson("longType", opt.argumentName) << ", " << toJson("shortType", std::string(1, ArgType::toShort.at(opt.argumentName))) << ", " << toJson("default", opt.printValue())) : toJson("default", false)) << " }";
+  return io::Str() << "{ "
+                   << toJson("long", io::Str() << "--" << opt.longName) << ", "
+                   << toJson("short", opt.shortName != '\0' ? std::string(io::Str() << "-" << opt.shortName) : "") << ", "
+                   << toJson("description", opt.description) << ", "
+                   << toJson("group", opt.group) << ", "
+                   << toJson("required", opt.requireArgument) << ", "
+                   << toJson("advanced", opt.isAdvanced) << ", "
+                   << toJson("incremental", opt.incrementalArgument) << ", "
+                   << (opt.requireArgument
+                           ? (io::Str() << toJson("longType", opt.argumentName) << ", "
+                                        << toJson("shortType", std::string(1, ArgType::toShort.at(opt.argumentName))) << ", "
+                                        << toJson("default", opt.printValue()))
+                           : toJson("default", false))
+                   << " }";
 }
 
 
