@@ -56,6 +56,7 @@ debug: clean Infomap
 format:
 	clang-format -i $(HEADERS) $(SOURCES)
 	autopep8 --in-place --recursive --jobs 8 --aggressive --aggressive --max-line-length 100 interfaces/python/*.py
+	prettier --write interfaces/js
 
 
 ##################################################
@@ -103,7 +104,7 @@ build/js/Infomap.js: $(SOURCES)
 	em++ -O0 -o build/js/Infomap.js $^
 
 js-clean:
-	$(RM) -r build/js interfaces/js/src/worker/* dist/* README.md
+	$(RM) -r build/js interfaces/js/src/worker dist README.md
 
 
 ##################################################
