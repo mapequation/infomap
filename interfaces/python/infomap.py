@@ -775,19 +775,19 @@ class Infomap(InfomapWrapper):
         Examples
         --------
 
+        >>> import networkx as nx
         >>> from infomap import Infomap
-        >>> # To prevent tests from failing if networkx is missing,
-        >>> # we need to wrap this in a try/except block
-        >>> try:
-        ...     import networkx as nx
-        ...     G = nx.Graph([("a", "b"), ("a", "c")])
-        ...     im = Infomap(silent=True)
-        ...     mapping = im.add_networkx_graph(G)
-        ... except ImportError:
-        ...     mapping = {0: 'a', 1: 'b', 2: 'c'}
+        >>> G = nx.Graph([("a", "b"), ("a", "c")])
+        >>> im = Infomap(silent=True)
+        >>> mapping = im.add_networkx_graph(G)
         >>> mapping
         {0: 'a', 1: 'b', 2: 'c'}
-
+        >>> im.run()
+        >>> for node in im.nodes:
+        ...     print(node.node_id, node.module_id, node.flow, mapping[node.node_id])
+        0 1 0.5 a
+        1 1 0.25 b
+        2 1 0.25 c
 
         Notes
         -----
