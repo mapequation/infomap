@@ -5,7 +5,10 @@ import networkx as nx
 input_path = sys.argv[1]
 output_path = sys.argv[2]
 prior_scaling = float(sys.argv[3]) if len(sys.argv) >= 4 else 1
+include_self_links = len(sys.argv) >= 5
 print(f"Generate Bayesian posterior network from input network '{input_path}' with prior scaling '{prior_scaling}'...")
+if include_self_links:
+    print("Include self-links...")
 
 try:
   print("Try reading edge list...")
@@ -41,7 +44,9 @@ for node in range(N):
     k_in[node] = np.sum(A[:, node])
     if k_in[node] > 0:
         mass_in[node] = np.float(s_in[node]) / k_in[node]
-norm = prior_scaling * (np.log(N) / (N - 1)) * (np.sum(k_out) + np.sum(k_in)) / (np.sum(s_out) + np.sum(s_in))        
+
+num_nodes_to_teleport_to = N if include_self_links else N - 1
+norm = prior_scaling * (np.log(N) / num_nodes_to_teleport_to) * (np.sum(k_out) + np.sum(k_in)) / (np.sum(s_out) + np.sum(s_in))
 # TODO: Added scaling factor above as ln(N)/N is too strong for small networks
 
 # print posterior network
@@ -54,7 +59,7 @@ with open(output_path, 'w') as fout:
     fout.write(f"*Edges {N * (N - 1)}\n")
     for node_i in range(N):
         for node_j in range(N):
-            if node_i == node_j:
+            if node_i == node_j and not include_self_links:
                 continue
             weight = W[node_i][node_j] + norm * mass_out[node_i] * mass_in[node_j]
             # if node_j == 0:
