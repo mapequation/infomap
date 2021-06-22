@@ -2,6 +2,7 @@
 import InfomapWorker from "./worker/infomap.worker.js";
 // @ts-ignore
 import MemFile from "./worker/infomap.worker.js.mem";
+import networkToString, { NetworkTypes } from "./network";
 
 export interface Changelog {
   body: string | null;
@@ -132,15 +133,19 @@ class Infomap {
     args,
     files,
   }: {
-    network?: string;
+    network?: string | NetworkTypes;
     filename?: string;
     args?: string;
     files?: {};
   }) {
-    filename = filename ?? "network.net";
     network = network ?? "";
+    filename = filename ?? "network.net";
     args = args ?? "";
     files = files ?? {};
+
+    if (typeof network !== "string") {
+      network = networkToString(network);
+    }
 
     const index = filename.lastIndexOf(".");
     const networkName = index > 0 ? filename.slice(0, index) : filename;
@@ -156,7 +161,7 @@ class Infomap {
       memBuffer: new Uint8Array(MemFile),
       arguments: args.split(" "),
       filename,
-      content: network,
+      network,
       outName,
       files,
     });

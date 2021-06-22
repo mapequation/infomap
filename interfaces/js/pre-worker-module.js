@@ -80,7 +80,7 @@ onmessage = function onmessage(message) {
   memoryHackRequest.useRequest();
   outName = data.outName;
   Module.arguments.push(...[data.filename, ".", ...data.arguments]);
-  FS.writeFile(data.filename, data.content);
+  FS.writeFile(data.filename, data.network);
   for (let filename of Object.keys(data.files)) {
     FS.writeFile(filename, data.files[filename]);
   }
