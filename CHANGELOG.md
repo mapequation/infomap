@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.0](https://github.com/mapequation/infomap/compare/v1.4.4...v1.5.0) (2021-06-22)
+
+
+### Features
+
+* **js:** Add Typescript types to JS worker ([f2fecf4](https://github.com/mapequation/infomap/commit/f2fecf4898dd0200709def0da11bea1883e70eaa))
+* **python:** Add get_links, links and flow_links ([a4c2611](https://github.com/mapequation/infomap/commit/a4c26112821abc05185442b1eb27fd1bf83fdbc9))
+* Write tree to CSV file ([5d0d36a](https://github.com/mapequation/infomap/commit/5d0d36a58413c0755f97d93dd00d8f6db7b2b785))
+
 ### [1.4.4](https://github.com/mapequation/infomap/compare/v1.4.3...v1.4.4) (2021-06-14)
 
 
