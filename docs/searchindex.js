@@ -11,7 +11,7 @@ Search.setIndex({
     "sphinx.domains.python": 2,
     "sphinx.domains.rst": 2,
     "sphinx.domains.std": 1,
-    sphinx: 56
+    sphinx: 56,
   },
   filenames: ["index.rst", "python/index.rst", "python/infomap.rst"],
   objects: {
@@ -26,7 +26,7 @@ Search.setIndex({
       layer_id: [2, 2, 1, ""],
       meta_data: [2, 2, 1, ""],
       node_id: [2, 2, 1, ""],
-      state_id: [2, 2, 1, ""]
+      state_id: [2, 2, 1, ""],
     },
     "infomap.Infomap": {
       __init__: [2, 2, 1, ""],
@@ -44,7 +44,9 @@ Search.setIndex({
       codelengths: [2, 2, 1, ""],
       effective_num_leaf_modules: [2, 2, 1, ""],
       effective_num_top_modules: [2, 2, 1, ""],
+      flow_links: [2, 2, 1, ""],
       get_effective_num_modules: [2, 2, 1, ""],
+      get_links: [2, 2, 1, ""],
       get_modules: [2, 2, 1, ""],
       get_multilevel_modules: [2, 2, 1, ""],
       get_name: [2, 2, 1, ""],
@@ -54,6 +56,7 @@ Search.setIndex({
       index_codelength: [2, 2, 1, ""],
       initial_partition: [2, 2, 1, ""],
       leaf_modules: [2, 2, 1, ""],
+      links: [2, 2, 1, ""],
       max_depth: [2, 2, 1, ""],
       meta_codelength: [2, 2, 1, ""],
       meta_entropy: [2, 2, 1, ""],
@@ -82,44 +85,45 @@ Search.setIndex({
       set_names: [2, 2, 1, ""],
       tree: [2, 2, 1, ""],
       write_clu: [2, 2, 1, ""],
+      write_csv: [2, 2, 1, ""],
       write_flow_tree: [2, 2, 1, ""],
       write_json: [2, 2, 1, ""],
       write_newick: [2, 2, 1, ""],
-      write_tree: [2, 2, 1, ""]
+      write_tree: [2, 2, 1, ""],
     },
     "infomap.InfomapIterator": {
       child_index: [2, 2, 1, ""],
       depth: [2, 2, 1, ""],
       module_id: [2, 2, 1, ""],
-      path: [2, 2, 1, ""]
+      path: [2, 2, 1, ""],
     },
     "infomap.InfomapIteratorPhysical": {
       child_index: [2, 2, 1, ""],
       depth: [2, 2, 1, ""],
       module_id: [2, 2, 1, ""],
-      path: [2, 2, 1, ""]
+      path: [2, 2, 1, ""],
     },
     "infomap.InfomapLeafIterator": {
       child_index: [2, 2, 1, ""],
       depth: [2, 2, 1, ""],
       module_id: [2, 2, 1, ""],
-      path: [2, 2, 1, ""]
+      path: [2, 2, 1, ""],
     },
     "infomap.InfomapLeafIteratorPhysical": {
       child_index: [2, 2, 1, ""],
       depth: [2, 2, 1, ""],
       module_id: [2, 2, 1, ""],
-      path: [2, 2, 1, ""]
+      path: [2, 2, 1, ""],
     },
     "infomap.InfomapLeafModuleIterator": {
       child_index: [2, 2, 1, ""],
       depth: [2, 2, 1, ""],
       module_id: [2, 2, 1, ""],
-      path: [2, 2, 1, ""]
+      path: [2, 2, 1, ""],
     },
     "infomap.MultilayerNode": {
       layer_id: [2, 3, 1, ""],
-      node_id: [2, 3, 1, ""]
+      node_id: [2, 3, 1, ""],
     },
     infomap: {
       InfoNode: [2, 1, 1, ""],
@@ -129,24 +133,27 @@ Search.setIndex({
       InfomapLeafIterator: [2, 1, 1, ""],
       InfomapLeafIteratorPhysical: [2, 1, 1, ""],
       InfomapLeafModuleIterator: [2, 1, 1, ""],
-      MultilayerNode: [2, 1, 1, ""]
-    }
+      MultilayerNode: [2, 1, 1, ""],
+    },
   },
   objnames: {
-    "0": ["py", "module", "Python module"],
-    "1": ["py", "class", "Python class"],
-    "2": ["py", "method", "Python method"],
-    "3": ["py", "attribute", "Python attribute"]
+    0: ["py", "module", "Python module"],
+    1: ["py", "class", "Python class"],
+    2: ["py", "method", "Python method"],
+    3: ["py", "attribute", "Python attribute"],
   },
   objtypes: {
-    "0": "py:module",
-    "1": "py:class",
-    "2": "py:method",
-    "3": "py:attribute"
+    0: "py:module",
+    1: "py:class",
+    2: "py:method",
+    3: "py:attribute",
   },
   terms: {
-    "4841898804052187": 2,
-    "8888": 0,
+    "14285714285714285": 2,
+    4056390622295662: 2,
+    4622731375264144: 2,
+    8888: 0,
+    9182958340544896: 2,
     class: 2,
     default: 2,
     float: 2,
@@ -165,6 +172,7 @@ Search.setIndex({
     Useful: 2,
     __init__: 2,
     about: 0,
+    abs: 2,
     accept: 2,
     accumul: 2,
     accuraci: 2,
@@ -243,6 +251,7 @@ Search.setIndex({
     core_loop_limit: 2,
     cost: 2,
     creat: [0, 2],
+    csv: 2,
     current: [0, 2],
     daniel: 0,
     data: [0, 2],
@@ -300,6 +309,7 @@ Search.setIndex({
     first: 2,
     flag: 1,
     flow: 2,
+    flow_link: 2,
     flow_model: 2,
     follow: 1,
     form: 2,
@@ -312,6 +322,7 @@ Search.setIndex({
     gener: [0, 2],
     get: 2,
     get_effective_num_modul: 2,
+    get_link: 2,
     get_meta_data: 2,
     get_modul: 2,
     get_multilevel_modul: 2,
@@ -378,6 +389,7 @@ Search.setIndex({
     keep: 2,
     kei: 2,
     keyword: 2,
+    kind: 2,
     kwarg: 2,
     l_1: 2,
     lab: 0,
@@ -625,6 +637,7 @@ Search.setIndex({
     threshold: 2,
     time: 2,
     to_nod: 2,
+    tol: 2,
     top: 2,
     total: 2,
     tradeoff: 2,
@@ -639,6 +652,7 @@ Search.setIndex({
     tupl: 2,
     two: [0, 1, 2],
     two_level: 2,
+    twotriangl: 2,
     txt: 0,
     type: 2,
     under: 0,
@@ -667,9 +681,8 @@ Search.setIndex({
     weight: [1, 2],
     weight_threshold: 2,
     wether: 2,
-    when: [0, 1],
+    when: [0, 1, 2],
     where: 2,
-    which: 2,
     within: 2,
     without: 2,
     work: 0,
@@ -678,6 +691,7 @@ Search.setIndex({
     wrapper: 2,
     write: 2,
     write_clu: 2,
+    write_csv: 2,
     write_flow_tre: 2,
     write_json: 2,
     write_newick: 2,
@@ -685,7 +699,7 @@ Search.setIndex({
     yield: 2,
     yml: 0,
     you: [0, 1, 2],
-    your: 1
+    your: 1,
   },
   titles: ["Infomap", "Infomap Python API", "infomap module"],
   titleterms: {
@@ -711,6 +725,6 @@ Search.setIndex({
     start: 0,
     term: 0,
     usag: 1,
-    use: 0
-  }
+    use: 0,
+  },
 });

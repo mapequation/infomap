@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>infomap module &#8212; Infomap 1.4.4 documentation</title>
+    <title>infomap module &#8212; Infomap 1.5.0 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -40,8 +40,8 @@
 <p>This class is a thin wrapper around Infomap C++ compiled with SWIG.</p>
 <p class="rubric">Examples</p>
 <p>Create an instance and add nodes and links:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">infomap</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">Infomap</span><span class="p">()</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -51,12 +51,13 @@
 </pre></div>
 </div>
 <p>Create an instance and read a network file:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">infomap</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">Infomap</span><span class="p">()</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;ninetriangles.net&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;-N5&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">codelength</span>
-<span class="go">3.4841898804052187</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tol</span> <span class="o">=</span> <span class="mf">1e-4</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">codelength</span> <span class="o">-</span> <span class="mf">3.4622731375264144</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span>
+<span class="go">True</span>
 </pre></div>
 </div>
 <p>For more examples, see the examples directory.</p>
@@ -90,7 +91,7 @@
 <li><p><strong>out_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for the output files, e.g. [output_directory]/[out-name].tree</p></li>
 <li><p><strong>no_file_output</strong> (<em>bool</em><em>, </em><em>optional</em>) – Don’t write output to file.</p></li>
 <li><p><strong>clu_level</strong> (<em>int</em><em>, </em><em>optional</em>) – For clu output, print modules at specified depth from root. Use -1 for bottom level modules.</p></li>
-<li><p><strong>output</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, network, states.</p></li>
+<li><p><strong>output</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states.</p></li>
 <li><p><strong>hide_bipartite_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Project bipartite solution to unipartite.</p></li>
 <li><p><strong>two_level</strong> (<em>bool</em><em>, </em><em>optional</em>) – Optimize a two-level partition of the network. Default is multi-level.</p></li>
 <li><p><strong>flow_model</strong> (<em>str</em><em>, </em><em>optional</em>) – Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.</p></li>
@@ -145,7 +146,7 @@
 <dt id="infomap.Infomap.add_links">
 <code class="sig-name descname">add_links</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">links</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_links" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add several links.</p>
-<p class="rubric">Example</p>
+<p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">links</span> <span class="o">=</span> <span class="p">(</span>
@@ -153,7 +154,6 @@
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_links</span><span class="p">(</span><span class="n">links</span><span class="p">)</span>
-<span class="go">None</span>
 </pre></div>
 </div>
 <div class="admonition seealso">
@@ -188,7 +188,6 @@
 <span class="gp">&gt;&gt;&gt; </span><span class="n">source_multilayer_node</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># layer_id, node_id</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">target_multilayer_node</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c1"># layer_id, node_id</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_multilayer_link</span><span class="p">(</span><span class="n">source_multilayer_node</span><span class="p">,</span> <span class="n">target_multilayer_node</span><span class="p">)</span>
-<span class="go">None</span>
 </pre></div>
 </div>
 <p>Usage with MultilayerNode</p>
@@ -197,7 +196,6 @@
 <span class="gp">&gt;&gt;&gt; </span><span class="n">source_multilayer_node</span> <span class="o">=</span> <span class="n">MultilayerNode</span><span class="p">(</span><span class="n">layer_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">node_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">target_multilayer_node</span> <span class="o">=</span> <span class="n">MultilayerNode</span><span class="p">(</span><span class="n">layer_id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">node_id</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_multilayer_link</span><span class="p">(</span><span class="n">source_multilayer_node</span><span class="p">,</span> <span class="n">target_multilayer_node</span><span class="p">)</span>
-<span class="go">None</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -206,7 +204,7 @@
 <dt id="infomap.Infomap.add_multilayer_links">
 <code class="sig-name descname">add_multilayer_links</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">links</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_multilayer_links" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add several multilayer links.</p>
-<p class="rubric">Example</p>
+<p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">links</span> <span class="o">=</span> <span class="p">(</span>
@@ -214,7 +212,6 @@
 <span class="gp">... </span>    <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_multilayer_links</span><span class="p">(</span><span class="n">links</span><span class="p">)</span>
-<span class="go">None</span>
 </pre></div>
 </div>
 <div class="admonition seealso">
@@ -232,17 +229,17 @@
 <dt id="infomap.Infomap.add_networkx_graph">
 <code class="sig-name descname">add_networkx_graph</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">g</span></em>, <em class="sig-param"><span class="n">weight</span><span class="o">=</span><span class="default_value">'weight'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_networkx_graph" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add NetworkX graph</p>
-<p class="rubric">Example</p>
+<p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">([(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">mapping</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">add_networkx_graph</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">mapping</span>
 <span class="go">{0: &#39;a&#39;, 1: &#39;b&#39;, 2: &#39;c&#39;}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">im</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">node_id</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">module_id</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span> <span class="n">im</span><span class="o">.</span><span class="n">get_name</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">node_id</span><span class="p">))</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">node_id</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">module_id</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span> <span class="n">mapping</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">node_id</span><span class="p">])</span>
 <span class="go">0 1 0.5 a</span>
 <span class="go">1 1 0.25 b</span>
 <span class="go">2 1 0.25 c</span>
@@ -257,7 +254,7 @@ to Infomap.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>g</strong> (<em>nx.Graph</em>) – A NetworkX graph</p></li>
-<li><p><strong>weight</strong> (<em>str</em>) – Key to lookup link weight in edge data if present</p></li>
+<li><p><strong>weight</strong> (<em>str</em><em>, </em><em>optional</em>) – Key to lookup link weight in edge data if present, default <code class="docutils literal notranslate"><span class="pre">&quot;weight&quot;</span></code></p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -301,7 +298,6 @@ to Infomap.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
-<span class="go">None</span>
 </pre></div>
 </div>
 <p>Add named nodes</p>
@@ -313,7 +309,6 @@ to Infomap.</p>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;Node 3&quot;</span><span class="p">)</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_nodes</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
-<span class="go">None</span>
 </pre></div>
 </div>
 <dl class="field-list simple">
@@ -348,7 +343,7 @@ If you want to name the physical node, use <code class="docutils literal notrans
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.add_state_node" title="infomap.Infomap.add_state_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_state_node</span></code></a></p>
 </div>
-<p class="rubric">Example</p>
+<p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">states</span> <span class="o">=</span> <span class="p">(</span>
@@ -357,7 +352,6 @@ If you want to name the physical node, use <code class="docutils literal notrans
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_state_nodes</span><span class="p">(</span><span class="n">states</span><span class="p">)</span>
-<span class="go">None</span>
 </pre></div>
 </div>
 <dl class="field-list simple">
@@ -371,9 +365,9 @@ If you want to name the physical node, use <code class="docutils literal notrans
 <dt id="infomap.Infomap.bipartite_start_id">
 <em class="property">property </em><code class="sig-name descname">bipartite_start_id</code><a class="headerlink" href="#infomap.Infomap.bipartite_start_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get or set the bipartite start id.</p>
-<p class="rubric">Example</p>
+<p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Left 1&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Left 2&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">bipartite_start_id</span> <span class="o">=</span> <span class="mi">3</span>
@@ -383,7 +377,9 @@ If you want to name the physical node, use <code class="docutils literal notrans
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-<span class="go">None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tol</span> <span class="o">=</span> <span class="mf">1e-4</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">codelength</span> <span class="o">-</span> <span class="mf">0.9182958340544896</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span>
+<span class="go">True</span>
 </pre></div>
 </div>
 <dl class="field-list simple">
@@ -466,6 +462,42 @@ If you want to name the physical node, use <code class="docutils literal notrans
 </dd></dl>
 
 <dl class="py method">
+<dt id="infomap.Infomap.flow_links">
+<em class="property">property </em><code class="sig-name descname">flow_links</code><a class="headerlink" href="#infomap.Infomap.flow_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>A view of the currently assigned links and their flow.</p>
+<p>The sources and targets are state ids when we have a
+state or multilayer network.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;twotriangles.net&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">im</span><span class="o">.</span><span class="n">flow_links</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+<span class="go">(1, 2, 0.14285714285714285)</span>
+<span class="go">(1, 3, 0.14285714285714285)</span>
+<span class="go">(2, 3, 0.14285714285714285)</span>
+<span class="go">(3, 4, 0.14285714285714285)</span>
+<span class="go">(4, 5, 0.14285714285714285)</span>
+<span class="go">(4, 6, 0.14285714285714285)</span>
+<span class="go">(5, 6, 0.14285714285714285)</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.links" title="infomap.Infomap.links"><code class="xref py py-obj docutils literal notranslate"><span class="pre">links</span></code></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>An iterator of source, target, flow tuples.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tuple of int, int, float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="infomap.Infomap.get_effective_num_modules">
 <code class="sig-name descname">get_effective_num_modules</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">depth_level</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_effective_num_modules" title="Permalink to this definition">¶</a></dt>
 <dd><p>The flow weighted effective number of modules.</p>
@@ -486,6 +518,54 @@ etc. Set to -1 to return the bottom level modules (finest level).</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="infomap.Infomap.get_links">
+<code class="sig-name descname">get_links</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span><span class="o">=</span><span class="default_value">'weight'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>A view of the currently assigned links and their weights or flow.</p>
+<p>The sources and targets are state ids when we have a
+state or multilayer network.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;twotriangles.net&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">im</span><span class="o">.</span><span class="n">get_links</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+<span class="go">(1, 2, 1.0)</span>
+<span class="go">(1, 3, 1.0)</span>
+<span class="go">(2, 3, 1.0)</span>
+<span class="go">(3, 4, 1.0)</span>
+<span class="go">(4, 5, 1.0)</span>
+<span class="go">(4, 6, 1.0)</span>
+<span class="go">(5, 6, 1.0)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">im</span><span class="o">.</span><span class="n">get_links</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="s2">&quot;flow&quot;</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+<span class="go">(1, 2, 0.14285714285714285)</span>
+<span class="go">(1, 3, 0.14285714285714285)</span>
+<span class="go">(2, 3, 0.14285714285714285)</span>
+<span class="go">(3, 4, 0.14285714285714285)</span>
+<span class="go">(4, 5, 0.14285714285714285)</span>
+<span class="go">(4, 6, 0.14285714285714285)</span>
+<span class="go">(5, 6, 0.14285714285714285)</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.links" title="infomap.Infomap.links"><code class="xref py py-obj docutils literal notranslate"><span class="pre">links</span></code></a>, <a class="reference internal" href="#infomap.Infomap.flow_links" title="infomap.Infomap.flow_links"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flow_links</span></code></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>str</em>) – The kind of data to return, one of “weight” or “flow”, default “weight”.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An iterator of source, target, weight/flow tuples.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple of int, int, float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="infomap.Infomap.get_modules">
 <code class="sig-name descname">get_modules</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">depth_level</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">states</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.get_modules" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the modules for a given depth in the hierarchical tree.</p>
@@ -494,12 +574,12 @@ etc. Set to -1 to return the bottom level modules (finest level).</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The level in the hierarchical tree. Set to 1 (default) to return the
 top modules (coarsest level), set to 2 for second coarsest level etc.
-Set to -1 to return the bottom level modules (finest level).</p></li>
+Set to -1 to return the bottom level modules (finest level). Default <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
 <li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate over state nodes,
 otherwise it will iterate over physical nodes, merging state nodes with same
 <code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same module.
 Note that the same physical node may end up on different paths in the tree.
-See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>.</p></li>
+See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>. Default <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -547,14 +627,14 @@ the <code class="docutils literal notranslate"><span class="pre">default</span><
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>node_id</strong> (<em>int</em>) – </p></li>
-<li><p><strong>default</strong> (<em>any</em>) – The return value if the node name is missing.</p></li>
+<li><p><strong>default</strong> (<em>str</em><em>, </em><em>optional</em>) – The return value if the node name is missing, default <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The node name if it exists, else the default which is <code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+<dd class="field-even"><p>The node name if it exists, else the <code class="docutils literal notranslate"><span class="pre">default</span></code>.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>string or any</p>
+<dd class="field-odd"><p>str</p>
 </dd>
 </dl>
 </dd></dl>
@@ -586,12 +666,12 @@ the <code class="docutils literal notranslate"><span class="pre">default</span><
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The module level returned by <code class="docutils literal notranslate"><span class="pre">iterator.module_id</span></code>. Set to 1 (default) to
 return the top modules (coarsest level), set to 2 for second coarsest level
-etc. Set to -1 to return the bottom level modules (finest level).</p></li>
+etc. Set to -1 to return the bottom level modules (finest level). Default <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
 <li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate over state nodes,
 otherwise it will iterate over physical nodes, merging state nodes with same
 <code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same module.
 Note that the same physical node may end up on different paths in the tree.
-See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>.</p></li>
+See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>. Default <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -671,9 +751,9 @@ as one (partial) physical node (if <code class="docutils literal notranslate"><s
 <dd><p>Get or set the initial partition.</p>
 <p>This is a initial configuration of nodes into modules where Infomap
 will start the optimizer.</p>
-<p class="rubric">Example</p>
+<p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
@@ -688,8 +768,11 @@ will start the optimizer.</p>
 <span class="gp">... </span>    <span class="mi">3</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="mi">4</span><span class="p">:</span> <span class="mi">1</span>
 <span class="gp">... </span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">no_infomap</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-<span class="go">None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tol</span> <span class="o">=</span> <span class="mf">1e-4</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">codelength</span> <span class="o">-</span> <span class="mf">3.4056390622295662</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span>
+<span class="go">True</span>
 </pre></div>
 </div>
 <p class="rubric">Notes</p>
@@ -723,6 +806,42 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapLeafModuleIterator" title="infomap.InfomapLeafModuleIterator">InfomapLeafModuleIterator</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="infomap.Infomap.links">
+<em class="property">property </em><code class="sig-name descname">links</code><a class="headerlink" href="#infomap.Infomap.links" title="Permalink to this definition">¶</a></dt>
+<dd><p>A view of the currently assigned links and their weights.</p>
+<p>The sources and targets are state ids when we have a
+state or multilayer network.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;twotriangles.net&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">im</span><span class="o">.</span><span class="n">links</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+<span class="go">(1, 2, 1.0)</span>
+<span class="go">(1, 3, 1.0)</span>
+<span class="go">(2, 3, 1.0)</span>
+<span class="go">(3, 4, 1.0)</span>
+<span class="go">(4, 5, 1.0)</span>
+<span class="go">(4, 6, 1.0)</span>
+<span class="go">(5, 6, 1.0)</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.flow_links" title="infomap.Infomap.flow_links"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flow_links</span></code></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>An iterator of source, target, weight tuples.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tuple of int, int, float</p>
 </dd>
 </dl>
 </dd></dl>
@@ -815,41 +934,41 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.get_modules" title="infomap.Infomap.get_modules"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_modules</span></code></a></p>
 </div>
-<p class="rubric">Example</p>
+<p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;ninetriangles.net&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;-N5&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">module_id</span> <span class="ow">in</span> <span class="n">im</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">node_id</span><span class="p">,</span> <span class="n">module_id</span><span class="p">)</span>
 <span class="gp">...</span>
-<span class="go">1 1</span>
-<span class="go">2 1</span>
-<span class="go">3 1</span>
-<span class="go">4 1</span>
-<span class="go">5 1</span>
-<span class="go">6 1</span>
-<span class="go">7 1</span>
-<span class="go">8 1</span>
-<span class="go">9 1</span>
-<span class="go">10 2</span>
-<span class="go">11 2</span>
-<span class="go">12 2</span>
-<span class="go">13 2</span>
-<span class="go">14 2</span>
-<span class="go">15 2</span>
-<span class="go">16 2</span>
-<span class="go">17 2</span>
-<span class="go">18 2</span>
-<span class="go">19 0</span>
-<span class="go">20 0</span>
-<span class="go">21 0</span>
-<span class="go">22 0</span>
-<span class="go">23 0</span>
-<span class="go">24 0</span>
-<span class="go">25 0</span>
-<span class="go">26 0</span>
-<span class="go">27 0</span>
+<span class="go">1 2</span>
+<span class="go">2 2</span>
+<span class="go">3 2</span>
+<span class="go">4 2</span>
+<span class="go">5 2</span>
+<span class="go">6 2</span>
+<span class="go">7 2</span>
+<span class="go">8 2</span>
+<span class="go">9 2</span>
+<span class="go">10 3</span>
+<span class="go">11 3</span>
+<span class="go">12 3</span>
+<span class="go">13 5</span>
+<span class="go">14 5</span>
+<span class="go">15 5</span>
+<span class="go">16 4</span>
+<span class="go">17 4</span>
+<span class="go">18 4</span>
+<span class="go">19 1</span>
+<span class="go">20 1</span>
+<span class="go">21 1</span>
+<span class="go">22 1</span>
+<span class="go">23 1</span>
+<span class="go">24 1</span>
+<span class="go">25 1</span>
+<span class="go">26 1</span>
+<span class="go">27 1</span>
 </pre></div>
 </div>
 <div class="admonition seealso">
@@ -1129,15 +1248,17 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 <dt id="infomap.Infomap.remove_links">
 <code class="sig-name descname">remove_links</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">links</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.remove_links" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove several links.</p>
-<p class="rubric">Example</p>
+<p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">links</span> <span class="o">=</span> <span class="p">(</span>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
 <span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_links</span><span class="p">(</span><span class="n">links</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">remove_links</span><span class="p">(</span><span class="n">links</span><span class="p">)</span>
-<span class="go">None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">num_links</span>
+<span class="go">0</span>
 </pre></div>
 </div>
 <div class="admonition seealso">
@@ -1238,7 +1359,7 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 <dt id="infomap.Infomap.set_names">
 <code class="sig-name descname">set_names</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">names</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.set_names" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set names to several nodes at once.</p>
-<p class="rubric">Example</p>
+<p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">names</span> <span class="o">=</span> <span class="p">(</span>
@@ -1246,7 +1367,6 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Node 2&quot;</span><span class="p">)</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">set_names</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
-<span class="go">None</span>
 </pre></div>
 </div>
 <div class="admonition seealso">
@@ -1292,6 +1412,24 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 <li><p><strong>filename</strong> (<em>str</em>) – </p></li>
 <li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included (default False).</p></li>
 <li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The depth in the hierarchical tree to write.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="infomap.Infomap.write_csv">
+<code class="sig-name descname">write_csv</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">states</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.write_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write result to a CSV file.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#infomap.Infomap.write_clu" title="infomap.Infomap.write_clu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_clu</span></code></a>, <a class="reference internal" href="#infomap.Infomap.write_tree" title="infomap.Infomap.write_tree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_tree</span></code></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – </p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included (default False).</p></li>
 </ul>
 </dd>
 </dl>
