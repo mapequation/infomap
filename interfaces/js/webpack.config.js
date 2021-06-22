@@ -11,16 +11,17 @@ const webpackConfig = async () => {
 
   return {
     mode: "production",
-    entry: "./interfaces/js/src/index.js",
-    devtool: "inline-source-map",
-    devServer: {
-      contentBase: "../../dist",
-    },
+    entry: "./interfaces/js/src/index.ts",
     output: {
       filename: "index.js",
-      path: path.resolve(__dirname, "../../dist"),
-      library: "infomap",
-      libraryTarget: "umd",
+      path: path.resolve(__dirname, "../../"),
+      library: {
+        name: "infomap",
+        type: "umd",
+      },
+    },
+    resolve: {
+      extensions: [".ts", ".js", ".js.mem"],
     },
     module: {
       rules: [
@@ -37,14 +38,10 @@ const webpackConfig = async () => {
           },
         },
         {
-          test: /\.js$/,
+          test: /\.ts$/,
           exclude: /(node_modules|utils|worker)/,
           use: {
-            loader: "babel-loader",
-            options: {
-              presets: ["@babel/preset-env"],
-              plugins: ["@babel/plugin-proposal-class-properties"],
-            },
+            loader: "ts-loader",
           },
         },
       ],

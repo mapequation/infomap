@@ -28,7 +28,9 @@ output
 build
 tmp
 node_modules
-dist
+/index.js
+/index.d.ts
+/index.d.ts.map
 docs/.*
 Infomap
 __pycache__
