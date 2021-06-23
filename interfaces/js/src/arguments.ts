@@ -33,7 +33,7 @@ export interface Arguments
     outName: string;
     noFileOutput: boolean;
     cluLevel: number;
-    output: OutputFormats[];
+    output: OutputFormats | OutputFormats[];
     hideBipartiteNodes: boolean;
     // algorithm
     twoLevel: boolean;
@@ -111,7 +111,10 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.cluLevel != null) result += " --clu-level " + args.cluLevel;
 
-  if (args.output != null) result += " -o " + args.output.join(",");
+  if (args.output != null) {
+    if (typeof args.output === "string") result += " -o " + args.output;
+    else result += " -o " + args.output.join(",");
+  }
 
   if (args.hideBipartiteNodes) result += " --hide-bipartite-nodes";
 
