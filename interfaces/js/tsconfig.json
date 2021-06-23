@@ -12,5 +12,5 @@
     "declarationDir": "../../",
     "baseUrl": "src"
   },
-  "files": ["./src/index.ts", "./src/network.ts"]
+  "files": ["./src/index.ts", "./src/network.ts", "./src/arguments.ts"]
 }
