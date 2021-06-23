@@ -29,8 +29,8 @@ build
 tmp
 node_modules
 /index.js
-/index.d.ts
-/index.d.ts.map
+/*.d.ts
+/*.d.ts.map
 docs/.*
 Infomap
 __pycache__

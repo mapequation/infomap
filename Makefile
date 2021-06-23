@@ -104,7 +104,7 @@ build/js/Infomap.js: $(SOURCES)
 	em++ -O0 -o build/js/Infomap.js $^
 
 js-clean:
-	$(RM) -r build/js interfaces/js/src/worker index.js index.d.ts README.md
+	$(RM) -r build/js interfaces/js/src/worker index.js *.d.ts README.md
 
 
 ##################################################
