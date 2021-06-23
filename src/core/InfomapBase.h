@@ -151,7 +151,11 @@ public:
 
   double getOneLevelCodelength() const { return m_oneLevelCodelength; }
 
-  double getRelativeCodelengthSavings() const { return 1.0 - codelength() / getOneLevelCodelength(); }
+  double getRelativeCodelengthSavings() const
+  {
+    auto oneLevelCodelength = getOneLevelCodelength();
+    return oneLevelCodelength < 1e-16 ? 0 : 1.0 - codelength() / oneLevelCodelength;
+  }
 
   bool isFullNetwork() const { return m_isMain && m_aggregationLevel == 0; }
   bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
