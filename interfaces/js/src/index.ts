@@ -3,6 +3,7 @@ import InfomapWorker from "./worker/infomap.worker.js";
 // @ts-ignore
 import MemFile from "./worker/infomap.worker.js.mem";
 import networkToString, { NetworkTypes } from "./network";
+import argumentsToString, { Arguments } from "./arguments";
 
 export interface Changelog {
   body: string | null;
@@ -135,7 +136,7 @@ class Infomap {
   }: {
     network?: string | NetworkTypes;
     filename?: string;
-    args?: string;
+    args?: string | Arguments;
     files?: {};
   }) {
     network = network ?? "";
@@ -145,6 +146,10 @@ class Infomap {
 
     if (typeof network !== "string") {
       network = networkToString(network);
+    }
+
+    if (typeof args !== "string") {
+      args = argumentsToString(args);
     }
 
     const index = filename.lastIndexOf(".");
@@ -205,4 +210,11 @@ class Infomap {
   }
 }
 
-export { Infomap as default, Infomap, changelog, parameters, networkToString };
+export {
+  Infomap as default,
+  Infomap,
+  changelog,
+  parameters,
+  networkToString,
+  argumentsToString,
+};
