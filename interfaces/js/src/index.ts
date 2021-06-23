@@ -139,7 +139,7 @@ class Infomap {
     network?: string | NetworkTypes;
     filename?: string;
     args?: string | Arguments;
-    files?: {};
+    files?: { [filename: string]: string };
   }) {
     network = network ?? "";
     filename = filename ?? "network.net";
