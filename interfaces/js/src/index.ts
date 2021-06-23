@@ -83,6 +83,8 @@ export interface Result {
   net?: string;
   states_as_physical?: string;
   states?: string;
+  flow?: string;
+  flow_as_physical?: string;
 }
 
 interface EventCallbacks {

@@ -67,6 +67,8 @@ var Module = {
       net: readFile(`${outName}.net`), // -o network (for state networks)
       states_as_physical: readFile(`${outName}_states_as_physical.net`), // -o network (for state networks)
       states: readFile(`${outName}_states.net`), // -o states
+      flow: readFile(`${outName}_flow.net`), // -o flow
+      flow_as_physical: readFile(`${outName}_states_as_physical_flow.net`), // -o flow
     };
     postMessage({ type: "finished", content });
   },
