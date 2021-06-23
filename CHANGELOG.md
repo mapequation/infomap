@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.5.1](https://github.com/mapequation/infomap/compare/v1.5.0...v1.5.1) (2021-06-23)
+
+
+### Bug Fixes
+
+* **js:** Add missing flow network file output ([6b8ddb8](https://github.com/mapequation/infomap/commit/6b8ddb820bc48eaed27a4e66d2810151b65b8bb9))
+* **js:** Handle json parse exceptions in worker ([a8a127b](https://github.com/mapequation/infomap/commit/a8a127b02e81b1bbd2a919edbc7952724b2e8682))
+* **js:** Pass arguments as object ([13e71a0](https://github.com/mapequation/infomap/commit/13e71a0b1a7465e5f59bb3d05ef1bbdef7b5f65f))
+* **js:** Worker should accept network as object ([d7184b8](https://github.com/mapequation/infomap/commit/d7184b840e7aae3b7d59b9b8bb2fa432d8d4c616))
+* Avoid nan values for relative codelength savings ([e6a429e](https://github.com/mapequation/infomap/commit/e6a429e6bd463fc405161f6b4e981439979fc5c3))
+
 ## [1.5.0](https://github.com/mapequation/infomap/compare/v1.4.4...v1.5.0) (2021-06-22)
 
 
