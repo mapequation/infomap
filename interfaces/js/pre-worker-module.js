@@ -33,8 +33,23 @@ var Module = {
     let json = readFile(`${outName}.json`); // -o json
     let json_states = readFile(`${outName}_states.json`); // -o json (for state networks)
 
-    if (json) json = JSON.parse(json);
-    if (json_states) json_states = JSON.parse(json_states);
+    if (json) {
+      try {
+        json = JSON.parse(json);
+      } catch (err) {
+        postMessage({ type: "error", content: err.message });
+        json = undefined;
+      }
+    }
+
+    if (json_states) {
+      try {
+        json_states = JSON.parse(json_states);
+      } catch (err) {
+        postMessage({ type: "error", content: err.message });
+        json = undefined;
+      }
+    }
 
     const content = {
       clu: readFile(`${outName}.clu`), // -o clu
