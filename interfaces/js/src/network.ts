@@ -76,7 +76,12 @@ const isBipartiteState = (
 
 const isMultilayer = (network: NetworkTypes): network is MultilayerNetwork => {
   const net = network as MultilayerNetwork;
-  return net.links.length > 1 && "sourceLayer" in net.links[0];
+  return (
+    "links" in net &&
+    net.links.length > 0 &&
+    "sourceLayer" in net.links[0] &&
+    "targetLayer" in net.links[0]
+  );
 };
 
 const isMultilayerIntraInter = (
@@ -97,7 +102,7 @@ export default function toString(network: NetworkTypes) {
     return bipartiteToString(network);
   } else if (isState(network)) {
     return stateToString(network);
-  } else {
+  } else if ("links" in network) {
     return networkToString(network);
   }
 }

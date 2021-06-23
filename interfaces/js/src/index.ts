@@ -205,4 +205,4 @@ class Infomap {
   }
 }
 
-export { Infomap as default, changelog, parameters };
+export { Infomap as default, Infomap, changelog, parameters, networkToString };
