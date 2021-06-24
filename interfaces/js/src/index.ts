@@ -4,6 +4,11 @@ import InfomapWorker from "./worker/infomap.worker.js";
 import MemFile from "./worker/infomap.worker.js.mem";
 import networkToString, { NetworkTypes } from "./network";
 import argumentsToString, { Arguments } from "./arguments";
+import fileToString, {
+  FileTypes,
+  TreeNode as Node,
+  TreeStateNode as StateNode,
+} from "./filetypes";
 
 export interface Changelog {
   body: string | null;
@@ -42,19 +47,7 @@ const changelog: Changelog[] = CHANGELOG;
 // @ts-ignore
 const parameters: (Parameter | RequiredParameter)[] = PARAMETERS;
 
-export interface Node {
-  path: number[];
-  flow: number;
-  name: string;
-  id: number;
-}
-
-export interface StateNode extends Node {
-  stateId: number;
-  layerId?: number;
-}
-
-export interface Tree<NodeType = Node> {
+export interface Tree<NodeType = Required<Node>> {
   version: string;
   args: string;
   startedAt: string;
@@ -77,7 +70,7 @@ export interface Result {
   newick?: string;
   newick_states?: string;
   json?: Tree;
-  json_states?: Tree<StateNode>;
+  json_states?: Tree<Required<StateNode>>;
   csv?: string;
   csv_states?: string;
   net?: string;
@@ -139,7 +132,7 @@ class Infomap {
     network?: string | NetworkTypes;
     filename?: string;
     args?: string | Arguments;
-    files?: { [filename: string]: string };
+    files?: { [filename: string]: string | FileTypes };
   }) {
     network = network ?? "";
     filename = filename ?? "network.net";
@@ -152,6 +145,13 @@ class Infomap {
 
     if (typeof args !== "string") {
       args = argumentsToString(args);
+    }
+
+    for (let key of Object.keys(files)) {
+      const file = files[key];
+      if (typeof file !== "string") {
+        files[key] = fileToString(file);
+      }
     }
 
     const index = filename.lastIndexOf(".");

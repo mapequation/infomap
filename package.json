@@ -10,6 +10,7 @@
     "index.js",
     "index.d.ts",
     "arguments.d.ts",
+    "filetypes.d.ts",
     "network.d.ts",
     "LICENSE_AGPLv3.txt"
   ],
