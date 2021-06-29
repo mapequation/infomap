@@ -27,7 +27,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install swig
-        pip install networkx flake8 autopep8
+        pip install networkx pandas flake8 autopep8
     - name: Build Python package
       run: |
         make python
