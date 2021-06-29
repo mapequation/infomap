@@ -71,51 +71,83 @@
 </dd>
 <dt class="field-even">Keyword Arguments</dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>cluster_data</strong> (<em>str</em><em>, </em><em>optional</em>) – Provide an initial two-level (clu format) or multi-layer (tree format) solution.</p></li>
-<li><p><strong>no_infomap</strong> (<em>bool</em><em>, </em><em>optional</em>) – Don’t run the optimizer. Useful to calculate codelength of provided cluster data or to print non-modular statistics.</p></li>
-<li><p><strong>input_format</strong> (<em>str</em><em>, </em><em>optional</em>) – Override automatically recognized types. Options: pajek, link-list, bipartite, multilayer, states.</p></li>
-<li><p><strong>skip_adjust_bipartite_flow</strong> (<em>bool</em><em>, </em><em>optional</em>) – Skip distributing all flow from the bipartite nodes to the primary nodes.</p></li>
-<li><p><strong>bipartite_teleportation</strong> (<em>bool</em><em>, </em><em>optional</em>) – Teleport like the bipartite flow instead of two-step (unipartite) teleportation.</p></li>
-<li><p><strong>weight_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Limit the number of links to read from the network. Ignore links with less weight than the threshold.</p></li>
+<li><p><strong>cluster_data</strong> (<em>str</em><em>, </em><em>optional</em>) – Provide an initial two-level (clu format) or multi-layer (tree
+format) solution.</p></li>
+<li><p><strong>no_infomap</strong> (<em>bool</em><em>, </em><em>optional</em>) – Don’t run the optimizer. Useful to calculate codelength of provided
+cluster data or to print non-modular statistics.</p></li>
+<li><p><strong>input_format</strong> (<em>str</em><em>, </em><em>optional</em>) – Override automatically recognized types. Options: pajek, link-list,
+bipartite, multilayer, states.</p></li>
+<li><p><strong>skip_adjust_bipartite_flow</strong> (<em>bool</em><em>, </em><em>optional</em>) – Skip distributing all flow from the bipartite nodes to the primary
+nodes.</p></li>
+<li><p><strong>bipartite_teleportation</strong> (<em>bool</em><em>, </em><em>optional</em>) – Teleport like the bipartite flow instead of two-step (unipartite)
+teleportation.</p></li>
+<li><p><strong>weight_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Limit the number of links to read from the network. Ignore links
+with less weight than the threshold.</p></li>
 <li><p><strong>include_self_links</strong> (<em>bool</em><em>, </em><em>optional</em>) – Include links with the same source and target node.</p></li>
-<li><p><strong>node_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.</p></li>
-<li><p><strong>assign_to_neighbouring_module</strong> (<em>bool</em><em>, </em><em>optional</em>) – Assign nodes without module assignments (from –cluster-data) to the module assignment of a neighbouring node if possible.</p></li>
+<li><p><strong>node_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of nodes to read from the network. Ignore links
+connected to ignored nodes.</p></li>
+<li><p><strong>assign_to_neighbouring_module</strong> (<em>bool</em><em>, </em><em>optional</em>) – Assign nodes without module assignments (from <code class="docutils literal notranslate"><span class="pre">cluster_data</span></code>) to
+the module assignment of a neighbouring node if possible.</p></li>
 <li><p><strong>meta_data</strong> (<em>str</em><em>, </em><em>optional</em>) – Provide meta data (clu format) that should be encoded.</p></li>
 <li><p><strong>meta_data_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – Metadata encoding rate. Default is to encode each step.</p></li>
 <li><p><strong>meta_data_unweighted</strong> (<em>bool</em><em>, </em><em>optional</em>) – Don’t weight meta data by node flow.</p></li>
-<li><p><strong>tree</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a tree file with the modular hierarchy. Automatically enabled if no other output is specified.</p></li>
-<li><p><strong>ftree</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a ftree file with the modular hierarchy including aggregated links between (nested) modules.</p></li>
+<li><p><strong>tree</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a tree file with the modular hierarchy. Automatically enabled
+if no other output is specified.</p></li>
+<li><p><strong>ftree</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a ftree file with the modular hierarchy including aggregated
+links between (nested) modules.</p></li>
 <li><p><strong>clu</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a clu file with the top cluster ids for each node.</p></li>
 <li><p><strong>verbosity_level</strong> (<em>int</em><em>, </em><em>optional</em>) – Verbose output on the console.</p></li>
 <li><p><strong>silent</strong> (<em>bool</em><em>, </em><em>optional</em>) – No output on the console.</p></li>
-<li><p><strong>out_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for the output files, e.g. [output_directory]/[out-name].tree</p></li>
+<li><p><strong>out_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for the output files, e.g.
+<code class="docutils literal notranslate"><span class="pre">&quot;[output_directory]/[out-name].tree&quot;</span></code></p></li>
 <li><p><strong>no_file_output</strong> (<em>bool</em><em>, </em><em>optional</em>) – Don’t write output to file.</p></li>
-<li><p><strong>clu_level</strong> (<em>int</em><em>, </em><em>optional</em>) – For clu output, print modules at specified depth from root. Use -1 for bottom level modules.</p></li>
-<li><p><strong>output</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states.</p></li>
+<li><p><strong>clu_level</strong> (<em>int</em><em>, </em><em>optional</em>) – For clu output, print modules at specified depth from root.
+Use <code class="docutils literal notranslate"><span class="pre">-1</span></code> for bottom level modules.</p></li>
+<li><p><strong>output</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – List of output formats.
+Options: clu, tree, ftree, newick, json, csv, network, states.</p></li>
 <li><p><strong>hide_bipartite_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Project bipartite solution to unipartite.</p></li>
-<li><p><strong>two_level</strong> (<em>bool</em><em>, </em><em>optional</em>) – Optimize a two-level partition of the network. Default is multi-level.</p></li>
-<li><p><strong>flow_model</strong> (<em>str</em><em>, </em><em>optional</em>) – Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.</p></li>
-<li><p><strong>directed</strong> (<em>bool</em><em>, </em><em>optional</em>) – Assume directed links. Shorthand for ‘–flow-model directed’.</p></li>
-<li><p><strong>use_node_weights_as_flow</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1.</p></li>
-<li><p><strong>to_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Teleport to nodes instead of to links, assuming uniform node weights if no such input data.</p></li>
+<li><p><strong>two_level</strong> (<em>bool</em><em>, </em><em>optional</em>) – Optimize a two-level partition of the network.
+Default (<code class="docutils literal notranslate"><span class="pre">false</span></code>) is multi-level.</p></li>
+<li><p><strong>flow_model</strong> (<em>str</em><em>, </em><em>optional</em>) – Specify flow model.
+Options: undirected, directed, undirdir, outdirdir, rawdir.</p></li>
+<li><p><strong>directed</strong> (<em>bool</em><em>, </em><em>optional</em>) – Assume directed links. Shorthand for <code class="docutils literal notranslate"><span class="pre">flow_model=&quot;directed&quot;</span></code>.</p></li>
+<li><p><strong>use_node_weights_as_flow</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use node weights (from api or after names in Pajek format) as flow,
+normalized to sum to 1.</p></li>
+<li><p><strong>to_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Teleport to nodes instead of to links, assuming uniform node
+weights if no such input data.</p></li>
 <li><p><strong>teleportation_probability</strong> (<em>float</em><em>, </em><em>optional</em>) – Probability of teleporting to a random node or link.</p></li>
-<li><p><strong>markov_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Scales link flow to change the cost of moving between modules. Higher values results in fewer modules.</p></li>
+<li><p><strong>markov_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Scales link flow to change the cost of moving between modules.
+Higher values results in fewer modules.</p></li>
 <li><p><strong>preferred_number_of_modules</strong> (<em>int</em><em>, </em><em>optional</em>) – Penalize solutions the more they differ from this number.</p></li>
-<li><p><strong>multilayer_relax_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – Probability to relax the constraint to move only in the current layer.</p></li>
-<li><p><strong>multilayer_relax_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers in each direction to relax to. If negative, relax to any layer.</p></li>
-<li><p><strong>multilayer_relax_limit_up</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers with higher id to relax to. If negative, relax to any layer.</p></li>
-<li><p><strong>multilayer_relax_limit_down</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers with lower id to relax to. If negative, relax to any layer.</p></li>
-<li><p><strong>multilayer_relax_by_jsd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.</p></li>
-<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – A seed (integer) to the random number generator for reproducible results.</p></li>
+<li><p><strong>multilayer_relax_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – Probability to relax the constraint to move only in the current
+layer.</p></li>
+<li><p><strong>multilayer_relax_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers in each direction to relax to.
+If negative, relax to any layer.</p></li>
+<li><p><strong>multilayer_relax_limit_up</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers with higher id to relax to.
+If negative, relax to any layer.</p></li>
+<li><p><strong>multilayer_relax_limit_down</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers with lower id to relax to.
+If negative, relax to any layer.</p></li>
+<li><p><strong>multilayer_relax_by_jsd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Relax proportional to the out-link similarity measured by the
+Jensen-Shannon divergence.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – A seed (integer) to the random number generator for reproducible
+results.</p></li>
 <li><p><strong>num_trials</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of outer-most loops to run before picking the best solution.</p></li>
-<li><p><strong>core_loop_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of loops that tries to move each node into the best possible module.</p></li>
-<li><p><strong>core_level_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.</p></li>
-<li><p><strong>tune_iteration_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.</p></li>
-<li><p><strong>core_loop_codelength_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum codelength threshold for accepting a new solution in core loop.</p></li>
-<li><p><strong>tune_iteration_relative_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Set codelength improvement threshold of each new tune iteration to ‘f’ times the initial two-level codelength.</p></li>
-<li><p><strong>fast_hierarchical_solution</strong> (<em>int</em><em>, </em><em>optional</em>) – Find top modules fast. Use 2 to keep all fast levels. Use 3 to skip recursive part.</p></li>
-<li><p><strong>prefer_modular_solution</strong> (<em>bool</em><em>, </em><em>optional</em>) – Prefer modular solutions even if they are worse than putting all nodes in one module.</p></li>
-<li><p><strong>inner_parallelization</strong> (<em>bool</em><em>, </em><em>optional</em>) – Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.</p></li>
+<li><p><strong>core_loop_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of loops that tries to move each node into the
+best possible module.</p></li>
+<li><p><strong>core_level_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of times the core loops are reapplied on existing
+modular network to search bigger structures.</p></li>
+<li><p><strong>tune_iteration_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of main iterations in the two-level partition
+algorithm. 0 means no limit.</p></li>
+<li><p><strong>core_loop_codelength_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum codelength threshold for accepting a new solution in core
+loop.</p></li>
+<li><p><strong>tune_iteration_relative_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Set codelength improvement threshold of each new tune iteration to
+<code class="docutils literal notranslate"><span class="pre">f</span></code> times the initial two-level codelength.</p></li>
+<li><p><strong>fast_hierarchical_solution</strong> (<em>int</em><em>, </em><em>optional</em>) – Find top modules fast. Use <code class="docutils literal notranslate"><span class="pre">2</span></code> to keep all fast levels.
+Use <code class="docutils literal notranslate"><span class="pre">3</span></code> to skip recursive part.</p></li>
+<li><p><strong>prefer_modular_solution</strong> (<em>bool</em><em>, </em><em>optional</em>) – Prefer modular solutions even if they are worse than putting all
+nodes in one module.</p></li>
+<li><p><strong>inner_parallelization</strong> (<em>bool</em><em>, </em><em>optional</em>) – Parallelize the inner-most loop for greater speed.
+This may give some accuracy tradeoff.</p></li>
 </ul>
 </dd>
 </dl>
@@ -162,7 +194,8 @@
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>links</strong> (<em>iterable of tuples</em>) – Iterable of tuples of int of the form (source_id, target_id, [weight])</p>
+<dd class="field-odd"><p><strong>links</strong> (<em>iterable of tuples</em>) – Iterable of tuples of int of the form
+<code class="docutils literal notranslate"><span class="pre">(source_id,</span> <span class="pre">target_id,</span> <span class="pre">[weight])</span></code></p>
 </dd>
 </dl>
 </dd></dl>
@@ -175,8 +208,10 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>source_multilayer_node</strong> (<em>tuple of int</em><em>, or </em><a class="reference internal" href="#infomap.MultilayerNode" title="infomap.MultilayerNode"><em>MultilayerNode</em></a>) – If passed a tuple, it should be of the format (layer_id, node_id).</p></li>
-<li><p><strong>target_multilayer_node</strong> (<em>tuple of int</em><em>, or </em><a class="reference internal" href="#infomap.MultilayerNode" title="infomap.MultilayerNode"><em>MultilayerNode</em></a>) – If passed a tuple, it should be of the format (layer_id, node_id).</p></li>
+<li><p><strong>source_multilayer_node</strong> (<em>tuple of int</em><em>, or </em><a class="reference internal" href="#infomap.MultilayerNode" title="infomap.MultilayerNode"><em>MultilayerNode</em></a>) – If passed a tuple, it should be of the format
+<code class="docutils literal notranslate"><span class="pre">(layer_id,</span> <span class="pre">node_id)</span></code>.</p></li>
+<li><p><strong>target_multilayer_node</strong> (<em>tuple of int</em><em>, or </em><a class="reference internal" href="#infomap.MultilayerNode" title="infomap.MultilayerNode"><em>MultilayerNode</em></a>) – If passed a tuple, it should be of the format
+<code class="docutils literal notranslate"><span class="pre">(layer_id,</span> <span class="pre">node_id)</span></code>.</p></li>
 <li><p><strong>weight</strong> (<em>float</em><em>, </em><em>optional</em>) – </p></li>
 </ul>
 </dd>
@@ -220,7 +255,8 @@
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>links</strong> (<em>iterable of tuples</em>) – Iterable of tuples of the form (source_node, target_node, [weight])</p>
+<dd class="field-odd"><p><strong>links</strong> (<em>iterable of tuples</em>) – Iterable of tuples of the form
+<code class="docutils literal notranslate"><span class="pre">(source_node,</span> <span class="pre">target_node,</span> <span class="pre">[weight])</span></code></p>
 </dd>
 </dl>
 </dd></dl>
@@ -254,7 +290,8 @@ to Infomap.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>g</strong> (<em>nx.Graph</em>) – A NetworkX graph</p></li>
-<li><p><strong>weight</strong> (<em>str</em><em>, </em><em>optional</em>) – Key to lookup link weight in edge data if present, default <code class="docutils literal notranslate"><span class="pre">&quot;weight&quot;</span></code></p></li>
+<li><p><strong>weight</strong> (<em>str</em><em>, </em><em>optional</em>) – Key to lookup link weight in edge data if present.
+Default <code class="docutils literal notranslate"><span class="pre">&quot;weight&quot;</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -313,7 +350,8 @@ to Infomap.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>nodes</strong> (<em>iterable of tuples</em><em> or </em><em>iterable of int</em>) – Iterable of tuples on the form (node_id, [name], [teleportation_weight])</p>
+<dd class="field-odd"><p><strong>nodes</strong> (<em>iterable of tuples</em><em> or </em><em>iterable of int</em>) – Iterable of tuples on the form
+<code class="docutils literal notranslate"><span class="pre">(node_id,</span> <span class="pre">[name],</span> <span class="pre">[teleportation_weight])</span></code></p>
 </dd>
 </dl>
 </dd></dl>
@@ -356,7 +394,7 @@ If you want to name the physical node, use <code class="docutils literal notrans
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>state_nodes</strong> (<em>iterable of tuples</em>) – Iterable of tuples of the form (state_id, node_id)</p>
+<dd class="field-odd"><p><strong>state_nodes</strong> (<em>iterable of tuples</em>) – Iterable of tuples of the form <code class="docutils literal notranslate"><span class="pre">(state_id,</span> <span class="pre">node_id)</span></code></p>
 </dd>
 </dl>
 </dd></dl>
@@ -504,9 +542,10 @@ state or multilayer network.</p>
 <p>Measured as the perplexity of the module flow distribution.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The module level returned by <code class="docutils literal notranslate"><span class="pre">iterator.depth</span></code>. Set to 1 (default) to
-return the top modules (coarsest level), set to 2 for second coarsest level
-etc. Set to -1 to return the bottom level modules (finest level).</p>
+<dd class="field-odd"><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The module level returned by <code class="docutils literal notranslate"><span class="pre">iterator.depth</span></code>.
+Set to <code class="docutils literal notranslate"><span class="pre">1</span></code> (default) to return the top modules (coarsest level).
+Set to <code class="docutils literal notranslate"><span class="pre">2</span></code> for second coarsest level etc. Set to <code class="docutils literal notranslate"><span class="pre">-1</span></code> to return
+the bottom level modules (finest level).</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>The effective number of modules</p>
@@ -554,7 +593,8 @@ state or multilayer network.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>data</strong> (<em>str</em>) – The kind of data to return, one of “weight” or “flow”, default “weight”.</p>
+<dd class="field-odd"><p><strong>data</strong> (<em>str</em>) – The kind of data to return, one of <code class="docutils literal notranslate"><span class="pre">&quot;weight&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;flow&quot;</span></code>.
+Default <code class="docutils literal notranslate"><span class="pre">&quot;weight&quot;</span></code>.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>An iterator of source, target, weight/flow tuples.</p>
@@ -572,13 +612,15 @@ state or multilayer network.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The level in the hierarchical tree. Set to 1 (default) to return the
-top modules (coarsest level), set to 2 for second coarsest level etc.
-Set to -1 to return the bottom level modules (finest level). Default <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
-<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate over state nodes,
-otherwise it will iterate over physical nodes, merging state nodes with same
-<code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same module.
-Note that the same physical node may end up on different paths in the tree.
+<li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The level in the hierarchical tree. Set to <code class="docutils literal notranslate"><span class="pre">1</span></code> (default) to
+return the top modules (coarsest level). Set to <code class="docutils literal notranslate"><span class="pre">2</span></code> for second
+coarsest level etc. Set to <code class="docutils literal notranslate"><span class="pre">-1</span></code> to return the bottom level
+modules (finest level). Default <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate
+over state nodes. Otherwise it will iterate over physical nodes,
+merging state nodes with same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same
+module. Note that the same physical node may end up on different
+paths in the tree.
 See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>. Default <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p></li>
 </ul>
 </dd>
@@ -597,11 +639,12 @@ See notes on <code class="docutils literal notranslate"><span class="pre">physic
 <dd><p>Get all the modules.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate over state nodes,
-otherwise it will iterate over physical nodes, merging state nodes with same
-<code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same module.
-Note that the same physical node may end up on different paths in the tree.
-See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>.</p>
+<dd class="field-odd"><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate
+over state nodes. Otherwise it will iterate over physical nodes,
+merging state nodes with same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same
+module. Note that the same physical node may end up on different
+paths in the tree.
+See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>. Default <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>Dict with node ids as keys and list of module ids as values.</p>
@@ -664,24 +707,27 @@ the <code class="docutils literal notranslate"><span class="pre">default</span><
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The module level returned by <code class="docutils literal notranslate"><span class="pre">iterator.module_id</span></code>. Set to 1 (default) to
-return the top modules (coarsest level), set to 2 for second coarsest level
-etc. Set to -1 to return the bottom level modules (finest level). Default <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
-<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate over state nodes,
-otherwise it will iterate over physical nodes, merging state nodes with same
-<code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same module.
-Note that the same physical node may end up on different paths in the tree.
+<li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The module level returned by <code class="docutils literal notranslate"><span class="pre">iterator.module_id</span></code>. Set to <code class="docutils literal notranslate"><span class="pre">1</span></code>
+(default) to return the top modules (coarsest level). Set to <code class="docutils literal notranslate"><span class="pre">2</span></code>
+for second coarsest level etc. Set to <code class="docutils literal notranslate"><span class="pre">-1</span></code> to return the bottom
+level modules (finest level). Default <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate
+over state nodes. Otherwise it will iterate over physical nodes,
+merging state nodes with same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same
+module. Note that the same physical node may end up on different
+paths in the tree.
 See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>. Default <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>For higher-order networks, each node is represented by a set of state nodes
-with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code>, where each state node represents a different memory
-constraining the random walker. This enables overlapping modules, where
-state nodes with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> end up in different modules. However,
-the state nodes with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> within each module are only visible
-as one (partial) physical node (if <code class="docutils literal notranslate"><span class="pre">states</span> <span class="pre">=</span> <span class="pre">False</span></code>).</p>
+<p>For higher-order networks, each node is represented by a set of state
+nodes with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code>, where each state node represents a
+different memory constraining the random walker. This enables
+overlapping modules, where state nodes with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> end up
+in different modules. However, the state nodes with the same
+<code class="docutils literal notranslate"><span class="pre">node_id</span></code> within each module are only visible as one (partial)
+physical node (if <code class="docutils literal notranslate"><span class="pre">states</span> <span class="pre">=</span> <span class="pre">False</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>An iterator over each node in the tree, depth first from the root</p>
@@ -699,24 +745,27 @@ as one (partial) physical node (if <code class="docutils literal notranslate"><s
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The module level returned by <code class="docutils literal notranslate"><span class="pre">iterator.module_id</span></code>. Set to 1 (default) to
-return the top modules (coarsest level), set to 2 for second coarsest level
-etc. Set to -1 to return the bottom level modules (finest level).</p></li>
-<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate over state nodes,
-otherwise it will iterate over physical nodes, merging state nodes with same
-<code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same module.
-Note that the same physical node may end up on different paths in the tree.
-See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>.</p></li>
+<li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The module level returned by <code class="docutils literal notranslate"><span class="pre">iterator.module_id</span></code>. Set to <code class="docutils literal notranslate"><span class="pre">1</span></code>
+(default) to return the top modules (coarsest level). Set to <code class="docutils literal notranslate"><span class="pre">2</span></code>
+for second coarsest level etc. Set to <code class="docutils literal notranslate"><span class="pre">-1</span></code> to return the bottom
+level modules (finest level).</p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – For higher-order networks, if <code class="docutils literal notranslate"><span class="pre">states</span></code> is True, it will iterate
+over state nodes. Otherwise it will iterate over physical nodes,
+merging state nodes with same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> if they are in the same
+module. Note that the same physical node may end up on different
+paths in the tree.
+See notes on <code class="docutils literal notranslate"><span class="pre">physical_tree</span></code>. Default <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>For higher-order networks, each node is represented by a set of state nodes
-with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code>, where each state node represents a different memory
-constraining the random walker. This enables overlapping modules, where
-state nodes with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> end up in different modules. However,
-the state nodes with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> within each module are only visible
-as one (partial) physical node (if <code class="docutils literal notranslate"><span class="pre">states</span> <span class="pre">=</span> <span class="pre">False</span></code>).</p>
+<p>For higher-order networks, each node is represented by a set of state
+nodes with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code>, where each state node represents a
+different memory constraining the random walker. This enables
+overlapping modules, where state nodes with the same <code class="docutils literal notranslate"><span class="pre">node_id</span></code> end up
+in different modules. However, the state nodes with the same
+<code class="docutils literal notranslate"><span class="pre">node_id</span></code> within each module are only visible as one (partial)
+physical node (if <code class="docutils literal notranslate"><span class="pre">states</span> <span class="pre">=</span> <span class="pre">False</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>An iterator over each node in the tree, depth first from the root</p>
@@ -802,7 +851,8 @@ use <code class="docutils literal notranslate"><span class="pre">run(initial_par
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>An iterator over each leaf module in the tree, depth first from the root</p>
+<dd class="field-odd"><p>An iterator over each leaf module in the tree, depth first from the
+root</p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapLeafModuleIterator" title="infomap.InfomapLeafModuleIterator">InfomapLeafModuleIterator</a></p>
@@ -925,8 +975,8 @@ is the sum of codelengths for each top module.</p>
 <dd><p>A view of the (top-level) modules, mapping
 <code class="docutils literal notranslate"><span class="pre">node_id</span></code> to <code class="docutils literal notranslate"><span class="pre">module_id</span></code>.</p>
 <p class="rubric">Notes</p>
-<p>In a higher-order network, a physical node (defined by node_id)
-may partially exist in multiple modules. However, the node_id
+<p>In a higher-order network, a physical node (defined by <code class="docutils literal notranslate"><span class="pre">node_id</span></code>)
+may partially exist in multiple modules. However, the <code class="docutils literal notranslate"><span class="pre">node_id</span></code>
 can not exist multiple times as a key in the node-to-module map,
 so only one occurrence of a physical node will be retrieved.
 To get all states, use <code class="docutils literal notranslate"><span class="pre">get_modules(states=True)</span></code>.</p>
@@ -977,7 +1027,7 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Yields</dt>
-<dd class="field-odd"><p><em>tuple of int, int</em> – An iterator of node_id, module_id pairs.</p>
+<dd class="field-odd"><p><em>tuple of int, int</em> – An iterator of <code class="docutils literal notranslate"><span class="pre">(node_id,</span> <span class="pre">module_id)</span></code> pairs.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1028,7 +1078,8 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>An iterator over each leaf node in the tree, depth first from the root</p>
+<dd class="field-odd"><p>An iterator over each leaf node in the tree, depth first from the
+root</p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapLeafIterator" title="infomap.InfomapLeafIterator">InfomapLeafIterator</a></p>
@@ -1067,7 +1118,8 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 <dl class="py method">
 <dt id="infomap.Infomap.num_nodes">
 <em class="property">property </em><code class="sig-name descname">num_nodes</code><a class="headerlink" href="#infomap.Infomap.num_nodes" title="Permalink to this definition">¶</a></dt>
-<dd><p>The number of state nodes if we have a higher order network, or the number of physical nodes.</p>
+<dd><p>The number of state nodes if we have a higher order network, or the
+number of physical nodes.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <p><a class="reference internal" href="#infomap.Infomap.num_physical_nodes" title="infomap.Infomap.num_physical_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_physical_nodes</span></code></a></p>
@@ -1157,7 +1209,8 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>An iterator over each physical leaf node in the tree, depth first from the root</p>
+<dd class="field-odd"><p>An iterator over each physical leaf node in the tree, depth first
+from the root</p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapLeafIteratorPhysical" title="infomap.InfomapLeafIteratorPhysical">InfomapLeafIteratorPhysical</a></p>
@@ -1176,7 +1229,8 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>An iterator over each physical node in the tree, depth first from the root</p>
+<dd class="field-odd"><p>An iterator over each physical node in the tree, depth first from
+the root</p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><a class="reference internal" href="#infomap.InfomapIteratorPhysical" title="infomap.InfomapIteratorPhysical">InfomapIteratorPhysical</a></p>
@@ -1193,7 +1247,7 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>filename</strong> (<em>str</em>) – </p></li>
 <li><p><strong>accumulate</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the network data should be accumulated to already added
-nodes and links (default True).</p></li>
+nodes and links. Default <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1267,7 +1321,7 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>links</strong> (<em>iterable of tuples</em>) – Iterable of tuples of the form (source_id, target_id)</p>
+<dd class="field-odd"><p><strong>links</strong> (<em>iterable of tuples</em>) – Iterable of tuples of the form <code class="docutils literal notranslate"><span class="pre">(source_id,</span> <span class="pre">target_id)</span></code></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1280,44 +1334,69 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>args</strong> (<em>str</em><em>, </em><em>optional</em>) – Space delimited parameter list (see Infomap documentation).</p></li>
-<li><p><strong>initial_partition</strong> (<em>dict</em><em>, </em><em>optional</em>) – Initial partition to start optimizer from (see initial_partition).</p></li>
+<li><p><strong>initial_partition</strong> (<em>dict</em><em>, </em><em>optional</em>) – Initial partition to start optimizer from.
+(See <code class="docutils literal notranslate"><span class="pre">initial_partition</span></code>).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Keyword Arguments</dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>tree</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a tree file with the modular hierarchy. Automatically enabled if no other output is specified.</p></li>
-<li><p><strong>ftree</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a ftree file with the modular hierarchy including aggregated links between (nested) modules.</p></li>
+<li><p><strong>tree</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a tree file with the modular hierarchy. Automatically enabled
+if no other output is specified.</p></li>
+<li><p><strong>ftree</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a ftree file with the modular hierarchy including aggregated
+links between (nested) modules.</p></li>
 <li><p><strong>clu</strong> (<em>bool</em><em>, </em><em>optional</em>) – Write a clu file with the top cluster ids for each node.</p></li>
 <li><p><strong>verbosity_level</strong> (<em>int</em><em>, </em><em>optional</em>) – Verbose output on the console.</p></li>
 <li><p><strong>silent</strong> (<em>bool</em><em>, </em><em>optional</em>) – No output on the console.</p></li>
-<li><p><strong>out_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for the output files, e.g. [output_directory]/[out-name].tree</p></li>
+<li><p><strong>out_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for the output files, e.g.
+<code class="docutils literal notranslate"><span class="pre">&quot;[output_directory]/[out-name].tree&quot;</span></code></p></li>
 <li><p><strong>no_file_output</strong> (<em>bool</em><em>, </em><em>optional</em>) – Don’t write output to file.</p></li>
-<li><p><strong>clu_level</strong> (<em>int</em><em>, </em><em>optional</em>) – For clu output, print modules at specified depth from root. Use -1 for bottom level modules.</p></li>
-<li><p><strong>output</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, network, states.</p></li>
+<li><p><strong>clu_level</strong> (<em>int</em><em>, </em><em>optional</em>) – For clu output, print modules at specified depth from root.
+Use <code class="docutils literal notranslate"><span class="pre">-1</span></code> for bottom level modules.</p></li>
+<li><p><strong>output</strong> (<em>list</em><em>(</em><em>str</em><em>)</em><em>, </em><em>optional</em>) – List of output formats.
+Options: clu, tree, ftree, newick, json, csv, network, states.</p></li>
 <li><p><strong>hide_bipartite_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Project bipartite solution to unipartite.</p></li>
-<li><p><strong>two_level</strong> (<em>bool</em><em>, </em><em>optional</em>) – Optimize a two-level partition of the network. Default is multi-level.</p></li>
-<li><p><strong>flow_model</strong> (<em>str</em><em>, </em><em>optional</em>) – Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.</p></li>
-<li><p><strong>directed</strong> (<em>bool</em><em>, </em><em>optional</em>) – Assume directed links. Shorthand for ‘–flow-model directed’.</p></li>
-<li><p><strong>use_node_weights_as_flow</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1.</p></li>
-<li><p><strong>to_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Teleport to nodes instead of to links, assuming uniform node weights if no such input data.</p></li>
+<li><p><strong>two_level</strong> (<em>bool</em><em>, </em><em>optional</em>) – Optimize a two-level partition of the network.
+Default (<code class="docutils literal notranslate"><span class="pre">false</span></code>) is multi-level.</p></li>
+<li><p><strong>flow_model</strong> (<em>str</em><em>, </em><em>optional</em>) – Specify flow model.
+Options: undirected, directed, undirdir, outdirdir, rawdir.</p></li>
+<li><p><strong>directed</strong> (<em>bool</em><em>, </em><em>optional</em>) – Assume directed links. Shorthand for <code class="docutils literal notranslate"><span class="pre">flow_model=&quot;directed&quot;</span></code>.</p></li>
+<li><p><strong>use_node_weights_as_flow</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use node weights (from api or after names in Pajek format) as flow,
+normalized to sum to 1.</p></li>
+<li><p><strong>to_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Teleport to nodes instead of to links, assuming uniform node
+weights if no such input data.</p></li>
 <li><p><strong>teleportation_probability</strong> (<em>float</em><em>, </em><em>optional</em>) – Probability of teleporting to a random node or link.</p></li>
-<li><p><strong>markov_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Scales link flow to change the cost of moving between modules. Higher values results in fewer modules.</p></li>
+<li><p><strong>markov_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Scales link flow to change the cost of moving between modules.
+Higher values results in fewer modules.</p></li>
 <li><p><strong>preferred_number_of_modules</strong> (<em>int</em><em>, </em><em>optional</em>) – Penalize solutions the more they differ from this number.</p></li>
-<li><p><strong>multilayer_relax_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – Probability to relax the constraint to move only in the current layer.</p></li>
-<li><p><strong>multilayer_relax_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers in each direction to relax to. If negative, relax to any layer.</p></li>
-<li><p><strong>multilayer_relax_limit_up</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers with higher id to relax to. If negative, relax to any layer.</p></li>
-<li><p><strong>multilayer_relax_limit_down</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers with lower id to relax to. If negative, relax to any layer.</p></li>
-<li><p><strong>multilayer_relax_by_jsd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.</p></li>
-<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – A seed (integer) to the random number generator for reproducible results.</p></li>
+<li><p><strong>multilayer_relax_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – Probability to relax the constraint to move only in the current
+layer.</p></li>
+<li><p><strong>multilayer_relax_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers in each direction to relax to.
+If negative, relax to any layer.</p></li>
+<li><p><strong>multilayer_relax_limit_up</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers with higher id to relax to.
+If negative, relax to any layer.</p></li>
+<li><p><strong>multilayer_relax_limit_down</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of neighboring layers with lower id to relax to.
+If negative, relax to any layer.</p></li>
+<li><p><strong>multilayer_relax_by_jsd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Relax proportional to the out-link similarity measured by the
+Jensen-Shannon divergence.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – A seed (integer) to the random number generator for reproducible
+results.</p></li>
 <li><p><strong>num_trials</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of outer-most loops to run before picking the best solution.</p></li>
-<li><p><strong>core_loop_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of loops that tries to move each node into the best possible module.</p></li>
-<li><p><strong>core_level_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.</p></li>
-<li><p><strong>tune_iteration_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.</p></li>
-<li><p><strong>core_loop_codelength_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum codelength threshold for accepting a new solution in core loop.</p></li>
-<li><p><strong>tune_iteration_relative_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Set codelength improvement threshold of each new tune iteration to ‘f’ times the initial two-level codelength.</p></li>
-<li><p><strong>fast_hierarchical_solution</strong> (<em>int</em><em>, </em><em>optional</em>) – Find top modules fast. Use 2 to keep all fast levels. Use 3 to skip recursive part.</p></li>
-<li><p><strong>prefer_modular_solution</strong> (<em>bool</em><em>, </em><em>optional</em>) – Prefer modular solutions even if they are worse than putting all nodes in one module.</p></li>
-<li><p><strong>inner_parallelization</strong> (<em>bool</em><em>, </em><em>optional</em>) – Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.</p></li>
+<li><p><strong>core_loop_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of loops that tries to move each node into the
+best possible module.</p></li>
+<li><p><strong>core_level_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of times the core loops are reapplied on existing
+modular network to search bigger structures.</p></li>
+<li><p><strong>tune_iteration_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of main iterations in the two-level partition
+algorithm. 0 means no limit.</p></li>
+<li><p><strong>core_loop_codelength_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum codelength threshold for accepting a new solution in core
+loop.</p></li>
+<li><p><strong>tune_iteration_relative_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Set codelength improvement threshold of each new tune iteration to
+<code class="docutils literal notranslate"><span class="pre">f</span></code> times the initial two-level codelength.</p></li>
+<li><p><strong>fast_hierarchical_solution</strong> (<em>int</em><em>, </em><em>optional</em>) – Find top modules fast. Use <code class="docutils literal notranslate"><span class="pre">2</span></code> to keep all fast levels.
+Use <code class="docutils literal notranslate"><span class="pre">3</span></code> to skip recursive part.</p></li>
+<li><p><strong>prefer_modular_solution</strong> (<em>bool</em><em>, </em><em>optional</em>) – Prefer modular solutions even if they are worse than putting all
+nodes in one module.</p></li>
+<li><p><strong>inner_parallelization</strong> (<em>bool</em><em>, </em><em>optional</em>) – Parallelize the inner-most loop for greater speed.
+This may give some accuracy tradeoff.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1375,7 +1454,7 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>names</strong> (<em>iterable of tuples</em>) – Iterable of tuples on the form (node_id, name).</p>
+<dd class="field-odd"><p><strong>names</strong> (<em>iterable of tuples</em>) – Iterable of tuples on the form <code class="docutils literal notranslate"><span class="pre">(node_id,</span> <span class="pre">name)</span></code>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1410,7 +1489,7 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>filename</strong> (<em>str</em>) – </p></li>
-<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included (default False).</p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
 <li><p><strong>depth_level</strong> (<em>int</em><em>, </em><em>optional</em>) – The depth in the hierarchical tree to write.</p></li>
 </ul>
 </dd>
@@ -1429,7 +1508,7 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>filename</strong> (<em>str</em>) – </p></li>
-<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included (default False).</p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1447,7 +1526,7 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>filename</strong> (<em>str</em>) – </p></li>
-<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included (default False).</p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1465,7 +1544,7 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>filename</strong> (<em>str</em>) – </p></li>
-<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included (default False).</p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1483,7 +1562,7 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>filename</strong> (<em>str</em>) – </p></li>
-<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included (default False).</p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1501,7 +1580,7 @@ the <code class="docutils literal notranslate"><span class="pre">one_level_codel
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>filename</strong> (<em>str</em>) – </p></li>
-<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included (default False).</p></li>
+<li><p><strong>states</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the state nodes should be included. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
 </ul>
 </dd>
 </dl>

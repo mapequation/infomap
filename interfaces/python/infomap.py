@@ -273,23 +273,31 @@ class Infomap(InfomapWrapper):
         Keyword Arguments
         -----------------
         cluster_data : str, optional
-            Provide an initial two-level (clu format) or multi-layer (tree format) solution.
+            Provide an initial two-level (clu format) or multi-layer (tree
+            format) solution.
         no_infomap : bool, optional
-            Don't run the optimizer. Useful to calculate codelength of provided cluster data or to print non-modular statistics.
+            Don't run the optimizer. Useful to calculate codelength of provided
+            cluster data or to print non-modular statistics.
         input_format : str, optional
-            Override automatically recognized types. Options: pajek, link-list, bipartite, multilayer, states.
+            Override automatically recognized types. Options: pajek, link-list,
+            bipartite, multilayer, states.
         skip_adjust_bipartite_flow : bool, optional
-            Skip distributing all flow from the bipartite nodes to the primary nodes.
+            Skip distributing all flow from the bipartite nodes to the primary
+            nodes.
         bipartite_teleportation : bool, optional
-            Teleport like the bipartite flow instead of two-step (unipartite) teleportation.
+            Teleport like the bipartite flow instead of two-step (unipartite)
+            teleportation.
         weight_threshold : float, optional
-            Limit the number of links to read from the network. Ignore links with less weight than the threshold.
+            Limit the number of links to read from the network. Ignore links
+            with less weight than the threshold.
         include_self_links : bool, optional
             Include links with the same source and target node.
         node_limit : int, optional
-            Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.
+            Limit the number of nodes to read from the network. Ignore links
+            connected to ignored nodes.
         assign_to_neighbouring_module : bool, optional
-            Assign nodes without module assignments (from --cluster-data) to the module assignment of a neighbouring node if possible.
+            Assign nodes without module assignments (from ``cluster_data``) to
+            the module assignment of a neighbouring node if possible.
         meta_data : str, optional
             Provide meta data (clu format) that should be encoded.
         meta_data_rate : float, optional
@@ -297,9 +305,11 @@ class Infomap(InfomapWrapper):
         meta_data_unweighted : bool, optional
             Don't weight meta data by node flow.
         tree : bool, optional
-            Write a tree file with the modular hierarchy. Automatically enabled if no other output is specified.
+            Write a tree file with the modular hierarchy. Automatically enabled
+            if no other output is specified.
         ftree : bool, optional
-            Write a ftree file with the modular hierarchy including aggregated links between (nested) modules.
+            Write a ftree file with the modular hierarchy including aggregated
+            links between (nested) modules.
         clu : bool, optional
             Write a clu file with the top cluster ids for each node.
         verbosity_level : int, optional
@@ -307,61 +317,83 @@ class Infomap(InfomapWrapper):
         silent : bool, optional
             No output on the console.
         out_name : str, optional
-            Name for the output files, e.g. [output_directory]/[out-name].tree
+            Name for the output files, e.g.
+            ``"[output_directory]/[out-name].tree"``
         no_file_output : bool, optional
             Don't write output to file.
         clu_level : int, optional
-            For clu output, print modules at specified depth from root. Use -1 for bottom level modules.
+            For clu output, print modules at specified depth from root.
+            Use ``-1`` for bottom level modules.
         output : list(str), optional
-            Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states.
+            List of output formats.
+            Options: clu, tree, ftree, newick, json, csv, network, states.
         hide_bipartite_nodes : bool, optional
             Project bipartite solution to unipartite.
         two_level : bool, optional
-            Optimize a two-level partition of the network. Default is multi-level.
+            Optimize a two-level partition of the network.
+            Default (``false``) is multi-level.
         flow_model : str, optional
-            Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.
+            Specify flow model.
+            Options: undirected, directed, undirdir, outdirdir, rawdir.
         directed : bool, optional
-            Assume directed links. Shorthand for '--flow-model directed'.
+            Assume directed links. Shorthand for ``flow_model="directed"``.
         use_node_weights_as_flow : bool, optional
-            Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1.
+            Use node weights (from api or after names in Pajek format) as flow,
+            normalized to sum to 1.
         to_nodes : bool, optional
-            Teleport to nodes instead of to links, assuming uniform node weights if no such input data.
+            Teleport to nodes instead of to links, assuming uniform node
+            weights if no such input data.
         teleportation_probability : float, optional
             Probability of teleporting to a random node or link.
         markov_time : float, optional
-            Scales link flow to change the cost of moving between modules. Higher values results in fewer modules.
+            Scales link flow to change the cost of moving between modules.
+            Higher values results in fewer modules.
         preferred_number_of_modules : int, optional
             Penalize solutions the more they differ from this number.
         multilayer_relax_rate : float, optional
-            Probability to relax the constraint to move only in the current layer.
+            Probability to relax the constraint to move only in the current
+            layer.
         multilayer_relax_limit : int, optional
-            Number of neighboring layers in each direction to relax to. If negative, relax to any layer.
+            Number of neighboring layers in each direction to relax to.
+            If negative, relax to any layer.
         multilayer_relax_limit_up : int, optional
-            Number of neighboring layers with higher id to relax to. If negative, relax to any layer.
+            Number of neighboring layers with higher id to relax to.
+            If negative, relax to any layer.
         multilayer_relax_limit_down : int, optional
-            Number of neighboring layers with lower id to relax to. If negative, relax to any layer.
+            Number of neighboring layers with lower id to relax to.
+            If negative, relax to any layer.
         multilayer_relax_by_jsd : bool, optional
-            Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.
+            Relax proportional to the out-link similarity measured by the
+            Jensen-Shannon divergence.
         seed : int, optional
-            A seed (integer) to the random number generator for reproducible results.
+            A seed (integer) to the random number generator for reproducible
+            results.
         num_trials : int, optional
             Number of outer-most loops to run before picking the best solution.
         core_loop_limit : int, optional
-            Limit the number of loops that tries to move each node into the best possible module.
+            Limit the number of loops that tries to move each node into the
+            best possible module.
         core_level_limit : int, optional
-            Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.
+            Limit the number of times the core loops are reapplied on existing
+            modular network to search bigger structures.
         tune_iteration_limit : int, optional
-            Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.
+            Limit the number of main iterations in the two-level partition
+            algorithm. 0 means no limit.
         core_loop_codelength_threshold : float, optional
-            Minimum codelength threshold for accepting a new solution in core loop.
+            Minimum codelength threshold for accepting a new solution in core
+            loop.
         tune_iteration_relative_threshold : float, optional
-            Set codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.
+            Set codelength improvement threshold of each new tune iteration to
+            ``f`` times the initial two-level codelength.
         fast_hierarchical_solution : int, optional
-            Find top modules fast. Use 2 to keep all fast levels. Use 3 to skip recursive part.
+            Find top modules fast. Use ``2`` to keep all fast levels.
+            Use ``3`` to skip recursive part.
         prefer_modular_solution : bool, optional
-            Prefer modular solutions even if they are worse than putting all nodes in one module.
+            Prefer modular solutions even if they are worse than putting all
+            nodes in one module.
         inner_parallelization : bool, optional
-            Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.
+            Parallelize the inner-most loop for greater speed.
+            This may give some accuracy tradeoff.
         """
         super().__init__(_construct_args(args, **kwargs))
 
@@ -373,7 +405,7 @@ class Infomap(InfomapWrapper):
         filename : str
         accumulate : bool, optional
             If the network data should be accumulated to already added
-            nodes and links (default True).
+            nodes and links. Default ``True``.
         """
         return super().readInputData(filename, accumulate)
 
@@ -435,7 +467,8 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         nodes : iterable of tuples or iterable of int
-            Iterable of tuples on the form (node_id, [name], [teleportation_weight])
+            Iterable of tuples on the form
+            ``(node_id, [name], [teleportation_weight])``
         """
         for node in nodes:
             if isinstance(node, int):
@@ -477,7 +510,7 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         names : iterable of tuples
-            Iterable of tuples on the form (node_id, name).
+            Iterable of tuples on the form ``(node_id, name)``.
         """
         for name in names:
             self.set_name(*name)
@@ -593,7 +626,7 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         state_nodes : iterable of tuples
-            Iterable of tuples of the form (state_id, node_id)
+            Iterable of tuples of the form ``(state_id, node_id)``
         """
         for node in state_nodes:
             self.add_state_node(*node)
@@ -640,7 +673,8 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         links : iterable of tuples
-            Iterable of tuples of int of the form (source_id, target_id, [weight])
+            Iterable of tuples of int of the form
+            ``(source_id, target_id, [weight])``
         """
         for link in links:
             self.add_link(*link)
@@ -688,7 +722,7 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         links : iterable of tuples
-            Iterable of tuples of the form (source_id, target_id)
+            Iterable of tuples of the form ``(source_id, target_id)``
         """
         for link in links:
             self.remove_link(*link)
@@ -705,9 +739,11 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         source_multilayer_node : tuple of int, or MultilayerNode
-            If passed a tuple, it should be of the format (layer_id, node_id).
+            If passed a tuple, it should be of the format
+            ``(layer_id, node_id)``.
         target_multilayer_node : tuple of int, or MultilayerNode
-            If passed a tuple, it should be of the format (layer_id, node_id).
+            If passed a tuple, it should be of the format
+            ``(layer_id, node_id)``.
         weight : float, optional
 
         Examples
@@ -761,7 +797,8 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         links : iterable of tuples
-            Iterable of tuples of the form (source_node, target_node, [weight])
+            Iterable of tuples of the form
+            ``(source_node, target_node, [weight])``
         """
         for link in links:
             self.add_multilayer_link(*link)
@@ -801,7 +838,8 @@ class Infomap(InfomapWrapper):
         g : nx.Graph
             A NetworkX graph
         weight : str, optional
-            Key to lookup link weight in edge data if present, default ``"weight"``
+            Key to lookup link weight in edge data if present.
+            Default ``"weight"``.
 
         Returns
         -------
@@ -963,14 +1001,17 @@ class Infomap(InfomapWrapper):
         args : str, optional
             Space delimited parameter list (see Infomap documentation).
         initial_partition : dict, optional
-            Initial partition to start optimizer from (see initial_partition).
+            Initial partition to start optimizer from.
+            (See ``initial_partition``).
 
         Keyword Arguments
         -----------------
         tree : bool, optional
-            Write a tree file with the modular hierarchy. Automatically enabled if no other output is specified.
+            Write a tree file with the modular hierarchy. Automatically enabled
+            if no other output is specified.
         ftree : bool, optional
-            Write a ftree file with the modular hierarchy including aggregated links between (nested) modules.
+            Write a ftree file with the modular hierarchy including aggregated
+            links between (nested) modules.
         clu : bool, optional
             Write a clu file with the top cluster ids for each node.
         verbosity_level : int, optional
@@ -978,61 +1019,83 @@ class Infomap(InfomapWrapper):
         silent : bool, optional
             No output on the console.
         out_name : str, optional
-            Name for the output files, e.g. [output_directory]/[out-name].tree
+            Name for the output files, e.g.
+            ``"[output_directory]/[out-name].tree"``
         no_file_output : bool, optional
             Don't write output to file.
         clu_level : int, optional
-            For clu output, print modules at specified depth from root. Use -1 for bottom level modules.
+            For clu output, print modules at specified depth from root.
+            Use ``-1`` for bottom level modules.
         output : list(str), optional
-            Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, network, states.
+            List of output formats.
+            Options: clu, tree, ftree, newick, json, csv, network, states.
         hide_bipartite_nodes : bool, optional
             Project bipartite solution to unipartite.
         two_level : bool, optional
-            Optimize a two-level partition of the network. Default is multi-level.
+            Optimize a two-level partition of the network.
+            Default (``false``) is multi-level.
         flow_model : str, optional
-            Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir.
+            Specify flow model.
+            Options: undirected, directed, undirdir, outdirdir, rawdir.
         directed : bool, optional
-            Assume directed links. Shorthand for '--flow-model directed'.
+            Assume directed links. Shorthand for ``flow_model="directed"``.
         use_node_weights_as_flow : bool, optional
-            Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1.
+            Use node weights (from api or after names in Pajek format) as flow,
+            normalized to sum to 1.
         to_nodes : bool, optional
-            Teleport to nodes instead of to links, assuming uniform node weights if no such input data.
+            Teleport to nodes instead of to links, assuming uniform node
+            weights if no such input data.
         teleportation_probability : float, optional
             Probability of teleporting to a random node or link.
         markov_time : float, optional
-            Scales link flow to change the cost of moving between modules. Higher values results in fewer modules.
+            Scales link flow to change the cost of moving between modules.
+            Higher values results in fewer modules.
         preferred_number_of_modules : int, optional
             Penalize solutions the more they differ from this number.
         multilayer_relax_rate : float, optional
-            Probability to relax the constraint to move only in the current layer.
+            Probability to relax the constraint to move only in the current
+            layer.
         multilayer_relax_limit : int, optional
-            Number of neighboring layers in each direction to relax to. If negative, relax to any layer.
+            Number of neighboring layers in each direction to relax to.
+            If negative, relax to any layer.
         multilayer_relax_limit_up : int, optional
-            Number of neighboring layers with higher id to relax to. If negative, relax to any layer.
+            Number of neighboring layers with higher id to relax to.
+            If negative, relax to any layer.
         multilayer_relax_limit_down : int, optional
-            Number of neighboring layers with lower id to relax to. If negative, relax to any layer.
+            Number of neighboring layers with lower id to relax to.
+            If negative, relax to any layer.
         multilayer_relax_by_jsd : bool, optional
-            Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.
+            Relax proportional to the out-link similarity measured by the
+            Jensen-Shannon divergence.
         seed : int, optional
-            A seed (integer) to the random number generator for reproducible results.
+            A seed (integer) to the random number generator for reproducible
+            results.
         num_trials : int, optional
             Number of outer-most loops to run before picking the best solution.
         core_loop_limit : int, optional
-            Limit the number of loops that tries to move each node into the best possible module.
+            Limit the number of loops that tries to move each node into the
+            best possible module.
         core_level_limit : int, optional
-            Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.
+            Limit the number of times the core loops are reapplied on existing
+            modular network to search bigger structures.
         tune_iteration_limit : int, optional
-            Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.
+            Limit the number of main iterations in the two-level partition
+            algorithm. 0 means no limit.
         core_loop_codelength_threshold : float, optional
-            Minimum codelength threshold for accepting a new solution in core loop.
+            Minimum codelength threshold for accepting a new solution in core
+            loop.
         tune_iteration_relative_threshold : float, optional
-            Set codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.
+            Set codelength improvement threshold of each new tune iteration to
+            ``f`` times the initial two-level codelength.
         fast_hierarchical_solution : int, optional
-            Find top modules fast. Use 2 to keep all fast levels. Use 3 to skip recursive part.
+            Find top modules fast. Use ``2`` to keep all fast levels.
+            Use ``3`` to skip recursive part.
         prefer_modular_solution : bool, optional
-            Prefer modular solutions even if they are worse than putting all nodes in one module.
+            Prefer modular solutions even if they are worse than putting all
+            nodes in one module.
         inner_parallelization : bool, optional
-            Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.
+            Parallelize the inner-most loop for greater speed.
+            This may give some accuracy tradeoff.
 
         See Also
         --------
@@ -1052,14 +1115,16 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         depth_level : int, optional
-            The level in the hierarchical tree. Set to 1 (default) to return the
-            top modules (coarsest level), set to 2 for second coarsest level etc.
-            Set to -1 to return the bottom level modules (finest level). Default ``1``.
+            The level in the hierarchical tree. Set to ``1`` (default) to
+            return the top modules (coarsest level). Set to ``2`` for second
+            coarsest level etc. Set to ``-1`` to return the bottom level
+            modules (finest level). Default ``1``.
         states : bool, optional
-            For higher-order networks, if ``states`` is True, it will iterate over state nodes,
-            otherwise it will iterate over physical nodes, merging state nodes with same
-            ``node_id`` if they are in the same module.
-            Note that the same physical node may end up on different paths in the tree.
+            For higher-order networks, if ``states`` is True, it will iterate
+            over state nodes. Otherwise it will iterate over physical nodes,
+            merging state nodes with same ``node_id`` if they are in the same
+            module. Note that the same physical node may end up on different
+            paths in the tree.
             See notes on ``physical_tree``. Default ``false``.
 
         Returns
@@ -1075,11 +1140,12 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         states : bool, optional
-            For higher-order networks, if ``states`` is True, it will iterate over state nodes,
-            otherwise it will iterate over physical nodes, merging state nodes with same
-            ``node_id`` if they are in the same module.
-            Note that the same physical node may end up on different paths in the tree.
-            See notes on ``physical_tree``.
+            For higher-order networks, if ``states`` is True, it will iterate
+            over state nodes. Otherwise it will iterate over physical nodes,
+            merging state nodes with same ``node_id`` if they are in the same
+            module. Note that the same physical node may end up on different
+            paths in the tree.
+            See notes on ``physical_tree``. Default ``false``.
 
         Returns
         -------
@@ -1095,8 +1161,8 @@ class Infomap(InfomapWrapper):
 
         Notes
         -----
-        In a higher-order network, a physical node (defined by node_id)
-        may partially exist in multiple modules. However, the node_id
+        In a higher-order network, a physical node (defined by ``node_id``)
+        may partially exist in multiple modules. However, the ``node_id``
         can not exist multiple times as a key in the node-to-module map,
         so only one occurrence of a physical node will be retrieved.
         To get all states, use ``get_modules(states=True)``.
@@ -1149,7 +1215,7 @@ class Infomap(InfomapWrapper):
         Yields
         -------
         tuple of int, int
-            An iterator of node_id, module_id pairs.
+            An iterator of ``(node_id, module_id)`` pairs.
         """
         return self.get_modules(depth_level=1, states=False).items()
 
@@ -1159,24 +1225,27 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         depth_level : int, optional
-            The module level returned by ``iterator.module_id``. Set to 1 (default) to
-            return the top modules (coarsest level), set to 2 for second coarsest level
-            etc. Set to -1 to return the bottom level modules (finest level).
+            The module level returned by ``iterator.module_id``. Set to ``1``
+            (default) to return the top modules (coarsest level). Set to ``2``
+            for second coarsest level etc. Set to ``-1`` to return the bottom
+            level modules (finest level).
         states : bool, optional
-            For higher-order networks, if ``states`` is True, it will iterate over state nodes,
-            otherwise it will iterate over physical nodes, merging state nodes with same
-            ``node_id`` if they are in the same module.
-            Note that the same physical node may end up on different paths in the tree.
-            See notes on ``physical_tree``.
+            For higher-order networks, if ``states`` is True, it will iterate
+            over state nodes. Otherwise it will iterate over physical nodes,
+            merging state nodes with same ``node_id`` if they are in the same
+            module. Note that the same physical node may end up on different
+            paths in the tree.
+            See notes on ``physical_tree``. Default ``false``.
 
         Notes
         ----
-        For higher-order networks, each node is represented by a set of state nodes
-        with the same ``node_id``, where each state node represents a different memory
-        constraining the random walker. This enables overlapping modules, where
-        state nodes with the same ``node_id`` end up in different modules. However,
-        the state nodes with the same ``node_id`` within each module are only visible
-        as one (partial) physical node (if ``states = False``).
+        For higher-order networks, each node is represented by a set of state
+        nodes with the same ``node_id``, where each state node represents a
+        different memory constraining the random walker. This enables
+        overlapping modules, where state nodes with the same ``node_id`` end up
+        in different modules. However, the state nodes with the same
+        ``node_id`` within each module are only visible as one (partial)
+        physical node (if ``states = False``).
 
         Returns
         -------
@@ -1193,24 +1262,27 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         depth_level : int, optional
-            The module level returned by ``iterator.module_id``. Set to 1 (default) to
-            return the top modules (coarsest level), set to 2 for second coarsest level
-            etc. Set to -1 to return the bottom level modules (finest level). Default ``1``.
+            The module level returned by ``iterator.module_id``. Set to ``1``
+            (default) to return the top modules (coarsest level). Set to ``2``
+            for second coarsest level etc. Set to ``-1`` to return the bottom
+            level modules (finest level). Default ``1``.
         states : bool, optional
-            For higher-order networks, if ``states`` is True, it will iterate over state nodes,
-            otherwise it will iterate over physical nodes, merging state nodes with same
-            ``node_id`` if they are in the same module.
-            Note that the same physical node may end up on different paths in the tree.
+            For higher-order networks, if ``states`` is True, it will iterate
+            over state nodes. Otherwise it will iterate over physical nodes,
+            merging state nodes with same ``node_id`` if they are in the same
+            module. Note that the same physical node may end up on different
+            paths in the tree.
             See notes on ``physical_tree``. Default ``false``.
 
         Notes
         -----
-        For higher-order networks, each node is represented by a set of state nodes
-        with the same ``node_id``, where each state node represents a different memory
-        constraining the random walker. This enables overlapping modules, where
-        state nodes with the same ``node_id`` end up in different modules. However,
-        the state nodes with the same ``node_id`` within each module are only visible
-        as one (partial) physical node (if ``states = False``).
+        For higher-order networks, each node is represented by a set of state
+        nodes with the same ``node_id``, where each state node represents a
+        different memory constraining the random walker. This enables
+        overlapping modules, where state nodes with the same ``node_id`` end up
+        in different modules. However, the state nodes with the same
+        ``node_id`` within each module are only visible as one (partial)
+        physical node (if ``states = False``).
 
         Returns
         -------
@@ -1250,7 +1322,8 @@ class Infomap(InfomapWrapper):
         Returns
         -------
         InfomapIteratorPhysical
-            An iterator over each physical node in the tree, depth first from the root
+            An iterator over each physical node in the tree, depth first from
+            the root
         """
         return self.get_tree(depth_level=1, states=False)
 
@@ -1266,7 +1339,8 @@ class Infomap(InfomapWrapper):
         Returns
         -------
         InfomapLeafModuleIterator
-            An iterator over each leaf module in the tree, depth first from the root
+            An iterator over each leaf module in the tree, depth first from the
+            root
         """
         return super().iterLeafModules()
 
@@ -1282,7 +1356,8 @@ class Infomap(InfomapWrapper):
         Returns
         -------
         InfomapLeafIterator
-            An iterator over each leaf node in the tree, depth first from the root
+            An iterator over each leaf node in the tree, depth first from the
+            root
         """
         return self.get_nodes(depth_level=1, states=True)
 
@@ -1298,13 +1373,15 @@ class Infomap(InfomapWrapper):
         Returns
         -------
         InfomapLeafIteratorPhysical
-            An iterator over each physical leaf node in the tree, depth first from the root
+            An iterator over each physical leaf node in the tree, depth first
+            from the root
         """
         return self.get_nodes(depth_level=1, states=False)
 
     @property
     def num_nodes(self):
-        """The number of state nodes if we have a higher order network, or the number of physical nodes.
+        """The number of state nodes if we have a higher order network, or the
+        number of physical nodes.
 
         See Also
         --------
@@ -1373,7 +1450,8 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         data : str
-            The kind of data to return, one of "weight" or "flow", default "weight".
+            The kind of data to return, one of ``"weight"`` or ``"flow"``.
+            Default ``"weight"``.
 
         Returns
         -------
@@ -1675,7 +1753,7 @@ class Infomap(InfomapWrapper):
         ----------
         filename : str
         states : bool, optional
-            If the state nodes should be included (default False).
+            If the state nodes should be included. Default ``False``.
         depth_level : int, optional
             The depth in the hierarchical tree to write.
         """
@@ -1693,7 +1771,7 @@ class Infomap(InfomapWrapper):
         ----------
         filename : str
         states : bool, optional
-            If the state nodes should be included (default False).
+            If the state nodes should be included. Default ``False``.
         """
         return self.writeTree(filename, states)
 
@@ -1709,7 +1787,7 @@ class Infomap(InfomapWrapper):
         ----------
         filename : str
         states : bool, optional
-            If the state nodes should be included (default False).
+            If the state nodes should be included. Default ``False``.
         """
         return self.writeFlowTree(filename, states)
 
@@ -1725,7 +1803,7 @@ class Infomap(InfomapWrapper):
         ----------
         filename : str
         states : bool, optional
-            If the state nodes should be included (default False).
+            If the state nodes should be included. Default ``False``.
         """
         return self.writeNewickTree(filename, states)
 
@@ -1741,7 +1819,7 @@ class Infomap(InfomapWrapper):
         ----------
         filename : str
         states : bool, optional
-            If the state nodes should be included (default False).
+            If the state nodes should be included. Default ``False``.
         """
         return self.writeJsonTree(filename, states)
 
@@ -1757,7 +1835,7 @@ class Infomap(InfomapWrapper):
         ----------
         filename : str
         states : bool, optional
-            If the state nodes should be included (default False).
+            If the state nodes should be included. Default ``False``.
         """
         return self.writeCsvTree(filename, states)
 
@@ -1769,9 +1847,10 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         depth_level : int, optional
-            The module level returned by ``iterator.depth``. Set to 1 (default) to
-            return the top modules (coarsest level), set to 2 for second coarsest level
-            etc. Set to -1 to return the bottom level modules (finest level).
+            The module level returned by ``iterator.depth``.
+            Set to ``1`` (default) to return the top modules (coarsest level).
+            Set to ``2`` for second coarsest level etc. Set to ``-1`` to return
+            the bottom level modules (finest level).
 
         Returns
         -------
