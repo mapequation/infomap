@@ -10,6 +10,13 @@ except ImportError:
     def log2(p):
         return log(p, 2.0)
 
+if __name__ != "__main__":
+    try:
+        import pandas
+    except ImportError:
+        pandas = None
+
+
 MultilayerNode = namedtuple("MultilayerNode", "layer_id, node_id")
 
 
@@ -1408,6 +1415,68 @@ class Infomap(InfomapWrapper):
             The number of nodes
         """
         return self.network.numPhysicalNodes()
+
+    def get_dataframe(self, columns=["path", "flow", "name", "node_id"]):
+        """Get a Pandas DataFrame with the selected columns.
+
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap(silent=True)
+        >>> im.read_file("twotriangles.net")
+        >>> im.run()
+        >>> im.get_dataframe()
+             path      flow name  node_id
+        0  (1, 1)  0.214286    C        3
+        1  (1, 2)  0.142857    A        1
+        2  (1, 3)  0.142857    B        2
+        3  (2, 1)  0.214286    D        4
+        4  (2, 2)  0.142857    E        5
+        5  (2, 3)  0.142857    F        6
+        >>> im.get_dataframe(columns=["node_id", "module_id"])
+           node_id  module_id
+        0        3          1
+        1        1          1
+        2        2          1
+        3        4          2
+        4        5          2
+        5        6          2
+
+
+        See Also
+        --------
+        InfoNode
+
+        Parameters
+        ---------
+        columns : list(str)
+            A list of columns that should be extracted from each node.
+            Must be available as an attribute of ``InfoNode``, with the
+            exception of ``"name"`` which is looked up internally.
+            Default ``["path", "flow", "name", "node_id"]``.
+
+        Raises
+        ------
+        ImportError
+            If the pandas package is not available.
+        AttributeError
+            If a column name is not available as an ``InfoNode`` attribute.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A DataFrame containing the selected columns.
+        """
+        if pandas is None:
+            raise ImportError("Cannot import package 'pandas'")
+
+        return pandas.DataFrame([[getattr(node, attr) if attr != "name"
+                                  else self.get_name(node.node_id,
+                                                     default=node.node_id)
+                                  for attr in columns]
+                                 for node in self.nodes],
+                                columns=columns)
 
     def get_links(self, data="weight"):
         """A view of the currently assigned links and their weights or flow.
