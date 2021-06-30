@@ -853,10 +853,7 @@ class Infomap(InfomapWrapper):
         dict
             Dict with the node ids as keys and labels as values.
         """
-        first = None
-        for node in g.nodes:
-            first = node
-            break
+        first = next(iter(g.nodes), None)
 
         if first is None:
             return dict()
@@ -874,7 +871,8 @@ class Infomap(InfomapWrapper):
 
         for source, target, data in g.edges(data=True):
             u, v = node_map[source], node_map[target]
-            self.add_link(u, v, data[weight] if weight is not None and weight in data else 1.0)
+            w = data[weight] if weight is not None and weight in data else 1.0
+            self.add_link(u, v, w)
 
         return {node: label for label, node in node_map.items()}
 
