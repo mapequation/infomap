@@ -404,6 +404,10 @@ class Infomap(InfomapWrapper):
         """
         super().__init__(_construct_args(args, **kwargs))
 
+    # ----------------------------------------
+    # Input
+    # ----------------------------------------
+
     def read_file(self, filename, accumulate=True):
         """Read network data from file.
 
@@ -483,117 +487,6 @@ class Infomap(InfomapWrapper):
             else:
                 self.add_node(*node)
 
-    def set_name(self, node_id, name):
-        """Set the name of a node.
-
-        Parameters
-        ----------
-        node_id : int
-        name : str
-        """
-        if name is None:
-            name = ""
-        return super().addName(node_id, name)
-
-    def set_names(self, names):
-        """Set names to several nodes at once.
-
-        Examples
-        --------
-
-        >>> from infomap import Infomap
-        >>> im = Infomap()
-        >>> names = (
-        ...     (1, "Node 1"),
-        ...     (2, "Node 2")
-        ... )
-        >>> im.set_names(names)
-
-
-        See Also
-        --------
-        set_name
-
-        Parameters
-        ----------
-        names : iterable of tuples
-            Iterable of tuples on the form ``(node_id, name)``.
-        """
-        for name in names:
-            self.set_name(*name)
-
-    def get_name(self, node_id, default=None):
-        """Get the name of a node.
-
-        Notes
-        -----
-        If the node name is an empty string,
-        the ``default`` will be returned.
-
-        See Also
-        --------
-        set_name
-        names
-
-        Parameters
-        ----------
-        node_id : int
-        default : str, optional
-            The return value if the node name is missing, default ``None``
-
-        Returns
-        -------
-        str
-            The node name if it exists, else the ``default``.
-        """
-        name = super().getName(node_id)
-        if name == "":
-            return default
-        return name
-
-    def get_names(self):
-        """Get all node names.
-
-        See Also
-        --------
-        names
-        get_name
-
-        Returns
-        -------
-        dict of string
-            A dict with node ids as keys and node names as values.
-        """
-        return super().getNames()
-
-    @property
-    def names(self):
-        """Get all node names.
-
-        Short-hand for ``get_names``.
-
-        See Also
-        --------
-        get_names
-        get_name
-
-        Returns
-        -------
-        dict of string
-            A dict with node ids as keys and node names as values.
-        """
-        return super().getNames()
-
-    def set_meta_data(self, node_id, meta_category):
-        """Set meta data to a node.
-
-        Parameters
-        ----------
-        node_id : int
-        meta_category : int
-        """
-        return self.network.addMetaData(node_id, meta_category)
-
     def add_state_node(self, state_id, node_id):
         """Add a state node.
 
@@ -637,6 +530,45 @@ class Infomap(InfomapWrapper):
         """
         for node in state_nodes:
             self.add_state_node(*node)
+
+    def set_name(self, node_id, name):
+        """Set the name of a node.
+
+        Parameters
+        ----------
+        node_id : int
+        name : str
+        """
+        if name is None:
+            name = ""
+        return super().addName(node_id, name)
+
+    def set_names(self, names):
+        """Set names to several nodes at once.
+
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> names = (
+        ...     (1, "Node 1"),
+        ...     (2, "Node 2")
+        ... )
+        >>> im.set_names(names)
+
+
+        See Also
+        --------
+        set_name
+
+        Parameters
+        ----------
+        names : iterable of tuples
+            Iterable of tuples on the form ``(node_id, name)``.
+        """
+        for name in names:
+            self.set_name(*name)
 
     def add_link(self, source_id, target_id, weight=1.0):
         """Add a link.
@@ -813,6 +745,16 @@ class Infomap(InfomapWrapper):
     def remove_multilayer_link(self):
         raise NotImplementedError
 
+    def set_meta_data(self, node_id, meta_category):
+        """Set meta data to a node.
+
+        Parameters
+        ----------
+        node_id : int
+        meta_category : int
+        """
+        return self.network.addMetaData(node_id, meta_category)
+
     def add_networkx_graph(self, g, weight="weight"):
         """Add NetworkX graph
 
@@ -875,6 +817,10 @@ class Infomap(InfomapWrapper):
             self.add_link(u, v, w)
 
         return {node: label for label, node in node_map.items()}
+
+    # ----------------------------------------
+    # Run
+    # ----------------------------------------
 
     @property
     def bipartite_start_id(self):
@@ -1113,6 +1059,10 @@ class Infomap(InfomapWrapper):
                 return super().run(args)
 
         return super().run(args)
+
+    # ----------------------------------------
+    # Iterators/Output
+    # ----------------------------------------
 
     def get_modules(self, depth_level=1, states=False):
         """Get the modules for a given depth in the hierarchical tree.
@@ -1383,37 +1333,6 @@ class Infomap(InfomapWrapper):
         """
         return self.get_nodes(depth_level=1, states=False)
 
-    @property
-    def num_nodes(self):
-        """The number of state nodes if we have a higher order network, or the
-        number of physical nodes.
-
-        See Also
-        --------
-        num_physical_nodes
-
-        Returns
-        -------
-        int
-            The number of nodes
-        """
-        return self.network.numNodes()
-
-    @property
-    def num_physical_nodes(self):
-        """The number of physical nodes.
-
-        See Also
-        --------
-        num_nodes
-
-        Returns
-        -------
-        int
-            The number of nodes
-        """
-        return self.network.numPhysicalNodes()
-
     def get_dataframe(self, columns=["path", "flow", "name", "node_id"]):
         """Get a Pandas DataFrame with the selected columns.
 
@@ -1475,6 +1394,68 @@ class Infomap(InfomapWrapper):
                                   for attr in columns]
                                  for node in self.nodes],
                                 columns=columns)
+
+    def get_name(self, node_id, default=None):
+        """Get the name of a node.
+
+        Notes
+        -----
+        If the node name is an empty string,
+        the ``default`` will be returned.
+
+        See Also
+        --------
+        set_name
+        names
+
+        Parameters
+        ----------
+        node_id : int
+        default : str, optional
+            The return value if the node name is missing, default ``None``
+
+        Returns
+        -------
+        str
+            The node name if it exists, else the ``default``.
+        """
+        name = super().getName(node_id)
+        if name == "":
+            return default
+        return name
+
+    def get_names(self):
+        """Get all node names.
+
+        See Also
+        --------
+        names
+        get_name
+
+        Returns
+        -------
+        dict of string
+            A dict with node ids as keys and node names as values.
+        """
+        return super().getNames()
+
+    @property
+    def names(self):
+        """Get all node names.
+
+        Short-hand for ``get_names``.
+
+        See Also
+        --------
+        get_names
+        get_name
+
+        Returns
+        -------
+        dict of string
+            A dict with node ids as keys and node names as values.
+        """
+        return super().getNames()
 
     def get_links(self, data="weight"):
         """A view of the currently assigned links and their weights or flow.
@@ -1604,6 +1585,31 @@ class Infomap(InfomapWrapper):
         return self.get_links(data="flow")
 
     @property
+    def network(self):
+        """Get the internal network."""
+        return super().network()
+
+    # ----------------------------------------
+    # num_* getters
+    # ----------------------------------------
+
+    @property
+    def num_nodes(self):
+        """The number of state nodes if we have a higher order network, or the
+        number of physical nodes.
+
+        See Also
+        --------
+        num_physical_nodes
+
+        Returns
+        -------
+        int
+            The number of nodes
+        """
+        return self.network.numNodes()
+
+    @property
     def num_links(self):
         """The number of links.
 
@@ -1613,6 +1619,21 @@ class Infomap(InfomapWrapper):
             The number of links
         """
         return self.network.numLinks()
+
+    @property
+    def num_physical_nodes(self):
+        """The number of physical nodes.
+
+        See Also
+        --------
+        num_nodes
+
+        Returns
+        -------
+        int
+            The number of nodes
+        """
+        return self.network.numPhysicalNodes()
 
     @property
     def num_top_modules(self):
@@ -1652,6 +1673,53 @@ class Infomap(InfomapWrapper):
             num_leaf_modules += 1
         return num_leaf_modules
 
+    def get_effective_num_modules(self, depth_level=1):
+        """The flow weighted effective number of modules.
+
+        Measured as the perplexity of the module flow distribution.
+
+        Parameters
+        ----------
+        depth_level : int, optional
+            The module level returned by ``iterator.depth``.
+            Set to ``1`` (default) to return the top modules (coarsest level).
+            Set to ``2`` for second coarsest level etc. Set to ``-1`` to return
+            the bottom level modules (finest level).
+
+        Returns
+        -------
+        float
+            The effective number of modules
+        """
+        return perplexity([module.flow for module in self.get_tree(
+            depth_level) if depth_level == -1 and module.is_leaf_module or module.depth == depth_level])
+
+    @property
+    def effective_num_top_modules(self):
+        """The flow weighted effective number of top modules.
+
+        Measured as the perplexity of the module flow distribution.
+
+        Returns
+        -------
+        float
+            The effective number of top modules
+        """
+        return self.get_effective_num_modules(depth_level=1)
+
+    @property
+    def effective_num_leaf_modules(self):
+        """The flow weighted effective number of leaf modules.
+
+        Measured as the perplexity of the module flow distribution.
+
+        Returns
+        -------
+        float
+            The effective number of top modules
+        """
+        return self.get_effective_num_modules(depth_level=-1)
+
     @property
     def max_depth(self):
         """Get the max depth of the hierarchical tree.
@@ -1662,6 +1730,10 @@ class Infomap(InfomapWrapper):
             The max depth
         """
         return super().maxTreeDepth()
+
+    # ----------------------------------------
+    # Codelength
+    # ----------------------------------------
 
     @property
     def codelength(self):
@@ -1803,10 +1875,9 @@ class Infomap(InfomapWrapper):
         """
         return super().getMetaCodelength(True)
 
-    @property
-    def network(self):
-        """Get the internal network."""
-        return super().network()
+    # ----------------------------------------
+    # Write Results
+    # ----------------------------------------
 
     def write_clu(self, filename, states=False, depth_level=1):
         """Write result to a clu file.
@@ -1905,53 +1976,6 @@ class Infomap(InfomapWrapper):
             If the state nodes should be included. Default ``False``.
         """
         return self.writeCsvTree(filename, states)
-
-    def get_effective_num_modules(self, depth_level=1):
-        """The flow weighted effective number of modules.
-
-        Measured as the perplexity of the module flow distribution.
-
-        Parameters
-        ----------
-        depth_level : int, optional
-            The module level returned by ``iterator.depth``.
-            Set to ``1`` (default) to return the top modules (coarsest level).
-            Set to ``2`` for second coarsest level etc. Set to ``-1`` to return
-            the bottom level modules (finest level).
-
-        Returns
-        -------
-        float
-            The effective number of modules
-        """
-        return perplexity([module.flow for module in self.get_tree(
-            depth_level) if depth_level == -1 and module.is_leaf_module or module.depth == depth_level])
-
-    @property
-    def effective_num_top_modules(self):
-        """The flow weighted effective number of top modules.
-
-        Measured as the perplexity of the module flow distribution.
-
-        Returns
-        -------
-        float
-            The effective number of top modules
-        """
-        return self.get_effective_num_modules(depth_level=1)
-
-    @property
-    def effective_num_leaf_modules(self):
-        """The flow weighted effective number of leaf modules.
-
-        Measured as the perplexity of the module flow distribution.
-
-        Returns
-        -------
-        float
-            The effective number of top modules
-        """
-        return self.get_effective_num_modules(depth_level=-1)
 
 
 def main():
