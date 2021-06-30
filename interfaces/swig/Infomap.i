@@ -39,6 +39,9 @@ namespace std {
         def getModules(self, level=1, states=False):
             return dict(_infomap.InfomapWrapper_getModules(self, level, states))
 
+        def getMultilevelModules(self, states=False):
+            return dict(_infomap.InfomapWrapper_getMultilevelModules(self, states))
+
         def getNames(self):
             return dict(_infomap.InfomapWrapper_getNames(self))
 
