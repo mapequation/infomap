@@ -1,5 +1,6 @@
 from collections import namedtuple
 from contextlib import contextmanager
+import os
 
 try:
     from math import log2
@@ -1879,6 +1880,29 @@ class Infomap(InfomapWrapper):
     # Write Results
     # ----------------------------------------
 
+    def write(self, filename, *args, **kwargs):
+        """Write results to file.
+
+        Raises
+        ------
+        NotImplementedError
+            If the file format is not supported.
+
+        Parameters
+        ----------
+        filename : str
+            The filename.
+        """
+        _, ext = os.path.splitext(filename)
+
+        # remove the dot
+        writer = "write_{}".format(ext[1:])
+
+        if hasattr(self, writer):
+            return getattr(self, writer)(filename, *args, **kwargs)
+
+        raise NotImplementedError("No method found for writing {} files".format(ext))
+
     def write_clu(self, filename, states=False, depth_level=1):
         """Write result to a clu file.
 
@@ -1976,6 +2000,10 @@ class Infomap(InfomapWrapper):
             If the state nodes should be included. Default ``False``.
         """
         return self.writeCsvTree(filename, states)
+
+    # for the method "write"
+    write_ftree = write_flow_tree
+    write_nwk = write_newick
 
 
 def main():
