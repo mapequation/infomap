@@ -2001,9 +2001,38 @@ class Infomap(InfomapWrapper):
         """
         return self.writeCsvTree(filename, states)
 
+    def write_state_network(self, filename):
+        """Write internal state network to file.
+
+        See Also
+        --------
+        write_pajek
+
+        Parameters
+        ----------
+        filename : str
+        """
+        return self.network.writeStateNetwork(filename)
+
+    def write_pajek(self, filename, flow=False):
+        """Write network to a Pajek file.
+
+        See Also
+        --------
+        write_state_network
+
+        Parameters
+        ----------
+        filename : str
+        flow : bool, optional
+            If the flow should be included. Default ``False``.
+        """
+        return self.network.writePajekNetwork(filename, flow)
+
     # for the method "write"
     write_ftree = write_flow_tree
     write_nwk = write_newick
+    write_net = write_pajek
 
 
 def main():
