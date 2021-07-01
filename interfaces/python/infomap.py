@@ -1896,7 +1896,16 @@ class Infomap(InfomapWrapper):
         _, ext = os.path.splitext(filename)
 
         # remove the dot
-        writer = "write_{}".format(ext[1:])
+        ext = ext[1:]
+
+        if ext == "ftree":
+            ext = "flow_tree"
+        elif ext == "nwk":
+            ext = "newick"
+        elif ext == "net":
+            ext = "pajek"
+
+        writer = "write_{}".format(ext)
 
         if hasattr(self, writer):
             return getattr(self, writer)(filename, *args, **kwargs)
@@ -2028,11 +2037,6 @@ class Infomap(InfomapWrapper):
             If the flow should be included. Default ``False``.
         """
         return self.network.writePajekNetwork(filename, flow)
-
-    # for the method "write"
-    write_ftree = write_flow_tree
-    write_nwk = write_newick
-    write_net = write_pajek
 
 
 def main():
