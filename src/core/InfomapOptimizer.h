@@ -304,25 +304,25 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
         newModuleDelta.deltaEnter += deltaEnterNew;
         newModuleDelta.deltaExit += deltaExitNew;
         
-        Log() << "\n----------\n";
-        Log() << "Node " << current.stateId << ", module " << oldM << " -> " << newM << "\n";
-        Log() << "  Old deltaEnter += " << (oldModuleDelta.deltaEnter - deltaEnterOld) << " + " << deltaEnterOld << " = " << oldModuleDelta.deltaEnter << "\n";
-        Log() << "  Old deltaExit += " << (oldModuleDelta.deltaExit - deltaExitOld) << " + " << deltaExitOld << " = " << oldModuleDelta.deltaExit << "\n";
-        Log() << "  New deltaEnter += " << (newModuleDelta.deltaEnter - deltaEnterNew) << " + " << deltaEnterNew << " = " << newModuleDelta.deltaEnter << "\n";
-        Log() << "  New deltaExit += " << (newModuleDelta.deltaExit - deltaExitNew) << " + " << deltaExitNew << " = " << newModuleDelta.deltaExit << "\n";
-        Log() << "  Old module data: " << m_moduleFlowData[oldM] << "\n";
-        Log() << "  New module data: " << m_moduleFlowData[newM] << "\n";
+        // Log() << "\n----------\n";
+        // Log() << "Node " << current.stateId << ", module " << oldM << " -> " << newM << "\n";
+        // Log() << "  Old deltaEnter += " << (oldModuleDelta.deltaEnter - deltaEnterOld) << " + " << deltaEnterOld << " = " << oldModuleDelta.deltaEnter << "\n";
+        // Log() << "  Old deltaExit += " << (oldModuleDelta.deltaExit - deltaExitOld) << " + " << deltaExitOld << " = " << oldModuleDelta.deltaExit << "\n";
+        // Log() << "  New deltaEnter += " << (newModuleDelta.deltaEnter - deltaEnterNew) << " + " << deltaEnterNew << " = " << newModuleDelta.deltaEnter << "\n";
+        // Log() << "  New deltaExit += " << (newModuleDelta.deltaExit - deltaExitNew) << " + " << deltaExitNew << " = " << newModuleDelta.deltaExit << "\n";
+        // Log() << "  Old module data: " << m_moduleFlowData[oldM] << "\n";
+        // Log() << "  New module data: " << m_moduleFlowData[newM] << "\n";
       }
-      else {
-        Log() << "\n----------\n";
-        Log() << "Node " << current.stateId << ", module " << oldM << " -> " << newM << "\n";
-        Log() << "  Old deltaEnter += " << oldModuleDelta.deltaEnter << "\n";
-        Log() << "  Old deltaExit += " << oldModuleDelta.deltaExit << "\n";
-        Log() << "  New deltaEnter += " << newModuleDelta.deltaEnter << "\n";
-        Log() << "  New deltaExit += " << newModuleDelta.deltaExit << "\n";
-        Log() << "  Old module data: " << m_moduleFlowData[oldM] << "\n";
-        Log() << "  New module data: " << m_moduleFlowData[newM] << "\n";
-      }
+      // else {
+      //   Log() << "\n----------\n";
+      //   Log() << "Node " << current.stateId << ", module " << oldM << " -> " << newM << "\n";
+      //   Log() << "  Old deltaEnter += " << oldModuleDelta.deltaEnter << "\n";
+      //   Log() << "  Old deltaExit += " << oldModuleDelta.deltaExit << "\n";
+      //   Log() << "  New deltaEnter += " << newModuleDelta.deltaEnter << "\n";
+      //   Log() << "  New deltaExit += " << newModuleDelta.deltaExit << "\n";
+      //   Log() << "  Old module data: " << m_moduleFlowData[oldM] << "\n";
+      //   Log() << "  New module data: " << m_moduleFlowData[newM] << "\n";
+      // }
 
 
       //Update empty module vector
@@ -337,8 +337,8 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
 
       m_moduleMembers[oldM] -= 1;
       m_moduleMembers[newM] += 1;
-      Log() << "  --> Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
-      Log() << "  --> New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
+      // Log() << "  --> Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
+      // Log() << "  --> New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
 
       current.index = newM;
       ++numMoved;
