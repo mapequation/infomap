@@ -760,8 +760,8 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     node.flow = nodeFlow[nodeIndex];
     node.weight = nodeTeleportWeights[nodeIndex];
     node.teleFlow = !nodeTeleportFlow.empty() ? nodeTeleportFlow[nodeIndex] : nodeFlow[nodeIndex] * (nodeOutDegree[nodeIndex] == 0 ? 1 : config.teleportationProbability);
-    node.enterFlow = node.flow;
-    node.exitFlow = node.flow;
+    node.enterFlow = node.flow - (config.includeSelfLinks ? node.teleFlow * node.weight : 0);
+    node.exitFlow = node.flow - (config.includeSelfLinks ? node.teleFlow * node.weight : 0);
     sumNodeFlow += node.flow;
     sumTeleFlow += node.teleFlow;
     Log() << "\nNode " << node.id << ": flow: " << node.flow << ", weight: " << node.weight << ", teleFlow: " << node.teleFlow << " (=> alpha: " << (node.teleFlow / node.flow) << ")";

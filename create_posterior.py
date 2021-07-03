@@ -6,6 +6,7 @@ input_path = sys.argv[1]
 output_path = sys.argv[2]
 prior_scaling = float(sys.argv[3]) if len(sys.argv) >= 4 else 1
 include_self_links = len(sys.argv) >= 5
+make_undirected_directed = False
 print(f"Generate Bayesian posterior network from input network '{input_path}' with prior scaling '{prior_scaling}'...")
 if include_self_links:
     print("Include self-links...")
@@ -18,10 +19,21 @@ except Exception as e:
   print("Try reading pajek...")
   G = nx.read_pajek(input_path)
 
-
 N = G.number_of_nodes()
 E = G.number_of_edges()
 print(f"Parsed network with {N} nodes and {E} edges...")
+
+if make_undirected_directed:
+    print(f"Make undirected network directed by duplicating links and add with opposite direction...")
+    G1 = nx.DiGraph()
+    for source, target, data in G.edges(data=True):
+        w = 1 if 'weight' not in data else data['weight']
+        node_i, node_j = int(source), int(target)
+        G1.add_edge(node_i, node_j, weight=w)
+        G1.add_edge(node_j, node_i, weight=w)
+    G = G1
+    E = G.number_of_edges()
+    print(f" -> {E} edges...")
 
 # read edgelist and create adjacency matrix
 A = np.zeros(N * N).reshape(N, N) # adjacency matrix

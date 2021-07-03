@@ -304,12 +304,24 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
         newModuleDelta.deltaEnter += deltaEnterNew;
         newModuleDelta.deltaExit += deltaExitNew;
         
-        // Log() << "\n----------\n";
-        // Log() << "Node " << current.stateId << ", module " << oldM << " -> " << newM << "\n";
-        // Log() << "  Old deltaEnter += " << deltaEnterOld << "\n";
-        // Log() << "  Old deltaExit += " << deltaExitOld << "\n";
-        // Log() << "  New deltaEnter += " << deltaEnterNew << "\n";
-        // Log() << "  New deltaExit += " << deltaExitNew << "\n";
+        Log() << "\n----------\n";
+        Log() << "Node " << current.stateId << ", module " << oldM << " -> " << newM << "\n";
+        Log() << "  Old deltaEnter += " << (oldModuleDelta.deltaEnter - deltaEnterOld) << " + " << deltaEnterOld << " = " << oldModuleDelta.deltaEnter << "\n";
+        Log() << "  Old deltaExit += " << (oldModuleDelta.deltaExit - deltaExitOld) << " + " << deltaExitOld << " = " << oldModuleDelta.deltaExit << "\n";
+        Log() << "  New deltaEnter += " << (newModuleDelta.deltaEnter - deltaEnterNew) << " + " << deltaEnterNew << " = " << newModuleDelta.deltaEnter << "\n";
+        Log() << "  New deltaExit += " << (newModuleDelta.deltaExit - deltaExitNew) << " + " << deltaExitNew << " = " << newModuleDelta.deltaExit << "\n";
+        Log() << "  Old module data: " << m_moduleFlowData[oldM] << "\n";
+        Log() << "  New module data: " << m_moduleFlowData[newM] << "\n";
+      }
+      else {
+        Log() << "\n----------\n";
+        Log() << "Node " << current.stateId << ", module " << oldM << " -> " << newM << "\n";
+        Log() << "  Old deltaEnter += " << oldModuleDelta.deltaEnter << "\n";
+        Log() << "  Old deltaExit += " << oldModuleDelta.deltaExit << "\n";
+        Log() << "  New deltaEnter += " << newModuleDelta.deltaEnter << "\n";
+        Log() << "  New deltaExit += " << newModuleDelta.deltaExit << "\n";
+        Log() << "  Old module data: " << m_moduleFlowData[oldM] << "\n";
+        Log() << "  New module data: " << m_moduleFlowData[newM] << "\n";
       }
 
 
@@ -325,6 +337,8 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
 
       m_moduleMembers[oldM] -= 1;
       m_moduleMembers[newM] += 1;
+      Log() << "  --> Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
+      Log() << "  --> New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
 
       current.index = newM;
       ++numMoved;
@@ -684,7 +698,6 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
           double deltaEnterNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
           // double deltaExitNew = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * newModuleFlowData.teleportWeight;
           double deltaExitNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
-          //TODO: Why is deltaEnterNew and deltaExitNew switched compared to moveToPredefinedModule? Why doesn't it matter?
 
           // deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaEnterNew, 0.0));
           // deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, deltaExitNew));

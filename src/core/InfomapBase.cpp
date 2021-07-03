@@ -1391,6 +1391,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
   if (recordedTeleportation) {
     // double alpha = teleportationProbability;
     // double beta = 1.0 - alpha;
+    Log() << "\n\nAggregating enter/exit flow for recorded teleportation, sum teleFlow: " << m_root.data.teleportFlow << "\n";
 
     for (auto& node : m_root.infomapTree()) {
       if (!node.isLeaf())
@@ -1399,7 +1400,12 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
         // node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
         // node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
 
-        // Log() << "\nNode on depth " << node.depth() << ", childDegree: " << node.childDegree() << ", isLeafModule: " << node.isLeafModule() << ", data: " << node.data;
+        double enterFlow = (m_root.data.teleportFlow - node.data.teleportFlow) * node.data.teleportWeight;
+        double exitFlow = node.data.teleportFlow * (1.0 - node.data.teleportWeight);
+        Log() << "  Node on depth " << node.depth() << ", childDegree: " << node.childDegree() << ", isLeafModule: " << node.isLeafModule() << ", data: " << node.data
+        << ", enterFlow += (" << (m_root.data.teleportFlow - node.data.teleportFlow)
+        << " * " << node.data.teleportWeight << " = " << enterFlow << " -> " << (node.data.enterFlow + enterFlow) << "), exitFlow += (" 
+        << node.data.teleportFlow << " * " << (1.0 - node.data.teleportWeight) << " = " << exitFlow << " -> " << (node.data.exitFlow + exitFlow) << ")\n";
 
         node.data.enterFlow += (m_root.data.teleportFlow - node.data.teleportFlow) * node.data.teleportWeight;
         node.data.exitFlow += node.data.teleportFlow * (1.0 - node.data.teleportWeight);
