@@ -2395,29 +2395,26 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
 
   if (mergePhysicalNodes) {
     for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
-      auto& node = *it;
-      if (node.isLeaf()) {
-        for (auto stateId : node.stateNodes) {
-          stateIdToParent[stateId] = node.parent;
-          stateIdToChildIndex[stateId] = node.childIndex();
+      if (it->isLeaf()) {
+        for (auto stateId : it->stateNodes) {
+          stateIdToParent[stateId] = it->parent;
+          stateIdToChildIndex[stateId] = it.childIndex();
         }
       } else {
         // Use stateId to store depth on modules to simplify link aggregation
-        node.stateId = node.depth();
-        node.index = node.childIndex();
+        it->stateId = it.depth();
+        it->index = it.childIndex();
       }
     }
   } else {
     for (auto it(iterTree()); !it.isEnd(); ++it) {
-      auto& node = *it;
-
-      if (node.isLeaf()) {
-        stateIdToParent[node.stateId] = node.parent;
-        stateIdToChildIndex[node.stateId] = node.childIndex();
+      if (it->isLeaf()) {
+        stateIdToParent[it->stateId] = it->parent;
+        stateIdToChildIndex[it->stateId] = it.childIndex();
       } else {
         // Use stateId to store depth on modules to simplify link aggregation
-        node.stateId = node.depth();
-        node.index = node.childIndex();
+        it->stateId = it.depth();
+        it->index = it.childIndex();
       }
     }
   }
