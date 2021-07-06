@@ -796,18 +796,17 @@ class Infomap(InfomapWrapper):
         dict
             Dict with the node ids as keys and labels as values.
         """
-        first = next(iter(g.nodes), None)
-
-        if first is None:
+        try:
+            first = next(iter(g.nodes))
+        except StopIteration:
             return dict()
 
-        is_int_id = isinstance(first, int)
-        is_string_id = isinstance(first, str)
-
-        if is_int_id:
+        if isinstance(first, int):
             node_map = {node: node for node in g.nodes}
         else:
             node_map = {label: node for node, label in enumerate(g.nodes)}
+
+        is_string_id = isinstance(first, str)
 
         for label, node in node_map.items():
             self.add_node(node, name=label if is_string_id else None)
