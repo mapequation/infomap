@@ -41,25 +41,19 @@ namespace infomap {
 
 std::map<unsigned int, unsigned int> InfomapWrapper::getModules(int level, bool states)
 {
-  // int maxDepth = maxTreeDepth();
-  // if (level >= maxDepth)
-  // 	throw InputDomainError(io::Str() << "Maximum module level is " << maxDepth - 1 << ".");
-  // if (level < -1)
-  // 	throw InputDomainError(io::Str() << "Minimum module level is -1, meaning finest module level starting from bottom of the tree.");
   std::map<unsigned int, unsigned int> modules;
   if (haveMemory() && !states) {
     for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
-      InfoNode& node = *it;
+      auto& node = *it;
       if (node.isLeaf()) {
         modules[node.physicalId] = it.moduleId();
       }
     }
   } else {
     for (auto it(iterTree(level)); !it.isEnd(); ++it) {
-      InfoNode& node = *it;
+      auto& node = *it;
       if (node.isLeaf()) {
-        auto nodeId = states ? node.stateId : node.physicalId;
-        modules[nodeId] = it.moduleId();
+        modules[states ? node.stateId : node.physicalId] = it.moduleId();
       }
     }
   }
@@ -74,14 +68,14 @@ std::map<unsigned int, std::vector<unsigned int>> InfomapWrapper::getMultilevelM
   for (unsigned int level = 1; level <= numModuleLevels; ++level) {
     if (haveMemory() && !states) {
       for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
-        InfoNode& node = *it;
+        auto& node = *it;
         if (node.isLeaf()) {
           modules[node.physicalId].push_back(it.moduleId());
         }
       }
     } else {
       for (auto it(iterTree(level)); !it.isEnd(); ++it) {
-        InfoNode& node = *it;
+        auto& node = *it;
         if (node.isLeaf()) {
           auto nodeId = states ? node.stateId : node.physicalId;
           modules[nodeId].push_back(it.moduleId());
