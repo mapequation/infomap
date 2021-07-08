@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.0](https://github.com/mapequation/infomap/compare/v1.5.1...v1.6.0) (2021-07-08)
+
+
+### Features
+
+* **python:** Add get_dataframe ([13066b3](https://github.com/mapequation/infomap/commit/13066b3300c921dcb18b46be2a633153ecf0ffa8))
+* **python:** Add write method ([fdb3ce1](https://github.com/mapequation/infomap/commit/fdb3ce13a96c77b46b064fcda5fdcaf0f0a3c753))
+* **python:** Add write_state_network and write_pajek ([da715a9](https://github.com/mapequation/infomap/commit/da715a9ccfc27b6dd2a079bd9f4e3ef6501a95a1))
+
+
+### Bug Fixes
+
+* Intra-module links missing from ftree output ([b347e24](https://github.com/mapequation/infomap/commit/b347e2491f343f2a541e6a3e4b7ac8837d0ae507))
+* **js:** Add type to files parameter ([269b426](https://github.com/mapequation/infomap/commit/269b426326e7eca02b53dcbddf3ae0925a4b5a23))
+* **js:** Output arguments should not be required to be an array ([a292318](https://github.com/mapequation/infomap/commit/a29231853e4d900e5f99dee962b1f44a20fc4e93))
+* **js:** Worker should accept extra files as objects ([524a0e7](https://github.com/mapequation/infomap/commit/524a0e7e80c2bef897dab85cd60473a3e06408c9))
+* **python:** get_multilevel_modules should return a dict ([f050fb5](https://github.com/mapequation/infomap/commit/f050fb568df4fb678e6c4689bef85cf18a6d93f2))
+
 ### [1.5.1](https://github.com/mapequation/infomap/compare/v1.5.0...v1.5.1) (2021-06-23)
 
 
