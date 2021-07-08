@@ -749,6 +749,30 @@ class Infomap(InfomapWrapper):
     def set_meta_data(self, node_id, meta_category):
         """Set meta data to a node.
 
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap(silent=True, num_trials=10)
+        >>> im.add_links((
+        ...     (1, 2), (1, 3), (2, 3),
+        ...     (3, 4),
+        ...     (4, 5), (4, 6), (5, 6)
+        ... ))
+        >>> im.set_meta_data(1, 0)
+        >>> im.set_meta_data(2, 0)
+        >>> im.set_meta_data(3, 1)
+        >>> im.set_meta_data(4, 1)
+        >>> im.set_meta_data(5, 0)
+        >>> im.set_meta_data(6, 0)
+        >>> im.run(meta_data_rate=0)
+        >>> im.num_top_modules
+        2
+        >>> im.run(meta_data_rate=2)
+        >>> im.num_top_modules
+        3
+
+
         Parameters
         ----------
         node_id : int
