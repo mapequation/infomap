@@ -15,7 +15,10 @@ import package_meta
 
 
 def get_compiler():
-    return os.environ.get('CXX', get_config_var('CXX')).split()[0]
+    cxx = os.environ.get('CXX', get_config_var('CXX'))
+    if cxx is None:
+        return "g++"  # need a better way to check this
+    return cxx.split()[0]
 
 
 def is_clang():
