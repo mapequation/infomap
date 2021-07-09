@@ -1091,6 +1091,17 @@ class Infomap(InfomapWrapper):
     def get_modules(self, depth_level=1, states=False):
         """Get the modules for a given depth in the hierarchical tree.
 
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap(silent=True)
+        >>> im.read_file("twotriangles.net")
+        >>> im.run()
+        >>> im.get_modules()
+        {1: 1, 2: 1, 3: 1, 4: 2, 5: 2, 6: 2}
+
+
         Parameters
         ----------
         depth_level : int, optional
