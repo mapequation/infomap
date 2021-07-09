@@ -1209,6 +1209,22 @@ class Infomap(InfomapWrapper):
         """
         return self.get_modules(depth_level=1, states=False).items()
 
+    @property
+    def multilevel_modules(self):
+        """A view of the multilevel modules, mapping
+        ``node_id`` to a tuple of ``module_id``.
+
+        See Also
+        --------
+        get_multilevel_modules
+
+        Yields
+        -------
+        tuple of (int, tuple of int)
+            An iterator of ``(node_id, (module_ids...)`` pairs.
+        """
+        return self.get_multilevel_modules().items()
+
     def get_tree(self, depth_level=1, states=False):
         """A view of the tree
 
