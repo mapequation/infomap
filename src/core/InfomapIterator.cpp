@@ -44,14 +44,6 @@ InfomapIterator& InfomapIterator::operator++()
             m_current = nullptr;
             return *this;
           }
-
-          if (m_moduleIndexLevel < 0) {
-            if (current->isLeafModule()) { // TODO: Generalize to -2 for second level to bottom
-              ++m_moduleIndex;
-            }
-          } else if (static_cast<unsigned int>(m_moduleIndexLevel) == m_depth) {
-            ++m_moduleIndex;
-          }
         } else { // null also if no children in first place
           m_current = nullptr;
           return *this;
@@ -60,6 +52,11 @@ InfomapIterator& InfomapIterator::operator++()
     }
 
     current = current->next;
+
+    if (!current->isLeaf() && (m_moduleIndex < 0 || static_cast<unsigned int>(m_moduleIndexLevel) >= m_depth)) {
+      ++m_moduleIndex;
+    }
+
     ++m_path.back();
   }
 
