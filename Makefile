@@ -53,11 +53,8 @@ noomp: Infomap
 debug: clean Infomap
 	@true
 
-format:
+format: js-format py-format
 	clang-format -i $(HEADERS) $(SOURCES)
-	autopep8 --in-place --recursive --jobs 8 --aggressive --aggressive --max-line-length 100 interfaces/python/*.py
-	prettier --write interfaces/js
-
 
 ##################################################
 # JavaScript through Emscripten
@@ -106,6 +103,8 @@ build/js/Infomap.js: $(SOURCES)
 js-clean:
 	$(RM) -r build/js interfaces/js/src/worker index.js *.d.ts README.md
 
+js-format:
+	prettier --write interfaces/js
 
 ##################################################
 # Static C++ library
@@ -235,6 +234,9 @@ PYPI_SDIST = $(shell find $(PYPI_DIR) -name "*.tar.gz" 2>/dev/null)
 
 py-clean:
 	$(RM) -r $(PY_BUILD_DIR)/dist
+
+py-format:
+	autopep8 --in-place --recursive --jobs 8 --aggressive --aggressive --max-line-length 100 interfaces/python/*.py
 
 pypi-dist: py-clean python
 	cd $(PY_BUILD_DIR) && python setup.py sdist bdist_wheel
