@@ -1101,6 +1101,13 @@ class Infomap(InfomapWrapper):
         >>> im.get_modules()
         {1: 1, 2: 1, 3: 1, 4: 2, 5: 2, 6: 2}
 
+        Notes
+        -----
+        In a higher-order network, a physical node (defined by ``node_id``)
+        may partially exist in multiple modules. However, the ``node_id``
+        can not exist multiple times as a key in the node-to-module map,
+        so only one occurrence of a physical node will be retrieved.
+        To get all states, use ``get_modules(states=True)``.
 
         Parameters
         ----------
@@ -1126,6 +1133,51 @@ class Infomap(InfomapWrapper):
 
     def get_multilevel_modules(self, states=False):
         """Get all the modules.
+
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap(silent=True)
+        >>> im.read_file("ninetriangles.net")
+        >>> im.run()
+        >>> for node, modules in im.get_multilevel_modules().items():
+        ...     print(node, modules)
+        1 (6, 8)
+        2 (6, 8)
+        3 (6, 8)
+        4 (2, 4)
+        5 (2, 4)
+        6 (2, 4)
+        7 (3, 5)
+        8 (3, 5)
+        9 (3, 5)
+        10 (4, 6)
+        11 (4, 6)
+        12 (4, 6)
+        13 (7, 9)
+        14 (7, 9)
+        15 (7, 9)
+        16 (5, 7)
+        17 (5, 7)
+        18 (5, 7)
+        19 (1, 1)
+        20 (1, 1)
+        21 (1, 1)
+        22 (1, 2)
+        23 (1, 2)
+        24 (1, 2)
+        25 (1, 3)
+        26 (1, 3)
+        27 (1, 3)
+
+        Notes
+        -----
+        In a higher-order network, a physical node (defined by ``node_id``)
+        may partially exist in multiple modules. However, the ``node_id``
+        can not exist multiple times as a key in the node-to-module map,
+        so only one occurrence of a physical node will be retrieved.
+        To get all states, use ``get_multilevel_modules(states=True)``.
 
         Parameters
         ----------
@@ -1213,6 +1265,14 @@ class Infomap(InfomapWrapper):
     def multilevel_modules(self):
         """A view of the multilevel modules, mapping
         ``node_id`` to a tuple of ``module_id``.
+
+        Notes
+        -----
+        In a higher-order network, a physical node (defined by ``node_id``)
+        may partially exist in multiple modules. However, the ``node_id``
+        can not exist multiple times as a key in the node-to-module map,
+        so only one occurrence of a physical node will be retrieved.
+        To get all states, use ``get_modules(states=True)``.
 
         See Also
         --------
