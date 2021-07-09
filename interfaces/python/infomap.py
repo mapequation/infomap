@@ -1127,6 +1127,52 @@ class Infomap(InfomapWrapper):
     def get_multilevel_modules(self, states=False):
         """Get all the modules.
 
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap(silent=True)
+        >>> im.read_file("ninetriangles.net")
+        >>> im.run()
+        >>> for node, modules in im.get_multilevel_modules().items():
+        ...     print(node, modules)
+        1 (6,)
+        2 (6,)
+        3 (6,)
+        4 (2,)
+        5 (2,)
+        6 (2,)
+        7 (3,)
+        8 (3,)
+        9 (3,)
+        10 (4,)
+        11 (4,)
+        12 (4,)
+        13 (7,)
+        14 (7,)
+        15 (7,)
+        16 (5,)
+        17 (5,)
+        18 (5,)
+        19 (1, 1)
+        20 (1, 1)
+        21 (1, 1)
+        22 (1, 2)
+        23 (1, 2)
+        24 (1, 2)
+        25 (1, 3)
+        26 (1, 3)
+        27 (1, 3)
+
+
+        Notes
+        -----
+        In a higher-order network, a physical node (defined by ``node_id``)
+        may partially exist in multiple modules. However, the ``node_id``
+        can not exist multiple times as a key in the node-to-module map,
+        so only one occurrence of a physical node will be retrieved.
+        To get all states, use ``get_multilevel_modules(states=True)``.
+
         Parameters
         ----------
         states : bool, optional
