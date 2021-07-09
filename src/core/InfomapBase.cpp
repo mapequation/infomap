@@ -15,6 +15,7 @@
 #include "../io/SafeFile.h"
 #include "../io/version.h"
 #include "../io/Network.h"
+#include "../io/Config.h"
 #include "../utils/Log.h"
 #include "../utils/infomath.h"
 #include "../utils/Date.h"

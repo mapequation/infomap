@@ -50,7 +50,7 @@ build/Infomap/%.o : src/%.cpp $(HEADERS) Makefile
 noomp: Infomap
 	@true
 
-debug: clean Infomap
+debug: Infomap
 	@true
 
 format: js-format py-format

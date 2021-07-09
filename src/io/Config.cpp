@@ -9,6 +9,12 @@
 
 namespace infomap {
 
+constexpr int FlowModel::undirected;
+constexpr int FlowModel::directed;
+constexpr int FlowModel::undirdir;
+constexpr int FlowModel::outdirdir;
+constexpr int FlowModel::rawdir;
+
 Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 {
   ProgramInterface api("Infomap",
