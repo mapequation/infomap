@@ -2567,7 +2567,8 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states)
             << "  \"numLevels\": " << maxTreeDepth() << ",\n"
             << "  \"numTopModules\": " << numTopModules() << ",\n"
             << "  \"codelength\": " << codelength() << ",\n"
-            << "  \"relativeCodelengthSavings\": " << getRelativeCodelengthSavings() << ",\n";
+            << "  \"relativeCodelengthSavings\": " << getRelativeCodelengthSavings() << ",\n"
+            << "  \"directed\": " << (isUndirectedFlow() ? "false" : "true") << ",\n";
 
   if (isBipartite()) {
     outStream << "  \"bipartiteStartId\": " << m_network.bipartiteStartId() << ",\n";

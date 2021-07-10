@@ -56,6 +56,7 @@ export interface Tree<NodeType = Required<Node>> {
   numLevels: number;
   numTopModules: number;
   relativeCodelengthSavings: number;
+  directed: boolean;
   bipartiteStartId?: number;
   nodes: NodeType[];
 }
