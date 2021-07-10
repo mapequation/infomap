@@ -497,6 +497,11 @@ protected:
   void writeJsonTree(std::ostream& outStream, bool states = false);
 
   /**
+   * Write tree links to output stream
+   */
+  void writeJsonTreeLinks(std::ostream& outStream, bool states = false);
+
+  /**
    * Write CSV tree to output stream
    * @param states, write state-level tree, else aggregate physical nodes within modules
    */

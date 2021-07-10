@@ -2242,6 +2242,8 @@ std::string InfomapBase::writeJsonTree(std::string filename, bool states)
 
   SafeOutFile outFile(outputFilename);
   writeJsonTree(outFile, states);
+  writeJsonTreeLinks(outFile, states);
+  outFile << "\n}\n";
 
   return outputFilename;
 }
@@ -2657,8 +2659,64 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states)
     }
   }
 
-  outStream << "\n  ]\n"; // tree
-  outStream << '}';
+  outStream << "\n  ]"; // tree
+  //outStream << "\n}";
+
+  outStream << std::setprecision(oldPrecision);
+}
+
+void InfomapBase::writeJsonTreeLinks(std::ostream& outStream, bool states)
+{
+  auto oldPrecision = outStream.precision();
+  outStream << std::setprecision(6);
+
+  auto moduleLinks = aggregateModuleLinks(states);
+
+  auto first = true;
+
+  outStream << ",\n  \"modules\": [\n";
+
+  // Use stateId to store depth on modules to optimize link aggregation
+  for (auto it(iterModules()); !it.isEnd(); ++it) {
+    const auto parentId = io::stringify(it.path(), ":");
+    const auto& module = *it;
+    const auto& links = moduleLinks[parentId];
+    const auto path = io::stringify(it.path(), ", ");
+
+
+    if (first) {
+      first = false;
+    } else {
+      outStream << ",\n";
+    }
+
+    outStream << "    {\n"
+              << "      \"path\": [" << (parentId.empty() ? "0" : path) << "], "
+              << "\"enterFlow\": " << module.data.enterFlow << ", "
+              << "\"exitFlow\": " << module.data.exitFlow << ", "
+              << "\"numEdges\": " << links.size() << ", "
+              << "\"numChildren\": " << module.infomapChildDegree() << ",\n"
+              << "      \"links\": [\n";
+
+    auto firstLink = true;
+
+    for (auto itLink : links) {
+      if (firstLink) {
+        firstLink = false;
+      } else {
+        outStream << ",\n";
+      }
+
+      unsigned int sourceId = itLink.first.first;
+      unsigned int targetId = itLink.first.second;
+      double flow = itLink.second;
+      outStream << "        { \"source\": " << sourceId << ", \"target\": " << targetId << ", \"flow\": " << flow << " }";
+    }
+    outStream << "\n      ]\n"
+              << "    }";
+  }
+
+  outStream << "\n  ]"; // links
 
   outStream << std::setprecision(oldPrecision);
 }
