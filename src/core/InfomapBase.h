@@ -502,6 +502,8 @@ protected:
    */
   void writeCsvTree(std::ostream& outStream, bool states = false);
 
+  std::map<std::string, std::map<std::pair<unsigned int, unsigned int>, double>> aggregateModuleLinks(bool states = false);
+
   InfoNode m_root;
   std::vector<InfoNode*> m_leafNodes;
   std::vector<InfoNode*> m_moduleNodes;

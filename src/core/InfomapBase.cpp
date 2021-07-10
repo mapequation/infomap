@@ -2381,10 +2381,8 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
   outStream << std::setprecision(oldPrecision);
 }
 
-void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
+std::map<std::string, std::map<std::pair<unsigned int, unsigned int>, double>> InfomapBase::aggregateModuleLinks(bool states)
 {
-  auto oldPrecision = outStream.precision();
-  outStream << std::setprecision(6);
   // Aggregate links between each module. Rest is aggregated as exit flow
 
   // Links on nodes within sub infomap instances doesn't have links outside the root
@@ -2476,6 +2474,16 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
       }
     }
   }
+
+  return moduleLinks;
+}
+
+void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
+{
+  auto oldPrecision = outStream.precision();
+  outStream << std::setprecision(6);
+
+  auto moduleLinks = aggregateModuleLinks(states);
 
   outStream << "*Links " << (isUndirectedFlow() ? "undirected" : "directed") << "\n";
   outStream << "#*Links path enterFlow exitFlow numEdges numChildren\n";
