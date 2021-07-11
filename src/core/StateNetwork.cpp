@@ -80,6 +80,7 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId)
 {
   auto& physNode = m_physNodes[physId];
   physNode.physId = physId;
+  m_sumNodeWeight += 1.0;
   return physNode;
 }
 
@@ -87,6 +88,7 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
 {
   auto& physNode = addPhysicalNode(physId);
   physNode.weight = weight;
+  m_sumNodeWeight += weight;
   return physNode;
 }
 
@@ -95,6 +97,7 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, const
   auto& physNode = addPhysicalNode(physId);
   // physNode.name = name;
   m_names[physId] = name;
+  m_sumNodeWeight += 1.0;
   return physNode;
 }
 
@@ -103,6 +106,7 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
   auto& physNode = addPhysicalNode(physId);
   physNode.weight = weight;
   // physNode.name = name;
+  m_sumNodeWeight += weight;
   m_names[physId] = name;
   return physNode;
 }

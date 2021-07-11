@@ -529,6 +529,8 @@ protected:
   double m_hierarchicalCodelength = 0.0;
   std::vector<double> m_codelengths;
 
+  double m_sumDanglingFlow = 0.0;
+
   Date m_startDate;
   Date m_endDate;
   Stopwatch m_elapsedTime = Stopwatch(false);

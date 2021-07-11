@@ -14,30 +14,50 @@ struct FlowData {
   FlowData(double flow = 0.0)
       : flow(flow),
         enterFlow(0.0),
-        exitFlow(0.0) {}
+        exitFlow(0.0),
+        teleportFlow(0.0),
+        teleportSourceFlow(0.0),
+        teleportWeight(0.0),
+        danglingFlow(0.0) {}
 
   FlowData(const FlowData& other)
       : flow(other.flow),
         enterFlow(other.enterFlow),
-        exitFlow(other.exitFlow) {}
+        exitFlow(other.exitFlow),
+        teleportFlow(other.teleportFlow),
+        teleportSourceFlow(other.teleportSourceFlow),
+        teleportWeight(other.teleportWeight),
+        danglingFlow(other.danglingFlow) {}
 
   FlowData& operator=(const FlowData& other)
   {
     flow = other.flow;
     enterFlow = other.enterFlow;
     exitFlow = other.exitFlow;
+    teleportFlow = other.teleportFlow;
+    teleportSourceFlow = other.teleportSourceFlow;
+    teleportWeight = other.teleportWeight;
+    danglingFlow = other.danglingFlow;
     return *this;
   }
 
   double flow;
   double enterFlow;
   double exitFlow;
+  double teleportFlow;
+  double teleportSourceFlow;
+  double teleportWeight;
+  double danglingFlow;
 
   FlowData& operator+=(const FlowData& other)
   {
     flow += other.flow;
     enterFlow += other.enterFlow;
     exitFlow += other.exitFlow;
+    teleportFlow += other.teleportFlow;
+    teleportSourceFlow += other.teleportSourceFlow;
+    teleportWeight += other.teleportWeight;
+    danglingFlow += other.danglingFlow;
     return *this;
   }
 
@@ -46,12 +66,19 @@ struct FlowData {
     flow -= other.flow;
     enterFlow -= other.enterFlow;
     exitFlow -= other.exitFlow;
+    teleportFlow -= other.teleportFlow;
+    teleportSourceFlow -= other.teleportSourceFlow;
+    teleportWeight -= other.teleportWeight;
+    danglingFlow -= other.danglingFlow;
     return *this;
   }
 
   friend std::ostream& operator<<(std::ostream& out, const FlowData& data)
   {
-    return out << "flow: " << data.flow << ", enter: " << data.enterFlow << ", exit: " << data.exitFlow;
+    // return out << "flow: " << data.flow << ", enter: " << data.enterFlow << ", exit: " << data.exitFlow;
+    return out << "flow: " << data.flow << ", enter: " << data.enterFlow <<
+				", exit: " << data.exitFlow << ", teleWeight: " << data.teleportWeight <<
+				", danglingFlow: " << data.danglingFlow << ", teleFlow: " << data.teleportFlow;
   }
 };
 

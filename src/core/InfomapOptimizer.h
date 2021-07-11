@@ -281,6 +281,49 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
           newModuleDelta.deltaEnter += edge.data.flow;
       }
 
+       // For recorded teleportation
+      if (m_infomap->recordedTeleportation) {
+        // double alpha = m_infomap->teleportationProbability;
+        // double beta = 1.0 - alpha;
+        
+        // addTeleportationDeltaFlowOnOldModuleIfMove(current, moduleDeltaExits[j]);
+        auto& oldModuleFlowData = m_moduleFlowData[oldM];
+        // double deltaEnterOld = (alpha*(oldModuleFlowData.teleportSourceFlow - current.data.teleportSourceFlow) + beta*(oldModuleFlowData.danglingFlow - current.data.danglingFlow)) * current.data.teleportWeight;
+        double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
+        // double deltaExitOld = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+        double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+        oldModuleDelta.deltaEnter += deltaEnterOld;
+        oldModuleDelta.deltaExit += deltaExitOld;
+
+        // addTeleportationDeltaFlowOnNewModuleIfMove(current, moduleDeltaExits[j]);
+        auto& newModuleFlowData = m_moduleFlowData[newM];
+        // double deltaEnterNew = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * newModuleFlowData.teleportWeight;
+        double deltaEnterNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
+        // double deltaExitNew = (alpha*newModuleFlowData.teleportSourceFlow +	beta*newModuleFlowData.danglingFlow) * current.data.teleportWeight;
+        double deltaExitNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
+        newModuleDelta.deltaEnter += deltaEnterNew;
+        newModuleDelta.deltaExit += deltaExitNew;
+        
+        // Log() << "\n----------\n";
+        // Log() << "Node " << current.stateId << ", module " << oldM << " -> " << newM << "\n";
+        // Log() << "  Old deltaEnter += " << (oldModuleDelta.deltaEnter - deltaEnterOld) << " + " << deltaEnterOld << " = " << oldModuleDelta.deltaEnter << "\n";
+        // Log() << "  Old deltaExit += " << (oldModuleDelta.deltaExit - deltaExitOld) << " + " << deltaExitOld << " = " << oldModuleDelta.deltaExit << "\n";
+        // Log() << "  New deltaEnter += " << (newModuleDelta.deltaEnter - deltaEnterNew) << " + " << deltaEnterNew << " = " << newModuleDelta.deltaEnter << "\n";
+        // Log() << "  New deltaExit += " << (newModuleDelta.deltaExit - deltaExitNew) << " + " << deltaExitNew << " = " << newModuleDelta.deltaExit << "\n";
+        // Log() << "  Old module data: " << m_moduleFlowData[oldM] << "\n";
+        // Log() << "  New module data: " << m_moduleFlowData[newM] << "\n";
+      }
+      // else {
+      //   Log() << "\n----------\n";
+      //   Log() << "Node " << current.stateId << ", module " << oldM << " -> " << newM << "\n";
+      //   Log() << "  Old deltaEnter += " << oldModuleDelta.deltaEnter << "\n";
+      //   Log() << "  Old deltaExit += " << oldModuleDelta.deltaExit << "\n";
+      //   Log() << "  New deltaEnter += " << newModuleDelta.deltaEnter << "\n";
+      //   Log() << "  New deltaExit += " << newModuleDelta.deltaExit << "\n";
+      //   Log() << "  Old module data: " << m_moduleFlowData[oldM] << "\n";
+      //   Log() << "  New module data: " << m_moduleFlowData[newM] << "\n";
+      // }
+
 
       //Update empty module vector
       if (m_moduleMembers[newM] == 0) {
@@ -294,6 +337,8 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
 
       m_moduleMembers[oldM] -= 1;
       m_moduleMembers[newM] += 1;
+      // Log() << "  --> Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
+      // Log() << "  --> New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
 
       current.index = newM;
       ++numMoved;
@@ -558,7 +603,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
   for (unsigned int i = 0; i < numNodes; ++i) {
     InfoNode& current = *network[nodeEnumeration[i]];
 
-    //		Log(5) << "Trying to move node " << current << " from module " << current.index << "...\n";
+    // Log(5) << "\nTrying to move node " << current << " from module " << current.index << "...\n";
 
     if (!current.dirty)
       continue;
@@ -590,6 +635,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
       InfoNode& neighbour = edge.target;
       // deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0);
       deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0));
+      // Log(5) << " -> " << neighbour.index << ", deltaExit: " << edge.data.flow << "\n";
     }
     // For all inlinks
     for (auto& e : current.inEdges()) {
@@ -598,13 +644,14 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
       // timer.start();
       // deltaFlow[neighbour.index] += DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow);
       deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow));
+      // Log(5) << " <- " << neighbour.index << ", deltaEnter: " << edge.data.flow << "\n";
       // t += timer.getElapsedTimeInMilliSec();
       // ++tCount;
     }
 
     // For not moving
     deltaFlow.add(current.index, DeltaFlowDataType(current.index, 0.0, 0.0));
-    DeltaFlowDataType oldModuleDelta = deltaFlow[current.index];
+    DeltaFlowDataType& oldModuleDelta = deltaFlow[current.index];
     oldModuleDelta.module = current.index; // Make sure index is correct if created new
     // ++oldModuleDelta.count;
     // oldModuleDelta += DeltaFlowDataType(current.index, 0.0, 0.0);
@@ -622,13 +669,56 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     unsigned int numModuleLinks = deltaFlow.size();
 
 
-    // Randomize link order for optimized search
-    if (numModuleLinks > 2) {
-      for (unsigned int j = 0; j < numModuleLinks - 2; ++j) {
-        unsigned int randPos = m_infomap->m_rand.randInt(j + 1, numModuleLinks - 1);
-        swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+
+    // For recorded teleportation
+    if (m_infomap->recordedTeleportation) {
+      // double alpha = m_infomap->teleportationProbability;
+      // double beta = 1.0 - alpha;
+      for (unsigned int j = 0; j < numModuleLinks; ++j)
+      {
+        auto& deltaEnterExit = moduleDeltaEnterExit[j];
+        auto moduleIndex = deltaEnterExit.module;
+        if (moduleIndex == current.index) {
+          // addTeleportationDeltaFlowOnOldModuleIfMove(current, moduleDeltaExits[j]);
+          auto& oldModuleFlowData = m_moduleFlowData[moduleIndex];
+          // double deltaEnterOld = (alpha*(oldModuleFlowData.teleportSourceFlow - current.data.teleportSourceFlow) + beta*(oldModuleFlowData.danglingFlow - current.data.danglingFlow)) * current.data.teleportWeight;
+          double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
+          // double deltaExitOld = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+          double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+          deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitOld, deltaEnterOld));
+          // deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaEnterOld, 0.0));
+          // deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, deltaExitOld));
+          // Log(5) << "OLD module " << moduleIndex << " deltaEnter: " << deltaEnterOld << ", deltaExit: " << deltaExitOld << "\n";
+          
+        }
+        else {
+          // addTeleportationDeltaFlowOnNewModuleIfMove(current, moduleDeltaExits[j]);
+          auto& newModuleFlowData = m_moduleFlowData[moduleIndex];
+          // double deltaEnterNew = (alpha*newModuleFlowData.teleportSourceFlow +	beta*newModuleFlowData.danglingFlow) * current.data.teleportWeight;
+          double deltaEnterNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
+          // double deltaExitNew = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * newModuleFlowData.teleportWeight;
+          double deltaExitNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
+
+          // deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaEnterNew, 0.0));
+          // deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, deltaExitNew));
+          deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitNew, deltaEnterNew));
+          // Log(5) << "NEW module " << moduleIndex << " deltaEnter: " << deltaEnterNew << ", deltaExit: " << deltaExitNew << "\n";
+        }
       }
     }
+
+
+    // Randomize link order for optimized search
+    // if (numModuleLinks > 2) {
+    //   for (unsigned int j = 0; j < numModuleLinks - 2; ++j) {
+    //     unsigned int randPos = m_infomap->m_rand.randInt(j + 1, numModuleLinks - 1);
+    //     // swap(moduleDeltaEnterExit[j], moduleDeltaEnterExit[randPos]);
+    //     deltaFlow.swapIndex(j, randPos); //TODO: Seg fault?
+    //   }
+    // }
+    std::vector<unsigned int> moduleEnumeration(numModuleLinks);
+    m_infomap->m_rand.getRandomizedIndexVector(moduleEnumeration);
+    // oldModuleDelta = deltaFlow[current.index];
 
     DeltaFlowDataType bestDeltaModule(oldModuleDelta);
     double bestDeltaCodelength = 0.0;
@@ -637,7 +727,8 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
     // Log(5) << "Move node " << current << " in module " << current.index << "...\n";
     // Find the move that minimizes the description length
-    for (unsigned int j = 0; j < numModuleLinks; ++j) {
+    for (unsigned int k = 0; k < numModuleLinks; ++k) {
+      auto j = moduleEnumeration[k];
       // if (moduleDeltaEnterExit[j].count == 0) {
       // 	continue;
       // }
@@ -682,6 +773,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
         m_emptyModules.push_back(current.index);
       }
 
+      // double oldCodelength = m_objective.getCodelength();
       // timer.start();
       m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
       // t += timer.getElapsedTimeInMilliSec();
@@ -690,9 +782,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
       m_moduleMembers[current.index] -= 1;
       m_moduleMembers[bestModuleIndex] += 1;
 
-      // double oldCodelength = m_objective.getCodelength();
-      // Log(5) << " --> Moved to module " << bestModuleIndex << " -> codelength: " << oldCodelength << " + " <<
-      // 		bestDeltaCodelength << " (" << (m_objective.getCodelength() - oldCodelength) << ") = " << m_objective << "\n";
+      // Log(5) << " --> Moved to module " << bestModuleIndex << " (" << m_moduleFlowData[bestModuleIndex] << ") " << " -> codelength: " << oldCodelength << " + " << bestDeltaCodelength << " (" << (m_objective.getCodelength() - oldCodelength) << ") = " << m_objective.getCodelength() << "\n";//m_objective << "\n";
 
       //			unsigned int oldModuleIndex = current.index;
       current.index = bestModuleIndex;

@@ -61,6 +61,7 @@ protected:
 
   void calcUndirectedFlow() noexcept;
   void calcDirectedFlow(const StateNetwork&, const Config&) noexcept;
+  void calcDirectedFlowWithBayesianPrior(const StateNetwork&, const Config&) noexcept;
   void calcDirectedBipartiteFlow(const StateNetwork&, const Config&) noexcept;
   void calcDirdirFlow(const Config&) noexcept;
   void calcRawdirFlow() noexcept;
@@ -78,7 +79,10 @@ protected:
 
   std::map<unsigned int, unsigned int> nodeIndexMap;
   std::vector<double> nodeFlow;
-  std::vector<double> nodeTeleportRates;
+  std::vector<double> nodeTeleportWeights;
+  std::vector<double> nodeTeleportFlow;
+  std::vector<double> enterFlow;
+  std::vector<double> exitFlow;
   std::vector<double> sumLinkOutWeight;
   std::vector<unsigned int> nodeOutDegree;
   std::vector<FlowLink> flowLinks;
