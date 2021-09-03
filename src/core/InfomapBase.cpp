@@ -22,6 +22,7 @@
 #include "../utils/Stopwatch.h"
 #include "../utils/exceptions.h"
 #include "../utils/FileURI.h"
+#include "../Infomap.h"
 
 #include <string>
 #include <vector>
@@ -2602,6 +2603,9 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, int module
   const auto shouldHideBipartiteNodes = isBipartite() && hideBipartiteNodes;
   const auto bipartiteStartId = shouldHideBipartiteNodes ? m_network.bipartiteStartId() : 0;
 
+  // Hack to re-use getMultilevelModules from Infomap.cpp
+  const auto multilevelModules = static_cast<InfomapWrapper*>(this)->getMultilevelModules(states);
+
   // don't append a comma after the last entry
   auto first = true;
 
@@ -2614,6 +2618,7 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, int module
         }
 
         const auto path = io::stringify(it.path(), ", ");
+        const auto modules = io::stringify(multilevelModules.at(node.physicalId), ", ");
 
         if (first) {
           first = false;
@@ -2623,6 +2628,7 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, int module
 
         outStream << "    { ";
         outStream << "\"path\": [" << path << "], ";
+        outStream << "\"modules\": [" << modules << "], ";
         outStream << "\"name\": \"" << nodeName(node) << "\", ";
         outStream << "\"flow\": " << node.data.flow << ", ";
         outStream << "\"id\": " << node.physicalId << " }";
@@ -2643,9 +2649,11 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, int module
         }
 
         const auto path = io::stringify(it.path(), ", ");
+        const auto modules = io::stringify(multilevelModules.at(node.physicalId), ", ");
 
         outStream << "    { ";
         outStream << "\"path\": [" << path << "], ";
+        outStream << "\"modules\": [" << modules << "], ";
         outStream << "\"name\": \"" << nodeName(node) << "\", ";
         outStream << "\"flow\": " << node.data.flow << ", ";
 

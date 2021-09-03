@@ -11,6 +11,7 @@ export type MetaClu = CluNode<"meta">[];
 
 export interface TreeNode {
   path: number[];
+  modules: number[];
   flow?: number;
   name?: string;
   id: number;
