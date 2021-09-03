@@ -499,7 +499,7 @@ protected:
   /**
    * Write tree links to output stream
    */
-  void writeJsonTreeLinks(std::ostream& outStream, bool states = false);
+  void writeJsonTreeLinks(std::ostream& outStream, bool states = false, bool writeLinks = true);
 
   /**
    * Write CSV tree to output stream

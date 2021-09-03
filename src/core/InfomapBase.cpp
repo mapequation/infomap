@@ -2665,7 +2665,7 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states)
   outStream << std::setprecision(oldPrecision);
 }
 
-void InfomapBase::writeJsonTreeLinks(std::ostream& outStream, bool states)
+void InfomapBase::writeJsonTreeLinks(std::ostream& outStream, bool states, bool writeLinks)
 {
   auto oldPrecision = outStream.precision();
   outStream << std::setprecision(6);
@@ -2695,28 +2695,34 @@ void InfomapBase::writeJsonTreeLinks(std::ostream& outStream, bool states)
               << "\"enterFlow\": " << module.data.enterFlow << ", "
               << "\"exitFlow\": " << module.data.exitFlow << ", "
               << "\"numEdges\": " << links.size() << ", "
-              << "\"numChildren\": " << module.infomapChildDegree() << ",\n"
-              << "      \"links\": [\n";
+              << "\"numChildren\": " << module.infomapChildDegree(); // << ",\n"
 
-    auto firstLink = true;
 
-    for (auto itLink : links) {
-      if (firstLink) {
-        firstLink = false;
-      } else {
-        outStream << ",\n";
+    if (writeLinks) {
+      outStream << ",\n"
+                << "      \"links\": [\n";
+
+      auto firstLink = true;
+
+      for (auto itLink : links) {
+        if (firstLink) {
+          firstLink = false;
+        } else {
+          outStream << ",\n";
+        }
+
+        unsigned int sourceId = itLink.first.first;
+        unsigned int targetId = itLink.first.second;
+        double flow = itLink.second;
+        outStream << "        { \"source\": " << sourceId << ", \"target\": " << targetId << ", \"flow\": " << flow << " }";
       }
-
-      unsigned int sourceId = itLink.first.first;
-      unsigned int targetId = itLink.first.second;
-      double flow = itLink.second;
-      outStream << "        { \"source\": " << sourceId << ", \"target\": " << targetId << ", \"flow\": " << flow << " }";
+      outStream << "\n      ]"; // links
     }
-    outStream << "\n      ]\n"
-              << "    }";
+
+    outStream << "\n    }";
   }
 
-  outStream << "\n  ]"; // links
+  outStream << "\n  ]"; // modules
 
   outStream << std::setprecision(oldPrecision);
 }

@@ -48,17 +48,17 @@ const changelog: Changelog[] = CHANGELOG;
 const parameters: (Parameter | RequiredParameter)[] = PARAMETERS;
 
 type Module = {
-  path: number[],
-  enterFlow: number,
-  exitFlow: number,
-  numEdges: number,
-  numChildren: number,
-  links: {
-    source: number,
-    target: number,
-    flow: number,
-  }[],
-}
+  path: number[];
+  enterFlow: number;
+  exitFlow: number;
+  numEdges: number;
+  numChildren: number;
+  links?: {
+    source: number;
+    target: number;
+    flow: number;
+  }[];
+};
 
 export interface Tree<NodeType = Required<Node>> {
   version: string;
