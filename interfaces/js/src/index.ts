@@ -49,7 +49,6 @@ const parameters: (Parameter | RequiredParameter)[] = PARAMETERS;
 
 type Module = {
   path: number[];
-  id: number;
   enterFlow: number;
   exitFlow: number;
   numEdges: number;
@@ -71,7 +70,6 @@ export interface Tree<NodeType = Required<Node>> {
   numTopModules: number;
   relativeCodelengthSavings: number;
   directed: boolean;
-  moduleLevel: number;
   bipartiteStartId?: number;
   nodes: NodeType[];
   modules: Module[];
