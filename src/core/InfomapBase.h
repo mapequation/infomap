@@ -434,7 +434,7 @@ public:
    */
   std::string writeNewickTree(std::string filename = "", bool states = false);
 
-  std::string writeJsonTree(std::string filename = "", bool states = false);
+  std::string writeJsonTree(std::string filename = "", bool states = false, bool writeLinks = false);
 
   std::string writeCsvTree(std::string filename = "", bool states = false);
 
@@ -494,7 +494,7 @@ protected:
    * Write JSON tree to output stream
    * @param states, write state-level tree, else aggregate physical nodes within modules
    */
-  void writeJsonTree(std::ostream& outStream, bool states = false);
+  void writeJsonTree(std::ostream& outStream, bool states = false, bool writeLinks = false);
 
   /**
    * Write CSV tree to output stream

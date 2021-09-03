@@ -22,6 +22,7 @@
 #include "../utils/Stopwatch.h"
 #include "../utils/exceptions.h"
 #include "../utils/FileURI.h"
+#include "../Infomap.h"
 
 #include <string>
 #include <vector>
@@ -2138,19 +2139,20 @@ void InfomapBase::writeResult()
 
   if (printJson) {
     std::string filename = outDirectory + outName + ".json";
+    const bool writeLinks = false;
 
     if (!haveMemory()) {
       Log() << "Write JSON tree to " << filename << "... ";
-      writeJsonTree(filename);
+      writeJsonTree(filename, false, writeLinks);
       Log() << "done!\n";
     } else {
       // Write both physical and state level
       Log() << "Write physical JSON tree to " << filename << "... ";
-      writeJsonTree(filename, false);
+      writeJsonTree(filename, false, writeLinks);
       Log() << "done!\n";
       std::string filenameStates = outDirectory + outName + "_states.json";
       Log() << "Write state JSON tree to " << filenameStates << "... ";
-      writeJsonTree(filenameStates, true);
+      writeJsonTree(filenameStates, true, writeLinks);
       Log() << "done!\n";
     }
   }
@@ -2236,12 +2238,12 @@ std::string InfomapBase::writeNewickTree(std::string filename, bool states)
   return outputFilename;
 }
 
-std::string InfomapBase::writeJsonTree(std::string filename, bool states)
+std::string InfomapBase::writeJsonTree(std::string filename, bool states, bool writeLinks)
 {
   std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.json" : ".json") : filename;
 
   SafeOutFile outFile(outputFilename);
-  writeJsonTree(outFile, states);
+  writeJsonTree(outFile, states, writeLinks);
 
   return outputFilename;
 }
@@ -2562,7 +2564,7 @@ void InfomapBase::writeNewickTree(std::ostream& outStream, bool states)
   outStream << std::setprecision(oldPrecision);
 }
 
-void InfomapBase::writeJsonTree(std::ostream& outStream, bool states)
+void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, bool writeLinks)
 {
   auto oldPrecision = outStream.precision();
 
@@ -2572,9 +2574,9 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states)
             << "  \"args\": \"" << parsedString << "\",\n"
             << "  \"startedAt\": \"" << m_startDate << "\",\n"
             << "  \"completedIn\": " << m_elapsedTime.getElapsedTimeInSec() << ",\n"
+            << "  \"codelength\": " << codelength() << ",\n"
             << "  \"numLevels\": " << maxTreeDepth() << ",\n"
             << "  \"numTopModules\": " << numTopModules() << ",\n"
-            << "  \"codelength\": " << codelength() << ",\n"
             << "  \"relativeCodelengthSavings\": " << getRelativeCodelengthSavings() << ",\n"
             << "  \"directed\": " << (isUndirectedFlow() ? "false" : "true") << ",\n";
 
@@ -2599,6 +2601,9 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states)
   const auto shouldHideBipartiteNodes = isBipartite() && hideBipartiteNodes;
   const auto bipartiteStartId = shouldHideBipartiteNodes ? m_network.bipartiteStartId() : 0;
 
+  // Hack to re-use getMultilevelModules from Infomap.cpp
+  const auto multilevelModules = static_cast<InfomapWrapper*>(this)->getMultilevelModules(states);
+
   // don't append a comma after the last entry
   auto first = true;
 
@@ -2611,6 +2616,7 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states)
         }
 
         const auto path = io::stringify(it.path(), ", ");
+        const auto modules = io::stringify(multilevelModules.at(node.physicalId), ", ");
 
         if (first) {
           first = false;
@@ -2618,11 +2624,12 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states)
           outStream << ",\n";
         }
 
-        outStream << "    { ";
-        outStream << "\"path\": [" << path << "], ";
-        outStream << "\"name\": \"" << nodeName(node) << "\", ";
-        outStream << "\"flow\": " << node.data.flow << ", ";
-        outStream << "\"id\": " << node.physicalId << " }";
+        outStream << "    { "
+                  << "\"path\": [" << path << "], "
+                  << "\"modules\": [" << modules << "], "
+                  << "\"name\": \"" << nodeName(node) << "\", "
+                  << "\"flow\": " << node.data.flow << ", "
+                  << "\"id\": " << node.physicalId << " }";
       }
     }
   } else {
@@ -2640,11 +2647,13 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states)
         }
 
         const auto path = io::stringify(it.path(), ", ");
+        const auto modules = io::stringify(multilevelModules.at(node.physicalId), ", ");
 
-        outStream << "    { ";
-        outStream << "\"path\": [" << path << "], ";
-        outStream << "\"name\": \"" << nodeName(node) << "\", ";
-        outStream << "\"flow\": " << node.data.flow << ", ";
+        outStream << "    { "
+                  << "\"path\": [" << path << "], "
+                  << "\"modules\": [" << modules << "], "
+                  << "\"name\": \"" << nodeName(node) << "\", "
+                  << "\"flow\": " << node.data.flow << ", ";
 
         if (states) {
           outStream << "\"stateId\": " << node.stateId << ", ";
@@ -2657,11 +2666,73 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states)
     }
   }
 
-  outStream << "\n  ]\n"; // tree
-  outStream << '}';
+  outStream << "\n  ],\n"; // tree
+
+  // -------------
+  // Write modules
+  // -------------
+  auto moduleLinks = aggregateModuleLinks(states);
+
+  first = true;
+
+  outStream << "  \"modules\": [\n";
+
+  // Use stateId to store depth on modules to optimize link aggregation
+  for (auto it(iterModules()); !it.isEnd(); ++it) {
+    const auto parentId = io::stringify(it.path(), ":");
+    const auto& module = *it;
+    const auto& links = moduleLinks[parentId];
+    const auto path = io::stringify(it.path(), ", ");
+
+
+    if (first) {
+      first = false;
+    } else {
+      outStream << ",\n";
+    }
+
+    outStream << "    {";
+
+    if (writeLinks) outStream << "\n     ";
+
+    outStream << " \"path\": [" << (parentId.empty() ? "0" : path) << "], "
+              << "\"enterFlow\": " << module.data.enterFlow << ", "
+              << "\"exitFlow\": " << module.data.exitFlow << ", "
+              << "\"numEdges\": " << links.size() << ", "
+              << "\"numChildren\": " << module.infomapChildDegree();
+
+
+    if (writeLinks) {
+      outStream << ",\n"
+                << "      \"links\": [\n";
+
+      auto firstLink = true;
+
+      for (auto itLink : links) {
+        if (firstLink) {
+          firstLink = false;
+        } else {
+          outStream << ",\n";
+        }
+
+        unsigned int sourceId = itLink.first.first;
+        unsigned int targetId = itLink.first.second;
+        double flow = itLink.second;
+        outStream << "        { \"source\": " << sourceId << ", \"target\": " << targetId << ", \"flow\": " << flow << " }";
+      }
+      outStream << "\n      ]\n   "; // links
+    }
+
+    outStream << " }";
+  }
+
+  outStream << "\n  ]\n"; // modules
+
+  outStream << "}\n";
 
   outStream << std::setprecision(oldPrecision);
 }
+
 
 void InfomapBase::writeCsvTree(std::ostream& outStream, bool states)
 {
