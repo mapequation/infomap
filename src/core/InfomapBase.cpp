@@ -2242,7 +2242,7 @@ std::string InfomapBase::writeJsonTree(std::string filename, bool states)
 
   SafeOutFile outFile(outputFilename);
   writeJsonTree(outFile, states);
-  writeJsonTreeLinks(outFile, states);
+  writeJsonTreeModules(outFile, states);
   outFile << "\n}\n";
 
   return outputFilename;
@@ -2665,7 +2665,7 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states)
   outStream << std::setprecision(oldPrecision);
 }
 
-void InfomapBase::writeJsonTreeLinks(std::ostream& outStream, bool states, bool writeLinks)
+void InfomapBase::writeJsonTreeModules(std::ostream& outStream, bool states, bool writeLinks)
 {
   auto oldPrecision = outStream.precision();
   outStream << std::setprecision(6);
