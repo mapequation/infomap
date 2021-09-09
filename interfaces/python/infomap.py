@@ -895,6 +895,8 @@ class Infomap(InfomapWrapper):
         Assumes that all nodes are of the same type.
         If node type is string, they are added as names
         to Infomap.
+        If the NetworkX graph is directed (``nx.DiGraph``), this method
+        sets the ``directed`` flag to ``True``.
 
         Parameters
         ----------
@@ -913,6 +915,8 @@ class Infomap(InfomapWrapper):
             first = next(iter(g.nodes))
         except StopIteration:
             return dict()
+
+        super().setDirected(g.is_directed())
 
         if isinstance(first, int):
             node_map = {node: node for node in g.nodes}
