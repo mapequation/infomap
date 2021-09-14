@@ -410,7 +410,7 @@ class Infomap(InfomapWrapper):
 
     def _get_flow_model(self, args, flow_model=None, directed=None, **kwargs):
         # String arguments
-        if args is not None and ('-f' in args or '--flow-model' in args):
+        if args is not None:
             argv = args.split()
             for arg in ('-f', '--flow-model'):
                 if arg in argv:
