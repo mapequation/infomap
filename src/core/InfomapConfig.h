@@ -121,7 +121,7 @@ public:
   Infomap& setDirected(bool value)
   {
     directed = value;
-    adaptDefaults();
+    flowModel = directed ? FlowModel::directed : FlowModel::undirected;
     return get();
   }
 
