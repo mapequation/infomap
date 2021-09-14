@@ -916,7 +916,8 @@ class Infomap(InfomapWrapper):
         Assumes that all nodes are of the same type.
         If node type is string, they are added as names
         to Infomap.
-        If the NetworkX graph is directed (``nx.DiGraph``), this method
+        If the NetworkX graph is directed (``nx.DiGraph``), and no flow
+        model has been specified in the constructor, this method
         sets the ``directed`` flag to ``True``.
 
         Parameters
