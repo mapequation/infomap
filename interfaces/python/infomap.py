@@ -449,7 +449,7 @@ class Infomap(InfomapWrapper):
         return super().addNode(node_id)
 
     def add_nodes(self, nodes):
-        """Add several nodes.
+        """Add nodes.
 
         See Also
         --------
@@ -474,19 +474,69 @@ class Infomap(InfomapWrapper):
         ...     (3, "Node 3")
         ... )
         >>> im.add_nodes(nodes)
+        >>> im.names
+        {1: 'Node 1', 2: 'Node 2', 3: 'Node 3'}
+
+
+        Add named nodes with teleportation weights
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> nodes = (
+        ...     (1, "Node 1", 0.5),
+        ...     (2, "Node 2", 0.2),
+        ...     (3, "Node 3", 0.8)
+        ... )
+        >>> im.add_nodes(nodes)
+        >>> im.names
+        {1: 'Node 1', 2: 'Node 2', 3: 'Node 3'}
+
+        Add named nodes using dict
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> nodes = {
+        ...     1: "Node 1",
+        ...     2: "Node 2",
+        ...     3: "Node 3"
+        ... }
+        >>> im.add_nodes(nodes)
+        >>> im.names
+        {1: 'Node 1', 2: 'Node 2', 3: 'Node 3'}
+
+
+        Add named nodes with teleporation weights using dict
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> nodes = {
+        ...     1: ("Node 1", 0.5),
+        ...     2: ("Node 2", 0.2),
+        ...     3: ("Node 3", 0.8)
+        ... }
+        >>> im.add_nodes(nodes)
+        >>> im.names
+        {1: 'Node 1', 2: 'Node 2', 3: 'Node 3'}
 
 
         Parameters
         ----------
-        nodes : iterable of tuples or iterable of int
+        nodes : iterable of tuples or iterable of int or dict of int: str or dict of int: tuple of (str, float)
             Iterable of tuples on the form
             ``(node_id, [name], [teleportation_weight])``
         """
-        for node in nodes:
-            if isinstance(node, int):
-                self.add_node(node)
-            else:
-                self.add_node(*node)
+        try:
+            for node, attr in nodes.items():
+                if isinstance(attr, str):
+                    self.add_node(node, attr)
+                else:
+                    self.add_node(node, *attr)
+        except AttributeError:
+            for node in nodes:
+                if isinstance(node, int):
+                    self.add_node(node)
+                else:
+                    self.add_node(*node)
 
     def add_state_node(self, state_id, node_id):
         """Add a state node.
