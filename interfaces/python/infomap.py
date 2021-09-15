@@ -549,7 +549,8 @@ class Infomap(InfomapWrapper):
 
         Examples
         --------
-
+        With tuples
+        
         >>> from infomap import Infomap
         >>> im = Infomap()
         >>> names = (
@@ -557,19 +558,39 @@ class Infomap(InfomapWrapper):
         ...     (2, "Node 2")
         ... )
         >>> im.set_names(names)
+        >>> im.names
+        {1: 'Node 1', 2: 'Node 2'}
+
+        
+        With dict
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> names = {
+        ...     1: "Node 1",
+        ...     2: "Node 2"
+        ... }
+        >>> im.set_names(names)
+        >>> im.names
+        {1: 'Node 1', 2: 'Node 2'}
 
 
         See Also
         --------
-        set_name
+        set_name, names
 
         Parameters
         ----------
-        names : iterable of tuples
-            Iterable of tuples on the form ``(node_id, name)``.
+        names : iterable of tuples or dict of int: str
+            Iterable of tuples on the form ``(node_id, name)``
+            or dict of the form ``{node_id: name}``.
         """
-        for name in names:
-            self.set_name(*name)
+        try:
+            for name in names.items():
+                self.set_name(*name)
+        except AttributeError:
+            for name in names:
+                self.set_name(*name)
 
     def add_link(self, source_id, target_id, weight=1.0):
         """Add a link.
