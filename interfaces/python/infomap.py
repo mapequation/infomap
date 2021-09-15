@@ -505,7 +505,7 @@ class Infomap(InfomapWrapper):
         return super().addStateNode(state_id, node_id)
 
     def add_state_nodes(self, state_nodes):
-        """Add several state nodes.
+        """Add state nodes.
 
         See Also
         --------
@@ -513,6 +513,7 @@ class Infomap(InfomapWrapper):
 
         Examples
         --------
+        With tuples
 
         >>> from infomap import Infomap
         >>> im = Infomap()
@@ -524,13 +525,30 @@ class Infomap(InfomapWrapper):
         >>> im.add_state_nodes(states)
 
 
+        With dict
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> states = {
+        ...     1: 1,
+        ...     2: 1,
+        ...     3: 2
+        ... }
+        >>> im.add_state_nodes(states)
+
+
         Parameters
         ----------
-        state_nodes : iterable of tuples
+        state_nodes : iterable of tuples or dict of int: int
             Iterable of tuples of the form ``(state_id, node_id)``
+            or dict of the form ``{state_id: node_id}``.
         """
-        for node in state_nodes:
-            self.add_state_node(*node)
+        try:
+            for node in state_nodes.items():
+                self.add_state_node(*node)
+        except AttributeError:
+            for node in state_nodes:
+                self.add_state_node(*node)
 
     def set_name(self, node_id, name):
         """Set the name of a node.
@@ -550,7 +568,7 @@ class Infomap(InfomapWrapper):
         Examples
         --------
         With tuples
-        
+
         >>> from infomap import Infomap
         >>> im = Infomap()
         >>> names = (
@@ -561,7 +579,7 @@ class Infomap(InfomapWrapper):
         >>> im.names
         {1: 'Node 1', 2: 'Node 2'}
 
-        
+
         With dict
 
         >>> from infomap import Infomap
