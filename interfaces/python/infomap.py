@@ -70,7 +70,7 @@ def _construct_args(args=None,
                     # algorithm
                     two_level=False,
                     flow_model=None,
-                    directed=False,
+                    directed=None,
                     use_node_weights_as_flow=False,
                     to_nodes=False,
                     teleportation_probability=_DEFAULT_TELEPORTATION_PROB,
@@ -170,8 +170,8 @@ def _construct_args(args=None,
     if flow_model is not None:
         args += " --flow-model {}".format(flow_model)
 
-    if directed:
-        args += " --directed"
+    if directed is not None:
+        args += " --directed" if directed else " --flow-model undirected"
 
     if use_node_weights_as_flow:
         args += " --use-node-weights-as-flow"
