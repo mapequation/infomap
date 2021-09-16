@@ -110,6 +110,7 @@ struct Config {
   bool noInfomap = false;
 
   FlowModel flowModel = FlowModel::undirected;
+  bool flowModelIsSet = false;
   // TODO: Remove variables for 'one-hot encoded' flow models
   bool directed = false;
   bool undirdir = false;
@@ -228,6 +229,7 @@ struct Config {
     assignToNeighbouringModule = other.assignToNeighbouringModule;
     noInfomap = other.noInfomap;
     flowModel = other.flowModel;
+    flowModelIsSet = other.flowModelIsSet;
     directed = other.directed;
     undirdir = other.undirdir;
     outdirdir = other.outdirdir;
@@ -350,6 +352,12 @@ struct Config {
   void setMemoryInput() { memoryInput = true; }
 
   void setMultilayerInput() { multilayerInput = true; }
+
+  void setFlowModel(FlowModel value)
+  {
+    flowModel = value;
+    flowModelIsSet = true;
+  }
 
   bool isUndirectedClustering() const { return flowModel == FlowModel::undirected; }
 

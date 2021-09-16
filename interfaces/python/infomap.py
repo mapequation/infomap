@@ -270,8 +270,6 @@ class Infomap(InfomapWrapper):
     For more examples, see the examples directory.
     """
 
-    _flow_model = None
-
     def __init__(self, args=None, **kwargs):
         """Create a new Infomap instance.
 
@@ -406,25 +404,6 @@ class Infomap(InfomapWrapper):
             This may give some accuracy tradeoff.
         """
         super().__init__(_construct_args(args, **kwargs))
-        self._get_flow_model(args, **kwargs)
-
-    def _get_flow_model(self, args, flow_model=None, directed=None, **kwargs):
-        # String arguments
-        if args is not None:
-            argv = args.split()
-            for arg in ('-f', '--flow-model'):
-                if arg in argv:
-                    idx = argv.index(arg) + 1
-                    if len(argv) > idx:
-                        model = argv[idx]
-                        if model in ('undirected', 'directed', 'undirdir', 'outdirdir', 'rawdir'):
-                            self._flow_model = model
-                            return
-
-        if flow_model is not None:
-            self._flow_model = flow_model
-        elif directed is not None and not directed:
-            self._flow_model = 'undirected'
 
     # ----------------------------------------
     # Input
@@ -940,7 +919,7 @@ class Infomap(InfomapWrapper):
 
         # If no flow model has been set, and the graph is directed,
         # set the flow model to directed.
-        if self._flow_model is None and g.is_directed():
+        if not super().flowModelIsSet and g.is_directed():
             super().setDirected(True)
 
         if isinstance(first, int):
