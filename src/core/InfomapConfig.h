@@ -118,6 +118,13 @@ public:
     return get();
   }
 
+  Infomap& setDirected(bool value)
+  {
+    directed = value;
+    flowModel = directed ? FlowModel::directed : FlowModel::undirected;
+    return get();
+  }
+
   Infomap& reseed(unsigned int seed)
   {
     m_rand.seed(seed);

@@ -895,6 +895,9 @@ class Infomap(InfomapWrapper):
         Assumes that all nodes are of the same type.
         If node type is string, they are added as names
         to Infomap.
+        If the NetworkX graph is directed (``nx.DiGraph``), and no flow
+        model has been specified in the constructor, this method
+        sets the ``directed`` flag to ``True``.
 
         Parameters
         ----------
@@ -913,6 +916,11 @@ class Infomap(InfomapWrapper):
             first = next(iter(g.nodes))
         except StopIteration:
             return dict()
+
+        # If no flow model has been set, and the graph is directed,
+        # set the flow model to directed.
+        if not super().flowModelIsSet and g.is_directed():
+            super().setDirected(True)
 
         if isinstance(first, int):
             node_map = {node: node for node in g.nodes}

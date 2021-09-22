@@ -196,15 +196,15 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
   }
 
   if (flowModelArg == "undirected") {
-    flowModel = FlowModel::undirected;
+    setFlowModel(FlowModel::undirected);
   } else if (flowModelArg == "directed") {
-    flowModel = FlowModel::directed;
+    setFlowModel(FlowModel::directed);
   } else if (flowModelArg == "undirdir") {
-    flowModel = FlowModel::undirdir;
+    setFlowModel(FlowModel::undirdir);
   } else if (flowModelArg == "outdirdir") {
-    flowModel = FlowModel::outdirdir;
+    setFlowModel(FlowModel::outdirdir);
   } else if (flowModelArg == "rawdir") {
-    flowModel = FlowModel::rawdir;
+    setFlowModel(FlowModel::rawdir);
   }
 
   // Some checks
@@ -237,13 +237,13 @@ void Config::adaptDefaults()
   }
 
   if (undirdir) {
-    flowModel = FlowModel::undirdir;
+    setFlowModel(FlowModel::undirdir);
   } else if (directed) {
-    flowModel = FlowModel::directed;
+    setFlowModel(FlowModel::directed);
   } else if (outdirdir) {
-    flowModel = FlowModel::outdirdir;
+    setFlowModel(FlowModel::outdirdir);
   } else if (rawdir) {
-    flowModel = FlowModel::rawdir;
+    setFlowModel(FlowModel::rawdir);
   }
 
   auto outputs = io::split(outputFormats, ',');
