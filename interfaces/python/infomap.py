@@ -1931,6 +1931,22 @@ class Infomap(InfomapWrapper):
         """
         return super().maxTreeDepth()
 
+    @property
+    def num_levels(self):
+        """Get the max depth of the hierarchical tree.
+        Alias of ``max_depth``.
+
+        See Also
+        --------
+        max_depth
+
+        Returns
+        -------
+        int
+            The max depth
+        """
+        return self.max_depth
+
     # ----------------------------------------
     # Codelength
     # ----------------------------------------
