@@ -1572,13 +1572,17 @@ class Infomap(InfomapWrapper):
         See Also
         --------
         InfoNode
+        InfomapLeafIterator
+        InfomapLeafIteratorPhysical
 
         Parameters
         ---------
         columns : list(str)
             A list of columns that should be extracted from each node.
-            Must be available as an attribute of ``InfoNode``, with the
-            exception of ``"name"`` which is looked up internally.
+            Must be available as an attribute of ``InfoNode``,
+            ``InfomapLeafIterator`` (for state nodes),
+            or ``InfomapLeafIteratorPhysical``.
+            One exception to this is ``"name"`` which is looked up internally.
             Default ``["path", "flow", "name", "node_id"]``.
 
         Raises
