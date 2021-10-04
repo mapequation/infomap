@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.7.0](https://github.com/mapequation/infomap/compare/v1.6.0...v1.7.0) (2021-10-04)
+
+
+### Features
+
+* **python:** Add multilevel_modules property ([0d4cc37](https://github.com/mapequation/infomap/commit/0d4cc375cebe8477ea2e0073f9e7056411c3091e))
+* **python:** Add num_levels property ([abd4f7f](https://github.com/mapequation/infomap/commit/abd4f7f8cc272cc20e4996b03a10dd2411a46260))
+* **python:** Pass dict to add_nodes ([e30870f](https://github.com/mapequation/infomap/commit/e30870f28366676e105b189980a2c5eb921b9481))
+* **python:** Pass dict to add_state_nodes ([5cd9ba2](https://github.com/mapequation/infomap/commit/5cd9ba25db758d2cb1a928c32adfdea21dda87d0))
+* **python:** Pass dict to set_names ([0ed79e8](https://github.com/mapequation/infomap/commit/0ed79e8b08ab1ae410a3fdbb4dd59ddb2ecf149a))
+* Add directed field to json output ([7db19f2](https://github.com/mapequation/infomap/commit/7db19f216b3d7f825a7eb90c89e0a0696c3a3e95))
+* Write json multilevel modules and module information ([e6796c8](https://github.com/mapequation/infomap/commit/e6796c8d91499c1287278ab818c7e62d7426c303))
+
+
+### Bug Fixes
+
+* **python:** Adding a networkx DiGraph should set the directed flag ([a60a404](https://github.com/mapequation/infomap/commit/a60a404eac88d04a3bb6beb1b130452b28a99d83))
+* **python:** Using directed=False should use undirected flow ([be0f6e2](https://github.com/mapequation/infomap/commit/be0f6e2f9ffc80ee58305709ebc6b801187e21bb))
+* Metadata codelength works after multiple runs ([ec00ccd](https://github.com/mapequation/infomap/commit/ec00ccd7d14bdff54e6757b4cd1fd84e93dd4e58)), closes [#167](https://github.com/mapequation/infomap/issues/167)
+* Module ids wrong for uneven depth and chosen level > 1 ([c3a0c90](https://github.com/mapequation/infomap/commit/c3a0c9025ae82a84f05e929f105b88d1d28f8be1)), closes [#221](https://github.com/mapequation/infomap/issues/221)
+
 ## [1.6.0](https://github.com/mapequation/infomap/compare/v1.5.1...v1.6.0) (2021-07-08)
 
 
