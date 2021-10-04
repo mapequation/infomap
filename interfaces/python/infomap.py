@@ -1186,7 +1186,44 @@ class Infomap(InfomapWrapper):
     # ----------------------------------------
 
     def get_modules(self, depth_level=1, states=False):
-        """Get the modules for a given depth in the hierarchical tree.
+        """Get a dict with node ids as keys and module ids as values for a given depth in the hierarchical tree.
+
+        ::
+
+            Level                            Root
+
+              0                               ┌─┐
+                                    ┌─────────┴─┴────────┐
+                                    │                    │
+                                    │                    │
+                                    │                    │
+                              Path  │  Module      Path  │  Module
+              1                  1 ┌┼┐ 1              2 ┌┼┐ 2
+                               ┌───┴─┴───┐          ┌───┴─┴───┐
+                               │         │          │         │
+                               │         │          │         │
+                               │         │          │         │
+                               │         │          │         │
+              2             1 ┌┼┐ 1   2 ┌┼┐ 2    1 ┌┼┐ 3   2 ┌┼┐ 3
+                          ┌───┴─┴───┐   └─┴────┐   └─┘       └─┘
+                          │         │          │
+                          │         │          │    ▲         ▲
+                          │         │          │    └────┬────┘
+                          │         │          │         │
+              3        1 ┌┼┐     2 ┌┼┐      1 ┌┼┐
+                         └─┘       └─┘        └─┘  ◄───  Leaf-nodes
+
+
+        Path to the left of the nodes. Depth dependent module ids to the right.
+        Leaf-nodes are network-nodes. All other tree-nodes are modules.
+
+        For example:
+
+        The left-most node on level 3 has path 1:1:1 and belong to module 1 on level 1.
+
+        The right-most node on level 2 has path 2:2 and belong to module 2 on level 1
+        which is renamed to module 3 on level 2 as we have more modules in total on this level.
+
 
         Examples
         --------
@@ -1222,12 +1259,12 @@ class Infomap(InfomapWrapper):
             coarsest level etc. Set to ``-1`` to return the bottom level
             modules (finest level). Default ``1``.
         states : bool, optional
-            For higher-order networks, if ``states`` is True, it will iterate
-            over state nodes. Otherwise it will iterate over physical nodes,
+            For higher-order networks, if ``states`` is True, it will return
+            state node ids. Otherwise it will return physical node ids,
             merging state nodes with same ``node_id`` if they are in the same
             module. Note that the same physical node may end up on different
             paths in the tree.
-            See notes on ``physical_tree``. Default ``false``.
+            Default ``false``.
 
         Returns
         -------
@@ -1237,7 +1274,14 @@ class Infomap(InfomapWrapper):
         return super().getModules(depth_level, states)
 
     def get_multilevel_modules(self, states=False):
-        """Get all the modules.
+        """Get a dict with node ids as keys and a tuple of module ids as values.
+        Each position in the tuple corresponds to a depth in the hierarchical tree,
+        with the first level being the top level.
+
+        See Also
+        --------
+        get_modules
+
 
         Examples
         --------
@@ -1301,23 +1345,23 @@ class Infomap(InfomapWrapper):
         Parameters
         ----------
         states : bool, optional
-            For higher-order networks, if ``states`` is True, it will iterate
-            over state nodes. Otherwise it will iterate over physical nodes,
+            For higher-order networks, if ``states`` is True, it will return
+            state node ids. Otherwise it will return physical node ids,
             merging state nodes with same ``node_id`` if they are in the same
             module. Note that the same physical node may end up on different
             paths in the tree.
-            See notes on ``physical_tree``. Default ``false``.
+            Default ``false``.
 
         Returns
         -------
         dict of list of int
-            Dict with node ids as keys and list of module ids as values.
+            Dict with node ids as keys and tuple of module ids as values.
         """
         return super().getMultilevelModules(states)
 
     @property
     def modules(self):
-        """A view of the (top-level) modules, mapping
+        """A view of the top-level modules, mapping
         ``node_id`` to ``module_id``.
 
         Notes
@@ -1327,10 +1371,6 @@ class Infomap(InfomapWrapper):
         can not exist multiple times as a key in the node-to-module map,
         so only one occurrence of a physical node will be retrieved.
         To get all states, use ``get_modules(states=True)``.
-
-        See Also
-        --------
-        get_modules
 
         Examples
         --------
@@ -1391,7 +1431,7 @@ class Infomap(InfomapWrapper):
         may partially exist in multiple modules. However, the ``node_id``
         can not exist multiple times as a key in the node-to-module map,
         so only one occurrence of a physical node will be retrieved.
-        To get all states, use ``get_modules(states=True)``.
+        To get all states, use ``get_multilevel_modules(states=True)``.
 
         See Also
         --------
@@ -1405,7 +1445,8 @@ class Infomap(InfomapWrapper):
         return self.get_multilevel_modules().items()
 
     def get_tree(self, depth_level=1, states=False):
-        """A view of the tree
+        """A view of the hierarchical tree, iterating
+        over the modules as well as the leaf-nodes.
 
         Parameters
         ----------
@@ -1420,13 +1461,13 @@ class Infomap(InfomapWrapper):
             merging state nodes with same ``node_id`` if they are in the same
             module. Note that the same physical node may end up on different
             paths in the tree.
-            See notes on ``physical_tree``. Default ``false``.
+            Default ``false``.
 
         Notes
         ----
         For higher-order networks, each node is represented by a set of state
         nodes with the same ``node_id``, where each state node represents a
-        different memory constraining the random walker. This enables
+        different constraint on the random walker. This enables
         overlapping modules, where state nodes with the same ``node_id`` end up
         in different modules. However, the state nodes with the same
         ``node_id`` within each module are only visible as one (partial)
@@ -1442,7 +1483,8 @@ class Infomap(InfomapWrapper):
         return super().iterTreePhysical(depth_level)
 
     def get_nodes(self, depth_level=1, states=False):
-        """A view of the tree
+        """A view of the nodes in the hierarchical tree, iterating depth first
+        from the root.
 
         Parameters
         ----------
@@ -1463,7 +1505,7 @@ class Infomap(InfomapWrapper):
         -----
         For higher-order networks, each node is represented by a set of state
         nodes with the same ``node_id``, where each state node represents a
-        different memory constraining the random walker. This enables
+        different constraint on the random walker. This enables
         overlapping modules, where state nodes with the same ``node_id`` end up
         in different modules. However, the state nodes with the same
         ``node_id`` within each module are only visible as one (partial)
@@ -1480,7 +1522,10 @@ class Infomap(InfomapWrapper):
 
     @property
     def tree(self):
-        """A view of the tree
+        """A view of the hierarchical tree, iterating
+        over the modules as well as the leaf-nodes.
+
+        Convinience method for ``get_tree(depth_level=1, states=True)``.
 
         See Also
         --------
@@ -1496,8 +1541,11 @@ class Infomap(InfomapWrapper):
 
     @property
     def physical_tree(self):
-        """A view of the tree where that state nodes of the same
-        ``node_id`` are merged to one physical node
+        """A view of the hierarchical tree, iterating
+        over the modules as well as the leaf-nodes.
+        All state nodes with the same ``node_id`` are merged to one physical node.
+
+        Convinience method for ``get_tree(depth_level=1, states=False)``.
 
         See Also
         --------
@@ -1531,7 +1579,10 @@ class Infomap(InfomapWrapper):
 
     @property
     def nodes(self):
-        """A view of the leaf nodes with the top level module ids
+        """A view of the nodes in the hierarchical tree, iterating depth first
+        from the root.
+
+        Convinience method for ``get_nodes(depth_level=1, states=True)``.
 
         See Also
         --------
@@ -1548,7 +1599,11 @@ class Infomap(InfomapWrapper):
 
     @property
     def physical_nodes(self):
-        """A view of the physical leaf nodes with the top level module ids
+        """A view of the nodes in the hierarchical tree, iterating depth first
+        from the root.
+        All state nodes with the same ``node_id`` are merged to one physical node.
+
+        Convinience method for ``get_nodes(depth_level=1, states=False)``.
 
         See Also
         --------
