@@ -1198,6 +1198,14 @@ class Infomap(InfomapWrapper):
         >>> im.get_modules()
         {1: 1, 2: 1, 3: 1, 4: 2, 5: 2, 6: 2}
 
+        >>> from infomap import Infomap
+        >>> im = Infomap(silent=True)
+        >>> im.read_file("states.net")
+        >>> im.run()
+        >>> im.get_modules(states=True)
+        {1: 1, 2: 1, 3: 1, 4: 2, 5: 2, 6: 2}
+
+
         Notes
         -----
         In a higher-order network, a physical node (defined by ``node_id``)
@@ -1267,6 +1275,20 @@ class Infomap(InfomapWrapper):
         25 (1, 3)
         26 (1, 3)
         27 (1, 3)
+
+        >>> from infomap import Infomap
+        >>> im = Infomap(silent=True)
+        >>> im.read_file("states.net")
+        >>> im.run()
+        >>> for node, modules in im.get_multilevel_modules(states=True).items():
+        ...     print(node, modules)
+        1 (1,)
+        2 (1,)
+        3 (1,)
+        4 (2,)
+        5 (2,)
+        6 (2,)
+
 
         Notes
         -----
