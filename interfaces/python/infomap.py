@@ -1215,7 +1215,7 @@ class Infomap(InfomapWrapper):
 
 
         Path to the left of the nodes. Depth dependent module ids to the right.
-        Leaf-nodes are network-nodes. All other tree-nodes are modules.
+        The five leaf-nodes are network-nodes. All other tree-nodes are modules.
 
         For example:
 
@@ -1223,6 +1223,18 @@ class Infomap(InfomapWrapper):
 
         The right-most node on level 2 has path 2:2 and belong to module 2 on level 1
         which is renamed to module 3 on level 2 as we have more modules in total on this level.
+
+        Assuming the nodes are labelled 1-5 from left to right, then the first three nodes
+        are in module 1, and the last two nodes are in module 2::
+
+            > im.get_modules(depth_level=1)
+            {1: 1, 2: 1, 3: 1, 4: 2, 5: 2}
+
+        However, at level 2, the first two nodes are in module 1, the third node in module 2,
+        and the last two nodes are in module 3::
+
+            > im.get_modules(depth_level=2)
+            {1: 1, 2: 1, 3: 2, 4: 3, 5: 3}
 
 
         Examples
