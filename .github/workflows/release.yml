@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+        
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: ${{ matrix.config.os }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      matrix:
+        config:
+          - {
+            os: windows-latest,
+            artifact: "infomap-win.zip",
+            cxx: "cxx",
+            #environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat",
+            binary: Infomap.exe,
+          }
+          - {
+            os: ubuntu-latest,
+            artifact: "infomap-linux.zip",
+            binary: Infomap,
+            cxx: g++,
+          }
+          - {
+            os: macos-latest,
+            artifact: "infomap-macos.zip",
+            binary: Infomap,
+            cxx: clang++,
+          }
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies on ubuntu
+        if: startsWith(matrix.config.os, 'ubuntu')
+        run: |
+          sudo apt update
+          sudo apt install libomp-dev
+          gcc --version
+
+      - name: Install dependencies on macos
+          if: startsWith(matrix.config.os, 'macos')
+          run: |
+            brew install p7zip libomp
+            clang --version
+
+      - name: Build
+        shell: bash
+        #if: startsWith(matrix.config.os, 'windows')
+        run: |
+          CXX=${{ config.cxx }} make
+      
+      - name: Pack
+        shell: bash
+        run: |
+          7z a ${{ config.artifact }} ${{ config.binary }}
+          ls
+
+      # - name: Upload
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     path: ./${{ matrix.config.artifact }}
+      #     name: ${{ matrix.config.artifact }}
+
+      # - name: Upload release asset
+      #   if: github.event_name == 'release' && (github.event.action == 'published' || github.event.action == 'created')
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ github.event.release.upload_url }}
+      #     asset_path: ./${{ matrix.config.artifact }}
+      #     asset_name: ${{ matrix.config.artifact }}.zip
+      #     asset_content_type: application/zip
