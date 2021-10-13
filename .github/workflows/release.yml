@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+        
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: ${{ matrix.config.os }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      matrix:
+        config:
+          - {
+            name: windows,
+            os: windows-latest,
+            artifact: "infomap-win.zip",
+            binary: Infomap.exe,
+            flags: -static,
+          }
+          - {
+            name: linux,
+            os: ubuntu-latest,
+            artifact: "infomap-linux.zip",
+            binary: Infomap,
+            flags:
+          }
+          - {
+            name: macos,
+            os: macos-latest,
+            artifact: "infomap-macos.zip",
+            binary: Infomap,
+            flags:
+          }
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies on ubuntu
+        if: startsWith(matrix.config.os, 'ubuntu')
+        run: |
+          sudo apt update
+          sudo apt install libomp-dev
+          gcc --version
+
+      - name: Install dependencies on macos
+        if: startsWith(matrix.config.os, 'macos')
+        run: |
+          brew install p7zip libomp
+          clang --version
+
+      - name: Build
+        shell: bash
+        run: |
+          CXXFLAGS=${{ matrix.config.flags }} LDFLAGS=${{ matrix.config.flags }} CXX=g++ make -j
+
+      - name: Pack
+        shell: bash
+        run: |
+          7z a ${{ matrix.config.artifact }} ${{ matrix.config.binary }}
+
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          retention-days: 1
+          path: ./${{ matrix.config.binary }}
+          name: infomap-${{ matrix.config.name }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ${{ matrix.config.artifact }}
