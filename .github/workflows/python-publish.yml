@@ -4,11 +4,13 @@ on:
   release:
     types: [created]
 
+  workflow_dispatch:
+
 jobs:
   swig:
-    name: SWIG
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Install deps
         run: |
           sudo apt update
@@ -21,14 +23,14 @@ jobs:
           name: swigfiles
           path: build/py/
 
-  publish:
+  build:
+    needs: swig
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
     strategy:
       matrix:
         config:
-          - { name: windows, os: windows-latest, flags: -static }
-          - { name: linux, os: ubuntu-latest, flags: "" }
+          - { name: windows, os: windows-latest, flags: "-static" }
           - { name: macos, os: macos-latest, flags: "" }
     steps:
       - uses: actions/checkout@v2
@@ -36,36 +38,63 @@ jobs:
         with:
           name: swigfiles
           path: build/py
-      - name: Display structure of downloaded files
-        shell: bash
-        run: ls
-        working-directory: build/py
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.x"
+          python-version: 3.8
       - name: Install dependencies
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          pip install setuptools wheel twine networkx pandas flake8 autopep8
-      - name: Install dependencies on ubuntu
-        if: startsWith(matrix.config.os, 'ubuntu')
-        run: |
-          sudo apt update
-          sudo apt install libomp-dev
-      - name: Install dependencies on macos
+          pip install setuptools wheel autopep8
+      - name: Install dependencies on macOS
         if: startsWith(matrix.config.os, 'macos')
         run: brew install libomp
       - name: Build
         shell: bash
-        run: CXXFLAGS=${{ matrix.config.flags }} LDFLAGS=${{ matrix.config.flags }} make py-build
+        run: CXXFLAGS=${{ matrix.config.flags }} LDFLAGS=${{ matrix.config.flags }} CXX=g++ make py-build
       - name: Test
         shell: bash
-        run: make py-test
-      # - name: Build and publish
-      #   env:
-      #     TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-      #     TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      #   run: |
-      #     make pypi_publish
+        run: |
+          pip install networkx pandas flake8
+          make py-test
+      - name: Dist
+        shell: bash
+        run: make pypi-dist
+      - uses: actions/upload-artifact@v2
+        with:
+          retention-days: 1
+          name: package-${{ matrix.config.name }}
+          path: build/py/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: package-windows
+          path: windows
+      - uses: actions/download-artifact@v2
+        with:
+          name: package-macos
+          path: macos
+      - name: Copy build files
+        run: |
+          mkdir build
+          mv macos build/py
+          mv windows/dist/*.whl build/py/dist
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install twine
+      - name: Publish
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: make pypi-publish

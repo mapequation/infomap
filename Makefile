@@ -240,18 +240,18 @@ py-clean:
 py-format:
 	autopep8 --in-place --recursive --jobs 8 --aggressive --aggressive --max-line-length 100 interfaces/python/*.py
 
-pypi-dist: py-clean python
+pypi-dist:
 	cd $(PY_BUILD_DIR) && python setup.py sdist bdist_wheel
 
 # pip -vvv --no-cache-dir install --upgrade -I --index-url https://test.pypi.org/simple/ infomap
 # pip install -e build/py/pypi/infomap/
-pypitest-publish: pypi-dist
+pypitest-publish:
 	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
 	cd $(PYPI_DIR) && python -m twine upload -r testpypi dist/*
 
-pypi-publish: pypi-dist
+pypi-publish:
 	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
-	cd $(PYPI_DIR) && python -m twine upload dist/*
+	cd $(PYPI_DIR) && python -m twine upload --skip-existing dist/* 
 
 
 ##################################################

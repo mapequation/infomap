@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - "v*.*.*"
-        
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -16,26 +16,26 @@ jobs:
       matrix:
         config:
           - {
-            name: windows,
-            os: windows-latest,
-            artifact: "infomap-win.zip",
-            binary: Infomap.exe,
-            flags: -static,
-          }
+              name: windows,
+              os: windows-latest,
+              artifact: "infomap-win.zip",
+              binary: Infomap.exe,
+              flags: -static,
+            }
           - {
-            name: linux,
-            os: ubuntu-latest,
-            artifact: "infomap-linux.zip",
-            binary: Infomap,
-            flags:
-          }
+              name: linux,
+              os: ubuntu-latest,
+              artifact: "infomap-linux.zip",
+              binary: Infomap,
+              flags: "",
+            }
           - {
-            name: macos,
-            os: macos-latest,
-            artifact: "infomap-macos.zip",
-            binary: Infomap,
-            flags:
-          }
+              name: macos,
+              os: macos-latest,
+              artifact: "infomap-macos.zip",
+              binary: Infomap,
+              flags: "",
+            }
 
     steps:
       - uses: actions/checkout@v2
