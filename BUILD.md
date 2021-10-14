@@ -87,7 +87,8 @@ To build:
 2. To test the build, run `make py-test`
 3. Test publish with `make pypitest-publish`
     - Install in a clean environment `pip3 --no-cache-dir install --index-url https://test.pypi.org/simple/ infomap`
-4. Publish with `make pypi-publish`
+4. Run `make pypi-dist`
+5. Publish with `make pypi-publish`
 
 Generate documentation:
 
