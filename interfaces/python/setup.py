@@ -97,6 +97,12 @@ compiler_args = [
 
 link_args = []
 
+if 'CXXFLAGS' in os.environ:
+    compiler_args.extend(os.environ['CXXFLAGS'].split())
+
+if 'LDFLAGS' in os.environ:
+    link_args.extend(os.environ['LDFLAGS'].split())
+
 if have_openmp():
     if is_clang():
         compiler_args.append('-Xpreprocessor')
