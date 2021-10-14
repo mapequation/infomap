@@ -25,13 +25,14 @@ jobs:
 
   build:
     needs: swig
-    name: ${{ matrix.config.name }}
+    name: build (${{ matrix.config.name }}, ${{ matrix.python-version }})
     runs-on: ${{ matrix.config.os }}
     strategy:
       matrix:
         config:
-          - { name: windows, os: windows-latest, flags: "-static" }
           - { name: macos, os: macos-latest, flags: "" }
+          - { name: windows, os: windows-latest, flags: "-static" }
+        python-version: [3.6, 3.7, 3.8, 3.9]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
@@ -41,7 +42,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         shell: bash
         run: |
@@ -64,8 +65,8 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           retention-days: 1
-          name: package-${{ matrix.config.name }}
-          path: build/py/
+          name: dist-${{ matrix.config.name }}-${{ matrix.python-version }}
+          path: build/py/dist/
 
   publish:
     needs: build
@@ -73,18 +74,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
-        with:
-          name: package-windows
-          path: windows
-      - uses: actions/download-artifact@v2
-        with:
-          name: package-macos
-          path: macos
-      - name: Copy build files
+      - name: Copy artifacts
         run: |
-          mkdir build
-          mv macos build/py
-          mv windows/dist/*.whl build/py/dist
+          mkdir -p build/py/dist
+          cp dist-macos-3.9/*.gz build/py/dist
+          cp dist-macos-*/*.whl build/py/dist
+          cp dist-windows-*/*.whl build/py/dist
+          ls -R build
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
