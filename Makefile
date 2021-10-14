@@ -173,10 +173,13 @@ PY_ONLY_HEADERS := $(HEADERS:%.h=$(PY_BUILD_DIR)/headers/%.h)
 PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
 PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
 
-.PHONY: python py-swig
+.PHONY: python py-swig py-build
 
 # Use python distutils to compile the module
-python: py-swig Makefile
+python: py-swig py-build Makefile
+	@true
+
+py-build: Makefile
 	@cp -a interfaces/python/setup.py $(PY_BUILD_DIR)/
 	@touch $(PY_BUILD_DIR)/__init__.py
 	@python utils/create-python-package-meta.py $(PY_BUILD_DIR)/package_meta.py
@@ -187,7 +190,6 @@ python: py-swig Makefile
 	@cp -a README.rst $(PY_BUILD_DIR)/
 	@cp -a LICENSE_AGPLv3.txt $(PY_BUILD_DIR)/LICENSE
 	@cd $(PY_BUILD_DIR) && CC=$(CXX) python3 setup.py build_ext --inplace
-	@true
 
 # Generate wrapper files from source and interface files
 py-swig: $(PY_HEADERS) $(PY_SOURCES) $(PY_ONLY_HEADERS) interfaces/python/infomap.py

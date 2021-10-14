@@ -1,6 +1,3 @@
-# This workflows will upload a Python Package using Twine when a release is created
-# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
-
 name: Publish Python Package
 
 on:
@@ -8,25 +5,67 @@ on:
     types: [created]
 
 jobs:
-  deploy:
-
+  swig:
+    name: SWIG
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install swig
-        python -m pip install --upgrade pip
-        pip install setuptools wheel twine
-    - name: Build and publish
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      run: |
-        make pypi_publish
+      - name: Install deps
+        run: |
+          sudo apt update
+          sudo apt install swig
+      - name: Run swig
+        run: make py-swig
+      - uses: actions/upload-artifact@v2
+        with:
+          retention-days: 1
+          name: swigfiles
+          path: build/py/
+
+  publish:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      matrix:
+        config:
+          - { name: windows, os: windows-latest, flags: -static }
+          - { name: linux, os: ubuntu-latest, flags: "" }
+          - { name: macos, os: macos-latest, flags: "" }
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: swigfiles
+          path: build/py
+      - name: Display structure of downloaded files
+        shell: bash
+        run: ls
+        working-directory: build/py
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine networkx pandas flake8 autopep8
+      - name: Install dependencies on ubuntu
+        if: startsWith(matrix.config.os, 'ubuntu')
+        run: |
+          sudo apt update
+          sudo apt install libomp-dev
+      - name: Install dependencies on macos
+        if: startsWith(matrix.config.os, 'macos')
+        run: brew install libomp
+      - name: Build
+        shell: bash
+        run: CXXFLAGS=${{ matrix.config.flags }} LDFLAGS=${{ matrix.config.flags }} make py-build
+      - name: Test
+        shell: bash
+        run: make py-test
+      # - name: Build and publish
+      #   env:
+      #     TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+      #     TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      #   run: |
+      #     make pypi_publish
