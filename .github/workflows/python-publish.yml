@@ -65,8 +65,8 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           retention-days: 1
-          name: dist-${{ matrix.config.name }}-${{ matrix.python-version }}
-          path: build/py/dist/
+          name: package-${{ matrix.config.name }}-${{ matrix.python-version }}
+          path: build/py/
 
   publish:
     needs: build
@@ -76,11 +76,10 @@ jobs:
       - uses: actions/download-artifact@v2
       - name: Copy artifacts
         run: |
-          mkdir -p build/py/dist
-          cp dist-macos-3.9/*.gz build/py/dist
-          cp dist-macos-*/*.whl build/py/dist
-          cp dist-windows-*/*.whl build/py/dist
-          ls -R build
+          mkdir -p build
+          mv package-macos-3.9 build/py
+          cp package-macos-*/dist/*.whl build/py/dist
+          cp package-windows-*/dist/*.whl build/py/dist
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -94,3 +93,32 @@ jobs:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: make pypi-publish
+
+  docs:
+    needs: publish
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: package-macos-3.9
+          path: build/py
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      - name: Install dependencies
+        run: |
+          npm install
+          python -m pip install --upgrade pip
+          pip install sphinx
+      - name: Build docs
+        run: |
+          make py-doc
+      - uses: EndBug/add-and-commit@v7.4.0
+        with:
+          default_author: github_actions
+          add: "docs"
+          message: "docs(python): Update Python docs"
