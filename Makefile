@@ -228,7 +228,7 @@ py-doc: py-local-install
 	@cp -a README.rst ${SPHINX_SOURCE_DIR}/index.rst
 	sphinx-build -b html $(SPHINX_SOURCE_DIR) $(SPHINX_TARGET_DIR)
 	@rm -r ${SPHINX_SOURCE_DIR}/index.rst
-	prettier --write docs/searchindex.js
+	npx prettier --write docs/searchindex.js
 
 .PHONY: pypitest-publish pypi-publish py-clean
 PYPI_DIR = $(PY_BUILD_DIR)
