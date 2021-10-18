@@ -1,4 +1,4 @@
-.. image:: https://github.com/mapequation/infomap/workflows/C++%20CI/badge.svg
+.. image:: https://github.com/mapequation/infomap/actions/workflows/build.yml/badge.svg
 
 Infomap
 =======
