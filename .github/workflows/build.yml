@@ -1,4 +1,4 @@
-name: C++ CI
+name: Build
 
 on:
   push:
@@ -16,5 +16,5 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: make
-      run: make noomp
+    - run: make noomp
+    - run: ./Infomap --version
