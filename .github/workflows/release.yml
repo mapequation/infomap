@@ -36,15 +36,15 @@ jobs:
               binary: Infomap,
               flags: "",
             }
-          target:
-            - {
-              name: "",
-              target: "",
-            }
-            - {
-              name: "-noomp"
-              target: "noomp"
-            }
+        target:
+          - {
+            name: "",
+            target: "",
+          }
+          - {
+            name: "-noomp"
+            target: "noomp"
+          }
 
     steps:
       - uses: actions/checkout@v2
