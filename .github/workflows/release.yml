@@ -42,8 +42,8 @@ jobs:
             target: "",
           }
           - {
-            name: "-noomp"
-            target: "noomp"
+            name: "-noomp",
+            target: "noomp",
           }
 
     steps:
