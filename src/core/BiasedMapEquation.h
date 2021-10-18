@@ -17,6 +17,7 @@
 namespace infomap {
 
 class InfoNode;
+class StateNetwork;
 
 class BiasedMapEquation : protected MapEquation {
   using Base = MapEquation;
@@ -145,6 +146,8 @@ protected:
 
   double calcNumModuleCost(unsigned int numModules) const;
 
+  double calcEntropyBiasCorrection(unsigned int numModules) const;
+
   // ===================================================
   // Consolidation
   // ===================================================
@@ -191,6 +194,16 @@ protected:
   unsigned int preferredNumModules = 0;
   unsigned int currentNumModules = 0;
   double biasedCost = 0.0;
+
+  // For entropy bias correction
+  bool useEntropyBiasCorrection = false;
+  double entropyBiasCorrection = 0;
+  double gamma = 0.7;
+  static double s_totalDegree;
+  static unsigned int s_numNodes;
+
+  public:
+  static void setNetworkProperties(const StateNetwork& network);
 };
 
 

@@ -10,7 +10,7 @@
 #include "InfoNode.h"
 #include "InfoEdge.h"
 #include "FlowData.h"
-#include "MapEquation.h"
+#include "BiasedMapEquation.h"
 #include "ClusterMap.h"
 #include "../io/SafeFile.h"
 #include "../io/version.h"
@@ -910,7 +910,8 @@ void InfomapBase::generateSubNetwork(Network& network)
   // m_calculateEnterExitFlow = true; //TODO: Implement always in flow calculation
   if (!this->regularized) {
     m_calculateEnterExitFlow = true;
-  }
+  }  
+  BiasedMapEquation::setNetworkProperties(network);
 
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Log() << "Warning, total flow on nodes differs from 1.0 by " << sumNodeFlow - 1.0 << "." << std::endl;
