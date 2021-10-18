@@ -11,12 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install deps
-        run: |
+      - run: |
           sudo apt update
           sudo apt install swig
-      - name: Run swig
-        run: make py-swig
+      - run: make py-swig
       - uses: actions/upload-artifact@v2
         with:
           retention-days: 1
@@ -39,28 +37,26 @@ jobs:
         with:
           name: swigfiles
           path: build/py
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        shell: bash
+      - shell: bash
         run: |
           python -m pip install --upgrade pip
           pip install setuptools wheel autopep8
-      - name: Install dependencies on macOS
-        if: startsWith(matrix.config.os, 'macos')
+      - if: startsWith(matrix.config.os, 'macos')
         run: brew install libomp
-      - name: Build
-        shell: bash
-        run: CXXFLAGS=${{ matrix.config.flags }} LDFLAGS=${{ matrix.config.flags }} CXX=g++ make py-build
-      - name: Test
-        shell: bash
+      - shell: bash
+        run: make py-build
+        env:
+          CXX: g++
+          CXXFLAGS: ${{ matrix.config.flags }}
+          LDFLAGS: ${{ matrix.config.flags }}
+      - shell: bash
         run: |
           pip install networkx pandas flake8
           make py-test
-      - name: Dist
-        shell: bash
+      - shell: bash
         run: make pypi-dist
       - uses: actions/upload-artifact@v2
         with:
@@ -74,25 +70,21 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
-      - name: Copy artifacts
-        run: |
+      - run: |
           mkdir -p build
           mv package-macos-3.9 build/py
           cp package-macos-*/dist/*.whl build/py/dist
           cp package-windows-*/dist/*.whl build/py/dist
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Install dependencies
-        run: |
+      - run: |
           python -m pip install --upgrade pip
           pip install twine
-      - name: Publish
+      - run: make pypi-publish
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: make pypi-publish
 
   docs:
     needs: publish
@@ -109,14 +101,11 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 14
-      - name: Install dependencies
-        run: |
+      - run: |
           npm install
           python -m pip install --upgrade pip
           pip install sphinx
-      - name: Build docs
-        run: |
-          make py-doc
+      - run: make py-doc
       - uses: EndBug/add-and-commit@v7.4.0
         with:
           default_author: github_actions
