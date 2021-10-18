@@ -40,38 +40,31 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install dependencies on ubuntu
-        if: startsWith(matrix.config.os, 'ubuntu')
+      - if: startsWith(matrix.config.os, 'ubuntu')
         run: |
           sudo apt update
           sudo apt install libomp-dev
-          gcc --version
 
-      - name: Install dependencies on macos
-        if: startsWith(matrix.config.os, 'macos')
-        run: |
-          brew install p7zip libomp
-          clang --version
+      - if: startsWith(matrix.config.os, 'macos')
+        run: brew install p7zip libomp
 
-      - name: Build
+      - run: make -j
         shell: bash
-        run: |
-          CXXFLAGS=${{ matrix.config.flags }} LDFLAGS=${{ matrix.config.flags }} CXX=g++ make -j
+        env:
+          CXX: g++
+          CXXFLAGS: ${{ matrix.config.flags }}
+          LDFLAGS: ${{ matrix.config.flags }}
 
-      - name: Pack
+      - run: 7z a ${{ matrix.config.artifact }} ${{ matrix.config.binary }}
         shell: bash
-        run: |
-          7z a ${{ matrix.config.artifact }} ${{ matrix.config.binary }}
 
-      - name: Upload
-        uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v2
         with:
           retention-days: 1
           path: ./${{ matrix.config.binary }}
           name: infomap-${{ matrix.config.name }}
 
-      - name: Release
-        uses: softprops/action-gh-release@v1
+      - uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: ${{ matrix.config.artifact }}
