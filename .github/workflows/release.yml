@@ -57,7 +57,7 @@ jobs:
       - if: startsWith(matrix.config.os, 'macos')
         run: brew install p7zip libomp
 
-      - run: make -j ${{ martix.target.target }}
+      - run: make -j ${{ matrix.target.target }}
         shell: bash
         env:
           CXX: g++
