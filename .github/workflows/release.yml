@@ -17,22 +17,22 @@ jobs:
         config:
           - {
               name: windows,
-              os: windows-latest,
+              os: windows-2019,
               artifact: "infomap-win",
               binary: Infomap.exe,
               flags: -static,
             }
           - {
-              name: linux,
-              os: ubuntu-latest,
-              artifact: "infomap-linux",
+              name: ubuntu,
+              os: ubuntu-18.04,
+              artifact: "infomap-ubuntu",
               binary: Infomap,
               flags: "",
             }
           - {
               name: macos,
-              os: macos-latest,
-              artifact: "infomap-macos",
+              os: macos-10.15,
+              artifact: "infomap-mac",
               binary: Infomap,
               flags: "",
             }
@@ -49,10 +49,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - if: startsWith(matrix.config.os, 'ubuntu')
-        run: |
-          sudo apt update
-          sudo apt install libomp-dev
+      #- if: startsWith(matrix.config.os, 'ubuntu')
+      #  run: |
+      #    sudo apt update
+      #    sudo apt install libomp-dev
 
       - if: startsWith(matrix.config.os, 'macos')
         run: brew install p7zip libomp
@@ -63,6 +63,9 @@ jobs:
           CXX: g++
           CXXFLAGS: ${{ matrix.config.flags }}
           LDFLAGS: ${{ matrix.config.flags }}
+
+      - run: ./Infomap --version
+        shell: bash
 
       - run: 7z a ${{ matrix.config.artifact }}${{ matrix.target.name }}.zip ${{ matrix.config.binary }}
         shell: bash
