@@ -218,9 +218,19 @@ class Infomap {
 
     const worker = this.workers[id];
 
-    if (worker.terminate) {
-      if (timeout <= 0) worker.terminate();
-      else setTimeout(() => worker.terminate(), timeout);
+    const terminate = () => {
+      if (worker.terminate) {
+        worker.terminate();
+      }
+      if (this.events.error) {
+        this.events.error(`Worker ${id} terminated`, id);
+      }
+    };
+
+    if (timeout <= 0) {
+      terminate();
+    } else {
+      setTimeout(terminate, timeout);
     }
 
     delete this.workers[id];
