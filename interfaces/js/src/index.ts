@@ -199,10 +199,10 @@ class Infomap {
       if (data && event.data.type === "data") {
         data(event.data.content, id);
       } else if (error && event.data.type === "error") {
-        this.terminate(id);
+        this._terminate(id);
         error(event.data.content, id);
       } else if (finished && event.data.type === "finished") {
-        this.terminate(id);
+        this._terminate(id);
         finished(event.data.content, id);
       }
     };
@@ -213,27 +213,35 @@ class Infomap {
     };
   }
 
-  terminate(id: number, timeout = 1000) {
-    if (!this.workers[id]) return;
+  protected async _terminate(id: number, timeout = 1000): Promise<boolean> {
+    if (!this.workers[id]) return Promise.resolve(false);
 
     const worker = this.workers[id];
 
-    const terminate = () => {
-      if (worker.terminate) {
-        worker.terminate();
-      }
-      if (this.events.error) {
-        this.events.error(`Worker ${id} terminated`, id);
-      }
-    };
+    return new Promise<boolean>((resolve, reject) => {
+      const terminate = () => {
+        if (worker.terminate) {
+          worker.terminate();
+          resolve(true);
+        }
+      };
 
-    if (timeout <= 0) {
-      terminate();
-    } else {
-      setTimeout(terminate, timeout);
+      if (timeout <= 0) {
+        terminate();
+      } else {
+        setTimeout(terminate, timeout);
+      }
+
+      delete this.workers[id];
+    });
+  }
+
+  async terminate(id: number, timeout = 1000) {
+    const success = await this._terminate(id, timeout);
+
+    if (success && this.events.error) {
+      this.events.error(`Worker ${id} terminated`, id);
     }
-
-    delete this.workers[id];
   }
 }
 
