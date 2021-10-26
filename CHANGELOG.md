@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.7.3](https://github.com/mapequation/infomap/compare/v1.7.2...v1.7.3) (2021-10-26)
+
+
+### Bug Fixes
+
+* **js:** Don't run error callback on finish ([13a21f0](https://github.com/mapequation/infomap/commit/13a21f00f445e8a378ca287e080085b47df4653f))
+
 ### [1.7.2](https://github.com/mapequation/infomap/compare/v1.7.1...v1.7.2) (2021-10-26)
 
 
