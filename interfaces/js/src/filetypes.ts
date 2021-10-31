@@ -13,6 +13,7 @@ export interface TreeNode {
   path: number[];
   modules?: number[];
   flow?: number;
+  modularCentrality?: number;
   name?: string;
   id: number;
 }
