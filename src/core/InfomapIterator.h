@@ -8,6 +8,7 @@
 
 #include <deque>
 #include <map>
+#include <cmath>
 #include "InfoNode.h"
 
 namespace infomap {
@@ -141,6 +142,24 @@ public:
     return m_depth;
   }
 
+  double modularCentrality() const
+  {
+    if (m_current->parent == nullptr) {
+      // The root node has no modular centrality
+      return 0.0;
+    }
+
+    const auto p_m = m_current->parent->data.flow;
+    const auto p_u = m_current->data.flow;
+    const auto p_diff = p_m - p_u;
+
+    if (p_diff > 0.0) {
+      return -p_diff * std::log2(p_diff / p_m);
+    }
+
+    return 0.0;
+  }
+
   bool isEnd() const
   {
     return m_current == nullptr;
@@ -175,6 +194,7 @@ public:
   using InfomapIterator::childIndex;
   using InfomapIterator::current;
   using InfomapIterator::depth;
+  using InfomapIterator::modularCentrality;
   using InfomapIterator::path;
 };
 
@@ -217,6 +237,7 @@ public:
   using InfomapIterator::childIndex;
   using InfomapIterator::current;
   using InfomapIterator::depth;
+  using InfomapIterator::modularCentrality;
   using InfomapIterator::path;
 };
 
@@ -259,6 +280,7 @@ public:
   using InfomapIterator::childIndex;
   using InfomapIterator::current;
   using InfomapIterator::depth;
+  using InfomapIterator::modularCentrality;
   using InfomapIterator::path;
 };
 
@@ -315,6 +337,7 @@ public:
   using InfomapIterator::childIndex;
   using InfomapIterator::current;
   using InfomapIterator::depth;
+  using InfomapIterator::modularCentrality;
   using InfomapIterator::path;
 };
 
@@ -363,6 +386,7 @@ public:
   using InfomapIteratorPhysical::childIndex;
   using InfomapIteratorPhysical::current;
   using InfomapIteratorPhysical::depth;
+  using InfomapIteratorPhysical::modularCentrality;
   using InfomapIteratorPhysical::path;
 };
 

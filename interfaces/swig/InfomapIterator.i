@@ -76,6 +76,17 @@ namespace std {
 			return self._depth()
 
 		@property
+		def modular_centrality(self):
+			"""Get the modular centrality of the node.
+
+			Returns
+			-------
+			float
+				The modular centrality
+			"""
+			return self.modularCentrality()
+
+		@property
 		def child_index(self):
 			"""Get the child index.
 
@@ -150,6 +161,17 @@ namespace std {
 				The depth
 			"""
 			return self._depth()
+
+		@property
+		def modular_centrality(self):
+			"""Get the modular centrality of the node.
+
+			Returns
+			-------
+			float
+				The modular centrality
+			"""
+			return self.modularCentrality()
 
 		@property
 		def child_index(self):
@@ -229,6 +251,17 @@ namespace std {
 			return self._depth()
 
 		@property
+		def modular_centrality(self):
+			"""Get the modular centrality of the node.
+
+			Returns
+			-------
+			float
+				The modular centrality
+			"""
+			return self.modularCentrality()
+
+		@property
 		def child_index(self):
 			"""Get the child index.
 
@@ -306,6 +339,17 @@ namespace std {
 			return self._depth()
 
 		@property
+		def modular_centrality(self):
+			"""Get the modular centrality of the node.
+
+			Returns
+			-------
+			float
+				The modular centrality
+			"""
+			return self.modularCentrality()
+
+		@property
 		def child_index(self):
 			"""Get the child index.
 
@@ -381,6 +425,17 @@ namespace std {
 				The depth
 			"""
 			return self._depth()
+
+		@property
+		def modular_centrality(self):
+			"""Get the modular centrality of the node.
+
+			Returns
+			-------
+			float
+				The modular centrality
+			"""
+			return self.modularCentrality()
 
 		@property
 		def child_index(self):
