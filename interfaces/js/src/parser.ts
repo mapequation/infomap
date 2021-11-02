@@ -5,7 +5,7 @@ import type {
   TreeNode as JsonTreeNode,
   TreeStateNode as JsonTreeStateNode,
 } from "./filetypes";
-import type { Header as JsonHeader } from "./index";
+import type { Header as JsonHeader, Module } from "./index";
 
 // FIXME This is not included in the header
 type Header = Omit<JsonHeader, "directed">;
@@ -14,6 +14,7 @@ type TreeStateNode = Omit<JsonTreeStateNode, "modules" | "modularCentrality">;
 
 export type Result<NodeType extends NodeBase> = Header & {
   nodes: NodeType[];
+  modules?: Module[];
 };
 
 export type Extension = "clu" | "tree";
@@ -109,7 +110,7 @@ export function parseClu<NodeType extends CluNode>(
 
   const nodes: NodeType[] = [];
 
-  for (const line of nodeSection(file)) {
+  for (const [_, line] of nodeSection(file)) {
     const fields = line.split(" ").map(Number);
 
     if (fields.length < nodeHeader.length) {
@@ -136,7 +137,8 @@ export function parseClu<NodeType extends CluNode>(
 
 export function parseTree<NodeType extends TreeNode>(
   file: string | string[],
-  nodeHeader?: string[]
+  nodeHeader?: string[],
+  parseLinks = false
 ): Result<NodeType> | null {
   // First order
   // # path flow name node_id
@@ -174,16 +176,10 @@ export function parseTree<NodeType extends TreeNode>(
 
   const nodes: NodeType[] = [];
 
-  let i = 0;
+  let lineNo = 0;
 
-  for (const line of nodeSection(file)) {
-    if (line.startsWith("#") || line.length === 0) {
-      continue;
-    }
-
-    if (line.startsWith("*")) {
-      break;
-    }
+  for (const [i, line] of nodeSection(file)) {
+    lineNo = i;
 
     const match = line.match(/[^\s"']+|"([^"]*)"/g);
 
@@ -219,19 +215,61 @@ export function parseTree<NodeType extends TreeNode>(
     }
 
     nodes.push(node as NodeType);
-    ++i;
   }
 
-  // i is the index of the first line after the node section
+  // lineNo is the index of the last line of the node section
+  ++lineNo;
+
+  if (file.length <= lineNo + 1) {
+    return {
+      ...header,
+      nodes,
+    };
+  }
+
+  const modules = [];
+  let module: Module | null = null;
+
+  for (const [_, line] of linkSection(file, lineNo)) {
+    if (line.startsWith("*Links")) {
+      const [moduleId, ...rest] = line.split(" ");
+
+      const path = moduleId === "root" ? [0] : moduleId.split(":").map(Number);
+      const [enterFlow, exitFlow, numEdges, numChildren] = rest.map(Number);
+
+      module = {
+        path,
+        enterFlow,
+        exitFlow,
+        numEdges,
+        numChildren,
+        links: parseLinks ? [] : undefined,
+      };
+
+      modules.push(module);
+      continue;
+    }
+
+    if (!parseLinks || !module) {
+      continue;
+    }
+
+    const [source, target, flow] = line.split(" ").map(Number);
+
+    module.links?.push({ source, target, flow });
+  }
 
   return {
     ...header,
     nodes,
+    modules,
   };
 }
 
 function* nodeSection(lines: string[]) {
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; ++i) {
+    const line = lines[i];
+
     if (line.startsWith("#") || line.length === 0) {
       continue;
     }
@@ -240,7 +278,28 @@ function* nodeSection(lines: string[]) {
       break;
     }
 
-    yield line;
+    yield [i, line] as [number, string];
+  }
+}
+
+function* linkSection(lines: string[], start: number = 0) {
+  // links section start at lines[start]
+  if (lines.length <= start || !lines[start].startsWith("*Links")) {
+    return;
+  }
+
+  // skip the section header
+  start++;
+
+  for (let i = start; i < lines.length; ++i) {
+    const line = lines[i];
+
+    if (line.length === 0) {
+      continue;
+    }
+
+    yield [i, line] as [number, string];
+    continue;
   }
 }
 
