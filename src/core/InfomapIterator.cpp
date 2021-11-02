@@ -53,7 +53,7 @@ InfomapIterator& InfomapIterator::operator++()
 
     current = current->next;
 
-    if (!current->isLeaf() && (m_moduleIndex < 0 || static_cast<unsigned int>(m_moduleIndexLevel) >= m_depth)) {
+    if (!current->isLeaf() && (static_cast<unsigned int>(m_moduleIndexLevel) >= m_depth)) {
       ++m_moduleIndex;
     }
 

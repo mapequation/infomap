@@ -338,6 +338,7 @@ std::string Network::parseVertices(std::ifstream& file, std::string heading)
 
 std::string Network::parseStateNodes(std::ifstream& file, /* [[maybe_unused]] */ std::string heading)
 {
+  m_higherOrderInputMethodCalled = true;
   Log() << "  Parsing state nodes...\n"
         << std::flush;
   std::string line;
@@ -590,6 +591,7 @@ void Network::printSummary()
 
 void Network::addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight)
 {
+  m_higherOrderInputMethodCalled = true;
   if (weight < m_config.weightThreshold) {
     ++m_numLinksIgnoredByWeightThreshold;
     m_totalLinkWeightIgnored += weight;
@@ -955,7 +957,7 @@ double Network::calculateJensenShannonDivergence(bool& intersect, const OutLinkM
   auto layer1OutLinkItEnd = layer1OutLinks.end();
   auto layer2OutLinkItEnd = layer2OutLinks.end();
   while (layer1OutLinkIt != layer1OutLinkItEnd && layer2OutLinkIt != layer2OutLinkItEnd) {
-    auto diff = layer1OutLinkIt->first.id - layer2OutLinkIt->first.id;
+    int diff = layer1OutLinkIt->first.id - layer2OutLinkIt->first.id;
     if (diff < 0) {
       // If the first state node has a link that the second has not
       double p1 = layer1OutLinkIt->second.weight / ow1;
@@ -1021,6 +1023,7 @@ void Network::simulateInterLayerLinks()
 
 void Network::addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsigned int n2, double weight)
 {
+  m_higherOrderInputMethodCalled = true;
   bool added = m_networks[layer].addLink(n1, n2, weight);
   if (added) {
     ++m_numIntraLayerLinks;
@@ -1034,6 +1037,7 @@ void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsign
   if (layer1 == layer2) {
     throw InputDomainError(io::Str() << "Inter-layer link (layer1, node, layer2): " << layer1 << ", " << n << ", " << layer2 << " must have layer1 != layer2");
   }
+  m_higherOrderInputMethodCalled = true;
 
   // m_interLinks[LayerNode(layer1, n)][layer2] += interWeight;
 
@@ -1067,6 +1071,7 @@ void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsign
 
 unsigned int Network::addMultilayerNode(unsigned int layerId, unsigned int physicalId, double weight)
 {
+  m_higherOrderInputMethodCalled = true;
   // auto layerNode = LayerNode(layerId, physicalId);
   // auto it = m_layerNodeToStateId.find(layerNode);
   // if (it != m_layerNodeToStateId.end()) {

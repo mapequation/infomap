@@ -48,6 +48,7 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(Stat
 
 std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(unsigned int id, unsigned int physId)
 {
+  m_higherOrderInputMethodCalled = true;
   return addStateNode(StateNode(id, physId));
 }
 

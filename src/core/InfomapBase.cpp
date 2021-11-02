@@ -289,7 +289,7 @@ void InfomapBase::run(Network& network)
 
   if (printPajekNetwork) {
     std::string filename;
-    if (network.haveMemoryInput()) {
+    if (printStates()) {
       filename = outDirectory + outName + "_states_as_physical.net";
       Log() << "Writing state network as first order Pajek network to '" << filename << "'... ";
     } else {
@@ -303,15 +303,17 @@ void InfomapBase::run(Network& network)
 
   if (network.haveMemoryInput()) {
     Log() << "  -> Found higher order network input, using the Map Equation for higher order network flows\n";
-    if (!haveMemory()) {
-      setMemoryInput();
-    }
+    setStateInput();
+    setStateOutput();
+
     if (network.isMultilayerNetwork() && !isMultilayerNetwork()) {
       setMultilayerInput();
     }
   } else {
-    if (haveMemory()) {
+    if (haveMemory() || network.higherOrderInputMethodCalled()) {
       Log() << "  -> Warning: Higher order network specified but no higher order input found.\n";
+      // Use state output anyway for consistency even in the special case when input is first order
+      setStateOutput();
     }
     Log() << "  -> Ordinary network input, using the Map Equation for first order network flows\n";
   }
@@ -326,7 +328,7 @@ void InfomapBase::run(Network& network)
 
   if (printFlowNetwork) {
     std::string filename;
-    if (network.haveMemoryInput()) {
+    if (printStates()) {
       filename = outDirectory + outName + "_states_as_physical_flow.net";
       Log() << "Writing flow state network as first order Pajek network to '" << filename << "'... ";
     } else {
@@ -2081,7 +2083,7 @@ void InfomapBase::writeResult()
   if (printTree) {
     std::string filename = outDirectory + outName + ".tree";
 
-    if (!haveMemory()) {
+    if (!printStates()) {
       Log() << "Write tree to " << filename << "... ";
       writeTree(filename);
       Log() << "done!\n";
@@ -2101,7 +2103,7 @@ void InfomapBase::writeResult()
   if (printFlowTree) {
     std::string filename = outDirectory + outName + ".ftree";
 
-    if (!haveMemory()) {
+    if (!printStates()) {
       Log() << "Write flow tree to " << filename << "... ";
       writeFlowTree(filename);
       Log() << "done!\n";
@@ -2121,7 +2123,7 @@ void InfomapBase::writeResult()
   if (printNewick) {
     std::string filename = outDirectory + outName + ".nwk";
 
-    if (!haveMemory()) {
+    if (!printStates()) {
       Log() << "Write Newick tree to " << filename << "... ";
       writeNewickTree(filename);
       Log() << "done!\n";
@@ -2141,7 +2143,7 @@ void InfomapBase::writeResult()
     std::string filename = outDirectory + outName + ".json";
     const bool writeLinks = false;
 
-    if (!haveMemory()) {
+    if (!printStates()) {
       Log() << "Write JSON tree to " << filename << "... ";
       writeJsonTree(filename, false, writeLinks);
       Log() << "done!\n";
@@ -2160,7 +2162,7 @@ void InfomapBase::writeResult()
   if (printCsv) {
     std::string filename = outDirectory + outName + ".csv";
 
-    if (!haveMemory()) {
+    if (!printStates()) {
       Log() << "Write CSV tree to " << filename << "... ";
       writeCsvTree(filename);
       Log() << "done!\n";
@@ -2178,7 +2180,7 @@ void InfomapBase::writeResult()
 
   if (printClu) {
     std::string filename = outDirectory + outName + ".clu";
-    if (!haveMemory()) {
+    if (!printStates()) {
       Log() << "Write node modules to " << filename << "... ";
       writeClu(filename, false, cluLevel);
       Log() << "done!\n";
