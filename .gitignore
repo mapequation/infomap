@@ -44,3 +44,4 @@ interfaces/python/source/index.rst
 *.nwk
 *.csv
 /*.net
+/*.json
