@@ -107,6 +107,7 @@ protected:
   // Network
   bool m_haveDirectedInput = false;
   bool m_haveMemoryInput = false;
+  bool m_higherOrderInputMethodCalled = false;
   NodeMap m_nodes; // Nodes indexed by state id (equal physical id for first-order networks)
   NodeLinkMap m_nodeLinkMap;
   unsigned int m_numNodesFound = 0;
@@ -194,6 +195,7 @@ public:
 
   bool haveDirectedInput() const { return m_haveDirectedInput; }
   bool haveMemoryInput() const { return m_haveMemoryInput; }
+  bool higherOrderInputMethodCalled() const { return m_higherOrderInputMethodCalled; }
   // Bipartite
   bool isBipartite() const { return m_bipartiteStartId > 0; }
   unsigned int bipartiteStartId() const { return m_bipartiteStartId; }

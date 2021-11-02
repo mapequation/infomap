@@ -83,7 +83,8 @@ struct Config {
   std::string networkFile;
   std::vector<std::string> additionalInput;
   std::string inputFormat;
-  bool memoryInput = false;
+  bool stateInput = false;
+  bool stateOutput = false;
   bool multilayerInput = false;
   //bool withMemory = false; // unused
   double weightThreshold = 0.0;
@@ -203,7 +204,8 @@ struct Config {
     networkFile = other.networkFile;
     additionalInput = other.additionalInput;
     inputFormat = other.inputFormat;
-    memoryInput = other.memoryInput;
+    stateInput = other.stateInput;
+    stateOutput = other.stateOutput;
     multilayerInput = other.multilayerInput;
     //withMemory = other.withMemory;
     weightThreshold = other.weightThreshold;
@@ -349,7 +351,9 @@ struct Config {
 
   void adaptDefaults();
 
-  void setMemoryInput() { memoryInput = true; }
+  void setStateInput() { stateInput = true; }
+
+  void setStateOutput() { stateOutput = true; }
 
   void setMultilayerInput() { multilayerInput = true; }
 
@@ -371,7 +375,8 @@ struct Config {
   bool isStateNetwork() const { return inputFormat == "states"; }
   bool isBipartite() const { return inputFormat == "bipartite" || bipartite; }
 
-  bool haveMemory() const { return memoryInput; }
+  bool haveMemory() const { return stateInput; }
+  bool printStates() const { return stateOutput; }
 
   bool haveMetaData() const { return !metaDataFile.empty() || numMetaDataDimensions != 0; }
 
