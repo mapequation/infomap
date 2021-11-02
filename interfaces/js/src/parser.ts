@@ -31,7 +31,11 @@ export function readFile(file: File) {
   });
 }
 
-export function parse(file: string, type?: Extension) {
+export function parse(file: string | string[], type?: Extension) {
+  if (typeof file === "string") {
+    file = file.split("\n");
+  }
+
   const nodeHeader = parseNodeHeader(file);
 
   if (nodeHeader === null) {
@@ -66,7 +70,7 @@ const map = {
 } as const;
 
 export function parseClu<NodeType extends CluNode>(
-  file: string,
+  file: string | string[],
   nodeHeader?: string[]
 ): Result<NodeType> | null {
   // First order
@@ -87,6 +91,10 @@ export function parseClu<NodeType extends CluNode>(
   // 4 1 0.166667 2 2
   // 5 1 0.166667 3 2
 
+  if (typeof file === "string") {
+    file = file.split("\n");
+  }
+
   const header = parseHeader(file);
   if (!header) {
     return null;
@@ -101,7 +109,7 @@ export function parseClu<NodeType extends CluNode>(
 
   const nodes: NodeType[] = [];
 
-  for (const line of nodeSection(file.split("\n"))) {
+  for (const line of nodeSection(file)) {
     const fields = line.split(" ").map(Number);
 
     if (fields.length < nodeHeader.length) {
@@ -127,7 +135,7 @@ export function parseClu<NodeType extends CluNode>(
 }
 
 export function parseTree<NodeType extends TreeNode>(
-  file: string,
+  file: string | string[],
   nodeHeader?: string[]
 ): Result<NodeType> | null {
   // First order
@@ -148,6 +156,10 @@ export function parseTree<NodeType extends TreeNode>(
   // 1:2 0.166667 "j" 4 2 2
   // 1:3 0.166667 "k" 5 3 2
 
+  if (typeof file === "string") {
+    file = file.split("\n");
+  }
+
   const header = parseHeader(file);
   if (!header) {
     return null;
@@ -162,10 +174,9 @@ export function parseTree<NodeType extends TreeNode>(
 
   const nodes: NodeType[] = [];
 
-  const lines = file.split("\n");
   let i = 0;
 
-  for (const line of nodeSection(lines)) {
+  for (const line of nodeSection(file)) {
     if (line.startsWith("#") || line.length === 0) {
       continue;
     }
@@ -233,7 +244,7 @@ function* nodeSection(lines: string[]) {
   }
 }
 
-function parseNodeHeader(file: string): string[] | null {
+function parseNodeHeader(file: string | string[]): string[] | null {
   // First order tree
   // # path flow name node_id
 
@@ -254,22 +265,24 @@ function parseNodeHeader(file: string): string[] | null {
 
   const prefixes = ["# path", "# node_id", "# state_id"];
 
-  for (const line of file.split("\n")) {
+  if (typeof file === "string") {
+    file = file.split("\n");
+  }
+
+  for (const line of file) {
     if (!line.startsWith("#")) {
       break;
     }
 
-    for (const prefix of prefixes) {
-      if (line.startsWith(prefix)) {
-        return line.slice(2).split(" ");
-      }
+    if (prefixes.some((prefix) => line.startsWith(prefix))) {
+      return line.slice(2).split(" ");
     }
   }
 
   return null;
 }
 
-export function parseHeader(file: string): Header | null {
+export function parseHeader(file: string | string[]): Header | null {
   // # v1.7.3
   // # ./Infomap examples/networks/ninetriangles.net .
   // # started at 2021-11-02 13:56:33
@@ -282,11 +295,13 @@ export function parseHeader(file: string): Header | null {
 
   const result: Partial<Header> = {};
 
-  const lines = file.split("\n");
+  if (typeof file === "string") {
+    file = file.split("\n");
+  }
 
-  if (lines.length < 8) return null;
+  if (file.length < 8) return null;
 
-  const version = lines[0].match(/^# (v\d+\.\d+\.\d+)/)?.[1];
+  const version = file[0].match(/^# (v\d+\.\d+\.\d+)/)?.[1];
 
   if (version) {
     result.version = version;
@@ -294,7 +309,7 @@ export function parseHeader(file: string): Header | null {
     return null;
   }
 
-  const args = lines[1].match(/^# (.+)/)?.[1];
+  const args = file[1].match(/^# (.+)/)?.[1];
 
   if (args) {
     result.args = args;
@@ -302,7 +317,9 @@ export function parseHeader(file: string): Header | null {
     return null;
   }
 
-  for (const line of lines.slice(2)) {
+  for (let i = 2; i < file.length; ++i) {
+    const line = file[i];
+
     if (!line.startsWith("#")) {
       break;
     }
@@ -313,9 +330,9 @@ export function parseHeader(file: string): Header | null {
       continue;
     }
 
-    const completedIn = line.match(/^# completed in (.+)/)?.[1];
+    const completedIn = line.match(/^# completed in (.+) s/)?.[1];
     if (completedIn) {
-      result.completedIn = parseFloat(completedIn);
+      result.completedIn = Number(completedIn);
       continue;
     }
 
@@ -323,14 +340,14 @@ export function parseHeader(file: string): Header | null {
       /^# partitioned into (\d+) levels with (\d+) top modules/
     );
     if (partitionedInto) {
-      result.numLevels = parseInt(partitionedInto[1]);
-      result.numTopModules = parseInt(partitionedInto[2]);
+      result.numLevels = Number(partitionedInto[1]);
+      result.numTopModules = Number(partitionedInto[2]);
       continue;
     }
 
     const codelength = line.match(/^# codelength (.+) bits/)?.[1];
     if (codelength) {
-      result.codelength = parseFloat(codelength);
+      result.codelength = Number(codelength);
       continue;
     }
 
@@ -339,13 +356,13 @@ export function parseHeader(file: string): Header | null {
     )?.[1];
     if (relativeCodelengthSavings) {
       result.relativeCodelengthSavings =
-        parseFloat(relativeCodelengthSavings) / 100;
+        Number(relativeCodelengthSavings) / 100;
       continue;
     }
 
     const bipartiteStartId = line.match(/^# bipartite start id (\d+)/)?.[1];
     if (bipartiteStartId) {
-      result.bipartiteStartId = parseInt(bipartiteStartId);
+      result.bipartiteStartId = Number(bipartiteStartId);
       continue;
     }
   }
