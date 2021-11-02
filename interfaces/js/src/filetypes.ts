@@ -1,27 +1,32 @@
-export type CluNode<T extends string = "moduleId"> = {
-  [key in T]: number;
-} & {
+export type NodeBase = {
   id: number;
   flow?: number;
 };
+
+type StateNodeBase = {
+  stateId: number;
+  layerId?: number;
+};
+
+export type CluNode<T extends string = "moduleId"> = {
+  [key in T]: number;
+} &
+  NodeBase;
+
+export type CluStateNode = CluNode & StateNodeBase;
 
 export type Clu = CluNode[];
 
 export type MetaClu = CluNode<"meta">[];
 
-export interface TreeNode {
+export type TreeNode = {
   path: number[];
   modules?: number[];
-  flow?: number;
   modularCentrality?: number;
   name?: string;
-  id: number;
-}
+} & NodeBase;
 
-export interface TreeStateNode extends TreeNode {
-  stateId: number;
-  layerId?: number;
-}
+export type TreeStateNode = TreeNode & StateNodeBase;
 
 export type Tree = TreeNode[];
 

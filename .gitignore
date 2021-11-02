@@ -28,7 +28,8 @@ output
 build
 tmp
 node_modules
-/index.js
+/*.js
+/*.py
 /*.d.ts
 /*.d.ts.map
 docs/.*

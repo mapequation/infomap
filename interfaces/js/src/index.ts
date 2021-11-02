@@ -47,7 +47,7 @@ const changelog: Changelog[] = CHANGELOG;
 // @ts-ignore
 const parameters: (Parameter | RequiredParameter)[] = PARAMETERS;
 
-type Module = {
+export type Module = {
   path: number[];
   enterFlow: number;
   exitFlow: number;
@@ -60,7 +60,7 @@ type Module = {
   }[];
 };
 
-export interface Tree<NodeType = Required<Node>> {
+export interface Header {
   version: string;
   args: string;
   startedAt: string;
@@ -71,10 +71,14 @@ export interface Tree<NodeType = Required<Node>> {
   relativeCodelengthSavings: number;
   directed: boolean;
   bipartiteStartId?: number;
-  nodes: NodeType[];
-  modules: Module[];
 }
 
+export type Tree<NodeType = Required<Node>> = Header & {
+  nodes: NodeType[];
+  modules: Module[];
+};
+
+export type StateTree = Tree<Required<StateNode>>;
 export interface Result {
   clu?: string;
   clu_states?: string;
@@ -85,7 +89,7 @@ export interface Result {
   newick?: string;
   newick_states?: string;
   json?: Tree;
-  json_states?: Tree<Required<StateNode>>;
+  json_states?: StateTree;
   csv?: string;
   csv_states?: string;
   net?: string;
