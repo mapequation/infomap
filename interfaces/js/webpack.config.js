@@ -11,9 +11,12 @@ const webpackConfig = async () => {
 
   return {
     mode: "production",
-    entry: "./interfaces/js/src/index.ts",
+    entry: {
+      "index": "./interfaces/js/src/index.ts",
+      "parser": "./interfaces/js/src/parser.ts"
+    },
     output: {
-      filename: "index.js",
+      filename: "[name].js",
       path: path.resolve(__dirname, "../../"),
       library: {
         name: "infomap",
