@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.8.0](https://github.com/mapequation/infomap/compare/v1.7.3...v1.8.0) (2021-11-05)
+
+
+### Features
+
+* **js:** Add clu and tree javascript parser ([f0c738c](https://github.com/mapequation/infomap/commit/f0c738c2ebbd4d1f43d14b75f82767b30dbfb02f))
+* Add modular centrality score ([31cdd7f](https://github.com/mapequation/infomap/commit/31cdd7fa7a12add63f5b8818e503fe81b3f48555))
+
 ### [1.7.3](https://github.com/mapequation/infomap/compare/v1.7.2...v1.7.3) (2021-10-26)
 
 
