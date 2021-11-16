@@ -804,6 +804,79 @@ class Infomap(InfomapWrapper):
                                          target_node_id,
                                          weight)
 
+
+    def add_multilayer_intra_link(
+            self,
+            layer_id,
+            source_node_id,
+            target_node_id,
+            weight=1.0):
+        """Add a intra-layer link.
+
+        Adds a link within a layer in a multilayer network.
+
+        Parameters
+        ----------
+        layer_id : int
+        source_node_id : int
+        target_node_id : int
+        weight : float, optional
+
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> im.add_multilayer_intra_link(1, 0, 1)
+        >>> im.add_multilayer_intra_link(1, 1, 2)
+        >>> im.add_multilayer_intra_link(2, 0, 2)
+        >>> im.add_multilayer_intra_link(2, 2, 3)
+
+
+        """
+        return super().addMultilayerIntraLink(layer_id,
+                                         source_node_id,
+                                         target_node_id,
+                                         weight)
+
+    def add_multilayer_inter_link(
+            self,
+            source_layer_id,
+            node_id,
+            target_layer_id,
+            weight=1.0):
+        """Add a inter-layer link.
+
+        Adds a link between two layers in a multilayer network.
+        The link is specified through a shared physical node, but
+        that jump will not be recorded so Infomap will spread out
+        this link to the next possible steps for the random walker
+        in the target layer.
+
+        Parameters
+        ----------
+        source_layer_id : int
+        node_id : int
+        target_layer_id : int
+        weight : float, optional
+
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> im.add_multilayer_inter_link(1, 0, 2)
+        >>> im.add_multilayer_inter_link(1, 1, 2)
+        >>> im.add_multilayer_inter_link(2, 0, 1)
+        >>> im.add_multilayer_inter_link(2, 2, 1)
+
+
+        """
+        return super().addMultilayerInterLink(source_layer_id,
+                                         node_id,
+                                         target_layer_id,
+                                         weight)
+
     def add_multilayer_links(self, links):
         """Add several multilayer links.
 

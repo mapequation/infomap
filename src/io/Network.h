@@ -117,6 +117,7 @@ public:
 
   // std::string getParsingResultSummary();
 
+  void postProcessInputData();
   void generateStateNetworkFromMultilayer();
   void generateStateNetworkFromMultilayerWithInterLinks();
   void generateStateNetworkFromMultilayerWithSimulatedInterLinks();
