@@ -765,16 +765,6 @@ class Infomap(InfomapWrapper):
 
         Adds a link between layers in a multilayer network.
 
-        Parameters
-        ----------
-        source_multilayer_node : tuple of int, or MultilayerNode
-            If passed a tuple, it should be of the format
-            ``(layer_id, node_id)``.
-        target_multilayer_node : tuple of int, or MultilayerNode
-            If passed a tuple, it should be of the format
-            ``(layer_id, node_id)``.
-        weight : float, optional
-
         Examples
         --------
         Usage with tuples:
@@ -794,6 +784,20 @@ class Infomap(InfomapWrapper):
         >>> target_multilayer_node = MultilayerNode(layer_id=1, node_id=2)
         >>> im.add_multilayer_link(source_multilayer_node, target_multilayer_node)
 
+        Notes
+        -----
+        This is the full multilayer format that supports both undirected
+        and directed links. Infomap will not make any changes to the network.
+
+        Parameters
+        ----------
+        source_multilayer_node : tuple of int, or MultilayerNode
+            If passed a tuple, it should be of the format
+            ``(layer_id, node_id)``.
+        target_multilayer_node : tuple of int, or MultilayerNode
+            If passed a tuple, it should be of the format
+            ``(layer_id, node_id)``.
+        weight : float, optional
 
         """
         source_layer_id, source_node_id = source_multilayer_node
@@ -815,22 +819,33 @@ class Infomap(InfomapWrapper):
 
         Adds a link within a layer in a multilayer network.
 
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> im.add_multilayer_intra_link(1, 1, 2)
+        >>> im.add_multilayer_intra_link(1, 2, 3)
+        >>> im.add_multilayer_intra_link(2, 1, 3)
+        >>> im.add_multilayer_intra_link(2, 3, 4)
+
+        Notes
+        -----
+        This multilayer format requires a directed network, so if
+        the directed flag is not present, it will add all links
+        also in their opposite direction to transform the undirected
+        input to directed. If no inter-layer links are added, Infomap
+        will simulate those by relaxing the random walker's constraint 
+        to its current layer. The provided links are added to a 
+        temporary data structure that will be removed on run when they
+        are added to the main state network.
+
         Parameters
         ----------
         layer_id : int
         source_node_id : int
         target_node_id : int
         weight : float, optional
-
-        Examples
-        --------
-
-        >>> from infomap import Infomap
-        >>> im = Infomap()
-        >>> im.add_multilayer_intra_link(1, 0, 1)
-        >>> im.add_multilayer_intra_link(1, 1, 2)
-        >>> im.add_multilayer_intra_link(2, 0, 2)
-        >>> im.add_multilayer_intra_link(2, 2, 3)
 
 
         """
@@ -853,23 +868,41 @@ class Infomap(InfomapWrapper):
         this link to the next possible steps for the random walker
         in the target layer.
 
-        Parameters
-        ----------
-        source_layer_id : int
-        node_id : int
-        target_layer_id : int
-        weight : float, optional
+
+        Notes
+        -----
+        This multilayer format requires a directed network, so if
+        the directed flag is not present, it will add all links
+        also in their opposite direction to transform the undirected
+        input to directed. If no inter-layer links are added, Infomap
+        will simulate these by relaxing the random walker's constraint 
+        to its current layer. The provided links are added to a 
+        temporary data structure that will be removed on run when they
+        are added to the main state network.
 
         Examples
         --------
 
         >>> from infomap import Infomap
         >>> im = Infomap()
-        >>> im.add_multilayer_inter_link(1, 0, 2)
         >>> im.add_multilayer_inter_link(1, 1, 2)
-        >>> im.add_multilayer_inter_link(2, 0, 1)
-        >>> im.add_multilayer_inter_link(2, 2, 1)
+        >>> im.add_multilayer_inter_link(1, 2, 2)
+        >>> im.add_multilayer_inter_link(2, 1, 1)
+        >>> im.add_multilayer_inter_link(2, 3, 1)
 
+        Notes
+        -----
+        This multilayer format requires a directed network, so if
+        the directed flag is not present, it will add all links
+        also in their opposite direction to transform the undirected
+        input to directed.
+
+        Parameters
+        ----------
+        source_layer_id : int
+        node_id : int
+        target_layer_id : int
+        weight : float, optional
 
         """
         return super().addMultilayerInterLink(source_layer_id,
