@@ -836,9 +836,9 @@ class Infomap(InfomapWrapper):
         also in their opposite direction to transform the undirected
         input to directed. If no inter-layer links are added, Infomap
         will simulate those by relaxing the random walker's constraint 
-        to its current layer. The provided links are added to a 
-        temporary data structure that will be removed on run when they
-        are added to the main state network.
+        to its current layer. The final state network will be generated
+        on run, which will clear the temporary data structure that holds
+        the provided intra-layer links.
 
         Parameters
         ----------
@@ -876,9 +876,9 @@ class Infomap(InfomapWrapper):
         also in their opposite direction to transform the undirected
         input to directed. If no inter-layer links are added, Infomap
         will simulate these by relaxing the random walker's constraint 
-        to its current layer. The provided links are added to a 
-        temporary data structure that will be removed on run when they
-        are added to the main state network.
+        to its current layer. The final state network will be generated
+        on run, which will clear the temporary data structure that holds
+        the provided inter-layer links.
 
         Examples
         --------
