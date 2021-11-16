@@ -259,7 +259,10 @@ void InfomapBase::run(std::string parameters)
 
 
   if (m_network.numNodes() == 0) {
-    m_network.readInputData(networkFile);
+    m_network.postProcessInputData();
+    if (m_network.numNodes() == 0) {
+      m_network.readInputData(networkFile);
+    }
   }
 
   if (metaDataFile != "") {
@@ -279,6 +282,13 @@ void InfomapBase::run(Network& network)
 {
   if (!isMainInfomap())
     throw InternalOrderError("Can't run a non-main Infomap with an input network");
+
+  if (m_network.numNodes() == 0) {
+    m_network.postProcessInputData();
+    if (m_network.numNodes() == 0) {
+      throw DataDomainError("Network is empty");
+    }
+  }
 
   if (printStateNetwork) {
     std::string filename = outDirectory + outName + "_states.net";

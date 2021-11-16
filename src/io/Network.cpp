@@ -239,6 +239,12 @@ void Network::parseNetwork(std::string filename, const InsensitiveStringSet& val
     }
   }
 
+  postProcessInputData();
+  Log() << "Done!\n";
+}
+
+void Network::postProcessInputData()
+{
   if (!m_networks.empty()) {
     generateStateNetworkFromMultilayer();
   }
@@ -249,8 +255,6 @@ void Network::parseNetwork(std::string filename, const InsensitiveStringSet& val
       addNode(it.second.physId, it.second.weight);
     }
   }
-
-  Log() << "Done!\n";
 }
 
 
@@ -635,6 +639,8 @@ void Network::generateStateNetworkFromMultilayer()
   } else {
     generateStateNetworkFromMultilayerWithSimulatedInterLinks();
   }
+  m_networks.clear();
+  m_interLinks.clear();
 }
 
 void Network::generateStateNetworkFromMultilayerWithInterLinks()
