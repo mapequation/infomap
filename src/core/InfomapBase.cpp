@@ -329,7 +329,7 @@ void InfomapBase::run(Network& network)
   }
 
   if (network.haveDirectedInput() && isUndirectedFlow()) {
-    Log() << "  -> Notice: Directed input found, changing flow model from '" << flowModel << "' to '" << FlowModel::directed << "'\n";
+    Log() << "  -> Notice: Directed input found, changing flow model from '" << flowModel << "' to '" << FlowModel(FlowModel::directed) << "'\n";
     flowModel = FlowModel::directed;
   }
   network.setConfig(*this);

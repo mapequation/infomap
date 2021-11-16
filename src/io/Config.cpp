@@ -279,7 +279,7 @@ void Config::adaptDefaults()
   originallyUndirected = isUndirectedFlow();
 }
 
-inline const char* flowModelToString(FlowModel flowModel)
+inline const char* flowModelToString(const FlowModel& flowModel)
 {
   switch (flowModel) {
   case FlowModel::directed:
