@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.9.0](https://github.com/mapequation/infomap/compare/v1.8.0...v1.9.0) (2021-11-17)
+
+
+### Features
+
+* **python:** Add API for intra/inter-layer links ([#245](https://github.com/mapequation/infomap/issues/245)) ([aa31ab2](https://github.com/mapequation/infomap/commit/aa31ab22ff8a706f7b1e5bbf75740d35ef5716bf)), closes [#244](https://github.com/mapequation/infomap/issues/244)
+
+
+### Bug Fixes
+
+* Incorrect one-level codelength for higher-order input ([5a6d1a1](https://github.com/mapequation/infomap/commit/5a6d1a10657c568f0fddf3afd6729a63e3543081)), closes [#182](https://github.com/mapequation/infomap/issues/182)
+* Write "directed", not "1", in cli output notice ([f0a9dc7](https://github.com/mapequation/infomap/commit/f0a9dc722f8e8d5b4ca7e9e30d201f129d210df4))
+
 ## [1.8.0](https://github.com/mapequation/infomap/compare/v1.7.3...v1.8.0) (2021-11-05)
 
 
