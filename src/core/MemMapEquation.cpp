@@ -67,6 +67,34 @@ void MemMapEquation::initPartition(std::vector<InfoNode*>& nodes)
 void MemMapEquation::initPhysicalNodes(InfoNode& root)
 {
   // bool notInitiated = root.firstChild->physicalNodes.empty();
+  bool notInitiatedOnRoot = root.physicalNodes.empty();
+  if (notInitiatedOnRoot) {
+    // Assume leaf nodes directly under the root node
+    std::unordered_map<unsigned int, double> physicalNodes;
+    unsigned int maxPhysicalId = 0;
+    unsigned int minPhysicalId = std::numeric_limits<unsigned int>::max();
+    for (auto it(root.begin_leaf_nodes()); !it.isEnd(); ++it) {
+      InfoNode& node = *it;
+      physicalNodes[node.physicalId] += node.data.flow;
+      minPhysicalId = std::min(minPhysicalId, node.physicalId);
+      maxPhysicalId = std::max(maxPhysicalId, node.physicalId);
+    }
+
+    // Re-index physical nodes if necessary
+    std::map<unsigned int, unsigned int> toZeroBasedIndex;
+    if (maxPhysicalId - minPhysicalId + 1 > m_numPhysicalNodes) {
+      unsigned int zeroBasedPhysicalId = 0;
+      for (const auto physNode : physicalNodes) {
+        toZeroBasedIndex.insert(std::make_pair(physNode.first, zeroBasedPhysicalId++));
+      }
+    }
+
+    for (const auto physNode : physicalNodes) {
+      unsigned int zeroBasedIndex = !toZeroBasedIndex.empty() ? toZeroBasedIndex[physNode.first] : (physNode.first - minPhysicalId);
+      root.physicalNodes.push_back(PhysData(zeroBasedIndex, physNode.second));
+      // Log() << "(" << zeroBasedIndex << ", " << node.data.flow << "), length: " << node.physicalNodes.size() << "\n";
+    }
+  }
   auto firstLeafIt = root.begin_leaf_nodes();
   auto depth = firstLeafIt.depth();
   bool notInitiatedOnLeafNodes = firstLeafIt->physicalNodes.empty();
@@ -220,13 +248,11 @@ void MemMapEquation::calculateNodeFlow_log_nodeFlow()
 
 double MemMapEquation::calcCodelength(const InfoNode& parent) const
 {
-  return parent.isLeafModule() ? (parent.isRoot() ?
-                                                  // Use first-order model for one-level codebook
-                                      MapEquation::calcCodelengthOnModuleOfLeafNodes(parent)
-                                                  : calcCodelengthOnModuleOfLeafNodes(parent))
-                               :
-                               // Use first-order model on index codebook
-      MapEquation::calcCodelengthOnModuleOfModules(parent);
+  if (parent.isLeafModule()) {
+    return calcCodelengthOnModuleOfLeafNodes(parent);
+  }
+  // Use first-order model on index codebook
+  return MapEquation::calcCodelengthOnModuleOfModules(parent);
 }
 
 double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
