@@ -42,4 +42,9 @@ for node in im.nodes:
     print(node.node_id, node.module_id, node.path,
           node.depth, node.child_index, node.flow, im.get_name(node.node_id, default=""))
 
+print("\n#path flow enter_flow exit_flow is_leaf")
+for node in im.tree:
+    print(node.path, node.flow, node.data.enter_flow, node.data.exit_flow, node.is_leaf)
+
+
 print("\nDone!")
