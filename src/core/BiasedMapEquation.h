@@ -32,7 +32,11 @@ public:
       : MapEquation(other),
         preferredNumModules(other.preferredNumModules),
         currentNumModules(other.currentNumModules),
-        biasedCost(other.biasedCost)
+        biasedCost(other.biasedCost),
+        useEntropyBiasCorrection(other.useEntropyBiasCorrection),
+        indexEntropyBiasCorrection(other.indexEntropyBiasCorrection),
+        moduleEntropyBiasCorrection(other.moduleEntropyBiasCorrection),
+        gamma(other.gamma)
   {
   }
 
@@ -42,6 +46,10 @@ public:
     preferredNumModules = other.preferredNumModules;
     currentNumModules = other.currentNumModules;
     biasedCost = other.biasedCost;
+    useEntropyBiasCorrection = other.useEntropyBiasCorrection;
+    indexEntropyBiasCorrection = other.indexEntropyBiasCorrection;
+    moduleEntropyBiasCorrection = other.moduleEntropyBiasCorrection;
+    gamma = other.gamma;
     return *this;
   }
 
@@ -51,13 +59,16 @@ public:
   // Getters
   // ===================================================
 
-  using Base::getIndexCodelength;
+  // using Base::getIndexCodelength;
+  double getIndexCodelength() const;
 
   // double getModuleCodelength() const { return moduleCodelength + metaCodelength; };
   double getModuleCodelength() const;
 
   // double getCodelength() const { return codelength + metaCodelength; };
   double getCodelength() const;
+
+  double getEntropyBiasCorrection() const;
 
   // ===================================================
   // IO
@@ -120,6 +131,7 @@ protected:
   // Protected member functions
   // ===================================================
   double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+  double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
 
   int getDeltaNumModulesIfMoving(InfoNode& current,
                                  unsigned int oldModule,
@@ -146,6 +158,8 @@ protected:
 
   double calcNumModuleCost(unsigned int numModules) const;
 
+  double calcIndexEntropyBiasCorrection(unsigned int numModules) const;
+  double calcModuleEntropyBiasCorrection(unsigned int numModules) const;
   double calcEntropyBiasCorrection(unsigned int numModules) const;
 
   // ===================================================
@@ -197,7 +211,8 @@ protected:
 
   // For entropy bias correction
   bool useEntropyBiasCorrection = false;
-  double entropyBiasCorrection = 0;
+  double indexEntropyBiasCorrection = 0;
+  double moduleEntropyBiasCorrection = 0;
   double gamma = 0.7;
   static double s_totalDegree;
   static unsigned int s_numNodes;
