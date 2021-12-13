@@ -139,6 +139,7 @@ struct Config {
   double teleportationProbability = 0.15;
   unsigned int preferredNumberOfModules = 0;
   bool entropyBiasCorrection = false;
+  double entropyBiasCorrectionMultiplier = 1;
   unsigned long seedToRandomNumberGenerator = 123;
 
   // Performance and accuracy
@@ -259,6 +260,7 @@ struct Config {
     teleportationProbability = other.teleportationProbability;
     // preferredNumberOfModules = other.preferredNumberOfModules;
     entropyBiasCorrection = other.entropyBiasCorrection;
+    entropyBiasCorrectionMultiplier = other.entropyBiasCorrectionMultiplier;
     seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;
     // numTrials = other.numTrials;
     minimumCodelengthImprovement = other.minimumCodelengthImprovement;

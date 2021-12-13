@@ -79,6 +79,7 @@ void BiasedMapEquation::init(const Config& config)
   Log(3) << "BiasedMapEquation::init()...\n";
   preferredNumModules = config.preferredNumberOfModules;
   useEntropyBiasCorrection = config.entropyBiasCorrection;
+  entropyBiasCorrectionMultiplier = config.entropyBiasCorrectionMultiplier;
 }
 
 
@@ -117,17 +118,17 @@ double BiasedMapEquation::calcNumModuleCost(unsigned int numModules) const
 
 double BiasedMapEquation::calcIndexEntropyBiasCorrection(unsigned int numModules) const
 {
-  return useEntropyBiasCorrection ? gamma * numModules / s_totalDegree : 0;
+  return useEntropyBiasCorrection ? correctionCoefficient() * numModules / s_totalDegree : 0;
 }
 
 double BiasedMapEquation::calcModuleEntropyBiasCorrection(unsigned int numModules) const
 {
-  return useEntropyBiasCorrection ? gamma * (numModules + s_numNodes) / s_totalDegree : 0;
+  return useEntropyBiasCorrection ? correctionCoefficient() * (numModules + s_numNodes) / s_totalDegree : 0;
 }
 
 double BiasedMapEquation::calcEntropyBiasCorrection(unsigned int numModules) const
 {
-  return useEntropyBiasCorrection ? gamma * (2 * numModules + s_numNodes) / s_totalDegree : 0;
+  return useEntropyBiasCorrection ? correctionCoefficient() * (2 * numModules + s_numNodes) / s_totalDegree : 0;
 }
 
 void BiasedMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
@@ -157,7 +158,7 @@ double BiasedMapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent
   if (!useEntropyBiasCorrection)
     return L;
   
-  return L + gamma * (1 + parent.childDegree()) / s_totalDegree;
+  return L + correctionCoefficient() * (1 + parent.childDegree()) / s_totalDegree;
 }
 
 double BiasedMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
@@ -166,7 +167,7 @@ double BiasedMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& pare
   if (!useEntropyBiasCorrection)
     return L;
   
-  return L + gamma * (1 + parent.childDegree()) / s_totalDegree;
+  return L + correctionCoefficient() * (1 + parent.childDegree()) / s_totalDegree;
 }
 
 int BiasedMapEquation::getDeltaNumModulesIfMoving(InfoNode& current,

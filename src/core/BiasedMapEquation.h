@@ -182,6 +182,8 @@ protected:
   // Protected member functions
   // ===================================================
 
+  double correctionCoefficient() const { return gamma * entropyBiasCorrectionMultiplier; }
+
   /**
    *  Get meta codelength of module of current node
    * @param addRemoveOrNothing +1, -1 or 0 to calculate codelength
@@ -211,6 +213,7 @@ protected:
 
   // For entropy bias correction
   bool useEntropyBiasCorrection = false;
+  double entropyBiasCorrectionMultiplier = 1;
   double indexEntropyBiasCorrection = 0;
   double moduleEntropyBiasCorrection = 0;
   double gamma = 0.7;
