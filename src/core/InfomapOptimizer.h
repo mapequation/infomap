@@ -252,7 +252,7 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
     throw std::length_error("Size of predefined modules differ from size of active network.");
   unsigned int numMoved = 0;
 
-  Log() << "\n\n>> Move to predefined modules from codelength: " << m_objective << "\n";
+  // Log() << "\n\n>> Move to predefined modules from codelength: " << m_objective << "\n";
 
   for (unsigned int i = 0; i < numNodes; ++i) {
     InfoNode& current = *network[i];
@@ -263,19 +263,19 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
       DeltaFlowDataType oldModuleDelta(oldM, 0.0, 0.0);
       DeltaFlowDataType newModuleDelta(newM, 0.0, 0.0);
 
-      Log() << "\n----------\n";
-      Log() << "Node " << current.stateId << ", module " << oldM << " -> " << newM << "\n";
+      // Log() << "\n----------\n";
+      // Log() << "Node " << current.stateId << ", module " << oldM << " -> " << newM << "\n";
 
       // For all outlinks
       for (auto& e : current.outEdges()) {
         auto& edge = *e;
         unsigned int otherModule = edge.target.index;
         if (otherModule == oldM) {
-          Log() << "  Old deltaExit += " << edge.data.flow << "\n";
+          // Log() << "  Old deltaExit += " << edge.data.flow << "\n";
           oldModuleDelta.deltaExit += edge.data.flow;
         }
         else if (otherModule == newM) {
-          Log() << "  New deltaExit += " << edge.data.flow << "\n";
+          // Log() << "  New deltaExit += " << edge.data.flow << "\n";
           newModuleDelta.deltaExit += edge.data.flow;
         }
       }
@@ -284,11 +284,11 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
         auto& edge = *e;
         unsigned int otherModule = edge.source.index;
         if (otherModule == oldM) {
-          Log() << "  Old deltaEnter += " << edge.data.flow << "\n";
+          // Log() << "  Old deltaEnter += " << edge.data.flow << "\n";
           oldModuleDelta.deltaEnter += edge.data.flow;
         }
         else if (otherModule == newM) {
-          Log() << "  New deltaEnter += " << edge.data.flow << "\n";
+          // Log() << "  New deltaEnter += " << edge.data.flow << "\n";
           newModuleDelta.deltaEnter += edge.data.flow;
         }
       }
@@ -304,11 +304,9 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
         double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
         // double deltaExitOld = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
         double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
-        if (m_infomap->isUndirectedClustering()) {
-          Log() << " (dOld enter: " << deltaEnterOld << ", exit: " << deltaExitOld << ") ";
-          // deltaEnterOld *= 0.5;
-          // deltaExitOld *= 0.5;
-        }
+        // if (m_infomap->isUndirectedClustering()) {
+          // Log() << " (dOld enter: " << deltaEnterOld << ", exit: " << deltaExitOld << ") ";
+        // }
         oldModuleDelta.deltaEnter += deltaEnterOld;
         oldModuleDelta.deltaExit += deltaExitOld;
 
@@ -318,32 +316,30 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
         double deltaEnterNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
         // double deltaExitNew = (alpha*newModuleFlowData.teleportSourceFlow +	beta*newModuleFlowData.danglingFlow) * current.data.teleportWeight;
         double deltaExitNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
-        if (m_infomap->isUndirectedClustering()) {
-          Log() << " (dNew enter: " << deltaEnterNew << ", exit: " << deltaExitNew << ") ";
-          // deltaEnterNew *= 0.5;
-          // deltaExitNew *= 0.5;
-        }
+        // if (m_infomap->isUndirectedClustering()) {
+        //   Log() << " (dNew enter: " << deltaEnterNew << ", exit: " << deltaExitNew << ") ";
+        // }
         newModuleDelta.deltaEnter += deltaEnterNew;
         newModuleDelta.deltaExit += deltaExitNew;
         
         
-        Log() << "  Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
-        Log() << "  New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
-        Log() << "  Codelength: " << m_objective << "\n";
-        Log() << "  Old deltaEnter += " << (oldModuleDelta.deltaEnter - deltaEnterOld) << " + " << deltaEnterOld << " = " << oldModuleDelta.deltaEnter << "\n";
-        Log() << "  Old deltaExit += " << (oldModuleDelta.deltaExit - deltaExitOld) << " + " << deltaExitOld << " = " << oldModuleDelta.deltaExit << "\n";
-        Log() << "  New deltaEnter += " << (newModuleDelta.deltaEnter - deltaEnterNew) << " + " << deltaEnterNew << " = " << newModuleDelta.deltaEnter << "\n";
-        Log() << "  New deltaExit += " << (newModuleDelta.deltaExit - deltaExitNew) << " + " << deltaExitNew << " = " << newModuleDelta.deltaExit << "\n";
+        // Log() << "  Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
+        // Log() << "  New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
+        // Log() << "  Codelength: " << m_objective << "\n";
+        // Log() << "  Old deltaEnter += " << (oldModuleDelta.deltaEnter - deltaEnterOld) << " + " << deltaEnterOld << " = " << oldModuleDelta.deltaEnter << "\n";
+        // Log() << "  Old deltaExit += " << (oldModuleDelta.deltaExit - deltaExitOld) << " + " << deltaExitOld << " = " << oldModuleDelta.deltaExit << "\n";
+        // Log() << "  New deltaEnter += " << (newModuleDelta.deltaEnter - deltaEnterNew) << " + " << deltaEnterNew << " = " << newModuleDelta.deltaEnter << "\n";
+        // Log() << "  New deltaExit += " << (newModuleDelta.deltaExit - deltaExitNew) << " + " << deltaExitNew << " = " << newModuleDelta.deltaExit << "\n";
       }
-      else {
-        Log() << "  Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
-        Log() << "  New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
-        Log() << "  Codelength: " << m_objective << "\n";
-        Log() << "  Old deltaEnter += " << oldModuleDelta.deltaEnter << "\n";
-        Log() << "  Old deltaExit += " << oldModuleDelta.deltaExit << "\n";
-        Log() << "  New deltaEnter += " << newModuleDelta.deltaEnter << "\n";
-        Log() << "  New deltaExit += " << newModuleDelta.deltaExit << "\n";
-      }
+      // else {
+      //   Log() << "  Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
+      //   Log() << "  New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
+      //   Log() << "  Codelength: " << m_objective << "\n";
+      //   Log() << "  Old deltaEnter += " << oldModuleDelta.deltaEnter << "\n";
+      //   Log() << "  Old deltaExit += " << oldModuleDelta.deltaExit << "\n";
+      //   Log() << "  New deltaEnter += " << newModuleDelta.deltaEnter << "\n";
+      //   Log() << "  New deltaExit += " << newModuleDelta.deltaExit << "\n";
+      // }
 
 
       //Update empty module vector
@@ -358,9 +354,9 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
 
       m_moduleMembers[oldM] -= 1;
       m_moduleMembers[newM] += 1;
-      Log() << "  --> Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
-      Log() << "  --> New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
-      Log() << "  ==> Codelength: " << m_objective << "\n";
+      // Log() << "  --> Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
+      // Log() << "  --> New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
+      // Log() << "  ==> Codelength: " << m_objective << "\n";
 
       current.index = newM;
       ++numMoved;
