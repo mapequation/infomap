@@ -892,7 +892,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   m_root.data.flow = sumNodeFlow;
   m_root.data.teleportFlow = sumTeleFlow;
   // m_calculateEnterExitFlow = true; //TODO: Implement always in flow calculation
-  if (!this->bayesianPrior) {
+  if (!this->regularized) {
     m_calculateEnterExitFlow = true;
   }
 

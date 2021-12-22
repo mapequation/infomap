@@ -161,8 +161,8 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
 
   switch (config.flowModel) {
   case FlowModel::undirected:
-    if (config.bayesianPrior) {
-      calcUndirectedFlowWithBayesianPrior(network, config);
+    if (config.regularized) {
+      calcUndirectedRegularizedFlow(network, config);
     } else {
       calcUndirectedFlow();
     }
@@ -171,8 +171,8 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     if (network.isBipartite() && config.bipartiteTeleportation) {
       calcDirectedBipartiteFlow(network, config);
     } else {
-      if (config.bayesianPrior) {
-        calcDirectedFlowWithBayesianPrior(network, config);
+      if (config.regularized) {
+        calcDirectedRegularizedFlow(network, config);
       } else {
         calcDirectedFlow(network, config);
       }
@@ -365,7 +365,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
   }
 }
 
-void FlowCalculator::calcDirectedFlowWithBayesianPrior(const StateNetwork& network, const Config& config) noexcept
+void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, const Config& config) noexcept
 {
   Log() << "\n  -> Using recorded teleportation to nodes according to a fully connected Bayesian prior. " << std::flush;
 
@@ -396,7 +396,7 @@ void FlowCalculator::calcDirectedFlowWithBayesianPrior(const StateNetwork& netwo
   auto u_ij = [u_in, u_out](auto i, auto j) { return u_out(i) * u_in(j); };
   
   unsigned int numNodesAsTeleportationTargets = config.includeSelfLinks ? N : N - 1;
-  double lambda = config.bayesianPriorStrength * std::log(N) / numNodesAsTeleportationTargets;
+  double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
   double u_t = average_weight;
   // for (unsigned int i = 0; i < N; ++i) {
   //   u_t += k(i) == 0 ? 0 : s(i) / k(i);
@@ -571,7 +571,7 @@ void FlowCalculator::calcDirectedFlowWithBayesianPrior(const StateNetwork& netwo
   // Log() << "\n";
 }
 
-void FlowCalculator::calcUndirectedFlowWithBayesianPrior(const StateNetwork& network, const Config& config) noexcept
+void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, const Config& config) noexcept
 {
   Log() << "\n  -> Using recorded teleportation to nodes according to a fully connected Bayesian prior. " << std::flush;
 
@@ -596,7 +596,7 @@ void FlowCalculator::calcUndirectedFlowWithBayesianPrior(const StateNetwork& net
   auto u_ij = [u](auto i, auto j) { return u(i) * u(j); };
   
   unsigned int numNodesAsTeleportationTargets = config.includeSelfLinks ? N : N - 1;
-  double lambda = config.bayesianPriorStrength * std::log(N) / numNodesAsTeleportationTargets;
+  double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
   double u_t = average_weight;
 
   // Log() << "\nLambda: " << lambda << ", avg weight: " << u_t << ", norm: " << lambda * u_t << "\n";
@@ -939,7 +939,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 
   // Enter/exit flow
   
-  if (!config.isUndirectedClustering() && !config.bayesianPrior) {
+  if (!config.isUndirectedClustering() && !config.regularized) {
     enterFlow.assign(N, 0);
     exitFlow.assign(N, 0);
     double alpha = config.teleportationProbability;

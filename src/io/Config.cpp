@@ -106,9 +106,9 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(teleportationProbability, 'p', "teleportation-probability", "Probability of teleporting to a random node or link.", ArgType::probability, "Algorithm", true);
 
-  api.addOptionArgument(bayesianPrior, "bayesian-prior", "Add a fully connected Bayesian prior network to not overfit due to missing links. Implies recorded teleportation", "Algorithm", true);
+  api.addOptionArgument(regularized, "regularized", "Effectively add a fully connected Bayesian prior network to not overfit due to missing links. Implies recorded teleportation", "Algorithm", true);
 
-  api.addOptionArgument(bayesianPriorStrength, "bayesian-prior-strength", "Adjust default Bayesian prior constant with this factor", ArgType::number, "Algorithm", true);
+  api.addOptionArgument(regularizationStrength, "regularization-strength", "Adjust relative strength of Bayesian prior network with this multiplier.", ArgType::number, "Algorithm", true);
 
 
   // api.addOptionArgument(selfTeleportationProbability, 'y', "self-link-teleportation-probability",
@@ -219,7 +219,7 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
     setFlowModel(FlowModel::rawdir);
   }
 
-  if (bayesianPrior) {
+  if (regularized) {
     recordedTeleportation = true;
     // teleportToNodes = true;
   }
