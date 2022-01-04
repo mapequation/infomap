@@ -468,13 +468,14 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
       // teleTmp += alpha[i] * nodeFlow[i] / (sum_u_in - u_in(i));
       teleTmp += alpha[i] * nodeFlow[i];
     }
-    double tmp1 = 0;
+    // double tmp1 = 0;
     for (unsigned int i = 0; i < N; ++i) {
       // nodeFlowTmp[i] = u_in(i) / sum_u_in * (teleportationFlow - alpha[i] * nodeFlow[i]);
       // nodeFlowTmp[i] = u_in(i) * (teleTmp - alpha[i] * nodeFlow[i] / (sum_u_in - u_in(i)));
       // nodeFlowTmp[i] = nodeTeleportWeights[i] * (teleTmp - alpha[i] * nodeFlow[i]);
-      nodeFlowTmp[i] = nodeTeleportWeights[i] * (config.includeSelfLinks ? teleTmp : (teleTmp - alpha[i] * nodeFlow[i]));
-      tmp1 += nodeFlowTmp[i];
+      // nodeFlowTmp[i] = nodeTeleportWeights[i] * (config.includeSelfLinks ? teleTmp : (teleTmp - alpha[i] * nodeFlow[i]));
+      nodeFlowTmp[i] = nodeTeleportWeights[i] * teleTmp;// (config.includeSelfLinks ? teleTmp : (teleTmp - alpha[i] * nodeFlow[i]));
+      // tmp1 += nodeFlowTmp[i];
       // if (i == 0 && iteration < 2) {
       //   Log() << "\nNode 0: u_in: " << u_in(i) << ", teleTmp: " << teleTmp << ", alpha: " << alpha[i] <<
       //   ", nodeFlow: " << nodeFlow[i] << ", sum_u_in: " << sum_u_in << "\n";
