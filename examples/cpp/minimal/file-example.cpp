@@ -27,29 +27,29 @@
 #include <iostream>
 #include <Infomap.h>
 
-void printClusters(infomap::Infomap& infomap)
+void printClusters(infomap::InfomapWrapper& infomap)
 {
-	std::cout << "\nClusters:\n#originalIndex clusterIndex:\n";
+  std::cout << "\nClusters:\n#originalIndex clusterIndex:\n";
 
-	for (auto it = infomap.tree(); !it.isEnd(); ++it) {
-		if (it->isLeaf())
-			std::cout << it->physicalId << " " << it.moduleIndex() << '\n';
-	}
+  for (auto it = infomap.iterTree(); !it.isEnd(); ++it) {
+    if (it->isLeaf())
+      std::cout << it->physicalId << " " << it.moduleIndex() << '\n';
+  }
 }
 
 int main(int argc, char** argv)
 {
-	std::string inputFilename = "../../../ninetriangles.net";
-	std::cout << "Cluster '" << inputFilename << "'...\n";
+  std::string inputFilename = "../../../ninetriangles.net";
+  std::cout << "Cluster '" << inputFilename << "'...\n";
 
-	// Add output directory (current directory '.') to print .tree file
-	infomap::Infomap infomapWrapper(". -v --tree");
+  // Add output directory (current directory '.') to print .tree file
+  infomap::InfomapWrapper infomapWrapper(". -v --tree");
 
-	auto& network = infomapWrapper.network();
-	network.readInputData(inputFilename);
-	
-	infomapWrapper.run();
-	
-	std::cout << "Done. Codelength: " << infomapWrapper.codelength() << "\n";
-	printClusters(infomapWrapper);
+  auto& network = infomapWrapper.network();
+  network.readInputData(inputFilename);
+
+  infomapWrapper.run();
+
+  std::cout << "Done. Codelength: " << infomapWrapper.codelength() << "\n";
+  printClusters(infomapWrapper);
 }
