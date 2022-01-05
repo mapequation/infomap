@@ -27,48 +27,48 @@
 #include <iostream>
 #include <Infomap.h>
 
-void printClusters(infomap::Infomap& infomap)
+void printClusters(infomap::InfomapWrapper& infomap)
 {
-	std::cout << "\nClusters:\n#originalIndex clusterIndex:\n";
+  std::cout << "\nClusters:\n#originalIndex clusterIndex:\n";
 
-	for (auto it = infomap.tree(); !it.isEnd(); ++it) {
-		if (it->isLeaf())
-			std::cout << it->physicalId << " " << it.moduleIndex() << '\n';
-	}
+  for (auto it = infomap.iterTree(); !it.isEnd(); ++it) {
+    if (it->isLeaf())
+      std::cout << it->physicalId << " " << it.moduleIndex() << '\n';
+  }
 }
 
 int main(int argc, char** argv)
 {
-	std::string inputFilename = "../../../ninetriangles.net";
-	std::cout << "Cluster '" << inputFilename << "' with meta data...\n";
+  std::string inputFilename = "../../../ninetriangles.net";
+  std::cout << "Cluster '" << inputFilename << "' with meta data...\n";
 
-	infomap::Infomap infomapWrapper("--two-level --meta-data-rate 0.3");
+  infomap::InfomapWrapper infomapWrapper("--two-level --meta-data-rate 0.3");
 
-	auto& network = infomapWrapper.network();
-	network.addLink(0, 1);
-	network.addLink(0, 2);
-	network.addLink(0, 3);
-	network.addLink(1, 0);
-	network.addLink(1, 2);
-	network.addLink(2, 1);
-	network.addLink(2, 0);
-	network.addLink(3, 0);
-	network.addLink(3, 4);
-	network.addLink(3, 5);
-	network.addLink(4, 3);
-	network.addLink(4, 5);
-	network.addLink(5, 4);
-	network.addLink(5, 3);
+  auto& network = infomapWrapper.network();
+  network.addLink(0, 1);
+  network.addLink(0, 2);
+  network.addLink(0, 3);
+  network.addLink(1, 0);
+  network.addLink(1, 2);
+  network.addLink(2, 1);
+  network.addLink(2, 0);
+  network.addLink(3, 0);
+  network.addLink(3, 4);
+  network.addLink(3, 5);
+  network.addLink(4, 3);
+  network.addLink(4, 5);
+  network.addLink(5, 4);
+  network.addLink(5, 3);
 
-	network.addMetaData(0, 1);
-	network.addMetaData(1, 1);
-	network.addMetaData(2, 2);
-	network.addMetaData(3, 2);
-	network.addMetaData(4, 3);
-	network.addMetaData(5, 3);
-	
-	infomapWrapper.run();
-	
-	std::cout << "Done. Codelength: " << infomapWrapper.codelength() << "\n";
-	printClusters(infomapWrapper);
+  network.addMetaData(0, 1);
+  network.addMetaData(1, 1);
+  network.addMetaData(2, 2);
+  network.addMetaData(3, 2);
+  network.addMetaData(4, 3);
+  network.addMetaData(5, 3);
+
+  infomapWrapper.run();
+
+  std::cout << "Done. Codelength: " << infomapWrapper.codelength() << "\n";
+  printClusters(infomapWrapper);
 }
