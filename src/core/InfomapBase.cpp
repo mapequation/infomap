@@ -276,6 +276,17 @@ void InfomapBase::run(std::string parameters)
   // Log() << "  (Elapsed time: " << (m_endDate - m_startDate) << ")\n";
   Log() << "  (Elapsed time: " << m_elapsedTime << ")\n";
   Log() << "===================================================\n";
+  // double sumNodeFlow = 0.0;
+  // double sumLinkFlow = 0.0;
+  // for (auto& nodePtr : m_leafNodes) {
+  //   auto& node = *nodePtr;
+  //   sumNodeFlow += node.data.flow;
+  //   Log() << node.stateId << ": flow: " << node.data.flow << "\n";
+  //   for (auto& edge : node.outEdges()) {
+  //     sumLinkFlow += edge->data.flow;
+  //   }
+  // }
+  // Log() << "Sum flow on nodes: " << sumNodeFlow << ", links: " << sumLinkFlow << "\n";
 }
 
 void InfomapBase::run(Network& network)
@@ -899,7 +910,6 @@ void InfomapBase::generateSubNetwork(Network& network)
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Log() << "Warning, total flow on nodes differs from 1.0 by " << sumNodeFlow - 1.0 << "." << std::endl;
 
-  unsigned int numLinksIgnored = 0;
   for (auto& linkIt : network.nodeLinkMap()) {
     unsigned int linkSourceId = linkIt.first.id;
     unsigned int sourceIndex = nodeIndexMap[linkSourceId];
@@ -907,20 +917,14 @@ void InfomapBase::generateSubNetwork(Network& network)
     for (auto& subIt : subLinks) {
       unsigned int linkTargetId = subIt.first.id;
       unsigned int targetIndex = nodeIndexMap[linkTargetId];
-      if (sourceIndex == targetIndex) {
-        ++numLinksIgnored;
-      } else {
+      // Ignore self-links in optimization as it doesn't change enter/exit flow on modular level
+      if (sourceIndex != targetIndex) {
         auto& linkData = subIt.second;
         m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.flow * markovTime);
         // Log() << linkSourceId << " (" << sourceIndex << ") -> " << linkTargetId << " (" << targetIndex << ")"
         // << ", weight: " << linkData.weight << ", flow: " << linkData.flow << "\n";
       }
     }
-  }
-
-  if (numLinksIgnored > 0) {
-    //		Log(1) << numLinksIgnored << " links with ~0 flow ignored -> " << network.getFlowLinks().size() - numLinksIgnored << " links." << std::endl;
-    Log() << numLinksIgnored << " self-links ignored -> " << network.numLinks() - numLinksIgnored << " links." << std::endl;
   }
 }
 
@@ -1256,8 +1260,6 @@ void InfomapBase::initEnterExitFlow()
   // Not done in Bayesian
   // TODO: Skip this, always add enter/exit/tele flow from flow calculator
   // Calculate enter/exit
-  // TODO: Skip add self-links to enter/exit flow on initEnterExitFlow as in old Infomap or no effect in this implementation? 
-  // (Possible self-links should not add to enter and exit flow in its enclosing module)
   double alpha = teleportationProbability;
   double beta = 1.0 - alpha;
   
@@ -1279,6 +1281,7 @@ void InfomapBase::initEnterExitFlow()
       auto& node = *n;
       for (EdgeType* e : node.outEdges()) {
         EdgeType& edge = *e;
+        // Self-links not included here, should not add to enter and exit flow in its enclosing module
         edge.source.data.exitFlow += edge.data.flow;
         edge.target.data.enterFlow += edge.data.flow;
       }
@@ -1302,6 +1305,7 @@ void InfomapBase::initEnterExitFlow()
       }
       for (EdgeType* e : node.outEdges()) {
         EdgeType& edge = *e;
+        // Self-links not included here, should not add to enter and exit flow in its enclosing module
         double halfFlow = edge.data.flow / 2;
         // double halfFlow = edge.data.flow;
         edge.source.data.exitFlow += halfFlow;

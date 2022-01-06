@@ -432,6 +432,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     alpha[i] = t_i / (s_out[i] + t_i);
     if (!config.includeSelfLinks) {
     // Inflate to adjust for no self-teleportation
+    // TODO: Check possible side-effects
       alpha[i] /= 1 - nodeTeleportWeights[i];
     }
     sumAlpha += alpha[i];
@@ -468,8 +469,8 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
       // nodeFlowTmp[i] = u_in(i) / sum_u_in * (teleportationFlow - alpha[i] * nodeFlow[i]);
       // nodeFlowTmp[i] = u_in(i) * (teleTmp - alpha[i] * nodeFlow[i] / (sum_u_in - u_in(i)));
       // nodeFlowTmp[i] = nodeTeleportWeights[i] * (teleTmp - alpha[i] * nodeFlow[i]);
-      // nodeFlowTmp[i] = nodeTeleportWeights[i] * (config.includeSelfLinks ? teleTmp : (teleTmp - alpha[i] * nodeFlow[i]));
-      nodeFlowTmp[i] = nodeTeleportWeights[i] * teleTmp;
+      nodeFlowTmp[i] = nodeTeleportWeights[i] * (config.includeSelfLinks ? teleTmp : (teleTmp - alpha[i] * nodeFlow[i]));
+      // nodeFlowTmp[i] = nodeTeleportWeights[i] * teleTmp;
       // tmp1 += nodeFlowTmp[i];
       // if (i == 0 && iteration < 2) {
       //   Log() << "\nNode 0: u_in: " << u_in(i) << ", teleTmp: " << teleTmp << ", alpha: " << alpha[i] <<
@@ -491,7 +492,9 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
     // Flow from links
     for (const auto& link : flowLinks) {
-      nodeFlowTmp[link.target] += (1 - alpha[link.source]) * link.flow * nodeFlow[link.source];
+      double beta = config.includeSelfLinks ? 1 - alpha[link.source] : 1 - alpha[link.source] * (1 - nodeTeleportWeights[link.source]);
+      nodeFlowTmp[link.target] += beta * link.flow * nodeFlow[link.source];
+      // nodeFlowTmp[link.target] += (1 - alpha[link.source]) * link.flow * nodeFlow[link.source];
     }
 
     // Update node flow from the power iteration above and check if converged
@@ -545,7 +548,8 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   double tmpE = 0;
   // Update the links with their global flow from the PageRank values.
   for (auto& link : flowLinks) {
-    link.flow *= (1 - alpha[link.source]) * nodeFlow[link.source] / sumNodeRank;
+    double beta = config.includeSelfLinks ? 1 - alpha[link.source] : 1 - alpha[link.source] * (1 - nodeTeleportWeights[link.source]);
+    link.flow *= beta * nodeFlow[link.source] / sumNodeRank;
     tmpE += link.flow;
   }
 
@@ -678,11 +682,12 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   // Update the links with their global flow from the undirected PageRank values.
   // Log() << "\nLink flow:\n";
   for (auto& link : flowLinks) {
-    // Double to capture flow in both directions
+    // Double for non-loops to capture flow in both directions, assuming symmetric tele flow
     // TODO: Side effect from inflating alpha, need real alpha here.
-    link.flow *= (1 - alpha[link.source] * (1 - nodeTeleportWeights[link.source])) * nodeFlow[link.source] * 2;
+    double beta = config.includeSelfLinks ? 1 - alpha[link.source] : 1 - alpha[link.source] * (1 - nodeTeleportWeights[link.source]);
+    link.flow *= beta * nodeFlow[link.source] * 2;
     // tmpE += link.flow;
-    // double teleFlow = nodeTeleportFlow[link.source] * nodeTeleportWeights[link.target] * 2;
+    // double teleFlow = nodeTeleportFlow[link.source] * nodeTeleportWeights[link.target] * (link.source == link.target ? 1 : 2);
     // Log() << "  " << link.source << " - " << link.target << ": " << link.flow << " + " << teleFlow << " = " << (link.flow + teleFlow) << "\n";
   }
 
@@ -691,9 +696,9 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   // for (unsigned int i = 0; i < N; ++i) {
   //   for (unsigned int j = i; j < N; ++j) {
   //     if (i != j || config.includeSelfLinks) {
-  //       sumLinkTeleFlow += nodeTeleportFlow[i] * nodeTeleportWeights[j] * 2;
-  //       if (i < 5 && j < 5)
-  //         Log() << "  " << i << " - " << j << ": " << nodeTeleportFlow[i] * nodeTeleportWeights[j] * 2 << "\n";
+  //       sumLinkTeleFlow += nodeTeleportFlow[i] * nodeTeleportWeights[j] * (i == j ? 1 : 2);
+  //       // if (i < 5 && j < 5)
+  //       //   Log() << "  " << i << " - " << j << ": " << nodeTeleportFlow[i] * nodeTeleportWeights[j] * 2 << "\n";
   //     }
   //   }
   // }
