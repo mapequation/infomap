@@ -423,13 +423,8 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   // Log() << "\nt_i (lambda: " << lambda << ", u_t: " << u_t << ", sum_u_in: " << sum_u_in << "): ";
   double sumAlpha = 0.0;
   for (unsigned int i = 0; i < N; ++i) {
-    if (k_out[i] == 0) {
-      alpha[i] = 1;
-      sumAlpha += 1;
-      continue;
-    }
     auto t_i = t_out(i);
-    alpha[i] = t_i / (s_out[i] + t_i);
+    alpha[i] = t_i / (s_out[i] + t_i); // = 1 for dangling nodes
     if (!config.includeSelfLinks) {
     // Inflate to adjust for no self-teleportation
     // TODO: Check possible side-effects
@@ -492,7 +487,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
     // Flow from links
     for (const auto& link : flowLinks) {
-      double beta = config.includeSelfLinks ? 1 - alpha[link.source] : 1 - alpha[link.source] * (1 - nodeTeleportWeights[link.source]);
+      double beta = 1 - alpha[link.source] * (config.includeSelfLinks ? 1 : 1 - nodeTeleportWeights[link.source]);
       nodeFlowTmp[link.target] += beta * link.flow * nodeFlow[link.source];
       // nodeFlowTmp[link.target] += (1 - alpha[link.source]) * link.flow * nodeFlow[link.source];
     }
@@ -541,16 +536,16 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   Log() << "\n  -> PageRank calculation done in " << iterations << " iterations." << std::endl;
 
   double sumNodeRank = 1.0;
-  double tmpN = 0.0;
-  for (auto& flow : nodeFlow) {
-    tmpN += flow;
-  }
-  double tmpE = 0;
+  // double tmpN = 0.0;
+  // for (auto& flow : nodeFlow) {
+  //   tmpN += flow;
+  // }
+  // double tmpE = 0;
   // Update the links with their global flow from the PageRank values.
   for (auto& link : flowLinks) {
-    double beta = config.includeSelfLinks ? 1 - alpha[link.source] : 1 - alpha[link.source] * (1 - nodeTeleportWeights[link.source]);
+    double beta = 1 - alpha[link.source] * (config.includeSelfLinks ? 1 : 1 - nodeTeleportWeights[link.source]);
     link.flow *= beta * nodeFlow[link.source] / sumNodeRank;
-    tmpE += link.flow;
+    // tmpE += link.flow;
   }
 
   // enterFlow = nodeFlow;
@@ -631,12 +626,6 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   double sum_ts = 0.0;
   double sum_t_to_ts = 0.0;
   for (unsigned int i = 0; i < N; ++i) {
-    if (k[i] == 0) {
-      alpha[i] = 1;
-      sumAlpha += 1;
-      sum_t += t(i);
-      continue;
-    }
     auto t_i = t(i);
     alpha[i] = t_i / (s[i] + t_i);
     sum_t_to_ts += alpha[i];
@@ -682,11 +671,11 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   // Update the links with their global flow from the undirected PageRank values.
   // Log() << "\nLink flow:\n";
   for (auto& link : flowLinks) {
-    // Double for non-loops to capture flow in both directions, assuming symmetric tele flow
     // TODO: Side effect from inflating alpha, need real alpha here.
-    double beta = config.includeSelfLinks ? 1 - alpha[link.source] : 1 - alpha[link.source] * (1 - nodeTeleportWeights[link.source]);
+    double beta = 1 - alpha[link.source] * (config.includeSelfLinks ? 1 : 1 - nodeTeleportWeights[link.source]);
     link.flow *= beta * nodeFlow[link.source] * 2;
     // tmpE += link.flow;
+    // Double for non-loops to capture flow in both directions, assuming symmetric tele flow
     // double teleFlow = nodeTeleportFlow[link.source] * nodeTeleportWeights[link.target] * (link.source == link.target ? 1 : 2);
     // Log() << "  " << link.source << " - " << link.target << ": " << link.flow << " + " << teleFlow << " = " << (link.flow + teleFlow) << "\n";
   }
