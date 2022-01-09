@@ -278,15 +278,20 @@ void InfomapBase::run(std::string parameters)
   Log() << "===================================================\n";
   // double sumNodeFlow = 0.0;
   // double sumLinkFlow = 0.0;
+  // double sumTeleWeight = 0.0;
+  // double sumTeleFlow = 0.0;
   // for (auto& nodePtr : m_leafNodes) {
   //   auto& node = *nodePtr;
   //   sumNodeFlow += node.data.flow;
-  //   Log() << node.stateId << ": flow: " << node.data.flow << "\n";
+  //   sumTeleFlow += node.data.teleportFlow;
+  //   sumTeleWeight += node.data.teleportWeight;
+  //   Log() << node.stateId << ": flow: " << node.data.flow << ", teleFlow: " << node.data.teleportFlow << ", teleWeight: " << node.data.teleportWeight << ", enter: " << node.data.enterFlow << ", exit: " << node.data.exitFlow << "\n";
   //   for (auto& edge : node.outEdges()) {
   //     sumLinkFlow += edge->data.flow;
+  //     Log() << " -> " << edge->target.stateId << ": flow: " << edge->data.flow << "\n";
   //   }
   // }
-  // Log() << "Sum flow on nodes: " << sumNodeFlow << ", links: " << sumLinkFlow << "\n";
+  // Log() << "Sum flow on nodes: " << sumNodeFlow << ", links: " << sumLinkFlow << ", tele: " << sumTeleFlow << ", sum tele weight: " << sumTeleWeight << "\n";
 }
 
 void InfomapBase::run(Network& network)
