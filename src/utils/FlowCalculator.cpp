@@ -112,6 +112,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   numLinks = network.numLinks();
   flowLinks.resize(numLinks, { 0, 0, 0.0 });
   sumLinkWeight = network.sumLinkWeight();
+  sumWeightedDegree = network.sumWeightedDegree();
 
   if (network.isBipartite()) {
     const auto bipartiteStartId = network.bipartiteStartId();
@@ -137,7 +138,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
 
       ++nodeOutDegree[sourceIndex];
       sumLinkOutWeight[sourceIndex] += linkWeight;
-      nodeFlow[sourceIndex] += linkWeight / sumWeightedDegree();
+      nodeFlow[sourceIndex] += linkWeight / sumWeightedDegree;
 
       if (network.isBipartite() && sourceId >= network.bipartiteStartId()) {
         // Link from feature node to ordinary node
@@ -153,12 +154,14 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
         ++linkIndex;
       }
 
-      if (config.isUndirectedFlow()) {
-        ++nodeOutDegree[targetIndex];
-        sumLinkOutWeight[targetIndex] += linkWeight;
-      }
-      if (config.flowModel != FlowModel::outdirdir) {
-        nodeFlow[targetIndex] += linkWeight / sumWeightedDegree();
+      if (sourceIndex != targetIndex) {
+        if (config.isUndirectedFlow()) {
+          ++nodeOutDegree[targetIndex];
+          sumLinkOutWeight[targetIndex] += linkWeight;
+        }
+        if (config.flowModel != FlowModel::outdirdir) {
+          nodeFlow[targetIndex] += linkWeight / sumWeightedDegree;
+        }
       }
     }
   }
@@ -202,8 +205,16 @@ void FlowCalculator::calcUndirectedFlow() noexcept
 {
   Log() << "\n  -> Using undirected links.";
 
+  // Flow is outgoing transition probability times source node flow
+  // = w_ij / s_ij * s_ij / sum(s_ij) = w_ij / sum(s_ij)
+  // Count twice for non-loops to cover flow in both directions
+  // Assuming convention to treat self-links as directed
+
   for (auto& link : flowLinks) {
-    link.flow /= sumLinkWeight;
+    link.flow /= sumWeightedDegree;
+    if (link.source != link.target) {
+      link.flow *= 2;
+    }
   }
 }
 
@@ -375,14 +386,13 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
   // Calculate node weights w_i = s_i/k_i, where s_i is the node strength (weighted degree) and k_i the (unweighted) degree
   unsigned int N = network.numNodes();
-  unsigned int E = network.numLinks();
 
   std::vector<unsigned int> k_out(N, 0);
   std::vector<unsigned int> k_in(N, 0);
   std::vector<double> s_out(N, 0);
   std::vector<double> s_in(N, 0);
-  double sum_s = sumWeightedDegree();
-  unsigned int sum_k = 2 * E;
+  double sum_s = sumWeightedDegree;
+  unsigned int sum_k = network.sumDegree();
   double average_weight = sum_s / sum_k;
 
   for (auto& link : flowLinks) {
@@ -581,19 +591,19 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
 
   // Calculate node weights w_i = s_i/k_i, where s_i is the node strength (weighted degree) and k_i the (unweighted) degree
   unsigned int N = network.numNodes();
-  unsigned int E = network.numLinks();
-
   std::vector<unsigned int> k(N, 0);
   std::vector<double> s(N, 0);
-  double sum_s = sumWeightedDegree();
-  unsigned int sum_k = 2 * E;
+  double sum_s = sumWeightedDegree;
+  unsigned int sum_k = network.sumDegree();
   double average_weight = sum_s / sum_k;
 
   for (auto& link : flowLinks) {
     k[link.source] += 1;
-    k[link.target] += 1;
     s[link.source] += link.flow;
-    s[link.target] += link.flow;
+    if (link.source != link.target) {
+      k[link.target] += 1;
+      s[link.target] += link.flow;
+    }
   }
 
   auto u = [s, k](auto i) { return k[i] == 0 ? 1 : s[i] / k[i]; };

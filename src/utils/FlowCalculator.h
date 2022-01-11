@@ -75,8 +75,8 @@ protected:
   unsigned int bipartiteStartIndex = 0;
   unsigned int bipartiteLinkStartIndex = 0;
 
-  double sumLinkWeight;
-  double sumWeightedDegree() const { return 2 * sumLinkWeight; }
+  double sumLinkWeight = 0;
+  double sumWeightedDegree = 0;
 
   std::map<unsigned int, unsigned int> nodeIndexMap;
   std::vector<double> nodeFlow;

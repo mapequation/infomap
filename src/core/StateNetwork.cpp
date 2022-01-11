@@ -133,6 +133,7 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
     if (m_config.noSelfLinks) {
       return false;
     }
+    ++m_numSelfLinks;
     m_sumSelfLinkWeight += weight;
   }
   // const auto& sourceNode = m_nodes.emplace(sourceId, StateNode(sourceId)).first;
@@ -254,6 +255,7 @@ bool StateNetwork::removeLink(unsigned int sourceId, unsigned int targetId)
 
   if (sourceId == targetId) {
     --m_numSelfLinksFound;
+    --m_numSelfLinks;
     m_sumSelfLinkWeight -= weight;
   }
 
@@ -317,6 +319,7 @@ void StateNetwork::clear()
   m_numLinks = 0;
   m_numSelfLinksFound = 0;
   m_sumLinkWeight = 0.0;
+  m_numSelfLinks = 0;
   m_sumSelfLinkWeight = 0.0;
   m_numAggregatedLinks = 0;
   m_totalLinkWeightAdded = 0.0;

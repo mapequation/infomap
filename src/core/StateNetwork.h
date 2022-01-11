@@ -116,8 +116,9 @@ protected:
   double m_sumNodeWeight = 0.0;
   unsigned int m_numLinksFound = 0;
   unsigned int m_numLinks = 0;
-  unsigned int m_numSelfLinksFound = 0;
   double m_sumLinkWeight = 0.0;
+  unsigned int m_numSelfLinksFound = 0;
+  unsigned int m_numSelfLinks = 0;
   double m_sumSelfLinkWeight = 0.0;
   unsigned int m_numAggregatedLinks = 0;
   double m_totalLinkWeightAdded = 0.0;
@@ -189,7 +190,11 @@ public:
   // const LinkMap& links() const { return m_links; }
   unsigned int numLinks() const { return m_numLinks; }
   double sumLinkWeight() const { return m_sumLinkWeight; }
+  unsigned int numSelfLinks() const { return m_numSelfLinks; }
   double sumSelfLinkWeight() const { return m_sumSelfLinkWeight; }
+  // Use convention of counting self-links only once, treating them as directed
+  double sumWeightedDegree() const { return 2 * sumLinkWeight() - (m_config.isUndirectedFlow() ? sumSelfLinkWeight() : 0); }
+  unsigned int sumDegree() const { return 2 * numLinks() - (m_config.isUndirectedFlow() ? numSelfLinks() : 0); }
   // const std::map<unsigned int, double>& outWeights() const { return m_outWeights; }
   std::map<unsigned int, double>& outWeights() { return m_outWeights; }
   std::map<unsigned int, std::string>& names() { return m_names; }
