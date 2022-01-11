@@ -274,6 +274,9 @@ bool StateNetwork::undirectedToDirected()
     const auto& subLinks = linkIt.second;
     for (auto& subIt : subLinks) {
       unsigned int targetId = subIt.first.id;
+      if (targetId == sourceId) {
+        continue; // Self-links are treated as directed on undirected networks
+      }
       double weight = subIt.second.weight;
       oppositeLinks.push_back(StateLink(targetId, sourceId, weight));
     }
