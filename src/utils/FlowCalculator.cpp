@@ -903,32 +903,6 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 
   // Write back flow to network
   double sumNodeFlow = 0.0;
-
-  // auto getDefaultTeleFlow = [nodeFlow, nodeOutDegree, config](unsigned int i) {
-  //   auto alpha = nodeOutDegree[i] == 0 ? 1 : config.teleportationProbability;
-  //   return alpha * nodeFlow[i];
-  // }
-
-  // Log() << "\nFinal node flow:\n";
-  double sumTeleFlow = 0.0;
-  for (auto& nodeIt : network.m_nodes) {
-    auto& node = nodeIt.second;
-    const auto nodeIndex = nodeIndexMap[node.id];
-    node.flow = nodeFlow[nodeIndex];
-    node.weight = nodeTeleportWeights[nodeIndex];
-    node.teleFlow = !nodeTeleportFlow.empty() ? nodeTeleportFlow[nodeIndex] : nodeFlow[nodeIndex] * (nodeOutDegree[nodeIndex] == 0 ? 1 : config.teleportationProbability);
-    node.enterFlow = node.flow - (config.includeSelfLinks ? node.teleFlow * node.weight : 0);
-    node.exitFlow = node.flow - (config.includeSelfLinks ? node.teleFlow * node.weight : 0);
-    // if (config.isUndirectedFlow()) {
-    //   node.enterFlow *= 0.5;
-    //   node.exitFlow *= 0.5;
-    // }
-    sumNodeFlow += node.flow;
-    sumTeleFlow += node.teleFlow;
-    // Log() << "\nNode " << node.id << " (idx: " << nodeIndex << "): flow: " << node.flow << ", weight: " << node.weight << ", teleFlow: " << node.teleFlow << " (=> alpha: " << (node.teleFlow / node.flow) << ", adj: " << (node.teleFlow / node.flow * (1 - node.weight)) << ")"; //, enter + exit: " << (node.enterFlow + node.exitFlow) << ", ratio: " << (node.enterFlow + node.exitFlow) / node.flow;
-  }
-  // Log() << "\n";
-
   double sumLinkFlow = 0.0;
   unsigned int linkIndex = 0;
   auto featureLinkIndex = bipartiteLinkStartIndex;
@@ -944,6 +918,49 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
       sumLinkFlow += linkData.flow;
     }
   }
+  // auto getDefaultTeleFlow = [nodeFlow, nodeOutDegree, config](unsigned int i) {
+  //   auto alpha = nodeOutDegree[i] == 0 ? 1 : config.teleportationProbability;
+  //   return alpha * nodeFlow[i];
+  // }
+
+  // Log() << "\nFinal node flow:\n";
+  double sumTeleFlow = 0.0;
+  for (auto& nodeIt : network.m_nodes) {
+    auto& node = nodeIt.second;
+    const auto nodeIndex = nodeIndexMap[node.id];
+    node.flow = nodeFlow[nodeIndex];
+    node.weight = nodeTeleportWeights[nodeIndex];
+    node.teleFlow = !nodeTeleportFlow.empty() ? nodeTeleportFlow[nodeIndex] : nodeFlow[nodeIndex] * (nodeOutDegree[nodeIndex] == 0 ? 1 : config.teleportationProbability);
+    node.enterFlow = node.flow;
+    node.exitFlow = node.flow;
+
+    if (config.includeSelfLinks) {
+      // Remove self-teleportation flow
+      node.enterFlow -= node.teleFlow * node.weight;
+      node.exitFlow -= node.teleFlow * node.weight;
+      
+      // Remove self-link flow
+      unsigned int norm = config.isUndirectedFlow() ? 2 : 1;
+      auto& outLinks = network.m_nodeLinkMap[node.id];
+      for (auto& link : outLinks) {
+        auto& linkData = link.second;
+        if (node.id == link.first.id) {
+          node.enterFlow -= linkData.flow / norm;
+          node.exitFlow -= linkData.flow / norm;
+          break;
+        }
+      }
+    }
+    // if (config.isUndirectedFlow()) {
+    //   node.enterFlow *= 0.5;
+    //   node.exitFlow *= 0.5;
+    // }
+    sumNodeFlow += node.flow;
+    sumTeleFlow += node.teleFlow;
+    // Log() << "\nNode " << node.id << " (idx: " << nodeIndex << "): flow: " << node.flow << ", weight: " << node.weight << ", teleFlow: " << node.teleFlow << " (=> alpha: " << (node.teleFlow / node.flow) << ", adj: " << (node.teleFlow / node.flow * (1 - node.weight)) << ")"; //, enter + exit: " << (node.enterFlow + node.exitFlow) << ", ratio: " << (node.enterFlow + node.exitFlow) / node.flow;
+  }
+  // Log() << "\n";
+
 
   // Enter/exit flow
 
@@ -985,6 +1002,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   Log() << "\n  => Sum node flow: " << sumNodeFlow << ", sum link flow: " << sumLinkFlow << "\n";
 
 
+  // Log() << "sumLinkWeight: " << sumLinkWeight << "\n";
   // Log() << "Node flow:\n";
   // for (auto& nodeIt : network.m_nodes) {
   //   auto& node = nodeIt.second;
