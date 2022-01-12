@@ -23,6 +23,7 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.setGroups({ "Input", "Algorithm", "Accuracy", "Output" });
 
+  bool deprecated_includeSelfLinks = false;
   std::vector<std::string> optionalOutputDir; // Used if !isCLI
   // --------------------- Input options ---------------------
   if (isCLI) {
@@ -42,7 +43,9 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(weightThreshold, "weight-threshold", "Limit the number of links to read from the network. Ignore links with less weight than the threshold.", ArgType::number, "Input", true);
 
-  api.addOptionArgument(includeSelfLinks, 'k', "include-self-links", "Include links with the same source and target node.", "Input", true);
+  api.addOptionArgument(deprecated_includeSelfLinks, 'k', "include-self-links", "DEPRECATED. Include self links by default now, exclude with --no-self-links.", "Input", true);
+
+  api.addOptionArgument(noSelfLinks, "no-self-links", "Exclude self links in the input network.", "Input", true);
 
   api.addOptionArgument(nodeLimit, "node-limit", "Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", ArgType::integer, "Input", true);
 
@@ -184,6 +187,10 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
   api.addOptionArgument(silent, "silent", "No output on the console.", "Output");
 
   api.parseArgs(flags);
+
+  if (deprecated_includeSelfLinks) {
+    throw InputDomainError("The --include-self-links flag is deprecated to include self links by default. Use --no-loops to exclude.");
+  }
 
   if (!optionalOutputDir.empty())
     outDirectory = optionalOutputDir[0];

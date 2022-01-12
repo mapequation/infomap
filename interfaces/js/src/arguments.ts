@@ -18,7 +18,7 @@ export interface Arguments
     skipAdjustBipartiteFlow: boolean;
     bipartiteTeleportation: boolean;
     weightThreshold: number;
-    includeSelfLinks: boolean;
+    noSelfLinks: boolean;
     nodeLimit: number;
     assignToNeighbouringModule: boolean;
     metaData: string;
@@ -81,7 +81,7 @@ export default function argumentsToString(args: Arguments) {
   if (args.weightThreshold != null)
     result += " --weight-threshold " + args.weightThreshold;
 
-  if (args.includeSelfLinks) result += " --include-self-links";
+  if (args.noSelfLinks) result += " --no-self-links";
 
   if (args.nodeLimit != null) result += " --node-limit " + args.nodeLimit;
 
