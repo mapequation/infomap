@@ -97,14 +97,19 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(directed, 'd', "directed", "Assume directed links. Shorthand for '--flow-model directed'.", "Algorithm");
 
-  // api.addOptionArgument(recordedTeleportation, 'e', "recorded-teleportation",
-  // 		"If teleportation is used to calculate the flow, also record it when minimizing codelength.", "Algorithm", true);
+  api.addOptionArgument(recordedTeleportation, 'e', "recorded-teleportation",
+  		"If teleportation is used to calculate the flow, also record it when minimizing codelength.", "Algorithm", true);
 
   api.addOptionArgument(useNodeWeightsAsFlow, "use-node-weights-as-flow", "Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1", "Algorithm", true);
 
   api.addOptionArgument(teleportToNodes, "to-nodes", "Teleport to nodes instead of to links, assuming uniform node weights if no such input data.", "Algorithm", true);
 
   api.addOptionArgument(teleportationProbability, 'p', "teleportation-probability", "Probability of teleporting to a random node or link.", ArgType::probability, "Algorithm", true);
+
+  api.addOptionArgument(regularized, "regularized", "Effectively add a fully connected Bayesian prior network to not overfit due to missing links. Implies recorded teleportation", "Algorithm", true);
+
+  api.addOptionArgument(regularizationStrength, "regularization-strength", "Adjust relative strength of Bayesian prior network with this multiplier.", ArgType::number, "Algorithm", true);
+
 
   // api.addOptionArgument(selfTeleportationProbability, 'y', "self-link-teleportation-probability",
   // 		"Additional probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", ArgType::number, "Algorithm", true);
@@ -212,6 +217,11 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
     setFlowModel(FlowModel::outdirdir);
   } else if (flowModelArg == "rawdir") {
     setFlowModel(FlowModel::rawdir);
+  }
+
+  if (regularized) {
+    recordedTeleportation = true;
+    // teleportToNodes = true;
   }
 
   // Some checks

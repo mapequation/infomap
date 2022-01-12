@@ -48,6 +48,7 @@ public:
     double flow = 0.0;
     double enterFlow = 0.0;
     double exitFlow = 0.0;
+    double teleFlow = 0.0;
 
     StateNode(unsigned int id = 0) : id(id), physicalId(id) {}
 
@@ -112,10 +113,12 @@ protected:
   NodeLinkMap m_nodeLinkMap;
   unsigned int m_numNodesFound = 0;
   unsigned int m_numStateNodesFound = 0;
+  double m_sumNodeWeight = 0.0;
   unsigned int m_numLinksFound = 0;
   unsigned int m_numLinks = 0;
-  unsigned int m_numSelfLinksFound = 0;
   double m_sumLinkWeight = 0.0;
+  unsigned int m_numSelfLinksFound = 0;
+  unsigned int m_numSelfLinks = 0;
   double m_sumSelfLinkWeight = 0.0;
   unsigned int m_numAggregatedLinks = 0;
   double m_totalLinkWeightAdded = 0.0;
@@ -181,12 +184,17 @@ public:
   const NodeMap& nodes() const { return m_nodes; }
   unsigned int numNodes() const { return m_nodes.size(); }
   unsigned int numPhysicalNodes() const { return m_physNodes.size(); }
+  double sumNodeWeight() const { return m_sumNodeWeight; }
   const NodeLinkMap& nodeLinkMap() const { return m_nodeLinkMap; }
   NodeLinkMap& nodeLinkMap() { return m_nodeLinkMap; }
   // const LinkMap& links() const { return m_links; }
   unsigned int numLinks() const { return m_numLinks; }
   double sumLinkWeight() const { return m_sumLinkWeight; }
+  unsigned int numSelfLinks() const { return m_numSelfLinks; }
   double sumSelfLinkWeight() const { return m_sumSelfLinkWeight; }
+  // Use convention of counting self-links only once, treating them as directed
+  double sumWeightedDegree() const { return 2 * sumLinkWeight() - (m_config.isUndirectedFlow() ? sumSelfLinkWeight() : 0); }
+  unsigned int sumDegree() const { return 2 * numLinks() - (m_config.isUndirectedFlow() ? numSelfLinks() : 0); }
   // const std::map<unsigned int, double>& outWeights() const { return m_outWeights; }
   std::map<unsigned int, double>& outWeights() { return m_outWeights; }
   std::map<unsigned int, std::string>& names() { return m_names; }

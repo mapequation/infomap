@@ -81,6 +81,7 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId)
 {
   auto& physNode = m_physNodes[physId];
   physNode.physId = physId;
+  m_sumNodeWeight += 1.0;
   return physNode;
 }
 
@@ -88,6 +89,7 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
 {
   auto& physNode = addPhysicalNode(physId);
   physNode.weight = weight;
+  m_sumNodeWeight += weight;
   return physNode;
 }
 
@@ -96,6 +98,7 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, const
   auto& physNode = addPhysicalNode(physId);
   // physNode.name = name;
   m_names[physId] = name;
+  m_sumNodeWeight += 1.0;
   return physNode;
 }
 
@@ -104,6 +107,7 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
   auto& physNode = addPhysicalNode(physId);
   physNode.weight = weight;
   // physNode.name = name;
+  m_sumNodeWeight += weight;
   m_names[physId] = name;
   return physNode;
 }
@@ -129,6 +133,7 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
     if (m_config.noSelfLinks) {
       return false;
     }
+    ++m_numSelfLinks;
     m_sumSelfLinkWeight += weight;
   }
   // const auto& sourceNode = m_nodes.emplace(sourceId, StateNode(sourceId)).first;
@@ -250,6 +255,7 @@ bool StateNetwork::removeLink(unsigned int sourceId, unsigned int targetId)
 
   if (sourceId == targetId) {
     --m_numSelfLinksFound;
+    --m_numSelfLinks;
     m_sumSelfLinkWeight -= weight;
   }
 
@@ -270,6 +276,9 @@ bool StateNetwork::undirectedToDirected()
     const auto& subLinks = linkIt.second;
     for (auto& subIt : subLinks) {
       unsigned int targetId = subIt.first.id;
+      if (targetId == sourceId) {
+        continue; // Self-links are treated as directed on undirected networks
+      }
       double weight = subIt.second.weight;
       oppositeLinks.push_back(StateLink(targetId, sourceId, weight));
     }
@@ -310,6 +319,7 @@ void StateNetwork::clear()
   m_numLinks = 0;
   m_numSelfLinksFound = 0;
   m_sumLinkWeight = 0.0;
+  m_numSelfLinks = 0;
   m_sumSelfLinkWeight = 0.0;
   m_numAggregatedLinks = 0;
   m_totalLinkWeightAdded = 0.0;

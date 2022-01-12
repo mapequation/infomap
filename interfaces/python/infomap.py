@@ -1494,38 +1494,17 @@ class Infomap(InfomapWrapper):
         --------
         >>> from infomap import Infomap
         >>> im = Infomap(silent=True, num_trials=5)
-        >>> im.read_file("ninetriangles.net")
+        >>> im.read_file("twotriangles.net")
         >>> im.run()
         >>> for node_id, module_id in im.modules:
         ...     print(node_id, module_id)
         ...
-        1 2
-        2 2
-        3 2
+        1 1
+        2 1
+        3 1
         4 2
         5 2
         6 2
-        7 2
-        8 2
-        9 2
-        10 3
-        11 3
-        12 3
-        13 5
-        14 5
-        15 5
-        16 4
-        17 4
-        18 4
-        19 1
-        20 1
-        21 1
-        22 1
-        23 1
-        24 1
-        25 1
-        26 1
-        27 1
 
         See Also
         --------
