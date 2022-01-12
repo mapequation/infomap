@@ -14,7 +14,6 @@ export interface Arguments
     // input
     clusterData: string;
     noInfomap: boolean;
-    inputFormat: "pajek" | "link-list" | "bipartite" | "multilayer" | "states";
     skipAdjustBipartiteFlow: boolean;
     bipartiteTeleportation: boolean;
     weightThreshold: number;
@@ -71,8 +70,6 @@ export default function argumentsToString(args: Arguments) {
   if (args.clusterData) result += " --cluster-data " + args.clusterData;
 
   if (args.noInfomap) result += " --no-infomap";
-
-  if (args.inputFormat) result += " --input-format " + args.inputFormat;
 
   if (args.skipAdjustBipartiteFlow) result += " --skip-adjust-bipartite-flow";
 

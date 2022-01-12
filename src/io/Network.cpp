@@ -126,33 +126,8 @@ void Network::readInputData(std::string filename, bool accumulate)
     throw InputSyntaxError("No input file to read network");
   }
   FileURI networkFilename(filename, false);
-  std::string format = m_config.inputFormat;
 
-  // if (format == "")
-  // {
-  // 	std::string type = networkFilename.getExtension();
-  // 	if (type == "net")
-  // 		format = "pajek";
-  // 	else if (type == "txt")
-  // 		format = "link-list";
-  // }
-  // if (format == "")
-  // 	throw UnknownFileTypeError("No known input format specified or implied by file extension.");
-
-  if (format == "")
-    parseNetwork(filename);
-  else if (format == "pajek")
-    parsePajekNetwork(filename);
-  else if (format == "link-list")
-    parseLinkList(filename);
-  else if (format == "bipartite")
-    parseBipartiteNetwork(filename);
-  else if (format == "states")
-    parseStateNetwork(filename);
-  else if (format == "multilayer")
-    parseMultilayerNetwork(filename);
-  else
-    throw UnknownFileTypeError(io::Str() << "Unrecognised input format specified: '" << format << "'.");
+  parseNetwork(filename);
   printSummary();
 }
 
@@ -410,7 +385,7 @@ std::string Network::parseMultilayerLinks(std::ifstream& file)
     double weight;
     parseMultilayerLink(line, layer1, n1, layer2, n2, weight);
 
-    //TODO: This explicit multilayer format can allow undirected but not the inter/intra format, clear?
+    // TODO: This explicit multilayer format can allow undirected but not the inter/intra format, clear?
     addMultilayerLink(layer1, n1, layer2, n2, weight);
   }
   Log() << "  -> " << (m_numIntraLayerLinks + m_numInterLayerLinks) << " links in " << m_layers.size() << " layers\n";
@@ -572,7 +547,7 @@ void Network::parseMultilayerInterLink(const std::string& line, unsigned int& la
   (m_extractor >> weight) || (weight = 1.0);
   if (layer1 == layer2)
     throw FileFormatError(io::Str() << "Inter-layer link from line '" << line << "' doesn't go between different layers.");
-  //TODO: Same as intra-layer self-link?
+  // TODO: Same as intra-layer self-link?
 }
 
 void Network::printSummary()
@@ -862,7 +837,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
                 auto& linkData = outLink.second;
                 double intraWeight = linkData.weight;
                 // Add intra link weight as teleport weight to source node
-                //asdf
+                // asdf
                 unsigned int stateId1 = addMultilayerNode(layer1, nodeId, intraWeight);
                 unsigned int stateId2i = addMultilayerNode(layer2, n2, 0.0);
 

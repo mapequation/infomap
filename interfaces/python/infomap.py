@@ -46,7 +46,6 @@ def _construct_args(args=None,
                     # input
                     cluster_data=None,
                     no_infomap=False,
-                    input_format=None,
                     skip_adjust_bipartite_flow=False,
                     bipartite_teleportation=False,
                     weight_threshold=None,
@@ -101,9 +100,6 @@ def _construct_args(args=None,
 
     if no_infomap:
         args += " --no-infomap"
-
-    if input_format is not None:
-        args += " --input-format {}".format(input_format)
 
     if skip_adjust_bipartite_flow:
         args += " --skip-adjust-bipartite-flow"
@@ -286,9 +282,6 @@ class Infomap(InfomapWrapper):
         no_infomap : bool, optional
             Don't run the optimizer. Useful to calculate codelength of provided
             cluster data or to print non-modular statistics.
-        input_format : str, optional
-            Override automatically recognized types. Options: pajek, link-list,
-            bipartite, multilayer, states.
         skip_adjust_bipartite_flow : bool, optional
             Skip distributing all flow from the bipartite nodes to the primary
             nodes.
