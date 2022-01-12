@@ -42,7 +42,9 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(weightThreshold, "weight-threshold", "Limit the number of links to read from the network. Ignore links with less weight than the threshold.", ArgType::number, "Input", true);
 
-  api.addOptionArgument(includeSelfLinks, 'k', "include-self-links", "Include links with the same source and target node.", "Input", true);
+  api.addOptionArgument(deprecated_includeSelfLinks, 'k', "include-self-links", "DEPRECATED. Include self links by default now, exclude with --no-loops.", "Input", true);
+
+  api.addOptionArgument(noLoops, "no-loops", "Exclude loops (self links) in the input network.", "Input", true);
 
   api.addOptionArgument(nodeLimit, "node-limit", "Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", ArgType::integer, "Input", true);
 
