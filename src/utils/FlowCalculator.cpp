@@ -409,7 +409,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   auto u_in = [s_in, k_in](auto i) { return k_in[i] == 0 ? 1 : s_in[i] / k_in[i]; };
   auto u_ij = [u_in, u_out](auto i, auto j) { return u_out(i) * u_in(j); };
 
-  unsigned int numNodesAsTeleportationTargets = config.includeSelfLinks ? N : N - 1;
+  unsigned int numNodesAsTeleportationTargets = config.noSelfLinks ? N - 1 : N;
   double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
   double u_t = average_weight;
   // for (unsigned int i = 0; i < N; ++i) {
@@ -436,7 +436,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   // auto t_out_withSelfLinks = [lambda, u_t, u_out, sum_u_in](unsigned int i) { return lambda/u_t * u_out(i) * sum_u_in; };
   std::function<double(unsigned int)> t_out_withoutSelfLinks = [lambda, u_t, u_out, u_in, sum_u_in](unsigned int i) { return lambda / u_t * u_out(i) * (sum_u_in - u_in(i)); };
   std::function<double(unsigned int)> t_out_withSelfLinks = [lambda, u_t, u_out, sum_u_in](unsigned int i) { return lambda / u_t * u_out(i) * sum_u_in; };
-  auto t_out = config.includeSelfLinks ? t_out_withSelfLinks : t_out_withoutSelfLinks;
+  auto t_out = config.noSelfLinks ? t_out_withoutSelfLinks : t_out_withSelfLinks;
 
   std::vector<double> alpha(N, 0);
   // Log() << "\nt_i (lambda: " << lambda << ", u_t: " << u_t << ", sum_u_in: " << sum_u_in << "): ";
@@ -444,7 +444,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   for (unsigned int i = 0; i < N; ++i) {
     auto t_i = t_out(i);
     alpha[i] = t_i / (s_out[i] + t_i); // = 1 for dangling nodes
-    if (!config.includeSelfLinks) {
+    if (config.noSelfLinks) {
       // Inflate to adjust for no self-teleportation
       // TODO: Check possible side-effects
       alpha[i] /= 1 - nodeTeleportWeights[i];
@@ -484,7 +484,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
       // nodeFlowTmp[i] = u_in(i) / sum_u_in * (teleportationFlow - alpha[i] * nodeFlow[i]);
       // nodeFlowTmp[i] = u_in(i) * (teleTmp - alpha[i] * nodeFlow[i] / (sum_u_in - u_in(i)));
       // nodeFlowTmp[i] = nodeTeleportWeights[i] * (teleTmp - alpha[i] * nodeFlow[i]);
-      nodeFlowTmp[i] = nodeTeleportWeights[i] * (config.includeSelfLinks ? teleTmp : (teleTmp - alpha[i] * nodeFlow[i]));
+      nodeFlowTmp[i] = nodeTeleportWeights[i] * (config.noSelfLinks ? (teleTmp - alpha[i] * nodeFlow[i]) : teleTmp);
       // nodeFlowTmp[i] = nodeTeleportWeights[i] * teleTmp;
       // tmp1 += nodeFlowTmp[i];
       // if (i == 0 && iteration < 2) {
@@ -507,7 +507,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
     // Flow from links
     for (const auto& link : flowLinks) {
-      double beta = 1 - alpha[link.source] * (config.includeSelfLinks ? 1 : 1 - nodeTeleportWeights[link.source]);
+      double beta = 1 - alpha[link.source] * (config.noSelfLinks ? 1 - nodeTeleportWeights[link.source] : 1);
       nodeFlowTmp[link.target] += beta * link.flow * nodeFlow[link.source];
       // nodeFlowTmp[link.target] += (1 - alpha[link.source]) * link.flow * nodeFlow[link.source];
     }
@@ -562,7 +562,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   // double tmpE = 0;
   // Update the links with their global flow from the PageRank values.
   for (auto& link : flowLinks) {
-    double beta = 1 - alpha[link.source] * (config.includeSelfLinks ? 1 : 1 - nodeTeleportWeights[link.source]);
+    double beta = 1 - alpha[link.source] * (config.noSelfLinks ? 1 - nodeTeleportWeights[link.source] : 1);
     link.flow *= beta * nodeFlow[link.source] / sumNodeRank;
     // tmpE += link.flow;
   }
@@ -609,7 +609,7 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   auto u = [s, k](auto i) { return k[i] == 0 ? 1 : s[i] / k[i]; };
   auto u_ij = [u](auto i, auto j) { return u(i) * u(j); };
 
-  unsigned int numNodesAsTeleportationTargets = config.includeSelfLinks ? N : N - 1;
+  unsigned int numNodesAsTeleportationTargets = config.noSelfLinks ? N - 1 : N;
   double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
   double u_t = average_weight;
 
@@ -635,7 +635,7 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   // auto t_out_withSelfLinks = [lambda, u_t, u_out, sum_u](unsigned int i) { return lambda/u_t * u_out(i) * sum_u; };
   std::function<double(unsigned int)> t_withoutSelfLinks = [lambda, u_t, u, sum_u](unsigned int i) { return lambda / u_t * u(i) * (sum_u - u(i)); };
   std::function<double(unsigned int)> t_withSelfLinks = [lambda, u_t, u, sum_u](unsigned int i) { return lambda / u_t * u(i) * sum_u; };
-  auto t = config.includeSelfLinks ? t_withSelfLinks : t_withoutSelfLinks;
+  auto t = config.noSelfLinks ? t_withoutSelfLinks : t_withSelfLinks;
 
   std::vector<double> alpha(N, 0);
   // Log() << "\nt_i (lambda: " << lambda << ", u_t: " << u_t << ", sum_u: " << sum_u << "): ";
@@ -647,7 +647,7 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
     auto t_i = t(i);
     alpha[i] = t_i / (s[i] + t_i);
     sum_t_to_ts += alpha[i];
-    if (!config.includeSelfLinks) {
+    if (config.noSelfLinks) {
       // Inflate to adjust for no self-teleportation
       // TODO: No later side effects of cheating here? Need to normalize targets instead?
       alpha[i] /= 1 - nodeTeleportWeights[i];
@@ -690,7 +690,7 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   // Log() << "\nLink flow:\n";
   for (auto& link : flowLinks) {
     // TODO: Side effect from inflating alpha, need real alpha here.
-    double beta = 1 - alpha[link.source] * (config.includeSelfLinks ? 1 : 1 - nodeTeleportWeights[link.source]);
+    double beta = 1 - alpha[link.source] * (config.noSelfLinks ? 1 - nodeTeleportWeights[link.source] : 1);
     link.flow *= beta * nodeFlow[link.source] * 2;
     // tmpE += link.flow;
     // Double for non-loops to capture flow in both directions, assuming symmetric tele flow
@@ -702,7 +702,7 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   // double sumLinkTeleFlow = 0.0;
   // for (unsigned int i = 0; i < N; ++i) {
   //   for (unsigned int j = i; j < N; ++j) {
-  //     if (i != j || config.includeSelfLinks) {
+  //     if (i != j || config.noSelfLinks) {
   //       sumLinkTeleFlow += nodeTeleportFlow[i] * nodeTeleportWeights[j] * (i == j ? 1 : 2);
   //       // if (i < 5 && j < 5)
   //       //   Log() << "  " << i << " - " << j << ": " << nodeTeleportFlow[i] * nodeTeleportWeights[j] * 2 << "\n";
@@ -934,7 +934,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     node.enterFlow = node.flow;
     node.exitFlow = node.flow;
 
-    if (config.includeSelfLinks) {
+    if (!config.noSelfLinks) {
       // Remove self-teleportation flow
       node.enterFlow -= node.teleFlow * node.weight;
       node.exitFlow -= node.teleFlow * node.weight;
