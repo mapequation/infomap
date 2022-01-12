@@ -118,6 +118,10 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(preferredNumberOfModules, "preferred-number-of-modules", "Penalize solutions the more they differ from this number.", ArgType::integer, "Algorithm", true);
 
+  api.addOptionArgument(entropyBiasCorrection, "entropy-corrected", "Correct for negative entropy bias in small samples (many modules).", "Algorithm", true);
+
+  api.addOptionArgument(entropyBiasCorrectionMultiplier, "entropy-correction-multiplier", "Increase or decrease the default entropy correction with this factor.", ArgType::number, "Algorithm", true);
+
   api.addOptionArgument(multilayerRelaxRate, "multilayer-relax-rate", "Probability to relax the constraint to move only in the current layer.", ArgType::probability, "Algorithm", true);
 
   api.addOptionArgument(multilayerRelaxLimit, "multilayer-relax-limit", "Number of neighboring layers in each direction to relax to. If negative, relax to any layer.", ArgType::integer, "Algorithm", true);

@@ -12,19 +12,40 @@
 #include <map>
 #include <utility>
 #include <cstdlib>
+#include "StateNetwork.h"
 
 namespace infomap {
 
+double BiasedMapEquation::s_totalDegree = 1;
+unsigned int BiasedMapEquation::s_numNodes = 0;
+
+void BiasedMapEquation::setNetworkProperties(const StateNetwork& network) {
+  s_totalDegree = network.sumWeightedDegree();
+  // Negative entropy bias is based on discrete counts, if average weight is below 1, use unweighted total degree
+  if (s_totalDegree < network.sumDegree()) {
+    s_totalDegree = network.sumDegree();
+  }
+  s_numNodes = network.numNodes();
+}
+
+double BiasedMapEquation::getIndexCodelength() const
+{
+  return indexCodelength + indexEntropyBiasCorrection;
+}
+
 double BiasedMapEquation::getModuleCodelength() const
 {
-  // std::cout << "\n$$$$$ getModuleCodelength: " << moduleCodelength << " + " << biasedCost << " = " << moduleCodelength + biasedCost << "\n";
-  return moduleCodelength + biasedCost;
+  return moduleCodelength + biasedCost + moduleEntropyBiasCorrection;
 }
 
 double BiasedMapEquation::getCodelength() const
 {
-  // std::cout << "\n$$$$$ getCodelength: " << codelength << " + " << biasedCost << " = " << codelength + biasedCost << "\n";
-  return codelength + biasedCost;
+  return codelength + biasedCost + getEntropyBiasCorrection();
+}
+
+double BiasedMapEquation::getEntropyBiasCorrection() const
+{
+  return indexEntropyBiasCorrection + moduleEntropyBiasCorrection;
 }
 
 // ===================================================
@@ -33,7 +54,15 @@ double BiasedMapEquation::getCodelength() const
 
 std::ostream& BiasedMapEquation::print(std::ostream& out) const
 {
-  return out << indexCodelength << " + " << moduleCodelength << " + " << biasedCost << " = " << io::toPrecision(getCodelength());
+  out << indexCodelength << " + " << moduleCodelength;
+  if (preferredNumModules != 0) {
+    out << " + " << biasedCost;
+  }
+  if (useEntropyBiasCorrection) {
+    out << " + " << getEntropyBiasCorrection();
+  }
+  out << " = " << io::toPrecision(getCodelength());
+  return out;
 }
 
 std::ostream& operator<<(std::ostream& out, const BiasedMapEquation& mapEq)
@@ -50,6 +79,8 @@ void BiasedMapEquation::init(const Config& config)
 {
   Log(3) << "BiasedMapEquation::init()...\n";
   preferredNumModules = config.preferredNumberOfModules;
+  useEntropyBiasCorrection = config.entropyBiasCorrection;
+  entropyBiasCorrectionMultiplier = config.entropyBiasCorrectionMultiplier;
 }
 
 
@@ -86,6 +117,21 @@ double BiasedMapEquation::calcNumModuleCost(unsigned int numModules) const
   return 1 * std::abs(deltaNumModules);
 }
 
+double BiasedMapEquation::calcIndexEntropyBiasCorrection(unsigned int numModules) const
+{
+  return useEntropyBiasCorrection ? correctionCoefficient() * numModules / s_totalDegree : 0;
+}
+
+double BiasedMapEquation::calcModuleEntropyBiasCorrection(unsigned int numModules) const
+{
+  return useEntropyBiasCorrection ? correctionCoefficient() * (numModules + s_numNodes) / s_totalDegree : 0;
+}
+
+double BiasedMapEquation::calcEntropyBiasCorrection(unsigned int numModules) const
+{
+  return useEntropyBiasCorrection ? correctionCoefficient() * (2 * numModules + s_numNodes) / s_totalDegree : 0;
+}
+
 void BiasedMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
 {
   calculateCodelengthTerms(nodes);
@@ -95,24 +141,34 @@ void BiasedMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
   currentNumModules = nodes.size();
 
   biasedCost = calcNumModuleCost(currentNumModules);
+
+  indexEntropyBiasCorrection = calcIndexEntropyBiasCorrection(currentNumModules);
+  moduleEntropyBiasCorrection = calcModuleEntropyBiasCorrection(currentNumModules);
 }
 
 double BiasedMapEquation::calcCodelength(const InfoNode& parent) const
 {
   return parent.isLeafModule()
       ? calcCodelengthOnModuleOfLeafNodes(parent)
-      : MapEquation::calcCodelengthOnModuleOfModules(parent); // Use first-order model on index codebook
+      : calcCodelengthOnModuleOfModules(parent);
+}
+
+double BiasedMapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent) const
+{
+  double L = MapEquation::calcCodelengthOnModuleOfModules(parent);
+  if (!useEntropyBiasCorrection)
+    return L;
+  
+  return L + correctionCoefficient() * (1 + parent.childDegree()) / s_totalDegree;
 }
 
 double BiasedMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
 {
-  double indexLength = MapEquation::calcCodelength(parent);
-
-  // double biasedCost	= calcNumModuleCost(parent.childDegree())
-  // std::cout << "\n!!!!! calcCodelengthOnModuleOfLeafNodes(parent) -> biasedCost: " << biasedCost << "\n";
-
-  // return indexLength + biasedCost;
-  return indexLength;
+  double L = MapEquation::calcCodelength(parent);
+  if (!useEntropyBiasCorrection)
+    return L;
+  
+  return L + correctionCoefficient() * (1 + parent.childDegree()) / s_totalDegree;
 }
 
 int BiasedMapEquation::getDeltaNumModulesIfMoving(InfoNode& current,
@@ -141,13 +197,15 @@ double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 
   double deltaBiasedCost = calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
 
+  double deltaEntropyBiasCorrection = calcEntropyBiasCorrection(currentNumModules + deltaNumModules) - getEntropyBiasCorrection();
+
   // std::cout << "\n!!!!! getDeltaCodelengthOnMovingNode(" << current.stateId << ") from " <<
   // 	oldModule << " (" << moduleMembers[oldModule] << ") to " <<
   // 	newModule << " (" << moduleMembers[newModule] << ") -> currentNumModules = " <<
   // 	currentNumModules << " + " << deltaNumModules << " => cost: " <<
   // 	biasedCost << " + " << deltaBiasedCost << " = " << (biasedCost + deltaBiasedCost) << "\n";
 
-  return deltaL + deltaBiasedCost;
+  return deltaL + deltaBiasedCost + deltaEntropyBiasCorrection;
 }
 
 
@@ -180,6 +238,8 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 
   currentNumModules += deltaNumModules;
   biasedCost = calcNumModuleCost(currentNumModules);
+  indexEntropyBiasCorrection = calcIndexEntropyBiasCorrection(currentNumModules);
+  moduleEntropyBiasCorrection = calcModuleEntropyBiasCorrection(currentNumModules);
 }
 
 
