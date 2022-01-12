@@ -126,7 +126,7 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
 
   if (sourceId == targetId) {
     ++m_numSelfLinksFound;
-    if (m_config.noLoops) {
+    if (m_config.noSelfLinks) {
       return false;
     }
     m_sumSelfLinkWeight += weight;

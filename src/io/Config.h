@@ -97,7 +97,7 @@ struct Config {
   //bool nonBacktracking = false; // unused
   bool parseWithoutIOStreams = false;
   bool zeroBasedNodeNumbers = false;
-  bool noLoops = false; // Replaces includeSelfLinks
+  bool noSelfLinks = false; // Replaces includeSelfLinks
   bool ignoreEdgeWeights = false;
   unsigned int nodeLimit = 0;
   bool preClusterMultilayer = false;
@@ -218,7 +218,7 @@ struct Config {
     //nonBacktracking = other.nonBacktracking;
     parseWithoutIOStreams = other.parseWithoutIOStreams;
     zeroBasedNodeNumbers = other.zeroBasedNodeNumbers;
-    noLoops = other.noLoops;
+    noSelfLinks = other.noSelfLinks;
     ignoreEdgeWeights = other.ignoreEdgeWeights;
     nodeLimit = other.nodeLimit;
     preClusterMultilayer = other.preClusterMultilayer;
