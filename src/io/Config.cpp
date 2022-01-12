@@ -108,6 +108,9 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(regularizationStrength, "regularization-strength", "Adjust relative strength of Bayesian prior network with this multiplier.", ArgType::number, "Algorithm", true);
 
+  api.addOptionArgument(entropyBiasCorrection, "entropy-corrected", "Correct for negative entropy bias in small samples (many modules).", "Algorithm", true);
+
+  api.addOptionArgument(entropyBiasCorrectionMultiplier, "entropy-correction-strength", "Increase or decrease the default entropy correction with this factor.", ArgType::number, "Algorithm", true);
 
   // api.addOptionArgument(selfTeleportationProbability, 'y', "self-link-teleportation-probability",
   // 		"Additional probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", ArgType::number, "Algorithm", true);
@@ -115,10 +118,6 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
   api.addOptionArgument(markovTime, "markov-time", "Scales link flow to change the cost of moving between modules. Higher values results in fewer modules.", ArgType::number, "Algorithm", true);
 
   api.addOptionArgument(preferredNumberOfModules, "preferred-number-of-modules", "Penalize solutions the more they differ from this number.", ArgType::integer, "Algorithm", true);
-
-  api.addOptionArgument(entropyBiasCorrection, "entropy-corrected", "Correct for negative entropy bias in small samples (many modules).", "Algorithm", true);
-
-  api.addOptionArgument(entropyBiasCorrectionMultiplier, "entropy-correction-multiplier", "Increase or decrease the default entropy correction with this factor.", ArgType::number, "Algorithm", true);
 
   api.addOptionArgument(multilayerRelaxRate, "multilayer-relax-rate", "Probability to relax the constraint to move only in the current layer.", ArgType::probability, "Algorithm", true);
 

@@ -41,6 +41,10 @@ export interface Arguments
     useNodeWeightsAsFlow: boolean;
     toNodes: boolean;
     teleportationProbability: number;
+    regularized: boolean;
+    regularizationStrength: number;
+    entropyCorrected: boolean;
+    entropyCorrectionStrength: number;
     markovTime: number;
     preferredNumberOfModules: number;
     multilayerRelaxRate: number;
@@ -127,6 +131,17 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.teleportationProbability != null)
     result += " --teleportation-probability " + args.teleportationProbability;
+
+  if (args.regularized) result += " --regularized";
+
+  if (args.regularizationStrength != null)
+    result += " --regularization-strength " + args.regularizationStrength;
+
+  if (args.entropyCorrected) result += " --entropy-corrected";
+
+  if (args.entropyCorrectionStrength != null)
+    result +=
+      " --entropy-correction-strength " + args.entropyCorrectionStrength;
 
   if (args.markovTime) result += " --markov-time " + args.markovTime;
 

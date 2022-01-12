@@ -73,6 +73,10 @@ def _construct_args(args=None,
                     use_node_weights_as_flow=False,
                     to_nodes=False,
                     teleportation_probability=_DEFAULT_TELEPORTATION_PROB,
+                    regularized=False,
+                    regularization_strength=1,
+                    entropy_corrected=False,
+                    entropy_correction_strength=1,
                     markov_time=1,
                     preferred_number_of_modules=None,
                     multilayer_relax_rate=_DEFAULT_MULTILAYER_RELAX_RATE,
@@ -177,6 +181,15 @@ def _construct_args(args=None,
 
     if teleportation_probability != _DEFAULT_TELEPORTATION_PROB:
         args += " --teleportation-probability {}".format(teleportation_probability)
+
+    if regularized:
+        args += " --regularized"
+    if regularization_strength != 1:
+        args += " --regularization-strength {}".format(regularization_strength)
+    if entropy_corrected:
+        args += " --entropy-corrected"
+    if entropy_correction_strength != 1:
+        args += " --entropy-correction-strength {}".format(entropy_correction_strength)
 
     if markov_time != 1:
         args += " --markov-time {}".format(markov_time)
@@ -346,6 +359,15 @@ class Infomap(InfomapWrapper):
             weights if no such input data.
         teleportation_probability : float, optional
             Probability of teleporting to a random node or link.
+        regularized : bool, optional
+            Effectively add a fully connected Bayesian prior network to not overfit 
+            due to missing links. Implies recorded teleportation.
+        regularization_strength : float, optional
+            Adjust relative strength of Bayesian prior network with this multiplier.
+        entropy_corrected : bool, optional
+            Correct for negative entropy bias in small samples (many modules).
+        entropy_correction_strength : float, optional
+            Increase or decrease the default entropy correction with this multiplier.
         markov_time : float, optional
             Scales link flow to change the cost of moving between modules.
             Higher values results in fewer modules.
@@ -1218,6 +1240,15 @@ class Infomap(InfomapWrapper):
             weights if no such input data.
         teleportation_probability : float, optional
             Probability of teleporting to a random node or link.
+        regularized : bool, optional
+            Effectively add a fully connected Bayesian prior network to not overfit 
+            due to missing links. Implies recorded teleportation.
+        regularization_strength : float, optional
+            Adjust relative strength of Bayesian prior network with this multiplier.
+        entropy_corrected : bool, optional
+            Correct for negative entropy bias in small samples (many modules).
+        entropy_correction_strength : float, optional
+            Increase or decrease the default entropy correction with this multiplier.
         markov_time : float, optional
             Scales link flow to change the cost of moving between modules.
             Higher values results in fewer modules.
