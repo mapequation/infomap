@@ -82,7 +82,6 @@ struct Config {
   bool isCLI = false;
   std::string networkFile;
   std::vector<std::string> additionalInput;
-  std::string inputFormat;
   bool stateInput = false;
   bool stateOutput = false;
   bool multilayerInput = false;
@@ -207,7 +206,6 @@ struct Config {
     isCLI = other.isCLI;
     networkFile = other.networkFile;
     additionalInput = other.additionalInput;
-    inputFormat = other.inputFormat;
     stateInput = other.stateInput;
     stateOutput = other.stateOutput;
     multilayerInput = other.multilayerInput;
@@ -377,11 +375,8 @@ struct Config {
 
   bool printAsUndirected() const { return isUndirectedClustering(); }
 
-  bool is3gram() const { return inputFormat == "3gram"; }
-  bool isPath() const { return inputFormat == "path"; }
-  bool isMultilayerNetwork() const { return multilayerInput || inputFormat == "multilayer" || inputFormat == "multiplex" || !additionalInput.empty(); }
-  bool isStateNetwork() const { return inputFormat == "states"; }
-  bool isBipartite() const { return inputFormat == "bipartite" || bipartite; }
+  bool isMultilayerNetwork() const { return multilayerInput || !additionalInput.empty(); }
+  bool isBipartite() const { return bipartite; }
 
   bool haveMemory() const { return stateInput; }
   bool printStates() const { return stateOutput; }

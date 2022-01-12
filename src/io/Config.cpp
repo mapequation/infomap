@@ -35,8 +35,6 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
     api.addOptionArgument(networkFile, "input", "File containing the network data. Assumes a link list format if no Pajek formatted heading.", ArgType::path, "Input");
   }
 
-  api.addOptionArgument(inputFormat, 'i', "input-format", "Override automatically recognized types. Options: pajek, link-list, bipartite, multilayer, states.", ArgType::option, "Input", true);
-
   api.addOptionArgument(skipAdjustBipartiteFlow, "skip-adjust-bipartite-flow", "Skip distributing all flow from the bipartite nodes to the primary nodes.", "Input", true);
 
   api.addOptionArgument(bipartiteTeleportation, "bipartite-teleportation", "Teleport like the bipartite flow instead of two-step (unipartite) teleportation.", "Input", true);
