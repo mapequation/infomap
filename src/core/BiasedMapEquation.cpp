@@ -20,10 +20,11 @@ double BiasedMapEquation::s_totalDegree = 1;
 unsigned int BiasedMapEquation::s_numNodes = 0;
 
 void BiasedMapEquation::setNetworkProperties(const StateNetwork& network) {
-  // s_totalDegree = 2 * network.numLinks();
-  double sumUndirLinkWeight = 2 * network.sumLinkWeight() - network.sumSelfLinkWeight();
-  // s_totalDegree = std::max(sumUndirLinkWeight, 2 * network.numLinks());
-  s_totalDegree = sumUndirLinkWeight < 2 * network.numLinks() ? 2 * network.numLinks() : sumUndirLinkWeight;
+  s_totalDegree = network.sumWeightedDegree();
+  // Negative entropy bias is based on discrete counts, if average weight is below 1, use unweighted total degree
+  if (s_totalDegree < network.sumDegree()) {
+    s_totalDegree = network.sumDegree();
+  }
   s_numNodes = network.numNodes();
 }
 
