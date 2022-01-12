@@ -23,6 +23,7 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.setGroups({ "Input", "Algorithm", "Accuracy", "Output" });
 
+  bool deprecated_includeSelfLinks = false;
   std::vector<std::string> optionalOutputDir; // Used if !isCLI
   // --------------------- Input options ---------------------
   if (isCLI) {
@@ -186,6 +187,10 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
   api.addOptionArgument(silent, "silent", "No output on the console.", "Output");
 
   api.parseArgs(flags);
+
+  if (deprecated_includeSelfLinks) {
+    throw InputDomainError("The --include-self-links flag is deprecated to include self links by default. Use --no-loops to exclude.");
+  }
 
   if (!optionalOutputDir.empty())
     outDirectory = optionalOutputDir[0];
