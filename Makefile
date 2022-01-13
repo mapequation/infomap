@@ -1,6 +1,12 @@
 CXXFLAGS += -Wall -Wextra -Wno-unused-parameter -std=c++14
 LDFLAGS +=
 CXX_CLANG := $(shell $(CXX) --version 2>/dev/null | grep clang)
+BREW := $(shell which brew 2>/dev/null)
+
+ifneq ($(BREW),)
+	CXXFLAGS += -I$(shell brew --prefix)/include
+	LDFLAGS += -L$(shell brew --prefix)/lib
+endif
 
 ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"
 	CXXFLAGS += -O0 -g

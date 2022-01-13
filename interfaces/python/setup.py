@@ -24,6 +24,20 @@ def get_compiler():
 def is_clang():
     return b'clang' in subprocess.check_output([get_compiler(), '--version'])
 
+def have_homebrew():   
+    return shutil.which("brew") is not None
+
+def get_homebrew_include():
+    brew_path = subprocess.check_output(["brew", "--prefix"], encoding="utf8")
+    brew_path = brew_path[:-1] # Remove trailing newline
+    brew_path = Path(brew_path)
+    
+    # returns (compile_args, link_args)
+    return (
+        "-I" + str(brew_path.joinpath("include")),
+        "-L" + str(brew_path.joinpath("lib"))
+    )
+
 
 test_openmp = """#include <omp.h>
 #include <cstdio>
@@ -51,6 +65,9 @@ def have_openmp():
     if is_clang():
         compile_args.insert(0, '-Xpreprocessor')
         compile_args.append('-lomp')
+
+    if have_homebrew():
+        compile_args.extend(get_homebrew_include())
 
     try:
         with open(os.devnull, 'w') as fnull:
@@ -104,14 +121,20 @@ if 'LDFLAGS' in os.environ:
     link_args.extend(os.environ['LDFLAGS'].split())
 
 if have_openmp():
+    print("Building with OpenMP support")
     if is_clang():
         compiler_args.append('-Xpreprocessor')
         link_args.append('-lomp')
     else:
         link_args.append('-fopenmp')
     compiler_args.append('-fopenmp')
+
+    if have_homebrew():
+        include_dir, link_dir = get_homebrew_include()
+        compiler_args.append(include_dir)
+        link_args.append(link_dir)
 else:
-    print("Warning: building without OMP support")
+    print("Warning: building without OpenMP support")
 
 if sys.platform == 'win32':
     # Not executed if we are on WSL
