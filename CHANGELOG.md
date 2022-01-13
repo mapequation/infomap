@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/mapequation/infomap/compare/v1.9.0...v2.0.0) (2022-01-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* Removes --input-format.
+* Removes --include-self-links.
+
+### Features
+
+* Entropy bias correction ([#258](https://github.com/mapequation/infomap/issues/258)) ([8ea235c](https://github.com/mapequation/infomap/commit/8ea235cf9159fc1a672a0470798ab7e443590fde))
+* Regularized map equation ([#181](https://github.com/mapequation/infomap/issues/181)) ([0673000](https://github.com/mapequation/infomap/commit/06730005329acb4ba781d647e7009d4ff2510ae7)), closes [#256](https://github.com/mapequation/infomap/issues/256)
+
+
+### Bug Fixes
+
+* Add new feature flags to python and js api ([48245a7](https://github.com/mapequation/infomap/commit/48245a795f87675b62b94b2f8bd8251b71e5f62e))
+* Include self links by default ([#255](https://github.com/mapequation/infomap/issues/255)) ([1f68940](https://github.com/mapequation/infomap/commit/1f68940a90633405f696efa93471ca8cbb25f14c))
+* **example:** Fix building c++ examples ([0d5c063](https://github.com/mapequation/infomap/commit/0d5c0639cb76b9b275388c1a45873496f675aeea)), closes [#252](https://github.com/mapequation/infomap/issues/252)
+
+
+* Remove superfluous --input-format flag ([2dd77c4](https://github.com/mapequation/infomap/commit/2dd77c4689c67485454478d739c22c8deb44eda0))
+
 ## [1.9.0](https://github.com/mapequation/infomap/compare/v1.8.0...v1.9.0) (2021-11-17)
 
 
