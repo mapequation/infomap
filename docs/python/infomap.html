@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>infomap module &#8212; Infomap 1.9.0 documentation</title>
+    <title>infomap module &#8212; Infomap 2.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
@@ -75,8 +75,6 @@
 format) solution.</p></li>
 <li><p><strong>no_infomap</strong> (<em>bool</em><em>, </em><em>optional</em>) – Don’t run the optimizer. Useful to calculate codelength of provided
 cluster data or to print non-modular statistics.</p></li>
-<li><p><strong>input_format</strong> (<em>str</em><em>, </em><em>optional</em>) – Override automatically recognized types. Options: pajek, link-list,
-bipartite, multilayer, states.</p></li>
 <li><p><strong>skip_adjust_bipartite_flow</strong> (<em>bool</em><em>, </em><em>optional</em>) – Skip distributing all flow from the bipartite nodes to the primary
 nodes.</p></li>
 <li><p><strong>bipartite_teleportation</strong> (<em>bool</em><em>, </em><em>optional</em>) – Teleport like the bipartite flow instead of two-step (unipartite)
@@ -116,6 +114,11 @@ normalized to sum to 1.</p></li>
 <li><p><strong>to_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Teleport to nodes instead of to links, assuming uniform node
 weights if no such input data.</p></li>
 <li><p><strong>teleportation_probability</strong> (<em>float</em><em>, </em><em>optional</em>) – Probability of teleporting to a random node or link.</p></li>
+<li><p><strong>regularized</strong> (<em>bool</em><em>, </em><em>optional</em>) – Effectively add a fully connected Bayesian prior network to not overfit
+due to missing links. Implies recorded teleportation.</p></li>
+<li><p><strong>regularization_strength</strong> (<em>float</em><em>, </em><em>optional</em>) – Adjust relative strength of Bayesian prior network with this multiplier.</p></li>
+<li><p><strong>entropy_corrected</strong> (<em>bool</em><em>, </em><em>optional</em>) – Correct for negative entropy bias in small samples (many modules).</p></li>
+<li><p><strong>entropy_correction_strength</strong> (<em>float</em><em>, </em><em>optional</em>) – Increase or decrease the default entropy correction with this multiplier.</p></li>
 <li><p><strong>markov_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Scales link flow to change the cost of moving between modules.
 Higher values results in fewer modules.</p></li>
 <li><p><strong>preferred_number_of_modules</strong> (<em>int</em><em>, </em><em>optional</em>) – Penalize solutions the more they differ from this number.</p></li>
@@ -1306,38 +1309,17 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">infomap</span> <span class="kn">import</span> <span class="n">Infomap</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;ninetriangles.net&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">&quot;twotriangles.net&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">module_id</span> <span class="ow">in</span> <span class="n">im</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">node_id</span><span class="p">,</span> <span class="n">module_id</span><span class="p">)</span>
 <span class="gp">...</span>
-<span class="go">1 2</span>
-<span class="go">2 2</span>
-<span class="go">3 2</span>
+<span class="go">1 1</span>
+<span class="go">2 1</span>
+<span class="go">3 1</span>
 <span class="go">4 2</span>
 <span class="go">5 2</span>
 <span class="go">6 2</span>
-<span class="go">7 2</span>
-<span class="go">8 2</span>
-<span class="go">9 2</span>
-<span class="go">10 3</span>
-<span class="go">11 3</span>
-<span class="go">12 3</span>
-<span class="go">13 5</span>
-<span class="go">14 5</span>
-<span class="go">15 5</span>
-<span class="go">16 4</span>
-<span class="go">17 4</span>
-<span class="go">18 4</span>
-<span class="go">19 1</span>
-<span class="go">20 1</span>
-<span class="go">21 1</span>
-<span class="go">22 1</span>
-<span class="go">23 1</span>
-<span class="go">24 1</span>
-<span class="go">25 1</span>
-<span class="go">26 1</span>
-<span class="go">27 1</span>
 </pre></div>
 </div>
 <div class="admonition seealso">
@@ -1732,6 +1714,11 @@ normalized to sum to 1.</p></li>
 <li><p><strong>to_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Teleport to nodes instead of to links, assuming uniform node
 weights if no such input data.</p></li>
 <li><p><strong>teleportation_probability</strong> (<em>float</em><em>, </em><em>optional</em>) – Probability of teleporting to a random node or link.</p></li>
+<li><p><strong>regularized</strong> (<em>bool</em><em>, </em><em>optional</em>) – Effectively add a fully connected Bayesian prior network to not overfit
+due to missing links. Implies recorded teleportation.</p></li>
+<li><p><strong>regularization_strength</strong> (<em>float</em><em>, </em><em>optional</em>) – Adjust relative strength of Bayesian prior network with this multiplier.</p></li>
+<li><p><strong>entropy_corrected</strong> (<em>bool</em><em>, </em><em>optional</em>) – Correct for negative entropy bias in small samples (many modules).</p></li>
+<li><p><strong>entropy_correction_strength</strong> (<em>float</em><em>, </em><em>optional</em>) – Increase or decrease the default entropy correction with this multiplier.</p></li>
 <li><p><strong>markov_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Scales link flow to change the cost of moving between modules.
 Higher values results in fewer modules.</p></li>
 <li><p><strong>preferred_number_of_modules</strong> (<em>int</em><em>, </em><em>optional</em>) – Penalize solutions the more they differ from this number.</p></li>
@@ -2636,7 +2623,7 @@ over the modules as well as the leaf-nodes.</p>
       &copy;2020, Daniel Edler, Anton Eriksson, Martin Rosvall.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
