@@ -189,25 +189,25 @@ export function parseTree<NodeType extends TreeNode>(
 
     const node: Partial<NodeType> = {};
 
-    for (let i = 0; i < nodeHeader.length; ++i) {
-      const field = nodeHeader[i] as keyof typeof map;
+    for (let j = 0; j < nodeHeader.length; ++j) {
+      const field = nodeHeader[j] as keyof typeof map;
       const key = map[field] as keyof NodeType;
 
       switch (field) {
         case "path":
-          node.path = match[i].split(":").map(Number);
+          node.path = match[j].split(":").map(Number);
           break;
         case "name":
-          node.name = match[i].slice(1, -1);
+          node.name = match[j].slice(1, -1);
           break;
         case "node_id":
-          node.id = Number(match[i]);
+          node.id = Number(match[j]);
           break;
         case "state_id":
         case "layer_id":
         case "flow":
           // @ts-ignore
-          node[key] = Number(match[i]);
+          node[key] = Number(match[j]);
           break;
         default:
           break;
