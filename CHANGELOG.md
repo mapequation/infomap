@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.1](https://github.com/mapequation/infomap/compare/v2.0.0...v2.0.1) (2022-01-26)
+
+
+### Bug Fixes
+
+* Bug in write state network to json ([50f8de2](https://github.com/mapequation/infomap/commit/50f8de2008cf6422693a74279b347d043735200d)), closes [#262](https://github.com/mapequation/infomap/issues/262)
+* **js:** Broken parser due to duplicate variable name ([f437e13](https://github.com/mapequation/infomap/commit/f437e138f7b24140732831e63fac8c28e44e44bf))
+* Use min mass for dangling nodes when regularized ([f741d07](https://github.com/mapequation/infomap/commit/f741d079b04558102130cbbbd742a0ddc3c1c366))
+
 ## [2.0.0](https://github.com/mapequation/infomap/compare/v1.9.0...v2.0.0) (2022-01-13)
 
 
