@@ -84,12 +84,12 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
     std::map<unsigned int, unsigned int> toZeroBasedIndex;
     if (maxPhysicalId - minPhysicalId + 1 > m_numPhysicalNodes) {
       unsigned int zeroBasedPhysicalId = 0;
-      for (const auto physNode : physicalNodes) {
+      for (const auto& physNode : physicalNodes) {
         toZeroBasedIndex.insert(std::make_pair(physNode.first, zeroBasedPhysicalId++));
       }
     }
 
-    for (const auto physNode : physicalNodes) {
+    for (const auto& physNode : physicalNodes) {
       unsigned int zeroBasedIndex = !toZeroBasedIndex.empty() ? toZeroBasedIndex[physNode.first] : (physNode.first - minPhysicalId);
       root.physicalNodes.push_back(PhysData(zeroBasedIndex, physNode.second));
       // Log() << "(" << zeroBasedIndex << ", " << node.data.flow << "), length: " << node.physicalNodes.size() << "\n";
