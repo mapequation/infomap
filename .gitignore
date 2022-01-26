@@ -33,7 +33,7 @@ node_modules
 /*.d.ts
 /*.d.ts.map
 docs/.*
-Infomap
+/Infomap
 __pycache__
 interfaces/js/src/worker
 interfaces/python/package_meta.py
@@ -45,4 +45,3 @@ interfaces/python/source/index.rst
 *.nwk
 *.csv
 /*.net
-/*.json
