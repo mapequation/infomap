@@ -31,6 +31,7 @@
 #include <iostream>
 #include <cmath>
 #include <numeric>
+#include <limits>
 #include <algorithm>
 #include <functional>
 namespace infomap {
@@ -402,11 +403,21 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     s_in[link.target] += link.flow;
   }
 
+  double min_u_out = 	std::numeric_limits<double>::max();
+  double min_u_in = 	std::numeric_limits<double>::max();
+  for (unsigned int i = 0; i < N; ++i) {
+    if (k_out[i] > 0) {
+      min_u_out =  std::min(min_u_out, s_out[i] / k_out[i]);
+    }
+    if (k_in[i] > 0) {
+      min_u_in = std::min(min_u_in, s_in[i] / k_in[i]);
+    }
+  }
+
   auto s = [s_in, s_out](auto i) { return s_in[i] + s_out[i]; };
   auto k = [k_in, k_out](auto i) { return k_in[i] + k_out[i]; };
-  // TODO: Use minimum weight instead of 1 as default if no link
-  auto u_out = [s_out, k_out](auto i) { return k_out[i] == 0 ? 1 : s_out[i] / k_out[i]; };
-  auto u_in = [s_in, k_in](auto i) { return k_in[i] == 0 ? 1 : s_in[i] / k_in[i]; };
+  auto u_out = [s_out, k_out, min_u_out](auto i) { return k_out[i] == 0 ? min_u_out : s_out[i] / k_out[i]; };
+  auto u_in = [s_in, k_in, min_u_in](auto i) { return k_in[i] == 0 ? min_u_in : s_in[i] / k_in[i]; };
   auto u_ij = [u_in, u_out](auto i, auto j) { return u_out(i) * u_in(j); };
 
   unsigned int numNodesAsTeleportationTargets = config.noSelfLinks ? N - 1 : N;
@@ -606,7 +617,15 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
     }
   }
 
-  auto u = [s, k](auto i) { return k[i] == 0 ? 1 : s[i] / k[i]; };
+
+  double min_u = 	std::numeric_limits<double>::max();
+  for (unsigned int i = 0; i < N; ++i) {
+    if (k[i] > 0) {
+      min_u = std::min(min_u, s[i] / k[i]);
+    }
+  }
+
+  auto u = [s, k, min_u](auto i) { return k[i] == 0 ? min_u : s[i] / k[i]; };
   auto u_ij = [u](auto i, auto j) { return u(i) * u(j); };
 
   unsigned int numNodesAsTeleportationTargets = config.noSelfLinks ? N - 1 : N;
