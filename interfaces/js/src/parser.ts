@@ -32,7 +32,7 @@ export function readFile(file: File) {
   });
 }
 
-export function parse(file: string | string[], type?: Extension) {
+export function parse(file: string | string[], type?: Extension, parseLinks = false) {
   if (typeof file === "string") {
     file = file.split("\n");
   }
@@ -51,9 +51,9 @@ export function parse(file: string | string[], type?: Extension) {
     }
   } else if ((type && type === "tree") || nodeHeader.includes("path")) {
     if (nodeHeader[nodeHeader.length - 2] === "name") {
-      return parseTree(file, nodeHeader);
-    } else if (nodeHeader[nodeHeader.length - 2] === "state_id") {
-      return parseTree<TreeStateNode>(file, nodeHeader);
+      return parseTree(file, nodeHeader, parseLinks);
+    } else if (nodeHeader[nodeHeader.length - 2] === "state_id" || nodeHeader[nodeHeader.length - 1] === "layer_id") {
+      return parseTree<TreeStateNode>(file, nodeHeader, parseLinks);
     }
   }
 
@@ -98,12 +98,14 @@ export function parseClu<NodeType extends CluNode>(
 
   const header = parseHeader(file);
   if (!header) {
+    console.warn("No header");
     return null;
   }
 
   if (!nodeHeader) {
     nodeHeader = parseNodeHeader(file) ?? [];
     if (nodeHeader.length === 0) {
+      console.warn("No node header");
       return null;
     }
   }
@@ -164,12 +166,14 @@ export function parseTree<NodeType extends TreeNode>(
 
   const header = parseHeader(file);
   if (!header) {
+    console.warn("No header");
     return null;
   }
 
   if (!nodeHeader) {
     nodeHeader = parseNodeHeader(file) ?? [];
     if (nodeHeader.length === 0) {
+      console.warn("No node header");
       return null;
     }
   }
@@ -210,6 +214,7 @@ export function parseTree<NodeType extends TreeNode>(
           node[key] = Number(match[j]);
           break;
         default:
+          console.warn(`Unknown field ${field}`);
           break;
       }
     }
@@ -232,7 +237,7 @@ export function parseTree<NodeType extends TreeNode>(
 
   for (const [_, line] of linkSection(file, lineNo)) {
     if (line.startsWith("*Links")) {
-      const [moduleId, ...rest] = line.split(" ");
+      const [_, moduleId, ...rest] = line.split(" ");
 
       const path = moduleId === "root" ? [0] : moduleId.split(":").map(Number);
       const [enterFlow, exitFlow, numEdges, numChildren] = rest.map(Number);
@@ -299,7 +304,6 @@ function* linkSection(lines: string[], start: number = 0) {
     }
 
     yield [i, line] as [number, string];
-    continue;
   }
 }
 
@@ -422,7 +426,7 @@ export function parseHeader(file: string | string[]): Header | null {
     const bipartiteStartId = line.match(/^# bipartite start id (\d+)/)?.[1];
     if (bipartiteStartId) {
       result.bipartiteStartId = Number(bipartiteStartId);
-      continue;
+      //continue;
     }
   }
 
