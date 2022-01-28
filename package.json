@@ -73,6 +73,10 @@
       {
         "filename": "src/io/version.cpp",
         "updater": "utils/update-version-cpp.js"
+      },
+      {
+        "filename": "CITATION.cff",
+        "updater": "utils/update-citation-cff.js"
       }
     ]
   },
