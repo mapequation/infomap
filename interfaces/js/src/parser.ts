@@ -7,8 +7,9 @@ import type {
 } from "./filetypes";
 import type { Header as JsonHeader, Module } from "./index";
 
-// FIXME This is not included in the header
-type Header = Omit<JsonHeader, "directed">;
+type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+
+type Header = Optional<JsonHeader, "directed">;
 type TreeNode = Omit<JsonTreeNode, "modules" | "modularCentrality">;
 type TreeStateNode = Omit<JsonTreeStateNode, "modules" | "modularCentrality">;
 
@@ -235,6 +236,15 @@ export function parseTree<NodeType extends TreeNode>(
   const modules = [];
   let module: Module | null = null;
 
+  const linkHeader = file[lineNo];
+
+  let directed = false;
+
+  if (linkHeader?.startsWith("*Links")) {
+    const parts = linkHeader.trim().split(" ");
+    directed = parts.length > 1 && parts[1] === "directed";
+  }
+
   for (const [_, line] of linkSection(file, lineNo)) {
     if (line.startsWith("*Links")) {
       const [_, moduleId, ...rest] = line.split(" ");
@@ -266,6 +276,7 @@ export function parseTree<NodeType extends TreeNode>(
 
   return {
     ...header,
+    directed,
     nodes,
     modules,
   };
