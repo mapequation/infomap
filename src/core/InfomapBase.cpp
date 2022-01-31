@@ -2726,7 +2726,7 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, bool write
                   << "\"modules\":[" << modules << "],"
                   << "\"name\":\"" << nodeName(node) << "\","
                   << "\"flow\":" << node.data.flow << ","
-                  << "\"modularCentrality\":" << it.modularCentrality() << ","
+                  << "\"mec\":" << it.modularCentrality() << ","
                   << "\"id\":" << node.physicalId << "}";
       }
     }
@@ -2752,7 +2752,7 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, bool write
                   << "\"modules\":[" << modules << "],"
                   << "\"name\":\"" << nodeName(node) << "\","
                   << "\"flow\":" << node.data.flow << ","
-                  << "\"modularCentrality\":" << it.modularCentrality() << ",";
+                  << "\"mec\":" << it.modularCentrality() << ",";
 
         if (states) {
           outStream << "\"stateId\":" << node.stateId << ",";
