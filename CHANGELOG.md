@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.2](https://github.com/mapequation/infomap/compare/v2.0.1...v2.0.2) (2022-01-31)
+
+
+### Bug Fixes
+
+* Change json key modularCentrality to mec ([78c7a57](https://github.com/mapequation/infomap/commit/78c7a573914e127bda03a2b8001df321e5bffd04))
+* **js:** Parse directed field in ftree files ([916f54a](https://github.com/mapequation/infomap/commit/916f54a05fb2ffd86ddf0ba297952e85ccfaa5b8))
+* **js:** Pass parseLinks to main parse function and correctly detect multilayer tree files ([0a40ca6](https://github.com/mapequation/infomap/commit/0a40ca6c1606c189f02e691a2fdb74a4494ffbe7))
+* Minify json output ([123c2b1](https://github.com/mapequation/infomap/commit/123c2b10f1e6486135346f8cd546ca0e72fb4d2e)), closes [#260](https://github.com/mapequation/infomap/issues/260)
+
 ### [2.0.1](https://github.com/mapequation/infomap/compare/v2.0.0...v2.0.1) (2022-01-26)
 
 
