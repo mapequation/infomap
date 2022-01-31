@@ -22,7 +22,7 @@ export type MetaClu = CluNode<"meta">[];
 export type TreeNode = {
   path: number[];
   modules?: number[];
-  modularCentrality?: number;
+  mec?: number;
   name?: string;
 } & NodeBase;
 

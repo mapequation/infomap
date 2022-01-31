@@ -10,8 +10,8 @@ import type { Header as JsonHeader, Module } from "./index";
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 type Header = Optional<JsonHeader, "directed">;
-type TreeNode = Omit<JsonTreeNode, "modules" | "modularCentrality">;
-type TreeStateNode = Omit<JsonTreeStateNode, "modules" | "modularCentrality">;
+type TreeNode = Omit<JsonTreeNode, "modules" | "mec">;
+type TreeStateNode = Omit<JsonTreeStateNode, "modules" | "mec">;
 
 export type Result<NodeType extends NodeBase> = Header & {
   nodes: NodeType[];
