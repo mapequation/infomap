@@ -101,6 +101,7 @@ export interface Result {
 
 interface EventCallbacks {
   data?: (output: string, id: number) => void;
+  progress?: (progress: number, id: number) => void;
   error?: (message: string, id: number) => void;
   finished?: (result: Result, id: number) => void;
 }
@@ -110,7 +111,7 @@ interface Event<Type extends keyof EventCallbacks> {
   content: Parameters<Required<EventCallbacks>[Type]>[0];
 }
 
-type EventData = Event<"data"> | Event<"error"> | Event<"finished">;
+type EventData = Event<"data"> | Event<"progress"> | Event<"error"> | Event<"finished">;
 
 const workerUrl = URL.createObjectURL(
   new Blob([InfomapWorker], { type: "application/javascript" })
@@ -197,11 +198,27 @@ class Infomap {
 
   protected setHandlers(id: number, events = this.events) {
     const worker = this.workers[id];
-    const { data, error, finished } = { ...this.events, ...events };
+    const { data, progress, error, finished } = { ...this.events, ...events };
 
     worker.onmessage = (event: MessageEvent<EventData>) => {
-      if (data && event.data.type === "data") {
-        data(event.data.content, id);
+      if (event.data.type === "data") {
+        if (data) {
+          data(event.data.content, id);
+        }
+        if (progress) {
+          const match = event.data.content.match(/^Trial (\d+)\/(\d+)/);
+          if (match) {
+            const trial = Number(match[1]);
+            const totTrials = Number(match[2]);
+            const currentProgress = 100 * trial / (totTrials + 1);
+            progress(currentProgress, id);
+          } else {
+            const summary = event.data.content.match(/^Summary after/);
+            if (summary) {
+              progress(100, id);
+            }
+          }
+        }
       } else if (error && event.data.type === "error") {
         this._terminate(id);
         error(event.data.content, id);
