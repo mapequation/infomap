@@ -10,8 +10,11 @@ import type { Header as JsonHeader, Module } from "./index";
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 type Header = Optional<JsonHeader, "directed">;
-type TreeNode = Omit<JsonTreeNode, "modules" | "mec">;
-type TreeStateNode = Omit<JsonTreeStateNode, "modules" | "mec">;
+
+// Support stree files
+type Path = { path: string | number[] };
+type TreeNode = Omit<JsonTreeNode, "modules" | "mec" | "path"> & Path;
+type TreeStateNode = Omit<JsonTreeStateNode, "modules" | "mec" | "path"> & Path;
 
 export type Result<NodeType extends NodeBase> = Header & {
   nodes: NodeType[];
@@ -200,7 +203,7 @@ export function parseTree<NodeType extends TreeNode>(
 
       switch (field) {
         case "path":
-          node.path = match[j].split(":").map(Number);
+          node.path = match[j] //.split(":").map(Number);
           break;
         case "name":
           node.name = match[j].slice(1, -1);
