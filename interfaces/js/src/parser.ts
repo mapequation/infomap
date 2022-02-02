@@ -43,10 +43,6 @@ export function parse(file: string | string[], type?: Extension, parseLinks = fa
 
   const nodeHeader = parseNodeHeader(file);
 
-  if (nodeHeader === null) {
-    return null;
-  }
-
   if ((type && type === "clu") || nodeHeader.includes("module")) {
     if (nodeHeader[0] === "node_id") {
       return parseClu(file, nodeHeader);
@@ -77,7 +73,7 @@ const map = {
 export function parseClu<NodeType extends CluNode>(
   file: string | string[],
   nodeHeader?: string[]
-): Result<NodeType> | null {
+): Result<NodeType> {
   // First order
   // # node_id module flow
   // 10 1 0.0384615
@@ -101,22 +97,14 @@ export function parseClu<NodeType extends CluNode>(
   }
 
   const header = parseHeader(file);
-  if (!header) {
-    console.warn("No header");
-    return null;
-  }
 
   if (!nodeHeader) {
-    nodeHeader = parseNodeHeader(file) ?? [];
-    if (nodeHeader.length === 0) {
-      console.warn("No node header");
-      return null;
-    }
+    nodeHeader = parseNodeHeader(file);
   }
 
   const nodes: NodeType[] = [];
 
-  for (const [_, line] of nodeSection(file)) {
+  for (const [i, line] of nodeSection(file)) {
     const fields = line.split(" ").map(Number);
 
     if (fields.length < nodeHeader.length) {
@@ -132,6 +120,10 @@ export function parseClu<NodeType extends CluNode>(
       node[key] = fields[i];
     }
 
+    if (node.id === undefined || node.moduleId === undefined || node.flow === undefined) {
+      throw new Error(`Invalid node at line ${i + 1}: ${line}`);
+    }
+
     nodes.push(node as NodeType);
   }
 
@@ -145,7 +137,7 @@ export function parseTree<NodeType extends TreeNode>(
   file: string | string[],
   nodeHeader?: string[],
   parseLinks = false
-): Result<NodeType> | null {
+): Result<NodeType> {
   // First order
   // # path flow name node_id
   // 1:1 0.166667 "i" 1
@@ -169,17 +161,9 @@ export function parseTree<NodeType extends TreeNode>(
   }
 
   const header = parseHeader(file);
-  if (!header) {
-    console.warn("No header");
-    return null;
-  }
 
   if (!nodeHeader) {
-    nodeHeader = parseNodeHeader(file) ?? [];
-    if (nodeHeader.length === 0) {
-      console.warn("No node header");
-      return null;
-    }
+    nodeHeader = parseNodeHeader(file);
   }
 
   const nodes: NodeType[] = [];
@@ -221,6 +205,10 @@ export function parseTree<NodeType extends TreeNode>(
           console.warn(`Unknown field ${field}`);
           break;
       }
+    }
+
+    if (node.path === undefined || node.flow === undefined || node.name === undefined || node.id === undefined) {
+      throw new Error(`Invalid node at line ${i + 1}: ${line}`);
     }
 
     nodes.push(node as NodeType);
@@ -321,7 +309,7 @@ function* linkSection(lines: string[], start: number = 0) {
   }
 }
 
-function parseNodeHeader(file: string | string[]): string[] | null {
+function parseNodeHeader(file: string | string[]): string[] {
   // First order tree
   // # path flow name node_id
 
@@ -356,10 +344,10 @@ function parseNodeHeader(file: string | string[]): string[] | null {
     }
   }
 
-  return null;
+  throw new Error("Could not parse node header");
 }
 
-export function parseHeader(file: string | string[]): Header | null {
+export function parseHeader(file: string | string[]): Header {
   // # v1.7.3
   // # ./Infomap examples/networks/ninetriangles.net .
   // # started at 2021-11-02 13:56:33
@@ -376,14 +364,16 @@ export function parseHeader(file: string | string[]): Header | null {
     file = file.split("\n");
   }
 
-  if (file.length < 8) return null;
+  if (file.length < 8) {
+    throw new Error("Expected file header to have at least 8 lines");
+  }
 
   const version = file[0].match(/^# (v\d+\.\d+\.\d+)/)?.[1];
 
   if (version) {
     result.version = version;
   } else {
-    return null;
+    throw new Error("Could not parse version");
   }
 
   const args = file[1].match(/^# (.+)/)?.[1];
@@ -391,7 +381,7 @@ export function parseHeader(file: string | string[]): Header | null {
   if (args) {
     result.args = args;
   } else {
-    return null;
+    throw new Error("Could not parse args");
   }
 
   for (let i = 2; i < file.length; ++i) {
@@ -442,6 +432,15 @@ export function parseHeader(file: string | string[]): Header | null {
       result.bipartiteStartId = Number(bipartiteStartId);
       //continue;
     }
+  }
+
+  if (!result.startedAt ||
+    !result.completedIn ||
+    !result.numLevels ||
+    !result.numTopModules ||
+    !result.codelength ||
+    !result.relativeCodelengthSavings) {
+    throw new Error("Could not parse file header");
   }
 
   return result as Header;
