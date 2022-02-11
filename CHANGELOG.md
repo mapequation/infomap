@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.0](https://github.com/mapequation/infomap/compare/v2.0.2...v2.1.0) (2022-02-11)
+
+
+### Features
+
+* **js:** Add progress event callback ([0fab95b](https://github.com/mapequation/infomap/commit/0fab95bd59717aaf2f36792f2be5a54223e38fab))
+
+
+### Bug Fixes
+
+* **js:** Change Typescript types to use mec instead of modularCentrality ([298eed3](https://github.com/mapequation/infomap/commit/298eed32d977758b07af058327775c234340b7b5))
+* **js:** Parse node path as string instead of array of number ([51feb73](https://github.com/mapequation/infomap/commit/51feb73254b17857e4feb27197d4bb8c8157db05))
+* **js:** Validate parsed results and throw instead of returning null on failure ([5f56b94](https://github.com/mapequation/infomap/commit/5f56b94fe0f956483f61a03ef07e94d8def2205e))
+
 ### [2.0.2](https://github.com/mapequation/infomap/compare/v2.0.1...v2.0.2) (2022-01-31)
 
 
