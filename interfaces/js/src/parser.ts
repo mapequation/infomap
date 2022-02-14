@@ -27,6 +27,11 @@ export function extension(filename: string) {
   return filename.split(".").pop() ?? null;
 }
 
+export function lines(file: string) {
+  // split file on \r\n or \n
+  return file.split(/\r?\n/);
+}
+
 export function readFile(file: File) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -36,28 +41,27 @@ export function readFile(file: File) {
   });
 }
 
-export function parse(file: string | string[], type?: Extension, parseLinks = false) {
+export function parse(file: string | string[], type?: Extension, parseLinks = false, strictHeader = true) {
   if (typeof file === "string") {
-    file = file.split("\n");
+    file = lines(file);
   }
 
   const nodeHeader = parseNodeHeader(file);
 
   if ((type && type === "clu") || nodeHeader.includes("module")) {
     if (nodeHeader[0] === "node_id") {
-      return parseClu(file, nodeHeader);
+      return parseClu(file, nodeHeader, strictHeader);
     } else if (nodeHeader[0] === "state_id") {
-      return parseClu<CluStateNode>(file, nodeHeader);
+      return parseClu<CluStateNode>(file, nodeHeader, strictHeader);
     }
   } else if ((type && type === "tree") || nodeHeader.includes("path")) {
     if (nodeHeader[nodeHeader.length - 2] === "name") {
-      return parseTree(file, nodeHeader, parseLinks);
+      return parseTree(file, nodeHeader, parseLinks, strictHeader);
     } else if (nodeHeader[nodeHeader.length - 2] === "state_id" || nodeHeader[nodeHeader.length - 1] === "layer_id") {
-      return parseTree<TreeStateNode>(file, nodeHeader, parseLinks);
+      return parseTree<TreeStateNode>(file, nodeHeader, parseLinks, strictHeader);
     }
   }
-
-  return null;
+  throw new Error("File must be either a tree or a clu file");
 }
 
 const map = {
@@ -72,7 +76,8 @@ const map = {
 
 export function parseClu<NodeType extends CluNode>(
   file: string | string[],
-  nodeHeader?: string[]
+  nodeHeader?: string[],
+  strictHeader = true,
 ): Result<NodeType> {
   // First order
   // # node_id module flow
@@ -93,10 +98,10 @@ export function parseClu<NodeType extends CluNode>(
   // 5 1 0.166667 3 2
 
   if (typeof file === "string") {
-    file = file.split("\n");
+    file = lines(file);
   }
 
-  const header = parseHeader(file);
+  const header = parseHeader(file, strictHeader);
 
   if (!nodeHeader) {
     nodeHeader = parseNodeHeader(file);
@@ -136,7 +141,8 @@ export function parseClu<NodeType extends CluNode>(
 export function parseTree<NodeType extends TreeNode>(
   file: string | string[],
   nodeHeader?: string[],
-  parseLinks = false
+  parseLinks = false,
+  strictHeader = true
 ): Result<NodeType> {
   // First order
   // # path flow name node_id
@@ -157,10 +163,10 @@ export function parseTree<NodeType extends TreeNode>(
   // 1:3 0.166667 "k" 5 3 2
 
   if (typeof file === "string") {
-    file = file.split("\n");
+    file = lines(file);
   }
 
-  const header = parseHeader(file);
+  const header = parseHeader(file, strictHeader);
 
   if (!nodeHeader) {
     nodeHeader = parseNodeHeader(file);
@@ -331,7 +337,7 @@ function parseNodeHeader(file: string | string[]): string[] {
   const prefixes = ["# path", "# node_id", "# state_id"];
 
   if (typeof file === "string") {
-    file = file.split("\n");
+    file = lines(file);
   }
 
   for (const line of file) {
@@ -347,7 +353,7 @@ function parseNodeHeader(file: string | string[]): string[] {
   throw new Error("Could not parse node header");
 }
 
-export function parseHeader(file: string | string[]): Header {
+export function parseHeader(file: string | string[], strict = true): Header {
   // # v1.7.3
   // # ./Infomap examples/networks/ninetriangles.net .
   // # started at 2021-11-02 13:56:33
@@ -361,26 +367,26 @@ export function parseHeader(file: string | string[]): Header {
   const result: Partial<Header> = {};
 
   if (typeof file === "string") {
-    file = file.split("\n");
+    file = lines(file);
   }
 
-  if (file.length < 8) {
+  if (file.length < 8 && strict) {
     throw new Error("Expected file header to have at least 8 lines");
   }
 
-  const version = file[0].match(/^# (v\d+\.\d+\.\d+)/)?.[1];
+  const version = file[0] && file[0].match(/^# (v\d+\.\d+\.\d+)/)?.[1];
 
   if (version) {
     result.version = version;
-  } else {
+  } else if (strict) {
     throw new Error("Could not parse version");
   }
 
-  const args = file[1].match(/^# (.+)/)?.[1];
+  const args = file[1] && file[1].match(/^# (.+)/)?.[1];
 
   if (args) {
     result.args = args;
-  } else {
+  } else if (strict) {
     throw new Error("Could not parse args");
   }
 
@@ -434,12 +440,12 @@ export function parseHeader(file: string | string[]): Header {
     }
   }
 
-  if (!result.startedAt ||
+  if (strict && (!result.startedAt ||
     !result.completedIn ||
     !result.numLevels ||
     !result.numTopModules ||
     !result.codelength ||
-    !result.relativeCodelengthSavings) {
+    !result.relativeCodelengthSavings)) {
     throw new Error("Could not parse file header");
   }
 
