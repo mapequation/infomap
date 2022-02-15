@@ -77,9 +77,9 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(cluLevel, "clu-level", "For clu output, print modules at specified depth from root. Use -1 for bottom level modules.", ArgType::integer, "Output", true);
 
-  //TODO: Include in -o
-  // api.addOptionArgument(printFlowNetwork, "print-flow-network",
-  // 		"Print the network with calculated flow values.", "Output", true);
+  // TODO: Include in -o
+  //  api.addOptionArgument(printFlowNetwork, "print-flow-network",
+  //  		"Print the network with calculated flow values.", "Output", true);
 
   // -o network,states,clu,ftree
   api.addOptionArgument(outputFormats, 'o', "output", "Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.", ArgType::list, "Output", true);
@@ -95,8 +95,7 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(directed, 'd', "directed", "Assume directed links. Shorthand for '--flow-model directed'.", "Algorithm");
 
-  api.addOptionArgument(recordedTeleportation, 'e', "recorded-teleportation",
-  		"If teleportation is used to calculate the flow, also record it when minimizing codelength.", "Algorithm", true);
+  api.addOptionArgument(recordedTeleportation, 'e', "recorded-teleportation", "If teleportation is used to calculate the flow, also record it when minimizing codelength.", "Algorithm", true);
 
   api.addOptionArgument(useNodeWeightsAsFlow, "use-node-weights-as-flow", "Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1", "Algorithm", true);
 
@@ -295,23 +294,6 @@ void Config::adaptDefaults()
   }
 
   originallyUndirected = isUndirectedFlow();
-}
-
-inline const char* flowModelToString(const FlowModel& flowModel)
-{
-  switch (flowModel) {
-  case FlowModel::directed:
-    return "directed";
-  case FlowModel::undirdir:
-    return "undirdir";
-  case FlowModel::outdirdir:
-    return "outdirdir";
-  case FlowModel::rawdir:
-    return "rawdir";
-  case FlowModel::undirected:
-  default:
-    return "undirected";
-  }
 }
 
 std::ostream& operator<<(std::ostream& out, FlowModel f)

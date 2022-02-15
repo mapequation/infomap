@@ -44,9 +44,9 @@ protected:
 public:
   using PartitionQueue = detail::PartitionQueue;
 
-  InfomapBase() : InfomapConfig<InfomapBase>() {}
+  InfomapBase() : InfomapConfig<InfomapBase>() { }
 
-  explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) {}
+  explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { }
 
   explicit InfomapBase(const std::string flags) : InfomapConfig<InfomapBase>(flags)
   {
@@ -169,8 +169,8 @@ public:
   InfomapBase& getSuperInfomap(InfoNode& node);
 
   /**
-    * Only the main infomap reads an external cluster file if exist
-    */
+   * Only the main infomap reads an external cluster file if exist
+   */
   InfomapBase& setIsMain(bool isMain);
   InfomapBase& setSubLevel(unsigned int level);
 
@@ -297,8 +297,8 @@ public:
   // ===================================================
 
   /**
-    * Done in network?
-    */
+   * Done in network?
+   */
   virtual void initEnterExitFlow();
 
   virtual void aggregateFlowValuesFromLeafToRoot();
@@ -403,7 +403,7 @@ public:
   // Output: *
   // ===================================================
 
-  std::string getOutputFileHeader();
+  std::string getOutputFileHeader(bool states = false);
 
   /**
    * Write tree to a .tree file.
@@ -451,9 +451,9 @@ public:
   std::string writeClu(std::string filename = "", bool states = false, int moduleIndexLevel = 1);
 
   /**
-    * Print per level statistics
-    * @param out The output stream to print the per level statistics to
-    */
+   * Print per level statistics
+   * @param out The output stream to print the per level statistics to
+   */
   unsigned int printPerLevelCodelength(std::ostream& out);
 
   void aggregatePerLevelCodelength(std::vector<PerLevelStat>& perLevelStat, unsigned int level = 0);
@@ -464,7 +464,7 @@ public:
   // Debug: *
   // ===================================================
 
-  virtual void printDebug() {}
+  virtual void printDebug() { }
 
   // ===================================================
   // Members

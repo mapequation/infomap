@@ -41,7 +41,12 @@ export function readFile(file: File) {
   });
 }
 
-export function parse(file: string | string[], type?: Extension, parseLinks = false, strictHeader = true) {
+export function parse(
+  file: string | string[],
+  type?: Extension,
+  parseLinks = false,
+  strictHeader = true
+) {
   if (typeof file === "string") {
     file = lines(file);
   }
@@ -57,8 +62,16 @@ export function parse(file: string | string[], type?: Extension, parseLinks = fa
   } else if ((type && type === "tree") || nodeHeader.includes("path")) {
     if (nodeHeader[nodeHeader.length - 2] === "name") {
       return parseTree(file, nodeHeader, parseLinks, strictHeader);
-    } else if (nodeHeader[nodeHeader.length - 2] === "state_id" || nodeHeader[nodeHeader.length - 1] === "layer_id") {
-      return parseTree<TreeStateNode>(file, nodeHeader, parseLinks, strictHeader);
+    } else if (
+      nodeHeader[nodeHeader.length - 2] === "state_id" ||
+      nodeHeader[nodeHeader.length - 1] === "layer_id"
+    ) {
+      return parseTree<TreeStateNode>(
+        file,
+        nodeHeader,
+        parseLinks,
+        strictHeader
+      );
     }
   }
   throw new Error("File must be either a tree or a clu file");
@@ -77,7 +90,7 @@ const map = {
 export function parseClu<NodeType extends CluNode>(
   file: string | string[],
   nodeHeader?: string[],
-  strictHeader = true,
+  strictHeader = true
 ): Result<NodeType> {
   // First order
   // # node_id module flow
@@ -125,7 +138,11 @@ export function parseClu<NodeType extends CluNode>(
       node[key] = fields[i];
     }
 
-    if (node.id === undefined || node.moduleId === undefined || node.flow === undefined) {
+    if (
+      node.id === undefined ||
+      node.moduleId === undefined ||
+      node.flow === undefined
+    ) {
       throw new Error(`Invalid node at line ${i + 1}: ${line}`);
     }
 
@@ -193,7 +210,7 @@ export function parseTree<NodeType extends TreeNode>(
 
       switch (field) {
         case "path":
-          node.path = match[j] //.split(":").map(Number);
+          node.path = match[j]; //.split(":").map(Number);
           break;
         case "name":
           node.name = match[j].slice(1, -1);
@@ -213,7 +230,12 @@ export function parseTree<NodeType extends TreeNode>(
       }
     }
 
-    if (node.path === undefined || node.flow === undefined || node.name === undefined || node.id === undefined) {
+    if (
+      node.path === undefined ||
+      node.flow === undefined ||
+      node.name === undefined ||
+      node.id === undefined
+    ) {
       throw new Error(`Invalid node at line ${i + 1}: ${line}`);
     }
 
@@ -361,6 +383,7 @@ export function parseHeader(file: string | string[], strict = true): Header {
   // # partitioned into 3 levels with 7 top modules
   // # codelength 3.49842 bits
   // # relative codelength savings 26.2781%
+  // # flow model undirected
   // # bipartite start id 123
   // # path flow name node_id
 
@@ -433,6 +456,22 @@ export function parseHeader(file: string | string[], strict = true): Header {
       continue;
     }
 
+    const flowModel = line.match(/^# flow model (.+)/)?.[1];
+    if (flowModel) {
+      result.flowModel = flowModel;
+      continue;
+    }
+
+    const higherOrder = line.match(/^# higher order/)?.[1];
+    if (higherOrder) {
+      result.higherOrder = true;
+    }
+
+    const stateLevel = line.match(/^# (state|physical) level/)?.[1];
+    if (stateLevel) {
+      result.stateLevel = stateLevel === "state";
+    }
+
     const bipartiteStartId = line.match(/^# bipartite start id (\d+)/)?.[1];
     if (bipartiteStartId) {
       result.bipartiteStartId = Number(bipartiteStartId);
@@ -440,12 +479,19 @@ export function parseHeader(file: string | string[], strict = true): Header {
     }
   }
 
-  if (strict && (!result.startedAt ||
-    !result.completedIn ||
-    !result.numLevels ||
-    !result.numTopModules ||
-    !result.codelength ||
-    !result.relativeCodelengthSavings)) {
+  if (!result.higherOrder) {
+    result.higherOrder = false;
+  }
+
+  if (
+    strict &&
+    (!result.startedAt ||
+      !result.completedIn ||
+      !result.numLevels ||
+      !result.numTopModules ||
+      !result.codelength ||
+      !result.relativeCodelengthSavings)
+  ) {
     throw new Error("Could not parse file header");
   }
 

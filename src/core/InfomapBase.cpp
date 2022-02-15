@@ -839,7 +839,7 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
   //	Log(3) << "Init " << (hard? "hard" : "soft") << " partition..." << std::endl;
   removeModules();
   setActiveNetworkFromLeafs();
-  initPartition(); //TODO: confusing same name, should be able to init default without arguments here too
+  initPartition(); // TODO: confusing same name, should be able to init default without arguments here too
   moveActiveNodesToPredefinedModules(modules);
   consolidateModules(false);
 
@@ -1404,8 +1404,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
     Log() << "\n\nAggregating enter/exit flow for recorded teleportation, sum teleFlow: " << m_root.data.teleportFlow << "\n";
 
     for (auto& node : m_root.infomapTree()) {
-      if (!node.isLeaf())
-      {
+      if (!node.isLeaf()) {
         // Don't code self-teleportation
         // node.data.enterFlow += (alpha * (1.0 - node.data.flow) + beta * (m_sumDanglingFlow - node.data.danglingFlow)) * node.data.teleportWeight;
         // node.data.exitFlow += (alpha * node.data.flow + beta * node.data.danglingFlow) * (1.0 - node.data.teleportWeight);
@@ -1413,9 +1412,9 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
         double enterFlow = (m_root.data.teleportFlow - node.data.teleportFlow) * node.data.teleportWeight;
         double exitFlow = node.data.teleportFlow * (1.0 - node.data.teleportWeight);
         Log() << "  Node on depth " << node.depth() << ", childDegree: " << node.childDegree() << ", isLeafModule: " << node.isLeafModule() << ", data: " << node.data
-        << ", enterFlow += (" << (m_root.data.teleportFlow - node.data.teleportFlow)
-        << " * " << node.data.teleportWeight << " = " << enterFlow << " -> " << (node.data.enterFlow + enterFlow) << "), exitFlow += ("
-        << node.data.teleportFlow << " * " << (1.0 - node.data.teleportWeight) << " = " << exitFlow << " -> " << (node.data.exitFlow + exitFlow) << ")\n";
+              << ", enterFlow += (" << (m_root.data.teleportFlow - node.data.teleportFlow)
+              << " * " << node.data.teleportWeight << " = " << enterFlow << " -> " << (node.data.enterFlow + enterFlow) << "), exitFlow += ("
+              << node.data.teleportFlow << " * " << (1.0 - node.data.teleportWeight) << " = " << exitFlow << " -> " << (node.data.exitFlow + exitFlow) << ")\n";
 
         node.data.enterFlow += (m_root.data.teleportFlow - node.data.teleportFlow) * node.data.teleportWeight;
         node.data.exitFlow += node.data.teleportFlow * (1.0 - node.data.teleportWeight);
@@ -1424,7 +1423,6 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
 
         // node.data.enterFlow += (1.0 - node.data.teleportFlow) * node.data.teleportWeight;
         // node.data.exitFlow += node.data.teleportFlow * (1.0 - node.data.teleportWeight);
-
       }
     }
   }
@@ -2292,7 +2290,7 @@ void InfomapBase::writeResult()
   }
 }
 
-std::string InfomapBase::getOutputFileHeader()
+std::string InfomapBase::getOutputFileHeader(bool states)
 {
   std::string bipartiteInfo = io::Str() << "\n# bipartite start id " << m_network.bipartiteStartId();
   return io::Str() << "# v" << INFOMAP_VERSION << "\n"
@@ -2301,7 +2299,11 @@ std::string InfomapBase::getOutputFileHeader()
                    << "# completed in " << m_elapsedTime.getElapsedTimeInSec() << " s\n"
                    << "# partitioned into " << maxTreeDepth() << " levels with " << numTopModules() << " top modules\n"
                    << "# codelength " << codelength() << " bits\n"
-                   << "# relative codelength savings " << getRelativeCodelengthSavings() * 100 << "%" << (m_network.isBipartite() ? bipartiteInfo : "");
+                   << "# relative codelength savings " << getRelativeCodelengthSavings() * 100 << "%\n"
+                   << "# flow model " << flowModelToString(flowModel)
+                   << (haveMemory() ? "\n# higher order" : "")
+                   << (haveMemory() ? states ? "\n# state level" : "\n# physical level" : "")
+                   << (m_network.isBipartite() ? bipartiteInfo : "");
 }
 
 std::string InfomapBase::writeTree(std::string filename, bool states)
@@ -2362,7 +2364,7 @@ std::string InfomapBase::writeClu(std::string filename, bool states, int moduleI
   SafeOutFile outFile(outputFilename);
 
   outFile << std::setprecision(9);
-  outFile << getOutputFileHeader() << "\n";
+  outFile << getOutputFileHeader(states) << "\n";
   outFile << "# module level " << moduleIndexLevel << "\n";
   outFile << std::resetiosflags(std::ios::floatfield) << std::setprecision(6);
 
@@ -2414,7 +2416,7 @@ void InfomapBase::writeTree(std::ostream& outStream, bool states)
 {
   auto oldPrecision = outStream.precision();
   outStream << std::setprecision(9);
-  outStream << getOutputFileHeader() << "\n";
+  outStream << getOutputFileHeader(states) << "\n";
   outStream << std::setprecision(6);
 
   if (states) {
@@ -2675,7 +2677,13 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, bool write
             << "\"numLevels\":" << maxTreeDepth() << ","
             << "\"numTopModules\":" << numTopModules() << ","
             << "\"relativeCodelengthSavings\":" << getRelativeCodelengthSavings() << ","
-            << "\"directed\":" << (isUndirectedFlow() ? "false" : "true") << ",";
+            << "\"directed\":" << (isUndirectedFlow() ? "false" : "true") << ","
+            << "\"flowModel\": \"" << flowModelToString(flowModel) << "\","
+            << "\"higherOrder\":" << (haveMemory() ? "true" : "false") << ",";
+
+  if (haveMemory()) {
+    outStream << "\"stateLevel\":" << (states ? "true" : "false") << ",";
+  }
 
   if (isBipartite()) {
     outStream << "\"bipartiteStartId\":" << m_network.bipartiteStartId() << ",";

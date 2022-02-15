@@ -12,8 +12,8 @@ const webpackConfig = async () => {
   return {
     mode: "production",
     entry: {
-      "index": "./interfaces/js/src/index.ts",
-      "parser": "./interfaces/js/src/parser.ts"
+      index: "./interfaces/js/src/index.ts",
+      parser: "./interfaces/js/src/parser.ts",
     },
     output: {
       filename: "[name].js",

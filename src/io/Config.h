@@ -51,7 +51,7 @@ struct FlowModel {
 
   int value = 0;
 
-  FlowModel(int val) : value(val) {}
+  FlowModel(int val) : value(val) { }
   FlowModel& operator=(int val)
   {
     value = val;
@@ -64,6 +64,23 @@ struct FlowModel {
 };
 
 std::ostream& operator<<(std::ostream& out, FlowModel f);
+
+inline const char* flowModelToString(const FlowModel& flowModel)
+{
+  switch (flowModel) {
+  case FlowModel::directed:
+    return "directed";
+  case FlowModel::undirdir:
+    return "undirdir";
+  case FlowModel::outdirdir:
+    return "outdirdir";
+  case FlowModel::rawdir:
+    return "rawdir";
+  case FlowModel::undirected:
+  default:
+    return "undirected";
+  }
+}
 
 struct OptimizationLevel {
   static constexpr int FullCoarseTune = 0;
@@ -85,7 +102,7 @@ struct Config {
   bool stateInput = false;
   bool stateOutput = false;
   bool multilayerInput = false;
-  //bool withMemory = false; // unused
+  // bool withMemory = false; // unused
   double weightThreshold = 0.0;
   bool unweightedPaths = false;
   unsigned int pathMarkovOrder = 1;
@@ -93,7 +110,7 @@ struct Config {
   bool skipAdjustBipartiteFlow = false;
   bool bipartiteTeleportation = false;
   bool hardPartitions = false;
-  //bool nonBacktracking = false; // unused
+  // bool nonBacktracking = false; // unused
   bool parseWithoutIOStreams = false;
   bool zeroBasedNodeNumbers = false;
   bool noSelfLinks = false; // Replaces includeSelfLinks
@@ -209,7 +226,7 @@ struct Config {
     stateInput = other.stateInput;
     stateOutput = other.stateOutput;
     multilayerInput = other.multilayerInput;
-    //withMemory = other.withMemory;
+    // withMemory = other.withMemory;
     weightThreshold = other.weightThreshold;
     unweightedPaths = other.unweightedPaths;
     pathMarkovOrder = other.pathMarkovOrder;
@@ -217,7 +234,7 @@ struct Config {
     skipAdjustBipartiteFlow = other.skipAdjustBipartiteFlow;
     bipartiteTeleportation = other.bipartiteTeleportation;
     hardPartitions = other.hardPartitions;
-    //nonBacktracking = other.nonBacktracking;
+    // nonBacktracking = other.nonBacktracking;
     parseWithoutIOStreams = other.parseWithoutIOStreams;
     zeroBasedNodeNumbers = other.zeroBasedNodeNumbers;
     noSelfLinks = other.noSelfLinks;
@@ -276,7 +293,7 @@ struct Config {
     // fastHierarchicalSolution = other.fastHierarchicalSolution;
     // fastFirstIteration = other.fastFirstIteration;
     preferModularSolution = other.preferModularSolution;
-    //lowMemoryPriority = other.lowMemoryPriority;
+    // lowMemoryPriority = other.lowMemoryPriority;
     innerParallelization = other.innerParallelization;
     outDirectory = other.outDirectory;
     outName = other.outName;

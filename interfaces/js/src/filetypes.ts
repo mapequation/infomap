@@ -10,8 +10,7 @@ type StateNodeBase = {
 
 export type CluNode<T extends string = "moduleId"> = {
   [key in T]: number;
-} &
-  NodeBase;
+} & NodeBase;
 
 export type CluStateNode = CluNode & StateNodeBase;
 

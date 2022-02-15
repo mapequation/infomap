@@ -70,6 +70,9 @@ export interface Header {
   numTopModules: number;
   relativeCodelengthSavings: number;
   directed: boolean;
+  flowModel: string;
+  higherOrder: boolean;
+  stateLevel?: boolean;
   bipartiteStartId?: number;
 }
 
@@ -111,7 +114,11 @@ interface Event<Type extends keyof EventCallbacks> {
   content: Parameters<Required<EventCallbacks>[Type]>[0];
 }
 
-type EventData = Event<"data"> | Event<"progress"> | Event<"error"> | Event<"finished">;
+type EventData =
+  | Event<"data">
+  | Event<"progress">
+  | Event<"error">
+  | Event<"finished">;
 
 const workerUrl = URL.createObjectURL(
   new Blob([InfomapWorker], { type: "application/javascript" })
@@ -210,7 +217,7 @@ class Infomap {
           if (match) {
             const trial = Number(match[1]);
             const totTrials = Number(match[2]);
-            const currentProgress = 100 * trial / (totTrials + 1);
+            const currentProgress = (100 * trial) / (totTrials + 1);
             progress(currentProgress, id);
           } else {
             const summary = event.data.content.match(/^Summary after/);
