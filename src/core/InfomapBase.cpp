@@ -2713,7 +2713,7 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, bool write
         }
 
         const auto path = io::stringify(it.path(), ",");
-        const auto modules = io::stringify(multilevelModules.at(node.physicalId), ",");
+        const auto modules = haveModules() ? io::stringify(multilevelModules.at(node.physicalId), ",") : "1";
 
         if (first) {
           first = false;
@@ -2745,7 +2745,7 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, bool write
         }
 
         const auto path = io::stringify(it.path(), ", ");
-        const auto modules = io::stringify(multilevelModules.at(node.stateId), ", ");
+        const auto modules = haveModules() ? io::stringify(multilevelModules.at(node.stateId), ", ") : "1";
 
         outStream << "{"
                   << "\"path\":[" << path << "],"
