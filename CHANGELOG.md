@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.2.0](https://github.com/mapequation/infomap/compare/v2.1.0...v2.2.0) (2022-03-07)
+
+
+### Features
+
+* Add flow-model, higher-order, and state-level fields to json, tree and clu output ([24125e5](https://github.com/mapequation/infomap/commit/24125e5874cd0599e7274e08a2691855f212186b))
+
+
+### Bug Fixes
+
+* **js:** More forgiving clu and tree parsing ([4764946](https://github.com/mapequation/infomap/commit/47649466a0ef2a200dc766b1442c7f33a8fec20f))
+* Write json output with --no-infomap ([c0cec87](https://github.com/mapequation/infomap/commit/c0cec8715981f53dd53c3134c8f16e5b4d644717)), closes [#268](https://github.com/mapequation/infomap/issues/268)
+
 ## [2.1.0](https://github.com/mapequation/infomap/compare/v2.0.2...v2.1.0) (2022-02-11)
 
 
