@@ -83,6 +83,7 @@ protected:
   virtual void initPartition();
 
   virtual void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules);
+  bool moveNodeToPredefinedModule(InfoNode& node, unsigned int module);
 
   virtual unsigned int optimizeActiveNetwork();
 
@@ -250,118 +251,125 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
   auto numNodes = network.size();
   if (modules.size() != numNodes)
     throw std::length_error("Size of predefined modules differ from size of active network.");
-  unsigned int numMoved = 0;
+  // unsigned int numMoved = 0;
 
   // Log() << "\n\n>> Move to predefined modules from codelength: " << m_objective << "\n";
 
   for (unsigned int i = 0; i < numNodes; ++i) {
-    InfoNode& current = *network[i];
-    unsigned int oldM = current.index;
-    unsigned int newM = modules[i];
+    moveNodeToPredefinedModule(*network[i], modules[i]);
+  }
+}
 
-    if (newM != oldM) {
-      DeltaFlowDataType oldModuleDelta(oldM, 0.0, 0.0);
-      DeltaFlowDataType newModuleDelta(newM, 0.0, 0.0);
+template <typename Objective>
+bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, unsigned int newModule)
+{
+  unsigned int oldM = current.index;
+  unsigned int newM = newModule;
 
-      // Log() << "\n----------\n";
-      // Log() << "Node " << current.stateId << ", module " << oldM << " -> " << newM << "\n";
+  if (newM == oldM) {
+    return false;
+  }
 
-      // For all outlinks
-      for (auto& e : current.outEdges()) {
-        auto& edge = *e;
-        unsigned int otherModule = edge.target.index;
-        if (otherModule == oldM) {
-          // Log() << "  Old deltaExit += " << edge.data.flow << "\n";
-          oldModuleDelta.deltaExit += edge.data.flow;
-        }
-        else if (otherModule == newM) {
-          // Log() << "  New deltaExit += " << edge.data.flow << "\n";
-          newModuleDelta.deltaExit += edge.data.flow;
-        }
-      }
-      // For all inlinks
-      for (auto& e : current.inEdges()) {
-        auto& edge = *e;
-        unsigned int otherModule = edge.source.index;
-        if (otherModule == oldM) {
-          // Log() << "  Old deltaEnter += " << edge.data.flow << "\n";
-          oldModuleDelta.deltaEnter += edge.data.flow;
-        }
-        else if (otherModule == newM) {
-          // Log() << "  New deltaEnter += " << edge.data.flow << "\n";
-          newModuleDelta.deltaEnter += edge.data.flow;
-        }
-      }
+  DeltaFlowDataType oldModuleDelta(oldM, 0.0, 0.0);
+  DeltaFlowDataType newModuleDelta(newM, 0.0, 0.0);
 
-       // For recorded teleportation
-      if (m_infomap->recordedTeleportation) {
-        // double alpha = m_infomap->teleportationProbability;
-        // double beta = 1.0 - alpha;
-        
-        // addTeleportationDeltaFlowOnOldModuleIfMove(current, moduleDeltaExits[j]);
-        auto& oldModuleFlowData = m_moduleFlowData[oldM];
-        // double deltaEnterOld = (alpha*(oldModuleFlowData.teleportSourceFlow - current.data.teleportSourceFlow) + beta*(oldModuleFlowData.danglingFlow - current.data.danglingFlow)) * current.data.teleportWeight;
-        double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
-        // double deltaExitOld = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
-        double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
-        // if (m_infomap->isUndirectedClustering()) {
-          // Log() << " (dOld enter: " << deltaEnterOld << ", exit: " << deltaExitOld << ") ";
-        // }
-        oldModuleDelta.deltaEnter += deltaEnterOld;
-        oldModuleDelta.deltaExit += deltaExitOld;
+  // Log() << "\n----------\n";
+  // Log() << "Node " << current.stateId << ", module " << oldM << " -> " << newM << "\n";
 
-        // addTeleportationDeltaFlowOnNewModuleIfMove(current, moduleDeltaExits[j]);
-        auto& newModuleFlowData = m_moduleFlowData[newM];
-        // double deltaEnterNew = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * newModuleFlowData.teleportWeight;
-        double deltaEnterNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
-        // double deltaExitNew = (alpha*newModuleFlowData.teleportSourceFlow +	beta*newModuleFlowData.danglingFlow) * current.data.teleportWeight;
-        double deltaExitNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
-        // if (m_infomap->isUndirectedClustering()) {
-        //   Log() << " (dNew enter: " << deltaEnterNew << ", exit: " << deltaExitNew << ") ";
-        // }
-        newModuleDelta.deltaEnter += deltaEnterNew;
-        newModuleDelta.deltaExit += deltaExitNew;
-        
-        
-        // Log() << "  Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
-        // Log() << "  New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
-        // Log() << "  Codelength: " << m_objective << "\n";
-        // Log() << "  Old deltaEnter += " << (oldModuleDelta.deltaEnter - deltaEnterOld) << " + " << deltaEnterOld << " = " << oldModuleDelta.deltaEnter << "\n";
-        // Log() << "  Old deltaExit += " << (oldModuleDelta.deltaExit - deltaExitOld) << " + " << deltaExitOld << " = " << oldModuleDelta.deltaExit << "\n";
-        // Log() << "  New deltaEnter += " << (newModuleDelta.deltaEnter - deltaEnterNew) << " + " << deltaEnterNew << " = " << newModuleDelta.deltaEnter << "\n";
-        // Log() << "  New deltaExit += " << (newModuleDelta.deltaExit - deltaExitNew) << " + " << deltaExitNew << " = " << newModuleDelta.deltaExit << "\n";
-      }
-      // else {
-      //   Log() << "  Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
-      //   Log() << "  New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
-      //   Log() << "  Codelength: " << m_objective << "\n";
-      //   Log() << "  Old deltaEnter += " << oldModuleDelta.deltaEnter << "\n";
-      //   Log() << "  Old deltaExit += " << oldModuleDelta.deltaExit << "\n";
-      //   Log() << "  New deltaEnter += " << newModuleDelta.deltaEnter << "\n";
-      //   Log() << "  New deltaExit += " << newModuleDelta.deltaExit << "\n";
-      // }
-
-
-      //Update empty module vector
-      if (m_moduleMembers[newM] == 0) {
-        m_emptyModules.pop_back();
-      }
-      if (m_moduleMembers[current.index] == 1) {
-        m_emptyModules.push_back(oldM);
-      }
-
-      m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, m_moduleFlowData, m_moduleMembers);
-
-      m_moduleMembers[oldM] -= 1;
-      m_moduleMembers[newM] += 1;
-      // Log() << "  --> Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
-      // Log() << "  --> New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
-      // Log() << "  ==> Codelength: " << m_objective << "\n";
-
-      current.index = newM;
-      ++numMoved;
+  // For all outlinks
+  for (auto& e : current.outEdges()) {
+    auto& edge = *e;
+    unsigned int otherModule = edge.target.index;
+    if (otherModule == oldM) {
+      // Log() << "  Old deltaExit += " << edge.data.flow << "\n";
+      oldModuleDelta.deltaExit += edge.data.flow;
+    }
+    else if (otherModule == newM) {
+      // Log() << "  New deltaExit += " << edge.data.flow << "\n";
+      newModuleDelta.deltaExit += edge.data.flow;
     }
   }
+  // For all inlinks
+  for (auto& e : current.inEdges()) {
+    auto& edge = *e;
+    unsigned int otherModule = edge.source.index;
+    if (otherModule == oldM) {
+      // Log() << "  Old deltaEnter += " << edge.data.flow << "\n";
+      oldModuleDelta.deltaEnter += edge.data.flow;
+    }
+    else if (otherModule == newM) {
+      // Log() << "  New deltaEnter += " << edge.data.flow << "\n";
+      newModuleDelta.deltaEnter += edge.data.flow;
+    }
+  }
+
+    // For recorded teleportation
+  if (m_infomap->recordedTeleportation) {
+    // double alpha = m_infomap->teleportationProbability;
+    // double beta = 1.0 - alpha;
+    
+    // addTeleportationDeltaFlowOnOldModuleIfMove(current, moduleDeltaExits[j]);
+    auto& oldModuleFlowData = m_moduleFlowData[oldM];
+    // double deltaEnterOld = (alpha*(oldModuleFlowData.teleportSourceFlow - current.data.teleportSourceFlow) + beta*(oldModuleFlowData.danglingFlow - current.data.danglingFlow)) * current.data.teleportWeight;
+    double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
+    // double deltaExitOld = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+    double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+    // if (m_infomap->isUndirectedClustering()) {
+      // Log() << " (dOld enter: " << deltaEnterOld << ", exit: " << deltaExitOld << ") ";
+    // }
+    oldModuleDelta.deltaEnter += deltaEnterOld;
+    oldModuleDelta.deltaExit += deltaExitOld;
+
+    // addTeleportationDeltaFlowOnNewModuleIfMove(current, moduleDeltaExits[j]);
+    auto& newModuleFlowData = m_moduleFlowData[newM];
+    // double deltaEnterNew = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * newModuleFlowData.teleportWeight;
+    double deltaEnterNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
+    // double deltaExitNew = (alpha*newModuleFlowData.teleportSourceFlow +	beta*newModuleFlowData.danglingFlow) * current.data.teleportWeight;
+    double deltaExitNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
+    // if (m_infomap->isUndirectedClustering()) {
+    //   Log() << " (dNew enter: " << deltaEnterNew << ", exit: " << deltaExitNew << ") ";
+    // }
+    newModuleDelta.deltaEnter += deltaEnterNew;
+    newModuleDelta.deltaExit += deltaExitNew;
+    
+    
+    // Log() << "  Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
+    // Log() << "  New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
+    // Log() << "  Codelength: " << m_objective << "\n";
+    // Log() << "  Old deltaEnter += " << (oldModuleDelta.deltaEnter - deltaEnterOld) << " + " << deltaEnterOld << " = " << oldModuleDelta.deltaEnter << "\n";
+    // Log() << "  Old deltaExit += " << (oldModuleDelta.deltaExit - deltaExitOld) << " + " << deltaExitOld << " = " << oldModuleDelta.deltaExit << "\n";
+    // Log() << "  New deltaEnter += " << (newModuleDelta.deltaEnter - deltaEnterNew) << " + " << deltaEnterNew << " = " << newModuleDelta.deltaEnter << "\n";
+    // Log() << "  New deltaExit += " << (newModuleDelta.deltaExit - deltaExitNew) << " + " << deltaExitNew << " = " << newModuleDelta.deltaExit << "\n";
+  }
+  // else {
+  //   Log() << "  Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
+  //   Log() << "  New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
+  //   Log() << "  Codelength: " << m_objective << "\n";
+  //   Log() << "  Old deltaEnter += " << oldModuleDelta.deltaEnter << "\n";
+  //   Log() << "  Old deltaExit += " << oldModuleDelta.deltaExit << "\n";
+  //   Log() << "  New deltaEnter += " << newModuleDelta.deltaEnter << "\n";
+  //   Log() << "  New deltaExit += " << newModuleDelta.deltaExit << "\n";
+  // }
+
+
+  //Update empty module vector
+  if (m_moduleMembers[newM] == 0) {
+    m_emptyModules.pop_back();
+  }
+  if (m_moduleMembers[current.index] == 1) {
+    m_emptyModules.push_back(oldM);
+  }
+
+  m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, m_moduleFlowData, m_moduleMembers);
+
+  m_moduleMembers[oldM] -= 1;
+  m_moduleMembers[newM] += 1;
+  // Log() << "  --> Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
+  // Log() << "  --> New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
+  // Log() << "  ==> Codelength: " << m_objective << "\n";
+
+  current.index = newM;
+  return true;
 }
 
 template <typename Objective>
@@ -802,16 +810,42 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
       // Log(5) << " --> Moved to module " << bestModuleIndex << " (" << m_moduleFlowData[bestModuleIndex] << ") " << " -> codelength: " << oldCodelength << " + " << bestDeltaCodelength << " (" << (m_objective.getCodelength() - oldCodelength) << ") = " << m_objective.getCodelength() << "\n";//m_objective << "\n";
 
-      //			unsigned int oldModuleIndex = current.index;
+      unsigned int oldModuleIndex = current.index;
       current.index = bestModuleIndex;
 
       ++numMoved;
 
+      InfoNode* nodeInOldModule = &current;
+      unsigned int numLinkedNodesInOldModule = 0;
       // Mark neighbours as dirty
-      for (auto& e : current.outEdges())
+      for (auto& e : current.outEdges()) {
         e->target.dirty = true;
-      for (auto& e : current.inEdges())
+        if (e->target.index == oldModuleIndex) {
+          nodeInOldModule = &(e->target);
+          ++numLinkedNodesInOldModule;
+        }
+      }
+      for (auto& e : current.inEdges()) {
         e->source.dirty = true;
+        if (e->source.index == oldModuleIndex) {
+          nodeInOldModule = &(e->source);
+          ++numLinkedNodesInOldModule;
+        }
+      }
+
+      // Move single connected nodes to same module
+      // if (numLinkedNodesInOldModule == 1 && nodeInOldModule->degree() <= 2) {
+      if (numLinkedNodesInOldModule == 1 && m_moduleMembers[oldModuleIndex] == 1) {
+        moveNodeToPredefinedModule(*nodeInOldModule, bestModuleIndex);
+        ++numMoved;
+        // Mark neighbours as dirty
+        if (nodeInOldModule->degree() > 1) {
+          for (auto& e : nodeInOldModule->outEdges())
+            e->target.dirty = true;
+          for (auto& e : nodeInOldModule->inEdges())
+            e->source.dirty = true;
+        }
+      }
     } else
       current.dirty = false;
 
