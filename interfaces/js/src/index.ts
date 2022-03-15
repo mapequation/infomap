@@ -121,7 +121,7 @@ type EventData =
   | Event<"finished">;
 
 const workerUrl = URL.createObjectURL(
-  new Blob([InfomapWorker], { type: "application/javascript" })
+  new Blob([InfomapWorker], { type: "application/javascript" }),
 );
 
 class Infomap {
@@ -141,7 +141,7 @@ class Infomap {
   async runAsync(...args: Parameters<Infomap["createWorker"]>) {
     const id = this.createWorker(...args);
     return new Promise<Result>((finished, error) =>
-      this.setHandlers(id, { finished, error })
+      this.setHandlers(id, { finished, error }),
     );
   }
 
@@ -246,12 +246,10 @@ class Infomap {
 
     const worker = this.workers[id];
 
-    return new Promise<boolean>((resolve, reject) => {
+    return new Promise<boolean>((resolve) => {
       const terminate = () => {
-        if (worker.terminate) {
-          worker.terminate();
-          resolve(true);
-        }
+        worker.terminate();
+        resolve(true);
       };
 
       if (timeout <= 0) {
@@ -264,12 +262,9 @@ class Infomap {
     });
   }
 
+  // Returns true if the worker with `id` existed and was terminated.
   async terminate(id: number, timeout = 1000) {
-    const success = await this._terminate(id, timeout);
-
-    if (success && this.events.error) {
-      this.events.error(`Worker ${id} terminated`, id);
-    }
+    return await this._terminate(id, timeout);
   }
 }
 
