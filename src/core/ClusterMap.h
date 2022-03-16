@@ -23,7 +23,7 @@ using NodePaths = std::vector<NodePath>;
 
 class ClusterMap {
 public:
-  void readClusterData(const std::string& filename, bool includeFlow = false);
+  void readClusterData(const std::string& filename, bool includeFlow = false, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);
 
   const std::map<unsigned int, unsigned int>& clusterIds() const noexcept
   {
@@ -42,8 +42,8 @@ public:
   bool isHigherOrder() const noexcept { return m_isHigherOrder; }
 
 protected:
-  void readTree(const std::string& filename, /* [[maybe_unused]] */ bool includeFlow);
-  void readClu(const std::string& filename, bool includeFlow);
+  void readTree(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);
+  void readClu(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);
 
 private:
   std::map<unsigned int, unsigned int> m_clusterIds;

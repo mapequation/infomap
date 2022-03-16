@@ -112,6 +112,7 @@ public:
   const std::map<unsigned int, std::vector<int>>& metaData() const { return m_metaData; }
 
   bool isMultilayerNetwork() const { return !m_layerNodeToStateId.empty(); }
+  const std::map<unsigned int, std::map<unsigned int, unsigned int>>& layerNodeToStateId() const { return m_layerNodeToStateId; }
 
   // void printParsingResult(bool onlySummary = false);
 

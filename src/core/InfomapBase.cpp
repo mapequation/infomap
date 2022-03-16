@@ -408,7 +408,7 @@ void InfomapBase::run(Network& network)
       // printRSS();
 
       if (!clusterDataFile.empty())
-        initPartition(clusterDataFile, clusterDataIsHard);
+        initPartition(clusterDataFile, clusterDataIsHard, &network);
       else if (!m_initialPartition.empty())
         initPartition(m_initialPartition, clusterDataIsHard);
     }
@@ -522,11 +522,16 @@ InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
   return *this;
 }
 
-InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard)
+InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard, const Network* network)
 {
   FileURI file(clusterDataFile);
   ClusterMap clusterMap;
-  clusterMap.readClusterData(clusterDataFile);
+  if (this->isMultilayerNetwork() && network != nullptr) {
+    auto map = network->layerNodeToStateId();
+    clusterMap.readClusterData(clusterDataFile, false, &map);
+  } else {
+    clusterMap.readClusterData(clusterDataFile);
+  }
 
   Log() << "Init partition from file '" << clusterDataFile << "'... ";
 
