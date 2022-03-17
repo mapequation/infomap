@@ -38,6 +38,7 @@ export interface Arguments
     twoLevel: boolean;
     flowModel: "undirected" | "directed" | "undirdir" | "outdirdir" | "rawdir";
     directed: boolean;
+    recordedTeleportation: boolean;
     useNodeWeightsAsFlow: boolean;
     toNodes: boolean;
     teleportationProbability: number;
@@ -124,6 +125,8 @@ export default function argumentsToString(args: Arguments) {
   if (args.flowModel) result += " --flow-model " + args.flowModel;
 
   if (args.directed) result += " --directed";
+
+  if (args.recordedTeleportation) result += " --recorded-teleportation";
 
   if (args.useNodeWeightsAsFlow) result += " --use-node-weights-as-flow";
 

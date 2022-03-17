@@ -70,6 +70,7 @@ def _construct_args(args=None,
                     two_level=False,
                     flow_model=None,
                     directed=None,
+                    recorded_teleportation=False,
                     use_node_weights_as_flow=False,
                     to_nodes=False,
                     teleportation_probability=_DEFAULT_TELEPORTATION_PROB,
@@ -172,6 +173,9 @@ def _construct_args(args=None,
 
     if directed is not None:
         args += " --directed" if directed else " --flow-model undirected"
+
+    if recorded_teleportation:
+        args += " --recorded-teleportation"
 
     if use_node_weights_as_flow:
         args += " --use-node-weights-as-flow"
@@ -351,6 +355,9 @@ class Infomap(InfomapWrapper):
             Options: undirected, directed, undirdir, outdirdir, rawdir.
         directed : bool, optional
             Assume directed links. Shorthand for ``flow_model="directed"``.
+        recorded_teleportation : bool, optional
+            If teleportation is used to calculate the flow, also record it
+            when minimizing codelength. Default False.
         use_node_weights_as_flow : bool, optional
             Use node weights (from api or after names in Pajek format) as flow,
             normalized to sum to 1.
