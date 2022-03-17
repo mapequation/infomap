@@ -19,6 +19,7 @@ export interface Arguments
     weightThreshold: number;
     noSelfLinks: boolean;
     nodeLimit: number;
+    matchableMultilayerIds: number;
     assignToNeighbouringModule: boolean;
     metaData: string;
     metaDataRate: number;
@@ -86,6 +87,9 @@ export default function argumentsToString(args: Arguments) {
   if (args.noSelfLinks) result += " --no-self-links";
 
   if (args.nodeLimit != null) result += " --node-limit " + args.nodeLimit;
+
+  if (args.matchableMultilayerIds != null)
+    result += " --matchable-multilayer-ids " + args.matchableMultilayerIds;
 
   if (args.assignToNeighbouringModule)
     result += " --assign-to-neighbouring-module";

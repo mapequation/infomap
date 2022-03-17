@@ -51,6 +51,7 @@ def _construct_args(args=None,
                     weight_threshold=None,
                     include_self_links=False,
                     node_limit=None,
+                    matchable_multilayer_ids=False,
                     assign_to_neighbouring_module=False,
                     meta_data=None,
                     meta_data_rate=_DEFAULT_META_DATA_RATE,
@@ -120,6 +121,9 @@ def _construct_args(args=None,
 
     if node_limit is not None:
         args += " --node-limit {}".format(node_limit)
+
+    if matchable_multilayer_ids is not False:
+        args += " --matchable-multilayer-ids {}".format(matchable_multilayer_ids)
 
     if assign_to_neighbouring_module:
         args += " --assign-to-neightbouring-module"
@@ -313,6 +317,10 @@ class Infomap(InfomapWrapper):
         node_limit : int, optional
             Limit the number of nodes to read from the network. Ignore links
             connected to ignored nodes.
+        matchable_multilayer_ids : int, optional
+            Construct state ids from node and layer ids that are consistent
+            across networks for the same max number of layers.
+            Set to at least the largest layer id among networks to match.
         assign_to_neighbouring_module : bool, optional
             Assign nodes without module assignments (from ``cluster_data``) to
             the module assignment of a neighbouring node if possible.

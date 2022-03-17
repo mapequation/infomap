@@ -408,5 +408,9 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithA
   return addStateNode(stateId, physId);
 }
 
+std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithDeterministicId(unsigned int physId, unsigned int layerId, unsigned int numLayersLog2) {
+  unsigned int stateId = physId << (numLayersLog2 + 1) | layerId;
+  return addStateNode(stateId, physId);
+}
 
 } // namespace infomap

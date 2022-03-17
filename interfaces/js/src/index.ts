@@ -121,7 +121,7 @@ type EventData =
   | Event<"finished">;
 
 const workerUrl = URL.createObjectURL(
-  new Blob([InfomapWorker], { type: "application/javascript" }),
+  new Blob([InfomapWorker], { type: "application/javascript" })
 );
 
 class Infomap {
@@ -141,7 +141,7 @@ class Infomap {
   async runAsync(...args: Parameters<Infomap["createWorker"]>) {
     const id = this.createWorker(...args);
     return new Promise<Result>((finished, error) =>
-      this.setHandlers(id, { finished, error }),
+      this.setHandlers(id, { finished, error })
     );
   }
 

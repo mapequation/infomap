@@ -47,6 +47,8 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(nodeLimit, "node-limit", "Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", ArgType::integer, "Input", true);
 
+  api.addOptionArgument(matchableMultilayerIds, "matchable-multilayer-ids", "Construct state ids from node and layer ids that are consistent across networks for the same max number of layers. Set to at least the largest layer id among networks to match.", ArgType::integer, "Input", true);
+
   // TODO: Support in v1.x
   // api.addOptionArgument(preClusterMultilayer, "pre-cluster-multilayer",
   // 		"Pre-cluster multilayer networks layer by layer.", "Input", true);
