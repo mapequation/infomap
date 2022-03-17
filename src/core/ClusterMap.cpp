@@ -7,15 +7,15 @@
 
 namespace infomap {
 
-void ClusterMap::readClusterData(const std::string& filename, bool includeFlow)
+void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId)
 {
   FileURI file(filename);
   m_extension = file.getExtension();
   if (m_extension == "tree" || m_extension == "ftree") {
-    return readTree(filename, includeFlow);
+    return readTree(filename, includeFlow, layerNodeToStateId);
   }
   if (m_extension == "clu") {
-    return readClu(filename, includeFlow);
+    return readClu(filename, includeFlow, layerNodeToStateId);
   }
   throw ImplementationError(io::Str() << "Input cluster data from file '" << filename << "' is of unknown extension '" << m_extension << "'. Must be 'clu' or 'tree'.");
 }
@@ -29,8 +29,10 @@ void ClusterMap::readClusterData(const std::string& filename, bool includeFlow)
 1:1:3 0.0384615 "3" 3
 1:2:1 0.0384615 "4" 4
  */
-void ClusterMap::readTree(const std::string& filename, bool includeFlow)
+void ClusterMap::readTree(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId)
 {
+  bool isMultilayer = layerNodeToStateId != nullptr;
+  
   SafeInFile input(filename);
   std::string line;
   std::istringstream lineStream;
@@ -65,8 +67,9 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow)
     std::string pathString;
     double flow;
     std::string name;
+    unsigned int stateId;
     unsigned int nodeId;
-    unsigned int physId;
+    unsigned int layerId;
     // if (!(lineStream >> pathString >> flow >> name >> nodeId))
     // 	throw FileFormatError(io::Str() << "Couldn't parse .tree line '" << line << "'");
     if (!(lineStream >> pathString))
@@ -78,17 +81,39 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow)
       throw BadConversionError(io::Str() << "Can't parse node name from line " << lineNr << " ('" << line << "').");
     if (!getline(lineStream, name, '"'))
       throw BadConversionError(io::Str() << "Can't parse node name from line " << lineNr << " ('" << line << "').");
-    if (!(lineStream >> nodeId))
+    if (!(lineStream >> stateId))
       throw FileFormatError(io::Str() << "Couldn't parse node id from line '" << line << "'");
-    if (lineStream >> physId) {
+    if (lineStream >> nodeId) {
       m_isHigherOrder = true;
     } else if (m_isHigherOrder) {
-      throw FileFormatError(io::Str() << "Missing stateId for node on line '" << line << "'.");
+      throw FileFormatError(io::Str() << "Missing state id for node on line '" << line << "'.");
+    }
+    if (isMultilayer && !(lineStream >> layerId))
+      throw FileFormatError(io::Str() << "Couldn't parse layer id from line '" << line << "'");
+
+    bool multilayerNodeFound = false;
+
+    if (isMultilayer) {
+      // get new state id from map
+      auto it = layerNodeToStateId->find(layerId);
+
+      if (it != layerNodeToStateId->end()) {
+        auto nodeIdToStateId = it->second.find(nodeId);
+        if (nodeIdToStateId != it->second.end()) {
+          stateId = nodeIdToStateId->second;
+          multilayerNodeFound = true;
+        }
+      }
     }
 
+    if (isMultilayer && !multilayerNodeFound) {
+      continue;
+    }
+  
     pathStream.clear();
     pathStream.str(pathString);
     unsigned int childNumber;
+    
     Path path;
     while (pathStream >> childNumber) {
       pathStream.get(); // Extract the delimiting character also
@@ -96,12 +121,18 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow)
         throw FileFormatError("There is a '0' in the tree path, lowest allowed integer is 1.");
       path.push_back(childNumber); // Keep 1-based indexing in path
     }
-    m_nodePaths.emplace_back(nodeId, path);
+
+    m_nodePaths.emplace_back(stateId, path);
+    
+    if (includeFlow)
+        m_flowData[stateId] = flow;
   }
 }
 
-void ClusterMap::readClu(const std::string& filename, bool includeFlow)
+void ClusterMap::readClu(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId)
 {
+  auto isMultilayer = layerNodeToStateId != nullptr;
+
   Log() << "Read initial partition from '" << filename << "'... " << std::flush;
   SafeInFile input(filename);
   std::string line;
@@ -114,17 +145,47 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow)
 
     lineStream.clear();
     lineStream.str(line);
+    // # state_id module flow node_id layer_id
 
+    unsigned int stateId;
     unsigned int nodeId;
-    unsigned int clusterId;
-    if (!(lineStream >> nodeId >> clusterId))
+    unsigned int moduleId;
+    unsigned int layerId;
+
+    if (!(lineStream >> stateId >> moduleId))
       throw FileFormatError(io::Str() << "Couldn't parse node key and cluster id from line '" << line << "'");
-    m_clusterIds[nodeId] = clusterId;
 
     auto flow = 0.0;
-    if (includeFlow && lineStream >> flow) {
-      m_flowData[nodeId] = flow;
+    if (lineStream >> flow) {
+      if (includeFlow)
+        m_flowData[stateId] = flow;
     }
+
+    auto multilayerNodeFound = false;
+    if (isMultilayer) {
+      if (!(lineStream >> nodeId))
+        throw FileFormatError(io::Str() << "Couldn't parse node key from line '" << line << "'");
+
+      if (!(lineStream >> layerId))
+        throw FileFormatError(io::Str() << "Couldn't parse layer id from line '" << line << "'");
+
+      // get new state id from map
+      auto it = layerNodeToStateId->find(layerId);
+
+      if (it != layerNodeToStateId->end()) {
+        auto nodeIdToStateId = it->second.find(nodeId);
+        if (nodeIdToStateId != it->second.end()) {
+          stateId = nodeIdToStateId->second;
+          multilayerNodeFound = true;
+        }
+      }
+    }
+
+    if (isMultilayer && !multilayerNodeFound) {
+      continue;
+    }
+    
+    m_clusterIds[stateId] = moduleId;
   }
 }
 

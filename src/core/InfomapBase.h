@@ -237,7 +237,7 @@ public:
    * effective network size during the optimization phase but the hard partitions are
    * after that replaced by the original nodes.
    */
-  InfomapBase& initPartition(std::string clusterDataFile, bool hard = false);
+  InfomapBase& initPartition(std::string clusterDataFile, bool hard = false, const Network* network = nullptr);
 
   /**
    * Provide an initial partition of the network.
