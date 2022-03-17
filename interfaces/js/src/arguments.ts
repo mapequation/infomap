@@ -19,6 +19,7 @@ export interface Arguments
     weightThreshold: number;
     noSelfLinks: boolean;
     nodeLimit: number;
+    matchableMultilayerIds: number;
     assignToNeighbouringModule: boolean;
     metaData: string;
     metaDataRate: number;
@@ -38,6 +39,7 @@ export interface Arguments
     twoLevel: boolean;
     flowModel: "undirected" | "directed" | "undirdir" | "outdirdir" | "rawdir";
     directed: boolean;
+    recordedTeleportation: boolean;
     useNodeWeightsAsFlow: boolean;
     toNodes: boolean;
     teleportationProbability: number;
@@ -86,6 +88,9 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.nodeLimit != null) result += " --node-limit " + args.nodeLimit;
 
+  if (args.matchableMultilayerIds != null)
+    result += " --matchable-multilayer-ids " + args.matchableMultilayerIds;
+
   if (args.assignToNeighbouringModule)
     result += " --assign-to-neighbouring-module";
 
@@ -124,6 +129,8 @@ export default function argumentsToString(args: Arguments) {
   if (args.flowModel) result += " --flow-model " + args.flowModel;
 
   if (args.directed) result += " --directed";
+
+  if (args.recordedTeleportation) result += " --recorded-teleportation";
 
   if (args.useNodeWeightsAsFlow) result += " --use-node-weights-as-flow";
 

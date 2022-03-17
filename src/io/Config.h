@@ -116,6 +116,7 @@ struct Config {
   bool noSelfLinks = false; // Replaces includeSelfLinks
   bool ignoreEdgeWeights = false;
   unsigned int nodeLimit = 0;
+  unsigned int matchableMultilayerIds = 0;
   bool preClusterMultilayer = false;
   std::string clusterDataFile;
   std::string metaDataFile;
@@ -240,6 +241,7 @@ struct Config {
     noSelfLinks = other.noSelfLinks;
     ignoreEdgeWeights = other.ignoreEdgeWeights;
     nodeLimit = other.nodeLimit;
+    matchableMultilayerIds = other.matchableMultilayerIds;
     preClusterMultilayer = other.preClusterMultilayer;
     // clusterDataFile = other.clusterDataFile;
     // metaDataFile = other.metaDataFile;

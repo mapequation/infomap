@@ -60,11 +60,13 @@ protected:
   std::map<unsigned int, std::map<unsigned int, unsigned int>> m_layerNodeToStateId;
   // std::map<LayerNode, double> m_sumIntraOutWeight;
   std::map<unsigned int, std::map<unsigned int, double>> m_sumIntraOutWeight;
-  //asdf m_sumIntraOutWeight
+  // asdf m_sumIntraOutWeight
   std::set<unsigned int> m_layers;
   unsigned int m_numInterLayerLinks = 0;
   unsigned int m_numIntraLayerLinks = 0;
   unsigned int m_maxNodeIdInIntraLayerNetworks = 0;
+
+  unsigned int m_multilayerStateIdBitShift = 0;
 
   // Meta data
   std::map<unsigned int, std::vector<int>> m_metaData;
@@ -81,18 +83,18 @@ protected:
   // };
 
 public:
-  Network() : StateNetwork() { initValidHeadings(); }
-  explicit Network(const Config& config) : StateNetwork(config) { initValidHeadings(); }
-  explicit Network(std::string flags) : StateNetwork(Config(std::move(flags))) { initValidHeadings(); }
+  Network() : StateNetwork() { init(); }
+  explicit Network(const Config& config) : StateNetwork(config) { init(); }
+  explicit Network(std::string flags) : StateNetwork(Config(std::move(flags))) { init(); }
   virtual ~Network() = default;
 
   virtual void clear();
 
   /**
-    * Parse network data from file and generate network
-    * @param filename input network
-    * @param accumulate add to possibly existing network data (default), else clear before.
-    */
+   * Parse network data from file and generate network
+   * @param filename input network
+   * @param accumulate add to possibly existing network data (default), else clear before.
+   */
   virtual void readInputData(std::string filename = "", bool accumulate = true);
 
   /**
@@ -143,6 +145,7 @@ public:
   void addMetaData(unsigned int nodeId, const std::vector<int>& metaData);
 
 protected:
+  void init();
   void initValidHeadings();
 
   void parsePajekNetwork(std::string filename);
@@ -244,7 +247,7 @@ protected:
 
 struct LayerNode {
   unsigned int layer, node;
-  explicit LayerNode(unsigned int layer = 0, unsigned int node = 0) : layer(layer), node(node) {}
+  explicit LayerNode(unsigned int layer = 0, unsigned int node = 0) : layer(layer), node(node) { }
 
   bool operator<(const LayerNode other) const
   {
@@ -254,7 +257,7 @@ struct LayerNode {
 
 struct Bigram {
   unsigned int first, second;
-  explicit Bigram(unsigned int first = 0, unsigned int second = 0) : first(first), second(second) {}
+  explicit Bigram(unsigned int first = 0, unsigned int second = 0) : first(first), second(second) { }
 
   bool operator<(const Bigram other) const
   {
@@ -266,7 +269,7 @@ struct BipartiteLink {
   unsigned int featureNode, node;
   bool swapOrder;
   explicit BipartiteLink(unsigned int featureNode = 0, unsigned int node = 0, bool swapOrder = false)
-      : featureNode(featureNode), node(node), swapOrder(swapOrder) {}
+      : featureNode(featureNode), node(node), swapOrder(swapOrder) { }
 
   bool operator<(const BipartiteLink other) const
   {
@@ -277,7 +280,7 @@ struct BipartiteLink {
 // Struct to make the weight initialized to zero by default in a map
 struct Weight {
   double weight;
-  explicit Weight(double weight = 0) : weight(weight) {}
+  explicit Weight(double weight = 0) : weight(weight) { }
 
   Weight& operator+=(double w)
   {
@@ -291,7 +294,7 @@ class MapMap {
 public:
   typedef std::map<subkey_t, value_t> submap_t;
   typedef std::map<key_t, submap_t> map_t;
-  MapMap() : m_size(0), m_numAggregations(0), m_sumValue(0) {}
+  MapMap() : m_size(0), m_numAggregations(0), m_sumValue(0) { }
   virtual ~MapMap() = default;
 
   bool insert(key_t key1, subkey_t key2, value_t value)
@@ -347,8 +350,8 @@ public:
 };
 
 struct Triple {
-  Triple() : n1(0), n2(0), n3(0) {}
-  Triple(unsigned int value1, unsigned int value2, unsigned int value3) : n1(value1), n2(value2), n3(value3) {}
+  Triple() : n1(0), n2(0), n3(0) { }
+  Triple(unsigned int value1, unsigned int value2, unsigned int value3) : n1(value1), n2(value2), n3(value3) { }
   Triple(const Triple& other) = default;
 
   bool operator<(const Triple& other) const
