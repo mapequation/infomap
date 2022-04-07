@@ -1155,8 +1155,7 @@ class Infomap(InfomapWrapper):
         ...     3: 1,
         ...     4: 1
         ... }
-        >>> im.no_infomap = True
-        >>> im.run()
+        >>> im.run(no_infomap=True)
         >>> tol = 1e-4
         >>> abs(im.codelength - 3.4056390622295662) < tol
         True
