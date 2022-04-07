@@ -67,6 +67,7 @@ protected:
   unsigned int m_maxNodeIdInIntraLayerNetworks = 0;
 
   unsigned int m_multilayerStateIdBitShift = 0;
+  bool m_haveAddedMultilayerNode = false;
 
   // Meta data
   std::map<unsigned int, std::vector<int>> m_metaData;

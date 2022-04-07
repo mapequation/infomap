@@ -1069,6 +1069,13 @@ void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsign
 unsigned int Network::addMultilayerNode(unsigned int layerId, unsigned int physicalId, double weight)
 {
   m_higherOrderInputMethodCalled = true;
+
+  if (!m_haveAddedMultilayerNode && !m_nodes.empty()) {
+    // On first multilayer node added, make sure no pre-existing state nodes exist, as those aren't multilayer state nodes
+    throw InputDomainError(io::Str() << "Non-multilayer state nodes already exists. Use 'set_name' and not 'add_node' to add names to physical nodes.");
+  }
+  m_haveAddedMultilayerNode = true;
+
   // auto layerNode = LayerNode(layerId, physicalId);
   // auto it = m_layerNodeToStateId.find(layerNode);
   // if (it != m_layerNodeToStateId.end()) {
