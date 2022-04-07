@@ -1,6 +1,7 @@
 from collections import namedtuple
 from contextlib import contextmanager
 import os
+import warnings
 
 try:
     from math import log2
@@ -49,7 +50,8 @@ def _construct_args(args=None,
                     skip_adjust_bipartite_flow=False,
                     bipartite_teleportation=False,
                     weight_threshold=None,
-                    include_self_links=False,
+                    include_self_links=None,
+                    no_self_links=False,
                     node_limit=None,
                     matchable_multilayer_ids=False,
                     assign_to_neighbouring_module=False,
@@ -116,8 +118,14 @@ def _construct_args(args=None,
     if weight_threshold is not None:
         args += " --weight-threshold {}".format(weight_threshold)
 
-    if include_self_links:
-        args += " --include-self-links"
+    if include_self_links is not None:
+        warnings.warn("include_self_links is deprecated, use no_self_links to exclude self-links", DeprecationWarning)
+
+    if include_self_links == False:
+        args += " --no-self-links"
+
+    if no_self_links:
+        args += " --no-self-links"
 
     if node_limit is not None:
         args += " --node-limit {}".format(node_limit)
@@ -314,6 +322,9 @@ class Infomap(InfomapWrapper):
             with less weight than the threshold.
         include_self_links : bool, optional
             Include links with the same source and target node.
+            DEPRECATED. Include self links by default now, exclude with no_self_links.
+        no_self_links : bool, optional
+            Exclude self links in the input network. 
         node_limit : int, optional
             Limit the number of nodes to read from the network. Ignore links
             connected to ignored nodes.
