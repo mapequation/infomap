@@ -130,8 +130,8 @@ def _construct_args(args=None,
     if node_limit is not None:
         args += " --node-limit {}".format(node_limit)
 
-    if matchable_multilayer_ids is not False:
-        args += " --matchable-multilayer-ids {}".format(matchable_multilayer_ids)
+    if matchable_multilayer_ids:
+        args += " --matchable-multilayer-ids"
 
     if assign_to_neighbouring_module:
         args += " --assign-to-neightbouring-module"
