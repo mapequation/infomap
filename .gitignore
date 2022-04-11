@@ -5,8 +5,7 @@
 .vscode
 .ipynb_checkpoints
 .idea
-CMakeLists.txt
-cmake-build-debug
+cmake-build-*
 examples/cpp/minimal/example
 examples/cpp/minimal/mem-example
 examples/cpp/minimal/multi-example
