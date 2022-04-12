@@ -1,7 +1,7 @@
 import type {
-  NodeBase,
   CluNode,
   CluStateNode,
+  NodeBase,
   TreeNode as JsonTreeNode,
   TreeStateNode as JsonTreeStateNode,
 } from "./filetypes";
@@ -32,7 +32,7 @@ export function lines(file: string) {
   return file.split(/\r?\n/);
 }
 
-export function readFile(file: File) {
+export function readFile(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
@@ -215,7 +215,7 @@ export function parseTree<NodeType extends TreeNode>(
         case "name":
           node.name = match[j].slice(1, -1);
           break;
-        case "node_id":
+        case "node_id": // FIXME can this be merged with the next case?
           node.id = Number(match[j]);
           break;
         case "state_id":
@@ -340,36 +340,105 @@ function* linkSection(lines: string[], start: number = 0) {
 function parseNodeHeader(file: string | string[]): string[] {
   // First order tree
   // # path flow name node_id
+  // 1:2 0.166667 "j" 2
 
   // States tree
   // # path flow name state_id node_id
+  // 1:2 0.166667 "j" 1 2
 
   // Multilayer tree states
   // # path flow name state_id node_id layer_id
+  // 1:2 0.166667 "j" 1 2 3
 
   // First order clu
   // # node_id module flow
+  // 1 1 0.166667
 
   // States clu
   // # state_id module flow node_id
+  // 1 1 0.166667 2
 
   // Multilayer clu states
   // # state_id module flow node_id layer_id
+  // 1 1 0.166667 2 3
 
-  const prefixes = ["# path", "# node_id", "# state_id"];
+  const prefix = /^#\s*(path|node_id|state_id)/;
 
   if (typeof file === "string") {
     file = lines(file);
   }
 
+  // Look for the commented line with the header
   for (const line of file) {
     if (!line.startsWith("#")) {
       break;
     }
 
-    if (prefixes.some((prefix) => line.startsWith(prefix))) {
-      return line.slice(2).split(" ");
+    if (prefix.test(line)) {
+      return line.slice(1).trim().split(" ");
     }
+  }
+
+  function isNumeric(arr: string[]) {
+    return arr.every((x) => !isNaN(Number(x)));
+  }
+
+  function bail(line: string): never {
+    throw new Error(`Invalid node line: ${line}`);
+  }
+
+  // Try parsing a single node line
+  for (const line of file) {
+    if (line.startsWith("#")) {
+      continue;
+    }
+
+    // Only tree files include names
+    if (line.includes('"')) {
+      // Don't split inside quotes
+      const match = line.match(/[^\s"']+|"([^"]*)"/g);
+      if (!match) bail(line);
+
+      const pathIndex = 0;
+      const nameIndex = 2;
+      const numericFields = match.slice();
+      numericFields.splice(nameIndex, 1);
+      numericFields.splice(pathIndex, 1);
+
+      const path = match[pathIndex].split(":");
+
+      if (!(isNumeric(numericFields) && isNumeric(path))) {
+        bail(line);
+      }
+
+      switch (match.length) {
+        case 4:
+          return ["path", "flow", "name", "node_id"];
+        case 5:
+          return ["path", "flow", "name", "state_id", "node_id"];
+        case 6:
+          return ["path", "flow", "name", "state_id", "node_id", "layer_id"];
+        default:
+          bail(line);
+      }
+    } else {
+      const fields = line.split(" ");
+
+      if (!isNumeric(fields)) bail(line);
+
+      switch (fields.length) {
+        case 4:
+          return ["node_id", "module", "flow"];
+        case 5:
+          return ["state_id", "module", "flow", "node_id"];
+        case 6:
+          return ["state_id", "module", "flow", "node_id", "layer_id"];
+        default:
+          bail(line);
+      }
+    }
+
+    break;
   }
 
   throw new Error("Could not parse node header");
@@ -485,12 +554,14 @@ export function parseHeader(file: string | string[], strict = true): Header {
 
   if (
     strict &&
-    (!result.startedAt ||
-      !result.completedIn ||
-      !result.numLevels ||
-      !result.numTopModules ||
-      !result.codelength ||
-      !result.relativeCodelengthSavings)
+    !(
+      result.startedAt &&
+      result.completedIn &&
+      result.numLevels &&
+      result.numTopModules &&
+      result.codelength &&
+      result.relativeCodelengthSavings
+    )
   ) {
     throw new Error("Could not parse file header");
   }
