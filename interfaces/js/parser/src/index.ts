@@ -3,9 +3,9 @@ import type {
   CluStateNode,
   NodeBase,
   TreeNode as JsonTreeNode,
-  TreeStateNode as JsonTreeStateNode,
-} from "./filetypes";
-import type { Header as JsonHeader, Module } from "./index";
+  TreeStateNode as JsonTreeStateNode
+} from "@mapequation/infomap/filetypes";
+import type { Header as JsonHeader, Module } from "@mapequation/infomap";
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
@@ -264,9 +264,9 @@ export function parseTree<NodeType extends TreeNode>(
     directed = parts.length > 1 && parts[1] === "directed";
   }
 
-  for (const [_, line] of linkSection(file, lineNo)) {
+  for (const [, line] of linkSection(file, lineNo)) {
     if (line.startsWith("*Links")) {
-      const [_, moduleId, ...rest] = line.split(" ");
+      const [, moduleId, ...rest] = line.split(" ");
 
       const path = moduleId === "root" ? [0] : moduleId.split(":").map(Number);
       const [enterFlow, exitFlow, numEdges, numChildren] = rest.map(Number);

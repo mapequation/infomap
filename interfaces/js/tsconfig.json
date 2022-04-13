@@ -12,5 +12,7 @@
     "declarationDir": "../../",
     "baseUrl": "src"
   },
-  "files": ["src/index.ts", "src/parser.ts"]
+  "files": [
+    "src/index.ts"
+  ]
 }
