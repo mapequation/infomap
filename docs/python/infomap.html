@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>infomap module &#8212; Infomap 2.2.0 documentation</title>
+    <title>infomap module &#8212; Infomap 2.3.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
@@ -81,9 +81,14 @@ nodes.</p></li>
 teleportation.</p></li>
 <li><p><strong>weight_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Limit the number of links to read from the network. Ignore links
 with less weight than the threshold.</p></li>
-<li><p><strong>include_self_links</strong> (<em>bool</em><em>, </em><em>optional</em>) – Include links with the same source and target node.</p></li>
+<li><p><strong>include_self_links</strong> (<em>bool</em><em>, </em><em>optional</em>) – Include links with the same source and target node.
+DEPRECATED. Include self links by default now, exclude with no_self_links.</p></li>
+<li><p><strong>no_self_links</strong> (<em>bool</em><em>, </em><em>optional</em>) – Exclude self links in the input network.</p></li>
 <li><p><strong>node_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Limit the number of nodes to read from the network. Ignore links
 connected to ignored nodes.</p></li>
+<li><p><strong>matchable_multilayer_ids</strong> (<em>int</em><em>, </em><em>optional</em>) – Construct state ids from node and layer ids that are consistent
+across networks for the same max number of layers.
+Set to at least the largest layer id among networks to match.</p></li>
 <li><p><strong>assign_to_neighbouring_module</strong> (<em>bool</em><em>, </em><em>optional</em>) – Assign nodes without module assignments (from <code class="docutils literal notranslate"><span class="pre">cluster_data</span></code>) to
 the module assignment of a neighbouring node if possible.</p></li>
 <li><p><strong>meta_data</strong> (<em>str</em><em>, </em><em>optional</em>) – Provide meta data (clu format) that should be encoded.</p></li>
@@ -109,6 +114,8 @@ Default (<code class="docutils literal notranslate"><span class="pre">false</spa
 <li><p><strong>flow_model</strong> (<em>str</em><em>, </em><em>optional</em>) – Specify flow model.
 Options: undirected, directed, undirdir, outdirdir, rawdir.</p></li>
 <li><p><strong>directed</strong> (<em>bool</em><em>, </em><em>optional</em>) – Assume directed links. Shorthand for <code class="docutils literal notranslate"><span class="pre">flow_model=&quot;directed&quot;</span></code>.</p></li>
+<li><p><strong>recorded_teleportation</strong> (<em>bool</em><em>, </em><em>optional</em>) – If teleportation is used to calculate the flow, also record it
+when minimizing codelength. Default False.</p></li>
 <li><p><strong>use_node_weights_as_flow</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use node weights (from api or after names in Pajek format) as flow,
 normalized to sum to 1.</p></li>
 <li><p><strong>to_nodes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Teleport to nodes instead of to links, assuming uniform node
@@ -1143,8 +1150,7 @@ will start the optimizer.</p>
 <span class="gp">... </span>    <span class="mi">3</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="mi">4</span><span class="p">:</span> <span class="mi">1</span>
 <span class="gp">... </span><span class="p">}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">no_infomap</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">no_infomap</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">tol</span> <span class="o">=</span> <span class="mf">1e-4</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">codelength</span> <span class="o">-</span> <span class="mf">3.4056390622295662</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span>
 <span class="go">True</span>
@@ -1378,17 +1384,6 @@ To get all states, use <code class="docutils literal notranslate"><span class="p
 <dt class="sig sig-object py" id="infomap.Infomap.network">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">network</span></span><a class="headerlink" href="#infomap.Infomap.network" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the internal network.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="infomap.Infomap.no_infomap">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">no_infomap</span></span><a class="headerlink" href="#infomap.Infomap.no_infomap" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set wether the optimizer should run or not.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>no_infomap</strong> (<em>bool</em>) – </p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py property">
@@ -2623,7 +2618,7 @@ over the modules as well as the leaf-nodes.</p>
       &copy;2020, Daniel Edler, Anton Eriksson, Martin Rosvall.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
