@@ -1,14 +1,14 @@
-interface Node {
+export interface Node {
   id: number;
   name?: string;
   weight?: number;
 }
 
-interface StateNode extends Omit<Node, "weight"> {
+export interface StateNode extends Omit<Node, "weight"> {
   stateId: number;
 }
 
-interface Link {
+export interface Link {
   source: number;
   target: number;
   weight?: number;
@@ -29,16 +29,16 @@ export interface StateNetwork extends Required<Network> {
 
 export type BipartiteStateNetwork = Required<BipartiteNetwork> & StateNetwork;
 
-interface MultilayerLink extends Link {
+export interface MultilayerLink extends Link {
   sourceLayer: number;
   targetLayer: number;
 }
 
-interface IntraLink extends Link {
+export interface IntraLink extends Link {
   layerId: number;
 }
 
-interface InterLink extends Omit<MultilayerLink, "source" | "target"> {
+export interface InterLink extends Omit<MultilayerLink, "source" | "target"> {
   id: number;
 }
 

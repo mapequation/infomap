@@ -1,14 +1,14 @@
-// @ts-ignore
-import InfomapWorker from "./worker/infomap.worker.js";
-// @ts-ignore
-import MemFile from "./worker/infomap.worker.js.mem";
-import networkToString, { NetworkTypes } from "./network";
 import argumentsToString, { Arguments } from "./arguments";
 import fileToString, {
   FileTypes,
   TreeNode as Node,
   TreeStateNode as StateNode,
 } from "./filetypes";
+import networkToString, { NetworkTypes } from "./network";
+// @ts-ignore
+import InfomapWorker from "./worker/infomap.worker.js";
+// @ts-ignore
+import MemFile from "./worker/infomap.worker.js.mem";
 
 export interface Changelog {
   body: string | null;
@@ -103,7 +103,7 @@ export interface Result {
   flow_as_physical?: string;
 }
 
-interface EventCallbacks {
+export interface EventCallbacks {
   data?: (output: string, id: number) => void;
   progress?: (progress: number, id: number) => void;
   error?: (message: string, id: number) => void;
