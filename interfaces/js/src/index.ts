@@ -82,6 +82,7 @@ export type Tree<NodeType = Required<Node>> = Header & {
 };
 
 export type StateTree = Tree<Required<StateNode>>;
+
 export interface Result {
   clu?: string;
   clu_states?: string;
@@ -138,7 +139,7 @@ class Infomap {
     return id;
   }
 
-  async runAsync(...args: Parameters<Infomap["createWorker"]>) {
+  runAsync(...args: Parameters<Infomap["createWorker"]>) {
     const id = this.createWorker(...args);
     return new Promise<Result>((finished, error) =>
       this.setHandlers(id, { finished, error })
@@ -241,7 +242,7 @@ class Infomap {
     };
   }
 
-  protected async _terminate(id: number, timeout = 1000): Promise<boolean> {
+  protected _terminate(id: number, timeout = 1000): Promise<boolean> {
     if (!this.workers[id]) return Promise.resolve(false);
 
     const worker = this.workers[id];
