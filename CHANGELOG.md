@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.3.0](https://github.com/mapequation/infomap/compare/v2.2.0...v2.3.0) (2022-04-13)
+
+
+### Features
+
+* Matchable multilayer ids ([c9d28b6](https://github.com/mapequation/infomap/commit/c9d28b6e739731043e0dd6b82d0ae9898f686618)), closes [#279](https://github.com/mapequation/infomap/issues/279)
+
+
+### Bug Fixes
+
+* **js:** Don't call error on worker terminate ([cc57c8c](https://github.com/mapequation/infomap/commit/cc57c8cbafa3ec313426e1356a8140fa6d09c9b5))
+* **js:** More robust heuristic to parse output format type ([33bde00](https://github.com/mapequation/infomap/commit/33bde00775c2fd41fb03b7592ae80633f09e8263))
+* Match multilayer nodes by node and layer ids when using --cluster-data ([b5f6eb3](https://github.com/mapequation/infomap/commit/b5f6eb38d1740559ae93591e659ff8f2f53b7927))
+* **python:** Add no_self_links to api ([b3d903d](https://github.com/mapequation/infomap/commit/b3d903d16e7619edebabe58a9004f40c88ea3614)), closes [#285](https://github.com/mapequation/infomap/issues/285)
+* **python:** Add recorded teleportation keyword argument ([839e1e0](https://github.com/mapequation/infomap/commit/839e1e057b2f7181a87d77758ae00c20aa368891)), closes [#270](https://github.com/mapequation/infomap/issues/270)
+* **python:** Fix matchable multilayer id option ([8377e07](https://github.com/mapequation/infomap/commit/8377e077832eafba1cb989dcad6e24b7a8f87edf))
+
 ## [2.2.0](https://github.com/mapequation/infomap/compare/v2.1.0...v2.2.0) (2022-03-07)
 
 
