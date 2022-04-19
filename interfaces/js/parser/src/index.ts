@@ -427,11 +427,11 @@ function parseNodeHeader(file: string | string[]): string[] {
       if (!isNumeric(fields)) bail(line);
 
       switch (fields.length) {
-        case 4:
+        case 3:
           return ["node_id", "module", "flow"];
-        case 5:
+        case 4:
           return ["state_id", "module", "flow", "node_id"];
-        case 6:
+        case 5:
           return ["state_id", "module", "flow", "node_id", "layer_id"];
         default:
           bail(line);
