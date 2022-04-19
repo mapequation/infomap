@@ -12,10 +12,10 @@ find_package(OpenMP)
 
 find_program(CCACHE ccache)
 if(CCACHE)
-    message("using ccache")
+    message("-- Found Ccache: TRUE")
     set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 else()
-    message("ccache not found")
+    message("-- Found Ccache: FALSE")
 endif()
 
 file(GLOB_RECURSE infomap_src CONFIGURE_DEPENDS "src/*.h" "src/*.cpp")
