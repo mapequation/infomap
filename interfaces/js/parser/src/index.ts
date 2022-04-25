@@ -9,7 +9,7 @@ import type { Header as JsonHeader, Module } from "@mapequation/infomap";
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
-type Header = Optional<JsonHeader, "directed">;
+type Header = Optional<JsonHeader, "directed"> & { cluLevel?: number };
 
 // Support stree files
 type Path = { path: string | number[] };
@@ -531,14 +531,22 @@ export function parseHeader(file: string | string[], strict = true): Header {
       continue;
     }
 
+    const cluLevel = line.match(/^# module level (\d+)/)?.[1];
+    if (cluLevel) {
+      result.cluLevel = Number(cluLevel);
+      continue;
+    }
+
     const higherOrder = line.match(/^# higher order/)?.[1];
     if (higherOrder) {
       result.higherOrder = true;
+      continue;
     }
 
     const stateLevel = line.match(/^# (state|physical) level/)?.[1];
     if (stateLevel) {
       result.stateLevel = stateLevel === "state";
+      continue;
     }
 
     const bipartiteStartId = line.match(/^# bipartite start id (\d+)/)?.[1];
