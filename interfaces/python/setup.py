@@ -24,14 +24,16 @@ def get_compiler():
 def is_clang():
     return b'clang' in subprocess.check_output([get_compiler(), '--version'])
 
-def have_homebrew():   
+
+def have_homebrew():
     return shutil.which("brew") is not None
+
 
 def get_homebrew_include():
     brew_path = subprocess.check_output(["brew", "--prefix"], encoding="utf8")
-    brew_path = brew_path[:-1] # Remove trailing newline
+    brew_path = brew_path[:-1]  # Remove trailing newline
     brew_path = Path(brew_path)
-    
+
     # returns (compile_args, link_args)
     return (
         "-I" + str(brew_path.joinpath("include")),

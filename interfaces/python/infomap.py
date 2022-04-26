@@ -119,9 +119,11 @@ def _construct_args(args=None,
         args += " --weight-threshold {}".format(weight_threshold)
 
     if include_self_links is not None:
-        warnings.warn("include_self_links is deprecated, use no_self_links to exclude self-links", DeprecationWarning)
+        warnings.warn(
+            "include_self_links is deprecated, use no_self_links to exclude self-links",
+            DeprecationWarning)
 
-    if include_self_links == False:
+    if not include_self_links:
         args += " --no-self-links"
 
     if no_self_links:
@@ -324,7 +326,7 @@ class Infomap(InfomapWrapper):
             Include links with the same source and target node.
             DEPRECATED. Include self links by default now, exclude with no_self_links.
         no_self_links : bool, optional
-            Exclude self links in the input network. 
+            Exclude self links in the input network.
         node_limit : int, optional
             Limit the number of nodes to read from the network. Ignore links
             connected to ignored nodes.
@@ -386,7 +388,7 @@ class Infomap(InfomapWrapper):
         teleportation_probability : float, optional
             Probability of teleporting to a random node or link.
         regularized : bool, optional
-            Effectively add a fully connected Bayesian prior network to not overfit 
+            Effectively add a fully connected Bayesian prior network to not overfit
             due to missing links. Implies recorded teleportation.
         regularization_strength : float, optional
             Adjust relative strength of Bayesian prior network with this multiplier.
@@ -849,7 +851,6 @@ class Infomap(InfomapWrapper):
                                          target_node_id,
                                          weight)
 
-
     def add_multilayer_intra_link(
             self,
             layer_id,
@@ -876,7 +877,7 @@ class Infomap(InfomapWrapper):
         the directed flag is not present, it will add all links
         also in their opposite direction to transform the undirected
         input to directed. If no inter-layer links are added, Infomap
-        will simulate those by relaxing the random walker's constraint 
+        will simulate those by relaxing the random walker's constraint
         to its current layer. The final state network will be generated
         on run, which will clear the temporary data structure that holds
         the provided intra-layer links.
@@ -891,9 +892,9 @@ class Infomap(InfomapWrapper):
 
         """
         return super().addMultilayerIntraLink(layer_id,
-                                         source_node_id,
-                                         target_node_id,
-                                         weight)
+                                              source_node_id,
+                                              target_node_id,
+                                              weight)
 
     def add_multilayer_inter_link(
             self,
@@ -916,7 +917,7 @@ class Infomap(InfomapWrapper):
         the directed flag is not present, it will add all links
         also in their opposite direction to transform the undirected
         input to directed. If no inter-layer links are added, Infomap
-        will simulate these by relaxing the random walker's constraint 
+        will simulate these by relaxing the random walker's constraint
         to its current layer. The final state network will be generated
         on run, which will clear the temporary data structure that holds
         the provided inter-layer links.
@@ -947,9 +948,9 @@ class Infomap(InfomapWrapper):
 
         """
         return super().addMultilayerInterLink(source_layer_id,
-                                         node_id,
-                                         target_layer_id,
-                                         weight)
+                                              node_id,
+                                              target_layer_id,
+                                              weight)
 
     def add_multilayer_links(self, links):
         """Add several multilayer links.
@@ -1252,7 +1253,7 @@ class Infomap(InfomapWrapper):
         teleportation_probability : float, optional
             Probability of teleporting to a random node or link.
         regularized : bool, optional
-            Effectively add a fully connected Bayesian prior network to not overfit 
+            Effectively add a fully connected Bayesian prior network to not overfit
             due to missing links. Implies recorded teleportation.
         regularization_strength : float, optional
             Adjust relative strength of Bayesian prior network with this multiplier.

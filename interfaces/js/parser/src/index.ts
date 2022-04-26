@@ -3,7 +3,7 @@ import type {
   CluStateNode,
   NodeBase,
   TreeNode as JsonTreeNode,
-  TreeStateNode as JsonTreeStateNode
+  TreeStateNode as JsonTreeStateNode,
 } from "@mapequation/infomap/filetypes";
 import type { Header as JsonHeader, Module } from "@mapequation/infomap";
 
