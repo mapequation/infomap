@@ -18,11 +18,11 @@ InfoNode::~InfoNode()
 
   deleteChildren();
 
-  if (next != 0)
+  if (next != nullptr)
     next->previous = previous;
-  if (previous != 0)
+  if (previous != nullptr)
     previous->next = next;
-  if (parent != 0) {
+  if (parent != nullptr) {
     if (parent->firstChild == this)
       parent->firstChild = next;
     if (parent->lastChild == this)
@@ -37,47 +37,6 @@ InfoNode::~InfoNode()
     delete *outEdgeIt;
   }
 }
-
-// InfomapBase& InfoNode::getInfomap(bool reset) {
-// 	if (!m_infomap || reset)
-// 		m_infomap = std::unique_ptr<InfomapBase>(new M1Infomap());
-// 	return *m_infomap;
-// }
-
-// InfomapBase& InfoNode::getMemInfomap(bool reset) {
-// 	if (!m_infomap || reset)
-// 		m_infomap = std::unique_ptr<InfomapBase>(new M2Infomap());
-// 	return *m_infomap;
-// }
-
-// InfoNode* InfoNode::getInfomapRoot() {
-// 	return m_infomap? &m_infomap->root() : nullptr;
-// }
-
-// bool InfoNode::disposeInfomap()
-// {
-// 	if (m_infomap) {
-// 		m_infomap.reset();
-// 		return true;
-// 	}
-// 	return false;
-// }
-
-// InfomapBase& InfoNode::getInfomap(bool reset) {
-// 	if (!m_infomap || reset || m_infomap->isHigherOrder()) {
-// 		disposeInfomap();
-// 		m_infomap = new M1Infomap();
-// 	}
-// 	return *m_infomap;
-// }
-
-// InfomapBase& InfoNode::getMemInfomap(bool reset) {
-// 	if (!m_infomap || reset || !m_infomap->isHigherOrder()) {
-// 		disposeInfomap();
-// 		m_infomap = new M2Infomap();
-// 	}
-// 	return *m_infomap;
-// }
 
 InfomapBase& InfoNode::setInfomap(InfomapBase* infomap)
 {
@@ -181,10 +140,7 @@ std::vector<unsigned int> InfoNode::calculatePath() const
 
 unsigned int InfoNode::childDegree() const
 {
-  //	if (!m_childrenChanged)
   return m_childDegree;
-  //	calcChildDegree();
-  //	return m_childDegree;
 }
 
 unsigned int InfoNode::infomapChildDegree() const
@@ -194,13 +150,10 @@ unsigned int InfoNode::infomapChildDegree() const
 
 void InfoNode::addChild(InfoNode* child)
 {
-  //	m_childrenChanged = true;
-  if (firstChild == 0) {
-    //		DEBUG_OUT("\t\t-->Add node " << *child << " as FIRST CHILD to parent " << *this << std::endl);
+  if (firstChild == nullptr) {
     child->previous = nullptr;
     firstChild = child;
   } else {
-    //		DEBUG_OUT("\t\t-->Add node " << *child << " as LAST CHILD to parent " << *this << std::endl);
     child->previous = lastChild;
     lastChild->next = child;
   }
@@ -229,14 +182,12 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
   InfoNode::child_iterator nodeIt = begin_child();
   unsigned int numOriginalChildrenLeft = m_childDegree;
   auto d0 = m_childDegree;
-  double flow = 0.0;
   do {
     InfoNode* n = nodeIt.current();
-    flow += n->data.flow;
     ++nodeIt;
     middleNode->addChild(n);
   } while (--numOriginalChildrenLeft != 0);
-  // middleNode->data.flow = flow;
+
   releaseChildren();
   addChild(middleNode);
   auto d1 = middleNode->replaceChildrenWithGrandChildren();
@@ -302,7 +253,7 @@ unsigned int InfoNode::replaceWithChildren()
 
 void InfoNode::replaceChildrenWithGrandChildrenDebug()
 {
-  if (firstChild == 0)
+  if (firstChild == nullptr)
     return;
   InfoNode::child_iterator nodeIt = begin_child();
   unsigned int numOriginalChildrenLeft = m_childDegree;
@@ -352,38 +303,9 @@ void InfoNode::replaceWithChildrenDebug()
   delete this;
 }
 
-// void InfoNode::storeModulesIn(InfoNode& otherRoot)
-// {
-// 	// Move root links to otherRoot
-// 	otherRoot.firstChild = firstChild;
-// 	otherRoot.lastChild = lastChild;
-// 	otherRoot.m_childDegree = m_childDegree;
-// 	firstChild->parent = &otherRoot;
-// 	lastChild->parent = &otherRoot;
-
-// 	// Link directly to leaf nodes in current node instead
-// 	// Re-parent leaf nodes within same infomap instance
-// 	InfoNode* leaf = this;
-// 	// Walk down to leaf
-// TODO: Use leaf module iterator and clone each leaf node to
-// otherRoot and re-parent leaf node to current node.
-// 	while (leaf->firstChild != nullptr)
-// 	{
-// 		leaf = leaf->firstChild;
-// 	}
-// 	unsigned int numLeafNodes = 0;
-// 	// Walk horizontally through all siblings and copy leaf nodes (without edges)
-// 	while (leaf != nullptr) {
-// 		++numLeafNodes;
-// 		leaf->parent = this;
-// 		leaf = leaf->next;
-// 	}
-// 	m_childDegree = numLeafNodes;
-// }
-
 void InfoNode::remove(bool removeChildren)
 {
-  firstChild = removeChildren ? 0 : firstChild;
+  firstChild = removeChildren ? nullptr : firstChild;
   delete this;
 }
 
