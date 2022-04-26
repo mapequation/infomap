@@ -34,7 +34,7 @@ public:
         numMetaDataDimensions(other.numMetaDataDimensions),
         metaDataRate(other.metaDataRate),
         weightByFlow(other.weightByFlow),
-        metaCodelength(other.metaCodelength) {}
+        metaCodelength(other.metaCodelength) { }
 
   MetaMapEquation& operator=(const MetaMapEquation& other)
   {
@@ -96,7 +96,7 @@ public:
 
   double calcCodelength(const InfoNode& parent) const;
 
-  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
+  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) { }
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                         DeltaFlowDataType& oldModuleDelta,
@@ -199,7 +199,6 @@ protected:
   double metaCodelength = 0.0;
   double m_unweightedNodeFlow = 0.0;
 };
-
 
 } // namespace infomap
 

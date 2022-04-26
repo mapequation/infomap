@@ -24,7 +24,6 @@
 
 **********************************************************************************/
 
-
 #ifndef CONVERT_H_
 #define CONVERT_H_
 
@@ -70,7 +69,6 @@ struct TypeInfo<double> {
   static std::string type() { return "double"; }
   static bool isNumeric() { return true; }
 };
-
 
 namespace io {
 
@@ -182,7 +180,6 @@ namespace io {
     return items;
   }
 
-
   inline std::vector<std::string> split(const std::string& s, char delim)
   {
     std::vector<std::string> items;
@@ -290,7 +287,6 @@ namespace io {
       throw BadConversionError((o << "stringify(" << value << ")", o.str()));
     return o.str();
   }
-
 
   inline std::string toPlural(std::string object, unsigned int num)
   {

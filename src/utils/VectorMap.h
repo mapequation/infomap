@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -33,7 +33,6 @@
 
 namespace infomap {
 
-
 template <typename T>
 class VectorMap {
 public:
@@ -41,7 +40,7 @@ public:
       : m_capacity(capacity),
         m_values(capacity),
         m_redirect(capacity, 0),
-        m_maxOffset(std::numeric_limits<unsigned int>::max() - 1 - capacity) {}
+        m_maxOffset(std::numeric_limits<unsigned int>::max() - 1 - capacity) { }
 
   void startRound()
   {

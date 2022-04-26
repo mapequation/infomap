@@ -24,7 +24,6 @@
 
 **********************************************************************************/
 
-
 #include "StateNetwork.h"
 #include "../utils/FlowCalculator.h"
 #include "../utils/Log.h"
@@ -112,7 +111,6 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
   return physNode;
 }
 
-
 std::pair<std::map<unsigned int, std::string>::iterator, bool> StateNetwork::addName(unsigned int id, std::string name)
 {
   // m_names[id] = name;
@@ -142,7 +140,6 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
   // m_nodes.emplace(targetId, StateNode(targetId));
   addNode(sourceId);
   addNode(targetId);
-
 
   ++m_numLinks;
   m_sumLinkWeight += weight;
@@ -247,7 +244,6 @@ bool StateNetwork::removeLink(unsigned int sourceId, unsigned int targetId)
   } else {
     --m_numAggregatedLinks;
   }
-
 
   --m_numLinks;
   m_sumLinkWeight -= weight;
@@ -408,7 +404,8 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithA
   return addStateNode(stateId, physId);
 }
 
-std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithDeterministicId(unsigned int physId, unsigned int layerId, unsigned int numLayersLog2) {
+std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNodeWithDeterministicId(unsigned int physId, unsigned int layerId, unsigned int numLayersLog2)
+{
   unsigned int stateId = physId << (numLayersLog2 + 1) | layerId;
   return addStateNode(stateId, physId);
 }

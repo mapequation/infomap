@@ -76,7 +76,7 @@ public:
   InfoNode* lastChild = nullptr;
   InfoNode* collapsedFirstChild = nullptr;
   InfoNode* collapsedLastChild = nullptr;
-  double codelength = 0.0; //TODO: Better design for hierarchical stuff!?
+  double codelength = 0.0; // TODO: Better design for hierarchical stuff!?
   bool dirty = false;
 
   std::vector<PhysData> physicalNodes;
@@ -131,11 +131,9 @@ public:
         metaCollection(other.metaCollection),
         m_childDegree(other.m_childDegree),
         m_childrenChanged(other.m_childrenChanged),
-        m_numLeafMembers(other.m_numLeafMembers) {}
-
+        m_numLeafMembers(other.m_numLeafMembers) { }
 
   ~InfoNode();
-
 
   InfoNode& operator=(const InfoNode& other)
   {
@@ -424,7 +422,6 @@ public:
   {
     return this != &rhs;
   }
-
 
   friend std::ostream& operator<<(std::ostream& out, const InfoNode& node)
   {

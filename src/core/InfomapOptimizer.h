@@ -195,7 +195,7 @@ inline void InfomapOptimizer<Objective>::initNetwork()
   m_objective.initNetwork(m_infomap->root());
 
   if (!m_infomap->isMainInfomap())
-    m_objective.initSubNetwork(m_infomap->root()); //TODO: Already called in initNetwork?
+    m_objective.initSubNetwork(m_infomap->root()); // TODO: Already called in initNetwork?
 }
 
 template <typename Objective>
@@ -283,8 +283,7 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
     if (otherModule == oldM) {
       // Log() << "  Old deltaExit += " << edge.data.flow << "\n";
       oldModuleDelta.deltaExit += edge.data.flow;
-    }
-    else if (otherModule == newM) {
+    } else if (otherModule == newM) {
       // Log() << "  New deltaExit += " << edge.data.flow << "\n";
       newModuleDelta.deltaExit += edge.data.flow;
     }
@@ -296,18 +295,17 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
     if (otherModule == oldM) {
       // Log() << "  Old deltaEnter += " << edge.data.flow << "\n";
       oldModuleDelta.deltaEnter += edge.data.flow;
-    }
-    else if (otherModule == newM) {
+    } else if (otherModule == newM) {
       // Log() << "  New deltaEnter += " << edge.data.flow << "\n";
       newModuleDelta.deltaEnter += edge.data.flow;
     }
   }
 
-    // For recorded teleportation
+  // For recorded teleportation
   if (m_infomap->recordedTeleportation) {
     // double alpha = m_infomap->teleportationProbability;
     // double beta = 1.0 - alpha;
-    
+
     // addTeleportationDeltaFlowOnOldModuleIfMove(current, moduleDeltaExits[j]);
     auto& oldModuleFlowData = m_moduleFlowData[oldM];
     // double deltaEnterOld = (alpha*(oldModuleFlowData.teleportSourceFlow - current.data.teleportSourceFlow) + beta*(oldModuleFlowData.danglingFlow - current.data.danglingFlow)) * current.data.teleportWeight;
@@ -315,7 +313,7 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
     // double deltaExitOld = (alpha*current.data.teleportSourceFlow + beta*current.data.danglingFlow) * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
     double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
     // if (m_infomap->isUndirectedClustering()) {
-      // Log() << " (dOld enter: " << deltaEnterOld << ", exit: " << deltaExitOld << ") ";
+    // Log() << " (dOld enter: " << deltaEnterOld << ", exit: " << deltaExitOld << ") ";
     // }
     oldModuleDelta.deltaEnter += deltaEnterOld;
     oldModuleDelta.deltaExit += deltaExitOld;
@@ -331,8 +329,8 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
     // }
     newModuleDelta.deltaEnter += deltaEnterNew;
     newModuleDelta.deltaExit += deltaExitNew;
-    
-    
+
+
     // Log() << "  Old module (" << m_moduleMembers[oldM] << ") data: " << m_moduleFlowData[oldM] << "\n";
     // Log() << "  New module (" << m_moduleMembers[newM] << ") data: " << m_moduleFlowData[newM] << "\n";
     // Log() << "  Codelength: " << m_objective << "\n";
@@ -352,7 +350,7 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
   // }
 
 
-  //Update empty module vector
+  // Update empty module vector
   if (m_moduleMembers[newM] == 0) {
     m_emptyModules.pop_back();
   }
@@ -695,13 +693,11 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     unsigned int numModuleLinks = deltaFlow.size();
 
 
-
     // For recorded teleportation
     if (m_infomap->recordedTeleportation) {
       // double alpha = m_infomap->teleportationProbability;
       // double beta = 1.0 - alpha;
-      for (unsigned int j = 0; j < numModuleLinks; ++j)
-      {
+      for (unsigned int j = 0; j < numModuleLinks; ++j) {
         auto& deltaEnterExit = moduleDeltaEnterExit[j];
         auto moduleIndex = deltaEnterExit.module;
         if (moduleIndex == current.index) {
@@ -715,9 +711,8 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
           // deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaEnterOld, 0.0));
           // deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, deltaExitOld));
           // Log(5) << "OLD module " << moduleIndex << " deltaEnter: " << deltaEnterOld << ", deltaExit: " << deltaExitOld << "\n";
-          
-        }
-        else {
+
+        } else {
           // addTeleportationDeltaFlowOnNewModuleIfMove(current, moduleDeltaExits[j]);
           auto& newModuleFlowData = m_moduleFlowData[moduleIndex];
           // double deltaEnterNew = (alpha*newModuleFlowData.teleportSourceFlow +	beta*newModuleFlowData.danglingFlow) * current.data.teleportWeight;
@@ -791,7 +786,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     // Make best possible move
     if (bestDeltaModule.module != current.index) {
       unsigned int bestModuleIndex = bestDeltaModule.module;
-      //Update empty module vector
+      // Update empty module vector
       if (m_moduleMembers[bestModuleIndex] == 0) {
         m_emptyModules.pop_back();
       }
@@ -1089,7 +1084,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 
 
           if (deltaCodelength < 0.0 - m_infomap->minimumSingleNodeCodelengthImprovement) {
-            //Update empty module vector
+            // Update empty module vector
             if (m_moduleMembers[bestModuleIndex] == 0) {
               m_emptyModules.pop_back();
             }

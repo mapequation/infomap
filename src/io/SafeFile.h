@@ -24,7 +24,6 @@
 
 **********************************************************************************/
 
-
 #ifndef SAFEFILE_H_
 #define SAFEFILE_H_
 
@@ -39,7 +38,6 @@ namespace infomap {
 
 using std::ifstream;
 using std::ofstream;
-
 
 /**
  * A wrapper for the C++ file stream class that automatically closes

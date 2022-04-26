@@ -248,7 +248,6 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
   Log::init(verbosity, silent, verboseNumberPrecision);
 }
 
-
 void Config::adaptDefaults()
 {
   if (flowModel != FlowModel::undirected && flowModel != FlowModel::undirdir && flowModel != FlowModel::directed && flowModel != FlowModel::outdirdir && flowModel != FlowModel::rawdir) {

@@ -26,7 +26,7 @@ public:
   using FlowDataType = FlowData;
   using DeltaFlowDataType = DeltaFlow;
 
-  BiasedMapEquation() : MapEquation() {}
+  BiasedMapEquation() : MapEquation() { }
 
   BiasedMapEquation(const BiasedMapEquation& other)
       : MapEquation(other),
@@ -84,7 +84,7 @@ public:
 
   void init(const Config& config);
 
-  void initTree(InfoNode& root) {}
+  void initTree(InfoNode& root) { }
 
   void initNetwork(InfoNode& root);
 
@@ -100,7 +100,7 @@ public:
 
   double calcCodelength(const InfoNode& parent) const;
 
-  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
+  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) { }
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                         DeltaFlowDataType& oldModuleDelta,
@@ -220,10 +220,9 @@ protected:
   static double s_totalDegree;
   static unsigned int s_numNodes;
 
-  public:
+public:
   static void setNetworkProperties(const StateNetwork& network);
 };
-
 
 } // namespace infomap
 

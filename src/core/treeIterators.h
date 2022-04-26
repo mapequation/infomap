@@ -24,7 +24,6 @@
 
 **********************************************************************************/
 
-
 #ifndef TREEITERATORS_H_
 #define TREEITERATORS_H_
 
@@ -40,7 +39,6 @@ namespace infomap {
 #endif
 
 using std::iterator_traits;
-
 
 /**
  * Child iterator.
@@ -58,13 +56,13 @@ protected:
   NodePointerType m_current = nullptr;
 
 public:
-  ChildIterator() {}
+  ChildIterator() { }
 
   explicit ChildIterator(const NodePointerType& nodePointer)
-      : m_root(nodePointer), m_current(nodePointer == nullptr ? nullptr : nodePointer->firstChild) {}
+      : m_root(nodePointer), m_current(nodePointer == nullptr ? nullptr : nodePointer->firstChild) { }
 
   ChildIterator(const ChildIterator& other)
-      : m_root(other.m_root), m_current(other.m_current) {}
+      : m_root(other.m_root), m_current(other.m_current) { }
 
   ChildIterator& operator=(const ChildIterator& other)
   {
@@ -162,7 +160,7 @@ protected:
   unsigned int m_depth = 0;
 
 public:
-  TreeIterator() {}
+  TreeIterator() { }
 
   TreeIterator(NodePointerType nodePointer, int moduleIndexLevel = -1)
       : m_root(nodePointer),
@@ -181,7 +179,7 @@ public:
   {
   }
 
-  virtual ~TreeIterator() {}
+  virtual ~TreeIterator() { }
 
   TreeIterator& operator=(const TreeIterator& other)
   {
@@ -193,7 +191,6 @@ public:
     m_depth = other.m_depth;
     return *this;
   }
-
 
   pointer current() const
   {
@@ -312,7 +309,6 @@ public:
   }
 };
 
-
 /**
  * Base node iterator.
  */
@@ -347,7 +343,7 @@ struct node_iterator_base {
     return *this;
   }
 
-  virtual ~node_iterator_base() {}
+  virtual ~node_iterator_base() { }
 
   pointer base() const
   {
@@ -430,7 +426,6 @@ protected:
   using Base::m_current;
 };
 
-
 /**
  * Pre processing depth first iterator
  * Note:
@@ -441,11 +436,11 @@ class DepthFirstIterator : public DepthFirstIteratorBase<NodePointerType> {
   typedef DepthFirstIteratorBase<NodePointerType> Base;
 
 public:
-  DepthFirstIterator() : Base() {}
+  DepthFirstIterator() : Base() { }
 
-  explicit DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) {}
+  explicit DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) { }
 
-  DepthFirstIterator(const DepthFirstIterator& other) : Base(other) {}
+  DepthFirstIterator(const DepthFirstIterator& other) : Base(other) { }
 
   DepthFirstIterator& operator=(const DepthFirstIterator& other)
   {
@@ -493,7 +488,6 @@ public:
   }
 };
 
-
 /**
  * Post processing depth first iterator
  * Note:
@@ -504,11 +498,11 @@ class DepthFirstIterator<NodePointerType, false> : public DepthFirstIteratorBase
   typedef DepthFirstIteratorBase<NodePointerType> Base;
 
 public:
-  DepthFirstIterator() : Base() {}
+  DepthFirstIterator() : Base() { }
 
   explicit DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
 
-  DepthFirstIterator(const DepthFirstIterator& other) : Base(other) {}
+  DepthFirstIterator(const DepthFirstIterator& other) : Base(other) { }
 
   DepthFirstIterator& operator=(const DepthFirstIterator& other)
   {
@@ -568,7 +562,6 @@ public:
   }
 };
 
-
 /**
  * Leaf node iterator
  */
@@ -577,11 +570,11 @@ class LeafNodeIterator : public DepthFirstIteratorBase<NodePointerType> {
   typedef DepthFirstIteratorBase<NodePointerType> Base;
 
 public:
-  LeafNodeIterator() : Base() {}
+  LeafNodeIterator() : Base() { }
 
   explicit LeafNodeIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
 
-  LeafNodeIterator(const LeafNodeIterator& other) : Base(other) {}
+  LeafNodeIterator(const LeafNodeIterator& other) : Base(other) { }
 
   LeafNodeIterator& operator=(const LeafNodeIterator& other)
   {
@@ -637,7 +630,6 @@ public:
   }
 };
 
-
 /**
  * Leaf module iterator
  */
@@ -646,11 +638,11 @@ class LeafModuleIterator : public DepthFirstIteratorBase<NodePointerType> {
   typedef DepthFirstIteratorBase<NodePointerType> Base;
 
 public:
-  LeafModuleIterator() : Base() {}
+  LeafModuleIterator() : Base() { }
 
   explicit LeafModuleIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
 
-  LeafModuleIterator(const LeafModuleIterator& other) : Base(other) {}
+  LeafModuleIterator(const LeafModuleIterator& other) : Base(other) { }
 
   LeafModuleIterator& operator=(const LeafModuleIterator& other)
   {
@@ -715,7 +707,6 @@ public:
   }
 };
 
-
 /**
  * Sibling iterator.
  */
@@ -726,11 +717,11 @@ class SiblingIterator : public node_iterator_base<NodePointerType> {
 public:
   typedef SiblingIterator<NodePointerType> self_type;
 
-  SiblingIterator() : Base() {}
+  SiblingIterator() : Base() { }
 
-  explicit SiblingIterator(const NodePointerType& nodePointer) : Base(nodePointer) {}
+  explicit SiblingIterator(const NodePointerType& nodePointer) : Base(nodePointer) { }
 
-  SiblingIterator(const SiblingIterator& other) : Base(other) {}
+  SiblingIterator(const SiblingIterator& other) : Base(other) { }
 
   SiblingIterator& operator=(const SiblingIterator& other)
   {

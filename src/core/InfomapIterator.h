@@ -168,13 +168,13 @@ public:
 
 struct InfomapModuleIterator : public InfomapIterator {
 public:
-  InfomapModuleIterator() : InfomapIterator() {}
+  InfomapModuleIterator() : InfomapIterator() { }
 
   InfomapModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
-      : InfomapIterator(nodePointer, moduleIndexLevel) {}
+      : InfomapIterator(nodePointer, moduleIndexLevel) { }
 
   InfomapModuleIterator(const InfomapModuleIterator& other)
-      : InfomapIterator(other) {}
+      : InfomapIterator(other) { }
 
   InfomapModuleIterator& operator=(const InfomapModuleIterator& other)
   {
@@ -200,7 +200,7 @@ public:
 
 struct InfomapLeafModuleIterator : public InfomapIterator {
 public:
-  InfomapLeafModuleIterator() : InfomapIterator() {}
+  InfomapLeafModuleIterator() : InfomapIterator() { }
 
   InfomapLeafModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
       : InfomapIterator(nodePointer, moduleIndexLevel)
@@ -243,7 +243,7 @@ public:
 
 struct InfomapLeafIterator : public InfomapIterator {
 public:
-  InfomapLeafIterator() : InfomapIterator() {}
+  InfomapLeafIterator() : InfomapIterator() { }
 
   InfomapLeafIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
       : InfomapIterator(nodePointer, moduleIndexLevel)
@@ -296,19 +296,19 @@ protected:
   InfomapIterator m_oldIter;
 
 public:
-  InfomapIteratorPhysical() : InfomapIterator() {}
+  InfomapIteratorPhysical() : InfomapIterator() { }
 
   InfomapIteratorPhysical(InfoNode* nodePointer, int moduleIndexLevel = -1)
-      : InfomapIterator(nodePointer, moduleIndexLevel) {}
+      : InfomapIterator(nodePointer, moduleIndexLevel) { }
 
   InfomapIteratorPhysical(const InfomapIteratorPhysical& other)
       : InfomapIterator(other),
         m_physNodes(other.m_physNodes),
         m_physIter(other.m_physIter),
-        m_oldIter(other.m_oldIter) {}
+        m_oldIter(other.m_oldIter) { }
 
   InfomapIteratorPhysical(const InfomapIterator& other)
-      : InfomapIterator(other) {}
+      : InfomapIterator(other) { }
 
   InfomapIteratorPhysical& operator=(const InfomapIteratorPhysical& other)
   {
@@ -349,7 +349,7 @@ public:
 struct InfomapLeafIteratorPhysical : public InfomapIteratorPhysical {
 public:
   InfomapLeafIteratorPhysical()
-      : InfomapIteratorPhysical() {}
+      : InfomapIteratorPhysical() { }
 
   InfomapLeafIteratorPhysical(InfoNode* nodePointer, int moduleIndexLevel = -1)
       : InfomapIteratorPhysical(nodePointer, moduleIndexLevel)
@@ -408,10 +408,10 @@ public:
   InfomapParentIterator() = default;
 
   InfomapParentIterator(InfoNode* nodePointer)
-      : m_current(nodePointer) {}
+      : m_current(nodePointer) { }
 
   InfomapParentIterator(const InfomapParentIterator& other)
-      : m_current(other.m_current) {}
+      : m_current(other.m_current) { }
 
   virtual ~InfomapParentIterator() = default;
 
@@ -483,7 +483,6 @@ public:
     return m_current == nullptr;
   }
 };
-
 
 } // namespace infomap
 

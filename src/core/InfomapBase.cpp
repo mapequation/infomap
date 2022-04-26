@@ -172,7 +172,6 @@ InfomapBase& InfomapBase::setSubLevel(unsigned int level)
   return *this;
 }
 
-
 bool InfomapBase::isTopLevel() const
 {
   return (m_subLevel & (SUPER_LEVEL_ADDITION - 1)) == 0;
@@ -193,7 +192,6 @@ bool InfomapBase::haveHardPartition() const
 {
   return !m_originalLeafNodes.empty();
 }
-
 
 std::vector<InfoNode*>& InfomapBase::activeNetwork() const
 {
@@ -256,7 +254,6 @@ void InfomapBase::run(std::string parameters)
     Log() << "  OpenMP " << _OPENMP << " detected with " << omp_get_num_threads() << " threads...\n";
   }
 #endif
-
 
   if (m_network.numNodes() == 0) {
     m_network.postProcessInputData();
@@ -456,7 +453,6 @@ void InfomapBase::run(Network& network)
         writeResult(); // Overwrite result to get total elapsed time in output file header
       }
 
-
       Log() << std::fixed << std::setprecision(9);
       double averageCodelength = 0.0;
       double minCodelength = m_codelengths[0];
@@ -482,11 +478,9 @@ void InfomapBase::run(Network& network)
   // printRSS();
 }
 
-
 // ===================================================
 // Run: Init: *
 // ===================================================
-
 
 InfomapBase& InfomapBase::initMetaData(std::string metaDataFile)
 {
@@ -764,7 +758,6 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
 
   return initPartition(modules);
 
-
   // // Log() << "\n\n.clu\n#stateId moduleId\n";
 
   // // Create map from stateId to leaf node index
@@ -1010,7 +1003,6 @@ double InfomapBase::calcEntropyRate()
   return entropyRate;
 }
 
-
 // ===================================================
 // Run: *
 // ===================================================
@@ -1234,7 +1226,6 @@ void InfomapBase::partition()
   m_hierarchicalCodelength = calcCodelengthOnTree(true);
 }
 
-
 void InfomapBase::restoreHardPartition()
 {
   // Collect all leaf nodes in a separate sequence to be able to iterate independent of tree structure
@@ -1260,7 +1251,6 @@ void InfomapBase::restoreHardPartition()
 
   Log(1) << "Expanded " << numExpandedNodes << " hard modules to " << numExpandedChildren << " original nodes." << std::endl;
 }
-
 
 // ===================================================
 // Run: Init: *
@@ -1451,7 +1441,6 @@ double InfomapBase::calcCodelengthOnTree(bool includeRoot)
 // 	Log() << "Calculate pre-clustering on multilayer networks (not implemented yet)...\n";
 
 // }
-
 
 // ===================================================
 // Run: Partition: *
@@ -1846,7 +1835,6 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   return numLevelsCreated;
 }
 
-
 void InfomapBase::transformNodeFlowToEnterFlow(InfoNode& parent)
 {
   double sumFlow = 0.0;
@@ -1903,7 +1891,6 @@ unsigned int InfomapBase::removeSubModules(bool recalculateCodelengthOnTree)
   }
   return numLevelsDeleted;
 }
-
 
 unsigned int InfomapBase::recursivePartition()
 {
@@ -1966,7 +1953,6 @@ unsigned int InfomapBase::recursivePartition()
 
   Log(0, 0) << ". Found " << partitionQueue.level << " levels with codelength " << io::toPrecision(hierarchicalCodelength) << "\n";
   Log(1) << "  -> Found " << partitionQueue.level << " levels with codelength " << io::toPrecision(hierarchicalCodelength) << "\n";
-
 
   return partitionQueue.level;
 }
@@ -2142,7 +2128,6 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
   return nextLevelSize > 0;
 }
 
-
 // ===================================================
 // Write output
 // ===================================================
@@ -2151,7 +2136,6 @@ void InfomapBase::sortTreeOnFlow()
 {
   root().sortChildrenOnFlow();
 }
-
 
 void InfomapBase::writeResult()
 {
@@ -2197,7 +2181,6 @@ void InfomapBase::writeResult()
     }
   }
 
-
   if (printFlowTree) {
     std::string filename = outDirectory + outName + ".ftree";
 
@@ -2216,7 +2199,6 @@ void InfomapBase::writeResult()
       Log() << "done!\n";
     }
   }
-
 
   if (printNewick) {
     std::string filename = outDirectory + outName + ".nwk";
@@ -2613,7 +2595,6 @@ void InfomapBase::writeTreeLinks(std::ostream& outStream, bool states)
   outStream << std::setprecision(oldPrecision);
 }
 
-
 void InfomapBase::writeNewickTree(std::ostream& outStream, bool states)
 {
   auto oldPrecision = outStream.precision();
@@ -2796,7 +2777,6 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, bool write
     const auto& links = moduleLinks[parentId];
     const auto path = io::stringify(it.path(), ",");
 
-
     if (first) {
       first = false;
     } else {
@@ -2810,7 +2790,6 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, bool write
               << "\"exitFlow\":" << module.data.exitFlow << ","
               << "\"numEdges\":" << links.size() << ","
               << "\"numChildren\":" << module.infomapChildDegree();
-
 
     if (writeLinks) {
       outStream << ","
@@ -2842,7 +2821,6 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, bool write
 
   outStream << std::setprecision(oldPrecision);
 }
-
 
 void InfomapBase::writeCsvTree(std::ostream& outStream, bool states)
 {
@@ -2942,7 +2920,6 @@ unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
   for (unsigned int i = 0; i < numLevels; ++i)
     sumNumLeafNodes += perLevelStats[i].numLeafNodes;
   out << " (sum: " << sumNumLeafNodes << ")" << std::endl;
-
 
   out << "Per level average child degree:      [";
   double childDegree = perLevelStats[0].numNodes();

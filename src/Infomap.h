@@ -20,10 +20,10 @@ namespace infomap {
 
 struct InfomapWrapper : public InfomapCore {
 public:
-  InfomapWrapper() : InfomapCore() {}
-  InfomapWrapper(const std::string flags) : InfomapCore(flags) {}
-  InfomapWrapper(const Config& conf) : InfomapCore(conf) {}
-  virtual ~InfomapWrapper() {}
+  InfomapWrapper() : InfomapCore() { }
+  InfomapWrapper(const std::string flags) : InfomapCore(flags) { }
+  InfomapWrapper(const Config& conf) : InfomapCore(conf) { }
+  virtual ~InfomapWrapper() { }
 
   // ===================================================
   // Wrapper methods

@@ -43,7 +43,7 @@ public:
         enterFlow(other.enterFlow),
         enterFlow_log_enterFlow(other.enterFlow_log_enterFlow),
         exitNetworkFlow(other.exitNetworkFlow),
-        exitNetworkFlow_log_exitNetworkFlow(other.exitNetworkFlow_log_exitNetworkFlow) {}
+        exitNetworkFlow_log_exitNetworkFlow(other.exitNetworkFlow_log_exitNetworkFlow) { }
 
   MapEquation& operator=(const MapEquation& other)
   {
@@ -81,14 +81,13 @@ public:
 
   friend std::ostream& operator<<(std::ostream&, const MapEquation&);
 
-
   // ===================================================
   // Init
   // ===================================================
 
   void init(const Config& config);
 
-  void initTree(InfoNode& root) {}
+  void initTree(InfoNode& root) { }
 
   void initNetwork(InfoNode& root);
 
@@ -104,9 +103,9 @@ public:
 
   double calcCodelength(const InfoNode& parent) const;
 
-  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) {}
+  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) { }
 
-  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) {}
+  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) { }
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                         DeltaFlowDataType& oldModuleDelta,
@@ -124,14 +123,13 @@ public:
                                     std::vector<FlowDataType>& moduleFlowData,
                                     std::vector<unsigned int>& moduleMembers);
 
-  void consolidateModules(std::vector<InfoNode*>& modules) {}
+  void consolidateModules(std::vector<InfoNode*>& modules) { }
 
   // ===================================================
   // Debug
   // ===================================================
 
   void printDebug();
-
 
 protected:
   // ===================================================
@@ -147,7 +145,6 @@ protected:
   void calculateCodelengthTerms(std::vector<InfoNode*>& nodes);
 
   void calculateCodelengthFromCodelengthTerms();
-
 
 public:
   // ===================================================
@@ -176,6 +173,5 @@ protected:
 };
 
 } // namespace infomap
-
 
 #endif /* SRC_CLUSTERING_MAPEQUATION_H_ */

@@ -22,7 +22,6 @@ namespace infomap {
 // Getters
 // ===================================================
 
-
 // ===================================================
 // IO
 // ===================================================
@@ -36,7 +35,6 @@ std::ostream& operator<<(std::ostream& out, const MapEquation& mapEq)
 {
   return mapEq.print(out);
 }
-
 
 // ===================================================
 // Init
@@ -78,7 +76,6 @@ void MapEquation::initPartition(std::vector<InfoNode*>& nodes)
 {
   calculateCodelength(nodes);
 }
-
 
 // ===================================================
 // Codelength
@@ -173,7 +170,6 @@ double MapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent) cons
   return infomath::plogp(totalCodewordUse) - sumEnterLogEnter - infomath::plogp(parentExit);
 }
 
-
 double MapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
                                                    DeltaFlowDataType& oldModuleDelta,
                                                    DeltaFlowDataType& newModuleDelta,
@@ -226,7 +222,6 @@ void MapEquation::updateCodelengthOnMovingNode(InfoNode& current,
   exit_log_exit -= plogp(moduleFlowData[oldModule].exitFlow) + plogp(moduleFlowData[newModule].exitFlow);
   flow_log_flow -= plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow) + plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow);
 
-
   moduleFlowData[oldModule] -= current.data;
   moduleFlowData[newModule] += current.data;
 
@@ -246,7 +241,6 @@ void MapEquation::updateCodelengthOnMovingNode(InfoNode& current,
   moduleCodelength = -exit_log_exit + flow_log_flow - nodeFlow_log_nodeFlow;
   codelength = indexCodelength + moduleCodelength;
 }
-
 
 // ===================================================
 // Debug

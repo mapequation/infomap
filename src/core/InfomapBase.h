@@ -56,7 +56,6 @@ public:
 
   virtual ~InfomapBase() = default;
 
-
   // ===================================================
   // Getters
   // ===================================================
@@ -213,7 +212,6 @@ public:
   InfomapBase& initNetwork(Network& network);
   InfomapBase& initNetwork(InfoNode& parent, bool asSuperNetwork = false);
 
-
   void generateSubNetwork(Network& network);
   virtual void generateSubNetwork(InfoNode& parent);
 
@@ -291,7 +289,6 @@ public:
 
   virtual void partition();
 
-
   // ===================================================
   // runPartition: init: *
   // ===================================================
@@ -323,7 +320,6 @@ public:
    * Partition layer by layer and
    */
   // virtual void preClusterMultilayerNetwork();
-
 
   // ===================================================
   // Run: Partition: *
@@ -362,7 +358,6 @@ public:
    * Return true if restored to consolidated optimization state
    */
   virtual bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false) = 0;
-
 
   // ===================================================
   // Run: Hierarchical Partition: *
@@ -538,7 +533,6 @@ protected:
   std::string m_currentParameters = "";
 };
 
-
 struct PerLevelStat {
   double codelength() const { return indexLength + leafLength; }
 
@@ -549,7 +543,6 @@ struct PerLevelStat {
   double indexLength = 0.0;
   double leafLength = 0.0;
 };
-
 
 namespace detail {
 

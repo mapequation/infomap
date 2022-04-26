@@ -24,7 +24,6 @@
 
 **********************************************************************************/
 
-
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
@@ -57,7 +56,6 @@ struct FlowModel {
     value = val;
     return *this;
   }
-
 
   operator int&() { return value; }
   operator int() const { return value; }

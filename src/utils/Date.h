@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -24,7 +24,6 @@
 
 **********************************************************************************/
 
-
 #ifndef DATE_H_
 #define DATE_H_
 
@@ -36,14 +35,13 @@ namespace infomap {
 
 class ElapsedTime {
 public:
-  ElapsedTime(double elapsedTime = 0.0) : m_elapsedTime(elapsedTime) {}
+  ElapsedTime(double elapsedTime = 0.0) : m_elapsedTime(elapsedTime) { }
   ~ElapsedTime() = default;
 
   double getSeconds() const { return m_elapsedTime; }
   double getMinutes() const { return m_elapsedTime / 60; }
   double getHours() const { return m_elapsedTime / 3600; }
   double getDays() const { return m_elapsedTime / 86400; }
-
 
   friend std::ostream& operator<<(std::ostream& out, const ElapsedTime& elapsedTime)
   {
@@ -72,9 +70,9 @@ private:
 
 class Date {
 public:
-  Date() : m_timeOfCreation(time(NULL)) {}
+  Date() : m_timeOfCreation(time(NULL)) { }
 
-  Date(const Date& other) : m_timeOfCreation(other.m_timeOfCreation) {}
+  Date(const Date& other) : m_timeOfCreation(other.m_timeOfCreation) { }
 
   Date& operator=(Date other)
   {

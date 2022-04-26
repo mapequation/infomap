@@ -18,7 +18,7 @@ struct FlowData {
         teleportFlow(0.0),
         teleportSourceFlow(0.0),
         teleportWeight(0.0),
-        danglingFlow(0.0) {}
+        danglingFlow(0.0) { }
 
   FlowData(const FlowData& other)
       : flow(other.flow),
@@ -27,7 +27,7 @@ struct FlowData {
         teleportFlow(other.teleportFlow),
         teleportSourceFlow(other.teleportSourceFlow),
         teleportWeight(other.teleportWeight),
-        danglingFlow(other.danglingFlow) {}
+        danglingFlow(other.danglingFlow) { }
 
   FlowData& operator=(const FlowData& other)
   {
@@ -76,12 +76,9 @@ struct FlowData {
   friend std::ostream& operator<<(std::ostream& out, const FlowData& data)
   {
     // return out << "flow: " << data.flow << ", enter: " << data.enterFlow << ", exit: " << data.exitFlow;
-    return out << "flow: " << data.flow << ", enter: " << data.enterFlow <<
-				", exit: " << data.exitFlow << ", teleWeight: " << data.teleportWeight <<
-				", danglingFlow: " << data.danglingFlow << ", teleFlow: " << data.teleportFlow;
+    return out << "flow: " << data.flow << ", enter: " << data.enterFlow << ", exit: " << data.exitFlow << ", teleWeight: " << data.teleportWeight << ", danglingFlow: " << data.danglingFlow << ", teleFlow: " << data.teleportFlow;
   }
 };
-
 
 struct DeltaFlow {
   unsigned int module = 0;
@@ -97,7 +94,7 @@ struct DeltaFlow {
       : module(module),
         deltaExit(deltaExit),
         deltaEnter(deltaEnter),
-        count(0) {}
+        count(0) { }
 
   DeltaFlow(const DeltaFlow&) = default;
   DeltaFlow& operator=(const DeltaFlow&) = default;
@@ -139,12 +136,12 @@ struct MemDeltaFlow : DeltaFlow {
   double sumDeltaPlogpPhysFlow = 0.0;
   double sumPlogpPhysFlow = 0.0;
 
-  MemDeltaFlow() : DeltaFlow() {}
+  MemDeltaFlow() : DeltaFlow() { }
 
   explicit MemDeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow = 0.0, double sumPlogpPhysFlow = 0.0)
       : DeltaFlow(module, deltaExit, deltaEnter),
         sumDeltaPlogpPhysFlow(sumDeltaPlogpPhysFlow),
-        sumPlogpPhysFlow(sumPlogpPhysFlow) {}
+        sumPlogpPhysFlow(sumPlogpPhysFlow) { }
 
   MemDeltaFlow& operator+=(const MemDeltaFlow& other)
   {
@@ -174,10 +171,9 @@ struct MemDeltaFlow : DeltaFlow {
   }
 };
 
-
 struct PhysData {
   explicit PhysData(unsigned int physNodeIndex, double sumFlowFromM2Node = 0.0)
-      : physNodeIndex(physNodeIndex), sumFlowFromM2Node(sumFlowFromM2Node) {}
+      : physNodeIndex(physNodeIndex), sumFlowFromM2Node(sumFlowFromM2Node) { }
 
   PhysData(const PhysData& other) = default;
 
@@ -190,8 +186,6 @@ struct PhysData {
   }
 };
 
-
 } // namespace infomap
-
 
 #endif /* SRC_CLUSTERING_FLOWDATA_H_ */

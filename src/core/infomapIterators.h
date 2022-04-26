@@ -14,7 +14,6 @@
 
 namespace infomap {
 
-
 /**
  * Child iterator.
  */
@@ -37,7 +36,7 @@ public:
       : m_root(nodePointer), m_current(nodePointer) { init(); }
 
   InfomapChildIterator(const InfomapChildIterator& other)
-      : m_root(other.m_root), m_current(other.m_current) {}
+      : m_root(other.m_root), m_current(other.m_current) { }
 
   InfomapChildIterator& operator=(const InfomapChildIterator& other)
   {
@@ -118,7 +117,7 @@ protected:
   using Base::m_depth;
 
 public:
-  InfomapClusterIterator() : Base() {}
+  InfomapClusterIterator() : Base() { }
 
   explicit InfomapClusterIterator(const NodePointerType& nodePointer, int moduleIndexLevel = -1)
       : Base(nodePointer), m_moduleIndexLevel(moduleIndexLevel)
@@ -127,7 +126,7 @@ public:
   }
 
   InfomapClusterIterator(const InfomapClusterIterator& other)
-      : Base(other), m_moduleIndex(other.m_moduleIndex), m_moduleIndexLevel(other.m_moduleIndexLevel) {}
+      : Base(other), m_moduleIndex(other.m_moduleIndex), m_moduleIndexLevel(other.m_moduleIndexLevel) { }
 
   virtual void init() { moveToInfomapRootIfExist(); }
 
@@ -240,7 +239,7 @@ protected:
   using Base::m_depth;
 
 public:
-  InfomapDepthFirstIterator() : Base() {}
+  InfomapDepthFirstIterator() : Base() { }
 
   explicit InfomapDepthFirstIterator(const NodePointerType& nodePointer, int moduleIndexLevel = -1)
       : Base(nodePointer),

@@ -24,7 +24,6 @@
 
 **********************************************************************************/
 
-
 #ifndef _STATENETWORK_H_
 #define _STATENETWORK_H_
 
@@ -50,11 +49,11 @@ public:
     double exitFlow = 0.0;
     double teleFlow = 0.0;
 
-    StateNode(unsigned int id = 0) : id(id), physicalId(id) {}
+    StateNode(unsigned int id = 0) : id(id), physicalId(id) { }
 
-    StateNode(unsigned int id, unsigned int physicalId) : id(id), physicalId(physicalId) {}
+    StateNode(unsigned int id, unsigned int physicalId) : id(id), physicalId(physicalId) { }
 
-    StateNode(unsigned int id, unsigned int physicalId, std::string name) : id(id), physicalId(physicalId), name(std::move(name)) {}
+    StateNode(unsigned int id, unsigned int physicalId, std::string name) : id(id), physicalId(physicalId), name(std::move(name)) { }
 
     bool operator==(const StateNode& rhs) const { return id == rhs.id; }
     bool operator!=(const StateNode& rhs) const { return id != rhs.id; }
@@ -64,9 +63,9 @@ public:
   struct PhysNode {
     unsigned int physId = 0;
     double weight = 1.0;
-    PhysNode(unsigned int physId) : physId(physId) {}
-    PhysNode(unsigned int physId, double weight) : physId(physId), weight(weight) {}
-    PhysNode(double weight = 1.0) : weight(weight) {}
+    PhysNode(unsigned int physId) : physId(physId) { }
+    PhysNode(unsigned int physId, double weight) : physId(physId), weight(weight) { }
+    PhysNode(double weight = 1.0) : weight(weight) { }
   };
 
   struct LinkData {
@@ -74,7 +73,7 @@ public:
     double flow = 0.0;
     unsigned int count = 0;
 
-    LinkData(double weight = 1.0) : weight(weight) {}
+    LinkData(double weight = 1.0) : weight(weight) { }
 
     LinkData& operator+=(double w)
     {
@@ -88,7 +87,7 @@ public:
         : source(sourceIndex),
           target(targetIndex),
           weight(weight),
-          flow(weight) {}
+          flow(weight) { }
 
     unsigned int source;
     unsigned int target;
@@ -136,8 +135,8 @@ protected:
   // InfoNode m_root;
 
 public:
-  StateNetwork() : m_config(Config()) {}
-  StateNetwork(const Config& config) : m_config(config) {}
+  StateNetwork() : m_config(Config()) { }
+  StateNetwork(const Config& config) : m_config(config) { }
   virtual ~StateNetwork() = default;
 
   // Config

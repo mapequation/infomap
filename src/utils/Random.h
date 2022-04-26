@@ -3,9 +3,9 @@
  Infomap software package for multi-level network clustering
 
  Copyright (c) 2013, 2014 Daniel Edler, Martin Rosvall
- 
+
  For more information, see <http://www.mapequation.org>
- 
+
 
  This file is part of Infomap software package.
 
@@ -23,7 +23,6 @@
  along with Infomap software package.  If not, see <http://www.gnu.org/licenses/>.
 
 **********************************************************************************/
-
 
 #ifndef RANDOM_H_
 #define RANDOM_H_
@@ -45,7 +44,7 @@ class Random {
   uniform_uint_dist uniform;
 
 public:
-  Random(unsigned int seed = 123) : m_randGen(seed) {}
+  Random(unsigned int seed = 123) : m_randGen(seed) { }
 
   void seed(unsigned int seedValue)
   {
@@ -58,8 +57,8 @@ public:
   }
 
   /**
-    * Get a random permutation of indices of the size of the input vector
-    */
+   * Get a random permutation of indices of the size of the input vector
+   */
   void getRandomizedIndexVector(std::vector<unsigned int>& randomOrder)
   {
     unsigned int size = randomOrder.size();
@@ -81,7 +80,7 @@ class Random {
   MTRand m_randGen;
 
 public:
-  Random(unsigned int seed = 123) : m_randGen(seed) {}
+  Random(unsigned int seed = 123) : m_randGen(seed) { }
 
   void seed(unsigned int seedValue)
   {

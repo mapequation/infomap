@@ -10,7 +10,6 @@
 
 namespace infomap {
 
-
 InfoNode::~InfoNode()
 {
   if (m_infomap != nullptr) {
@@ -38,7 +37,6 @@ InfoNode::~InfoNode()
     delete *outEdgeIt;
   }
 }
-
 
 // InfomapBase& InfoNode::getInfomap(bool reset) {
 // 	if (!m_infomap || reset)
@@ -124,7 +122,7 @@ bool InfoNode::isLeaf() const
 
 bool InfoNode::isLeafModule() const
 {
-  //TODO: Safe to assume all children are leaves if first child is leaf?
+  // TODO: Safe to assume all children are leaves if first child is leaf?
   return m_infomap == nullptr && firstChild != nullptr && firstChild->firstChild == nullptr;
 }
 
@@ -315,12 +313,10 @@ void InfoNode::replaceChildrenWithGrandChildrenDebug()
   } while (--numOriginalChildrenLeft != 0);
 }
 
-
 void InfoNode::replaceWithChildrenDebug()
 {
   if (isLeaf() || isRoot())
     return;
-
 
   // Re-parent children
   unsigned int deltaChildDegree = 0;
@@ -369,7 +365,7 @@ void InfoNode::replaceWithChildrenDebug()
 // 	// Re-parent leaf nodes within same infomap instance
 // 	InfoNode* leaf = this;
 // 	// Walk down to leaf
-//TODO: Use leaf module iterator and clone each leaf node to
+// TODO: Use leaf module iterator and clone each leaf node to
 // otherRoot and re-parent leaf node to current node.
 // 	while (leaf->firstChild != nullptr)
 // 	{

@@ -30,4 +30,4 @@ public:
 
 } // namespace infomap
 
-#endif //ITERATORS_H_
+#endif // ITERATORS_H_

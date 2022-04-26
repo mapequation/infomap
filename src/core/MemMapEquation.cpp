@@ -31,7 +31,6 @@ std::ostream& operator<<(std::ostream& out, const MemMapEquation& mapEq)
   return mapEq.print(out);
 }
 
-
 // ===================================================
 // Init
 // ===================================================
@@ -41,7 +40,6 @@ void MemMapEquation::init(const Config& config)
   Log(3) << "MemMapEquation::init()...\n";
 }
 
-
 void MemMapEquation::initNetwork(InfoNode& root)
 {
   initPhysicalNodes(root);
@@ -49,7 +47,7 @@ void MemMapEquation::initNetwork(InfoNode& root)
 
 void MemMapEquation::initSuperNetwork(InfoNode& root)
 {
-  //TODO: How use enterFlow instead of flow
+  // TODO: How use enterFlow instead of flow
 }
 
 void MemMapEquation::initSubNetwork(InfoNode& root)
@@ -222,7 +220,6 @@ void MemMapEquation::initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes)
   m_memoryContributionsAdded = false;
 }
 
-
 // ===================================================
 // Codelength
 // ===================================================
@@ -261,8 +258,8 @@ double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent)
     return MapEquation::calcCodelength(parent); // Infomap root node
   }
 
-  //TODO: For ordinary networks, flow should be used instead of enter flow
-  // for leaf nodes, what about memory networks? sumFlowFromM2Node vs sumEnterFlowFromM2Node?
+  // TODO: For ordinary networks, flow should be used instead of enter flow
+  //  for leaf nodes, what about memory networks? sumFlowFromM2Node vs sumEnterFlowFromM2Node?
   double parentFlow = parent.data.flow;
   double parentExit = parent.data.exitFlow;
   double totalParentFlow = parentFlow + parentExit;
@@ -327,7 +324,6 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
   m_memoryContributionsAdded = true;
 }
 
-
 double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
                                                       DeltaFlowDataType& oldModuleDelta,
                                                       DeltaFlowDataType& newModuleDelta,
@@ -340,7 +336,6 @@ double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 
   return deltaL - delta_nodeFlow_log_nodeFlow;
 }
-
 
 // ===================================================
 // Consolidation
@@ -364,7 +359,6 @@ void MemMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
   moduleCodelength -= delta_nodeFlow_log_nodeFlow;
   codelength -= delta_nodeFlow_log_nodeFlow;
 }
-
 
 void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex)
 {
@@ -417,7 +411,6 @@ void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& curr
     if (--memNodeSet.numMemNodes == 0)
       moduleToMemNodes.erase(overlapIt);
 
-
     // Add contribution to new module
     overlapIt = moduleToMemNodes.find(bestModuleIndex);
     if (overlapIt == moduleToMemNodes.end()) {
@@ -438,7 +431,6 @@ void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& curr
   }
 }
 
-
 void MemMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 {
   std::map<unsigned int, std::map<unsigned int, unsigned int>> validate;
@@ -454,7 +446,6 @@ void MemMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
   }
 }
 
-
 // ===================================================
 // Debug
 // ===================================================
@@ -464,6 +455,5 @@ void MemMapEquation::printDebug()
   std::cout << "MemMapEquation::m_numPhysicalNodes: " << m_numPhysicalNodes << "\n";
   Base::printDebug();
 }
-
 
 } // namespace infomap

@@ -26,7 +26,7 @@ public:
    * and maxLevel is above or equal Log::verboseLevel()
    */
   explicit Log(unsigned int level = 0, unsigned int maxLevel = std::numeric_limits<int>::max())
-      : m_level(level), m_maxLevel(maxLevel), m_visible(isVisible(m_level, m_maxLevel)) {}
+      : m_level(level), m_maxLevel(maxLevel), m_visible(isVisible(m_level, m_maxLevel)) { }
 
   bool isVisible() const { return isVisible(m_level, m_maxLevel); }
 
@@ -87,7 +87,7 @@ private:
 };
 
 struct hideIf {
-  explicit hideIf(bool value) : hide(value) {}
+  explicit hideIf(bool value) : hide(value) { }
 
   friend Log& operator<<(Log& out, const hideIf& manip)
   {

@@ -29,13 +29,13 @@ public:
   using FlowDataType = FlowData;
   using DeltaFlowDataType = MemDeltaFlow;
 
-  MemMapEquation() : MapEquation() {}
+  MemMapEquation() : MapEquation() { }
 
   MemMapEquation(const MemMapEquation& other)
       : MapEquation(other),
         m_physToModuleToMemNodes(other.m_physToModuleToMemNodes),
         m_numPhysicalNodes(other.m_numPhysicalNodes),
-        m_memoryContributionsAdded(other.m_memoryContributionsAdded) {}
+        m_memoryContributionsAdded(other.m_memoryContributionsAdded) { }
 
   MemMapEquation& operator=(const MemMapEquation& other)
   {
@@ -46,7 +46,7 @@ public:
     return *this;
   }
 
-  virtual ~MemMapEquation() {}
+  virtual ~MemMapEquation() { }
 
   // ===================================================
   // Getters
@@ -72,7 +72,7 @@ public:
 
   void init(const Config& config);
 
-  void initTree(InfoNode& root) {}
+  void initTree(InfoNode& root) { }
 
   void initNetwork(InfoNode& root);
 
@@ -181,8 +181,8 @@ protected:
 };
 
 struct MemNodeSet {
-  MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) {}
-  MemNodeSet(const MemNodeSet& other) : numMemNodes(other.numMemNodes), sumFlow(other.sumFlow) {}
+  MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) { }
+  MemNodeSet(const MemNodeSet& other) : numMemNodes(other.numMemNodes), sumFlow(other.sumFlow) { }
   MemNodeSet& operator=(const MemNodeSet& other)
   {
     numMemNodes = other.numMemNodes;
@@ -192,7 +192,6 @@ struct MemNodeSet {
   unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
   double sumFlow;
 };
-
 
 } // namespace infomap
 

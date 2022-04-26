@@ -24,7 +24,6 @@
 
 **********************************************************************************/
 
-
 #ifndef NETWORK_H_
 #define NETWORK_H_
 
@@ -108,7 +107,6 @@ public:
    * @param filename input filename for metadata
    */
   virtual void readMetaData(std::string filename);
-
 
   unsigned int numMetaDataColumns() const { return m_numMetaDataColumns; }
   const std::map<unsigned int, std::vector<int>>& metaData() const { return m_metaData; }
@@ -202,7 +200,6 @@ protected:
   std::string parseBipartiteLinks(std::ifstream& file, std::string heading);
 
   std::string ignoreSection(std::ifstream& file, std::string heading);
-
 
   void parseStateNode(const std::string& line, StateNetwork::StateNode& stateNode);
 
@@ -324,7 +321,6 @@ public:
   value_t sumValue() const { return m_sumValue; }
   map_t& data() { return m_data; }
   const map_t& data() const { return m_data; }
-
 
 private:
   map_t m_data;

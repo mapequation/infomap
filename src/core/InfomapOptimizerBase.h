@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 
 #ifndef INFOMAP_OPTIMIZER_BASE_H_

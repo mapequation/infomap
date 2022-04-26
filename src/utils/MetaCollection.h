@@ -16,10 +16,10 @@ struct FlowCount {
   FlowCount() = default;
 
   explicit FlowCount(double flow)
-      : flow(flow), count(1) {}
+      : flow(flow), count(1) { }
 
   FlowCount(const FlowCount& other)
-      : flow(other.flow), count(other.count) {}
+      : flow(other.flow), count(other.count) { }
 
   FlowCount& operator=(const FlowCount& other)
   {

@@ -12,11 +12,11 @@ namespace infomap {
 
 struct EdgeData {
 public:
-  EdgeData() : weight(0.0), flow(0.0) {}
+  EdgeData() : weight(0.0), flow(0.0) { }
 
-  EdgeData(double weight) : weight(weight), flow(weight) {}
+  EdgeData(double weight) : weight(weight), flow(weight) { }
 
-  EdgeData(double weight, double flow) : weight(weight), flow(flow) {}
+  EdgeData(double weight, double flow) : weight(weight), flow(flow) { }
 
   double weight;
   double flow;
@@ -28,12 +28,12 @@ public:
   Edge(node_type& source, node_type& target, double weight, double flow)
       : source(source),
         target(target),
-        data(weight, flow) {}
+        data(weight, flow) { }
 
   Edge(Edge const& edge)
       : source(edge.source),
         target(edge.target),
-        data(edge.data) {}
+        data(edge.data) { }
 
   node_type& other(node_type& node)
   {
@@ -57,6 +57,5 @@ public:
 };
 
 } // namespace infomap
-
 
 #endif /* MODULES_CLUSTERING_CLUSTERING_INFOEDGE_H_ */

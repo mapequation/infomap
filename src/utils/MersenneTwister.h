@@ -67,8 +67,7 @@ protected:
   uint32* pNext; // next value to get from state
   int left; // number of values left before reload needed
 
-
-  //Methods
+  // Methods
 public:
   MTRand(const uint32& oneSeed); // initialize with a simple uint32
   MTRand(uint32* const bigSeed); // initialize with an array of N uint32's
@@ -114,7 +113,6 @@ protected:
   }
   static uint32 hash(time_t t, clock_t c);
 };
-
 
 inline MTRand::MTRand(const uint32& oneSeed)
 {
@@ -174,7 +172,6 @@ inline MTRand::uint32 MTRand::randInt()
   return (s1 ^ (s1 >> 18));
 }
 
-
 inline MTRand::uint32 MTRand::randInt(const uint32& n)
 {
   // Find which bits are used in n
@@ -191,7 +188,6 @@ inline MTRand::uint32 MTRand::randInt(const uint32& n)
   return i;
 }
 
-
 inline void MTRand::seed(uint32 oneSeed)
 {
   // Seed the generator with a simple uint32
@@ -205,7 +201,6 @@ inline void MTRand::seed(uint32 oneSeed)
   } // hard to read, but fast
   reload();
 }
-
 
 inline void MTRand::seed(uint32* const bigSeed)
 {
@@ -222,7 +217,6 @@ inline void MTRand::seed(uint32* const bigSeed)
   }
   reload();
 }
-
 
 inline void MTRand::seed()
 {
@@ -253,7 +247,6 @@ inline void MTRand::seed()
   seed(hash(time(NULL), clock()));
 }
 
-
 inline void MTRand::reload()
 {
   // Generate N new values in state
@@ -268,7 +261,6 @@ inline void MTRand::reload()
 
   left = N, pNext = state;
 }
-
 
 inline MTRand::uint32 MTRand::hash(time_t t, clock_t c)
 {
@@ -293,7 +285,6 @@ inline MTRand::uint32 MTRand::hash(time_t t, clock_t c)
   return (h1 + differ++) ^ h2;
 }
 
-
 inline void MTRand::save(uint32* saveArray) const
 {
   uint32* sa = saveArray;
@@ -303,7 +294,6 @@ inline void MTRand::save(uint32* saveArray) const
   }
   *sa = left;
 }
-
 
 inline void MTRand::load(uint32* const loadArray)
 {
@@ -316,7 +306,6 @@ inline void MTRand::load(uint32* const loadArray)
   pNext = &state[N - left];
 }
 
-
 inline std::ostream& operator<<(std::ostream& os, const MTRand& mtrand)
 {
   const MTRand::uint32* s = mtrand.state;
@@ -325,7 +314,6 @@ inline std::ostream& operator<<(std::ostream& os, const MTRand& mtrand)
   }
   return os << mtrand.left;
 }
-
 
 inline std::istream& operator>>(std::istream& is, MTRand& mtrand)
 {
@@ -338,7 +326,7 @@ inline std::istream& operator>>(std::istream& is, MTRand& mtrand)
   return is;
 }
 
-#endif //MERSENNETWISTER_H
+#endif // MERSENNETWISTER_H
 
 // Change log:
 //

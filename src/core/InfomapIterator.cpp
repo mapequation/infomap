@@ -141,7 +141,7 @@ InfomapIterator& InfomapIteratorPhysical::operator++()
           physNode.parent = m_current->parent;
         } else {
           // Not inserted, add flow to existing physical node
-          //TODO: If exitFlow should be correct, flow between memory nodes within same physical node should be subtracted.
+          // TODO: If exitFlow should be correct, flow between memory nodes within same physical node should be subtracted.
           physNode.data += m_current->data;
         }
         physNode.stateNodes.push_back(m_current->stateId);
@@ -195,7 +195,6 @@ InfomapIterator& InfomapLeafIteratorPhysical::operator++()
   }
   return *this;
 }
-
 
 // -------------------------------------
 // InfomapParentIterator

@@ -24,7 +24,6 @@
 
 **********************************************************************************/
 
-
 #include "FlowCalculator.h"
 #include "../utils/Log.h"
 #include "../core/StateNetwork.h"
@@ -403,11 +402,11 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     s_in[link.target] += link.flow;
   }
 
-  double min_u_out = 	std::numeric_limits<double>::max();
-  double min_u_in = 	std::numeric_limits<double>::max();
+  double min_u_out = std::numeric_limits<double>::max();
+  double min_u_in = std::numeric_limits<double>::max();
   for (unsigned int i = 0; i < N; ++i) {
     if (k_out[i] > 0) {
-      min_u_out =  std::min(min_u_out, s_out[i] / k_out[i]);
+      min_u_out = std::min(min_u_out, s_out[i] / k_out[i]);
     }
     if (k_in[i] > 0) {
       min_u_in = std::min(min_u_in, s_in[i] / k_in[i]);
@@ -515,7 +514,6 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     //   Log() << "=> Sum 2: " << tmp2 << "\n";
     // }
 
-
     // Flow from links
     for (const auto& link : flowLinks) {
       double beta = 1 - alpha[link.source] * (config.noSelfLinks ? 1 - nodeTeleportWeights[link.source] : 1);
@@ -585,7 +583,6 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     nodeTeleportFlow[i] = nodeFlow[i] * alpha[i];
   }
 
-
   // Log() << "\nSum node flow: " << tmpN << ", sum link flow: " << tmpE << "\n\n";
   // Log() << "Node flow (sum: " << tmpN << "):\n";
   // for (unsigned int i = 0; i < N; ++i)
@@ -617,8 +614,7 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
     }
   }
 
-
-  double min_u = 	std::numeric_limits<double>::max();
+  double min_u = std::numeric_limits<double>::max();
   for (unsigned int i = 0; i < N; ++i) {
     if (k[i] > 0) {
       min_u = std::min(min_u, s[i] / k[i]);
@@ -957,7 +953,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
       // Remove self-teleportation flow
       node.enterFlow -= node.teleFlow * node.weight;
       node.exitFlow -= node.teleFlow * node.weight;
-      
+
       // Remove self-link flow
       unsigned int norm = config.isUndirectedFlow() ? 2 : 1;
       auto& outLinks = network.m_nodeLinkMap[node.id];
@@ -979,7 +975,6 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     // Log() << "\nNode " << node.id << " (idx: " << nodeIndex << "): flow: " << node.flow << ", weight: " << node.weight << ", teleFlow: " << node.teleFlow << " (=> alpha: " << (node.teleFlow / node.flow) << ", adj: " << (node.teleFlow / node.flow * (1 - node.weight)) << ")"; //, enter + exit: " << (node.enterFlow + node.exitFlow) << ", ratio: " << (node.enterFlow + node.exitFlow) / node.flow;
   }
   // Log() << "\n";
-
 
   // Enter/exit flow
 
@@ -1019,7 +1014,6 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   }
 
   Log() << "\n  => Sum node flow: " << sumNodeFlow << ", sum link flow: " << sumLinkFlow << "\n";
-
 
   // Log() << "sumLinkWeight: " << sumLinkWeight << "\n";
   // Log() << "Node flow:\n";

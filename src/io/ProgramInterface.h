@@ -24,7 +24,6 @@
 
 **********************************************************************************/
 
-
 #ifndef PROGRAMINTERFACE_H_
 #define PROGRAMINTERFACE_H_
 
@@ -60,7 +59,7 @@ struct Option {
         isAdvanced(isAdvanced),
         requireArgument(requireArgument),
         incrementalArgument(false),
-        argumentName(std::move(argName)) {}
+        argumentName(std::move(argName)) { }
 
   virtual ~Option() = default;
 
@@ -141,7 +140,7 @@ struct IncrementalOption : Option {
 template <typename T>
 struct ArgumentOption : Option {
   ArgumentOption(T& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced, std::string argName)
-      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, true, std::move(argName)), target(target) {}
+      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, true, std::move(argName)), target(target) { }
 
   bool parse(std::string const& value) override
   {
@@ -159,7 +158,7 @@ struct ArgumentOption : Option {
 template <>
 struct ArgumentOption<bool> : Option {
   ArgumentOption(bool& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced)
-      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, false), target(target) {}
+      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, false), target(target) { }
 
   bool parse(std::string const& value) override
   {
@@ -191,7 +190,7 @@ struct ParsedOption {
         incrementalArgument(opt.incrementalArgument),
         argumentName(opt.argumentName),
         negated(opt.negated),
-        value(opt.printValue()) {}
+        value(opt.printValue()) { }
 
   friend std::ostream& operator<<(std::ostream& out, const ParsedOption& option)
   {
@@ -217,7 +216,7 @@ struct ParsedOption {
 
 struct TargetBase {
   TargetBase(std::string variableName, std::string desc, std::string group, bool isAdvanced)
-      : variableName(variableName), description(desc), group(group), isOptionalVector(false), isAdvanced(isAdvanced) {}
+      : variableName(variableName), description(desc), group(group), isOptionalVector(false), isAdvanced(isAdvanced) { }
 
   virtual ~TargetBase() = default;
 
@@ -233,7 +232,7 @@ struct TargetBase {
 template <typename T>
 struct Target : TargetBase {
   Target(T& target, std::string variableName, std::string desc, std::string group, bool isAdvanced)
-      : TargetBase(std::move(variableName), std::move(desc), std::move(group), isAdvanced), target(target) {}
+      : TargetBase(std::move(variableName), std::move(desc), std::move(group), isAdvanced), target(target) { }
 
   bool parse(std::string const& value) override
   {

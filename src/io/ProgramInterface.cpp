@@ -24,7 +24,6 @@
 
 **********************************************************************************/
 
-
 #include "ProgramInterface.h"
 #include <iostream>
 #include <cstdlib>
@@ -100,8 +99,10 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
   for (unsigned int i = 0; i < m_optionArguments.size(); ++i) {
     auto& opt = *m_optionArguments[i];
     bool haveShort = opt.shortName != '\0';
-    std::string optArgShort = opt.requireArgument ? (io::Str() << "<" << ArgType::toShort.at(opt.argumentName) << ">") : opt.incrementalArgument ? "[+]" : std::string(3, ' ');
-    std::string optArgLong = opt.requireArgument ? (io::Str() << "<" << opt.argumentName << ">") : opt.incrementalArgument ? "[+]" : std::string(3, ' ');
+    std::string optArgShort = opt.requireArgument ? (io::Str() << "<" << ArgType::toShort.at(opt.argumentName) << ">") : opt.incrementalArgument ? "[+]"
+                                                                                                                                                 : std::string(3, ' ');
+    std::string optArgLong = opt.requireArgument ? (io::Str() << "<" << opt.argumentName << ">") : opt.incrementalArgument ? "[+]"
+                                                                                                                           : std::string(3, ' ');
     std::string shortOption = haveShort ? (io::Str() << "  -" << opt.shortName << optArgShort) : std::string(7, ' ');
     optionStrings[i] = io::Str() << shortOption << " --" << opt.longName << " " << optArgLong;
     if (optionStrings[i].length() > maxLength)
@@ -231,7 +232,6 @@ std::string ProgramInterface::toJson(const Option& opt)
                    << " }";
 }
 
-
 void ProgramInterface::parseArgs(const std::string& args)
 {
   // Map the options on short and long name, and check for duplication
@@ -262,7 +262,7 @@ void ProgramInterface::parseArgs(const std::string& args)
   std::deque<std::string> nonOpts;
   try {
     for (unsigned int i = 0; i < flags.size(); ++i) {
-      //bool negate = m_negateNextOption;
+      // bool negate = m_negateNextOption;
       m_negateNextOption = false;
       bool flagValue = true;
       unsigned int numArgsLeft = flags.size() - i - 1;
@@ -306,7 +306,7 @@ void ProgramInterface::parseArgs(const std::string& args)
         } else {
           // Short option(s)
           for (unsigned int j = 1; j < arg.length(); ++j) {
-            //negate = m_negateNextOption;
+            // negate = m_negateNextOption;
             m_negateNextOption = false;
             char o = arg[j];
             unsigned int numCharsLeft = arg.length() - j - 1;

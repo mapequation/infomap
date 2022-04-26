@@ -32,7 +32,7 @@ void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, 
 void ClusterMap::readTree(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId)
 {
   bool isMultilayer = layerNodeToStateId != nullptr;
-  
+
   SafeInFile input(filename);
   std::string line;
   std::istringstream lineStream;
@@ -109,11 +109,11 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
     if (isMultilayer && !multilayerNodeFound) {
       continue;
     }
-  
+
     pathStream.clear();
     pathStream.str(pathString);
     unsigned int childNumber;
-    
+
     Path path;
     while (pathStream >> childNumber) {
       pathStream.get(); // Extract the delimiting character also
@@ -123,9 +123,9 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
     }
 
     m_nodePaths.emplace_back(stateId, path);
-    
+
     if (includeFlow)
-        m_flowData[stateId] = flow;
+      m_flowData[stateId] = flow;
   }
 }
 
@@ -184,7 +184,7 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
     if (isMultilayer && !multilayerNodeFound) {
       continue;
     }
-    
+
     m_clusterIds[stateId] = moduleId;
   }
 }

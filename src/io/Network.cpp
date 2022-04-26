@@ -24,7 +24,6 @@
 
 **********************************************************************************/
 
-
 #include "Network.h"
 
 #include <cmath>
@@ -237,7 +236,6 @@ void Network::postProcessInputData()
     }
   }
 }
-
 
 void Network::readMetaData(std::string filename)
 {
@@ -609,7 +607,6 @@ void Network::addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned i
   addLink(stateId1, stateId2, weight);
 }
 
-
 void Network::generateStateNetworkFromMultilayer()
 {
   // As inter-layer links is directed to neighbouring nodes in target layer,
@@ -786,7 +783,6 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 
         double sumOutLinkWeightLayer1 = m_networks[layer1].outWeights()[nodeId];
 
-
         for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2) {
           auto& layer2LinkMap = m_networks[layer2].nodeLinkMap();
           auto& layer2OutLinks = layer2LinkMap[StateNode(nodeId)];
@@ -870,7 +866,6 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 
     return;
   }
-
 
   for (auto& it1 : m_networks) {
     auto layer1 = it1.first;
@@ -1017,7 +1012,6 @@ void Network::simulateInterLayerLinks()
 {
 }
 
-
 void Network::addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsigned int n2, double weight)
 {
   m_higherOrderInputMethodCalled = true;
@@ -1027,7 +1021,6 @@ void Network::addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsign
     m_maxNodeIdInIntraLayerNetworks = std::max(m_maxNodeIdInIntraLayerNetworks, std::max(n1, n2));
   }
 }
-
 
 void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight)
 {
@@ -1045,7 +1038,6 @@ void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsign
     ++m_numInterLayerLinks;
   }
   interLinks[layer2] += interWeight;
-
 
   // unsigned int stateId1 = addMultilayerNode(layer1, n);
   // unsigned int stateId2 = addMultilayerNode(layer2, n);
@@ -1105,7 +1097,6 @@ unsigned int Network::addMultilayerNode(unsigned int layerId, unsigned int physi
   return stateNode.id;
 }
 
-
 void Network::addMetaData(unsigned int nodeId, int meta)
 {
   std::vector<int> metaData(1, meta);
@@ -1162,7 +1153,6 @@ void Network::addMetaData(unsigned int nodeId, const std::vector<int>& metaData)
 
 // 	return true;
 // }
-
 
 // bool Network::insertLink(unsigned int n1, unsigned int n2, double weight)
 // {
@@ -1397,7 +1387,6 @@ void Network::addMetaData(unsigned int nodeId, const std::vector<int>& metaData)
 // 	o << ".";
 // 	return o.str();
 // }
-
 
 // void Network::printNetworkAsPajek(std::string filename) const
 // {

@@ -27,7 +27,7 @@ public:
   InfomapCore() : InfomapBase() { initOptimizer(); }
   InfomapCore(const std::string flags) : InfomapBase(flags) { initOptimizer(); }
   InfomapCore(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
-  virtual ~InfomapCore() {}
+  virtual ~InfomapCore() { }
 
   // ===================================================
   // IO
@@ -173,7 +173,6 @@ protected:
 
   OptimizerPtr m_optimizer;
 };
-
 
 } /* namespace infomap */
 

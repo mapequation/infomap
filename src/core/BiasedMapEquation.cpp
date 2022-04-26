@@ -19,7 +19,8 @@ namespace infomap {
 double BiasedMapEquation::s_totalDegree = 1;
 unsigned int BiasedMapEquation::s_numNodes = 0;
 
-void BiasedMapEquation::setNetworkProperties(const StateNetwork& network) {
+void BiasedMapEquation::setNetworkProperties(const StateNetwork& network)
+{
   s_totalDegree = network.sumWeightedDegree();
   // Negative entropy bias is based on discrete counts, if average weight is below 1, use unweighted total degree
   if (s_totalDegree < network.sumDegree()) {
@@ -70,7 +71,6 @@ std::ostream& operator<<(std::ostream& out, const BiasedMapEquation& mapEq)
   return mapEq.print(out);
 }
 
-
 // ===================================================
 // Init
 // ===================================================
@@ -82,7 +82,6 @@ void BiasedMapEquation::init(const Config& config)
   useEntropyBiasCorrection = config.entropyBiasCorrection;
   entropyBiasCorrectionMultiplier = config.entropyBiasCorrectionMultiplier;
 }
-
 
 void BiasedMapEquation::initNetwork(InfoNode& root)
 {
@@ -104,7 +103,6 @@ void BiasedMapEquation::initPartition(std::vector<InfoNode*>& nodes)
 {
   calculateCodelength(nodes);
 }
-
 
 // ===================================================
 // Codelength
@@ -158,7 +156,7 @@ double BiasedMapEquation::calcCodelengthOnModuleOfModules(const InfoNode& parent
   double L = MapEquation::calcCodelengthOnModuleOfModules(parent);
   if (!useEntropyBiasCorrection)
     return L;
-  
+
   return L + correctionCoefficient() * (1 + parent.childDegree()) / s_totalDegree;
 }
 
@@ -167,7 +165,7 @@ double BiasedMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& pare
   double L = MapEquation::calcCodelength(parent);
   if (!useEntropyBiasCorrection)
     return L;
-  
+
   return L + correctionCoefficient() * (1 + parent.childDegree()) / s_totalDegree;
 }
 
@@ -208,7 +206,6 @@ double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
   return deltaL + deltaBiasedCost + deltaEntropyBiasCorrection;
 }
 
-
 // ===================================================
 // Consolidation
 // ===================================================
@@ -242,7 +239,6 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
   moduleEntropyBiasCorrection = calcModuleEntropyBiasCorrection(currentNumModules);
 }
 
-
 void BiasedMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 {
   unsigned int numModules = 0;
@@ -254,7 +250,6 @@ void BiasedMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
   currentNumModules = numModules;
 }
 
-
 // ===================================================
 // Debug
 // ===================================================
@@ -264,6 +259,5 @@ void BiasedMapEquation::printDebug()
   std::cout << "BiasedMapEquation\n";
   Base::printDebug();
 }
-
 
 } // namespace infomap
