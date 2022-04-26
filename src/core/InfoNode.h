@@ -62,7 +62,6 @@ public:
 public:
   FlowData data;
   unsigned int index = 0; // Temporary index used in finding best module
-  //	unsigned int originalIndex = 0; // Index in the original network (for leaf nodes)
   /*const*/ unsigned int stateId = 0; // Unique state node id for the leaf nodes
   /*const*/ unsigned int physicalId = 0; // Physical id equals stateId for first order networks, otherwise can be non-unique
   /*const*/ unsigned int layerId = 0; // Layer id for multilayer networks
@@ -84,8 +83,6 @@ public:
   std::vector<unsigned int> stateNodes; // For physically aggregated nodes
 
 protected:
-  //	SubStructure m_subStructure;
-  // std::unique_ptr<InfomapBase> m_infomap;
   unsigned int m_childDegree = 0;
   bool m_childrenChanged = false;
   unsigned int m_numLeafMembers = 0;
@@ -93,7 +90,6 @@ protected:
   std::vector<EdgeType*> m_outEdges;
   std::vector<EdgeType*> m_inEdges;
 
-  // std::unique_ptr<InfomapBase> m_infomap;
   InfomapBase* m_infomap = nullptr;
 
 public:
@@ -253,12 +249,6 @@ public:
     return const_infomap_child_iterator_wrapper(const_infomap_child_iterator(this), const_infomap_child_iterator(nullptr));
   }
 
-  // InfomapLeafIterator begin_leaf()
-  // { return InfomapLeafIterator(this); }
-
-  // InfomapLeafIterator end_leaf()
-  // { return InfomapLeafIterator(nullptr); }
-
   post_depth_first_iterator begin_post_depth_first()
   {
     return post_depth_first_iterator(this);
@@ -326,12 +316,6 @@ public:
     return m_inEdges.end();
   }
 
-  //	inout_edge_iterator begin_inoutEdge()
-  //	{ return inout_edge_iterator(begin_inEdge(), end_inEdge(), begin_outEdge()); }
-  //
-  //	inout_edge_iterator	end_inoutEdge()
-  //	{ return inout_edge_iterator(end_outEdge()); }
-
   edge_iterator_wrapper outEdges()
   {
     return edge_iterator_wrapper(m_outEdges);
@@ -378,18 +362,6 @@ public:
   {
     return outDegree() + inDegree();
   }
-
-  //	InfomapBase* getSubInfomap()
-  //	{ return m_subStructure.subInfomap.get(); }
-  //
-  //	const InfomapBase* getSubInfomap() const
-  //	{ return m_subStructure.subInfomap.get(); }
-  //
-  //	SubStructure& getSubStructure()
-  //	{ return m_subStructure; }
-  //
-  //	const SubStructure& getSubStructure() const
-  //	{ return m_subStructure; }
 
   // ---------------------------- Order ----------------------------
   bool isFirst() const
@@ -477,9 +449,6 @@ public:
   unsigned int replaceWithChildren();
 
   void replaceWithChildrenDebug();
-
-  // void storeModulesIn(InfoNode& other);
-  // void restoreModulesTo(InfoNode& other);
 
   /**
    * @return The number of children removed
