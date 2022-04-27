@@ -27,22 +27,15 @@
 #ifndef CONVERT_H_
 #define CONVERT_H_
 
+#include "../utils/exceptions.h"
 #include <iomanip>
 #include <sstream>
 #include <string>
-#include "../utils/exceptions.h"
 #include <locale> // std::locale, std::tolower
 #include <iostream>
 #include <vector>
 
 namespace infomap {
-
-// template<class T>
-// auto operator<<(std::ostream& os, const T& t) -> decltype(t.print(os), os)
-// {
-//     t.print(os);
-//     return os;
-// }
 
 template <typename T>
 struct TypeInfo {

@@ -27,6 +27,9 @@
 #ifndef PROGRAMINTERFACE_H_
 #define PROGRAMINTERFACE_H_
 
+#include "convert.h"
+#include "../utils/exceptions.h"
+
 #include <utility>
 #include <vector>
 #include <deque>
@@ -34,8 +37,6 @@
 #include <sstream>
 #include <iostream>
 #include <unordered_map>
-#include "convert.h"
-#include "../utils/exceptions.h"
 
 namespace infomap {
 

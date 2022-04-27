@@ -25,12 +25,13 @@
 **********************************************************************************/
 
 #include "ProgramInterface.h"
+#include "convert.h"
+#include "../utils/Log.h"
+
 #include <iostream>
 #include <cstdlib>
 #include <map>
 #include <utility>
-#include "convert.h"
-#include "../utils/Log.h"
 
 namespace infomap {
 
@@ -262,7 +263,6 @@ void ProgramInterface::parseArgs(const std::string& args)
   std::deque<std::string> nonOpts;
   try {
     for (unsigned int i = 0; i < flags.size(); ++i) {
-      // bool negate = m_negateNextOption;
       m_negateNextOption = false;
       bool flagValue = true;
       unsigned int numArgsLeft = flags.size() - i - 1;
@@ -306,7 +306,6 @@ void ProgramInterface::parseArgs(const std::string& args)
         } else {
           // Short option(s)
           for (unsigned int j = 1; j < arg.length(); ++j) {
-            // negate = m_negateNextOption;
             m_negateNextOption = false;
             char o = arg[j];
             unsigned int numCharsLeft = arg.length() - j - 1;
