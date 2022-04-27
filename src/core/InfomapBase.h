@@ -11,7 +11,7 @@
 #include "InfomapConfig.h"
 #include "InfoEdge.h"
 #include "InfoNode.h"
-#include "InfomapIterator.h"
+#include "iterators/InfomapIterator.h"
 #include "ClusterMap.h"
 #include "../io/Network.h"
 #include "../utils/Log.h"

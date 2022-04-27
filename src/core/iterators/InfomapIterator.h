@@ -9,7 +9,7 @@
 #include <deque>
 #include <map>
 #include <cmath>
-#include "InfoNode.h"
+#include "../InfoNode.h"
 
 namespace infomap {
 

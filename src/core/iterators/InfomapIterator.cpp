@@ -1,7 +1,7 @@
 #include "InfomapIterator.h"
-#include "InfoNode.h"
+#include "../InfoNode.h"
 #include <utility> // std::pair
-#include "../utils/Log.h"
+#include "../../utils/Log.h"
 
 namespace infomap {
 

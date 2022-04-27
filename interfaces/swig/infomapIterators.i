@@ -2,7 +2,7 @@
 
 %{
 /* Includes the header in the wrapper code */
-#include "src/core/infomapIterators.h"
+#include "src/core/iterators/infomapIterators.h"
 %}
 
 %include "treeIterators.i"

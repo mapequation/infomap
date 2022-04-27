@@ -10,9 +10,9 @@
 
 #include "FlowData.h"
 #include "InfoEdge.h"
-#include "infomapIterators.h"
-#include "treeIterators.h"
-#include "../utils/iterators.h"
+#include "iterators/infomapIterators.h"
+#include "iterators/treeIterators.h"
+#include "iterators/iterators.h"
 #include "../utils/exceptions.h"
 #include "../utils/MetaCollection.h"
 #include <memory>

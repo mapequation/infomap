@@ -2,7 +2,7 @@
 
 %{
 /* Includes the header in the wrapper code */
-#include "src/core/InfomapIterator.h"
+#include "src/core/iterators/InfomapIterator.h"
 %}
 
 %include "std_deque.i"
@@ -14,7 +14,7 @@ namespace std {
 %include "InfoNode.i"
 
 /* Parse the header file to generate wrappers */
-%include "src/core/InfomapIterator.h"
+%include "src/core/iterators/InfomapIterator.h"
 
 
 #ifdef SWIGPYTHON
