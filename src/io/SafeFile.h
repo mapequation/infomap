@@ -31,7 +31,7 @@
 #include <fstream>
 #include <ios>
 #include <cstdio>
-#include "convert.h"
+#include "../utils/convert.h"
 #include "../utils/exceptions.h"
 
 namespace infomap {

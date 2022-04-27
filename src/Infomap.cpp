@@ -27,7 +27,7 @@
 #include <iostream>
 #include "utils/Log.h"
 #include "io/Config.h"
-#include "io/convert.h"
+#include "utils/convert.h"
 #include <string>
 #include "Infomap.h"
 #include "utils/exceptions.h"
@@ -37,7 +37,6 @@
 #endif
 
 namespace infomap {
-
 
 std::map<unsigned int, unsigned int> InfomapWrapper::getModules(int level, bool states)
 {

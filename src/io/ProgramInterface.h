@@ -27,7 +27,7 @@
 #ifndef PROGRAMINTERFACE_H_
 #define PROGRAMINTERFACE_H_
 
-#include "convert.h"
+#include "../utils/convert.h"
 #include "../utils/exceptions.h"
 
 #include <utility>

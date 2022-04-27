@@ -25,7 +25,7 @@
 **********************************************************************************/
 
 #include "FileURI.h"
-#include "../io/convert.h"
+#include "convert.h"
 #include <stdexcept>
 #include <utility>
 

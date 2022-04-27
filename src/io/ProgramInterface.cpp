@@ -25,7 +25,7 @@
 **********************************************************************************/
 
 #include "ProgramInterface.h"
-#include "convert.h"
+#include "../utils/convert.h"
 #include "../utils/Log.h"
 
 #include <iostream>

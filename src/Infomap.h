@@ -49,7 +49,6 @@ public:
   void addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsigned int n2, double weight) { m_network.addMultilayerIntraLink(layer, n1, n2, weight); }
   void addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight) { m_network.addMultilayerInterLink(layer1, n, layer2, interWeight); }
 
-
   void setBipartiteStartId(unsigned int startId) { m_network.setBipartiteStartId(startId); }
 
   std::map<std::pair<unsigned int, unsigned int>, double> getLinks(bool flow);
@@ -69,7 +68,6 @@ extern "C" {
 struct Infomap;
 struct InfomapLeafIterator;
 #endif // __cplusplus
-
 
 #ifndef SWIG
 
@@ -106,6 +104,5 @@ double Flow(struct InfomapLeafIterator* it);
 } // extern "C"
 } /* namespace infomap */
 #endif
-
 
 #endif /* INFOMAP_H_ */

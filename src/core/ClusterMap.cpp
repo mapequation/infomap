@@ -1,7 +1,7 @@
 #include <sstream>
 #include "ClusterMap.h"
 #include "../io/SafeFile.h"
-#include "../io/convert.h"
+#include "../utils/convert.h"
 #include "../utils/Log.h"
 #include "../utils/FileURI.h"
 

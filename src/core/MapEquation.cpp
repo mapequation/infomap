@@ -6,7 +6,7 @@
  */
 #include "MapEquation.h"
 #include "../utils/infomath.h"
-#include "../io/convert.h"
+#include "../utils/convert.h"
 #include "../io/Config.h"
 #include "../utils/Log.h"
 #include "../utils/VectorMap.h"
