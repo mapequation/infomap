@@ -10,8 +10,6 @@
 #ifndef INFOMAP_H_
 #define INFOMAP_H_
 
-#ifdef __cplusplus
-
 #include "core/InfomapCore.h"
 #include "io/Config.h"
 
@@ -40,7 +38,13 @@ public:
   void addNode(unsigned int id, std::string name, double weight) { m_network.addNode(id, name, weight); }
 
   void addName(unsigned int id, std::string name) { m_network.addName(id, name); }
-  std::string getName(unsigned int id) const;
+  std::string getName(unsigned int id) const
+  {
+    auto& names = m_network.names();
+    auto it = names.find(id);
+    return it != names.end() ? it->second : "";
+  }
+
   const std::map<unsigned int, std::string>& getNames() const { return m_network.names(); }
 
   void addPhysicalNode(unsigned int id, std::string name = "") { m_network.addPhysicalNode(id, name); }
@@ -54,58 +58,75 @@ public:
 
   void setBipartiteStartId(unsigned int startId) { m_network.setBipartiteStartId(startId); }
 
-  std::map<std::pair<unsigned int, unsigned int>, double> getLinks(bool flow);
+  std::map<std::pair<unsigned int, unsigned int>, double> getLinks(bool flow)
+  {
+    std::map<std::pair<unsigned int, unsigned int>, double> links;
 
-  std::map<unsigned int, unsigned int> getModules(int level = 1, bool states = false);
-  std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false);
+    for (const auto& node : m_network.nodeLinkMap()) {
+      const auto sourceId = node.first.id;
+
+      for (const auto& link : node.second) {
+        const auto targetId = link.first.id;
+        links[{ sourceId, targetId }] = flow ? link.second.flow : link.second.weight;
+      }
+    }
+
+    return links;
+  }
+
+  std::map<unsigned int, unsigned int> getModules(int level = 1, bool states = false)
+  {
+    std::map<unsigned int, unsigned int> modules;
+    if (haveMemory() && !states) {
+      for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
+        auto& node = *it;
+        if (node.isLeaf()) {
+          modules[node.physicalId] = it.moduleId();
+        }
+      }
+    } else {
+      for (auto it(iterTree(level)); !it.isEnd(); ++it) {
+        auto& node = *it;
+        if (node.isLeaf()) {
+          modules[states ? node.stateId : node.physicalId] = it.moduleId();
+        }
+      }
+    }
+    return modules;
+  }
+
+  std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false)
+  {
+    unsigned int maxDepth = maxTreeDepth();
+    unsigned int numModuleLevels = maxDepth - 1;
+    std::map<unsigned int, std::vector<unsigned int>> modules;
+    for (unsigned int level = 1; level <= numModuleLevels; ++level) {
+      if (haveMemory() && !states) {
+        for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
+          auto& node = *it;
+          if (node.isLeaf()) {
+            modules[node.physicalId].push_back(it.moduleId());
+          }
+        }
+      } else {
+        for (auto it(iterTree(level)); !it.isEnd(); ++it) {
+          auto& node = *it;
+          if (node.isLeaf()) {
+            auto nodeId = states ? node.stateId : node.physicalId;
+            modules[nodeId].push_back(it.moduleId());
+          }
+        }
+      }
+    }
+    return modules;
+  }
+
   using InfomapCore::codelength;
   using InfomapCore::iterLeafNodes;
   using InfomapCore::iterTree;
   using InfomapCore::run;
 };
 
-extern "C" {
-#else
-#include <stdint.h>
-#include <stdbool.h>
-struct Infomap;
-struct InfomapLeafIterator;
-#endif // __cplusplus
-
-#ifndef SWIG
-
-struct InfomapWrapper* NewInfomap(const char* flags);
-
-void DestroyInfomap(struct InfomapWrapper* im);
-
-void InfomapAddLink(struct InfomapWrapper* im, unsigned int sourceId, unsigned int targetId, double weight);
-
-void InfomapRun(struct InfomapWrapper* im);
-
-double Codelength(struct InfomapWrapper* im);
-
-unsigned int NumModules(struct InfomapWrapper* im);
-
-struct InfomapLeafIterator* NewIter(struct InfomapWrapper* im);
-
-void DestroyIter(struct InfomapLeafIterator* it);
-
-bool IsEnd(struct InfomapLeafIterator* it);
-
-void Next(struct InfomapLeafIterator* it);
-
-unsigned int Depth(struct InfomapLeafIterator* it);
-
-unsigned int NodeId(struct InfomapLeafIterator* it);
-
-unsigned int ModuleIndex(struct InfomapLeafIterator* it);
-
-double Flow(struct InfomapLeafIterator* it);
-
-#endif // SWIG
-#ifdef __cplusplus
-} // extern "C"
-} /* namespace infomap */
-#endif
+} // namespace infomap
 
 #endif /* INFOMAP_H_ */
