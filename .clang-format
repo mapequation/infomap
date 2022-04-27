@@ -13,7 +13,7 @@ FixNamespaceComments: true
 IncludeBlocks: Preserve
 KeepEmptyLinesAtTheStartOfBlocks: false
 Language: Cpp
-MaxEmptyLinesToKeep: 2
+MaxEmptyLinesToKeep: 1
 PointerAlignment: Left
 DerivePointerAlignment: false
 ReflowComments: true
