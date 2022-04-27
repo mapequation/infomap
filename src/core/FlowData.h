@@ -75,7 +75,6 @@ struct FlowData {
 
   friend std::ostream& operator<<(std::ostream& out, const FlowData& data)
   {
-    // return out << "flow: " << data.flow << ", enter: " << data.enterFlow << ", exit: " << data.exitFlow;
     return out << "flow: " << data.flow << ", enter: " << data.enterFlow << ", exit: " << data.exitFlow << ", teleWeight: " << data.teleportWeight << ", danglingFlow: " << data.danglingFlow << ", teleFlow: " << data.teleportFlow;
   }
 };
