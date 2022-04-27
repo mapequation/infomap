@@ -13,7 +13,6 @@
 #include "../io/Config.h"
 #include "../utils/Log.h"
 #include "../utils/VectorMap.h"
-// #include "InfoNode.h"
 #include "FlowData.h"
 #include <vector>
 #include <map>
@@ -22,12 +21,10 @@
 namespace infomap {
 
 class InfoNode;
-// struct Config;
 
 class MapEquation {
 public:
   using FlowDataType = FlowData;
-  // using DeltaFlowDataType = MemDeltaFlow;
   using DeltaFlowDataType = DeltaFlow;
 
   MapEquation() = default;
