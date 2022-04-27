@@ -197,12 +197,6 @@ double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 
   double deltaEntropyBiasCorrection = calcEntropyBiasCorrection(currentNumModules + deltaNumModules) - getEntropyBiasCorrection();
 
-  // std::cout << "\n!!!!! getDeltaCodelengthOnMovingNode(" << current.stateId << ") from " <<
-  // 	oldModule << " (" << moduleMembers[oldModule] << ") to " <<
-  // 	newModule << " (" << moduleMembers[newModule] << ") -> currentNumModules = " <<
-  // 	currentNumModules << " + " << deltaNumModules << " => cost: " <<
-  // 	biasedCost << " + " << deltaBiasedCost << " = " << (biasedCost + deltaBiasedCost) << "\n";
-
   return deltaL + deltaBiasedCost + deltaEntropyBiasCorrection;
 }
 
@@ -222,16 +216,6 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
     return;
 
   int deltaNumModules = getDeltaNumModulesIfMoving(current, oldModuleDelta.module, newModuleDelta.module, moduleMembers);
-
-  // double deltaBiasedCost = calcNumModuleCost(currentNumModules + deltaNumModules) - biasedCost;
-
-  // std::cout << "\n!!!!! updateCodelengthOnMovingNode(" << current.stateId << ") from " <<
-  // 	oldModule << " (" << moduleMembers[oldModule] << ") to " <<
-  // 	newModule << " (" << moduleMembers[newModule] << ") -> currentNumModules = " <<
-  // 	currentNumModules << " + " << deltaNumModules << " => cost: " <<
-  // 	biasedCost << " + " << deltaBiasedCost << " = " << (biasedCost + deltaBiasedCost) << "\n";
-
-  // biasedCost += deltaBiasedCost;
 
   currentNumModules += deltaNumModules;
   biasedCost = calcNumModuleCost(currentNumModules);
