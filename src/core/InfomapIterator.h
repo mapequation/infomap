@@ -90,8 +90,6 @@ public:
     return m_current;
   }
 
-  // InfoNode& operator*();
-
   bool operator==(const InfomapIterator& other) const
   {
     return m_current == other.m_current;
@@ -397,12 +395,7 @@ public:
  */
 struct InfomapParentIterator {
 protected:
-  // InfoNode* m_root = nullptr;
   InfoNode* m_current = nullptr;
-  // int m_moduleIndexLevel = -1;
-  // unsigned int m_moduleIndex = 0;
-  // std::deque<unsigned int> m_path; // The child index path to current node
-  // unsigned int m_depth = 0;
 
 public:
   InfomapParentIterator() = default;
@@ -450,8 +443,6 @@ public:
   {
     return m_current;
   }
-
-  // InfoNode& operator*();
 
   bool operator==(const InfomapParentIterator& other) const
   {
