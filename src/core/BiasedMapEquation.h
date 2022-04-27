@@ -11,7 +11,6 @@
 #include <utility>
 #include "MapEquation.h"
 #include "FlowData.h"
-// #include "InfoNode.h"
 #include "../utils/Log.h"
 
 namespace infomap {
@@ -59,13 +58,10 @@ public:
   // Getters
   // ===================================================
 
-  // using Base::getIndexCodelength;
   double getIndexCodelength() const;
 
-  // double getModuleCodelength() const { return moduleCodelength + metaCodelength; };
   double getModuleCodelength() const;
 
-  // double getCodelength() const { return codelength + metaCodelength; };
   double getCodelength() const;
 
   double getEntropyBiasCorrection() const;
@@ -74,7 +70,6 @@ public:
   // IO
   // ===================================================
 
-  // using Base::print;
   std::ostream& print(std::ostream& out) const;
   friend std::ostream& operator<<(std::ostream&, const BiasedMapEquation&);
 
@@ -142,10 +137,6 @@ protected:
   // Init
   // ===================================================
 
-  // void initMetaNodes(InfoNode& root);
-
-  // void initPartitionOfMetaNodes(std::vector<InfoNode*>& nodes);
-
   // ===================================================
   // Codelength
   // ===================================================
@@ -166,8 +157,6 @@ protected:
   // Consolidation
   // ===================================================
 
-  // void updateMetaData(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
-
 public:
   // ===================================================
   // Public member variables
@@ -183,13 +172,6 @@ protected:
   // ===================================================
 
   double correctionCoefficient() const { return gamma * entropyBiasCorrectionMultiplier; }
-
-  /**
-   *  Get meta codelength of module of current node
-   * @param addRemoveOrNothing +1, -1 or 0 to calculate codelength
-   * as if current node was added, removed or untouched in current module
-   */
-  // double getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing);
 
   // ===================================================
   // Protected member variables
