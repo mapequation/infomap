@@ -171,7 +171,7 @@ inline double InfomapOptimizer<MetaMapEquation>::getMetaCodelength(bool unweight
 }
 
 template <typename Objective>
-inline double InfomapOptimizer<Objective>::getMetaCodelength(/* [[maybe_unused]] */ bool unweighted) const
+inline double InfomapOptimizer<Objective>::getMetaCodelength(bool /*unweighted*/) const
 {
   return 0.0;
 }

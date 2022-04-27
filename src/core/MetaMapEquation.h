@@ -111,7 +111,7 @@ public:
 
   double calcCodelength(const InfoNode& parent) const;
 
-  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) { }
+  void addMemoryContributions(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, VectorMap<DeltaFlowDataType>& /*moduleDeltaFlow*/) { }
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                         DeltaFlowDataType& oldModuleDelta,

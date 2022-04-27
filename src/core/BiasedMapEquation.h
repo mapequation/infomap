@@ -98,7 +98,7 @@ public:
 
   void init(const Config& config);
 
-  void initTree(InfoNode& root) { }
+  void initTree(InfoNode& /*root*/) { }
 
   void initNetwork(InfoNode& root);
 
@@ -114,7 +114,7 @@ public:
 
   double calcCodelength(const InfoNode& parent) const;
 
-  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) { }
+  void addMemoryContributions(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, VectorMap<DeltaFlowDataType>& /*moduleDeltaFlow*/) { }
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                         DeltaFlowDataType& oldModuleDelta,

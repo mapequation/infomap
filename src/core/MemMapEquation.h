@@ -87,7 +87,7 @@ public:
 
   void init(const Config& config);
 
-  void initTree(InfoNode& root) { }
+  void initTree(InfoNode& /*root*/) { }
 
   void initNetwork(InfoNode& root);
 

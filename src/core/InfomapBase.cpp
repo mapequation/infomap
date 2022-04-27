@@ -2474,7 +2474,7 @@ void InfomapBase::writeNewickTree(std::ostream& outStream, bool states)
   unsigned int lastDepth = 0;
   std::vector<double> flowStack;
 
-  auto writeNewickNode = [&](std::ostream& o, const InfoNode& node, unsigned int depth) {
+  auto writeNewickNode = [&](const InfoNode& node, unsigned int depth) {
     if (depth > lastDepth || isRoot) {
       outStream << "(";
       flowStack.push_back(node.data.flow);
@@ -2502,11 +2502,11 @@ void InfomapBase::writeNewickTree(std::ostream& outStream, bool states)
   // TODO: Make a general iterator where merging physical nodes depend on a parameter rather than type to be able to DRY here
   if (haveMemory() && !states) {
     for (auto it(iterTreePhysical()); !it.isEnd(); ++it) {
-      writeNewickNode(outStream, *it, it.depth());
+      writeNewickNode(*it, it.depth());
     }
   } else {
     for (auto it(iterTree()); !it.isEnd(); ++it) {
-      writeNewickNode(outStream, *it, it.depth());
+      writeNewickNode(*it, it.depth());
     }
   }
   while (flowStack.size() > 1) {

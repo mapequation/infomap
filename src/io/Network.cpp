@@ -267,7 +267,7 @@ void Network::readMetaData(std::string filename)
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
-std::string Network::parseVertices(std::ifstream& file, std::string heading)
+std::string Network::parseVertices(std::ifstream& file, std::string /*heading*/)
 {
   Log() << "  Parsing vertices...\n"
         << std::flush;
@@ -310,7 +310,7 @@ std::string Network::parseVertices(std::ifstream& file, std::string heading)
   return line;
 }
 
-std::string Network::parseStateNodes(std::ifstream& file, /* [[maybe_unused]] */ std::string heading)
+std::string Network::parseStateNodes(std::ifstream& file, std::string /*heading*/)
 {
   m_higherOrderInputMethodCalled = true;
   Log() << "  Parsing state nodes...\n"

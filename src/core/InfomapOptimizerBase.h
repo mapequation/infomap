@@ -58,7 +58,7 @@ public:
 
   virtual double getModuleCodelength() const = 0;
 
-  virtual double getMetaCodelength(bool unweighted = false) const { return 0.0; }
+  virtual double getMetaCodelength(bool /*unweighted*/ = false) const { return 0.0; }
 
 protected:
   virtual unsigned int numActiveModules() const = 0;
