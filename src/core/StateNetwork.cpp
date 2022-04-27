@@ -95,7 +95,6 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
 StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, const std::string& name)
 {
   auto& physNode = addPhysicalNode(physId);
-  // physNode.name = name;
   m_names[physId] = name;
   m_sumNodeWeight += 1.0;
   return physNode;
@@ -105,7 +104,6 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
 {
   auto& physNode = addPhysicalNode(physId);
   physNode.weight = weight;
-  // physNode.name = name;
   m_sumNodeWeight += weight;
   m_names[physId] = name;
   return physNode;
@@ -113,7 +111,6 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
 
 std::pair<std::map<unsigned int, std::string>::iterator, bool> StateNetwork::addName(unsigned int id, std::string name)
 {
-  // m_names[id] = name;
   return m_names.insert(std::make_pair(id, name));
 }
 
@@ -134,10 +131,7 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
     ++m_numSelfLinks;
     m_sumSelfLinkWeight += weight;
   }
-  // const auto& sourceNode = m_nodes.emplace(sourceId, StateNode(sourceId)).first;
-  // const auto& targetNode = m_nodes.emplace(targetId, StateNode(targetId)).first;
-  // m_nodes.emplace(sourceId, StateNode(sourceId));
-  // m_nodes.emplace(targetId, StateNode(targetId));
+
   addNode(sourceId);
   addNode(targetId);
 
@@ -146,75 +140,24 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
 
   bool addedNewLink = true;
 
-  // Log() << "Add link " << sourceId << " -> " << targetId << ", weight: " << weight << "\n";
   // Aggregate link weights if they are defined more than once
   auto& outLinks = m_nodeLinkMap[sourceId];
   if (outLinks.empty()) {
     outLinks[targetId] = weight;
-    // Log() << "  -> new source link!\n";
   } else {
-    // auto& ret = outLinks.emplace(targetNode, weight);
-    // if (!ret.second)
-    // auto& linkData = ret.first;
-    // Log() << " " << outLinks.size() << " outlinks exist: ";
-    // for (auto& it : outLinks) {
-    // 	Log() << "\n  " << it.first.id << ": weight: " << it.second.weight << ", count: " << it.second.count << ".. ";
-    // }
-    // auto& linkData = outLinks[targetId];
     auto ret = outLinks.insert(std::make_pair(StateNode(targetId), LinkData(weight)));
-    // ++linkData.count;
-    // Log() << "\n ++count -> weight: " << linkData.weight << ", count: " << linkData.count << ".. ";
     auto& linkData = ret.first->second;
-    // if (linkData.count != 1) {
     if (!ret.second) {
-      // Log() << "  -> existing weight: " << linkData.weight;
       linkData.weight += weight;
-      // Log() << " -> weight: " << linkData.weight << "\n";
-      // Log() << "    -> count: " << linkData.count << ", weight: " << linkData.weight << "\n";
       ++m_numAggregatedLinks;
       --m_numLinks;
       addedNewLink = false;
     } else {
-      // Log() << "  -> new target link!\n";
       linkData.weight = weight;
     }
   }
   m_outWeights[sourceId] += weight;
-  // printNetwork();
   return addedNewLink;
-  // auto& ret = m_nodeLinkMap.emplace(sourceId, std::make_pair(StateNode(), LinkData()));
-  // if (!ret.second) {
-  // 	ret.first[targetId] = weight;
-  // }
-  // else {
-  // 	auto& ret2 = ret.first.emplace(targetId, weight);
-  // 	if (!ret2.second) {
-  // 		ret2.first += weight;
-  // 		++m_numAggregatedLinks;
-  // 		--m_numLinks;
-  // 		return false;
-  // 	}
-  // }
-  // return true;
-
-  // LinkMap::iterator firstIt = m_links.lower_bound(sourceId);
-  // if (firstIt != m_links.end() && firstIt->first == sourceId) // First linkEnd already exists, check second linkEnd
-  // {
-  // 	std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(targetId, weight));
-  // 	if (!ret2.second)
-  // 	{
-  // 		ret2.first->second += weight;
-  // 		++m_numAggregatedLinks;
-  // 		--m_numLinks;
-  // 		return false;
-  // 	}
-  // }
-  // else
-  // {
-  // 	m_links.insert(firstIt, std::make_pair(sourceId, std::map<unsigned int, double>()))->second.insert(std::make_pair(targetId, weight));
-  // }
-
-  // return true;
 }
 
 bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, unsigned long weight)
@@ -292,11 +235,7 @@ void StateNetwork::calculateFlow()
 
 void StateNetwork::clearLinks()
 {
-  // m_nodes.clear();
   m_nodeLinkMap.clear();
-  // m_physNodes.clear();
-  // m_outWeights.clear();
-  // m_names.clear();
 }
 
 void StateNetwork::clear()
