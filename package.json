@@ -69,7 +69,7 @@
       "package.json",
       "package-lock.json",
       {
-        "filename": "src/io/version.cpp",
+        "filename": "src/version.cpp",
         "updater": "utils/update-version-cpp.js"
       },
       {

@@ -28,7 +28,7 @@
 #define CONFIG_H_
 
 #include "../utils/Date.h"
-#include "version.h"
+#include "../version.h"
 #include "ProgramInterface.h"
 #include "../utils/exceptions.h"
 
