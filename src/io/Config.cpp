@@ -1,5 +1,5 @@
 #include "Config.h"
-#include "version.h"
+#include "../version.h"
 #include <vector>
 #include "ProgramInterface.h"
 #include "SafeFile.h"
