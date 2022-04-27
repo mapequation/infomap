@@ -1,4 +1,4 @@
-CXXFLAGS += -Wall -Wextra -Wno-unused-parameter -std=c++14
+CXXFLAGS += -Wall -Wextra -pedantic -std=c++14
 LDFLAGS +=
 CXX_CLANG := $(shell $(CXX) --version 2>/dev/null | grep clang)
 BREW := $(shell which brew 2>/dev/null)

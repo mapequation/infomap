@@ -189,7 +189,7 @@ double BiasedMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& pare
   return L + correctionCoefficient() * (1 + parent.childDegree()) / s_totalDegree;
 }
 
-int BiasedMapEquation::getDeltaNumModulesIfMoving(InfoNode& current,
+int BiasedMapEquation::getDeltaNumModulesIfMoving(InfoNode& /*current*/,
                                                   unsigned int oldModule,
                                                   unsigned int newModule,
                                                   std::vector<unsigned int>& moduleMembers) const

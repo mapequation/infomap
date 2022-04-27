@@ -52,7 +52,7 @@ std::ostream& operator<<(std::ostream& out, const MemMapEquation& mapEq)
 // Init
 // ===================================================
 
-void MemMapEquation::init(const Config& config)
+void MemMapEquation::init(const Config& /*config*/)
 {
   Log(3) << "MemMapEquation::init()...\n";
 }
@@ -62,12 +62,12 @@ void MemMapEquation::initNetwork(InfoNode& root)
   initPhysicalNodes(root);
 }
 
-void MemMapEquation::initSuperNetwork(InfoNode& root)
+void MemMapEquation::initSuperNetwork(InfoNode& /*root*/)
 {
   // TODO: How use enterFlow instead of flow
 }
 
-void MemMapEquation::initSubNetwork(InfoNode& root)
+void MemMapEquation::initSubNetwork(InfoNode& /*root*/)
 {
   //	Base::initSubNetwork(root);
 }

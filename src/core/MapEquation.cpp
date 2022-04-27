@@ -58,7 +58,7 @@ std::ostream& operator<<(std::ostream& out, const MapEquation& mapEq)
 // Init
 // ===================================================
 
-void MapEquation::init(const Config& config)
+void MapEquation::init(const Config& /*config*/)
 {
   Log(3) << "MapEquation::init()...\n";
 }
@@ -192,7 +192,7 @@ double MapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
                                                    DeltaFlowDataType& oldModuleDelta,
                                                    DeltaFlowDataType& newModuleDelta,
                                                    std::vector<FlowDataType>& moduleFlowData,
-                                                   std::vector<unsigned int>& moduleMembers)
+                                                   std::vector<unsigned int>& /*moduleMembers*/)
 {
   using infomath::plogp;
   unsigned int oldModule = oldModuleDelta.module;
@@ -227,7 +227,7 @@ void MapEquation::updateCodelengthOnMovingNode(InfoNode& current,
                                                DeltaFlowDataType& oldModuleDelta,
                                                DeltaFlowDataType& newModuleDelta,
                                                std::vector<FlowDataType>& moduleFlowData,
-                                               std::vector<unsigned int>& moduleMembers)
+                                               std::vector<unsigned int>& /*moduleMembers*/)
 {
   using infomath::plogp;
   unsigned int oldModule = oldModuleDelta.module;
