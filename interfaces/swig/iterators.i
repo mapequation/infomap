@@ -2,8 +2,8 @@
 
 %{
 /* Includes the header in the wrapper code */
-#include "src/utils/iterators.h"
+#include "src/core/iterators/iterators.h"
 %}
 
 /* Parse the header file to generate wrappers */
-%include "src/utils/iterators.h"
+%include "src/core/iterators/iterators.h"
