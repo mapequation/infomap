@@ -67,9 +67,6 @@ public:
   InfoNode& root();
   const InfoNode& root() const;
 
-  // InfomapIterator tree(int maxClusterLevel = std::numeric_limits<unsigned int>::max())
-  // { return InfomapIterator(&root(), maxClusterLevel); }
-
   InfomapIterator iterTree(int maxClusterLevel = 1)
   {
     return InfomapIterator(&root(), maxClusterLevel);
@@ -158,8 +155,6 @@ public:
 
   bool isFullNetwork() const { return m_isMain && m_aggregationLevel == 0; }
   bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
-
-  // virtual InfomapBase& getInfomap(InfoNode& node);
 
   virtual InfomapBase* getNewInfomapInstance() const = 0;
   virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const = 0;
@@ -315,11 +310,6 @@ public:
    * @return the hierarchical codelength
    */
   virtual double calcCodelengthOnTree(bool includeRoot = true);
-
-  /**
-   * Partition layer by layer and
-   */
-  // virtual void preClusterMultilayerNetwork();
 
   // ===================================================
   // Run: Partition: *

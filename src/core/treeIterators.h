@@ -314,8 +314,6 @@ public:
  */
 template <typename NodePointerType, typename iterator_tag = std::bidirectional_iterator_tag>
 struct node_iterator_base {
-  //	typedef typename iterator_traits<NodePointerType>::iterator_category	iterator_category; //random_access_iterator_tag
-  //	typedef std::forward_iterator_tag										iterator_category;
   typedef iterator_tag iterator_category;
   typedef typename iterator_traits<NodePointerType>::value_type value_type;
   typedef typename iterator_traits<NodePointerType>::difference_type difference_type;
