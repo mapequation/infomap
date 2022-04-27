@@ -44,8 +44,6 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
   std::string section;
 
   while (!std::getline(input, line).fail()) {
-    // if (line.length() == 0 || line[0] == '#' || line[0] == '*')
-    // 	continue;
     ++lineNr;
     if (line.length() == 0)
       continue;
@@ -70,8 +68,6 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
     unsigned int stateId;
     unsigned int nodeId;
     unsigned int layerId;
-    // if (!(lineStream >> pathString >> flow >> name >> nodeId))
-    // 	throw FileFormatError(io::Str() << "Couldn't parse .tree line '" << line << "'");
     if (!(lineStream >> pathString))
       throw FileFormatError(io::Str() << "Couldn't parse tree path from line '" << line << "'");
     if (!(lineStream >> flow))
