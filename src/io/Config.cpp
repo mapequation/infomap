@@ -28,9 +28,6 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
   // --------------------- Input options ---------------------
   if (isCLI) {
     api.addNonOptionArgument(networkFile, "network_file", "File containing the network data. Assumes a link list format if no Pajek formatted heading.", "Input");
-
-    // api.addOptionalNonOptionArguments(additionalInput, "[additional input]",
-    // 		"More network layers for multilayer.", true);
   } else {
     api.addOptionArgument(networkFile, "input", "File containing the network data. Assumes a link list format if no Pajek formatted heading.", ArgType::path, "Input");
   }
@@ -48,10 +45,6 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
   api.addOptionArgument(nodeLimit, "node-limit", "Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", ArgType::integer, "Input", true);
 
   api.addOptionArgument(matchableMultilayerIds, "matchable-multilayer-ids", "Construct state ids from node and layer ids that are consistent across networks for the same max number of layers. Set to at least the largest layer id among networks to match.", ArgType::integer, "Input", true);
-
-  // TODO: Support in v1.x
-  // api.addOptionArgument(preClusterMultilayer, "pre-cluster-multilayer",
-  // 		"Pre-cluster multilayer networks layer by layer.", "Input", true);
 
   api.addOptionArgument(clusterDataFile, 'c', "cluster-data", "Provide an initial two-level (clu format) or multi-layer (tree format) solution.", ArgType::path, "Input");
 
@@ -79,11 +72,6 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(cluLevel, "clu-level", "For clu output, print modules at specified depth from root. Use -1 for bottom level modules.", ArgType::integer, "Output", true);
 
-  // TODO: Include in -o
-  //  api.addOptionArgument(printFlowNetwork, "print-flow-network",
-  //  		"Print the network with calculated flow values.", "Output", true);
-
-  // -o network,states,clu,ftree
   api.addOptionArgument(outputFormats, 'o', "output", "Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.", ArgType::list, "Output", true);
 
   api.addOptionArgument(hideBipartiteNodes, "hide-bipartite-nodes", "Project bipartite solution to unipartite.", "Output", true);
@@ -113,9 +101,6 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(entropyBiasCorrectionMultiplier, "entropy-correction-strength", "Increase or decrease the default entropy correction with this factor.", ArgType::number, "Algorithm", true);
 
-  // api.addOptionArgument(selfTeleportationProbability, 'y', "self-link-teleportation-probability",
-  // 		"Additional probability of teleporting to itself. Effectively increasing the code rate, generating more and smaller modules.", ArgType::number, "Algorithm", true);
-
   api.addOptionArgument(markovTime, "markov-time", "Scales link flow to change the cost of moving between modules. Higher values results in fewer modules.", ArgType::number, "Algorithm", true);
 
   api.addOptionArgument(preferredNumberOfModules, "preferred-number-of-modules", "Penalize solutions the more they differ from this number.", ArgType::integer, "Algorithm", true);
@@ -130,19 +115,10 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(multilayerRelaxByJensenShannonDivergence, "multilayer-relax-by-jsd", "Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.", "Algorithm", true);
 
-  // api.addOptionArgument(multilayerJSRelaxRate, "multilayer-js-relax-rate",
-  // 		"The probability to relax the constraint to move only in the current layer and instead move to a random layer where the same physical node is present and proportional to the out-link similarity measured by the Jensen-Shannon divergence.", ArgType::getprop, "Algorithm", true);
-
-  // api.addOptionArgument(multilayerJSRelaxLimit, "multilayer-js-relax-limit",
-  // 		"The minimum out-link similarity measured by the Jensen-Shannon divergence to relax to other layer. From 0 to 1. No limit if negative.", ArgType::getprop, "Algorithm", true);
-
   // --------------------- Performance and accuracy options ---------------------
   api.addOptionArgument(seedToRandomNumberGenerator, 's', "seed", "A seed (integer) to the random number generator for reproducible results.", ArgType::integer, "Accuracy");
 
   api.addOptionArgument(numTrials, 'N', "num-trials", "Number of outer-most loops to run before picking the best solution.", ArgType::integer, "Accuracy");
-
-  // api.addOptionArgument(randomizeCoreLoopLimit, "random-loop-limit",
-  // 		"Randomize the core loop limit from 1 to 'core-loop-limit'", "Accuracy", true);
 
   api.addOptionArgument(coreLoopLimit, 'M', "core-loop-limit", "Limit the number of loops that tries to move each node into the best possible module.", ArgType::integer, "Accuracy", true);
 
@@ -154,38 +130,11 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(minimumRelativeTuneIterationImprovement, "tune-iteration-relative-threshold", "Set codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.", ArgType::number, "Accuracy", true);
 
-  // api.addOptionArgument(fastFirstIteration, "fast-first-iteration",
-  // 		"Move nodes to strongest connected module in the first iteration instead of minimizing the map equation.", "Accuracy", true);
-
-  // api.addOptionArgument(fastCoarseTunePartition, 'C', "fast-coarse-tune",
-  // 		"Try to find the quickest partition of each module when creating sub-modules for the coarse-tune part.", "Accuracy", true);
-
-  // api.addOptionArgument(alternateCoarseTuneLevel, 'A', "alternate-coarse-tune-level",
-  // 		"Try to find different levels of sub-modules to move in the coarse-tune part.", "Accuracy", true);
-
-  // api.addOptionArgument(coarseTuneLevel, 'S', "coarse-tune-level",
-  // 		"Set the recursion limit when searching for sub-modules. A level of 1 will find sub-sub-modules.", ArgType::integer, "Accuracy", true);
-
   api.addIncrementalOptionArgument(fastHierarchicalSolution, 'F', "fast-hierarchical-solution", "Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.", "Accuracy", true);
 
   api.addOptionArgument(preferModularSolution, "prefer-modular-solution", "Prefer modular solutions even if they are worse than putting all nodes in one module.", "Accuracy", true);
 
-  // api.addIncrementalOptionArgument(lowMemoryPriority, 'l', "low-memory",
-  // 		"Prioritize memory efficient algorithms before fast. Use -ll to optimize even more, but this may give approximate results.");
-
   api.addOptionArgument(innerParallelization, "inner-parallelization", "Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.", "Accuracy", true);
-
-  // --------------------- Output options ---------------------
-  // if (isCLI)
-  // {
-  // 	api.addNonOptionArgument(outDirectory, "out_directory",
-  // 			"The directory to write the results to");
-  // }
-  // else
-  // {
-  // 	api.addOptionalNonOptionArguments(optionalOutputDir, "[out_directory]",
-  // 			"The directory to write the results to.");
-  // }
 
   api.addOptionalNonOptionArguments(optionalOutputDir, "out_directory", "Directory to write the results to.", "Output");
 
@@ -223,10 +172,8 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 
   if (regularized) {
     recordedTeleportation = true;
-    // teleportToNodes = true;
   }
 
-  // Some checks
   if (*--outDirectory.end() != '/')
     outDirectory.append("/");
 
