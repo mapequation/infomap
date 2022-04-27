@@ -64,7 +64,6 @@ void MemMapEquation::initPartition(std::vector<InfoNode*>& nodes)
 
 void MemMapEquation::initPhysicalNodes(InfoNode& root)
 {
-  // bool notInitiated = root.firstChild->physicalNodes.empty();
   bool notInitiatedOnRoot = root.physicalNodes.empty();
   if (notInitiatedOnRoot) {
     // Assume leaf nodes directly under the root node
@@ -90,7 +89,6 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
     for (const auto& physNode : physicalNodes) {
       unsigned int zeroBasedIndex = !toZeroBasedIndex.empty() ? toZeroBasedIndex[physNode.first] : (physNode.first - minPhysicalId);
       root.physicalNodes.push_back(PhysData(zeroBasedIndex, physNode.second));
-      // Log() << "(" << zeroBasedIndex << ", " << node.data.flow << "), length: " << node.physicalNodes.size() << "\n";
     }
   }
   auto firstLeafIt = root.begin_leaf_nodes();
@@ -121,12 +119,8 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
 
     for (auto it(root.begin_leaf_nodes()); !it.isEnd(); ++it) {
       InfoNode& node = *it;
-      // Log() << "Leaf node " << node.stateId << " (phys " << node.physicalId << ") physicalNodes: ";
-      // unsigned int zeroBasedIndex = toZeroBasedIndex[node.physicalId];
-      // unsigned int zeroBasedIndex = getPhysIndex[node.physicalId];
       unsigned int zeroBasedIndex = !toZeroBasedIndex.empty() ? toZeroBasedIndex[node.physicalId] : (node.physicalId - minPhysicalId);
       node.physicalNodes.push_back(PhysData(zeroBasedIndex, node.data.flow));
-      // Log() << "(" << zeroBasedIndex << ", " << node.data.flow << "), length: " << node.physicalNodes.size() << "\n";
     }
 
     // If leaf nodes was not directly under root, make sure leaf modules have
@@ -151,7 +145,6 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
       // new sub-network
       Log(3) << "MemMapEquation::initPhysicalNodesOnSubNetwork()...\n";
       std::set<unsigned int> setOfPhysicalNodes;
-      // std::cout << "_*!|!*_";
       unsigned int maxPhysNodeIndex = 0;
       unsigned int minPhysNodeIndex = std::numeric_limits<unsigned int>::max();
 
@@ -310,11 +303,6 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
         double oldPhysFlow = memNodeSet.sumFlow;
         double newPhysFlow = memNodeSet.sumFlow + physData.sumFlowFromM2Node;
 
-        // DeltaFlowDataType& otherDeltaFlow = moduleDeltaFlow[moduleIndex];
-        // otherDeltaFlow.module = moduleIndex; // Make sure module index is correct if created new module link
-        // otherDeltaFlow.sumDeltaPlogpPhysFlow = infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
-        // otherDeltaFlow.sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
-        // ++otherDeltaFlow.count;
         double sumDeltaPlogpPhysFlow = infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
         double sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
         moduleDeltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, 0.0, 0.0, sumDeltaPlogpPhysFlow, sumPlogpPhysFlow));
