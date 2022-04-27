@@ -131,9 +131,6 @@ protected:
   // Bipartite
   unsigned int m_bipartiteStartId = 0;
 
-  // Infomap
-  // InfoNode m_root;
-
 public:
   StateNetwork() : m_config(Config()) { }
   StateNetwork(const Config& config) : m_config(config) { }
@@ -186,7 +183,6 @@ public:
   double sumNodeWeight() const { return m_sumNodeWeight; }
   const NodeLinkMap& nodeLinkMap() const { return m_nodeLinkMap; }
   NodeLinkMap& nodeLinkMap() { return m_nodeLinkMap; }
-  // const LinkMap& links() const { return m_links; }
   unsigned int numLinks() const { return m_numLinks; }
   double sumLinkWeight() const { return m_sumLinkWeight; }
   unsigned int numSelfLinks() const { return m_numSelfLinks; }
@@ -194,11 +190,9 @@ public:
   // Use convention of counting self-links only once, treating them as directed
   double sumWeightedDegree() const { return 2 * sumLinkWeight() - (m_config.isUndirectedFlow() ? sumSelfLinkWeight() : 0); }
   unsigned int sumDegree() const { return 2 * numLinks() - (m_config.isUndirectedFlow() ? numSelfLinks() : 0); }
-  // const std::map<unsigned int, double>& outWeights() const { return m_outWeights; }
   std::map<unsigned int, double>& outWeights() { return m_outWeights; }
   std::map<unsigned int, std::string>& names() { return m_names; }
   const std::map<unsigned int, std::string>& names() const { return m_names; }
-  // std::string getName(unsigned int physId);
 
   bool haveDirectedInput() const { return m_haveDirectedInput; }
   bool haveMemoryInput() const { return m_haveMemoryInput; }
