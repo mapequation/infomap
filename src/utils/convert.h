@@ -27,7 +27,7 @@
 #ifndef CONVERT_H_
 #define CONVERT_H_
 
-#include "exceptions.h"
+#include <stdexcept>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -78,7 +78,7 @@ namespace io {
   {
     std::ostringstream o;
     if (!(o << x))
-      throw BadConversionError((o << "stringify(" << x << ")", o.str()));
+      throw std::runtime_error((o << "stringify(" << x << ")", o.str()));
     return o.str();
   }
 
@@ -97,11 +97,11 @@ namespace io {
     unsigned int maxIndex = cont.size() - 1;
     for (unsigned int i = 0; i < maxIndex; ++i) {
       if (!(o << cont[i]))
-        throw BadConversionError((o << "stringify(container[" << i << "])", o.str()));
+        throw std::runtime_error((o << "stringify(container[" << i << "])", o.str()));
       o << delimiter;
     }
     if (!(o << cont[maxIndex]))
-      throw BadConversionError((o << "stringify(container[" << maxIndex << "])", o.str()));
+      throw std::runtime_error((o << "stringify(container[" << maxIndex << "])", o.str()));
     return o.str();
   }
 
@@ -114,11 +114,11 @@ namespace io {
     unsigned int maxIndex = cont.size() - 1;
     for (unsigned int i = 0; i < maxIndex; ++i) {
       if (!(o << (cont[i] + offset)))
-        throw BadConversionError((o << "stringify(container[" << i << "])", o.str()));
+        throw std::runtime_error((o << "stringify(container[" << i << "])", o.str()));
       o << delimiter;
     }
     if (!(o << (cont[maxIndex] + offset)))
-      throw BadConversionError((o << "stringify(container[" << maxIndex << "])", o.str()));
+      throw std::runtime_error((o << "stringify(container[" << maxIndex << "])", o.str()));
     return o.str();
   }
 
@@ -129,16 +129,16 @@ namespace io {
     if (cont.empty())
       return "";
     if (startIndex >= cont.size())
-      throw ArgumentOutOfRangeError("stringifyContainer called with startIndex out of range");
+      throw std::out_of_range("stringifyContainer called with startIndex out of range");
     unsigned int stopIndex = length == 0 || (startIndex + length > cont.size()) ? cont.size() : (startIndex + length);
     unsigned int endIndex = stopIndex - 1;
     for (unsigned int i = startIndex; i < endIndex; ++i) {
       if (!(o << (cont[i])))
-        throw BadConversionError((o << "stringifyContainer(container[" << i << "])", o.str()));
+        throw std::runtime_error((o << "stringifyContainer(container[" << i << "])", o.str()));
       o << delimiter;
     }
     if (!(o << (cont[endIndex])))
-      throw BadConversionError((o << "stringifyContainer(container[" << endIndex << "])", o.str()));
+      throw std::runtime_error((o << "stringifyContainer(container[" << endIndex << "])", o.str()));
     return o.str();
   }
 
@@ -223,7 +223,7 @@ namespace io {
     std::istringstream istream(str);
     T value;
     if (!(istream >> value))
-      throw BadConversionError(Str() << "Error converting '" << str << "' to " << TypeInfo<T>::type());
+      throw std::runtime_error(Str() << "Error converting '" << str << "' to " << TypeInfo<T>::type());
     return value;
   }
 
@@ -235,7 +235,7 @@ namespace io {
     istream.setf(std::ios::boolalpha);
     bool value;
     if (!(istream >> value))
-      throw BadConversionError(Str() << "Error converting '" << str << "' to bool");
+      throw std::runtime_error(Str() << "Error converting '" << str << "' to bool");
     return value;
   }
 
@@ -277,7 +277,7 @@ namespace io {
     else
       o << std::setprecision(precision);
     if (!(o << value))
-      throw BadConversionError((o << "stringify(" << value << ")", o.str()));
+      throw std::runtime_error((o << "stringify(" << value << ")", o.str()));
     return o.str();
   }
 

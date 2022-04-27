@@ -43,14 +43,14 @@ InfomapBase& InfoNode::setInfomap(InfomapBase* infomap)
   disposeInfomap();
   m_infomap = infomap;
   if (infomap == nullptr)
-    throw InternalOrderError("InfoNode::setInfomap(...) called with null infomap");
+    throw std::logic_error("InfoNode::setInfomap(...) called with null infomap");
   return *m_infomap;
 }
 
 InfomapBase& InfoNode::getInfomap()
 {
   if (m_infomap == nullptr)
-    throw InternalOrderError("InfoNode::getInfomap() called but infomap is null");
+    throw std::logic_error("InfoNode::getInfomap() called but infomap is null");
   return *m_infomap;
 }
 
@@ -175,9 +175,9 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
   if (childDegree() == 1)
     return *firstChild;
   if (firstChild == nullptr)
-    throw InternalOrderError("replaceChildrenWithOneNode called on a node without any children.");
+    throw std::logic_error("replaceChildrenWithOneNode called on a node without any children.");
   if (firstChild->firstChild == nullptr)
-    throw InternalOrderError("replaceChildrenWithOneNode called on a node without any grandchildren.");
+    throw std::logic_error("replaceChildrenWithOneNode called on a node without any grandchildren.");
   InfoNode* middleNode = new InfoNode();
   InfoNode::child_iterator nodeIt = begin_child();
   unsigned int numOriginalChildrenLeft = m_childDegree;
@@ -192,7 +192,7 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
   addChild(middleNode);
   auto d1 = middleNode->replaceChildrenWithGrandChildren();
   if (d1 != d0)
-    throw InternalOrderError("replaceChildrenWithOneNode replaced different number of children as having before");
+    throw std::logic_error("replaceChildrenWithOneNode replaced different number of children as having before");
   return *middleNode;
 }
 
@@ -409,7 +409,7 @@ unsigned int InfoNode::expandChildren()
   bool haveCollapsedChildren = collapsedFirstChild != nullptr;
   if (haveCollapsedChildren) {
     if (firstChild != nullptr || lastChild != nullptr)
-      throw InternalOrderError("Expand collapsed children called on a node that already has children.");
+      throw std::logic_error("Expand collapsed children called on a node that already has children.");
     std::swap(collapsedFirstChild, firstChild);
     std::swap(collapsedLastChild, lastChild);
     calcChildDegree();

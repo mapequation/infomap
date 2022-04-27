@@ -243,13 +243,13 @@ void ProgramInterface::parseArgs(const std::string& args)
     if (opt.shortName != '\0') {
       auto it = shortOptionMap.find(opt.shortName);
       if (it != shortOptionMap.end())
-        throw OptionConflictError(io::Str() << "Duplication of option '" << opt.shortName << "'");
+        throw std::runtime_error(io::Str() << "Duplication of option '" << opt.shortName << "'");
       shortOptionMap.insert(std::make_pair(opt.shortName, &opt));
     }
 
     auto it = longOptionMap.find(opt.longName);
     if (it != longOptionMap.end())
-      throw OptionConflictError(io::Str() << "Duplication of option \"" << opt.longName << "\"");
+      throw std::runtime_error(io::Str() << "Duplication of option \"" << opt.longName << "\"");
     longOptionMap.insert(std::make_pair(opt.longName, &opt));
   }
 
@@ -269,18 +269,18 @@ void ProgramInterface::parseArgs(const std::string& args)
 
       const std::string& arg = flags[i];
       if (arg.length() == 0)
-        throw InputSyntaxError("Illegal argument ''");
+        throw std::runtime_error("Illegal argument ''");
 
       if (arg[0] != '-') {
         nonOpts.push_back(arg);
       } else {
         if (arg.length() < 2)
-          throw InputSyntaxError("Illegal argument '-'");
+          throw std::runtime_error("Illegal argument '-'");
 
         if (arg[1] == '-') {
           // Long option
           if (arg.length() < 3)
-            throw InputSyntaxError("Illegal argument '--'");
+            throw std::runtime_error("Illegal argument '--'");
           std::string longOpt = arg.substr(2);
           auto it = longOptionMap.find(longOpt);
           if (it == longOptionMap.end()) {
@@ -290,7 +290,7 @@ void ProgramInterface::parseArgs(const std::string& args)
               it = longOptionMap.find(longOpt);
               flagValue = false;
             } else {
-              throw InputDomainError(io::Str() << "Unrecognized option: '--" << longOpt << "'");
+              throw std::runtime_error(io::Str() << "Unrecognized option: '--" << longOpt << "'");
             }
           }
           auto& opt = *it->second;
@@ -298,10 +298,10 @@ void ProgramInterface::parseArgs(const std::string& args)
             opt.set(flagValue);
           else {
             if (numArgsLeft == 0)
-              throw InputDomainError(io::Str() << "Option '" << opt.longName << "' requires argument");
+              throw std::runtime_error(io::Str() << "Option '" << opt.longName << "' requires argument");
             ++i;
             if (!opt.parse(flags[i]))
-              throw InputDomainError(io::Str() << "Cannot parse '" << flags[i] << "' as argument to option '" << opt.longName << "'. ");
+              throw std::runtime_error(io::Str() << "Cannot parse '" << flags[i] << "' as argument to option '" << opt.longName << "'. ");
           }
         } else {
           // Short option(s)
@@ -311,7 +311,7 @@ void ProgramInterface::parseArgs(const std::string& args)
             unsigned int numCharsLeft = arg.length() - j - 1;
             auto it = shortOptionMap.find(o);
             if (it == shortOptionMap.end())
-              throw InputDomainError(io::Str() << "Unrecognized option: '-" << o << "'");
+              throw std::runtime_error(io::Str() << "Unrecognized option: '-" << o << "'");
             auto& opt = *it->second;
             if (!opt.requireArgument || opt.incrementalArgument)
               opt.set(flagValue);
@@ -324,10 +324,10 @@ void ProgramInterface::parseArgs(const std::string& args)
                 ++i;
                 optArg = flags[i];
               } else
-                throw InputDomainError(io::Str() << "Option '" << opt.longName << "' requires argument");
+                throw std::runtime_error(io::Str() << "Option '" << opt.longName << "' requires argument");
 
               if (!opt.parse(optArg))
-                throw InputDomainError(io::Str() << "Cannot parse '" << optArg << "' as argument to option '" << opt.longName << "'. ");
+                throw std::runtime_error(io::Str() << "Cannot parse '" << optArg << "' as argument to option '" << opt.longName << "'. ");
             }
           }
         }

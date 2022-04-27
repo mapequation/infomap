@@ -30,7 +30,7 @@
 #include "../utils/Date.h"
 #include "../version.h"
 #include "ProgramInterface.h"
-#include "../utils/exceptions.h"
+#include <stdexcept>
 
 #include <iomanip>
 #include <iostream>

@@ -3,7 +3,7 @@
 #include <vector>
 #include "ProgramInterface.h"
 #include "SafeFile.h"
-#include "../utils/exceptions.h"
+#include <stdexcept>
 #include "../utils/FileURI.h"
 #include "../utils/Log.h"
 
@@ -145,7 +145,7 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
   api.parseArgs(flags);
 
   if (deprecated_includeSelfLinks) {
-    throw InputDomainError("The --include-self-links flag is deprecated to include self links by default. Use --no-loops to exclude.");
+    throw std::runtime_error("The --include-self-links flag is deprecated to include self links by default. Use --no-loops to exclude.");
   }
 
   if (!optionalOutputDir.empty())
@@ -155,7 +155,7 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
     noFileOutput = true;
 
   if (!noFileOutput && outDirectory.empty() && isCLI) {
-    throw InputDomainError("Missing out_directory");
+    throw std::runtime_error("Missing out_directory");
   }
 
   if (flowModelArg == "undirected") {
@@ -178,7 +178,7 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
     outDirectory.append("/");
 
   if (haveOutput() && !isDirectoryWritable(outDirectory))
-    throw FileOpenError(io::Str() << "Can't write to directory '" << outDirectory << "'. Check that the directory exists and that you have write permissions.");
+    throw std::runtime_error(io::Str() << "Can't write to directory '" << outDirectory << "'. Check that the directory exists and that you have write permissions.");
 
   if (outName.empty()) {
     if (!networkFile.empty())
@@ -198,7 +198,7 @@ Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
 void Config::adaptDefaults()
 {
   if (flowModel != FlowModel::undirected && flowModel != FlowModel::undirdir && flowModel != FlowModel::directed && flowModel != FlowModel::outdirdir && flowModel != FlowModel::rawdir) {
-    throw InputDomainError("Unrecognized flow model");
+    throw std::runtime_error("Unrecognized flow model");
   }
 
   if (undirdir) {
@@ -232,7 +232,7 @@ void Config::adaptDefaults()
     } else if (o == "states") {
       printStateNetwork = true;
     } else {
-      throw InputDomainError(io::Str() << "Unrecognized output format: '" << o << "'.");
+      throw std::runtime_error(io::Str() << "Unrecognized output format: '" << o << "'.");
     }
   }
 

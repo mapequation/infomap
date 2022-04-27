@@ -17,7 +17,7 @@ void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, 
   if (m_extension == "clu") {
     return readClu(filename, includeFlow, layerNodeToStateId);
   }
-  throw ImplementationError(io::Str() << "Input cluster data from file '" << filename << "' is of unknown extension '" << m_extension << "'. Must be 'clu' or 'tree'.");
+  throw std::runtime_error(io::Str() << "Input cluster data from file '" << filename << "' is of unknown extension '" << m_extension << "'. Must be 'clu' or 'tree'.");
 }
 
 /**
@@ -69,23 +69,23 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
     unsigned int nodeId;
     unsigned int layerId;
     if (!(lineStream >> pathString))
-      throw FileFormatError(io::Str() << "Couldn't parse tree path from line '" << line << "'");
+      throw std::runtime_error(io::Str() << "Couldn't parse tree path from line '" << line << "'");
     if (!(lineStream >> flow))
-      throw FileFormatError(io::Str() << "Couldn't parse node flow from line '" << line << "'");
+      throw std::runtime_error(io::Str() << "Couldn't parse node flow from line '" << line << "'");
     // Get the name by extracting the rest of the stream until the first quotation mark and then the last.
     if (!getline(lineStream, name, '"'))
-      throw BadConversionError(io::Str() << "Can't parse node name from line " << lineNr << " ('" << line << "').");
+      throw std::runtime_error(io::Str() << "Can't parse node name from line " << lineNr << " ('" << line << "').");
     if (!getline(lineStream, name, '"'))
-      throw BadConversionError(io::Str() << "Can't parse node name from line " << lineNr << " ('" << line << "').");
+      throw std::runtime_error(io::Str() << "Can't parse node name from line " << lineNr << " ('" << line << "').");
     if (!(lineStream >> stateId))
-      throw FileFormatError(io::Str() << "Couldn't parse node id from line '" << line << "'");
+      throw std::runtime_error(io::Str() << "Couldn't parse node id from line '" << line << "'");
     if (lineStream >> nodeId) {
       m_isHigherOrder = true;
     } else if (m_isHigherOrder) {
-      throw FileFormatError(io::Str() << "Missing state id for node on line '" << line << "'.");
+      throw std::runtime_error(io::Str() << "Missing state id for node on line '" << line << "'.");
     }
     if (isMultilayer && !(lineStream >> layerId))
-      throw FileFormatError(io::Str() << "Couldn't parse layer id from line '" << line << "'");
+      throw std::runtime_error(io::Str() << "Couldn't parse layer id from line '" << line << "'");
 
     bool multilayerNodeFound = false;
 
@@ -114,7 +114,7 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
     while (pathStream >> childNumber) {
       pathStream.get(); // Extract the delimiting character also
       if (childNumber == 0)
-        throw FileFormatError("There is a '0' in the tree path, lowest allowed integer is 1.");
+        throw std::runtime_error("There is a '0' in the tree path, lowest allowed integer is 1.");
       path.push_back(childNumber); // Keep 1-based indexing in path
     }
 
@@ -149,7 +149,7 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
     unsigned int layerId;
 
     if (!(lineStream >> stateId >> moduleId))
-      throw FileFormatError(io::Str() << "Couldn't parse node key and cluster id from line '" << line << "'");
+      throw std::runtime_error(io::Str() << "Couldn't parse node key and cluster id from line '" << line << "'");
 
     auto flow = 0.0;
     if (lineStream >> flow) {
@@ -160,10 +160,10 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
     auto multilayerNodeFound = false;
     if (isMultilayer) {
       if (!(lineStream >> nodeId))
-        throw FileFormatError(io::Str() << "Couldn't parse node key from line '" << line << "'");
+        throw std::runtime_error(io::Str() << "Couldn't parse node key from line '" << line << "'");
 
       if (!(lineStream >> layerId))
-        throw FileFormatError(io::Str() << "Couldn't parse layer id from line '" << line << "'");
+        throw std::runtime_error(io::Str() << "Couldn't parse layer id from line '" << line << "'");
 
       // get new state id from map
       auto it = layerNodeToStateId->find(layerId);
