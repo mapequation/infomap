@@ -20,7 +20,7 @@
 #include "../utils/infomath.h"
 #include "../utils/Date.h"
 #include "../utils/Stopwatch.h"
-#include "../utils/exceptions.h"
+#include <stdexcept>
 #include "../utils/FileURI.h"
 #include "../Infomap.h"
 
@@ -267,12 +267,12 @@ void InfomapBase::run(std::string parameters)
 void InfomapBase::run(Network& network)
 {
   if (!isMainInfomap())
-    throw InternalOrderError("Can't run a non-main Infomap with an input network");
+    throw std::logic_error("Can't run a non-main Infomap with an input network");
 
   if (m_network.numNodes() == 0) {
     m_network.postProcessInputData();
     if (m_network.numNodes() == 0) {
-      throw DataDomainError("Network is empty");
+      throw std::domain_error("Network is empty");
     }
   }
 
@@ -343,7 +343,7 @@ void InfomapBase::run(Network& network)
   initNetwork(network);
 
   if (numLeafNodes() == 0)
-    throw DataDomainError("No nodes to partition");
+    throw std::domain_error("No nodes to partition");
 
   // If used as a library, we may want to reuse the network instance, else clear to use less memory
   // TODO: May have to use some meta data for output?
@@ -462,7 +462,7 @@ InfomapBase& InfomapBase::initMetaData(std::string metaDataFile)
 InfomapBase& InfomapBase::initNetwork(Network& network)
 {
   if (network.numNodes() == 0)
-    throw DataDomainError("No nodes in network");
+    throw std::domain_error("No nodes in network");
   if (m_root.childDegree() > 0) {
     m_root.deleteChildren();
     m_leafNodes.clear();
@@ -1420,7 +1420,7 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 unsigned int InfomapBase::fineTune()
 {
   if (numLevels() != 2)
-    throw InternalOrderError("InfomapBase::fineTune() called but numLevels != 2");
+    throw std::logic_error("InfomapBase::fineTune() called but numLevels != 2");
 
   setActiveNetworkFromLeafs();
   initPartition();
@@ -1458,7 +1458,7 @@ unsigned int InfomapBase::fineTune()
 unsigned int InfomapBase::coarseTune()
 {
   if (numLevels() != 2)
-    throw InternalOrderError("InfomapBase::coarseTune() called but numLevels != 2");
+    throw std::logic_error("InfomapBase::coarseTune() called but numLevels != 2");
 
   Log(4) << "Coarse-tune...\nPartition each module in sub-modules for coarse tune..." << std::endl;
 
@@ -1646,7 +1646,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   double workingHierarchicalCodelength = hierarchicalCodelength;
 
   if (!haveModules())
-    throw InternalOrderError("Trying to find hierarchical super modules without any modules");
+    throw std::logic_error("Trying to find hierarchical super modules without any modules");
 
   Log(1) << "\nFind hierarchical super modules iteratively..." << std::endl;
   Log(0, 0) << "Super-level compression: " << std::setprecision(2) << std::flush;

@@ -125,7 +125,7 @@ void Network::readInputData(std::string filename, bool accumulate)
   if (filename.empty())
     filename = m_config.networkFile;
   if (filename == "") {
-    throw InputSyntaxError("No input file to read network");
+    throw std::runtime_error("No input file to read network");
   }
   FileURI networkFilename(filename, false);
 
@@ -185,7 +185,7 @@ void Network::parseNetwork(std::string filename, const InsensitiveStringSet& val
   while (heading.length() > 0 && heading[0] == '*') {
     std::string headingLowerCase = io::tolower(io::firstWord(heading));
     if (validHeadings.count(headingLowerCase) == 0) {
-      throw FileFormatError(io::Str() << "Unrecognized heading in network file: '" << headingLowerCase << "'.");
+      throw std::runtime_error(io::Str() << "Unrecognized heading in network file: '" << headingLowerCase << "'.");
     }
     if (ignoreHeadings.count(headingLowerCase) > 0) {
       heading = ignoreSection(input, headingLowerCase);
@@ -251,7 +251,7 @@ void Network::readMetaData(std::string filename)
 
     unsigned int nodeId;
     if (!(m_extractor >> nodeId))
-      throw FileFormatError(io::Str() << "Can't parse node id from line '" << line << "'");
+      throw std::runtime_error(io::Str() << "Can't parse node id from line '" << line << "'");
 
     std::vector<int> metaData;
     unsigned int metaId;
@@ -259,7 +259,7 @@ void Network::readMetaData(std::string filename)
       metaData.push_back(metaId);
     }
     if (metaData.empty())
-      throw FileFormatError(io::Str() << "Can't parse any meta data from line '" << line << "'");
+      throw std::runtime_error(io::Str() << "Can't parse any meta data from line '" << line << "'");
 
     addMetaData(nodeId, metaData);
   }
@@ -288,7 +288,7 @@ std::string Network::parseVertices(std::ifstream& file, std::string heading)
 
     unsigned int id = 0;
     if (!(m_extractor >> id))
-      throw FileFormatError(io::Str() << "Can't parse node id from line '" << line << "'");
+      throw std::runtime_error(io::Str() << "Can't parse node id from line '" << line << "'");
 
     auto nameStart = line.find_first_of("\"");
     auto nameEnd = line.find_last_of("\"");
@@ -300,12 +300,12 @@ std::string Network::parseVertices(std::ifstream& file, std::string heading)
       m_extractor.str(line);
     } else {
       if (!(m_extractor >> name))
-        throw FileFormatError(io::Str() << "Can't parse node name from line '" << line << "'");
+        throw std::runtime_error(io::Str() << "Can't parse node name from line '" << line << "'");
     }
     double weight = 1.0;
     if ((m_extractor >> weight)) {
       if (weight < 0)
-        throw FileFormatError(io::Str() << "Negative node weight (" << weight << ") from line '" << line << "'");
+        throw std::runtime_error(io::Str() << "Negative node weight (" << weight << ") from line '" << line << "'");
     }
 
     addPhysicalNode(id, weight, name);
@@ -455,7 +455,7 @@ std::string Network::parseBipartiteLinks(std::ifstream& file, std::string headin
   m_extractor.str(heading);
   std::string tmp;
   if (!(m_extractor >> tmp >> m_bipartiteStartId))
-    throw FileFormatError(io::Str() << "Can't parse bipartite start id from line '" << heading << "'");
+    throw std::runtime_error(io::Str() << "Can't parse bipartite start id from line '" << heading << "'");
 
   Log() << "  -> Using bipartite start id " << m_bipartiteStartId << "\n";
   m_config.bipartite = true;
@@ -473,7 +473,7 @@ std::string Network::parseBipartiteLinks(std::ifstream& file, std::string headin
     bool sourceIsFeature = n1 >= m_bipartiteStartId;
     bool targetIsFeature = n2 >= m_bipartiteStartId;
     if (sourceIsFeature == targetIsFeature) {
-      throw FileFormatError(io::Str() << "Bipartite link '" << line << "' must cross bipartite start id " << m_bipartiteStartId << ".");
+      throw std::runtime_error(io::Str() << "Bipartite link '" << line << "' must cross bipartite start id " << m_bipartiteStartId << ".");
     }
     addLink(n1, n2, weight);
   }
@@ -496,7 +496,7 @@ void Network::parseStateNode(const std::string& line, StateNetwork::StateNode& s
   m_extractor.clear();
   m_extractor.str(line);
   if (!(m_extractor >> stateNode.id >> stateNode.physicalId))
-    throw FileFormatError(io::Str() << "Can't parse any state node from line '" << line << "'");
+    throw std::runtime_error(io::Str() << "Can't parse any state node from line '" << line << "'");
 
   // Optional name enclosed in double quotes
   auto nameStart = line.find_first_of("\"", m_extractor.tellg());
@@ -514,7 +514,7 @@ void Network::parseLink(const std::string& line, unsigned int& n1, unsigned int&
   m_extractor.clear();
   m_extractor.str(line);
   if (!(m_extractor >> n1 >> n2))
-    throw FileFormatError(io::Str() << "Can't parse link data from line '" << line << "'");
+    throw std::runtime_error(io::Str() << "Can't parse link data from line '" << line << "'");
   (m_extractor >> weight) || (weight = 1.0);
 }
 
@@ -523,7 +523,7 @@ void Network::parseMultilayerLink(const std::string& line, unsigned int& layer1,
   m_extractor.clear();
   m_extractor.str(line);
   if (!(m_extractor >> layer1 >> n1 >> layer2 >> n2))
-    throw FileFormatError(io::Str() << "Can't parse multilayer link data from line '" << line << "'");
+    throw std::runtime_error(io::Str() << "Can't parse multilayer link data from line '" << line << "'");
   (m_extractor >> weight) || (weight = 1.0);
 }
 
@@ -532,7 +532,7 @@ void Network::parseMultilayerIntraLink(const std::string& line, unsigned int& la
   m_extractor.clear();
   m_extractor.str(line);
   if (!(m_extractor >> layer >> n1 >> n2))
-    throw FileFormatError(io::Str() << "Can't parse intra-multilayer link data from line '" << line << "'");
+    throw std::runtime_error(io::Str() << "Can't parse intra-multilayer link data from line '" << line << "'");
   (m_extractor >> weight) || (weight = 1.0);
 }
 
@@ -541,10 +541,10 @@ void Network::parseMultilayerInterLink(const std::string& line, unsigned int& la
   m_extractor.clear();
   m_extractor.str(line);
   if (!(m_extractor >> layer1 >> n >> layer2))
-    throw FileFormatError(io::Str() << "Can't parse inter-multilayer link data from line '" << line << "'");
+    throw std::runtime_error(io::Str() << "Can't parse inter-multilayer link data from line '" << line << "'");
   (m_extractor >> weight) || (weight = 1.0);
   if (layer1 == layer2)
-    throw FileFormatError(io::Str() << "Inter-layer link from line '" << line << "' doesn't go between different layers.");
+    throw std::runtime_error(io::Str() << "Inter-layer link from line '" << line << "' doesn't go between different layers.");
   // TODO: Same as intra-layer self-link?
 }
 
@@ -980,7 +980,7 @@ void Network::addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsign
 void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight)
 {
   if (layer1 == layer2) {
-    throw InputDomainError(io::Str() << "Inter-layer link (layer1, node, layer2): " << layer1 << ", " << n << ", " << layer2 << " must have layer1 != layer2");
+    throw std::runtime_error(io::Str() << "Inter-layer link (layer1, node, layer2): " << layer1 << ", " << n << ", " << layer2 << " must have layer1 != layer2");
   }
   m_higherOrderInputMethodCalled = true;
 
@@ -1008,7 +1008,7 @@ unsigned int Network::addMultilayerNode(unsigned int layerId, unsigned int physi
   bool matchableMultilayerIds = m_config.matchableMultilayerIds != 0;
 
   if (matchableMultilayerIds && layerId > m_config.matchableMultilayerIds) {
-    throw InputDomainError(io::Str() << "Cannot add node with layer " << layerId << " to network with matchable multilayer ids using largest layer id " << m_config.matchableMultilayerIds);
+    throw std::runtime_error(io::Str() << "Cannot add node with layer " << layerId << " to network with matchable multilayer ids using largest layer id " << m_config.matchableMultilayerIds);
   }
 
   auto ret = matchableMultilayerIds
@@ -1034,7 +1034,7 @@ void Network::addMetaData(unsigned int nodeId, const std::vector<int>& metaData)
   if (m_numMetaDataColumns == 0) {
     m_numMetaDataColumns = metaData.size();
   } else if (metaData.size() != m_numMetaDataColumns) {
-    throw FileFormatError(io::Str() << "Must have same number of dimensions in meta data, error trying to add meta data '" << io::stringify(metaData, ",") << "' on node " << nodeId << ".");
+    throw std::runtime_error(io::Str() << "Must have same number of dimensions in meta data, error trying to add meta data '" << io::stringify(metaData, ",") << "' on node " << nodeId << ".");
   }
 }
 

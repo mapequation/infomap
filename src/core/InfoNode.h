@@ -13,7 +13,7 @@
 #include "iterators/infomapIterators.h"
 #include "iterators/treeIterators.h"
 #include "iterators/iterators.h"
-#include "../utils/exceptions.h"
+#include <stdexcept>
 #include "../utils/MetaCollection.h"
 #include <memory>
 #include <iostream>

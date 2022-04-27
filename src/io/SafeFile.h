@@ -32,7 +32,7 @@
 #include <ios>
 #include <cstdio>
 #include "../utils/convert.h"
-#include "../utils/exceptions.h"
+#include <stdexcept>
 
 namespace infomap {
 
@@ -59,7 +59,7 @@ public:
       : ifstream(filename.c_str(), mode)
   {
     if (fail())
-      throw FileOpenError(io::Str() << "Error opening file '" << filename << "'. Check that the path points to a file and that you have read permissions.");
+      throw std::runtime_error(io::Str() << "Error opening file '" << filename << "'. Check that the path points to a file and that you have read permissions.");
   }
 
   ~SafeInFile()
@@ -75,7 +75,7 @@ public:
       : ofstream(filename.c_str(), mode)
   {
     if (fail())
-      throw FileOpenError(io::Str() << "Error opening file '" << filename << "'. Check that the directory you are writing to exists and that you have write permissions.");
+      throw std::runtime_error(io::Str() << "Error opening file '" << filename << "'. Check that the directory you are writing to exists and that you have write permissions.");
   }
 
   ~SafeOutFile()
@@ -91,7 +91,7 @@ inline bool isDirectoryWritable(const std::string& dir)
   bool ok = true;
   try {
     SafeOutFile out(path.c_str());
-  } catch (const FileOpenError&) {
+  } catch (const std::runtime_error&) {
     ok = false;
   }
   if (ok)

@@ -30,7 +30,7 @@
 #include "utils/convert.h"
 #include <string>
 #include "Infomap.h"
-#include "utils/exceptions.h"
+#include <stdexcept>
 #include <algorithm>
 #ifdef _OPENMP
 #include <omp.h>

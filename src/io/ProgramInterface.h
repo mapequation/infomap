@@ -28,7 +28,7 @@
 #define PROGRAMINTERFACE_H_
 
 #include "../utils/convert.h"
-#include "../utils/exceptions.h"
+#include <stdexcept>
 
 #include <utility>
 #include <vector>
@@ -288,7 +288,7 @@ public:
   void addOptionalNonOptionArguments(std::vector<T>& target, std::string variableName, std::string desc, std::string group, bool isAdvanced = false)
   {
     if (m_numOptionalNonOptionArguments != 0)
-      throw OptionConflictError("Can't have two non-option vector arguments");
+      throw std::runtime_error("Can't have two non-option vector arguments");
     ++m_numOptionalNonOptionArguments;
     m_nonOptionArguments.push_back(new OptionalTargets<T>(target, std::move(variableName), std::move(desc), std::move(group), isAdvanced));
   }

@@ -27,7 +27,7 @@
 #include "StateNetwork.h"
 #include "../utils/FlowCalculator.h"
 #include "../utils/Log.h"
-#include "../utils/exceptions.h"
+#include <stdexcept>
 #include "../io/SafeFile.h"
 
 namespace infomap {
@@ -265,7 +265,7 @@ void StateNetwork::clear()
 void StateNetwork::writeStateNetwork(std::string filename) const
 {
   if (filename.empty())
-    throw BadArgumentError("writeStateNetwork called with empty filename");
+    throw std::runtime_error("writeStateNetwork called with empty filename");
 
   SafeOutFile outFile(filename);
 
@@ -303,7 +303,7 @@ void StateNetwork::writeStateNetwork(std::string filename) const
 void StateNetwork::writePajekNetwork(std::string filename, bool printFlow) const
 {
   if (filename.empty())
-    throw BadArgumentError("writePajekNetwork called with empty filename");
+    throw std::runtime_error("writePajekNetwork called with empty filename");
 
   SafeOutFile outFile(filename);
 
