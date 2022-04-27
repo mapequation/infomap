@@ -251,12 +251,6 @@ void MapEquation::printDebug()
   std::cout << "(enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << ", "
             << "enter_log_enter: " << enter_log_enter << ", "
             << "exitNetworkFlow_log_exitNetworkFlow: " << exitNetworkFlow_log_exitNetworkFlow << ") ";
-  //	std::cout << "enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << "\n" <<
-  //			"enter_log_enter: " << enter_log_enter << "\n" <<
-  //			"exitNetworkFlow_log_exitNetworkFlow: " << exitNetworkFlow_log_exitNetworkFlow << "\n";
-  //	std::cout << "exit_log_exit: " << exit_log_exit << "\n" <<
-  //			"flow_log_flow: " << flow_log_flow << "\n" <<
-  //			"nodeFlow_log_nodeFlow: " << nodeFlow_log_nodeFlow << "\n";
 }
 
 } // namespace infomap
