@@ -54,12 +54,9 @@ protected:
   // Multilayer
   std::map<unsigned int, Network> m_networks; // intra-layer links
   std::map<LayerNode, std::map<unsigned int, double>> m_interLinks;
-  // std::map<LayerNode, unsigned int> m_layerNodeToStateId;
   // { layer -> { physId -> stateId }}
   std::map<unsigned int, std::map<unsigned int, unsigned int>> m_layerNodeToStateId;
-  // std::map<LayerNode, double> m_sumIntraOutWeight;
   std::map<unsigned int, std::map<unsigned int, double>> m_sumIntraOutWeight;
-  // asdf m_sumIntraOutWeight
   std::set<unsigned int> m_layers;
   unsigned int m_numInterLayerLinks = 0;
   unsigned int m_numIntraLayerLinks = 0;
@@ -113,10 +110,6 @@ public:
 
   bool isMultilayerNetwork() const { return !m_layerNodeToStateId.empty(); }
   const std::map<unsigned int, std::map<unsigned int, unsigned int>>& layerNodeToStateId() const { return m_layerNodeToStateId; }
-
-  // void printParsingResult(bool onlySummary = false);
-
-  // std::string getParsingResultSummary();
 
   void postProcessInputData();
   void generateStateNetworkFromMultilayer();

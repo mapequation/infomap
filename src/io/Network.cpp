@@ -26,6 +26,11 @@
 
 #include "Network.h"
 
+#include "../io/convert.h"
+#include "../io/SafeFile.h"
+#include "../utils/FileURI.h"
+#include "../utils/Log.h"
+
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -33,10 +38,6 @@
 #include <iostream>
 #include <algorithm>
 
-#include "../io/convert.h"
-#include "../io/SafeFile.h"
-#include "../utils/FileURI.h"
-#include "../utils/Log.h"
 
 namespace infomap {
 
@@ -72,7 +73,6 @@ void Network::initValidHeadings()
   headingsStates.insert("*links");
   headingsStates.insert("*contexts");
   auto& ignoreHeadingsStates = m_ignoreHeadings["states"];
-  // ignoreHeadingsStates.insert("*arcs"); //TODO: Old allows this but what if both specified?
   ignoreHeadingsStates.insert("*edges");
   ignoreHeadingsStates.insert("*contexts");
 
@@ -82,7 +82,6 @@ void Network::initValidHeadings()
   headingsMultilayer.insert("*multilayer");
   headingsMultilayer.insert("*intra");
   headingsMultilayer.insert("*inter");
-  // auto& ignoreHeadingsMultilayer = m_ignoreHeadings["multilayer"];
 
   auto& headingsGeneral = m_validHeadings["general"];
   headingsGeneral.insert("*vertices");
@@ -97,7 +96,6 @@ void Network::initValidHeadings()
   headingsGeneral.insert("*contexts");
   headingsGeneral.insert("*bipartite");
   auto& ignoreHeadingsGeneral = m_ignoreHeadings["general"];
-  // ignoreHeadingsGeneral.insert("*states");
   ignoreHeadingsGeneral.insert("*contexts");
 }
 
@@ -249,7 +247,6 @@ void Network::readMetaData(std::string filename)
     if (line[0] == '*')
       break;
 
-    // parseVertice(line, id, name, weight);
     m_extractor.clear();
     m_extractor.str(line);
 
@@ -287,7 +284,6 @@ std::string Network::parseVertices(std::ifstream& file, std::string heading)
     if (line[0] == '*')
       break;
 
-    // parseVertice(line, id, name, weight);
     m_extractor.clear();
     m_extractor.str(line);
 
@@ -424,7 +420,6 @@ std::string Network::parseMultilayerIntraLinks(std::ifstream& file)
     double weight;
     parseMultilayerIntraLink(line, layer, n1, n2, weight);
 
-    // addMultilayerLink(layer, n1, layer, n2, weight);
     addMultilayerIntraLink(layer, n1, n2, weight);
   }
   Log() << "  -> " << m_numIntraLayerLinks << " intra-layer links\n";
@@ -455,8 +450,7 @@ std::string Network::parseMultilayerInterLinks(std::ifstream& file)
 
 std::string Network::parseBipartiteLinks(std::ifstream& file, std::string heading)
 {
-  Log() << "  Parsing bipartite links...\n"
-        << std::flush;
+  Log() << "  Parsing bipartite links...\n";
   // Extract break point for bipartite links
   m_extractor.clear();
   m_extractor.str(heading);
@@ -497,15 +491,6 @@ std::string Network::ignoreSection(std::ifstream& file, std::string heading)
   }
   return line;
 }
-
-// void Network::parseVertice(const std::string& line, unsigned int& id, std::string& name, double& weight)
-// {
-// 	m_extractor.clear();
-// 	m_extractor.str(line);
-// 	if (!(m_extractor >> id >> name))
-// 		throw FileFormatError(io::Str() << "Can't parse link data from line '" << line << "'");
-// 	(m_extractor >> weight) || (weight = 1.0);
-// }
 
 void Network::parseStateNode(const std::string& line, StateNetwork::StateNode& stateNode)
 {
@@ -656,33 +641,26 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
     auto& layerNode = it.first;
     unsigned int layer1 = layerNode.layer;
     unsigned int physId = layerNode.node;
-    // Log() << "From layer: " << layer1 << ", phys: " << physId << "\n";
     unsigned int stateId1 = addMultilayerNode(layer1, physId);
     for (auto& it2 : it.second) {
       unsigned int layer2 = it2.first;
       double interWeight = it2.second;
-      // Log() << "  -> layer: " << layer2 << ", weight: " << interWeight << "\n";
       auto& targetNetwork = m_networks[layer2];
 
-      // auto& targetLinks = targetNetwork.nodeLinkMap();
       std::map<StateNode, std::map<StateNode, LinkData>>& targetLinks = targetNetwork.nodeLinkMap();
       auto& outlinks = targetLinks[StateNode(physId)];
       if (outlinks.empty()) {
-        // Log() << "  Dangling\n";
         continue;
       }
-      // unsigned int stateId2 = addMultilayerNode(layer2, physId);
       auto& targetOutWeights = targetNetwork.outWeights();
       double sumIntraOutWeightTargetLayer = targetOutWeights[physId];
 
-      // Log() << "    -> " << outlinks.size() << " outlinks:\n";
       for (auto& outLink : outlinks) {
         auto& targetPhysId = outLink.first.physicalId;
         auto& linkData = outLink.second;
         double intraWeight = linkData.weight;
         unsigned int stateId2i = addMultilayerNode(layer2, targetPhysId);
 
-        // Log() << "      -> " << targetPhysId << "\n";
         double weight = sumIntraOutWeightTargetLayer == 0.0 ? 0.0 : interWeight * intraWeight / sumIntraOutWeightTargetLayer;
 
         addLink(stateId1, stateId2i, weight);
@@ -696,13 +674,10 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
       auto& layerNode = it.first;
       unsigned int layer2 = layerNode.layer;
       unsigned int physId = layerNode.node;
-      // Log() << "From layer: " << layer1 << ", phys: " << physId << "\n";
-      // unsigned int stateId1 = addMultilayerNode(layer1, physId);
       auto& targetNetwork = m_networks[layer2];
       std::map<StateNode, std::map<StateNode, LinkData>>& targetLinks = targetNetwork.nodeLinkMap();
       auto& outlinks = targetLinks[StateNode(physId)];
       if (outlinks.empty()) {
-        // Log() << "  Dangling\n";
         continue;
       }
       auto& targetOutWeights = targetNetwork.outWeights();
@@ -710,17 +685,14 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
       for (auto& it2 : it.second) {
         unsigned int layer1 = it2.first;
         double interWeight = it2.second;
-        // Log() << "  -> layer: " << layer2 << ", weight: " << interWeight << "\n";
         unsigned int stateId1 = addMultilayerNode(layer1, physId);
 
-        // Log() << "    -> " << outlinks.size() << " outlinks:\n";
         for (auto& outLink : outlinks) {
           auto& targetPhysId = outLink.first.physicalId;
           auto& linkData = outLink.second;
           double intraWeight = linkData.weight;
           unsigned int stateId2i = addMultilayerNode(layer2, targetPhysId);
 
-          // Log() << "      -> " << targetPhysId << "\n";
           double weight = sumIntraOutWeightTargetLayer == 0.0 ? 0.0 : interWeight * intraWeight / sumIntraOutWeightTargetLayer;
 
           addLink(stateId1, stateId2i, weight);
@@ -835,13 +807,9 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
                 linkWeightNormalizationFactor = jsRelaxWeightsIt->second * relaxRate / (1.0 - relaxRate) * sumOutLinkWeightLayer1 / jsTotWeightIt->second;
               }
 
-              // double stateNodeWeightNormalizationFactor = 1.0;
-              // createIntraLinksToNeighbouringNodesInTargetLayer(layer1, nodeId, layer2, m_networks[layer2].nodeLinkMap(), linkWeightNormalizationFactor, stateNodeWeightNormalizationFactor);
-
               auto& targetLinks = m_networks[layer2].nodeLinkMap();
               auto& targetOutlinks = targetLinks[StateNode(nodeId)];
               if (targetOutlinks.empty()) {
-                // Log() << "   -> Dangling\n";
                 continue;
               }
               for (auto& outLink : targetOutlinks) {
@@ -849,11 +817,9 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
                 auto& linkData = outLink.second;
                 double intraWeight = linkData.weight;
                 // Add intra link weight as teleport weight to source node
-                // asdf
                 unsigned int stateId1 = addMultilayerNode(layer1, nodeId, intraWeight);
                 unsigned int stateId2i = addMultilayerNode(layer2, n2, 0.0);
 
-                // Log() << "      -> " << n2 << "\n";
                 double weight = intraWeight == 0.0 ? 0.0 : linkWeightNormalizationFactor * intraWeight;
                 addLink(stateId1, stateId2i, weight);
                 ++m_numInterLayerLinks;
@@ -870,11 +836,9 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
   for (auto& it1 : m_networks) {
     auto layer1 = it1.first;
     auto& network1 = it1.second;
-    // Log() << "Layer " << layer1 << "\n";
 
     for (auto& n1It : network1.nodes()) {
       auto& n1 = n1It.first;
-      // Log() << "   Node " << n1 << "\n";
       unsigned int stateId1 = addMultilayerNode(layer1, n1);
 
       double sumOutLinkWeightLayer1 = network1.outWeights()[n1];
@@ -888,7 +852,6 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
         auto& network2 = it2.second;
         sumOutWeightAllLayers += network2.outWeights()[n1];
       }
-      // Log() << "   -> sumOutWeightAllLayers: " << sumOutWeightAllLayers << "\n";
 
       if (sumOutWeightAllLayers <= 0) {
         continue;
@@ -899,20 +862,16 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
           continue;
         }
         auto& network2 = it2.second;
-        // Log() << "     Layer " << layer2 << "\n";
         bool isIntra = layer2 == layer1;
 
         double linkWeightNormalizationFactor = relaxRate / sumOutWeightAllLayers;
         if (isIntra) {
           linkWeightNormalizationFactor += (1.0 - relaxRate) / sumOutLinkWeightLayer1;
         }
-        // double stateNodeWeightNormalizationFactor = 1.0;
 
-        // createIntraLinksToNeighbouringNodesInTargetLayer(layer1, nodeIndex, layer2, m_networks[layer2].linkMap(), linkWeightNormalizationFactor, stateNodeWeightNormalizationFactor);
         auto& targetLinks = network2.nodeLinkMap();
         auto& targetOutlinks = targetLinks[StateNode(n1)];
         if (targetOutlinks.empty()) {
-          // Log() << "   -> Dangling\n";
           continue;
         }
         for (auto& outLink : targetOutlinks) {
@@ -921,7 +880,6 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
           double intraWeight = linkData.weight;
           unsigned int stateId2i = addMultilayerNode(layer2, n2);
 
-          // Log() << "      -> " << n2 << "\n";
           double weight = intraWeight == 0.0 ? 0.0 : linkWeightNormalizationFactor * intraWeight;
           addLink(stateId1, stateId2i, weight);
           ++m_numInterLayerLinks; // TODO: Count all as one?
@@ -1003,8 +961,6 @@ double Network::calculateJensenShannonDivergence(bool& intersect, const OutLinkM
   else if (div > 1.0)
     div = 1.0;
 
-  // Log() << "\n" << div << " " << (pi1+pi2) << " " << h12 << " " << pi1 << " " << h1 << " " << pi2 << " " << h2;
-
   return div;
 }
 
@@ -1029,8 +985,6 @@ void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsign
   }
   m_higherOrderInputMethodCalled = true;
 
-  // m_interLinks[LayerNode(layer1, n)][layer2] += interWeight;
-
   auto& interLinks = m_interLinks[LayerNode(layer1, n)];
   auto it = interLinks.find(layer2);
 
@@ -1038,39 +992,11 @@ void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsign
     ++m_numInterLayerLinks;
   }
   interLinks[layer2] += interWeight;
-
-  // unsigned int stateId1 = addMultilayerNode(layer1, n);
-  // unsigned int stateId2 = addMultilayerNode(layer2, n);
-
-  // auto& outLinks = m_nodeLinkMap[stateId2]; // std::map<StateNode, LinkData>
-  // if (outLinks.empty()) {
-  // 	// TODO: Do nothing?
-  // 	return;
-  // }
-
-  // for (auto& outLink : outLinks) {
-  // 	auto& targetNode = outLink.first;
-  // 	auto& linkData = outLink.second;
-  // 	double intraWeight = linkData.weight;
-  // 	double weight = interWeight * intraWeight / m_sumIntraOutWeight[layer2][n];
-  // 	addLink(stateId1, targetNode.id, weight);
-  // 	++m_numInterLayerLinks; // TODO: Count all as one?
-  // }
 }
 
 unsigned int Network::addMultilayerNode(unsigned int layerId, unsigned int physicalId, double weight)
 {
   m_higherOrderInputMethodCalled = true;
-  // auto layerNode = LayerNode(layerId, physicalId);
-  // auto it = m_layerNodeToStateId.find(layerNode);
-  // if (it != m_layerNodeToStateId.end()) {
-  // 	return it->second;
-  // }
-  // auto ret = addStateNodeWithAutogeneratedId(physicalId);
-  // auto& stateNode = ret.first->second;
-  // m_layerNodeToStateId[layerNode] = stateNode.id;
-  // m_layers.insert(layerId);
-  // return stateNode.id;
 
   // Create state node if not already exist, return state node id
   auto& layerIt = m_layerNodeToStateId[layerId];
@@ -1112,336 +1038,5 @@ void Network::addMetaData(unsigned int nodeId, const std::vector<int>& metaData)
     throw FileFormatError(io::Str() << "Must have same number of dimensions in meta data, error trying to add meta data '" << io::stringify(metaData, ",") << "' on node " << nodeId << ".");
   }
 }
-
-// bool Network::addLink(unsigned int n1, unsigned int n2, double weight)
-// {
-// 	++m_numLinksFound;
-
-// 	if (m_config.nodeLimit > 0 && (n1 >= m_config.nodeLimit || n2 >= m_config.nodeLimit))
-// 		return false;
-
-// 	if (n2 == n1)
-// 	{
-// 		++m_numSelfLinksFound;
-// 		if (!m_config.includeSelfLinks)
-// 			return false;
-// 		++m_numSelfLinks;
-// 		m_totalSelfLinkWeight += weight;
-// 	}
-// 	else if (m_config.parseAsUndirected() && n2 < n1) // minimize number of links
-// 		std::swap(n1, n2);
-
-// 	m_maxNodeIndex = std::max(m_maxNodeIndex, std::max(n1, n2));
-// 	m_minNodeIndex = std::min(m_minNodeIndex, std::min(n1, n2));
-
-// 	insertLink(n1, n2, weight);
-
-// 	return true;
-// }
-
-// bool Network::addBipartiteLink(unsigned int featureNode, unsigned int node, bool swapOrder, double weight)
-// {
-// 	++m_numLinksFound;
-
-// 	if (m_config.nodeLimit > 0 && node >= m_config.nodeLimit)
-// 		return false;
-
-// 	m_maxNodeIndex = std::max(m_maxNodeIndex, node);
-// 	m_minNodeIndex = std::min(m_minNodeIndex, node);
-
-// 	m_bipartiteLinks[BipartiteLink(featureNode, node, swapOrder)] += weight;
-
-// 	return true;
-// }
-
-// bool Network::insertLink(unsigned int n1, unsigned int n2, double weight)
-// {
-// 	++m_numLinks;
-// 	m_totalLinkWeight += weight;
-
-// 	// Aggregate link weights if they are definied more than once
-// 	LinkMap::iterator firstIt = m_links.lower_bound(n1);
-// 	if (firstIt != m_links.end() && firstIt->first == n1) // First linkEnd already exists, check second linkEnd
-// 	{
-// 		std::pair<std::map<unsigned int, double>::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(n2, weight));
-// 		if (!ret2.second)
-// 		{
-// 			ret2.first->second += weight;
-// 			++m_numAggregatedLinks;
-// 			--m_numLinks;
-// 			return false;
-// 		}
-// 	}
-// 	else
-// 	{
-// 		m_links.insert(firstIt, std::make_pair(n1, std::map<unsigned int, double>()))->second.insert(std::make_pair(n2, weight));
-// 	}
-
-// 	return true;
-// }
-
-// void Network::finalizeAndCheckNetwork(bool printSummary, unsigned int desiredNumberOfNodes)
-// {
-// 	// If no nodes defined
-// 	if (m_numNodes == 0)
-// 		m_numNodes = m_numNodesFound = m_maxNodeIndex + 1;
-
-// 	if (desiredNumberOfNodes != 0)
-// 	{
-// 		if (!m_nodeNames.empty() && desiredNumberOfNodes != m_nodeNames.size()) {
-// 			// throw InputDomainError("Can't change the number of nodes in networks with a specified number of nodes.");
-// 			m_nodeNames.reserve(desiredNumberOfNodes);
-// 			for (unsigned int i = m_nodeNames.size(); i < desiredNumberOfNodes; ++i) {
-// 				m_nodeNames.push_back(io::Str() << "_completion_node_" << (i + 1));
-// 			}
-// 		}
-// 		m_numNodes = desiredNumberOfNodes;
-// 	}
-
-// 	unsigned int zeroMinusOne = 0;
-// 	--zeroMinusOne;
-// 	if (m_maxNodeIndex == zeroMinusOne)
-// 		throw InputDomainError(io::Str() << "Integer overflow, be sure to use zero-based node numbering if the node numbers start from zero.");
-// 	if (m_maxNodeIndex >= m_numNodes)
-// 		throw InputDomainError(io::Str() << "At least one link is defined with node numbers that exceeds the number of nodes.");
-// 	if (m_minNodeIndex == 1 && m_config.zeroBasedNodeNumbers)
-// 		Log() << "(Warning: minimum link index is one, check that you don't use zero based numbering if it's not true.) ";
-
-// 	if (!m_bipartiteLinks.empty())
-// 	{
-// 		if (m_numLinks > 0)
-// 			throw InputDomainError("Can't add bipartite links together with ordinary links.");
-// 		for (std::map<BipartiteLink, Weight>::iterator it(m_bipartiteLinks.begin()); it != m_bipartiteLinks.end(); ++it)
-// 		{
-// 			const BipartiteLink& link = it->first;
-// 			// Offset feature nodes by the number of ordinary nodes to make them unique
-// 			unsigned int featureNodeIndex = link.featureNode + m_numNodes;
-// 			m_maxNodeIndex = std::max(m_maxNodeIndex, featureNodeIndex);
-// 			if (link.swapOrder)
-// 				insertLink(link.node, featureNodeIndex, it->second.weight);
-// 			else
-// 				insertLink(featureNodeIndex, link.node, it->second.weight);
-// 		}
-// 		m_numBipartiteNodes = m_maxNodeIndex + 1 - m_numNodes;
-// 		m_numNodes += m_numBipartiteNodes;
-// 	}
-
-// 	if (m_links.empty())
-// 		throw InputDomainError("No links added!");
-
-// 	if (m_addSelfLinks)
-// 		zoom();
-
-// 	initNodeDegrees();
-
-// 	if (printSummary)
-// 		printParsingResult();
-// }
-
-// void Network::zoom()
-// {
-// 	unsigned int numNodes = m_numNodes;
-// 	std::vector<unsigned int> nodeOutDegree(numNodes, 0);
-// 	std::vector<double> sumLinkOutWeight(numNodes, 0.0);
-// 	std::map<unsigned int, double> dummy;
-// 	std::vector<std::map<unsigned int, double>::iterator> existingSelfLinks(numNodes, dummy.end());
-
-// 	for (LinkMap::iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
-// 	{
-// 		unsigned int linkEnd1 = linkIt->first;
-// 		std::map<unsigned int, double>& subLinks = linkIt->second;
-// 		for (std::map<unsigned int, double>::iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
-// 		{
-// 			unsigned int linkEnd2 = subIt->first;
-// 			double linkWeight = subIt->second;
-// 			++nodeOutDegree[linkEnd1];
-// 			if (linkEnd1 == linkEnd2)
-// 			{
-// 				// Store existing self-link to aggregate additional weight
-// 				existingSelfLinks[linkEnd1] = subIt;
-// //				sumLinkOutWeight[linkEnd1] += linkWeight;
-// 			}
-// 			else
-// 			{
-// 				if (m_config.isUndirected())
-// 				{
-// 					sumLinkOutWeight[linkEnd1] += linkWeight * 0.5; // Why half?
-// 					sumLinkOutWeight[linkEnd2] += linkWeight * 0.5;
-// 					++nodeOutDegree[linkEnd2];
-// 				}
-// 				else
-// 				{
-// 					sumLinkOutWeight[linkEnd1] += linkWeight;
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	double selfProb = m_config.selfTeleportationProbability;
-
-// 	for (unsigned int i = 0; i < numNodes; ++i)
-// 	{
-// 		if (nodeOutDegree[i] == 0)
-// 			continue; // Skip dangling nodes at the moment
-
-// 		double selfLinkWeight = sumLinkOutWeight[i] * selfProb / (1.0 - selfProb);
-
-// 		if (existingSelfLinks[i] != dummy.end()) {
-// 			existingSelfLinks[i]->second += selfLinkWeight;
-// 		}
-// 		else {
-// 			m_links[i].insert(std::make_pair(i, selfLinkWeight));
-// 			++m_numAdditionalLinks;
-// 		}
-// 		m_sumAdditionalLinkWeight += selfLinkWeight;
-// 	}
-
-// 	m_numLinks += m_numAdditionalLinks;
-// 	m_numSelfLinks += m_numAdditionalLinks;
-// 	m_totalLinkWeight += m_sumAdditionalLinkWeight;
-// 	m_totalSelfLinkWeight += m_sumAdditionalLinkWeight;
-// }
-
-// void Network::initNodeDegrees()
-// {
-// 	m_outDegree.assign(m_numNodes, 0.0);
-// 	m_sumLinkOutWeight.assign(m_numNodes, 0.0);
-// 	m_numDanglingNodes = m_numNodes;
-// 	for (LinkMap::iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
-// 	{
-// 		unsigned int n1 = linkIt->first;
-// 		std::map<unsigned int, double>& subLinks = linkIt->second;
-// 		for (std::map<unsigned int, double>::iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
-// 		{
-// 			unsigned int n2 = subIt->first;
-// 			double linkWeight = subIt->second;
-// 			if (m_outDegree[n1] == 0)
-// 				--m_numDanglingNodes;
-// 			++m_outDegree[n1];
-// 			m_sumLinkOutWeight[n1] += linkWeight;
-// 			if (n1 != n2 && m_config.parseAsUndirected())
-// 			{
-// 				if (m_outDegree[n2] == 0)
-// 					--m_numDanglingNodes;
-// 				++m_outDegree[n2];
-// 				m_sumLinkOutWeight[n2] += linkWeight;
-// 			}
-// 		}
-// 	}
-// }
-
-// void Network::printParsingResult(bool onlySummary)
-// {
-// 	bool dataModified = m_numNodesFound != m_numNodes || m_numLinksFound != m_numLinks;
-
-// 	if (onlySummary)
-// 	{
-// 		Log() << "  ==> " << getParsingResultSummary() << '\n';
-// 		return;
-// 	}
-
-// 	if (!dataModified)
-// 		Log() << "  ==> " << getParsingResultSummary();
-// 	else {
-// 		Log() << "  --> Found " << m_numNodesFound << io::toPlural(" node", m_numNodesFound);
-// 		Log() << "  and " << m_numLinksFound << io::toPlural(" link", m_numLinksFound) << ".";
-// 	}
-
-// 	if(m_numAggregatedLinks > 0)
-// 		Log() << "\n --> Aggregated " << m_numAggregatedLinks << io::toPlural(" link", m_numAggregatedLinks) << " to existing links.";
-// 	if (m_numSelfLinksFound > 0 && !m_config.includeSelfLinks)
-// 		Log() << "\n --> Ignored " << m_numSelfLinksFound << io::toPlural(" self-link", m_numSelfLinksFound) << ".";
-// 	unsigned int numNodesIgnored = m_numNodesFound - m_numNodes;
-// 	if (m_config.nodeLimit > 0)
-// 		Log() << "\n --> Ignored " << numNodesIgnored << io::toPlural(" node", numNodesIgnored) << " due to specified limit.";
-// 	if (m_numDanglingNodes > 0)
-// 		Log() << "\n --> " << m_numDanglingNodes << " dangling " << io::toPlural("node", m_numDanglingNodes) << " (nodes with no outgoing links).";
-
-// 	if (m_numAdditionalLinks > 0)
-// 		Log() << "\n --> Added " << m_numAdditionalLinks << io::toPlural(" self-link", m_numAdditionalLinks) << " with total weight " << m_sumAdditionalLinkWeight << ".";
-// 	if (m_numSelfLinks > 0) {
-// 		Log() << "\n --> " << m_numSelfLinks << io::toPlural(" self-link", m_numSelfLinks);
-// 		Log() << "  with total weight " << m_totalSelfLinkWeight << " (" << (m_totalSelfLinkWeight / m_totalLinkWeight * 100) << "% of the total link weight).";
-// 	}
-
-// 	if (dataModified) {
-// 		Log() << "\n ==> " << getParsingResultSummary();
-// 	}
-
-// 	if (isBipartite())
-// 		Log() << "\nBipartite => " << m_numNodes - m_numBipartiteNodes << " ordinary nodes and " <<
-// 			m_numBipartiteNodes << " feature nodes.";
-
-// 	Log() << std::endl;
-// }
-
-// std::string Network::getParsingResultSummary()
-// {
-// 	std::ostringstream o;
-// 	o << m_numNodes << io::toPlural(" node", m_numNodes);
-// 	if (!m_nodeWeights.empty() && std::abs(m_sumNodeWeights / m_numNodes - 1.0) > 1e-9)
-// 		o << " (with total weight " << m_sumNodeWeights << ")";
-// 	o << " and " << m_numLinks << io::toPlural(" link", m_numLinks);
-// 	if (std::abs(m_totalLinkWeight / m_numLinks - 1.0) > 1e-9)
-// 		o << " (with total weight " << m_totalLinkWeight << ")";
-// 	o << ".";
-// 	return o.str();
-// }
-
-// void Network::printNetworkAsPajek(std::string filename) const
-// {
-// 	SafeOutFile out(filename.c_str());
-
-// 	out << "*Vertices " << m_numNodes << "\n";
-// 	if (m_nodeNames.empty()) {
-// 		for (unsigned int i = 0; i < m_numNodes; ++i)
-// 			out << (i+1) << " \"" << i + 1 << "\"\n";
-// 	}
-// 	else {
-// 		for (unsigned int i = 0; i < m_numNodes; ++i)
-// 			out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
-// 	}
-
-// 	out << (m_config.isUndirected() ? "*Edges " : "*Arcs ") << m_links.size() << "\n";
-// 	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
-// 	{
-// 		unsigned int linkEnd1 = linkIt->first;
-// 		const std::map<unsigned int, double>& subLinks = linkIt->second;
-// 		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
-// 		{
-// 			unsigned int linkEnd2 = subIt->first;
-// 			double linkWeight = subIt->second;
-// 			out << (linkEnd1 + 1) << " " << (linkEnd2 + 1) << " " << linkWeight << "\n";
-// 		}
-// 	}
-// }
-
-// void Network::printStateNetwork(std::string filename) const
-// {
-// 	SafeOutFile out(filename.c_str());
-
-// 	out << "*States " << m_numNodes << "\n";
-// 	if (m_nodeNames.empty()) {
-// 		for (unsigned int i = 0; i < m_numNodes; ++i)
-// 			out << (i+1) << " \"" << i + 1 << "\"\n";
-// 	}
-// 	else {
-// 		for (unsigned int i = 0; i < m_numNodes; ++i)
-// 			out << (i+1) << " \"" << m_nodeNames[i] << "\"\n";
-// 	}
-
-// 	out << (m_config.isUndirected() ? "*Edges " : "*Arcs ") << m_links.size() << "\n";
-// 	for (LinkMap::const_iterator linkIt(m_links.begin()); linkIt != m_links.end(); ++linkIt)
-// 	{
-// 		unsigned int linkEnd1 = linkIt->first;
-// 		const std::map<unsigned int, double>& subLinks = linkIt->second;
-// 		for (std::map<unsigned int, double>::const_iterator subIt(subLinks.begin()); subIt != subLinks.end(); ++subIt)
-// 		{
-// 			unsigned int linkEnd2 = subIt->first;
-// 			double linkWeight = subIt->second;
-// 			out << (linkEnd1 + 1) << " " << (linkEnd2 + 1) << " " << linkWeight << "\n";
-// 		}
-// 	}
-// }
 
 } // namespace infomap
