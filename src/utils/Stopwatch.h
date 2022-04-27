@@ -90,7 +90,7 @@ public:
 
   friend std::ostream& operator<<(std::ostream& out, const Stopwatch& stopwatch)
   {
-    unsigned int temp = static_cast<unsigned int>(std::floor(stopwatch.getElapsedTimeInMilliSec()));
+    auto temp = static_cast<unsigned int>(std::floor(stopwatch.getElapsedTimeInMilliSec()));
     if (temp > 60'000) {
       if (temp > 3600'000) {
         if (temp > 86'400'000) {
@@ -108,16 +108,6 @@ public:
     }
     return out;
   }
-
-  // static double getElapsedTimeSinceProgramStartInSec()
-  // {
-  // 	return (double)Clock::now() / CLOCKS_PER_SEC;
-  // }
-
-  // static double getElapsedTimeSinceProgramStartInMilliSec()
-  // {
-  // 	return Clock::now() * 1000.0 / CLOCKS_PER_SEC;
-  // }
 
 private:
   TimeType m_start, m_stop;
