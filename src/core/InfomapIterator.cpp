@@ -150,7 +150,6 @@ InfomapIterator& InfomapIteratorPhysical::operator++()
       // Store current iterator to continue with after iterating physical leaf nodes
       m_oldIter = *this;
       // Reset path/depth/moduleIndex to values for first leaf node
-      // *this = firstLeafIt;
       m_path = firstLeafIt.m_path;
       m_depth = firstLeafIt.m_depth;
       m_moduleIndex = firstLeafIt.m_moduleIndex;
