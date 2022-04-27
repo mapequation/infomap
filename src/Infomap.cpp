@@ -7,18 +7,7 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#include "utils/Log.h"
-#include "io/Config.h"
-#include "utils/convert.h"
 #include "Infomap.h"
-
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <algorithm>
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 
 namespace infomap {
 
@@ -92,24 +81,6 @@ std::map<std::pair<unsigned int, unsigned int>, double> InfomapWrapper::getLinks
   return links;
 }
 
-int run(const std::string& flags)
-{
-  try {
-    Config conf(flags, true);
-
-    InfomapWrapper infomap(conf);
-    // InfomapWrapper infomap(flags, true);
-
-    infomap.run();
-  } catch (std::exception& e) {
-    std::cerr << "Error: " << e.what() << std::endl;
-    return 1;
-  } catch (char const* e) {
-    std::cerr << "Str error: " << e << std::endl;
-  }
-
-  return 0;
-}
 
 ////////////////////////////////
 // Implementation of c bindings
@@ -154,13 +125,3 @@ double Flow(struct InfomapLeafIterator* it) { return it->current()->data.flow; }
 
 } // namespace infomap
 
-#ifndef AS_LIB
-int main(int argc, char* argv[])
-{
-  std::ostringstream args("");
-  for (int i = 1; i < argc; ++i)
-    args << argv[i] << (i + 1 == argc ? "" : " ");
-
-  return infomap::run(args.str());
-}
-#endif
