@@ -27,7 +27,7 @@
 #ifndef CONVERT_H_
 #define CONVERT_H_
 
-#include "../utils/exceptions.h"
+#include "exceptions.h"
 #include <iomanip>
 #include <sstream>
 #include <string>
