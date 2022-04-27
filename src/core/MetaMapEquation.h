@@ -11,7 +11,6 @@
 #include <utility>
 #include "MapEquation.h"
 #include "FlowData.h"
-// #include "InfoNode.h"
 #include "../utils/Log.h"
 #include "../utils/MetaCollection.h"
 
@@ -55,10 +54,8 @@ public:
 
   using Base::getIndexCodelength;
 
-  // double getModuleCodelength() const { return moduleCodelength + metaCodelength; };
   double getModuleCodelength() const;
 
-  // double getCodelength() const { return codelength + metaCodelength; };
   double getCodelength() const;
 
   double getMetaCodelength(bool unweighted = false) const
@@ -70,7 +67,6 @@ public:
   // IO
   // ===================================================
 
-  // using Base::print;
   std::ostream& print(std::ostream& out) const;
   friend std::ostream& operator<<(std::ostream&, const MetaMapEquation&);
 
