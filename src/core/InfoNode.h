@@ -28,7 +28,7 @@
 #include "InfoEdge.h"
 #include "iterators/infomapIterators.h"
 #include "iterators/treeIterators.h"
-#include "iterators/iterators.h"
+#include "iterators/IterWrapper.h"
 #include "../utils/MetaCollection.h"
 
 #include <stdexcept>
