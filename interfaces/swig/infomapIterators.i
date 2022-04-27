@@ -13,7 +13,7 @@
 %import "InfoNode.i"
 
 /* Parse the header file to generate wrappers */
-%include "src/core/infomapIterators.h"
+%include "src/core/iterators/infomapIterators.h"
 
 
 namespace infomap {

@@ -6,4 +6,4 @@
 %}
 
 /* Parse the header file to generate wrappers */
-%include "src/core/treeIterators.h"
+%include "src/core/iterators/treeIterators.h"
