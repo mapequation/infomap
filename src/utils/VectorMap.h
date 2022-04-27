@@ -58,9 +58,6 @@ public:
   {
     if (isSet(index)) {
       m_values[m_redirect[index] - m_offset] += value;
-      // auto tmp = m_values[m_redirect[index] - m_offset];
-      // m_values[m_redirect[index] - m_offset] = value;
-      // m_values[m_redirect[index] - m_offset] += tmp;
     } else {
       m_redirect[index] = m_offset + m_size;
       m_values[m_size] = value;

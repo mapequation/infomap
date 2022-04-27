@@ -5,10 +5,9 @@
 #ifndef _META_COLLECTION_H
 #define _META_COLLECTION_H
 
-#include <ostream>
-// #include <unordered_map>
-#include <map>
 #include "infomath.h"
+#include <ostream>
+#include <map>
 
 namespace infomap {
 
@@ -30,19 +29,15 @@ struct FlowCount {
 
   FlowCount& operator+=(const FlowCount& o)
   {
-    // std::cout << " [[FlowCount " << *this << " += " << o << " --> ";
     flow += o.flow;
     count += o.count;
-    // std::cout << *this << "]] ";
     return *this;
   }
 
   FlowCount& operator+=(double f)
   {
-    // std::cout << " [FlowCount " << *this << " += " << f << " --> ";
     flow += f;
     ++count;
-    // std::cout << *this << "] ";
     return *this;
   }
 
@@ -76,7 +71,6 @@ struct FlowCount {
   unsigned int count = 0;
 };
 
-// using MetaToFlowCount = std::unordered_map<unsigned int, FlowCount>; // metaId -> (flow,count)
 using MetaToFlowCount = std::map<unsigned int, FlowCount>; // metaId -> (flow,count)
 
 class MetaCollection {
