@@ -290,4 +290,4 @@ struct Config {
 
 } // namespace infomap
 
-#endif /* CONFIG_H_ */
+#endif // CONFIG_H_

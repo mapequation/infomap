@@ -16,4 +16,4 @@ extern const char* INFOMAP_VERSION;
 
 }
 
-#endif /* VERSION_H_ */
+#endif // VERSION_H_

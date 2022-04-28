@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef _META_COLLECTION_H
-#define _META_COLLECTION_H
+#ifndef META_COLLECTION_H_
+#define META_COLLECTION_H_
 
 #include "infomath.h"
 #include <ostream>
@@ -160,4 +160,4 @@ public:
 
 } // namespace infomap
 
-#endif /* _META_COLLECTION_H */
+#endif // META_COLLECTION_H_

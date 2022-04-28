@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef _LOG_H_
-#define _LOG_H_
+#ifndef LOG_H_
+#define LOG_H_
 
 #include <iostream>
 #include <limits>
@@ -100,4 +100,4 @@ struct hideIf {
 
 } // namespace infomap
 
-#endif /* _LOG_H_ */
+#endif // LOG_H_

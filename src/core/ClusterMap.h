@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef _CLUSTERMAP_H_
-#define _CLUSTERMAP_H_
+#ifndef CLUSTER_MAP_H_
+#define CLUSTER_MAP_H_
 
 #include <string>
 #include <map>
@@ -50,4 +50,4 @@ private:
 
 } // namespace infomap
 
-#endif /* _CLUSTERMAP_H_ */
+#endif // CLUSTER_MAP_H_

@@ -129,4 +129,4 @@ public:
 
 } // namespace infomap
 
-#endif /* INFOMAP_H_ */
+#endif // INFOMAP_H_

@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef SRC_CLUSTERING_MAPEQUATION_H_
-#define SRC_CLUSTERING_MAPEQUATION_H_
+#ifndef MAPEQUATION_H_
+#define MAPEQUATION_H_
 
 #include "../utils/infomath.h"
 #include "../utils/convert.h"
@@ -173,4 +173,4 @@ protected:
 
 } // namespace infomap
 
-#endif /* SRC_CLUSTERING_MAPEQUATION_H_ */
+#endif // MAPEQUATION_H_

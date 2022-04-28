@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef _BIASEDMAPEQUATION_H_
-#define _BIASEDMAPEQUATION_H_
+#ifndef BIASED_MAPEQUATION_H_
+#define BIASED_MAPEQUATION_H_
 
 #include "MapEquation.h"
 #include "FlowData.h"
@@ -213,4 +213,4 @@ public:
 
 } // namespace infomap
 
-#endif /* _BIASEDMAPEQUATION_H_ */
+#endif // BIASED_MAPEQUATION_H_

@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef MODULES_CLUSTERING_CLUSTERING_INFOMAPCONFIG_H_
-#define MODULES_CLUSTERING_CLUSTERING_INFOMAPCONFIG_H_
+#ifndef INFOMAP_CONFIG_H_
+#define INFOMAP_CONFIG_H_
 
 #include "../io/Config.h"
 #include "../utils/Random.h"
@@ -135,4 +135,4 @@ public:
 
 } // namespace infomap
 
-#endif /* MODULES_CLUSTERING_CLUSTERING_INFOMAPCONFIG_H_ */
+#endif // INFOMAP_CONFIG_H_

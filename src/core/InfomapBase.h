@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef SRC_CLUSTERING_INFOMAPBASE_H_
-#define SRC_CLUSTERING_INFOMAPBASE_H_
+#ifndef INFOMAP_BASE_H_
+#define INFOMAP_BASE_H_
 
 #include "InfomapConfig.h"
 #include "InfoEdge.h"
@@ -580,4 +580,4 @@ namespace detail {
 
 } // namespace infomap
 
-#endif /* SRC_CLUSTERING_INFOMAPBASE_H_ */
+#endif // INFOMAP_BASE_H_

@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef _METAMAPEQUATION_H_
-#define _METAMAPEQUATION_H_
+#ifndef META_MAPEQUATION_H_
+#define META_MAPEQUATION_H_
 
 #include "MapEquation.h"
 #include "FlowData.h"
@@ -203,4 +203,4 @@ protected:
 
 } // namespace infomap
 
-#endif /* _METAMAPEQUATION_H_ */
+#endif // META_MAPEQUATION_H_

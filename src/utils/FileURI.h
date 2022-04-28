@@ -51,4 +51,4 @@ private:
 
 } // namespace infomap
 
-#endif /* FILEURI_H_ */
+#endif // FILEURI_H_

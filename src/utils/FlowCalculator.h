@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef FLOWCALCULATOR_H_
-#define FLOWCALCULATOR_H_
+#ifndef FLOW_CALCULATOR_H_
+#define FLOW_CALCULATOR_H_
 
 #include <map>
 #include <vector>
@@ -73,4 +73,4 @@ protected:
 
 } // namespace infomap
 
-#endif /* FLOWCALCULATOR_H_ */
+#endif // FLOW_CALCULATOR_H_

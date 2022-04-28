@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef _ITERATOR_H_
-#define _ITERATOR_H_
+#ifndef INFOMAP_ITERATOR_H_
+#define INFOMAP_ITERATOR_H_
 
 #include "../InfoNode.h"
 #include <deque>
@@ -481,4 +481,4 @@ public:
 
 } // namespace infomap
 
-#endif /* _ITERATOR_H_ */
+#endif // INFOMAP_ITERATOR_H_
