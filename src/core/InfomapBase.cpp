@@ -12,7 +12,6 @@
 #include "InfoNode.h"
 #include "FlowData.h"
 #include "BiasedMapEquation.h"
-#include "ClusterMap.h"
 #include "../io/SafeFile.h"
 #include "../utils/FileURI.h"
 #include "../Infomap.h"

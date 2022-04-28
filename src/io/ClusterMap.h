@@ -36,11 +36,10 @@ public:
 
   const std::string& extension() const noexcept { return m_extension; }
 
-protected:
+private:
   void readTree(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);
   void readClu(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);
 
-private:
   std::map<unsigned int, unsigned int> m_clusterIds;
   std::map<unsigned int, double> m_flowData;
   NodePaths m_nodePaths;

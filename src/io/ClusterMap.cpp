@@ -8,7 +8,7 @@
  ******************************************************************************/
 
 #include "ClusterMap.h"
-#include "../io/SafeFile.h"
+#include "SafeFile.h"
 #include "../utils/Log.h"
 #include "../utils/FileURI.h"
 #include <sstream>
