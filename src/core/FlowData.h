@@ -114,7 +114,7 @@ struct DeltaFlow {
     return *this;
   }
 
-  virtual void reset()
+  void reset()
   {
     module = 0;
     deltaExit = 0.0;
@@ -155,7 +155,7 @@ struct MemDeltaFlow : DeltaFlow {
     return *this;
   }
 
-  void reset() override
+  void reset()
   {
     DeltaFlow::reset();
     sumDeltaPlogpPhysFlow = 0.0;
