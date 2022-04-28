@@ -90,7 +90,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
 
     for (const auto& physNode : physicalNodes) {
       unsigned int zeroBasedIndex = !toZeroBasedIndex.empty() ? toZeroBasedIndex[physNode.first] : (physNode.first - minPhysicalId);
-      root.physicalNodes.push_back(PhysData(zeroBasedIndex, physNode.second));
+      root.physicalNodes.emplace_back(zeroBasedIndex, physNode.second);
     }
   }
   auto firstLeafIt = root.begin_leaf_nodes();
@@ -122,7 +122,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
     for (auto it(root.begin_leaf_nodes()); !it.isEnd(); ++it) {
       InfoNode& node = *it;
       unsigned int zeroBasedIndex = !toZeroBasedIndex.empty() ? toZeroBasedIndex[node.physicalId] : (node.physicalId - minPhysicalId);
-      node.physicalNodes.push_back(PhysData(zeroBasedIndex, node.data.flow));
+      node.physicalNodes.emplace_back(zeroBasedIndex, node.data.flow);
     }
 
     // If leaf nodes was not directly under root, make sure leaf modules have
@@ -137,7 +137,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
           }
         }
         for (auto& physFlow : physToFlow) {
-          module.physicalNodes.push_back(PhysData(physFlow.first, physFlow.second));
+          module.physicalNodes.emplace_back(physFlow.first, physFlow.second);
         }
       }
     }
@@ -189,7 +189,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
           }
         }
         for (auto& physFlow : physToFlow) {
-          module.physicalNodes.push_back(PhysData(physFlow.first, physFlow.second));
+          module.physicalNodes.emplace_back(physFlow.first, physFlow.second);
         }
       }
     }
@@ -431,7 +431,7 @@ void MemMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
       if (++validate[overlapIt->first][i] > 1)
         throw std::domain_error("[InfomapGreedy::consolidateModules] Error updating physical nodes: duplication error");
 
-      modules[overlapIt->first]->physicalNodes.push_back(PhysData(i, overlapIt->second.sumFlow));
+      modules[overlapIt->first]->physicalNodes.emplace_back(i, overlapIt->second.sumFlow);
     }
   }
 }
