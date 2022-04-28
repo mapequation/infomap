@@ -260,7 +260,7 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
   // For all outlinks
   for (auto& e : current.outEdges()) {
     auto& edge = *e;
-    unsigned int otherModule = edge.target.index;
+    unsigned int otherModule = edge.target->index;
     if (otherModule == oldM) {
       oldModuleDelta.deltaExit += edge.data.flow;
     } else if (otherModule == newM) {
@@ -270,7 +270,7 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
   // For all inlinks
   for (auto& e : current.inEdges()) {
     auto& edge = *e;
-    unsigned int otherModule = edge.source.index;
+    unsigned int otherModule = edge.source->index;
     if (otherModule == oldM) {
       oldModuleDelta.deltaEnter += edge.data.flow;
     } else if (otherModule == newM) {
@@ -371,14 +371,14 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     // For all outlinks
     for (auto& e : current.outEdges()) {
       auto& edge = *e;
-      InfoNode& neighbour = edge.target;
-      deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0));
+      InfoNode* neighbour = edge.target;
+      deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, edge.data.flow, 0.0));
     }
     // For all inlinks
     for (auto& e : current.inEdges()) {
       auto& edge = *e;
-      InfoNode& neighbour = edge.source;
-      deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow));
+      InfoNode* neighbour = edge.source;
+      deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, 0.0, edge.data.flow));
     }
 
     // For not moving
@@ -479,16 +479,16 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
       unsigned int numLinkedNodesInOldModule = 0;
       // Mark neighbours as dirty
       for (auto& e : current.outEdges()) {
-        e->target.dirty = true;
-        if (e->target.index == oldModuleIndex) {
-          nodeInOldModule = &(e->target);
+        e->target->dirty = true;
+        if (e->target->index == oldModuleIndex) {
+          nodeInOldModule = e->target;
           ++numLinkedNodesInOldModule;
         }
       }
       for (auto& e : current.inEdges()) {
-        e->source.dirty = true;
-        if (e->source.index == oldModuleIndex) {
-          nodeInOldModule = &(e->source);
+        e->source->dirty = true;
+        if (e->source->index == oldModuleIndex) {
+          nodeInOldModule = e->source;
           ++numLinkedNodesInOldModule;
         }
       }
@@ -500,9 +500,9 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
         // Mark neighbours as dirty
         if (nodeInOldModule->degree() > 1) {
           for (auto& e : nodeInOldModule->outEdges())
-            e->target.dirty = true;
+            e->target->dirty = true;
           for (auto& e : nodeInOldModule->inEdges())
-            e->source.dirty = true;
+            e->source->dirty = true;
         }
       }
     } else {
@@ -556,14 +556,14 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
     // For all outlinks
     for (auto& e : current.outEdges()) {
       auto& edge = *e;
-      InfoNode& neighbour = edge.target;
-      deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, edge.data.flow, 0.0));
+      InfoNode* neighbour = edge.target;
+      deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, edge.data.flow, 0.0));
     }
     // For all inlinks
     for (auto& e : current.inEdges()) {
       auto& edge = *e;
-      InfoNode& neighbour = edge.source;
-      deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, edge.data.flow));
+      InfoNode* neighbour = edge.source;
+      deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, 0.0, edge.data.flow));
     }
 
     // For not moving
@@ -652,7 +652,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
           // For all outlinks
           for (auto& e : current.outEdges()) {
             auto& edge = *e;
-            unsigned int otherModule = edge.target.index;
+            unsigned int otherModule = edge.target->index;
             if (otherModule == oldModuleIndex)
               oldModuleDelta.deltaExit += edge.data.flow;
             else if (otherModule == bestModuleIndex)
@@ -661,7 +661,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
           // For all inlinks
           for (auto& e : current.inEdges()) {
             auto& edge = *e;
-            unsigned int otherModule = edge.source.index;
+            unsigned int otherModule = edge.source->index;
             if (otherModule == oldModuleIndex)
               oldModuleDelta.deltaEnter += edge.data.flow;
             else if (otherModule == bestModuleIndex)
@@ -697,9 +697,9 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 
             // Mark neighbours as dirty
             for (auto& e : current.outEdges())
-              e->target.dirty = true;
+              e->target->dirty = true;
             for (auto& e : current.inEdges())
-              e->source.dirty = true;
+              e->source->dirty = true;
           } else {
             ++numInvalidMoves;
           }
@@ -752,7 +752,7 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
     unsigned int module1 = node->index;
     for (auto& e : node->outEdges()) {
       EdgeType& edge = *e;
-      unsigned int module2 = edge.target.index;
+      unsigned int module2 = edge.target->index;
       if (module1 != module2) {
         // Use new variables to not swap module1
         unsigned int m1 = module1, m2 = module2;
