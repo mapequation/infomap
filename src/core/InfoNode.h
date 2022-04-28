@@ -65,9 +65,9 @@ public:
 public:
   FlowData data;
   unsigned int index = 0; // Temporary index used in finding best module
-  /*const*/ unsigned int stateId = 0; // Unique state node id for the leaf nodes
-  /*const*/ unsigned int physicalId = 0; // Physical id equals stateId for first order networks, otherwise can be non-unique
-  /*const*/ unsigned int layerId = 0; // Layer id for multilayer networks
+  unsigned int stateId = 0; // Unique state node id for the leaf nodes
+  unsigned int physicalId = 0; // Physical id equals stateId for first order networks, otherwise can be non-unique
+  unsigned int layerId = 0; // Layer id for multilayer networks
   std::vector<int> metaData; // Categorical value for each meta data dimension
 
   InfoNode* owner = nullptr; // Infomap owner (if this is an Infomap root)
@@ -96,7 +96,7 @@ protected:
   InfomapBase* m_infomap = nullptr;
 
 public:
-  InfoNode(const FlowData& flowData)
+  explicit InfoNode(const FlowData& flowData)
       : data(flowData) {};
 
   // For first order nodes, physicalId equals stateId
@@ -109,7 +109,7 @@ public:
   InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId, unsigned int layerId)
       : data(flowData), stateId(stateId), physicalId(physicalId), layerId(layerId) {};
 
-  InfoNode() {};
+  InfoNode() = default;
 
   InfoNode(const InfoNode& other)
       : data(other.data),
@@ -234,22 +234,22 @@ public:
 
   child_iterator_wrapper children()
   {
-    return child_iterator_wrapper(child_iterator(this), child_iterator(nullptr));
+    return { child_iterator(this), child_iterator(nullptr) };
   }
 
   const_child_iterator_wrapper children() const
   {
-    return const_child_iterator_wrapper(const_child_iterator(this), const_child_iterator(nullptr));
+    return { const_child_iterator(this), const_child_iterator(nullptr) };
   }
 
   infomap_child_iterator_wrapper infomap_children()
   {
-    return infomap_child_iterator_wrapper(infomap_child_iterator(this), infomap_child_iterator(nullptr));
+    return { infomap_child_iterator(this), infomap_child_iterator(nullptr) };
   }
 
   const_infomap_child_iterator_wrapper infomap_children() const
   {
-    return const_infomap_child_iterator_wrapper(const_infomap_child_iterator(this), const_infomap_child_iterator(nullptr));
+    return { const_infomap_child_iterator(this), const_infomap_child_iterator(nullptr) };
   }
 
   post_depth_first_iterator begin_post_depth_first()
@@ -269,32 +269,32 @@ public:
 
   tree_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
   {
-    return tree_iterator(this, maxClusterLevel);
+    return { this, static_cast<int>(maxClusterLevel) };
   }
 
   tree_iterator end_tree()
   {
-    return tree_iterator(nullptr);
+    return { nullptr };
   }
 
   const_tree_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const
   {
-    return const_tree_iterator(this, maxClusterLevel);
+    return { this, static_cast<int>(maxClusterLevel) };
   }
 
   const_tree_iterator end_tree() const
   {
-    return const_tree_iterator(nullptr);
+    return { nullptr };
   }
 
   infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
   {
-    return infomap_iterator_wrapper(tree_iterator(this, maxClusterLevel), tree_iterator(nullptr));
+    return { tree_iterator(this, static_cast<int>(maxClusterLevel)), tree_iterator(nullptr) };
   }
 
   const_infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const
   {
-    return const_infomap_iterator_wrapper(const_tree_iterator(this, maxClusterLevel), const_tree_iterator(nullptr));
+    return { const_tree_iterator(this, static_cast<int>(maxClusterLevel)), const_tree_iterator(nullptr) };
   }
 
   // ---------------------------- Graph iterators ----------------------------
@@ -321,12 +321,12 @@ public:
 
   edge_iterator_wrapper outEdges()
   {
-    return edge_iterator_wrapper(m_outEdges);
+    return { m_outEdges };
   }
 
   edge_iterator_wrapper inEdges()
   {
-    return edge_iterator_wrapper(m_inEdges);
+    return { m_inEdges };
   }
 
   // ---------------------------- Capacity ----------------------------
@@ -341,27 +341,27 @@ public:
 
   unsigned int firstDepthBelow() const;
 
-  unsigned int numLeafMembers()
+  unsigned int numLeafMembers() const
   {
     return m_numLeafMembers;
   }
 
-  bool isDangling()
+  bool isDangling() const
   {
     return m_outEdges.empty();
   }
 
-  unsigned int outDegree()
+  unsigned int outDegree() const
   {
     return m_outEdges.size();
   }
 
-  unsigned int inDegree()
+  unsigned int inDegree() const
   {
     return m_inEdges.size();
   }
 
-  unsigned int degree()
+  unsigned int degree() const
   {
     return outDegree() + inDegree();
   }
@@ -466,7 +466,7 @@ public:
 
   EdgeType* addOutEdge(InfoNode& target, double weight, double flow = 0.0)
   {
-    EdgeType* edge = new EdgeType(*this, target, weight, flow);
+    auto* edge = new EdgeType(*this, target, weight, flow);
     m_outEdges.push_back(edge);
     target.m_inEdges.push_back(edge);
     return edge;
