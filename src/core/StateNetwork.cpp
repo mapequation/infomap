@@ -12,10 +12,11 @@
 #include "../utils/Log.h"
 #include "../io/SafeFile.h"
 #include <stdexcept>
+#include <utility>
 
 namespace infomap {
 
-std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(StateNode node)
+std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addStateNode(const StateNode& node)
 {
   auto ret = m_nodes.insert(StateNetwork::NodeMap::value_type(node.id, node));
   if (ret.second) {
@@ -49,13 +50,13 @@ std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned 
 
 std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned int id, std::string name)
 {
-  m_names[id] = name;
+  m_names[id] = std::move(name);
   return addNode(id);
 }
 
 std::pair<StateNetwork::NodeMap::iterator, bool> StateNetwork::addNode(unsigned int id, std::string name, double weight)
 {
-  m_names[id] = name;
+  m_names[id] = std::move(name);
   return addNode(id, weight);
 }
 
@@ -92,7 +93,7 @@ StateNetwork::PhysNode& StateNetwork::addPhysicalNode(unsigned int physId, doubl
   return physNode;
 }
 
-std::pair<std::map<unsigned int, std::string>::iterator, bool> StateNetwork::addName(unsigned int id, std::string name)
+std::pair<std::map<unsigned int, std::string>::iterator, bool> StateNetwork::addName(unsigned int id, const std::string& name)
 {
   return m_names.insert(std::make_pair(id, name));
 }
@@ -243,7 +244,7 @@ void StateNetwork::clear()
   m_totalLinkWeightIgnored = 0.0;
 }
 
-void StateNetwork::writeStateNetwork(std::string filename) const
+void StateNetwork::writeStateNetwork(const std::string& filename) const
 {
   if (filename.empty())
     throw std::runtime_error("writeStateNetwork called with empty filename");
@@ -281,7 +282,7 @@ void StateNetwork::writeStateNetwork(std::string filename) const
   }
 }
 
-void StateNetwork::writePajekNetwork(std::string filename, bool printFlow) const
+void StateNetwork::writePajekNetwork(const std::string& filename, bool printFlow) const
 {
   if (filename.empty())
     throw std::runtime_error("writePajekNetwork called with empty filename");

@@ -23,7 +23,7 @@ constexpr int FlowModel::undirdir;
 constexpr int FlowModel::outdirdir;
 constexpr int FlowModel::rawdir;
 
-Config::Config(std::string flags, bool isCLI) : isCLI(isCLI)
+Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 {
   ProgramInterface api("Infomap",
                        "Implementation of the Infomap clustering algorithm based on the Map Equation (see www.mapequation.org)",

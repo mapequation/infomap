@@ -200,7 +200,7 @@ struct ParsedOption {
 
 struct TargetBase {
   TargetBase(std::string variableName, std::string desc, std::string group, bool isAdvanced)
-      : variableName(variableName), description(desc), group(group), isOptionalVector(false), isAdvanced(isAdvanced) { }
+      : variableName(std::move(variableName)), description(std::move(desc)), group(std::move(group)), isOptionalVector(false), isAdvanced(isAdvanced) { }
 
   virtual ~TargetBase() = default;
 
@@ -326,7 +326,7 @@ public:
 private:
   void exitWithUsage(bool showAdvanced);
   void exitWithVersionInformation();
-  void exitWithError(std::string message);
+  void exitWithError(const std::string& message);
   void exitWithJsonParameters();
 
   static std::string toJson(const std::string& key, const std::string& value);

@@ -22,15 +22,11 @@ struct FlowCount {
   explicit FlowCount(double flow)
       : flow(flow), count(1) { }
 
-  FlowCount(const FlowCount& other)
-      : flow(other.flow), count(other.count) { }
-
-  FlowCount& operator=(const FlowCount& other)
-  {
-    flow = other.flow;
-    count = other.count;
-    return *this;
-  }
+  FlowCount(const FlowCount&) = default;
+  FlowCount& operator=(const FlowCount&) = default;
+  FlowCount(FlowCount&&) = default;
+  FlowCount& operator=(FlowCount&&) = default;
+  ~FlowCount() = default;
 
   FlowCount& operator+=(const FlowCount& o)
   {

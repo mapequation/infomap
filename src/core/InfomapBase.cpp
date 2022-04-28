@@ -18,6 +18,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 #include <iomanip>
 #include <limits>
@@ -196,7 +197,7 @@ InfomapBase& InfomapBase::setInitialPartition(const std::map<unsigned int, unsig
 // Run
 // ===================================================
 
-void InfomapBase::run(std::string parameters)
+void InfomapBase::run(const std::string& parameters)
 {
   if (!isMainInfomap()) {
     runPartition();
@@ -245,7 +246,7 @@ void InfomapBase::run(std::string parameters)
     }
   }
 
-  if (metaDataFile != "") {
+  if (!metaDataFile.empty()) {
     initMetaData(metaDataFile);
   }
 
@@ -384,7 +385,6 @@ void InfomapBase::run(Network& network)
       restoreHardPartition();
 
     if (isMainInfomap()) {
-      auto endDate = Date();
       Log() << "\n=> Trial " << (i + 1) << "/" << numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
       m_codelengths.push_back(m_hierarchicalCodelength);
       if (m_hierarchicalCodelength < bestHierarchicalCodelength - 1e-10) {
@@ -448,7 +448,7 @@ void InfomapBase::run(Network& network)
 
 InfomapBase& InfomapBase::initMetaData(std::string metaDataFile)
 {
-  m_network.readMetaData(metaDataFile);
+  m_network.readMetaData(std::move(metaDataFile));
   return *this;
 }
 
@@ -479,7 +479,7 @@ InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
   return *this;
 }
 
-InfomapBase& InfomapBase::initPartition(std::string clusterDataFile, bool hard, const Network* network)
+InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool hard, const Network* network)
 {
   FileURI file(clusterDataFile);
   ClusterMap clusterMap;
@@ -652,7 +652,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
   std::vector<unsigned int> modules(numNodes);
   std::vector<unsigned int> selectedNodes(numNodes, 0);
   unsigned int moduleIndex = 0;
-  for (auto it : clusterIdToNodeIds) {
+  for (const auto& it : clusterIdToNodeIds) {
     auto& nodes = it.second;
     for (auto& nodeId : nodes) {
       auto nodeIndex = nodeIdToIndex[nodeId];
@@ -807,7 +807,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   std::map<unsigned int, unsigned int> nodeIndexMap;
   for (auto& nodeIt : network.nodes()) {
     auto& networkNode = nodeIt.second;
-    InfoNode* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
+    auto* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
     node->data.teleportWeight = networkNode.weight;
     node->data.teleportFlow = networkNode.teleFlow;
     node->data.exitFlow = networkNode.exitFlow;
@@ -866,7 +866,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
 
   unsigned int childIndex = 0;
   for (InfoNode& node : parent) {
-    InfoNode* clonedNode = new InfoNode(node);
+    auto* clonedNode = new InfoNode(node);
     clonedNode->initClean();
     m_root.addChild(clonedNode);
     node.index = childIndex; // Set index to its place in this subnetwork to be able to find edge target below
@@ -2141,7 +2141,7 @@ std::string InfomapBase::getOutputFileHeader(bool states)
                    << (m_network.isBipartite() ? bipartiteInfo : "");
 }
 
-std::string InfomapBase::writeTree(std::string filename, bool states)
+std::string InfomapBase::writeTree(const std::string& filename, bool states)
 {
   std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.tree" : ".tree") : filename;
 
@@ -2151,7 +2151,7 @@ std::string InfomapBase::writeTree(std::string filename, bool states)
   return outputFilename;
 }
 
-std::string InfomapBase::writeFlowTree(std::string filename, bool states)
+std::string InfomapBase::writeFlowTree(const std::string& filename, bool states)
 {
   std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.ftree" : ".ftree") : filename;
 
@@ -2162,7 +2162,7 @@ std::string InfomapBase::writeFlowTree(std::string filename, bool states)
   return outputFilename;
 }
 
-std::string InfomapBase::writeNewickTree(std::string filename, bool states)
+std::string InfomapBase::writeNewickTree(const std::string& filename, bool states)
 {
   std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.nwk" : ".nwk") : filename;
 
@@ -2172,7 +2172,7 @@ std::string InfomapBase::writeNewickTree(std::string filename, bool states)
   return outputFilename;
 }
 
-std::string InfomapBase::writeJsonTree(std::string filename, bool states, bool writeLinks)
+std::string InfomapBase::writeJsonTree(const std::string& filename, bool states, bool writeLinks)
 {
   std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.json" : ".json") : filename;
 
@@ -2182,7 +2182,7 @@ std::string InfomapBase::writeJsonTree(std::string filename, bool states, bool w
   return outputFilename;
 }
 
-std::string InfomapBase::writeCsvTree(std::string filename, bool states)
+std::string InfomapBase::writeCsvTree(const std::string& filename, bool states)
 {
   std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.csv" : ".csv") : filename;
 
@@ -2192,7 +2192,7 @@ std::string InfomapBase::writeCsvTree(std::string filename, bool states)
   return outputFilename;
 }
 
-std::string InfomapBase::writeClu(std::string filename, bool states, int moduleIndexLevel)
+std::string InfomapBase::writeClu(const std::string& filename, bool states, int moduleIndexLevel)
 {
   std::string outputFilename = filename.empty() ? outDirectory + outName + (haveMemory() && states ? "_states.clu" : ".clu") : filename;
   SafeOutFile outFile(outputFilename);
@@ -2538,7 +2538,7 @@ void InfomapBase::writeJsonTree(std::ostream& outStream, bool states, bool write
   const auto bipartiteStartId = shouldHideBipartiteNodes ? m_network.bipartiteStartId() : 0;
 
   // Hack to re-use getMultilevelModules from Infomap.cpp
-  const auto multilevelModules = static_cast<InfomapWrapper*>(this)->getMultilevelModules(states);
+  const auto multilevelModules = dynamic_cast<InfomapWrapper*>(this)->getMultilevelModules(states);
 
   // don't append a comma after the last entry
   auto first = true;

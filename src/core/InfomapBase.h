@@ -50,7 +50,7 @@ public:
 
   explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { }
 
-  explicit InfomapBase(const std::string flags) : InfomapConfig<InfomapBase>(flags)
+  explicit InfomapBase(const std::string& flags) : InfomapConfig<InfomapBase>(flags)
   {
     m_network.setConfig(*this);
     m_initialParameters = m_currentParameters = flags;
@@ -71,37 +71,37 @@ public:
 
   InfomapIterator iterTree(int maxClusterLevel = 1)
   {
-    return InfomapIterator(&root(), maxClusterLevel);
+    return {&root(), maxClusterLevel};
   }
 
   InfomapIteratorPhysical iterTreePhysical(int maxClusterLevel = 1)
   {
-    return InfomapIteratorPhysical(&root(), maxClusterLevel);
+    return {&root(), maxClusterLevel};
   }
 
   InfomapModuleIterator iterModules(int maxClusterLevel = 1)
   {
-    return InfomapModuleIterator(&root(), maxClusterLevel);
+    return {&root(), maxClusterLevel};
   }
 
   InfomapLeafModuleIterator iterLeafModules(int maxClusterLevel = 1)
   {
-    return InfomapLeafModuleIterator(&root(), maxClusterLevel);
+    return {&root(), maxClusterLevel};
   }
 
   InfomapLeafIterator iterLeafNodes(int maxClusterLevel = 1)
   {
-    return InfomapLeafIterator(&root(), maxClusterLevel);
+    return {&root(), maxClusterLevel};
   }
 
   InfomapLeafIteratorPhysical iterLeafNodesPhysical(int maxClusterLevel = 1)
   {
-    return InfomapLeafIteratorPhysical(&root(), maxClusterLevel);
+    return {&root(), maxClusterLevel};
   }
 
   InfomapIterator begin(int maxClusterLevel = 1)
   {
-    return InfomapIterator(&root(), maxClusterLevel);
+    return {&root(), maxClusterLevel};
   }
 
   InfomapIterator end()
@@ -156,7 +156,7 @@ public:
   }
 
   bool isFullNetwork() const { return m_isMain && m_aggregationLevel == 0; }
-  bool isFirstLoop() { return m_tuneIterationIndex == 0 && isFullNetwork(); }
+  bool isFirstLoop() const { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 
   virtual InfomapBase* getNewInfomapInstance() const = 0;
   virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const = 0;
@@ -198,7 +198,7 @@ public:
   // Run
   // ===================================================
 
-  virtual void run(std::string parameters = "");
+  virtual void run(const std::string& parameters = "");
 
   virtual void run(Network& network);
 
@@ -232,7 +232,7 @@ public:
    * effective network size during the optimization phase but the hard partitions are
    * after that replaced by the original nodes.
    */
-  InfomapBase& initPartition(std::string clusterDataFile, bool hard = false, const Network* network = nullptr);
+  InfomapBase& initPartition(const std::string& clusterDataFile, bool hard = false, const Network* network = nullptr);
 
   /**
    * Provide an initial partition of the network.
@@ -399,7 +399,7 @@ public:
    * @param states if memory network, print the state-level network without merging physical nodes within modules
    * @return the filename written to
    */
-  std::string writeTree(std::string filename = "", bool states = false);
+  std::string writeTree(const std::string& filename = "", bool states = false);
 
   /**
    * Write flow tree to a .ftree file.
@@ -410,7 +410,7 @@ public:
    * @param states if memory network, print the state-level network without merging physical nodes within modules
    * @return the filename written to
    */
-  std::string writeFlowTree(std::string filename = "", bool states = false);
+  std::string writeFlowTree(const std::string& filename = "", bool states = false);
 
   /**
    * Write Newick tree to a .tre file.
@@ -419,11 +419,11 @@ public:
    * @param states if memory network, print the state-level network without merging physical nodes within modules
    * @return the filename written to
    */
-  std::string writeNewickTree(std::string filename = "", bool states = false);
+  std::string writeNewickTree(const std::string& filename = "", bool states = false);
 
-  std::string writeJsonTree(std::string filename = "", bool states = false, bool writeLinks = false);
+  std::string writeJsonTree(const std::string& filename = "", bool states = false, bool writeLinks = false);
 
-  std::string writeCsvTree(std::string filename = "", bool states = false);
+  std::string writeCsvTree(const std::string& filename = "", bool states = false);
 
   /**
    * Write tree to a .clu file.
@@ -435,7 +435,7 @@ public:
    * Value -1 will give the module index for the lowest level, i.e. the finest modular structure.
    * @return the filename written to
    */
-  std::string writeClu(std::string filename = "", bool states = false, int moduleIndexLevel = 1);
+  std::string writeClu(const std::string& filename = "", bool states = false, int moduleIndexLevel = 1);
 
   /**
    * Print per level statistics
@@ -521,8 +521,8 @@ protected:
   Date m_startDate;
   Date m_endDate;
   Stopwatch m_elapsedTime = Stopwatch(false);
-  std::string m_initialParameters = "";
-  std::string m_currentParameters = "";
+  std::string m_initialParameters;
+  std::string m_currentParameters;
 };
 
 struct PerLevelStat {

@@ -54,14 +54,14 @@ public:
 
 class SafeOutFile : public ofstream {
 public:
-  SafeOutFile(std::string filename, ios_base::openmode mode = ios_base::out)
+  SafeOutFile(const std::string& filename, ios_base::openmode mode = ios_base::out)
       : ofstream(filename.c_str(), mode)
   {
     if (fail())
       throw std::runtime_error(io::Str() << "Error opening file '" << filename << "'. Check that the directory you are writing to exists and that you have write permissions.");
   }
 
-  ~SafeOutFile()
+  ~SafeOutFile() override
   {
     if (is_open())
       close();
@@ -73,7 +73,7 @@ inline bool isDirectoryWritable(const std::string& dir)
   std::string path = io::Str() << dir << "_1nf0m4p_.tmp";
   bool ok = true;
   try {
-    SafeOutFile out(path.c_str());
+    SafeOutFile out(path);
   } catch (const std::runtime_error&) {
     ok = false;
   }

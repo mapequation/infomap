@@ -55,7 +55,7 @@ public:
   {
     setVerboseLevel(verboseLevel);
     setSilent(silent);
-    Log() << std::setprecision(numberPrecision);
+    Log() << std::setprecision(static_cast<int>(numberPrecision));
   }
 
   static bool isVisible(unsigned int level, unsigned int maxLevel)

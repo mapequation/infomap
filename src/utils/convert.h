@@ -46,8 +46,8 @@ namespace io {
   inline std::string tolower(std::string str)
   {
     std::locale loc;
-    for (std::string::size_type i = 0; i < str.length(); ++i)
-      str[i] = std::tolower(str[i], loc);
+    for (char& c : str)
+      c = std::tolower(c, loc);
     return str;
   }
 
@@ -151,13 +151,6 @@ namespace io {
     return !!(istream >> value);
   }
 
-  template <>
-  inline bool stringToValue<bool>(std::string const& str, bool& value)
-  {
-    std::istringstream istream(str);
-    return !!(istream >> value);
-  }
-
   inline std::string firstWord(const std::string& line)
   {
     std::istringstream ss;
@@ -186,9 +179,9 @@ namespace io {
   {
     std::ostringstream o;
     if (fixed)
-      o << std::fixed << std::setprecision(precision);
+      o << std::fixed << std::setprecision(static_cast<int>(precision));
     else
-      o << std::setprecision(precision);
+      o << std::setprecision(static_cast<int>(precision));
     if (!(o << value))
       throw std::runtime_error((o << "stringify(" << value << ")", o.str()));
     return o.str();

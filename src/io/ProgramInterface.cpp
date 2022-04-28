@@ -134,7 +134,7 @@ void ProgramInterface::exitWithVersionInformation()
   std::exit(0);
 }
 
-void ProgramInterface::exitWithError(std::string message)
+void ProgramInterface::exitWithError(const std::string& message)
 {
   Log() << m_programName << " version " << m_programVersion;
 #ifdef _OPENMP

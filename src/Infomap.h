@@ -22,22 +22,22 @@ namespace infomap {
 struct InfomapWrapper : public InfomapCore {
 public:
   InfomapWrapper() : InfomapCore() { }
-  InfomapWrapper(const std::string flags) : InfomapCore(flags) { }
+  InfomapWrapper(const std::string& flags) : InfomapCore(flags) { }
   InfomapWrapper(const Config& conf) : InfomapCore(conf) { }
-  virtual ~InfomapWrapper() { }
+  virtual ~InfomapWrapper() = default;
 
   // ===================================================
   // Wrapper methods
   // ===================================================
 
-  void readInputData(std::string filename = "", bool accumulate = true) { m_network.readInputData(filename, accumulate); }
+  void readInputData(std::string filename = "", bool accumulate = true) { m_network.readInputData(std::move(filename), accumulate); }
 
   void addNode(unsigned int id) { m_network.addNode(id); }
-  void addNode(unsigned int id, std::string name) { m_network.addNode(id, name); }
+  void addNode(unsigned int id, std::string name) { m_network.addNode(id, std::move(name)); }
   void addNode(unsigned int id, double weight) { m_network.addNode(id, weight); }
-  void addNode(unsigned int id, std::string name, double weight) { m_network.addNode(id, name, weight); }
+  void addNode(unsigned int id, std::string name, double weight) { m_network.addNode(id, std::move(name), weight); }
 
-  void addName(unsigned int id, std::string name) { m_network.addName(id, name); }
+  void addName(unsigned int id, const std::string& name) { m_network.addName(id, name); }
   std::string getName(unsigned int id) const
   {
     auto& names = m_network.names();
@@ -47,7 +47,7 @@ public:
 
   const std::map<unsigned int, std::string>& getNames() const { return m_network.names(); }
 
-  void addPhysicalNode(unsigned int id, std::string name = "") { m_network.addPhysicalNode(id, name); }
+  void addPhysicalNode(unsigned int id, const std::string& name = "") { m_network.addPhysicalNode(id, name); }
   void addStateNode(unsigned int id, unsigned int physId) { m_network.addStateNode(id, physId); }
 
   void addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0) { m_network.addLink(sourceId, targetId, weight); }
@@ -102,14 +102,14 @@ public:
     std::map<unsigned int, std::vector<unsigned int>> modules;
     for (unsigned int level = 1; level <= numModuleLevels; ++level) {
       if (haveMemory() && !states) {
-        for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
+        for (auto it(iterTreePhysical(static_cast<int>(level))); !it.isEnd(); ++it) {
           auto& node = *it;
           if (node.isLeaf()) {
             modules[node.physicalId].push_back(it.moduleId());
           }
         }
       } else {
-        for (auto it(iterTree(level)); !it.isEnd(); ++it) {
+        for (auto it(iterTree(static_cast<int>(level))); !it.isEnd(); ++it) {
           auto& node = *it;
           if (node.isLeaf()) {
             auto nodeId = states ? node.stateId : node.physicalId;
