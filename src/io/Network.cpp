@@ -115,41 +115,6 @@ void Network::readInputData(std::string filename, bool accumulate)
   printSummary();
 }
 
-void Network::parsePajekNetwork(std::string filename)
-{
-  Log() << "Parsing " << (m_config.isUndirectedFlow() ? "undirected" : "directed") << " pajek network from file '" << filename << "'... " << std::endl;
-
-  parseNetwork(filename, m_validHeadings["pajek"], m_ignoreHeadings["pajek"]);
-}
-
-void Network::parseLinkList(std::string filename)
-{
-  Log() << "Parsing " << (m_config.directed ? "directed" : "undirected") << " link list from file '" << filename << "'... " << std::endl;
-
-  parseNetwork(filename, m_validHeadings["link-list"], m_ignoreHeadings["link-list"]);
-}
-
-void Network::parseBipartiteNetwork(std::string filename)
-{
-  Log() << "Parsing bipartite network from file '" << filename << "'... " << std::endl;
-
-  parseNetwork(filename, m_validHeadings["bipartite"], m_ignoreHeadings["bipartite"]);
-}
-
-void Network::parseMultilayerNetwork(std::string filename)
-{
-  Log() << "Parsing multilayer network from file '" << filename << "'... " << std::endl;
-
-  parseNetwork(filename, m_validHeadings["multilayer"], m_ignoreHeadings["multilayer"], "*multilayer");
-}
-
-void Network::parseStateNetwork(std::string filename)
-{
-  Log() << "Parsing state network from file '" << filename << "'... " << std::endl;
-
-  parseNetwork(filename, m_validHeadings["states"], m_ignoreHeadings["states"]);
-}
-
 void Network::parseNetwork(std::string filename)
 {
   Log() << "Parsing " << (m_config.isUndirectedFlow() ? "undirected" : "directed") << " network from file '" << filename << "'... " << std::endl;

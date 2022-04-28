@@ -231,9 +231,7 @@ void StateNetwork::clear()
 
   m_haveDirectedInput = false;
   m_haveMemoryInput = false;
-  m_numNodesFound = 0;
   m_numStateNodesFound = 0;
-  m_numLinksFound = 0;
   m_numLinks = 0;
   m_numSelfLinksFound = 0;
   m_sumLinkWeight = 0.0;

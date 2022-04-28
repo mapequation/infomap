@@ -19,7 +19,6 @@ namespace infomap {
  * Filename class to simplify handling of parts of a filename.
  * If a path is path/to/file.ext, the member methods of this class give these parts:
  * getFilename -> "path/to/file.ext"
- * getDirectory -> "path/to/"
  * getName -> "file"
  * getExtension -> "ext"
  * Can throw std::invalid_argument on creation.
@@ -32,19 +31,9 @@ public:
 
   const std::string& getFilename() const { return m_filename; }
 
-  /**
-   * Includes last '/' if non-empty.
-   */
-  const std::string& getDirectory() const { return m_directory; }
-
   const std::string& getName() const { return m_name; }
 
   const std::string& getExtension() const { return m_extension; }
-
-  std::string getParts() const
-  {
-    return "['" + getDirectory() + "' + '" + getName() + "' + '" + getExtension() + "']";
-  }
 
   friend std::ostream& operator<<(std::ostream& out, const FileURI& file)
   {

@@ -26,9 +26,6 @@
 namespace infomap {
 
 struct LayerNode;
-struct Bigram;
-struct Weight;
-struct BipartiteLink;
 
 class Network : public StateNetwork {
 protected:
@@ -123,30 +120,8 @@ protected:
   void init();
   void initValidHeadings();
 
-  void parsePajekNetwork(std::string filename);
-  void parseLinkList(std::string filename);
-  void parseStateNetwork(std::string filename);
   void parseNetwork(std::string filename);
   void parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings, std::string startHeading = "");
-
-  /**
-   * Parse a bipartite network with the following format
-# A bipartite network with node names
-*Vertices 5
-1 "Node 1"
-2 "Node 2"
-3 "Node 3"
-4 "Feature 1"
-5 "Feature 2"
-*Bipartite 4
-# set bipartite start id in heading above
-4 1
-4 2
-5 2
-5 3
-   */
-  void parseBipartiteNetwork(std::string filename);
-  void parseMultilayerNetwork(std::string filename);
 
   // Helper methods
 
@@ -227,119 +202,6 @@ struct LayerNode {
   {
     return layer == other.layer ? node < other.node : layer < other.layer;
   }
-};
-
-struct Bigram {
-  unsigned int first, second;
-  explicit Bigram(unsigned int first = 0, unsigned int second = 0) : first(first), second(second) { }
-
-  bool operator<(const Bigram other) const
-  {
-    return first == other.first ? second < other.second : first < other.first;
-  }
-};
-
-struct BipartiteLink {
-  unsigned int featureNode, node;
-  bool swapOrder;
-  explicit BipartiteLink(unsigned int featureNode = 0, unsigned int node = 0, bool swapOrder = false)
-      : featureNode(featureNode), node(node), swapOrder(swapOrder) { }
-
-  bool operator<(const BipartiteLink other) const
-  {
-    return featureNode == other.featureNode ? node < other.node : featureNode < other.featureNode;
-  }
-};
-
-// Struct to make the weight initialized to zero by default in a map
-struct Weight {
-  double weight;
-  explicit Weight(double weight = 0) : weight(weight) { }
-
-  Weight& operator+=(double w)
-  {
-    weight += w;
-    return *this;
-  }
-};
-
-template <typename key_t, typename subkey_t, typename value_t>
-class MapMap {
-public:
-  typedef std::map<subkey_t, value_t> submap_t;
-  typedef std::map<key_t, submap_t> map_t;
-  MapMap() : m_size(0), m_numAggregations(0), m_sumValue(0) { }
-  virtual ~MapMap() = default;
-
-  bool insert(key_t key1, subkey_t key2, value_t value)
-  {
-    ++m_size;
-    m_sumValue += value;
-
-    // Aggregate link weights if they are definied more than once
-    typename map_t::iterator firstIt = m_data.lower_bound(key1);
-    if (firstIt != m_data.end() && firstIt->first == key1) {
-      std::pair<typename submap_t::iterator, bool> ret2 = firstIt->second.insert(std::make_pair(key2, value));
-      if (!ret2.second) {
-        ret2.first->second += value;
-        ++m_numAggregations;
-        --m_size;
-        return false;
-      }
-    } else {
-      m_data.insert(firstIt, std::make_pair(key1, submap_t()))->second.insert(std::make_pair(key2, value));
-    }
-
-    return true;
-  }
-
-  unsigned int size() const { return m_size; }
-  unsigned int numAggregations() const { return m_numAggregations; }
-  value_t sumValue() const { return m_sumValue; }
-  map_t& data() { return m_data; }
-  const map_t& data() const { return m_data; }
-
-private:
-  map_t m_data;
-  unsigned int m_size;
-  unsigned int m_numAggregations;
-  value_t m_sumValue;
-};
-
-typedef MapMap<unsigned int, unsigned int, double> LinkMapMap;
-
-template <typename key_t, typename value_t>
-class EasyMap : public std::map<key_t, value_t> {
-public:
-  typedef std::map<key_t, value_t> map_t;
-  typedef EasyMap<key_t, value_t> self_t;
-  value_t& getOrSet(const key_t& key, value_t defaultValue = 0)
-  {
-    typename self_t::iterator it = lower_bound(key);
-    if (it != this->end() && it->first == key)
-      return it->second;
-    return this->insert(it, std::make_pair(key, defaultValue))->second;
-  }
-};
-
-struct Triple {
-  Triple() : n1(0), n2(0), n3(0) { }
-  Triple(unsigned int value1, unsigned int value2, unsigned int value3) : n1(value1), n2(value2), n3(value3) { }
-  Triple(const Triple& other) = default;
-
-  bool operator<(const Triple& other) const
-  {
-    return n1 == other.n1 ? (n2 == other.n2 ? n3 < other.n3 : n2 < other.n2) : n1 < other.n1;
-  }
-
-  bool operator==(const Triple& other) const
-  {
-    return n1 == other.n1 && n2 == other.n2 && n3 == other.n3;
-  }
-
-  unsigned int n1;
-  unsigned int n2;
-  unsigned int n3;
 };
 
 } // namespace infomap

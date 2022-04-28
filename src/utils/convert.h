@@ -22,27 +22,22 @@ namespace infomap {
 
 template <typename T>
 struct TypeInfo {
-  static std::string type() { return "undefined"; }
   static bool isNumeric() { return false; }
 };
 template <>
 struct TypeInfo<bool> {
-  static std::string type() { return "bool"; }
   static bool isNumeric() { return false; }
 };
 template <>
 struct TypeInfo<int> {
-  static std::string type() { return "int"; }
   static bool isNumeric() { return true; }
 };
 template <>
 struct TypeInfo<unsigned int> {
-  static std::string type() { return "unsigned int"; }
   static bool isNumeric() { return true; }
 };
 template <>
 struct TypeInfo<double> {
-  static std::string type() { return "double"; }
   static bool isNumeric() { return true; }
 };
 
@@ -66,13 +61,13 @@ namespace io {
   }
 
   template <>
-  inline std::string stringify(bool& b)
+  inline std::string stringify(bool& x)
   {
-    return b ? "true" : "false";
+    return x ? "true" : "false";
   }
 
   template <typename Container>
-  inline std::string stringify(const Container& cont, std::string delimiter)
+  inline std::string stringify(const Container& cont, const std::string& delimiter)
   {
     std::ostringstream o;
     if (cont.empty())
@@ -85,43 +80,6 @@ namespace io {
     }
     if (!(o << cont[maxIndex]))
       throw std::runtime_error((o << "stringify(container[" << maxIndex << "])", o.str()));
-    return o.str();
-  }
-
-  template <typename Container>
-  inline std::string stringify(const Container& cont, std::string delimiter, unsigned int offset)
-  {
-    std::ostringstream o;
-    if (cont.empty())
-      return "";
-    unsigned int maxIndex = cont.size() - 1;
-    for (unsigned int i = 0; i < maxIndex; ++i) {
-      if (!(o << (cont[i] + offset)))
-        throw std::runtime_error((o << "stringify(container[" << i << "])", o.str()));
-      o << delimiter;
-    }
-    if (!(o << (cont[maxIndex] + offset)))
-      throw std::runtime_error((o << "stringify(container[" << maxIndex << "])", o.str()));
-    return o.str();
-  }
-
-  template <typename Container>
-  inline std::string stringifyContainer(const Container& cont, std::string delimiter, unsigned int startIndex = 0, unsigned int length = 0)
-  {
-    std::ostringstream o;
-    if (cont.empty())
-      return "";
-    if (startIndex >= cont.size())
-      throw std::out_of_range("stringifyContainer called with startIndex out of range");
-    unsigned int stopIndex = length == 0 || (startIndex + length > cont.size()) ? cont.size() : (startIndex + length);
-    unsigned int endIndex = stopIndex - 1;
-    for (unsigned int i = startIndex; i < endIndex; ++i) {
-      if (!(o << (cont[i])))
-        throw std::runtime_error((o << "stringifyContainer(container[" << i << "])", o.str()));
-      o << delimiter;
-    }
-    if (!(o << (cont[endIndex])))
-      throw std::runtime_error((o << "stringifyContainer(container[" << endIndex << "])", o.str()));
     return o.str();
   }
 
@@ -200,28 +158,6 @@ namespace io {
     return !!(istream >> value);
   }
 
-  template <typename T>
-  inline T parse(std::string const& str)
-  {
-    std::istringstream istream(str);
-    T value;
-    if (!(istream >> value))
-      throw std::runtime_error(Str() << "Error converting '" << str << "' to " << TypeInfo<T>::type());
-    return value;
-  }
-
-  // Template specialization for bool type to correctly parse "true" and "false"
-  template <>
-  inline bool parse<bool>(std::string const& str)
-  {
-    std::istringstream istream(str);
-    istream.setf(std::ios::boolalpha);
-    bool value;
-    if (!(istream >> value))
-      throw std::runtime_error(Str() << "Error converting '" << str << "' to bool");
-    return value;
-  }
-
   inline std::string firstWord(const std::string& line)
   {
     std::istringstream ss;
@@ -229,12 +165,6 @@ namespace io {
     ss.str(line);
     ss >> buf;
     return buf;
-  }
-
-  inline void padString(std::string& str, const std::string::size_type newSize, const char paddingChar = ' ')
-  {
-    if (newSize > str.size())
-      str.append(newSize - str.size(), paddingChar);
   }
 
   template <typename T>
@@ -262,13 +192,6 @@ namespace io {
     if (!(o << value))
       throw std::runtime_error((o << "stringify(" << value << ")", o.str()));
     return o.str();
-  }
-
-  inline std::string toPlural(std::string object, unsigned int num)
-  {
-    if (num > 1 || num == 0)
-      object.push_back('s');
-    return object;
   }
 
 } // namespace io

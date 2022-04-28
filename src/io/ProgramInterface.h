@@ -251,11 +251,6 @@ public:
   ProgramInterface(std::string name, std::string shortDescription, std::string version);
   virtual ~ProgramInterface();
 
-  void addProgramDescription(std::string desc)
-  {
-    m_programDescription = std::move(desc);
-  }
-
   void setGroups(std::vector<std::string> groups)
   {
     m_groups = std::move(groups);
@@ -351,7 +346,6 @@ private:
   std::string m_executableName = "Infomap";
   unsigned int m_displayHelp = 0;
   bool m_displayVersion = false;
-  bool m_negateNextOption = false;
   bool m_printJsonParameters = false;
 
   unsigned int m_numOptionalNonOptionArguments = 0;
@@ -359,4 +353,4 @@ private:
 
 } // namespace infomap
 
-#endif /* ARGPARSER_H_ */
+#endif // PROGRAMINTERFACE_H_

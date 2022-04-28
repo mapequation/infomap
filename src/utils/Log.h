@@ -65,8 +65,6 @@ public:
 
   static void setVerboseLevel(unsigned int level) { s_verboseLevel = level; }
 
-  static unsigned int verboseLevel() { return s_verboseLevel; }
-
   static void setSilent(bool silent) { s_silent = silent; }
 
   static bool isSilent() { return s_silent; }
