@@ -824,4 +824,4 @@ inline void InfomapOptimizer<Objective>::printDebug()
 
 } /* namespace infomap */
 
-#endif /* INFOMAP_OPTIMIZER_H_ */
+#endif // INFOMAP_OPTIMIZER_H_

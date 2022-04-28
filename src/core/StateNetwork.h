@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef _STATENETWORK_H_
-#define _STATENETWORK_H_
+#ifndef STATE_NETWORK_H_
+#define STATE_NETWORK_H_
 
 #include "../io/Config.h"
 #include <string>
@@ -202,4 +202,4 @@ protected:
 
 } // namespace infomap
 
-#endif /* _STATENETWORK_H_ */
+#endif // STATE_NETWORK_H_

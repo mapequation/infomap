@@ -79,4 +79,4 @@ private:
 
 } // namespace infomap
 
-#endif /* VECTOR_MAP_H_ */
+#endif // VECTOR_MAP_H_

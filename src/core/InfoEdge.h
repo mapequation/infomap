@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef MODULES_CLUSTERING_CLUSTERING_INFOEDGE_H_
-#define MODULES_CLUSTERING_CLUSTERING_INFOEDGE_H_
+#ifndef INFOEDGE_H_
+#define INFOEDGE_H_
 
 namespace infomap {
 
@@ -53,4 +53,4 @@ public:
 
 } // namespace infomap
 
-#endif /* MODULES_CLUSTERING_CLUSTERING_INFOEDGE_H_ */
+#endif // INFOEDGE_H_

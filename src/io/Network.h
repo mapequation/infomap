@@ -206,4 +206,4 @@ struct LayerNode {
 
 } // namespace infomap
 
-#endif /* NETWORK_H_ */
+#endif // NETWORK_H_

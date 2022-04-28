@@ -79,4 +79,4 @@ private:
 
 } // namespace infomap
 
-#endif /* DATE_H_ */
+#endif // DATE_H_

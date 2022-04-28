@@ -187,4 +187,4 @@ private:
 
 #endif
 
-#endif /* STOPWATCH_H_ */
+#endif // STOPWATCH_H_

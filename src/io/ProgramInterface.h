@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef PROGRAMINTERFACE_H_
-#define PROGRAMINTERFACE_H_
+#ifndef PROGRAM_INTERFACE_H_
+#define PROGRAM_INTERFACE_H_
 
 #include "../utils/convert.h"
 
@@ -353,4 +353,4 @@ private:
 
 } // namespace infomap
 
-#endif // PROGRAMINTERFACE_H_
+#endif // PROGRAM_INTERFACE_H_

@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef TREEITERATORS_H_
-#define TREEITERATORS_H_
+#ifndef TREE_ITERATORS_H_
+#define TREE_ITERATORS_H_
 
 #include <cstddef>
 #include <iterator>
@@ -745,4 +745,4 @@ public:
 
 } // namespace infomap
 
-#endif /* TREEITERATORS_H_ */
+#endif // TREE_ITERATORS_H_

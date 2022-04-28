@@ -91,4 +91,4 @@ protected:
 
 } /* namespace infomap */
 
-#endif /* INFOMAP_OPTIMIZER_BASE_H_ */
+#endif // INFOMAP_OPTIMIZER_BASE_H_

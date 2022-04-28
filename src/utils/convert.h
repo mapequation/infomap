@@ -198,4 +198,4 @@ namespace io {
 
 } // namespace infomap
 
-#endif /* CONVERT_H_ */
+#endif // CONVERT_H_

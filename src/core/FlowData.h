@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef SRC_CLUSTERING_FLOWDATA_H_
-#define SRC_CLUSTERING_FLOWDATA_H_
+#ifndef FLOWDATA_H_
+#define FLOWDATA_H_
 
 #include <ostream>
 #include <utility>
@@ -192,4 +192,4 @@ struct PhysData {
 
 } // namespace infomap
 
-#endif /* SRC_CLUSTERING_FLOWDATA_H_ */
+#endif // FLOWDATA_H_

@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef ITERATORS_H_
-#define ITERATORS_H_
+#ifndef ITER_WRAPPER_H_
+#define ITER_WRAPPER_H_
 
 namespace infomap {
 
@@ -39,4 +39,4 @@ public:
 
 } // namespace infomap
 
-#endif // ITERATORS_H_
+#endif // ITER_WRAPPER_H_

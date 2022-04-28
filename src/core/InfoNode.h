@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef SRC_CLUSTERING_INFONODE_H_
-#define SRC_CLUSTERING_INFONODE_H_
+#ifndef INFONODE_H_
+#define INFONODE_H_
 
 #include "FlowData.h"
 #include "InfoEdge.h"
@@ -478,4 +478,4 @@ private:
 
 } // namespace infomap
 
-#endif /* SRC_CLUSTERING_INFONODE_H_ */
+#endif // INFONODE_H_

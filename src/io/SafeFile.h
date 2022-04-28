@@ -84,4 +84,4 @@ inline bool isDirectoryWritable(const std::string& dir)
 
 } // namespace infomap
 
-#endif /* SAFEFILE_H_ */
+#endif // SAFEFILE_H_

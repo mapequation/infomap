@@ -175,4 +175,4 @@ protected:
 
 } /* namespace infomap */
 
-#endif /* INFOMAP_CORE_H_ */
+#endif // INFOMAP_CORE_H_

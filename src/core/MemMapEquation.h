@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef MODULES_CLUSTERING_CLUSTERING_MEMMAPEQUATION_H_
-#define MODULES_CLUSTERING_CLUSTERING_MEMMAPEQUATION_H_
+#ifndef MEM_MAPEQUATION_H_
+#define MEM_MAPEQUATION_H_
 
 #include "MapEquation.h"
 #include "FlowData.h"
@@ -196,4 +196,4 @@ struct MemNodeSet {
 
 } // namespace infomap
 
-#endif /* MODULES_CLUSTERING_CLUSTERING_MEMMAPEQUATION_H_ */
+#endif // MEM_MAPEQUATION_H_
