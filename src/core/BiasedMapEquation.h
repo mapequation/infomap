@@ -57,17 +57,17 @@ public:
     return *this;
   }
 
-  virtual ~BiasedMapEquation() = default;
+  ~BiasedMapEquation() override = default;
 
   // ===================================================
   // Getters
   // ===================================================
 
-  double getIndexCodelength() const;
+  double getIndexCodelength() const override;
 
-  double getModuleCodelength() const;
+  double getModuleCodelength() const override;
 
-  double getCodelength() const;
+  double getCodelength() const override;
 
   double getEntropyBiasCorrection() const;
 
@@ -75,30 +75,30 @@ public:
   // IO
   // ===================================================
 
-  std::ostream& print(std::ostream& out) const;
+  std::ostream& print(std::ostream& out) const override;
   friend std::ostream& operator<<(std::ostream&, const BiasedMapEquation&);
 
   // ===================================================
   // Init
   // ===================================================
 
-  void init(const Config& config);
+  void init(const Config& config) override;
 
-  void initTree(InfoNode& /*root*/) { }
+  void initTree(InfoNode& /*root*/) override { }
 
-  void initNetwork(InfoNode& root);
+  void initNetwork(InfoNode& root) override;
 
-  void initSuperNetwork(InfoNode& root);
+  void initSuperNetwork(InfoNode& root) override;
 
-  void initSubNetwork(InfoNode& root);
+  void initSubNetwork(InfoNode& root) override;
 
-  void initPartition(std::vector<InfoNode*>& nodes);
+  void initPartition(std::vector<InfoNode*>& nodes) override;
 
   // ===================================================
   // Codelength
   // ===================================================
 
-  double calcCodelength(const InfoNode& parent) const;
+  double calcCodelength(const InfoNode& parent) const override;
 
   void addMemoryContributions(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, VectorMap<DeltaFlowDataType>& /*moduleDeltaFlow*/) { }
 
@@ -118,20 +118,20 @@ public:
                                     std::vector<FlowDataType>& moduleFlowData,
                                     std::vector<unsigned int>& moduleMembers);
 
-  void consolidateModules(std::vector<InfoNode*>& modules);
+  void consolidateModules(std::vector<InfoNode*>& modules) override;
 
   // ===================================================
   // Debug
   // ===================================================
 
-  void printDebug();
+  void printDebug() override;
 
 protected:
   // ===================================================
   // Protected member functions
   // ===================================================
-  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
-  double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
+  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const override;
+  double calcCodelengthOnModuleOfModules(const InfoNode& parent) const override;
 
   int getDeltaNumModulesIfMoving(InfoNode& current,
                                  unsigned int oldModule,
@@ -146,7 +146,7 @@ protected:
   // Codelength
   // ===================================================
 
-  void calculateCodelength(std::vector<InfoNode*>& nodes);
+  void calculateCodelength(std::vector<InfoNode*>& nodes) override;
 
   using Base::calculateCodelengthTerms;
 
