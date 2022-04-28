@@ -10,12 +10,8 @@
 #include "BiasedMapEquation.h"
 #include "FlowData.h"
 #include "InfoNode.h"
-#include "../utils/Log.h"
-#include "../io/Config.h"
 
 #include <vector>
-#include <set>
-#include <map>
 #include <utility>
 #include <cstdlib>
 #include "StateNetwork.h"

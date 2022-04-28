@@ -8,16 +8,10 @@
  ******************************************************************************/
 
 #include "MapEquation.h"
-#include "../utils/infomath.h"
-#include "../utils/convert.h"
-#include "../io/Config.h"
-#include "../utils/Log.h"
-#include "../utils/VectorMap.h"
 #include "InfoNode.h"
 #include "FlowData.h"
 
 #include <vector>
-#include <map>
 #include <iostream>
 
 namespace infomap {

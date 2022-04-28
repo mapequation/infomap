@@ -8,7 +8,6 @@
  ******************************************************************************/
 
 #include "Config.h"
-#include "../version.h"
 #include "ProgramInterface.h"
 #include "SafeFile.h"
 #include "../utils/FileURI.h"

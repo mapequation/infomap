@@ -8,8 +8,6 @@
  ******************************************************************************/
 
 #include "InfomapIterator.h"
-#include "../InfoNode.h"
-#include "../../utils/Log.h"
 #include <utility> // std::pair
 
 namespace infomap {
