@@ -181,7 +181,7 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
     throw std::logic_error("replaceChildrenWithOneNode called on a node without any children.");
   if (firstChild->firstChild == nullptr)
     throw std::logic_error("replaceChildrenWithOneNode called on a node without any grandchildren.");
-  InfoNode* middleNode = new InfoNode();
+  auto* middleNode = new InfoNode();
   InfoNode::child_iterator nodeIt = begin_child();
   unsigned int numOriginalChildrenLeft = m_childDegree;
   auto d0 = m_childDegree;
@@ -279,7 +279,7 @@ void InfoNode::replaceWithChildrenDebug()
     child->parent = parent;
     child = child->next;
     ++deltaChildDegree;
-  } while (child != 0);
+  } while (child != nullptr);
   parent->m_childDegree += deltaChildDegree - 1; // -1 as this node is deleted
 
   if (parent->firstChild == this) {
