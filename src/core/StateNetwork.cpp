@@ -202,7 +202,7 @@ bool StateNetwork::undirectedToDirected()
         continue; // Self-links are treated as directed on undirected networks
       }
       double weight = subIt.second.weight;
-      oppositeLinks.push_back(StateLink(targetId, sourceId, weight));
+      oppositeLinks.emplace_back(targetId, sourceId, weight);
     }
   }
   for (auto& link : oppositeLinks) {
