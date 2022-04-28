@@ -47,7 +47,7 @@ public:
     return *this;
   }
 
-  virtual ~MemMapEquation() { }
+  virtual ~MemMapEquation() = default;
 
   // ===================================================
   // Getters

@@ -90,8 +90,6 @@ struct DeltaFlow {
   double deltaEnter = 0.0;
   unsigned int count = 0;
 
-  virtual ~DeltaFlow() = default;
-
   DeltaFlow() = default;
 
   explicit DeltaFlow(unsigned int module, double deltaExit, double deltaEnter)
@@ -104,6 +102,7 @@ struct DeltaFlow {
   DeltaFlow& operator=(const DeltaFlow&) = default;
   DeltaFlow(DeltaFlow&&) = default;
   DeltaFlow& operator=(DeltaFlow&&) = default;
+  virtual ~DeltaFlow() = default;
 
   DeltaFlow& operator+=(const DeltaFlow& other)
   {
@@ -114,7 +113,7 @@ struct DeltaFlow {
     return *this;
   }
 
-  void reset()
+  virtual void reset()
   {
     module = 0;
     deltaExit = 0.0;
@@ -155,7 +154,7 @@ struct MemDeltaFlow : DeltaFlow {
     return *this;
   }
 
-  void reset()
+  void reset() override
   {
     DeltaFlow::reset();
     sumDeltaPlogpPhysFlow = 0.0;
@@ -176,13 +175,11 @@ struct MemDeltaFlow : DeltaFlow {
 };
 
 struct PhysData {
-  explicit PhysData(unsigned int physNodeIndex, double sumFlowFromM2Node = 0.0)
-      : physNodeIndex(physNodeIndex), sumFlowFromM2Node(sumFlowFromM2Node) { }
-
-  PhysData(const PhysData& other) = default;
-
   unsigned int physNodeIndex;
   double sumFlowFromM2Node; // The amount of flow from the memory node in this physical node
+
+  explicit PhysData(unsigned int physNodeIndex, double sumFlowFromM2Node = 0.0)
+      : physNodeIndex(physNodeIndex), sumFlowFromM2Node(sumFlowFromM2Node) { }
 
   friend std::ostream& operator<<(std::ostream& out, const PhysData& data)
   {

@@ -120,8 +120,8 @@ protected:
   void init();
   void initValidHeadings();
 
-  void parseNetwork(std::string filename);
-  void parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings, std::string startHeading = "");
+  void parseNetwork(const std::string& filename);
+  void parseNetwork(const std::string& filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings, const std::string& startHeading = "");
 
   // Helper methods
 
@@ -129,8 +129,8 @@ protected:
    * Parse vertices under the heading
    * @return The line after the vertices
    */
-  std::string parseVertices(std::ifstream& file, std::string heading);
-  std::string parseStateNodes(std::ifstream& file, std::string heading);
+  std::string parseVertices(std::ifstream& file, const std::string& heading);
+  std::string parseStateNodes(std::ifstream& file, const std::string& heading);
 
   std::string parseLinks(std::ifstream& file);
 
@@ -149,9 +149,9 @@ protected:
    */
   std::string parseMultilayerInterLinks(std::ifstream& file);
 
-  std::string parseBipartiteLinks(std::ifstream& file, std::string heading);
+  std::string parseBipartiteLinks(std::ifstream& file, const std::string& heading);
 
-  std::string ignoreSection(std::ifstream& file, std::string heading);
+  static std::string ignoreSection(std::ifstream& file, const std::string& heading);
 
   void parseStateNode(const std::string& line, StateNetwork::StateNode& stateNode);
 
@@ -189,7 +189,7 @@ protected:
    */
   unsigned int addMultilayerNode(unsigned int layerId, unsigned int physicalId, double weight = 1.0);
 
-  double calculateJensenShannonDivergence(bool& intersect, const OutLinkMap& layer1OutLinks, double sumOutLinkWeightLayer1, const OutLinkMap& layer2OutLinks, double sumOutLinkWeightLayer2);
+  static double calculateJensenShannonDivergence(bool& intersect, const OutLinkMap& layer1OutLinks, double sumOutLinkWeightLayer1, const OutLinkMap& layer2OutLinks, double sumOutLinkWeightLayer2);
 
   void printSummary();
 };

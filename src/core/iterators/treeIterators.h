@@ -39,7 +39,7 @@ protected:
   NodePointerType m_current = nullptr;
 
 public:
-  ChildIterator() { }
+  ChildIterator() = default;
 
   explicit ChildIterator(const NodePointerType& nodePointer)
       : m_root(nodePointer), m_current(nodePointer == nullptr ? nullptr : nodePointer->firstChild) { }
@@ -143,7 +143,7 @@ protected:
   unsigned int m_depth = 0;
 
 public:
-  TreeIterator() { }
+  TreeIterator() = default;
 
   TreeIterator(NodePointerType nodePointer, int moduleIndexLevel = -1)
       : m_root(nodePointer),
@@ -162,7 +162,7 @@ public:
   {
   }
 
-  virtual ~TreeIterator() { }
+  virtual ~TreeIterator() = default;
 
   TreeIterator& operator=(const TreeIterator& other)
   {
@@ -324,7 +324,7 @@ struct node_iterator_base {
     return *this;
   }
 
-  virtual ~node_iterator_base() { }
+  virtual ~node_iterator_base() = default;
 
   pointer base() const
   {

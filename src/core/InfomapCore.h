@@ -28,9 +28,9 @@ class InfomapCore : public InfomapBase {
 protected:
 public:
   InfomapCore() : InfomapBase() { initOptimizer(); }
-  InfomapCore(const std::string flags) : InfomapBase(flags) { initOptimizer(); }
+  InfomapCore(const std::string& flags) : InfomapBase(flags) { initOptimizer(); }
   InfomapCore(const Config& conf) : InfomapBase(conf) { initOptimizer(); }
-  virtual ~InfomapCore() { }
+  virtual ~InfomapCore() = default;
 
   // ===================================================
   // IO

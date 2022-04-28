@@ -244,7 +244,7 @@ void MapEquation::updateCodelengthOnMovingNode(InfoNode& current,
 // Debug
 // ===================================================
 
-void MapEquation::printDebug()
+void MapEquation::printDebug() const
 {
   std::cout << "(enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << ", "
             << "enter_log_enter: " << enter_log_enter << ", "

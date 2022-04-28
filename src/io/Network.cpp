@@ -102,7 +102,7 @@ void Network::readInputData(std::string filename, bool accumulate)
   }
   if (filename.empty())
     filename = m_config.networkFile;
-  if (filename == "") {
+  if (filename.empty()) {
     throw std::runtime_error("No input file to read network");
   }
   FileURI networkFilename(filename, false);
@@ -111,16 +111,16 @@ void Network::readInputData(std::string filename, bool accumulate)
   printSummary();
 }
 
-void Network::parseNetwork(std::string filename)
+void Network::parseNetwork(const std::string& filename)
 {
   Log() << "Parsing " << (m_config.isUndirectedFlow() ? "undirected" : "directed") << " network from file '" << filename << "'... " << std::endl;
 
   parseNetwork(filename, m_validHeadings["general"], m_ignoreHeadings["general"]);
 }
 
-void Network::parseNetwork(std::string filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings, std::string startHeading)
+void Network::parseNetwork(const std::string& filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings, const std::string& startHeading)
 {
-  SafeInFile input(filename.c_str());
+  SafeInFile input(filename);
 
   // Parse standard links by default until possible heading is reached
   std::string heading = startHeading.length() > 0 ? startHeading : parseLinks(input);
@@ -180,7 +180,7 @@ void Network::postProcessInputData()
 void Network::readMetaData(std::string filename)
 {
   Log() << "Parsing meta data from '" << filename << "'..." << std::endl;
-  SafeInFile input(filename.c_str());
+  SafeInFile input(filename);
   std::string line;
   while (!std::getline(input, line).fail()) {
     if (line.length() == 0 || line[0] == '#')
@@ -214,7 +214,7 @@ void Network::readMetaData(std::string filename)
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 
-std::string Network::parseVertices(std::ifstream& file, std::string /*heading*/)
+std::string Network::parseVertices(std::ifstream& file, const std::string& /*heading*/)
 {
   Log() << "  Parsing vertices...\n"
         << std::flush;
@@ -233,9 +233,9 @@ std::string Network::parseVertices(std::ifstream& file, std::string /*heading*/)
     if (!(m_extractor >> id))
       throw std::runtime_error(io::Str() << "Can't parse node id from line '" << line << "'");
 
-    auto nameStart = line.find_first_of("\"");
-    auto nameEnd = line.find_last_of("\"");
-    std::string name("");
+    auto nameStart = line.find_first_of('\"');
+    auto nameEnd = line.find_last_of('\"');
+    std::string name;
     if (nameStart < nameEnd) {
       name = std::string(line.begin() + nameStart + 1, line.begin() + nameEnd);
       line = line.substr(nameEnd + 1);
@@ -257,7 +257,7 @@ std::string Network::parseVertices(std::ifstream& file, std::string /*heading*/)
   return line;
 }
 
-std::string Network::parseStateNodes(std::ifstream& file, std::string /*heading*/)
+std::string Network::parseStateNodes(std::ifstream& file, const std::string& /*heading*/)
 {
   m_higherOrderInputMethodCalled = true;
   Log() << "  Parsing state nodes...\n"
@@ -390,7 +390,7 @@ std::string Network::parseMultilayerInterLinks(std::ifstream& file)
   return line;
 }
 
-std::string Network::parseBipartiteLinks(std::ifstream& file, std::string heading)
+std::string Network::parseBipartiteLinks(std::ifstream& file, const std::string& heading)
 {
   Log() << "  Parsing bipartite links...\n";
   // Extract break point for bipartite links
@@ -423,7 +423,7 @@ std::string Network::parseBipartiteLinks(std::ifstream& file, std::string headin
   return line;
 }
 
-std::string Network::ignoreSection(std::ifstream& file, std::string heading)
+std::string Network::ignoreSection(std::ifstream& file, const std::string& heading)
 {
   Log() << "(Ignoring section " << heading << ") ";
   std::string line;
@@ -442,8 +442,8 @@ void Network::parseStateNode(const std::string& line, StateNetwork::StateNode& s
     throw std::runtime_error(io::Str() << "Can't parse any state node from line '" << line << "'");
 
   // Optional name enclosed in double quotes
-  auto nameStart = line.find_first_of("\"", m_extractor.tellg());
-  auto nameEnd = line.find_last_of("\"");
+  auto nameStart = line.find_first_of('\"', m_extractor.tellg());
+  auto nameEnd = line.find_last_of('\"');
   if (nameStart < nameEnd) {
     stateNode.name = std::string(line.begin() + nameStart + 1, line.begin() + nameEnd);
     m_extractor.seekg(nameEnd + 1);
@@ -731,13 +731,13 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinks()
 
         double sumOutLinkWeightLayer1 = m_networks[layer1].outWeights()[nodeId];
 
-        std::map<unsigned int, std::map<unsigned int, double>>::iterator jsRelaxWeightsLayer1It = jsRelaxWeights.find(layer1);
-        std::map<unsigned int, double>::iterator jsTotWeightIt = jsTotWeight.find(layer1);
+        auto jsRelaxWeightsLayer1It = jsRelaxWeights.find(layer1);
+        auto jsTotWeightIt = jsTotWeight.find(layer1);
 
         // Create inter-links to the intra-connected nodes in other layers
         for (unsigned int layer2 = layer2from; layer2 < layer2to; ++layer2) {
           if (jsRelaxWeightsLayer1It != jsRelaxWeights.end()) {
-            std::map<unsigned int, double>::iterator jsRelaxWeightsIt = jsRelaxWeightsLayer1It->second.find(layer2);
+            auto jsRelaxWeightsIt = jsRelaxWeightsLayer1It->second.find(layer2);
             if (jsRelaxWeightsIt != jsRelaxWeightsLayer1It->second.end()) {
               bool isIntra = layer2 == layer1;
 
