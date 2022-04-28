@@ -9,7 +9,6 @@
 
 #include "ClusterMap.h"
 #include "../io/SafeFile.h"
-#include "../utils/convert.h"
 #include "../utils/Log.h"
 #include "../utils/FileURI.h"
 #include <sstream>

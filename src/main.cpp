@@ -10,7 +10,6 @@
 #include "io/Config.h"
 #include "Infomap.h"
 #include <iostream>
-#include <string>
 #include <stdexcept>
 
 #ifdef _OPENMP

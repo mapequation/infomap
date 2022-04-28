@@ -8,15 +8,11 @@
  ******************************************************************************/
 
 #include "Network.h"
-#include "../utils/convert.h"
 #include "../io/SafeFile.h"
 #include "../utils/FileURI.h"
 #include "../utils/Log.h"
 
 #include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <iostream>
 #include <algorithm>
 

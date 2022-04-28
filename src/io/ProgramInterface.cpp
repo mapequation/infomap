@@ -8,7 +8,6 @@
  ******************************************************************************/
 
 #include "ProgramInterface.h"
-#include "../utils/convert.h"
 #include "../utils/Log.h"
 
 #include <iostream>
