@@ -114,15 +114,6 @@ public:
     }
   }
 
-  void remove(unsigned int meta, double flow)
-  {
-    m_total -= flow;
-    auto& metaFlowCount = m_metaToFlowCount[meta];
-    metaFlowCount -= flow;
-    if (metaFlowCount.empty())
-      m_metaToFlowCount.erase(meta);
-  }
-
   void remove(unsigned int meta, const FlowCount& flow)
   {
     m_total -= flow;

@@ -67,7 +67,7 @@ double Flow(struct InfomapLeafIterator* it) { return it->current()->data.flow; }
 #endif // SWIG
 
 #ifdef __cplusplus
-}; // extern "C"
+} // extern "C"
 } // namespace infomap
 #endif
 

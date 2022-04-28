@@ -16,8 +16,6 @@ struct EdgeData {
 public:
   EdgeData() : weight(0.0), flow(0.0) { }
 
-  EdgeData(double weight) : weight(weight), flow(weight) { }
-
   EdgeData(double weight, double flow) : weight(weight), flow(flow) { }
 
   double weight;
@@ -40,11 +38,6 @@ public:
   node_type& other(node_type& node)
   {
     return (node == source) ? target : source;
-  }
-
-  bool isSelfPointing()
-  {
-    return source == target;
   }
 
   friend std::ostream& operator<<(std::ostream& out, const Edge& edge)

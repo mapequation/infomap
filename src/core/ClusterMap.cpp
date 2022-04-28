@@ -48,23 +48,16 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
   std::istringstream pathStream;
   m_nodePaths.clear();
 
-  std::string header;
   unsigned int lineNr = 0;
-  std::string section;
 
   while (!std::getline(input, line).fail()) {
     ++lineNr;
     if (line.length() == 0)
       continue;
     if (line[0] == '#') {
-      if (lineNr == 1) {
-        header = line; // e.g. '# Codelength = 8.45977 bits.'
-      }
       continue;
     }
     if (line[0] == '*') {
-      // New section, abort tree parsing.
-      section = line;
       break;
     }
 

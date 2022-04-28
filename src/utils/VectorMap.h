@@ -68,12 +68,6 @@ public:
     return m_values;
   }
 
-  void swapIndex(unsigned int i, unsigned int j)
-  {
-    swap(operator[](i), operator[](j));
-    std::swap(m_redirect[i], m_redirect[j]);
-  }
-
 private:
   unsigned int m_capacity = 0;
   std::vector<T> m_values;

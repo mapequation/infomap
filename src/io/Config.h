@@ -63,18 +63,6 @@ inline const char* flowModelToString(const FlowModel& flowModel)
   }
 }
 
-struct OptimizationLevel {
-  static constexpr int FullCoarseTune = 0;
-  static constexpr int FastCoarseTune = 1;
-  static constexpr int NoTune = 2;
-  static constexpr int NoAggregationNoTune = 3;
-
-  int value = 0;
-
-  operator int&() { return value; }
-  operator int() const { return value; }
-};
-
 struct Config {
   // Input
   bool isCLI = false;
@@ -150,10 +138,8 @@ struct Config {
   bool fastCoarseTunePartition = false;
   bool alternateCoarseTuneLevel = false;
   unsigned int coarseTuneLevel = 1;
-  unsigned int superLevelLimit = std::numeric_limits<unsigned int>::max(); // Max super level iterations
   bool onlySuperModules = false;
   unsigned int fastHierarchicalSolution = 0;
-  bool fastFirstIteration = false;
   bool preferModularSolution = false;
   bool innerParallelization = false;
 
@@ -170,7 +156,6 @@ struct Config {
   bool printMap = false;
   bool printClu = false;
   int cluLevel = 1; // Write modules at specified depth from root. 1, 2, ... or -1 for bottom level
-  bool printNodeRanks = false;
   bool printFlowNetwork = false;
   bool printPajekNetwork = false;
   bool printStateNetwork = false;
@@ -180,11 +165,7 @@ struct Config {
   unsigned int verbosity = 0;
   unsigned int verboseNumberPrecision = 9;
   bool silent = false;
-  bool benchmark = false;
   bool hideBipartiteNodes = false;
-
-  unsigned int maxNodeIndexVisible = 0;
-  unsigned int minBipartiteNodeIndex = 0;
 
   // Other
   Date startDate;
@@ -269,53 +250,6 @@ struct Config {
     startDate = other.startDate;
     version = other.version;
     return *this;
-  }
-
-  // Set all optimization options at once with different accuracy to performance trade-off
-  void setOptimizationLevel(OptimizationLevel level)
-  {
-    switch (level) {
-    case OptimizationLevel::FullCoarseTune:
-      randomizeCoreLoopLimit = false;
-      coreLoopLimit = 0;
-      levelAggregationLimit = 0;
-      tuneIterationLimit = 0;
-      minimumRelativeTuneIterationImprovement = 1.0e-6;
-      fastCoarseTunePartition = false;
-      alternateCoarseTuneLevel = true;
-      coarseTuneLevel = 3;
-      break;
-    case OptimizationLevel::FastCoarseTune:
-      randomizeCoreLoopLimit = true;
-      coreLoopLimit = 10;
-      levelAggregationLimit = 0;
-      tuneIterationLimit = 0;
-      minimumRelativeTuneIterationImprovement = 1.0e-5;
-      fastCoarseTunePartition = true;
-      alternateCoarseTuneLevel = false;
-      coarseTuneLevel = 1;
-      break;
-    case OptimizationLevel::NoTune:
-      randomizeCoreLoopLimit = true;
-      coreLoopLimit = 10;
-      levelAggregationLimit = 0;
-      tuneIterationLimit = 1;
-      fastCoarseTunePartition = true;
-      alternateCoarseTuneLevel = false;
-      coarseTuneLevel = 1;
-      break;
-    case OptimizationLevel::NoAggregationNoTune:
-      randomizeCoreLoopLimit = true;
-      coreLoopLimit = 10;
-      levelAggregationLimit = 1;
-      tuneIterationLimit = 1;
-      fastCoarseTunePartition = true;
-      alternateCoarseTuneLevel = false;
-      coarseTuneLevel = 1;
-      break;
-    default:
-      break;
-    }
   }
 
   void adaptDefaults();

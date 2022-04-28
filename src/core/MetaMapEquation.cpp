@@ -201,7 +201,7 @@ double MetaMapEquation::getCurrentModuleMetaCodelength(unsigned int module, Info
 {
   auto& currentMetaCollection = m_moduleToMetaCollection[module];
 
-  double moduleMetaCodelength = 0.0;
+  double moduleMetaCodelength;
 
   if (addRemoveOrNothing == 0) {
     moduleMetaCodelength = currentMetaCollection.calculateEntropy();

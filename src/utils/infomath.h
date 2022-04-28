@@ -25,4 +25,4 @@ namespace infomath {
 } // namespace infomath
 } // namespace infomap
 
-#endif /* INFOMAPTH_H_ */
+#endif // INFOMATH_H_

@@ -142,9 +142,6 @@ protected:
     return m_optimizer->tryMoveEachNodeIntoBestModule();
   }
 
-  // unsigned int tryMoveEachNodeIntoBestModuleLocal() {
-  // }
-
   virtual unsigned int tryMoveEachNodeIntoBestModuleInParallel()
   {
     return m_optimizer->tryMoveEachNodeIntoBestModuleInParallel();

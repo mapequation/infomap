@@ -54,7 +54,6 @@ public:
   struct LinkData {
     double weight = 1.0;
     double flow = 0.0;
-    unsigned int count = 0;
 
     LinkData(double weight = 1.0) : weight(weight) { }
 
@@ -93,10 +92,8 @@ protected:
   bool m_higherOrderInputMethodCalled = false;
   NodeMap m_nodes; // Nodes indexed by state id (equal physical id for first-order networks)
   NodeLinkMap m_nodeLinkMap;
-  unsigned int m_numNodesFound = 0;
   unsigned int m_numStateNodesFound = 0;
   double m_sumNodeWeight = 0.0;
-  unsigned int m_numLinksFound = 0;
   unsigned int m_numLinks = 0;
   double m_sumLinkWeight = 0.0;
   unsigned int m_numSelfLinksFound = 0;
@@ -121,7 +118,6 @@ public:
 
   // Config
   void setConfig(const Config& config) { m_config = config; }
-  const Config& getConfig() { return m_config; }
 
   // Mutators
   std::pair<NodeMap::iterator, bool> addStateNode(StateNode node);

@@ -22,9 +22,6 @@ public:
   ~ElapsedTime() = default;
 
   double getSeconds() const { return m_elapsedTime; }
-  double getMinutes() const { return m_elapsedTime / 60; }
-  double getHours() const { return m_elapsedTime / 3600; }
-  double getDays() const { return m_elapsedTime / 86400; }
 
   friend std::ostream& operator<<(std::ostream& out, const ElapsedTime& elapsedTime)
   {

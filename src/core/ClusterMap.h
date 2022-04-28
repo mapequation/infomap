@@ -32,16 +32,9 @@ public:
     return m_clusterIds;
   }
 
-  const std::map<unsigned int, double>& getFlow() const noexcept
-  {
-    return m_flowData;
-  }
-
   const NodePaths& nodePaths() const noexcept { return m_nodePaths; }
 
   const std::string& extension() const noexcept { return m_extension; }
-
-  bool isHigherOrder() const noexcept { return m_isHigherOrder; }
 
 protected:
   void readTree(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);
