@@ -27,28 +27,23 @@ class Edge {
 public:
   Edge(node_type& source, node_type& target, double weight, double flow)
       : data(weight, flow),
-        source(source),
-        target(target) { }
-
-  Edge(Edge const& edge)
-      : data(edge.data),
-        source(edge.source),
-        target(edge.target) { }
+        source(&source),
+        target(&target) { }
 
   node_type& other(node_type& node)
   {
-    return (node == source) ? target : source;
+    return (node == *source) ? *target : *source;
   }
 
   friend std::ostream& operator<<(std::ostream& out, const Edge& edge)
   {
-    return out << "(" << edge.source << ") -> (" << edge.target << "), flow: "
+    return out << "(" << *edge.source << ") -> (" << *edge.target << "), flow: "
                << edge.data.flow;
   }
 
   EdgeData data;
-  node_type& source;
-  node_type& target;
+  node_type* source;
+  node_type* target;
 };
 
 } // namespace infomap

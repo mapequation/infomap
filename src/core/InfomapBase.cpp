@@ -575,8 +575,8 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
     if (assignToNeighbouringModule) {
       // Take first neighbour that has a module assigned
       for (auto& edge : leafNode->outEdges()) {
-        if (edge->target.parent != nullptr) {
-          edge->target.parent->addChild(leafNode);
+        if (edge->target->parent != nullptr) {
+          edge->target->parent->addChild(leafNode);
           ++numNodesAddedToNeighbouringModules;
           break;
         }
@@ -584,8 +584,8 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       // Check incoming links if still orphan
       if (leafNode->parent == nullptr) {
         for (auto& edge : leafNode->inEdges()) {
-          if (edge->source.parent != nullptr) {
-            edge->source.parent->addChild(leafNode);
+          if (edge->source->parent != nullptr) {
+            edge->source->parent->addChild(leafNode);
             ++numNodesAddedToNeighbouringModules;
             break;
           }
@@ -681,7 +681,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
         auto& node = *m_leafNodes[i];
         for (auto& e : node.outEdges()) {
           auto& edge = *e;
-          auto targetNodeIndex = nodeIdToIndex[edge.target.stateId];
+          auto targetNodeIndex = nodeIdToIndex[edge.target->stateId];
           if (selectedNodes[targetNodeIndex] != 0) {
             selectedNodes[i] = 1;
             modules[i] = modules[targetNodeIndex];
@@ -692,7 +692,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
           // Check in edges greedily for connected modules
           for (auto& e : node.inEdges()) {
             auto& edge = *e;
-            auto sourceNodeIndex = nodeIdToIndex[edge.source.stateId];
+            auto sourceNodeIndex = nodeIdToIndex[edge.source->stateId];
             if (selectedNodes[sourceNodeIndex] != 0) {
               selectedNodes[i] = 1;
               modules[i] = modules[sourceNodeIndex];
@@ -880,8 +880,8 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
     for (EdgeType* e : node.outEdges()) {
       EdgeType& edge = *e;
       // If neighbour node is within the same module, add the link to this subnetwork.
-      if (edge.target.parent == parentPtr) {
-        m_leafNodes[edge.source.index]->addOutEdge(*m_leafNodes[edge.target.index], edge.data.weight, edge.data.flow);
+      if (edge.target->parent == parentPtr) {
+        m_leafNodes[edge.source->index]->addOutEdge(*m_leafNodes[edge.target->index], edge.data.weight, edge.data.flow);
       }
     }
   }
@@ -1204,8 +1204,8 @@ void InfomapBase::initEnterExitFlow()
       for (EdgeType* e : node.outEdges()) {
         EdgeType& edge = *e;
         // Self-links not included here, should not add to enter and exit flow in its enclosing module
-        edge.source.data.exitFlow += edge.data.flow;
-        edge.target.data.enterFlow += edge.data.flow;
+        edge.source->data.exitFlow += edge.data.flow;
+        edge.target->data.enterFlow += edge.data.flow;
       }
       if (recordedTeleportation) {
         // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
@@ -1226,10 +1226,10 @@ void InfomapBase::initEnterExitFlow()
         EdgeType& edge = *e;
         // Self-links not included here, should not add to enter and exit flow in its enclosing module
         double halfFlow = edge.data.flow / 2;
-        edge.source.data.exitFlow += halfFlow;
-        edge.target.data.exitFlow += halfFlow;
-        edge.source.data.enterFlow += halfFlow;
-        edge.target.data.enterFlow += halfFlow;
+        edge.source->data.exitFlow += halfFlow;
+        edge.target->data.exitFlow += halfFlow;
+        edge.source->data.enterFlow += halfFlow;
+        edge.target->data.enterFlow += halfFlow;
       }
     }
   }
@@ -1268,7 +1268,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
       double halfFlow = linkFlow / 2;
 
       InfoNode* node1 = leafNodeSource.parent;
-      InfoNode* node2 = leafNodeTarget.parent;
+      InfoNode* node2 = leafNodeTarget->parent;
 
       if (node1 == node2)
         continue;
@@ -2361,14 +2361,14 @@ std::map<std::string, std::map<std::pair<unsigned int, unsigned int>, double>> I
   for (auto& leaf : m_leafNodes) {
     for (auto& link : leaf->outEdges()) {
       double flow = link->data.flow;
-      InfoNode* sourceParent = stateIdToParent[link->source.stateId];
-      InfoNode* targetParent = stateIdToParent[link->target.stateId];
+      InfoNode* sourceParent = stateIdToParent[link->source->stateId];
+      InfoNode* targetParent = stateIdToParent[link->target->stateId];
 
       auto sourceDepth = sourceParent->calculatePath().size() + 1;
       auto targetDepth = targetParent->calculatePath().size() + 1;
 
-      auto sourceChildIndex = stateIdToChildIndex[link->source.stateId];
-      auto targetChildIndex = stateIdToChildIndex[link->target.stateId];
+      auto sourceChildIndex = stateIdToChildIndex[link->source->stateId];
+      auto targetChildIndex = stateIdToChildIndex[link->target->stateId];
 
       auto sourceParentIt = InfomapParentIterator(sourceParent);
       auto targetParentIt = InfomapParentIterator(targetParent);
