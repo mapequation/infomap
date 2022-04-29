@@ -38,14 +38,14 @@ using std::ofstream;
  */
 class SafeInFile : public ifstream {
 public:
-  SafeInFile(std::string filename, ios_base::openmode mode = ios_base::in)
-      : ifstream(filename.c_str(), mode)
+  SafeInFile(const std::string& filename, ios_base::openmode mode = ios_base::in)
+      : ifstream(filename, mode)
   {
     if (fail())
       throw std::runtime_error(io::Str() << "Error opening file '" << filename << "'. Check that the path points to a file and that you have read permissions.");
   }
 
-  ~SafeInFile()
+  ~SafeInFile() override
   {
     if (is_open())
       close();
@@ -55,7 +55,7 @@ public:
 class SafeOutFile : public ofstream {
 public:
   SafeOutFile(const std::string& filename, ios_base::openmode mode = ios_base::out)
-      : ofstream(filename.c_str(), mode)
+      : ofstream(filename, mode)
   {
     if (fail())
       throw std::runtime_error(io::Str() << "Error opening file '" << filename << "'. Check that the directory you are writing to exists and that you have write permissions.");

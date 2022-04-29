@@ -28,7 +28,7 @@ namespace infomap {
 struct LayerNode;
 
 class Network : public StateNetwork {
-protected:
+private:
   // Helpers
   std::istringstream m_extractor;
 
@@ -65,6 +65,11 @@ public:
   explicit Network(std::string flags) : StateNetwork(Config(std::move(flags))) { init(); }
   virtual ~Network() = default;
 
+  Network(const Network&) = delete;
+  Network& operator=(const Network&) = delete;
+  Network(Network&&) = delete;
+  Network& operator=(Network&&) = delete;
+
   virtual void clear();
 
   /**
@@ -84,7 +89,7 @@ public:
    * 5 3
    * @param filename input filename for metadata
    */
-  virtual void readMetaData(std::string filename);
+  virtual void readMetaData(const std::string& filename);
 
   unsigned int numMetaDataColumns() const { return m_numMetaDataColumns; }
   const std::map<unsigned int, std::vector<int>>& metaData() const { return m_metaData; }
@@ -116,7 +121,7 @@ public:
 
   void addMetaData(unsigned int nodeId, const std::vector<int>& metaData);
 
-protected:
+private:
   void init();
   void initValidHeadings();
 

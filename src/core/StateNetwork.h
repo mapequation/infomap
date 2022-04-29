@@ -113,8 +113,13 @@ protected:
 
 public:
   StateNetwork() : m_config(Config()) { }
-  StateNetwork(const Config& config) : m_config(config) { }
+  StateNetwork(Config config) : m_config(std::move(config)) { }
   virtual ~StateNetwork() = default;
+
+  StateNetwork(const StateNetwork&) = delete;
+  StateNetwork& operator=(const StateNetwork&) = delete;
+  StateNetwork(StateNetwork&&) = delete;
+  StateNetwork& operator=(StateNetwork&&) = delete;
 
   // Config
   void setConfig(const Config& config) { m_config = config; }

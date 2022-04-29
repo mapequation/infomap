@@ -47,6 +47,11 @@ struct Option {
 
   virtual ~Option() = default;
 
+  Option(const Option&) = default;
+  Option& operator=(const Option&) = default;
+  Option(Option&&) = default;
+  Option& operator=(Option&&) = default;
+
   virtual bool parse(std::string const&)
   {
     used = true;
@@ -204,6 +209,11 @@ struct TargetBase {
 
   virtual ~TargetBase() = default;
 
+  TargetBase(const TargetBase&) = default;
+  TargetBase& operator=(const TargetBase&) = default;
+  TargetBase(TargetBase&&) = default;
+  TargetBase& operator=(TargetBase&&) = default;
+
   virtual bool parse(std::string const& value) = 0;
 
   std::string variableName;
@@ -250,6 +260,11 @@ class ProgramInterface {
 public:
   ProgramInterface(std::string name, std::string shortDescription, std::string version);
   virtual ~ProgramInterface();
+
+  ProgramInterface(const ProgramInterface&) = delete;
+  ProgramInterface& operator=(const ProgramInterface&) = delete;
+  ProgramInterface(ProgramInterface&&) = delete;
+  ProgramInterface& operator=(ProgramInterface&&) = delete;
 
   void setGroups(std::vector<std::string> groups)
   {

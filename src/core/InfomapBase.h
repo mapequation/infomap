@@ -71,37 +71,37 @@ public:
 
   InfomapIterator iterTree(int maxClusterLevel = 1)
   {
-    return {&root(), maxClusterLevel};
+    return { &root(), maxClusterLevel };
   }
 
   InfomapIteratorPhysical iterTreePhysical(int maxClusterLevel = 1)
   {
-    return {&root(), maxClusterLevel};
+    return { &root(), maxClusterLevel };
   }
 
   InfomapModuleIterator iterModules(int maxClusterLevel = 1)
   {
-    return {&root(), maxClusterLevel};
+    return { &root(), maxClusterLevel };
   }
 
   InfomapLeafModuleIterator iterLeafModules(int maxClusterLevel = 1)
   {
-    return {&root(), maxClusterLevel};
+    return { &root(), maxClusterLevel };
   }
 
   InfomapLeafIterator iterLeafNodes(int maxClusterLevel = 1)
   {
-    return {&root(), maxClusterLevel};
+    return { &root(), maxClusterLevel };
   }
 
   InfomapLeafIteratorPhysical iterLeafNodesPhysical(int maxClusterLevel = 1)
   {
-    return {&root(), maxClusterLevel};
+    return { &root(), maxClusterLevel };
   }
 
   InfomapIterator begin(int maxClusterLevel = 1)
   {
-    return {&root(), maxClusterLevel};
+    return { &root(), maxClusterLevel };
   }
 
   InfomapIterator end()

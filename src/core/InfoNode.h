@@ -85,7 +85,7 @@ public:
   MetaCollection metaCollection; // For modules
   std::vector<unsigned int> stateNodes; // For physically aggregated nodes
 
-protected:
+private:
   unsigned int m_childDegree = 0;
   bool m_childrenChanged = false;
   unsigned int m_numLeafMembers = 0;
@@ -96,7 +96,7 @@ protected:
   InfomapBase* m_infomap = nullptr;
 
 public:
-  explicit InfoNode(const FlowData& flowData)
+  InfoNode(const FlowData& flowData)
       : data(flowData) {};
 
   // For first order nodes, physicalId equals stateId
