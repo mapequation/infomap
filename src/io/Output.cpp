@@ -124,6 +124,15 @@ std::string Output::writeClu(InfomapBase& im, const std::string& filename, bool 
   return outputFilename;
 }
 
+std::string Output::getNodeName(const InfomapBase& im, const InfoNode& node)
+{
+  try {
+    return im.m_network.names().at(node.physicalId);
+  } catch (...) {
+    return io::stringify(node.physicalId);
+  }
+}
+
 void Output::writeTree(InfomapBase& im, std::ostream& outStream, bool states)
 {
   auto oldPrecision = outStream.precision();
@@ -140,16 +149,6 @@ void Output::writeTree(InfomapBase& im, std::ostream& outStream, bool states)
     outStream << "# path flow name node_id\n";
   }
 
-  const auto nodeName = [&im](const auto& node) {
-    auto name = im.m_network.names()[node.physicalId];
-
-    if (name.empty()) {
-      name = io::stringify(node.physicalId);
-    }
-
-    return name;
-  };
-
   const auto shouldHideBipartiteNodes = !im.printFlowTree && im.isBipartite() && im.hideBipartiteNodes;
   const auto bipartiteStartId = shouldHideBipartiteNodes ? im.m_network.bipartiteStartId() : 0;
 
@@ -164,7 +163,7 @@ void Output::writeTree(InfomapBase& im, std::ostream& outStream, bool states)
 
         auto& path = it.path();
 
-        outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << nodeName(node) << "\" " << node.physicalId << '\n';
+        outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << getNodeName(im, node) << "\" " << node.physicalId << '\n';
       }
     }
   } else {
@@ -177,7 +176,7 @@ void Output::writeTree(InfomapBase& im, std::ostream& outStream, bool states)
 
         auto& path = it.path();
 
-        outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << nodeName(node) << "\" ";
+        outStream << io::stringify(path, ":") << " " << node.data.flow << " \"" << getNodeName(im, node) << "\" ";
 
         if (states) {
           outStream << node.stateId << " " << node.physicalId;
@@ -305,16 +304,6 @@ void Output::writeJsonTree(InfomapBase& im, std::ostream& outStream, bool states
 
   outStream << "\"nodes\":[";
 
-  const auto nodeName = [&im](const auto& node) {
-    auto name = im.m_network.names()[node.physicalId];
-
-    if (name.empty()) {
-      name = io::stringify(node.physicalId);
-    }
-
-    return name;
-  };
-
   const auto shouldHideBipartiteNodes = im.isBipartite() && im.hideBipartiteNodes;
   const auto bipartiteStartId = shouldHideBipartiteNodes ? im.m_network.bipartiteStartId() : 0;
 
@@ -344,7 +333,7 @@ void Output::writeJsonTree(InfomapBase& im, std::ostream& outStream, bool states
         outStream << "{"
                   << "\"path\":[" << path << "],"
                   << "\"modules\":[" << modules << "],"
-                  << "\"name\":\"" << nodeName(node) << "\","
+                  << "\"name\":\"" << getNodeName(im, node) << "\","
                   << "\"flow\":" << node.data.flow << ","
                   << "\"mec\":" << it.modularCentrality() << ","
                   << "\"id\":" << node.physicalId << "}";
@@ -370,7 +359,7 @@ void Output::writeJsonTree(InfomapBase& im, std::ostream& outStream, bool states
         outStream << "{"
                   << "\"path\":[" << path << "],"
                   << "\"modules\":[" << modules << "],"
-                  << "\"name\":\"" << nodeName(node) << "\","
+                  << "\"name\":\"" << getNodeName(im, node) << "\","
                   << "\"flow\":" << node.data.flow << ","
                   << "\"mec\":" << it.modularCentrality() << ",";
 
@@ -466,16 +455,6 @@ void Output::writeCsvTree(InfomapBase& im, std::ostream& outStream, bool states)
     outStream << "node_id\n";
   }
 
-  const auto nodeName = [&im](const auto& node) {
-    auto name = im.m_network.names()[node.physicalId];
-
-    if (name.empty()) {
-      name = io::stringify(node.physicalId);
-    }
-
-    return name;
-  };
-
   const auto shouldHideBipartiteNodes = im.isBipartite() && im.hideBipartiteNodes;
   const auto bipartiteStartId = shouldHideBipartiteNodes ? im.m_network.bipartiteStartId() : 0;
 
@@ -488,7 +467,7 @@ void Output::writeCsvTree(InfomapBase& im, std::ostream& outStream, bool states)
         }
 
         const auto path = io::stringify(it.path(), ":");
-        outStream << path << ',' << node.data.flow << ",\"" << nodeName(node) << "\"," << node.physicalId << '\n';
+        outStream << path << ',' << node.data.flow << ",\"" << getNodeName(im, node) << "\"," << node.physicalId << '\n';
       }
     }
   } else {
@@ -500,7 +479,7 @@ void Output::writeCsvTree(InfomapBase& im, std::ostream& outStream, bool states)
         }
 
         const auto path = io::stringify(it.path(), ":");
-        outStream << path << ',' << node.data.flow << ",\"" << nodeName(node) << "\",";
+        outStream << path << ',' << node.data.flow << ",\"" << getNodeName(im, node) << "\",";
 
         if (states) {
           outStream << node.stateId << ',';

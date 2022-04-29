@@ -17,6 +17,7 @@
 namespace infomap {
 
 class InfomapBase;
+class InfoNode;
 
 class Output {
 public:
@@ -44,6 +45,8 @@ private:
   static void writeCsvTree(InfomapBase& im, std::ostream& o, bool states);
 
   static std::string getOutputFileHeader(const InfomapBase& im, bool states = false);
+
+  static std::string getNodeName(const InfomapBase& im, const InfoNode& node);
 
   using Link = std::pair<unsigned int, unsigned int>;
   using LinkMap = std::map<Link, double>;
