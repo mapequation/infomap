@@ -16,6 +16,7 @@
 #include "iterators/InfomapIterator.h"
 #include "../io/ClusterMap.h"
 #include "../io/Network.h"
+#include "../io/Output.h"
 #include "../utils/Log.h"
 #include "../utils/Date.h"
 #include "../utils/Stopwatch.h"
@@ -39,6 +40,7 @@ namespace detail {
 class InfomapBase : public InfomapConfig<InfomapBase> {
   template <typename Objective>
   friend class InfomapOptimizer;
+  friend class Output;
 
 protected:
   using EdgeType = Edge<InfoNode>;
@@ -390,8 +392,6 @@ public:
   // Output: *
   // ===================================================
 
-  std::string getOutputFileHeader(bool states = false);
-
   /**
    * Write tree to a .tree file.
    * @param filename the filename for the output file. If empty, use default
@@ -399,7 +399,10 @@ public:
    * @param states if memory network, print the state-level network without merging physical nodes within modules
    * @return the filename written to
    */
-  std::string writeTree(const std::string& filename = "", bool states = false);
+  std::string writeTree(const std::string& filename = "", bool states = false)
+  {
+    return Output::writeTree(*this, filename, states);
+  }
 
   /**
    * Write flow tree to a .ftree file.
@@ -410,7 +413,10 @@ public:
    * @param states if memory network, print the state-level network without merging physical nodes within modules
    * @return the filename written to
    */
-  std::string writeFlowTree(const std::string& filename = "", bool states = false);
+  std::string writeFlowTree(const std::string& filename = "", bool states = false)
+  {
+    return Output::writeFlowTree(*this, filename, states);
+  }
 
   /**
    * Write Newick tree to a .tre file.
@@ -419,11 +425,20 @@ public:
    * @param states if memory network, print the state-level network without merging physical nodes within modules
    * @return the filename written to
    */
-  std::string writeNewickTree(const std::string& filename = "", bool states = false);
+  std::string writeNewickTree(const std::string& filename = "", bool states = false)
+  {
+    return Output::writeNewickTree(*this, filename, states);
+  }
 
-  std::string writeJsonTree(const std::string& filename = "", bool states = false, bool writeLinks = false);
+  std::string writeJsonTree(const std::string& filename = "", bool states = false, bool writeLinks = false)
+  {
+    return Output::writeJsonTree(*this, filename, states, writeLinks);
+  }
 
-  std::string writeCsvTree(const std::string& filename = "", bool states = false);
+  std::string writeCsvTree(const std::string& filename = "", bool states = false)
+  {
+    return Output::writeCsvTree(*this, filename, states);
+  }
 
   /**
    * Write tree to a .clu file.
@@ -435,7 +450,10 @@ public:
    * Value -1 will give the module index for the lowest level, i.e. the finest modular structure.
    * @return the filename written to
    */
-  std::string writeClu(const std::string& filename = "", bool states = false, int moduleIndexLevel = 1);
+  std::string writeClu(const std::string& filename = "", bool states = false, int moduleIndexLevel = 1)
+  {
+    return Output::writeClu(*this, filename, states, moduleIndexLevel);
+  }
 
   /**
    * Print per level statistics
@@ -459,37 +477,6 @@ public:
 
 protected:
   virtual void initOptimizer(bool forceNoMemory = false) = 0;
-
-  /**
-   * Write tree to output stream
-   * @param states, write state-level tree, else aggregate physical nodes within modules
-   */
-  void writeTree(std::ostream& outStream, bool states = false);
-
-  /**
-   * Write tree links to output stream
-   */
-  void writeTreeLinks(std::ostream& outStream, bool states = false);
-
-  /**
-   * Write Newick tree to output stream
-   * @param states, write state-level tree, else aggregate physical nodes within modules
-   */
-  void writeNewickTree(std::ostream& outStream, bool states = false);
-
-  /**
-   * Write JSON tree to output stream
-   * @param states, write state-level tree, else aggregate physical nodes within modules
-   */
-  void writeJsonTree(std::ostream& outStream, bool states = false, bool writeLinks = false);
-
-  /**
-   * Write CSV tree to output stream
-   * @param states, write state-level tree, else aggregate physical nodes within modules
-   */
-  void writeCsvTree(std::ostream& outStream, bool states = false);
-
-  std::map<std::string, std::map<std::pair<unsigned int, unsigned int>, double>> aggregateModuleLinks(bool states = false);
 
   InfoNode m_root;
   std::vector<InfoNode*> m_leafNodes;
