@@ -528,10 +528,21 @@ namespace detail {
   class PartitionQueue {
     using PendingModule = InfoNode*;
 
+    std::deque<PendingModule> m_queue;
+
   public:
+    unsigned int level = 1;
+    unsigned int numNonTrivialModules = 0;
+    double flow = 0.0;
+    double nonTrivialFlow = 0.0;
+    bool skip = false;
+    double indexCodelength = 0.0; // Consolidated
+    double leafCodelength = 0.0; // Consolidated
+    double moduleCodelength = 0.0; // Left to improve on next level
+
     using size_t = std::deque<PendingModule>::size_type;
 
-    void swap(PartitionQueue& other)
+    void swap(PartitionQueue& other) noexcept
     {
       std::swap(level, other.level);
       std::swap(numNonTrivialModules, other.numNonTrivialModules);
@@ -549,18 +560,6 @@ namespace detail {
     void resize(size_t size) { m_queue.resize(size); }
 
     PendingModule& operator[](size_t i) { return m_queue[i]; }
-
-    unsigned int level = 1;
-    unsigned int numNonTrivialModules = 0;
-    double flow = 0.0;
-    double nonTrivialFlow = 0.0;
-    bool skip = false;
-    double indexCodelength = 0.0; // Consolidated
-    double leafCodelength = 0.0; // Consolidated
-    double moduleCodelength = 0.0; // Left to improve on next level
-
-  private:
-    std::deque<PendingModule> m_queue;
   };
 
 } // namespace detail
