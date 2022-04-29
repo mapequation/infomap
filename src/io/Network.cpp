@@ -177,7 +177,7 @@ void Network::postProcessInputData()
   }
 }
 
-void Network::readMetaData(std::string filename)
+void Network::readMetaData(const std::string& filename)
 {
   Log() << "Parsing meta data from '" << filename << "'..." << std::endl;
   SafeInFile input(filename);

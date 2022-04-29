@@ -36,7 +36,7 @@ public:
     FlowCalculator f(network, config);
   }
 
-protected:
+private:
   FlowCalculator(StateNetwork&, const Config&);
 
   using FlowLink = detail::FlowLink;

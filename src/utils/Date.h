@@ -49,8 +49,6 @@ private:
 
 class Date {
 public:
-  Date() : m_timeOfCreation(time(nullptr)) { }
-
   friend std::ostream& operator<<(std::ostream& out, const Date& date)
   {
     struct std::tm t = *localtime(&date.m_timeOfCreation);
@@ -63,7 +61,7 @@ public:
   }
 
 private:
-  std::time_t m_timeOfCreation;
+  std::time_t m_timeOfCreation = time(nullptr);
 };
 
 } // namespace infomap

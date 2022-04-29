@@ -25,7 +25,7 @@ namespace infomap {
  */
 class FileURI {
 public:
-  FileURI() = default; // Allow FileURI member without initialization
+  FileURI() = default;
 
   explicit FileURI(std::string filename, bool requireExtension = false);
 

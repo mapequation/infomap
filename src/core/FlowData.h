@@ -16,43 +16,16 @@
 namespace infomap {
 
 struct FlowData {
-  FlowData(double flow = 0.0)
-      : flow(flow),
-        enterFlow(0.0),
-        exitFlow(0.0),
-        teleportFlow(0.0),
-        teleportSourceFlow(0.0),
-        teleportWeight(0.0),
-        danglingFlow(0.0) { }
+  double flow = 0.0;
+  double enterFlow = 0.0;
+  double exitFlow = 0.0;
+  double teleportFlow = 0.0;
+  double teleportSourceFlow = 0.0;
+  double teleportWeight = 0.0;
+  double danglingFlow = 0.0;
 
-  FlowData(const FlowData& other)
-      : flow(other.flow),
-        enterFlow(other.enterFlow),
-        exitFlow(other.exitFlow),
-        teleportFlow(other.teleportFlow),
-        teleportSourceFlow(other.teleportSourceFlow),
-        teleportWeight(other.teleportWeight),
-        danglingFlow(other.danglingFlow) { }
-
-  FlowData& operator=(const FlowData& other)
-  {
-    flow = other.flow;
-    enterFlow = other.enterFlow;
-    exitFlow = other.exitFlow;
-    teleportFlow = other.teleportFlow;
-    teleportSourceFlow = other.teleportSourceFlow;
-    teleportWeight = other.teleportWeight;
-    danglingFlow = other.danglingFlow;
-    return *this;
-  }
-
-  double flow;
-  double enterFlow;
-  double exitFlow;
-  double teleportFlow;
-  double teleportSourceFlow;
-  double teleportWeight;
-  double danglingFlow;
+  FlowData() = default;
+  FlowData(double flow) : flow(flow) { }
 
   FlowData& operator+=(const FlowData& other)
   {
@@ -80,7 +53,9 @@ struct FlowData {
 
   friend std::ostream& operator<<(std::ostream& out, const FlowData& data)
   {
-    return out << "flow: " << data.flow << ", enter: " << data.enterFlow << ", exit: " << data.exitFlow << ", teleWeight: " << data.teleportWeight << ", danglingFlow: " << data.danglingFlow << ", teleFlow: " << data.teleportFlow;
+    return out << "flow: " << data.flow << ", enter: " << data.enterFlow << ", exit: " << data.exitFlow
+               << ", teleWeight: " << data.teleportWeight << ", danglingFlow: " << data.danglingFlow
+               << ", teleFlow: " << data.teleportFlow;
   }
 };
 
@@ -90,17 +65,15 @@ struct DeltaFlow {
   double deltaEnter = 0.0;
   unsigned int count = 0;
 
-  DeltaFlow() = default;
-
   explicit DeltaFlow(unsigned int module, double deltaExit, double deltaEnter)
       : module(module),
         deltaExit(deltaExit),
-        deltaEnter(deltaEnter),
-        count(0) { }
+        deltaEnter(deltaEnter) { }
 
+  DeltaFlow() = default;
   DeltaFlow(const DeltaFlow&) = default;
-  DeltaFlow& operator=(const DeltaFlow&) = default;
   DeltaFlow(DeltaFlow&&) = default;
+  DeltaFlow& operator=(const DeltaFlow&) = default;
   DeltaFlow& operator=(DeltaFlow&&) = default;
   virtual ~DeltaFlow() = default;
 
@@ -121,7 +94,7 @@ struct DeltaFlow {
     count = 0;
   }
 
-  friend void swap(DeltaFlow& first, DeltaFlow& second)
+  friend void swap(DeltaFlow& first, DeltaFlow& second) noexcept
   {
     std::swap(first.module, second.module);
     std::swap(first.deltaExit, second.deltaExit);
@@ -139,7 +112,7 @@ struct MemDeltaFlow : DeltaFlow {
   double sumDeltaPlogpPhysFlow = 0.0;
   double sumPlogpPhysFlow = 0.0;
 
-  MemDeltaFlow() : DeltaFlow() { }
+  MemDeltaFlow() = default;
 
   explicit MemDeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow = 0.0, double sumPlogpPhysFlow = 0.0)
       : DeltaFlow(module, deltaExit, deltaEnter),
@@ -161,7 +134,7 @@ struct MemDeltaFlow : DeltaFlow {
     sumPlogpPhysFlow = 0.0;
   }
 
-  friend void swap(MemDeltaFlow& first, MemDeltaFlow& second)
+  friend void swap(MemDeltaFlow& first, MemDeltaFlow& second) noexcept
   {
     swap(static_cast<DeltaFlow&>(first), static_cast<DeltaFlow&>(second));
     std::swap(first.sumDeltaPlogpPhysFlow, second.sumDeltaPlogpPhysFlow);
