@@ -1,6 +1,6 @@
 import Infomap from "@mapequation/infomap";
 import type { Arguments } from "@mapequation/infomap/arguments";
-import { useCallback, useState } from "react";
+import { useCallback, useDebugValue, useState } from "react";
 
 export function useInfomap(args?: Arguments) {
   const [progress, setProgress] = useState(0);
@@ -36,6 +36,8 @@ export function useInfomap(args?: Arguments) {
     },
     [infomap, args]
   );
+
+  useDebugValue(running ? "Running" : "Stopped");
 
   return {
     infomap,
