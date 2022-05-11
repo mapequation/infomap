@@ -166,16 +166,18 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
     throw std::runtime_error("Missing out_directory");
   }
 
-  if (flowModelArg == "undirected") {
-    setFlowModel(FlowModel::undirected);
-  } else if (flowModelArg == "directed") {
+  if (flowModelArg == "directed" || directed) {
     setFlowModel(FlowModel::directed);
+  } else if (flowModelArg == "undirected") {
+    setFlowModel(FlowModel::undirected);
   } else if (flowModelArg == "undirdir") {
     setFlowModel(FlowModel::undirdir);
   } else if (flowModelArg == "outdirdir") {
     setFlowModel(FlowModel::outdirdir);
   } else if (flowModelArg == "rawdir") {
     setFlowModel(FlowModel::rawdir);
+  } else if (!flowModelArg.empty()) {
+    throw std::runtime_error("Unrecognized flow model");
   }
 
   if (regularized) {
@@ -189,10 +191,7 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
     throw std::runtime_error(io::Str() << "Can't write to directory '" << outDirectory << "'. Check that the directory exists and that you have write permissions.");
 
   if (outName.empty()) {
-    if (!networkFile.empty())
-      outName = FileURI(networkFile).getName();
-    else
-      outName = "no-name";
+    outName = !networkFile.empty() ? FileURI(networkFile).getName() : "no-name";
   }
 
   parsedString = flags;
@@ -205,20 +204,6 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
 void Config::adaptDefaults()
 {
-  if (flowModel != FlowModel::undirected && flowModel != FlowModel::undirdir && flowModel != FlowModel::directed && flowModel != FlowModel::outdirdir && flowModel != FlowModel::rawdir) {
-    throw std::runtime_error("Unrecognized flow model");
-  }
-
-  if (undirdir) {
-    setFlowModel(FlowModel::undirdir);
-  } else if (directed) {
-    setFlowModel(FlowModel::directed);
-  } else if (outdirdir) {
-    setFlowModel(FlowModel::outdirdir);
-  } else if (rawdir) {
-    setFlowModel(FlowModel::rawdir);
-  }
-
   auto outputs = io::split(outputFormats, ',');
   for (std::string& o : outputs) {
     if (o == "clu") {
@@ -248,8 +233,6 @@ void Config::adaptDefaults()
   if (isCLI && !haveModularResultOutput()) {
     printTree = true;
   }
-
-  originallyUndirected = isUndirectedFlow();
 }
 
 std::ostream& operator<<(std::ostream& out, FlowModel f)
