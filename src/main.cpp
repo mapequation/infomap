@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
+#include "core/InfomapCore.h"
 #include "io/Config.h"
-#include "Infomap.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -23,7 +23,7 @@ int run(const std::string& flags)
   try {
     Config conf(flags, true);
 
-    InfomapWrapper infomap(conf);
+    InfomapCore infomap(conf);
 
     infomap.run();
   } catch (std::exception& e) {
