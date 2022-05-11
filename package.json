@@ -69,8 +69,8 @@
       "package.json",
       "package-lock.json",
       {
-        "filename": "src/version.cpp",
-        "updater": "utils/update-version-cpp.js"
+        "filename": "src/version.h",
+        "updater": "utils/update-version-h.js"
       },
       {
         "filename": "CITATION.cff",
