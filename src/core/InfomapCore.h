@@ -23,9 +23,6 @@
 namespace infomap {
 
 class InfomapCore : public InfomapBase {
-  using OptimizerPtr = std::unique_ptr<InfomapOptimizerBase>;
-
-protected:
 public:
   InfomapCore() : InfomapBase() { initOptimizer(); }
   InfomapCore(const std::string& flags, bool isCli = false) : InfomapBase(flags, isCli) { initOptimizer(); }
@@ -69,11 +66,11 @@ protected:
   void initOptimizer(bool forceNoMemory = false)
   {
     if (haveMetaData()) {
-      m_optimizer = OptimizerPtr(new InfomapOptimizer<MetaMapEquation>());
+      m_optimizer = std::make_unique<InfomapOptimizer<MetaMapEquation>>();
     } else if (haveMemory() && !forceNoMemory) {
-      m_optimizer = OptimizerPtr(new InfomapOptimizer<MemMapEquation>());
+      m_optimizer = std::make_unique<InfomapOptimizer<MemMapEquation>>();
     } else {
-      m_optimizer = OptimizerPtr(new InfomapOptimizer<BiasedMapEquation>());
+      m_optimizer = std::make_unique<InfomapOptimizer<BiasedMapEquation>>();
     }
     m_optimizer->init(this);
   }
@@ -170,7 +167,7 @@ protected:
   // Protected members
   // ===================================================
 
-  OptimizerPtr m_optimizer;
+  std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };
 
 } /* namespace infomap */

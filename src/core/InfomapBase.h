@@ -41,9 +41,6 @@ class InfomapBase : public InfomapConfig<InfomapBase> {
   friend class InfomapOptimizer;
   friend class Output;
 
-protected:
-  using EdgeType = Edge<InfoNode>;
-
 public:
   using PartitionQueue = detail::PartitionQueue;
   using PerLevelStat = detail::PerLevelStat;

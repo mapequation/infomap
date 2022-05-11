@@ -10,6 +10,8 @@
 #ifndef INFOEDGE_H_
 #define INFOEDGE_H_
 
+#include <iostream>
+
 namespace infomap {
 
 struct EdgeData {
@@ -22,28 +24,22 @@ public:
   double flow;
 };
 
-template <typename node_type>
-class Edge {
+class InfoNode;
+
+class InfoEdge {
 public:
-  Edge(node_type& source, node_type& target, double weight, double flow)
+  InfoEdge(InfoNode& source, InfoNode& target, double weight, double flow)
       : data(weight, flow),
         source(&source),
         target(&target) { }
 
-  node_type& other(node_type& node)
-  {
-    return (node == *source) ? *target : *source;
-  }
+  InfoNode& other(InfoNode& node) const;
 
-  friend std::ostream& operator<<(std::ostream& out, const Edge& edge)
-  {
-    return out << "(" << *edge.source << ") -> (" << *edge.target << "), flow: "
-               << edge.data.flow;
-  }
+  friend std::ostream& operator<<(std::ostream& out, const InfoEdge& edge);
 
   EdgeData data;
-  node_type* source;
-  node_type* target;
+  InfoNode* source;
+  InfoNode* target;
 };
 
 } // namespace infomap

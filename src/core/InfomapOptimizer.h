@@ -27,9 +27,6 @@ class InfomapOptimizer : public InfomapOptimizerBase {
   using FlowDataType = FlowData;
   using DeltaFlowDataType = typename Objective::DeltaFlowDataType;
 
-protected:
-  using EdgeType = Edge<InfoNode>;
-
 public:
   InfomapOptimizer() = default;
 
@@ -751,7 +748,7 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
   for (auto& node : network) {
     unsigned int module1 = node->index;
     for (auto& e : node->outEdges()) {
-      EdgeType& edge = *e;
+      InfoEdge& edge = *e;
       unsigned int module2 = edge.target->index;
       if (module1 != module2) {
         // Use new variables to not swap module1

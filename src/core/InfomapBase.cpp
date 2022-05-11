@@ -876,8 +876,8 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   InfoNode* parentPtr = &parent;
   // Clone edges
   for (InfoNode& node : parent) {
-    for (EdgeType* e : node.outEdges()) {
-      EdgeType& edge = *e;
+    for (InfoEdge* e : node.outEdges()) {
+      InfoEdge& edge = *e;
       // If neighbour node is within the same module, add the link to this subnetwork.
       if (edge.target->parent == parentPtr) {
         m_leafNodes[edge.source->index]->addOutEdge(*m_leafNodes[edge.target->index], edge.data.weight, edge.data.flow);
@@ -911,11 +911,11 @@ double InfomapBase::calcEntropyRate()
     InfoNode& node = *it;
     double sumOutFlow = 0.0;
     double entropy = 0.0;
-    for (EdgeType* e : node.outEdges()) {
-      EdgeType& edge = *e;
+    for (InfoEdge* e : node.outEdges()) {
+      InfoEdge& edge = *e;
       sumOutFlow += edge.data.flow;
     }
-    for (EdgeType* e : node.outEdges()) {
+    for (InfoEdge* e : node.outEdges()) {
       entropy += -infomath::plogp(e->data.flow / sumOutFlow);
     }
     entropyRate += node.data.flow * entropy;
@@ -1200,8 +1200,8 @@ void InfomapBase::initEnterExitFlow()
     }
     for (auto* n : m_leafNodes) {
       auto& node = *n;
-      for (EdgeType* e : node.outEdges()) {
-        EdgeType& edge = *e;
+      for (InfoEdge* e : node.outEdges()) {
+        InfoEdge& edge = *e;
         // Self-links not included here, should not add to enter and exit flow in its enclosing module
         edge.source->data.exitFlow += edge.data.flow;
         edge.target->data.enterFlow += edge.data.flow;
@@ -1221,8 +1221,8 @@ void InfomapBase::initEnterExitFlow()
         node.data.teleportFlow = node.data.flow;
         node.data.danglingFlow = node.data.flow;
       }
-      for (EdgeType* e : node.outEdges()) {
-        EdgeType& edge = *e;
+      for (InfoEdge* e : node.outEdges()) {
+        InfoEdge& edge = *e;
         // Self-links not included here, should not add to enter and exit flow in its enclosing module
         double halfFlow = edge.data.flow / 2;
         edge.source->data.exitFlow += halfFlow;
@@ -1260,7 +1260,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
   // Aggregate enter and exit flow between modules
   for (auto& leafNode : m_leafNodes) {
     auto& leafNodeSource = *leafNode;
-    for (EdgeType* e : leafNodeSource.outEdges()) {
+    for (InfoEdge* e : leafNodeSource.outEdges()) {
       auto& edge = *e;
       auto& leafNodeTarget = edge.target;
       double linkFlow = edge.data.flow;

@@ -29,8 +29,6 @@ class InfomapBase;
 
 class InfoNode {
 public:
-  using EdgeType = Edge<InfoNode>;
-
   using child_iterator = ChildIterator<InfoNode*>;
   using const_child_iterator = ChildIterator<InfoNode const*>;
   using infomap_child_iterator = InfomapChildIterator<InfoNode*>;
@@ -47,8 +45,8 @@ public:
   using post_depth_first_iterator = DepthFirstIterator<InfoNode*, false>;
   using const_post_depth_first_iterator = DepthFirstIterator<InfoNode const*, false>;
 
-  using edge_iterator = std::vector<EdgeType*>::iterator;
-  using const_edge_iterator = std::vector<EdgeType*>::const_iterator;
+  using edge_iterator = std::vector<InfoEdge*>::iterator;
+  using const_edge_iterator = std::vector<InfoEdge*>::const_iterator;
 
   using edge_iterator_wrapper = IterWrapper<edge_iterator>;
   using const_edge_iterator_wrapper = IterWrapper<const_edge_iterator>;
@@ -90,8 +88,8 @@ private:
   bool m_childrenChanged = false;
   unsigned int m_numLeafMembers = 0;
 
-  std::vector<EdgeType*> m_outEdges;
-  std::vector<EdgeType*> m_inEdges;
+  std::vector<InfoEdge*> m_outEdges;
+  std::vector<InfoEdge*> m_inEdges;
 
   InfomapBase* m_infomap = nullptr;
 
@@ -464,9 +462,9 @@ public:
 
   void deleteChildren();
 
-  EdgeType* addOutEdge(InfoNode& target, double weight, double flow = 0.0)
+  InfoEdge* addOutEdge(InfoNode& target, double weight, double flow = 0.0)
   {
-    auto* edge = new EdgeType(*this, target, weight, flow);
+    auto* edge = new InfoEdge(*this, target, weight, flow);
     m_outEdges.push_back(edge);
     target.m_inEdges.push_back(edge);
     return edge;
