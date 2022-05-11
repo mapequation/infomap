@@ -8,7 +8,6 @@
  ******************************************************************************/
 
 #include "core/InfomapCore.h"
-#include "io/Config.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -21,11 +20,7 @@ namespace infomap {
 int run(const std::string& flags)
 {
   try {
-    Config conf(flags, true);
-
-    InfomapCore infomap(conf);
-
-    infomap.run();
+    InfomapCore(flags, true).run();
   } catch (std::exception& e) {
     std::cerr << "Error: " << e.what() << std::endl;
     return 1;

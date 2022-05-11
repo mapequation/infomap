@@ -22,7 +22,7 @@ class InfomapConfig : public Config {
 public:
   InfomapConfig() = default;
 
-  InfomapConfig(const std::string flags) : InfomapConfig(Config(flags)) { }
+  InfomapConfig(const std::string& flags, bool isCli = false) : InfomapConfig(Config(flags, isCli)) { }
 
   InfomapConfig(const Config& conf) : Config(conf), m_rand(conf.seedToRandomNumberGenerator)
   {

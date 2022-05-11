@@ -52,7 +52,7 @@ public:
 
   explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { }
 
-  explicit InfomapBase(const std::string& flags) : InfomapConfig<InfomapBase>(flags)
+  explicit InfomapBase(const std::string& flags, bool isCli = false) : InfomapConfig<InfomapBase>(flags, isCli)
   {
     m_network.setConfig(*this);
     m_initialParameters = m_currentParameters = flags;
