@@ -65,20 +65,9 @@ void MetaMapEquation::initNetwork(InfoNode& root)
   m_unweightedNodeFlow = 1.0 / root.childDegree();
 }
 
-void MetaMapEquation::initSuperNetwork(InfoNode& root)
-{
-  Base::initSuperNetwork(root);
-}
-
-void MetaMapEquation::initSubNetwork(InfoNode& root)
-{
-  Base::initSubNetwork(root);
-}
-
 void MetaMapEquation::initPartition(std::vector<InfoNode*>& nodes)
 {
   initPartitionOfMetaNodes(nodes);
-
   calculateCodelength(nodes);
 }
 
@@ -148,12 +137,12 @@ void MetaMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
 
 double MetaMapEquation::calcCodelength(const InfoNode& parent) const
 {
-  return parent.isLeafModule() ? calcCodelengthOnModuleOfLeafNodes(parent) : MapEquation::calcCodelengthOnModuleOfModules(parent);
+  return parent.isLeafModule() ? calcCodelengthOnModuleOfLeafNodes(parent) : Base::calcCodelengthOnModuleOfModules(parent);
 }
 
 double MetaMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
 {
-  double indexLength = MapEquation::calcCodelength(parent);
+  double indexLength = Base::calcCodelength(parent);
 
   // Meta addition
   MetaCollection metaCollection;
@@ -170,9 +159,9 @@ double MetaMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent
 }
 
 double MetaMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                       DeltaFlowDataType& oldModuleDelta,
-                                                       DeltaFlowDataType& newModuleDelta,
-                                                       std::vector<FlowDataType>& moduleFlowData,
+                                                       DeltaFlow& oldModuleDelta,
+                                                       DeltaFlow& newModuleDelta,
+                                                       std::vector<FlowData>& moduleFlowData,
                                                        std::vector<unsigned int>& moduleMembers)
 {
   double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
@@ -197,7 +186,7 @@ double MetaMapEquation::getCurrentModuleMetaCodelength(unsigned int module, Info
 {
   auto& currentMetaCollection = m_moduleToMetaCollection[module];
 
-  double moduleMetaCodelength;
+  double moduleMetaCodelength = 0.0;
 
   if (addRemoveOrNothing == 0) {
     moduleMetaCodelength = currentMetaCollection.calculateEntropy();
@@ -221,9 +210,9 @@ double MetaMapEquation::getCurrentModuleMetaCodelength(unsigned int module, Info
 // ===================================================
 
 void MetaMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
-                                                   DeltaFlowDataType& oldModuleDelta,
-                                                   DeltaFlowDataType& newModuleDelta,
-                                                   std::vector<FlowDataType>& moduleFlowData,
+                                                   DeltaFlow& oldModuleDelta,
+                                                   DeltaFlow& newModuleDelta,
+                                                   std::vector<FlowData>& moduleFlowData,
                                                    std::vector<unsigned int>& moduleMembers)
 {
   Base::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
@@ -271,7 +260,7 @@ void MetaMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 // Debug
 // ===================================================
 
-void MetaMapEquation::printDebug()
+void MetaMapEquation::printDebug() const
 {
   std::cout << "MetaMapEquation\n";
   Base::printDebug();

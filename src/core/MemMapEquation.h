@@ -23,31 +23,12 @@ namespace infomap {
 class InfoNode;
 struct MemNodeSet;
 
-class MemMapEquation : protected MapEquation {
-  using Base = MapEquation;
+class MemMapEquation : private MapEquation<FlowData, MemDeltaFlow> {
+  using Base = MapEquation<FlowData, MemDeltaFlow>;
 
 public:
   using FlowDataType = FlowData;
   using DeltaFlowDataType = MemDeltaFlow;
-
-  MemMapEquation() : MapEquation() { }
-
-  MemMapEquation(const MemMapEquation& other)
-      : MapEquation(other),
-        m_physToModuleToMemNodes(other.m_physToModuleToMemNodes),
-        m_numPhysicalNodes(other.m_numPhysicalNodes),
-        m_memoryContributionsAdded(other.m_memoryContributionsAdded) { }
-
-  MemMapEquation& operator=(const MemMapEquation& other)
-  {
-    Base::operator=(other);
-    m_physToModuleToMemNodes = other.m_physToModuleToMemNodes;
-    m_numPhysicalNodes = other.m_numPhysicalNodes;
-    m_memoryContributionsAdded = other.m_memoryContributionsAdded;
-    return *this;
-  }
-
-  virtual ~MemMapEquation() = default;
 
   // ===================================================
   // Getters
@@ -63,63 +44,62 @@ public:
   // IO
   // ===================================================
 
-  // using Base::print;
-  std::ostream& print(std::ostream& out) const;
+  std::ostream& print(std::ostream& out) const override;
   friend std::ostream& operator<<(std::ostream&, const MemMapEquation&);
 
   // ===================================================
   // Init
   // ===================================================
 
-  void init(const Config& config);
+  void init(const Config& config) override;
 
-  void initTree(InfoNode& /*root*/) { }
+  void initTree(InfoNode& /*root*/) override { }
 
-  void initNetwork(InfoNode& root);
+  void initNetwork(InfoNode& root) override;
 
-  void initSuperNetwork(InfoNode& root);
+  void initSuperNetwork(InfoNode& root) override;
 
-  void initSubNetwork(InfoNode& root);
+  void initSubNetwork(InfoNode& root) override;
 
-  void initPartition(std::vector<InfoNode*>& nodes);
+  void initPartition(std::vector<InfoNode*>& nodes) override;
 
   // ===================================================
   // Codelength
   // ===================================================
 
-  double calcCodelength(const InfoNode& parent) const;
+  double calcCodelength(const InfoNode& parent) const override;
 
-  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
+  void addMemoryContributions(InfoNode& current, MemDeltaFlow& oldModuleDelta, VectorMap<MemDeltaFlow>& moduleDeltaFlow) override;
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                        DeltaFlowDataType& oldModuleDelta,
-                                        DeltaFlowDataType& newModuleDelta,
-                                        std::vector<FlowDataType>& moduleFlowData,
-                                        std::vector<unsigned int>& moduleMembers);
+                                        MemDeltaFlow& oldModuleDelta,
+                                        MemDeltaFlow& newModuleDelta,
+                                        std::vector<FlowData>& moduleFlowData,
+                                        std::vector<unsigned int>& moduleMembers) override;
 
   // ===================================================
   // Consolidation
   // ===================================================
 
   void updateCodelengthOnMovingNode(InfoNode& current,
-                                    DeltaFlowDataType& oldModuleDelta,
-                                    DeltaFlowDataType& newModuleDelta,
-                                    std::vector<FlowDataType>& moduleFlowData,
-                                    std::vector<unsigned int>& moduleMembers);
+                                    MemDeltaFlow& oldModuleDelta,
+                                    MemDeltaFlow& newModuleDelta,
+                                    std::vector<FlowData>& moduleFlowData,
+                                    std::vector<unsigned int>& moduleMembers) override;
 
-  void consolidateModules(std::vector<InfoNode*>& modules);
+  void consolidateModules(std::vector<InfoNode*>& modules) override;
 
   // ===================================================
   // Debug
   // ===================================================
 
-  void printDebug();
+  void printDebug() const override;
 
-protected:
+private:
   // ===================================================
-  // Protected member functions
+  // Private member functions
   // ===================================================
-  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const override;
 
   // ===================================================
   // Init
@@ -133,7 +113,7 @@ protected:
   // Codelength
   // ===================================================
 
-  void calculateCodelength(std::vector<InfoNode*>& nodes);
+  void calculateCodelength(std::vector<InfoNode*>& nodes) override;
 
   using Base::calculateCodelengthTerms;
 
@@ -147,7 +127,7 @@ protected:
 
   void updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
-  void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
+  void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, MemDeltaFlow& oldModuleDelta, MemDeltaFlow& newModuleDelta);
 
 public:
   // ===================================================
@@ -158,9 +138,9 @@ public:
   using Base::indexCodelength;
   using Base::moduleCodelength;
 
-protected:
+private:
   // ===================================================
-  // Protected member variables
+  // Private member variables
   // ===================================================
 
   using Base::enter_log_enter;
@@ -183,13 +163,6 @@ protected:
 
 struct MemNodeSet {
   MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) { }
-  MemNodeSet(const MemNodeSet& other) : numMemNodes(other.numMemNodes), sumFlow(other.sumFlow) { }
-  MemNodeSet& operator=(const MemNodeSet& other)
-  {
-    numMemNodes = other.numMemNodes;
-    sumFlow = other.sumFlow;
-    return *this;
-  }
   unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
   double sumFlow;
 };

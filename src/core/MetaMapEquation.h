@@ -23,35 +23,12 @@ namespace infomap {
 
 class InfoNode;
 
-class MetaMapEquation : protected MapEquation {
-  using Base = MapEquation;
+class MetaMapEquation : private MapEquation<> {
+  using Base = MapEquation<>;
 
 public:
   using FlowDataType = FlowData;
   using DeltaFlowDataType = DeltaFlow;
-
-  MetaMapEquation() = default;
-
-  MetaMapEquation(const MetaMapEquation& other)
-      : MapEquation(other),
-        m_moduleToMetaCollection(other.m_moduleToMetaCollection),
-        numMetaDataDimensions(other.numMetaDataDimensions),
-        metaDataRate(other.metaDataRate),
-        weightByFlow(other.weightByFlow),
-        metaCodelength(other.metaCodelength) { }
-
-  MetaMapEquation& operator=(const MetaMapEquation& other)
-  {
-    Base::operator=(other);
-    m_moduleToMetaCollection = other.m_moduleToMetaCollection;
-    numMetaDataDimensions = other.numMetaDataDimensions;
-    metaDataRate = other.metaDataRate;
-    weightByFlow = other.weightByFlow;
-    metaCodelength = other.metaCodelength;
-    return *this;
-  }
-
-  virtual ~MetaMapEquation() = default;
 
   // ===================================================
   // Getters
@@ -59,9 +36,9 @@ public:
 
   using Base::getIndexCodelength;
 
-  double getModuleCodelength() const;
+  double getModuleCodelength() const override;
 
-  double getCodelength() const;
+  double getCodelength() const override;
 
   double getMetaCodelength(bool unweighted = false) const
   {
@@ -72,62 +49,62 @@ public:
   // IO
   // ===================================================
 
-  std::ostream& print(std::ostream& out) const;
+  std::ostream& print(std::ostream& out) const override;
   friend std::ostream& operator<<(std::ostream&, const MetaMapEquation&);
 
   // ===================================================
   // Init
   // ===================================================
 
-  void init(const Config& config);
+  void init(const Config& config) override;
 
-  void initTree(InfoNode& root);
+  void initTree(InfoNode& root) override;
 
-  void initNetwork(InfoNode& root);
+  void initNetwork(InfoNode& root) override;
 
-  void initSuperNetwork(InfoNode& root);
+  using Base::initSuperNetwork;
 
-  void initSubNetwork(InfoNode& root);
+  using Base::initSubNetwork;
 
-  void initPartition(std::vector<InfoNode*>& nodes);
+  void initPartition(std::vector<InfoNode*>& nodes) override;
 
   // ===================================================
   // Codelength
   // ===================================================
 
-  double calcCodelength(const InfoNode& parent) const;
+  double calcCodelength(const InfoNode& parent) const override;
 
-  void addMemoryContributions(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, VectorMap<DeltaFlowDataType>& /*moduleDeltaFlow*/) { }
+  using Base::addMemoryContributions;
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                        DeltaFlowDataType& oldModuleDelta,
-                                        DeltaFlowDataType& newModuleDelta,
-                                        std::vector<FlowDataType>& moduleFlowData,
-                                        std::vector<unsigned int>& moduleMembers);
+                                        DeltaFlow& oldModuleDelta,
+                                        DeltaFlow& newModuleDelta,
+                                        std::vector<FlowData>& moduleFlowData,
+                                        std::vector<unsigned int>& moduleMembers) override;
 
   // ===================================================
   // Consolidation
   // ===================================================
 
   void updateCodelengthOnMovingNode(InfoNode& current,
-                                    DeltaFlowDataType& oldModuleDelta,
-                                    DeltaFlowDataType& newModuleDelta,
-                                    std::vector<FlowDataType>& moduleFlowData,
-                                    std::vector<unsigned int>& moduleMembers);
+                                    DeltaFlow& oldModuleDelta,
+                                    DeltaFlow& newModuleDelta,
+                                    std::vector<FlowData>& moduleFlowData,
+                                    std::vector<unsigned int>& moduleMembers) override;
 
-  void consolidateModules(std::vector<InfoNode*>& modules);
+  void consolidateModules(std::vector<InfoNode*>& modules) override;
 
   // ===================================================
   // Debug
   // ===================================================
 
-  void printDebug();
+  void printDebug() const override;
 
-protected:
+private:
   // ===================================================
-  // Protected member functions
+  // Private member functions
   // ===================================================
-  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
+  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const override;
 
   // ===================================================
   // Init
@@ -141,7 +118,7 @@ protected:
   // Codelength
   // ===================================================
 
-  void calculateCodelength(std::vector<InfoNode*>& nodes);
+  void calculateCodelength(std::vector<InfoNode*>& nodes) override;
 
   using Base::calculateCodelengthTerms;
 
@@ -162,9 +139,9 @@ public:
   using Base::indexCodelength;
   using Base::moduleCodelength;
 
-protected:
+private:
   // ===================================================
-  // Protected member functions
+  // Private member functions
   // ===================================================
 
   /**
@@ -175,7 +152,7 @@ protected:
   double getCurrentModuleMetaCodelength(unsigned int module, InfoNode& current, int addRemoveOrNothing);
 
   // ===================================================
-  // Protected member variables
+  // Private member variables
   // ===================================================
 
   using Base::enter_log_enter;
