@@ -23,51 +23,22 @@ namespace infomap {
 class InfoNode;
 class StateNetwork;
 
-class BiasedMapEquation : protected MapEquation {
-  using Base = MapEquation;
+class BiasedMapEquation : private MapEquation<> {
+  using Base = MapEquation<>;
 
 public:
   using FlowDataType = FlowData;
   using DeltaFlowDataType = DeltaFlow;
 
-  BiasedMapEquation() : MapEquation() { }
-
-  BiasedMapEquation(const BiasedMapEquation& other)
-      : MapEquation(other),
-        preferredNumModules(other.preferredNumModules),
-        currentNumModules(other.currentNumModules),
-        biasedCost(other.biasedCost),
-        useEntropyBiasCorrection(other.useEntropyBiasCorrection),
-        indexEntropyBiasCorrection(other.indexEntropyBiasCorrection),
-        moduleEntropyBiasCorrection(other.moduleEntropyBiasCorrection),
-        gamma(other.gamma)
-  {
-  }
-
-  BiasedMapEquation& operator=(const BiasedMapEquation& other)
-  {
-    Base::operator=(other);
-    preferredNumModules = other.preferredNumModules;
-    currentNumModules = other.currentNumModules;
-    biasedCost = other.biasedCost;
-    useEntropyBiasCorrection = other.useEntropyBiasCorrection;
-    indexEntropyBiasCorrection = other.indexEntropyBiasCorrection;
-    moduleEntropyBiasCorrection = other.moduleEntropyBiasCorrection;
-    gamma = other.gamma;
-    return *this;
-  }
-
-  virtual ~BiasedMapEquation() = default;
-
   // ===================================================
   // Getters
   // ===================================================
 
-  double getIndexCodelength() const;
+  double getIndexCodelength() const override;
 
-  double getModuleCodelength() const;
+  double getModuleCodelength() const override;
 
-  double getCodelength() const;
+  double getCodelength() const override;
 
   double getEntropyBiasCorrection() const;
 
@@ -75,68 +46,68 @@ public:
   // IO
   // ===================================================
 
-  std::ostream& print(std::ostream& out) const;
+  std::ostream& print(std::ostream& out) const override;
+
   friend std::ostream& operator<<(std::ostream&, const BiasedMapEquation&);
 
   // ===================================================
   // Init
   // ===================================================
 
-  void init(const Config& config);
+  void init(const Config& config) override;
 
-  void initTree(InfoNode& /*root*/) { }
+  void initTree(InfoNode& /*root*/) override { }
 
-  void initNetwork(InfoNode& root);
+  void initNetwork(InfoNode& root) override;
 
-  void initSuperNetwork(InfoNode& root);
+  using Base::initSuperNetwork;
 
-  void initSubNetwork(InfoNode& root);
+  using Base::initSubNetwork;
 
-  void initPartition(std::vector<InfoNode*>& nodes);
+  void initPartition(std::vector<InfoNode*>& nodes) override;
 
   // ===================================================
   // Codelength
   // ===================================================
 
-  double calcCodelength(const InfoNode& parent) const;
+  double calcCodelength(const InfoNode& parent) const override;
 
-  void addMemoryContributions(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, VectorMap<DeltaFlowDataType>& /*moduleDeltaFlow*/) { }
+  using Base::addMemoryContributions;
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                        DeltaFlowDataType& oldModuleDelta,
-                                        DeltaFlowDataType& newModuleDelta,
-                                        std::vector<FlowDataType>& moduleFlowData,
-                                        std::vector<unsigned int>& moduleMembers);
+                                        DeltaFlow& oldModuleDelta,
+                                        DeltaFlow& newModuleDelta,
+                                        std::vector<FlowData>& moduleFlowData,
+                                        std::vector<unsigned int>& moduleMembers) override;
 
   // ===================================================
   // Consolidation
   // ===================================================
 
   void updateCodelengthOnMovingNode(InfoNode& current,
-                                    DeltaFlowDataType& oldModuleDelta,
-                                    DeltaFlowDataType& newModuleDelta,
-                                    std::vector<FlowDataType>& moduleFlowData,
-                                    std::vector<unsigned int>& moduleMembers);
+                                    DeltaFlow& oldModuleDelta,
+                                    DeltaFlow& newModuleDelta,
+                                    std::vector<FlowData>& moduleFlowData,
+                                    std::vector<unsigned int>& moduleMembers) override;
 
-  void consolidateModules(std::vector<InfoNode*>& modules);
+  void consolidateModules(std::vector<InfoNode*>& modules) override;
 
   // ===================================================
   // Debug
   // ===================================================
 
-  void printDebug();
+  void printDebug() const override;
 
-protected:
+private:
   // ===================================================
-  // Protected member functions
+  // Private member functions
   // ===================================================
-  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const;
-  double calcCodelengthOnModuleOfModules(const InfoNode& parent) const;
+  double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const override;
+  double calcCodelengthOnModuleOfModules(const InfoNode& parent) const override;
 
-  int getDeltaNumModulesIfMoving(InfoNode& current,
-                                 unsigned int oldModule,
-                                 unsigned int newModule,
-                                 std::vector<unsigned int>& moduleMembers) const;
+  double correctionCoefficient() const { return gamma * entropyBiasCorrectionMultiplier; }
+
+  static int getDeltaNumModulesIfMoving(unsigned int oldModule, unsigned int newModule, std::vector<unsigned int>& moduleMembers);
 
   // ===================================================
   // Init
@@ -146,7 +117,7 @@ protected:
   // Codelength
   // ===================================================
 
-  void calculateCodelength(std::vector<InfoNode*>& nodes);
+  void calculateCodelength(std::vector<InfoNode*>& nodes) override;
 
   using Base::calculateCodelengthTerms;
 
@@ -171,15 +142,9 @@ public:
   using Base::indexCodelength;
   using Base::moduleCodelength;
 
-protected:
+private:
   // ===================================================
-  // Protected member functions
-  // ===================================================
-
-  double correctionCoefficient() const { return gamma * entropyBiasCorrectionMultiplier; }
-
-  // ===================================================
-  // Protected member variables
+  // Private member variables
   // ===================================================
 
   using Base::enter_log_enter;
