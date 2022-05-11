@@ -31,10 +31,9 @@
 
 namespace infomap {
 
-struct PerLevelStat;
-
 namespace detail {
   class PartitionQueue;
+  struct PerLevelStat;
 } // namespace detail
 
 class InfomapBase : public InfomapConfig<InfomapBase> {
@@ -47,6 +46,7 @@ protected:
 
 public:
   using PartitionQueue = detail::PartitionQueue;
+  using PerLevelStat = detail::PerLevelStat;
 
   InfomapBase() : InfomapConfig<InfomapBase>() { }
 
@@ -512,18 +512,18 @@ protected:
   std::string m_currentParameters;
 };
 
-struct PerLevelStat {
-  double codelength() const { return indexLength + leafLength; }
-
-  unsigned int numNodes() const { return numModules + numLeafNodes; }
-
-  unsigned int numModules = 0;
-  unsigned int numLeafNodes = 0;
-  double indexLength = 0.0;
-  double leafLength = 0.0;
-};
-
 namespace detail {
+
+  struct PerLevelStat {
+    double codelength() const { return indexLength + leafLength; }
+
+    unsigned int numNodes() const { return numModules + numLeafNodes; }
+
+    unsigned int numModules = 0;
+    unsigned int numLeafNodes = 0;
+    double indexLength = 0.0;
+    double leafLength = 0.0;
+  };
 
   class PartitionQueue {
     using PendingModule = InfoNode*;
