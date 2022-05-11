@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 #include <deque>
+#include <memory>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -259,12 +260,6 @@ struct OptionalTargets : TargetBase {
 class ProgramInterface {
 public:
   ProgramInterface(std::string name, std::string shortDescription, std::string version);
-  virtual ~ProgramInterface();
-
-  ProgramInterface(const ProgramInterface&) = delete;
-  ProgramInterface& operator=(const ProgramInterface&) = delete;
-  ProgramInterface(ProgramInterface&&) = delete;
-  ProgramInterface& operator=(ProgramInterface&&) = delete;
 
   void setGroups(std::vector<std::string> groups)
   {
@@ -274,7 +269,7 @@ public:
   template <typename T>
   void addNonOptionArgument(T& target, std::string variableName, std::string desc, std::string group, bool isAdvanced = false)
   {
-    m_nonOptionArguments.push_back(new Target<T>(target, std::move(variableName), std::move(desc), std::move(group), isAdvanced));
+    m_nonOptionArguments.emplace_back(new Target<T>(target, std::move(variableName), std::move(desc), std::move(group), isAdvanced));
   }
 
   template <typename T>
@@ -283,27 +278,27 @@ public:
     if (m_numOptionalNonOptionArguments != 0)
       throw std::runtime_error("Can't have two non-option vector arguments");
     ++m_numOptionalNonOptionArguments;
-    m_nonOptionArguments.push_back(new OptionalTargets<T>(target, std::move(variableName), std::move(desc), std::move(group), isAdvanced));
+    m_nonOptionArguments.emplace_back(new OptionalTargets<T>(target, std::move(variableName), std::move(desc), std::move(group), isAdvanced));
   }
 
   Option& addOptionArgument(char shortName, std::string longName, std::string description, std::string group, bool isAdvanced = false)
   {
     auto* o = new Option(shortName, std::move(longName), std::move(description), std::move(group), isAdvanced);
-    m_optionArguments.push_back(o);
+    m_optionArguments.emplace_back(o);
     return *o;
   }
 
   Option& addIncrementalOptionArgument(unsigned int& target, char shortName, std::string longName, std::string description, std::string group, bool isAdvanced = false)
   {
     auto* o = new IncrementalOption(target, shortName, std::move(longName), std::move(description), std::move(group), isAdvanced);
-    m_optionArguments.push_back(o);
+    m_optionArguments.emplace_back(o);
     return *o;
   }
 
   Option& addOptionArgument(bool& target, char shortName, std::string longName, std::string description, std::string group, bool isAdvanced = false)
   {
     auto* o = new ArgumentOption<bool>(target, shortName, std::move(longName), std::move(description), std::move(group), isAdvanced);
-    m_optionArguments.push_back(o);
+    m_optionArguments.emplace_back(o);
     return *o;
   }
 
@@ -311,7 +306,7 @@ public:
   Option& addOptionArgument(bool& target, std::string longName, std::string description, std::string group, bool isAdvanced = false)
   {
     auto* o = new ArgumentOption<bool>(target, '\0', std::move(longName), std::move(description), std::move(group), isAdvanced);
-    m_optionArguments.push_back(o);
+    m_optionArguments.emplace_back(o);
     return *o;
   }
 
@@ -319,7 +314,7 @@ public:
   Option& addOptionArgument(T& target, char shortName, std::string longName, std::string description, std::string argumentName, std::string group, bool isAdvanced = false)
   {
     auto* o = new ArgumentOption<T>(target, shortName, std::move(longName), std::move(description), std::move(group), isAdvanced, std::move(argumentName));
-    m_optionArguments.push_back(o);
+    m_optionArguments.emplace_back(o);
     return *o;
   }
 
@@ -328,7 +323,7 @@ public:
   Option& addOptionArgument(T& target, std::string longName, std::string description, std::string argumentName, std::string group, bool isAdvanced = false)
   {
     auto* o = new ArgumentOption<T>(target, '\0', std::move(longName), std::move(description), std::move(group), isAdvanced, std::move(argumentName));
-    m_optionArguments.push_back(o);
+    m_optionArguments.emplace_back(o);
     return *o;
   }
 
@@ -351,8 +346,8 @@ private:
   static std::string toJson(const std::string& key, bool value);
   static std::string toJson(const Option& opt);
 
-  std::deque<Option*> m_optionArguments;
-  std::deque<TargetBase*> m_nonOptionArguments;
+  std::deque<std::unique_ptr<Option>> m_optionArguments;
+  std::deque<std::unique_ptr<TargetBase>> m_nonOptionArguments;
   std::string m_programName = "Infomap";
   std::string m_shortProgramDescription;
   std::string m_programVersion;

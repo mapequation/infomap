@@ -45,14 +45,6 @@ ProgramInterface::ProgramInterface(std::string name, std::string shortDescriptio
   addOptionArgument(m_printJsonParameters, "print-json-parameters", "Print Infomap parameters in JSON.", "About").setHidden(true);
 }
 
-ProgramInterface::~ProgramInterface()
-{
-  for (auto& arg : m_nonOptionArguments)
-    delete arg;
-  for (auto& arg : m_optionArguments)
-    delete arg;
-}
-
 void ProgramInterface::exitWithUsage(bool showAdvanced)
 {
   Log() << "Name:" << std::endl;
