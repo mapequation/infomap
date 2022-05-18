@@ -30,7 +30,7 @@ jobs:
         config:
           - { name: macos, os: macos-latest, flags: "" }
           - { name: windows, os: windows-latest, flags: "-static" }
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
