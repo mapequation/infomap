@@ -62,15 +62,15 @@ private:
 public:
   Network() : StateNetwork() { init(); }
   explicit Network(const Config& config) : StateNetwork(config) { init(); }
-  explicit Network(std::string flags) : StateNetwork(Config(std::move(flags))) { init(); }
-  virtual ~Network() = default;
+  explicit Network(const std::string& flags) : StateNetwork(Config(flags)) { init(); }
+  ~Network() override = default;
 
   Network(const Network&) = delete;
   Network& operator=(const Network&) = delete;
   Network(Network&&) = delete;
   Network& operator=(Network&&) = delete;
 
-  virtual void clear();
+  void clear() override;
 
   /**
    * Parse network data from file and generate network
