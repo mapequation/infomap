@@ -264,7 +264,7 @@ IterationResult powerIterate(double alpha, Iteration&& iter)
     ++iterations;
   } while (iterations < 200 && (err > 1.0e-15 || iterations < 50));
 
-  Log() << "\n  -> PageRank calculation done in " << iterations << " iterations." << std::endl;
+  Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
 
   return { alpha, beta };
 }
@@ -486,7 +486,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     ++iterations;
   } while (iterations < 200 && (err > 1.0e-15 || iterations < 50));
 
-  Log() << "\n  -> PageRank calculation done in " << iterations << " iterations." << std::endl;
+  Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
 
   double sumNodeRank = 1.0;
   for (auto& link : flowLinks) {

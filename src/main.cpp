@@ -22,10 +22,10 @@ int run(const std::string& flags)
   try {
     InfomapCore(flags, true).run();
   } catch (std::exception& e) {
-    std::cerr << "Error: " << e.what() << std::endl;
+    std::cerr << "Error: " << e.what() << '\n';
     return 1;
   } catch (char const* e) {
-    std::cerr << "Str error: " << e << std::endl;
+    std::cerr << "Str error: " << e << '\n';
     return 1;
   }
 

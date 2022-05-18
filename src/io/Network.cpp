@@ -113,7 +113,7 @@ void Network::readInputData(std::string filename, bool accumulate)
 
 void Network::parseNetwork(const std::string& filename)
 {
-  Log() << "Parsing " << (m_config.isUndirectedFlow() ? "undirected" : "directed") << " network from file '" << filename << "'... " << std::endl;
+  Log() << "Parsing " << (m_config.isUndirectedFlow() ? "undirected" : "directed") << " network from file '" << filename << "'...\n";
 
   parseNetwork(filename, m_validHeadings["general"], m_ignoreHeadings["general"]);
 }
@@ -179,7 +179,7 @@ void Network::postProcessInputData()
 
 void Network::readMetaData(const std::string& filename)
 {
-  Log() << "Parsing meta data from '" << filename << "'..." << std::endl;
+  Log() << "Parsing meta data from '" << filename << "'...\n";
   SafeInFile input(filename);
   std::string line;
   while (!std::getline(input, line).fail()) {
@@ -206,7 +206,7 @@ void Network::readMetaData(const std::string& filename)
 
     addMetaData(nodeId, metaData);
   }
-  Log() << " -> Parsed " << m_numMetaDataColumns << " columns of meta data for " << m_metaData.size() << " nodes." << std::endl;
+  Log() << " -> Parsed " << m_numMetaDataColumns << " columns of meta data for " << m_metaData.size() << " nodes.\n";
 }
 //////////////////////////////////////////////////////////////////////////////////////////
 //

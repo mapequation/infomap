@@ -207,7 +207,7 @@ template <typename Objective>
 void InfomapOptimizer<Objective>::initPartition()
 {
   auto& network = m_infomap->activeNetwork();
-  Log(4) << "InfomapOptimizer::initPartition() with " << network.size() << " nodes..." << std::endl;
+  Log(4) << "InfomapOptimizer::initPartition() with " << network.size() << " nodes...\n";
 
   // Init one module for each node
   auto numNodes = network.size();
@@ -772,11 +772,11 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
 
   if (replaceExistingModules) {
     if (level == 1) {
-      Log(4) << "Consolidated super modules, removing old modules..." << std::endl;
+      Log(4) << "Consolidated super modules, removing old modules...\n";
       for (auto& node : network)
         node->replaceWithChildren();
     } else if (level == 2) {
-      Log(4) << "Consolidated sub-modules, removing modules..." << std::endl;
+      Log(4) << "Consolidated sub-modules, removing modules...\n";
       unsigned int moduleIndex = 0;
       for (InfoNode& module : m_infomap->root()) {
         // Store current modular structure on the sub-modules

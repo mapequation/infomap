@@ -47,26 +47,26 @@ ProgramInterface::ProgramInterface(std::string name, std::string shortDescriptio
 
 void ProgramInterface::exitWithUsage(bool showAdvanced)
 {
-  Log() << "Name:" << std::endl;
-  Log() << "        " << m_programName << " - " << m_shortProgramDescription << std::endl;
-  Log() << "\nUsage:" << std::endl;
+  Log() << "Name:\n";
+  Log() << "        " << m_programName << " - " << m_shortProgramDescription << '\n';
+  Log() << "\nUsage:\n";
   Log() << "        " << m_executableName;
   for (auto& nonOptionArgument : m_nonOptionArguments)
     if (showAdvanced || !nonOptionArgument->isAdvanced)
       Log() << " " << nonOptionArgument->variableName;
   if (!m_optionArguments.empty())
     Log() << " [options]";
-  Log() << std::endl;
+  Log() << '\n';
 
   if (!m_programDescription.empty())
-    Log() << "\nDescription:\n        " << m_programDescription << std::endl;
+    Log() << "\nDescription:\n        " << m_programDescription << '\n';
 
   for (auto& nonOptionArgument : m_nonOptionArguments)
     if (showAdvanced || !nonOptionArgument->isAdvanced)
-      Log() << "\n[" << nonOptionArgument->variableName << "]\n    " << nonOptionArgument->description << std::endl;
+      Log() << "\n[" << nonOptionArgument->variableName << "]\n    " << nonOptionArgument->description << '\n';
 
   if (!m_optionArguments.empty())
-    Log() << "\n[options]" << std::endl;
+    Log() << "\n[options]\n";
 
   // First stringify the options part to get the maximum length
   std::deque<std::string> optionStrings(m_optionArguments.size());
@@ -111,7 +111,7 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
       }
     }
   }
-  Log() << std::endl;
+  Log() << '\n';
   std::exit(0);
 }
 
@@ -121,8 +121,8 @@ void ProgramInterface::exitWithVersionInformation()
 #ifdef _OPENMP
   Log() << " compiled with OpenMP";
 #endif
-  Log() << std::endl;
-  Log() << "See www.mapequation.org for terms of use." << std::endl;
+  Log() << '\n';
+  Log() << "See www.mapequation.org for terms of use.\n";
   std::exit(0);
 }
 
@@ -140,7 +140,7 @@ void ProgramInterface::exitWithError(const std::string& message)
       Log() << " " << nonOptionArgument->variableName;
   if (!m_optionArguments.empty())
     Log() << " [options]";
-  Log() << ". Run with option '-h' for more information." << std::endl;
+  Log() << ". Run with option '-h' for more information.\n";
   std::exit(1);
 }
 
