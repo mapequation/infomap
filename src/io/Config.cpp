@@ -153,7 +153,7 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
   api.parseArgs(flags);
 
   if (deprecated_includeSelfLinks) {
-    throw std::runtime_error("The --include-self-links flag is deprecated to include self links by default. Use --no-loops to exclude.");
+    throw std::runtime_error("The --include-self-links flag is deprecated to include self links by default. Use --no-self-links to exclude.");
   }
 
   if (!optionalOutputDir.empty())
