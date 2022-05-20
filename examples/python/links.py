@@ -1,5 +1,6 @@
-from infomap import Infomap
 import os
+
+from infomap import Infomap
 
 network = """
 *Vertices 5

@@ -52,7 +52,9 @@ print("#state_id node_id module_id")
 for node in im.nodes:
     print(f"{node.state_id} {node.node_id} {node.module_id}")
 
-print("\nPhysical nodes (merging state nodes with same physical node id within modules):")
+print(
+    "\nPhysical nodes (merging state nodes with same physical node id within modules):"
+)
 print("#node_id module_id")
 for node in im.physical_tree:
     if node.is_leaf:

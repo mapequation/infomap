@@ -21,6 +21,6 @@ jobs:
     - run: |
         sudo apt update
         sudo apt install swig
-        pip install networkx pandas flake8 autopep8
+        pip install -r requirements_dev.txt
     - run: make python
     - run: make py-test

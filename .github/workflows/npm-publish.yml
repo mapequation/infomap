@@ -18,7 +18,7 @@ jobs:
           node-version: 14
       - uses: mymindstorm/setup-emsdk@v9
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       - name: Build
         run: make -j js-worker
       - uses: JS-DevTools/npm-publish@v1

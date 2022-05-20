@@ -1,16 +1,8 @@
-from collections import namedtuple
-from contextlib import contextmanager
 import os
 import warnings
-
-try:
-    from math import log2
-except ImportError:
-    # Python < 3.3
-    from math import log
-
-    def log2(p):
-        return log(p, 2.0)
+from collections import namedtuple
+from contextlib import contextmanager
+from math import log2
 
 if __name__ != "__main__":
     try:
@@ -43,62 +35,64 @@ _DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD = 1e-10
 _DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD = 1e-5
 
 
-def _construct_args(args=None,
-                    # input
-                    cluster_data=None,
-                    no_infomap=False,
-                    skip_adjust_bipartite_flow=False,
-                    bipartite_teleportation=False,
-                    weight_threshold=None,
-                    include_self_links=None,
-                    no_self_links=False,
-                    node_limit=None,
-                    matchable_multilayer_ids=None,
-                    assign_to_neighbouring_module=False,
-                    meta_data=None,
-                    meta_data_rate=_DEFAULT_META_DATA_RATE,
-                    meta_data_unweighted=False,
-                    # output
-                    tree=False,
-                    ftree=False,
-                    clu=False,
-                    verbosity_level=_DEFAULT_VERBOSITY_LEVEL,
-                    silent=False,
-                    out_name=None,
-                    no_file_output=False,
-                    clu_level=None,
-                    output=None,
-                    hide_bipartite_nodes=False,
-                    # algorithm
-                    two_level=False,
-                    flow_model=None,
-                    directed=None,
-                    recorded_teleportation=False,
-                    use_node_weights_as_flow=False,
-                    to_nodes=False,
-                    teleportation_probability=_DEFAULT_TELEPORTATION_PROB,
-                    regularized=False,
-                    regularization_strength=1.0,
-                    entropy_corrected=False,
-                    entropy_correction_strength=1.0,
-                    markov_time=1.0,
-                    preferred_number_of_modules=None,
-                    multilayer_relax_rate=_DEFAULT_MULTILAYER_RELAX_RATE,
-                    multilayer_relax_limit=-1,
-                    multilayer_relax_limit_up=-1,
-                    multilayer_relax_limit_down=-1,
-                    multilayer_relax_by_jsd=False,
-                    # accuracy
-                    seed=_DEFAULT_SEED,
-                    num_trials=1,
-                    core_loop_limit=10,
-                    core_level_limit=None,
-                    tune_iteration_limit=None,
-                    core_loop_codelength_threshold=_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
-                    tune_iteration_relative_threshold=_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD,
-                    fast_hierarchical_solution=None,
-                    prefer_modular_solution=False,
-                    inner_parallelization=False):
+def _construct_args(
+    args=None,
+    # input
+    cluster_data=None,
+    no_infomap=False,
+    skip_adjust_bipartite_flow=False,
+    bipartite_teleportation=False,
+    weight_threshold=None,
+    include_self_links=None,
+    no_self_links=False,
+    node_limit=None,
+    matchable_multilayer_ids=None,
+    assign_to_neighbouring_module=False,
+    meta_data=None,
+    meta_data_rate=_DEFAULT_META_DATA_RATE,
+    meta_data_unweighted=False,
+    # output
+    tree=False,
+    ftree=False,
+    clu=False,
+    verbosity_level=_DEFAULT_VERBOSITY_LEVEL,
+    silent=False,
+    out_name=None,
+    no_file_output=False,
+    clu_level=None,
+    output=None,
+    hide_bipartite_nodes=False,
+    # algorithm
+    two_level=False,
+    flow_model=None,
+    directed=None,
+    recorded_teleportation=False,
+    use_node_weights_as_flow=False,
+    to_nodes=False,
+    teleportation_probability=_DEFAULT_TELEPORTATION_PROB,
+    regularized=False,
+    regularization_strength=1.0,
+    entropy_corrected=False,
+    entropy_correction_strength=1.0,
+    markov_time=1.0,
+    preferred_number_of_modules=None,
+    multilayer_relax_rate=_DEFAULT_MULTILAYER_RELAX_RATE,
+    multilayer_relax_limit=-1,
+    multilayer_relax_limit_up=-1,
+    multilayer_relax_limit_down=-1,
+    multilayer_relax_by_jsd=False,
+    # accuracy
+    seed=_DEFAULT_SEED,
+    num_trials=1,
+    core_loop_limit=10,
+    core_level_limit=None,
+    tune_iteration_limit=None,
+    core_loop_codelength_threshold=_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
+    tune_iteration_relative_threshold=_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD,
+    fast_hierarchical_solution=None,
+    prefer_modular_solution=False,
+    inner_parallelization=False,
+):
     if args is None:
         args = ""
 
@@ -121,7 +115,8 @@ def _construct_args(args=None,
     if include_self_links is not None:
         warnings.warn(
             "include_self_links is deprecated, use no_self_links to exclude self-links",
-            DeprecationWarning)
+            DeprecationWarning,
+        )
 
     if not include_self_links:
         args += " --no-self-links"
@@ -247,10 +242,14 @@ def _construct_args(args=None,
         args += " --tune-iteration-limit {}".format(tune_iteration_limit)
 
     if core_loop_codelength_threshold != _DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD:
-        args += " --core-loop-codelength-threshold {}".format(core_loop_codelength_threshold)
+        args += " --core-loop-codelength-threshold {}".format(
+            core_loop_codelength_threshold
+        )
 
     if tune_iteration_relative_threshold != _DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD:
-        args += " --tune-iteration-relative-threshold {}".format(tune_iteration_relative_threshold)
+        args += " --tune-iteration-relative-threshold {}".format(
+            tune_iteration_relative_threshold
+        )
 
     if fast_hierarchical_solution is not None:
         args += " -{}".format("F" * fast_hierarchical_solution)
@@ -297,63 +296,65 @@ class Infomap(InfomapWrapper):
     For more examples, see the examples directory.
     """
 
-    def __init__(self,
-                 args=None,
-                 # input
-                 cluster_data=None,
-                 no_infomap=False,
-                 skip_adjust_bipartite_flow=False,
-                 bipartite_teleportation=False,
-                 weight_threshold=None,
-                 include_self_links=None,
-                 no_self_links=False,
-                 node_limit=None,
-                 matchable_multilayer_ids=None,
-                 assign_to_neighbouring_module=False,
-                 meta_data=None,
-                 meta_data_rate=_DEFAULT_META_DATA_RATE,
-                 meta_data_unweighted=False,
-                 # output
-                 tree=False,
-                 ftree=False,
-                 clu=False,
-                 verbosity_level=_DEFAULT_VERBOSITY_LEVEL,
-                 silent=False,
-                 out_name=None,
-                 no_file_output=False,
-                 clu_level=None,
-                 output=None,
-                 hide_bipartite_nodes=False,
-                 # algorithm
-                 two_level=False,
-                 flow_model=None,
-                 directed=None,
-                 recorded_teleportation=False,
-                 use_node_weights_as_flow=False,
-                 to_nodes=False,
-                 teleportation_probability=_DEFAULT_TELEPORTATION_PROB,
-                 regularized=False,
-                 regularization_strength=1.0,
-                 entropy_corrected=False,
-                 entropy_correction_strength=1.0,
-                 markov_time=1.0,
-                 preferred_number_of_modules=None,
-                 multilayer_relax_rate=_DEFAULT_MULTILAYER_RELAX_RATE,
-                 multilayer_relax_limit=-1,
-                 multilayer_relax_limit_up=-1,
-                 multilayer_relax_limit_down=-1,
-                 multilayer_relax_by_jsd=False,
-                 # accuracy
-                 seed=_DEFAULT_SEED,
-                 num_trials=1,
-                 core_loop_limit=10,
-                 core_level_limit=None,
-                 tune_iteration_limit=None,
-                 core_loop_codelength_threshold=_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
-                 tune_iteration_relative_threshold=_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD,
-                 fast_hierarchical_solution=None,
-                 prefer_modular_solution=False,
-                 inner_parallelization=False):
+    def __init__(
+        self,
+        args=None,
+        # input
+        cluster_data=None,
+        no_infomap=False,
+        skip_adjust_bipartite_flow=False,
+        bipartite_teleportation=False,
+        weight_threshold=None,
+        include_self_links=None,
+        no_self_links=False,
+        node_limit=None,
+        matchable_multilayer_ids=None,
+        assign_to_neighbouring_module=False,
+        meta_data=None,
+        meta_data_rate=_DEFAULT_META_DATA_RATE,
+        meta_data_unweighted=False,
+        # output
+        tree=False,
+        ftree=False,
+        clu=False,
+        verbosity_level=_DEFAULT_VERBOSITY_LEVEL,
+        silent=False,
+        out_name=None,
+        no_file_output=False,
+        clu_level=None,
+        output=None,
+        hide_bipartite_nodes=False,
+        # algorithm
+        two_level=False,
+        flow_model=None,
+        directed=None,
+        recorded_teleportation=False,
+        use_node_weights_as_flow=False,
+        to_nodes=False,
+        teleportation_probability=_DEFAULT_TELEPORTATION_PROB,
+        regularized=False,
+        regularization_strength=1.0,
+        entropy_corrected=False,
+        entropy_correction_strength=1.0,
+        markov_time=1.0,
+        preferred_number_of_modules=None,
+        multilayer_relax_rate=_DEFAULT_MULTILAYER_RELAX_RATE,
+        multilayer_relax_limit=-1,
+        multilayer_relax_limit_up=-1,
+        multilayer_relax_limit_down=-1,
+        multilayer_relax_by_jsd=False,
+        # accuracy
+        seed=_DEFAULT_SEED,
+        num_trials=1,
+        core_loop_limit=10,
+        core_level_limit=None,
+        tune_iteration_limit=None,
+        core_loop_codelength_threshold=_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
+        tune_iteration_relative_threshold=_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD,
+        fast_hierarchical_solution=None,
+        prefer_modular_solution=False,
+        inner_parallelization=False,
+    ):
         """Create a new Infomap instance.
 
         Parameters
@@ -552,7 +553,9 @@ class Infomap(InfomapWrapper):
                 tune_iteration_relative_threshold=tune_iteration_relative_threshold,
                 fast_hierarchical_solution=fast_hierarchical_solution,
                 prefer_modular_solution=prefer_modular_solution,
-                inner_parallelization=inner_parallelization))
+                inner_parallelization=inner_parallelization,
+            )
+        )
 
     # ----------------------------------------
     # Input
@@ -906,10 +909,8 @@ class Infomap(InfomapWrapper):
             self.remove_link(*link)
 
     def add_multilayer_link(
-            self,
-            source_multilayer_node,
-            target_multilayer_node,
-            weight=1.0):
+        self, source_multilayer_node, target_multilayer_node, weight=1.0
+    ):
         """Add a multilayer link.
 
         Adds a link between layers in a multilayer network.
@@ -951,18 +952,13 @@ class Infomap(InfomapWrapper):
         """
         source_layer_id, source_node_id = source_multilayer_node
         target_layer_id, target_node_id = target_multilayer_node
-        return super().addMultilayerLink(source_layer_id,
-                                         source_node_id,
-                                         target_layer_id,
-                                         target_node_id,
-                                         weight)
+        return super().addMultilayerLink(
+            source_layer_id, source_node_id, target_layer_id, target_node_id, weight
+        )
 
     def add_multilayer_intra_link(
-            self,
-            layer_id,
-            source_node_id,
-            target_node_id,
-            weight=1.0):
+        self, layer_id, source_node_id, target_node_id, weight=1.0
+    ):
         """Add an intra-layer link.
 
         Adds a link within a layer in a multilayer network.
@@ -1000,19 +996,16 @@ class Infomap(InfomapWrapper):
         if self.num_nodes != 0:
             raise RuntimeError(
                 """Using the multilayer intra/inter api and explicitly adding nodes using add_node is unsupported.
-If you want to set node names, use set_name.""")
+If you want to set node names, use set_name."""
+            )
 
-        return super().addMultilayerIntraLink(layer_id,
-                                              source_node_id,
-                                              target_node_id,
-                                              weight)
+        return super().addMultilayerIntraLink(
+            layer_id, source_node_id, target_node_id, weight
+        )
 
     def add_multilayer_inter_link(
-            self,
-            source_layer_id,
-            node_id,
-            target_layer_id,
-            weight=1.0):
+        self, source_layer_id, node_id, target_layer_id, weight=1.0
+    ):
         """Add an inter-layer link.
 
         Adds a link between two layers in a multilayer network.
@@ -1054,12 +1047,12 @@ If you want to set node names, use set_name.""")
         if self.num_nodes != 0:
             raise RuntimeError(
                 """Using the multilayer intra/inter api and explicitly adding nodes using add_node is unsupported.
-If you want to set node names, use set_name.""")
+If you want to set node names, use set_name."""
+            )
 
-        return super().addMultilayerInterLink(source_layer_id,
-                                              node_id,
-                                              target_layer_id,
-                                              weight)
+        return super().addMultilayerInterLink(
+            source_layer_id, node_id, target_layer_id, weight
+        )
 
     def add_multilayer_links(self, links):
         """Add several multilayer links.
@@ -1307,64 +1300,66 @@ If you want to set node names, use set_name.""")
         finally:
             self.initial_partition = old_partition
 
-    def run(self,
-            args=None,
-            initial_partition=None,
-            # input
-            cluster_data=None,
-            no_infomap=False,
-            skip_adjust_bipartite_flow=False,
-            bipartite_teleportation=False,
-            weight_threshold=None,
-            include_self_links=None,
-            no_self_links=False,
-            node_limit=None,
-            matchable_multilayer_ids=None,
-            assign_to_neighbouring_module=False,
-            meta_data=None,
-            meta_data_rate=_DEFAULT_META_DATA_RATE,
-            meta_data_unweighted=False,
-            # output
-            tree=False,
-            ftree=False,
-            clu=False,
-            verbosity_level=_DEFAULT_VERBOSITY_LEVEL,
-            silent=False,
-            out_name=None,
-            no_file_output=False,
-            clu_level=None,
-            output=None,
-            hide_bipartite_nodes=False,
-            # algorithm
-            two_level=False,
-            flow_model=None,
-            directed=None,
-            recorded_teleportation=False,
-            use_node_weights_as_flow=False,
-            to_nodes=False,
-            teleportation_probability=_DEFAULT_TELEPORTATION_PROB,
-            regularized=False,
-            regularization_strength=1.0,
-            entropy_corrected=False,
-            entropy_correction_strength=1.0,
-            markov_time=1.0,
-            preferred_number_of_modules=None,
-            multilayer_relax_rate=_DEFAULT_MULTILAYER_RELAX_RATE,
-            multilayer_relax_limit=-1,
-            multilayer_relax_limit_up=-1,
-            multilayer_relax_limit_down=-1,
-            multilayer_relax_by_jsd=False,
-            # accuracy
-            seed=_DEFAULT_SEED,
-            num_trials=1,
-            core_loop_limit=10,
-            core_level_limit=None,
-            tune_iteration_limit=None,
-            core_loop_codelength_threshold=_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
-            tune_iteration_relative_threshold=_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD,
-            fast_hierarchical_solution=None,
-            prefer_modular_solution=False,
-            inner_parallelization=False):
+    def run(
+        self,
+        args=None,
+        initial_partition=None,
+        # input
+        cluster_data=None,
+        no_infomap=False,
+        skip_adjust_bipartite_flow=False,
+        bipartite_teleportation=False,
+        weight_threshold=None,
+        include_self_links=None,
+        no_self_links=False,
+        node_limit=None,
+        matchable_multilayer_ids=None,
+        assign_to_neighbouring_module=False,
+        meta_data=None,
+        meta_data_rate=_DEFAULT_META_DATA_RATE,
+        meta_data_unweighted=False,
+        # output
+        tree=False,
+        ftree=False,
+        clu=False,
+        verbosity_level=_DEFAULT_VERBOSITY_LEVEL,
+        silent=False,
+        out_name=None,
+        no_file_output=False,
+        clu_level=None,
+        output=None,
+        hide_bipartite_nodes=False,
+        # algorithm
+        two_level=False,
+        flow_model=None,
+        directed=None,
+        recorded_teleportation=False,
+        use_node_weights_as_flow=False,
+        to_nodes=False,
+        teleportation_probability=_DEFAULT_TELEPORTATION_PROB,
+        regularized=False,
+        regularization_strength=1.0,
+        entropy_corrected=False,
+        entropy_correction_strength=1.0,
+        markov_time=1.0,
+        preferred_number_of_modules=None,
+        multilayer_relax_rate=_DEFAULT_MULTILAYER_RELAX_RATE,
+        multilayer_relax_limit=-1,
+        multilayer_relax_limit_up=-1,
+        multilayer_relax_limit_down=-1,
+        multilayer_relax_by_jsd=False,
+        # accuracy
+        seed=_DEFAULT_SEED,
+        num_trials=1,
+        core_loop_limit=10,
+        core_level_limit=None,
+        tune_iteration_limit=None,
+        core_loop_codelength_threshold=_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
+        tune_iteration_relative_threshold=_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD,
+        fast_hierarchical_solution=None,
+        prefer_modular_solution=False,
+        inner_parallelization=False,
+    ):
         """Run Infomap.
 
         Parameters
@@ -1517,58 +1512,60 @@ If you want to set node names, use set_name.""")
         --------
         initial_partition
         """
-        args = _construct_args(args,
-                               cluster_data=cluster_data,
-                               no_infomap=no_infomap,
-                               skip_adjust_bipartite_flow=skip_adjust_bipartite_flow,
-                               bipartite_teleportation=bipartite_teleportation,
-                               weight_threshold=weight_threshold,
-                               include_self_links=include_self_links,
-                               no_self_links=no_self_links,
-                               node_limit=node_limit,
-                               matchable_multilayer_ids=matchable_multilayer_ids,
-                               assign_to_neighbouring_module=assign_to_neighbouring_module,
-                               meta_data=meta_data,
-                               meta_data_rate=meta_data_rate,
-                               meta_data_unweighted=meta_data_unweighted,
-                               tree=tree,
-                               ftree=ftree,
-                               clu=clu,
-                               verbosity_level=verbosity_level,
-                               silent=silent,
-                               out_name=out_name,
-                               no_file_output=no_file_output,
-                               clu_level=clu_level,
-                               output=output,
-                               hide_bipartite_nodes=hide_bipartite_nodes,
-                               two_level=two_level,
-                               flow_model=flow_model,
-                               directed=directed,
-                               recorded_teleportation=recorded_teleportation,
-                               use_node_weights_as_flow=use_node_weights_as_flow,
-                               to_nodes=to_nodes,
-                               teleportation_probability=teleportation_probability,
-                               regularized=regularized,
-                               regularization_strength=regularization_strength,
-                               entropy_corrected=entropy_corrected,
-                               entropy_correction_strength=entropy_correction_strength,
-                               markov_time=markov_time,
-                               preferred_number_of_modules=preferred_number_of_modules,
-                               multilayer_relax_rate=multilayer_relax_rate,
-                               multilayer_relax_limit=multilayer_relax_limit,
-                               multilayer_relax_limit_up=multilayer_relax_limit_up,
-                               multilayer_relax_limit_down=multilayer_relax_limit_down,
-                               multilayer_relax_by_jsd=multilayer_relax_by_jsd,
-                               seed=seed,
-                               num_trials=num_trials,
-                               core_loop_limit=core_loop_limit,
-                               core_level_limit=core_level_limit,
-                               tune_iteration_limit=tune_iteration_limit,
-                               core_loop_codelength_threshold=core_loop_codelength_threshold,
-                               tune_iteration_relative_threshold=tune_iteration_relative_threshold,
-                               fast_hierarchical_solution=fast_hierarchical_solution,
-                               prefer_modular_solution=prefer_modular_solution,
-                               inner_parallelization=inner_parallelization)
+        args = _construct_args(
+            args,
+            cluster_data=cluster_data,
+            no_infomap=no_infomap,
+            skip_adjust_bipartite_flow=skip_adjust_bipartite_flow,
+            bipartite_teleportation=bipartite_teleportation,
+            weight_threshold=weight_threshold,
+            include_self_links=include_self_links,
+            no_self_links=no_self_links,
+            node_limit=node_limit,
+            matchable_multilayer_ids=matchable_multilayer_ids,
+            assign_to_neighbouring_module=assign_to_neighbouring_module,
+            meta_data=meta_data,
+            meta_data_rate=meta_data_rate,
+            meta_data_unweighted=meta_data_unweighted,
+            tree=tree,
+            ftree=ftree,
+            clu=clu,
+            verbosity_level=verbosity_level,
+            silent=silent,
+            out_name=out_name,
+            no_file_output=no_file_output,
+            clu_level=clu_level,
+            output=output,
+            hide_bipartite_nodes=hide_bipartite_nodes,
+            two_level=two_level,
+            flow_model=flow_model,
+            directed=directed,
+            recorded_teleportation=recorded_teleportation,
+            use_node_weights_as_flow=use_node_weights_as_flow,
+            to_nodes=to_nodes,
+            teleportation_probability=teleportation_probability,
+            regularized=regularized,
+            regularization_strength=regularization_strength,
+            entropy_corrected=entropy_corrected,
+            entropy_correction_strength=entropy_correction_strength,
+            markov_time=markov_time,
+            preferred_number_of_modules=preferred_number_of_modules,
+            multilayer_relax_rate=multilayer_relax_rate,
+            multilayer_relax_limit=multilayer_relax_limit,
+            multilayer_relax_limit_up=multilayer_relax_limit_up,
+            multilayer_relax_limit_down=multilayer_relax_limit_down,
+            multilayer_relax_by_jsd=multilayer_relax_by_jsd,
+            seed=seed,
+            num_trials=num_trials,
+            core_loop_limit=core_loop_limit,
+            core_level_limit=core_level_limit,
+            tune_iteration_limit=tune_iteration_limit,
+            core_loop_codelength_threshold=core_loop_codelength_threshold,
+            tune_iteration_relative_threshold=tune_iteration_relative_threshold,
+            fast_hierarchical_solution=fast_hierarchical_solution,
+            prefer_modular_solution=prefer_modular_solution,
+            inner_parallelization=inner_parallelization,
+        )
 
         if initial_partition:
             with self._initial_partition(initial_partition):
@@ -2063,12 +2060,18 @@ If you want to set node names, use set_name.""")
         if pandas is None:
             raise ImportError("Cannot import package 'pandas'")
 
-        return pandas.DataFrame([[getattr(node, attr) if attr != "name"
-                                  else self.get_name(node.node_id,
-                                                     default=node.node_id)
-                                  for attr in columns]
-                                 for node in self.nodes],
-                                columns=columns)
+        return pandas.DataFrame(
+            [
+                [
+                    getattr(node, attr)
+                    if attr != "name"
+                    else self.get_name(node.node_id, default=node.node_id)
+                    for attr in columns
+                ]
+                for node in self.nodes
+            ],
+            columns=columns,
+        )
 
     def get_name(self, node_id, default=None):
         """Get the name of a node.
@@ -2182,10 +2185,12 @@ If you want to set node names, use set_name.""")
             An iterator of source, target, weight/flow tuples.
         """
         if data not in ("weight", "flow"):
-            raise RuntimeError("data must one of \"weight\" or \"flow\"")
+            raise RuntimeError('data must one of "weight" or "flow"')
 
-        return ((source, target, value)
-                for (source, target), value in self.getLinks(data != "weight").items())
+        return (
+            (source, target, value)
+            for (source, target), value in self.getLinks(data != "weight").items()
+        )
 
     @property
     def links(self):
@@ -2366,8 +2371,15 @@ If you want to set node names, use set_name.""")
         float
             The effective number of modules
         """
-        return perplexity([module.flow for module in self.get_tree(
-            depth_level) if depth_level == -1 and module.is_leaf_module or module.depth == depth_level])
+        return perplexity(
+            [
+                module.flow
+                for module in self.get_tree(depth_level)
+                if depth_level == -1
+                and module.is_leaf_module
+                or module.depth == depth_level
+            ]
+        )
 
     @property
     def effective_num_top_modules(self):
@@ -2738,5 +2750,5 @@ def main():
     im.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

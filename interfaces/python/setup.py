@@ -1,28 +1,27 @@
-import sys
-
 import codecs
 import fnmatch
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
-from pkg_resources import parse_version
-from setuptools import setup, Extension
 from sysconfig import get_config_var
 
 import package_meta
+from pkg_resources import parse_version
+from setuptools import Extension, setup
 
 
 def get_compiler():
-    cxx = os.environ.get('CXX', get_config_var('CXX'))
+    cxx = os.environ.get("CXX", get_config_var("CXX"))
     if cxx is None:
         return "g++"  # need a better way to check this
     return cxx.split()[0]
 
 
 def is_clang():
-    return b'clang' in subprocess.check_output([get_compiler(), '--version'])
+    return b"clang" in subprocess.check_output([get_compiler(), "--version"])
 
 
 def have_homebrew():
@@ -37,7 +36,7 @@ def get_homebrew_include():
     # returns (compile_args, link_args)
     return (
         "-I" + str(brew_path.joinpath("include")),
-        "-L" + str(brew_path.joinpath("lib"))
+        "-L" + str(brew_path.joinpath("lib")),
     )
 
 
@@ -57,24 +56,25 @@ def have_openmp():
     cwd = Path.cwd()
     os.chdir(tmpdir)
 
-    filename = 'test-openmp.cpp'
-    with open(os.path.join(tmpdir, filename), 'w') as f:
+    filename = "test-openmp.cpp"
+    with open(os.path.join(tmpdir, filename), "w") as f:
         f.write(test_openmp)
 
     compiler = get_compiler()
-    compile_args = ['-fopenmp']
+    compile_args = ["-fopenmp"]
 
     if is_clang():
-        compile_args.insert(0, '-Xpreprocessor')
-        compile_args.append('-lomp')
+        compile_args.insert(0, "-Xpreprocessor")
+        compile_args.append("-lomp")
 
     if have_homebrew():
         compile_args.extend(get_homebrew_include())
 
     try:
-        with open(os.devnull, 'w') as fnull:
+        with open(os.devnull, "w") as fnull:
             exit_code = subprocess.call(
-                [compiler, *compile_args, filename], stdout=fnull, stderr=fnull)
+                [compiler, *compile_args, filename], stdout=fnull, stderr=fnull
+            )
     except OSError:
         exit_code = 1
 
@@ -88,48 +88,55 @@ def have_openmp():
 here = os.path.abspath(os.path.dirname(__file__))
 
 # Get the long description from the relevant file
-with codecs.open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
+with codecs.open(os.path.join(here, "README.rst"), encoding="utf-8") as f:
     long_description = f.read()
 
-sources = ['./infomap_wrap.cpp']
+sources = ["./infomap_wrap.cpp"]
 headers = []
-for root, dirnames, filenames in os.walk('./src'):
-    for filename in fnmatch.filter(filenames, '*.cpp'):
+for root, dirnames, filenames in os.walk("./src"):
+    for filename in fnmatch.filter(filenames, "*.cpp"):
         sources.append(os.path.join(root, filename))
-    for filename in fnmatch.filter(filenames, '*.h'):
+    for filename in fnmatch.filter(filenames, "*.h"):
         headers.append(os.path.join(root, filename))
 
 # Set minimum Mac OS X version to 10.9 to pick up C++ standard library
-if get_config_var('MACOSX_DEPLOYMENT_TARGET') and 'MACOSX_DEPLOYMENT_TARGET' not in os.environ:
-    if parse_version(get_config_var('MACOSX_DEPLOYMENT_TARGET')) < parse_version("10.9"):
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = "10.9"
+if (
+    get_config_var("MACOSX_DEPLOYMENT_TARGET")
+    and "MACOSX_DEPLOYMENT_TARGET" not in os.environ
+):
+    if parse_version(get_config_var("MACOSX_DEPLOYMENT_TARGET")) < parse_version(
+        "10.9"
+    ):
+        os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.9"
     else:
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = get_config_var('MACOSX_DEPLOYMENT_TARGET')
+        os.environ["MACOSX_DEPLOYMENT_TARGET"] = get_config_var(
+            "MACOSX_DEPLOYMENT_TARGET"
+        )
 
 compiler_args = [
-    '-DAS_LIB',
-    '-DPYTHON',
-    '-Wno-deprecated-register',
-    '-Wno-deprecated-declarations',
-    '-std=c++14',
+    "-DAS_LIB",
+    "-DPYTHON",
+    "-Wno-deprecated-register",
+    "-Wno-deprecated-declarations",
+    "-std=c++14",
 ]
 
 link_args = []
 
-if 'CXXFLAGS' in os.environ:
-    compiler_args.extend(os.environ['CXXFLAGS'].split())
+if "CXXFLAGS" in os.environ:
+    compiler_args.extend(os.environ["CXXFLAGS"].split())
 
-if 'LDFLAGS' in os.environ:
-    link_args.extend(os.environ['LDFLAGS'].split())
+if "LDFLAGS" in os.environ:
+    link_args.extend(os.environ["LDFLAGS"].split())
 
 if have_openmp():
     print("Building with OpenMP support")
     if is_clang():
-        compiler_args.append('-Xpreprocessor')
-        link_args.append('-lomp')
+        compiler_args.append("-Xpreprocessor")
+        link_args.append("-lomp")
     else:
-        link_args.append('-fopenmp')
-    compiler_args.append('-fopenmp')
+        link_args.append("-fopenmp")
+    compiler_args.append("-fopenmp")
 
     if have_homebrew():
         include_dir, link_dir = get_homebrew_include()
@@ -138,26 +145,28 @@ if have_openmp():
 else:
     print("Warning: building without OpenMP support")
 
-if sys.platform == 'win32':
+if sys.platform == "win32":
     # Not executed if we are on WSL
     compiler_args = [
-        '/DAS_LIB',
-        '/DPYTHON',
-        '/DNOMINMAX',
+        "/DAS_LIB",
+        "/DPYTHON",
+        "/DNOMINMAX",
     ]
 
 infomap_module = Extension(
-    '_infomap',
+    "_infomap",
     sources=sources,
     include_dirs=[
-        'headers',
-        'headers/src',
-        'headers/src/core',
-        'headers/src/io',
-        'headers/src/utils'],
-    language='c++',
+        "headers",
+        "headers/src",
+        "headers/src/core",
+        "headers/src/io",
+        "headers/src/utils",
+    ],
+    language="c++",
     extra_compile_args=compiler_args,
-    extra_link_args=link_args)
+    extra_link_args=link_args,
+)
 
 setup(
     # This is the name of your project. The first time you publish this
@@ -172,7 +181,6 @@ setup(
     # specification here:
     # https://packaging.python.org/specifications/core-metadata/#name
     name=package_meta.__name__,  # Required
-
     # Versions should comply with PEP 440:
     # https://www.python.org/dev/peps/pep-0440/
     #
@@ -181,12 +189,10 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     # version='1.0.0-beta.39',  # Required
     version=package_meta.__version__,  # Required
-
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
     description=package_meta.__description__,  # Required
-
     # This is an optional longer description of your project that represents
     # the body of text which users will see when they visit PyPI.
     #
@@ -196,7 +202,6 @@ setup(
     # This field corresponds to the "Description" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#description-optional
     long_description=long_description,  # Optional
-
     # Denotes that our long_description is in Markdown; valid values are
     # text/plain, text/x-rst, and text/markdown
     #
@@ -208,35 +213,28 @@ setup(
     # This field corresponds to the "Description-Content-Type" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#description-content-type-optional
     # long_description_content_type='text/markdown',  # Optional (see note above)
-
     # This should be a valid link to your project's main homepage.
     #
     # This field corresponds to the "Home-Page" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#home-page-optional
     url=package_meta.__url__,  # Optional
-
     # This should be your name or the name of the organization which owns the
     # project.
     author=package_meta.__author__,  # Optional
-
     # This should be a valid email address corresponding to the author listed
     # above.
     author_email=package_meta.__email__,  # Optional
-
     # Choose your license
     license=package_meta.__license__,
-
     # Classifiers help users find your project by categorizing it.
     #
     # For a list of valid classifiers, see https://pypi.org/classifiers/
     classifiers=package_meta.__classifiers__,
-
     # This field adds keywords for your project which will appear on the
     # project page. What does your project relate to?
     #
     # Note that this is a string of words separated by whitespace, not a list.
     keywords=package_meta.__keywords__,
-
     # You can just specify package directories manually here if your project is
     # simple. Or you can use find_packages().
     #
@@ -249,7 +247,6 @@ setup(
     # packages=find_packages(exclude=['contrib', 'docs', 'tests']),  # Required
     # packages=['infomap'],
     py_modules=["infomap", "package_meta"],
-
     # This field lists other packages that your project depends on to run.
     # Any package you put here will be installed by pip when your project is
     # installed, so they must be valid existing projects.
@@ -257,7 +254,6 @@ setup(
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     # install_requires=['peppercorn'],  # Optional
-
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
     # syntax, for example:
@@ -270,7 +266,6 @@ setup(
     #     'dev': ['check-manifest'],
     #     'test': ['coverage'],
     # },
-
     # If there are data files included in your packages that need to be
     # installed, specify them here.
     #
@@ -279,14 +274,12 @@ setup(
     # package_data={  # Optional
     #     'sample': ['package_data.dat'],
     # },
-
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
     # http://docs.python.org/3.4/distutils/setupscript.html#installing-additional-files
     #
     # In this case, 'data_file' will be installed into '<sys.prefix>/my_data'
     # data_files=[('my_data', ['data/data_file'])],  # Optional
-
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # `pip` to create the appropriate form of executable for the target
@@ -300,11 +293,10 @@ setup(
     #     ],
     # },
     entry_points={  # Optional
-        'console_scripts': [
-            'infomap=infomap:main',
+        "console_scripts": [
+            "infomap=infomap:main",
         ],
     },
-
     # List additional URLs that are relevant to your project as a dict.
     #
     # This field corresponds to the "Project-URL" metadata fields:
@@ -315,15 +307,12 @@ setup(
     # maintainers, and where to support the project financially. The key is
     # what's used to render the link text on PyPI.
     project_urls={  # Optional
-        'Bug Reports': package_meta.__issues__,
-        'Source': package_meta.__repo__,
+        "Bug Reports": package_meta.__issues__,
+        "Source": package_meta.__repo__,
     },
-
     # Check MANIFEST.in
     include_package_data=True,
-
     # C++ source files defined with the Extension module
     ext_modules=[infomap_module],
-
-    python_requires='>=3',
+    python_requires=">=3",
 )

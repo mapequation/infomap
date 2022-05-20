@@ -1,6 +1,5 @@
 import infomap
 
-
 im = infomap.Infomap("--two-level --silent")
 
 # Add weight as an optional third argument
