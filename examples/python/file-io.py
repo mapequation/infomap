@@ -1,5 +1,6 @@
-import infomap
 import pathlib
+
+import infomap
 
 name = "ninetriangles"
 filename = f"../../{name}.net"
@@ -13,7 +14,9 @@ im.read_file(filename, accumulate)
 
 im.run("-N5")
 
-print(f"Found {im.max_depth} levels with {im.num_leaf_modules} leaf modules in {im.num_top_modules} top modules and codelength: {im.codelength}")
+print(
+    f"Found {im.max_depth} levels with {im.num_leaf_modules} leaf modules in {im.num_top_modules} top modules and codelength: {im.codelength}"
+)
 print(f"All codelengths: {im.codelengths}")
 
 print("Tree:\n# path node_id module_id flow")
@@ -43,6 +46,8 @@ im.write_tree(f"output/{name}.tree")
 print("Read back .clu file and only calculate codelength...")
 im2 = infomap.Infomap(f"--input {filename} --no-infomap -c output/{name}.clu")
 im2.run()
-print(f"Found {im2.max_depth} levels with {im2.num_top_modules} top modules and codelength: {im2.codelength}")
+print(
+    f"Found {im2.max_depth} levels with {im2.num_top_modules} top modules and codelength: {im2.codelength}"
+)
 
 print("Done!")

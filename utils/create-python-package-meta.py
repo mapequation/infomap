@@ -2,11 +2,11 @@ import json
 
 
 def create_package_meta(package_json, meta_file):
-    with open(package_json, 'r') as fp:
+    with open(package_json, "r") as fp:
         pkg = json.load(fp)
-    
+
     lines = (
-        f"__name__ = \"infomap\"\n",
+        f'__name__ = "infomap"\n',
         f"__version__ = \"{pkg.get('version')}\"\n",
         f"__description__ = \"{pkg.get('description')}\"\n",
         f"__author__ = \"{pkg.get('author')['name']}\"\n",
@@ -20,14 +20,14 @@ def create_package_meta(package_json, meta_file):
         f"__classifiers__ = {pkg.get('python')['classifiers']}\n",
     )
 
-    with open(meta_file, 'w') as fp:
+    with open(meta_file, "w") as fp:
         fp.writelines(lines)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 2:
         raise RuntimeError("missing argument: outfile")
 
-    create_package_meta('./package.json', sys.argv[1])
+    create_package_meta("./package.json", sys.argv[1])

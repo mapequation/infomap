@@ -1,5 +1,6 @@
 import infomap
 
+
 def printResult(im):
     print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
 

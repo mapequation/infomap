@@ -172,7 +172,7 @@ py-build: Makefile
 	@python utils/create-python-package-meta.py $(PY_BUILD_DIR)/package_meta.py
 	@cat $(PY_BUILD_DIR)/package_meta.py $(PY_BUILD_DIR)/infomap.py > $(PY_BUILD_DIR)/temp.py
 	@mv $(PY_BUILD_DIR)/temp.py $(PY_BUILD_DIR)/infomap.py
-	@command -v autopep8 && autopep8 --in-place --jobs 8 --aggressive --aggressive $(PY_BUILD_DIR)/infomap.py
+	@autopep8 --jobs 8 --aggressive --aggressive -i $(PY_BUILD_DIR)/infomap.py
 	@cp -a interfaces/python/MANIFEST.in $(PY_BUILD_DIR)/
 	@cp -a README.rst $(PY_BUILD_DIR)/
 	@cp -a LICENSE_AGPLv3.txt $(PY_BUILD_DIR)/LICENSE
@@ -199,7 +199,7 @@ SPHINX_TARGET_DIR = docs
 
 py-test:
 	@cp -r examples/networks/*.net $(PY_BUILD_DIR)
-	python3 -m flake8 --count --show-source --statistics --ignore E501,F811 $(PY_BUILD_DIR)/infomap.py
+	python3 -m flake8 --count --show-source --statistics --ignore E501,F811,W503 $(PY_BUILD_DIR)/infomap.py
 	cd $(PY_BUILD_DIR) && python3 -m doctest infomap.py
 
 py-local-install:
@@ -225,7 +225,8 @@ py-clean:
 	$(RM) -r $(PY_BUILD_DIR)/dist
 
 py-format:
-	autopep8 --in-place --recursive --jobs 8 --aggressive --aggressive --max-line-length 100 interfaces/python/*.py
+	python3 -m isort interfaces/python examples/python
+	python3 -m black interfaces/python examples/python
 
 pypi-dist:
 	cd $(PY_BUILD_DIR) && python setup.py sdist bdist_wheel
