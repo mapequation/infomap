@@ -100,6 +100,7 @@ public:
     unsigned int maxDepth = maxTreeDepth();
     unsigned int numModuleLevels = maxDepth - 1;
     std::map<unsigned int, std::vector<unsigned int>> modules;
+    if (maxDepth < 2) return modules;
     for (unsigned int level = 1; level <= numModuleLevels; ++level) {
       if (haveMemory() && !states) {
         for (auto it(iterTreePhysical(static_cast<int>(level))); !it.isEnd(); ++it) {
