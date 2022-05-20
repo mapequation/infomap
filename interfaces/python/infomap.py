@@ -118,7 +118,7 @@ def _construct_args(
             DeprecationWarning,
         )
 
-    if not include_self_links:
+    if include_self_links is not None and not include_self_links:
         args += " --no-self-links"
 
     if no_self_links:
