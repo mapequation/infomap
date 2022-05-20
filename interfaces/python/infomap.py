@@ -857,7 +857,7 @@ class Infomap(InfomapWrapper):
             source_node_id,
             target_node_id,
             weight=1.0):
-        """Add a intra-layer link.
+        """Add an intra-layer link.
 
         Adds a link within a layer in a multilayer network.
 
@@ -891,6 +891,11 @@ class Infomap(InfomapWrapper):
 
 
         """
+        if self.num_nodes != 0:
+            raise RuntimeError(
+                """Using the multilayer intra/inter api and explicitly adding nodes using add_node is unsupported.
+If you want to set node names, use set_name.""")
+
         return super().addMultilayerIntraLink(layer_id,
                                               source_node_id,
                                               target_node_id,
@@ -902,7 +907,7 @@ class Infomap(InfomapWrapper):
             node_id,
             target_layer_id,
             weight=1.0):
-        """Add a inter-layer link.
+        """Add an inter-layer link.
 
         Adds a link between two layers in a multilayer network.
         The link is specified through a shared physical node, but
@@ -932,13 +937,6 @@ class Infomap(InfomapWrapper):
         >>> im.add_multilayer_inter_link(2, 1, 1)
         >>> im.add_multilayer_inter_link(2, 3, 1)
 
-        Notes
-        -----
-        This multilayer format requires a directed network, so if
-        the directed flag is not present, it will add all links
-        also in their opposite direction to transform the undirected
-        input to directed.
-
         Parameters
         ----------
         source_layer_id : int
@@ -947,6 +945,11 @@ class Infomap(InfomapWrapper):
         weight : float, optional
 
         """
+        if self.num_nodes != 0:
+            raise RuntimeError(
+                """Using the multilayer intra/inter api and explicitly adding nodes using add_node is unsupported.
+If you want to set node names, use set_name.""")
+
         return super().addMultilayerInterLink(source_layer_id,
                                               node_id,
                                               target_layer_id,
