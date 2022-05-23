@@ -14,13 +14,13 @@ according to the community structure found by Infomap.
 """
 
 
-def find_communities(G):
+def find_communities(G, **kwargs):
     """
     Partition network with the Infomap algorithm.
     Annotates nodes with 'community' id.
     """
 
-    im = Infomap(two_level=True, silent=True)
+    im = Infomap(**kwargs)
 
     print("Building Infomap network from a NetworkX graph...")
 
@@ -87,5 +87,5 @@ def draw_network(G):
 
 G = nx.karate_club_graph()
 
-find_communities(G)
+find_communities(G, two_level=True, silent=True, num_trials=5)
 draw_network(G)

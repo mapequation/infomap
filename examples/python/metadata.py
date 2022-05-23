@@ -29,13 +29,13 @@ im.set_meta_data(5, 3)
 im.run()
 
 print(f"\nFound {im.num_top_modules} modules with codelength: {im.codelength}")
-Lindex = im.index_codelength
-Lmodules = im.module_codelength
-Lmeta = im.meta_codelength
-Hmeta = im.meta_entropy
-print(f" - Codelength = index codelength ({Lindex}) + module codelength ({Lmodules})")
-print(f" - Module codelength = {Lmodules - Lmeta} + meta codelength ({Lmeta})")
-print(f" - Meta codelength = eta ({eta}) * meta entropy ({Hmeta})")
+print(
+    f" - Codelength = index codelength ({im.index_codelength}) + module codelength ({im.module_codelength})"
+)
+print(
+    f" - Module codelength = {im.module_codelength - im.meta_codelength} + meta codelength ({im.meta_codelength})"
+)
+print(f" - Meta codelength = eta ({eta}) * meta entropy ({im.meta_entropy})")
 
 print("\n#node module meta")
 for node in im.nodes:

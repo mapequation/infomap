@@ -2,28 +2,6 @@ from infomap import Infomap
 
 im = Infomap(two_level=True, silent=True)
 
-stateNetwork = """
-*Vertices 4
-1 "PRE"
-2 "SCIENCE"
-3 "PRL"
-4 "BIO"
-# *ngrams
-# 1 2 3
-# 1 2 2 3
-# 4 2 4
-*States
-1 2 "1 2"
-2 3 "2 3"
-3 2 "1 2 2"
-4 2 "4 2"
-5 4 "2 4"
-*Links
-1 2
-3 2
-4 5
-"""
-
 im.set_name(1, "PRE")
 im.set_name(2, "SCIENCE")
 im.set_name(3, "PRL")

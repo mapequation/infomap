@@ -26,7 +26,6 @@ im.remove_link(5, 6)
 
 # Run again with the optimal partition from the original network as initial solution
 # Set no_infomap to skip optimization and just calculate the codelength
-im.no_infomap = True
-im.run(initial_partition=modules)
+im.run(initial_partition=modules, no_infomap=True)
 
 print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")

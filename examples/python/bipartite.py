@@ -8,8 +8,8 @@ im.bipartite_start_id = 5
 # Add weight as an optional third argument
 im.add_link(5, 0)
 im.add_link(5, 1)
-im.add_link(5, 2)
-im.add_link(6, 2)
+im.add_link(5, 2, 0.25)
+im.add_link(6, 2, 0.25)
 im.add_link(6, 3)
 im.add_link(6, 4)
 

@@ -2,7 +2,7 @@ import pathlib
 
 from infomap import Infomap
 
-im = Infomap(silent=True)
+im = Infomap(silent=True, two_level=True)
 
 name = "ninetriangles"
 filename = f"../networks/{name}.net"
@@ -32,19 +32,21 @@ for node_id, modules in im.get_multilevel_modules().items():
 
 pathlib.Path("output").mkdir(exist_ok=True)
 print(f"Writing top level modules to output/{name}.clu...")
-im.write_clu(f"output/{name}.clu")
+im.write(f"output/{name}.clu")
 
 print(f"Writing second level modules to output/{name}_level2.clu...")
-im.write_clu(f"output/{name}_level2.clu", depth_level=2)
+im.write(f"output/{name}_level2.clu", depth_level=2)
 
 print(f"Writing bottom level modules to output/{name}_level-1.clu...")
-im.write_clu(f"output/{name}_level-1.clu", depth_level=-1)
+im.write(f"output/{name}_level-1.clu", depth_level=-1)
 
 print(f"Writing tree to output/{name}.tree...")
-im.write_tree(f"output/{name}.tree")
+im.write(f"output/{name}.tree")
 
 print("Read back .clu file and only calculate codelength...")
-im2 = Infomap(silent=True, no_infomap=True, cluster_data=f"output/{name}.clu")
+im2 = Infomap(
+    silent=True, two_level=True, no_infomap=True, cluster_data=f"output/{name}.clu"
+)
 im2.read_file(filename)
 im2.run()
 print(

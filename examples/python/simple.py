@@ -46,7 +46,7 @@ for node in im.nodes:
         node.depth,
         node.child_index,
         node.flow,
-        im.get_name(node.node_id, default=""),
+        im.get_name(node.node_id, default=node.node_id),
     )
 
 print("\n#path flow enter_flow exit_flow is_leaf")

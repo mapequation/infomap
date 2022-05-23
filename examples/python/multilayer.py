@@ -1,7 +1,7 @@
 from infomap import Infomap
 
 
-def printResult(im):
+def print_result(im):
     print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
 
     print("#layer_id node_id module_id:")
@@ -19,7 +19,7 @@ im.add_multilayer_link((3, 2), (2, 3), 1.0)
 
 im.run()
 
-printResult(im)
+print_result(im)
 
 # Add only intra-layer links and let Infomap provide
 # inter-layer links by relaxing the random walker's
@@ -38,4 +38,4 @@ im.add_multilayer_intra_link(2, 3, 4)
 
 im.run()
 
-printResult(im)
+print_result(im)
