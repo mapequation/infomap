@@ -360,19 +360,20 @@ void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModu
     auto overlapIt = moduleToMemNodes.find(oldModuleIndex);
     if (overlapIt == moduleToMemNodes.end())
       throw std::length_error(io::Str() << "Couldn't find old module " << oldModuleIndex << " in physical node " << physData.physNodeIndex);
-    MemNodeSet& memNodeSet = overlapIt->second;
-    memNodeSet.sumFlow -= physData.sumFlowFromM2Node;
-    if (--memNodeSet.numMemNodes == 0)
+
+    MemNodeSet& oldMemNodeSet = overlapIt->second;
+    oldMemNodeSet.sumFlow -= physData.sumFlowFromM2Node;
+    if (--oldMemNodeSet.numMemNodes == 0)
       moduleToMemNodes.erase(overlapIt);
 
     // Add contribution to new module
     overlapIt = moduleToMemNodes.find(bestModuleIndex);
-    if (overlapIt == moduleToMemNodes.end())
+    if (overlapIt == moduleToMemNodes.end()) {
       moduleToMemNodes.insert(std::make_pair(bestModuleIndex, MemNodeSet(1, physData.sumFlowFromM2Node)));
-    else {
-      MemNodeSet& memNodeSet = overlapIt->second;
-      ++memNodeSet.numMemNodes;
-      memNodeSet.sumFlow += physData.sumFlowFromM2Node;
+    } else {
+      MemNodeSet& newMemNodeSet = overlapIt->second;
+      ++newMemNodeSet.numMemNodes;
+      newMemNodeSet.sumFlow += physData.sumFlowFromM2Node;
     }
   }
 }
@@ -390,13 +391,14 @@ void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& curr
     auto overlapIt = moduleToMemNodes.find(oldModuleIndex);
     if (overlapIt == moduleToMemNodes.end())
       throw std::length_error("Couldn't find old module among physical node assignments.");
-    MemNodeSet& memNodeSet = overlapIt->second;
-    double oldPhysFlow = memNodeSet.sumFlow;
-    double newPhysFlow = memNodeSet.sumFlow - physData.sumFlowFromM2Node;
+
+    MemNodeSet& oldMemNodeSet = overlapIt->second;
+    double oldPhysFlow = oldMemNodeSet.sumFlow;
+    double newPhysFlow = oldMemNodeSet.sumFlow - physData.sumFlowFromM2Node;
     oldModuleDelta.sumDeltaPlogpPhysFlow += infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
     oldModuleDelta.sumPlogpPhysFlow += infomath::plogp(physData.sumFlowFromM2Node);
-    memNodeSet.sumFlow -= physData.sumFlowFromM2Node;
-    if (--memNodeSet.numMemNodes == 0)
+    oldMemNodeSet.sumFlow -= physData.sumFlowFromM2Node;
+    if (--oldMemNodeSet.numMemNodes == 0)
       moduleToMemNodes.erase(overlapIt);
 
     // Add contribution to new module
@@ -408,13 +410,13 @@ void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& curr
       newModuleDelta.sumDeltaPlogpPhysFlow += infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
       newModuleDelta.sumPlogpPhysFlow += infomath::plogp(physData.sumFlowFromM2Node);
     } else {
-      MemNodeSet& memNodeSet = overlapIt->second;
-      oldPhysFlow = memNodeSet.sumFlow;
-      newPhysFlow = memNodeSet.sumFlow + physData.sumFlowFromM2Node;
+      MemNodeSet& newMemNodeSet = overlapIt->second;
+      oldPhysFlow = newMemNodeSet.sumFlow;
+      newPhysFlow = newMemNodeSet.sumFlow + physData.sumFlowFromM2Node;
       newModuleDelta.sumDeltaPlogpPhysFlow += infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
       newModuleDelta.sumPlogpPhysFlow += infomath::plogp(physData.sumFlowFromM2Node);
-      ++memNodeSet.numMemNodes;
-      memNodeSet.sumFlow += physData.sumFlowFromM2Node;
+      ++newMemNodeSet.numMemNodes;
+      newMemNodeSet.sumFlow += physData.sumFlowFromM2Node;
     }
   }
 }

@@ -153,9 +153,9 @@ double MetaMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent
       metaCollection.add(node.metaData[0], weightByFlow ? node.data.flow : m_unweightedNodeFlow); // TODO: Initiate to collection and use all dimensions
   }
 
-  double metaCodelength = metaCollection.calculateEntropy();
+  double _metaCodelength = metaCollection.calculateEntropy();
 
-  return indexLength + metaDataRate * metaCodelength;
+  return indexLength + metaDataRate * _metaCodelength;
 }
 
 double MetaMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,

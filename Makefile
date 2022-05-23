@@ -1,4 +1,4 @@
-CXXFLAGS += -Wall -Wextra -pedantic -std=c++14
+CXXFLAGS += -Wall -Wextra -pedantic -Wnon-virtual-dtor -std=c++14
 LDFLAGS +=
 CXX_CLANG := $(shell $(CXX) --version 2>/dev/null | grep clang)
 BREW := $(shell which brew 2>/dev/null)
@@ -18,7 +18,7 @@ else
 			LDFLAGS += -fopenmp
 		endif
 	else
-		CXXFLAGS += -O3
+		CXXFLAGS += -Wshadow -O3
 		ifneq "$(findstring noomp, $(MAKECMDGOALS))" "noomp"
 			CXXFLAGS += -Xpreprocessor -fopenmp
 			LDFLAGS += -lomp

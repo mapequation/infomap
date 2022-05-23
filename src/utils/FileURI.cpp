@@ -19,8 +19,8 @@ namespace infomap {
 FileURI::FileURI(string filename, bool requireExtension)
     : m_filename(std::move(filename)), m_requireExtension(requireExtension)
 {
-  auto getErrorMessage = [](const auto& filename, auto requireExt) {
-    string s = io::Str() << "Filename '" << filename << "' must match the pattern \"[dir/]name" << (requireExt ? ".extension\"" : "[.extension]\"");
+  auto getErrorMessage = [](const auto& name, auto requireExt) {
+    string s = io::Str() << "Filename '" << name << "' must match the pattern \"[dir/]name" << (requireExt ? ".extension\"" : "[.extension]\"");
     return s;
   };
 

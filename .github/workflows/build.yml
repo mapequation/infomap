@@ -16,7 +16,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - run: make noomp
+    - run: make noomp -j
       env:
         CXXFLAGS: -Werror -Wno-unknown-pragmas
     - run: ./Infomap --version

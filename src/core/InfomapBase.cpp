@@ -870,11 +870,11 @@ void InfomapBase::hierarchicalPartition()
           std::vector<InfoNode*> subModules(numLeafs, nullptr);
           module.releaseChildren();
 
-          for (auto i = 0; i < numLeafs; ++i) {
-            InfoNode* leaf = leafs[i];
-            unsigned int moduleIndex = modules[i];
+          for (auto j = 0; j < numLeafs; ++j) {
+            InfoNode* leaf = leafs[j];
+            unsigned int moduleIndex = modules[j];
             if (subModules[moduleIndex] == nullptr) {
-              subModules[moduleIndex] = new InfoNode(subInfomap.leafNodes()[i]->parent->data);
+              subModules[moduleIndex] = new InfoNode(subInfomap.leafNodes()[j]->parent->data);
               subModules[moduleIndex]->index = moduleIndex;
               module.addChild(subModules[moduleIndex]);
             }

@@ -305,7 +305,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
   double danglingRank;
 
   // Calculate PageRank
-  const auto iteration = [&](const auto iteration, const double alpha, const double beta) {
+  const auto iteration = [&](const auto iter, const double alpha, const double beta) {
     danglingRank = std::accumulate(cbegin(nodeFlow), cbegin(nodeFlow) + nonDanglingStartIndex, 0.0);
 
     // Flow from teleportation
@@ -331,7 +331,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log() << "(Normalizing ranks after " << iteration << " power iterations with error " << nodeFlowDiff << ") ";
+      Log() << "(Normalizing ranks after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 
@@ -437,7 +437,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   std::vector<double> nodeFlowTmp(numNodes, 0.0);
 
   // Calculate PageRank
-  const auto iteration = [&](const auto iteration) {
+  const auto iteration = [&](const auto iter) {
     double teleTmp = 0.0;
     for (unsigned int i = 0; i < N; ++i) {
       teleTmp += alpha[i] * nodeFlow[i];
@@ -465,7 +465,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log() << "(Normalizing ranks after " << iteration << " power iterations with error " << nodeFlowDiff << ") ";
+      Log() << "(Normalizing ranks after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 
@@ -637,7 +637,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
   double danglingRank;
 
   // Calculate two-step PageRank
-  const auto iteration = [&](const auto iteration, const double alpha, const double beta) {
+  const auto iteration = [&](const auto iter, const double alpha, const double beta) {
     danglingRank = 0.0;
     for (const auto& i : danglingIndices) {
       danglingRank += nodeFlow[i];
@@ -676,7 +676,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log() << "(Normalizing ranks after " << iteration << " power iterations with error " << nodeFlowDiff << ") ";
+      Log() << "(Normalizing ranks after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 

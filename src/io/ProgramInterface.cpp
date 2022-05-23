@@ -230,9 +230,12 @@ void ProgramInterface::parseArgs(const std::string& args)
   // Split the flags on whitespace
   std::vector<std::string> flags;
   std::istringstream argStream(args);
-  std::string arg;
-  while (!(argStream >> arg).fail())
-    flags.push_back(arg);
+
+  {
+    std::string arg;
+    while (!(argStream >> arg).fail())
+      flags.push_back(arg);
+  }
 
   std::deque<std::string> nonOpts;
   try {
