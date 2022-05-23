@@ -35,8 +35,6 @@
 
 namespace infomap {
 
-using detail::PartitionQueue;
-
 // ===================================================
 // IO
 // ===================================================
@@ -49,56 +47,6 @@ std::ostream& operator<<(std::ostream& out, const InfomapBase& infomap)
 // ===================================================
 // Getters
 // ===================================================
-
-const Network& InfomapBase::network() const
-{
-  return m_network;
-}
-
-Network& InfomapBase::network()
-{
-  return m_network;
-}
-
-InfoNode& InfomapBase::root()
-{
-  return m_root;
-}
-
-const InfoNode& InfomapBase::root() const
-{
-  return m_root;
-}
-
-unsigned int InfomapBase::numLeafNodes() const
-{
-  return m_leafNodes.size();
-}
-
-const std::vector<InfoNode*>& InfomapBase::leafNodes() const
-{
-  return m_leafNodes;
-}
-
-unsigned int InfomapBase::numTopModules() const
-{
-  return m_root.childDegree();
-}
-
-unsigned int InfomapBase::numNonTrivialTopModules() const
-{
-  return m_numNonTrivialTopModules;
-}
-
-bool InfomapBase::haveModules() const
-{
-  return !m_root.isLeaf() && !m_root.firstChild->isLeaf();
-}
-
-bool InfomapBase::haveNonTrivialModules() const
-{
-  return numNonTrivialTopModules() > 0;
-}
 
 unsigned int InfomapBase::numLevels() const
 {
@@ -124,70 +72,6 @@ unsigned int InfomapBase::maxTreeDepth() const
     }
   }
   return maxDepth;
-}
-
-double InfomapBase::getHierarchicalCodelength() const
-{
-  return m_hierarchicalCodelength;
-}
-
-InfomapBase& InfomapBase::getSubInfomap(InfoNode& node)
-{
-  return node.setInfomap(getNewInfomapInstance())
-      .setIsMain(false)
-      .setSubLevel(m_subLevel + 1)
-      .setNonMainConfig(*this);
-}
-
-InfomapBase& InfomapBase::getSuperInfomap(InfoNode& node)
-{
-  return node.setInfomap(getNewInfomapInstanceWithoutMemory())
-      .setIsMain(false)
-      .setSubLevel(m_subLevel + SUPER_LEVEL_ADDITION)
-      .setNonMainConfig(*this);
-}
-
-InfomapBase& InfomapBase::setIsMain(bool isMain)
-{
-  m_isMain = isMain;
-  return *this;
-}
-
-InfomapBase& InfomapBase::setSubLevel(unsigned int level)
-{
-  m_subLevel = level;
-  return *this;
-}
-
-bool InfomapBase::isTopLevel() const
-{
-  return (m_subLevel & (SUPER_LEVEL_ADDITION - 1)) == 0;
-}
-
-bool InfomapBase::isSuperLevelOnTopLevel() const
-{
-  return m_subLevel == SUPER_LEVEL_ADDITION;
-}
-
-bool InfomapBase::isMainInfomap() const
-{
-  return m_isMain;
-}
-
-bool InfomapBase::haveHardPartition() const
-{
-  return !m_originalLeafNodes.empty();
-}
-
-std::vector<InfoNode*>& InfomapBase::activeNetwork() const
-{
-  return *m_activeNetwork;
-}
-
-InfomapBase& InfomapBase::setInitialPartition(const std::map<unsigned int, unsigned int>& moduleIds)
-{
-  m_initialPartition = moduleIds;
-  return *this;
 }
 
 // ===================================================
@@ -925,14 +809,6 @@ double InfomapBase::calcEntropyRate()
 // Run: *
 // ===================================================
 
-void InfomapBase::runPartition()
-{
-  if (twoLevel)
-    partition();
-  else
-    hierarchicalPartition();
-}
-
 void InfomapBase::hierarchicalPartition()
 {
   Log(1) << "Hierarchical partition...\n";
@@ -1343,11 +1219,6 @@ double InfomapBase::calcCodelengthOnTree(bool includeRoot)
 // ===================================================
 // Run: Partition: *
 // ===================================================
-
-void InfomapBase::setActiveNetworkFromLeafs()
-{
-  m_activeNetwork = &m_leafNodes;
-}
 
 void InfomapBase::setActiveNetworkFromChildrenOfRoot()
 {
@@ -1997,11 +1868,6 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 // Write output
 // ===================================================
 
-void InfomapBase::sortTreeOnFlow()
-{
-  root().sortChildrenOnFlow();
-}
-
 void InfomapBase::writeResult()
 {
   if (noFileOutput)
@@ -2201,11 +2067,6 @@ unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
   out << " (sum: " << sumCodelengths << ")\n";
 
   return numLevels;
-}
-
-void InfomapBase::aggregatePerLevelCodelength(std::vector<PerLevelStat>& perLevelStat, unsigned int level)
-{
-  aggregatePerLevelCodelength(root(), perLevelStat, level);
 }
 
 void InfomapBase::aggregatePerLevelCodelength(InfoNode& parent, std::vector<PerLevelStat>& perLevelStat, unsigned int level)

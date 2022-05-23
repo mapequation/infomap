@@ -19,6 +19,7 @@
 
 namespace infomap {
 
+// Wrapper class for the Python API
 struct InfomapWrapper : public InfomapBase {
 public:
   InfomapWrapper() : InfomapBase() { }

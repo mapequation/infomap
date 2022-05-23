@@ -42,6 +42,8 @@ class InfomapBase : public InfomapConfig<InfomapBase> {
   friend class InfomapOptimizer;
   friend class Output;
 
+  void initOptimizer(bool forceNoMemory = false);
+
 public:
   using PartitionQueue = detail::PartitionQueue;
   using PerLevelStat = detail::PerLevelStat;
@@ -63,66 +65,41 @@ public:
   // Getters
   // ===================================================
 
-  const Network& network() const;
+  Network& network() { return m_network; }
+  const Network& network() const { return m_network; }
 
-  Network& network();
+  InfoNode& root() { return m_root; }
+  const InfoNode& root() const { return m_root; }
 
-  InfoNode& root();
-  const InfoNode& root() const;
+  InfomapIterator iterTree(int maxClusterLevel = 1) { return { &root(), maxClusterLevel }; }
 
-  InfomapIterator iterTree(int maxClusterLevel = 1)
-  {
-    return { &root(), maxClusterLevel };
-  }
+  InfomapIteratorPhysical iterTreePhysical(int maxClusterLevel = 1) { return { &root(), maxClusterLevel }; }
 
-  InfomapIteratorPhysical iterTreePhysical(int maxClusterLevel = 1)
-  {
-    return { &root(), maxClusterLevel };
-  }
+  InfomapModuleIterator iterModules(int maxClusterLevel = 1) { return { &root(), maxClusterLevel }; }
 
-  InfomapModuleIterator iterModules(int maxClusterLevel = 1)
-  {
-    return { &root(), maxClusterLevel };
-  }
+  InfomapLeafModuleIterator iterLeafModules(int maxClusterLevel = 1) { return { &root(), maxClusterLevel }; }
 
-  InfomapLeafModuleIterator iterLeafModules(int maxClusterLevel = 1)
-  {
-    return { &root(), maxClusterLevel };
-  }
+  InfomapLeafIterator iterLeafNodes(int maxClusterLevel = 1) { return { &root(), maxClusterLevel }; }
 
-  InfomapLeafIterator iterLeafNodes(int maxClusterLevel = 1)
-  {
-    return { &root(), maxClusterLevel };
-  }
+  InfomapLeafIteratorPhysical iterLeafNodesPhysical(int maxClusterLevel = 1) { return { &root(), maxClusterLevel }; }
 
-  InfomapLeafIteratorPhysical iterLeafNodesPhysical(int maxClusterLevel = 1)
-  {
-    return { &root(), maxClusterLevel };
-  }
+  InfomapIterator begin(int maxClusterLevel = 1) { return { &root(), maxClusterLevel }; }
 
-  InfomapIterator begin(int maxClusterLevel = 1)
-  {
-    return { &root(), maxClusterLevel };
-  }
+  InfomapIterator end() { return InfomapIterator(nullptr); }
 
-  InfomapIterator end()
-  {
-    return InfomapIterator(nullptr);
-  }
+  unsigned int numLeafNodes() const { return m_leafNodes.size(); }
 
-  unsigned int numLeafNodes() const;
+  const std::vector<InfoNode*>& leafNodes() const { return m_leafNodes; }
 
-  const std::vector<InfoNode*>& leafNodes() const;
-
-  unsigned int numTopModules() const;
+  unsigned int numTopModules() const { return m_root.childDegree(); }
 
   unsigned int numActiveModules() const { return m_optimizer->numActiveModules(); }
 
-  unsigned int numNonTrivialTopModules() const;
+  unsigned int numNonTrivialTopModules() const { return m_numNonTrivialTopModules; }
 
-  bool haveModules() const;
+  bool haveModules() const { return !m_root.isLeaf() && !m_root.firstChild->isLeaf(); }
 
-  bool haveNonTrivialModules() const;
+  bool haveNonTrivialModules() const { return numNonTrivialTopModules() > 0; }
 
   /**
    * Number of node levels below the root in current Infomap instance, 1 if no modules
@@ -146,7 +123,7 @@ public:
 
   double getModuleCodelength() const { return m_hierarchicalCodelength - m_optimizer->getIndexCodelength(); }
 
-  double getHierarchicalCodelength() const;
+  double getHierarchicalCodelength() const { return m_hierarchicalCodelength; }
 
   double getOneLevelCodelength() const { return m_oneLevelCodelength; }
 
@@ -167,22 +144,44 @@ public:
     return im;
   }
 
-  InfomapBase& getSubInfomap(InfoNode& node);
-  InfomapBase& getSuperInfomap(InfoNode& node);
+  InfomapBase& getSubInfomap(InfoNode& node) const
+  {
+    return node.setInfomap(getNewInfomapInstance())
+        .setIsMain(false)
+        .setSubLevel(m_subLevel + 1)
+        .setNonMainConfig(*this);
+  }
+
+  InfomapBase& getSuperInfomap(InfoNode& node) const
+  {
+    return node.setInfomap(getNewInfomapInstanceWithoutMemory())
+        .setIsMain(false)
+        .setSubLevel(m_subLevel + SUPER_LEVEL_ADDITION)
+        .setNonMainConfig(*this);
+  }
 
   /**
    * Only the main infomap reads an external cluster file if exist
    */
-  InfomapBase& setIsMain(bool isMain);
-  InfomapBase& setSubLevel(unsigned int level);
+  InfomapBase& setIsMain(bool isMain)
+  {
+    m_isMain = isMain;
+    return *this;
+  }
 
-  bool isTopLevel() const;
-  bool isSuperLevelOnTopLevel() const;
-  bool isMainInfomap() const;
+  InfomapBase& setSubLevel(unsigned int level)
+  {
+    m_subLevel = level;
+    return *this;
+  }
 
-  bool haveHardPartition() const;
+  bool isTopLevel() const { return (m_subLevel & (SUPER_LEVEL_ADDITION - 1)) == 0; }
+  bool isSuperLevelOnTopLevel() const { return m_subLevel == SUPER_LEVEL_ADDITION; }
+  bool isMainInfomap() const { return m_isMain; }
 
-  std::vector<InfoNode*>& activeNetwork() const;
+  bool haveHardPartition() const { return !m_originalLeafNodes.empty(); }
+
+  std::vector<InfoNode*>& activeNetwork() const { return *m_activeNetwork; }
 
   // ===================================================
   // IO
@@ -198,7 +197,11 @@ public:
 
   double calcEntropyRate();
 
-  InfomapBase& setInitialPartition(const std::map<unsigned int, unsigned int>& moduleIds);
+  InfomapBase& setInitialPartition(const std::map<unsigned int, unsigned int>& moduleIds)
+  {
+    m_initialPartition = moduleIds;
+    return *this;
+  }
 
   // ===================================================
   // Run
@@ -276,11 +279,17 @@ public:
 
   void init();
 
-  void runPartition();
+  void runPartition()
+  {
+    if (twoLevel)
+      partition();
+    else
+      hierarchicalPartition();
+  }
 
   void restoreHardPartition();
 
-  void sortTreeOnFlow();
+  void sortTreeOnFlow() { root().sortChildrenOnFlow(); }
 
   void writeResult();
 
@@ -323,7 +332,7 @@ public:
   // Run: Partition: *
   // ===================================================
 
-  void setActiveNetworkFromLeafs();
+  void setActiveNetworkFromLeafs() { m_activeNetwork = &m_leafNodes; }
 
   void setActiveNetworkFromChildrenOfRoot();
 
@@ -412,10 +421,7 @@ public:
    * @param states if memory network, print the state-level network without merging physical nodes within modules
    * @return the filename written to
    */
-  std::string writeTree(const std::string& filename = "", bool states = false)
-  {
-    return Output::writeTree(*this, filename, states);
-  }
+  std::string writeTree(const std::string& filename = "", bool states = false) { return Output::writeTree(*this, filename, states); }
 
   /**
    * Write flow tree to a .ftree file.
@@ -426,10 +432,7 @@ public:
    * @param states if memory network, print the state-level network without merging physical nodes within modules
    * @return the filename written to
    */
-  std::string writeFlowTree(const std::string& filename = "", bool states = false)
-  {
-    return Output::writeFlowTree(*this, filename, states);
-  }
+  std::string writeFlowTree(const std::string& filename = "", bool states = false) { return Output::writeFlowTree(*this, filename, states); }
 
   /**
    * Write Newick tree to a .tre file.
@@ -438,20 +441,11 @@ public:
    * @param states if memory network, print the state-level network without merging physical nodes within modules
    * @return the filename written to
    */
-  std::string writeNewickTree(const std::string& filename = "", bool states = false)
-  {
-    return Output::writeNewickTree(*this, filename, states);
-  }
+  std::string writeNewickTree(const std::string& filename = "", bool states = false) { return Output::writeNewickTree(*this, filename, states); }
 
-  std::string writeJsonTree(const std::string& filename = "", bool states = false, bool writeLinks = false)
-  {
-    return Output::writeJsonTree(*this, filename, states, writeLinks);
-  }
+  std::string writeJsonTree(const std::string& filename = "", bool states = false, bool writeLinks = false) { return Output::writeJsonTree(*this, filename, states, writeLinks); }
 
-  std::string writeCsvTree(const std::string& filename = "", bool states = false)
-  {
-    return Output::writeCsvTree(*this, filename, states);
-  }
+  std::string writeCsvTree(const std::string& filename = "", bool states = false) { return Output::writeCsvTree(*this, filename, states); }
 
   /**
    * Write tree to a .clu file.
@@ -463,10 +457,7 @@ public:
    * Value -1 will give the module index for the lowest level, i.e. the finest modular structure.
    * @return the filename written to
    */
-  std::string writeClu(const std::string& filename = "", bool states = false, int moduleIndexLevel = 1)
-  {
-    return Output::writeClu(*this, filename, states, moduleIndexLevel);
-  }
+  std::string writeClu(const std::string& filename = "", bool states = false, int moduleIndexLevel = 1) { return Output::writeClu(*this, filename, states, moduleIndexLevel); }
 
   /**
    * Print per level statistics
@@ -474,7 +465,7 @@ public:
    */
   unsigned int printPerLevelCodelength(std::ostream& out);
 
-  void aggregatePerLevelCodelength(std::vector<PerLevelStat>& perLevelStat, unsigned int level = 0);
+  void aggregatePerLevelCodelength(std::vector<PerLevelStat>& perLevelStat, unsigned int level = 0) { aggregatePerLevelCodelength(root(), perLevelStat, level); }
 
   void aggregatePerLevelCodelength(InfoNode& parent, std::vector<PerLevelStat>& perLevelStat, unsigned int level);
 
@@ -489,8 +480,6 @@ public:
   // ===================================================
 
 protected:
-  void initOptimizer(bool forceNoMemory = false);
-
   InfoNode m_root;
   std::vector<InfoNode*> m_leafNodes;
   std::vector<InfoNode*> m_moduleNodes;
