@@ -66,13 +66,10 @@ format: js-format py-format
 # JavaScript through Emscripten
 ##################################################
 
-.PHONY: js js-worker js-clean js-test
+.PHONY: js-worker js-clean js-test
 
 WORKER_FILENAME := infomap.worker.js
 PRE_WORKER_MODULE := interfaces/js/pre-worker-module.js
-
-js: build/js/Infomap.js
-	@echo "Built $^"
 
 js-worker: build/js/$(WORKER_FILENAME) Infomap
 	@echo "Built $^"
@@ -100,11 +97,6 @@ build/js/infomap.worker.js: $(SOURCES) $(PRE_WORKER_MODULE)
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
 	em++ -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=worker --pre-js $(PRE_WORKER_MODULE) -o build/js/$(WORKER_FILENAME) $(SOURCES)
-
-build/js/Infomap.js: $(SOURCES)
-	@echo "Compiling Infomap for Node.js..."
-	@mkdir -p $(dir $@)
-	em++ -O0 -o build/js/Infomap.js $^
 
 js-clean:
 	$(RM) -r build/js interfaces/js/src/worker index.js *.d.ts README.md
