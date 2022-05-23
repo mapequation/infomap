@@ -53,6 +53,8 @@ jobs:
           CXX: g++
           CXXFLAGS: ${{ matrix.config.flags }}
           LDFLAGS: ${{ matrix.config.flags }}
+      - run: make py-local-install
+        shell: bash
       - run: make py-test
         shell: bash
       - run: make pypi-dist

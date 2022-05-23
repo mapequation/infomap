@@ -6,7 +6,7 @@ import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import networkx as nx
 
-import infomap
+from infomap import Infomap
 
 """
 Generate and draw a network with NetworkX, colored
@@ -20,7 +20,7 @@ def find_communities(G):
     Annotates nodes with 'community' id.
     """
 
-    im = infomap.Infomap("--two-level")
+    im = Infomap(two_level=True, silent=True)
 
     print("Building Infomap network from a NetworkX graph...")
 

@@ -1,6 +1,6 @@
-import infomap
+from infomap import Infomap
 
-im = infomap.Infomap("--two-level --verbose")
+im = Infomap(two_level=True, silent=True)
 
 # Set the start id for bipartite nodes
 im.bipartite_start_id = 5

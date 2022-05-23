@@ -23,4 +23,5 @@ jobs:
         sudo apt install swig
         pip install -r requirements_dev.txt
     - run: make python
+    - run: make py-local-install
     - run: make py-test

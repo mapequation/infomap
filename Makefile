@@ -193,6 +193,7 @@ py-test:
 	@cp -r examples/networks/*.net $(PY_BUILD_DIR)
 	python3 -m flake8 --count --show-source --statistics --ignore E501,F811,W503 $(PY_BUILD_DIR)/infomap.py
 	cd $(PY_BUILD_DIR) && python3 -m doctest infomap.py
+	cd examples/python && for f in *.py; do python3 "$$f" > /dev/null || exit 1; done
 
 py-local-install:
 	# Run this to get 'import infomap' to always import the latest

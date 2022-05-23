@@ -1,7 +1,7 @@
-import infomap
+from infomap import Infomap
 
 eta = 0.3
-im = infomap.Infomap(f"--two-level --meta-data-rate {eta}")
+im = Infomap(two_level=True, silent=True, meta_data_rate=eta)
 
 # Add weight as an optional third argument
 im.add_link(0, 1)

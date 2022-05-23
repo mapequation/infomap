@@ -1,10 +1,10 @@
-import infomap
+from infomap import Infomap
 
 # Compare codelengths for two different partitions of a network
 # composed of two triangles {0,1,2} and {5,6,7} connected by a
 # chain of two nodes in the middle {3,4}.
 
-im = infomap.Infomap("--two-level --silent")
+im = Infomap(two_level=True, silent=True)
 
 # Add weight as an optional third argument
 im.add_link(0, 1)

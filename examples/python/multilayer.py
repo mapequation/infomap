@@ -1,4 +1,4 @@
-import infomap
+from infomap import Infomap
 
 
 def printResult(im):
@@ -9,7 +9,7 @@ def printResult(im):
         print(f"{node.layer_id} {node.node_id} {node.module_id}")
 
 
-im = infomap.Infomap("--silent")
+im = Infomap(silent=True)
 print("\nAdding multilayer network...")
 
 # from (layer1, node1) to (layer2, node2) with optional weight
@@ -24,7 +24,7 @@ printResult(im)
 # Add only intra-layer links and let Infomap provide
 # inter-layer links by relaxing the random walker's
 # constraint to its current layer
-im = infomap.Infomap("--silent")
+im = Infomap(silent=True)
 print("\nAdding intra-layer network...")
 
 # Add layer_id, source_node_id, target_node_id and optional weight

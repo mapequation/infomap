@@ -1,18 +1,18 @@
 import pathlib
 
-import infomap
+from infomap import Infomap
+
+im = Infomap(silent=True)
 
 name = "ninetriangles"
-filename = f"../../{name}.net"
-
-im = infomap.Infomap()
+filename = f"../networks/{name}.net"
 
 # You can read a network with the method read_file,
 # which by default will accumulate to existing network data
 accumulate = False
 im.read_file(filename, accumulate)
 
-im.run("-N5")
+im.run(num_trials=5)
 
 print(
     f"Found {im.max_depth} levels with {im.num_leaf_modules} leaf modules in {im.num_top_modules} top modules and codelength: {im.codelength}"
@@ -44,7 +44,8 @@ print(f"Writing tree to output/{name}.tree...")
 im.write_tree(f"output/{name}.tree")
 
 print("Read back .clu file and only calculate codelength...")
-im2 = infomap.Infomap(f"--input {filename} --no-infomap -c output/{name}.clu")
+im2 = Infomap(silent=True, no_infomap=True, cluster_data=f"output/{name}.clu")
+im2.read_file(filename)
 im2.run()
 print(
     f"Found {im2.max_depth} levels with {im2.num_top_modules} top modules and codelength: {im2.codelength}"

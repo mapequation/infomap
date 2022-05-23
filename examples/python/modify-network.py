@@ -1,6 +1,6 @@
-import infomap
+from infomap import Infomap
 
-im = infomap.Infomap("--two-level --silent")
+im = Infomap(two_level=True, silent=True)
 
 # Add weight as an optional third argument
 im.add_link(1, 2)

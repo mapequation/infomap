@@ -2,7 +2,7 @@ import infomap
 
 print(f"Using Infomap {infomap.__version__}")
 
-im = infomap.Infomap("--two-level --verbose --silent")
+im = infomap.Infomap(two_level=True, silent=True)
 
 print("Creating network...")
 
