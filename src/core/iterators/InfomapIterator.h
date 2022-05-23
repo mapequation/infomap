@@ -10,12 +10,13 @@
 #ifndef INFOMAP_ITERATOR_H_
 #define INFOMAP_ITERATOR_H_
 
-#include "../InfoNode.h"
 #include <deque>
 #include <map>
 #include <cmath>
 
 namespace infomap {
+
+class InfoNode;
 
 /**
  * Pre processing depth first iterator that explores sub-Infomap instances
@@ -64,45 +65,21 @@ public:
     return *this;
   }
 
-  InfoNode* current()
-  {
-    return m_current;
-  }
+  InfoNode* current() { return m_current; }
 
-  const InfoNode* current() const
-  {
-    return m_current;
-  }
+  const InfoNode* current() const { return m_current; }
 
-  InfoNode& operator*()
-  {
-    return *m_current;
-  }
+  InfoNode& operator*() { return *m_current; }
 
-  const InfoNode& operator*() const
-  {
-    return *m_current;
-  }
+  const InfoNode& operator*() const { return *m_current; }
 
-  InfoNode* operator->()
-  {
-    return m_current;
-  }
+  InfoNode* operator->() { return m_current; }
 
-  const InfoNode* operator->() const
-  {
-    return m_current;
-  }
+  const InfoNode* operator->() const { return m_current; }
 
-  bool operator==(const InfomapIterator& other) const
-  {
-    return m_current == other.m_current;
-  }
+  bool operator==(const InfomapIterator& other) const { return m_current == other.m_current; }
 
-  bool operator!=(const InfomapIterator& other) const
-  {
-    return m_current != other.m_current;
-  }
+  bool operator!=(const InfomapIterator& other) const { return m_current != other.m_current; }
 
   virtual InfomapIterator& operator++();
 
@@ -119,64 +96,28 @@ public:
     return *this;
   }
 
-  const std::deque<unsigned int>& path() const
-  {
-    return m_path;
-  }
+  const std::deque<unsigned int>& path() const { return m_path; }
 
-  unsigned int moduleIndex() const
-  {
-    return m_moduleIndex;
-  }
+  unsigned int moduleIndex() const { return m_moduleIndex; }
 
-  unsigned int moduleId() const
-  {
-    return m_moduleIndex + 1;
-  }
+  unsigned int moduleId() const { return m_moduleIndex + 1; }
 
-  unsigned int childIndex() const
-  {
-    return m_path.empty() ? 0 : m_path.back() - 1;
-  }
+  unsigned int childIndex() const { return m_path.empty() ? 0 : m_path.back() - 1; }
 
-  unsigned int depth() const
-  {
-    return m_depth;
-  }
+  unsigned int depth() const { return m_depth; }
 
-  double modularCentrality() const
-  {
-    if (m_current->parent == nullptr) {
-      // The root node has no modular centrality
-      return 0.0;
-    }
+  double modularCentrality() const;
 
-    const auto p_m = m_current->parent->data.flow;
-    const auto p_u = m_current->data.flow;
-    const auto p_diff = p_m - p_u;
-
-    if (p_diff > 0.0) {
-      return -p_diff * std::log2(p_diff / p_m);
-    }
-
-    return 0.0;
-  }
-
-  bool isEnd() const
-  {
-    return m_current == nullptr;
-  }
+  bool isEnd() const { return m_current == nullptr; }
 };
 
 struct InfomapModuleIterator : public InfomapIterator {
 public:
   InfomapModuleIterator() : InfomapIterator() { }
 
-  InfomapModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
-      : InfomapIterator(nodePointer, moduleIndexLevel) { }
+  InfomapModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1) : InfomapIterator(nodePointer, moduleIndexLevel) { }
 
-  InfomapModuleIterator(const InfomapModuleIterator& other)
-      : InfomapIterator(other) { }
+  InfomapModuleIterator(const InfomapModuleIterator& other) : InfomapIterator(other) { }
 
   InfomapModuleIterator& operator=(const InfomapModuleIterator& other)
   {
@@ -205,16 +146,10 @@ public:
   InfomapLeafModuleIterator() : InfomapIterator() { }
 
   InfomapLeafModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
-      : InfomapIterator(nodePointer, moduleIndexLevel)
-  {
-    init();
-  }
+      : InfomapIterator(nodePointer, moduleIndexLevel) { init(); }
 
   InfomapLeafModuleIterator(const InfomapLeafModuleIterator& other)
-      : InfomapIterator(other)
-  {
-    init();
-  }
+      : InfomapIterator(other) { init(); }
 
   InfomapLeafModuleIterator& operator=(const InfomapLeafModuleIterator& other)
   {
@@ -248,16 +183,10 @@ public:
   InfomapLeafIterator() : InfomapIterator() { }
 
   InfomapLeafIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
-      : InfomapIterator(nodePointer, moduleIndexLevel)
-  {
-    init();
-  }
+      : InfomapIterator(nodePointer, moduleIndexLevel) { init(); }
 
   InfomapLeafIterator(const InfomapLeafIterator& other)
-      : InfomapIterator(other)
-  {
-    init();
-  }
+      : InfomapIterator(other) { init(); }
 
   InfomapLeafIterator& operator=(const InfomapLeafIterator& other)
   {
@@ -350,20 +279,13 @@ public:
  */
 struct InfomapLeafIteratorPhysical : public InfomapIteratorPhysical {
 public:
-  InfomapLeafIteratorPhysical()
-      : InfomapIteratorPhysical() { }
+  InfomapLeafIteratorPhysical() : InfomapIteratorPhysical() { }
 
   InfomapLeafIteratorPhysical(InfoNode* nodePointer, int moduleIndexLevel = -1)
-      : InfomapIteratorPhysical(nodePointer, moduleIndexLevel)
-  {
-    init();
-  }
+      : InfomapIteratorPhysical(nodePointer, moduleIndexLevel) { init(); }
 
   InfomapLeafIteratorPhysical(const InfomapLeafIteratorPhysical& other)
-      : InfomapIteratorPhysical(other)
-  {
-    init();
-  }
+      : InfomapIteratorPhysical(other) { init(); }
 
   InfomapLeafIteratorPhysical& operator=(const InfomapLeafIteratorPhysical& other)
   {
@@ -404,11 +326,9 @@ protected:
 public:
   InfomapParentIterator() = default;
 
-  InfomapParentIterator(InfoNode* nodePointer)
-      : m_current(nodePointer) { }
+  InfomapParentIterator(InfoNode* nodePointer) : m_current(nodePointer) { }
 
-  InfomapParentIterator(const InfomapParentIterator& other)
-      : m_current(other.m_current) { }
+  InfomapParentIterator(const InfomapParentIterator& other) : m_current(other.m_current) { }
 
   virtual ~InfomapParentIterator() = default;
 
@@ -418,45 +338,21 @@ public:
     return *this;
   }
 
-  InfoNode* current()
-  {
-    return m_current;
-  }
+  InfoNode* current() { return m_current; }
 
-  const InfoNode* current() const
-  {
-    return m_current;
-  }
+  const InfoNode* current() const { return m_current; }
 
-  InfoNode& operator*()
-  {
-    return *m_current;
-  }
+  InfoNode& operator*() { return *m_current; }
 
-  const InfoNode& operator*() const
-  {
-    return *m_current;
-  }
+  const InfoNode& operator*() const { return *m_current; }
 
-  InfoNode* operator->()
-  {
-    return m_current;
-  }
+  InfoNode* operator->() { return m_current; }
 
-  const InfoNode* operator->() const
-  {
-    return m_current;
-  }
+  const InfoNode* operator->() const { return m_current; }
 
-  bool operator==(const InfomapParentIterator& other) const
-  {
-    return m_current == other.m_current;
-  }
+  bool operator==(const InfomapParentIterator& other) const { return m_current == other.m_current; }
 
-  bool operator!=(const InfomapParentIterator& other) const
-  {
-    return m_current != other.m_current;
-  }
+  bool operator!=(const InfomapParentIterator& other) const { return m_current != other.m_current; }
 
   virtual InfomapParentIterator& operator++();
 
@@ -473,10 +369,7 @@ public:
     return *this;
   }
 
-  bool isEnd() const
-  {
-    return m_current == nullptr;
-  }
+  bool isEnd() const { return m_current == nullptr; }
 };
 
 } // namespace infomap

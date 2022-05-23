@@ -327,9 +327,9 @@ void InfomapBase::run(Network& network)
 // Run: Init: *
 // ===================================================
 
-InfomapBase& InfomapBase::initMetaData(std::string metaDataFile)
+InfomapBase& InfomapBase::initMetaData(const std::string& metaDataFile)
 {
-  m_network.readMetaData(std::move(metaDataFile));
+  m_network.readMetaData(metaDataFile);
   return *this;
 }
 

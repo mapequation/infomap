@@ -231,7 +231,7 @@ public:
    * 5 3
    *
    */
-  InfomapBase& initMetaData(std::string metaDataFile);
+  InfomapBase& initMetaData(const std::string& metaDataFile);
 
   /**
    * Provide an initial partition of the network.

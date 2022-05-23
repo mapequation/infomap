@@ -31,6 +31,11 @@ public:
 
   virtual ~InfomapConfig() = default;
 
+  InfomapConfig(const InfomapConfig&) = default;
+  InfomapConfig& operator=(const InfomapConfig&) = default;
+  InfomapConfig(InfomapConfig&&) noexcept = default;
+  InfomapConfig& operator=(InfomapConfig&&) noexcept = default;
+
 private:
   Infomap& get()
   {
