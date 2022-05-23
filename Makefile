@@ -302,13 +302,6 @@ docker-run-rstudio: Makefile
 	docker run --rm \
 	$(TAG_NAME):rstudio
 
-# swig python
-docker-build-swig-python: Makefile
-	docker build -f docker/swig.python.Dockerfile -t infomap:python .
-
-docker-run-swig-python: Makefile
-	docker run --rm infomap:python
-
 # ubuntu test python
 docker-build-ubuntu-test-python: Makefile
 	docker build -f docker/ubuntu.Dockerfile -t infomap:python-test .
@@ -322,10 +315,6 @@ docker-build-r: Makefile
 
 docker-run-r: Makefile
 	docker run --rm -p 8787:8787 -e PASSWORD=InfomapR infomap:r
-
-# docker-run:
-# 	docker run -it --rm -v $(pwd):/home/rstudio infomap \
-	ninetriangles.net output
 
 ##################################################
 # Clean

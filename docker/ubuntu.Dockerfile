@@ -11,7 +11,7 @@ COPY . /infomap/
 
 WORKDIR /infomap
 
-RUN make all
+RUN make -j
 
 RUN pip3 --no-cache-dir install --index-url https://test.pypi.org/simple/ infomap
 

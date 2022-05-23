@@ -8,7 +8,7 @@ COPY . /infomap
 
 WORKDIR /infomap
 
-RUN make
+RUN make -j
 
 FROM alpine:${ALPINE_VERSION}
 
