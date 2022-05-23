@@ -8,7 +8,7 @@
  ******************************************************************************/
 
 #include "InfoNode.h"
-#include "InfomapCore.h"
+#include "InfomapBase.h"
 #include <algorithm>
 
 namespace infomap {

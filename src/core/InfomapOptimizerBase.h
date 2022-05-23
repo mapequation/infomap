@@ -18,7 +18,7 @@
 namespace infomap {
 
 class InfomapOptimizerBase {
-  friend class InfomapCore;
+  friend class InfomapBase;
   using FlowDataType = FlowData;
 
 public:

@@ -12,6 +12,9 @@
 #include "InfoNode.h"
 #include "FlowData.h"
 #include "BiasedMapEquation.h"
+#include "MemMapEquation.h"
+#include "MetaMapEquation.h"
+#include "InfomapOptimizer.h"
 #include "../io/SafeFile.h"
 #include "../utils/FileURI.h"
 
@@ -41,11 +44,6 @@ using detail::PartitionQueue;
 std::ostream& operator<<(std::ostream& out, const InfomapBase& infomap)
 {
   return infomap.toString(out);
-}
-
-std::ostream& InfomapBase::toString(std::ostream& out) const
-{
-  return out << numTopModules() << " top modules.";
 }
 
 // ===================================================
@@ -2230,6 +2228,18 @@ void InfomapBase::aggregatePerLevelCodelength(InfoNode& parent, std::vector<PerL
     else
       aggregatePerLevelCodelength(module, perLevelStat, level + 1);
   }
+}
+
+void InfomapBase::initOptimizer(bool forceNoMemory)
+{
+  if (haveMetaData()) {
+    m_optimizer = std::make_unique<InfomapOptimizer<MetaMapEquation>>();
+  } else if (haveMemory() && !forceNoMemory) {
+    m_optimizer = std::make_unique<InfomapOptimizer<MemMapEquation>>();
+  } else {
+    m_optimizer = std::make_unique<InfomapOptimizer<BiasedMapEquation>>();
+  }
+  m_optimizer->init(this);
 }
 
 } // namespace infomap
