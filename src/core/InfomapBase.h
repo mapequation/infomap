@@ -13,6 +13,7 @@
 #include "InfomapConfig.h"
 #include "InfoEdge.h"
 #include "InfoNode.h"
+#include "InfomapOptimizerBase.h"
 #include "iterators/InfomapIterator.h"
 #include "../io/ClusterMap.h"
 #include "../io/Network.h"
@@ -45,12 +46,13 @@ public:
   using PartitionQueue = detail::PartitionQueue;
   using PerLevelStat = detail::PerLevelStat;
 
-  InfomapBase() : InfomapConfig<InfomapBase>() { }
+  InfomapBase() : InfomapConfig<InfomapBase>() { initOptimizer(); }
 
-  explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { }
+  explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { initOptimizer(); }
 
   explicit InfomapBase(const std::string& flags, bool isCli = false) : InfomapConfig<InfomapBase>(flags, isCli)
   {
+    initOptimizer();
     m_network.setConfig(*this);
     m_initialParameters = m_currentParameters = flags;
   }
@@ -114,7 +116,7 @@ public:
 
   unsigned int numTopModules() const;
 
-  virtual unsigned int numActiveModules() const = 0;
+  unsigned int numActiveModules() const { return m_optimizer->numActiveModules(); }
 
   unsigned int numNonTrivialTopModules() const;
 
@@ -132,17 +134,17 @@ public:
    */
   unsigned int maxTreeDepth() const;
 
-  virtual double getCodelength() const = 0;
+  double getCodelength() const { return m_optimizer->getCodelength(); }
 
-  virtual double getMetaCodelength(bool /*unweighted*/ = false) const { return 0.0; }
+  double getMetaCodelength(bool unweighted = false) const { return m_optimizer->getMetaCodelength(unweighted); }
 
-  virtual double codelength() const { return m_hierarchicalCodelength; }
+  double codelength() const { return m_hierarchicalCodelength; }
 
   const std::vector<double>& codelengths() const { return m_codelengths; }
 
-  virtual double getIndexCodelength() const = 0;
+  double getIndexCodelength() const { return m_optimizer->getIndexCodelength(); }
 
-  virtual double getModuleCodelength() const = 0; // m_hierarchicalCodelength - getIndexCodelength()
+  double getModuleCodelength() const { return m_hierarchicalCodelength - m_optimizer->getIndexCodelength(); }
 
   double getHierarchicalCodelength() const;
 
@@ -157,8 +159,13 @@ public:
   bool isFullNetwork() const { return m_isMain && m_aggregationLevel == 0; }
   bool isFirstLoop() const { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 
-  virtual InfomapBase* getNewInfomapInstance() const = 0;
-  virtual InfomapBase* getNewInfomapInstanceWithoutMemory() const = 0;
+  InfomapBase* getNewInfomapInstance() const { return new InfomapBase(getConfig()); }
+  InfomapBase* getNewInfomapInstanceWithoutMemory() const
+  {
+    auto im = new InfomapBase();
+    im->initOptimizer(true);
+    return im;
+  }
 
   InfomapBase& getSubInfomap(InfoNode& node);
   InfomapBase& getSuperInfomap(InfoNode& node);
@@ -181,7 +188,7 @@ public:
   // IO
   // ===================================================
 
-  virtual std::ostream& toString(std::ostream& out) const;
+  std::ostream& toString(std::ostream& out) const { return m_optimizer->toString(out); }
 
   const std::map<unsigned int, unsigned int>& getInitialPartition() const { return m_initialPartition; }
 
@@ -197,9 +204,9 @@ public:
   // Run
   // ===================================================
 
-  virtual void run(const std::string& parameters = "");
+  void run(const std::string& parameters = "");
 
-  virtual void run(Network& network);
+  void run(Network& network);
 
   // ===================================================
   // Run: *
@@ -209,7 +216,7 @@ public:
   InfomapBase& initNetwork(InfoNode& parent, bool asSuperNetwork = false);
 
   void generateSubNetwork(Network& network);
-  virtual void generateSubNetwork(InfoNode& parent);
+  void generateSubNetwork(InfoNode& parent);
 
   /**
    * Init categorical meta data on all nodes from a file with the following format:
@@ -267,23 +274,23 @@ public:
    */
   InfomapBase& initTree(const NodePaths& tree);
 
-  virtual void init();
+  void init();
 
-  virtual void runPartition();
+  void runPartition();
 
-  virtual void restoreHardPartition();
+  void restoreHardPartition();
 
   void sortTreeOnFlow();
 
-  virtual void writeResult();
+  void writeResult();
 
   // ===================================================
   // runPartition: *
   // ===================================================
 
-  virtual void hierarchicalPartition();
+  void hierarchicalPartition();
 
-  virtual void partition();
+  void partition();
 
   // ===================================================
   // runPartition: init: *
@@ -292,50 +299,56 @@ public:
   /**
    * Done in network?
    */
-  virtual void initEnterExitFlow();
+  void initEnterExitFlow();
 
-  virtual void aggregateFlowValuesFromLeafToRoot();
+  void aggregateFlowValuesFromLeafToRoot();
 
   // Init terms that is constant for the whole network
-  virtual void initTree() = 0;
+  void initTree() { return m_optimizer->initTree(); }
 
-  virtual void initNetwork() = 0;
+  void initNetwork() { return m_optimizer->initNetwork(); }
 
-  virtual void initSuperNetwork() = 0;
+  void initSuperNetwork() { return m_optimizer->initSuperNetwork(); }
 
-  virtual double calcCodelength(const InfoNode& parent) const = 0;
+  double calcCodelength(const InfoNode& parent) const { return m_optimizer->calcCodelength(parent); }
 
   /**
    * Calculate and store codelength on all modules in the tree
    * @param includeRoot Also calculate the codelength on the root node
    * @return the hierarchical codelength
    */
-  virtual double calcCodelengthOnTree(bool includeRoot = true);
+  double calcCodelengthOnTree(bool includeRoot = true);
 
   // ===================================================
   // Run: Partition: *
   // ===================================================
 
-  virtual void setActiveNetworkFromLeafs();
+  void setActiveNetworkFromLeafs();
 
-  virtual void setActiveNetworkFromChildrenOfRoot();
+  void setActiveNetworkFromChildrenOfRoot();
 
-  virtual void initPartition() = 0;
+  void initPartition() { return m_optimizer->initPartition(); }
 
-  virtual void findTopModulesRepeatedly(unsigned int maxLevels);
+  void findTopModulesRepeatedly(unsigned int maxLevels);
 
-  virtual unsigned int fineTune();
+  unsigned int fineTune();
 
-  virtual unsigned int coarseTune();
+  unsigned int coarseTune();
 
   /**
    * Return the number of effective core loops, i.e. not the last if not at coreLoopLimit
    */
-  virtual unsigned int optimizeActiveNetwork() = 0;
+  unsigned int optimizeActiveNetwork() { return m_optimizer->optimizeActiveNetwork(); }
 
-  virtual void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules) = 0;
+  void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
+  {
+    return m_optimizer->moveActiveNodesToPredefinedModules(modules);
+  }
 
-  virtual void consolidateModules(bool replaceExistingModules = true) = 0;
+  void consolidateModules(bool replaceExistingModules = true)
+  {
+    return m_optimizer->consolidateModules(replaceExistingModules);
+  }
 
   void calculateNumNonTrivialTopModules();
 
@@ -348,7 +361,10 @@ public:
   /**
    * Return true if restored to consolidated optimization state
    */
-  virtual bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false) = 0;
+  bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false)
+  {
+    return m_optimizer->restoreConsolidatedOptimizationPointIfNoImprovement(forceRestore);
+  }
 
   // ===================================================
   // Run: Hierarchical Partition: *
@@ -360,24 +376,24 @@ public:
    * @param levelLimit The maximum number of super module levels allowed
    * @return number of levels created
    */
-  virtual unsigned int findHierarchicalSuperModules(unsigned int superLevelLimit = std::numeric_limits<unsigned int>::max());
+  unsigned int findHierarchicalSuperModules(unsigned int superLevelLimit = std::numeric_limits<unsigned int>::max());
 
   /**
    * Find super modules fast by merge and consolidate top modules iteratively
    * @param levelLimit The maximum number of super module levels allowed
    * @return number of levels created
    */
-  virtual unsigned int findHierarchicalSuperModulesFast(unsigned int superLevelLimit = std::numeric_limits<unsigned int>::max());
+  unsigned int findHierarchicalSuperModulesFast(unsigned int superLevelLimit = std::numeric_limits<unsigned int>::max());
 
-  virtual void transformNodeFlowToEnterFlow(InfoNode& parent);
+  void transformNodeFlowToEnterFlow(InfoNode& parent);
 
-  virtual void resetFlowOnModules();
+  void resetFlowOnModules();
 
-  virtual unsigned int removeModules();
+  unsigned int removeModules();
 
-  virtual unsigned int removeSubModules(bool recalculateCodelengthOnTree);
+  unsigned int removeSubModules(bool recalculateCodelengthOnTree);
 
-  virtual unsigned int recursivePartition();
+  unsigned int recursivePartition();
 
   void queueTopModules(PartitionQueue& partitionQueue);
 
@@ -466,14 +482,14 @@ public:
   // Debug: *
   // ===================================================
 
-  virtual void printDebug() { }
+  void printDebug() { return m_optimizer->printDebug(); }
 
   // ===================================================
   // Members
   // ===================================================
 
 protected:
-  virtual void initOptimizer(bool forceNoMemory = false) = 0;
+  void initOptimizer(bool forceNoMemory = false);
 
   InfoNode m_root;
   std::vector<InfoNode*> m_leafNodes;
@@ -507,6 +523,8 @@ protected:
   Stopwatch m_elapsedTime = Stopwatch(false);
   std::string m_initialParameters;
   std::string m_currentParameters;
+
+  std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };
 
 namespace detail {

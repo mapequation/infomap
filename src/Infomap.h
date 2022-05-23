@@ -10,7 +10,7 @@
 #ifndef INFOMAP_H_
 #define INFOMAP_H_
 
-#include "core/InfomapCore.h"
+#include "core/InfomapBase.h"
 #include "io/Config.h"
 
 #include <string>
@@ -19,11 +19,11 @@
 
 namespace infomap {
 
-struct InfomapWrapper : public InfomapCore {
+struct InfomapWrapper : public InfomapBase {
 public:
-  InfomapWrapper() : InfomapCore() { }
-  InfomapWrapper(const std::string& flags) : InfomapCore(flags) { }
-  InfomapWrapper(const Config& conf) : InfomapCore(conf) { }
+  InfomapWrapper() : InfomapBase() { }
+  InfomapWrapper(const std::string& flags) : InfomapBase(flags) { }
+  InfomapWrapper(const Config& conf) : InfomapBase(conf) { }
   virtual ~InfomapWrapper() = default;
 
   // ===================================================
@@ -122,10 +122,10 @@ public:
     return modules;
   }
 
-  using InfomapCore::codelength;
-  using InfomapCore::iterLeafNodes;
-  using InfomapCore::iterTree;
-  using InfomapCore::run;
+  using InfomapBase::codelength;
+  using InfomapBase::iterLeafNodes;
+  using InfomapBase::iterTree;
+  using InfomapBase::run;
 };
 
 } // namespace infomap

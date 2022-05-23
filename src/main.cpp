@@ -7,7 +7,7 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#include "core/InfomapCore.h"
+#include "core/InfomapBase.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -20,7 +20,7 @@ namespace infomap {
 int run(const std::string& flags)
 {
   try {
-    InfomapCore(flags, true).run();
+    InfomapBase(flags, true).run();
   } catch (std::exception& e) {
     std::cerr << "Error: " << e.what() << '\n';
     return 1;
