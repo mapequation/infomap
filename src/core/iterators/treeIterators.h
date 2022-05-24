@@ -28,11 +28,11 @@ using std::iterator_traits;
  */
 template <typename NodePointerType> // pointer or const pointer
 class ChildIterator {
-  typedef std::bidirectional_iterator_tag iterator_category;
-  typedef typename iterator_traits<NodePointerType>::value_type value_type;
-  typedef typename iterator_traits<NodePointerType>::difference_type difference_type;
-  typedef typename iterator_traits<NodePointerType>::reference reference;
-  typedef typename iterator_traits<NodePointerType>::pointer pointer;
+  using iterator_category = std::bidirectional_iterator_tag;
+  using value_type = typename iterator_traits<NodePointerType>::value_type;
+  using difference_type = typename iterator_traits<NodePointerType>::difference_type;
+  using reference = typename iterator_traits<NodePointerType>::reference;
+  using pointer = typename iterator_traits<NodePointerType>::pointer;
 
 protected:
   NodePointerType m_root = nullptr;
@@ -41,7 +41,7 @@ protected:
 public:
   ChildIterator() = default;
 
-  explicit ChildIterator(const NodePointerType& nodePointer)
+  ChildIterator(const NodePointerType& nodePointer)
       : m_root(nodePointer), m_current(nodePointer == nullptr ? nullptr : nodePointer->firstChild) { }
 
   ChildIterator(const ChildIterator& other)
@@ -54,40 +54,19 @@ public:
     return *this;
   }
 
-  pointer current() const
-  {
-    return m_current;
-  }
+  pointer current() const { return m_current; }
 
-  reference
-  operator*() const
-  {
-    return *m_current;
-  }
+  reference operator*() const { return *m_current; }
 
-  pointer
-  operator->() const
-  {
-    return m_current;
-  }
+  pointer operator->() const { return m_current; }
 
-  bool operator==(const ChildIterator& rhs) const
-  {
-    return m_current == rhs.m_current;
-  }
+  bool operator==(const ChildIterator& rhs) const { return m_current == rhs.m_current; }
 
-  bool operator!=(const ChildIterator& rhs) const
-  {
-    return !(m_current == rhs.m_current);
-  }
+  bool operator!=(const ChildIterator& rhs) const { return !(m_current == rhs.m_current); }
 
-  bool isEnd() const
-  {
-    return m_current == nullptr;
-  }
+  bool isEnd() const { return m_current == nullptr; }
 
-  ChildIterator&
-  operator++()
+  ChildIterator& operator++()
   {
     m_current = m_current->next;
     if (m_current != nullptr && m_current->parent != m_root) {
@@ -96,16 +75,14 @@ public:
     return *this;
   }
 
-  ChildIterator
-  operator++(int)
+  ChildIterator operator++(int)
   {
     ChildIterator copy(*this);
     ++(*this);
     return copy;
   }
 
-  ChildIterator&
-  operator--()
+  ChildIterator& operator--()
   {
     m_current = m_current->previous;
     if (m_current != nullptr && m_current->parent != m_root) {
@@ -114,8 +91,7 @@ public:
     return *this;
   }
 
-  ChildIterator
-  operator--(int)
+  ChildIterator operator--(int)
   {
     ChildIterator copy(*this);
     --(*this);
@@ -128,11 +104,11 @@ public:
  */
 template <typename NodePointerType> // pointer or const pointer
 class TreeIterator {
-  typedef std::forward_iterator_tag iterator_category;
-  typedef typename iterator_traits<NodePointerType>::value_type value_type;
-  typedef typename iterator_traits<NodePointerType>::difference_type difference_type;
-  typedef typename iterator_traits<NodePointerType>::reference reference;
-  typedef typename iterator_traits<NodePointerType>::pointer pointer;
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = typename iterator_traits<NodePointerType>::value_type;
+  using difference_type = typename iterator_traits<NodePointerType>::difference_type;
+  using reference = typename iterator_traits<NodePointerType>::reference;
+  using pointer = typename iterator_traits<NodePointerType>::pointer;
 
 protected:
   NodePointerType m_root = nullptr;
@@ -148,9 +124,7 @@ public:
   TreeIterator(NodePointerType nodePointer, int moduleIndexLevel = -1)
       : m_root(nodePointer),
         m_current(nodePointer),
-        m_moduleIndexLevel(moduleIndexLevel)
-  {
-  }
+        m_moduleIndexLevel(moduleIndexLevel) { }
 
   TreeIterator(const TreeIterator& other)
       : m_root(other.m_root),
@@ -158,9 +132,7 @@ public:
         m_moduleIndexLevel(other.m_moduleIndexLevel),
         m_moduleIndex(other.m_moduleIndex),
         m_path(other.m_path),
-        m_depth(other.m_depth)
-  {
-  }
+        m_depth(other.m_depth) { }
 
   virtual ~TreeIterator() = default;
 
@@ -175,52 +147,23 @@ public:
     return *this;
   }
 
-  pointer current() const
-  {
-    return m_current;
-  }
+  pointer current() const { return m_current; }
 
-  reference
-  operator*() const
-  {
-    return *m_current;
-  }
+  reference operator*() const { return *m_current; }
 
-  pointer
-  operator->() const
-  {
-    return m_current;
-  }
+  pointer operator->() const { return m_current; }
 
-  bool operator==(const TreeIterator& rhs) const
-  {
-    return m_current == rhs.m_current;
-  }
+  bool operator==(const TreeIterator& rhs) const { return m_current == rhs.m_current; }
 
-  bool operator!=(const TreeIterator& rhs) const
-  {
-    return !(m_current == rhs.m_current);
-  }
+  bool operator!=(const TreeIterator& rhs) const { return !(m_current == rhs.m_current); }
 
-  const std::deque<unsigned int>& path() const
-  {
-    return m_path;
-  }
+  const std::deque<unsigned int>& path() const { return m_path; }
 
-  unsigned int moduleIndex() const
-  {
-    return m_moduleIndex;
-  }
+  unsigned int moduleIndex() const { return m_moduleIndex; }
 
-  unsigned int depth() const
-  {
-    return m_depth;
-  }
+  unsigned int depth() const { return m_depth; }
 
-  bool isEnd() const
-  {
-    return m_current == nullptr;
-  }
+  bool isEnd() const { return m_current == nullptr; }
 
   TreeIterator& operator++()
   {
@@ -277,8 +220,7 @@ public:
     return *this;
   }
 
-  TreeIterator
-  operator++(int)
+  TreeIterator operator++(int)
   {
     TreeIterator copy(*this);
     ++(*this);
@@ -297,26 +239,17 @@ public:
  */
 template <typename NodePointerType, typename iterator_tag = std::bidirectional_iterator_tag>
 struct node_iterator_base {
-  typedef iterator_tag iterator_category;
-  typedef typename iterator_traits<NodePointerType>::value_type value_type;
-  typedef typename iterator_traits<NodePointerType>::difference_type difference_type;
-  typedef typename iterator_traits<NodePointerType>::reference reference;
-  typedef typename iterator_traits<NodePointerType>::pointer pointer;
+  using iterator_category = iterator_tag;
+  using value_type = typename iterator_traits<NodePointerType>::value_type;
+  using difference_type = typename iterator_traits<NodePointerType>::difference_type;
+  using reference = typename iterator_traits<NodePointerType>::reference;
+  using pointer = typename iterator_traits<NodePointerType>::pointer;
 
-  node_iterator_base()
-      : m_current(nullptr)
-  {
-  }
+  node_iterator_base() : m_current(nullptr) { }
 
-  explicit node_iterator_base(const NodePointerType& nodePointer)
-      : m_current(nodePointer)
-  {
-  }
+  node_iterator_base(const NodePointerType& nodePointer) : m_current(nodePointer) { }
 
-  node_iterator_base(const node_iterator_base& other)
-      : m_current(other.m_current)
-  {
-  }
+  node_iterator_base(const node_iterator_base& other) : m_current(other.m_current) { }
 
   node_iterator_base& operator=(const node_iterator_base& other)
   {
@@ -326,37 +259,17 @@ struct node_iterator_base {
 
   virtual ~node_iterator_base() = default;
 
-  pointer base() const
-  {
-    return m_current;
-  }
+  pointer base() const { return m_current; }
 
-  reference
-  operator*() const
-  {
-    return *m_current;
-  }
+  reference operator*() const { return *m_current; }
 
-  pointer
-  operator->() const
-  {
-    return m_current;
-  }
+  pointer operator->() const { return m_current; }
 
-  bool operator==(const node_iterator_base& rhs) const
-  {
-    return m_current == rhs.m_current;
-  }
+  bool operator==(const node_iterator_base& rhs) const { return m_current == rhs.m_current; }
 
-  bool operator!=(const node_iterator_base& rhs) const
-  {
-    return !(m_current == rhs.m_current);
-  }
+  bool operator!=(const node_iterator_base& rhs) const { return !(m_current == rhs.m_current); }
 
-  bool isEnd() const
-  {
-    return m_current == nullptr;
-  }
+  bool isEnd() const { return m_current == nullptr; }
 
 protected:
   NodePointerType m_current;
@@ -364,29 +277,14 @@ protected:
 
 template <typename NodePointerType>
 class DepthFirstIteratorBase : public node_iterator_base<NodePointerType> {
-  typedef node_iterator_base<NodePointerType> Base;
+  using Base = node_iterator_base<NodePointerType>;
 
 public:
-  DepthFirstIteratorBase()
-      : Base(),
-        m_root(nullptr),
-        m_depth(0)
-  {
-  }
+  DepthFirstIteratorBase() : Base(), m_root(nullptr), m_depth(0) { }
 
-  explicit DepthFirstIteratorBase(const NodePointerType& nodePointer)
-      : Base(nodePointer),
-        m_root(nodePointer),
-        m_depth(0)
-  {
-  }
+  DepthFirstIteratorBase(const NodePointerType& nodePointer) : Base(nodePointer), m_root(nodePointer), m_depth(0) { }
 
-  DepthFirstIteratorBase(const DepthFirstIteratorBase& other)
-      : Base(other),
-        m_root(other.m_root),
-        m_depth(other.m_depth)
-  {
-  }
+  DepthFirstIteratorBase(const DepthFirstIteratorBase& other) : Base(other), m_root(other.m_root), m_depth(other.m_depth) { }
 
   DepthFirstIteratorBase& operator=(const DepthFirstIteratorBase& other)
   {
@@ -396,10 +294,7 @@ public:
     return *this;
   }
 
-  unsigned int depth() const
-  {
-    return m_depth;
-  }
+  unsigned int depth() const { return m_depth; }
 
 protected:
   NodePointerType m_root;
@@ -414,12 +309,12 @@ protected:
  */
 template <typename NodePointerType, bool pre_t = true>
 class DepthFirstIterator : public DepthFirstIteratorBase<NodePointerType> {
-  typedef DepthFirstIteratorBase<NodePointerType> Base;
+  using Base = DepthFirstIteratorBase<NodePointerType>;
 
 public:
   DepthFirstIterator() : Base() { }
 
-  explicit DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) { }
+  DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) { }
 
   DepthFirstIterator(const DepthFirstIterator& other) : Base(other) { }
 
@@ -429,8 +324,7 @@ public:
     return *this;
   }
 
-  DepthFirstIterator&
-  operator++()
+  DepthFirstIterator& operator++()
   {
     NodePointerType curr = Base::m_current;
     if (curr->firstChild != nullptr) {
@@ -453,16 +347,14 @@ public:
     return *this;
   }
 
-  DepthFirstIterator
-  operator++(int)
+  DepthFirstIterator operator++(int)
   {
     auto copy(*this);
     ++(*this);
     return copy;
   }
 
-  DepthFirstIterator
-  next()
+  DepthFirstIterator next()
   {
     auto copy(*this);
     return ++copy;
@@ -476,12 +368,12 @@ public:
  */
 template <typename NodePointerType>
 class DepthFirstIterator<NodePointerType, false> : public DepthFirstIteratorBase<NodePointerType> {
-  typedef DepthFirstIteratorBase<NodePointerType> Base;
+  using Base = DepthFirstIteratorBase<NodePointerType>;
 
 public:
   DepthFirstIterator() : Base() { }
 
-  explicit DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
+  DepthFirstIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
 
   DepthFirstIterator(const DepthFirstIterator& other) : Base(other) { }
 
@@ -501,8 +393,7 @@ public:
     }
   }
 
-  DepthFirstIterator&
-  operator++()
+  DepthFirstIterator& operator++()
   {
     // The root should be the last node
     if (Base::m_current == Base::m_root) {
@@ -527,8 +418,7 @@ public:
     return *this;
   }
 
-  DepthFirstIterator
-  operator++(int)
+  DepthFirstIterator operator++(int)
   {
     DepthFirstIterator copy(*this);
     ++(*this);
@@ -548,12 +438,12 @@ public:
  */
 template <typename NodePointerType>
 class LeafNodeIterator : public DepthFirstIteratorBase<NodePointerType> {
-  typedef DepthFirstIteratorBase<NodePointerType> Base;
+  using Base = DepthFirstIteratorBase<NodePointerType>;
 
 public:
   LeafNodeIterator() : Base() { }
 
-  explicit LeafNodeIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
+  LeafNodeIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
 
   LeafNodeIterator(const LeafNodeIterator& other) : Base(other) { }
 
@@ -573,8 +463,7 @@ public:
     }
   }
 
-  LeafNodeIterator&
-  operator++()
+  LeafNodeIterator& operator++()
   {
     ASSERT(Base::m_current != nullptr);
     while (Base::m_current->next == nullptr || Base::m_current->next->parent != Base::m_current->parent) {
@@ -595,16 +484,14 @@ public:
     return *this;
   }
 
-  LeafNodeIterator
-  operator++(int)
+  LeafNodeIterator operator++(int)
   {
     LeafNodeIterator copy(*this);
     ++(*this);
     return copy;
   }
 
-  LeafNodeIterator
-  next()
+  LeafNodeIterator next()
   {
     LeafNodeIterator copy(*this);
     return ++copy;
@@ -616,12 +503,12 @@ public:
  */
 template <typename NodePointerType>
 class LeafModuleIterator : public DepthFirstIteratorBase<NodePointerType> {
-  typedef DepthFirstIteratorBase<NodePointerType> Base;
+  using Base = DepthFirstIteratorBase<NodePointerType>;
 
 public:
   LeafModuleIterator() : Base() { }
 
-  explicit LeafModuleIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
+  LeafModuleIterator(const NodePointerType& nodePointer) : Base(nodePointer) { init(); }
 
   LeafModuleIterator(const LeafModuleIterator& other) : Base(other) { }
 
@@ -646,8 +533,7 @@ public:
     }
   }
 
-  LeafModuleIterator&
-  operator++()
+  LeafModuleIterator& operator++()
   {
     ASSERT(Base::m_current != nullptr);
     while (Base::m_current->next == nullptr || Base::m_current->next->parent != Base::m_current->parent) {
@@ -672,16 +558,14 @@ public:
     return *this;
   }
 
-  LeafModuleIterator
-  operator++(int)
+  LeafModuleIterator operator++(int)
   {
     LeafModuleIterator copy(*this);
     ++(*this);
     return copy;
   }
 
-  LeafModuleIterator
-  next()
+  LeafModuleIterator next()
   {
     LeafModuleIterator copy(*this);
     return ++copy;
@@ -693,14 +577,14 @@ public:
  */
 template <typename NodePointerType> // pointer or const pointer
 class SiblingIterator : public node_iterator_base<NodePointerType> {
-  typedef node_iterator_base<NodePointerType> Base;
+  using Base = node_iterator_base<NodePointerType>;
 
 public:
-  typedef SiblingIterator<NodePointerType> self_type;
+  using self_type = SiblingIterator<NodePointerType>;
 
   SiblingIterator() : Base() { }
 
-  explicit SiblingIterator(const NodePointerType& nodePointer) : Base(nodePointer) { }
+  SiblingIterator(const NodePointerType& nodePointer) : Base(nodePointer) { }
 
   SiblingIterator(const SiblingIterator& other) : Base(other) { }
 
@@ -710,32 +594,28 @@ public:
     return *this;
   }
 
-  SiblingIterator&
-  operator++()
+  SiblingIterator& operator++()
   {
     ASSERT(Base::m_current != nullptr);
     Base::m_current = Base::m_current->next;
     return *this;
   }
 
-  SiblingIterator
-  operator++(int)
+  SiblingIterator operator++(int)
   {
     SiblingIterator copy(*this);
     ++(*this);
     return copy;
   }
 
-  SiblingIterator&
-  operator--()
+  SiblingIterator& operator--()
   {
     ASSERT(Base::m_current != nullptr);
     Base::m_current = Base::m_current->previous;
     return *this;
   }
 
-  SiblingIterator
-  operator--(int)
+  SiblingIterator operator--(int)
   {
     SiblingIterator copy(*this);
     --(*this);

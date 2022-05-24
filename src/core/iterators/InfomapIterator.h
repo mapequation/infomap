@@ -36,79 +36,58 @@ public:
   InfomapIterator() = default;
 
   InfomapIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
-      : m_root(nodePointer),
-        m_current(nodePointer),
-        m_moduleIndexLevel(moduleIndexLevel)
-  {
-  }
-
-  InfomapIterator(const InfomapIterator& other)
-      : m_root(other.m_root),
-        m_current(other.m_current),
-        m_moduleIndexLevel(other.m_moduleIndexLevel),
-        m_moduleIndex(other.m_moduleIndex),
-        m_path(other.m_path),
-        m_depth(other.m_depth)
-  {
-  }
+      : m_root(nodePointer), m_current(nodePointer), m_moduleIndexLevel(moduleIndexLevel) { }
 
   virtual ~InfomapIterator() = default;
+  InfomapIterator(const InfomapIterator&) = default;
+  InfomapIterator& operator=(const InfomapIterator&) = default;
+  InfomapIterator(InfomapIterator&&) = default;
+  InfomapIterator& operator=(InfomapIterator&&) = default;
 
-  virtual InfomapIterator& operator=(const InfomapIterator& other)
-  {
-    m_root = other.m_root;
-    m_current = other.m_current;
-    m_moduleIndexLevel = other.m_moduleIndexLevel;
-    m_moduleIndex = other.m_moduleIndex;
-    m_path = other.m_path;
-    m_depth = other.m_depth;
-    return *this;
-  }
+  InfoNode* current() noexcept { return m_current; }
 
-  InfoNode* current() { return m_current; }
+  const InfoNode* current() const noexcept { return m_current; }
 
-  const InfoNode* current() const { return m_current; }
+  InfoNode& operator*() noexcept { return *m_current; }
 
-  InfoNode& operator*() { return *m_current; }
+  const InfoNode& operator*() const noexcept { return *m_current; }
 
-  const InfoNode& operator*() const { return *m_current; }
+  InfoNode* operator->() noexcept { return m_current; }
 
-  InfoNode* operator->() { return m_current; }
+  const InfoNode* operator->() const noexcept { return m_current; }
 
-  const InfoNode* operator->() const { return m_current; }
+  bool operator==(const InfomapIterator& other) const noexcept { return m_current == other.m_current; }
 
-  bool operator==(const InfomapIterator& other) const { return m_current == other.m_current; }
+  bool operator!=(const InfomapIterator& other) const noexcept { return m_current != other.m_current; }
 
-  bool operator!=(const InfomapIterator& other) const { return m_current != other.m_current; }
+  virtual InfomapIterator& operator++() noexcept;
 
-  virtual InfomapIterator& operator++();
-
-  virtual InfomapIterator operator++(int)
+  virtual InfomapIterator operator++(int) noexcept
   {
     InfomapIterator copy(*this);
     ++(*this);
     return copy;
   }
 
-  virtual InfomapIterator& stepForward()
+  virtual InfomapIterator& stepForward() noexcept
   {
     ++(*this);
     return *this;
   }
 
-  const std::deque<unsigned int>& path() const { return m_path; }
+  const std::deque<unsigned int>& path() const noexcept { return m_path; }
 
-  unsigned int moduleIndex() const { return m_moduleIndex; }
+  unsigned int moduleIndex() const noexcept { return m_moduleIndex; }
 
-  unsigned int moduleId() const { return m_moduleIndex + 1; }
+  unsigned int moduleId() const noexcept { return m_moduleIndex + 1; }
 
-  unsigned int childIndex() const { return m_path.empty() ? 0 : m_path.back() - 1; }
+  unsigned int childIndex() const noexcept { return m_path.empty() ? 0 : m_path.back() - 1; }
 
-  unsigned int depth() const { return m_depth; }
+  unsigned int depth() const noexcept { return m_depth; }
 
-  double modularCentrality() const;
+  double modularCentrality() const noexcept;
 
-  bool isEnd() const { return m_current == nullptr; }
+  bool isEnd() const noexcept { return m_current == nullptr; }
 };
 
 struct InfomapModuleIterator : public InfomapIterator {
@@ -117,21 +96,19 @@ public:
 
   InfomapModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1) : InfomapIterator(nodePointer, moduleIndexLevel) { }
 
-  InfomapModuleIterator(const InfomapModuleIterator& other) : InfomapIterator(other) { }
+  ~InfomapModuleIterator() override = default;
+  InfomapModuleIterator(const InfomapModuleIterator&) = default;
+  InfomapModuleIterator& operator=(const InfomapModuleIterator&) = default;
+  InfomapModuleIterator(InfomapModuleIterator&&) = default;
+  InfomapModuleIterator& operator=(InfomapModuleIterator&&) = default;
 
-  InfomapModuleIterator& operator=(const InfomapModuleIterator& other)
-  {
-    InfomapIterator::operator=(other);
-    return *this;
-  }
+  InfomapIterator& operator++() noexcept override;
 
-  virtual InfomapIterator& operator++();
-
-  virtual InfomapIterator operator++(int)
+  InfomapIterator operator++(int) noexcept override
   {
     InfomapModuleIterator copy(*this);
     ++(*this);
-    return copy;
+    return std::move(copy);
   }
 
   using InfomapIterator::childIndex;
@@ -148,27 +125,24 @@ public:
   InfomapLeafModuleIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
       : InfomapIterator(nodePointer, moduleIndexLevel) { init(); }
 
-  InfomapLeafModuleIterator(const InfomapLeafModuleIterator& other)
-      : InfomapIterator(other) { init(); }
-
-  InfomapLeafModuleIterator& operator=(const InfomapLeafModuleIterator& other)
-  {
-    InfomapIterator::operator=(other);
-    return *this;
-  }
+  ~InfomapLeafModuleIterator() override = default;
+  InfomapLeafModuleIterator(const InfomapLeafModuleIterator& other) : InfomapIterator(other) { init(); }
+  InfomapLeafModuleIterator& operator=(const InfomapLeafModuleIterator&) = default;
+  InfomapLeafModuleIterator(InfomapLeafModuleIterator&&) = default;
+  InfomapLeafModuleIterator& operator=(InfomapLeafModuleIterator&&) = default;
 
   /**
    * Iterate to first leaf module
    */
-  void init();
+  void init() noexcept;
 
-  virtual InfomapIterator& operator++();
+  InfomapIterator& operator++() noexcept override;
 
-  virtual InfomapIterator operator++(int)
+  InfomapIterator operator++(int) noexcept override
   {
     InfomapLeafModuleIterator copy(*this);
     ++(*this);
-    return copy;
+    return std::move(copy);
   }
 
   using InfomapIterator::childIndex;
@@ -185,27 +159,24 @@ public:
   InfomapLeafIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
       : InfomapIterator(nodePointer, moduleIndexLevel) { init(); }
 
-  InfomapLeafIterator(const InfomapLeafIterator& other)
-      : InfomapIterator(other) { init(); }
-
-  InfomapLeafIterator& operator=(const InfomapLeafIterator& other)
-  {
-    InfomapIterator::operator=(other);
-    return *this;
-  }
+  ~InfomapLeafIterator() override = default;
+  InfomapLeafIterator(const InfomapLeafIterator& other) : InfomapIterator(other) { init(); }
+  InfomapLeafIterator& operator=(const InfomapLeafIterator&) = default;
+  InfomapLeafIterator(InfomapLeafIterator&&) = default;
+  InfomapLeafIterator& operator=(InfomapLeafIterator&&) = default;
 
   /**
    * Iterate to first leaf node
    */
-  void init();
+  void init() noexcept;
 
-  virtual InfomapIterator& operator++();
+  InfomapIterator& operator++() noexcept override;
 
-  virtual InfomapIterator operator++(int)
+  InfomapIterator operator++(int) noexcept override
   {
     InfomapLeafIterator copy(*this);
     ++(*this);
-    return copy;
+    return std::move(copy);
   }
 
   using InfomapIterator::childIndex;
@@ -232,23 +203,13 @@ public:
   InfomapIteratorPhysical(InfoNode* nodePointer, int moduleIndexLevel = -1)
       : InfomapIterator(nodePointer, moduleIndexLevel) { }
 
-  InfomapIteratorPhysical(const InfomapIteratorPhysical& other)
-      : InfomapIterator(other),
-        m_physNodes(other.m_physNodes),
-        m_physIter(other.m_physIter),
-        m_oldIter(other.m_oldIter) { }
+  InfomapIteratorPhysical(const InfomapIterator& other) : InfomapIterator(other) { }
 
-  InfomapIteratorPhysical(const InfomapIterator& other)
-      : InfomapIterator(other) { }
-
-  InfomapIteratorPhysical& operator=(const InfomapIteratorPhysical& other)
-  {
-    InfomapIterator::operator=(other);
-    m_physNodes = other.m_physNodes;
-    m_physIter = other.m_physIter;
-    m_oldIter = other.m_oldIter;
-    return *this;
-  }
+  ~InfomapIteratorPhysical() override = default;
+  InfomapIteratorPhysical(const InfomapIteratorPhysical&) = default;
+  InfomapIteratorPhysical& operator=(const InfomapIteratorPhysical&) = default;
+  InfomapIteratorPhysical(InfomapIteratorPhysical&&) = default;
+  InfomapIteratorPhysical& operator=(InfomapIteratorPhysical&&) = default;
 
   InfomapIteratorPhysical& operator=(const InfomapIterator& other)
   {
@@ -256,13 +217,13 @@ public:
     return *this;
   }
 
-  virtual InfomapIterator& operator++();
+  InfomapIterator& operator++() noexcept override;
 
-  virtual InfomapIterator operator++(int)
+  InfomapIterator operator++(int) noexcept override
   {
     InfomapIteratorPhysical copy(*this);
     ++(*this);
-    return copy;
+    return std::move(copy);
   }
 
   using InfomapIterator::childIndex;
@@ -287,24 +248,23 @@ public:
   InfomapLeafIteratorPhysical(const InfomapLeafIteratorPhysical& other)
       : InfomapIteratorPhysical(other) { init(); }
 
-  InfomapLeafIteratorPhysical& operator=(const InfomapLeafIteratorPhysical& other)
-  {
-    InfomapIteratorPhysical::operator=(other);
-    return *this;
-  }
+  ~InfomapLeafIteratorPhysical() override = default;
+  InfomapLeafIteratorPhysical& operator=(const InfomapLeafIteratorPhysical&) = default;
+  InfomapLeafIteratorPhysical(InfomapLeafIteratorPhysical&&) = default;
+  InfomapLeafIteratorPhysical& operator=(InfomapLeafIteratorPhysical&&) = default;
 
   /**
    * Iterate to first leaf node
    */
-  void init();
+  void init() noexcept;
 
-  virtual InfomapIterator& operator++();
+  InfomapIterator& operator++() noexcept override;
 
-  virtual InfomapIterator operator++(int)
+  InfomapIterator operator++(int) noexcept override
   {
     InfomapLeafIteratorPhysical copy(*this);
     ++(*this);
-    return copy;
+    return std::move(copy);
   }
 
   using InfomapIteratorPhysical::childIndex;
@@ -328,48 +288,48 @@ public:
 
   InfomapParentIterator(InfoNode* nodePointer) : m_current(nodePointer) { }
 
-  InfomapParentIterator(const InfomapParentIterator& other) : m_current(other.m_current) { }
+  ~InfomapParentIterator() = default;
 
-  virtual ~InfomapParentIterator() = default;
+  InfomapParentIterator(const InfomapParentIterator&) = default;
 
-  InfomapParentIterator& operator=(const InfomapParentIterator& other)
-  {
-    m_current = other.m_current;
-    return *this;
-  }
+  InfomapParentIterator& operator=(const InfomapParentIterator&) = default;
 
-  InfoNode* current() { return m_current; }
+  InfomapParentIterator(InfomapParentIterator&&) = default;
 
-  const InfoNode* current() const { return m_current; }
+  InfomapParentIterator& operator=(InfomapParentIterator&&) = default;
 
-  InfoNode& operator*() { return *m_current; }
+  InfoNode* current() noexcept { return m_current; }
 
-  const InfoNode& operator*() const { return *m_current; }
+  const InfoNode* current() const noexcept { return m_current; }
 
-  InfoNode* operator->() { return m_current; }
+  InfoNode& operator*() noexcept { return *m_current; }
 
-  const InfoNode* operator->() const { return m_current; }
+  const InfoNode& operator*() const noexcept { return *m_current; }
 
-  bool operator==(const InfomapParentIterator& other) const { return m_current == other.m_current; }
+  InfoNode* operator->() noexcept { return m_current; }
 
-  bool operator!=(const InfomapParentIterator& other) const { return m_current != other.m_current; }
+  const InfoNode* operator->() const noexcept { return m_current; }
 
-  virtual InfomapParentIterator& operator++();
+  bool operator==(const InfomapParentIterator& other) const noexcept { return m_current == other.m_current; }
 
-  virtual InfomapParentIterator operator++(int)
+  bool operator!=(const InfomapParentIterator& other) const noexcept { return m_current != other.m_current; }
+
+  InfomapParentIterator& operator++() noexcept;
+
+  InfomapParentIterator operator++(int) noexcept
   {
     InfomapParentIterator copy(*this);
     ++(*this);
     return copy;
   }
 
-  virtual InfomapParentIterator& stepForward()
+  InfomapParentIterator& stepForward() noexcept
   {
     ++(*this);
     return *this;
   }
 
-  bool isEnd() const { return m_current == nullptr; }
+  bool isEnd() const noexcept { return m_current == nullptr; }
 };
 
 } // namespace infomap

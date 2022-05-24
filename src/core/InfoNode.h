@@ -190,35 +190,35 @@ public:
   // ---------------------------- Tree iterators ----------------------------
 
   // Default iteration on children
-  child_iterator begin() noexcept { return child_iterator(this); }
+  child_iterator begin() noexcept { return { this }; }
 
-  child_iterator end() noexcept { return child_iterator(nullptr); }
+  child_iterator end() noexcept { return { nullptr }; }
 
-  const_child_iterator begin() const noexcept { return const_child_iterator(this); }
+  const_child_iterator begin() const noexcept { return { this }; }
 
-  const_child_iterator end() const noexcept { return const_child_iterator(nullptr); }
+  const_child_iterator end() const noexcept { return { nullptr }; }
 
-  child_iterator begin_child() noexcept { return child_iterator(this); }
+  child_iterator begin_child() noexcept { return { this }; }
 
-  child_iterator end_child() noexcept { return child_iterator(nullptr); }
+  child_iterator end_child() noexcept { return { nullptr }; }
 
-  const_child_iterator begin_child() const noexcept { return const_child_iterator(this); }
+  const_child_iterator begin_child() const noexcept { return { this }; }
 
-  const_child_iterator end_child() const noexcept { return const_child_iterator(nullptr); }
+  const_child_iterator end_child() const noexcept { return { nullptr }; }
 
-  child_iterator_wrapper children() noexcept { return { child_iterator(this), child_iterator(nullptr) }; }
+  child_iterator_wrapper children() noexcept { return { { this }, { nullptr } }; }
 
-  const_child_iterator_wrapper children() const noexcept { return { const_child_iterator(this), const_child_iterator(nullptr) }; }
+  const_child_iterator_wrapper children() const noexcept { return { { this }, { nullptr } }; }
 
-  infomap_child_iterator_wrapper infomap_children() noexcept { return { infomap_child_iterator(this), infomap_child_iterator(nullptr) }; }
+  infomap_child_iterator_wrapper infomap_children() noexcept { return { { this }, { nullptr } }; }
 
-  const_infomap_child_iterator_wrapper infomap_children() const noexcept { return { const_infomap_child_iterator(this), const_infomap_child_iterator(nullptr) }; }
+  const_infomap_child_iterator_wrapper infomap_children() const noexcept { return { { this }, { nullptr } }; }
 
-  post_depth_first_iterator begin_post_depth_first() noexcept { return post_depth_first_iterator(this); }
+  post_depth_first_iterator begin_post_depth_first() noexcept { return { this }; }
 
-  leaf_node_iterator begin_leaf_nodes() noexcept { return leaf_node_iterator(this); }
+  leaf_node_iterator begin_leaf_nodes() noexcept { return { this }; }
 
-  leaf_module_iterator begin_leaf_modules() noexcept { return leaf_module_iterator(this); }
+  leaf_module_iterator begin_leaf_modules() noexcept { return { this }; }
 
   tree_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) noexcept { return { this, static_cast<int>(maxClusterLevel) }; }
 
@@ -228,9 +228,9 @@ public:
 
   const_tree_iterator end_tree() const noexcept { return { nullptr }; }
 
-  infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) noexcept { return { tree_iterator(this, static_cast<int>(maxClusterLevel)), tree_iterator(nullptr) }; }
+  infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) noexcept { return { { this, static_cast<int>(maxClusterLevel) }, { nullptr } }; }
 
-  const_infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const noexcept { return { const_tree_iterator(this, static_cast<int>(maxClusterLevel)), const_tree_iterator(nullptr) }; }
+  const_infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const noexcept { return { { this, static_cast<int>(maxClusterLevel) }, { nullptr } }; }
 
   // ---------------------------- Graph iterators ----------------------------
 

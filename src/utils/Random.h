@@ -18,9 +18,9 @@
 #include <utility>
 
 namespace infomap {
-typedef std::mt19937 RandGen;
-typedef std::uniform_int_distribution<unsigned int> uniform_uint_dist;
-typedef uniform_uint_dist::param_type uniform_param_t;
+using RandGen = std::mt19937;
+using uniform_uint_dist = std::uniform_int_distribution<unsigned int>;
+using uniform_param_t = uniform_uint_dist::param_type;
 
 class Random {
   RandGen m_randGen;

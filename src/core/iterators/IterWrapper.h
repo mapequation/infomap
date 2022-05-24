@@ -17,24 +17,14 @@ class IterWrapper {
   Iter m_begin, m_end;
 
 public:
-  IterWrapper(Iter begin, Iter end) : m_begin(begin), m_end(end)
-  {
-  }
+  IterWrapper(Iter begin, Iter end) : m_begin(begin), m_end(end) { }
 
   template <typename Container>
-  IterWrapper(Container& container) : m_begin(container.begin()), m_end(container.end())
-  {
-  }
+  IterWrapper(Container& container) : m_begin(container.begin()), m_end(container.end()) { }
 
-  Iter begin()
-  {
-    return m_begin;
-  };
+  Iter begin() noexcept { return m_begin; };
 
-  Iter end()
-  {
-    return m_end;
-  };
+  Iter end() noexcept { return m_end; };
 };
 
 } // namespace infomap

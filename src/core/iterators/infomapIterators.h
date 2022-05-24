@@ -34,7 +34,7 @@ protected:
 public:
   InfomapChildIterator() = default;
 
-  explicit InfomapChildIterator(const NodePointerType& nodePointer)
+  InfomapChildIterator(const NodePointerType& nodePointer)
       : m_root(nodePointer), m_current(nodePointer) { init(); }
 
   InfomapChildIterator(const InfomapChildIterator& other)
@@ -121,7 +121,7 @@ protected:
 public:
   InfomapClusterIterator() : Base() { }
 
-  explicit InfomapClusterIterator(const NodePointerType& nodePointer, int moduleIndexLevel = -1)
+  InfomapClusterIterator(const NodePointerType& nodePointer, int moduleIndexLevel = -1)
       : Base(nodePointer), m_moduleIndexLevel(moduleIndexLevel)
   {
     init();
@@ -231,7 +231,7 @@ public:
 template <typename NodePointerType>
 class InfomapDepthFirstIterator : public DepthFirstIteratorBase<NodePointerType> {
 protected:
-  typedef DepthFirstIteratorBase<NodePointerType> Base;
+  using Base = DepthFirstIteratorBase<NodePointerType>;
 
   std::deque<unsigned int> m_path; // The child index path to current node
   unsigned int m_moduleIndex = 0;
@@ -243,7 +243,7 @@ protected:
 public:
   InfomapDepthFirstIterator() : Base() { }
 
-  explicit InfomapDepthFirstIterator(const NodePointerType& nodePointer, int moduleIndexLevel = -1)
+  InfomapDepthFirstIterator(const NodePointerType& nodePointer, int moduleIndexLevel = -1)
       : Base(nodePointer),
         m_moduleIndexLevel(moduleIndexLevel)
   {

@@ -13,7 +13,7 @@
 
 namespace infomap {
 
-InfomapIterator& InfomapIterator::operator++()
+InfomapIterator& InfomapIterator::operator++() noexcept
 {
   const auto root = m_current->getInfomapRoot();
   auto current = root ? root : m_current;
@@ -72,7 +72,7 @@ InfomapIterator& InfomapIterator::operator++()
   return *this;
 }
 
-double InfomapIterator::modularCentrality() const
+double InfomapIterator::modularCentrality() const noexcept
 {
   if (m_current->parent == nullptr) {
     // The root node has no modular centrality
@@ -94,7 +94,7 @@ double InfomapIterator::modularCentrality() const
 // InfomapModuleIterator
 // -------------------------------------
 
-InfomapIterator& InfomapModuleIterator::operator++()
+InfomapIterator& InfomapModuleIterator::operator++() noexcept
 {
   InfomapIterator::operator++();
   while (!isEnd() && m_current->isLeaf()) {
@@ -107,14 +107,14 @@ InfomapIterator& InfomapModuleIterator::operator++()
 // InfomapLeafModuleIterator
 // -------------------------------------
 
-void InfomapLeafModuleIterator::init()
+void InfomapLeafModuleIterator::init() noexcept
 {
   while (!isEnd() && !m_current->isLeafModule()) {
     InfomapIterator::operator++();
   }
 }
 
-InfomapIterator& InfomapLeafModuleIterator::operator++()
+InfomapIterator& InfomapLeafModuleIterator::operator++() noexcept
 {
   InfomapIterator::operator++();
   while (!isEnd() && !m_current->isLeafModule()) {
@@ -127,14 +127,14 @@ InfomapIterator& InfomapLeafModuleIterator::operator++()
 // InfomapLeafIterator
 // -------------------------------------
 
-void InfomapLeafIterator::init()
+void InfomapLeafIterator::init() noexcept
 {
   while (!isEnd() && !m_current->isLeaf()) {
     InfomapIterator::operator++();
   }
 }
 
-InfomapIterator& InfomapLeafIterator::operator++()
+InfomapIterator& InfomapLeafIterator::operator++() noexcept
 {
   InfomapIterator::operator++();
   while (!isEnd() && !m_current->isLeaf()) {
@@ -147,7 +147,7 @@ InfomapIterator& InfomapLeafIterator::operator++()
 // InfomapIteratorPhysical
 // -------------------------------------
 
-InfomapIterator& InfomapIteratorPhysical::operator++()
+InfomapIterator& InfomapIteratorPhysical::operator++() noexcept
 {
   if (m_physNodes.empty()) {
     // Iterate modules
@@ -205,14 +205,14 @@ InfomapIterator& InfomapIteratorPhysical::operator++()
 // InfomapLeafIteratorPhysical
 // -------------------------------------
 
-void InfomapLeafIteratorPhysical::init()
+void InfomapLeafIteratorPhysical::init() noexcept
 {
   while (!isEnd() && !m_current->isLeaf()) {
     InfomapIteratorPhysical::operator++();
   }
 }
 
-InfomapIterator& InfomapLeafIteratorPhysical::operator++()
+InfomapIterator& InfomapLeafIteratorPhysical::operator++() noexcept
 {
   InfomapIteratorPhysical::operator++();
   while (!isEnd() && !m_current->isLeaf()) {
@@ -225,7 +225,7 @@ InfomapIterator& InfomapLeafIteratorPhysical::operator++()
 // InfomapParentIterator
 // -------------------------------------
 
-InfomapParentIterator& InfomapParentIterator::operator++()
+InfomapParentIterator& InfomapParentIterator::operator++() noexcept
 {
   m_current = m_current->parent;
   if (m_current != nullptr && m_current->owner != nullptr) {
