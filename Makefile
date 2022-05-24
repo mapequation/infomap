@@ -228,11 +228,11 @@ pypi-dist:
 # pip install -e build/py/pypi/infomap/
 pypitest-publish:
 	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
-	cd $(PYPI_DIR) && python -m twine upload -r testpypi dist/*
+	cd $(PYPI_DIR) && python -m twine upload -r testpypi --verbose dist/*
 
 pypi-publish:
 	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
-	cd $(PYPI_DIR) && python -m twine upload --skip-existing dist/* 
+	cd $(PYPI_DIR) && python -m twine upload --skip-existing --verbose dist/*
 
 
 ##################################################
