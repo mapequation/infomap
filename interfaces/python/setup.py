@@ -161,6 +161,7 @@ infomap_module = Extension(
         "headers",
         "headers/src",
         "headers/src/core",
+        "headers/src/core/iterators",
         "headers/src/io",
         "headers/src/utils",
     ],
