@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.4.0](https://github.com/mapequation/infomap/compare/v2.3.0...v2.4.0) (2022-05-24)
+
+
+### Features
+
+* **js:** React hook ([c19a819](https://github.com/mapequation/infomap/commit/c19a81917849e27298d00bc1b7c6bde2d66f46c5))
+
+
+### Bug Fixes
+
+* **js-parser:** Parse module level from clu files ([bb91066](https://github.com/mapequation/infomap/commit/bb9106625761716dfabbb240ba39702c110f011a))
+* **js:** Correctly parse clu-files without header ([04c39ea](https://github.com/mapequation/infomap/commit/04c39ea46b716fb10af987a568d5ab226e6ad69d))
+* **python:** Don't allow adding multilayer intra-inter links and ordinary nodes. ([8c3d09c](https://github.com/mapequation/infomap/commit/8c3d09c5c5188c1c94d691beff2c519100b939f9)), closes [#287](https://github.com/mapequation/infomap/issues/287)
+* **python:** Improve constructor and run signatures ([6852e14](https://github.com/mapequation/infomap/commit/6852e142343c91e61a9affe9bcff2897375cf70c)), closes [#286](https://github.com/mapequation/infomap/issues/286)
+* **python:** no_self_links was always set unless include_self_links=True ([9afe5fa](https://github.com/mapequation/infomap/commit/9afe5fa7afbf3f143dd2b8d293be59f572a14c79))
+* **python:** Prevent infinite loop in getMultilevelModules ([1174b66](https://github.com/mapequation/infomap/commit/1174b6658ed5c0bbc2c976223524f5f58e4d6c35)), closes [#284](https://github.com/mapequation/infomap/issues/284)
+* Using deprecated option --include-self-links references missing option --no-loops ([1497bf7](https://github.com/mapequation/infomap/commit/1497bf71fe7a6f5dad725742db8c36a49171eb4d))
+
 ## [2.3.0](https://github.com/mapequation/infomap/compare/v2.2.0...v2.3.0) (2022-04-13)
 
 
