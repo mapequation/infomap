@@ -1,4 +1,5 @@
 %module infomap
+#pragma SWIG nowarn=302,325,362,383,389,503,508,509
 
 %include "exceptions.i"
 
