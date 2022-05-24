@@ -12,7 +12,7 @@
 
 namespace infomap {
 
-const char* const INFOMAP_VERSION = "2.4.0";
+const char* const INFOMAP_VERSION = "2.4.0-1";
 
 }
 
