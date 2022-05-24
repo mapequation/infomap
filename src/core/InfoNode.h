@@ -130,7 +130,7 @@ public:
         m_childrenChanged(other.m_childrenChanged),
         m_numLeafMembers(other.m_numLeafMembers) { }
 
-  ~InfoNode();
+  ~InfoNode() noexcept;
 
   InfoNode& operator=(const InfoNode& other)
   {
@@ -158,7 +158,7 @@ public:
 
   // ---------------------------- Getters ----------------------------
 
-  unsigned int getMetaData(unsigned int dimension = 0)
+  unsigned int getMetaData(unsigned int dimension = 0) noexcept
   {
     if (dimension >= metaData.size()) {
       return 0;
@@ -172,231 +172,126 @@ public:
 
   InfomapBase& setInfomap(InfomapBase*);
 
-  InfoNode* getInfomapRoot();
+  InfoNode* getInfomapRoot() noexcept;
 
-  InfoNode const* getInfomapRoot() const;
+  InfoNode const* getInfomapRoot() const noexcept;
 
   /**
    * Dispose the Infomap instance if it exists
    * @return true if an existing Infomap instance was deleted
    */
-  bool disposeInfomap();
+  bool disposeInfomap() noexcept;
 
   /**
    * Number of physical nodes in memory nodes
    */
-  unsigned int numPhysicalNodes() const { return physicalNodes.size(); }
+  unsigned int numPhysicalNodes() const noexcept { return physicalNodes.size(); }
 
   // ---------------------------- Tree iterators ----------------------------
 
   // Default iteration on children
-  child_iterator begin()
-  {
-    return child_iterator(this);
-  }
+  child_iterator begin() noexcept { return child_iterator(this); }
 
-  child_iterator end()
-  {
-    return child_iterator(nullptr);
-  }
+  child_iterator end() noexcept { return child_iterator(nullptr); }
 
-  const_child_iterator begin() const
-  {
-    return const_child_iterator(this);
-  }
+  const_child_iterator begin() const noexcept { return const_child_iterator(this); }
 
-  const_child_iterator end() const
-  {
-    return const_child_iterator(nullptr);
-  }
+  const_child_iterator end() const noexcept { return const_child_iterator(nullptr); }
 
-  child_iterator begin_child()
-  {
-    return child_iterator(this);
-  }
+  child_iterator begin_child() noexcept { return child_iterator(this); }
 
-  child_iterator end_child()
-  {
-    return child_iterator(nullptr);
-  }
+  child_iterator end_child() noexcept { return child_iterator(nullptr); }
 
-  const_child_iterator begin_child() const
-  {
-    return const_child_iterator(this);
-  }
+  const_child_iterator begin_child() const noexcept { return const_child_iterator(this); }
 
-  const_child_iterator end_child() const
-  {
-    return const_child_iterator(nullptr);
-  }
+  const_child_iterator end_child() const noexcept { return const_child_iterator(nullptr); }
 
-  child_iterator_wrapper children()
-  {
-    return { child_iterator(this), child_iterator(nullptr) };
-  }
+  child_iterator_wrapper children() noexcept { return { child_iterator(this), child_iterator(nullptr) }; }
 
-  const_child_iterator_wrapper children() const
-  {
-    return { const_child_iterator(this), const_child_iterator(nullptr) };
-  }
+  const_child_iterator_wrapper children() const noexcept { return { const_child_iterator(this), const_child_iterator(nullptr) }; }
 
-  infomap_child_iterator_wrapper infomap_children()
-  {
-    return { infomap_child_iterator(this), infomap_child_iterator(nullptr) };
-  }
+  infomap_child_iterator_wrapper infomap_children() noexcept { return { infomap_child_iterator(this), infomap_child_iterator(nullptr) }; }
 
-  const_infomap_child_iterator_wrapper infomap_children() const
-  {
-    return { const_infomap_child_iterator(this), const_infomap_child_iterator(nullptr) };
-  }
+  const_infomap_child_iterator_wrapper infomap_children() const noexcept { return { const_infomap_child_iterator(this), const_infomap_child_iterator(nullptr) }; }
 
-  post_depth_first_iterator begin_post_depth_first()
-  {
-    return post_depth_first_iterator(this);
-  }
+  post_depth_first_iterator begin_post_depth_first() noexcept { return post_depth_first_iterator(this); }
 
-  leaf_node_iterator begin_leaf_nodes()
-  {
-    return leaf_node_iterator(this);
-  }
+  leaf_node_iterator begin_leaf_nodes() noexcept { return leaf_node_iterator(this); }
 
-  leaf_module_iterator begin_leaf_modules()
-  {
-    return leaf_module_iterator(this);
-  }
+  leaf_module_iterator begin_leaf_modules() noexcept { return leaf_module_iterator(this); }
 
-  tree_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
-  {
-    return { this, static_cast<int>(maxClusterLevel) };
-  }
+  tree_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) noexcept { return { this, static_cast<int>(maxClusterLevel) }; }
 
-  tree_iterator end_tree()
-  {
-    return { nullptr };
-  }
+  tree_iterator end_tree() noexcept { return { nullptr }; }
 
-  const_tree_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const
-  {
-    return { this, static_cast<int>(maxClusterLevel) };
-  }
+  const_tree_iterator begin_tree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const noexcept { return { this, static_cast<int>(maxClusterLevel) }; }
 
-  const_tree_iterator end_tree() const
-  {
-    return { nullptr };
-  }
+  const_tree_iterator end_tree() const noexcept { return { nullptr }; }
 
-  infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max())
-  {
-    return { tree_iterator(this, static_cast<int>(maxClusterLevel)), tree_iterator(nullptr) };
-  }
+  infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) noexcept { return { tree_iterator(this, static_cast<int>(maxClusterLevel)), tree_iterator(nullptr) }; }
 
-  const_infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const
-  {
-    return { const_tree_iterator(this, static_cast<int>(maxClusterLevel)), const_tree_iterator(nullptr) };
-  }
+  const_infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const noexcept { return { const_tree_iterator(this, static_cast<int>(maxClusterLevel)), const_tree_iterator(nullptr) }; }
 
   // ---------------------------- Graph iterators ----------------------------
 
-  edge_iterator begin_outEdge()
-  {
-    return m_outEdges.begin();
-  }
+  edge_iterator begin_outEdge() noexcept { return m_outEdges.begin(); }
 
-  edge_iterator end_outEdge()
-  {
-    return m_outEdges.end();
-  }
+  edge_iterator end_outEdge() noexcept { return m_outEdges.end(); }
 
-  edge_iterator begin_inEdge()
-  {
-    return m_inEdges.begin();
-  }
+  edge_iterator begin_inEdge() noexcept { return m_inEdges.begin(); }
 
-  edge_iterator end_inEdge()
-  {
-    return m_inEdges.end();
-  }
+  edge_iterator end_inEdge() noexcept { return m_inEdges.end(); }
 
-  edge_iterator_wrapper outEdges()
-  {
-    return { m_outEdges };
-  }
+  edge_iterator_wrapper outEdges() noexcept { return { m_outEdges }; }
 
-  edge_iterator_wrapper inEdges()
-  {
-    return { m_inEdges };
-  }
+  edge_iterator_wrapper inEdges() noexcept { return { m_inEdges }; }
 
   // ---------------------------- Capacity ----------------------------
 
-  unsigned int childDegree() const;
+  unsigned int childDegree() const noexcept { return m_childDegree; }
 
-  bool isLeaf() const;
-  bool isLeafModule() const;
-  bool isRoot() const;
+  bool isLeaf() const noexcept { return firstChild == nullptr; }
 
-  unsigned int depth() const;
+  // TODO: Safe to assume all children are leaves if first child is leaf?
+  bool isLeafModule() const noexcept { return m_infomap == nullptr && firstChild != nullptr && firstChild->firstChild == nullptr; }
 
-  unsigned int firstDepthBelow() const;
+  bool isRoot() const noexcept { return parent == nullptr; }
 
-  unsigned int numLeafMembers() const
-  {
-    return m_numLeafMembers;
-  }
+  unsigned int depth() const noexcept;
 
-  bool isDangling() const
-  {
-    return m_outEdges.empty();
-  }
+  unsigned int firstDepthBelow() const noexcept;
 
-  unsigned int outDegree() const
-  {
-    return m_outEdges.size();
-  }
+  unsigned int numLeafMembers() const noexcept { return m_numLeafMembers; }
 
-  unsigned int inDegree() const
-  {
-    return m_inEdges.size();
-  }
+  bool isDangling() const noexcept { return m_outEdges.empty(); }
 
-  unsigned int degree() const
-  {
-    return outDegree() + inDegree();
-  }
+  unsigned int outDegree() const noexcept { return m_outEdges.size(); }
+
+  unsigned int inDegree() const noexcept { return m_inEdges.size(); }
+
+  unsigned int degree() const noexcept { return outDegree() + inDegree(); }
 
   // ---------------------------- Order ----------------------------
-  bool isFirst() const
-  {
-    return !parent || parent->firstChild == this;
-  }
+  bool isFirst() const noexcept { return !parent || parent->firstChild == this; }
 
-  bool isLast() const
-  {
-    return !parent || parent->lastChild == this;
-  }
+  bool isLast() const noexcept { return !parent || parent->lastChild == this; }
 
-  unsigned int childIndex() const;
+  unsigned int childIndex() const noexcept;
 
   // Generate 1-based tree path
-  std::vector<unsigned int> calculatePath() const;
+  std::vector<unsigned int> calculatePath() const noexcept;
 
-  unsigned int infomapChildDegree() const;
+  unsigned int infomapChildDegree() const noexcept;
 
-  unsigned int id() const { return stateId; }
+  unsigned int id() const noexcept { return stateId; }
 
   // ---------------------------- Operators ----------------------------
 
-  bool operator==(const InfoNode& rhs) const
-  {
-    return this == &rhs;
-  }
+  bool operator==(const InfoNode& rhs) const noexcept { return this == &rhs; }
 
-  bool operator!=(const InfoNode& rhs) const
-  {
-    return this != &rhs;
-  }
+  bool operator!=(const InfoNode& rhs) const noexcept { return this != &rhs; }
 
-  friend std::ostream& operator<<(std::ostream& out, const InfoNode& node)
+  friend std::ostream& operator<<(std::ostream& out, const InfoNode& node) noexcept
   {
     if (node.isLeaf())
       out << "[" << node.physicalId << "]";
@@ -410,15 +305,15 @@ public:
   /**
    * Clear a cloned node to initial state
    */
-  void initClean();
+  void initClean() noexcept;
 
-  void sortChildrenOnFlow(bool recurse = true);
+  void sortChildrenOnFlow(bool recurse = true) noexcept;
 
   /**
    * Release the children and store the child pointers for later expansion
    * @return the number of children collapsed
    */
-  unsigned int collapseChildren();
+  unsigned int collapseChildren() noexcept;
 
   /**
    * Expand collapsed children
@@ -429,13 +324,13 @@ public:
   // ------ OLD -----
 
   // After change, set the child degree if known instead of lazily computing it by traversing the linked list
-  void setChildDegree(unsigned int value);
+  void setChildDegree(unsigned int value) noexcept;
 
-  void setNumLeafNodes(unsigned int value);
+  void setNumLeafNodes(unsigned int value) noexcept { m_numLeafMembers = value; }
 
-  void addChild(InfoNode* child);
+  void addChild(InfoNode* child) noexcept;
 
-  void releaseChildren();
+  void releaseChildren() noexcept;
 
   /**
    * If not already having a single child, replace children
@@ -447,31 +342,30 @@ public:
   /**
    * @return 1 if the node is removed, otherwise 0
    */
-  unsigned int replaceWithChildren();
+  unsigned int replaceWithChildren() noexcept;
 
-  void replaceWithChildrenDebug();
+  void replaceWithChildrenDebug() noexcept;
 
   /**
    * @return The number of children removed
    */
-  unsigned int replaceChildrenWithGrandChildren();
+  unsigned int replaceChildrenWithGrandChildren() noexcept;
 
-  void replaceChildrenWithGrandChildrenDebug();
+  void replaceChildrenWithGrandChildrenDebug() noexcept;
 
-  void remove(bool removeChildren);
+  void remove(bool removeChildren) noexcept;
 
-  void deleteChildren();
+  void deleteChildren() noexcept;
 
-  InfoEdge* addOutEdge(InfoNode& target, double weight, double flow = 0.0)
+  void addOutEdge(InfoNode& target, double weight, double flow = 0.0) noexcept
   {
     auto* edge = new InfoEdge(*this, target, weight, flow);
     m_outEdges.push_back(edge);
     target.m_inEdges.push_back(edge);
-    return edge;
   }
 
 private:
-  void calcChildDegree();
+  void calcChildDegree() noexcept;
 };
 
 } // namespace infomap

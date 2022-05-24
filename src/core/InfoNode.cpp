@@ -13,7 +13,7 @@
 
 namespace infomap {
 
-InfoNode::~InfoNode()
+InfoNode::~InfoNode() noexcept
 {
   if (m_infomap != nullptr) {
     delete m_infomap;
@@ -57,17 +57,17 @@ InfomapBase& InfoNode::getInfomap()
   return *m_infomap;
 }
 
-InfoNode* InfoNode::getInfomapRoot()
+InfoNode* InfoNode::getInfomapRoot() noexcept
 {
   return m_infomap != nullptr ? &m_infomap->root() : nullptr;
 }
 
-InfoNode const* InfoNode::getInfomapRoot() const
+InfoNode const* InfoNode::getInfomapRoot() const noexcept
 {
   return m_infomap != nullptr ? &m_infomap->root() : nullptr;
 }
 
-bool InfoNode::disposeInfomap()
+bool InfoNode::disposeInfomap() noexcept
 {
   if (m_infomap != nullptr) {
     delete m_infomap;
@@ -77,23 +77,7 @@ bool InfoNode::disposeInfomap()
   return false;
 }
 
-bool InfoNode::isLeaf() const
-{
-  return firstChild == nullptr;
-}
-
-bool InfoNode::isLeafModule() const
-{
-  // TODO: Safe to assume all children are leaves if first child is leaf?
-  return m_infomap == nullptr && firstChild != nullptr && firstChild->firstChild == nullptr;
-}
-
-bool InfoNode::isRoot() const
-{
-  return parent == nullptr;
-}
-
-unsigned int InfoNode::depth() const
+unsigned int InfoNode::depth() const noexcept
 {
   unsigned int depth = 0;
   InfoNode* n = parent;
@@ -104,7 +88,7 @@ unsigned int InfoNode::depth() const
   return depth;
 }
 
-unsigned int InfoNode::firstDepthBelow() const
+unsigned int InfoNode::firstDepthBelow() const noexcept
 {
   unsigned int depthBelow = 0;
   InfoNode* child = firstChild;
@@ -115,7 +99,7 @@ unsigned int InfoNode::firstDepthBelow() const
   return depthBelow;
 }
 
-unsigned int InfoNode::childIndex() const
+unsigned int InfoNode::childIndex() const noexcept
 {
   unsigned int childIndex = 0;
   const InfoNode* n(this);
@@ -126,7 +110,7 @@ unsigned int InfoNode::childIndex() const
   return childIndex;
 }
 
-std::vector<unsigned int> InfoNode::calculatePath() const
+std::vector<unsigned int> InfoNode::calculatePath() const noexcept
 {
   const InfoNode* current = this;
   std::vector<unsigned int> path;
@@ -141,17 +125,12 @@ std::vector<unsigned int> InfoNode::calculatePath() const
   return path;
 }
 
-unsigned int InfoNode::childDegree() const
-{
-  return m_childDegree;
-}
-
-unsigned int InfoNode::infomapChildDegree() const
+unsigned int InfoNode::infomapChildDegree() const noexcept
 {
   return m_infomap == nullptr ? childDegree() : m_infomap->root().childDegree();
 }
 
-void InfoNode::addChild(InfoNode* child)
+void InfoNode::addChild(InfoNode* child) noexcept
 {
   if (firstChild == nullptr) {
     child->previous = nullptr;
@@ -166,7 +145,7 @@ void InfoNode::addChild(InfoNode* child)
   ++m_childDegree;
 }
 
-void InfoNode::releaseChildren()
+void InfoNode::releaseChildren() noexcept
 {
   firstChild = nullptr;
   lastChild = nullptr;
@@ -199,7 +178,7 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
   return *middleNode;
 }
 
-unsigned int InfoNode::replaceChildrenWithGrandChildren()
+unsigned int InfoNode::replaceChildrenWithGrandChildren() noexcept
 {
   if (firstChild == nullptr)
     return 0;
@@ -214,7 +193,7 @@ unsigned int InfoNode::replaceChildrenWithGrandChildren()
   return numChildrenReplaced;
 }
 
-unsigned int InfoNode::replaceWithChildren()
+unsigned int InfoNode::replaceWithChildren() noexcept
 {
   if (isLeaf() || isRoot())
     return 0;
@@ -254,7 +233,7 @@ unsigned int InfoNode::replaceWithChildren()
   return 1;
 }
 
-void InfoNode::replaceChildrenWithGrandChildrenDebug()
+void InfoNode::replaceChildrenWithGrandChildrenDebug() noexcept
 {
   if (firstChild == nullptr)
     return;
@@ -267,7 +246,7 @@ void InfoNode::replaceChildrenWithGrandChildrenDebug()
   } while (--numOriginalChildrenLeft != 0);
 }
 
-void InfoNode::replaceWithChildrenDebug()
+void InfoNode::replaceWithChildrenDebug() noexcept
 {
   if (isLeaf() || isRoot())
     return;
@@ -306,13 +285,13 @@ void InfoNode::replaceWithChildrenDebug()
   delete this;
 }
 
-void InfoNode::remove(bool removeChildren)
+void InfoNode::remove(bool removeChildren) noexcept
 {
   firstChild = removeChildren ? nullptr : firstChild;
   delete this;
 }
 
-void InfoNode::deleteChildren()
+void InfoNode::deleteChildren() noexcept
 {
   if (firstChild == nullptr)
     return;
@@ -329,7 +308,7 @@ void InfoNode::deleteChildren()
   m_childDegree = 0;
 }
 
-void InfoNode::calcChildDegree()
+void InfoNode::calcChildDegree() noexcept
 {
   m_childrenChanged = false;
   if (firstChild == nullptr)
@@ -345,18 +324,13 @@ void InfoNode::calcChildDegree()
   }
 }
 
-void InfoNode::setChildDegree(unsigned int value)
+void InfoNode::setChildDegree(unsigned int value) noexcept
 {
   m_childDegree = value;
   m_childrenChanged = false;
 }
 
-void InfoNode::setNumLeafNodes(unsigned int value)
-{
-  m_numLeafMembers = value;
-}
-
-void InfoNode::initClean()
+void InfoNode::initClean() noexcept
 {
   releaseChildren();
   previous = next = parent = nullptr;
@@ -364,7 +338,7 @@ void InfoNode::initClean()
   physicalNodes.clear();
 }
 
-void InfoNode::sortChildrenOnFlow(bool recurse)
+void InfoNode::sortChildrenOnFlow(bool recurse) noexcept
 {
   if (childDegree() == 0)
     return;
@@ -398,7 +372,7 @@ void InfoNode::sortChildrenOnFlow(bool recurse)
   }
 }
 
-unsigned int InfoNode::collapseChildren()
+unsigned int InfoNode::collapseChildren() noexcept
 {
   std::swap(collapsedFirstChild, firstChild);
   std::swap(collapsedLastChild, lastChild);
