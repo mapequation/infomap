@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.4.1](https://github.com/mapequation/infomap/compare/v2.4.0...v2.4.1) (2022-05-27)
+
+
+### Bug Fixes
+
+* Json output causes segfault ([78e80c5](https://github.com/mapequation/infomap/commit/78e80c581edd92001818abdf50066b798251c604))
+
 ## [2.4.0](https://github.com/mapequation/infomap/compare/v2.3.0...v2.4.0) (2022-05-24)
 
 
