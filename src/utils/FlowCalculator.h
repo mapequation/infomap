@@ -31,16 +31,9 @@ namespace detail {
  */
 class FlowCalculator {
 public:
-  static void calculateFlow(StateNetwork& network, const Config& config) noexcept
-  {
-    FlowCalculator f(network, config);
-  }
-
-private:
   FlowCalculator(StateNetwork&, const Config&);
 
-  using FlowLink = detail::FlowLink;
-
+private:
   void calcUndirectedFlow() noexcept;
   void calcDirectedFlow(const StateNetwork&, const Config&) noexcept;
   void calcUndirectedRegularizedFlow(const StateNetwork&, const Config&) noexcept;
@@ -68,8 +61,14 @@ private:
   std::vector<double> exitFlow;
   std::vector<double> sumLinkOutWeight;
   std::vector<unsigned int> nodeOutDegree;
+  using FlowLink = detail::FlowLink;
   std::vector<FlowLink> flowLinks;
 };
+
+inline void calculateFlow(StateNetwork& network, const Config& config) noexcept
+{
+  FlowCalculator(network, config);
+}
 
 } // namespace infomap
 

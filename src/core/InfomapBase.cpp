@@ -17,6 +17,7 @@
 #include "InfomapOptimizer.h"
 #include "../io/SafeFile.h"
 #include "../utils/FileURI.h"
+#include "../utils/FlowCalculator.h"
 
 #include <stdexcept>
 #include <string>
@@ -195,7 +196,7 @@ void InfomapBase::run(Network& network)
   }
   network.setConfig(*this);
 
-  network.calculateFlow();
+  calculateFlow(network, *this);
 
   if (printFlowNetwork) {
     std::string filename;

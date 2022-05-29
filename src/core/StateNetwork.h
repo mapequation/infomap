@@ -148,8 +148,6 @@ public:
   // Expand each undirected link to two opposite directed links
   bool undirectedToDirected();
 
-  void calculateFlow();
-
   /**
    * Clear all network data and reset to default state.
    */

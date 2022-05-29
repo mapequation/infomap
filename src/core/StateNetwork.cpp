@@ -212,11 +212,6 @@ bool StateNetwork::undirectedToDirected()
   return true;
 }
 
-void StateNetwork::calculateFlow()
-{
-  FlowCalculator::calculateFlow(*this, m_config);
-}
-
 void StateNetwork::clearLinks()
 {
   m_nodeLinkMap.clear();
