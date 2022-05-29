@@ -18,41 +18,19 @@ namespace infomap {
 
 class InfomapBase;
 class InfoNode;
+class StateNetwork;
 
-class Output {
-public:
-  static std::string writeTree(InfomapBase& im, const std::string& f, bool states);
+std::string writeTree(InfomapBase&, const StateNetwork&, const std::string&, bool states);
 
-  static std::string writeFlowTree(InfomapBase& im, const std::string& f, bool states);
+std::string writeFlowTree(InfomapBase&, const StateNetwork&, const std::string&, bool states);
 
-  static std::string writeNewickTree(InfomapBase& im, const std::string& f, bool states);
+std::string writeNewickTree(InfomapBase&, const std::string&, bool states);
 
-  static std::string writeJsonTree(InfomapBase& im, const std::string& f, bool states, bool writeLinks);
+std::string writeJsonTree(InfomapBase&, const StateNetwork&, const std::string&, bool states, bool writeLinks);
 
-  static std::string writeCsvTree(InfomapBase& im, const std::string& f, bool states);
+std::string writeCsvTree(InfomapBase&, const StateNetwork&, const std::string&, bool states);
 
-  static std::string writeClu(InfomapBase& im, const std::string& f, bool states, int moduleIndexLevel);
-
-private:
-  static void writeTree(InfomapBase& im, std::ostream& o, bool states);
-
-  static void writeTreeLinks(InfomapBase& im, std::ostream& o, bool states);
-
-  static void writeNewickTree(InfomapBase& im, std::ostream& o, bool states);
-
-  static void writeJsonTree(InfomapBase& im, std::ostream& o, bool states, bool writeLinks);
-
-  static void writeCsvTree(InfomapBase& im, std::ostream& o, bool states);
-
-  static std::string getOutputFileHeader(const InfomapBase& im, bool states = false);
-
-  static std::string getNodeName(const InfomapBase& im, const InfoNode& node);
-
-  using Link = std::pair<unsigned int, unsigned int>;
-  using LinkMap = std::map<Link, double>;
-
-  static std::map<std::string, LinkMap> aggregateModuleLinks(InfomapBase& im, bool states = false);
-};
+std::string writeClu(InfomapBase&, const StateNetwork&, const std::string&, bool states, int moduleIndexLevel);
 
 } // namespace infomap
 

@@ -40,7 +40,6 @@ namespace detail {
 class InfomapBase : public InfomapConfig<InfomapBase> {
   template <typename Objective>
   friend class InfomapOptimizer;
-  friend class Output;
 
   void initOptimizer(bool forceNoMemory = false);
 
@@ -178,6 +177,11 @@ public:
   bool isTopLevel() const { return (m_subLevel & (SUPER_LEVEL_ADDITION - 1)) == 0; }
   bool isSuperLevelOnTopLevel() const { return m_subLevel == SUPER_LEVEL_ADDITION; }
   bool isMainInfomap() const { return m_isMain; }
+
+  const Date& getStartDate() const noexcept { return m_startDate; }
+  const Stopwatch& getElapsedTime() const noexcept { return m_elapsedTime; }
+
+  const std::vector<InfoNode*>& getLeafNodes() const { return m_leafNodes; }
 
   bool haveHardPartition() const { return !m_originalLeafNodes.empty(); }
 
@@ -421,7 +425,7 @@ public:
    * @param states if memory network, print the state-level network without merging physical nodes within modules
    * @return the filename written to
    */
-  std::string writeTree(const std::string& filename = "", bool states = false) { return Output::writeTree(*this, filename, states); }
+  std::string writeTree(const std::string& filename = "", bool states = false) { return infomap::writeTree(*this, m_network, filename, states); }
 
   /**
    * Write flow tree to a .ftree file.
@@ -432,7 +436,7 @@ public:
    * @param states if memory network, print the state-level network without merging physical nodes within modules
    * @return the filename written to
    */
-  std::string writeFlowTree(const std::string& filename = "", bool states = false) { return Output::writeFlowTree(*this, filename, states); }
+  std::string writeFlowTree(const std::string& filename = "", bool states = false) { return infomap::writeFlowTree(*this, m_network, filename, states); }
 
   /**
    * Write Newick tree to a .tre file.
@@ -441,11 +445,11 @@ public:
    * @param states if memory network, print the state-level network without merging physical nodes within modules
    * @return the filename written to
    */
-  std::string writeNewickTree(const std::string& filename = "", bool states = false) { return Output::writeNewickTree(*this, filename, states); }
+  std::string writeNewickTree(const std::string& filename = "", bool states = false) { return infomap::writeNewickTree(*this, filename, states); }
 
-  std::string writeJsonTree(const std::string& filename = "", bool states = false, bool writeLinks = false) { return Output::writeJsonTree(*this, filename, states, writeLinks); }
+  std::string writeJsonTree(const std::string& filename = "", bool states = false, bool writeLinks = false) { return infomap::writeJsonTree(*this, m_network, filename, states, writeLinks); }
 
-  std::string writeCsvTree(const std::string& filename = "", bool states = false) { return Output::writeCsvTree(*this, filename, states); }
+  std::string writeCsvTree(const std::string& filename = "", bool states = false) { return infomap::writeCsvTree(*this, m_network, filename, states); }
 
   /**
    * Write tree to a .clu file.
@@ -457,7 +461,7 @@ public:
    * Value -1 will give the module index for the lowest level, i.e. the finest modular structure.
    * @return the filename written to
    */
-  std::string writeClu(const std::string& filename = "", bool states = false, int moduleIndexLevel = 1) { return Output::writeClu(*this, filename, states, moduleIndexLevel); }
+  std::string writeClu(const std::string& filename = "", bool states = false, int moduleIndexLevel = 1) { return infomap::writeClu(*this, m_network, filename, states, moduleIndexLevel); }
 
   /**
    * Print per level statistics
