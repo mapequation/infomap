@@ -170,6 +170,8 @@ public:
   // ---------------------------- Infomap ----------------------------
   InfomapBase& getInfomap();
 
+  const InfomapBase& getInfomap() const;
+
   InfomapBase& setInfomap(InfomapBase*);
 
   InfoNode* getInfomapRoot() noexcept;

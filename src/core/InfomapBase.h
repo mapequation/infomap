@@ -412,7 +412,7 @@ public:
 
   void queueLeafModules(PartitionQueue& partitionQueue);
 
-  bool processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevel);
+  bool processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevel) const;
 
   // ===================================================
   // Output: *
@@ -469,10 +469,6 @@ public:
    */
   unsigned int printPerLevelCodelength(std::ostream& out);
 
-  void aggregatePerLevelCodelength(std::vector<PerLevelStat>& perLevelStat, unsigned int level = 0) { aggregatePerLevelCodelength(root(), perLevelStat, level); }
-
-  void aggregatePerLevelCodelength(InfoNode& parent, std::vector<PerLevelStat>& perLevelStat, unsigned int level);
-
   // ===================================================
   // Debug: *
   // ===================================================
@@ -519,6 +515,8 @@ protected:
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };
+
+void aggregatePerLevelCodelength(const InfoNode& parent, std::vector<detail::PerLevelStat>& perLevelStat, unsigned int level = 0);
 
 namespace detail {
 

@@ -1776,7 +1776,7 @@ void InfomapBase::queueLeafModules(PartitionQueue& partitionQueue)
   partitionQueue.level = maxDepth;
 }
 
-bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevelQueue)
+bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevelQueue) const
 {
   PartitionQueue::size_t numModules = queue.size();
   std::vector<double> indexCodelengths(numModules, 0.0);
@@ -1992,7 +1992,7 @@ void InfomapBase::writeResult()
 unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
 {
   std::vector<PerLevelStat> perLevelStats;
-  aggregatePerLevelCodelength(perLevelStats);
+  aggregatePerLevelCodelength(root(), perLevelStats);
 
   unsigned int numLevels = perLevelStats.size();
 
@@ -2070,7 +2070,7 @@ unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
   return numLevels;
 }
 
-void InfomapBase::aggregatePerLevelCodelength(InfoNode& parent, std::vector<PerLevelStat>& perLevelStat, unsigned int level)
+void aggregatePerLevelCodelength(const InfoNode& parent, std::vector<detail::PerLevelStat>& perLevelStat, unsigned int level)
 {
   if (perLevelStat.size() < level + 1)
     perLevelStat.resize(level + 1);
@@ -2086,7 +2086,7 @@ void InfomapBase::aggregatePerLevelCodelength(InfoNode& parent, std::vector<PerL
 
   for (auto& module : parent) {
     if (module.getInfomapRoot() != nullptr)
-      module.getInfomap().aggregatePerLevelCodelength(perLevelStat, level + 1);
+      aggregatePerLevelCodelength(*module.getInfomapRoot(), perLevelStat, level + 1);
     else
       aggregatePerLevelCodelength(module, perLevelStat, level + 1);
   }

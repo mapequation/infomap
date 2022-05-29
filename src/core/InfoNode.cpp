@@ -57,6 +57,13 @@ InfomapBase& InfoNode::getInfomap()
   return *m_infomap;
 }
 
+const InfomapBase& InfoNode::getInfomap() const
+{
+  if (m_infomap == nullptr)
+    throw std::logic_error("InfoNode::getInfomap() called but infomap is null");
+  return *m_infomap;
+}
+
 InfoNode* InfoNode::getInfomapRoot() noexcept
 {
   return m_infomap != nullptr ? &m_infomap->root() : nullptr;
