@@ -212,7 +212,7 @@ std::map<std::string, LinkMap> aggregateModuleLinks(InfomapBase& im, bool states
 
   std::map<std::string, LinkMap> moduleLinks;
 
-  for (auto& leaf : im.getLeafNodes()) {
+  for (auto& leaf : im.leafNodes()) {
     for (auto& link : leaf->outEdges()) {
       double flow = link->data.flow;
       InfoNode* sourceParent = stateIdToParent[link->source->stateId];

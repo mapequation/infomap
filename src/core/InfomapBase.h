@@ -60,14 +60,8 @@ public:
   virtual ~InfomapBase() = default;
 
   // ===================================================
-  // Getters
+  // Iterators
   // ===================================================
-
-  Network& network() { return m_network; }
-  const Network& network() const { return m_network; }
-
-  InfoNode& root() { return m_root; }
-  const InfoNode& root() const { return m_root; }
 
   InfomapIterator iterTree(int maxClusterLevel = 1) { return { &root(), maxClusterLevel }; }
 
@@ -84,6 +78,16 @@ public:
   InfomapIterator begin(int maxClusterLevel = 1) { return { &root(), maxClusterLevel }; }
 
   InfomapIterator end() { return InfomapIterator(nullptr); }
+
+  // ===================================================
+  // Getters
+  // ===================================================
+
+  Network& network() { return m_network; }
+  const Network& network() const { return m_network; }
+
+  InfoNode& root() { return m_root; }
+  const InfoNode& root() const { return m_root; }
 
   unsigned int numLeafNodes() const { return m_leafNodes.size(); }
 
@@ -131,6 +135,36 @@ public:
     return oneLevelCodelength < 1e-16 ? 0 : 1.0 - codelength() / oneLevelCodelength;
   }
 
+  const Date& getStartDate() const { return m_startDate; }
+  const Stopwatch& getElapsedTime() const { return m_elapsedTime; }
+
+  std::vector<InfoNode*>& activeNetwork() const { return *m_activeNetwork; }
+
+  // ===================================================
+  // IO
+  // ===================================================
+
+  std::ostream& toString(std::ostream& out) const { return m_optimizer->toString(out); }
+
+  // ===================================================
+  // Run
+  // ===================================================
+
+  using InitialPartition = std::map<unsigned int, unsigned int>;
+
+  const InitialPartition& getInitialPartition() const { return m_initialPartition; }
+
+  InfomapBase& setInitialPartition(const InitialPartition& moduleIds)
+  {
+    m_initialPartition = moduleIds;
+    return *this;
+  }
+
+  void run(const std::string& parameters = "");
+
+  void run(Network& network);
+
+private:
   bool isFullNetwork() const { return m_isMain && m_aggregationLevel == 0; }
   bool isFirstLoop() const { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 
@@ -174,45 +208,14 @@ public:
   }
 
   bool isTopLevel() const { return (m_subLevel & (SUPER_LEVEL_ADDITION - 1)) == 0; }
+
   bool isSuperLevelOnTopLevel() const { return m_subLevel == SUPER_LEVEL_ADDITION; }
+
   bool isMainInfomap() const { return m_isMain; }
-
-  const Date& getStartDate() const noexcept { return m_startDate; }
-  const Stopwatch& getElapsedTime() const noexcept { return m_elapsedTime; }
-
-  const std::vector<InfoNode*>& getLeafNodes() const { return m_leafNodes; }
 
   bool haveHardPartition() const { return !m_originalLeafNodes.empty(); }
 
-  std::vector<InfoNode*>& activeNetwork() const { return *m_activeNetwork; }
-
-  // ===================================================
-  // IO
-  // ===================================================
-
-  std::ostream& toString(std::ostream& out) const { return m_optimizer->toString(out); }
-
-  const std::map<unsigned int, unsigned int>& getInitialPartition() const { return m_initialPartition; }
-
-  // ===================================================
-  // Init
-  // ===================================================
-
   double calcEntropyRate();
-
-  InfomapBase& setInitialPartition(const std::map<unsigned int, unsigned int>& moduleIds)
-  {
-    m_initialPartition = moduleIds;
-    return *this;
-  }
-
-  // ===================================================
-  // Run
-  // ===================================================
-
-  void run(const std::string& parameters = "");
-
-  void run(Network& network);
 
   // ===================================================
   // Run: *
@@ -413,6 +416,7 @@ public:
 
   bool processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevel) const;
 
+public:
   // ===================================================
   // Output: *
   // ===================================================
@@ -462,6 +466,7 @@ public:
    */
   std::string writeClu(const std::string& filename = "", bool states = false, int moduleIndexLevel = 1) { return infomap::writeClu(*this, m_network, filename, states, moduleIndexLevel); }
 
+private:
   // ===================================================
   // Debug: *
   // ===================================================
@@ -481,7 +486,7 @@ protected:
   std::vector<InfoNode*> m_originalLeafNodes;
 
   Network m_network;
-  std::map<unsigned int, unsigned int> m_initialPartition = {}; // nodeId -> moduleId
+  InitialPartition m_initialPartition = {}; // nodeId -> moduleId
 
   const unsigned int SUPER_LEVEL_ADDITION = 1 << 20;
   bool m_isMain = true;
