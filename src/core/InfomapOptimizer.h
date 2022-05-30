@@ -28,78 +28,77 @@ class InfomapOptimizer : public InfomapOptimizerBase {
   using DeltaFlowDataType = typename Objective::DeltaFlowDataType;
 
 public:
-  InfomapOptimizer() = default;
-
-  virtual ~InfomapOptimizer() = default;
-
-  virtual void init(InfomapBase* infomap);
+  void init(InfomapBase* infomap) override
+  {
+    m_infomap = infomap;
+    m_objective.init(infomap->getConfig());
+  }
 
   // ===================================================
   // IO
   // ===================================================
 
-  virtual std::ostream& toString(std::ostream& out) const;
+  std::ostream& toString(std::ostream& out) const override { return out << m_objective; }
 
   // ===================================================
   // Getters
   // ===================================================
 
-  virtual double getCodelength() const;
+  double getCodelength() const override { return m_objective.getCodelength(); }
 
-  virtual double getIndexCodelength() const;
+  double getIndexCodelength() const override { return m_objective.getIndexCodelength(); }
 
-  virtual double getModuleCodelength() const;
+  double getModuleCodelength() const override { return m_objective.getModuleCodelength(); }
 
-  virtual double getMetaCodelength(bool unweighted = false) const;
+  double getMetaCodelength(bool unweighted = false) const override;
 
 protected:
-  virtual unsigned int numActiveModules() const;
+  unsigned int numActiveModules() const override { return m_infomap->activeNetwork().size() - m_emptyModules.size(); }
 
   // ===================================================
   // Run: Init: *
   // ===================================================
 
   // Init terms that is constant for the whole network
-  virtual void initTree();
+  void initTree() override;
 
-  virtual void initNetwork();
+  void initNetwork() override;
 
-  virtual void initSuperNetwork();
+  void initSuperNetwork() override;
 
-  virtual double calcCodelength(const InfoNode& parent) const;
+  double calcCodelength(const InfoNode& parent) const override { return m_objective.calcCodelength(parent); }
 
   // ===================================================
   // Run: Partition: *
   // ===================================================
 
-  virtual void initPartition();
+  void initPartition() override;
 
-  virtual void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules);
+  void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules) override;
 
-  bool moveNodeToPredefinedModule(InfoNode& node, unsigned int module);
+  bool moveNodeToPredefinedModule(InfoNode& current, unsigned int module);
 
-  virtual unsigned int optimizeActiveNetwork();
+  unsigned int optimizeActiveNetwork() override;
 
-  virtual unsigned int tryMoveEachNodeIntoBestModule();
+  unsigned int tryMoveEachNodeIntoBestModule() override;
 
-  virtual unsigned int tryMoveEachNodeIntoBestModuleInParallel();
+  unsigned int tryMoveEachNodeIntoBestModuleInParallel() override;
 
-  virtual void consolidateModules(bool replaceExistingModules = true);
+  void consolidateModules(bool replaceExistingModules = true) override;
 
-  virtual bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false);
+  bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false) override;
 
   // ===================================================
   // Debug: *
   // ===================================================
 
-  virtual void printDebug();
+  void printDebug() override { m_objective.printDebug(); }
 
   // ===================================================
   // Protected members
   // ===================================================
 
-  InfomapBase* m_infomap;
-
+  InfomapBase* m_infomap = nullptr;
   Objective m_objective;
   Objective m_consolidatedObjective;
   std::vector<FlowDataType> m_moduleFlowData;
@@ -107,45 +106,9 @@ protected:
   std::vector<unsigned int> m_emptyModules;
 };
 
-template <typename Objective>
-inline void InfomapOptimizer<Objective>::init(InfomapBase* infomap)
-{
-  m_infomap = infomap;
-  Config& conf = infomap->getConfig();
-  m_objective.init(conf);
-}
-
-// ===================================================
-// IO
-// ===================================================
-
-template <typename Objective>
-inline std::ostream& InfomapOptimizer<Objective>::toString(std::ostream& out) const
-{
-  return out << m_objective;
-}
-
 // ===================================================
 // Getters
 // ===================================================
-
-template <typename Objective>
-inline double InfomapOptimizer<Objective>::getCodelength() const
-{
-  return m_objective.getCodelength();
-}
-
-template <typename Objective>
-inline double InfomapOptimizer<Objective>::getIndexCodelength() const
-{
-  return m_objective.getIndexCodelength();
-}
-
-template <typename Objective>
-inline double InfomapOptimizer<Objective>::getModuleCodelength() const
-{
-  return m_objective.getModuleCodelength();
-}
 
 template <>
 inline double InfomapOptimizer<MetaMapEquation>::getMetaCodelength(bool unweighted) const
@@ -157,12 +120,6 @@ template <typename Objective>
 inline double InfomapOptimizer<Objective>::getMetaCodelength(bool /*unweighted*/) const
 {
   return 0.0;
-}
-
-template <typename Objective>
-inline unsigned int InfomapOptimizer<Objective>::numActiveModules() const
-{
-  return m_infomap->activeNetwork().size() - m_emptyModules.size();
 }
 
 // ===================================================
@@ -191,12 +148,6 @@ inline void InfomapOptimizer<Objective>::initSuperNetwork()
 {
   Log(4) << "InfomapOptimizer::initSuperNetwork()...\n";
   m_objective.initSuperNetwork(m_infomap->root());
-}
-
-template <typename Objective>
-inline double InfomapOptimizer<Objective>::calcCodelength(const InfoNode& parent) const
-{
-  return m_objective.calcCodelength(parent);
 }
 
 // ===================================================
@@ -384,7 +335,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     oldModuleDelta.module = current.index; // Make sure index is correct if created new
 
     // Option to move to empty module (if node not already alone)
-    if (m_moduleMembers[current.index] > 1 && m_emptyModules.size() > 0) {
+    if (m_moduleMembers[current.index] > 1 && !m_emptyModules.empty()) {
       deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
     }
 
@@ -569,7 +520,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
     oldModuleDelta.module = current.index; // Make sure index is correct if created new
 
     // Option to move to empty module (if node not already alone)
-    if (m_moduleMembers[current.index] > 1 && m_emptyModules.size() > 0) {
+    if (m_moduleMembers[current.index] > 1 && !m_emptyModules.empty()) {
       // deltaFlow[m_emptyModules.back()] += DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0);
       deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
     }
@@ -631,15 +582,11 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
         unsigned int bestModuleIndex = bestDeltaModule.module;
         unsigned int oldModuleIndex = current.index;
 
-        bool validMove;
-
-        if (bestModuleIndex == m_emptyModules.back()) {
-          // Check validity of move to empty target
-          validMove = m_moduleMembers[oldModuleIndex] > 1 && m_emptyModules.size() > 0;
-        } else {
-          // Not valid if the best module is empty now but not when decided
-          validMove = m_moduleMembers[bestModuleIndex] > 0;
-        }
+        bool validMove = bestModuleIndex == m_emptyModules.back()
+            // Check validity of move to empty target
+            ? m_moduleMembers[oldModuleIndex] > 1 && !m_emptyModules.empty()
+            // Not valid if the best module is empty now but not when decided
+            : m_moduleMembers[bestModuleIndex] > 0;
 
         if (validMove) {
           // Recalculate delta codelength for proposed move to see if still an improvement
@@ -807,16 +754,6 @@ inline bool InfomapOptimizer<Objective>::restoreConsolidatedOptimizationPointIfN
     return true;
   }
   return false;
-}
-
-// ===================================================
-// Debug: *
-// ===================================================
-
-template <typename Objective>
-inline void InfomapOptimizer<Objective>::printDebug()
-{
-  m_objective.printDebug();
 }
 
 } /* namespace infomap */
