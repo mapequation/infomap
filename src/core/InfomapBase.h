@@ -45,7 +45,6 @@ class InfomapBase : public InfomapConfig<InfomapBase> {
 
 public:
   using PartitionQueue = detail::PartitionQueue;
-  using PerLevelStat = detail::PerLevelStat;
 
   InfomapBase() : InfomapConfig<InfomapBase>() { initOptimizer(); }
 
@@ -463,12 +462,6 @@ public:
    */
   std::string writeClu(const std::string& filename = "", bool states = false, int moduleIndexLevel = 1) { return infomap::writeClu(*this, m_network, filename, states, moduleIndexLevel); }
 
-  /**
-   * Print per level statistics
-   * @param out The output stream to print the per level statistics to
-   */
-  unsigned int printPerLevelCodelength(std::ostream& out);
-
   // ===================================================
   // Debug: *
   // ===================================================
@@ -515,6 +508,11 @@ protected:
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };
+
+/**
+ * Print per level statistics
+ */
+unsigned int printPerLevelCodelength(const InfoNode& parent, std::ostream& out);
 
 void aggregatePerLevelCodelength(const InfoNode& parent, std::vector<detail::PerLevelStat>& perLevelStat, unsigned int level = 0);
 

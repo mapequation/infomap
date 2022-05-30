@@ -272,7 +272,7 @@ void InfomapBase::run(Network& network)
       if (m_hierarchicalCodelength < bestHierarchicalCodelength - 1e-10) {
         bestSolutionStatistics.clear();
         bestSolutionStatistics.str("");
-        bestNumLevels = printPerLevelCodelength(bestSolutionStatistics);
+        bestNumLevels = printPerLevelCodelength(root(), bestSolutionStatistics);
         bestHierarchicalCodelength = m_hierarchicalCodelength;
         bestTrialIndex = i;
         sortTreeOnFlow();
@@ -1989,10 +1989,10 @@ void InfomapBase::writeResult()
   }
 }
 
-unsigned int InfomapBase::printPerLevelCodelength(std::ostream& out)
+unsigned int printPerLevelCodelength(const InfoNode& parent, std::ostream& out)
 {
-  std::vector<PerLevelStat> perLevelStats;
-  aggregatePerLevelCodelength(root(), perLevelStats);
+  std::vector<detail::PerLevelStat> perLevelStats;
+  aggregatePerLevelCodelength(parent, perLevelStats);
 
   unsigned int numLevels = perLevelStats.size();
 
