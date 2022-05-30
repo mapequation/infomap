@@ -261,7 +261,7 @@ void InfomapBase::run(Network& network)
     if (!noInfomap)
       runPartition();
     else
-      m_hierarchicalCodelength = calcCodelengthOnTree(true);
+      m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
 
     if (haveHardPartition())
       restoreHardPartition();
@@ -275,7 +275,7 @@ void InfomapBase::run(Network& network)
         bestNumLevels = printPerLevelCodelength(root(), bestSolutionStatistics);
         bestHierarchicalCodelength = m_hierarchicalCodelength;
         bestTrialIndex = i;
-        sortTreeOnFlow();
+        root().sortChildrenOnFlow();
         writeResult();
         if (numTrials > 1) {
           bestTree.clear();
@@ -497,7 +497,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
   aggregateFlowValuesFromLeafToRoot();
   initTree();
   initNetwork();
-  calculateNumNonTrivialTopModules();
+  m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
   // Init partition to calculate indexCodelength and moduleCodelength
   if (haveModules())
     setActiveNetworkFromChildrenOfRoot();
@@ -505,7 +505,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
     setActiveNetworkFromLeafs();
   initPartition();
 
-  m_hierarchicalCodelength = calcCodelengthOnTree(true);
+  m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
   Log() << "\n -> Initiated to codelength " << m_hierarchicalCodelength << " in " << maxDepth << " levels with " << numTopModules() << " top modules.\n";
   Log() << std::setprecision(6);
   return *this;
@@ -783,6 +783,7 @@ void InfomapBase::init()
   Log() << "done!\n -> One-level codelength: " << m_oneLevelCodelength << '\n';
 
   Log() << "Calculating entropy rate... " << std::flush;
+
   double entropyRate = calcEntropyRate();
   Log() << "done!\n  -> Entropy rate: " << io::toPrecision(entropyRate) << '\n';
 }
@@ -821,7 +822,7 @@ void InfomapBase::hierarchicalPartition()
     if (fastHierarchicalSolution == 0) {
       Log(1) << "Removing sub modules...\n";
       removeSubModules(true);
-      m_hierarchicalCodelength = calcCodelengthOnTree(true);
+      m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
     }
 
     else if (fastHierarchicalSolution == 1) {
@@ -911,7 +912,7 @@ void InfomapBase::hierarchicalPartition()
 
   if (onlySuperModules) {
     removeSubModules(true);
-    m_hierarchicalCodelength = calcCodelengthOnTree(true);
+    m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
     return;
   }
 
@@ -922,7 +923,7 @@ void InfomapBase::hierarchicalPartition()
 
   if (fastHierarchicalSolution == 0) {
     removeSubModules(true);
-    m_hierarchicalCodelength = calcCodelengthOnTree(true);
+    m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
   }
 
   recursivePartition();
@@ -1014,11 +1015,11 @@ void InfomapBase::partition()
     }
 
     // Calculate individual module codelengths and store on the modules
-    calcCodelengthOnTree(false);
+    calcCodelengthOnTree(root(), false);
     m_root.codelength = getIndexCodelength();
     m_hierarchicalCodelength = getCodelength();
   }
-  m_hierarchicalCodelength = calcCodelengthOnTree(true);
+  m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
 }
 
 void InfomapBase::restoreHardPartition()
@@ -1065,7 +1066,7 @@ void InfomapBase::initEnterExitFlow()
   if (!isUndirectedClustering()) {
     for (auto* n : m_leafNodes) {
       auto& node = *n;
-      node.data.teleportFlow = teleportationProbability * node.data.flow;
+      node.data.teleportFlow = alpha * node.data.flow;
       node.data.teleportSourceFlow = node.data.flow;
       if (node.isDangling()) {
         node.data.teleportFlow = node.data.flow;
@@ -1090,7 +1091,7 @@ void InfomapBase::initEnterExitFlow()
   } else {
     for (auto* n : m_leafNodes) {
       auto& node = *n;
-      node.data.teleportFlow = teleportationProbability * node.data.flow;
+      node.data.teleportFlow = alpha * node.data.flow;
       node.data.teleportSourceFlow = node.data.flow;
       if (node.isDangling()) {
         node.data.teleportFlow = node.data.flow;
@@ -1204,11 +1205,11 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
   }
 }
 
-double InfomapBase::calcCodelengthOnTree(bool includeRoot)
+double InfomapBase::calcCodelengthOnTree(InfoNode& root, bool includeRoot) const
 {
   double totalCodelength = 0.0;
   // Calculate enter/exit flow (assuming 0 by default)
-  for (auto& node : m_root.infomapTree()) {
+  for (auto& node : root.infomapTree()) {
     if (node.isLeaf() || (!includeRoot && node.isRoot()))
       continue;
     node.codelength = calcCodelength(node);
@@ -1274,7 +1275,7 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
   }
   m_aggregationLevel = 0;
 
-  calculateNumNonTrivialTopModules();
+  m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
 
   Log(1, 2) << (m_isCoarseTune ? "modules" : "nodes") << "*loops from codelength " << initialCodelength << " to codelength " << *this << " in " << numTopModules() << " modules. (" << m_numNonTrivialTopModules << " non-trivial modules)\n";
 }
@@ -1400,18 +1401,19 @@ unsigned int InfomapBase::coarseTune()
   return numEffectiveLoops;
 }
 
-void InfomapBase::calculateNumNonTrivialTopModules()
+unsigned int InfomapBase::calculateNumNonTrivialTopModules() const
 {
-  m_numNonTrivialTopModules = 0;
   if (root().childDegree() == 1)
-    return;
+    return 0;
+  unsigned int numNonTrivialTopModules = 0;
   for (auto& module : m_root) {
     if (module.childDegree() > 1)
-      ++m_numNonTrivialTopModules;
+      ++numNonTrivialTopModules;
   }
+  return numNonTrivialTopModules;
 }
 
-unsigned int InfomapBase::calculateMaxDepth()
+unsigned int InfomapBase::calculateMaxDepth() const
 {
   unsigned int maxDepth = 0;
   for (auto it(m_root.begin_tree()); !it.isEnd(); ++it) {
@@ -1481,7 +1483,7 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
 
     ++numLevelsCreated;
 
-    calculateNumNonTrivialTopModules();
+    m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
 
   } while (m_numNonTrivialTopModules > 1 && numLevelsCreated != superLevelLimit);
 
@@ -1492,7 +1494,7 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
   Log(1) << "Finding super modules done! Added " << numLevelsCreated << " levels with hierarchical codelength " << io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules.\n";
 
   // Calculate and store hierarchical codelengths
-  m_hierarchicalCodelength = calcCodelengthOnTree(true);
+  m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
 
   return numLevelsCreated;
 }
@@ -1575,7 +1577,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
 
     ++numLevelsCreated;
 
-    calculateNumNonTrivialTopModules();
+    m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
 
   } while (m_numNonTrivialTopModules > 1 && numLevelsCreated != superLevelLimit);
 
@@ -1586,7 +1588,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   Log(1) << "Finding super modules done! Added " << numLevelsCreated << " levels with hierarchical codelength " << io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules.\n";
 
   // Calculate and store hierarchical codelengths
-  m_hierarchicalCodelength = calcCodelengthOnTree(true);
+  m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
 
   return numLevelsCreated;
 }
@@ -1643,7 +1645,7 @@ unsigned int InfomapBase::removeSubModules(bool recalculateCodelengthOnTree)
   if (numLevelsDeleted > 0) {
     Log(2) << "Removed " << numLevelsDeleted << " levels of sub-modules.\n";
     if (recalculateCodelengthOnTree)
-      calcCodelengthOnTree(false);
+      calcCodelengthOnTree(root(), false);
   }
   return numLevelsDeleted;
 }

@@ -41,8 +41,8 @@ public:
   virtual ~InfomapIterator() = default;
   InfomapIterator(const InfomapIterator&) = default;
   InfomapIterator& operator=(const InfomapIterator&) = default;
-  InfomapIterator(InfomapIterator&&) = default;
-  InfomapIterator& operator=(InfomapIterator&&) = default;
+  InfomapIterator(InfomapIterator&&) noexcept = default;
+  InfomapIterator& operator=(InfomapIterator&&) noexcept = default;
 
   InfoNode* current() noexcept { return m_current; }
 

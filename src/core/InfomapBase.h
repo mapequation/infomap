@@ -77,7 +77,7 @@ public:
 
   InfomapIterator begin(int maxClusterLevel = 1) { return { &root(), maxClusterLevel }; }
 
-  InfomapIterator end() { return InfomapIterator(nullptr); }
+  InfomapIterator end() const { return InfomapIterator(nullptr); }
 
   // ===================================================
   // Getters
@@ -295,8 +295,6 @@ private:
 
   void restoreHardPartition();
 
-  void sortTreeOnFlow() { root().sortChildrenOnFlow(); }
-
   void writeResult();
 
   // ===================================================
@@ -332,7 +330,7 @@ private:
    * @param includeRoot Also calculate the codelength on the root node
    * @return the hierarchical codelength
    */
-  double calcCodelengthOnTree(bool includeRoot = true);
+  double calcCodelengthOnTree(InfoNode& root, bool includeRoot = true) const;
 
   // ===================================================
   // Run: Partition: *
@@ -365,9 +363,9 @@ private:
     return m_optimizer->consolidateModules(replaceExistingModules);
   }
 
-  void calculateNumNonTrivialTopModules();
+  unsigned int calculateNumNonTrivialTopModules() const;
 
-  unsigned int calculateMaxDepth();
+  unsigned int calculateMaxDepth() const;
 
   // ===================================================
   // Partition: findTopModulesRepeatedly: *
@@ -471,7 +469,7 @@ private:
   // Debug: *
   // ===================================================
 
-  void printDebug() { return m_optimizer->printDebug(); }
+  void printDebug() const { return m_optimizer->printDebug(); }
 
   // ===================================================
   // Members
