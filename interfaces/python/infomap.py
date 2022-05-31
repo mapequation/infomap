@@ -62,6 +62,7 @@ def _construct_args(
     clu_level=None,
     output=None,
     hide_bipartite_nodes=False,
+    print_all_trials=False,
     # algorithm
     two_level=False,
     flow_model=None,
@@ -172,6 +173,9 @@ def _construct_args(
 
     if hide_bipartite_nodes:
         args += " --hide-bipartite-nodes"
+
+    if print_all_trials:
+        args += " --print-all-trials"
 
     # algorithm
     if two_level:
@@ -324,6 +328,7 @@ class Infomap(InfomapWrapper):
         clu_level=None,
         output=None,
         hide_bipartite_nodes=False,
+        print_all_trials=False,
         # algorithm
         two_level=False,
         flow_model=None,
@@ -422,6 +427,8 @@ class Infomap(InfomapWrapper):
             Options: clu, tree, ftree, newick, json, csv, network, states.
         hide_bipartite_nodes : bool, optional
             Project bipartite solution to unipartite.
+        print_all_trials : bool, optional
+            Print all trials to separate files.
         two_level : bool, optional
             Optimize a two-level partition of the network.
             Default (``false``) is multi-level.
@@ -526,6 +533,7 @@ class Infomap(InfomapWrapper):
                 clu_level=clu_level,
                 output=output,
                 hide_bipartite_nodes=hide_bipartite_nodes,
+                print_all_trials=print_all_trials,
                 two_level=two_level,
                 flow_model=flow_model,
                 directed=directed,
@@ -1329,6 +1337,7 @@ If you want to set node names, use set_name."""
         clu_level=None,
         output=None,
         hide_bipartite_nodes=False,
+        print_all_trials=False,
         # algorithm
         two_level=False,
         flow_model=None,
@@ -1430,6 +1439,8 @@ If you want to set node names, use set_name."""
             Options: clu, tree, ftree, newick, json, csv, network, states.
         hide_bipartite_nodes : bool, optional
             Project bipartite solution to unipartite.
+        print_all_trials : bool, optional
+            Print all trials to separate files.
         two_level : bool, optional
             Optimize a two-level partition of the network.
             Default (``false``) is multi-level.
@@ -1537,6 +1548,7 @@ If you want to set node names, use set_name."""
             clu_level=clu_level,
             output=output,
             hide_bipartite_nodes=hide_bipartite_nodes,
+            print_all_trials=print_all_trials,
             two_level=two_level,
             flow_model=flow_model,
             directed=directed,
