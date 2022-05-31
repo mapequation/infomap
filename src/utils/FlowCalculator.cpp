@@ -35,13 +35,12 @@ inline void normalize(std::vector<T>& v) noexcept
 }
 
 FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
+    : numNodes(network.numNodes())
 {
   Log() << "Calculating global network flow using flow model '" << config.flowModel << "'... " << std::flush;
 
   // Prepare data in sequence containers for fast access of individual elements
   // Map to zero-based dense indexing
-  numNodes = network.numNodes();
-
   nodeFlow.assign(numNodes, 0.0);
   nodeTeleportWeights.assign(numNodes, 0.0); // Fraction of teleportation flow landing on node i
 
@@ -92,8 +91,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     }
   }
 
-  numLinks = network.numLinks();
-  flowLinks.resize(numLinks, { 0, 0, 0.0 });
+  flowLinks.resize(network.numLinks(), { 0, 0, 0.0 });
   sumLinkWeight = network.sumLinkWeight();
   sumWeightedDegree = network.sumWeightedDegree();
 

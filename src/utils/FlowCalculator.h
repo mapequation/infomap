@@ -45,7 +45,6 @@ private:
   void finalize(StateNetwork&, const Config&, bool) noexcept;
 
   unsigned int numNodes;
-  unsigned int numLinks;
   unsigned int nonDanglingStartIndex = 0;
   unsigned int bipartiteStartIndex = 0;
   unsigned int bipartiteLinkStartIndex = 0;
