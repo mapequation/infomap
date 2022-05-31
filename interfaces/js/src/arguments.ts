@@ -35,6 +35,7 @@ export interface Arguments
     cluLevel: number;
     output: OutputFormats | OutputFormats[];
     hideBipartiteNodes: boolean;
+    printAllTrials: boolean;
     // algorithm
     twoLevel: boolean;
     flowModel: "undirected" | "directed" | "undirdir" | "outdirdir" | "rawdir";
@@ -123,6 +124,8 @@ export default function argumentsToString(args: Arguments) {
   }
 
   if (args.hideBipartiteNodes) result += " --hide-bipartite-nodes";
+
+  if (args.printAllTrials) result += " --print-all-trials";
 
   if (args.twoLevel) result += " --two-level";
 

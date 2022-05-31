@@ -295,7 +295,7 @@ private:
 
   void restoreHardPartition();
 
-  void writeResult();
+  void writeResult(int trial = -1);
 
   // ===================================================
   // runPartition: *

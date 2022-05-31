@@ -269,6 +269,7 @@ void InfomapBase::run(Network& network)
     if (isMainInfomap()) {
       Log() << "\n=> Trial " << (i + 1) << "/" << numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
       m_codelengths.push_back(m_hierarchicalCodelength);
+      writeResult(static_cast<int>(i + 1));
       if (m_hierarchicalCodelength < bestHierarchicalCodelength - 1e-10) {
         bestSolutionStatistics.clear();
         bestSolutionStatistics.str("");
@@ -1871,13 +1872,22 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 // Write output
 // ===================================================
 
-void InfomapBase::writeResult()
+void InfomapBase::writeResult(int trial)
 {
   if (noFileOutput)
     return;
 
+  io::Str s;
+  s << outDirectory + outName;
+
+  if (printAllTrials && trial != -1) {
+    s << "_trial_" << trial;
+  }
+
+  std::string basename = s;
+
   if (printTree) {
-    std::string filename = outDirectory + outName + ".tree";
+    std::string filename = basename + ".tree";
 
     if (!printStates()) {
       Log() << "Write tree to " << filename << "... ";
@@ -1888,7 +1898,7 @@ void InfomapBase::writeResult()
       Log() << "Write physical tree to " << filename << "... ";
       writeTree(filename);
       Log() << "done!\n";
-      std::string filenameStates = outDirectory + outName + "_states.tree";
+      std::string filenameStates = basename + "_states.tree";
       Log() << "Write state tree to " << filenameStates << "... ";
       writeTree(filenameStates, true);
       Log() << "done!\n";
@@ -1896,7 +1906,7 @@ void InfomapBase::writeResult()
   }
 
   if (printFlowTree) {
-    std::string filename = outDirectory + outName + ".ftree";
+    std::string filename = basename + ".ftree";
 
     if (!printStates()) {
       Log() << "Write flow tree to " << filename << "... ";
@@ -1907,7 +1917,7 @@ void InfomapBase::writeResult()
       Log() << "Write physical flow tree to " << filename << "... ";
       writeFlowTree(filename, false);
       Log() << "done!\n";
-      std::string filenameStates = outDirectory + outName + "_states.ftree";
+      std::string filenameStates = basename + "_states.ftree";
       Log() << "Write state flow tree to " << filenameStates << "... ";
       writeFlowTree(filenameStates, true);
       Log() << "done!\n";
@@ -1915,7 +1925,7 @@ void InfomapBase::writeResult()
   }
 
   if (printNewick) {
-    std::string filename = outDirectory + outName + ".nwk";
+    std::string filename = basename + ".nwk";
 
     if (!printStates()) {
       Log() << "Write Newick tree to " << filename << "... ";
@@ -1926,7 +1936,7 @@ void InfomapBase::writeResult()
       Log() << "Write physical Newick tree to " << filename << "... ";
       writeNewickTree(filename, false);
       Log() << "done!\n";
-      std::string filenameStates = outDirectory + outName + "_states.nwk";
+      std::string filenameStates = basename + "_states.nwk";
       Log() << "Write state Newick tree to " << filenameStates << "... ";
       writeNewickTree(filenameStates, true);
       Log() << "done!\n";
@@ -1934,7 +1944,7 @@ void InfomapBase::writeResult()
   }
 
   if (printJson) {
-    std::string filename = outDirectory + outName + ".json";
+    std::string filename = basename + ".json";
     const bool writeLinks = false;
 
     if (!printStates()) {
@@ -1946,7 +1956,7 @@ void InfomapBase::writeResult()
       Log() << "Write physical JSON tree to " << filename << "... ";
       writeJsonTree(filename, false, writeLinks);
       Log() << "done!\n";
-      std::string filenameStates = outDirectory + outName + "_states.json";
+      std::string filenameStates = basename + "_states.json";
       Log() << "Write state JSON tree to " << filenameStates << "... ";
       writeJsonTree(filenameStates, true, writeLinks);
       Log() << "done!\n";
@@ -1954,7 +1964,7 @@ void InfomapBase::writeResult()
   }
 
   if (printCsv) {
-    std::string filename = outDirectory + outName + ".csv";
+    std::string filename = basename + ".csv";
 
     if (!printStates()) {
       Log() << "Write CSV tree to " << filename << "... ";
@@ -1965,7 +1975,7 @@ void InfomapBase::writeResult()
       Log() << "Write physical CSV tree to " << filename << "... ";
       writeCsvTree(filename, false);
       Log() << "done!\n";
-      std::string filenameStates = outDirectory + outName + "_states.csv";
+      std::string filenameStates = basename + "_states.csv";
       Log() << "Write state CSV tree to " << filenameStates << "... ";
       writeCsvTree(filenameStates, true);
       Log() << "done!\n";
@@ -1973,7 +1983,7 @@ void InfomapBase::writeResult()
   }
 
   if (printClu) {
-    std::string filename = outDirectory + outName + ".clu";
+    std::string filename = basename + ".clu";
     if (!printStates()) {
       Log() << "Write node modules to " << filename << "... ";
       writeClu(filename, false, cluLevel);
@@ -1983,7 +1993,7 @@ void InfomapBase::writeResult()
       Log() << "Write physical node modules to " << filename << "... ";
       writeClu(filename, false, cluLevel);
       Log() << "done!\n";
-      std::string filenameStates = outDirectory + outName + "_states.clu";
+      std::string filenameStates = basename + "_states.clu";
       Log() << "Write state node modules to " << filenameStates << "... ";
       writeClu(filenameStates, true, cluLevel);
       Log() << "done!\n";

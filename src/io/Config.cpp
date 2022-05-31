@@ -84,6 +84,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(hideBipartiteNodes, "hide-bipartite-nodes", "Project bipartite solution to unipartite.", "Output", true);
 
+  api.addOptionArgument(printAllTrials, "print-all-trials", "Print all trials to separate files.", "Output", true);
+
   // --------------------- Core algorithm options ---------------------
   api.addOptionArgument(twoLevel, '2', "two-level", "Optimize a two-level partition of the network. Default is multi-level.", "Algorithm");
 

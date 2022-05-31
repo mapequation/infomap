@@ -137,6 +137,7 @@ struct Config {
   bool printJson = false;
   bool printCsv = false;
   bool printClu = false;
+  bool printAllTrials = false;
   int cluLevel = 1; // Write modules at specified depth from root. 1, 2, ... or -1 for bottom level
   bool printFlowNetwork = false;
   bool printPajekNetwork = false;
