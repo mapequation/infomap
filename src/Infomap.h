@@ -59,7 +59,7 @@ public:
 
   void setBipartiteStartId(unsigned int startId) { m_network.setBipartiteStartId(startId); }
 
-  std::map<std::pair<unsigned int, unsigned int>, double> getLinks(bool flow)
+  std::map<std::pair<unsigned int, unsigned int>, double> getLinks(bool flow) const
   {
     std::map<std::pair<unsigned int, unsigned int>, double> links;
 
@@ -96,34 +96,8 @@ public:
     return modules;
   }
 
-  std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false)
-  {
-    unsigned int maxDepth = maxTreeDepth();
-    unsigned int numModuleLevels = maxDepth - 1;
-    std::map<unsigned int, std::vector<unsigned int>> modules;
-    if (maxDepth < 2) return modules;
-    for (unsigned int level = 1; level <= numModuleLevels; ++level) {
-      if (haveMemory() && !states) {
-        for (auto it(iterTreePhysical(static_cast<int>(level))); !it.isEnd(); ++it) {
-          auto& node = *it;
-          if (node.isLeaf()) {
-            modules[node.physicalId].push_back(it.moduleId());
-          }
-        }
-      } else {
-        for (auto it(iterTree(static_cast<int>(level))); !it.isEnd(); ++it) {
-          auto& node = *it;
-          if (node.isLeaf()) {
-            auto nodeId = states ? node.stateId : node.physicalId;
-            modules[nodeId].push_back(it.moduleId());
-          }
-        }
-      }
-    }
-    return modules;
-  }
-
   using InfomapBase::codelength;
+  using InfomapBase::getMultilevelModules;
   using InfomapBase::iterLeafNodes;
   using InfomapBase::iterTree;
   using InfomapBase::run;

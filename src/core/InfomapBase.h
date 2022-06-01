@@ -140,6 +140,8 @@ public:
 
   std::vector<InfoNode*>& activeNetwork() const { return *m_activeNetwork; }
 
+  std::map<unsigned int, std::vector<unsigned int>> getMultilevelModules(bool states = false);
+
   // ===================================================
   // IO
   // ===================================================

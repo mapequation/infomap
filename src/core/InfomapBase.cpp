@@ -36,6 +36,33 @@
 
 namespace infomap {
 
+std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)
+{
+  unsigned int maxDepth = maxTreeDepth();
+  unsigned int numModuleLevels = maxDepth - 1;
+  std::map<unsigned int, std::vector<unsigned int>> modules;
+  if (maxDepth < 2) return modules;
+  for (unsigned int level = 1; level <= numModuleLevels; ++level) {
+    if (haveMemory() && !states) {
+      for (auto it(iterTreePhysical(static_cast<int>(level))); !it.isEnd(); ++it) {
+        auto& node = *it;
+        if (node.isLeaf()) {
+          modules[node.physicalId].push_back(it.moduleId());
+        }
+      }
+    } else {
+      for (auto it(iterTree(static_cast<int>(level))); !it.isEnd(); ++it) {
+        auto& node = *it;
+        if (node.isLeaf()) {
+          auto nodeId = states ? node.stateId : node.physicalId;
+          modules[nodeId].push_back(it.moduleId());
+        }
+      }
+    }
+  }
+  return modules;
+}
+
 // ===================================================
 // IO
 // ===================================================

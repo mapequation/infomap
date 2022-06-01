@@ -10,7 +10,6 @@
 #include "Output.h"
 #include "../core/InfomapBase.h"
 #include "../core/StateNetwork.h"
-#include "../Infomap.h"
 #include "../io/SafeFile.h"
 
 namespace infomap {
@@ -381,8 +380,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   const auto shouldHideBipartiteNodes = im.isBipartite() && im.hideBipartiteNodes;
   const auto bipartiteStartId = shouldHideBipartiteNodes ? network.bipartiteStartId() : 0;
 
-  // Hack to re-use getMultilevelModules from Infomap.cpp
-  const auto multilevelModules = dynamic_cast<InfomapWrapper*>(&im)->getMultilevelModules(states);
+  const auto multilevelModules = im.getMultilevelModules(states);
 
   // don't append a comma after the last entry
   auto first = true;
@@ -453,13 +451,14 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   // -------------
   // Write modules
   // -------------
+
+  // Uses stateId to store depth on modules to optimize link aggregation
   auto moduleLinks = aggregateModuleLinks(im, states);
 
   first = true;
 
   outStream << "\"modules\":[";
 
-  // Use stateId to store depth on modules to optimize link aggregation
   for (auto it(im.iterModules()); !it.isEnd(); ++it) {
     const auto parentId = io::stringify(it.path(), ":");
     const auto& module = *it;
