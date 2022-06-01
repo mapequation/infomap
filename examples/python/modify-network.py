@@ -13,7 +13,7 @@ im.add_link(5, 6)
 
 im.run()
 
-print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
+print(f"Found {im.num_top_modules} modules with codelength {im.codelength:.8f} bits")
 
 modules = im.get_modules()
 
@@ -28,4 +28,4 @@ im.remove_link(5, 6)
 # Set no_infomap to skip optimization and just calculate the codelength
 im.run(initial_partition=modules, no_infomap=True)
 
-print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
+print(f"Found {im.num_top_modules} modules with codelength {im.codelength:.8f} bits")

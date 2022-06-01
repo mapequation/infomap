@@ -7,28 +7,30 @@ im.set_name(2, "SCIENCE")
 im.set_name(3, "PRL")
 im.set_name(4, "BIO")
 
+im.add_state_node(0, 1)
 im.add_state_node(1, 2)
 im.add_state_node(2, 3)
 im.add_state_node(3, 2)
 im.add_state_node(4, 2)
 im.add_state_node(5, 4)
 
+im.add_link(0, 1)
 im.add_link(1, 2)
 im.add_link(3, 2)
 im.add_link(4, 5)
 
 im.run()
 
-print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
+print(f"Found {im.num_top_modules} modules with codelength {im.codelength:.8f} bits")
 
 print("\n#node_id module")
-for node, module in im.modules:
-    print(f"{node} {module}")
+for node, module in im.get_modules(states=True).items():
+    print(node, module)
 
 print("\nState nodes:")
 print("#state_id node_id module_id")
 for node in im.nodes:
-    print(f"{node.state_id} {node.node_id} {node.module_id}")
+    print(node.state_id, node.node_id, node.module_id)
 
 print(
     "\nPhysical nodes (merging state nodes with same physical node id within modules):"
@@ -36,7 +38,7 @@ print(
 print("#node_id module_id")
 for node in im.physical_tree:
     if node.is_leaf:
-        print(f"{node.node_id} {node.module_id}")
+        print(node.node_id, node.module_id)
 
 # for node in im.physical_nodes:
-#     print(f"{node.node_id} {node.module_id}")
+#     print(node.node_id, node.module_id)

@@ -2,7 +2,9 @@ from infomap import Infomap
 
 
 def print_result(im):
-    print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
+    print(
+        f"Found {im.num_top_modules} modules with codelength {im.codelength:.8f} bits"
+    )
 
     print("#layer_id node_id module_id:")
     for node in im.nodes:

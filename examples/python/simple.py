@@ -1,10 +1,6 @@
-import infomap
+from infomap import Infomap
 
-print(f"Using Infomap {infomap.__version__}")
-
-im = infomap.Infomap(two_level=True, silent=True)
-
-print("Creating network...")
+im = Infomap(two_level=True, silent=True)
 
 # Optionally add nodes with names
 im.add_node(0, "Node 0")
@@ -31,11 +27,11 @@ print("Run Infomap...")
 
 im.run()
 
-print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
+print(f"Found {im.num_top_modules} modules with codelength {im.codelength:.8f} bits")
 
 print("\n#node_id module_id")
 for node, module in im.modules:
-    print(f"{node} {module}")
+    print(node, module)
 
 print("\n#node_id module_id path depth child_index flow [name]:")
 for node in im.nodes:
@@ -45,13 +41,19 @@ for node in im.nodes:
         node.path,
         node.depth,
         node.child_index,
-        node.flow,
+        f"{node.flow:.5f}",
         im.get_name(node.node_id, default=node.node_id),
     )
 
 print("\n#path flow enter_flow exit_flow is_leaf")
 for node in im.tree:
-    print(node.path, node.flow, node.data.enter_flow, node.data.exit_flow, node.is_leaf)
+    print(
+        node.path,
+        f"{node.flow:.5f}",
+        f"{node.data.enter_flow:.5f}",
+        f"{node.data.exit_flow:.5f}",
+        "leaf" if node.is_leaf else "module",
+    )
 
 
 print("\nDone!")

@@ -46,13 +46,17 @@ im.initial_partition = partition1
 
 im.run(no_infomap=True)
 
-print(f"Partition one with {im.num_top_modules} modules -> codelength: {im.codelength}")
+print(
+    f"Partition one with {im.num_top_modules} modules -> codelength: {im.codelength:.8f} bits"
+)
 
 
 # Set initial partition as run parameter to only use it for this run (will be restored to partition1 after)
 im.run(initial_partition=partition2, no_infomap=True)
 
-print(f"Partition two with {im.num_top_modules} modules -> codelength: {im.codelength}")
+print(
+    f"Partition two with {im.num_top_modules} modules -> codelength: {im.codelength:.8f} bits"
+)
 
 # Output:
 # Partition one with 3 modules -> codelength: 2.5555555555555554

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import pathlib
 
 import matplotlib.colors as colors
@@ -12,27 +10,6 @@ from infomap import Infomap
 Generate and draw a network with NetworkX, colored
 according to the community structure found by Infomap.
 """
-
-
-def find_communities(G, **kwargs):
-    """
-    Partition network with the Infomap algorithm.
-    Annotates nodes with 'community' id.
-    """
-
-    im = Infomap(**kwargs)
-
-    print("Building Infomap network from a NetworkX graph...")
-
-    im.add_networkx_graph(G)
-
-    print("Find communities with Infomap...")
-    im.run()
-
-    print(f"Found {im.num_top_modules} modules with codelength: {im.codelength}")
-
-    communities = im.get_modules()
-    nx.set_node_attributes(G, communities, "community")
 
 
 def draw_network(G):
@@ -87,5 +64,15 @@ def draw_network(G):
 
 G = nx.karate_club_graph()
 
-find_communities(G, two_level=True, silent=True, num_trials=5)
+print("Building Infomap network from a NetworkX graph...")
+im = Infomap(two_level=True, silent=True, num_trials=20)
+im.add_networkx_graph(G)
+
+print("Find communities with Infomap...")
+im.run()
+
+print(f"Found {im.num_top_modules} modules with codelength {im.codelength:.8f} bits")
+
+nx.set_node_attributes(G, im.get_modules(), "community")
+
 draw_network(G)
