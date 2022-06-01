@@ -17,7 +17,6 @@
 namespace infomap {
 
 class InfomapBase;
-class InfoNode;
 class StateNetwork;
 
 std::string writeTree(InfomapBase&, const StateNetwork&, const std::string&, bool states);

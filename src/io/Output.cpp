@@ -475,10 +475,11 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
     outStream << "{";
 
     outStream << "\"path\":[" << (parentId.empty() ? "0" : path) << "],"
-              << "\"enterFlow\":" << module.data.enterFlow << ","
-              << "\"exitFlow\":" << module.data.exitFlow << ","
-              << "\"numEdges\":" << links.size() << ","
-              << "\"numChildren\":" << module.infomapChildDegree();
+              << "\"enterFlow\":" << module.data.enterFlow << ','
+              << "\"exitFlow\":" << module.data.exitFlow << ','
+              << "\"numEdges\":" << links.size() << ','
+              << "\"numChildren\":" << module.infomapChildDegree() << ','
+              << "\"codelength\":" << module.codelength;
 
     if (writeLinks) {
       outStream << ","
