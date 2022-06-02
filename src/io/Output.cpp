@@ -459,6 +459,11 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
 
   outStream << "\"modules\":[";
 
+  double total_savings = 0.0;
+  double total_l1 = 0.0;
+
+  auto oneLevelCodelength = im.getOneLevelCodelength();
+
   for (auto it(im.iterModules()); !it.isEnd(); ++it) {
     const auto parentId = io::stringify(it.path(), ":");
     const auto& module = *it;
@@ -471,6 +476,10 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
       outStream << ",";
     }
 
+    double moduleSavings = module.savings();
+    total_savings += moduleSavings;
+    total_l1 += module.oneLevelCodelength();
+
     outStream << "{";
 
     outStream << "\"path\":[" << (parentId.empty() ? "0" : path) << "],"
@@ -478,7 +487,8 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
               << "\"exitFlow\":" << module.data.exitFlow << ','
               << "\"numEdges\":" << links.size() << ','
               << "\"numChildren\":" << module.infomapChildDegree() << ','
-              << "\"codelength\":" << module.codelength;
+              << "\"codelength\":" << module.codelength << ','
+              << "\"moduleSavings\":" << moduleSavings;
 
     if (writeLinks) {
       outStream << ","
@@ -503,6 +513,8 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
 
     outStream << "}";
   }
+  Log() << "\n!!!!!!!!!!!! module savings: " << total_savings << " savings: " << oneLevelCodelength - im.codelength() << '\n';
+  Log() << "!!!!!!!!!!!! module l1: " << total_l1 << " one level: " << oneLevelCodelength << '\n';
 
   outStream << "]"; // modules
 

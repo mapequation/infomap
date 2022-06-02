@@ -15,12 +15,14 @@
 #include "iterators/infomapIterators.h"
 #include "iterators/IterWrapper.h"
 #include "../utils/MetaCollection.h"
+#include "iterators/InfomapIterator.h"
 
 #include <stdexcept>
 #include <memory>
 #include <iostream>
 #include <vector>
 #include <limits>
+#include <numeric>
 
 namespace infomap {
 
@@ -233,6 +235,8 @@ public:
 
   const_infomap_iterator_wrapper infomapTree(unsigned int maxClusterLevel = std::numeric_limits<unsigned int>::max()) const noexcept { return { { this, static_cast<int>(maxClusterLevel) }, { nullptr } }; }
 
+  InfomapIterator testIter() { return { this }; }
+
   // ---------------------------- Graph iterators ----------------------------
 
   edge_iterator begin_outEdge() noexcept { return m_outEdges.begin(); }
@@ -271,6 +275,37 @@ public:
   unsigned int inDegree() const noexcept { return m_inEdges.size(); }
 
   unsigned int degree() const noexcept { return outDegree() + inDegree(); }
+
+  double oneLevelCodelength() const
+  {
+    // TODO deal with higher-order
+    if (isLeaf()) {
+      return -infomath::plogp(data.flow);
+    }
+
+    return std::accumulate(begin_child(), end_child(), 0.0, [](double tot, const auto& n) { return tot + n.oneLevelCodelength(); });
+//    if (isLeafModule()) {
+//      return entropy;
+//    }
+//
+//    return 0.0;
+  }
+
+  double hierarchicalCodelength() const {
+    if (isLeaf()) return 0.0;
+
+    if (isLeafModule()) return codelength;
+
+    return codelength + std::accumulate(begin_child(), end_child(), 0.0,
+      [](double tot, const auto& n) { return tot + n.hierarchicalCodelength(); });
+  }
+
+  double savings() const
+  {
+    if (isLeaf()) return 0.0; // TODO add later
+
+    return oneLevelCodelength() - hierarchicalCodelength();
+  }
 
   // ---------------------------- Order ----------------------------
   bool isFirst() const noexcept { return !parent || parent->firstChild == this; }
