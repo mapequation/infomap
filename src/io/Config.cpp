@@ -128,7 +128,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
   // --------------------- Performance and accuracy options ---------------------
   api.addOptionArgument(seedToRandomNumberGenerator, 's', "seed", "A seed (integer) to the random number generator for reproducible results.", ArgType::integer, "Accuracy");
 
-  api.addOptionArgument(numTrials, 'N', "num-trials", "Number of outer-most loops to run before picking the best solution.", ArgType::integer, "Accuracy");
+  int _numTrials = 1;
+  api.addOptionArgument(_numTrials, 'N', "num-trials", "Number of outer-most loops to run before picking the best solution.", ArgType::integer, "Accuracy");
 
   api.addOptionArgument(coreLoopLimit, 'M', "core-loop-limit", "Limit the number of loops that tries to move each node into the best possible module.", ArgType::integer, "Accuracy", true);
 
@@ -157,6 +158,11 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
   if (deprecated_includeSelfLinks) {
     throw std::runtime_error("The --include-self-links flag is deprecated to include self links by default. Use --no-self-links to exclude.");
   }
+
+  if (_numTrials < 1) {
+    throw std::runtime_error("Must use at least 1 trial.");
+  }
+  numTrials = static_cast<unsigned int>(_numTrials);
 
   if (!optionalOutputDir.empty())
     outDirectory = optionalOutputDir[0];
