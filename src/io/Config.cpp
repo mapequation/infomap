@@ -46,7 +46,7 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(weightThreshold, "weight-threshold", "Limit the number of links to read from the network. Ignore links with less weight than the threshold.", ArgType::number, "Input", true);
 
-  api.addOptionArgument(deprecated_includeSelfLinks, 'k', "include-self-links", "DEPRECATED. Include self links by default now, exclude with --no-self-links.", "Input", true);
+  api.addOptionArgument(deprecated_includeSelfLinks, 'k', "include-self-links", "DEPRECATED. Include self links by default now, exclude with --no-self-links.", "Input", true).setHidden(true);
 
   api.addOptionArgument(noSelfLinks, "no-self-links", "Exclude self links in the input network.", "Input", true);
 
