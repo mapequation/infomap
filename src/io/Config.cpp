@@ -205,6 +205,10 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
   parsedString = flags;
   parsedOptions = api.getUsedOptionArguments();
 
+  if (printAllTrials && numTrials < 2) {
+    printAllTrials = false;
+  }
+
   adaptDefaults();
 
   Log::init(verbosity, silent, verboseNumberPrecision);

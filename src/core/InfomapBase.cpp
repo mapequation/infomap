@@ -296,7 +296,11 @@ void InfomapBase::run(Network& network)
     if (isMainInfomap()) {
       Log() << "\n=> Trial " << (i + 1) << "/" << numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
       m_codelengths.push_back(m_hierarchicalCodelength);
-      writeResult(static_cast<int>(i + 1));
+
+      if (printAllTrials && numTrials > 1) {
+        writeResult(static_cast<int>(i + 1));
+      }
+
       if (m_hierarchicalCodelength < bestHierarchicalCodelength - 1e-10) {
         bestSolutionStatistics.clear();
         bestSolutionStatistics.str("");
@@ -1907,7 +1911,7 @@ void InfomapBase::writeResult(int trial)
   io::Str s;
   s << outDirectory + outName;
 
-  if (printAllTrials && trial != -1) {
+  if (printAllTrials && trial != -1 && numTrials > 1) {
     s << "_trial_" << trial;
   }
 
