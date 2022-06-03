@@ -176,6 +176,8 @@ public:
   std::map<unsigned int, std::string>& names() { return m_names; }
   const std::map<unsigned int, std::string>& names() const { return m_names; }
 
+  virtual const std::map<unsigned int, std::vector<int>>& metaData() const = 0;
+
   bool haveDirectedInput() const { return m_haveDirectedInput; }
   bool haveMemoryInput() const { return m_haveMemoryInput; }
   bool higherOrderInputMethodCalled() const { return m_higherOrderInputMethodCalled; }

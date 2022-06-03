@@ -92,7 +92,7 @@ public:
   virtual void readMetaData(const std::string& filename);
 
   unsigned int numMetaDataColumns() const { return m_numMetaDataColumns; }
-  const std::map<unsigned int, std::vector<int>>& metaData() const { return m_metaData; }
+  const std::map<unsigned int, std::vector<int>>& metaData() const override { return m_metaData; }
 
   bool isMultilayerNetwork() const { return !m_layerNodeToStateId.empty(); }
   const std::map<unsigned int, std::map<unsigned int, unsigned int>>& layerNodeToStateId() const { return m_layerNodeToStateId; }
