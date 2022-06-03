@@ -382,6 +382,19 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
 
   const auto multilevelModules = im.getMultilevelModules(states);
 
+  auto metaData = network.metaData();
+  auto writeMeta = [&metaData](auto& outStream, auto nodeId) {
+    outStream << "\"metadata\":{";
+    auto meta = metaData[nodeId];
+    for (unsigned int i = 0; i < meta.size(); ++i) {
+      outStream << '"' << i << "\":"
+                << '"' << meta[i] << '"'; // metadata class as string to highlight that this is a categorical variable
+      if (i < meta.size() - 1)
+        outStream << ',';
+    }
+    outStream << "},";
+  };
+
   // don't append a comma after the last entry
   auto first = true;
 
@@ -434,6 +447,11 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
                   << "\"name\":\"" << getNodeName(network.names(), node) << "\","
                   << "\"flow\":" << node.data.flow << ","
                   << "\"mec\":" << it.modularCentrality() << ",";
+
+        // can't currently use both memory and meta map equation
+        if (im.haveMetaData() && !states) {
+          writeMeta(outStream, node.physicalId);
+        }
 
         if (states) {
           outStream << "\"stateId\":" << node.stateId << ",";
