@@ -145,6 +145,36 @@ struct ArgumentOption : Option {
   T& target;
 };
 
+template <typename T>
+struct LowerBoundArgumentOption : ArgumentOption<T> {
+  LowerBoundArgumentOption(T& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced, std::string argName, T minValue)
+      : ArgumentOption<T>(target, shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, std::move(argName)), minValue(minValue) { }
+
+  bool parse(std::string const& value) override
+  {
+    auto ok = ArgumentOption<T>::parse(value);
+    if (ArgumentOption<T>::target < minValue) return false;
+    return ok;
+  }
+
+  T minValue;
+};
+
+template <typename T>
+struct LowerUpperBoundArgumentOption : LowerBoundArgumentOption<T> {
+  LowerUpperBoundArgumentOption(T& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced, std::string argName, T minValue, T maxValue)
+      : LowerBoundArgumentOption<T>(target, shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, std::move(argName), minValue), maxValue(maxValue) { }
+
+  bool parse(std::string const& value) override
+  {
+    auto ok = LowerBoundArgumentOption<T>::parse(value);
+    if (LowerBoundArgumentOption<T>::target > maxValue) return false;
+    return ok;
+  }
+
+  T maxValue;
+};
+
 template <>
 struct ArgumentOption<bool> : Option {
   ArgumentOption(bool& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced)
@@ -302,9 +332,7 @@ public:
   // Without shortName
   Option& addOptionArgument(bool& target, std::string longName, std::string description, std::string group, bool isAdvanced = false)
   {
-    auto* o = new ArgumentOption<bool>(target, '\0', std::move(longName), std::move(description), std::move(group), isAdvanced);
-    m_optionArguments.emplace_back(o);
-    return *o;
+    return addOptionArgument(target, '\0', std::move(longName), std::move(description), std::move(group), isAdvanced);
   }
 
   template <typename T>
@@ -315,13 +343,39 @@ public:
     return *o;
   }
 
+  template <typename T>
+  Option& addOptionArgument(T& target, char shortName, std::string longName, std::string description, std::string argumentName, std::string group, T minValue, bool isAdvanced = false)
+  {
+    auto* o = new LowerBoundArgumentOption<T>(target, shortName, std::move(longName), std::move(description), std::move(group), isAdvanced, std::move(argumentName), minValue);
+    m_optionArguments.emplace_back(o);
+    return *o;
+  }
+
+  template <typename T>
+  Option& addOptionArgument(T& target, char shortName, std::string longName, std::string description, std::string argumentName, std::string group, T minValue, T maxValue, bool isAdvanced = false)
+  {
+    auto* o = new LowerUpperBoundArgumentOption<T>(target, shortName, std::move(longName), std::move(description), std::move(group), isAdvanced, std::move(argumentName), minValue, maxValue);
+    m_optionArguments.emplace_back(o);
+    return *o;
+  }
+
   // Without shortName
   template <typename T>
   Option& addOptionArgument(T& target, std::string longName, std::string description, std::string argumentName, std::string group, bool isAdvanced = false)
   {
-    auto* o = new ArgumentOption<T>(target, '\0', std::move(longName), std::move(description), std::move(group), isAdvanced, std::move(argumentName));
-    m_optionArguments.emplace_back(o);
-    return *o;
+    return addOptionArgument(target, '\0', std::move(longName), std::move(description), std::move(argumentName), std::move(group), isAdvanced);
+  }
+
+  template <typename T>
+  Option& addOptionArgument(T& target, std::string longName, std::string description, std::string argumentName, std::string group, T minValue, bool isAdvanced = false)
+  {
+    return addOptionArgument(target, '\0', std::move(longName), std::move(description), std::move(argumentName), std::move(group), minValue, isAdvanced);
+  }
+
+  template <typename T>
+  Option& addOptionArgument(T& target, std::string longName, std::string description, std::string argumentName, std::string group, T minValue, T maxValue, bool isAdvanced = false)
+  {
+    return addOptionArgument(target, '\0', std::move(longName), std::move(description), std::move(argumentName), std::move(group), minValue, maxValue, isAdvanced);
   }
 
   void parseArgs(const std::string& args);

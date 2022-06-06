@@ -31,7 +31,6 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.setGroups({ "Input", "Algorithm", "Accuracy", "Output" });
 
-  bool deprecated_includeSelfLinks = false;
   std::vector<std::string> optionalOutputDir; // Used if !isCLI
   // --------------------- Input options ---------------------
   if (isCLI) {
@@ -44,15 +43,16 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(bipartiteTeleportation, "bipartite-teleportation", "Teleport like the bipartite flow instead of two-step (unipartite) teleportation.", "Input", true);
 
-  api.addOptionArgument(weightThreshold, "weight-threshold", "Limit the number of links to read from the network. Ignore links with less weight than the threshold.", ArgType::number, "Input", true);
+  api.addOptionArgument(weightThreshold, "weight-threshold", "Limit the number of links to read from the network. Ignore links with less weight than the threshold.", ArgType::number, "Input", 0.0, true);
 
+  bool deprecated_includeSelfLinks = false;
   api.addOptionArgument(deprecated_includeSelfLinks, 'k', "include-self-links", "DEPRECATED. Include self links by default now, exclude with --no-self-links.", "Input", true).setHidden(true);
 
   api.addOptionArgument(noSelfLinks, "no-self-links", "Exclude self links in the input network.", "Input", true);
 
-  api.addOptionArgument(nodeLimit, "node-limit", "Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", ArgType::integer, "Input", true);
+  api.addOptionArgument(nodeLimit, "node-limit", "Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", ArgType::integer, "Input", 1u, true);
 
-  api.addOptionArgument(matchableMultilayerIds, "matchable-multilayer-ids", "Construct state ids from node and layer ids that are consistent across networks for the same max number of layers. Set to at least the largest layer id among networks to match.", ArgType::integer, "Input", true);
+  api.addOptionArgument(matchableMultilayerIds, "matchable-multilayer-ids", "Construct state ids from node and layer ids that are consistent across networks for the same max number of layers. Set to at least the largest layer id among networks to match.", ArgType::integer, "Input", 1u, true);
 
   api.addOptionArgument(clusterDataFile, 'c', "cluster-data", "Provide an initial two-level (clu format) or multi-layer (tree format) solution.", ArgType::path, "Input");
 
@@ -60,7 +60,7 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(metaDataFile, "meta-data", "Provide meta data (clu format) that should be encoded.", ArgType::path, "Input", true);
 
-  api.addOptionArgument(metaDataRate, "meta-data-rate", "Metadata encoding rate. Default is to encode each step.", ArgType::number, "Input", true);
+  api.addOptionArgument(metaDataRate, "meta-data-rate", "Metadata encoding rate. Default is to encode each step.", ArgType::number, "Input", 0.0, true);
 
   api.addOptionArgument(unweightedMetaData, "meta-data-unweighted", "Don't weight meta data by node flow.", "Input", true);
 
@@ -78,7 +78,7 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(printClu, "clu", "Write a clu file with the top cluster ids for each node.", "Output");
 
-  api.addOptionArgument(cluLevel, "clu-level", "For clu output, print modules at specified depth from root. Use -1 for bottom level modules.", ArgType::integer, "Output", true);
+  api.addOptionArgument(cluLevel, "clu-level", "For clu output, print modules at specified depth from root. Use -1 for bottom level modules.", ArgType::integer, "Output", -1, true);
 
   api.addOptionArgument(outputFormats, 'o', "output", "Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.", ArgType::list, "Output", true);
 
@@ -101,45 +101,44 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(teleportToNodes, "to-nodes", "Teleport to nodes instead of to links, assuming uniform node weights if no such input data.", "Algorithm", true);
 
-  api.addOptionArgument(teleportationProbability, 'p', "teleportation-probability", "Probability of teleporting to a random node or link.", ArgType::probability, "Algorithm", true);
+  api.addOptionArgument(teleportationProbability, 'p', "teleportation-probability", "Probability of teleporting to a random node or link.", ArgType::probability, "Algorithm", 0.0, 1.0, true);
 
   api.addOptionArgument(regularized, "regularized", "Effectively add a fully connected Bayesian prior network to not overfit due to missing links. Implies recorded teleportation", "Algorithm", true);
 
-  api.addOptionArgument(regularizationStrength, "regularization-strength", "Adjust relative strength of Bayesian prior network with this multiplier.", ArgType::number, "Algorithm", true);
+  api.addOptionArgument(regularizationStrength, "regularization-strength", "Adjust relative strength of Bayesian prior network with this multiplier.", ArgType::number, "Algorithm", 0.0, true);
 
   api.addOptionArgument(entropyBiasCorrection, "entropy-corrected", "Correct for negative entropy bias in small samples (many modules).", "Algorithm", true);
 
   api.addOptionArgument(entropyBiasCorrectionMultiplier, "entropy-correction-strength", "Increase or decrease the default entropy correction with this factor.", ArgType::number, "Algorithm", true);
 
-  api.addOptionArgument(markovTime, "markov-time", "Scales link flow to change the cost of moving between modules. Higher values results in fewer modules.", ArgType::number, "Algorithm", true);
+  api.addOptionArgument(markovTime, "markov-time", "Scales link flow to change the cost of moving between modules. Higher values results in fewer modules.", ArgType::number, "Algorithm", 0.0, true);
 
-  api.addOptionArgument(preferredNumberOfModules, "preferred-number-of-modules", "Penalize solutions the more they differ from this number.", ArgType::integer, "Algorithm", true);
+  api.addOptionArgument(preferredNumberOfModules, "preferred-number-of-modules", "Penalize solutions the more they differ from this number.", ArgType::integer, "Algorithm", 1u, true);
 
-  api.addOptionArgument(multilayerRelaxRate, "multilayer-relax-rate", "Probability to relax the constraint to move only in the current layer.", ArgType::probability, "Algorithm", true);
+  api.addOptionArgument(multilayerRelaxRate, "multilayer-relax-rate", "Probability to relax the constraint to move only in the current layer.", ArgType::probability, "Algorithm", 0.0, 1.0, true);
 
-  api.addOptionArgument(multilayerRelaxLimit, "multilayer-relax-limit", "Number of neighboring layers in each direction to relax to. If negative, relax to any layer.", ArgType::integer, "Algorithm", true);
+  api.addOptionArgument(multilayerRelaxLimit, "multilayer-relax-limit", "Number of neighboring layers in each direction to relax to. If negative, relax to any layer.", ArgType::integer, "Algorithm", -1, true);
 
-  api.addOptionArgument(multilayerRelaxLimitUp, "multilayer-relax-limit-up", "Number of neighboring layers with higher id to relax to. If negative, relax to any layer.", ArgType::integer, "Algorithm", true);
+  api.addOptionArgument(multilayerRelaxLimitUp, "multilayer-relax-limit-up", "Number of neighboring layers with higher id to relax to. If negative, relax to any layer.", ArgType::integer, "Algorithm", -1, true);
 
-  api.addOptionArgument(multilayerRelaxLimitDown, "multilayer-relax-limit-down", "Number of neighboring layers with lower id to relax to. If negative, relax to any layer.", ArgType::integer, "Algorithm", true);
+  api.addOptionArgument(multilayerRelaxLimitDown, "multilayer-relax-limit-down", "Number of neighboring layers with lower id to relax to. If negative, relax to any layer.", ArgType::integer, "Algorithm", -1, true);
 
   api.addOptionArgument(multilayerRelaxByJensenShannonDivergence, "multilayer-relax-by-jsd", "Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.", "Algorithm", true);
 
   // --------------------- Performance and accuracy options ---------------------
-  api.addOptionArgument(seedToRandomNumberGenerator, 's', "seed", "A seed (integer) to the random number generator for reproducible results.", ArgType::integer, "Accuracy");
+  api.addOptionArgument(seedToRandomNumberGenerator, 's', "seed", "A seed (integer) to the random number generator for reproducible results.", ArgType::integer, "Accuracy", 1ul);
 
-  int _numTrials = 1;
-  api.addOptionArgument(_numTrials, 'N', "num-trials", "Number of outer-most loops to run before picking the best solution.", ArgType::integer, "Accuracy");
+  api.addOptionArgument(numTrials, 'N', "num-trials", "Number of outer-most loops to run before picking the best solution.", ArgType::integer, "Accuracy", 1u);
 
-  api.addOptionArgument(coreLoopLimit, 'M', "core-loop-limit", "Limit the number of loops that tries to move each node into the best possible module.", ArgType::integer, "Accuracy", true);
+  api.addOptionArgument(coreLoopLimit, 'M', "core-loop-limit", "Limit the number of loops that tries to move each node into the best possible module.", ArgType::integer, "Accuracy", 1u, true);
 
-  api.addOptionArgument(levelAggregationLimit, 'L', "core-level-limit", "Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.", ArgType::integer, "Accuracy", true);
+  api.addOptionArgument(levelAggregationLimit, 'L', "core-level-limit", "Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.", ArgType::integer, "Accuracy", 1u, true);
 
-  api.addOptionArgument(tuneIterationLimit, 'T', "tune-iteration-limit", "Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.", ArgType::integer, "Accuracy", true);
+  api.addOptionArgument(tuneIterationLimit, 'T', "tune-iteration-limit", "Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.", ArgType::integer, "Accuracy", 1u, true);
 
-  api.addOptionArgument(minimumCodelengthImprovement, "core-loop-codelength-threshold", "Minimum codelength threshold for accepting a new solution in core loop.", ArgType::number, "Accuracy", true);
+  api.addOptionArgument(minimumCodelengthImprovement, "core-loop-codelength-threshold", "Minimum codelength threshold for accepting a new solution in core loop.", ArgType::number, "Accuracy", 0.0, true);
 
-  api.addOptionArgument(minimumRelativeTuneIterationImprovement, "tune-iteration-relative-threshold", "Set codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.", ArgType::number, "Accuracy", true);
+  api.addOptionArgument(minimumRelativeTuneIterationImprovement, "tune-iteration-relative-threshold", "Set codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.", ArgType::number, "Accuracy", 0.0, true);
 
   api.addIncrementalOptionArgument(fastHierarchicalSolution, 'F', "fast-hierarchical-solution", "Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.", "Accuracy", true);
 
@@ -158,11 +157,6 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
   if (deprecated_includeSelfLinks) {
     throw std::runtime_error("The --include-self-links flag is deprecated to include self links by default. Use --no-self-links to exclude.");
   }
-
-  if (_numTrials < 1) {
-    throw std::runtime_error("Must use at least 1 trial.");
-  }
-  numTrials = static_cast<unsigned int>(_numTrials);
 
   if (!optionalOutputDir.empty())
     outDirectory = optionalOutputDir[0];
