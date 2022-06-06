@@ -151,6 +151,28 @@ namespace io {
     return !!(istream >> value);
   }
 
+  template <>
+  inline bool stringToValue(std::string const& str, unsigned int& value)
+  {
+    std::istringstream istream(str);
+    int target = 0;
+    istream >> target;
+    if (target < 0) return false;
+    value = target;
+    return true;
+  }
+
+  template <>
+  inline bool stringToValue(std::string const& str, unsigned long& value)
+  {
+    std::istringstream istream(str);
+    int target = 0;
+    istream >> target;
+    if (target < 0) return false;
+    value = target;
+    return true;
+  }
+
   inline std::string firstWord(const std::string& line)
   {
     std::istringstream ss;
