@@ -10,10 +10,7 @@
 #ifndef RANDOM_H_
 #define RANDOM_H_
 
-#include <cmath>
 #include <vector>
-
-#ifndef PYTHON
 #include <random>
 #include <utility>
 
@@ -52,41 +49,5 @@ public:
   }
 };
 } // namespace infomap
-
-#else // PYTHON
-
-#include "MersenneTwister.h"
-
-namespace infomap {
-
-class Random {
-  MTRand m_randGen;
-
-public:
-  Random(unsigned int seed = 123) : m_randGen(seed) { }
-
-  void seed(unsigned int seedValue)
-  {
-    m_randGen.seed(seedValue);
-  }
-
-  unsigned int randInt(unsigned int min, unsigned int max)
-  {
-    return m_randGen.randInt(max - min) + min;
-  }
-
-  void getRandomizedIndexVector(std::vector<unsigned int>& randomOrder)
-  {
-    unsigned int size = randomOrder.size();
-    for (unsigned int i = 0; i < size; ++i)
-      randomOrder[i] = i;
-    for (unsigned int i = 0; i < size; ++i)
-      std::swap(randomOrder[i], randomOrder[i + randInt(0, size - i - 1)]);
-  }
-};
-
-} // namespace infomap
-
-#endif
 
 #endif // RANDOM_H_
