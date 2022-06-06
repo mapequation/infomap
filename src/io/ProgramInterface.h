@@ -261,10 +261,7 @@ class ProgramInterface {
 public:
   ProgramInterface(std::string name, std::string shortDescription, std::string version);
 
-  void setGroups(std::vector<std::string> groups)
-  {
-    m_groups = std::move(groups);
-  }
+  void setGroups(std::vector<std::string> groups) { m_groups = std::move(groups); }
 
   template <typename T>
   void addNonOptionArgument(T& target, std::string variableName, std::string desc, std::string group, bool isAdvanced = false)
@@ -329,22 +326,15 @@ public:
 
   void parseArgs(const std::string& args);
 
-  std::vector<ParsedOption> getUsedOptionArguments();
+  std::vector<ParsedOption> getUsedOptionArguments() const;
 
-  unsigned int numRequiredArguments() { return m_nonOptionArguments.size() - m_numOptionalNonOptionArguments; }
+  unsigned int numRequiredArguments() const { return m_nonOptionArguments.size() - m_numOptionalNonOptionArguments; }
 
 private:
-  void exitWithUsage(bool showAdvanced);
-  void exitWithVersionInformation();
-  void exitWithError(const std::string& message);
-  void exitWithJsonParameters();
-
-  static std::string toJson(const std::string& key, const std::string& value);
-  static std::string toJson(const std::string& key, int value);
-  static std::string toJson(const std::string& key, unsigned int value);
-  static std::string toJson(const std::string& key, double value);
-  static std::string toJson(const std::string& key, bool value);
-  static std::string toJson(const Option& opt);
+  void exitWithUsage(bool showAdvanced) const;
+  void exitWithVersionInformation() const;
+  void exitWithError(const std::string& message) const;
+  void exitWithJsonParameters() const;
 
   std::deque<std::unique_ptr<Option>> m_optionArguments;
   std::deque<std::unique_ptr<TargetBase>> m_nonOptionArguments;

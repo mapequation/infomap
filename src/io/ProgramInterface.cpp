@@ -45,7 +45,7 @@ ProgramInterface::ProgramInterface(std::string name, std::string shortDescriptio
   addOptionArgument(m_printJsonParameters, "print-json-parameters", "Print Infomap parameters in JSON.", "About").setHidden(true);
 }
 
-void ProgramInterface::exitWithUsage(bool showAdvanced)
+void ProgramInterface::exitWithUsage(bool showAdvanced) const
 {
   Log() << "Name:\n";
   Log() << "        " << m_programName << " - " << m_shortProgramDescription << '\n';
@@ -115,7 +115,7 @@ void ProgramInterface::exitWithUsage(bool showAdvanced)
   std::exit(0);
 }
 
-void ProgramInterface::exitWithVersionInformation()
+void ProgramInterface::exitWithVersionInformation() const
 {
   Log() << m_programName << " version " << m_programVersion;
 #ifdef _OPENMP
@@ -126,7 +126,7 @@ void ProgramInterface::exitWithVersionInformation()
   std::exit(0);
 }
 
-void ProgramInterface::exitWithError(const std::string& message)
+void ProgramInterface::exitWithError(const std::string& message) const
 {
   Log() << m_programName << " version " << m_programVersion;
 #ifdef _OPENMP
@@ -144,7 +144,41 @@ void ProgramInterface::exitWithError(const std::string& message)
   std::exit(1);
 }
 
-void ProgramInterface::exitWithJsonParameters()
+std::string toJson(const std::string& key, const std::string& value)
+{
+  return io::Str() << '"' << key << "\": \"" << value << '"';
+}
+
+std::string toJson(const std::string& key, bool value)
+{
+  return io::Str() << '"' << key << "\": " << (value ? "true" : "false");
+}
+
+template <typename Value>
+std::string toJson(const std::string& key, Value value)
+{
+  return io::Str() << '"' << key << "\": " << value;
+}
+
+std::string toJson(const Option& opt)
+{
+  return io::Str() << "{ "
+                   << toJson("long", std::string(io::Str() << "--" << opt.longName)) << ", "
+                   << toJson("short", opt.shortName != '\0' ? std::string(io::Str() << "-" << opt.shortName) : "") << ", "
+                   << toJson("description", opt.description) << ", "
+                   << toJson("group", opt.group) << ", "
+                   << toJson("required", opt.requireArgument) << ", "
+                   << toJson("advanced", opt.isAdvanced) << ", "
+                   << toJson("incremental", opt.incrementalArgument) << ", "
+                   << (opt.requireArgument
+                           ? (io::Str() << toJson("longType", opt.argumentName) << ", "
+                                        << toJson("shortType", std::string(1, ArgType::toShort.at(opt.argumentName))) << ", "
+                                        << toJson("default", opt.printValue()))
+                           : toJson("default", false))
+                   << " }";
+}
+
+void ProgramInterface::exitWithJsonParameters() const
 {
   Log() << "{\n  \"parameters\": [\n";
 
@@ -162,49 +196,6 @@ void ProgramInterface::exitWithJsonParameters()
   Log() << "  ]\n}";
 
   std::exit(0);
-}
-
-std::string ProgramInterface::toJson(const std::string& key, const std::string& value)
-{
-  return io::Str() << "\"" << key << "\": \"" << value << "\"";
-}
-
-std::string ProgramInterface::toJson(const std::string& key, int value)
-{
-  return io::Str() << "\"" << key << "\": " << value;
-}
-
-std::string ProgramInterface::toJson(const std::string& key, unsigned int value)
-{
-  return io::Str() << "\"" << key << "\": " << value;
-}
-
-std::string ProgramInterface::toJson(const std::string& key, double value)
-{
-  return io::Str() << "\"" << key << "\": " << value;
-}
-
-std::string ProgramInterface::toJson(const std::string& key, bool value)
-{
-  return io::Str() << "\"" << key << "\": " << (value ? "true" : "false");
-}
-
-std::string ProgramInterface::toJson(const Option& opt)
-{
-  return io::Str() << "{ "
-                   << toJson("long", io::Str() << "--" << opt.longName) << ", "
-                   << toJson("short", opt.shortName != '\0' ? std::string(io::Str() << "-" << opt.shortName) : "") << ", "
-                   << toJson("description", opt.description) << ", "
-                   << toJson("group", opt.group) << ", "
-                   << toJson("required", opt.requireArgument) << ", "
-                   << toJson("advanced", opt.isAdvanced) << ", "
-                   << toJson("incremental", opt.incrementalArgument) << ", "
-                   << (opt.requireArgument
-                           ? (io::Str() << toJson("longType", opt.argumentName) << ", "
-                                        << toJson("shortType", std::string(1, ArgType::toShort.at(opt.argumentName))) << ", "
-                                        << toJson("default", opt.printValue()))
-                           : toJson("default", false))
-                   << " }";
 }
 
 void ProgramInterface::parseArgs(const std::string& args)
@@ -335,7 +326,7 @@ void ProgramInterface::parseArgs(const std::string& args)
   }
 }
 
-std::vector<ParsedOption> ProgramInterface::getUsedOptionArguments()
+std::vector<ParsedOption> ProgramInterface::getUsedOptionArguments() const
 {
   std::vector<ParsedOption> opts;
   unsigned int numFlags = m_optionArguments.size();
