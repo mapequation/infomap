@@ -203,13 +203,15 @@ public:
   InfomapIteratorPhysical(InfoNode* nodePointer, int moduleIndexLevel = -1)
       : InfomapIterator(nodePointer, moduleIndexLevel) { }
 
-  InfomapIteratorPhysical(const InfomapIterator& other) : InfomapIterator(other) { }
-
   ~InfomapIteratorPhysical() override = default;
   InfomapIteratorPhysical(const InfomapIteratorPhysical&) = default;
-  InfomapIteratorPhysical& operator=(const InfomapIteratorPhysical&) = default;
+  InfomapIteratorPhysical(const InfomapIterator& other) : InfomapIterator(other) { }
+
   InfomapIteratorPhysical(InfomapIteratorPhysical&&) = default;
-  InfomapIteratorPhysical& operator=(InfomapIteratorPhysical&&) = default;
+  InfomapIteratorPhysical& operator=(const InfomapIteratorPhysical&) = default;
+
+  // Don't allow moving from this iterator as we use the old iterator in operator++
+  InfomapIteratorPhysical& operator=(InfomapIteratorPhysical&&) = delete;
 
   InfomapIteratorPhysical& operator=(const InfomapIterator& other)
   {
@@ -249,9 +251,11 @@ public:
       : InfomapIteratorPhysical(other) { init(); }
 
   ~InfomapLeafIteratorPhysical() override = default;
-  InfomapLeafIteratorPhysical& operator=(const InfomapLeafIteratorPhysical&) = default;
   InfomapLeafIteratorPhysical(InfomapLeafIteratorPhysical&&) = default;
-  InfomapLeafIteratorPhysical& operator=(InfomapLeafIteratorPhysical&&) = default;
+  InfomapLeafIteratorPhysical& operator=(const InfomapLeafIteratorPhysical&) = default;
+
+  // Don't allow moving from this iterator as we use the old iterator in operator++
+  InfomapLeafIteratorPhysical& operator=(InfomapLeafIteratorPhysical&&) = delete;
 
   /**
    * Iterate to first leaf node
