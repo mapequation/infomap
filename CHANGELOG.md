@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.5.0](https://github.com/mapequation/infomap/compare/v2.4.1...v2.5.0) (2022-06-07)
+
+
+### Features
+
+* Output per-module codelength in json ([eae6650](https://github.com/mapequation/infomap/commit/eae6650c48dbf90a938d011f1c736794a786d7ef))
+* Print all trials using --print-all-trials ([e65bea8](https://github.com/mapequation/infomap/commit/e65bea86c21ebcabafb053e79306049e92429ca1)), closes [#298](https://github.com/mapequation/infomap/issues/298)
+* Write node metadata to json ([472b791](https://github.com/mapequation/infomap/commit/472b791742f0f692a0a4b06262b33165245f6f36))
+
+
+### Bug Fixes
+
+* Constrain numerical arguments to sensible values ([174c99f](https://github.com/mapequation/infomap/commit/174c99fb56c4a50a2e11c37208bcec3e98ba4ab4))
+* Don't allow less than 1 trial ([18e97e2](https://github.com/mapequation/infomap/commit/18e97e21d76e7d27520eb2625c281031d72376d3))
+* Json multilevel modules for higher-order networks ([d020c7c](https://github.com/mapequation/infomap/commit/d020c7c444d1227cb26aa249f7cae5e7de5ecaa4)), closes [#266](https://github.com/mapequation/infomap/issues/266)
+* Only print all trials when running with more than 1 trial ([5f9d8b5](https://github.com/mapequation/infomap/commit/5f9d8b5e56ae348b142404f3f775ad526d396c55))
+* **python:** Fix elapsed running time ([1131e84](https://github.com/mapequation/infomap/commit/1131e845243d3053cceae5bdf069569b2856bc4a))
+* **python:** Replace MersenneTwister implementation with stdlib ([be3effd](https://github.com/mapequation/infomap/commit/be3effd9813a00892437c806b62cb8ee15387d3d))
+
 ### [2.4.1](https://github.com/mapequation/infomap/compare/v2.4.0...v2.4.1) (2022-05-27)
 
 
