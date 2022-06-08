@@ -1873,9 +1873,9 @@ If you want to set node names, use set_name."""
         InfomapIterator or InfomapIteratorPhysical
             An iterator over each node in the tree, depth first from the root
         """
-        if states:
-            return super().iterTree(depth_level)
-        return super().iterTreePhysical(depth_level)
+        if self.have_memory and not states:
+            return super().iterTreePhysical(depth_level)
+        return super().iterTree(depth_level)
 
     def get_nodes(self, depth_level=1, states=False):
         """A view of the nodes in the hierarchical tree, iterating depth first
@@ -1911,9 +1911,9 @@ If you want to set node names, use set_name."""
         InfomapIterator or InfomapIteratorPhysical
             An iterator over each node in the tree, depth first from the root
         """
-        if states:
-            return super().iterLeafNodes(depth_level)
-        return super().iterLeafNodesPhysical(depth_level)
+        if self.have_memory and not states:
+            return super().iterLeafNodesPhysical(depth_level)
+        return super().iterLeafNodes(depth_level)
 
     @property
     def tree(self):
@@ -2445,6 +2445,17 @@ If you want to set node names, use set_name."""
             The max depth
         """
         return self.max_depth
+
+    @property
+    def have_memory(self):
+        """Returns true for multilayer and memory networks.
+
+        Returns
+        -------
+        bool
+            True if the network is a multilayer or memory network.
+        """
+        return super().haveMemory()
 
     # ----------------------------------------
     # Codelength
