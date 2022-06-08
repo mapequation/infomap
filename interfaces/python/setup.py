@@ -117,8 +117,6 @@ if (
 compiler_args = [
     "-DAS_LIB",
     "-DPYTHON",
-    "-Wno-deprecated-register",
-    "-Wno-deprecated-declarations",
     "-std=c++14",
 ]
 
