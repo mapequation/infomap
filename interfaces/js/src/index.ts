@@ -1,5 +1,9 @@
 import argumentsToString, { Arguments } from "./arguments";
-import fileToString, { FileTypes, TreeNode as Node, TreeStateNode as StateNode } from "./filetypes";
+import fileToString, {
+  FileTypes,
+  TreeNode as Node,
+  TreeStateNode as StateNode,
+} from "./filetypes";
 import networkToString, { NetworkTypes } from "./network";
 // @ts-ignore
 import InfomapWorker from "./worker/infomap.worker.js";
