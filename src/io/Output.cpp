@@ -380,8 +380,6 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   const auto shouldHideBipartiteNodes = im.isBipartite() && im.hideBipartiteNodes;
   const auto bipartiteStartId = shouldHideBipartiteNodes ? network.bipartiteStartId() : 0;
 
-  const auto multilevelModules = im.getMultilevelModules(states);
-
   auto metaData = network.metaData();
   auto writeMeta = [&metaData](auto& outStream, auto nodeId) {
     outStream << "\"metadata\":{";
@@ -407,7 +405,6 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
         }
 
         const auto path = io::stringify(it.path(), ",");
-        const auto modules = im.haveModules() ? io::stringify(multilevelModules.at(node.physicalId), ",") : "1";
 
         if (first) {
           first = false;
@@ -417,7 +414,6 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
 
         outStream << "{"
                   << "\"path\":[" << path << "],"
-                  << "\"modules\":[" << modules << "],"
                   << "\"name\":\"" << getNodeName(network.names(), node) << "\","
                   << "\"flow\":" << node.data.flow << ","
                   << "\"mec\":" << it.modularCentrality() << ","
@@ -425,6 +421,8 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
       }
     }
   } else {
+    const auto multilevelModules = im.getMultilevelModules(states);
+
     for (auto it(im.iterTree()); !it.isEnd(); ++it) {
       InfoNode& node = *it;
       if (node.isLeaf()) {

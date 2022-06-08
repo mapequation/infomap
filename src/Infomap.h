@@ -77,20 +77,14 @@ public:
 
   std::map<unsigned int, unsigned int> getModules(int level = 1, bool states = false)
   {
-    std::map<unsigned int, unsigned int> modules;
     if (haveMemory() && !states) {
-      for (auto it(iterTreePhysical(level)); !it.isEnd(); ++it) {
-        auto& node = *it;
-        if (node.isLeaf()) {
-          modules[node.physicalId] = it.moduleId();
-        }
-      }
-    } else {
-      for (auto it(iterTree(level)); !it.isEnd(); ++it) {
-        auto& node = *it;
-        if (node.isLeaf()) {
-          modules[states ? node.stateId : node.physicalId] = it.moduleId();
-        }
+      throw std::runtime_error("Cannot get modules on higher-order network without states.");
+    }
+    std::map<unsigned int, unsigned int> modules;
+    for (auto it = iterTree(level); !it.isEnd(); ++it) {
+      auto& node = *it;
+      if (node.isLeaf()) {
+        modules[states ? node.stateId : node.physicalId] = it.moduleId();
       }
     }
     return modules;
