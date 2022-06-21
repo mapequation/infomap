@@ -91,6 +91,7 @@ public:
   }
 
   using InfomapBase::codelength;
+  using InfomapBase::getEntropyRate;
   using InfomapBase::getMultilevelModules;
   using InfomapBase::iterLeafNodes;
   using InfomapBase::iterTree;

@@ -135,6 +135,8 @@ public:
     return oneLevelCodelength < 1e-16 ? 0 : 1.0 - codelength() / oneLevelCodelength;
   }
 
+  double getEntropyRate() { return calcEntropyRate(); }
+
   const Date& getStartDate() const { return m_startDate; }
   const Stopwatch& getElapsedTime() const { return m_elapsedTime; }
 

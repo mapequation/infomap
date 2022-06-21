@@ -2570,6 +2570,35 @@ If you want to set node names, use set_name."""
         return super().getRelativeCodelengthSavings()
 
     @property
+    def entropy_rate(self):
+        """Get the entropy rate of the network.
+
+        The entropy rate is an indication of the sparsity of a network.
+        A higher entropy rate corresponds to a densely connected network.
+
+        Notes
+        -----
+        This value is only accessable after running the optimizer (``im.run()``).
+
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap(silent=True, no_infomap=True)
+        >>> im.read_file("twotriangles.net")
+        >>> im.run()
+        >>> f"{im.entropy_rate:.5f}"
+        '0.35714'
+
+
+        Returns
+        -------
+        float
+            The entropy rate
+        """
+        return super().getEntropyRate()
+
+    @property
     def meta_codelength(self):
         """Get the meta codelength.
 
