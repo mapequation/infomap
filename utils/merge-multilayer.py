@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sys
 from collections import defaultdict
 
@@ -16,19 +17,19 @@ def merge_multilayer(input_files, out_file):
             if line.startswith("#"):
                 continue
             if line.startswith("*"):
-                context = line.lower().split(" ", maxsplit=1)[0]
+                context = line.split(maxsplit=1)[0].lower()
                 continue
 
-            if context == "*vertices" or context == "*nodes":
-                node_id, name = line.split(" ", maxsplit=1)
+            if context in ("*vertices", "*nodes"):
+                node_id, name = line.split(maxsplit=1)
                 if node_id in nodes and nodes[node_id] != name:
                     print(f"Warning: node {node_id} has a different names ({nodes[node_id]} and {name})")
                 nodes[node_id] = name
-            elif context == "*links" or context == "*edges" or context is None:
+            elif context in ("*links", "*edges") or context is None:
                 try:
-                    source, target, weight = line.split(" ")
+                    source, target, weight = line.split()
                 except ValueError:
-                    source, target = line.split(" ")
+                    source, target = line.split()
                     weight = 1
 
                 links[layer + 1].append((source, target, weight))
@@ -49,8 +50,9 @@ def merge_multilayer(input_files, out_file):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
+        print("Merge pajek network files into a multilayer network with intra-layer links.")
         print("Usage:")
-        print("\t merge_multilayer pajek_file1 [pajek_file2 pajek_fileN] outfile")
+        print("\tmerge-multilayer.py pajek_file1 [pajek_file2 pajek_fileN] outfile")
         sys.exit(0)
 
     input_files = sys.argv[1:-1]
