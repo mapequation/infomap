@@ -1911,8 +1911,24 @@ If you want to set node names, use set_name."""
         InfomapIterator or InfomapIteratorPhysical
             An iterator over each node in the tree, depth first from the root
         """
+        class LeafIterWrapper:
+            def __init__(self, treeIterator):
+                self.it = treeIterator
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                self.it.stepForward()
+                while not self.it.isEnd() and not self.it.isLeaf():
+                    self.it.stepForward()
+                if not self.it.isEnd():
+                    return self.it
+                raise StopIteration
+        
         if self.have_memory and not states:
-            return super().iterLeafNodesPhysical(depth_level)
+            # super().iterLeafNodesPhysical(depth_level) is unreliable in python
+            return LeafIterWrapper(super().iterTreePhysical(depth_level))
         return super().iterLeafNodes(depth_level)
 
     @property

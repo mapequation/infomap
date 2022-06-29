@@ -278,65 +278,6 @@ public:
   using InfomapIteratorPhysical::path;
 };
 
-struct InfomapLeafIteratorPhysical2 : public InfomapIterator {
-protected:
-  InfomapIteratorPhysical m_physIter;
-
-public:
-  // InfomapLeafIterator(InfoNode* nodePointer, int moduleIndexLevel = -1)
-  //     : InfomapIterator(nodePointer, moduleIndexLevel) { init(); }
-
-  // ~InfomapLeafIterator() override = default;
-  // InfomapLeafIterator(const InfomapLeafIterator& other) : InfomapIterator(other) { init(); }
-  // InfomapLeafIterator& operator=(const InfomapLeafIterator&) = default;
-  // InfomapLeafIterator(InfomapLeafIterator&&) = default;
-  // InfomapLeafIterator& operator=(InfomapLeafIterator&&) = default;
-
-  InfomapLeafIteratorPhysical2() : InfomapIterator() { }
-
-  InfomapLeafIteratorPhysical2(InfoNode* nodePointer, int moduleIndexLevel = -1)
-      : InfomapIterator(nodePointer, moduleIndexLevel),
-        m_physIter(nodePointer, moduleIndexLevel) { init(); }
-
-  ~InfomapLeafIteratorPhysical2() override = default;
-  // InfomapLeafIteratorPhysical2(const InfomapLeafIteratorPhysical2&) = default;
-  InfomapLeafIteratorPhysical2(const InfomapLeafIteratorPhysical2& other) :
-    InfomapIterator(other), m_physIter(other.m_physIter) { init(); } //TODO: Skip this init?
-
-  InfomapLeafIteratorPhysical2(InfomapLeafIteratorPhysical2&&) = default;
-  InfomapLeafIteratorPhysical2& operator=(const InfomapLeafIteratorPhysical2&) = default;
-
-  /**
-   * Iterate to first leaf node
-   */
-  void init() noexcept;
-
-  // Don't allow moving from this iterator as we use the old iterator in operator++
-  InfomapLeafIteratorPhysical2& operator=(InfomapLeafIteratorPhysical2&&) = delete;
-
-  // InfomapLeafIteratorPhysical2& operator=(const InfomapLeafIteratorPhysical2& other)
-  // {
-  //   InfomapIterator::operator=(other);
-  //   m_physIter = other.m_physIter;
-  //   return *this;
-  // }
-
-  InfomapIterator& operator++() noexcept override;
-
-  InfomapIterator operator++(int) noexcept override
-  {
-    InfomapLeafIteratorPhysical2 copy(*this);
-    ++(*this);
-    return std::move(copy);
-  }
-
-  using InfomapIterator::childIndex;
-  using InfomapIterator::current;
-  using InfomapIterator::depth;
-  using InfomapIterator::modularCentrality;
-  using InfomapIterator::path;
-};
-
 /**
  * Iterate parent by parent until it is nullptr,
  * moving up through possible sub infomap instances

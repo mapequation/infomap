@@ -222,25 +222,6 @@ InfomapIterator& InfomapLeafIteratorPhysical::operator++() noexcept
   return *this;
 }
 
-void InfomapLeafIteratorPhysical2::init() noexcept
-{
-  std::cout << "!!InfomapLeafIteratorPhysical2::init()\n";
-  while (!m_physIter.isEnd() && !m_physIter->isLeaf()) {
-    ++m_physIter;
-  }
-  m_current = m_physIter.current();
-}
-
-InfomapIterator& InfomapLeafIteratorPhysical2::operator++() noexcept
-{
-  ++m_physIter;
-  while (!m_physIter.isEnd() && !m_physIter->isLeaf()) {
-    ++m_physIter;
-  }
-  m_current = m_physIter.current();
-  return *this;
-}
-
 // -------------------------------------
 // InfomapParentIterator
 // -------------------------------------

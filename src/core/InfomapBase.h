@@ -75,8 +75,6 @@ public:
 
   InfomapLeafIteratorPhysical iterLeafNodesPhysical(int maxClusterLevel = 1) { return { &root(), maxClusterLevel }; }
 
-  InfomapLeafIteratorPhysical2 iterLeafNodesPhysical2(int maxClusterLevel = 1) { return { &root(), maxClusterLevel }; }
-
   InfomapIterator begin(int maxClusterLevel = 1) { return { &root(), maxClusterLevel }; }
 
   InfomapIterator end() const { return InfomapIterator(nullptr); }
