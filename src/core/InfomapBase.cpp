@@ -29,6 +29,7 @@
 #include <set>
 #include <cstdlib>
 #include <algorithm>
+#include <cmath>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -743,6 +744,11 @@ void InfomapBase::generateSubNetwork(Network& network)
   if (std::abs(sumNodeFlow - 1.0) > 1e-10)
     Log() << "Warning, total flow on nodes differs from 1.0 by " << sumNodeFlow - 1.0 << ".\n";
 
+  bool changeMarkovTime = std::abs(markovTime - 1) > 1e-3;
+  if (changeMarkovTime) {
+    Log() << "  -> Rescale link flow with global Markov time " << markovTime << "\n";
+  }
+
   for (auto& linkIt : network.nodeLinkMap()) {
     unsigned int linkSourceId = linkIt.first.id;
     unsigned int sourceIndex = nodeIndexMap[linkSourceId];
@@ -754,6 +760,55 @@ void InfomapBase::generateSubNetwork(Network& network)
       if (sourceIndex != targetIndex) {
         auto& linkData = subIt.second;
         m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], linkData.weight, linkData.flow * markovTime);
+      }
+    }
+  }
+  
+  if (variableMarkovTime) {
+    Log() << "  -> Rescale link flow with variable Markov time\n";
+    if (std::abs(variableMarkovTimeStrength - 1) > 1e-9) {
+      Log() << "  -> Use variable Markov time strength " << variableMarkovTimeStrength << "\n";
+    }
+  }
+
+  double maxEntropy = 0.0;
+  double entropyRate = 0.0;
+  std::vector<double> entropies(numNodes, 0);
+
+  for (unsigned i = 0; i < numNodes; ++i) {
+    InfoNode& node = *m_leafNodes[i];
+    double entropy = 0;
+    double sumOut = 0;
+    for (InfoEdge* e : node.outEdges()) {
+      entropy -= infomath::plogp(e->data.weight);
+      sumOut += e->data.weight;
+    }
+    if (isUndirectedFlow()) {
+      for (InfoEdge* e : node.inEdges()) {
+        entropy -= infomath::plogp(e->data.weight);
+        sumOut += e->data.weight;
+      }
+    }
+    entropy = sumOut > 1e-9 ? (entropy + infomath::plogp(sumOut)) / sumOut : 0;
+    maxEntropy = std::max(maxEntropy, entropy);
+    entropyRate += m_leafNodes[i]->data.flow * entropy;
+    entropies[i] = entropy; // Store for undirected networks
+  }
+  m_entropyRate = entropyRate;
+  m_maxEntropy = maxEntropy;
+  Log() << "  -> Max node entropy: " << io::toPrecision(maxEntropy) << '\n';
+  Log() << "  -> Entropy rate: " << io::toPrecision(entropyRate) << '\n';
+  if (variableMarkovTime) {
+    for (unsigned i = 0; i < numNodes; ++i) {
+      InfoNode& node = *m_leafNodes[i];
+      double localEntropy = std::max(1e-6, entropies[i]);
+      for (InfoEdge* e : node.outEdges()) {
+        if (isUndirectedFlow()) {
+          double hTarget = std::max(1e-6, entropies[nodeIndexMap[e->target->stateId]]);
+          localEntropy = std::max(localEntropy, hTarget);
+        }
+        double localMarkovTimeScale = pow(maxEntropy / localEntropy, variableMarkovTimeStrength);
+        e->data.flow *= localMarkovTimeScale;
       }
     }
   }
@@ -802,42 +857,8 @@ void InfomapBase::init()
 
   initNetwork();
 
-  Log() << "Calculating one-level codelength... " << std::flush;
   m_oneLevelCodelength = calcCodelength(m_root);
-  Log() << "done!\n -> One-level codelength: " << m_oneLevelCodelength << '\n';
-
-  Log() << "Calculating entropy rate... " << std::flush;
-
-  double entropyRate = calcEntropyRate();
-  Log() << "done!\n  -> Entropy rate: " << io::toPrecision(entropyRate) << '\n';
-}
-
-double InfomapBase::calcEntropyRate()
-{
-  double entropyRate = 0.0;
-  for (auto it(iterLeafNodes()); !it.isEnd(); ++it) {
-    InfoNode& node = *it;
-    double sumOutFlow = 0.0;
-    double entropy = 0.0;
-    for (InfoEdge* e : node.outEdges()) {
-      sumOutFlow += e->data.flow;
-    }
-    if (this->isUndirectedClustering()) {
-      for (InfoEdge* e : node.inEdges()) {
-        sumOutFlow += e->data.flow;
-      }
-    }
-    for (InfoEdge* e : node.outEdges()) {
-      entropy += -infomath::plogp(e->data.flow / sumOutFlow);
-    }
-    if (this->isUndirectedClustering()) {
-      for (InfoEdge* e : node.inEdges()) {
-        entropy += -infomath::plogp(e->data.flow / sumOutFlow);
-      }
-    }
-    entropyRate += node.data.flow * entropy;
-  }
-  return entropyRate;
+  Log() << "  -> One-level codelength: " << m_oneLevelCodelength << '\n';
 }
 
 // ===================================================
