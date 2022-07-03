@@ -820,11 +820,20 @@ double InfomapBase::calcEntropyRate()
     double sumOutFlow = 0.0;
     double entropy = 0.0;
     for (InfoEdge* e : node.outEdges()) {
-      InfoEdge& edge = *e;
-      sumOutFlow += edge.data.flow;
+      sumOutFlow += e->data.flow;
+    }
+    if (this->isUndirectedClustering()) {
+      for (InfoEdge* e : node.inEdges()) {
+        sumOutFlow += e->data.flow;
+      }
     }
     for (InfoEdge* e : node.outEdges()) {
       entropy += -infomath::plogp(e->data.flow / sumOutFlow);
+    }
+    if (this->isUndirectedClustering()) {
+      for (InfoEdge* e : node.inEdges()) {
+        entropy += -infomath::plogp(e->data.flow / sumOutFlow);
+      }
     }
     entropyRate += node.data.flow * entropy;
   }
