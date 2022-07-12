@@ -137,6 +137,7 @@ public:
 
   double getEntropyRate() { return m_entropyRate; }
   double getMaxEntropy() { return m_maxEntropy; }
+  double getMaxFlow() { return m_maxFlow; }
 
   const Date& getStartDate() const { return m_startDate; }
   const Stopwatch& getElapsedTime() const { return m_elapsedTime; }
@@ -505,6 +506,7 @@ protected:
   std::vector<double> m_codelengths;
   double m_entropyRate = 0.0;
   double m_maxEntropy = 0.0;
+  double m_maxFlow = 0.0;
 
   double m_sumDanglingFlow = 0.0;
 

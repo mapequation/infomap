@@ -772,6 +772,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   }
 
   double maxEntropy = 0.0;
+  double maxFlow = 0.0;
   double entropyRate = 0.0;
   std::vector<double> entropies(numNodes, 0);
 
@@ -792,22 +793,27 @@ void InfomapBase::generateSubNetwork(Network& network)
     entropy = sumOut > 1e-9 ? (entropy + infomath::plogp(sumOut)) / sumOut : 0;
     maxEntropy = std::max(maxEntropy, entropy);
     entropyRate += m_leafNodes[i]->data.flow * entropy;
+    maxFlow = std::max(maxFlow, node.data.flow);
     entropies[i] = entropy; // Store for undirected networks
   }
   m_entropyRate = entropyRate;
   m_maxEntropy = maxEntropy;
+  m_maxFlow = maxFlow;
+  Log() << "  -> Max node flow: " << io::toPrecision(maxFlow) << '\n';
   Log() << "  -> Max node entropy: " << io::toPrecision(maxEntropy) << '\n';
   Log() << "  -> Entropy rate: " << io::toPrecision(entropyRate) << '\n';
   if (variableMarkovTime) {
+    if (variableMarkovTimeStrength < 0) {
+      maxFlow = pow(2., maxEntropy);
+    }
     for (unsigned i = 0; i < numNodes; ++i) {
       InfoNode& node = *m_leafNodes[i];
-      double localEntropy = std::max(1e-6, entropies[i]);
+      double localFlow = variableMarkovTimeStrength >= 0 ? node.data.flow : pow(2., entropies[i]);
       for (InfoEdge* e : node.outEdges()) {
         if (isUndirectedFlow()) {
-          double hTarget = std::max(1e-6, entropies[nodeIndexMap[e->target->stateId]]);
-          localEntropy = std::max(localEntropy, hTarget);
+          localFlow = std::max(localFlow, variableMarkovTimeStrength >= 0 ? e->target->data.flow : pow(2., entropies[nodeIndexMap[e->target->stateId]]));
         }
-        double localMarkovTimeScale = pow(maxEntropy / localEntropy, variableMarkovTimeStrength);
+        double localMarkovTimeScale = pow(maxFlow / std::max(1e-9, localFlow), std::abs(variableMarkovTimeStrength));
         e->data.flow *= localMarkovTimeScale;
       }
     }
