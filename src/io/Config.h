@@ -93,6 +93,9 @@ struct Config {
   bool useNodeWeightsAsFlow = false;
   bool teleportToNodes = false;
   double markovTime = 1.0;
+  bool variableMarkovTime = false;
+  double variableMarkovTimeStrength = 1.0;
+  bool markovTimeNoSelfLinks = false;
   double multilayerRelaxRate = 0.15;
   int multilayerRelaxLimit = -1; // Amount of layers allowed to jump up or down
   int multilayerRelaxLimitUp = -1; // One-sided limit to higher layers
@@ -184,6 +187,9 @@ struct Config {
     useNodeWeightsAsFlow = other.useNodeWeightsAsFlow;
     teleportToNodes = other.teleportToNodes;
     markovTime = other.markovTime;
+    variableMarkovTime = other.variableMarkovTime;
+    variableMarkovTimeStrength = other.variableMarkovTimeStrength;
+    markovTimeNoSelfLinks = other.markovTimeNoSelfLinks;
     multilayerRelaxRate = other.multilayerRelaxRate;
     multilayerRelaxLimit = other.multilayerRelaxLimit;
     multilayerRelaxLimitUp = other.multilayerRelaxLimitUp;
