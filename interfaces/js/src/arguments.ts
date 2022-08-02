@@ -49,6 +49,8 @@ export interface Arguments
     entropyCorrected: boolean;
     entropyCorrectionStrength: number;
     markovTime: number;
+    variableMarkovTime: boolean;
+    variableMarkovTimeStrength: number;
     preferredNumberOfModules: number;
     multilayerRelaxRate: number;
     multilayerRelaxLimit: number;
@@ -154,6 +156,12 @@ export default function argumentsToString(args: Arguments) {
       " --entropy-correction-strength " + args.entropyCorrectionStrength;
 
   if (args.markovTime) result += " --markov-time " + args.markovTime;
+
+  if (args.variableMarkovTime) result += " --variable-markov-time";
+
+  if (args.variableMarkovTimeStrength != null)
+    result +=
+      " --variable-markov-time-strength " + args.variableMarkovTimeStrength;
 
   if (args.preferredNumberOfModules != null)
     result += " --preferred-number-of-modules " + args.preferredNumberOfModules;

@@ -113,9 +113,9 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(markovTime, "markov-time", "Scale link flow to change the cost of moving between modules. Higher values results in fewer modules.", ArgType::number, "Algorithm", 0.0, true);
   
-  api.addOptionArgument(variableMarkovTime, "variable-markov-time", "Increase link flow inversely proportional to local entropy to avoid overpartition sparse areas while keeping high resolution in dense areas.", "Algorithm", true);
+  api.addOptionArgument(variableMarkovTime, "variable-markov-time", "Increase Markov time locally to level out link flow. Reduces risk of overpartitioning sparse areas while keeping high resolution in dense areas.", "Algorithm", true);
   
-  api.addOptionArgument(variableMarkovTimeStrength, "variable-markov-time-strength", "Exponent for variable Markov time scale, 0 means no rescaling and 1 means full rescaling to constant bit rate.", ArgType::number, "Algorithm", true);
+  api.addOptionArgument(variableMarkovTimeStrength, "variable-markov-time-strength", "Exponent for variable Markov time scale. 0 means no rescaling and 1 means full rescaling to constant transition flow rate.", ArgType::number, "Algorithm", true);
   
   // api.addOptionArgument(markovTimeNoSelfLinks, "markov-time-no-self-links", "For testing.", "Algorithm", true);
 

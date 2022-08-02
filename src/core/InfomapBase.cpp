@@ -774,10 +774,16 @@ void InfomapBase::generateSubNetwork(Network& network)
   double maxEntropy = 0.0;
   double maxFlow = 0.0;
   double entropyRate = 0.0;
+  unsigned int maxDegree = 0;
+  unsigned int maxOutDegree = 0;
+  unsigned int maxInDegree = 0;
   std::vector<double> entropies(numNodes, 0);
 
   for (unsigned i = 0; i < numNodes; ++i) {
     InfoNode& node = *m_leafNodes[i];
+    maxDegree = std::max(maxDegree, node.degree());
+    maxOutDegree = std::max(maxOutDegree, node.outDegree());
+    maxInDegree = std::max(maxInDegree, node.inDegree());
     double entropy = 0;
     double sumOut = 0;
     for (InfoEdge* e : node.outEdges()) {
@@ -799,7 +805,11 @@ void InfomapBase::generateSubNetwork(Network& network)
   m_entropyRate = entropyRate;
   m_maxEntropy = maxEntropy;
   m_maxFlow = maxFlow;
-  Log() << "  -> Max node flow: " << io::toPrecision(maxFlow) << '\n';
+  Log() << "  -> Max node flow: " << io::toPrecision(maxFlow, 3) << '\n';
+  if (isUndirectedFlow())
+    Log() << "  -> Max node degree: " << io::toPrecision(maxDegree) << '\n';
+  else
+    Log() << "  -> Max node in/out degree: " << maxInDegree << "/" << maxOutDegree << '\n';
   Log() << "  -> Max node entropy: " << io::toPrecision(maxEntropy) << '\n';
   Log() << "  -> Entropy rate: " << io::toPrecision(entropyRate) << '\n';
   if (variableMarkovTime) {

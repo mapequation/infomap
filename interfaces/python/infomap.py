@@ -76,6 +76,8 @@ def _construct_args(
     entropy_corrected=False,
     entropy_correction_strength=1.0,
     markov_time=1.0,
+    variable_markov_time=False,
+    variable_markov_time_strength=1.0,
     preferred_number_of_modules=None,
     multilayer_relax_rate=_DEFAULT_MULTILAYER_RELAX_RATE,
     multilayer_relax_limit=-1,
@@ -210,6 +212,10 @@ def _construct_args(
 
     if markov_time != 1.0:
         args += " --markov-time {}".format(markov_time)
+    if variable_markov_time:
+        args += " --variable-markov-time"
+    if variable_markov_time_strength != 1.0:
+        args += " --variable-markov-time-strength {}".format(variable_markov_time_strength)
 
     if preferred_number_of_modules is not None:
         args += " --preferred-number-of-modules {}".format(preferred_number_of_modules)
@@ -342,6 +348,8 @@ class Infomap(InfomapWrapper):
         entropy_corrected=False,
         entropy_correction_strength=1.0,
         markov_time=1.0,
+        variable_markov_time=False,
+        variable_markov_time_strength=1.0,
         preferred_number_of_modules=None,
         multilayer_relax_rate=_DEFAULT_MULTILAYER_RELAX_RATE,
         multilayer_relax_limit=-1,
@@ -460,6 +468,12 @@ class Infomap(InfomapWrapper):
         markov_time : float, optional
             Scales link flow to change the cost of moving between modules.
             Higher values results in fewer modules.
+        variable_markov_time : bool, optional
+            Increase Markov time locally to level out link flow. Reduces risk of 
+            overpartitioning sparse areas while keeping high resolution in dense areas.
+        variable_markov_time_strength : float, optional
+            Exponent for variable Markov time scale. 0 means no rescaling and 1 means 
+            full rescaling to constant transition flow rate.
         preferred_number_of_modules : int, optional
             Penalize solutions the more they differ from this number.
         multilayer_relax_rate : float, optional
@@ -546,6 +560,8 @@ class Infomap(InfomapWrapper):
                 entropy_corrected=entropy_corrected,
                 entropy_correction_strength=entropy_correction_strength,
                 markov_time=markov_time,
+                variable_markov_time=False,
+                variable_markov_time_strength=1.0,
                 preferred_number_of_modules=preferred_number_of_modules,
                 multilayer_relax_rate=multilayer_relax_rate,
                 multilayer_relax_limit=multilayer_relax_limit,
@@ -1351,6 +1367,8 @@ If you want to set node names, use set_name."""
         entropy_corrected=False,
         entropy_correction_strength=1.0,
         markov_time=1.0,
+        variable_markov_time=False,
+        variable_markov_time_strength=1.0,
         preferred_number_of_modules=None,
         multilayer_relax_rate=_DEFAULT_MULTILAYER_RELAX_RATE,
         multilayer_relax_limit=-1,
@@ -1472,6 +1490,12 @@ If you want to set node names, use set_name."""
         markov_time : float, optional
             Scales link flow to change the cost of moving between modules.
             Higher values results in fewer modules.
+        variable_markov_time : bool, optional
+            Increase Markov time locally to level out link flow. Reduces risk of 
+            overpartitioning sparse areas while keeping high resolution in dense areas.
+        variable_markov_time_strength : float, optional
+            Exponent for variable Markov time scale. 0 means no rescaling and 1 means 
+            full rescaling to constant transition flow rate.
         preferred_number_of_modules : int, optional
             Penalize solutions the more they differ from this number.
         multilayer_relax_rate : float, optional
@@ -1561,6 +1585,8 @@ If you want to set node names, use set_name."""
             entropy_corrected=entropy_corrected,
             entropy_correction_strength=entropy_correction_strength,
             markov_time=markov_time,
+            variable_markov_time=False,
+            variable_markov_time_strength=1.0,
             preferred_number_of_modules=preferred_number_of_modules,
             multilayer_relax_rate=multilayer_relax_rate,
             multilayer_relax_limit=multilayer_relax_limit,
