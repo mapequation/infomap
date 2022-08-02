@@ -105,8 +105,6 @@ private:
   double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const override;
   double calcCodelengthOnModuleOfModules(const InfoNode& parent) const override;
 
-  double correctionCoefficient() const { return gamma * entropyBiasCorrectionMultiplier; }
-
   static int getDeltaNumModulesIfMoving(unsigned int oldModule, unsigned int newModule, std::vector<unsigned int>& moduleMembers);
 
   // ===================================================
@@ -126,7 +124,7 @@ private:
   double calcNumModuleCost(unsigned int numModules) const;
 
   double calcIndexEntropyBiasCorrection(unsigned int numModules) const;
-  double calcModuleEntropyBiasCorrection(unsigned int numModules) const;
+  double calcModuleEntropyBiasCorrection() const;
   double calcEntropyBiasCorrection(unsigned int numModules) const;
 
   // ===================================================
@@ -168,7 +166,6 @@ private:
   double entropyBiasCorrectionMultiplier = 1;
   double indexEntropyBiasCorrection = 0;
   double moduleEntropyBiasCorrection = 0;
-  double gamma = 0.7;
   static double s_totalDegree;
   static unsigned int s_numNodes;
 
