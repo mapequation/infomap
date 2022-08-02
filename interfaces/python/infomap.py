@@ -2604,7 +2604,7 @@ If you want to set node names, use set_name."""
         >>> im.read_file("twotriangles.net")
         >>> im.run()
         >>> f"{im.entropy_rate:.5f}"
-        '0.35714'
+        '1.25070'
 
 
         Returns
