@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.6.0](https://github.com/mapequation/infomap/compare/v2.5.0...v2.6.0) (2022-08-09)
+
+
+### Features
+
+* **python:** Add entropy_rate property ([a243dfc](https://github.com/mapequation/infomap/commit/a243dfcdf4629aff85b425d11aa7317b1fc6b80c))
+* Variable Markov time ([#315](https://github.com/mapequation/infomap/issues/315)) ([cd7b25b](https://github.com/mapequation/infomap/commit/cd7b25b8aded24f85034ddc0d2d3bbacb881b24c))
+
+
+### Bug Fixes
+
+* Adjust entropy correction to Miller-Madow ([324c9f7](https://github.com/mapequation/infomap/commit/324c9f757d94b2d045ec77d14b53491ef30aba17))
+* Don't write multilevel json output for aggregated higher-order networks ([1f5e7ea](https://github.com/mapequation/infomap/commit/1f5e7eab31b865fd2208cecbd0ed50642b9ca199))
+* Fix calc entropy rate for undirected networks ([ccd6b6c](https://github.com/mapequation/infomap/commit/ccd6b6cbdb8b322a5e457355a214801301351d4a))
+* **py:** Fix ignored variable_markov_time argument ([eedc777](https://github.com/mapequation/infomap/commit/eedc77705e44255c580d973c9403d1062a6e1712))
+* **py:** Fix test for entropy rate ([78772b5](https://github.com/mapequation/infomap/commit/78772b5b81323d65456220e23456210c48fc0871))
+* **python:** Fix physical leaf node iterator on state networks ([#312](https://github.com/mapequation/infomap/issues/312)) ([4e2918c](https://github.com/mapequation/infomap/commit/4e2918c131beeda4187012e8c9672e3635f77df4)), closes [#313](https://github.com/mapequation/infomap/issues/313)
+* **python:** Only aggregate states into physical nodes when we have a higher-order network ([7e3277c](https://github.com/mapequation/infomap/commit/7e3277c97881057b36756f6328089ed7252234eb))
+* **python:** Segfault when accessing physical_nodes ([cc5c95e](https://github.com/mapequation/infomap/commit/cc5c95e302e5093ee168a9952bbb70dc1e5b74ce)), closes [#300](https://github.com/mapequation/infomap/issues/300)
+
 ## [2.5.0](https://github.com/mapequation/infomap/compare/v2.4.1...v2.5.0) (2022-06-07)
 
 
