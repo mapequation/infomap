@@ -215,7 +215,9 @@ def _construct_args(
     if variable_markov_time:
         args += " --variable-markov-time"
     if variable_markov_time_strength != 1.0:
-        args += " --variable-markov-time-strength {}".format(variable_markov_time_strength)
+        args += " --variable-markov-time-strength {}".format(
+            variable_markov_time_strength
+        )
 
     if preferred_number_of_modules is not None:
         args += " --preferred-number-of-modules {}".format(preferred_number_of_modules)
@@ -469,10 +471,10 @@ class Infomap(InfomapWrapper):
             Scales link flow to change the cost of moving between modules.
             Higher values results in fewer modules.
         variable_markov_time : bool, optional
-            Increase Markov time locally to level out link flow. Reduces risk of 
+            Increase Markov time locally to level out link flow. Reduces risk of
             overpartitioning sparse areas while keeping high resolution in dense areas.
         variable_markov_time_strength : float, optional
-            Exponent for variable Markov time scale. 0 means no rescaling and 1 means 
+            Exponent for variable Markov time scale. 0 means no rescaling and 1 means
             full rescaling to constant transition flow rate.
         preferred_number_of_modules : int, optional
             Penalize solutions the more they differ from this number.
@@ -1491,10 +1493,10 @@ If you want to set node names, use set_name."""
             Scales link flow to change the cost of moving between modules.
             Higher values results in fewer modules.
         variable_markov_time : bool, optional
-            Increase Markov time locally to level out link flow. Reduces risk of 
+            Increase Markov time locally to level out link flow. Reduces risk of
             overpartitioning sparse areas while keeping high resolution in dense areas.
         variable_markov_time_strength : float, optional
-            Exponent for variable Markov time scale. 0 means no rescaling and 1 means 
+            Exponent for variable Markov time scale. 0 means no rescaling and 1 means
             full rescaling to constant transition flow rate.
         preferred_number_of_modules : int, optional
             Penalize solutions the more they differ from this number.
@@ -1937,6 +1939,7 @@ If you want to set node names, use set_name."""
         InfomapIterator or InfomapIteratorPhysical
             An iterator over each node in the tree, depth first from the root
         """
+
         class LeafIterWrapper:
             def __init__(self, treeIterator):
                 self.it = treeIterator
@@ -1951,7 +1954,7 @@ If you want to set node names, use set_name."""
                 if not self.it.isEnd():
                     return self.it
                 raise StopIteration
-        
+
         if self.have_memory and not states:
             # super().iterLeafNodesPhysical(depth_level) is unreliable in python
             return LeafIterWrapper(super().iterTreePhysical(depth_level))

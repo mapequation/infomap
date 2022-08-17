@@ -763,7 +763,7 @@ void InfomapBase::generateSubNetwork(Network& network)
       }
     }
   }
-  
+
   if (variableMarkovTime) {
     Log() << "  -> Rescale link flow with variable Markov time\n";
     if (std::abs(variableMarkovTimeStrength - 1) > 1e-9) {
@@ -802,16 +802,11 @@ void InfomapBase::generateSubNetwork(Network& network)
     maxFlow = std::max(maxFlow, node.data.flow);
     entropies[i] = entropy; // Store for undirected networks
   }
+
   m_entropyRate = entropyRate;
   m_maxEntropy = maxEntropy;
   m_maxFlow = maxFlow;
-  Log() << "  -> Max node flow: " << io::toPrecision(maxFlow, 3) << '\n';
-  if (isUndirectedFlow())
-    Log() << "  -> Max node degree: " << io::toPrecision(maxDegree) << '\n';
-  else
-    Log() << "  -> Max node in/out degree: " << maxInDegree << "/" << maxOutDegree << '\n';
-  Log() << "  -> Max node entropy: " << io::toPrecision(maxEntropy) << '\n';
-  Log() << "  -> Entropy rate: " << io::toPrecision(entropyRate) << '\n';
+
   if (variableMarkovTime) {
     if (variableMarkovTimeStrength < 0) {
       maxFlow = pow(2., maxEntropy);
