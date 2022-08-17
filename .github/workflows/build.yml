@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-12, macos-11, macos-10.15, ubuntu-20.04, ubuntu-18.04, windows-2022, windows-2019]
+        os: [ macos-12, macos-11, ubuntu-22.04, ubuntu-20.04, windows-2022, windows-2019 ]
   
     runs-on: ${{ matrix.os }}
 
@@ -20,3 +20,4 @@ jobs:
       env:
         CXXFLAGS: -Werror -Wno-unknown-pragmas
     - run: ./Infomap --version
+      shell: bash

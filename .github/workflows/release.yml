@@ -23,19 +23,19 @@ jobs:
               flags: -static,
             }
           - {
-              name: ubuntu,
-              os: ubuntu-18.04,
-              artifact: "infomap-ubuntu",
-              binary: Infomap,
-              flags: "",
-            }
+            name: ubuntu,
+            os: ubuntu-20.04,
+            artifact: "infomap-ubuntu",
+            binary: Infomap,
+            flags: "",
+          }
           - {
-              name: macos,
-              os: macos-10.15,
-              artifact: "infomap-mac",
-              binary: Infomap,
-              flags: "",
-            }
+            name: macos,
+            os: macos-11,
+            artifact: "infomap-mac",
+            binary: Infomap,
+            flags: "",
+          }
         target:
           - {
             name: "",
