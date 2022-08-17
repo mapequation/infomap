@@ -1256,13 +1256,6 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
       if (!node.isLeaf()) {
         // Don't code self-teleportation
 
-        double enterFlow = (m_root.data.teleportFlow - node.data.teleportFlow) * node.data.teleportWeight;
-        double exitFlow = node.data.teleportFlow * (1.0 - node.data.teleportWeight);
-        Log() << "  Node on depth " << node.depth() << ", childDegree: " << node.childDegree() << ", isLeafModule: " << node.isLeafModule() << ", data: " << node.data
-              << ", enterFlow += (" << (m_root.data.teleportFlow - node.data.teleportFlow)
-              << " * " << node.data.teleportWeight << " = " << enterFlow << " -> " << (node.data.enterFlow + enterFlow) << "), exitFlow += ("
-              << node.data.teleportFlow << " * " << (1.0 - node.data.teleportWeight) << " = " << exitFlow << " -> " << (node.data.exitFlow + exitFlow) << ")\n";
-
         node.data.enterFlow += (m_root.data.teleportFlow - node.data.teleportFlow) * node.data.teleportWeight;
         node.data.exitFlow += node.data.teleportFlow * (1.0 - node.data.teleportWeight);
       }
