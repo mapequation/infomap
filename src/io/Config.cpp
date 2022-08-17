@@ -58,7 +58,9 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(assignToNeighbouringModule, "assign-to-neighbouring-module", "Assign nodes without module assignments (from --cluster-data) to the module assignment of a neighbouring node if possible.", "Input", true);
 
-  api.addOptionArgument(clusterDataIsHard, "hard-partition", "Lock nodes in assigned modules from an initial partition.", "Input", true);
+  api.addOptionArgument(clusterDataIsHard, "hard-partition", "Merge nodes according to cluster data before optimization and restore afterwards.", "Input", true);
+
+  api.addOptionArgument(freezeInitialPartition, "freeze-initial-partition", "Don't move nodes with assigned modules from an initial partition.", "Input", true);
 
   api.addOptionArgument(metaDataFile, "meta-data", "Provide meta data (clu format) that should be encoded.", ArgType::path, "Input", true);
 

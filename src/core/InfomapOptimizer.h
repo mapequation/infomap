@@ -303,7 +303,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
   for (unsigned int i = 0; i < numNodes; ++i) {
     InfoNode& current = *network[nodeEnumeration[i]];
 
-    if (!current.dirty)
+    if (!current.dirty || current.freeze)
       continue;
 
     // If other nodes have moved here, don't move away on first loop
@@ -487,7 +487,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
     // Pick nodes in random order
     InfoNode& current = *network[nodeEnumeration[i]];
 
-    if (!current.dirty)
+    if (!current.dirty || current.freeze)
       continue;
 
     // If other nodes have moved here, don't move away on first loop
@@ -686,6 +686,9 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
       node->parent->addChild(modules[moduleIndex]);
     }
     modules[moduleIndex]->addChild(node);
+    if (node->freeze) {
+      modules[moduleIndex]->freeze = true;
+    }
   }
 
   using NodePair = std::pair<unsigned int, unsigned int>;

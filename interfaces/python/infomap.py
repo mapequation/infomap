@@ -48,6 +48,7 @@ def _construct_args(
     node_limit=None,
     matchable_multilayer_ids=None,
     assign_to_neighbouring_module=False,
+    freeze_initial_partition=False,
     meta_data=None,
     meta_data_rate=_DEFAULT_META_DATA_RATE,
     meta_data_unweighted=False,
@@ -131,10 +132,14 @@ def _construct_args(
         args += " --node-limit {}".format(node_limit)
 
     if matchable_multilayer_ids is not None:
-        args += " --matchable-multilayer-ids {}".format(matchable_multilayer_ids)
+        args += " --matchable-multilayer-ids {}".format(
+            matchable_multilayer_ids)
 
     if assign_to_neighbouring_module:
         args += " --assign-to-neightbouring-module"
+
+    if freeze_initial_partition:
+        args += " --freeze-initial-partition"
 
     if meta_data is not None:
         args += " --meta-data {}".format(meta_data)
@@ -199,7 +204,8 @@ def _construct_args(
         args += " --to-nodes"
 
     if teleportation_probability != _DEFAULT_TELEPORTATION_PROB:
-        args += " --teleportation-probability {}".format(teleportation_probability)
+        args += " --teleportation-probability {}".format(
+            teleportation_probability)
 
     if regularized:
         args += " --regularized"
@@ -208,17 +214,20 @@ def _construct_args(
     if entropy_corrected:
         args += " --entropy-corrected"
     if entropy_correction_strength != 1.0:
-        args += " --entropy-correction-strength {}".format(entropy_correction_strength)
+        args += " --entropy-correction-strength {}".format(
+            entropy_correction_strength)
 
     if markov_time != 1.0:
         args += " --markov-time {}".format(markov_time)
     if variable_markov_time:
         args += " --variable-markov-time"
     if variable_markov_time_strength != 1.0:
-        args += " --variable-markov-time-strength {}".format(variable_markov_time_strength)
+        args += " --variable-markov-time-strength {}".format(
+            variable_markov_time_strength)
 
     if preferred_number_of_modules is not None:
-        args += " --preferred-number-of-modules {}".format(preferred_number_of_modules)
+        args += " --preferred-number-of-modules {}".format(
+            preferred_number_of_modules)
 
     if multilayer_relax_rate != _DEFAULT_MULTILAYER_RELAX_RATE:
         args += " --multilayer-relax-rate {}".format(multilayer_relax_rate)
@@ -227,10 +236,12 @@ def _construct_args(
         args += " --multilayer-relax-limit {}".format(multilayer_relax_limit)
 
     if multilayer_relax_limit_up != -1:
-        args += " --multilayer-relax-limit-up {}".format(multilayer_relax_limit_up)
+        args += " --multilayer-relax-limit-up {}".format(
+            multilayer_relax_limit_up)
 
     if multilayer_relax_limit_down != -1:
-        args += " --multilayer-relax-limit-down {}".format(multilayer_relax_limit_down)
+        args += " --multilayer-relax-limit-down {}".format(
+            multilayer_relax_limit_down)
 
     if multilayer_relax_by_jsd:
         args += " --multilayer-relax-by-jsd"
@@ -320,6 +331,7 @@ class Infomap(InfomapWrapper):
         node_limit=None,
         matchable_multilayer_ids=None,
         assign_to_neighbouring_module=False,
+        freeze_initial_partition=False,
         meta_data=None,
         meta_data_rate=_DEFAULT_META_DATA_RATE,
         meta_data_unweighted=False,
@@ -404,6 +416,9 @@ class Infomap(InfomapWrapper):
         assign_to_neighbouring_module : bool, optional
             Assign nodes without module assignments (from ``cluster_data``) to
             the module assignment of a neighbouring node if possible.
+        freeze_initial_partition : bool, optional
+            Freeze nodes with module assignments (from ``cluster_data``) to
+            their initial modules.
         meta_data : str, optional
             Provide meta data (clu format) that should be encoded.
         meta_data_rate : float, optional
@@ -534,6 +549,7 @@ class Infomap(InfomapWrapper):
                 node_limit=node_limit,
                 matchable_multilayer_ids=matchable_multilayer_ids,
                 assign_to_neighbouring_module=assign_to_neighbouring_module,
+                freeze_initial_partition=freeze_initial_partition,
                 meta_data=meta_data,
                 meta_data_rate=meta_data_rate,
                 meta_data_unweighted=meta_data_unweighted,
@@ -1339,6 +1355,7 @@ If you want to set node names, use set_name."""
         node_limit=None,
         matchable_multilayer_ids=None,
         assign_to_neighbouring_module=False,
+        freeze_initial_partition=False,
         meta_data=None,
         meta_data_rate=_DEFAULT_META_DATA_RATE,
         meta_data_unweighted=False,
@@ -1426,6 +1443,9 @@ If you want to set node names, use set_name."""
         assign_to_neighbouring_module : bool, optional
             Assign nodes without module assignments (from ``cluster_data``) to
             the module assignment of a neighbouring node if possible.
+        freeze_initial_partition : bool, optional
+            Freeze nodes with module assignments (from ``cluster_data``) to
+            their initial modules.
         meta_data : str, optional
             Provide meta data (clu format) that should be encoded.
         meta_data_rate : float, optional
@@ -1559,6 +1579,7 @@ If you want to set node names, use set_name."""
             node_limit=node_limit,
             matchable_multilayer_ids=matchable_multilayer_ids,
             assign_to_neighbouring_module=assign_to_neighbouring_module,
+            freeze_initial_partition=freeze_initial_partition,
             meta_data=meta_data,
             meta_data_rate=meta_data_rate,
             meta_data_unweighted=meta_data_unweighted,
@@ -1951,7 +1972,7 @@ If you want to set node names, use set_name."""
                 if not self.it.isEnd():
                     return self.it
                 raise StopIteration
-        
+
         if self.have_memory and not states:
             # super().iterLeafNodesPhysical(depth_level) is unreliable in python
             return LeafIterWrapper(super().iterTreePhysical(depth_level))
@@ -2706,7 +2727,8 @@ If you want to set node names, use set_name."""
         if hasattr(self, writer):
             return getattr(self, writer)(filename, *args, **kwargs)
 
-        raise NotImplementedError("No method found for writing {} files".format(ext))
+        raise NotImplementedError(
+            "No method found for writing {} files".format(ext))
 
     def write_clu(self, filename, states=False, depth_level=1):
         """Write result to a clu file.

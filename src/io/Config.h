@@ -83,7 +83,8 @@ struct Config {
   double metaDataRate = 1.0;
   bool unweightedMetaData = false;
   unsigned int numMetaDataDimensions = 0;
-  bool clusterDataIsHard = false; // FIXME Not used
+  bool clusterDataIsHard = false;
+  bool freezeInitialPartition = false;
   bool assignToNeighbouringModule = false;
   bool noInfomap = false;
 
@@ -179,6 +180,7 @@ struct Config {
     metaDataRate = other.metaDataRate;
     unweightedMetaData = other.unweightedMetaData;
     numMetaDataDimensions = other.numMetaDataDimensions;
+    freezeInitialPartition = other.freezeInitialPartition;
     assignToNeighbouringModule = other.assignToNeighbouringModule;
     noInfomap = other.noInfomap;
     flowModel = other.flowModel;

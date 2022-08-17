@@ -430,6 +430,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 
   auto numNodesFound = 0;
   auto numNodesNotInNetwork = 0;
+  unsigned int numFreezed = 0;
   for (const auto& nodePath : tree) {
     ++numNodesFound;
     InfoNode* node = &root();
@@ -444,6 +445,11 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
     } catch (std::exception& e) {
       ++numNodesNotInNetwork;
       continue;
+    }
+
+    if (freezeInitialPartition) {
+      leafNode->freeze = true;
+      ++numFreezed;
     }
 
     for (size_t i = 0; i < path.size(); ++i) {
@@ -463,6 +469,10 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       ++depth;
     }
     maxDepth = std::max(maxDepth, depth);
+  }
+
+  if (numFreezed > 0) {
+    Log() << "\n -> Freezed " << numFreezed << " nodes in assigned modules. ";
   }
 
   if (numNodesNotInNetwork > 0) {
@@ -558,6 +568,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
   unsigned int numNodes = numLeafNodes();
   std::vector<unsigned int> modules(numNodes);
   std::vector<unsigned int> selectedNodes(numNodes, 0);
+  unsigned int numFreezed = 0;
   unsigned int moduleIndex = 0;
   for (const auto& it : clusterIdToNodeIds) {
     auto& nodes = it.second;
@@ -565,6 +576,10 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
       auto nodeIndex = nodeIdToIndex[nodeId];
       modules[nodeIndex] = moduleIndex;
       ++selectedNodes[nodeIndex];
+      if (freezeInitialPartition) {
+        m_leafNodes[nodeIndex]->freeze = true;
+        ++numFreezed;
+      }
     }
     ++moduleIndex;
   }
@@ -624,6 +639,9 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
         ++moduleIndex;
       }
     }
+  }
+  if (numFreezed > 0) {
+    Log() << "\n -> Freezed " << numFreezed << " nodes in assigned modules. ";
   }
 
   return initPartition(modules, hard);

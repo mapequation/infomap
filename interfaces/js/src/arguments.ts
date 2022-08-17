@@ -21,6 +21,7 @@ export interface Arguments
     nodeLimit: number;
     matchableMultilayerIds: number;
     assignToNeighbouringModule: boolean;
+    freezeInitialPartition: boolean;
     metaData: string;
     metaDataRate: number;
     metaDataUnweighted: boolean;
@@ -96,6 +97,9 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.assignToNeighbouringModule)
     result += " --assign-to-neighbouring-module";
+
+  if (args.freezeInitialPartition)
+    result += " --freeze-initial-partition";
 
   if (args.metaData) result += " --meta-data " + args.metaData;
 

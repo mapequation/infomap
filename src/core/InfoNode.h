@@ -77,6 +77,7 @@ public:
   InfoNode* collapsedLastChild = nullptr;
   double codelength = 0.0; // TODO: Better design for hierarchical stuff!?
   bool dirty = false;
+  bool freeze = false;
 
   std::vector<PhysData> physicalNodes;
   MetaCollection metaCollection; // For modules
@@ -124,6 +125,7 @@ public:
         collapsedLastChild(other.collapsedLastChild),
         codelength(other.codelength),
         dirty(other.dirty),
+        freeze(other.freeze),
         metaCollection(other.metaCollection),
         m_childDegree(other.m_childDegree),
         m_childrenChanged(other.m_childrenChanged),
@@ -148,6 +150,7 @@ public:
     collapsedLastChild = other.collapsedLastChild;
     codelength = other.codelength;
     dirty = other.dirty;
+    freeze = other.freeze;
     metaCollection = other.metaCollection;
     m_childDegree = other.m_childDegree;
     m_childrenChanged = other.m_childrenChanged;
