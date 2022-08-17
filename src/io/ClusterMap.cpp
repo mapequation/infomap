@@ -129,8 +129,6 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
 void ClusterMap::readClu(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId)
 {
   auto isMultilayer = layerNodeToStateId != nullptr;
-
-  Log() << "Read initial partition from '" << filename << "'... " << std::flush;
   SafeInFile input(filename);
   std::string line;
   std::istringstream lineStream;

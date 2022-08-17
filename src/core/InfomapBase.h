@@ -121,6 +121,7 @@ public:
 
   const std::vector<double>& codelengths() const { return m_codelengths; }
 
+  // TODO: Use root().codelength instead? If calculated from initial clustering, index codelenght is not set?
   double getIndexCodelength() const { return m_optimizer->getIndexCodelength(); }
 
   double getModuleCodelength() const { return m_hierarchicalCodelength - m_optimizer->getIndexCodelength(); }
