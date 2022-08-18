@@ -202,6 +202,10 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
     outName = !networkFile.empty() ? FileURI(networkFile).getName() : "no-name";
   }
 
+  if (noInfomap) {
+    numTrials = 1;
+  }
+
   parsedString = flags;
   parsedOptions = api.getUsedOptionArguments();
 
