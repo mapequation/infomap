@@ -214,6 +214,11 @@ void InfomapBase::run(Network& network)
     Log() << "  -> Notice: Directed input found, changing flow model from '" << flowModel << "' to '" << FlowModel(FlowModel::directed) << "'\n";
     flowModel = FlowModel::directed;
   }
+
+  if (network.isBipartite()) {
+    bipartite = true;
+  }
+
   network.setConfig(*this);
 
   calculateFlow(network, *this);
@@ -230,10 +235,6 @@ void InfomapBase::run(Network& network)
     }
     network.writePajekNetwork(filename, true);
     Log() << "done!\n";
-  }
-
-  if (network.isBipartite()) {
-    bipartite = true;
   }
 
   initNetwork(network);
@@ -430,7 +431,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 
   auto numNodesFound = 0;
   auto numNodesNotInNetwork = 0;
-  unsigned int numFreezed = 0;
+  unsigned int numFrozenNodes = 0;
   for (const auto& nodePath : tree) {
     ++numNodesFound;
     InfoNode* node = &root();
@@ -449,7 +450,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 
     if (freezeInitialPartition) {
       leafNode->freeze = true;
-      ++numFreezed;
+      ++numFrozenNodes;
     }
 
     for (size_t i = 0; i < path.size(); ++i) {
@@ -471,8 +472,8 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
     maxDepth = std::max(maxDepth, depth);
   }
 
-  if (numFreezed > 0) {
-    Log() << "\n -> Freezed " << numFreezed << " nodes in assigned modules. ";
+  if (numFrozenNodes > 0) {
+    Log() << "\n -> Freezed " << numFrozenNodes << " nodes in assigned modules. ";
   }
 
   if (numNodesNotInNetwork > 0) {
@@ -551,6 +552,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
  */
 InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned int>& clusterIds, bool hard)
 {
+  Log() << "Init partition with " << clusterIds.size() << " module assignments.\n";
   // Generate map from node id to index in leaf node vector
   std::map<unsigned int, unsigned int> nodeIdToIndex;
   unsigned int leafIndex = 0;
@@ -568,7 +570,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
   unsigned int numNodes = numLeafNodes();
   std::vector<unsigned int> modules(numNodes);
   std::vector<unsigned int> selectedNodes(numNodes, 0);
-  unsigned int numFreezed = 0;
+  unsigned int numFrozenNodes = 0;
   unsigned int moduleIndex = 0;
   for (const auto& it : clusterIdToNodeIds) {
     auto& nodes = it.second;
@@ -578,7 +580,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
       ++selectedNodes[nodeIndex];
       if (freezeInitialPartition) {
         m_leafNodes[nodeIndex]->freeze = true;
-        ++numFreezed;
+        ++numFrozenNodes;
       }
     }
     ++moduleIndex;
@@ -596,7 +598,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
   }
 
   if (assignToNeighbouringModule) {
-    Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into neighbouring modules if possible. ";
+    Log() << " -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into neighbouring modules if possible.\n";
     for (unsigned int i = 0; i < numNodes; ++i) {
       if (selectedNodes[i] == 0) {
         // Check out edges greedily for connected modules
@@ -631,7 +633,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
       }
     }
   } else {
-    Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into separate modules. ";
+    Log() << " -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into separate modules.\n";
     // Put non-selected nodes in its own module
     for (unsigned int i = 0; i < numNodes; ++i) {
       if (selectedNodes[i] == 0) {
@@ -640,8 +642,8 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
       }
     }
   }
-  if (numFreezed > 0) {
-    Log() << "\n -> Freezed " << numFreezed << " nodes in assigned modules. ";
+  if (numFrozenNodes > 0) {
+    Log() << " -> Freezed " << numFrozenNodes << " nodes in assigned modules.\n";
   }
 
   return initPartition(modules, hard);
@@ -649,7 +651,8 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
 
 InfomapBase& InfomapBase::initPartition(std::vector<std::vector<unsigned int>>& clusters, bool hard)
 {
-  Log(3) << "\n -> Init " << (hard ? "hard" : "soft") << " partition... " << std::flush;
+  Log(3) << " -> Init " << (hard ? "hard" : "soft") << " partition.\n"
+         << std::flush;
   unsigned int numNodes = numLeafNodes();
   // Get module indices from the merge structure
   std::vector<unsigned int> modules(numNodes);
@@ -676,7 +679,7 @@ InfomapBase& InfomapBase::initPartition(std::vector<std::vector<unsigned int>>& 
     }
   }
   if (numNodesWithoutClusterInfo > 0)
-    Log() << "\n -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into separate modules. ";
+    Log() << " -> " << numNodesWithoutClusterInfo << " nodes not found in cluster file are put into separate modules.\n";
 
   return initPartition(modules, hard);
 }
@@ -706,9 +709,9 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
       ++nodeIndex;
     }
 
-    Log(1) << "\n -> Hard-partitioned the network to " << numNodesInNewNetwork << " nodes and " << numLinksInNewNetwork << " links with codelength " << *this << '\n';
+    Log(1) << " -> Hard-partitioned the network to " << numNodesInNewNetwork << " nodes and " << numLinksInNewNetwork << " links with codelength " << *this << '\n';
   } else {
-    Log(1) << "\n -> Initiated to codelength " << *this << " in " << numTopModules() << " top modules.\n";
+    Log(1) << " -> Initiated to codelength " << *this << " in " << numTopModules() << " top modules.\n";
   }
   m_hierarchicalCodelength = getCodelength();
 

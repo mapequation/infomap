@@ -442,7 +442,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
       }
 
       // Move single connected nodes to same module
-      if (numLinkedNodesInOldModule == 1 && m_moduleMembers[oldModuleIndex] == 1) {
+      if (numLinkedNodesInOldModule == 1 && m_moduleMembers[oldModuleIndex] == 1 && !nodeInOldModule->freeze) {
         moveNodeToPredefinedModule(*nodeInOldModule, bestModuleIndex);
         ++numMoved;
         // Mark neighbours as dirty
