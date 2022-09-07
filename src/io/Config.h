@@ -94,7 +94,7 @@ struct Config {
   bool teleportToNodes = false;
   double markovTime = 1.0;
   bool variableMarkovTime = false;
-  double variableMarkovTimeStrength = 1.0;
+  double variableMarkovTimeDamping = 1.0; // 0 for linear scaling, 1 for log scaled.
   bool markovTimeNoSelfLinks = false;
   double multilayerRelaxRate = 0.15;
   int multilayerRelaxLimit = -1; // Amount of layers allowed to jump up or down
@@ -188,7 +188,7 @@ struct Config {
     teleportToNodes = other.teleportToNodes;
     markovTime = other.markovTime;
     variableMarkovTime = other.variableMarkovTime;
-    variableMarkovTimeStrength = other.variableMarkovTimeStrength;
+    variableMarkovTimeDamping = other.variableMarkovTimeDamping;
     markovTimeNoSelfLinks = other.markovTimeNoSelfLinks;
     multilayerRelaxRate = other.multilayerRelaxRate;
     multilayerRelaxLimit = other.multilayerRelaxLimit;
