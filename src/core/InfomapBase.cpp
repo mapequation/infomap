@@ -808,7 +808,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   m_maxEntropy = maxEntropy;
   m_maxFlow = maxFlow;
 
-  double minLocalScale = 1e-9;
+  double minLocalScale = variableMarkovTimeMinLocalScale;
   double damping = variableMarkovTimeDamping;
 
   double maxScale = infomath::linlog(pow(2.0, maxEntropy), damping);

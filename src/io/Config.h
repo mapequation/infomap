@@ -95,6 +95,7 @@ struct Config {
   double markovTime = 1.0;
   bool variableMarkovTime = false;
   double variableMarkovTimeDamping = 1.0; // 0 for linear scaling, 1 for log scaled.
+  double variableMarkovTimeMinLocalScale = 1e-9;
   bool markovTimeNoSelfLinks = false;
   double multilayerRelaxRate = 0.15;
   int multilayerRelaxLimit = -1; // Amount of layers allowed to jump up or down
