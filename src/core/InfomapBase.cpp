@@ -218,6 +218,15 @@ void InfomapBase::run(Network& network)
 
   calculateFlow(network, *this);
 
+  if (network.isBipartite()) {
+    bipartite = true;
+  }
+
+  initNetwork(network);
+
+  if (numLeafNodes() == 0)
+    throw std::domain_error("No nodes to partition");
+
   if (printFlowNetwork) {
     std::string filename;
     if (printStates()) {
@@ -231,15 +240,6 @@ void InfomapBase::run(Network& network)
     network.writePajekNetwork(filename, true);
     Log() << "done!\n";
   }
-
-  if (network.isBipartite()) {
-    bipartite = true;
-  }
-
-  initNetwork(network);
-
-  if (numLeafNodes() == 0)
-    throw std::domain_error("No nodes to partition");
 
   // If used as a library, we may want to reuse the network instance, else clear to use less memory
   // TODO: May have to use some meta data for output?
