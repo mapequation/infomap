@@ -808,28 +808,26 @@ void InfomapBase::generateSubNetwork(Network& network)
   m_maxEntropy = maxEntropy;
   m_maxFlow = maxFlow;
 
-  double eps = 1e-9;
+  double minLocalScale = 1e-9;
   double damping = variableMarkovTimeDamping;
 
-  double maxScale = infomath::linlog(pow(2.0, maxEntropy) + eps, damping);
+  double maxScale = infomath::linlog(pow(2.0, maxEntropy), damping);
 
   if (variableMarkovTime) {
     if (damping < 0) {
-      maxScale = infomath::linlog(maxFlow * totDegree, damping);
+      maxScale = infomath::linlog(maxFlow * totDegree, -damping);
     }
     for (unsigned i = 0; i < numNodes; ++i) {
       InfoNode& node = *m_leafNodes[i];
-      double localScale = damping >= 0 ? infomath::linlog(pow(2.0, entropies[i]) + eps, damping) : infomath::linlog(std::max(2.0, node.data.flow * totDegree), damping);
+      double localScale = damping >= 0 ? infomath::linlog(pow(2.0, entropies[i]), damping) : infomath::linlog(std::max(1.0, node.data.flow * totDegree), -damping);
       for (InfoEdge* e : node.outEdges()) {
         if (isUndirectedFlow()) {
-          double oppositeLocalScale = damping >= 0 ? infomath::linlog(pow(2., entropies[nodeIndexMap[e->target->stateId]]) + eps, damping) : infomath::linlog(std::max(2.0, e->target->data.flow * totDegree), damping);
+          double oppositeLocalScale = damping >= 0 ? infomath::linlog(pow(2.0, entropies[nodeIndexMap[e->target->stateId]]), damping) : infomath::linlog(std::max(1.0, e->target->data.flow * totDegree), -damping);
           localScale = std::max(localScale, oppositeLocalScale);
         }
-        // double localMarkovTimeScale = pow(std::log(std::max(1e-9, localScale)) / std::log(maxFlow), std::abs(damping));
-        // double localMarkovTimeScale = pow(maxScale / std::max(1.0, localScale), std::abs(damping));
-        // double localMarkovTimeScale = damping >= 0 ? maxScale / localScale : pow(maxScale / std::max(1.0, localScale), std::abs(damping));
-        double localMarkovTimeScale = maxScale / localScale;
+        double localMarkovTimeScale = maxScale / std::max(minLocalScale, localScale);
         e->data.flow *= localMarkovTimeScale;
+        network.nodeLinkMap()[e->source->stateId][e->target->stateId].flow = e->data.flow;
       }
     }
   }
