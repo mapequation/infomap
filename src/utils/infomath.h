@@ -34,19 +34,21 @@ namespace infomath {
   inline double tsallisEntropyUniform(double n, double q = 1)
   {
     if (isEqual(q, 1)) {
-      return std::log(n);
+      return std::log2(n);
     }
-    return 1 / (q - 1) * (1 - pow(n, (1 - q)));
+    return 1 / (q - 1) * (1 - pow(n, (1 - q))) / std::log(2);
   }
 
   /**
    * Interpolate from linear (q = 0) to log (q = 1)
-   * linlog(k, 0) = k - 1
-   * linlog(k, 1) = log(k)
+   * linlog(k, 0) = k
+   * linlog(k, 1) = log2(k)
    */
   inline double linlog(double k, double q = 1)
   {
-    return tsallisEntropyUniform(k, q);
+    double baseCorrection = q <= 1 ? (1 - q) * std::log(2) + q : 1;
+    double offsetCorrection = q <= 1 ? 1 - q : 0;
+    return tsallisEntropyUniform(k, q) * baseCorrection + offsetCorrection;
   }
 
 } // namespace infomath
