@@ -777,7 +777,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   unsigned int maxDegree = 0;
   unsigned int maxOutDegree = 0;
   unsigned int maxInDegree = 0;
-  double totDegree = network.sumWeightedDegree();
+  double totDegree = network.sumDegree();
   std::vector<double> entropies(numNodes, 0);
 
   for (unsigned i = 0; i < numNodes; ++i) {
@@ -811,18 +811,18 @@ void InfomapBase::generateSubNetwork(Network& network)
   double minLocalScale = variableMarkovTimeMinLocalScale;
   double damping = variableMarkovTimeDamping;
 
-  double maxScale = infomath::linlog(pow(2.0, maxEntropy), damping);
+  double maxScale = infomath::linlog(maxFlow * totDegree, damping);
 
   if (variableMarkovTime) {
     if (damping < 0) {
-      maxScale = infomath::linlog(maxFlow * totDegree, -damping);
+      maxScale = infomath::linlog(pow(2.0, maxEntropy), -damping);
     }
     for (unsigned i = 0; i < numNodes; ++i) {
       InfoNode& node = *m_leafNodes[i];
-      double localScale = damping >= 0 ? infomath::linlog(pow(2.0, entropies[i]), damping) : infomath::linlog(std::max(1.0, node.data.flow * totDegree), -damping);
+      double localScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[i]), -damping) : infomath::linlog(std::max(minLocalScale, node.data.flow * totDegree), damping);
       for (InfoEdge* e : node.outEdges()) {
         if (isUndirectedFlow()) {
-          double oppositeLocalScale = damping >= 0 ? infomath::linlog(pow(2.0, entropies[nodeIndexMap[e->target->stateId]]), damping) : infomath::linlog(std::max(1.0, e->target->data.flow * totDegree), -damping);
+          double oppositeLocalScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[nodeIndexMap[e->target->stateId]]), -damping) : infomath::linlog(std::max(minLocalScale, e->target->data.flow * totDegree), damping);
           localScale = std::max(localScale, oppositeLocalScale);
         }
         double localMarkovTimeScale = maxScale / std::max(minLocalScale, localScale);
