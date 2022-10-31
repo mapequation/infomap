@@ -50,7 +50,7 @@ export interface Arguments
     entropyCorrectionStrength: number;
     markovTime: number;
     variableMarkovTime: boolean;
-    variableMarkovTimeStrength: number;
+    variableMarkovDamping: number;
     preferredNumberOfModules: number;
     multilayerRelaxRate: number;
     multilayerRelaxLimit: number;
@@ -71,7 +71,7 @@ export interface Arguments
     // about
     help: boolean | "advanced";
     version: boolean;
-  }> {}
+  }> { }
 
 export default function argumentsToString(args: Arguments) {
   let result = "";
@@ -159,9 +159,9 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.variableMarkovTime) result += " --variable-markov-time";
 
-  if (args.variableMarkovTimeStrength != null)
+  if (args.variableMarkovDamping != null)
     result +=
-      " --variable-markov-time-strength " + args.variableMarkovTimeStrength;
+      " --variable-markov-damping " + args.variableMarkovDamping;
 
   if (args.preferredNumberOfModules != null)
     result += " --preferred-number-of-modules " + args.preferredNumberOfModules;

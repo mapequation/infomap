@@ -115,7 +115,9 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(variableMarkovTime, "variable-markov-time", "Increase Markov time locally to level out link flow. Reduces risk of overpartitioning sparse areas while keeping high resolution in dense areas.", "Algorithm", true);
 
-  api.addOptionArgument(variableMarkovTimeStrength, "variable-markov-time-strength", "Exponent for variable Markov time scale. 0 means no rescaling and 1 means full rescaling to constant transition flow rate.", ArgType::number, "Algorithm", true);
+  api.addOptionArgument(variableMarkovTimeDamping, "variable-markov-damping", "Damping parameter for variable Markov time, to scale with local effective degree (0) or local entropy (1).", ArgType::number, "Algorithm", true);
+
+  api.addOptionArgument(variableMarkovTimeMinLocalScale, "variable-markov-min-scale", "Minimum local scale for nodes with zero entropy to avoid division by zero. Local Markov time is max scale divided by local scale.", ArgType::number, "Algorithm", true);
 
   // api.addOptionArgument(markovTimeNoSelfLinks, "markov-time-no-self-links", "For testing.", "Algorithm", true);
 

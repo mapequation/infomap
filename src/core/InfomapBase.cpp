@@ -218,6 +218,15 @@ void InfomapBase::run(Network& network)
 
   calculateFlow(network, *this);
 
+  if (network.isBipartite()) {
+    bipartite = true;
+  }
+
+  initNetwork(network);
+
+  if (numLeafNodes() == 0)
+    throw std::domain_error("No nodes to partition");
+
   if (printFlowNetwork) {
     std::string filename;
     if (printStates()) {
@@ -231,15 +240,6 @@ void InfomapBase::run(Network& network)
     network.writePajekNetwork(filename, true);
     Log() << "done!\n";
   }
-
-  if (network.isBipartite()) {
-    bipartite = true;
-  }
-
-  initNetwork(network);
-
-  if (numLeafNodes() == 0)
-    throw std::domain_error("No nodes to partition");
 
   // If used as a library, we may want to reuse the network instance, else clear to use less memory
   // TODO: May have to use some meta data for output?
@@ -766,8 +766,8 @@ void InfomapBase::generateSubNetwork(Network& network)
 
   if (variableMarkovTime) {
     Log() << "  -> Rescale link flow with variable Markov time\n";
-    if (std::abs(variableMarkovTimeStrength - 1) > 1e-9) {
-      Log() << "  -> Use variable Markov time strength " << variableMarkovTimeStrength << "\n";
+    if (std::abs(variableMarkovTimeDamping - 1) > 1e-9) {
+      Log() << "  -> Use variable Markov time strength " << variableMarkovTimeDamping << "\n";
     }
   }
 
@@ -777,6 +777,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   unsigned int maxDegree = 0;
   unsigned int maxOutDegree = 0;
   unsigned int maxInDegree = 0;
+  double totDegree = network.sumDegree();
   std::vector<double> entropies(numNodes, 0);
 
   for (unsigned i = 0; i < numNodes; ++i) {
@@ -807,19 +808,26 @@ void InfomapBase::generateSubNetwork(Network& network)
   m_maxEntropy = maxEntropy;
   m_maxFlow = maxFlow;
 
+  double minLocalScale = variableMarkovTimeMinLocalScale;
+  double damping = variableMarkovTimeDamping;
+
+  double maxScale = infomath::linlog(maxFlow * totDegree, damping);
+
   if (variableMarkovTime) {
-    if (variableMarkovTimeStrength < 0) {
-      maxFlow = pow(2., maxEntropy);
+    if (damping < 0) {
+      maxScale = infomath::linlog(pow(2.0, maxEntropy), -damping);
     }
     for (unsigned i = 0; i < numNodes; ++i) {
       InfoNode& node = *m_leafNodes[i];
-      double localFlow = variableMarkovTimeStrength >= 0 ? node.data.flow : pow(2., entropies[i]);
+      double localScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[i]), -damping) : infomath::linlog(std::max(minLocalScale, node.data.flow * totDegree), damping);
       for (InfoEdge* e : node.outEdges()) {
         if (isUndirectedFlow()) {
-          localFlow = std::max(localFlow, variableMarkovTimeStrength >= 0 ? e->target->data.flow : pow(2., entropies[nodeIndexMap[e->target->stateId]]));
+          double oppositeLocalScale = damping < 0 ? infomath::linlog(pow(2.0, entropies[nodeIndexMap[e->target->stateId]]), -damping) : infomath::linlog(std::max(minLocalScale, e->target->data.flow * totDegree), damping);
+          localScale = std::max(localScale, oppositeLocalScale);
         }
-        double localMarkovTimeScale = pow(maxFlow / std::max(1e-9, localFlow), std::abs(variableMarkovTimeStrength));
+        double localMarkovTimeScale = maxScale / std::max(minLocalScale, localScale);
         e->data.flow *= localMarkovTimeScale;
+        network.nodeLinkMap()[e->source->stateId][e->target->stateId].flow = e->data.flow;
       }
     }
   }
