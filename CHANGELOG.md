@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.6.1](https://github.com/mapequation/infomap/compare/v2.6.0...v2.6.1) (2022-10-31)
+
+
+### Bug Fixes
+
+* Scale variable Markov time logarithmic as default ([#320](https://github.com/mapequation/infomap/issues/320)) ([3f40134](https://github.com/mapequation/infomap/commit/3f40134b0346586b9d051c3a2996a77500ba10d6))
+* Set num trials to 1 if no infomap ([be60a09](https://github.com/mapequation/infomap/commit/be60a09c785d8bee9ac885ebc92473494db368c1))
+
 ## [2.6.0](https://github.com/mapequation/infomap/compare/v2.5.0...v2.6.0) (2022-08-09)
 
 
