@@ -38,6 +38,7 @@ docs/.*
 /Infomap
 __pycache__
 interfaces/js/src/worker
+interfaces/js/package.json
 interfaces/python/package_meta.py
 interfaces/python/source/index.rst
 /README.md
