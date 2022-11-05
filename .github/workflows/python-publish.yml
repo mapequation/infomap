@@ -28,8 +28,27 @@ jobs:
     strategy:
       matrix:
         config:
-          - { name: macos, os: macos-latest, flags: "" }
-          - { name: windows, os: windows-latest, flags: "-static" }
+          - {
+              name: windows,
+              os: windows-2019,
+              cxxflags: -static,
+              ldflags: -static,
+              compiler: g++,
+            }
+          - {
+              name: ubuntu,
+              os: ubuntu-20.04,
+              cxxflags: "",
+              ldflags: "",
+              compiler: g++,
+            }
+          - {
+              name: macos,
+              os: macos-11,
+              cxxflags: "-I /usr/local/include -I/usr/local/opt/llvm/include",
+              ldflags: "-L /usr/local/lib -L/usr/local/opt/llvm/lib",
+              compiler: /usr/local/opt/llvm/bin/clang++,
+            }
         python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
     steps:
       - uses: actions/checkout@v2
@@ -46,13 +65,15 @@ jobs:
           pip install setuptools wheel
           pip install -r requirements_dev.txt
       - if: startsWith(matrix.config.os, 'macos')
-        run: brew install libomp
+        run: |
+          brew install llvm libomp
+          export PATH="$(brew --prefix llvm)/bin:$PATH"
       - run: make py-build
         shell: bash
         env:
-          CXX: g++
-          CXXFLAGS: ${{ matrix.config.flags }}
-          LDFLAGS: ${{ matrix.config.flags }}
+          CXX: ${{ matrix.config.compiler }}
+          CXXFLAGS: ${{ matrix.config.cxxflags }}
+          LDFLAGS: ${{ matrix.config.ldflags }}
       - run: make py-local-install
         shell: bash
       - run: make py-test
