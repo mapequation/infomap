@@ -20,21 +20,27 @@ jobs:
               os: windows-2019,
               artifact: "infomap-win",
               binary: Infomap.exe,
-              flags: -static,
+              cxxflags: -static,
+              ldflags: -static,
+              compiler: g++,
             }
           - {
               name: ubuntu,
               os: ubuntu-20.04,
               artifact: "infomap-ubuntu",
               binary: Infomap,
-              flags: "",
+              cxxflags: "",
+              ldflags: "",
+              compiler: g++,
             }
           - {
               name: macos,
               os: macos-11,
               artifact: "infomap-mac",
               binary: Infomap,
-              flags: "",
+              cxxflags: "-I /usr/local/include -I/usr/local/opt/llvm/include",
+              ldflags: "-L /usr/local/lib -L/usr/local/opt/llvm/lib",
+              compiler: /usr/local/opt/llvm/bin/clang++,
             }
         target:
           - { name: "", target: "" }
@@ -49,14 +55,16 @@ jobs:
       #    sudo apt install libomp-dev
 
       - if: startsWith(matrix.config.os, 'macos')
-        run: brew install p7zip libomp
+        run: |
+          brew install p7zip llvm libomp
+          export PATH="$(brew --prefix llvm)/bin:$PATH"
 
       - run: make -j ${{ matrix.target.target }}
         shell: bash
         env:
-          CXX: g++
-          CXXFLAGS: ${{ matrix.config.flags }}
-          LDFLAGS: ${{ matrix.config.flags }}
+          CXX: ${{ matrix.config.compiler }}
+          CXXFLAGS: ${{ matrix.config.cxxflags }}
+          LDFLAGS: ${{ matrix.config.ldflags }}
 
       - run: ./Infomap --version
         shell: bash
