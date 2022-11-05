@@ -7,25 +7,57 @@ on:
     branches: [master]
 
 jobs:
-  build:
+  release:
+    name: ${{ matrix.config.os }}${{ matrix.target.name }}
+    runs-on: ${{ matrix.config.os }}
     strategy:
       matrix:
-        os:
-          [
-            macos-12,
-            macos-11,
-            ubuntu-22.04,
-            ubuntu-20.04,
-            windows-2022,
-            windows-2019,
-          ]
-
-    runs-on: ${{ matrix.os }}
+        config:
+          - {
+              name: windows,
+              os: windows-2019,
+              artifact: "infomap-win",
+              binary: Infomap.exe,
+              cxxflags: -static,
+              ldflags: -static,
+              compiler: g++,
+            }
+          - {
+              name: ubuntu,
+              os: ubuntu-20.04,
+              artifact: "infomap-ubuntu",
+              binary: Infomap,
+              cxxflags: "",
+              ldflags: "",
+              compiler: g++,
+            }
+          - {
+              name: macos,
+              os: macos-11,
+              artifact: "infomap-mac",
+              binary: Infomap,
+              cxxflags: "-I /usr/local/include -I/usr/local/opt/llvm/include",
+              ldflags: "-L /usr/local/lib -L/usr/local/opt/llvm/lib",
+              compiler: /usr/local/opt/llvm/bin/clang++,
+            }
+        target:
+          - { name: "", target: "" }
+          - { name: "-noomp", target: "noomp" }
 
     steps:
       - uses: actions/checkout@v2
-      - run: make noomp -j
+
+      - if: startsWith(matrix.config.os, 'macos')
+        run: |
+          brew install p7zip llvm libomp
+          export PATH="$(brew --prefix llvm)/bin:$PATH"
+
+      - run: make -j ${{ matrix.target.target }}
+        shell: bash
         env:
-          CXXFLAGS: -Werror -Wno-unknown-pragmas
+          CXX: ${{ matrix.config.compiler }}
+          CXXFLAGS: ${{ matrix.config.cxxflags }}
+          LDFLAGS: ${{ matrix.config.ldflags }}
+
       - run: ./Infomap --version
         shell: bash
