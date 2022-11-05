@@ -149,6 +149,13 @@ Search.setIndex({
     copyleft: 0,
     u: 0,
     modul: 1,
+    multilayernod: [1, 2],
+    infonod: [1, 2],
+    infomapiter: [1, 2],
+    infomapleafmoduleiter: [1, 2],
+    infomapleafiter: [1, 2],
+    infomapiteratorphys: [1, 2],
+    infomapleafiteratorphys: [1, 2],
     pip: 1,
     want: [1, 2],
     from: [1, 2],
@@ -227,7 +234,7 @@ Search.setIndex({
     entropy_correction_strength: 2,
     markov_tim: 2,
     variable_markov_tim: 2,
-    variable_markov_time_strength: 2,
+    variable_markov_damp: 2,
     preferred_number_of_modul: 2,
     multilayer_relax_r: 2,
     multilayer_relax_limit: 2,
@@ -417,13 +424,9 @@ Search.setIndex({
     high: 2,
     resolut: 2,
     dens: 2,
-    expon: 2,
+    damp: 2,
     variabl: 2,
-    mean: 2,
-    rescal: 2,
-    full: 2,
-    constant: 2,
-    transit: 2,
+    degre: 2,
     penal: 2,
     thei: 2,
     relax: 2,
@@ -453,6 +456,7 @@ Search.setIndex({
     structur: 2,
     main: 2,
     iter: 2,
+    mean: 2,
     minimum: 2,
     accept: 2,
     improv: 2,
@@ -516,7 +520,7 @@ Search.setIndex({
     source_multilayer_nod: 2,
     target_multilayer_nod: 2,
     usag: 2,
-    multilayernod: 2,
+    full: 2,
     support: 2,
     both: 2,
     pass: 2,
@@ -589,9 +593,6 @@ Search.setIndex({
     214286: 2,
     142857: 2,
     d: 2,
-    infonod: 2,
-    infomapleafiter: 2,
-    infomapleafiteratorphys: 2,
     extract: 2,
     must: 2,
     attribut: 2,
@@ -647,8 +648,6 @@ Search.setIndex({
     repres: 2,
     overlap: 2,
     visibl: 2,
-    infomapiter: 2,
-    infomapiteratorphys: 2,
     get_tre: 2,
     well: 2,
     have_memori: 2,
@@ -659,7 +658,6 @@ Search.setIndex({
     4056390622295662: 2,
     save: 2,
     leaf_modul: 2,
-    infomapleafmoduleiter: 2,
     max_depth: 2,
     meta_codelength: 2,
     meta_entropi: 2,
@@ -692,6 +690,10 @@ Search.setIndex({
     remov: 2,
     becom: 2,
     disconnect: 2,
+    expon: 2,
+    rescal: 2,
+    constant: 2,
+    transit: 2,
     set_meta_data: 2,
     meta_categori: 2,
     onc: 2,
@@ -898,13 +900,308 @@ Search.setIndex({
     "sphinx.domains.c": 2,
     "sphinx.domains.changeset": 1,
     "sphinx.domains.citation": 1,
-    "sphinx.domains.cpp": 6,
+    "sphinx.domains.cpp": 8,
     "sphinx.domains.index": 1,
     "sphinx.domains.javascript": 2,
     "sphinx.domains.math": 2,
     "sphinx.domains.python": 3,
     "sphinx.domains.rst": 2,
     "sphinx.domains.std": 2,
-    sphinx: 56,
+    sphinx: 57,
+  },
+  alltitles: {
+    Infomap: [[0, "infomap"]],
+    "Getting started": [[0, "getting-started"]],
+    "Using pip": [[0, "using-pip"]],
+    "Using Docker": [[0, "using-docker"]],
+    "Compiling from source": [[0, "compiling-from-source"]],
+    "Npm package": [[0, "npm-package"]],
+    Feedback: [[0, "feedback"]],
+    Authors: [[0, "authors"]],
+    "Terms of use": [[0, "terms-of-use"]],
+    "Infomap Python API": [[1, "infomap-python-api"]],
+    "API Reference": [[1, "api-reference"]],
+    Installation: [[1, "installation"]],
+    Usage: [[1, "usage"]],
+    "Command line": [[1, "command-line"]],
+    "Python package": [[1, "python-package"]],
+    "infomap module": [[2, "module-infomap"]],
+  },
+  indexentries: {
+    "infonode (class in infomap)": [[2, "infomap.InfoNode"]],
+    "infomap (class in infomap)": [[2, "infomap.Infomap"]],
+    "infomapiterator (class in infomap)": [[2, "infomap.InfomapIterator"]],
+    "infomapiteratorphysical (class in infomap)": [
+      [2, "infomap.InfomapIteratorPhysical"],
+    ],
+    "infomapleafiterator (class in infomap)": [
+      [2, "infomap.InfomapLeafIterator"],
+    ],
+    "infomapleafiteratorphysical (class in infomap)": [
+      [2, "infomap.InfomapLeafIteratorPhysical"],
+    ],
+    "infomapleafmoduleiterator (class in infomap)": [
+      [2, "infomap.InfomapLeafModuleIterator"],
+    ],
+    "multilayernode (class in infomap)": [[2, "infomap.MultilayerNode"]],
+    "__init__() (infomap.infomap method)": [[2, "infomap.Infomap.__init__"]],
+    "add_link() (infomap.infomap method)": [[2, "infomap.Infomap.add_link"]],
+    "add_links() (infomap.infomap method)": [[2, "infomap.Infomap.add_links"]],
+    "add_multilayer_inter_link() (infomap.infomap method)": [
+      [2, "infomap.Infomap.add_multilayer_inter_link"],
+    ],
+    "add_multilayer_intra_link() (infomap.infomap method)": [
+      [2, "infomap.Infomap.add_multilayer_intra_link"],
+    ],
+    "add_multilayer_link() (infomap.infomap method)": [
+      [2, "infomap.Infomap.add_multilayer_link"],
+    ],
+    "add_multilayer_links() (infomap.infomap method)": [
+      [2, "infomap.Infomap.add_multilayer_links"],
+    ],
+    "add_networkx_graph() (infomap.infomap method)": [
+      [2, "infomap.Infomap.add_networkx_graph"],
+    ],
+    "add_node() (infomap.infomap method)": [[2, "infomap.Infomap.add_node"]],
+    "add_nodes() (infomap.infomap method)": [[2, "infomap.Infomap.add_nodes"]],
+    "add_state_node() (infomap.infomap method)": [
+      [2, "infomap.Infomap.add_state_node"],
+    ],
+    "add_state_nodes() (infomap.infomap method)": [
+      [2, "infomap.Infomap.add_state_nodes"],
+    ],
+    "bipartite_start_id (infomap.infomap property)": [
+      [2, "infomap.Infomap.bipartite_start_id"],
+    ],
+    "child_degree (infomap.infonode property)": [
+      [2, "infomap.InfoNode.child_degree"],
+    ],
+    "child_index (infomap.infomapiterator property)": [
+      [2, "infomap.InfomapIterator.child_index"],
+    ],
+    "child_index (infomap.infomapiteratorphysical property)": [
+      [2, "infomap.InfomapIteratorPhysical.child_index"],
+    ],
+    "child_index (infomap.infomapleafiterator property)": [
+      [2, "infomap.InfomapLeafIterator.child_index"],
+    ],
+    "child_index (infomap.infomapleafiteratorphysical property)": [
+      [2, "infomap.InfomapLeafIteratorPhysical.child_index"],
+    ],
+    "child_index (infomap.infomapleafmoduleiterator property)": [
+      [2, "infomap.InfomapLeafModuleIterator.child_index"],
+    ],
+    "codelength (infomap.infomap property)": [
+      [2, "infomap.Infomap.codelength"],
+    ],
+    "codelengths (infomap.infomap property)": [
+      [2, "infomap.Infomap.codelengths"],
+    ],
+    "depth (infomap.infomapiterator property)": [
+      [2, "infomap.InfomapIterator.depth"],
+    ],
+    "depth (infomap.infomapiteratorphysical property)": [
+      [2, "infomap.InfomapIteratorPhysical.depth"],
+    ],
+    "depth (infomap.infomapleafiterator property)": [
+      [2, "infomap.InfomapLeafIterator.depth"],
+    ],
+    "depth (infomap.infomapleafiteratorphysical property)": [
+      [2, "infomap.InfomapLeafIteratorPhysical.depth"],
+    ],
+    "depth (infomap.infomapleafmoduleiterator property)": [
+      [2, "infomap.InfomapLeafModuleIterator.depth"],
+    ],
+    "effective_num_leaf_modules (infomap.infomap property)": [
+      [2, "infomap.Infomap.effective_num_leaf_modules"],
+    ],
+    "effective_num_top_modules (infomap.infomap property)": [
+      [2, "infomap.Infomap.effective_num_top_modules"],
+    ],
+    "entropy_rate (infomap.infomap property)": [
+      [2, "infomap.Infomap.entropy_rate"],
+    ],
+    "flow (infomap.infonode property)": [[2, "infomap.InfoNode.flow"]],
+    "flow_links (infomap.infomap property)": [
+      [2, "infomap.Infomap.flow_links"],
+    ],
+    "get_dataframe() (infomap.infomap method)": [
+      [2, "infomap.Infomap.get_dataframe"],
+    ],
+    "get_effective_num_modules() (infomap.infomap method)": [
+      [2, "infomap.Infomap.get_effective_num_modules"],
+    ],
+    "get_links() (infomap.infomap method)": [[2, "infomap.Infomap.get_links"]],
+    "get_meta_data() (infomap.infonode method)": [
+      [2, "infomap.InfoNode.get_meta_data"],
+    ],
+    "get_modules() (infomap.infomap method)": [
+      [2, "infomap.Infomap.get_modules"],
+    ],
+    "get_multilevel_modules() (infomap.infomap method)": [
+      [2, "infomap.Infomap.get_multilevel_modules"],
+    ],
+    "get_name() (infomap.infomap method)": [[2, "infomap.Infomap.get_name"]],
+    "get_names() (infomap.infomap method)": [[2, "infomap.Infomap.get_names"]],
+    "get_nodes() (infomap.infomap method)": [[2, "infomap.Infomap.get_nodes"]],
+    "get_tree() (infomap.infomap method)": [[2, "infomap.Infomap.get_tree"]],
+    "have_memory (infomap.infomap property)": [
+      [2, "infomap.Infomap.have_memory"],
+    ],
+    "index_codelength (infomap.infomap property)": [
+      [2, "infomap.Infomap.index_codelength"],
+    ],
+    infomap: [[2, "module-infomap"]],
+    "initial_partition (infomap.infomap property)": [
+      [2, "infomap.Infomap.initial_partition"],
+    ],
+    "is_leaf (infomap.infonode property)": [[2, "infomap.InfoNode.is_leaf"]],
+    "is_leaf_module (infomap.infonode property)": [
+      [2, "infomap.InfoNode.is_leaf_module"],
+    ],
+    "is_root (infomap.infonode property)": [[2, "infomap.InfoNode.is_root"]],
+    "layer_id (infomap.infonode property)": [[2, "infomap.InfoNode.layer_id"]],
+    "layer_id (infomap.multilayernode attribute)": [
+      [2, "infomap.MultilayerNode.layer_id"],
+    ],
+    "leaf_modules (infomap.infomap property)": [
+      [2, "infomap.Infomap.leaf_modules"],
+    ],
+    "links (infomap.infomap property)": [[2, "infomap.Infomap.links"]],
+    "max_depth (infomap.infomap property)": [[2, "infomap.Infomap.max_depth"]],
+    "meta_codelength (infomap.infomap property)": [
+      [2, "infomap.Infomap.meta_codelength"],
+    ],
+    "meta_data (infomap.infonode property)": [
+      [2, "infomap.InfoNode.meta_data"],
+    ],
+    "meta_entropy (infomap.infomap property)": [
+      [2, "infomap.Infomap.meta_entropy"],
+    ],
+    "modular_centrality (infomap.infomapiterator property)": [
+      [2, "infomap.InfomapIterator.modular_centrality"],
+    ],
+    "modular_centrality (infomap.infomapiteratorphysical property)": [
+      [2, "infomap.InfomapIteratorPhysical.modular_centrality"],
+    ],
+    "modular_centrality (infomap.infomapleafiterator property)": [
+      [2, "infomap.InfomapLeafIterator.modular_centrality"],
+    ],
+    "modular_centrality (infomap.infomapleafiteratorphysical property)": [
+      [2, "infomap.InfomapLeafIteratorPhysical.modular_centrality"],
+    ],
+    "modular_centrality (infomap.infomapleafmoduleiterator property)": [
+      [2, "infomap.InfomapLeafModuleIterator.modular_centrality"],
+    ],
+    module: [[2, "module-infomap"]],
+    "module_codelength (infomap.infomap property)": [
+      [2, "infomap.Infomap.module_codelength"],
+    ],
+    "module_id (infomap.infomapiterator property)": [
+      [2, "infomap.InfomapIterator.module_id"],
+    ],
+    "module_id (infomap.infomapiteratorphysical property)": [
+      [2, "infomap.InfomapIteratorPhysical.module_id"],
+    ],
+    "module_id (infomap.infomapleafiterator property)": [
+      [2, "infomap.InfomapLeafIterator.module_id"],
+    ],
+    "module_id (infomap.infomapleafiteratorphysical property)": [
+      [2, "infomap.InfomapLeafIteratorPhysical.module_id"],
+    ],
+    "module_id (infomap.infomapleafmoduleiterator property)": [
+      [2, "infomap.InfomapLeafModuleIterator.module_id"],
+    ],
+    "modules (infomap.infomap property)": [[2, "infomap.Infomap.modules"]],
+    "multilevel_modules (infomap.infomap property)": [
+      [2, "infomap.Infomap.multilevel_modules"],
+    ],
+    "names (infomap.infomap property)": [[2, "infomap.Infomap.names"]],
+    "network (infomap.infomap property)": [[2, "infomap.Infomap.network"]],
+    "node_id (infomap.infonode property)": [[2, "infomap.InfoNode.node_id"]],
+    "node_id (infomap.multilayernode attribute)": [
+      [2, "infomap.MultilayerNode.node_id"],
+    ],
+    "nodes (infomap.infomap property)": [[2, "infomap.Infomap.nodes"]],
+    "num_leaf_modules (infomap.infomap property)": [
+      [2, "infomap.Infomap.num_leaf_modules"],
+    ],
+    "num_levels (infomap.infomap property)": [
+      [2, "infomap.Infomap.num_levels"],
+    ],
+    "num_links (infomap.infomap property)": [[2, "infomap.Infomap.num_links"]],
+    "num_nodes (infomap.infomap property)": [[2, "infomap.Infomap.num_nodes"]],
+    "num_non_trivial_top_modules (infomap.infomap property)": [
+      [2, "infomap.Infomap.num_non_trivial_top_modules"],
+    ],
+    "num_physical_nodes (infomap.infomap property)": [
+      [2, "infomap.Infomap.num_physical_nodes"],
+    ],
+    "num_top_modules (infomap.infomap property)": [
+      [2, "infomap.Infomap.num_top_modules"],
+    ],
+    "one_level_codelength (infomap.infomap property)": [
+      [2, "infomap.Infomap.one_level_codelength"],
+    ],
+    "path (infomap.infomapiterator property)": [
+      [2, "infomap.InfomapIterator.path"],
+    ],
+    "path (infomap.infomapiteratorphysical property)": [
+      [2, "infomap.InfomapIteratorPhysical.path"],
+    ],
+    "path (infomap.infomapleafiterator property)": [
+      [2, "infomap.InfomapLeafIterator.path"],
+    ],
+    "path (infomap.infomapleafiteratorphysical property)": [
+      [2, "infomap.InfomapLeafIteratorPhysical.path"],
+    ],
+    "path (infomap.infomapleafmoduleiterator property)": [
+      [2, "infomap.InfomapLeafModuleIterator.path"],
+    ],
+    "physical_nodes (infomap.infomap property)": [
+      [2, "infomap.Infomap.physical_nodes"],
+    ],
+    "physical_tree (infomap.infomap property)": [
+      [2, "infomap.Infomap.physical_tree"],
+    ],
+    "read_file() (infomap.infomap method)": [[2, "infomap.Infomap.read_file"]],
+    "relative_codelength_savings (infomap.infomap property)": [
+      [2, "infomap.Infomap.relative_codelength_savings"],
+    ],
+    "remove_link() (infomap.infomap method)": [
+      [2, "infomap.Infomap.remove_link"],
+    ],
+    "remove_links() (infomap.infomap method)": [
+      [2, "infomap.Infomap.remove_links"],
+    ],
+    "run() (infomap.infomap method)": [[2, "infomap.Infomap.run"]],
+    "set_meta_data() (infomap.infomap method)": [
+      [2, "infomap.Infomap.set_meta_data"],
+    ],
+    "set_name() (infomap.infomap method)": [[2, "infomap.Infomap.set_name"]],
+    "set_names() (infomap.infomap method)": [[2, "infomap.Infomap.set_names"]],
+    "state_id (infomap.infonode property)": [[2, "infomap.InfoNode.state_id"]],
+    "tree (infomap.infomap property)": [[2, "infomap.Infomap.tree"]],
+    "write() (infomap.infomap method)": [[2, "infomap.Infomap.write"]],
+    "write_clu() (infomap.infomap method)": [[2, "infomap.Infomap.write_clu"]],
+    "write_csv() (infomap.infomap method)": [[2, "infomap.Infomap.write_csv"]],
+    "write_flow_tree() (infomap.infomap method)": [
+      [2, "infomap.Infomap.write_flow_tree"],
+    ],
+    "write_json() (infomap.infomap method)": [
+      [2, "infomap.Infomap.write_json"],
+    ],
+    "write_newick() (infomap.infomap method)": [
+      [2, "infomap.Infomap.write_newick"],
+    ],
+    "write_pajek() (infomap.infomap method)": [
+      [2, "infomap.Infomap.write_pajek"],
+    ],
+    "write_state_network() (infomap.infomap method)": [
+      [2, "infomap.Infomap.write_state_network"],
+    ],
+    "write_tree() (infomap.infomap method)": [
+      [2, "infomap.Infomap.write_tree"],
+    ],
   },
 });
