@@ -1,6 +1,6 @@
 /*******************************************************************************
  Infomap software package for multi-level network clustering
- Copyright (c) 2013, 2014 Daniel Edler, Anton Eriksson, Martin Rosvall
+ Copyright (c) 2013, 2014 Daniel Edler, Anton Holmgren, Martin Rosvall
 
  This file is part of the Infomap software package.
  See file LICENSE_AGPLv3.txt for full license details.

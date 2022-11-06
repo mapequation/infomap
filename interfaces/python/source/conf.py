@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = "Infomap"
-copyright = "2020, Daniel Edler, Anton Eriksson, Martin Rosvall"
-author = "Daniel Edler, Anton Eriksson, Martin Rosvall"
+copyright = "2020, Daniel Edler, Anton Holmgren, Martin Rosvall"
+author = "Daniel Edler, Anton Holmgren, Martin Rosvall"
 
 # The full version, including alpha/beta/rc tags
 # release = '1.0.0-beta.59'

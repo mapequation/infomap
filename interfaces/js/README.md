@@ -77,7 +77,7 @@ If you have any questions, suggestions or issues regarding the software, please 
 
 ## Authors
 
-Daniel Edler, Anton Eriksson, Martin Rosvall
+Daniel Edler, Anton Holmgren, Martin Rosvall
 
 For contact information, see [mapequation.org/about.html](//www.mapequation.org/about.html).
 
