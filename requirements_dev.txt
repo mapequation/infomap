@@ -6,5 +6,5 @@ twine
 sphinx
 networkx
 pandas
-sklearn
+scikit-learn
 matplotlib
