@@ -134,7 +134,7 @@ def _construct_args(
         args += " --matchable-multilayer-ids {}".format(matchable_multilayer_ids)
 
     if assign_to_neighbouring_module:
-        args += " --assign-to-neightbouring-module"
+        args += " --assign-to-neighbouring-module"
 
     if meta_data is not None:
         args += " --meta-data {}".format(meta_data)
