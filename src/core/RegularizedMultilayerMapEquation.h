@@ -7,8 +7,8 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#ifndef BIASED_MAPEQUATION_H_
-#define BIASED_MAPEQUATION_H_
+#ifndef REGULARIZED_MULTILAYER_MAPEQUATION_H_
+#define REGULARIZED_MULTILAYER_MAPEQUATION_H_
 
 #include "MapEquation.h"
 #include "FlowData.h"
@@ -21,34 +21,30 @@
 namespace infomap {
 
 class InfoNode;
-class StateNetwork;
 
-class BiasedMapEquation : private MapEquation<> {
-  using Base = MapEquation<>;
+class RegularizedMultilayerMapEquation : private MapEquation<MultiFlowData, MemDeltaFlow> {
+  using Base = MapEquation<MultiFlowData, MemDeltaFlow>;
 
 public:
-  using FlowDataType = FlowData;
-  using DeltaFlowDataType = DeltaFlow;
+  using FlowDataType = MultiFlowData;
+  using DeltaFlowDataType = MemDeltaFlow;
 
   // ===================================================
   // Getters
   // ===================================================
 
-  double getIndexCodelength() const override;
+  using Base::getIndexCodelength;
 
-  double getModuleCodelength() const override;
+  using Base::getModuleCodelength;
 
-  double getCodelength() const override;
-
-  double getEntropyBiasCorrection() const;
+  using Base::getCodelength;
 
   // ===================================================
   // IO
   // ===================================================
 
   std::ostream& print(std::ostream& out) const override;
-
-  friend std::ostream& operator<<(std::ostream&, const BiasedMapEquation&);
+  friend std::ostream& operator<<(std::ostream&, const RegularizedMultilayerMapEquation&);
 
   // ===================================================
   // Init
@@ -60,9 +56,9 @@ public:
 
   void initNetwork(InfoNode& root) override;
 
-  using Base::initSuperNetwork;
+  void initSuperNetwork(InfoNode& root) override;
 
-  using Base::initSubNetwork;
+  void initSubNetwork(InfoNode& root) override;
 
   void initPartition(std::vector<InfoNode*>& nodes) override;
 
@@ -72,14 +68,15 @@ public:
 
   double calcCodelength(const InfoNode& parent) const override;
 
-  using Base::addMemoryContributions;
+  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) override;
 
-  using Base::addTeleportationFlow;
+  void addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta) override;
+  void addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) override;
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                        DeltaFlow& oldModuleDelta,
-                                        DeltaFlow& newModuleDelta,
-                                        std::vector<FlowData>& moduleFlowData,
+                                        DeltaFlowDataType& oldModuleDelta,
+                                        DeltaFlowDataType& newModuleDelta,
+                                        std::vector<FlowDataType>& moduleFlowData,
                                         std::vector<unsigned int>& moduleMembers) override;
 
   // ===================================================
@@ -87,9 +84,9 @@ public:
   // ===================================================
 
   void updateCodelengthOnMovingNode(InfoNode& current,
-                                    DeltaFlow& oldModuleDelta,
-                                    DeltaFlow& newModuleDelta,
-                                    std::vector<FlowData>& moduleFlowData,
+                                    DeltaFlowDataType& oldModuleDelta,
+                                    DeltaFlowDataType& newModuleDelta,
+                                    std::vector<FlowDataType>& moduleFlowData,
                                     std::vector<unsigned int>& moduleMembers) override;
 
   void consolidateModules(std::vector<InfoNode*>& modules) override;
@@ -105,13 +102,14 @@ private:
   // Private member functions
   // ===================================================
   double calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const override;
-  double calcCodelengthOnModuleOfModules(const InfoNode& parent) const override;
-
-  static int getDeltaNumModulesIfMoving(unsigned int oldModule, unsigned int newModule, std::vector<unsigned int>& moduleMembers);
 
   // ===================================================
   // Init
   // ===================================================
+
+  void initPhysicalNodes(InfoNode& root);
+
+  void initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes);
 
   // ===================================================
   // Codelength
@@ -123,15 +121,15 @@ private:
 
   using Base::calculateCodelengthFromCodelengthTerms;
 
-  double calcNumModuleCost(unsigned int numModules) const;
-
-  double calcIndexEntropyBiasCorrection(unsigned int numModules) const;
-  double calcModuleEntropyBiasCorrection() const;
-  double calcEntropyBiasCorrection(unsigned int numModules) const;
+  void calculateNodeFlow_log_nodeFlow();
 
   // ===================================================
   // Consolidation
   // ===================================================
+
+  void updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
+
+  void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
 
 public:
   // ===================================================
@@ -158,23 +156,13 @@ private:
   using Base::exitNetworkFlow;
   using Base::exitNetworkFlow_log_exitNetworkFlow;
 
-  // For biased
-  unsigned int preferredNumModules = 0;
-  unsigned int currentNumModules = 0;
-  double biasedCost = 0.0;
+  using ModuleToMemNodes = std::map<unsigned int, MemNodeSet>;
 
-  // For entropy bias correction
-  bool useEntropyBiasCorrection = false;
-  double entropyBiasCorrectionMultiplier = 1;
-  double indexEntropyBiasCorrection = 0;
-  double moduleEntropyBiasCorrection = 0;
-  static double s_totalDegree;
-  static unsigned int s_numNodes;
-
-public:
-  static void setNetworkProperties(const StateNetwork& network);
+  std::vector<ModuleToMemNodes> m_physToModuleToMemNodes; // vector[physicalNodeID] map<moduleID, {#memNodes, sumFlow}>
+  unsigned int m_numPhysicalNodes = 0;
+  bool m_memoryContributionsAdded = false;
 };
 
 } // namespace infomap
 
-#endif // BIASED_MAPEQUATION_H_
+#endif // REGULARIZED_MULTILAYER_MAPEQUATION_H_

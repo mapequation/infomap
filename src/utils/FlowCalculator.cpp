@@ -153,7 +153,10 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   switch (config.flowModel) {
   case FlowModel::undirected:
     if (config.regularized) {
-      calcUndirectedRegularizedFlow(network, config);
+      if (config.isMultilayerNetwork())
+        calcUndirectedRegularizedMultilayerFlow(network, config);
+      else
+        calcUndirectedRegularizedFlow(network, config);
     } else {
       calcUndirectedFlow();
     }
@@ -163,7 +166,10 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
       calcDirectedBipartiteFlow(network, config);
     } else {
       if (config.regularized) {
-        calcDirectedRegularizedFlow(network, config);
+        if (config.isMultilayerNetwork())
+          calcDirectedRegularizedMultilayerFlow(network, config);
+        else
+          calcDirectedRegularizedFlow(network, config);
       } else {
         calcDirectedFlow(network, config);
       }
@@ -539,6 +545,12 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   }
 }
 
+void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config) noexcept
+{
+  Log() << "\n  -> Using regularized multilayer flow. " << std::flush;
+  calcDirectedRegularizedFlow(network, config);
+}
+
 void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, const Config& config) noexcept
 {
   Log() << "\n  -> Using recorded teleportation to nodes according to a fully connected Bayesian prior. " << std::flush;
@@ -620,6 +632,43 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
     double beta = 1 - alpha[link.source] * (config.noSelfLinks ? 1 - nodeTeleportWeights[link.source] : 1);
     link.flow *= beta * nodeFlow[link.source] * 2;
   }
+}
+
+void FlowCalculator::calcUndirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config) noexcept
+{
+  Log() << "\n  -> Using regularized multilayer flow. " << std::flush;
+
+  // double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
+
+  unsigned int N = network.numPhysicalNodes();
+  unsigned int N_states = network.numNodes();
+  unsigned int L = network.numLayers();
+  // double n = N / L; // average number of nodes per layer
+
+  double defaultLambda = std::log(N_states) / N_states;
+
+  double lambdaIntra = std::log(N) / (L * N);
+  double lambdaInter = std::log(L) / (L * N);
+  // double lambda = lambdaIntra + lambdaInter;
+  double fractionIntraFlow = std::log(N) / (std::log(N) + L * std::log(L));
+
+  double newLambda = lambdaIntra + lambdaInter;
+
+  Config tmpConfig(config);
+  tmpConfig.regularizationStrength *= newLambda / defaultLambda;
+  // Log() << "\n!! old lambda: " << defaultLambda << ", new lambda: " << newLambda << "\n";
+  // Log() << "Fraction intra flow: " << fractionIntraFlow << "\n";
+
+  // for (auto& link : flowLinks) {
+  //   k[link.source] += 1;
+  //   s[link.source] += link.flow;
+  //   if (link.source != link.target) {
+  //     k[link.target] += 1;
+  //     s[link.target] += link.flow;
+  //   }
+  // }
+
+  calcUndirectedRegularizedFlow(network, tmpConfig);
 }
 
 void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, const Config& config) noexcept
@@ -820,12 +869,21 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     }
   }
 
+  unsigned int N_phys = network.numPhysicalNodes();
+  unsigned int L = network.numLayers();
+  double fractionIntraFlow = std::log(N_phys) / (std::log(N_phys) + L * std::log(L));
+
   for (auto& nodeIt : network.m_nodes) {
     auto& node = nodeIt.second;
     const auto nodeIndex = nodeIndexMap[node.id];
     node.flow = nodeFlow[nodeIndex];
     node.weight = nodeTeleportWeights[nodeIndex];
     node.teleFlow = !nodeTeleportFlow.empty() ? nodeTeleportFlow[nodeIndex] : nodeFlow[nodeIndex] * (nodeOutDegree[nodeIndex] == 0 ? 1 : config.teleportationProbability);
+    node.intraLayerTeleFlow = fractionIntraFlow * node.flow;
+    node.teleFlow *= 1 - fractionIntraFlow; // TODO: Calculate real proportions
+    node.intraLayerTeleWeight = 1 / N;
+    // node.weight; // TODO: Calculate real proportions!!
+    // node.teleFlow *= 0.8;
     node.enterFlow = node.flow;
     node.exitFlow = node.flow;
 

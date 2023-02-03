@@ -246,8 +246,9 @@ struct Config {
 
   bool printAsUndirected() const { return isUndirectedClustering(); }
 
-  bool isMultilayerNetwork() const { return multilayerInput || !additionalInput.empty(); }
   bool isBipartite() const { return bipartite; }
+  bool isMultilayerNetwork() const { return multilayerInput || !additionalInput.empty(); }
+  bool isRegularizedMultilayerFlow() const { return isMultilayerNetwork() && regularized; }
 
   bool haveMemory() const { return stateInput; }
   bool printStates() const { return stateOutput; }

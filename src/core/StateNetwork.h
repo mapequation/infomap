@@ -15,6 +15,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <set>
 #include <utility>
 
 namespace infomap {
@@ -31,6 +32,8 @@ public:
     double enterFlow = 0.0;
     double exitFlow = 0.0;
     double teleFlow = 0.0;
+    double intraLayerTeleFlow = 0.0;
+    double intraLayerTeleWeight = 0.0;
 
     StateNode(unsigned int id = 0) : id(id), physicalId(id) { }
 
@@ -112,6 +115,9 @@ protected:
   // Bipartite
   unsigned int m_bipartiteStartId = 0;
 
+  // Multilayer
+  std::set<unsigned int> m_layers;
+
 public:
   StateNetwork() : m_config(Config()) { }
   StateNetwork(Config config) : m_config(std::move(config)) { }
@@ -187,6 +193,8 @@ public:
   bool isBipartite() const { return m_bipartiteStartId > 0; }
   unsigned int bipartiteStartId() const { return m_bipartiteStartId; }
   void setBipartiteStartId(unsigned int value) { m_bipartiteStartId = value; }
+  // Multilayer
+  unsigned int numLayers() const { return m_layers.size(); }
 
   /**
    * Write state network to file.

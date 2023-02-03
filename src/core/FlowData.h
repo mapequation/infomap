@@ -12,6 +12,8 @@
 
 #include <ostream>
 #include <utility>
+#include <map>
+#include "StateNetwork.h"
 
 namespace infomap {
 
@@ -20,12 +22,21 @@ struct FlowData {
   double enterFlow = 0.0;
   double exitFlow = 0.0;
   double teleportFlow = 0.0;
-  double teleportSourceFlow = 0.0;
   double teleportWeight = 0.0;
-  double danglingFlow = 0.0;
+  double teleportSourceFlow = 0.0; // TODO: Skip?
+  double danglingFlow = 0.0; // TODO: Skip?
 
   FlowData() = default;
   FlowData(double flow) : flow(flow) { }
+  virtual ~FlowData() = default;
+
+  virtual void init(const StateNetwork::StateNode& node)
+  {
+    teleportWeight = node.weight;
+    teleportFlow = node.teleFlow;
+    exitFlow = node.exitFlow;
+    enterFlow = node.enterFlow;
+  }
 
   FlowData& operator+=(const FlowData& other)
   {
@@ -157,6 +168,99 @@ struct PhysData {
   friend std::ostream& operator<<(std::ostream& out, const PhysData& data)
   {
     return out << "physNodeIndex: " << data.physNodeIndex << ", sumFlowFromM2Node: " << data.sumFlowFromM2Node;
+  }
+};
+
+struct LayerTeleFlowData {
+  unsigned int numNodes = 0;
+  double teleportFlow = 0.0;
+  double teleportWeight = 0.0;
+
+  LayerTeleFlowData() = default;
+  LayerTeleFlowData(double flow, double weight) : teleportFlow(flow), teleportWeight(weight) { }
+
+  LayerTeleFlowData& operator+=(const LayerTeleFlowData& other)
+  {
+    numNodes += other.numNodes;
+    teleportFlow += other.teleportFlow;
+    teleportWeight += other.teleportWeight;
+    return *this;
+  }
+
+  LayerTeleFlowData& operator-=(const LayerTeleFlowData& other)
+  {
+    numNodes -= other.numNodes;
+    teleportFlow -= other.teleportFlow;
+    teleportWeight -= other.teleportWeight;
+    return *this;
+  }
+
+  // LayerTeleFlowData& operator=(const LayerTeleFlowData& other)
+  // {
+  //   numNodes = other.numNodes;
+  //   teleportFlow = other.teleportFlow;
+  //   teleportWeight = other.teleportWeight;
+  //   return *this;
+  // }
+
+  bool isEmpty() const
+  {
+    return numNodes == 0;
+  }
+
+  friend std::ostream& operator<<(std::ostream& out, const LayerTeleFlowData& data)
+  {
+    return out << "{" << data.numNodes << "|" << data.teleportFlow << "|" << data.teleportWeight << "}";
+  }
+};
+
+// For regularized multilayer flow
+struct MultiFlowData : FlowData {
+  std::map<unsigned int, LayerTeleFlowData> layerTeleFlowData; // layer -> LayerTeleFlowData
+
+  MultiFlowData() = default;
+  MultiFlowData(double flow) : FlowData(flow) { }
+  MultiFlowData(const FlowData& data) : FlowData(data) { }
+  virtual ~MultiFlowData() = default;
+
+  MultiFlowData& operator+=(const MultiFlowData& other)
+  {
+    FlowData::operator+=(other);
+    for (auto& it : other.layerTeleFlowData) {
+      layerTeleFlowData[it.first] += it.second;
+    }
+    return *this;
+  }
+
+  MultiFlowData& operator-=(const MultiFlowData& other)
+  {
+    FlowData::operator-=(other);
+    for (auto& it : other.layerTeleFlowData) {
+      auto& data = layerTeleFlowData[it.first];
+      data -= it.second;
+      if (data.isEmpty()) {
+        layerTeleFlowData.erase(it.first);
+      }
+    }
+    return *this;
+  }
+
+  void init(const StateNetwork::StateNode& node) override
+  {
+    FlowData::init(node);
+    layerTeleFlowData[node.layerId] = LayerTeleFlowData(node.intraLayerTeleFlow, node.intraLayerTeleWeight);
+  }
+
+  unsigned int numLayers() const { return layerTeleFlowData.size(); }
+
+  friend std::ostream& operator<<(std::ostream& out, const MultiFlowData& data)
+  {
+    out << "[MultiFlow: ";
+    for (auto& it : data.layerTeleFlowData) {
+      out << "(" << it.first << ": " << it.second << "), ";
+    }
+    out << "]";
+    return out;
   }
 };
 

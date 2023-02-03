@@ -24,7 +24,7 @@ namespace infomap {
 
 template <typename Objective>
 class InfomapOptimizer : public InfomapOptimizerBase {
-  using FlowDataType = FlowData;
+  using FlowDataType = typename Objective::FlowDataType;
   using DeltaFlowDataType = typename Objective::DeltaFlowDataType;
 
 public:
@@ -171,7 +171,7 @@ void InfomapOptimizer<Objective>::initPartition()
   for (auto& nodePtr : network) {
     InfoNode& node = *nodePtr;
     node.index = i; // Unique module index for each node
-    m_moduleFlowData[i] = node.data;
+    m_moduleFlowData[i] = node.data; // node.data is hard coded MultiFlowData now to solve this, trade-offs with template?
     node.dirty = true;
     ++i;
   }
@@ -227,19 +227,8 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
   }
 
   // For recorded teleportation
-  if (m_infomap->recordedTeleportation) {
-    auto& oldModuleFlowData = m_moduleFlowData[oldM];
-    double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
-    double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
-    oldModuleDelta.deltaEnter += deltaEnterOld;
-    oldModuleDelta.deltaExit += deltaExitOld;
+  m_objective.addTeleportationFlow(current, m_moduleFlowData, oldModuleDelta, newModuleDelta);
 
-    auto& newModuleFlowData = m_moduleFlowData[newM];
-    double deltaEnterNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
-    double deltaExitNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
-    newModuleDelta.deltaEnter += deltaEnterNew;
-    newModuleDelta.deltaExit += deltaExitNew;
-  }
   // Update empty module vector
   if (m_moduleMembers[newM] == 0) {
     m_emptyModules.pop_back();
@@ -339,30 +328,16 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
       deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
     }
 
+    // TODO: Optimize for singletons? If leaving a singleton, it's easy to calculate change in codelength in old module.
+
     // For memory networks
     m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
+    // For recorded teleportation
+    m_objective.addTeleportationFlow(current, m_moduleFlowData, deltaFlow);
+
     auto& moduleDeltaEnterExit = deltaFlow.values();
     unsigned int numModuleLinks = deltaFlow.size();
-
-    // For recorded teleportation
-    if (m_infomap->recordedTeleportation) {
-      for (unsigned int j = 0; j < numModuleLinks; ++j) {
-        auto& deltaEnterExit = moduleDeltaEnterExit[j];
-        auto moduleIndex = deltaEnterExit.module;
-        if (moduleIndex == current.index) {
-          auto& oldModuleFlowData = m_moduleFlowData[moduleIndex];
-          double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
-          double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
-          deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitOld, deltaEnterOld));
-        } else {
-          auto& newModuleFlowData = m_moduleFlowData[moduleIndex];
-          double deltaEnterNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
-          double deltaExitNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
-          deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitNew, deltaEnterNew));
-        }
-      }
-    }
 
     // Randomize link order for optimized search
     std::vector<unsigned int> moduleEnumeration(numModuleLinks);
@@ -528,6 +503,9 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
     // For memory networks
     m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
+    // For recorded teleportation
+    m_objective.addTeleportationFlow(current, m_moduleFlowData, deltaFlow);
+
     auto& moduleDeltaEnterExit = deltaFlow.values();
     unsigned int numModuleLinks = deltaFlow.size();
 
@@ -613,7 +591,12 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
           }
 
           // For memory networks
+          // XXX: Don't use deltaFlow but create method for only old and new module!
+          // TODO: Expose first part of addMemoryContributionsAndUpdatePhysicalNodes
           m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+
+          // For recorded teleportation
+          m_objective.addTeleportationFlow(current, m_moduleFlowData, oldModuleDelta, newModuleDelta);
 
           double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
                                                                               oldModuleDelta,

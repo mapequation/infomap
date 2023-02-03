@@ -76,6 +76,8 @@ public:
 
   using Base::addMemoryContributions;
 
+  using Base::addTeleportationFlow;
+
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                         DeltaFlow& oldModuleDelta,
                                         DeltaFlow& newModuleDelta,

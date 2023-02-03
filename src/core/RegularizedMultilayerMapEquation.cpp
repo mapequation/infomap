@@ -7,7 +7,7 @@
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
-#include "MemMapEquation.h"
+#include "RegularizedMultilayerMapEquation.h"
 #include "FlowData.h"
 #include "InfoNode.h"
 
@@ -23,12 +23,12 @@ namespace infomap {
 // IO
 // ===================================================
 
-std::ostream& MemMapEquation::print(std::ostream& out) const
+std::ostream& RegularizedMultilayerMapEquation::print(std::ostream& out) const
 {
   return out << indexCodelength << " + " << moduleCodelength << " = " << io::toPrecision(codelength);
 }
 
-std::ostream& operator<<(std::ostream& out, const MemMapEquation& mapEq)
+std::ostream& operator<<(std::ostream& out, const RegularizedMultilayerMapEquation& mapEq)
 {
   return mapEq.print(out);
 }
@@ -37,34 +37,35 @@ std::ostream& operator<<(std::ostream& out, const MemMapEquation& mapEq)
 // Init
 // ===================================================
 
-void MemMapEquation::init(const Config& /*config*/)
+void RegularizedMultilayerMapEquation::init(const Config& config)
 {
-  Log(3) << "MemMapEquation::init()...\n";
+  Log(3) << "RegularizedMultilayerMapEquation::init()...\n";
+  Base::init(config);
 }
 
-void MemMapEquation::initNetwork(InfoNode& root)
+void RegularizedMultilayerMapEquation::initNetwork(InfoNode& root)
 {
   initPhysicalNodes(root);
 }
 
-void MemMapEquation::initSuperNetwork(InfoNode& /*root*/)
+void RegularizedMultilayerMapEquation::initSuperNetwork(InfoNode& /*root*/)
 {
   // TODO: How use enterFlow instead of flow
 }
 
-void MemMapEquation::initSubNetwork(InfoNode& /*root*/)
+void RegularizedMultilayerMapEquation::initSubNetwork(InfoNode& /*root*/)
 {
   //	Base::initSubNetwork(root);
 }
 
-void MemMapEquation::initPartition(std::vector<InfoNode*>& nodes)
+void RegularizedMultilayerMapEquation::initPartition(std::vector<InfoNode*>& nodes)
 {
   initPartitionOfPhysicalNodes(nodes);
 
   calculateCodelength(nodes);
 }
 
-void MemMapEquation::initPhysicalNodes(InfoNode& root)
+void RegularizedMultilayerMapEquation::initPhysicalNodes(InfoNode& root)
 {
   bool notInitiatedOnRoot = root.physicalNodes.empty();
   if (notInitiatedOnRoot) {
@@ -97,7 +98,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
   auto depth = firstLeafIt.depth();
   bool notInitiatedOnLeafNodes = firstLeafIt->physicalNodes.empty();
   if (notInitiatedOnLeafNodes) {
-    Log(3) << "MemMapEquation::initPhysicalNodesOnOriginalNetwork()...\n";
+    Log(3) << "RegularizedMultilayerMapEquation::initPhysicalNodesOnOriginalNetwork()...\n";
     std::set<unsigned int> setOfPhysicalNodes;
     unsigned int maxPhysicalId = 0;
     unsigned int minPhysicalId = std::numeric_limits<unsigned int>::max();
@@ -145,7 +146,7 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
     // Either a sub-network (without modules) or the whole network with reconstructed tree
     if (depth == 1) {
       // new sub-network
-      Log(3) << "MemMapEquation::initPhysicalNodesOnSubNetwork()...\n";
+      Log(3) << "RegularizedMultilayerMapEquation::initPhysicalNodesOnSubNetwork()...\n";
       std::set<unsigned int> setOfPhysicalNodes;
       unsigned int maxPhysNodeIndex = 0;
       unsigned int minPhysNodeIndex = std::numeric_limits<unsigned int>::max();
@@ -196,9 +197,9 @@ void MemMapEquation::initPhysicalNodes(InfoNode& root)
   }
 }
 
-void MemMapEquation::initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes)
+void RegularizedMultilayerMapEquation::initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes)
 {
-  Log(4) << "MemMapEquation::initPartitionOfPhysicalNodes()...\n";
+  Log(4) << "RegularizedMultilayerMapEquation::initPartitionOfPhysicalNodes()...\n";
   m_physToModuleToMemNodes.clear();
   m_physToModuleToMemNodes.resize(m_numPhysicalNodes);
 
@@ -219,7 +220,7 @@ void MemMapEquation::initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes)
 // Codelength
 // ===================================================
 
-void MemMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
+void RegularizedMultilayerMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
 {
   calculateCodelengthTerms(nodes);
 
@@ -228,7 +229,7 @@ void MemMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
   calculateCodelengthFromCodelengthTerms();
 }
 
-void MemMapEquation::calculateNodeFlow_log_nodeFlow()
+void RegularizedMultilayerMapEquation::calculateNodeFlow_log_nodeFlow()
 {
   nodeFlow_log_nodeFlow = 0.0;
   for (unsigned int i = 0; i < m_numPhysicalNodes; ++i) {
@@ -238,7 +239,7 @@ void MemMapEquation::calculateNodeFlow_log_nodeFlow()
   }
 }
 
-double MemMapEquation::calcCodelength(const InfoNode& parent) const
+double RegularizedMultilayerMapEquation::calcCodelength(const InfoNode& parent) const
 {
   if (parent.isLeafModule()) {
     return calcCodelengthOnModuleOfLeafNodes(parent);
@@ -247,7 +248,7 @@ double MemMapEquation::calcCodelength(const InfoNode& parent) const
   return Base::calcCodelengthOnModuleOfModules(parent);
 }
 
-double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
+double RegularizedMultilayerMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
 {
   if (parent.numPhysicalNodes() == 0) {
     return Base::calcCodelength(parent); // Infomap root node
@@ -273,9 +274,9 @@ double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent)
   return indexLength;
 }
 
-void MemMapEquation::addMemoryContributions(InfoNode& current,
-                                            DeltaFlowDataType& oldModuleDelta,
-                                            VectorMap<DeltaFlowDataType>& moduleDeltaFlow)
+void RegularizedMultilayerMapEquation::addMemoryContributions(InfoNode& current,
+                                                              DeltaFlowDataType& oldModuleDelta,
+                                                              VectorMap<DeltaFlowDataType>& moduleDeltaFlow)
 {
   // Overlapping modules
   /*
@@ -314,11 +315,85 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
   m_memoryContributionsAdded = true;
 }
 
-double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                                      DeltaFlowDataType& oldModuleDelta,
-                                                      DeltaFlowDataType& newModuleDelta,
-                                                      std::vector<FlowDataType>& moduleFlowData,
-                                                      std::vector<unsigned int>& moduleMembers)
+/**
+ * Add teleportation flow for predefined move
+ */
+void RegularizedMultilayerMapEquation::addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta)
+{
+  Base::addTeleportationFlow(current, moduleFlowData, oldModuleDelta, newModuleDelta);
+
+  auto& oldModuleFlowData = moduleFlowData[oldModuleDelta.module];
+
+  for (auto& it : current.data.layerTeleFlowData) {
+    auto itModuleLayer = oldModuleFlowData.layerTeleFlowData.find(it.first);
+    if (itModuleLayer != oldModuleFlowData.layerTeleFlowData.end()) {
+      const auto& moduleLayerFlow = itModuleLayer->second;
+      const auto& nodeLayerFlow = it.second;
+      oldModuleDelta.deltaEnter += (moduleLayerFlow.teleportFlow - nodeLayerFlow.teleportFlow) * nodeLayerFlow.teleportWeight;
+      oldModuleDelta.deltaExit += nodeLayerFlow.teleportFlow * (moduleLayerFlow.teleportWeight - nodeLayerFlow.teleportWeight);
+    }
+  }
+
+  auto& newModuleFlowData = moduleFlowData[newModuleDelta.module];
+
+  for (auto& it : current.data.layerTeleFlowData) {
+    auto itModuleLayer = newModuleFlowData.layerTeleFlowData.find(it.first);
+    if (itModuleLayer != newModuleFlowData.layerTeleFlowData.end()) {
+      const auto& moduleLayerFlow = itModuleLayer->second;
+      const auto& nodeLayerFlow = it.second;
+      newModuleDelta.deltaEnter += moduleLayerFlow.teleportFlow * nodeLayerFlow.teleportWeight;
+      newModuleDelta.deltaExit += nodeLayerFlow.teleportFlow * moduleLayerFlow.teleportWeight;
+    }
+  }
+}
+
+void RegularizedMultilayerMapEquation::addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, VectorMap<DeltaFlowDataType>& moduleDeltaFlow)
+{
+  Base::addTeleportationFlow(current, moduleFlowData, moduleDeltaFlow);
+
+  const auto& moduleDeltaEnterExit = moduleDeltaFlow.values();
+
+  for (unsigned int j = 0; j < moduleDeltaFlow.size(); ++j) {
+    const auto& deltaEnterExit = moduleDeltaEnterExit[j];
+    auto moduleIndex = deltaEnterExit.module;
+    double deltaEnter = 0;
+    double deltaExit = 0;
+
+    if (moduleIndex == current.index) {
+      auto& oldModuleFlowData = moduleFlowData[moduleIndex];
+
+      // A single node here can be multiple nodes moving (coarse-tune), so need to check all layers
+      for (auto& it : current.data.layerTeleFlowData) {
+        auto itModuleLayer = oldModuleFlowData.layerTeleFlowData.find(it.first);
+        if (itModuleLayer != oldModuleFlowData.layerTeleFlowData.end()) {
+          const auto& moduleLayerFlow = itModuleLayer->second;
+          const auto& nodeLayerFlow = it.second;
+          deltaEnter += (moduleLayerFlow.teleportFlow - nodeLayerFlow.teleportFlow) * nodeLayerFlow.teleportWeight;
+          deltaExit += nodeLayerFlow.teleportFlow * (moduleLayerFlow.teleportWeight - nodeLayerFlow.teleportWeight);
+        }
+      }
+    } else {
+      auto& newModuleFlowData = moduleFlowData[moduleIndex];
+
+      for (auto& it : current.data.layerTeleFlowData) {
+        auto itModuleLayer = newModuleFlowData.layerTeleFlowData.find(it.first);
+        if (itModuleLayer != newModuleFlowData.layerTeleFlowData.end()) {
+          const auto& moduleLayerFlow = itModuleLayer->second;
+          const auto& nodeLayerFlow = it.second;
+          deltaEnter += moduleLayerFlow.teleportFlow * nodeLayerFlow.teleportWeight;
+          deltaExit += nodeLayerFlow.teleportFlow * moduleLayerFlow.teleportWeight;
+        }
+      }
+    }
+    moduleDeltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExit, deltaEnter));
+  }
+}
+
+double RegularizedMultilayerMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
+                                                                        DeltaFlowDataType& oldModuleDelta,
+                                                                        DeltaFlowDataType& newModuleDelta,
+                                                                        std::vector<FlowDataType>& moduleFlowData,
+                                                                        std::vector<unsigned int>& moduleMembers)
 {
   double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 
@@ -331,11 +406,11 @@ double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
 // Consolidation
 // ===================================================
 
-void MemMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
-                                                  DeltaFlowDataType& oldModuleDelta,
-                                                  DeltaFlowDataType& newModuleDelta,
-                                                  std::vector<FlowDataType>& moduleFlowData,
-                                                  std::vector<unsigned int>& moduleMembers)
+void RegularizedMultilayerMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
+                                                                    DeltaFlowDataType& oldModuleDelta,
+                                                                    DeltaFlowDataType& newModuleDelta,
+                                                                    std::vector<FlowDataType>& moduleFlowData,
+                                                                    std::vector<unsigned int>& moduleMembers)
 {
   Base::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
   if (m_memoryContributionsAdded)
@@ -350,7 +425,7 @@ void MemMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
   codelength -= delta_nodeFlow_log_nodeFlow;
 }
 
-void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex)
+void RegularizedMultilayerMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex)
 {
   // For all multiple assigned nodes
   for (const auto& physData : current.physicalNodes) {
@@ -378,7 +453,7 @@ void MemMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModu
   }
 }
 
-void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta)
+void RegularizedMultilayerMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta)
 {
   unsigned int oldModuleIndex = oldModuleDelta.module;
   unsigned int bestModuleIndex = newModuleDelta.module;
@@ -421,7 +496,7 @@ void MemMapEquation::addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& curr
   }
 }
 
-void MemMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
+void RegularizedMultilayerMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 {
   std::map<unsigned int, std::map<unsigned int, unsigned int>> validate;
 
@@ -440,9 +515,9 @@ void MemMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 // Debug
 // ===================================================
 
-void MemMapEquation::printDebug() const
+void RegularizedMultilayerMapEquation::printDebug() const
 {
-  std::cout << "MemMapEquation::m_numPhysicalNodes: " << m_numPhysicalNodes << "\n";
+  std::cout << "RegularizedMultilayerMapEquation::m_numPhysicalNodes: " << m_numPhysicalNodes << "\n";
   Base::printDebug();
 }
 

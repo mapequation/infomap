@@ -14,6 +14,7 @@
 #include "BiasedMapEquation.h"
 #include "MemMapEquation.h"
 #include "MetaMapEquation.h"
+#include "RegularizedMultilayerMapEquation.h"
 #include "InfomapOptimizer.h"
 #include "../io/SafeFile.h"
 #include "../utils/FileURI.h"
@@ -715,10 +716,7 @@ void InfomapBase::generateSubNetwork(Network& network)
   for (auto& nodeIt : network.nodes()) {
     auto& networkNode = nodeIt.second;
     auto* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
-    node->data.teleportWeight = networkNode.weight;
-    node->data.teleportFlow = networkNode.teleFlow;
-    node->data.exitFlow = networkNode.exitFlow;
-    node->data.enterFlow = networkNode.enterFlow;
+    node->data.init(networkNode);
     if (haveMetaData()) {
       auto meta = metaData.find(networkNode.id);
       if (meta != metaData.end()) {
@@ -2174,7 +2172,11 @@ void InfomapBase::initOptimizer(bool forceNoMemory)
   if (haveMetaData()) {
     m_optimizer = std::make_unique<InfomapOptimizer<MetaMapEquation>>();
   } else if (haveMemory() && !forceNoMemory) {
-    m_optimizer = std::make_unique<InfomapOptimizer<MemMapEquation>>();
+    if (isRegularizedMultilayerFlow()) {
+      m_optimizer = std::make_unique<InfomapOptimizer<RegularizedMultilayerMapEquation>>();
+    } else {
+      m_optimizer = std::make_unique<InfomapOptimizer<MemMapEquation>>();
+    }
   } else {
     m_optimizer = std::make_unique<InfomapOptimizer<BiasedMapEquation>>();
   }

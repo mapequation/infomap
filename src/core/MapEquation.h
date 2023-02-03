@@ -25,6 +25,12 @@ namespace infomap {
 
 class InfoNode;
 
+struct MemNodeSet {
+  MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) { }
+  unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
+  double sumFlow;
+};
+
 template <typename FlowDataType = FlowData, typename DeltaFlowDataType = DeltaFlow>
 class MapEquation {
   using ME = MapEquation<FlowDataType, DeltaFlowDataType>;
@@ -65,9 +71,10 @@ public:
   // Init
   // ===================================================
 
-  virtual void init(const Config&)
+  virtual void init(const Config& config)
   {
     Log(3) << "MapEquation::init()...\n";
+    m_config = config;
   }
 
   virtual void initTree(InfoNode& /*root*/) = 0;
@@ -113,6 +120,10 @@ public:
   virtual void addMemoryContributions(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, DeltaFlowDataType& /*newModuleDelta*/) { }
 
   virtual void addMemoryContributions(InfoNode& /*current*/, DeltaFlowDataType& /*oldModuleDelta*/, VectorMap<DeltaFlowDataType>& /*moduleDeltaFlow*/) { }
+
+  virtual void addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
+
+  virtual void addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, VectorMap<DeltaFlowDataType>& moduleDeltaFlow);
 
   virtual double getDeltaCodelengthOnMovingNode(InfoNode& current,
                                                 DeltaFlowDataType& oldModuleDelta,
@@ -181,6 +192,8 @@ protected:
   // Protected member variables
   // ===================================================
 
+  Config m_config;
+
   double nodeFlow_log_nodeFlow = 0.0; // constant while the leaf network is the same
   double flow_log_flow = 0.0; // node.(flow + exitFlow)
   double exit_log_exit = 0.0;
@@ -192,6 +205,54 @@ protected:
   double exitNetworkFlow = 0.0;
   double exitNetworkFlow_log_exitNetworkFlow = 0.0;
 };
+
+/**
+ * Add teleportation flow for predefined move
+ */
+template <typename FlowDataType, typename DeltaFlowDataType>
+void MapEquation<FlowDataType, DeltaFlowDataType>::addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta)
+{
+  if (!m_config.recordedTeleportation)
+    return;
+
+  auto& oldModuleFlowData = moduleFlowData[oldModuleDelta.module];
+  double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
+  double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+  oldModuleDelta.deltaEnter += deltaEnterOld;
+  oldModuleDelta.deltaExit += deltaExitOld;
+
+  auto& newModuleFlowData = moduleFlowData[newModuleDelta.module];
+  double deltaEnterNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
+  double deltaExitNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
+  newModuleDelta.deltaEnter += deltaEnterNew;
+  newModuleDelta.deltaExit += deltaExitNew;
+}
+
+template <typename FlowDataType, typename DeltaFlowDataType>
+void MapEquation<FlowDataType, DeltaFlowDataType>::addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, VectorMap<DeltaFlowDataType>& moduleDeltaFlow)
+{
+  if (!m_config.recordedTeleportation)
+    return;
+
+  auto& moduleDeltaEnterExit = moduleDeltaFlow.values();
+
+  for (unsigned int j = 0; j < moduleDeltaFlow.size(); ++j) {
+    auto& deltaEnterExit = moduleDeltaEnterExit[j];
+    auto moduleIndex = deltaEnterExit.module;
+
+    if (moduleIndex == current.index) {
+      auto& oldModuleFlowData = moduleFlowData[moduleIndex];
+      double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
+      double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+      moduleDeltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitOld, deltaEnterOld));
+    } else {
+      auto& newModuleFlowData = moduleFlowData[moduleIndex];
+      double deltaEnterNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
+      double deltaExitNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
+      moduleDeltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitNew, deltaEnterNew));
+    }
+  }
+}
 
 template <typename FlowDataType, typename DeltaFlowDataType>
 double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelengthOnMovingNode(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>&)

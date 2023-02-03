@@ -17,7 +17,6 @@
 #include <map>
 #include <utility>
 #include <vector>
-#include <set>
 #include <utility>
 #include <limits>
 #include <sstream>
@@ -38,7 +37,6 @@ private:
   // { layer -> { physId -> stateId }}
   std::map<unsigned int, std::map<unsigned int, unsigned int>> m_layerNodeToStateId;
   std::map<unsigned int, std::map<unsigned int, double>> m_sumIntraOutWeight;
-  std::set<unsigned int> m_layers;
   unsigned int m_numInterLayerLinks = 0;
   unsigned int m_numIntraLayerLinks = 0;
   unsigned int m_maxNodeIdInIntraLayerNetworks = 0;

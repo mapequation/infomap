@@ -125,6 +125,7 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, double 
   bool addedNewLink = true;
 
   // Aggregate link weights if they are defined more than once
+  // TODO: Sort source/target order if undirected?
   auto& outLinks = m_nodeLinkMap[sourceId];
   if (outLinks.empty()) {
     outLinks[targetId] = weight;

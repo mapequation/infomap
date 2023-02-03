@@ -69,12 +69,14 @@ public:
 
   double calcCodelength(const InfoNode& parent) const override;
 
-  void addMemoryContributions(InfoNode& current, MemDeltaFlow& oldModuleDelta, VectorMap<MemDeltaFlow>& moduleDeltaFlow) override;
+  void addMemoryContributions(InfoNode& current, DeltaFlowDataType& oldModuleDelta, VectorMap<DeltaFlowDataType>& moduleDeltaFlow) override;
+
+  using Base::addTeleportationFlow;
 
   double getDeltaCodelengthOnMovingNode(InfoNode& current,
-                                        MemDeltaFlow& oldModuleDelta,
-                                        MemDeltaFlow& newModuleDelta,
-                                        std::vector<FlowData>& moduleFlowData,
+                                        DeltaFlowDataType& oldModuleDelta,
+                                        DeltaFlowDataType& newModuleDelta,
+                                        std::vector<FlowDataType>& moduleFlowData,
                                         std::vector<unsigned int>& moduleMembers) override;
 
   // ===================================================
@@ -82,9 +84,9 @@ public:
   // ===================================================
 
   void updateCodelengthOnMovingNode(InfoNode& current,
-                                    MemDeltaFlow& oldModuleDelta,
-                                    MemDeltaFlow& newModuleDelta,
-                                    std::vector<FlowData>& moduleFlowData,
+                                    DeltaFlowDataType& oldModuleDelta,
+                                    DeltaFlowDataType& newModuleDelta,
+                                    std::vector<FlowDataType>& moduleFlowData,
                                     std::vector<unsigned int>& moduleMembers) override;
 
   void consolidateModules(std::vector<InfoNode*>& modules) override;
@@ -127,7 +129,7 @@ private:
 
   void updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
-  void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, MemDeltaFlow& oldModuleDelta, MemDeltaFlow& newModuleDelta);
+  void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
 
 public:
   // ===================================================
@@ -159,12 +161,6 @@ private:
   std::vector<ModuleToMemNodes> m_physToModuleToMemNodes; // vector[physicalNodeID] map<moduleID, {#memNodes, sumFlow}>
   unsigned int m_numPhysicalNodes = 0;
   bool m_memoryContributionsAdded = false;
-};
-
-struct MemNodeSet {
-  MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) { }
-  unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
-  double sumFlow;
 };
 
 } // namespace infomap

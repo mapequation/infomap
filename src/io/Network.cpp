@@ -350,6 +350,13 @@ std::string Network::parseMultilayerIntraLinks(std::ifstream& file)
   if (m_config.matchableMultilayerIds > 0) {
     Log() << "  Creating matchable state ids using: nodeId << (log2(" << m_config.matchableMultilayerIds << ") + 1) | layerId\n";
   }
+  if (m_config.regularized) {
+    Log() << "  Using regularized multilayer flow...\n";
+    // if (m_config.isUndirectedFlow()) {
+    //   m_haveDirectedInput = true;
+    //   Log() << "  -> Expanding undirected links to directed...\n";
+    // }
+  }
 
   std::string line;
   while (!std::getline(file, line).fail()) {
@@ -363,7 +370,13 @@ std::string Network::parseMultilayerIntraLinks(std::ifstream& file)
     double weight;
     parseMultilayerIntraLink(line, layer, n1, n2, weight);
 
-    addMultilayerIntraLink(layer, n1, n2, weight);
+    if (m_config.regularized) {
+      addMultilayerLink(layer, n1, layer, n2, weight);
+      // if (m_config.isUndirectedFlow())
+      //   addMultilayerLink(layer, n2, layer, n1, weight);
+    } else {
+      addMultilayerIntraLink(layer, n1, n2, weight);
+    }
   }
   Log() << "  -> " << m_numIntraLayerLinks << " intra-layer links\n";
   return line;
