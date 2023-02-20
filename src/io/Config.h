@@ -107,6 +107,7 @@ struct Config {
   double multilayerJSRelaxRate = 0.15;
   bool multilayerRelaxByJensenShannonDivergence = false;
   int multilayerJSRelaxLimit = -1;
+  bool multilayerSelfInterLinks = false;
 
   // Clustering
   bool twoLevel = false;
@@ -201,6 +202,7 @@ struct Config {
     multilayerJSRelaxRate = other.multilayerJSRelaxRate;
     multilayerRelaxByJensenShannonDivergence = other.multilayerRelaxByJensenShannonDivergence;
     multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
+    multilayerSelfInterLinks = other.multilayerSelfInterLinks;
     twoLevel = other.twoLevel;
     noCoarseTune = other.noCoarseTune;
     recordedTeleportation = other.recordedTeleportation;

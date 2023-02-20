@@ -401,6 +401,32 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
     beta = 1.0;
   }
 
+  if (config.multilayerSelfInterLinks) {
+    // Log() << "(adjusting flow for self-inter-links...) ";
+    // auto r = config.multilayerRelaxRate;
+    // for (unsigned int i = 0; i < numNodes; ++i) {
+    //   nodeFlow[i] *= (1 - r);
+    // }
+    // double sumFlow = 1 - r;
+
+    // // for (auto& nodeIt : network.m_nodes) {
+    // //   auto& node = nodeIt.second;
+    // //   const auto nodeIndex = nodeIndexMap[node.id];
+    // // }
+
+    // for (const auto& link : flowLinks) {
+    //   bool isIntra = true; //asdf
+    //   if (isIntra) {
+    //     double f = r * nodeFlowTmp[link.source] * link.flow;
+    //     sumFlow += f;
+    //     nodeFlow[link.target] += f;
+    //   }
+    // }
+    // for (unsigned int i = 0; i < numNodes; ++i) {
+    //   nodeFlow[i] /= sumFlow;
+    // }
+  }
+
   // Update the links with their global flow from the PageRank values.
   // Note: beta is set to 1 if unrecorded teleportation
   for (auto& link : flowLinks) {
@@ -650,7 +676,7 @@ void FlowCalculator::calcUndirectedRegularizedMultilayerFlow(const StateNetwork&
   double lambdaIntra = std::log(N) / (L * N);
   double lambdaInter = std::log(L) / (L * N);
   // double lambda = lambdaIntra + lambdaInter;
-  double fractionIntraFlow = std::log(N) / (std::log(N) + L * std::log(L));
+  // double fractionIntraFlow = std::log(N) / (std::log(N) + L * std::log(L));
 
   double newLambda = lambdaIntra + lambdaInter;
 
