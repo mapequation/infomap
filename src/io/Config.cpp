@@ -106,6 +106,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(teleportationProbability, 'p', "teleportation-probability", "Probability of teleporting to a random node or link.", ArgType::probability, "Algorithm", 0.0, 1.0, true);
 
+  api.addOptionArgument(randomNodeCheckRate, "random-node-check-rate", "Check a selected proportion of nodes for moves if recorded teleportation", ArgType::probability, "Algorithm", 0.0, 1.0, true);
+
   api.addOptionArgument(regularized, "regularized", "Effectively add a fully connected Bayesian prior network to not overfit due to missing links. Implies recorded teleportation", "Algorithm", true);
 
   api.addOptionArgument(regularizationStrength, "regularization-strength", "Adjust relative strength of Bayesian prior network with this multiplier.", ArgType::number, "Algorithm", 0.0, true);
@@ -135,6 +137,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
   api.addOptionArgument(multilayerRelaxLimitDown, "multilayer-relax-limit-down", "Number of neighboring layers with lower id to relax to. If negative, relax to any layer.", ArgType::integer, "Algorithm", -1, true);
 
   api.addOptionArgument(multilayerRelaxByJensenShannonDivergence, "multilayer-relax-by-jsd", "Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.", "Algorithm", true);
+
+  api.addOptionArgument(multilayerTest, "multilayer-test", "Testing different multilayer implementations.", ArgType::integer, "Algorithm", true);
 
   // --------------------- Performance and accuracy options ---------------------
   api.addOptionArgument(seedToRandomNumberGenerator, 's', "seed", "A seed (integer) to the random number generator for reproducible results.", ArgType::integer, "Accuracy", 1ul);

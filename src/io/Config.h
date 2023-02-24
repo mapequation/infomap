@@ -95,6 +95,7 @@ struct Config {
   bool directed = false;
   bool useNodeWeightsAsFlow = false;
   bool teleportToNodes = false;
+  double randomNodeCheckRate = 0.0;
   double markovTime = 1.0;
   bool variableMarkovTime = false;
   double variableMarkovTimeDamping = 1.0; // 0 for linear scaling, 1 for log scaled.
@@ -108,6 +109,7 @@ struct Config {
   bool multilayerRelaxByJensenShannonDivergence = false;
   int multilayerJSRelaxLimit = -1;
   bool multilayerSelfInterLinks = false;
+  unsigned int multilayerTest = 0;
 
   // Clustering
   bool twoLevel = false;
@@ -191,6 +193,7 @@ struct Config {
     directed = other.directed;
     useNodeWeightsAsFlow = other.useNodeWeightsAsFlow;
     teleportToNodes = other.teleportToNodes;
+    randomNodeCheckRate = other.randomNodeCheckRate;
     markovTime = other.markovTime;
     variableMarkovTime = other.variableMarkovTime;
     variableMarkovTimeDamping = other.variableMarkovTimeDamping;
@@ -203,6 +206,7 @@ struct Config {
     multilayerRelaxByJensenShannonDivergence = other.multilayerRelaxByJensenShannonDivergence;
     multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
     multilayerSelfInterLinks = other.multilayerSelfInterLinks;
+    multilayerTest = other.multilayerTest;
     twoLevel = other.twoLevel;
     noCoarseTune = other.noCoarseTune;
     recordedTeleportation = other.recordedTeleportation;
