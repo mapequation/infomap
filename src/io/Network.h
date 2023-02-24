@@ -33,6 +33,7 @@ private:
 
   // Multilayer
   std::map<unsigned int, Network> m_networks; // intra-layer links
+  std::unique_ptr<Network> m_aggregatedNetwork;
   std::map<LayerNode, std::map<unsigned int, double>> m_interLinks;
   // { layer -> { physId -> stateId }}
   std::map<unsigned int, std::map<unsigned int, unsigned int>> m_layerNodeToStateId;
@@ -99,6 +100,7 @@ public:
   void generateStateNetworkFromMultilayer();
   void generateStateNetworkFromMultilayerWithInterLinks();
   void generateStateNetworkFromMultilayerWithSimulatedInterLinks();
+  void generateRegularizedInterlayerLinksFromAggregatedMultilayer();
   void simulateInterLayerLinks();
 
   void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight);

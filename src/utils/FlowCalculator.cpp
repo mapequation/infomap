@@ -662,6 +662,10 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
 
 void FlowCalculator::calcUndirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config) noexcept
 {
+  if (config.multilayerTest == 0) {
+    calcUndirectedRegularizedFlow(network, config);
+    return;
+  }
   Log() << "\n  -> Using regularized multilayer flow. " << std::flush;
 
   // double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
@@ -898,6 +902,9 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   unsigned int N_phys = network.numPhysicalNodes();
   unsigned int L = network.numLayers();
   double fractionIntraFlow = std::log(N_phys) / (std::log(N_phys) + L * std::log(L));
+  if (config.multilayerTest == 0) {
+    fractionIntraFlow = 0;
+  }
 
   for (auto& nodeIt : network.m_nodes) {
     auto& node = nodeIt.second;

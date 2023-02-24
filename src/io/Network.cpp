@@ -165,7 +165,7 @@ void Network::parseNetwork(const std::string& filename, const InsensitiveStringS
 
 void Network::postProcessInputData()
 {
-  if (!m_networks.empty()) {
+  if (!m_networks.empty() || m_aggregatedNetwork) {
     generateStateNetworkFromMultilayer();
   }
 
@@ -350,8 +350,9 @@ std::string Network::parseMultilayerIntraLinks(std::ifstream& file)
   if (m_config.matchableMultilayerIds > 0) {
     Log() << "  Creating matchable state ids using: nodeId << (log2(" << m_config.matchableMultilayerIds << ") + 1) | layerId\n";
   }
-  if (m_config.regularized) {
+  if (m_config.regularized && m_config.multilayerTest > 0) {
     Log() << "  Using regularized multilayer flow...\n";
+    m_aggregatedNetwork = std::make_unique<Network>();
     // if (m_config.isUndirectedFlow()) {
     //   m_haveDirectedInput = true;
     //   Log() << "  -> Expanding undirected links to directed...\n";
@@ -370,10 +371,11 @@ std::string Network::parseMultilayerIntraLinks(std::ifstream& file)
     double weight;
     parseMultilayerIntraLink(line, layer, n1, n2, weight);
 
-    if (m_config.regularized) {
+    if (m_config.regularized && m_config.multilayerTest > 0) {
       addMultilayerLink(layer, n1, layer, n2, weight);
       // if (m_config.isUndirectedFlow())
       //   addMultilayerLink(layer, n2, layer, n1, weight);
+      m_aggregatedNetwork->addLink(n1, n2, weight);
     } else {
       addMultilayerIntraLink(layer, n1, n2, weight);
     }
@@ -566,8 +568,13 @@ void Network::generateStateNetworkFromMultilayer()
   if (!m_interLinks.empty()) {
     generateStateNetworkFromMultilayerWithInterLinks();
   } else {
-    generateStateNetworkFromMultilayerWithSimulatedInterLinks();
+    if (m_config.regularized && m_config.multilayerTest > 0) {
+      generateRegularizedInterlayerLinksFromAggregatedMultilayer();
+    } else {
+      generateStateNetworkFromMultilayerWithSimulatedInterLinks();
+    }
   }
+  m_aggregatedNetwork.reset();
   m_networks.clear();
   m_interLinks.clear();
 }
@@ -653,6 +660,48 @@ void Network::generateStateNetworkFromMultilayerWithInterLinks()
 
           addLink(stateId1, stateId2i, weight);
           ++m_numInterLayerLinks; // TODO: Count all as one?
+        }
+      }
+    }
+  }
+}
+
+void Network::generateRegularizedInterlayerLinksFromAggregatedMultilayer()
+{
+  auto numLayers = m_layers.size();
+  auto N = m_aggregatedNetwork->numNodes();
+  auto E = m_aggregatedNetwork->numLinks();
+
+  Log() << "  -> " << N << " nodes and " << E << " links in aggregated...\n";
+  Log() << "  -> Generating regularized inter-layer links in " << numLayers << " layers...\n"
+        << std::flush;
+
+  double interLinkWeightNormalizationFactor = std::log(numLayers) / numLayers * m_config.regularizationStrength;
+  auto& targetLinks = m_aggregatedNetwork->nodeLinkMap();
+  for (auto& n1It : m_aggregatedNetwork->nodes()) {
+    auto& n1 = n1It.first;
+
+    for (auto& layer1 : m_layers) {
+      unsigned int stateId1i = addMultilayerNode(layer1, n1);
+
+      for (auto& layer2 : m_layers) {
+        auto& targetOutlinks = targetLinks[StateNode(n1)];
+        if (targetOutlinks.empty()) {
+          continue;
+        }
+        for (auto& outLink : targetOutlinks) {
+          auto& n2 = outLink.first.physicalId;
+          auto& linkData = outLink.second;
+          double intraWeight = linkData.weight;
+
+          unsigned int stateId2i = addMultilayerNode(layer2, n2);
+
+          double weight = interLinkWeightNormalizationFactor * intraWeight;
+          if (weight < 1e-16) {
+            continue;
+          }
+          addLink(stateId1i, stateId2i, weight);
+          ++m_numInterLayerLinks;
         }
       }
     }
