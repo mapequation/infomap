@@ -161,7 +161,7 @@ python: py-swig py-build Makefile
 py-build: Makefile
 	@cp -a interfaces/python/setup.py $(PY_BUILD_DIR)/
 	@touch $(PY_BUILD_DIR)/__init__.py
-	@python utils/create-python-package-meta.py $(PY_BUILD_DIR)/package_meta.py
+	@python3 utils/create-python-package-meta.py $(PY_BUILD_DIR)/package_meta.py
 	@cat $(PY_BUILD_DIR)/package_meta.py $(PY_BUILD_DIR)/infomap.py > $(PY_BUILD_DIR)/temp.py
 	@mv $(PY_BUILD_DIR)/temp.py $(PY_BUILD_DIR)/infomap.py
 	@autopep8 --jobs 8 --aggressive --aggressive -i $(PY_BUILD_DIR)/infomap.py
