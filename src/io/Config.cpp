@@ -140,6 +140,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(multilayerTest, "multilayer-test", "Testing different multilayer implementations.", ArgType::integer, "Algorithm", true);
 
+  api.addOptionArgument(multilayerAggregation, "multilayer-aggregation", "Experimental: Use aggregated multilayer network.", "Algorithm", true);
+
   // --------------------- Performance and accuracy options ---------------------
   api.addOptionArgument(seedToRandomNumberGenerator, 's', "seed", "A seed (integer) to the random number generator for reproducible results.", ArgType::integer, "Accuracy", 1ul);
 

@@ -2172,7 +2172,7 @@ void InfomapBase::initOptimizer(bool forceNoMemory)
   if (haveMetaData()) {
     m_optimizer = std::make_unique<InfomapOptimizer<MetaMapEquation>>();
   } else if (haveMemory() && !forceNoMemory) {
-    if (isRegularizedMultilayerFlow()) {
+    if (isRegularizedMultilayerFlow() && multilayerTest > 1) {
       m_optimizer = std::make_unique<InfomapOptimizer<RegularizedMultilayerMapEquation>>();
     } else {
       m_optimizer = std::make_unique<InfomapOptimizer<MemMapEquation>>();

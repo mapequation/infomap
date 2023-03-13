@@ -666,27 +666,34 @@ void FlowCalculator::calcUndirectedRegularizedMultilayerFlow(const StateNetwork&
     calcUndirectedRegularizedFlow(network, config);
     return;
   }
-  Log() << "\n  -> Using regularized multilayer flow. " << std::flush;
+  // Log() << "\n  -> Using regularized multilayer flow. " << std::flush;
 
   // double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
 
   unsigned int N = network.numPhysicalNodes();
   unsigned int N_states = network.numNodes();
-  unsigned int L = network.numLayers();
+  // unsigned int L = network.numLayers();
   // double n = N / L; // average number of nodes per layer
 
-  double defaultLambda = std::log(N_states) / N_states;
+  // Default tele degree is log(N_states)
+  // We want log(N), so adjust with regularization strength
 
-  double lambdaIntra = std::log(N) / (L * N);
-  double lambdaInter = std::log(L) / (L * N);
+  // double defaultLambda = std::log(N_states) / N_states;
+
+  // double lambdaIntra = std::log(N) / (L * N);
+  // double lambdaInter = std::log(L) / (L * N);
   // double lambda = lambdaIntra + lambdaInter;
   // double fractionIntraFlow = std::log(N) / (std::log(N) + L * std::log(L));
 
-  double newLambda = lambdaIntra + lambdaInter;
+  // double newLambda = lambdaIntra + lambdaInter;
 
   Config tmpConfig(config);
-  tmpConfig.regularizationStrength *= newLambda / defaultLambda;
+  // tmpConfig.regularizationStrength *= newLambda / defaultLambda;
   // Log() << "\n!! old lambda: " << defaultLambda << ", new lambda: " << newLambda << "\n";
+  double lambdaFactor = std::log(N) / std::log(N_states);
+  tmpConfig.regularizationStrength *= lambdaFactor;
+  Log() << "\n  -> Using regularized multilayer flow (lambda factor " << lambdaFactor << "). " << std::flush;
+  // Log() << "\n!! lambda factor: " << lambdaFactor << "\n";
   // Log() << "Fraction intra flow: " << fractionIntraFlow << "\n";
 
   // for (auto& link : flowLinks) {
@@ -901,8 +908,9 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
 
   unsigned int N_phys = network.numPhysicalNodes();
   unsigned int L = network.numLayers();
-  double fractionIntraFlow = std::log(N_phys) / (std::log(N_phys) + L * std::log(L));
-  if (config.multilayerTest == 0) {
+  // double fractionIntraFlow = std::log(N_phys) / (std::log(N_phys) + L * std::log(L));
+  double fractionIntraFlow = 1 / L;
+  if (config.multilayerTest < 2) {
     fractionIntraFlow = 0;
   }
 

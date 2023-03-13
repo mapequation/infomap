@@ -109,6 +109,7 @@ struct Config {
   bool multilayerRelaxByJensenShannonDivergence = false;
   int multilayerJSRelaxLimit = -1;
   bool multilayerSelfInterLinks = false;
+  bool multilayerAggregation = false;
   unsigned int multilayerTest = 0;
 
   // Clustering
@@ -206,6 +207,7 @@ struct Config {
     multilayerRelaxByJensenShannonDivergence = other.multilayerRelaxByJensenShannonDivergence;
     multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
     multilayerSelfInterLinks = other.multilayerSelfInterLinks;
+    multilayerAggregation = other.multilayerAggregation;
     multilayerTest = other.multilayerTest;
     twoLevel = other.twoLevel;
     noCoarseTune = other.noCoarseTune;
