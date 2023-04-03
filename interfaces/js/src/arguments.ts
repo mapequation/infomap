@@ -38,7 +38,7 @@ export interface Arguments
     printAllTrials: boolean;
     // algorithm
     twoLevel: boolean;
-    flowModel: "undirected" | "directed" | "undirdir" | "outdirdir" | "rawdir";
+    flowModel: "undirected" | "directed" | "undirdir" | "outdirdir" | "rawdir" | "precomputed";
     directed: boolean;
     recordedTeleportation: boolean;
     useNodeWeightsAsFlow: boolean;

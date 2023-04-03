@@ -247,6 +247,7 @@ std::string Network::parseVertices(std::ifstream& file, const std::string& /*hea
     }
     double weight = 1.0;
     if ((m_extractor >> weight)) {
+      m_haveNodeWeights = true;
       if (weight < 0)
         throw std::runtime_error(io::Str() << "Negative node weight (" << weight << ") from line '" << line << "'");
     }

@@ -9,6 +9,7 @@
 
 #include "FlowCalculator.h"
 #include "../utils/Log.h"
+#include "../utils/infomath.h"
 #include "../core/StateNetwork.h"
 #include <iostream>
 #include <cmath>
@@ -177,6 +178,10 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     calcRawdirFlow();
     normalizeNodeFlow = true;
     break;
+  case FlowModel::precomputed:
+    usePrecomputedFlow(network, config);
+    normalizeNodeFlow = true;
+    break;
   }
 
   finalize(network, config, normalizeNodeFlow);
@@ -234,6 +239,42 @@ void FlowCalculator::calcRawdirFlow() noexcept
   for (auto& link : flowLinks) {
     link.flow /= sumLinkWeight;
     nodeFlow[link.target] += link.flow;
+  }
+}
+
+void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Config& config)
+{
+  Log() << "\n  -> Using directed links with precomputed flow from input data.";
+  Log() << "\n  -> Total link flow: " << sumLinkWeight << ".";
+
+  if (config.isCLI && !network.haveNodeWeights()) {
+    Log() << std::endl;
+    throw std::runtime_error("Missing node flow in input data. Should be passed as a third field under a *Vertices section.");
+  }
+
+  // Treat the link weights as flow
+  nodeFlow.assign(numNodes, 0.0);
+  double sumFlow = 0.0;
+
+  for (const auto& nodeIt : network.nodes()) {
+    auto& node = nodeIt.second;
+    nodeFlow[nodeIndexMap[node.id]] = node.weight;
+    sumFlow += node.weight;
+  }
+  Log() << "\n  -> Total node flow: " << sumFlow << ".";
+
+  if (infomath::isEqual(sumFlow, 0)) {
+    throw std::runtime_error("Missing node flow. Set it on the node weight property.");
+  }
+  if (!infomath::isEqual(sumFlow, 1)) {
+    if (infomath::isEqual(sumFlow, numNodes) && infomath::isEqual(nodeFlow[0], 1)) {
+      Log() << "\n  Warning: Node flow sums to the number of nodes, is node flow provided or is default node weights used? Normalizing.";
+    } else {
+      Log() << "\n  Warning: Node flow sums to " << sumFlow << ", normalizing.";
+    }
+    for (unsigned int i = 0; i < numNodes; ++i) {
+      nodeFlow[i] /= sumFlow;
+    }
   }
 }
 
