@@ -444,7 +444,7 @@ class Infomap(InfomapWrapper):
             Default (``false``) is multi-level.
         flow_model : str, optional
             Specify flow model.
-            Options: undirected, directed, undirdir, outdirdir, rawdir.
+            Options: undirected, directed, undirdir, outdirdir, rawdir, precomputed.
         directed : bool, optional
             Assume directed links. Shorthand for ``flow_model="directed"``.
         recorded_teleportation : bool, optional
@@ -1466,7 +1466,7 @@ If you want to set node names, use set_name."""
             Default (``false``) is multi-level.
         flow_model : str, optional
             Specify flow model.
-            Options: undirected, directed, undirdir, outdirdir, rawdir.
+            Options: undirected, directed, undirdir, outdirdir, rawdir, precomputed.
         directed : bool, optional
             Assume directed links. Shorthand for ``flow_model="directed"``.
         recorded_teleportation : bool, optional

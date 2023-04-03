@@ -41,6 +41,7 @@ private:
   void calcDirectedBipartiteFlow(const StateNetwork&, const Config&) noexcept;
   void calcDirdirFlow(const Config&) noexcept;
   void calcRawdirFlow() noexcept;
+  void usePrecomputedFlow(const StateNetwork&, const Config&);
 
   void finalize(StateNetwork&, const Config&, bool) noexcept;
 
@@ -64,7 +65,7 @@ private:
   std::vector<FlowLink> flowLinks;
 };
 
-inline void calculateFlow(StateNetwork& network, const Config& config) noexcept
+inline void calculateFlow(StateNetwork& network, const Config& config)
 {
   FlowCalculator(network, config);
 }
