@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.7.0](https://github.com/mapequation/infomap/compare/v2.6.1...v2.7.0) (2023-04-04)
+
+
+### Features
+
+* Add flow model "precomputed" ([407dbe9](https://github.com/mapequation/infomap/commit/407dbe9592641bea7a4cac292a7d25df308644ca))
+
+
+### Bug Fixes
+
+* Do not add links with zero weight ([cc61b61](https://github.com/mapequation/infomap/commit/cc61b61db228e8a0b433d5bc55f0fedc540e1c0d)), closes [#324](https://github.com/mapequation/infomap/issues/324)
+* **python:** Typo in assign_to_neighbouring_module ([c644e80](https://github.com/mapequation/infomap/commit/c644e80d1717cc28c6247b470e4f1c6eb2d4a420))
+
 ### [2.6.1](https://github.com/mapequation/infomap/compare/v2.6.0...v2.6.1) (2022-10-31)
 
 
