@@ -59,6 +59,10 @@ public:
   using infomap_child_iterator_wrapper = IterWrapper<infomap_child_iterator>;
   using const_infomap_child_iterator_wrapper = IterWrapper<const_infomap_child_iterator>;
 
+  using concat_edges = Concat<std::vector<InfoEdge*>>;
+  using concat_edges_iter = concat_edges::IterConcat;
+  using concat_edges_wrapper = IterWrapper<concat_edges_iter>;
+
 public:
   FlowData data;
   unsigned int index = 0; // Temporary index used in finding best module
@@ -246,6 +250,12 @@ public:
   edge_iterator_wrapper outEdges() noexcept { return { m_outEdges }; }
 
   edge_iterator_wrapper inEdges() noexcept { return { m_inEdges }; }
+
+  concat_edges_wrapper edges() noexcept
+  {
+    // return { concat_edges(m_inEdges, m_outEdges) };
+    return concat_edges_wrapper(concat_edges(m_inEdges, m_outEdges).begin(), concat_edges(m_inEdges, m_outEdges).end());
+  }
 
   // ---------------------------- Capacity ----------------------------
 

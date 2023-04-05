@@ -769,6 +769,69 @@ void InfomapBase::generateSubNetwork(Network& network)
     if (std::abs(variableMarkovTimeDamping - 1) > 1e-9) {
       Log() << "  -> Use variable Markov time strength " << variableMarkovTimeDamping << "\n";
     }
+    if (variableMarkovTimeMinDegree > 0) {
+      Log() << "  -> Use variable Markov min degree " << variableMarkovTimeMinDegree << "... ";
+
+      std::map<unsigned int, std::map<unsigned int, double>> newLinks;
+
+      if (isUndirectedFlow()) {
+        for (unsigned i = 0; i < numNodes; ++i) {
+          InfoNode& n1 = *m_leafNodes[i];
+          unsigned int k1 = n1.degree();
+          auto& linkMap = newLinks[n1.stateId];
+          if (k1 < variableMarkovTimeMinDegree) {
+            for (InfoEdge* e12 : n1.edges()) {
+              auto& n2 = *(e12->target == &n1 ? e12->source : e12->target);
+              unsigned int k2 = n2.degree();
+              if (k2 < variableMarkovTimeMinDegree) {
+                for (InfoEdge* e23 : n2.edges()) {
+                  auto& n3 = *(e23->target == &n2 ? e23->source : e23->target);
+                  // Skip adding self-links
+                  if (n3 != n1 && n3.degree() < variableMarkovTimeMinDegree) {
+                    std::pair<unsigned int, unsigned int> pair = n1.stateId < n3.stateId ? std::make_pair(n1.stateId, n3.stateId) : std::make_pair(n3.stateId, n1.stateId);
+                    newLinks[pair.first][pair.second] += e23->data.flow;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+      } else {
+        for (unsigned i = 0; i < numNodes; ++i) {
+          InfoNode& n1 = *m_leafNodes[i];
+          unsigned int k1 = n1.outDegree();
+          auto& linkMap = newLinks[n1.stateId];
+          if (k1 < variableMarkovTimeMinDegree) {
+            for (InfoEdge* e12 : n1.outEdges()) {
+              auto& n2 = *(e12->target);
+              unsigned int k2 = n2.outDegree();
+              if (k2 < variableMarkovTimeMinDegree) {
+                for (InfoEdge* e23 : n2.outEdges()) {
+                  auto& n3 = *(e23->target);
+                  // Skip adding self-links
+                  if (n3 != n1 && n3.outDegree() < variableMarkovTimeMinDegree) {
+                    linkMap[n3.stateId] += e23->data.flow;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      // Add new links
+      unsigned int numLinksAdded = 0;
+      for (auto& linkIt : newLinks) {
+        for (auto& outLinkIt : linkIt.second) {
+          unsigned int sourceIndex = nodeIndexMap[linkIt.first];
+          unsigned int targetIndex = nodeIndexMap[outLinkIt.first];
+          double flow = outLinkIt.second;
+          m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndex], 0, flow);
+          ++numLinksAdded;
+        }
+      }
+      Log() << " added " << numLinksAdded << " links!\n";
+    }
   }
 
   double maxEntropy = 0.0;

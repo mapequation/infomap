@@ -100,6 +100,7 @@ struct Config {
   double variableMarkovTimeDamping = 1.0; // 0 for linear scaling, 1 for log scaled.
   double variableMarkovTimeMinLocalScale = 1; // Correspond to two links in undirected unweighted networks. Avoids division by zero.
   bool markovTimeNoSelfLinks = false;
+  unsigned int variableMarkovTimeMinDegree = 0;
   double multilayerRelaxRate = 0.15;
   int multilayerRelaxLimit = -1; // Amount of layers allowed to jump up or down
   int multilayerRelaxLimitUp = -1; // One-sided limit to higher layers
@@ -194,6 +195,7 @@ struct Config {
     variableMarkovTime = other.variableMarkovTime;
     variableMarkovTimeDamping = other.variableMarkovTimeDamping;
     markovTimeNoSelfLinks = other.markovTimeNoSelfLinks;
+    variableMarkovTimeMinDegree = other.variableMarkovTimeMinDegree;
     multilayerRelaxRate = other.multilayerRelaxRate;
     multilayerRelaxLimit = other.multilayerRelaxLimit;
     multilayerRelaxLimitUp = other.multilayerRelaxLimitUp;

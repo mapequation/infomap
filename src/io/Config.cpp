@@ -120,6 +120,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(variableMarkovTimeMinLocalScale, "variable-markov-min-scale", "Minimum local scale for nodes with zero entropy to avoid division by zero. Local Markov time is max scale divided by local scale.", ArgType::number, "Algorithm", true);
 
+  api.addOptionArgument(variableMarkovTimeMinDegree, "variable-markov-min-degree", "If below this degree, add two-step links.", ArgType::number, "Algorithm", true);
+
   // api.addOptionArgument(markovTimeNoSelfLinks, "markov-time-no-self-links", "For testing.", "Algorithm", true);
 
   api.addOptionArgument(preferredNumberOfModules, "preferred-number-of-modules", "Penalize solutions the more they differ from this number.", ArgType::integer, "Algorithm", 1u, true);
