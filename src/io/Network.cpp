@@ -120,6 +120,7 @@ void Network::parseNetwork(const std::string& filename)
 
 void Network::parseNetwork(const std::string& filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings, const std::string& startHeading)
 {
+  m_haveFileInput = true;
   SafeInFile input(filename);
 
   // Parse standard links by default until possible heading is reached
@@ -450,7 +451,11 @@ void Network::parseStateNode(const std::string& line, StateNetwork::StateNode& s
     m_extractor.seekg(nameEnd + 1);
   }
   // Optional weight, default to 1.0
-  (m_extractor >> stateNode.weight) || (stateNode.weight = 1.0);
+  if ((m_extractor >> stateNode.weight)) {
+    m_haveStateNodeWeights = true;
+    if (stateNode.weight < 0)
+      throw std::runtime_error(io::Str() << "Negative state node weight (" << stateNode.weight << ") from line '" << line << "'");
+  }
 }
 
 void Network::parseLink(const std::string& line, unsigned int& n1, unsigned int& n2, double& weight)
