@@ -23,6 +23,11 @@ namespace infomath {
     return p > 0.0 ? p * log2(p) : 0.0;
   }
 
+  inline double plogp_unorm(double p)
+  {
+    return p > 0.0 ? p * log(p) : 0.0;
+  }
+
   inline double isEqual(double a, double b, double tol = 1e-8)
   {
     return std::abs(a - b) <= tol;

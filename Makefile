@@ -9,7 +9,7 @@ ifneq ($(BREW),)
 endif
 
 ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"
-	CXXFLAGS += -O0 -g
+	CXXFLAGS += -O2 -g
 else
 	ifeq "$(CXX_CLANG)" ""
 		CXXFLAGS += -O4
