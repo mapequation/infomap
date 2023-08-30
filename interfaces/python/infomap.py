@@ -1145,8 +1145,13 @@ If you want to set node names, use set_name."""
         """
         return self.network.addMetaData(node_id, meta_category)
 
-    def add_networkx_graph(self, g, weight="weight"):
+    def add_networkx_graph(self, g, weight="weight", phys_id=None, layer_id=None, multilayer_is_inter_intra_format=False):
         """Add NetworkX graph
+
+        Uses weighted links if present on the `weight` attribute.
+        Treats the graph as a state network if `phys_id` is provided.
+        If also `layer_id` is provided, it is added as a multilayer
+        network.
 
         Examples
         --------
@@ -1165,6 +1170,56 @@ If you want to set node names, use set_name."""
         1 1 0.25 b
         2 1 0.25 c
 
+        Usage with a state network
+
+        >>> import networkx as nx
+        >>> from infomap import Infomap
+        >>> G = nx.Graph()
+        >>> G.add_node("a", phys_id=1)
+        >>> G.add_node("b", phys_id=2)
+        >>> G.add_node("c", phys_id=3)
+        >>> G.add_node("d", phys_id=1)
+        >>> G.add_node("e", phys_id=4)
+        >>> G.add_node("f", phys_id=5)
+        >>> G.add_edge("a", "b")
+        >>> G.add_edge("a", "c")
+        >>> G.add_edge("b", "c")
+        >>> G.add_edge("d", "e")
+        >>> G.add_edge("d", "f")
+        >>> G.add_edge("e", "f")
+        >>> im = Infomap(silent=True)
+        >>> py.add_networkx_graph(im, G, phys_id="phys_id")
+        >>> im.run()
+        >>> for node in im.nodes:
+        ...     print(node.node_id, node.module_id, node.flow, node.state_id)
+        1 1 0.16666666666666666 0
+        2 1 0.16666666666666666 1
+        3 1 0.16666666666666666 2
+        1 2 0.16666666666666666 3
+        4 2 0.16666666666666666 4
+        5 2 0.16666666666666666 5
+
+        Usage with a multilayer network
+
+        >>> import networkx as nx
+        >>> from infomap import Infomap
+        >>> G = nx.Graph()
+        >>> G.add_node(11, phys_id=1, layer_id=1)
+        >>> G.add_node(21, phys_id=2, layer_id=1)
+        >>> G.add_node(22, phys_id=2, layer_id=2)
+        >>> G.add_node(23, phys_id=3, layer_id=2)
+        >>> G.add_edge(11, 21)
+        >>> G.add_edge(22, 23)
+        >>> im = Infomap(silent=True)
+        >>> im.add_networkx_graph(G)
+        >>> im.run()
+        >>> for node in im.nodes:
+        ...     print(node.node_id, node.module_id, node.flow, node.state_id, node.layer_id)
+        1 1 0.25 0 1
+        2 1 0.25 1 1
+        2 2 0.25 2 2
+        3 2 0.25 3 2
+
         Notes
         -----
         Transforms non-int labels to unique int ids.
@@ -1182,6 +1237,12 @@ If you want to set node names, use set_name."""
         weight : str, optional
             Key to lookup link weight in edge data if present.
             Default ``"weight"``.
+        phys_id : str, optional
+            Node attribute for physical node ids, implying a state network.
+        layer_id : str, optional
+            Node attribute for node layer ids, assuming a state network.
+        multilayer_is_inter_intra_format : bool, optional
+            Use intra/inter format, assuming no 'diagonal' links. Default false.
 
         Returns
         -------
@@ -1195,8 +1256,8 @@ If you want to set node names, use set_name."""
 
         # If no flow model has been set, and the graph is directed,
         # set the flow model to directed.
-        if not super().flowModelIsSet and g.is_directed():
-            super().setDirected(True)
+        if not self.flowModelIsSet and g.is_directed():
+            self.setDirected(True)
 
         if isinstance(first, int):
             node_map = {node: node for node in g.nodes}
@@ -1204,14 +1265,63 @@ If you want to set node names, use set_name."""
             node_map = {label: node for node, label in enumerate(g.nodes)}
 
         is_string_id = isinstance(first, str)
+        is_state_network = phys_id is not None
+        is_multilayer_network = layer_id is not None
 
-        for label, node in node_map.items():
-            self.add_node(node, name=label if is_string_id else None)
+        if is_state_network:
+            phys_nodes = set(node_id for _, node_id in g.nodes.data(phys_id))
+            phys_first = next(iter(phys_nodes))
+            phys_is_string_id = isinstance(phys_first, str)
+            if phys_is_string_id:
+                phys_map = {label: node for node, label in enumerate(phys_nodes)}
+            else:
+                phys_map = {node: node for node in phys_nodes}
 
-        for source, target, data in g.edges(data=True):
-            u, v = node_map[source], node_map[target]
-            w = data[weight] if weight is not None and weight in data else 1.0
-            self.add_link(u, v, w)
+            if phys_is_string_id:
+                for i, phys_node in enumerate(phys_nodes):
+                    self.set_name(i, phys_node)
+            else:
+                for phys_node in phys_nodes:
+                    self.set_name(phys_node, f"{phys_node}")
+
+            if is_multilayer_network:
+                pass
+            else:
+                for state_id, node_id in g.nodes.data(phys_id):
+                    self.add_state_node(node_map[state_id], phys_map[node_id])
+        else:
+            # Standard network
+            for label, node in node_map.items():
+                self.add_node(node, name=label if is_string_id else None)
+
+        if is_multilayer_network:
+            phys_ids = nx.get_node_attributes(g, phys_id)
+            layer_ids = nx.get_node_attributes(g, layer_id)
+            if not layer_ids:
+                raise RuntimeError(
+                    f"""Add multilayer network but no layer ids on the node attribute '${layer_id}'."""
+                )
+            for source, target, d in g.edges.data():
+                u, v = node_map[source], node_map[target]
+                w = d[weight] if weight is not None and weight in d else 1.0
+                source_node = MultilayerNode(layer_id=layer_ids[source], node_id=phys_ids[source])
+                target_node = MultilayerNode(layer_id=layer_ids[target], node_id=phys_ids[target])
+                if multilayer_is_inter_intra_format:
+                    if source_node.layer_id == target_node.layer_id:
+                        self.add_multilayer_intra_link(
+                            source_node.layer_id, source_node.node_id, target_node.node_id, w)
+                    else:
+                        if source_node.node_id != target_node.node_id:
+                            raise RuntimeError("Multilayer intra/inter format does not support 'diagonal' links.")
+                        self.add_multilayer_inter_link(
+                            source_node.layer_id, source_node.node_id, target_node.layer_id, w)
+                else:
+                    self.add_multilayer_link(source_node, target_node, w)
+        else:
+            for source, target, d in g.edges.data():
+                u, v = node_map[source], node_map[target]
+                w = d[weight] if weight is not None and weight in d else 1.0
+                self.add_link(u, v, w)
 
         return {node: label for label, node in node_map.items()}
 
