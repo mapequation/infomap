@@ -253,9 +253,15 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
   Log() << "\n  -> Using directed links with precomputed flow from input data.";
   Log() << "\n  -> Total link flow: " << sumLinkWeight << ".";
 
-  if (config.isCLI && !network.haveNodeWeights()) {
-    Log() << std::endl;
-    throw std::runtime_error("Missing node flow in input data. Should be passed as a third field under a *Vertices section.");
+  if (network.haveFileInput()) {
+    if (network.haveMemoryInput() && !network.haveStateNodeWeights()) {
+      Log() << std::endl;
+      throw std::runtime_error("Missing node flow in input data. Should be passed as a third field under a *States section.");
+    }
+    if (!network.haveMemoryInput() && !network.haveNodeWeights()) {
+      Log() << std::endl;
+      throw std::runtime_error("Missing node flow in input data. Should be passed as a third field under a *Vertices section.");
+    }
   }
 
   // Treat the link weights as flow

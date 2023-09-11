@@ -141,7 +141,7 @@ please add them to `GitHub issues`_.
 Authors
 -------
 
-Daniel Edler, Anton Eriksson, Martin Rosvall
+Daniel Edler, Anton Holmgren, Martin Rosvall
 
 For contact information, see `mapequation.org/about.html`_.
 

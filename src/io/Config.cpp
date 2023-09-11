@@ -198,7 +198,7 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
   } else if (flowModelArg == "precomputed") {
     setFlowModel(FlowModel::precomputed);
   } else if (!flowModelArg.empty()) {
-    throw std::runtime_error("Unrecognized flow model");
+    throw std::runtime_error(io::Str() << "Unrecognized flow model: '" << flowModelArg << "'");
   }
 
   if (regularized) {

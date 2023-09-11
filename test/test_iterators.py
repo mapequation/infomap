@@ -1,5 +1,6 @@
 from infomap import Infomap
 from operator import itemgetter
+import pytest
 
 
 def test_iter_physical_on_physical():
@@ -9,6 +10,7 @@ def test_iter_physical_on_physical():
 
     modules = sorted([(node.node_id, node.module_id) for node in im.physical_nodes], key=itemgetter(0))
     assert modules == [(1, 1), (2, 1), (3, 1), (4, 2), (5, 2), (6, 2)]
+
 
 def test_iter_physical_on_states():
     im = Infomap(num_trials=10, silent=True)
@@ -20,14 +22,15 @@ def test_iter_physical_on_states():
 
 
 def test_iter_physical_reliability():
-    
+
     for _ in range(100):
         im = Infomap(num_trials=10, silent=True)
         im.read_file("examples/networks/states.net")
         im.run()
-        
+
         modules = [(node.node_id, node.module_id) for node in im.physical_nodes]
         assert modules == [(1, 1), (2, 1), (3, 1), (1, 2), (4, 2), (5, 2)]
+
 
 def test_multilevel_modules_on_states():
     im = Infomap(silent=True)
@@ -36,14 +39,14 @@ def test_multilevel_modules_on_states():
     modules = [(node, modules) for node, modules in im.get_multilevel_modules(states=True).items()]
     assert modules == [(1, (1,)), (2, (1,)), (3, (1,)), (4, (2,)), (5, (2,)), (6, (2,))]
 
+
 def test_multilevel_modules_on_physical():
     im = Infomap(silent=True)
     im.read_file("examples/networks/states.net")
     im.run()
-    # todo: Use unit test function to assert exception is raised
     # RuntimeError: Cannot get multilevel modules on higher-order network without states.
-    modules = im.get_multilevel_modules(states=False)
-
+    with pytest.raises(RuntimeError):
+        im.get_multilevel_modules(states=False)
 
 
 if __name__ == "__main__":
