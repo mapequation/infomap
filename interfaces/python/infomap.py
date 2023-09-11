@@ -1145,13 +1145,13 @@ If you want to set node names, use set_name."""
         """
         return self.network.addMetaData(node_id, meta_category)
 
-    def add_networkx_graph(self, g, weight="weight", phys_id=None, layer_id=None, multilayer_is_inter_intra_format=False):
+    def add_networkx_graph(self, g, weight="weight", phys_id="phys_id", layer_id="layer_id", multilayer_inter_intra_format=False):
         """Add NetworkX graph
 
         Uses weighted links if present on the `weight` attribute.
-        Treats the graph as a state network if `phys_id` is provided.
-        If also `layer_id` is provided, it is added as a multilayer
-        network.
+        Treats the graph as a state network if the `phys_id` attribute
+        is present and as a multilayer network if also the `layer_id` 
+        attribute is present on the nodes.
 
         Examples
         --------
@@ -1265,8 +1265,11 @@ If you want to set node names, use set_name."""
             node_map = {label: node for node, label in enumerate(g.nodes)}
 
         is_string_id = isinstance(first, str)
-        is_state_network = phys_id is not None
-        is_multilayer_network = layer_id is not None
+
+        phys_ids = dict(g.nodes.data(phys_id))
+        is_state_network = not None in phys_ids.values()
+        layer_ids = dict(g.nodes.data(layer_id))
+        is_multilayer_network = not None in layer_ids.values()
 
         if is_state_network:
             phys_nodes = set(node_id for _, node_id in g.nodes.data(phys_id))
@@ -1295,8 +1298,6 @@ If you want to set node names, use set_name."""
                 self.add_node(node, name=label if is_string_id else None)
 
         if is_multilayer_network:
-            phys_ids = nx.get_node_attributes(g, phys_id)
-            layer_ids = nx.get_node_attributes(g, layer_id)
             if not layer_ids:
                 raise RuntimeError(
                     f"""Add multilayer network but no layer ids on the node attribute '${layer_id}'."""
@@ -1306,7 +1307,7 @@ If you want to set node names, use set_name."""
                 w = d[weight] if weight is not None and weight in d else 1.0
                 source_node = MultilayerNode(layer_id=layer_ids[source], node_id=phys_ids[source])
                 target_node = MultilayerNode(layer_id=layer_ids[target], node_id=phys_ids[target])
-                if multilayer_is_inter_intra_format:
+                if multilayer_inter_intra_format:
                     if source_node.layer_id == target_node.layer_id:
                         self.add_multilayer_intra_link(
                             source_node.layer_id, source_node.node_id, target_node.node_id, w)
