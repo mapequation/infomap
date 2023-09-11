@@ -1188,7 +1188,7 @@ If you want to set node names, use set_name."""
         >>> G.add_edge("d", "f")
         >>> G.add_edge("e", "f")
         >>> im = Infomap(silent=True)
-        >>> py.add_networkx_graph(im, G, phys_id="phys_id")
+        >>> py.add_networkx_graph(im, G)
         >>> im.run()
         >>> for node in im.nodes:
         ...     print(node.node_id, node.module_id, node.flow, node.state_id)
