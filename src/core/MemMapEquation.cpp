@@ -288,7 +288,6 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
    */
   auto& physicalNodes = current.physicalNodes;
   unsigned int numPhysicalNodes = physicalNodes.size();
-  double ONE_LN2 = 1 / M_LN2;
   for (unsigned int i = 0; i < numPhysicalNodes; ++i) {
     PhysData& physData = physicalNodes[i];
     ModuleToMemNodes& moduleToMemNodes = m_physToModuleToMemNodes[physData.physNodeIndex];
@@ -299,21 +298,19 @@ void MemMapEquation::addMemoryContributions(InfoNode& current,
       {
         double oldPhysFlow = memNodeSet.sumFlow;
         double newPhysFlow = memNodeSet.sumFlow - physData.sumFlowFromM2Node;
-        oldModuleDelta.sumDeltaPlogpPhysFlow += infomath::plogp_unorm(newPhysFlow) - infomath::plogp_unorm(oldPhysFlow);
-        oldModuleDelta.sumPlogpPhysFlow += infomath::plogp_unorm(physData.sumFlowFromM2Node);
+        oldModuleDelta.sumDeltaPlogpPhysFlow += infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
+        oldModuleDelta.sumPlogpPhysFlow += infomath::plogp(physData.sumFlowFromM2Node);
       } else // To where the multiple assigned node is moved
       {
         double oldPhysFlow = memNodeSet.sumFlow;
         double newPhysFlow = memNodeSet.sumFlow + physData.sumFlowFromM2Node;
 
-        double sumDeltaPlogpPhysFlow = (infomath::plogp_unorm(newPhysFlow) - infomath::plogp_unorm(oldPhysFlow))*ONE_LN2;
+        double sumDeltaPlogpPhysFlow = infomath::plogp(newPhysFlow) - infomath::plogp(oldPhysFlow);
         double sumPlogpPhysFlow = infomath::plogp(physData.sumFlowFromM2Node);
         moduleDeltaFlow.add(moduleIndex, MemDeltaFlow(moduleIndex, 0.0, 0.0, sumDeltaPlogpPhysFlow, sumPlogpPhysFlow));
       }
     }
   }
-  oldModuleDelta.sumDeltaPlogpPhysFlow *= ONE_LN2;
-  oldModuleDelta.sumPlogpPhysFlow *= ONE_LN2;
   m_memoryContributionsAdded = true;
 }
 
