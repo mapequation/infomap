@@ -1852,7 +1852,13 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
   std::vector<double> leafCodelengths(numModules, 0.0);
   std::vector<PartitionQueue> subQueues(numModules);
 
-#pragma omp parallel for schedule(dynamic)
+  double sumLeafCodelength = 0.0;
+  double sumIndexCodelength = 0.0;
+  double sumModuleCodelengths = 0.0;
+  PartitionQueue::size_t nextLevelSize = 0;
+#pragma omp parallel 
+ {
+#pragma omp for schedule(dynamic)
   for (PartitionQueue::size_t moduleIndex = 0; moduleIndex < numModules; ++moduleIndex) {
     InfoNode& module = *queue[moduleIndex];
 
@@ -1898,11 +1904,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
       moduleCodelengths[moduleIndex] = subModuleCodelength;
     }
   }
-
-  double sumLeafCodelength = 0.0;
-  double sumIndexCodelength = 0.0;
-  double sumModuleCodelengths = 0.0;
-  PartitionQueue::size_t nextLevelSize = 0;
+#pragma omp for schedule(dynamic) reduction(+:nextLevelSize,sumLeafCodelength,sumIndexCodelength,sumModuleCodelengths) 
   for (PartitionQueue::size_t moduleIndex = 0; moduleIndex < numModules; ++moduleIndex) {
     nextLevelSize += subQueues[moduleIndex].skip ? 0 : subQueues[moduleIndex].size();
     sumLeafCodelength += leafCodelengths[moduleIndex];
@@ -1910,6 +1912,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
     sumModuleCodelengths += moduleCodelengths[moduleIndex];
   }
 
+ } 
   queue.indexCodelength = sumIndexCodelength;
   queue.leafCodelength = sumLeafCodelength;
   queue.moduleCodelength = sumModuleCodelengths;
