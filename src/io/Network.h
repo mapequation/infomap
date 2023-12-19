@@ -100,6 +100,9 @@ public:
   void generateStateNetworkFromMultilayer();
   void generateStateNetworkFromMultilayerWithInterLinks();
   void generateStateNetworkFromMultilayerWithSimulatedInterLinks();
+  void generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLayerSimilarity();
+  void generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrength();
+  void generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrengthRegularized();
   void generateInterlayerLinksFromAggregatedMultilayer();
   void simulateInterLayerLinks();
 

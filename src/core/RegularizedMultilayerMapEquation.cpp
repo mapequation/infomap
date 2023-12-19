@@ -320,6 +320,7 @@ void RegularizedMultilayerMapEquation::addMemoryContributions(InfoNode& current,
  */
 void RegularizedMultilayerMapEquation::addTeleportationFlow(InfoNode& current, const std::vector<FlowDataType>& moduleFlowData, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta)
 {
+  // TODO: Optimize: check if teleportFlow is zero and skip this (true for multilayer regularization now)
   Base::addTeleportationFlow(current, moduleFlowData, oldModuleDelta, newModuleDelta);
 
   auto& oldModuleFlowData = moduleFlowData[oldModuleDelta.module];

@@ -199,6 +199,7 @@ public:
   void setBipartiteStartId(unsigned int value) { m_bipartiteStartId = value; }
   // Multilayer
   unsigned int numLayers() const { return m_layers.size(); }
+  const std::set<unsigned int>& layers() const { return m_layers; }
 
   /**
    * Write state network to file.
