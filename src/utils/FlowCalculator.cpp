@@ -812,7 +812,9 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
       Log() << "(Normalizing ranks after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
-      throw std::runtime_error("Fix flow calculation!");
+      if (std::abs(nodeFlowDiff) > 1.0e-4) {
+        throw std::runtime_error(io::Str() << "Total flow differs from 1 by " << nodeFlowDiff << " after " << iter << " iterations. Please report the issue.");
+      }
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 
