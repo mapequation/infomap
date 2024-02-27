@@ -37,7 +37,7 @@ private:
   void calcUndirectedFlow() noexcept;
   void calcDirectedFlow(const StateNetwork&, const Config&) noexcept;
   void calcUndirectedRegularizedFlow(const StateNetwork&, const Config&) noexcept;
-  void calcUndirectedRegularizedMultilayerFlow(const StateNetwork&, const Config&) noexcept;
+  void calcUndirectedRegularizedMultilayerFlow(const StateNetwork&, const Config&);
   void calcDirectedRegularizedFlow(const StateNetwork&, const Config&) noexcept;
   void calcDirectedRegularizedMultilayerFlow(const StateNetwork&, const Config&) noexcept;
   void calcDirectedBipartiteFlow(const StateNetwork&, const Config&) noexcept;

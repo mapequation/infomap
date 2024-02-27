@@ -996,16 +996,17 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
   // double relaxRate = m_config.multilayerRelaxRate;
 
   unsigned int L = m_networks.size();
-  unsigned int N = numPhysicalNodes();
+  // unsigned int N = numPhysicalNodes();
   int maxRelaxLimit = L;
   int relaxLimitSymmetric = m_config.multilayerRelaxLimit < 0 ? maxRelaxLimit : m_config.multilayerRelaxLimit;
   int relaxLimitDown = m_config.multilayerRelaxLimitDown < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitDown);
   int relaxLimitUp = m_config.multilayerRelaxLimitUp < 0 ? relaxLimitSymmetric : std::min(relaxLimitSymmetric, m_config.multilayerRelaxLimitUp);
   auto haveUpOrDownLimit = m_config.multilayerRelaxLimitDown >= 0 || m_config.multilayerRelaxLimitUp >= 0;
 
-  double interLinkStrength = std::log(L);
-  double interLinkWeight = std::log(L) / L;
-  double intraLinkStrength = std::log(N) / L;
+  // double interLinkStrength = std::log(L);
+  // double interLinkWeight = std::log(L) / L;
+  double interLinkWeight = std::log(L) / (m_config.noSelfLinks ? L - 1 : L);
+  // double intraLinkStrength = std::log(N) / L;
   // double totalInterWeightIfNoLimit = interLinkWeight * L;
   if (haveUpOrDownLimit) {
     // TODO: create a map with aggregated inter-flow for each layer with limits.
@@ -1035,7 +1036,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
       auto& n1 = n1It.first;
       unsigned int stateId1 = addMultilayerNode(layer1, n1);
 
-      double sumOutLinkWeightLayer1 = network1.outWeights()[n1];
+      // double sumOutLinkWeightLayer1 = network1.outWeights()[n1];
       // Multiply observed link weight with this factor to account for the physical part of inter-link flow
       // double gamma = 1 + interLinkStrength / (sumOutLinkWeightLayer1 + intraLinkStrength);
       // Log() << "(" << layer1 << "," << n1 << "): gamma = 1 + " << interLinkStrength << " / (" << sumOutLinkWeightLayer1 << " + " << intraLinkStrength << ") = " << gamma << "\n";
@@ -1074,7 +1075,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
       // }
       for (auto& it2 : m_networks) {
         auto layer2 = it2.first;
-        if (!withinRelaxLimit(layer1, layer2)) {
+        if (!withinRelaxLimit(layer1, layer2) || (m_config.noSelfLinks && layer1 == layer2)) {
           continue;
         }
         // auto& network2 = it2.second;
