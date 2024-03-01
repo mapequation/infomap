@@ -185,7 +185,7 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
     throw std::runtime_error("Missing out_directory");
   }
 
-  if (flowModelArg == "directed" || directed) {
+  if (flowModelArg == "directed") {
     setFlowModel(FlowModel::directed);
   } else if (flowModelArg == "undirected") {
     setFlowModel(FlowModel::undirected);
@@ -199,6 +199,10 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
     setFlowModel(FlowModel::precomputed);
   } else if (!flowModelArg.empty()) {
     throw std::runtime_error(io::Str() << "Unrecognized flow model: '" << flowModelArg << "'");
+  }
+
+  if (directed && !flowModelIsSet) {
+    setFlowModel(FlowModel::directed);
   }
 
   if (regularized) {
