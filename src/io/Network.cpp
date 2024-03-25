@@ -1012,7 +1012,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
     // TODO: create a map with aggregated inter-flow for each layer with limits.
   }
 
-  Log() << "-> " << m_networks.size() << " networks\n";
+  Log() << "-> " << m_networks.size() << " networks and " << m_physNodes.size() << " physical nodes\n";
   // Log() << "-> Relax rate: " << relaxRate << "\n";
   if (haveUpOrDownLimit) {
     Log() << "-> Relax limit up: " << relaxLimitUp << (relaxLimitUp == maxRelaxLimit ? " (no limit)\n" : "\n");
@@ -1028,12 +1028,15 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
     return layer1 >= layer2 ? diff <= relaxLimitDown : -diff <= relaxLimitUp;
   };
 
+  // Log() << "\n\n=== DEBUG network creation ===\n";
+
   for (auto& it1 : m_networks) {
     auto layer1 = it1.first;
     auto& network1 = it1.second;
 
-    for (auto& n1It : network1.nodes()) {
-      auto& n1 = n1It.first;
+    // Loop over all physical nodes, even if they lack intra links, to add inter links
+    for (auto& physNodeIt : m_physNodes) {
+      auto& n1 = physNodeIt.first;
       unsigned int stateId1 = addMultilayerNode(layer1, n1);
 
       // double sumOutLinkWeightLayer1 = network1.outWeights()[n1];
@@ -1043,19 +1046,21 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
       // Need original weight to calculate correct inter-layer relax rate.
 
       // Add intra links
-      auto& targetOutlinks = network1.nodeLinkMap()[StateNode(n1)];
-      for (auto& outLink : targetOutlinks) {
-        auto& n2 = outLink.first.physicalId;
-        auto& linkData = outLink.second;
-        // double weight = linkData.weight * gamma;
-        double weight = linkData.weight;
-        unsigned int stateId2i = addMultilayerNode(layer1, n2);
+      auto targetOutLinksIt = network1.nodeLinkMap().find(StateNode(n1));
+      if (targetOutLinksIt != network1.nodeLinkMap().end()) {
+        for (auto& outLink : targetOutLinksIt->second) {
+          auto& n2 = outLink.first.physicalId;
+          auto& linkData = outLink.second;
+          // double weight = linkData.weight * gamma;
+          double weight = linkData.weight;
+          unsigned int stateId2i = addMultilayerNode(layer1, n2);
 
-        if (weight < 1e-16) {
-          continue;
+          if (weight < 1e-16) {
+            continue;
+          }
+          addLink(stateId1, stateId2i, weight);
+          ++m_numIntraLayerLinks;
         }
-        addLink(stateId1, stateId2i, weight);
-        ++m_numIntraLayerLinks;
       }
 
       // double sumOutLinkWeightLayer1 = network1.outWeights()[n1];
@@ -1082,6 +1087,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
         // bool isIntra = layer2 == layer1;
 
         unsigned int stateId2 = addMultilayerNode(layer2, n1);
+        // Log() << "Add vertical link " << stateId1 << " -> " << stateId2 << " with weight: " << interLinkWeight << "\n";
         addLink(stateId1, stateId2, interLinkWeight);
         ++m_numInterLayerLinks;
 
@@ -1121,6 +1127,7 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
       }
     }
   }
+  // Log() << "Created " << m_numInterLayerLinks << " inter-layer links!\n";
 }
 
 double Network::calculateJensenShannonDivergence(bool& intersect, const OutLinkMap& layer1OutLinks, double sumOutLinkWeightLayer1, const OutLinkMap& layer2OutLinks, double sumOutLinkWeightLayer2)
@@ -1210,6 +1217,8 @@ void Network::addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsign
     ++m_numIntraLayerLinks;
     m_maxNodeIdInIntraLayerNetworks = std::max(m_maxNodeIdInIntraLayerNetworks, std::max(n1, n2));
   }
+  addPhysicalNode(n1);
+  addPhysicalNode(n2);
 }
 
 void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight)
