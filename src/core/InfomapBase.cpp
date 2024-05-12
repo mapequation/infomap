@@ -717,6 +717,7 @@ void InfomapBase::generateSubNetwork(Network& network)
     auto& networkNode = nodeIt.second;
     auto* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
     node->data.init(networkNode);
+    // Log() << "Node " << node->stateId << " (" << node->layerId << "," << node->physicalId << ") data: " << node->data << ", tele-flow: " << networkNode.teleFlow << ", intra-tele: " << networkNode.intraLayerTeleFlow << "\n";
     if (haveMetaData()) {
       auto meta = metaData.find(networkNode.id);
       if (meta != metaData.end()) {
