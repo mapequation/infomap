@@ -342,9 +342,9 @@ void InfomapBase::run(Network& network)
       Log() << "[min, average, max] codelength: [" << minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n\n";
     }
 
-    Log() << "Best end modular solution in " << bestNumLevels << " levels";
+    Log() << "Best end modular solution in " << bestNumLevels << " levels: " << bestHierarchicalCodelength << " bits (savings: " << getRelativeCodelengthSavings(bestHierarchicalCodelength) * 100 << "%)";
     if (bestHierarchicalCodelength > m_oneLevelCodelength)
-      Log() << " (warning: worse than one-level solution)";
+      Log() << ". Warning: restoring to improved one-level solution";
     Log() << ":\n";
     Log() << bestSolutionStatistics.str() << '\n';
   }
