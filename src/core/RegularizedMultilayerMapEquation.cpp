@@ -60,7 +60,6 @@ void RegularizedMultilayerMapEquation::initSubNetwork(InfoNode& /*root*/)
 
 void RegularizedMultilayerMapEquation::initPartition(std::vector<InfoNode*>& nodes)
 {
-  Log(4) << "\nRegularizedMultilayerMapEquation::initPartition()...\n";
   initPartitionOfPhysicalNodes(nodes);
 
   calculateCodelength(nodes);
@@ -200,7 +199,6 @@ void RegularizedMultilayerMapEquation::initPhysicalNodes(InfoNode& root)
 
 void RegularizedMultilayerMapEquation::initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes)
 {
-  Log(4) << "RegularizedMultilayerMapEquation::initPartitionOfPhysicalNodes()...\n";
   m_physToModuleToMemNodes.clear();
   m_physToModuleToMemNodes.resize(m_numPhysicalNodes);
 
@@ -223,7 +221,6 @@ void RegularizedMultilayerMapEquation::initPartitionOfPhysicalNodes(std::vector<
 
 void RegularizedMultilayerMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
 {
-  Log(4) << "\nRegularizedMultilayerMapEquation::calculateCodelength()...\n";
   calculateCodelengthTerms(nodes);
 
   calculateNodeFlow_log_nodeFlow();
@@ -243,7 +240,6 @@ void RegularizedMultilayerMapEquation::calculateNodeFlow_log_nodeFlow()
 
 double RegularizedMultilayerMapEquation::calcCodelength(const InfoNode& parent) const
 {
-  Log(4) << "RegularizedMultilayerMapEquation::calcCodelength(parent)...\n";
   if (parent.isLeafModule()) {
     return calcCodelengthOnModuleOfLeafNodes(parent);
   }

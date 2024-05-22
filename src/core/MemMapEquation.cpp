@@ -242,7 +242,6 @@ void MemMapEquation::calculateNodeFlow_log_nodeFlow()
 
 double MemMapEquation::calcCodelength(const InfoNode& parent) const
 {
-  Log(4) << "MemMapEquation::calcCodelength(parent)...\n";
   if (parent.isLeafModule()) {
     return calcCodelengthOnModuleOfLeafNodes(parent);
   }
@@ -252,7 +251,6 @@ double MemMapEquation::calcCodelength(const InfoNode& parent) const
 
 double MemMapEquation::calcCodelengthOnModuleOfLeafNodes(const InfoNode& parent) const
 {
-  Log(4) << "MemMapEquation::calcCodelengthOnModuleOfLeafNodes(parent)...\n";
   if (parent.numPhysicalNodes() == 0) {
     return Base::calcCodelength(parent); // Infomap root node
   }

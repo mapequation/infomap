@@ -858,14 +858,18 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   double sumInterLinkFlow = 0.0;
   enterFlow.assign(numNodes, 0.0);
   exitFlow.assign(numNodes, 0.0);
+  // unrecorded inter-layer flow, skip adding enter/exit to intermediate node for unrecorded flow?
   for (auto& link : flowLinks) {
     if (isInterLink[linkIndex++]) {
       // Log() << " | Inter-link " << linkIndex << ": (" << layerIds[link.source] << "," << physicalIds[link.source] << ") -> (" << layerIds[link.target] << "," << physicalIds[link.target] << ") p_i_inter: " << alphaInter[link.source] << ", flow: " << nodeFlow[link.source] << ", p_ij_inter: " << link.flow << " -> flow " << alphaInter[link.source] * nodeFlow[link.source] * link.flow << "\n";
       link.flow = alphaInter[link.source] * nodeFlow[link.source] * link.flow;
       sumInterLinkFlow += link.flow;
-      // if (false) { // unrecorded inter-layer flow
-      //   exitFlow[link.source] += link.flow;
-      //   enterFlow[link.target] += link.flow;
+      // Need to add enter/exit flow to eventually collapse
+      exitFlow[link.source] += link.flow;
+      enterFlow[link.target] += link.flow;
+      // Remove unrecorded enter and exit flow on intermediate nodes removes collapse
+      // exitFlow[link.target] -= link.flow;
+      // enterFlow[link.target] -= link.flow;
       // }
     } else {
       double beta = 1 - alpha[link.source];
@@ -889,6 +893,10 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
 
     exitFlow[i] += nodeTeleportFlow[i] * (1 - nodeTeleportWeights[i]); // + node.intraLayerTeleFlow * (1 - node.intraLayerTeleWeight);
     enterFlow[i] += (layerTeleFlow[layerIndices[i]] - nodeTeleportFlow[i]) * nodeTeleportWeights[i];
+    // double unrecordedTeleFlow = alpha[i] * (1 - alphaInter[i]) * nodeFlow[i];
+    // exitFlow[i] += unrecordedTeleFlow * (1 - nodeTeleportWeights[i]); // + node.intraLayerTeleFlow * (1 - node.intraLayerTeleWeight);
+    // enterFlow[i] += (layerTeleFlow[layerIndices[i]] - unrecordedTeleFlow) * nodeTeleportWeights[i];
+    // Log() << i << " (" << layerIds[i] << "," << physicalIds[i] << "): enter: " << enterFlow[i] << ", exit: " << exitFlow[i] << "\n";
   }
 }
 
