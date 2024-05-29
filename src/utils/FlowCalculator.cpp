@@ -1161,7 +1161,6 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
 
 void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow) noexcept
 {
-  unsigned int N = network.numNodes();
   // TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
   if (network.isBipartite()) {
     Log() << "\n  -> Using bipartite links.";

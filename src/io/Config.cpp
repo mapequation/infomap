@@ -75,6 +75,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(noFileOutput, '0', "no-file-output", "Don't write output to file.", "Output", true);
 
+  api.addOptionArgument(clusterDataIsHard, "hard-partition", "Do not split initial partition.", "Input", true);
+
   api.addOptionArgument(printTree, "tree", "Write a tree file with the modular hierarchy. Automatically enabled if no other output is specified.", "Output");
 
   api.addOptionArgument(printFlowTree, "ftree", "Write a ftree file with the modular hierarchy including aggregated links between (nested) modules. (Used by Network Navigator)", "Output");
