@@ -54,6 +54,7 @@ private:
 
   double sumLinkWeight = 0;
   double sumWeightedDegree = 0;
+  double sumTeleFlow = 0;
 
   std::map<unsigned int, unsigned int> nodeIndexMap;
   std::vector<double> nodeFlow;

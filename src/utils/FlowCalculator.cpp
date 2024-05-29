@@ -842,7 +842,6 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
 
   // Log() << std::setprecision(16);
   // Log() << "Flow: ";
-  double sumTeleFlow = 0.0;
   for (unsigned int i = 0; i < layerTeleFlow.size(); ++i) {
     sumTeleFlow += layerTeleFlow[i];
   }
@@ -1234,12 +1233,12 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   // unsigned int L = network.numLayers();
   // double fractionIntraFlow = std::log(N_phys) / (std::log(N_phys) + L * std::log(L));
   // double fractionIntraFlow = 1 / L;
-  double fractionIntraFlow = 1;
+  double fractionIntraFlow = config.isMultilayerNetwork() && config.regularized ? 1 : 0;
   // if (config.multilayerTest < 2) {
   //   fractionIntraFlow = 0;
   // }
 
-  double sumTeleFlow = 0.0;
+  sumTeleFlow = 0.0;
   // double sumIntraTeleFlow = 0.0;
 
   for (auto& nodeIt : network.m_nodes) {
@@ -1251,29 +1250,11 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     node.intraLayerTeleFlow = fractionIntraFlow * node.teleFlow;
     node.teleFlow *= 1 - fractionIntraFlow;
     node.intraLayerTeleWeight = nodeTeleportWeights[nodeIndex];
-    node.enterFlow = node.flow;
-    node.exitFlow = node.flow;
+    // node.enterFlow = node.flow;
+    // node.exitFlow = node.flow;
     // Log() << nodeIndex << ": teleFlow: " << node.teleFlow << ", intraTele: " << node.intraLayerTeleFlow << ", intraTeleWeight: " << node.intraLayerTeleWeight << "\n";
     sumTeleFlow += node.teleFlow;
     // sumIntraTeleFlow += node.intraLayerTeleFlow;
-
-    if (!config.noSelfLinks) {
-      // Remove self-teleportation flow
-      node.enterFlow -= node.teleFlow * node.weight;
-      node.exitFlow -= node.teleFlow * node.weight;
-
-      // Remove self-link flow
-      unsigned int norm = config.isUndirectedFlow() ? 2 : 1;
-      auto& outLinks = network.m_nodeLinkMap[node.id];
-      for (auto& link : outLinks) {
-        auto& linkData = link.second;
-        if (node.id == link.first.id) {
-          node.enterFlow -= linkData.flow / norm;
-          node.exitFlow -= linkData.flow / norm;
-          break;
-        }
-      }
-    }
 
     sumNodeFlow += node.flow;
   }
@@ -1290,42 +1271,65 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
       }
     }
     // Add teleportation flow
-    for (auto& nodeIt : network.m_nodes) {
-      auto& node = nodeIt.second;
-      const auto nodeIndex = nodeIndexMap[node.id];
-      exitFlow[nodeIndex] += node.teleFlow * (1 - node.weight);
-      enterFlow[nodeIndex] += (sumTeleFlow - node.teleFlow) * node.weight;
+    if (!config.isUndirectedClustering() || config.regularized) {
+      for (auto& nodeIt : network.m_nodes) {
+        auto& node = nodeIt.second;
+        const auto nodeIndex = nodeIndexMap[node.id];
+        // exitFlow[nodeIndex] += node.teleFlow * (1 - node.weight);
+        // enterFlow[nodeIndex] += (sumTeleFlow - node.teleFlow) * node.weight;
+        // Already adjusted for the case of excluding self-flow?
+        exitFlow[nodeIndex] += node.teleFlow * 1;
+        enterFlow[nodeIndex] += sumTeleFlow * node.weight;
+
+        // if (config.noSelfLinks) {
+        //   // Remove self-teleportation flow
+        //   node.enterFlow -= node.teleFlow * node.weight;
+        //   node.exitFlow -= node.teleFlow * node.weight;
+
+        //   // Remove self-link flow
+        //   unsigned int norm = config.isUndirectedFlow() ? 2 : 1;
+        //   auto& outLinks = network.m_nodeLinkMap[node.id];
+        //   for (auto& link : outLinks) {
+        //     auto& linkData = link.second;
+        //     if (node.id == link.first.id) {
+        //       node.enterFlow -= linkData.flow / norm;
+        //       node.exitFlow -= linkData.flow / norm;
+        //       break;
+        //     }
+        //   }
+        // }
+      }
     }
   }
 
-  if (!config.isUndirectedClustering() && !config.regularized) {
-    enterFlow.assign(N, 0);
-    exitFlow.assign(N, 0);
-    double alpha = config.teleportationProbability;
-    double sumDanglingFlow = 0.0;
-    for (unsigned int i = 0; i < N; ++i) {
-      if (nodeOutDegree[i] == 0) {
-        sumDanglingFlow += nodeFlow[i];
-      }
-    }
-    for (auto& nodeIt : network.m_nodes) {
-      auto& node = nodeIt.second;
-      const auto sourceIndex = nodeIndexMap[node.id];
-      auto& outLinks = network.m_nodeLinkMap[node.id];
-      double danglingFlow = outLinks.empty() ? node.flow : 0.0;
-      if (config.recordedTeleportation) {
-        // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
-        exitFlow[sourceIndex] += alpha * node.flow * (1.0 - node.weight);
-        enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + (1 - alpha) * (sumDanglingFlow - danglingFlow)) * node.weight;
-      }
-      for (auto& link : outLinks) {
-        auto& linkData = link.second;
-        const auto targetIndex = nodeIndexMap[link.first.id];
-        exitFlow[sourceIndex] += linkData.flow;
-        enterFlow[targetIndex] += linkData.flow;
-      }
-    }
-  }
+  // if (!config.isUndirectedClustering() && !config.regularized) {
+  //   enterFlow.assign(N, 0);
+  //   exitFlow.assign(N, 0);
+  //   double alpha = config.teleportationProbability;
+  //   double sumDanglingFlow = 0.0;
+  //   for (unsigned int i = 0; i < N; ++i) {
+  //     if (nodeOutDegree[i] == 0) {
+  //       sumDanglingFlow += nodeFlow[i];
+  //     }
+  //   }
+  //   for (auto& nodeIt : network.m_nodes) {
+  //     auto& node = nodeIt.second;
+  //     const auto sourceIndex = nodeIndexMap[node.id];
+  //     auto& outLinks = network.m_nodeLinkMap[node.id];
+  //     double danglingFlow = outLinks.empty() ? node.flow : 0.0;
+  //     if (config.recordedTeleportation) {
+  //       // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
+  //       exitFlow[sourceIndex] += alpha * node.flow * (1.0 - node.weight);
+  //       enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + (1 - alpha) * (sumDanglingFlow - danglingFlow)) * node.weight;
+  //     }
+  //     for (auto& link : outLinks) {
+  //       auto& linkData = link.second;
+  //       const auto targetIndex = nodeIndexMap[link.first.id];
+  //       exitFlow[sourceIndex] += linkData.flow;
+  //       enterFlow[targetIndex] += linkData.flow;
+  //     }
+  //   }
+  // }
   // Save enter/exit flow on nodes
   for (auto& nodeIt : network.m_nodes) {
     auto& node = nodeIt.second;
