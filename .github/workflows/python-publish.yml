@@ -10,7 +10,7 @@ jobs:
   swig:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: |
           sudo apt update
           sudo apt install swig
@@ -51,12 +51,12 @@ jobs:
             }
         python-version: [3.7, 3.8, 3.9, "3.10"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v3
         with:
           name: swigfiles
           path: build/py
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - shell: bash
@@ -90,17 +90,17 @@ jobs:
     needs: build
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v3
       - run: |
           mkdir -p build
           mv package-macos-3.9 build/py
           cp package-macos-*/dist/*.whl build/py/dist
           cp package-windows-*/dist/*.whl build/py/dist
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 16
       # npm ci to get prettier
