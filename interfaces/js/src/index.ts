@@ -7,8 +7,6 @@ import fileToString, {
 import networkToString, { NetworkTypes } from "./network";
 // @ts-ignore
 import InfomapWorker from "./worker/infomap.worker.js";
-// @ts-ignore
-import MemFile from "./worker/infomap.worker.js.mem";
 
 export interface Changelog {
   body: string | null;
@@ -194,7 +192,6 @@ class Infomap {
     this.workers[id] = worker;
 
     worker.postMessage({
-      memBuffer: new Uint8Array(MemFile),
       arguments: args.split(" "),
       filename,
       network,
