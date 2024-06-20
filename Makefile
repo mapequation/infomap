@@ -167,7 +167,7 @@ py-build: Makefile
 	@autopep8 --jobs 8 --aggressive --aggressive -i $(PY_BUILD_DIR)/infomap.py
 	@cp -a interfaces/python/MANIFEST.in $(PY_BUILD_DIR)/
 	@cp -a README.rst $(PY_BUILD_DIR)/
-	@cp -a LICENSE_AGPLv3.txt $(PY_BUILD_DIR)/LICENSE
+	@cp -a LICENSE_GPLv3.txt $(PY_BUILD_DIR)/LICENSE
 	@cd $(PY_BUILD_DIR) && CC=$(CXX) python setup.py build_ext --inplace
 
 # Generate wrapper files from source and interface files

@@ -143,7 +143,7 @@ Search.setIndex({
     licens: 0,
     3: [0, 1, 2],
     later: 0,
-    license_agplv3: 0,
+    license_GPLv3: 0,
     txt: 0,
     non: [0, 2],
     copyleft: 0,

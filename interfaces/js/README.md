@@ -86,7 +86,7 @@ For contact information, see [mapequation.org/about.html](//www.mapequation.org/
 Infomap is released under a dual licence.
 
 To give everyone maximum freedom to make use of Infomap and derivative works,
-we make the code open source under the GNU Affero General Public License version 3
-or any later version (see LICENSE_AGPLv3.txt).
+we make the code open source under the GNU General Public License version 3
+or any later version (see LICENSE_GPLv3.txt).
 
 For a non-copyleft license, please contact us.

@@ -12,7 +12,7 @@
     "arguments.d.ts",
     "filetypes.d.ts",
     "network.d.ts",
-    "LICENSE_AGPLv3.txt"
+    "LICENSE_GPLv3.txt"
   ],
   "main": "index.js",
   "types": "index.d.ts",
@@ -47,7 +47,7 @@
       "name": "Martin Rosvall"
     }
   ],
-  "license": "AGPL-3.0-or-later",
+  "license": "GPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/mapequation/infomap/issues"
   },
@@ -85,7 +85,7 @@
       "Development Status :: 5 - Production/Stable",
       "Intended Audience :: Science/Research",
       "Topic :: Scientific/Engineering :: Information Analysis",
-      "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+      "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
       "Programming Language :: Python :: 3"
     ]
   }
