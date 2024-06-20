@@ -1,455 +1,204 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="generator"
-      content="Docutils 0.19: https://docutils.sourceforge.io/"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Infomap &#8212; Infomap 2.7.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
-    <script
-      data-url_root="./"
-      id="documentation_options"
-      src="_static/documentation_options.js"
-    ></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
+    <title>Infomap &#8212; Infomap 2.8.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=69ff2ef9"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
 
-    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
 
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=0.9, maximum-scale=0.9"
-    />
-  </head>
-  <body>
+  </head><body>
+  
+
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
-            <img
-              alt="https://github.com/mapequation/infomap/actions/workflows/build.yml/badge.svg"
-              src="https://github.com/mapequation/infomap/actions/workflows/build.yml/badge.svg"
-            />
-            <section id="infomap">
-              <h1>
-                Infomap<a
-                  class="headerlink"
-                  href="#infomap"
-                  title="Permalink to this heading"
-                  >¶</a
-                >
-              </h1>
-              <p>
-                Infomap is a network clustering algorithm based on the
-                <a
-                  class="reference external"
-                  href="https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation"
-                  >Map equation</a
-                >.
-              </p>
-              <p>
-                For detailed documentation, see
-                <a
-                  class="reference external"
-                  href="https://www.mapequation.org/infomap"
-                  >mapequation.org/infomap</a
-                >.
-              </p>
-              <p>
-                For a list of recent changes, see
-                <a
-                  class="reference external"
-                  href="https://github.com/mapequation/infomap/blob/master/CHANGELOG.md"
-                  >CHANGELOG.md</a
-                >
-                in the source directory.
-              </p>
-              <section id="getting-started">
-                <h2>
-                  Getting started<a
-                    class="headerlink"
-                    href="#getting-started"
-                    title="Permalink to this heading"
-                    >¶</a
-                  >
-                </h2>
-                <p>
-                  Infomap can be installed either from
-                  <a
-                    class="reference external"
-                    href="https://pypi.org/project/infomap/"
-                    >PyPI</a
-                  >
-                  using
-                  <code class="docutils literal notranslate"
-                    ><span class="pre">pip</span></code
-                  >
-                  or by compiling from source.
-                </p>
-                <p>
-                  An experimental Javascript version for browsers is available
-                  on
-                  <a
-                    class="reference external"
-                    href="https://www.npmjs.com/package/&#64;mapequation/infomap"
-                    >NPM</a
-                  >.
-                </p>
-              </section>
-              <section id="using-pip">
-                <h2>
-                  Using pip<a
-                    class="headerlink"
-                    href="#using-pip"
-                    title="Permalink to this heading"
-                    >¶</a
-                  >
-                </h2>
-                <p>A pre-compiled version is available for macOS users.</p>
-                <p>
-                  Installing on other operating systems requires a working
-                  <code class="docutils literal notranslate"
-                    ><span class="pre">gcc</span></code
-                  >
-                  or
-                  <code class="docutils literal notranslate"
-                    ><span class="pre">clang</span></code
-                  >
-                  compiler.
-                </p>
-                <p>To install, run:</p>
-                <div class="highlight-default notranslate">
-                  <div class="highlight">
-                    <pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">infomap</span>
-</pre>
-                  </div>
-                </div>
-                <p>To upgrade, run:</p>
-                <div class="highlight-default notranslate">
-                  <div class="highlight">
-                    <pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">infomap</span>
-</pre>
-                  </div>
-                </div>
-                <p>
-                  When the Python package is installed, an executable called
-                  <code class="docutils literal notranslate"
-                    ><span class="pre">infomap</span></code
-                  >
-                  (with lowercase i) is available from any directory.
-                </p>
-                <p>
-                  To get started, read
-                  <a
-                    class="reference external"
-                    href="https://mapequation.github.io/infomap/python/"
-                    >Infomap Python API</a
-                  >.
-                </p>
-              </section>
-              <section id="using-docker">
-                <h2>
-                  Using Docker<a
-                    class="headerlink"
-                    href="#using-docker"
-                    title="Permalink to this heading"
-                    >¶</a
-                  >
-                </h2>
-                <p>
-                  There are currently two Docker images available on
-                  <a
-                    class="reference external"
-                    href="https://hub.docker.com/r/mapequation/infomap"
-                    >Docker Hub</a
-                  >.
-                </p>
-                <ul class="simple">
-                  <li>
-                    <p>
-                      <code class="docutils literal notranslate"
-                        ><span class="pre">mapequation/infomap</span></code
-                      >
-                    </p>
-                  </li>
-                  <li>
-                    <p>
-                      <code class="docutils literal notranslate"
-                        ><span class="pre"
-                          >mapequation/infomap:notebook</span
-                        ></code
-                      >
-                      based on
-                      <code class="docutils literal notranslate"
-                        ><span class="pre">jupyter/scipy-notebook</span></code
-                      >
-                    </p>
-                  </li>
-                </ul>
-                <p>
-                  The image
-                  <code class="docutils literal notranslate"
-                    ><span class="pre">mapequation/infomap</span></code
-                  >
-                  can be started with
-                </p>
-                <div class="highlight-bash notranslate">
-                  <div class="highlight">
-                    <pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+            
+  <img alt="https://github.com/mapequation/infomap/actions/workflows/build.yml/badge.svg" src="https://github.com/mapequation/infomap/actions/workflows/build.yml/badge.svg" /><section id="infomap">
+<h1>Infomap<a class="headerlink" href="#infomap" title="Link to this heading">¶</a></h1>
+<p>Infomap is a network clustering algorithm based on the <a class="reference external" href="https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation">Map equation</a>.</p>
+<p>For detailed documentation, see <a class="reference external" href="https://www.mapequation.org/infomap">mapequation.org/infomap</a>.</p>
+<p>For a list of recent changes, see <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/CHANGELOG.md">CHANGELOG.md</a> in the source directory.</p>
+<section id="getting-started">
+<h2>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h2>
+<p>Infomap can be installed either from <a class="reference external" href="https://pypi.org/project/infomap/">PyPI</a> using <code class="docutils literal notranslate"><span class="pre">pip</span></code> or by
+compiling from source.</p>
+<p>An experimental Javascript version for browsers is available on <a class="reference external" href="https://www.npmjs.com/package/&#64;mapequation/infomap">NPM</a>.</p>
+</section>
+<section id="using-pip">
+<h2>Using pip<a class="headerlink" href="#using-pip" title="Link to this heading">¶</a></h2>
+<p>A pre-compiled version is available for macOS users.</p>
+<p>Installing on other operating systems requires a
+working <code class="docutils literal notranslate"><span class="pre">gcc</span></code> or <code class="docutils literal notranslate"><span class="pre">clang</span></code> compiler.</p>
+<p>To install, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">infomap</span>
+</pre></div>
+</div>
+<p>To upgrade, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">infomap</span>
+</pre></div>
+</div>
+<p>When the Python package is installed, an executable called
+<code class="docutils literal notranslate"><span class="pre">infomap</span></code> (with lowercase i) is available from any directory.</p>
+<p>To get started, read <a class="reference external" href="https://mapequation.github.io/infomap/python/">Infomap Python API</a>.</p>
+</section>
+<section id="using-docker">
+<h2>Using Docker<a class="headerlink" href="#using-docker" title="Link to this heading">¶</a></h2>
+<p>There are currently two Docker images available on <a class="reference external" href="https://hub.docker.com/r/mapequation/infomap">Docker Hub</a>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mapequation/infomap</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mapequation/infomap:notebook</span></code> based on <code class="docutils literal notranslate"><span class="pre">jupyter/scipy-notebook</span></code></p></li>
+</ul>
+<p>The image <code class="docutils literal notranslate"><span class="pre">mapequation/infomap</span></code> can be started with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-v<span class="w"> </span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>:/data<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>mapequation/infomap
 <span class="w">    </span><span class="o">[</span>infomap<span class="w"> </span>arguments<span class="o">]</span>
-</pre>
-                  </div>
-                </div>
-                <p>
-                  You can also use the supplied
-                  <a
-                    class="reference external"
-                    href="https://github.com/mapequation/infomap/blob/master/docker-compose.yml"
-                    >docker-compose.yml</a
-                  >:
-                </p>
-                <div class="highlight-bash notranslate">
-                  <div class="highlight">
-                    <pre><span></span>docker-compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>infomap
-</pre>
-                  </div>
-                </div>
-                <p>
-                  The image
-                  <code class="docutils literal notranslate"
-                    ><span class="pre">mapequation/infomap:notebook</span></code
-                  >
-                  can be started with
-                </p>
-                <div class="highlight-bash notranslate">
-                  <div class="highlight">
-                    <pre><span></span>docker<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+</pre></div>
+</div>
+<p>You can also use the supplied <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/docker-compose.yml">docker-compose.yml</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker-compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>infomap
+</pre></div>
+</div>
+<p>The image <code class="docutils literal notranslate"><span class="pre">mapequation/infomap:notebook</span></code> can be started with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-v<span class="w"> </span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>:/home/jovyan/work<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-p<span class="w"> </span><span class="m">8888</span>:8888<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>mapequation/infomap:notebook<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>start.sh<span class="w"> </span>jupyter<span class="w"> </span>lab
-</pre>
-                  </div>
-                </div>
-                <p>Or similarly, using docker-compose:</p>
-                <div class="highlight-bash notranslate">
-                  <div class="highlight">
-                    <pre><span></span>docker-compose<span class="w"> </span>up<span class="w"> </span>notebook
-</pre>
-                  </div>
-                </div>
-              </section>
-              <section id="compiling-from-source">
-                <h2>
-                  Compiling from source<a
-                    class="headerlink"
-                    href="#compiling-from-source"
-                    title="Permalink to this heading"
-                    >¶</a
-                  >
-                </h2>
-                <p>
-                  Installing Infomap from source requires a working
-                  <code class="docutils literal notranslate"
-                    ><span class="pre">gcc</span></code
-                  >
-                  or
-                  <code class="docutils literal notranslate"
-                    ><span class="pre">clang</span></code
-                  >
-                  compiler.
-                </p>
-                <p>
-                  To download and compile the newest version from
-                  <a
-                    class="reference external"
-                    href="https://www.github.com/mapequation/infomap"
-                    >Github</a
-                  >, clone the repository by running
-                </p>
-                <div class="highlight-shell notranslate">
-                  <div class="highlight">
-                    <pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:mapequation/infomap.git
+</pre></div>
+</div>
+<p>Or similarly, using docker-compose:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker-compose<span class="w"> </span>up<span class="w"> </span>notebook
+</pre></div>
+</div>
+</section>
+<section id="compiling-from-source">
+<h2>Compiling from source<a class="headerlink" href="#compiling-from-source" title="Link to this heading">¶</a></h2>
+<p>Installing Infomap from source requires a working <code class="docutils literal notranslate"><span class="pre">gcc</span></code> or <code class="docutils literal notranslate"><span class="pre">clang</span></code> compiler.</p>
+<p>To download and compile the newest version from <a class="reference external" href="https://www.github.com/mapequation/infomap">Github</a>, clone the repository
+by running</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:mapequation/infomap.git
 <span class="nb">cd</span><span class="w"> </span>infomap
 make
-</pre>
-                  </div>
-                </div>
-                <p>
-                  This creates the binary
-                  <code class="docutils literal notranslate"
-                    ><span class="pre">Infomap</span></code
-                  >, run it using:
-                </p>
-                <div class="highlight-default notranslate">
-                  <div class="highlight">
-                    <pre><span></span><span class="o">./</span><span class="n">Infomap</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="n">network_data</span> <span class="n">destination</span>
-</pre>
-                  </div>
-                </div>
-                <p>For a list of options, run:</p>
-                <div class="highlight-default notranslate">
-                  <div class="highlight">
-                    <pre><span></span><span class="o">./</span><span class="n">Infomap</span> <span class="o">--</span><span class="n">help</span>
-</pre>
-                  </div>
-                </div>
-                <p>
-                  Read
-                  <a
-                    class="reference external"
-                    href="https://www.mapequation.org/infomap"
-                    >the documentation</a
-                  >
-                  to learn more about the different options.
-                </p>
-              </section>
-              <section id="npm-package">
-                <h2>
-                  Npm package<a
-                    class="headerlink"
-                    href="#npm-package"
-                    title="Permalink to this heading"
-                    >¶</a
-                  >
-                </h2>
-                <p>
-                  An experimental Javascript web worker is available on
-                  <a
-                    class="reference external"
-                    href="https://www.npmjs.com/package/&#64;mapequation/infomap"
-                    >NPM</a
-                  >.
-                </p>
-                <p>To install it, run</p>
-                <div class="highlight-shell notranslate">
-                  <div class="highlight">
-                    <pre><span></span>npm<span class="w"> </span>install<span class="w"> </span>@mapequation/infomap
-</pre>
-                  </div>
-                </div>
-              </section>
-              <section id="feedback">
-                <h2>
-                  Feedback<a
-                    class="headerlink"
-                    href="#feedback"
-                    title="Permalink to this heading"
-                    >¶</a
-                  >
-                </h2>
-                <p>
-                  If you have any questions, suggestions or issues regarding the
-                  software, please add them to
-                  <a
-                    class="reference external"
-                    href="http://www.github.com/mapequation/infomap/issues"
-                    >GitHub issues</a
-                  >.
-                </p>
-              </section>
-              <section id="authors">
-                <h2>
-                  Authors<a
-                    class="headerlink"
-                    href="#authors"
-                    title="Permalink to this heading"
-                    >¶</a
-                  >
-                </h2>
-                <p>Daniel Edler, Anton Holmgren, Martin Rosvall</p>
-                <p>
-                  For contact information, see
-                  <a
-                    class="reference external"
-                    href="https://www.mapequation.org/about.html"
-                    >mapequation.org/about.html</a
-                  >.
-                </p>
-              </section>
-              <section id="terms-of-use">
-                <h2>
-                  Terms of use<a
-                    class="headerlink"
-                    href="#terms-of-use"
-                    title="Permalink to this heading"
-                    >¶</a
-                  >
-                </h2>
-                <p>Infomap is released under a dual licence.</p>
-                <p>
-                  To give everyone maximum freedom to make use of Infomap and
-                  derivative works, we make the code open source under the GNU
-                  General Public License version 3 or any later version
-                  (see
-                  <a
-                    class="reference external"
-                    href="https://github.com/mapequation/infomap/blob/master/LICENSE_GPLv3.txt"
-                    >LICENSE_GPLv3.txt</a
-                  >).
-                </p>
-                <p>For a non-copyleft license, please contact us.</p>
-              </section>
-            </section>
+</pre></div>
+</div>
+<p>This creates the binary <code class="docutils literal notranslate"><span class="pre">Infomap</span></code>, run it using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">Infomap</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="n">network_data</span> <span class="n">destination</span>
+</pre></div>
+</div>
+<p>For a list of options, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">Infomap</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<p>Read <a class="reference external" href="https://www.mapequation.org/infomap">the documentation</a> to learn more about the different options.</p>
+</section>
+<section id="npm-package">
+<h2>Npm package<a class="headerlink" href="#npm-package" title="Link to this heading">¶</a></h2>
+<p>An experimental Javascript web worker is available on <a class="reference external" href="https://www.npmjs.com/package/&#64;mapequation/infomap">NPM</a>.</p>
+<p>To install it, run</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>npm<span class="w"> </span>install<span class="w"> </span>@mapequation/infomap
+</pre></div>
+</div>
+</section>
+<section id="feedback">
+<h2>Feedback<a class="headerlink" href="#feedback" title="Link to this heading">¶</a></h2>
+<p>If you have any questions, suggestions or issues regarding the software,
+please add them to <a class="reference external" href="http://www.github.com/mapequation/infomap/issues">GitHub issues</a>.</p>
+</section>
+<section id="authors">
+<h2>Authors<a class="headerlink" href="#authors" title="Link to this heading">¶</a></h2>
+<p>Daniel Edler, Anton Holmgren, Martin Rosvall</p>
+<p>For contact information, see <a class="reference external" href="https://www.mapequation.org/about.html">mapequation.org/about.html</a>.</p>
+</section>
+<section id="terms-of-use">
+<h2>Terms of use<a class="headerlink" href="#terms-of-use" title="Link to this heading">¶</a></h2>
+<p>Infomap is released under a dual licence.</p>
+<p>To give everyone maximum freedom to make use of Infomap
+and derivative works, we make the code open source under
+the GNU General Public License version 3 or any
+later version (see <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/LICENSE_GPLv3.txt">LICENSE_GPLv3.txt</a>).</p>
+<p>For a non-copyleft license, please contact us.</p>
+</section>
+</section>
+
+
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-          <h1 class="logo"><a href="#">Infomap</a></h1>
+<h1 class="logo"><a href="#">Infomap</a></h1>
 
-          <h3>Navigation</h3>
 
-          <div class="relations">
-            <h3>Related Topics</h3>
-            <ul>
-              <li>
-                <a href="#">Documentation overview</a>
-                <ul></ul>
-              </li>
-            </ul>
-          </div>
-          <div id="searchbox" style="display: none" role="search">
-            <h3 id="searchlabel">Quick search</h3>
-            <div class="searchformwrapper">
-              <form class="search" action="search.html" method="get">
-                <input
-                  type="text"
-                  name="q"
-                  aria-labelledby="searchlabel"
-                  autocomplete="off"
-                  autocorrect="off"
-                  autocapitalize="off"
-                  spellcheck="false"
-                />
-                <input type="submit" value="Go" />
-              </form>
-            </div>
-          </div>
-          <script>
-            document.getElementById("searchbox").style.display = "block";
-          </script>
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, Daniel Edler, Anton Holmgren, Martin Rosvall. | Powered by
-      <a href="http://sphinx-doc.org/">Sphinx 6.2.1</a> &amp;
-      <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
-
+      &#169;2020, Daniel Edler, Anton Holmgren, Martin Rosvall.
+      
       |
-      <a href="_sources/index.rst.txt" rel="nofollow">Page source</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
     </div>
+
+    
+
+    
   </body>
 </html>
