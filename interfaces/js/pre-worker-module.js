@@ -8,16 +8,6 @@ function readFile(filename) {
 
 let outName = "Untitled";
 
-let memoryHackRequest = {
-  status: 200,
-  useRequest: null,
-  addEventListener: function (event, callback) {
-    if (event === "load") {
-      this.useRequest = callback;
-    }
-  },
-};
-
 var Module = {
   arguments: [],
   preRun: function () {
@@ -72,14 +62,10 @@ var Module = {
     };
     postMessage({ type: "finished", content });
   },
-  memoryInitializerRequest: memoryHackRequest,
 };
 
 onmessage = function onmessage(message) {
   const data = message.data;
-
-  memoryHackRequest.response = data.memBuffer;
-  memoryHackRequest.useRequest();
   outName = data.outName;
   Module.arguments.push(...[data.filename, ".", ...data.arguments]);
   FS.writeFile(data.filename, data.network);
