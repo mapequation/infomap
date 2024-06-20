@@ -168,7 +168,7 @@ py-build: Makefile
 	@cp -a interfaces/python/MANIFEST.in $(PY_BUILD_DIR)/
 	@cp -a README.rst $(PY_BUILD_DIR)/
 	@cp -a LICENSE_AGPLv3.txt $(PY_BUILD_DIR)/LICENSE
-	@cd $(PY_BUILD_DIR) && CC=$(CXX) python3 setup.py build_ext --inplace
+	@cd $(PY_BUILD_DIR) && CC=$(CXX) python setup.py build_ext --inplace
 
 # Generate wrapper files from source and interface files
 py-swig: $(PY_HEADERS) $(PY_SOURCES) $(PY_ONLY_HEADERS) interfaces/python/infomap.py
@@ -191,9 +191,9 @@ SPHINX_TARGET_DIR = docs
 
 py-test:
 	@cp -r examples/networks/*.net $(PY_BUILD_DIR)
-	python3 -m flake8 --count --show-source --statistics --ignore E501,F811,W503 $(PY_BUILD_DIR)/infomap.py
-	cd $(PY_BUILD_DIR) && python3 -m doctest infomap.py
-	cd examples/python && for f in *.py; do python3 "$$f" > /dev/null || exit 1; done
+	python -m flake8 --count --show-source --statistics --ignore E501,F811,W503 $(PY_BUILD_DIR)/infomap.py
+	cd $(PY_BUILD_DIR) && python -m doctest infomap.py
+	cd examples/python && for f in *.py; do python "$$f" > /dev/null || exit 1; done
 
 py-local-install:
 	# Run this to get 'import infomap' to always import the latest
@@ -218,8 +218,8 @@ py-clean:
 	$(RM) -r $(PY_BUILD_DIR)/dist
 
 py-format:
-	python3 -m isort interfaces/python examples/python
-	python3 -m black interfaces/python examples/python
+	python -m isort interfaces/python examples/python
+	python -m black interfaces/python examples/python
 
 pypi-dist:
 	cd $(PY_BUILD_DIR) && python setup.py sdist bdist_wheel
