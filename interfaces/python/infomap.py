@@ -216,6 +216,7 @@ def _construct_args(
         args += " --variable-markov-time"
     if variable_markov_damping != 1.0:
         args += " --variable-markov-damping {}".format(variable_markov_damping)
+        args += " --variable-markov-damping {}".format(variable_markov_damping)
 
     if preferred_number_of_modules is not None:
         args += " --preferred-number-of-modules {}".format(preferred_number_of_modules)
@@ -1017,12 +1018,6 @@ class Infomap(InfomapWrapper):
 
 
         """
-        if self.num_nodes != 0:
-            raise RuntimeError(
-                """Using the multilayer intra/inter api and explicitly adding nodes using add_node is unsupported.
-If you want to set node names, use set_name."""
-            )
-
         return super().addMultilayerIntraLink(
             layer_id, source_node_id, target_node_id, weight
         )
@@ -1068,12 +1063,6 @@ If you want to set node names, use set_name."""
         weight : float, optional
 
         """
-        if self.num_nodes != 0:
-            raise RuntimeError(
-                """Using the multilayer intra/inter api and explicitly adding nodes using add_node is unsupported.
-If you want to set node names, use set_name."""
-            )
-
         return super().addMultilayerInterLink(
             source_layer_id, node_id, target_layer_id, weight
         )
@@ -1149,7 +1138,7 @@ If you want to set node names, use set_name."""
         weight="weight",
         phys_id="phys_id",
         layer_id="layer_id",
-        multilayer_inter_intra_format=False,
+        multilayer_inter_intra_format=True,
     ):
         """Add NetworkX graph
 
@@ -1198,13 +1187,13 @@ If you want to set node names, use set_name."""
         {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f'}
         >>> im.run()
         >>> for node in im.nodes:
-        ...     print(node.node_id, node.module_id, node.flow, node.state_id)
-        1 1 0.16666666666666666 0
-        2 1 0.16666666666666666 1
-        3 1 0.16666666666666666 2
-        1 2 0.16666666666666666 3
-        4 2 0.16666666666666666 4
-        5 2 0.16666666666666666 5
+        ...     print(node.state_id, node.node_id, node.module_id, node.flow)
+        0 1 1 0.16666666666666666
+        1 2 1 0.16666666666666666
+        2 3 1 0.16666666666666666
+        3 1 2 0.16666666666666666
+        4 4 2 0.16666666666666666
+        5 5 2 0.16666666666666666
 
         Usage with a multilayer network
 
@@ -1221,9 +1210,9 @@ If you want to set node names, use set_name."""
         >>> mapping = im.add_networkx_graph(G)
         >>> im.run()
         >>> for node in im.nodes:
-        ...     print(node.node_id, node.module_id, node.flow, node.state_id, node.layer_id)
-        1 1 0.25 0 1
-        2 1 0.25 1 1
+        ...     print(node.state_id, node.module_id, f"{node.flow:.2f}", node.node_id, node.layer_id)
+        0 1 0.25 1 1
+        1 1 0.25 2 1
         2 2 0.25 2 2
         3 2 0.25 3 2
 

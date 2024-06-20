@@ -77,7 +77,7 @@ nx.set_node_attributes(G, im.get_modules(), "community")
 
 draw_network(G)
 
-print("A state network...")
+print("\nA state network...")
 G = nx.Graph()
 G.add_node("a", phys_id=1)
 G.add_node("b", phys_id=2)
@@ -94,6 +94,7 @@ G.add_edge("e", "f")
 im = Infomap(silent=True)
 im.add_networkx_graph(G)
 im.run()
+print("#node_id module_id flow state_id")
 for node in im.nodes:
     print(node.node_id, node.module_id, node.flow, node.state_id)
 # 1 1 0.16666666666666666 0
@@ -104,7 +105,7 @@ for node in im.nodes:
 # 5 2 0.16666666666666666 5
 
 
-print("A multilayer network...")
+print("\nA multilayer network...")
 G = nx.Graph()
 G.add_node(11, phys_id=1, layer_id=1)
 G.add_node(21, phys_id=2, layer_id=1)
@@ -112,11 +113,15 @@ G.add_node(22, phys_id=2, layer_id=2)
 G.add_node(23, phys_id=3, layer_id=2)
 G.add_edge(11, 21)
 G.add_edge(22, 23)
-im = Infomap(silent=True)
+im = Infomap(silent=False)
+# Add multilayer_inter_intra_format=False for full multilayer format
 im.add_networkx_graph(G)
 im.run()
+print("#node_id module_id flow state_id layer_id")
 for node in im.nodes:
-    print(node.node_id, node.module_id, node.flow, node.state_id, node.layer_id)
+    print(
+        node.node_id, node.module_id, f"{node.flow:.2f}", node.state_id, node.layer_id
+    )
 # 1 1 0.25 0 1
 # 2 1 0.25 1 1
 # 2 2 0.25 2 2

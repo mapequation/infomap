@@ -141,11 +141,9 @@ void InfomapBase::run(const std::string& parameters)
   }
 #endif
 
+  m_network.postProcessInputData();
   if (m_network.numNodes() == 0) {
-    m_network.postProcessInputData();
-    if (m_network.numNodes() == 0) {
-      m_network.readInputData(networkFile);
-    }
+    m_network.readInputData(networkFile);
   }
 
   if (!metaDataFile.empty()) {
