@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.8.0](https://github.com/mapequation/infomap/compare/v2.7.1...v2.8.0) (2024-06-20)
+
+
+### Features
+
+* Add state network from NetworkX graph ([#344](https://github.com/mapequation/infomap/issues/344)) ([1467768](https://github.com/mapequation/infomap/commit/1467768d8850860977c05142c0d3d4c3aaf5eea0))
+
+
+### Bug Fixes
+
+* **py:** Use inter/intra multilayer format by default ([0ed9af3](https://github.com/mapequation/infomap/commit/0ed9af30af19cbede0317f71ef44a5b5193661fc))
+* Upgrade github actions dependencies ([ffe0fe2](https://github.com/mapequation/infomap/commit/ffe0fe21f98e70a918fdd45157f960eb770c153d))
+
 ### [2.7.1](https://github.com/mapequation/infomap/compare/v2.7.0...v2.7.1) (2023-04-25)
 
 
