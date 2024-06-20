@@ -10,18 +10,18 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 14
-      - uses: mymindstorm/setup-emsdk@v12
+          node-version: 16
+      - uses: mymindstorm/setup-emsdk@v14
       - name: Install dependencies
         run: npm ci
       - name: Build
         run: make -j js-worker
-      - uses: JS-DevTools/npm-publish@v1
+      - uses: JS-DevTools/npm-publish@v3
         with:
           token: ${{ secrets.NPM_TOKEN }}
           access: public

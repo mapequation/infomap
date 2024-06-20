@@ -45,7 +45,7 @@ jobs:
           - { name: "-noomp", target: "noomp" }
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - if: startsWith(matrix.config.os, 'macos')
         run: |
