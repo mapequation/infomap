@@ -52,7 +52,7 @@ jobs:
         python-version: [3.7, 3.8, 3.9, "3.10"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: swigfiles
           path: build/py
@@ -91,7 +91,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
       - run: |
           mkdir -p build
           mv package-macos-3.9 build/py
