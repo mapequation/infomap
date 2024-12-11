@@ -1203,9 +1203,9 @@ class Infomap(InfomapWrapper):
         >>> G.add_node(11, phys_id=1, layer_id=1)
         >>> G.add_node(21, phys_id=2, layer_id=1)
         >>> G.add_node(22, phys_id=2, layer_id=2)
-        >>> G.add_node(23, phys_id=3, layer_id=2)
+        >>> G.add_node(32, phys_id=3, layer_id=2)
         >>> G.add_edge(11, 21)
-        >>> G.add_edge(22, 23)
+        >>> G.add_edge(22, 32)
         >>> im = Infomap(silent=True)
         >>> mapping = im.add_networkx_graph(G)
         >>> im.run()
@@ -1238,7 +1238,7 @@ class Infomap(InfomapWrapper):
         layer_id : str, optional
             Node attribute for node layer ids, assuming a state network.
         multilayer_is_inter_intra_format : bool, optional
-            Use intra/inter format to simulate inter-layer links. Default false.
+            Use intra/inter format to simulate inter-layer links. Default true.
 
         Returns
         -------
