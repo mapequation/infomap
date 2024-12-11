@@ -301,8 +301,8 @@ IterationResult powerIterate(double alpha, Iteration&& iter)
     err = iter(iterations, alpha, beta);
 
     // Perturb the system if equilibrium
-    if (std::abs(err - oldErr) < 1e-15) {
-      alpha += 1.0e-10;
+    if (std::abs(err - oldErr) < 1e-17) {
+      alpha += 1.0e-12;
       beta = 1.0 - alpha;
     }
 
