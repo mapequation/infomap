@@ -30,12 +30,15 @@
 #include <cstdlib>
 #include <algorithm>
 #include <cmath>
+#include <csignal>
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
 namespace infomap {
+
+bool InfomapBase::shouldExit = false;
 
 std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)
 {
@@ -95,6 +98,12 @@ unsigned int InfomapBase::maxTreeDepth() const
   return maxDepth;
 }
 
+void InfomapBase::signalHandler(int signal)
+{
+  // shouldExit.store(true);
+  InfomapBase::shouldExit = true;
+}
+
 // ===================================================
 // Run
 // ===================================================
@@ -105,6 +114,12 @@ void InfomapBase::run(const std::string& parameters)
     runPartition();
     return;
   }
+
+  // Register signal handlers
+  std::signal(SIGINT, InfomapBase::signalHandler);
+  std::signal(SIGTERM, InfomapBase::signalHandler);
+  // shouldExit.store(false);
+  shouldExit = false;
 
   m_elapsedTime = Stopwatch(true);
   m_startDate = Date();

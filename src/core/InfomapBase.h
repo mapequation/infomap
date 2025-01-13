@@ -29,6 +29,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <atomic>
 
 namespace infomap {
 
@@ -171,6 +172,7 @@ public:
   void run(Network& network);
 
 private:
+  static void signalHandler(int signal);
   bool isFullNetwork() const { return m_isMain && m_aggregationLevel == 0; }
   bool isFirstLoop() const { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 
@@ -515,6 +517,10 @@ protected:
   Stopwatch m_elapsedTime = Stopwatch(false);
   std::string m_initialParameters;
   std::string m_currentParameters;
+
+  // Atomic flag to indicate the program should exit
+  // static std::atomic<bool> shouldExit;
+  static bool shouldExit;
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };

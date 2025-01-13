@@ -20,6 +20,9 @@
 #include <set>
 #include <utility>
 
+#include <chrono>
+#include <thread>
+
 namespace infomap {
 
 template <typename Objective>
@@ -272,6 +275,12 @@ inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
   }
 
   do {
+    std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+    if (m_infomap->shouldExit) {
+      Log() << "\nGot interrupt signal, early exiting.\n";
+      return numEffectiveLoops;
+    }
+
     ++coreLoopCount;
     unsigned int numNodesMoved = m_infomap->innerParallelization
         ? tryMoveEachNodeIntoBestModuleInParallel()
