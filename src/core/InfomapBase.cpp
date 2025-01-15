@@ -163,9 +163,9 @@ void InfomapBase::run(Network& network)
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
 
-  if (m_network.numNodes() == 0) {
-    m_network.postProcessInputData();
-    if (m_network.numNodes() == 0) {
+  if (network.numNodes() == 0) {
+    network.postProcessInputData();
+    if (network.numNodes() == 0) {
       throw std::domain_error("Network is empty");
     }
   }
