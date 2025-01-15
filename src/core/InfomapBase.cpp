@@ -323,6 +323,10 @@ void InfomapBase::run(Network& network)
         }
       }
     }
+    if (shouldExit) {
+      numTrials = i + 1;
+      break;
+    }
   }
   if (isMainInfomap()) {
     m_elapsedTime.stop();
@@ -992,6 +996,10 @@ void InfomapBase::hierarchicalPartition()
     return;
   }
 
+  if (shouldExit) {
+    return;
+  }
+
   if (numTopModules() > preferredNumberOfModules) {
     findHierarchicalSuperModules();
   }
@@ -1010,6 +1018,10 @@ void InfomapBase::hierarchicalPartition()
   if (fastHierarchicalSolution == 0) {
     removeSubModules(true);
     m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+  }
+
+  if (shouldExit) {
+    return;
   }
 
   recursivePartition();
@@ -1033,7 +1045,7 @@ void InfomapBase::partition()
 
   bool doFineTune = true;
   bool coarseTuned = false;
-  while (numTopModules() > 1 && (m_tuneIterationIndex + 1) != tuneIterationLimit) {
+  while (numTopModules() > 1 && (m_tuneIterationIndex + 1) != tuneIterationLimit && !shouldExit) {
     ++m_tuneIterationIndex;
     if (doFineTune) {
       Log(3) << "\n";
@@ -1351,6 +1363,9 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
     consolidateModules(replaceExistingModules);
     ++numLevelsConsolidated;
     ++m_aggregationLevel;
+    if (shouldExit) {
+      break;
+    }
   }
   m_aggregationLevel = 0;
 
@@ -1757,7 +1772,7 @@ unsigned int InfomapBase::recursivePartition()
     isSilent = Log::isSilent();
   }
 
-  while (partitionQueue.size() > 0) {
+  while (partitionQueue.size() > 0 && !shouldExit) {
     Log(1) << "Level " << partitionQueue.level << ": " << (partitionQueue.flow * 100) << "% of the flow in " << partitionQueue.size() << " modules. Partitioning... " << std::setprecision(6) << std::flush;
 
     if (isMainInfomap())

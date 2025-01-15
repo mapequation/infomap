@@ -23,6 +23,10 @@
 #include <chrono>
 #include <thread>
 
+#ifdef PYTHON
+#include <Python.h>
+#endif
+
 namespace infomap {
 
 template <typename Objective>
@@ -275,9 +279,16 @@ inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
   }
 
   do {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+#ifdef PYTHON
+    if (PyErr_CheckSignals() != 0) {
+      Log() << "\nGot interruption signal from Python, early exiting.\n";
+      m_infomap->shouldExit = true;
+      return numEffectiveLoops;
+    }
+#endif
+    // std::this_thread::sleep_for(std::chrono::nanoseconds(1));
     if (m_infomap->shouldExit) {
-      Log() << "\nGot interrupt signal, early exiting.\n";
+      Log() << "\nGot interruption signal, early exiting.\n";
       return numEffectiveLoops;
     }
 
