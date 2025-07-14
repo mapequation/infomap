@@ -190,6 +190,7 @@ SPHINX_SOURCE_DIR = interfaces/python/source
 SPHINX_TARGET_DIR = docs
 
 py-test:
+	pytest
 	@cp -r examples/networks/*.net $(PY_BUILD_DIR)
 	python3 -m flake8 --count --show-source --statistics --ignore E501,F811,W503 $(PY_BUILD_DIR)/infomap.py
 	cd $(PY_BUILD_DIR) && python3 -m doctest infomap.py
