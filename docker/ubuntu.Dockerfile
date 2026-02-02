@@ -1,9 +1,8 @@
-FROM ubuntu:18.04
-# FROM ubuntu:latest
+FROM ubuntu:latest
 
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    python3-pip \
+  build-essential \
+  python3-pip \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 

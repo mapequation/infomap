@@ -302,6 +302,13 @@ docker-build-ubuntu-test-python: Makefile
 docker-run-ubuntu-test-python: Makefile
 	docker run --rm infomap:python-test
 
+# Build a lightweight python test image
+.PHONY: docker-build-python
+
+# Test that python builds in linux environment
+docker-build-python: Makefile docker/python.Dockerfile
+	docker build -f docker/python.Dockerfile -t infomap-python .
+
 # R with RStudio
 docker-build-r: Makefile
 	docker build -f docker/rstudio.Dockerfile -t infomap:r .
