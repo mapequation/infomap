@@ -446,6 +446,11 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
   unsigned int numNodesAsTeleportationTargets = config.noSelfLinks ? N - 1 : N;
   double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
+  if (network.numPhysicalNodes() < N) {
+    // Adjust for higher-order network, lnN/N^2 recovers lnN/N on physical network, but divide by N again because physically unconstrained teleportation
+    unsigned int Np = network.numPhysicalNodes();
+    lambda = config.regularizationStrength * std::log(Np) / (Np * Np * Np);
+  }
   double u_t = average_weight;
 
   double sum_u_in = 0.0;
@@ -577,6 +582,11 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
 
   unsigned int numNodesAsTeleportationTargets = config.noSelfLinks ? N - 1 : N;
   double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
+  if (network.numPhysicalNodes() < N) {
+    // Adjust for higher-order network, lnN/N^2 recovers lnN/N on physical network, but divide by N again because physically unconstrained teleportation
+    unsigned int Np = network.numPhysicalNodes();
+    lambda = config.regularizationStrength * std::log(Np) / (Np * Np * Np);
+  }
   double u_t = average_weight;
 
   double sum_u = 0.0;
