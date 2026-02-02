@@ -413,7 +413,25 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
 InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 {
   Log(4) << "Init tree... " << std::setprecision(9);
-  auto maxDepth = 2;
+  int maxDepth = 2;
+  // If only two-level partition, we can directly use initPartition
+  for (const auto& nodePath : tree) {
+    if (nodePath.second.size() > 2) {
+      maxDepth = std::max(maxDepth, static_cast<int>(nodePath.second.size()));
+    }
+  }
+  if (maxDepth == 2) {
+    std::map<unsigned int, unsigned int> clusterIds;
+    for (const auto& nodePath : tree) {
+      const auto nodeId = nodePath.first;
+      const auto clusterId = nodePath.second[0]; // First level module
+      clusterIds[nodeId] = clusterId;
+    }
+    return initPartition(clusterIds, false);
+  } else {
+    // TODO: Use initPartition on lowest modular level and apply it iteratively upwards to build tree
+  }
+
   std::map<unsigned int, unsigned int> nodeIdToIndex;
   auto leafIndex = 0;
   for (auto& leafNode : m_leafNodes) {
