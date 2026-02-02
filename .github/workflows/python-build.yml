@@ -10,8 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9, "3.10"]
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
@@ -20,8 +21,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: |
           sudo apt update
-          sudo apt install swig
-          pip install -r requirements_dev.txt
+          sudo apt-get install -y swig
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements_dev.txt
       - run: make python
       - run: make py-local-install
       - run: make py-test
