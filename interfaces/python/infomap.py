@@ -4,6 +4,18 @@ from collections import namedtuple
 from contextlib import contextmanager
 from math import log2
 
+# Try to import the compiled SWIG extension so the wrapped C++ classes
+# (e.g. `InfomapWrapper`) are available when this module is imported.
+try:
+    # Prefer package-local extension
+    from ._infomap import *  # noqa: F401,F403
+except Exception:
+    try:
+        from _infomap import *  # noqa: F401,F403
+    except Exception:
+        # Extension not available (e.g., before build); continue gracefully
+        pass
+
 if __name__ != "__main__":
     try:
         import pandas

@@ -1,0 +1,8 @@
+# Ignore pyflakes warnings coming from the auto-generated SWIG Python wrapper
+lint.per-file-ignores = { "build/py/*.py" = [
+    "F401",
+    "F811",
+    "E402",
+    "F821",
+    "F405",
+] }

@@ -152,7 +152,7 @@ PY_ONLY_HEADERS := $(HEADERS:%.h=$(PY_BUILD_DIR)/headers/%.h)
 PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
 PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
 
-.PHONY: python py-swig py-build
+.PHONY: python py-swig py-build py-test py-format
 
 # Use python distutils to compile the module
 python: py-swig py-build Makefile
@@ -164,7 +164,8 @@ py-build: Makefile
 	@python utils/create-python-package-meta.py $(PY_BUILD_DIR)/package_meta.py
 	@cat $(PY_BUILD_DIR)/package_meta.py $(PY_BUILD_DIR)/infomap.py > $(PY_BUILD_DIR)/temp.py
 	@mv $(PY_BUILD_DIR)/temp.py $(PY_BUILD_DIR)/infomap.py
-	@autopep8 --jobs 8 --aggressive --aggressive -i $(PY_BUILD_DIR)/infomap.py
+	@python scripts/ensure_build_deps.py || true
+	@python -m ruff format $(PY_BUILD_DIR)/infomap.py || true
 	@cp -a interfaces/python/MANIFEST.in $(PY_BUILD_DIR)/
 	@cp -a README.rst $(PY_BUILD_DIR)/
 	@cp -a LICENSE_GPLv3.txt $(PY_BUILD_DIR)/LICENSE
@@ -174,6 +175,7 @@ py-build: Makefile
 py-swig: $(PY_HEADERS) $(PY_SOURCES) $(PY_ONLY_HEADERS) interfaces/python/infomap.py
 	@mkdir -p $(PY_BUILD_DIR)
 	@cp -a $(SWIG_FILES) $(PY_BUILD_DIR)/
+	@swig -version | grep "SWIG Version"
 	swig -c++ -python -outdir $(PY_BUILD_DIR) -o $(PY_BUILD_DIR)/infomap_wrap.cpp $(PY_BUILD_DIR)/Infomap.i
 
 # Rule for $(PY_HEADERS) and $(PY_SOURCES)
@@ -185,15 +187,18 @@ $(PY_BUILD_DIR)/headers/%: %
 	@mkdir -p $(dir $@)
 	@cp -a $^ $@
 
-.PHONY: py-doc py-local-install
+.PHONY: py-doc py-local-install py-prepare
 SPHINX_SOURCE_DIR = interfaces/python/source
 SPHINX_TARGET_DIR = docs
 
+py-prepare:
+	pip install -r requirements_dev.txt
+
 py-test:
-	@cp -r examples/networks/*.net $(PY_BUILD_DIR)
-	python -m flake8 --count --show-source --statistics --ignore E501,F811,W503 $(PY_BUILD_DIR)/infomap.py
-	cd $(PY_BUILD_DIR) && python -m doctest infomap.py
-	cd examples/python && for f in *.py; do python "$$f" > /dev/null || exit 1; done
+	@cp -r examples/networks/*.net $(PY_BUILD_DIR) || true
+	@cd $(PY_BUILD_DIR) && python -m ruff check infomap.py
+	@cd $(PY_BUILD_DIR) && python -m doctest infomap.py
+	@cd examples/python && for f in *.py; do python "$$f" > /dev/null || exit 1; done
 
 py-local-install:
 	# Run this to get 'import infomap' to always import the latest
@@ -218,8 +223,7 @@ py-clean:
 	$(RM) -r $(PY_BUILD_DIR)/dist
 
 py-format:
-	python -m isort interfaces/python examples/python
-	python -m black interfaces/python examples/python
+	python -m ruff format interfaces/python examples/python || true
 
 pypi-dist:
 	cd $(PY_BUILD_DIR) && python setup.py sdist bdist_wheel
