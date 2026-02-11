@@ -47,7 +47,7 @@ jobs:
               os: macos-latest,
               cxxflags: "-I /usr/local/include -I/usr/local/opt/llvm/include",
               ldflags: "-L /usr/local/lib -L/usr/local/opt/llvm/lib",
-              compiler: /usr/local/opt/llvm/bin/clang++,
+              compiler: /usr/bin/clang++,
             }
         python-version: ["3.10", "3.11", "3.12"]
     steps:
