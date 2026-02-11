@@ -15,7 +15,7 @@ jobs:
         config:
           - {
               name: windows,
-              os: windows-2019,
+              os: windows-2025,
               artifact: "infomap-win",
               binary: Infomap.exe,
               cxxflags: -static,
@@ -24,7 +24,7 @@ jobs:
             }
           - {
               name: ubuntu,
-              os: ubuntu-20.04,
+              os: ubuntu-24.04,
               artifact: "infomap-ubuntu",
               binary: Infomap,
               cxxflags: "",
@@ -33,7 +33,7 @@ jobs:
             }
           - {
               name: macos,
-              os: macos-11,
+              os: macos-15,
               artifact: "infomap-mac",
               binary: Infomap,
               cxxflags: "-I /usr/local/include -I/usr/local/opt/llvm/include",
