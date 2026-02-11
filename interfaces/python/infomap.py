@@ -1221,7 +1221,7 @@ class Infomap(InfomapWrapper):
         >>> im = Infomap(silent=True)
         >>> mapping = im.add_networkx_graph(G)
         >>> im.run()
-        >>> for node in im.nodes:
+        >>> for node in sorted(im.nodes, key=lambda n: n.state_id):
         ...     print(node.state_id, node.module_id, f"{node.flow:.2f}", node.node_id, node.layer_id)
         0 1 0.25 1 1
         1 1 0.25 2 1

@@ -27,7 +27,7 @@ struct InfomapIterator {
 protected:
   InfoNode* m_root = nullptr;
   InfoNode* m_current = nullptr;
-  int m_moduleIndexLevel = -1;
+  int m_moduleIndexLevel = -1; // TODO: Not used.
   unsigned int m_moduleIndex = 0;
   std::deque<unsigned int> m_path; // The tree path to current node (indexing starting from one!)
   unsigned int m_depth = 0;
@@ -88,6 +88,11 @@ public:
   double modularCentrality() const noexcept;
 
   bool isEnd() const noexcept { return m_current == nullptr; }
+
+  virtual InfomapIterator copy() const noexcept
+  {
+    return InfomapIterator(*this);
+  }
 };
 
 struct InfomapModuleIterator : public InfomapIterator {
@@ -109,6 +114,11 @@ public:
     InfomapModuleIterator copy(*this);
     ++(*this);
     return std::move(copy);
+  }
+
+  InfomapIterator copy() const noexcept override
+  {
+    return InfomapModuleIterator(*this);
   }
 
   using InfomapIterator::childIndex;
@@ -145,6 +155,11 @@ public:
     return std::move(copy);
   }
 
+  InfomapIterator copy() const noexcept override
+  {
+    return InfomapLeafModuleIterator(*this);
+  }
+
   using InfomapIterator::childIndex;
   using InfomapIterator::current;
   using InfomapIterator::depth;
@@ -177,6 +192,11 @@ public:
     InfomapLeafIterator copy(*this);
     ++(*this);
     return std::move(copy);
+  }
+
+  InfomapIterator copy() const noexcept override
+  {
+    return InfomapLeafIterator(*this);
   }
 
   using InfomapIterator::childIndex;
@@ -228,6 +248,11 @@ public:
     return std::move(copy);
   }
 
+  InfomapIterator copy() const noexcept override
+  {
+    return InfomapIteratorPhysical(*this);
+  }
+
   using InfomapIterator::childIndex;
   using InfomapIterator::current;
   using InfomapIterator::depth;
@@ -269,6 +294,11 @@ public:
     InfomapLeafIteratorPhysical copy(*this);
     ++(*this);
     return std::move(copy);
+  }
+
+  InfomapIterator copy() const noexcept override
+  {
+    return InfomapLeafIteratorPhysical(*this);
   }
 
   using InfomapIteratorPhysical::childIndex;
