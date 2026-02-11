@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.8.1](https://github.com/mapequation/infomap/compare/v2.8.0...v2.8.1) (2026-02-11)
+
+
+### Bug Fixes
+
+* Adjust regularization for memory networks ([629f63c](https://github.com/mapequation/infomap/commit/629f63c671c2f3bce6f003aa70da9c9ef166c7cb))
+* Always use network in run(Network& network) ([60a86c7](https://github.com/mapequation/infomap/commit/60a86c76ffd4157542a468410ca251d2811535b9)), closes [#364](https://github.com/mapequation/infomap/issues/364)
+* Avoid non-converging flow due to large perturbation ([1a0747a](https://github.com/mapequation/infomap/commit/1a0747a0e8671d2fdb90b0906ad8c4433ad43513))
+* **py:** Make storing iterator items work ([b3f5877](https://github.com/mapequation/infomap/commit/b3f5877e6ac83895d859cd85475ada2cef69711e))
+* Restore to correct codelength for -2 regularized states ([3cd7d5e](https://github.com/mapequation/infomap/commit/3cd7d5e8bb86728d0a7bf7a037e404951f998da0))
+
 ## [2.8.0](https://github.com/mapequation/infomap/compare/v2.7.1...v2.8.0) (2024-06-20)
 
 
