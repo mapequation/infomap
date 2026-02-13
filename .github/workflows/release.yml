@@ -40,7 +40,7 @@ jobs:
               binary: Infomap,
               cxxflags: "-I /usr/local/include -I/usr/local/opt/llvm/include",
               ldflags: "-L /usr/local/lib -L/usr/local/opt/llvm/lib",
-              compiler: /usr/bin/clang++,
+              compiler: clang++,
             }
         target:
           - { name: "", target: "" }
