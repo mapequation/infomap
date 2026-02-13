@@ -67,8 +67,8 @@ jobs:
         shell: bash
         env:
           CXX: ${{ matrix.config.compiler }}
-          CXXFLAGS: ${{ matrix.config.cxxflags }}
-          LDFLAGS: ${{ matrix.config.ldflags }}
+          CXXFLAGS: ${{ matrix.config.cxxflags }} ${{ env.CPPFLAGS }}
+          LDFLAGS: ${{ matrix.config.ldflags }} ${{ env.LDFLAGS }}
 
       - run: ./Infomap --version
         shell: bash
