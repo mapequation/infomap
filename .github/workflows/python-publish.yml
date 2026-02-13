@@ -45,8 +45,8 @@ jobs:
           - {
               name: macos,
               os: macos-latest,
-              cxxflags: "-I /usr/local/include -I/usr/local/opt/llvm/include",
-              ldflags: "-L /usr/local/lib -L/usr/local/opt/llvm/lib",
+              cxxflags: "",
+              ldflags: "",
               compiler: clang++,
             }
         python-version: ["3.10", "3.11", "3.12"]
@@ -67,7 +67,11 @@ jobs:
       - if: startsWith(matrix.config.os, 'macos')
         run: |
           brew install llvm libomp
-          export PATH="$(brew --prefix llvm)/bin:$PATH"
+          BREW_PREFIX="$(brew --prefix)"
+          echo "PATH=$BREW_PREFIX/opt/llvm/bin:${PATH}" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$BREW_PREFIX/opt/llvm/include -I$BREW_PREFIX/opt/libomp/include" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$BREW_PREFIX/opt/llvm/lib -L$BREW_PREFIX/opt/libomp/lib" >> $GITHUB_ENV
+          echo "CXX=$BREW_PREFIX/opt/llvm/bin/clang++" >> $GITHUB_ENV
       - run: make py-build
         shell: bash
         env:
