@@ -109,7 +109,10 @@ public:
    */
   unsigned int addMultilayerNode(unsigned int layerId, unsigned int physicalId, double weight = 1.0);
 
+  unsigned int addMultilayerNode(unsigned int stateId, unsigned int layerId, unsigned int physicalId, double weight);
+
   void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight);
+  void addMultilayerLink(unsigned int stateId1, unsigned int layer1, unsigned int n1, unsigned int stateId2, unsigned int layer2, unsigned int n2, double weight);
 
   /**
    * Create an intra-layer link

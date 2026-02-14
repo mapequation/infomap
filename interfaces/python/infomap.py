@@ -1216,17 +1216,17 @@ class Infomap(InfomapWrapper):
         >>> G.add_node(21, phys_id=2, layer_id=1)
         >>> G.add_node(22, phys_id=2, layer_id=2)
         >>> G.add_node(32, phys_id=3, layer_id=2)
-        >>> G.add_edge(11, 21)
+        >>> G.add_edge(11, 21, weight=2)
         >>> G.add_edge(22, 32)
         >>> im = Infomap(silent=True)
         >>> mapping = im.add_networkx_graph(G)
         >>> im.run()
         >>> for node in sorted(im.nodes, key=lambda n: n.state_id):
         ...     print(node.state_id, node.module_id, f"{node.flow:.2f}", node.node_id, node.layer_id)
-        0 1 0.25 1 1
-        1 1 0.25 2 1
-        2 2 0.25 2 2
-        3 2 0.25 3 2
+        11 1 0.28 1 1
+        21 1 0.28 2 1
+        22 2 0.22 2 2
+        32 2 0.22 3 2
 
         Notes
         -----
@@ -1279,8 +1279,6 @@ class Infomap(InfomapWrapper):
         layer_ids = dict(g.nodes.data(layer_id))
         is_multilayer_network = None not in layer_ids.values()
 
-        multilayer_node_to_state_id = {}  # MultilayerNode -> int
-
         if is_state_network:
             phys_nodes = set(node_id for _, node_id in g.nodes.data(phys_id))
             phys_first = next(iter(phys_nodes))
@@ -1298,12 +1296,10 @@ class Infomap(InfomapWrapper):
                     self.set_name(phys_node, f"{phys_node}")
 
             if is_multilayer_network:
-                # TODO: Implement python api
-                for _, d in g.nodes.data():
-                    state_id = self.network.addMultilayerNode(d[layer_id], d[phys_id])
-                    multilayer_node_to_state_id[
-                        MultilayerNode(d[layer_id], d[phys_id])
-                    ] = state_id
+                for state_id, d in g.nodes.data():
+                    self.network.add_multilayer_node(
+                        state_id, d[layer_id], d[phys_id], 1.0
+                    )
             else:
                 for state_id, node_id in g.nodes.data(phys_id):
                     self.add_state_node(node_map[state_id], phys_map[node_id])
@@ -1322,41 +1318,39 @@ class Infomap(InfomapWrapper):
             for source, target, d in g.edges.data():
                 u, v = node_map[source], node_map[target]
                 w = d[weight] if weight is not None and weight in d else 1.0
-                source_node = MultilayerNode(
-                    layer_id=layer_ids[source], node_id=phys_ids[source]
-                )
-                target_node = MultilayerNode(
-                    layer_id=layer_ids[target], node_id=phys_ids[target]
-                )
+                u_layer_id = layer_ids[u]
+                v_layer_id = layer_ids[v]
+                u_node_id = phys_ids[u]
+                v_node_id = phys_ids[v]
                 if multilayer_inter_intra_format:
-                    if source_node.layer_id == target_node.layer_id:
+                    if u_layer_id == v_layer_id:
                         self.add_multilayer_intra_link(
-                            source_node.layer_id,
-                            source_node.node_id,
-                            target_node.node_id,
+                            u_layer_id,
+                            u_node_id,
+                            v_node_id,
                             w,
                         )
                     else:
-                        if source_node.node_id != target_node.node_id:
+                        if u_node_id != v_node_id:
                             raise RuntimeError(
                                 "Multilayer intra/inter format does not support 'diagonal' links. Use `multilayer_inter_intra_format=False`"
                             )
                         self.add_multilayer_inter_link(
-                            source_node.layer_id,
-                            source_node.node_id,
-                            target_node.layer_id,
+                            u_layer_id,
+                            u_node_id,
+                            v_layer_id,
                             w,
                         )
                 else:
-                    self.add_multilayer_link(source_node, target_node, w)
+                    self.network.add_multilayer_state_link(
+                        u, u_layer_id, u_node_id, v, v_layer_id, v_node_id, w
+                    )
         else:
             for source, target, d in g.edges.data():
                 u, v = node_map[source], node_map[target]
                 w = d[weight] if weight is not None and weight in d else 1.0
                 self.add_link(u, v, w)
 
-        if is_multilayer_network:
-            return multilayer_node_to_state_id
         return {node: label for label, node in node_map.items()}
 
     # ----------------------------------------
