@@ -6,6 +6,10 @@ BREW := $(shell which brew 2>/dev/null)
 ifneq ($(BREW),)
 	CXXFLAGS += -I$(shell brew --prefix)/include
 	LDFLAGS += -L$(shell brew --prefix)/lib
+	ifneq ($(MACOSX_DEPLOYMENT_TARGET),)
+		CXXFLAGS += -mmacosx-version-min=$(MACOSX_DEPLOYMENT_TARGET)
+		LDFLAGS += -mmacosx-version-min=$(MACOSX_DEPLOYMENT_TARGET)
+	endif
 endif
 
 ifeq "$(findstring debug, $(MAKECMDGOALS))" "debug"
@@ -326,3 +330,13 @@ docker-run-r: Makefile
 
 clean: js-clean
 	$(RM) -r Infomap build lib include
+
+.PHONY: print-env
+print-env:
+	@echo "--- Build environment ---"
+	@echo "CXX=$(CXX)"
+	@echo "CXXFLAGS=$(CXXFLAGS)"
+	@echo "CPPFLAGS=$(CPPFLAGS)"
+	@echo "LDFLAGS=$(LDFLAGS)"
+	@echo "MACOSX_DEPLOYMENT_TARGET=$(MACOSX_DEPLOYMENT_TARGET)"
+	@echo "BREW=$(BREW)"
