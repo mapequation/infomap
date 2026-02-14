@@ -240,7 +240,9 @@ pypitest-publish:
 
 pypi-publish:
 	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
-	cd $(PYPI_DIR) && python -m twine upload --skip-existing --verbose dist/*
+	@echo "Uploading distributions (excluding linux_x86_64 wheels)..."
+	cd $(PYPI_DIR) && \
+		find dist -type f ! -name "*linux_x86_64.whl" -print0 | xargs -0 python -m twine upload --skip-existing --verbose || true
 
 
 ##################################################
