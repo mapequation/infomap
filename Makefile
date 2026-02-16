@@ -207,14 +207,9 @@ py-test:
 py-local-install:
 	# Run this to get 'import infomap' to always import the latest
 	# locally built version, so no need to run this multiple times.
-	@echo "Installing package for local use..."
-	@if [ -d "$(PY_BUILD_DIR)/dist" ] && ls $(PY_BUILD_DIR)/dist/*.whl >/dev/null 2>&1; then \
-		python -m pip install $(PY_BUILD_DIR)/dist/*.whl; \
-	else \
-		python -m pip install -e $(PY_BUILD_DIR); \
-	fi
+	python -m pip install -e $(PY_BUILD_DIR)
 
-py-doc: py-local-install
+py-doc:
 	# Uses docstrings from the infomap available with 'import infomap'.
 	# Run py-local-install if you don't have pip installed it with -e
 	# and don't have the latest version installed

@@ -93,7 +93,7 @@ jobs:
 
   publish:
     needs: build
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -119,6 +119,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements_dev.txt
           npm ci
+      - run: make python
+      - run: make py-local-install
       - run: make pypi-publish
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
