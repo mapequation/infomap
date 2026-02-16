@@ -242,7 +242,12 @@ pypi-publish:
 	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
 	@echo "Uploading distributions (excluding linux_x86_64 wheels)..."
 	cd $(PYPI_DIR) && \
-		find dist -type f ! -name "*linux_x86_64.whl" -print0 | xargs -0 python -m twine upload --skip-existing --verbose || true
+		for f in dist/*; do \
+			case "$$f" in \
+				*linux_x86_64.whl) echo "Skipping $$f" ;; \
+				*) echo "Uploading $$f" && python -m twine upload --skip-existing --verbose "$$f" || true ;; \
+			esac; \
+		done
 
 
 ##################################################
