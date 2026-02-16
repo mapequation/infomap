@@ -207,7 +207,12 @@ py-test:
 py-local-install:
 	# Run this to get 'import infomap' to always import the latest
 	# locally built version, so no need to run this multiple times.
-	pip install -e $(PY_BUILD_DIR)
+	@echo "Installing package for local use..."
+	@if [ -d "$(PY_BUILD_DIR)/dist" ] && ls $(PY_BUILD_DIR)/dist/*.whl >/dev/null 2>&1; then \
+		python -m pip install $(PY_BUILD_DIR)/dist/*.whl; \
+	else \
+		python -m pip install -e $(PY_BUILD_DIR); \
+	fi
 
 py-doc: py-local-install
 	# Uses docstrings from the infomap available with 'import infomap'.
@@ -240,14 +245,7 @@ pypitest-publish:
 
 pypi-publish:
 	@[ "${PYPI_SDIST}" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
-	@echo "Uploading distributions (excluding linux_x86_64 wheels)..."
-	cd $(PYPI_DIR) && \
-		for f in dist/*; do \
-			case "$$f" in \
-				*linux_x86_64.whl) echo "Skipping $$f" ;; \
-				*) echo "Uploading $$f" && python -m twine upload --skip-existing --verbose "$$f" || true ;; \
-			esac; \
-		done
+	cd $(PYPI_DIR) && python -m twine upload --skip-existing --verbose dist/*
 
 
 ##################################################

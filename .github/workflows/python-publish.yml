@@ -71,6 +71,7 @@ jobs:
           echo "PATH=$BREW_PREFIX/opt/llvm/bin:${PATH}" >> $GITHUB_ENV
           echo "CPPFLAGS=-I$BREW_PREFIX/opt/llvm/include -I$BREW_PREFIX/opt/libomp/include" >> $GITHUB_ENV
           echo "LDFLAGS=-L$BREW_PREFIX/opt/llvm/lib/c++ -L$BREW_PREFIX/opt/llvm/lib/unwind -lunwind -L$BREW_PREFIX/opt/libomp/lib" >> $GITHUB_ENV
+          echo "MACOSX_DEPLOYMENT_TARGET=15.0" >> $GITHUB_ENV
           echo "CXX=$BREW_PREFIX/opt/llvm/bin/clang++" >> $GITHUB_ENV
       - run: make py-build
         shell: bash
@@ -98,12 +99,15 @@ jobs:
       - uses: actions/download-artifact@v4
       - run: |
           mkdir -p build/py/dist
-          for d in package-macos-*; do
-            [ -d "$d" ] && mv "$d" build/py/ || true
-          done
-          for p in package-*/dist/*.whl; do
-            [ -f "$p" ] && cp "$p" build/py/dist/ || true
-          done
+          # Copy wheels and source dists from all downloaded artifacts into build/py/dist
+          # Exclude linux_x86_64 wheels which PyPI rejects for our target audience
+          find . -type f \( -name "*.whl" -o -name "*.tar.gz" \) ! -name "*linux_x86_64.whl" -exec cp {} build/py/dist/ \;
+      - name: Verify artifacts
+        run: |
+          echo "Contents of build/py/dist:"
+          ls -la build/py/dist || true
+          echo "File types:" 
+          file build/py/dist/* || true
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
