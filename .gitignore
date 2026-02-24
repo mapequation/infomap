@@ -37,6 +37,7 @@ node_modules
 docs/.*
 /Infomap
 __pycache__
+pip-build.log
 interfaces/js/src/worker
 interfaces/js/package.json
 interfaces/python/package_meta.py

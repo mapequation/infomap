@@ -6,6 +6,7 @@ BREW := $(shell which brew 2>/dev/null)
 ifneq ($(BREW),)
 	CXXFLAGS += -I$(shell brew --prefix)/include
 	LDFLAGS += -L$(shell brew --prefix)/lib
+	LDFLAGS += -L$(shell brew --prefix llvm)/lib/c++ -L$(shell brew --prefix llvm)/lib/unwind -lunwind
 	ifneq ($(MACOSX_DEPLOYMENT_TARGET),)
 		CXXFLAGS += -mmacosx-version-min=$(MACOSX_DEPLOYMENT_TARGET)
 		LDFLAGS += -mmacosx-version-min=$(MACOSX_DEPLOYMENT_TARGET)
