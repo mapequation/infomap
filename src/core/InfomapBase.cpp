@@ -254,6 +254,7 @@ void InfomapBase::run(Network& network)
   unsigned int bestNumLevels = 0;
   double bestHierarchicalCodelength = std::numeric_limits<double>::max();
   m_codelengths.clear();
+  m_numTopModules.clear();
   NodePaths bestTree(numLeafNodes());
   unsigned int bestTrialIndex = 0;
 
@@ -287,6 +288,7 @@ void InfomapBase::run(Network& network)
     if (isMainInfomap()) {
       Log() << "\n=> Trial " << (i + 1) << "/" << numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
       m_codelengths.push_back(m_hierarchicalCodelength);
+      m_numTopModules.push_back(numTopModules());
 
       if (printAllTrials && numTrials > 1) {
         writeResult(static_cast<int>(i + 1));
@@ -327,22 +329,42 @@ void InfomapBase::run(Network& network)
       double averageCodelength = 0.0;
       double minCodelength = m_codelengths[0];
       double maxCodelength = m_codelengths[0];
-      Log() << "Codelengths: [";
-      for (auto codelength : m_codelengths) {
-        Log() << codelength << ", ";
-        averageCodelength += codelength;
-        minCodelength = std::min(minCodelength, codelength);
-        maxCodelength = std::max(maxCodelength, codelength);
+      double averageNumTopModules = 0.0;
+      auto minNumTopModules = m_numTopModules[0];
+      auto maxNumTopModules = m_numTopModules[0];
+      double bestCodelengthSoFar = std::numeric_limits<double>::max();
+      Log() << "Trial    Codelength    NumTopModules    Best\n";
+      for (unsigned int i = 0; i < numTrials; ++i) {
+        bool isBest = m_codelengths[i] < bestCodelengthSoFar;
+        if (isBest) {
+          bestCodelengthSoFar = m_codelengths[i];
+        }
+        bool isEqual = std::abs(m_codelengths[i] - bestCodelengthSoFar) < 1e-10;
+        Log() << std::setw(5) << (i + 1) << std::setw(14) << io::toPrecision(m_codelengths[i]) << std::setw(17) << m_numTopModules[i] << std::setw(8) << (isBest ? '*' : isEqual ? '='
+                                                                                                                                                                                 : ' ')
+              << "\n";
+        averageCodelength += m_codelengths[i];
+        minCodelength = std::min(minCodelength, m_codelengths[i]);
+        maxCodelength = std::max(maxCodelength, m_codelengths[i]);
+        averageNumTopModules += m_numTopModules[i];
+        minNumTopModules = std::min(minNumTopModules, m_numTopModules[i]);
+        maxNumTopModules = std::max(maxNumTopModules, m_numTopModules[i]);
       }
       averageCodelength /= numTrials;
-      Log() << "\b\b]\n";
-      Log() << "[min, average, max] codelength: [" << minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n\n";
+      averageNumTopModules /= numTrials;
+      Log() << "\n";
+      Log() << "[min, average, max] codelength:      [" << minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n";
+      Log() << "[min, average, max] num top modules: [" << minNumTopModules << ", " << io::toPrecision(averageNumTopModules, 1, true) << ", " << maxNumTopModules << "]\n\n";
     }
-
-    Log() << "Best end modular solution in " << bestNumLevels << " levels";
-    if (bestHierarchicalCodelength > m_oneLevelCodelength)
-      Log() << " (warning: worse than one-level solution)";
-    Log() << ":\n";
+    Log() << "Number nodes:                " << numLeafNodes() << "\n";
+    Log() << "Number links:                " << network.numLinks() << "\n";
+    Log() << "Average degree:              " << io::toPrecision(network.numLinks() * 2.0 / numLeafNodes(), 1, true) << "\n";
+    Log() << "Number of top modules:       " << numTopModules() << "\n";
+    Log() << "Number of levels:            " << bestNumLevels << "\n";
+    Log() << "One-level codelength:        " << io::toPrecision(getOneLevelCodelength()) << "\n";
+    Log() << "Codelength:                  " << io::toPrecision(bestHierarchicalCodelength) << "\n";
+    Log() << "Relative codelength savings: " << io::toPrecision(getRelativeCodelengthSavings() * 100, 2, true) << "%\n";
+    Log() << "\n";
     Log() << bestSolutionStatistics.str() << '\n';
   }
 }

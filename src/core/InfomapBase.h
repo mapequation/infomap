@@ -504,6 +504,7 @@ protected:
 
   double m_hierarchicalCodelength = 0.0;
   std::vector<double> m_codelengths;
+  std::vector<unsigned int> m_numTopModules;
   double m_entropyRate = 0.0;
   double m_maxEntropy = 0.0;
   double m_maxFlow = 0.0;
