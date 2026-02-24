@@ -1089,13 +1089,17 @@ void InfomapBase::partition()
 
     // Create new single module between modules and root
     auto& module = root().replaceChildrenWithOneNode();
+    // TODO: Extract copying from root and resetting index to a method, also copy metadata?
     module.data = m_root.data;
+    module.physicalNodes = m_root.physicalNodes;
     module.index = 0;
     for (auto& node : module) {
       node.index = 0;
     }
     module.codelength = getOneLevelCodelength();
     m_hierarchicalCodelength = getOneLevelCodelength();
+    // calcCodelengthOnTree(root(), true);
+    m_root.codelength = 0.0;
 
   } else {
     // Set consolidated cluster index on nodes and modules
@@ -1108,7 +1112,6 @@ void InfomapBase::partition()
     m_root.codelength = getIndexCodelength();
     m_hierarchicalCodelength = getCodelength();
   }
-  m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
 }
 
 void InfomapBase::restoreHardPartition()
