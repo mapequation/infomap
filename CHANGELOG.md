@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.8.2](https://github.com/mapequation/infomap/compare/v2.8.1...v2.8.2) (2026-02-24)
+
+
+### Bug Fixes
+
+* Restore correct codelength on worse 2-level higher-order solution ([36f9870](https://github.com/mapequation/infomap/commit/36f987094bd66822e2e2350d53690859e91da21e))
+* Use provided state ids on networkx multilayer graph ([33c2978](https://github.com/mapequation/infomap/commit/33c2978d7698bc5f6f841ce2d3609c8dcd738b05))
+
 ### [2.8.1](https://github.com/mapequation/infomap/compare/v2.8.0...v2.8.1) (2026-02-11)
 
 
