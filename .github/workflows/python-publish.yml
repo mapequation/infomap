@@ -49,7 +49,7 @@ jobs:
               ldflags: "",
               compiler: clang++,
             }
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.14", "3.13", "3.12", "3.11"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -110,7 +110,7 @@ jobs:
           file build/py/dist/* || true
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - uses: actions/setup-node@v4
         with:
           node-version: 20
