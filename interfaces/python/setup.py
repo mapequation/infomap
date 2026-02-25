@@ -5,10 +5,21 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import importlib.util
 from pathlib import Path
 from sysconfig import get_config_var
-import package_meta
 from setuptools import Extension, setup
+
+
+def load_package_meta():
+    package_meta_path = Path(__file__).resolve().with_name("package_meta.py")
+    spec = importlib.util.spec_from_file_location("package_meta", package_meta_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+package_meta = load_package_meta()
 
 
 def get_compiler():

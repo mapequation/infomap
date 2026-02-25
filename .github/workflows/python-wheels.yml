@@ -1,0 +1,55 @@
+name: Build Python Wheels (Manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  swig:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt update
+          sudo apt-get install -y swig
+      - run: make py-swig py-package-files
+      - uses: actions/upload-artifact@v4
+        with:
+          retention-days: 7
+          name: py-source
+          path: build/py/
+
+  build_wheels:
+    needs: swig
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: py-source
+          path: build/py
+      - uses: actions/setup-python@v6
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel==3.3.1
+      - if: startsWith(matrix.os, 'macos')
+        run: brew install libomp
+      - name: Build wheels
+        run: python -m cibuildwheel build/py --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp311-* cp312-* cp313-* cp314-*"
+          CIBW_SKIP: "*-musllinux* pp*"
+          CIBW_ENVIRONMENT_MACOS: >-
+            CXX=/usr/bin/clang++
+            MACOSX_DEPLOYMENT_TARGET=15.0
+            CPPFLAGS="-I$(brew --prefix libomp)/include"
+            LDFLAGS="-L$(brew --prefix libomp)/lib"
+      - uses: actions/upload-artifact@v4
+        with:
+          retention-days: 7
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl

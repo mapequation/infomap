@@ -220,7 +220,7 @@ py-test:
 py-local-install:
 	# Run this to get 'import infomap' to always import the latest
 	# locally built version, so no need to run this multiple times.
-	python -m pip install -e $(PY_BUILD_DIR)
+	python -m pip install --no-build-isolation -e $(PY_BUILD_DIR)
 
 py-doc:
 	# Uses docstrings from the infomap available with 'import infomap'.
