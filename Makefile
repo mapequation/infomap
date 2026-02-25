@@ -344,3 +344,19 @@ print-env:
 	@echo "LDFLAGS=$(LDFLAGS)"
 	@echo "MACOSX_DEPLOYMENT_TARGET=$(MACOSX_DEPLOYMENT_TARGET)"
 	@echo "BREW=$(BREW)"
+
+
+##################################################
+# CI helpers
+##################################################
+
+.PHONY: ci-github-env
+ci-github-env:
+	@BREW="$$(brew --prefix 2>/dev/null || true)"; \
+    if [ -n "$$BREW" ]; then \
+        echo "PATH=$$BREW/opt/llvm/bin:$$PATH"; \
+        echo "CPPFLAGS=$$CPPFLAGS -I$$BREW/opt/llvm/include -I$$BREW/opt/libomp/include"; \
+        echo "LDFLAGS=$$LDFLAGS -L$$BREW/opt/llvm/lib/c++ -L$$BREW/opt/libomp/lib"; \
+        echo "MACOSX_DEPLOYMENT_TARGET=15.0"; \
+        echo "CXX=$$BREW/opt/llvm/bin/clang++"; \
+    fi

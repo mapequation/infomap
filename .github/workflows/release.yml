@@ -57,12 +57,7 @@ jobs:
       - if: startsWith(matrix.config.os, 'macos')
         run: |
           brew install llvm libomp
-          BREW_PREFIX="$(brew --prefix)"
-          echo "PATH=$BREW_PREFIX/opt/llvm/bin:${PATH}" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$BREW_PREFIX/opt/llvm/include -I$BREW_PREFIX/opt/libomp/include" >> $GITHUB_ENV
-          echo "LDFLAGS=-L$BREW_PREFIX/opt/llvm/lib/c++ -L$BREW_PREFIX/opt/llvm/lib/unwind -lunwind -L$BREW_PREFIX/opt/libomp/lib" >> $GITHUB_ENV
-          echo "MACOSX_DEPLOYMENT_TARGET=15.0" >> $GITHUB_ENV
-          echo "CXX=$BREW_PREFIX/opt/llvm/bin/clang++" >> $GITHUB_ENV
+          make ci-github-env >> $GITHUB_ENV
 
       - run: make -j ${{ matrix.target.target }}
         shell: bash
