@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.9.2](https://github.com/mapequation/infomap/compare/v2.9.1...v2.9.2) (2026-02-25)
+
+
+### Bug Fixes
+
+* **ci:** avoid llvm libc++ dependency for macOS python ([a79b285](https://github.com/mapequation/infomap/commit/a79b2859769d3158adbc9750de466e85587b6a8a))
+* **ci:** remove llvm dependency and use cibuildwheel ([d51fac4](https://github.com/mapequation/infomap/commit/d51fac427b3d1000b1e59baee2afb5c92225c365))
+
 ### [2.9.1](https://github.com/mapequation/infomap/compare/v2.9.0...v2.9.1) (2026-02-25)
 
 
