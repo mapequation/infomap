@@ -56,7 +56,7 @@ jobs:
 
       - if: startsWith(matrix.config.os, 'macos')
         run: |
-          brew install llvm libomp
+          brew install libomp
           make ci-github-env >> $GITHUB_ENV
 
       - run: make -j ${{ matrix.target.target }}

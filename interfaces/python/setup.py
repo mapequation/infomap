@@ -1,5 +1,6 @@
 import fnmatch
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -25,16 +26,14 @@ def have_homebrew():
     return shutil.which("brew") is not None
 
 
-def get_homebrew_include():
-    brew_path = subprocess.check_output(["brew", "--prefix"], encoding="utf8")
-    brew_path = brew_path[:-1]  # Remove trailing newline
-    brew_path = Path(brew_path)
+def get_brew_prefix(package):
+    prefix = subprocess.check_output(["brew", "--prefix", package], encoding="utf8")
+    return Path(prefix.strip())
 
-    # returns (compile_args, link_args)
-    return (
-        "-I" + str(brew_path.joinpath("include")),
-        "-L" + str(brew_path.joinpath("lib")),
-    )
+
+def get_libomp_flags():
+    libomp = get_brew_prefix("libomp")
+    return ("-I" + str(libomp.joinpath("include")), "-L" + str(libomp.joinpath("lib")))
 
 
 test_openmp = """#include <omp.h>
@@ -64,8 +63,11 @@ def have_openmp():
         compile_args.insert(0, "-Xpreprocessor")
         compile_args.append("-lomp")
 
-    if have_homebrew():
-        compile_args.extend(get_homebrew_include())
+    if sys.platform == "darwin" and have_homebrew():
+        try:
+            compile_args.extend(get_libomp_flags())
+        except subprocess.CalledProcessError:
+            pass
 
     try:
         with open(os.devnull, "w") as fnull:
@@ -106,10 +108,10 @@ compiler_args = [
 link_args = []
 
 if "CXXFLAGS" in os.environ:
-    compiler_args.extend(os.environ["CXXFLAGS"].split())
+    compiler_args.extend(shlex.split(os.environ["CXXFLAGS"]))
 
 if "LDFLAGS" in os.environ:
-    link_args.extend(os.environ["LDFLAGS"].split())
+    link_args.extend(shlex.split(os.environ["LDFLAGS"]))
 
 if have_openmp():
     print("Building with OpenMP support")
@@ -120,10 +122,13 @@ if have_openmp():
         link_args.append("-fopenmp")
     compiler_args.append("-fopenmp")
 
-    if have_homebrew():
-        include_dir, link_dir = get_homebrew_include()
-        compiler_args.append(include_dir)
-        link_args.append(link_dir)
+    if sys.platform == "darwin" and have_homebrew():
+        try:
+            include_dir, link_dir = get_libomp_flags()
+            compiler_args.append(include_dir)
+            link_args.append(link_dir)
+        except subprocess.CalledProcessError:
+            pass
 else:
     print("Warning: building without OpenMP support")
 

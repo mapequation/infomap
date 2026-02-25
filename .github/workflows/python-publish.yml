@@ -3,7 +3,6 @@ name: Publish Python Package
 on:
   release:
     types: [created]
-
   workflow_dispatch:
 
 jobs:
@@ -14,108 +13,97 @@ jobs:
       - run: |
           sudo apt update
           sudo apt-get install -y swig
-      - run: make py-swig
+      - run: make py-swig py-package-files
       - uses: actions/upload-artifact@v4
         with:
           retention-days: 1
-          name: swigfiles
+          name: py-source
           path: build/py/
 
-  build:
+  sdist:
     needs: swig
-    name: build (${{ matrix.config.name }}, ${{ matrix.python-version }})
-    runs-on: ${{ matrix.config.os }}
-    strategy:
-      matrix:
-        config:
-          - {
-              name: windows,
-              os: windows-latest,
-              cxxflags: -static,
-              ldflags: -static,
-              compiler: g++,
-            }
-          - {
-              name: ubuntu,
-              os: ubuntu-latest,
-              cxxflags: "",
-              ldflags: "",
-              compiler: g++,
-            }
-          - {
-              name: macos,
-              os: macos-latest,
-              cxxflags: "",
-              ldflags: "",
-              compiler: clang++,
-            }
-        python-version: ["3.14", "3.13", "3.12", "3.11"]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: swigfiles
+          name: py-source
           path: build/py
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python-version }}
-      - shell: bash
-        run: |
+          python-version: "3.14"
+      - run: |
           python -m pip install --upgrade pip
-          python -m pip install setuptools wheel
-          python -m pip install -r requirements_dev.txt
-      - if: startsWith(matrix.config.os, 'macos')
-        run: |
-          brew install llvm libomp
-          make ci-github-env >> $GITHUB_ENV
-      - run: make py-build
-        shell: bash
-        env:
-          CXX: ${{ matrix.config.compiler }}
-          CXXFLAGS: ${{ matrix.config.cxxflags }} ${{ env.CPPFLAGS }}
-          LDFLAGS: ${{ matrix.config.ldflags }} ${{ env.LDFLAGS }}
-      - run: make py-local-install
-        shell: bash
-      - run: make py-test
-        shell: bash
-      - run: make pypi-dist
-        shell: bash
+          python -m pip install build
+          python -m build --sdist --outdir build/py/dist build/py
       - uses: actions/upload-artifact@v4
         with:
           retention-days: 1
-          name: package-${{ matrix.config.name }}-${{ matrix.python-version }}
-          path: build/py/
+          name: python-sdist
+          path: build/py/dist/*.tar.gz
+
+  build_wheels:
+    needs: swig
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: py-source
+          path: build/py
+      - uses: actions/setup-python@v6
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel==3.3.1
+      - if: startsWith(matrix.os, 'macos')
+        run: brew install libomp
+      - name: Build wheels
+        run: python -m cibuildwheel build/py --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp311-* cp312-* cp313-* cp314-*"
+          CIBW_SKIP: "*-musllinux* pp*"
+          CIBW_ENVIRONMENT_MACOS: >-
+            CXX=/usr/bin/clang++
+            MACOSX_DEPLOYMENT_TARGET=15.0
+            CPPFLAGS="-I$(brew --prefix libomp)/include"
+            LDFLAGS="-L$(brew --prefix libomp)/lib"
+      - uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
 
   publish:
-    needs: build
+    needs: [build_wheels, sdist]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
       - run: |
           mkdir -p build/py/dist
-          # Copy wheels and source dists from all downloaded artifacts into build/py/dist
-          # Exclude linux_x86_64 wheels which PyPI rejects for our target audience
-          find . -type f \( -name "*.whl" -o -name "*.tar.gz" \) ! -name "*linux_x86_64.whl" -exec cp {} build/py/dist/ \;
+          find . -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} build/py/dist/ \;
       - name: Verify artifacts
         run: |
           echo "Contents of build/py/dist:"
           ls -la build/py/dist || true
-          echo "File types:" 
+          echo "File types:"
           file build/py/dist/* || true
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      # npm ci to get prettier
       - run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements_dev.txt
+          python -m pip install --no-index --find-links build/py/dist infomap
           npm ci
-      - run: make python
-      - run: make py-local-install
       - run: make pypi-publish
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}

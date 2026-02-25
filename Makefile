@@ -6,14 +6,6 @@ BREW := $(shell which brew 2>/dev/null)
 ifneq ($(BREW),)
 	CXXFLAGS += -I$(shell brew --prefix)/include
 	LDFLAGS += -L$(shell brew --prefix)/lib
-	LLVM_PREFIX := $(shell brew --prefix llvm 2>/dev/null)
-	ifneq ($(LLVM_PREFIX),)
-		# Do not add Homebrew's libc++ path by default; linking against
-		# brew's libc++ makes the produced binaries depend on Homebrew
-		# runtime paths on users' machines. Only add llvm/libunwind or
-		# other llvm-specific libs on demand.
-		# (Keep this block in case maintainers want to add conditional links.)
-	endif
 	ifneq ($(MACOSX_DEPLOYMENT_TARGET),)
 		CXXFLAGS += -mmacosx-version-min=$(MACOSX_DEPLOYMENT_TARGET)
 		LDFLAGS += -mmacosx-version-min=$(MACOSX_DEPLOYMENT_TARGET)
@@ -164,7 +156,7 @@ PY_ONLY_HEADERS := $(HEADERS:%.h=$(PY_BUILD_DIR)/headers/%.h)
 PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
 PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
 
-.PHONY: python py-swig py-build py-test py-format
+.PHONY: python py-swig py-build py-package-files py-test py-format
 
 # Use python distutils to compile the module
 python: py-swig py-build Makefile
@@ -172,6 +164,7 @@ python: py-swig py-build Makefile
 
 py-build: Makefile
 	@cp -a interfaces/python/setup.py $(PY_BUILD_DIR)/
+	@cp -a interfaces/python/pyproject.toml $(PY_BUILD_DIR)/
 	@touch $(PY_BUILD_DIR)/__init__.py
 	@python utils/create-python-package-meta.py $(PY_BUILD_DIR)/package_meta.py
 	@cat $(PY_BUILD_DIR)/package_meta.py $(PY_BUILD_DIR)/infomap.py > $(PY_BUILD_DIR)/temp.py
@@ -182,6 +175,18 @@ py-build: Makefile
 	@cp -a README.rst $(PY_BUILD_DIR)/
 	@cp -a LICENSE_GPLv3.txt $(PY_BUILD_DIR)/LICENSE
 	@cd $(PY_BUILD_DIR) && CC=$(CXX) python setup.py build_ext --inplace
+
+py-package-files: Makefile
+	@cp -a interfaces/python/setup.py $(PY_BUILD_DIR)/
+	@cp -a interfaces/python/pyproject.toml $(PY_BUILD_DIR)/
+	@touch $(PY_BUILD_DIR)/__init__.py
+	@python utils/create-python-package-meta.py $(PY_BUILD_DIR)/package_meta.py
+	@cat $(PY_BUILD_DIR)/package_meta.py $(PY_BUILD_DIR)/infomap.py > $(PY_BUILD_DIR)/temp.py
+	@mv $(PY_BUILD_DIR)/temp.py $(PY_BUILD_DIR)/infomap.py
+	@python -m ruff format $(PY_BUILD_DIR)/infomap.py || true
+	@cp -a interfaces/python/MANIFEST.in $(PY_BUILD_DIR)/
+	@cp -a README.rst $(PY_BUILD_DIR)/
+	@cp -a LICENSE_GPLv3.txt $(PY_BUILD_DIR)/LICENSE
 
 # Generate wrapper files from source and interface files
 py-swig: $(PY_HEADERS) $(PY_SOURCES) $(PY_ONLY_HEADERS) interfaces/python/infomap.py
@@ -357,10 +362,10 @@ print-env:
 .PHONY: ci-github-env
 ci-github-env:
 	@BREW="$$(brew --prefix 2>/dev/null || true)"; \
-	if [ -n "$$BREW" ]; then \
-		echo "PATH=$$BREW/opt/llvm/bin:$$PATH"; \
-		echo "CPPFLAGS=$$CPPFLAGS -I$$BREW/opt/llvm/include -I$$BREW/opt/libomp/include"; \
-		echo "LDFLAGS=$$LDFLAGS -L$$BREW/opt/libomp/lib"; \
+	LIBOMP="$$(brew --prefix libomp 2>/dev/null || true)"; \
+	if [ -n "$$BREW" ] && [ -n "$$LIBOMP" ]; then \
+		echo "CPPFLAGS=$$CPPFLAGS -I$$LIBOMP/include"; \
+		echo "LDFLAGS=$$LDFLAGS -L$$LIBOMP/lib"; \
         echo "MACOSX_DEPLOYMENT_TARGET=15.0"; \
-        echo "CXX=$$BREW/opt/llvm/bin/clang++"; \
+        echo "CXX=/usr/bin/clang++"; \
     fi
