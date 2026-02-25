@@ -8,7 +8,11 @@ ifneq ($(BREW),)
 	LDFLAGS += -L$(shell brew --prefix)/lib
 	LLVM_PREFIX := $(shell brew --prefix llvm 2>/dev/null)
 	ifneq ($(LLVM_PREFIX),)
-		LDFLAGS += -L$(LLVM_PREFIX)/lib/c++
+		# Do not add Homebrew's libc++ path by default; linking against
+		# brew's libc++ makes the produced binaries depend on Homebrew
+		# runtime paths on users' machines. Only add llvm/libunwind or
+		# other llvm-specific libs on demand.
+		# (Keep this block in case maintainers want to add conditional links.)
 	endif
 	ifneq ($(MACOSX_DEPLOYMENT_TARGET),)
 		CXXFLAGS += -mmacosx-version-min=$(MACOSX_DEPLOYMENT_TARGET)
@@ -353,10 +357,10 @@ print-env:
 .PHONY: ci-github-env
 ci-github-env:
 	@BREW="$$(brew --prefix 2>/dev/null || true)"; \
-    if [ -n "$$BREW" ]; then \
-        echo "PATH=$$BREW/opt/llvm/bin:$$PATH"; \
-        echo "CPPFLAGS=$$CPPFLAGS -I$$BREW/opt/llvm/include -I$$BREW/opt/libomp/include"; \
-        echo "LDFLAGS=$$LDFLAGS -L$$BREW/opt/llvm/lib/c++ -L$$BREW/opt/libomp/lib"; \
+	if [ -n "$$BREW" ]; then \
+		echo "PATH=$$BREW/opt/llvm/bin:$$PATH"; \
+		echo "CPPFLAGS=$$CPPFLAGS -I$$BREW/opt/llvm/include -I$$BREW/opt/libomp/include"; \
+		echo "LDFLAGS=$$LDFLAGS -L$$BREW/opt/libomp/lib"; \
         echo "MACOSX_DEPLOYMENT_TARGET=15.0"; \
         echo "CXX=$$BREW/opt/llvm/bin/clang++"; \
     fi
