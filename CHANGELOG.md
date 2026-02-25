@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.9.0](https://github.com/mapequation/infomap/compare/v2.8.2...v2.9.0) (2026-02-25)
+
+
+### Features
+
+* Enhance Infomap CLI summary output with more info ([35a3bc9](https://github.com/mapequation/infomap/commit/35a3bc9282964342cbb4a67c3221684857650ad8))
+
 ### [2.8.2](https://github.com/mapequation/infomap/compare/v2.8.1...v2.8.2) (2026-02-24)
 
 
