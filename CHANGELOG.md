@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.9.1](https://github.com/mapequation/infomap/compare/v2.9.0...v2.9.1) (2026-02-25)
+
+
+### Bug Fixes
+
+* **ci:** avoid embedding Homebrew libunwind in macOS builds ([0377ca2](https://github.com/mapequation/infomap/commit/0377ca21cce0f203ee30205ebda3ac0c2deecd65))
+
 ## [2.9.0](https://github.com/mapequation/infomap/compare/v2.8.2...v2.9.0) (2026-02-25)
 
 
