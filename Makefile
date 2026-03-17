@@ -87,20 +87,12 @@ js-test:
 	npm pack
 	tar -xzvf mapequation-infomap-*.tgz
 	cp package/index.js examples/js
-	sed -i.'backup' -e 's/src=".*"/src="index.js"/' \
-		examples/js/infomap-worker.html
 	open examples/js/infomap-worker.html
-	sleep 5
-	$(RM) -r package
-	$(RM) -r mapequation-infomap-*.tgz
-	$(RM) -r examples/js/index.js
-	$(RM) -r examples/js/infomap-worker.html
-	mv examples/js/infomap-worker.html{.backup,}
 
-build/js/infomap.worker.js: $(SOURCES) $(PRE_WORKER_MODULE)
+build/js/infomap.worker.js: $(SOURCES) $(PRE_WORKER_MODULE) Makefile
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
-	em++ -std=c++14 -O3 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=worker --pre-js $(PRE_WORKER_MODULE) -o build/js/$(WORKER_FILENAME) $(SOURCES)
+	em++ -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=worker --pre-js $(PRE_WORKER_MODULE) -o build/js/$(WORKER_FILENAME) $(SOURCES)
 
 js-clean:
 	$(RM) -r build/js interfaces/js/src/worker index.js *.d.ts README.md

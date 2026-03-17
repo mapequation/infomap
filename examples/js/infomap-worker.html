@@ -1,6 +1,9 @@
 <html>
   <head>
     <style type="text/css">
+      textarea {
+        font-family: monospace;
+      }
       .io > * {
         display: inline-block;
         vertical-align: middle;
@@ -9,14 +12,71 @@
         width: 100%;
       }
     </style>
-    <script
-      type="text/javascript"
-      src="https://cdn.jsdelivr.net/npm/@mapequation/infomap@latest/index.min.js"
-    ></script>
+    <script type="text/javascript">
+      // Loader for Infomap library: choose local (default) or public CDN
+      (function () {
+        const CDN = 'https://cdn.jsdelivr.net/npm/@mapequation/infomap@latest/index.min.js';
+        const LOCAL = '../../index.js';
+
+        function createScript(src) {
+          const old = document.getElementById('infomap-lib');
+          if (old) old.remove();
+          // clear previous global if present
+          try {
+            if (window.infomap) delete window.infomap;
+          } catch (e) {}
+
+          const s = document.createElement('script');
+          s.id = 'infomap-lib';
+          s.type = 'text/javascript';
+          s.src = src;
+          s.onload = () => onLibraryLoaded();
+          s.onerror = () => {
+            const el = document.getElementById('version');
+            if (el) el.textContent = 'Failed to load library';
+          };
+          document.head.appendChild(s);
+        }
+
+        function onLibraryLoaded() {
+          const verEl = document.getElementById('version');
+          try {
+            const v = window.infomap && window.infomap.default && window.infomap.default.__version__;
+            verEl.textContent = v || 'unknown';
+          } catch (e) {
+            verEl.textContent = 'unknown';
+          }
+          // initialize page-level Infomap bindings
+          if (typeof initializeInfomap === 'function') initializeInfomap();
+        }
+
+        // build UI controls in head so they're available early
+        document.addEventListener('DOMContentLoaded', () => {
+          const container = document.createElement('div');
+          container.style.margin = '8px 0';
+          container.innerHTML =
+            '<strong>Infomap version:</strong> <span id="version">(loading)</span> &nbsp; ' +
+            '<label><input type="radio" name="src" value="local" checked> Local</label> ' +
+            '<label><input type="radio" name="src" value="public"> Public</label> ' +
+            '<button id="reload-lib">Load</button>';
+          document.body.insertBefore(container, document.body.firstChild);
+
+          document.getElementById('reload-lib').addEventListener('click', () => {
+            const val = document.querySelector('input[name="src"]:checked').value;
+            createScript(val === 'local' ? LOCAL : CDN);
+          });
+
+          // load local by default
+          createScript(LOCAL);
+        });
+      })();
+    </script>
   </head>
   <body>
-    <div class="io">
+    
+    <div class="io" style="display: flex; gap: 16px;">
       <div class="input">
+        <h5 style="margin: 0; padding: 6px 0;">Network input</h5>
         <form id="network-form">
           <textarea id="network" rows="30" cols="20">
 #source target [weight]
@@ -39,8 +99,10 @@
       </div>
 
       <div class="action">
-        <input type="text" id="arguments" value="" />
-        <button id="run">Run...</button>
+        <div style="display: flex; margin-bottom: 7px; gap: 8px;">
+          <input type="text" id="arguments" value="--tree" placeholder="Infomap arguments..." />
+          <button id="run">Run...</button>
+        </div>
         <div class="console">
           <textarea
             id="console"
@@ -52,43 +114,65 @@
       </div>
 
       <div class="output">
+        <h5 style="margin: 0; padding: 6px 0;">Output</h5>
         <textarea id="output" rows="30" cols="20" readonly="true"></textarea>
       </div>
     </div>
 
     <script type="text/javascript">
-      const Infomap = window.infomap.default;
+      // Defer Infomap initialization until library loads. The loader will call
+      // `initializeInfomap()` once `window.infomap` is available.
+      let InfomapClass = null;
+      let infomap = null;
 
-      const infomap = new Infomap()
-        .on("data", printLine)
-        .on("error", content => printLine("Error: " + content))
-        .on("finished", onFinished);
+      function initializeInfomap() {
+        try {
+          InfomapClass = window.infomap && window.infomap.default;
+          if (!InfomapClass) return;
+        } catch (e) {
+          return;
+        }
+
+        // If an existing instance exists, remove or recreate it
+        try {
+          if (infomap && typeof infomap.stop === 'function') infomap.stop();
+        } catch (e) {}
+
+        infomap = new InfomapClass()
+          .on('data', printLine)
+          .on('error', content => printLine('Error: ' + content))
+          .on('finished', onFinished);
+      }
 
       function run() {
+        if (!infomap) {
+          alert('Infomap library not loaded yet. Click Load.');
+          return;
+        }
         clearOutput();
-        const network = document.getElementById("network").value;
-        const args = document.getElementById("arguments").value;
+        const network = document.getElementById('network').value;
+        const args = document.getElementById('arguments').value;
 
         infomap.run({ network, args });
       }
 
       function printLine(line) {
-        document.getElementById("console").value += line + "\n";
+        document.getElementById('console').value += line + '\n';
       }
 
       function clearOutput() {
-        document.getElementById("console").value = "";
-        document.getElementById("output").value = "";
+        document.getElementById('console').value = '';
+        document.getElementById('output').value = '';
       }
 
       function onFinished(content) {
         const { clu, tree, ftree } = content;
-        if (clu) document.getElementById("output").value += clu;
-        if (tree) document.getElementById("output").value += tree;
-        if (ftree) document.getElementById("output").value += ftree;
+        if (clu) document.getElementById('output').value += clu;
+        if (tree) document.getElementById('output').value += tree;
+        if (ftree) document.getElementById('output').value += ftree;
       }
 
-      document.getElementById("run").addEventListener("click", run);
+      document.getElementById('run').addEventListener('click', run);
     </script>
   </body>
 </html>

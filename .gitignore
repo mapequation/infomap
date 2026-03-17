@@ -23,6 +23,8 @@ examples/R/infomap
 examples/R/\.Rhistory
 examples/js/Infomap-worker.js
 examples/js/Infomap.js
+examples/js/index.js
+/mapequation-infomap-*.tgz
 *.dSym
 callgrind.*
 /networks
