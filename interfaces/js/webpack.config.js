@@ -1,13 +1,23 @@
-const path = require("path");
-const DefinePlugin = require("webpack").DefinePlugin;
-const getCommits = require("./get-commits.js");
-const getParameters = require("./get-parameters.js");
-const version = require("../../package.json").version;
+import path from "path";
+import { fileURLToPath } from "url";
+import webpack from "webpack";
+import getCommits from "./get-commits.js";
+import getParameters from "./get-parameters.js";
 
-const webpackConfig = async () => {
+const DefinePlugin = webpack.DefinePlugin;
+import { readFile } from "fs/promises";
+
+export default async () => {
+  const pkg = JSON.parse(await readFile(new URL("../../package.json", import.meta.url), "utf8"));
+  const version = pkg.version;
+  // __dirname is not defined in ESM; emulate it
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
   const v1beta56hash = "63de1fea1c05cf23bf469cf07e6c8b387b0cb520";
   const commits = await getCommits(v1beta56hash);
   const { parameters } = await getParameters("./Infomap");
+
+  console.log(`Building infomap.js v${version} with ${parameters.length} parameters and${commits.length} commits since v1beta56 (${v1beta56hash})...`);
 
   return {
     mode: "production",
@@ -58,4 +68,3 @@ const webpackConfig = async () => {
   };
 };
 
-module.exports = webpackConfig;

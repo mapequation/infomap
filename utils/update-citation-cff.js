@@ -1,11 +1,11 @@
-function readVersion(contents) {
+export function readVersion(contents) {
   const matches = contents.match(/^version: (.*)$/im);
   if (matches && matches[1]) {
     return matches[1];
   }
 }
 
-function writeVersion(contents, version) {
+export function writeVersion(contents, version) {
   contents = contents.replace(/version: (.*)$/gim, `version: ${version}`);
   contents = contents.replace(
     /^date-released: (.*)$/gim,
@@ -13,5 +13,3 @@ function writeVersion(contents, version) {
   );
   return contents;
 }
-
-module.exports = { readVersion, writeVersion };

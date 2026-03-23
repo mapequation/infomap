@@ -7,10 +7,13 @@
     "strictNullChecks": true,
     "esModuleInterop": true,
     "target": "es6",
-    "module": "commonjs",
+    "module": "preserve",
+    "moduleResolution": "bundler",
     "declaration": true,
     "declarationDir": "../../",
     "baseUrl": "src"
   },
-  "files": ["src/index.ts"]
+  "files": [
+    "src/index.ts"
+  ]
 }

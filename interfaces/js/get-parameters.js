@@ -1,6 +1,6 @@
-const { exec } = require("child_process");
+import { exec } from "child_process";
 
-function getParameters(infomapBin) {
+export default function getParameters(infomapBin) {
   return new Promise((resolve, reject) => {
     exec(`${infomapBin} --print-json-parameters`, (err, stdout, stderr) => {
       if (err) reject(err);
@@ -10,5 +10,3 @@ function getParameters(infomapBin) {
     });
   });
 }
-
-module.exports = getParameters;
