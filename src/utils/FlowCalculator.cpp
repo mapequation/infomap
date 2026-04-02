@@ -441,8 +441,8 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     }
   }
 
-  auto u_out = [s_out, k_out, min_u_out](auto i) { return k_out[i] == 0 ? min_u_out : s_out[i] / k_out[i]; };
-  auto u_in = [s_in, k_in, min_u_in](auto i) { return k_in[i] == 0 ? min_u_in : s_in[i] / k_in[i]; };
+  auto u_out = [&s_out, &k_out, min_u_out](auto i) { return k_out[i] == 0 ? min_u_out : s_out[i] / k_out[i]; };
+  auto u_in = [&s_in, &k_in, min_u_in](auto i) { return k_in[i] == 0 ? min_u_in : s_in[i] / k_in[i]; };
 
   unsigned int numNodesAsTeleportationTargets = config.noSelfLinks ? N - 1 : N;
   double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
@@ -578,7 +578,7 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
     }
   }
 
-  auto u = [s, k, min_u](auto i) { return k[i] == 0 ? min_u : s[i] / k[i]; };
+  auto u = [&s, &k, min_u](auto i) { return k[i] == 0 ? min_u : s[i] / k[i]; };
 
   unsigned int numNodesAsTeleportationTargets = config.noSelfLinks ? N - 1 : N;
   double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
