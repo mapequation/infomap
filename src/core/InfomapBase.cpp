@@ -707,9 +707,9 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
   setActiveNetworkFromLeafs();
   initPartition(); // TODO: confusing same name, should be able to init default without arguments here too
   moveActiveNodesToPredefinedModules(modules);
-  consolidateModules(false);
 
   if (hard) {
+    consolidateModules(false);
     // Save the original network
     m_originalLeafNodes.swap(m_leafNodes);
 
@@ -727,8 +727,15 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
     }
 
     Log(1) << "\n -> Hard-partitioned the network to " << numNodesInNewNetwork << " nodes and " << numLinksInNewNetwork << " links with codelength " << *this << '\n';
-  } else {
+    m_startFromPredefinedModules = false;
+  } else if (noInfomap) {
+    consolidateModules(false);
+    m_startFromPredefinedModules = false;
     Log(1) << "\n -> Initiated to codelength " << *this << " in " << numTopModules() << " top modules.\n";
+  } else {
+    m_startFromPredefinedModules = true;
+    auto numInitialModules = 1 + *std::max_element(cbegin(modules), cend(modules));
+    Log(1) << "\n -> Prepared initial partition with codelength " << *this << " in " << numInitialModules << " top modules.\n";
   }
   m_hierarchicalCodelength = getCodelength();
 
@@ -1049,7 +1056,18 @@ void InfomapBase::partition()
   double oldCodelength = initialCodelength;
 
   m_tuneIterationIndex = 0;
-  findTopModulesRepeatedly(levelAggregationLimit);
+  bool hadPredefinedInitialPartition = m_startFromPredefinedModules;
+  if (m_startFromPredefinedModules) {
+    Log(1, 3) << "Optimize initial partition... " << std::flush;
+    unsigned int numOptimizationLoops = optimizeActiveNetwork();
+    consolidateModules(false);
+    m_startFromPredefinedModules = false;
+    Log(1, 3) << "done in " << numOptimizationLoops << " optimization loops to codelength " << *this << " in " << numTopModules() << " modules.\n";
+  }
+
+  if (levelAggregationLimit == 0 || numLevels() - 1 != levelAggregationLimit) {
+    findTopModulesRepeatedly(levelAggregationLimit);
+  }
 
   double newCodelength = getCodelength();
   double compression = oldCodelength < 1e-16 ? 0.0 : (oldCodelength - newCodelength) / oldCodelength;
@@ -1058,7 +1076,9 @@ void InfomapBase::partition()
 
   bool doFineTune = true;
   bool coarseTuned = false;
-  while (numTopModules() > 1 && (m_tuneIterationIndex + 1) != tuneIterationLimit) {
+  bool allowTuneAfterInitialPartition = hadPredefinedInitialPartition;
+  while (numTopModules() > 1 && (allowTuneAfterInitialPartition || (m_tuneIterationIndex + 1) != tuneIterationLimit)) {
+    allowTuneAfterInitialPartition = false;
     ++m_tuneIterationIndex;
     if (doFineTune) {
       Log(3) << "\n";

@@ -100,6 +100,7 @@ public:
   unsigned int numNonTrivialTopModules() const { return m_numNonTrivialTopModules; }
 
   bool haveModules() const { return !m_root.isLeaf() && !m_root.firstChild->isLeaf(); }
+  bool startFromPredefinedModules() const { return m_startFromPredefinedModules; }
 
   bool haveNonTrivialModules() const { return numNonTrivialTopModules() > 0; }
 
@@ -505,6 +506,7 @@ protected:
   double m_hierarchicalCodelength = 0.0;
   std::vector<double> m_codelengths;
   std::vector<unsigned int> m_numTopModules;
+  bool m_startFromPredefinedModules = false;
   double m_entropyRate = 0.0;
   double m_maxEntropy = 0.0;
   double m_maxFlow = 0.0;
