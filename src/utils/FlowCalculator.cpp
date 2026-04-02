@@ -421,6 +421,13 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   std::vector<double> s_in(N, 0);
   double sum_s = sumWeightedDegree;
   unsigned int sum_k = network.sumDegree();
+  if (sum_k == 0) {
+    const auto uniformFlow = 1.0 / N;
+    std::fill(nodeFlow.begin(), nodeFlow.end(), uniformFlow);
+    std::fill(nodeTeleportWeights.begin(), nodeTeleportWeights.end(), uniformFlow);
+    nodeTeleportFlow.assign(numNodes, uniformFlow);
+    return;
+  }
   double average_weight = sum_s / sum_k;
 
   for (auto& link : flowLinks) {
@@ -560,6 +567,13 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   std::vector<double> s(N, 0);
   double sum_s = sumWeightedDegree;
   unsigned int sum_k = network.sumDegree();
+  if (sum_k == 0) {
+    const auto uniformFlow = 1.0 / N;
+    std::fill(nodeFlow.begin(), nodeFlow.end(), uniformFlow);
+    std::fill(nodeTeleportWeights.begin(), nodeTeleportWeights.end(), uniformFlow);
+    nodeTeleportFlow.assign(numNodes, uniformFlow);
+    return;
+  }
   double average_weight = sum_s / sum_k;
 
   for (auto& link : flowLinks) {
