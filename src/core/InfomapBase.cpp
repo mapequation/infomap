@@ -262,6 +262,9 @@ void InfomapBase::run(Network& network)
 
   for (unsigned int i = 0; i < numTrials; ++i) {
     removeModules();
+    // This flag is only meaningful for the next partition pass after an
+    // explicit initial partition and must not leak across runs or trials.
+    m_startFromPredefinedModules = false;
     auto startDate = Date();
     Stopwatch timer(true);
 
@@ -449,7 +452,13 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       const auto clusterId = nodePath.second[0]; // First level module
       clusterIds[nodeId] = clusterId;
     }
-    return initPartition(clusterIds, false);
+    initPartition(clusterIds, false);
+    if (m_startFromPredefinedModules) {
+      consolidateModules(false);
+      m_startFromPredefinedModules = false;
+      m_hierarchicalCodelength = getCodelength();
+    }
+    return *this;
   } else {
     // TODO: Use initPartition on lowest modular level and apply it iteratively upwards to build tree
   }

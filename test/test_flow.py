@@ -63,3 +63,30 @@ def test_initial_partition_runs_optimization_before_first_level_consolidation():
 
     assert im.num_top_modules == baseline.num_top_modules == 2
     assert math.isclose(im.codelength, baseline.codelength)
+
+
+def test_repeated_run_with_metadata_after_initial_partition_optimization_change():
+    im = Infomap(silent=True, num_trials=10)
+    im.add_links(
+        (
+            (1, 2),
+            (1, 3),
+            (2, 3),
+            (3, 4),
+            (4, 5),
+            (4, 6),
+            (5, 6),
+        )
+    )
+    im.set_meta_data(1, 0)
+    im.set_meta_data(2, 0)
+    im.set_meta_data(3, 1)
+    im.set_meta_data(4, 1)
+    im.set_meta_data(5, 0)
+    im.set_meta_data(6, 0)
+
+    im.run(meta_data_rate=0)
+    assert im.num_top_modules == 2
+
+    im.run(meta_data_rate=2)
+    assert im.num_top_modules == 3

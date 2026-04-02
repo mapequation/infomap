@@ -100,7 +100,6 @@ public:
   unsigned int numNonTrivialTopModules() const { return m_numNonTrivialTopModules; }
 
   bool haveModules() const { return !m_root.isLeaf() && !m_root.firstChild->isLeaf(); }
-  bool startFromPredefinedModules() const { return m_startFromPredefinedModules; }
 
   bool haveNonTrivialModules() const { return numNonTrivialTopModules() > 0; }
 
@@ -173,6 +172,7 @@ public:
 
 private:
   bool isFullNetwork() const { return m_isMain && m_aggregationLevel == 0; }
+  bool startFromPredefinedModules() const { return m_startFromPredefinedModules; }
   bool isFirstLoop() const { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 
   InfomapBase* getNewInfomapInstance() const { return new InfomapBase(getConfig()); }
