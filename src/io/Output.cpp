@@ -350,6 +350,8 @@ void writeNewickTree(InfomapBase& im, std::ostream& outStream, bool states)
 void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& outStream, bool states, bool writeLinks)
 {
   auto oldPrecision = outStream.precision();
+  std::vector<detail::PerLevelStat> perLevelStats;
+  aggregatePerLevelCodelength(im.root(), perLevelStats);
 
   outStream << "{";
 
@@ -360,6 +362,16 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
             << "\"codelength\":" << im.codelength() << ","
             << "\"numLevels\":" << im.maxTreeDepth() << ","
             << "\"numTopModules\":" << im.numTopModules() << ","
+            << "\"numModules\":[";
+
+  for (size_t i = 0; i < perLevelStats.size(); ++i) {
+    if (i > 0) {
+      outStream << ",";
+    }
+    outStream << perLevelStats[i].numModules;
+  }
+
+  outStream << "],"
             << "\"relativeCodelengthSavings\":" << im.getRelativeCodelengthSavings() << ","
             << "\"directed\":" << (im.isUndirectedFlow() ? "false" : "true") << ","
             << "\"flowModel\": \"" << flowModelToString(im.flowModel) << "\","
