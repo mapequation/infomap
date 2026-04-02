@@ -138,6 +138,14 @@ please add them to `GitHub issues`_.
 
 .. _Github issues: http://www.github.com/mapequation/infomap/issues
 
+Maintainer automation
+---------------------
+
+Repository-specific agent guidance lives in ``AGENTS.md``.
+
+Automation policy, risk classification, verification rules, and GitHub
+interaction templates live under ``docs/automation/``.
+
 Authors
 -------
 
