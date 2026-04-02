@@ -1,0 +1,231 @@
+name: _Python Package
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: false
+        type: string
+        default: ""
+      run-tests:
+        required: false
+        type: boolean
+        default: true
+      build-release-artifacts:
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    if: inputs.run-tests
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements_dev.txt
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y swig
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements_dev.txt
+
+      - name: Build Python package
+        run: make python
+
+      - name: Install editable package
+        run: make py-local-install
+
+      - name: Run Python verification
+        run: make py-test
+
+  swig-source:
+    if: inputs.build-release-artifacts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements_dev.txt
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y swig
+
+      - name: Build SWIG source bundle
+        run: make py-swig py-package-files
+
+      - name: Upload Python source bundle
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: python-source
+          path: build/py/
+          retention-days: 7
+
+  sdist:
+    if: inputs.build-release-artifacts
+    needs: swig-source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Download Python source bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-source
+          path: build/py
+
+      - name: Build sdist
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build
+          python -m build --sdist --outdir build/py/dist build/py
+
+      - name: Upload sdist
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: python-sdist
+          path: build/py/dist/*.tar.gz
+          retention-days: 7
+
+  build-wheels:
+    if: inputs.build-release-artifacts
+    needs: swig-source
+    name: Python wheel ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Download Python source bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-source
+          path: build/py
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel==3.3.1
+
+      - name: Install macOS OpenMP runtime
+        if: startsWith(matrix.os, 'macos')
+        run: brew install libomp
+
+      - name: Build wheels
+        run: python -m cibuildwheel build/py --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp311-* cp312-* cp313-* cp314-*"
+          CIBW_SKIP: "*-musllinux* pp*"
+          CIBW_ENVIRONMENT_MACOS: >-
+            CXX=/usr/bin/clang++
+            MACOSX_DEPLOYMENT_TARGET=15.0
+            CPPFLAGS="-I$(brew --prefix libomp)/include"
+            LDFLAGS="-L$(brew --prefix libomp)/lib"
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: python-wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+          retention-days: 7
+
+  verify-release-artifacts:
+    if: inputs.build-release-artifacts
+    needs: [sdist, build-wheels]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Download sdist
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-sdist
+          path: artifacts/sdist
+
+      - name: Download wheels
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: python-wheels-*
+          path: artifacts/wheels
+          merge-multiple: true
+
+      - name: Smoke test sdist
+        run: |
+          python -m venv .venv-sdist
+          . .venv-sdist/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install artifacts/sdist/*.tar.gz
+          python - <<'PY'
+          from infomap import Infomap
+          print(Infomap(silent=True).num_top_modules)
+          PY
+
+      - name: Smoke test linux wheel
+        run: |
+          python -m venv .venv-wheel
+          . .venv-wheel/bin/activate
+          python -m pip install --upgrade pip
+          wheel="$(find artifacts/wheels -name '*linux*.whl' | head -n 1)"
+          [ -n "$wheel" ]
+          python -m pip install "$wheel"
+          python - <<'PY'
+          from infomap import Infomap
+          print(Infomap(silent=True).num_top_modules)
+          PY

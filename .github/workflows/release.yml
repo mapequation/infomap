@@ -4,81 +4,146 @@ on:
   push:
     tags:
       - "v*.*.*"
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to republish assets for
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
-  release:
-    name: ${{ matrix.config.os }}${{ matrix.target.name }}
-    runs-on: ${{ matrix.config.os }}
-    strategy:
-      matrix:
-        config:
-          - {
-              name: windows,
-              os: windows-2025,
-              artifact: "infomap-win",
-              binary: Infomap.exe,
-              cxxflags: -static,
-              ldflags: -static,
-              compiler: g++,
-            }
-          - {
-              name: ubuntu,
-              os: ubuntu-24.04,
-              artifact: "infomap-ubuntu",
-              binary: Infomap,
-              cxxflags: "",
-              ldflags: "",
-              compiler: g++,
-            }
-          - {
-              name: macos,
-              os: macos-15,
-              artifact: "infomap-mac",
-              binary: Infomap,
-              cxxflags: "",
-              ldflags: "",
-              compiler: clang++,
-            }
-        target:
-          - { name: "", target: "" }
-          - { name: "-noomp", target: "noomp" }
+  native:
+    uses: ./.github/workflows/_native-build.yml
+    with:
+      ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
+      upload-artifacts: true
+
+  python:
+    uses: ./.github/workflows/_python-package.yml
+    with:
+      ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
+      run-tests: false
+      build-release-artifacts: true
+
+  javascript:
+    uses: ./.github/workflows/_js-package.yml
+    with:
+      ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
+      run-tests: true
+      pack-artifact: true
+
+  publish-github-release:
+    name: Publish GitHub release assets
+    needs: [native, python, javascript]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
 
     steps:
-      - uses: actions/checkout@v4
-
-      #- if: startsWith(matrix.config.os, 'ubuntu')
-      #  run: |
-      #    sudo apt update
-      #    sudo apt install libomp-dev
-
-      - if: startsWith(matrix.config.os, 'macos')
-        run: |
-          brew install libomp
-          make ci-github-env >> $GITHUB_ENV
-
-      - run: make -j ${{ matrix.target.target }}
-        shell: bash
-        env:
-          CXX: ${{ matrix.config.compiler }}
-          CXXFLAGS: ${{ matrix.config.cxxflags }} ${{ env.CPPFLAGS }}
-          LDFLAGS: ${{ matrix.config.ldflags }} ${{ env.LDFLAGS }}
-
-      - run: ./Infomap --version
-        shell: bash
-
-      - run: 7z a ${{ matrix.config.artifact }}${{ matrix.target.name }}.zip ${{ matrix.config.binary }}
-        shell: bash
-
-      - uses: actions/upload-artifact@v4
+      - name: Download native release assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          retention-days: 1
-          path: ./${{ matrix.config.binary }}
-          name: ${{ matrix.config.artifact }}${{ matrix.target.name }}
+          pattern: native-*
+          path: release-assets/native
+          merge-multiple: true
 
-      - uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Download Python release assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          files: ${{ matrix.config.artifact }}${{ matrix.target.name }}.zip
+          name: python-sdist
+          path: release-assets/python
+
+      - name: Download Python wheel assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: python-wheels-*
+          path: release-assets/python
+          merge-multiple: true
+
+      - name: Download npm release asset
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: npm-package
+          path: release-assets/npm
+
+      - name: List packaged assets
+        run: find release-assets -maxdepth 3 -type f | sort
+
+      - name: Attach assets to GitHub release
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          files: |
+            release-assets/native/*.zip
+            release-assets/python/**/*.tar.gz
+            release-assets/python/**/*.whl
+            release-assets/npm/*.tgz
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [publish-github-release, python]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: pypi-release
+      url: https://pypi.org/project/infomap/
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Download Python distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-sdist
+          path: build/py/dist
+
+      - name: Download Python wheels
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: python-wheels-*
+          path: build/py/dist
+          merge-multiple: true
+
+      - name: Verify Python distributions
+        run: ls -la build/py/dist
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
+        with:
+          packages-dir: build/py/dist
+
+  publish-npm:
+    name: Publish to npm
+    needs: [publish-github-release, publish-pypi, javascript]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: npm-release
+      url: https://www.npmjs.com/package/@mapequation/infomap
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 20
+
+      - name: Download npm package artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: npm-package
+          path: dist/npm
+
+      - name: Publish npm package
+        run: npm publish --provenance --access public dist/npm/*.tgz

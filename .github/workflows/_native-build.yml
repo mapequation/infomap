@@ -1,0 +1,93 @@
+name: _Native Build
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: false
+        type: string
+        default: ""
+      upload-artifacts:
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.config.os }}${{ matrix.target.name }}
+    runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+              name: windows,
+              os: windows-2025,
+              artifact: infomap-win,
+              binary: Infomap.exe,
+              cxxflags: -static,
+              ldflags: -static,
+              compiler: g++,
+            }
+          - {
+              name: ubuntu,
+              os: ubuntu-24.04,
+              artifact: infomap-ubuntu,
+              binary: Infomap,
+              cxxflags: "",
+              ldflags: "",
+              compiler: g++,
+            }
+          - {
+              name: macos,
+              os: macos-15,
+              artifact: infomap-mac,
+              binary: Infomap,
+              cxxflags: "",
+              ldflags: "",
+              compiler: clang++,
+            }
+        target:
+          - { name: "", target: "" }
+          - { name: "-noomp", target: "noomp" }
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Configure macOS OpenMP environment
+        if: startsWith(matrix.config.os, 'macos')
+        run: |
+          brew install libomp
+          make ci-github-env >> "$GITHUB_ENV"
+
+      - name: Build native binary
+        run: make -j ${{ matrix.target.target }}
+        shell: bash
+        env:
+          CXX: ${{ matrix.config.compiler }}
+          CXXFLAGS: ${{ matrix.config.cxxflags }} ${{ env.CPPFLAGS }}
+          LDFLAGS: ${{ matrix.config.ldflags }} ${{ env.LDFLAGS }}
+
+      - name: Smoke test binary
+        run: ./Infomap --version
+        shell: bash
+
+      - name: Package binary
+        if: inputs.upload-artifacts
+        run: 7z a ${{ matrix.config.artifact }}${{ matrix.target.name }}.zip ${{ matrix.config.binary }}
+        shell: bash
+
+      - name: Upload packaged binary
+        if: inputs.upload-artifacts
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: native-${{ matrix.config.artifact }}${{ matrix.target.name }}
+          path: ./${{ matrix.config.artifact }}${{ matrix.target.name }}.zip
+          retention-days: 7
