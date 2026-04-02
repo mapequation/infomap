@@ -70,6 +70,12 @@ public:
   Network(Network&&) = delete;
   Network& operator=(Network&&) = delete;
 
+  void setConfig(const Config& config)
+  {
+    StateNetwork::setConfig(config);
+    updateDerivedConfig();
+  }
+
   void clear() override;
 
   /**
@@ -132,6 +138,7 @@ public:
 
 private:
   void init();
+  void updateDerivedConfig();
   void initValidHeadings();
 
   void parseNetwork(const std::string& filename);
