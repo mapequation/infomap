@@ -23,7 +23,9 @@ using std::make_pair;
 void Network::init()
 {
   initValidHeadings();
-  m_multilayerStateIdBitShift = static_cast<unsigned int>(std::ceil(std::log2(m_config.matchableMultilayerIds)));
+  m_multilayerStateIdBitShift = m_config.matchableMultilayerIds == 0
+      ? 0
+      : static_cast<unsigned int>(std::ceil(std::log2(m_config.matchableMultilayerIds)));
 }
 
 void Network::initValidHeadings()
