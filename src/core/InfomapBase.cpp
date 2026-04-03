@@ -1416,6 +1416,27 @@ void InfomapBase::syncActiveGraphPayloadToHierarchy()
   }
 }
 
+unsigned int InfomapBase::optimizeActiveNetwork()
+{
+  const auto numEffectiveLoops = m_optimizer->optimizeActiveNetwork();
+  syncActiveGraphPayloadToHierarchy();
+  return numEffectiveLoops;
+}
+
+void InfomapBase::moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
+{
+  syncActiveGraphPayloadToHierarchy();
+  m_optimizer->moveActiveNodesToPredefinedModules(modules);
+  materializeActiveGraphPayload();
+}
+
+void InfomapBase::consolidateModules(bool replaceExistingModules)
+{
+  syncActiveGraphPayloadToHierarchy();
+  m_optimizer->consolidateModules(replaceExistingModules);
+  materializeActiveGraphPayload();
+}
+
 void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 {
   ScopedBenchmarkDuration scopedDuration(m_benchmarkStats.findTopModulesSec, &m_benchmarkStats.findTopModulesCalls);

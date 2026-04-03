@@ -241,6 +241,30 @@ TEST_CASE("Active graph payload materialization mirrors module-level active node
   }
 }
 
+TEST_CASE("Active graph wrappers sync payload back to hierarchy nodes [fast][core][partition][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+  im.initPartition();
+
+  auto& materialization = im.activeGraphMaterialization();
+  REQUIRE_FALSE(materialization.payloads.empty());
+
+  const auto originalFlow = im.activeNetwork()[0]->data.flow;
+  materialization.payloads[0].data.flow = originalFlow + 0.25;
+
+  std::vector<unsigned int> modules(im.numLeafNodes());
+  for (unsigned int i = 0; i < im.numLeafNodes(); ++i) {
+    modules[i] = i;
+  }
+  im.moveActiveNodesToPredefinedModules(modules);
+
+  CHECK(im.activeNetwork()[0]->data.flow == doctest::Approx(originalFlow + 0.25));
+  CHECK(im.activeGraphMaterialization().payloads[0].data.flow == doctest::Approx(originalFlow + 0.25));
+}
+
 TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

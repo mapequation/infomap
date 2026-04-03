@@ -432,17 +432,11 @@ private:
   /**
    * Return the number of effective core loops, i.e. not the last if not at coreLoopLimit
    */
-  unsigned int optimizeActiveNetwork() { return m_optimizer->optimizeActiveNetwork(); }
+  unsigned int optimizeActiveNetwork();
 
-  void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
-  {
-    return m_optimizer->moveActiveNodesToPredefinedModules(modules);
-  }
+  void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules);
 
-  void consolidateModules(bool replaceExistingModules = true)
-  {
-    return m_optimizer->consolidateModules(replaceExistingModules);
-  }
+  void consolidateModules(bool replaceExistingModules = true);
 
   unsigned int calculateNumNonTrivialTopModules() const;
 
