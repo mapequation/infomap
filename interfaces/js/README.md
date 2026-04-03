@@ -42,7 +42,12 @@ let infomap = new Infomap()
   .on("error", (err) => console.warn(err))
   .on("finished", (data) => console.log(data));
 
-infomap.run(network, "--two-level");
+infomap.run({
+  network,
+  args: {
+    twoLevel: true,
+  },
+});
 ```
 
 If you use a CDN, for example JSDelivr, `Infomap` is exported as `window.infomap.default`.
@@ -66,7 +71,12 @@ For example:
                 .on("error", err => console.warn(err))
                 .on("finished", data => console.log(data));
 
-            infomap.run(network, "--two-level");
+            infomap.run({
+                network,
+                args: {
+                    twoLevel: true,
+                },
+            });
         </script>
 </html>
 ```
