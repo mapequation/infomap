@@ -157,7 +157,7 @@ PY_ONLY_HEADERS := $(HEADERS:%.h=$(PY_BUILD_DIR)/headers/%.h)
 PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
 PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
 
-.PHONY: python py-swig py-build py-package-files py-test py-format
+.PHONY: python py-swig py-build py-package-files py-test py-test-unit py-test-doctest py-test-examples py-format
 
 # Use python distutils to compile the module
 python: py-swig py-build Makefile
@@ -208,14 +208,24 @@ $(PY_BUILD_DIR)/headers/%: %
 .PHONY: py-doc py-local-install py-prepare
 SPHINX_SOURCE_DIR = interfaces/python/source
 SPHINX_TARGET_DIR = docs
+PYTHON_TEST_DIR = test/python
+PYTEST ?= python -m pytest
+PYTEST_ARGS ?=
 
 py-prepare:
 	pip install -r requirements_dev.txt
 
-py-test:
+py-test: py-test-unit py-test-doctest py-test-examples
+
+py-test-unit:
+	@$(PYTEST) $(PYTEST_ARGS) $(PYTHON_TEST_DIR)
+
+py-test-doctest:
 	@cp -r examples/networks/*.net $(PY_BUILD_DIR) || true
 	@cd $(PY_BUILD_DIR) && python -m ruff check infomap.py
 	@cd $(PY_BUILD_DIR) && python -m doctest infomap.py
+
+py-test-examples:
 	@cd examples/python && for f in *.py; do python "$$f" > /dev/null || exit 1; done
 
 py-local-install:
