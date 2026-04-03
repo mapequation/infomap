@@ -25,6 +25,7 @@
 #include <vector>
 #include <deque>
 #include <map>
+#include <unordered_map>
 #include <limits>
 #include <string>
 #include <iostream>
@@ -103,18 +104,65 @@ public:
   };
 
   struct ActiveGraphMaterialization {
+    using ActiveNodeId = unsigned int;
+
     std::vector<InfoNode*> nodes;
     std::vector<ActiveNodePayload> payloads;
+    std::unordered_map<InfoNode*, ActiveNodeId> nodeToId;
 
     void reset()
     {
       nodes.clear();
       payloads.clear();
+      nodeToId.clear();
     }
 
     std::size_t payloadBytes() const noexcept
     {
       return payloads.size() * sizeof(ActiveNodePayload);
+    }
+
+    std::size_t size() const noexcept
+    {
+      return nodes.size();
+    }
+
+    bool empty() const noexcept
+    {
+      return nodes.empty();
+    }
+
+    ActiveNodeId idFor(const InfoNode& node) const
+    {
+      auto it = nodeToId.find(const_cast<InfoNode*>(&node));
+      if (it == nodeToId.end()) {
+        throw std::out_of_range("ActiveGraphMaterialization::idFor() called for non-materialized node");
+      }
+      return it->second;
+    }
+
+    InfoNode& nodeFor(ActiveNodeId id) const
+    {
+      if (id >= nodes.size()) {
+        throw std::out_of_range("ActiveGraphMaterialization::nodeFor() id out of range");
+      }
+      return *nodes[id];
+    }
+
+    ActiveNodePayload& payloadFor(ActiveNodeId id)
+    {
+      if (id >= payloads.size()) {
+        throw std::out_of_range("ActiveGraphMaterialization::payloadFor() id out of range");
+      }
+      return payloads[id];
+    }
+
+    const ActiveNodePayload& payloadFor(ActiveNodeId id) const
+    {
+      if (id >= payloads.size()) {
+        throw std::out_of_range("ActiveGraphMaterialization::payloadFor() id out of range");
+      }
+      return payloads[id];
     }
   };
 

@@ -1392,7 +1392,10 @@ void InfomapBase::materializeActiveGraphPayload()
   const auto& network = *m_activeNetwork;
   m_activeGraphMaterialization.nodes = network;
   m_activeGraphMaterialization.payloads.reserve(network.size());
-  for (const auto* node : network) {
+  m_activeGraphMaterialization.nodeToId.reserve(network.size());
+  for (std::size_t i = 0; i < network.size(); ++i) {
+    const auto* node = network[i];
+    m_activeGraphMaterialization.nodeToId[const_cast<InfoNode*>(node)] = static_cast<ActiveGraphMaterialization::ActiveNodeId>(i);
     m_activeGraphMaterialization.payloads.push_back({
         node->data,
         node->stateId,

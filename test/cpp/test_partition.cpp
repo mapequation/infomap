@@ -207,10 +207,13 @@ TEST_CASE("Active graph payload materialization mirrors the leaf-level active ne
   for (std::size_t i = 0; i < materialization.nodes.size(); ++i) {
     auto* node = im.activeNetwork()[i];
     CHECK(materialization.nodes[i] == node);
+    CHECK(materialization.idFor(*node) == i);
+    CHECK(&materialization.nodeFor(i) == node);
     CHECK(materialization.payloads[i].data.flow == doctest::Approx(node->data.flow));
     CHECK(materialization.payloads[i].stateId == node->stateId);
     CHECK(materialization.payloads[i].physicalId == node->physicalId);
     CHECK(materialization.payloads[i].layerId == node->layerId);
+    CHECK(materialization.payloadFor(i).stateId == node->stateId);
   }
 
   materialization.payloads[0].data.flow += 0.5;
@@ -236,6 +239,8 @@ TEST_CASE("Active graph payload materialization mirrors module-level active node
   for (std::size_t i = 0; i < materialization.nodes.size(); ++i) {
     auto* node = im.activeNetwork()[i];
     CHECK(materialization.nodes[i] == node);
+    CHECK(materialization.idFor(*node) == i);
+    CHECK(&materialization.nodeFor(i) == node);
     CHECK(materialization.payloads[i].data.flow == doctest::Approx(node->data.flow));
     CHECK(materialization.payloads[i].stateId == node->stateId);
   }
