@@ -70,8 +70,17 @@ public:
 protected:
   unsigned int numActiveModules() const override { return m_infomap->activeNetwork().size() - m_emptyModules.size(); }
 
+  void addNeighbourModuleLinks(InfomapBase::CsrBackend& graph, InfomapBase::CsrBackend::ActiveNodeId currentId, VectorMap<DeltaFlowDataType>& deltaFlow);
+
   template <typename Graph>
   void addNeighbourModuleLinks(Graph& graph, typename Graph::ActiveNodeId currentId, VectorMap<DeltaFlowDataType>& deltaFlow);
+
+  void accumulateMoveDelta(InfomapBase::CsrBackend& graph,
+                           InfomapBase::CsrBackend::ActiveNodeId currentId,
+                           unsigned int oldModule,
+                           unsigned int newModule,
+                           DeltaFlowDataType& oldModuleDelta,
+                           DeltaFlowDataType& newModuleDelta);
 
   template <typename Graph>
   void accumulateMoveDelta(Graph& graph,
@@ -81,6 +90,12 @@ protected:
                            DeltaFlowDataType& oldModuleDelta,
                            DeltaFlowDataType& newModuleDelta);
 
+  void markNeighboursDirty(InfomapBase::CsrBackend& graph,
+                           InfomapBase::CsrBackend::ActiveNodeId currentId,
+                           unsigned int oldModuleIndex,
+                           InfoNode*& nodeInOldModule,
+                           unsigned int& numLinkedNodesInOldModule);
+
   template <typename Graph>
   void markNeighboursDirty(Graph& graph,
                            typename Graph::ActiveNodeId currentId,
@@ -88,14 +103,22 @@ protected:
                            InfoNode*& nodeInOldModule,
                            unsigned int& numLinkedNodesInOldModule);
 
+  void markNodeNeighboursDirty(InfomapBase::CsrBackend& graph, InfomapBase::CsrBackend::ActiveNodeId nodeId);
+
   template <typename Graph>
   void markNodeNeighboursDirty(Graph& graph, typename Graph::ActiveNodeId nodeId);
 
   template <typename Graph>
   void moveActiveNodesToPredefinedModulesImpl(Graph& graph, std::vector<unsigned int>& modules);
 
+  bool moveNodeToPredefinedModuleImpl(InfomapBase::CsrBackend& graph,
+                                      InfomapBase::CsrBackend::ActiveNodeId currentId,
+                                      unsigned int newModule);
+
   template <typename Graph>
   bool moveNodeToPredefinedModuleImpl(Graph& graph, typename Graph::ActiveNodeId currentId, unsigned int newModule);
+
+  unsigned int tryMoveEachNodeIntoBestModuleImpl(InfomapBase::CsrBackend& graph);
 
   template <typename Graph>
   unsigned int tryMoveEachNodeIntoBestModuleImpl(Graph& graph);
@@ -200,6 +223,27 @@ inline void InfomapOptimizer<Objective>::initSuperNetwork()
 // ===================================================
 
 template <typename Objective>
+void InfomapOptimizer<Objective>::addNeighbourModuleLinks(InfomapBase::CsrBackend& graph,
+                                                          InfomapBase::CsrBackend::ActiveNodeId currentId,
+                                                          VectorMap<DeltaFlowDataType>& deltaFlow)
+{
+  const auto* moduleIndices = graph.moduleIndicesData();
+  const auto outEdges = graph.outEdges(currentId);
+  for (std::size_t i = 0; i < outEdges.size; ++i) {
+    const auto neighbourId = outEdges.targets[i];
+    const auto otherModule = moduleIndices[neighbourId];
+    deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, outEdges.flows[i], 0.0));
+  }
+
+  const auto inEdges = graph.inEdges(currentId);
+  for (std::size_t i = 0; i < inEdges.size; ++i) {
+    const auto neighbourId = inEdges.targets[i];
+    const auto otherModule = moduleIndices[neighbourId];
+    deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, 0.0, inEdges.flows[i]));
+  }
+}
+
+template <typename Objective>
 template <typename Graph>
 void InfomapOptimizer<Objective>::addNeighbourModuleLinks(Graph& graph, typename Graph::ActiveNodeId currentId, VectorMap<DeltaFlowDataType>& deltaFlow)
 {
@@ -212,6 +256,36 @@ void InfomapOptimizer<Objective>::addNeighbourModuleLinks(Graph& graph, typename
     auto otherModule = graph.moduleIndex(neighbourId);
     deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, 0.0, detail::edgeFlow(edge)));
   });
+}
+
+template <typename Objective>
+void InfomapOptimizer<Objective>::accumulateMoveDelta(InfomapBase::CsrBackend& graph,
+                                                      InfomapBase::CsrBackend::ActiveNodeId currentId,
+                                                      unsigned int oldModule,
+                                                      unsigned int newModule,
+                                                      DeltaFlowDataType& oldModuleDelta,
+                                                      DeltaFlowDataType& newModuleDelta)
+{
+  const auto* moduleIndices = graph.moduleIndicesData();
+  const auto outEdges = graph.outEdges(currentId);
+  for (std::size_t i = 0; i < outEdges.size; ++i) {
+    const auto otherModule = moduleIndices[outEdges.targets[i]];
+    if (otherModule == oldModule) {
+      oldModuleDelta.deltaExit += outEdges.flows[i];
+    } else if (otherModule == newModule) {
+      newModuleDelta.deltaExit += outEdges.flows[i];
+    }
+  }
+
+  const auto inEdges = graph.inEdges(currentId);
+  for (std::size_t i = 0; i < inEdges.size; ++i) {
+    const auto otherModule = moduleIndices[inEdges.targets[i]];
+    if (otherModule == oldModule) {
+      oldModuleDelta.deltaEnter += inEdges.flows[i];
+    } else if (otherModule == newModule) {
+      newModuleDelta.deltaEnter += inEdges.flows[i];
+    }
+  }
 }
 
 template <typename Objective>
@@ -243,6 +317,37 @@ void InfomapOptimizer<Objective>::accumulateMoveDelta(Graph& graph,
 }
 
 template <typename Objective>
+void InfomapOptimizer<Objective>::markNeighboursDirty(InfomapBase::CsrBackend& graph,
+                                                      InfomapBase::CsrBackend::ActiveNodeId currentId,
+                                                      unsigned int oldModuleIndex,
+                                                      InfoNode*& nodeInOldModule,
+                                                      unsigned int& numLinkedNodesInOldModule)
+{
+  auto* dirtyFlags = graph.dirtyFlagsData();
+  const auto* moduleIndices = graph.moduleIndicesData();
+
+  const auto outEdges = graph.outEdges(currentId);
+  for (std::size_t i = 0; i < outEdges.size; ++i) {
+    const auto neighbourId = outEdges.targets[i];
+    dirtyFlags[neighbourId] = 1u;
+    if (moduleIndices[neighbourId] == oldModuleIndex) {
+      nodeInOldModule = &graph.nodeFor(neighbourId);
+      ++numLinkedNodesInOldModule;
+    }
+  }
+
+  const auto inEdges = graph.inEdges(currentId);
+  for (std::size_t i = 0; i < inEdges.size; ++i) {
+    const auto neighbourId = inEdges.targets[i];
+    dirtyFlags[neighbourId] = 1u;
+    if (moduleIndices[neighbourId] == oldModuleIndex) {
+      nodeInOldModule = &graph.nodeFor(neighbourId);
+      ++numLinkedNodesInOldModule;
+    }
+  }
+}
+
+template <typename Objective>
 template <typename Graph>
 void InfomapOptimizer<Objective>::markNeighboursDirty(Graph& graph,
                                                       typename Graph::ActiveNodeId currentId,
@@ -265,6 +370,22 @@ void InfomapOptimizer<Objective>::markNeighboursDirty(Graph& graph,
       ++numLinkedNodesInOldModule;
     }
   });
+}
+
+template <typename Objective>
+void InfomapOptimizer<Objective>::markNodeNeighboursDirty(InfomapBase::CsrBackend& graph, InfomapBase::CsrBackend::ActiveNodeId nodeId)
+{
+  auto* dirtyFlags = graph.dirtyFlagsData();
+
+  const auto outEdges = graph.outEdges(nodeId);
+  for (std::size_t i = 0; i < outEdges.size; ++i) {
+    dirtyFlags[outEdges.targets[i]] = 1u;
+  }
+
+  const auto inEdges = graph.inEdges(nodeId);
+  for (std::size_t i = 0; i < inEdges.size; ++i) {
+    dirtyFlags[inEdges.targets[i]] = 1u;
+  }
 }
 
 template <typename Objective>
@@ -345,6 +466,55 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
   }
   auto graph = m_infomap->pointerBackend();
   return moveNodeToPredefinedModuleImpl(graph, graph.idFor(current), newModule);
+}
+
+template <typename Objective>
+bool InfomapOptimizer<Objective>::moveNodeToPredefinedModuleImpl(InfomapBase::CsrBackend& graph,
+                                                                 InfomapBase::CsrBackend::ActiveNodeId currentId,
+                                                                 unsigned int newModule)
+{
+  InfoNode& current = graph.nodeFor(currentId);
+  auto* moduleIndices = graph.moduleIndicesData();
+  unsigned int oldM = moduleIndices[currentId];
+  unsigned int newM = newModule;
+
+  if (newM == oldM) {
+    return false;
+  }
+
+  DeltaFlowDataType oldModuleDelta(oldM, 0.0, 0.0);
+  DeltaFlowDataType newModuleDelta(newM, 0.0, 0.0);
+
+  accumulateMoveDelta(graph, currentId, oldM, newM, oldModuleDelta, newModuleDelta);
+
+  if (m_infomap->recordedTeleportation) {
+    auto& oldModuleFlowData = m_moduleFlowData[oldM];
+    double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
+    double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+    oldModuleDelta.deltaEnter += deltaEnterOld;
+    oldModuleDelta.deltaExit += deltaExitOld;
+
+    auto& newModuleFlowData = m_moduleFlowData[newM];
+    double deltaEnterNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
+    double deltaExitNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
+    newModuleDelta.deltaEnter += deltaEnterNew;
+    newModuleDelta.deltaExit += deltaExitNew;
+  }
+
+  if (m_moduleMembers[newM] == 0) {
+    m_emptyModules.pop_back();
+  }
+  if (m_moduleMembers[oldM] == 1) {
+    m_emptyModules.push_back(oldM);
+  }
+
+  m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, m_moduleFlowData, m_moduleMembers);
+
+  m_moduleMembers[oldM] -= 1;
+  m_moduleMembers[newM] += 1;
+
+  moduleIndices[currentId] = newM;
+  return true;
 }
 
 template <typename Objective>
@@ -433,6 +603,138 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
   }
   auto graph = m_infomap->pointerBackend();
   return tryMoveEachNodeIntoBestModuleImpl(graph);
+}
+
+template <typename Objective>
+unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(InfomapBase::CsrBackend& graph)
+{
+  std::vector<unsigned int> nodeEnumeration(graph.size());
+  m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
+
+  const auto numNodes = nodeEnumeration.size();
+  unsigned int numMoved = 0;
+
+  auto* moduleIndices = graph.moduleIndicesData();
+  auto* dirtyFlags = graph.dirtyFlagsData();
+
+  VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
+
+  for (unsigned int i = 0; i < numNodes; ++i) {
+    const auto currentId = nodeEnumeration[i];
+    InfoNode& current = graph.nodeFor(currentId);
+    const unsigned int currentModuleIndex = moduleIndices[currentId];
+
+    if (dirtyFlags[currentId] == 0u)
+      continue;
+
+    if (m_moduleMembers[currentModuleIndex] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
+      continue;
+
+    deltaFlow.startRound();
+
+    addNeighbourModuleLinks(graph, currentId, deltaFlow);
+
+    deltaFlow.add(currentModuleIndex, DeltaFlowDataType(currentModuleIndex, 0.0, 0.0));
+    DeltaFlowDataType& oldModuleDelta = deltaFlow[currentModuleIndex];
+    oldModuleDelta.module = currentModuleIndex;
+
+    if (m_moduleMembers[currentModuleIndex] > 1 && !m_emptyModules.empty()) {
+      deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
+    }
+
+    m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+
+    auto& moduleDeltaEnterExit = deltaFlow.values();
+    const unsigned int numModuleLinks = deltaFlow.size();
+
+    if (m_infomap->recordedTeleportation) {
+      for (unsigned int j = 0; j < numModuleLinks; ++j) {
+        auto& deltaEnterExit = moduleDeltaEnterExit[j];
+        const auto moduleIndex = deltaEnterExit.module;
+        if (moduleIndex == currentModuleIndex) {
+          auto& oldModuleFlowData = m_moduleFlowData[moduleIndex];
+          const double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
+          const double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
+          deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitOld, deltaEnterOld));
+        } else {
+          auto& newModuleFlowData = m_moduleFlowData[moduleIndex];
+          const double deltaEnterNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
+          const double deltaExitNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
+          deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitNew, deltaEnterNew));
+        }
+      }
+    }
+
+    std::vector<unsigned int> moduleEnumeration(numModuleLinks);
+    m_infomap->m_rand.getRandomizedIndexVector(moduleEnumeration);
+
+    DeltaFlowDataType bestDeltaModule(oldModuleDelta);
+    double bestDeltaCodelength = 0.0;
+    DeltaFlowDataType strongestConnectedModule(oldModuleDelta);
+    double deltaCodelengthOnStrongestConnectedModule = 0.0;
+
+    for (unsigned int k = 0; k < numModuleLinks; ++k) {
+      const auto j = moduleEnumeration[k];
+      const unsigned int otherModule = moduleDeltaEnterExit[j].module;
+      if (otherModule != currentModuleIndex) {
+        const double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
+                                                                                   oldModuleDelta,
+                                                                                   moduleDeltaEnterExit[j],
+                                                                                   m_moduleFlowData,
+                                                                                   m_moduleMembers);
+
+        if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement) {
+          bestDeltaModule = moduleDeltaEnterExit[j];
+          bestDeltaCodelength = deltaCodelength;
+        }
+
+        if (moduleDeltaEnterExit[j].deltaExit > strongestConnectedModule.deltaExit) {
+          strongestConnectedModule = moduleDeltaEnterExit[j];
+          deltaCodelengthOnStrongestConnectedModule = deltaCodelength;
+        }
+      }
+    }
+
+    if (strongestConnectedModule.module != bestDeltaModule.module && deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + m_infomap->minimumSingleNodeCodelengthImprovement) {
+      bestDeltaModule = strongestConnectedModule;
+    }
+
+    if (bestDeltaModule.module != currentModuleIndex) {
+      const unsigned int bestModuleIndex = bestDeltaModule.module;
+      if (m_moduleMembers[bestModuleIndex] == 0) {
+        m_emptyModules.pop_back();
+      }
+      if (m_moduleMembers[currentModuleIndex] == 1) {
+        m_emptyModules.push_back(currentModuleIndex);
+      }
+
+      m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
+
+      m_moduleMembers[currentModuleIndex] -= 1;
+      m_moduleMembers[bestModuleIndex] += 1;
+
+      const unsigned int oldModuleIndex = currentModuleIndex;
+      moduleIndices[currentId] = bestModuleIndex;
+
+      ++numMoved;
+
+      InfoNode* nodeInOldModule = &current;
+      unsigned int numLinkedNodesInOldModule = 0;
+      markNeighboursDirty(graph, currentId, oldModuleIndex, nodeInOldModule, numLinkedNodesInOldModule);
+
+      if (numLinkedNodesInOldModule == 1 && m_moduleMembers[oldModuleIndex] == 1) {
+        moveNodeToPredefinedModuleImpl(graph, graph.idFor(*nodeInOldModule), bestModuleIndex);
+        ++numMoved;
+        if (nodeInOldModule->degree() > 1) {
+          markNodeNeighboursDirty(graph, graph.idFor(*nodeInOldModule));
+        }
+      }
+    } else {
+      dirtyFlags[currentId] = 0u;
+    }
+  }
+
+  return numMoved;
 }
 
 template <typename Objective>

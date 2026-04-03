@@ -355,6 +355,11 @@ public:
       return DirtyRef{&csrMaterialization.dirtyFlags, id};
     }
 
+    unsigned int* moduleIndicesData() noexcept { return csrMaterialization.moduleIndices.data(); }
+    const unsigned int* moduleIndicesData() const noexcept { return csrMaterialization.moduleIndices.data(); }
+    unsigned char* dirtyFlagsData() noexcept { return csrMaterialization.dirtyFlags.data(); }
+    const unsigned char* dirtyFlagsData() const noexcept { return csrMaterialization.dirtyFlags.data(); }
+
     template <typename Fn>
     void forEachOutEdge(ActiveNodeId id, Fn&& fn) const
     {

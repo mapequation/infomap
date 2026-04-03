@@ -1419,37 +1419,46 @@ void InfomapBase::materializeLeafLevelCsr()
   }
 
   const auto numNodes = m_activeGraphMaterialization.size();
+  const auto& nodes = m_activeGraphMaterialization.nodes;
   auto& csr = m_csrMaterialization;
-  csr.outOffsets.reserve(numNodes + 1);
-  csr.inOffsets.reserve(numNodes + 1);
-  csr.moduleIndices.reserve(numNodes);
-  csr.dirtyFlags.reserve(numNodes);
-  csr.outOffsets.push_back(0);
-  csr.inOffsets.push_back(0);
+
+  std::size_t totalOutEdges = 0;
+  std::size_t totalInEdges = 0;
+  for (const auto* node : nodes) {
+    totalOutEdges += node->outDegree();
+    totalInEdges += node->inDegree();
+  }
+
+  csr.outOffsets.resize(numNodes + 1);
+  csr.inOffsets.resize(numNodes + 1);
+  csr.moduleIndices.resize(numNodes);
+  csr.dirtyFlags.resize(numNodes);
+  csr.outTargets.reserve(totalOutEdges);
+  csr.outWeights.reserve(totalOutEdges);
+  csr.outFlows.reserve(totalOutEdges);
+  csr.inTargets.reserve(totalInEdges);
+  csr.inWeights.reserve(totalInEdges);
+  csr.inFlows.reserve(totalInEdges);
+  csr.outOffsets[0] = 0;
+  csr.inOffsets[0] = 0;
 
   for (std::size_t i = 0; i < numNodes; ++i) {
-    auto& node = m_activeGraphMaterialization.nodeFor(static_cast<ActiveGraphMaterialization::ActiveNodeId>(i));
-    csr.moduleIndices.push_back(node.index);
-    csr.dirtyFlags.push_back(node.dirty);
-    csr.outTargets.reserve(csr.outTargets.size() + node.outDegree());
-    csr.outWeights.reserve(csr.outWeights.size() + node.outDegree());
-    csr.outFlows.reserve(csr.outFlows.size() + node.outDegree());
+    auto& node = *nodes[i];
+    csr.moduleIndices[i] = node.index;
+    csr.dirtyFlags[i] = node.dirty ? 1u : 0u;
     for (auto* edge : node.outEdges()) {
       csr.outTargets.push_back(m_activeGraphMaterialization.idFor(*edge->target));
       csr.outWeights.push_back(edge->data.weight);
       csr.outFlows.push_back(edge->data.flow);
     }
-    csr.outOffsets.push_back(static_cast<unsigned int>(csr.outTargets.size()));
+    csr.outOffsets[i + 1] = static_cast<unsigned int>(csr.outTargets.size());
 
-    csr.inTargets.reserve(csr.inTargets.size() + node.inDegree());
-    csr.inWeights.reserve(csr.inWeights.size() + node.inDegree());
-    csr.inFlows.reserve(csr.inFlows.size() + node.inDegree());
     for (auto* edge : node.inEdges()) {
       csr.inTargets.push_back(m_activeGraphMaterialization.idFor(*edge->source));
       csr.inWeights.push_back(edge->data.weight);
       csr.inFlows.push_back(edge->data.flow);
     }
-    csr.inOffsets.push_back(static_cast<unsigned int>(csr.inTargets.size()));
+    csr.inOffsets[i + 1] = static_cast<unsigned int>(csr.inTargets.size());
   }
 
   csr.available = true;
