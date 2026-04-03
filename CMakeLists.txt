@@ -1,26 +1,69 @@
 cmake_minimum_required(VERSION 3.21)
 project(infomap LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -Wshadow")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-
 option(INFOMAP_USE_OPENMP "Enable OpenMP support when available." ON)
 option(INFOMAP_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers." OFF)
-set(INFOMAP_EXTRA_CXX_FLAGS "" CACHE STRING "Extra C++ compiler flags appended to the global build flags.")
-set(INFOMAP_EXTRA_LINK_FLAGS "" CACHE STRING "Extra linker flags appended to executable and shared library link flags.")
+set(INFOMAP_MODE "release" CACHE STRING "Build mode shared with the Make-based native build policy.")
+set_property(CACHE INFOMAP_MODE PROPERTY STRINGS release debug)
+set(INFOMAP_EXTRA_CPPFLAGS "" CACHE STRING "Extra preprocessor/compiler flags appended to the shared build policy.")
+set(INFOMAP_EXTRA_CXX_FLAGS "" CACHE STRING "Extra C++ compiler flags appended to the shared build policy.")
+set(INFOMAP_EXTRA_LINK_FLAGS "" CACHE STRING "Extra linker flags appended to the shared build policy.")
 
-string(APPEND CMAKE_CXX_FLAGS " ${INFOMAP_EXTRA_CXX_FLAGS}")
-string(APPEND CMAKE_EXE_LINKER_FLAGS " ${INFOMAP_EXTRA_LINK_FLAGS}")
-string(APPEND CMAKE_SHARED_LINKER_FLAGS " ${INFOMAP_EXTRA_LINK_FLAGS}")
+# Keep CMake build types available for generators and output directories, but let the
+# shared build policy own optimization, debug, and OpenMP flags across all surfaces.
+set(CMAKE_CXX_FLAGS_DEBUG "" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_RELEASE "" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_MINSIZEREL "" CACHE STRING "" FORCE)
+
+include(CTest)
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 if(INFOMAP_USE_OPENMP)
-    find_package(OpenMP)
+    set(INFOMAP_OPENMP_ARG 1)
+else()
+    set(INFOMAP_OPENMP_ARG 0)
 endif()
-include(CTest)
+
+execute_process(
+    COMMAND
+        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_config.py" json
+        --mode "${INFOMAP_MODE}"
+        --openmp "${INFOMAP_OPENMP_ARG}"
+        --compiler "${CMAKE_CXX_COMPILER}"
+        --cppflags "${INFOMAP_EXTRA_CPPFLAGS}"
+        --cxxflags "${INFOMAP_EXTRA_CXX_FLAGS}"
+        --ldflags "${INFOMAP_EXTRA_LINK_FLAGS}"
+        --deployment-target "$ENV{MACOSX_DEPLOYMENT_TARGET}"
+        --platform "${CMAKE_SYSTEM_NAME}"
+    OUTPUT_VARIABLE INFOMAP_BUILD_CONFIG_JSON
+    RESULT_VARIABLE INFOMAP_BUILD_CONFIG_RESULT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(NOT INFOMAP_BUILD_CONFIG_RESULT EQUAL 0)
+    message(FATAL_ERROR "Failed to resolve Infomap build config.")
+endif()
+
+string(JSON INFOMAP_COMPILE_FLAG_COUNT LENGTH "${INFOMAP_BUILD_CONFIG_JSON}" compile_flags)
+math(EXPR INFOMAP_COMPILE_FLAG_LAST "${INFOMAP_COMPILE_FLAG_COUNT} - 1")
+set(INFOMAP_COMPILE_FLAGS "")
+if(INFOMAP_COMPILE_FLAG_COUNT GREATER 0)
+    foreach(INDEX RANGE ${INFOMAP_COMPILE_FLAG_LAST})
+        string(JSON INFOMAP_COMPILE_FLAG GET "${INFOMAP_BUILD_CONFIG_JSON}" compile_flags ${INDEX})
+        list(APPEND INFOMAP_COMPILE_FLAGS "${INFOMAP_COMPILE_FLAG}")
+    endforeach()
+endif()
+
+string(JSON INFOMAP_LINK_FLAG_COUNT LENGTH "${INFOMAP_BUILD_CONFIG_JSON}" link_flags)
+math(EXPR INFOMAP_LINK_FLAG_LAST "${INFOMAP_LINK_FLAG_COUNT} - 1")
+set(INFOMAP_LINK_FLAGS "")
+if(INFOMAP_LINK_FLAG_COUNT GREATER 0)
+    foreach(INDEX RANGE ${INFOMAP_LINK_FLAG_LAST})
+        string(JSON INFOMAP_LINK_FLAG GET "${INFOMAP_BUILD_CONFIG_JSON}" link_flags ${INDEX})
+        list(APPEND INFOMAP_LINK_FLAGS "${INFOMAP_LINK_FLAG}")
+    endforeach()
+endif()
 
 find_program(CCACHE ccache)
 if(CCACHE)
@@ -37,6 +80,10 @@ list(REMOVE_ITEM infomap_sources "${infomap_main_source}")
 
 add_library(infomap_core ${infomap_headers} ${infomap_sources})
 target_include_directories(infomap_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_compile_features(infomap_core PUBLIC cxx_std_14)
+set_target_properties(infomap_core PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_options(infomap_core PRIVATE ${INFOMAP_COMPILE_FLAGS})
+target_link_options(infomap_core PUBLIC ${INFOMAP_LINK_FLAGS})
 
 if(INFOMAP_ENABLE_SANITIZERS)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -45,10 +92,6 @@ if(INFOMAP_ENABLE_SANITIZERS)
     else()
         message(FATAL_ERROR "INFOMAP_ENABLE_SANITIZERS requires Clang or GCC.")
     endif()
-endif()
-
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(infomap_core PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
 add_executable(infomap_cli "${infomap_main_source}")

@@ -2,12 +2,11 @@ MAKEFLAGS += --no-builtin-rules
 .SUFFIXES:
 
 UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
-BREW_PREFIX := $(shell brew --prefix 2>/dev/null || true)
-LIBOMP_PREFIX := $(shell brew --prefix libomp 2>/dev/null || true)
 
 CXX ?= c++
 AR ?= ar
 PYTHON ?= python
+PYTHON_FOR_BUILD_CONFIG ?= $(shell command -v $(PYTHON) 2>/dev/null || command -v python3 2>/dev/null || echo python3)
 PIP ?= $(PYTHON) -m pip
 PYTEST ?= $(PYTHON) -m pytest
 RUFF ?= $(PYTHON) -m ruff
@@ -38,6 +37,22 @@ HEADERS := $(shell find src -name "*.h")
 SOURCES := $(shell find src -name "*.cpp")
 SWIG_FILES := $(shell find interfaces/swig -name "*.i")
 MK_FILES := $(wildcard mk/*.mk)
+BUILD_CONFIG_SCRIPT := scripts/build_config.py
+
+define build_config_field
+$(strip $(shell $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) field --field "$(1)" --mode "$(MODE)" --openmp "$(OPENMP)" --compiler "$(CXX)" --cppflags '$(CPPFLAGS)' --cxxflags '$(CXXFLAGS)' --ldflags '$(LDFLAGS)' --deployment-target '$(MACOSX_DEPLOYMENT_TARGET)' --platform '$(UNAME_S)'))
+endef
+
+BUILD_CONFIG_MODE := $(call build_config_field,mode)
+BUILD_CONFIG_OPENMP := $(call build_config_field,openmp)
+BUILD_CONFIG_PLATFORM := $(call build_config_field,platform)
+BUILD_CONFIG_COMPILER := $(call build_config_field,compiler)
+BUILD_CONFIG_COMPILER_FAMILY := $(call build_config_field,compiler_family)
+BUILD_CONFIG_BREW_PREFIX := $(call build_config_field,brew_prefix)
+BUILD_CONFIG_LIBOMP_PREFIX := $(call build_config_field,libomp_prefix)
+BUILD_CONFIG_DEPLOYMENT_TARGET := $(call build_config_field,deployment_target)
+NATIVE_CXXFLAGS := $(call build_config_field,compile_flags)
+NATIVE_LDFLAGS := $(call build_config_field,link_flags)
 
 .PHONY: help doctor dev-bootstrap clean
 
@@ -109,10 +124,9 @@ doctor:
 	@printf "NATIVE_CXXFLAGS=%s\n" "$(NATIVE_CXXFLAGS)"
 	@printf "NATIVE_LDFLAGS=%s\n" "$(NATIVE_LDFLAGS)"
 	@if [ "$(UNAME_S)" = "Darwin" ]; then \
-		printf "brew prefix: %s\n" "$(if $(BREW_PREFIX),$(BREW_PREFIX),missing)"; \
-		printf "libomp prefix: %s\n" "$(if $(LIBOMP_PREFIX),$(LIBOMP_PREFIX),missing)"; \
-		printf "CMake extra cxx flags: %s\n" "$(CMAKE_EXTRA_CXX_FLAGS)"; \
-		printf "CMake extra link flags: %s\n" "$(CMAKE_EXTRA_LINK_FLAGS)"; \
+		printf "brew prefix: %s\n" "$(if $(BUILD_CONFIG_BREW_PREFIX),$(BUILD_CONFIG_BREW_PREFIX),missing)"; \
+		printf "libomp prefix: %s\n" "$(if $(BUILD_CONFIG_LIBOMP_PREFIX),$(BUILD_CONFIG_LIBOMP_PREFIX),missing)"; \
+		printf "deployment target: %s\n" "$(if $(BUILD_CONFIG_DEPLOYMENT_TARGET),$(BUILD_CONFIG_DEPLOYMENT_TARGET),unset)"; \
 	fi
 
 dev-bootstrap:

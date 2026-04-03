@@ -9,6 +9,10 @@ PYTHON_TEST_DIR := test/python
 PYTEST_ARGS ?=
 PYPI_DIR := $(PY_BUILD_DIR)
 PYPI_SDIST := $(shell find $(PYPI_DIR) -name "*.tar.gz" 2>/dev/null)
+PYTHON_BUILD_ENV = \
+	CC="$(CXX)" CXX="$(CXX)" MODE="$(MODE)" OPENMP="$(OPENMP)" \
+	CPPFLAGS="$(CPPFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" \
+	$(if $(MACOSX_DEPLOYMENT_TARGET),MACOSX_DEPLOYMENT_TARGET="$(MACOSX_DEPLOYMENT_TARGET)")
 
 .PHONY: \
 	build-python \
@@ -29,7 +33,7 @@ PYPI_SDIST := $(shell find $(PYPI_DIR) -name "*.tar.gz" 2>/dev/null)
 	py-prepare
 
 build-python: build-python-swig _build-python-package-layout
-	@cd $(PY_BUILD_DIR) && CC="$(CXX)" CXXFLAGS="$(NATIVE_CXXFLAGS)" LDFLAGS="$(NATIVE_LDFLAGS)" $(PYTHON) setup.py build_ext --inplace
+	@cd $(PY_BUILD_DIR) && $(PYTHON_BUILD_ENV) $(PYTHON) setup.py build_ext --inplace
 
 build-python-package-files: _build-python-package-layout
 	@true
@@ -42,6 +46,7 @@ build-python-swig: $(PY_HEADERS) $(PY_SOURCES) $(PY_ONLY_HEADERS) interfaces/pyt
 
 _build-python-package-layout: build-python-swig $(MK_FILES) Makefile
 	@cp -a interfaces/python/setup.py $(PY_BUILD_DIR)/
+	@cp -a scripts/build_config.py $(PY_BUILD_DIR)/
 	@cp -a interfaces/python/pyproject.toml $(PY_BUILD_DIR)/
 	@touch $(PY_BUILD_DIR)/__init__.py
 	@$(PYTHON) utils/create-python-package-meta.py $(PY_BUILD_DIR)/package_meta.py
@@ -62,7 +67,7 @@ $(PY_BUILD_DIR)/headers/%: %
 	@cp -a $^ $@
 
 dev-python-install: build-python
-	$(PIP) install --no-build-isolation -e $(PY_BUILD_DIR)
+	$(PYTHON_BUILD_ENV) $(PIP) install --no-build-isolation -e $(PY_BUILD_DIR)
 
 test-python: test-python-unit test-python-doctest test-python-examples
 	@true
@@ -95,7 +100,7 @@ py-prepare:
 	$(PIP) install -r requirements_dev.txt
 
 release-python-dist: build-python
-	cd $(PY_BUILD_DIR) && $(PYTHON) setup.py sdist bdist_wheel
+	cd $(PY_BUILD_DIR) && $(PYTHON_BUILD_ENV) $(PYTHON) setup.py sdist bdist_wheel
 
 release-python-testpypi:
 	@[ "$(PYPI_SDIST)" ] && echo "Publish dist..." || ( echo "dist files not built"; exit 1 )
