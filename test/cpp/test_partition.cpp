@@ -415,9 +415,9 @@ TEST_CASE("CSR backend matches pointer backend for predefined moves on leaf-leve
   pointerIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
   pointerIm.initNetwork(pointerIm.network());
   pointerIm.setActiveNetworkFromLeafs();
-  pointerIm.initPartition();
   pointerIm.m_csrMaterialization.reset();
   CHECK_FALSE(pointerIm.csrBackend().available());
+  pointerIm.initPartition();
 
   InfomapWrapper csrIm(flags);
   csrIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -442,9 +442,9 @@ TEST_CASE("CSR backend matches pointer backend for one serial move pass on leaf-
   pointerIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
   pointerIm.initNetwork(pointerIm.network());
   pointerIm.setActiveNetworkFromLeafs();
-  pointerIm.initPartition();
   pointerIm.m_csrMaterialization.reset();
   CHECK_FALSE(pointerIm.csrBackend().available());
+  pointerIm.initPartition();
 
   InfomapWrapper csrIm(flags);
   csrIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -477,9 +477,9 @@ TEST_CASE("CSR backend matches pointer backend for biased first-order serial mov
     pointerIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
     pointerIm.initNetwork(pointerIm.network());
     pointerIm.setActiveNetworkFromLeafs();
-    pointerIm.initPartition();
     pointerIm.m_csrMaterialization.reset();
     CHECK_FALSE(pointerIm.csrBackend().available());
+    pointerIm.initPartition();
 
     InfomapWrapper csrIm(flags);
     csrIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -524,6 +524,38 @@ TEST_CASE("End-to-end first-order runs match with CSR materialization enabled or
     CHECK(csrIm.codelength() == doctest::Approx(pointerIm.codelength()));
     CHECK(csrIm.getIndexCodelength() == doctest::Approx(pointerIm.getIndexCodelength()));
   }
+}
+
+TEST_CASE("CSR active state syncs back module assignment and dirty flags to hierarchy nodes [fast][core][partition][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+  REQUIRE(im.csrBackend().available());
+
+  auto csr = im.csrBackend();
+  im.initPartition();
+
+  const auto firstId = csr.idFor(*im.activeNetwork().front());
+  const auto secondId = csr.idFor(*im.activeNetwork()[1]);
+
+  im.activeNetwork().front()->index = 99;
+  im.activeNetwork().front()->dirty = false;
+  im.activeNetwork()[1]->index = 77;
+  im.activeNetwork()[1]->dirty = false;
+
+  csr.moduleIndex(firstId) = 5;
+  csr.dirty(firstId) = true;
+  csr.moduleIndex(secondId) = 4;
+  csr.dirty(secondId) = true;
+
+  im.syncActiveGraphStateToHierarchy();
+
+  CHECK(im.activeNetwork().front()->index == 5);
+  CHECK(im.activeNetwork().front()->dirty);
+  CHECK(im.activeNetwork()[1]->index == 4);
+  CHECK(im.activeNetwork()[1]->dirty);
 }
 
 TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition]")

@@ -175,6 +175,8 @@ public:
     std::vector<unsigned int> inTargets;
     std::vector<double> inWeights;
     std::vector<double> inFlows;
+    std::vector<unsigned int> moduleIndices;
+    std::vector<bool> dirtyFlags;
     bool available = false;
 
     void reset()
@@ -187,6 +189,8 @@ public:
       inTargets.clear();
       inWeights.clear();
       inFlows.clear();
+      moduleIndices.clear();
+      dirtyFlags.clear();
       available = false;
     }
 
@@ -199,7 +203,9 @@ public:
           + inOffsets.size() * sizeof(unsigned int)
           + inTargets.size() * sizeof(unsigned int)
           + inWeights.size() * sizeof(double)
-          + inFlows.size() * sizeof(double);
+          + inFlows.size() * sizeof(double)
+          + moduleIndices.size() * sizeof(unsigned int)
+          + dirtyFlags.size() * sizeof(bool);
     }
   };
 
@@ -308,8 +314,37 @@ public:
     InfoNode& nodeFor(ActiveNodeId id) const { return materialization.nodeFor(id); }
     ActiveNodePayload& payloadFor(ActiveNodeId id) { return materialization.payloadFor(id); }
     const ActiveNodePayload& payloadFor(ActiveNodeId id) const { return materialization.payloadFor(id); }
-    unsigned int& moduleIndex(ActiveNodeId id) const { return nodeFor(id).index; }
-    bool& dirty(ActiveNodeId id) const { return nodeFor(id).dirty; }
+    unsigned int& moduleIndex(ActiveNodeId id) const
+    {
+      if (id >= csrMaterialization.moduleIndices.size()) {
+        throw std::out_of_range("CsrBackend::moduleIndex() id out of range");
+      }
+      return csrMaterialization.moduleIndices[id];
+    }
+
+    struct DirtyRef {
+      std::vector<bool>* flags = nullptr;
+      std::size_t index = 0;
+
+      DirtyRef& operator=(bool value)
+      {
+        (*flags)[index] = value;
+        return *this;
+      }
+
+      operator bool() const
+      {
+        return (*flags)[index];
+      }
+    };
+
+    DirtyRef dirty(ActiveNodeId id) const
+    {
+      if (id >= csrMaterialization.dirtyFlags.size()) {
+        throw std::out_of_range("CsrBackend::dirty() id out of range");
+      }
+      return DirtyRef{&csrMaterialization.dirtyFlags, id};
+    }
 
     template <typename Fn>
     void forEachOutEdge(ActiveNodeId id, Fn&& fn) const
@@ -688,6 +723,7 @@ private:
   void materializeLeafLevelCsr();
 
   void syncActiveGraphPayloadToHierarchy();
+  void syncActiveGraphStateToHierarchy();
 
   void initPartition() { return m_optimizer->initPartition(); }
 

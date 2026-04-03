@@ -1422,11 +1422,15 @@ void InfomapBase::materializeLeafLevelCsr()
   auto& csr = m_csrMaterialization;
   csr.outOffsets.reserve(numNodes + 1);
   csr.inOffsets.reserve(numNodes + 1);
+  csr.moduleIndices.reserve(numNodes);
+  csr.dirtyFlags.reserve(numNodes);
   csr.outOffsets.push_back(0);
   csr.inOffsets.push_back(0);
 
   for (std::size_t i = 0; i < numNodes; ++i) {
     auto& node = m_activeGraphMaterialization.nodeFor(static_cast<ActiveGraphMaterialization::ActiveNodeId>(i));
+    csr.moduleIndices.push_back(node.index);
+    csr.dirtyFlags.push_back(node.dirty);
     csr.outTargets.reserve(csr.outTargets.size() + node.outDegree());
     csr.outWeights.reserve(csr.outWeights.size() + node.outDegree());
     csr.outFlows.reserve(csr.outFlows.size() + node.outDegree());
@@ -1465,22 +1469,46 @@ void InfomapBase::syncActiveGraphPayloadToHierarchy()
   }
 }
 
+void InfomapBase::syncActiveGraphStateToHierarchy()
+{
+  if (!m_csrMaterialization.available) {
+    return;
+  }
+
+  auto& nodes = m_activeGraphMaterialization.nodes;
+  auto& moduleIndices = m_csrMaterialization.moduleIndices;
+  auto& dirtyFlags = m_csrMaterialization.dirtyFlags;
+
+  if (nodes.size() != moduleIndices.size() || nodes.size() != dirtyFlags.size()) {
+    throw std::logic_error("InfomapBase::syncActiveGraphStateToHierarchy() called with mismatched active state");
+  }
+
+  for (std::size_t i = 0; i < nodes.size(); ++i) {
+    nodes[i]->index = moduleIndices[i];
+    nodes[i]->dirty = dirtyFlags[i];
+  }
+}
+
 unsigned int InfomapBase::optimizeActiveNetwork()
 {
   const auto numEffectiveLoops = m_optimizer->optimizeActiveNetwork();
+  syncActiveGraphStateToHierarchy();
   syncActiveGraphPayloadToHierarchy();
   return numEffectiveLoops;
 }
 
 void InfomapBase::moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
 {
+  syncActiveGraphStateToHierarchy();
   syncActiveGraphPayloadToHierarchy();
   m_optimizer->moveActiveNodesToPredefinedModules(modules);
+  syncActiveGraphStateToHierarchy();
   materializeActiveGraphPayload();
 }
 
 void InfomapBase::consolidateModules(bool replaceExistingModules)
 {
+  syncActiveGraphStateToHierarchy();
   syncActiveGraphPayloadToHierarchy();
   m_optimizer->consolidateModules(replaceExistingModules);
   materializeActiveGraphPayload();
