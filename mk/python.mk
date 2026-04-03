@@ -94,9 +94,6 @@ _build-docs-site:
 	@trap 'rm -f "$(SPHINX_SOURCE_DIR)/index.rst"' EXIT; \
 		$(SPHINX_BUILD) -b html "$(SPHINX_SOURCE_DIR)" "$(SPHINX_TARGET_DIR)"
 	@rm -rf "$(SPHINX_TARGET_DIR)/.doctrees"
-	@if [ -f "$(SPHINX_TARGET_DIR)/searchindex.js" ]; then \
-		npx prettier --write "$(SPHINX_TARGET_DIR)/searchindex.js"; \
-	fi
 
 build-docs: dev-python-install
 	@tmp_dir="$$(mktemp -d 2>/dev/null || mktemp -d -t infomap-docs)"; \
