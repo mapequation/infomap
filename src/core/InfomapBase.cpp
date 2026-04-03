@@ -1392,12 +1392,6 @@ void InfomapBase::materializeActiveGraphPayload()
 
   const auto& network = *m_activeNetwork;
   m_activeGraphMaterialization.nodes = network;
-  m_activeGraphMaterialization.nodeToId.max_load_factor(4.0f);
-  m_activeGraphMaterialization.nodeToId.reserve(network.size());
-  for (std::size_t i = 0; i < network.size(); ++i) {
-    const auto* node = network[i];
-    m_activeGraphMaterialization.nodeToId[const_cast<InfoNode*>(node)] = static_cast<ActiveGraphMaterialization::ActiveNodeId>(i);
-  }
 
   if (m_disableCsrMaterialization) {
     m_benchmarkStats.lastActiveGraphStorage = activeGraphStorageBreakdown();
@@ -1431,6 +1425,8 @@ void InfomapBase::materializeLeafLevelCsr()
   csr.inOffsets.resize(numNodes + 1);
   csr.moduleIndices.resize(numNodes);
   csr.dirtyFlags.resize(numNodes);
+  csr.stateIdToActiveId.max_load_factor(4.0f);
+  csr.stateIdToActiveId.reserve(numNodes);
   csr.outTargets.reserve(totalOutEdges);
   csr.outFlows.reserve(totalOutEdges);
   csr.inTargets.reserve(totalInEdges);
@@ -1440,16 +1436,21 @@ void InfomapBase::materializeLeafLevelCsr()
 
   for (std::size_t i = 0; i < numNodes; ++i) {
     auto& node = *nodes[i];
+    csr.stateIdToActiveId[node.stateId] = static_cast<unsigned int>(i);
+  }
+
+  for (std::size_t i = 0; i < numNodes; ++i) {
+    auto& node = *nodes[i];
     csr.moduleIndices[i] = node.index;
     csr.dirtyFlags[i] = node.dirty ? 1u : 0u;
     for (auto* edge : node.outEdges()) {
-      csr.outTargets.push_back(m_activeGraphMaterialization.idFor(*edge->target));
+      csr.outTargets.push_back(csr.stateIdToActiveId.at(edge->target->stateId));
       csr.outFlows.push_back(edge->data.flow);
     }
     csr.outOffsets[i + 1] = static_cast<unsigned int>(csr.outTargets.size());
 
     for (auto* edge : node.inEdges()) {
-      csr.inTargets.push_back(m_activeGraphMaterialization.idFor(*edge->source));
+      csr.inTargets.push_back(csr.stateIdToActiveId.at(edge->source->stateId));
       csr.inFlows.push_back(edge->data.flow);
     }
     csr.inOffsets[i + 1] = static_cast<unsigned int>(csr.inTargets.size());

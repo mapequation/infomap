@@ -53,6 +53,8 @@ public:
     std::size_t activeNodePointerBytes = 0;
     std::size_t activeNodeToIdEntryBytes = 0;
     std::size_t activeNodeToIdBucketBytes = 0;
+    std::size_t csrStateIdEntryBytes = 0;
+    std::size_t csrStateIdBucketBytes = 0;
     std::size_t csrOutOffsetBytes = 0;
     std::size_t csrOutTargetBytes = 0;
     std::size_t csrOutFlowBytes = 0;
@@ -68,6 +70,8 @@ public:
       return activeNodePointerBytes
           + activeNodeToIdEntryBytes
           + activeNodeToIdBucketBytes
+          + csrStateIdEntryBytes
+          + csrStateIdBucketBytes
           + csrOutOffsetBytes
           + csrOutTargetBytes
           + csrOutFlowBytes
@@ -83,6 +87,8 @@ public:
       activeNodePointerBytes = std::max(activeNodePointerBytes, other.activeNodePointerBytes);
       activeNodeToIdEntryBytes = std::max(activeNodeToIdEntryBytes, other.activeNodeToIdEntryBytes);
       activeNodeToIdBucketBytes = std::max(activeNodeToIdBucketBytes, other.activeNodeToIdBucketBytes);
+      csrStateIdEntryBytes = std::max(csrStateIdEntryBytes, other.csrStateIdEntryBytes);
+      csrStateIdBucketBytes = std::max(csrStateIdBucketBytes, other.csrStateIdBucketBytes);
       csrOutOffsetBytes = std::max(csrOutOffsetBytes, other.csrOutOffsetBytes);
       csrOutTargetBytes = std::max(csrOutTargetBytes, other.csrOutTargetBytes);
       csrOutFlowBytes = std::max(csrOutFlowBytes, other.csrOutFlowBytes);
@@ -152,7 +158,7 @@ public:
     using ActiveNodeId = unsigned int;
 
     std::vector<InfoNode*> nodes;
-    std::unordered_map<InfoNode*, ActiveNodeId> nodeToId;
+    mutable std::unordered_map<InfoNode*, ActiveNodeId> nodeToId;
 
     void reset()
     {
@@ -195,8 +201,21 @@ public:
       return nodes.empty();
     }
 
+    void ensureNodeToId() const
+    {
+      if (!nodeToId.empty() || nodes.empty()) {
+        return;
+      }
+      nodeToId.max_load_factor(4.0f);
+      nodeToId.reserve(nodes.size());
+      for (std::size_t i = 0; i < nodes.size(); ++i) {
+        nodeToId[const_cast<InfoNode*>(nodes[i])] = static_cast<ActiveNodeId>(i);
+      }
+    }
+
     ActiveNodeId idFor(const InfoNode& node) const
     {
+      ensureNodeToId();
       auto it = nodeToId.find(const_cast<InfoNode*>(&node));
       if (it == nodeToId.end()) {
         throw std::out_of_range("ActiveGraphMaterialization::idFor() called for non-materialized node");
@@ -215,6 +234,7 @@ public:
   };
 
   struct CsrMaterialization {
+    std::unordered_map<unsigned int, unsigned int> stateIdToActiveId;
     std::vector<unsigned int> outOffsets;
     std::vector<unsigned int> outTargets;
     std::vector<double> outFlows;
@@ -227,6 +247,7 @@ public:
 
     void reset()
     {
+      stateIdToActiveId.clear();
       outOffsets.clear();
       outTargets.clear();
       outFlows.clear();
@@ -240,7 +261,9 @@ public:
 
     std::size_t adjacencyBytes() const noexcept
     {
-      return outOffsetBytes()
+      return stateIdEntryBytes()
+          + stateIdBucketBytes()
+          + outOffsetBytes()
           + outTargetBytes()
           + outFlowBytes()
           + inOffsetBytes()
@@ -253,6 +276,16 @@ public:
     std::size_t outOffsetBytes() const noexcept
     {
       return outOffsets.capacity() * sizeof(unsigned int);
+    }
+
+    std::size_t stateIdEntryBytes() const noexcept
+    {
+      return stateIdToActiveId.size() * sizeof(typename decltype(stateIdToActiveId)::value_type);
+    }
+
+    std::size_t stateIdBucketBytes() const noexcept
+    {
+      return stateIdToActiveId.bucket_count() * sizeof(void*);
     }
 
     std::size_t outTargetBytes() const noexcept
@@ -305,6 +338,7 @@ public:
 
     std::size_t size() const noexcept { return materialization.size(); }
     bool empty() const noexcept { return materialization.empty(); }
+    void ensureReverseLookup() const { materialization.ensureNodeToId(); }
 
     ActiveNodeId idFor(const InfoNode& node) const { return materialization.idFor(node); }
     InfoNode& nodeFor(ActiveNodeId id) const { return materialization.nodeFor(id); }
@@ -387,7 +421,14 @@ public:
     std::size_t size() const noexcept { return materialization.size(); }
     bool empty() const noexcept { return materialization.empty(); }
 
-    ActiveNodeId idFor(const InfoNode& node) const { return materialization.idFor(node); }
+    ActiveNodeId idFor(const InfoNode& node) const
+    {
+      auto it = csrMaterialization.stateIdToActiveId.find(node.stateId);
+      if (it == csrMaterialization.stateIdToActiveId.end()) {
+        throw std::out_of_range("CsrBackend::idFor() called for non-materialized node");
+      }
+      return it->second;
+    }
     InfoNode& nodeFor(ActiveNodeId id) const
     {
       assert(id < materialization.nodes.size());
@@ -582,6 +623,8 @@ public:
         m_activeGraphMaterialization.nodePointerBytes(),
         m_activeGraphMaterialization.nodeToIdEntryBytes(),
         m_activeGraphMaterialization.nodeToIdBucketBytes(),
+        m_csrMaterialization.stateIdEntryBytes(),
+        m_csrMaterialization.stateIdBucketBytes(),
         m_csrMaterialization.outOffsetBytes(),
         m_csrMaterialization.outTargetBytes(),
         m_csrMaterialization.outFlowBytes(),

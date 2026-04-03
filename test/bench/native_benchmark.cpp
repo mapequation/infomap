@@ -60,6 +60,8 @@ void printStorageBreakdown(const infomap::InfomapBase::ActiveGraphStorageBreakdo
   std::cout << "\"active_node_pointer_bytes\":" << storage.activeNodePointerBytes << ",";
   std::cout << "\"active_node_to_id_entry_bytes\":" << storage.activeNodeToIdEntryBytes << ",";
   std::cout << "\"active_node_to_id_bucket_bytes\":" << storage.activeNodeToIdBucketBytes << ",";
+  std::cout << "\"csr_state_id_entry_bytes\":" << storage.csrStateIdEntryBytes << ",";
+  std::cout << "\"csr_state_id_bucket_bytes\":" << storage.csrStateIdBucketBytes << ",";
   std::cout << "\"csr_out_offset_bytes\":" << storage.csrOutOffsetBytes << ",";
   std::cout << "\"csr_out_target_bytes\":" << storage.csrOutTargetBytes << ",";
   std::cout << "\"csr_out_flow_bytes\":" << storage.csrOutFlowBytes << ",";

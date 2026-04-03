@@ -1224,6 +1224,7 @@ template <typename Objective>
 unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParallel()
 {
   auto graph = m_infomap->pointerBackend();
+  graph.ensureReverseLookup();
   // Get random enumeration of nodes
   const auto numNodes = graph.size();
   const bool lockFirstLoopMoves = m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1;

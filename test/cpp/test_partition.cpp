@@ -339,11 +339,13 @@ TEST_CASE("Active graph storage breakdown distinguishes pointer-only and CSR-bac
   pointerIm.initNetwork(pointerIm.network());
   pointerIm.m_disableCsrMaterialization = true;
   pointerIm.setActiveNetworkFromLeafs();
+  pointerIm.pointerBackend().ensureReverseLookup();
 
   const auto pointerStorage = pointerIm.activeGraphStorageBreakdown();
   CHECK_FALSE(pointerStorage.csrAvailable);
   CHECK(pointerStorage.activeNodePointerBytes > 0);
   CHECK(pointerStorage.activeNodeToIdEntryBytes > 0);
+  CHECK(pointerStorage.csrStateIdEntryBytes == 0);
   CHECK(pointerStorage.csrOutOffsetBytes == 0);
   CHECK(pointerStorage.csrInOffsetBytes == 0);
 
@@ -355,7 +357,10 @@ TEST_CASE("Active graph storage breakdown distinguishes pointer-only and CSR-bac
   const auto csrStorage = csrIm.activeGraphStorageBreakdown();
   REQUIRE(csrStorage.csrAvailable);
   CHECK(csrStorage.activeNodePointerBytes > 0);
-  CHECK(csrStorage.activeNodeToIdEntryBytes > 0);
+  CHECK(csrStorage.activeNodeToIdEntryBytes == 0);
+  CHECK(csrStorage.activeNodeToIdBucketBytes == 0);
+  CHECK(csrStorage.csrStateIdEntryBytes > 0);
+  CHECK(csrStorage.csrStateIdBucketBytes > 0);
   CHECK(csrStorage.csrOutOffsetBytes > 0);
   CHECK(csrStorage.csrInOffsetBytes > 0);
   CHECK(csrStorage.totalBytes() > pointerStorage.totalBytes());
