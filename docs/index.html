@@ -31,7 +31,7 @@
 
           <div class="body" role="main">
             
-  <img alt="https://github.com/mapequation/infomap/actions/workflows/build.yml/badge.svg" src="https://github.com/mapequation/infomap/actions/workflows/build.yml/badge.svg" />
+  <img alt="https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg" src="https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg" />
 <section id="infomap">
 <h1>Infomap<a class="headerlink" href="#infomap" title="Link to this heading">¶</a></h1>
 <p>Infomap is a network clustering algorithm based on the <a class="reference external" href="https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation">Map equation</a>.</p>
@@ -74,8 +74,8 @@ working <code class="docutils literal notranslate"><span class="pre">gcc</span><
 <span class="w">    </span><span class="o">[</span>infomap<span class="w"> </span>arguments<span class="o">]</span>
 </pre></div>
 </div>
-<p>You can also use the supplied <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/docker-compose.yml">docker-compose.yml</a>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker-compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>infomap
+<p>You can also use the supplied Compose file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>infomap
 </pre></div>
 </div>
 <p>The image <code class="docutils literal notranslate"><span class="pre">mapequation/infomap:notebook</span></code> can be started with</p>
@@ -86,8 +86,8 @@ working <code class="docutils literal notranslate"><span class="pre">gcc</span><
 <span class="w">    </span>start.sh<span class="w"> </span>jupyter<span class="w"> </span>lab
 </pre></div>
 </div>
-<p>Or similarly, using docker-compose:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker-compose<span class="w"> </span>up<span class="w"> </span>notebook
+<p>Or similarly, using Docker Compose:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>notebook
 </pre></div>
 </div>
 </section>
@@ -98,7 +98,7 @@ working <code class="docutils literal notranslate"><span class="pre">gcc</span><
 by running</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:mapequation/infomap.git
 <span class="nb">cd</span><span class="w"> </span>infomap
-make
+make<span class="w"> </span>build-native
 </pre></div>
 </div>
 <p>This creates the binary <code class="docutils literal notranslate"><span class="pre">Infomap</span></code>, run it using:</p>
@@ -123,6 +123,14 @@ make
 <h2>Feedback<a class="headerlink" href="#feedback" title="Link to this heading">¶</a></h2>
 <p>If you have any questions, suggestions or issues regarding the software,
 please add them to <a class="reference external" href="http://www.github.com/mapequation/infomap/issues">GitHub issues</a>.</p>
+</section>
+<section id="maintainer-automation">
+<h2>Maintainer automation<a class="headerlink" href="#maintainer-automation" title="Link to this heading">¶</a></h2>
+<p>Repository-specific agent guidance lives in <code class="docutils literal notranslate"><span class="pre">AGENTS.md</span></code>.</p>
+<p>Automation policy, risk classification, verification rules, and GitHub
+interaction templates live under <code class="docutils literal notranslate"><span class="pre">docs/automation/</span></code>.
+Maintainer architecture and ownership guidance lives in
+<code class="docutils literal notranslate"><span class="pre">docs/maintainers/architecture.md</span></code>.</p>
 </section>
 <section id="authors">
 <h2>Authors<a class="headerlink" href="#authors" title="Link to this heading">¶</a></h2>
