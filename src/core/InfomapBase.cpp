@@ -1405,6 +1405,10 @@ void InfomapBase::materializeActiveGraphPayload()
     });
   }
 
+  if (m_disableCsrMaterialization) {
+    return;
+  }
+
   materializeLeafLevelCsr();
 }
 

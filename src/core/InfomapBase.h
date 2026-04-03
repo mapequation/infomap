@@ -870,6 +870,7 @@ protected:
   BenchmarkStats m_benchmarkStats;
   ActiveGraphMaterialization m_activeGraphMaterialization;
   CsrMaterialization m_csrMaterialization;
+  bool m_disableCsrMaterialization = false;
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };

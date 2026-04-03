@@ -498,6 +498,34 @@ TEST_CASE("CSR backend matches pointer backend for biased first-order serial mov
   }
 }
 
+TEST_CASE("End-to-end first-order runs match with CSR materialization enabled or disabled [fast][core][partition][lifecycle]")
+{
+  const std::vector<std::string> flagSets{
+      "",
+      "--preferred-number-of-modules 1",
+  };
+
+  for (const auto& extraFlags : flagSets) {
+    INFO(extraFlags);
+
+    InfomapWrapper pointerIm(infomap::test::defaultFlags(extraFlags));
+    pointerIm.m_disableCsrMaterialization = true;
+    pointerIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    pointerIm.run();
+
+    InfomapWrapper csrIm(infomap::test::defaultFlags(extraFlags));
+    csrIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    csrIm.run();
+
+    infomap::test::checkRunSanity(pointerIm);
+    infomap::test::checkRunSanity(csrIm);
+    CHECK(csrIm.numTopModules() == pointerIm.numTopModules());
+    CHECK(infomap::test::canonicalPartition(csrIm.getModules()) == infomap::test::canonicalPartition(pointerIm.getModules()));
+    CHECK(csrIm.codelength() == doctest::Approx(pointerIm.codelength()));
+    CHECK(csrIm.getIndexCodelength() == doctest::Approx(pointerIm.getIndexCodelength()));
+  }
+}
+
 TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
