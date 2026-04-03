@@ -234,7 +234,6 @@ public:
   };
 
   struct CsrMaterialization {
-    std::unordered_map<unsigned int, unsigned int> stateIdToActiveId;
     std::vector<unsigned int> outOffsets;
     std::vector<unsigned int> outTargets;
     std::vector<double> outFlows;
@@ -247,7 +246,6 @@ public:
 
     void reset()
     {
-      decltype(stateIdToActiveId){}.swap(stateIdToActiveId);
       outOffsets.clear();
       outTargets.clear();
       outFlows.clear();
@@ -280,12 +278,12 @@ public:
 
     std::size_t stateIdEntryBytes() const noexcept
     {
-      return stateIdToActiveId.size() * sizeof(typename decltype(stateIdToActiveId)::value_type);
+      return 0;
     }
 
     std::size_t stateIdBucketBytes() const noexcept
     {
-      return stateIdToActiveId.bucket_count() * sizeof(void*);
+      return 0;
     }
 
     std::size_t outTargetBytes() const noexcept
@@ -441,11 +439,7 @@ public:
 
     ActiveNodeId idFor(const InfoNode& node) const
     {
-      auto it = csrMaterialization.stateIdToActiveId.find(node.stateId);
-      if (it == csrMaterialization.stateIdToActiveId.end()) {
-        throw std::out_of_range("CsrBackend::idFor() called for non-materialized node");
-      }
-      return it->second;
+      return materialization.idFor(node);
     }
     InfoNode& nodeFor(ActiveNodeId id) const
     {

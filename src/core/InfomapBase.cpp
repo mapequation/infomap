@@ -1423,8 +1423,6 @@ void InfomapBase::materializeLeafLevelCsr()
   csr.inOffsets.resize(numNodes + 1);
   csr.moduleIndices.resize(numNodes);
   csr.dirtyFlags.resize(numNodes);
-  csr.stateIdToActiveId.max_load_factor(4.0f);
-  csr.stateIdToActiveId.reserve(numNodes);
   csr.outTargets.reserve(totalOutEdges);
   csr.outFlows.reserve(totalOutEdges);
   csr.inTargets.reserve(totalInEdges);
@@ -1432,12 +1430,15 @@ void InfomapBase::materializeLeafLevelCsr()
   csr.outOffsets[0] = 0;
   csr.inOffsets[0] = 0;
 
+  std::unordered_map<unsigned int, unsigned int> stateIdToActiveId;
+  stateIdToActiveId.max_load_factor(4.0f);
+  stateIdToActiveId.reserve(numNodes);
   std::unordered_map<const InfoEdge*, unsigned int> outFlowIndexByEdge;
   outFlowIndexByEdge.reserve(totalOutEdges);
 
   for (std::size_t i = 0; i < numNodes; ++i) {
     auto& node = *nodes[i];
-    csr.stateIdToActiveId[node.stateId] = static_cast<unsigned int>(i);
+    stateIdToActiveId[node.stateId] = static_cast<unsigned int>(i);
   }
 
   for (std::size_t i = 0; i < numNodes; ++i) {
@@ -1445,7 +1446,7 @@ void InfomapBase::materializeLeafLevelCsr()
     csr.moduleIndices[i] = node.index;
     csr.dirtyFlags[i] = node.dirty ? 1u : 0u;
     for (auto* edge : node.outEdges()) {
-      csr.outTargets.push_back(csr.stateIdToActiveId.at(edge->target->stateId));
+      csr.outTargets.push_back(stateIdToActiveId.at(edge->target->stateId));
       csr.outFlows.push_back(edge->data.flow);
       outFlowIndexByEdge.emplace(edge, static_cast<unsigned int>(csr.outFlows.size() - 1));
     }
@@ -1455,7 +1456,7 @@ void InfomapBase::materializeLeafLevelCsr()
   for (std::size_t i = 0; i < numNodes; ++i) {
     auto& node = *nodes[i];
     for (auto* edge : node.inEdges()) {
-      csr.inTargets.push_back(csr.stateIdToActiveId.at(edge->source->stateId));
+      csr.inTargets.push_back(stateIdToActiveId.at(edge->source->stateId));
       csr.inFlowIndices.push_back(outFlowIndexByEdge.at(edge));
     }
     csr.inOffsets[i + 1] = static_cast<unsigned int>(csr.inTargets.size());

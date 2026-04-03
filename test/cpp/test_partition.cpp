@@ -361,8 +361,8 @@ TEST_CASE("Active graph storage breakdown distinguishes pointer-only and CSR-bac
   CHECK(csrStorage.activeNodePointerBytes > 0);
   CHECK(csrStorage.activeNodeToIdEntryBytes == 0);
   CHECK(csrStorage.activeNodeToIdBucketBytes == 0);
-  CHECK(csrStorage.csrStateIdEntryBytes > 0);
-  CHECK(csrStorage.csrStateIdBucketBytes > 0);
+  CHECK(csrStorage.csrStateIdEntryBytes == 0);
+  CHECK(csrStorage.csrStateIdBucketBytes == 0);
   CHECK(csrStorage.csrOutOffsetBytes > 0);
   CHECK(csrStorage.csrInOffsetBytes > 0);
   CHECK(csrStorage.totalBytes() > pointerStorage.totalBytes());
@@ -385,7 +385,8 @@ TEST_CASE("Active graph reset releases stale reverse-lookup buckets [fast][core]
   csrIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
   csrIm.initNetwork(csrIm.network());
   csrIm.setActiveNetworkFromLeafs();
-  REQUIRE(csrIm.activeGraphStorageBreakdown().csrStateIdBucketBytes > 0);
+  CHECK(csrIm.activeGraphStorageBreakdown().csrStateIdEntryBytes == 0);
+  CHECK(csrIm.activeGraphStorageBreakdown().csrStateIdBucketBytes == 0);
   csrIm.setActiveNetworkFromChildrenOfRoot();
   CHECK(csrIm.activeGraphStorageBreakdown().csrStateIdEntryBytes == 0);
   CHECK(csrIm.activeGraphStorageBreakdown().csrStateIdBucketBytes == 0);
