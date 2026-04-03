@@ -101,6 +101,16 @@ TEST_CASE("Inner parallelization remains runnable and numerically sane on the di
   CHECK(result.codelength >= result.indexCodelength);
 }
 
+TEST_CASE("Inner parallelization keeps the active graph pointer-backed [fast][core][flow][openmp][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--directed --inner-parallelization"));
+  infomap::test::readNetworkFixture(im, "teleport_directed.net");
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+
+  CHECK_FALSE(im.csrBackend().available());
+}
+
 TEST_CASE("Precomputed flow rejects first-order input without vertex flows [fast][core][flow][parser]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--flow-model precomputed"));
