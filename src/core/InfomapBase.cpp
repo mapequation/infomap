@@ -1414,10 +1414,8 @@ void InfomapBase::materializeLeafLevelCsr()
   auto& csr = m_csrMaterialization;
 
   std::size_t totalOutEdges = 0;
-  std::size_t totalInEdges = 0;
   for (const auto* node : nodes) {
     totalOutEdges += node->outDegree();
-    totalInEdges += node->inDegree();
   }
 
   csr.outOffsets.resize(numNodes + 1);
@@ -1426,10 +1424,9 @@ void InfomapBase::materializeLeafLevelCsr()
   csr.dirtyFlags.resize(numNodes);
   csr.outTargets.reserve(totalOutEdges);
   csr.outFlows.reserve(totalOutEdges);
-  csr.inTargets.reserve(totalInEdges);
-  csr.inFlowIndices.reserve(totalInEdges);
+  csr.inTargets.resize(totalOutEdges);
+  csr.inFlowIndices.resize(totalOutEdges);
   csr.outOffsets[0] = 0;
-  csr.inOffsets[0] = 0;
 
   std::unordered_map<unsigned int, unsigned int> stateIdToActiveId;
   stateIdToActiveId.max_load_factor(4.0f);
@@ -1451,27 +1448,24 @@ void InfomapBase::materializeLeafLevelCsr()
     csr.outOffsets[i + 1] = static_cast<unsigned int>(csr.outTargets.size());
   }
 
+  std::vector<unsigned int> inCount(numNodes, 0);
+  for (auto targetId : csr.outTargets) {
+    ++inCount[targetId];
+  }
+
+  csr.inOffsets[0] = 0;
   for (std::size_t i = 0; i < numNodes; ++i) {
-    auto& node = *nodes[i];
-    for (auto* edge : node.inEdges()) {
-      const auto sourceId = stateIdToActiveId.at(edge->source->stateId);
-      const auto sourceOutOffset = csr.outOffsets[sourceId];
-      unsigned int localOutIndex = 0;
-      bool foundOutEdge = false;
-      for (auto* sourceEdge : edge->source->outEdges()) {
-        if (sourceEdge == edge) {
-          foundOutEdge = true;
-          break;
-        }
-        ++localOutIndex;
-      }
-      if (!foundOutEdge) {
-        throw std::logic_error("InfomapBase::materializeLeafLevelCsr() could not resolve inbound edge to source out-edge index");
-      }
-      csr.inTargets.push_back(sourceId);
-      csr.inFlowIndices.push_back(sourceOutOffset + localOutIndex);
+    csr.inOffsets[i + 1] = csr.inOffsets[i] + inCount[i];
+  }
+
+  std::vector<unsigned int> insertPos(csr.inOffsets.begin(), csr.inOffsets.begin() + numNodes);
+  for (unsigned int sourceId = 0; sourceId < numNodes; ++sourceId) {
+    for (unsigned int edgeIndex = csr.outOffsets[sourceId]; edgeIndex < csr.outOffsets[sourceId + 1]; ++edgeIndex) {
+      const auto targetId = csr.outTargets[edgeIndex];
+      const auto insertIndex = insertPos[targetId]++;
+      csr.inTargets[insertIndex] = sourceId;
+      csr.inFlowIndices[insertIndex] = edgeIndex;
     }
-    csr.inOffsets[i + 1] = static_cast<unsigned int>(csr.inTargets.size());
   }
 
   csr.available = true;
