@@ -30,6 +30,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <cassert>
 
 namespace infomap {
 
@@ -176,7 +177,7 @@ public:
     std::vector<double> inWeights;
     std::vector<double> inFlows;
     std::vector<unsigned int> moduleIndices;
-    std::vector<bool> dirtyFlags;
+    std::vector<unsigned char> dirtyFlags;
     bool available = false;
 
     void reset()
@@ -205,7 +206,7 @@ public:
           + inWeights.size() * sizeof(double)
           + inFlows.size() * sizeof(double)
           + moduleIndices.size() * sizeof(unsigned int)
-          + dirtyFlags.size() * sizeof(bool);
+          + dirtyFlags.size() * sizeof(unsigned char);
     }
   };
 
@@ -311,38 +312,46 @@ public:
     bool empty() const noexcept { return materialization.empty(); }
 
     ActiveNodeId idFor(const InfoNode& node) const { return materialization.idFor(node); }
-    InfoNode& nodeFor(ActiveNodeId id) const { return materialization.nodeFor(id); }
-    ActiveNodePayload& payloadFor(ActiveNodeId id) { return materialization.payloadFor(id); }
-    const ActiveNodePayload& payloadFor(ActiveNodeId id) const { return materialization.payloadFor(id); }
+    InfoNode& nodeFor(ActiveNodeId id) const
+    {
+      assert(id < materialization.nodes.size());
+      return *materialization.nodes[id];
+    }
+    ActiveNodePayload& payloadFor(ActiveNodeId id)
+    {
+      assert(id < materialization.payloads.size());
+      return materialization.payloads[id];
+    }
+    const ActiveNodePayload& payloadFor(ActiveNodeId id) const
+    {
+      assert(id < materialization.payloads.size());
+      return materialization.payloads[id];
+    }
     unsigned int& moduleIndex(ActiveNodeId id) const
     {
-      if (id >= csrMaterialization.moduleIndices.size()) {
-        throw std::out_of_range("CsrBackend::moduleIndex() id out of range");
-      }
+      assert(id < csrMaterialization.moduleIndices.size());
       return csrMaterialization.moduleIndices[id];
     }
 
     struct DirtyRef {
-      std::vector<bool>* flags = nullptr;
+      std::vector<unsigned char>* flags = nullptr;
       std::size_t index = 0;
 
       DirtyRef& operator=(bool value)
       {
-        (*flags)[index] = value;
+        (*flags)[index] = value ? 1u : 0u;
         return *this;
       }
 
       operator bool() const
       {
-        return (*flags)[index];
+        return (*flags)[index] != 0;
       }
     };
 
     DirtyRef dirty(ActiveNodeId id) const
     {
-      if (id >= csrMaterialization.dirtyFlags.size()) {
-        throw std::out_of_range("CsrBackend::dirty() id out of range");
-      }
+      assert(id < csrMaterialization.dirtyFlags.size());
       return DirtyRef{&csrMaterialization.dirtyFlags, id};
     }
 
@@ -356,7 +365,7 @@ public:
             edges.weights[i],
             edges.flows[i],
         };
-        fn(edge.neighbourId, nodeFor(edge.neighbourId), edge);
+        fn(edge.neighbourId, *materialization.nodes[edge.neighbourId], edge);
       }
     }
 
@@ -370,18 +379,14 @@ public:
             edges.weights[i],
             edges.flows[i],
         };
-        fn(edge.neighbourId, nodeFor(edge.neighbourId), edge);
+        fn(edge.neighbourId, *materialization.nodes[edge.neighbourId], edge);
       }
     }
 
     EdgeSpan outEdges(ActiveNodeId id) const
     {
-      if (!available()) {
-        return {};
-      }
-      if (id + 1 >= csrMaterialization.outOffsets.size()) {
-        throw std::out_of_range("CsrBackend::outEdges() id out of range");
-      }
+      if (!available()) return {};
+      assert(id + 1 < csrMaterialization.outOffsets.size());
       const auto begin = csrMaterialization.outOffsets[id];
       const auto end = csrMaterialization.outOffsets[id + 1];
       return {
@@ -394,12 +399,8 @@ public:
 
     EdgeSpan inEdges(ActiveNodeId id) const
     {
-      if (!available()) {
-        return {};
-      }
-      if (id + 1 >= csrMaterialization.inOffsets.size()) {
-        throw std::out_of_range("CsrBackend::inEdges() id out of range");
-      }
+      if (!available()) return {};
+      assert(id + 1 < csrMaterialization.inOffsets.size());
       const auto begin = csrMaterialization.inOffsets[id];
       const auto end = csrMaterialization.inOffsets[id + 1];
       return {
