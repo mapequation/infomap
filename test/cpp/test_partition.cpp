@@ -5,11 +5,63 @@
 #include "TestUtils.h"
 
 #include <map>
+#include <set>
+#include <tuple>
 #include <vector>
 
 namespace {
 
 using infomap::InfomapWrapper;
+using infomap::InfoNode;
+
+using EdgeKey = std::pair<unsigned int, unsigned int>;
+
+std::vector<unsigned int> childStateIds(const InfoNode& node)
+{
+  std::vector<unsigned int> ids;
+  for (const auto& child : node.children()) {
+    ids.push_back(child.stateId);
+  }
+  return ids;
+}
+
+std::map<EdgeKey, double> aggregatedInterModuleFlow(std::vector<InfoNode*>& nodes, bool undirected)
+{
+  std::map<EdgeKey, double> flows;
+  for (auto* node : nodes) {
+    for (auto* edge : node->outEdges()) {
+      auto module1 = node->index;
+      auto module2 = edge->target->index;
+      if (module1 == module2) {
+        continue;
+      }
+      if (undirected && module1 > module2) {
+        std::swap(module1, module2);
+      }
+      flows[{module1, module2}] += edge->data.flow;
+    }
+  }
+  return flows;
+}
+
+std::map<EdgeKey, double> aggregatedModuleFlow(InfoNode& root, bool undirected)
+{
+  std::map<EdgeKey, double> flows;
+  for (auto& module : root.children()) {
+    for (auto* edge : module.outEdges()) {
+      auto module1 = module.index;
+      auto module2 = edge->target->index;
+      if (module1 == module2) {
+        continue;
+      }
+      if (undirected && module1 > module2) {
+        std::swap(module1, module2);
+      }
+      flows[{module1, module2}] += edge->data.flow;
+    }
+  }
+  return flows;
+}
 
 TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][core][partition]")
 {
@@ -64,6 +116,82 @@ TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core]
   infomap::test::checkRunSanity(im);
 }
 
+TEST_CASE("InfoNode hierarchy mutations preserve parentage and child order [fast][core][partition][tree]")
+{
+  InfoNode root;
+
+  auto* childA = new InfoNode({}, 10);
+  auto* childB = new InfoNode({}, 20);
+  auto* childC = new InfoNode({}, 30);
+  root.addChild(childA);
+  root.addChild(childB);
+  root.addChild(childC);
+
+  CHECK(root.childDegree() == 3);
+  CHECK(childStateIds(root) == std::vector<unsigned int>{10, 20, 30});
+
+  CHECK(root.collapseChildren() == 3);
+  CHECK(root.childDegree() == 0);
+  CHECK(root.firstChild == nullptr);
+  CHECK(root.lastChild == nullptr);
+
+  CHECK(root.expandChildren() == 3);
+  CHECK(root.childDegree() == 3);
+  CHECK(childStateIds(root) == std::vector<unsigned int>{10, 20, 30});
+  CHECK(childA->parent == &root);
+  CHECK(childB->parent == &root);
+  CHECK(childC->parent == &root);
+
+  root.releaseChildren();
+  CHECK(root.childDegree() == 0);
+  CHECK(root.firstChild == nullptr);
+  CHECK(root.lastChild == nullptr);
+
+  delete childA;
+  delete childB;
+  delete childC;
+
+  auto* rebuiltA = new InfoNode({}, 40);
+  auto* rebuiltB = new InfoNode({}, 50);
+  root.addChild(rebuiltA);
+  root.addChild(rebuiltB);
+
+  CHECK(root.childDegree() == 2);
+  CHECK(childStateIds(root) == std::vector<unsigned int>{40, 50});
+}
+
+TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][core][partition][tree]")
+{
+  InfoNode root;
+  auto* moduleA = new InfoNode({}, 100);
+  auto* moduleB = new InfoNode({}, 200);
+  root.addChild(moduleA);
+  root.addChild(moduleB);
+  moduleA->addChild(new InfoNode({}, 1));
+  moduleA->addChild(new InfoNode({}, 2));
+  moduleB->addChild(new InfoNode({}, 3));
+  moduleB->addChild(new InfoNode({}, 4));
+
+  CHECK(root.childDegree() == 2);
+  CHECK(moduleA->childDegree() == 2);
+  CHECK(moduleB->childDegree() == 2);
+
+  CHECK(moduleA->replaceWithChildren() == 1);
+  CHECK(root.childDegree() == 3);
+  CHECK(childStateIds(root) == std::vector<unsigned int>{1, 2, 200});
+  CHECK(root.firstChild->parent == &root);
+  CHECK(root.firstChild->next->parent == &root);
+  CHECK(root.lastChild == moduleB);
+
+  CHECK(root.replaceChildrenWithGrandChildren() == 1);
+  CHECK(root.childDegree() == 4);
+  CHECK(childStateIds(root) == std::vector<unsigned int>{1, 2, 3, 4});
+  for (const auto& child : root.children()) {
+    CHECK(child.parent == &root);
+    CHECK(child.isLeaf());
+  }
+}
+
 TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
@@ -100,6 +228,27 @@ TEST_CASE("Hard cluster-data preserves the imposed coarse partition [fast][core]
   CHECK(im.numLeafNodes() == 6);
   CHECK(im.numTopModules() == 2);
   infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
+}
+
+TEST_CASE("Consolidate modules preserves aggregated inter-module flow [fast][core][partition][tree]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+  im.initPartition();
+
+  std::vector<unsigned int> modules{0, 0, 0, 1, 1, 1};
+  im.moveActiveNodesToPredefinedModules(modules);
+
+  const auto expectedFlows = aggregatedInterModuleFlow(im.activeNetwork(), im.isUndirectedClustering());
+  REQUIRE(expectedFlows.size() == 1);
+
+  im.consolidateModules(false);
+
+  CHECK(im.numTopModules() == 2);
+  CHECK(im.root().childDegree() == 2);
+  CHECK(aggregatedModuleFlow(im.root(), im.isUndirectedClustering()) == expectedFlows);
 }
 
 TEST_CASE("Invalid cluster-data fixtures fail deterministically [fast][core][partition][parser]")
