@@ -9,6 +9,7 @@ Default rule: run the smallest sufficient verification for the changed surface. 
 | `interfaces/python/`, Python packaging, SWIG-facing Python surface | `make build-python` and `make test-python` | `make test-python` exercises pytest, doctest, and the Python examples. |
 | `interfaces/js/` TypeScript or npm package surface | `npm ci` and `make build-js` | Use for package or TypeScript-only JS changes. |
 | JS worker or Emscripten boundary | `npm ci` and `make test-js` | Use when the change touches worker generation, bundled worker files, or the C++ to JS boundary. |
+| `docker/`, `docker-compose.yml`, Docker support docs | Validate the smallest relevant Docker smoke path, usually `make test-docker-supported` | Keep Docker support scoped to the documented supported images unless the issue explicitly targets an internal image. |
 | `.github/workflows/` CI changes | Validate the smallest related local command, then keep PR as `draft` | Do not claim full CI validation from local-only checks. |
 | Release or publish workflows | No automatic release verification | Keep automation out of release execution; triage only unless a maintainer explicitly approves. |
 
