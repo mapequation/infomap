@@ -658,11 +658,11 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 template <typename Objective>
 inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules)
 {
-  auto& network = m_infomap->activeNetwork();
-  auto numNodes = network.size();
+  auto graph = m_infomap->pointerActiveGraph();
+  auto numNodes = graph.size();
   std::vector<InfoNode*> modules(numNodes, nullptr);
 
-  InfoNode& firstActiveNode = *network[0];
+  InfoNode& firstActiveNode = graph.nodeFor(0);
   auto level = firstActiveNode.depth();
   auto leafLevel = m_infomap->numLevels();
 
@@ -670,40 +670,39 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
     replaceExistingModules = false;
 
   // Release children pointers on current parent(s) to put new modules between
-  for (auto& n : network) {
-    n->parent->releaseChildren(); // Safe to call multiple times
+  for (unsigned int i = 0; i < numNodes; ++i) {
+    graph.nodeFor(i).parent->releaseChildren(); // Safe to call multiple times
   }
 
   // Create the new module nodes and re-parent the active network from its common parent to the new module level
   for (unsigned int i = 0; i < numNodes; ++i) {
-    InfoNode* node = network[i];
-    unsigned int moduleIndex = node->index;
+    InfoNode& node = graph.nodeFor(i);
+    unsigned int moduleIndex = graph.moduleIndex(i);
     if (modules[moduleIndex] == nullptr) {
       modules[moduleIndex] = new InfoNode(m_moduleFlowData[moduleIndex]);
       modules[moduleIndex]->index = moduleIndex;
-      node->parent->addChild(modules[moduleIndex]);
+      node.parent->addChild(modules[moduleIndex]);
     }
-    modules[moduleIndex]->addChild(node);
+    modules[moduleIndex]->addChild(&node);
   }
 
   using NodePair = std::pair<unsigned int, unsigned int>;
   using EdgeMap = std::map<NodePair, double>;
   EdgeMap moduleLinks;
 
-  for (auto& node : network) {
-    unsigned int module1 = node->index;
-    for (auto& e : node->outEdges()) {
-      InfoEdge& edge = *e;
-      unsigned int module2 = edge.target->index;
+  for (unsigned int i = 0; i < numNodes; ++i) {
+    unsigned int module1 = graph.moduleIndex(i);
+    for (const auto& edge : graph.outEdges(i)) {
+      unsigned int module2 = graph.moduleIndex(edge.neighbourId);
       if (module1 != module2) {
         // Use new variables to not swap module1
         unsigned int m1 = module1, m2 = module2;
         // If undirected, the order may be swapped to aggregate the edge on an opposite one
         if (m_infomap->isUndirectedClustering() && m1 > m2)
           std::swap(m1, m2);
-        auto ret = moduleLinks.insert(std::make_pair(NodePair(m1, m2), edge.data.flow));
+        auto ret = moduleLinks.insert(std::make_pair(NodePair(m1, m2), edge.flow));
         if (!ret.second) {
-          ret.first->second += edge.data.flow;
+          ret.first->second += edge.flow;
         }
       }
     }
@@ -726,8 +725,8 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
   if (replaceExistingModules) {
     if (level == 1) {
       Log(4) << "Consolidated super modules, removing old modules...\n";
-      for (auto& node : network)
-        node->replaceWithChildren();
+      for (unsigned int i = 0; i < numNodes; ++i)
+        graph.nodeFor(i).replaceWithChildren();
     } else if (level == 2) {
       Log(4) << "Consolidated sub-modules, removing modules...\n";
       unsigned int moduleIndex = 0;
