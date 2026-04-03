@@ -21,5 +21,12 @@ namespace infomap {
     %template(InfomapConfigInfomapBase) InfomapConfig<InfomapBase>;
 }
 
+// Internal refactor helpers; not part of the supported Python API.
+%ignore infomap::InfomapBase::activeGraphMaterialization;
+%ignore infomap::InfomapBase::csrMaterialization;
+%ignore infomap::InfomapBase::pointerBackend;
+%ignore infomap::InfomapBase::pointerActiveGraph;
+%ignore infomap::InfomapBase::csrBackend;
+
 /* Parse the header file to generate wrappers */
 %include "src/core/InfomapBase.h"
