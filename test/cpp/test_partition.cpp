@@ -332,6 +332,35 @@ TEST_CASE("Pointer backend exposes state and adjacency by active node id [fast][
   view.dirty(0) = originalDirty;
 }
 
+TEST_CASE("Active graph storage breakdown distinguishes pointer-only and CSR-backed leaf materialization [fast][core][partition][lifecycle]")
+{
+  InfomapWrapper pointerIm(infomap::test::defaultFlags());
+  pointerIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  pointerIm.initNetwork(pointerIm.network());
+  pointerIm.m_disableCsrMaterialization = true;
+  pointerIm.setActiveNetworkFromLeafs();
+
+  const auto pointerStorage = pointerIm.activeGraphStorageBreakdown();
+  CHECK_FALSE(pointerStorage.csrAvailable);
+  CHECK(pointerStorage.activeNodePointerBytes > 0);
+  CHECK(pointerStorage.activeNodeToIdEntryBytes > 0);
+  CHECK(pointerStorage.csrOutOffsetBytes == 0);
+  CHECK(pointerStorage.csrInOffsetBytes == 0);
+
+  InfomapWrapper csrIm(infomap::test::defaultFlags());
+  csrIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  csrIm.initNetwork(csrIm.network());
+  csrIm.setActiveNetworkFromLeafs();
+
+  const auto csrStorage = csrIm.activeGraphStorageBreakdown();
+  REQUIRE(csrStorage.csrAvailable);
+  CHECK(csrStorage.activeNodePointerBytes > 0);
+  CHECK(csrStorage.activeNodeToIdEntryBytes > 0);
+  CHECK(csrStorage.csrOutOffsetBytes > 0);
+  CHECK(csrStorage.csrInOffsetBytes > 0);
+  CHECK(csrStorage.totalBytes() > pointerStorage.totalBytes());
+}
+
 TEST_CASE("CSR backend materializes leaf-level first-order adjacency [fast][core][partition][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

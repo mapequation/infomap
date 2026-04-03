@@ -124,6 +124,9 @@ def benchmark_case(binary: Path, name: str, network_path: Path, repeats: int, wa
         "edge_size_bytes": runs[0]["edge_size_bytes"],
         "active_payload_nodes": runs[0].get("active_payload_nodes", 0),
         "active_payload_bytes": runs[0].get("active_payload_bytes", 0),
+        "active_graph_storage": runs[0].get("active_graph_storage", {}),
+        "last_active_graph_storage": runs[0]["benchmark_stats"].get("last_active_graph_storage", {}),
+        "max_active_graph_storage": runs[0]["benchmark_stats"].get("max_active_graph_storage", {}),
         "benchmark_stats_median": {
             "calculate_flow_sec": stats_median("calculate_flow_sec"),
             "init_network_sec": stats_median("init_network_sec"),

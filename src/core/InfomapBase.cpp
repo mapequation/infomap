@@ -1399,10 +1399,14 @@ void InfomapBase::materializeActiveGraphPayload()
   }
 
   if (m_disableCsrMaterialization) {
+    m_benchmarkStats.lastActiveGraphStorage = activeGraphStorageBreakdown();
+    m_benchmarkStats.maxActiveGraphStorage.maximize(m_benchmarkStats.lastActiveGraphStorage);
     return;
   }
 
   materializeLeafLevelCsr();
+  m_benchmarkStats.lastActiveGraphStorage = activeGraphStorageBreakdown();
+  m_benchmarkStats.maxActiveGraphStorage.maximize(m_benchmarkStats.lastActiveGraphStorage);
 }
 
 void InfomapBase::materializeLeafLevelCsr()

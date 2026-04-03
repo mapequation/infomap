@@ -54,6 +54,25 @@ void printUsage(const char* argv0)
   std::cerr << "Usage: " << argv0 << " --input <path> [--name <label>] [--flags <infomap flags>] [--backend-mode auto|pointer]\n";
 }
 
+void printStorageBreakdown(const infomap::InfomapBase::ActiveGraphStorageBreakdown& storage)
+{
+  std::cout << "{";
+  std::cout << "\"active_node_pointer_bytes\":" << storage.activeNodePointerBytes << ",";
+  std::cout << "\"active_node_to_id_entry_bytes\":" << storage.activeNodeToIdEntryBytes << ",";
+  std::cout << "\"active_node_to_id_bucket_bytes\":" << storage.activeNodeToIdBucketBytes << ",";
+  std::cout << "\"csr_out_offset_bytes\":" << storage.csrOutOffsetBytes << ",";
+  std::cout << "\"csr_out_target_bytes\":" << storage.csrOutTargetBytes << ",";
+  std::cout << "\"csr_out_flow_bytes\":" << storage.csrOutFlowBytes << ",";
+  std::cout << "\"csr_in_offset_bytes\":" << storage.csrInOffsetBytes << ",";
+  std::cout << "\"csr_in_target_bytes\":" << storage.csrInTargetBytes << ",";
+  std::cout << "\"csr_in_flow_bytes\":" << storage.csrInFlowBytes << ",";
+  std::cout << "\"csr_module_index_bytes\":" << storage.csrModuleIndexBytes << ",";
+  std::cout << "\"csr_dirty_flag_bytes\":" << storage.csrDirtyFlagBytes << ",";
+  std::cout << "\"total_bytes\":" << storage.totalBytes() << ",";
+  std::cout << "\"csr_available\":" << (storage.csrAvailable ? "true" : "false");
+  std::cout << "}";
+}
+
 } // namespace
 
 int main(int argc, char* argv[])
@@ -117,6 +136,7 @@ int main(int argc, char* argv[])
 
     const auto& stats = im.benchmarkStats();
     const auto& activeMaterialization = im.activeGraphMaterialization();
+    const auto storage = im.activeGraphStorageBreakdown();
     std::cout << "{";
     std::cout << "\"name\":\"" << jsonEscape(caseName) << "\",";
     std::cout << "\"path\":\"" << jsonEscape(inputPath) << "\",";
@@ -130,6 +150,9 @@ int main(int argc, char* argv[])
     std::cout << "\"edge_size_bytes\":" << sizeof(infomap::InfoEdge) << ",";
     std::cout << "\"active_payload_nodes\":0,";
     std::cout << "\"active_payload_bytes\":" << activeMaterialization.payloadBytes() << ",";
+    std::cout << "\"active_graph_storage\":";
+    printStorageBreakdown(storage);
+    std::cout << ",";
     std::cout << "\"num_nodes\":" << inputNodeCount << ",";
     std::cout << "\"num_links\":" << inputLinkCount << ",";
     std::cout << "\"num_top_modules\":" << im.numTopModules() << ",";
@@ -154,6 +177,12 @@ int main(int argc, char* argv[])
     std::cout << "\"super_modules_calls\":" << stats.superModulesCalls << ",";
     std::cout << "\"super_modules_fast_calls\":" << stats.superModulesFastCalls << ",";
     std::cout << "\"consolidation_count\":" << stats.consolidationCount << ",";
+    std::cout << "\"last_active_graph_storage\":";
+    printStorageBreakdown(stats.lastActiveGraphStorage);
+    std::cout << ",";
+    std::cout << "\"max_active_graph_storage\":";
+    printStorageBreakdown(stats.maxActiveGraphStorage);
+    std::cout << ",";
     std::cout << "\"consolidations\":[";
     for (std::size_t i = 0; i < stats.consolidations.size(); ++i) {
       const auto& consolidation = stats.consolidations[i];

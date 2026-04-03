@@ -23,6 +23,7 @@
 #include "../utils/Stopwatch.h"
 
 #include <vector>
+#include <algorithm>
 #include <deque>
 #include <map>
 #include <unordered_map>
@@ -47,6 +48,52 @@ class InfomapBase : public InfomapConfig<InfomapBase> {
 
 public:
   using PartitionQueue = detail::PartitionQueue;
+
+  struct ActiveGraphStorageBreakdown {
+    std::size_t activeNodePointerBytes = 0;
+    std::size_t activeNodeToIdEntryBytes = 0;
+    std::size_t activeNodeToIdBucketBytes = 0;
+    std::size_t csrOutOffsetBytes = 0;
+    std::size_t csrOutTargetBytes = 0;
+    std::size_t csrOutFlowBytes = 0;
+    std::size_t csrInOffsetBytes = 0;
+    std::size_t csrInTargetBytes = 0;
+    std::size_t csrInFlowBytes = 0;
+    std::size_t csrModuleIndexBytes = 0;
+    std::size_t csrDirtyFlagBytes = 0;
+    bool csrAvailable = false;
+
+    std::size_t totalBytes() const noexcept
+    {
+      return activeNodePointerBytes
+          + activeNodeToIdEntryBytes
+          + activeNodeToIdBucketBytes
+          + csrOutOffsetBytes
+          + csrOutTargetBytes
+          + csrOutFlowBytes
+          + csrInOffsetBytes
+          + csrInTargetBytes
+          + csrInFlowBytes
+          + csrModuleIndexBytes
+          + csrDirtyFlagBytes;
+    }
+
+    void maximize(const ActiveGraphStorageBreakdown& other) noexcept
+    {
+      activeNodePointerBytes = std::max(activeNodePointerBytes, other.activeNodePointerBytes);
+      activeNodeToIdEntryBytes = std::max(activeNodeToIdEntryBytes, other.activeNodeToIdEntryBytes);
+      activeNodeToIdBucketBytes = std::max(activeNodeToIdBucketBytes, other.activeNodeToIdBucketBytes);
+      csrOutOffsetBytes = std::max(csrOutOffsetBytes, other.csrOutOffsetBytes);
+      csrOutTargetBytes = std::max(csrOutTargetBytes, other.csrOutTargetBytes);
+      csrOutFlowBytes = std::max(csrOutFlowBytes, other.csrOutFlowBytes);
+      csrInOffsetBytes = std::max(csrInOffsetBytes, other.csrInOffsetBytes);
+      csrInTargetBytes = std::max(csrInTargetBytes, other.csrInTargetBytes);
+      csrInFlowBytes = std::max(csrInFlowBytes, other.csrInFlowBytes);
+      csrModuleIndexBytes = std::max(csrModuleIndexBytes, other.csrModuleIndexBytes);
+      csrDirtyFlagBytes = std::max(csrDirtyFlagBytes, other.csrDirtyFlagBytes);
+      csrAvailable = csrAvailable || other.csrAvailable;
+    }
+  };
 
   struct ConsolidationSnapshot {
     unsigned int level = 0;
@@ -74,6 +121,8 @@ public:
     unsigned int superModulesFastCalls = 0;
     unsigned int consolidationCount = 0;
     std::vector<ConsolidationSnapshot> consolidations;
+    ActiveGraphStorageBreakdown lastActiveGraphStorage;
+    ActiveGraphStorageBreakdown maxActiveGraphStorage;
 
     void reset()
     {
@@ -94,6 +143,8 @@ public:
       superModulesFastCalls = 0;
       consolidationCount = 0;
       consolidations.clear();
+      lastActiveGraphStorage = {};
+      maxActiveGraphStorage = {};
     }
   };
 
@@ -112,6 +163,26 @@ public:
     std::size_t payloadBytes() const noexcept
     {
       return 0;
+    }
+
+    std::size_t nodePointerBytes() const noexcept
+    {
+      return nodes.capacity() * sizeof(InfoNode*);
+    }
+
+    std::size_t nodeToIdEntryBytes() const noexcept
+    {
+      return nodeToId.size() * sizeof(typename decltype(nodeToId)::value_type);
+    }
+
+    std::size_t nodeToIdBucketBytes() const noexcept
+    {
+      return nodeToId.bucket_count() * sizeof(void*);
+    }
+
+    std::size_t storageBytes() const noexcept
+    {
+      return nodePointerBytes() + nodeToIdEntryBytes() + nodeToIdBucketBytes();
     }
 
     std::size_t size() const noexcept
@@ -169,14 +240,54 @@ public:
 
     std::size_t adjacencyBytes() const noexcept
     {
-      return outOffsets.size() * sizeof(unsigned int)
-          + outTargets.size() * sizeof(unsigned int)
-          + outFlows.size() * sizeof(double)
-          + inOffsets.size() * sizeof(unsigned int)
-          + inTargets.size() * sizeof(unsigned int)
-          + inFlows.size() * sizeof(double)
-          + moduleIndices.size() * sizeof(unsigned int)
-          + dirtyFlags.size() * sizeof(unsigned char);
+      return outOffsetBytes()
+          + outTargetBytes()
+          + outFlowBytes()
+          + inOffsetBytes()
+          + inTargetBytes()
+          + inFlowBytes()
+          + moduleIndexBytes()
+          + dirtyFlagBytes();
+    }
+
+    std::size_t outOffsetBytes() const noexcept
+    {
+      return outOffsets.capacity() * sizeof(unsigned int);
+    }
+
+    std::size_t outTargetBytes() const noexcept
+    {
+      return outTargets.capacity() * sizeof(unsigned int);
+    }
+
+    std::size_t outFlowBytes() const noexcept
+    {
+      return outFlows.capacity() * sizeof(double);
+    }
+
+    std::size_t inOffsetBytes() const noexcept
+    {
+      return inOffsets.capacity() * sizeof(unsigned int);
+    }
+
+    std::size_t inTargetBytes() const noexcept
+    {
+      return inTargets.capacity() * sizeof(unsigned int);
+    }
+
+    std::size_t inFlowBytes() const noexcept
+    {
+      return inFlows.capacity() * sizeof(double);
+    }
+
+    std::size_t moduleIndexBytes() const noexcept
+    {
+      return moduleIndices.capacity() * sizeof(unsigned int);
+    }
+
+    std::size_t dirtyFlagBytes() const noexcept
+    {
+      return dirtyFlags.capacity() * sizeof(unsigned char);
     }
   };
 
@@ -465,6 +576,23 @@ public:
   double getMaxEntropy() { return m_maxEntropy; }
   double getMaxFlow() { return m_maxFlow; }
   const BenchmarkStats& benchmarkStats() const noexcept { return m_benchmarkStats; }
+  ActiveGraphStorageBreakdown activeGraphStorageBreakdown() const noexcept
+  {
+    return {
+        m_activeGraphMaterialization.nodePointerBytes(),
+        m_activeGraphMaterialization.nodeToIdEntryBytes(),
+        m_activeGraphMaterialization.nodeToIdBucketBytes(),
+        m_csrMaterialization.outOffsetBytes(),
+        m_csrMaterialization.outTargetBytes(),
+        m_csrMaterialization.outFlowBytes(),
+        m_csrMaterialization.inOffsetBytes(),
+        m_csrMaterialization.inTargetBytes(),
+        m_csrMaterialization.inFlowBytes(),
+        m_csrMaterialization.moduleIndexBytes(),
+        m_csrMaterialization.dirtyFlagBytes(),
+        m_csrMaterialization.available,
+    };
+  }
   ActiveGraphMaterialization& activeGraphMaterialization() noexcept { return m_activeGraphMaterialization; }
   const ActiveGraphMaterialization& activeGraphMaterialization() const noexcept { return m_activeGraphMaterialization; }
   CsrMaterialization& csrMaterialization() noexcept { return m_csrMaterialization; }
