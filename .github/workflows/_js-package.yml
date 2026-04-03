@@ -44,11 +44,11 @@ jobs:
         run: npm ci
 
       - name: Build JavaScript worker
-        run: make -j js-worker
+        run: make -j build-js
 
       - name: Run JavaScript verification
         if: inputs.run-tests
-        run: make js-test
+        run: make test-js
 
       - name: Pack npm artifact
         if: inputs.pack-artifact

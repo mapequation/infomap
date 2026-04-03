@@ -36,7 +36,7 @@ jobs:
         if: startsWith(matrix.os, 'macos')
         run: |
           brew install libomp
-          make ci-github-env >> "$GITHUB_ENV"
+          make ci-export-github-env >> "$GITHUB_ENV"
         shell: bash
 
       - name: Verify toolchain
@@ -46,22 +46,13 @@ jobs:
           ${{ matrix.cxx }} --version
         shell: bash
 
-      - name: Configure C++ tests
-        run: |
-          cmake -S . -B build/cmake -G Ninja \
-            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
-            -DINFOMAP_EXTRA_CXX_FLAGS="${CPPFLAGS}" \
-            -DINFOMAP_EXTRA_LINK_FLAGS="${LDFLAGS}"
+      - name: Run C++ correctness suite
+        run: make test-native CMAKE_GENERATOR=Ninja CMAKE_CXX_COMPILER=${{ matrix.cxx }}
         shell: bash
-
-      - name: Build C++ tests
-        run: cmake --build build/cmake --target infomap_cpp_tests --parallel
-        shell: bash
-
-      - name: Run C++ tests
-        run: ctest --test-dir build/cmake --output-on-failure
-        shell: bash
+        env:
+          CXX: ${{ matrix.cxx }}
+          CXXFLAGS: ${{ env.CPPFLAGS }}
+          LDFLAGS: ${{ env.LDFLAGS }}
 
   python-correctness:
     name: Python correctness ${{ matrix.os }}
@@ -94,7 +85,7 @@ jobs:
         if: startsWith(matrix.os, 'macos')
         run: |
           brew install swig libomp
-          make ci-github-env >> "$GITHUB_ENV"
+          make ci-export-github-env >> "$GITHUB_ENV"
         shell: bash
 
       - name: Install Python dependencies
@@ -105,8 +96,8 @@ jobs:
 
       - name: Build and install local Python package
         run: |
-          make python
-          make py-local-install
+          make build-python
+          make dev-python-install
         shell: bash
 
       - name: Run Python nightly correctness suite
@@ -129,20 +120,7 @@ jobs:
         shell: bash
 
       - name: Configure sanitizer build
-        run: |
-          cmake -S . -B build/cmake-sanitizers -G Ninja \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_CXX_COMPILER=clang++ \
-            -DINFOMAP_USE_OPENMP=OFF \
-            -DINFOMAP_ENABLE_SANITIZERS=ON
-        shell: bash
-
-      - name: Build sanitizer tests
-        run: cmake --build build/cmake-sanitizers --target infomap_cpp_tests --parallel
-        shell: bash
-
-      - name: Run sanitizer tests
-        run: ctest --test-dir build/cmake-sanitizers --output-on-failure
+        run: make test-sanitizers CMAKE_GENERATOR=Ninja SANITIZER_CXX=clang++
         shell: bash
         env:
           ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
@@ -179,15 +157,15 @@ jobs:
 
       - name: Build and install local Python package
         run: |
-          make python
-          make py-local-install
+          make build-python
+          make dev-python-install
         shell: bash
 
       - name: Run Python benchmarks
         run: |
-          python scripts/benchmarks/run_python_benchmarks.py \
-            --output build/benchmarks/python-benchmarks.json \
-            --summary build/benchmarks/summary.md
+          make bench-python \
+            BENCHMARK_OUTPUT=build/benchmarks/python-benchmarks.json \
+            BENCHMARK_SUMMARY=build/benchmarks/summary.md
           cat build/benchmarks/summary.md >> "$GITHUB_STEP_SUMMARY"
         shell: bash
 
