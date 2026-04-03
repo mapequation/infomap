@@ -5,7 +5,7 @@ PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
 
 SPHINX_SOURCE_DIR := interfaces/python/source
 SPHINX_TARGET_DIR ?= docs
-DOCS_FRESHNESS_EXCLUDES := automation maintainers plans .nojekyll
+DOCS_FRESHNESS_EXCLUDES := automation maintainers plans .nojekyll .buildinfo
 DOCS_FRESHNESS_DIFF_ARGS := $(foreach excluded,$(DOCS_FRESHNESS_EXCLUDES),--exclude=$(excluded))
 DOCS_SYNC_ARGS := -a --delete $(foreach excluded,$(DOCS_FRESHNESS_EXCLUDES),--exclude=/$(excluded))
 PYTHON_TEST_DIR := test/python
