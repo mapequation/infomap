@@ -1,9 +1,9 @@
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 RUN apt-get update && apt-get install -y \
   build-essential \
+  make \
   swig \
-  git \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -15,8 +15,9 @@ WORKDIR /infomap
 RUN python -m pip install --upgrade pip setuptools wheel
 RUN python -m pip install -r requirements_dev.txt
 
-# Build python artifacts
-RUN make python
+RUN make build-python \
+  && make dev-python-install \
+  && make test-python-unit
 
-ENTRYPOINT ["/infomap/Infomap"]
-CMD ["--help"]
+ENTRYPOINT ["python", "-m", "pytest"]
+CMD ["test/python"]

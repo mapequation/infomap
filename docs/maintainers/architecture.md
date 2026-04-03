@@ -97,11 +97,12 @@ generated output by hand.
 Docker remains supported, but not every image has the same role:
 
 - Supported:
-  - CLI image
-  - notebook image
+  - CLI image (`docker/infomap.Dockerfile`)
+  - notebook image (`docker/notebook.Dockerfile`)
 - Internal-supported:
-  - Python build/test image
-  - compatibility or investigation images
+  - Python build/test image (`docker/python.Dockerfile`)
+  - Ubuntu compatibility image (`docker/ubuntu.Dockerfile`)
+  - RStudio image (`docker/rstudio.Dockerfile`)
 
 Supported images should stay aligned with current Make-based build workflows and
 should have at least smoke coverage in CI over time.

@@ -123,5 +123,19 @@ content under `docs/automation/`, `docs/maintainers/`, and `docs/plans/`. Only
 the generated subset is refreshed by `make build-docs` and checked by
 `make test-docs`; do not hand-edit generated HTML or JS.
 
-Advanced or internal targets such as `R`, `R-build`, and `docker-*` still exist in
-the Makefile, but they are no longer part of the primary development surface.
+Docker remains supported, but it is a secondary maintainer surface:
+
+- supported images:
+  - CLI image (`docker/infomap.Dockerfile`)
+  - notebook image (`docker/notebook.Dockerfile`)
+- internal-supported images:
+  - Python build/test image (`docker/python.Dockerfile`)
+  - Ubuntu compatibility image (`docker/ubuntu.Dockerfile`)
+  - RStudio image (`docker/rstudio.Dockerfile`)
+
+Use Docker Compose v2 commands if you are invoking the local compose file, for
+example `docker compose run --rm infomap`.
+
+Advanced or internal targets such as `R`, `R-build`, and `docker-*` still exist
+in the Makefile, but they are no longer part of the primary development
+surface.
