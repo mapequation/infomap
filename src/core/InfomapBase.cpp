@@ -1392,14 +1392,10 @@ void InfomapBase::materializeActiveGraphPayload()
 
   const auto& network = *m_activeNetwork;
   m_activeGraphMaterialization.nodes = network;
-  m_activeGraphMaterialization.payloads.reserve(network.size());
   m_activeGraphMaterialization.nodeToId.reserve(network.size());
   for (std::size_t i = 0; i < network.size(); ++i) {
     const auto* node = network[i];
     m_activeGraphMaterialization.nodeToId[const_cast<InfoNode*>(node)] = static_cast<ActiveGraphMaterialization::ActiveNodeId>(i);
-    m_activeGraphMaterialization.payloads.push_back({
-        node->data,
-    });
   }
 
   if (m_disableCsrMaterialization) {
@@ -1457,20 +1453,6 @@ void InfomapBase::materializeLeafLevelCsr()
   csr.available = true;
 }
 
-void InfomapBase::syncActiveGraphPayloadToHierarchy()
-{
-  auto& nodes = m_activeGraphMaterialization.nodes;
-  auto& payloads = m_activeGraphMaterialization.payloads;
-
-  if (nodes.size() != payloads.size()) {
-    throw std::logic_error("InfomapBase::syncActiveGraphPayloadToHierarchy() called with mismatched active payload state");
-  }
-
-  for (std::size_t i = 0; i < nodes.size(); ++i) {
-    nodes[i]->data = payloads[i].data;
-  }
-}
-
 void InfomapBase::syncActiveGraphStateToHierarchy()
 {
   if (!m_csrMaterialization.available) {
@@ -1495,14 +1477,12 @@ unsigned int InfomapBase::optimizeActiveNetwork()
 {
   const auto numEffectiveLoops = m_optimizer->optimizeActiveNetwork();
   syncActiveGraphStateToHierarchy();
-  syncActiveGraphPayloadToHierarchy();
   return numEffectiveLoops;
 }
 
 void InfomapBase::moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
 {
   syncActiveGraphStateToHierarchy();
-  syncActiveGraphPayloadToHierarchy();
   m_optimizer->moveActiveNodesToPredefinedModules(modules);
   syncActiveGraphStateToHierarchy();
   materializeActiveGraphPayload();
@@ -1511,7 +1491,6 @@ void InfomapBase::moveActiveNodesToPredefinedModules(std::vector<unsigned int>& 
 void InfomapBase::consolidateModules(bool replaceExistingModules)
 {
   syncActiveGraphStateToHierarchy();
-  syncActiveGraphPayloadToHierarchy();
   m_optimizer->consolidateModules(replaceExistingModules);
   materializeActiveGraphPayload();
 }

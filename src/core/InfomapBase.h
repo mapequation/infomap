@@ -97,27 +97,21 @@ public:
     }
   };
 
-  struct ActiveNodePayload {
-    FlowData data;
-  };
-
   struct ActiveGraphMaterialization {
     using ActiveNodeId = unsigned int;
 
     std::vector<InfoNode*> nodes;
-    std::vector<ActiveNodePayload> payloads;
     std::unordered_map<InfoNode*, ActiveNodeId> nodeToId;
 
     void reset()
     {
       nodes.clear();
-      payloads.clear();
       nodeToId.clear();
     }
 
     std::size_t payloadBytes() const noexcept
     {
-      return payloads.size() * sizeof(ActiveNodePayload);
+      return 0;
     }
 
     std::size_t size() const noexcept
@@ -147,21 +141,6 @@ public:
       return *nodes[id];
     }
 
-    ActiveNodePayload& payloadFor(ActiveNodeId id)
-    {
-      if (id >= payloads.size()) {
-        throw std::out_of_range("ActiveGraphMaterialization::payloadFor() id out of range");
-      }
-      return payloads[id];
-    }
-
-    const ActiveNodePayload& payloadFor(ActiveNodeId id) const
-    {
-      if (id >= payloads.size()) {
-        throw std::out_of_range("ActiveGraphMaterialization::payloadFor() id out of range");
-      }
-      return payloads[id];
-    }
   };
 
   struct CsrMaterialization {
@@ -218,9 +197,6 @@ public:
 
     ActiveNodeId idFor(const InfoNode& node) const { return materialization.idFor(node); }
     InfoNode& nodeFor(ActiveNodeId id) const { return materialization.nodeFor(id); }
-    ActiveNodePayload& payloadFor(ActiveNodeId id) { return materialization.payloadFor(id); }
-    const ActiveNodePayload& payloadFor(ActiveNodeId id) const { return materialization.payloadFor(id); }
-
     unsigned int& moduleIndex(ActiveNodeId id) const { return nodeFor(id).index; }
     bool& dirty(ActiveNodeId id) const { return nodeFor(id).dirty; }
 
@@ -305,16 +281,6 @@ public:
     {
       assert(id < materialization.nodes.size());
       return *materialization.nodes[id];
-    }
-    ActiveNodePayload& payloadFor(ActiveNodeId id)
-    {
-      assert(id < materialization.payloads.size());
-      return materialization.payloads[id];
-    }
-    const ActiveNodePayload& payloadFor(ActiveNodeId id) const
-    {
-      assert(id < materialization.payloads.size());
-      return materialization.payloads[id];
     }
     unsigned int& moduleIndex(ActiveNodeId id) const
     {
@@ -712,8 +678,6 @@ private:
 
   void materializeActiveGraphPayload();
   void materializeLeafLevelCsr();
-
-  void syncActiveGraphPayloadToHierarchy();
   void syncActiveGraphStateToHierarchy();
 
   void initPartition() { return m_optimizer->initPartition(); }

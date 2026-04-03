@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
     std::cout << "\"peak_rss_bytes\":" << peakRssBytes() << ",";
     std::cout << "\"node_size_bytes\":" << sizeof(infomap::InfoNode) << ",";
     std::cout << "\"edge_size_bytes\":" << sizeof(infomap::InfoEdge) << ",";
-    std::cout << "\"active_payload_nodes\":" << activeMaterialization.payloads.size() << ",";
+    std::cout << "\"active_payload_nodes\":0,";
     std::cout << "\"active_payload_bytes\":" << activeMaterialization.payloadBytes() << ",";
     std::cout << "\"num_nodes\":" << inputNodeCount << ",";
     std::cout << "\"num_links\":" << inputLinkCount << ",";

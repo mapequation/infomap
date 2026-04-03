@@ -213,7 +213,7 @@ TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][c
   }
 }
 
-TEST_CASE("Active graph payload materialization mirrors the leaf-level active network [fast][core][partition][lifecycle]")
+TEST_CASE("Active graph materialization mirrors the leaf-level active network without duplicated payload storage [fast][core][partition][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -222,24 +222,17 @@ TEST_CASE("Active graph payload materialization mirrors the leaf-level active ne
 
   auto& materialization = im.activeGraphMaterialization();
   REQUIRE(materialization.nodes.size() == im.activeNetwork().size());
-  REQUIRE(materialization.payloads.size() == im.activeNetwork().size());
-  CHECK(materialization.payloadBytes() == materialization.payloads.size() * sizeof(infomap::InfomapBase::ActiveNodePayload));
+  CHECK(materialization.payloadBytes() == 0);
 
   for (std::size_t i = 0; i < materialization.nodes.size(); ++i) {
     auto* node = im.activeNetwork()[i];
     CHECK(materialization.nodes[i] == node);
     CHECK(materialization.idFor(*node) == i);
     CHECK(&materialization.nodeFor(i) == node);
-    CHECK(materialization.payloads[i].data.flow == doctest::Approx(node->data.flow));
   }
-
-  materialization.payloads[0].data.flow += 0.5;
-  im.syncActiveGraphPayloadToHierarchy();
-
-  CHECK(im.activeNetwork()[0]->data.flow == doctest::Approx(materialization.payloads[0].data.flow));
 }
 
-TEST_CASE("Active graph payload materialization mirrors module-level active nodes [fast][core][partition][lifecycle]")
+TEST_CASE("Active graph materialization mirrors module-level active nodes without duplicated payload storage [fast][core][partition][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -258,11 +251,10 @@ TEST_CASE("Active graph payload materialization mirrors module-level active node
     CHECK(materialization.nodes[i] == node);
     CHECK(materialization.idFor(*node) == i);
     CHECK(&materialization.nodeFor(i) == node);
-    CHECK(materialization.payloads[i].data.flow == doctest::Approx(node->data.flow));
   }
 }
 
-TEST_CASE("Active graph wrappers sync payload back to hierarchy nodes [fast][core][partition][lifecycle]")
+TEST_CASE("Active graph wrappers preserve hierarchy payload without duplicated payload storage [fast][core][partition][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -271,10 +263,9 @@ TEST_CASE("Active graph wrappers sync payload back to hierarchy nodes [fast][cor
   im.initPartition();
 
   auto& materialization = im.activeGraphMaterialization();
-  REQUIRE_FALSE(materialization.payloads.empty());
+  CHECK(materialization.payloadBytes() == 0);
 
   const auto originalFlow = im.activeNetwork()[0]->data.flow;
-  materialization.payloads[0].data.flow = originalFlow + 0.25;
 
   std::vector<unsigned int> modules(im.numLeafNodes());
   for (unsigned int i = 0; i < im.numLeafNodes(); ++i) {
@@ -282,11 +273,11 @@ TEST_CASE("Active graph wrappers sync payload back to hierarchy nodes [fast][cor
   }
   im.moveActiveNodesToPredefinedModules(modules);
 
-  CHECK(im.activeNetwork()[0]->data.flow == doctest::Approx(originalFlow + 0.25));
-  CHECK(im.activeGraphMaterialization().payloads[0].data.flow == doctest::Approx(originalFlow + 0.25));
+  CHECK(im.activeNetwork()[0]->data.flow == doctest::Approx(originalFlow));
+  CHECK(im.activeGraphMaterialization().payloadBytes() == 0);
 }
 
-TEST_CASE("Pointer backend exposes payload, state, and adjacency by active node id [fast][core][partition][lifecycle]")
+TEST_CASE("Pointer backend exposes state and adjacency by active node id [fast][core][partition][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -301,7 +292,6 @@ TEST_CASE("Pointer backend exposes payload, state, and adjacency by active node 
   for (std::size_t i = 0; i < view.size(); ++i) {
     auto& node = view.nodeFor(static_cast<infomap::InfomapBase::ActiveGraphMaterialization::ActiveNodeId>(i));
     CHECK(view.idFor(node) == i);
-    CHECK(view.payloadFor(i).data.flow == doctest::Approx(node.data.flow));
     CHECK(view.moduleIndex(i) == node.index);
     CHECK(view.dirty(i) == node.dirty);
 

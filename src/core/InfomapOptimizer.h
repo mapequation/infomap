@@ -417,7 +417,7 @@ void InfomapOptimizer<Objective>::initPartition()
 
     for (unsigned int i = 0; i < numNodes; ++i) {
       graph.moduleIndex(i) = i; // Unique module index for each node
-      m_moduleFlowData[i] = graph.payloadFor(i).data;
+      m_moduleFlowData[i] = graph.nodeFor(i).data;
       graph.dirty(i) = true;
     }
 
