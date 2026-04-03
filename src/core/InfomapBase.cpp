@@ -1394,14 +1394,12 @@ void InfomapBase::materializeActiveGraphPayload()
   m_activeGraphMaterialization.nodes = network;
 
   if (m_disableCsrMaterialization) {
-    m_benchmarkStats.lastActiveGraphStorage = activeGraphStorageBreakdown();
-    m_benchmarkStats.maxActiveGraphStorage.maximize(m_benchmarkStats.lastActiveGraphStorage);
+    updateActiveGraphStorageBenchmarkStats();
     return;
   }
 
   materializeLeafLevelCsr();
-  m_benchmarkStats.lastActiveGraphStorage = activeGraphStorageBreakdown();
-  m_benchmarkStats.maxActiveGraphStorage.maximize(m_benchmarkStats.lastActiveGraphStorage);
+  updateActiveGraphStorageBenchmarkStats();
 }
 
 void InfomapBase::materializeLeafLevelCsr()
@@ -1457,6 +1455,21 @@ void InfomapBase::materializeLeafLevelCsr()
   }
 
   csr.available = true;
+}
+
+void InfomapBase::updateActiveGraphStorageBenchmarkStats()
+{
+  m_benchmarkStats.lastActiveGraphStorage = activeGraphStorageBreakdown();
+  m_benchmarkStats.maxActiveGraphStorage.maximize(m_benchmarkStats.lastActiveGraphStorage);
+}
+
+void InfomapBase::ensureActiveGraphNodeToId()
+{
+  const auto hadReverseLookup = !m_activeGraphMaterialization.nodeToId.empty();
+  m_activeGraphMaterialization.ensureNodeToId();
+  if (!hadReverseLookup && !m_activeGraphMaterialization.nodeToId.empty()) {
+    updateActiveGraphStorageBenchmarkStats();
+  }
 }
 
 void InfomapBase::syncActiveGraphStateToHierarchy()

@@ -348,6 +348,8 @@ TEST_CASE("Active graph storage breakdown distinguishes pointer-only and CSR-bac
   CHECK(pointerStorage.csrStateIdEntryBytes == 0);
   CHECK(pointerStorage.csrOutOffsetBytes == 0);
   CHECK(pointerStorage.csrInOffsetBytes == 0);
+  CHECK(pointerIm.benchmarkStats().lastActiveGraphStorage.activeNodeToIdEntryBytes > 0);
+  CHECK(pointerIm.benchmarkStats().maxActiveGraphStorage.activeNodeToIdEntryBytes > 0);
 
   InfomapWrapper csrIm(infomap::test::defaultFlags());
   csrIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));

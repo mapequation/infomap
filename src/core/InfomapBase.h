@@ -333,14 +333,19 @@ public:
       double flow = 0.0;
     };
 
-    explicit PointerBackend(ActiveGraphMaterialization& materialization)
-        : materialization(materialization) { }
+    PointerBackend(InfomapBase& owner, ActiveGraphMaterialization& materialization)
+        : owner(owner),
+          materialization(materialization) { }
 
     std::size_t size() const noexcept { return materialization.size(); }
     bool empty() const noexcept { return materialization.empty(); }
-    void ensureReverseLookup() const { materialization.ensureNodeToId(); }
+    void ensureReverseLookup() const { owner.ensureActiveGraphNodeToId(); }
 
-    ActiveNodeId idFor(const InfoNode& node) const { return materialization.idFor(node); }
+    ActiveNodeId idFor(const InfoNode& node) const
+    {
+      owner.ensureActiveGraphNodeToId();
+      return materialization.idFor(node);
+    }
     InfoNode& nodeFor(ActiveNodeId id) const { return materialization.nodeFor(id); }
     unsigned int& moduleIndex(ActiveNodeId id) const { return nodeFor(id).index; }
     bool& dirty(ActiveNodeId id) const { return nodeFor(id).dirty; }
@@ -394,6 +399,7 @@ public:
     }
 
   private:
+    InfomapBase& owner;
     ActiveGraphMaterialization& materialization;
   };
 
@@ -640,7 +646,7 @@ public:
   const ActiveGraphMaterialization& activeGraphMaterialization() const noexcept { return m_activeGraphMaterialization; }
   CsrMaterialization& csrMaterialization() noexcept { return m_csrMaterialization; }
   const CsrMaterialization& csrMaterialization() const noexcept { return m_csrMaterialization; }
-  PointerBackend pointerBackend() noexcept { return PointerBackend(m_activeGraphMaterialization); }
+  PointerBackend pointerBackend() noexcept { return PointerBackend(*this, m_activeGraphMaterialization); }
   PointerActiveGraph pointerActiveGraph() noexcept { return pointerBackend(); }
   CsrBackend csrBackend() noexcept { return CsrBackend(m_activeGraphMaterialization, m_csrMaterialization); }
 
@@ -849,6 +855,8 @@ private:
 
   void materializeActiveGraphPayload();
   void materializeLeafLevelCsr();
+  void updateActiveGraphStorageBenchmarkStats();
+  void ensureActiveGraphNodeToId();
   void syncActiveGraphStateToHierarchy();
 
   void initPartition() { return m_optimizer->initPartition(); }
