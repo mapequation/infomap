@@ -10,7 +10,7 @@ Reduce the GitHub issue backlog with the smallest safe change, the smallest usef
 - `interfaces/python/`: Python package sources and SWIG-facing wrapper code
 - `interfaces/js/`: JavaScript worker packaging and TypeScript sources
 - `test/`: Python-facing regression tests and fixtures
-- `examples/python/`: executable Python examples used by `make py-test`
+- `examples/python/`: executable Python examples used by `make test-python`
 - `docs/`: generated documentation output; do not hand-edit unless the task is explicitly about docs generation or publishing
 - `.github/workflows/`: CI, release, packaging, and publishing workflows
 
@@ -45,11 +45,11 @@ See `docs/automation/risk-rubric.md` for the detailed rubric.
 
 Run the smallest sufficient verification for the changed surface.
 
-- `src/` changes: at least `make`
-- Python wrapper changes: `make python` and `make py-test`
-- JS package or worker changes: `npm ci` and the smallest relevant build, usually `npm run build` or `make js-worker`
+- `src/` changes: at least `make build-native`
+- Python wrapper changes: `make build-python` and `make test-python`
+- JS package or worker changes: `npm ci` and the smallest relevant build, usually `make build-js` or `make test-js`
 - CI or release workflow changes: limit local verification and default to `draft`
-- docs-only changes: no code build unless the issue depends on regenerated docs
+- docs-only changes: no code build unless the issue depends on generated docs freshness, in which case run `make test-docs`
 
 See `docs/automation/verification-matrix.md` for the command matrix.
 
