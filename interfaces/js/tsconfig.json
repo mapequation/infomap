@@ -10,7 +10,7 @@
     "module": "preserve",
     "moduleResolution": "bundler",
     "declaration": true,
-    "declarationDir": "../../",
+    "declarationDir": "../../dist/npm/package",
     "baseUrl": "src"
   },
   "files": [
