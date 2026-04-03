@@ -1,8 +1,5 @@
-from infomap import Infomap
-
-
-def test_add_link():
-    im = Infomap(silent=True)
+def test_add_link(make_infomap):
+    im = make_infomap()
     links = [
         [1, 2],
         [2, 3],
@@ -21,8 +18,8 @@ def test_add_link():
     assert im.num_top_modules == 2
 
 
-def test_add_links_unweighted():
-    im = Infomap(silent=True)
+def test_add_links_unweighted(make_infomap):
+    im = make_infomap()
     links = [
         [1, 2],
         [2, 3],
@@ -40,8 +37,8 @@ def test_add_links_unweighted():
     assert im.num_top_modules == 2
 
 
-def test_add_links_weighted():
-    im = Infomap(silent=True)
+def test_add_links_weighted(make_infomap):
+    im = make_infomap()
     links = [
         [1, 2, 0.5],
         [2, 3, 0.5],
