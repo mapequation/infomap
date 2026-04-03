@@ -4,7 +4,10 @@ PY_HEADERS := $(HEADERS:src/%.h=$(PY_BUILD_DIR)/src/%.h)
 PY_SOURCES := $(SOURCES:src/%.cpp=$(PY_BUILD_DIR)/src/%.cpp)
 
 SPHINX_SOURCE_DIR := interfaces/python/source
-SPHINX_TARGET_DIR := docs
+SPHINX_TARGET_DIR ?= docs
+DOCS_FRESHNESS_EXCLUDES := automation maintainers plans .nojekyll
+DOCS_FRESHNESS_DIFF_ARGS := $(foreach excluded,$(DOCS_FRESHNESS_EXCLUDES),--exclude=$(excluded))
+DOCS_SYNC_ARGS := -a --delete $(foreach excluded,$(DOCS_FRESHNESS_EXCLUDES),--exclude=/$(excluded))
 PYTHON_TEST_DIR := test/python
 PYTEST_ARGS ?=
 PYPI_DIR := $(PY_BUILD_DIR)
@@ -25,6 +28,8 @@ PYTHON_BUILD_ENV = \
 	test-python-doctest \
 	test-python-examples \
 	build-docs \
+	test-docs \
+	_build-docs-site \
 	clean-python \
 	format-python \
 	release-python-dist \
@@ -83,12 +88,28 @@ test-python-doctest:
 test-python-examples:
 	@cd examples/python && for f in *.py; do $(PYTHON) "$$f" > /dev/null || exit 1; done
 
+_build-docs-site:
+	@mkdir -p "$(SPHINX_TARGET_DIR)"
+	@cp -a README.rst "$(SPHINX_SOURCE_DIR)/index.rst"
+	@trap 'rm -f "$(SPHINX_SOURCE_DIR)/index.rst"' EXIT; \
+		$(SPHINX_BUILD) -b html "$(SPHINX_SOURCE_DIR)" "$(SPHINX_TARGET_DIR)"
+	@rm -rf "$(SPHINX_TARGET_DIR)/.doctrees"
+	@if [ -f "$(SPHINX_TARGET_DIR)/searchindex.js" ]; then \
+		npx prettier --write "$(SPHINX_TARGET_DIR)/searchindex.js"; \
+	fi
+
 build-docs: dev-python-install
-	@mkdir -p $(SPHINX_TARGET_DIR)
-	@cp -a README.rst $(SPHINX_SOURCE_DIR)/index.rst
-	$(SPHINX_BUILD) -b html $(SPHINX_SOURCE_DIR) $(SPHINX_TARGET_DIR)
-	@rm -r $(SPHINX_SOURCE_DIR)/index.rst
-	npx prettier --write docs/searchindex.js
+	@tmp_dir="$$(mktemp -d 2>/dev/null || mktemp -d -t infomap-docs)"; \
+	trap 'rm -rf "$$tmp_dir"' EXIT; \
+	$(MAKE) --no-print-directory SPHINX_TARGET_DIR="$$tmp_dir/docs" _build-docs-site; \
+	mkdir -p docs; \
+	rsync $(DOCS_SYNC_ARGS) "$$tmp_dir/docs/" docs/
+
+test-docs: dev-python-install
+	@tmp_dir="$$(mktemp -d 2>/dev/null || mktemp -d -t infomap-docs)"; \
+	trap 'rm -rf "$$tmp_dir"' EXIT; \
+	$(MAKE) --no-print-directory SPHINX_TARGET_DIR="$$tmp_dir/docs" _build-docs-site; \
+	diff -ru $(DOCS_FRESHNESS_DIFF_ARGS) "$$tmp_dir/docs" docs
 
 clean-python:
 	$(RM) -r $(PY_BUILD_DIR)

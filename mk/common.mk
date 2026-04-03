@@ -66,7 +66,7 @@ help:
 		"  build-python          Generate the SWIG wrapper and build the local Python extension." \
 		"  build-js-metadata     Refresh the tracked JS parameters/changelog metadata." \
 		"  build-js              Build the JS worker bundle and npm package assets from tracked metadata." \
-		"  build-docs            Build the Python docs site into docs/." \
+		"  build-docs            Refresh the committed Python docs site in docs/." \
 		"" \
 		"Test" \
 		"  test-native           Configure, build, and run the C++ doctest suite via CMake/CTest." \
@@ -74,6 +74,7 @@ help:
 		"  test-python-unit      Run pytest for test/python." \
 		"  test-python-doctest   Run Python doctests and ruff checks for the built package." \
 		"  test-python-examples  Run the Python example smoke tests." \
+		"  test-docs             Rebuild docs in a temp dir and verify committed docs/ is fresh." \
 		"  test-js-metadata      Regenerate JS metadata in a temp dir and verify tracked files are current." \
 		"  test-js               Pack the npm package and smoke-test the browser example." \
 		"  test-fast             Run the fast native + Python feedback suite." \
@@ -91,7 +92,8 @@ help:
 		"  clean-js              Remove JS build and pack outputs." \
 		"" \
 		"Docs / Release" \
-		"  build-docs            Build the Python docs site after installing the local package." \
+		"  build-docs            Refresh the committed Python docs site after installing the local package." \
+		"  test-docs             Verify committed docs/ matches a fresh Sphinx build." \
 		"  release-python-dist   Build local sdist and wheel artifacts from build/py." \
 		"  release-python-testpypi  Publish the built distributions to TestPyPI." \
 		"  release-python-pypi      Publish the built distributions to PyPI." \
@@ -108,6 +110,7 @@ help:
 		"  make build-js-metadata test-js-metadata" \
 		"  make build-js test-js" \
 		"  make build-docs" \
+		"  make test-docs" \
 		"" \
 		"Legacy aliases like make python, make js-worker, make cpp-test, and make py-test still work."
 
