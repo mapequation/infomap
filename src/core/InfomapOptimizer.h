@@ -1224,6 +1224,10 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
   auto graph = m_infomap->pointerBackend();
   // Get random enumeration of nodes
   const auto numNodes = graph.size();
+  const bool lockFirstLoopMoves = m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1;
+  const double minimumSingleNodeImprovement = m_infomap->minimumSingleNodeCodelengthImprovement;
+  auto& moduleFlowData = m_moduleFlowData;
+  auto& moduleMembers = m_moduleMembers;
   std::vector<unsigned int> nodeEnumeration(numNodes);
   m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
@@ -1240,12 +1244,12 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
       const auto currentId = nodeEnumeration[i];
       InfoNode& current = graph.nodeFor(currentId);
 
-      if (!graph.dirty(currentId))
+      if (!current.dirty)
         continue;
 
       // If other nodes have moved here, don't move away on first loop
-      const auto currentModuleIndex = graph.moduleIndex(currentId);
-      if (m_moduleMembers[currentModuleIndex] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
+      const auto currentModuleIndex = current.index;
+      if (moduleMembers[currentModuleIndex] > 1 && lockFirstLoopMoves)
         continue;
 
       // If no links connecting this node with other nodes, it won't move into others,
@@ -1262,7 +1266,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
       oldModuleDelta.module = currentModuleIndex; // Make sure index is correct if created new
 
       // Option to move to empty module (if node not already alone)
-      if (m_moduleMembers[currentModuleIndex] > 1 && !m_emptyModules.empty()) {
+      if (moduleMembers[currentModuleIndex] > 1 && !m_emptyModules.empty()) {
         // deltaFlow[m_emptyModules.back()] += DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0);
         deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
       }
@@ -1293,10 +1297,10 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
           double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
                                                                               oldModuleDelta,
                                                                               moduleDeltaEnterExit[j],
-                                                                              m_moduleFlowData,
-                                                                              m_moduleMembers);
+                                                                              moduleFlowData,
+                                                                              moduleMembers);
 
-          if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement) {
+          if (deltaCodelength < bestDeltaCodelength - minimumSingleNodeImprovement) {
             bestDeltaModule = moduleDeltaEnterExit[j];
             bestDeltaCodelength = deltaCodelength;
           }
@@ -1310,7 +1314,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
       }
 
       // Prefer strongest connected module if equal delta codelength
-      if (strongestConnectedModule.module != bestDeltaModule.module && deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + m_infomap->minimumSingleNodeCodelengthImprovement) {
+      if (strongestConnectedModule.module != bestDeltaModule.module && deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + minimumSingleNodeImprovement) {
         bestDeltaModule = strongestConnectedModule;
       }
 
@@ -1322,14 +1326,14 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 #pragma omp critical(moveUpdate)
       {
         unsigned int bestModuleIndex = bestDeltaModule.module;
-        unsigned int oldModuleIndex = graph.moduleIndex(currentId);
+        unsigned int oldModuleIndex = current.index;
         const bool targetsCurrentEmptyModule = !m_emptyModules.empty() && bestModuleIndex == m_emptyModules.back();
 
         bool validMove = targetsCurrentEmptyModule
             // Check validity of move to empty target
-            ? m_moduleMembers[oldModuleIndex] > 1 && !m_emptyModules.empty()
+            ? moduleMembers[oldModuleIndex] > 1 && !m_emptyModules.empty()
             // Not valid if the best module is empty now but not when decided
-            : m_moduleMembers[bestModuleIndex] > 0;
+            : moduleMembers[bestModuleIndex] > 0;
 
         if (validMove) {
           // Recalculate delta codelength for proposed move to see if still an improvement
@@ -1344,24 +1348,24 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
           double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
                                                                               oldModuleDelta,
                                                                               newModuleDelta,
-                                                                              m_moduleFlowData,
-                                                                              m_moduleMembers);
+                                                                              moduleFlowData,
+                                                                              moduleMembers);
 
-          if (deltaCodelength < 0.0 - m_infomap->minimumSingleNodeCodelengthImprovement) {
+          if (deltaCodelength < 0.0 - minimumSingleNodeImprovement) {
             // Update empty module vector
-            if (m_moduleMembers[bestModuleIndex] == 0) {
+            if (moduleMembers[bestModuleIndex] == 0) {
               m_emptyModules.pop_back();
             }
-            if (m_moduleMembers[oldModuleIndex] == 1) {
+            if (moduleMembers[oldModuleIndex] == 1) {
               m_emptyModules.push_back(oldModuleIndex);
             }
 
-            m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
+            m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, moduleFlowData, moduleMembers);
 
-            m_moduleMembers[oldModuleIndex] -= 1;
-            m_moduleMembers[bestModuleIndex] += 1;
+            moduleMembers[oldModuleIndex] -= 1;
+            moduleMembers[bestModuleIndex] += 1;
 
-            graph.moduleIndex(currentId) = bestModuleIndex;
+            current.index = bestModuleIndex;
 
             ++numMoved;
 
