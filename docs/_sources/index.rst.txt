@@ -1,4 +1,4 @@
-.. image:: https://github.com/mapequation/infomap/actions/workflows/build.yml/badge.svg
+.. image:: https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg
 
 Infomap
 =======
@@ -65,11 +65,11 @@ The image ``mapequation/infomap`` can be started with
         mapequation/infomap
         [infomap arguments]
 
-You can also use the supplied `docker-compose.yml`_:
+You can also use the supplied Compose file:
 
 .. code-block:: bash
 
-    docker-compose run --rm infomap
+    docker compose run --rm infomap
 
 The image ``mapequation/infomap:notebook`` can be started with
 
@@ -81,14 +81,13 @@ The image ``mapequation/infomap:notebook`` can be started with
         mapequation/infomap:notebook \
         start.sh jupyter lab
 
-Or similarly, using docker-compose:
+Or similarly, using Docker Compose:
 
 .. code-block:: bash
 
-    docker-compose up notebook
+    docker compose up notebook
 
 .. _`Docker Hub`: https://hub.docker.com/r/mapequation/infomap
-.. _`docker-compose.yml`: https://github.com/mapequation/infomap/blob/master/docker-compose.yml
 
 Compiling from source
 ---------------------
@@ -102,7 +101,7 @@ by running
 
     git clone git@github.com:mapequation/infomap.git
     cd infomap
-    make
+    make build-native
 
 This creates the binary ``Infomap``, run it using::
 
@@ -137,6 +136,16 @@ If you have any questions, suggestions or issues regarding the software,
 please add them to `GitHub issues`_.
 
 .. _Github issues: http://www.github.com/mapequation/infomap/issues
+
+Maintainer automation
+---------------------
+
+Repository-specific agent guidance lives in ``AGENTS.md``.
+
+Automation policy, risk classification, verification rules, and GitHub
+interaction templates live under ``docs/automation/``.
+Maintainer architecture and ownership guidance lives in
+``docs/maintainers/architecture.md``.
 
 Authors
 -------
