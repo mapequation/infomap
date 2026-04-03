@@ -10,8 +10,13 @@ SANITIZER_CXX ?= clang++
 SANITIZER_CMAKE_ARGS ?=
 BENCHMARK_OUTPUT ?= build/benchmarks/python-benchmarks.json
 BENCHMARK_SUMMARY ?=
+NATIVE_BENCHMARK_TARGET ?= infomap_native_benchmark
+NATIVE_BENCHMARK_OUTPUT ?= build/benchmarks/native-benchmarks.json
+NATIVE_BENCHMARK_SUMMARY ?=
+NATIVE_BENCHMARK_PROFILE ?= baseline
+NATIVE_BENCHMARK_REPEATS ?= 3
 
-.PHONY: test-native test-fast test-sanitizers bench-python
+.PHONY: test-native test-fast test-sanitizers bench-python bench-native
 
 test-native:
 	@generator_args=""; \
@@ -58,3 +63,25 @@ test-sanitizers:
 bench-python:
 	@mkdir -p $(dir $(BENCHMARK_OUTPUT))
 	@$(PYTHON) scripts/benchmarks/run_python_benchmarks.py --output $(BENCHMARK_OUTPUT) $(if $(BENCHMARK_SUMMARY),--summary $(BENCHMARK_SUMMARY),)
+
+bench-native:
+	@generator_args=""; \
+	if [ -n "$(CMAKE_GENERATOR)" ]; then generator_args="-G $(CMAKE_GENERATOR)"; fi; \
+	$(CMAKE) -S . -B $(CMAKE_TEST_BUILD_DIR) $$generator_args \
+		-DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
+		$(if $(CMAKE_CXX_COMPILER),-DCMAKE_CXX_COMPILER=$(CMAKE_CXX_COMPILER),) \
+		$(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),-DCMAKE_CXX_COMPILER_LAUNCHER=$(CCACHE_BIN),) \
+		-DINFOMAP_MODE=$(MODE) \
+		-DINFOMAP_USE_OPENMP=$(if $(filter 1,$(OPENMP)),ON,OFF) \
+		-DINFOMAP_EXTRA_CPPFLAGS="$(CPPFLAGS)" \
+		-DINFOMAP_EXTRA_CXX_FLAGS="$(CXXFLAGS)" \
+		-DINFOMAP_EXTRA_LINK_FLAGS="$(LDFLAGS)" \
+		$(TEST_CMAKE_ARGS)
+	@$(CMAKE) --build $(CMAKE_TEST_BUILD_DIR) --target $(NATIVE_BENCHMARK_TARGET) --parallel $(JOBS)
+	@mkdir -p $(dir $(NATIVE_BENCHMARK_OUTPUT))
+	@$(PYTHON) scripts/benchmarks/run_native_benchmarks.py \
+		--binary $(CMAKE_TEST_BUILD_DIR)/$(NATIVE_BENCHMARK_TARGET) \
+		--output $(NATIVE_BENCHMARK_OUTPUT) \
+		--profile $(NATIVE_BENCHMARK_PROFILE) \
+		--repeats $(NATIVE_BENCHMARK_REPEATS) \
+		$(if $(NATIVE_BENCHMARK_SUMMARY),--summary $(NATIVE_BENCHMARK_SUMMARY),)
