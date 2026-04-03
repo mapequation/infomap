@@ -94,6 +94,7 @@ protected:
                            InfomapBase::CsrBackend::ActiveNodeId currentId,
                            unsigned int oldModuleIndex,
                            InfoNode*& nodeInOldModule,
+                           InfomapBase::CsrBackend::ActiveNodeId& nodeInOldModuleId,
                            unsigned int& numLinkedNodesInOldModule);
 
   template <typename Graph>
@@ -101,6 +102,7 @@ protected:
                            typename Graph::ActiveNodeId currentId,
                            unsigned int oldModuleIndex,
                            InfoNode*& nodeInOldModule,
+                           typename Graph::ActiveNodeId& nodeInOldModuleId,
                            unsigned int& numLinkedNodesInOldModule);
 
   void markNodeNeighboursDirty(InfomapBase::CsrBackend& graph, InfomapBase::CsrBackend::ActiveNodeId nodeId);
@@ -321,6 +323,7 @@ void InfomapOptimizer<Objective>::markNeighboursDirty(InfomapBase::CsrBackend& g
                                                       InfomapBase::CsrBackend::ActiveNodeId currentId,
                                                       unsigned int oldModuleIndex,
                                                       InfoNode*& nodeInOldModule,
+                                                      InfomapBase::CsrBackend::ActiveNodeId& nodeInOldModuleId,
                                                       unsigned int& numLinkedNodesInOldModule)
 {
   auto* dirtyFlags = graph.dirtyFlagsData();
@@ -332,6 +335,7 @@ void InfomapOptimizer<Objective>::markNeighboursDirty(InfomapBase::CsrBackend& g
     dirtyFlags[neighbourId] = 1u;
     if (moduleIndices[neighbourId] == oldModuleIndex) {
       nodeInOldModule = &graph.nodeFor(neighbourId);
+      nodeInOldModuleId = neighbourId;
       ++numLinkedNodesInOldModule;
     }
   }
@@ -342,6 +346,7 @@ void InfomapOptimizer<Objective>::markNeighboursDirty(InfomapBase::CsrBackend& g
     dirtyFlags[neighbourId] = 1u;
     if (moduleIndices[neighbourId] == oldModuleIndex) {
       nodeInOldModule = &graph.nodeFor(neighbourId);
+      nodeInOldModuleId = neighbourId;
       ++numLinkedNodesInOldModule;
     }
   }
@@ -353,12 +358,14 @@ void InfomapOptimizer<Objective>::markNeighboursDirty(Graph& graph,
                                                       typename Graph::ActiveNodeId currentId,
                                                       unsigned int oldModuleIndex,
                                                       InfoNode*& nodeInOldModule,
+                                                      typename Graph::ActiveNodeId& nodeInOldModuleId,
                                                       unsigned int& numLinkedNodesInOldModule)
 {
   graph.forEachOutEdge(currentId, [&](auto neighbourId, InfoNode& neighbour, const auto&) {
     graph.dirty(neighbourId) = true;
     if (graph.moduleIndex(neighbourId) == oldModuleIndex) {
       nodeInOldModule = &neighbour;
+      nodeInOldModuleId = neighbourId;
       ++numLinkedNodesInOldModule;
     }
   });
@@ -367,6 +374,7 @@ void InfomapOptimizer<Objective>::markNeighboursDirty(Graph& graph,
     graph.dirty(neighbourId) = true;
     if (graph.moduleIndex(neighbourId) == oldModuleIndex) {
       nodeInOldModule = &neighbour;
+      nodeInOldModuleId = neighbourId;
       ++numLinkedNodesInOldModule;
     }
   });
@@ -720,14 +728,15 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Info
       ++numMoved;
 
       InfoNode* nodeInOldModule = &current;
+      auto nodeInOldModuleId = currentId;
       unsigned int numLinkedNodesInOldModule = 0;
-      markNeighboursDirty(graph, currentId, oldModuleIndex, nodeInOldModule, numLinkedNodesInOldModule);
+      markNeighboursDirty(graph, currentId, oldModuleIndex, nodeInOldModule, nodeInOldModuleId, numLinkedNodesInOldModule);
 
       if (numLinkedNodesInOldModule == 1 && m_moduleMembers[oldModuleIndex] == 1) {
-        moveNodeToPredefinedModuleImpl(graph, graph.idFor(*nodeInOldModule), bestModuleIndex);
+        moveNodeToPredefinedModuleImpl(graph, nodeInOldModuleId, bestModuleIndex);
         ++numMoved;
         if (nodeInOldModule->degree() > 1) {
-          markNodeNeighboursDirty(graph, graph.idFor(*nodeInOldModule));
+          markNodeNeighboursDirty(graph, nodeInOldModuleId);
         }
       }
     } else {
@@ -869,18 +878,18 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
       ++numMoved;
 
       InfoNode* nodeInOldModule = &current;
+      auto nodeInOldModuleId = currentId;
       unsigned int numLinkedNodesInOldModule = 0;
       // Mark neighbours as dirty
-      markNeighboursDirty(graph, currentId, oldModuleIndex, nodeInOldModule, numLinkedNodesInOldModule);
+      markNeighboursDirty(graph, currentId, oldModuleIndex, nodeInOldModule, nodeInOldModuleId, numLinkedNodesInOldModule);
 
       // Move single connected nodes to same module
       if (numLinkedNodesInOldModule == 1 && m_moduleMembers[oldModuleIndex] == 1) {
-        moveNodeToPredefinedModuleImpl(graph, graph.idFor(*nodeInOldModule), bestModuleIndex);
+        moveNodeToPredefinedModuleImpl(graph, nodeInOldModuleId, bestModuleIndex);
         ++numMoved;
         // Mark neighbours as dirty
         if (nodeInOldModule->degree() > 1) {
-          auto linkedNodeId = graph.idFor(*nodeInOldModule);
-          markNodeNeighboursDirty(graph, linkedNodeId);
+          markNodeNeighboursDirty(graph, nodeInOldModuleId);
         }
       }
     } else {
