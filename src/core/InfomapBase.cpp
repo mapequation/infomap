@@ -37,6 +37,28 @@
 
 namespace infomap {
 
+namespace {
+
+struct ScopedBenchmarkDuration {
+  double& field;
+  unsigned int* calls = nullptr;
+  Stopwatch timer{ true };
+
+  explicit ScopedBenchmarkDuration(double& field, unsigned int* calls = nullptr)
+      : field(field),
+        calls(calls) { }
+
+  ~ScopedBenchmarkDuration()
+  {
+    field += timer.getElapsedTimeInSec();
+    if (calls != nullptr) {
+      ++(*calls);
+    }
+  }
+};
+
+} // namespace
+
 std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)
 {
   if (haveMemory() && !states) {
@@ -163,6 +185,8 @@ void InfomapBase::run(Network& network)
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
 
+  resetBenchmarkStats();
+
   if (network.numNodes() == 0) {
     network.postProcessInputData();
     if (network.numNodes() == 0) {
@@ -214,13 +238,19 @@ void InfomapBase::run(Network& network)
   }
   network.setConfig(*this);
 
-  calculateFlow(network, *this);
+  {
+    ScopedBenchmarkDuration scopedDuration(m_benchmarkStats.calculateFlowSec);
+    calculateFlow(network, *this);
+  }
 
   if (network.isBipartite()) {
     bipartite = true;
   }
 
-  initNetwork(network);
+  {
+    ScopedBenchmarkDuration scopedDuration(m_benchmarkStats.initNetworkSec);
+    initNetwork(network);
+  }
 
   if (numLeafNodes() == 0)
     throw std::domain_error("No nodes to partition");
@@ -367,6 +397,15 @@ void InfomapBase::run(Network& network)
     Log() << "\n";
     Log() << bestSolutionStatistics.str() << '\n';
   }
+}
+
+void InfomapBase::runPartition()
+{
+  ScopedBenchmarkDuration scopedDuration(m_benchmarkStats.runPartitionSec);
+  if (twoLevel)
+    partition();
+  else
+    hierarchicalPartition();
 }
 
 // ===================================================
@@ -1340,6 +1379,7 @@ void InfomapBase::setActiveNetworkFromChildrenOfRoot()
 
 void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 {
+  ScopedBenchmarkDuration scopedDuration(m_benchmarkStats.findTopModulesSec, &m_benchmarkStats.findTopModulesCalls);
   Log(1, 2) << "Iteration " << (m_tuneIterationIndex + 1) << ", moving ";
   Log(3) << "\nIteration " << (m_tuneIterationIndex + 1) << ":\n";
   m_aggregationLevel = 0;
@@ -1389,6 +1429,7 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 
 unsigned int InfomapBase::fineTune()
 {
+  ScopedBenchmarkDuration scopedDuration(m_benchmarkStats.fineTuneSec, &m_benchmarkStats.fineTuneCalls);
   if (numLevels() != 2)
     throw std::logic_error("InfomapBase::fineTune() called but numLevels != 2");
 
@@ -1427,6 +1468,7 @@ unsigned int InfomapBase::fineTune()
 
 unsigned int InfomapBase::coarseTune()
 {
+  ScopedBenchmarkDuration scopedDuration(m_benchmarkStats.coarseTuneSec, &m_benchmarkStats.coarseTuneCalls);
   if (numLevels() != 2)
     throw std::logic_error("InfomapBase::coarseTune() called but numLevels != 2");
 
@@ -1533,6 +1575,7 @@ unsigned int InfomapBase::calculateMaxDepth() const
 
 unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLevelLimit)
 {
+  ScopedBenchmarkDuration scopedDuration(m_benchmarkStats.superModulesFastSec, &m_benchmarkStats.superModulesFastCalls);
   if (superLevelLimit == 0)
     return 0;
 
@@ -1608,6 +1651,7 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
 
 unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLimit)
 {
+  ScopedBenchmarkDuration scopedDuration(m_benchmarkStats.superModulesSec, &m_benchmarkStats.superModulesCalls);
   if (superLevelLimit == 0)
     return 0;
 
@@ -1759,6 +1803,7 @@ unsigned int InfomapBase::removeSubModules(bool recalculateCodelengthOnTree)
 
 unsigned int InfomapBase::recursivePartition()
 {
+  ScopedBenchmarkDuration scopedDuration(m_benchmarkStats.recursivePartitionSec, &m_benchmarkStats.recursivePartitionCalls);
   double indexCodelength = getIndexCodelength();
   double hierarchicalCodelength = m_hierarchicalCodelength;
 

@@ -46,6 +46,55 @@ class InfomapBase : public InfomapConfig<InfomapBase> {
 public:
   using PartitionQueue = detail::PartitionQueue;
 
+  struct ConsolidationSnapshot {
+    unsigned int level = 0;
+    unsigned int activeNodeCount = 0;
+    unsigned int moduleNodeCount = 0;
+    unsigned int moduleEdgeCount = 0;
+    bool replaceExistingModules = false;
+  };
+
+  struct BenchmarkStats {
+    double calculateFlowSec = 0.0;
+    double initNetworkSec = 0.0;
+    double runPartitionSec = 0.0;
+    double findTopModulesSec = 0.0;
+    double fineTuneSec = 0.0;
+    double coarseTuneSec = 0.0;
+    double recursivePartitionSec = 0.0;
+    double superModulesSec = 0.0;
+    double superModulesFastSec = 0.0;
+    unsigned int findTopModulesCalls = 0;
+    unsigned int fineTuneCalls = 0;
+    unsigned int coarseTuneCalls = 0;
+    unsigned int recursivePartitionCalls = 0;
+    unsigned int superModulesCalls = 0;
+    unsigned int superModulesFastCalls = 0;
+    unsigned int consolidationCount = 0;
+    std::vector<ConsolidationSnapshot> consolidations;
+
+    void reset()
+    {
+      calculateFlowSec = 0.0;
+      initNetworkSec = 0.0;
+      runPartitionSec = 0.0;
+      findTopModulesSec = 0.0;
+      fineTuneSec = 0.0;
+      coarseTuneSec = 0.0;
+      recursivePartitionSec = 0.0;
+      superModulesSec = 0.0;
+      superModulesFastSec = 0.0;
+      findTopModulesCalls = 0;
+      fineTuneCalls = 0;
+      coarseTuneCalls = 0;
+      recursivePartitionCalls = 0;
+      superModulesCalls = 0;
+      superModulesFastCalls = 0;
+      consolidationCount = 0;
+      consolidations.clear();
+    }
+  };
+
   InfomapBase() : InfomapConfig<InfomapBase>() { initOptimizer(); }
 
   explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { initOptimizer(); }
@@ -138,6 +187,7 @@ public:
   double getEntropyRate() { return m_entropyRate; }
   double getMaxEntropy() { return m_maxEntropy; }
   double getMaxFlow() { return m_maxFlow; }
+  const BenchmarkStats& benchmarkStats() const noexcept { return m_benchmarkStats; }
 
   const Date& getStartDate() const { return m_startDate; }
   const Stopwatch& getElapsedTime() const { return m_elapsedTime; }
@@ -289,13 +339,7 @@ private:
 
   void init();
 
-  void runPartition()
-  {
-    if (twoLevel)
-      partition();
-    else
-      hierarchicalPartition();
-  }
+  void runPartition();
 
   void restoreHardPartition();
 
@@ -418,6 +462,18 @@ private:
 
   bool processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevel) const;
 
+  void resetBenchmarkStats() { m_benchmarkStats.reset(); }
+
+  void recordConsolidationSnapshot(unsigned int level,
+                                   unsigned int activeNodeCount,
+                                   unsigned int moduleNodeCount,
+                                   unsigned int moduleEdgeCount,
+                                   bool replaceExistingModules)
+  {
+    ++m_benchmarkStats.consolidationCount;
+    m_benchmarkStats.consolidations.push_back({ level, activeNodeCount, moduleNodeCount, moduleEdgeCount, replaceExistingModules });
+  }
+
 public:
   // ===================================================
   // Output: *
@@ -516,6 +572,7 @@ protected:
   Stopwatch m_elapsedTime = Stopwatch(false);
   std::string m_initialParameters;
   std::string m_currentParameters;
+  BenchmarkStats m_benchmarkStats;
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };
