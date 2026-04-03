@@ -15,6 +15,7 @@ using infomap::InfomapWrapper;
 using infomap::InfoNode;
 
 using EdgeKey = std::pair<unsigned int, unsigned int>;
+using CsrEdgeKey = std::tuple<unsigned int, double, double>;
 
 std::vector<unsigned int> childStateIds(const InfoNode& node)
 {
@@ -61,6 +62,26 @@ std::map<EdgeKey, double> aggregatedModuleFlow(InfoNode& root, bool undirected)
     }
   }
   return flows;
+}
+
+std::vector<CsrEdgeKey> pointerOutEdgeTuples(InfoNode& node)
+{
+  std::vector<CsrEdgeKey> edges;
+  for (auto* edge : node.outEdges()) {
+    edges.emplace_back(edge->target->stateId, edge->data.weight, edge->data.flow);
+  }
+  std::sort(edges.begin(), edges.end());
+  return edges;
+}
+
+std::vector<CsrEdgeKey> pointerInEdgeTuples(InfoNode& node)
+{
+  std::vector<CsrEdgeKey> edges;
+  for (auto* edge : node.inEdges()) {
+    edges.emplace_back(edge->source->stateId, edge->data.weight, edge->data.flow);
+  }
+  std::sort(edges.begin(), edges.end());
+  return edges;
 }
 
 TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][core][partition]")
@@ -325,6 +346,64 @@ TEST_CASE("Pointer backend exposes payload, state, and adjacency by active node 
   CHECK(im.activeNetwork()[0]->dirty == !originalDirty);
   view.moduleIndex(0) = originalModule;
   view.dirty(0) = originalDirty;
+}
+
+TEST_CASE("CSR backend materializes leaf-level first-order adjacency [fast][core][partition][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+
+  auto csr = im.csrBackend();
+  REQUIRE(csr.available());
+  REQUIRE(csr.size() == im.numLeafNodes());
+  CHECK(im.csrMaterialization().outOffsets.size() == im.numLeafNodes() + 1);
+  CHECK(im.csrMaterialization().inOffsets.size() == im.numLeafNodes() + 1);
+  CHECK(im.csrMaterialization().adjacencyBytes() > 0);
+
+  for (std::size_t i = 0; i < csr.size(); ++i) {
+    auto& node = csr.nodeFor(static_cast<infomap::InfomapBase::ActiveGraphMaterialization::ActiveNodeId>(i));
+
+    std::vector<CsrEdgeKey> csrOut;
+    const auto outEdges = csr.outEdges(i);
+    for (std::size_t j = 0; j < outEdges.size; ++j) {
+      csrOut.emplace_back(csr.nodeFor(outEdges.targets[j]).stateId, outEdges.weights[j], outEdges.flows[j]);
+    }
+    std::sort(csrOut.begin(), csrOut.end());
+    CHECK(csrOut == pointerOutEdgeTuples(node));
+
+    std::vector<CsrEdgeKey> csrIn;
+    const auto inEdges = csr.inEdges(i);
+    for (std::size_t j = 0; j < inEdges.size; ++j) {
+      csrIn.emplace_back(csr.nodeFor(inEdges.targets[j]).stateId, inEdges.weights[j], inEdges.flows[j]);
+    }
+    std::sort(csrIn.begin(), csrIn.end());
+    CHECK(csrIn == pointerInEdgeTuples(node));
+  }
+}
+
+TEST_CASE("CSR backend stays disabled for module-level and higher-order active graphs [fast][core][partition][lifecycle]")
+{
+  {
+    InfomapWrapper im(infomap::test::defaultFlags());
+    im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    im.run();
+
+    infomap::test::checkRunSanity(im);
+    im.setActiveNetworkFromChildrenOfRoot();
+    CHECK_FALSE(im.csrBackend().available());
+  }
+
+  {
+    InfomapWrapper im(infomap::test::defaultFlags());
+    im.readInputData(infomap::test::repoPath("examples/networks/states.net"));
+    im.run();
+
+    infomap::test::checkRunSanity(im);
+    im.setActiveNetworkFromLeafs();
+    CHECK_FALSE(im.csrBackend().available());
+  }
 }
 
 TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition]")

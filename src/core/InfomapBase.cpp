@@ -1384,6 +1384,7 @@ void InfomapBase::setActiveNetworkFromChildrenOfRoot()
 void InfomapBase::materializeActiveGraphPayload()
 {
   m_activeGraphMaterialization.reset();
+  m_csrMaterialization.reset();
 
   if (m_activeNetwork == nullptr) {
     return;
@@ -1403,6 +1404,47 @@ void InfomapBase::materializeActiveGraphPayload()
         node->layerId,
     });
   }
+
+  materializeLeafLevelCsr();
+}
+
+void InfomapBase::materializeLeafLevelCsr()
+{
+  if (m_activeNetwork == nullptr || m_activeNetwork != &m_leafNodes || haveMemory()) {
+    return;
+  }
+
+  const auto numNodes = m_activeGraphMaterialization.size();
+  auto& csr = m_csrMaterialization;
+  csr.outOffsets.reserve(numNodes + 1);
+  csr.inOffsets.reserve(numNodes + 1);
+  csr.outOffsets.push_back(0);
+  csr.inOffsets.push_back(0);
+
+  for (std::size_t i = 0; i < numNodes; ++i) {
+    auto& node = m_activeGraphMaterialization.nodeFor(static_cast<ActiveGraphMaterialization::ActiveNodeId>(i));
+    csr.outTargets.reserve(csr.outTargets.size() + node.outDegree());
+    csr.outWeights.reserve(csr.outWeights.size() + node.outDegree());
+    csr.outFlows.reserve(csr.outFlows.size() + node.outDegree());
+    for (auto* edge : node.outEdges()) {
+      csr.outTargets.push_back(m_activeGraphMaterialization.idFor(*edge->target));
+      csr.outWeights.push_back(edge->data.weight);
+      csr.outFlows.push_back(edge->data.flow);
+    }
+    csr.outOffsets.push_back(static_cast<unsigned int>(csr.outTargets.size()));
+
+    csr.inTargets.reserve(csr.inTargets.size() + node.inDegree());
+    csr.inWeights.reserve(csr.inWeights.size() + node.inDegree());
+    csr.inFlows.reserve(csr.inFlows.size() + node.inDegree());
+    for (auto* edge : node.inEdges()) {
+      csr.inTargets.push_back(m_activeGraphMaterialization.idFor(*edge->source));
+      csr.inWeights.push_back(edge->data.weight);
+      csr.inFlows.push_back(edge->data.flow);
+    }
+    csr.inOffsets.push_back(static_cast<unsigned int>(csr.inTargets.size()));
+  }
+
+  csr.available = true;
 }
 
 void InfomapBase::syncActiveGraphPayloadToHierarchy()

@@ -166,6 +166,43 @@ public:
     }
   };
 
+  struct CsrMaterialization {
+    std::vector<unsigned int> outOffsets;
+    std::vector<unsigned int> outTargets;
+    std::vector<double> outWeights;
+    std::vector<double> outFlows;
+    std::vector<unsigned int> inOffsets;
+    std::vector<unsigned int> inTargets;
+    std::vector<double> inWeights;
+    std::vector<double> inFlows;
+    bool available = false;
+
+    void reset()
+    {
+      outOffsets.clear();
+      outTargets.clear();
+      outWeights.clear();
+      outFlows.clear();
+      inOffsets.clear();
+      inTargets.clear();
+      inWeights.clear();
+      inFlows.clear();
+      available = false;
+    }
+
+    std::size_t adjacencyBytes() const noexcept
+    {
+      return outOffsets.size() * sizeof(unsigned int)
+          + outTargets.size() * sizeof(unsigned int)
+          + outWeights.size() * sizeof(double)
+          + outFlows.size() * sizeof(double)
+          + inOffsets.size() * sizeof(unsigned int)
+          + inTargets.size() * sizeof(unsigned int)
+          + inWeights.size() * sizeof(double)
+          + inFlows.size() * sizeof(double);
+    }
+  };
+
   struct PointerBackend {
     using ActiveNodeId = ActiveGraphMaterialization::ActiveNodeId;
 
@@ -242,6 +279,70 @@ public:
   };
 
   using PointerActiveGraph = PointerBackend;
+
+  struct CsrBackend {
+    using ActiveNodeId = ActiveGraphMaterialization::ActiveNodeId;
+
+    struct EdgeSpan {
+      const unsigned int* targets = nullptr;
+      const double* weights = nullptr;
+      const double* flows = nullptr;
+      std::size_t size = 0;
+    };
+
+    CsrBackend(ActiveGraphMaterialization& materialization, CsrMaterialization& csrMaterialization)
+        : materialization(materialization),
+          csrMaterialization(csrMaterialization) { }
+
+    bool available() const noexcept { return csrMaterialization.available; }
+    std::size_t size() const noexcept { return materialization.size(); }
+    bool empty() const noexcept { return materialization.empty(); }
+
+    ActiveNodeId idFor(const InfoNode& node) const { return materialization.idFor(node); }
+    InfoNode& nodeFor(ActiveNodeId id) const { return materialization.nodeFor(id); }
+    ActiveNodePayload& payloadFor(ActiveNodeId id) { return materialization.payloadFor(id); }
+    const ActiveNodePayload& payloadFor(ActiveNodeId id) const { return materialization.payloadFor(id); }
+
+    EdgeSpan outEdges(ActiveNodeId id) const
+    {
+      if (!available()) {
+        return {};
+      }
+      if (id + 1 >= csrMaterialization.outOffsets.size()) {
+        throw std::out_of_range("CsrBackend::outEdges() id out of range");
+      }
+      const auto begin = csrMaterialization.outOffsets[id];
+      const auto end = csrMaterialization.outOffsets[id + 1];
+      return {
+          csrMaterialization.outTargets.data() + begin,
+          csrMaterialization.outWeights.data() + begin,
+          csrMaterialization.outFlows.data() + begin,
+          end - begin,
+      };
+    }
+
+    EdgeSpan inEdges(ActiveNodeId id) const
+    {
+      if (!available()) {
+        return {};
+      }
+      if (id + 1 >= csrMaterialization.inOffsets.size()) {
+        throw std::out_of_range("CsrBackend::inEdges() id out of range");
+      }
+      const auto begin = csrMaterialization.inOffsets[id];
+      const auto end = csrMaterialization.inOffsets[id + 1];
+      return {
+          csrMaterialization.inTargets.data() + begin,
+          csrMaterialization.inWeights.data() + begin,
+          csrMaterialization.inFlows.data() + begin,
+          end - begin,
+      };
+    }
+
+  private:
+    ActiveGraphMaterialization& materialization;
+    CsrMaterialization& csrMaterialization;
+  };
 
   InfomapBase() : InfomapConfig<InfomapBase>() { initOptimizer(); }
 
@@ -338,8 +439,11 @@ public:
   const BenchmarkStats& benchmarkStats() const noexcept { return m_benchmarkStats; }
   ActiveGraphMaterialization& activeGraphMaterialization() noexcept { return m_activeGraphMaterialization; }
   const ActiveGraphMaterialization& activeGraphMaterialization() const noexcept { return m_activeGraphMaterialization; }
+  CsrMaterialization& csrMaterialization() noexcept { return m_csrMaterialization; }
+  const CsrMaterialization& csrMaterialization() const noexcept { return m_csrMaterialization; }
   PointerBackend pointerBackend() noexcept { return PointerBackend(m_activeGraphMaterialization); }
   PointerActiveGraph pointerActiveGraph() noexcept { return pointerBackend(); }
+  CsrBackend csrBackend() noexcept { return CsrBackend(m_activeGraphMaterialization, m_csrMaterialization); }
 
   const Date& getStartDate() const { return m_startDate; }
   const Stopwatch& getElapsedTime() const { return m_elapsedTime; }
@@ -545,6 +649,7 @@ private:
   void setActiveNetworkFromChildrenOfRoot();
 
   void materializeActiveGraphPayload();
+  void materializeLeafLevelCsr();
 
   void syncActiveGraphPayloadToHierarchy();
 
@@ -728,6 +833,7 @@ protected:
   std::string m_currentParameters;
   BenchmarkStats m_benchmarkStats;
   ActiveGraphMaterialization m_activeGraphMaterialization;
+  CsrMaterialization m_csrMaterialization;
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };
