@@ -262,6 +262,7 @@ Performance expectation:
 - it is not expected to deliver major speedups on its own
 - hot-path performance is expected to remain effectively unchanged
 - acceptable outcome is parity with baseline within a small regression budget
+- the optimizer and objective hot path remain unchanged in Phase 1; the new lifecycle/payload infrastructure exists alongside the current hot-path consumers without replacing them yet
 
 Phase 1 exit criteria:
 
@@ -287,6 +288,12 @@ Storage shape:
   - module assignment
   - dirty flags
 
+Backend requirements:
+
+- a `CSRBackend` for migrated leaf-level active graphs
+- a `PointerBackend` compatibility adapter that wraps current `InfoNode*` / `InfoEdge*` access behind the same accessor concept
+- the inner templated optimizer methods must work against both backends so pointer-backed module-level graphs and fallback paths keep using the same logic
+
 Backend behavior:
 
 - the leaf-level active graph can be materialized as CSR
@@ -295,6 +302,11 @@ Backend behavior:
 - CSR adjacency remains read-only during a move round
 - for first-order and biased objectives, the objective interface can remain `InfoNode&`-based because the objective logic reads stable flow payload on `InfoNode`, while module-assignment and dirty-state changes stay inside the optimizer/backend layer until sync-back
 - the `recordedTeleportation` optimizer branch is an explicit Phase 2 change site because it currently reads `current.index`
+- `initPartition()` is also an explicit Phase 2 change site because it seeds module assignment and dirty state for the active graph
+- `moveNodeToPredefinedModule()` and `moveActiveNodesToPredefinedModules()` are part of the Phase 2 optimizer/backend scope because fine-tuning seeds optimization through the same neighbor-module access pattern as the main move loop
+- fine-tuning should be treated as split scope:
+  - hierarchy/module bookkeeping stays pointer-backed
+  - the leaf-level optimization portion is CSR-eligible when the active graph is leaf-level
 
 OpenMP design requirement:
 
@@ -378,6 +390,7 @@ Add direct pointer-vs-CSR A/B tests in the C++ suite for:
 - active-graph sync-back invariants before downstream tree consumers run
 - `recordedTeleportation` parity on migrated CSR paths
 - `BiasedMapEquation` parity if it rides along with the first-order CSR rollout
+- `moveActiveNodesToPredefinedModules()` parity on migrated CSR paths
 
 ### Sanitizer and stress requirements
 
@@ -398,6 +411,8 @@ Track:
 - total runtime
 - partition-only runtime
 - CSR materialization/rebuild time
+- fine-tune time
+- coarse-tune time
 - consolidation count per trial
 - module graph size distribution after each consolidation step
 - peak RSS
