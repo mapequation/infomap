@@ -10,7 +10,7 @@ namespace {
 using infomap::Config;
 using infomap::Network;
 
-TEST_CASE("Network aggregates duplicate links")
+TEST_CASE("Network aggregates duplicate links [fast][core]")
 {
   Config config;
   config.silent = true;
@@ -25,7 +25,7 @@ TEST_CASE("Network aggregates duplicate links")
   CHECK(network.outWeights().at(1) == doctest::Approx(3.5));
 }
 
-TEST_CASE("Network reads states fixture as higher-order input")
+TEST_CASE("Network reads states fixture as higher-order input [fast][core]")
 {
   Config config;
   config.silent = true;
@@ -38,7 +38,7 @@ TEST_CASE("Network reads states fixture as higher-order input")
   CHECK(network.numPhysicalNodes() == 5);
 }
 
-TEST_CASE("Network tracks deterministic multilayer state ids")
+TEST_CASE("Network tracks deterministic multilayer state ids [fast][core][crash]")
 {
   Config config;
   config.silent = true;

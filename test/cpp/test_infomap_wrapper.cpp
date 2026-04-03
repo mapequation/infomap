@@ -10,7 +10,7 @@ namespace {
 
 using infomap::InfomapWrapper;
 
-TEST_CASE("Infomap partitions the two-triangle graph into two modules")
+TEST_CASE("Infomap partitions the two-triangle graph into two modules [fast][core]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.addLink(1, 2);
@@ -28,7 +28,7 @@ TEST_CASE("Infomap partitions the two-triangle graph into two modules")
   CHECK(infomap::test::canonicalPartition(im.getModules()) == std::vector<std::vector<unsigned int>>{{1, 2, 3}, {4, 5, 6}});
 }
 
-TEST_CASE("Precomputed flow rejects first-order input without vertex flows")
+TEST_CASE("Precomputed flow rejects first-order input without vertex flows [fast][core]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--flow-model precomputed"));
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -39,7 +39,7 @@ TEST_CASE("Precomputed flow rejects first-order input without vertex flows")
       std::runtime_error);
 }
 
-TEST_CASE("Precomputed flow rejects higher-order input without state flows")
+TEST_CASE("Precomputed flow rejects higher-order input without state flows [fast][core]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--flow-model precomputed"));
   im.readInputData(infomap::test::repoPath("examples/networks/states.net"));
@@ -50,7 +50,7 @@ TEST_CASE("Precomputed flow rejects higher-order input without state flows")
       std::runtime_error);
 }
 
-TEST_CASE("Precomputed flow fixture remains runnable in C++ tests")
+TEST_CASE("Precomputed flow fixture remains runnable in C++ tests [fast][core]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--flow-model precomputed"));
   im.readInputData(infomap::test::repoPath("test/fixtures/twotriangles_flow.net"));
@@ -63,7 +63,7 @@ TEST_CASE("Precomputed flow fixture remains runnable in C++ tests")
   CHECK(infomap::test::canonicalPartition(im.getModules()) == std::vector<std::vector<unsigned int>>{{1, 2, 3}, {4, 5, 6}});
 }
 
-TEST_CASE("Higher-order module queries require state ids")
+TEST_CASE("Higher-order module queries require state ids [fast][core]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/states.net"));
@@ -76,7 +76,7 @@ TEST_CASE("Higher-order module queries require state ids")
   CHECK_THROWS_WITH_AS(im.getModules(false), "Cannot get modules on higher-order network without states.", std::runtime_error);
 }
 
-TEST_CASE("Multilayer links can be clustered without crashing")
+TEST_CASE("Multilayer links can be clustered without crashing [fast][crash]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.addMultilayerLink(2, 1, 1, 2, 1.0);
