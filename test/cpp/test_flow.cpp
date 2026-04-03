@@ -63,6 +63,16 @@ TEST_CASE("Directed regularization remains numerically sane on the teleportation
   CHECK(result.codelength > result.indexCodelength);
 }
 
+TEST_CASE("Inner parallelization remains runnable and numerically sane on the directed fixture [fast][core][flow][openmp]")
+{
+  const auto result = runDirectedFixture("--inner-parallelization");
+
+  CHECK(result.numTopModules >= 1);
+  CHECK(result.numTopModules <= 6);
+  CHECK(result.partition.size() == result.numTopModules);
+  CHECK(result.codelength >= result.indexCodelength);
+}
+
 TEST_CASE("Precomputed flow rejects first-order input without vertex flows [fast][core][flow][parser]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--flow-model precomputed"));
