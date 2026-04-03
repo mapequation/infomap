@@ -4,6 +4,16 @@ Infomap releases are tag-driven and orchestrated by GitHub Actions.
 Maintainers do not publish npm or PyPI packages directly from local shells during
 the normal flow.
 
+Supported public release surfaces are:
+
+- CLI release assets
+- Python package
+- `@mapequation/infomap`
+- committed Python documentation output in `docs/`
+
+Internal-supported JS sibling packages and secondary Docker images are outside
+the automated public release path unless a maintainer explicitly expands scope.
+
 ## One-time repository setup
 
 Configure these repository integrations before the first automated release:
@@ -45,8 +55,10 @@ Configure these repository integrations before the first automated release:
 ## Documentation publishing
 
 Python docs are published by `.github/workflows/docs.yml`, not by the release
-workflow. The docs workflow builds from `master` and deploys the generated
-artifact to GitHub Pages through the `github-pages` environment.
+workflow. The docs workflow builds from `master`, refreshes the committed
+generated output derived from `interfaces/python/source/` plus `README.rst`, and
+deploys the generated artifact to GitHub Pages through the `github-pages`
+environment.
 
 ## Recovery
 
