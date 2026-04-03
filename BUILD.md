@@ -100,6 +100,11 @@ make dev-python-install
 make test-python
 ```
 
+The current automated macOS wheel build in CI/release uses
+`MACOSX_DEPLOYMENT_TARGET=15.0`. If you need broader compatibility than the
+published wheel currently provides, verify that policy before changing the
+release pipeline.
+
 Build source and wheel distributions locally when needed:
 
 ```bash

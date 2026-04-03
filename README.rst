@@ -26,7 +26,9 @@ An experimental Javascript version for browsers is available on `NPM`_.
 Using pip
 ---------
 
-A pre-compiled version is available for macOS users.
+Pre-built wheels are published for current macOS releases. The current
+automated macOS wheel build targets macOS 15, so older macOS versions may fall
+back to a source build.
 
 Installing on other operating systems requires a
 working ``gcc`` or ``clang`` compiler.
