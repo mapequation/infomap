@@ -1,8 +1,6 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import webpack from "webpack";
-import getCommits from "./get-commits.js";
-import getParameters from "./get-parameters.js";
 
 const DefinePlugin = webpack.DefinePlugin;
 import { readFile } from "fs/promises";
@@ -13,11 +11,14 @@ export default async () => {
   // __dirname is not defined in ESM; emulate it
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const v1beta56hash = "63de1fea1c05cf23bf469cf07e6c8b387b0cb520";
-  const commits = await getCommits(v1beta56hash);
-  const { parameters } = await getParameters("./Infomap");
+  const changelog = JSON.parse(
+    await readFile(new URL("./generated/changelog.json", import.meta.url), "utf8")
+  );
+  const parameters = JSON.parse(
+    await readFile(new URL("./generated/parameters.json", import.meta.url), "utf8")
+  );
 
-  console.log(`Building infomap.js v${version} with ${parameters.length} parameters and${commits.length} commits since v1beta56 (${v1beta56hash})...`);
+  console.log(`Building infomap.js v${version} with ${parameters.length} parameters and ${changelog.length} changelog entries...`);
 
   return {
     mode: "production",
@@ -60,11 +61,10 @@ export default async () => {
     },
     plugins: [
       new DefinePlugin({
-        CHANGELOG: JSON.stringify(commits, null, 2),
+        CHANGELOG: JSON.stringify(changelog, null, 2),
         VERSION: JSON.stringify(version),
         PARAMETERS: JSON.stringify(parameters, null, 2),
       }),
     ],
   };
 };
-

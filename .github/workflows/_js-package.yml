@@ -28,7 +28,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          fetch-depth: 0
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up Node.js
@@ -42,6 +41,10 @@ jobs:
 
       - name: Install JavaScript dependencies
         run: npm ci
+
+      - name: Verify JavaScript metadata freshness
+        if: inputs.run-tests
+        run: make test-js-metadata
 
       - name: Build JavaScript worker
         run: make -j build-js

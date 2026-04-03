@@ -64,7 +64,8 @@ help:
 		"  build-native          Build the Infomap binary (MODE=release|debug, OPENMP=0|1)." \
 		"  build-lib             Build the static C++ library and exported headers." \
 		"  build-python          Generate the SWIG wrapper and build the local Python extension." \
-		"  build-js              Build the JS worker bundle and npm package assets." \
+		"  build-js-metadata     Refresh the tracked JS parameters/changelog metadata." \
+		"  build-js              Build the JS worker bundle and npm package assets from tracked metadata." \
 		"  build-docs            Build the Python docs site into docs/." \
 		"" \
 		"Test" \
@@ -73,6 +74,7 @@ help:
 		"  test-python-unit      Run pytest for test/python." \
 		"  test-python-doctest   Run Python doctests and ruff checks for the built package." \
 		"  test-python-examples  Run the Python example smoke tests." \
+		"  test-js-metadata      Regenerate JS metadata in a temp dir and verify tracked files are current." \
 		"  test-js               Pack the npm package and smoke-test the browser example." \
 		"  test-fast             Run the fast native + Python feedback suite." \
 		"  test-sanitizers       Run the C++ test suite under ASan/UBSan." \
@@ -102,6 +104,7 @@ help:
 		"  make build-native" \
 		"  make build-native MODE=debug OPENMP=0" \
 		"  make build-python dev-python-install test-python-unit" \
+		"  make build-js-metadata test-js-metadata" \
 		"  make build-js test-js" \
 		"  make build-docs" \
 		"" \
