@@ -53,7 +53,7 @@ For example:
 <!doctype html>
 <html>
     <head>
-        <script type="text/javascript" src="//cdn.jsdelivr.net/npm/@mapequation/infomap@latest/dist/index.min.js"></script>
+        <script type="text/javascript" src="//cdn.jsdelivr.net/npm/@mapequation/infomap@latest/index.js"></script>
     </head>
     <body>
         <script type="text/javascript">
