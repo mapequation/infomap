@@ -163,7 +163,7 @@ public:
     void reset()
     {
       nodes.clear();
-      nodeToId.clear();
+      decltype(nodeToId){}.swap(nodeToId);
     }
 
     std::size_t payloadBytes() const noexcept
@@ -247,7 +247,7 @@ public:
 
     void reset()
     {
-      stateIdToActiveId.clear();
+      decltype(stateIdToActiveId){}.swap(stateIdToActiveId);
       outOffsets.clear();
       outTargets.clear();
       outFlows.clear();

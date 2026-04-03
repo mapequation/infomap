@@ -368,6 +368,29 @@ TEST_CASE("Active graph storage breakdown distinguishes pointer-only and CSR-bac
   CHECK(csrStorage.totalBytes() > pointerStorage.totalBytes());
 }
 
+TEST_CASE("Active graph reset releases stale reverse-lookup buckets [fast][core][partition][lifecycle]")
+{
+  InfomapWrapper pointerIm(infomap::test::defaultFlags());
+  pointerIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  pointerIm.initNetwork(pointerIm.network());
+  pointerIm.m_disableCsrMaterialization = true;
+  pointerIm.setActiveNetworkFromLeafs();
+  pointerIm.pointerBackend().ensureReverseLookup();
+  REQUIRE(pointerIm.activeGraphStorageBreakdown().activeNodeToIdBucketBytes > 0);
+  pointerIm.setActiveNetworkFromLeafs();
+  CHECK(pointerIm.activeGraphStorageBreakdown().activeNodeToIdEntryBytes == 0);
+  CHECK(pointerIm.activeGraphStorageBreakdown().activeNodeToIdBucketBytes == 0);
+
+  InfomapWrapper csrIm(infomap::test::defaultFlags());
+  csrIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  csrIm.initNetwork(csrIm.network());
+  csrIm.setActiveNetworkFromLeafs();
+  REQUIRE(csrIm.activeGraphStorageBreakdown().csrStateIdBucketBytes > 0);
+  csrIm.setActiveNetworkFromChildrenOfRoot();
+  CHECK(csrIm.activeGraphStorageBreakdown().csrStateIdEntryBytes == 0);
+  CHECK(csrIm.activeGraphStorageBreakdown().csrStateIdBucketBytes == 0);
+}
+
 TEST_CASE("CSR backend materializes leaf-level first-order adjacency [fast][core][partition][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
