@@ -130,6 +130,7 @@ def benchmark_case(binary: Path, name: str, network_path: Path, repeats: int, wa
         "benchmark_stats_median": {
             "calculate_flow_sec": stats_median("calculate_flow_sec"),
             "init_network_sec": stats_median("init_network_sec"),
+            "materialize_csr_sec": stats_median("materialize_csr_sec"),
             "run_partition_sec": stats_median("run_partition_sec"),
             "find_top_modules_sec": stats_median("find_top_modules_sec"),
             "fine_tune_sec": stats_median("fine_tune_sec"),

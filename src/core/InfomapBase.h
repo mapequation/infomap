@@ -112,6 +112,7 @@ public:
   struct BenchmarkStats {
     double calculateFlowSec = 0.0;
     double initNetworkSec = 0.0;
+    double materializeCsrSec = 0.0;
     double runPartitionSec = 0.0;
     double findTopModulesSec = 0.0;
     double fineTuneSec = 0.0;
@@ -134,6 +135,7 @@ public:
     {
       calculateFlowSec = 0.0;
       initNetworkSec = 0.0;
+      materializeCsrSec = 0.0;
       runPartitionSec = 0.0;
       findTopModulesSec = 0.0;
       fineTuneSec = 0.0;

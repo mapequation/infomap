@@ -165,6 +165,7 @@ int main(int argc, char* argv[])
     std::cout << "\"benchmark_stats\":{";
     std::cout << "\"calculate_flow_sec\":" << stats.calculateFlowSec << ",";
     std::cout << "\"init_network_sec\":" << stats.initNetworkSec << ",";
+    std::cout << "\"materialize_csr_sec\":" << stats.materializeCsrSec << ",";
     std::cout << "\"run_partition_sec\":" << stats.runPartitionSec << ",";
     std::cout << "\"find_top_modules_sec\":" << stats.findTopModulesSec << ",";
     std::cout << "\"fine_tune_sec\":" << stats.fineTuneSec << ",";

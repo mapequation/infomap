@@ -1404,6 +1404,7 @@ void InfomapBase::materializeActiveGraphPayload()
 
 void InfomapBase::materializeLeafLevelCsr()
 {
+  ScopedBenchmarkDuration scopedDuration(m_benchmarkStats.materializeCsrSec);
   if (m_activeNetwork == nullptr || m_activeNetwork != &m_leafNodes || haveMemory() || !isMainInfomap() || innerParallelization) {
     return;
   }
