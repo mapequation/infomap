@@ -52,8 +52,8 @@ jobs:
               compiler: clang++,
             }
         target:
-          - { name: "", target: "" }
-          - { name: "-noomp", target: "noomp" }
+          - { name: "", openmp: "1" }
+          - { name: "-noomp", openmp: "0" }
 
     steps:
       - name: Checkout repository
@@ -65,10 +65,10 @@ jobs:
         if: startsWith(matrix.config.os, 'macos')
         run: |
           brew install libomp
-          make ci-github-env >> "$GITHUB_ENV"
+          make ci-export-github-env >> "$GITHUB_ENV"
 
       - name: Build native binary
-        run: make -j ${{ matrix.target.target }}
+        run: make -j build-native OPENMP=${{ matrix.target.openmp }}
         shell: bash
         env:
           CXX: ${{ matrix.config.compiler }}
@@ -79,20 +79,14 @@ jobs:
         run: ./Infomap --version
         shell: bash
 
-      - name: Configure C++ tests
-        if: matrix.config.name == 'ubuntu' && matrix.target.name == ''
-        run: cmake -S . -B build/cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo
-        shell: bash
-
-      - name: Build C++ tests
-        if: matrix.config.name == 'ubuntu' && matrix.target.name == ''
-        run: cmake --build build/cmake --target infomap_cpp_tests --parallel
-        shell: bash
-
       - name: Run C++ tests
         if: matrix.config.name == 'ubuntu' && matrix.target.name == ''
-        run: ctest --test-dir build/cmake --output-on-failure
+        run: make test-native CMAKE_CXX_COMPILER=${{ matrix.config.compiler }}
         shell: bash
+        env:
+          CXX: ${{ matrix.config.compiler }}
+          CXXFLAGS: ${{ matrix.config.cxxflags }} ${{ env.CPPFLAGS }}
+          LDFLAGS: ${{ matrix.config.ldflags }} ${{ env.LDFLAGS }}
 
       - name: Package binary
         if: inputs.upload-artifacts
