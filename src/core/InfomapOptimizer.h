@@ -717,14 +717,6 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
     modules[nodePair.first]->addOutEdge(*modules[nodePair.second], 0.0, e.second);
   }
 
-  unsigned int moduleCount = 0;
-  for (const auto* module : modules) {
-    if (module != nullptr) {
-      ++moduleCount;
-    }
-  }
-  m_infomap->recordConsolidationSnapshot(level, numNodes, moduleCount, moduleLinks.size(), replaceExistingModules);
-
   if (replaceExistingModules) {
     if (level == 1) {
       Log(4) << "Consolidated super modules, removing old modules...\n";

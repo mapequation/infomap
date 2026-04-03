@@ -104,11 +104,9 @@ int main(int argc, char* argv[])
     im.run();
     const double runSec = runTimer.getElapsedTimeInSec();
 
-    const auto& stats = im.benchmarkStats();
     std::cout << "{";
     std::cout << "\"name\":\"" << jsonEscape(caseName) << "\",";
     std::cout << "\"path\":\"" << jsonEscape(inputPath) << "\",";
-    std::cout << "\"backend_mode\":\"pointer\",";
     std::cout << "\"flags\":\"" << jsonEscape(flags) << "\",";
     std::cout << "\"read_input_sec\":" << readInputSec << ",";
     std::cout << "\"run_sec\":" << runSec << ",";
@@ -122,40 +120,7 @@ int main(int argc, char* argv[])
     std::cout << "\"num_levels\":" << im.numLevels() << ",";
     std::cout << "\"codelength\":" << im.codelength() << ",";
     std::cout << "\"higher_order_input\":" << (higherOrderInput ? "true" : "false") << ",";
-    std::cout << "\"directed_input\":" << (directedInput ? "true" : "false") << ",";
-    std::cout << "\"benchmark_stats\":{";
-    std::cout << "\"calculate_flow_sec\":" << stats.calculateFlowSec << ",";
-    std::cout << "\"init_network_sec\":" << stats.initNetworkSec << ",";
-    std::cout << "\"run_partition_sec\":" << stats.runPartitionSec << ",";
-    std::cout << "\"find_top_modules_sec\":" << stats.findTopModulesSec << ",";
-    std::cout << "\"fine_tune_sec\":" << stats.fineTuneSec << ",";
-    std::cout << "\"coarse_tune_sec\":" << stats.coarseTuneSec << ",";
-    std::cout << "\"recursive_partition_sec\":" << stats.recursivePartitionSec << ",";
-    std::cout << "\"super_modules_sec\":" << stats.superModulesSec << ",";
-    std::cout << "\"super_modules_fast_sec\":" << stats.superModulesFastSec << ",";
-    std::cout << "\"find_top_modules_calls\":" << stats.findTopModulesCalls << ",";
-    std::cout << "\"fine_tune_calls\":" << stats.fineTuneCalls << ",";
-    std::cout << "\"coarse_tune_calls\":" << stats.coarseTuneCalls << ",";
-    std::cout << "\"recursive_partition_calls\":" << stats.recursivePartitionCalls << ",";
-    std::cout << "\"super_modules_calls\":" << stats.superModulesCalls << ",";
-    std::cout << "\"super_modules_fast_calls\":" << stats.superModulesFastCalls << ",";
-    std::cout << "\"consolidation_count\":" << stats.consolidationCount << ",";
-    std::cout << "\"consolidations\":[";
-    for (std::size_t i = 0; i < stats.consolidations.size(); ++i) {
-      const auto& consolidation = stats.consolidations[i];
-      if (i > 0) {
-        std::cout << ",";
-      }
-      std::cout << "{";
-      std::cout << "\"level\":" << consolidation.level << ",";
-      std::cout << "\"active_node_count\":" << consolidation.activeNodeCount << ",";
-      std::cout << "\"module_node_count\":" << consolidation.moduleNodeCount << ",";
-      std::cout << "\"module_edge_count\":" << consolidation.moduleEdgeCount << ",";
-      std::cout << "\"replace_existing_modules\":" << (consolidation.replaceExistingModules ? "true" : "false");
-      std::cout << "}";
-    }
-    std::cout << "]";
-    std::cout << "}";
+    std::cout << "\"directed_input\":" << (directedInput ? "true" : "false");
     std::cout << "}\n";
   } catch (const std::exception& error) {
     std::cerr << "Error: " << error.what() << "\n";

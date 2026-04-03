@@ -92,14 +92,10 @@ def benchmark_case(binary: Path, name: str, network_path: Path, repeats: int, fl
     def median(key: str) -> float:
         return statistics.median(float(run[key]) for run in runs)
 
-    def stats_median(key: str) -> float:
-        return statistics.median(float(run["benchmark_stats"][key]) for run in runs)
-
     return {
         "name": name,
         "path": str(network_path),
         "repeats": repeats,
-        "backend_mode": runs[0]["backend_mode"],
         "flags": runs[0]["flags"],
         "median_total_sec": median("total_sec"),
         "median_read_input_sec": median("read_input_sec"),
@@ -114,25 +110,6 @@ def benchmark_case(binary: Path, name: str, network_path: Path, repeats: int, fl
         "directed_input": runs[0]["directed_input"],
         "node_size_bytes": runs[0]["node_size_bytes"],
         "edge_size_bytes": runs[0]["edge_size_bytes"],
-        "benchmark_stats_median": {
-            "calculate_flow_sec": stats_median("calculate_flow_sec"),
-            "init_network_sec": stats_median("init_network_sec"),
-            "run_partition_sec": stats_median("run_partition_sec"),
-            "find_top_modules_sec": stats_median("find_top_modules_sec"),
-            "fine_tune_sec": stats_median("fine_tune_sec"),
-            "coarse_tune_sec": stats_median("coarse_tune_sec"),
-            "recursive_partition_sec": stats_median("recursive_partition_sec"),
-            "super_modules_sec": stats_median("super_modules_sec"),
-            "super_modules_fast_sec": stats_median("super_modules_fast_sec"),
-            "find_top_modules_calls": runs[0]["benchmark_stats"]["find_top_modules_calls"],
-            "fine_tune_calls": runs[0]["benchmark_stats"]["fine_tune_calls"],
-            "coarse_tune_calls": runs[0]["benchmark_stats"]["coarse_tune_calls"],
-            "recursive_partition_calls": runs[0]["benchmark_stats"]["recursive_partition_calls"],
-            "super_modules_calls": runs[0]["benchmark_stats"]["super_modules_calls"],
-            "super_modules_fast_calls": runs[0]["benchmark_stats"]["super_modules_fast_calls"],
-            "consolidation_count": runs[0]["benchmark_stats"]["consolidation_count"],
-            "consolidations": runs[0]["benchmark_stats"]["consolidations"],
-        },
     }
 
 
