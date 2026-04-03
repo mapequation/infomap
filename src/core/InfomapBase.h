@@ -289,7 +289,13 @@ private:
 
   void init();
 
-  void runPartition();
+  void runPartition()
+  {
+    if (twoLevel)
+      partition();
+    else
+      hierarchicalPartition();
+  }
 
   void restoreHardPartition();
 

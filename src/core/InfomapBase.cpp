@@ -370,14 +370,6 @@ void InfomapBase::run(Network& network)
   }
 }
 
-void InfomapBase::runPartition()
-{
-  if (twoLevel)
-    partition();
-  else
-    hierarchicalPartition();
-}
-
 // ===================================================
 // Run: Init: *
 // ===================================================
