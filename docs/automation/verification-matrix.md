@@ -6,6 +6,7 @@ Default rule: run the smallest sufficient verification for the changed surface. 
 | --- | --- | --- |
 | `README.rst`, `docs/automation/`, other docs-only text | No code verification required | If the change affects generated docs behavior or committed Sphinx output freshness, run `make test-docs` instead of editing generated output blindly. |
 | `src/` C++ code | `make build-native` | Use this as the minimum binary build check. Add narrower reproduction checks if the issue provides them. |
+| `scripts/benchmarks/`, native benchmark harness, benchmark-only instrumentation | `make build-native` and the smallest relevant benchmark smoke path, usually `make bench-native NATIVE_BENCHMARK_PROFILE=smoke NATIVE_BENCHMARK_REPEATS=1` | Use when changing benchmark runners, benchmark-only core timing hooks, or native benchmark build integration. |
 | `interfaces/python/`, Python packaging, SWIG-facing Python surface | `make build-python` and `make test-python` | `make test-python` exercises pytest, doctest, and the Python examples. |
 | `interfaces/js/` TypeScript or npm package surface | `npm ci` and `make build-js` | Use for package or TypeScript-only JS changes. |
 | JS worker or Emscripten boundary | `npm ci` and `make test-js` | Use when the change touches worker generation, bundled worker files, or the C++ to JS boundary. |

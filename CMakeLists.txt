@@ -99,6 +99,18 @@ target_link_libraries(infomap_cli PRIVATE infomap_core)
 set_target_properties(infomap_cli PROPERTIES OUTPUT_NAME "Infomap")
 
 if(BUILD_TESTING)
+    add_executable(
+        infomap_native_benchmark
+        test/bench/native_benchmark.cpp
+    )
+    target_include_directories(
+        infomap_native_benchmark
+        PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/src"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test"
+    )
+    target_link_libraries(infomap_native_benchmark PRIVATE infomap_core)
+
     function(add_infomap_cpp_test target_name source_file labels)
         add_executable(
             ${target_name}

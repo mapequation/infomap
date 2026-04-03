@@ -15,7 +15,7 @@ endif
 
 CXX ?= c++
 AR ?= ar
-PYTHON ?= python
+PYTHON ?= $(shell command -v python 2>/dev/null || command -v python3 2>/dev/null || echo python3)
 PYTHON_FOR_BUILD_CONFIG ?= $(shell command -v $(PYTHON) 2>/dev/null || command -v python3 2>/dev/null || echo python3)
 PIP ?= $(PYTHON) -m pip
 PYTEST ?= $(PYTHON) -m pytest
@@ -90,6 +90,7 @@ help:
 		"  test-js               Pack the npm package and smoke-test the browser example." \
 		"  test-fast             Run the fast native + Python feedback suite." \
 		"  test-sanitizers       Run the C++ test suite under ASan/UBSan." \
+		"  bench-native          Run the native benchmark and memory baseline harness." \
 		"  bench-python          Run the nightly-style Python benchmark harness." \
 		"" \
 		"Dev" \
