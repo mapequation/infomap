@@ -61,6 +61,9 @@ make test-js
 under `interfaces/js/generated/`.
 `make build-js` builds the worker and bundles the public npm package from those
 tracked metadata files into `dist/npm/package/`.
+`interfaces/js/README.md` is the source README for the npm package. The
+root-level `README.md` is generated/secondary package output and is not the
+hand-maintained source of truth.
 `make test-js-metadata` regenerates metadata in a temp directory and verifies
 that the committed files are fresh.
 `make test-js` packs the npm package and validates the local example against the
