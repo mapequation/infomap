@@ -27,14 +27,15 @@ endif()
 
 execute_process(
     COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "CPPFLAGS=${INFOMAP_EXTRA_CPPFLAGS}"
+        "CXXFLAGS=${INFOMAP_EXTRA_CXX_FLAGS}"
+        "LDFLAGS=${INFOMAP_EXTRA_LINK_FLAGS}"
+        "MACOSX_DEPLOYMENT_TARGET=$ENV{MACOSX_DEPLOYMENT_TARGET}"
         "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_config.py" json
         --mode "${INFOMAP_MODE}"
         --openmp "${INFOMAP_OPENMP_ARG}"
         --compiler "${CMAKE_CXX_COMPILER}"
-        --cppflags "${INFOMAP_EXTRA_CPPFLAGS}"
-        --cxxflags "${INFOMAP_EXTRA_CXX_FLAGS}"
-        --ldflags "${INFOMAP_EXTRA_LINK_FLAGS}"
-        --deployment-target "$ENV{MACOSX_DEPLOYMENT_TARGET}"
         --platform "${CMAKE_SYSTEM_NAME}"
     OUTPUT_VARIABLE INFOMAP_BUILD_CONFIG_JSON
     RESULT_VARIABLE INFOMAP_BUILD_CONFIG_RESULT
