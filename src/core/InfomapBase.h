@@ -166,6 +166,63 @@ public:
     }
   };
 
+  struct PointerActiveGraph {
+    using ActiveNodeId = ActiveGraphMaterialization::ActiveNodeId;
+
+    struct EdgeView {
+      ActiveNodeId neighbourId = 0;
+      double weight = 0.0;
+      double flow = 0.0;
+    };
+
+    explicit PointerActiveGraph(ActiveGraphMaterialization& materialization)
+        : materialization(materialization) { }
+
+    std::size_t size() const noexcept { return materialization.size(); }
+    bool empty() const noexcept { return materialization.empty(); }
+
+    ActiveNodeId idFor(const InfoNode& node) const { return materialization.idFor(node); }
+    InfoNode& nodeFor(ActiveNodeId id) const { return materialization.nodeFor(id); }
+    ActiveNodePayload& payloadFor(ActiveNodeId id) { return materialization.payloadFor(id); }
+    const ActiveNodePayload& payloadFor(ActiveNodeId id) const { return materialization.payloadFor(id); }
+
+    unsigned int& moduleIndex(ActiveNodeId id) const { return nodeFor(id).index; }
+    bool& dirty(ActiveNodeId id) const { return nodeFor(id).dirty; }
+
+    std::vector<EdgeView> outEdges(ActiveNodeId id) const
+    {
+      std::vector<EdgeView> edges;
+      auto& node = nodeFor(id);
+      edges.reserve(node.outDegree());
+      for (auto* edge : node.outEdges()) {
+        edges.push_back({
+            materialization.idFor(*edge->target),
+            edge->data.weight,
+            edge->data.flow,
+        });
+      }
+      return edges;
+    }
+
+    std::vector<EdgeView> inEdges(ActiveNodeId id) const
+    {
+      std::vector<EdgeView> edges;
+      auto& node = nodeFor(id);
+      edges.reserve(node.inDegree());
+      for (auto* edge : node.inEdges()) {
+        edges.push_back({
+            materialization.idFor(*edge->source),
+            edge->data.weight,
+            edge->data.flow,
+        });
+      }
+      return edges;
+    }
+
+  private:
+    ActiveGraphMaterialization& materialization;
+  };
+
   InfomapBase() : InfomapConfig<InfomapBase>() { initOptimizer(); }
 
   explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { initOptimizer(); }
@@ -261,6 +318,7 @@ public:
   const BenchmarkStats& benchmarkStats() const noexcept { return m_benchmarkStats; }
   ActiveGraphMaterialization& activeGraphMaterialization() noexcept { return m_activeGraphMaterialization; }
   const ActiveGraphMaterialization& activeGraphMaterialization() const noexcept { return m_activeGraphMaterialization; }
+  PointerActiveGraph pointerActiveGraph() noexcept { return PointerActiveGraph(m_activeGraphMaterialization); }
 
   const Date& getStartDate() const { return m_startDate; }
   const Stopwatch& getElapsedTime() const { return m_elapsedTime; }

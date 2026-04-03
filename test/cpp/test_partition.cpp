@@ -270,6 +270,63 @@ TEST_CASE("Active graph wrappers sync payload back to hierarchy nodes [fast][cor
   CHECK(im.activeGraphMaterialization().payloads[0].data.flow == doctest::Approx(originalFlow + 0.25));
 }
 
+TEST_CASE("Pointer active graph view exposes payload, state, and adjacency by active node id [fast][core][partition][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+  im.initPartition();
+
+  auto view = im.pointerActiveGraph();
+  REQUIRE(view.size() == im.numLeafNodes());
+  REQUIRE_FALSE(view.empty());
+
+  for (std::size_t i = 0; i < view.size(); ++i) {
+    auto& node = view.nodeFor(static_cast<infomap::InfomapBase::ActiveGraphMaterialization::ActiveNodeId>(i));
+    CHECK(view.idFor(node) == i);
+    CHECK(view.payloadFor(i).stateId == node.stateId);
+    CHECK(view.payloadFor(i).data.flow == doctest::Approx(node.data.flow));
+    CHECK(view.moduleIndex(i) == node.index);
+    CHECK(view.dirty(i) == node.dirty);
+
+    std::vector<unsigned int> expectedOutTargets;
+    for (auto* edge : node.outEdges()) {
+      expectedOutTargets.push_back(edge->target->stateId);
+    }
+    std::sort(expectedOutTargets.begin(), expectedOutTargets.end());
+
+    std::vector<unsigned int> actualOutTargets;
+    for (const auto& edge : view.outEdges(i)) {
+      actualOutTargets.push_back(view.nodeFor(edge.neighbourId).stateId);
+    }
+    std::sort(actualOutTargets.begin(), actualOutTargets.end());
+    CHECK(actualOutTargets == expectedOutTargets);
+
+    std::vector<unsigned int> expectedInSources;
+    for (auto* edge : node.inEdges()) {
+      expectedInSources.push_back(edge->source->stateId);
+    }
+    std::sort(expectedInSources.begin(), expectedInSources.end());
+
+    std::vector<unsigned int> actualInSources;
+    for (const auto& edge : view.inEdges(i)) {
+      actualInSources.push_back(view.nodeFor(edge.neighbourId).stateId);
+    }
+    std::sort(actualInSources.begin(), actualInSources.end());
+    CHECK(actualInSources == expectedInSources);
+  }
+
+  const auto originalModule = view.moduleIndex(0);
+  const auto originalDirty = view.dirty(0);
+  view.moduleIndex(0) = originalModule + 7;
+  view.dirty(0) = !originalDirty;
+  CHECK(im.activeNetwork()[0]->index == originalModule + 7);
+  CHECK(im.activeNetwork()[0]->dirty == !originalDirty);
+  view.moduleIndex(0) = originalModule;
+  view.dirty(0) = originalDirty;
+}
+
 TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
