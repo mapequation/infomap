@@ -618,6 +618,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Info
   auto* dirtyFlags = graph.dirtyFlagsData();
 
   VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
+  std::vector<unsigned int> moduleEnumeration;
 
   for (unsigned int i = 0; i < numNodes; ++i) {
     const auto currentId = nodeEnumeration[i];
@@ -665,7 +666,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Info
       }
     }
 
-    std::vector<unsigned int> moduleEnumeration(numModuleLinks);
+    moduleEnumeration.resize(numModuleLinks);
     m_infomap->m_rand.getRandomizedIndexVector(moduleEnumeration);
 
     DeltaFlowDataType bestDeltaModule(oldModuleDelta);
@@ -750,6 +751,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
 
   // Create map with module links
   VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
+  std::vector<unsigned int> moduleEnumeration;
 
   for (unsigned int i = 0; i < numNodes; ++i) {
     auto currentId = nodeEnumeration[i];
@@ -808,7 +810,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
     }
 
     // Randomize link order for optimized search
-    std::vector<unsigned int> moduleEnumeration(numModuleLinks);
+    moduleEnumeration.resize(numModuleLinks);
     m_infomap->m_rand.getRandomizedIndexVector(moduleEnumeration);
 
     DeltaFlowDataType bestDeltaModule(oldModuleDelta);
