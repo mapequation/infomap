@@ -1,5 +1,6 @@
 from operator import itemgetter
 
+import networkx as nx
 import pytest
 
 
@@ -45,3 +46,21 @@ def test_multilevel_modules_on_physical(make_infomap, example_network_path):
     im.run()
     with pytest.raises(RuntimeError):
         im.get_multilevel_modules(states=False)
+
+
+def test_iter_nodes_with_no_infomap_on_networkx_graph(make_infomap):
+    graph = nx.Graph()
+    graph.add_edges_from([(1, 2), (1, 3), (2, 3), (3, 4), (4, 5)])
+
+    im = make_infomap(no_infomap=True)
+    im.add_networkx_graph(graph)
+    im.run()
+
+    nodes = [(node.node_id, node.data.flow) for node in im.nodes]
+    assert nodes == [
+        (3, 0.30000000000000004),
+        (1, 0.2),
+        (2, 0.2),
+        (4, 0.2),
+        (5, 0.1),
+    ]
