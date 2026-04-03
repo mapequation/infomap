@@ -99,9 +99,6 @@ public:
 
   struct ActiveNodePayload {
     FlowData data;
-    unsigned int stateId = 0;
-    unsigned int physicalId = 0;
-    unsigned int layerId = 0;
   };
 
   struct ActiveGraphMaterialization {

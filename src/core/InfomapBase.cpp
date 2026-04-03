@@ -1399,9 +1399,6 @@ void InfomapBase::materializeActiveGraphPayload()
     m_activeGraphMaterialization.nodeToId[const_cast<InfoNode*>(node)] = static_cast<ActiveGraphMaterialization::ActiveNodeId>(i);
     m_activeGraphMaterialization.payloads.push_back({
         node->data,
-        node->stateId,
-        node->physicalId,
-        node->layerId,
     });
   }
 

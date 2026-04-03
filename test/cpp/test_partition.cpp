@@ -231,10 +231,6 @@ TEST_CASE("Active graph payload materialization mirrors the leaf-level active ne
     CHECK(materialization.idFor(*node) == i);
     CHECK(&materialization.nodeFor(i) == node);
     CHECK(materialization.payloads[i].data.flow == doctest::Approx(node->data.flow));
-    CHECK(materialization.payloads[i].stateId == node->stateId);
-    CHECK(materialization.payloads[i].physicalId == node->physicalId);
-    CHECK(materialization.payloads[i].layerId == node->layerId);
-    CHECK(materialization.payloadFor(i).stateId == node->stateId);
   }
 
   materialization.payloads[0].data.flow += 0.5;
@@ -263,7 +259,6 @@ TEST_CASE("Active graph payload materialization mirrors module-level active node
     CHECK(materialization.idFor(*node) == i);
     CHECK(&materialization.nodeFor(i) == node);
     CHECK(materialization.payloads[i].data.flow == doctest::Approx(node->data.flow));
-    CHECK(materialization.payloads[i].stateId == node->stateId);
   }
 }
 
@@ -306,7 +301,6 @@ TEST_CASE("Pointer backend exposes payload, state, and adjacency by active node 
   for (std::size_t i = 0; i < view.size(); ++i) {
     auto& node = view.nodeFor(static_cast<infomap::InfomapBase::ActiveGraphMaterialization::ActiveNodeId>(i));
     CHECK(view.idFor(node) == i);
-    CHECK(view.payloadFor(i).stateId == node.stateId);
     CHECK(view.payloadFor(i).data.flow == doctest::Approx(node.data.flow));
     CHECK(view.moduleIndex(i) == node.index);
     CHECK(view.dirty(i) == node.dirty);
