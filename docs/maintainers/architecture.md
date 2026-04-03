@@ -86,7 +86,10 @@ consistent across them rather than re-encoding the same logic separately.
 ## Documentation and release expectations
 
 - `README.rst` is user-facing source content and feeds the committed docs site
-- `README.md` is the npm package README for the public JavaScript package
+- `interfaces/js/README.md` is the source README for the public JavaScript
+  package
+- root `README.md` is generated/secondary package output and should not be
+  treated as the hand-maintained source document
 - `BUILD.md` describes local maintainer build/test workflows
 - `RELEASING.md` describes maintainer release policy
 
