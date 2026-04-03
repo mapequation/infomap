@@ -78,16 +78,23 @@ def generate_state_ring(path: Path, physical_nodes: int) -> None:
             handle.write(f"{current_b} {next_b} 1\n")
 
 
-def benchmark_case(binary: Path, name: str, network_path: Path, repeats: int, flags: str) -> dict[str, object]:
+def run_case(binary: Path, name: str, network_path: Path, flags: str) -> dict[str, object]:
+    completed = subprocess.run(
+        [str(binary), "--input", str(network_path), "--name", name, "--flags", flags],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return json.loads(completed.stdout)
+
+
+def benchmark_case(binary: Path, name: str, network_path: Path, repeats: int, warmup_repeats: int, flags: str) -> dict[str, object]:
+    for _ in range(warmup_repeats):
+        run_case(binary, name, network_path, flags)
+
     runs: list[dict[str, object]] = []
     for _ in range(repeats):
-        completed = subprocess.run(
-            [str(binary), "--input", str(network_path), "--name", name, "--flags", flags],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        runs.append(json.loads(completed.stdout))
+        runs.append(run_case(binary, name, network_path, flags))
 
     def median(key: str) -> float:
         return statistics.median(float(run[key]) for run in runs)
@@ -99,6 +106,7 @@ def benchmark_case(binary: Path, name: str, network_path: Path, repeats: int, fl
         "name": name,
         "path": str(network_path),
         "repeats": repeats,
+        "warmup_repeats": warmup_repeats,
         "backend_mode": runs[0]["backend_mode"],
         "flags": runs[0]["flags"],
         "median_total_sec": median("total_sec"),
@@ -114,8 +122,8 @@ def benchmark_case(binary: Path, name: str, network_path: Path, repeats: int, fl
         "directed_input": runs[0]["directed_input"],
         "node_size_bytes": runs[0]["node_size_bytes"],
         "edge_size_bytes": runs[0]["edge_size_bytes"],
-        "active_payload_nodes": runs[0]["active_payload_nodes"],
-        "active_payload_bytes": runs[0]["active_payload_bytes"],
+        "active_payload_nodes": runs[0].get("active_payload_nodes", 0),
+        "active_payload_bytes": runs[0].get("active_payload_bytes", 0),
         "benchmark_stats_median": {
             "calculate_flow_sec": stats_median("calculate_flow_sec"),
             "init_network_sec": stats_median("init_network_sec"),
@@ -162,6 +170,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True, help="Path to write the JSON benchmark report.")
     parser.add_argument("--summary", type=Path, default=None, help="Optional Markdown summary output.")
     parser.add_argument("--repeats", type=int, default=3, help="Number of runs per case.")
+    parser.add_argument("--warmup-repeats", type=int, default=0, help="Number of warmup runs per case before recording.")
     parser.add_argument(
         "--profile",
         choices=("smoke", "baseline", "full"),
@@ -223,13 +232,14 @@ def main() -> None:
             cases.append(("sparse_1m", sparse_1m))
 
         results = [
-            benchmark_case(args.binary, name, path, args.repeats, args.flags)
+            benchmark_case(args.binary, name, path, args.repeats, args.warmup_repeats, args.flags)
             for name, path in cases
         ]
 
     report = {
         "profile": args.profile,
         "repeats": args.repeats,
+        "warmup_repeats": args.warmup_repeats,
         "binary": str(args.binary),
         "benchmarks": results,
     }

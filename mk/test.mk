@@ -15,6 +15,8 @@ NATIVE_BENCHMARK_OUTPUT ?= build/benchmarks/native-benchmarks.json
 NATIVE_BENCHMARK_SUMMARY ?=
 NATIVE_BENCHMARK_PROFILE ?= baseline
 NATIVE_BENCHMARK_REPEATS ?= 3
+NATIVE_BENCHMARK_WARMUP_REPEATS ?= 0
+NATIVE_BENCHMARK_FLAGS ?= --silent --no-file-output --num-trials 1 --seed 123
 
 .PHONY: test-native test-fast test-sanitizers bench-python bench-native
 
@@ -84,4 +86,6 @@ bench-native:
 		--output $(NATIVE_BENCHMARK_OUTPUT) \
 		--profile $(NATIVE_BENCHMARK_PROFILE) \
 		--repeats $(NATIVE_BENCHMARK_REPEATS) \
+		--warmup-repeats $(NATIVE_BENCHMARK_WARMUP_REPEATS) \
+		--flags "$(NATIVE_BENCHMARK_FLAGS)" \
 		$(if $(NATIVE_BENCHMARK_SUMMARY),--summary $(NATIVE_BENCHMARK_SUMMARY),)
