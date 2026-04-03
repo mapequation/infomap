@@ -620,6 +620,8 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Info
   m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
   const auto numNodes = nodeEnumeration.size();
+  const bool lockFirstLoopMoves = m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1;
+  const bool recordedTeleportation = m_infomap->recordedTeleportation;
   unsigned int numMoved = 0;
 
   auto* moduleIndices = graph.moduleIndicesData();
@@ -636,7 +638,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Info
     if (dirtyFlags[currentId] == 0u)
       continue;
 
-    if (m_moduleMembers[currentModuleIndex] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
+    if (m_moduleMembers[currentModuleIndex] > 1 && lockFirstLoopMoves)
       continue;
 
     deltaFlow.startRound();
@@ -656,7 +658,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Info
     auto& moduleDeltaEnterExit = deltaFlow.values();
     const unsigned int numModuleLinks = deltaFlow.size();
 
-    if (m_infomap->recordedTeleportation) {
+    if (recordedTeleportation) {
       for (unsigned int j = 0; j < numModuleLinks; ++j) {
         auto& deltaEnterExit = moduleDeltaEnterExit[j];
         const auto moduleIndex = deltaEnterExit.module;
@@ -756,6 +758,8 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
   m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
   auto numNodes = nodeEnumeration.size();
+  const bool lockFirstLoopMoves = m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1;
+  const bool recordedTeleportation = m_infomap->recordedTeleportation;
   unsigned int numMoved = 0;
 
   // Create map with module links
@@ -771,7 +775,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
       continue;
 
     // If other nodes have moved here, don't move away on first loop
-    if (m_moduleMembers[currentModuleIndex] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
+    if (m_moduleMembers[currentModuleIndex] > 1 && lockFirstLoopMoves)
       continue;
 
     // If no links connecting this node with other nodes, it won't move into others,
@@ -800,7 +804,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
     unsigned int numModuleLinks = deltaFlow.size();
 
     // For recorded teleportation
-    if (m_infomap->recordedTeleportation) {
+    if (recordedTeleportation) {
       for (unsigned int j = 0; j < numModuleLinks; ++j) {
         auto& deltaEnterExit = moduleDeltaEnterExit[j];
         auto moduleIndex = deltaEnterExit.module;
