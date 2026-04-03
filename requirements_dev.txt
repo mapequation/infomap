@@ -1,4 +1,5 @@
 # ruff replaces black/isort/autopep8/flake8 for linting/formatting
+pytest
 ruff
 twine
 sphinx

@@ -28,7 +28,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        include:
+          - python-version: "3.11"
+            run-full-suite: false
+          - python-version: "3.12"
+            run-full-suite: false
+          - python-version: "3.13"
+            run-full-suite: false
+          - python-version: "3.14"
+            run-full-suite: true
 
     steps:
       - name: Checkout repository
@@ -59,8 +67,16 @@ jobs:
       - name: Install editable package
         run: make py-local-install
 
-      - name: Run Python verification
-        run: make py-test
+      - name: Run Python unit tests
+        run: make py-test-unit
+
+      - name: Run Python doctests
+        if: matrix.run-full-suite
+        run: make py-test-doctest
+
+      - name: Run Python example smoke tests
+        if: matrix.run-full-suite
+        run: make py-test-examples
 
   swig-source:
     if: inputs.build-release-artifacts
