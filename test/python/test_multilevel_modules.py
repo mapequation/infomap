@@ -3,6 +3,9 @@ from collections import defaultdict
 import pytest
 
 
+pytestmark = pytest.mark.fast
+
+
 def multilevel_modules(im, states):
     modules = defaultdict(list)
 

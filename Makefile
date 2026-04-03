@@ -42,11 +42,13 @@ OBJECTS := $(SOURCES:src/%.cpp=build/Infomap/%.o)
 # Stand-alone C++ targets
 ##################################################
 
-.PHONY: all noomp test debug format cpp-test test-fast cmake-configure
+.PHONY: all noomp test debug format cpp-test test-fast test-sanitizers perf-bench cmake-configure
 
 CMAKE ?= $(shell command -v cmake 2>/dev/null || command -v /opt/homebrew/bin/cmake 2>/dev/null || echo cmake)
 CTEST ?= $(shell command -v ctest 2>/dev/null || command -v /opt/homebrew/bin/ctest 2>/dev/null || echo ctest)
 CMAKE_BUILD_DIR ?= build/cmake
+SANITIZER_BUILD_DIR ?= build/cmake-sanitizers
+BENCHMARK_OUTPUT ?= build/benchmarks/python-benchmarks.json
 
 all: Infomap
 	@true
@@ -79,6 +81,21 @@ cpp-test: cmake-configure
 
 test-fast: cpp-test py-test-unit
 	@true
+
+test-sanitizers:
+	@$(CMAKE) -S . -B $(SANITIZER_BUILD_DIR) -DCMAKE_BUILD_TYPE=Debug -DINFOMAP_USE_OPENMP=OFF -DINFOMAP_ENABLE_SANITIZERS=ON
+	@$(CMAKE) --build $(SANITIZER_BUILD_DIR) --target infomap_cpp_tests
+	@ASAN_OPTS="strict_string_checks=1"; \
+	if [ "$$(uname -s)" = "Darwin" ]; then \
+		ASAN_OPTS="$$ASAN_OPTS:detect_leaks=0"; \
+	else \
+		ASAN_OPTS="$$ASAN_OPTS:detect_leaks=1"; \
+	fi; \
+	ASAN_OPTIONS="$$ASAN_OPTS" UBSAN_OPTIONS=print_stacktrace=1 $(CTEST) --test-dir $(SANITIZER_BUILD_DIR) --output-on-failure
+
+perf-bench:
+	@mkdir -p $(dir $(BENCHMARK_OUTPUT))
+	@python scripts/benchmarks/run_python_benchmarks.py --output $(BENCHMARK_OUTPUT)
 
 ##################################################
 # JavaScript through Emscripten

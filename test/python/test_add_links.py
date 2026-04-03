@@ -1,3 +1,9 @@
+import pytest
+
+
+pytestmark = pytest.mark.fast
+
+
 def test_add_link(make_infomap):
     im = make_infomap()
     links = [
