@@ -6,7 +6,7 @@ import fileToString, {
 } from "./filetypes";
 import networkToString, { NetworkTypes } from "./network";
 // @ts-ignore
-import InfomapWorker from "./worker/infomap.worker.js";
+import InfomapWorker from "../../../build/js/infomap.worker.js";
 
 export interface Changelog {
   body: string | null;

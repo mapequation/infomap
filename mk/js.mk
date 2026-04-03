@@ -15,8 +15,6 @@ JS_INTERNAL_PACKAGES := interfaces/js/react interfaces/js/parser
 build-js: $(JS_WORKER_TARGET) $(JS_METADATA_FILES)
 	$(RM) -r $(NPM_STAGE_DIR)
 	@mkdir -p $(NPM_STAGE_DIR)
-	@mkdir -p interfaces/js/src/worker
-	cp build/js/* interfaces/js/src/worker/
 	$(NPM) run build
 	@$(PYTHON_FOR_BUILD_CONFIG) scripts/prepare_npm_package.py --source-package package.json --readme interfaces/js/README.md --readme-rst README.rst --license LICENSE_GPLv3.txt --output-dir $(NPM_STAGE_DIR)
 	@echo "Built $^ into $(NPM_STAGE_DIR)"
