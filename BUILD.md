@@ -15,6 +15,8 @@ Examples:
 ## Release process
 
 Maintainer release flow now lives in [RELEASING.md](RELEASING.md).
+Maintainer architecture and ownership rules live in
+[docs/maintainers/architecture.md](docs/maintainers/architecture.md).
 This document only covers local build and verification.
 
 ## Native build
@@ -53,8 +55,13 @@ make build-js
 make test-js
 ```
 
-`make build-js` builds the worker and bundles the published package. `make test-js`
-packs the npm package and validates the local example against the packed artifact.
+`make build-js` builds the worker and bundles the public npm package.
+`make test-js` packs the npm package and validates the local example against the
+packed artifact.
+
+The sibling `interfaces/js/react` and `interfaces/js/parser` packages are
+internal-supported and are not part of the primary local workflow in this
+document.
 
 ## Python package
 
@@ -96,6 +103,10 @@ make build-docs
 ```
 
 This writes the static site into `docs/`.
+
+The documentation source lives under `interfaces/python/source/`. The committed
+`docs/` tree is generated output and should be refreshed via the documented
+build path rather than hand-edited.
 
 Advanced or internal targets such as `R`, `R-build`, and `docker-*` still exist in
 the Makefile, but they are no longer part of the primary development surface.
