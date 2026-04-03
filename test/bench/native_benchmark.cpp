@@ -51,7 +51,7 @@ unsigned long long peakRssBytes()
 
 void printUsage(const char* argv0)
 {
-  std::cerr << "Usage: " << argv0 << " --input <path> [--name <label>] [--flags <infomap flags>]\n";
+  std::cerr << "Usage: " << argv0 << " --input <path> [--name <label>] [--flags <infomap flags>] [--backend-mode auto|pointer]\n";
 }
 
 } // namespace
@@ -61,6 +61,7 @@ int main(int argc, char* argv[])
   std::string inputPath;
   std::string caseName;
   std::string flags = "--silent --no-file-output --num-trials 1 --seed 123";
+  std::string backendMode = "auto";
 
   for (int i = 1; i < argc; ++i) {
     const std::string arg = argv[i];
@@ -70,6 +71,8 @@ int main(int argc, char* argv[])
       caseName = argv[++i];
     } else if (arg == "--flags" && i + 1 < argc) {
       flags = argv[++i];
+    } else if (arg == "--backend-mode" && i + 1 < argc) {
+      backendMode = argv[++i];
     } else if (arg == "--help" || arg == "-h") {
       printUsage(argv[0]);
       return 0;
@@ -87,9 +90,17 @@ int main(int argc, char* argv[])
   if (caseName.empty()) {
     caseName = inputPath;
   }
+  if (backendMode != "auto" && backendMode != "pointer") {
+    std::cerr << "Unsupported backend mode: " << backendMode << "\n";
+    printUsage(argv[0]);
+    return 2;
+  }
 
   try {
     infomap::InfomapWrapper im(flags);
+    if (backendMode == "pointer") {
+      im.m_disableCsrMaterialization = true;
+    }
 
     infomap::Stopwatch readTimer(true);
     im.readInputData(inputPath);
@@ -109,7 +120,7 @@ int main(int argc, char* argv[])
     std::cout << "{";
     std::cout << "\"name\":\"" << jsonEscape(caseName) << "\",";
     std::cout << "\"path\":\"" << jsonEscape(inputPath) << "\",";
-    std::cout << "\"backend_mode\":\"pointer\",";
+    std::cout << "\"backend_mode\":\"" << jsonEscape(backendMode) << "\",";
     std::cout << "\"flags\":\"" << jsonEscape(flags) << "\",";
     std::cout << "\"read_input_sec\":" << readInputSec << ",";
     std::cout << "\"run_sec\":" << runSec << ",";

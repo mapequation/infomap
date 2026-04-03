@@ -78,9 +78,9 @@ def generate_state_ring(path: Path, physical_nodes: int) -> None:
             handle.write(f"{current_b} {next_b} 1\n")
 
 
-def run_case(binary: Path, name: str, network_path: Path, flags: str) -> dict[str, object]:
+def run_case(binary: Path, name: str, network_path: Path, flags: str, backend_mode: str) -> dict[str, object]:
     completed = subprocess.run(
-        [str(binary), "--input", str(network_path), "--name", name, "--flags", flags],
+        [str(binary), "--input", str(network_path), "--name", name, "--flags", flags, "--backend-mode", backend_mode],
         check=True,
         capture_output=True,
         text=True,
@@ -88,13 +88,13 @@ def run_case(binary: Path, name: str, network_path: Path, flags: str) -> dict[st
     return json.loads(completed.stdout)
 
 
-def benchmark_case(binary: Path, name: str, network_path: Path, repeats: int, warmup_repeats: int, flags: str) -> dict[str, object]:
+def benchmark_case(binary: Path, name: str, network_path: Path, repeats: int, warmup_repeats: int, flags: str, backend_mode: str) -> dict[str, object]:
     for _ in range(warmup_repeats):
-        run_case(binary, name, network_path, flags)
+        run_case(binary, name, network_path, flags, backend_mode)
 
     runs: list[dict[str, object]] = []
     for _ in range(repeats):
-        runs.append(run_case(binary, name, network_path, flags))
+        runs.append(run_case(binary, name, network_path, flags, backend_mode))
 
     def median(key: str) -> float:
         return statistics.median(float(run[key]) for run in runs)
@@ -182,6 +182,12 @@ def main() -> None:
         default="--silent --no-file-output --num-trials 1 --seed 123",
         help="Infomap flags forwarded to the native benchmark executable.",
     )
+    parser.add_argument(
+        "--backend-mode",
+        choices=("auto", "pointer"),
+        default="auto",
+        help="Internal active-graph backend mode for the benchmark executable.",
+    )
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parents[2]
@@ -232,7 +238,7 @@ def main() -> None:
             cases.append(("sparse_1m", sparse_1m))
 
         results = [
-            benchmark_case(args.binary, name, path, args.repeats, args.warmup_repeats, args.flags)
+            benchmark_case(args.binary, name, path, args.repeats, args.warmup_repeats, args.flags, args.backend_mode)
             for name, path in cases
         ]
 
@@ -241,6 +247,7 @@ def main() -> None:
         "repeats": args.repeats,
         "warmup_repeats": args.warmup_repeats,
         "binary": str(args.binary),
+        "backend_mode": args.backend_mode,
         "benchmarks": results,
     }
 

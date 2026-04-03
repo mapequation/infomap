@@ -110,6 +110,9 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/test"
     )
     target_link_libraries(infomap_native_benchmark PRIVATE infomap_core)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(infomap_native_benchmark PRIVATE -fno-access-control)
+    endif()
 
     function(add_infomap_cpp_test target_name source_file labels)
         add_executable(
