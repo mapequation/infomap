@@ -47,6 +47,8 @@ interfaces/python/source/index.rst
 /README.md
 *.clu
 *.tree
+!test/fixtures/clusters/*.clu
+!test/fixtures/clusters/*.tree
 *.ftree
 *.nwk
 *.csv
