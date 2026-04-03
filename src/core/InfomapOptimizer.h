@@ -55,6 +55,27 @@ public:
 protected:
   unsigned int numActiveModules() const override { return m_infomap->activeNetwork().size() - m_emptyModules.size(); }
 
+  template <typename Graph>
+  void addNeighbourModuleLinks(Graph& graph, typename Graph::ActiveNodeId currentId, VectorMap<DeltaFlowDataType>& deltaFlow);
+
+  template <typename Graph>
+  void accumulateMoveDelta(Graph& graph,
+                           typename Graph::ActiveNodeId currentId,
+                           unsigned int oldModule,
+                           unsigned int newModule,
+                           DeltaFlowDataType& oldModuleDelta,
+                           DeltaFlowDataType& newModuleDelta);
+
+  template <typename Graph>
+  void markNeighboursDirty(Graph& graph,
+                           typename Graph::ActiveNodeId currentId,
+                           unsigned int oldModuleIndex,
+                           InfoNode*& nodeInOldModule,
+                           unsigned int& numLinkedNodesInOldModule);
+
+  template <typename Graph>
+  void markNodeNeighboursDirty(Graph& graph, typename Graph::ActiveNodeId nodeId);
+
   // ===================================================
   // Run: Init: *
   // ===================================================
@@ -155,6 +176,87 @@ inline void InfomapOptimizer<Objective>::initSuperNetwork()
 // ===================================================
 
 template <typename Objective>
+template <typename Graph>
+void InfomapOptimizer<Objective>::addNeighbourModuleLinks(Graph& graph, typename Graph::ActiveNodeId currentId, VectorMap<DeltaFlowDataType>& deltaFlow)
+{
+  graph.forEachOutEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
+    auto otherModule = graph.moduleIndex(neighbourId);
+    deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, edge.data.flow, 0.0));
+  });
+
+  graph.forEachInEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
+    auto otherModule = graph.moduleIndex(neighbourId);
+    deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, 0.0, edge.data.flow));
+  });
+}
+
+template <typename Objective>
+template <typename Graph>
+void InfomapOptimizer<Objective>::accumulateMoveDelta(Graph& graph,
+                                                      typename Graph::ActiveNodeId currentId,
+                                                      unsigned int oldModule,
+                                                      unsigned int newModule,
+                                                      DeltaFlowDataType& oldModuleDelta,
+                                                      DeltaFlowDataType& newModuleDelta)
+{
+  graph.forEachOutEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
+    unsigned int otherModule = graph.moduleIndex(neighbourId);
+    if (otherModule == oldModule) {
+      oldModuleDelta.deltaExit += edge.data.flow;
+    } else if (otherModule == newModule) {
+      newModuleDelta.deltaExit += edge.data.flow;
+    }
+  });
+
+  graph.forEachInEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
+    unsigned int otherModule = graph.moduleIndex(neighbourId);
+    if (otherModule == oldModule) {
+      oldModuleDelta.deltaEnter += edge.data.flow;
+    } else if (otherModule == newModule) {
+      newModuleDelta.deltaEnter += edge.data.flow;
+    }
+  });
+}
+
+template <typename Objective>
+template <typename Graph>
+void InfomapOptimizer<Objective>::markNeighboursDirty(Graph& graph,
+                                                      typename Graph::ActiveNodeId currentId,
+                                                      unsigned int oldModuleIndex,
+                                                      InfoNode*& nodeInOldModule,
+                                                      unsigned int& numLinkedNodesInOldModule)
+{
+  graph.forEachOutEdge(currentId, [&](auto neighbourId, InfoNode& neighbour, const InfoEdge&) {
+    graph.dirty(neighbourId) = true;
+    if (graph.moduleIndex(neighbourId) == oldModuleIndex) {
+      nodeInOldModule = &neighbour;
+      ++numLinkedNodesInOldModule;
+    }
+  });
+
+  graph.forEachInEdge(currentId, [&](auto neighbourId, InfoNode& neighbour, const InfoEdge&) {
+    graph.dirty(neighbourId) = true;
+    if (graph.moduleIndex(neighbourId) == oldModuleIndex) {
+      nodeInOldModule = &neighbour;
+      ++numLinkedNodesInOldModule;
+    }
+  });
+}
+
+template <typename Objective>
+template <typename Graph>
+void InfomapOptimizer<Objective>::markNodeNeighboursDirty(Graph& graph, typename Graph::ActiveNodeId nodeId)
+{
+  graph.forEachOutEdge(nodeId, [&](auto neighbourId, InfoNode&, const InfoEdge&) {
+    graph.dirty(neighbourId) = true;
+  });
+
+  graph.forEachInEdge(nodeId, [&](auto neighbourId, InfoNode&, const InfoEdge&) {
+    graph.dirty(neighbourId) = true;
+  });
+}
+
+template <typename Objective>
 void InfomapOptimizer<Objective>::initPartition()
 {
   auto graph = m_infomap->pointerActiveGraph();
@@ -205,24 +307,7 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
   DeltaFlowDataType oldModuleDelta(oldM, 0.0, 0.0);
   DeltaFlowDataType newModuleDelta(newM, 0.0, 0.0);
 
-  // For all outlinks
-  graph.forEachOutEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
-    unsigned int otherModule = graph.moduleIndex(neighbourId);
-    if (otherModule == oldM) {
-      oldModuleDelta.deltaExit += edge.data.flow;
-    } else if (otherModule == newM) {
-      newModuleDelta.deltaExit += edge.data.flow;
-    }
-  });
-  // For all inlinks
-  graph.forEachInEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
-    unsigned int otherModule = graph.moduleIndex(neighbourId);
-    if (otherModule == oldM) {
-      oldModuleDelta.deltaEnter += edge.data.flow;
-    } else if (otherModule == newM) {
-      newModuleDelta.deltaEnter += edge.data.flow;
-    }
-  });
+  accumulateMoveDelta(graph, currentId, oldM, newM, oldModuleDelta, newModuleDelta);
 
   // For recorded teleportation
   if (m_infomap->recordedTeleportation) {
@@ -317,15 +402,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     deltaFlow.startRound();
 
     // For all outlinks
-    graph.forEachOutEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
-      auto otherModule = graph.moduleIndex(neighbourId);
-      deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, edge.data.flow, 0.0));
-    });
-    // For all inlinks
-    graph.forEachInEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
-      auto otherModule = graph.moduleIndex(neighbourId);
-      deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, 0.0, edge.data.flow));
-    });
+    addNeighbourModuleLinks(graph, currentId, deltaFlow);
 
     // For not moving
     deltaFlow.add(currentModuleIndex, DeltaFlowDataType(currentModuleIndex, 0.0, 0.0));
@@ -424,20 +501,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
       InfoNode* nodeInOldModule = &current;
       unsigned int numLinkedNodesInOldModule = 0;
       // Mark neighbours as dirty
-      graph.forEachOutEdge(currentId, [&](auto neighbourId, InfoNode& neighbour, const InfoEdge&) {
-        graph.dirty(neighbourId) = true;
-        if (graph.moduleIndex(neighbourId) == oldModuleIndex) {
-          nodeInOldModule = &neighbour;
-          ++numLinkedNodesInOldModule;
-        }
-      });
-      graph.forEachInEdge(currentId, [&](auto neighbourId, InfoNode& neighbour, const InfoEdge&) {
-        graph.dirty(neighbourId) = true;
-        if (graph.moduleIndex(neighbourId) == oldModuleIndex) {
-          nodeInOldModule = &neighbour;
-          ++numLinkedNodesInOldModule;
-        }
-      });
+      markNeighboursDirty(graph, currentId, oldModuleIndex, nodeInOldModule, numLinkedNodesInOldModule);
 
       // Move single connected nodes to same module
       if (numLinkedNodesInOldModule == 1 && m_moduleMembers[oldModuleIndex] == 1) {
@@ -446,12 +510,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
         // Mark neighbours as dirty
         if (nodeInOldModule->degree() > 1) {
           auto linkedNodeId = graph.idFor(*nodeInOldModule);
-          graph.forEachOutEdge(linkedNodeId, [&](auto neighbourId, InfoNode&, const InfoEdge&) {
-            graph.dirty(neighbourId) = true;
-          });
-          graph.forEachInEdge(linkedNodeId, [&](auto neighbourId, InfoNode&, const InfoEdge&) {
-            graph.dirty(neighbourId) = true;
-          });
+          markNodeNeighboursDirty(graph, linkedNodeId);
         }
       }
     } else {
