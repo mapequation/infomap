@@ -87,7 +87,16 @@ js-test:
 	npm pack
 	tar -xzvf mapequation-infomap-*.tgz
 	cp package/index.js examples/js
-	open examples/js/infomap-worker.html
+	@browser_target="examples/js/infomap-worker.html"; \
+	if [ -n "$$CI" ]; then \
+		echo "Built browser example at $$browser_target"; \
+	elif command -v open >/dev/null 2>&1; then \
+		open "$$browser_target" || echo "Open $$browser_target manually"; \
+	elif command -v xdg-open >/dev/null 2>&1; then \
+		xdg-open "$$browser_target" || echo "Open $$browser_target manually"; \
+	else \
+		echo "Open $$browser_target manually"; \
+	fi
 
 build/js/infomap.worker.js: $(SOURCES) $(PRE_WORKER_MODULE) Makefile
 	@echo "Compiling Infomap to run in a worker in the browser..."

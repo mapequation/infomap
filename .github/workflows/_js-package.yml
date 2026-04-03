@@ -1,0 +1,67 @@
+name: _JavaScript Package
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: false
+        type: string
+        default: ""
+      run-tests:
+        required: false
+        type: boolean
+        default: true
+      pack-artifact:
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Build JavaScript worker
+        run: make -j js-worker
+
+      - name: Run JavaScript verification
+        if: inputs.run-tests
+        run: make js-test
+
+      - name: Pack npm artifact
+        if: inputs.pack-artifact
+        run: |
+          npm pack --json > npm-pack.json
+          pkg="$(node --input-type=module -e "import fs from 'node:fs'; const [entry] = JSON.parse(fs.readFileSync('npm-pack.json', 'utf8')); console.log(entry.filename);")"
+          mkdir -p dist/npm
+          mv "$pkg" dist/npm/
+
+      - name: Upload npm package artifact
+        if: inputs.pack-artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: npm-package
+          path: dist/npm/*.tgz
+          retention-days: 7

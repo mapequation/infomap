@@ -1,97 +1,95 @@
 # Building
 
-## Conventional commits
+## Commit style
 
-This repo uses [conventional commits](https://www.conventionalcommits.org) formatted messages.
+This repository uses [Conventional Commits](https://www.conventionalcommits.org).
+Release automation relies on commit types such as `fix`, `feat`, `docs`, `build`
+and `test`, with optional scopes like `js` and `python`.
 
-Basically, it means that your commit messages should be [atomic](https://en.wikipedia.org/wiki/Atomic_commit#Atomic_commit_convention)
-and prepended with the type of change it introduces.
-
-This is used for creating [CHANGELOG.md](CHANGELOG.md) and the changelog
-object used by the JavaScript worker version.
-
-For example
+Examples:
 
 - `fix: Off by one error in output`
-- `feat: Support multilayer files`
-- `docs: Update installation instructions for Windows`
+- `fix(python): Correct iterator materialization`
+- `docs: Update macOS build prerequisites`
 
-Other commit types are e.g. `perf`, `refactor`, `test` and `build`.
+## Release process
 
-### Scopes
+Maintainer release flow now lives in [RELEASING.md](RELEASING.md).
+This document only covers local build and verification.
 
-Scopes in conventional commits is appended to the commit type.
+## Native build
 
-We use the scopes `js` and `python`, for example
+Compile the C++ binary from the repository root:
 
-- `fix(js): Check that error handler is a function`
-- `docs(python): Update Python documentation`
+```bash
+make
+```
 
+On macOS with Homebrew `libomp`, use:
 
-## Releasing new versions
+```bash
+PATH="/opt/homebrew/bin:$PATH" \
+CXXFLAGS="-I/opt/homebrew/opt/libomp/include" \
+LDFLAGS="-L/opt/homebrew/opt/libomp/lib" \
+make
+```
 
-0. Commit everything with conventional commit messages
-1. Install `standard-version` by running `npm i`
-2. Run `npm run release -- --dry-run` to run [standard-version](https://github.com/conventional-changelog/standard-version)
-    - Double check the output and that the `bumpFiles` has been updated
-3. Run `npm run release` (Note: do not amend the release commit, the tag will point to the wrong commit!)
-4. Run `git push --follow-tags`
-
-
-### JavaScript
+## JavaScript package
 
 Building requires [Emscripten](https://emscripten.org/docs/getting_started/downloads.html).
 
-In short:
-
-```
+```bash
 git clone https://github.com/emscripten-core/emsdk.git
 cd emsdk
 ./emsdk install latest
 ./emsdk activate latest
 source ./emsdk_env.sh
+cd /path/to/infomap
+npm ci
+make js-worker
+make js-test
 ```
 
-We also need Infomap to extract the command line arguments for Infomap Online.
+`make js-worker` builds the worker and bundles the published package. `make js-test`
+packs the npm package and validates the local example against the packed artifact.
 
-To build:
+## Python package
 
-0. Follow the [release workflow](#releasing-new-versions) before building
-1. Install deps with `npm i`
-2. Run `make js-worker`
-    - This creates `build/js/infomap.worker.js`
-    - Copies the worker to `interfaces/js/src/worker`
-    - Runs `npm run build` which bundles the worker with the js source files and copies them to `dist`
-    - Copies the js README.md to the root
-3. To test, run `make js-test`
-    - Runs `npm pack` and extracts the `tgz` file.
-    - Copies `packages/dist/index.js` to `examples/js/`.
-    - Replaces the script source from the CDN to the local `./index.js`.
-4. Run `npm publish`
-    - Optionally run `make js-clean`
+Building requires [SWIG](http://swig.org), Python packaging tooling, and Sphinx.
 
+On macOS with Homebrew:
 
-### Python
+```bash
+brew install swig sphinx-doc libomp
+```
 
-Building requires [Swig](http://swig.org) and [Sphinx](https://www.sphinx-doc.org)
+Build and test locally:
 
-On macOS, install with `brew install swig` and `brew install sphinx-doc`.
+```bash
+PATH="/opt/homebrew/bin:$PATH" \
+CXXFLAGS="-I/opt/homebrew/opt/libomp/include" \
+LDFLAGS="-L/opt/homebrew/opt/libomp/lib" \
+python -m pip install -r requirements_dev.txt
 
-To build:
+PATH="/opt/homebrew/bin:$PATH" \
+CXXFLAGS="-I/opt/homebrew/opt/libomp/include" \
+LDFLAGS="-L/opt/homebrew/opt/libomp/lib" \
+make python
 
-0. Follow the [release workflow](#releasing-new-versions) before building
-1. Run `make python`
-    - Runs `swig`
-    - Creates `package-meta.py`
-    - Copies python package files to `build/py`
-2. To test the build, run `make py-test`
-3. Test publish with `make pypitest-publish`
-    - Install in a clean environment `pip3 --no-cache-dir install --index-url https://test.pypi.org/simple/ infomap`
-4. Run `make pypi-dist`
-5. Publish with `make pypi-publish`
+make py-local-install
+make py-test
+```
 
-Generate documentation:
+Build source and wheel distributions locally when needed:
 
-0. Follow the [release workflow](#releasing-new-versions) before generating documentation
-1. Run `make py-doc` which generates the documentation for Github pages. The front page is generated from `README.rst`
-2. Commit the documentation with a `docs(python)` scoped commit.
+```bash
+make pypi-dist
+```
+
+Generate the Python documentation locally:
+
+```bash
+make py-doc
+```
+
+This writes the static site into `docs/`.

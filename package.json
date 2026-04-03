@@ -19,8 +19,7 @@
   "type": "module",
   "scripts": {
     "watch": "webpack --watch --config interfaces/js/webpack.config.js",
-    "build": "webpack --config interfaces/js/webpack.config.js",
-    "release": "standard-version"
+    "build": "webpack --config interfaces/js/webpack.config.js"
   },
   "repository": {
     "type": "git",
@@ -61,25 +60,10 @@
     "git-raw-commits": "^5.0.1",
     "prettier": "^3.8.1",
     "raw-loader": "^4.0.2",
-    "standard-version": "^9.5.0",
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3",
     "webpack": "^5.105.4",
     "webpack-cli": "^7.0.2"
-  },
-  "standard-version": {
-    "bumpFiles": [
-      "package.json",
-      "package-lock.json",
-      {
-        "filename": "src/version.h",
-        "updater": "utils/update-version-h.js"
-      },
-      {
-        "filename": "CITATION.cff",
-        "updater": "utils/update-citation-cff.js"
-      }
-    ]
   },
   "python": {
     "url": "https://pypi.org/project/infomap/",
