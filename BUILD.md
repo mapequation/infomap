@@ -51,11 +51,18 @@ cd emsdk
 source ./emsdk_env.sh
 cd /path/to/infomap
 npm ci
+make build-js-metadata
 make build-js
+make test-js-metadata
 make test-js
 ```
 
-`make build-js` builds the worker and bundles the public npm package.
+`make build-js-metadata` refreshes the tracked parameter and changelog metadata
+under `interfaces/js/generated/`.
+`make build-js` builds the worker and bundles the public npm package from those
+tracked metadata files.
+`make test-js-metadata` regenerates metadata in a temp directory and verifies
+that the committed files are fresh.
 `make test-js` packs the npm package and validates the local example against the
 packed artifact.
 
