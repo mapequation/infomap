@@ -1434,10 +1434,8 @@ void InfomapBase::materializeLeafLevelCsr()
   csr.moduleIndices.resize(numNodes);
   csr.dirtyFlags.resize(numNodes);
   csr.outTargets.reserve(totalOutEdges);
-  csr.outWeights.reserve(totalOutEdges);
   csr.outFlows.reserve(totalOutEdges);
   csr.inTargets.reserve(totalInEdges);
-  csr.inWeights.reserve(totalInEdges);
   csr.inFlows.reserve(totalInEdges);
   csr.outOffsets[0] = 0;
   csr.inOffsets[0] = 0;
@@ -1448,14 +1446,12 @@ void InfomapBase::materializeLeafLevelCsr()
     csr.dirtyFlags[i] = node.dirty ? 1u : 0u;
     for (auto* edge : node.outEdges()) {
       csr.outTargets.push_back(m_activeGraphMaterialization.idFor(*edge->target));
-      csr.outWeights.push_back(edge->data.weight);
       csr.outFlows.push_back(edge->data.flow);
     }
     csr.outOffsets[i + 1] = static_cast<unsigned int>(csr.outTargets.size());
 
     for (auto* edge : node.inEdges()) {
       csr.inTargets.push_back(m_activeGraphMaterialization.idFor(*edge->source));
-      csr.inWeights.push_back(edge->data.weight);
       csr.inFlows.push_back(edge->data.flow);
     }
     csr.inOffsets[i + 1] = static_cast<unsigned int>(csr.inTargets.size());

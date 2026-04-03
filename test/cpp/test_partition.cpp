@@ -15,7 +15,7 @@ using infomap::InfomapWrapper;
 using infomap::InfoNode;
 
 using EdgeKey = std::pair<unsigned int, unsigned int>;
-using CsrEdgeKey = std::tuple<unsigned int, double, double>;
+using CsrEdgeKey = std::pair<unsigned int, double>;
 
 std::vector<unsigned int> childStateIds(const InfoNode& node)
 {
@@ -68,7 +68,7 @@ std::vector<CsrEdgeKey> pointerOutEdgeTuples(InfoNode& node)
 {
   std::vector<CsrEdgeKey> edges;
   for (auto* edge : node.outEdges()) {
-    edges.emplace_back(edge->target->stateId, edge->data.weight, edge->data.flow);
+    edges.emplace_back(edge->target->stateId, edge->data.flow);
   }
   std::sort(edges.begin(), edges.end());
   return edges;
@@ -78,7 +78,7 @@ std::vector<CsrEdgeKey> pointerInEdgeTuples(InfoNode& node)
 {
   std::vector<CsrEdgeKey> edges;
   for (auto* edge : node.inEdges()) {
-    edges.emplace_back(edge->source->stateId, edge->data.weight, edge->data.flow);
+    edges.emplace_back(edge->source->stateId, edge->data.flow);
   }
   std::sort(edges.begin(), edges.end());
   return edges;
@@ -368,7 +368,7 @@ TEST_CASE("CSR backend materializes leaf-level first-order adjacency [fast][core
     std::vector<CsrEdgeKey> csrOut;
     const auto outEdges = csr.outEdges(i);
     for (std::size_t j = 0; j < outEdges.size; ++j) {
-      csrOut.emplace_back(csr.nodeFor(outEdges.targets[j]).stateId, outEdges.weights[j], outEdges.flows[j]);
+      csrOut.emplace_back(csr.nodeFor(outEdges.targets[j]).stateId, outEdges.flows[j]);
     }
     std::sort(csrOut.begin(), csrOut.end());
     CHECK(csrOut == pointerOutEdgeTuples(node));
@@ -376,7 +376,7 @@ TEST_CASE("CSR backend materializes leaf-level first-order adjacency [fast][core
     std::vector<CsrEdgeKey> csrIn;
     const auto inEdges = csr.inEdges(i);
     for (std::size_t j = 0; j < inEdges.size; ++j) {
-      csrIn.emplace_back(csr.nodeFor(inEdges.targets[j]).stateId, inEdges.weights[j], inEdges.flows[j]);
+      csrIn.emplace_back(csr.nodeFor(inEdges.targets[j]).stateId, inEdges.flows[j]);
     }
     std::sort(csrIn.begin(), csrIn.end());
     CHECK(csrIn == pointerInEdgeTuples(node));

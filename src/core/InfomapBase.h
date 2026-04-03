@@ -170,11 +170,9 @@ public:
   struct CsrMaterialization {
     std::vector<unsigned int> outOffsets;
     std::vector<unsigned int> outTargets;
-    std::vector<double> outWeights;
     std::vector<double> outFlows;
     std::vector<unsigned int> inOffsets;
     std::vector<unsigned int> inTargets;
-    std::vector<double> inWeights;
     std::vector<double> inFlows;
     std::vector<unsigned int> moduleIndices;
     std::vector<unsigned char> dirtyFlags;
@@ -184,11 +182,9 @@ public:
     {
       outOffsets.clear();
       outTargets.clear();
-      outWeights.clear();
       outFlows.clear();
       inOffsets.clear();
       inTargets.clear();
-      inWeights.clear();
       inFlows.clear();
       moduleIndices.clear();
       dirtyFlags.clear();
@@ -199,11 +195,9 @@ public:
     {
       return outOffsets.size() * sizeof(unsigned int)
           + outTargets.size() * sizeof(unsigned int)
-          + outWeights.size() * sizeof(double)
           + outFlows.size() * sizeof(double)
           + inOffsets.size() * sizeof(unsigned int)
           + inTargets.size() * sizeof(unsigned int)
-          + inWeights.size() * sizeof(double)
           + inFlows.size() * sizeof(double)
           + moduleIndices.size() * sizeof(unsigned int)
           + dirtyFlags.size() * sizeof(unsigned char);
@@ -292,13 +286,11 @@ public:
 
     struct EdgeView {
       ActiveNodeId neighbourId = 0;
-      double weight = 0.0;
       double flow = 0.0;
     };
 
     struct EdgeSpan {
       const unsigned int* targets = nullptr;
-      const double* weights = nullptr;
       const double* flows = nullptr;
       std::size_t size = 0;
     };
@@ -367,7 +359,6 @@ public:
       for (std::size_t i = 0; i < edges.size; ++i) {
         EdgeView edge{
             edges.targets[i],
-            edges.weights[i],
             edges.flows[i],
         };
         fn(edge.neighbourId, *materialization.nodes[edge.neighbourId], edge);
@@ -381,7 +372,6 @@ public:
       for (std::size_t i = 0; i < edges.size; ++i) {
         EdgeView edge{
             edges.targets[i],
-            edges.weights[i],
             edges.flows[i],
         };
         fn(edge.neighbourId, *materialization.nodes[edge.neighbourId], edge);
@@ -396,7 +386,6 @@ public:
       const auto end = csrMaterialization.outOffsets[id + 1];
       return {
           csrMaterialization.outTargets.data() + begin,
-          csrMaterialization.outWeights.data() + begin,
           csrMaterialization.outFlows.data() + begin,
           end - begin,
       };
@@ -410,7 +399,6 @@ public:
       const auto end = csrMaterialization.inOffsets[id + 1];
       return {
           csrMaterialization.inTargets.data() + begin,
-          csrMaterialization.inWeights.data() + begin,
           csrMaterialization.inFlows.data() + begin,
           end - begin,
       };
