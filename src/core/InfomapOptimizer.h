@@ -269,7 +269,7 @@ void InfomapOptimizer<Objective>::addNeighbourModuleLinks(InfomapBase::CsrBacken
   for (std::size_t i = 0; i < inEdges.size; ++i) {
     const auto neighbourId = inEdges.targets[i];
     const auto otherModule = moduleIndices[neighbourId];
-    deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, 0.0, inEdges.flows[i]));
+    deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, 0.0, inEdges.flowAt(i)));
   }
 }
 
@@ -325,9 +325,9 @@ void InfomapOptimizer<Objective>::accumulateMoveDelta(InfomapBase::CsrBackend& g
   for (std::size_t i = 0; i < inEdges.size; ++i) {
     const auto otherModule = moduleIndices[inEdges.targets[i]];
     if (otherModule == oldModule) {
-      oldModuleDelta.deltaEnter += inEdges.flows[i];
+      oldModuleDelta.deltaEnter += inEdges.flowAt(i);
     } else if (otherModule == newModule) {
-      newModuleDelta.deltaEnter += inEdges.flows[i];
+      newModuleDelta.deltaEnter += inEdges.flowAt(i);
     }
   }
 }

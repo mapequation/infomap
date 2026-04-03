@@ -67,7 +67,7 @@ void printStorageBreakdown(const infomap::InfomapBase::ActiveGraphStorageBreakdo
   std::cout << "\"csr_out_flow_bytes\":" << storage.csrOutFlowBytes << ",";
   std::cout << "\"csr_in_offset_bytes\":" << storage.csrInOffsetBytes << ",";
   std::cout << "\"csr_in_target_bytes\":" << storage.csrInTargetBytes << ",";
-  std::cout << "\"csr_in_flow_bytes\":" << storage.csrInFlowBytes << ",";
+  std::cout << "\"csr_in_flow_index_bytes\":" << storage.csrInFlowIndexBytes << ",";
   std::cout << "\"csr_module_index_bytes\":" << storage.csrModuleIndexBytes << ",";
   std::cout << "\"csr_dirty_flag_bytes\":" << storage.csrDirtyFlagBytes << ",";
   std::cout << "\"total_bytes\":" << storage.totalBytes() << ",";

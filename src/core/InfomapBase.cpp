@@ -1428,9 +1428,12 @@ void InfomapBase::materializeLeafLevelCsr()
   csr.outTargets.reserve(totalOutEdges);
   csr.outFlows.reserve(totalOutEdges);
   csr.inTargets.reserve(totalInEdges);
-  csr.inFlows.reserve(totalInEdges);
+  csr.inFlowIndices.reserve(totalInEdges);
   csr.outOffsets[0] = 0;
   csr.inOffsets[0] = 0;
+
+  std::unordered_map<const InfoEdge*, unsigned int> outFlowIndexByEdge;
+  outFlowIndexByEdge.reserve(totalOutEdges);
 
   for (std::size_t i = 0; i < numNodes; ++i) {
     auto& node = *nodes[i];
@@ -1444,12 +1447,16 @@ void InfomapBase::materializeLeafLevelCsr()
     for (auto* edge : node.outEdges()) {
       csr.outTargets.push_back(csr.stateIdToActiveId.at(edge->target->stateId));
       csr.outFlows.push_back(edge->data.flow);
+      outFlowIndexByEdge.emplace(edge, static_cast<unsigned int>(csr.outFlows.size() - 1));
     }
     csr.outOffsets[i + 1] = static_cast<unsigned int>(csr.outTargets.size());
+  }
 
+  for (std::size_t i = 0; i < numNodes; ++i) {
+    auto& node = *nodes[i];
     for (auto* edge : node.inEdges()) {
       csr.inTargets.push_back(csr.stateIdToActiveId.at(edge->source->stateId));
-      csr.inFlows.push_back(edge->data.flow);
+      csr.inFlowIndices.push_back(outFlowIndexByEdge.at(edge));
     }
     csr.inOffsets[i + 1] = static_cast<unsigned int>(csr.inTargets.size());
   }

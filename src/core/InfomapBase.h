@@ -60,7 +60,7 @@ public:
     std::size_t csrOutFlowBytes = 0;
     std::size_t csrInOffsetBytes = 0;
     std::size_t csrInTargetBytes = 0;
-    std::size_t csrInFlowBytes = 0;
+    std::size_t csrInFlowIndexBytes = 0;
     std::size_t csrModuleIndexBytes = 0;
     std::size_t csrDirtyFlagBytes = 0;
     bool csrAvailable = false;
@@ -77,7 +77,7 @@ public:
           + csrOutFlowBytes
           + csrInOffsetBytes
           + csrInTargetBytes
-          + csrInFlowBytes
+          + csrInFlowIndexBytes
           + csrModuleIndexBytes
           + csrDirtyFlagBytes;
     }
@@ -94,7 +94,7 @@ public:
       csrOutFlowBytes = std::max(csrOutFlowBytes, other.csrOutFlowBytes);
       csrInOffsetBytes = std::max(csrInOffsetBytes, other.csrInOffsetBytes);
       csrInTargetBytes = std::max(csrInTargetBytes, other.csrInTargetBytes);
-      csrInFlowBytes = std::max(csrInFlowBytes, other.csrInFlowBytes);
+      csrInFlowIndexBytes = std::max(csrInFlowIndexBytes, other.csrInFlowIndexBytes);
       csrModuleIndexBytes = std::max(csrModuleIndexBytes, other.csrModuleIndexBytes);
       csrDirtyFlagBytes = std::max(csrDirtyFlagBytes, other.csrDirtyFlagBytes);
       csrAvailable = csrAvailable || other.csrAvailable;
@@ -240,7 +240,7 @@ public:
     std::vector<double> outFlows;
     std::vector<unsigned int> inOffsets;
     std::vector<unsigned int> inTargets;
-    std::vector<double> inFlows;
+    std::vector<unsigned int> inFlowIndices;
     std::vector<unsigned int> moduleIndices;
     std::vector<unsigned char> dirtyFlags;
     bool available = false;
@@ -253,7 +253,7 @@ public:
       outFlows.clear();
       inOffsets.clear();
       inTargets.clear();
-      inFlows.clear();
+      inFlowIndices.clear();
       moduleIndices.clear();
       dirtyFlags.clear();
       available = false;
@@ -268,7 +268,7 @@ public:
           + outFlowBytes()
           + inOffsetBytes()
           + inTargetBytes()
-          + inFlowBytes()
+          + inFlowIndexBytes()
           + moduleIndexBytes()
           + dirtyFlagBytes();
     }
@@ -308,9 +308,9 @@ public:
       return inTargets.capacity() * sizeof(unsigned int);
     }
 
-    std::size_t inFlowBytes() const noexcept
+    std::size_t inFlowIndexBytes() const noexcept
     {
-      return inFlows.capacity() * sizeof(double);
+      return inFlowIndices.capacity() * sizeof(unsigned int);
     }
 
     std::size_t moduleIndexBytes() const noexcept
@@ -419,6 +419,18 @@ public:
       std::size_t size = 0;
     };
 
+    struct InEdgeSpan {
+      const unsigned int* targets = nullptr;
+      const unsigned int* flowIndices = nullptr;
+      const double* outFlows = nullptr;
+      std::size_t size = 0;
+
+      double flowAt(std::size_t index) const
+      {
+        return outFlows[flowIndices[index]];
+      }
+    };
+
     CsrBackend(ActiveGraphMaterialization& materialization, CsrMaterialization& csrMaterialization)
         : materialization(materialization),
           csrMaterialization(csrMaterialization) { }
@@ -493,7 +505,7 @@ public:
       for (std::size_t i = 0; i < edges.size; ++i) {
         EdgeView edge{
             edges.targets[i],
-            edges.flows[i],
+            edges.flowAt(i),
         };
         fn(edge.neighbourId, *materialization.nodes[edge.neighbourId], edge);
       }
@@ -512,7 +524,7 @@ public:
       };
     }
 
-    EdgeSpan inEdges(ActiveNodeId id) const
+    InEdgeSpan inEdges(ActiveNodeId id) const
     {
       if (!available()) return {};
       assert(id + 1 < csrMaterialization.inOffsets.size());
@@ -520,7 +532,8 @@ public:
       const auto end = csrMaterialization.inOffsets[id + 1];
       return {
           csrMaterialization.inTargets.data() + begin,
-          csrMaterialization.inFlows.data() + begin,
+          csrMaterialization.inFlowIndices.data() + begin,
+          csrMaterialization.outFlows.data(),
           end - begin,
       };
     }
@@ -636,7 +649,7 @@ public:
         m_csrMaterialization.outFlowBytes(),
         m_csrMaterialization.inOffsetBytes(),
         m_csrMaterialization.inTargetBytes(),
-        m_csrMaterialization.inFlowBytes(),
+        m_csrMaterialization.inFlowIndexBytes(),
         m_csrMaterialization.moduleIndexBytes(),
         m_csrMaterialization.dirtyFlagBytes(),
         m_csrMaterialization.available,

@@ -419,7 +419,7 @@ TEST_CASE("CSR backend materializes leaf-level first-order adjacency [fast][core
     std::vector<CsrEdgeKey> csrIn;
     const auto inEdges = csr.inEdges(i);
     for (std::size_t j = 0; j < inEdges.size; ++j) {
-      csrIn.emplace_back(csr.nodeFor(inEdges.targets[j]).stateId, inEdges.flows[j]);
+      csrIn.emplace_back(csr.nodeFor(inEdges.targets[j]).stateId, inEdges.flowAt(j));
     }
     std::sort(csrIn.begin(), csrIn.end());
     CHECK(csrIn == pointerInEdgeTuples(node));
