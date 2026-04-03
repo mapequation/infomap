@@ -157,23 +157,21 @@ inline void InfomapOptimizer<Objective>::initSuperNetwork()
 template <typename Objective>
 void InfomapOptimizer<Objective>::initPartition()
 {
+  auto graph = m_infomap->pointerActiveGraph();
   auto& network = m_infomap->activeNetwork();
-  Log(4) << "InfomapOptimizer::initPartition() with " << network.size() << " nodes...\n";
+  Log(4) << "InfomapOptimizer::initPartition() with " << graph.size() << " nodes...\n";
 
   // Init one module for each node
-  auto numNodes = network.size();
+  auto numNodes = graph.size();
   m_moduleFlowData.resize(numNodes);
   m_moduleMembers.assign(numNodes, 1);
   m_emptyModules.clear();
   m_emptyModules.reserve(numNodes);
 
-  unsigned int i = 0;
-  for (auto& nodePtr : network) {
-    InfoNode& node = *nodePtr;
-    node.index = i; // Unique module index for each node
-    m_moduleFlowData[i] = node.data;
-    node.dirty = true;
-    ++i;
+  for (unsigned int i = 0; i < numNodes; ++i) {
+    graph.moduleIndex(i) = i; // Unique module index for each node
+    m_moduleFlowData[i] = graph.payloadFor(i).data;
+    graph.dirty(i) = true;
   }
 
   m_objective.initPartition(network);
@@ -182,13 +180,13 @@ void InfomapOptimizer<Objective>::initPartition()
 template <typename Objective>
 void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
 {
-  auto& network = m_infomap->activeNetwork();
-  auto numNodes = network.size();
+  auto graph = m_infomap->pointerActiveGraph();
+  auto numNodes = graph.size();
   if (modules.size() != numNodes)
     throw std::length_error("Size of predefined modules differ from size of active network.");
 
   for (unsigned int i = 0; i < numNodes; ++i) {
-    moveNodeToPredefinedModule(*network[i], modules[i]);
+    moveNodeToPredefinedModule(graph.nodeFor(i), modules[i]);
   }
 }
 
