@@ -582,9 +582,10 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
         unsigned int bestModuleIndex = bestDeltaModule.module;
         unsigned int oldModuleIndex = current.index;
 
-        bool validMove = bestModuleIndex == m_emptyModules.back()
+        bool movingToEmptyModule = !m_emptyModules.empty() && bestModuleIndex == m_emptyModules.back();
+        bool validMove = movingToEmptyModule
             // Check validity of move to empty target
-            ? m_moduleMembers[oldModuleIndex] > 1 && !m_emptyModules.empty()
+            ? m_moduleMembers[oldModuleIndex] > 1
             // Not valid if the best module is empty now but not when decided
             : m_moduleMembers[bestModuleIndex] > 0;
 

@@ -50,7 +50,7 @@ MK_FILES := $(wildcard mk/*.mk)
 BUILD_CONFIG_SCRIPT := scripts/build_config.py
 
 define build_config_field
-$(strip $(shell $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) field --field "$(1)" --mode "$(MODE)" --openmp "$(OPENMP)" --compiler "$(CXX)" --cppflags '$(CPPFLAGS)' --cxxflags '$(CXXFLAGS)' --ldflags '$(LDFLAGS)' --deployment-target '$(MACOSX_DEPLOYMENT_TARGET)' --platform '$(UNAME_S)'))
+$(strip $(shell CPPFLAGS='$(CPPFLAGS)' CXXFLAGS='$(CXXFLAGS)' LDFLAGS='$(LDFLAGS)' MACOSX_DEPLOYMENT_TARGET='$(MACOSX_DEPLOYMENT_TARGET)' $(PYTHON_FOR_BUILD_CONFIG) $(BUILD_CONFIG_SCRIPT) field --field "$(1)" --mode "$(MODE)" --openmp "$(OPENMP)" --compiler "$(CXX)" --platform "$(UNAME_S)"))
 endef
 
 BUILD_CONFIG_MODE := $(call build_config_field,mode)
