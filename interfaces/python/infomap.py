@@ -46,6 +46,170 @@ _DEFAULT_SEED = 123
 _DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD = 1e-10
 _DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD = 1e-5
 
+_INPUT_PRE_SELF_LINK_OPTION_SPECS = (
+    ("value", "cluster_data", "--cluster-data", lambda value: value is not None),
+    ("flag", "no_infomap", "--no-infomap", None),
+    ("flag", "skip_adjust_bipartite_flow", "--skip-adjust-bipartite-flow", None),
+    ("flag", "bipartite_teleportation", "--bipartite-teleportation", None),
+    ("value", "weight_threshold", "--weight-threshold", lambda value: value is not None),
+)
+
+_INPUT_POST_SELF_LINK_OPTION_SPECS = (
+    ("value", "node_limit", "--node-limit", lambda value: value is not None),
+    (
+        "value",
+        "matchable_multilayer_ids",
+        "--matchable-multilayer-ids",
+        lambda value: value is not None,
+    ),
+    ("flag", "assign_to_neighbouring_module", "--assign-to-neighbouring-module", None),
+    ("value", "meta_data", "--meta-data", lambda value: value is not None),
+    (
+        "value",
+        "meta_data_rate",
+        "--meta-data-rate",
+        lambda value: value != _DEFAULT_META_DATA_RATE,
+    ),
+    ("flag", "meta_data_unweighted", "--meta-data-unweighted", None),
+)
+
+_OUTPUT_PRE_VERBOSITY_OPTION_SPECS = (
+    ("flag", "tree", "--tree", None),
+    ("flag", "ftree", "--ftree", None),
+    ("flag", "clu", "--clu", None),
+)
+
+_OUTPUT_POST_VERBOSITY_OPTION_SPECS = (
+    ("flag", "silent", "--silent", None),
+    ("value", "out_name", "--out-name", lambda value: value is not None),
+    ("flag", "no_file_output", "--no-file-output", None),
+    ("value", "clu_level", "--clu-level", lambda value: value is not None),
+)
+
+_OUTPUT_POST_OUTPUT_OPTION_SPECS = (
+    ("flag", "hide_bipartite_nodes", "--hide-bipartite-nodes", None),
+    ("flag", "print_all_trials", "--print-all-trials", None),
+)
+
+_ALGORITHM_PRE_DIRECTED_OPTION_SPECS = (
+    ("flag", "two_level", "--two-level", None),
+    ("value", "flow_model", "--flow-model", lambda value: value is not None),
+)
+
+_ALGORITHM_POST_DIRECTED_OPTION_SPECS = (
+    ("flag", "recorded_teleportation", "--recorded-teleportation", None),
+    ("flag", "use_node_weights_as_flow", "--use-node-weights-as-flow", None),
+    ("flag", "to_nodes", "--to-nodes", None),
+    (
+        "value",
+        "teleportation_probability",
+        "--teleportation-probability",
+        lambda value: value != _DEFAULT_TELEPORTATION_PROB,
+    ),
+    ("flag", "regularized", "--regularized", None),
+    (
+        "value",
+        "regularization_strength",
+        "--regularization-strength",
+        lambda value: value != 1.0,
+    ),
+    ("flag", "entropy_corrected", "--entropy-corrected", None),
+    (
+        "value",
+        "entropy_correction_strength",
+        "--entropy-correction-strength",
+        lambda value: value != 1.0,
+    ),
+    ("value", "markov_time", "--markov-time", lambda value: value != 1.0),
+    ("flag", "variable_markov_time", "--variable-markov-time", None),
+    (
+        "value",
+        "variable_markov_damping",
+        "--variable-markov-damping",
+        lambda value: value != 1.0,
+    ),
+    (
+        "value",
+        "preferred_number_of_modules",
+        "--preferred-number-of-modules",
+        lambda value: value is not None,
+    ),
+    (
+        "value",
+        "multilayer_relax_rate",
+        "--multilayer-relax-rate",
+        lambda value: value != _DEFAULT_MULTILAYER_RELAX_RATE,
+    ),
+    (
+        "value",
+        "multilayer_relax_limit",
+        "--multilayer-relax-limit",
+        lambda value: value != -1,
+    ),
+    (
+        "value",
+        "multilayer_relax_limit_up",
+        "--multilayer-relax-limit-up",
+        lambda value: value != -1,
+    ),
+    (
+        "value",
+        "multilayer_relax_limit_down",
+        "--multilayer-relax-limit-down",
+        lambda value: value != -1,
+    ),
+    ("flag", "multilayer_relax_by_jsd", "--multilayer-relax-by-jsd", None),
+)
+
+_ACCURACY_PRE_FAST_HIERARCHICAL_OPTION_SPECS = (
+    ("value", "seed", "--seed", lambda value: value != _DEFAULT_SEED),
+    ("value", "num_trials", "--num-trials", lambda value: value != 1),
+    ("value", "core_loop_limit", "--core-loop-limit", lambda value: value != 10),
+    ("value", "core_level_limit", "--core-level-limit", lambda value: value is not None),
+    (
+        "value",
+        "tune_iteration_limit",
+        "--tune-iteration-limit",
+        lambda value: value is not None,
+    ),
+    (
+        "value",
+        "core_loop_codelength_threshold",
+        "--core-loop-codelength-threshold",
+        lambda value: value != _DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
+    ),
+    (
+        "value",
+        "tune_iteration_relative_threshold",
+        "--tune-iteration-relative-threshold",
+        lambda value: value != _DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD,
+    ),
+)
+
+_ACCURACY_POST_FAST_HIERARCHICAL_OPTION_SPECS = (
+    ("flag", "prefer_modular_solution", "--prefer-modular-solution", None),
+    ("flag", "inner_parallelization", "--inner-parallelization", None),
+)
+
+
+def _append_option_specs(parts, options, specs):
+    for option_type, option_name, flag, include in specs:
+        value = options[option_name]
+        if option_type == "flag":
+            if value:
+                parts.append(flag)
+            continue
+        if include(value):
+            parts.append(f"{flag} {value}")
+
+
+def _join_args(base_args, parts):
+    if not parts:
+        return "" if base_args is None else base_args
+    if not base_args:
+        return f" {' '.join(parts)}"
+    return f"{base_args} {' '.join(parts)}"
+
 
 def _construct_args(
     args=None,
@@ -108,24 +272,8 @@ def _construct_args(
     prefer_modular_solution=False,
     inner_parallelization=False,
 ):
-    if args is None:
-        args = ""
-
-    # input
-    if cluster_data is not None:
-        args += " --cluster-data {}".format(cluster_data)
-
-    if no_infomap:
-        args += " --no-infomap"
-
-    if skip_adjust_bipartite_flow:
-        args += " --skip-adjust-bipartite-flow"
-
-    if bipartite_teleportation:
-        args += " --bipartite-teleportation"
-
-    if weight_threshold is not None:
-        args += " --weight-threshold {}".format(weight_threshold)
+    options = locals().copy()
+    rendered_args = []
 
     if include_self_links is not None:
         warnings.warn(
@@ -133,157 +281,47 @@ def _construct_args(
             DeprecationWarning,
         )
 
-    if include_self_links is not None and not include_self_links:
-        args += " --no-self-links"
+    _append_option_specs(rendered_args, options, _INPUT_PRE_SELF_LINK_OPTION_SPECS)
 
-    if no_self_links:
-        args += " --no-self-links"
+    if (include_self_links is not None and not include_self_links) or no_self_links:
+        rendered_args.append("--no-self-links")
 
-    if node_limit is not None:
-        args += " --node-limit {}".format(node_limit)
-
-    if matchable_multilayer_ids is not None:
-        args += " --matchable-multilayer-ids {}".format(matchable_multilayer_ids)
-
-    if assign_to_neighbouring_module:
-        args += " --assign-to-neighbouring-module"
-
-    if meta_data is not None:
-        args += " --meta-data {}".format(meta_data)
-
-    if meta_data_rate != _DEFAULT_META_DATA_RATE:
-        args += " --meta-data-rate {}".format(meta_data_rate)
-
-    if meta_data_unweighted:
-        args += " --meta-data-unweighted"
+    _append_option_specs(rendered_args, options, _INPUT_POST_SELF_LINK_OPTION_SPECS)
 
     # output
-    if tree:
-        args += " --tree"
-
-    if ftree:
-        args += " --ftree"
-
-    if clu:
-        args += " --clu"
+    _append_option_specs(rendered_args, options, _OUTPUT_PRE_VERBOSITY_OPTION_SPECS)
 
     if verbosity_level > 1:
-        args += " -{}".format("v" * verbosity_level)
+        rendered_args.append("-{}".format("v" * verbosity_level))
 
-    if silent:
-        args += " --silent"
-
-    if out_name is not None:
-        args += " --out-name {}".format(out_name)
-
-    if no_file_output:
-        args += " --no-file-output"
-
-    if clu_level is not None:
-        args += " --clu-level {}".format(clu_level)
-
+    _append_option_specs(rendered_args, options, _OUTPUT_POST_VERBOSITY_OPTION_SPECS)
     if output is not None:
-        args += " --output {}".format(",".join(output))
-
-    if hide_bipartite_nodes:
-        args += " --hide-bipartite-nodes"
-
-    if print_all_trials:
-        args += " --print-all-trials"
+        rendered_args.append("--output {}".format(",".join(output)))
+    _append_option_specs(rendered_args, options, _OUTPUT_POST_OUTPUT_OPTION_SPECS)
 
     # algorithm
-    if two_level:
-        args += " --two-level"
-
-    if flow_model is not None:
-        args += " --flow-model {}".format(flow_model)
+    _append_option_specs(rendered_args, options, _ALGORITHM_PRE_DIRECTED_OPTION_SPECS)
 
     if directed is not None:
-        args += " --directed" if directed else " --flow-model undirected"
-
-    if recorded_teleportation:
-        args += " --recorded-teleportation"
-
-    if use_node_weights_as_flow:
-        args += " --use-node-weights-as-flow"
-
-    if to_nodes:
-        args += " --to-nodes"
-
-    if teleportation_probability != _DEFAULT_TELEPORTATION_PROB:
-        args += " --teleportation-probability {}".format(teleportation_probability)
-
-    if regularized:
-        args += " --regularized"
-    if regularization_strength != 1.0:
-        args += " --regularization-strength {}".format(regularization_strength)
-    if entropy_corrected:
-        args += " --entropy-corrected"
-    if entropy_correction_strength != 1.0:
-        args += " --entropy-correction-strength {}".format(entropy_correction_strength)
-
-    if markov_time != 1.0:
-        args += " --markov-time {}".format(markov_time)
-    if variable_markov_time:
-        args += " --variable-markov-time"
-    if variable_markov_damping != 1.0:
-        args += " --variable-markov-damping {}".format(variable_markov_damping)
-        args += " --variable-markov-damping {}".format(variable_markov_damping)
-
-    if preferred_number_of_modules is not None:
-        args += " --preferred-number-of-modules {}".format(preferred_number_of_modules)
-
-    if multilayer_relax_rate != _DEFAULT_MULTILAYER_RELAX_RATE:
-        args += " --multilayer-relax-rate {}".format(multilayer_relax_rate)
-
-    if multilayer_relax_limit != -1:
-        args += " --multilayer-relax-limit {}".format(multilayer_relax_limit)
-
-    if multilayer_relax_limit_up != -1:
-        args += " --multilayer-relax-limit-up {}".format(multilayer_relax_limit_up)
-
-    if multilayer_relax_limit_down != -1:
-        args += " --multilayer-relax-limit-down {}".format(multilayer_relax_limit_down)
-
-    if multilayer_relax_by_jsd:
-        args += " --multilayer-relax-by-jsd"
+        rendered_args.append("--directed" if directed else "--flow-model undirected")
+    _append_option_specs(rendered_args, options, _ALGORITHM_POST_DIRECTED_OPTION_SPECS)
 
     # accuracy
-    if seed != _DEFAULT_SEED:
-        args += " --seed {}".format(seed)
-
-    if num_trials != 1:
-        args += " --num-trials {}".format(num_trials)
-
-    if core_loop_limit != 10:
-        args += " --core-loop-limit {}".format(core_loop_limit)
-
-    if core_level_limit is not None:
-        args += " --core-level-limit {}".format(core_level_limit)
-
-    if tune_iteration_limit is not None:
-        args += " --tune-iteration-limit {}".format(tune_iteration_limit)
-
-    if core_loop_codelength_threshold != _DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD:
-        args += " --core-loop-codelength-threshold {}".format(
-            core_loop_codelength_threshold
-        )
-
-    if tune_iteration_relative_threshold != _DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD:
-        args += " --tune-iteration-relative-threshold {}".format(
-            tune_iteration_relative_threshold
-        )
+    _append_option_specs(
+        rendered_args,
+        options,
+        _ACCURACY_PRE_FAST_HIERARCHICAL_OPTION_SPECS,
+    )
 
     if fast_hierarchical_solution is not None:
-        args += " -{}".format("F" * fast_hierarchical_solution)
+        rendered_args.append("-{}".format("F" * fast_hierarchical_solution))
 
-    if prefer_modular_solution:
-        args += " --prefer-modular-solution"
-
-    if inner_parallelization:
-        args += " --inner-parallelization"
-
-    return args
+    _append_option_specs(
+        rendered_args,
+        options,
+        _ACCURACY_POST_FAST_HIERARCHICAL_OPTION_SPECS,
+    )
+    return _join_args(args, rendered_args)
 
 
 class Infomap(InfomapWrapper):
@@ -1725,8 +1763,8 @@ class Infomap(InfomapWrapper):
             entropy_corrected=entropy_corrected,
             entropy_correction_strength=entropy_correction_strength,
             markov_time=markov_time,
-            variable_markov_time=False,
-            variable_markov_damping=1.0,
+            variable_markov_time=variable_markov_time,
+            variable_markov_damping=variable_markov_damping,
             preferred_number_of_modules=preferred_number_of_modules,
             multilayer_relax_rate=multilayer_relax_rate,
             multilayer_relax_limit=multilayer_relax_limit,
