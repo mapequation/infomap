@@ -8,7 +8,7 @@ This change should proceed in stages:
 
 1. lock down current behavior with stronger conformance tests and measurement
 2. remove known coupling/precondition bugs that block a clean abstraction
-3. split active-graph payload/state from `InfoNode`
+3. split active-graph flow payload from `InfoNode`
 4. introduce CSR adjacency for the leaf-level active graph
 5. retain pointer-backed fallback for features that are not yet migrated
 
@@ -47,7 +47,7 @@ Internal concepts to introduce:
 
 - `ActiveNodeId`: stable dense integer id for the current active graph
 - `ActiveNodePayload`: read-mostly per-node values such as flow data, state/physical/layer ids, and any metadata needed by the current objective
-- `ActiveNodeState`: read-write optimization state such as module assignment and dirty flags
+- `ActiveNodeState`: optimization state for CSR-backed paths such as module assignment and dirty flags
 - `ActiveAdjacency`: backend-specific adjacency access
 - `ActiveGraphContext<Backend>`: the active graph object handed to the optimizer/objective layer
 
@@ -59,6 +59,28 @@ Backend policy:
 - the second backend is CSR
 
 This active-graph layer is the only new abstraction boundary that should be introduced in the first implementation.
+
+### 2b. Define the active-graph lifecycle explicitly
+
+Every migrated path must follow the same lifecycle:
+
+1. **materialize**
+   - build the active graph from the current hierarchy state
+   - establish dense active-node ids and any payload arrays
+2. **optimize**
+   - run the move loop and objective updates against the active graph backend
+   - treat backend-owned optimization state as authoritative during this phase
+3. **sync back**
+   - write any state needed by downstream tree logic back to hierarchy `InfoNode`s
+   - this must happen before consolidation, tuning, or output code reads tree state again
+
+Fields that may require sync-back once they are migrated off `InfoNode`:
+
+- module assignment
+- dirty state if any downstream logic depends on it
+- any payload values that the tree/objective/output code later expects to read directly from `InfoNode`
+
+This lifecycle is a correctness invariant. No later phase should rely on implicit aliasing between active-graph storage and `InfoNode`.
 
 ### 3. Treat consolidation as an explicit backend boundary
 
@@ -81,7 +103,11 @@ Before any storage refactor starts, fix current coupling that would invalidate t
 
 - `generateSubNetwork(InfoNode&)` must stop clobbering `node.index` as a side-channel for mapping cloned edges
 - replace that temporary mutation with a local pointer-to-index map or equivalent explicit lookup
-- document `node.index` and `node.dirty` semantics as optimization-state fields, not general scratch storage
+- audit current `node.index` usages and document each role by lifecycle phase:
+  - optimization-time module assignment
+  - tree-time scratch/indexing uses
+  - output- or traversal-related temporary uses
+- document `node.dirty` semantics as optimization-state, not general scratch storage
 - document OpenMP move-loop assumptions: adjacency is read-only during a move round; membership/state arrays are the only mutated hot-path storage
 
 These are prerequisites, not follow-up cleanup.
@@ -139,9 +165,9 @@ Required code cleanup before storage changes:
 - add regression coverage for sub-network edge cloning correctness
 - codify module-assignment semantics so later SoA arrays preserve current read/write ordering
 
-#### 0c. Expand the conformance suite
+#### 0c. Expand the conformance suite in two tiers
 
-Add missing tests before introducing CSR:
+##### Tier 1: must-have before Phase 1
 
 1. hierarchy mutation invariants
    - `replaceChildrenWithGrandChildren`
@@ -149,56 +175,72 @@ Add missing tests before introducing CSR:
    - `collapseChildren` / `expandChildren`
    - `releaseChildren`
    - repeated remove/rebuild cycles
-2. output parity
+2. first-order partition parity
+   - current C++/Python regressions remain green
+   - add direct regression for `generateSubNetwork(...)` edge cloning correctness
+3. OpenMP parity
+   - sequential and parallel move loops produce equivalent results for fixed seeds / deterministic fixtures
+4. consolidation bridge correctness
+   - module-level edge weights equal the sum of inter-module leaf-edge weights after `consolidateModules(...)`
+
+##### Tier 2: must-have before Phase 2
+
+1. output parity
    - `.tree`
    - `.clu`
    - JSON
    - Pajek / state-network output
    - state vs physical output for memory networks
-3. recursive hierarchy behavior
+2. recursive hierarchy behavior
    - fine tune
    - coarse tune
    - super-module search
    - repeated rerun after hierarchy reconstruction
-4. higher-order parity
+3. higher-order parity
    - `states.net`
    - `multilayer.net`
    - `matchableMultilayerIds`
    - `iterTreePhysical`
    - `iterLeafNodesPhysical`
    - `getModules(states=true/false)`
-5. hard partition behavior
+4. hard partition behavior
    - `.clu` hard/soft
    - `.tree` import
    - restore after optimization
-6. metadata behavior
+5. metadata behavior
    - minimal `MetaMapEquation` fixture
    - stable module-level metadata aggregation after moves/consolidation
-7. OpenMP parity
-   - sequential and parallel move loops produce equivalent results for fixed seeds / deterministic fixtures
+6. sync-back and rollback invariants
+   - post-optimization sync-back preserves downstream tree semantics
+   - `restoreConsolidatedOptimizationPointIfNoImprovement(...)` remains safe with split active-graph state
 
 Phase 0 exit criteria:
 
 - all current tests remain green
-- the new conformance suite is green
+- Tier 1 conformance tests are green
 - baseline benchmark JSON exists and is committed or archived for comparison
 
-### Phase 1: Split active payload/state from `InfoNode`
+### Phase 1: Split active flow payload from `InfoNode`
 
-Introduce a dense active-graph data model without changing adjacency yet.
+Introduce a dense active-graph data model for read-mostly flow/payload values without changing adjacency or moving module assignment off `InfoNode` yet.
 
 Add:
 
 - read-mostly arrays for flow/payload data
-- read-write arrays for optimization state:
-  - module assignment
-  - dirty flags
 - explicit mapping between active-node id and hierarchy `InfoNode*`
 
 Important design rule:
 
 - separate read-mostly payload from read-write optimization state
-- do not treat them as one generic “node payload” blob
+- Phase 1 only migrates the read-mostly payload part
+- `InfoNode.index` and `InfoNode.dirty` remain authoritative in Phase 1
+
+Objective/backend rule for Phase 1:
+
+- do **not** attempt to template the existing objective virtual hierarchy on backend yet
+- keep objective entry points compatible with the current `InfoNode&`-based design
+- introduce lightweight payload access helpers/views as needed, but do not force a CRTP/policy rewrite of the objective hierarchy in Phase 1
+- the explicit template-based backend dimension starts when adjacency moves in Phase 2
 
 At this phase:
 
@@ -211,17 +253,24 @@ Purpose:
 
 - prove the active-graph abstraction
 - de-risk backend templating
-- isolate optimizer/objective code from direct `InfoNode` field access
+- isolate optimizer/objective code from direct `InfoNode.data` dependence where feasible
+
+Performance expectation:
+
+- Phase 1 is primarily an architecture/de-risking step
+- it is not expected to deliver major speedups on its own
+- acceptable outcome is parity with baseline within a small regression budget
 
 Phase 1 exit criteria:
 
 - correctness parity with the pointer baseline
 - measurable storage/accounting visibility for active payload/state
-- no unacceptable regression in total runtime on the benchmark corpus
+- total runtime within roughly `+/-5%` of baseline on benchmark cases
+- no new correctness regressions in Tier 1 conformance tests
 
 ### Phase 2: Add CSR adjacency for leaf-level active graphs
 
-Implement a CSR backend for the initial leaf-level active graph only.
+Implement a CSR backend for the initial leaf-level active graph only. This is also the phase where optimization state can move off `InfoNode` because neighbor positions become directly available from CSR targets.
 
 Storage shape:
 
@@ -232,11 +281,14 @@ Storage shape:
 - in-edge support:
   - either transposed CSR
   - or an explicit incoming index structure
+- optimization-state arrays:
+  - module assignment
+  - dirty flags
 
 Backend behavior:
 
 - the leaf-level active graph can be materialized as CSR
-- the optimizer/objective layer uses template-based backend access
+- the optimizer/objective layer can now use template-based backend access for hot-path adjacency/state reads
 - the move loop mutates only active-node state arrays
 - CSR adjacency remains read-only during a move round
 
@@ -250,12 +302,14 @@ Deliberate scope limit:
 
 - after `consolidateModules`, the next module-level active graph stays pointer-backed by default
 - recursive sub-Infomap and special feature paths also stay pointer-backed unless explicitly migrated later
+- directed CSR support may be staged after undirected support if transpose/in-edge support makes the initial rollout too large
 
 Phase 2 exit criteria:
 
 - pointer and CSR backends produce identical partitions/codelengths on first-order fixtures
-- benchmark shows real benefit on large first-order sparse graphs
-- no correctness regressions in the conformance suite
+- benchmark shows at least a measurable win on large first-order sparse graphs
+- Tier 2 conformance tests are green for any migrated path
+- no more than roughly `3%` total-runtime regression on non-migrated or fallback paths
 
 ### Phase 3: Extend CSR to selected nontrivial active-graph cases
 
@@ -315,6 +369,7 @@ Add direct pointer-vs-CSR A/B tests in the C++ suite for:
 - repeated multi-trial reruns
 - sub-network generation where applicable
 - OpenMP vs sequential parity for migrated backends
+- active-graph sync-back invariants before downstream tree consumers run
 
 ### Sanitizer and stress requirements
 
@@ -349,7 +404,8 @@ Recommended interpretation:
 ### Measurement gates per phase
 
 - Phase 1 must not meaningfully regress large first-order graphs while introducing payload/state arrays
-- Phase 2 must show a measurable benefit on large first-order sparse graphs before CSR expands further
+- Phase 1 should be judged as an architectural milestone, not a performance milestone
+- Phase 2 must show at least about `10%` peak-RSS reduction and about `5%` partition-phase speedup on `100k+` first-order sparse graphs before CSR expands further
 - Phase 3 extensions must justify themselves case-by-case
 
 ## Current Blockers And High-Risk Features
