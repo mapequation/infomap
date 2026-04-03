@@ -46,6 +46,34 @@ TEST_CASE("Recorded teleportation stays stable across trial counts for the direc
   CHECK(oneTrial.indexCodelength == doctest::Approx(twoTrials.indexCodelength));
 }
 
+TEST_CASE("Recorded teleportation serial leaf optimization matches pointer and CSR backends [fast][core][flow][lifecycle]")
+{
+  const auto flags = infomap::test::defaultFlags("--directed --recorded-teleportation");
+
+  InfomapWrapper pointerIm(flags);
+  infomap::test::readNetworkFixture(pointerIm, "teleport_directed.net");
+  pointerIm.initNetwork(pointerIm.network());
+  pointerIm.setActiveNetworkFromLeafs();
+  pointerIm.m_csrMaterialization.reset();
+  CHECK_FALSE(pointerIm.csrBackend().available());
+  pointerIm.initPartition();
+
+  InfomapWrapper csrIm(flags);
+  infomap::test::readNetworkFixture(csrIm, "teleport_directed.net");
+  csrIm.initNetwork(csrIm.network());
+  csrIm.setActiveNetworkFromLeafs();
+  REQUIRE(csrIm.csrBackend().available());
+  csrIm.initPartition();
+
+  const auto pointerLoops = pointerIm.optimizeActiveNetwork();
+  const auto csrLoops = csrIm.optimizeActiveNetwork();
+
+  CHECK(csrLoops == pointerLoops);
+  CHECK(infomap::test::canonicalPartition(csrIm.getModules()) == infomap::test::canonicalPartition(pointerIm.getModules()));
+  CHECK(csrIm.codelength() == doctest::Approx(pointerIm.codelength()));
+  CHECK(csrIm.getIndexCodelength() == doctest::Approx(pointerIm.getIndexCodelength()));
+}
+
 TEST_CASE("Directed to-nodes teleportation keeps the expected coarse partition [fast][core][flow]")
 {
   const auto result = runDirectedFixture("--to-nodes");

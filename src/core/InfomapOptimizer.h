@@ -283,24 +283,33 @@ void InfomapOptimizer<Objective>::markNodeNeighboursDirty(Graph& graph, typename
 template <typename Objective>
 void InfomapOptimizer<Objective>::initPartition()
 {
-  auto graph = m_infomap->pointerBackend();
-  auto& network = m_infomap->activeNetwork();
-  Log(4) << "InfomapOptimizer::initPartition() with " << graph.size() << " nodes...\n";
+  auto initPartitionImpl = [&](auto graph) {
+    auto& network = m_infomap->activeNetwork();
+    Log(4) << "InfomapOptimizer::initPartition() with " << graph.size() << " nodes...\n";
 
-  // Init one module for each node
-  auto numNodes = graph.size();
-  m_moduleFlowData.resize(numNodes);
-  m_moduleMembers.assign(numNodes, 1);
-  m_emptyModules.clear();
-  m_emptyModules.reserve(numNodes);
+    // Init one module for each node
+    auto numNodes = graph.size();
+    m_moduleFlowData.resize(numNodes);
+    m_moduleMembers.assign(numNodes, 1);
+    m_emptyModules.clear();
+    m_emptyModules.reserve(numNodes);
 
-  for (unsigned int i = 0; i < numNodes; ++i) {
-    graph.moduleIndex(i) = i; // Unique module index for each node
-    m_moduleFlowData[i] = graph.payloadFor(i).data;
-    graph.dirty(i) = true;
+    for (unsigned int i = 0; i < numNodes; ++i) {
+      graph.moduleIndex(i) = i; // Unique module index for each node
+      m_moduleFlowData[i] = graph.payloadFor(i).data;
+      graph.dirty(i) = true;
+    }
+
+    m_objective.initPartition(network);
+  };
+
+  auto csrGraph = m_infomap->csrBackend();
+  if (csrGraph.available()) {
+    return initPartitionImpl(csrGraph);
   }
 
-  m_objective.initPartition(network);
+  auto graph = m_infomap->pointerBackend();
+  initPartitionImpl(graph);
 }
 
 template <typename Objective>

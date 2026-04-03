@@ -141,6 +141,7 @@ if(BUILD_TESTING)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(infomap_cpp_lifecycle_tests PRIVATE -fno-access-control)
         target_compile_options(infomap_cpp_partition_tests PRIVATE -fno-access-control)
+        target_compile_options(infomap_cpp_flow_tests PRIVATE -fno-access-control)
     endif()
 
     add_custom_target(
