@@ -189,6 +189,24 @@ public:
     unsigned int& moduleIndex(ActiveNodeId id) const { return nodeFor(id).index; }
     bool& dirty(ActiveNodeId id) const { return nodeFor(id).dirty; }
 
+    template <typename Fn>
+    void forEachOutEdge(ActiveNodeId id, Fn&& fn) const
+    {
+      auto& node = nodeFor(id);
+      for (auto* edge : node.outEdges()) {
+        fn(materialization.idFor(*edge->target), *edge->target, *edge);
+      }
+    }
+
+    template <typename Fn>
+    void forEachInEdge(ActiveNodeId id, Fn&& fn) const
+    {
+      auto& node = nodeFor(id);
+      for (auto* edge : node.inEdges()) {
+        fn(materialization.idFor(*edge->source), *edge->source, *edge);
+      }
+    }
+
     std::vector<EdgeView> outEdges(ActiveNodeId id) const
     {
       std::vector<EdgeView> edges;

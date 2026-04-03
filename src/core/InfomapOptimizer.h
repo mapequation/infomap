@@ -193,7 +193,9 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
 template <typename Objective>
 bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, unsigned int newModule)
 {
-  unsigned int oldM = current.index;
+  auto graph = m_infomap->pointerActiveGraph();
+  auto currentId = graph.idFor(current);
+  unsigned int oldM = graph.moduleIndex(currentId);
   unsigned int newM = newModule;
 
   if (newM == oldM) {
@@ -204,25 +206,23 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
   DeltaFlowDataType newModuleDelta(newM, 0.0, 0.0);
 
   // For all outlinks
-  for (auto& e : current.outEdges()) {
-    auto& edge = *e;
-    unsigned int otherModule = edge.target->index;
+  graph.forEachOutEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
+    unsigned int otherModule = graph.moduleIndex(neighbourId);
     if (otherModule == oldM) {
       oldModuleDelta.deltaExit += edge.data.flow;
     } else if (otherModule == newM) {
       newModuleDelta.deltaExit += edge.data.flow;
     }
-  }
+  });
   // For all inlinks
-  for (auto& e : current.inEdges()) {
-    auto& edge = *e;
-    unsigned int otherModule = edge.source->index;
+  graph.forEachInEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
+    unsigned int otherModule = graph.moduleIndex(neighbourId);
     if (otherModule == oldM) {
       oldModuleDelta.deltaEnter += edge.data.flow;
     } else if (otherModule == newM) {
       newModuleDelta.deltaEnter += edge.data.flow;
     }
-  }
+  });
 
   // For recorded teleportation
   if (m_infomap->recordedTeleportation) {
@@ -242,7 +242,7 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
   if (m_moduleMembers[newM] == 0) {
     m_emptyModules.pop_back();
   }
-  if (m_moduleMembers[current.index] == 1) {
+  if (m_moduleMembers[oldM] == 1) {
     m_emptyModules.push_back(oldM);
   }
 
@@ -251,7 +251,7 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
   m_moduleMembers[oldM] -= 1;
   m_moduleMembers[newM] += 1;
 
-  current.index = newM;
+  graph.moduleIndex(currentId) = newM;
   return true;
 }
 
@@ -287,9 +287,9 @@ inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 template <typename Objective>
 unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 {
+  auto graph = m_infomap->pointerActiveGraph();
   // Get random enumeration of nodes
-  auto& network = m_infomap->activeNetwork();
-  std::vector<unsigned int> nodeEnumeration(network.size());
+  std::vector<unsigned int> nodeEnumeration(graph.size());
   m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
   auto numNodes = nodeEnumeration.size();
@@ -299,13 +299,15 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
   VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
 
   for (unsigned int i = 0; i < numNodes; ++i) {
-    InfoNode& current = *network[nodeEnumeration[i]];
+    auto currentId = nodeEnumeration[i];
+    InfoNode& current = graph.nodeFor(currentId);
+    unsigned int currentModuleIndex = graph.moduleIndex(currentId);
 
-    if (!current.dirty)
+    if (!graph.dirty(currentId))
       continue;
 
     // If other nodes have moved here, don't move away on first loop
-    if (m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
+    if (m_moduleMembers[currentModuleIndex] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
       continue;
 
     // If no links connecting this node with other nodes, it won't move into others,
@@ -315,25 +317,23 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     deltaFlow.startRound();
 
     // For all outlinks
-    for (auto& e : current.outEdges()) {
-      auto& edge = *e;
-      InfoNode* neighbour = edge.target;
-      deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, edge.data.flow, 0.0));
-    }
+    graph.forEachOutEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
+      auto otherModule = graph.moduleIndex(neighbourId);
+      deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, edge.data.flow, 0.0));
+    });
     // For all inlinks
-    for (auto& e : current.inEdges()) {
-      auto& edge = *e;
-      InfoNode* neighbour = edge.source;
-      deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, 0.0, edge.data.flow));
-    }
+    graph.forEachInEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
+      auto otherModule = graph.moduleIndex(neighbourId);
+      deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, 0.0, edge.data.flow));
+    });
 
     // For not moving
-    deltaFlow.add(current.index, DeltaFlowDataType(current.index, 0.0, 0.0));
-    DeltaFlowDataType& oldModuleDelta = deltaFlow[current.index];
-    oldModuleDelta.module = current.index; // Make sure index is correct if created new
+    deltaFlow.add(currentModuleIndex, DeltaFlowDataType(currentModuleIndex, 0.0, 0.0));
+    DeltaFlowDataType& oldModuleDelta = deltaFlow[currentModuleIndex];
+    oldModuleDelta.module = currentModuleIndex; // Make sure index is correct if created new
 
     // Option to move to empty module (if node not already alone)
-    if (m_moduleMembers[current.index] > 1 && !m_emptyModules.empty()) {
+    if (m_moduleMembers[currentModuleIndex] > 1 && !m_emptyModules.empty()) {
       deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
     }
 
@@ -348,7 +348,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
       for (unsigned int j = 0; j < numModuleLinks; ++j) {
         auto& deltaEnterExit = moduleDeltaEnterExit[j];
         auto moduleIndex = deltaEnterExit.module;
-        if (moduleIndex == current.index) {
+        if (moduleIndex == currentModuleIndex) {
           auto& oldModuleFlowData = m_moduleFlowData[moduleIndex];
           double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
           double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
@@ -375,7 +375,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     for (unsigned int k = 0; k < numModuleLinks; ++k) {
       auto j = moduleEnumeration[k];
       unsigned int otherModule = moduleDeltaEnterExit[j].module;
-      if (otherModule != current.index) {
+      if (otherModule != currentModuleIndex) {
         double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
                                                                             oldModuleDelta,
                                                                             moduleDeltaEnterExit[j],
@@ -401,43 +401,43 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     }
 
     // Make best possible move
-    if (bestDeltaModule.module != current.index) {
+    if (bestDeltaModule.module != currentModuleIndex) {
       unsigned int bestModuleIndex = bestDeltaModule.module;
       // Update empty module vector
       if (m_moduleMembers[bestModuleIndex] == 0) {
         m_emptyModules.pop_back();
       }
-      if (m_moduleMembers[current.index] == 1) {
-        m_emptyModules.push_back(current.index);
+      if (m_moduleMembers[currentModuleIndex] == 1) {
+        m_emptyModules.push_back(currentModuleIndex);
       }
 
       m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
 
-      m_moduleMembers[current.index] -= 1;
+      m_moduleMembers[currentModuleIndex] -= 1;
       m_moduleMembers[bestModuleIndex] += 1;
 
-      unsigned int oldModuleIndex = current.index;
-      current.index = bestModuleIndex;
+      unsigned int oldModuleIndex = currentModuleIndex;
+      graph.moduleIndex(currentId) = bestModuleIndex;
 
       ++numMoved;
 
       InfoNode* nodeInOldModule = &current;
       unsigned int numLinkedNodesInOldModule = 0;
       // Mark neighbours as dirty
-      for (auto& e : current.outEdges()) {
-        e->target->dirty = true;
-        if (e->target->index == oldModuleIndex) {
-          nodeInOldModule = e->target;
+      graph.forEachOutEdge(currentId, [&](auto neighbourId, InfoNode& neighbour, const InfoEdge&) {
+        graph.dirty(neighbourId) = true;
+        if (graph.moduleIndex(neighbourId) == oldModuleIndex) {
+          nodeInOldModule = &neighbour;
           ++numLinkedNodesInOldModule;
         }
-      }
-      for (auto& e : current.inEdges()) {
-        e->source->dirty = true;
-        if (e->source->index == oldModuleIndex) {
-          nodeInOldModule = e->source;
+      });
+      graph.forEachInEdge(currentId, [&](auto neighbourId, InfoNode& neighbour, const InfoEdge&) {
+        graph.dirty(neighbourId) = true;
+        if (graph.moduleIndex(neighbourId) == oldModuleIndex) {
+          nodeInOldModule = &neighbour;
           ++numLinkedNodesInOldModule;
         }
-      }
+      });
 
       // Move single connected nodes to same module
       if (numLinkedNodesInOldModule == 1 && m_moduleMembers[oldModuleIndex] == 1) {
@@ -445,14 +445,17 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
         ++numMoved;
         // Mark neighbours as dirty
         if (nodeInOldModule->degree() > 1) {
-          for (auto& e : nodeInOldModule->outEdges())
-            e->target->dirty = true;
-          for (auto& e : nodeInOldModule->inEdges())
-            e->source->dirty = true;
+          auto linkedNodeId = graph.idFor(*nodeInOldModule);
+          graph.forEachOutEdge(linkedNodeId, [&](auto neighbourId, InfoNode&, const InfoEdge&) {
+            graph.dirty(neighbourId) = true;
+          });
+          graph.forEachInEdge(linkedNodeId, [&](auto neighbourId, InfoNode&, const InfoEdge&) {
+            graph.dirty(neighbourId) = true;
+          });
         }
       }
     } else {
-      current.dirty = false;
+      graph.dirty(currentId) = false;
     }
   }
 
