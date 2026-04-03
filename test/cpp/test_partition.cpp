@@ -1,8 +1,6 @@
 #include "vendor/doctest.h"
 
-#define private public
 #include "Infomap.h"
-#undef private
 
 #include "TestUtils.h"
 
