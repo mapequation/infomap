@@ -1407,7 +1407,7 @@ void InfomapBase::materializeActiveGraphPayload()
 
 void InfomapBase::materializeLeafLevelCsr()
 {
-  if (m_activeNetwork == nullptr || m_activeNetwork != &m_leafNodes || haveMemory()) {
+  if (m_activeNetwork == nullptr || m_activeNetwork != &m_leafNodes || haveMemory() || !isMainInfomap()) {
     return;
   }
 

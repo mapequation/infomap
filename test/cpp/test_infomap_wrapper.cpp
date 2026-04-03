@@ -148,6 +148,7 @@ TEST_CASE("Subnetwork generation preserves parent indices and clones internal ed
 
   REQUIRE(subInfomap.numLeafNodes() == module.childDegree());
   CHECK(subInfomap.root().owner == &module);
+  CHECK_FALSE(subInfomap.csrBackend().available());
   CHECK(internalEdgesForModule(subInfomap.root()) == originalEdges);
 
   childIndex = 0;
