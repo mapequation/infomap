@@ -25,6 +25,7 @@ examples/js/Infomap-worker.js
 examples/js/Infomap.js
 examples/js/index.js
 /mapequation-infomap-*.tgz
+/dist/npm
 *.dSym
 callgrind.*
 /networks
@@ -52,3 +53,4 @@ interfaces/python/source/index.rst
 *.csv
 /*.net
 /package
+/npm-pack.json

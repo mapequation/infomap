@@ -98,6 +98,7 @@ help:
 		"" \
 		"CI / Advanced" \
 		"  ci-export-github-env  Print GitHub Actions environment exports for macOS libomp." \
+		"  test-js-internal      Smoke-build the internal-supported react/parser JS packages." \
 		"  Advanced/internal targets such as R and docker-* remain available but are no longer primary." \
 		"" \
 		"Examples" \

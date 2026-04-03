@@ -60,7 +60,7 @@ make test-js
 `make build-js-metadata` refreshes the tracked parameter and changelog metadata
 under `interfaces/js/generated/`.
 `make build-js` builds the worker and bundles the public npm package from those
-tracked metadata files.
+tracked metadata files into `dist/npm/package/`.
 `make test-js-metadata` regenerates metadata in a temp directory and verifies
 that the committed files are fresh.
 `make test-js` packs the npm package and validates the local example against the
@@ -68,7 +68,7 @@ packed artifact.
 
 The sibling `interfaces/js/react` and `interfaces/js/parser` packages are
 internal-supported and are not part of the primary local workflow in this
-document.
+document. `make test-js-internal` smoke-builds them in CI.
 
 ## Python package
 
