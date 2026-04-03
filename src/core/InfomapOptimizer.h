@@ -901,6 +901,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
 template <typename Objective>
 unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParallel()
 {
+  auto graph = m_infomap->pointerBackend();
   // Get random enumeration of nodes
   auto& network = m_infomap->activeNetwork();
   std::vector<unsigned int> nodeEnumeration(network.size());
@@ -913,13 +914,15 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 #pragma omp parallel for schedule(dynamic) // Use dynamic scheduling as some threads could end early
   for (unsigned int i = 0; i < numNodes; ++i) {
     // Pick nodes in random order
-    InfoNode& current = *network[nodeEnumeration[i]];
+    const auto currentId = nodeEnumeration[i];
+    InfoNode& current = graph.nodeFor(currentId);
 
-    if (!current.dirty)
+    if (!graph.dirty(currentId))
       continue;
 
     // If other nodes have moved here, don't move away on first loop
-    if (m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
+    const auto currentModuleIndex = graph.moduleIndex(currentId);
+    if (m_moduleMembers[currentModuleIndex] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
       continue;
 
     // If no links connecting this node with other nodes, it won't move into others,
@@ -929,26 +932,15 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
     // Create map with module links
     VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
 
-    // For all outlinks
-    for (auto& e : current.outEdges()) {
-      auto& edge = *e;
-      InfoNode* neighbour = edge.target;
-      deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, edge.data.flow, 0.0));
-    }
-    // For all inlinks
-    for (auto& e : current.inEdges()) {
-      auto& edge = *e;
-      InfoNode* neighbour = edge.source;
-      deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, 0.0, edge.data.flow));
-    }
+    addNeighbourModuleLinks(graph, currentId, deltaFlow);
 
     // For not moving
-    deltaFlow.add(current.index, DeltaFlowDataType(current.index, 0.0, 0.0));
-    DeltaFlowDataType& oldModuleDelta = deltaFlow[current.index];
-    oldModuleDelta.module = current.index; // Make sure index is correct if created new
+    deltaFlow.add(currentModuleIndex, DeltaFlowDataType(currentModuleIndex, 0.0, 0.0));
+    DeltaFlowDataType& oldModuleDelta = deltaFlow[currentModuleIndex];
+    oldModuleDelta.module = currentModuleIndex; // Make sure index is correct if created new
 
     // Option to move to empty module (if node not already alone)
-    if (m_moduleMembers[current.index] > 1 && !m_emptyModules.empty()) {
+    if (m_moduleMembers[currentModuleIndex] > 1 && !m_emptyModules.empty()) {
       // deltaFlow[m_emptyModules.back()] += DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0);
       deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
     }
@@ -975,7 +967,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
     // Find the move that minimizes the description length
     for (unsigned int j = 0; j < deltaFlow.size(); ++j) {
       unsigned int otherModule = moduleDeltaEnterExit[j].module;
-      if (otherModule != current.index) {
+      if (otherModule != currentModuleIndex) {
         double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
                                                                             oldModuleDelta,
                                                                             moduleDeltaEnterExit[j],
@@ -1001,14 +993,14 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
     }
 
     // Make best possible move
-    if (bestDeltaModule.module == current.index) {
-      current.dirty = false;
+    if (bestDeltaModule.module == currentModuleIndex) {
+      graph.dirty(currentId) = false;
       continue;
     } else {
 #pragma omp critical(moveUpdate)
       {
         unsigned int bestModuleIndex = bestDeltaModule.module;
-        unsigned int oldModuleIndex = current.index;
+        unsigned int oldModuleIndex = graph.moduleIndex(currentId);
 
         bool validMove = bestModuleIndex == m_emptyModules.back()
             // Check validity of move to empty target
@@ -1021,24 +1013,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
           oldModuleDelta = DeltaFlowDataType(oldModuleIndex, 0.0, 0.0);
           DeltaFlowDataType newModuleDelta(bestModuleIndex, 0.0, 0.0);
 
-          // For all outlinks
-          for (auto& e : current.outEdges()) {
-            auto& edge = *e;
-            unsigned int otherModule = edge.target->index;
-            if (otherModule == oldModuleIndex)
-              oldModuleDelta.deltaExit += edge.data.flow;
-            else if (otherModule == bestModuleIndex)
-              newModuleDelta.deltaExit += edge.data.flow;
-          }
-          // For all inlinks
-          for (auto& e : current.inEdges()) {
-            auto& edge = *e;
-            unsigned int otherModule = edge.source->index;
-            if (otherModule == oldModuleIndex)
-              oldModuleDelta.deltaEnter += edge.data.flow;
-            else if (otherModule == bestModuleIndex)
-              newModuleDelta.deltaEnter += edge.data.flow;
-          }
+          accumulateMoveDelta(graph, currentId, oldModuleIndex, bestModuleIndex, oldModuleDelta, newModuleDelta);
 
           // For memory networks
           m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
@@ -1063,15 +1038,12 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
             m_moduleMembers[oldModuleIndex] -= 1;
             m_moduleMembers[bestModuleIndex] += 1;
 
-            current.index = bestModuleIndex;
+            graph.moduleIndex(currentId) = bestModuleIndex;
 
             ++numMoved;
 
             // Mark neighbours as dirty
-            for (auto& e : current.outEdges())
-              e->target->dirty = true;
-            for (auto& e : current.inEdges())
-              e->source->dirty = true;
+            markNodeNeighboursDirty(graph, currentId);
           } else {
             ++numInvalidMoves;
           }
