@@ -9,10 +9,10 @@ from math import log2
 try:
     # Prefer package-local extension
     from ._infomap import *  # noqa: F401,F403
-except Exception:
+except ImportError:
     try:
         from _infomap import *  # noqa: F401,F403
-    except Exception:
+    except ImportError:
         # Extension not available (e.g., before build); continue gracefully
         pass
 
@@ -1351,7 +1351,7 @@ class Infomap(InfomapWrapper):
         if is_multilayer_network:
             if not layer_ids:
                 raise RuntimeError(
-                    f"""Add multilayer network but no layer ids on the node attribute '${layer_id}'."""
+                    f"""Add multilayer network but no layer ids on the node attribute '{layer_id}'."""
                 )
             for source, target, d in g.edges.data():
                 u, v = node_map[source], node_map[target]
