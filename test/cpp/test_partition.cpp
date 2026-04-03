@@ -462,6 +462,42 @@ TEST_CASE("CSR backend matches pointer backend for one serial move pass on leaf-
   CHECK(csrIm.getIndexCodelength() == doctest::Approx(pointerIm.getIndexCodelength()));
 }
 
+TEST_CASE("CSR backend matches pointer backend for biased first-order serial move passes [fast][core][partition][lifecycle]")
+{
+  const std::vector<std::string> biasedFlagSets{
+      "--preferred-number-of-modules 1",
+      "--entropy-corrected",
+  };
+
+  for (const auto& extraFlags : biasedFlagSets) {
+    INFO(extraFlags);
+    const auto flags = infomap::test::defaultFlags(extraFlags);
+
+    InfomapWrapper pointerIm(flags);
+    pointerIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    pointerIm.initNetwork(pointerIm.network());
+    pointerIm.setActiveNetworkFromLeafs();
+    pointerIm.initPartition();
+    pointerIm.m_csrMaterialization.reset();
+    CHECK_FALSE(pointerIm.csrBackend().available());
+
+    InfomapWrapper csrIm(flags);
+    csrIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+    csrIm.initNetwork(csrIm.network());
+    csrIm.setActiveNetworkFromLeafs();
+    csrIm.initPartition();
+    REQUIRE(csrIm.csrBackend().available());
+
+    const auto pointerMoved = pointerIm.optimizeActiveNetwork();
+    const auto csrMoved = csrIm.optimizeActiveNetwork();
+
+    CHECK(csrMoved == pointerMoved);
+    CHECK(csrIm.getModules() == pointerIm.getModules());
+    CHECK(csrIm.getCodelength() == doctest::Approx(pointerIm.getCodelength()));
+    CHECK(csrIm.getIndexCodelength() == doctest::Approx(pointerIm.getIndexCodelength()));
+  }
+}
+
 TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
