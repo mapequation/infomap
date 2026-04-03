@@ -6,6 +6,9 @@ import networkx as nx
 import pytest
 
 
+pytestmark = pytest.mark.fast
+
+
 def test_precomputed_requirements(make_infomap, example_network_path):
     im = make_infomap(flow_model="precomputed")
     im.read_file(str(example_network_path("twotriangles.net")))

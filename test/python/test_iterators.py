@@ -4,6 +4,9 @@ import networkx as nx
 import pytest
 
 
+pytestmark = pytest.mark.fast
+
+
 def test_iter_physical_on_physical(make_infomap, example_network_path):
     im = make_infomap(num_trials=10)
     im.read_file(str(example_network_path("twotriangles.net")))
