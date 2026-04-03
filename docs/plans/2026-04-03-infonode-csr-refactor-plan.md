@@ -18,6 +18,57 @@ This plan intentionally narrows the abstraction boundary compared to the previou
 - **do** abstract the active graph used by `InfomapOptimizer` and the objective functions
 - **do not** assume module-level or recursive graphs should immediately move to CSR
 
+## Execution Contract
+
+This plan should be executed incrementally on one long-lived refactor branch with explicit checkpoints. Do not treat it as a single uninterrupted implementation run.
+
+### Working rules
+
+- open and keep a draft PR for the refactor branch early
+- keep commits grouped by prerequisite, checkpoint, or one bounded refactor step
+- do not mix unrelated cleanup into the branch
+- update this plan file whenever scope, fallback policy, or success criteria materially change
+
+### Allowed local decisions
+
+The implementer may decide the following without rewriting the plan:
+
+- exact file/type names for active-graph structures
+- exact JSON schema for benchmark artifacts, as long as all required metrics are present
+- whether directed CSR lands in the first Phase 2 pass or as a short follow-up within Phase 2
+- whether a migrated path uses CSR or the pointer backend, as long as the documented fallback rules and verification gates are preserved
+
+### Changes that require a plan update first
+
+Do not continue implementation without updating the plan if any of these become necessary:
+
+- moving the hierarchy/tree itself away from pointer-backed storage
+- making CSR the default backend before pointer-vs-CSR parity is demonstrated
+- dropping supported feature behavior instead of routing through the pointer-backed fallback
+- widening scope to public API, packaging, release, or publishing changes
+
+### Checkpoints
+
+Stop and review after each checkpoint:
+
+1. **Checkpoint A**
+   - Phase 0a baseline harness
+   - Phase 0b prerequisite cleanup
+2. **Checkpoint B**
+   - Phase 0c Tier 1 conformance tests
+3. **Checkpoint C**
+   - Phase 1 lifecycle/payload infrastructure
+4. **Checkpoint D**
+   - first Phase 2 CSR leaf-level rollout
+5. **Checkpoint E**
+   - any Phase 3 extension beyond first-order leaf-level CSR
+
+Each checkpoint should end with:
+
+- a clean commit boundary
+- explicit verification output
+- a short note in the PR describing what is now proven and what still falls back to pointer-backed behavior
+
 ## Architecture And Implementation Changes
 
 ### 1. Keep the tree pointer-backed
@@ -220,6 +271,12 @@ Phase 0 exit criteria:
 - Tier 1 conformance tests are green
 - baseline benchmark JSON exists and is committed or archived for comparison
 
+Phase 0 verification should include at minimum:
+
+- `make test-native`
+- targeted reruns for new C++ suites with `CTEST_ARGS`
+- one successful baseline benchmark run producing machine-readable output
+
 ### Phase 1: Introduce active-graph lifecycle and payload infrastructure
 
 Introduce the active-graph lifecycle, active-node id mapping, and read-mostly payload infrastructure without changing adjacency or moving module assignment off `InfoNode` yet.
@@ -270,6 +327,13 @@ Phase 1 exit criteria:
 - measurable storage/accounting visibility for active payload/state
 - total runtime within roughly `+/-5%` of baseline on benchmark cases
 - no new correctness regressions in Tier 1 conformance tests
+
+Phase 1 verification should include at minimum:
+
+- `make test-native`
+- targeted lifecycle/sync-back test reruns
+- one benchmark comparison against the Phase 0 baseline
+- explicit PR note that optimizer/objective hot-path consumers remain unchanged
 
 ### Phase 2: Add CSR adjacency for leaf-level active graphs
 
@@ -329,6 +393,19 @@ Phase 2 exit criteria:
 - non-first-order Tier 2 tests remain green on the unchanged pointer-backed paths
 - no more than roughly `3%` total-runtime regression on non-migrated or fallback paths
 
+Phase 2 verification should include at minimum:
+
+- `make test-native`
+- targeted pointer-vs-CSR A/B tests
+- `make test-sanitizers`
+- at least one sanitizer rerun of a migrated leaf-level CSR case
+- benchmark comparison against Phase 0 and Phase 1 with:
+  - partition-only runtime
+  - peak RSS
+  - CSR materialization cost
+  - consolidation count
+  - module graph size distribution
+
 ### Phase 3: Extend CSR to selected nontrivial active-graph cases
 
 Only after Phase 2 is proven useful, evaluate and selectively extend CSR to:
@@ -355,6 +432,12 @@ Phase 3 exit criteria:
 
 - selected extensions are benchmarked and justified individually
 - fallback matrix is documented explicitly
+
+Phase 3 verification should include at minimum:
+
+- targeted tests for the newly migrated path
+- pointer-vs-CSR parity for that path
+- a short ROI note in the PR explaining whether the extension is kept or reverted
 
 ### Phase 4: Re-evaluate broader migration or permanent hybrid design
 
@@ -426,6 +509,12 @@ Recommended interpretation:
 - if CSR improves leaf-level partition time but total runtime barely moves, report that honestly rather than calling it a universal speedup
 - module-level CSR is only justified if rebuild cost is amortized by subsequent optimization rounds
 
+Artifact policy:
+
+- preserve one clear Phase 0 baseline comparison point
+- do not overwrite later benchmark summaries without preserving the prior comparison context in the PR discussion or artifacts
+- every benchmark artifact should include backend mode, graph name, node count, edge count, and per-phase timing breakdown
+
 ### Measurement gates per phase
 
 - Phase 1 must not meaningfully regress large first-order graphs while introducing payload/state arrays
@@ -495,3 +584,16 @@ Internal changes that should exist after the first successful milestone:
 - The pointer-backed tree is not the primary performance problem; the hot active graph is.
 - A permanent hybrid design is acceptable if it gives the desired speed/memory improvements with lower risk.
 - Full user-visible feature support remains the goal, but full CSR coverage across all internal paths is **not** required for the first successful milestone.
+
+## Implementation Start Point
+
+Implementation should start at **Phase 0a**, not at abstraction work.
+
+Recommended first sequence:
+
+1. add the native benchmark/memory harness and capture the baseline
+2. fix the `generateSubNetwork(...)` scratch-index coupling
+3. add Tier 1 conformance tests
+4. only then begin Phase 1 lifecycle infrastructure
+
+If any of those first three steps expose a larger-than-expected blast radius, stop there and revise the plan before entering Phase 1.
