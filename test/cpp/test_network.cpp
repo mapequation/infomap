@@ -54,4 +54,16 @@ TEST_CASE("Network tracks deterministic multilayer state ids [fast][core][crash]
   CHECK(network.nodes().count(17) == 1);
 }
 
+TEST_CASE("Network rejects malformed multilayer fixture lines [fast][core][parser]")
+{
+  Config config;
+  config.silent = true;
+  Network network(config);
+
+  CHECK_THROWS_WITH_AS(
+      network.readInputData(infomap::test::repoPath("test/fixtures/networks/invalid_multilayer.net")),
+      "Can't parse multilayer link data from line '1 1 broken'",
+      std::runtime_error);
+}
+
 } // namespace
