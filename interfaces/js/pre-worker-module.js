@@ -37,7 +37,7 @@ var Module = {
         json_states = JSON.parse(json_states);
       } catch (err) {
         postMessage({ type: "error", content: err.message });
-        json = undefined;
+        json_states = undefined;
       }
     }
 

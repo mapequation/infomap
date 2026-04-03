@@ -11,8 +11,7 @@ export function useInfomap(args?: Arguments) {
     (...params: Parameters<Infomap["run"]>) => {
       setRunning(true);
       setProgress(0);
-      applyArgs(params, args);
-      infomap.run(...params);
+      infomap.run(...applyArgs(params, args));
       setRunning(false);
     },
     [infomap, args]
@@ -22,9 +21,8 @@ export function useInfomap(args?: Arguments) {
     (...params: Parameters<Infomap["runAsync"]>) => {
       setRunning(true);
       setProgress(0);
-      applyArgs(params, args);
       return infomap
-        .runAsync(...params)
+        .runAsync(...applyArgs(params, args))
         .then((result) => {
           setRunning(false);
           return result;
@@ -52,13 +50,14 @@ export function useInfomap(args?: Arguments) {
   };
 }
 
-function applyArgs(params: Parameters<Infomap["run"]>, args?: Arguments) {
-  if (!params.length) params[0] = {};
-  const param = params[0];
+function applyArgs(params: Parameters<Infomap["run"]>, args?: Arguments): Parameters<Infomap["run"]> {
+  const param = params[0] ? { ...params[0] } : {};
 
   if (typeof param.args === "object" && typeof args === "object") {
     param.args = { ...args, ...param.args };
-  } else {
+  } else if (args !== undefined) {
     param.args = args;
   }
+
+  return [param];
 }
