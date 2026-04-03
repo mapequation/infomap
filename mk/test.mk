@@ -5,6 +5,7 @@ CMAKE_TEST_TARGET ?= infomap_cpp_tests
 CMAKE_GENERATOR ?=
 CMAKE_CXX_COMPILER ?=
 TEST_CMAKE_ARGS ?=
+CTEST_ARGS ?=
 SANITIZER_CXX ?= clang++
 SANITIZER_CMAKE_ARGS ?=
 BENCHMARK_OUTPUT ?= build/benchmarks/python-benchmarks.json
@@ -26,7 +27,7 @@ test-native:
 		-DINFOMAP_EXTRA_LINK_FLAGS="$(LDFLAGS)" \
 		$(TEST_CMAKE_ARGS)
 	@$(CMAKE) --build $(CMAKE_TEST_BUILD_DIR) --target $(CMAKE_TEST_TARGET) --parallel $(JOBS)
-	@$(CTEST) --test-dir $(CMAKE_TEST_BUILD_DIR) --output-on-failure
+	@$(CTEST) --test-dir $(CMAKE_TEST_BUILD_DIR) --output-on-failure $(CTEST_ARGS)
 
 test-fast: test-native test-python-unit
 	@true
@@ -52,7 +53,7 @@ test-sanitizers:
 	else \
 		ASAN_OPTS="$$ASAN_OPTS:detect_leaks=1"; \
 	fi; \
-	ASAN_OPTIONS="$$ASAN_OPTS" UBSAN_OPTIONS=print_stacktrace=1 $(CTEST) --test-dir $(SANITIZER_BUILD_DIR) --output-on-failure
+	ASAN_OPTIONS="$$ASAN_OPTS" UBSAN_OPTIONS=print_stacktrace=1 $(CTEST) --test-dir $(SANITIZER_BUILD_DIR) --output-on-failure $(CTEST_ARGS)
 
 bench-python:
 	@mkdir -p $(dir $(BENCHMARK_OUTPUT))

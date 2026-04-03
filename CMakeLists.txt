@@ -99,24 +99,43 @@ target_link_libraries(infomap_cli PRIVATE infomap_core)
 set_target_properties(infomap_cli PROPERTIES OUTPUT_NAME "Infomap")
 
 if(BUILD_TESTING)
-    add_executable(
+    function(add_infomap_cpp_test target_name source_file labels)
+        add_executable(
+            ${target_name}
+            test/cpp/doctest_main.cpp
+            ${source_file}
+        )
+        target_include_directories(
+            ${target_name}
+            PRIVATE
+                "${CMAKE_CURRENT_SOURCE_DIR}/src"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test/cpp"
+        )
+        target_compile_definitions(
+            ${target_name}
+            PRIVATE
+                INFOMAP_TEST_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+        )
+        target_link_libraries(${target_name} PRIVATE infomap_core)
+        add_test(NAME ${target_name} COMMAND ${target_name})
+        set_tests_properties(${target_name} PROPERTIES LABELS "${labels}")
+    endfunction()
+
+    add_infomap_cpp_test(infomap_cpp_network_tests test/cpp/test_network.cpp "fast;core;network;parser")
+    add_infomap_cpp_test(infomap_cpp_lifecycle_tests test/cpp/test_infomap_wrapper.cpp "fast;core;lifecycle;crash")
+    add_infomap_cpp_test(infomap_cpp_partition_tests test/cpp/test_partition.cpp "fast;core;partition;parser")
+    add_infomap_cpp_test(infomap_cpp_flow_tests test/cpp/test_flow.cpp "fast;core;flow")
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(infomap_cpp_partition_tests PRIVATE -fno-access-control)
+    endif()
+
+    add_custom_target(
         infomap_cpp_tests
-        test/cpp/doctest_main.cpp
-        test/cpp/test_network.cpp
-        test/cpp/test_infomap_wrapper.cpp
+        DEPENDS
+            infomap_cpp_network_tests
+            infomap_cpp_lifecycle_tests
+            infomap_cpp_partition_tests
+            infomap_cpp_flow_tests
     )
-    target_include_directories(
-        infomap_cpp_tests
-        PRIVATE
-            "${CMAKE_CURRENT_SOURCE_DIR}/src"
-            "${CMAKE_CURRENT_SOURCE_DIR}/test/cpp"
-    )
-    target_compile_definitions(
-        infomap_cpp_tests
-        PRIVATE
-            INFOMAP_TEST_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
-    )
-    target_link_libraries(infomap_cpp_tests PRIVATE infomap_core)
-    add_test(NAME infomap_cpp_tests COMMAND infomap_cpp_tests)
-    set_tests_properties(infomap_cpp_tests PROPERTIES LABELS "fast;core;crash")
 endif()
