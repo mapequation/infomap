@@ -27,6 +27,13 @@ Compile the C++ binary from the repository root:
 make build-native
 ```
 
+Builds use all detected logical cores by default. Use `JOBS=1` to back off to
+a single-job build when debugging or reducing local machine load:
+
+```bash
+make build-native JOBS=1
+```
+
 On macOS with Homebrew `libomp`, use:
 
 ```bash
@@ -99,6 +106,10 @@ make build-python
 make dev-python-install
 make test-python
 ```
+
+`make build-python` uses the detected `JOBS` count for the extension compile
+step by default. If a local machine or toolchain behaves better serially, rerun
+with `JOBS=1`.
 
 The current automated macOS wheel build in CI/release uses
 `MACOSX_DEPLOYMENT_TARGET=15.0`. If you need broader compatibility than the

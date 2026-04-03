@@ -18,13 +18,14 @@ test-native:
 	$(CMAKE) -S . -B $(CMAKE_TEST_BUILD_DIR) $$generator_args \
 		-DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 		$(if $(CMAKE_CXX_COMPILER),-DCMAKE_CXX_COMPILER=$(CMAKE_CXX_COMPILER),) \
+		$(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),-DCMAKE_CXX_COMPILER_LAUNCHER=$(CCACHE_BIN),) \
 		-DINFOMAP_MODE=$(MODE) \
 		-DINFOMAP_USE_OPENMP=$(if $(filter 1,$(OPENMP)),ON,OFF) \
 		-DINFOMAP_EXTRA_CPPFLAGS="$(CPPFLAGS)" \
 		-DINFOMAP_EXTRA_CXX_FLAGS="$(CXXFLAGS)" \
 		-DINFOMAP_EXTRA_LINK_FLAGS="$(LDFLAGS)" \
 		$(TEST_CMAKE_ARGS)
-	@$(CMAKE) --build $(CMAKE_TEST_BUILD_DIR) --target $(CMAKE_TEST_TARGET) --parallel
+	@$(CMAKE) --build $(CMAKE_TEST_BUILD_DIR) --target $(CMAKE_TEST_TARGET) --parallel $(JOBS)
 	@$(CTEST) --test-dir $(CMAKE_TEST_BUILD_DIR) --output-on-failure
 
 test-fast: test-native test-python-unit
@@ -36,6 +37,7 @@ test-sanitizers:
 	$(CMAKE) -S . -B $(SANITIZER_BUILD_DIR) $$generator_args \
 		-DCMAKE_BUILD_TYPE=Debug \
 		$(if $(SANITIZER_CXX),-DCMAKE_CXX_COMPILER=$(SANITIZER_CXX),) \
+		$(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),-DCMAKE_CXX_COMPILER_LAUNCHER=$(CCACHE_BIN),) \
 		-DINFOMAP_MODE=debug \
 		-DINFOMAP_USE_OPENMP=OFF \
 		-DINFOMAP_ENABLE_SANITIZERS=ON \
@@ -43,7 +45,7 @@ test-sanitizers:
 		-DINFOMAP_EXTRA_CXX_FLAGS="$(CXXFLAGS)" \
 		-DINFOMAP_EXTRA_LINK_FLAGS="$(LDFLAGS)" \
 		$(SANITIZER_CMAKE_ARGS)
-	@$(CMAKE) --build $(SANITIZER_BUILD_DIR) --target $(CMAKE_TEST_TARGET) --parallel
+	@$(CMAKE) --build $(SANITIZER_BUILD_DIR) --target $(CMAKE_TEST_TARGET) --parallel $(JOBS)
 	@ASAN_OPTS="strict_string_checks=1"; \
 	if [ "$$(uname -s)" = "Darwin" ]; then \
 		ASAN_OPTS="$$ASAN_OPTS:detect_leaks=0"; \

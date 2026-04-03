@@ -2,6 +2,16 @@ MAKEFLAGS += --no-builtin-rules
 .SUFFIXES:
 
 UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
+DEFAULT_JOBS := $(shell command -v nproc >/dev/null 2>&1 && nproc || sysctl -n hw.logicalcpu 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+JOBS ?= $(DEFAULT_JOBS)
+CCACHE_BIN := $(shell command -v ccache 2>/dev/null || true)
+USE_CCACHE ?= $(if $(CCACHE_BIN),1,0)
+
+ifeq ($(filter -j% --jobserver% --jobserver-auth=%,$(MAKEFLAGS)),)
+ifneq ($(JOBS),1)
+MAKEFLAGS += -j$(JOBS)
+endif
+endif
 
 CXX ?= c++
 AR ?= ar
@@ -53,6 +63,7 @@ BUILD_CONFIG_LIBOMP_PREFIX := $(call build_config_field,libomp_prefix)
 BUILD_CONFIG_DEPLOYMENT_TARGET := $(call build_config_field,deployment_target)
 NATIVE_CXXFLAGS := $(call build_config_field,compile_flags)
 NATIVE_LDFLAGS := $(call build_config_field,link_flags)
+CXX_COMPILE := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN) ,)$(CXX)
 
 .PHONY: help doctor dev-bootstrap clean
 
@@ -105,6 +116,7 @@ help:
 		"" \
 		"Examples" \
 		"  make build-native" \
+		"  make build-native JOBS=1" \
 		"  make build-native MODE=debug OPENMP=0" \
 		"  make build-python dev-python-install test-python-unit" \
 		"  make build-js-metadata test-js-metadata" \
@@ -118,6 +130,8 @@ doctor:
 	@printf "%s\n" "Infomap doctor" ""
 	@printf "Platform: %s\n" "$(UNAME_S)"
 	@printf "Mode: MODE=%s OPENMP=%s\n" "$(MODE)" "$(OPENMP)"
+	@printf "Parallel jobs: %s\n" "$(JOBS)"
+	@printf "ccache: %s\n" "$(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN),disabled)"
 	@printf "make: %s\n" "$$(command -v $(MAKE) 2>/dev/null || echo missing)"
 	@printf "cxx (%s): %s\n" "$(CXX)" "$$(command -v $(CXX) 2>/dev/null || echo missing)"
 	@printf "python (%s): %s\n" "$(PYTHON)" "$$(command -v $(PYTHON) 2>/dev/null || echo missing)"

@@ -12,6 +12,7 @@ PYTHON_TEST_DIR := test/python
 PYTEST_ARGS ?=
 PYPI_DIR := $(PY_BUILD_DIR)
 PYPI_SDIST := $(shell find $(PYPI_DIR) -name "*.tar.gz" 2>/dev/null)
+PYTHON_BUILD_PARALLEL_ARGS := $(if $(filter-out 1,$(JOBS)),--parallel $(JOBS),)
 PYTHON_BUILD_ENV = \
 	CC="$(CXX)" CXX="$(CXX)" MODE="$(MODE)" OPENMP="$(OPENMP)" \
 	CPPFLAGS="$(CPPFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" \
@@ -38,7 +39,7 @@ PYTHON_BUILD_ENV = \
 	py-prepare
 
 build-python: build-python-swig _build-python-package-layout
-	@cd $(PY_BUILD_DIR) && $(PYTHON_BUILD_ENV) $(PYTHON) setup.py build_ext --inplace
+	@cd $(PY_BUILD_DIR) && $(PYTHON_BUILD_ENV) $(PYTHON) setup.py build_ext --inplace $(PYTHON_BUILD_PARALLEL_ARGS)
 
 build-python-package-files: _build-python-package-layout
 	@true
