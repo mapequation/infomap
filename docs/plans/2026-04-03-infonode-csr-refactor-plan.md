@@ -220,9 +220,9 @@ Phase 0 exit criteria:
 - Tier 1 conformance tests are green
 - baseline benchmark JSON exists and is committed or archived for comparison
 
-### Phase 1: Split active flow payload from `InfoNode`
+### Phase 1: Introduce active-graph lifecycle and payload infrastructure
 
-Introduce a dense active-graph data model for read-mostly flow/payload values without changing adjacency or moving module assignment off `InfoNode` yet.
+Introduce the active-graph lifecycle, active-node id mapping, and read-mostly payload infrastructure without changing adjacency or moving module assignment off `InfoNode` yet.
 
 Add:
 
@@ -251,14 +251,16 @@ At this phase:
 
 Purpose:
 
-- prove the active-graph abstraction
-- de-risk backend templating
-- isolate optimizer/objective code from direct `InfoNode.data` dependence where feasible
+- prove the materialize -> optimize -> sync-back lifecycle
+- establish active-node id <-> `InfoNode*` mapping
+- build payload arrays as structural proof that active-graph materialization works
+- de-risk later backend work without changing the hot-path consumer contract yet
 
 Performance expectation:
 
 - Phase 1 is primarily an architecture/de-risking step
 - it is not expected to deliver major speedups on its own
+- hot-path performance is expected to remain effectively unchanged
 - acceptable outcome is parity with baseline within a small regression budget
 
 Phase 1 exit criteria:
@@ -288,9 +290,11 @@ Storage shape:
 Backend behavior:
 
 - the leaf-level active graph can be materialized as CSR
-- the optimizer/objective layer can now use template-based backend access for hot-path adjacency/state reads
+- the optimizer hot path can now use template-based backend access for adjacency/state reads
 - the move loop mutates only active-node state arrays
 - CSR adjacency remains read-only during a move round
+- for first-order and biased objectives, the objective interface can remain `InfoNode&`-based because the objective logic reads stable flow payload on `InfoNode`, while module-assignment and dirty-state changes stay inside the optimizer/backend layer until sync-back
+- the `recordedTeleportation` optimizer branch is an explicit Phase 2 change site because it currently reads `current.index`
 
 OpenMP design requirement:
 
@@ -302,13 +306,15 @@ Deliberate scope limit:
 
 - after `consolidateModules`, the next module-level active graph stays pointer-backed by default
 - recursive sub-Infomap and special feature paths also stay pointer-backed unless explicitly migrated later
-- directed CSR support may be staged after undirected support if transpose/in-edge support makes the initial rollout too large
+- Phase 2 should start undirected-first if that materially reduces implementation size
+- directed CSR support can follow within Phase 2 once transpose/in-edge support is validated
 
 Phase 2 exit criteria:
 
 - pointer and CSR backends produce identical partitions/codelengths on first-order fixtures
 - benchmark shows at least a measurable win on large first-order sparse graphs
-- Tier 2 conformance tests are green for any migrated path
+- first-order Tier 2 conformance tests are green on both pointer and CSR backends for migrated paths
+- non-first-order Tier 2 tests remain green on the unchanged pointer-backed paths
 - no more than roughly `3%` total-runtime regression on non-migrated or fallback paths
 
 ### Phase 3: Extend CSR to selected nontrivial active-graph cases
@@ -370,6 +376,8 @@ Add direct pointer-vs-CSR A/B tests in the C++ suite for:
 - sub-network generation where applicable
 - OpenMP vs sequential parity for migrated backends
 - active-graph sync-back invariants before downstream tree consumers run
+- `recordedTeleportation` parity on migrated CSR paths
+- `BiasedMapEquation` parity if it rides along with the first-order CSR rollout
 
 ### Sanitizer and stress requirements
 
@@ -390,6 +398,8 @@ Track:
 - total runtime
 - partition-only runtime
 - CSR materialization/rebuild time
+- consolidation count per trial
+- module graph size distribution after each consolidation step
 - peak RSS
 - bytes per node
 - bytes per edge
@@ -407,6 +417,16 @@ Recommended interpretation:
 - Phase 1 should be judged as an architectural milestone, not a performance milestone
 - Phase 2 must show at least about `10%` peak-RSS reduction and about `5%` partition-phase speedup on `100k+` first-order sparse graphs before CSR expands further
 - Phase 3 extensions must justify themselves case-by-case
+
+### Backend templating default
+
+Preferred implementation strategy:
+
+- keep the outer optimizer type as `InfomapOptimizer<Objective>`
+- template only the hot inner methods on the backend/accessor type
+- select the backend once per call, then run the inner templated move loop
+
+This keeps runtime selection logic and binary growth more contained than templating the entire optimizer class on both objective and backend.
 
 ## Current Blockers And High-Risk Features
 
