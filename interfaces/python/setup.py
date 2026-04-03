@@ -1,13 +1,8 @@
 import fnmatch
 import os
-import shlex
-import shutil
-import subprocess
 import sys
-import tempfile
 import importlib.util
 from pathlib import Path
-from sysconfig import get_config_var
 from setuptools import Extension, setup
 
 
@@ -22,77 +17,14 @@ def load_package_meta():
 package_meta = load_package_meta()
 
 
-def get_compiler():
-    cxx = os.environ.get("CXX", get_config_var("CXX"))
-    if cxx is None:
-        return "g++"  # need a better way to check this
-    return cxx.split()[0]
-
-
-def is_clang():
-    return b"clang" in subprocess.check_output([get_compiler(), "--version"])
-
-
-def have_homebrew():
-    return shutil.which("brew") is not None
-
-
-def get_brew_prefix(package):
-    prefix = subprocess.check_output(["brew", "--prefix", package], encoding="utf8")
-    return Path(prefix.strip())
-
-
-def get_libomp_flags():
-    libomp = get_brew_prefix("libomp")
-    return ("-I" + str(libomp.joinpath("include")), "-L" + str(libomp.joinpath("lib")))
-
-
-test_openmp = """#include <omp.h>
-#include <cstdio>
-
-int main() {
-#pragma omp parallel
-  printf("Hello from thread %d, nthreads %d\\n", omp_get_thread_num(), omp_get_num_threads());
-}
-"""
-
-
-def have_openmp():
-    # Create a temporary directory
-    tmpdir = tempfile.mkdtemp()
-    cwd = Path.cwd()
-    os.chdir(tmpdir)
-
-    filename = "test-openmp.cpp"
-    with open(os.path.join(tmpdir, filename), "w") as f:
-        f.write(test_openmp)
-
-    compiler = get_compiler()
-    compile_args = ["-fopenmp"]
-
-    if is_clang():
-        compile_args.insert(0, "-Xpreprocessor")
-        compile_args.append("-lomp")
-
-    if sys.platform == "darwin" and have_homebrew():
-        try:
-            compile_args.extend(get_libomp_flags())
-        except subprocess.CalledProcessError:
-            pass
-
-    try:
-        with open(os.devnull, "w") as fnull:
-            exit_code = subprocess.call(
-                [compiler, *compile_args, filename], stdout=fnull, stderr=fnull
-            )
-    except OSError:
-        exit_code = 1
-
-    # Clean up
-    os.chdir(cwd)
-    shutil.rmtree(tmpdir)
-
-    return exit_code == 0
+def load_build_config():
+    local_build_config = Path(__file__).resolve().with_name("build_config.py")
+    if not local_build_config.exists():
+        local_build_config = Path(__file__).resolve().parents[2] / "scripts" / "build_config.py"
+    spec = importlib.util.spec_from_file_location("build_config", local_build_config)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -110,51 +42,39 @@ for root, dirnames, filenames in os.walk("./src"):
         headers.append(os.path.join(root, filename))
 
 
-compiler_args = [
-    "-DAS_LIB",
-    "-DPYTHON",
-    "-std=c++14",
-]
+build_config = load_build_config()
+shared_build = build_config.resolve_build_config(
+    mode=os.environ.get("MODE", "release"),
+    openmp=os.environ.get("OPENMP", "1"),
+    compiler=os.environ.get("CXX", "c++"),
+    cppflags=os.environ.get("CPPFLAGS", ""),
+    cxxflags=os.environ.get("CXXFLAGS", ""),
+    ldflags=os.environ.get("LDFLAGS", ""),
+    deployment_target=os.environ.get("MACOSX_DEPLOYMENT_TARGET", ""),
+    platform_name=sys.platform,
+)
 
-link_args = []
-
-if "CXXFLAGS" in os.environ:
-    compiler_args.extend(shlex.split(os.environ["CXXFLAGS"]))
-
-if "LDFLAGS" in os.environ:
-    link_args.extend(shlex.split(os.environ["LDFLAGS"]))
-
-if have_openmp():
-    print("Building with OpenMP support")
-    if is_clang():
-        compiler_args.append("-Xpreprocessor")
-        link_args.append("-lomp")
-    else:
-        link_args.append("-fopenmp")
-    compiler_args.append("-fopenmp")
-
-    if sys.platform == "darwin" and have_homebrew():
-        try:
-            include_dir, link_dir = get_libomp_flags()
-            compiler_args.append(include_dir)
-            link_args.append(link_dir)
-        except subprocess.CalledProcessError:
-            pass
-else:
-    print("Warning: building without OpenMP support")
+compiler_args = list(shared_build["compile_flags"])
+link_args = list(shared_build["link_flags"])
 
 if sys.platform == "win32":
     # Not executed if we are on WSL
-    compiler_args = [
+    compiler_args = compiler_args + [
         "/DAS_LIB",
         "/DPYTHON",
         "/DNOMINMAX",
     ]
+else:
+    compiler_args = [
+        "-DAS_LIB",
+        "-DPYTHON",
+        *compiler_args,
+    ]
 
-if sys.platform == "darwin":
-    mdt = os.environ.get("MACOSX_DEPLOYMENT_TARGET") or "15.0"
-    compiler_args.append(f"-mmacosx-version-min={mdt}")
-    link_args.append(f"-mmacosx-version-min={mdt}")
+if shared_build["openmp"]:
+    print("Building with OpenMP support")
+else:
+    print("Warning: building without OpenMP support")
 
 
 infomap_module = Extension(
