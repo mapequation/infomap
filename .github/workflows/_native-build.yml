@@ -79,6 +79,21 @@ jobs:
         run: ./Infomap --version
         shell: bash
 
+      - name: Configure C++ tests
+        if: matrix.config.name == 'ubuntu' && matrix.target.name == ''
+        run: cmake -S . -B build/cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        shell: bash
+
+      - name: Build C++ tests
+        if: matrix.config.name == 'ubuntu' && matrix.target.name == ''
+        run: cmake --build build/cmake --target infomap_cpp_tests --parallel
+        shell: bash
+
+      - name: Run C++ tests
+        if: matrix.config.name == 'ubuntu' && matrix.target.name == ''
+        run: ctest --test-dir build/cmake --output-on-failure
+        shell: bash
+
       - name: Package binary
         if: inputs.upload-artifacts
         run: 7z a ${{ matrix.config.artifact }}${{ matrix.target.name }}.zip ${{ matrix.config.binary }}

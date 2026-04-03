@@ -42,7 +42,11 @@ OBJECTS := $(SOURCES:src/%.cpp=build/Infomap/%.o)
 # Stand-alone C++ targets
 ##################################################
 
-.PHONY: all noomp test debug format
+.PHONY: all noomp test debug format cpp-test test-fast cmake-configure
+
+CMAKE ?= $(shell command -v cmake 2>/dev/null || command -v /opt/homebrew/bin/cmake 2>/dev/null || echo cmake)
+CTEST ?= $(shell command -v ctest 2>/dev/null || command -v /opt/homebrew/bin/ctest 2>/dev/null || echo ctest)
+CMAKE_BUILD_DIR ?= build/cmake
 
 all: Infomap
 	@true
@@ -65,6 +69,16 @@ debug: Infomap
 
 format: js-format py-format
 	clang-format -i $(HEADERS) $(SOURCES)
+
+cmake-configure:
+	@$(CMAKE) -S . -B $(CMAKE_BUILD_DIR) -DCMAKE_BUILD_TYPE=RelWithDebInfo
+
+cpp-test: cmake-configure
+	@$(CMAKE) --build $(CMAKE_BUILD_DIR) --target infomap_cpp_tests
+	@$(CTEST) --test-dir $(CMAKE_BUILD_DIR) --output-on-failure
+
+test-fast: cpp-test py-test-unit
+	@true
 
 ##################################################
 # JavaScript through Emscripten
