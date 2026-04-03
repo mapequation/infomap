@@ -51,7 +51,7 @@ To get started, read `Infomap Python API`_.
 Using Docker
 ------------
 
-There are currently two Docker images available on `Docker Hub`_.
+There are currently two supported Docker images available on `Docker Hub`_.
 
 - ``mapequation/infomap``
 - ``mapequation/infomap:notebook`` based on ``jupyter/scipy-notebook``
@@ -65,7 +65,7 @@ The image ``mapequation/infomap`` can be started with
         mapequation/infomap
         [infomap arguments]
 
-You can also use the supplied Compose file:
+You can also use the supplied Compose file with Docker Compose v2:
 
 .. code-block:: bash
 
@@ -81,7 +81,7 @@ The image ``mapequation/infomap:notebook`` can be started with
         mapequation/infomap:notebook \
         start.sh jupyter lab
 
-Or similarly, using Docker Compose:
+Or similarly, using Docker Compose v2:
 
 .. code-block:: bash
 

@@ -6,6 +6,10 @@ R_BUILD_DIR := build/R
 R_HEADERS := $(HEADERS:src/%.h=$(R_BUILD_DIR)/src/%.h)
 R_SOURCES := $(SOURCES:src/%.cpp=$(R_BUILD_DIR)/src/%.cpp)
 TAG_NAME := mapequation/infomap
+DOCKER ?= docker
+DOCKER_COMPOSE ?= $(DOCKER) compose
+DOCKER_SUPPORTED_CLI_TAG ?= infomap:cli-local
+DOCKER_SUPPORTED_NOTEBOOK_TAG ?= infomap:notebook-local
 
 .PHONY: \
 	R \
@@ -20,7 +24,8 @@ TAG_NAME := mapequation/infomap
 	docker-run-ubuntu-test-python \
 	docker-build-python \
 	docker-build-r \
-	docker-run-r
+	docker-run-r \
+	test-docker-supported
 
 R: R-build
 	@mkdir -p $(R_BUILD_DIR)/Infomap
@@ -40,37 +45,42 @@ $(R_BUILD_DIR)/src/%: src/%
 	@cp -a $^ $@
 
 docker-build: docker/infomap.Dockerfile
-	docker-compose build infomap
+	$(DOCKER_COMPOSE) build infomap
 
 docker-run:
-	docker-compose run --rm infomap
+	$(DOCKER_COMPOSE) run --rm infomap
 
 docker-build-notebook: docker/notebook.Dockerfile
-	docker-compose build notebook
+	$(DOCKER_COMPOSE) build notebook
 
 docker-run-notebook:
-	docker-compose up notebook
+	$(DOCKER_COMPOSE) up notebook
 
 docker-build-rstudio: docker/rstudio.Dockerfile
-	docker build \
+	$(DOCKER) build \
 	-f docker/rstudio.Dockerfile \
 	-t $(TAG_NAME):rstudio .
 
 docker-run-rstudio:
-	docker run --rm \
+	$(DOCKER) run --rm \
 	$(TAG_NAME):rstudio
 
 docker-build-ubuntu-test-python:
-	docker build -f docker/ubuntu.Dockerfile -t infomap:python-test .
+	$(DOCKER) build -f docker/ubuntu.Dockerfile -t infomap:python-test .
 
 docker-run-ubuntu-test-python:
-	docker run --rm infomap:python-test
+	$(DOCKER) run --rm infomap:python-test
 
 docker-build-python: docker/python.Dockerfile
-	docker build -f docker/python.Dockerfile -t infomap-python .
+	$(DOCKER) build -f docker/python.Dockerfile -t infomap-python .
 
 docker-build-r:
-	docker build -f docker/rstudio.Dockerfile -t infomap:r .
+	$(DOCKER) build -f docker/rstudio.Dockerfile -t infomap:r .
 
 docker-run-r:
-	docker run --rm -p 8787:8787 -e PASSWORD=InfomapR infomap:r
+	$(DOCKER) run --rm -p 8787:8787 -e PASSWORD=InfomapR infomap:r
+
+test-docker-supported:
+	$(DOCKER) build -f docker/infomap.Dockerfile -t $(DOCKER_SUPPORTED_CLI_TAG) .
+	$(DOCKER) run --rm $(DOCKER_SUPPORTED_CLI_TAG) --help > /dev/null
+	$(DOCKER) build -f docker/notebook.Dockerfile -t $(DOCKER_SUPPORTED_NOTEBOOK_TAG) .

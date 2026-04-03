@@ -62,7 +62,7 @@ working <code class="docutils literal notranslate"><span class="pre">gcc</span><
 </section>
 <section id="using-docker">
 <h2>Using Docker<a class="headerlink" href="#using-docker" title="Link to this heading">¶</a></h2>
-<p>There are currently two Docker images available on <a class="reference external" href="https://hub.docker.com/r/mapequation/infomap">Docker Hub</a>.</p>
+<p>There are currently two supported Docker images available on <a class="reference external" href="https://hub.docker.com/r/mapequation/infomap">Docker Hub</a>.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">mapequation/infomap</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">mapequation/infomap:notebook</span></code> based on <code class="docutils literal notranslate"><span class="pre">jupyter/scipy-notebook</span></code></p></li>
@@ -74,7 +74,7 @@ working <code class="docutils literal notranslate"><span class="pre">gcc</span><
 <span class="w">    </span><span class="o">[</span>infomap<span class="w"> </span>arguments<span class="o">]</span>
 </pre></div>
 </div>
-<p>You can also use the supplied Compose file:</p>
+<p>You can also use the supplied Compose file with Docker Compose v2:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>infomap
 </pre></div>
 </div>
@@ -86,7 +86,7 @@ working <code class="docutils literal notranslate"><span class="pre">gcc</span><
 <span class="w">    </span>start.sh<span class="w"> </span>jupyter<span class="w"> </span>lab
 </pre></div>
 </div>
-<p>Or similarly, using Docker Compose:</p>
+<p>Or similarly, using Docker Compose v2:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>notebook
 </pre></div>
 </div>

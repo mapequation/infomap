@@ -1,0 +1,48 @@
+name: Docker Smoke
+
+on:
+  pull_request:
+    paths:
+      - "docker/**"
+      - "docker-compose.yml"
+      - ".dockerignore"
+      - "Makefile"
+      - "mk/**"
+      - "src/**"
+      - "interfaces/python/**"
+      - "scripts/build_config.py"
+      - "README.rst"
+      - ".github/workflows/docker-smoke.yml"
+  push:
+    branches: [master]
+    paths:
+      - "docker/**"
+      - "docker-compose.yml"
+      - ".dockerignore"
+      - "Makefile"
+      - "mk/**"
+      - "src/**"
+      - "interfaces/python/**"
+      - "scripts/build_config.py"
+      - "README.rst"
+      - ".github/workflows/docker-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-smoke-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  supported-images:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Build and smoke-test supported Docker images
+        run: make test-docker-supported
