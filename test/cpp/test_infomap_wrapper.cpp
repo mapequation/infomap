@@ -4,11 +4,28 @@
 
 #include "TestUtils.h"
 
+#include <set>
+#include <tuple>
 #include <vector>
 
 namespace {
 
 using infomap::InfomapWrapper;
+
+using InternalEdge = std::tuple<unsigned int, unsigned int, double, double>;
+
+std::multiset<InternalEdge> internalEdgesForModule(infomap::InfoNode& module)
+{
+  std::multiset<InternalEdge> edges;
+  for (auto& node : module) {
+    for (auto* edge : node.outEdges()) {
+      if (edge->target->parent == &module) {
+        edges.emplace(edge->source->stateId, edge->target->stateId, edge->data.weight, edge->data.flow);
+      }
+    }
+  }
+  return edges;
+}
 
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
 {
@@ -104,6 +121,40 @@ TEST_CASE("File-backed multilayer input clusters as a higher-order network [fast
   infomap::test::checkRunSanity(im);
   CHECK(im.network().haveMemoryInput());
   CHECK(im.getModules(1, true).size() == im.numLeafNodes());
+}
+
+TEST_CASE("Subnetwork generation preserves parent indices and clones internal edges [fast][core][lifecycle][subnetwork]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  REQUIRE(im.numTopModules() == 2);
+
+  auto& module = *im.root().firstChild;
+  REQUIRE(module.childDegree() == 3);
+
+  const auto originalEdges = internalEdgesForModule(module);
+  std::vector<unsigned int> sentinelIndices;
+  unsigned int childIndex = 0;
+  for (auto& node : module) {
+    node.index = 100 + childIndex;
+    sentinelIndices.push_back(node.index);
+    ++childIndex;
+  }
+
+  auto& subInfomap = im.getSubInfomap(module).initNetwork(module);
+
+  REQUIRE(subInfomap.numLeafNodes() == module.childDegree());
+  CHECK(subInfomap.root().owner == &module);
+  CHECK(internalEdgesForModule(subInfomap.root()) == originalEdges);
+
+  childIndex = 0;
+  for (auto& node : module) {
+    CHECK(node.index == sentinelIndices[childIndex]);
+    ++childIndex;
+  }
 }
 
 } // namespace

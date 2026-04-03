@@ -27,6 +27,7 @@
 #include <limits>
 #include <map>
 #include <set>
+#include <unordered_map>
 #include <cstdlib>
 #include <algorithm>
 #include <cmath>
@@ -883,11 +884,13 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   Log(1) << "Generate sub network with " << numNodes << " nodes...\n";
 
   unsigned int childIndex = 0;
+  std::unordered_map<InfoNode*, unsigned int> nodeIndexMap;
+  nodeIndexMap.reserve(numNodes);
   for (InfoNode& node : parent) {
     auto* clonedNode = new InfoNode(node);
     clonedNode->initClean();
     m_root.addChild(clonedNode);
-    node.index = childIndex; // Set index to its place in this subnetwork to be able to find edge target below
+    nodeIndexMap[&node] = childIndex;
     m_leafNodes[childIndex] = clonedNode;
     ++childIndex;
   }
@@ -899,7 +902,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
       InfoEdge& edge = *e;
       // If neighbour node is within the same module, add the link to this subnetwork.
       if (edge.target->parent == parentPtr) {
-        m_leafNodes[edge.source->index]->addOutEdge(*m_leafNodes[edge.target->index], edge.data.weight, edge.data.flow);
+        m_leafNodes[nodeIndexMap.at(edge.source)]->addOutEdge(*m_leafNodes[nodeIndexMap.at(edge.target)], edge.data.weight, edge.data.flow);
       }
     }
   }
