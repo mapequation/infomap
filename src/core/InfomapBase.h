@@ -166,7 +166,7 @@ public:
     }
   };
 
-  struct PointerActiveGraph {
+  struct PointerBackend {
     using ActiveNodeId = ActiveGraphMaterialization::ActiveNodeId;
 
     struct EdgeView {
@@ -175,7 +175,7 @@ public:
       double flow = 0.0;
     };
 
-    explicit PointerActiveGraph(ActiveGraphMaterialization& materialization)
+    explicit PointerBackend(ActiveGraphMaterialization& materialization)
         : materialization(materialization) { }
 
     std::size_t size() const noexcept { return materialization.size(); }
@@ -240,6 +240,8 @@ public:
   private:
     ActiveGraphMaterialization& materialization;
   };
+
+  using PointerActiveGraph = PointerBackend;
 
   InfomapBase() : InfomapConfig<InfomapBase>() { initOptimizer(); }
 
@@ -336,7 +338,8 @@ public:
   const BenchmarkStats& benchmarkStats() const noexcept { return m_benchmarkStats; }
   ActiveGraphMaterialization& activeGraphMaterialization() noexcept { return m_activeGraphMaterialization; }
   const ActiveGraphMaterialization& activeGraphMaterialization() const noexcept { return m_activeGraphMaterialization; }
-  PointerActiveGraph pointerActiveGraph() noexcept { return PointerActiveGraph(m_activeGraphMaterialization); }
+  PointerBackend pointerBackend() noexcept { return PointerBackend(m_activeGraphMaterialization); }
+  PointerActiveGraph pointerActiveGraph() noexcept { return pointerBackend(); }
 
   const Date& getStartDate() const { return m_startDate; }
   const Stopwatch& getElapsedTime() const { return m_elapsedTime; }

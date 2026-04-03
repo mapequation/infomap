@@ -270,7 +270,7 @@ TEST_CASE("Active graph wrappers sync payload back to hierarchy nodes [fast][cor
   CHECK(im.activeGraphMaterialization().payloads[0].data.flow == doctest::Approx(originalFlow + 0.25));
 }
 
-TEST_CASE("Pointer active graph view exposes payload, state, and adjacency by active node id [fast][core][partition][lifecycle]")
+TEST_CASE("Pointer backend exposes payload, state, and adjacency by active node id [fast][core][partition][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -278,7 +278,7 @@ TEST_CASE("Pointer active graph view exposes payload, state, and adjacency by ac
   im.setActiveNetworkFromLeafs();
   im.initPartition();
 
-  auto view = im.pointerActiveGraph();
+  auto view = im.pointerBackend();
   REQUIRE(view.size() == im.numLeafNodes());
   REQUIRE_FALSE(view.empty());
 

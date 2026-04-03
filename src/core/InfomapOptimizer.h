@@ -268,7 +268,7 @@ void InfomapOptimizer<Objective>::markNodeNeighboursDirty(Graph& graph, typename
 template <typename Objective>
 void InfomapOptimizer<Objective>::initPartition()
 {
-  auto graph = m_infomap->pointerActiveGraph();
+  auto graph = m_infomap->pointerBackend();
   auto& network = m_infomap->activeNetwork();
   Log(4) << "InfomapOptimizer::initPartition() with " << graph.size() << " nodes...\n";
 
@@ -291,7 +291,7 @@ void InfomapOptimizer<Objective>::initPartition()
 template <typename Objective>
 void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
 {
-  auto graph = m_infomap->pointerActiveGraph();
+  auto graph = m_infomap->pointerBackend();
   moveActiveNodesToPredefinedModulesImpl(graph, modules);
 }
 
@@ -311,7 +311,7 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModulesImpl(Graph& 
 template <typename Objective>
 bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, unsigned int newModule)
 {
-  auto graph = m_infomap->pointerActiveGraph();
+  auto graph = m_infomap->pointerBackend();
   return moveNodeToPredefinedModuleImpl(graph, graph.idFor(current), newModule);
 }
 
@@ -395,7 +395,7 @@ inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 template <typename Objective>
 unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 {
-  auto graph = m_infomap->pointerActiveGraph();
+  auto graph = m_infomap->pointerBackend();
   return tryMoveEachNodeIntoBestModuleImpl(graph);
 }
 
@@ -750,7 +750,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 template <typename Objective>
 inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExistingModules)
 {
-  auto graph = m_infomap->pointerActiveGraph();
+  auto graph = m_infomap->pointerBackend();
   auto numNodes = graph.size();
   std::vector<InfoNode*> modules(numNodes, nullptr);
 
