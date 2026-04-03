@@ -111,9 +111,17 @@ make build-docs
 
 This writes the static site into `docs/`.
 
+Verify that the committed generated docs are fresh without rewriting `docs/`:
+
+```bash
+make test-docs
+```
+
 The documentation source lives under `interfaces/python/source/`. The committed
-`docs/` tree is generated output and should be refreshed via the documented
-build path rather than hand-edited.
+`docs/` tree contains the generated Sphinx site plus checked-in maintainer
+content under `docs/automation/`, `docs/maintainers/`, and `docs/plans/`. Only
+the generated subset is refreshed by `make build-docs` and checked by
+`make test-docs`; do not hand-edit generated HTML or JS.
 
 Advanced or internal targets such as `R`, `R-build`, and `docker-*` still exist in
 the Makefile, but they are no longer part of the primary development surface.

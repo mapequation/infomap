@@ -1,14 +1,27 @@
 name: Docs
 
 on:
+  pull_request:
+    paths:
+      - "README.rst"
+      - "BUILD.md"
+      - "mk/**"
+      - "requirements_dev.txt"
+      - "interfaces/python/**"
+      - "src/**"
+      - "docs/maintainers/**"
+      - ".github/workflows/docs.yml"
   push:
     branches: [master]
     paths:
       - "README.rst"
+      - "BUILD.md"
       - "Makefile"
+      - "mk/**"
       - "requirements_dev.txt"
       - "interfaces/python/**"
       - "src/**"
+      - "docs/maintainers/**"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
@@ -29,6 +42,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Configure GitHub Pages
+        if: github.event_name == 'push'
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
       - name: Set up Python
@@ -55,15 +69,17 @@ jobs:
           python -m pip install -r requirements_dev.txt
           npm ci
 
-      - name: Build docs site
-        run: make build-docs
+      - name: Verify committed docs freshness
+        run: make test-docs
 
       - name: Upload Pages artifact
+        if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
         with:
           path: docs
 
   deploy:
+    if: github.event_name == 'push'
     needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 15
