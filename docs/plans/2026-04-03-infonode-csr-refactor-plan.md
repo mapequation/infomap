@@ -229,8 +229,10 @@ Required code cleanup before storage changes:
 2. first-order partition parity
    - current C++/Python regressions remain green
    - add direct regression for `generateSubNetwork(...)` edge cloning correctness
-3. OpenMP parity
-   - sequential and parallel move loops produce equivalent results for fixed seeds / deterministic fixtures
+3. OpenMP / inner-parallelization contract
+   - sequential and parallel move loops are both runnable and numerically sane on deterministic fixtures
+   - measure and document any current partition/codelength divergence under `--inner-parallelization`
+   - do not treat exact serial-vs-parallel parity as a Phase 1 gate unless the product contract is tightened first
 4. consolidation bridge correctness
    - module-level edge weights equal the sum of inter-module leaf-edge weights after `consolidateModules(...)`
 
