@@ -192,6 +192,55 @@ TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][c
   }
 }
 
+TEST_CASE("Active graph payload materialization mirrors the leaf-level active network [fast][core][partition][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+
+  auto& materialization = im.activeGraphMaterialization();
+  REQUIRE(materialization.nodes.size() == im.activeNetwork().size());
+  REQUIRE(materialization.payloads.size() == im.activeNetwork().size());
+  CHECK(materialization.payloadBytes() == materialization.payloads.size() * sizeof(infomap::InfomapBase::ActiveNodePayload));
+
+  for (std::size_t i = 0; i < materialization.nodes.size(); ++i) {
+    auto* node = im.activeNetwork()[i];
+    CHECK(materialization.nodes[i] == node);
+    CHECK(materialization.payloads[i].data.flow == doctest::Approx(node->data.flow));
+    CHECK(materialization.payloads[i].stateId == node->stateId);
+    CHECK(materialization.payloads[i].physicalId == node->physicalId);
+    CHECK(materialization.payloads[i].layerId == node->layerId);
+  }
+
+  materialization.payloads[0].data.flow += 0.5;
+  im.syncActiveGraphPayloadToHierarchy();
+
+  CHECK(im.activeNetwork()[0]->data.flow == doctest::Approx(materialization.payloads[0].data.flow));
+}
+
+TEST_CASE("Active graph payload materialization mirrors module-level active nodes [fast][core][partition][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  REQUIRE(im.numTopModules() == 2);
+
+  im.setActiveNetworkFromChildrenOfRoot();
+  const auto& materialization = im.activeGraphMaterialization();
+
+  REQUIRE(materialization.nodes.size() == im.activeNetwork().size());
+  REQUIRE(materialization.nodes.size() == im.numTopModules());
+  for (std::size_t i = 0; i < materialization.nodes.size(); ++i) {
+    auto* node = im.activeNetwork()[i];
+    CHECK(materialization.nodes[i] == node);
+    CHECK(materialization.payloads[i].data.flow == doctest::Approx(node->data.flow));
+    CHECK(materialization.payloads[i].stateId == node->stateId);
+  }
+}
+
 TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

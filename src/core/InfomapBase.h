@@ -95,6 +95,29 @@ public:
     }
   };
 
+  struct ActiveNodePayload {
+    FlowData data;
+    unsigned int stateId = 0;
+    unsigned int physicalId = 0;
+    unsigned int layerId = 0;
+  };
+
+  struct ActiveGraphMaterialization {
+    std::vector<InfoNode*> nodes;
+    std::vector<ActiveNodePayload> payloads;
+
+    void reset()
+    {
+      nodes.clear();
+      payloads.clear();
+    }
+
+    std::size_t payloadBytes() const noexcept
+    {
+      return payloads.size() * sizeof(ActiveNodePayload);
+    }
+  };
+
   InfomapBase() : InfomapConfig<InfomapBase>() { initOptimizer(); }
 
   explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { initOptimizer(); }
@@ -188,6 +211,8 @@ public:
   double getMaxEntropy() { return m_maxEntropy; }
   double getMaxFlow() { return m_maxFlow; }
   const BenchmarkStats& benchmarkStats() const noexcept { return m_benchmarkStats; }
+  ActiveGraphMaterialization& activeGraphMaterialization() noexcept { return m_activeGraphMaterialization; }
+  const ActiveGraphMaterialization& activeGraphMaterialization() const noexcept { return m_activeGraphMaterialization; }
 
   const Date& getStartDate() const { return m_startDate; }
   const Stopwatch& getElapsedTime() const { return m_elapsedTime; }
@@ -384,9 +409,17 @@ private:
   // Run: Partition: *
   // ===================================================
 
-  void setActiveNetworkFromLeafs() { m_activeNetwork = &m_leafNodes; }
+  void setActiveNetworkFromLeafs()
+  {
+    m_activeNetwork = &m_leafNodes;
+    materializeActiveGraphPayload();
+  }
 
   void setActiveNetworkFromChildrenOfRoot();
+
+  void materializeActiveGraphPayload();
+
+  void syncActiveGraphPayloadToHierarchy();
 
   void initPartition() { return m_optimizer->initPartition(); }
 
@@ -573,6 +606,7 @@ protected:
   std::string m_initialParameters;
   std::string m_currentParameters;
   BenchmarkStats m_benchmarkStats;
+  ActiveGraphMaterialization m_activeGraphMaterialization;
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };

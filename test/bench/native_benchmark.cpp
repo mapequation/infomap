@@ -105,6 +105,7 @@ int main(int argc, char* argv[])
     const double runSec = runTimer.getElapsedTimeInSec();
 
     const auto& stats = im.benchmarkStats();
+    const auto& activeMaterialization = im.activeGraphMaterialization();
     std::cout << "{";
     std::cout << "\"name\":\"" << jsonEscape(caseName) << "\",";
     std::cout << "\"path\":\"" << jsonEscape(inputPath) << "\",";
@@ -116,6 +117,8 @@ int main(int argc, char* argv[])
     std::cout << "\"peak_rss_bytes\":" << peakRssBytes() << ",";
     std::cout << "\"node_size_bytes\":" << sizeof(infomap::InfoNode) << ",";
     std::cout << "\"edge_size_bytes\":" << sizeof(infomap::InfoEdge) << ",";
+    std::cout << "\"active_payload_nodes\":" << activeMaterialization.payloads.size() << ",";
+    std::cout << "\"active_payload_bytes\":" << activeMaterialization.payloadBytes() << ",";
     std::cout << "\"num_nodes\":" << inputNodeCount << ",";
     std::cout << "\"num_links\":" << inputLinkCount << ",";
     std::cout << "\"num_top_modules\":" << im.numTopModules() << ",";

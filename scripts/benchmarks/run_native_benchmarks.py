@@ -114,6 +114,8 @@ def benchmark_case(binary: Path, name: str, network_path: Path, repeats: int, fl
         "directed_input": runs[0]["directed_input"],
         "node_size_bytes": runs[0]["node_size_bytes"],
         "edge_size_bytes": runs[0]["edge_size_bytes"],
+        "active_payload_nodes": runs[0]["active_payload_nodes"],
+        "active_payload_bytes": runs[0]["active_payload_bytes"],
         "benchmark_stats_median": {
             "calculate_flow_sec": stats_median("calculate_flow_sec"),
             "init_network_sec": stats_median("init_network_sec"),

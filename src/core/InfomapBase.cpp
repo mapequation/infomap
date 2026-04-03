@@ -1378,6 +1378,42 @@ void InfomapBase::setActiveNetworkFromChildrenOfRoot()
   for (auto& node : m_root)
     m_moduleNodes[i++] = &node;
   m_activeNetwork = &m_moduleNodes;
+  materializeActiveGraphPayload();
+}
+
+void InfomapBase::materializeActiveGraphPayload()
+{
+  m_activeGraphMaterialization.reset();
+
+  if (m_activeNetwork == nullptr) {
+    return;
+  }
+
+  const auto& network = *m_activeNetwork;
+  m_activeGraphMaterialization.nodes = network;
+  m_activeGraphMaterialization.payloads.reserve(network.size());
+  for (const auto* node : network) {
+    m_activeGraphMaterialization.payloads.push_back({
+        node->data,
+        node->stateId,
+        node->physicalId,
+        node->layerId,
+    });
+  }
+}
+
+void InfomapBase::syncActiveGraphPayloadToHierarchy()
+{
+  auto& nodes = m_activeGraphMaterialization.nodes;
+  auto& payloads = m_activeGraphMaterialization.payloads;
+
+  if (nodes.size() != payloads.size()) {
+    throw std::logic_error("InfomapBase::syncActiveGraphPayloadToHierarchy() called with mismatched active payload state");
+  }
+
+  for (std::size_t i = 0; i < nodes.size(); ++i) {
+    nodes[i]->data = payloads[i].data;
+  }
 }
 
 void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
