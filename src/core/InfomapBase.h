@@ -283,6 +283,12 @@ public:
   struct CsrBackend {
     using ActiveNodeId = ActiveGraphMaterialization::ActiveNodeId;
 
+    struct EdgeView {
+      ActiveNodeId neighbourId = 0;
+      double weight = 0.0;
+      double flow = 0.0;
+    };
+
     struct EdgeSpan {
       const unsigned int* targets = nullptr;
       const double* weights = nullptr;
@@ -302,6 +308,36 @@ public:
     InfoNode& nodeFor(ActiveNodeId id) const { return materialization.nodeFor(id); }
     ActiveNodePayload& payloadFor(ActiveNodeId id) { return materialization.payloadFor(id); }
     const ActiveNodePayload& payloadFor(ActiveNodeId id) const { return materialization.payloadFor(id); }
+    unsigned int& moduleIndex(ActiveNodeId id) const { return nodeFor(id).index; }
+    bool& dirty(ActiveNodeId id) const { return nodeFor(id).dirty; }
+
+    template <typename Fn>
+    void forEachOutEdge(ActiveNodeId id, Fn&& fn) const
+    {
+      const auto edges = outEdges(id);
+      for (std::size_t i = 0; i < edges.size; ++i) {
+        EdgeView edge{
+            edges.targets[i],
+            edges.weights[i],
+            edges.flows[i],
+        };
+        fn(edge.neighbourId, nodeFor(edge.neighbourId), edge);
+      }
+    }
+
+    template <typename Fn>
+    void forEachInEdge(ActiveNodeId id, Fn&& fn) const
+    {
+      const auto edges = inEdges(id);
+      for (std::size_t i = 0; i < edges.size; ++i) {
+        EdgeView edge{
+            edges.targets[i],
+            edges.weights[i],
+            edges.flows[i],
+        };
+        fn(edge.neighbourId, nodeFor(edge.neighbourId), edge);
+      }
+    }
 
     EdgeSpan outEdges(ActiveNodeId id) const
     {

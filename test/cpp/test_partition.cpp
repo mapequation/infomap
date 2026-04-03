@@ -406,6 +406,62 @@ TEST_CASE("CSR backend stays disabled for module-level and higher-order active g
   }
 }
 
+TEST_CASE("CSR backend matches pointer backend for predefined moves on leaf-level first-order graphs [fast][core][partition][lifecycle]")
+{
+  const auto flags = infomap::test::defaultFlags();
+  std::vector<unsigned int> modules{0, 0, 0, 1, 1, 1};
+
+  InfomapWrapper pointerIm(flags);
+  pointerIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  pointerIm.initNetwork(pointerIm.network());
+  pointerIm.setActiveNetworkFromLeafs();
+  pointerIm.initPartition();
+  pointerIm.m_csrMaterialization.reset();
+  CHECK_FALSE(pointerIm.csrBackend().available());
+
+  InfomapWrapper csrIm(flags);
+  csrIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  csrIm.initNetwork(csrIm.network());
+  csrIm.setActiveNetworkFromLeafs();
+  csrIm.initPartition();
+  REQUIRE(csrIm.csrBackend().available());
+
+  pointerIm.moveActiveNodesToPredefinedModules(modules);
+  csrIm.moveActiveNodesToPredefinedModules(modules);
+
+  CHECK(csrIm.getModules() == pointerIm.getModules());
+  CHECK(csrIm.getCodelength() == doctest::Approx(pointerIm.getCodelength()));
+  CHECK(csrIm.getIndexCodelength() == doctest::Approx(pointerIm.getIndexCodelength()));
+}
+
+TEST_CASE("CSR backend matches pointer backend for one serial move pass on leaf-level first-order graphs [fast][core][partition][lifecycle]")
+{
+  const auto flags = infomap::test::defaultFlags();
+
+  InfomapWrapper pointerIm(flags);
+  pointerIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  pointerIm.initNetwork(pointerIm.network());
+  pointerIm.setActiveNetworkFromLeafs();
+  pointerIm.initPartition();
+  pointerIm.m_csrMaterialization.reset();
+  CHECK_FALSE(pointerIm.csrBackend().available());
+
+  InfomapWrapper csrIm(flags);
+  csrIm.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  csrIm.initNetwork(csrIm.network());
+  csrIm.setActiveNetworkFromLeafs();
+  csrIm.initPartition();
+  REQUIRE(csrIm.csrBackend().available());
+
+  const auto pointerMoved = pointerIm.optimizeActiveNetwork();
+  const auto csrMoved = csrIm.optimizeActiveNetwork();
+
+  CHECK(csrMoved == pointerMoved);
+  CHECK(csrIm.getModules() == pointerIm.getModules());
+  CHECK(csrIm.getCodelength() == doctest::Approx(pointerIm.getCodelength()));
+  CHECK(csrIm.getIndexCodelength() == doctest::Approx(pointerIm.getIndexCodelength()));
+}
+
 TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

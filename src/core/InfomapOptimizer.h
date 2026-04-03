@@ -22,6 +22,21 @@
 
 namespace infomap {
 
+namespace detail {
+
+inline double edgeFlow(const InfoEdge& edge)
+{
+  return edge.data.flow;
+}
+
+template <typename EdgeLike>
+inline double edgeFlow(const EdgeLike& edge)
+{
+  return edge.flow;
+}
+
+} // namespace detail
+
 template <typename Objective>
 class InfomapOptimizer : public InfomapOptimizerBase {
   using FlowDataType = FlowData;
@@ -188,14 +203,14 @@ template <typename Objective>
 template <typename Graph>
 void InfomapOptimizer<Objective>::addNeighbourModuleLinks(Graph& graph, typename Graph::ActiveNodeId currentId, VectorMap<DeltaFlowDataType>& deltaFlow)
 {
-  graph.forEachOutEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
+  graph.forEachOutEdge(currentId, [&](auto neighbourId, const InfoNode&, const auto& edge) {
     auto otherModule = graph.moduleIndex(neighbourId);
-    deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, edge.data.flow, 0.0));
+    deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, detail::edgeFlow(edge), 0.0));
   });
 
-  graph.forEachInEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
+  graph.forEachInEdge(currentId, [&](auto neighbourId, const InfoNode&, const auto& edge) {
     auto otherModule = graph.moduleIndex(neighbourId);
-    deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, 0.0, edge.data.flow));
+    deltaFlow.add(otherModule, DeltaFlowDataType(otherModule, 0.0, detail::edgeFlow(edge)));
   });
 }
 
@@ -208,21 +223,21 @@ void InfomapOptimizer<Objective>::accumulateMoveDelta(Graph& graph,
                                                       DeltaFlowDataType& oldModuleDelta,
                                                       DeltaFlowDataType& newModuleDelta)
 {
-  graph.forEachOutEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
+  graph.forEachOutEdge(currentId, [&](auto neighbourId, const InfoNode&, const auto& edge) {
     unsigned int otherModule = graph.moduleIndex(neighbourId);
     if (otherModule == oldModule) {
-      oldModuleDelta.deltaExit += edge.data.flow;
+      oldModuleDelta.deltaExit += detail::edgeFlow(edge);
     } else if (otherModule == newModule) {
-      newModuleDelta.deltaExit += edge.data.flow;
+      newModuleDelta.deltaExit += detail::edgeFlow(edge);
     }
   });
 
-  graph.forEachInEdge(currentId, [&](auto neighbourId, const InfoNode&, const InfoEdge& edge) {
+  graph.forEachInEdge(currentId, [&](auto neighbourId, const InfoNode&, const auto& edge) {
     unsigned int otherModule = graph.moduleIndex(neighbourId);
     if (otherModule == oldModule) {
-      oldModuleDelta.deltaEnter += edge.data.flow;
+      oldModuleDelta.deltaEnter += detail::edgeFlow(edge);
     } else if (otherModule == newModule) {
-      newModuleDelta.deltaEnter += edge.data.flow;
+      newModuleDelta.deltaEnter += detail::edgeFlow(edge);
     }
   });
 }
@@ -235,7 +250,7 @@ void InfomapOptimizer<Objective>::markNeighboursDirty(Graph& graph,
                                                       InfoNode*& nodeInOldModule,
                                                       unsigned int& numLinkedNodesInOldModule)
 {
-  graph.forEachOutEdge(currentId, [&](auto neighbourId, InfoNode& neighbour, const InfoEdge&) {
+  graph.forEachOutEdge(currentId, [&](auto neighbourId, InfoNode& neighbour, const auto&) {
     graph.dirty(neighbourId) = true;
     if (graph.moduleIndex(neighbourId) == oldModuleIndex) {
       nodeInOldModule = &neighbour;
@@ -243,7 +258,7 @@ void InfomapOptimizer<Objective>::markNeighboursDirty(Graph& graph,
     }
   });
 
-  graph.forEachInEdge(currentId, [&](auto neighbourId, InfoNode& neighbour, const InfoEdge&) {
+  graph.forEachInEdge(currentId, [&](auto neighbourId, InfoNode& neighbour, const auto&) {
     graph.dirty(neighbourId) = true;
     if (graph.moduleIndex(neighbourId) == oldModuleIndex) {
       nodeInOldModule = &neighbour;
@@ -256,11 +271,11 @@ template <typename Objective>
 template <typename Graph>
 void InfomapOptimizer<Objective>::markNodeNeighboursDirty(Graph& graph, typename Graph::ActiveNodeId nodeId)
 {
-  graph.forEachOutEdge(nodeId, [&](auto neighbourId, InfoNode&, const InfoEdge&) {
+  graph.forEachOutEdge(nodeId, [&](auto neighbourId, InfoNode&, const auto&) {
     graph.dirty(neighbourId) = true;
   });
 
-  graph.forEachInEdge(nodeId, [&](auto neighbourId, InfoNode&, const InfoEdge&) {
+  graph.forEachInEdge(nodeId, [&](auto neighbourId, InfoNode&, const auto&) {
     graph.dirty(neighbourId) = true;
   });
 }
@@ -291,6 +306,10 @@ void InfomapOptimizer<Objective>::initPartition()
 template <typename Objective>
 void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
 {
+  auto csrGraph = m_infomap->csrBackend();
+  if (csrGraph.available()) {
+    return moveActiveNodesToPredefinedModulesImpl(csrGraph, modules);
+  }
   auto graph = m_infomap->pointerBackend();
   moveActiveNodesToPredefinedModulesImpl(graph, modules);
 }
@@ -311,6 +330,10 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModulesImpl(Graph& 
 template <typename Objective>
 bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, unsigned int newModule)
 {
+  auto csrGraph = m_infomap->csrBackend();
+  if (csrGraph.available()) {
+    return moveNodeToPredefinedModuleImpl(csrGraph, csrGraph.idFor(current), newModule);
+  }
   auto graph = m_infomap->pointerBackend();
   return moveNodeToPredefinedModuleImpl(graph, graph.idFor(current), newModule);
 }
@@ -395,6 +418,10 @@ inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
 template <typename Objective>
 unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 {
+  auto csrGraph = m_infomap->csrBackend();
+  if (csrGraph.available()) {
+    return tryMoveEachNodeIntoBestModuleImpl(csrGraph);
+  }
   auto graph = m_infomap->pointerBackend();
   return tryMoveEachNodeIntoBestModuleImpl(graph);
 }
