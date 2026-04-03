@@ -76,6 +76,15 @@ protected:
   template <typename Graph>
   void markNodeNeighboursDirty(Graph& graph, typename Graph::ActiveNodeId nodeId);
 
+  template <typename Graph>
+  void moveActiveNodesToPredefinedModulesImpl(Graph& graph, std::vector<unsigned int>& modules);
+
+  template <typename Graph>
+  bool moveNodeToPredefinedModuleImpl(Graph& graph, typename Graph::ActiveNodeId currentId, unsigned int newModule);
+
+  template <typename Graph>
+  unsigned int tryMoveEachNodeIntoBestModuleImpl(Graph& graph);
+
   // ===================================================
   // Run: Init: *
   // ===================================================
@@ -283,12 +292,19 @@ template <typename Objective>
 void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
 {
   auto graph = m_infomap->pointerActiveGraph();
+  moveActiveNodesToPredefinedModulesImpl(graph, modules);
+}
+
+template <typename Objective>
+template <typename Graph>
+void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModulesImpl(Graph& graph, std::vector<unsigned int>& modules)
+{
   auto numNodes = graph.size();
   if (modules.size() != numNodes)
     throw std::length_error("Size of predefined modules differ from size of active network.");
 
   for (unsigned int i = 0; i < numNodes; ++i) {
-    moveNodeToPredefinedModule(graph.nodeFor(i), modules[i]);
+    moveNodeToPredefinedModuleImpl(graph, i, modules[i]);
   }
 }
 
@@ -296,7 +312,14 @@ template <typename Objective>
 bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, unsigned int newModule)
 {
   auto graph = m_infomap->pointerActiveGraph();
-  auto currentId = graph.idFor(current);
+  return moveNodeToPredefinedModuleImpl(graph, graph.idFor(current), newModule);
+}
+
+template <typename Objective>
+template <typename Graph>
+bool InfomapOptimizer<Objective>::moveNodeToPredefinedModuleImpl(Graph& graph, typename Graph::ActiveNodeId currentId, unsigned int newModule)
+{
+  InfoNode& current = graph.nodeFor(currentId);
   unsigned int oldM = graph.moduleIndex(currentId);
   unsigned int newM = newModule;
 
@@ -373,6 +396,13 @@ template <typename Objective>
 unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 {
   auto graph = m_infomap->pointerActiveGraph();
+  return tryMoveEachNodeIntoBestModuleImpl(graph);
+}
+
+template <typename Objective>
+template <typename Graph>
+unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Graph& graph)
+{
   // Get random enumeration of nodes
   std::vector<unsigned int> nodeEnumeration(graph.size());
   m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
@@ -505,7 +535,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
       // Move single connected nodes to same module
       if (numLinkedNodesInOldModule == 1 && m_moduleMembers[oldModuleIndex] == 1) {
-        moveNodeToPredefinedModule(*nodeInOldModule, bestModuleIndex);
+        moveNodeToPredefinedModuleImpl(graph, graph.idFor(*nodeInOldModule), bestModuleIndex);
         ++numMoved;
         // Mark neighbours as dirty
         if (nodeInOldModule->degree() > 1) {
