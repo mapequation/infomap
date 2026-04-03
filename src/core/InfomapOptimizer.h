@@ -483,6 +483,9 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModuleImpl(InfomapBase::Cs
 {
   InfoNode& current = graph.nodeFor(currentId);
   auto* moduleIndices = graph.moduleIndicesData();
+  const bool recordedTeleportation = m_infomap->recordedTeleportation;
+  auto& moduleFlowData = m_moduleFlowData;
+  auto& moduleMembers = m_moduleMembers;
   unsigned int oldM = moduleIndices[currentId];
   unsigned int newM = newModule;
 
@@ -495,31 +498,31 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModuleImpl(InfomapBase::Cs
 
   accumulateMoveDelta(graph, currentId, oldM, newM, oldModuleDelta, newModuleDelta);
 
-  if (m_infomap->recordedTeleportation) {
-    auto& oldModuleFlowData = m_moduleFlowData[oldM];
+  if (recordedTeleportation) {
+    auto& oldModuleFlowData = moduleFlowData[oldM];
     double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
     double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
     oldModuleDelta.deltaEnter += deltaEnterOld;
     oldModuleDelta.deltaExit += deltaExitOld;
 
-    auto& newModuleFlowData = m_moduleFlowData[newM];
+    auto& newModuleFlowData = moduleFlowData[newM];
     double deltaEnterNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
     double deltaExitNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
     newModuleDelta.deltaEnter += deltaEnterNew;
     newModuleDelta.deltaExit += deltaExitNew;
   }
 
-  if (m_moduleMembers[newM] == 0) {
+  if (moduleMembers[newM] == 0) {
     m_emptyModules.pop_back();
   }
-  if (m_moduleMembers[oldM] == 1) {
+  if (moduleMembers[oldM] == 1) {
     m_emptyModules.push_back(oldM);
   }
 
-  m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, m_moduleFlowData, m_moduleMembers);
+  m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 
-  m_moduleMembers[oldM] -= 1;
-  m_moduleMembers[newM] += 1;
+  moduleMembers[oldM] -= 1;
+  moduleMembers[newM] += 1;
 
   moduleIndices[currentId] = newM;
   return true;
@@ -530,6 +533,9 @@ template <typename Graph>
 bool InfomapOptimizer<Objective>::moveNodeToPredefinedModuleImpl(Graph& graph, typename Graph::ActiveNodeId currentId, unsigned int newModule)
 {
   InfoNode& current = graph.nodeFor(currentId);
+  const bool recordedTeleportation = m_infomap->recordedTeleportation;
+  auto& moduleFlowData = m_moduleFlowData;
+  auto& moduleMembers = m_moduleMembers;
   unsigned int oldM = graph.moduleIndex(currentId);
   unsigned int newM = newModule;
 
@@ -543,31 +549,31 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModuleImpl(Graph& graph, t
   accumulateMoveDelta(graph, currentId, oldM, newM, oldModuleDelta, newModuleDelta);
 
   // For recorded teleportation
-  if (m_infomap->recordedTeleportation) {
-    auto& oldModuleFlowData = m_moduleFlowData[oldM];
+  if (recordedTeleportation) {
+    auto& oldModuleFlowData = moduleFlowData[oldM];
     double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
     double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
     oldModuleDelta.deltaEnter += deltaEnterOld;
     oldModuleDelta.deltaExit += deltaExitOld;
 
-    auto& newModuleFlowData = m_moduleFlowData[newM];
+    auto& newModuleFlowData = moduleFlowData[newM];
     double deltaEnterNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
     double deltaExitNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
     newModuleDelta.deltaEnter += deltaEnterNew;
     newModuleDelta.deltaExit += deltaExitNew;
   }
   // Update empty module vector
-  if (m_moduleMembers[newM] == 0) {
+  if (moduleMembers[newM] == 0) {
     m_emptyModules.pop_back();
   }
-  if (m_moduleMembers[oldM] == 1) {
+  if (moduleMembers[oldM] == 1) {
     m_emptyModules.push_back(oldM);
   }
 
-  m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, m_moduleFlowData, m_moduleMembers);
+  m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 
-  m_moduleMembers[oldM] -= 1;
-  m_moduleMembers[newM] += 1;
+  moduleMembers[oldM] -= 1;
+  moduleMembers[newM] += 1;
 
   graph.moduleIndex(currentId) = newM;
   return true;
