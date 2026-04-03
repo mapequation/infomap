@@ -4,7 +4,7 @@ Default rule: run the smallest sufficient verification for the changed surface. 
 
 | Changed surface | Minimum verification | Notes |
 | --- | --- | --- |
-| `README.rst`, `docs/automation/`, other docs-only text | No code verification required | If the change affects generated docs behavior, escalate to the relevant build instead of editing generated output blindly. |
+| `README.rst`, `docs/automation/`, other docs-only text | No code verification required | If the change affects generated docs behavior or committed Sphinx output freshness, run `make test-docs` instead of editing generated output blindly. |
 | `src/` C++ code | `make build-native` | Use this as the minimum binary build check. Add narrower reproduction checks if the issue provides them. |
 | `interfaces/python/`, Python packaging, SWIG-facing Python surface | `make build-python` and `make test-python` | `make test-python` exercises pytest, doctest, and the Python examples. |
 | `interfaces/js/` TypeScript or npm package surface | `npm ci` and `make build-js` | Use for package or TypeScript-only JS changes. |

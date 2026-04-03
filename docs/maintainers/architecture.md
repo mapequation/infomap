@@ -45,7 +45,9 @@ Use these ownership rules when making changes:
 - `interfaces/python/source/`
   - documentation source for the published Python docs
 - `docs/`
-  - committed generated Sphinx output; do not hand-edit generated HTML or JS
+  - checked-in Pages tree; the Sphinx-generated site output is generated, while
+    `docs/automation/`, `docs/maintainers/`, and `docs/plans/` remain source-owned
+    maintainer content that is excluded from docs freshness checks
 - `interfaces/js/generated/`
   - generated metadata consumed by the JS package build
 - `test/fixtures/`
@@ -53,6 +55,14 @@ Use these ownership rules when making changes:
 
 Generated outputs should have an explicit generator and verification path. They
 should not be treated as hand-maintained source files.
+
+For the Python docs site specifically:
+
+- `make build-docs`
+  - refreshes the committed generated Sphinx output in `docs/`
+- `make test-docs`
+  - rebuilds the site in a temp directory and diffs it against the committed
+    generated subset of `docs/`
 
 ## Build ownership
 

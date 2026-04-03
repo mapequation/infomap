@@ -55,9 +55,10 @@ Configure these repository integrations before the first automated release:
 ## Documentation publishing
 
 Python docs are published by `.github/workflows/docs.yml`, not by the release
-workflow. The docs workflow builds from `master`, refreshes the committed
-generated output derived from `interfaces/python/source/` plus `README.rst`, and
-deploys the generated artifact to GitHub Pages through the `github-pages`
+workflow. On pull requests, the docs workflow runs `make test-docs` to verify
+that the committed generated output derived from `interfaces/python/source/`
+plus `README.rst` is fresh. On `master`, the same freshness check gates the
+deployment of the already-committed `docs/` Pages tree to the `github-pages`
 environment.
 
 ## Recovery
