@@ -21,14 +21,12 @@ Configure these repository integrations before the first automated release:
 1. GitHub Environments
    - `pypi-release`
    - `npm-release`
-   - `github-pages`
 2. Add required reviewers to `pypi-release` and `npm-release`.
 3. Configure PyPI trusted publishing for this repository and the
    `.github/workflows/release.yml` workflow.
 4. Configure npm trusted publishing for this repository and the
    `.github/workflows/release.yml` workflow.
-5. Enable GitHub Pages from Actions.
-6. Remove legacy registry secrets after trusted publishing is confirmed:
+5. Remove legacy registry secrets after trusted publishing is confirmed:
    - `PYPI_USERNAME`
    - `PYPI_PASSWORD`
    - `NPM_TOKEN`
@@ -54,12 +52,11 @@ Configure these repository integrations before the first automated release:
 
 ## Documentation publishing
 
-Python docs are published by `.github/workflows/docs.yml`, not by the release
-workflow. On pull requests, the docs workflow runs `make test-docs` to verify
-that the committed generated output derived from `interfaces/python/source/`
-plus `README.rst` is fresh. On `master`, the same freshness check gates the
-deployment of the already-committed `docs/` Pages tree to the `github-pages`
-environment.
+Python docs are published from the committed `docs/` tree on `master`, which is
+the current GitHub Pages source for this repository. `.github/workflows/docs.yml`
+is a verify-only workflow: on pull requests and on `master`, it runs
+`make test-docs` to verify that the committed generated output derived from
+`interfaces/python/source/` plus `README.rst` is fresh.
 
 ## Recovery
 

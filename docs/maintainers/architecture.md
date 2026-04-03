@@ -31,7 +31,7 @@ Internal-supported surfaces:
 
 - React helpers (`@mapequation/infomap-react`)
 - parser helpers (`@mapequation/infomap-parser`)
-- notebook image and Python-oriented Docker images
+- Python-oriented Docker images
 
 Internal-supported means the surface still matters and should keep building, but
 it is not a primary public contract for release planning.
@@ -45,9 +45,10 @@ Use these ownership rules when making changes:
 - `interfaces/python/source/`
   - documentation source for the published Python docs
 - `docs/`
-  - checked-in Pages tree; the Sphinx-generated site output is generated, while
-    `docs/automation/`, `docs/maintainers/`, and `docs/plans/` remain source-owned
-    maintainer content that is excluded from docs freshness checks
+  - checked-in Pages tree currently served from `master:/docs`; the
+    Sphinx-generated site output is generated, while `docs/automation/`,
+    `docs/maintainers/`, and `docs/plans/` remain source-owned maintainer
+    content that is excluded from docs freshness checks
 - `interfaces/js/generated/`
   - generated metadata consumed by the JS package build
 - `test/fixtures/`
