@@ -10,22 +10,55 @@ namespace {
 
 using infomap::InfomapWrapper;
 
-TEST_CASE("Infomap partitions the two-triangle graph into two modules [fast][core]")
+TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
-  im.addLink(1, 2);
-  im.addLink(2, 3);
-  im.addLink(3, 1);
-  im.addLink(3, 4);
-  im.addLink(4, 5);
-  im.addLink(5, 6);
-  im.addLink(6, 4);
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
 
   im.run();
 
   CHECK(im.numTopModules() == 2);
   CHECK(im.numLevels() == 2);
   CHECK(infomap::test::canonicalPartition(im.getModules()) == std::vector<std::vector<unsigned int>>{{1, 2, 3}, {4, 5, 6}});
+}
+
+TEST_CASE("Infomap partitions the weighted two-triangle fixture into two modules [fast][core]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_weighted.edges");
+
+  im.run();
+
+  CHECK(im.numTopModules() == 2);
+  CHECK(im.numLevels() == 2);
+  CHECK(infomap::test::canonicalPartition(im.getModules()) == std::vector<std::vector<unsigned int>>{{1, 2, 3}, {4, 5, 6}});
+}
+
+TEST_CASE("Recorded teleportation stays stable across trial counts for the directed fixture [fast][core]")
+{
+  auto runFixture = [](unsigned int numTrials, std::vector<std::vector<unsigned int>>& partition, double& codelength, double& indexCodelength) {
+    InfomapWrapper im(infomap::test::defaultFlags("--directed --recorded-teleportation --num-trials " + std::to_string(numTrials)));
+    infomap::test::addEdgeFixtureLinks(im, "graphs/recorded_teleportation_directed.edges");
+    im.run();
+    partition = infomap::test::canonicalPartition(im.getModules());
+    codelength = im.codelength();
+    indexCodelength = im.getIndexCodelength();
+  };
+
+  std::vector<std::vector<unsigned int>> oneTrialPartition;
+  std::vector<std::vector<unsigned int>> twoTrialPartition;
+  double oneTrialCodelength = 0.0;
+  double twoTrialCodelength = 0.0;
+  double oneTrialIndexCodelength = 0.0;
+  double twoTrialIndexCodelength = 0.0;
+
+  runFixture(1, oneTrialPartition, oneTrialCodelength, oneTrialIndexCodelength);
+  runFixture(2, twoTrialPartition, twoTrialCodelength, twoTrialIndexCodelength);
+
+  CHECK(oneTrialPartition == std::vector<std::vector<unsigned int>>{{1, 2, 3}, {4, 5, 6}});
+  CHECK(oneTrialPartition == twoTrialPartition);
+  CHECK(oneTrialCodelength == doctest::Approx(twoTrialCodelength));
+  CHECK(oneTrialIndexCodelength == doctest::Approx(twoTrialIndexCodelength));
 }
 
 TEST_CASE("Precomputed flow rejects first-order input without vertex flows [fast][core]")
@@ -53,7 +86,7 @@ TEST_CASE("Precomputed flow rejects higher-order input without state flows [fast
 TEST_CASE("Precomputed flow fixture remains runnable in C++ tests [fast][core]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--flow-model precomputed"));
-  im.readInputData(infomap::test::repoPath("test/fixtures/twotriangles_flow.net"));
+  im.readInputData(infomap::test::repoPath("test/fixtures/networks/twotriangles_flow.net"));
 
   im.run();
 
@@ -66,7 +99,7 @@ TEST_CASE("Precomputed flow fixture remains runnable in C++ tests [fast][core]")
 TEST_CASE("Higher-order module queries require state ids [fast][core]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
-  im.readInputData(infomap::test::repoPath("examples/networks/states.net"));
+  im.readInputData(infomap::test::repoPath("test/fixtures/networks/states.net"));
 
   im.run();
 

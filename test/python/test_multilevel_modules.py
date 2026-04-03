@@ -25,9 +25,9 @@ def multilevel_modules(im, states):
     return {node: tuple(m) for node, m in modules.items()}
 
 
-def test_multilevel_modules_states(make_infomap, fixture_path):
+def test_multilevel_modules_states(make_infomap, network_fixture_path):
     im = make_infomap(num_trials=5)
-    im.read_file(str(fixture_path("multilayer.net")))
+    im.read_file(str(network_fixture_path("multilayer.net")))
     im.run()
 
     assert im.num_top_modules == 2

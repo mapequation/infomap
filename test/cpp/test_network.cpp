@@ -31,7 +31,7 @@ TEST_CASE("Network reads states fixture as higher-order input [fast][core]")
   config.silent = true;
   Network network(config);
 
-  network.readInputData(infomap::test::repoPath("examples/networks/states.net"));
+  network.readInputData(infomap::test::repoPath("test/fixtures/networks/states.net"));
 
   CHECK(network.haveMemoryInput());
   CHECK(network.numNodes() == 6);
