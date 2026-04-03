@@ -622,6 +622,9 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Info
   const auto numNodes = nodeEnumeration.size();
   const bool lockFirstLoopMoves = m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1;
   const bool recordedTeleportation = m_infomap->recordedTeleportation;
+  const double minimumSingleNodeImprovement = m_infomap->minimumSingleNodeCodelengthImprovement;
+  auto& moduleFlowData = m_moduleFlowData;
+  auto& moduleMembers = m_moduleMembers;
   unsigned int numMoved = 0;
 
   auto* moduleIndices = graph.moduleIndicesData();
@@ -638,7 +641,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Info
     if (dirtyFlags[currentId] == 0u)
       continue;
 
-    if (m_moduleMembers[currentModuleIndex] > 1 && lockFirstLoopMoves)
+    if (moduleMembers[currentModuleIndex] > 1 && lockFirstLoopMoves)
       continue;
 
     deltaFlow.startRound();
@@ -649,7 +652,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Info
     DeltaFlowDataType& oldModuleDelta = deltaFlow[currentModuleIndex];
     oldModuleDelta.module = currentModuleIndex;
 
-    if (m_moduleMembers[currentModuleIndex] > 1 && !m_emptyModules.empty()) {
+    if (moduleMembers[currentModuleIndex] > 1 && !m_emptyModules.empty()) {
       deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
     }
 
@@ -663,12 +666,12 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Info
         auto& deltaEnterExit = moduleDeltaEnterExit[j];
         const auto moduleIndex = deltaEnterExit.module;
         if (moduleIndex == currentModuleIndex) {
-          auto& oldModuleFlowData = m_moduleFlowData[moduleIndex];
+          auto& oldModuleFlowData = moduleFlowData[moduleIndex];
           const double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
           const double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
           deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitOld, deltaEnterOld));
         } else {
-          auto& newModuleFlowData = m_moduleFlowData[moduleIndex];
+          auto& newModuleFlowData = moduleFlowData[moduleIndex];
           const double deltaEnterNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
           const double deltaExitNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
           deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitNew, deltaEnterNew));
@@ -691,10 +694,10 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Info
         const double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
                                                                                    oldModuleDelta,
                                                                                    moduleDeltaEnterExit[j],
-                                                                                   m_moduleFlowData,
-                                                                                   m_moduleMembers);
+                                                                                   moduleFlowData,
+                                                                                   moduleMembers);
 
-        if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement) {
+        if (deltaCodelength < bestDeltaCodelength - minimumSingleNodeImprovement) {
           bestDeltaModule = moduleDeltaEnterExit[j];
           bestDeltaCodelength = deltaCodelength;
         }
@@ -706,23 +709,23 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Info
       }
     }
 
-    if (strongestConnectedModule.module != bestDeltaModule.module && deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + m_infomap->minimumSingleNodeCodelengthImprovement) {
+    if (strongestConnectedModule.module != bestDeltaModule.module && deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + minimumSingleNodeImprovement) {
       bestDeltaModule = strongestConnectedModule;
     }
 
     if (bestDeltaModule.module != currentModuleIndex) {
       const unsigned int bestModuleIndex = bestDeltaModule.module;
-      if (m_moduleMembers[bestModuleIndex] == 0) {
+      if (moduleMembers[bestModuleIndex] == 0) {
         m_emptyModules.pop_back();
       }
-      if (m_moduleMembers[currentModuleIndex] == 1) {
+      if (moduleMembers[currentModuleIndex] == 1) {
         m_emptyModules.push_back(currentModuleIndex);
       }
 
-      m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
+      m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, moduleFlowData, moduleMembers);
 
-      m_moduleMembers[currentModuleIndex] -= 1;
-      m_moduleMembers[bestModuleIndex] += 1;
+      moduleMembers[currentModuleIndex] -= 1;
+      moduleMembers[bestModuleIndex] += 1;
 
       const unsigned int oldModuleIndex = currentModuleIndex;
       moduleIndices[currentId] = bestModuleIndex;
@@ -734,7 +737,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Info
       unsigned int numLinkedNodesInOldModule = 0;
       markNeighboursDirty(graph, currentId, oldModuleIndex, nodeInOldModule, nodeInOldModuleId, numLinkedNodesInOldModule);
 
-      if (numLinkedNodesInOldModule == 1 && m_moduleMembers[oldModuleIndex] == 1) {
+      if (numLinkedNodesInOldModule == 1 && moduleMembers[oldModuleIndex] == 1) {
         moveNodeToPredefinedModuleImpl(graph, nodeInOldModuleId, bestModuleIndex);
         ++numMoved;
         if (nodeInOldModule->degree() > 1) {
@@ -760,6 +763,9 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
   auto numNodes = nodeEnumeration.size();
   const bool lockFirstLoopMoves = m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1;
   const bool recordedTeleportation = m_infomap->recordedTeleportation;
+  const double minimumSingleNodeImprovement = m_infomap->minimumSingleNodeCodelengthImprovement;
+  auto& moduleFlowData = m_moduleFlowData;
+  auto& moduleMembers = m_moduleMembers;
   unsigned int numMoved = 0;
 
   // Create map with module links
@@ -775,7 +781,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
       continue;
 
     // If other nodes have moved here, don't move away on first loop
-    if (m_moduleMembers[currentModuleIndex] > 1 && lockFirstLoopMoves)
+    if (moduleMembers[currentModuleIndex] > 1 && lockFirstLoopMoves)
       continue;
 
     // If no links connecting this node with other nodes, it won't move into others,
@@ -793,7 +799,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
     oldModuleDelta.module = currentModuleIndex; // Make sure index is correct if created new
 
     // Option to move to empty module (if node not already alone)
-    if (m_moduleMembers[currentModuleIndex] > 1 && !m_emptyModules.empty()) {
+    if (moduleMembers[currentModuleIndex] > 1 && !m_emptyModules.empty()) {
       deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
     }
 
@@ -809,12 +815,12 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
         auto& deltaEnterExit = moduleDeltaEnterExit[j];
         auto moduleIndex = deltaEnterExit.module;
         if (moduleIndex == currentModuleIndex) {
-          auto& oldModuleFlowData = m_moduleFlowData[moduleIndex];
+          auto& oldModuleFlowData = moduleFlowData[moduleIndex];
           double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
           double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
           deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitOld, deltaEnterOld));
         } else {
-          auto& newModuleFlowData = m_moduleFlowData[moduleIndex];
+          auto& newModuleFlowData = moduleFlowData[moduleIndex];
           double deltaEnterNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
           double deltaExitNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
           deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitNew, deltaEnterNew));
@@ -839,10 +845,10 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
         double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
                                                                             oldModuleDelta,
                                                                             moduleDeltaEnterExit[j],
-                                                                            m_moduleFlowData,
-                                                                            m_moduleMembers);
+                                                                            moduleFlowData,
+                                                                            moduleMembers);
 
-        if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement) {
+        if (deltaCodelength < bestDeltaCodelength - minimumSingleNodeImprovement) {
           bestDeltaModule = moduleDeltaEnterExit[j];
           bestDeltaCodelength = deltaCodelength;
         }
@@ -856,7 +862,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
     }
 
     // Prefer strongest connected module if equal delta codelength
-    if (strongestConnectedModule.module != bestDeltaModule.module && deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + m_infomap->minimumSingleNodeCodelengthImprovement) {
+    if (strongestConnectedModule.module != bestDeltaModule.module && deltaCodelengthOnStrongestConnectedModule <= bestDeltaCodelength + minimumSingleNodeImprovement) {
       bestDeltaModule = strongestConnectedModule;
     }
 
@@ -864,17 +870,17 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
     if (bestDeltaModule.module != currentModuleIndex) {
       unsigned int bestModuleIndex = bestDeltaModule.module;
       // Update empty module vector
-      if (m_moduleMembers[bestModuleIndex] == 0) {
+      if (moduleMembers[bestModuleIndex] == 0) {
         m_emptyModules.pop_back();
       }
-      if (m_moduleMembers[currentModuleIndex] == 1) {
+      if (moduleMembers[currentModuleIndex] == 1) {
         m_emptyModules.push_back(currentModuleIndex);
       }
 
-      m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
+      m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, moduleFlowData, moduleMembers);
 
-      m_moduleMembers[currentModuleIndex] -= 1;
-      m_moduleMembers[bestModuleIndex] += 1;
+      moduleMembers[currentModuleIndex] -= 1;
+      moduleMembers[bestModuleIndex] += 1;
 
       unsigned int oldModuleIndex = currentModuleIndex;
       graph.moduleIndex(currentId) = bestModuleIndex;
@@ -888,7 +894,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleImpl(Grap
       markNeighboursDirty(graph, currentId, oldModuleIndex, nodeInOldModule, nodeInOldModuleId, numLinkedNodesInOldModule);
 
       // Move single connected nodes to same module
-      if (numLinkedNodesInOldModule == 1 && m_moduleMembers[oldModuleIndex] == 1) {
+      if (numLinkedNodesInOldModule == 1 && moduleMembers[oldModuleIndex] == 1) {
         moveNodeToPredefinedModuleImpl(graph, nodeInOldModuleId, bestModuleIndex);
         ++numMoved;
         // Mark neighbours as dirty
