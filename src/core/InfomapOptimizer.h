@@ -72,11 +72,22 @@ protected:
 
   void addNeighbourModuleLinks(InfomapBase::CsrBackend& graph, InfomapBase::CsrBackend::ActiveNodeId currentId, VectorMap<DeltaFlowDataType>& deltaFlow);
 
+  void addNeighbourModuleLinks(InfomapBase::PointerBackend& graph,
+                               InfomapBase::PointerBackend::ActiveNodeId currentId,
+                               VectorMap<DeltaFlowDataType>& deltaFlow);
+
   template <typename Graph>
   void addNeighbourModuleLinks(Graph& graph, typename Graph::ActiveNodeId currentId, VectorMap<DeltaFlowDataType>& deltaFlow);
 
   void accumulateMoveDelta(InfomapBase::CsrBackend& graph,
                            InfomapBase::CsrBackend::ActiveNodeId currentId,
+                           unsigned int oldModule,
+                           unsigned int newModule,
+                           DeltaFlowDataType& oldModuleDelta,
+                           DeltaFlowDataType& newModuleDelta);
+
+  void accumulateMoveDelta(InfomapBase::PointerBackend& graph,
+                           InfomapBase::PointerBackend::ActiveNodeId currentId,
                            unsigned int oldModule,
                            unsigned int newModule,
                            DeltaFlowDataType& oldModuleDelta,
@@ -97,6 +108,13 @@ protected:
                            InfomapBase::CsrBackend::ActiveNodeId& nodeInOldModuleId,
                            unsigned int& numLinkedNodesInOldModule);
 
+  void markNeighboursDirty(InfomapBase::PointerBackend& graph,
+                           InfomapBase::PointerBackend::ActiveNodeId currentId,
+                           unsigned int oldModuleIndex,
+                           InfoNode*& nodeInOldModule,
+                           InfomapBase::PointerBackend::ActiveNodeId& nodeInOldModuleId,
+                           unsigned int& numLinkedNodesInOldModule);
+
   template <typename Graph>
   void markNeighboursDirty(Graph& graph,
                            typename Graph::ActiveNodeId currentId,
@@ -106,6 +124,8 @@ protected:
                            unsigned int& numLinkedNodesInOldModule);
 
   void markNodeNeighboursDirty(InfomapBase::CsrBackend& graph, InfomapBase::CsrBackend::ActiveNodeId nodeId);
+
+  void markNodeNeighboursDirty(InfomapBase::PointerBackend& graph, InfomapBase::PointerBackend::ActiveNodeId nodeId);
 
   template <typename Graph>
   void markNodeNeighboursDirty(Graph& graph, typename Graph::ActiveNodeId nodeId);
@@ -246,6 +266,20 @@ void InfomapOptimizer<Objective>::addNeighbourModuleLinks(InfomapBase::CsrBacken
 }
 
 template <typename Objective>
+void InfomapOptimizer<Objective>::addNeighbourModuleLinks(InfomapBase::PointerBackend& graph,
+                                                          InfomapBase::PointerBackend::ActiveNodeId currentId,
+                                                          VectorMap<DeltaFlowDataType>& deltaFlow)
+{
+  graph.forEachOutEdge(currentId, [&](auto, const InfoNode& neighbour, const auto& edge) {
+    deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, detail::edgeFlow(edge), 0.0));
+  });
+
+  graph.forEachInEdge(currentId, [&](auto, const InfoNode& neighbour, const auto& edge) {
+    deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0.0, detail::edgeFlow(edge)));
+  });
+}
+
+template <typename Objective>
 template <typename Graph>
 void InfomapOptimizer<Objective>::addNeighbourModuleLinks(Graph& graph, typename Graph::ActiveNodeId currentId, VectorMap<DeltaFlowDataType>& deltaFlow)
 {
@@ -288,6 +322,33 @@ void InfomapOptimizer<Objective>::accumulateMoveDelta(InfomapBase::CsrBackend& g
       newModuleDelta.deltaEnter += inEdges.flows[i];
     }
   }
+}
+
+template <typename Objective>
+void InfomapOptimizer<Objective>::accumulateMoveDelta(InfomapBase::PointerBackend& graph,
+                                                      InfomapBase::PointerBackend::ActiveNodeId currentId,
+                                                      unsigned int oldModule,
+                                                      unsigned int newModule,
+                                                      DeltaFlowDataType& oldModuleDelta,
+                                                      DeltaFlowDataType& newModuleDelta)
+{
+  graph.forEachOutEdge(currentId, [&](auto, const InfoNode& neighbour, const auto& edge) {
+    const unsigned int otherModule = neighbour.index;
+    if (otherModule == oldModule) {
+      oldModuleDelta.deltaExit += detail::edgeFlow(edge);
+    } else if (otherModule == newModule) {
+      newModuleDelta.deltaExit += detail::edgeFlow(edge);
+    }
+  });
+
+  graph.forEachInEdge(currentId, [&](auto, const InfoNode& neighbour, const auto& edge) {
+    const unsigned int otherModule = neighbour.index;
+    if (otherModule == oldModule) {
+      oldModuleDelta.deltaEnter += detail::edgeFlow(edge);
+    } else if (otherModule == newModule) {
+      newModuleDelta.deltaEnter += detail::edgeFlow(edge);
+    }
+  });
 }
 
 template <typename Objective>
@@ -353,6 +414,33 @@ void InfomapOptimizer<Objective>::markNeighboursDirty(InfomapBase::CsrBackend& g
 }
 
 template <typename Objective>
+void InfomapOptimizer<Objective>::markNeighboursDirty(InfomapBase::PointerBackend& graph,
+                                                      InfomapBase::PointerBackend::ActiveNodeId currentId,
+                                                      unsigned int oldModuleIndex,
+                                                      InfoNode*& nodeInOldModule,
+                                                      InfomapBase::PointerBackend::ActiveNodeId& nodeInOldModuleId,
+                                                      unsigned int& numLinkedNodesInOldModule)
+{
+  graph.forEachOutEdge(currentId, [&](auto neighbourId, InfoNode& neighbour, const auto&) {
+    neighbour.dirty = true;
+    if (neighbour.index == oldModuleIndex) {
+      nodeInOldModule = &neighbour;
+      nodeInOldModuleId = neighbourId;
+      ++numLinkedNodesInOldModule;
+    }
+  });
+
+  graph.forEachInEdge(currentId, [&](auto neighbourId, InfoNode& neighbour, const auto&) {
+    neighbour.dirty = true;
+    if (neighbour.index == oldModuleIndex) {
+      nodeInOldModule = &neighbour;
+      nodeInOldModuleId = neighbourId;
+      ++numLinkedNodesInOldModule;
+    }
+  });
+}
+
+template <typename Objective>
 template <typename Graph>
 void InfomapOptimizer<Objective>::markNeighboursDirty(Graph& graph,
                                                       typename Graph::ActiveNodeId currentId,
@@ -394,6 +482,18 @@ void InfomapOptimizer<Objective>::markNodeNeighboursDirty(InfomapBase::CsrBacken
   for (std::size_t i = 0; i < inEdges.size; ++i) {
     dirtyFlags[inEdges.targets[i]] = 1u;
   }
+}
+
+template <typename Objective>
+void InfomapOptimizer<Objective>::markNodeNeighboursDirty(InfomapBase::PointerBackend& graph, InfomapBase::PointerBackend::ActiveNodeId nodeId)
+{
+  graph.forEachOutEdge(nodeId, [&](auto, InfoNode& neighbour, const auto&) {
+    neighbour.dirty = true;
+  });
+
+  graph.forEachInEdge(nodeId, [&](auto, InfoNode& neighbour, const auto&) {
+    neighbour.dirty = true;
+  });
 }
 
 template <typename Objective>
