@@ -22,7 +22,7 @@ This document only covers local build and verification.
 Compile the C++ binary from the repository root:
 
 ```bash
-make
+make build-native
 ```
 
 On macOS with Homebrew `libomp`, use:
@@ -31,8 +31,11 @@ On macOS with Homebrew `libomp`, use:
 PATH="/opt/homebrew/bin:$PATH" \
 CXXFLAGS="-I/opt/homebrew/opt/libomp/include" \
 LDFLAGS="-L/opt/homebrew/opt/libomp/lib" \
-make
+make build-native
 ```
+
+Use `make help` to see the grouped target surface, and `make doctor` to inspect
+tool availability plus the active build flags on the current machine.
 
 ## JavaScript package
 
@@ -46,11 +49,11 @@ cd emsdk
 source ./emsdk_env.sh
 cd /path/to/infomap
 npm ci
-make js-worker
-make js-test
+make build-js
+make test-js
 ```
 
-`make js-worker` builds the worker and bundles the published package. `make js-test`
+`make build-js` builds the worker and bundles the published package. `make test-js`
 packs the npm package and validates the local example against the packed artifact.
 
 ## Python package
@@ -74,22 +77,25 @@ python -m pip install -r requirements_dev.txt
 PATH="/opt/homebrew/bin:$PATH" \
 CXXFLAGS="-I/opt/homebrew/opt/libomp/include" \
 LDFLAGS="-L/opt/homebrew/opt/libomp/lib" \
-make python
+make build-python
 
-make py-local-install
-make py-test
+make dev-python-install
+make test-python
 ```
 
 Build source and wheel distributions locally when needed:
 
 ```bash
-make pypi-dist
+make release-python-dist
 ```
 
 Generate the Python documentation locally:
 
 ```bash
-make py-doc
+make build-docs
 ```
 
 This writes the static site into `docs/`.
+
+Advanced or internal targets such as `R`, `R-build`, and `docker-*` still exist in
+the Makefile, but they are no longer part of the primary development surface.
