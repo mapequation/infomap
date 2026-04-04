@@ -344,4 +344,28 @@ TEST_CASE("Invalid cluster-data fixtures fail deterministically [fast][core][par
       std::runtime_error);
 }
 
+TEST_CASE("Invalid cluster-data failure does not poison later valid init on the same instance [fast][core][partition][parser][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+
+  im.initNetwork(im.network());
+  CHECK_THROWS_WITH_AS(
+      im.initPartition(infomap::test::clusterFixturePath("invalid_missing_module.clu"), false, &im.network()),
+      "Couldn't parse node key and cluster id from line '1'",
+      std::runtime_error);
+
+  im.initNetwork(im.network());
+  im.initPartition(infomap::test::clusterFixturePath("twotriangles_two_modules.clu"), false, &im.network());
+
+  CHECK(im.numLeafNodes() == 6);
+  CHECK(im.numTopModules() == 2);
+  CHECK(im.numLevels() == 2);
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
+}
+
 } // namespace
