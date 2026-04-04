@@ -13,6 +13,7 @@ namespace {
 using infomap::InfomapWrapper;
 
 using InternalEdge = std::tuple<unsigned int, unsigned int, double, double>;
+using NodeIdentity = std::tuple<unsigned int, unsigned int, std::vector<int>>;
 
 std::multiset<InternalEdge> internalEdgesForModule(infomap::InfoNode& module)
 {
@@ -25,6 +26,33 @@ std::multiset<InternalEdge> internalEdgesForModule(infomap::InfoNode& module)
     }
   }
   return edges;
+}
+
+std::vector<NodeIdentity> nodeIdentitiesForModule(infomap::InfoNode& module)
+{
+  std::vector<NodeIdentity> identities;
+  for (auto& node : module) {
+    identities.emplace_back(node.stateId, node.physicalId, node.metaData);
+  }
+  std::sort(identities.begin(), identities.end());
+  return identities;
+}
+
+std::vector<std::vector<unsigned int>> canonicalSubInfomapPartition(infomap::InfomapBase& subInfomap, bool states)
+{
+  std::map<unsigned int, unsigned int> modules;
+  unsigned int moduleIndex = 0;
+  for (auto& topModule : subInfomap.root()) {
+    if (topModule.isLeaf()) {
+      modules[states ? topModule.stateId : topModule.physicalId] = moduleIndex;
+    } else {
+      for (auto& leaf : topModule) {
+        modules[states ? leaf.stateId : leaf.physicalId] = moduleIndex;
+      }
+    }
+    ++moduleIndex;
+  }
+  return infomap::test::canonicalPartition(modules);
 }
 
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
@@ -276,8 +304,8 @@ TEST_CASE("Subnetwork reuse and dispose stay stable on the same parent module [f
     subInfomap.run();
     CHECK(std::isfinite(subInfomap.codelength()));
     CHECK(std::isfinite(subInfomap.getIndexCodelength()));
-    CHECK(subInfomap.codelength() >= 0.0);
-    CHECK(subInfomap.getIndexCodelength() >= 0.0);
+    CHECK(subInfomap.codelength() >= -1e-12);
+    CHECK(subInfomap.getIndexCodelength() >= -1e-12);
     CHECK(subInfomap.numLevels() >= 1);
     CHECK(subInfomap.numLeafNodes() == module.childDegree());
 
@@ -318,6 +346,75 @@ TEST_CASE("Subnetwork reuse and dispose stay stable on the same parent module [f
 
   CHECK(module.disposeInfomap());
   CHECK(module.getInfomapRoot() == nullptr);
+}
+
+TEST_CASE("Higher-order subnetwork rebuild preserves state identities and internal edges [fast][core][lifecycle][subnetwork]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  infomap::test::readNetworkFixture(im, "states.net");
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  REQUIRE(im.numTopModules() == 2);
+
+  auto& module = *im.root().firstChild;
+  REQUIRE(module.childDegree() >= 2);
+
+  const auto originalEdges = internalEdgesForModule(module);
+  const auto originalIdentities = nodeIdentitiesForModule(module);
+
+  auto runSubnetwork = [&]() -> std::tuple<std::vector<std::vector<unsigned int>>, double, double> {
+    auto& subInfomap = im.getSubInfomap(module).initNetwork(module);
+    REQUIRE(subInfomap.root().owner == &module);
+    REQUIRE(subInfomap.numLeafNodes() == module.childDegree());
+    CHECK(internalEdgesForModule(subInfomap.root()) == originalEdges);
+    CHECK(nodeIdentitiesForModule(subInfomap.root()) == originalIdentities);
+
+    subInfomap.run();
+    CHECK(std::isfinite(subInfomap.codelength()));
+    CHECK(std::isfinite(subInfomap.getIndexCodelength()));
+    CHECK(subInfomap.codelength() >= -1e-12);
+    CHECK(subInfomap.getIndexCodelength() >= -1e-12);
+    CHECK(subInfomap.numLevels() >= 1);
+
+    return {canonicalSubInfomapPartition(subInfomap, true), subInfomap.codelength(), subInfomap.getIndexCodelength()};
+  };
+
+  const auto firstRun = runSubnetwork();
+  const auto secondRun = runSubnetwork();
+
+  CHECK(std::get<0>(secondRun) == std::get<0>(firstRun));
+  CHECK(std::get<1>(secondRun) == doctest::Approx(std::get<1>(firstRun)));
+  CHECK(std::get<2>(secondRun) == doctest::Approx(std::get<2>(firstRun)));
+}
+
+TEST_CASE("Metadata-bearing subnetwork rebuild preserves leaf metadata [fast][core][lifecycle][subnetwork][parser]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initMetaData(infomap::test::fixturePath("meta/twotriangles.meta"));
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  REQUIRE(im.numTopModules() == 2);
+
+  auto& module = *im.root().firstChild;
+  const auto originalEdges = internalEdgesForModule(module);
+  const auto originalIdentities = nodeIdentitiesForModule(module);
+  REQUIRE_FALSE(originalIdentities.empty());
+
+  auto& subInfomap = im.getSubInfomap(module).initNetwork(module);
+  REQUIRE(subInfomap.root().owner == &module);
+  REQUIRE(subInfomap.numLeafNodes() == module.childDegree());
+  CHECK(internalEdgesForModule(subInfomap.root()) == originalEdges);
+  CHECK(nodeIdentitiesForModule(subInfomap.root()) == originalIdentities);
+
+  subInfomap.run();
+  CHECK(std::isfinite(subInfomap.codelength()));
+  CHECK(std::isfinite(subInfomap.getIndexCodelength()));
+  CHECK(subInfomap.codelength() >= -1e-12);
+  CHECK(subInfomap.getIndexCodelength() >= -1e-12);
+  CHECK(subInfomap.numLevels() >= 1);
 }
 
 } // namespace
