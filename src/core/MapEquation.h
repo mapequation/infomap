@@ -199,27 +199,30 @@ double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelengthOnMovingN
   using infomath::plogp;
   unsigned int oldModule = oldModuleDelta.module;
   unsigned int newModule = newModuleDelta.module;
+  const auto& currentData = current.data;
+  const auto& oldModuleData = moduleFlowData[oldModule];
+  const auto& newModuleData = moduleFlowData[newModule];
   double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
   double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
   double delta_enter = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
 
-  double delta_enter_log_enter = -plogp(moduleFlowData[oldModule].enterFlow)
-      - plogp(moduleFlowData[newModule].enterFlow)
-      + plogp(moduleFlowData[oldModule].enterFlow - current.data.enterFlow + deltaEnterExitOldModule)
-      + plogp(moduleFlowData[newModule].enterFlow + current.data.enterFlow - deltaEnterExitNewModule);
+  double delta_enter_log_enter = -plogp(oldModuleData.enterFlow)
+      - plogp(newModuleData.enterFlow)
+      + plogp(oldModuleData.enterFlow - currentData.enterFlow + deltaEnterExitOldModule)
+      + plogp(newModuleData.enterFlow + currentData.enterFlow - deltaEnterExitNewModule);
 
-  double delta_exit_log_exit = -plogp(moduleFlowData[oldModule].exitFlow)
-      - plogp(moduleFlowData[newModule].exitFlow)
-      + plogp(moduleFlowData[oldModule].exitFlow - current.data.exitFlow + deltaEnterExitOldModule)
-      + plogp(moduleFlowData[newModule].exitFlow + current.data.exitFlow - deltaEnterExitNewModule);
+  double delta_exit_log_exit = -plogp(oldModuleData.exitFlow)
+      - plogp(newModuleData.exitFlow)
+      + plogp(oldModuleData.exitFlow - currentData.exitFlow + deltaEnterExitOldModule)
+      + plogp(newModuleData.exitFlow + currentData.exitFlow - deltaEnterExitNewModule);
 
-  double delta_flow_log_flow = -plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow)
-      - plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow)
-      + plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow
-              - current.data.exitFlow - current.data.flow + deltaEnterExitOldModule)
-      + plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow
-              + current.data.exitFlow + current.data.flow - deltaEnterExitNewModule);
+  double delta_flow_log_flow = -plogp(oldModuleData.exitFlow + oldModuleData.flow)
+      - plogp(newModuleData.exitFlow + newModuleData.flow)
+      + plogp(oldModuleData.exitFlow + oldModuleData.flow
+              - currentData.exitFlow - currentData.flow + deltaEnterExitOldModule)
+      + plogp(newModuleData.exitFlow + newModuleData.flow
+              + currentData.exitFlow + currentData.flow - deltaEnterExitNewModule);
 
   double deltaL = delta_enter - delta_enter_log_enter - delta_exit_log_exit + delta_flow_log_flow;
   return deltaL;
