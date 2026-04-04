@@ -300,18 +300,23 @@ void InfoNode::remove(bool removeChildren) noexcept
 
 void InfoNode::deleteChildren() noexcept
 {
-  if (firstChild == nullptr)
-    return;
+  auto delete_child_chain = [](InfoNode*& first, InfoNode*& last) {
+    if (first == nullptr)
+      return;
 
-  child_iterator nodeIt = begin_child();
-  do {
-    InfoNode* n = nodeIt.current();
-    ++nodeIt;
-    delete n;
-  } while (nodeIt.current() != nullptr);
+    InfoNode* node = first;
+    while (node != nullptr) {
+      InfoNode* next_node = node->next;
+      delete node;
+      node = next_node;
+    }
 
-  firstChild = nullptr;
-  lastChild = nullptr;
+    first = nullptr;
+    last = nullptr;
+  };
+
+  delete_child_chain(firstChild, lastChild);
+  delete_child_chain(collapsedFirstChild, collapsedLastChild);
   m_childDegree = 0;
 }
 
