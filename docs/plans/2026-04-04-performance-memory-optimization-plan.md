@@ -167,7 +167,8 @@ Exit gate:
 Checkpoint status (2026-04-04, post-hardening): `sufficient for re-ranking`
 - same-instance rerun and recovery coverage now includes hard partition, higher-order `states`, file-backed multilayer, subnetwork rebuild/dispose, tree cluster-data reuse, invalid `.clu` recovery, invalid `.tree` recovery, and repeated `readInputData(...)` accumulation on the same wrapper
 - targeted sanitizer coverage is green on the touched lifecycle and partition surfaces
-- no new lifecycle bug is currently exposed by the expanded coverage, so additional Phase 1-only slices are temporarily deprioritized in favor of a stronger benchmark checkpoint and workstream re-ranking
+- a same-instance hard-partition + metadata rerun bug was exposed and fixed by clearing stale hard-partition restore state on fresh `initNetwork(...)`; targeted sanitizer coverage remains green after the fix
+- no additional lifecycle bug is currently exposed by the expanded coverage, so further Phase 1-only slices are again temporarily deprioritized in favor of benchmark-driven workstream re-ranking
 
 ### Phase 2: `InfoNode` Footprint Reduction
 
@@ -196,6 +197,14 @@ Rules:
 Exit gate:
 - at least one measurable RSS win on a targeted workload
 - no >3% runtime loss on the large first-order cases unless explicitly accepted as a higher-order memory tradeoff
+
+Checkpoint status (2026-04-04, post-node-budget extension): `still deferred`
+- benchmark reporting now includes metadata-bearing cases and explicit `node_budget_peak_rss_ratio`
+- observed node-budget ratios remain low on the newly added cases:
+  - `states_meta`: about `0.0009`
+  - `twotriangles_meta`: about `0.0009`
+  - `state_ring_5k`: about `0.0678`
+- together with the earlier `sparse_100k` / `ring_of_cliques_100k` ratios, this keeps `InfoNode` footprint reduction out of the top slot for the next slice
 
 ### Phase 3: Current Adjacency / Edge Overhead
 
