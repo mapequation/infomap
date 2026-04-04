@@ -121,6 +121,9 @@ def benchmark_case(
             run_sample["repeat"] = repeat + 1
             run_samples.append(run_sample)
 
+    rebuild_total_stats = metric_stats([float(run.get("rebuild", {}).get("total_sec", 0.0)) for run in run_samples])
+    rebuild_network_stats = metric_stats([float(run.get("rebuild", {}).get("network_sec", 0.0)) for run in run_samples])
+    rebuild_module_stats = metric_stats([float(run.get("rebuild", {}).get("module_sec", 0.0)) for run in run_samples])
     total_stats = metric_stats([float(sample["total_sec"]) for sample in samples])
     run_stats = metric_stats([float(run["run_sec"]) for run in run_samples])
     read_input_stats = metric_stats([float(sample["read_input_sec"]) for sample in samples])
@@ -159,6 +162,21 @@ def benchmark_case(
         "directed_input": samples[0]["directed_input"],
         "node_size_bytes": samples[0]["node_size_bytes"],
         "edge_size_bytes": samples[0]["edge_size_bytes"],
+        "rebuild": {
+            "median_total_sec": statistics.median(float(run.get("rebuild", {}).get("total_sec", 0.0)) for run in run_samples),
+            "mean_total_sec": rebuild_total_stats["mean"],
+            "stdev_total_sec": rebuild_total_stats["stdev"],
+            "cv_total_sec": rebuild_total_stats["cv"],
+            "median_network_sec": statistics.median(float(run.get("rebuild", {}).get("network_sec", 0.0)) for run in run_samples),
+            "mean_network_sec": rebuild_network_stats["mean"],
+            "median_module_sec": statistics.median(float(run.get("rebuild", {}).get("module_sec", 0.0)) for run in run_samples),
+            "mean_module_sec": rebuild_module_stats["mean"],
+            "median_total_calls": statistics.median(int(run.get("rebuild", {}).get("total_calls", 0)) for run in run_samples),
+            "median_network_calls": statistics.median(int(run.get("rebuild", {}).get("network_calls", 0)) for run in run_samples),
+            "median_module_calls": statistics.median(int(run.get("rebuild", {}).get("module_calls", 0)) for run in run_samples),
+            "peak_rss_bytes_max": max(int(run.get("rebuild", {}).get("peak_rss_bytes_max", 0)) for run in run_samples),
+            "peak_rss_delta_bytes_max": max(int(run.get("rebuild", {}).get("peak_rss_delta_bytes_max", 0)) for run in run_samples),
+        },
     }
 
 

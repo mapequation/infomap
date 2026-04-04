@@ -64,7 +64,40 @@ struct RunSample {
   unsigned int numTopModules = 0;
   unsigned int numLevels = 0;
   double codelength = 0.0;
+  infomap::InfomapBase::RebuildBenchmarkStats rebuildStats;
 };
+
+void aggregateRebuildStats(
+    infomap::InfomapBase::RebuildBenchmarkStats& total,
+    const infomap::InfomapBase::RebuildBenchmarkStats& sample)
+{
+  total.networkCalls += sample.networkCalls;
+  total.moduleCalls += sample.moduleCalls;
+  total.totalCalls += sample.totalCalls;
+  total.networkSec += sample.networkSec;
+  total.moduleSec += sample.moduleSec;
+  total.totalSec += sample.totalSec;
+  if (sample.peakRssBytesMax > total.peakRssBytesMax) {
+    total.peakRssBytesMax = sample.peakRssBytesMax;
+  }
+  if (sample.peakRssDeltaBytesMax > total.peakRssDeltaBytesMax) {
+    total.peakRssDeltaBytesMax = sample.peakRssDeltaBytesMax;
+  }
+}
+
+void printRebuildStats(const infomap::InfomapBase::RebuildBenchmarkStats& stats)
+{
+  std::cout << "{";
+  std::cout << "\"network_calls\":" << stats.networkCalls << ",";
+  std::cout << "\"module_calls\":" << stats.moduleCalls << ",";
+  std::cout << "\"total_calls\":" << stats.totalCalls << ",";
+  std::cout << "\"network_sec\":" << stats.networkSec << ",";
+  std::cout << "\"module_sec\":" << stats.moduleSec << ",";
+  std::cout << "\"total_sec\":" << stats.totalSec << ",";
+  std::cout << "\"peak_rss_bytes_max\":" << stats.peakRssBytesMax << ",";
+  std::cout << "\"peak_rss_delta_bytes_max\":" << stats.peakRssDeltaBytesMax;
+  std::cout << "}";
+}
 
 void printRunSample(const RunSample& sample)
 {
@@ -76,7 +109,9 @@ void printRunSample(const RunSample& sample)
   std::cout << "\"peak_rss_bytes\":" << sample.peakRssBytes << ",";
   std::cout << "\"num_top_modules\":" << sample.numTopModules << ",";
   std::cout << "\"num_levels\":" << sample.numLevels << ",";
-  std::cout << "\"codelength\":" << sample.codelength;
+  std::cout << "\"codelength\":" << sample.codelength << ",";
+  std::cout << "\"rebuild\":";
+  printRebuildStats(sample.rebuildStats);
   std::cout << "}";
 }
 
@@ -142,16 +177,19 @@ int main(int argc, char* argv[])
     runs.reserve(static_cast<std::size_t>(iterations));
     double totalRunSec = 0.0;
     unsigned long long peakRss = 0;
+    infomap::InfomapBase::RebuildBenchmarkStats totalRebuildStats;
 
     for (int iteration = 0; iteration < iterations; ++iteration) {
       infomap::Stopwatch runTimer(true);
       im.run();
       const double runSec = runTimer.getElapsedTimeInSec();
       const auto currentPeakRss = peakRssBytes();
+      const auto runRebuildStats = im.getRebuildBenchmarkStats();
       totalRunSec += runSec;
       if (currentPeakRss > peakRss) {
         peakRss = currentPeakRss;
       }
+      aggregateRebuildStats(totalRebuildStats, runRebuildStats);
       runs.push_back(RunSample{
           static_cast<unsigned int>(iteration + 1),
           0.0,
@@ -161,6 +199,7 @@ int main(int argc, char* argv[])
           im.numTopModules(),
           im.numLevels(),
           im.codelength(),
+          runRebuildStats,
       });
     }
 
@@ -182,6 +221,9 @@ int main(int argc, char* argv[])
     std::cout << "\"codelength\":" << im.codelength() << ",";
     std::cout << "\"higher_order_input\":" << (higherOrderInput ? "true" : "false") << ",";
     std::cout << "\"directed_input\":" << (directedInput ? "true" : "false") << ",";
+    std::cout << "\"rebuild\":";
+    printRebuildStats(totalRebuildStats);
+    std::cout << ",";
     std::cout << "\"runs\":[";
     for (std::size_t i = 0; i < runs.size(); ++i) {
       if (i > 0) {

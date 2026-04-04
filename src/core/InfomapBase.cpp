@@ -36,6 +36,54 @@
 #include <omp.h>
 #endif
 
+#if defined(__unix__) || defined(__APPLE__)
+#include <sys/resource.h>
+#endif
+
+namespace {
+
+unsigned long long currentPeakRssBytes()
+{
+#if defined(__unix__) || defined(__APPLE__)
+  struct rusage usage {};
+  if (getrusage(RUSAGE_SELF, &usage) != 0) {
+    return 0;
+  }
+#if defined(__APPLE__)
+  return static_cast<unsigned long long>(usage.ru_maxrss);
+#else
+  return static_cast<unsigned long long>(usage.ru_maxrss) * 1024ULL;
+#endif
+#else
+  return 0;
+#endif
+}
+
+void recordRebuildBenchmarkSample(
+    infomap::InfomapBase::RebuildBenchmarkStats& stats,
+    bool moduleRebuild,
+    double elapsedSec,
+    unsigned long long startPeakRssBytes)
+{
+  const auto endPeakRssBytes = currentPeakRssBytes();
+  const auto peakRssDeltaBytes = endPeakRssBytes > startPeakRssBytes ? endPeakRssBytes - startPeakRssBytes : 0ULL;
+
+  if (moduleRebuild) {
+    ++stats.moduleCalls;
+    stats.moduleSec += elapsedSec;
+  } else {
+    ++stats.networkCalls;
+    stats.networkSec += elapsedSec;
+  }
+
+  ++stats.totalCalls;
+  stats.totalSec += elapsedSec;
+  stats.peakRssBytesMax = std::max(stats.peakRssBytesMax, endPeakRssBytes);
+  stats.peakRssDeltaBytesMax = std::max(stats.peakRssDeltaBytesMax, peakRssDeltaBytes);
+}
+
+} // namespace
+
 namespace infomap {
 
 std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)
@@ -163,6 +211,8 @@ void InfomapBase::run(Network& network)
 {
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
+
+  resetRebuildBenchmarkStats();
 
   // Reset the RNG for each run so a reused instance stays deterministic with a fixed seed.
   m_rand.seed(seedToRandomNumberGenerator);
@@ -741,6 +791,9 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
 
 void InfomapBase::generateSubNetwork(Network& network)
 {
+  Stopwatch rebuildTimer(true);
+  const auto rebuildPeakRssBefore = currentPeakRssBytes();
+
   unsigned int numNodes = network.numNodes();
   auto& metaData = network.metaData();
   numMetaDataDimensions = network.numMetaDataColumns();
@@ -873,10 +926,15 @@ void InfomapBase::generateSubNetwork(Network& network)
       }
     }
   }
+
+  recordRebuildBenchmarkSample(*m_rebuildBenchmarkStats, false, rebuildTimer.getElapsedTimeInSec(), rebuildPeakRssBefore);
 }
 
 void InfomapBase::generateSubNetwork(InfoNode& parent)
 {
+  Stopwatch rebuildTimer(true);
+  const auto rebuildPeakRssBefore = currentPeakRssBytes();
+
   // Store parent module
   m_root.owner = &parent;
   m_root.data = parent.data;
@@ -909,6 +967,8 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
       }
     }
   }
+
+  recordRebuildBenchmarkSample(*m_rebuildBenchmarkStats, true, rebuildTimer.getElapsedTimeInSec(), rebuildPeakRssBefore);
 }
 
 void InfomapBase::init()
