@@ -63,14 +63,27 @@ void recordRebuildBenchmarkSample(
     infomap::InfomapBase::RebuildBenchmarkStats& stats,
     bool moduleRebuild,
     double elapsedSec,
-    unsigned long long startPeakRssBytes)
+    unsigned long long startPeakRssBytes,
+    unsigned int moduleSize = 0)
 {
   const auto endPeakRssBytes = currentPeakRssBytes();
   const auto peakRssDeltaBytes = endPeakRssBytes > startPeakRssBytes ? endPeakRssBytes - startPeakRssBytes : 0ULL;
 
   if (moduleRebuild) {
+    auto moduleSizeBucketIndex = [](unsigned int size) {
+      if (size <= 2) return 0U;
+      if (size <= 4) return 1U;
+      if (size <= 8) return 2U;
+      if (size <= 16) return 3U;
+      if (size <= 32) return 4U;
+      if (size <= 64) return 5U;
+      return 6U;
+    };
     ++stats.moduleCalls;
     stats.moduleSec += elapsedSec;
+    const auto bucketIndex = moduleSizeBucketIndex(moduleSize);
+    ++stats.moduleSizeBucketCalls[bucketIndex];
+    stats.moduleSizeBucketSec[bucketIndex] += elapsedSec;
   } else {
     ++stats.networkCalls;
     stats.networkSec += elapsedSec;
@@ -990,7 +1003,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
     }
   }
 
-  recordRebuildBenchmarkSample(*m_rebuildBenchmarkStats, true, rebuildTimer.getElapsedTimeInSec(), rebuildPeakRssBefore);
+  recordRebuildBenchmarkSample(*m_rebuildBenchmarkStats, true, rebuildTimer.getElapsedTimeInSec(), rebuildPeakRssBefore, numNodes);
 }
 
 void InfomapBase::init()

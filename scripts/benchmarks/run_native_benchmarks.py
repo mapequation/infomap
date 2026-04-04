@@ -8,6 +8,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+MODULE_SIZE_BUCKET_LABELS = ("1-2", "3-4", "5-8", "9-16", "17-32", "33-64", "65+")
+
 
 def write_pajek_edges(path: Path, num_nodes: int, edges: set[tuple[int, int]]) -> None:
     with path.open("w", encoding="utf-8") as handle:
@@ -128,6 +130,19 @@ def benchmark_case(
     run_stats = metric_stats([float(run["run_sec"]) for run in run_samples])
     read_input_stats = metric_stats([float(sample["read_input_sec"]) for sample in samples])
     peak_rss_stats = metric_stats([float(run["peak_rss_bytes"]) for run in run_samples])
+    rebuild_bucket_stats: dict[str, dict[str, float | int]] = {}
+    for label in MODULE_SIZE_BUCKET_LABELS:
+        bucket_calls = [int(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("calls", 0)) for run in run_samples]
+        bucket_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("sec", 0.0)) for run in run_samples]
+        bucket_sec_stats = metric_stats(bucket_sec)
+        rebuild_bucket_stats[label] = {
+            "median_calls": statistics.median(bucket_calls),
+            "mean_calls": statistics.mean(bucket_calls) if bucket_calls else 0.0,
+            "median_sec": statistics.median(bucket_sec),
+            "mean_sec": bucket_sec_stats["mean"],
+            "stdev_sec": bucket_sec_stats["stdev"],
+            "cv_sec": bucket_sec_stats["cv"],
+        }
 
     return {
         "name": name,
@@ -176,6 +191,7 @@ def benchmark_case(
             "median_module_calls": statistics.median(int(run.get("rebuild", {}).get("module_calls", 0)) for run in run_samples),
             "peak_rss_bytes_max": max(int(run.get("rebuild", {}).get("peak_rss_bytes_max", 0)) for run in run_samples),
             "peak_rss_delta_bytes_max": max(int(run.get("rebuild", {}).get("peak_rss_delta_bytes_max", 0)) for run in run_samples),
+            "module_size_buckets": rebuild_bucket_stats,
         },
     }
 
