@@ -164,6 +164,9 @@ void InfomapBase::run(Network& network)
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
 
+  // Reset the RNG for each run so a reused instance stays deterministic with a fixed seed.
+  m_rand.seed(seedToRandomNumberGenerator);
+
   if (network.numNodes() == 0) {
     network.postProcessInputData();
     if (network.numNodes() == 0) {

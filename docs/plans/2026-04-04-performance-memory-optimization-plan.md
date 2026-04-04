@@ -136,6 +136,14 @@ Exit gate:
 - the node-budget-to-RSS ratio is recorded for the large first-order cases
 - sanitizer and rerun expectations are fixed for later phases
 
+Checkpoint status (2026-04-04): `complete`
+- prerequisite lifecycle fixes from the PR #398 / PR #400 line are present in the branch
+- baseline and variance artifacts are recorded in `build/benchmarks/phase0-baseline-r10.json` and `build/benchmarks/phase0-baseline-r10.md`
+- large-case CPU/allocation artifacts are recorded in `build/benchmarks/phase0-prof/` using macOS substitutes (`sample` and `heap`) because Linux `perf`/`heaptrack` were unavailable locally
+- node-budget ratios are recorded for `sparse_100k` and `ring_of_cliques_100k`; `InfoNode` residency was about `10.6%` and `5.7%` of peak RSS respectively
+- repeated-run benchmark coverage was added, and the refreshed `build/benchmarks/phase0-smoke-iter2-rerun.json` artifact is stable across same-instance reruns for the smoke cases
+- targeted lifecycle/partition sanitizer coverage is green via `make test-sanitizers ... -R "infomap_cpp_(lifecycle|partition)_tests"`
+
 ### Phase 1: Ownership And Lifetime Fixes
 
 **Purpose:** remove correctness/lifetime issues that can swamp performance or memory results.
