@@ -143,6 +143,30 @@ TEST_CASE("File-backed multilayer input clusters as a higher-order network [fast
   CHECK(im.getModules(1, true).size() == im.numLeafNodes());
 }
 
+TEST_CASE("File-backed multilayer input reruns deterministically on the same instance [fast][core][lifecycle][crash]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  infomap::test::readNetworkFixture(im, "multilayer.net");
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+  CHECK(im.network().haveMemoryInput());
+  CHECK(im.network().numPhysicalNodes() == 5);
+
+  const auto firstPartition = infomap::test::canonicalPartition(im.getModules(1, true));
+  const auto firstCodelength = im.codelength();
+  const auto firstIndexCodelength = im.getIndexCodelength();
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+  CHECK(im.network().haveMemoryInput());
+  CHECK(im.network().numPhysicalNodes() == 5);
+
+  CHECK(infomap::test::canonicalPartition(im.getModules(1, true)) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+  CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
+}
+
 TEST_CASE("Subnetwork generation preserves parent indices and clones internal edges [fast][core][lifecycle][subnetwork]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
