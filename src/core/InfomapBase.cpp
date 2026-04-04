@@ -95,7 +95,7 @@ void recordRebuildBenchmarkSample(
   stats.peakRssDeltaBytesMax = std::max(stats.peakRssDeltaBytesMax, peakRssDeltaBytes);
 }
 
-constexpr unsigned int kTinySubnetworkRebuildThreshold = 2;
+constexpr unsigned int kTinySubnetworkRebuildThreshold = 16;
 
 } // namespace
 
