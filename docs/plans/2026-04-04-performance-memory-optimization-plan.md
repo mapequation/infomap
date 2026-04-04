@@ -156,6 +156,11 @@ Exit gate:
 - no known lifecycle bug remains on touched paths
 - benchmark regressions stay within the runtime/memory guardrails above
 
+Checkpoint status (2026-04-04, post-hardening): `sufficient for re-ranking`
+- same-instance rerun and recovery coverage now includes hard partition, higher-order `states`, file-backed multilayer, subnetwork rebuild/dispose, tree cluster-data reuse, invalid `.clu` recovery, invalid `.tree` recovery, and repeated `readInputData(...)` accumulation on the same wrapper
+- targeted sanitizer coverage is green on the touched lifecycle and partition surfaces
+- no new lifecycle bug is currently exposed by the expanded coverage, so additional Phase 1-only slices are temporarily deprioritized in favor of a stronger benchmark checkpoint and workstream re-ranking
+
 ### Phase 2: `InfoNode` Footprint Reduction
 
 **Purpose:** attack the largest always-live memory structure directly.
@@ -223,6 +228,22 @@ Rules:
 Exit gate:
 - meaningful runtime movement on the intended large workloads
 - neutral or improved memory behavior on `baseline`
+
+Checkpoint status (2026-04-04, post-Phase-4 micro-slices): `paused for re-ranking`
+- kept green runtime slices so far are:
+  - `perf(core): reuse openmp delta maps`
+  - `perf(core): cache module data in delta evaluation`
+  - `perf(core): reuse module enumeration buffer`
+- current checkpoint artifacts:
+  - `build/benchmarks/checkpoint-current-baseline-r3.json`
+  - `build/benchmarks/checkpoint-current-full-r3.json`
+- the current green state remains materially faster than the Phase 0 baseline on the large first-order cases, including `sparse_100k`, `ring_of_cliques_100k`, and `sparse_1m`
+- two consecutive additional hot-path micro-slices in `tryMoveEachNodeIntoBestModule()` regressed and were reverted, so further Phase 4 work is paused until a fresh workstream is chosen from profiling and allocation evidence rather than intuition
+- rebuild attribution is now recorded in `build/benchmarks/rebuild-current-baseline-r3.json`
+- current rebuild signal:
+  - `sparse_100k`: rebuild about `0.281s` of `3.599s` run time (`~7.8%`), dominated by module rebuild calls
+  - `ring_of_cliques_100k`: rebuild about `0.620s` of `3.041s` run time (`~20.4%`), overwhelmingly dominated by module rebuild calls
+- next Phase 3 work should therefore target module subnetwork rebuild cost with the new `rebuild_*` baseline as the comparison point, not the older pre-attribution checkpoint artifacts
 
 ## 4. Agent Review And Execution Loop
 

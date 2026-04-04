@@ -46,6 +46,19 @@ class InfomapBase : public InfomapConfig<InfomapBase> {
 public:
   using PartitionQueue = detail::PartitionQueue;
 
+  struct RebuildBenchmarkStats {
+    unsigned int networkCalls = 0;
+    unsigned int moduleCalls = 0;
+    unsigned int totalCalls = 0;
+    double networkSec = 0.0;
+    double moduleSec = 0.0;
+    double totalSec = 0.0;
+    unsigned long long peakRssBytesMax = 0;
+    unsigned long long peakRssDeltaBytesMax = 0;
+
+    void reset() noexcept { *this = RebuildBenchmarkStats{}; }
+  };
+
   InfomapBase() : InfomapConfig<InfomapBase>() { initOptimizer(); }
 
   explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { initOptimizer(); }
@@ -141,6 +154,7 @@ public:
 
   const Date& getStartDate() const { return m_startDate; }
   const Stopwatch& getElapsedTime() const { return m_elapsedTime; }
+  const RebuildBenchmarkStats& getRebuildBenchmarkStats() const { return *m_rebuildBenchmarkStats; }
 
   std::vector<InfoNode*>& activeNetwork() const { return *m_activeNetwork; }
 
@@ -182,12 +196,25 @@ private:
     return im;
   }
 
+  InfomapBase& shareRebuildBenchmarkStats(RebuildBenchmarkStats& stats)
+  {
+    m_rebuildBenchmarkStats = &stats;
+    return *this;
+  }
+
+  void resetRebuildBenchmarkStats()
+  {
+    m_localRebuildBenchmarkStats.reset();
+    m_rebuildBenchmarkStats = &m_localRebuildBenchmarkStats;
+  }
+
   InfomapBase& getSubInfomap(InfoNode& node) const
   {
     return node.setInfomap(getNewInfomapInstance())
         .setIsMain(false)
         .setSubLevel(m_subLevel + 1)
-        .setNonMainConfig(*this);
+        .setNonMainConfig(*this)
+        .shareRebuildBenchmarkStats(*m_rebuildBenchmarkStats);
   }
 
   InfomapBase& getSuperInfomap(InfoNode& node) const
@@ -195,7 +222,8 @@ private:
     return node.setInfomap(getNewInfomapInstanceWithoutMemory())
         .setIsMain(false)
         .setSubLevel(m_subLevel + SUPER_LEVEL_ADDITION)
-        .setNonMainConfig(*this);
+        .setNonMainConfig(*this)
+        .shareRebuildBenchmarkStats(*m_rebuildBenchmarkStats);
   }
 
   /**
@@ -516,6 +544,8 @@ protected:
   Stopwatch m_elapsedTime = Stopwatch(false);
   std::string m_initialParameters;
   std::string m_currentParameters;
+  RebuildBenchmarkStats m_localRebuildBenchmarkStats;
+  RebuildBenchmarkStats* m_rebuildBenchmarkStats = &m_localRebuildBenchmarkStats;
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };

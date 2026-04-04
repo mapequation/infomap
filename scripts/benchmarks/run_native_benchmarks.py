@@ -121,6 +121,9 @@ def benchmark_case(
             run_sample["repeat"] = repeat + 1
             run_samples.append(run_sample)
 
+    rebuild_total_stats = metric_stats([float(run.get("rebuild", {}).get("total_sec", 0.0)) for run in run_samples])
+    rebuild_network_stats = metric_stats([float(run.get("rebuild", {}).get("network_sec", 0.0)) for run in run_samples])
+    rebuild_module_stats = metric_stats([float(run.get("rebuild", {}).get("module_sec", 0.0)) for run in run_samples])
     total_stats = metric_stats([float(sample["total_sec"]) for sample in samples])
     run_stats = metric_stats([float(run["run_sec"]) for run in run_samples])
     read_input_stats = metric_stats([float(sample["read_input_sec"]) for sample in samples])
