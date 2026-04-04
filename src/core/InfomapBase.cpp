@@ -64,7 +64,9 @@ void recordRebuildBenchmarkSample(
     bool moduleRebuild,
     double elapsedSec,
     unsigned long long startPeakRssBytes,
-    unsigned int moduleSize = 0)
+    unsigned int moduleSize = 0,
+    double moduleCloneSec = 0.0,
+    double moduleEdgeCloneSec = 0.0)
 {
   const auto endPeakRssBytes = currentPeakRssBytes();
   const auto peakRssDeltaBytes = endPeakRssBytes > startPeakRssBytes ? endPeakRssBytes - startPeakRssBytes : 0ULL;
@@ -81,9 +83,13 @@ void recordRebuildBenchmarkSample(
     };
     ++stats.moduleCalls;
     stats.moduleSec += elapsedSec;
+    stats.moduleCloneSec += moduleCloneSec;
+    stats.moduleEdgeCloneSec += moduleEdgeCloneSec;
     const auto bucketIndex = moduleSizeBucketIndex(moduleSize);
     ++stats.moduleSizeBucketCalls[bucketIndex];
     stats.moduleSizeBucketSec[bucketIndex] += elapsedSec;
+    stats.moduleSizeBucketCloneSec[bucketIndex] += moduleCloneSec;
+    stats.moduleSizeBucketEdgeCloneSec[bucketIndex] += moduleEdgeCloneSec;
   } else {
     ++stats.networkCalls;
     stats.networkSec += elapsedSec;
@@ -967,6 +973,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   if (!useTinyFastPath) {
     nodeIndexMap.reserve(numNodes);
   }
+  Stopwatch cloneTimer(true);
   for (InfoNode& node : parent) {
     auto* clonedNode = new InfoNode(node);
     clonedNode->initClean();
@@ -978,6 +985,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
     m_leafNodes[childIndex] = clonedNode;
     ++childIndex;
   }
+  const double moduleCloneSec = cloneTimer.getElapsedTimeInSec();
 
   InfoNode* parentPtr = &parent;
   auto targetIndexFor = [&](InfoNode* target) -> unsigned int {
@@ -992,6 +1000,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   };
 
   // Clone edges
+  Stopwatch edgeCloneTimer(true);
   for (unsigned int sourceIndex = 0; sourceIndex < numNodes; ++sourceIndex) {
     InfoNode& node = *originalChildren[sourceIndex];
     for (InfoEdge* e : node.outEdges()) {
@@ -1002,8 +1011,9 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
       }
     }
   }
+  const double moduleEdgeCloneSec = edgeCloneTimer.getElapsedTimeInSec();
 
-  recordRebuildBenchmarkSample(*m_rebuildBenchmarkStats, true, rebuildTimer.getElapsedTimeInSec(), rebuildPeakRssBefore, numNodes);
+  recordRebuildBenchmarkSample(*m_rebuildBenchmarkStats, true, rebuildTimer.getElapsedTimeInSec(), rebuildPeakRssBefore, numNodes, moduleCloneSec, moduleEdgeCloneSec);
 }
 
 void InfomapBase::init()

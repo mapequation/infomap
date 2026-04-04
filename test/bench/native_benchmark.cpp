@@ -87,6 +87,8 @@ void aggregateRebuildStats(
   total.totalCalls += sample.totalCalls;
   total.networkSec += sample.networkSec;
   total.moduleSec += sample.moduleSec;
+  total.moduleCloneSec += sample.moduleCloneSec;
+  total.moduleEdgeCloneSec += sample.moduleEdgeCloneSec;
   total.totalSec += sample.totalSec;
   if (sample.peakRssBytesMax > total.peakRssBytesMax) {
     total.peakRssBytesMax = sample.peakRssBytesMax;
@@ -97,6 +99,8 @@ void aggregateRebuildStats(
   for (std::size_t i = 0; i < total.moduleSizeBucketCalls.size(); ++i) {
     total.moduleSizeBucketCalls[i] += sample.moduleSizeBucketCalls[i];
     total.moduleSizeBucketSec[i] += sample.moduleSizeBucketSec[i];
+    total.moduleSizeBucketCloneSec[i] += sample.moduleSizeBucketCloneSec[i];
+    total.moduleSizeBucketEdgeCloneSec[i] += sample.moduleSizeBucketEdgeCloneSec[i];
   }
 }
 
@@ -108,6 +112,8 @@ void printRebuildStats(const infomap::InfomapBase::RebuildBenchmarkStats& stats)
   std::cout << "\"total_calls\":" << stats.totalCalls << ",";
   std::cout << "\"network_sec\":" << stats.networkSec << ",";
   std::cout << "\"module_sec\":" << stats.moduleSec << ",";
+  std::cout << "\"module_clone_sec\":" << stats.moduleCloneSec << ",";
+  std::cout << "\"module_edge_clone_sec\":" << stats.moduleEdgeCloneSec << ",";
   std::cout << "\"total_sec\":" << stats.totalSec << ",";
   std::cout << "\"peak_rss_bytes_max\":" << stats.peakRssBytesMax << ",";
   std::cout << "\"peak_rss_delta_bytes_max\":" << stats.peakRssDeltaBytesMax << ",";
@@ -118,7 +124,9 @@ void printRebuildStats(const infomap::InfomapBase::RebuildBenchmarkStats& stats)
     }
     std::cout << "\"" << kModuleSizeBucketLabels[i] << "\":{";
     std::cout << "\"calls\":" << stats.moduleSizeBucketCalls[i] << ",";
-    std::cout << "\"sec\":" << stats.moduleSizeBucketSec[i];
+    std::cout << "\"sec\":" << stats.moduleSizeBucketSec[i] << ",";
+    std::cout << "\"clone_sec\":" << stats.moduleSizeBucketCloneSec[i] << ",";
+    std::cout << "\"edge_clone_sec\":" << stats.moduleSizeBucketEdgeCloneSec[i];
     std::cout << "}";
   }
   std::cout << "}";
