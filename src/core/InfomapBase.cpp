@@ -66,6 +66,8 @@ void recordRebuildBenchmarkSample(
     unsigned long long startPeakRssBytes,
     unsigned int moduleSize = 0,
     double modulePrepSec = 0.0,
+    double moduleIndexSec = 0.0,
+    double moduleReserveSec = 0.0,
     double moduleCloneSec = 0.0,
     double moduleEdgeCloneSec = 0.0)
 {
@@ -85,12 +87,16 @@ void recordRebuildBenchmarkSample(
     ++stats.moduleCalls;
     stats.moduleSec += elapsedSec;
     stats.modulePrepSec += modulePrepSec;
+    stats.moduleIndexSec += moduleIndexSec;
+    stats.moduleReserveSec += moduleReserveSec;
     stats.moduleCloneSec += moduleCloneSec;
     stats.moduleEdgeCloneSec += moduleEdgeCloneSec;
     const auto bucketIndex = moduleSizeBucketIndex(moduleSize);
     ++stats.moduleSizeBucketCalls[bucketIndex];
     stats.moduleSizeBucketSec[bucketIndex] += elapsedSec;
     stats.moduleSizeBucketPrepSec[bucketIndex] += modulePrepSec;
+    stats.moduleSizeBucketIndexSec[bucketIndex] += moduleIndexSec;
+    stats.moduleSizeBucketReserveSec[bucketIndex] += moduleReserveSec;
     stats.moduleSizeBucketCloneSec[bucketIndex] += moduleCloneSec;
     stats.moduleSizeBucketEdgeCloneSec[bucketIndex] += moduleEdgeCloneSec;
   } else {
@@ -999,6 +1005,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   };
 
   Stopwatch prepTimer(true);
+  Stopwatch indexTimer(true);
   std::vector<unsigned int> internalOutDegree(numNodes, 0);
   std::vector<unsigned int> internalInDegree(numNodes, 0);
   std::vector<InternalEdgeRef> internalEdges;
@@ -1024,9 +1031,12 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
       }
     }
   }
+  const double moduleIndexSec = indexTimer.getElapsedTimeInSec();
+  Stopwatch reserveTimer(true);
   for (unsigned int index = 0; index < numNodes; ++index) {
     m_leafNodes[index]->reserveEdgeStorage(internalOutDegree[index], internalInDegree[index]);
   }
+  const double moduleReserveSec = reserveTimer.getElapsedTimeInSec();
   const double modulePrepSec = prepTimer.getElapsedTimeInSec();
 
   // Clone edges
@@ -1037,7 +1047,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   }
   const double moduleEdgeCloneSec = edgeCloneTimer.getElapsedTimeInSec();
 
-  recordRebuildBenchmarkSample(*m_rebuildBenchmarkStats, true, rebuildTimer.getElapsedTimeInSec(), rebuildPeakRssBefore, numNodes, modulePrepSec, moduleCloneSec, moduleEdgeCloneSec);
+  recordRebuildBenchmarkSample(*m_rebuildBenchmarkStats, true, rebuildTimer.getElapsedTimeInSec(), rebuildPeakRssBefore, numNodes, modulePrepSec, moduleIndexSec, moduleReserveSec, moduleCloneSec, moduleEdgeCloneSec);
 }
 
 void InfomapBase::init()

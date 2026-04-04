@@ -127,6 +127,8 @@ def benchmark_case(
     rebuild_network_stats = metric_stats([float(run.get("rebuild", {}).get("network_sec", 0.0)) for run in run_samples])
     rebuild_module_stats = metric_stats([float(run.get("rebuild", {}).get("module_sec", 0.0)) for run in run_samples])
     rebuild_module_prep_stats = metric_stats([float(run.get("rebuild", {}).get("module_prep_sec", 0.0)) for run in run_samples])
+    rebuild_module_index_stats = metric_stats([float(run.get("rebuild", {}).get("module_index_sec", 0.0)) for run in run_samples])
+    rebuild_module_reserve_stats = metric_stats([float(run.get("rebuild", {}).get("module_reserve_sec", 0.0)) for run in run_samples])
     rebuild_module_clone_stats = metric_stats([float(run.get("rebuild", {}).get("module_clone_sec", 0.0)) for run in run_samples])
     rebuild_module_edge_clone_stats = metric_stats([float(run.get("rebuild", {}).get("module_edge_clone_sec", 0.0)) for run in run_samples])
     total_stats = metric_stats([float(sample["total_sec"]) for sample in samples])
@@ -138,10 +140,14 @@ def benchmark_case(
         bucket_calls = [int(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("calls", 0)) for run in run_samples]
         bucket_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("sec", 0.0)) for run in run_samples]
         bucket_prep_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("prep_sec", 0.0)) for run in run_samples]
+        bucket_index_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("index_sec", 0.0)) for run in run_samples]
+        bucket_reserve_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("reserve_sec", 0.0)) for run in run_samples]
         bucket_clone_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("clone_sec", 0.0)) for run in run_samples]
         bucket_edge_clone_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("edge_clone_sec", 0.0)) for run in run_samples]
         bucket_sec_stats = metric_stats(bucket_sec)
         bucket_prep_sec_stats = metric_stats(bucket_prep_sec)
+        bucket_index_sec_stats = metric_stats(bucket_index_sec)
+        bucket_reserve_sec_stats = metric_stats(bucket_reserve_sec)
         bucket_clone_sec_stats = metric_stats(bucket_clone_sec)
         bucket_edge_clone_sec_stats = metric_stats(bucket_edge_clone_sec)
         rebuild_bucket_stats[label] = {
@@ -153,6 +159,10 @@ def benchmark_case(
             "cv_sec": bucket_sec_stats["cv"],
             "median_prep_sec": statistics.median(bucket_prep_sec),
             "mean_prep_sec": bucket_prep_sec_stats["mean"],
+            "median_index_sec": statistics.median(bucket_index_sec),
+            "mean_index_sec": bucket_index_sec_stats["mean"],
+            "median_reserve_sec": statistics.median(bucket_reserve_sec),
+            "mean_reserve_sec": bucket_reserve_sec_stats["mean"],
             "median_clone_sec": statistics.median(bucket_clone_sec),
             "mean_clone_sec": bucket_clone_sec_stats["mean"],
             "median_edge_clone_sec": statistics.median(bucket_edge_clone_sec),
@@ -203,6 +213,10 @@ def benchmark_case(
             "mean_module_sec": rebuild_module_stats["mean"],
             "median_module_prep_sec": statistics.median(float(run.get("rebuild", {}).get("module_prep_sec", 0.0)) for run in run_samples),
             "mean_module_prep_sec": rebuild_module_prep_stats["mean"],
+            "median_module_index_sec": statistics.median(float(run.get("rebuild", {}).get("module_index_sec", 0.0)) for run in run_samples),
+            "mean_module_index_sec": rebuild_module_index_stats["mean"],
+            "median_module_reserve_sec": statistics.median(float(run.get("rebuild", {}).get("module_reserve_sec", 0.0)) for run in run_samples),
+            "mean_module_reserve_sec": rebuild_module_reserve_stats["mean"],
             "median_module_clone_sec": statistics.median(float(run.get("rebuild", {}).get("module_clone_sec", 0.0)) for run in run_samples),
             "mean_module_clone_sec": rebuild_module_clone_stats["mean"],
             "median_module_edge_clone_sec": statistics.median(float(run.get("rebuild", {}).get("module_edge_clone_sec", 0.0)) for run in run_samples),
