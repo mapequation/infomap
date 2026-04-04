@@ -108,6 +108,26 @@ TEST_CASE("Higher-order module queries require state ids [fast][core][lifecycle]
   CHECK_THROWS_WITH_AS(im.getModules(false), "Cannot get modules on higher-order network without states.", std::runtime_error);
 }
 
+TEST_CASE("Higher-order input reruns deterministically on the same instance [fast][core][lifecycle][crash]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  infomap::test::readNetworkFixture(im, "states.net");
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  const auto firstPartition = infomap::test::canonicalPartition(im.getModules(1, true));
+  const auto firstCodelength = im.codelength();
+  const auto firstIndexCodelength = im.getIndexCodelength();
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  CHECK(infomap::test::canonicalPartition(im.getModules(1, true)) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+  CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
+}
+
 TEST_CASE("File-backed multilayer input clusters as a higher-order network [fast][core][lifecycle][parser]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
@@ -155,6 +175,76 @@ TEST_CASE("Subnetwork generation preserves parent indices and clones internal ed
     CHECK(node.index == sentinelIndices[childIndex]);
     ++childIndex;
   }
+}
+
+TEST_CASE("Subnetwork reuse and dispose stay stable on the same parent module [fast][core][lifecycle][subnetwork]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  REQUIRE(im.numTopModules() == 2);
+
+  auto& module = *im.root().firstChild;
+  const auto originalEdges = internalEdgesForModule(module);
+  std::vector<unsigned int> expectedLeafIds;
+  for (const auto& node : module) {
+    expectedLeafIds.push_back(node.stateId);
+  }
+  std::sort(expectedLeafIds.begin(), expectedLeafIds.end());
+
+  auto runSubnetwork = [&]() -> std::tuple<std::vector<std::vector<unsigned int>>, double, double> {
+    auto& subInfomap = im.getSubInfomap(module).initNetwork(module);
+    REQUIRE(module.getInfomapRoot() == &subInfomap.root());
+    REQUIRE(subInfomap.root().owner == &module);
+    CHECK(internalEdgesForModule(subInfomap.root()) == originalEdges);
+
+    subInfomap.run();
+    CHECK(std::isfinite(subInfomap.codelength()));
+    CHECK(std::isfinite(subInfomap.getIndexCodelength()));
+    CHECK(subInfomap.codelength() >= 0.0);
+    CHECK(subInfomap.getIndexCodelength() >= 0.0);
+    CHECK(subInfomap.numLevels() >= 1);
+    CHECK(subInfomap.numLeafNodes() == module.childDegree());
+
+    std::map<unsigned int, unsigned int> modules;
+    unsigned int moduleIndex = 0;
+    for (auto& topModule : subInfomap.root()) {
+      if (topModule.isLeaf()) {
+        modules[topModule.stateId] = moduleIndex;
+      } else {
+        for (auto& leaf : topModule) {
+          modules[leaf.stateId] = moduleIndex;
+        }
+      }
+      ++moduleIndex;
+    }
+
+    std::vector<unsigned int> coveredIds;
+    for (const auto& moduleEntry : modules) {
+      coveredIds.push_back(moduleEntry.first);
+    }
+    CHECK(coveredIds == expectedLeafIds);
+
+    return {infomap::test::canonicalPartition(modules), subInfomap.codelength(), subInfomap.getIndexCodelength()};
+  };
+
+  const auto firstRun = runSubnetwork();
+  const auto secondRun = runSubnetwork();
+  const auto& firstPartition = std::get<0>(firstRun);
+  const auto firstCodelength = std::get<1>(firstRun);
+  const auto firstIndexCodelength = std::get<2>(firstRun);
+  const auto& secondPartition = std::get<0>(secondRun);
+  const auto secondCodelength = std::get<1>(secondRun);
+  const auto secondIndexCodelength = std::get<2>(secondRun);
+
+  CHECK(secondPartition == firstPartition);
+  CHECK(secondCodelength == doctest::Approx(firstCodelength));
+  CHECK(secondIndexCodelength == doctest::Approx(firstIndexCodelength));
+
+  CHECK(module.disposeInfomap());
+  CHECK(module.getInfomapRoot() == nullptr);
 }
 
 } // namespace
