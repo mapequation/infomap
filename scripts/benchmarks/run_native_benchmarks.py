@@ -78,38 +78,87 @@ def generate_state_ring(path: Path, physical_nodes: int) -> None:
             handle.write(f"{current_b} {next_b} 1\n")
 
 
-def benchmark_case(binary: Path, name: str, network_path: Path, repeats: int, flags: str) -> dict[str, object]:
-    runs: list[dict[str, object]] = []
-    for _ in range(repeats):
+def metric_stats(values: list[float]) -> dict[str, float]:
+    if not values:
+        return {"mean": 0.0, "stdev": 0.0, "cv": 0.0}
+    mean_value = statistics.mean(values)
+    stdev_value = statistics.stdev(values) if len(values) > 1 else 0.0
+    cv_value = stdev_value / mean_value if mean_value else 0.0
+    return {"mean": mean_value, "stdev": stdev_value, "cv": cv_value}
+
+
+def benchmark_case(
+    binary: Path,
+    name: str,
+    network_path: Path,
+    repeats: int,
+    iterations: int,
+    flags: str,
+) -> dict[str, object]:
+    samples: list[dict[str, object]] = []
+    run_samples: list[dict[str, object]] = []
+    for repeat in range(repeats):
         completed = subprocess.run(
-            [str(binary), "--input", str(network_path), "--name", name, "--flags", flags],
+            [
+                str(binary),
+                "--input",
+                str(network_path),
+                "--name",
+                name,
+                "--flags",
+                flags,
+                "--iterations",
+                str(iterations),
+            ],
             check=True,
             capture_output=True,
             text=True,
         )
-        runs.append(json.loads(completed.stdout))
+        sample = json.loads(completed.stdout)
+        samples.append(sample)
+        for run in sample.get("runs", [sample]):
+            run_sample = dict(run)
+            run_sample["repeat"] = repeat + 1
+            run_samples.append(run_sample)
 
-    def median(key: str) -> float:
-        return statistics.median(float(run[key]) for run in runs)
+    total_stats = metric_stats([float(sample["total_sec"]) for sample in samples])
+    run_stats = metric_stats([float(run["run_sec"]) for run in run_samples])
+    read_input_stats = metric_stats([float(sample["read_input_sec"]) for sample in samples])
+    peak_rss_stats = metric_stats([float(run["peak_rss_bytes"]) for run in run_samples])
 
     return {
         "name": name,
         "path": str(network_path),
         "repeats": repeats,
-        "flags": runs[0]["flags"],
-        "median_total_sec": median("total_sec"),
-        "median_read_input_sec": median("read_input_sec"),
-        "median_run_sec": median("run_sec"),
-        "peak_rss_bytes_max": max(int(run["peak_rss_bytes"]) for run in runs),
-        "num_nodes": runs[0]["num_nodes"],
-        "num_links": runs[0]["num_links"],
-        "num_top_modules": runs[0]["num_top_modules"],
-        "num_levels": runs[0]["num_levels"],
-        "codelength": runs[0]["codelength"],
-        "higher_order_input": runs[0]["higher_order_input"],
-        "directed_input": runs[0]["directed_input"],
-        "node_size_bytes": runs[0]["node_size_bytes"],
-        "edge_size_bytes": runs[0]["edge_size_bytes"],
+        "iterations": iterations,
+        "flags": samples[0]["flags"],
+        "samples": samples,
+        "run_samples": run_samples,
+        "median_total_sec": statistics.median(float(sample["total_sec"]) for sample in samples),
+        "median_read_input_sec": statistics.median(float(sample["read_input_sec"]) for sample in samples),
+        "median_run_sec": statistics.median(float(run["run_sec"]) for run in run_samples),
+        "mean_total_sec": total_stats["mean"],
+        "stdev_total_sec": total_stats["stdev"],
+        "cv_total_sec": total_stats["cv"],
+        "mean_read_input_sec": read_input_stats["mean"],
+        "stdev_read_input_sec": read_input_stats["stdev"],
+        "cv_read_input_sec": read_input_stats["cv"],
+        "mean_run_sec": run_stats["mean"],
+        "stdev_run_sec": run_stats["stdev"],
+        "cv_run_sec": run_stats["cv"],
+        "mean_peak_rss_bytes": peak_rss_stats["mean"],
+        "stdev_peak_rss_bytes": peak_rss_stats["stdev"],
+        "cv_peak_rss_bytes": peak_rss_stats["cv"],
+        "peak_rss_bytes_max": max(int(run["peak_rss_bytes"]) for run in run_samples),
+        "num_nodes": samples[0]["num_nodes"],
+        "num_links": samples[0]["num_links"],
+        "num_top_modules": samples[0]["num_top_modules"],
+        "num_levels": samples[0]["num_levels"],
+        "codelength": samples[0]["codelength"],
+        "higher_order_input": samples[0]["higher_order_input"],
+        "directed_input": samples[0]["directed_input"],
+        "node_size_bytes": samples[0]["node_size_bytes"],
+        "edge_size_bytes": samples[0]["edge_size_bytes"],
     }
 
 
@@ -137,6 +186,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True, help="Path to write the JSON benchmark report.")
     parser.add_argument("--summary", type=Path, default=None, help="Optional Markdown summary output.")
     parser.add_argument("--repeats", type=int, default=3, help="Number of runs per case.")
+    parser.add_argument("--iterations", type=int, default=1, help="Number of in-process iterations per benchmark run.")
     parser.add_argument(
         "--profile",
         choices=("smoke", "baseline", "full"),
@@ -149,6 +199,9 @@ def main() -> None:
         help="Infomap flags forwarded to the native benchmark executable.",
     )
     args = parser.parse_args()
+
+    if args.iterations < 1:
+        parser.error("--iterations must be at least 1")
 
     repo_root = Path(__file__).resolve().parents[2]
     if not args.binary.is_file():
@@ -198,13 +251,14 @@ def main() -> None:
             cases.append(("sparse_1m", sparse_1m))
 
         results = [
-            benchmark_case(args.binary, name, path, args.repeats, args.flags)
+            benchmark_case(args.binary, name, path, args.repeats, args.iterations, args.flags)
             for name, path in cases
         ]
 
     report = {
         "profile": args.profile,
         "repeats": args.repeats,
+        "iterations": args.iterations,
         "binary": str(args.binary),
         "benchmarks": results,
     }
