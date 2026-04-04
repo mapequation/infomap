@@ -330,6 +330,72 @@ TEST_CASE("Hard cluster-data preserves the imposed coarse partition [fast][core]
   infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
 }
 
+TEST_CASE("Hard cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+
+  auto runHardPartition = [&]() {
+    im.initNetwork(im.network());
+    im.initPartition(infomap::test::clusterFixturePath("twotriangles_two_modules.clu"), true, &im.network());
+
+    CHECK(im.numLeafNodes() == 2);
+    CHECK(im.numTopModules() == 2);
+    CHECK_FALSE(im.haveModules());
+
+    im.run();
+
+    infomap::test::checkRunSanity(im);
+    CHECK(im.numLeafNodes() == 6);
+    CHECK(im.numTopModules() == 2);
+    infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
+  };
+
+  runHardPartition();
+  const auto firstPartition = infomap::test::canonicalPartition(im.getModules());
+  const auto firstCodelength = im.codelength();
+  const auto firstIndexCodelength = im.getIndexCodelength();
+
+  runHardPartition();
+
+  CHECK(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+  CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
+}
+TEST_CASE("Hard cluster-data rerun preserves leaf metadata on the same instance [fast][core][partition][lifecycle][parser]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--meta-data-rate 2"));
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initMetaData(infomap::test::fixturePath("meta/twotriangles.meta"));
+
+  auto runHardPartition = [&]() {
+    im.initNetwork(im.network());
+    im.initPartition(infomap::test::clusterFixturePath("twotriangles_two_modules.clu"), true, &im.network());
+
+    CHECK(im.numLeafNodes() == 2);
+    CHECK(im.numTopModules() == 2);
+    CHECK_FALSE(im.haveModules());
+
+    im.run();
+
+    infomap::test::checkRunSanity(im);
+    CHECK(im.numLeafNodes() == 6);
+    for (auto* leaf : im.leafNodes()) {
+      CHECK_FALSE(leaf->metaData.empty());
+    }
+  };
+
+  runHardPartition();
+  const auto firstPartition = infomap::test::canonicalPartition(im.getModules());
+  const auto firstCodelength = im.codelength();
+  const auto firstIndexCodelength = im.getIndexCodelength();
+
+  runHardPartition();
+
+  CHECK(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+  CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
+}
 TEST_CASE("Consolidate modules preserves aggregated inter-module flow [fast][core][partition][tree]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
