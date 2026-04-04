@@ -237,6 +237,29 @@ TEST_CASE("InfoNode deleteChildren also clears collapsed children [fast][core][p
   CHECK(root.collapsedLastChild == nullptr);
 }
 
+TEST_CASE("InfoNode initClean clears inherited collapsed children on clones [fast][core][partition][tree]")
+{
+  InfoNode source;
+  source.addChild(new InfoNode({}, 10));
+  source.addChild(new InfoNode({}, 20));
+
+  CHECK(source.collapseChildren() == 2);
+  CHECK(source.childDegree() == 0);
+  CHECK(source.collapsedFirstChild != nullptr);
+  CHECK(source.collapsedLastChild != nullptr);
+
+  InfoNode clone(source);
+  clone.initClean();
+
+  CHECK(clone.childDegree() == 0);
+  CHECK(clone.firstChild == nullptr);
+  CHECK(clone.lastChild == nullptr);
+  CHECK(clone.collapsedFirstChild == nullptr);
+  CHECK(clone.collapsedLastChild == nullptr);
+
+  source.deleteChildren();
+}
+
 TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][core][partition][tree]")
 {
   InfoNode root;
