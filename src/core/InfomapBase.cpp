@@ -65,6 +65,7 @@ void recordRebuildBenchmarkSample(
     double elapsedSec,
     unsigned long long startPeakRssBytes,
     unsigned int moduleSize = 0,
+    double modulePrepSec = 0.0,
     double moduleCloneSec = 0.0,
     double moduleEdgeCloneSec = 0.0)
 {
@@ -83,11 +84,13 @@ void recordRebuildBenchmarkSample(
     };
     ++stats.moduleCalls;
     stats.moduleSec += elapsedSec;
+    stats.modulePrepSec += modulePrepSec;
     stats.moduleCloneSec += moduleCloneSec;
     stats.moduleEdgeCloneSec += moduleEdgeCloneSec;
     const auto bucketIndex = moduleSizeBucketIndex(moduleSize);
     ++stats.moduleSizeBucketCalls[bucketIndex];
     stats.moduleSizeBucketSec[bucketIndex] += elapsedSec;
+    stats.moduleSizeBucketPrepSec[bucketIndex] += modulePrepSec;
     stats.moduleSizeBucketCloneSec[bucketIndex] += moduleCloneSec;
     stats.moduleSizeBucketEdgeCloneSec[bucketIndex] += moduleEdgeCloneSec;
   } else {
@@ -995,6 +998,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
     InfoEdge* edge;
   };
 
+  Stopwatch prepTimer(true);
   std::vector<unsigned int> internalOutDegree(numNodes, 0);
   std::vector<unsigned int> internalInDegree(numNodes, 0);
   std::vector<InternalEdgeRef> internalEdges;
@@ -1023,6 +1027,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   for (unsigned int index = 0; index < numNodes; ++index) {
     m_leafNodes[index]->reserveEdgeStorage(internalOutDegree[index], internalInDegree[index]);
   }
+  const double modulePrepSec = prepTimer.getElapsedTimeInSec();
 
   // Clone edges
   Stopwatch edgeCloneTimer(true);
@@ -1032,7 +1037,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   }
   const double moduleEdgeCloneSec = edgeCloneTimer.getElapsedTimeInSec();
 
-  recordRebuildBenchmarkSample(*m_rebuildBenchmarkStats, true, rebuildTimer.getElapsedTimeInSec(), rebuildPeakRssBefore, numNodes, moduleCloneSec, moduleEdgeCloneSec);
+  recordRebuildBenchmarkSample(*m_rebuildBenchmarkStats, true, rebuildTimer.getElapsedTimeInSec(), rebuildPeakRssBefore, numNodes, modulePrepSec, moduleCloneSec, moduleEdgeCloneSec);
 }
 
 void InfomapBase::init()
