@@ -160,6 +160,23 @@ TEST_CASE("InfoNode hierarchy mutations preserve parentage and child order [fast
   CHECK(childStateIds(root) == std::vector<unsigned int>{40, 50});
 }
 
+TEST_CASE("Reinitializing a network clears collapsed root children [fast][core][partition][tree]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+
+  CHECK(im.root().childDegree() == 6);
+  CHECK(im.root().collapseChildren() == 6);
+  CHECK(im.root().childDegree() == 0);
+
+  im.initNetwork(im.network());
+
+  CHECK(im.root().childDegree() == 6);
+  CHECK(im.root().collapsedFirstChild == nullptr);
+  CHECK(im.root().collapsedLastChild == nullptr);
+}
+
 TEST_CASE("InfoNode deleteChildren also clears collapsed children [fast][core][partition][tree]")
 {
   InfoNode root;

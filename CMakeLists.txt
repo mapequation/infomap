@@ -140,6 +140,7 @@ if(BUILD_TESTING)
     add_infomap_cpp_test(infomap_cpp_flow_tests test/cpp/test_flow.cpp "fast;core;flow")
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(infomap_cpp_lifecycle_tests PRIVATE -fno-access-control)
         target_compile_options(infomap_cpp_partition_tests PRIVATE -fno-access-control)
     endif()
 
