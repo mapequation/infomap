@@ -116,6 +116,46 @@ TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core]
   infomap::test::checkRunSanity(im);
 }
 
+TEST_CASE("Tree cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+
+  auto runTreePartition = [&]() {
+    im.initNetwork(im.network());
+    im.initPartition(infomap::test::clusterFixturePath("twotriangles_three_level.tree"), false, &im.network());
+
+    CHECK(im.numLeafNodes() == 6);
+    CHECK(im.numTopModules() == 2);
+    CHECK(im.numLevels() == 3);
+
+    const auto modules = im.getMultilevelModules(false);
+    CHECK(modules.size() == 6);
+    CHECK(modules.at(1).size() == 2);
+    CHECK(modules.at(2).size() == 2);
+    CHECK(modules.at(3).size() == 2);
+    CHECK(modules.at(4).size() == 2);
+    CHECK(modules.at(5).size() == 2);
+    CHECK(modules.at(6).size() == 2);
+
+    im.run();
+    infomap::test::checkRunSanity(im);
+  };
+
+  runTreePartition();
+  const auto firstModules = im.getMultilevelModules(false);
+  const auto firstCodelength = im.codelength();
+  const auto firstIndexCodelength = im.getIndexCodelength();
+  const auto firstNumLevels = im.numLevels();
+
+  runTreePartition();
+
+  CHECK(im.getMultilevelModules(false) == firstModules);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+  CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
+  CHECK(im.numLevels() == firstNumLevels);
+}
+
 TEST_CASE("InfoNode hierarchy mutations preserve parentage and child order [fast][core][partition][tree]")
 {
   InfoNode root;
