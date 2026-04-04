@@ -82,6 +82,8 @@ void recordRebuildBenchmarkSample(
   stats.peakRssDeltaBytesMax = std::max(stats.peakRssDeltaBytesMax, peakRssDeltaBytes);
 }
 
+constexpr unsigned int kTinySubnetworkRebuildThreshold = 2;
+
 } // namespace
 
 namespace infomap {
@@ -944,26 +946,46 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
 
   Log(1) << "Generate sub network with " << numNodes << " nodes...\n";
 
+  const bool useTinyFastPath = !haveMemory() && numNodes <= kTinySubnetworkRebuildThreshold;
   unsigned int childIndex = 0;
+  std::vector<InfoNode*> originalChildren;
+  originalChildren.reserve(numNodes);
   std::unordered_map<InfoNode*, unsigned int> nodeIndexMap;
-  nodeIndexMap.reserve(numNodes);
+  if (!useTinyFastPath) {
+    nodeIndexMap.reserve(numNodes);
+  }
   for (InfoNode& node : parent) {
     auto* clonedNode = new InfoNode(node);
     clonedNode->initClean();
+    originalChildren.push_back(&node);
     m_root.addChild(clonedNode);
-    nodeIndexMap[&node] = childIndex;
+    if (!useTinyFastPath) {
+      nodeIndexMap[&node] = childIndex;
+    }
     m_leafNodes[childIndex] = clonedNode;
     ++childIndex;
   }
 
   InfoNode* parentPtr = &parent;
+  auto targetIndexFor = [&](InfoNode* target) -> unsigned int {
+    if (useTinyFastPath) {
+      auto it = std::find(originalChildren.begin(), originalChildren.end(), target);
+      if (it == originalChildren.end()) {
+        throw std::logic_error("generateSubNetwork target child not found in tiny fast path");
+      }
+      return static_cast<unsigned int>(std::distance(originalChildren.begin(), it));
+    }
+    return nodeIndexMap.at(target);
+  };
+
   // Clone edges
-  for (InfoNode& node : parent) {
+  for (unsigned int sourceIndex = 0; sourceIndex < numNodes; ++sourceIndex) {
+    InfoNode& node = *originalChildren[sourceIndex];
     for (InfoEdge* e : node.outEdges()) {
       InfoEdge& edge = *e;
       // If neighbour node is within the same module, add the link to this subnetwork.
       if (edge.target->parent == parentPtr) {
-        m_leafNodes[nodeIndexMap.at(edge.source)]->addOutEdge(*m_leafNodes[nodeIndexMap.at(edge.target)], edge.data.weight, edge.data.flow);
+        m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndexFor(edge.target)], edge.data.weight, edge.data.flow);
       }
     }
   }
