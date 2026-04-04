@@ -175,6 +175,23 @@ TEST_CASE("File-backed multilayer input clusters as a higher-order network [fast
   CHECK(im.getModules(1, true).size() == im.numLeafNodes());
 }
 
+TEST_CASE("Invalid multilayer input failure does not poison later valid multilayer init on the same instance [fast][core][lifecycle][parser]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+
+  CHECK_THROWS_AS(infomap::test::readNetworkFixture(im, "invalid_multilayer.net"), std::runtime_error);
+
+  infomap::test::readNetworkFixture(im, "multilayer.net");
+  CHECK(im.network().haveMemoryInput());
+  CHECK(im.network().numPhysicalNodes() == 5);
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.network().haveMemoryInput());
+  CHECK(im.getModules(1, true).size() == im.numLeafNodes());
+}
+
 TEST_CASE("File-backed multilayer input reruns deterministically on the same instance [fast][core][lifecycle][crash]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
