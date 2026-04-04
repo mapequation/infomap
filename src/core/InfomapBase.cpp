@@ -990,6 +990,30 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   }
   const double moduleCloneSec = cloneTimer.getElapsedTimeInSec();
 
+  std::vector<unsigned int> internalOutDegree(numNodes, 0);
+  std::vector<unsigned int> internalInDegree(numNodes, 0);
+  for (unsigned int sourceIndex = 0; sourceIndex < numNodes; ++sourceIndex) {
+    InfoNode& node = *originalChildren[sourceIndex];
+    for (InfoEdge* e : node.outEdges()) {
+      InfoEdge& edge = *e;
+      if (edge.target->parent == &parent) {
+        ++internalOutDegree[sourceIndex];
+        if (useTinyFastPath) {
+          auto it = std::find(originalChildren.begin(), originalChildren.end(), edge.target);
+          if (it == originalChildren.end()) {
+            throw std::logic_error("generateSubNetwork target child not found during tiny degree count");
+          }
+          ++internalInDegree[static_cast<unsigned int>(std::distance(originalChildren.begin(), it))];
+        } else {
+          ++internalInDegree[nodeIndexMap.at(edge.target)];
+        }
+      }
+    }
+  }
+  for (unsigned int index = 0; index < numNodes; ++index) {
+    m_leafNodes[index]->reserveEdgeStorage(internalOutDegree[index], internalInDegree[index]);
+  }
+
   InfoNode* parentPtr = &parent;
   auto targetIndexFor = [&](InfoNode* target) -> unsigned int {
     if (useTinyFastPath) {

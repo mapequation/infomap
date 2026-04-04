@@ -365,6 +365,12 @@ public:
     target.m_inEdges.push_back(edge);
   }
 
+  void reserveEdgeStorage(unsigned int outDegree, unsigned int inDegree)
+  {
+    m_outEdges.reserve(outDegree);
+    m_inEdges.reserve(inDegree);
+  }
+
 private:
   void calcChildDegree() noexcept;
 };
