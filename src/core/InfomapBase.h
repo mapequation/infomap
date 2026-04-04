@@ -56,6 +56,8 @@ public:
     double networkSec = 0.0;
     double moduleSec = 0.0;
     double modulePrepSec = 0.0;
+    double moduleIndexSec = 0.0;
+    double moduleReserveSec = 0.0;
     double moduleCloneSec = 0.0;
     double moduleEdgeCloneSec = 0.0;
     double totalSec = 0.0;
@@ -64,6 +66,8 @@ public:
     std::array<unsigned int, moduleSizeBucketCount> moduleSizeBucketCalls{};
     std::array<double, moduleSizeBucketCount> moduleSizeBucketSec{};
     std::array<double, moduleSizeBucketCount> moduleSizeBucketPrepSec{};
+    std::array<double, moduleSizeBucketCount> moduleSizeBucketIndexSec{};
+    std::array<double, moduleSizeBucketCount> moduleSizeBucketReserveSec{};
     std::array<double, moduleSizeBucketCount> moduleSizeBucketCloneSec{};
     std::array<double, moduleSizeBucketCount> moduleSizeBucketEdgeCloneSec{};
 
