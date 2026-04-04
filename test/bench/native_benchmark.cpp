@@ -99,6 +99,7 @@ void aggregateRebuildStats(
   total.totalCalls += sample.totalCalls;
   total.networkSec += sample.networkSec;
   total.moduleSec += sample.moduleSec;
+  total.modulePrepSec += sample.modulePrepSec;
   total.moduleCloneSec += sample.moduleCloneSec;
   total.moduleEdgeCloneSec += sample.moduleEdgeCloneSec;
   total.totalSec += sample.totalSec;
@@ -111,6 +112,7 @@ void aggregateRebuildStats(
   for (std::size_t i = 0; i < total.moduleSizeBucketCalls.size(); ++i) {
     total.moduleSizeBucketCalls[i] += sample.moduleSizeBucketCalls[i];
     total.moduleSizeBucketSec[i] += sample.moduleSizeBucketSec[i];
+    total.moduleSizeBucketPrepSec[i] += sample.moduleSizeBucketPrepSec[i];
     total.moduleSizeBucketCloneSec[i] += sample.moduleSizeBucketCloneSec[i];
     total.moduleSizeBucketEdgeCloneSec[i] += sample.moduleSizeBucketEdgeCloneSec[i];
   }
@@ -124,6 +126,7 @@ void printRebuildStats(const infomap::InfomapBase::RebuildBenchmarkStats& stats)
   std::cout << "\"total_calls\":" << stats.totalCalls << ",";
   std::cout << "\"network_sec\":" << stats.networkSec << ",";
   std::cout << "\"module_sec\":" << stats.moduleSec << ",";
+  std::cout << "\"module_prep_sec\":" << stats.modulePrepSec << ",";
   std::cout << "\"module_clone_sec\":" << stats.moduleCloneSec << ",";
   std::cout << "\"module_edge_clone_sec\":" << stats.moduleEdgeCloneSec << ",";
   std::cout << "\"total_sec\":" << stats.totalSec << ",";
@@ -137,6 +140,7 @@ void printRebuildStats(const infomap::InfomapBase::RebuildBenchmarkStats& stats)
     std::cout << "\"" << kModuleSizeBucketLabels[i] << "\":{";
     std::cout << "\"calls\":" << stats.moduleSizeBucketCalls[i] << ",";
     std::cout << "\"sec\":" << stats.moduleSizeBucketSec[i] << ",";
+    std::cout << "\"prep_sec\":" << stats.moduleSizeBucketPrepSec[i] << ",";
     std::cout << "\"clone_sec\":" << stats.moduleSizeBucketCloneSec[i] << ",";
     std::cout << "\"edge_clone_sec\":" << stats.moduleSizeBucketEdgeCloneSec[i];
     std::cout << "}";

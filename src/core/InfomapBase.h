@@ -55,6 +55,7 @@ public:
     unsigned int totalCalls = 0;
     double networkSec = 0.0;
     double moduleSec = 0.0;
+    double modulePrepSec = 0.0;
     double moduleCloneSec = 0.0;
     double moduleEdgeCloneSec = 0.0;
     double totalSec = 0.0;
@@ -62,6 +63,7 @@ public:
     unsigned long long peakRssDeltaBytesMax = 0;
     std::array<unsigned int, moduleSizeBucketCount> moduleSizeBucketCalls{};
     std::array<double, moduleSizeBucketCount> moduleSizeBucketSec{};
+    std::array<double, moduleSizeBucketCount> moduleSizeBucketPrepSec{};
     std::array<double, moduleSizeBucketCount> moduleSizeBucketCloneSec{};
     std::array<double, moduleSizeBucketCount> moduleSizeBucketEdgeCloneSec{};
 
