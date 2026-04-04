@@ -967,6 +967,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
 
   const bool useTinyFastPath = !haveMemory() && numNodes <= kTinySubnetworkRebuildThreshold;
   unsigned int childIndex = 0;
+  unsigned int totalOutDegreeUpperBound = 0;
   std::vector<InfoNode*> originalChildren;
   originalChildren.reserve(numNodes);
   std::unordered_map<InfoNode*, unsigned int> nodeIndexMap;
@@ -978,6 +979,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
     auto* clonedNode = new InfoNode(node);
     clonedNode->initClean();
     originalChildren.push_back(&node);
+    totalOutDegreeUpperBound += node.outDegree();
     m_root.addChild(clonedNode);
     if (!useTinyFastPath) {
       nodeIndexMap[&node] = childIndex;
@@ -987,23 +989,34 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   }
   const double moduleCloneSec = cloneTimer.getElapsedTimeInSec();
 
+  struct InternalEdgeRef {
+    unsigned int sourceIndex;
+    unsigned int targetIndex;
+    InfoEdge* edge;
+  };
+
   std::vector<unsigned int> internalOutDegree(numNodes, 0);
   std::vector<unsigned int> internalInDegree(numNodes, 0);
+  std::vector<InternalEdgeRef> internalEdges;
+  internalEdges.reserve(totalOutDegreeUpperBound);
   for (unsigned int sourceIndex = 0; sourceIndex < numNodes; ++sourceIndex) {
     InfoNode& node = *originalChildren[sourceIndex];
     for (InfoEdge* e : node.outEdges()) {
       InfoEdge& edge = *e;
       if (edge.target->parent == &parent) {
         ++internalOutDegree[sourceIndex];
+        unsigned int targetIndex = 0;
         if (useTinyFastPath) {
           auto it = std::find(originalChildren.begin(), originalChildren.end(), edge.target);
           if (it == originalChildren.end()) {
             throw std::logic_error("generateSubNetwork target child not found during tiny degree count");
           }
-          ++internalInDegree[static_cast<unsigned int>(std::distance(originalChildren.begin(), it))];
+          targetIndex = static_cast<unsigned int>(std::distance(originalChildren.begin(), it));
         } else {
-          ++internalInDegree[nodeIndexMap.at(edge.target)];
+          targetIndex = nodeIndexMap.at(edge.target);
         }
+        ++internalInDegree[targetIndex];
+        internalEdges.push_back({sourceIndex, targetIndex, &edge});
       }
     }
   }
@@ -1011,29 +1024,11 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
     m_leafNodes[index]->reserveEdgeStorage(internalOutDegree[index], internalInDegree[index]);
   }
 
-  InfoNode* parentPtr = &parent;
-  auto targetIndexFor = [&](InfoNode* target) -> unsigned int {
-    if (useTinyFastPath) {
-      auto it = std::find(originalChildren.begin(), originalChildren.end(), target);
-      if (it == originalChildren.end()) {
-        throw std::logic_error("generateSubNetwork target child not found in tiny fast path");
-      }
-      return static_cast<unsigned int>(std::distance(originalChildren.begin(), it));
-    }
-    return nodeIndexMap.at(target);
-  };
-
   // Clone edges
   Stopwatch edgeCloneTimer(true);
-  for (unsigned int sourceIndex = 0; sourceIndex < numNodes; ++sourceIndex) {
-    InfoNode& node = *originalChildren[sourceIndex];
-    for (InfoEdge* e : node.outEdges()) {
-      InfoEdge& edge = *e;
-      // If neighbour node is within the same module, add the link to this subnetwork.
-      if (edge.target->parent == parentPtr) {
-        m_leafNodes[sourceIndex]->addOutEdge(*m_leafNodes[targetIndexFor(edge.target)], edge.data.weight, edge.data.flow);
-      }
-    }
+  for (const auto& internalEdge : internalEdges) {
+    InfoEdge& edge = *internalEdge.edge;
+    m_leafNodes[internalEdge.sourceIndex]->addOutEdge(*m_leafNodes[internalEdge.targetIndex], edge.data.weight, edge.data.flow);
   }
   const double moduleEdgeCloneSec = edgeCloneTimer.getElapsedTimeInSec();
 
