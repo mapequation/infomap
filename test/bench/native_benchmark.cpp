@@ -9,6 +9,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <array>
 #include <vector>
 
 #if defined(__unix__) || defined(__APPLE__)
@@ -79,6 +80,16 @@ struct RunSample {
   infomap::InfomapBase::RebuildBenchmarkStats rebuildStats;
 };
 
+constexpr std::array<const char*, infomap::InfomapBase::RebuildBenchmarkStats::moduleSizeBucketCount> kModuleSizeBucketLabels = {
+    "1-2",
+    "3-4",
+    "5-8",
+    "9-16",
+    "17-32",
+    "33-64",
+    "65+",
+};
+
 void aggregateRebuildStats(
     infomap::InfomapBase::RebuildBenchmarkStats& total,
     const infomap::InfomapBase::RebuildBenchmarkStats& sample)
@@ -95,6 +106,10 @@ void aggregateRebuildStats(
   if (sample.peakRssDeltaBytesMax > total.peakRssDeltaBytesMax) {
     total.peakRssDeltaBytesMax = sample.peakRssDeltaBytesMax;
   }
+  for (std::size_t i = 0; i < total.moduleSizeBucketCalls.size(); ++i) {
+    total.moduleSizeBucketCalls[i] += sample.moduleSizeBucketCalls[i];
+    total.moduleSizeBucketSec[i] += sample.moduleSizeBucketSec[i];
+  }
 }
 
 void printRebuildStats(const infomap::InfomapBase::RebuildBenchmarkStats& stats)
@@ -107,7 +122,18 @@ void printRebuildStats(const infomap::InfomapBase::RebuildBenchmarkStats& stats)
   std::cout << "\"module_sec\":" << stats.moduleSec << ",";
   std::cout << "\"total_sec\":" << stats.totalSec << ",";
   std::cout << "\"peak_rss_bytes_max\":" << stats.peakRssBytesMax << ",";
-  std::cout << "\"peak_rss_delta_bytes_max\":" << stats.peakRssDeltaBytesMax;
+  std::cout << "\"peak_rss_delta_bytes_max\":" << stats.peakRssDeltaBytesMax << ",";
+  std::cout << "\"module_size_buckets\":{";
+  for (std::size_t i = 0; i < kModuleSizeBucketLabels.size(); ++i) {
+    if (i > 0) {
+      std::cout << ",";
+    }
+    std::cout << "\"" << kModuleSizeBucketLabels[i] << "\":{";
+    std::cout << "\"calls\":" << stats.moduleSizeBucketCalls[i] << ",";
+    std::cout << "\"sec\":" << stats.moduleSizeBucketSec[i];
+    std::cout << "}";
+  }
+  std::cout << "}";
   std::cout << "}";
 }
 

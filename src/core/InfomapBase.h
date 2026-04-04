@@ -29,6 +29,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <array>
 
 namespace infomap {
 
@@ -47,6 +48,8 @@ public:
   using PartitionQueue = detail::PartitionQueue;
 
   struct RebuildBenchmarkStats {
+    static constexpr unsigned int moduleSizeBucketCount = 7;
+
     unsigned int networkCalls = 0;
     unsigned int moduleCalls = 0;
     unsigned int totalCalls = 0;
@@ -55,6 +58,8 @@ public:
     double totalSec = 0.0;
     unsigned long long peakRssBytesMax = 0;
     unsigned long long peakRssDeltaBytesMax = 0;
+    std::array<unsigned int, moduleSizeBucketCount> moduleSizeBucketCalls{};
+    std::array<double, moduleSizeBucketCount> moduleSizeBucketSec{};
 
     void reset() noexcept { *this = RebuildBenchmarkStats{}; }
   };

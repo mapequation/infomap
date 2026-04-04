@@ -8,6 +8,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+MODULE_SIZE_BUCKET_LABELS = ("1-2", "3-4", "5-8", "9-16", "17-32", "33-64", "65+")
+
 
 def write_pajek_edges(path: Path, num_nodes: int, edges: set[tuple[int, int]]) -> None:
     with path.open("w", encoding="utf-8") as handle:
