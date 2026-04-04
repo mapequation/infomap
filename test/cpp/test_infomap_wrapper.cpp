@@ -437,4 +437,49 @@ TEST_CASE("Metadata-bearing subnetwork rebuild preserves leaf metadata [fast][co
   CHECK(subInfomap.numLevels() >= 1);
 }
 
+TEST_CASE("Higher-order metadata-bearing subnetwork rebuild stays stable [fast][core][lifecycle][subnetwork][parser]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--meta-data-rate 2"));
+  infomap::test::readNetworkFixture(im, "states.net");
+  im.initMetaData(infomap::test::fixturePath("meta/states.meta"));
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  REQUIRE(im.numTopModules() == 2);
+
+  auto& module = *im.root().firstChild;
+  REQUIRE(module.childDegree() >= 2);
+
+  const auto originalEdges = internalEdgesForModule(module);
+  const auto originalIdentities = nodeIdentitiesForModule(module);
+  REQUIRE_FALSE(originalIdentities.empty());
+  for (const auto& identity : originalIdentities) {
+    CHECK_FALSE(std::get<2>(identity).empty());
+  }
+
+  auto runSubnetwork = [&]() -> std::tuple<std::vector<std::vector<unsigned int>>, double, double> {
+    auto& subInfomap = im.getSubInfomap(module).initNetwork(module);
+    REQUIRE(subInfomap.root().owner == &module);
+    REQUIRE(subInfomap.numLeafNodes() == module.childDegree());
+    CHECK(internalEdgesForModule(subInfomap.root()) == originalEdges);
+    CHECK(nodeIdentitiesForModule(subInfomap.root()) == originalIdentities);
+
+    subInfomap.run();
+    CHECK(std::isfinite(subInfomap.codelength()));
+    CHECK(std::isfinite(subInfomap.getIndexCodelength()));
+    CHECK(subInfomap.codelength() >= -1e-12);
+    CHECK(subInfomap.getIndexCodelength() >= -1e-12);
+    CHECK(subInfomap.numLevels() >= 1);
+
+    return {canonicalSubInfomapPartition(subInfomap, true), subInfomap.codelength(), subInfomap.getIndexCodelength()};
+  };
+
+  const auto firstRun = runSubnetwork();
+  const auto secondRun = runSubnetwork();
+
+  CHECK(std::get<0>(secondRun) == std::get<0>(firstRun));
+  CHECK(std::get<1>(secondRun) == doctest::Approx(std::get<1>(firstRun)));
+  CHECK(std::get<2>(secondRun) == doctest::Approx(std::get<2>(firstRun)));
+}
+
 } // namespace
