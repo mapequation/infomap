@@ -94,6 +94,38 @@ TEST_CASE("readInputData accumulate=true appends first-order fixtures [fast][cor
   infomap::test::checkCanonicalPartition(im, {{1, 2}, {3, 4}});
 }
 
+TEST_CASE("readInputData accumulate mode stays stable across multiple runs on the same instance [fast][core][lifecycle][parser]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+
+  infomap::test::readNetworkFixture(im, "accumulate_a.net", false);
+  CHECK(im.network().numNodes() == 2);
+  CHECK(im.network().numLinks() == 1);
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+  CHECK(im.numTopModules() == 1);
+  infomap::test::checkCanonicalPartition(im, {{1, 2}});
+
+  infomap::test::readNetworkFixture(im, "accumulate_b.net", true);
+  CHECK(im.network().numNodes() == 4);
+  CHECK(im.network().numLinks() == 2);
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+  CHECK(im.numTopModules() == 2);
+  infomap::test::checkCanonicalPartition(im, {{1, 2}, {3, 4}});
+
+  infomap::test::readNetworkFixture(im, "accumulate_b.net", false);
+  CHECK(im.network().numNodes() == 2);
+  CHECK(im.network().numLinks() == 1);
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+  CHECK(im.numTopModules() == 1);
+  infomap::test::checkCanonicalPartition(im, {{3, 4}});
+}
+
 TEST_CASE("Higher-order module queries require state ids [fast][core][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
