@@ -368,4 +368,28 @@ TEST_CASE("Invalid cluster-data failure does not poison later valid init on the 
   infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
 }
 
+TEST_CASE("Invalid tree cluster-data failure does not poison later valid tree init on the same instance [fast][core][partition][parser][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+
+  im.initNetwork(im.network());
+  CHECK_THROWS_WITH_AS(
+      im.initPartition(infomap::test::clusterFixturePath("invalid_zero_path.tree"), false, &im.network()),
+      "There is a '0' in the tree path, lowest allowed integer is 1.",
+      std::runtime_error);
+
+  im.initNetwork(im.network());
+  im.initPartition(infomap::test::clusterFixturePath("twotriangles_three_level.tree"), false, &im.network());
+
+  CHECK(im.numLeafNodes() == 6);
+  CHECK(im.numTopModules() == 2);
+  CHECK(im.numLevels() == 3);
+  CHECK(im.getMultilevelModules(false).size() == 6);
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+}
+
 } // namespace
