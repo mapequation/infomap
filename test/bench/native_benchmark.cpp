@@ -23,12 +23,24 @@ std::string jsonEscape(const std::string& value)
   std::ostringstream escaped;
   for (char c : value) {
     switch (c) {
-      case '\\': escaped << "\\\\"; break;
-      case '"': escaped << "\\\""; break;
-      case '\n': escaped << "\\n"; break;
-      case '\r': escaped << "\\r"; break;
-      case '\t': escaped << "\\t"; break;
-      default: escaped << c; break;
+    case '\\':
+      escaped << "\\\\";
+      break;
+    case '"':
+      escaped << "\\\"";
+      break;
+    case '\n':
+      escaped << "\\n";
+      break;
+    case '\r':
+      escaped << "\\r";
+      break;
+    case '\t':
+      escaped << "\\t";
+      break;
+    default:
+      escaped << c;
+      break;
     }
   }
   return escaped.str();
@@ -69,13 +81,13 @@ struct RunSample {
 };
 
 constexpr std::array<const char*, infomap::InfomapBase::RebuildBenchmarkStats::moduleSizeBucketCount> kModuleSizeBucketLabels = {
-    "1-2",
-    "3-4",
-    "5-8",
-    "9-16",
-    "17-32",
-    "33-64",
-    "65+",
+  "1-2",
+  "3-4",
+  "5-8",
+  "9-16",
+  "17-32",
+  "33-64",
+  "65+",
 };
 
 void aggregateRebuildStats(
@@ -236,7 +248,7 @@ int main(int argc, char* argv[])
         peakRss = currentPeakRss;
       }
       aggregateRebuildStats(totalRebuildStats, runRebuildStats);
-      runs.push_back(RunSample{
+      runs.push_back(RunSample {
           static_cast<unsigned int>(iteration + 1),
           0.0,
           runSec,

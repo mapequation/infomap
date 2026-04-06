@@ -38,7 +38,7 @@ std::map<EdgeKey, double> aggregatedInterModuleFlow(std::vector<InfoNode*>& node
       if (undirected && module1 > module2) {
         std::swap(module1, module2);
       }
-      flows[{module1, module2}] += edge->data.flow;
+      flows[{ module1, module2 }] += edge->data.flow;
     }
   }
   return flows;
@@ -57,7 +57,7 @@ std::map<EdgeKey, double> aggregatedModuleFlow(InfoNode& root, bool undirected)
       if (undirected && module1 > module2) {
         std::swap(module1, module2);
       }
-      flows[{module1, module2}] += edge->data.flow;
+      flows[{ module1, module2 }] += edge->data.flow;
     }
   }
   return flows;
@@ -74,12 +74,12 @@ TEST_CASE("Cluster-data clu fixture initializes a two-level partition [fast][cor
   CHECK(im.numLeafNodes() == 6);
   CHECK(im.numTopModules() == 2);
   CHECK(im.numLevels() == 2);
-  infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 
   im.run();
 
   infomap::test::checkRunSanity(im);
-  infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
 TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core][partition]")
@@ -168,7 +168,7 @@ TEST_CASE("InfoNode hierarchy mutations preserve parentage and child order [fast
   root.addChild(childC);
 
   CHECK(root.childDegree() == 3);
-  CHECK(childStateIds(root) == std::vector<unsigned int>{10, 20, 30});
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 20, 30 });
 
   CHECK(root.collapseChildren() == 3);
   CHECK(root.childDegree() == 0);
@@ -177,7 +177,7 @@ TEST_CASE("InfoNode hierarchy mutations preserve parentage and child order [fast
 
   CHECK(root.expandChildren() == 3);
   CHECK(root.childDegree() == 3);
-  CHECK(childStateIds(root) == std::vector<unsigned int>{10, 20, 30});
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 20, 30 });
   CHECK(childA->parent == &root);
   CHECK(childB->parent == &root);
   CHECK(childC->parent == &root);
@@ -197,7 +197,7 @@ TEST_CASE("InfoNode hierarchy mutations preserve parentage and child order [fast
   root.addChild(rebuiltB);
 
   CHECK(root.childDegree() == 2);
-  CHECK(childStateIds(root) == std::vector<unsigned int>{40, 50});
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 40, 50 });
 }
 
 TEST_CASE("Reinitializing a network clears collapsed root children [fast][core][partition][tree]")
@@ -278,14 +278,14 @@ TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][c
 
   CHECK(moduleA->replaceWithChildren() == 1);
   CHECK(root.childDegree() == 3);
-  CHECK(childStateIds(root) == std::vector<unsigned int>{1, 2, 200});
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 1, 2, 200 });
   CHECK(root.firstChild->parent == &root);
   CHECK(root.firstChild->next->parent == &root);
   CHECK(root.lastChild == moduleB);
 
   CHECK(root.replaceChildrenWithGrandChildren() == 1);
   CHECK(root.childDegree() == 4);
-  CHECK(childStateIds(root) == std::vector<unsigned int>{1, 2, 3, 4});
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 1, 2, 3, 4 });
   for (const auto& child : root.children()) {
     CHECK(child.parent == &root);
     CHECK(child.isLeaf());
@@ -307,7 +307,7 @@ TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][
 
   infomap::test::checkRunSanity(im);
   CHECK(im.numTopModules() == 2);
-  infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
 TEST_CASE("Hard cluster-data preserves the imposed coarse partition [fast][core][partition]")
@@ -327,7 +327,7 @@ TEST_CASE("Hard cluster-data preserves the imposed coarse partition [fast][core]
   infomap::test::checkRunSanity(im);
   CHECK(im.numLeafNodes() == 6);
   CHECK(im.numTopModules() == 2);
-  infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
 TEST_CASE("Hard cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle]")
@@ -348,7 +348,7 @@ TEST_CASE("Hard cluster-data reinit and rerun stay stable on the same instance [
     infomap::test::checkRunSanity(im);
     CHECK(im.numLeafNodes() == 6);
     CHECK(im.numTopModules() == 2);
-    infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
+    infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
   };
 
   runHardPartition();
@@ -406,7 +406,7 @@ TEST_CASE("Consolidate modules preserves aggregated inter-module flow [fast][cor
   im.setActiveNetworkFromLeafs();
   im.initPartition();
 
-  std::vector<unsigned int> modules{0, 0, 0, 1, 1, 1};
+  std::vector<unsigned int> modules { 0, 0, 0, 1, 1, 1 };
   im.moveActiveNodesToPredefinedModules(modules);
 
   const auto expectedFlows = aggregatedInterModuleFlow(im.activeNetwork(), im.isUndirectedClustering());
@@ -456,7 +456,7 @@ TEST_CASE("Invalid cluster-data failure does not poison later valid init on the 
   im.run();
 
   infomap::test::checkRunSanity(im);
-  infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
 TEST_CASE("Invalid tree cluster-data failure does not poison later valid tree init on the same instance [fast][core][partition][parser][lifecycle]")

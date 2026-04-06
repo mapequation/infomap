@@ -94,17 +94,17 @@ private:
 
 public:
   InfoNode(const FlowData& flowData)
-      : data(flowData) {};
+      : data(flowData) { };
 
   // For first order nodes, physicalId equals stateId
   InfoNode(const FlowData& flowData, unsigned int stateId)
-      : data(flowData), stateId(stateId), physicalId(stateId) {};
+      : data(flowData), stateId(stateId), physicalId(stateId) { };
 
   InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId)
-      : data(flowData), stateId(stateId), physicalId(physicalId) {};
+      : data(flowData), stateId(stateId), physicalId(physicalId) { };
 
   InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId, unsigned int layerId)
-      : data(flowData), stateId(stateId), physicalId(physicalId), layerId(layerId) {};
+      : data(flowData), stateId(stateId), physicalId(physicalId), layerId(layerId) { };
 
   InfoNode() = default;
 
