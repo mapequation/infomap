@@ -1,2 +1,0 @@
-# Convenience environment for local package, test, docs, example, and release work.
--e .[test,docs,examples,release]

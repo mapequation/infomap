@@ -153,7 +153,7 @@ doctor:
 	fi
 
 dev-bootstrap:
-	@$(PIP) install -r requirements_dev.txt
+	@$(PIP) install -e '.[test,docs,examples,release]'
 	@$(NPM) ci
 	@printf "%s\n" \
 		"Bootstrap complete." \

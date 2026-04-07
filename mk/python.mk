@@ -116,7 +116,7 @@ format-python:
 	$(RUFF) format $(PYTHON_FORMAT_TARGETS) || true
 
 py-prepare:
-	$(PIP) install -r requirements_dev.txt
+	$(PIP) install -e '.[test,docs,examples,release]'
 
 release-python-dist:
 	@mkdir -p $(PYTHON_DIST_DIR)

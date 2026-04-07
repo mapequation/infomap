@@ -54,7 +54,7 @@ Install development dependencies, build the extension, then run the full Python
 verification path:
 
 ```bash
-python -m pip install -r requirements_dev.txt
+python -m pip install -e '.[test,docs,examples,release]'
 
 PATH="/opt/homebrew/bin:$PATH" \
 CXXFLAGS="-I/opt/homebrew/opt/libomp/include" \
