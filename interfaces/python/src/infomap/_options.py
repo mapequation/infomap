@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shlex
 import warnings
 from dataclasses import dataclass, fields
 
@@ -166,7 +167,7 @@ def _append_option_specs(parts, options, specs):
                 parts.append(flag)
             continue
         if include(value):
-            parts.append(f"{flag} {value}")
+            parts.append(f"{flag} {shlex.quote(str(value))}")
 
 
 def _join_args(base_args, parts):
@@ -407,7 +408,7 @@ class InfomapOptions:
 
         _append_option_specs(rendered_args, options, _OUTPUT_POST_VERBOSITY_OPTION_SPECS)
         if self.output is not None:
-            rendered_args.append(f"--output {','.join(self.output)}")
+            rendered_args.append(f"--output {shlex.quote(','.join(self.output))}")
         _append_option_specs(rendered_args, options, _OUTPUT_POST_OUTPUT_OPTION_SPECS)
         _append_option_specs(rendered_args, options, _ALGORITHM_PRE_DIRECTED_OPTION_SPECS)
 

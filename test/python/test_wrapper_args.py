@@ -47,6 +47,25 @@ def test_construct_args_deduplicates_no_self_links():
     assert tokens.count("--no-self-links") == 1
 
 
+def test_construct_args_quotes_values_with_spaces():
+    args = infomap_module._construct_args(
+        out_name="foo bar",
+        meta_data="path with spaces.clu",
+    )
+
+    tokens = shlex.split(args)
+    assert tokens == [
+        "--meta-data",
+        "path with spaces.clu",
+        "--out-name",
+        "foo bar",
+    ]
+
+    conf = infomap_module.Config(args, False)
+    assert conf.outName == "foo bar"
+    assert conf.metaDataFile == "path with spaces.clu"
+
+
 def test_run_forwards_variable_markov_options(monkeypatch):
     captured = {}
     im = infomap_module.Infomap(silent=True, no_file_output=True)

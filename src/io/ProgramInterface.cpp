@@ -10,6 +10,7 @@
 #include "ProgramInterface.h"
 #include "../utils/Log.h"
 
+#include <cctype>
 #include <iostream>
 #include <cstdlib>
 #include <map>
@@ -67,10 +68,61 @@ OptionLookup buildOptionLookup(std::deque<std::unique_ptr<Option>>& options)
 std::vector<std::string> tokenizeArgs(const std::string& args)
 {
   std::vector<std::string> flags;
-  std::istringstream argStream(args);
   std::string arg;
-  while (!(argStream >> arg).fail())
+  bool inSingleQuotes = false;
+  bool inDoubleQuotes = false;
+  bool escaped = false;
+
+  for (std::size_t i = 0; i < args.size(); ++i) {
+    const char c = args[i];
+    const char next = i + 1 < args.size() ? args[i + 1] : '\0';
+
+    if (escaped) {
+      arg.push_back(c);
+      escaped = false;
+      continue;
+    }
+
+    if (c == '\'' && !inDoubleQuotes) {
+      inSingleQuotes = !inSingleQuotes;
+      continue;
+    }
+
+    if (c == '"' && !inSingleQuotes) {
+      inDoubleQuotes = !inDoubleQuotes;
+      continue;
+    }
+
+    if (c == '\\' && !inSingleQuotes) {
+      if (next != '\0' &&
+          (std::isspace(static_cast<unsigned char>(next)) || next == '\\' || next == '"' || next == '\'')) {
+        escaped = true;
+        continue;
+      }
+      arg.push_back(c);
+      continue;
+    }
+
+    if (std::isspace(static_cast<unsigned char>(c)) && !inSingleQuotes && !inDoubleQuotes) {
+      if (!arg.empty()) {
+        flags.push_back(arg);
+        arg.clear();
+      }
+      continue;
+    }
+
+    arg.push_back(c);
+  }
+
+  if (escaped)
+    throw std::runtime_error("Illegal trailing escape in arguments");
+
+  if (inSingleQuotes || inDoubleQuotes)
+    throw std::runtime_error("Unterminated quoted argument");
+
+  if (!arg.empty())
     flags.push_back(arg);
+
   return flags;
 }
 

@@ -1,4 +1,8 @@
 from operator import itemgetter
+import os
+from pathlib import Path
+import subprocess
+import sys
 
 import networkx as nx
 import pytest
@@ -182,3 +186,39 @@ def test_run_with_options_forwards_to_run(monkeypatch):
     assert captured["kwargs"]["initial_partition"] == {1: 1}
     assert captured["kwargs"]["variable_markov_time"] is True
     assert captured["kwargs"]["num_trials"] == 5
+
+
+def test_main_preserves_cli_argument_boundaries(example_network_path, tmp_path):
+    network_path = tmp_path / "with space.net"
+    network_path.write_text(example_network_path("twotriangles.net").read_text())
+
+    repo_root = Path(__file__).resolve().parents[2]
+    env = dict(**os.environ)
+    existing_pythonpath = env.get("PYTHONPATH")
+    src_path = str(repo_root / "interfaces" / "python" / "src")
+    env["PYTHONPATH"] = (
+        src_path if not existing_pythonpath else f"{src_path}{os.pathsep}{existing_pythonpath}"
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "infomap",
+            str(network_path),
+            "--silent",
+            "--no-file-output",
+        ],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_config_hides_unusable_raw_members():
+    conf = infomap_module.Config("", False)
+
+    for attr in ("startDate", "additionalInput", "parsedOptions"):
+        assert not hasattr(conf, attr)

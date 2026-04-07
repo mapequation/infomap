@@ -3546,20 +3546,18 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 #define SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t swig_types[100]
 #define SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_std__string_t__iterator_bool_t swig_types[101]
 #define SWIGTYPE_p_std__pairT_unsigned_int_unsigned_int_t swig_types[102]
-#define SWIGTYPE_p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t swig_types[103]
-#define SWIGTYPE_p_std__vectorT_double_t swig_types[104]
-#define SWIGTYPE_p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator swig_types[105]
-#define SWIGTYPE_p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t swig_types[106]
-#define SWIGTYPE_p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t swig_types[107]
-#define SWIGTYPE_p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t swig_types[108]
-#define SWIGTYPE_p_std__vectorT_int_std__allocatorT_int_t_t swig_types[109]
-#define SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t swig_types[110]
-#define SWIGTYPE_p_std__vectorT_unsigned_int_t swig_types[111]
-#define SWIGTYPE_p_swig__SwigPyIterator swig_types[112]
-#define SWIGTYPE_p_tree_iterator swig_types[113]
-#define SWIGTYPE_p_value_type swig_types[114]
-static swig_type_info *swig_types[116];
-static swig_module_info swig_module = {swig_types, 115, 0, 0, 0, 0};
+#define SWIGTYPE_p_std__vectorT_double_t swig_types[103]
+#define SWIGTYPE_p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator swig_types[104]
+#define SWIGTYPE_p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t swig_types[105]
+#define SWIGTYPE_p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t swig_types[106]
+#define SWIGTYPE_p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t swig_types[107]
+#define SWIGTYPE_p_std__vectorT_int_std__allocatorT_int_t_t swig_types[108]
+#define SWIGTYPE_p_std__vectorT_unsigned_int_t swig_types[109]
+#define SWIGTYPE_p_swig__SwigPyIterator swig_types[110]
+#define SWIGTYPE_p_tree_iterator swig_types[111]
+#define SWIGTYPE_p_value_type swig_types[112]
+static swig_type_info *swig_types[114];
+static swig_module_info swig_module = {swig_types, 113, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -7085,60 +7083,6 @@ SWIGINTERN PyObject *_wrap_Config_networkFile_get(PyObject *self, PyObject *args
   arg1 = reinterpret_cast< infomap::Config * >(argp1);
   result = (std::string *) & ((arg1)->networkFile);
   resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Config_additionalInput_set(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::Config *arg1 = 0 ;
-  std::vector< std::string,std::allocator< std::string > > *arg2 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  PyObject *swig_obj[2] ;
-  
-  (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "Config_additionalInput_set", 2, 2, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_additionalInput_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::Config * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Config_additionalInput_set" "', argument " "2"" of type '" "std::vector< std::string,std::allocator< std::string > > *""'"); 
-  }
-  arg2 = reinterpret_cast< std::vector< std::string,std::allocator< std::string > > * >(argp2);
-  if (arg1) (arg1)->additionalInput = *arg2;
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Config_additionalInput_get(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::Config *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject *swig_obj[1] ;
-  std::vector< std::string,std::allocator< std::string > > *result = 0 ;
-  
-  (void)self;
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_additionalInput_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::Config * >(argp1);
-  result = (std::vector< std::string,std::allocator< std::string > > *)& ((arg1)->additionalInput);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t, 0 |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -11284,68 +11228,6 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_Config_startDate_set(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::Config *arg1 = 0 ;
-  Date arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 ;
-  int res2 = 0 ;
-  PyObject *swig_obj[2] ;
-  
-  (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "Config_startDate_set", 2, 2, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_startDate_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::Config * >(argp1);
-  {
-    res2 = SWIG_ConvertPtr(swig_obj[1], &argp2, SWIGTYPE_p_Date,  0  | 0);
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Config_startDate_set" "', argument " "2"" of type '" "Date""'"); 
-    }  
-    if (!argp2) {
-      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "Config_startDate_set" "', argument " "2"" of type '" "Date""'");
-    } else {
-      Date * temp = reinterpret_cast< Date * >(argp2);
-      arg2 = *temp;
-      if (SWIG_IsNewObj(res2)) delete temp;
-    }
-  }
-  if (arg1) (arg1)->startDate = arg2;
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Config_startDate_get(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::Config *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject *swig_obj[1] ;
-  Date result;
-  
-  (void)self;
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_startDate_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::Config * >(argp1);
-  result =  ((arg1)->startDate);
-  resultobj = SWIG_NewPointerObj((new Date(result)), SWIGTYPE_p_Date, SWIG_POINTER_OWN |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
 SWIGINTERN PyObject *_wrap_Config_version_set(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::Config *arg1 = 0 ;
@@ -11462,60 +11344,6 @@ SWIGINTERN PyObject *_wrap_Config_parsedString_get(PyObject *self, PyObject *arg
   arg1 = reinterpret_cast< infomap::Config * >(argp1);
   result = (std::string *) & ((arg1)->parsedString);
   resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Config_parsedOptions_set(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::Config *arg1 = 0 ;
-  std::vector< ParsedOption,std::allocator< ParsedOption > > *arg2 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  PyObject *swig_obj[2] ;
-  
-  (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "Config_parsedOptions_set", 2, 2, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_parsedOptions_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::Config * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Config_parsedOptions_set" "', argument " "2"" of type '" "std::vector< ParsedOption,std::allocator< ParsedOption > > *""'"); 
-  }
-  arg2 = reinterpret_cast< std::vector< ParsedOption,std::allocator< ParsedOption > > * >(argp2);
-  if (arg1) (arg1)->parsedOptions = *arg2;
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Config_parsedOptions_get(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::Config *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject *swig_obj[1] ;
-  std::vector< ParsedOption,std::allocator< ParsedOption > > *result = 0 ;
-  
-  (void)self;
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_parsedOptions_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::Config * >(argp1);
-  result = (std::vector< ParsedOption,std::allocator< ParsedOption > > *)& ((arg1)->parsedOptions);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t, 0 |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -56779,8 +56607,6 @@ static PyMethodDef SwigMethods[] = {
 	 { "Config_isCLI_get", _wrap_Config_isCLI_get, METH_O, NULL},
 	 { "Config_networkFile_set", _wrap_Config_networkFile_set, METH_VARARGS, NULL},
 	 { "Config_networkFile_get", _wrap_Config_networkFile_get, METH_O, NULL},
-	 { "Config_additionalInput_set", _wrap_Config_additionalInput_set, METH_VARARGS, NULL},
-	 { "Config_additionalInput_get", _wrap_Config_additionalInput_get, METH_O, NULL},
 	 { "Config_stateInput_set", _wrap_Config_stateInput_set, METH_VARARGS, NULL},
 	 { "Config_stateInput_get", _wrap_Config_stateInput_get, METH_O, NULL},
 	 { "Config_stateOutput_set", _wrap_Config_stateOutput_set, METH_VARARGS, NULL},
@@ -56933,14 +56759,10 @@ static PyMethodDef SwigMethods[] = {
 	 { "Config_silent_get", _wrap_Config_silent_get, METH_O, NULL},
 	 { "Config_hideBipartiteNodes_set", _wrap_Config_hideBipartiteNodes_set, METH_VARARGS, NULL},
 	 { "Config_hideBipartiteNodes_get", _wrap_Config_hideBipartiteNodes_get, METH_O, NULL},
-	 { "Config_startDate_set", _wrap_Config_startDate_set, METH_VARARGS, NULL},
-	 { "Config_startDate_get", _wrap_Config_startDate_get, METH_O, NULL},
 	 { "Config_version_set", _wrap_Config_version_set, METH_VARARGS, NULL},
 	 { "Config_version_get", _wrap_Config_version_get, METH_O, NULL},
 	 { "Config_parsedString_set", _wrap_Config_parsedString_set, METH_VARARGS, NULL},
 	 { "Config_parsedString_get", _wrap_Config_parsedString_get, METH_O, NULL},
-	 { "Config_parsedOptions_set", _wrap_Config_parsedOptions_set, METH_VARARGS, NULL},
-	 { "Config_parsedOptions_get", _wrap_Config_parsedOptions_get, METH_O, NULL},
 	 { "new_Config", _wrap_new_Config, METH_VARARGS, NULL},
 	 { "Config_cloneAsNonMain", _wrap_Config_cloneAsNonMain, METH_VARARGS, NULL},
 	 { "Config_adaptDefaults", _wrap_Config_adaptDefaults, METH_O, NULL},
@@ -58016,14 +57838,12 @@ static swig_type_info _swigt__p_std__ostream = {"_p_std__ostream", "std::ostream
 static swig_type_info _swigt__p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t = {"_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t", "std::pair< infomap::StateNetwork::NodeMap::iterator,bool > *|std::pair< std::map< unsigned int,infomap::StateNetwork::StateNode,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::StateNetwork::StateNode > > >::iterator,bool > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__pairT_std__mapT_unsigned_int_std__string_t__iterator_bool_t = {"_p_std__pairT_std__mapT_unsigned_int_std__string_t__iterator_bool_t", "std::pair< std::map< unsigned int,std::string,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::string > > >::iterator,bool > *|std::pair< std::map< unsigned int,std::string >::iterator,bool > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__pairT_unsigned_int_unsigned_int_t = {"_p_std__pairT_unsigned_int_unsigned_int_t", "std::pair< unsigned int,unsigned int > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t = {"_p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t", "std::vector< ParsedOption,std::allocator< ParsedOption > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_double_t = {"_p_std__vectorT_double_t", "std::vector< double,std::allocator< double > > *|std::vector< double > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator = {"_p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator", "infomap::InfoNode::edge_iterator *|std::vector< infomap::InfoEdge *,std::allocator< infomap::InfoEdge * > >::iterator *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t = {"_p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t", "std::vector< infomap::InfoNode *,std::allocator< infomap::InfoNode * > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t = {"_p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t", "std::vector< infomap::PhysData,std::allocator< infomap::PhysData > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t = {"_p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t", "std::vector< infomap::detail::PerLevelStat,std::allocator< infomap::detail::PerLevelStat > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_int_std__allocatorT_int_t_t = {"_p_std__vectorT_int_std__allocatorT_int_t_t", "std::vector< int,std::allocator< int > > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorT_std__string_std__allocatorT_std__string_t_t = {"_p_std__vectorT_std__string_std__allocatorT_std__string_t_t", "std::vector< std::string,std::allocator< std::string > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_unsigned_int_t = {"_p_std__vectorT_unsigned_int_t", "std::vector< unsigned int,std::allocator< unsigned int > > *|std::vector< unsigned int > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_swig__SwigPyIterator = {"_p_swig__SwigPyIterator", "swig::SwigPyIterator *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_tree_iterator = {"_p_tree_iterator", "tree_iterator *", 0, 0, (void*)0, 0};
@@ -58133,14 +57953,12 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t,
   &_swigt__p_std__pairT_std__mapT_unsigned_int_std__string_t__iterator_bool_t,
   &_swigt__p_std__pairT_unsigned_int_unsigned_int_t,
-  &_swigt__p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t,
   &_swigt__p_std__vectorT_double_t,
   &_swigt__p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator,
   &_swigt__p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t,
   &_swigt__p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t,
   &_swigt__p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t,
   &_swigt__p_std__vectorT_int_std__allocatorT_int_t_t,
-  &_swigt__p_std__vectorT_std__string_std__allocatorT_std__string_t_t,
   &_swigt__p_std__vectorT_unsigned_int_t,
   &_swigt__p_swig__SwigPyIterator,
   &_swigt__p_tree_iterator,
@@ -58250,14 +58068,12 @@ static swig_cast_info _swigc__p_std__ostream[] = {  {&_swigt__p_std__ostream, 0,
 static swig_cast_info _swigc__p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t[] = {  {&_swigt__p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__pairT_std__mapT_unsigned_int_std__string_t__iterator_bool_t[] = {  {&_swigt__p_std__pairT_std__mapT_unsigned_int_std__string_t__iterator_bool_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__pairT_unsigned_int_unsigned_int_t[] = {  {&_swigt__p_std__pairT_unsigned_int_unsigned_int_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t[] = {  {&_swigt__p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_double_t[] = {  {&_swigt__p_std__vectorT_double_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator[] = {  {&_swigt__p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t[] = {  {&_swigt__p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t[] = {  {&_swigt__p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t[] = {  {&_swigt__p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_int_std__allocatorT_int_t_t[] = {  {&_swigt__p_std__vectorT_int_std__allocatorT_int_t_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorT_std__string_std__allocatorT_std__string_t_t[] = {  {&_swigt__p_std__vectorT_std__string_std__allocatorT_std__string_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_unsigned_int_t[] = {  {&_swigt__p_std__vectorT_unsigned_int_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_swig__SwigPyIterator[] = {  {&_swigt__p_swig__SwigPyIterator, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_tree_iterator[] = {  {&_swigt__p_tree_iterator, 0, 0, 0},{0, 0, 0, 0}};
@@ -58367,14 +58183,12 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t,
   _swigc__p_std__pairT_std__mapT_unsigned_int_std__string_t__iterator_bool_t,
   _swigc__p_std__pairT_unsigned_int_unsigned_int_t,
-  _swigc__p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t,
   _swigc__p_std__vectorT_double_t,
   _swigc__p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator,
   _swigc__p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t,
   _swigc__p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t,
   _swigc__p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t,
   _swigc__p_std__vectorT_int_std__allocatorT_int_t_t,
-  _swigc__p_std__vectorT_std__string_std__allocatorT_std__string_t_t,
   _swigc__p_std__vectorT_unsigned_int_t,
   _swigc__p_swig__SwigPyIterator,
   _swigc__p_tree_iterator,

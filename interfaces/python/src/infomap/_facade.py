@@ -1082,9 +1082,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         return super().codelengths()
 
 def main():
+    import shlex
     import sys
 
-    args = " ".join(sys.argv[1:])
+    args = shlex.join(sys.argv[1:])
     conf = Config(args, True)  # noqa: F405
     im = Infomap(conf)
     im.run()

@@ -152,6 +152,13 @@ namespace io {
     return !!(istream >> value);
   }
 
+  template <>
+  inline bool stringToValue(std::string const& str, std::string& value)
+  {
+    value = str;
+    return true;
+  }
+
   template <typename T>
   inline bool stringToUnsignedValue(std::string const& str, T& value)
   {

@@ -83,7 +83,6 @@ class Config(object):
     __repr__ = _swig_repr
     isCLI = property(_infomap.Config_isCLI_get, _infomap.Config_isCLI_set)
     networkFile = property(_infomap.Config_networkFile_get, _infomap.Config_networkFile_set)
-    additionalInput = property(_infomap.Config_additionalInput_get, _infomap.Config_additionalInput_set)
     stateInput = property(_infomap.Config_stateInput_get, _infomap.Config_stateInput_set)
     stateOutput = property(_infomap.Config_stateOutput_get, _infomap.Config_stateOutput_set)
     multilayerInput = property(_infomap.Config_multilayerInput_get, _infomap.Config_multilayerInput_set)
@@ -160,10 +159,8 @@ class Config(object):
     verboseNumberPrecision = property(_infomap.Config_verboseNumberPrecision_get, _infomap.Config_verboseNumberPrecision_set)
     silent = property(_infomap.Config_silent_get, _infomap.Config_silent_set)
     hideBipartiteNodes = property(_infomap.Config_hideBipartiteNodes_get, _infomap.Config_hideBipartiteNodes_set)
-    startDate = property(_infomap.Config_startDate_get, _infomap.Config_startDate_set)
     version = property(_infomap.Config_version_get, _infomap.Config_version_set)
     parsedString = property(_infomap.Config_parsedString_get, _infomap.Config_parsedString_set)
-    parsedOptions = property(_infomap.Config_parsedOptions_get, _infomap.Config_parsedOptions_set)
 
     def __init__(self, *args):
         _infomap.Config_swiginit(self, _infomap.new_Config(*args))
