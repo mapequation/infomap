@@ -345,8 +345,6 @@ void InfoNode::setChildDegree(unsigned int value) noexcept
 void InfoNode::initClean() noexcept
 {
   releaseChildren();
-  collapsedFirstChild = nullptr;
-  collapsedLastChild = nullptr;
   previous = next = parent = nullptr;
 
   physicalNodes.clear();

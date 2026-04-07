@@ -27,7 +27,6 @@
 #include <limits>
 #include <map>
 #include <set>
-#include <unordered_map>
 #include <cstdlib>
 #include <algorithm>
 #include <cmath>
@@ -163,9 +162,6 @@ void InfomapBase::run(Network& network)
 {
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
-
-  // Reset the RNG for each run so a reused instance stays deterministic with a fixed seed.
-  m_rand.seed(seedToRandomNumberGenerator);
 
   if (network.numNodes() == 0) {
     network.postProcessInputData();
@@ -387,8 +383,6 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
 {
   if (network.numNodes() == 0)
     throw std::domain_error("No nodes in network");
-  // A fresh network init invalidates any previous hard-partition restore buffer.
-  m_originalLeafNodes.clear();
   if (m_root.firstChild != nullptr || m_root.collapsedFirstChild != nullptr) {
     m_root.deleteChildren();
     m_leafNodes.clear();
@@ -403,7 +397,6 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
 
 InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
 {
-  m_originalLeafNodes.clear();
   generateSubNetwork(parent);
 
   if (asSuperNetwork)
@@ -890,13 +883,11 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   Log(1) << "Generate sub network with " << numNodes << " nodes...\n";
 
   unsigned int childIndex = 0;
-  std::unordered_map<InfoNode*, unsigned int> nodeIndexMap;
-  nodeIndexMap.reserve(numNodes);
   for (InfoNode& node : parent) {
     auto* clonedNode = new InfoNode(node);
     clonedNode->initClean();
     m_root.addChild(clonedNode);
-    nodeIndexMap[&node] = childIndex;
+    node.index = childIndex; // Set index to its place in this subnetwork to be able to find edge target below
     m_leafNodes[childIndex] = clonedNode;
     ++childIndex;
   }
@@ -908,7 +899,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
       InfoEdge& edge = *e;
       // If neighbour node is within the same module, add the link to this subnetwork.
       if (edge.target->parent == parentPtr) {
-        m_leafNodes[nodeIndexMap.at(edge.source)]->addOutEdge(*m_leafNodes[nodeIndexMap.at(edge.target)], edge.data.weight, edge.data.flow);
+        m_leafNodes[edge.source->index]->addOutEdge(*m_leafNodes[edge.target->index], edge.data.weight, edge.data.flow);
       }
     }
   }
