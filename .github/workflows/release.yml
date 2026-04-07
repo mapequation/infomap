@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing release tag to republish assets for
+        description: Existing release tag to rebuild and republish GitHub release assets for
         required: true
         type: string
 
@@ -89,6 +89,7 @@ jobs:
 
   publish-pypi:
     name: Publish to PyPI
+    if: github.event_name == 'push'
     needs: [publish-github-release, python]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -123,6 +124,7 @@ jobs:
 
   publish-npm:
     name: Publish to npm
+    if: github.event_name == 'push'
     needs: [publish-github-release, publish-pypi, javascript]
     runs-on: ubuntu-24.04
     timeout-minutes: 15

@@ -180,6 +180,24 @@ jobs:
             CPPFLAGS="-I$(brew --prefix libomp)/include"
             LDFLAGS="-L$(brew --prefix libomp)/lib"
 
+      - name: Smoke test representative wheel
+        run: |
+          python -m venv .venv-wheel
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            venv_python=".venv-wheel/Scripts/python.exe"
+          else
+            venv_python=".venv-wheel/bin/python"
+          fi
+          wheel="$(find wheelhouse -maxdepth 1 -name '*cp314*.whl' | head -n 1)"
+          [ -n "$wheel" ]
+          "$venv_python" -m pip install --upgrade pip
+          "$venv_python" -m pip install "$wheel"
+          "$venv_python" - <<'PY'
+          from infomap import Infomap
+          print(Infomap(silent=True).num_top_modules)
+          PY
+        shell: bash
+
       - name: Upload wheels
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
@@ -225,15 +243,9 @@ jobs:
           print(Infomap(silent=True).num_top_modules)
           PY
 
-      - name: Smoke test linux wheel
+      - name: Verify wheel artifacts are present
         run: |
-          python -m venv .venv-wheel
-          . .venv-wheel/bin/activate
-          python -m pip install --upgrade pip
-          wheel="$(find artifacts/wheels -name '*linux*.whl' | head -n 1)"
-          [ -n "$wheel" ]
-          python -m pip install "$wheel"
-          python - <<'PY'
-          from infomap import Infomap
-          print(Infomap(silent=True).num_top_modules)
-          PY
+          find artifacts/wheels -name '*.whl' | sort
+          wheel_count="$(find artifacts/wheels -name '*.whl' | wc -l | tr -d ' ')"
+          [ "$wheel_count" -gt 0 ]
+        shell: bash

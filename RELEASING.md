@@ -58,12 +58,13 @@ to confirm that the committed generated output derived from
 
 If a release only partially succeeds:
 
-- If GitHub Release assets fail, rerun `.github/workflows/release.yml` for the
-  same tag before approving registry publishing.
+- If GitHub Release assets fail, rerun `.github/workflows/release.yml` with
+  `workflow_dispatch` for the same tag to rebuild and re-attach the GitHub
+  Release assets before approving registry publishing.
 - If PyPI fails before any successful publish, fix the configuration problem and
-  rerun `publish-pypi`.
+  rerun `publish-pypi` in the original tag-triggered release workflow.
 - If npm fails before any successful publish, fix the configuration problem and
-  rerun `publish-npm`.
+  rerun `publish-npm` in the original tag-triggered release workflow.
 - If a registry publish already succeeded, do not delete or rewrite the tag.
   Resume from the remaining failed job and keep the published version.
 
