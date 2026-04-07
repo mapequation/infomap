@@ -32,7 +32,6 @@ Public-supported:
 
 Internal-supported:
 
-- deprecated parser helpers (`@mapequation/infomap-parser`)
 - secondary Docker images used for compatibility or maintainer workflows
 
 Internal-supported means the surface still matters and should keep building, but

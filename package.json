@@ -51,14 +51,10 @@
     "./package.json": "./package.json"
   },
   "sideEffects": false,
-  "workspaces": [
-    "interfaces/js/parser"
-  ],
   "scripts": {
-    "build": "npm run build:package && npm run build:parser",
+    "build": "npm run build:package",
     "build:package": "rollup -c interfaces/js/rollup.config.mjs && tsc -p interfaces/js/tsconfig.build.json",
-    "build:parser": "npm run build --workspace interfaces/js/parser",
-    "typecheck": "tsc -p interfaces/js/tsconfig.json --noEmit && npm run typecheck --workspace interfaces/js/parser",
+    "typecheck": "tsc -p interfaces/js/tsconfig.json --noEmit",
     "lint": "eslint --config interfaces/js/eslint.config.mjs --max-warnings=0 \"interfaces/js/**/*.{ts,mts,cts}\"",
     "test:unit": "vitest run --config interfaces/js/vitest.config.ts",
     "test:browser": "playwright test --config interfaces/js/playwright.config.ts",

@@ -7,7 +7,6 @@ export default tseslint.config(
     ignores: [
       "interfaces/js/generated/*.json",
       "interfaces/js/test/package/**",
-      "interfaces/js/parser/dist/**",
       "dist/**",
       "build/**"
     ]
@@ -18,10 +17,7 @@ export default tseslint.config(
     files: ["interfaces/js/**/*.{ts,mts,cts}"],
     languageOptions: {
       parserOptions: {
-        project: [
-          "./tsconfig.json",
-          "./parser/tsconfig.json"
-        ],
+        project: ["./tsconfig.json"],
         tsconfigRootDir: import.meta.dirname
       },
       globals: {

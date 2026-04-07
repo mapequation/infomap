@@ -50,10 +50,6 @@ jobs:
         if: inputs.run-tests
         run: make test-js-metadata
 
-      - name: Smoke-build deprecated parser package
-        if: inputs.run-tests
-        run: make test-js-internal
-
       - name: Build JavaScript worker
         run: make -j build-js
 
