@@ -112,7 +112,7 @@ make test-python
 `make build-python` builds a wheel from the repo root using the tracked SWIG
 artifacts under `interfaces/python/generated/` and
 `interfaces/python/src/infomap/_swig.py`. If those tracked files need to be
-refreshed, install SWIG and run:
+refreshed, use SWIG 4.4.1 and run:
 
 ```bash
 make build-python-swig

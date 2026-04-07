@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -11,12 +12,42 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INTERFACE_FILE = REPO_ROOT / "interfaces" / "swig" / "Infomap.i"
+REQUIRED_SWIG_VERSION = "4.4.1"
+
+
+def get_swig_command() -> str:
+    return os.environ.get("SWIG") or shutil.which("swig") or "swig"
+
+
+def get_swig_version(swig_command: str) -> str:
+    result = subprocess.run(
+        [swig_command, "-version"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    match = re.search(r"SWIG Version\s+(\S+)", result.stdout)
+    if match is None:
+        raise RuntimeError(f"Could not parse SWIG version from output:\n{result.stdout}")
+    return match.group(1)
+
+
+def validate_swig_version(swig_command: str) -> None:
+    version = get_swig_version(swig_command)
+    if version != REQUIRED_SWIG_VERSION:
+        raise RuntimeError(
+            "Tracked Python SWIG outputs must be generated with "
+            f"SWIG {REQUIRED_SWIG_VERSION}, but got {version} from {swig_command}. "
+            "Install the required SWIG version or point SWIG=/path/to/swig-4.4.1."
+        )
 
 
 def generate(temp_dir: Path) -> tuple[Path, Path]:
     cpp_out = temp_dir / "infomap_wrap.cpp"
+    swig_command = get_swig_command()
+    validate_swig_version(swig_command)
     command = [
-        os.environ.get("SWIG") or shutil.which("swig") or "swig",
+        swig_command,
         "-c++",
         "-python",
         "-outdir",

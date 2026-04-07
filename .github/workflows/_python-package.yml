@@ -39,10 +39,19 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Install system dependencies
+      - name: Install SWIG 4.4.1
         run: |
           sudo apt-get update
-          sudo apt-get install -y swig
+          sudo apt-get install -y ca-certificates curl build-essential libpcre2-dev
+          curl -L --retry 3 --output /tmp/swig.tar.gz \
+            https://downloads.sourceforge.net/project/swig/swig/swig-4.4.1/swig-4.4.1.tar.gz
+          mkdir -p /tmp/swig-src
+          tar -xzf /tmp/swig.tar.gz -C /tmp/swig-src --strip-components=1
+          cd /tmp/swig-src
+          ./configure
+          make -j"$(nproc)"
+          sudo make install
+          swig -version
 
       - name: Verify tracked SWIG outputs
         run: make test-python-swig-freshness
