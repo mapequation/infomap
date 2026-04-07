@@ -50,8 +50,8 @@ it is not a primary public contract for release planning.
   - README source for the public npm package
 - `interfaces/js/generated/`
   - tracked metadata consumed by the JS package build
-- `docs/maintainers/`
-  - hand-maintained maintainer documentation
+- `ARCHITECTURE.md`, `BUILD.md`, `RELEASING.md`, and `AGENTS.md`
+  - hand-maintained maintainer documentation and repo working rules
 - `docs/`
   - generated Python docs output for GitHub Pages
 - `test/fixtures/`
