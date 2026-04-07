@@ -22,12 +22,24 @@ std::string jsonEscape(const std::string& value)
   std::ostringstream escaped;
   for (char c : value) {
     switch (c) {
-      case '\\': escaped << "\\\\"; break;
-      case '"': escaped << "\\\""; break;
-      case '\n': escaped << "\\n"; break;
-      case '\r': escaped << "\\r"; break;
-      case '\t': escaped << "\\t"; break;
-      default: escaped << c; break;
+    case '\\':
+      escaped << "\\\\";
+      break;
+    case '"':
+      escaped << "\\\"";
+      break;
+    case '\n':
+      escaped << "\\n";
+      break;
+    case '\r':
+      escaped << "\\r";
+      break;
+    case '\t':
+      escaped << "\\t";
+      break;
+    default:
+      escaped << c;
+      break;
     }
   }
   return escaped.str();
@@ -152,7 +164,7 @@ int main(int argc, char* argv[])
       if (currentPeakRss > peakRss) {
         peakRss = currentPeakRss;
       }
-      runs.push_back(RunSample{
+      runs.push_back(RunSample {
           static_cast<unsigned int>(iteration + 1),
           0.0,
           runSec,
