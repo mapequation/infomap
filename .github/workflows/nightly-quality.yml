@@ -23,10 +23,16 @@ jobs:
         include:
           - os: ubuntu-24.04
             cxx: g++
+            cxxflags: ""
+            ldflags: ""
           - os: macos-15
             cxx: clang++
+            cxxflags: ""
+            ldflags: ""
           - os: windows-2025
             cxx: g++
+            cxxflags: -static
+            ldflags: -static
 
     steps:
       - name: Checkout repository
@@ -51,8 +57,8 @@ jobs:
         shell: bash
         env:
           CXX: ${{ matrix.cxx }}
-          CXXFLAGS: ${{ env.CPPFLAGS }}
-          LDFLAGS: ${{ env.LDFLAGS }}
+          CXXFLAGS: ${{ matrix.cxxflags }} ${{ env.CPPFLAGS }}
+          LDFLAGS: ${{ matrix.ldflags }} ${{ env.LDFLAGS }}
 
   python-correctness:
     name: Python correctness ${{ matrix.os }}
