@@ -63,15 +63,15 @@ public:
     double totalSec = 0.0;
     unsigned long long peakRssBytesMax = 0;
     unsigned long long peakRssDeltaBytesMax = 0;
-    std::array<unsigned int, moduleSizeBucketCount> moduleSizeBucketCalls{};
-    std::array<double, moduleSizeBucketCount> moduleSizeBucketSec{};
-    std::array<double, moduleSizeBucketCount> moduleSizeBucketPrepSec{};
-    std::array<double, moduleSizeBucketCount> moduleSizeBucketIndexSec{};
-    std::array<double, moduleSizeBucketCount> moduleSizeBucketReserveSec{};
-    std::array<double, moduleSizeBucketCount> moduleSizeBucketCloneSec{};
-    std::array<double, moduleSizeBucketCount> moduleSizeBucketEdgeCloneSec{};
+    std::array<unsigned int, moduleSizeBucketCount> moduleSizeBucketCalls {};
+    std::array<double, moduleSizeBucketCount> moduleSizeBucketSec {};
+    std::array<double, moduleSizeBucketCount> moduleSizeBucketPrepSec {};
+    std::array<double, moduleSizeBucketCount> moduleSizeBucketIndexSec {};
+    std::array<double, moduleSizeBucketCount> moduleSizeBucketReserveSec {};
+    std::array<double, moduleSizeBucketCount> moduleSizeBucketCloneSec {};
+    std::array<double, moduleSizeBucketCount> moduleSizeBucketEdgeCloneSec {};
 
-    void reset() noexcept { *this = RebuildBenchmarkStats{}; }
+    void reset() noexcept { *this = RebuildBenchmarkStats {}; }
   };
 
   InfomapBase() : InfomapConfig<InfomapBase>() { initOptimizer(); }

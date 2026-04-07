@@ -490,19 +490,19 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
     VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
 #pragma omp for schedule(dynamic) // Use dynamic scheduling as some threads could end early
     for (unsigned int i = 0; i < numNodes; ++i) {
-    // Pick nodes in random order
-    InfoNode& current = *network[nodeEnumeration[i]];
+      // Pick nodes in random order
+      InfoNode& current = *network[nodeEnumeration[i]];
 
-    if (!current.dirty)
-      continue;
+      if (!current.dirty)
+        continue;
 
-    // If other nodes have moved here, don't move away on first loop
-    if (m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
-      continue;
+      // If other nodes have moved here, don't move away on first loop
+      if (m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
+        continue;
 
-    // If no links connecting this node with other nodes, it won't move into others,
-    // and others won't move into this. TODO: Always best leave it alone?
-    // For memory networks, don't skip try move to same physical node!
+      // If no links connecting this node with other nodes, it won't move into others,
+      // and others won't move into this. TODO: Always best leave it alone?
+      // For memory networks, don't skip try move to same physical node!
 
       // Create map with module links
       deltaFlow.startRound();

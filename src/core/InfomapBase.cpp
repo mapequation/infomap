@@ -1030,7 +1030,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
           targetIndex = nodeIndexMap.at(edge.target);
         }
         ++internalInDegree[targetIndex];
-        internalEdges.push_back({sourceIndex, targetIndex, &edge});
+        internalEdges.push_back({ sourceIndex, targetIndex, &edge });
       }
     }
   }

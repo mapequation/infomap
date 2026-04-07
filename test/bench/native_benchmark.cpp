@@ -81,13 +81,13 @@ struct RunSample {
 };
 
 constexpr std::array<const char*, infomap::InfomapBase::RebuildBenchmarkStats::moduleSizeBucketCount> kModuleSizeBucketLabels = {
-    "1-2",
-    "3-4",
-    "5-8",
-    "9-16",
-    "17-32",
-    "33-64",
-    "65+",
+  "1-2",
+  "3-4",
+  "5-8",
+  "9-16",
+  "17-32",
+  "33-64",
+  "65+",
 };
 
 void aggregateRebuildStats(
@@ -248,7 +248,7 @@ int main(int argc, char* argv[])
         peakRss = currentPeakRss;
       }
       aggregateRebuildStats(totalRebuildStats, runRebuildStats);
-      runs.push_back(RunSample{
+      runs.push_back(RunSample {
           static_cast<unsigned int>(iteration + 1),
           0.0,
           runSec,
