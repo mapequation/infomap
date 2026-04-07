@@ -4,9 +4,11 @@ import importlib.util
 from pathlib import Path
 
 from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext
 
 
 REPO_ROOT = Path(__file__).resolve().parent
+SWIG_CPP_SOURCE = REPO_ROOT / "interfaces" / "python" / "generated" / "infomap_wrap.cpp"
 
 
 def repo_rel(path: Path) -> str:
@@ -22,11 +24,38 @@ def load_build_config():
 
 
 def collect_cpp_sources():
-    generated = REPO_ROOT / "interfaces" / "python" / "generated" / "infomap_wrap.cpp"
-    sources = [repo_rel(generated)]
+    sources = [repo_rel(SWIG_CPP_SOURCE)]
     for path in sorted((REPO_ROOT / "src").rglob("*.cpp")):
         sources.append(repo_rel(path))
     return sources
+
+
+def swig_warning_suppression(compiler_family):
+    if compiler_family == "msvc":
+        return ["/w"]
+    if compiler_family in {"clang", "gnu", "unknown"}:
+        return ["-w"]
+    return []
+
+
+class BuildExt(build_ext):
+    def build_extensions(self):
+        original_compile = self.compiler._compile
+        quiet_swig_flags = swig_warning_suppression(shared_build["compiler_family"])
+        swig_source = str(SWIG_CPP_SOURCE)
+
+        def compile_with_source_overrides(obj, src, ext, cc_args, extra_postargs, pp_opts):
+            source = os.path.abspath(src)
+            compile_args = list(extra_postargs or [])
+            if source == swig_source and quiet_swig_flags:
+                compile_args.extend(quiet_swig_flags)
+            return original_compile(obj, src, ext, cc_args, compile_args, pp_opts)
+
+        self.compiler._compile = compile_with_source_overrides
+        try:
+            super().build_extensions()
+        finally:
+            self.compiler._compile = original_compile
 
 
 build_config = load_build_config()
@@ -57,6 +86,7 @@ if sys.platform == "win32":
 
 
 setup(
+    cmdclass={"build_ext": BuildExt},
     ext_modules=[
         Extension(
             "infomap._infomap",

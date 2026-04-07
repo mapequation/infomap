@@ -5,8 +5,6 @@
 namespace {
 
 using infomap::Config;
-using infomap::FlowModel;
-
 TEST_CASE("Config accepts no-file-output without an output directory [fast][core][config][cli]")
 {
   CHECK_NOTHROW(Config("input.net --silent --no-file-output", true));
@@ -20,7 +18,7 @@ TEST_CASE("Config accepts no-file-output without an output directory [fast][core
 TEST_CASE("Config parses flow model selection and output formats [fast][core][config][cli]")
 {
   const Config config("input.net --silent --no-file-output --flow-model precomputed --output json,tree", true);
-  CHECK(config.flowModel == FlowModel::precomputed);
+  CHECK(infomap::flowModelToString(config.flowModel) == std::string("precomputed"));
   CHECK(config.printJson);
   CHECK(config.printTree);
 }
@@ -28,7 +26,7 @@ TEST_CASE("Config parses flow model selection and output formats [fast][core][co
 TEST_CASE("Config treats directed shorthand as directed flow model [fast][core][config][cli]")
 {
   const Config config("input.net --silent --no-file-output --directed", true);
-  CHECK(config.flowModel == FlowModel::directed);
+  CHECK(infomap::flowModelToString(config.flowModel) == std::string("directed"));
 }
 
 TEST_CASE("Config rejects unknown flow models and output formats [fast][core][config][cli]")
