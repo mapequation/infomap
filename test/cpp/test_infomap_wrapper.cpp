@@ -88,6 +88,26 @@ TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][l
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
 }
 
+TEST_CASE("Infomap reruns ninetriangles deterministically on the same instance [fast][core][lifecycle][crash]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  const auto firstPartition = infomap::test::canonicalPartition(im.getModules());
+  const auto firstCodelength = im.codelength();
+  const auto firstIndexCodelength = im.getIndexCodelength();
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  CHECK(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+  CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
+}
+
 TEST_CASE("readInputData accumulate=false replaces the previous network [fast][core][lifecycle][parser]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

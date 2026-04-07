@@ -133,6 +133,7 @@ public:
 
   Infomap& reseed(unsigned int seed)
   {
+    seedToRandomNumberGenerator = seed;
     m_rand.seed(seed);
     return get();
   }
