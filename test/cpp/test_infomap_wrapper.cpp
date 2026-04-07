@@ -4,6 +4,8 @@
 
 #include "TestUtils.h"
 
+#include <cstdio>
+#include <unistd.h>
 #include <set>
 #include <tuple>
 #include <vector>
@@ -53,6 +55,19 @@ std::vector<std::vector<unsigned int>> canonicalSubInfomapPartition(infomap::Inf
     ++moduleIndex;
   }
   return infomap::test::canonicalPartition(modules);
+}
+
+std::string temporaryOutputPath(const std::string& prefix, const std::string& suffix)
+{
+  char buffer[] = "/tmp/infomap-output-XXXXXX";
+  const int fd = ::mkstemp(buffer);
+  if (fd == -1) {
+    throw std::runtime_error("Could not generate a temporary output path");
+  }
+
+  ::close(fd);
+  std::remove(buffer);
+  return std::string(buffer) + "_" + prefix + suffix;
 }
 
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
@@ -442,6 +457,49 @@ TEST_CASE("Higher-order metadata-bearing subnetwork rebuild stays stable [fast][
   CHECK(std::get<0>(secondRun) == std::get<0>(firstRun));
   CHECK(std::get<1>(secondRun) == doctest::Approx(std::get<1>(firstRun)));
   CHECK(std::get<2>(secondRun) == doctest::Approx(std::get<2>(firstRun)));
+}
+
+TEST_CASE("writeTree and writeClu render higher-order state output [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "states.net"); });
+
+  const auto treePath = temporaryOutputPath("states_tree", ".tree");
+  const auto cluPath = temporaryOutputPath("states_clu", ".clu");
+
+  im->writeTree(treePath, true);
+  im->writeClu(cluPath, true, 1);
+
+  const auto treeText = infomap::test::readTextFile(treePath);
+  const auto cluText = infomap::test::readTextFile(cluPath);
+
+  CHECK(treeText.find("# path flow name state_id node_id") != std::string::npos);
+  CHECK(treeText.find("state_id") != std::string::npos);
+  CHECK(cluText.find("# state_id module flow node_id") != std::string::npos);
+  CHECK(cluText.find("# module level 1") != std::string::npos);
+
+  std::remove(treePath.c_str());
+  std::remove(cluPath.c_str());
+}
+
+TEST_CASE("writeFlowTree is stable across repeated calls on the same instance [fast][core][output][regression]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::addEdgeFixtureLinks(infomap, "graphs/twotriangles_unweighted.edges"); });
+
+  const auto firstPath = temporaryOutputPath("first_flow_tree", ".ftree");
+  const auto secondPath = temporaryOutputPath("second_flow_tree", ".ftree");
+
+  im->writeFlowTree(firstPath);
+  im->writeFlowTree(secondPath);
+
+  const auto firstText = infomap::test::readTextFile(firstPath);
+  const auto secondText = infomap::test::readTextFile(secondPath);
+  CHECK(firstText == secondText);
+  CHECK(firstText.find("#*Links path enterFlow exitFlow numEdges numChildren") != std::string::npos);
+
+  std::remove(firstPath.c_str());
+  std::remove(secondPath.c_str());
 }
 
 } // namespace

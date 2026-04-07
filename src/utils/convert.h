@@ -16,6 +16,7 @@
 #include <string>
 #include <locale> // std::locale, std::tolower
 #include <iostream>
+#include <limits>
 #include <vector>
 
 namespace infomap {
@@ -52,7 +53,7 @@ namespace io {
   }
 
   template <typename T>
-  inline std::string stringify(T& x)
+  inline std::string stringify(const T& x)
   {
     std::ostringstream o;
     if (!(o << x))
@@ -61,7 +62,7 @@ namespace io {
   }
 
   template <>
-  inline std::string stringify(bool& x)
+  inline std::string stringify(const bool& x)
   {
     return x ? "true" : "false";
   }
@@ -151,26 +152,36 @@ namespace io {
     return !!(istream >> value);
   }
 
+  template <typename T>
+  inline bool stringToUnsignedValue(std::string const& str, T& value)
+  {
+    std::istringstream istream(str);
+    istream >> std::ws;
+    if (!istream.good() || istream.peek() == '-' || istream.peek() == std::char_traits<char>::eof())
+      return false;
+
+    unsigned long long target = 0;
+    if (!(istream >> target))
+      return false;
+
+    istream >> std::ws;
+    if (!istream.eof() || target > std::numeric_limits<T>::max())
+      return false;
+
+    value = static_cast<T>(target);
+    return true;
+  }
+
   template <>
   inline bool stringToValue(std::string const& str, unsigned int& value)
   {
-    std::istringstream istream(str);
-    int target = 0;
-    istream >> target;
-    if (target < 0) return false;
-    value = target;
-    return true;
+    return stringToUnsignedValue(str, value);
   }
 
   template <>
   inline bool stringToValue(std::string const& str, unsigned long& value)
   {
-    std::istringstream istream(str);
-    int target = 0;
-    istream >> target;
-    if (target < 0) return false;
-    value = target;
-    return true;
+    return stringToUnsignedValue(str, value);
   }
 
   inline std::string firstWord(const std::string& line)

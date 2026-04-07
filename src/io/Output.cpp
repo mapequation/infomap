@@ -190,10 +190,6 @@ std::map<std::string, LinkMap> aggregateModuleLinks(InfomapBase& im, bool states
           stateIdToParent[stateId] = it->parent;
           stateIdToChildIndex[stateId] = it.childIndex();
         }
-      } else {
-        // Use stateId to store depth on modules to simplify link aggregation
-        it->stateId = it.depth();
-        it->index = it.childIndex();
       }
     }
   } else {
@@ -201,10 +197,6 @@ std::map<std::string, LinkMap> aggregateModuleLinks(InfomapBase& im, bool states
       if (it->isLeaf()) {
         stateIdToParent[it->stateId] = it->parent;
         stateIdToChildIndex[it->stateId] = it.childIndex();
-      } else {
-        // Use stateId to store depth on modules to simplify link aggregation
-        it->stateId = it.depth();
-        it->index = it.childIndex();
       }
     }
   }
@@ -252,8 +244,8 @@ std::map<std::string, LinkMap> aggregateModuleLinks(InfomapBase& im, bool states
           }
         }
 
-        sourceChildIndex = sourceParentIt->index;
-        targetChildIndex = targetParentIt->index;
+        sourceChildIndex = sourceParentIt->childIndex();
+        targetChildIndex = targetParentIt->childIndex();
 
         ++sourceParentIt;
         ++targetParentIt;
@@ -276,7 +268,6 @@ void writeTreeLinks(InfomapBase& im, std::ostream& outStream, bool states)
   outStream << "*Links " << (im.isUndirectedFlow() ? "undirected" : "directed") << "\n";
   outStream << "#*Links path enterFlow exitFlow numEdges numChildren\n";
 
-  // Use stateId to store depth on modules to optimize link aggregation
   for (auto it(im.iterModules()); !it.isEnd(); ++it) {
     auto parentId = io::stringify(it.path(), ":");
     auto& module = *it;

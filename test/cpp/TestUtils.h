@@ -5,9 +5,11 @@
 #include "Infomap.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cmath>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <set>
 #include <stdexcept>
@@ -104,6 +106,27 @@ inline void addEdgeFixtureLinks(InfomapWrapper& im, const std::string& relativeP
   for (const auto& link : readEdgeFixture(relativePath)) {
     im.addLink(link.sourceId, link.targetId, link.weight);
   }
+}
+
+template <typename SetupFn>
+inline std::unique_ptr<InfomapWrapper> makeRunningInfomap(SetupFn&& setup, const std::string& extraFlags = "")
+{
+  std::unique_ptr<InfomapWrapper> im(new InfomapWrapper(defaultFlags(extraFlags)));
+  setup(*im);
+  im->run();
+  return im;
+}
+
+inline std::string readTextFile(const std::string& path)
+{
+  std::ifstream input(path.c_str());
+  if (!input) {
+    throw std::runtime_error("Could not open text file: " + path);
+  }
+
+  std::ostringstream output;
+  output << input.rdbuf();
+  return output.str();
 }
 
 inline void readNetworkFixture(InfomapWrapper& im, const std::string& filename, bool accumulate = true)
