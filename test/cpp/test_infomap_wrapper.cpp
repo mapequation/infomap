@@ -65,7 +65,7 @@ TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modul
   infomap::test::checkRunSanity(im);
   CHECK(im.numTopModules() == 2);
   CHECK(im.numLevels() == 2);
-  infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
 TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][lifecycle][crash]")
@@ -122,7 +122,7 @@ TEST_CASE("readInputData accumulate=false replaces the previous network [fast][c
 
   infomap::test::checkRunSanity(im);
   CHECK(im.numTopModules() == 1);
-  infomap::test::checkCanonicalPartition(im, {{3, 4}});
+  infomap::test::checkCanonicalPartition(im, { { 3, 4 } });
 }
 
 TEST_CASE("readInputData accumulate=true appends first-order fixtures [fast][core][lifecycle][parser]")
@@ -139,7 +139,7 @@ TEST_CASE("readInputData accumulate=true appends first-order fixtures [fast][cor
 
   infomap::test::checkRunSanity(im);
   CHECK(im.numTopModules() == 2);
-  infomap::test::checkCanonicalPartition(im, {{1, 2}, {3, 4}});
+  infomap::test::checkCanonicalPartition(im, { { 1, 2 }, { 3, 4 } });
 }
 
 TEST_CASE("readInputData accumulate mode stays stable across multiple runs on the same instance [fast][core][lifecycle][parser]")
@@ -153,7 +153,7 @@ TEST_CASE("readInputData accumulate mode stays stable across multiple runs on th
   im.run();
   infomap::test::checkRunSanity(im);
   CHECK(im.numTopModules() == 1);
-  infomap::test::checkCanonicalPartition(im, {{1, 2}});
+  infomap::test::checkCanonicalPartition(im, { { 1, 2 } });
 
   infomap::test::readNetworkFixture(im, "accumulate_b.net", true);
   CHECK(im.network().numNodes() == 4);
@@ -162,7 +162,7 @@ TEST_CASE("readInputData accumulate mode stays stable across multiple runs on th
   im.run();
   infomap::test::checkRunSanity(im);
   CHECK(im.numTopModules() == 2);
-  infomap::test::checkCanonicalPartition(im, {{1, 2}, {3, 4}});
+  infomap::test::checkCanonicalPartition(im, { { 1, 2 }, { 3, 4 } });
 
   infomap::test::readNetworkFixture(im, "accumulate_b.net", false);
   CHECK(im.network().numNodes() == 2);
@@ -171,7 +171,7 @@ TEST_CASE("readInputData accumulate mode stays stable across multiple runs on th
   im.run();
   infomap::test::checkRunSanity(im);
   CHECK(im.numTopModules() == 1);
-  infomap::test::checkCanonicalPartition(im, {{3, 4}});
+  infomap::test::checkCanonicalPartition(im, { { 3, 4 } });
 }
 
 TEST_CASE("Higher-order module queries require state ids [fast][core][lifecycle]")
@@ -184,7 +184,7 @@ TEST_CASE("Higher-order module queries require state ids [fast][core][lifecycle]
   infomap::test::checkRunSanity(im);
   CHECK(im.numTopModules() == 2);
   CHECK(im.numLevels() == 2);
-  infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}}, true);
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } }, true);
   CHECK_THROWS_WITH_AS(im.getModules(false), "Cannot get modules on higher-order network without states.", std::runtime_error);
 }
 
@@ -348,7 +348,7 @@ TEST_CASE("Subnetwork reuse and dispose stay stable on the same parent module [f
     }
     CHECK(coveredIds == expectedLeafIds);
 
-    return {infomap::test::canonicalPartition(modules), subInfomap.codelength(), subInfomap.getIndexCodelength()};
+    return { infomap::test::canonicalPartition(modules), subInfomap.codelength(), subInfomap.getIndexCodelength() };
   };
 
   const auto firstRun = runSubnetwork();
@@ -397,7 +397,7 @@ TEST_CASE("Higher-order subnetwork rebuild preserves state identities and intern
     CHECK(subInfomap.getIndexCodelength() >= -1e-12);
     CHECK(subInfomap.numLevels() >= 1);
 
-    return {canonicalSubInfomapPartition(subInfomap, true), subInfomap.codelength(), subInfomap.getIndexCodelength()};
+    return { canonicalSubInfomapPartition(subInfomap, true), subInfomap.codelength(), subInfomap.getIndexCodelength() };
   };
 
   const auto firstRun = runSubnetwork();
@@ -471,7 +471,7 @@ TEST_CASE("Higher-order metadata-bearing subnetwork rebuild stays stable [fast][
     CHECK(subInfomap.getIndexCodelength() >= -1e-12);
     CHECK(subInfomap.numLevels() >= 1);
 
-    return {canonicalSubInfomapPartition(subInfomap, true), subInfomap.codelength(), subInfomap.getIndexCodelength()};
+    return { canonicalSubInfomapPartition(subInfomap, true), subInfomap.codelength(), subInfomap.getIndexCodelength() };
   };
 
   const auto firstRun = runSubnetwork();
