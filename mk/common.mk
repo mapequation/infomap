@@ -74,7 +74,8 @@ help:
 		"Build" \
 		"  build-native          Build the Infomap binary (MODE=release|debug, OPENMP=0|1)." \
 		"  build-lib             Build the static C++ library and exported headers." \
-		"  build-python          Generate the SWIG wrapper and build the local Python extension." \
+		"  build-python          Build a Python wheel from the repo root using pyproject metadata." \
+		"  build-python-swig     Regenerate the tracked SWIG wrapper outputs for Python maintainers." \
 		"  build-js-metadata     Refresh the tracked JS parameters/changelog metadata." \
 		"  build-js              Build the JS worker bundle and npm package assets from tracked metadata." \
 		"  build-docs            Refresh the committed Python docs site in docs/." \
@@ -83,8 +84,9 @@ help:
 		"  test-native           Configure, build, and run the C++ doctest suite via CMake/CTest." \
 		"  test-python           Run the full Python verification suite." \
 		"  test-python-unit      Run pytest for test/python." \
-		"  test-python-doctest   Run Python doctests and ruff checks for the built package." \
+		"  test-python-doctest   Run Python doctests and ruff checks for the installed package." \
 		"  test-python-examples  Run the Python example smoke tests." \
+		"  test-python-swig-freshness  Verify tracked SWIG outputs are up to date." \
 		"  test-docs             Rebuild docs in a temp dir and verify committed docs/ is fresh." \
 		"  test-js-metadata      Regenerate JS metadata in a temp dir and verify tracked files are current." \
 		"  test-js               Run JS lint/typecheck/unit/browser/package verification for the built npm package." \
@@ -106,7 +108,7 @@ help:
 		"Docs / Release" \
 		"  build-docs            Refresh the committed Python docs site after installing the local package." \
 		"  test-docs             Verify committed docs/ matches a fresh Sphinx build." \
-		"  release-python-dist   Build local sdist and wheel artifacts from build/py." \
+		"  release-python-dist   Build local sdist and wheel artifacts from the repo root." \
 		"  release-python-testpypi  Publish the built distributions to TestPyPI." \
 		"  release-python-pypi      Publish the built distributions to PyPI." \
 		"" \

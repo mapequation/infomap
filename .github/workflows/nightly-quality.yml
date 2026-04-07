@@ -78,26 +78,19 @@ jobs:
         with:
           python-version: "3.14"
           cache: pip
-          cache-dependency-path: requirements_dev.txt
-
-      - name: Install Ubuntu system dependencies
-        if: startsWith(matrix.os, 'ubuntu')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y swig
-        shell: bash
+          cache-dependency-path: pyproject.toml
 
       - name: Install macOS system dependencies
         if: startsWith(matrix.os, 'macos')
         run: |
-          brew install swig libomp
+          brew install libomp
           make ci-export-github-env >> "$GITHUB_ENV"
         shell: bash
 
-      - name: Install Python dependencies
+      - name: Install Python build tooling
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements_dev.txt
+          python -m pip install build wheel
         shell: bash
 
       - name: Build and install local Python package
@@ -147,18 +140,12 @@ jobs:
         with:
           python-version: "3.14"
           cache: pip
-          cache-dependency-path: requirements_dev.txt
+          cache-dependency-path: pyproject.toml
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y swig
-        shell: bash
-
-      - name: Install Python dependencies
+      - name: Install Python build tooling
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements_dev.txt
+          python -m pip install build wheel
         shell: bash
 
       - name: Build and install local Python package
@@ -197,7 +184,7 @@ jobs:
         with:
           python-version: "3.14"
           cache: pip
-          cache-dependency-path: requirements_dev.txt
+          cache-dependency-path: pyproject.toml
 
       - name: Run native benchmarks
         run: |

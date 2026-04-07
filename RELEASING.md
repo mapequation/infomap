@@ -72,5 +72,7 @@ If a release partially succeeds:
   Resume from the remaining failed job and keep the existing version.
 
 Manual publish from a local shell should be reserved for incident recovery only.
-The fallback commands remain in the `Makefile`, but using them should be treated
-as an exception and documented in the release notes or issue tracker.
+The fallback commands remain in the `Makefile`, but they now build directly from
+the repository root rather than from a staged `build/py` package tree. Treat
+any local publish as an exception and document it in the release notes or issue
+tracker.

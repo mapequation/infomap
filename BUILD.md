@@ -82,12 +82,14 @@ document. `make test-js-internal` smoke-builds them in CI.
 
 ## Python package
 
-Building requires [SWIG](http://swig.org), Python packaging tooling, and Sphinx.
+Building the Python package requires Python packaging tooling and Sphinx.
+Only SWIG maintainer tasks such as regenerating tracked wrapper outputs require
+SWIG itself.
 
 On macOS with Homebrew:
 
 ```bash
-brew install swig sphinx-doc libomp
+brew install sphinx-doc libomp
 ```
 
 Build and test locally:
@@ -107,9 +109,15 @@ make dev-python-install
 make test-python
 ```
 
-`make build-python` uses the detected `JOBS` count for the extension compile
-step by default. If a local machine or toolchain behaves better serially, rerun
-with `JOBS=1`.
+`make build-python` builds a wheel from the repo root using the tracked SWIG
+artifacts under `interfaces/python/generated/` and
+`interfaces/python/src/infomap/_swig.py`. If those tracked files need to be
+refreshed, use SWIG 4.4.1 and run:
+
+```bash
+make build-python-swig
+make test-python-swig-freshness
+```
 
 The current automated macOS wheel build in CI/release uses
 `MACOSX_DEPLOYMENT_TARGET=15.0`. If you need broader compatibility than the

@@ -1,0 +1,82 @@
+[build-system]
+requires = [
+  "setuptools>=68",
+  "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "infomap"
+dynamic = ["version"]
+description = "Infomap network clustering algorithm"
+readme = { file = "README.rst", content-type = "text/x-rst" }
+license = "GPL-3.0-or-later"
+authors = [
+  { name = "mapequation", email = "mapequation@gmail.com" },
+]
+requires-python = ">=3.11"
+keywords = [
+  "map equation",
+  "network analysis",
+  "community detection",
+  "clustering algorithm",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+
+[project.urls]
+Homepage = "https://www.mapequation.org/infomap"
+Documentation = "https://mapequation.github.io/infomap/"
+Repository = "https://github.com/mapequation/infomap.git"
+Issues = "https://github.com/mapequation/infomap/issues"
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "networkx",
+  "ruff",
+]
+docs = [
+  "sphinx",
+]
+examples = [
+  "matplotlib",
+  "networkx",
+  "numpy",
+  "pandas",
+  "scikit-learn",
+]
+release = [
+  "build",
+  "cibuildwheel==3.3.1",
+  "twine",
+  "wheel",
+]
+
+[project.scripts]
+infomap = "infomap:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-dir]
+"" = "interfaces/python/src"
+
+[tool.setuptools.packages.find]
+where = ["interfaces/python/src"]
+
+[tool.setuptools.dynamic]
+version = { attr = "infomap.__version__" }
+
+[tool.ruff]
+extend-exclude = [
+  "interfaces/python/src/infomap/_swig.py",
+]
