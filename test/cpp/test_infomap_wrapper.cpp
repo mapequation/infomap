@@ -5,7 +5,6 @@
 #include "TestUtils.h"
 
 #include <cstdio>
-#include <unistd.h>
 #include <set>
 #include <tuple>
 #include <vector>
@@ -59,15 +58,7 @@ std::vector<std::vector<unsigned int>> canonicalSubInfomapPartition(infomap::Inf
 
 std::string temporaryOutputPath(const std::string& prefix, const std::string& suffix)
 {
-  char buffer[] = "/tmp/infomap-output-XXXXXX";
-  const int fd = ::mkstemp(buffer);
-  if (fd == -1) {
-    throw std::runtime_error("Could not generate a temporary output path");
-  }
-
-  ::close(fd);
-  std::remove(buffer);
-  return std::string(buffer) + "_" + prefix + suffix;
+  return prefix + suffix;
 }
 
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
