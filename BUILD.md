@@ -110,8 +110,6 @@ What each target does:
 
 `interfaces/js/README.md` is the source README for the public npm package.
 `@mapequation/infomap/react` is exported from the main package.
-The separate parser workspace under `interfaces/js/parser` is legacy-only and
-is smoke-built with `make test-js-internal`.
 
 ## Documentation
 

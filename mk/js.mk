@@ -8,9 +8,8 @@ JS_METADATA_FILES := $(JS_CHANGELOG_JSON) $(JS_PARAMETERS_JSON)
 NPM_STAGE_DIR := dist/npm/package
 NPM_UNPACK_DIR := dist/npm/unpacked
 NPM_PACK_JSON := dist/npm/npm-pack.json
-JS_INTERNAL_PACKAGE := interfaces/js/parser
 
-.PHONY: build-js build-js-metadata test-js-metadata test-js test-js-internal clean-js format-js
+.PHONY: build-js build-js-metadata test-js-metadata test-js clean-js format-js
 
 build-js: $(JS_WORKER_TARGET) $(JS_METADATA_FILES)
 	$(RM) -r $(NPM_STAGE_DIR)
@@ -50,12 +49,8 @@ test-js: build-js
 	$(NPM) run test:package
 	$(NPM) run test:browser
 
-test-js-internal:
-	@echo "Smoke-building deprecated parser package"
-	@$(NPM) run build --workspace $(JS_INTERNAL_PACKAGE) >/dev/null
-
 clean-js:
-	$(RM) -r build/js dist/npm interfaces/js/parser/dist
+	$(RM) -r build/js dist/npm
 
 format-js:
 	$(NPM) run format

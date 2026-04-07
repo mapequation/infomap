@@ -90,7 +90,6 @@ With JSDelivr, the package is available as `window.infomap.default`.
 ## Package notes
 
 - `@mapequation/infomap/react` is the supported React entrypoint.
-- `@mapequation/infomap-parser` is deprecated legacy code kept in this repository for internal use.
 
 ## More information
 
