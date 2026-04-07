@@ -87,6 +87,13 @@ def metric_stats(values: list[float]) -> dict[str, float]:
     return {"mean": mean_value, "stdev": stdev_value, "cv": cv_value}
 
 
+def collect_module_size_bucket_labels(run_samples: list[dict[str, object]]) -> list[str]:
+    labels: set[str] = set()
+    for run in run_samples:
+        labels.update(run.get("rebuild", {}).get("module_size_buckets", {}).keys())
+    return sorted(labels)
+
+
 def benchmark_case(
     binary: Path,
     name: str,
@@ -128,8 +135,24 @@ def benchmark_case(
     node_budget_bytes = int(samples[0]["num_nodes"]) * int(samples[0]["node_size_bytes"])
     edge_budget_bytes = int(samples[0]["num_links"]) * int(samples[0]["edge_size_bytes"])
     peak_rss_bytes_max = max(int(run["peak_rss_bytes"]) for run in run_samples)
+    rebuild_total = [float(run.get("rebuild", {}).get("total_sec", 0.0)) for run in run_samples]
+    rebuild_network = [float(run.get("rebuild", {}).get("network_sec", 0.0)) for run in run_samples]
+    rebuild_module = [float(run.get("rebuild", {}).get("module_sec", 0.0)) for run in run_samples]
+    rebuild_module_prep = [float(run.get("rebuild", {}).get("module_prep_sec", 0.0)) for run in run_samples]
+    rebuild_module_index = [float(run.get("rebuild", {}).get("module_index_sec", 0.0)) for run in run_samples]
+    rebuild_module_reserve = [float(run.get("rebuild", {}).get("module_reserve_sec", 0.0)) for run in run_samples]
+    rebuild_module_clone = [float(run.get("rebuild", {}).get("module_clone_sec", 0.0)) for run in run_samples]
+    rebuild_module_edge_clone = [float(run.get("rebuild", {}).get("module_edge_clone_sec", 0.0)) for run in run_samples]
+    rebuild_total_stats = metric_stats(rebuild_total)
+    rebuild_network_stats = metric_stats(rebuild_network)
+    rebuild_module_stats = metric_stats(rebuild_module)
+    rebuild_module_prep_stats = metric_stats(rebuild_module_prep)
+    rebuild_module_index_stats = metric_stats(rebuild_module_index)
+    rebuild_module_reserve_stats = metric_stats(rebuild_module_reserve)
+    rebuild_module_clone_stats = metric_stats(rebuild_module_clone)
+    rebuild_module_edge_clone_stats = metric_stats(rebuild_module_edge_clone)
     rebuild_bucket_stats: dict[str, dict[str, float | int]] = {}
-    for label in MODULE_SIZE_BUCKET_LABELS:
+    for label in collect_module_size_bucket_labels(run_samples):
         bucket_calls = [int(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("calls", 0)) for run in run_samples]
         bucket_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("sec", 0.0)) for run in run_samples]
         bucket_prep_sec = [float(run.get("rebuild", {}).get("module_size_buckets", {}).get(label, {}).get("prep_sec", 0.0)) for run in run_samples]
@@ -201,23 +224,23 @@ def benchmark_case(
         "node_budget_peak_rss_ratio": (node_budget_bytes / peak_rss_bytes_max) if peak_rss_bytes_max else 0.0,
         "edge_budget_peak_rss_ratio": (edge_budget_bytes / peak_rss_bytes_max) if peak_rss_bytes_max else 0.0,
         "rebuild": {
-            "median_total_sec": statistics.median(float(run.get("rebuild", {}).get("total_sec", 0.0)) for run in run_samples),
+            "median_total_sec": statistics.median(rebuild_total),
             "mean_total_sec": rebuild_total_stats["mean"],
             "stdev_total_sec": rebuild_total_stats["stdev"],
             "cv_total_sec": rebuild_total_stats["cv"],
-            "median_network_sec": statistics.median(float(run.get("rebuild", {}).get("network_sec", 0.0)) for run in run_samples),
+            "median_network_sec": statistics.median(rebuild_network),
             "mean_network_sec": rebuild_network_stats["mean"],
-            "median_module_sec": statistics.median(float(run.get("rebuild", {}).get("module_sec", 0.0)) for run in run_samples),
+            "median_module_sec": statistics.median(rebuild_module),
             "mean_module_sec": rebuild_module_stats["mean"],
-            "median_module_prep_sec": statistics.median(float(run.get("rebuild", {}).get("module_prep_sec", 0.0)) for run in run_samples),
+            "median_module_prep_sec": statistics.median(rebuild_module_prep),
             "mean_module_prep_sec": rebuild_module_prep_stats["mean"],
-            "median_module_index_sec": statistics.median(float(run.get("rebuild", {}).get("module_index_sec", 0.0)) for run in run_samples),
+            "median_module_index_sec": statistics.median(rebuild_module_index),
             "mean_module_index_sec": rebuild_module_index_stats["mean"],
-            "median_module_reserve_sec": statistics.median(float(run.get("rebuild", {}).get("module_reserve_sec", 0.0)) for run in run_samples),
+            "median_module_reserve_sec": statistics.median(rebuild_module_reserve),
             "mean_module_reserve_sec": rebuild_module_reserve_stats["mean"],
-            "median_module_clone_sec": statistics.median(float(run.get("rebuild", {}).get("module_clone_sec", 0.0)) for run in run_samples),
+            "median_module_clone_sec": statistics.median(rebuild_module_clone),
             "mean_module_clone_sec": rebuild_module_clone_stats["mean"],
-            "median_module_edge_clone_sec": statistics.median(float(run.get("rebuild", {}).get("module_edge_clone_sec", 0.0)) for run in run_samples),
+            "median_module_edge_clone_sec": statistics.median(rebuild_module_edge_clone),
             "mean_module_edge_clone_sec": rebuild_module_edge_clone_stats["mean"],
             "median_total_calls": statistics.median(int(run.get("rebuild", {}).get("total_calls", 0)) for run in run_samples),
             "median_network_calls": statistics.median(int(run.get("rebuild", {}).get("network_calls", 0)) for run in run_samples),
