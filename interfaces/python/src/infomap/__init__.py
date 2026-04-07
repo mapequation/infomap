@@ -12,9 +12,27 @@ from ._version import (
     __version__ as __version__,
 )
 
+_VERSION_ALL = [
+    "__author__",
+    "__classifiers__",
+    "__description__",
+    "__email__",
+    "__homepage__",
+    "__issues__",
+    "__keywords__",
+    "__license__",
+    "__repo__",
+    "__url__",
+    "__version__",
+]
+
+__all__ = list(_VERSION_ALL)
+
 try:
-    from ._api import *  # noqa: F401,F403
-    from ._api import _construct_args as _construct_args
+    from ._facade import __all__ as _FACADE_ALL
+    from ._facade import *  # noqa: F401,F403
+    from ._facade import _construct_args as _construct_args
+    __all__.extend(_FACADE_ALL)
 except ImportError:
     # Allow setuptools to read package metadata before the extension is built.
     pass

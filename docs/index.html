@@ -54,6 +54,18 @@ documentation.</p>
 </div>
 <p>The package also installs the <code class="docutils literal notranslate"><span class="pre">infomap</span></code> CLI entry point.
 The Python API reference lives at <a class="reference external" href="https://mapequation.github.io/infomap/python/">Infomap Python API</a>.</p>
+<p>Quick start with Python:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">infomap</span><span class="w"> </span><span class="kn">import</span> <span class="n">Infomap</span><span class="p">,</span> <span class="n">InfomapOptions</span>
+
+<span class="n">options</span> <span class="o">=</span> <span class="n">InfomapOptions</span><span class="p">(</span><span class="n">two_level</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="o">.</span><span class="n">from_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">num_top_modules</span><span class="p">,</span> <span class="n">im</span><span class="o">.</span><span class="n">codelength</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 <section id="javascript-package">
 <h3>JavaScript package<a class="headerlink" href="#javascript-package" title="Link to this heading">¶</a></h3>

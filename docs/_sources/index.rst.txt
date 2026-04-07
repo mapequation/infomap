@@ -52,6 +52,20 @@ Upgrades use the usual `pip` flow:
 The package also installs the ``infomap`` CLI entry point.
 The Python API reference lives at `Infomap Python API`_.
 
+Quick start with Python:
+
+.. code-block:: python
+
+    from infomap import Infomap, InfomapOptions
+
+    options = InfomapOptions(two_level=True, silent=True, num_trials=20)
+    im = Infomap.from_options(options)
+    im.add_link(0, 1)
+    im.add_link(1, 2)
+    im.run()
+
+    print(im.num_top_modules, im.codelength)
+
 .. _PyPI: https://pypi.org/project/infomap/
 .. _`Infomap Python API`: https://mapequation.github.io/infomap/python/
 

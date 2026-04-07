@@ -89,6 +89,72 @@ A simple example:
         if node.is_leaf:
             print(node.node_id, node.module_id)
 
+Reusable options
+""""""""""""""""
+
+Use :class:`infomap.InfomapOptions` when you want to reuse the same
+configuration across multiple runs:
+
+.. code-block:: python
+
+    from infomap import Infomap, InfomapOptions
+
+    options = InfomapOptions(
+        two_level=True,
+        directed=True,
+        silent=True,
+        num_trials=20,
+    )
+
+    im = Infomap.from_options(options)
+    im.add_link(0, 1)
+    im.add_link(1, 2)
+    im.run()
+
+    # Reuse the same settings on another instance or another run
+    im2 = Infomap(silent=True)
+    im2.add_link(2, 3)
+    im2.run_with_options(options)
+
+NetworkX graphs
+"""""""""""""""
+
+``Infomap.add_networkx_graph()`` accepts standard, state, and multilayer
+NetworkX graphs. Non-integer node labels are mapped to stable internal ids in
+first-seen order and returned as a mapping:
+
+.. code-block:: python
+
+    import networkx as nx
+    from infomap import Infomap
+
+    graph = nx.Graph([("a", "b"), ("a", "c")])
+    im = Infomap(silent=True)
+    mapping = im.add_networkx_graph(graph)
+    im.run()
+
+State and multilayer networks
+"""""""""""""""""""""""""""""
+
+State networks are inferred from a ``phys_id`` node attribute, and multilayer
+networks additionally use ``layer_id``:
+
+.. code-block:: python
+
+    import networkx as nx
+    from infomap import Infomap
+
+    graph = nx.Graph()
+    graph.add_node("state-a", phys_id="a", layer_id=1)
+    graph.add_node("state-b", phys_id="b", layer_id=1)
+    graph.add_node("state-a-next", phys_id="a", layer_id=2)
+    graph.add_edge("state-a", "state-b")
+    graph.add_edge("state-a", "state-a-next")
+
+    im = Infomap(silent=True)
+    im.add_networkx_graph(graph)
+    im.run()
+
 Please read the :doc:`/python/infomap` reference to learn more.
 
 .. * :ref:`genindex`

@@ -9,18 +9,26 @@ PYTHON_TEST_DIR := test/python
 PYTHON_LINT_TARGETS := \
 	interfaces/python/src/infomap/__init__.py \
 	interfaces/python/src/infomap/__main__.py \
-	interfaces/python/src/infomap/_api.py \
-	interfaces/python/src/infomap/_core.py \
+	interfaces/python/src/infomap/_bindings.py \
+	interfaces/python/src/infomap/_facade.py \
+	interfaces/python/src/infomap/_networkx.py \
 	interfaces/python/src/infomap/_optional.py \
+	interfaces/python/src/infomap/_options.py \
+	interfaces/python/src/infomap/_results.py \
 	interfaces/python/src/infomap/_version.py \
+	interfaces/python/src/infomap/_writers.py \
 	examples/python
 PYTHON_FORMAT_TARGETS := \
 	interfaces/python/src/infomap/__init__.py \
 	interfaces/python/src/infomap/__main__.py \
-	interfaces/python/src/infomap/_api.py \
-	interfaces/python/src/infomap/_core.py \
+	interfaces/python/src/infomap/_bindings.py \
+	interfaces/python/src/infomap/_facade.py \
+	interfaces/python/src/infomap/_networkx.py \
 	interfaces/python/src/infomap/_optional.py \
+	interfaces/python/src/infomap/_options.py \
+	interfaces/python/src/infomap/_results.py \
 	interfaces/python/src/infomap/_version.py \
+	interfaces/python/src/infomap/_writers.py \
 	examples/python \
 	test/python
 PYTEST_ARGS ?=
@@ -36,6 +44,7 @@ PYTHON_BUILD_ENV = \
 	build-python \
 	build-python-swig \
 	build-python-package-files \
+	clean-python-build-cache \
 	test-python-swig-freshness \
 	dev-python-install \
 	test-python \
@@ -53,8 +62,12 @@ PYTHON_BUILD_ENV = \
 	py-prepare
 
 build-python:
+	@$(MAKE) --no-print-directory clean-python-build-cache
 	@mkdir -p $(PYTHON_DIST_DIR)
 	@$(PYTHON_BUILD_ENV) $(PYTHON) -m build --wheel --outdir $(PYTHON_DIST_DIR) .
+
+clean-python-build-cache:
+	@find build -maxdepth 1 -type d \( -name 'bdist.*' -o -name 'lib.*' \) -exec rm -rf {} + 2>/dev/null || true
 
 build-python-package-files: build-python-swig
 	@true
@@ -79,7 +92,10 @@ test-python-doctest:
 	@tmp_dir="$$(mktemp -d 2>/dev/null || mktemp -d -t infomap-doctest)"; \
 	trap 'rm -rf "$$tmp_dir"' EXIT; \
 	cp examples/networks/*.net "$$tmp_dir"/; \
-	cd "$$tmp_dir" && $(PYTEST) --doctest-modules -q "$(CURDIR)/interfaces/python/src/infomap/_api.py"
+	cd "$$tmp_dir" && $(PYTEST) --doctest-modules -q \
+		"$(CURDIR)/interfaces/python/src/infomap/_facade.py" \
+		"$(CURDIR)/interfaces/python/src/infomap/_results.py" \
+		"$(CURDIR)/interfaces/python/src/infomap/_writers.py"
 
 test-python-examples:
 	@cd examples/python && for f in *.py; do $(PYTHON) "$$f" > /dev/null || exit 1; done
@@ -119,6 +135,7 @@ py-prepare:
 	$(PIP) install -e '.[test,docs,examples,release]'
 
 release-python-dist:
+	@$(MAKE) --no-print-directory clean-python-build-cache
 	@mkdir -p $(PYTHON_DIST_DIR)
 	@$(PYTHON_BUILD_ENV) $(PYTHON) -m build --sdist --wheel --outdir $(PYTHON_DIST_DIR) .
 
