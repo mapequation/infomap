@@ -1,26 +1,22 @@
 import os
+import sys
 import warnings
 from collections import namedtuple
 from contextlib import contextmanager
 from math import log2
 
-# Try to import the compiled SWIG extension so the wrapped C++ classes
-# (e.g. `InfomapWrapper`) are available when this module is imported.
-try:
-    # Prefer package-local extension
-    from ._infomap import *  # noqa: F401,F403
-except ImportError:
-    try:
-        from _infomap import *  # noqa: F401,F403
-    except ImportError:
-        # Extension not available (e.g., before build); continue gracefully
-        pass
+from ._core import *  # noqa: F401,F403
+from ._optional import get_pandas
 
-if __name__ != "__main__":
-    try:
-        import pandas
-    except ImportError:
-        pandas = None
+
+pandas = get_pandas()
+
+
+def _package_construct_args():
+    package_module = sys.modules.get(__package__)
+    if package_module is None:
+        return _construct_args
+    return getattr(package_module, "_construct_args", _construct_args)
 
 
 MultilayerNode = namedtuple("MultilayerNode", "layer_id, node_id")
@@ -324,7 +320,7 @@ def _construct_args(
     return _join_args(args, rendered_args)
 
 
-class Infomap(InfomapWrapper):
+class Infomap(InfomapWrapper):  # noqa: F405
     """Infomap
 
     This class is a thin wrapper around Infomap C++ compiled with SWIG.
@@ -573,7 +569,7 @@ class Infomap(InfomapWrapper):
             This may give some accuracy tradeoff.
         """
         super().__init__(
-            _construct_args(
+            _package_construct_args()(
                 args,
                 cluster_data=cluster_data,
                 no_infomap=no_infomap,
@@ -1725,7 +1721,7 @@ class Infomap(InfomapWrapper):
         --------
         initial_partition
         """
-        args = _construct_args(
+        args = _package_construct_args()(
             args,
             cluster_data=cluster_data,
             no_infomap=no_infomap,
@@ -3018,7 +3014,7 @@ def main():
     import sys
 
     args = " ".join(sys.argv[1:])
-    conf = Config(args, True)
+    conf = Config(args, True)  # noqa: F405
     im = Infomap(conf)
     im.run()
 

@@ -1,9 +1,2 @@
-# ruff replaces black/isort/autopep8/flake8 for linting/formatting
-pytest
-ruff
-twine
-sphinx
-networkx
-pandas
-scikit-learn
-matplotlib
+# Convenience environment for local package, test, docs, example, and release work.
+-e .[test,docs,examples,release]

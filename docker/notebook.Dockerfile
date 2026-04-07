@@ -5,16 +5,15 @@ USER root
 
 RUN apt-get update && apt-get install -y -q \
         build-essential \
-        swig \
         && rm -rf /var/lib/apt/lists/*
 
 COPY . /tmp/infomap
 
 WORKDIR /tmp/infomap
 
-RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel backports.tarfile importlib_metadata \
+RUN python -m pip install --no-cache-dir --upgrade pip build wheel backports.tarfile importlib_metadata \
         && make build-python \
-        && cd build/py && python setup.py install \
+        && make dev-python-install \
         && rm -rf /tmp/infomap \
         && fix-permissions $CONDA_DIR \
         && fix-permissions /home/$NB_USER

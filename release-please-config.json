@@ -10,6 +10,10 @@
           "path": "src/version.h"
         },
         {
+          "type": "generic",
+          "path": "interfaces/python/src/infomap/_version.py"
+        },
+        {
           "type": "yaml",
           "path": "CITATION.cff",
           "jsonpath": "$.version"

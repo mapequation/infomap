@@ -22,12 +22,14 @@ copyright = "2020, Daniel Edler, Anton Holmgren, Martin Rosvall"
 author = "Daniel Edler, Anton Holmgren, Martin Rosvall"
 
 # The full version, including alpha/beta/rc tags
-# release = '1.0.0-beta.59'
-import json
+import importlib.util
+from pathlib import Path
 
-with open("../../../package.json", "r") as fp:
-    pkg = json.load(fp)
-    release = pkg.get("version")
+version_module_path = Path(__file__).resolve().parents[1] / "src" / "infomap" / "_version.py"
+spec = importlib.util.spec_from_file_location("infomap_version", version_module_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+release = module.__version__
 
 
 # -- General configuration ---------------------------------------------------

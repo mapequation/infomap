@@ -38,7 +38,7 @@ debug:
 python: build-python
 py-swig: build-python-swig
 py-build: build-python
-py-package-files: _build-python-package-layout
+py-package-files: build-python-package-files
 py-test: test-python
 py-test-unit: test-python-unit
 py-test-doctest: test-python-doctest
