@@ -87,8 +87,8 @@ Typical local flow:
 ```bash
 git clone https://github.com/emscripten-core/emsdk.git
 cd emsdk
-./emsdk install latest
-./emsdk activate latest
+./emsdk install 5.0.5
+./emsdk activate 5.0.5
 source ./emsdk_env.sh
 cd /path/to/infomap
 npm ci
@@ -97,6 +97,8 @@ make build-js
 make test-js-metadata
 make test-js
 ```
+
+Keep local maintainer builds on the same emsdk version that CI uses: `5.0.5`.
 
 What each target does:
 
