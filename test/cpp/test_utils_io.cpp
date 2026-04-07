@@ -4,35 +4,98 @@
 #include "utils/FileURI.h"
 #include "utils/convert.h"
 
-#include <array>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <limits>
 #include <string>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <vector>
+
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace {
 
 using infomap::FileURI;
 
+int createDirectory(const char* path)
+{
+#ifdef _WIN32
+  return _mkdir(path);
+#else
+  return mkdir(path, 0700);
+#endif
+}
+
+int removeDirectory(const char* path)
+{
+#ifdef _WIN32
+  return _rmdir(path);
+#else
+  return rmdir(path);
+#endif
+}
+
+std::string tempDirectoryRoot()
+{
+  for (const auto* name : { "TMPDIR", "TEMP", "TMP" }) {
+    const auto* value = std::getenv(name);
+    if (value != nullptr && value[0] != '\0')
+      return value;
+  }
+#ifdef _WIN32
+  return ".";
+#else
+  return "/tmp";
+#endif
+}
+
+std::string joinPath(const std::string& directory, const std::string& filename)
+{
+#ifdef _WIN32
+  constexpr char separator = '\\';
+#else
+  constexpr char separator = '/';
+#endif
+  if (!directory.empty() && (directory.back() == '/' || directory.back() == '\\'))
+    return directory + filename;
+  return directory + separator + filename;
+}
+
 class TempDir {
 public:
   TempDir()
   {
-    std::array<char, 64> pathTemplate {};
-    const auto prefix = std::string("/tmp/infomap-tests-XXXXXX");
-    std::copy(prefix.begin(), prefix.end(), pathTemplate.begin());
-    pathTemplate[prefix.size()] = '\0';
-    auto* dir = mkdtemp(pathTemplate.data());
-    REQUIRE_MESSAGE(dir != nullptr, std::strerror(errno));
-    m_path = dir;
+    const auto root = tempDirectoryRoot();
+    const auto timestamp = static_cast<unsigned long long>(std::time(nullptr));
+    const auto clockTicks = static_cast<unsigned long long>(std::clock());
+    int lastError = 0;
+
+    for (unsigned int attempt = 0; attempt < 128; ++attempt) {
+      const auto candidate = joinPath(root,
+          "infomap-tests-" + infomap::io::stringify(timestamp) + "-" +
+              infomap::io::stringify(clockTicks) + "-" + infomap::io::stringify(attempt));
+      errno = 0;
+      if (createDirectory(candidate.c_str()) == 0) {
+        m_path = candidate;
+        return;
+      }
+      lastError = errno;
+      if (lastError != EEXIST)
+        break;
+    }
+
+    REQUIRE_MESSAGE(false, std::strerror(lastError));
   }
 
   ~TempDir()
   {
-    rmdir(m_path.c_str());
+    removeDirectory(m_path.c_str());
   }
 
   const std::string& path() const { return m_path; }
