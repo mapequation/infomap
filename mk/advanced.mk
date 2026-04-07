@@ -84,3 +84,4 @@ test-docker-supported:
 	$(DOCKER) build -f docker/infomap.Dockerfile -t $(DOCKER_SUPPORTED_CLI_TAG) .
 	$(DOCKER) run --rm $(DOCKER_SUPPORTED_CLI_TAG) --help > /dev/null
 	$(DOCKER) build -f docker/notebook.Dockerfile -t $(DOCKER_SUPPORTED_NOTEBOOK_TAG) .
+	$(DOCKER) run --rm $(DOCKER_SUPPORTED_NOTEBOOK_TAG) python -c "from infomap import Infomap; print(Infomap(silent=True).num_top_modules)" > /dev/null

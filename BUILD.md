@@ -2,8 +2,7 @@
 
 This file covers the local build and verification paths that maintainers should
 use most often. Release policy lives in [RELEASING.md](RELEASING.md). Ownership
-and source-of-truth rules live in
-[docs/maintainers/architecture.md](docs/maintainers/architecture.md).
+and source-of-truth rules live in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## General notes
 

@@ -51,6 +51,7 @@ jobs:
         run: make test-js-metadata
 
       - name: Build JavaScript worker
+        if: ${{ !inputs.run-tests }}
         run: make -j build-js
 
       - name: Run JavaScript verification

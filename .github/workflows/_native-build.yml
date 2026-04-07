@@ -80,7 +80,7 @@ jobs:
         shell: bash
 
       - name: Run C++ tests
-        if: matrix.config.name == 'ubuntu' && matrix.target.name == ''
+        if: matrix.config.name != 'windows' && matrix.target.name == ''
         run: make test-native CMAKE_CXX_COMPILER=${{ matrix.config.compiler }}
         shell: bash
         env:

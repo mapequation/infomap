@@ -137,7 +137,7 @@ Maintainers should use:
 
 - ``BUILD.md`` for local build and verification commands
 - ``RELEASING.md`` for the release flow
-- ``docs/maintainers/architecture.md`` for ownership and source-of-truth rules
+- ``ARCHITECTURE.md`` for ownership and source-of-truth rules
 - ``AGENTS.md`` for repo-local maintenance guidance
 
 Feedback
