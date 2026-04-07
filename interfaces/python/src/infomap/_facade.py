@@ -3,6 +3,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 from ._bindings import *  # noqa: F401,F403
+from ._bindings import __all__ as _BINDINGS_ALL
 from ._networkx import add_networkx_graph as _add_networkx_graph
 from ._options import (
     InfomapOptions,
@@ -16,9 +17,7 @@ from ._options import (
     _construct_args,
 )
 from ._results import _InfomapResultsMixin
-from ._results import entropy as entropy  # noqa: F401
-from ._results import perplexity as perplexity  # noqa: F401
-from ._results import plogp as plogp  # noqa: F401
+from ._results import entropy, perplexity, plogp
 from ._writers import _InfomapWritersMixin
 
 
@@ -30,6 +29,17 @@ def _package_construct_args():
 
 
 MultilayerNode = namedtuple("MultilayerNode", "layer_id, node_id")
+
+__all__ = [
+    *_BINDINGS_ALL,
+    "Infomap",
+    "InfomapOptions",
+    "MultilayerNode",
+    "entropy",
+    "main",
+    "perplexity",
+    "plogp",
+]
 
 
 class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # noqa: F405
@@ -1034,6 +1044,42 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             initial_partition=initial_partition,
             **options.to_kwargs(),
         )
+
+    @property
+    def network(self):
+        """Get the internal network."""
+        return super().network()
+
+    @property
+    def codelength(self):
+        """Get the total (hierarchical) codelength.
+
+        See Also
+        --------
+        index_codelength
+        module_codelength
+
+        Returns
+        -------
+        float
+            The codelength
+        """
+        return super().codelength()
+
+    @property
+    def codelengths(self):
+        """Get the total (hierarchical) codelength for each trial.
+
+        See Also
+        --------
+        codelength
+
+        Returns
+        -------
+        tuple of float
+            The codelengths for each trial
+        """
+        return super().codelengths()
 
 def main():
     import sys

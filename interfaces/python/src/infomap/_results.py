@@ -735,11 +735,6 @@ class _InfomapResultsMixin:
         return self.get_links(data="flow")
 
     @property
-    def network(self):
-        """Get the internal network."""
-        return super().network()
-
-    @property
     def num_nodes(self):
         """The number of state nodes if we have a higher order network, or the
         number of physical nodes.
@@ -910,37 +905,6 @@ class _InfomapResultsMixin:
             True if the network is a multilayer or memory network.
         """
         return super().haveMemory()
-
-    @property
-    def codelength(self):
-        """Get the total (hierarchical) codelength.
-
-        See Also
-        --------
-        index_codelength
-        module_codelength
-
-        Returns
-        -------
-        float
-            The codelength
-        """
-        return super().codelength()
-
-    @property
-    def codelengths(self):
-        """Get the total (hierarchical) codelength for each trial.
-
-        See Also
-        --------
-        codelength
-
-        Returns
-        -------
-        tuple of float
-            The codelengths for each trial
-        """
-        return super().codelengths()
 
     @property
     def index_codelength(self):
