@@ -1109,7 +1109,8 @@ void InfomapBase::partition()
     Log() << " (" << m_numNonTrivialTopModules << " non-trivial)";
   Log() << " modules.\n";
 
-  if (!preferModularSolution && preferredNumberOfModules == 0 && haveNonTrivialModules() && getCodelength() > getOneLevelCodelength()) {
+  const bool regularizedPriorOnly = regularized && network().numLinks() == 0;
+  if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > getOneLevelCodelength()) {
     Log() << "Worse codelength than one-level codelength, putting all nodes in one module... ";
 
     // Create new single module between modules and root
