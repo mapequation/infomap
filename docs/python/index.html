@@ -33,7 +33,7 @@
             
   <section id="infomap-python-api">
 <h1>Infomap Python API<a class="headerlink" href="#infomap-python-api" title="Link to this heading">¶</a></h1>
-<p>Infomap is a network clustering algorithm based on the <a class="reference external" href="http://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation">Map equation</a>.</p>
+<p>Infomap is a network clustering algorithm based on the <a class="reference external" href="https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation">Map equation</a>.</p>
 <section id="api-reference">
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">
@@ -52,11 +52,11 @@
 </section>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
-<p>Infomap is available on <a class="reference external" href="https://pypi.org/project/infomap/">PyPI</a>. To install, run:</p>
+<p>Infomap is available on <a class="reference external" href="https://pypi.org/project/infomap/">PyPI</a>. Install it with:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">infomap</span>
 </pre></div>
 </div>
-<p>If you want to upgrade Infomap, run:</p>
+<p>Upgrade an existing installation with:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">infomap</span>
 </pre></div>
 </div>
@@ -65,9 +65,8 @@
 <h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h2>
 <section id="command-line">
 <h3>Command line<a class="headerlink" href="#command-line" title="Link to this heading">¶</a></h3>
-<p>When the Python package is installed, an executable called
-<code class="docutils literal notranslate"><span class="pre">infomap</span></code> is available from any directory.
-To verify your installation, run:</p>
+<p>Installing the Python package also provides an <code class="docutils literal notranslate"><span class="pre">infomap</span></code> executable.
+To verify that the CLI is available, run:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">infomap</span> <span class="o">-</span><span class="n">v</span>
 </pre></div>
 </div>
@@ -82,14 +81,14 @@ To verify your installation, run:</p>
 </section>
 <section id="python-package">
 <h3>Python package<a class="headerlink" href="#python-package" title="Link to this heading">¶</a></h3>
-<p>The Python package can be imported with:</p>
+<p>Import the package with:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">infomap</span>
 </pre></div>
 </div>
 <p>A simple example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">infomap</span><span class="w"> </span><span class="kn">import</span> <span class="n">Infomap</span>
 
-<span class="c1"># Command line flags can be added as a string to Infomap</span>
+<span class="c1"># Command line flags can be provided as a string</span>
 <span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="s2">&quot;--two-level --directed&quot;</span><span class="p">)</span>
 
 <span class="c1"># Add weight as optional third argument</span>
@@ -108,7 +107,7 @@ To verify your installation, run:</p>
 <span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 <span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
 
-<span class="c1"># Run the Infomap search algorithm to find optimal modules</span>
+<span class="c1"># Run the search</span>
 <span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="n">im</span><span class="o">.</span><span class="n">num_top_modules</span><span class="si">}</span><span class="s2"> modules with codelength: </span><span class="si">{</span><span class="n">im</span><span class="o">.</span><span class="n">codelength</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

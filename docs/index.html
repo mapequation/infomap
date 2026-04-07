@@ -31,108 +31,89 @@
 
           <div class="body" role="main">
             
-  <img alt="https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg" src="https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg" />
+  <p><a class="reference external" href="https://github.com/mapequation/infomap/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg" /></a> <a class="reference external" href="https://github.com/mapequation/infomap/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/mapequation/infomap/actions/workflows/docs.yml/badge.svg" /></a> <a class="reference external" href="https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml"><img alt="Docker smoke" src="https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml/badge.svg" /></a> <a class="reference external" href="https://github.com/mapequation/infomap/actions/workflows/nightly-quality.yml"><img alt="Nightly quality" src="https://github.com/mapequation/infomap/actions/workflows/nightly-quality.yml/badge.svg" /></a></p>
 <section id="infomap">
 <h1>Infomap<a class="headerlink" href="#infomap" title="Link to this heading">¶</a></h1>
-<p>Infomap is a network clustering algorithm based on the <a class="reference external" href="https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation">Map equation</a>.</p>
-<p>For detailed documentation, see <a class="reference external" href="https://www.mapequation.org/infomap">mapequation.org/infomap</a>.</p>
-<p>For a list of recent changes, see <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/CHANGELOG.md">CHANGELOG.md</a> in the source directory.</p>
-<section id="getting-started">
-<h2>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h2>
-<p>Infomap can be installed either from <a class="reference external" href="https://pypi.org/project/infomap/">PyPI</a> using <code class="docutils literal notranslate"><span class="pre">pip</span></code> or by
-compiling from source.</p>
-<p>An experimental Javascript version for browsers is available on <a class="reference external" href="https://www.npmjs.com/package/&#64;mapequation/infomap">NPM</a>.</p>
-</section>
-<section id="using-pip">
-<h2>Using pip<a class="headerlink" href="#using-pip" title="Link to this heading">¶</a></h2>
-<p>Pre-built wheels are published for current macOS releases. The current
-automated macOS wheel build targets macOS 15, so older macOS versions may fall
-back to a source build.</p>
-<p>Installing on other operating systems requires a
-working <code class="docutils literal notranslate"><span class="pre">gcc</span></code> or <code class="docutils literal notranslate"><span class="pre">clang</span></code> compiler.</p>
-<p>To install, run:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">infomap</span>
+<p>Infomap is a network clustering algorithm based on the <a class="reference external" href="https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation">Map equation</a>.
+This repository contains the native CLI, the Python package, the JavaScript web
+worker, the Docker images, and the source for the published Python
+documentation.</p>
+<p>Start with <a class="reference external" href="https://www.mapequation.org/infomap">mapequation.org/infomap</a> for the user guide and
+<a class="reference external" href="https://github.com/mapequation/infomap/blob/master/CHANGELOG.md">CHANGELOG.md</a> for release notes.</p>
+<section id="install">
+<h2>Install<a class="headerlink" href="#install" title="Link to this heading">¶</a></h2>
+<section id="python-package">
+<h3>Python package<a class="headerlink" href="#python-package" title="Link to this heading">¶</a></h3>
+<p>Install from <a class="reference external" href="https://pypi.org/project/infomap/">PyPI</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>infomap
 </pre></div>
 </div>
-<p>To upgrade, run:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">infomap</span>
+<p>Upgrades use the usual <cite>pip</cite> flow:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>infomap
 </pre></div>
 </div>
-<p>When the Python package is installed, an executable called
-<code class="docutils literal notranslate"><span class="pre">infomap</span></code> (with lowercase i) is available from any directory.</p>
-<p>To get started, read <a class="reference external" href="https://mapequation.github.io/infomap/python/">Infomap Python API</a>.</p>
+<p>The package also installs the <code class="docutils literal notranslate"><span class="pre">infomap</span></code> CLI entry point.
+The Python API reference lives at <a class="reference external" href="https://mapequation.github.io/infomap/python/">Infomap Python API</a>.</p>
 </section>
-<section id="using-docker">
-<h2>Using Docker<a class="headerlink" href="#using-docker" title="Link to this heading">¶</a></h2>
-<p>There are currently two supported Docker images available on <a class="reference external" href="https://hub.docker.com/r/mapequation/infomap">Docker Hub</a>.</p>
+<section id="javascript-package">
+<h3>JavaScript package<a class="headerlink" href="#javascript-package" title="Link to this heading">¶</a></h3>
+<p>The browser worker package is published on <a class="reference external" href="https://www.npmjs.com/package/&#64;mapequation/infomap">NPM</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>npm<span class="w"> </span>install<span class="w"> </span>@mapequation/infomap
+</pre></div>
+</div>
+</section>
+<section id="docker">
+<h3>Docker<a class="headerlink" href="#docker" title="Link to this heading">¶</a></h3>
+<p>Supported images are published on <a class="reference external" href="https://hub.docker.com/r/mapequation/infomap">Docker Hub</a>:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">mapequation/infomap</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">mapequation/infomap:notebook</span></code> based on <code class="docutils literal notranslate"><span class="pre">jupyter/scipy-notebook</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mapequation/infomap:notebook</span></code></p></li>
 </ul>
-<p>The image <code class="docutils literal notranslate"><span class="pre">mapequation/infomap</span></code> can be started with</p>
+<p>Run the CLI image with:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>-v<span class="w"> </span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>:/data<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>mapequation/infomap
+<span class="w">    </span>-v<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">&quot;</span>:/data<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>mapequation/infomap<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span><span class="o">[</span>infomap<span class="w"> </span>arguments<span class="o">]</span>
 </pre></div>
 </div>
-<p>You can also use the supplied Compose file with Docker Compose v2:</p>
+<p>Or use the local Compose file:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>infomap
 </pre></div>
 </div>
-<p>The image <code class="docutils literal notranslate"><span class="pre">mapequation/infomap:notebook</span></code> can be started with</p>
+<p>Start the notebook image with:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>-v<span class="w"> </span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>:/home/jovyan/work<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">&quot;</span>:/home/jovyan/work<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-p<span class="w"> </span><span class="m">8888</span>:8888<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>mapequation/infomap:notebook<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>start.sh<span class="w"> </span>jupyter<span class="w"> </span>lab
 </pre></div>
 </div>
-<p>Or similarly, using Docker Compose v2:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>notebook
-</pre></div>
-</div>
 </section>
-<section id="compiling-from-source">
-<h2>Compiling from source<a class="headerlink" href="#compiling-from-source" title="Link to this heading">¶</a></h2>
-<p>Installing Infomap from source requires a working <code class="docutils literal notranslate"><span class="pre">gcc</span></code> or <code class="docutils literal notranslate"><span class="pre">clang</span></code> compiler.</p>
-<p>To download and compile the newest version from <a class="reference external" href="https://www.github.com/mapequation/infomap">Github</a>, clone the repository
-by running</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:mapequation/infomap.git
+</section>
+<section id="build-from-source">
+<h2>Build from source<a class="headerlink" href="#build-from-source" title="Link to this heading">¶</a></h2>
+<p>Building locally requires a working <code class="docutils literal notranslate"><span class="pre">gcc</span></code> or <code class="docutils literal notranslate"><span class="pre">clang</span></code> toolchain.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:mapequation/infomap.git
 <span class="nb">cd</span><span class="w"> </span>infomap
 make<span class="w"> </span>build-native
 </pre></div>
 </div>
-<p>This creates the binary <code class="docutils literal notranslate"><span class="pre">Infomap</span></code>, run it using:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">Infomap</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="n">network_data</span> <span class="n">destination</span>
+<p>This creates the <code class="docutils literal notranslate"><span class="pre">Infomap</span></code> binary in the repository root.
+Show the available CLI options with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./Infomap<span class="w"> </span>--help
 </pre></div>
 </div>
-<p>For a list of options, run:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">Infomap</span> <span class="o">--</span><span class="n">help</span>
-</pre></div>
-</div>
-<p>Read <a class="reference external" href="https://www.mapequation.org/infomap">the documentation</a> to learn more about the different options.</p>
-</section>
-<section id="npm-package">
-<h2>Npm package<a class="headerlink" href="#npm-package" title="Link to this heading">¶</a></h2>
-<p>An experimental Javascript web worker is available on <a class="reference external" href="https://www.npmjs.com/package/&#64;mapequation/infomap">NPM</a>.</p>
-<p>To install it, run</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>npm<span class="w"> </span>install<span class="w"> </span>@mapequation/infomap
-</pre></div>
-</div>
+<p>Maintainers should use:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">BUILD.md</span></code> for local build and verification commands</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RELEASING.md</span></code> for the release flow</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/maintainers/architecture.md</span></code> for ownership and source-of-truth rules</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AGENTS.md</span></code> for repo-local maintenance guidance</p></li>
+</ul>
 </section>
 <section id="feedback">
 <h2>Feedback<a class="headerlink" href="#feedback" title="Link to this heading">¶</a></h2>
-<p>If you have any questions, suggestions or issues regarding the software,
-please add them to <a class="reference external" href="http://www.github.com/mapequation/infomap/issues">GitHub issues</a>.</p>
-</section>
-<section id="maintainer-automation">
-<h2>Maintainer automation<a class="headerlink" href="#maintainer-automation" title="Link to this heading">¶</a></h2>
-<p>Repository-specific agent guidance lives in <code class="docutils literal notranslate"><span class="pre">AGENTS.md</span></code>.</p>
-<p>Automation policy, risk classification, verification rules, and GitHub
-interaction templates live under <code class="docutils literal notranslate"><span class="pre">docs/automation/</span></code>.
-Maintainer architecture and ownership guidance lives in
-<code class="docutils literal notranslate"><span class="pre">docs/maintainers/architecture.md</span></code>.</p>
+<p>Questions, bug reports, and feature requests belong in <a class="reference external" href="https://github.com/mapequation/infomap/issues">GitHub issues</a>.</p>
 </section>
 <section id="authors">
 <h2>Authors<a class="headerlink" href="#authors" title="Link to this heading">¶</a></h2>
@@ -142,11 +123,9 @@ Maintainer architecture and ownership guidance lives in
 <section id="terms-of-use">
 <h2>Terms of use<a class="headerlink" href="#terms-of-use" title="Link to this heading">¶</a></h2>
 <p>Infomap is released under a dual licence.</p>
-<p>To give everyone maximum freedom to make use of Infomap
-and derivative works, we make the code open source under
-the GNU General Public License version 3 or any
-later version (see <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/LICENSE_GPLv3.txt">LICENSE_GPLv3.txt</a>).</p>
-<p>For a non-copyleft license, please contact us.</p>
+<p>The code is available under the GNU General Public License version 3 or any
+later version; see <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/LICENSE_GPLv3.txt">LICENSE_GPLv3.txt</a>.
+For a non-copyleft license, please contact us.</p>
 </section>
 </section>
 
