@@ -383,7 +383,7 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
 {
   if (network.numNodes() == 0)
     throw std::domain_error("No nodes in network");
-  if (m_root.childDegree() > 0) {
+  if (m_root.firstChild != nullptr || m_root.collapsedFirstChild != nullptr) {
     m_root.deleteChildren();
     m_leafNodes.clear();
   }
