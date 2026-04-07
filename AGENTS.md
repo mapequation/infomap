@@ -2,96 +2,68 @@
 
 ## Mission
 
-Reduce the GitHub issue backlog with the smallest safe change, the smallest useful verification, and the least possible ambiguity.
+Keep changes small, source-aware, and easy to verify.
+
+Default priorities:
+
+1. identify the smallest affected surface
+2. edit the real source-of-truth file
+3. run the smallest useful verification
+4. state clearly what was verified and what was not
+
+Do not bundle unrelated cleanup into the same change.
 
 ## Repo Map
 
-- `src/`: C++ core logic, algorithms, parsing, IO, and CLI behavior
-- `interfaces/python/`: Python package sources and SWIG-facing wrapper code
-- `interfaces/js/`: JavaScript worker packaging and TypeScript sources
+- `src/`: C++ runtime behavior, algorithms, parsing, IO, and CLI semantics
+- `interfaces/python/`: Python package sources, tracked SWIG outputs, and Sphinx source
+- `interfaces/js/`: JavaScript package sources, legacy parser package, and TypeScript sources
 - `test/`: Python-facing regression tests and fixtures
 - `examples/python/`: executable Python examples used by `make test-python`
-- `docs/`: generated documentation output; do not hand-edit unless the task is explicitly about docs generation or publishing
-- `.github/workflows/`: CI, release, packaging, and publishing workflows
+- `docs/`: committed generated Python docs output plus hand-maintained maintainer docs
+- `.github/workflows/`: CI, docs verification, release, and packaging workflows
 
-## Default Work Unit
+## Source Of Truth
 
-Treat each issue as one bounded work unit:
+- `src/` owns runtime behavior
+- `README.rst` is the main repository and Python-docs landing-page source
+- `interfaces/js/README.md` is the source README for the public npm package
+- `interfaces/python/source/` owns the published Python docs source
+- `interfaces/python/generated/` and `interfaces/python/src/infomap/_swig.py` are tracked Python wrapper outputs
+- `docs/` generated HTML, JS, and `_sources` files are build output; do not hand-edit them
 
-1. classify risk
-2. identify the smallest affected surface
-3. choose the minimum required verification
-4. make the smallest useful change
-5. open a PR according to the repo PR policy
-
-Do not batch unrelated issues into a single change.
-
-## Risk Policy
-
-- `low`: docs, tests, small build or tooling fixes, isolated Python or JS wrapper bugs, import or packaging issues with narrow blast radius
-- `medium`: bounded parsing changes, wrapper API behavior changes, constrained C++ fixes with a clear hypothesis, or build fixes with moderate regression surface
-- `high`: algorithm correctness, determinism across platforms, numerical stability, OpenMP or parallel behavior, memory behavior, release or publishing logic
-- `blocked`: missing reproduction, missing environment, unclear ownership, or unresolved product or research decision
-
-PR policy:
-
-- `low` + required verification passes -> `ready` PR allowed
-- `medium` + required verification passes -> `draft` PR only
-- `high` or `blocked` -> no automatic implementation PR
-
-See `docs/automation/risk-rubric.md` for the detailed rubric.
+When two documents disagree, fix the source document and regenerate derived
+output instead of patching the generated copy by hand.
 
 ## Verification
 
-Run the smallest sufficient verification for the changed surface.
+Run the smallest sufficient verification for the changed surface:
 
 - `src/` changes: at least `make build-native`
-- Python wrapper changes: `make build-python` and `make test-python`
-- JS package or worker changes: `npm ci` and the smallest relevant build, usually `make build-js` or `make test-js`
-- CI or release workflow changes: limit local verification and default to `draft`
-- docs-only changes: no code build unless the issue depends on generated docs freshness, in which case run `make test-docs`
-
-See `docs/automation/verification-matrix.md` for the command matrix.
-
-## GitHub Contract
-
-Automation may:
-
-- classify issues
-- add or update labels
-- leave one short structured triage comment per issue and update it when needed
-- open issue-scoped pull requests
-
-Automation may not:
-
-- merge pull requests
-- close issues without a clear PR or merge relationship
-- silently broaden issue scope
-- treat unlabeled issues as low risk by default
-
-See `docs/automation/github-contract.md` for the exact rules and templates.
+- Python wrapper or packaging changes: `make build-python` and `make test-python`
+- JavaScript worker or package changes: `npm ci` plus `make build-js` or `make test-js`
+- docs-only text changes: no code build unless docs output freshness is affected; then run `make test-docs`
+- workflow or release changes: run the smallest relevant local smoke check and say what remains unverified
 
 ## Environment
 
-- Prefer Codex Cloud for recurring backlog automation.
-- Do not assume local shell setup matches cloud setup.
-- Verify tool availability before use: `gh`, `python`, `node`, `swig`, `em++`, and the compiler toolchain.
-- On some local macOS setups, `gh` may exist at `/opt/homebrew/bin/gh` even when Homebrew paths are missing from `PATH`.
-- Never develop directly on `master`; create or use an issue-specific branch.
+- Verify tool availability before use: `python`, `node`, `swig`, `em++`, and the compiler toolchain
+- On some local macOS setups, Homebrew tools may need `PATH="/opt/homebrew/bin:$PATH"`
+- Never develop directly on `master`; create or use a task-specific branch
 
 ## Do Not Guess
 
-- Do not improvise around SWIG generation or Python packaging.
-- Do not improvise around JS worker generation or Emscripten.
-- Do not hand-edit generated docs in `docs/` unless the issue is explicitly about the generated output.
-- Do not make release or publishing changes automatically.
-- Do not treat algorithmic, numerical, or determinism bugs as low risk.
+- Do not improvise around SWIG generation or Python packaging
+- Do not improvise around JS worker generation or Emscripten
+- Do not hand-edit generated docs output in `docs/`
+- Do not make release or publishing changes casually
+- Do not treat algorithmic, numerical, determinism, or memory issues as routine cleanup
 
 ## Escalation
 
 Stop and hand off when:
 
-- the issue spans multiple major surfaces
+- the work spans multiple major surfaces
 - the verification path is unavailable in the current environment
 - the fix appears to require architectural redesign instead of a bounded patch
 - the behavior change cannot be validated with a small scoped check

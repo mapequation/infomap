@@ -2,7 +2,7 @@ PYTHON_SWIG_PY := interfaces/python/src/infomap/_swig.py
 PYTHON_SWIG_CPP := interfaces/python/generated/infomap_wrap.cpp
 SPHINX_SOURCE_DIR := interfaces/python/source
 SPHINX_TARGET_DIR ?= docs
-DOCS_FRESHNESS_EXCLUDES := automation maintainers plans .nojekyll .buildinfo
+DOCS_FRESHNESS_EXCLUDES := maintainers .nojekyll .buildinfo
 DOCS_FRESHNESS_DIFF_ARGS := $(foreach excluded,$(DOCS_FRESHNESS_EXCLUDES),--exclude=$(excluded))
 DOCS_SYNC_ARGS := -a --delete $(foreach excluded,$(DOCS_FRESHNESS_EXCLUDES),--exclude=/$(excluded))
 PYTHON_TEST_DIR := test/python

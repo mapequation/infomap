@@ -1,31 +1,28 @@
 # Releasing
 
-Infomap releases are tag-driven and orchestrated by GitHub Actions.
-Maintainers do not publish npm or PyPI packages directly from local shells during
-the normal flow.
+Infomap releases are tag-driven and published by GitHub Actions.
+The normal path does not involve publishing to PyPI or npm from a local shell.
 
-Supported public release surfaces are:
+Public release deliverables are:
 
-- CLI release assets
-- Python package
-- `@mapequation/infomap`
-- committed Python documentation output in `docs/`
+- native CLI release assets
+- the `infomap` Python package
+- the `@mapequation/infomap` npm package
+- the committed Python docs output in `docs/`
 
-Internal-supported JS sibling packages and secondary Docker images are outside
-the automated public release path unless a maintainer explicitly expands scope.
+Internal-supported packages and secondary Docker images are outside the default
+public release flow unless a maintainer explicitly widens the release scope.
 
 ## One-time repository setup
 
-Configure these repository integrations before the first automated release:
+Configure these integrations before the first release:
 
-1. GitHub Environments
-   - `pypi-release`
-   - `npm-release`
-2. Add required reviewers to `pypi-release` and `npm-release`.
-3. Configure PyPI trusted publishing for this repository and the
-   `.github/workflows/release.yml` workflow.
-4. Configure npm trusted publishing for this repository and the
-   `.github/workflows/release.yml` workflow.
+1. Create the GitHub environments `pypi-release` and `npm-release`.
+2. Add the required reviewers to both environments.
+3. Configure PyPI trusted publishing for this repository and
+   `.github/workflows/release.yml`.
+4. Configure npm trusted publishing for this repository and
+   `.github/workflows/release.yml`.
 5. Remove legacy registry secrets after trusted publishing is confirmed:
    - `PYPI_USERNAME`
    - `PYPI_PASSWORD`
@@ -33,43 +30,42 @@ Configure these repository integrations before the first automated release:
 
 ## Normal release flow
 
-1. Merge ordinary pull requests with Conventional Commit messages to `master`.
-2. Wait for `.github/workflows/release-please.yml` to open or update a release PR.
-3. Review the release PR like any other change:
-   - version bump
-   - changelog
+1. Merge ordinary pull requests to `master` using Conventional Commit messages.
+2. Let `.github/workflows/release-please.yml` open or update the release PR.
+3. Review the release PR like any other change. At minimum, check:
+   - the version bumps
+   - `CHANGELOG.md`
    - `src/version.h`
    - `CITATION.cff`
 4. Merge the release PR.
-5. Release Please creates the `vX.Y.Z` tag and GitHub Release.
-6. `.github/workflows/release.yml` runs on that tag and:
-   - builds native binaries
-   - builds Python sdist and wheels
-   - builds and tests the npm package
-   - uploads release assets to GitHub
-   - publishes to PyPI behind the `pypi-release` environment gate
-   - publishes to npm behind the `npm-release` environment gate
+5. Release Please creates the `vX.Y.Z` tag and the GitHub Release.
+6. `.github/workflows/release.yml` runs for that tag and:
+   - builds the native release assets
+   - builds the Python sdist and wheels
+   - builds and verifies the npm package
+   - attaches assets to the GitHub Release
+   - publishes to PyPI behind `pypi-release`
+   - publishes to npm behind `npm-release`
 
 ## Documentation publishing
 
-Python docs are published from the committed `docs/` tree on `master`, which is
-the current GitHub Pages source for this repository. `.github/workflows/docs.yml`
-is a verify-only workflow: on pull requests and on `master`, it runs
-`make test-docs` to verify that the committed generated output derived from
-`interfaces/python/source/` plus `README.rst` is fresh.
+The published Python docs are served from the committed `docs/` tree on
+`master`. `.github/workflows/docs.yml` is verify-only: it runs `make test-docs`
+to confirm that the committed generated output derived from
+`interfaces/python/source/` and `README.rst` is fresh.
 
 ## Recovery
 
-If a release partially succeeds:
+If a release only partially succeeds:
 
-- If GitHub Release assets failed, rerun `.github/workflows/release.yml` for the
-  same tag before approving any registry publish steps.
-- If PyPI publish failed before success, rerun the `publish_pypi` job after
-  fixing the configuration issue.
-- If npm publish failed before success, rerun the `publish_npm` job after
-  fixing the configuration issue.
+- If GitHub Release assets fail, rerun `.github/workflows/release.yml` for the
+  same tag before approving registry publishing.
+- If PyPI fails before any successful publish, fix the configuration problem and
+  rerun `publish-pypi`.
+- If npm fails before any successful publish, fix the configuration problem and
+  rerun `publish-npm`.
 - If a registry publish already succeeded, do not delete or rewrite the tag.
-  Resume from the remaining failed job and keep the existing version.
+  Resume from the remaining failed job and keep the published version.
 
 Manual publish from a local shell should be reserved for incident recovery only.
 The fallback commands remain in the `Makefile`, but they now build directly from

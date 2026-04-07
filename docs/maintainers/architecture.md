@@ -1,26 +1,28 @@
 # Architecture
 
-This document defines ownership boundaries for Infomap's supported surfaces.
-It is intended for maintainers who need to understand which files are sources
-of truth, which outputs are generated, and which products are public versus
-internal-supported.
+This document describes the ownership boundaries for Infomap's maintained
+surfaces. Use it to answer three questions quickly:
 
-## Primary runtime authority
+1. Which file is the source of truth?
+2. Which outputs are generated?
+3. Which surfaces are public versus internal-supported?
 
-`src/` is the only implementation authority for Infomap runtime behavior:
+## Runtime authority
 
-- algorithms and optimization behavior
+`src/` is the only authority for Infomap runtime behavior:
+
+- algorithm and optimization behavior
 - parsing and file IO semantics
 - CLI option semantics and output formats
 - metadata exposed to wrappers and tests
 
-The CLI binary, Python wrapper, JavaScript worker, C++ test suite, and Docker
-images are all projections of this C++ core. They should not redefine runtime
-behavior independently.
+The CLI, Python package, JavaScript worker, tests, and Docker images are all
+projections of this core. They should not redefine runtime behavior
+independently.
 
 ## Supported surfaces
 
-Public-supported surfaces:
+Public-supported:
 
 - CLI binary (`Infomap`)
 - Python package (`infomap`)
@@ -28,85 +30,86 @@ Public-supported surfaces:
 - React hook subpath (`@mapequation/infomap/react`)
 - published Python documentation site
 
-Internal-supported surfaces:
+Internal-supported:
 
 - deprecated parser helpers (`@mapequation/infomap-parser`)
-- Python-oriented Docker images
+- secondary Docker images used for compatibility or maintainer workflows
 
 Internal-supported means the surface still matters and should keep building, but
 it is not a primary public contract for release planning.
 
 ## Source-of-truth rules
 
-Use these ownership rules when making changes:
-
 - `src/`
   - runtime semantics, option behavior, output semantics, and C++ APIs
+- `README.rst`
+  - repository landing-page text and the landing-page content reused in the
+    generated Python docs
 - `interfaces/python/source/`
-  - documentation source for the published Python docs
-- `docs/`
-  - checked-in Pages tree currently served from `master:/docs`; the
-    Sphinx-generated site output is generated, while `docs/automation/`,
-    `docs/maintainers/`, and `docs/plans/` remain source-owned maintainer
-    content that is excluded from docs freshness checks
+  - Python docs source beyond the landing page
+- `interfaces/js/README.md`
+  - README source for the public npm package
 - `interfaces/js/generated/`
-  - generated metadata consumed by the JS package build
+  - tracked metadata consumed by the JS package build
+- `docs/maintainers/`
+  - hand-maintained maintainer documentation
+- `docs/`
+  - generated Python docs output for GitHub Pages
 - `test/fixtures/`
   - shared regression inputs and expected outputs for tests
 
-Generated outputs should have an explicit generator and verification path. They
-should not be treated as hand-maintained source files.
+Generated outputs should always have a clear generator and verification path.
+They are not hand-maintained source files.
 
-For the Python docs site specifically:
+For the Python docs site:
 
-- `make build-docs`
-  - refreshes the committed generated Sphinx output in `docs/`
-- `make test-docs`
-  - rebuilds the site in a temp directory and diffs it against the committed
-    generated subset of `docs/`
+- `make build-docs` refreshes the committed generated output in `docs/`
+- `make test-docs` rebuilds in a temp directory and compares that output with
+  the committed generated subset of `docs/`
+
+Do not hand-edit generated HTML, JavaScript, or `_sources` files under `docs/`.
 
 ## Build ownership
 
-The repository intentionally uses more than one tool, but their roles are
-distinct:
+The repository intentionally uses several tools, each with a narrow role:
 
 - `make`
-  - primary maintainer UX for native builds, wrapper builds, packaging, and
-    common verification
+  - primary maintainer entry point for builds, packaging, and common verification
 - `cmake`
-  - C++ test and instrumentation build path
+  - C++ tests and instrumentation builds
 - `swig`
   - Python wrapper generation layer
 - `rollup` and `em++`
   - JavaScript worker packaging layer
 
-If a change touches multiple build surfaces, keep the configuration policy
-consistent across them rather than re-encoding the same logic separately.
+If a change touches multiple build surfaces, keep the policy aligned across
+them instead of re-encoding the same logic separately.
 
-## Documentation and release expectations
+## Documentation expectations
 
-- `README.rst` is user-facing source content and feeds the committed docs site
-- `interfaces/js/README.md` is the source README for the public JavaScript
-  package
-- root `README.md` is generated/secondary package output and should not be
-  treated as the hand-maintained source document
-- `BUILD.md` describes local maintainer build/test workflows
-- `RELEASING.md` describes maintainer release policy
+- `README.rst` is the main general-purpose README in this repository
+- `interfaces/js/README.md` is the npm-package README
+- `BUILD.md` describes local maintainer build and verification commands
+- `RELEASING.md` describes the release flow
+- `AGENTS.md` captures repo-local working rules for small, safe changes
 
-When these documents disagree, fix the source document rather than patching
-generated output by hand.
+When documents disagree, update the owning source rather than the generated
+output.
 
 ## Docker support policy
 
-Docker remains supported, but not every image has the same role:
+Docker remains supported, but not every image has the same role.
 
-- Supported:
-  - CLI image (`docker/infomap.Dockerfile`)
-  - notebook image (`docker/notebook.Dockerfile`)
-- Internal-supported:
-  - Python build/test image (`docker/python.Dockerfile`)
-  - Ubuntu compatibility image (`docker/ubuntu.Dockerfile`)
-  - RStudio image (`docker/rstudio.Dockerfile`)
+Supported images:
 
-Supported images should stay aligned with current Make-based build workflows and
-should have at least smoke coverage in CI over time.
+- CLI image (`docker/infomap.Dockerfile`)
+- notebook image (`docker/notebook.Dockerfile`)
+
+Internal-supported images:
+
+- Python build/test image (`docker/python.Dockerfile`)
+- Ubuntu compatibility image (`docker/ubuntu.Dockerfile`)
+- RStudio image (`docker/rstudio.Dockerfile`)
+
+Supported images should stay aligned with the current Make-based workflows and
+retain smoke coverage in CI.
