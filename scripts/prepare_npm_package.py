@@ -11,11 +11,14 @@ KEEP_PACKAGE_FIELDS = [
     "version",
     "description",
     "browser",
+    "module",
     "publishConfig",
     "files",
     "main",
     "types",
     "type",
+    "exports",
+    "sideEffects",
     "repository",
     "keywords",
     "author",
@@ -23,6 +26,8 @@ KEEP_PACKAGE_FIELDS = [
     "license",
     "bugs",
     "homepage",
+    "peerDependencies",
+    "peerDependenciesMeta",
 ]
 
 

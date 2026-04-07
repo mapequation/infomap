@@ -42,11 +42,15 @@ jobs:
       - name: Install JavaScript dependencies
         run: npm ci
 
+      - name: Install Playwright browser
+        if: inputs.run-tests
+        run: npx playwright install --with-deps chromium
+
       - name: Verify JavaScript metadata freshness
         if: inputs.run-tests
         run: make test-js-metadata
 
-      - name: Smoke-build internal JavaScript packages
+      - name: Smoke-build deprecated parser package
         if: inputs.run-tests
         run: make test-js-internal
 

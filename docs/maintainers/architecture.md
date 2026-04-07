@@ -25,12 +25,12 @@ Public-supported surfaces:
 - CLI binary (`Infomap`)
 - Python package (`infomap`)
 - JavaScript worker package (`@mapequation/infomap`)
+- React hook subpath (`@mapequation/infomap/react`)
 - published Python documentation site
 
 Internal-supported surfaces:
 
-- React helpers (`@mapequation/infomap-react`)
-- parser helpers (`@mapequation/infomap-parser`)
+- deprecated parser helpers (`@mapequation/infomap-parser`)
 - Python-oriented Docker images
 
 Internal-supported means the surface still matters and should keep building, but
@@ -77,7 +77,7 @@ distinct:
   - C++ test and instrumentation build path
 - `swig`
   - Python wrapper generation layer
-- `webpack` and `em++`
+- `rollup` and `em++`
   - JavaScript worker packaging layer
 
 If a change touches multiple build surfaces, keep the configuration policy

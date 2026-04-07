@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@mapequation/infomap": ["../../../dist/npm/unpacked/package/index.d.ts"],
+      "@mapequation/infomap/arguments": [
+        "../../../dist/npm/unpacked/package/arguments.d.ts"
+      ],
+      "@mapequation/infomap/filetypes": [
+        "../../../dist/npm/unpacked/package/filetypes.d.ts"
+      ],
+      "@mapequation/infomap/network": [
+        "../../../dist/npm/unpacked/package/network.d.ts"
+      ],
+      "@mapequation/infomap/react": [
+        "../../../dist/npm/unpacked/package/react.d.ts"
+      ]
+    }
+  },
+  "include": ["./consumer.ts"]
+}

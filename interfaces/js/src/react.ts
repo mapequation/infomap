@@ -1,5 +1,6 @@
-import Infomap from "@mapequation/infomap";
-import type { Arguments } from "@mapequation/infomap/arguments";
+import type { Arguments } from "./arguments";
+import Infomap from "./index";
+import { mergeInfomapArgs } from "./react-args";
 import { useCallback, useDebugValue, useState } from "react";
 
 export function useInfomap(args?: Arguments) {
@@ -11,7 +12,7 @@ export function useInfomap(args?: Arguments) {
     (...params: Parameters<Infomap["run"]>) => {
       setRunning(true);
       setProgress(0);
-      infomap.run(...applyArgs(params, args));
+      infomap.run(...mergeInfomapArgs(params, args));
       setRunning(false);
     },
     [infomap, args]
@@ -22,14 +23,14 @@ export function useInfomap(args?: Arguments) {
       setRunning(true);
       setProgress(0);
       return infomap
-        .runAsync(...applyArgs(params, args))
+        .runAsync(...mergeInfomapArgs(params, args))
         .then((result) => {
           setRunning(false);
           return result;
         })
-        .catch((e) => {
+        .catch((error) => {
           setRunning(false);
-          throw e;
+          throw error;
         });
     },
     [infomap, args]
@@ -46,18 +47,6 @@ export function useInfomap(args?: Arguments) {
     on(...params: Parameters<Infomap["on"]>) {
       infomap.on(...params);
       return this;
-    },
+    }
   };
-}
-
-function applyArgs(params: Parameters<Infomap["run"]>, args?: Arguments): Parameters<Infomap["run"]> {
-  const param = params[0] ? { ...params[0] } : {};
-
-  if (typeof param.args === "object" && typeof args === "object") {
-    param.args = { ...args, ...param.args };
-  } else if (args !== undefined) {
-    param.args = args;
-  }
-
-  return [param];
 }

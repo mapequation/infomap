@@ -87,7 +87,7 @@ help:
 		"  test-python-examples  Run the Python example smoke tests." \
 		"  test-docs             Rebuild docs in a temp dir and verify committed docs/ is fresh." \
 		"  test-js-metadata      Regenerate JS metadata in a temp dir and verify tracked files are current." \
-		"  test-js               Pack the npm package and smoke-test the browser example." \
+		"  test-js               Run JS lint/typecheck/unit/browser/package verification for the built npm package." \
 		"  test-fast             Run the fast native + Python feedback suite." \
 		"  test-sanitizers       Run the C++ test suite under ASan/UBSan." \
 		"  bench-native          Run the native benchmark and memory baseline harness." \
@@ -112,7 +112,7 @@ help:
 		"" \
 		"CI / Advanced" \
 		"  ci-export-github-env  Print GitHub Actions environment exports for macOS libomp." \
-		"  test-js-internal      Smoke-build the internal-supported react/parser JS packages." \
+		"  test-js-internal      Smoke-build the deprecated internal parser package." \
 		"  Advanced/internal targets such as R and docker-* remain available but are no longer primary." \
 		"" \
 		"Examples" \

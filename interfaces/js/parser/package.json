@@ -1,7 +1,8 @@
 {
   "name": "@mapequation/infomap-parser",
   "version": "1.0.2",
-  "description": "Infomap output parser",
+  "private": true,
+  "description": "Deprecated Infomap output parser",
   "author": {
     "name": "mapequation",
     "email": "mapequation@gmail.com",
@@ -13,38 +14,21 @@
     "type": "git",
     "url": "https://github.com/mapequation/infomap.git"
   },
-  "publishConfig": {
-    "access": "public"
-  },
+  "type": "module",
   "main": "dist/index.js",
-  "module": "dist/index.es.js",
-  "types": "dist/index.d.ts",
-  "jsnext:main": "dist/index.es.js",
-  "engines": {
-    "node": ">=8",
-    "npm": ">=5"
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    }
   },
+  "types": "src/index.ts",
   "scripts": {
-    "build": "rollup -c && tsc -d --emitDeclarationOnly --noEmit false --declarationDir dist",
-    "start": "rollup -c -w",
-    "prepare": "npm run build"
+    "build": "rollup -c rollup.config.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "dependencies": {},
-  "peerDependencies": {
-    "@mapequation/infomap": ">=2.3.0"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.2.2",
-    "@babel/runtime": "^7.3.1",
-    "@rollup/plugin-babel": "^5.2.0",
-    "@rollup/plugin-commonjs": "^15.0.0",
-    "@rollup/plugin-node-resolve": "^9.0.0",
-    "@rollup/plugin-typescript": "^5.0.2",
-    "@rollup/plugin-url": "^5.0.1",
-    "cross-env": "^5.2.0",
-    "rollup": "^2.26.9",
-    "rollup-plugin-peer-deps-external": "^2.2.0",
-    "tslib": "^2.0.1",
-    "typescript": "^3.2.4"
-  }
+  "dependencies": {}
 }

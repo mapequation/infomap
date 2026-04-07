@@ -1,19 +1,16 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "allowJs": false,
-    "checkJs": false,
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "esModuleInterop": true,
-    "target": "es6",
-    "module": "preserve",
-    "moduleResolution": "bundler",
-    "declaration": true,
-    "declarationDir": "../../dist/npm/package",
-    "baseUrl": "src"
+    "noEmit": true,
+    "types": ["node", "vitest/globals"]
   },
-  "files": [
-    "src/index.ts"
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "test/browser/**/*.ts",
+    "test/setup/**/*.ts",
+    "test/unit/**/*.ts",
+    "playwright.config.ts",
+    "vitest.config.ts"
   ]
 }

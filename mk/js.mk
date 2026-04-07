@@ -8,14 +8,14 @@ JS_METADATA_FILES := $(JS_CHANGELOG_JSON) $(JS_PARAMETERS_JSON)
 NPM_STAGE_DIR := dist/npm/package
 NPM_UNPACK_DIR := dist/npm/unpacked
 NPM_PACK_JSON := dist/npm/npm-pack.json
-JS_INTERNAL_PACKAGES := interfaces/js/react interfaces/js/parser
+JS_INTERNAL_PACKAGE := interfaces/js/parser
 
 .PHONY: build-js build-js-metadata test-js-metadata test-js test-js-internal clean-js format-js
 
 build-js: $(JS_WORKER_TARGET) $(JS_METADATA_FILES)
 	$(RM) -r $(NPM_STAGE_DIR)
 	@mkdir -p $(NPM_STAGE_DIR)
-	$(NPM) run build
+	$(NPM) run build:package
 	@$(PYTHON_FOR_BUILD_CONFIG) scripts/prepare_npm_package.py --source-package package.json --readme interfaces/js/README.md --readme-rst README.rst --license LICENSE_GPLv3.txt --output-dir $(NPM_STAGE_DIR)
 	@echo "Built $^ into $(NPM_STAGE_DIR)"
 
@@ -38,32 +38,24 @@ $(JS_WORKER_TARGET): $(SOURCES) $(HEADERS) $(PRE_WORKER_MODULE) $(MK_FILES) Make
 test-js: build-js
 	$(RM) -r $(NPM_UNPACK_DIR) $(NPM_STAGE_DIR)/*.tgz $(NPM_PACK_JSON)
 	@mkdir -p dist/npm
+	$(NPM) run lint
+	$(NPM) run typecheck
+	$(NPM) run test:unit
 	$(NPM) pack --json $(NPM_STAGE_DIR) > $(NPM_PACK_JSON)
 	@pack_json="$(NPM_PACK_JSON)"; \
 	pkg="$$(node --input-type=module -e "import fs from 'node:fs'; const [entry] = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); console.log(entry.filename);" "$$pack_json")"; \
 	mv "$$pkg" dist/npm/; \
 	mkdir -p $(NPM_UNPACK_DIR); \
 	tar -xzf dist/npm/"$$pkg" -C $(NPM_UNPACK_DIR)
-	@browser_target="examples/js/infomap-worker.html"; \
-	if [ -n "$$CI" ]; then \
-		echo "Built browser example at $$browser_target"; \
-	elif command -v open >/dev/null 2>&1; then \
-		open "$$browser_target" || echo "Open $$browser_target manually"; \
-	elif command -v xdg-open >/dev/null 2>&1; then \
-		xdg-open "$$browser_target" || echo "Open $$browser_target manually"; \
-	else \
-		echo "Open $$browser_target manually"; \
-	fi
+	$(NPM) run test:package
+	$(NPM) run test:browser
 
 test-js-internal:
-	@for pkg in $(JS_INTERNAL_PACKAGES); do \
-		echo "Smoke-building $$pkg"; \
-		$(NPM) ci --prefix "$$pkg" >/dev/null; \
-		$(NPM) run build --prefix "$$pkg" >/dev/null; \
-	done
+	@echo "Smoke-building deprecated parser package"
+	@$(NPM) run build --workspace $(JS_INTERNAL_PACKAGE) >/dev/null
 
 clean-js:
-	$(RM) -r build/js interfaces/js/src/worker dist/npm
+	$(RM) -r build/js dist/npm interfaces/js/parser/dist
 
 format-js:
-	prettier --write interfaces/js
+	$(NPM) run format
