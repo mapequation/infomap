@@ -69,3 +69,12 @@ def test_run_forwards_variable_markov_options(monkeypatch):
     assert captured["rendered_args"] == "--synthetic"
     assert captured["kwargs"]["variable_markov_time"] is True
     assert captured["kwargs"]["variable_markov_damping"] == 0.25
+
+
+def test_no_file_output_runs_without_output_directory(make_infomap, load_graph_fixture):
+    im = make_infomap(no_file_output=True)
+    load_graph_fixture(im, "twotriangles_unweighted.edges")
+
+    im.run()
+
+    assert im.num_top_modules == 2

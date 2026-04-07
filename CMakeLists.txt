@@ -138,6 +138,18 @@ if(BUILD_TESTING)
     add_infomap_cpp_test(infomap_cpp_lifecycle_tests test/cpp/test_infomap_wrapper.cpp "fast;core;lifecycle;crash")
     add_infomap_cpp_test(infomap_cpp_partition_tests test/cpp/test_partition.cpp "fast;core;partition;parser")
     add_infomap_cpp_test(infomap_cpp_flow_tests test/cpp/test_flow.cpp "fast;core;flow")
+    add_infomap_cpp_test(infomap_cpp_utils_io_tests test/cpp/test_utils_io.cpp "fast;core;utils;io")
+    add_infomap_cpp_test(infomap_cpp_program_interface_tests test/cpp/test_program_interface.cpp "fast;core;parser;cli")
+    add_infomap_cpp_test(infomap_cpp_config_tests test/cpp/test_config.cpp "fast;core;config;cli")
+
+    add_test(
+        NAME print_json_parameters
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_print_json_parameters.py"
+            "$<TARGET_FILE:infomap_cli>"
+    )
+    set_tests_properties(print_json_parameters PROPERTIES LABELS "fast;core;parser;cli")
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(infomap_cpp_lifecycle_tests PRIVATE -fno-access-control)
@@ -151,5 +163,9 @@ if(BUILD_TESTING)
             infomap_cpp_lifecycle_tests
             infomap_cpp_partition_tests
             infomap_cpp_flow_tests
+            infomap_cpp_utils_io_tests
+            infomap_cpp_program_interface_tests
+            infomap_cpp_config_tests
+            infomap_cli
     )
 endif()
