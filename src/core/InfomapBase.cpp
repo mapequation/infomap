@@ -383,6 +383,8 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
 {
   if (network.numNodes() == 0)
     throw std::domain_error("No nodes in network");
+  // A fresh network init invalidates any previous hard-partition restore buffer.
+  m_originalLeafNodes.clear();
   if (m_root.firstChild != nullptr || m_root.collapsedFirstChild != nullptr) {
     m_root.deleteChildren();
     m_leafNodes.clear();
@@ -397,6 +399,7 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
 
 InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
 {
+  m_originalLeafNodes.clear();
   generateSubNetwork(parent);
 
   if (asSuperNetwork)
