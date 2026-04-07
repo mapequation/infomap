@@ -5,6 +5,9 @@ infomap module
    :members:
    :show-inheritance:
 
+.. autoclass:: InfomapOptions
+   :members:
+
 .. autoclass:: InfoNode
    :members:
 

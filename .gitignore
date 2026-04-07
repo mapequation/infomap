@@ -21,6 +21,9 @@ callgrind.*
 /output/
 /package/
 /*.egg-info
+interfaces/python/src/infomap.egg-info/
+interfaces/python/src/infomap/_infomap*.so
+interfaces/python/src/infomap/*.pyd
 
 /README.md
 /npm-pack.json

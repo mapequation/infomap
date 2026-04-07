@@ -13,8 +13,8 @@ from ._version import (
 )
 
 try:
-    from ._api import *  # noqa: F401,F403
-    from ._api import _construct_args as _construct_args
+    from ._facade import *  # noqa: F401,F403
+    from ._facade import _construct_args as _construct_args
 except ImportError:
     # Allow setuptools to read package metadata before the extension is built.
     pass
