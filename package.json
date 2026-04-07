@@ -2,24 +2,69 @@
   "name": "@mapequation/infomap",
   "version": "2.9.2",
   "description": "Infomap network clustering algorithm",
-  "browser": "index.js",
+  "browser": "./index.umd.js",
+  "module": "./index.js",
   "publishConfig": {
     "access": "public"
   },
   "files": [
-    "index.js",
-    "index.d.ts",
-    "arguments.d.ts",
-    "filetypes.d.ts",
-    "network.d.ts",
+    "*.js",
+    "*.cjs",
+    "*.d.ts",
+    "*.map",
     "LICENSE_GPLv3.txt"
   ],
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "./index.cjs",
+  "types": "./index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "require": "./index.cjs",
+      "default": "./index.js"
+    },
+    "./react": {
+      "types": "./react.d.ts",
+      "import": "./react.js",
+      "require": "./react.cjs",
+      "default": "./react.js"
+    },
+    "./arguments": {
+      "types": "./arguments.d.ts",
+      "import": "./arguments.js",
+      "require": "./arguments.cjs",
+      "default": "./arguments.js"
+    },
+    "./filetypes": {
+      "types": "./filetypes.d.ts",
+      "import": "./filetypes.js",
+      "require": "./filetypes.cjs",
+      "default": "./filetypes.js"
+    },
+    "./network": {
+      "types": "./network.d.ts",
+      "import": "./network.js",
+      "require": "./network.cjs",
+      "default": "./network.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "workspaces": [
+    "interfaces/js/parser"
+  ],
   "scripts": {
-    "watch": "webpack --watch --config interfaces/js/webpack.config.js",
-    "build": "webpack --config interfaces/js/webpack.config.js"
+    "build": "npm run build:package && npm run build:parser",
+    "build:package": "rollup -c interfaces/js/rollup.config.mjs && tsc -p interfaces/js/tsconfig.build.json",
+    "build:parser": "npm run build --workspace interfaces/js/parser",
+    "typecheck": "tsc -p interfaces/js/tsconfig.json --noEmit && npm run typecheck --workspace interfaces/js/parser",
+    "lint": "eslint --config interfaces/js/eslint.config.mjs --max-warnings=0 \"interfaces/js/**/*.{ts,mts,cts}\"",
+    "test:unit": "vitest run --config interfaces/js/vitest.config.ts",
+    "test:browser": "playwright test --config interfaces/js/playwright.config.ts",
+    "test:package": "node interfaces/js/scripts/verify-package.mjs",
+    "format": "prettier --write \"package.json\" \"interfaces/js/**/*.{ts,mts,cts,js,mjs,cjs,json,md,html}\"",
+    "format:check": "prettier --check \"package.json\" \"interfaces/js/**/*.{ts,mts,cts,js,mjs,cjs,json,md,html}\""
   },
   "repository": {
     "type": "git",
@@ -53,13 +98,33 @@
   },
   "homepage": "https://www.mapequation.org/infomap",
   "devDependencies": {
-    "arraybuffer-loader": "^1.0.8",
+    "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.58.2",
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "@types/node": "^24.7.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "eslint": "^9.39.1",
+    "globals": "^16.4.0",
     "prettier": "^3.8.1",
-    "raw-loader": "^4.0.2",
-    "ts-loader": "^9.5.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "rollup": "^4.52.4",
+    "tslib": "^2.8.1",
     "typescript": "^5.9.3",
-    "webpack": "^5.105.4",
-    "webpack-cli": "^7.0.2"
+    "typescript-eslint": "^8.46.1",
+    "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "react": ">=16.9.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   },
   "python": {
     "url": "https://pypi.org/project/infomap/",

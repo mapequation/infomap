@@ -1,6 +1,6 @@
 # Infomap
 
-This is Infomap compiled as a web worker with Emscripten.
+This package ships Infomap as a modern browser worker package.
 
 Infomap is a network clustering algorithm based on the [Map equation](//www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation).
 
@@ -50,6 +50,12 @@ infomap.run({
 });
 ```
 
+React users can import the hook entrypoint directly from the main package:
+
+```javascript
+import { useInfomap } from "@mapequation/infomap/react";
+```
+
 If you use a CDN, for example JSDelivr, `Infomap` is exported as `window.infomap.default`.
 
 For example:
@@ -58,7 +64,7 @@ For example:
 <!doctype html>
 <html>
     <head>
-        <script type="text/javascript" src="//cdn.jsdelivr.net/npm/@mapequation/infomap@latest/index.js"></script>
+        <script type="text/javascript" src="//cdn.jsdelivr.net/npm/@mapequation/infomap@latest/index.umd.js"></script>
     </head>
     <body>
         <script type="text/javascript">
@@ -80,6 +86,11 @@ For example:
         </script>
 </html>
 ```
+
+## Legacy packages
+
+- `@mapequation/infomap-react` has been replaced by `@mapequation/infomap/react`.
+- `@mapequation/infomap-parser` is deprecated and retained only as legacy internal code in this repository.
 
 ## Feedback
 

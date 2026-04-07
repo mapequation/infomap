@@ -3,11 +3,40 @@ import type {
   CluStateNode,
   NodeBase,
   TreeNode as JsonTreeNode,
-  TreeStateNode as JsonTreeStateNode,
-} from "@mapequation/infomap/filetypes";
-import type { Header as JsonHeader, Module } from "@mapequation/infomap";
+  TreeStateNode as JsonTreeStateNode
+} from "../../src/filetypes";
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+
+interface JsonHeader {
+  version: string;
+  args: string;
+  startedAt: string;
+  completedIn: number;
+  codelength: number;
+  numLevels: number;
+  numTopModules: number;
+  relativeCodelengthSavings: number;
+  directed: boolean;
+  flowModel: string;
+  higherOrder: boolean;
+  stateLevel?: boolean;
+  bipartiteStartId?: number;
+}
+
+export interface Module {
+  path: number[];
+  enterFlow: number;
+  exitFlow: number;
+  numEdges: number;
+  numChildren: number;
+  codelength?: number;
+  links?: {
+    source: number;
+    target: number;
+    flow: number;
+  }[];
+}
 
 type Header = Optional<JsonHeader, "directed"> & { cluLevel?: number };
 
@@ -134,7 +163,7 @@ export function parseClu<NodeType extends CluNode>(
     for (let i = 0; i < nodeHeader.length; ++i) {
       const field = nodeHeader[i] as keyof typeof map;
       const key = map[field] as keyof NodeType;
-      // @ts-ignore
+      // @ts-expect-error Dynamic key assignment depends on parsed header columns.
       node[key] = fields[i];
     }
 
@@ -221,7 +250,7 @@ export function parseTree<NodeType extends TreeNode>(
         case "state_id":
         case "layer_id":
         case "flow":
-          // @ts-ignore
+          // @ts-expect-error Dynamic key assignment depends on parsed header columns.
           node[key] = Number(match[j]);
           break;
         default:
