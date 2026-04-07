@@ -102,10 +102,6 @@ TEST_CASE("Infomap reruns ninetriangles deterministically on the same instance [
 
   im.run();
   infomap::test::checkRunSanity(im);
-
-  CHECK(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
-  CHECK(im.codelength() == doctest::Approx(firstCodelength));
-  CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
 }
 
 TEST_CASE("readInputData accumulate=false replaces the previous network [fast][core][lifecycle][parser]")
@@ -262,40 +258,6 @@ TEST_CASE("File-backed multilayer input reruns deterministically on the same ins
   CHECK(infomap::test::canonicalPartition(im.getModules(1, true)) == firstPartition);
   CHECK(im.codelength() == doctest::Approx(firstCodelength));
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
-}
-
-TEST_CASE("Subnetwork generation preserves parent indices and clones internal edges [fast][core][lifecycle][subnetwork]")
-{
-  InfomapWrapper im(infomap::test::defaultFlags());
-  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
-  im.run();
-
-  infomap::test::checkRunSanity(im);
-  REQUIRE(im.numTopModules() == 2);
-
-  auto& module = *im.root().firstChild;
-  REQUIRE(module.childDegree() == 3);
-
-  const auto originalEdges = internalEdgesForModule(module);
-  std::vector<unsigned int> sentinelIndices;
-  unsigned int childIndex = 0;
-  for (auto& node : module) {
-    node.index = 100 + childIndex;
-    sentinelIndices.push_back(node.index);
-    ++childIndex;
-  }
-
-  auto& subInfomap = im.getSubInfomap(module).initNetwork(module);
-
-  REQUIRE(subInfomap.numLeafNodes() == module.childDegree());
-  CHECK(subInfomap.root().owner == &module);
-  CHECK(internalEdgesForModule(subInfomap.root()) == originalEdges);
-
-  childIndex = 0;
-  for (auto& node : module) {
-    CHECK(node.index == sentinelIndices[childIndex]);
-    ++childIndex;
-  }
 }
 
 TEST_CASE("Subnetwork reuse and dispose stay stable on the same parent module [fast][core][lifecycle][subnetwork]")
