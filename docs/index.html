@@ -110,16 +110,22 @@ The Python API reference lives at <a class="reference external" href="https://ma
 make<span class="w"> </span>build-native
 </pre></div>
 </div>
+<p>On macOS, the default OpenMP-enabled build may require Homebrew <code class="docutils literal notranslate"><span class="pre">libomp</span></code>.
+If OpenMP is unavailable, use:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>build-native<span class="w"> </span><span class="nv">OPENMP</span><span class="o">=</span><span class="m">0</span>
+</pre></div>
+</div>
 <p>This creates the <code class="docutils literal notranslate"><span class="pre">Infomap</span></code> binary in the repository root.
 Show the available CLI options with:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./Infomap<span class="w"> </span>--help
 </pre></div>
 </div>
+<p>See <code class="docutils literal notranslate"><span class="pre">BUILD.md</span></code> for platform-specific maintainer build details.</p>
 <p>Maintainers should use:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">BUILD.md</span></code> for local build and verification commands</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">RELEASING.md</span></code> for the release flow</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">docs/maintainers/architecture.md</span></code> for ownership and source-of-truth rules</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ARCHITECTURE.md</span></code> for ownership and source-of-truth rules</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">AGENTS.md</span></code> for repo-local maintenance guidance</p></li>
 </ul>
 </section>
