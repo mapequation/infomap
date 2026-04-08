@@ -35,7 +35,7 @@ PYTEST_ARGS ?=
 PYTHON_DIST_DIR := dist/python
 PYPI_DIR := $(PYTHON_DIST_DIR)
 PYPI_SDIST := $(shell find $(PYPI_DIR) -name "*.tar.gz" 2>/dev/null)
-PYTHON_BUILD_CXX ?= $(if $(and $(filter Windows_NT,$(OS)),$(filter c++,$(CXX))),cl,$(CXX))
+PYTHON_BUILD_CXX ?= $(if $(filter Windows_NT,$(OS)),cl,$(CXX))
 PYTHON_BUILD_CC ?= $(PYTHON_BUILD_CXX)
 PYTHON_BUILD_ENV = \
 	CC="$(PYTHON_BUILD_CC)" CXX="$(PYTHON_BUILD_CXX)" MODE="$(MODE)" OPENMP="$(OPENMP)" \
