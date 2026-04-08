@@ -111,6 +111,27 @@ def shutil_which(name):
     return None
 
 
+def _base_compile_flags(compiler_family):
+    if compiler_family == "msvc":
+        return ["/std:c++14"]
+
+    flags = ["-Wall", "-Wextra", "-pedantic", "-Wnon-virtual-dtor", "-std=c++14"]
+    if compiler_family in {"clang", "gnu"}:
+        flags.append("-Wshadow")
+    return flags
+
+
+def _mode_compile_flags(mode, compiler_family):
+    if mode == "debug":
+        if compiler_family == "msvc":
+            return ["/Od", "/Zi"]
+        return ["-O0", "-g"]
+
+    if compiler_family == "msvc":
+        return ["/O2"]
+    return ["-O3"]
+
+
 def resolve_build_config(
     *,
     mode="release",
@@ -129,24 +150,8 @@ def resolve_build_config(
     brew_prefix = _brew_prefix() if is_darwin else ""
     libomp_prefix = _brew_prefix("libomp") if is_darwin else ""
 
-    base_compile_flags = []
-    if compiler_family == "msvc":
-        base_compile_flags.append("/std:c++14")
-    else:
-        base_compile_flags.extend(["-Wall", "-Wextra", "-pedantic", "-Wnon-virtual-dtor", "-std=c++14"])
-
-    mode_compile_flags = []
-    if mode == "debug":
-        if compiler_family == "msvc":
-            mode_compile_flags.extend(["/Od", "/Zi"])
-        else:
-            mode_compile_flags.extend(["-O0", "-g"])
-    elif compiler_family == "clang":
-        mode_compile_flags.extend(["-Wshadow", "-O3"])
-    elif compiler_family in {"gnu", "unknown"}:
-        mode_compile_flags.append("-O4")
-    else:
-        mode_compile_flags.append("/O2")
+    base_compile_flags = _base_compile_flags(compiler_family)
+    mode_compile_flags = _mode_compile_flags(mode, compiler_family)
 
     platform_compile_flags = []
     platform_link_flags = []

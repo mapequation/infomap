@@ -8,6 +8,10 @@ and source-of-truth rules live in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 - Use `make help` to see the maintained target surface.
 - Use `make doctor` to inspect tool availability and active build flags.
+- `MODE=release|debug` is the source of truth for Infomap optimization and
+  debug-symbol flags across the native CLI, Python extension, and CMake-based
+  native tests.
+- `OPENMP=0|1` controls whether the shared build policy adds OpenMP flags.
 - Builds use all detected logical cores by default; add `JOBS=1` when you want
   a serial build.
 - The repository uses
@@ -20,6 +24,14 @@ Examples:
 - `docs: refresh build instructions`
 
 ## Native CLI
+
+Build policy summary:
+
+- `MODE=release` adds the maintained release optimization flags.
+- `MODE=debug` adds the maintained debug flags (`-O0 -g` on Clang/GCC-style
+  toolchains).
+- `make doctor` prints the resolved compile and link flags for the current
+  settings.
 
 Build the C++ binary from the repository root:
 
@@ -39,6 +51,10 @@ make build-native
 The compiled binary is written to `./Infomap`.
 
 ## Python package
+
+`make build-python` uses the same shared `MODE`/`OPENMP` policy as
+`make build-native`, so native and Python builds stay aligned unless you pass
+extra flags explicitly with `CPPFLAGS`, `CXXFLAGS`, or `LDFLAGS`.
 
 Building the Python package requires [SWIG](https://www.swig.org/), Python
 packaging tooling, and Sphinx.
@@ -69,6 +85,12 @@ More targeted checks are available when you only need one slice:
 - `make test-python-unit`
 - `make test-python-doctest`
 - `make test-python-examples`
+
+To build the Python extension in debug mode, pass the same mode override:
+
+```bash
+make build-python MODE=debug
+```
 
 Build source and wheel distributions locally when needed:
 
@@ -141,6 +163,21 @@ The current automated macOS wheel build in CI/release uses
 `MACOSX_DEPLOYMENT_TARGET=15.0`. If you need broader compatibility than the
 published wheel currently provides, verify that policy before changing the
 release pipeline.
+
+## Native tests and benchmarks
+
+`make test-native` and `make bench-native` pass `MODE` through to the shared
+build policy used by CMake. `CMAKE_BUILD_TYPE` is still forwarded for generator
+and output-directory behavior, but it does not override Infomap's own
+optimization/debug policy.
+
+Examples:
+
+```bash
+make test-native
+make test-native MODE=debug
+make bench-native MODE=debug CMAKE_BUILD_TYPE=Debug
+```
 
 Build source and wheel distributions locally when needed:
 
