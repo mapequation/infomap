@@ -74,6 +74,21 @@ def _compiler_family(compiler):
     return "unknown"
 
 
+def _compiler_family_for_platform(compiler, platform_name):
+    compiler_family = _compiler_family(compiler)
+    if platform_name != "win32":
+        return compiler_family
+
+    compiler_name = _compiler_command_basename(compiler)
+    if compiler_family == "msvc":
+        return "msvc"
+    if compiler_name in {"gcc", "g++"} or "mingw" in compiler_name:
+        return "gnu"
+    if compiler_name in {"clang", "clang++"}:
+        return "clang"
+    return "msvc"
+
+
 def _brew_prefix(package=None):
     brew = shutil_which("brew")
     if not brew:
@@ -108,7 +123,7 @@ def resolve_build_config(
     platform_name=None,
 ):
     platform_name = platform_name or sys.platform
-    compiler_family = _compiler_family(compiler)
+    compiler_family = _compiler_family_for_platform(compiler, platform_name)
     is_darwin = platform_name in {"darwin", "Darwin"}
 
     brew_prefix = _brew_prefix() if is_darwin else ""

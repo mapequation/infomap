@@ -37,3 +37,12 @@ def test_windows_quoted_cl_path_uses_msvc_flags():
     assert "/std:c++14" in config["compile_flags"]
     assert "-Wextra" not in config["compile_flags"]
     assert "-fopenmp" not in config["compile_flags"]
+
+
+def test_windows_unknown_compiler_defaults_to_msvc_flags():
+    config = resolve_build_config(platform_name="win32", compiler="c++", openmp=True)
+
+    assert config["compiler_family"] == "msvc"
+    assert "/std:c++14" in config["compile_flags"]
+    assert "-Wextra" not in config["compile_flags"]
+    assert "-fopenmp" not in config["compile_flags"]
