@@ -1,6 +1,7 @@
 CMAKE_TEST_BUILD_DIR ?= build/cmake
 SANITIZER_BUILD_DIR ?= build/cmake-sanitizers
-CMAKE_BUILD_TYPE ?= RelWithDebInfo
+DEFAULT_CMAKE_BUILD_TYPE := $(if $(filter debug,$(MODE)),Debug,RelWithDebInfo)
+CMAKE_BUILD_TYPE ?= $(DEFAULT_CMAKE_BUILD_TYPE)
 CMAKE_TEST_TARGET ?= infomap_cpp_tests
 CMAKE_GENERATOR ?=
 CMAKE_CXX_COMPILER ?=
@@ -17,9 +18,19 @@ NATIVE_BENCHMARK_PROFILE ?= baseline
 NATIVE_BENCHMARK_REPEATS ?= 3
 NATIVE_BENCHMARK_ITERATIONS ?= 1
 
+define warn_cmake_build_type_mismatch
+	@if [ "$(MODE)" = "debug" ] && [ "$(CMAKE_BUILD_TYPE)" != "Debug" ]; then \
+		printf "%s\n" "Warning: MODE=debug controls Infomap compile flags; CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) only affects generator metadata and output layout."; \
+	fi
+	@if [ "$(MODE)" = "release" ] && [ "$(CMAKE_BUILD_TYPE)" = "Debug" ]; then \
+		printf "%s\n" "Warning: MODE=release controls Infomap compile flags; CMAKE_BUILD_TYPE=Debug only affects generator metadata and output layout."; \
+	fi
+endef
+
 .PHONY: test-native test-fast test-sanitizers bench-python bench-native
 
 test-native:
+	$(warn_cmake_build_type_mismatch)
 	@generator_args=""; \
 	if [ -n "$(CMAKE_GENERATOR)" ]; then generator_args="-G $(CMAKE_GENERATOR)"; fi; \
 	"$(CMAKE)" -S . -B $(CMAKE_TEST_BUILD_DIR) $$generator_args \
@@ -66,6 +77,7 @@ bench-python:
 	@$(PYTHON) scripts/benchmarks/run_python_benchmarks.py --output $(BENCHMARK_OUTPUT) $(if $(BENCHMARK_SUMMARY),--summary $(BENCHMARK_SUMMARY),)
 
 bench-native:
+	$(warn_cmake_build_type_mismatch)
 	@generator_args=""; \
 	if [ -n "$(CMAKE_GENERATOR)" ]; then generator_args="-G $(CMAKE_GENERATOR)"; fi; \
 	"$(CMAKE)" -S . -B $(CMAKE_TEST_BUILD_DIR) $$generator_args \
