@@ -70,27 +70,22 @@ jobs:
             python-version: "3.11"
             smoke-only: false
             run-full-suite: false
-            use-make-python-build: true
           - os: ubuntu-24.04
             python-version: "3.12"
             smoke-only: false
             run-full-suite: false
-            use-make-python-build: true
           - os: ubuntu-24.04
             python-version: "3.13"
             smoke-only: false
             run-full-suite: false
-            use-make-python-build: true
           - os: ubuntu-24.04
             python-version: "3.14"
             smoke-only: false
             run-full-suite: true
-            use-make-python-build: true
           - os: windows-2025
             python-version: "3.14"
             smoke-only: true
             run-full-suite: false
-            use-make-python-build: false
 
     defaults:
       run:
@@ -115,24 +110,10 @@ jobs:
           python -m pip install build wheel
 
       - name: Build Python wheel from repo root
-        if: matrix.use-make-python-build
         run: make build-python
 
-      - name: Build Python wheel directly
-        if: ${{ !matrix.use-make-python-build }}
-        env:
-          OPENMP: "0"
-        run: python -m build --wheel --outdir dist/python .
-
       - name: Install editable package
-        if: matrix.use-make-python-build
         run: make dev-python-install
-
-      - name: Install editable package directly
-        if: ${{ !matrix.use-make-python-build }}
-        env:
-          OPENMP: "0"
-        run: python -m pip install -e ".[test,docs,examples]"
 
       - name: Run Python smoke test
         if: matrix.smoke-only
