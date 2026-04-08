@@ -17,8 +17,8 @@ callgrind.*
 /dist/
 /include/
 /lib/
-/networks/
-/output/
+/networks
+/output
 /package/
 /*.egg-info
 interfaces/python/src/infomap.egg-info/
