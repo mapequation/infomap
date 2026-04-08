@@ -43,9 +43,26 @@ def _compiler_version(compiler):
     return (completed.stdout or completed.stderr or "").lower()
 
 
+def _compiler_command_basename(compiler):
+    compiler = (compiler or "").strip()
+    if not compiler:
+        return ""
+
+    stripped = compiler.strip("\"'")
+    if ("\\" in stripped or "/" in stripped) and stripped.lower().endswith(".exe"):
+        return Path(stripped.replace("\\", "/")).stem.lower()
+
+    try:
+        first_token = shlex.split(compiler)[0]
+    except (ValueError, IndexError):
+        first_token = stripped
+
+    return Path(first_token).stem.lower()
+
+
 def _compiler_family(compiler):
     version = _compiler_version(compiler)
-    compiler_name = Path(shlex.split(compiler)[0]).name.lower()
+    compiler_name = _compiler_command_basename(compiler)
     if "clang-cl" in compiler_name or compiler_name == "cl":
         return "msvc"
     if "clang" in version or "clang" in compiler_name:
