@@ -6,6 +6,7 @@
 
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <cstdio>
 #include <set>
 #include <tuple>
@@ -22,7 +23,20 @@ struct TrackingEngine {
   using result_type = infomap::RandGen::result_type;
 
   struct Stats {
+    mutable std::mutex mutex;
     std::vector<unsigned int> seedValues;
+
+    void recordSeed(unsigned int seedValue)
+    {
+      std::lock_guard<std::mutex> lock(mutex);
+      seedValues.push_back(seedValue);
+    }
+
+    std::vector<unsigned int> snapshot() const
+    {
+      std::lock_guard<std::mutex> lock(mutex);
+      return seedValues;
+    }
   };
 
   std::shared_ptr<Stats> stats;
@@ -36,7 +50,7 @@ struct TrackingEngine {
   void seed(unsigned int seedValue)
   {
     state = seedValue;
-    stats->seedValues.push_back(seedValue);
+    stats->recordSeed(seedValue);
   }
 
   static constexpr result_type min() { return 0; }
@@ -145,12 +159,13 @@ TEST_CASE("Infomap accepts a custom RNG engine and reseeding stays deterministic
   im.run();
   infomap::test::checkRunSanity(im);
 
+  const auto seedValues = stats->snapshot();
   CHECK(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
   CHECK(im.codelength() == doctest::Approx(firstCodelength));
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
-  REQUIRE(stats->seedValues.size() >= 2);
-  CHECK(stats->seedValues[0] == 123u);
-  CHECK(stats->seedValues[1] == 123u);
+  REQUIRE(seedValues.size() >= 2);
+  CHECK(seedValues[0] == 123u);
+  CHECK(seedValues[1] == 123u);
 }
 
 TEST_CASE("setConfig preserves injected RNG engine and applies the new seed [fast][core][lifecycle][rng]")
@@ -163,9 +178,10 @@ TEST_CASE("setConfig preserves injected RNG engine and applies the new seed [fas
   conf.seedToRandomNumberGenerator = 321;
   im.setConfig(conf);
 
-  REQUIRE(stats->seedValues.size() == 2);
-  CHECK(stats->seedValues[0] == 123u);
-  CHECK(stats->seedValues[1] == 321u);
+  const auto seedValues = stats->snapshot();
+  REQUIRE(seedValues.size() == 2);
+  CHECK(seedValues[0] == 123u);
+  CHECK(seedValues[1] == 321u);
 
   infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
   im.run();
@@ -426,13 +442,14 @@ TEST_CASE("Subnetwork creation inherits an injected RNG engine [fast][core][life
   REQUIRE(im.numTopModules() == 2);
 
   im.reseed(456);
-  const auto seedEventsBeforeSubnetwork = stats->seedValues.size();
+  const auto seedEventsBeforeSubnetwork = stats->snapshot().size();
 
   auto& module = *im.root().firstChild;
   auto& subInfomap = im.getSubInfomap(module).initNetwork(module);
 
-  REQUIRE(stats->seedValues.size() == seedEventsBeforeSubnetwork + 1);
-  CHECK(stats->seedValues.back() == 456u);
+  const auto seedValues = stats->snapshot();
+  REQUIRE(seedValues.size() == seedEventsBeforeSubnetwork + 1);
+  CHECK(seedValues.back() == 456u);
 
   subInfomap.run();
   CHECK(std::isfinite(subInfomap.codelength()));

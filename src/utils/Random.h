@@ -34,8 +34,8 @@ class Random {
     Engine engine;
     uniform_uint_dist uniform;
 
-    explicit EngineModel(Engine engine)
-      : engine(std::move(engine))
+    explicit EngineModel(Engine engineValue)
+      : engine(std::move(engineValue))
     {
     }
 
