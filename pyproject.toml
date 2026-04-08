@@ -74,7 +74,7 @@ include-package-data = true
 where = ["interfaces/python/src"]
 
 [tool.setuptools.dynamic]
-version = { attr = "infomap.__version__" }
+version = { attr = "infomap._version.__version__" }
 
 [tool.ruff]
 extend-exclude = [

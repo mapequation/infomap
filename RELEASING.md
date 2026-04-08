@@ -27,6 +27,12 @@ Configure these integrations before the first release:
    - `PYPI_USERNAME`
    - `PYPI_PASSWORD`
    - `NPM_TOKEN`
+6. Keep `release-please-config.json` aligned with the historic tag format:
+   `include-v-in-tag: true` and `include-component-in-tag: false`.
+   Infomap's existing releases use tags like `v2.9.2`, not
+   `infomap-v2.9.2`. If Release Please is allowed to add the component
+   prefix, the first release PR after the migration can re-include already
+   released commits and generate an overlapping `CHANGELOG.md`.
 
 ## Normal release flow
 
@@ -46,6 +52,13 @@ Configure these integrations before the first release:
    - attaches assets to the GitHub Release
    - publishes to PyPI behind `pypi-release`
    - publishes to npm behind `npm-release`
+
+If the first Release Please PR after the migration already contains historical
+entries that are present lower down in `CHANGELOG.md`, do not merge it. Merge
+the tag-format fix first, then close the stale release PR (or delete the
+`release-please--branches--...` branch) and rerun
+`.github/workflows/release-please.yml` so Release Please rebuilds the PR from
+the latest existing `vX.Y.Z` tag.
 
 ## Documentation publishing
 
