@@ -126,12 +126,21 @@ Building locally requires a working ``gcc`` or ``clang`` toolchain.
     cd infomap
     make build-native
 
+On macOS, the default OpenMP-enabled build may require Homebrew ``libomp``.
+If OpenMP is unavailable, use:
+
+.. code-block:: bash
+
+    make build-native OPENMP=0
+
 This creates the ``Infomap`` binary in the repository root.
 Show the available CLI options with:
 
 .. code-block:: bash
 
     ./Infomap --help
+
+See ``BUILD.md`` for platform-specific maintainer build details.
 
 Maintainers should use:
 

@@ -61,11 +61,16 @@ class BuildExt(build_ext):
 build_config = load_build_config()
 resolve_build_config = build_config.resolve_build_config
 norm_openmp = build_config._norm_openmp
+requested_build_compiler = os.environ.get("CXX", "")
+if sys.platform == "win32" and requested_build_compiler in {"", "c++"}:
+    default_build_compiler = "cl"
+else:
+    default_build_compiler = requested_build_compiler or "c++"
 
 shared_build = resolve_build_config(
     mode=os.environ.get("MODE", "release"),
     openmp=norm_openmp(os.environ.get("OPENMP", "1")),
-    compiler=os.environ.get("CXX", "c++"),
+    compiler=default_build_compiler,
     cppflags=os.environ.get("CPPFLAGS", ""),
     cxxflags=os.environ.get("CXXFLAGS", ""),
     ldflags=os.environ.get("LDFLAGS", ""),

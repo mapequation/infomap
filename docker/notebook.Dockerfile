@@ -13,7 +13,7 @@ WORKDIR /tmp/infomap
 
 RUN python -m pip install --no-cache-dir --upgrade pip build wheel backports.tarfile importlib_metadata \
         && make build-python \
-        && make dev-python-install \
+        && python -m pip install --no-cache-dir dist/python/*.whl \
         && rm -rf /tmp/infomap \
         && fix-permissions $CONDA_DIR \
         && fix-permissions /home/$NB_USER

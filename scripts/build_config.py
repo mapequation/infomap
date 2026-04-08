@@ -43,9 +43,26 @@ def _compiler_version(compiler):
     return (completed.stdout or completed.stderr or "").lower()
 
 
+def _compiler_command_basename(compiler):
+    compiler = (compiler or "").strip()
+    if not compiler:
+        return ""
+
+    stripped = compiler.strip("\"'")
+    if ("\\" in stripped or "/" in stripped) and stripped.lower().endswith(".exe"):
+        return Path(stripped.replace("\\", "/")).stem.lower()
+
+    try:
+        first_token = shlex.split(compiler)[0]
+    except (ValueError, IndexError):
+        first_token = stripped
+
+    return Path(first_token).stem.lower()
+
+
 def _compiler_family(compiler):
     version = _compiler_version(compiler)
-    compiler_name = Path(shlex.split(compiler)[0]).name.lower()
+    compiler_name = _compiler_command_basename(compiler)
     if "clang-cl" in compiler_name or compiler_name == "cl":
         return "msvc"
     if "clang" in version or "clang" in compiler_name:
@@ -55,6 +72,21 @@ def _compiler_family(compiler):
     if "microsoft" in version or "msvc" in version:
         return "msvc"
     return "unknown"
+
+
+def _compiler_family_for_platform(compiler, platform_name):
+    compiler_family = _compiler_family(compiler)
+    if platform_name != "win32":
+        return compiler_family
+
+    compiler_name = _compiler_command_basename(compiler)
+    if compiler_family == "msvc":
+        return "msvc"
+    if compiler_name in {"gcc", "g++"} or "mingw" in compiler_name:
+        return "gnu"
+    if compiler_name in {"clang", "clang++"}:
+        return "clang"
+    return "msvc"
 
 
 def _brew_prefix(package=None):
@@ -91,7 +123,7 @@ def resolve_build_config(
     platform_name=None,
 ):
     platform_name = platform_name or sys.platform
-    compiler_family = _compiler_family(compiler)
+    compiler_family = _compiler_family_for_platform(compiler, platform_name)
     is_darwin = platform_name in {"darwin", "Darwin"}
 
     brew_prefix = _brew_prefix() if is_darwin else ""

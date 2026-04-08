@@ -58,22 +58,38 @@ jobs:
 
   tests:
     if: inputs.run-tests
-    name: Python ${{ matrix.python-version }}
-    runs-on: ubuntu-24.04
+    name: Python ${{ matrix.os }} / ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     needs: swig-freshness
     strategy:
       fail-fast: false
       matrix:
         include:
-          - python-version: "3.11"
+          - os: ubuntu-24.04
+            python-version: "3.11"
+            smoke-only: false
             run-full-suite: false
-          - python-version: "3.12"
+          - os: ubuntu-24.04
+            python-version: "3.12"
+            smoke-only: false
             run-full-suite: false
-          - python-version: "3.13"
+          - os: ubuntu-24.04
+            python-version: "3.13"
+            smoke-only: false
             run-full-suite: false
-          - python-version: "3.14"
+          - os: ubuntu-24.04
+            python-version: "3.14"
+            smoke-only: false
             run-full-suite: true
+          - os: windows-2025
+            python-version: "3.14"
+            smoke-only: true
+            run-full-suite: false
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout repository
@@ -99,7 +115,16 @@ jobs:
       - name: Install editable package
         run: make dev-python-install
 
+      - name: Run Python smoke test
+        if: matrix.smoke-only
+        run: |
+          python - <<'PY'
+          from infomap import Infomap
+          print(Infomap(silent=True).num_top_modules)
+          PY
+
       - name: Run Python unit tests
+        if: ${{ !matrix.smoke-only }}
         run: make test-python-unit
 
       - name: Run Python doctests
