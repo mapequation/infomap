@@ -67,3 +67,27 @@ def test_state_output_writers_include_state_columns(make_infomap, network_fixtur
     parsed = json.loads(json_text)
     assert parsed["stateLevel"] is True
     assert parsed["higherOrder"] is True
+
+
+def test_tree_cluster_data_round_trips_for_state_network(
+    make_infomap, network_fixture_path, output_dir, canonical_modules
+):
+    baseline = make_infomap()
+    baseline.read_file(str(network_fixture_path("states.net")))
+    baseline.run()
+
+    expected_partition = canonical_modules(baseline.get_modules(states=True))
+    physical_tree_path = output_dir / "states-physical.tree"
+    state_tree_path = output_dir / "states-state.tree"
+
+    baseline.write_tree(str(physical_tree_path))
+    baseline.write_tree(str(state_tree_path), states=True)
+
+    for cluster_data_path in (physical_tree_path, state_tree_path):
+        im = make_infomap(cluster_data=str(cluster_data_path))
+        im.read_file(str(network_fixture_path("states.net")))
+        im.run()
+
+        modules = im.get_modules(states=True)
+        assert canonical_modules(modules) == expected_partition
+        assert sorted(modules) == [1, 2, 3, 4, 5, 6]

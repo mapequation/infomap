@@ -411,9 +411,8 @@ InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
 
 InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool hard, const Network* network)
 {
-  FileURI file(clusterDataFile);
   ClusterMap clusterMap;
-  if (this->isMultilayerNetwork() && network != nullptr) {
+  if (network != nullptr && network->isMultilayerNetwork()) {
     auto map = network->layerNodeToStateId();
     clusterMap.readClusterData(clusterDataFile, false, &map);
   } else {
@@ -425,7 +424,12 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
   const auto& ext = clusterMap.extension();
 
   if (ext == "tree" || ext == "ftree") {
-    initTree(clusterMap.nodePaths());
+    unsigned int numTreeNodesNotInNetwork = 0;
+    const auto normalizedTree = normalizeTreePaths(clusterMap.treePaths(), numTreeNodesNotInNetwork);
+    if (numTreeNodesNotInNetwork > 0) {
+      Log(1) << "\n -> " << numTreeNodesNotInNetwork << " nodes in tree not found in network before state expansion.";
+    }
+    initTree(normalizedTree);
   } else if (ext == "clu") {
     initPartition(clusterMap.clusterIds(), hard);
   }
@@ -433,6 +437,60 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
   Log() << "done! Generated " << numLevels() << " levels with codelength " << getIndexCodelength() << " + " << (m_hierarchicalCodelength - getIndexCodelength()) << " = " << io::toPrecision(m_hierarchicalCodelength) << '\n';
 
   return *this;
+}
+
+NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& numNodesNotInNetwork) const
+{
+  std::map<unsigned int, std::vector<unsigned int>> physicalToStateIds;
+  for (const auto* leafNode : m_leafNodes) {
+    physicalToStateIds[leafNode->physicalId].push_back(leafNode->stateId);
+  }
+
+  std::map<unsigned int, unsigned int> physicalOccurrences;
+  for (const auto& treePath : tree) {
+    if (treePath.idType == TreeLeafIdType::physical) {
+      ++physicalOccurrences[treePath.nodeId];
+    }
+  }
+
+  std::map<unsigned int, unsigned int> usedPhysicalOccurrences;
+  std::map<unsigned int, unsigned int> usedStateCounts;
+  NodePaths normalizedTree;
+  numNodesNotInNetwork = 0;
+
+  for (const auto& treePath : tree) {
+    if (treePath.idType == TreeLeafIdType::state) {
+      normalizedTree.emplace_back(treePath.nodeId, treePath.path);
+      continue;
+    }
+
+    const auto it = physicalToStateIds.find(treePath.nodeId);
+    if (it == physicalToStateIds.end()) {
+      ++numNodesNotInNetwork;
+      continue;
+    }
+
+    auto& usedOccurrences = usedPhysicalOccurrences[treePath.nodeId];
+    auto& usedStates = usedStateCounts[treePath.nodeId];
+    const auto totalOccurrences = physicalOccurrences[treePath.nodeId];
+    const auto remainingOccurrences = totalOccurrences - usedOccurrences;
+    const auto remainingStates = it->second.size() - usedStates;
+
+    if (remainingStates == 0) {
+      ++numNodesNotInNetwork;
+      ++usedOccurrences;
+      continue;
+    }
+
+    const auto statesToAssign = remainingOccurrences <= 1 ? remainingStates : 1u;
+    for (unsigned int i = 0; i < statesToAssign; ++i) {
+      normalizedTree.emplace_back(it->second[usedStates + i], treePath.path);
+    }
+    usedStates += statesToAssign;
+    ++usedOccurrences;
+  }
+
+  return normalizedTree;
 }
 
 InfomapBase& InfomapBase::initTree(const NodePaths& tree)

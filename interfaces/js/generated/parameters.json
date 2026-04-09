@@ -88,7 +88,7 @@
   {
     "long": "--cluster-data",
     "short": "-c",
-    "description": "Provide an initial two-level (clu format) or multi-layer (tree format) solution.",
+    "description": "Provide an initial solution in .clu or .tree/.ftree format. On higher-order networks, .tree input may be either physical or state-level.",
     "group": "Input",
     "required": true,
     "advanced": false,

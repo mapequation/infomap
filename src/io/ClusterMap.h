@@ -23,6 +23,21 @@ using NodePath = std::pair<unsigned int, Path>;
 
 using NodePaths = std::vector<NodePath>;
 
+enum class TreeLeafIdType
+{
+  physical,
+  state,
+};
+
+struct TreePath
+{
+  unsigned int nodeId = 0;
+  Path path;
+  TreeLeafIdType idType = TreeLeafIdType::physical;
+};
+
+using TreePaths = std::vector<TreePath>;
+
 class ClusterMap {
 public:
   void readClusterData(const std::string& filename, bool includeFlow = false, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId = nullptr);
@@ -32,7 +47,7 @@ public:
     return m_clusterIds;
   }
 
-  const NodePaths& nodePaths() const noexcept { return m_nodePaths; }
+  const TreePaths& treePaths() const noexcept { return m_treePaths; }
 
   const std::string& extension() const noexcept { return m_extension; }
 
@@ -42,9 +57,12 @@ private:
 
   std::map<unsigned int, unsigned int> m_clusterIds;
   std::map<unsigned int, double> m_flowData;
-  NodePaths m_nodePaths;
+  TreePaths m_treePaths;
   std::string m_extension;
   bool m_isHigherOrder = false;
+  bool m_hasTreeLeafIdType = false;
+  bool m_treeLeafIdTypeFromHeader = false;
+  TreeLeafIdType m_treeLeafIdType = TreeLeafIdType::physical;
 };
 
 } // namespace infomap

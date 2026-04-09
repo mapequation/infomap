@@ -190,8 +190,9 @@ class InfomapOptions:
     Parameters
     ----------
     cluster_data : str, optional
-        Provide an initial two-level (clu format) or multi-layer (tree format)
-        solution.
+        Provide an initial solution in ``.clu`` or ``.tree``/``.ftree``
+        format. On higher-order networks, ``.tree`` input may be either
+        physical or state-level.
     no_infomap : bool, optional
         Don't run the optimizer. Useful to calculate codelength of provided
         cluster data or to print non-modular statistics.
