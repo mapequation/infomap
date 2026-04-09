@@ -66,6 +66,10 @@ Quick start with Python:
 
     print(im.num_top_modules, im.codelength)
 
+To prefer a certain hierarchy depth without forcing it, use
+``preferred_number_of_levels``. This is a soft preference and cannot be
+combined with ``two_level=True``.
+
 .. _PyPI: https://pypi.org/project/infomap/
 .. _`Infomap Python API`: https://mapequation.github.io/infomap/python/
 

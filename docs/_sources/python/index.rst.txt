@@ -116,6 +116,10 @@ configuration across multiple runs:
     im2.add_link(2, 3)
     im2.run_with_options(options)
 
+``preferred_number_of_levels`` provides a soft hierarchy-depth preference. It
+guides result selection toward the requested number of levels but does not
+force an exact depth, and it cannot be combined with ``two_level=True``.
+
 NetworkX graphs
 """""""""""""""
 
