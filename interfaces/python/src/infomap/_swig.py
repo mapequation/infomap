@@ -126,6 +126,7 @@ class Config(object):
     regularizationStrength = property(_infomap.Config_regularizationStrength_get, _infomap.Config_regularizationStrength_set)
     teleportationProbability = property(_infomap.Config_teleportationProbability_get, _infomap.Config_teleportationProbability_set)
     preferredNumberOfModules = property(_infomap.Config_preferredNumberOfModules_get, _infomap.Config_preferredNumberOfModules_set)
+    preferredNumberOfLevels = property(_infomap.Config_preferredNumberOfLevels_get, _infomap.Config_preferredNumberOfLevels_set)
     entropyBiasCorrection = property(_infomap.Config_entropyBiasCorrection_get, _infomap.Config_entropyBiasCorrection_set)
     entropyBiasCorrectionMultiplier = property(_infomap.Config_entropyBiasCorrectionMultiplier_get, _infomap.Config_entropyBiasCorrectionMultiplier_set)
     seedToRandomNumberGenerator = property(_infomap.Config_seedToRandomNumberGenerator_get, _infomap.Config_seedToRandomNumberGenerator_set)
@@ -2426,6 +2427,9 @@ class InfomapConfigInfomapBase(Config):
 
     def setTuneIterationLimit(self, value):
         return _infomap.InfomapConfigInfomapBase_setTuneIterationLimit(self, value)
+
+    def setPreferredNumberOfLevels(self, value):
+        return _infomap.InfomapConfigInfomapBase_setPreferredNumberOfLevels(self, value)
 
     def setFastHierarchicalSolution(self, level):
         return _infomap.InfomapConfigInfomapBase_setFastHierarchicalSolution(self, level)

@@ -6,10 +6,11 @@ describe("argumentsToString", () => {
     expect(
       argumentsToString({
         twoLevel: true,
+        preferredNumberOfLevels: 2,
         numTrials: 5,
         output: ["tree", "clu"],
         help: "advanced"
       })
-    ).toBe(" -o tree,clu --two-level --num-trials 5 -hh");
+    ).toBe(" -o tree,clu --two-level --preferred-number-of-levels 2 --num-trials 5 -hh");
   });
 });

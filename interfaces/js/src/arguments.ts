@@ -57,6 +57,7 @@ export type Arguments = Partial<{
   variableMarkovTime: boolean;
   variableMarkovDamping: number;
   preferredNumberOfModules: number;
+  preferredNumberOfLevels: number;
   multilayerRelaxRate: number;
   multilayerRelaxLimit: number;
   multilayerRelaxLimitUp: number;
@@ -170,6 +171,9 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.preferredNumberOfModules != null)
     result += " --preferred-number-of-modules " + args.preferredNumberOfModules;
+
+  if (args.preferredNumberOfLevels != null)
+    result += " --preferred-number-of-levels " + args.preferredNumberOfLevels;
 
   if (args.multilayerRelaxRate != null)
     result += " --multilayer-relax-rate " + args.multilayerRelaxRate;

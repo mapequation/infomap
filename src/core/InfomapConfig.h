@@ -94,6 +94,12 @@ public:
     return get();
   }
 
+  Infomap& setPreferredNumberOfLevels(unsigned int value)
+  {
+    preferredNumberOfLevels = value;
+    return get();
+  }
+
   Infomap& setFastHierarchicalSolution(unsigned int level)
   {
     fastHierarchicalSolution = level;

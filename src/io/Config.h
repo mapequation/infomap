@@ -116,6 +116,7 @@ struct Config {
   double regularizationStrength = 1.0; // Scale Bayesian prior constant ln(N)/N with this factor
   double teleportationProbability = 0.15;
   unsigned int preferredNumberOfModules = 0;
+  unsigned int preferredNumberOfLevels = 0;
   bool entropyBiasCorrection = false;
   double entropyBiasCorrectionMultiplier = 1;
   unsigned long seedToRandomNumberGenerator = 123;
@@ -207,6 +208,7 @@ struct Config {
     regularized = other.regularized;
     regularizationStrength = other.regularizationStrength;
     teleportationProbability = other.teleportationProbability;
+    preferredNumberOfLevels = 0;
     entropyBiasCorrection = other.entropyBiasCorrection;
     entropyBiasCorrectionMultiplier = other.entropyBiasCorrectionMultiplier;
     seedToRandomNumberGenerator = other.seedToRandomNumberGenerator;

@@ -102,6 +102,12 @@ _ALGORITHM_POST_DIRECTED_OPTION_SPECS = (
     ),
     (
         "value",
+        "preferred_number_of_levels",
+        "--preferred-number-of-levels",
+        lambda value: value is not None,
+    ),
+    (
+        "value",
         "multilayer_relax_rate",
         "--multilayer-relax-rate",
         lambda value: value != _DEFAULT_MULTILAYER_RELAX_RATE,
@@ -277,6 +283,9 @@ class InfomapOptions:
         ``1`` means full rescaling to constant transition flow rate.
     preferred_number_of_modules : int, optional
         Penalize solutions by how much they differ from this number.
+    preferred_number_of_levels : int, optional
+        Prefer solutions close to this many levels. This is a soft preference
+        and cannot be combined with ``two_level=True``.
     multilayer_relax_rate : float, optional
         Probability to relax the constraint to move only in the current layer.
     multilayer_relax_limit : int, optional
@@ -359,6 +368,7 @@ class InfomapOptions:
     variable_markov_time: bool = False
     variable_markov_damping: float = 1.0
     preferred_number_of_modules: int | None = None
+    preferred_number_of_levels: int | None = None
     multilayer_relax_rate: float = _DEFAULT_MULTILAYER_RELAX_RATE
     multilayer_relax_limit: int = -1
     multilayer_relax_limit_up: int = -1
@@ -470,6 +480,7 @@ def _construct_args(
     variable_markov_time=False,
     variable_markov_damping=1.0,
     preferred_number_of_modules=None,
+    preferred_number_of_levels=None,
     multilayer_relax_rate=_DEFAULT_MULTILAYER_RELAX_RATE,
     multilayer_relax_limit=-1,
     multilayer_relax_limit_up=-1,

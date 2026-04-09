@@ -162,6 +162,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(preferredNumberOfModules, "preferred-number-of-modules", "Penalize solutions the more they differ from this number.", ArgType::integer, "Algorithm", 1u, true);
 
+  api.addOptionArgument(preferredNumberOfLevels, "preferred-number-of-levels", "Prefer solutions close to this many levels. Soft preference only; does not force an exact hierarchy depth.", ArgType::integer, "Algorithm", 2u, true);
+
   api.addOptionArgument(multilayerRelaxRate, "multilayer-relax-rate", "Probability to relax the constraint to move only in the current layer.", ArgType::probability, "Algorithm", 0.0, 1.0, true);
 
   api.addOptionArgument(multilayerRelaxLimit, "multilayer-relax-limit", "Number of neighboring layers in each direction to relax to. If negative, relax to any layer.", ArgType::integer, "Algorithm", -1, true);
@@ -219,6 +221,10 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   if (regularized) {
     recordedTeleportation = true;
+  }
+
+  if (twoLevel && preferredNumberOfLevels > 0) {
+    throw std::runtime_error("The options --two-level and --preferred-number-of-levels cannot be combined.");
   }
 
   normalizeOutputDirectory(*this);
