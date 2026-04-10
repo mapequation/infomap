@@ -19,7 +19,7 @@
 #include "FlowData.h"
 #include <vector>
 #include <map>
-#include <iostream>
+#include <ostream>
 
 namespace infomap {
 
@@ -138,9 +138,9 @@ public:
 
   virtual void printDebug() const
   {
-    std::cout << "(enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << ", "
-              << "enter_log_enter: " << enter_log_enter << ", "
-              << "exitNetworkFlow_log_exitNetworkFlow: " << exitNetworkFlow_log_exitNetworkFlow << ") ";
+    Log() << "(enterFlow_log_enterFlow: " << enterFlow_log_enterFlow << ", "
+          << "enter_log_enter: " << enter_log_enter << ", "
+          << "exitNetworkFlow_log_exitNetworkFlow: " << exitNetworkFlow_log_exitNetworkFlow << ") ";
   }
 
 protected:

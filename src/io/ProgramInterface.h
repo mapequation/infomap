@@ -19,7 +19,7 @@
 #include <memory>
 #include <string>
 #include <sstream>
-#include <iostream>
+#include <ostream>
 #include <unordered_map>
 
 namespace infomap {

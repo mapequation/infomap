@@ -10,7 +10,7 @@
 #ifndef LOG_H_
 #define LOG_H_
 
-#include <iostream>
+#include <ostream>
 #include <limits>
 #include <iomanip>
 #include <type_traits>
@@ -69,19 +69,32 @@ public:
 
   static bool isSilent() { return s_silent; }
 
-  static std::streamsize precision() { return std::cout.precision(); }
+  /// Set a custom output stream for all Log output.
+  static void setOutputStream(std::ostream& os)
+  {
+    s_ostream = &os;
+    s_silent = false;
+  }
+
+  /// Guarantee zero output: redirect to a null sink and set silent.
+  static void setNoOutput();
+
+  static std::ostream& getOutputStream() { return *s_ostream; }
+
+  static std::streamsize precision() { return s_ostream->precision(); }
 
   static std::streamsize precision(std::streamsize precision)
   {
-    return std::cout.precision(precision);
+    return s_ostream->precision(precision);
   }
 
 private:
   unsigned int m_level;
   unsigned int m_maxLevel;
   bool m_visible;
-  std::ostream& m_ostream = std::cout;
+  std::ostream& m_ostream = *s_ostream;
 
+  static std::ostream* s_ostream;
   static unsigned int s_verboseLevel;
   static bool s_silent;
 };

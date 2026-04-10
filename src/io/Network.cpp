@@ -13,7 +13,6 @@
 #include "../utils/Log.h"
 
 #include <cmath>
-#include <iostream>
 #include <algorithm>
 
 namespace infomap {
