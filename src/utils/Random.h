@@ -55,23 +55,28 @@ class Random {
     }
   };
 
-  std::unique_ptr<EngineConcept> m_engine;
+  RandGen m_defaultEngine;
+  uniform_uint_dist m_uniform;
+  std::unique_ptr<EngineConcept> m_customEngine;
 
 public:
   Random(unsigned int seed = 123)
-    : m_engine(new EngineModel<RandGen>(RandGen(seed)))
+    : m_defaultEngine(seed)
   {
   }
 
   Random(const Random& other)
-    : m_engine(other.m_engine->clone())
+    : m_defaultEngine(other.m_defaultEngine)
+    , m_customEngine(other.m_customEngine ? other.m_customEngine->clone() : nullptr)
   {
   }
 
   Random& operator=(const Random& other)
   {
-    if (this != &other)
-      m_engine = other.m_engine->clone();
+    if (this != &other) {
+      m_defaultEngine = other.m_defaultEngine;
+      m_customEngine = other.m_customEngine ? other.m_customEngine->clone() : nullptr;
+    }
     return *this;
   }
 
@@ -83,18 +88,26 @@ public:
   void setEngine(Engine engine)
   {
     using EngineType = typename std::decay<Engine>::type;
-    m_engine.reset(new EngineModel<EngineType>(std::move(engine)));
+    static_assert(std::is_copy_constructible<EngineType>::value,
+                  "Random::setEngine() requires a copy-constructible engine because Random is copyable.");
+    m_customEngine.reset(new EngineModel<EngineType>(std::move(engine)));
   }
 #endif
 
   void seed(unsigned int seedValue)
   {
-    m_engine->seed(seedValue);
+    if (m_customEngine) {
+      m_customEngine->seed(seedValue);
+      return;
+    }
+    m_defaultEngine.seed(seedValue);
   }
 
   unsigned int randInt(unsigned int min, unsigned int max)
   {
-    return m_engine->randInt(min, max);
+    if (m_customEngine)
+      return m_customEngine->randInt(min, max);
+    return m_uniform(m_defaultEngine, uniform_param_t(min, max));
   }
 
   /**
