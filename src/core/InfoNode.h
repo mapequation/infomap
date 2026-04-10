@@ -18,7 +18,7 @@
 
 #include <stdexcept>
 #include <memory>
-#include <iostream>
+#include <ostream>
 #include <vector>
 #include <limits>
 
