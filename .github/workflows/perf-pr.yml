@@ -1,0 +1,106 @@
+name: PR Performance
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/perf-pr.yml"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/_native-build.yml"
+      - "CMakeLists.txt"
+      - "examples/networks/**"
+      - "mk/**"
+      - "scripts/benchmarks/**"
+      - "src/**"
+      - "test/bench/**"
+      - "test/fixtures/meta/**"
+      - "test/python/test_native_benchmark_script.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-pr-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  native-regression-check:
+    name: Native perf regression check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: head
+
+      - name: Checkout PR base
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+
+      - name: Build base and head benchmark binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          build_native_benchmark() {
+            local tree="$1"
+            cmake -S "$tree" -B "$tree/build/cmake" \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DINFOMAP_MODE=release \
+              -DINFOMAP_USE_OPENMP=ON
+            cmake --build "$tree/build/cmake" --target infomap_native_benchmark --parallel 1
+          }
+
+          build_native_benchmark "$GITHUB_WORKSPACE/base"
+          build_native_benchmark "$GITHUB_WORKSPACE/head"
+
+      - name: Run base and head PR benchmarks
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+
+          python "$GITHUB_WORKSPACE/head/scripts/benchmarks/run_native_benchmarks.py" \
+            --binary "$GITHUB_WORKSPACE/base/build/cmake/infomap_native_benchmark" \
+            --profile pr \
+            --repeats 3 \
+            --iterations 1 \
+            --output "$GITHUB_WORKSPACE/artifacts/base-native-benchmarks.json"
+
+          python "$GITHUB_WORKSPACE/head/scripts/benchmarks/run_native_benchmarks.py" \
+            --binary "$GITHUB_WORKSPACE/head/build/cmake/infomap_native_benchmark" \
+            --profile pr \
+            --repeats 3 \
+            --iterations 1 \
+            --output "$GITHUB_WORKSPACE/artifacts/head-native-benchmarks.json"
+
+      - name: Compare base and head benchmark reports
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$GITHUB_WORKSPACE/head/scripts/benchmarks/compare_native_benchmarks.py" \
+            --base "$GITHUB_WORKSPACE/artifacts/base-native-benchmarks.json" \
+            --head "$GITHUB_WORKSPACE/artifacts/head-native-benchmarks.json" \
+            --markdown-out "$GITHUB_WORKSPACE/artifacts/perf-summary.md" \
+            --json-out "$GITHUB_WORKSPACE/artifacts/perf-comparison.json"
+          cat "$GITHUB_WORKSPACE/artifacts/perf-summary.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload comparison artifacts
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: pr-native-perf
+          path: |
+            artifacts/base-native-benchmarks.json
+            artifacts/head-native-benchmarks.json
+            artifacts/perf-comparison.json
+            artifacts/perf-summary.md
+          retention-days: 14

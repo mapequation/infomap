@@ -136,3 +136,13 @@ def test_benchmark_case_collects_dynamic_rebuild_bucket_labels(monkeypatch, tmp_
 
     assert result["rebuild"]["mean_total_sec"] == pytest.approx(0.05)
     assert result["rebuild"]["module_size_buckets"]["33-64"]["mean_sec"] == pytest.approx(0.03)
+
+
+def test_build_benchmark_cases_pr_profile_focuses_on_stable_cases(tmp_path: Path):
+    benchmark_module = _load_benchmark_module()
+    repo_root = Path(__file__).resolve().parents[2]
+
+    cases = benchmark_module.build_benchmark_cases("pr", repo_root, tmp_path)
+    names = [case["name"] for case in cases]
+
+    assert names == ["states_meta", "state_ring_5k", "sparse_100k", "ring_of_cliques_100k"]

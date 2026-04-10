@@ -94,6 +94,69 @@ def collect_module_size_bucket_labels(run_samples: list[dict[str, object]]) -> l
     return sorted(labels)
 
 
+def build_benchmark_cases(profile: str, repo_root: Path, generated_dir: Path) -> list[dict[str, str | Path]]:
+    cases: list[dict[str, str | Path]] = [
+        {"name": "twotriangles", "path": repo_root / "examples" / "networks" / "twotriangles.net", "flags": ""},
+        {"name": "ninetriangles", "path": repo_root / "examples" / "networks" / "ninetriangles.net", "flags": ""},
+        {"name": "modular_w", "path": repo_root / "examples" / "networks" / "modular_w.net", "flags": ""},
+        {"name": "modular_wd", "path": repo_root / "examples" / "networks" / "modular_wd.net", "flags": ""},
+        {"name": "states", "path": repo_root / "examples" / "networks" / "states.net", "flags": ""},
+        {
+            "name": "states_meta",
+            "path": repo_root / "examples" / "networks" / "states.net",
+            "flags": f"--meta-data {repo_root / 'test' / 'fixtures' / 'meta' / 'states.meta'} --meta-data-rate 2",
+        },
+        {"name": "multilayer", "path": repo_root / "examples" / "networks" / "multilayer.net", "flags": ""},
+        {"name": "bipartite", "path": repo_root / "examples" / "networks" / "bipartite.net", "flags": ""},
+        {
+            "name": "twotriangles_meta",
+            "path": repo_root / "examples" / "networks" / "twotriangles.net",
+            "flags": f"--meta-data {repo_root / 'test' / 'fixtures' / 'meta' / 'twotriangles.meta'} --meta-data-rate 2",
+        },
+    ]
+
+    sparse_10k = generated_dir / "sparse_10k.net"
+    ring_10k = generated_dir / "ring_of_cliques_10k.net"
+    state_5k = generated_dir / "state_ring_5k.net"
+    generate_sparse_graph(sparse_10k, num_nodes=10_000, avg_degree=10, seed=123)
+    generate_ring_of_cliques(ring_10k, clique_count=1_000, clique_size=10)
+    generate_state_ring(state_5k, physical_nodes=5_000)
+    smoke_cases = [
+        {"name": "sparse_10k", "path": sparse_10k, "flags": ""},
+        {"name": "ring_of_cliques_10k", "path": ring_10k, "flags": ""},
+        {"name": "state_ring_5k", "path": state_5k, "flags": ""},
+    ]
+
+    sparse_100k = generated_dir / "sparse_100k.net"
+    ring_100k = generated_dir / "ring_of_cliques_100k.net"
+    generate_sparse_graph(sparse_100k, num_nodes=100_000, avg_degree=10, seed=456)
+    generate_ring_of_cliques(ring_100k, clique_count=10_000, clique_size=10)
+    baseline_only_cases = [
+        {"name": "sparse_100k", "path": sparse_100k, "flags": ""},
+        {"name": "ring_of_cliques_100k", "path": ring_100k, "flags": ""},
+    ]
+
+    if profile == "pr":
+        return [
+            {"name": "states_meta", "path": repo_root / "examples" / "networks" / "states.net", "flags": f"--meta-data {repo_root / 'test' / 'fixtures' / 'meta' / 'states.meta'} --meta-data-rate 2"},
+            {"name": "state_ring_5k", "path": state_5k, "flags": ""},
+            {"name": "sparse_100k", "path": sparse_100k, "flags": ""},
+            {"name": "ring_of_cliques_100k", "path": ring_100k, "flags": ""},
+        ]
+
+    cases.extend(smoke_cases)
+
+    if profile in {"baseline", "full"}:
+        cases.extend(baseline_only_cases)
+
+    if profile == "full":
+        sparse_1m = generated_dir / "sparse_1m.net"
+        generate_sparse_graph(sparse_1m, num_nodes=1_000_000, avg_degree=10, seed=789)
+        cases.append({"name": "sparse_1m", "path": sparse_1m, "flags": ""})
+
+    return cases
+
+
 def benchmark_case(
     binary: Path,
     name: str,
@@ -279,7 +342,7 @@ def main() -> None:
     parser.add_argument("--iterations", type=int, default=1, help="Number of in-process iterations per benchmark run.")
     parser.add_argument(
         "--profile",
-        choices=("smoke", "baseline", "full"),
+        choices=("smoke", "baseline", "full", "pr"),
         default="baseline",
         help="Benchmark corpus size.",
     )
@@ -297,59 +360,9 @@ def main() -> None:
     if not args.binary.is_file():
         raise FileNotFoundError(f"Benchmark binary not found: {args.binary}")
 
-    cases: list[dict[str, str | Path]] = [
-        {"name": "twotriangles", "path": repo_root / "examples" / "networks" / "twotriangles.net", "flags": ""},
-        {"name": "ninetriangles", "path": repo_root / "examples" / "networks" / "ninetriangles.net", "flags": ""},
-        {"name": "modular_w", "path": repo_root / "examples" / "networks" / "modular_w.net", "flags": ""},
-        {"name": "modular_wd", "path": repo_root / "examples" / "networks" / "modular_wd.net", "flags": ""},
-        {"name": "states", "path": repo_root / "examples" / "networks" / "states.net", "flags": ""},
-        {
-            "name": "states_meta",
-            "path": repo_root / "examples" / "networks" / "states.net",
-            "flags": f"--meta-data {repo_root / 'test' / 'fixtures' / 'meta' / 'states.meta'} --meta-data-rate 2",
-        },
-        {"name": "multilayer", "path": repo_root / "examples" / "networks" / "multilayer.net", "flags": ""},
-        {"name": "bipartite", "path": repo_root / "examples" / "networks" / "bipartite.net", "flags": ""},
-        {
-            "name": "twotriangles_meta",
-            "path": repo_root / "examples" / "networks" / "twotriangles.net",
-            "flags": f"--meta-data {repo_root / 'test' / 'fixtures' / 'meta' / 'twotriangles.meta'} --meta-data-rate 2",
-        },
-    ]
-
     with tempfile.TemporaryDirectory() as temp_dir:
         generated_dir = Path(temp_dir)
-        sparse_10k = generated_dir / "sparse_10k.net"
-        ring_10k = generated_dir / "ring_of_cliques_10k.net"
-        state_5k = generated_dir / "state_ring_5k.net"
-        generate_sparse_graph(sparse_10k, num_nodes=10_000, avg_degree=10, seed=123)
-        generate_ring_of_cliques(ring_10k, clique_count=1_000, clique_size=10)
-        generate_state_ring(state_5k, physical_nodes=5_000)
-        cases.extend(
-            [
-                {"name": "sparse_10k", "path": sparse_10k, "flags": ""},
-                {"name": "ring_of_cliques_10k", "path": ring_10k, "flags": ""},
-                {"name": "state_ring_5k", "path": state_5k, "flags": ""},
-            ]
-        )
-
-        if args.profile in {"baseline", "full"}:
-            sparse_100k = generated_dir / "sparse_100k.net"
-            ring_100k = generated_dir / "ring_of_cliques_100k.net"
-            generate_sparse_graph(sparse_100k, num_nodes=100_000, avg_degree=10, seed=456)
-            generate_ring_of_cliques(ring_100k, clique_count=10_000, clique_size=10)
-            cases.extend(
-                [
-                    {"name": "sparse_100k", "path": sparse_100k, "flags": ""},
-                    {"name": "ring_of_cliques_100k", "path": ring_100k, "flags": ""},
-                ]
-            )
-
-        if args.profile == "full":
-            sparse_1m = generated_dir / "sparse_1m.net"
-            generate_sparse_graph(sparse_1m, num_nodes=1_000_000, avg_degree=10, seed=789)
-            cases.append({"name": "sparse_1m", "path": sparse_1m, "flags": ""})
-
+        cases = build_benchmark_cases(args.profile, repo_root, generated_dir)
         results = [
             benchmark_case(
                 args.binary,
