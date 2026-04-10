@@ -291,6 +291,8 @@ struct IterationResult {
   double beta;
 };
 
+inline void noInterruptCheck() noexcept {}
+
 template <typename Iteration, typename Interrupt>
 IterationResult powerIterate(double alpha, Iteration&& iter, Interrupt&& interrupt)
 {
@@ -315,6 +317,27 @@ IterationResult powerIterate(double alpha, Iteration&& iter, Interrupt&& interru
   Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
 
   return { alpha, beta };
+}
+
+template <typename Iteration, typename Interrupt>
+unsigned int iterateToConvergence(Iteration&& iter, Interrupt&& interrupt, double& err)
+{
+  unsigned int iterations = 0;
+  err = 0.0;
+
+  do {
+    interrupt();
+    double oldErr = err;
+    err = iter(iterations);
+
+    // Perturb the system if equilibrium
+    if (std::abs(err - oldErr) < 1e-15) {
+    }
+
+    ++iterations;
+  } while (iterations < 200 && (err > 1.0e-15 || iterations < 50));
+
+  return iterations;
 }
 
 void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config& config)
@@ -386,11 +409,11 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
     return error;
   };
 
-  const auto result = powerIterate(config.teleportationProbability, iteration, [this]() {
-    if (m_interruptOwner != nullptr) {
-      m_interruptOwner->throwIfInterruptedThrottled();
-    }
-  });
+  const auto result = m_interruptOwner == nullptr
+      ? powerIterate(config.teleportationProbability, iteration, noInterruptCheck)
+      : powerIterate(config.teleportationProbability, iteration, [this]() {
+          m_interruptOwner->throwIfInterruptedThrottled();
+        });
 
   double sumNodeRank = 1.0;
   double beta = result.beta;
@@ -536,22 +559,12 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     return error;
   };
 
-  unsigned int iterations = 0;
   double err = 0.0;
-
-  do {
-    if (m_interruptOwner != nullptr) {
-      m_interruptOwner->throwIfInterruptedThrottled();
-    }
-    double oldErr = err;
-    err = iteration(iterations);
-
-    // Perturb the system if equilibrium
-    if (std::abs(err - oldErr) < 1e-15) {
-    }
-
-    ++iterations;
-  } while (iterations < 200 && (err > 1.0e-15 || iterations < 50));
+  const unsigned int iterations = m_interruptOwner == nullptr
+      ? iterateToConvergence(iteration, noInterruptCheck, err)
+      : iterateToConvergence(iteration, [this]() {
+          m_interruptOwner->throwIfInterruptedThrottled();
+        }, err);
 
   Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
 
@@ -762,11 +775,11 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
     return error;
   };
 
-  const auto result = powerIterate(config.teleportationProbability, iteration, [this]() {
-    if (m_interruptOwner != nullptr) {
-      m_interruptOwner->throwIfInterruptedThrottled();
-    }
-  });
+  const auto result = m_interruptOwner == nullptr
+      ? powerIterate(config.teleportationProbability, iteration, noInterruptCheck)
+      : powerIterate(config.teleportationProbability, iteration, [this]() {
+          m_interruptOwner->throwIfInterruptedThrottled();
+        });
 
   double sumNodeRank = 1.0;
   double beta = result.beta;

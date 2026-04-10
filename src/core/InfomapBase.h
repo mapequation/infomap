@@ -29,6 +29,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 namespace infomap {
 
