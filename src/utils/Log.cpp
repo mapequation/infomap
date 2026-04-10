@@ -17,21 +17,26 @@ namespace {
 
 class NullStreambuf : public std::streambuf {
 protected:
-  int overflow(int c) override { return c; }
+  int_type overflow(int_type c) override { return traits_type::not_eof(c); }
 };
-
-NullStreambuf s_nullBuf;
-std::ostream s_nullStream(&s_nullBuf);
 
 } // namespace
 
-std::ostream* Log::s_ostream = &std::cout;
+std::ostream& Log::defaultStream()
+{
+  static std::ostream& s = std::cout;
+  return s;
+}
+
+std::ostream* Log::s_ostream = nullptr;
 unsigned int Log::s_verboseLevel = 0;
 bool Log::s_silent = false;
 
 void Log::setNoOutput()
 {
-  s_ostream = &s_nullStream;
+  static NullStreambuf nullBuf;
+  static std::ostream nullStream(&nullBuf);
+  s_ostream = &nullStream;
   s_silent = true;
 }
 

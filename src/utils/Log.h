@@ -70,30 +70,37 @@ public:
   static bool isSilent() { return s_silent; }
 
   /// Set a custom output stream for all Log output.
+  /// The caller must ensure @p os outlives all subsequent logging,
+  /// or remains valid until another stream is configured.
   static void setOutputStream(std::ostream& os)
   {
     s_ostream = &os;
-    s_silent = false;
   }
+  static void setOutputStream(std::ostream&&) = delete;
 
   /// Guarantee zero output: redirect to a null sink and set silent.
   static void setNoOutput();
 
-  static std::ostream& getOutputStream() { return *s_ostream; }
+  static std::ostream& getOutputStream() { return ostream(); }
 
-  static std::streamsize precision() { return s_ostream->precision(); }
+  static std::streamsize precision() { return ostream().precision(); }
 
   static std::streamsize precision(std::streamsize precision)
   {
-    return s_ostream->precision(precision);
+    return ostream().precision(precision);
   }
 
 private:
   unsigned int m_level;
   unsigned int m_maxLevel;
   bool m_visible;
-  std::ostream& m_ostream = *s_ostream;
+  std::ostream& m_ostream = ostream();
 
+  static std::ostream& ostream()
+  {
+    return s_ostream ? *s_ostream : defaultStream();
+  }
+  static std::ostream& defaultStream();
   static std::ostream* s_ostream;
   static unsigned int s_verboseLevel;
   static bool s_silent;
