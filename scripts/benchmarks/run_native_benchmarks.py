@@ -114,6 +114,7 @@ def build_benchmark_cases(profile: str, repo_root: Path, generated_dir: Path) ->
             "flags": f"--meta-data {repo_root / 'test' / 'fixtures' / 'meta' / 'twotriangles.meta'} --meta-data-rate 2",
         },
     ]
+    case_index = {str(case["name"]): case for case in cases}
 
     state_5k = generated_dir / "state_ring_5k.net"
     generate_state_ring(state_5k, physical_nodes=5_000)
@@ -131,7 +132,7 @@ def build_benchmark_cases(profile: str, repo_root: Path, generated_dir: Path) ->
 
     if profile == "pr":
         return [
-            {"name": "states_meta", "path": repo_root / "examples" / "networks" / "states.net", "flags": f"--meta-data {repo_root / 'test' / 'fixtures' / 'meta' / 'states.meta'} --meta-data-rate 2"},
+            case_index["states_meta"],
             {"name": "state_ring_5k", "path": state_5k, "flags": ""},
             *baseline_only_cases,
         ]
