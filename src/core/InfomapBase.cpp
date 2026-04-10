@@ -217,7 +217,7 @@ void InfomapBase::run(Network& network)
   }
   network.setConfig(*this);
 
-  calculateFlow(network, *this, this);
+  calculateFlow(network, *this, hasInterruptHandler() ? this : nullptr);
   throwIfInterrupted();
 
   if (network.isBipartite()) {

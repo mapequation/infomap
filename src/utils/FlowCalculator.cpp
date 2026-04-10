@@ -388,7 +388,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
   const auto result = powerIterate(config.teleportationProbability, iteration, [this]() {
     if (m_interruptOwner != nullptr) {
-      m_interruptOwner->throwIfInterrupted();
+      m_interruptOwner->throwIfInterruptedThrottled();
     }
   });
 
@@ -541,7 +541,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
   do {
     if (m_interruptOwner != nullptr) {
-      m_interruptOwner->throwIfInterrupted();
+      m_interruptOwner->throwIfInterruptedThrottled();
     }
     double oldErr = err;
     err = iteration(iterations);
@@ -764,7 +764,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
 
   const auto result = powerIterate(config.teleportationProbability, iteration, [this]() {
     if (m_interruptOwner != nullptr) {
-      m_interruptOwner->throwIfInterrupted();
+      m_interruptOwner->throwIfInterruptedThrottled();
     }
   });
 
