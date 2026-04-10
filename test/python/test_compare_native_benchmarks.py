@@ -96,6 +96,18 @@ def test_compare_reports_requires_manual_review_when_outputs_change():
     assert result["overall_status"] == "manual_review"
 
 
+def test_render_markdown_uses_na_for_missing_case_metrics():
+    compare_module = _load_compare_module()
+    result = compare_module.compare_reports(
+        {"benchmarks": [_case("ring", median_run_sec=1.00)]},
+        {"benchmarks": []},
+    )
+
+    markdown = compare_module.render_markdown(result)
+
+    assert "| ring | manual_review | n/a | n/a | n/a | n/a | case_missing |" in markdown
+
+
 def test_main_writes_markdown_and_json(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     compare_module = _load_compare_module()
     base_path = tmp_path / "base.json"

@@ -154,18 +154,30 @@ def render_markdown(result: dict[str, object]) -> str:
     ]
 
     for case in result["cases"]:
-        base_runtime = float(case.get("base_median_run_sec", 0.0))
-        head_runtime = float(case.get("head_median_run_sec", 0.0))
-        delta_sec = float(case.get("delta_sec", 0.0))
-        delta_pct = float(case.get("delta_pct", 0.0)) * 100.0
+        base_runtime = case.get("base_median_run_sec")
+        head_runtime = case.get("head_median_run_sec")
+        delta_sec = case.get("delta_sec")
+        delta_pct = case.get("delta_pct")
+
+        if base_runtime is None or head_runtime is None or delta_sec is None or delta_pct is None:
+            base_runtime_text = "n/a"
+            head_runtime_text = "n/a"
+            delta_sec_text = "n/a"
+            delta_pct_text = "n/a"
+        else:
+            base_runtime_text = f"{float(base_runtime):.6f}"
+            head_runtime_text = f"{float(head_runtime):.6f}"
+            delta_sec_text = f"{float(delta_sec):.6f}"
+            delta_pct_text = f"{float(delta_pct) * 100.0:.1f}"
+
         lines.append(
-            "| {name} | {status} | {base_runtime:.6f} | {head_runtime:.6f} | {delta_sec:.6f} | {delta_pct:.1f} | {reason} |".format(
+            "| {name} | {status} | {base_runtime} | {head_runtime} | {delta_sec} | {delta_pct} | {reason} |".format(
                 name=case["name"],
                 status=case["status"],
-                base_runtime=base_runtime,
-                head_runtime=head_runtime,
-                delta_sec=delta_sec,
-                delta_pct=delta_pct,
+                base_runtime=base_runtime_text,
+                head_runtime=head_runtime_text,
+                delta_sec=delta_sec_text,
+                delta_pct=delta_pct_text,
                 reason=case["reason"],
             )
         )

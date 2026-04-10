@@ -115,34 +115,36 @@ def build_benchmark_cases(profile: str, repo_root: Path, generated_dir: Path) ->
         },
     ]
 
-    sparse_10k = generated_dir / "sparse_10k.net"
-    ring_10k = generated_dir / "ring_of_cliques_10k.net"
     state_5k = generated_dir / "state_ring_5k.net"
-    generate_sparse_graph(sparse_10k, num_nodes=10_000, avg_degree=10, seed=123)
-    generate_ring_of_cliques(ring_10k, clique_count=1_000, clique_size=10)
     generate_state_ring(state_5k, physical_nodes=5_000)
-    smoke_cases = [
-        {"name": "sparse_10k", "path": sparse_10k, "flags": ""},
-        {"name": "ring_of_cliques_10k", "path": ring_10k, "flags": ""},
-        {"name": "state_ring_5k", "path": state_5k, "flags": ""},
-    ]
 
-    sparse_100k = generated_dir / "sparse_100k.net"
-    ring_100k = generated_dir / "ring_of_cliques_100k.net"
-    generate_sparse_graph(sparse_100k, num_nodes=100_000, avg_degree=10, seed=456)
-    generate_ring_of_cliques(ring_100k, clique_count=10_000, clique_size=10)
-    baseline_only_cases = [
-        {"name": "sparse_100k", "path": sparse_100k, "flags": ""},
-        {"name": "ring_of_cliques_100k", "path": ring_100k, "flags": ""},
-    ]
+    baseline_only_cases: list[dict[str, str | Path]] = []
+    if profile in {"baseline", "full", "pr"}:
+        sparse_100k = generated_dir / "sparse_100k.net"
+        ring_100k = generated_dir / "ring_of_cliques_100k.net"
+        generate_sparse_graph(sparse_100k, num_nodes=100_000, avg_degree=10, seed=456)
+        generate_ring_of_cliques(ring_100k, clique_count=10_000, clique_size=10)
+        baseline_only_cases = [
+            {"name": "sparse_100k", "path": sparse_100k, "flags": ""},
+            {"name": "ring_of_cliques_100k", "path": ring_100k, "flags": ""},
+        ]
 
     if profile == "pr":
         return [
             {"name": "states_meta", "path": repo_root / "examples" / "networks" / "states.net", "flags": f"--meta-data {repo_root / 'test' / 'fixtures' / 'meta' / 'states.meta'} --meta-data-rate 2"},
             {"name": "state_ring_5k", "path": state_5k, "flags": ""},
-            {"name": "sparse_100k", "path": sparse_100k, "flags": ""},
-            {"name": "ring_of_cliques_100k", "path": ring_100k, "flags": ""},
+            *baseline_only_cases,
         ]
+
+    sparse_10k = generated_dir / "sparse_10k.net"
+    ring_10k = generated_dir / "ring_of_cliques_10k.net"
+    generate_sparse_graph(sparse_10k, num_nodes=10_000, avg_degree=10, seed=123)
+    generate_ring_of_cliques(ring_10k, clique_count=1_000, clique_size=10)
+    smoke_cases = [
+        {"name": "sparse_10k", "path": sparse_10k, "flags": ""},
+        {"name": "ring_of_cliques_10k", "path": ring_10k, "flags": ""},
+        {"name": "state_ring_5k", "path": state_5k, "flags": ""},
+    ]
 
     cases.extend(smoke_cases)
 

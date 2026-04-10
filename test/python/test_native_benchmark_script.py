@@ -146,3 +146,21 @@ def test_build_benchmark_cases_pr_profile_focuses_on_stable_cases(tmp_path: Path
     names = [case["name"] for case in cases]
 
     assert names == ["states_meta", "state_ring_5k", "sparse_100k", "ring_of_cliques_100k"]
+
+
+def test_build_benchmark_cases_smoke_skips_100k_generation(monkeypatch, tmp_path: Path):
+    benchmark_module = _load_benchmark_module()
+    repo_root = Path(__file__).resolve().parents[2]
+    calls: list[int] = []
+
+    original_generate_sparse_graph = benchmark_module.generate_sparse_graph
+
+    def recording_generate_sparse_graph(path: Path, num_nodes: int, avg_degree: int, seed: int) -> None:
+        calls.append(num_nodes)
+        original_generate_sparse_graph(path, num_nodes, avg_degree, seed)
+
+    monkeypatch.setattr(benchmark_module, "generate_sparse_graph", recording_generate_sparse_graph)
+
+    benchmark_module.build_benchmark_cases("smoke", repo_root, tmp_path)
+
+    assert calls == [10_000]
