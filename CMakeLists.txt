@@ -167,6 +167,7 @@ if(BUILD_TESTING)
             infomap_cpp_utils_io_tests
             infomap_cpp_program_interface_tests
             infomap_cpp_config_tests
+            infomap_cpp_no_output_tests
             infomap_cli
     )
 endif()
