@@ -2450,6 +2450,16 @@ class InfomapConfigInfomapBase(Config):
 
 # Register InfomapConfigInfomapBase in _infomap:
 _infomap.InfomapConfigInfomapBase_swigregister(InfomapConfigInfomapBase)
+class InterruptionError(object):
+    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    __repr__ = _swig_repr
+
+    def __init__(self):
+        _infomap.InterruptionError_swiginit(self, _infomap.new_InterruptionError())
+    __swig_destroy__ = _infomap.delete_InterruptionError
+
+# Register InterruptionError in _infomap:
+_infomap.InterruptionError_swigregister(InterruptionError)
 class InfomapBase(InfomapConfigInfomapBase):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
