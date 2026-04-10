@@ -12,6 +12,7 @@
 namespace {
 
 using infomap::InfomapWrapper;
+using infomap::InterruptionError;
 
 using InternalEdge = std::tuple<unsigned int, unsigned int, double, double>;
 using NodeIdentity = std::tuple<unsigned int, unsigned int, std::vector<int>>;
@@ -72,6 +73,40 @@ TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modul
   CHECK(im.numTopModules() == 2);
   CHECK(im.numLevels() == 2);
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
+}
+
+TEST_CASE("Infomap can be interrupted at a safe point and rerun cleanly on the same instance [fast][core][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+
+  infomap::test::InterruptState interruptState { 1, 0 };
+  im.setInterruptPollingPeriod(1);
+  im.setInterruptHandler(&infomap::test::interruptAfterCountdown, &interruptState);
+
+  CHECK_THROWS_WITH_AS(im.run(), "Infomap run interrupted.", InterruptionError);
+  CHECK(interruptState.calls >= 2);
+
+  im.clearInterruptHandler();
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.numTopModules() == 2);
+  CHECK(im.numLevels() == 2);
+  infomap::test::checkCanonicalPartition(im, {{1, 2, 3}, {4, 5, 6}});
+}
+
+TEST_CASE("Infomap can be interrupted during optimizer polling [fast][core][lifecycle]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--two-level"));
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  infomap::test::InterruptState interruptState { 5, 0 };
+  im.setInterruptPollingPeriod(1);
+  im.setInterruptHandler(&infomap::test::interruptAfterCountdown, &interruptState);
+
+  CHECK_THROWS_WITH_AS(im.run(), "Infomap run interrupted.", InterruptionError);
+  CHECK(interruptState.calls >= 6);
 }
 
 TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][lifecycle][crash]")

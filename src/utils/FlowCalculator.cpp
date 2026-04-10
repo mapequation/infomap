@@ -8,6 +8,7 @@
  ******************************************************************************/
 
 #include "FlowCalculator.h"
+#include "../core/InfomapBase.h"
 #include "../utils/Log.h"
 #include "../utils/infomath.h"
 #include "../core/StateNetwork.h"
@@ -35,8 +36,9 @@ inline void normalize(std::vector<T>& v) noexcept
   normalize(v, sum);
 }
 
-FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
-    : numNodes(network.numNodes())
+FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config, InfomapBase* interruptOwner)
+    : numNodes(network.numNodes()),
+      m_interruptOwner(interruptOwner)
 {
   Log() << "Calculating global network flow using flow model '" << config.flowModel << "'... " << std::flush;
 
@@ -289,14 +291,15 @@ struct IterationResult {
   double beta;
 };
 
-template <typename Iteration>
-IterationResult powerIterate(double alpha, Iteration&& iter)
+template <typename Iteration, typename Interrupt>
+IterationResult powerIterate(double alpha, Iteration&& iter, Interrupt&& interrupt)
 {
   unsigned int iterations = 0;
   double beta = 1.0 - alpha;
   double err = 0.0;
 
   do {
+    interrupt();
     double oldErr = err;
     err = iter(iterations, alpha, beta);
 
@@ -314,7 +317,7 @@ IterationResult powerIterate(double alpha, Iteration&& iter)
   return { alpha, beta };
 }
 
-void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config& config) noexcept
+void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config& config)
 {
   Log() << "\n  -> Using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " << (config.teleportToNodes ? "nodes" : "links") << ". " << std::flush;
 
@@ -383,7 +386,11 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
     return error;
   };
 
-  const auto result = powerIterate(config.teleportationProbability, iteration);
+  const auto result = powerIterate(config.teleportationProbability, iteration, [this]() {
+    if (m_interruptOwner != nullptr) {
+      m_interruptOwner->throwIfInterrupted();
+    }
+  });
 
   double sumNodeRank = 1.0;
   double beta = result.beta;
@@ -408,7 +415,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
   }
 }
 
-void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, const Config& config) noexcept
+void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, const Config& config)
 {
   Log() << "\n  -> Using recorded teleportation to nodes according to a fully connected Bayesian prior. " << std::flush;
 
@@ -533,6 +540,9 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   double err = 0.0;
 
   do {
+    if (m_interruptOwner != nullptr) {
+      m_interruptOwner->throwIfInterrupted();
+    }
     double oldErr = err;
     err = iteration(iterations);
 
@@ -652,7 +662,7 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   }
 }
 
-void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, const Config& config) noexcept
+void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, const Config& config)
 {
   Log() << "\n  -> Using bipartite " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " << (config.teleportToNodes ? "nodes" : "links") << ". " << std::flush;
 
@@ -752,7 +762,11 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
     return error;
   };
 
-  const auto result = powerIterate(config.teleportationProbability, iteration);
+  const auto result = powerIterate(config.teleportationProbability, iteration, [this]() {
+    if (m_interruptOwner != nullptr) {
+      m_interruptOwner->throwIfInterrupted();
+    }
+  });
 
   double sumNodeRank = 1.0;
   double beta = result.beta;

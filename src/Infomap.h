@@ -91,11 +91,15 @@ public:
   }
 
   using InfomapBase::codelength;
+  using InfomapBase::clearInterruptHandler;
   using InfomapBase::getEntropyRate;
   using InfomapBase::getMultilevelModules;
+  using InfomapBase::hasInterruptHandler;
   using InfomapBase::iterLeafNodes;
   using InfomapBase::iterTree;
   using InfomapBase::run;
+  using InfomapBase::setInterruptHandler;
+  using InfomapBase::setInterruptPollingPeriod;
 };
 
 } // namespace infomap
