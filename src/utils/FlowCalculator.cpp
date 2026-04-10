@@ -291,7 +291,7 @@ struct IterationResult {
   double beta;
 };
 
-inline void noInterruptCheck() noexcept {}
+static inline void noInterruptCheck() noexcept {}
 
 template <typename Iteration, typename Interrupt>
 IterationResult powerIterate(double alpha, Iteration&& iter, Interrupt&& interrupt)
@@ -412,7 +412,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
   const auto result = m_interruptOwner == nullptr
       ? powerIterate(config.teleportationProbability, iteration, noInterruptCheck)
       : powerIterate(config.teleportationProbability, iteration, [this]() {
-          m_interruptOwner->throwIfInterruptedThrottled();
+          m_interruptOwner->throwIfInterrupted();
         });
 
   double sumNodeRank = 1.0;
@@ -563,7 +563,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   const unsigned int iterations = m_interruptOwner == nullptr
       ? iterateToConvergence(iteration, noInterruptCheck, err)
       : iterateToConvergence(iteration, [this]() {
-          m_interruptOwner->throwIfInterruptedThrottled();
+          m_interruptOwner->throwIfInterrupted();
         }, err);
 
   Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
@@ -778,7 +778,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
   const auto result = m_interruptOwner == nullptr
       ? powerIterate(config.teleportationProbability, iteration, noInterruptCheck)
       : powerIterate(config.teleportationProbability, iteration, [this]() {
-          m_interruptOwner->throwIfInterruptedThrottled();
+          m_interruptOwner->throwIfInterrupted();
         });
 
   double sumNodeRank = 1.0;
