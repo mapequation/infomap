@@ -136,3 +136,49 @@ def test_benchmark_case_collects_dynamic_rebuild_bucket_labels(monkeypatch, tmp_
 
     assert result["rebuild"]["mean_total_sec"] == pytest.approx(0.05)
     assert result["rebuild"]["module_size_buckets"]["33-64"]["mean_sec"] == pytest.approx(0.03)
+
+
+def test_build_benchmark_cases_pr_profile_focuses_on_stable_cases(monkeypatch, tmp_path: Path):
+    benchmark_module = _load_benchmark_module()
+    repo_root = Path(__file__).resolve().parents[2]
+    generated_paths: list[Path] = []
+
+    def stub_generate_state_ring(path: Path, physical_nodes: int) -> None:
+        generated_paths.append(path)
+
+    def stub_generate_sparse_graph(path: Path, num_nodes: int, avg_degree: int, seed: int) -> None:
+        generated_paths.append(path)
+
+    def stub_generate_ring_of_cliques(path: Path, clique_count: int, clique_size: int) -> None:
+        generated_paths.append(path)
+
+    monkeypatch.setattr(benchmark_module, "generate_state_ring", stub_generate_state_ring)
+    monkeypatch.setattr(benchmark_module, "generate_sparse_graph", stub_generate_sparse_graph)
+    monkeypatch.setattr(benchmark_module, "generate_ring_of_cliques", stub_generate_ring_of_cliques)
+
+    cases = benchmark_module.build_benchmark_cases("pr", repo_root, tmp_path)
+    names = [case["name"] for case in cases]
+    paths = [Path(case["path"]) for case in cases]
+
+    assert names == ["states_meta", "state_ring_5k", "sparse_100k", "ring_of_cliques_100k"]
+    assert paths[0] == repo_root / "examples" / "networks" / "states.net"
+    assert paths[1:] == generated_paths
+    assert [path.name for path in generated_paths] == ["state_ring_5k.net", "sparse_100k.net", "ring_of_cliques_100k.net"]
+
+
+def test_build_benchmark_cases_smoke_skips_100k_generation(monkeypatch, tmp_path: Path):
+    benchmark_module = _load_benchmark_module()
+    repo_root = Path(__file__).resolve().parents[2]
+    calls: list[int] = []
+
+    original_generate_sparse_graph = benchmark_module.generate_sparse_graph
+
+    def recording_generate_sparse_graph(path: Path, num_nodes: int, avg_degree: int, seed: int) -> None:
+        calls.append(num_nodes)
+        original_generate_sparse_graph(path, num_nodes, avg_degree, seed)
+
+    monkeypatch.setattr(benchmark_module, "generate_sparse_graph", recording_generate_sparse_graph)
+
+    benchmark_module.build_benchmark_cases("smoke", repo_root, tmp_path)
+
+    assert calls == [10_000]
