@@ -15,8 +15,51 @@
 
 namespace infomap {
 
+namespace {
+
+bool tryParseTreeLeafIdTypeFromHeader(const std::string& line, TreeLeafIdType& idType)
+{
+  std::istringstream headerStream(line);
+  std::string hash;
+  std::string path;
+  std::string flowField;
+  std::string name;
+  std::string idField;
+
+  if (!(headerStream >> hash >> path >> flowField >> name >> idField)) {
+    return false;
+  }
+
+  if (hash != "#" || path != "path" || name != "name") {
+    return false;
+  }
+
+  if (idField == "state_id") {
+    idType = TreeLeafIdType::state;
+    return true;
+  }
+
+  if (idField == "node_id" || idField == "physical_id" || idField == "physicalId") {
+    idType = TreeLeafIdType::physical;
+    return true;
+  }
+
+  return false;
+}
+
+} // namespace
+
 void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId)
 {
+  m_clusterIds.clear();
+  m_flowData.clear();
+  m_treePaths.clear();
+  m_extension.clear();
+  m_isHigherOrder = false;
+  m_hasTreeLeafIdType = false;
+  m_treeLeafIdTypeFromHeader = false;
+  m_treeLeafIdType = TreeLeafIdType::physical;
+
   FileURI file(filename);
   m_extension = file.getExtension();
   if (m_extension == "tree" || m_extension == "ftree") {
@@ -25,7 +68,7 @@ void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, 
   if (m_extension == "clu") {
     return readClu(filename, includeFlow, layerNodeToStateId);
   }
-  throw std::runtime_error(io::Str() << "Input cluster data from file '" << filename << "' is of unknown extension '" << m_extension << "'. Must be 'clu' or 'tree'.");
+  throw std::runtime_error(io::Str() << "Input cluster data from file '" << filename << "' is of unknown extension '" << m_extension << "'. Must be 'clu', 'tree' or 'ftree'.");
 }
 
 /**
@@ -45,7 +88,6 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
   std::string line;
   std::istringstream lineStream;
   std::istringstream pathStream;
-  m_nodePaths.clear();
 
   unsigned int lineNr = 0;
 
@@ -54,6 +96,12 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
     if (line.length() == 0)
       continue;
     if (line[0] == '#') {
+      TreeLeafIdType idType;
+      if (tryParseTreeLeafIdTypeFromHeader(line, idType)) {
+        m_treeLeafIdType = idType;
+        m_hasTreeLeafIdType = true;
+        m_treeLeafIdTypeFromHeader = true;
+      }
       continue;
     }
     if (line[0] == '*') {
@@ -66,9 +114,9 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
     std::string pathString;
     double flow;
     std::string name;
-    unsigned int stateId;
-    unsigned int nodeId;
-    unsigned int layerId;
+    unsigned int parsedId;
+    unsigned int nodeId = 0;
+    unsigned int layerId = 0;
     if (!(lineStream >> pathString))
       throw std::runtime_error(io::Str() << "Couldn't parse tree path from line '" << line << "'");
     if (!(lineStream >> flow))
@@ -78,19 +126,37 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
       throw std::runtime_error(io::Str() << "Can't parse node name from line " << lineNr << " ('" << line << "').");
     if (!getline(lineStream, name, '"'))
       throw std::runtime_error(io::Str() << "Can't parse node name from line " << lineNr << " ('" << line << "').");
-    if (!(lineStream >> stateId))
+    if (!(lineStream >> parsedId))
       throw std::runtime_error(io::Str() << "Couldn't parse node id from line '" << line << "'");
-    if (lineStream >> nodeId) {
-      m_isHigherOrder = true;
-    } else if (m_isHigherOrder) {
-      throw std::runtime_error(io::Str() << "Missing state id for node on line '" << line << "'.");
+
+    const auto hasExplicitNodeId = static_cast<bool>(lineStream >> nodeId);
+    const auto inferredLeafIdType = hasExplicitNodeId ? TreeLeafIdType::state : TreeLeafIdType::physical;
+
+    if (!m_hasTreeLeafIdType) {
+      m_treeLeafIdType = inferredLeafIdType;
+      m_hasTreeLeafIdType = true;
+    } else if (!m_treeLeafIdTypeFromHeader && inferredLeafIdType != m_treeLeafIdType) {
+      throw std::runtime_error(io::Str() << "Mixed state and physical tree ids are not supported in line '" << line << "'.");
     }
-    if (isMultilayer && !(lineStream >> layerId))
-      throw std::runtime_error(io::Str() << "Couldn't parse layer id from line '" << line << "'");
+
+    if (m_treeLeafIdType == TreeLeafIdType::state) {
+      if (hasExplicitNodeId) {
+        m_isHigherOrder = true;
+      } else if (m_isHigherOrder) {
+        throw std::runtime_error(io::Str() << "Missing node id from line '" << line << "'.");
+      }
+      if (isMultilayer) {
+        if (!hasExplicitNodeId)
+          throw std::runtime_error(io::Str() << "Couldn't parse node key from line '" << line << "'");
+        if (!(lineStream >> layerId))
+          throw std::runtime_error(io::Str() << "Couldn't parse layer id from line '" << line << "'");
+      }
+    }
 
     bool multilayerNodeFound = false;
+    unsigned int stateId = parsedId;
 
-    if (isMultilayer) {
+    if (isMultilayer && m_treeLeafIdType == TreeLeafIdType::state) {
       // get new state id from map
       auto it = layerNodeToStateId->find(layerId);
 
@@ -103,7 +169,7 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
       }
     }
 
-    if (isMultilayer && !multilayerNodeFound) {
+    if (isMultilayer && m_treeLeafIdType == TreeLeafIdType::state && !multilayerNodeFound) {
       continue;
     }
 
@@ -119,7 +185,7 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
       path.push_back(childNumber); // Keep 1-based indexing in path
     }
 
-    m_nodePaths.emplace_back(stateId, path);
+    m_treePaths.push_back({ stateId, path, m_treeLeafIdType });
 
     if (includeFlow)
       m_flowData[stateId] = flow;

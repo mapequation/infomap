@@ -246,7 +246,8 @@ private:
   /**
    * Provide an initial partition of the network.
    *
-   * @param clusterDataFile A .clu file containing cluster data.
+   * @param clusterDataFile A .clu, .tree or .ftree file containing cluster data.
+   * Tree input may be physical or state-level on higher-order networks.
    * @param hard If true, the provided clusters will not be splitted. This reduces the
    * effective network size during the optimization phase but the hard partitions are
    * after that replaced by the original nodes.
@@ -286,6 +287,7 @@ private:
    * @param tree A tree path for each node
    */
   InfomapBase& initTree(const NodePaths& tree);
+  NodePaths normalizeTreePaths(const TreePaths& tree, unsigned int& numNodesNotInNetwork) const;
 
   void init();
 

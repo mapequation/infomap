@@ -93,7 +93,7 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(matchableMultilayerIds, "matchable-multilayer-ids", "Construct state ids from node and layer ids that are consistent across networks for the same max number of layers. Set to at least the largest layer id among networks to match.", ArgType::integer, "Input", 1u, true);
 
-  api.addOptionArgument(clusterDataFile, 'c', "cluster-data", "Provide an initial two-level (clu format) or multi-layer (tree format) solution.", ArgType::path, "Input");
+  api.addOptionArgument(clusterDataFile, 'c', "cluster-data", "Provide an initial solution in .clu or .tree/.ftree format. On higher-order networks, .tree input may be either physical or state-level.", ArgType::path, "Input");
 
   api.addOptionArgument(assignToNeighbouringModule, "assign-to-neighbouring-module", "Assign nodes without module assignments (from --cluster-data) to the module assignment of a neighbouring node if possible.", "Input", true);
 

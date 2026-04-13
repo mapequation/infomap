@@ -858,8 +858,9 @@ dicts, or the convenience methods <a class="reference internal" href="#infomap.I
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cluster_data</strong> (<em>str</em><em>, </em><em>optional</em>) – Provide an initial two-level (clu format) or multi-layer (tree format)
-solution.</p></li>
+<li><p><strong>cluster_data</strong> (<em>str</em><em>, </em><em>optional</em>) – Provide an initial solution in <code class="docutils literal notranslate"><span class="pre">.clu</span></code> or <code class="docutils literal notranslate"><span class="pre">.tree</span></code>/<code class="docutils literal notranslate"><span class="pre">.ftree</span></code>
+format. On higher-order networks, <code class="docutils literal notranslate"><span class="pre">.tree</span></code> input may be either
+physical or state-level.</p></li>
 <li><p><strong>no_infomap</strong> (<em>bool</em><em>, </em><em>optional</em>) – Don’t run the optimizer. Useful to calculate codelength of provided
 cluster data or to print non-modular statistics.</p></li>
 <li><p><strong>skip_adjust_bipartite_flow</strong> (<em>bool</em><em>, </em><em>optional</em>) – Skip distributing all flow from the bipartite nodes to the primary

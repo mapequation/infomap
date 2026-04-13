@@ -4,6 +4,7 @@
 
 #include "TestUtils.h"
 
+#include <cstdio>
 #include <map>
 #include <set>
 #include <tuple>
@@ -15,6 +16,11 @@ using infomap::InfomapWrapper;
 using infomap::InfoNode;
 
 using EdgeKey = std::pair<unsigned int, unsigned int>;
+
+std::string temporaryOutputPath(const std::string& prefix, const std::string& suffix)
+{
+  return prefix + suffix;
+}
 
 std::vector<unsigned int> childStateIds(const InfoNode& node)
 {
@@ -114,6 +120,75 @@ TEST_CASE("Tree cluster-data fixture initializes a multi-level tree [fast][core]
   im.run();
 
   infomap::test::checkRunSanity(im);
+}
+
+TEST_CASE("Run accepts first-order tree cluster-data through the public config path [fast][core][partition][parser]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--cluster-data " + infomap::test::clusterFixturePath("twotriangles_three_level.tree")));
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.numTopModules() == 2);
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
+}
+
+TEST_CASE("Run accepts physical and state tree cluster-data on the same higher-order instance [fast][core][partition][lifecycle]")
+{
+  auto baseline = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "states.net"); });
+
+  const auto expectedPartition = infomap::test::canonicalPartition(baseline->getModules(1, true));
+  const auto physicalTreePath = temporaryOutputPath("states_physical_clusterdata", ".tree");
+  const auto stateTreePath = temporaryOutputPath("states_state_clusterdata", ".tree");
+  baseline->writeTree(physicalTreePath);
+  baseline->writeTree(stateTreePath, true);
+
+  InfomapWrapper im(infomap::test::defaultFlags());
+  infomap::test::readNetworkFixture(im, "states.net");
+
+  auto runWithTree = [&](const std::string& treePath) {
+    im.run("--cluster-data " + treePath);
+    infomap::test::checkRunSanity(im);
+    CHECK(im.numLeafNodes() == 6);
+    return infomap::test::canonicalPartition(im.getModules(1, true));
+  };
+
+  CHECK(runWithTree(physicalTreePath) == expectedPartition);
+  CHECK(runWithTree(stateTreePath) == expectedPartition);
+  CHECK(runWithTree(physicalTreePath) == expectedPartition);
+
+  std::remove(physicalTreePath.c_str());
+  std::remove(stateTreePath.c_str());
+}
+
+TEST_CASE("Physical tree cluster-data stays stable across repeated multi-trial runs [fast][core][partition][lifecycle]")
+{
+  auto baseline = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "states.net"); });
+
+  const auto physicalTreePath = temporaryOutputPath("states_physical_multitrial_clusterdata", ".tree");
+  baseline->writeTree(physicalTreePath);
+
+  InfomapWrapper im(infomap::test::defaultFlags("--num-trials 2 --cluster-data " + physicalTreePath));
+  infomap::test::readNetworkFixture(im, "states.net");
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  const auto firstPartition = infomap::test::canonicalPartition(im.getModules(1, true));
+  const auto firstCodelength = im.codelength();
+  const auto firstIndexCodelength = im.getIndexCodelength();
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  CHECK(infomap::test::canonicalPartition(im.getModules(1, true)) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+  CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
+
+  std::remove(physicalTreePath.c_str());
 }
 
 TEST_CASE("Tree cluster-data reinit and rerun stay stable on the same instance [fast][core][partition][lifecycle]")
@@ -433,6 +508,18 @@ TEST_CASE("Invalid cluster-data fixtures fail deterministically [fast][core][par
       std::runtime_error);
 }
 
+TEST_CASE("Invalid multilayer state tree cluster-data fails deterministically [fast][core][partition][parser]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  infomap::test::readNetworkFixture(im, "multilayer.net");
+  im.initNetwork(im.network());
+
+  CHECK_THROWS_WITH_AS(
+      im.initPartition(infomap::test::clusterFixturePath("invalid_missing_layer.tree"), false, &im.network()),
+      "Couldn't parse layer id from line '1:1 0.1 \"alpha\" 1 1'",
+      std::runtime_error);
+}
+
 TEST_CASE("Invalid cluster-data failure does not poison later valid init on the same instance [fast][core][partition][parser][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
@@ -479,6 +566,36 @@ TEST_CASE("Invalid tree cluster-data failure does not poison later valid tree in
   im.run();
 
   infomap::test::checkRunSanity(im);
+}
+
+TEST_CASE("Invalid multilayer tree cluster-data failure does not poison later valid tree init on the same instance [fast][core][partition][parser][lifecycle]")
+{
+  auto baseline = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "multilayer.net"); });
+
+  const auto validTreePath = temporaryOutputPath("multilayer_state_clusterdata", ".tree");
+  baseline->writeTree(validTreePath, true);
+  const auto expectedPartition = infomap::test::canonicalPartition(baseline->getModules(1, true));
+
+  InfomapWrapper im(infomap::test::defaultFlags());
+  infomap::test::readNetworkFixture(im, "multilayer.net");
+
+  im.initNetwork(im.network());
+  CHECK_THROWS_WITH_AS(
+      im.initPartition(infomap::test::clusterFixturePath("invalid_missing_layer.tree"), false, &im.network()),
+      "Couldn't parse layer id from line '1:1 0.1 \"alpha\" 1 1'",
+      std::runtime_error);
+
+  im.initNetwork(im.network());
+  im.initPartition(validTreePath, false, &im.network());
+
+  CHECK(infomap::test::canonicalPartition(im.getModules(1, true)) == expectedPartition);
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+
+  std::remove(validTreePath.c_str());
 }
 
 } // namespace
