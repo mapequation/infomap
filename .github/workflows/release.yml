@@ -150,6 +150,28 @@ jobs:
       - name: Publish npm package
         run: npm publish --provenance --access public dist/npm/*.tgz
 
+  notify-homebrew-infomap:
+    name: Notify homebrew-infomap
+    if: github.event_name == 'push'
+    needs: [publish-github-release]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Dispatch homebrew-infomap update workflow
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_INFOMAP_REPO_DISPATCH_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          version="${RELEASE_TAG#v}"
+          gh api repos/mapequation/homebrew-infomap/dispatches \
+            -f event_type=infomap_release_published \
+            -F client_payload[version]="$version" \
+            -F client_payload[release_tag]="$RELEASE_TAG" \
+            -F client_payload[release_url]="https://github.com/${{ github.repository }}/releases/tag/$RELEASE_TAG"
+
   notify-infomap-online:
     name: Notify infomap-online
     if: github.event_name == 'push'

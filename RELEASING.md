@@ -33,6 +33,9 @@ Configure these integrations before the first release:
    `infomap-v2.9.2`. If Release Please is allowed to add the component
    prefix, the first release PR after the migration can re-include already
    released commits and generate an overlapping `CHANGELOG.md`.
+7. Add repository dispatch tokens for downstream update workflows:
+   - `HOMEBREW_INFOMAP_REPO_DISPATCH_TOKEN`
+   - `INFOMAP_ONLINE_REPO_DISPATCH_TOKEN`
 
 ## Normal release flow
 
@@ -50,8 +53,10 @@ Configure these integrations before the first release:
    - builds the Python sdist and wheels
    - builds and verifies the npm package
    - attaches assets to the GitHub Release
+   - dispatches the Homebrew tap update workflow
    - publishes to PyPI behind `pypi-release`
    - publishes to npm behind `npm-release`
+   - dispatches the `infomap-online` package update workflow
 
 If the first Release Please PR after the migration already contains historical
 entries that are present lower down in `CHANGELOG.md`, do not merge it. Merge

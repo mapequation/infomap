@@ -69,6 +69,29 @@ Quick start with Python:
 .. _PyPI: https://pypi.org/project/infomap/
 .. _`Infomap Python API`: https://mapequation.github.io/infomap/python/
 
+Homebrew CLI
+^^^^^^^^^^^^
+
+If you want the native CLI without the Python package, install the tap and
+formula with:
+
+.. code-block:: bash
+
+    brew tap mapequation/infomap
+    brew install infomap
+
+Or install directly in one command:
+
+.. code-block:: bash
+
+    brew install mapequation/infomap/infomap
+
+Upgrade the CLI with the normal Homebrew flow:
+
+.. code-block:: bash
+
+    brew upgrade infomap
+
 JavaScript package
 ^^^^^^^^^^^^^^^^^^
 
