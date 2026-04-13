@@ -1213,14 +1213,6 @@ void InfomapBase::partition()
   if (m_numNonTrivialTopModules != numTopModules())
     Log() << " (" << m_numNonTrivialTopModules << " non-trivial)";
   Log() << " modules.\n";
-  if (isMainInfomap()) {
-    Log::emitStructuredEvent("partition_result",
-                             jsonObject({
-                                 jsonField("codelength", jsonNumber(m_hierarchicalCodelength)),
-                                 jsonField("numTopModules", jsonNumber(numTopModules())),
-                                 jsonField("numNonTrivialTopModules", jsonNumber(m_numNonTrivialTopModules)),
-                             }));
-  }
 
   const bool regularizedPriorOnly = regularized && network().numLinks() == 0;
   if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > getOneLevelCodelength()) {
@@ -1250,6 +1242,15 @@ void InfomapBase::partition()
     calcCodelengthOnTree(root(), false);
     m_root.codelength = getIndexCodelength();
     m_hierarchicalCodelength = getCodelength();
+  }
+
+  if (isMainInfomap()) {
+    Log::emitStructuredEvent("partition_result",
+                             jsonObject({
+                                 jsonField("codelength", jsonNumber(m_hierarchicalCodelength)),
+                                 jsonField("numTopModules", jsonNumber(numTopModules())),
+                                 jsonField("numNonTrivialTopModules", jsonNumber(m_numNonTrivialTopModules)),
+                             }));
   }
 }
 
