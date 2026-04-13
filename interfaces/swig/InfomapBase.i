@@ -21,5 +21,11 @@ namespace infomap {
     %template(InfomapConfigInfomapBase) InfomapConfig<InfomapBase>;
 }
 
+%ignore infomap::InfomapBase::setInterruptHandler;
+%ignore infomap::InfomapBase::clearInterruptHandler;
+%ignore infomap::InfomapBase::setInterruptPollingPeriod;
+%ignore infomap::InfomapBase::hasInterruptHandler;
+%ignore infomap::InterruptionError;
+
 /* Parse the header file to generate wrappers */
 %include "src/core/InfomapBase.h"

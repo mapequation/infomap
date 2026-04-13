@@ -16,6 +16,7 @@
 namespace infomap {
 
 struct Config;
+class InfomapBase;
 class StateNetwork;
 
 namespace detail {
@@ -31,14 +32,14 @@ namespace detail {
  */
 class FlowCalculator {
 public:
-  FlowCalculator(StateNetwork&, const Config&);
+  FlowCalculator(StateNetwork&, const Config&, InfomapBase* interruptOwner = nullptr);
 
 private:
   void calcUndirectedFlow() noexcept;
-  void calcDirectedFlow(const StateNetwork&, const Config&) noexcept;
+  void calcDirectedFlow(const StateNetwork&, const Config&);
   void calcUndirectedRegularizedFlow(const StateNetwork&, const Config&) noexcept;
-  void calcDirectedRegularizedFlow(const StateNetwork&, const Config&) noexcept;
-  void calcDirectedBipartiteFlow(const StateNetwork&, const Config&) noexcept;
+  void calcDirectedRegularizedFlow(const StateNetwork&, const Config&);
+  void calcDirectedBipartiteFlow(const StateNetwork&, const Config&);
   void calcDirdirFlow(const Config&) noexcept;
   void calcRawdirFlow() noexcept;
   void usePrecomputedFlow(const StateNetwork&, const Config&);
@@ -63,11 +64,12 @@ private:
   std::vector<unsigned int> nodeOutDegree;
   using FlowLink = detail::FlowLink;
   std::vector<FlowLink> flowLinks;
+  InfomapBase* m_interruptOwner = nullptr;
 };
 
-inline void calculateFlow(StateNetwork& network, const Config& config)
+inline void calculateFlow(StateNetwork& network, const Config& config, InfomapBase* interruptOwner = nullptr)
 {
-  FlowCalculator(network, config);
+  FlowCalculator(network, config, interruptOwner);
 }
 
 } // namespace infomap

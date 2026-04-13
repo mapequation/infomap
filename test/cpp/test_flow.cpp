@@ -11,6 +11,7 @@
 namespace {
 
 using infomap::InfomapWrapper;
+using infomap::InterruptionError;
 
 struct FlowRunResult {
   std::vector<std::vector<unsigned int>> partition;
@@ -61,6 +62,19 @@ TEST_CASE("Directed regularization remains numerically sane on the teleportation
   CHECK(result.numTopModules == 1);
   CHECK(result.partition == std::vector<std::vector<unsigned int>>{{1, 2, 3, 4, 5, 6}});
   CHECK(result.codelength > result.indexCodelength);
+}
+
+TEST_CASE("Directed flow calculation can be interrupted cooperatively [fast][core][flow]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--directed --recorded-teleportation"));
+  infomap::test::readNetworkFixture(im, "teleport_directed.net");
+
+  infomap::test::InterruptState interruptState { 1, 0 };
+  im.setInterruptPollingPeriod(1);
+  im.setInterruptHandler(&infomap::test::interruptAfterCountdown, &interruptState);
+
+  CHECK_THROWS_WITH_AS(im.run(), "Infomap run interrupted.", InterruptionError);
+  CHECK(interruptState.calls >= 2);
 }
 
 TEST_CASE("Inner parallelization remains runnable and numerically sane on the directed fixture [fast][core][flow][openmp]")

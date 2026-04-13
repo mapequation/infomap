@@ -163,6 +163,9 @@ void InfomapBase::run(Network& network)
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
 
+  resetInterruptPollingState();
+  throwIfInterrupted();
+
   if (network.numNodes() == 0) {
     network.postProcessInputData();
     if (network.numNodes() == 0) {
@@ -214,13 +217,15 @@ void InfomapBase::run(Network& network)
   }
   network.setConfig(*this);
 
-  calculateFlow(network, *this);
+  calculateFlow(network, *this, hasInterruptHandler() ? this : nullptr);
+  throwIfInterrupted();
 
   if (network.isBipartite()) {
     bipartite = true;
   }
 
   initNetwork(network);
+  throwIfInterrupted();
 
   if (numLeafNodes() == 0)
     throw std::domain_error("No nodes to partition");
@@ -261,6 +266,7 @@ void InfomapBase::run(Network& network)
   unsigned int numTrials = this->numTrials;
 
   for (unsigned int i = 0; i < numTrials; ++i) {
+    throwIfInterrupted();
     removeModules();
     auto startDate = Date();
     Stopwatch timer(true);
@@ -277,13 +283,21 @@ void InfomapBase::run(Network& network)
         initPartition(m_initialPartition, clusterDataIsHard);
     }
 
-    if (!noInfomap)
-      runPartition();
-    else
-      m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+    try {
+      if (!noInfomap)
+        runPartition();
+      else
+        m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+    } catch (const InterruptionError&) {
+      if (haveHardPartition()) {
+        restoreHardPartition();
+      }
+      throw;
+    }
 
     if (haveHardPartition())
       restoreHardPartition();
+    throwIfInterrupted();
 
     if (isMainInfomap()) {
       Log() << "\n=> Trial " << (i + 1) << "/" << numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
@@ -927,6 +941,7 @@ void InfomapBase::init()
 
 void InfomapBase::hierarchicalPartition()
 {
+  throwIfInterrupted();
   Log(1) << "Hierarchical partition...\n";
 
   const auto depth = maxTreeDepth();
@@ -947,6 +962,7 @@ void InfomapBase::hierarchicalPartition()
       double codelengthAfter = 0.0;
 
       for (InfoNode& module : m_root.infomapTree()) {
+        throwIfInterrupted();
         if (!module.isLeaf() && module.firstChild->isLeafModule()) {
           codelengthBefore += module.codelength;
           auto numLeafs = 0;
@@ -973,7 +989,12 @@ void InfomapBase::hierarchicalPartition()
           subInfomap.initPartition(modules);
 
           // Run two-level partition + find hierarchically super modules (skip recursion)
-          subInfomap.setOnlySuperModules(true).run();
+          try {
+            subInfomap.setOnlySuperModules(true).run();
+          } catch (const InterruptionError&) {
+            module.disposeInfomap();
+            throw;
+          }
 
           // Collect sub Infomap modules
           i = 0;
@@ -1045,6 +1066,7 @@ void InfomapBase::hierarchicalPartition()
 
 void InfomapBase::partition()
 {
+  throwIfInterrupted();
   auto oldPrecision = Log::precision();
   Log(0, 0) << "Two-level compression: " << std::setprecision(2) << std::flush;
   Log(1) << "Trying to find modular structure... \n";
@@ -1062,6 +1084,7 @@ void InfomapBase::partition()
   bool doFineTune = true;
   bool coarseTuned = false;
   while (numTopModules() > 1 && (m_tuneIterationIndex + 1) != tuneIterationLimit) {
+    throwIfInterrupted();
     ++m_tuneIterationIndex;
     if (doFineTune) {
       Log(3) << "\n";
@@ -1344,6 +1367,7 @@ void InfomapBase::setActiveNetworkFromChildrenOfRoot()
 
 void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 {
+  throwIfInterrupted();
   Log(1, 2) << "Iteration " << (m_tuneIterationIndex + 1) << ", moving ";
   Log(3) << "\nIteration " << (m_tuneIterationIndex + 1) << ":\n";
   m_aggregationLevel = 0;
@@ -1355,6 +1379,7 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 
   // Reapply core algorithm on modular network, replacing modules with super modules
   while (numTopModules() > 1 && numLevelsConsolidated != maxLevels) {
+    throwIfInterrupted();
     if (haveModules())
       setActiveNetworkFromChildrenOfRoot();
     else
@@ -1381,6 +1406,7 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
     // Consolidate modules
     bool replaceExistingModules = haveModules();
     consolidateModules(replaceExistingModules);
+    throwIfInterrupted();
     ++numLevelsConsolidated;
     ++m_aggregationLevel;
   }
@@ -1395,6 +1421,8 @@ unsigned int InfomapBase::fineTune()
 {
   if (numLevels() != 2)
     throw std::logic_error("InfomapBase::fineTune() called but numLevels != 2");
+
+  throwIfInterrupted();
 
   setActiveNetworkFromLeafs();
   initPartition();
@@ -1434,6 +1462,8 @@ unsigned int InfomapBase::coarseTune()
   if (numLevels() != 2)
     throw std::logic_error("InfomapBase::coarseTune() called but numLevels != 2");
 
+  throwIfInterrupted();
+
   Log(4) << "Coarse-tune...\nPartition each module in sub-modules for coarse tune...\n";
 
   bool isSilent = false;
@@ -1444,6 +1474,7 @@ unsigned int InfomapBase::coarseTune()
 
   unsigned int moduleIndexOffset = 0;
   for (auto& node : m_root) {
+    throwIfInterrupted();
     // Don't search for sub-modules in too small modules
     if (node.childDegree() < 2) {
       for (auto& child : node) {
@@ -1455,7 +1486,12 @@ unsigned int InfomapBase::coarseTune()
       InfomapBase& subInfomap = getSubInfomap(node)
                                     .setTwoLevel(true)
                                     .setTuneIterationLimit(1);
-      subInfomap.initNetwork(node).run();
+      try {
+        subInfomap.initNetwork(node).run();
+      } catch (const InterruptionError&) {
+        node.disposeInfomap();
+        throw;
+      }
 
       auto originalLeafIt = node.begin_child();
       for (auto& subLeafPtr : subInfomap.leafNodes()) {
@@ -1540,6 +1576,8 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
   if (superLevelLimit == 0)
     return 0;
 
+  throwIfInterrupted();
+
   unsigned int numLevelsCreated = 0;
   double oldIndexLength = getIndexCodelength();
   double hierarchicalCodelength = getCodelength();
@@ -1550,6 +1588,7 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
 
   // Add index codebooks as long as the code gets shorter
   do {
+    throwIfInterrupted();
     Log(1) << "Iteration " << numLevelsCreated + 1 << ", finding super modules fast to " << numTopModules() << (haveModules() ? " modules" : " nodes") << "... \n";
 
     if (haveModules()) {
@@ -1615,6 +1654,8 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   if (superLevelLimit == 0)
     return 0;
 
+  throwIfInterrupted();
+
   unsigned int numLevelsCreated = 0;
   double oldIndexLength = getIndexCodelength();
   double hierarchicalCodelength = getCodelength();
@@ -1628,6 +1669,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
 
   // Add index codebooks as long as the code gets shorter
   do {
+    throwIfInterrupted();
     Log(1) << "Iteration " << numLevelsCreated + 1 << ", finding super modules to " << numTopModules() << " modules... \n";
     bool isSilent = false;
     if (isMainInfomap()) {
@@ -1763,6 +1805,7 @@ unsigned int InfomapBase::removeSubModules(bool recalculateCodelengthOnTree)
 
 unsigned int InfomapBase::recursivePartition()
 {
+  throwIfInterrupted();
   double indexCodelength = getIndexCodelength();
   double hierarchicalCodelength = m_hierarchicalCodelength;
 
@@ -1790,6 +1833,7 @@ unsigned int InfomapBase::recursivePartition()
   }
 
   while (partitionQueue.size() > 0) {
+    throwIfInterrupted();
     Log(1) << "Level " << partitionQueue.level << ": " << (partitionQueue.flow * 100) << "% of the flow in " << partitionQueue.size() << " modules. Partitioning... " << std::setprecision(6) << std::flush;
 
     if (isMainInfomap())
@@ -1897,7 +1941,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
   std::vector<double> leafCodelengths(numModules, 0.0);
   std::vector<PartitionQueue> subQueues(numModules);
 
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic) if(!hasInterruptHandler())
   for (PartitionQueue::size_t moduleIndex = 0; moduleIndex < numModules; ++moduleIndex) {
     InfoNode& module = *queue[moduleIndex];
 
@@ -1920,7 +1964,12 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
     auto& subInfomap = getSubInfomap(module)
                            .initNetwork(module);
     // Run two-level partition + find hierarchically super modules (skip recursion)
-    subInfomap.setOnlySuperModules(true).run();
+    try {
+      subInfomap.setOnlySuperModules(true).run();
+    } catch (const InterruptionError&) {
+      module.disposeInfomap();
+      throw;
+    }
 
     double subCodelength = subInfomap.getHierarchicalCodelength();
     double subIndexCodelength = subInfomap.root().codelength;

@@ -29,8 +29,19 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 namespace infomap {
+
+class FlowCalculator;
+
+using InterruptCallback = bool (*)(void*);
+
+class InterruptionError : public std::runtime_error {
+public:
+  InterruptionError()
+      : std::runtime_error("Infomap run interrupted.") { }
+};
 
 namespace detail {
   class PartitionQueue;
@@ -40,6 +51,7 @@ namespace detail {
 class InfomapBase : public InfomapConfig<InfomapBase> {
   template <typename Objective>
   friend class InfomapOptimizer;
+  friend class FlowCalculator;
 
   void initOptimizer(bool forceNoMemory = false);
 
@@ -170,6 +182,31 @@ public:
 
   void run(Network& network);
 
+  InfomapBase& setInterruptHandler(InterruptCallback callback, void* userData = nullptr)
+  {
+    m_interruptCallback = callback;
+    m_interruptUserData = userData;
+    resetInterruptPollingState();
+    return *this;
+  }
+
+  InfomapBase& clearInterruptHandler()
+  {
+    m_interruptCallback = nullptr;
+    m_interruptUserData = nullptr;
+    resetInterruptPollingState();
+    return *this;
+  }
+
+  InfomapBase& setInterruptPollingPeriod(unsigned int pollingPeriod)
+  {
+    m_interruptPollingPeriod = pollingPeriod == 0 ? 1 : pollingPeriod;
+    resetInterruptPollingState();
+    return *this;
+  }
+
+  bool hasInterruptHandler() const { return m_interruptCallback != nullptr; }
+
 private:
   bool isFullNetwork() const { return m_isMain && m_aggregationLevel == 0; }
   bool isFirstLoop() const { return m_tuneIterationIndex == 0 && isFullNetwork(); }
@@ -185,6 +222,7 @@ private:
   InfomapBase& getSubInfomap(InfoNode& node) const
   {
     return node.setInfomap(getNewInfomapInstance())
+        .inheritRuntimeContext(*this)
         .setIsMain(false)
         .setSubLevel(m_subLevel + 1)
         .setNonMainConfig(*this);
@@ -193,6 +231,7 @@ private:
   InfomapBase& getSuperInfomap(InfoNode& node) const
   {
     return node.setInfomap(getNewInfomapInstanceWithoutMemory())
+        .inheritRuntimeContext(*this)
         .setIsMain(false)
         .setSubLevel(m_subLevel + SUPER_LEVEL_ADDITION)
         .setNonMainConfig(*this);
@@ -220,6 +259,37 @@ private:
   bool isMainInfomap() const { return m_isMain; }
 
   bool haveHardPartition() const { return !m_originalLeafNodes.empty(); }
+
+  InfomapBase& inheritRuntimeContext(const InfomapBase& other)
+  {
+    m_interruptCallback = other.m_interruptCallback;
+    m_interruptUserData = other.m_interruptUserData;
+    m_interruptPollingPeriod = other.m_interruptPollingPeriod;
+    resetInterruptPollingState();
+    return *this;
+  }
+
+  void resetInterruptPollingState() { m_interruptPollCounter = 0; }
+
+  void throwIfInterrupted()
+  {
+    if (m_interruptCallback != nullptr && m_interruptCallback(m_interruptUserData)) {
+      throw InterruptionError();
+    }
+  }
+
+  void throwIfInterruptedThrottled()
+  {
+    if (m_interruptCallback == nullptr) {
+      return;
+    }
+    ++m_interruptPollCounter;
+    if (m_interruptPollCounter < m_interruptPollingPeriod) {
+      return;
+    }
+    m_interruptPollCounter = 0;
+    throwIfInterrupted();
+  }
 
   // ===================================================
   // Run: *
@@ -516,6 +586,10 @@ protected:
   Stopwatch m_elapsedTime = Stopwatch(false);
   std::string m_initialParameters;
   std::string m_currentParameters;
+  InterruptCallback m_interruptCallback = nullptr;
+  void* m_interruptUserData = nullptr;
+  unsigned int m_interruptPollingPeriod = 1024;
+  unsigned int m_interruptPollCounter = 0;
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };

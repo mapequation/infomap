@@ -272,8 +272,9 @@ inline unsigned int InfomapOptimizer<Objective>::optimizeActiveNetwork()
   }
 
   do {
+    m_infomap->throwIfInterrupted();
     ++coreLoopCount;
-    unsigned int numNodesMoved = m_infomap->innerParallelization
+    unsigned int numNodesMoved = (m_infomap->innerParallelization && !m_infomap->hasInterruptHandler())
         ? tryMoveEachNodeIntoBestModuleInParallel()
         : tryMoveEachNodeIntoBestModule();
     // Break if not enough improvement
@@ -301,6 +302,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
   VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
 
   for (unsigned int i = 0; i < numNodes; ++i) {
+    m_infomap->throwIfInterruptedThrottled();
     InfoNode& current = *network[nodeEnumeration[i]];
 
     if (!current.dirty)

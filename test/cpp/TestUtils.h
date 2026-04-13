@@ -25,6 +25,22 @@ struct EdgeFixtureLink {
   double weight = 1.0;
 };
 
+struct InterruptState {
+  unsigned int remainingBeforeInterrupt = 0;
+  unsigned int calls = 0;
+};
+
+inline bool interruptAfterCountdown(void* userData)
+{
+  auto& state = *static_cast<InterruptState*>(userData);
+  ++state.calls;
+  if (state.remainingBeforeInterrupt == 0) {
+    return true;
+  }
+  --state.remainingBeforeInterrupt;
+  return false;
+}
+
 inline std::string repoPath(const std::string& relativePath)
 {
   return std::string(INFOMAP_TEST_ROOT) + "/" + relativePath;
