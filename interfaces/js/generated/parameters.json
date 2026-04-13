@@ -424,6 +424,18 @@
     "default": "0"
   },
   {
+    "long": "--preferred-number-of-levels",
+    "short": "",
+    "description": "Prefer solutions close to this many levels. Soft preference only; does not force an exact hierarchy depth.",
+    "group": "Algorithm",
+    "required": true,
+    "advanced": true,
+    "incremental": false,
+    "longType": "integer",
+    "shortType": "n",
+    "default": "0"
+  },
+  {
     "long": "--multilayer-relax-rate",
     "short": "",
     "description": "Probability to relax the constraint to move only in the current layer.",

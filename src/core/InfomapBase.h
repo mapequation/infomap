@@ -45,6 +45,14 @@ class InfomapBase : public InfomapConfig<InfomapBase> {
 
 public:
   using PartitionQueue = detail::PartitionQueue;
+  struct HierarchySelectionCheckpoint {
+    NodePaths tree;
+    double codelength = std::numeric_limits<double>::max();
+    double score = std::numeric_limits<double>::max();
+    unsigned int numLevels = 0;
+
+    bool isValid() const noexcept { return !tree.empty(); }
+  };
 
   InfomapBase() : InfomapConfig<InfomapBase>() { initOptimizer(); }
 
@@ -418,6 +426,23 @@ private:
 
   bool processPartitionQueue(PartitionQueue& queue, PartitionQueue& nextLevel) const;
 
+  bool usePreferredNumberOfLevelsSelection() const
+  {
+    return isMainInfomap() && preferredNumberOfLevels > 0;
+  }
+
+  double calculateHierarchySelectionScore(double hierarchicalCodelength, unsigned int numLevels) const;
+
+  NodePaths captureHierarchyTree() const;
+
+  void resetHierarchySelection();
+
+  void updateHierarchySelectionCheckpoint(double hierarchicalCodelength);
+
+  void restoreHierarchySelectionCheckpoint();
+
+  const HierarchySelectionCheckpoint& hierarchySelectionCheckpoint() const noexcept { return m_hierarchySelectionCheckpoint; }
+
 public:
   // ===================================================
   // Output: *
@@ -516,6 +541,7 @@ protected:
   Stopwatch m_elapsedTime = Stopwatch(false);
   std::string m_initialParameters;
   std::string m_currentParameters;
+  HierarchySelectionCheckpoint m_hierarchySelectionCheckpoint;
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };

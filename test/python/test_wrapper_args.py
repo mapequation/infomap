@@ -15,6 +15,7 @@ def test_construct_args_renders_expected_cli_flags():
         no_file_output=True,
         output=["json", "tree"],
         recorded_teleportation=True,
+        preferred_number_of_levels=2,
         variable_markov_time=True,
         variable_markov_damping=0.42,
         verbosity_level=3,
@@ -31,6 +32,8 @@ def test_construct_args_renders_expected_cli_flags():
         "--variable-markov-time",
         "--variable-markov-damping",
         "0.42",
+        "--preferred-number-of-levels",
+        "2",
     ]
 
 
@@ -78,3 +81,13 @@ def test_no_file_output_runs_without_output_directory(make_infomap, load_graph_f
     im.run()
 
     assert im.num_top_modules == 2
+
+
+def test_preferred_number_of_levels_conflicts_with_two_level():
+    with pytest.raises(RuntimeError, match="preferred-number-of-levels"):
+        infomap_module.Infomap(
+            silent=True,
+            no_file_output=True,
+            two_level=True,
+            preferred_number_of_levels=2,
+        )

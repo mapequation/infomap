@@ -74,6 +74,33 @@ TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modul
   infomap::test::checkCanonicalPartition(im, { { 1, 2, 3 }, { 4, 5, 6 } });
 }
 
+TEST_CASE("Preferred number of levels can select a shallower hierarchy [fast][core][lifecycle][hierarchy]")
+{
+  InfomapWrapper baseline(infomap::test::defaultFlags("--num-trials 10"));
+  baseline.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  baseline.run();
+
+  InfomapWrapper preferred(infomap::test::defaultFlags("--num-trials 10 --preferred-number-of-levels 2"));
+  preferred.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  preferred.run();
+
+  infomap::test::checkRunSanity(preferred);
+  CHECK(baseline.numLevels() >= 3);
+  CHECK(preferred.numLevels() == 2);
+  CHECK(preferred.codelength() >= baseline.codelength());
+}
+
+TEST_CASE("Preferred number of levels applies consistently across multiple trials [fast][core][lifecycle][hierarchy]")
+{
+  InfomapWrapper im("--seed 123 --num-trials 5 --silent --preferred-number-of-levels 2");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.numLevels() == 2);
+}
+
 TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][lifecycle][crash]")
 {
   InfomapWrapper im(infomap::test::defaultFlags("--num-trials 2"));

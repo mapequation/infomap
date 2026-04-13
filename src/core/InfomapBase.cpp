@@ -95,6 +95,59 @@ unsigned int InfomapBase::maxTreeDepth() const
   return maxDepth;
 }
 
+double InfomapBase::calculateHierarchySelectionScore(double hierarchicalCodelength, unsigned int numLevels) const
+{
+  if (!usePreferredNumberOfLevelsSelection())
+    return hierarchicalCodelength;
+
+  return hierarchicalCodelength + std::abs(static_cast<int>(numLevels) - static_cast<int>(preferredNumberOfLevels));
+}
+
+NodePaths InfomapBase::captureHierarchyTree() const
+{
+  NodePaths tree;
+  tree.reserve(numLeafNodes());
+  for (auto it(root().begin_tree()); !it.isEnd(); ++it) {
+    if (it->isLeaf()) {
+      tree.emplace_back(it->stateId, it.path());
+    }
+  }
+  return tree;
+}
+
+void InfomapBase::resetHierarchySelection()
+{
+  m_hierarchySelectionCheckpoint = {};
+}
+
+void InfomapBase::updateHierarchySelectionCheckpoint(double hierarchicalCodelength)
+{
+  if (!usePreferredNumberOfLevelsSelection())
+    return;
+
+  const auto currentNumLevels = maxTreeDepth();
+  const auto currentScore = calculateHierarchySelectionScore(hierarchicalCodelength, currentNumLevels);
+  const bool isBetterScore = currentScore < m_hierarchySelectionCheckpoint.score - 1e-10;
+  const bool isSameScore = std::abs(currentScore - m_hierarchySelectionCheckpoint.score) <= 1e-10;
+  const bool isBetterCodelength = hierarchicalCodelength < m_hierarchySelectionCheckpoint.codelength - 1e-10;
+
+  if (!m_hierarchySelectionCheckpoint.isValid() || isBetterScore || (isSameScore && isBetterCodelength)) {
+    m_hierarchySelectionCheckpoint.tree = captureHierarchyTree();
+    m_hierarchySelectionCheckpoint.codelength = hierarchicalCodelength;
+    m_hierarchySelectionCheckpoint.score = currentScore;
+    m_hierarchySelectionCheckpoint.numLevels = currentNumLevels;
+  }
+}
+
+void InfomapBase::restoreHierarchySelectionCheckpoint()
+{
+  if (!usePreferredNumberOfLevelsSelection() || !m_hierarchySelectionCheckpoint.isValid())
+    return;
+
+  initTree(m_hierarchySelectionCheckpoint.tree);
+  m_hierarchicalCodelength = m_hierarchySelectionCheckpoint.codelength;
+}
+
 // ===================================================
 // Run
 // ===================================================
@@ -253,6 +306,7 @@ void InfomapBase::run(Network& network)
   std::ostringstream bestSolutionStatistics;
   unsigned int bestNumLevels = 0;
   double bestHierarchicalCodelength = std::numeric_limits<double>::max();
+  double bestHierarchySelectionScore = std::numeric_limits<double>::max();
   m_codelengths.clear();
   m_numTopModules.clear();
   NodePaths bestTree(numLeafNodes());
@@ -262,6 +316,7 @@ void InfomapBase::run(Network& network)
 
   for (unsigned int i = 0; i < numTrials; ++i) {
     removeModules();
+    resetHierarchySelection();
     auto startDate = Date();
     Stopwatch timer(true);
 
@@ -282,6 +337,8 @@ void InfomapBase::run(Network& network)
     else
       m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
 
+    restoreHierarchySelectionCheckpoint();
+
     if (haveHardPartition())
       restoreHardPartition();
 
@@ -294,10 +351,19 @@ void InfomapBase::run(Network& network)
         writeResult(static_cast<int>(i + 1));
       }
 
-      if (m_hierarchicalCodelength < bestHierarchicalCodelength - 1e-10) {
+      const auto trialNumLevels = maxTreeDepth();
+      const auto trialSelectionScore = calculateHierarchySelectionScore(m_hierarchicalCodelength, trialNumLevels);
+      const bool betterSelectionScore = trialSelectionScore < bestHierarchySelectionScore - 1e-10;
+      const bool sameSelectionScore = std::abs(trialSelectionScore - bestHierarchySelectionScore) <= 1e-10;
+      const bool betterCodelength = m_hierarchicalCodelength < bestHierarchicalCodelength - 1e-10;
+      const bool isBestTrial = usePreferredNumberOfLevelsSelection() ? (betterSelectionScore || (sameSelectionScore && betterCodelength))
+                                                                     : betterCodelength;
+
+      if (isBestTrial) {
         bestSolutionStatistics.clear();
         bestSolutionStatistics.str("");
         bestNumLevels = printPerLevelCodelength(root(), bestSolutionStatistics);
+        bestHierarchySelectionScore = trialSelectionScore;
         bestHierarchicalCodelength = m_hierarchicalCodelength;
         bestTrialIndex = i;
         root().sortChildrenOnFlow();
@@ -1009,11 +1075,16 @@ void InfomapBase::hierarchicalPartition()
       Log() << "done! Codelength improvement " << (diffCodelength / codelengthBefore) * 100 << "% to codelength " << codelengthAfter << "\n";
     }
 
+    if (usePreferredNumberOfLevelsSelection() && fastHierarchicalSolution == 1) {
+      m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+    }
+    updateHierarchySelectionCheckpoint(m_hierarchicalCodelength);
     recursivePartition();
     return;
   }
 
   partition();
+  updateHierarchySelectionCheckpoint(m_hierarchicalCodelength);
 
   if (numTopModules() == 1 || numTopModules() == numLeafNodes()) {
     Log(1) << "Trivial partition, skip search for hierarchical solution.\n";
@@ -1027,6 +1098,7 @@ void InfomapBase::hierarchicalPartition()
   if (onlySuperModules) {
     removeSubModules(true);
     m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+    updateHierarchySelectionCheckpoint(m_hierarchicalCodelength);
     return;
   }
 
@@ -1038,6 +1110,7 @@ void InfomapBase::hierarchicalPartition()
   if (fastHierarchicalSolution == 0) {
     removeSubModules(true);
     m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+    updateHierarchySelectionCheckpoint(m_hierarchicalCodelength);
   }
 
   recursivePartition();
@@ -1595,6 +1668,7 @@ unsigned int InfomapBase::findHierarchicalSuperModulesFast(unsigned int superLev
     ++numLevelsCreated;
 
     m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+    updateHierarchySelectionCheckpoint(hierarchicalCodelength);
 
   } while (m_numNonTrivialTopModules > 1 && numLevelsCreated != superLevelLimit);
 
@@ -1689,6 +1763,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     ++numLevelsCreated;
 
     m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
+    updateHierarchySelectionCheckpoint(hierarchicalCodelength);
 
   } while (m_numNonTrivialTopModules > 1 && numLevelsCreated != superLevelLimit);
 
@@ -1811,6 +1886,7 @@ unsigned int InfomapBase::recursivePartition()
            << " -> limit: " << io::toPrecision(limitCodelength) << " bits.\n";
 
     hierarchicalCodelength = limitCodelength;
+    updateHierarchySelectionCheckpoint(hierarchicalCodelength);
 
     partitionQueue.swap(nextLevelQueue);
   }
