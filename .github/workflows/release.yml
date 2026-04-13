@@ -168,7 +168,7 @@ jobs:
           version="${RELEASE_TAG#v}"
           gh api repos/mapequation/infomap-online/dispatches \
             -f event_type=infomap_release_published \
-            -F client_payload[package]=@mapequation/infomap \
+            -f client_payload[package]=@mapequation/infomap \
             -F client_payload[version]="$version" \
             -F client_payload[release_tag]="$RELEASE_TAG" \
             -F client_payload[release_url]="https://github.com/${{ github.repository }}/releases/tag/$RELEASE_TAG"
