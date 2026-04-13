@@ -13,6 +13,7 @@
 #include <iostream>
 #include <limits>
 #include <iomanip>
+#include <string>
 #include <type_traits>
 
 namespace infomap {
@@ -68,6 +69,10 @@ public:
   static void setSilent(bool silent) { s_silent = silent; }
 
   static bool isSilent() { return s_silent; }
+
+  static std::string escapeJsonString(const std::string& value);
+
+  static void emitStructuredEvent(const std::string& type, const std::string& payload = "{}");
 
   static std::streamsize precision() { return std::cout.precision(); }
 

@@ -30,12 +30,64 @@
 #include <cstdlib>
 #include <algorithm>
 #include <cmath>
+#include <numeric>
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
 namespace infomap {
+
+namespace {
+
+std::string jsonString(const std::string& value)
+{
+  return "\"" + Log::escapeJsonString(value) + "\"";
+}
+
+std::string jsonBool(bool value)
+{
+  return value ? "true" : "false";
+}
+
+template <typename T>
+std::string jsonNumber(T value)
+{
+  std::ostringstream out;
+  out << std::setprecision(std::numeric_limits<double>::digits10 + 1) << value;
+  return out.str();
+}
+
+std::string jsonField(const std::string& key, const std::string& value)
+{
+  return "\"" + key + "\":" + value;
+}
+
+std::string jsonObject(std::initializer_list<std::string> fields)
+{
+  std::ostringstream out;
+  out << "{";
+  bool first = true;
+  for (const auto& field : fields) {
+    if (field.empty()) {
+      continue;
+    }
+    if (!first) {
+      out << ",";
+    }
+    out << field;
+    first = false;
+  }
+  out << "}";
+  return out.str();
+}
+
+std::string dateToString(const Date& date)
+{
+  return io::Str() << date;
+}
+
+} // namespace
 
 std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)
 {
@@ -117,6 +169,17 @@ void InfomapBase::run(const std::string& parameters)
   }
 
   Log::init(verbosity, silent, verboseNumberPrecision);
+  Log::emitStructuredEvent("run_started",
+                           jsonObject({
+                               jsonField("version", jsonString(INFOMAP_VERSION)),
+                               jsonField("startedAt", jsonString(dateToString(m_startDate))),
+                               jsonField("inputNetwork", jsonString(networkFile)),
+                               jsonField("outputPath", jsonString(outDirectory)),
+                               jsonField("arguments", jsonString(parsedString)),
+                               jsonField("numTrials", jsonNumber(numTrials)),
+                               jsonField("noFileOutput", jsonBool(noFileOutput)),
+                               jsonField("initialPartitionCount", jsonNumber(m_initialPartition.size())),
+                           }));
 
   Log() << "=======================================================\n";
   Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << m_startDate << "\n";
@@ -156,6 +219,11 @@ void InfomapBase::run(const std::string& parameters)
   Log() << "  Infomap ends at " << m_endDate << "\n";
   Log() << "  (Elapsed time: " << m_elapsedTime << ")\n";
   Log() << "===================================================\n";
+  Log::emitStructuredEvent("run_finished",
+                           jsonObject({
+                               jsonField("endedAt", jsonString(dateToString(m_endDate))),
+                               jsonField("elapsedSeconds", jsonNumber(m_elapsedTime.getElapsedTimeInSec())),
+                           }));
 }
 
 void InfomapBase::run(Network& network)
@@ -202,6 +270,10 @@ void InfomapBase::run(Network& network)
   } else {
     if (haveMemory() || network.higherOrderInputMethodCalled()) {
       Log() << "  -> Warning: Higher order network specified but no higher order input found.\n";
+      Log::emitStructuredEvent("warning",
+                               jsonObject({
+                                   jsonField("message", jsonString("Higher order network specified but no higher order input found.")),
+                               }));
       // Use state output anyway for consistency even in the special case when input is first order
       setStateOutput();
     }
@@ -266,6 +338,12 @@ void InfomapBase::run(Network& network)
     Stopwatch timer(true);
 
     if (isMainInfomap()) {
+      Log::emitStructuredEvent("trial_started",
+                               jsonObject({
+                                   jsonField("trial", jsonNumber(i + 1)),
+                                   jsonField("numTrials", jsonNumber(numTrials)),
+                                   jsonField("startedAt", jsonString(dateToString(startDate))),
+                               }));
       Log() << "\n";
       Log() << "================================================\n";
       Log() << "Trial " << (i + 1) << "/" << numTrials << " starting at " << startDate << "\n";
@@ -287,6 +365,14 @@ void InfomapBase::run(Network& network)
 
     if (isMainInfomap()) {
       Log() << "\n=> Trial " << (i + 1) << "/" << numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
+      Log::emitStructuredEvent("trial_finished",
+                               jsonObject({
+                                   jsonField("trial", jsonNumber(i + 1)),
+                                   jsonField("numTrials", jsonNumber(numTrials)),
+                                   jsonField("elapsedSeconds", jsonNumber(timer.getElapsedTimeInSec())),
+                                   jsonField("codelength", jsonNumber(m_hierarchicalCodelength)),
+                                   jsonField("numTopModules", jsonNumber(numTopModules())),
+                               }));
       m_codelengths.push_back(m_hierarchicalCodelength);
       m_numTopModules.push_back(numTopModules());
 
@@ -366,6 +452,25 @@ void InfomapBase::run(Network& network)
     Log() << "Relative codelength savings: " << io::toPrecision(getRelativeCodelengthSavings() * 100, 2, true) << "%\n";
     Log() << "\n";
     Log() << bestSolutionStatistics.str() << '\n';
+    Log::emitStructuredEvent("summary",
+                             jsonObject({
+                                 jsonField("numTrials", jsonNumber(numTrials)),
+                                 jsonField("bestTrial", jsonNumber(bestTrialIndex + 1)),
+                                 jsonField("numNodes", jsonNumber(numLeafNodes())),
+                                 jsonField("numLinks", jsonNumber(network.numLinks())),
+                                 jsonField("averageDegree", jsonNumber(network.numLinks() * 2.0 / numLeafNodes())),
+                                 jsonField("numTopModules", jsonNumber(numTopModules())),
+                                 jsonField("numLevels", jsonNumber(bestNumLevels)),
+                                 jsonField("oneLevelCodelength", jsonNumber(getOneLevelCodelength())),
+                                 jsonField("codelength", jsonNumber(bestHierarchicalCodelength)),
+                                 jsonField("relativeCodelengthSavings", jsonNumber(getRelativeCodelengthSavings())),
+                                 numTrials > 1 ? jsonField("minCodelength", jsonNumber(*std::min_element(m_codelengths.begin(), m_codelengths.end()))) : "",
+                                 numTrials > 1 ? jsonField("averageCodelength", jsonNumber(std::accumulate(m_codelengths.begin(), m_codelengths.end(), 0.0) / numTrials)) : "",
+                                 numTrials > 1 ? jsonField("maxCodelength", jsonNumber(*std::max_element(m_codelengths.begin(), m_codelengths.end()))) : "",
+                                 numTrials > 1 ? jsonField("minNumTopModules", jsonNumber(*std::min_element(m_numTopModules.begin(), m_numTopModules.end()))) : "",
+                                 numTrials > 1 ? jsonField("averageNumTopModules", jsonNumber(std::accumulate(m_numTopModules.begin(), m_numTopModules.end(), 0.0) / numTrials)) : "",
+                                 numTrials > 1 ? jsonField("maxNumTopModules", jsonNumber(*std::max_element(m_numTopModules.begin(), m_numTopModules.end()))) : "",
+                             }));
   }
 }
 
@@ -1108,6 +1213,14 @@ void InfomapBase::partition()
   if (m_numNonTrivialTopModules != numTopModules())
     Log() << " (" << m_numNonTrivialTopModules << " non-trivial)";
   Log() << " modules.\n";
+  if (isMainInfomap()) {
+    Log::emitStructuredEvent("partition_result",
+                             jsonObject({
+                                 jsonField("codelength", jsonNumber(m_hierarchicalCodelength)),
+                                 jsonField("numTopModules", jsonNumber(numTopModules())),
+                                 jsonField("numNonTrivialTopModules", jsonNumber(m_numNonTrivialTopModules)),
+                             }));
+  }
 
   const bool regularizedPriorOnly = regularized && network().numLinks() == 0;
   if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > getOneLevelCodelength()) {

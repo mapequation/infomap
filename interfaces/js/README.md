@@ -50,6 +50,45 @@ infomap.run({
 });
 ```
 
+## Structured run events
+
+The package can emit structured run events in addition to the default text
+output. Set `logFormat` to `jsonl` or `both` to enable it.
+
+```js
+import Infomap from "@mapequation/infomap";
+
+const infomap = new Infomap()
+  .on("event", (event) => {
+    if (event.type === "summary") {
+      console.log("codelength", event.codelength);
+    }
+  })
+  .on("jsonl", (line) => console.log(line))
+  .on("finished", (result) => console.log(result));
+
+infomap.run({
+  network: "#source target\n1 2\n2 1\n",
+  args: "--tree --clu --silent",
+  logFormat: "both",
+});
+```
+
+Supported structured event types:
+
+- `run_started`
+- `log_line`
+- `trial_started`
+- `trial_finished`
+- `summary`
+- `partition_result`
+- `warning`
+- `run_failed`
+- `run_finished`
+
+`logFormat: "text"` remains the default and preserves the existing `data`
+callback behavior.
+
 React users can import the hook entrypoint directly from the main package:
 
 ```js

@@ -8,6 +8,7 @@
  ******************************************************************************/
 
 #include "Infomap.h"
+#include "utils/Log.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -17,14 +18,25 @@
 
 namespace infomap {
 
+namespace {
+
+std::string jsonString(const std::string& value)
+{
+  return "\"" + Log::escapeJsonString(value) + "\"";
+}
+
+} // namespace
+
 int run(const std::string& flags)
 {
   try {
     InfomapWrapper(Config(flags, true)).run();
   } catch (std::exception& e) {
+    Log::emitStructuredEvent("run_failed", "{\"message\":" + jsonString(e.what()) + "}");
     std::cerr << "Error: " << e.what() << '\n';
     return 1;
   } catch (char const* e) {
+    Log::emitStructuredEvent("run_failed", "{\"message\":" + jsonString(e) + "}");
     std::cerr << "Str error: " << e << '\n';
     return 1;
   }

@@ -7,6 +7,53 @@ function readFile(filename) {
 }
 
 let outName = "Untitled";
+let logFormat = "text";
+
+function shouldEmitText() {
+  return logFormat === "text" || logFormat === "both";
+}
+
+function shouldEmitStructured() {
+  return logFormat === "jsonl" || logFormat === "both";
+}
+
+function shouldEmitJsonl() {
+  return logFormat === "jsonl" || logFormat === "both";
+}
+
+function emitStructured(event) {
+  if (!shouldEmitStructured()) {
+    return;
+  }
+
+  postMessage({ type: "event", content: event });
+
+  if (shouldEmitJsonl()) {
+    postMessage({ type: "jsonl", content: JSON.stringify(event) });
+  }
+}
+
+globalThis.__infomapEmitStructuredEvent = function (type, payloadJson) {
+  if (!shouldEmitStructured()) {
+    return;
+  }
+
+  let payload = {};
+
+  if (payloadJson && payloadJson !== "{}") {
+    try {
+      payload = JSON.parse(payloadJson);
+    } catch (error) {
+      postMessage({
+        type: "error",
+        content: `Failed to parse structured Infomap event payload: ${error.message}`,
+      });
+      return;
+    }
+  }
+
+  emitStructured({ type, ...payload });
+};
 
 var Module = {
   arguments: [],
@@ -14,7 +61,10 @@ var Module = {
     addRunDependency("filesReady");
   },
   print: function (content) {
-    postMessage({ type: "data", content });
+    if (shouldEmitText()) {
+      postMessage({ type: "data", content });
+    }
+    emitStructured({ type: "log_line", message: content });
   },
   printErr: function (content) {
     postMessage({ type: "error", content });
@@ -67,6 +117,7 @@ var Module = {
 onmessage = function onmessage(message) {
   const data = message.data;
   outName = data.outName;
+  logFormat = data.logFormat || "text";
   Module.arguments.push(...[data.filename, ".", ...data.arguments]);
   FS.writeFile(data.filename, data.network);
   for (let filename of Object.keys(data.files)) {

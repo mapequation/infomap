@@ -16,17 +16,21 @@
       async function run() {
         try {
           status.textContent = Infomap.__version__;
-          const infomap = new Infomap();
+          const eventTypes = [];
+          const infomap = new Infomap().on("event", (event) => {
+            eventTypes.push(event.type);
+          });
           const output = await infomap.runAsync({
             network: "#source target\n1 2\n2 1\n2 3\n3 2\n",
-            args: "--tree --clu --silent"
+            args: "--tree --clu --silent",
+            logFormat: "jsonl"
           });
 
-          if (!output.tree || !output.clu) {
+          if (!output.tree || !output.clu || !eventTypes.includes("summary")) {
             throw new Error("Missing expected output");
           }
 
-          result.textContent = `${output.tree}\n${output.clu}`;
+          result.textContent = `${eventTypes.join(",")}\n${output.tree}\n${output.clu}`;
           status.textContent = "ok";
         } catch (error) {
           status.textContent = String(error);

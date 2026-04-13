@@ -4,7 +4,7 @@ import fileToString, {
   type TreeStateNode as StateNode
 } from "./filetypes";
 import networkToString from "./network";
-import type { RunOptions } from "./run-options";
+import type { LogFormat, RunOptions } from "./run-options";
 import { createInfomapWorker } from "./worker";
 import changelog from "../generated/changelog.json";
 import parameters from "../generated/parameters.json";
@@ -99,8 +99,97 @@ export interface Result {
   flow_as_physical?: string;
 }
 
+export interface RunStartedEvent {
+  type: "run_started";
+  version: string;
+  startedAt: string;
+  inputNetwork: string;
+  outputPath: string;
+  arguments: string;
+  numTrials: number;
+  noFileOutput: boolean;
+  initialPartitionCount: number;
+}
+
+export interface LogLineEvent {
+  type: "log_line";
+  message: string;
+}
+
+export interface TrialStartedEvent {
+  type: "trial_started";
+  trial: number;
+  numTrials: number;
+  startedAt: string;
+}
+
+export interface TrialFinishedEvent {
+  type: "trial_finished";
+  trial: number;
+  numTrials: number;
+  elapsedSeconds: number;
+  codelength: number;
+  numTopModules: number;
+}
+
+export interface SummaryEvent {
+  type: "summary";
+  numTrials: number;
+  bestTrial: number;
+  numNodes: number;
+  numLinks: number;
+  averageDegree: number;
+  numTopModules: number;
+  numLevels: number;
+  oneLevelCodelength: number;
+  codelength: number;
+  relativeCodelengthSavings: number;
+  minCodelength?: number;
+  averageCodelength?: number;
+  maxCodelength?: number;
+  minNumTopModules?: number;
+  averageNumTopModules?: number;
+  maxNumTopModules?: number;
+}
+
+export interface PartitionResultEvent {
+  type: "partition_result";
+  codelength: number;
+  numTopModules: number;
+  numNonTrivialTopModules: number;
+}
+
+export interface WarningEvent {
+  type: "warning";
+  message: string;
+}
+
+export interface RunFailedEvent {
+  type: "run_failed";
+  message: string;
+}
+
+export interface RunFinishedEvent {
+  type: "run_finished";
+  endedAt: string;
+  elapsedSeconds: number;
+}
+
+export type InfomapRunEvent =
+  | RunStartedEvent
+  | LogLineEvent
+  | TrialStartedEvent
+  | TrialFinishedEvent
+  | SummaryEvent
+  | PartitionResultEvent
+  | WarningEvent
+  | RunFailedEvent
+  | RunFinishedEvent;
+
 export interface EventCallbacks {
   data?: (output: string, id: number) => void;
+  event?: (event: InfomapRunEvent, id: number) => void;
+  jsonl?: (line: string, id: number) => void;
   progress?: (progress: number, id: number) => void;
   error?: (message: string, id: number) => void;
   finished?: (result: Result, id: number) => void;
@@ -113,9 +202,42 @@ interface Event<Type extends keyof EventCallbacks> {
 
 type EventData =
   | Event<"data">
+  | Event<"event">
+  | Event<"jsonl">
   | Event<"progress">
   | Event<"error">
   | Event<"finished">;
+
+function getLegacyProgress(output: string) {
+  const match = output.match(/^Trial (\d+)\/(\d+)/);
+  if (match) {
+    const trial = Number(match[1]);
+    const totalTrials = Number(match[2]);
+    return (100 * trial) / (totalTrials + 1);
+  }
+
+  if (output.match(/^Summary after/)) {
+    return 100;
+  }
+
+  return undefined;
+}
+
+function getStructuredProgress(event: InfomapRunEvent) {
+  switch (event.type) {
+    case "run_started":
+      return 0;
+    case "trial_started":
+      return (100 * (event.trial - 1)) / (event.numTrials + 1);
+    case "trial_finished":
+      return (100 * event.trial) / (event.numTrials + 1);
+    case "summary":
+    case "run_finished":
+      return 100;
+    default:
+      return undefined;
+  }
+}
 
 class Infomap {
   static __version__: string = packageJson.version;
@@ -123,6 +245,7 @@ class Infomap {
   protected events: EventCallbacks = {};
   protected workerId = 0;
   protected workers: { [id: number]: Worker } = {};
+  protected workerFormats: { [id: number]: LogFormat } = {};
 
   run(...args: Parameters<Infomap["createWorker"]>) {
     const id = this.createWorker(...args);
@@ -147,11 +270,13 @@ class Infomap {
     filename,
     args,
     files,
+    logFormat,
   }: RunOptions) {
     network = network ?? "";
     filename = filename ?? "network.net";
     args = args ?? "";
     files = files ?? {};
+    logFormat = logFormat ?? "text";
 
     if (typeof network !== "string") {
       network = networkToString(network);
@@ -177,6 +302,7 @@ class Infomap {
     const worker = createInfomapWorker();
     const id = this.workerId++;
     this.workers[id] = worker;
+    this.workerFormats[id] = logFormat;
 
     worker.postMessage({
       arguments: args.split(" "),
@@ -184,6 +310,7 @@ class Infomap {
       network,
       outName,
       files,
+      logFormat,
     });
 
     return id;
@@ -191,26 +318,36 @@ class Infomap {
 
   protected setHandlers(id: number, events = this.events) {
     const worker = this.workers[id];
-    const { data, progress, error, finished } = { ...this.events, ...events };
+    const format = this.workerFormats[id] ?? "text";
+    const { data, event: onEvent, jsonl, progress, error, finished } = {
+      ...this.events,
+      ...events,
+    };
 
     worker.onmessage = (event: MessageEvent<EventData>) => {
       if (event.data.type === "data") {
         if (data) {
           data(event.data.content, id);
         }
-        if (progress) {
-          const match = event.data.content.match(/^Trial (\d+)\/(\d+)/);
-          if (match) {
-            const trial = Number(match[1]);
-            const totTrials = Number(match[2]);
-            const currentProgress = (100 * trial) / (totTrials + 1);
+        if (progress && format === "text") {
+          const currentProgress = getLegacyProgress(event.data.content);
+          if (currentProgress != null) {
             progress(currentProgress, id);
-          } else {
-            const summary = event.data.content.match(/^Summary after/);
-            if (summary) {
-              progress(100, id);
-            }
           }
+        }
+      } else if (event.data.type === "event") {
+        if (onEvent) {
+          onEvent(event.data.content, id);
+        }
+        if (progress && format !== "text") {
+          const currentProgress = getStructuredProgress(event.data.content);
+          if (currentProgress != null) {
+            progress(currentProgress, id);
+          }
+        }
+      } else if (event.data.type === "jsonl") {
+        if (jsonl) {
+          jsonl(event.data.content, id);
         }
       } else if (error && event.data.type === "error") {
         void this._terminate(id);
@@ -245,6 +382,7 @@ class Infomap {
       }
 
       delete this.workers[id];
+      delete this.workerFormats[id];
     });
   }
 
