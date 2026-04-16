@@ -33,3 +33,4 @@ Infomap.dSym
 callgrind.*
 tmp
 .rstudio
+.DS_Store

@@ -219,6 +219,20 @@ void InfomapBase::run(HierarchicalNetwork& output)
 			std::string outName = io::Str() << m_config.outName << "_" << (iTrial+1);
 			printNetworkData(outName);
 		}
+
+		//Currently all numTrials always run regardless of convergence. Added check: if the last K trials 
+		//all produced the same codelength (within epsilon), stop early. This could make the default 
+		//--num-trials 10 faster on graphs with clear community structure.
+		if (iTrial >= 2) {
+			double delta = std::abs(
+				m_iterationStats[iTrial].codelength -
+				m_iterationStats[iTrial - 1].codelength);
+			if (delta < 1e-10) {
+				Log() << "Early stopping: codelength converged after "
+					<< (iTrial + 1) << " trials.\n";
+				break;
+			}
+		}
 		
 		if (hierarchicalCodelength < bestHierarchicalCodelength)
 		{
