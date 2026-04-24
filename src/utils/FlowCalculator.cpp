@@ -31,7 +31,7 @@ inline void normalize(std::vector<T>& v, const T sum) noexcept
 template <typename T>
 inline void normalize(std::vector<T>& v) noexcept
 {
-  const auto sum = std::accumulate(cbegin(v), cend(v), T {});
+  const auto sum = std::accumulate(cbegin(v), cend(v), T { });
   normalize(v, sum);
 }
 
@@ -290,7 +290,7 @@ struct IterationResult {
 };
 
 template <typename Iteration>
-IterationResult powerIterate(double alpha, Iteration&& iter)
+IterationResult powerIterate(double alpha, unsigned int maxIterations, Iteration&& iter)
 {
   unsigned int iterations = 0;
   double beta = 1.0 - alpha;
@@ -307,9 +307,13 @@ IterationResult powerIterate(double alpha, Iteration&& iter)
     }
 
     ++iterations;
-  } while (iterations < 200 && (err > 1.0e-15 || iterations < 50));
+  } while (iterations < maxIterations && (err > 1.0e-15 || iterations < 50));
 
-  Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
+  if (iterations >= maxIterations) {
+    Log() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
+  } else {
+    Log() << "\n  -> PageRank calculation done in " << iterations << " iterations with error " << err << ".\n";
+  }
 
   return { alpha, beta };
 }
@@ -383,7 +387,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
     return error;
   };
 
-  const auto result = powerIterate(config.teleportationProbability, iteration);
+  const auto result = powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration);
 
   double sumNodeRank = 1.0;
   double beta = result.beta;
@@ -541,9 +545,13 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     }
 
     ++iterations;
-  } while (iterations < 200 && (err > 1.0e-15 || iterations < 50));
+  } while (iterations < config.maxFlowIterations && (err > 1.0e-15 || iterations < 50));
 
-  Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
+  if (iterations >= config.maxFlowIterations) {
+    Log() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
+  } else {
+    Log() << "\n  -> PageRank calculation done in " << iterations << " iterations with error " << err << ".\n";
+  }
 
   double sumNodeRank = 1.0;
   for (auto& link : flowLinks) {
@@ -752,7 +760,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
     return error;
   };
 
-  const auto result = powerIterate(config.teleportationProbability, iteration);
+  const auto result = powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration);
 
   double sumNodeRank = 1.0;
   double beta = result.beta;

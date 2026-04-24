@@ -107,6 +107,7 @@ struct Config {
   double multilayerJSRelaxRate = 0.15;
   bool multilayerRelaxByJensenShannonDivergence = false;
   int multilayerJSRelaxLimit = -1;
+  unsigned int maxFlowIterations = 400;
 
   // Clustering
   bool twoLevel = false;
