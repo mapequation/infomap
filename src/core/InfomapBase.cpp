@@ -356,14 +356,15 @@ void InfomapBase::run(Network& network)
       Log() << "[min, average, max] codelength:      [" << minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n";
       Log() << "[min, average, max] num top modules: [" << minNumTopModules << ", " << io::toPrecision(averageNumTopModules, 1, true) << ", " << maxNumTopModules << "]\n\n";
     }
-    Log() << "Number nodes:                " << numLeafNodes() << "\n";
-    Log() << "Number links:                " << network.numLinks() << "\n";
-    Log() << "Average degree:              " << io::toPrecision(network.numLinks() * 2.0 / numLeafNodes(), 1, true) << "\n";
-    Log() << "Number of top modules:       " << numTopModules() << "\n";
-    Log() << "Number of levels:            " << bestNumLevels << "\n";
-    Log() << "One-level codelength:        " << io::toPrecision(getOneLevelCodelength()) << "\n";
-    Log() << "Codelength:                  " << io::toPrecision(bestHierarchicalCodelength) << "\n";
-    Log() << "Relative codelength savings: " << io::toPrecision(getRelativeCodelengthSavings() * 100, 2, true) << "%\n";
+    Log() << "Number nodes:                      " << numLeafNodes() << "\n";
+    Log() << "Number links:                      " << network.numLinks() << "\n";
+    Log() << "Average degree:                    " << io::toPrecision(network.numLinks() * 2.0 / numLeafNodes(), 1, true) << "\n";
+    Log() << "Number of top modules:             " << numTopModules() << "\n";
+    Log() << "Number of non-trivial top modules: " << numNonTrivialTopModules() << "\n";
+    Log() << "Number of levels:                  " << bestNumLevels << "\n";
+    Log() << "One-level codelength:              " << io::toPrecision(getOneLevelCodelength()) << "\n";
+    Log() << "Codelength:                        " << io::toPrecision(bestHierarchicalCodelength) << "\n";
+    Log() << "Relative codelength savings:       " << io::toPrecision(getRelativeCodelengthSavings() * 100, 2, true) << "%\n";
     Log() << "\n";
     Log() << bestSolutionStatistics.str() << '\n';
   }
