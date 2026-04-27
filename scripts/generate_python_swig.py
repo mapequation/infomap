@@ -5,7 +5,6 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
 
@@ -13,6 +12,18 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INTERFACE_FILE = REPO_ROOT / "interfaces" / "swig" / "Infomap.i"
 REQUIRED_SWIG_VERSION = "4.4.1"
+
+
+def github_actions_escape(value: str) -> str:
+    return value.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A").replace(":", "%3A")
+
+
+def print_github_actions_error(message: str) -> None:
+    if os.environ.get("GITHUB_ACTIONS") != "true":
+        return
+    title = github_actions_escape("Tracked Python SWIG outputs are stale")
+    body = github_actions_escape(message)
+    print(f"::error title={title}::{body}")
 
 
 def get_swig_command() -> str:
@@ -93,10 +104,20 @@ def main() -> int:
             if not files_match(cpp_out, generated_cpp):
                 failures.append(str(cpp_out))
             if failures:
+                print_github_actions_error(
+                    "Regenerate the Python SWIG wrapper outputs with `make build-python-swig` "
+                    "and commit the updated generated files."
+                )
                 print("Tracked SWIG outputs are stale:")
                 for path in failures:
                     print(f"  {path}")
+                print()
+                print(
+                    "This usually means a C++ header or SWIG interface changed, "
+                    "but the generated Python wrapper files were not regenerated."
+                )
                 print("Run: make build-python-swig")
+                print("Then commit the updated files listed above.")
                 return 1
             print("Tracked SWIG outputs are fresh.")
             return 0
