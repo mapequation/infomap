@@ -70,6 +70,13 @@ def test_clang_debug_and_release_share_warning_policy():
     assert "-g" in debug_config["compile_flags"]
     assert "-O3" in release_config["compile_flags"]
 
+    assert "-Xpreprocessor" not in debug_config["compile_flags"]
+    assert "-fopenmp" not in debug_config["compile_flags"]
+    assert "-lomp" not in debug_config["link_flags"]
+    assert "-Xpreprocessor" not in release_config["compile_flags"]
+    assert "-fopenmp" not in release_config["compile_flags"]
+    assert "-lomp" not in release_config["link_flags"]
+
 
 def test_clang_without_openmp_drops_openmp_flags():
     config = resolve_build_config(
