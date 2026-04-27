@@ -733,7 +733,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
     // Flow from links
     // First step
     for (auto link = begin(flowLinks); link != begin(flowLinks) + bipartiteLinkStartIndex; ++link) {
-      nodeFlow[link->target] += beta * link->flow * nodeFlow[link->source];
+      nodeFlowTmp[link->target] += beta * link->flow * nodeFlow[link->source];
     }
 
     // Second step back to primary nodes
