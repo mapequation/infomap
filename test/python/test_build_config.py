@@ -22,6 +22,7 @@ def test_windows_cl_exe_uses_msvc_flags():
 
     assert config["compiler_family"] == "msvc"
     assert "/std:c++14" in config["compile_flags"]
+    assert "/openmp" in config["compile_flags"]
     assert "-Wextra" not in config["compile_flags"]
     assert "-fopenmp" not in config["compile_flags"]
 
@@ -35,6 +36,7 @@ def test_windows_quoted_cl_path_uses_msvc_flags():
 
     assert config["compiler_family"] == "msvc"
     assert "/std:c++14" in config["compile_flags"]
+    assert "/openmp" in config["compile_flags"]
     assert "-Wextra" not in config["compile_flags"]
     assert "-fopenmp" not in config["compile_flags"]
 
@@ -44,8 +46,17 @@ def test_windows_unknown_compiler_defaults_to_msvc_flags():
 
     assert config["compiler_family"] == "msvc"
     assert "/std:c++14" in config["compile_flags"]
+    assert "/openmp" in config["compile_flags"]
     assert "-Wextra" not in config["compile_flags"]
     assert "-fopenmp" not in config["compile_flags"]
+
+
+def test_windows_cl_exe_without_openmp_drops_msvc_openmp_flag():
+    config = resolve_build_config(platform_name="win32", compiler="cl.exe", openmp=False)
+
+    assert config["compiler_family"] == "msvc"
+    assert "/std:c++14" in config["compile_flags"]
+    assert "/openmp" not in config["compile_flags"]
 
 
 def test_clang_debug_and_release_share_warning_policy():
