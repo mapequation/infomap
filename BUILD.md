@@ -80,6 +80,11 @@ make dev-python-install
 make test-python
 ```
 
+Run `make dev-python-install` again after changing C++ extension sources,
+SWIG interfaces, or tracked SWIG outputs. Local tests import the installed
+editable package; without reinstalling, they can load an older `_infomap`
+extension that does not match the current Python wrapper.
+
 More targeted checks are available when you only need one slice:
 
 - `make test-python-unit`
