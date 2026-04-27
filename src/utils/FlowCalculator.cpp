@@ -542,6 +542,7 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
     // Perturb the system if equilibrium
     if (std::abs(err - oldErr) < 1e-15) {
+      // Intentionally left blank: no perturbation is currently applied here.
     }
 
     ++iterations;
