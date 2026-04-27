@@ -19,6 +19,7 @@
 
 #include <set>
 #include <utility>
+#include <algorithm>
 
 namespace infomap {
 
@@ -294,8 +295,9 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
   std::vector<unsigned int> nodeEnumeration(network.size());
   m_infomap->m_rand.getRandomizedIndexVector(nodeEnumeration);
 
-  auto numNodes = nodeEnumeration.size();
+  unsigned int numNodes = nodeEnumeration.size();
   unsigned int numMoved = 0;
+  unsigned int numRandomMoves = std::min(m_infomap->numRandomMoves, numNodes);
 
   // Create map with module links
   VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
@@ -310,10 +312,6 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     if (m_moduleMembers[current.index] > 1 && m_infomap->isFirstLoop() && m_infomap->tuneIterationLimit != 1)
       continue;
 
-    // If no links connecting this node with other nodes, it won't move into others,
-    // and others won't move into this. TODO: Always best leave it alone?
-    // For memory networks, don't skip try move to same physical node!
-
     deltaFlow.startRound();
 
     // For all outlinks
@@ -327,6 +325,15 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
       auto& edge = *e;
       InfoNode* neighbour = edge.source;
       deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, 0.0, edge.data.flow));
+    }
+
+    // For random moves
+    if (current.degree() <= m_infomap->maxDegreeForRandomMoves) {
+      for (unsigned int j = 0; j < numRandomMoves; ++j) {
+        unsigned int randIndex = m_infomap->m_rand.randInt(0, numNodes - 1);
+        InfoNode& neighbour = *network[nodeEnumeration[randIndex]];
+        deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0, 0));
+      }
     }
 
     // For not moving
