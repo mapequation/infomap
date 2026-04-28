@@ -41,11 +41,16 @@ Configure these integrations before the first release:
 
 1. Merge ordinary pull requests to `master` using Conventional Commit messages.
 2. Let `.github/workflows/release-please.yml` open or update the release PR.
-3. Review the release PR like any other change. At minimum, check:
-   - the version bumps
-   - `CHANGELOG.md`
-   - `src/version.h`
-   - `CITATION.cff`
+3. Review the release PR. Verify all four version surfaces moved to the
+   same `X.Y.Z` and match the PR title:
+   - `package.json` (`version`) — drives the npm package
+   - `src/version.h` (`INFOMAP_VERSION`) — compiled into the native CLI
+   - `interfaces/python/src/infomap/_version.py` (`__version__`) — Python package
+   - `CITATION.cff` (`version`) — citation metadata
+
+   Also confirm `CHANGELOG.md` contains only entries new since the last
+   `vX.Y.Z` tag. If a version surface did not move, the issue is in
+   `release-please-config.json` `extra-files`, not in the PR.
 4. Merge the release PR.
 5. Release Please creates the `vX.Y.Z` tag and the GitHub Release.
 6. `.github/workflows/release.yml` runs for that tag and:
@@ -58,12 +63,38 @@ Configure these integrations before the first release:
    - publishes to npm behind `npm-release`
    - dispatches the `infomap-online` package update workflow
 
-If the first Release Please PR after the migration already contains historical
-entries that are present lower down in `CHANGELOG.md`, do not merge it. Merge
-the tag-format fix first, then close the stale release PR (or delete the
-`release-please--branches--...` branch) and rerun
-`.github/workflows/release-please.yml` so Release Please rebuilds the PR from
-the latest existing `vX.Y.Z` tag.
+### Conventional Commit to version bump
+
+Release Please derives the bump from commit messages on `master` since the
+last `vX.Y.Z` tag:
+
+| Commit prefix                       | Bump  |
+| ----------------------------------- | ----- |
+| `fix:`                              | patch |
+| `feat:`                             | minor |
+| `feat!:` / `BREAKING CHANGE:` body  | major |
+| `chore:`, `docs:`, `test:`, `ci:`   | none  |
+
+If the proposed bump does not match the commit log
+(`git log vLAST..master --oneline`), investigate before merging.
+
+### Red flags that block merge
+
+- **Tag format regressed.** PR title shows `infomap-vX.Y.Z` instead of
+  `vX.Y.Z`. Means `include-component-in-tag` flipped to `true`. Fix
+  `release-please-config.json` first; do not merge the release PR.
+- **CHANGELOG contains duplicate entries.** Entries near the top are
+  already present further down. Release Please rebuilt from the wrong
+  base tag. Close the stale release PR (or delete the
+  `release-please--branches--...` branch) and rerun
+  `.github/workflows/release-please.yml` so it rebuilds from the latest
+  existing `vX.Y.Z` tag.
+- **Version surfaces out of sync.** One of the four `extra-files` did
+  not move. Fix `release-please-config.json` and rerun release-please;
+  do not patch the PR by hand.
+- **Bump does not match commits.** E.g. only `fix:` commits but a minor
+  bump appears. Inspect the log; a stray `feat:` may be hiding, or the
+  config has changelog-section overrides that need attention.
 
 ## Documentation publishing
 
@@ -73,6 +104,19 @@ to confirm that the committed generated output derived from
 `interfaces/python/source/` and `README.rst` is fresh.
 
 ## Recovery
+
+Before any recovery action, verify what actually published. Registry
+state is the source of truth, not the workflow log:
+
+```bash
+gh release view vX.Y.Z
+pip index versions infomap
+npm view @mapequation/infomap versions --json
+```
+
+If a recovery action would conflict with what is already published, stop
+and resume from the failed job instead. Never delete or rewrite a tag
+whose version exists on PyPI or npm.
 
 If a release only partially succeeds:
 
