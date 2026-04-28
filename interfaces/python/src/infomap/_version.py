@@ -1,4 +1,4 @@
-__version__ = "2.9.2"  # x-release-please-version
+__version__ = "2.10.0"  # x-release-please-version
 __description__ = "Infomap network clustering algorithm"
 __author__ = "mapequation"
 __email__ = "mapequation@gmail.com"

@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.10.0](https://github.com/mapequation/infomap/compare/v2.9.2...v2.10.0) (2026-04-28)
+
+
+### Features
+
+* add per-level module counts to json output ([#372](https://github.com/mapequation/infomap/issues/372)) ([dc9b30c](https://github.com/mapequation/infomap/commit/dc9b30cd7278d604e7327ddf6c33056d6a471dd2))
+
+
+### Bug Fixes
+
+* avoid expensive vector copies in regularized flow lambdas ([#371](https://github.com/mapequation/infomap/issues/371)) ([23445fc](https://github.com/mapequation/infomap/commit/23445fcdf708f0ad1d0621c753582d63a9d14bb6))
+* delete collapsed children when resetting InfoNode trees ([#403](https://github.com/mapequation/infomap/issues/403)) ([050a686](https://github.com/mapequation/infomap/commit/050a6869a0b028a5957cc1db296b29241f0e4866))
+* guard empty-module access in parallel move path ([#404](https://github.com/mapequation/infomap/issues/404)) ([c445a88](https://github.com/mapequation/infomap/commit/c445a88fe6f34f4e51ef834f1722ce822ad8270a))
+* guard multilayer state id shift for zero ([#373](https://github.com/mapequation/infomap/issues/373)) ([499b88a](https://github.com/mapequation/infomap/commit/499b88a2184929740f45e5355b0b94fe67e3fb6e))
+* handle regularized no-link networks ([#374](https://github.com/mapequation/infomap/issues/374)) ([f2700d0](https://github.com/mapequation/infomap/commit/f2700d03d806cf5f6593be142a5b2accae1178c7))
+* plumbing and lifecycle fixes ([#405](https://github.com/mapequation/infomap/issues/405)) ([ce27af6](https://github.com/mapequation/infomap/commit/ce27af604ac8806284ee84ce9de4389ad89839cd))
+* tighten wrapper edge cases ([4a9d542](https://github.com/mapequation/infomap/commit/4a9d54298629fdc484d8c40d44a9f3d6d8434ffd))
+* Use consistent convention on degree of self-links ([342321d](https://github.com/mapequation/infomap/commit/342321d0b25a008bd6ccf5ff5815add75c1e1fa9))
+
+
+### Performance Improvements
+
+* **ci:** add PR perf regression benchmark check ([#427](https://github.com/mapequation/infomap/issues/427)) ([270e527](https://github.com/mapequation/infomap/commit/270e5274ade5b23e0ed2b429bad3e53fe06c085e))
+
 ### [2.9.2](https://github.com/mapequation/infomap/compare/v2.9.1...v2.9.2) (2026-02-25)
 
 
