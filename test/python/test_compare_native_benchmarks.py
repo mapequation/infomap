@@ -10,8 +10,18 @@ import pytest
 pytestmark = pytest.mark.fast
 
 
+def _find_compare_script_path() -> Path:
+    current = Path(__file__).resolve()
+    relative_target = Path("scripts") / "benchmarks" / "compare_native_benchmarks.py"
+    for parent in current.parents:
+        candidate = parent / relative_target
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError(f"Could not locate {relative_target} from {current}")
+
+
 def _load_compare_module():
-    module_path = Path(__file__).resolve().parents[2] / "scripts" / "benchmarks" / "compare_native_benchmarks.py"
+    module_path = _find_compare_script_path()
     spec = importlib.util.spec_from_file_location("compare_native_benchmarks", module_path)
     assert spec is not None
     assert spec.loader is not None
