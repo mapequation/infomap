@@ -2413,8 +2413,8 @@ class InfomapConfigInfomapBase(Config):
     def setConfig(self, conf):
         return _infomap.InfomapConfigInfomapBase_setConfig(self, conf)
 
-    def setNonMainConfig(self, conf):
-        return _infomap.InfomapConfigInfomapBase_setNonMainConfig(self, conf)
+    def setNonMainConfig(self, *args):
+        return _infomap.InfomapConfigInfomapBase_setNonMainConfig(self, *args)
 
     def setNumTrials(self, N):
         return _infomap.InfomapConfigInfomapBase_setNumTrials(self, N)
