@@ -33,11 +33,9 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: ./.github/actions/setup-python-build
         with:
           python-version: "3.14"
-          cache: pip
-          cache-dependency-path: pyproject.toml
 
       - name: Install SWIG 4.4.1
         run: |
@@ -98,16 +96,10 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: ./.github/actions/setup-python-build
         with:
           python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Install Python build tooling
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install build wheel
+          install-build-tooling: "true"
 
       - name: Build Python wheel from repo root
         run: make build-python
@@ -148,16 +140,10 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: ./.github/actions/setup-python-build
         with:
           python-version: "3.14"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Install Python build tooling
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install build wheel
+          install-build-tooling: "true"
 
       - name: Build release distributions
         run: make release-python-dist
@@ -198,17 +184,13 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: ./.github/actions/setup-python-build
         with:
           python-version: "3.14"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+          install-build-tooling: "true"
 
       - name: Build sdist
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install build wheel
-          python -m build --sdist --outdir dist/python .
+        run: python -m build --sdist --outdir dist/python .
 
       - name: Upload sdist
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -234,7 +216,7 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: ./.github/actions/setup-python-build
         with:
           python-version: "3.14"
 

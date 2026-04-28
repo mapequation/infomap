@@ -50,8 +50,9 @@ it is not a primary public contract for release planning.
   - README source for the public npm package
 - `interfaces/js/generated/`
   - tracked metadata consumed by the JS package build
-- `ARCHITECTURE.md`, `BUILD.md`, `RELEASING.md`, and `AGENTS.md`
-  - hand-maintained maintainer documentation and repo working rules
+- `ARCHITECTURE.md`, `BUILD.md`, `RELEASING.md`, `AGENTS.md`,
+  `CONTRIBUTING.md`, `SECURITY.md`, and `CODE_OF_CONDUCT.md`
+  - hand-maintained maintainer, contribution, and governance documentation
 - `docs/`
   - generated Python docs output for GitHub Pages
 - `test/fixtures/`
@@ -91,6 +92,9 @@ them instead of re-encoding the same logic separately.
 - `BUILD.md` describes local maintainer build and verification commands
 - `RELEASING.md` describes the release flow
 - `AGENTS.md` captures repo-local working rules for small, safe changes
+- `CONTRIBUTING.md` describes the maintainer-led contribution policy
+- `SECURITY.md` describes vulnerability reporting
+- `CODE_OF_CONDUCT.md` describes community conduct expectations
 
 When documents disagree, update the owning source rather than the generated
 output.

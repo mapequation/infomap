@@ -11,6 +11,10 @@ documentation.
 Start with `mapequation.org/infomap`_ for the user guide and
 `CHANGELOG.md`_ for release notes.
 
+For contributing, security reporting, and maintainer workflows, see
+`CONTRIBUTING.md`_, `SECURITY.md`_, `BUILD.md`_, `ARCHITECTURE.md`_, and
+`AGENTS.md`_.
+
 .. |ci| image:: https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg
    :target: https://github.com/mapequation/infomap/actions/workflows/ci.yml
    :alt: CI
@@ -30,6 +34,11 @@ Start with `mapequation.org/infomap`_ for the user guide and
 .. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
 .. _`mapequation.org/infomap`: https://www.mapequation.org/infomap
 .. _`CHANGELOG.md`: https://github.com/mapequation/infomap/blob/master/CHANGELOG.md
+.. _`CONTRIBUTING.md`: https://github.com/mapequation/infomap/blob/master/CONTRIBUTING.md
+.. _`SECURITY.md`: https://github.com/mapequation/infomap/blob/master/SECURITY.md
+.. _`BUILD.md`: https://github.com/mapequation/infomap/blob/master/BUILD.md
+.. _`ARCHITECTURE.md`: https://github.com/mapequation/infomap/blob/master/ARCHITECTURE.md
+.. _`AGENTS.md`: https://github.com/mapequation/infomap/blob/master/AGENTS.md
 
 Install
 -------
@@ -171,12 +180,16 @@ Maintainers should use:
 - ``RELEASING.md`` for the release flow
 - ``ARCHITECTURE.md`` for ownership and source-of-truth rules
 - ``AGENTS.md`` for repo-local maintenance guidance
+- ``CONTRIBUTING.md`` for pull request and contributor guidance
+- ``SECURITY.md`` for vulnerability reporting
 
 Feedback
 --------
 
-Questions, bug reports, and feature requests belong in `GitHub issues`_.
+Usage questions and setup help belong in `GitHub Discussions`_.
+Bug reports and feature requests belong in `GitHub issues`_.
 
+.. _`GitHub Discussions`: https://github.com/mapequation/infomap/discussions
 .. _`GitHub issues`: https://github.com/mapequation/infomap/issues
 
 Authors

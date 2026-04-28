@@ -30,19 +30,8 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.sha }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Set up Emscripten
-        uses: mymindstorm/setup-emsdk@667eb33f24e84e7f362c16d8d7fff0629a73e15e # v15
-        with:
-          version: 5.0.5
-
-      - name: Install JavaScript dependencies
-        run: npm ci
+      - name: Set up JavaScript build
+        uses: ./.github/actions/setup-js-build
 
       - name: Install Playwright browser
         if: inputs.run-tests
