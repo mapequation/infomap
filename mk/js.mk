@@ -32,7 +32,7 @@ test-js-metadata: build-native
 $(JS_WORKER_TARGET): $(SOURCES) $(HEADERS) $(PRE_WORKER_MODULE) $(MK_FILES) Makefile
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
-	$(EMXX) -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=worker --pre-js $(PRE_WORKER_MODULE) -o $@ $(SOURCES)
+	$(EMXX) -std=c++17 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=worker --pre-js $(PRE_WORKER_MODULE) -o $@ $(SOURCES)
 
 test-js: build-js
 	$(RM) -r $(NPM_UNPACK_DIR) $(NPM_STAGE_DIR)/*.tgz $(NPM_PACK_JSON)

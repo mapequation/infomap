@@ -113,9 +113,9 @@ def shutil_which(name):
 
 def _base_compile_flags(compiler_family):
     if compiler_family == "msvc":
-        return ["/std:c++14"]
+        return ["/std:c++17"]
 
-    flags = ["-Wall", "-Wextra", "-pedantic", "-Wnon-virtual-dtor", "-std=c++14"]
+    flags = ["-Wall", "-Wextra", "-pedantic", "-Wnon-virtual-dtor", "-std=c++17"]
     if compiler_family in {"clang", "gnu"}:
         flags.append("-Wshadow")
     return flags
