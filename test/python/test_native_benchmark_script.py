@@ -10,8 +10,17 @@ import pytest
 pytestmark = pytest.mark.fast
 
 
+def _find_repo_root(start: Path) -> Path:
+    target = Path("scripts") / "benchmarks" / "run_native_benchmarks.py"
+    for candidate in (start, *start.parents):
+        if (candidate / target).exists():
+            return candidate
+    raise FileNotFoundError(f"Could not locate repository root containing {target!s} from {start!s}")
+
+
 def _load_benchmark_module():
-    module_path = Path(__file__).resolve().parents[2] / "scripts" / "benchmarks" / "run_native_benchmarks.py"
+    repo_root = _find_repo_root(Path(__file__).resolve())
+    module_path = repo_root / "scripts" / "benchmarks" / "run_native_benchmarks.py"
     spec = importlib.util.spec_from_file_location("run_native_benchmarks", module_path)
     assert spec is not None
     assert spec.loader is not None
@@ -168,7 +177,7 @@ def test_build_benchmark_cases_pr_profile_focuses_on_stable_cases(monkeypatch, t
 
 def test_build_benchmark_cases_smoke_skips_100k_generation(monkeypatch, tmp_path: Path):
     benchmark_module = _load_benchmark_module()
-    repo_root = Path(__file__).resolve().parents[2]
+    repo_root = _find_repo_root(Path(__file__).resolve())
     calls: list[int] = []
 
     original_generate_sparse_graph = benchmark_module.generate_sparse_graph
