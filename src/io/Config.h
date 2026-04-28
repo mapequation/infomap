@@ -134,6 +134,8 @@ struct Config {
   unsigned int fastHierarchicalSolution = 0;
   bool preferModularSolution = false;
   bool innerParallelization = false;
+  unsigned int numRandomMoves = 5; // Amount of random moves to try in core loop, used if regularized/recorded teleportation.
+  unsigned int maxDegreeForRandomMoves = 2; // Only try random moves for nodes with degree less than or equal to this value.
 
   // Output
   std::string outDirectory;
@@ -217,6 +219,8 @@ struct Config {
     minimumRelativeTuneIterationImprovement = other.minimumRelativeTuneIterationImprovement;
     preferModularSolution = other.preferModularSolution;
     innerParallelization = other.innerParallelization;
+    numRandomMoves = other.numRandomMoves;
+    maxDegreeForRandomMoves = other.maxDegreeForRandomMoves;
     outDirectory = other.outDirectory;
     outName = other.outName;
     outputFormats = other.outputFormats;

@@ -26,39 +26,39 @@ constexpr int FlowModel::precomputed;
 
 namespace {
 
-void applyFlowModelSelection(Config& config, const std::string& flowModelArg)
-{
-  if (flowModelArg == "directed" || config.directed) {
-    config.setFlowModel(FlowModel::directed);
-  } else if (flowModelArg == "undirected") {
-    config.setFlowModel(FlowModel::undirected);
-  } else if (flowModelArg == "undirdir") {
-    config.setFlowModel(FlowModel::undirdir);
-  } else if (flowModelArg == "outdirdir") {
-    config.setFlowModel(FlowModel::outdirdir);
-  } else if (flowModelArg == "rawdir") {
-    config.setFlowModel(FlowModel::rawdir);
-  } else if (flowModelArg == "precomputed") {
-    config.setFlowModel(FlowModel::precomputed);
-  } else if (!flowModelArg.empty()) {
-    throw std::runtime_error(io::Str() << "Unrecognized flow model: '" << flowModelArg << "'");
+  void applyFlowModelSelection(Config& config, const std::string& flowModelArg)
+  {
+    if (flowModelArg == "directed" || config.directed) {
+      config.setFlowModel(FlowModel::directed);
+    } else if (flowModelArg == "undirected") {
+      config.setFlowModel(FlowModel::undirected);
+    } else if (flowModelArg == "undirdir") {
+      config.setFlowModel(FlowModel::undirdir);
+    } else if (flowModelArg == "outdirdir") {
+      config.setFlowModel(FlowModel::outdirdir);
+    } else if (flowModelArg == "rawdir") {
+      config.setFlowModel(FlowModel::rawdir);
+    } else if (flowModelArg == "precomputed") {
+      config.setFlowModel(FlowModel::precomputed);
+    } else if (!flowModelArg.empty()) {
+      throw std::runtime_error(io::Str() << "Unrecognized flow model: '" << flowModelArg << "'");
+    }
   }
-}
 
-void normalizeOutputDirectory(Config& config)
-{
-  if (!config.haveOutput() || config.outDirectory.empty())
-    return;
+  void normalizeOutputDirectory(Config& config)
+  {
+    if (!config.haveOutput() || config.outDirectory.empty())
+      return;
 
-  if (config.outDirectory.back() != '/')
-    config.outDirectory.push_back('/');
-}
+    if (config.outDirectory.back() != '/')
+      config.outDirectory.push_back('/');
+  }
 
-void validateOutputDirectory(const Config& config)
-{
-  if (config.haveOutput() && !isDirectoryWritable(config.outDirectory))
-    throw std::runtime_error(io::Str() << "Can't write to directory '" << config.outDirectory << "'. Check that the directory exists and that you have write permissions.");
-}
+  void validateOutputDirectory(const Config& config)
+  {
+    if (config.haveOutput() && !isDirectoryWritable(config.outDirectory))
+      throw std::runtime_error(io::Str() << "Can't write to directory '" << config.outDirectory << "'. Check that the directory exists and that you have write permissions.");
+  }
 
 } // namespace
 
@@ -189,9 +189,13 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addIncrementalOptionArgument(fastHierarchicalSolution, 'F', "fast-hierarchical-solution", "Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.", "Accuracy", true);
 
+  api.addOptionArgument(innerParallelization, "inner-parallelization", "Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.", "Accuracy", true);
+
   api.addOptionArgument(preferModularSolution, "prefer-modular-solution", "Prefer modular solutions even if they are worse than putting all nodes in one module.", "Accuracy", true);
 
-  api.addOptionArgument(innerParallelization, "inner-parallelization", "Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.", "Accuracy", true);
+  api.addOptionArgument(numRandomMoves, "num-random-moves", "Number of random moves to try in core loop, used if regularized/recorded teleportation.", ArgType::integer, "Accuracy", 0u, true);
+
+  api.addOptionArgument(maxDegreeForRandomMoves, "max-degree-for-random-moves", "Maximum degree of nodes for which to try random moves.", ArgType::integer, "Accuracy", 0u, true);
 
   api.addOptionalNonOptionArguments(optionalOutputDir, "out_directory", "Directory to write the results to.", "Output");
 
