@@ -74,23 +74,16 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: ./.github/actions/setup-python-build
         with:
           python-version: "3.14"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+          install-build-tooling: "true"
 
       - name: Install macOS system dependencies
         if: startsWith(matrix.os, 'macos')
         run: |
           brew install libomp
           make ci-export-github-env >> "$GITHUB_ENV"
-        shell: bash
-
-      - name: Install Python build tooling
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install build wheel
         shell: bash
 
       - name: Build and install local Python package
@@ -136,17 +129,10 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: ./.github/actions/setup-python-build
         with:
           python-version: "3.14"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Install Python build tooling
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install build wheel
-        shell: bash
+          install-build-tooling: "true"
 
       - name: Build and install local Python package
         run: |
@@ -180,11 +166,9 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: ./.github/actions/setup-python-build
         with:
           python-version: "3.14"
-          cache: pip
-          cache-dependency-path: pyproject.toml
 
       - name: Run native benchmarks
         run: |

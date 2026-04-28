@@ -1,0 +1,37 @@
+name: Feature request
+description: Propose a new or changed Infomap capability.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: Describe the user problem this would solve.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the CLI, Python, JavaScript, or documentation behavior you want.
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected surface
+      options:
+        - CLI / C++ runtime
+        - Python package
+        - JavaScript package
+        - Documentation
+        - Packaging / release
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Note workarounds or related tools if any.

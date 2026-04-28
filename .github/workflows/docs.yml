@@ -13,6 +13,7 @@ on:
       - "interfaces/python/**"
       - "src/**"
       - "docs/**"
+      - ".github/actions/setup-python-build/action.yml"
       - ".github/workflows/docs.yml"
   push:
     branches: [master]
@@ -27,6 +28,7 @@ on:
       - "interfaces/python/**"
       - "src/**"
       - "docs/**"
+      - ".github/actions/setup-python-build/action.yml"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
@@ -47,15 +49,9 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: ./.github/actions/setup-python-build
         with:
           python-version: "3.14"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Install Python tooling
-        run: |
-          python -m pip install --upgrade pip
 
       - name: Verify committed docs freshness
         run: make test-docs

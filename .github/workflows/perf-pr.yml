@@ -7,6 +7,7 @@ on:
       - ".github/workflows/perf-pr.yml"
       - ".github/workflows/ci.yml"
       - ".github/workflows/_native-build.yml"
+      - ".github/actions/setup-python-build/action.yml"
       - "CMakeLists.txt"
       - "examples/networks/**"
       - "mk/**"
@@ -44,9 +45,10 @@ jobs:
           path: base
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: ./head/.github/actions/setup-python-build
         with:
           python-version: "3.14"
+          cache-dependency-path: head/pyproject.toml
 
       - name: Build base and head benchmark binaries
         shell: bash

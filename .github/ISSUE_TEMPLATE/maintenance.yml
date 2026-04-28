@@ -1,0 +1,26 @@
+name: Maintenance chore
+description: Track repository, CI, docs, or packaging maintenance.
+title: "[Maintenance]: "
+labels: ["maintenance"]
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: Maintenance task
+      description: Describe the chore and the smallest affected surface.
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: Why this is needed
+      description: Explain the risk, drift, or support burden this reduces.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Suggested verification
+      description: List the smallest useful checks for this chore.
+    validations:
+      required: true
