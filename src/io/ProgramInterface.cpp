@@ -10,7 +10,6 @@
 #include "ProgramInterface.h"
 #include "../utils/Log.h"
 
-#include <iostream>
 #include <cstdlib>
 #include <map>
 #include <utility>
@@ -263,7 +262,6 @@ void ProgramInterface::exitWithError(const std::string& message) const
   Log() << " compiled with OpenMP";
 #endif
   Log() << std::endl;
-  std::cerr << message << std::endl;
   Log() << "Usage: " << m_executableName;
   for (auto& nonOptionArgument : m_nonOptionArguments)
     if (!nonOptionArgument->isAdvanced)
@@ -271,7 +269,7 @@ void ProgramInterface::exitWithError(const std::string& message) const
   if (!m_optionArguments.empty())
     Log() << " [options]";
   Log() << ". Run with option '-h' for more information.\n";
-  std::exit(1);
+  throw std::runtime_error(message);
 }
 
 std::string toJson(const std::string& key, const std::string& value)

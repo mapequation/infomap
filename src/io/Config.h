@@ -16,7 +16,7 @@
 
 #include <stdexcept>
 #include <iomanip>
-#include <iostream>
+#include <iosfwd>
 #include <string>
 #include <utility>
 #include <vector>

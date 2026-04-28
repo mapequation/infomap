@@ -27,7 +27,7 @@
 #include <map>
 #include <limits>
 #include <string>
-#include <iostream>
+#include <ostream>
 #include <sstream>
 
 namespace infomap {

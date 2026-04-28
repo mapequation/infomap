@@ -11,7 +11,6 @@
 #define SAFEFILE_H_
 
 #include "../utils/convert.h"
-#include <iostream>
 #include <fstream>
 #include <ios>
 #include <cstdio>
