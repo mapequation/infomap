@@ -31,6 +31,7 @@ InfoNode& InfoNode::operator=(const InfoNode& other)
   assert(m_outEdges.empty());
   assert(m_inEdges.empty());
   deleteChildren();
+  // Defensive cleanup if assertions are disabled.
   m_outEdges.clear();
   m_inEdges.clear();
   m_infomap.reset();
