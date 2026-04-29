@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 from pathlib import Path
 
 RELATIVE_REGRESSION_THRESHOLD = 0.15
@@ -108,14 +109,13 @@ def compare_reports(base_report: dict[str, object], head_report: dict[str, objec
 
     manual_review = [case for case in cases if case["status"] == "manual_review"]
     regressions = [case for case in cases if case["status"] == "regression"]
-    severe_regressions = [case for case in regressions if case["severe"]]
     inconclusive = [case for case in cases if case["status"] == "inconclusive"]
     improvements = [case for case in cases if case["status"] == "improvement"]
 
     if manual_review:
         overall_status = "manual_review"
         summary = "manual review needed"
-    elif len(regressions) >= 2 or severe_regressions:
+    elif regressions:
         overall_status = "possible_regression"
         summary = "possible regression"
     else:
@@ -198,12 +198,17 @@ def render_markdown(result: dict[str, object]) -> str:
     return "\n".join(lines)
 
 
-def main() -> None:
+def main() -> int:
     parser = argparse.ArgumentParser(description="Compare native benchmark reports for PR perf regression detection.")
     parser.add_argument("--base", type=Path, required=True, help="Path to the base benchmark JSON report.")
     parser.add_argument("--head", type=Path, required=True, help="Path to the head benchmark JSON report.")
     parser.add_argument("--markdown-out", type=Path, default=None, help="Optional Markdown summary output path.")
     parser.add_argument("--json-out", type=Path, default=None, help="Optional JSON comparison output path.")
+    parser.add_argument(
+        "--fail-on-regression",
+        action="store_true",
+        help="Exit with status 1 when any benchmark case is classified as a regression.",
+    )
     args = parser.parse_args()
 
     result = compare_reports(load_report(args.base), load_report(args.head))
@@ -218,7 +223,10 @@ def main() -> None:
         args.json_out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
 
     print(markdown)
+    if args.fail_on_regression and result["counts"]["regression"]:
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
