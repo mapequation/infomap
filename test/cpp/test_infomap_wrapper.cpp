@@ -336,6 +336,31 @@ TEST_CASE("Subnetwork reuse and dispose stay stable on the same parent module [f
   CHECK(module.getInfomapRoot() == nullptr);
 }
 
+TEST_CASE("Subnetwork ownership replaces and disposes the module Infomap instance [fast][core][lifecycle][subnetwork]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  REQUIRE(im.numTopModules() == 2);
+
+  auto& module = *im.root().firstChild;
+
+  auto& firstSubInfomap = im.getSubInfomap(module).initNetwork(module);
+  REQUIRE(module.getInfomapRoot() == &firstSubInfomap.root());
+  REQUIRE(firstSubInfomap.root().owner == &module);
+
+  auto& replacementSubInfomap = im.getSubInfomap(module).initNetwork(module);
+  CHECK(module.getInfomapRoot() == &replacementSubInfomap.root());
+  CHECK(replacementSubInfomap.root().owner == &module);
+  CHECK(replacementSubInfomap.numLeafNodes() == module.childDegree());
+
+  CHECK(module.disposeInfomap());
+  CHECK(module.getInfomapRoot() == nullptr);
+  CHECK_FALSE(module.disposeInfomap());
+}
+
 TEST_CASE("Higher-order subnetwork rebuild preserves state identities and internal edges [fast][core][lifecycle][subnetwork]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

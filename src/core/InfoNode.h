@@ -26,6 +26,10 @@ namespace infomap {
 
 class InfomapBase;
 
+struct InfomapBaseDeleter {
+  void operator()(InfomapBase* infomap) const noexcept;
+};
+
 /**
  * Tree node with raw-pointer ownership.
  *
@@ -34,8 +38,9 @@ class InfomapBase;
  * collapsedLastChild. Destruction deletes both chains. releaseChildren() only
  * detaches the active chain from this parent; the caller must reattach or delete
  * those nodes. Reparenting helpers detach children before deleting the removed
- * intermediate node. An InfoNode also owns its sub-Infomap pointer and outgoing
- * InfoEdge objects; incoming edge pointers are non-owning back-references.
+ * intermediate node. An InfoNode also owns its sub-Infomap through a unique_ptr
+ * and owns outgoing InfoEdge objects; incoming edge pointers are non-owning
+ * back-references.
  */
 class InfoNode {
 public:
@@ -101,7 +106,7 @@ private:
   std::vector<InfoEdge*> m_outEdges;
   std::vector<InfoEdge*> m_inEdges;
 
-  InfomapBase* m_infomap = nullptr;
+  std::unique_ptr<InfomapBase, InfomapBaseDeleter> m_infomap;
 
 public:
   InfoNode(const FlowData& flowData)
