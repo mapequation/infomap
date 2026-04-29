@@ -22,6 +22,7 @@ _INPUT_PRE_SELF_LINK_OPTION_SPECS = (
 
 _INPUT_POST_SELF_LINK_OPTION_SPECS = (
     ("value", "node_limit", "--node-limit", lambda value: value is not None),
+    ("flag", "multilayer_self_inter_links", "--multilayer-self-inter-links", None),
     (
         "value",
         "matchable_multilayer_ids",
@@ -37,6 +38,7 @@ _INPUT_POST_SELF_LINK_OPTION_SPECS = (
         lambda value: value != _DEFAULT_META_DATA_RATE,
     ),
     ("flag", "meta_data_unweighted", "--meta-data-unweighted", None),
+    ("flag", "hard_partition", "--hard-partition", None),
 )
 
 _OUTPUT_PRE_VERBOSITY_OPTION_SPECS = (
@@ -71,6 +73,12 @@ _ALGORITHM_POST_DIRECTED_OPTION_SPECS = (
         "teleportation_probability",
         "--teleportation-probability",
         lambda value: value != _DEFAULT_TELEPORTATION_PROB,
+    ),
+    (
+        "value",
+        "random_node_check_rate",
+        "--random-node-check-rate",
+        lambda value: value != 0.0,
     ),
     ("flag", "regularized", "--regularized", None),
     (
@@ -125,6 +133,13 @@ _ALGORITHM_POST_DIRECTED_OPTION_SPECS = (
         lambda value: value != -1,
     ),
     ("flag", "multilayer_relax_by_jsd", "--multilayer-relax-by-jsd", None),
+    (
+        "value",
+        "multilayer_test",
+        "--multilayer-test",
+        lambda value: value is not None,
+    ),
+    ("flag", "multilayer_aggregation", "--multilayer-aggregation", None),
 )
 
 _ACCURACY_PRE_FAST_HIERARCHICAL_OPTION_SPECS = (
@@ -326,11 +341,13 @@ class InfomapOptions:
     include_self_links: bool | None = None
     no_self_links: bool = False
     node_limit: int | None = None
+    multilayer_self_inter_links: bool = False
     matchable_multilayer_ids: int | None = None
     assign_to_neighbouring_module: bool = False
     meta_data: str | None = None
     meta_data_rate: float = _DEFAULT_META_DATA_RATE
     meta_data_unweighted: bool = False
+    hard_partition: bool = False
     # output
     tree: bool = False
     ftree: bool = False
@@ -351,6 +368,7 @@ class InfomapOptions:
     use_node_weights_as_flow: bool = False
     to_nodes: bool = False
     teleportation_probability: float = _DEFAULT_TELEPORTATION_PROB
+    random_node_check_rate: float = 0.0
     regularized: bool = False
     regularization_strength: float = 1.0
     entropy_corrected: bool = False
@@ -364,6 +382,8 @@ class InfomapOptions:
     multilayer_relax_limit_up: int = -1
     multilayer_relax_limit_down: int = -1
     multilayer_relax_by_jsd: bool = False
+    multilayer_test: int | None = None
+    multilayer_aggregation: bool = False
     # accuracy
     seed: int = _DEFAULT_SEED
     num_trials: int = 1
@@ -437,11 +457,13 @@ def _construct_args(
     include_self_links=None,
     no_self_links=False,
     node_limit=None,
+    multilayer_self_inter_links=False,
     matchable_multilayer_ids=None,
     assign_to_neighbouring_module=False,
     meta_data=None,
     meta_data_rate=_DEFAULT_META_DATA_RATE,
     meta_data_unweighted=False,
+    hard_partition=False,
     # output
     tree=False,
     ftree=False,
@@ -462,6 +484,7 @@ def _construct_args(
     use_node_weights_as_flow=False,
     to_nodes=False,
     teleportation_probability=_DEFAULT_TELEPORTATION_PROB,
+    random_node_check_rate=0.0,
     regularized=False,
     regularization_strength=1.0,
     entropy_corrected=False,
@@ -475,6 +498,8 @@ def _construct_args(
     multilayer_relax_limit_up=-1,
     multilayer_relax_limit_down=-1,
     multilayer_relax_by_jsd=False,
+    multilayer_test=None,
+    multilayer_aggregation=False,
     # accuracy
     seed=_DEFAULT_SEED,
     num_trials=1,

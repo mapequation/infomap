@@ -74,6 +74,16 @@
     "default": "0"
   },
   {
+    "long": "--multilayer-self-inter-links",
+    "short": "",
+    "description": "For inter/intra format, restrict inter-layer links within same physical node but adjust flow to approximate physical steps",
+    "group": "Input",
+    "required": false,
+    "advanced": true,
+    "incremental": false,
+    "default": false
+  },
+  {
     "long": "--matchable-multilayer-ids",
     "short": "",
     "description": "Construct state ids from node and layer ids that are consistent across networks for the same max number of layers. Set to at least the largest layer id among networks to match.",
@@ -168,6 +178,16 @@
     "short": "-0",
     "description": "Don't write output to file.",
     "group": "Output",
+    "required": false,
+    "advanced": true,
+    "incremental": false,
+    "default": false
+  },
+  {
+    "long": "--hard-partition",
+    "short": "",
+    "description": "Do not split initial partition.",
+    "group": "Input",
     "required": false,
     "advanced": true,
     "incremental": false,
@@ -320,6 +340,18 @@
     "longType": "probability",
     "shortType": "P",
     "default": "0.15"
+  },
+  {
+    "long": "--random-node-check-rate",
+    "short": "",
+    "description": "Check a selected proportion of nodes for moves if recorded teleportation",
+    "group": "Algorithm",
+    "required": true,
+    "advanced": true,
+    "incremental": false,
+    "longType": "probability",
+    "shortType": "P",
+    "default": "0"
   },
   {
     "long": "--regularized",
@@ -475,6 +507,28 @@
     "long": "--multilayer-relax-by-jsd",
     "short": "",
     "description": "Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.",
+    "group": "Algorithm",
+    "required": false,
+    "advanced": true,
+    "incremental": false,
+    "default": false
+  },
+  {
+    "long": "--multilayer-test",
+    "short": "",
+    "description": "Testing different multilayer implementations.",
+    "group": "Algorithm",
+    "required": true,
+    "advanced": true,
+    "incremental": false,
+    "longType": "integer",
+    "shortType": "n",
+    "default": "0"
+  },
+  {
+    "long": "--multilayer-aggregation",
+    "short": "",
+    "description": "Experimental: Use aggregated multilayer network.",
     "group": "Algorithm",
     "required": false,
     "advanced": true,
