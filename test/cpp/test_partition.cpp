@@ -282,6 +282,28 @@ TEST_CASE("InfoNode unique_ptr child handoff preserves raw child-chain semantics
   CHECK(childAPtr->childDegree() == 1);
 }
 
+TEST_CASE("InfoNode raw addChild reparents child ownership between parents [fast][core][partition][tree][ownership]")
+{
+  InfoNode oldParent;
+  InfoNode newParent;
+  auto* child = &oldParent.addChild(std::make_unique<InfoNode>(FlowData {}, 10));
+  oldParent.addChild(std::make_unique<InfoNode>(FlowData {}, 20));
+
+  newParent.addChild(child);
+
+  CHECK(childStateIds(oldParent) == std::vector<unsigned int> { 20 });
+  CHECK(childStateIds(newParent) == std::vector<unsigned int> { 10 });
+  CHECK(child->parent == &newParent);
+  CHECK(child->previous == nullptr);
+  CHECK(child->next == nullptr);
+
+  oldParent.deleteChildren();
+
+  CHECK(child->stateId == 10);
+  CHECK(newParent.firstChild == child);
+  CHECK(newParent.lastChild == child);
+}
+
 TEST_CASE("InfoNode releaseChildren detaches active children without deleting them [fast][core][partition][tree][ownership]")
 {
   InfoNode root;
@@ -304,6 +326,23 @@ TEST_CASE("InfoNode releaseChildren detaches active children without deleting th
 
   delete childA;
   delete childB;
+}
+
+TEST_CASE("InfoNode reattaches released children under new unique_ptr ownership [fast][core][partition][tree][ownership]")
+{
+  InfoNode oldParent;
+  InfoNode newParent;
+  auto* childA = &oldParent.addChild(std::make_unique<InfoNode>(FlowData {}, 10));
+  auto* childB = &oldParent.addChild(std::make_unique<InfoNode>(FlowData {}, 20));
+
+  oldParent.releaseChildren();
+  newParent.addChild(childA);
+  newParent.addChild(childB);
+
+  CHECK(oldParent.childDegree() == 0);
+  CHECK(oldParent.firstChild == nullptr);
+  CHECK(oldParent.lastChild == nullptr);
+  checkLinkedChildOrder(newParent, { 10, 20 });
 }
 
 TEST_CASE("Reinitializing a network clears collapsed root children [fast][core][partition][tree]")

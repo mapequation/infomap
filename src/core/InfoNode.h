@@ -52,16 +52,14 @@ public:
 /**
  * Tree node with raw-pointer ownership.
  *
- * An InfoNode owns the active child chain reachable through firstChild/lastChild
- * and the collapsed child chain reachable through collapsedFirstChild/
- * collapsedLastChild. Child storage remains a raw linked list; the unique_ptr
- * addChild() overload is only a safe handoff helper for newly allocated nodes,
- * while internal detach/delete paths use an RAII guard. Destruction deletes both
- * chains. releaseChildren() only detaches the active chain from this parent; the
- * caller must reattach or delete those nodes. Reparenting helpers detach
- * children before deleting the removed intermediate node. An InfoNode also owns
- * its sub-Infomap and outgoing InfoEdge objects through unique_ptr; incoming
- * edge pointers are non-owning back-references.
+ * An InfoNode owns active and collapsed children through private unique_ptr
+ * storage. firstChild/lastChild, collapsedFirstChild/collapsedLastChild, and
+ * sibling links are non-owning raw iteration links kept for compatibility.
+ * releaseChildren() only detaches the active chain from this parent; the caller
+ * must reattach or delete those nodes. Reparenting helpers transfer child
+ * ownership before deleting the removed intermediate node. An InfoNode also
+ * owns its sub-Infomap and outgoing InfoEdge objects through unique_ptr;
+ * incoming edge pointers are non-owning back-references.
  */
 class InfoNode {
 public:
@@ -128,6 +126,8 @@ private:
   bool m_childrenChanged = false;
   unsigned int m_numLeafMembers = 0;
 
+  std::vector<std::unique_ptr<InfoNode>> m_children;
+  std::vector<std::unique_ptr<InfoNode>> m_collapsedChildren;
   std::vector<std::unique_ptr<InfoEdge>> m_outEdges;
   std::vector<InfoEdge*> m_inEdges;
 
@@ -400,6 +400,14 @@ private:
   void copyDetachedValueStateFrom(const InfoNode& other);
 
   void calcChildDegree() noexcept;
+
+  void appendOwnedChild(std::unique_ptr<InfoNode> child) noexcept;
+
+  void appendLinkedChild(InfoNode* child) noexcept;
+
+  std::unique_ptr<InfoNode> takeChildOwnership(InfoNode* child) noexcept;
+
+  void moveActiveChildOwnershipTo(InfoNode& newParent);
 };
 
 } // namespace infomap
