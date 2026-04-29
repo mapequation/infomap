@@ -682,9 +682,10 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
     InfoNode* node = network[i];
     unsigned int moduleIndex = node->index;
     if (modules[moduleIndex] == nullptr) {
-      modules[moduleIndex] = new InfoNode(m_moduleFlowData[moduleIndex]);
+      auto module = std::make_unique<InfoNode>(m_moduleFlowData[moduleIndex]);
+      modules[moduleIndex] = module.get();
       modules[moduleIndex]->index = moduleIndex;
-      node->parent->addChild(modules[moduleIndex]);
+      node->parent->addChild(std::move(module));
     }
     modules[moduleIndex]->addChild(node);
   }

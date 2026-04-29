@@ -5,6 +5,7 @@
 #include "TestUtils.h"
 
 #include <map>
+#include <memory>
 #include <set>
 #include <tuple>
 #include <vector>
@@ -12,6 +13,7 @@
 namespace {
 
 using infomap::InfomapWrapper;
+using infomap::FlowData;
 using infomap::InfoNode;
 
 using EdgeKey = std::pair<unsigned int, unsigned int>;
@@ -200,6 +202,37 @@ TEST_CASE("InfoNode hierarchy mutations preserve parentage and child order [fast
   CHECK(childStateIds(root) == std::vector<unsigned int> { 40, 50 });
 }
 
+TEST_CASE("InfoNode unique_ptr child handoff preserves raw child-chain semantics [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto childA = std::make_unique<InfoNode>(FlowData {}, 10);
+  auto childB = std::make_unique<InfoNode>(FlowData {}, 20);
+
+  auto* childAPtr = childA.get();
+  auto* childBPtr = childB.get();
+
+  InfoNode& returnedA = root.addChild(std::move(childA));
+  InfoNode& returnedB = root.addChild(std::move(childB));
+
+  CHECK(&returnedA == childAPtr);
+  CHECK(&returnedB == childBPtr);
+  CHECK(childA == nullptr);
+  CHECK(childB == nullptr);
+  CHECK(root.childDegree() == 2);
+  CHECK(root.firstChild == childAPtr);
+  CHECK(root.lastChild == childBPtr);
+  CHECK(childAPtr->parent == &root);
+  CHECK(childBPtr->parent == &root);
+  CHECK(childAPtr->previous == nullptr);
+  CHECK(childAPtr->next == childBPtr);
+  CHECK(childBPtr->previous == childAPtr);
+  CHECK(childBPtr->next == nullptr);
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 20 });
+
+  childAPtr->addChild(std::make_unique<InfoNode>(FlowData {}, 11));
+  CHECK(childAPtr->childDegree() == 1);
+}
+
 TEST_CASE("InfoNode releaseChildren detaches active children without deleting them [fast][core][partition][tree][ownership]")
 {
   InfoNode root;
@@ -244,8 +277,8 @@ TEST_CASE("Reinitializing a network clears collapsed root children [fast][core][
 TEST_CASE("InfoNode deleteChildren also clears collapsed children [fast][core][partition][tree]")
 {
   InfoNode root;
-  root.addChild(new InfoNode({}, 10));
-  root.addChild(new InfoNode({}, 20));
+  root.addChild(std::make_unique<InfoNode>(FlowData {}, 10));
+  root.addChild(std::make_unique<InfoNode>(FlowData {}, 20));
 
   CHECK(root.collapseChildren() == 2);
   CHECK(root.childDegree() == 0);
@@ -264,11 +297,11 @@ TEST_CASE("InfoNode deleteChildren also clears collapsed children [fast][core][p
 TEST_CASE("InfoNode deleteChildren clears both active and collapsed child chains [fast][core][partition][tree][ownership]")
 {
   InfoNode root;
-  root.addChild(new InfoNode({}, 10));
-  root.addChild(new InfoNode({}, 20));
+  root.addChild(std::make_unique<InfoNode>(FlowData {}, 10));
+  root.addChild(std::make_unique<InfoNode>(FlowData {}, 20));
 
   CHECK(root.collapseChildren() == 2);
-  root.addChild(new InfoNode({}, 30));
+  root.addChild(std::make_unique<InfoNode>(FlowData {}, 30));
 
   root.deleteChildren();
 
@@ -282,8 +315,8 @@ TEST_CASE("InfoNode deleteChildren clears both active and collapsed child chains
 TEST_CASE("InfoNode initClean clears inherited collapsed children on clones [fast][core][partition][tree]")
 {
   InfoNode source;
-  source.addChild(new InfoNode({}, 10));
-  source.addChild(new InfoNode({}, 20));
+  source.addChild(std::make_unique<InfoNode>(FlowData {}, 10));
+  source.addChild(std::make_unique<InfoNode>(FlowData {}, 20));
 
   CHECK(source.collapseChildren() == 2);
   CHECK(source.childDegree() == 0);
@@ -309,10 +342,10 @@ TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][c
   auto* moduleB = new InfoNode({}, 200);
   root.addChild(moduleA);
   root.addChild(moduleB);
-  moduleA->addChild(new InfoNode({}, 1));
-  moduleA->addChild(new InfoNode({}, 2));
-  moduleB->addChild(new InfoNode({}, 3));
-  moduleB->addChild(new InfoNode({}, 4));
+  moduleA->addChild(std::make_unique<InfoNode>(FlowData {}, 1));
+  moduleA->addChild(std::make_unique<InfoNode>(FlowData {}, 2));
+  moduleB->addChild(std::make_unique<InfoNode>(FlowData {}, 3));
+  moduleB->addChild(std::make_unique<InfoNode>(FlowData {}, 4));
 
   CHECK(root.childDegree() == 2);
   CHECK(moduleA->childDegree() == 2);
@@ -343,8 +376,8 @@ TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before de
   root.addChild(before);
   root.addChild(module);
   root.addChild(after);
-  module->addChild(new InfoNode({}, 1));
-  module->addChild(new InfoNode({}, 2));
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 1));
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 2));
 
   CHECK(module->replaceWithChildren() == 1);
 
@@ -363,7 +396,7 @@ TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fa
 {
   InfoNode deleteRoot;
   auto* deletingParent = new InfoNode({}, 10);
-  deletingParent->addChild(new InfoNode({}, 11));
+  deletingParent->addChild(std::make_unique<InfoNode>(FlowData {}, 11));
   deleteRoot.addChild(deletingParent);
 
   deletingParent->remove(false);
