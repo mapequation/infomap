@@ -890,7 +890,6 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   for (InfoNode& node : parent) {
     auto ownedClonedNode = std::make_unique<InfoNode>(node);
     auto* clonedNode = ownedClonedNode.get();
-    clonedNode->initClean();
     m_root.addChild(std::move(ownedClonedNode));
     node.index = childIndex; // Set index to its place in this subnetwork to be able to find edge target below
     m_leafNodes[childIndex] = clonedNode;
