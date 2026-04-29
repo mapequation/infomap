@@ -397,6 +397,7 @@ TEST_CASE("InfoNode owns outgoing edges while incoming edges are non-owning refe
 
   CHECK(source->outDegree() == 1);
   CHECK(target.inDegree() == 1);
+  CHECK(*source->outEdges().begin() == *target.inEdges().begin());
 
   delete source;
 

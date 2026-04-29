@@ -523,7 +523,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
     ++numNodesWithoutClusterInfo;
     if (assignToNeighbouringModule) {
       // Take first neighbour that has a module assigned
-      for (auto& edge : leafNode->outEdges()) {
+      for (auto* edge : leafNode->outEdges()) {
         if (edge->target->parent != nullptr) {
           edge->target->parent->addChild(leafNode);
           ++numNodesAddedToNeighbouringModules;
@@ -532,7 +532,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       }
       // Check incoming links if still orphan
       if (leafNode->parent == nullptr) {
-        for (auto& edge : leafNode->inEdges()) {
+        for (auto* edge : leafNode->inEdges()) {
           if (edge->source->parent != nullptr) {
             edge->source->parent->addChild(leafNode);
             ++numNodesAddedToNeighbouringModules;
@@ -628,7 +628,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
       if (selectedNodes[i] == 0) {
         // Check out edges greedily for connected modules
         auto& node = *m_leafNodes[i];
-        for (auto& e : node.outEdges()) {
+        for (auto* e : node.outEdges()) {
           auto& edge = *e;
           auto targetNodeIndex = nodeIdToIndex[edge.target->stateId];
           if (selectedNodes[targetNodeIndex] != 0) {
@@ -639,7 +639,7 @@ InfomapBase& InfomapBase::initPartition(const std::map<unsigned int, unsigned in
         }
         if (selectedNodes[i] == 0) {
           // Check in edges greedily for connected modules
-          for (auto& e : node.inEdges()) {
+          for (auto* e : node.inEdges()) {
             auto& edge = *e;
             auto sourceNodeIndex = nodeIdToIndex[edge.source->stateId];
             if (selectedNodes[sourceNodeIndex] != 0) {

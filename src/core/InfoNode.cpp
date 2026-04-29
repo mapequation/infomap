@@ -33,13 +33,7 @@ InfoNode::~InfoNode() noexcept
       parent->lastChild = previous;
   }
 
-  // Delete outgoing edges.
-  // TODO: Renders ingoing edges invalid. Assume or assert that all nodes on the same level are deleted?
-  for (edge_iterator outEdgeIt(begin_outEdge());
-       outEdgeIt != end_outEdge();
-       ++outEdgeIt) {
-    delete *outEdgeIt;
-  }
+  // Incoming edge pointers on other nodes become dangling non-owning back-references.
 }
 
 InfomapBase& InfoNode::setInfomap(InfomapBase* infomap)
