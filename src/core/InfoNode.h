@@ -148,52 +148,11 @@ public:
 
   InfoNode() = default;
 
-  InfoNode(const InfoNode& other)
-      : data(other.data),
-        index(other.index),
-        stateId(other.stateId),
-        physicalId(other.physicalId),
-        layerId(other.layerId),
-        metaData(other.metaData),
-        parent(other.parent),
-        previous(other.previous),
-        next(other.next),
-        firstChild(other.firstChild),
-        lastChild(other.lastChild),
-        collapsedFirstChild(other.collapsedFirstChild),
-        collapsedLastChild(other.collapsedLastChild),
-        codelength(other.codelength),
-        dirty(other.dirty),
-        metaCollection(other.metaCollection),
-        m_childDegree(other.m_childDegree),
-        m_childrenChanged(other.m_childrenChanged),
-        m_numLeafMembers(other.m_numLeafMembers) { }
+  InfoNode(const InfoNode& other);
 
   ~InfoNode() noexcept;
 
-  InfoNode& operator=(const InfoNode& other)
-  {
-    data = other.data;
-    index = other.index;
-    stateId = other.stateId;
-    physicalId = other.physicalId;
-    layerId = other.layerId;
-    metaData = other.metaData;
-    parent = other.parent;
-    previous = other.previous;
-    next = other.next;
-    firstChild = other.firstChild;
-    lastChild = other.lastChild;
-    collapsedFirstChild = other.collapsedFirstChild;
-    collapsedLastChild = other.collapsedLastChild;
-    codelength = other.codelength;
-    dirty = other.dirty;
-    metaCollection = other.metaCollection;
-    m_childDegree = other.m_childDegree;
-    m_childrenChanged = other.m_childrenChanged;
-    m_numLeafMembers = other.m_numLeafMembers;
-    return *this;
-  }
+  InfoNode& operator=(const InfoNode& other);
 
   // ---------------------------- Getters ----------------------------
 
@@ -436,6 +395,8 @@ public:
   }
 
 private:
+  void copyDetachedValueStateFrom(const InfoNode& other);
+
   void calcChildDegree() noexcept;
 };
 
