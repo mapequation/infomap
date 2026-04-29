@@ -107,6 +107,7 @@ class Config(object):
     directed = property(_infomap.Config_directed_get, _infomap.Config_directed_set)
     useNodeWeightsAsFlow = property(_infomap.Config_useNodeWeightsAsFlow_get, _infomap.Config_useNodeWeightsAsFlow_set)
     teleportToNodes = property(_infomap.Config_teleportToNodes_get, _infomap.Config_teleportToNodes_set)
+    randomNodeCheckRate = property(_infomap.Config_randomNodeCheckRate_get, _infomap.Config_randomNodeCheckRate_set)
     markovTime = property(_infomap.Config_markovTime_get, _infomap.Config_markovTime_set)
     variableMarkovTime = property(_infomap.Config_variableMarkovTime_get, _infomap.Config_variableMarkovTime_set)
     variableMarkovTimeDamping = property(_infomap.Config_variableMarkovTimeDamping_get, _infomap.Config_variableMarkovTimeDamping_set)
@@ -119,6 +120,9 @@ class Config(object):
     multilayerJSRelaxRate = property(_infomap.Config_multilayerJSRelaxRate_get, _infomap.Config_multilayerJSRelaxRate_set)
     multilayerRelaxByJensenShannonDivergence = property(_infomap.Config_multilayerRelaxByJensenShannonDivergence_get, _infomap.Config_multilayerRelaxByJensenShannonDivergence_set)
     multilayerJSRelaxLimit = property(_infomap.Config_multilayerJSRelaxLimit_get, _infomap.Config_multilayerJSRelaxLimit_set)
+    multilayerSelfInterLinks = property(_infomap.Config_multilayerSelfInterLinks_get, _infomap.Config_multilayerSelfInterLinks_set)
+    multilayerAggregation = property(_infomap.Config_multilayerAggregation_get, _infomap.Config_multilayerAggregation_set)
+    multilayerTest = property(_infomap.Config_multilayerTest_get, _infomap.Config_multilayerTest_set)
     maxFlowIterations = property(_infomap.Config_maxFlowIterations_get, _infomap.Config_maxFlowIterations_set)
     twoLevel = property(_infomap.Config_twoLevel_get, _infomap.Config_twoLevel_set)
     noCoarseTune = property(_infomap.Config_noCoarseTune_get, _infomap.Config_noCoarseTune_set)
@@ -196,11 +200,14 @@ class Config(object):
     def printAsUndirected(self):
         return _infomap.Config_printAsUndirected(self)
 
+    def isBipartite(self):
+        return _infomap.Config_isBipartite(self)
+
     def isMultilayerNetwork(self):
         return _infomap.Config_isMultilayerNetwork(self)
 
-    def isBipartite(self):
-        return _infomap.Config_isBipartite(self)
+    def isRegularizedMultilayerFlow(self):
+        return _infomap.Config_isRegularizedMultilayerFlow(self)
 
     def haveMemory(self):
         return _infomap.Config_haveMemory(self)
@@ -227,12 +234,16 @@ class FlowData(object):
     enterFlow = property(_infomap.FlowData_enterFlow_get, _infomap.FlowData_enterFlow_set)
     exitFlow = property(_infomap.FlowData_exitFlow_get, _infomap.FlowData_exitFlow_set)
     teleportFlow = property(_infomap.FlowData_teleportFlow_get, _infomap.FlowData_teleportFlow_set)
-    teleportSourceFlow = property(_infomap.FlowData_teleportSourceFlow_get, _infomap.FlowData_teleportSourceFlow_set)
     teleportWeight = property(_infomap.FlowData_teleportWeight_get, _infomap.FlowData_teleportWeight_set)
+    teleportSourceFlow = property(_infomap.FlowData_teleportSourceFlow_get, _infomap.FlowData_teleportSourceFlow_set)
     danglingFlow = property(_infomap.FlowData_danglingFlow_get, _infomap.FlowData_danglingFlow_set)
 
     def __init__(self, *args):
         _infomap.FlowData_swiginit(self, _infomap.new_FlowData(*args))
+    __swig_destroy__ = _infomap.delete_FlowData
+
+    def init(self, node):
+        return _infomap.FlowData_init(self, node)
 
     def __iadd__(self, other):
         return _infomap.FlowData___iadd__(self, other)
@@ -252,7 +263,6 @@ class FlowData(object):
     	return self.exitFlow
 
 
-    __swig_destroy__ = _infomap.delete_FlowData
 
 # Register FlowData in _infomap:
 _infomap.FlowData_swigregister(FlowData)
@@ -310,6 +320,51 @@ class PhysData(object):
 
 # Register PhysData in _infomap:
 _infomap.PhysData_swigregister(PhysData)
+class LayerTeleFlowData(object):
+    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    __repr__ = _swig_repr
+    numNodes = property(_infomap.LayerTeleFlowData_numNodes_get, _infomap.LayerTeleFlowData_numNodes_set)
+    teleportFlow = property(_infomap.LayerTeleFlowData_teleportFlow_get, _infomap.LayerTeleFlowData_teleportFlow_set)
+    teleportWeight = property(_infomap.LayerTeleFlowData_teleportWeight_get, _infomap.LayerTeleFlowData_teleportWeight_set)
+
+    def __init__(self, *args):
+        _infomap.LayerTeleFlowData_swiginit(self, _infomap.new_LayerTeleFlowData(*args))
+
+    def __iadd__(self, other):
+        return _infomap.LayerTeleFlowData___iadd__(self, other)
+
+    def __isub__(self, other):
+        return _infomap.LayerTeleFlowData___isub__(self, other)
+
+    def isEmpty(self):
+        return _infomap.LayerTeleFlowData_isEmpty(self)
+    __swig_destroy__ = _infomap.delete_LayerTeleFlowData
+
+# Register LayerTeleFlowData in _infomap:
+_infomap.LayerTeleFlowData_swigregister(LayerTeleFlowData)
+class MultiFlowData(FlowData):
+    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    __repr__ = _swig_repr
+    layerTeleFlowData = property(_infomap.MultiFlowData_layerTeleFlowData_get, _infomap.MultiFlowData_layerTeleFlowData_set)
+
+    def __init__(self, *args):
+        _infomap.MultiFlowData_swiginit(self, _infomap.new_MultiFlowData(*args))
+    __swig_destroy__ = _infomap.delete_MultiFlowData
+
+    def __iadd__(self, other):
+        return _infomap.MultiFlowData___iadd__(self, other)
+
+    def __isub__(self, other):
+        return _infomap.MultiFlowData___isub__(self, other)
+
+    def init(self, node):
+        return _infomap.MultiFlowData_init(self, node)
+
+    def numLayers(self):
+        return _infomap.MultiFlowData_numLayers(self)
+
+# Register MultiFlowData in _infomap:
+_infomap.MultiFlowData_swigregister(MultiFlowData)
 class EdgeData(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
@@ -2041,6 +2096,12 @@ class StateNetwork(object):
     def setBipartiteStartId(self, value):
         return _infomap.StateNetwork_setBipartiteStartId(self, value)
 
+    def numLayers(self):
+        return _infomap.StateNetwork_numLayers(self)
+
+    def layers(self):
+        return _infomap.StateNetwork_layers(self)
+
     def writeStateNetwork(self, filename):
         return _infomap.StateNetwork_writeStateNetwork(self, filename)
 
@@ -2089,6 +2150,18 @@ class Network(StateNetwork):
 
     def generateStateNetworkFromMultilayerWithSimulatedInterLinks(self):
         return _infomap.Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks(self)
+
+    def generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLayerSimilarity(self):
+        return _infomap.Network_generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLayerSimilarity(self)
+
+    def generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrength(self):
+        return _infomap.Network_generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrength(self)
+
+    def generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrengthRegularized(self):
+        return _infomap.Network_generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrengthRegularized(self)
+
+    def generateInterlayerLinksFromAggregatedMultilayer(self):
+        return _infomap.Network_generateInterlayerLinksFromAggregatedMultilayer(self)
 
     def simulateInterLayerLinks(self):
         return _infomap.Network_simulateInterLayerLinks(self)
@@ -2540,8 +2613,8 @@ class InfomapBase(InfomapConfigInfomapBase):
     def getOneLevelCodelength(self):
         return _infomap.InfomapBase_getOneLevelCodelength(self)
 
-    def getRelativeCodelengthSavings(self):
-        return _infomap.InfomapBase_getRelativeCodelengthSavings(self)
+    def getRelativeCodelengthSavings(self, *args):
+        return _infomap.InfomapBase_getRelativeCodelengthSavings(self, *args)
 
     def getEntropyRate(self):
         return _infomap.InfomapBase_getEntropyRate(self)
