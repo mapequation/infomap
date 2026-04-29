@@ -101,6 +101,22 @@ void InfomapBaseDeleter::operator()(InfomapBase* infomap) const noexcept
   delete infomap;
 }
 
+std::unique_ptr<InfoNode> InfoNode::DetachedChildChain::take(InfoNode* child) noexcept
+{
+  for (auto it = m_children.begin(); it != m_children.end(); ++it) {
+    if (it->get() == child) {
+      unlinkFromChain(*child, m_first, m_last);
+      auto ownedChild = std::move(*it);
+      m_children.erase(it);
+      if (m_childDegree > 0)
+        --m_childDegree;
+      child->parent = nullptr;
+      return ownedChild;
+    }
+  }
+  return nullptr;
+}
+
 InfoNode::InfoNode(const InfoNode& other)
 {
   copyDetachedValueStateFrom(other);
@@ -338,13 +354,57 @@ InfoNode& InfoNode::addChild(std::unique_ptr<InfoNode> child) noexcept
 
 void InfoNode::releaseChildren() noexcept
 {
-  for (auto& child : m_children) {
+  auto detachedChildren = detachChildren();
+  for (auto& child : detachedChildren.m_children) {
     child.release();
   }
-  m_children.clear();
+}
+
+InfoNode::DetachedChildChain InfoNode::detachChildren() noexcept
+{
+  auto unorderedChildren = std::move(m_children);
+  std::vector<std::unique_ptr<InfoNode>> orderedChildren;
+  orderedChildren.reserve(unorderedChildren.size());
+
+  auto takeFromUnorderedChildren = [&unorderedChildren](InfoNode* child) {
+    for (auto it = unorderedChildren.begin(); it != unorderedChildren.end(); ++it) {
+      if (it->get() == child) {
+        auto ownedChild = std::move(*it);
+        unorderedChildren.erase(it);
+        return ownedChild;
+      }
+    }
+    return std::unique_ptr<InfoNode>();
+  };
+
+  for (auto* child = firstChild; child != nullptr; child = child->next) {
+    if (auto ownedChild = takeFromUnorderedChildren(child))
+      orderedChildren.push_back(std::move(ownedChild));
+  }
+
+  for (auto& child : unorderedChildren) {
+    if (child != nullptr)
+      orderedChildren.push_back(std::move(child));
+  }
+
+  auto* detachedFirstChild = firstChild;
+  auto* detachedLastChild = lastChild;
+  auto detachedChildDegree = m_childDegree;
+
   firstChild = nullptr;
   lastChild = nullptr;
   m_childDegree = 0;
+
+  return { std::move(orderedChildren), detachedFirstChild, detachedLastChild, detachedChildDegree };
+}
+
+void InfoNode::adoptChildren(DetachedChildChain children) noexcept
+{
+  for (auto& child : children.m_children) {
+    child->previous = nullptr;
+    child->next = nullptr;
+    appendOwnedChild(std::move(child));
+  }
 }
 
 InfoNode& InfoNode::replaceChildrenWithOneNode()

@@ -55,11 +55,13 @@ public:
  * An InfoNode owns active and collapsed children through private unique_ptr
  * storage. firstChild/lastChild, collapsedFirstChild/collapsedLastChild, and
  * sibling links are non-owning raw iteration links kept for compatibility.
- * releaseChildren() only detaches the active chain from this parent; the caller
- * must reattach or delete those nodes. Reparenting helpers transfer child
- * ownership before deleting the removed intermediate node. An InfoNode also
- * owns its sub-Infomap and outgoing InfoEdge objects through unique_ptr;
- * incoming edge pointers are non-owning back-references.
+ * detachChildren() returns an owning move-only handle until the chain is
+ * adopted by another parent or dropped. releaseChildren() is a legacy wrapper
+ * that gives up ownership and leaves the caller responsible for reattach/delete.
+ * Reparenting helpers transfer child ownership before deleting the removed
+ * intermediate node. An InfoNode also owns its sub-Infomap and outgoing
+ * InfoEdge objects through unique_ptr; incoming edge pointers are non-owning
+ * back-references.
  */
 class InfoNode {
 public:
@@ -97,6 +99,46 @@ public:
 
   using infomap_child_iterator_wrapper = IterWrapper<infomap_child_iterator>;
   using const_infomap_child_iterator_wrapper = IterWrapper<const_infomap_child_iterator>;
+
+#ifndef SWIG
+  /**
+   * Owning temporary for an active child chain detached from a parent.
+   * The raw first/last/sibling links preserve child order while unique_ptr
+   * storage keeps lifetime explicit until adoption or destruction.
+   */
+  class DetachedChildChain {
+  public:
+    DetachedChildChain() = default;
+    DetachedChildChain(const DetachedChildChain&) = delete;
+    DetachedChildChain& operator=(const DetachedChildChain&) = delete;
+    DetachedChildChain(DetachedChildChain&&) noexcept = default;
+    DetachedChildChain& operator=(DetachedChildChain&&) noexcept = default;
+
+    InfoNode* first() const noexcept { return m_first; }
+    InfoNode* last() const noexcept { return m_last; }
+    bool empty() const noexcept { return m_children.empty(); }
+    unsigned int size() const noexcept { return m_childDegree; }
+    std::unique_ptr<InfoNode> take(InfoNode* child) noexcept;
+
+  private:
+    friend class InfoNode;
+
+    DetachedChildChain(
+        std::vector<std::unique_ptr<InfoNode>> children,
+        InfoNode* first,
+        InfoNode* last,
+        unsigned int childDegree) noexcept
+        : m_children(std::move(children)),
+          m_first(first),
+          m_last(last),
+          m_childDegree(childDegree) { }
+
+    std::vector<std::unique_ptr<InfoNode>> m_children;
+    InfoNode* m_first = nullptr;
+    InfoNode* m_last = nullptr;
+    unsigned int m_childDegree = 0;
+  };
+#endif
 
 public:
   FlowData data;
@@ -351,6 +393,19 @@ public:
    * delete the detached chain before those stale links can be observed.
    */
   void releaseChildren() noexcept;
+
+#ifndef SWIG
+  /**
+   * Detach the active child chain into an owning temporary. The handle preserves
+   * linked-list order even when private storage has a different order.
+   */
+  DetachedChildChain detachChildren() noexcept;
+
+  /**
+   * Append all children from a detached handle to this node's active child chain.
+   */
+  void adoptChildren(DetachedChildChain children) noexcept;
+#endif
 
   /**
    * If not already having a single child, replace children

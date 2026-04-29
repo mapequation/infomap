@@ -460,15 +460,24 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 
   std::map<unsigned int, unsigned int> nodeIdToIndex;
   auto leafIndex = 0;
+  std::vector<InfoNode::DetachedChildChain> detachedLeafParents;
   for (auto& leafNode : m_leafNodes) {
     // Also detach leaf nodes to delete all modules, safe to call multiple times
-    leafNode->parent->releaseChildren();
+    detachedLeafParents.push_back(leafNode->parent->detachChildren());
     // Set parent to nullptr to be able to collect any orphaned nodes in the end
     leafNode->parent = nullptr;
     nodeIdToIndex[leafNode->stateId] = leafIndex;
     ++leafIndex;
   }
   m_root.deleteChildren();
+
+  auto takeDetachedLeaf = [&detachedLeafParents](InfoNode* leafNode) {
+    for (auto& detachedParent : detachedLeafParents) {
+      if (auto ownedLeaf = detachedParent.take(leafNode))
+        return ownedLeaf;
+    }
+    throw std::logic_error("Detached leaf node ownership not found.");
+  };
 
   auto numNodesFound = 0;
   auto numNodesNotInNetwork = 0;
@@ -494,11 +503,10 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       // Create new node if path doesn't exist
       // TODO: Check correct tree indexing?
       if (node->childDegree() < childNumber) {
-        InfoNode* child = leafNode;
         if (i + 1 < path.size()) {
-          child = &node->addChild(std::make_unique<InfoNode>());
+          node->addChild(std::make_unique<InfoNode>());
         } else {
-          node->addChild(child);
+          node->addChild(takeDetachedLeaf(leafNode));
         }
       }
 
@@ -526,7 +534,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       // Take first neighbour that has a module assigned
       for (auto* edge : leafNode->outEdges()) {
         if (edge->target->parent != nullptr) {
-          edge->target->parent->addChild(leafNode);
+          edge->target->parent->addChild(takeDetachedLeaf(leafNode));
           ++numNodesAddedToNeighbouringModules;
           break;
         }
@@ -535,7 +543,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       if (leafNode->parent == nullptr) {
         for (auto* edge : leafNode->inEdges()) {
           if (edge->source->parent != nullptr) {
-            edge->source->parent->addChild(leafNode);
+            edge->source->parent->addChild(takeDetachedLeaf(leafNode));
             ++numNodesAddedToNeighbouringModules;
             break;
           }
@@ -544,12 +552,12 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       // Set to own module if no neighbour module available
       if (leafNode->parent == nullptr) {
         auto& module = root().addChild(std::make_unique<InfoNode>());
-        module.addChild(leafNode);
+        module.addChild(takeDetachedLeaf(leafNode));
       }
     } else {
       // Set to own module if no neighbour module available
       auto& module = root().addChild(std::make_unique<InfoNode>());
-      module.addChild(leafNode);
+      module.addChild(takeDetachedLeaf(leafNode));
     }
   }
   if (numNodesWithoutClusterInfo > 0) {
@@ -985,7 +993,7 @@ void InfomapBase::hierarchicalPartition()
 
           // Create new sub modules
           std::vector<InfoNode*> subModules(numLeafs, nullptr);
-          module.releaseChildren();
+          auto detachedChildren = module.detachChildren();
 
           for (auto j = 0; j < numLeafs; ++j) {
             InfoNode* leaf = leafs[j];
@@ -996,7 +1004,10 @@ void InfomapBase::hierarchicalPartition()
               subModules[moduleIndex]->index = moduleIndex;
               module.addChild(std::move(subModule));
             }
-            subModules[moduleIndex]->addChild(leaf);
+            auto ownedLeaf = detachedChildren.take(leaf);
+            if (ownedLeaf == nullptr)
+              throw std::logic_error("Detached submodule leaf ownership not found.");
+            subModules[moduleIndex]->addChild(std::move(ownedLeaf));
           }
           module.disposeInfomap();
           module.codelength = calcCodelength(module);

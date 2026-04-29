@@ -345,6 +345,93 @@ TEST_CASE("InfoNode reattaches released children under new unique_ptr ownership 
   checkLinkedChildOrder(newParent, { 10, 20 });
 }
 
+TEST_CASE("InfoNode detached child handle adopts children in linked-list order [fast][core][partition][tree][ownership]")
+{
+  InfoNode oldParent;
+  InfoNode newParent;
+  auto childA = std::make_unique<InfoNode>(FlowData {}, 10);
+  auto childB = std::make_unique<InfoNode>(FlowData {}, 20);
+  auto childC = std::make_unique<InfoNode>(FlowData {}, 30);
+  childA->data.flow = 0.1;
+  childB->data.flow = 0.7;
+  childC->data.flow = 0.4;
+
+  oldParent.addChild(std::move(childA));
+  oldParent.addChild(std::move(childB));
+  oldParent.addChild(std::move(childC));
+  oldParent.sortChildrenOnFlow(false);
+
+  auto detachedChildren = oldParent.detachChildren();
+
+  CHECK(oldParent.childDegree() == 0);
+  CHECK(oldParent.firstChild == nullptr);
+  CHECK(oldParent.lastChild == nullptr);
+  CHECK(detachedChildren.size() == 3);
+  CHECK(childChainStateIds(detachedChildren.first()) == std::vector<unsigned int> { 20, 30, 10 });
+
+  newParent.adoptChildren(std::move(detachedChildren));
+
+  checkLinkedChildOrder(newParent, { 20, 30, 10 });
+}
+
+TEST_CASE("InfoNode detached child handle can move one child to another parent [fast][core][partition][tree][ownership]")
+{
+  InfoNode oldParent;
+  InfoNode firstNewParent;
+  InfoNode secondNewParent;
+  auto* childA = &oldParent.addChild(std::make_unique<InfoNode>(FlowData {}, 10));
+  auto* childB = &oldParent.addChild(std::make_unique<InfoNode>(FlowData {}, 20));
+  auto* childC = &oldParent.addChild(std::make_unique<InfoNode>(FlowData {}, 30));
+
+  auto detachedChildren = oldParent.detachChildren();
+  firstNewParent.addChild(detachedChildren.take(childB));
+  secondNewParent.adoptChildren(std::move(detachedChildren));
+
+  checkLinkedChildOrder(firstNewParent, { 20 });
+  checkLinkedChildOrder(secondNewParent, { 10, 30 });
+  CHECK(childA->parent == &secondNewParent);
+  CHECK(childB->parent == &firstNewParent);
+  CHECK(childC->parent == &secondNewParent);
+}
+
+TEST_CASE("InfoNode adoptChildren appends without reordering existing children [fast][core][partition][tree][ownership]")
+{
+  InfoNode oldParent;
+  InfoNode newParent;
+  auto existingA = std::make_unique<InfoNode>(FlowData {}, 10);
+  auto existingB = std::make_unique<InfoNode>(FlowData {}, 20);
+  existingA->data.flow = 0.1;
+  existingB->data.flow = 0.7;
+  newParent.addChild(std::move(existingA));
+  newParent.addChild(std::move(existingB));
+  newParent.sortChildrenOnFlow(false);
+
+  oldParent.addChild(std::make_unique<InfoNode>(FlowData {}, 30));
+  oldParent.addChild(std::make_unique<InfoNode>(FlowData {}, 40));
+
+  newParent.adoptChildren(oldParent.detachChildren());
+
+  checkLinkedChildOrder(newParent, { 20, 10, 30, 40 });
+}
+
+TEST_CASE("InfoNode detached child handle deletes dropped children [fast][core][partition][tree][ownership]")
+{
+  InfoNode oldParent;
+  oldParent.addChild(std::make_unique<InfoNode>(FlowData {}, 10));
+  oldParent.addChild(std::make_unique<InfoNode>(FlowData {}, 20));
+
+  {
+    auto detachedChildren = oldParent.detachChildren();
+    CHECK(detachedChildren.size() == 2);
+    CHECK(oldParent.childDegree() == 0);
+  }
+
+  CHECK(oldParent.childDegree() == 0);
+  CHECK(oldParent.firstChild == nullptr);
+  CHECK(oldParent.lastChild == nullptr);
+  oldParent.deleteChildren();
+}
+
 TEST_CASE("Reinitializing a network clears collapsed root children [fast][core][partition][tree]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

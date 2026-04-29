@@ -17,6 +17,7 @@
 #include "InfoNode.h"
 #include "FlowData.h"
 
+#include <stdexcept>
 #include <set>
 #include <utility>
 
@@ -672,10 +673,19 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
   if (leafLevel == 1)
     replaceExistingModules = false;
 
-  // Release children pointers on current parent(s) to put new modules between
+  // Detach active children from current parent(s) to put new modules between
+  std::vector<InfoNode::DetachedChildChain> detachedParents;
   for (auto& n : network) {
-    n->parent->releaseChildren(); // Safe to call multiple times
+    detachedParents.push_back(n->parent->detachChildren()); // Safe to call multiple times
   }
+
+  auto takeDetachedNode = [&detachedParents](InfoNode* node) {
+    for (auto& detachedParent : detachedParents) {
+      if (auto ownedNode = detachedParent.take(node))
+        return ownedNode;
+    }
+    throw std::logic_error("Detached active node ownership not found.");
+  };
 
   // Create the new module nodes and re-parent the active network from its common parent to the new module level
   for (unsigned int i = 0; i < numNodes; ++i) {
@@ -687,7 +697,7 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
       modules[moduleIndex]->index = moduleIndex;
       node->parent->addChild(std::move(module));
     }
-    modules[moduleIndex]->addChild(node);
+    modules[moduleIndex]->addChild(takeDetachedNode(node));
   }
 
   using NodePair = std::pair<unsigned int, unsigned int>;
