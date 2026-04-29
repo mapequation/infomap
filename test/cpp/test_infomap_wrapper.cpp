@@ -21,7 +21,7 @@ std::multiset<InternalEdge> internalEdgesForModule(infomap::InfoNode& module)
   std::multiset<InternalEdge> edges;
   for (auto& node : module) {
     for (auto* edge : node.outEdges()) {
-      if (edge->target->parent == &module) {
+      if (edge->target->parentNode() == &module) {
         edges.emplace(edge->source->stateId, edge->target->stateId, edge->data.weight, edge->data.flow);
       }
     }
@@ -275,7 +275,7 @@ TEST_CASE("Subnetwork reuse and dispose stay stable on the same parent module [f
   infomap::test::checkRunSanity(im);
   REQUIRE(im.numTopModules() == 2);
 
-  auto& module = *im.root().firstChild;
+  auto& module = *im.root().firstChildNode();
   const auto originalEdges = internalEdgesForModule(module);
   std::vector<unsigned int> expectedLeafIds;
   for (const auto& node : module) {
@@ -345,7 +345,7 @@ TEST_CASE("Subnetwork ownership replaces and disposes the module Infomap instanc
   infomap::test::checkRunSanity(im);
   REQUIRE(im.numTopModules() == 2);
 
-  auto& module = *im.root().firstChild;
+  auto& module = *im.root().firstChildNode();
 
   auto& firstSubInfomap = im.getSubInfomap(module).initNetwork(module);
   REQUIRE(module.getInfomapRoot() == &firstSubInfomap.root());
@@ -370,7 +370,7 @@ TEST_CASE("Higher-order subnetwork rebuild preserves state identities and intern
   infomap::test::checkRunSanity(im);
   REQUIRE(im.numTopModules() == 2);
 
-  auto& module = *im.root().firstChild;
+  auto& module = *im.root().firstChildNode();
   REQUIRE(module.childDegree() >= 2);
 
   const auto originalEdges = internalEdgesForModule(module);
@@ -411,7 +411,7 @@ TEST_CASE("Metadata-bearing subnetwork rebuild preserves leaf metadata [fast][co
   infomap::test::checkRunSanity(im);
   REQUIRE(im.numTopModules() == 2);
 
-  auto& module = *im.root().firstChild;
+  auto& module = *im.root().firstChildNode();
   const auto originalEdges = internalEdgesForModule(module);
   const auto originalIdentities = nodeIdentitiesForModule(module);
   REQUIRE_FALSE(originalIdentities.empty());
@@ -440,7 +440,7 @@ TEST_CASE("Higher-order metadata-bearing subnetwork rebuild stays stable [fast][
   infomap::test::checkRunSanity(im);
   REQUIRE(im.numTopModules() == 2);
 
-  auto& module = *im.root().firstChild;
+  auto& module = *im.root().firstChildNode();
   REQUIRE(module.childDegree() >= 2);
 
   const auto originalEdges = internalEdgesForModule(module);

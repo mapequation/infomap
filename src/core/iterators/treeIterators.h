@@ -42,7 +42,7 @@ public:
   ChildIterator() = default;
 
   ChildIterator(const NodePointerType& nodePointer)
-      : m_root(nodePointer), m_current(nodePointer == nullptr ? nullptr : nodePointer->firstChild) { }
+      : m_root(nodePointer), m_current(nodePointer == nullptr ? nullptr : nodePointer->firstChildNode()) { }
 
   ChildIterator(const ChildIterator& other)
       : m_root(other.m_root), m_current(other.m_current) { }
@@ -68,8 +68,8 @@ public:
 
   ChildIterator& operator++()
   {
-    m_current = m_current->next;
-    if (m_current != nullptr && m_current->parent != m_root) {
+    m_current = m_current->nextSibling();
+    if (m_current != nullptr && m_current->parentNode() != m_root) {
       m_current = nullptr;
     }
     return *this;
@@ -84,8 +84,8 @@ public:
 
   ChildIterator& operator--()
   {
-    m_current = m_current->previous;
-    if (m_current != nullptr && m_current->parent != m_root) {
+    m_current = m_current->previousSibling();
+    if (m_current != nullptr && m_current->parentNode() != m_root) {
       m_current = nullptr;
     }
     return *this;
@@ -173,17 +173,17 @@ public:
       curr = infomapRoot;
     }
 
-    if (curr->firstChild != nullptr) {
-      curr = curr->firstChild;
+    if (curr->firstChildNode() != nullptr) {
+      curr = curr->firstChildNode();
       ++m_depth;
       m_path.push_back(0);
     } else {
     // Current node is a leaf
     // Presupposes that the next pointer can't reach out from the current parent.
     tryNext:
-      while (curr->next == nullptr) {
-        if (curr->parent != nullptr) {
-          curr = curr->parent;
+      while (curr->nextSibling() == nullptr) {
+        if (curr->parentNode() != nullptr) {
+          curr = curr->parentNode();
           --m_depth;
           m_path.pop_back();
           if (curr == m_root) // Check if back to beginning
@@ -213,7 +213,7 @@ public:
           }
         }
       }
-      curr = curr->next;
+      curr = curr->nextSibling();
       ++m_path.back();
     }
     m_current = curr;
@@ -327,13 +327,13 @@ public:
   DepthFirstIterator& operator++()
   {
     NodePointerType curr = Base::m_current;
-    if (curr->firstChild != nullptr) {
-      curr = curr->firstChild;
+    if (curr->firstChildNode() != nullptr) {
+      curr = curr->firstChildNode();
       ++Base::m_depth;
     } else {
       // Presupposes that the next pointer can't reach out from the current parent.
-      while (curr->next == nullptr) {
-        curr = curr->parent;
+      while (curr->nextSibling() == nullptr) {
+        curr = curr->parentNode();
         --Base::m_depth;
         if (curr == Base::m_root || curr == nullptr) // 0 if no children in first place
         {
@@ -341,7 +341,7 @@ public:
           return *this;
         }
       }
-      curr = curr->next;
+      curr = curr->nextSibling();
     }
     Base::m_current = curr;
     return *this;
@@ -386,8 +386,8 @@ public:
   void init()
   {
     if (Base::m_current != nullptr) {
-      while (Base::m_current->firstChild != nullptr) {
-        Base::m_current = Base::m_current->firstChild;
+      while (Base::m_current->firstChildNode() != nullptr) {
+        Base::m_current = Base::m_current->firstChildNode();
         ++Base::m_depth;
       }
     }
@@ -402,14 +402,14 @@ public:
     }
 
     NodePointerType curr = Base::m_current;
-    if (curr->next != nullptr) {
-      curr = curr->next;
-      while (curr->firstChild != nullptr) {
-        curr = curr->firstChild;
+    if (curr->nextSibling() != nullptr) {
+      curr = curr->nextSibling();
+      while (curr->firstChildNode() != nullptr) {
+        curr = curr->firstChildNode();
         ++Base::m_depth;
       }
     } else {
-      curr = curr->parent;
+      curr = curr->parentNode();
       --Base::m_depth;
     }
 
@@ -456,8 +456,8 @@ public:
   void init()
   {
     if (Base::m_current != nullptr) {
-      while (Base::m_current->firstChild != nullptr) {
-        Base::m_current = Base::m_current->firstChild;
+      while (Base::m_current->firstChildNode() != nullptr) {
+        Base::m_current = Base::m_current->firstChildNode();
         ++Base::m_depth;
       }
     }
@@ -466,18 +466,18 @@ public:
   LeafNodeIterator& operator++()
   {
     ASSERT(Base::m_current != nullptr);
-    while (Base::m_current->next == nullptr || Base::m_current->next->parent != Base::m_current->parent) {
-      Base::m_current = Base::m_current->parent;
+    while (Base::m_current->nextSibling() == nullptr || Base::m_current->nextSibling()->parentNode() != Base::m_current->parentNode()) {
+      Base::m_current = Base::m_current->parentNode();
       --Base::m_depth;
       if (Base::m_current == nullptr)
         return *this;
     }
 
-    Base::m_current = Base::m_current->next;
+    Base::m_current = Base::m_current->nextSibling();
 
     if (Base::m_current != nullptr) {
-      while (Base::m_current->firstChild != nullptr) {
-        Base::m_current = Base::m_current->firstChild;
+      while (Base::m_current->firstChildNode() != nullptr) {
+        Base::m_current = Base::m_current->firstChildNode();
         ++Base::m_depth;
       }
     }
@@ -522,11 +522,11 @@ public:
   void init()
   {
     if (Base::m_current != nullptr) {
-      if (Base::m_current->firstChild == nullptr) {
+      if (Base::m_current->firstChildNode() == nullptr) {
         Base::m_current = nullptr; // End directly if no module
       } else {
-        while (Base::m_current->firstChild->firstChild != nullptr) {
-          Base::m_current = Base::m_current->firstChild;
+        while (Base::m_current->firstChildNode()->firstChildNode() != nullptr) {
+          Base::m_current = Base::m_current->firstChildNode();
           ++Base::m_depth;
         }
       }
@@ -536,21 +536,21 @@ public:
   LeafModuleIterator& operator++()
   {
     ASSERT(Base::m_current != nullptr);
-    while (Base::m_current->next == nullptr || Base::m_current->next->parent != Base::m_current->parent) {
-      Base::m_current = Base::m_current->parent;
+    while (Base::m_current->nextSibling() == nullptr || Base::m_current->nextSibling()->parentNode() != Base::m_current->parentNode()) {
+      Base::m_current = Base::m_current->parentNode();
       --Base::m_depth;
       if (Base::m_current == nullptr)
         return *this;
     }
 
-    Base::m_current = Base::m_current->next;
+    Base::m_current = Base::m_current->nextSibling();
 
     if (Base::m_current != nullptr) {
-      if (Base::m_current->firstChild == nullptr) {
-        Base::m_current = Base::m_current->parent;
+      if (Base::m_current->firstChildNode() == nullptr) {
+        Base::m_current = Base::m_current->parentNode();
       } else {
-        while (Base::m_current->firstChild->firstChild != nullptr) {
-          Base::m_current = Base::m_current->firstChild;
+        while (Base::m_current->firstChildNode()->firstChildNode() != nullptr) {
+          Base::m_current = Base::m_current->firstChildNode();
           ++Base::m_depth;
         }
       }
@@ -597,7 +597,7 @@ public:
   SiblingIterator& operator++()
   {
     ASSERT(Base::m_current != nullptr);
-    Base::m_current = Base::m_current->next;
+    Base::m_current = Base::m_current->nextSibling();
     return *this;
   }
 
@@ -611,7 +611,7 @@ public:
   SiblingIterator& operator--()
   {
     ASSERT(Base::m_current != nullptr);
-    Base::m_current = Base::m_current->previous;
+    Base::m_current = Base::m_current->previousSibling();
     return *this;
   }
 

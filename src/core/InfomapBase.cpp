@@ -73,10 +73,10 @@ unsigned int InfomapBase::numLevels() const
 {
   // TODO: Make sure this is not called unless tree is guaranteed to have even depth!
   unsigned int depth = 0;
-  InfoNode* n = m_root.firstChild;
+  const InfoNode* n = m_root.firstChildNode();
   while (n != nullptr) {
     ++depth;
-    n = n->firstChild;
+    n = n->firstChildNode();
   }
   return depth;
 }
@@ -386,7 +386,7 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
     throw std::domain_error("No nodes in network");
   // A fresh network init invalidates any previous hard-partition restore buffer.
   m_originalLeafNodes.clear();
-  if (m_root.firstChild != nullptr || m_root.collapsedFirstChild != nullptr) {
+  if (m_root.firstChildNode() != nullptr || m_root.collapsedFirstChildNode() != nullptr) {
     m_root.deleteChildren();
     m_leafNodes.clear();
   }
@@ -463,9 +463,9 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
   std::vector<InfoNode::DetachedChildChain> detachedLeafParents;
   for (auto& leafNode : m_leafNodes) {
     // Also detach leaf nodes to delete all modules, safe to call multiple times
-    detachedLeafParents.push_back(leafNode->parent->detachChildren());
+    detachedLeafParents.push_back(leafNode->parentNode()->detachChildren());
     // Set parent to nullptr to be able to collect any orphaned nodes in the end
-    leafNode->parent = nullptr;
+    leafNode->clearDetachedLinks();
     nodeIdToIndex[leafNode->stateId] = leafIndex;
     ++leafIndex;
   }
@@ -510,7 +510,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
         }
       }
 
-      node = node->lastChild;
+      node = node->lastChildNode();
       ++depth;
     }
     maxDepth = std::max(maxDepth, depth);
@@ -525,7 +525,7 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 
   // Set orphaned nodes to their own or neighbouring module
   for (auto& leafNode : m_leafNodes) {
-    if (leafNode->parent != nullptr) {
+    if (leafNode->parentNode() != nullptr) {
       continue;
     }
 
@@ -533,24 +533,24 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
     if (assignToNeighbouringModule) {
       // Take first neighbour that has a module assigned
       for (auto* edge : leafNode->outEdges()) {
-        if (edge->target->parent != nullptr) {
-          edge->target->parent->addChild(takeDetachedLeaf(leafNode));
+        if (edge->target->parentNode() != nullptr) {
+          edge->target->parentNode()->addChild(takeDetachedLeaf(leafNode));
           ++numNodesAddedToNeighbouringModules;
           break;
         }
       }
       // Check incoming links if still orphan
-      if (leafNode->parent == nullptr) {
+      if (leafNode->parentNode() == nullptr) {
         for (auto* edge : leafNode->inEdges()) {
-          if (edge->source->parent != nullptr) {
-            edge->source->parent->addChild(takeDetachedLeaf(leafNode));
+          if (edge->source->parentNode() != nullptr) {
+            edge->source->parentNode()->addChild(takeDetachedLeaf(leafNode));
             ++numNodesAddedToNeighbouringModules;
             break;
           }
         }
       }
       // Set to own module if no neighbour module available
-      if (leafNode->parent == nullptr) {
+      if (leafNode->parentNode() == nullptr) {
         auto& module = root().addChild(std::make_unique<InfoNode>());
         module.addChild(takeDetachedLeaf(leafNode));
       }
@@ -910,7 +910,7 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
     for (InfoEdge* e : node.outEdges()) {
       InfoEdge& edge = *e;
       // If neighbour node is within the same module, add the link to this subnetwork.
-      if (edge.target->parent == parentPtr) {
+      if (edge.target->parentNode() == parentPtr) {
         m_leafNodes[edge.source->index]->addOutEdge(*m_leafNodes[edge.target->index], edge.data.weight, edge.data.flow);
       }
     }
@@ -956,7 +956,7 @@ void InfomapBase::hierarchicalPartition()
       double codelengthAfter = 0.0;
 
       for (InfoNode& module : m_root.infomapTree()) {
-        if (!module.isLeaf() && module.firstChild->isLeafModule()) {
+        if (!module.isLeaf() && module.firstChildNode()->isLeafModule()) {
           codelengthBefore += module.codelength;
           auto numLeafs = 0;
           for (auto& leafModule : module) {
@@ -999,7 +999,7 @@ void InfomapBase::hierarchicalPartition()
             InfoNode* leaf = leafs[j];
             unsigned int moduleIndex = modules[j];
             if (subModules[moduleIndex] == nullptr) {
-              auto subModule = std::make_unique<InfoNode>(subInfomap.leafNodes()[j]->parent->data);
+              auto subModule = std::make_unique<InfoNode>(subInfomap.leafNodes()[j]->parentNode()->data);
               subModules[moduleIndex] = subModule.get();
               subModules[moduleIndex]->index = moduleIndex;
               module.addChild(std::move(subModule));
@@ -1170,8 +1170,8 @@ void InfomapBase::restoreHardPartition()
   for (InfoNode* node : leafNodes) {
     ++numExpandedNodes;
     numExpandedChildren += node->expandChildren();
-    if (!node->isLeaf() && node->parent != nullptr)
-      node->parent->replaceChildWithChildren(*node);
+    if (!node->isLeaf() && node->parentNode() != nullptr)
+      node->parentNode()->replaceChildWithChildren(*node);
   }
 
   // Swap back original leaf nodes
@@ -1251,7 +1251,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
   for (auto it = root().begin_post_depth_first(); !it.isEnd(); ++it) {
     auto& node = *it;
     if (!node.isRoot())
-      node.parent->data += node.data;
+      node.parentNode()->data += node.data;
     // Don't aggregate enter and exit flow
     if (!node.isLeaf()) {
       node.index = it.depth(); // Use index to store the depth on modules
@@ -1274,8 +1274,8 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
       double linkFlow = edge.data.flow;
       double halfFlow = linkFlow / 2;
 
-      InfoNode* node1 = leafNodeSource.parent;
-      InfoNode* node2 = leafNodeTarget->parent;
+      InfoNode* node1 = leafNodeSource.parentNode();
+      InfoNode* node2 = leafNodeTarget->parentNode();
 
       if (node1 == node2)
         continue;
@@ -1288,7 +1288,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
         } else {
           node1->data.exitFlow += linkFlow;
         }
-        node1 = node1->parent;
+        node1 = node1->parentNode();
       }
       while (node2->index > node1->index) {
         if (isUndirectedClustering()) {
@@ -1297,7 +1297,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
         } else {
           node2->data.enterFlow += linkFlow;
         }
-        node2 = node2->parent;
+        node2 = node2->parentNode();
       }
 
       // Then aggregate link flow until equal parent
@@ -1311,8 +1311,8 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
           node1->data.exitFlow += linkFlow;
           node2->data.enterFlow += linkFlow;
         }
-        node1 = node1->parent;
-        node2 = node2->parent;
+        node1 = node1->parentNode();
+        node2 = node2->parentNode();
       }
     }
   }
@@ -1422,7 +1422,7 @@ unsigned int InfomapBase::fineTune()
   // Put leaf modules in existing modules
   std::vector<unsigned int> modules(numLeafNodes());
   for (unsigned int i = 0; i < numLeafNodes(); ++i) {
-    modules[i] = m_leafNodes[i]->parent->index;
+    modules[i] = m_leafNodes[i]->parentNode()->index;
   }
   moveActiveNodesToPredefinedModules(modules);
 
@@ -1738,10 +1738,10 @@ void InfomapBase::resetFlowOnModules()
   // Aggregate flow from leaf nodes up in the tree
   for (InfoNode* n : m_leafNodes) {
     double leafNodeFlow = n->data.flow;
-    InfoNode* module = n->parent;
+    InfoNode* module = n->parentNode();
     do {
       module->data.flow += leafNodeFlow;
-      module = module->parent;
+      module = module->parentNode();
     } while (module != nullptr);
   }
 }
@@ -2211,7 +2211,7 @@ void aggregatePerLevelCodelength(const InfoNode& parent, std::vector<detail::Per
   if (perLevelStat.size() < level + 1)
     perLevelStat.resize(level + 1);
 
-  if (parent.firstChild->isLeaf()) {
+  if (parent.firstChildNode()->isLeaf()) {
     perLevelStat[level].numLeafNodes += parent.childDegree();
     perLevelStat[level].leafLength += parent.codelength;
     return;

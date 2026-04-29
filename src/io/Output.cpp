@@ -187,7 +187,7 @@ std::map<std::string, LinkMap> aggregateModuleLinks(InfomapBase& im, bool states
     for (auto it(im.iterTreePhysical()); !it.isEnd(); ++it) {
       if (it->isLeaf()) {
         for (auto stateId : it->stateNodes) {
-          stateIdToParent[stateId] = it->parent;
+          stateIdToParent[stateId] = it->parentNode();
           stateIdToChildIndex[stateId] = it.childIndex();
         }
       }
@@ -195,7 +195,7 @@ std::map<std::string, LinkMap> aggregateModuleLinks(InfomapBase& im, bool states
   } else {
     for (auto it(im.iterTree()); !it.isEnd(); ++it) {
       if (it->isLeaf()) {
-        stateIdToParent[it->stateId] = it->parent;
+        stateIdToParent[it->stateId] = it->parentNode();
         stateIdToChildIndex[it->stateId] = it.childIndex();
       }
     }

@@ -99,7 +99,7 @@ public:
 
   unsigned int numNonTrivialTopModules() const { return m_numNonTrivialTopModules; }
 
-  bool haveModules() const { return !m_root.isLeaf() && !m_root.firstChild->isLeaf(); }
+  bool haveModules() const { return !m_root.isLeaf() && !m_root.firstChildNode()->isLeaf(); }
 
   bool haveNonTrivialModules() const { return numNonTrivialTopModules() > 0; }
 

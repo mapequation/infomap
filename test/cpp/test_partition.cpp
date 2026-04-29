@@ -30,7 +30,7 @@ std::vector<unsigned int> childStateIds(const InfoNode& node)
 std::vector<unsigned int> childChainStateIds(const InfoNode* firstChild)
 {
   std::vector<unsigned int> ids;
-  for (const auto* child = firstChild; child != nullptr; child = child->next) {
+  for (const auto* child = firstChild; child != nullptr; child = child->nextSibling()) {
     ids.push_back(child->stateId);
   }
   return ids;
@@ -39,10 +39,8 @@ std::vector<unsigned int> childChainStateIds(const InfoNode* firstChild)
 void deleteDetachedChildChain(InfoNode* firstChild)
 {
   while (firstChild != nullptr) {
-    auto* next = firstChild->next;
-    firstChild->parent = nullptr;
-    firstChild->previous = nullptr;
-    firstChild->next = nullptr;
+    auto* next = firstChild->nextSibling();
+    firstChild->clearDetachedLinks();
     delete firstChild;
     firstChild = next;
   }
@@ -54,25 +52,25 @@ void checkLinkedChildOrder(InfoNode& parent, const std::vector<unsigned int>& ex
   CHECK(parent.childDegree() == expectedStateIds.size());
 
   InfoNode* previous = nullptr;
-  InfoNode* child = parent.firstChild;
+  InfoNode* child = parent.firstChildNode();
   std::size_t index = 0;
   while (child != nullptr) {
     REQUIRE(index < expectedStateIds.size());
     CHECK(child->stateId == expectedStateIds[index]);
-    CHECK(child->parent == &parent);
-    CHECK(child->previous == previous);
+    CHECK(child->parentNode() == &parent);
+    CHECK(child->previousSibling() == previous);
     if (previous != nullptr) {
-      CHECK(previous->next == child);
+      CHECK(previous->nextSibling() == child);
     }
     previous = child;
-    child = child->next;
+    child = child->nextSibling();
     ++index;
   }
 
   CHECK(index == expectedStateIds.size());
-  CHECK(parent.lastChild == previous);
+  CHECK(parent.lastChildNode() == previous);
   if (previous != nullptr) {
-    CHECK(previous->next == nullptr);
+    CHECK(previous->nextSibling() == nullptr);
   }
 }
 
@@ -223,20 +221,20 @@ TEST_CASE("InfoNode hierarchy mutations preserve parentage and child order [fast
 
   CHECK(root.collapseChildren() == 3);
   CHECK(root.childDegree() == 0);
-  CHECK(root.firstChild == nullptr);
-  CHECK(root.lastChild == nullptr);
+  CHECK(root.firstChildNode() == nullptr);
+  CHECK(root.lastChildNode() == nullptr);
 
   CHECK(root.expandChildren() == 3);
   CHECK(root.childDegree() == 3);
   CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 20, 30 });
-  CHECK(childA->parent == &root);
-  CHECK(childB->parent == &root);
-  CHECK(childC->parent == &root);
+  CHECK(childA->parentNode() == &root);
+  CHECK(childB->parentNode() == &root);
+  CHECK(childC->parentNode() == &root);
 
   root.releaseChildren();
   CHECK(root.childDegree() == 0);
-  CHECK(root.firstChild == nullptr);
-  CHECK(root.lastChild == nullptr);
+  CHECK(root.firstChildNode() == nullptr);
+  CHECK(root.lastChildNode() == nullptr);
 
   delete childA;
   delete childB;
@@ -268,14 +266,14 @@ TEST_CASE("InfoNode unique_ptr child handoff preserves raw child-chain semantics
   CHECK(childA == nullptr);
   CHECK(childB == nullptr);
   CHECK(root.childDegree() == 2);
-  CHECK(root.firstChild == childAPtr);
-  CHECK(root.lastChild == childBPtr);
-  CHECK(childAPtr->parent == &root);
-  CHECK(childBPtr->parent == &root);
-  CHECK(childAPtr->previous == nullptr);
-  CHECK(childAPtr->next == childBPtr);
-  CHECK(childBPtr->previous == childAPtr);
-  CHECK(childBPtr->next == nullptr);
+  CHECK(root.firstChildNode() == childAPtr);
+  CHECK(root.lastChildNode() == childBPtr);
+  CHECK(childAPtr->parentNode() == &root);
+  CHECK(childBPtr->parentNode() == &root);
+  CHECK(childAPtr->previousSibling() == nullptr);
+  CHECK(childAPtr->nextSibling() == childBPtr);
+  CHECK(childBPtr->previousSibling() == childAPtr);
+  CHECK(childBPtr->nextSibling() == nullptr);
   CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 20 });
 
   childAPtr->addChild(std::make_unique<InfoNode>(FlowData {}, 11));
@@ -293,15 +291,15 @@ TEST_CASE("InfoNode raw addChild reparents child ownership between parents [fast
 
   CHECK(childStateIds(oldParent) == std::vector<unsigned int> { 20 });
   CHECK(childStateIds(newParent) == std::vector<unsigned int> { 10 });
-  CHECK(child->parent == &newParent);
-  CHECK(child->previous == nullptr);
-  CHECK(child->next == nullptr);
+  CHECK(child->parentNode() == &newParent);
+  CHECK(child->previousSibling() == nullptr);
+  CHECK(child->nextSibling() == nullptr);
 
   oldParent.deleteChildren();
 
   CHECK(child->stateId == 10);
-  CHECK(newParent.firstChild == child);
-  CHECK(newParent.lastChild == child);
+  CHECK(newParent.firstChildNode() == child);
+  CHECK(newParent.lastChildNode() == child);
 }
 
 TEST_CASE("InfoNode releaseChildren detaches active children without deleting them [fast][core][partition][tree][ownership]")
@@ -315,14 +313,14 @@ TEST_CASE("InfoNode releaseChildren detaches active children without deleting th
   root.releaseChildren();
 
   CHECK(root.childDegree() == 0);
-  CHECK(root.firstChild == nullptr);
-  CHECK(root.lastChild == nullptr);
+  CHECK(root.firstChildNode() == nullptr);
+  CHECK(root.lastChildNode() == nullptr);
   CHECK(childA->stateId == 10);
   CHECK(childB->stateId == 20);
-  CHECK(childA->parent == &root);
-  CHECK(childB->parent == &root);
-  CHECK(childA->next == childB);
-  CHECK(childB->previous == childA);
+  CHECK(childA->parentNode() == &root);
+  CHECK(childB->parentNode() == &root);
+  CHECK(childA->nextSibling() == childB);
+  CHECK(childB->previousSibling() == childA);
 
   delete childA;
   delete childB;
@@ -340,8 +338,8 @@ TEST_CASE("InfoNode reattaches released children under new unique_ptr ownership 
   newParent.addChild(childB);
 
   CHECK(oldParent.childDegree() == 0);
-  CHECK(oldParent.firstChild == nullptr);
-  CHECK(oldParent.lastChild == nullptr);
+  CHECK(oldParent.firstChildNode() == nullptr);
+  CHECK(oldParent.lastChildNode() == nullptr);
   checkLinkedChildOrder(newParent, { 10, 20 });
 }
 
@@ -364,8 +362,8 @@ TEST_CASE("InfoNode detached child handle adopts children in linked-list order [
   auto detachedChildren = oldParent.detachChildren();
 
   CHECK(oldParent.childDegree() == 0);
-  CHECK(oldParent.firstChild == nullptr);
-  CHECK(oldParent.lastChild == nullptr);
+  CHECK(oldParent.firstChildNode() == nullptr);
+  CHECK(oldParent.lastChildNode() == nullptr);
   CHECK(detachedChildren.size() == 3);
   CHECK(childChainStateIds(detachedChildren.first()) == std::vector<unsigned int> { 20, 30, 10 });
 
@@ -389,9 +387,9 @@ TEST_CASE("InfoNode detached child handle can move one child to another parent [
 
   checkLinkedChildOrder(firstNewParent, { 20 });
   checkLinkedChildOrder(secondNewParent, { 10, 30 });
-  CHECK(childA->parent == &secondNewParent);
-  CHECK(childB->parent == &firstNewParent);
-  CHECK(childC->parent == &secondNewParent);
+  CHECK(childA->parentNode() == &secondNewParent);
+  CHECK(childB->parentNode() == &firstNewParent);
+  CHECK(childC->parentNode() == &secondNewParent);
 }
 
 TEST_CASE("InfoNode adoptChildren appends without reordering existing children [fast][core][partition][tree][ownership]")
@@ -427,8 +425,8 @@ TEST_CASE("InfoNode detached child handle deletes dropped children [fast][core][
   }
 
   CHECK(oldParent.childDegree() == 0);
-  CHECK(oldParent.firstChild == nullptr);
-  CHECK(oldParent.lastChild == nullptr);
+  CHECK(oldParent.firstChildNode() == nullptr);
+  CHECK(oldParent.lastChildNode() == nullptr);
   oldParent.deleteChildren();
 }
 
@@ -445,8 +443,8 @@ TEST_CASE("Reinitializing a network clears collapsed root children [fast][core][
   im.initNetwork(im.network());
 
   CHECK(im.root().childDegree() == 6);
-  CHECK(im.root().collapsedFirstChild == nullptr);
-  CHECK(im.root().collapsedLastChild == nullptr);
+  CHECK(im.root().collapsedFirstChildNode() == nullptr);
+  CHECK(im.root().collapsedLastChildNode() == nullptr);
 }
 
 TEST_CASE("InfoNode deleteChildren also clears collapsed children [fast][core][partition][tree]")
@@ -457,16 +455,16 @@ TEST_CASE("InfoNode deleteChildren also clears collapsed children [fast][core][p
 
   CHECK(root.collapseChildren() == 2);
   CHECK(root.childDegree() == 0);
-  CHECK(root.firstChild == nullptr);
-  CHECK(root.collapsedFirstChild != nullptr);
+  CHECK(root.firstChildNode() == nullptr);
+  CHECK(root.collapsedFirstChildNode() != nullptr);
 
   root.deleteChildren();
 
   CHECK(root.childDegree() == 0);
-  CHECK(root.firstChild == nullptr);
-  CHECK(root.lastChild == nullptr);
-  CHECK(root.collapsedFirstChild == nullptr);
-  CHECK(root.collapsedLastChild == nullptr);
+  CHECK(root.firstChildNode() == nullptr);
+  CHECK(root.lastChildNode() == nullptr);
+  CHECK(root.collapsedFirstChildNode() == nullptr);
+  CHECK(root.collapsedLastChildNode() == nullptr);
 }
 
 TEST_CASE("InfoNode deleteChildren clears both active and collapsed child chains [fast][core][partition][tree][ownership]")
@@ -481,10 +479,10 @@ TEST_CASE("InfoNode deleteChildren clears both active and collapsed child chains
   root.deleteChildren();
 
   CHECK(root.childDegree() == 0);
-  CHECK(root.firstChild == nullptr);
-  CHECK(root.lastChild == nullptr);
-  CHECK(root.collapsedFirstChild == nullptr);
-  CHECK(root.collapsedLastChild == nullptr);
+  CHECK(root.firstChildNode() == nullptr);
+  CHECK(root.lastChildNode() == nullptr);
+  CHECK(root.collapsedFirstChildNode() == nullptr);
+  CHECK(root.collapsedLastChildNode() == nullptr);
 }
 
 TEST_CASE("InfoNode copy constructor creates detached shallow copies [fast][core][partition][tree][ownership]")
@@ -508,8 +506,8 @@ TEST_CASE("InfoNode copy constructor creates detached shallow copies [fast][core
 
   CHECK(source.collapseChildren() == 2);
   CHECK(source.childDegree() == 0);
-  CHECK(source.collapsedFirstChild != nullptr);
-  CHECK(source.collapsedLastChild != nullptr);
+  CHECK(source.collapsedFirstChildNode() != nullptr);
+  CHECK(source.collapsedLastChildNode() != nullptr);
 
   InfoNode clone(source);
 
@@ -526,16 +524,16 @@ TEST_CASE("InfoNode copy constructor creates detached shallow copies [fast][core
   CHECK(clone.outDegree() == 0);
   CHECK(clone.inDegree() == 0);
   CHECK(clone.owner == nullptr);
-  CHECK(clone.parent == nullptr);
-  CHECK(clone.previous == nullptr);
-  CHECK(clone.next == nullptr);
-  CHECK(clone.firstChild == nullptr);
-  CHECK(clone.lastChild == nullptr);
-  CHECK(clone.collapsedFirstChild == nullptr);
-  CHECK(clone.collapsedLastChild == nullptr);
+  CHECK(clone.parentNode() == nullptr);
+  CHECK(clone.previousSibling() == nullptr);
+  CHECK(clone.nextSibling() == nullptr);
+  CHECK(clone.firstChildNode() == nullptr);
+  CHECK(clone.lastChildNode() == nullptr);
+  CHECK(clone.collapsedFirstChildNode() == nullptr);
+  CHECK(clone.collapsedLastChildNode() == nullptr);
 
-  CHECK(source.collapsedFirstChild == activeChild);
-  CHECK(source.collapsedFirstChild->next->stateId == 20);
+  CHECK(source.collapsedFirstChildNode() == activeChild);
+  CHECK(source.collapsedFirstChildNode()->nextSibling()->stateId == 20);
 
   delete sourceEdgeTarget;
   source.deleteChildren();
@@ -554,7 +552,7 @@ TEST_CASE("InfoNode copy assignment clears destination ownership and detaches fr
   auto* destinationEdgeTarget = new InfoNode(FlowData {}, 12);
   destination.addOutEdge(*destinationEdgeTarget, 1.0, 0.5);
 
-  auto* sourceChild = source.firstChild;
+  auto* sourceChild = source.firstChildNode();
   destination = source;
 
   CHECK(destination.stateId == source.stateId);
@@ -564,43 +562,37 @@ TEST_CASE("InfoNode copy assignment clears destination ownership and detaches fr
   CHECK(destination.childDegree() == 0);
   CHECK(destination.outDegree() == 0);
   CHECK(destination.inDegree() == 0);
-  CHECK(destination.parent == nullptr);
-  CHECK(destination.previous == nullptr);
-  CHECK(destination.next == nullptr);
-  CHECK(destination.firstChild == nullptr);
-  CHECK(destination.lastChild == nullptr);
-  CHECK(destination.collapsedFirstChild == nullptr);
-  CHECK(destination.collapsedLastChild == nullptr);
+  CHECK(destination.parentNode() == nullptr);
+  CHECK(destination.previousSibling() == nullptr);
+  CHECK(destination.nextSibling() == nullptr);
+  CHECK(destination.firstChildNode() == nullptr);
+  CHECK(destination.lastChildNode() == nullptr);
+  CHECK(destination.collapsedFirstChildNode() == nullptr);
+  CHECK(destination.collapsedLastChildNode() == nullptr);
 
-  CHECK(source.firstChild == sourceChild);
-  CHECK(source.firstChild->parent == &source);
+  CHECK(source.firstChildNode() == sourceChild);
+  CHECK(source.firstChildNode()->parentNode() == &source);
 
   delete destinationEdgeTarget;
 }
 
 TEST_CASE("InfoNode initClean remains an explicit reset helper [fast][core][partition][tree]")
 {
-  InfoNode source;
   InfoNode parent;
-  InfoNode previous;
-  InfoNode next;
-  InfoNode collapsed;
-  source.parent = &parent;
-  source.previous = &previous;
-  source.next = &next;
-  source.collapsedFirstChild = &collapsed;
-  source.collapsedLastChild = &collapsed;
+  auto& source = parent.addChild(std::make_unique<InfoNode>());
+  source.addChild(std::make_unique<InfoNode>(FlowData {}, 10));
+  source.collapseChildren();
 
   source.initClean();
 
   CHECK(source.childDegree() == 0);
-  CHECK(source.parent == nullptr);
-  CHECK(source.previous == nullptr);
-  CHECK(source.next == nullptr);
-  CHECK(source.firstChild == nullptr);
-  CHECK(source.lastChild == nullptr);
-  CHECK(source.collapsedFirstChild == nullptr);
-  CHECK(source.collapsedLastChild == nullptr);
+  CHECK(source.parentNode() == nullptr);
+  CHECK(source.previousSibling() == nullptr);
+  CHECK(source.nextSibling() == nullptr);
+  CHECK(source.firstChildNode() == nullptr);
+  CHECK(source.lastChildNode() == nullptr);
+  CHECK(source.collapsedFirstChildNode() == nullptr);
+  CHECK(source.collapsedLastChildNode() == nullptr);
 }
 
 TEST_CASE("InfoNode replaceChildrenWithOneNode preserves children through guarded detach [fast][core][partition][tree][ownership]")
@@ -618,15 +610,15 @@ TEST_CASE("InfoNode replaceChildrenWithOneNode preserves children through guarde
   InfoNode& middle = root.replaceChildrenWithOneNode();
 
   CHECK(root.childDegree() == 1);
-  CHECK(root.firstChild == &middle);
-  CHECK(root.lastChild == &middle);
-  CHECK(middle.parent == &root);
-  CHECK(middle.previous == nullptr);
-  CHECK(middle.next == nullptr);
+  CHECK(root.firstChildNode() == &middle);
+  CHECK(root.lastChildNode() == &middle);
+  CHECK(middle.parentNode() == &root);
+  CHECK(middle.previousSibling() == nullptr);
+  CHECK(middle.nextSibling() == nullptr);
   CHECK(middle.childDegree() == 4);
   CHECK(childStateIds(middle) == std::vector<unsigned int> { 1, 2, 3, 4 });
   for (auto& child : middle.children()) {
-    CHECK(child.parent == &middle);
+    CHECK(child.parentNode() == &middle);
   }
 }
 
@@ -648,13 +640,13 @@ TEST_CASE("InfoNode sortChildrenOnFlow preserves links through guarded detach [f
 
   CHECK(root.childDegree() == 3);
   CHECK(childStateIds(root) == std::vector<unsigned int> { 20, 30, 10 });
-  CHECK(root.firstChild->previous == nullptr);
-  CHECK(root.firstChild->parent == &root);
-  CHECK(root.firstChild->next->parent == &root);
-  CHECK(root.lastChild->parent == &root);
-  CHECK(root.lastChild->next == nullptr);
-  CHECK(root.firstChild->next->previous == root.firstChild);
-  CHECK(root.lastChild->previous == root.firstChild->next);
+  CHECK(root.firstChildNode()->previousSibling() == nullptr);
+  CHECK(root.firstChildNode()->parentNode() == &root);
+  CHECK(root.firstChildNode()->nextSibling()->parentNode() == &root);
+  CHECK(root.lastChildNode()->parentNode() == &root);
+  CHECK(root.lastChildNode()->nextSibling() == nullptr);
+  CHECK(root.firstChildNode()->nextSibling()->previousSibling() == root.firstChildNode());
+  CHECK(root.lastChildNode()->previousSibling() == root.firstChildNode()->nextSibling());
 }
 
 TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][core][partition][tree]")
@@ -676,15 +668,15 @@ TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][c
   CHECK(moduleA->replaceWithChildren() == 1);
   CHECK(root.childDegree() == 3);
   CHECK(childStateIds(root) == std::vector<unsigned int> { 1, 2, 200 });
-  CHECK(root.firstChild->parent == &root);
-  CHECK(root.firstChild->next->parent == &root);
-  CHECK(root.lastChild == moduleB);
+  CHECK(root.firstChildNode()->parentNode() == &root);
+  CHECK(root.firstChildNode()->nextSibling()->parentNode() == &root);
+  CHECK(root.lastChildNode() == moduleB);
 
   CHECK(root.replaceChildrenWithGrandChildren() == 1);
   CHECK(root.childDegree() == 4);
   CHECK(childStateIds(root) == std::vector<unsigned int> { 1, 2, 3, 4 });
   for (const auto& child : root.children()) {
-    CHECK(child.parent == &root);
+    CHECK(child.parentNode() == &root);
     CHECK(child.isLeaf());
   }
 }
@@ -702,9 +694,9 @@ TEST_CASE("InfoNode replaceWithChildren reparents a first child chain before del
   CHECK(module->replaceWithChildren() == 1);
 
   checkLinkedChildOrder(root, { 1, 2, 30 });
-  CHECK(root.firstChild->previous == nullptr);
-  CHECK(root.lastChild == after);
-  CHECK(after->previous->stateId == 2);
+  CHECK(root.firstChildNode()->previousSibling() == nullptr);
+  CHECK(root.lastChildNode() == after);
+  CHECK(after->previousSibling()->stateId == 2);
 }
 
 TEST_CASE("InfoNode replaceWithChildren reparents a last child chain before deleting the module [fast][core][partition][tree][ownership]")
@@ -720,9 +712,9 @@ TEST_CASE("InfoNode replaceWithChildren reparents a last child chain before dele
   CHECK(module->replaceWithChildren() == 1);
 
   checkLinkedChildOrder(root, { 10, 1, 2 });
-  CHECK(root.firstChild == before);
-  CHECK(root.lastChild->stateId == 2);
-  CHECK(root.lastChild->next == nullptr);
+  CHECK(root.firstChildNode() == before);
+  CHECK(root.lastChildNode()->stateId == 2);
+  CHECK(root.lastChildNode()->nextSibling() == nullptr);
 }
 
 TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before deleting the module [fast][core][partition][tree][ownership]")
@@ -740,14 +732,14 @@ TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before de
   CHECK(module->replaceWithChildren() == 1);
 
   checkLinkedChildOrder(root, { 10, 1, 2, 30 });
-  CHECK(root.firstChild == before);
-  CHECK(root.lastChild == after);
-  CHECK(before->next->stateId == 1);
-  CHECK(before->next->parent == &root);
-  CHECK(before->next->next->stateId == 2);
-  CHECK(before->next->next->parent == &root);
-  CHECK(before->next->next->next == after);
-  CHECK(after->previous->stateId == 2);
+  CHECK(root.firstChildNode() == before);
+  CHECK(root.lastChildNode() == after);
+  CHECK(before->nextSibling()->stateId == 1);
+  CHECK(before->nextSibling()->parentNode() == &root);
+  CHECK(before->nextSibling()->nextSibling()->stateId == 2);
+  CHECK(before->nextSibling()->nextSibling()->parentNode() == &root);
+  CHECK(before->nextSibling()->nextSibling()->nextSibling() == after);
+  CHECK(after->previousSibling()->stateId == 2);
 }
 
 TEST_CASE("InfoNode replaceChildWithChildren performs parent-owned reparenting [fast][core][partition][tree][ownership]")
@@ -766,8 +758,8 @@ TEST_CASE("InfoNode replaceChildWithChildren performs parent-owned reparenting [
 
   checkLinkedChildOrder(root, { 10, 1, 2, 30 });
   CHECK(root.childDegree() == 4);
-  CHECK(before->next->stateId == 1);
-  CHECK(after->previous->stateId == 2);
+  CHECK(before->nextSibling()->stateId == 1);
+  CHECK(after->previousSibling()->stateId == 2);
 }
 
 TEST_CASE("InfoNode replaceWithChildrenDebug uses the same reparent splice path [fast][core][partition][tree][ownership]")
@@ -785,8 +777,8 @@ TEST_CASE("InfoNode replaceWithChildrenDebug uses the same reparent splice path 
   module->replaceWithChildrenDebug();
 
   checkLinkedChildOrder(root, { 10, 1, 2, 30 });
-  CHECK(root.firstChild == before);
-  CHECK(root.lastChild == after);
+  CHECK(root.firstChildNode() == before);
+  CHECK(root.lastChildNode() == after);
 }
 
 TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fast][core][partition][tree][ownership]")
@@ -799,8 +791,8 @@ TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fa
 
   deletingParent->remove(false);
 
-  CHECK(deleteRoot.firstChild == nullptr);
-  CHECK(deleteRoot.lastChild == nullptr);
+  CHECK(deleteRoot.firstChildNode() == nullptr);
+  CHECK(deleteRoot.lastChildNode() == nullptr);
 
   InfoNode detachRoot;
   auto* detachingParent = new InfoNode({}, 20);
@@ -812,13 +804,13 @@ TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fa
 
   detachingParent->remove(true);
 
-  CHECK(detachRoot.firstChild == nullptr);
-  CHECK(detachRoot.lastChild == nullptr);
+  CHECK(detachRoot.firstChildNode() == nullptr);
+  CHECK(detachRoot.lastChildNode() == nullptr);
   CHECK(childChainStateIds(detachedChild) == std::vector<unsigned int> { 21, 22 });
-  CHECK(detachedChild->previous == nullptr);
-  CHECK(detachedChild->next == detachedSibling);
-  CHECK(detachedSibling->previous == detachedChild);
-  CHECK(detachedSibling->next == nullptr);
+  CHECK(detachedChild->previousSibling() == nullptr);
+  CHECK(detachedChild->nextSibling() == detachedSibling);
+  CHECK(detachedSibling->previousSibling() == detachedChild);
+  CHECK(detachedSibling->nextSibling() == nullptr);
 
   deleteDetachedChildChain(detachedChild);
 }
@@ -836,10 +828,10 @@ TEST_CASE("InfoNode remove true unlinks first and last child modules while detac
   firstModule->remove(true);
 
   CHECK(childStateIds(firstRoot) == std::vector<unsigned int> { 20 });
-  CHECK(firstRoot.firstChild == firstSibling);
-  CHECK(firstRoot.lastChild == firstSibling);
-  CHECK(firstSibling->previous == nullptr);
-  CHECK(firstSibling->next == nullptr);
+  CHECK(firstRoot.firstChildNode() == firstSibling);
+  CHECK(firstRoot.lastChildNode() == firstSibling);
+  CHECK(firstSibling->previousSibling() == nullptr);
+  CHECK(firstSibling->nextSibling() == nullptr);
   deleteDetachedChildChain(firstDetachedChild);
 
   InfoNode lastRoot;
@@ -853,10 +845,10 @@ TEST_CASE("InfoNode remove true unlinks first and last child modules while detac
   lastModule->remove(true);
 
   CHECK(childStateIds(lastRoot) == std::vector<unsigned int> { 30 });
-  CHECK(lastRoot.firstChild == lastSibling);
-  CHECK(lastRoot.lastChild == lastSibling);
-  CHECK(lastSibling->previous == nullptr);
-  CHECK(lastSibling->next == nullptr);
+  CHECK(lastRoot.firstChildNode() == lastSibling);
+  CHECK(lastRoot.lastChildNode() == lastSibling);
+  CHECK(lastSibling->previousSibling() == nullptr);
+  CHECK(lastSibling->nextSibling() == nullptr);
   deleteDetachedChildChain(lastDetachedChild);
 }
 
@@ -873,12 +865,12 @@ TEST_CASE("InfoNode removeChild unlinks parent and sibling pointers through owne
   root.removeChild(*middle, InfoNode::RemoveChildrenPolicy::DeleteSubtree);
 
   CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 30 });
-  CHECK(root.firstChild == first);
-  CHECK(root.lastChild == last);
-  CHECK(first->previous == nullptr);
-  CHECK(first->next == last);
-  CHECK(last->previous == first);
-  CHECK(last->next == nullptr);
+  CHECK(root.firstChildNode() == first);
+  CHECK(root.lastChildNode() == last);
+  CHECK(first->previousSibling() == nullptr);
+  CHECK(first->nextSibling() == last);
+  CHECK(last->previousSibling() == first);
+  CHECK(last->nextSibling() == nullptr);
   CHECK(root.childDegree() == 2);
 }
 
@@ -893,10 +885,10 @@ TEST_CASE("InfoNode removeChild unlinks first and last children through owner AP
   firstRoot.removeChild(*first, InfoNode::RemoveChildrenPolicy::DeleteSubtree);
 
   CHECK(childStateIds(firstRoot) == std::vector<unsigned int> { 20 });
-  CHECK(firstRoot.firstChild == second);
-  CHECK(firstRoot.lastChild == second);
-  CHECK(second->previous == nullptr);
-  CHECK(second->next == nullptr);
+  CHECK(firstRoot.firstChildNode() == second);
+  CHECK(firstRoot.lastChildNode() == second);
+  CHECK(second->previousSibling() == nullptr);
+  CHECK(second->nextSibling() == nullptr);
   CHECK(firstRoot.childDegree() == 1);
 
   InfoNode lastRoot;
@@ -908,10 +900,10 @@ TEST_CASE("InfoNode removeChild unlinks first and last children through owner AP
   lastRoot.removeChild(*last, InfoNode::RemoveChildrenPolicy::DeleteSubtree);
 
   CHECK(childStateIds(lastRoot) == std::vector<unsigned int> { 30 });
-  CHECK(lastRoot.firstChild == beforeLast);
-  CHECK(lastRoot.lastChild == beforeLast);
-  CHECK(beforeLast->previous == nullptr);
-  CHECK(beforeLast->next == nullptr);
+  CHECK(lastRoot.firstChildNode() == beforeLast);
+  CHECK(lastRoot.lastChildNode() == beforeLast);
+  CHECK(beforeLast->previousSibling() == nullptr);
+  CHECK(beforeLast->nextSibling() == nullptr);
   CHECK(lastRoot.childDegree() == 1);
 }
 

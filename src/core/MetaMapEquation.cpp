@@ -73,7 +73,7 @@ void MetaMapEquation::initPartition(std::vector<InfoNode*>& nodes)
 
 void MetaMapEquation::initMetaNodes(InfoNode& root)
 {
-  bool notInitiated = root.firstChild->metaCollection.empty();
+  bool notInitiated = root.firstChildNode()->metaCollection.empty();
   if (notInitiated) {
     Log(3) << "MetaMapEquation::initMetaNodes()...\n";
 
@@ -86,12 +86,12 @@ void MetaMapEquation::initMetaNodes(InfoNode& root)
         if (!node.metaData.empty()) {
           // TODO: Use flow here and move weightByFlow choice to metaCollection, using flowCount?
           double flow = weightByFlow ? node.data.flow : m_unweightedNodeFlow;
-          node.parent->metaCollection.add(node.metaData[0], flow);
+          node.parentNode()->metaCollection.add(node.metaData[0], flow);
         } else {
           throw std::length_error("A node is missing meta data using MetaMapEquation");
         }
       } else {
-        node.parent->metaCollection.add(node.metaCollection);
+        node.parentNode()->metaCollection.add(node.metaCollection);
       }
     }
   }

@@ -19,8 +19,8 @@ InfomapIterator& InfomapIterator::operator++() noexcept
   const auto root = m_current->getInfomapRoot();
   auto current = root ? root : m_current;
 
-  if (current->firstChild) {
-    current = current->firstChild;
+  if (current->firstChildNode()) {
+    current = current->firstChildNode();
     ++m_depth;
     m_path.push_back(1);
   } else {
@@ -32,7 +32,7 @@ InfomapIterator& InfomapIterator::operator++() noexcept
     while (tryNext) {
       tryNext = false;
 
-      while (!current->next) {
+      while (!current->nextSibling()) {
         if (current->owner) {
           current = current->owner;
 
@@ -44,8 +44,8 @@ InfomapIterator& InfomapIterator::operator++() noexcept
           tryNext = true;
           break;
         }
-        if (current->parent) {
-          current = current->parent;
+        if (current->parentNode()) {
+          current = current->parentNode();
           --m_depth;
           m_path.pop_back();
 
@@ -60,7 +60,7 @@ InfomapIterator& InfomapIterator::operator++() noexcept
       }
     }
 
-    current = current->next;
+    current = current->nextSibling();
 
     if (!current->isLeaf() && (static_cast<unsigned int>(m_moduleIndexLevel) >= m_depth)) {
       ++m_moduleIndex;
@@ -75,12 +75,12 @@ InfomapIterator& InfomapIterator::operator++() noexcept
 
 double InfomapIterator::modularCentrality() const noexcept
 {
-  if (m_current->parent == nullptr) {
+  if (m_current->parentNode() == nullptr) {
     // The root node has no modular centrality
     return 0.0;
   }
 
-  const auto p_m = m_current->parent->data.flow;
+  const auto p_m = m_current->parentNode()->data.flow;
   const auto p_u = m_current->data.flow;
   const auto p_diff = p_m - p_u;
 
@@ -165,7 +165,7 @@ InfomapIterator& InfomapIteratorPhysical::operator++() noexcept
         auto& physNode = ret.first->second;
         if (ret.second) {
           // New physical node, use same parent as the state leaf node
-          physNode.parent = m_current->parent;
+          physNode.setParentLink(m_current->parentNode());
         } else {
           // Not inserted, add flow to existing physical node
           // TODO: If exitFlow should be correct, flow between memory nodes within same physical node should be subtracted.
@@ -228,7 +228,7 @@ InfomapIterator& InfomapLeafIteratorPhysical::operator++() noexcept
 
 InfomapParentIterator& InfomapParentIterator::operator++() noexcept
 {
-  m_current = m_current->parent;
+  m_current = m_current->parentNode();
   if (m_current != nullptr && m_current->owner != nullptr) {
     m_current = m_current->owner;
   }

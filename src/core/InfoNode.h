@@ -55,7 +55,9 @@ public:
  *
  * An InfoNode owns active and collapsed children through private unique_ptr
  * storage. firstChild/lastChild, collapsedFirstChild/collapsedLastChild, and
- * sibling links are non-owning raw iteration links kept for compatibility.
+ * sibling links are non-owning raw iteration links kept as private native
+ * compatibility caches. They remain visible to SWIG/Python builds to preserve
+ * the existing generated wrapper ABI until that public API can be removed.
  * detachChildren() returns an owning move-only handle until the chain is
  * adopted by another parent or dropped. releaseChildren() is a legacy wrapper
  * that gives up ownership and leaves the caller responsible for reattach/delete.
@@ -155,6 +157,9 @@ public:
   std::vector<int> metaData; // Categorical value for each meta data dimension
 
   InfoNode* owner = nullptr; // Infomap owner (if this is an Infomap root)
+#if !defined(SWIG) && !defined(PYTHON)
+private:
+#endif
   InfoNode* parent = nullptr;
   InfoNode* previous = nullptr; // sibling
   InfoNode* next = nullptr; // sibling
@@ -162,6 +167,9 @@ public:
   InfoNode* lastChild = nullptr;
   InfoNode* collapsedFirstChild = nullptr;
   InfoNode* collapsedLastChild = nullptr;
+#if !defined(SWIG) && !defined(PYTHON)
+public:
+#endif
   double codelength = 0.0; // TODO: Better design for hierarchical stuff!?
   bool dirty = false;
 
@@ -334,6 +342,29 @@ public:
 
   unsigned int id() const noexcept { return stateId; }
 
+#ifndef SWIG
+  InfoNode* parentNode() noexcept { return parent; }
+  const InfoNode* parentNode() const noexcept { return parent; }
+
+  InfoNode* previousSibling() noexcept { return previous; }
+  const InfoNode* previousSibling() const noexcept { return previous; }
+
+  InfoNode* nextSibling() noexcept { return next; }
+  const InfoNode* nextSibling() const noexcept { return next; }
+
+  InfoNode* firstChildNode() noexcept { return firstChild; }
+  const InfoNode* firstChildNode() const noexcept { return firstChild; }
+
+  InfoNode* lastChildNode() noexcept { return lastChild; }
+  const InfoNode* lastChildNode() const noexcept { return lastChild; }
+
+  InfoNode* collapsedFirstChildNode() noexcept { return collapsedFirstChild; }
+  const InfoNode* collapsedFirstChildNode() const noexcept { return collapsedFirstChild; }
+
+  InfoNode* collapsedLastChildNode() noexcept { return collapsedLastChild; }
+  const InfoNode* collapsedLastChildNode() const noexcept { return collapsedLastChild; }
+#endif
+
   // ---------------------------- Operators ----------------------------
 
   bool operator==(const InfoNode& rhs) const noexcept { return this == &rhs; }
@@ -413,6 +444,16 @@ public:
   void adoptChildren(DetachedChildChain children) noexcept;
 
   /**
+   * Clear stale raw links on nodes intentionally detached through legacy APIs.
+   */
+  void clearDetachedLinks() noexcept;
+
+  /**
+   * Preserve parent context on detached value copies used by physical iterators.
+   */
+  void setParentLink(InfoNode* parentNode) noexcept;
+
+  /**
    * Replace an active child module with its active child chain. The parent owns
    * the mutation and destroys the removed module after reparenting children.
    */
@@ -477,6 +518,12 @@ private:
   void appendLinkedChild(InfoNode* child) noexcept;
 
   std::unique_ptr<InfoNode> takeChildOwnership(InfoNode* child) noexcept;
+
+  static bool chainContains(InfoNode* first, const InfoNode* node) noexcept;
+
+  static void unlinkFromChain(InfoNode& node, InfoNode*& first, InfoNode*& last) noexcept;
+
+  static void unlinkFromParentAndSiblings(InfoNode& node) noexcept;
 };
 
 } // namespace infomap

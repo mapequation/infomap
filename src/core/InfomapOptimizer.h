@@ -676,7 +676,7 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
   // Detach active children from current parent(s) to put new modules between
   std::vector<InfoNode::DetachedChildChain> detachedParents;
   for (auto& n : network) {
-    detachedParents.push_back(n->parent->detachChildren()); // Safe to call multiple times
+    detachedParents.push_back(n->parentNode()->detachChildren()); // Safe to call multiple times
   }
 
   auto takeDetachedNode = [&detachedParents](InfoNode* node) {
@@ -695,7 +695,7 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
       auto module = std::make_unique<InfoNode>(m_moduleFlowData[moduleIndex]);
       modules[moduleIndex] = module.get();
       modules[moduleIndex]->index = moduleIndex;
-      node->parent->addChild(std::move(module));
+      node->parentNode()->addChild(std::move(module));
     }
     modules[moduleIndex]->addChild(takeDetachedNode(node));
   }
@@ -733,7 +733,7 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
     if (level == 1) {
       Log(4) << "Consolidated super modules, removing old modules...\n";
       for (auto& node : network)
-        node->parent->replaceChildWithChildren(*node);
+        node->parentNode()->replaceChildWithChildren(*node);
     } else if (level == 2) {
       Log(4) << "Consolidated sub-modules, removing modules...\n";
       unsigned int moduleIndex = 0;

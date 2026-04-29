@@ -13,9 +13,28 @@
 
 namespace infomap {
 
-namespace {
+void InfomapBaseDeleter::operator()(InfomapBase* infomap) const noexcept
+{
+  delete infomap;
+}
 
-bool chainContains(InfoNode* first, const InfoNode* node) noexcept
+std::unique_ptr<InfoNode> InfoNode::DetachedChildChain::take(InfoNode* child) noexcept
+{
+  for (auto it = m_children.begin(); it != m_children.end(); ++it) {
+    if (it->get() == child) {
+      InfoNode::unlinkFromChain(*child, m_first, m_last);
+      auto ownedChild = std::move(*it);
+      m_children.erase(it);
+      if (m_childDegree > 0)
+        --m_childDegree;
+      child->parent = nullptr;
+      return ownedChild;
+    }
+  }
+  return nullptr;
+}
+
+bool InfoNode::chainContains(InfoNode* first, const InfoNode* node) noexcept
 {
   for (auto* child = first; child != nullptr; child = child->next) {
     if (child == node)
@@ -24,7 +43,7 @@ bool chainContains(InfoNode* first, const InfoNode* node) noexcept
   return false;
 }
 
-void unlinkFromChain(InfoNode& node, InfoNode*& first, InfoNode*& last) noexcept
+void InfoNode::unlinkFromChain(InfoNode& node, InfoNode*& first, InfoNode*& last) noexcept
 {
   if (node.next != nullptr)
     node.next->previous = node.previous;
@@ -39,7 +58,7 @@ void unlinkFromChain(InfoNode& node, InfoNode*& first, InfoNode*& last) noexcept
   node.next = nullptr;
 }
 
-void unlinkFromParentAndSiblings(InfoNode& node) noexcept
+void InfoNode::unlinkFromParentAndSiblings(InfoNode& node) noexcept
 {
   if (node.parent != nullptr) {
     unlinkFromChain(node, node.parent->firstChild, node.parent->lastChild);
@@ -51,29 +70,6 @@ void unlinkFromParentAndSiblings(InfoNode& node) noexcept
   // Preserve current destructor/remove semantics: unlinking updates links but
   // does not update the parent's cached child degree.
   node.parent = nullptr;
-}
-
-} // namespace
-
-void InfomapBaseDeleter::operator()(InfomapBase* infomap) const noexcept
-{
-  delete infomap;
-}
-
-std::unique_ptr<InfoNode> InfoNode::DetachedChildChain::take(InfoNode* child) noexcept
-{
-  for (auto it = m_children.begin(); it != m_children.end(); ++it) {
-    if (it->get() == child) {
-      unlinkFromChain(*child, m_first, m_last);
-      auto ownedChild = std::move(*it);
-      m_children.erase(it);
-      if (m_childDegree > 0)
-        --m_childDegree;
-      child->parent = nullptr;
-      return ownedChild;
-    }
-  }
-  return nullptr;
 }
 
 InfoNode::InfoNode(const InfoNode& other)
@@ -352,6 +348,18 @@ void InfoNode::adoptChildren(DetachedChildChain children) noexcept
     child->next = nullptr;
     appendOwnedChild(std::move(child));
   }
+}
+
+void InfoNode::clearDetachedLinks() noexcept
+{
+  parent = nullptr;
+  previous = nullptr;
+  next = nullptr;
+}
+
+void InfoNode::setParentLink(InfoNode* parentNode) noexcept
+{
+  parent = parentNode;
 }
 
 unsigned int InfoNode::replaceChildWithChildren(InfoNode& child) noexcept

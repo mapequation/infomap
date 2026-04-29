@@ -55,7 +55,7 @@ public:
         m_root = infomapRoot;
       }
     }
-    m_current = m_root == nullptr ? nullptr : m_root->firstChild;
+    m_current = m_root == nullptr ? nullptr : m_root->firstChildNode();
   }
 
   pointer current() const { return m_current; }
@@ -72,8 +72,8 @@ public:
 
   InfomapChildIterator& operator++()
   {
-    m_current = m_current->next;
-    if (m_current != nullptr && m_current->parent != m_root) {
+    m_current = m_current->nextSibling();
+    if (m_current != nullptr && m_current->parentNode() != m_root) {
       m_current = nullptr;
     }
     return *this;
@@ -88,8 +88,8 @@ public:
 
   InfomapChildIterator& operator--()
   {
-    m_current = m_current->previous;
-    if (m_current != nullptr && m_current->parent != m_root) {
+    m_current = m_current->previousSibling();
+    if (m_current != nullptr && m_current->parentNode() != m_root) {
       m_current = nullptr;
     }
     return *this;
@@ -154,16 +154,16 @@ public:
   {
     NodePointerType curr = Base::m_current;
 
-    if (curr->firstChild != nullptr) {
-      curr = curr->firstChild;
+    if (curr->firstChildNode() != nullptr) {
+      curr = curr->firstChildNode();
       ++m_depth;
     } else {
     // Current node is a leaf
     // Presupposes that the next pointer can't reach out from the current parent.
     tryNext:
-      while (curr->next == nullptr) {
-        if (curr->parent != nullptr) {
-          curr = curr->parent;
+      while (curr->nextSibling() == nullptr) {
+        if (curr->parentNode() != nullptr) {
+          curr = curr->parentNode();
           --m_depth;
           if (curr == Base::m_root) // Check if back to beginning
           {
@@ -192,7 +192,7 @@ public:
           }
         }
       }
-      curr = curr->next;
+      curr = curr->nextSibling();
     }
     m_current = curr;
     moveToInfomapRootIfExist();
@@ -286,17 +286,17 @@ public:
   {
     NodePointerType curr = Base::m_current;
 
-    if (curr->firstChild != nullptr) {
-      curr = curr->firstChild;
+    if (curr->firstChildNode() != nullptr) {
+      curr = curr->firstChildNode();
       ++m_depth;
       m_path.push_back(0);
     } else {
     // Current node is a leaf
     // Presupposes that the next pointer can't reach out from the current parent.
     tryNext:
-      while (curr->next == nullptr) {
-        if (curr->parent != nullptr) {
-          curr = curr->parent;
+      while (curr->nextSibling() == nullptr) {
+        if (curr->parentNode() != nullptr) {
+          curr = curr->parentNode();
           --m_depth;
           m_path.pop_back();
           if (curr == Base::m_root) // Check if back to beginning
@@ -326,7 +326,7 @@ public:
           }
         }
       }
-      curr = curr->next;
+      curr = curr->nextSibling();
       ++m_path.back();
     }
     m_current = curr;
