@@ -55,12 +55,13 @@ public:
  * An InfoNode owns the active child chain reachable through firstChild/lastChild
  * and the collapsed child chain reachable through collapsedFirstChild/
  * collapsedLastChild. Child storage remains a raw linked list; the unique_ptr
- * addChild() overload is only a safe handoff helper for newly allocated nodes.
- * Destruction deletes both chains. releaseChildren() only detaches the active
- * chain from this parent; the caller must reattach or delete those nodes.
- * Reparenting helpers detach children before deleting the removed intermediate
- * node. An InfoNode also owns its sub-Infomap and outgoing InfoEdge objects
- * through unique_ptr; incoming edge pointers are non-owning back-references.
+ * addChild() overload is only a safe handoff helper for newly allocated nodes,
+ * while internal detach/delete paths use an RAII guard. Destruction deletes both
+ * chains. releaseChildren() only detaches the active chain from this parent; the
+ * caller must reattach or delete those nodes. Reparenting helpers detach
+ * children before deleting the removed intermediate node. An InfoNode also owns
+ * its sub-Infomap and outgoing InfoEdge objects through unique_ptr; incoming
+ * edge pointers are non-owning back-references.
  */
 class InfoNode {
 public:

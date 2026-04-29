@@ -13,6 +13,75 @@
 
 namespace infomap {
 
+namespace {
+
+class DetachedChildChain {
+public:
+  DetachedChildChain() = default;
+
+  DetachedChildChain(InfoNode* first, InfoNode* last) noexcept
+      : m_first(first),
+        m_last(last) { }
+
+  DetachedChildChain(const DetachedChildChain&) = delete;
+  DetachedChildChain& operator=(const DetachedChildChain&) = delete;
+
+  DetachedChildChain(DetachedChildChain&& other) noexcept
+      : m_first(other.m_first),
+        m_last(other.m_last)
+  {
+    other.m_first = nullptr;
+    other.m_last = nullptr;
+  }
+
+  DetachedChildChain& operator=(DetachedChildChain&& other) noexcept
+  {
+    if (this != &other) {
+      reset();
+      m_first = other.m_first;
+      m_last = other.m_last;
+      other.m_first = nullptr;
+      other.m_last = nullptr;
+    }
+    return *this;
+  }
+
+  ~DetachedChildChain() noexcept
+  {
+    reset();
+  }
+
+  InfoNode* first() const noexcept { return m_first; }
+
+  InfoNode* last() const noexcept { return m_last; }
+
+  bool empty() const noexcept { return m_first == nullptr; }
+
+  void release() noexcept
+  {
+    m_first = nullptr;
+    m_last = nullptr;
+  }
+
+  void reset() noexcept
+  {
+    InfoNode* node = m_first;
+    m_first = nullptr;
+    m_last = nullptr;
+    while (node != nullptr) {
+      InfoNode* next = node->next;
+      delete node;
+      node = next;
+    }
+  }
+
+private:
+  InfoNode* m_first = nullptr;
+  InfoNode* m_last = nullptr;
+};
+
+} // namespace
+
 void InfomapBaseDeleter::operator()(InfomapBase* infomap) const noexcept
 {
   delete infomap;
@@ -199,9 +268,11 @@ InfoNode& InfoNode::addChild(std::unique_ptr<InfoNode> child) noexcept
 
 void InfoNode::releaseChildren() noexcept
 {
+  DetachedChildChain detached(firstChild, lastChild);
   firstChild = nullptr;
   lastChild = nullptr;
   m_childDegree = 0;
+  detached.release();
 }
 
 InfoNode& InfoNode::replaceChildrenWithOneNode()
@@ -223,8 +294,12 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
     middleNodePtr->addChild(n);
   } while (--numOriginalChildrenLeft != 0);
 
-  releaseChildren();
+  auto detachedChildren = DetachedChildChain(firstChild, lastChild);
+  firstChild = nullptr;
+  lastChild = nullptr;
+  m_childDegree = 0;
   addChild(std::move(middleNode));
+  detachedChildren.release();
   auto d1 = middleNodePtr->replaceChildrenWithGrandChildren();
   if (d1 != d0)
     throw std::logic_error("replaceChildrenWithOneNode replaced different number of children as having before");
@@ -346,23 +421,12 @@ void InfoNode::remove(bool removeChildren) noexcept
 
 void InfoNode::deleteChildren() noexcept
 {
-  auto delete_child_chain = [](InfoNode*& first, InfoNode*& last) {
-    if (first == nullptr)
-      return;
-
-    InfoNode* node = first;
-    while (node != nullptr) {
-      InfoNode* next_node = node->next;
-      delete node;
-      node = next_node;
-    }
-
-    first = nullptr;
-    last = nullptr;
-  };
-
-  delete_child_chain(firstChild, lastChild);
-  delete_child_chain(collapsedFirstChild, collapsedLastChild);
+  DetachedChildChain activeChildren(firstChild, lastChild);
+  firstChild = nullptr;
+  lastChild = nullptr;
+  DetachedChildChain collapsedChildren(collapsedFirstChild, collapsedLastChild);
+  collapsedFirstChild = nullptr;
+  collapsedLastChild = nullptr;
   m_childDegree = 0;
 }
 
@@ -418,10 +482,14 @@ void InfoNode::sortChildrenOnFlow(bool recurse) noexcept
     std::sort(nodes.begin(), nodes.end(), [](const InfoNode* a, const InfoNode* b) {
       return b->data.flow < a->data.flow;
     });
-    releaseChildren();
+    auto detachedChildren = DetachedChildChain(firstChild, lastChild);
+    firstChild = nullptr;
+    lastChild = nullptr;
+    m_childDegree = 0;
     for (auto node : nodes) {
       addChild(node);
     }
+    detachedChildren.release();
   }
   if (recurse) {
     for (InfoNode& child : children()) {
@@ -434,10 +502,14 @@ void InfoNode::sortChildrenOnFlow(bool recurse) noexcept
 
 unsigned int InfoNode::collapseChildren() noexcept
 {
-  std::swap(collapsedFirstChild, firstChild);
-  std::swap(collapsedLastChild, lastChild);
+  auto activeChildren = DetachedChildChain(firstChild, lastChild);
   unsigned int numCollapsedChildren = childDegree();
-  releaseChildren();
+  firstChild = nullptr;
+  lastChild = nullptr;
+  m_childDegree = 0;
+  collapsedFirstChild = activeChildren.first();
+  collapsedLastChild = activeChildren.last();
+  activeChildren.release();
   return numCollapsedChildren;
 }
 

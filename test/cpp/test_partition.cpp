@@ -428,6 +428,60 @@ TEST_CASE("InfoNode initClean remains an explicit reset helper [fast][core][part
   CHECK(source.collapsedLastChild == nullptr);
 }
 
+TEST_CASE("InfoNode replaceChildrenWithOneNode preserves children through guarded detach [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* moduleA = new InfoNode({}, 100);
+  auto* moduleB = new InfoNode({}, 200);
+  root.addChild(moduleA);
+  root.addChild(moduleB);
+  moduleA->addChild(std::make_unique<InfoNode>(FlowData {}, 1));
+  moduleA->addChild(std::make_unique<InfoNode>(FlowData {}, 2));
+  moduleB->addChild(std::make_unique<InfoNode>(FlowData {}, 3));
+  moduleB->addChild(std::make_unique<InfoNode>(FlowData {}, 4));
+
+  InfoNode& middle = root.replaceChildrenWithOneNode();
+
+  CHECK(root.childDegree() == 1);
+  CHECK(root.firstChild == &middle);
+  CHECK(root.lastChild == &middle);
+  CHECK(middle.parent == &root);
+  CHECK(middle.previous == nullptr);
+  CHECK(middle.next == nullptr);
+  CHECK(middle.childDegree() == 4);
+  CHECK(childStateIds(middle) == std::vector<unsigned int> { 1, 2, 3, 4 });
+  for (auto& child : middle.children()) {
+    CHECK(child.parent == &middle);
+  }
+}
+
+TEST_CASE("InfoNode sortChildrenOnFlow preserves links through guarded detach [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto childA = std::make_unique<InfoNode>(FlowData {}, 10);
+  auto childB = std::make_unique<InfoNode>(FlowData {}, 20);
+  auto childC = std::make_unique<InfoNode>(FlowData {}, 30);
+  childA->data.flow = 0.1;
+  childB->data.flow = 0.7;
+  childC->data.flow = 0.4;
+
+  root.addChild(std::move(childA));
+  root.addChild(std::move(childB));
+  root.addChild(std::move(childC));
+
+  root.sortChildrenOnFlow(false);
+
+  CHECK(root.childDegree() == 3);
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 20, 30, 10 });
+  CHECK(root.firstChild->previous == nullptr);
+  CHECK(root.firstChild->parent == &root);
+  CHECK(root.firstChild->next->parent == &root);
+  CHECK(root.lastChild->parent == &root);
+  CHECK(root.lastChild->next == nullptr);
+  CHECK(root.firstChild->next->previous == root.firstChild);
+  CHECK(root.lastChild->previous == root.firstChild->next);
+}
+
 TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][core][partition][tree]")
 {
   InfoNode root;
