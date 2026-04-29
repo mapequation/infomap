@@ -1232,13 +1232,23 @@ void InfomapBase::initEnterExitFlow()
 // Aggregate node and enter/exit flow to all tree nodes
 void InfomapBase::aggregateFlowValuesFromLeafToRoot()
 {
+  for (auto& node : root().infomapTree()) {
+    if (!node.isLeaf()) {
+      node.data = {};
+    }
+  }
+
   // Aggregate flow from leaf nodes to root node
   unsigned int numLevels = 0;
-  root().data.flow = 0.0;
   for (auto it = root().begin_post_depth_first(); !it.isEnd(); ++it) {
     auto& node = *it;
-    if (!node.isRoot())
-      node.parent->data += node.data;
+    if (!node.isRoot()) {
+      node.parent->data.flow += node.data.flow;
+      node.parent->data.teleportFlow += node.data.teleportFlow;
+      node.parent->data.teleportSourceFlow += node.data.teleportSourceFlow;
+      node.parent->data.teleportWeight += node.data.teleportWeight;
+      node.parent->data.danglingFlow += node.data.danglingFlow;
+    }
     // Don't aggregate enter and exit flow
     if (!node.isLeaf()) {
       node.index = it.depth(); // Use index to store the depth on modules
