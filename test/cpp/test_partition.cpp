@@ -714,6 +714,66 @@ TEST_CASE("InfoNode remove true unlinks first and last child modules while detac
   deleteDetachedChildChain(lastDetachedChild);
 }
 
+TEST_CASE("InfoNode destructor unlinks parent and sibling pointers without updating cached child degree [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* first = new InfoNode({}, 10);
+  auto* middle = new InfoNode({}, 20);
+  auto* last = new InfoNode({}, 30);
+  root.addChild(first);
+  root.addChild(middle);
+  root.addChild(last);
+
+  delete middle;
+
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 30 });
+  CHECK(root.firstChild == first);
+  CHECK(root.lastChild == last);
+  CHECK(first->previous == nullptr);
+  CHECK(first->next == last);
+  CHECK(last->previous == first);
+  CHECK(last->next == nullptr);
+  // Existing destructor/remove semantics preserve the cached degree until a
+  // caller explicitly recalculates or overwrites it.
+  CHECK(root.childDegree() == 3);
+
+  root.calcChildDegree();
+  CHECK(root.childDegree() == 2);
+}
+
+TEST_CASE("InfoNode destructor unlinks first and last children without changing cached child degree [fast][core][partition][tree][ownership]")
+{
+  InfoNode firstRoot;
+  auto* first = new InfoNode({}, 10);
+  auto* second = new InfoNode({}, 20);
+  firstRoot.addChild(first);
+  firstRoot.addChild(second);
+
+  delete first;
+
+  CHECK(childStateIds(firstRoot) == std::vector<unsigned int> { 20 });
+  CHECK(firstRoot.firstChild == second);
+  CHECK(firstRoot.lastChild == second);
+  CHECK(second->previous == nullptr);
+  CHECK(second->next == nullptr);
+  CHECK(firstRoot.childDegree() == 2);
+
+  InfoNode lastRoot;
+  auto* beforeLast = new InfoNode({}, 30);
+  auto* last = new InfoNode({}, 40);
+  lastRoot.addChild(beforeLast);
+  lastRoot.addChild(last);
+
+  delete last;
+
+  CHECK(childStateIds(lastRoot) == std::vector<unsigned int> { 30 });
+  CHECK(lastRoot.firstChild == beforeLast);
+  CHECK(lastRoot.lastChild == beforeLast);
+  CHECK(beforeLast->previous == nullptr);
+  CHECK(beforeLast->next == nullptr);
+  CHECK(lastRoot.childDegree() == 2);
+}
+
 TEST_CASE("InfoNode owns outgoing edges while incoming edges are non-owning references [fast][core][partition][tree][ownership]")
 {
   auto* source = new InfoNode({}, 10);

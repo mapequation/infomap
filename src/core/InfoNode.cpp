@@ -131,6 +131,26 @@ void prepareForSelfDelete(InfoNode& node, bool detachChildren) noexcept
   node.setChildDegree(0);
 }
 
+void unlinkFromParentAndSiblings(InfoNode& node) noexcept
+{
+  if (node.next != nullptr)
+    node.next->previous = node.previous;
+  if (node.previous != nullptr)
+    node.previous->next = node.next;
+  if (node.parent != nullptr) {
+    if (node.parent->firstChild == &node)
+      node.parent->firstChild = node.next;
+    if (node.parent->lastChild == &node)
+      node.parent->lastChild = node.previous;
+  }
+
+  // Preserve current destructor/remove semantics: unlinking updates links but
+  // does not update the parent's cached child degree.
+  node.parent = nullptr;
+  node.previous = nullptr;
+  node.next = nullptr;
+}
+
 } // namespace
 
 void InfomapBaseDeleter::operator()(InfomapBase* infomap) const noexcept
@@ -159,17 +179,7 @@ InfoNode& InfoNode::operator=(const InfoNode& other)
 InfoNode::~InfoNode() noexcept
 {
   deleteChildren();
-
-  if (next != nullptr)
-    next->previous = previous;
-  if (previous != nullptr)
-    previous->next = next;
-  if (parent != nullptr) {
-    if (parent->firstChild == this)
-      parent->firstChild = next;
-    if (parent->lastChild == this)
-      parent->lastChild = previous;
-  }
+  unlinkFromParentAndSiblings(*this);
 
   // Incoming edge pointers on other nodes become dangling non-owning back-references.
 }
