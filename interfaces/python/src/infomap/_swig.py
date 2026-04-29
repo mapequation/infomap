@@ -503,6 +503,19 @@ class vector_uint(object):
 
 # Register vector_uint in _infomap:
 _infomap.vector_uint_swigregister(vector_uint)
+class InfomapBaseDeleter(object):
+    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    __repr__ = _swig_repr
+
+    def __call__(self, infomap):
+        return _infomap.InfomapBaseDeleter___call__(self, infomap)
+
+    def __init__(self):
+        _infomap.InfomapBaseDeleter_swiginit(self, _infomap.new_InfomapBaseDeleter())
+    __swig_destroy__ = _infomap.delete_InfomapBaseDeleter
+
+# Register InfomapBaseDeleter in _infomap:
+_infomap.InfomapBaseDeleter_swigregister(InfomapBaseDeleter)
 class InfoNode(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
