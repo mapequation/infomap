@@ -18,6 +18,24 @@ void InfomapBaseDeleter::operator()(InfomapBase* infomap) const noexcept
   delete infomap;
 }
 
+InfoNode::InfoNode(const InfoNode& other)
+{
+  copyDetachedValueStateFrom(other);
+}
+
+InfoNode& InfoNode::operator=(const InfoNode& other)
+{
+  if (this == &other)
+    return *this;
+
+  deleteChildren();
+  m_outEdges.clear();
+  m_inEdges.clear();
+  m_infomap.reset();
+  copyDetachedValueStateFrom(other);
+  return *this;
+}
+
 InfoNode::~InfoNode() noexcept
 {
   deleteChildren();
@@ -34,6 +52,32 @@ InfoNode::~InfoNode() noexcept
   }
 
   // Incoming edge pointers on other nodes become dangling non-owning back-references.
+}
+
+void InfoNode::copyDetachedValueStateFrom(const InfoNode& other)
+{
+  data = other.data;
+  index = other.index;
+  stateId = other.stateId;
+  physicalId = other.physicalId;
+  layerId = other.layerId;
+  metaData = other.metaData;
+  owner = nullptr;
+  parent = nullptr;
+  previous = nullptr;
+  next = nullptr;
+  firstChild = nullptr;
+  lastChild = nullptr;
+  collapsedFirstChild = nullptr;
+  collapsedLastChild = nullptr;
+  codelength = other.codelength;
+  dirty = other.dirty;
+  physicalNodes = other.physicalNodes;
+  metaCollection = other.metaCollection;
+  stateNodes = other.stateNodes;
+  m_childDegree = 0;
+  m_childrenChanged = false;
+  m_numLeafMembers = other.m_numLeafMembers;
 }
 
 InfomapBase& InfoNode::setInfomap(InfomapBase* infomap)

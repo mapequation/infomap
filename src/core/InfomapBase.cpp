@@ -889,7 +889,6 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
   unsigned int childIndex = 0;
   for (InfoNode& node : parent) {
     auto* clonedNode = new InfoNode(node);
-    clonedNode->initClean();
     m_root.addChild(clonedNode);
     node.index = childIndex; // Set index to its place in this subnetwork to be able to find edge target below
     m_leafNodes[childIndex] = clonedNode;

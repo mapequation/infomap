@@ -279,11 +279,24 @@ TEST_CASE("InfoNode deleteChildren clears both active and collapsed child chains
   CHECK(root.collapsedLastChild == nullptr);
 }
 
-TEST_CASE("InfoNode initClean clears inherited collapsed children on clones [fast][core][partition][tree]")
+TEST_CASE("InfoNode copy constructor creates detached shallow copies [fast][core][partition][tree][ownership]")
 {
   InfoNode source;
-  source.addChild(new InfoNode({}, 10));
-  source.addChild(new InfoNode({}, 20));
+  source.index = 7;
+  source.stateId = 100;
+  source.physicalId = 200;
+  source.layerId = 3;
+  source.metaData = { 1, 2 };
+  source.codelength = 1.25;
+  source.dirty = true;
+  source.stateNodes = { 100, 101 };
+  source.setNumLeafNodes(2);
+  auto* sourceEdgeTarget = new InfoNode(FlowData {}, 99);
+  source.addOutEdge(*sourceEdgeTarget, 1.0, 0.5);
+
+  auto* activeChild = new InfoNode({}, 10);
+  source.addChild(activeChild);
+  source.addChild(new InfoNode(FlowData {}, 20));
 
   CHECK(source.collapseChildren() == 2);
   CHECK(source.childDegree() == 0);
@@ -291,15 +304,95 @@ TEST_CASE("InfoNode initClean clears inherited collapsed children on clones [fas
   CHECK(source.collapsedLastChild != nullptr);
 
   InfoNode clone(source);
-  clone.initClean();
 
+  CHECK(clone.index == source.index);
+  CHECK(clone.stateId == source.stateId);
+  CHECK(clone.physicalId == source.physicalId);
+  CHECK(clone.layerId == source.layerId);
+  CHECK(clone.metaData == source.metaData);
+  CHECK(clone.codelength == doctest::Approx(source.codelength));
+  CHECK(clone.dirty == source.dirty);
+  CHECK(clone.stateNodes == source.stateNodes);
+  CHECK(clone.numLeafMembers() == source.numLeafMembers());
   CHECK(clone.childDegree() == 0);
+  CHECK(clone.outDegree() == 0);
+  CHECK(clone.inDegree() == 0);
+  CHECK(clone.owner == nullptr);
+  CHECK(clone.parent == nullptr);
+  CHECK(clone.previous == nullptr);
+  CHECK(clone.next == nullptr);
   CHECK(clone.firstChild == nullptr);
   CHECK(clone.lastChild == nullptr);
   CHECK(clone.collapsedFirstChild == nullptr);
   CHECK(clone.collapsedLastChild == nullptr);
 
+  CHECK(source.collapsedFirstChild == activeChild);
+  CHECK(source.collapsedFirstChild->next->stateId == 20);
+
+  delete sourceEdgeTarget;
   source.deleteChildren();
+}
+
+TEST_CASE("InfoNode copy assignment clears destination ownership and detaches from source [fast][core][partition][tree][ownership]")
+{
+  InfoNode source({}, 40);
+  source.index = 12;
+  source.codelength = 2.5;
+  source.setNumLeafNodes(3);
+  source.addChild(new InfoNode(FlowData {}, 41));
+
+  InfoNode destination({}, 10);
+  destination.addChild(new InfoNode(FlowData {}, 11));
+  auto* destinationEdgeTarget = new InfoNode(FlowData {}, 12);
+  destination.addOutEdge(*destinationEdgeTarget, 1.0, 0.5);
+
+  auto* sourceChild = source.firstChild;
+  destination = source;
+
+  CHECK(destination.stateId == source.stateId);
+  CHECK(destination.index == source.index);
+  CHECK(destination.codelength == doctest::Approx(source.codelength));
+  CHECK(destination.numLeafMembers() == source.numLeafMembers());
+  CHECK(destination.childDegree() == 0);
+  CHECK(destination.outDegree() == 0);
+  CHECK(destination.inDegree() == 0);
+  CHECK(destination.parent == nullptr);
+  CHECK(destination.previous == nullptr);
+  CHECK(destination.next == nullptr);
+  CHECK(destination.firstChild == nullptr);
+  CHECK(destination.lastChild == nullptr);
+  CHECK(destination.collapsedFirstChild == nullptr);
+  CHECK(destination.collapsedLastChild == nullptr);
+
+  CHECK(source.firstChild == sourceChild);
+  CHECK(source.firstChild->parent == &source);
+
+  delete destinationEdgeTarget;
+}
+
+TEST_CASE("InfoNode initClean remains an explicit reset helper [fast][core][partition][tree]")
+{
+  InfoNode source;
+  InfoNode parent;
+  InfoNode previous;
+  InfoNode next;
+  InfoNode collapsed;
+  source.parent = &parent;
+  source.previous = &previous;
+  source.next = &next;
+  source.collapsedFirstChild = &collapsed;
+  source.collapsedLastChild = &collapsed;
+
+  source.initClean();
+
+  CHECK(source.childDegree() == 0);
+  CHECK(source.parent == nullptr);
+  CHECK(source.previous == nullptr);
+  CHECK(source.next == nullptr);
+  CHECK(source.firstChild == nullptr);
+  CHECK(source.lastChild == nullptr);
+  CHECK(source.collapsedFirstChild == nullptr);
+  CHECK(source.collapsedLastChild == nullptr);
 }
 
 TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][core][partition][tree]")
