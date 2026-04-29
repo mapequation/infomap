@@ -1034,8 +1034,6 @@ void Network::generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNo
     return layer1 >= layer2 ? diff <= relaxLimitDown : -diff <= relaxLimitUp;
   };
 
-  // Log() << "\n\n=== DEBUG network creation ===\n";
-
   for (auto& it1 : m_networks) {
     auto layer1 = it1.first;
     auto& network1 = it1.second;

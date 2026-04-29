@@ -55,12 +55,10 @@ void MemMapEquation::initSuperNetwork(InfoNode& /*root*/)
 
 void MemMapEquation::initSubNetwork(InfoNode& /*root*/)
 {
-  //	Base::initSubNetwork(root);
 }
 
 void MemMapEquation::initPartition(std::vector<InfoNode*>& nodes)
 {
-  Log(4) << "\nMemMapEquation::initPartition()...\n";
   initPartitionOfPhysicalNodes(nodes);
 
   calculateCodelength(nodes);
@@ -223,7 +221,6 @@ void MemMapEquation::initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes)
 
 void MemMapEquation::calculateCodelength(std::vector<InfoNode*>& nodes)
 {
-  Log(4) << "\nMemMapEquation::calculateCodelength()...\n";
   calculateCodelengthTerms(nodes);
 
   calculateNodeFlow_log_nodeFlow();

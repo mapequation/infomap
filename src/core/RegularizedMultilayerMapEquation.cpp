@@ -11,11 +11,13 @@
 #include "FlowData.h"
 #include "InfoNode.h"
 
-#include <vector>
-#include <set>
-#include <map>
-#include <utility>
 #include <algorithm>
+#include <limits>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace infomap {
 
@@ -55,7 +57,6 @@ void RegularizedMultilayerMapEquation::initSuperNetwork(InfoNode& /*root*/)
 
 void RegularizedMultilayerMapEquation::initSubNetwork(InfoNode& /*root*/)
 {
-  //	Base::initSubNetwork(root);
 }
 
 void RegularizedMultilayerMapEquation::initPartition(std::vector<InfoNode*>& nodes)

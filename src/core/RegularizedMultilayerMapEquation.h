@@ -13,10 +13,10 @@
 #include "MapEquation.h"
 #include "FlowData.h"
 #include "../utils/Log.h"
-#include <vector>
-#include <set>
 #include <map>
+#include <set>
 #include <utility>
+#include <vector>
 
 namespace infomap {
 
