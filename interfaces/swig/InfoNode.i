@@ -10,6 +10,15 @@
 %include "std_string.i"
 %include "std_vector.i"
 
+%ignore infomap::InfomapBaseDeleter;
+%immutable infomap::InfoNode::parent;
+%immutable infomap::InfoNode::previous;
+%immutable infomap::InfoNode::next;
+%immutable infomap::InfoNode::firstChild;
+%immutable infomap::InfoNode::lastChild;
+%immutable infomap::InfoNode::collapsedFirstChild;
+%immutable infomap::InfoNode::collapsedLastChild;
+
 namespace std {
     %template(vector_uint) std::vector<unsigned int>;
 }

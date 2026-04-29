@@ -291,12 +291,12 @@ TEST_CASE("InfoNode copy constructor creates detached shallow copies [fast][core
   source.dirty = true;
   source.stateNodes = { 100, 101 };
   source.setNumLeafNodes(2);
-  auto* sourceEdgeTarget = new InfoNode(FlowData {}, 99);
+  auto* sourceEdgeTarget = new InfoNode({}, 99);
   source.addOutEdge(*sourceEdgeTarget, 1.0, 0.5);
 
   auto* activeChild = new InfoNode({}, 10);
   source.addChild(activeChild);
-  source.addChild(new InfoNode(FlowData {}, 20));
+  source.addChild(new InfoNode({}, 20));
 
   CHECK(source.collapseChildren() == 2);
   CHECK(source.childDegree() == 0);
@@ -312,7 +312,8 @@ TEST_CASE("InfoNode copy constructor creates detached shallow copies [fast][core
   CHECK(clone.metaData == source.metaData);
   CHECK(clone.codelength == doctest::Approx(source.codelength));
   CHECK(clone.dirty == source.dirty);
-  CHECK(clone.stateNodes == source.stateNodes);
+  CHECK(clone.stateNodes.empty());
+  CHECK(clone.physicalNodes.empty());
   CHECK(clone.numLeafMembers() == source.numLeafMembers());
   CHECK(clone.childDegree() == 0);
   CHECK(clone.outDegree() == 0);
@@ -339,11 +340,11 @@ TEST_CASE("InfoNode copy assignment clears destination ownership and detaches fr
   source.index = 12;
   source.codelength = 2.5;
   source.setNumLeafNodes(3);
-  source.addChild(new InfoNode(FlowData {}, 41));
+  source.addChild(new InfoNode({}, 41));
 
   InfoNode destination({}, 10);
-  destination.addChild(new InfoNode(FlowData {}, 11));
-  auto* destinationEdgeTarget = new InfoNode(FlowData {}, 12);
+  destination.addChild(new InfoNode({}, 11));
+  auto* destinationEdgeTarget = new InfoNode({}, 12);
   destination.addOutEdge(*destinationEdgeTarget, 1.0, 0.5);
 
   auto* sourceChild = source.firstChild;

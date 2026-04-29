@@ -72,9 +72,9 @@ void InfoNode::copyDetachedValueStateFrom(const InfoNode& other)
   collapsedLastChild = nullptr;
   codelength = other.codelength;
   dirty = other.dirty;
-  physicalNodes = other.physicalNodes;
+  physicalNodes.clear();
   metaCollection = other.metaCollection;
-  stateNodes = other.stateNodes;
+  stateNodes.clear();
   m_childDegree = 0;
   m_childrenChanged = false;
   m_numLeafMembers = other.m_numLeafMembers;

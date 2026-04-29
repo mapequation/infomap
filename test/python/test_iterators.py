@@ -3,6 +3,8 @@ from operator import itemgetter
 import networkx as nx
 import pytest
 
+from infomap import InfoNode
+
 
 pytestmark = pytest.mark.fast
 
@@ -67,3 +69,20 @@ def test_iter_nodes_with_no_infomap_on_networkx_graph(make_infomap):
         (4, 0.2),
         (5, 0.1),
     ]
+
+
+def test_infonode_tree_links_are_read_only_in_python():
+    node = InfoNode()
+    other = InfoNode()
+
+    for field in (
+        "parent",
+        "previous",
+        "next",
+        "firstChild",
+        "lastChild",
+        "collapsedFirstChild",
+        "collapsedLastChild",
+    ):
+        with pytest.raises(AttributeError):
+            setattr(node, field, other)
