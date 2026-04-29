@@ -28,10 +28,10 @@ InfoNode& InfoNode::operator=(const InfoNode& other)
   if (this == &other)
     return *this;
 
-  assert(m_outEdges.empty());
-  assert(m_inEdges.empty());
+  if (parent != nullptr || previous != nullptr || next != nullptr || !m_outEdges.empty() || !m_inEdges.empty())
+    throw std::logic_error("InfoNode copy assignment requires a detached node without edges");
+
   deleteChildren();
-  // Defensive cleanup if assertions are disabled.
   m_outEdges.clear();
   m_inEdges.clear();
   m_infomap.reset();

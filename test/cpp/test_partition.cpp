@@ -403,6 +403,24 @@ TEST_CASE("InfoNode copy assignment clears destination ownership and detaches fr
   CHECK(source.firstChild->parent == &source);
 }
 
+TEST_CASE("InfoNode copy assignment rejects linked or edge-connected destinations [fast][core][partition][tree][ownership]")
+{
+  InfoNode source({}, 40);
+  InfoNode root;
+  auto* linkedDestination = new InfoNode({}, 10);
+  root.addChild(linkedDestination);
+
+  CHECK_THROWS_AS(*linkedDestination = source, std::logic_error);
+
+  linkedDestination->remove(false);
+
+  InfoNode edgeDestination({}, 20);
+  InfoNode edgeTarget({}, 21);
+  edgeDestination.addOutEdge(edgeTarget, 1.0, 0.5);
+
+  CHECK_THROWS_AS(edgeDestination = source, std::logic_error);
+}
+
 TEST_CASE("InfoNode initClean remains an explicit reset helper [fast][core][partition][tree]")
 {
   InfoNode source;

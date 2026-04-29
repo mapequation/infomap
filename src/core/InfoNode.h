@@ -16,7 +16,6 @@
 #include "iterators/IterWrapper.h"
 #include "../utils/MetaCollection.h"
 
-#include <cassert>
 #include <stdexcept>
 #include <memory>
 #include <iostream>
