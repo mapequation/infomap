@@ -28,6 +28,8 @@ InfoNode& InfoNode::operator=(const InfoNode& other)
   if (this == &other)
     return *this;
 
+  assert(m_outEdges.empty());
+  assert(m_inEdges.empty());
   deleteChildren();
   m_outEdges.clear();
   m_inEdges.clear();

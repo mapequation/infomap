@@ -380,8 +380,6 @@ TEST_CASE("InfoNode copy assignment clears destination ownership and detaches fr
 
   InfoNode destination({}, 10);
   destination.addChild(new InfoNode({}, 11));
-  auto* destinationEdgeTarget = new InfoNode({}, 12);
-  destination.addOutEdge(*destinationEdgeTarget, 1.0, 0.5);
 
   auto* sourceChild = source.firstChild;
   destination = source;
@@ -403,8 +401,6 @@ TEST_CASE("InfoNode copy assignment clears destination ownership and detaches fr
 
   CHECK(source.firstChild == sourceChild);
   CHECK(source.firstChild->parent == &source);
-
-  delete destinationEdgeTarget;
 }
 
 TEST_CASE("InfoNode initClean remains an explicit reset helper [fast][core][partition][tree]")

@@ -16,6 +16,7 @@
 #include "iterators/IterWrapper.h"
 #include "../utils/MetaCollection.h"
 
+#include <cassert>
 #include <stdexcept>
 #include <memory>
 #include <iostream>
@@ -173,6 +174,13 @@ public:
 
   ~InfoNode() noexcept;
 
+  /**
+   * Copy value state from another node into a detached node.
+   *
+   * The destination must not have incoming or outgoing edges; assignment does
+   * not rewrite edge back-references on other nodes. Children and sub-Infomap
+   * owned by the destination are destroyed before copying detached value state.
+   */
   InfoNode& operator=(const InfoNode& other);
 
   InfoNode& operator=(InfoNode&&) = delete;
@@ -399,9 +407,9 @@ public:
    * Delete this node.
    *
    * removeChildren=false leaves firstChild intact, so the destructor deletes
-   * this node's active subtree. removeChildren=true clears this node's active
-   * child entry points before deletion, leaving the previous child chain alive
-   * with legacy parent/sibling links for caller cleanup or reattach.
+   * this node's active subtree. removeChildren=true detaches the active child
+   * chain from destructor traversal before deletion, leaving the previous child
+   * chain alive with legacy parent/sibling links for caller cleanup or reattach.
    */
   void remove(bool removeChildren) noexcept;
 
