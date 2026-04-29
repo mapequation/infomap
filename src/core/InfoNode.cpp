@@ -13,12 +13,13 @@
 
 namespace infomap {
 
+void InfomapBaseDeleter::operator()(InfomapBase* infomap) const noexcept
+{
+  delete infomap;
+}
+
 InfoNode::~InfoNode() noexcept
 {
-  if (m_infomap != nullptr) {
-    delete m_infomap;
-  }
-
   deleteChildren();
 
   if (next != nullptr)
@@ -43,8 +44,7 @@ InfoNode::~InfoNode() noexcept
 
 InfomapBase& InfoNode::setInfomap(InfomapBase* infomap)
 {
-  disposeInfomap();
-  m_infomap = infomap;
+  m_infomap.reset(infomap);
   if (infomap == nullptr)
     throw std::logic_error("InfoNode::setInfomap(...) called with null infomap");
   return *m_infomap;
@@ -77,8 +77,7 @@ InfoNode const* InfoNode::getInfomapRoot() const noexcept
 bool InfoNode::disposeInfomap() noexcept
 {
   if (m_infomap != nullptr) {
-    delete m_infomap;
-    m_infomap = nullptr;
+    m_infomap.reset();
     return true;
   }
   return false;
