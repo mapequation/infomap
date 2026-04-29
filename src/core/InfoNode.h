@@ -377,8 +377,9 @@ public:
    * Delete this node.
    *
    * removeChildren=false leaves firstChild intact, so the destructor deletes the
-   * active child chain. removeChildren=true clears firstChild before deletion,
-   * leaving the previous child chain for the caller to reattach or delete.
+   * active child chain. removeChildren=true detaches this node from active child
+   * chain ownership before deletion, leaving the previous child chain for the
+   * caller to reattach or delete.
    */
   void remove(bool removeChildren) noexcept;
 

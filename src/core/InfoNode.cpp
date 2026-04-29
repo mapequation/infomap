@@ -119,7 +119,16 @@ void spliceChildrenIntoParentBeforeDelete(InfoNode& node) noexcept
   node.previous = nullptr;
   node.parent = nullptr;
   node.setChildDegree(0);
+}
 
+void prepareForSelfDelete(InfoNode& node, bool detachChildren) noexcept
+{
+  if (!detachChildren)
+    return;
+
+  node.firstChild = nullptr;
+  node.lastChild = nullptr;
+  node.setChildDegree(0);
 }
 
 } // namespace
@@ -397,7 +406,7 @@ void InfoNode::replaceWithChildrenDebug() noexcept
 
 void InfoNode::remove(bool removeChildren) noexcept
 {
-  firstChild = removeChildren ? nullptr : firstChild;
+  prepareForSelfDelete(*this, removeChildren);
   delete this;
 }
 

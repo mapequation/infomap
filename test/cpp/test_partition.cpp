@@ -27,6 +27,27 @@ std::vector<unsigned int> childStateIds(const InfoNode& node)
   return ids;
 }
 
+std::vector<unsigned int> childChainStateIds(const InfoNode* firstChild)
+{
+  std::vector<unsigned int> ids;
+  for (const auto* child = firstChild; child != nullptr; child = child->next) {
+    ids.push_back(child->stateId);
+  }
+  return ids;
+}
+
+void deleteDetachedChildChain(InfoNode* firstChild)
+{
+  while (firstChild != nullptr) {
+    auto* next = firstChild->next;
+    firstChild->parent = nullptr;
+    firstChild->previous = nullptr;
+    firstChild->next = nullptr;
+    delete firstChild;
+    firstChild = next;
+  }
+}
+
 void checkLinkedChildOrder(InfoNode& parent, const std::vector<unsigned int>& expectedStateIds)
 {
   CHECK(childStateIds(parent) == expectedStateIds);
@@ -627,6 +648,7 @@ TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fa
   InfoNode deleteRoot;
   auto* deletingParent = new InfoNode({}, 10);
   deletingParent->addChild(std::make_unique<InfoNode>(FlowData {}, 11));
+  deletingParent->addChild(std::make_unique<InfoNode>(FlowData {}, 12));
   deleteRoot.addChild(deletingParent);
 
   deletingParent->remove(false);
@@ -637,19 +659,59 @@ TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fa
   InfoNode detachRoot;
   auto* detachingParent = new InfoNode({}, 20);
   auto* detachedChild = new InfoNode({}, 21);
+  auto* detachedSibling = new InfoNode({}, 22);
   detachingParent->addChild(detachedChild);
+  detachingParent->addChild(detachedSibling);
   detachRoot.addChild(detachingParent);
 
   detachingParent->remove(true);
 
   CHECK(detachRoot.firstChild == nullptr);
   CHECK(detachRoot.lastChild == nullptr);
-  CHECK(detachedChild->stateId == 21);
+  CHECK(childChainStateIds(detachedChild) == std::vector<unsigned int> { 21, 22 });
+  CHECK(detachedChild->previous == nullptr);
+  CHECK(detachedChild->next == detachedSibling);
+  CHECK(detachedSibling->previous == detachedChild);
+  CHECK(detachedSibling->next == nullptr);
 
-  detachedChild->parent = nullptr;
-  detachedChild->previous = nullptr;
-  detachedChild->next = nullptr;
-  delete detachedChild;
+  deleteDetachedChildChain(detachedChild);
+}
+
+TEST_CASE("InfoNode remove true unlinks first and last child modules while detaching their children [fast][core][partition][tree][ownership]")
+{
+  InfoNode firstRoot;
+  auto* firstModule = new InfoNode({}, 10);
+  auto* firstSibling = new InfoNode({}, 20);
+  auto* firstDetachedChild = new InfoNode({}, 11);
+  firstModule->addChild(firstDetachedChild);
+  firstRoot.addChild(firstModule);
+  firstRoot.addChild(firstSibling);
+
+  firstModule->remove(true);
+
+  CHECK(childStateIds(firstRoot) == std::vector<unsigned int> { 20 });
+  CHECK(firstRoot.firstChild == firstSibling);
+  CHECK(firstRoot.lastChild == firstSibling);
+  CHECK(firstSibling->previous == nullptr);
+  CHECK(firstSibling->next == nullptr);
+  deleteDetachedChildChain(firstDetachedChild);
+
+  InfoNode lastRoot;
+  auto* lastSibling = new InfoNode({}, 30);
+  auto* lastModule = new InfoNode({}, 40);
+  auto* lastDetachedChild = new InfoNode({}, 41);
+  lastModule->addChild(lastDetachedChild);
+  lastRoot.addChild(lastSibling);
+  lastRoot.addChild(lastModule);
+
+  lastModule->remove(true);
+
+  CHECK(childStateIds(lastRoot) == std::vector<unsigned int> { 30 });
+  CHECK(lastRoot.firstChild == lastSibling);
+  CHECK(lastRoot.lastChild == lastSibling);
+  CHECK(lastSibling->previous == nullptr);
+  CHECK(lastSibling->next == nullptr);
+  deleteDetachedChildChain(lastDetachedChild);
 }
 
 TEST_CASE("InfoNode owns outgoing edges while incoming edges are non-owning references [fast][core][partition][tree][ownership]")
