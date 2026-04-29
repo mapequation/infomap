@@ -38,6 +38,7 @@ InfoNode& InfoNode::operator=(const InfoNode& other)
 
 InfoNode::~InfoNode() noexcept
 {
+  m_infomap.reset();
   deleteChildren();
 
   if (next != nullptr)
@@ -82,9 +83,9 @@ void InfoNode::copyDetachedValueStateFrom(const InfoNode& other)
 
 InfomapBase& InfoNode::setInfomap(InfomapBase* infomap)
 {
-  m_infomap.reset(infomap);
   if (infomap == nullptr)
     throw std::logic_error("InfoNode::setInfomap(...) called with null infomap");
+  m_infomap.reset(infomap);
   return *m_infomap;
 }
 

@@ -361,6 +361,18 @@ TEST_CASE("Subnetwork ownership replaces and disposes the module Infomap instanc
   CHECK_FALSE(module.disposeInfomap());
 }
 
+TEST_CASE("InfoNode destruction handles sub-Infomap and active children [fast][core][lifecycle][subnetwork]")
+{
+  auto* module = new infomap::InfoNode({}, 100);
+  module->addChild(new infomap::InfoNode({}, 101));
+  module->addChild(new infomap::InfoNode({}, 102));
+
+  module->setInfomap(new infomap::InfomapBase(infomap::test::defaultFlags()));
+  REQUIRE(module->getInfomapRoot() != nullptr);
+
+  delete module;
+}
+
 TEST_CASE("Higher-order subnetwork rebuild preserves state identities and internal edges [fast][core][lifecycle][subnetwork]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

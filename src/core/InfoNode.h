@@ -35,14 +35,29 @@ class OwnedEdgePtrIterator {
   Iter m_current;
 
 public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = InfoEdge*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = InfoEdge*;
+  using reference = InfoEdge*;
+
   explicit OwnedEdgePtrIterator(Iter current) : m_current(current) { }
 
   InfoEdge* operator*() const noexcept { return m_current->get(); }
+
+  InfoEdge* operator->() const noexcept { return m_current->get(); }
 
   OwnedEdgePtrIterator& operator++() noexcept
   {
     ++m_current;
     return *this;
+  }
+
+  OwnedEdgePtrIterator operator++(int) noexcept
+  {
+    auto copy = *this;
+    ++(*this);
+    return copy;
   }
 
   bool operator==(const OwnedEdgePtrIterator& other) const noexcept { return m_current == other.m_current; }
@@ -154,9 +169,13 @@ public:
 
   InfoNode(const InfoNode& other);
 
+  InfoNode(InfoNode&&) = delete;
+
   ~InfoNode() noexcept;
 
   InfoNode& operator=(const InfoNode& other);
+
+  InfoNode& operator=(InfoNode&&) = delete;
 
   // ---------------------------- Getters ----------------------------
 
