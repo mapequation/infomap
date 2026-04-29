@@ -26,6 +26,17 @@ namespace infomap {
 
 class InfomapBase;
 
+/**
+ * Tree node with raw-pointer ownership.
+ *
+ * An InfoNode owns the active child chain reachable through firstChild/lastChild
+ * and the collapsed child chain reachable through collapsedFirstChild/
+ * collapsedLastChild. Destruction deletes both chains. releaseChildren() only
+ * detaches the active chain from this parent; the caller must reattach or delete
+ * those nodes. Reparenting helpers detach children before deleting the removed
+ * intermediate node. An InfoNode also owns its sub-Infomap pointer and outgoing
+ * InfoEdge objects; incoming edge pointers are non-owning back-references.
+ */
 class InfoNode {
 public:
   using child_iterator = ChildIterator<InfoNode*>;
@@ -311,13 +322,15 @@ public:
   void sortChildrenOnFlow(bool recurse = true) noexcept;
 
   /**
-   * Release the children and store the child pointers for later expansion
+   * Move the active child chain to the collapsed child chain without deleting
+   * it. The node owns the collapsed chain until expandChildren() restores it or
+   * deleteChildren()/destruction deletes it.
    * @return the number of children collapsed
    */
   unsigned int collapseChildren() noexcept;
 
   /**
-   * Expand collapsed children
+   * Move the collapsed child chain back to the active child chain.
    * @return the number of collapsed children expanded
    */
   unsigned int expandChildren();
@@ -329,8 +342,17 @@ public:
 
   void setNumLeafNodes(unsigned int value) noexcept { m_numLeafMembers = value; }
 
+  /**
+   * Append child to this node's active child chain and transfer tree ownership
+   * to this parent. The child must not still be owned by another active chain.
+   */
   void addChild(InfoNode* child) noexcept;
 
+  /**
+   * Detach this node from its active child chain without deleting any child.
+   * Child parent/sibling links are not rewritten; callers must reattach or
+   * delete the detached chain before those stale links can be observed.
+   */
   void releaseChildren() noexcept;
 
   /**
@@ -354,8 +376,18 @@ public:
 
   void replaceChildrenWithGrandChildrenDebug() noexcept;
 
+  /**
+   * Delete this node.
+   *
+   * removeChildren=false leaves firstChild intact, so the destructor deletes the
+   * active child chain. removeChildren=true clears firstChild before deletion,
+   * leaving the previous child chain for the caller to reattach or delete.
+   */
   void remove(bool removeChildren) noexcept;
 
+  /**
+   * Delete active and collapsed child chains owned by this node.
+   */
   void deleteChildren() noexcept;
 
   void addOutEdge(InfoNode& target, double weight, double flow = 0.0) noexcept
