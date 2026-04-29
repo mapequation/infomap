@@ -27,6 +27,55 @@ std::vector<unsigned int> childStateIds(const InfoNode& node)
   return ids;
 }
 
+std::vector<unsigned int> childChainStateIds(const InfoNode* firstChild)
+{
+  std::vector<unsigned int> ids;
+  for (const auto* child = firstChild; child != nullptr; child = child->next) {
+    ids.push_back(child->stateId);
+  }
+  return ids;
+}
+
+void deleteDetachedChildChain(InfoNode* firstChild)
+{
+  while (firstChild != nullptr) {
+    auto* next = firstChild->next;
+    firstChild->parent = nullptr;
+    firstChild->previous = nullptr;
+    firstChild->next = nullptr;
+    delete firstChild;
+    firstChild = next;
+  }
+}
+
+void checkLinkedChildOrder(InfoNode& parent, const std::vector<unsigned int>& expectedStateIds)
+{
+  CHECK(childStateIds(parent) == expectedStateIds);
+  CHECK(parent.childDegree() == expectedStateIds.size());
+
+  InfoNode* previous = nullptr;
+  InfoNode* child = parent.firstChild;
+  std::size_t index = 0;
+  while (child != nullptr) {
+    REQUIRE(index < expectedStateIds.size());
+    CHECK(child->stateId == expectedStateIds[index]);
+    CHECK(child->parent == &parent);
+    CHECK(child->previous == previous);
+    if (previous != nullptr) {
+      CHECK(previous->next == child);
+    }
+    previous = child;
+    child = child->next;
+    ++index;
+  }
+
+  CHECK(index == expectedStateIds.size());
+  CHECK(parent.lastChild == previous);
+  if (previous != nullptr) {
+    CHECK(previous->next == nullptr);
+  }
+}
+
 std::map<EdgeKey, double> aggregatedInterModuleFlow(std::vector<InfoNode*>& nodes, bool undirected)
 {
   std::map<EdgeKey, double> flows;
@@ -428,6 +477,60 @@ TEST_CASE("InfoNode initClean remains an explicit reset helper [fast][core][part
   CHECK(source.collapsedLastChild == nullptr);
 }
 
+TEST_CASE("InfoNode replaceChildrenWithOneNode preserves children through guarded detach [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* moduleA = new InfoNode({}, 100);
+  auto* moduleB = new InfoNode({}, 200);
+  root.addChild(moduleA);
+  root.addChild(moduleB);
+  moduleA->addChild(std::make_unique<InfoNode>(FlowData {}, 1));
+  moduleA->addChild(std::make_unique<InfoNode>(FlowData {}, 2));
+  moduleB->addChild(std::make_unique<InfoNode>(FlowData {}, 3));
+  moduleB->addChild(std::make_unique<InfoNode>(FlowData {}, 4));
+
+  InfoNode& middle = root.replaceChildrenWithOneNode();
+
+  CHECK(root.childDegree() == 1);
+  CHECK(root.firstChild == &middle);
+  CHECK(root.lastChild == &middle);
+  CHECK(middle.parent == &root);
+  CHECK(middle.previous == nullptr);
+  CHECK(middle.next == nullptr);
+  CHECK(middle.childDegree() == 4);
+  CHECK(childStateIds(middle) == std::vector<unsigned int> { 1, 2, 3, 4 });
+  for (auto& child : middle.children()) {
+    CHECK(child.parent == &middle);
+  }
+}
+
+TEST_CASE("InfoNode sortChildrenOnFlow preserves links through guarded detach [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto childA = std::make_unique<InfoNode>(FlowData {}, 10);
+  auto childB = std::make_unique<InfoNode>(FlowData {}, 20);
+  auto childC = std::make_unique<InfoNode>(FlowData {}, 30);
+  childA->data.flow = 0.1;
+  childB->data.flow = 0.7;
+  childC->data.flow = 0.4;
+
+  root.addChild(std::move(childA));
+  root.addChild(std::move(childB));
+  root.addChild(std::move(childC));
+
+  root.sortChildrenOnFlow(false);
+
+  CHECK(root.childDegree() == 3);
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 20, 30, 10 });
+  CHECK(root.firstChild->previous == nullptr);
+  CHECK(root.firstChild->parent == &root);
+  CHECK(root.firstChild->next->parent == &root);
+  CHECK(root.lastChild->parent == &root);
+  CHECK(root.lastChild->next == nullptr);
+  CHECK(root.firstChild->next->previous == root.firstChild);
+  CHECK(root.lastChild->previous == root.firstChild->next);
+}
+
 TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][core][partition][tree]")
 {
   InfoNode root;
@@ -460,6 +563,42 @@ TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][c
   }
 }
 
+TEST_CASE("InfoNode replaceWithChildren reparents a first child chain before deleting the module [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* module = new InfoNode({}, 20);
+  auto* after = new InfoNode({}, 30);
+  root.addChild(module);
+  root.addChild(after);
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 1));
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 2));
+
+  CHECK(module->replaceWithChildren() == 1);
+
+  checkLinkedChildOrder(root, { 1, 2, 30 });
+  CHECK(root.firstChild->previous == nullptr);
+  CHECK(root.lastChild == after);
+  CHECK(after->previous->stateId == 2);
+}
+
+TEST_CASE("InfoNode replaceWithChildren reparents a last child chain before deleting the module [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* before = new InfoNode({}, 10);
+  auto* module = new InfoNode({}, 20);
+  root.addChild(before);
+  root.addChild(module);
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 1));
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 2));
+
+  CHECK(module->replaceWithChildren() == 1);
+
+  checkLinkedChildOrder(root, { 10, 1, 2 });
+  CHECK(root.firstChild == before);
+  CHECK(root.lastChild->stateId == 2);
+  CHECK(root.lastChild->next == nullptr);
+}
+
 TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before deleting the module [fast][core][partition][tree][ownership]")
 {
   InfoNode root;
@@ -474,7 +613,7 @@ TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before de
 
   CHECK(module->replaceWithChildren() == 1);
 
-  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 1, 2, 30 });
+  checkLinkedChildOrder(root, { 10, 1, 2, 30 });
   CHECK(root.firstChild == before);
   CHECK(root.lastChild == after);
   CHECK(before->next->stateId == 1);
@@ -485,11 +624,31 @@ TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before de
   CHECK(after->previous->stateId == 2);
 }
 
+TEST_CASE("InfoNode replaceWithChildrenDebug uses the same reparent splice path [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* before = new InfoNode({}, 10);
+  auto* module = new InfoNode({}, 20);
+  auto* after = new InfoNode({}, 30);
+  root.addChild(before);
+  root.addChild(module);
+  root.addChild(after);
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 1));
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 2));
+
+  module->replaceWithChildrenDebug();
+
+  checkLinkedChildOrder(root, { 10, 1, 2, 30 });
+  CHECK(root.firstChild == before);
+  CHECK(root.lastChild == after);
+}
+
 TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fast][core][partition][tree][ownership]")
 {
   InfoNode deleteRoot;
   auto* deletingParent = new InfoNode({}, 10);
   deletingParent->addChild(std::make_unique<InfoNode>(FlowData {}, 11));
+  deletingParent->addChild(std::make_unique<InfoNode>(FlowData {}, 12));
   deleteRoot.addChild(deletingParent);
 
   deletingParent->remove(false);
@@ -500,19 +659,119 @@ TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fa
   InfoNode detachRoot;
   auto* detachingParent = new InfoNode({}, 20);
   auto* detachedChild = new InfoNode({}, 21);
+  auto* detachedSibling = new InfoNode({}, 22);
   detachingParent->addChild(detachedChild);
+  detachingParent->addChild(detachedSibling);
   detachRoot.addChild(detachingParent);
 
   detachingParent->remove(true);
 
   CHECK(detachRoot.firstChild == nullptr);
   CHECK(detachRoot.lastChild == nullptr);
-  CHECK(detachedChild->stateId == 21);
+  CHECK(childChainStateIds(detachedChild) == std::vector<unsigned int> { 21, 22 });
+  CHECK(detachedChild->previous == nullptr);
+  CHECK(detachedChild->next == detachedSibling);
+  CHECK(detachedSibling->previous == detachedChild);
+  CHECK(detachedSibling->next == nullptr);
 
-  detachedChild->parent = nullptr;
-  detachedChild->previous = nullptr;
-  detachedChild->next = nullptr;
-  delete detachedChild;
+  deleteDetachedChildChain(detachedChild);
+}
+
+TEST_CASE("InfoNode remove true unlinks first and last child modules while detaching their children [fast][core][partition][tree][ownership]")
+{
+  InfoNode firstRoot;
+  auto* firstModule = new InfoNode({}, 10);
+  auto* firstSibling = new InfoNode({}, 20);
+  auto* firstDetachedChild = new InfoNode({}, 11);
+  firstModule->addChild(firstDetachedChild);
+  firstRoot.addChild(firstModule);
+  firstRoot.addChild(firstSibling);
+
+  firstModule->remove(true);
+
+  CHECK(childStateIds(firstRoot) == std::vector<unsigned int> { 20 });
+  CHECK(firstRoot.firstChild == firstSibling);
+  CHECK(firstRoot.lastChild == firstSibling);
+  CHECK(firstSibling->previous == nullptr);
+  CHECK(firstSibling->next == nullptr);
+  deleteDetachedChildChain(firstDetachedChild);
+
+  InfoNode lastRoot;
+  auto* lastSibling = new InfoNode({}, 30);
+  auto* lastModule = new InfoNode({}, 40);
+  auto* lastDetachedChild = new InfoNode({}, 41);
+  lastModule->addChild(lastDetachedChild);
+  lastRoot.addChild(lastSibling);
+  lastRoot.addChild(lastModule);
+
+  lastModule->remove(true);
+
+  CHECK(childStateIds(lastRoot) == std::vector<unsigned int> { 30 });
+  CHECK(lastRoot.firstChild == lastSibling);
+  CHECK(lastRoot.lastChild == lastSibling);
+  CHECK(lastSibling->previous == nullptr);
+  CHECK(lastSibling->next == nullptr);
+  deleteDetachedChildChain(lastDetachedChild);
+}
+
+TEST_CASE("InfoNode destructor unlinks parent and sibling pointers without updating cached child degree [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* first = new InfoNode({}, 10);
+  auto* middle = new InfoNode({}, 20);
+  auto* last = new InfoNode({}, 30);
+  root.addChild(first);
+  root.addChild(middle);
+  root.addChild(last);
+
+  delete middle;
+
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 30 });
+  CHECK(root.firstChild == first);
+  CHECK(root.lastChild == last);
+  CHECK(first->previous == nullptr);
+  CHECK(first->next == last);
+  CHECK(last->previous == first);
+  CHECK(last->next == nullptr);
+  // Existing destructor/remove semantics preserve the cached degree until a
+  // caller explicitly recalculates or overwrites it.
+  CHECK(root.childDegree() == 3);
+
+  root.calcChildDegree();
+  CHECK(root.childDegree() == 2);
+}
+
+TEST_CASE("InfoNode destructor unlinks first and last children without changing cached child degree [fast][core][partition][tree][ownership]")
+{
+  InfoNode firstRoot;
+  auto* first = new InfoNode({}, 10);
+  auto* second = new InfoNode({}, 20);
+  firstRoot.addChild(first);
+  firstRoot.addChild(second);
+
+  delete first;
+
+  CHECK(childStateIds(firstRoot) == std::vector<unsigned int> { 20 });
+  CHECK(firstRoot.firstChild == second);
+  CHECK(firstRoot.lastChild == second);
+  CHECK(second->previous == nullptr);
+  CHECK(second->next == nullptr);
+  CHECK(firstRoot.childDegree() == 2);
+
+  InfoNode lastRoot;
+  auto* beforeLast = new InfoNode({}, 30);
+  auto* last = new InfoNode({}, 40);
+  lastRoot.addChild(beforeLast);
+  lastRoot.addChild(last);
+
+  delete last;
+
+  CHECK(childStateIds(lastRoot) == std::vector<unsigned int> { 30 });
+  CHECK(lastRoot.firstChild == beforeLast);
+  CHECK(lastRoot.lastChild == beforeLast);
+  CHECK(beforeLast->previous == nullptr);
+  CHECK(beforeLast->next == nullptr);
+  CHECK(lastRoot.childDegree() == 2);
 }
 
 TEST_CASE("InfoNode owns outgoing edges while incoming edges are non-owning references [fast][core][partition][tree][ownership]")

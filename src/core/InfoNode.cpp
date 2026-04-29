@@ -13,6 +13,146 @@
 
 namespace infomap {
 
+namespace {
+
+class DetachedChildChain {
+public:
+  DetachedChildChain() = default;
+
+  DetachedChildChain(InfoNode* first, InfoNode* last) noexcept
+      : m_first(first),
+        m_last(last) { }
+
+  DetachedChildChain(const DetachedChildChain&) = delete;
+  DetachedChildChain& operator=(const DetachedChildChain&) = delete;
+
+  DetachedChildChain(DetachedChildChain&& other) noexcept
+      : m_first(other.m_first),
+        m_last(other.m_last)
+  {
+    other.m_first = nullptr;
+    other.m_last = nullptr;
+  }
+
+  DetachedChildChain& operator=(DetachedChildChain&& other) noexcept
+  {
+    if (this != &other) {
+      reset();
+      m_first = other.m_first;
+      m_last = other.m_last;
+      other.m_first = nullptr;
+      other.m_last = nullptr;
+    }
+    return *this;
+  }
+
+  ~DetachedChildChain() noexcept
+  {
+    reset();
+  }
+
+  InfoNode* first() const noexcept { return m_first; }
+
+  InfoNode* last() const noexcept { return m_last; }
+
+  bool empty() const noexcept { return m_first == nullptr; }
+
+  void release() noexcept
+  {
+    m_first = nullptr;
+    m_last = nullptr;
+  }
+
+  void reset() noexcept
+  {
+    InfoNode* node = m_first;
+    m_first = nullptr;
+    m_last = nullptr;
+    while (node != nullptr) {
+      InfoNode* next = node->next;
+      delete node;
+      node = next;
+    }
+  }
+
+private:
+  InfoNode* m_first = nullptr;
+  InfoNode* m_last = nullptr;
+};
+
+void spliceChildrenIntoParentBeforeDelete(InfoNode& node) noexcept
+{
+  InfoNode* parent = node.parent;
+  InfoNode* previous = node.previous;
+  InfoNode* next = node.next;
+  InfoNode* firstChild = node.firstChild;
+  InfoNode* lastChild = node.lastChild;
+
+  unsigned int childCount = 0;
+  for (InfoNode* child = firstChild; child != nullptr; child = child->next) {
+    child->parent = parent;
+    ++childCount;
+  }
+
+  parent->setChildDegree(parent->childDegree() + childCount - 1); // -1 as this node is deleted.
+
+  firstChild->previous = previous;
+  lastChild->next = next;
+
+  if (parent->firstChild == &node) {
+    parent->firstChild = firstChild;
+  } else {
+    previous->next = firstChild;
+  }
+
+  if (parent->lastChild == &node) {
+    parent->lastChild = lastChild;
+  } else {
+    next->previous = lastChild;
+  }
+
+  // Detach before self-delete so the destructor does not delete the reparented
+  // child chain or reconnect sibling links that were already spliced.
+  node.firstChild = nullptr;
+  node.lastChild = nullptr;
+  node.next = nullptr;
+  node.previous = nullptr;
+  node.parent = nullptr;
+  node.setChildDegree(0);
+}
+
+void prepareForSelfDelete(InfoNode& node, bool detachChildren) noexcept
+{
+  if (!detachChildren)
+    return;
+
+  node.firstChild = nullptr;
+  node.lastChild = nullptr;
+  node.setChildDegree(0);
+}
+
+void unlinkFromParentAndSiblings(InfoNode& node) noexcept
+{
+  if (node.next != nullptr)
+    node.next->previous = node.previous;
+  if (node.previous != nullptr)
+    node.previous->next = node.next;
+  if (node.parent != nullptr) {
+    if (node.parent->firstChild == &node)
+      node.parent->firstChild = node.next;
+    if (node.parent->lastChild == &node)
+      node.parent->lastChild = node.previous;
+  }
+
+  // Preserve current destructor/remove semantics: unlinking updates links but
+  // does not update the parent's cached child degree.
+  node.parent = nullptr;
+  node.previous = nullptr;
+  node.next = nullptr;
+}
+
+} // namespace
+
 void InfomapBaseDeleter::operator()(InfomapBase* infomap) const noexcept
 {
   delete infomap;
@@ -39,17 +179,7 @@ InfoNode& InfoNode::operator=(const InfoNode& other)
 InfoNode::~InfoNode() noexcept
 {
   deleteChildren();
-
-  if (next != nullptr)
-    next->previous = previous;
-  if (previous != nullptr)
-    previous->next = next;
-  if (parent != nullptr) {
-    if (parent->firstChild == this)
-      parent->firstChild = next;
-    if (parent->lastChild == this)
-      parent->lastChild = previous;
-  }
+  unlinkFromParentAndSiblings(*this);
 
   // Incoming edge pointers on other nodes become dangling non-owning back-references.
 }
@@ -199,9 +329,11 @@ InfoNode& InfoNode::addChild(std::unique_ptr<InfoNode> child) noexcept
 
 void InfoNode::releaseChildren() noexcept
 {
+  DetachedChildChain detached(firstChild, lastChild);
   firstChild = nullptr;
   lastChild = nullptr;
   m_childDegree = 0;
+  detached.release();
 }
 
 InfoNode& InfoNode::replaceChildrenWithOneNode()
@@ -223,8 +355,12 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
     middleNodePtr->addChild(n);
   } while (--numOriginalChildrenLeft != 0);
 
-  releaseChildren();
+  auto detachedChildren = DetachedChildChain(firstChild, lastChild);
+  firstChild = nullptr;
+  lastChild = nullptr;
+  m_childDegree = 0;
   addChild(std::move(middleNode));
+  detachedChildren.release();
   auto d1 = middleNodePtr->replaceChildrenWithGrandChildren();
   if (d1 != d0)
     throw std::logic_error("replaceChildrenWithOneNode replaced different number of children as having before");
@@ -251,37 +387,7 @@ unsigned int InfoNode::replaceWithChildren() noexcept
   if (isLeaf() || isRoot())
     return 0;
 
-  // Re-parent children
-  unsigned int deltaChildDegree = 0;
-  InfoNode* child = firstChild;
-  do {
-    child->parent = parent;
-    child = child->next;
-    ++deltaChildDegree;
-  } while (child != nullptr);
-  parent->m_childDegree += deltaChildDegree - 1; // -1 as this node is deleted
-
-  firstChild->previous = previous;
-  lastChild->next = next;
-
-  if (parent->firstChild == this) {
-    parent->firstChild = firstChild;
-  } else {
-    previous->next = firstChild;
-  }
-
-  if (parent->lastChild == this) {
-    parent->lastChild = lastChild;
-  } else {
-    next->previous = lastChild;
-  }
-
-  // Release connected nodes before delete, otherwise children are deleted and neighbours are reconnected.
-  firstChild = nullptr;
-  lastChild = nullptr;
-  next = nullptr;
-  previous = nullptr;
-  parent = nullptr;
+  spliceChildrenIntoParentBeforeDelete(*this);
   delete this;
   return 1;
 }
@@ -304,65 +410,24 @@ void InfoNode::replaceWithChildrenDebug() noexcept
   if (isLeaf() || isRoot())
     return;
 
-  // Re-parent children
-  unsigned int deltaChildDegree = 0;
-  InfoNode* child = firstChild;
-  do {
-    child->parent = parent;
-    child = child->next;
-    ++deltaChildDegree;
-  } while (child != nullptr);
-  parent->m_childDegree += deltaChildDegree - 1; // -1 as this node is deleted
-
-  if (parent->firstChild == this) {
-    parent->firstChild = firstChild;
-  } else {
-    previous->next = firstChild;
-    firstChild->previous = previous;
-  }
-
-  if (parent->lastChild == this) {
-    parent->lastChild = lastChild;
-  } else {
-    next->previous = lastChild;
-    lastChild->next = next;
-  }
-
-  // Release connected nodes before delete, otherwise children are deleted and neighbours are reconnected.
-  firstChild = nullptr;
-  lastChild = nullptr;
-  next = nullptr;
-  previous = nullptr;
-  parent = nullptr;
-
+  spliceChildrenIntoParentBeforeDelete(*this);
   delete this;
 }
 
 void InfoNode::remove(bool removeChildren) noexcept
 {
-  firstChild = removeChildren ? nullptr : firstChild;
+  prepareForSelfDelete(*this, removeChildren);
   delete this;
 }
 
 void InfoNode::deleteChildren() noexcept
 {
-  auto delete_child_chain = [](InfoNode*& first, InfoNode*& last) {
-    if (first == nullptr)
-      return;
-
-    InfoNode* node = first;
-    while (node != nullptr) {
-      InfoNode* next_node = node->next;
-      delete node;
-      node = next_node;
-    }
-
-    first = nullptr;
-    last = nullptr;
-  };
-
-  delete_child_chain(firstChild, lastChild);
-  delete_child_chain(collapsedFirstChild, collapsedLastChild);
+  DetachedChildChain activeChildren(firstChild, lastChild);
+  firstChild = nullptr;
+  lastChild = nullptr;
+  DetachedChildChain collapsedChildren(collapsedFirstChild, collapsedLastChild);
+  collapsedFirstChild = nullptr;
+  collapsedLastChild = nullptr;
   m_childDegree = 0;
 }
 
@@ -418,10 +483,14 @@ void InfoNode::sortChildrenOnFlow(bool recurse) noexcept
     std::sort(nodes.begin(), nodes.end(), [](const InfoNode* a, const InfoNode* b) {
       return b->data.flow < a->data.flow;
     });
-    releaseChildren();
+    auto detachedChildren = DetachedChildChain(firstChild, lastChild);
+    firstChild = nullptr;
+    lastChild = nullptr;
+    m_childDegree = 0;
     for (auto node : nodes) {
       addChild(node);
     }
+    detachedChildren.release();
   }
   if (recurse) {
     for (InfoNode& child : children()) {
@@ -434,10 +503,14 @@ void InfoNode::sortChildrenOnFlow(bool recurse) noexcept
 
 unsigned int InfoNode::collapseChildren() noexcept
 {
-  std::swap(collapsedFirstChild, firstChild);
-  std::swap(collapsedLastChild, lastChild);
+  auto activeChildren = DetachedChildChain(firstChild, lastChild);
   unsigned int numCollapsedChildren = childDegree();
-  releaseChildren();
+  firstChild = nullptr;
+  lastChild = nullptr;
+  m_childDegree = 0;
+  collapsedFirstChild = activeChildren.first();
+  collapsedLastChild = activeChildren.last();
+  activeChildren.release();
   return numCollapsedChildren;
 }
 
