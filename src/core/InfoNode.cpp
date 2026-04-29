@@ -145,6 +145,14 @@ void InfoNode::addChild(InfoNode* child) noexcept
   ++m_childDegree;
 }
 
+InfoNode& InfoNode::addChild(std::unique_ptr<InfoNode> child) noexcept
+{
+  auto* childPtr = child.get();
+  addChild(childPtr);
+  child.release();
+  return *childPtr;
+}
+
 void InfoNode::releaseChildren() noexcept
 {
   firstChild = nullptr;
@@ -160,22 +168,23 @@ InfoNode& InfoNode::replaceChildrenWithOneNode()
     throw std::logic_error("replaceChildrenWithOneNode called on a node without any children.");
   if (firstChild->firstChild == nullptr)
     throw std::logic_error("replaceChildrenWithOneNode called on a node without any grandchildren.");
-  auto* middleNode = new InfoNode();
+  auto middleNode = std::make_unique<InfoNode>();
+  auto* middleNodePtr = middleNode.get();
   InfoNode::child_iterator nodeIt = begin_child();
   unsigned int numOriginalChildrenLeft = m_childDegree;
   auto d0 = m_childDegree;
   do {
     InfoNode* n = nodeIt.current();
     ++nodeIt;
-    middleNode->addChild(n);
+    middleNodePtr->addChild(n);
   } while (--numOriginalChildrenLeft != 0);
 
   releaseChildren();
-  addChild(middleNode);
-  auto d1 = middleNode->replaceChildrenWithGrandChildren();
+  addChild(std::move(middleNode));
+  auto d1 = middleNodePtr->replaceChildrenWithGrandChildren();
   if (d1 != d0)
     throw std::logic_error("replaceChildrenWithOneNode replaced different number of children as having before");
-  return *middleNode;
+  return *middleNodePtr;
 }
 
 unsigned int InfoNode::replaceChildrenWithGrandChildren() noexcept

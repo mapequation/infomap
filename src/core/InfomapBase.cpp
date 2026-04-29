@@ -496,9 +496,10 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       if (node->childDegree() < childNumber) {
         InfoNode* child = leafNode;
         if (i + 1 < path.size()) {
-          child = new InfoNode();
+          child = &node->addChild(std::make_unique<InfoNode>());
+        } else {
+          node->addChild(child);
         }
-        node->addChild(child);
       }
 
       node = node->lastChild;
@@ -542,15 +543,13 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       }
       // Set to own module if no neighbour module available
       if (leafNode->parent == nullptr) {
-        auto module = new InfoNode();
-        root().addChild(module);
-        module->addChild(leafNode);
+        auto& module = root().addChild(std::make_unique<InfoNode>());
+        module.addChild(leafNode);
       }
     } else {
       // Set to own module if no neighbour module available
-      auto module = new InfoNode();
-      root().addChild(module);
-      module->addChild(leafNode);
+      auto& module = root().addChild(std::make_unique<InfoNode>());
+      module.addChild(leafNode);
     }
   }
   if (numNodesWithoutClusterInfo > 0) {
@@ -756,7 +755,8 @@ void InfomapBase::generateSubNetwork(Network& network)
   std::map<unsigned int, unsigned int> nodeIndexMap;
   for (auto& nodeIt : network.nodes()) {
     auto& networkNode = nodeIt.second;
-    auto* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
+    auto ownedNode = std::make_unique<InfoNode>(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
+    auto* node = ownedNode.get();
     node->data.teleportWeight = networkNode.weight;
     node->data.teleportFlow = networkNode.teleFlow;
     node->data.exitFlow = networkNode.exitFlow;
@@ -771,7 +771,7 @@ void InfomapBase::generateSubNetwork(Network& network)
     }
     sumNodeFlow += networkNode.flow;
     sumTeleFlow += networkNode.teleFlow;
-    m_root.addChild(node);
+    m_root.addChild(std::move(ownedNode));
     nodeIndexMap[networkNode.id] = m_leafNodes.size();
     m_leafNodes.push_back(node);
   }
@@ -888,9 +888,10 @@ void InfomapBase::generateSubNetwork(InfoNode& parent)
 
   unsigned int childIndex = 0;
   for (InfoNode& node : parent) {
-    auto* clonedNode = new InfoNode(node);
+    auto ownedClonedNode = std::make_unique<InfoNode>(node);
+    auto* clonedNode = ownedClonedNode.get();
     clonedNode->initClean();
-    m_root.addChild(clonedNode);
+    m_root.addChild(std::move(ownedClonedNode));
     node.index = childIndex; // Set index to its place in this subnetwork to be able to find edge target below
     m_leafNodes[childIndex] = clonedNode;
     ++childIndex;
@@ -991,9 +992,10 @@ void InfomapBase::hierarchicalPartition()
             InfoNode* leaf = leafs[j];
             unsigned int moduleIndex = modules[j];
             if (subModules[moduleIndex] == nullptr) {
-              subModules[moduleIndex] = new InfoNode(subInfomap.leafNodes()[j]->parent->data);
+              auto subModule = std::make_unique<InfoNode>(subInfomap.leafNodes()[j]->parent->data);
+              subModules[moduleIndex] = subModule.get();
               subModules[moduleIndex]->index = moduleIndex;
-              module.addChild(subModules[moduleIndex]);
+              module.addChild(std::move(subModule));
             }
             subModules[moduleIndex]->addChild(leaf);
           }
