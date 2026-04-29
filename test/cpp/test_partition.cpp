@@ -27,6 +27,34 @@ std::vector<unsigned int> childStateIds(const InfoNode& node)
   return ids;
 }
 
+void checkLinkedChildOrder(InfoNode& parent, const std::vector<unsigned int>& expectedStateIds)
+{
+  CHECK(childStateIds(parent) == expectedStateIds);
+  CHECK(parent.childDegree() == expectedStateIds.size());
+
+  InfoNode* previous = nullptr;
+  InfoNode* child = parent.firstChild;
+  std::size_t index = 0;
+  while (child != nullptr) {
+    REQUIRE(index < expectedStateIds.size());
+    CHECK(child->stateId == expectedStateIds[index]);
+    CHECK(child->parent == &parent);
+    CHECK(child->previous == previous);
+    if (previous != nullptr) {
+      CHECK(previous->next == child);
+    }
+    previous = child;
+    child = child->next;
+    ++index;
+  }
+
+  CHECK(index == expectedStateIds.size());
+  CHECK(parent.lastChild == previous);
+  if (previous != nullptr) {
+    CHECK(previous->next == nullptr);
+  }
+}
+
 std::map<EdgeKey, double> aggregatedInterModuleFlow(std::vector<InfoNode*>& nodes, bool undirected)
 {
   std::map<EdgeKey, double> flows;
@@ -514,6 +542,42 @@ TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][c
   }
 }
 
+TEST_CASE("InfoNode replaceWithChildren reparents a first child chain before deleting the module [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* module = new InfoNode({}, 20);
+  auto* after = new InfoNode({}, 30);
+  root.addChild(module);
+  root.addChild(after);
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 1));
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 2));
+
+  CHECK(module->replaceWithChildren() == 1);
+
+  checkLinkedChildOrder(root, { 1, 2, 30 });
+  CHECK(root.firstChild->previous == nullptr);
+  CHECK(root.lastChild == after);
+  CHECK(after->previous->stateId == 2);
+}
+
+TEST_CASE("InfoNode replaceWithChildren reparents a last child chain before deleting the module [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* before = new InfoNode({}, 10);
+  auto* module = new InfoNode({}, 20);
+  root.addChild(before);
+  root.addChild(module);
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 1));
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 2));
+
+  CHECK(module->replaceWithChildren() == 1);
+
+  checkLinkedChildOrder(root, { 10, 1, 2 });
+  CHECK(root.firstChild == before);
+  CHECK(root.lastChild->stateId == 2);
+  CHECK(root.lastChild->next == nullptr);
+}
+
 TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before deleting the module [fast][core][partition][tree][ownership]")
 {
   InfoNode root;
@@ -528,7 +592,7 @@ TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before de
 
   CHECK(module->replaceWithChildren() == 1);
 
-  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 1, 2, 30 });
+  checkLinkedChildOrder(root, { 10, 1, 2, 30 });
   CHECK(root.firstChild == before);
   CHECK(root.lastChild == after);
   CHECK(before->next->stateId == 1);
@@ -537,6 +601,25 @@ TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before de
   CHECK(before->next->next->parent == &root);
   CHECK(before->next->next->next == after);
   CHECK(after->previous->stateId == 2);
+}
+
+TEST_CASE("InfoNode replaceWithChildrenDebug uses the same reparent splice path [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* before = new InfoNode({}, 10);
+  auto* module = new InfoNode({}, 20);
+  auto* after = new InfoNode({}, 30);
+  root.addChild(before);
+  root.addChild(module);
+  root.addChild(after);
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 1));
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 2));
+
+  module->replaceWithChildrenDebug();
+
+  checkLinkedChildOrder(root, { 10, 1, 2, 30 });
+  CHECK(root.firstChild == before);
+  CHECK(root.lastChild == after);
 }
 
 TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fast][core][partition][tree][ownership]")

@@ -80,6 +80,48 @@ private:
   InfoNode* m_last = nullptr;
 };
 
+void spliceChildrenIntoParentBeforeDelete(InfoNode& node) noexcept
+{
+  InfoNode* parent = node.parent;
+  InfoNode* previous = node.previous;
+  InfoNode* next = node.next;
+  InfoNode* firstChild = node.firstChild;
+  InfoNode* lastChild = node.lastChild;
+
+  unsigned int childCount = 0;
+  for (InfoNode* child = firstChild; child != nullptr; child = child->next) {
+    child->parent = parent;
+    ++childCount;
+  }
+
+  parent->setChildDegree(parent->childDegree() + childCount - 1); // -1 as this node is deleted.
+
+  firstChild->previous = previous;
+  lastChild->next = next;
+
+  if (parent->firstChild == &node) {
+    parent->firstChild = firstChild;
+  } else {
+    previous->next = firstChild;
+  }
+
+  if (parent->lastChild == &node) {
+    parent->lastChild = lastChild;
+  } else {
+    next->previous = lastChild;
+  }
+
+  // Detach before self-delete so the destructor does not delete the reparented
+  // child chain or reconnect sibling links that were already spliced.
+  node.firstChild = nullptr;
+  node.lastChild = nullptr;
+  node.next = nullptr;
+  node.previous = nullptr;
+  node.parent = nullptr;
+  node.setChildDegree(0);
+
+}
+
 } // namespace
 
 void InfomapBaseDeleter::operator()(InfomapBase* infomap) const noexcept
@@ -326,37 +368,7 @@ unsigned int InfoNode::replaceWithChildren() noexcept
   if (isLeaf() || isRoot())
     return 0;
 
-  // Re-parent children
-  unsigned int deltaChildDegree = 0;
-  InfoNode* child = firstChild;
-  do {
-    child->parent = parent;
-    child = child->next;
-    ++deltaChildDegree;
-  } while (child != nullptr);
-  parent->m_childDegree += deltaChildDegree - 1; // -1 as this node is deleted
-
-  firstChild->previous = previous;
-  lastChild->next = next;
-
-  if (parent->firstChild == this) {
-    parent->firstChild = firstChild;
-  } else {
-    previous->next = firstChild;
-  }
-
-  if (parent->lastChild == this) {
-    parent->lastChild = lastChild;
-  } else {
-    next->previous = lastChild;
-  }
-
-  // Release connected nodes before delete, otherwise children are deleted and neighbours are reconnected.
-  firstChild = nullptr;
-  lastChild = nullptr;
-  next = nullptr;
-  previous = nullptr;
-  parent = nullptr;
+  spliceChildrenIntoParentBeforeDelete(*this);
   delete this;
   return 1;
 }
@@ -379,37 +391,7 @@ void InfoNode::replaceWithChildrenDebug() noexcept
   if (isLeaf() || isRoot())
     return;
 
-  // Re-parent children
-  unsigned int deltaChildDegree = 0;
-  InfoNode* child = firstChild;
-  do {
-    child->parent = parent;
-    child = child->next;
-    ++deltaChildDegree;
-  } while (child != nullptr);
-  parent->m_childDegree += deltaChildDegree - 1; // -1 as this node is deleted
-
-  if (parent->firstChild == this) {
-    parent->firstChild = firstChild;
-  } else {
-    previous->next = firstChild;
-    firstChild->previous = previous;
-  }
-
-  if (parent->lastChild == this) {
-    parent->lastChild = lastChild;
-  } else {
-    next->previous = lastChild;
-    lastChild->next = next;
-  }
-
-  // Release connected nodes before delete, otherwise children are deleted and neighbours are reconnected.
-  firstChild = nullptr;
-  lastChild = nullptr;
-  next = nullptr;
-  previous = nullptr;
-  parent = nullptr;
-
+  spliceChildrenIntoParentBeforeDelete(*this);
   delete this;
 }
 
