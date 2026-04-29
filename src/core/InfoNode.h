@@ -30,6 +30,25 @@ struct InfomapBaseDeleter {
   void operator()(InfomapBase* infomap) const noexcept;
 };
 
+template <typename Iter>
+class OwnedEdgePtrIterator {
+  Iter m_current;
+
+public:
+  explicit OwnedEdgePtrIterator(Iter current) : m_current(current) { }
+
+  InfoEdge* operator*() const noexcept { return m_current->get(); }
+
+  OwnedEdgePtrIterator& operator++() noexcept
+  {
+    ++m_current;
+    return *this;
+  }
+
+  bool operator==(const OwnedEdgePtrIterator& other) const noexcept { return m_current == other.m_current; }
+  bool operator!=(const OwnedEdgePtrIterator& other) const noexcept { return m_current != other.m_current; }
+};
+
 /**
  * Tree node with raw-pointer ownership.
  *
@@ -38,8 +57,8 @@ struct InfomapBaseDeleter {
  * collapsedLastChild. Destruction deletes both chains. releaseChildren() only
  * detaches the active chain from this parent; the caller must reattach or delete
  * those nodes. Reparenting helpers detach children before deleting the removed
- * intermediate node. An InfoNode also owns its sub-Infomap through a unique_ptr
- * and owns outgoing InfoEdge objects; incoming edge pointers are non-owning
+ * intermediate node. An InfoNode also owns its sub-Infomap and outgoing
+ * InfoEdge objects through unique_ptr; incoming edge pointers are non-owning
  * back-references.
  */
 class InfoNode {
@@ -60,11 +79,15 @@ public:
   using post_depth_first_iterator = DepthFirstIterator<InfoNode*, false>;
   using const_post_depth_first_iterator = DepthFirstIterator<InfoNode const*, false>;
 
-  using edge_iterator = std::vector<InfoEdge*>::iterator;
-  using const_edge_iterator = std::vector<InfoEdge*>::const_iterator;
+  using edge_iterator = OwnedEdgePtrIterator<std::vector<std::unique_ptr<InfoEdge>>::iterator>;
+  using const_edge_iterator = OwnedEdgePtrIterator<std::vector<std::unique_ptr<InfoEdge>>::const_iterator>;
+  using in_edge_iterator = std::vector<InfoEdge*>::iterator;
+  using const_in_edge_iterator = std::vector<InfoEdge*>::const_iterator;
 
   using edge_iterator_wrapper = IterWrapper<edge_iterator>;
   using const_edge_iterator_wrapper = IterWrapper<const_edge_iterator>;
+  using in_edge_iterator_wrapper = IterWrapper<in_edge_iterator>;
+  using const_in_edge_iterator_wrapper = IterWrapper<const_in_edge_iterator>;
 
   using infomap_iterator_wrapper = IterWrapper<tree_iterator>;
   using const_infomap_iterator_wrapper = IterWrapper<const_tree_iterator>;
@@ -103,7 +126,7 @@ private:
   bool m_childrenChanged = false;
   unsigned int m_numLeafMembers = 0;
 
-  std::vector<InfoEdge*> m_outEdges;
+  std::vector<std::unique_ptr<InfoEdge>> m_outEdges;
   std::vector<InfoEdge*> m_inEdges;
 
   std::unique_ptr<InfomapBase, InfomapBaseDeleter> m_infomap;
@@ -251,17 +274,17 @@ public:
 
   // ---------------------------- Graph iterators ----------------------------
 
-  edge_iterator begin_outEdge() noexcept { return m_outEdges.begin(); }
+  edge_iterator begin_outEdge() noexcept { return edge_iterator(m_outEdges.begin()); }
 
-  edge_iterator end_outEdge() noexcept { return m_outEdges.end(); }
+  edge_iterator end_outEdge() noexcept { return edge_iterator(m_outEdges.end()); }
 
-  edge_iterator begin_inEdge() noexcept { return m_inEdges.begin(); }
+  in_edge_iterator begin_inEdge() noexcept { return m_inEdges.begin(); }
 
-  edge_iterator end_inEdge() noexcept { return m_inEdges.end(); }
+  in_edge_iterator end_inEdge() noexcept { return m_inEdges.end(); }
 
-  edge_iterator_wrapper outEdges() noexcept { return { m_outEdges }; }
+  edge_iterator_wrapper outEdges() noexcept { return { begin_outEdge(), end_outEdge() }; }
 
-  edge_iterator_wrapper inEdges() noexcept { return { m_inEdges }; }
+  in_edge_iterator_wrapper inEdges() noexcept { return { m_inEdges }; }
 
   // ---------------------------- Capacity ----------------------------
 
@@ -397,9 +420,10 @@ public:
 
   void addOutEdge(InfoNode& target, double weight, double flow = 0.0) noexcept
   {
-    auto* edge = new InfoEdge(*this, target, weight, flow);
-    m_outEdges.push_back(edge);
-    target.m_inEdges.push_back(edge);
+    auto edge = std::make_unique<InfoEdge>(*this, target, weight, flow);
+    auto* edgePtr = edge.get();
+    m_outEdges.push_back(std::move(edge));
+    target.m_inEdges.push_back(edgePtr);
   }
 
 private:
