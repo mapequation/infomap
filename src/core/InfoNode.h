@@ -52,14 +52,19 @@ public:
 /**
  * Tree node with raw-pointer ownership.
  *
- * An InfoNode owns the active child chain reachable through firstChild/lastChild
- * and the collapsed child chain reachable through collapsedFirstChild/
- * collapsedLastChild. Destruction deletes both chains. releaseChildren() only
- * detaches the active chain from this parent; the caller must reattach or delete
- * those nodes. Reparenting helpers detach children before deleting the removed
- * intermediate node. An InfoNode also owns its sub-Infomap and outgoing
- * InfoEdge objects through unique_ptr; incoming edge pointers are non-owning
- * back-references.
+ * Child ownership still follows the raw linked lists:
+ * - firstChild/lastChild own the active child chain through next pointers.
+ * - collapsedFirstChild/collapsedLastChild own the collapsed child chain.
+ *
+ * releaseChildren() only clears this parent's active chain entry points and
+ * child degree. It does not delete children or rewrite child parent/sibling
+ * links; the caller must reattach or delete the detached chain. remove(true)
+ * has the same legacy handoff shape for this node's active children, while
+ * remove(false) deletes the subtree with this node. replaceWithChildren()
+ * reparents children before deleting the removed intermediate node.
+ *
+ * An InfoNode owns its sub-Infomap and outgoing InfoEdge objects through
+ * unique_ptr. Incoming edge pointers are non-owning back-references.
  */
 class InfoNode {
 public:
@@ -309,15 +314,18 @@ public:
   void sortChildrenOnFlow(bool recurse = true) noexcept;
 
   /**
-   * Move the active child chain to the collapsed child chain without deleting
-   * it. The node owns the collapsed chain until expandChildren() restores it or
-   * deleteChildren()/destruction deletes it.
+   * Move the active child chain to the collapsed child chain.
+   *
+   * Ownership remains with this node, but through collapsedFirstChild/
+   * collapsedLastChild instead of firstChild/lastChild. Child parent/sibling
+   * links are preserved.
    * @return the number of children collapsed
    */
   unsigned int collapseChildren() noexcept;
 
   /**
-   * Move the collapsed child chain back to the active child chain.
+   * Move the collapsed child chain back to the active child chain, preserving
+   * child order and existing parent/sibling links.
    * @return the number of collapsed children expanded
    */
   unsigned int expandChildren();
@@ -336,9 +344,11 @@ public:
   void addChild(InfoNode* child) noexcept;
 
   /**
-   * Detach this node from its active child chain without deleting any child.
-   * Child parent/sibling links are not rewritten; callers must reattach or
-   * delete the detached chain before those stale links can be observed.
+   * Detach the active child chain without deleting any child.
+   *
+   * This clears firstChild/lastChild and childDegree() only. The detached
+   * children keep their existing parent/previous/next links as a legacy raw
+   * handoff contract; callers must reattach or delete the detached chain.
    */
   void releaseChildren() noexcept;
 
@@ -350,7 +360,10 @@ public:
   InfoNode& replaceChildrenWithOneNode();
 
   /**
-   * @return 1 if the node is removed, otherwise 0
+   * Replace this node in its parent chain with this node's active children.
+   *
+   * The children are reparented to this node's parent before this node deletes
+   * itself. Returns 1 if the node is removed, otherwise 0.
    */
   unsigned int replaceWithChildren() noexcept;
 
@@ -366,9 +379,10 @@ public:
   /**
    * Delete this node.
    *
-   * removeChildren=false leaves firstChild intact, so the destructor deletes the
-   * active child chain. removeChildren=true clears firstChild before deletion,
-   * leaving the previous child chain for the caller to reattach or delete.
+   * removeChildren=false leaves firstChild intact, so the destructor deletes
+   * this node's active subtree. removeChildren=true clears this node's active
+   * child entry points before deletion, leaving the previous child chain alive
+   * with legacy parent/sibling links for caller cleanup or reattach.
    */
   void remove(bool removeChildren) noexcept;
 

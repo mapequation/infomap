@@ -279,6 +279,42 @@ TEST_CASE("InfoNode deleteChildren clears both active and collapsed child chains
   CHECK(root.collapsedLastChild == nullptr);
 }
 
+TEST_CASE("InfoNode collapse and expand preserve raw child links [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* childA = new InfoNode({}, 10);
+  auto* childB = new InfoNode({}, 20);
+  auto* childC = new InfoNode({}, 30);
+  root.addChild(childA);
+  root.addChild(childB);
+  root.addChild(childC);
+
+  CHECK(root.collapseChildren() == 3);
+
+  CHECK(root.firstChild == nullptr);
+  CHECK(root.lastChild == nullptr);
+  CHECK(root.collapsedFirstChild == childA);
+  CHECK(root.collapsedLastChild == childC);
+  CHECK(childA->parent == &root);
+  CHECK(childA->previous == nullptr);
+  CHECK(childA->next == childB);
+  CHECK(childB->previous == childA);
+  CHECK(childB->next == childC);
+  CHECK(childC->previous == childB);
+  CHECK(childC->next == nullptr);
+
+  CHECK(root.expandChildren() == 3);
+
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 20, 30 });
+  CHECK(root.firstChild == childA);
+  CHECK(root.lastChild == childC);
+  CHECK(root.collapsedFirstChild == nullptr);
+  CHECK(root.collapsedLastChild == nullptr);
+  CHECK(childA->parent == &root);
+  CHECK(childB->parent == &root);
+  CHECK(childC->parent == &root);
+}
+
 TEST_CASE("InfoNode copy constructor creates detached shallow copies [fast][core][partition][tree][ownership]")
 {
   InfoNode source;
@@ -453,6 +489,40 @@ TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before de
   CHECK(after->previous->stateId == 2);
 }
 
+TEST_CASE("InfoNode replaceWithChildren preserves first and last sibling links [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* firstModule = new InfoNode({}, 10);
+  auto* middle = new InfoNode({}, 20);
+  auto* lastModule = new InfoNode({}, 30);
+  root.addChild(firstModule);
+  root.addChild(middle);
+  root.addChild(lastModule);
+  firstModule->addChild(new InfoNode({}, 1));
+  firstModule->addChild(new InfoNode({}, 2));
+  lastModule->addChild(new InfoNode({}, 3));
+  lastModule->addChild(new InfoNode({}, 4));
+
+  CHECK(firstModule->replaceWithChildren() == 1);
+
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 1, 2, 20, 30 });
+  CHECK(root.firstChild->stateId == 1);
+  CHECK(root.firstChild->previous == nullptr);
+  CHECK(root.firstChild->next->stateId == 2);
+  CHECK(root.firstChild->next->next == middle);
+  CHECK(middle->previous->stateId == 2);
+  CHECK(root.lastChild == lastModule);
+
+  CHECK(lastModule->replaceWithChildren() == 1);
+
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 1, 2, 20, 3, 4 });
+  CHECK(root.firstChild->stateId == 1);
+  CHECK(root.lastChild->stateId == 4);
+  CHECK(root.lastChild->next == nullptr);
+  CHECK(root.lastChild->previous->stateId == 3);
+  CHECK(middle->next->stateId == 3);
+}
+
 TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fast][core][partition][tree][ownership]")
 {
   InfoNode deleteRoot;
@@ -481,6 +551,45 @@ TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fa
   detachedChild->previous = nullptr;
   detachedChild->next = nullptr;
   delete detachedChild;
+}
+
+TEST_CASE("InfoNode remove true leaves detached child chain for caller cleanup [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* before = new InfoNode({}, 10);
+  auto* module = new InfoNode({}, 20);
+  auto* after = new InfoNode({}, 30);
+  auto* childA = new InfoNode({}, 21);
+  auto* childB = new InfoNode({}, 22);
+  root.addChild(before);
+  root.addChild(module);
+  root.addChild(after);
+  module->addChild(childA);
+  module->addChild(childB);
+
+  module->remove(true);
+
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 30 });
+  CHECK(root.firstChild == before);
+  CHECK(root.lastChild == after);
+  CHECK(before->next == after);
+  CHECK(after->previous == before);
+
+  CHECK(childA->stateId == 21);
+  CHECK(childA->next == childB);
+  CHECK(childB->previous == childA);
+  CHECK(childB->next == nullptr);
+  CHECK(childA->parent == module);
+  CHECK(childB->parent == module);
+
+  childA->parent = nullptr;
+  childA->previous = nullptr;
+  childA->next = nullptr;
+  childB->parent = nullptr;
+  childB->previous = nullptr;
+  childB->next = nullptr;
+  delete childA;
+  delete childB;
 }
 
 TEST_CASE("InfoNode owns outgoing edges while incoming edges are non-owning references [fast][core][partition][tree][ownership]")
