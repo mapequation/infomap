@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include <memory>
 #include <iostream>
+#include <iterator>
 #include <vector>
 #include <limits>
 
@@ -101,6 +102,11 @@ public:
   using const_infomap_child_iterator_wrapper = IterWrapper<const_infomap_child_iterator>;
 
 #ifndef SWIG
+  enum class RemoveChildrenPolicy {
+    DeleteSubtree,
+    DetachChildren
+  };
+
   /**
    * Owning temporary for an active child chain detached from a parent.
    * The raw first/last/sibling links preserve child order while unique_ptr
@@ -405,6 +411,17 @@ public:
    * Append all children from a detached handle to this node's active child chain.
    */
   void adoptChildren(DetachedChildChain children) noexcept;
+
+  /**
+   * Replace an active child module with its active child chain. The parent owns
+   * the mutation and destroys the removed module after reparenting children.
+   */
+  unsigned int replaceChildWithChildren(InfoNode& child) noexcept;
+
+  /**
+   * Remove an active child owned by this parent.
+   */
+  void removeChild(InfoNode& child, RemoveChildrenPolicy policy) noexcept;
 #endif
 
   /**
@@ -429,12 +446,11 @@ public:
   void replaceChildrenWithGrandChildrenDebug() noexcept;
 
   /**
-   * Delete this node.
+   * Remove this node through its parent-owned child storage.
    *
-   * removeChildren=false leaves firstChild intact, so the destructor deletes the
-   * active child chain. removeChildren=true detaches this node from active child
-   * chain ownership before deletion, leaving the previous child chain for the
-   * caller to reattach or delete.
+   * removeChildren=false deletes the active child subtree. removeChildren=true
+   * detaches this node's active child chain before removing the node, leaving the
+   * previous child chain for the caller to reattach or delete.
    */
   void remove(bool removeChildren) noexcept;
 
@@ -461,8 +477,6 @@ private:
   void appendLinkedChild(InfoNode* child) noexcept;
 
   std::unique_ptr<InfoNode> takeChildOwnership(InfoNode* child) noexcept;
-
-  void moveActiveChildOwnershipTo(InfoNode& newParent);
 };
 
 } // namespace infomap

@@ -39,47 +39,6 @@ void unlinkFromChain(InfoNode& node, InfoNode*& first, InfoNode*& last) noexcept
   node.next = nullptr;
 }
 
-void spliceChildrenIntoParentBeforeDelete(InfoNode& node) noexcept
-{
-  InfoNode* parent = node.parent;
-  InfoNode* previous = node.previous;
-  InfoNode* next = node.next;
-  InfoNode* firstChild = node.firstChild;
-  InfoNode* lastChild = node.lastChild;
-
-  unsigned int childCount = 0;
-  for (InfoNode* child = firstChild; child != nullptr; child = child->next) {
-    child->parent = parent;
-    ++childCount;
-  }
-
-  parent->setChildDegree(parent->childDegree() + childCount - 1); // -1 as this node is deleted.
-
-  firstChild->previous = previous;
-  lastChild->next = next;
-
-  if (parent->firstChild == &node) {
-    parent->firstChild = firstChild;
-  } else {
-    previous->next = firstChild;
-  }
-
-  if (parent->lastChild == &node) {
-    parent->lastChild = lastChild;
-  } else {
-    next->previous = lastChild;
-  }
-
-  // Detach before self-delete so the destructor does not delete the reparented
-  // child chain or reconnect sibling links that were already spliced.
-  node.firstChild = nullptr;
-  node.lastChild = nullptr;
-  node.next = nullptr;
-  node.previous = nullptr;
-  node.parent = nullptr;
-  node.setChildDegree(0);
-}
-
 void unlinkFromParentAndSiblings(InfoNode& node) noexcept
 {
   if (node.parent != nullptr) {
@@ -139,10 +98,6 @@ InfoNode& InfoNode::operator=(const InfoNode& other)
 
 InfoNode::~InfoNode() noexcept
 {
-  if (parent != nullptr) {
-    auto selfOwnership = parent->takeChildOwnership(this);
-    selfOwnership.release();
-  }
   deleteChildren();
   unlinkFromParentAndSiblings(*this);
 
@@ -311,14 +266,6 @@ std::unique_ptr<InfoNode> InfoNode::takeChildOwnership(InfoNode* child) noexcept
   return takeFrom(m_collapsedChildren);
 }
 
-void InfoNode::moveActiveChildOwnershipTo(InfoNode& newParent)
-{
-  for (auto& child : m_children) {
-    newParent.m_children.push_back(std::move(child));
-  }
-  m_children.clear();
-}
-
 void InfoNode::addChild(InfoNode* child) noexcept
 {
   std::unique_ptr<InfoNode> ownedChild;
@@ -407,6 +354,89 @@ void InfoNode::adoptChildren(DetachedChildChain children) noexcept
   }
 }
 
+unsigned int InfoNode::replaceChildWithChildren(InfoNode& child) noexcept
+{
+  if (child.parent != this || child.isLeaf())
+    return 0;
+
+  auto childIt = std::find_if(m_children.begin(), m_children.end(), [&child](const auto& ownedChild) {
+    return ownedChild.get() == &child;
+  });
+  if (childIt == m_children.end())
+    return 0;
+
+  auto replacementChildren = child.detachChildren();
+  if (replacementChildren.empty())
+    return 0;
+
+  auto* previousSibling = child.previous;
+  auto* nextSibling = child.next;
+  auto* replacementFirst = replacementChildren.first();
+  auto* replacementLast = replacementChildren.last();
+  const auto replacementCount = replacementChildren.size();
+
+  for (auto* replacement = replacementFirst; replacement != nullptr; replacement = replacement->next) {
+    replacement->parent = this;
+  }
+
+  replacementFirst->previous = previousSibling;
+  replacementLast->next = nextSibling;
+
+  if (firstChild == &child) {
+    firstChild = replacementFirst;
+  } else if (previousSibling != nullptr) {
+    previousSibling->next = replacementFirst;
+  }
+
+  if (lastChild == &child) {
+    lastChild = replacementLast;
+  } else if (nextSibling != nullptr) {
+    nextSibling->previous = replacementLast;
+  }
+
+  child.parent = nullptr;
+  child.previous = nullptr;
+  child.next = nullptr;
+  child.setChildDegree(0);
+
+  auto removedChild = std::move(*childIt);
+  auto insertPos = m_children.erase(childIt);
+  m_children.insert(
+      insertPos,
+      std::make_move_iterator(replacementChildren.m_children.begin()),
+      std::make_move_iterator(replacementChildren.m_children.end()));
+
+  setChildDegree(childDegree() + replacementCount - 1);
+  return 1;
+}
+
+void InfoNode::removeChild(InfoNode& child, RemoveChildrenPolicy policy) noexcept
+{
+  if (child.parent != this)
+    return;
+
+  auto childIt = std::find_if(m_children.begin(), m_children.end(), [&child](const auto& ownedChild) {
+    return ownedChild.get() == &child;
+  });
+  if (childIt == m_children.end())
+    return;
+
+  InfoNode::DetachedChildChain detachedChildren;
+  if (policy == RemoveChildrenPolicy::DetachChildren) {
+    detachedChildren = child.detachChildren();
+    for (auto& detachedChild : detachedChildren.m_children) {
+      detachedChild.release();
+    }
+  }
+
+  unlinkFromChain(child, firstChild, lastChild);
+  child.parent = nullptr;
+  if (m_childDegree > 0)
+    setChildDegree(m_childDegree - 1);
+
+  m_children.erase(childIt);
+}
+
 InfoNode& InfoNode::replaceChildrenWithOneNode()
 {
   if (childDegree() == 1)
@@ -456,7 +486,7 @@ unsigned int InfoNode::replaceChildrenWithGrandChildren() noexcept
   do {
     InfoNode* n = nodeIt.current();
     ++nodeIt;
-    numChildrenReplaced += n->replaceWithChildren();
+    numChildrenReplaced += replaceChildWithChildren(*n);
   } while (--numOriginalChildrenLeft != 0);
   return numChildrenReplaced;
 }
@@ -466,13 +496,7 @@ unsigned int InfoNode::replaceWithChildren() noexcept
   if (isLeaf() || isRoot())
     return 0;
 
-  InfoNode* oldParent = parent;
-  moveActiveChildOwnershipTo(*oldParent);
-  auto selfOwnership = oldParent->takeChildOwnership(this);
-  selfOwnership.release();
-  spliceChildrenIntoParentBeforeDelete(*this);
-  delete this;
-  return 1;
+  return parent->replaceChildWithChildren(*this);
 }
 
 void InfoNode::replaceChildrenWithGrandChildrenDebug() noexcept
@@ -484,7 +508,7 @@ void InfoNode::replaceChildrenWithGrandChildrenDebug() noexcept
   do {
     InfoNode* n = nodeIt.current();
     ++nodeIt;
-    n->replaceWithChildrenDebug();
+    replaceChildWithChildren(*n);
   } while (--numOriginalChildrenLeft != 0);
 }
 
@@ -493,22 +517,18 @@ void InfoNode::replaceWithChildrenDebug() noexcept
   if (isLeaf() || isRoot())
     return;
 
-  InfoNode* oldParent = parent;
-  moveActiveChildOwnershipTo(*oldParent);
-  auto selfOwnership = oldParent->takeChildOwnership(this);
-  selfOwnership.release();
-  spliceChildrenIntoParentBeforeDelete(*this);
-  delete this;
+  parent->replaceChildWithChildren(*this);
 }
 
 void InfoNode::remove(bool removeChildren) noexcept
 {
-  std::unique_ptr<InfoNode> selfOwnership;
   if (parent != nullptr) {
-    selfOwnership = parent->takeChildOwnership(this);
-    selfOwnership.release();
+    parent->removeChild(*this, removeChildren ? RemoveChildrenPolicy::DetachChildren : RemoveChildrenPolicy::DeleteSubtree);
+    return;
   }
 
+  // Legacy detached-node compatibility. Internally, parent-owned nodes are
+  // removed through removeChild().
   if (removeChildren) {
     for (auto& child : m_children) {
       child.release();
@@ -518,7 +538,7 @@ void InfoNode::remove(bool removeChildren) noexcept
     lastChild = nullptr;
     setChildDegree(0);
   }
-  delete this;
+  std::unique_ptr<InfoNode> self(this);
 }
 
 void InfoNode::deleteChildren() noexcept

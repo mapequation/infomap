@@ -733,7 +733,7 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
     if (level == 1) {
       Log(4) << "Consolidated super modules, removing old modules...\n";
       for (auto& node : network)
-        node->replaceWithChildren();
+        node->parent->replaceChildWithChildren(*node);
     } else if (level == 2) {
       Log(4) << "Consolidated sub-modules, removing modules...\n";
       unsigned int moduleIndex = 0;

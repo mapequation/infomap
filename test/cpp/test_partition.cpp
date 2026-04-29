@@ -750,6 +750,26 @@ TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before de
   CHECK(after->previous->stateId == 2);
 }
 
+TEST_CASE("InfoNode replaceChildWithChildren performs parent-owned reparenting [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* before = new InfoNode({}, 10);
+  auto* module = new InfoNode({}, 20);
+  auto* after = new InfoNode({}, 30);
+  root.addChild(before);
+  root.addChild(module);
+  root.addChild(after);
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 1));
+  module->addChild(std::make_unique<InfoNode>(FlowData {}, 2));
+
+  CHECK(root.replaceChildWithChildren(*module) == 1);
+
+  checkLinkedChildOrder(root, { 10, 1, 2, 30 });
+  CHECK(root.childDegree() == 4);
+  CHECK(before->next->stateId == 1);
+  CHECK(after->previous->stateId == 2);
+}
+
 TEST_CASE("InfoNode replaceWithChildrenDebug uses the same reparent splice path [fast][core][partition][tree][ownership]")
 {
   InfoNode root;
@@ -840,7 +860,7 @@ TEST_CASE("InfoNode remove true unlinks first and last child modules while detac
   deleteDetachedChildChain(lastDetachedChild);
 }
 
-TEST_CASE("InfoNode destructor unlinks parent and sibling pointers without updating cached child degree [fast][core][partition][tree][ownership]")
+TEST_CASE("InfoNode removeChild unlinks parent and sibling pointers through owner API [fast][core][partition][tree][ownership]")
 {
   InfoNode root;
   auto* first = new InfoNode({}, 10);
@@ -850,7 +870,7 @@ TEST_CASE("InfoNode destructor unlinks parent and sibling pointers without updat
   root.addChild(middle);
   root.addChild(last);
 
-  delete middle;
+  root.removeChild(*middle, InfoNode::RemoveChildrenPolicy::DeleteSubtree);
 
   CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 30 });
   CHECK(root.firstChild == first);
@@ -859,15 +879,10 @@ TEST_CASE("InfoNode destructor unlinks parent and sibling pointers without updat
   CHECK(first->next == last);
   CHECK(last->previous == first);
   CHECK(last->next == nullptr);
-  // Existing destructor/remove semantics preserve the cached degree until a
-  // caller explicitly recalculates or overwrites it.
-  CHECK(root.childDegree() == 3);
-
-  root.calcChildDegree();
   CHECK(root.childDegree() == 2);
 }
 
-TEST_CASE("InfoNode destructor unlinks first and last children without changing cached child degree [fast][core][partition][tree][ownership]")
+TEST_CASE("InfoNode removeChild unlinks first and last children through owner API [fast][core][partition][tree][ownership]")
 {
   InfoNode firstRoot;
   auto* first = new InfoNode({}, 10);
@@ -875,14 +890,14 @@ TEST_CASE("InfoNode destructor unlinks first and last children without changing 
   firstRoot.addChild(first);
   firstRoot.addChild(second);
 
-  delete first;
+  firstRoot.removeChild(*first, InfoNode::RemoveChildrenPolicy::DeleteSubtree);
 
   CHECK(childStateIds(firstRoot) == std::vector<unsigned int> { 20 });
   CHECK(firstRoot.firstChild == second);
   CHECK(firstRoot.lastChild == second);
   CHECK(second->previous == nullptr);
   CHECK(second->next == nullptr);
-  CHECK(firstRoot.childDegree() == 2);
+  CHECK(firstRoot.childDegree() == 1);
 
   InfoNode lastRoot;
   auto* beforeLast = new InfoNode({}, 30);
@@ -890,14 +905,14 @@ TEST_CASE("InfoNode destructor unlinks first and last children without changing 
   lastRoot.addChild(beforeLast);
   lastRoot.addChild(last);
 
-  delete last;
+  lastRoot.removeChild(*last, InfoNode::RemoveChildrenPolicy::DeleteSubtree);
 
   CHECK(childStateIds(lastRoot) == std::vector<unsigned int> { 30 });
   CHECK(lastRoot.firstChild == beforeLast);
   CHECK(lastRoot.lastChild == beforeLast);
   CHECK(beforeLast->previous == nullptr);
   CHECK(beforeLast->next == nullptr);
-  CHECK(lastRoot.childDegree() == 2);
+  CHECK(lastRoot.childDegree() == 1);
 }
 
 TEST_CASE("InfoNode owns outgoing edges while incoming edges are non-owning references [fast][core][partition][tree][ownership]")

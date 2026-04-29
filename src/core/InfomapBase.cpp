@@ -1170,7 +1170,8 @@ void InfomapBase::restoreHardPartition()
   for (InfoNode* node : leafNodes) {
     ++numExpandedNodes;
     numExpandedChildren += node->expandChildren();
-    node->replaceWithChildren();
+    if (!node->isLeaf() && node->parent != nullptr)
+      node->parent->replaceChildWithChildren(*node);
   }
 
   // Swap back original leaf nodes
