@@ -165,24 +165,35 @@ def benchmark_case(
     name: str,
     network_path: Path,
     repeats: int,
+    warmup_runs: int,
     iterations: int,
     flags: str,
 ) -> dict[str, object]:
     samples: list[dict[str, object]] = []
     run_samples: list[dict[str, object]] = []
+
+    command = [
+        str(binary),
+        "--input",
+        str(network_path),
+        "--name",
+        name,
+        "--flags",
+        flags,
+        "--iterations",
+        str(iterations),
+    ]
+    for _ in range(warmup_runs):
+        subprocess.run(
+            command,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
     for repeat in range(repeats):
         completed = subprocess.run(
-            [
-                str(binary),
-                "--input",
-                str(network_path),
-                "--name",
-                name,
-                "--flags",
-                flags,
-                "--iterations",
-                str(iterations),
-            ],
+            command,
             check=True,
             capture_output=True,
             text=True,
@@ -255,6 +266,7 @@ def benchmark_case(
         "name": name,
         "path": str(network_path),
         "repeats": repeats,
+        "warmup_runs": warmup_runs,
         "iterations": iterations,
         "flags": samples[0]["flags"],
         "samples": samples,
@@ -342,6 +354,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True, help="Path to write the JSON benchmark report.")
     parser.add_argument("--summary", type=Path, default=None, help="Optional Markdown summary output.")
     parser.add_argument("--repeats", type=int, default=3, help="Number of runs per case.")
+    parser.add_argument("--warmup-runs", type=int, default=0, help="Number of unmeasured warmup runs per case.")
     parser.add_argument("--iterations", type=int, default=1, help="Number of in-process iterations per benchmark run.")
     parser.add_argument(
         "--profile",
@@ -358,6 +371,10 @@ def main() -> None:
 
     if args.iterations < 1:
         parser.error("--iterations must be at least 1")
+    if args.repeats < 1:
+        parser.error("--repeats must be at least 1")
+    if args.warmup_runs < 0:
+        parser.error("--warmup-runs must be at least 0")
 
     repo_root = Path(__file__).resolve().parents[2]
     if not args.binary.is_file():
@@ -372,6 +389,7 @@ def main() -> None:
                 str(case["name"]),
                 Path(case["path"]),
                 args.repeats,
+                args.warmup_runs,
                 args.iterations,
                 " ".join(part for part in (args.flags, str(case["flags"])) if part).strip(),
             )
@@ -381,6 +399,7 @@ def main() -> None:
     report = {
         "profile": args.profile,
         "repeats": args.repeats,
+        "warmup_runs": args.warmup_runs,
         "iterations": args.iterations,
         "binary": str(args.binary),
         "benchmarks": results,

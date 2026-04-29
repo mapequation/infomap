@@ -70,6 +70,7 @@ def test_benchmark_case_tolerates_missing_rebuild_metrics(monkeypatch, tmp_path:
         name="toy",
         network_path=tmp_path / "toy.net",
         repeats=1,
+        warmup_runs=0,
         iterations=1,
         flags="--silent",
     )
@@ -139,12 +140,71 @@ def test_benchmark_case_collects_dynamic_rebuild_bucket_labels(monkeypatch, tmp_
         name="toy",
         network_path=tmp_path / "toy.net",
         repeats=1,
+        warmup_runs=0,
         iterations=1,
         flags="--silent",
     )
 
     assert result["rebuild"]["mean_total_sec"] == pytest.approx(0.05)
     assert result["rebuild"]["module_size_buckets"]["33-64"]["mean_sec"] == pytest.approx(0.03)
+
+
+def test_benchmark_case_discards_warmup_samples(monkeypatch, tmp_path: Path):
+    benchmark_module = _load_benchmark_module()
+
+    def payload(run_sec: float) -> dict[str, object]:
+        return {
+            "flags": "--silent --no-file-output --num-trials 1 --seed 123",
+            "total_sec": run_sec + 0.1,
+            "read_input_sec": 0.1,
+            "run_sec": run_sec,
+            "peak_rss_bytes": 4096,
+            "node_size_bytes": 32,
+            "edge_size_bytes": 16,
+            "num_nodes": 5,
+            "num_links": 4,
+            "num_top_modules": 2,
+            "num_levels": 1,
+            "codelength": 1.5,
+            "higher_order_input": False,
+            "directed_input": False,
+            "runs": [
+                {
+                    "iteration": 1,
+                    "read_input_sec": 0.0,
+                    "run_sec": run_sec,
+                    "total_sec": run_sec,
+                    "peak_rss_bytes": 4096,
+                    "num_top_modules": 2,
+                    "num_levels": 1,
+                    "codelength": 1.5,
+                }
+            ],
+        }
+
+    payloads = [payload(99.0), payload(1.0), payload(3.0)]
+
+    def fake_run(*args, **kwargs):
+        return benchmark_module.subprocess.CompletedProcess(args[0], 0, stdout=json.dumps(payloads.pop(0)), stderr="")
+
+    monkeypatch.setattr(benchmark_module.subprocess, "run", fake_run)
+
+    result = benchmark_module.benchmark_case(
+        binary=tmp_path / "infomap_native_benchmark",
+        name="toy",
+        network_path=tmp_path / "toy.net",
+        repeats=2,
+        warmup_runs=1,
+        iterations=1,
+        flags="--silent",
+    )
+
+    assert payloads == []
+    assert result["warmup_runs"] == 1
+    assert len(result["samples"]) == 2
+    assert [sample["run_sec"] for sample in result["samples"]] == [1.0, 3.0]
+    assert result["median_run_sec"] == pytest.approx(2.0)
+    assert [sample["repeat"] for sample in result["run_samples"]] == [1, 2]
 
 
 def test_build_benchmark_cases_pr_profile_focuses_on_stable_cases(monkeypatch, tmp_path: Path):
@@ -191,3 +251,27 @@ def test_build_benchmark_cases_smoke_skips_100k_generation(monkeypatch, tmp_path
     benchmark_module.build_benchmark_cases("smoke", repo_root, tmp_path)
 
     assert calls == [10_000]
+
+
+def test_main_rejects_negative_warmup_runs(monkeypatch):
+    benchmark_module = _load_benchmark_module()
+
+    import sys
+
+    old_argv = sys.argv
+    sys.argv = [
+        "run_native_benchmarks.py",
+        "--binary",
+        "missing-binary",
+        "--output",
+        "missing-output.json",
+        "--warmup-runs",
+        "-1",
+    ]
+    try:
+        with pytest.raises(SystemExit) as exc_info:
+            benchmark_module.main()
+    finally:
+        sys.argv = old_argv
+
+    assert exc_info.value.code == 2

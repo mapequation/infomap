@@ -77,6 +77,7 @@ jobs:
             --binary "$GITHUB_WORKSPACE/base/build/cmake/infomap_native_benchmark" \
             --profile pr \
             --repeats 3 \
+            --warmup-runs 1 \
             --iterations 1 \
             --output "$GITHUB_WORKSPACE/artifacts/base-native-benchmarks.json"
 
@@ -84,6 +85,7 @@ jobs:
             --binary "$GITHUB_WORKSPACE/head/build/cmake/infomap_native_benchmark" \
             --profile pr \
             --repeats 3 \
+            --warmup-runs 1 \
             --iterations 1 \
             --output "$GITHUB_WORKSPACE/artifacts/head-native-benchmarks.json"
 
