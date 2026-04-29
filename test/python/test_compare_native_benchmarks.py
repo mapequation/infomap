@@ -58,7 +58,7 @@ def test_compare_reports_marks_stable_regression():
 
     assert result["cases"][0]["status"] == "regression"
     assert result["cases"][0]["reason"] == "regression"
-    assert result["overall_status"] == "no_regression"
+    assert result["overall_status"] == "possible_regression"
 
 
 def test_compare_reports_ignores_small_delta():
@@ -142,7 +142,7 @@ def test_main_writes_markdown_and_json(tmp_path: Path, capsys: pytest.CaptureFix
         str(json_path),
     ]
     try:
-        compare_module.main()
+        assert compare_module.main() == 0
     finally:
         sys.argv = old_argv
 
@@ -150,3 +150,36 @@ def test_main_writes_markdown_and_json(tmp_path: Path, capsys: pytest.CaptureFix
     assert "PR Native Benchmark Comparison" in captured.out
     assert "possible regression" in markdown_path.read_text(encoding="utf-8")
     assert json.loads(json_path.read_text(encoding="utf-8"))["overall_status"] == "possible_regression"
+
+
+def test_main_can_fail_after_writing_reports_for_regression(tmp_path: Path):
+    compare_module = _load_compare_module()
+    base_path = tmp_path / "base.json"
+    head_path = tmp_path / "head.json"
+    markdown_path = tmp_path / "summary.md"
+    json_path = tmp_path / "comparison.json"
+    base_path.write_text(json.dumps({"benchmarks": [_case("ring", median_run_sec=1.00)]}) + "\n", encoding="utf-8")
+    head_path.write_text(json.dumps({"benchmarks": [_case("ring", median_run_sec=1.20)]}) + "\n", encoding="utf-8")
+
+    import sys
+
+    old_argv = sys.argv
+    sys.argv = [
+        "compare_native_benchmarks.py",
+        "--base",
+        str(base_path),
+        "--head",
+        str(head_path),
+        "--markdown-out",
+        str(markdown_path),
+        "--json-out",
+        str(json_path),
+        "--fail-on-regression",
+    ]
+    try:
+        assert compare_module.main() == 1
+    finally:
+        sys.argv = old_argv
+
+    assert "possible regression" in markdown_path.read_text(encoding="utf-8")
+    assert json.loads(json_path.read_text(encoding="utf-8"))["counts"]["regression"] == 1
