@@ -3,7 +3,11 @@ infomap module
 
 .. automodule:: infomap
    :members:
+   :exclude-members: InfomapOptions
    :show-inheritance:
+
+.. autoclass:: InfomapOptions
+   :members:
 
 .. autoclass:: InfoNode
    :members:

@@ -3,7 +3,7 @@
  Copyright (c) 2013, 2014 Daniel Edler, Anton Holmgren, Martin Rosvall
 
  This file is part of the Infomap software package.
- See file LICENSE_AGPLv3.txt for full license details.
+ See file LICENSE_GPLv3.txt for full license details.
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
@@ -142,11 +142,9 @@ void InfomapBase::run(const std::string& parameters)
   }
 #endif
 
+  m_network.postProcessInputData();
   if (m_network.numNodes() == 0) {
-    m_network.postProcessInputData();
-    if (m_network.numNodes() == 0) {
-      m_network.readInputData(networkFile);
-    }
+    m_network.readInputData(networkFile);
   }
 
   if (!metaDataFile.empty()) {
@@ -166,9 +164,9 @@ void InfomapBase::run(Network& network)
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
 
-  if (m_network.numNodes() == 0) {
-    m_network.postProcessInputData();
-    if (m_network.numNodes() == 0) {
+  if (network.numNodes() == 0) {
+    network.postProcessInputData();
+    if (network.numNodes() == 0) {
       throw std::domain_error("Network is empty");
     }
   }
@@ -257,6 +255,7 @@ void InfomapBase::run(Network& network)
   unsigned int bestNumLevels = 0;
   double bestHierarchicalCodelength = std::numeric_limits<double>::max();
   m_codelengths.clear();
+  m_numTopModules.clear();
   NodePaths bestTree(numLeafNodes());
   unsigned int bestTrialIndex = 0;
 
@@ -290,6 +289,7 @@ void InfomapBase::run(Network& network)
     if (isMainInfomap()) {
       Log() << "\n=> Trial " << (i + 1) << "/" << numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
       m_codelengths.push_back(m_hierarchicalCodelength);
+      m_numTopModules.push_back(numTopModules());
 
       if (printAllTrials && numTrials > 1) {
         writeResult(static_cast<int>(i + 1));
@@ -330,22 +330,43 @@ void InfomapBase::run(Network& network)
       double averageCodelength = 0.0;
       double minCodelength = m_codelengths[0];
       double maxCodelength = m_codelengths[0];
-      Log() << "Codelengths: [";
-      for (auto codelength : m_codelengths) {
-        Log() << codelength << ", ";
-        averageCodelength += codelength;
-        minCodelength = std::min(minCodelength, codelength);
-        maxCodelength = std::max(maxCodelength, codelength);
+      double averageNumTopModules = 0.0;
+      auto minNumTopModules = m_numTopModules[0];
+      auto maxNumTopModules = m_numTopModules[0];
+      double bestCodelengthSoFar = std::numeric_limits<double>::max();
+      Log() << "Trial    Codelength    NumTopModules    Best\n";
+      for (unsigned int i = 0; i < numTrials; ++i) {
+        bool isBest = m_codelengths[i] < bestCodelengthSoFar;
+        if (isBest) {
+          bestCodelengthSoFar = m_codelengths[i];
+        }
+        bool isEqual = std::abs(m_codelengths[i] - bestCodelengthSoFar) < 1e-10;
+        Log() << std::setw(5) << (i + 1) << std::setw(14) << io::toPrecision(m_codelengths[i]) << std::setw(17) << m_numTopModules[i] << std::setw(8) << (isBest ? '*' : isEqual ? '='
+                                                                                                                                                                                 : ' ')
+              << "\n";
+        averageCodelength += m_codelengths[i];
+        minCodelength = std::min(minCodelength, m_codelengths[i]);
+        maxCodelength = std::max(maxCodelength, m_codelengths[i]);
+        averageNumTopModules += m_numTopModules[i];
+        minNumTopModules = std::min(minNumTopModules, m_numTopModules[i]);
+        maxNumTopModules = std::max(maxNumTopModules, m_numTopModules[i]);
       }
       averageCodelength /= numTrials;
-      Log() << "\b\b]\n";
-      Log() << "[min, average, max] codelength: [" << minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n\n";
+      averageNumTopModules /= numTrials;
+      Log() << "\n";
+      Log() << "[min, average, max] codelength:      [" << minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n";
+      Log() << "[min, average, max] num top modules: [" << minNumTopModules << ", " << io::toPrecision(averageNumTopModules, 1, true) << ", " << maxNumTopModules << "]\n\n";
     }
-
-    Log() << "Best end modular solution in " << bestNumLevels << " levels: " << bestHierarchicalCodelength << " bits (savings: " << getRelativeCodelengthSavings(bestHierarchicalCodelength) * 100 << "%)";
-    if (bestHierarchicalCodelength > m_oneLevelCodelength)
-      Log() << ". Warning: restoring to improved one-level solution";
-    Log() << ":\n";
+    Log() << "Number nodes:                      " << numLeafNodes() << "\n";
+    Log() << "Number links:                      " << network.numLinks() << "\n";
+    Log() << "Average degree:                    " << io::toPrecision(network.numLinks() * 2.0 / numLeafNodes(), 1, true) << "\n";
+    Log() << "Number of top modules:             " << numTopModules() << "\n";
+    Log() << "Number of non-trivial top modules: " << numNonTrivialTopModules() << "\n";
+    Log() << "Number of levels:                  " << bestNumLevels << "\n";
+    Log() << "One-level codelength:              " << io::toPrecision(getOneLevelCodelength()) << "\n";
+    Log() << "Codelength:                        " << io::toPrecision(bestHierarchicalCodelength) << "\n";
+    Log() << "Relative codelength savings:       " << io::toPrecision(getRelativeCodelengthSavings() * 100, 2, true) << "%\n";
+    Log() << "\n";
     Log() << bestSolutionStatistics.str() << '\n';
   }
 }
@@ -364,7 +385,9 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
 {
   if (network.numNodes() == 0)
     throw std::domain_error("No nodes in network");
-  if (m_root.childDegree() > 0) {
+  // A fresh network init invalidates any previous hard-partition restore buffer.
+  m_originalLeafNodes.clear();
+  if (m_root.firstChild != nullptr || m_root.collapsedFirstChild != nullptr) {
     m_root.deleteChildren();
     m_leafNodes.clear();
   }
@@ -378,6 +401,7 @@ InfomapBase& InfomapBase::initNetwork(Network& network)
 
 InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
 {
+  m_originalLeafNodes.clear();
   generateSubNetwork(parent);
 
   if (asSuperNetwork)
@@ -416,7 +440,25 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
 InfomapBase& InfomapBase::initTree(const NodePaths& tree)
 {
   Log(4) << "Init tree... " << std::setprecision(9);
-  auto maxDepth = 2;
+  int maxDepth = 2;
+  // If only two-level partition, we can directly use initPartition
+  for (const auto& nodePath : tree) {
+    if (nodePath.second.size() > 2) {
+      maxDepth = std::max(maxDepth, static_cast<int>(nodePath.second.size()));
+    }
+  }
+  if (maxDepth == 2) {
+    std::map<unsigned int, unsigned int> clusterIds;
+    for (const auto& nodePath : tree) {
+      const auto nodeId = nodePath.first;
+      const auto clusterId = nodePath.second[0]; // First level module
+      clusterIds[nodeId] = clusterId;
+    }
+    return initPartition(clusterIds, false);
+  } else {
+    // TODO: Use initPartition on lowest modular level and apply it iteratively upwards to build tree
+  }
+
   std::map<unsigned int, unsigned int> nodeIdToIndex;
   auto leafIndex = 0;
   for (auto& leafNode : m_leafNodes) {
@@ -1067,18 +1109,23 @@ void InfomapBase::partition()
     Log() << " (" << m_numNonTrivialTopModules << " non-trivial)";
   Log() << " modules.\n";
 
-  if (!preferModularSolution && preferredNumberOfModules == 0 && haveNonTrivialModules() && getCodelength() > getOneLevelCodelength()) {
+  const bool regularizedPriorOnly = regularized && network().numLinks() == 0;
+  if (!preferModularSolution && preferredNumberOfModules == 0 && (haveNonTrivialModules() || regularizedPriorOnly) && getCodelength() > getOneLevelCodelength()) {
     Log() << "Worse codelength than one-level codelength, putting all nodes in one module... ";
 
     // Create new single module between modules and root
     auto& module = root().replaceChildrenWithOneNode();
+    // TODO: Extract copying from root and resetting index to a method, also copy metadata?
     module.data = m_root.data;
+    module.physicalNodes = m_root.physicalNodes;
     module.index = 0;
     for (auto& node : module) {
       node.index = 0;
     }
     module.codelength = getOneLevelCodelength();
     m_hierarchicalCodelength = getOneLevelCodelength();
+    // calcCodelengthOnTree(root(), true);
+    m_root.codelength = 0.0;
 
   } else {
     // Set consolidated cluster index on nodes and modules
@@ -1091,7 +1138,6 @@ void InfomapBase::partition()
     m_root.codelength = getIndexCodelength();
     m_hierarchicalCodelength = getCodelength();
   }
-  m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
 }
 
 void InfomapBase::restoreHardPartition()
@@ -1185,13 +1231,23 @@ void InfomapBase::initEnterExitFlow()
 // Aggregate node and enter/exit flow to all tree nodes
 void InfomapBase::aggregateFlowValuesFromLeafToRoot()
 {
+  for (auto& node : root().infomapTree()) {
+    if (!node.isLeaf()) {
+      node.data = {};
+    }
+  }
+
   // Aggregate flow from leaf nodes to root node
   unsigned int numLevels = 0;
-  root().data.flow = 0.0;
   for (auto it = root().begin_post_depth_first(); !it.isEnd(); ++it) {
     auto& node = *it;
-    if (!node.isRoot())
-      node.parent->data += node.data;
+    if (!node.isRoot()) {
+      node.parent->data.flow += node.data.flow;
+      node.parent->data.teleportFlow += node.data.teleportFlow;
+      node.parent->data.teleportSourceFlow += node.data.teleportSourceFlow;
+      node.parent->data.teleportWeight += node.data.teleportWeight;
+      node.parent->data.danglingFlow += node.data.danglingFlow;
+    }
     // Don't aggregate enter and exit flow
     if (!node.isLeaf()) {
       node.index = it.depth(); // Use index to store the depth on modules

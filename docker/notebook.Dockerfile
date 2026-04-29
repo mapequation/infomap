@@ -1,4 +1,4 @@
-ARG BASE_CONTAINER=jupyter/scipy-notebook:74b0a01aebb1
+ARG BASE_CONTAINER=jupyter/scipy-notebook:python-3.11
 FROM $BASE_CONTAINER
 
 USER root
@@ -7,10 +7,19 @@ RUN apt-get update && apt-get install -y -q \
         build-essential \
         && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache infomap \
+COPY . /tmp/infomap
+
+WORKDIR /tmp/infomap
+
+RUN python -m pip install --no-cache-dir --upgrade pip build wheel backports.tarfile importlib_metadata \
+        && make build-python \
+        && python -m pip install --no-cache-dir dist/python/*.whl \
+        && rm -rf /tmp/infomap \
         && fix-permissions $CONDA_DIR \
         && fix-permissions /home/$NB_USER
 
 USER $NB_UID
 
 VOLUME /home/jovyan/work
+
+WORKDIR /home/jovyan/work

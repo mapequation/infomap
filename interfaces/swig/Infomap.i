@@ -54,7 +54,3 @@ namespace std {
 
 /* Parse the header file to generate wrappers */
 %include "src/Infomap.h"
-
-#ifdef SWIGPYTHON
-%pythoncode "interfaces/python/infomap.py"
-#endif

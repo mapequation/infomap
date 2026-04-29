@@ -3,7 +3,7 @@
  Copyright (c) 2013, 2014 Daniel Edler, Anton Holmgren, Martin Rosvall
 
  This file is part of the Infomap software package.
- See file LICENSE_AGPLv3.txt for full license details.
+ See file LICENSE_GPLv3.txt for full license details.
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
@@ -286,7 +286,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
   auto numNodes = nodeEnumeration.size();
   unsigned int numMoved = 0;
 
-  unsigned int numRandTries = (unsigned int)std::round(numNodes * m_infomap->randomNodeCheckRate) + 1;
+  unsigned int numRandTries = (unsigned int)std::round(numNodes * m_infomap->randomNodeCheckRate);
   std::vector<bool> moduleTested(numNodes);
 
   // Create map with module links
@@ -307,6 +307,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     // For memory networks, don't skip try move to same physical node!
 
     deltaFlow.startRound();
+    std::fill(moduleTested.begin(), moduleTested.end(), false);
 
     // For all outlinks
     for (auto& e : current.outEdges()) {
@@ -575,9 +576,10 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
         unsigned int bestModuleIndex = bestDeltaModule.module;
         unsigned int oldModuleIndex = current.index;
 
-        bool validMove = bestModuleIndex == m_emptyModules.back()
+        bool movingToEmptyModule = !m_emptyModules.empty() && bestModuleIndex == m_emptyModules.back();
+        bool validMove = movingToEmptyModule
             // Check validity of move to empty target
-            ? m_moduleMembers[oldModuleIndex] > 1 && !m_emptyModules.empty()
+            ? m_moduleMembers[oldModuleIndex] > 1
             // Not valid if the best module is empty now but not when decided
             : m_moduleMembers[bestModuleIndex] > 0;
 

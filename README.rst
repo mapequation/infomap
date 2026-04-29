@@ -1,142 +1,196 @@
-.. image:: https://github.com/mapequation/infomap/actions/workflows/build.yml/badge.svg
+|ci| |docs| |docker| |nightly|
 
 Infomap
 =======
 
 Infomap is a network clustering algorithm based on the `Map equation`_.
+This repository contains the native CLI, the Python package, the JavaScript web
+worker, the Docker images, and the source for the published Python
+documentation.
 
-For detailed documentation, see `mapequation.org/infomap`_.
+Start with `mapequation.org/infomap`_ for the user guide and
+`CHANGELOG.md`_ for release notes.
 
-For a list of recent changes, see `CHANGELOG.md`_ in the source directory.
+For contributing, security reporting, and maintainer workflows, see
+`CONTRIBUTING.md`_, `SECURITY.md`_, `BUILD.md`_, `ARCHITECTURE.md`_, and
+`AGENTS.md`_.
+
+.. |ci| image:: https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg
+   :target: https://github.com/mapequation/infomap/actions/workflows/ci.yml
+   :alt: CI
+
+.. |docs| image:: https://github.com/mapequation/infomap/actions/workflows/docs.yml/badge.svg
+   :target: https://github.com/mapequation/infomap/actions/workflows/docs.yml
+   :alt: Docs
+
+.. |docker| image:: https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml/badge.svg
+   :target: https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml
+   :alt: Docker smoke
+
+.. |nightly| image:: https://github.com/mapequation/infomap/actions/workflows/nightly-quality.yml/badge.svg
+   :target: https://github.com/mapequation/infomap/actions/workflows/nightly-quality.yml
+   :alt: Nightly quality
 
 .. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
 .. _`mapequation.org/infomap`: https://www.mapequation.org/infomap
 .. _`CHANGELOG.md`: https://github.com/mapequation/infomap/blob/master/CHANGELOG.md
+.. _`CONTRIBUTING.md`: https://github.com/mapequation/infomap/blob/master/CONTRIBUTING.md
+.. _`SECURITY.md`: https://github.com/mapequation/infomap/blob/master/SECURITY.md
+.. _`BUILD.md`: https://github.com/mapequation/infomap/blob/master/BUILD.md
+.. _`ARCHITECTURE.md`: https://github.com/mapequation/infomap/blob/master/ARCHITECTURE.md
+.. _`AGENTS.md`: https://github.com/mapequation/infomap/blob/master/AGENTS.md
 
-Getting started
----------------
+Install
+-------
 
-Infomap can be installed either from `PyPI`_ using ``pip`` or by
-compiling from source.
+Python package
+^^^^^^^^^^^^^^
 
-An experimental Javascript version for browsers is available on `NPM`_.
+Install from `PyPI`_:
 
-.. _PyPI: https://pypi.org/project/infomap/
-
-Using pip
----------
-
-A pre-compiled version is available for macOS users.
-
-Installing on other operating systems requires a
-working ``gcc`` or ``clang`` compiler.
-
-To install, run::
+.. code-block:: bash
 
     pip install infomap
 
+Upgrades use the usual `pip` flow:
 
-To upgrade, run::
+.. code-block:: bash
 
     pip install --upgrade infomap
 
+The package also installs the ``infomap`` CLI entry point.
+The Python API reference lives at `Infomap Python API`_.
 
-When the Python package is installed, an executable called
-``infomap`` (with lowercase i) is available from any directory.
+Quick start with Python:
 
-To get started, read `Infomap Python API`_.
+.. code-block:: python
 
+    from infomap import Infomap, InfomapOptions
+
+    options = InfomapOptions(two_level=True, silent=True, num_trials=20)
+    im = Infomap.from_options(options)
+    im.add_link(0, 1)
+    im.add_link(1, 2)
+    im.run()
+
+    print(im.num_top_modules, im.codelength)
+
+.. _PyPI: https://pypi.org/project/infomap/
 .. _`Infomap Python API`: https://mapequation.github.io/infomap/python/
 
-Using Docker
-------------
+Homebrew CLI
+^^^^^^^^^^^^
 
-There are currently two Docker images available on `Docker Hub`_.
-
-- ``mapequation/infomap``
-- ``mapequation/infomap:notebook`` based on ``jupyter/scipy-notebook``
-
-The image ``mapequation/infomap`` can be started with
+If you want the native CLI without the Python package, install the tap and
+formula with:
 
 .. code-block:: bash
 
-    docker run -it --rm \
-        -v `pwd`:/data \
-        mapequation/infomap
-        [infomap arguments]
+    brew tap mapequation/infomap
+    brew install infomap
 
-You can also use the supplied `docker-compose.yml`_:
+Or install directly in one command:
 
 .. code-block:: bash
 
-    docker-compose run --rm infomap
+    brew install mapequation/infomap/infomap
 
-The image ``mapequation/infomap:notebook`` can be started with
-
-.. code-block:: bash
-
-    docker run \
-        -v `pwd`:/home/jovyan/work \
-        -p 8888:8888 \
-        mapequation/infomap:notebook \
-        start.sh jupyter lab
-
-Or similarly, using docker-compose:
+Upgrade the CLI with the normal Homebrew flow:
 
 .. code-block:: bash
 
-    docker-compose up notebook
+    brew upgrade infomap
 
-.. _`Docker Hub`: https://hub.docker.com/r/mapequation/infomap
-.. _`docker-compose.yml`: https://github.com/mapequation/infomap/blob/master/docker-compose.yml
+JavaScript package
+^^^^^^^^^^^^^^^^^^
 
-Compiling from source
----------------------
+The browser worker package is published on `NPM`_:
 
-Installing Infomap from source requires a working ``gcc`` or ``clang`` compiler.
-
-To download and compile the newest version from `Github`_, clone the repository
-by running
-
-.. code-block:: shell
-
-    git clone git@github.com:mapequation/infomap.git
-    cd infomap
-    make
-
-This creates the binary ``Infomap``, run it using::
-
-    ./Infomap [options] network_data destination
-
-For a list of options, run::
-
-    ./Infomap --help
-
-Read `the documentation`_ to learn more about the different options.
-
-.. _Github: https://www.github.com/mapequation/infomap
-.. _the documentation: https://www.mapequation.org/infomap
-
-Npm package
------------
-
-An experimental Javascript web worker is available on `NPM`_.
-
-To install it, run
-
-.. code-block:: shell
+.. code-block:: bash
 
     npm install @mapequation/infomap
 
 .. _NPM: https://www.npmjs.com/package/@mapequation/infomap
 
+Docker
+^^^^^^
+
+Supported images are published on `Docker Hub`_:
+
+- ``mapequation/infomap``
+- ``mapequation/infomap:notebook``
+
+Run the CLI image with:
+
+.. code-block:: bash
+
+    docker run -it --rm \
+        -v "$(pwd)":/data \
+        mapequation/infomap \
+        [infomap arguments]
+
+Or use the local Compose file:
+
+.. code-block:: bash
+
+    docker compose run --rm infomap
+
+Start the notebook image with:
+
+.. code-block:: bash
+
+    docker run \
+        -v "$(pwd)":/home/jovyan/work \
+        -p 8888:8888 \
+        mapequation/infomap:notebook \
+        start.sh jupyter lab
+
+.. _`Docker Hub`: https://hub.docker.com/r/mapequation/infomap
+
+Build from source
+-----------------
+
+Building locally requires a working ``gcc`` or ``clang`` toolchain.
+
+.. code-block:: bash
+
+    git clone git@github.com:mapequation/infomap.git
+    cd infomap
+    make build-native
+
+On macOS, the default OpenMP-enabled build may require Homebrew ``libomp``.
+If OpenMP is unavailable, use:
+
+.. code-block:: bash
+
+    make build-native OPENMP=0
+
+This creates the ``Infomap`` binary in the repository root.
+Show the available CLI options with:
+
+.. code-block:: bash
+
+    ./Infomap --help
+
+See ``BUILD.md`` for platform-specific maintainer build details.
+
+Maintainers should use:
+
+- ``BUILD.md`` for local build and verification commands
+- ``RELEASING.md`` for the release flow
+- ``ARCHITECTURE.md`` for ownership and source-of-truth rules
+- ``AGENTS.md`` for repo-local maintenance guidance
+- ``CONTRIBUTING.md`` for pull request and contributor guidance
+- ``SECURITY.md`` for vulnerability reporting
+
 Feedback
 --------
 
-If you have any questions, suggestions or issues regarding the software,
-please add them to `GitHub issues`_.
+Usage questions and setup help belong in `GitHub Discussions`_.
+Bug reports and feature requests belong in `GitHub issues`_.
 
-.. _Github issues: http://www.github.com/mapequation/infomap/issues
+.. _`GitHub Discussions`: https://github.com/mapequation/infomap/discussions
+.. _`GitHub issues`: https://github.com/mapequation/infomap/issues
 
 Authors
 -------
@@ -152,11 +206,8 @@ Terms of use
 
 Infomap is released under a dual licence.
 
-To give everyone maximum freedom to make use of Infomap
-and derivative works, we make the code open source under
-the GNU Affero General Public License version 3 or any
-later version (see `LICENSE_AGPLv3.txt`_).
-
+The code is available under the GNU General Public License version 3 or any
+later version; see `LICENSE_GPLv3.txt`_.
 For a non-copyleft license, please contact us.
 
-.. _LICENSE_AGPLv3.txt: https://github.com/mapequation/infomap/blob/master/LICENSE_AGPLv3.txt
+.. _`LICENSE_GPLv3.txt`: https://github.com/mapequation/infomap/blob/master/LICENSE_GPLv3.txt

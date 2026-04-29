@@ -105,6 +105,8 @@ export default function toString(network: NetworkTypes) {
   } else if ("links" in network) {
     return networkToString(network);
   }
+
+  return "";
 }
 
 function multilayerIntraInterToString(network: MultilayerIntraInterNetwork) {
@@ -117,7 +119,7 @@ function multilayerIntraInterToString(network: MultilayerIntraInterNetwork) {
   if (network.intra.length > 0) {
     result += "*Intra\n";
 
-    for (let { layerId, source, target, weight } of network.intra) {
+    for (const { layerId, source, target, weight } of network.intra) {
       result += `${layerId} ${source} ${target}`;
       if (weight != null) result += ` ${weight}`;
       result += "\n";
@@ -127,7 +129,7 @@ function multilayerIntraInterToString(network: MultilayerIntraInterNetwork) {
   if (network.inter != null && network.inter.length > 0) {
     result += "*Inter\n";
 
-    for (let { sourceLayer, id, targetLayer, weight } of network.inter) {
+    for (const { sourceLayer, id, targetLayer, weight } of network.inter) {
       result += `${sourceLayer} ${id} ${targetLayer}`;
       if (weight != null) result += ` ${weight}`;
       result += "\n";
@@ -147,7 +149,7 @@ function multilayerToString(network: MultilayerNetwork) {
   if (network.links.length > 0) {
     result += "*Multilayer\n";
 
-    for (let {
+    for (const {
       sourceLayer,
       source,
       targetLayer,
@@ -224,7 +226,7 @@ function nodesToString(nodes: Node[]) {
 
   let result = "*Vertices\n";
 
-  for (let { id, name, weight } of nodes) {
+  for (const { id, name, weight } of nodes) {
     result += id;
     if (name != null) result += ` "${name}"`;
     else result += ` "${id}"`;
@@ -242,7 +244,7 @@ function statesToString(nodes: StateNode[]) {
 
   let result = "*States\n";
 
-  for (let { stateId, id, name } of nodes) {
+  for (const { stateId, id, name } of nodes) {
     result += `${stateId} ${id}`;
     if (name != null) result += ` "${name}"`;
     result += "\n";
@@ -258,7 +260,7 @@ function linksToString(links: Link[], header = "*Links\n") {
 
   let result = header;
 
-  for (let { source, target, weight } of links) {
+  for (const { source, target, weight } of links) {
     result += `${source} ${target}`;
     if (weight != null) result += ` ${weight}`;
     result += "\n";

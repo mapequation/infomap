@@ -9,69 +9,74 @@ type OutputFormats =
   | "states"
   | "flow";
 
-export interface Arguments
-  extends Partial<{
-    // input
-    clusterData: string;
-    noInfomap: boolean;
-    skipAdjustBipartiteFlow: boolean;
-    bipartiteTeleportation: boolean;
-    weightThreshold: number;
-    noSelfLinks: boolean;
-    nodeLimit: number;
-    matchableMultilayerIds: number;
-    assignToNeighbouringModule: boolean;
-    metaData: string;
-    metaDataRate: number;
-    metaDataUnweighted: boolean;
-    // output
-    tree: boolean;
-    ftree: boolean;
-    clu: boolean;
-    verbose: 1 | 2 | 3;
-    silent: boolean;
-    outName: string;
-    noFileOutput: boolean;
-    cluLevel: number;
-    output: OutputFormats | OutputFormats[];
-    hideBipartiteNodes: boolean;
-    printAllTrials: boolean;
-    // algorithm
-    twoLevel: boolean;
-    flowModel: "undirected" | "directed" | "undirdir" | "outdirdir" | "rawdir" | "precomputed";
-    directed: boolean;
-    recordedTeleportation: boolean;
-    useNodeWeightsAsFlow: boolean;
-    toNodes: boolean;
-    teleportationProbability: number;
-    regularized: boolean;
-    regularizationStrength: number;
-    entropyCorrected: boolean;
-    entropyCorrectionStrength: number;
-    markovTime: number;
-    variableMarkovTime: boolean;
-    variableMarkovDamping: number;
-    preferredNumberOfModules: number;
-    multilayerRelaxRate: number;
-    multilayerRelaxLimit: number;
-    multilayerRelaxLimitUp: number;
-    multilayerRelaxLimitDown: number;
-    multilayerRelaxByJsd: boolean;
-    // accuracy
-    seed: number;
-    numTrials: number;
-    coreLoopLimit: number;
-    coreLevelLimit: number;
-    tuneIterationLimit: number;
-    coreLoopCodelengthThreshold: number;
-    tuneIterationRelativeThreshold: number;
-    fastHierarchicalSolution: 1 | 2 | 3;
-    preferModularSolution: boolean;
-    innerParallelization: boolean;
-    // about
-    help: boolean | "advanced";
-    version: boolean;
-  }> { }
+export type Arguments = Partial<{
+  // input
+  clusterData: string;
+  noInfomap: boolean;
+  skipAdjustBipartiteFlow: boolean;
+  bipartiteTeleportation: boolean;
+  weightThreshold: number;
+  noSelfLinks: boolean;
+  nodeLimit: number;
+  matchableMultilayerIds: number;
+  assignToNeighbouringModule: boolean;
+  metaData: string;
+  metaDataRate: number;
+  metaDataUnweighted: boolean;
+  // output
+  tree: boolean;
+  ftree: boolean;
+  clu: boolean;
+  verbose: 1 | 2 | 3;
+  silent: boolean;
+  outName: string;
+  noFileOutput: boolean;
+  cluLevel: number;
+  output: OutputFormats | OutputFormats[];
+  hideBipartiteNodes: boolean;
+  printAllTrials: boolean;
+  // algorithm
+  twoLevel: boolean;
+  flowModel:
+    | "undirected"
+    | "directed"
+    | "undirdir"
+    | "outdirdir"
+    | "rawdir"
+    | "precomputed";
+  directed: boolean;
+  recordedTeleportation: boolean;
+  useNodeWeightsAsFlow: boolean;
+  toNodes: boolean;
+  teleportationProbability: number;
+  regularized: boolean;
+  regularizationStrength: number;
+  entropyCorrected: boolean;
+  entropyCorrectionStrength: number;
+  markovTime: number;
+  variableMarkovTime: boolean;
+  variableMarkovDamping: number;
+  preferredNumberOfModules: number;
+  multilayerRelaxRate: number;
+  multilayerRelaxLimit: number;
+  multilayerRelaxLimitUp: number;
+  multilayerRelaxLimitDown: number;
+  multilayerRelaxByJsd: boolean;
+  // accuracy
+  seed: number;
+  numTrials: number;
+  coreLoopLimit: number;
+  coreLevelLimit: number;
+  tuneIterationLimit: number;
+  coreLoopCodelengthThreshold: number;
+  tuneIterationRelativeThreshold: number;
+  fastHierarchicalSolution: 1 | 2 | 3;
+  preferModularSolution: boolean;
+  innerParallelization: boolean;
+  // about
+  help: boolean | "advanced";
+  version: boolean;
+}>;
 
 export default function argumentsToString(args: Arguments) {
   let result = "";

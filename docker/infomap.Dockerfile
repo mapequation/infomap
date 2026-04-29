@@ -1,4 +1,4 @@
-ARG ALPINE_VERSION=3.12
+ARG ALPINE_VERSION=3.22
 
 FROM alpine:$ALPINE_VERSION AS builder
 
@@ -8,7 +8,7 @@ COPY . /infomap
 
 WORKDIR /infomap
 
-RUN make -j
+RUN make -j build-native
 
 FROM alpine:${ALPINE_VERSION}
 

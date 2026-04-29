@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Usage question
+    url: https://github.com/mapequation/infomap/discussions
+    about: Use Discussions for usage questions, setup help, and general support.

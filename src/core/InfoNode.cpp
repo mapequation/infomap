@@ -3,7 +3,7 @@
  Copyright (c) 2013, 2014 Daniel Edler, Anton Holmgren, Martin Rosvall
 
  This file is part of the Infomap software package.
- See file LICENSE_AGPLv3.txt for full license details.
+ See file LICENSE_GPLv3.txt for full license details.
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
@@ -300,18 +300,23 @@ void InfoNode::remove(bool removeChildren) noexcept
 
 void InfoNode::deleteChildren() noexcept
 {
-  if (firstChild == nullptr)
-    return;
+  auto delete_child_chain = [](InfoNode*& first, InfoNode*& last) {
+    if (first == nullptr)
+      return;
 
-  child_iterator nodeIt = begin_child();
-  do {
-    InfoNode* n = nodeIt.current();
-    ++nodeIt;
-    delete n;
-  } while (nodeIt.current() != nullptr);
+    InfoNode* node = first;
+    while (node != nullptr) {
+      InfoNode* next_node = node->next;
+      delete node;
+      node = next_node;
+    }
 
-  firstChild = nullptr;
-  lastChild = nullptr;
+    first = nullptr;
+    last = nullptr;
+  };
+
+  delete_child_chain(firstChild, lastChild);
+  delete_child_chain(collapsedFirstChild, collapsedLastChild);
   m_childDegree = 0;
 }
 
@@ -340,6 +345,8 @@ void InfoNode::setChildDegree(unsigned int value) noexcept
 void InfoNode::initClean() noexcept
 {
   releaseChildren();
+  collapsedFirstChild = nullptr;
+  collapsedLastChild = nullptr;
   previous = next = parent = nullptr;
 
   physicalNodes.clear();

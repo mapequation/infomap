@@ -1,14 +1,14 @@
-import argumentsToString, { Arguments } from "./arguments";
+import argumentsToString from "./arguments";
 import fileToString, {
-  FileTypes,
-  TreeNode as Node,
-  TreeStateNode as StateNode,
+  type TreeNode as Node,
+  type TreeStateNode as StateNode
 } from "./filetypes";
-import networkToString, { NetworkTypes } from "./network";
-// @ts-ignore
-import InfomapWorker from "./worker/infomap.worker.js";
-// @ts-ignore
-import MemFile from "./worker/infomap.worker.js.mem";
+import networkToString from "./network";
+import type { RunOptions } from "./run-options";
+import { createInfomapWorker } from "./worker";
+import changelog from "../generated/changelog.json";
+import parameters from "../generated/parameters.json";
+import packageJson from "../../../package.json";
 
 export interface Changelog {
   body: string | null;
@@ -41,11 +41,6 @@ export interface RequiredParameter extends Parameter<true> {
   shortType: string;
   default: string;
 }
-
-// @ts-ignore
-const changelog: Changelog[] = CHANGELOG;
-// @ts-ignore
-const parameters: (Parameter | RequiredParameter)[] = PARAMETERS;
 
 export type Module = {
   path: number[];
@@ -122,13 +117,8 @@ type EventData =
   | Event<"error">
   | Event<"finished">;
 
-const workerUrl = URL.createObjectURL(
-  new Blob([InfomapWorker], { type: "application/javascript" })
-);
-
 class Infomap {
-  // @ts-ignore
-  static __version__: string = VERSION;
+  static __version__: string = packageJson.version;
 
   protected events: EventCallbacks = {};
   protected workerId = 0;
@@ -157,12 +147,7 @@ class Infomap {
     filename,
     args,
     files,
-  }: {
-    network?: string | NetworkTypes;
-    filename?: string;
-    args?: string | Arguments;
-    files?: { [filename: string]: string | FileTypes };
-  }) {
+  }: RunOptions) {
     network = network ?? "";
     filename = filename ?? "network.net";
     args = args ?? "";
@@ -176,7 +161,7 @@ class Infomap {
       args = argumentsToString(args);
     }
 
-    for (let key of Object.keys(files)) {
+    for (const key of Object.keys(files)) {
       const file = files[key];
       if (typeof file !== "string") {
         files[key] = fileToString(file);
@@ -189,12 +174,11 @@ class Infomap {
     const outName =
       outNameMatch && outNameMatch[1] ? outNameMatch[1] : networkName;
 
-    const worker = new Worker(workerUrl);
+    const worker = createInfomapWorker();
     const id = this.workerId++;
     this.workers[id] = worker;
 
     worker.postMessage({
-      memBuffer: new Uint8Array(MemFile),
       arguments: args.split(" "),
       filename,
       network,
@@ -229,10 +213,10 @@ class Infomap {
           }
         }
       } else if (error && event.data.type === "error") {
-        this._terminate(id);
+        void this._terminate(id);
         error(event.data.content, id);
       } else if (finished && event.data.type === "finished") {
-        this._terminate(id);
+        void this._terminate(id);
         finished(event.data.content, id);
       }
     };
@@ -276,5 +260,5 @@ export {
   changelog,
   parameters,
   networkToString,
-  argumentsToString,
+  argumentsToString
 };

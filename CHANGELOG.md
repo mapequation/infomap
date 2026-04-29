@@ -1,6 +1,60 @@
 # Changelog
 
-All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
+
+### [2.9.2](https://github.com/mapequation/infomap/compare/v2.9.1...v2.9.2) (2026-02-25)
+
+
+### Bug Fixes
+
+* **ci:** avoid llvm libc++ dependency for macOS python ([a79b285](https://github.com/mapequation/infomap/commit/a79b2859769d3158adbc9750de466e85587b6a8a))
+* **ci:** remove llvm dependency and use cibuildwheel ([d51fac4](https://github.com/mapequation/infomap/commit/d51fac427b3d1000b1e59baee2afb5c92225c365))
+
+### [2.9.1](https://github.com/mapequation/infomap/compare/v2.9.0...v2.9.1) (2026-02-25)
+
+
+### Bug Fixes
+
+* **ci:** avoid embedding Homebrew libunwind in macOS builds ([0377ca2](https://github.com/mapequation/infomap/commit/0377ca21cce0f203ee30205ebda3ac0c2deecd65))
+
+## [2.9.0](https://github.com/mapequation/infomap/compare/v2.8.2...v2.9.0) (2026-02-25)
+
+
+### Features
+
+* Enhance Infomap CLI summary output with more info ([35a3bc9](https://github.com/mapequation/infomap/commit/35a3bc9282964342cbb4a67c3221684857650ad8))
+
+### [2.8.2](https://github.com/mapequation/infomap/compare/v2.8.1...v2.8.2) (2026-02-24)
+
+
+### Bug Fixes
+
+* Restore correct codelength on worse 2-level higher-order solution ([36f9870](https://github.com/mapequation/infomap/commit/36f987094bd66822e2e2350d53690859e91da21e))
+* Use provided state ids on networkx multilayer graph ([33c2978](https://github.com/mapequation/infomap/commit/33c2978d7698bc5f6f841ce2d3609c8dcd738b05))
+
+### [2.8.1](https://github.com/mapequation/infomap/compare/v2.8.0...v2.8.1) (2026-02-11)
+
+
+### Bug Fixes
+
+* Adjust regularization for memory networks ([629f63c](https://github.com/mapequation/infomap/commit/629f63c671c2f3bce6f003aa70da9c9ef166c7cb))
+* Always use network in run(Network& network) ([60a86c7](https://github.com/mapequation/infomap/commit/60a86c76ffd4157542a468410ca251d2811535b9)), closes [#364](https://github.com/mapequation/infomap/issues/364)
+* Avoid non-converging flow due to large perturbation ([1a0747a](https://github.com/mapequation/infomap/commit/1a0747a0e8671d2fdb90b0906ad8c4433ad43513))
+* **py:** Make storing iterator items work ([b3f5877](https://github.com/mapequation/infomap/commit/b3f5877e6ac83895d859cd85475ada2cef69711e))
+* Restore to correct codelength for -2 regularized states ([3cd7d5e](https://github.com/mapequation/infomap/commit/3cd7d5e8bb86728d0a7bf7a037e404951f998da0))
+
+## [2.8.0](https://github.com/mapequation/infomap/compare/v2.7.1...v2.8.0) (2024-06-20)
+
+
+### Features
+
+* Add state network from NetworkX graph ([#344](https://github.com/mapequation/infomap/issues/344)) ([1467768](https://github.com/mapequation/infomap/commit/1467768d8850860977c05142c0d3d4c3aaf5eea0))
+
+
+### Bug Fixes
+
+* **py:** Use inter/intra multilayer format by default ([0ed9af3](https://github.com/mapequation/infomap/commit/0ed9af30af19cbede0317f71ef44a5b5193661fc))
+* Upgrade github actions dependencies ([ffe0fe2](https://github.com/mapequation/infomap/commit/ffe0fe21f98e70a918fdd45157f960eb770c153d))
 
 ### [2.7.1](https://github.com/mapequation/infomap/compare/v2.7.0...v2.7.1) (2023-04-25)
 

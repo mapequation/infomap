@@ -3,7 +3,7 @@
  Copyright (c) 2013, 2014 Daniel Edler, Anton Holmgren, Martin Rosvall
 
  This file is part of the Infomap software package.
- See file LICENSE_AGPLv3.txt for full license details.
+ See file LICENSE_GPLv3.txt for full license details.
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
@@ -32,7 +32,7 @@ inline void normalize(std::vector<T>& v, const T sum) noexcept
 template <typename T>
 inline void normalize(std::vector<T>& v) noexcept
 {
-  const auto sum = std::accumulate(cbegin(v), cend(v), T {});
+  const auto sum = std::accumulate(cbegin(v), cend(v), T { });
   normalize(v, sum);
 }
 
@@ -298,26 +298,30 @@ struct IterationResult {
 };
 
 template <typename Iteration>
-IterationResult powerIterate(double alpha, Iteration&& iter)
+IterationResult powerIterate(double alpha, unsigned int maxIterations, Iteration&& iter)
 {
   unsigned int iterations = 0;
   double beta = 1.0 - alpha;
   double err = 0.0;
 
   do {
-    // double oldErr = err;
+    double oldErr = err;
     err = iter(iterations, alpha, beta);
 
-    // // Perturb the system if equilibrium
-    // if (std::abs(err - oldErr) < 1e-15) {
-    //   alpha += 1.0e-10;
-    //   beta = 1.0 - alpha;
-    // }
+    // Perturb the system if equilibrium
+    if (std::abs(err - oldErr) < 1e-17) {
+      alpha += 1.0e-12;
+      beta = 1.0 - alpha;
+    }
 
     ++iterations;
-  } while (iterations < 200 && (err > 1.0e-15 || iterations < 50));
+  } while (iterations < maxIterations && (err > 1.0e-15 || iterations < 50));
 
-  Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
+  if (iterations >= maxIterations) {
+    Log() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
+  } else {
+    Log() << "\n  -> PageRank calculation done in " << iterations << " iterations with error " << err << ".\n";
+  }
 
   return { alpha, beta };
 }
@@ -391,7 +395,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
     return error;
   };
 
-  const auto result = powerIterate(config.teleportationProbability, iteration);
+  const auto result = powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration);
 
   double sumNodeRank = 1.0;
   double beta = result.beta;
@@ -455,6 +459,13 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   std::vector<double> s_in(N, 0);
   double sum_s = sumWeightedDegree;
   unsigned int sum_k = network.sumDegree();
+  if (sum_k == 0) {
+    const auto uniformFlow = 1.0 / N;
+    std::fill(nodeFlow.begin(), nodeFlow.end(), uniformFlow);
+    std::fill(nodeTeleportWeights.begin(), nodeTeleportWeights.end(), uniformFlow);
+    nodeTeleportFlow.assign(numNodes, uniformFlow);
+    return;
+  }
   double average_weight = sum_s / sum_k;
 
   for (auto& link : flowLinks) {
@@ -475,11 +486,16 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     }
   }
 
-  auto u_out = [s_out, k_out, min_u_out](auto i) { return k_out[i] == 0 ? min_u_out : s_out[i] / k_out[i]; };
-  auto u_in = [s_in, k_in, min_u_in](auto i) { return k_in[i] == 0 ? min_u_in : s_in[i] / k_in[i]; };
+  auto u_out = [&s_out, &k_out, min_u_out](auto i) { return k_out[i] == 0 ? min_u_out : s_out[i] / k_out[i]; };
+  auto u_in = [&s_in, &k_in, min_u_in](auto i) { return k_in[i] == 0 ? min_u_in : s_in[i] / k_in[i]; };
 
   unsigned int numNodesAsTeleportationTargets = config.noSelfLinks ? N - 1 : N;
   double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
+  if (network.numPhysicalNodes() < N) {
+    // Adjust for higher-order network, lnN/N^2 recovers lnN/N on physical network, but divide by N again because physically unconstrained teleportation
+    unsigned int Np = network.numPhysicalNodes();
+    lambda = config.regularizationStrength * std::log(Np) / (Np * Np * Np);
+  }
   double u_t = average_weight;
 
   double sum_u_in = 0.0;
@@ -563,9 +579,13 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     }
 
     ++iterations;
-  } while (iterations < 200 && (err > 1.0e-15 || iterations < 50));
+  } while (iterations < config.maxFlowIterations && (err > 1.0e-15 || iterations < 50));
 
-  Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
+  if (iterations >= config.maxFlowIterations) {
+    Log() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
+  } else {
+    Log() << "\n  -> PageRank calculation done in " << iterations << " iterations with error " << err << ".\n";
+  }
 
   double sumNodeRank = 1.0;
   for (auto& link : flowLinks) {
@@ -909,6 +929,13 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
   std::vector<double> s(N, 0);
   double sum_s = sumWeightedDegree;
   unsigned int sum_k = network.sumDegree();
+  if (sum_k == 0) {
+    const auto uniformFlow = 1.0 / N;
+    std::fill(nodeFlow.begin(), nodeFlow.end(), uniformFlow);
+    std::fill(nodeTeleportWeights.begin(), nodeTeleportWeights.end(), uniformFlow);
+    nodeTeleportFlow.assign(numNodes, uniformFlow);
+    return;
+  }
   double average_weight = sum_s / sum_k;
 
   for (auto& link : flowLinks) {
@@ -927,10 +954,15 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
     }
   }
 
-  auto u = [s, k, min_u](auto i) { return k[i] == 0 ? min_u : s[i] / k[i]; };
+  auto u = [&s, &k, min_u](auto i) { return k[i] == 0 ? min_u : s[i] / k[i]; };
 
   unsigned int numNodesAsTeleportationTargets = config.noSelfLinks ? N - 1 : N;
   double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
+  if (network.numPhysicalNodes() < N) {
+    // Adjust for higher-order network, lnN/N^2 recovers lnN/N on physical network, but divide by N again because physically unconstrained teleportation
+    unsigned int Np = network.numPhysicalNodes();
+    lambda = config.regularizationStrength * std::log(Np) / (Np * Np * Np);
+  }
   double u_t = average_weight;
 
   double sum_u = 0.0;
@@ -1131,7 +1163,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
     return error;
   };
 
-  const auto result = powerIterate(config.teleportationProbability, iteration);
+  const auto result = powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration);
 
   double sumNodeRank = 1.0;
   double beta = result.beta;
@@ -1249,92 +1281,71 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     node.intraLayerTeleFlow = fractionIntraFlow * node.teleFlow;
     node.teleFlow *= 1 - fractionIntraFlow;
     node.intraLayerTeleWeight = nodeTeleportWeights[nodeIndex];
-    // node.enterFlow = node.flow;
-    // node.exitFlow = node.flow;
-    // Log() << nodeIndex << ": teleFlow: " << node.teleFlow << ", intraTele: " << node.intraLayerTeleFlow << ", intraTeleWeight: " << node.intraLayerTeleWeight << "\n";
-    sumTeleFlow += node.teleFlow;
-    // sumIntraTeleFlow += node.intraLayerTeleFlow;
+    node.enterFlow = node.flow;
+    node.exitFlow = node.flow;
 
+    if (!config.noSelfLinks) {
+      // Remove self-teleportation flow
+      node.enterFlow -= node.teleFlow * node.weight;
+      node.exitFlow -= node.teleFlow * node.weight;
+
+      // Remove self-link flow
+      unsigned int norm = config.isUndirectedFlow() ? 2 : 1;
+      auto& outLinks = network.m_nodeLinkMap[node.id];
+      for (auto& link : outLinks) {
+        auto& linkData = link.second;
+        if (node.id == link.first.id) {
+          node.enterFlow -= linkData.flow / norm;
+          node.exitFlow -= linkData.flow / norm;
+          break;
+        }
+      }
+    }
+
+    sumTeleFlow += node.teleFlow;
     sumNodeFlow += node.flow;
   }
 
   // Enter/exit flow
   if (enterFlow.size() == 0) {
-    enterFlow.assign(numNodes, 0.0);
-    exitFlow.assign(numNodes, 0.0);
-
-    for (auto& link : flowLinks) {
-      if (link.source != link.target) {
-        exitFlow[link.source] += link.flow;
-        enterFlow[link.target] += link.flow;
+    if (!config.isUndirectedClustering() && !config.regularized) {
+      enterFlow.assign(numNodes, 0);
+      exitFlow.assign(numNodes, 0);
+      double alpha = config.teleportationProbability;
+      double sumDanglingFlow = 0.0;
+      for (unsigned int i = 0; i < numNodes; ++i) {
+        if (nodeOutDegree[i] == 0) {
+          sumDanglingFlow += nodeFlow[i];
+        }
       }
-    }
-    // Add teleportation flow
-    if (!config.isUndirectedClustering() || config.regularized) {
       for (auto& nodeIt : network.m_nodes) {
         auto& node = nodeIt.second;
-        const auto nodeIndex = nodeIndexMap[node.id];
-        // exitFlow[nodeIndex] += node.teleFlow * (1 - node.weight);
-        // enterFlow[nodeIndex] += (sumTeleFlow - node.teleFlow) * node.weight;
-        // Already adjusted for the case of excluding self-flow?
-        exitFlow[nodeIndex] += node.teleFlow * 1;
-        enterFlow[nodeIndex] += sumTeleFlow * node.weight;
-
-        // if (config.noSelfLinks) {
-        //   // Remove self-teleportation flow
-        //   node.enterFlow -= node.teleFlow * node.weight;
-        //   node.exitFlow -= node.teleFlow * node.weight;
-
-        //   // Remove self-link flow
-        //   unsigned int norm = config.isUndirectedFlow() ? 2 : 1;
-        //   auto& outLinks = network.m_nodeLinkMap[node.id];
-        //   for (auto& link : outLinks) {
-        //     auto& linkData = link.second;
-        //     if (node.id == link.first.id) {
-        //       node.enterFlow -= linkData.flow / norm;
-        //       node.exitFlow -= linkData.flow / norm;
-        //       break;
-        //     }
-        //   }
-        // }
+        const auto sourceIndex = nodeIndexMap[node.id];
+        auto& outLinks = network.m_nodeLinkMap[node.id];
+        double danglingFlow = outLinks.empty() ? node.flow : 0.0;
+        if (config.recordedTeleportation) {
+          // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
+          exitFlow[sourceIndex] += alpha * node.flow * (1.0 - node.weight);
+          enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + (1 - alpha) * (sumDanglingFlow - danglingFlow)) * node.weight;
+        }
+        for (auto& link : outLinks) {
+          auto& linkData = link.second;
+          const auto targetIndex = nodeIndexMap[link.first.id];
+          exitFlow[sourceIndex] += linkData.flow;
+          enterFlow[targetIndex] += linkData.flow;
+        }
       }
     }
   }
 
-  // if (!config.isUndirectedClustering() && !config.regularized) {
-  //   enterFlow.assign(N, 0);
-  //   exitFlow.assign(N, 0);
-  //   double alpha = config.teleportationProbability;
-  //   double sumDanglingFlow = 0.0;
-  //   for (unsigned int i = 0; i < N; ++i) {
-  //     if (nodeOutDegree[i] == 0) {
-  //       sumDanglingFlow += nodeFlow[i];
-  //     }
-  //   }
-  //   for (auto& nodeIt : network.m_nodes) {
-  //     auto& node = nodeIt.second;
-  //     const auto sourceIndex = nodeIndexMap[node.id];
-  //     auto& outLinks = network.m_nodeLinkMap[node.id];
-  //     double danglingFlow = outLinks.empty() ? node.flow : 0.0;
-  //     if (config.recordedTeleportation) {
-  //       // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
-  //       exitFlow[sourceIndex] += alpha * node.flow * (1.0 - node.weight);
-  //       enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + (1 - alpha) * (sumDanglingFlow - danglingFlow)) * node.weight;
-  //     }
-  //     for (auto& link : outLinks) {
-  //       auto& linkData = link.second;
-  //       const auto targetIndex = nodeIndexMap[link.first.id];
-  //       exitFlow[sourceIndex] += linkData.flow;
-  //       enterFlow[targetIndex] += linkData.flow;
-  //     }
-  //   }
-  // }
   // Save enter/exit flow on nodes
-  for (auto& nodeIt : network.m_nodes) {
-    auto& node = nodeIt.second;
-    const auto nodeIndex = nodeIndexMap[node.id];
-    node.enterFlow = enterFlow[nodeIndex];
-    node.exitFlow = exitFlow[nodeIndex];
+  if (!enterFlow.empty()) {
+    for (auto& nodeIt : network.m_nodes) {
+      auto& node = nodeIt.second;
+      const auto nodeIndex = nodeIndexMap[node.id];
+      node.enterFlow = enterFlow[nodeIndex];
+      node.exitFlow = exitFlow[nodeIndex];
+    }
   }
 
   Log() << "\n  => Sum node flow: " << sumNodeFlow << ", sum link flow: " << sumLinkFlow << "\n";

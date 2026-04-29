@@ -3,7 +3,7 @@
  Copyright (c) 2013, 2014 Daniel Edler, Anton Holmgren, Martin Rosvall
 
  This file is part of the Infomap software package.
- See file LICENSE_AGPLv3.txt for full license details.
+ See file LICENSE_GPLv3.txt for full license details.
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
@@ -111,6 +111,7 @@ struct Config {
   bool multilayerSelfInterLinks = false;
   bool multilayerAggregation = false;
   unsigned int multilayerTest = 0;
+  unsigned int maxFlowIterations = 400;
 
   // Clustering
   bool twoLevel = false;
@@ -209,6 +210,7 @@ struct Config {
     multilayerSelfInterLinks = other.multilayerSelfInterLinks;
     multilayerAggregation = other.multilayerAggregation;
     multilayerTest = other.multilayerTest;
+    maxFlowIterations = other.maxFlowIterations;
     twoLevel = other.twoLevel;
     noCoarseTune = other.noCoarseTune;
     recordedTeleportation = other.recordedTeleportation;

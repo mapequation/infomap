@@ -1,0 +1,66 @@
+name: _JavaScript Package
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: false
+        type: string
+        default: ""
+      run-tests:
+        required: false
+        type: boolean
+        default: true
+      pack-artifact:
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Set up JavaScript build
+        uses: ./.github/actions/setup-js-build
+
+      - name: Install Playwright browser
+        if: inputs.run-tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify JavaScript metadata freshness
+        if: inputs.run-tests
+        run: make test-js-metadata
+
+      - name: Build JavaScript worker
+        if: ${{ !inputs.run-tests }}
+        run: make -j build-js
+
+      - name: Run JavaScript verification
+        if: inputs.run-tests
+        run: make test-js
+
+      - name: Pack npm artifact
+        if: inputs.pack-artifact
+        run: |
+          npm pack --json dist/npm/package > dist/npm/npm-pack.json
+          pkg="$(node --input-type=module -e "import fs from 'node:fs'; const [entry] = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); console.log(entry.filename);" dist/npm/npm-pack.json)"
+          mkdir -p dist/npm
+          mv "$pkg" dist/npm/
+
+      - name: Upload npm package artifact
+        if: inputs.pack-artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npm-package
+          path: dist/npm/*.tgz
+          retention-days: 7

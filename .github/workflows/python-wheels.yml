@@ -1,0 +1,18 @@
+name: Build Python release artifacts (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: python-release-artifacts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-release-artifacts:
+    uses: ./.github/workflows/_python-package.yml
+    with:
+      run-tests: false
+      build-release-artifacts: true

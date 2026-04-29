@@ -1,0 +1,32 @@
+name: Set up Python build
+description: Set up Python with pip caching and optional build tooling.
+inputs:
+  python-version:
+    description: Python version for actions/setup-python.
+    required: true
+  install-build-tooling:
+    description: Install the build and wheel packages.
+    required: false
+    default: "false"
+  cache-dependency-path:
+    description: Dependency file path for pip cache invalidation.
+    required: false
+    default: pyproject.toml
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: pip
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
+
+    - name: Upgrade pip
+      shell: bash
+      run: python -m pip install --upgrade pip
+
+    - name: Install Python build tooling
+      if: inputs.install-build-tooling == 'true'
+      shell: bash
+      run: python -m pip install build wheel

@@ -1,27 +1,27 @@
-# Infomap
+[![CI](https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg)](https://github.com/mapequation/infomap/actions/workflows/ci.yml)
+[![Release](https://github.com/mapequation/infomap/actions/workflows/release.yml/badge.svg)](https://github.com/mapequation/infomap/actions/workflows/release.yml)
 
-This is Infomap compiled as a web worker with Emscripten.
+# @mapequation/infomap
 
-Infomap is a network clustering algorithm based on the [Map equation](//www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation).
+`@mapequation/infomap` packages Infomap as a browser web worker built with
+Emscripten.
 
-This package is used in [Infomap Online](//www.mapequation.org/infomap/).
+Infomap is a network clustering algorithm based on the
+[Map equation](https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation).
+The package is used in [Infomap Online](https://www.mapequation.org/infomap/).
 
-## Installing
+## Install
 
-To install, run
-
-```shell
+```bash
 npm install @mapequation/infomap
 ```
 
-## Usage
+## Use with ES modules
 
-If you use ES modules, import the package like this
-
-```javascript
+```js
 import Infomap from "@mapequation/infomap";
 
-let network = `#source target [weight]
+const network = `#source target [weight]
 0 1
 0 2
 0 3
@@ -37,56 +37,76 @@ let network = `#source target [weight]
 5 4
 5 3`;
 
-let infomap = new Infomap()
+const infomap = new Infomap()
   .on("data", (data) => console.log(data))
-  .on("error", (err) => console.warn(err))
+  .on("error", (error) => console.warn(error))
   .on("finished", (data) => console.log(data));
 
-infomap.run(network, "--two-level");
+infomap.run({
+  network,
+  args: {
+    twoLevel: true,
+  },
+});
 ```
 
-If you use a CDN, for example JSDelivr, `Infomap` is exported as `window.infomap.default`.
+React users can import the hook entrypoint directly from the main package:
 
-For example:
+```js
+import { useInfomap } from "@mapequation/infomap/react";
+```
+
+## Use from a CDN
+
+With JSDelivr, the package is available as `window.infomap.default`.
 
 ```html
 <!doctype html>
 <html>
-    <head>
-        <script type="text/javascript" src="//cdn.jsdelivr.net/npm/@mapequation/infomap@latest/dist/index.min.js"></script>
-    </head>
-    <body>
-        <script type="text/javascript">
-            const Infomap = window.infomap.default;
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/@mapequation/infomap@latest/index.umd.js"></script>
+  </head>
+  <body>
+    <script>
+      const Infomap = window.infomap.default;
+      const network = "#--- same network as above ---";
 
-            let network = "#--- as above! ---";
+      const infomap = new Infomap()
+        .on("data", (data) => console.log(data))
+        .on("error", (error) => console.warn(error))
+        .on("finished", (data) => console.log(data));
 
-            let infomap = new Infomap()
-                .on("data", data => console.log(data))
-                .on("error", err => console.warn(err))
-                .on("finished", data => console.log(data));
-
-            infomap.run(network, "--two-level");
-        </script>
+      infomap.run({
+        network,
+        args: {
+          twoLevel: true,
+        },
+      });
+    </script>
+  </body>
 </html>
 ```
 
-## Feedback
+## Package notes
 
-If you have any questions, suggestions or issues regarding the software, please add them to [GitHub issues](//github.com/mapequation/infomap/issues).
+- `@mapequation/infomap/react` is the supported React entrypoint.
+
+## More information
+
+- Main docs: [mapequation.org/infomap](https://www.mapequation.org/infomap/)
+- Issues: [github.com/mapequation/infomap/issues](https://github.com/mapequation/infomap/issues)
 
 ## Authors
 
 Daniel Edler, Anton Holmgren, Martin Rosvall
 
-For contact information, see [mapequation.org/about.html](//www.mapequation.org/about.html).
+Contact details are available at
+[mapequation.org/about.html](https://www.mapequation.org/about.html).
 
 ## Terms of use
 
 Infomap is released under a dual licence.
 
-To give everyone maximum freedom to make use of Infomap and derivative works,
-we make the code open source under the GNU Affero General Public License version 3
-or any later version (see LICENSE_AGPLv3.txt).
-
+The code is available under the GNU General Public License version 3 or any
+later version; see `LICENSE_GPLv3.txt`.
 For a non-copyleft license, please contact us.

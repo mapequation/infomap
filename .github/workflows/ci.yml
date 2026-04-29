@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      native: ${{ steps.filter.outputs.native }}
+      python: ${{ steps.filter.outputs.python }}
+      javascript: ${{ steps.filter.outputs.javascript }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.2
+        with:
+          filters: |
+            native:
+              - "CMakeLists.txt"
+              - "Makefile"
+              - "mk/**"
+              - "src/**"
+              - "test/cpp/**"
+              - "test/fixtures/**"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/_native-build.yml"
+            python:
+              - "CMakeLists.txt"
+              - "Makefile"
+              - "mk/**"
+              - "src/**"
+              - "test/cpp/**"
+              - "test/fixtures/**"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/_native-build.yml"
+              - "pyproject.toml"
+              - "setup.py"
+              - "interfaces/python/**"
+              - "examples/python/**"
+              - "examples/networks/**"
+              - "test/python/**"
+              - "scripts/build_config.py"
+              - "scripts/generate_python_swig.py"
+              - ".github/actions/setup-python-build/action.yml"
+              - ".github/workflows/_python-package.yml"
+            javascript:
+              - "CMakeLists.txt"
+              - "Makefile"
+              - "mk/**"
+              - "src/**"
+              - "test/cpp/**"
+              - "test/fixtures/**"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/_native-build.yml"
+              - "package.json"
+              - "package-lock.json"
+              - "interfaces/js/**"
+              - "scripts/generate_js_metadata.py"
+              - "scripts/prepare_npm_package.py"
+              - ".github/actions/setup-js-build/action.yml"
+              - ".github/workflows/_js-package.yml"
+
+  native:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.native == 'true'
+    uses: ./.github/workflows/_native-build.yml
+
+  python:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true'
+    uses: ./.github/workflows/_python-package.yml
+    with:
+      run-tests: true
+      build-release-artifacts: false
+
+  javascript:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.javascript == 'true'
+    uses: ./.github/workflows/_js-package.yml
+    with:
+      run-tests: true
+      pack-artifact: false
+
+  ci-summary:
+    name: CI Summary
+    needs: [changes, native, python, javascript]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check CI results
+        run: |
+          results='${{ toJSON(needs) }}'
+          echo "$results"
+          echo "$results" | jq -e 'to_entries | all(.value.result == "success" or .value.result == "skipped")'

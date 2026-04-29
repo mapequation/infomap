@@ -3,7 +3,7 @@
  Copyright (c) 2013, 2014 Daniel Edler, Anton Holmgren, Martin Rosvall
 
  This file is part of the Infomap software package.
- See file LICENSE_AGPLv3.txt for full license details.
+ See file LICENSE_GPLv3.txt for full license details.
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
@@ -23,6 +23,44 @@ constexpr int FlowModel::undirdir;
 constexpr int FlowModel::outdirdir;
 constexpr int FlowModel::rawdir;
 constexpr int FlowModel::precomputed;
+
+namespace {
+
+void applyFlowModelSelection(Config& config, const std::string& flowModelArg)
+{
+  if (flowModelArg == "directed" || config.directed) {
+    config.setFlowModel(FlowModel::directed);
+  } else if (flowModelArg == "undirected") {
+    config.setFlowModel(FlowModel::undirected);
+  } else if (flowModelArg == "undirdir") {
+    config.setFlowModel(FlowModel::undirdir);
+  } else if (flowModelArg == "outdirdir") {
+    config.setFlowModel(FlowModel::outdirdir);
+  } else if (flowModelArg == "rawdir") {
+    config.setFlowModel(FlowModel::rawdir);
+  } else if (flowModelArg == "precomputed") {
+    config.setFlowModel(FlowModel::precomputed);
+  } else if (!flowModelArg.empty()) {
+    throw std::runtime_error(io::Str() << "Unrecognized flow model: '" << flowModelArg << "'");
+  }
+}
+
+void normalizeOutputDirectory(Config& config)
+{
+  if (!config.haveOutput() || config.outDirectory.empty())
+    return;
+
+  if (config.outDirectory.back() != '/')
+    config.outDirectory.push_back('/');
+}
+
+void validateOutputDirectory(const Config& config)
+{
+  if (config.haveOutput() && !isDirectoryWritable(config.outDirectory))
+    throw std::runtime_error(io::Str() << "Can't write to directory '" << config.outDirectory << "'. Check that the directory exists and that you have write permissions.");
+}
+
+} // namespace
 
 Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 {
@@ -187,35 +225,14 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
     throw std::runtime_error("Missing out_directory");
   }
 
-  if (flowModelArg == "directed") {
-    setFlowModel(FlowModel::directed);
-  } else if (flowModelArg == "undirected") {
-    setFlowModel(FlowModel::undirected);
-  } else if (flowModelArg == "undirdir") {
-    setFlowModel(FlowModel::undirdir);
-  } else if (flowModelArg == "outdirdir") {
-    setFlowModel(FlowModel::outdirdir);
-  } else if (flowModelArg == "rawdir") {
-    setFlowModel(FlowModel::rawdir);
-  } else if (flowModelArg == "precomputed") {
-    setFlowModel(FlowModel::precomputed);
-  } else if (!flowModelArg.empty()) {
-    throw std::runtime_error(io::Str() << "Unrecognized flow model: '" << flowModelArg << "'");
-  }
-
-  if (directed && !flowModelIsSet) {
-    setFlowModel(FlowModel::directed);
-  }
+  applyFlowModelSelection(*this, flowModelArg);
 
   if (regularized) {
     recordedTeleportation = true;
   }
 
-  if (*--outDirectory.end() != '/')
-    outDirectory.append("/");
-
-  if (haveOutput() && !isDirectoryWritable(outDirectory))
-    throw std::runtime_error(io::Str() << "Can't write to directory '" << outDirectory << "'. Check that the directory exists and that you have write permissions.");
+  normalizeOutputDirectory(*this);
+  validateOutputDirectory(*this);
 
   if (outName.empty()) {
     outName = !networkFile.empty() ? FileURI(networkFile).getName() : "no-name";

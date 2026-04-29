@@ -3,7 +3,7 @@
  Copyright (c) 2013, 2014 Daniel Edler, Anton Holmgren, Martin Rosvall
 
  This file is part of the Infomap software package.
- See file LICENSE_AGPLv3.txt for full license details.
+ See file LICENSE_GPLv3.txt for full license details.
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
@@ -179,8 +179,8 @@ public:
   unsigned int numSelfLinks() const { return m_numSelfLinks; }
   double sumSelfLinkWeight() const { return m_sumSelfLinkWeight; }
   // Use convention of counting self-links only once, treating them as directed
-  double sumWeightedDegree() const { return 2 * sumLinkWeight() - (m_config.isUndirectedFlow() ? sumSelfLinkWeight() : 0); }
-  unsigned int sumDegree() const { return 2 * numLinks() - (m_config.isUndirectedFlow() ? numSelfLinks() : 0); }
+  double sumWeightedDegree() const { return 2 * sumLinkWeight() - sumSelfLinkWeight(); }
+  unsigned int sumDegree() const { return 2 * numLinks() - numSelfLinks(); }
   std::map<unsigned int, double>& outWeights() { return m_outWeights; }
   std::map<unsigned int, std::string>& names() { return m_names; }
   const std::map<unsigned int, std::string>& names() const { return m_names; }

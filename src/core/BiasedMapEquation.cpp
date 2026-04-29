@@ -3,7 +3,7 @@
  Copyright (c) 2013, 2014 Daniel Edler, Anton Holmgren, Martin Rosvall
 
  This file is part of the Infomap software package.
- See file LICENSE_AGPLv3.txt for full license details.
+ See file LICENSE_GPLv3.txt for full license details.
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
@@ -80,6 +80,7 @@ std::ostream& operator<<(std::ostream& out, const BiasedMapEquation& mapEq)
 void BiasedMapEquation::init(const Config& config)
 {
   Log(3) << "BiasedMapEquation::init()...\n";
+  Base::init(config);
   preferredNumModules = config.preferredNumberOfModules;
   useEntropyBiasCorrection = config.entropyBiasCorrection;
   entropyBiasCorrectionMultiplier = config.entropyBiasCorrectionMultiplier;

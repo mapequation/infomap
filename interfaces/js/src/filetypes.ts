@@ -60,7 +60,7 @@ export default function fileToString(file: FileTypes): string {
 function cluToString(clu: Clu | MetaClu): string {
   let result = "";
 
-  for (let node of clu) {
+  for (const node of clu) {
     result += node.id;
     if ("moduleId" in node) result += ` ${node.moduleId}`;
     else if ("meta" in node) result += ` ${node.meta}`;
@@ -74,7 +74,7 @@ function cluToString(clu: Clu | MetaClu): string {
 function treeToString(tree: Tree | StateTree): string {
   let result = "";
 
-  for (let node of tree) {
+  for (const node of tree) {
     const flow = node.flow ?? 0;
     const name = node.name ?? node.id;
 

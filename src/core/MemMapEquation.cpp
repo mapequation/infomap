@@ -3,7 +3,7 @@
  Copyright (c) 2013, 2014 Daniel Edler, Anton Holmgren, Martin Rosvall
 
  This file is part of the Infomap software package.
- See file LICENSE_AGPLv3.txt for full license details.
+ See file LICENSE_GPLv3.txt for full license details.
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
@@ -37,9 +37,10 @@ std::ostream& operator<<(std::ostream& out, const MemMapEquation& mapEq)
 // Init
 // ===================================================
 
-void MemMapEquation::init(const Config& /*config*/)
+void MemMapEquation::init(const Config& config)
 {
   Log(3) << "MemMapEquation::init()...\n";
+  Base::init(config);
 }
 
 void MemMapEquation::initNetwork(InfoNode& root)

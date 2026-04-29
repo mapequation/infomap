@@ -4,81 +4,193 @@ on:
   push:
     tags:
       - "v*.*.*"
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to rebuild and republish GitHub release assets for
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
-  release:
-    name: ${{ matrix.config.os }}${{ matrix.target.name }}
-    runs-on: ${{ matrix.config.os }}
-    strategy:
-      matrix:
-        config:
-          - {
-              name: windows,
-              os: windows-2019,
-              artifact: "infomap-win",
-              binary: Infomap.exe,
-              cxxflags: -static,
-              ldflags: -static,
-              compiler: g++,
-            }
-          - {
-              name: ubuntu,
-              os: ubuntu-20.04,
-              artifact: "infomap-ubuntu",
-              binary: Infomap,
-              cxxflags: "",
-              ldflags: "",
-              compiler: g++,
-            }
-          - {
-              name: macos,
-              os: macos-11,
-              artifact: "infomap-mac",
-              binary: Infomap,
-              cxxflags: "-I /usr/local/include -I/usr/local/opt/llvm/include",
-              ldflags: "-L /usr/local/lib -L/usr/local/opt/llvm/lib",
-              compiler: /usr/local/opt/llvm/bin/clang++,
-            }
-        target:
-          - { name: "", target: "" }
-          - { name: "-noomp", target: "noomp" }
+  native:
+    uses: ./.github/workflows/_native-build.yml
+    with:
+      ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
+      upload-artifacts: true
+
+  python:
+    uses: ./.github/workflows/_python-package.yml
+    with:
+      ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
+      run-tests: false
+      build-release-artifacts: true
+
+  javascript:
+    uses: ./.github/workflows/_js-package.yml
+    with:
+      ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
+      run-tests: true
+      pack-artifact: true
+
+  publish-github-release:
+    name: Publish GitHub release assets
+    needs: [native, python, javascript]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Download native release assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: native-*
+          path: release-assets/native
+          merge-multiple: true
 
-      #- if: startsWith(matrix.config.os, 'ubuntu')
-      #  run: |
-      #    sudo apt update
-      #    sudo apt install libomp-dev
+      - name: Download Python release assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-sdist
+          path: release-assets/python
 
-      - if: startsWith(matrix.config.os, 'macos')
-        run: |
-          brew install p7zip llvm libomp
-          export PATH="$(brew --prefix llvm)/bin:$PATH"
+      - name: Download Python wheel assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: python-wheels-*
+          path: release-assets/python
+          merge-multiple: true
 
-      - run: make -j ${{ matrix.target.target }}
-        shell: bash
+      - name: Download npm release asset
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: npm-package
+          path: release-assets/npm
+
+      - name: List packaged assets
+        run: find release-assets -maxdepth 3 -type f | sort
+
+      - name: Attach assets to GitHub release
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          files: |
+            release-assets/native/*.zip
+            release-assets/python/**/*.tar.gz
+            release-assets/python/**/*.whl
+            release-assets/npm/*.tgz
+
+  publish-pypi:
+    name: Publish to PyPI
+    if: github.event_name == 'push'
+    needs: [publish-github-release, python]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: pypi-release
+      url: https://pypi.org/project/infomap/
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Download Python distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-sdist
+          path: dist/python
+
+      - name: Download Python wheels
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: python-wheels-*
+          path: dist/python
+          merge-multiple: true
+
+      - name: Verify Python distributions
+        run: ls -la dist/python
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
+        with:
+          packages-dir: dist/python
+
+  publish-npm:
+    name: Publish to npm
+    if: github.event_name == 'push'
+    needs: [publish-github-release, publish-pypi, javascript]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: npm-release
+      url: https://www.npmjs.com/package/@mapequation/infomap
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 20
+
+      - name: Download npm package artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: npm-package
+          path: dist/npm
+
+      - name: Publish npm package
+        run: npm publish --provenance --access public dist/npm/*.tgz
+
+  notify-homebrew-infomap:
+    name: Notify homebrew-infomap
+    if: github.event_name == 'push'
+    needs: [publish-github-release]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Dispatch homebrew-infomap update workflow
         env:
-          CXX: ${{ matrix.config.compiler }}
-          CXXFLAGS: ${{ matrix.config.cxxflags }}
-          LDFLAGS: ${{ matrix.config.ldflags }}
+          GH_TOKEN: ${{ secrets.HOMEBREW_INFOMAP_REPO_DISPATCH_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
 
-      - run: ./Infomap --version
-        shell: bash
+          version="${RELEASE_TAG#v}"
+          gh api repos/mapequation/homebrew-infomap/dispatches \
+            -f event_type=infomap_release_published \
+            -F client_payload[version]="$version" \
+            -F client_payload[release_tag]="$RELEASE_TAG" \
+            -F client_payload[release_url]="https://github.com/${{ github.repository }}/releases/tag/$RELEASE_TAG"
 
-      - run: 7z a ${{ matrix.config.artifact }}${{ matrix.target.name }}.zip ${{ matrix.config.binary }}
-        shell: bash
+  notify-infomap-online:
+    name: Notify infomap-online
+    if: github.event_name == 'push'
+    needs: [publish-npm]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
 
-      - uses: actions/upload-artifact@v3
-        with:
-          retention-days: 1
-          path: ./${{ matrix.config.binary }}
-          name: ${{ matrix.config.artifact }}${{ matrix.target.name }}
+    steps:
+      - name: Dispatch infomap-online update workflow
+        env:
+          GH_TOKEN: ${{ secrets.INFOMAP_ONLINE_REPO_DISPATCH_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
 
-      - uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: ${{ matrix.config.artifact }}${{ matrix.target.name }}.zip
+          version="${RELEASE_TAG#v}"
+          gh api repos/mapequation/infomap-online/dispatches \
+            -f event_type=infomap_release_published \
+            -f client_payload[package]=@mapequation/infomap \
+            -F client_payload[version]="$version" \
+            -F client_payload[release_tag]="$RELEASE_TAG" \
+            -F client_payload[release_url]="https://github.com/${{ github.repository }}/releases/tag/$RELEASE_TAG"

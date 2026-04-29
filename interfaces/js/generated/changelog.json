@@ -1,0 +1,3561 @@
+[
+  {
+    "body": null,
+    "date": "2026-02-25",
+    "footer": "2.9.2 (2026-02-25)",
+    "header": "fix(ci): avoid llvm libc++ dependency for macOS python (a79b285)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "a79b285",
+      "a79b2859769d3158adbc9750de466e85587b6a8a"
+    ],
+    "revert": null,
+    "scope": "ci",
+    "subject": "avoid llvm libc++ dependency for macOS python (a79b285)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2026-02-25",
+    "footer": "2.9.2 (2026-02-25)",
+    "header": "fix(ci): remove llvm dependency and use cibuildwheel (d51fac4)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "d51fac4",
+      "d51fac427b3d1000b1e59baee2afb5c92225c365"
+    ],
+    "revert": null,
+    "scope": "ci",
+    "subject": "remove llvm dependency and use cibuildwheel (d51fac4)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2026-02-25",
+    "footer": "2.9.1 (2026-02-25)",
+    "header": "fix(ci): avoid embedding Homebrew libunwind in macOS builds (0377ca2)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "0377ca2",
+      "0377ca21cce0f203ee30205ebda3ac0c2deecd65"
+    ],
+    "revert": null,
+    "scope": "ci",
+    "subject": "avoid embedding Homebrew libunwind in macOS builds (0377ca2)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2026-02-25",
+    "footer": "2.9.0 (2026-02-25)",
+    "header": "feat: Enhance Infomap CLI summary output with more info (35a3bc9)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "35a3bc9",
+      "35a3bc9282964342cbb4a67c3221684857650ad8"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Enhance Infomap CLI summary output with more info (35a3bc9)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2026-02-24",
+    "footer": "2.8.2 (2026-02-24)",
+    "header": "fix: Restore correct codelength on worse 2-level higher-order solution (36f9870)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "36f9870",
+      "36f987094bd66822e2e2350d53690859e91da21e"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Restore correct codelength on worse 2-level higher-order solution (36f9870)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2026-02-24",
+    "footer": "2.8.2 (2026-02-24)",
+    "header": "fix: Use provided state ids on networkx multilayer graph (33c2978)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "33c2978",
+      "33c2978d7698bc5f6f841ce2d3609c8dcd738b05"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Use provided state ids on networkx multilayer graph (33c2978)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2026-02-11",
+    "footer": "2.8.1 (2026-02-11)",
+    "header": "fix: Adjust regularization for memory networks (629f63c)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "629f63c",
+      "629f63c671c2f3bce6f003aa70da9c9ef166c7cb"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Adjust regularization for memory networks (629f63c)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2026-02-11",
+    "footer": "2.8.1 (2026-02-11)",
+    "header": "fix: Always use network in run(Network& network) (60a86c7), closes #364",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#364",
+      "60a86c7",
+      "60a86c76ffd4157542a468410ca251d2811535b9"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Always use network in run(Network& network) (60a86c7), closes #364",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2026-02-11",
+    "footer": "2.8.1 (2026-02-11)",
+    "header": "fix: Avoid non-converging flow due to large perturbation (1a0747a)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "1a0747a",
+      "1a0747a0e8671d2fdb90b0906ad8c4433ad43513"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Avoid non-converging flow due to large perturbation (1a0747a)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2026-02-11",
+    "footer": "2.8.1 (2026-02-11)",
+    "header": "fix(py): Make storing iterator items work (b3f5877)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "b3f5877",
+      "b3f5877e6ac83895d859cd85475ada2cef69711e"
+    ],
+    "revert": null,
+    "scope": "py",
+    "subject": "Make storing iterator items work (b3f5877)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2026-02-11",
+    "footer": "2.8.1 (2026-02-11)",
+    "header": "fix: Restore to correct codelength for -2 regularized states (3cd7d5e)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "3cd7d5e",
+      "3cd7d5e8bb86728d0a7bf7a037e404951f998da0"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Restore to correct codelength for -2 regularized states (3cd7d5e)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2024-06-20",
+    "footer": "2.8.0 (2024-06-20)",
+    "header": "feat: Add state network from NetworkX graph (#344) (1467768)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#344",
+      "1467768",
+      "1467768d8850860977c05142c0d3d4c3aaf5eea0"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add state network from NetworkX graph (#344) (1467768)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2024-06-20",
+    "footer": "2.8.0 (2024-06-20)",
+    "header": "fix(py): Use inter/intra multilayer format by default (0ed9af3)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "0ed9af3",
+      "0ed9af30af19cbede0317f71ef44a5b5193661fc"
+    ],
+    "revert": null,
+    "scope": "py",
+    "subject": "Use inter/intra multilayer format by default (0ed9af3)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2024-06-20",
+    "footer": "2.8.0 (2024-06-20)",
+    "header": "fix: Upgrade github actions dependencies (ffe0fe2)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "ffe0fe2",
+      "ffe0fe21f98e70a918fdd45157f960eb770c153d"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Upgrade github actions dependencies (ffe0fe2)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2023-04-25",
+    "footer": "2.7.1 (2023-04-25)",
+    "header": "fix: Allow precomputed flow for state networks (ab7c5b5)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "ab7c5b5",
+      "ab7c5b55b294a3e256ed53f903e888efc08f1ae6"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Allow precomputed flow for state networks (ab7c5b5)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2023-04-04",
+    "footer": "2.7.0 (2023-04-04)",
+    "header": "feat: Add flow model \"precomputed\" (407dbe9)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "407dbe9",
+      "407dbe9592641bea7a4cac292a7d25df308644ca"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add flow model \"precomputed\" (407dbe9)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2023-04-04",
+    "footer": "2.7.0 (2023-04-04)",
+    "header": "fix: Do not add links with zero weight (cc61b61), closes #324",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#324",
+      "cc61b61",
+      "cc61b61db228e8a0b433d5bc55f0fedc540e1c0d"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Do not add links with zero weight (cc61b61), closes #324",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2023-04-04",
+    "footer": "2.7.0 (2023-04-04)",
+    "header": "fix(python): Typo in assign_to_neighbouring_module (c644e80)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "c644e80",
+      "c644e80d1717cc28c6247b470e4f1c6eb2d4a420"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Typo in assign_to_neighbouring_module (c644e80)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-10-31",
+    "footer": "2.6.1 (2022-10-31)",
+    "header": "fix: Scale variable Markov time logarithmic as default (#320) (3f40134)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#320",
+      "3f40134",
+      "3f40134b0346586b9d051c3a2996a77500ba10d6"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Scale variable Markov time logarithmic as default (#320) (3f40134)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-10-31",
+    "footer": "2.6.1 (2022-10-31)",
+    "header": "fix: Set num trials to 1 if no infomap (be60a09)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "be60a09",
+      "be60a09c785d8bee9ac885ebc92473494db368c1"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Set num trials to 1 if no infomap (be60a09)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-08-09",
+    "footer": "2.6.0 (2022-08-09)",
+    "header": "feat(python): Add entropy_rate property (a243dfc)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "a243dfc",
+      "a243dfcdf4629aff85b425d11aa7317b1fc6b80c"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add entropy_rate property (a243dfc)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2022-08-09",
+    "footer": "2.6.0 (2022-08-09)",
+    "header": "feat: Variable Markov time (#315) (cd7b25b)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#315",
+      "cd7b25b",
+      "cd7b25b8aded24f85034ddc0d2d3bbacb881b24c"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Variable Markov time (#315) (cd7b25b)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2022-08-09",
+    "footer": "2.6.0 (2022-08-09)",
+    "header": "fix: Adjust entropy correction to Miller-Madow (324c9f7)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "324c9f7",
+      "324c9f757d94b2d045ec77d14b53491ef30aba17"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Adjust entropy correction to Miller-Madow (324c9f7)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-08-09",
+    "footer": "2.6.0 (2022-08-09)",
+    "header": "fix: Don't write multilevel json output for aggregated higher-order networks (1f5e7ea)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "1f5e7ea",
+      "1f5e7eab31b865fd2208cecbd0ed50642b9ca199"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Don't write multilevel json output for aggregated higher-order networks (1f5e7ea)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-08-09",
+    "footer": "2.6.0 (2022-08-09)",
+    "header": "fix: Fix calc entropy rate for undirected networks (ccd6b6c)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "ccd6b6c",
+      "ccd6b6cbdb8b322a5e457355a214801301351d4a"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Fix calc entropy rate for undirected networks (ccd6b6c)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-08-09",
+    "footer": "2.6.0 (2022-08-09)",
+    "header": "fix(py): Fix ignored variable_markov_time argument (eedc777)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "eedc777",
+      "eedc77705e44255c580d973c9403d1062a6e1712"
+    ],
+    "revert": null,
+    "scope": "py",
+    "subject": "Fix ignored variable_markov_time argument (eedc777)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-08-09",
+    "footer": "2.6.0 (2022-08-09)",
+    "header": "fix(py): Fix test for entropy rate (78772b5)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "78772b5",
+      "78772b5b81323d65456220e23456210c48fc0871"
+    ],
+    "revert": null,
+    "scope": "py",
+    "subject": "Fix test for entropy rate (78772b5)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-08-09",
+    "footer": "2.6.0 (2022-08-09)",
+    "header": "fix(python): Fix physical leaf node iterator on state networks (#312) (4e2918c), closes #313",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#312",
+      "#313",
+      "4e2918c",
+      "4e2918c131beeda4187012e8c9672e3635f77df4"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Fix physical leaf node iterator on state networks (#312) (4e2918c), closes #313",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-08-09",
+    "footer": "2.6.0 (2022-08-09)",
+    "header": "fix(python): Only aggregate states into physical nodes when we have a higher-order network (7e3277c)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "7e3277c",
+      "7e3277c97881057b36756f6328089ed7252234eb"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Only aggregate states into physical nodes when we have a higher-order network (7e3277c)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-08-09",
+    "footer": "2.6.0 (2022-08-09)",
+    "header": "fix(python): Segfault when accessing physical_nodes (cc5c95e), closes #300",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#300",
+      "cc5c95e",
+      "cc5c95e302e5093ee168a9952bbb70dc1e5b74ce"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Segfault when accessing physical_nodes (cc5c95e), closes #300",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-06-07",
+    "footer": "2.5.0 (2022-06-07)",
+    "header": "feat: Output per-module codelength in json (eae6650)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "eae6650",
+      "eae6650c48dbf90a938d011f1c736794a786d7ef"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Output per-module codelength in json (eae6650)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2022-06-07",
+    "footer": "2.5.0 (2022-06-07)",
+    "header": "feat: Print all trials using --print-all-trials (e65bea8), closes #298",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#298",
+      "e65bea8",
+      "e65bea86c21ebcabafb053e79306049e92429ca1"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Print all trials using --print-all-trials (e65bea8), closes #298",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2022-06-07",
+    "footer": "2.5.0 (2022-06-07)",
+    "header": "feat: Write node metadata to json (472b791)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "472b791",
+      "472b791742f0f692a0a4b06262b33165245f6f36"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Write node metadata to json (472b791)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2022-06-07",
+    "footer": "2.5.0 (2022-06-07)",
+    "header": "fix: Constrain numerical arguments to sensible values (174c99f)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "174c99f",
+      "174c99fb56c4a50a2e11c37208bcec3e98ba4ab4"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Constrain numerical arguments to sensible values (174c99f)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-06-07",
+    "footer": "2.5.0 (2022-06-07)",
+    "header": "fix: Don't allow less than 1 trial (18e97e2)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "18e97e2",
+      "18e97e21d76e7d27520eb2625c281031d72376d3"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Don't allow less than 1 trial (18e97e2)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-06-07",
+    "footer": "2.5.0 (2022-06-07)",
+    "header": "fix: Json multilevel modules for higher-order networks (d020c7c), closes #266",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#266",
+      "d020c7c",
+      "d020c7c444d1227cb26aa249f7cae5e7de5ecaa4"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Json multilevel modules for higher-order networks (d020c7c), closes #266",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-06-07",
+    "footer": "2.5.0 (2022-06-07)",
+    "header": "fix: Only print all trials when running with more than 1 trial (5f9d8b5)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "5f9d8b5",
+      "5f9d8b5e56ae348b142404f3f775ad526d396c55"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Only print all trials when running with more than 1 trial (5f9d8b5)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-06-07",
+    "footer": "2.5.0 (2022-06-07)",
+    "header": "fix(python): Fix elapsed running time (1131e84)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "1131e84",
+      "1131e845243d3053cceae5bdf069569b2856bc4a"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Fix elapsed running time (1131e84)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-06-07",
+    "footer": "2.5.0 (2022-06-07)",
+    "header": "fix(python): Replace MersenneTwister implementation with stdlib (be3effd)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "be3effd",
+      "be3effd9813a00892437c806b62cb8ee15387d3d"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Replace MersenneTwister implementation with stdlib (be3effd)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-05-27",
+    "footer": "2.4.1 (2022-05-27)",
+    "header": "fix: Json output causes segfault (78e80c5)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "78e80c5",
+      "78e80c581edd92001818abdf50066b798251c604"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Json output causes segfault (78e80c5)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-05-24",
+    "footer": "2.4.0 (2022-05-24)",
+    "header": "feat(js): React hook (c19a819)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "c19a819",
+      "c19a81917849e27298d00bc1b7c6bde2d66f46c5"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "React hook (c19a819)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2022-05-24",
+    "footer": "2.4.0 (2022-05-24)",
+    "header": "fix(js-parser): Parse module level from clu files (bb91066)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "bb91066",
+      "bb9106625761716dfabbb240ba39702c110f011a"
+    ],
+    "revert": null,
+    "scope": "js-parser",
+    "subject": "Parse module level from clu files (bb91066)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-05-24",
+    "footer": "2.4.0 (2022-05-24)",
+    "header": "fix(js): Correctly parse clu-files without header (04c39ea)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "04c39ea",
+      "04c39ea46b716fb10af987a568d5ab226e6ad69d"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Correctly parse clu-files without header (04c39ea)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-05-24",
+    "footer": "2.4.0 (2022-05-24)",
+    "header": "fix(python): Don't allow adding multilayer intra-inter links and ordinary nodes. (8c3d09c), closes #287",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#287",
+      "8c3d09c",
+      "8c3d09c5c5188c1c94d691beff2c519100b939f9"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Don't allow adding multilayer intra-inter links and ordinary nodes. (8c3d09c), closes #287",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-05-24",
+    "footer": "2.4.0 (2022-05-24)",
+    "header": "fix(python): Improve constructor and run signatures (6852e14), closes #286",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#286",
+      "6852e14",
+      "6852e142343c91e61a9affe9bcff2897375cf70c"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Improve constructor and run signatures (6852e14), closes #286",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-05-24",
+    "footer": "2.4.0 (2022-05-24)",
+    "header": "fix(python): no_self_links was always set unless include_self_links=True (9afe5fa)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "9afe5fa",
+      "9afe5fa7afbf3f143dd2b8d293be59f572a14c79"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "no_self_links was always set unless include_self_links=True (9afe5fa)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-05-24",
+    "footer": "2.4.0 (2022-05-24)",
+    "header": "fix(python): Prevent infinite loop in getMultilevelModules (1174b66), closes #284",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#284",
+      "1174b66",
+      "1174b6658ed5c0bbc2c976223524f5f58e4d6c35"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Prevent infinite loop in getMultilevelModules (1174b66), closes #284",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-05-24",
+    "footer": "2.4.0 (2022-05-24)",
+    "header": "fix: Using deprecated option --include-self-links references missing option --no-loops (1497bf7)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "1497bf7",
+      "1497bf71fe7a6f5dad725742db8c36a49171eb4d"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Using deprecated option --include-self-links references missing option --no-loops (1497bf7)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-04-13",
+    "footer": "2.3.0 (2022-04-13)",
+    "header": "feat: Matchable multilayer ids (c9d28b6), closes #279",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#279",
+      "c9d28b6",
+      "c9d28b6e739731043e0dd6b82d0ae9898f686618"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Matchable multilayer ids (c9d28b6), closes #279",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2022-04-13",
+    "footer": "2.3.0 (2022-04-13)",
+    "header": "fix(js): Don't call error on worker terminate (cc57c8c)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "cc57c8c",
+      "cc57c8cbafa3ec313426e1356a8140fa6d09c9b5"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Don't call error on worker terminate (cc57c8c)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-04-13",
+    "footer": "2.3.0 (2022-04-13)",
+    "header": "fix(js): More robust heuristic to parse output format type (33bde00)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "33bde00",
+      "33bde00775c2fd41fb03b7592ae80633f09e8263"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "More robust heuristic to parse output format type (33bde00)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-04-13",
+    "footer": "2.3.0 (2022-04-13)",
+    "header": "fix: Match multilayer nodes by node and layer ids when using --cluster-data (b5f6eb3)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "b5f6eb3",
+      "b5f6eb38d1740559ae93591e659ff8f2f53b7927"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Match multilayer nodes by node and layer ids when using --cluster-data (b5f6eb3)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-04-13",
+    "footer": "2.3.0 (2022-04-13)",
+    "header": "fix(python): Add no_self_links to api (b3d903d), closes #285",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#285",
+      "b3d903d",
+      "b3d903d16e7619edebabe58a9004f40c88ea3614"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add no_self_links to api (b3d903d), closes #285",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-04-13",
+    "footer": "2.3.0 (2022-04-13)",
+    "header": "fix(python): Add recorded teleportation keyword argument (839e1e0), closes #270",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#270",
+      "839e1e0",
+      "839e1e057b2f7181a87d77758ae00c20aa368891"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add recorded teleportation keyword argument (839e1e0), closes #270",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-04-13",
+    "footer": "2.3.0 (2022-04-13)",
+    "header": "fix(python): Fix matchable multilayer id option (8377e07)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "8377e07",
+      "8377e077832eafba1cb989dcad6e24b7a8f87edf"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Fix matchable multilayer id option (8377e07)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-03-07",
+    "footer": "2.2.0 (2022-03-07)",
+    "header": "feat: Add flow-model, higher-order, and state-level fields to json, tree and clu output (24125e5)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "24125e5",
+      "24125e5874cd0599e7274e08a2691855f212186b"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add flow-model, higher-order, and state-level fields to json, tree and clu output (24125e5)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2022-03-07",
+    "footer": "2.2.0 (2022-03-07)",
+    "header": "fix(js): More forgiving clu and tree parsing (4764946)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "4764946",
+      "47649466a0ef2a200dc766b1442c7f33a8fec20f"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "More forgiving clu and tree parsing (4764946)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-03-07",
+    "footer": "2.2.0 (2022-03-07)",
+    "header": "fix: Write json output with --no-infomap (c0cec87), closes #268",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#268",
+      "c0cec87",
+      "c0cec8715981f53dd53c3134c8f16e5b4d644717"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Write json output with --no-infomap (c0cec87), closes #268",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-02-11",
+    "footer": "2.1.0 (2022-02-11)",
+    "header": "feat(js): Add progress event callback (0fab95b)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "0fab95b",
+      "0fab95bd59717aaf2f36792f2be5a54223e38fab"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Add progress event callback (0fab95b)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2022-02-11",
+    "footer": "2.1.0 (2022-02-11)",
+    "header": "fix(js): Change Typescript types to use mec instead of modularCentrality (298eed3)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "298eed3",
+      "298eed32d977758b07af058327775c234340b7b5"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Change Typescript types to use mec instead of modularCentrality (298eed3)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-02-11",
+    "footer": "2.1.0 (2022-02-11)",
+    "header": "fix(js): Parse node path as string instead of array of number (51feb73)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "51feb73",
+      "51feb73254b17857e4feb27197d4bb8c8157db05"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Parse node path as string instead of array of number (51feb73)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-02-11",
+    "footer": "2.1.0 (2022-02-11)",
+    "header": "fix(js): Validate parsed results and throw instead of returning null on failure (5f56b94)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "5f56b94",
+      "5f56b94fe0f956483f61a03ef07e94d8def2205e"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Validate parsed results and throw instead of returning null on failure (5f56b94)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-01-31",
+    "footer": "2.0.2 (2022-01-31)",
+    "header": "fix: Change json key modularCentrality to mec (78c7a57)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "78c7a57",
+      "78c7a573914e127bda03a2b8001df321e5bffd04"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Change json key modularCentrality to mec (78c7a57)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-01-31",
+    "footer": "2.0.2 (2022-01-31)",
+    "header": "fix(js): Parse directed field in ftree files (916f54a)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "916f54a",
+      "916f54a05fb2ffd86ddf0ba297952e85ccfaa5b8"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Parse directed field in ftree files (916f54a)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-01-31",
+    "footer": "2.0.2 (2022-01-31)",
+    "header": "fix(js): Pass parseLinks to main parse function and correctly detect multilayer tree files (0a40ca6)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "0a40ca6",
+      "0a40ca6c1606c189f02e691a2fdb74a4494ffbe7"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Pass parseLinks to main parse function and correctly detect multilayer tree files (0a40ca6)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-01-31",
+    "footer": "2.0.2 (2022-01-31)",
+    "header": "fix: Minify json output (123c2b1), closes #260",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#260",
+      "123c2b1",
+      "123c2b10f1e6486135346f8cd546ca0e72fb4d2e"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Minify json output (123c2b1), closes #260",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-01-26",
+    "footer": "2.0.1 (2022-01-26)",
+    "header": "fix: Bug in write state network to json (50f8de2), closes #262",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#262",
+      "50f8de2",
+      "50f8de2008cf6422693a74279b347d043735200d"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Bug in write state network to json (50f8de2), closes #262",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-01-26",
+    "footer": "2.0.1 (2022-01-26)",
+    "header": "fix(js): Broken parser due to duplicate variable name (f437e13)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "f437e13",
+      "f437e138f7b24140732831e63fac8c28e44e44bf"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Broken parser due to duplicate variable name (f437e13)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-01-26",
+    "footer": "2.0.1 (2022-01-26)",
+    "header": "fix: Use min mass for dangling nodes when regularized (f741d07)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "f741d07",
+      "f741d079b04558102130cbbbd742a0ddc3c1c366"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Use min mass for dangling nodes when regularized (f741d07)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-01-13",
+    "footer": "2.0.0 (2022-01-13)",
+    "header": "note: Removes --input-format.",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Removes --input-format."
+    ],
+    "references": [],
+    "revert": null,
+    "scope": null,
+    "subject": "Removes --input-format.",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2022-01-13",
+    "footer": "2.0.0 (2022-01-13)",
+    "header": "note: Removes --include-self-links.",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Removes --include-self-links."
+    ],
+    "references": [],
+    "revert": null,
+    "scope": null,
+    "subject": "Removes --include-self-links.",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2022-01-13",
+    "footer": "2.0.0 (2022-01-13)",
+    "header": "feat: Entropy bias correction (#258) (8ea235c)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#258",
+      "8ea235c",
+      "8ea235cf9159fc1a672a0470798ab7e443590fde"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Entropy bias correction (#258) (8ea235c)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2022-01-13",
+    "footer": "2.0.0 (2022-01-13)",
+    "header": "feat: Regularized map equation (#181) (0673000), closes #256",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#181",
+      "#256",
+      "0673000",
+      "06730005329acb4ba781d647e7009d4ff2510ae7"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Regularized map equation (#181) (0673000), closes #256",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2022-01-13",
+    "footer": "2.0.0 (2022-01-13)",
+    "header": "fix: Add new feature flags to python and js api (48245a7)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "48245a7",
+      "48245a795f87675b62b94b2f8bd8251b71e5f62e"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add new feature flags to python and js api (48245a7)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-01-13",
+    "footer": "2.0.0 (2022-01-13)",
+    "header": "fix: Include self links by default (#255) (1f68940)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#255",
+      "1f68940",
+      "1f68940a90633405f696efa93471ca8cbb25f14c"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Include self links by default (#255) (1f68940)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-01-13",
+    "footer": "2.0.0 (2022-01-13)",
+    "header": "fix(example): Fix building c++ examples (0d5c063), closes #252",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#252",
+      "0d5c063",
+      "0d5c0639cb76b9b275388c1a45873496f675aeea"
+    ],
+    "revert": null,
+    "scope": "example",
+    "subject": "Fix building c++ examples (0d5c063), closes #252",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2022-01-13",
+    "footer": "2.0.0 (2022-01-13)",
+    "header": "fix: Remove superfluous --input-format flag (2dd77c4)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "2dd77c4",
+      "2dd77c4689c67485454478d739c22c8deb44eda0"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Remove superfluous --input-format flag (2dd77c4)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-11-17",
+    "footer": "1.9.0 (2021-11-17)",
+    "header": "feat(python): Add API for intra/inter-layer links (#245) (aa31ab2), closes #244",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#244",
+      "#245",
+      "aa31ab2",
+      "aa31ab22ff8a706f7b1e5bbf75740d35ef5716bf"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add API for intra/inter-layer links (#245) (aa31ab2), closes #244",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-11-17",
+    "footer": "1.9.0 (2021-11-17)",
+    "header": "fix: Incorrect one-level codelength for higher-order input (5a6d1a1), closes #182",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#182",
+      "5a6d1a1",
+      "5a6d1a10657c568f0fddf3afd6729a63e3543081"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Incorrect one-level codelength for higher-order input (5a6d1a1), closes #182",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-11-17",
+    "footer": "1.9.0 (2021-11-17)",
+    "header": "fix: Write \"directed\", not \"1\", in cli output notice (f0a9dc7)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "f0a9dc7",
+      "f0a9dc722f8e8d5b4ca7e9e30d201f129d210df4"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Write \"directed\", not \"1\", in cli output notice (f0a9dc7)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-11-05",
+    "footer": "1.8.0 (2021-11-05)",
+    "header": "feat(js): Add clu and tree javascript parser (f0c738c)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "f0c738c",
+      "f0c738c2ebbd4d1f43d14b75f82767b30dbfb02f"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Add clu and tree javascript parser (f0c738c)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-11-05",
+    "footer": "1.8.0 (2021-11-05)",
+    "header": "feat: Add modular centrality score (31cdd7f)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "31cdd7f",
+      "31cdd7fa7a12add63f5b8818e503fe81b3f48555"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add modular centrality score (31cdd7f)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-10-26",
+    "footer": "1.7.3 (2021-10-26)",
+    "header": "fix(js): Don't run error callback on finish (13a21f0)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "13a21f0",
+      "13a21f00f445e8a378ca287e080085b47df4653f"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Don't run error callback on finish (13a21f0)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-10-26",
+    "footer": "1.7.2 (2021-10-26)",
+    "header": "fix(js): Run error callback on terminate (e83e897)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "e83e897",
+      "e83e8970656e654aee353705a85bd7f97aae3f71"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Run error callback on terminate (e83e897)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-10-04",
+    "footer": "1.7.0 (2021-10-04)",
+    "header": "feat(python): Add multilevel_modules property (0d4cc37)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "0d4cc37",
+      "0d4cc375cebe8477ea2e0073f9e7056411c3091e"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add multilevel_modules property (0d4cc37)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-10-04",
+    "footer": "1.7.0 (2021-10-04)",
+    "header": "feat(python): Add num_levels property (abd4f7f)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "abd4f7f",
+      "abd4f7f8cc272cc20e4996b03a10dd2411a46260"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add num_levels property (abd4f7f)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-10-04",
+    "footer": "1.7.0 (2021-10-04)",
+    "header": "feat(python): Pass dict to add_nodes (e30870f)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "e30870f",
+      "e30870f28366676e105b189980a2c5eb921b9481"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Pass dict to add_nodes (e30870f)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-10-04",
+    "footer": "1.7.0 (2021-10-04)",
+    "header": "feat(python): Pass dict to add_state_nodes (5cd9ba2)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "5cd9ba2",
+      "5cd9ba25db758d2cb1a928c32adfdea21dda87d0"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Pass dict to add_state_nodes (5cd9ba2)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-10-04",
+    "footer": "1.7.0 (2021-10-04)",
+    "header": "feat(python): Pass dict to set_names (0ed79e8)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "0ed79e8",
+      "0ed79e8b08ab1ae410a3fdbb4dd59ddb2ecf149a"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Pass dict to set_names (0ed79e8)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-10-04",
+    "footer": "1.7.0 (2021-10-04)",
+    "header": "feat: Add directed field to json output (7db19f2)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "7db19f2",
+      "7db19f216b3d7f825a7eb90c89e0a0696c3a3e95"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add directed field to json output (7db19f2)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-10-04",
+    "footer": "1.7.0 (2021-10-04)",
+    "header": "feat: Write json multilevel modules and module information (e6796c8)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "e6796c8",
+      "e6796c8d91499c1287278ab818c7e62d7426c303"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Write json multilevel modules and module information (e6796c8)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-10-04",
+    "footer": "1.7.0 (2021-10-04)",
+    "header": "fix(python): Adding a networkx DiGraph should set the directed flag (a60a404)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "a60a404",
+      "a60a404eac88d04a3bb6beb1b130452b28a99d83"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Adding a networkx DiGraph should set the directed flag (a60a404)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-10-04",
+    "footer": "1.7.0 (2021-10-04)",
+    "header": "fix(python): Using directed=False should use undirected flow (be0f6e2)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "be0f6e2",
+      "be0f6e2f9ffc80ee58305709ebc6b801187e21bb"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Using directed=False should use undirected flow (be0f6e2)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-10-04",
+    "footer": "1.7.0 (2021-10-04)",
+    "header": "fix: Metadata codelength works after multiple runs (ec00ccd), closes #167",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#167",
+      "ec00ccd",
+      "ec00ccd7d14bdff54e6757b4cd1fd84e93dd4e58"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Metadata codelength works after multiple runs (ec00ccd), closes #167",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-10-04",
+    "footer": "1.7.0 (2021-10-04)",
+    "header": "fix: Module ids wrong for uneven depth and chosen level > 1 (c3a0c90), closes #221",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#221",
+      "c3a0c90",
+      "c3a0c9025ae82a84f05e929f105b88d1d28f8be1"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Module ids wrong for uneven depth and chosen level > 1 (c3a0c90), closes #221",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-07-08",
+    "footer": "1.6.0 (2021-07-08)",
+    "header": "feat(python): Add get_dataframe (13066b3)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "13066b3",
+      "13066b3300c921dcb18b46be2a633153ecf0ffa8"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add get_dataframe (13066b3)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-07-08",
+    "footer": "1.6.0 (2021-07-08)",
+    "header": "feat(python): Add write method (fdb3ce1)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "fdb3ce1",
+      "fdb3ce13a96c77b46b064fcda5fdcaf0f0a3c753"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add write method (fdb3ce1)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-07-08",
+    "footer": "1.6.0 (2021-07-08)",
+    "header": "feat(python): Add write_state_network and write_pajek (da715a9)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "da715a9",
+      "da715a9ccfc27b6dd2a079bd9f4e3ef6501a95a1"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add write_state_network and write_pajek (da715a9)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-07-08",
+    "footer": "1.6.0 (2021-07-08)",
+    "header": "fix: Intra-module links missing from ftree output (b347e24)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "b347e24",
+      "b347e2491f343f2a541e6a3e4b7ac8837d0ae507"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Intra-module links missing from ftree output (b347e24)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-07-08",
+    "footer": "1.6.0 (2021-07-08)",
+    "header": "fix(js): Add type to files parameter (269b426)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "269b426",
+      "269b426326e7eca02b53dcbddf3ae0925a4b5a23"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Add type to files parameter (269b426)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-07-08",
+    "footer": "1.6.0 (2021-07-08)",
+    "header": "fix(js): Output arguments should not be required to be an array (a292318)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "a292318",
+      "a29231853e4d900e5f99dee962b1f44a20fc4e93"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Output arguments should not be required to be an array (a292318)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-07-08",
+    "footer": "1.6.0 (2021-07-08)",
+    "header": "fix(js): Worker should accept extra files as objects (524a0e7)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "524a0e7",
+      "524a0e7e80c2bef897dab85cd60473a3e06408c9"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Worker should accept extra files as objects (524a0e7)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-07-08",
+    "footer": "1.6.0 (2021-07-08)",
+    "header": "fix(python): get_multilevel_modules should return a dict (f050fb5)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "f050fb5",
+      "f050fb568df4fb678e6c4689bef85cf18a6d93f2"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "get_multilevel_modules should return a dict (f050fb5)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-23",
+    "footer": "1.5.1 (2021-06-23)",
+    "header": "fix(js): Add missing flow network file output (6b8ddb8)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "6b8ddb8",
+      "6b8ddb820bc48eaed27a4e66d2810151b65b8bb9"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Add missing flow network file output (6b8ddb8)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-23",
+    "footer": "1.5.1 (2021-06-23)",
+    "header": "fix(js): Handle json parse exceptions in worker (a8a127b)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "a8a127b",
+      "a8a127b02e81b1bbd2a919edbc7952724b2e8682"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Handle json parse exceptions in worker (a8a127b)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-23",
+    "footer": "1.5.1 (2021-06-23)",
+    "header": "fix(js): Pass arguments as object (13e71a0)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "13e71a0",
+      "13e71a0b1a7465e5f59bb3d05ef1bbdef7b5f65f"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Pass arguments as object (13e71a0)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-23",
+    "footer": "1.5.1 (2021-06-23)",
+    "header": "fix(js): Worker should accept network as object (d7184b8)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "d7184b8",
+      "d7184b840e7aae3b7d59b9b8bb2fa432d8d4c616"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Worker should accept network as object (d7184b8)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-23",
+    "footer": "1.5.1 (2021-06-23)",
+    "header": "fix: Avoid nan values for relative codelength savings (e6a429e)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "e6a429e",
+      "e6a429e6bd463fc405161f6b4e981439979fc5c3"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Avoid nan values for relative codelength savings (e6a429e)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-22",
+    "footer": "1.5.0 (2021-06-22)",
+    "header": "feat(js): Add Typescript types to JS worker (f2fecf4)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "f2fecf4",
+      "f2fecf4898dd0200709def0da11bea1883e70eaa"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Add Typescript types to JS worker (f2fecf4)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-06-22",
+    "footer": "1.5.0 (2021-06-22)",
+    "header": "feat(python): Add get_links, links and flow_links (a4c2611)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "a4c2611",
+      "a4c26112821abc05185442b1eb27fd1bf83fdbc9"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add get_links, links and flow_links (a4c2611)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-06-22",
+    "footer": "1.5.0 (2021-06-22)",
+    "header": "feat: Write tree to CSV file (5d0d36a)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "5d0d36a",
+      "5d0d36a58413c0755f97d93dd00d8f6db7b2b785"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Write tree to CSV file (5d0d36a)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-06-14",
+    "footer": "1.4.4 (2021-06-14)",
+    "header": "fix(python): Fix OpenMP detection (27f9070)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "27f9070",
+      "27f9070d4676aee859f14bbf0ba2e1de6a417636"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Fix OpenMP detection (27f9070)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-14",
+    "footer": "1.4.2 (2021-06-14)",
+    "header": "fix(build): Fix building Python package with OpenMP if available (cfaade5)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "cfaade5",
+      "cfaade5bb699980954fc6d618ef1eb211bb2a63e"
+    ],
+    "revert": null,
+    "scope": "build",
+    "subject": "Fix building Python package with OpenMP if available (cfaade5)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.1 (2021-06-10)",
+    "header": "fix(js): Add newick and json to output from JS worker (549ee84)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "549ee84",
+      "549ee84858860680d2b9ed93e2d79a419c24e7d1"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Add newick and json to output from JS worker (549ee84)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.1 (2021-06-10)",
+    "header": "fix(python): Add missing write_newick and write_json methods (62c2736)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "62c2736",
+      "62c2736dfb048de432093313e19b3d67869d3138"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add missing write_newick and write_json methods (62c2736)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.1 (2021-06-10)",
+    "header": "fix: Change Newick output extention to .nwk (f0e2e8e)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "f0e2e8e",
+      "f0e2e8ef8b6f5da6985c548b2f2b00521177cad8"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Change Newick output extention to .nwk (f0e2e8e)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.0 (2021-06-10)",
+    "header": "feat: Support printing JSON tree (22116d6)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "22116d6",
+      "22116d6a9077909c2e5eb2160feea913022752e8"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Support printing JSON tree (22116d6)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.0 (2021-06-10)",
+    "header": "feat(python): Accept named arguments (5dabf4a)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "5dabf4a",
+      "5dabf4abbaa90512d5a1ffd11c8986f8623ccb13"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Accept named arguments (5dabf4a)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.0 (2021-06-10)",
+    "header": "feat(python): Add 'add_networkx_graph' method to API (4067d40)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "4067d40",
+      "4067d40268c4b2726652b5ef47358ca049c58edd"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add 'add_networkx_graph' method to API (4067d40)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.0 (2021-06-10)",
+    "header": "feat(python): Add effective number of modules (0f9a516)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "0f9a516",
+      "0f9a5169cacde5c9106bb6cf7dfa3b726a1c28d5"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add effective number of modules (0f9a516)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.0 (2021-06-10)",
+    "header": "feat(python): Add shorthand for accessing number of nodes and links (8808045)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "8808045",
+      "88080454e054c51516ee7047975baf480ce1bd42"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add shorthand for accessing number of nodes and links (8808045)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.0 (2021-06-10)",
+    "header": "feat: Add 'flow' to output options for node/edge flow (d74a773)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "d74a773",
+      "d74a773dd33102b85ff444158c958a8048c8cb02"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add 'flow' to output options for node/edge flow (d74a773)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.0 (2021-06-10)",
+    "header": "fix(python): Also add nodes in networkx example (3a88878)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "3a88878",
+      "3a888789cc229521cffdf6da62fd0c239a5607eb"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Also add nodes in networkx example (3a88878)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.0 (2021-06-10)",
+    "header": "fix(python): Fix effective_num_modules (f41827f)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "f41827f",
+      "f41827fde6f30e914e73d8a141992c4363f14adc"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Fix effective_num_modules (f41827f)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.0 (2021-06-10)",
+    "header": "fix(R): Expose base class methods to avoid c stack usage error (47bdec0)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "47bdec0",
+      "47bdec0ab9a3d0e80cd7a77a7629ad9d9b400183"
+    ],
+    "revert": null,
+    "scope": "R",
+    "subject": "Expose base class methods to avoid c stack usage error (47bdec0)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.0 (2021-06-10)",
+    "header": "fix(R): Fix swig build by hiding python specifics (6b8a67e)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "6b8a67e",
+      "6b8a67e6f09a02daad8e85c8b9fcec0f632526e3"
+    ],
+    "revert": null,
+    "scope": "R",
+    "subject": "Fix swig build by hiding python specifics (6b8a67e)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.0 (2021-06-10)",
+    "header": "fix(R): Replace enum class with struct for R (73c702f)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "73c702f",
+      "73c702fd23e7a02ae8ccc3630f5713181cb842a9"
+    ],
+    "revert": null,
+    "scope": "R",
+    "subject": "Replace enum class with struct for R (73c702f)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.0 (2021-06-10)",
+    "header": "fix(R): Update R example and build to Infomap v1 (17e1cc0)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "17e1cc0",
+      "17e1cc00bd789c8798bd0633a39285a4160854a4"
+    ],
+    "revert": null,
+    "scope": "R",
+    "subject": "Update R example and build to Infomap v1 (17e1cc0)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2021-06-10",
+    "footer": "1.4.0 (2021-06-10)",
+    "header": "fix(R): Update swig version in docker build (74c4e86)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "74c4e86",
+      "74c4e86cfdd395ec1b335fc34dd5e0b34d7f6c1e"
+    ],
+    "revert": null,
+    "scope": "R",
+    "subject": "Update swig version in docker build (74c4e86)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-12-03",
+    "footer": "1.3.0 (2020-12-03)",
+    "header": "feat: Add --hide-bipartite-nodes (#156) (f5e673c)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#156",
+      "f5e673c",
+      "f5e673c64efaf5ae825ee6b303e78389b8d594f9"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add --hide-bipartite-nodes (#156) (f5e673c)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-12-03",
+    "footer": "1.3.0 (2020-12-03)",
+    "header": "feat: New optional flow model for bipartite input (91f35fe)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "91f35fe",
+      "91f35fef9b1246b87cde46d8e36ad7a992291a28"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "New optional flow model for bipartite input (91f35fe)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-12-03",
+    "footer": "1.3.0 (2020-12-03)",
+    "header": "feat: Support Newick tree format in output (9749a05)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "9749a05",
+      "9749a0535b9db47826c198b6f98b8fe2510eadc4"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Support Newick tree format in output (9749a05)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-12-03",
+    "footer": "1.3.0 (2020-12-03)",
+    "header": "fix: Continue searching from input tree (2199921)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "2199921",
+      "21999211ed822a8e46a8f1cd158185ce79b3075e"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Continue searching from input tree (2199921)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-12-03",
+    "footer": "1.3.0 (2020-12-03)",
+    "header": "fix: Fine-tune bottom modules in input tree with -F (c187718)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "c187718",
+      "c187718e49618e2dac6c060233c844ff9a40893f"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Fine-tune bottom modules in input tree with -F (c187718)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-12-03",
+    "footer": "1.3.0 (2020-12-03)",
+    "header": "fix: Implement missing multilayer relax by JSD (95141bf), closes #154",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#154",
+      "95141bf",
+      "95141bf89452053a5f8f7bb2afbfc4048f066ee3"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Implement missing multilayer relax by JSD (95141bf), closes #154",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-12-03",
+    "footer": "1.3.0 (2020-12-03)",
+    "header": "fix: Use correct objective in coarse tune for memory and multilevel networks (97db558), closes #174",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#174",
+      "97db558",
+      "97db558f27a81994a09aa6834bff5d8810a93130"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Use correct objective in coarse tune for memory and multilevel networks (97db558), closes #174",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-11-10",
+    "footer": "1.2.1 (2020-11-10)",
+    "header": "fix: --clu-level was not respected in command line usage (b82a0b1), closes #153",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#153",
+      "b82a0b1",
+      "b82a0b1a0582583b4552887650b0a6b92aba14fc"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "--clu-level was not respected in command line usage (b82a0b1), closes #153",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-11-10",
+    "footer": "1.2.1 (2020-11-10)",
+    "header": "fix: Allow ftree cluster data (bfe3601)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "bfe3601",
+      "bfe3601a50675cf353379efdb940b184773fb2b2"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Allow ftree cluster data (bfe3601)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-11-10",
+    "footer": "1.2.1 (2020-11-10)",
+    "header": "fix: Apply weight-threshold also to multilayer nodes (db2d781)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "db2d781",
+      "db2d781c5257932ad5a4e5fe1976498b01985a39"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Apply weight-threshold also to multilayer nodes (db2d781)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-11-10",
+    "footer": "1.2.1 (2020-11-10)",
+    "header": "fix: Remove ClusterReader/BipartiteClusterReader (8e08309), closes #162",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#162",
+      "8e08309",
+      "8e0830915f47bd4460a1b1b4f3794d60919a429a"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Remove ClusterReader/BipartiteClusterReader (8e08309), closes #162",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-11-10",
+    "footer": "1.2.1 (2020-11-10)",
+    "header": "fix(windows): Include algorithm header (4f9ef88), closes #150",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#150",
+      "4f9ef88",
+      "4f9ef88409012ff00457291fc0ad8d0f33063c59"
+    ],
+    "revert": null,
+    "scope": "windows",
+    "subject": "Include algorithm header (4f9ef88), closes #150",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-09-30",
+    "footer": "1.2.0 (2020-09-30)",
+    "header": "feat: Add option to --use-node-weights-as-flow (0d75174)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "0d75174",
+      "0d751745ba565e06f93dfad6feb79ac9c6794e1e"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add option to --use-node-weights-as-flow (0d75174)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-09-30",
+    "footer": "1.2.0 (2020-09-30)",
+    "header": "feat: Show bipartite start id in bipartite output (f6e9233)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "f6e9233",
+      "f6e9233932f39f2dbe72b842fe2ddb259b725e08"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Show bipartite start id in bipartite output (f6e9233)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-09-30",
+    "footer": "1.2.0 (2020-09-30)",
+    "header": "fix: Fix flow calculator for bipartite networks (b725b27)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "b725b27",
+      "b725b27563e84092438839606aba294d7b993de5"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Fix flow calculator for bipartite networks (b725b27)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-09-30",
+    "footer": "1.2.0 (2020-09-30)",
+    "header": "fix(python): Fix bipartite_start_id getter (d326298)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "d326298",
+      "d326298c22570ded7002a8ee9cc361a448d8e4c5"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Fix bipartite_start_id getter (d326298)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-09-13",
+    "footer": "1.1.4 (2020-09-13)",
+    "header": "fix: Clarify that the algorithm searches for multi-level solutions by default (47be4de)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "47be4de",
+      "47be4defa349e3be99851105aff290cd488b9282"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Clarify that the algorithm searches for multi-level solutions by default (47be4de)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-09-13",
+    "footer": "1.1.4 (2020-09-13)",
+    "header": "fix(python): Fix color indices in networkx example (dcf5888)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "dcf5888",
+      "dcf588800faf7f5d1f9be13d0bcc5528a2c2cf18"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Fix color indices in networkx example (dcf5888)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-05-09",
+    "footer": "1.1.3 (2020-05-09)",
+    "header": "fix(python): Correct codelength terms after N > 1 (146cee6)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "146cee6",
+      "146cee6246e55fb9c4a711c1278bdc251b54fced"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Correct codelength terms after N > 1 (146cee6)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-05-09",
+    "footer": "1.1.3 (2020-05-09)",
+    "header": "fix(python): Define module_codelength as L - L_index (fa6eb94)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "fa6eb94",
+      "fa6eb946acb22d808cd286bcfad6d76d3f2d4293"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Define module_codelength as L - L_index (fa6eb94)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-05-09",
+    "footer": "1.1.3 (2020-05-09)",
+    "header": "fix(python): Don't create empty node names if they didn't already exist (#126) (4d1cd56)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#126",
+      "4d1cd56",
+      "4d1cd565e356f5c4ac4e8ce1620ae128a0f9ad4c"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Don't create empty node names if they didn't already exist (#126) (4d1cd56)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-05-09",
+    "footer": "1.1.3 (2020-05-09)",
+    "header": "fix(python): Expose num_non_trivial_top_modules (6b91184)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "6b91184",
+      "6b911842693f46546fdc89beb145394ed74dacdf"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Expose num_non_trivial_top_modules (6b91184)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-04-08",
+    "footer": "1.1.2 (2020-04-08)",
+    "header": "fix(python): Expose node names with get_name and get_names (#125) (b8cb409), closes #52",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#125",
+      "#52",
+      "b8cb409",
+      "b8cb409eec171d63f60634ce3a19cc01bc3a6eef"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Expose node names with get_name and get_names (#125) (b8cb409), closes #52",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-04-08",
+    "footer": "1.1.1 (2020-04-08)",
+    "header": "fix: Remove implied link direction from --skip-adjust-bipartite-flow (05c3eba)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "05c3eba",
+      "05c3eba891521e6833292802c9c9671dee1303f7"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Remove implied link direction from --skip-adjust-bipartite-flow (05c3eba)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-31",
+    "footer": "1.1.0 (2020-03-31)",
+    "header": "feat: Show num levels and modules in file output (0b70cd8)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "0b70cd8",
+      "0b70cd82030693faaf24a318d45b7e929dc61c77"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Show num levels and modules in file output (0b70cd8)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-03-31",
+    "footer": "1.1.0 (2020-03-31)",
+    "header": "feat(python): Expose codelengths for all trials (eab7ae8)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "eab7ae8",
+      "eab7ae861b2d93a9aea640994b53a80f4a52030c"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Expose codelengths for all trials (eab7ae8)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-03-31",
+    "footer": "1.1.0 (2020-03-31)",
+    "header": "fix: Don't use physical names in _states_as_physical.net (5889fb1)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "5889fb1",
+      "5889fb17b13a38b1ce7a3b5ae714810bba1406c2"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Don't use physical names in _states_as_physical.net (5889fb1)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-31",
+    "footer": "1.0.11 (2020-03-31)",
+    "header": "fix: Handle zero weights in intra-layer links (ddc5a3d)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "ddc5a3d",
+      "ddc5a3d827013cc006bdfa4b3518c32aef2ec722"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Handle zero weights in intra-layer links (ddc5a3d)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-17",
+    "footer": "1.0.10 (2020-03-17)",
+    "header": "fix: Handle unassigned nodes after input tree (d337535), closes #119",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#119",
+      "d337535",
+      "d33753500939912035e30db4b4dfaf38beeb3eb1"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Handle unassigned nodes after input tree (d337535), closes #119",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-14",
+    "footer": "1.0.9 (2020-03-14)",
+    "header": "fix(windows): compilation error on std::min (b6c1a41)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "b6c1a41",
+      "b6c1a419ad7f732520723a5df621eaed4bb5d2da"
+    ],
+    "revert": null,
+    "scope": "windows",
+    "subject": "compilation error on std::min (b6c1a41)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-12",
+    "footer": "1.0.8 (2020-03-12)",
+    "header": "fix: Fix reconstruct physically merged state nodes (dc91e1a), closes #118",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#118",
+      "dc91e1a",
+      "dc91e1ad93fe150c58994c9dd2ab3aebefd84ef8"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Fix reconstruct physically merged state nodes (dc91e1a), closes #118",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-12",
+    "footer": "1.0.8 (2020-03-12)",
+    "header": "fix: Remove debug output (#117) (60e7ab3)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#117",
+      "60e7ab3",
+      "60e7ab346f50d3cedff06a6b7a12ef106b296f5a"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Remove debug output (#117) (60e7ab3)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-09",
+    "footer": "1.0.7 (2020-03-09)",
+    "header": "fix: Add header in network and states output (c415a4b)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "c415a4b",
+      "c415a4bf05625eaa2330e6e9e3c9b1e2797895c5"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add header in network and states output (c415a4b)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-09",
+    "footer": "1.0.7 (2020-03-09)",
+    "header": "fix: Use *Edges/*Arcs instead of *Links in pajek output (ff3a98e)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "ff3a98e",
+      "ff3a98e18c119a64b8324018920452b6611b77d2"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Use *Edges/*Arcs instead of *Links in pajek output (ff3a98e)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-09",
+    "footer": "1.0.7 (2020-03-09)",
+    "header": "fix: Use node_id instead of id in clu output (39cd4e4)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "39cd4e4",
+      "39cd4e4d866ee03c1d701946225a2bd76a0a9790"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Use node_id instead of id in clu output (39cd4e4)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-09",
+    "footer": "1.0.7 (2020-03-09)",
+    "header": "fix(js): Fix support for all file io in Infomap.js (ea9d899)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "ea9d899",
+      "ea9d899bdebdd361f0ff90e673471f92bc46cfaa"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Fix support for all file io in Infomap.js (ea9d899)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-03",
+    "footer": "1.0.6 (2020-03-03)",
+    "header": "fix(python): Enable numpy.int64 in link weights (8d91206), closes #107",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#107",
+      "8d91206",
+      "8d9120681f932bd0cfad37cc4740f719f2acb358"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Enable numpy.int64 in link weights (8d91206), closes #107",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-03",
+    "footer": "1.0.6 (2020-03-03)",
+    "header": "fix(python): Print tree by default with python cli (1565cab), closes #106",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#106",
+      "1565cab",
+      "1565cab1f3afec8c555180dd620379557709d3d0"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Print tree by default with python cli (1565cab), closes #106",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-02",
+    "footer": "1.0.5 (2020-03-02)",
+    "header": "fix: Common parameters should not be advanced (#101) (2907c86), closes #100",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#100",
+      "#101",
+      "2907c86",
+      "2907c8605313d60fc7c74e36d7a841b2f96c7b1d"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Common parameters should not be advanced (#101) (2907c86), closes #100",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-02",
+    "footer": "1.0.5 (2020-03-02)",
+    "header": "fix: consistently use 1-based indexing for paths and 0 for indexes (f283818), closes #103",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#103",
+      "f283818",
+      "f2838189771cfc118ee20152d96694b438168ca8"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "consistently use 1-based indexing for paths and 0 for indexes (f283818), closes #103",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-03-02",
+    "footer": "1.0.5 (2020-03-02)",
+    "header": "fix: Fix ftree links since remapping path from 1 (f447b48), closes #102",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#102",
+      "f447b48",
+      "f447b4872cb29b651747c08cd919e837353b4354"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Fix ftree links since remapping path from 1 (f447b48), closes #102",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-02-28",
+    "footer": "1.0.4 (2020-02-28)",
+    "header": "fix(js): Revert attempted worker blob optimization (c521373)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "c521373",
+      "c521373fadaf741a34792ea27cd2efba6813cff9"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Revert attempted worker blob optimization (c521373)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-02-28",
+    "footer": "1.0.3 (2020-02-28)",
+    "header": "fix(js): Handle Infomap exceptions in js (7a641f9), closes #99",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#99",
+      "7a641f9",
+      "7a641f94ddae3df99c2065e77e3a1bc78922e174"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Handle Infomap exceptions in js (7a641f9), closes #99",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-02-28",
+    "footer": "1.0.3 (2020-02-28)",
+    "header": "fix(python): Start module id from 1 in get_[multilevel_]modules (9419798)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "9419798",
+      "94197982597df86ae315dd9520ae24c27f67c552"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Start module id from 1 in get_[multilevel_]modules (9419798)",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-02-28",
+    "footer": "1.0.2 (2020-02-28)",
+    "header": "fix(windows): Fix compilation error on std::min (3b000dc), closes #97",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#97",
+      "3b000dc",
+      "3b000dcea45875e222d69b63ae0c289bcc6efcdc"
+    ],
+    "revert": null,
+    "scope": "windows",
+    "subject": "Fix compilation error on std::min (3b000dc), closes #97",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "fix(python): Fix missing package_meta on pip install (dd24b1d), closes #95",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#95",
+      "dd24b1d",
+      "dd24b1d8fa7aa0c0b276dd611c57ef8a110002b8"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Fix missing package_meta on pip install (dd24b1d), closes #95",
+    "type": "fix"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "note(python): Drop support for python 2",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Drop support for python 2"
+    ],
+    "references": [],
+    "revert": null,
+    "scope": "python",
+    "subject": "Drop support for python 2",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "note(python): Rename physicalId to node_id.",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Rename physicalId to node_id."
+    ],
+    "references": [],
+    "revert": null,
+    "scope": "python",
+    "subject": "Rename physicalId to node_id.",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "note: Output header format has changed",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Output header format has changed"
+    ],
+    "references": [],
+    "revert": null,
+    "scope": null,
+    "subject": "Output header format has changed",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "note: Ftree output format has changed to include enter flow",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Ftree output format has changed to include enter flow"
+    ],
+    "references": [],
+    "revert": null,
+    "scope": null,
+    "subject": "Ftree output format has changed to include enter flow",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "note: Clu output now contains top modules instead of leaf modules",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Clu output now contains top modules instead of leaf modules"
+    ],
+    "references": [],
+    "revert": null,
+    "scope": null,
+    "subject": "Clu output now contains top modules instead of leaf modules",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "note: Tree output is sorted on flow",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Tree output is sorted on flow"
+    ],
+    "references": [],
+    "revert": null,
+    "scope": null,
+    "subject": "Tree output is sorted on flow",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "note: Clu module ids starts from 1 instead of 0",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Clu module ids starts from 1 instead of 0"
+    ],
+    "references": [],
+    "revert": null,
+    "scope": null,
+    "subject": "Clu module ids starts from 1 instead of 0",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "note: Output contains name of the physical node instead of state id",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Output contains name of the physical node instead of state id"
+    ],
+    "references": [],
+    "revert": null,
+    "scope": null,
+    "subject": "Output contains name of the physical node instead of state id",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "note: Full multilayer format require the *multilayer heading",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Full multilayer format require the *multilayer heading"
+    ],
+    "references": [],
+    "revert": null,
+    "scope": null,
+    "subject": "Full multilayer format require the *multilayer heading",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "note: Remove undirdir and outdirdir, use --flow-model. Rename min-improment to --core-loop-codelength-thresh. Remove random-loop-limit. Rename tune-iteration-threshold to --tune-iteration-relative-threshold. Rename skip-replace-to-one-module to --prefer-modular-solution.",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Remove undirdir and outdirdir, use --flow-model. Rename min-improment to --core-loop-codelength-thresh. Remove random-loop-limit. Rename tune-iteration-threshold to --tune-iteration-relative-threshold. Rename skip-replace-to-one-module to --prefer-modular-solution."
+    ],
+    "references": [],
+    "revert": null,
+    "scope": null,
+    "subject": "Remove undirdir and outdirdir, use --flow-model. Rename min-improment to --core-loop-codelength-thresh. Remove random-loop-limit. Rename tune-iteration-threshold to --tune-iteration-relative-threshold. Rename skip-replace-to-one-module to --prefer-modular-solution.",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "note: Removed --print-state-network, use -o states",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Removed --print-state-network, use -o states"
+    ],
+    "references": [],
+    "revert": null,
+    "scope": null,
+    "subject": "Removed --print-state-network, use -o states",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "note: Renamed --set-unidentified-nodes-to-closest-module to",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "Renamed --set-unidentified-nodes-to-closest-module to"
+    ],
+    "references": [],
+    "revert": null,
+    "scope": null,
+    "subject": "Renamed --set-unidentified-nodes-to-closest-module to",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "note: No support for *path input",
+    "mentions": [],
+    "merge": null,
+    "notes": [
+      "No support for *path input"
+    ],
+    "references": [],
+    "revert": null,
+    "scope": null,
+    "subject": "No support for *path input",
+    "type": "breaking"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat(python): Add meta info to infomap package (a2caaf4), closes #63",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#63",
+      "a2caaf4",
+      "a2caaf4ff7f368c237c2752207b097028bacb900"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Add meta info to infomap package (a2caaf4), closes #63",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Add enter flow to ftree output (bd3255e), closes #82",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#82",
+      "bd3255e",
+      "bd3255e61977ce8f1d9e0babb95ec8158710e3a8"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add enter flow to ftree output (bd3255e), closes #82",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Show entropy rate in the beginning (f61692c)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "f61692c",
+      "f61692c60c681d532f7a45b980f5041199b088b5"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Show entropy rate in the beginning (f61692c)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat(python): Improve Python API (#87) (c39cd9f)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#87",
+      "c39cd9f",
+      "c39cd9f2a310a10a30e0de83dab95902e8c6aa91"
+    ],
+    "revert": null,
+    "scope": "python",
+    "subject": "Improve Python API (#87) (c39cd9f)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Add -o/--output option for comma-separated formats (a255a18)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "a255a18",
+      "a255a181f109b51eed3e1cbb82bb5f73f1894dd0"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add -o/--output option for comma-separated formats (a255a18)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Add meta data in output file header (66ccc64)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "66ccc64",
+      "66ccc64fec74a47a92b053642d7ad5fb63b74df2"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add meta data in output file header (66ccc64)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Add option to print parameters in json (3a2509d)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "3a2509d",
+      "3a2509d28dec022d5bdd2c8b8a4a5fd87448edab"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Add option to print parameters in json (3a2509d)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Allow multilayer formats without specifying -i. (08e09f1)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "08e09f1",
+      "08e09f136321dcf917d0d131d57041d32c923e64"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Allow multilayer formats without specifying -i. (08e09f1)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Allow one-sided multilayer relax limit (a116b83), closes #68",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#68",
+      "a116b83",
+      "a116b83bcf1240a17aca12a576fe634fd3db91dd"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Allow one-sided multilayer relax limit (a116b83), closes #68",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Begin module id from 1 instead of 0 in clu output (2bbea5d)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "2bbea5d",
+      "2bbea5d537ef0e68ac167d1f84acbf0888d22fb8"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Begin module id from 1 instead of 0 in clu output (2bbea5d)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Create npm package with Infomap worker, changelog and parameters (44dae36)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "44dae36",
+      "44dae36d65e9dccd2462db330298887318bc2463"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Create npm package with Infomap worker, changelog and parameters (44dae36)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Output name of physical node instead of state id (dda3277)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "dda3277",
+      "dda3277a2f97152a5b5011c94e440f9bb5ee9b9b"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Output name of physical node instead of state id (dda3277)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Remove --skip-complete-dangling-memory-nodes (6909f21)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "6909f21",
+      "6909f21a3ebc6eb84c5bc10f6f43c1839020ba41"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Remove --skip-complete-dangling-memory-nodes (6909f21)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Remove support for *path input (e7be175)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "e7be175",
+      "e7be175378838b294d64390bd6f59cdc6b8a42f1"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Remove support for *path input (e7be175)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Rename --set-unidentified-nodes-to-closest-module (16fdc15)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "16fdc15",
+      "16fdc155d2d1fefbb22af1305f7ae7efcd1f06f4"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Rename --set-unidentified-nodes-to-closest-module (16fdc15)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Simplify command line interface (f537132)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "f537132",
+      "f5371328e63d761ccaf6ee1cdce543ced80fe25c"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Simplify command line interface (f537132)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Sort tree on flow (6e27858), closes #71",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "#71",
+      "6e27858",
+      "6e278584c45367145f57ce6323f6a8a9c2d64ffe"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Sort tree on flow (6e27858), closes #71",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "feat: Write top modules to .clu, not bottom level (1e16a3c)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "1e16a3c",
+      "1e16a3ccdf15ee6155a22d8d0cd4bc6ebfdeb94f"
+    ],
+    "revert": null,
+    "scope": null,
+    "subject": "Write top modules to .clu, not bottom level (1e16a3c)",
+    "type": "feat"
+  },
+  {
+    "body": null,
+    "date": "2020-02-27",
+    "footer": "1.0.1 (2020-02-27)",
+    "header": "fix(js): Add missing this in error handler (7345cdf)",
+    "mentions": [],
+    "merge": null,
+    "notes": [],
+    "references": [
+      "7345cdf",
+      "7345cdff8aa2b362df9d6522960fb992f5634f6e"
+    ],
+    "revert": null,
+    "scope": "js",
+    "subject": "Add missing this in error handler (7345cdf)",
+    "type": "fix"
+  }
+]

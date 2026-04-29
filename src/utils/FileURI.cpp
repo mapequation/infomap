@@ -3,7 +3,7 @@
  Copyright (c) 2013, 2014 Daniel Edler, Anton Holmgren, Martin Rosvall
 
  This file is part of the Infomap software package.
- See file LICENSE_AGPLv3.txt for full license details.
+ See file LICENSE_GPLv3.txt for full license details.
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
@@ -24,10 +24,13 @@ FileURI::FileURI(string filename, bool requireExtension)
     return s;
   };
 
+  if (m_filename.empty())
+    throw std::invalid_argument(getErrorMessage(m_filename, m_requireExtension));
+
   auto name = m_filename;
   auto pos = m_filename.find_last_of('/');
   if (pos != string::npos) {
-    if (pos == m_filename.length()) // File could not end with slash
+    if (pos == m_filename.length() - 1) // File could not end with slash
       throw std::invalid_argument(getErrorMessage(m_filename, m_requireExtension));
     m_directory = m_filename.substr(0, pos + 1); // Include the last slash in the directory
     name = m_filename.substr(pos + 1); // No slash in the name

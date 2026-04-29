@@ -3,7 +3,7 @@
  Copyright (c) 2013, 2014 Daniel Edler, Anton Holmgren, Martin Rosvall
 
  This file is part of the Infomap software package.
- See file LICENSE_AGPLv3.txt for full license details.
+ See file LICENSE_GPLv3.txt for full license details.
  For more information, see <http://www.mapequation.org>
  ******************************************************************************/
 
@@ -106,7 +106,16 @@ public:
   void generateInterlayerLinksFromAggregatedMultilayer();
   void simulateInterLayerLinks();
 
+  /**
+   * Create state node corresponding to this multilayer node if not already exist
+   * @return state node id
+   */
+  unsigned int addMultilayerNode(unsigned int layerId, unsigned int physicalId, double weight = 1.0);
+
+  unsigned int addMultilayerNode(unsigned int stateId, unsigned int layerId, unsigned int physicalId, double weight);
+
   void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight);
+  void addMultilayerLink(unsigned int stateId1, unsigned int layer1, unsigned int n1, unsigned int stateId2, unsigned int layer2, unsigned int n2, double weight);
 
   /**
    * Create an intra-layer link
@@ -190,12 +199,6 @@ private:
    * @throws an error if not both node and layer ids can be extracted.
    */
   void parseMultilayerInterLink(const std::string& line, unsigned int& layer1, unsigned int& n, unsigned int& layer2, double& weight);
-
-  /**
-   * Create state node corresponding to this multilayer node if not already exist
-   * @return state node id
-   */
-  unsigned int addMultilayerNode(unsigned int layerId, unsigned int physicalId, double weight = 1.0);
 
   static double calculateJensenShannonDivergence(bool& intersect, const OutLinkMap& layer1OutLinks, double sumOutLinkWeightLayer1, const OutLinkMap& layer2OutLinks, double sumOutLinkWeightLayer2);
 

@@ -1,0 +1,60 @@
+name: Bug report
+description: Report a reproducible Infomap bug.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Infomap version
+      description: Output from `infomap --version`, package version, or commit SHA.
+    validations:
+      required: true
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: Install method
+      options:
+        - pip
+        - Homebrew
+        - source build
+        - Docker
+        - npm
+        - other
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: Include OS version and architecture when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: command-api
+    attributes:
+      label: Command or API call
+      description: Paste the exact CLI command, Python snippet, or JavaScript call that fails.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: Minimal reproducer
+      description: Provide the smallest input data or code needed to reproduce the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include logs, tracebacks, or output differences.
+    validations:
+      required: true

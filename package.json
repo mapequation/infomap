@@ -1,25 +1,66 @@
 {
   "name": "@mapequation/infomap",
-  "version": "2.7.1",
+  "version": "2.9.2",
   "description": "Infomap network clustering algorithm",
-  "browser": "index.js",
+  "browser": "./index.umd.js",
+  "module": "./index.js",
   "publishConfig": {
     "access": "public"
   },
   "files": [
-    "index.js",
-    "index.d.ts",
-    "arguments.d.ts",
-    "filetypes.d.ts",
-    "network.d.ts",
-    "LICENSE_AGPLv3.txt"
+    "*.js",
+    "*.cjs",
+    "*.d.ts",
+    "*.map",
+    "LICENSE_GPLv3.txt"
   ],
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "./index.cjs",
+  "types": "./index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "require": "./index.cjs",
+      "default": "./index.js"
+    },
+    "./react": {
+      "types": "./react.d.ts",
+      "import": "./react.js",
+      "require": "./react.cjs",
+      "default": "./react.js"
+    },
+    "./arguments": {
+      "types": "./arguments.d.ts",
+      "import": "./arguments.js",
+      "require": "./arguments.cjs",
+      "default": "./arguments.js"
+    },
+    "./filetypes": {
+      "types": "./filetypes.d.ts",
+      "import": "./filetypes.js",
+      "require": "./filetypes.cjs",
+      "default": "./filetypes.js"
+    },
+    "./network": {
+      "types": "./network.d.ts",
+      "import": "./network.js",
+      "require": "./network.cjs",
+      "default": "./network.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
   "scripts": {
-    "watch": "webpack --watch --config interfaces/js/webpack.config.js",
-    "build": "webpack --config interfaces/js/webpack.config.js",
-    "release": "standard-version"
+    "build": "npm run build:package",
+    "build:package": "rollup -c interfaces/js/rollup.config.mjs && tsc -p interfaces/js/tsconfig.build.json",
+    "typecheck": "tsc -p interfaces/js/tsconfig.json --noEmit",
+    "lint": "eslint --config interfaces/js/eslint.config.mjs --max-warnings=0 \"interfaces/js/**/*.{ts,mts,cts}\"",
+    "test:unit": "vitest run --config interfaces/js/vitest.config.ts",
+    "test:browser": "playwright test --config interfaces/js/playwright.config.ts",
+    "test:package": "node interfaces/js/scripts/verify-package.mjs",
+    "format": "prettier --write \"package.json\" \"interfaces/js/**/*.{ts,mts,cts,js,mjs,cjs,json,md,html}\"",
+    "format:check": "prettier --check \"package.json\" \"interfaces/js/**/*.{ts,mts,cts,js,mjs,cjs,json,md,html}\""
   },
   "repository": {
     "type": "git",
@@ -47,36 +88,39 @@
       "name": "Martin Rosvall"
     }
   ],
-  "license": "AGPL-3.0-or-later",
+  "license": "GPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/mapequation/infomap/issues"
   },
   "homepage": "https://www.mapequation.org/infomap",
   "devDependencies": {
-    "arraybuffer-loader": "^1.0.8",
-    "conventional-commits-parser": "^3.2.4",
-    "git-raw-commits": "^2.0.11",
-    "prettier": "^2.5.1",
-    "raw-loader": "^4.0.2",
-    "standard-version": "^9.3.2",
-    "ts-loader": "^9.2.6",
-    "typescript": "^4.5.4",
-    "webpack": "^5.66.0",
-    "webpack-cli": "^4.9.1"
+    "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.58.2",
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "@types/node": "^24.7.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "eslint": "^9.39.1",
+    "globals": "^16.4.0",
+    "prettier": "^3.8.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "rollup": "^4.52.4",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.1",
+    "vitest": "^3.2.4"
   },
-  "standard-version": {
-    "bumpFiles": [
-      "package.json",
-      "package-lock.json",
-      {
-        "filename": "src/version.h",
-        "updater": "utils/update-version-h.js"
-      },
-      {
-        "filename": "CITATION.cff",
-        "updater": "utils/update-citation-cff.js"
-      }
-    ]
+  "peerDependencies": {
+    "react": ">=16.9.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   },
   "python": {
     "url": "https://pypi.org/project/infomap/",
@@ -85,7 +129,6 @@
       "Development Status :: 5 - Production/Stable",
       "Intended Audience :: Science/Research",
       "Topic :: Scientific/Engineering :: Information Analysis",
-      "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
       "Programming Language :: Python :: 3"
     ]
   }

@@ -1,0 +1,189 @@
+name: Nightly Quality
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cpp-correctness:
+    name: C++ correctness ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            cxx: g++
+            cxxflags: ""
+            ldflags: ""
+          - os: macos-15
+            cxx: clang++
+            cxxflags: ""
+            ldflags: ""
+          - os: windows-2025
+            cxx: g++
+            cxxflags: -static
+            ldflags: -static
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Configure macOS OpenMP environment
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          brew install libomp
+          make ci-export-github-env >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Verify toolchain
+        run: |
+          cmake --version
+          ctest --version
+          ${{ matrix.cxx }} --version
+        shell: bash
+
+      - name: Run C++ correctness suite
+        run: make test-native CMAKE_GENERATOR=Ninja CMAKE_CXX_COMPILER=${{ matrix.cxx }}
+        shell: bash
+        env:
+          CXX: ${{ matrix.cxx }}
+          CXXFLAGS: ${{ matrix.cxxflags }} ${{ env.CPPFLAGS }}
+          LDFLAGS: ${{ matrix.ldflags }} ${{ env.LDFLAGS }}
+
+  python-correctness:
+    name: Python correctness ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Python
+        uses: ./.github/actions/setup-python-build
+        with:
+          python-version: "3.14"
+          install-build-tooling: "true"
+
+      - name: Install macOS system dependencies
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          brew install libomp
+          make ci-export-github-env >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Build and install local Python package
+        run: |
+          make build-python
+          make dev-python-install
+        shell: bash
+
+      - name: Run Python nightly correctness suite
+        run: python -m pytest -m "not slow and not perf" test/python
+        shell: bash
+
+  linux-sanitizers:
+    name: Linux sanitizers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install sanitizer toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang lld ninja-build
+        shell: bash
+
+      - name: Configure sanitizer build
+        run: make test-sanitizers CMAKE_GENERATOR=Ninja SANITIZER_CXX=clang++
+        shell: bash
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: print_stacktrace=1
+
+  python-benchmarks:
+    name: Python benchmarks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Python
+        uses: ./.github/actions/setup-python-build
+        with:
+          python-version: "3.14"
+          install-build-tooling: "true"
+
+      - name: Build and install local Python package
+        run: |
+          make build-python
+          make dev-python-install
+        shell: bash
+
+      - name: Run Python benchmarks
+        run: |
+          make bench-python \
+            BENCHMARK_OUTPUT=build/benchmarks/python-benchmarks.json \
+            BENCHMARK_SUMMARY=build/benchmarks/summary.md
+          cat build/benchmarks/summary.md >> "$GITHUB_STEP_SUMMARY"
+        shell: bash
+
+      - name: Upload benchmark artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-benchmarks
+          path: build/benchmarks/python-benchmarks.json
+          retention-days: 14
+
+  native-benchmarks:
+    name: Native benchmarks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Python
+        uses: ./.github/actions/setup-python-build
+        with:
+          python-version: "3.14"
+
+      - name: Run native benchmarks
+        run: |
+          make bench-native \
+            JOBS=1 \
+            NATIVE_BENCHMARK_PROFILE=smoke \
+            NATIVE_BENCHMARK_REPEATS=3 \
+            NATIVE_BENCHMARK_OUTPUT=build/benchmarks/native-benchmarks.json \
+            NATIVE_BENCHMARK_SUMMARY=build/benchmarks/native-summary.md
+          cat build/benchmarks/native-summary.md >> "$GITHUB_STEP_SUMMARY"
+        shell: bash
+
+      - name: Upload native benchmark artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-benchmarks
+          path: build/benchmarks/native-benchmarks.json
+          retention-days: 14
