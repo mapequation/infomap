@@ -320,6 +320,10 @@ std::string Network::parseMultilayerLinks(std::ifstream& file)
   Log() << "  Parsing multilayer links...\n"
         << std::flush;
 
+  if (m_config.regularized) {
+    throw std::runtime_error("Regularized multilayer flow requires *Intra/*Inter input; explicit *Multilayer input is not supported with --regularized.");
+  }
+
   if (m_config.matchableMultilayerIds > 0) {
     Log() << "  Creating matchable state ids using: nodeId << (log2(" << m_config.matchableMultilayerIds << ") + 1) | layerId\n";
   }
