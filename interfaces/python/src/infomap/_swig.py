@@ -240,10 +240,6 @@ class FlowData(object):
 
     def __init__(self, *args):
         _infomap.FlowData_swiginit(self, _infomap.new_FlowData(*args))
-    __swig_destroy__ = _infomap.delete_FlowData
-
-    def init(self, node):
-        return _infomap.FlowData_init(self, node)
 
     def __iadd__(self, other):
         return _infomap.FlowData___iadd__(self, other)
@@ -263,6 +259,7 @@ class FlowData(object):
     	return self.exitFlow
 
 
+    __swig_destroy__ = _infomap.delete_FlowData
 
 # Register FlowData in _infomap:
 _infomap.FlowData_swigregister(FlowData)
@@ -323,6 +320,7 @@ _infomap.PhysData_swigregister(PhysData)
 class LayerTeleFlowData(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
+    layerId = property(_infomap.LayerTeleFlowData_layerId_get, _infomap.LayerTeleFlowData_layerId_set)
     numNodes = property(_infomap.LayerTeleFlowData_numNodes_get, _infomap.LayerTeleFlowData_numNodes_set)
     teleportFlow = property(_infomap.LayerTeleFlowData_teleportFlow_get, _infomap.LayerTeleFlowData_teleportFlow_set)
     teleportWeight = property(_infomap.LayerTeleFlowData_teleportWeight_get, _infomap.LayerTeleFlowData_teleportWeight_set)
@@ -342,29 +340,6 @@ class LayerTeleFlowData(object):
 
 # Register LayerTeleFlowData in _infomap:
 _infomap.LayerTeleFlowData_swigregister(LayerTeleFlowData)
-class MultiFlowData(FlowData):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
-    __repr__ = _swig_repr
-    layerTeleFlowData = property(_infomap.MultiFlowData_layerTeleFlowData_get, _infomap.MultiFlowData_layerTeleFlowData_set)
-
-    def __init__(self, *args):
-        _infomap.MultiFlowData_swiginit(self, _infomap.new_MultiFlowData(*args))
-    __swig_destroy__ = _infomap.delete_MultiFlowData
-
-    def __iadd__(self, other):
-        return _infomap.MultiFlowData___iadd__(self, other)
-
-    def __isub__(self, other):
-        return _infomap.MultiFlowData___isub__(self, other)
-
-    def init(self, node):
-        return _infomap.MultiFlowData_init(self, node)
-
-    def numLayers(self):
-        return _infomap.MultiFlowData_numLayers(self)
-
-# Register MultiFlowData in _infomap:
-_infomap.MultiFlowData_swigregister(MultiFlowData)
 class EdgeData(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
@@ -578,6 +553,7 @@ class InfoNode(object):
     codelength = property(_infomap.InfoNode_codelength_get, _infomap.InfoNode_codelength_set)
     dirty = property(_infomap.InfoNode_dirty_get, _infomap.InfoNode_dirty_set)
     physicalNodes = property(_infomap.InfoNode_physicalNodes_get, _infomap.InfoNode_physicalNodes_set)
+    layerTeleFlowData = property(_infomap.InfoNode_layerTeleFlowData_get, _infomap.InfoNode_layerTeleFlowData_set)
     metaCollection = property(_infomap.InfoNode_metaCollection_get, _infomap.InfoNode_metaCollection_set)
     stateNodes = property(_infomap.InfoNode_stateNodes_get, _infomap.InfoNode_stateNodes_set)
 
@@ -1134,6 +1110,7 @@ class InfomapIterator(object):
     codelength = property(_infomap.InfomapIterator_codelength_get, _infomap.InfomapIterator_codelength_set)
     dirty = property(_infomap.InfomapIterator_dirty_get, _infomap.InfomapIterator_dirty_set)
     physicalNodes = property(_infomap.InfomapIterator_physicalNodes_get, _infomap.InfomapIterator_physicalNodes_set)
+    layerTeleFlowData = property(_infomap.InfomapIterator_layerTeleFlowData_get, _infomap.InfomapIterator_layerTeleFlowData_set)
     metaCollection = property(_infomap.InfomapIterator_metaCollection_get, _infomap.InfomapIterator_metaCollection_set)
     stateNodes = property(_infomap.InfomapIterator_stateNodes_get, _infomap.InfomapIterator_stateNodes_set)
 
@@ -1813,6 +1790,7 @@ class InfomapParentIterator(object):
     codelength = property(_infomap.InfomapParentIterator_codelength_get, _infomap.InfomapParentIterator_codelength_set)
     dirty = property(_infomap.InfomapParentIterator_dirty_get, _infomap.InfomapParentIterator_dirty_set)
     physicalNodes = property(_infomap.InfomapParentIterator_physicalNodes_get, _infomap.InfomapParentIterator_physicalNodes_set)
+    layerTeleFlowData = property(_infomap.InfomapParentIterator_layerTeleFlowData_get, _infomap.InfomapParentIterator_layerTeleFlowData_set)
     metaCollection = property(_infomap.InfomapParentIterator_metaCollection_get, _infomap.InfomapParentIterator_metaCollection_set)
     stateNodes = property(_infomap.InfomapParentIterator_stateNodes_get, _infomap.InfomapParentIterator_stateNodes_set)
 

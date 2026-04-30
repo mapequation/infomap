@@ -3462,109 +3462,107 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 #define SWIGTYPE_p_NodeMap swig_types[16]
 #define SWIGTYPE_p_OutLinkMap swig_types[17]
 #define SWIGTYPE_p_PartitionQueue swig_types[18]
-#define SWIGTYPE_p_StateNetwork__StateNode swig_types[19]
-#define SWIGTYPE_p_Stopwatch swig_types[20]
-#define SWIGTYPE_p_TreeIteratorT_infomap__InfoNode_const_p_t swig_types[21]
-#define SWIGTYPE_p_TreeIteratorT_infomap__InfoNode_p_t swig_types[22]
-#define SWIGTYPE_p_allocator_type swig_types[23]
-#define SWIGTYPE_p_char swig_types[24]
-#define SWIGTYPE_p_child_iterator swig_types[25]
-#define SWIGTYPE_p_child_iterator_wrapper swig_types[26]
-#define SWIGTYPE_p_const_child_iterator swig_types[27]
-#define SWIGTYPE_p_const_child_iterator_wrapper swig_types[28]
-#define SWIGTYPE_p_const_edge_iterator swig_types[29]
-#define SWIGTYPE_p_const_edge_iterator_wrapper swig_types[30]
-#define SWIGTYPE_p_const_infomap_child_iterator swig_types[31]
-#define SWIGTYPE_p_const_infomap_child_iterator_wrapper swig_types[32]
-#define SWIGTYPE_p_const_infomap_iterator_wrapper swig_types[33]
-#define SWIGTYPE_p_const_leaf_module_iterator swig_types[34]
-#define SWIGTYPE_p_const_leaf_node_iterator swig_types[35]
-#define SWIGTYPE_p_const_post_depth_first_iterator swig_types[36]
-#define SWIGTYPE_p_const_tree_iterator swig_types[37]
-#define SWIGTYPE_p_difference_type swig_types[38]
-#define SWIGTYPE_p_edge_iterator swig_types[39]
-#define SWIGTYPE_p_edge_iterator_wrapper swig_types[40]
-#define SWIGTYPE_p_first_type swig_types[41]
-#define SWIGTYPE_p_infomap__Config swig_types[42]
-#define SWIGTYPE_p_infomap__DeltaFlow swig_types[43]
-#define SWIGTYPE_p_infomap__EdgeData swig_types[44]
-#define SWIGTYPE_p_infomap__FlowData swig_types[45]
-#define SWIGTYPE_p_infomap__FlowModel swig_types[46]
-#define SWIGTYPE_p_infomap__InfoEdge swig_types[47]
-#define SWIGTYPE_p_infomap__InfoNode swig_types[48]
-#define SWIGTYPE_p_infomap__InfomapBase swig_types[49]
-#define SWIGTYPE_p_infomap__InfomapConfigT_infomap__InfomapBase_t swig_types[50]
-#define SWIGTYPE_p_infomap__InfomapIterator swig_types[51]
-#define SWIGTYPE_p_infomap__InfomapIteratorPhysical swig_types[52]
-#define SWIGTYPE_p_infomap__InfomapLeafIterator swig_types[53]
-#define SWIGTYPE_p_infomap__InfomapLeafIteratorPhysical swig_types[54]
-#define SWIGTYPE_p_infomap__InfomapLeafModuleIterator swig_types[55]
-#define SWIGTYPE_p_infomap__InfomapModuleIterator swig_types[56]
-#define SWIGTYPE_p_infomap__InfomapParentIterator swig_types[57]
-#define SWIGTYPE_p_infomap__InfomapWrapper swig_types[58]
-#define SWIGTYPE_p_infomap__LayerNode swig_types[59]
-#define SWIGTYPE_p_infomap__LayerTeleFlowData swig_types[60]
-#define SWIGTYPE_p_infomap__MemDeltaFlow swig_types[61]
-#define SWIGTYPE_p_infomap__MultiFlowData swig_types[62]
-#define SWIGTYPE_p_infomap__Network swig_types[63]
-#define SWIGTYPE_p_infomap__PhysData swig_types[64]
-#define SWIGTYPE_p_infomap__StateNetwork swig_types[65]
-#define SWIGTYPE_p_infomap__StateNetwork__PhysNode swig_types[66]
-#define SWIGTYPE_p_infomap__StateNetwork__StateNode swig_types[67]
-#define SWIGTYPE_p_infomap__detail__PartitionQueue swig_types[68]
-#define SWIGTYPE_p_infomap__detail__PerLevelStat swig_types[69]
-#define SWIGTYPE_p_infomap_child_iterator swig_types[70]
-#define SWIGTYPE_p_infomap_child_iterator_wrapper swig_types[71]
-#define SWIGTYPE_p_infomap_iterator_wrapper swig_types[72]
-#define SWIGTYPE_p_key_type swig_types[73]
-#define SWIGTYPE_p_leaf_module_iterator swig_types[74]
-#define SWIGTYPE_p_leaf_node_iterator swig_types[75]
-#define SWIGTYPE_p_mapped_type swig_types[76]
-#define SWIGTYPE_p_p_PyObject swig_types[77]
-#define SWIGTYPE_p_post_depth_first_iterator swig_types[78]
-#define SWIGTYPE_p_second_type swig_types[79]
-#define SWIGTYPE_p_size_t swig_types[80]
-#define SWIGTYPE_p_size_type swig_types[81]
-#define SWIGTYPE_p_std__allocatorT_double_t swig_types[82]
-#define SWIGTYPE_p_std__allocatorT_std__pairT_std__pairT_unsigned_int_unsigned_int_t_const_double_t_t swig_types[83]
-#define SWIGTYPE_p_std__allocatorT_std__pairT_unsigned_int_const_std__string_t_t swig_types[84]
-#define SWIGTYPE_p_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_unsigned_int_t_t_t swig_types[85]
-#define SWIGTYPE_p_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t swig_types[86]
-#define SWIGTYPE_p_std__allocatorT_unsigned_int_t swig_types[87]
-#define SWIGTYPE_p_std__dequeT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t__size_type swig_types[88]
-#define SWIGTYPE_p_std__dequeT_unsigned_int_t swig_types[89]
-#define SWIGTYPE_p_std__invalid_argument swig_types[90]
-#define SWIGTYPE_p_std__lessT_std__pairT_unsigned_int_unsigned_int_t_t swig_types[91]
-#define SWIGTYPE_p_std__lessT_unsigned_int_t swig_types[92]
-#define SWIGTYPE_p_std__mapT_infomap__StateNetwork__StateNode_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t swig_types[93]
-#define SWIGTYPE_p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t swig_types[94]
-#define SWIGTYPE_p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t swig_types[95]
-#define SWIGTYPE_p_std__mapT_unsigned_int_infomap__LayerTeleFlowData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__LayerTeleFlowData_t_t_t swig_types[96]
-#define SWIGTYPE_p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t swig_types[97]
-#define SWIGTYPE_p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t swig_types[98]
-#define SWIGTYPE_p_std__mapT_unsigned_int_std__string_t swig_types[99]
-#define SWIGTYPE_p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t swig_types[100]
-#define SWIGTYPE_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t swig_types[101]
-#define SWIGTYPE_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t swig_types[102]
-#define SWIGTYPE_p_std__ostream swig_types[103]
-#define SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t swig_types[104]
-#define SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_std__string_t__iterator_bool_t swig_types[105]
-#define SWIGTYPE_p_std__pairT_unsigned_int_unsigned_int_t swig_types[106]
-#define SWIGTYPE_p_std__setT_unsigned_int_t swig_types[107]
-#define SWIGTYPE_p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t swig_types[108]
-#define SWIGTYPE_p_std__vectorT_double_t swig_types[109]
-#define SWIGTYPE_p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator swig_types[110]
-#define SWIGTYPE_p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t swig_types[111]
-#define SWIGTYPE_p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t swig_types[112]
-#define SWIGTYPE_p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t swig_types[113]
-#define SWIGTYPE_p_std__vectorT_int_std__allocatorT_int_t_t swig_types[114]
-#define SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t swig_types[115]
-#define SWIGTYPE_p_std__vectorT_unsigned_int_t swig_types[116]
-#define SWIGTYPE_p_swig__SwigPyIterator swig_types[117]
-#define SWIGTYPE_p_tree_iterator swig_types[118]
-#define SWIGTYPE_p_value_type swig_types[119]
-static swig_type_info *swig_types[121];
-static swig_module_info swig_module = {swig_types, 120, 0, 0, 0, 0};
+#define SWIGTYPE_p_Stopwatch swig_types[19]
+#define SWIGTYPE_p_TreeIteratorT_infomap__InfoNode_const_p_t swig_types[20]
+#define SWIGTYPE_p_TreeIteratorT_infomap__InfoNode_p_t swig_types[21]
+#define SWIGTYPE_p_allocator_type swig_types[22]
+#define SWIGTYPE_p_char swig_types[23]
+#define SWIGTYPE_p_child_iterator swig_types[24]
+#define SWIGTYPE_p_child_iterator_wrapper swig_types[25]
+#define SWIGTYPE_p_const_child_iterator swig_types[26]
+#define SWIGTYPE_p_const_child_iterator_wrapper swig_types[27]
+#define SWIGTYPE_p_const_edge_iterator swig_types[28]
+#define SWIGTYPE_p_const_edge_iterator_wrapper swig_types[29]
+#define SWIGTYPE_p_const_infomap_child_iterator swig_types[30]
+#define SWIGTYPE_p_const_infomap_child_iterator_wrapper swig_types[31]
+#define SWIGTYPE_p_const_infomap_iterator_wrapper swig_types[32]
+#define SWIGTYPE_p_const_leaf_module_iterator swig_types[33]
+#define SWIGTYPE_p_const_leaf_node_iterator swig_types[34]
+#define SWIGTYPE_p_const_post_depth_first_iterator swig_types[35]
+#define SWIGTYPE_p_const_tree_iterator swig_types[36]
+#define SWIGTYPE_p_difference_type swig_types[37]
+#define SWIGTYPE_p_edge_iterator swig_types[38]
+#define SWIGTYPE_p_edge_iterator_wrapper swig_types[39]
+#define SWIGTYPE_p_first_type swig_types[40]
+#define SWIGTYPE_p_infomap__Config swig_types[41]
+#define SWIGTYPE_p_infomap__DeltaFlow swig_types[42]
+#define SWIGTYPE_p_infomap__EdgeData swig_types[43]
+#define SWIGTYPE_p_infomap__FlowData swig_types[44]
+#define SWIGTYPE_p_infomap__FlowModel swig_types[45]
+#define SWIGTYPE_p_infomap__InfoEdge swig_types[46]
+#define SWIGTYPE_p_infomap__InfoNode swig_types[47]
+#define SWIGTYPE_p_infomap__InfomapBase swig_types[48]
+#define SWIGTYPE_p_infomap__InfomapConfigT_infomap__InfomapBase_t swig_types[49]
+#define SWIGTYPE_p_infomap__InfomapIterator swig_types[50]
+#define SWIGTYPE_p_infomap__InfomapIteratorPhysical swig_types[51]
+#define SWIGTYPE_p_infomap__InfomapLeafIterator swig_types[52]
+#define SWIGTYPE_p_infomap__InfomapLeafIteratorPhysical swig_types[53]
+#define SWIGTYPE_p_infomap__InfomapLeafModuleIterator swig_types[54]
+#define SWIGTYPE_p_infomap__InfomapModuleIterator swig_types[55]
+#define SWIGTYPE_p_infomap__InfomapParentIterator swig_types[56]
+#define SWIGTYPE_p_infomap__InfomapWrapper swig_types[57]
+#define SWIGTYPE_p_infomap__LayerNode swig_types[58]
+#define SWIGTYPE_p_infomap__LayerTeleFlowData swig_types[59]
+#define SWIGTYPE_p_infomap__MemDeltaFlow swig_types[60]
+#define SWIGTYPE_p_infomap__Network swig_types[61]
+#define SWIGTYPE_p_infomap__PhysData swig_types[62]
+#define SWIGTYPE_p_infomap__StateNetwork swig_types[63]
+#define SWIGTYPE_p_infomap__StateNetwork__PhysNode swig_types[64]
+#define SWIGTYPE_p_infomap__StateNetwork__StateNode swig_types[65]
+#define SWIGTYPE_p_infomap__detail__PartitionQueue swig_types[66]
+#define SWIGTYPE_p_infomap__detail__PerLevelStat swig_types[67]
+#define SWIGTYPE_p_infomap_child_iterator swig_types[68]
+#define SWIGTYPE_p_infomap_child_iterator_wrapper swig_types[69]
+#define SWIGTYPE_p_infomap_iterator_wrapper swig_types[70]
+#define SWIGTYPE_p_key_type swig_types[71]
+#define SWIGTYPE_p_leaf_module_iterator swig_types[72]
+#define SWIGTYPE_p_leaf_node_iterator swig_types[73]
+#define SWIGTYPE_p_mapped_type swig_types[74]
+#define SWIGTYPE_p_p_PyObject swig_types[75]
+#define SWIGTYPE_p_post_depth_first_iterator swig_types[76]
+#define SWIGTYPE_p_second_type swig_types[77]
+#define SWIGTYPE_p_size_t swig_types[78]
+#define SWIGTYPE_p_size_type swig_types[79]
+#define SWIGTYPE_p_std__allocatorT_double_t swig_types[80]
+#define SWIGTYPE_p_std__allocatorT_std__pairT_std__pairT_unsigned_int_unsigned_int_t_const_double_t_t swig_types[81]
+#define SWIGTYPE_p_std__allocatorT_std__pairT_unsigned_int_const_std__string_t_t swig_types[82]
+#define SWIGTYPE_p_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_unsigned_int_t_t_t swig_types[83]
+#define SWIGTYPE_p_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t swig_types[84]
+#define SWIGTYPE_p_std__allocatorT_unsigned_int_t swig_types[85]
+#define SWIGTYPE_p_std__dequeT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t__size_type swig_types[86]
+#define SWIGTYPE_p_std__dequeT_unsigned_int_t swig_types[87]
+#define SWIGTYPE_p_std__invalid_argument swig_types[88]
+#define SWIGTYPE_p_std__lessT_std__pairT_unsigned_int_unsigned_int_t_t swig_types[89]
+#define SWIGTYPE_p_std__lessT_unsigned_int_t swig_types[90]
+#define SWIGTYPE_p_std__mapT_infomap__StateNetwork__StateNode_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t swig_types[91]
+#define SWIGTYPE_p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t swig_types[92]
+#define SWIGTYPE_p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t swig_types[93]
+#define SWIGTYPE_p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t swig_types[94]
+#define SWIGTYPE_p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t swig_types[95]
+#define SWIGTYPE_p_std__mapT_unsigned_int_std__string_t swig_types[96]
+#define SWIGTYPE_p_std__mapT_unsigned_int_std__vectorT_int_std__allocatorT_int_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__vectorT_int_std__allocatorT_int_t_t_t_t_t swig_types[97]
+#define SWIGTYPE_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t swig_types[98]
+#define SWIGTYPE_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t swig_types[99]
+#define SWIGTYPE_p_std__ostream swig_types[100]
+#define SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t__iterator_bool_t swig_types[101]
+#define SWIGTYPE_p_std__pairT_std__mapT_unsigned_int_std__string_t__iterator_bool_t swig_types[102]
+#define SWIGTYPE_p_std__pairT_unsigned_int_unsigned_int_t swig_types[103]
+#define SWIGTYPE_p_std__setT_unsigned_int_t swig_types[104]
+#define SWIGTYPE_p_std__vectorT_ParsedOption_std__allocatorT_ParsedOption_t_t swig_types[105]
+#define SWIGTYPE_p_std__vectorT_double_t swig_types[106]
+#define SWIGTYPE_p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator swig_types[107]
+#define SWIGTYPE_p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t swig_types[108]
+#define SWIGTYPE_p_std__vectorT_infomap__LayerTeleFlowData_std__allocatorT_infomap__LayerTeleFlowData_t_t swig_types[109]
+#define SWIGTYPE_p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t swig_types[110]
+#define SWIGTYPE_p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t swig_types[111]
+#define SWIGTYPE_p_std__vectorT_int_std__allocatorT_int_t_t swig_types[112]
+#define SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t swig_types[113]
+#define SWIGTYPE_p_std__vectorT_unsigned_int_t swig_types[114]
+#define SWIGTYPE_p_swig__SwigPyIterator swig_types[115]
+#define SWIGTYPE_p_tree_iterator swig_types[116]
+#define SWIGTYPE_p_value_type swig_types[117]
+static swig_type_info *swig_types[119];
+static swig_module_info swig_module = {swig_types, 118, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -12966,74 +12964,6 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_delete_FlowData(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::FlowData *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject *swig_obj[1] ;
-  
-  (void)self;
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__FlowData, SWIG_POINTER_DISOWN |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_FlowData" "', argument " "1"" of type '" "infomap::FlowData *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::FlowData * >(argp1);
-  {
-    try {
-      delete arg1;
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_FlowData_init(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::FlowData *arg1 = 0 ;
-  StateNetwork::StateNode *arg2 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  PyObject *swig_obj[2] ;
-  
-  (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "FlowData_init", 2, 2, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__FlowData, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "FlowData_init" "', argument " "1"" of type '" "infomap::FlowData *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::FlowData * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2, SWIGTYPE_p_StateNetwork__StateNode,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "FlowData_init" "', argument " "2"" of type '" "StateNetwork::StateNode const &""'"); 
-  }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "FlowData_init" "', argument " "2"" of type '" "StateNetwork::StateNode const &""'"); 
-  }
-  arg2 = reinterpret_cast< StateNetwork::StateNode * >(argp2);
-  {
-    try {
-      (arg1)->init((StateNetwork::StateNode const &)*arg2);
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
 SWIGINTERN PyObject *_wrap_FlowData___iadd__(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::FlowData *arg1 = 0 ;
@@ -13158,6 +13088,35 @@ fail:
   PyErr_Clear();
   SWIG_Py_INCREF(Py_NotImplemented);
   return Py_NotImplemented;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_FlowData(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::FlowData *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__FlowData, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_FlowData" "', argument " "1"" of type '" "infomap::FlowData *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::FlowData * >(argp1);
+  {
+    try {
+      delete arg1;
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
 }
 
 
@@ -14718,6 +14677,60 @@ SWIGINTERN PyObject *PhysData_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObject 
   return SWIG_Python_InitShadowInstance(args);
 }
 
+SWIGINTERN PyObject *_wrap_LayerTeleFlowData_layerId_set(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::LayerTeleFlowData *arg1 = 0 ;
+  unsigned int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "LayerTeleFlowData_layerId_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__LayerTeleFlowData, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LayerTeleFlowData_layerId_set" "', argument " "1"" of type '" "infomap::LayerTeleFlowData *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::LayerTeleFlowData * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "LayerTeleFlowData_layerId_set" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  if (arg1) (arg1)->layerId = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LayerTeleFlowData_layerId_get(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::LayerTeleFlowData *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  unsigned int result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__LayerTeleFlowData, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LayerTeleFlowData_layerId_get" "', argument " "1"" of type '" "infomap::LayerTeleFlowData *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::LayerTeleFlowData * >(argp1);
+  result = (unsigned int) ((arg1)->layerId);
+  resultobj = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_LayerTeleFlowData_numNodes_set(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::LayerTeleFlowData *arg1 = 0 ;
@@ -14902,29 +14915,89 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_LayerTeleFlowData__SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
-  double arg1 ;
+  unsigned int arg1 ;
   double arg2 ;
-  double val1 ;
+  double arg3 ;
+  unsigned int arg4 ;
+  unsigned int val1 ;
   int ecode1 = 0 ;
   double val2 ;
   int ecode2 = 0 ;
+  double val3 ;
+  int ecode3 = 0 ;
+  unsigned int val4 ;
+  int ecode4 = 0 ;
   infomap::LayerTeleFlowData *result = 0 ;
   
   (void)self;
-  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
-  ecode1 = SWIG_AsVal_double(swig_obj[0], &val1);
+  if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
+  ecode1 = SWIG_AsVal_unsigned_SS_int(swig_obj[0], &val1);
   if (!SWIG_IsOK(ecode1)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_LayerTeleFlowData" "', argument " "1"" of type '" "double""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_LayerTeleFlowData" "', argument " "1"" of type '" "unsigned int""'");
   } 
-  arg1 = static_cast< double >(val1);
+  arg1 = static_cast< unsigned int >(val1);
   ecode2 = SWIG_AsVal_double(swig_obj[1], &val2);
   if (!SWIG_IsOK(ecode2)) {
     SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_LayerTeleFlowData" "', argument " "2"" of type '" "double""'");
   } 
   arg2 = static_cast< double >(val2);
+  ecode3 = SWIG_AsVal_double(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "new_LayerTeleFlowData" "', argument " "3"" of type '" "double""'");
+  } 
+  arg3 = static_cast< double >(val3);
+  ecode4 = SWIG_AsVal_unsigned_SS_int(swig_obj[3], &val4);
+  if (!SWIG_IsOK(ecode4)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "new_LayerTeleFlowData" "', argument " "4"" of type '" "unsigned int""'");
+  } 
+  arg4 = static_cast< unsigned int >(val4);
   {
     try {
-      result = (infomap::LayerTeleFlowData *)new infomap::LayerTeleFlowData(arg1,arg2);
+      result = (infomap::LayerTeleFlowData *)new infomap::LayerTeleFlowData(arg1,arg2,arg3,arg4);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__LayerTeleFlowData, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_LayerTeleFlowData__SWIG_2(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  unsigned int arg1 ;
+  double arg2 ;
+  double arg3 ;
+  unsigned int val1 ;
+  int ecode1 = 0 ;
+  double val2 ;
+  int ecode2 = 0 ;
+  double val3 ;
+  int ecode3 = 0 ;
+  infomap::LayerTeleFlowData *result = 0 ;
+  
+  (void)self;
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  ecode1 = SWIG_AsVal_unsigned_SS_int(swig_obj[0], &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_LayerTeleFlowData" "', argument " "1"" of type '" "unsigned int""'");
+  } 
+  arg1 = static_cast< unsigned int >(val1);
+  ecode2 = SWIG_AsVal_double(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_LayerTeleFlowData" "', argument " "2"" of type '" "double""'");
+  } 
+  arg2 = static_cast< double >(val2);
+  ecode3 = SWIG_AsVal_double(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "new_LayerTeleFlowData" "', argument " "3"" of type '" "double""'");
+  } 
+  arg3 = static_cast< double >(val3);
+  {
+    try {
+      result = (infomap::LayerTeleFlowData *)new infomap::LayerTeleFlowData(arg1,arg2,arg3);
     } catch (const std::exception& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
@@ -14938,19 +15011,19 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_LayerTeleFlowData(PyObject *self, PyObject *args) {
   Py_ssize_t argc;
-  PyObject *argv[3] = {
+  PyObject *argv[5] = {
     0
   };
   
-  if (!(argc = SWIG_Python_UnpackTuple(args, "new_LayerTeleFlowData", 0, 2, argv))) SWIG_fail;
+  if (!(argc = SWIG_Python_UnpackTuple(args, "new_LayerTeleFlowData", 0, 4, argv))) SWIG_fail;
   --argc;
   if (argc == 0) {
     return _wrap_new_LayerTeleFlowData__SWIG_0(self, argc, argv);
   }
-  if (argc == 2) {
+  if (argc == 3) {
     int _v = 0;
     {
-      int res = SWIG_AsVal_double(argv[0], NULL);
+      int res = SWIG_AsVal_unsigned_SS_int(argv[0], NULL);
       _v = SWIG_CheckState(res);
     }
     if (_v) {
@@ -14959,7 +15032,41 @@ SWIGINTERN PyObject *_wrap_new_LayerTeleFlowData(PyObject *self, PyObject *args)
         _v = SWIG_CheckState(res);
       }
       if (_v) {
-        return _wrap_new_LayerTeleFlowData__SWIG_1(self, argc, argv);
+        {
+          int res = SWIG_AsVal_double(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          return _wrap_new_LayerTeleFlowData__SWIG_2(self, argc, argv);
+        }
+      }
+    }
+  }
+  if (argc == 4) {
+    int _v = 0;
+    {
+      int res = SWIG_AsVal_unsigned_SS_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      {
+        int res = SWIG_AsVal_double(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_double(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            int res = SWIG_AsVal_unsigned_SS_int(argv[3], NULL);
+            _v = SWIG_CheckState(res);
+          }
+          if (_v) {
+            return _wrap_new_LayerTeleFlowData__SWIG_1(self, argc, argv);
+          }
+        }
       }
     }
   }
@@ -14968,7 +15075,8 @@ fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'new_LayerTeleFlowData'.\n"
     "  Possible C/C++ prototypes are:\n"
     "    infomap::LayerTeleFlowData::LayerTeleFlowData()\n"
-    "    infomap::LayerTeleFlowData::LayerTeleFlowData(double,double)\n");
+    "    infomap::LayerTeleFlowData::LayerTeleFlowData(unsigned int,double,double,unsigned int)\n"
+    "    infomap::LayerTeleFlowData::LayerTeleFlowData(unsigned int,double,double)\n");
   return 0;
 }
 
@@ -15167,415 +15275,6 @@ SWIGINTERN PyObject *LayerTeleFlowData_swigregister(PyObject *SWIGUNUSEDPARM(sel
 }
 
 SWIGINTERN PyObject *LayerTeleFlowData_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  return SWIG_Python_InitShadowInstance(args);
-}
-
-SWIGINTERN PyObject *_wrap_MultiFlowData_layerTeleFlowData_set(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::MultiFlowData *arg1 = 0 ;
-  std::map< unsigned int,infomap::LayerTeleFlowData,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::LayerTeleFlowData > > > *arg2 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  PyObject *swig_obj[2] ;
-  
-  (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "MultiFlowData_layerTeleFlowData_set", 2, 2, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__MultiFlowData, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "MultiFlowData_layerTeleFlowData_set" "', argument " "1"" of type '" "infomap::MultiFlowData *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::MultiFlowData * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_std__mapT_unsigned_int_infomap__LayerTeleFlowData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__LayerTeleFlowData_t_t_t, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "MultiFlowData_layerTeleFlowData_set" "', argument " "2"" of type '" "std::map< unsigned int,infomap::LayerTeleFlowData,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::LayerTeleFlowData > > > *""'"); 
-  }
-  arg2 = reinterpret_cast< std::map< unsigned int,infomap::LayerTeleFlowData,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::LayerTeleFlowData > > > * >(argp2);
-  if (arg1) (arg1)->layerTeleFlowData = *arg2;
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_MultiFlowData_layerTeleFlowData_get(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::MultiFlowData *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject *swig_obj[1] ;
-  std::map< unsigned int,infomap::LayerTeleFlowData,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::LayerTeleFlowData > > > *result = 0 ;
-  
-  (void)self;
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__MultiFlowData, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "MultiFlowData_layerTeleFlowData_get" "', argument " "1"" of type '" "infomap::MultiFlowData *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::MultiFlowData * >(argp1);
-  result = (std::map< unsigned int,infomap::LayerTeleFlowData,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::LayerTeleFlowData > > > *)& ((arg1)->layerTeleFlowData);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__mapT_unsigned_int_infomap__LayerTeleFlowData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__LayerTeleFlowData_t_t_t, 0 |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_new_MultiFlowData__SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **SWIGUNUSEDPARM(swig_obj)) {
-  PyObject *resultobj = 0;
-  infomap::MultiFlowData *result = 0 ;
-  
-  (void)self;
-  if ((nobjs < 0) || (nobjs > 0)) SWIG_fail;
-  {
-    try {
-      result = (infomap::MultiFlowData *)new infomap::MultiFlowData();
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__MultiFlowData, SWIG_POINTER_NEW |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_new_MultiFlowData__SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
-  PyObject *resultobj = 0;
-  double arg1 ;
-  double val1 ;
-  int ecode1 = 0 ;
-  infomap::MultiFlowData *result = 0 ;
-  
-  (void)self;
-  if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
-  ecode1 = SWIG_AsVal_double(swig_obj[0], &val1);
-  if (!SWIG_IsOK(ecode1)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_MultiFlowData" "', argument " "1"" of type '" "double""'");
-  } 
-  arg1 = static_cast< double >(val1);
-  {
-    try {
-      result = (infomap::MultiFlowData *)new infomap::MultiFlowData(arg1);
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__MultiFlowData, SWIG_POINTER_NEW |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_new_MultiFlowData__SWIG_2(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
-  PyObject *resultobj = 0;
-  infomap::FlowData *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  infomap::MultiFlowData *result = 0 ;
-  
-  (void)self;
-  if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_infomap__FlowData,  0  | 0);
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_MultiFlowData" "', argument " "1"" of type '" "infomap::FlowData const &""'"); 
-  }
-  if (!argp1) {
-    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_MultiFlowData" "', argument " "1"" of type '" "infomap::FlowData const &""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::FlowData * >(argp1);
-  {
-    try {
-      result = (infomap::MultiFlowData *)new infomap::MultiFlowData((infomap::FlowData const &)*arg1);
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__MultiFlowData, SWIG_POINTER_NEW |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_new_MultiFlowData(PyObject *self, PyObject *args) {
-  Py_ssize_t argc;
-  PyObject *argv[2] = {
-    0
-  };
-  
-  if (!(argc = SWIG_Python_UnpackTuple(args, "new_MultiFlowData", 0, 1, argv))) SWIG_fail;
-  --argc;
-  if (argc == 0) {
-    return _wrap_new_MultiFlowData__SWIG_0(self, argc, argv);
-  }
-  if (argc == 1) {
-    int _v = 0;
-    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_infomap__FlowData, SWIG_POINTER_NO_NULL | 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      return _wrap_new_MultiFlowData__SWIG_2(self, argc, argv);
-    }
-  }
-  if (argc == 1) {
-    int _v = 0;
-    {
-      int res = SWIG_AsVal_double(argv[0], NULL);
-      _v = SWIG_CheckState(res);
-    }
-    if (_v) {
-      return _wrap_new_MultiFlowData__SWIG_1(self, argc, argv);
-    }
-  }
-  
-fail:
-  SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'new_MultiFlowData'.\n"
-    "  Possible C/C++ prototypes are:\n"
-    "    infomap::MultiFlowData::MultiFlowData()\n"
-    "    infomap::MultiFlowData::MultiFlowData(double)\n"
-    "    infomap::MultiFlowData::MultiFlowData(infomap::FlowData const &)\n");
-  return 0;
-}
-
-
-SWIGINTERN PyObject *_wrap_delete_MultiFlowData(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::MultiFlowData *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject *swig_obj[1] ;
-  
-  (void)self;
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__MultiFlowData, SWIG_POINTER_DISOWN |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_MultiFlowData" "', argument " "1"" of type '" "infomap::MultiFlowData *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::MultiFlowData * >(argp1);
-  {
-    try {
-      delete arg1;
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_MultiFlowData___iadd__(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::MultiFlowData *arg1 = 0 ;
-  infomap::MultiFlowData *arg2 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  PyObject *swig_obj[2] ;
-  infomap::MultiFlowData *result = 0 ;
-  
-  (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "MultiFlowData___iadd__", 2, 2, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__MultiFlowData, SWIG_POINTER_DISOWN |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "MultiFlowData___iadd__" "', argument " "1"" of type '" "infomap::MultiFlowData *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::MultiFlowData * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2, SWIGTYPE_p_infomap__MultiFlowData,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "MultiFlowData___iadd__" "', argument " "2"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "MultiFlowData___iadd__" "', argument " "2"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  arg2 = reinterpret_cast< infomap::MultiFlowData * >(argp2);
-  {
-    try {
-      result = (infomap::MultiFlowData *) &(arg1)->operator +=((infomap::MultiFlowData const &)*arg2);
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__MultiFlowData, SWIG_POINTER_OWN |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_MultiFlowData___isub__(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::MultiFlowData *arg1 = 0 ;
-  infomap::MultiFlowData *arg2 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  PyObject *swig_obj[2] ;
-  infomap::MultiFlowData *result = 0 ;
-  
-  (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "MultiFlowData___isub__", 2, 2, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__MultiFlowData, SWIG_POINTER_DISOWN |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "MultiFlowData___isub__" "', argument " "1"" of type '" "infomap::MultiFlowData *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::MultiFlowData * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2, SWIGTYPE_p_infomap__MultiFlowData,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "MultiFlowData___isub__" "', argument " "2"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "MultiFlowData___isub__" "', argument " "2"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  arg2 = reinterpret_cast< infomap::MultiFlowData * >(argp2);
-  {
-    try {
-      result = (infomap::MultiFlowData *) &(arg1)->operator -=((infomap::MultiFlowData const &)*arg2);
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__MultiFlowData, SWIG_POINTER_OWN |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_MultiFlowData_init(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::MultiFlowData *arg1 = 0 ;
-  StateNetwork::StateNode *arg2 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  PyObject *swig_obj[2] ;
-  
-  (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "MultiFlowData_init", 2, 2, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__MultiFlowData, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "MultiFlowData_init" "', argument " "1"" of type '" "infomap::MultiFlowData *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::MultiFlowData * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2, SWIGTYPE_p_StateNetwork__StateNode,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "MultiFlowData_init" "', argument " "2"" of type '" "StateNetwork::StateNode const &""'"); 
-  }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "MultiFlowData_init" "', argument " "2"" of type '" "StateNetwork::StateNode const &""'"); 
-  }
-  arg2 = reinterpret_cast< StateNetwork::StateNode * >(argp2);
-  {
-    try {
-      (arg1)->init((StateNetwork::StateNode const &)*arg2);
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_MultiFlowData_numLayers(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  infomap::MultiFlowData *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject *swig_obj[1] ;
-  unsigned int result;
-  
-  (void)self;
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__MultiFlowData, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "MultiFlowData_numLayers" "', argument " "1"" of type '" "infomap::MultiFlowData const *""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::MultiFlowData * >(argp1);
-  {
-    try {
-      result = (unsigned int)((infomap::MultiFlowData const *)arg1)->numLayers();
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap___lshift____SWIG_6(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
-  PyObject *resultobj = 0;
-  std::ostream *arg1 = 0 ;
-  infomap::MultiFlowData *arg2 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  std::ostream *result = 0 ;
-  
-  (void)self;
-  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_std__ostream,  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "__lshift__" "', argument " "1"" of type '" "std::ostream &""'"); 
-  }
-  if (!argp1) {
-    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "__lshift__" "', argument " "1"" of type '" "std::ostream &""'"); 
-  }
-  arg1 = reinterpret_cast< std::ostream * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2, SWIGTYPE_p_infomap__MultiFlowData,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "__lshift__" "', argument " "2"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "__lshift__" "', argument " "2"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  arg2 = reinterpret_cast< infomap::MultiFlowData * >(argp2);
-  {
-    try {
-      result = (std::ostream *) &operator <<(*arg1,(infomap::MultiFlowData const &)*arg2);
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__ostream, 0 |  0 );
-  return resultobj;
-fail:
-  if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_TypeError)) {
-    return NULL;
-  }
-  PyErr_Clear();
-  SWIG_Py_INCREF(Py_NotImplemented);
-  return Py_NotImplemented;
-}
-
-
-SWIGINTERN PyObject *MultiFlowData_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *obj = NULL;
-  if (!SWIG_Python_UnpackTuple(args, "swigregister", 1, 1, &obj)) return NULL;
-  SWIG_TypeNewClientData(SWIGTYPE_p_infomap__MultiFlowData, SWIG_NewClientData(obj));
-  return SWIG_Py_Void();
-}
-
-SWIGINTERN PyObject *MultiFlowData_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   return SWIG_Python_InitShadowInstance(args);
 }
 
@@ -15919,7 +15618,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap___lshift____SWIG_7(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap___lshift____SWIG_6(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::ostream *arg1 = 0 ;
   infomap::InfoEdge *arg2 = 0 ;
@@ -19181,7 +18880,7 @@ SWIGINTERN PyObject *vector_uint_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObje
 SWIGINTERN PyObject *_wrap_InfoNode_data_set(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::InfoNode *arg1 = 0 ;
-  infomap::MultiFlowData *arg2 = 0 ;
+  infomap::FlowData *arg2 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -19195,11 +18894,11 @@ SWIGINTERN PyObject *_wrap_InfoNode_data_set(PyObject *self, PyObject *args) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfoNode_data_set" "', argument " "1"" of type '" "infomap::InfoNode *""'"); 
   }
   arg1 = reinterpret_cast< infomap::InfoNode * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_infomap__MultiFlowData, 0 |  0 );
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_infomap__FlowData, 0 |  0 );
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfoNode_data_set" "', argument " "2"" of type '" "infomap::MultiFlowData *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfoNode_data_set" "', argument " "2"" of type '" "infomap::FlowData *""'"); 
   }
-  arg2 = reinterpret_cast< infomap::MultiFlowData * >(argp2);
+  arg2 = reinterpret_cast< infomap::FlowData * >(argp2);
   if (arg1) (arg1)->data = *arg2;
   resultobj = SWIG_Py_Void();
   return resultobj;
@@ -19214,7 +18913,7 @@ SWIGINTERN PyObject *_wrap_InfoNode_data_get(PyObject *self, PyObject *args) {
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject *swig_obj[1] ;
-  infomap::MultiFlowData *result = 0 ;
+  infomap::FlowData *result = 0 ;
   
   (void)self;
   if (!args) SWIG_fail;
@@ -19224,8 +18923,8 @@ SWIGINTERN PyObject *_wrap_InfoNode_data_get(PyObject *self, PyObject *args) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfoNode_data_get" "', argument " "1"" of type '" "infomap::InfoNode *""'"); 
   }
   arg1 = reinterpret_cast< infomap::InfoNode * >(argp1);
-  result = (infomap::MultiFlowData *)& ((arg1)->data);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__MultiFlowData, 0 |  0 );
+  result = (infomap::FlowData *)& ((arg1)->data);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__FlowData, 0 |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -20096,6 +19795,60 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_InfoNode_layerTeleFlowData_set(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfoNode *arg1 = 0 ;
+  std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "InfoNode_layerTeleFlowData_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfoNode, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfoNode_layerTeleFlowData_set" "', argument " "1"" of type '" "infomap::InfoNode *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfoNode * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_std__vectorT_infomap__LayerTeleFlowData_std__allocatorT_infomap__LayerTeleFlowData_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfoNode_layerTeleFlowData_set" "', argument " "2"" of type '" "std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > *""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > * >(argp2);
+  if (arg1) (arg1)->layerTeleFlowData = *arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfoNode_layerTeleFlowData_get(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfoNode *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > *result = 0 ;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfoNode, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfoNode_layerTeleFlowData_get" "', argument " "1"" of type '" "infomap::InfoNode *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfoNode * >(argp1);
+  result = (std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > *)& ((arg1)->layerTeleFlowData);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_infomap__LayerTeleFlowData_std__allocatorT_infomap__LayerTeleFlowData_t_t, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_InfoNode_metaCollection_set(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::InfoNode *arg1 = 0 ;
@@ -20214,178 +19967,6 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_InfoNode__SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
-  infomap::MultiFlowData *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  infomap::InfoNode *result = 0 ;
-  
-  (void)self;
-  if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_infomap__MultiFlowData,  0  | 0);
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  if (!argp1) {
-    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::MultiFlowData * >(argp1);
-  {
-    try {
-      result = (infomap::InfoNode *)new infomap::InfoNode((infomap::MultiFlowData const &)*arg1);
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__InfoNode, SWIG_POINTER_NEW |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_new_InfoNode__SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
-  PyObject *resultobj = 0;
-  infomap::MultiFlowData *arg1 = 0 ;
-  unsigned int arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  unsigned int val2 ;
-  int ecode2 = 0 ;
-  infomap::InfoNode *result = 0 ;
-  
-  (void)self;
-  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_infomap__MultiFlowData,  0  | 0);
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  if (!argp1) {
-    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::MultiFlowData * >(argp1);
-  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_InfoNode" "', argument " "2"" of type '" "unsigned int""'");
-  } 
-  arg2 = static_cast< unsigned int >(val2);
-  {
-    try {
-      result = (infomap::InfoNode *)new infomap::InfoNode((infomap::MultiFlowData const &)*arg1,arg2);
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__InfoNode, SWIG_POINTER_NEW |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_new_InfoNode__SWIG_2(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
-  PyObject *resultobj = 0;
-  infomap::MultiFlowData *arg1 = 0 ;
-  unsigned int arg2 ;
-  unsigned int arg3 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  unsigned int val2 ;
-  int ecode2 = 0 ;
-  unsigned int val3 ;
-  int ecode3 = 0 ;
-  infomap::InfoNode *result = 0 ;
-  
-  (void)self;
-  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_infomap__MultiFlowData,  0  | 0);
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  if (!argp1) {
-    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::MultiFlowData * >(argp1);
-  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_InfoNode" "', argument " "2"" of type '" "unsigned int""'");
-  } 
-  arg2 = static_cast< unsigned int >(val2);
-  ecode3 = SWIG_AsVal_unsigned_SS_int(swig_obj[2], &val3);
-  if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "new_InfoNode" "', argument " "3"" of type '" "unsigned int""'");
-  } 
-  arg3 = static_cast< unsigned int >(val3);
-  {
-    try {
-      result = (infomap::InfoNode *)new infomap::InfoNode((infomap::MultiFlowData const &)*arg1,arg2,arg3);
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__InfoNode, SWIG_POINTER_NEW |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_new_InfoNode__SWIG_3(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
-  PyObject *resultobj = 0;
-  infomap::MultiFlowData *arg1 = 0 ;
-  unsigned int arg2 ;
-  unsigned int arg3 ;
-  unsigned int arg4 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  unsigned int val2 ;
-  int ecode2 = 0 ;
-  unsigned int val3 ;
-  int ecode3 = 0 ;
-  unsigned int val4 ;
-  int ecode4 = 0 ;
-  infomap::InfoNode *result = 0 ;
-  
-  (void)self;
-  if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_infomap__MultiFlowData,  0  | 0);
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  if (!argp1) {
-    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::MultiFlowData const &""'"); 
-  }
-  arg1 = reinterpret_cast< infomap::MultiFlowData * >(argp1);
-  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_InfoNode" "', argument " "2"" of type '" "unsigned int""'");
-  } 
-  arg2 = static_cast< unsigned int >(val2);
-  ecode3 = SWIG_AsVal_unsigned_SS_int(swig_obj[2], &val3);
-  if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "new_InfoNode" "', argument " "3"" of type '" "unsigned int""'");
-  } 
-  arg3 = static_cast< unsigned int >(val3);
-  ecode4 = SWIG_AsVal_unsigned_SS_int(swig_obj[3], &val4);
-  if (!SWIG_IsOK(ecode4)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "new_InfoNode" "', argument " "4"" of type '" "unsigned int""'");
-  } 
-  arg4 = static_cast< unsigned int >(val4);
-  {
-    try {
-      result = (infomap::InfoNode *)new infomap::InfoNode((infomap::MultiFlowData const &)*arg1,arg2,arg3,arg4);
-    } catch (const std::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__InfoNode, SWIG_POINTER_NEW |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_new_InfoNode__SWIG_4(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
-  PyObject *resultobj = 0;
   infomap::FlowData *arg1 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -20415,7 +19996,148 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_new_InfoNode__SWIG_5(PyObject *self, Py_ssize_t nobjs, PyObject **SWIGUNUSEDPARM(swig_obj)) {
+SWIGINTERN PyObject *_wrap_new_InfoNode__SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  infomap::FlowData *arg1 = 0 ;
+  unsigned int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  infomap::InfoNode *result = 0 ;
+  
+  (void)self;
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_infomap__FlowData,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::FlowData const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::FlowData const &""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::FlowData * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_InfoNode" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  {
+    try {
+      result = (infomap::InfoNode *)new infomap::InfoNode((infomap::FlowData const &)*arg1,arg2);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__InfoNode, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_InfoNode__SWIG_2(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  infomap::FlowData *arg1 = 0 ;
+  unsigned int arg2 ;
+  unsigned int arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  unsigned int val3 ;
+  int ecode3 = 0 ;
+  infomap::InfoNode *result = 0 ;
+  
+  (void)self;
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_infomap__FlowData,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::FlowData const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::FlowData const &""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::FlowData * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_InfoNode" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  ecode3 = SWIG_AsVal_unsigned_SS_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "new_InfoNode" "', argument " "3"" of type '" "unsigned int""'");
+  } 
+  arg3 = static_cast< unsigned int >(val3);
+  {
+    try {
+      result = (infomap::InfoNode *)new infomap::InfoNode((infomap::FlowData const &)*arg1,arg2,arg3);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__InfoNode, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_InfoNode__SWIG_3(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  infomap::FlowData *arg1 = 0 ;
+  unsigned int arg2 ;
+  unsigned int arg3 ;
+  unsigned int arg4 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  unsigned int val3 ;
+  int ecode3 = 0 ;
+  unsigned int val4 ;
+  int ecode4 = 0 ;
+  infomap::InfoNode *result = 0 ;
+  
+  (void)self;
+  if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_infomap__FlowData,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::FlowData const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_InfoNode" "', argument " "1"" of type '" "infomap::FlowData const &""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::FlowData * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_InfoNode" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  ecode3 = SWIG_AsVal_unsigned_SS_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "new_InfoNode" "', argument " "3"" of type '" "unsigned int""'");
+  } 
+  arg3 = static_cast< unsigned int >(val3);
+  ecode4 = SWIG_AsVal_unsigned_SS_int(swig_obj[3], &val4);
+  if (!SWIG_IsOK(ecode4)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "new_InfoNode" "', argument " "4"" of type '" "unsigned int""'");
+  } 
+  arg4 = static_cast< unsigned int >(val4);
+  {
+    try {
+      result = (infomap::InfoNode *)new infomap::InfoNode((infomap::FlowData const &)*arg1,arg2,arg3,arg4);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__InfoNode, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_InfoNode__SWIG_4(PyObject *self, Py_ssize_t nobjs, PyObject **SWIGUNUSEDPARM(swig_obj)) {
   PyObject *resultobj = 0;
   infomap::InfoNode *result = 0 ;
   
@@ -20435,7 +20157,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_new_InfoNode__SWIG_6(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_new_InfoNode__SWIG_5(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   infomap::InfoNode *arg1 = 0 ;
   void *argp1 = 0 ;
@@ -20475,11 +20197,11 @@ SWIGINTERN PyObject *_wrap_new_InfoNode(PyObject *self, PyObject *args) {
   if (!(argc = SWIG_Python_UnpackTuple(args, "new_InfoNode", 0, 4, argv))) SWIG_fail;
   --argc;
   if (argc == 0) {
-    return _wrap_new_InfoNode__SWIG_5(self, argc, argv);
+    return _wrap_new_InfoNode__SWIG_4(self, argc, argv);
   }
   if (argc == 1) {
     int _v = 0;
-    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_infomap__MultiFlowData, SWIG_POINTER_NO_NULL | 0);
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_infomap__FlowData, SWIG_POINTER_NO_NULL | 0);
     _v = SWIG_CheckState(res);
     if (_v) {
       return _wrap_new_InfoNode__SWIG_0(self, argc, argv);
@@ -20487,23 +20209,15 @@ SWIGINTERN PyObject *_wrap_new_InfoNode(PyObject *self, PyObject *args) {
   }
   if (argc == 1) {
     int _v = 0;
-    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_infomap__FlowData, SWIG_POINTER_NO_NULL | 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      return _wrap_new_InfoNode__SWIG_4(self, argc, argv);
-    }
-  }
-  if (argc == 1) {
-    int _v = 0;
     int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_infomap__InfoNode, SWIG_POINTER_NO_NULL | 0);
     _v = SWIG_CheckState(res);
     if (_v) {
-      return _wrap_new_InfoNode__SWIG_6(self, argc, argv);
+      return _wrap_new_InfoNode__SWIG_5(self, argc, argv);
     }
   }
   if (argc == 2) {
     int _v = 0;
-    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_infomap__MultiFlowData, SWIG_POINTER_NO_NULL | 0);
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_infomap__FlowData, SWIG_POINTER_NO_NULL | 0);
     _v = SWIG_CheckState(res);
     if (_v) {
       {
@@ -20517,7 +20231,7 @@ SWIGINTERN PyObject *_wrap_new_InfoNode(PyObject *self, PyObject *args) {
   }
   if (argc == 3) {
     int _v = 0;
-    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_infomap__MultiFlowData, SWIG_POINTER_NO_NULL | 0);
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_infomap__FlowData, SWIG_POINTER_NO_NULL | 0);
     _v = SWIG_CheckState(res);
     if (_v) {
       {
@@ -20537,7 +20251,7 @@ SWIGINTERN PyObject *_wrap_new_InfoNode(PyObject *self, PyObject *args) {
   }
   if (argc == 4) {
     int _v = 0;
-    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_infomap__MultiFlowData, SWIG_POINTER_NO_NULL | 0);
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_infomap__FlowData, SWIG_POINTER_NO_NULL | 0);
     _v = SWIG_CheckState(res);
     if (_v) {
       {
@@ -20565,11 +20279,10 @@ SWIGINTERN PyObject *_wrap_new_InfoNode(PyObject *self, PyObject *args) {
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'new_InfoNode'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    infomap::InfoNode::InfoNode(infomap::MultiFlowData const &)\n"
-    "    infomap::InfoNode::InfoNode(infomap::MultiFlowData const &,unsigned int)\n"
-    "    infomap::InfoNode::InfoNode(infomap::MultiFlowData const &,unsigned int,unsigned int)\n"
-    "    infomap::InfoNode::InfoNode(infomap::MultiFlowData const &,unsigned int,unsigned int,unsigned int)\n"
     "    infomap::InfoNode::InfoNode(infomap::FlowData const &)\n"
+    "    infomap::InfoNode::InfoNode(infomap::FlowData const &,unsigned int)\n"
+    "    infomap::InfoNode::InfoNode(infomap::FlowData const &,unsigned int,unsigned int)\n"
+    "    infomap::InfoNode::InfoNode(infomap::FlowData const &,unsigned int,unsigned int,unsigned int)\n"
     "    infomap::InfoNode::InfoNode()\n"
     "    infomap::InfoNode::InfoNode(infomap::InfoNode const &)\n");
   return 0;
@@ -22898,7 +22611,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap___lshift____SWIG_8(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap___lshift____SWIG_7(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::ostream *arg1 = 0 ;
   infomap::InfoNode *arg2 = 0 ;
@@ -22972,10 +22685,10 @@ SWIGINTERN PyObject *_wrap___lshift__(PyObject *self, PyObject *args) {
     int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_std__ostream, SWIG_POINTER_NO_NULL);
     _v = SWIG_CheckState(res);
     if (_v) {
-      int res = SWIG_ConvertPtr(argv[1], 0, SWIGTYPE_p_infomap__MultiFlowData, SWIG_POINTER_NO_NULL | 0);
+      int res = SWIG_ConvertPtr(argv[1], 0, SWIGTYPE_p_infomap__FlowData, SWIG_POINTER_NO_NULL | 0);
       _v = SWIG_CheckState(res);
       if (_v) {
-        return _wrap___lshift____SWIG_6(self, argc, argv);
+        return _wrap___lshift____SWIG_1(self, argc, argv);
       }
     }
   }
@@ -23037,23 +22750,10 @@ SWIGINTERN PyObject *_wrap___lshift__(PyObject *self, PyObject *args) {
     int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_std__ostream, SWIG_POINTER_NO_NULL);
     _v = SWIG_CheckState(res);
     if (_v) {
-      int res = SWIG_ConvertPtr(argv[1], 0, SWIGTYPE_p_infomap__FlowData, SWIG_POINTER_NO_NULL | 0);
-      _v = SWIG_CheckState(res);
-      if (_v) {
-        return _wrap___lshift____SWIG_1(self, argc, argv);
-      }
-    }
-  }
-  if (argc == 2) {
-    int _v = 0;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_std__ostream, SWIG_POINTER_NO_NULL);
-    _v = SWIG_CheckState(res);
-    if (_v) {
       int res = SWIG_ConvertPtr(argv[1], 0, SWIGTYPE_p_infomap__InfoEdge, SWIG_POINTER_NO_NULL | 0);
       _v = SWIG_CheckState(res);
       if (_v) {
-        return _wrap___lshift____SWIG_7(self, argc, argv);
+        return _wrap___lshift____SWIG_6(self, argc, argv);
       }
     }
   }
@@ -23066,7 +22766,7 @@ SWIGINTERN PyObject *_wrap___lshift__(PyObject *self, PyObject *args) {
       int res = SWIG_ConvertPtr(argv[1], 0, SWIGTYPE_p_infomap__InfoNode, SWIG_POINTER_NO_NULL | 0);
       _v = SWIG_CheckState(res);
       if (_v) {
-        return _wrap___lshift____SWIG_8(self, argc, argv);
+        return _wrap___lshift____SWIG_7(self, argc, argv);
       }
     }
   }
@@ -26827,7 +26527,7 @@ fail:
 SWIGINTERN PyObject *_wrap_InfomapIterator_data_set(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::InfomapIterator *arg1 = 0 ;
-  infomap::MultiFlowData *arg2 = 0 ;
+  infomap::FlowData *arg2 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -26841,11 +26541,11 @@ SWIGINTERN PyObject *_wrap_InfomapIterator_data_set(PyObject *self, PyObject *ar
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapIterator_data_set" "', argument " "1"" of type '" "infomap::InfomapIterator *""'"); 
   }
   arg1 = reinterpret_cast< infomap::InfomapIterator * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_infomap__MultiFlowData, 0 |  0 );
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_infomap__FlowData, 0 |  0 );
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfomapIterator_data_set" "', argument " "2"" of type '" "infomap::MultiFlowData *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfomapIterator_data_set" "', argument " "2"" of type '" "infomap::FlowData *""'"); 
   }
-  arg2 = reinterpret_cast< infomap::MultiFlowData * >(argp2);
+  arg2 = reinterpret_cast< infomap::FlowData * >(argp2);
   if (arg1) (*arg1)->data = *arg2;
   resultobj = SWIG_Py_Void();
   return resultobj;
@@ -26860,7 +26560,7 @@ SWIGINTERN PyObject *_wrap_InfomapIterator_data_get(PyObject *self, PyObject *ar
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject *swig_obj[1] ;
-  infomap::MultiFlowData *result = 0 ;
+  infomap::FlowData *result = 0 ;
   
   (void)self;
   if (!args) SWIG_fail;
@@ -26870,8 +26570,8 @@ SWIGINTERN PyObject *_wrap_InfomapIterator_data_get(PyObject *self, PyObject *ar
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapIterator_data_get" "', argument " "1"" of type '" "infomap::InfomapIterator *""'"); 
   }
   arg1 = reinterpret_cast< infomap::InfomapIterator * >(argp1);
-  result = (infomap::MultiFlowData *)& ((*(infomap::InfomapIterator const *)arg1)->data);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__MultiFlowData, 0 |  0 );
+  result = (infomap::FlowData *)& ((*(infomap::InfomapIterator const *)arg1)->data);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__FlowData, 0 |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -27736,6 +27436,60 @@ SWIGINTERN PyObject *_wrap_InfomapIterator_physicalNodes_get(PyObject *self, PyO
   arg1 = reinterpret_cast< infomap::InfomapIterator * >(argp1);
   result = (std::vector< infomap::PhysData,std::allocator< infomap::PhysData > > *)& ((*(infomap::InfomapIterator const *)arg1)->physicalNodes);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfomapIterator_layerTeleFlowData_set(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapIterator *arg1 = 0 ;
+  std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "InfomapIterator_layerTeleFlowData_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapIterator, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapIterator_layerTeleFlowData_set" "', argument " "1"" of type '" "infomap::InfomapIterator *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapIterator * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_std__vectorT_infomap__LayerTeleFlowData_std__allocatorT_infomap__LayerTeleFlowData_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfomapIterator_layerTeleFlowData_set" "', argument " "2"" of type '" "std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > *""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > * >(argp2);
+  if (arg1) (*arg1)->layerTeleFlowData = *arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfomapIterator_layerTeleFlowData_get(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapIterator *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > *result = 0 ;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapIterator, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapIterator_layerTeleFlowData_get" "', argument " "1"" of type '" "infomap::InfomapIterator *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapIterator * >(argp1);
+  result = (std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > *)& ((*(infomap::InfomapIterator const *)arg1)->layerTeleFlowData);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_infomap__LayerTeleFlowData_std__allocatorT_infomap__LayerTeleFlowData_t_t, 0 |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -33971,7 +33725,7 @@ fail:
 SWIGINTERN PyObject *_wrap_InfomapParentIterator_data_set(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::InfomapParentIterator *arg1 = 0 ;
-  infomap::MultiFlowData *arg2 = 0 ;
+  infomap::FlowData *arg2 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -33985,11 +33739,11 @@ SWIGINTERN PyObject *_wrap_InfomapParentIterator_data_set(PyObject *self, PyObje
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapParentIterator_data_set" "', argument " "1"" of type '" "infomap::InfomapParentIterator *""'"); 
   }
   arg1 = reinterpret_cast< infomap::InfomapParentIterator * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_infomap__MultiFlowData, 0 |  0 );
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_infomap__FlowData, 0 |  0 );
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfomapParentIterator_data_set" "', argument " "2"" of type '" "infomap::MultiFlowData *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfomapParentIterator_data_set" "', argument " "2"" of type '" "infomap::FlowData *""'"); 
   }
-  arg2 = reinterpret_cast< infomap::MultiFlowData * >(argp2);
+  arg2 = reinterpret_cast< infomap::FlowData * >(argp2);
   if (arg1) (*arg1)->data = *arg2;
   resultobj = SWIG_Py_Void();
   return resultobj;
@@ -34004,7 +33758,7 @@ SWIGINTERN PyObject *_wrap_InfomapParentIterator_data_get(PyObject *self, PyObje
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject *swig_obj[1] ;
-  infomap::MultiFlowData *result = 0 ;
+  infomap::FlowData *result = 0 ;
   
   (void)self;
   if (!args) SWIG_fail;
@@ -34014,8 +33768,8 @@ SWIGINTERN PyObject *_wrap_InfomapParentIterator_data_get(PyObject *self, PyObje
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapParentIterator_data_get" "', argument " "1"" of type '" "infomap::InfomapParentIterator *""'"); 
   }
   arg1 = reinterpret_cast< infomap::InfomapParentIterator * >(argp1);
-  result = (infomap::MultiFlowData *)& ((*(infomap::InfomapParentIterator const *)arg1)->data);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__MultiFlowData, 0 |  0 );
+  result = (infomap::FlowData *)& ((*(infomap::InfomapParentIterator const *)arg1)->data);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__FlowData, 0 |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -34880,6 +34634,60 @@ SWIGINTERN PyObject *_wrap_InfomapParentIterator_physicalNodes_get(PyObject *sel
   arg1 = reinterpret_cast< infomap::InfomapParentIterator * >(argp1);
   result = (std::vector< infomap::PhysData,std::allocator< infomap::PhysData > > *)& ((*(infomap::InfomapParentIterator const *)arg1)->physicalNodes);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfomapParentIterator_layerTeleFlowData_set(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapParentIterator *arg1 = 0 ;
+  std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "InfomapParentIterator_layerTeleFlowData_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapParentIterator, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapParentIterator_layerTeleFlowData_set" "', argument " "1"" of type '" "infomap::InfomapParentIterator *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapParentIterator * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_std__vectorT_infomap__LayerTeleFlowData_std__allocatorT_infomap__LayerTeleFlowData_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfomapParentIterator_layerTeleFlowData_set" "', argument " "2"" of type '" "std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > *""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > * >(argp2);
+  if (arg1) (*arg1)->layerTeleFlowData = *arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfomapParentIterator_layerTeleFlowData_get(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapParentIterator *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > *result = 0 ;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapParentIterator, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapParentIterator_layerTeleFlowData_get" "', argument " "1"" of type '" "infomap::InfomapParentIterator *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapParentIterator * >(argp1);
+  result = (std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > *)& ((*(infomap::InfomapParentIterator const *)arg1)->layerTeleFlowData);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_infomap__LayerTeleFlowData_std__allocatorT_infomap__LayerTeleFlowData_t_t, 0 |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -58510,10 +58318,9 @@ static PyMethodDef SwigMethods[] = {
 	 { "FlowData_danglingFlow_set", _wrap_FlowData_danglingFlow_set, METH_VARARGS, NULL},
 	 { "FlowData_danglingFlow_get", _wrap_FlowData_danglingFlow_get, METH_O, NULL},
 	 { "new_FlowData", _wrap_new_FlowData, METH_VARARGS, NULL},
-	 { "delete_FlowData", _wrap_delete_FlowData, METH_O, NULL},
-	 { "FlowData_init", _wrap_FlowData_init, METH_VARARGS, NULL},
 	 { "FlowData___iadd__", _wrap_FlowData___iadd__, METH_VARARGS, NULL},
 	 { "FlowData___isub__", _wrap_FlowData___isub__, METH_VARARGS, NULL},
+	 { "delete_FlowData", _wrap_delete_FlowData, METH_O, NULL},
 	 { "FlowData_swigregister", FlowData_swigregister, METH_O, NULL},
 	 { "FlowData_swiginit", FlowData_swiginit, METH_VARARGS, NULL},
 	 { "DeltaFlow_module_set", _wrap_DeltaFlow_module_set, METH_VARARGS, NULL},
@@ -58549,6 +58356,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "delete_PhysData", _wrap_delete_PhysData, METH_O, NULL},
 	 { "PhysData_swigregister", PhysData_swigregister, METH_O, NULL},
 	 { "PhysData_swiginit", PhysData_swiginit, METH_VARARGS, NULL},
+	 { "LayerTeleFlowData_layerId_set", _wrap_LayerTeleFlowData_layerId_set, METH_VARARGS, NULL},
+	 { "LayerTeleFlowData_layerId_get", _wrap_LayerTeleFlowData_layerId_get, METH_O, NULL},
 	 { "LayerTeleFlowData_numNodes_set", _wrap_LayerTeleFlowData_numNodes_set, METH_VARARGS, NULL},
 	 { "LayerTeleFlowData_numNodes_get", _wrap_LayerTeleFlowData_numNodes_get, METH_O, NULL},
 	 { "LayerTeleFlowData_teleportFlow_set", _wrap_LayerTeleFlowData_teleportFlow_set, METH_VARARGS, NULL},
@@ -58562,16 +58371,6 @@ static PyMethodDef SwigMethods[] = {
 	 { "delete_LayerTeleFlowData", _wrap_delete_LayerTeleFlowData, METH_O, NULL},
 	 { "LayerTeleFlowData_swigregister", LayerTeleFlowData_swigregister, METH_O, NULL},
 	 { "LayerTeleFlowData_swiginit", LayerTeleFlowData_swiginit, METH_VARARGS, NULL},
-	 { "MultiFlowData_layerTeleFlowData_set", _wrap_MultiFlowData_layerTeleFlowData_set, METH_VARARGS, NULL},
-	 { "MultiFlowData_layerTeleFlowData_get", _wrap_MultiFlowData_layerTeleFlowData_get, METH_O, NULL},
-	 { "new_MultiFlowData", _wrap_new_MultiFlowData, METH_VARARGS, NULL},
-	 { "delete_MultiFlowData", _wrap_delete_MultiFlowData, METH_O, NULL},
-	 { "MultiFlowData___iadd__", _wrap_MultiFlowData___iadd__, METH_VARARGS, NULL},
-	 { "MultiFlowData___isub__", _wrap_MultiFlowData___isub__, METH_VARARGS, NULL},
-	 { "MultiFlowData_init", _wrap_MultiFlowData_init, METH_VARARGS, NULL},
-	 { "MultiFlowData_numLayers", _wrap_MultiFlowData_numLayers, METH_O, NULL},
-	 { "MultiFlowData_swigregister", MultiFlowData_swigregister, METH_O, NULL},
-	 { "MultiFlowData_swiginit", MultiFlowData_swiginit, METH_VARARGS, NULL},
 	 { "new_EdgeData", _wrap_new_EdgeData, METH_VARARGS, NULL},
 	 { "EdgeData_weight_set", _wrap_EdgeData_weight_set, METH_VARARGS, NULL},
 	 { "EdgeData_weight_get", _wrap_EdgeData_weight_get, METH_O, NULL},
@@ -58678,6 +58477,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "InfoNode_dirty_get", _wrap_InfoNode_dirty_get, METH_O, NULL},
 	 { "InfoNode_physicalNodes_set", _wrap_InfoNode_physicalNodes_set, METH_VARARGS, NULL},
 	 { "InfoNode_physicalNodes_get", _wrap_InfoNode_physicalNodes_get, METH_O, NULL},
+	 { "InfoNode_layerTeleFlowData_set", _wrap_InfoNode_layerTeleFlowData_set, METH_VARARGS, NULL},
+	 { "InfoNode_layerTeleFlowData_get", _wrap_InfoNode_layerTeleFlowData_get, METH_O, NULL},
 	 { "InfoNode_metaCollection_set", _wrap_InfoNode_metaCollection_set, METH_VARARGS, NULL},
 	 { "InfoNode_metaCollection_get", _wrap_InfoNode_metaCollection_get, METH_O, NULL},
 	 { "InfoNode_stateNodes_set", _wrap_InfoNode_stateNodes_set, METH_VARARGS, NULL},
@@ -58831,6 +58632,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "InfomapIterator_dirty_get", _wrap_InfomapIterator_dirty_get, METH_O, NULL},
 	 { "InfomapIterator_physicalNodes_set", _wrap_InfomapIterator_physicalNodes_set, METH_VARARGS, NULL},
 	 { "InfomapIterator_physicalNodes_get", _wrap_InfomapIterator_physicalNodes_get, METH_O, NULL},
+	 { "InfomapIterator_layerTeleFlowData_set", _wrap_InfomapIterator_layerTeleFlowData_set, METH_VARARGS, NULL},
+	 { "InfomapIterator_layerTeleFlowData_get", _wrap_InfomapIterator_layerTeleFlowData_get, METH_O, NULL},
 	 { "InfomapIterator_metaCollection_set", _wrap_InfomapIterator_metaCollection_set, METH_VARARGS, NULL},
 	 { "InfomapIterator_metaCollection_get", _wrap_InfomapIterator_metaCollection_get, METH_O, NULL},
 	 { "InfomapIterator_stateNodes_set", _wrap_InfomapIterator_stateNodes_set, METH_VARARGS, NULL},
@@ -58988,6 +58791,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "InfomapParentIterator_dirty_get", _wrap_InfomapParentIterator_dirty_get, METH_O, NULL},
 	 { "InfomapParentIterator_physicalNodes_set", _wrap_InfomapParentIterator_physicalNodes_set, METH_VARARGS, NULL},
 	 { "InfomapParentIterator_physicalNodes_get", _wrap_InfomapParentIterator_physicalNodes_get, METH_O, NULL},
+	 { "InfomapParentIterator_layerTeleFlowData_set", _wrap_InfomapParentIterator_layerTeleFlowData_set, METH_VARARGS, NULL},
+	 { "InfomapParentIterator_layerTeleFlowData_get", _wrap_InfomapParentIterator_layerTeleFlowData_get, METH_O, NULL},
 	 { "InfomapParentIterator_metaCollection_set", _wrap_InfomapParentIterator_metaCollection_set, METH_VARARGS, NULL},
 	 { "InfomapParentIterator_metaCollection_get", _wrap_InfomapParentIterator_metaCollection_get, METH_O, NULL},
 	 { "InfomapParentIterator_stateNodes_set", _wrap_InfomapParentIterator_stateNodes_set, METH_VARARGS, NULL},
@@ -59447,9 +59252,6 @@ static void *_p_infomap__InfomapWrapperTo_p_infomap__Config(void *x, int *SWIGUN
 static void *_p_infomap__MemDeltaFlowTo_p_infomap__DeltaFlow(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((infomap::DeltaFlow *)  ((infomap::MemDeltaFlow *) x));
 }
-static void *_p_infomap__MultiFlowDataTo_p_infomap__FlowData(void *x, int *SWIGUNUSEDPARM(newmemory)) {
-    return (void *)((infomap::FlowData *)  ((infomap::MultiFlowData *) x));
-}
 static void *_p_infomap__InfomapWrapperTo_p_infomap__InfomapBase(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((infomap::InfomapBase *)  ((infomap::InfomapWrapper *) x));
 }
@@ -59499,7 +59301,6 @@ static swig_type_info _swigt__p_NodeLinkMap = {"_p_NodeLinkMap", "NodeLinkMap *"
 static swig_type_info _swigt__p_NodeMap = {"_p_NodeMap", "NodeMap *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OutLinkMap = {"_p_OutLinkMap", "OutLinkMap *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_PartitionQueue = {"_p_PartitionQueue", "PartitionQueue *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_StateNetwork__StateNode = {"_p_StateNetwork__StateNode", "StateNetwork::StateNode *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Stopwatch = {"_p_Stopwatch", "Stopwatch *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_TreeIteratorT_infomap__InfoNode_const_p_t = {"_p_TreeIteratorT_infomap__InfoNode_const_p_t", "infomap::InfoNode::const_tree_iterator *|TreeIterator< infomap::InfoNode const * > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_TreeIteratorT_infomap__InfoNode_p_t = {"_p_TreeIteratorT_infomap__InfoNode_p_t", "infomap::InfoNode::tree_iterator *|TreeIterator< infomap::InfoNode * > *", 0, 0, (void*)0, 0};
@@ -59542,7 +59343,6 @@ static swig_type_info _swigt__p_infomap__InfomapWrapper = {"_p_infomap__InfomapW
 static swig_type_info _swigt__p_infomap__LayerNode = {"_p_infomap__LayerNode", "infomap::LayerNode *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_infomap__LayerTeleFlowData = {"_p_infomap__LayerTeleFlowData", "infomap::LayerTeleFlowData *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_infomap__MemDeltaFlow = {"_p_infomap__MemDeltaFlow", "infomap::MemDeltaFlow *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_infomap__MultiFlowData = {"_p_infomap__MultiFlowData", "infomap::MultiFlowData *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_infomap__Network = {"_p_infomap__Network", "infomap::Network *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_infomap__PhysData = {"_p_infomap__PhysData", "infomap::PhysData *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_infomap__StateNetwork = {"_p_infomap__StateNetwork", "infomap::StateNetwork *", 0, 0, (void*)0, 0};
@@ -59576,7 +59376,6 @@ static swig_type_info _swigt__p_std__lessT_unsigned_int_t = {"_p_std__lessT_unsi
 static swig_type_info _swigt__p_std__mapT_infomap__StateNetwork__StateNode_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t = {"_p_std__mapT_infomap__StateNetwork__StateNode_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t", "infomap::StateNetwork::NodeLinkMap *|std::map< infomap::StateNetwork::StateNode,std::map< infomap::StateNetwork::StateNode,infomap::StateNetwork::LinkData,std::less< infomap::StateNetwork::StateNode >,std::allocator< std::pair< infomap::StateNetwork::StateNode const,infomap::StateNetwork::LinkData > > >,std::less< infomap::StateNetwork::StateNode >,std::allocator< std::pair< infomap::StateNetwork::StateNode const,std::map< infomap::StateNetwork::StateNode,infomap::StateNetwork::LinkData,std::less< infomap::StateNetwork::StateNode >,std::allocator< std::pair< infomap::StateNetwork::StateNode const,infomap::StateNetwork::LinkData > > > > > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t = {"_p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t", "std::map< std::pair< unsigned int,unsigned int >,double,std::less< std::pair< unsigned int,unsigned int > >,std::allocator< std::pair< std::pair< unsigned int,unsigned int > const,double > > > *|std::map< std::pair< unsigned int,unsigned int >,double > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t = {"_p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t", "std::map< unsigned int,double,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,double > > > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__mapT_unsigned_int_infomap__LayerTeleFlowData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__LayerTeleFlowData_t_t_t = {"_p_std__mapT_unsigned_int_infomap__LayerTeleFlowData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__LayerTeleFlowData_t_t_t", "std::map< unsigned int,infomap::LayerTeleFlowData,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::LayerTeleFlowData > > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t = {"_p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t", "infomap::StateNetwork::NodeMap *|std::map< unsigned int,infomap::StateNetwork::StateNode,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,infomap::StateNetwork::StateNode > > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t = {"_p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t", "std::map< unsigned int,std::map< unsigned int,unsigned int,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,unsigned int > > >,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::map< unsigned int,unsigned int,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,unsigned int > > > > > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__mapT_unsigned_int_std__string_t = {"_p_std__mapT_unsigned_int_std__string_t", "std::map< unsigned int,std::string,std::less< unsigned int >,std::allocator< std::pair< unsigned int const,std::string > > > *|std::map< unsigned int,std::string > *", 0, 0, (void*)0, 0};
@@ -59592,6 +59391,7 @@ static swig_type_info _swigt__p_std__vectorT_ParsedOption_std__allocatorT_Parsed
 static swig_type_info _swigt__p_std__vectorT_double_t = {"_p_std__vectorT_double_t", "std::vector< double,std::allocator< double > > *|std::vector< double > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator = {"_p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator", "infomap::InfoNode::edge_iterator *|std::vector< infomap::InfoEdge *,std::allocator< infomap::InfoEdge * > >::iterator *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t = {"_p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t", "std::vector< infomap::InfoNode *,std::allocator< infomap::InfoNode * > > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_infomap__LayerTeleFlowData_std__allocatorT_infomap__LayerTeleFlowData_t_t = {"_p_std__vectorT_infomap__LayerTeleFlowData_std__allocatorT_infomap__LayerTeleFlowData_t_t", "std::vector< infomap::LayerTeleFlowData,std::allocator< infomap::LayerTeleFlowData > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t = {"_p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t", "std::vector< infomap::PhysData,std::allocator< infomap::PhysData > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t = {"_p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t", "std::vector< infomap::detail::PerLevelStat,std::allocator< infomap::detail::PerLevelStat > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_int_std__allocatorT_int_t_t = {"_p_std__vectorT_int_std__allocatorT_int_t_t", "std::vector< int,std::allocator< int > > *", 0, 0, (void*)0, 0};
@@ -59621,7 +59421,6 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_NodeMap,
   &_swigt__p_OutLinkMap,
   &_swigt__p_PartitionQueue,
-  &_swigt__p_StateNetwork__StateNode,
   &_swigt__p_Stopwatch,
   &_swigt__p_TreeIteratorT_infomap__InfoNode_const_p_t,
   &_swigt__p_TreeIteratorT_infomap__InfoNode_p_t,
@@ -59664,7 +59463,6 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_infomap__LayerNode,
   &_swigt__p_infomap__LayerTeleFlowData,
   &_swigt__p_infomap__MemDeltaFlow,
-  &_swigt__p_infomap__MultiFlowData,
   &_swigt__p_infomap__Network,
   &_swigt__p_infomap__PhysData,
   &_swigt__p_infomap__StateNetwork,
@@ -59698,7 +59496,6 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_std__mapT_infomap__StateNetwork__StateNode_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t,
   &_swigt__p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t,
   &_swigt__p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t,
-  &_swigt__p_std__mapT_unsigned_int_infomap__LayerTeleFlowData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__LayerTeleFlowData_t_t_t,
   &_swigt__p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t,
   &_swigt__p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t,
   &_swigt__p_std__mapT_unsigned_int_std__string_t,
@@ -59714,6 +59511,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_std__vectorT_double_t,
   &_swigt__p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator,
   &_swigt__p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t,
+  &_swigt__p_std__vectorT_infomap__LayerTeleFlowData_std__allocatorT_infomap__LayerTeleFlowData_t_t,
   &_swigt__p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t,
   &_swigt__p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t,
   &_swigt__p_std__vectorT_int_std__allocatorT_int_t_t,
@@ -59743,7 +59541,6 @@ static swig_cast_info _swigc__p_NodeLinkMap[] = {  {&_swigt__p_NodeLinkMap, 0, 0
 static swig_cast_info _swigc__p_NodeMap[] = {  {&_swigt__p_NodeMap, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OutLinkMap[] = {  {&_swigt__p_OutLinkMap, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_PartitionQueue[] = {  {&_swigt__p_PartitionQueue, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_StateNetwork__StateNode[] = {  {&_swigt__p_StateNetwork__StateNode, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Stopwatch[] = {  {&_swigt__p_Stopwatch, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_TreeIteratorT_infomap__InfoNode_const_p_t[] = {  {&_swigt__p_TreeIteratorT_infomap__InfoNode_const_p_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_TreeIteratorT_infomap__InfoNode_p_t[] = {  {&_swigt__p_TreeIteratorT_infomap__InfoNode_p_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -59769,7 +59566,7 @@ static swig_cast_info _swigc__p_first_type[] = {  {&_swigt__p_first_type, 0, 0, 
 static swig_cast_info _swigc__p_infomap__Config[] = {  {&_swigt__p_infomap__Config, 0, 0, 0},  {&_swigt__p_infomap__InfomapBase, _p_infomap__InfomapBaseTo_p_infomap__Config, 0, 0},  {&_swigt__p_infomap__InfomapConfigT_infomap__InfomapBase_t, _p_infomap__InfomapConfigT_infomap__InfomapBase_tTo_p_infomap__Config, 0, 0},  {&_swigt__p_infomap__InfomapWrapper, _p_infomap__InfomapWrapperTo_p_infomap__Config, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_infomap__DeltaFlow[] = {  {&_swigt__p_infomap__DeltaFlow, 0, 0, 0},  {&_swigt__p_infomap__MemDeltaFlow, _p_infomap__MemDeltaFlowTo_p_infomap__DeltaFlow, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_infomap__EdgeData[] = {  {&_swigt__p_infomap__EdgeData, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_infomap__FlowData[] = {  {&_swigt__p_infomap__FlowData, 0, 0, 0},  {&_swigt__p_infomap__MultiFlowData, _p_infomap__MultiFlowDataTo_p_infomap__FlowData, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_infomap__FlowData[] = {  {&_swigt__p_infomap__FlowData, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_infomap__FlowModel[] = {  {&_swigt__p_infomap__FlowModel, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_infomap__InfoEdge[] = {  {&_swigt__p_infomap__InfoEdge, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_infomap__InfoNode[] = {  {&_swigt__p_infomap__InfoNode, 0, 0, 0},{0, 0, 0, 0}};
@@ -59786,7 +59583,6 @@ static swig_cast_info _swigc__p_infomap__InfomapWrapper[] = {  {&_swigt__p_infom
 static swig_cast_info _swigc__p_infomap__LayerNode[] = {  {&_swigt__p_infomap__LayerNode, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_infomap__LayerTeleFlowData[] = {  {&_swigt__p_infomap__LayerTeleFlowData, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_infomap__MemDeltaFlow[] = {  {&_swigt__p_infomap__MemDeltaFlow, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_infomap__MultiFlowData[] = {  {&_swigt__p_infomap__MultiFlowData, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_infomap__Network[] = {  {&_swigt__p_infomap__Network, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_infomap__PhysData[] = {  {&_swigt__p_infomap__PhysData, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_infomap__StateNetwork[] = {  {&_swigt__p_infomap__StateNetwork, 0, 0, 0},  {&_swigt__p_infomap__Network, _p_infomap__NetworkTo_p_infomap__StateNetwork, 0, 0},{0, 0, 0, 0}};
@@ -59820,7 +59616,6 @@ static swig_cast_info _swigc__p_std__lessT_unsigned_int_t[] = {  {&_swigt__p_std
 static swig_cast_info _swigc__p_std__mapT_infomap__StateNetwork__StateNode_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t[] = {  {&_swigt__p_std__mapT_infomap__StateNetwork__StateNode_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t[] = {  {&_swigt__p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t[] = {  {&_swigt__p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__mapT_unsigned_int_infomap__LayerTeleFlowData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__LayerTeleFlowData_t_t_t[] = {  {&_swigt__p_std__mapT_unsigned_int_infomap__LayerTeleFlowData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__LayerTeleFlowData_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t[] = {  {&_swigt__p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t[] = {  {&_swigt__p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__mapT_unsigned_int_std__string_t[] = {  {&_swigt__p_std__mapT_unsigned_int_std__string_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -59836,6 +59631,7 @@ static swig_cast_info _swigc__p_std__vectorT_ParsedOption_std__allocatorT_Parsed
 static swig_cast_info _swigc__p_std__vectorT_double_t[] = {  {&_swigt__p_std__vectorT_double_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator[] = {  {&_swigt__p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t[] = {  {&_swigt__p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_infomap__LayerTeleFlowData_std__allocatorT_infomap__LayerTeleFlowData_t_t[] = {  {&_swigt__p_std__vectorT_infomap__LayerTeleFlowData_std__allocatorT_infomap__LayerTeleFlowData_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t[] = {  {&_swigt__p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t[] = {  {&_swigt__p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_int_std__allocatorT_int_t_t[] = {  {&_swigt__p_std__vectorT_int_std__allocatorT_int_t_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -59865,7 +59661,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_NodeMap,
   _swigc__p_OutLinkMap,
   _swigc__p_PartitionQueue,
-  _swigc__p_StateNetwork__StateNode,
   _swigc__p_Stopwatch,
   _swigc__p_TreeIteratorT_infomap__InfoNode_const_p_t,
   _swigc__p_TreeIteratorT_infomap__InfoNode_p_t,
@@ -59908,7 +59703,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_infomap__LayerNode,
   _swigc__p_infomap__LayerTeleFlowData,
   _swigc__p_infomap__MemDeltaFlow,
-  _swigc__p_infomap__MultiFlowData,
   _swigc__p_infomap__Network,
   _swigc__p_infomap__PhysData,
   _swigc__p_infomap__StateNetwork,
@@ -59942,7 +59736,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_std__mapT_infomap__StateNetwork__StateNode_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_std__mapT_infomap__StateNetwork__StateNode_infomap__StateNetwork__LinkData_std__lessT_infomap__StateNetwork__StateNode_t_std__allocatorT_std__pairT_infomap__StateNetwork__StateNode_const_infomap__StateNetwork__LinkData_t_t_t_t_t_t,
   _swigc__p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t,
   _swigc__p_std__mapT_unsigned_int_double_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_double_t_t_t,
-  _swigc__p_std__mapT_unsigned_int_infomap__LayerTeleFlowData_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__LayerTeleFlowData_t_t_t,
   _swigc__p_std__mapT_unsigned_int_infomap__StateNetwork__StateNode_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_infomap__StateNetwork__StateNode_t_t_t,
   _swigc__p_std__mapT_unsigned_int_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t_t_t_t,
   _swigc__p_std__mapT_unsigned_int_std__string_t,
@@ -59958,6 +59751,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_std__vectorT_double_t,
   _swigc__p_std__vectorT_infomap__InfoEdge_p_std__allocatorT_infomap__InfoEdge_p_t_t__iterator,
   _swigc__p_std__vectorT_infomap__InfoNode_p_std__allocatorT_infomap__InfoNode_p_t_t,
+  _swigc__p_std__vectorT_infomap__LayerTeleFlowData_std__allocatorT_infomap__LayerTeleFlowData_t_t,
   _swigc__p_std__vectorT_infomap__PhysData_std__allocatorT_infomap__PhysData_t_t,
   _swigc__p_std__vectorT_infomap__detail__PerLevelStat_std__allocatorT_infomap__detail__PerLevelStat_t_t,
   _swigc__p_std__vectorT_int_std__allocatorT_int_t_t,
