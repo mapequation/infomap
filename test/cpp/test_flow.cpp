@@ -96,6 +96,25 @@ TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fa
   infomap::test::checkApproxCodelength(im.codelength(), 4.051270346886);
 }
 
+TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fast][core][flow]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags(
+      "--directed --regularized --no-infomap --cluster-data "
+      + infomap::test::clusterFixturePath("regularized_four_pairs_three_level.tree")));
+  im.addLink(1, 2);
+  im.addLink(2, 1);
+  im.addLink(3, 4);
+  im.addLink(4, 3);
+  im.addLink(5, 6);
+  im.addLink(6, 5);
+  im.addLink(7, 8);
+  im.addLink(8, 7);
+  im.run();
+
+  CHECK(im.numLevels() == 3);
+  infomap::test::checkApproxCodelength(im.codelength(), 4.051270346886);
+}
+
 TEST_CASE("Inner parallelization remains runnable and numerically sane on the directed fixture [fast][core][flow][openmp]")
 {
   const auto result = runDirectedFixture("--inner-parallelization");
