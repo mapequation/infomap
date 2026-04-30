@@ -618,11 +618,6 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
 
   std::vector<unsigned int> layerIds(N, 0);
   std::vector<unsigned int> physicalIds(N, 0);
-  const auto& nodes = network.nodes();
-  for (unsigned int i = 0; i < N; ++i) {
-    layerIds[i] = nodes.at(i).layerId;
-    physicalIds[i] = nodes.at(i).physicalId;
-  }
 
   std::unordered_map<unsigned int, unsigned int> layerIdToIndex;
   unsigned int layerIndex = 0;
@@ -636,8 +631,10 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
   std::vector<unsigned int> layerIndices(N);
 
   for (const auto& node : network.nodes()) {
-    // const auto nodeId = node.second.id;
-    layerIndices[nodeIndexMap[node.second.id]] = layerIdToIndex[node.second.layerId];
+    const auto nodeIndex = nodeIndexMap[node.second.id];
+    layerIds[nodeIndex] = node.second.layerId;
+    physicalIds[nodeIndex] = node.second.physicalId;
+    layerIndices[nodeIndex] = layerIdToIndex[node.second.layerId];
     // nodeTeleportWeights[nodeIndexMap[nodeId]] = node.weight;
     // if (layerIdToIndex.count(node.second.layerId) == 0) {
     //   layerIdToIndex[node.second.layerId] = layerIndex++;
@@ -649,13 +646,10 @@ void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& n
 
   // Log() << "\nLinks:\n";
 
-  const auto& nodeLinkMap = network.nodeLinkMap();
-  for (const auto& node : nodeLinkMap) {
-    for (const auto& link : node.second) {
-      isInterLink[linkIndex] = physicalIds[node.first.id] == physicalIds[link.first.id];
-      // Log() << linkIndex << ": (" << layerIds[node.first.id] << "," << physicalIds[node.first.id] << ") -> (" << layerIds[link.first.id] << "," << physicalIds[link.first.id] << ") is inter: " << isInterLink[linkIndex] << "\n";
-      ++linkIndex;
-    }
+  for (const auto& link : flowLinks) {
+    isInterLink[linkIndex] = physicalIds[link.source] == physicalIds[link.target];
+    // Log() << linkIndex << ": (" << layerIds[link.source] << "," << physicalIds[link.source] << ") -> (" << layerIds[link.target] << "," << physicalIds[link.target] << ") is inter: " << isInterLink[linkIndex] << "\n";
+    ++linkIndex;
   }
 
   std::vector<unsigned int> k_out(N, 0);
