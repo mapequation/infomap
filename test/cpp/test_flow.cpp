@@ -4,6 +4,8 @@
 
 #include "TestUtils.h"
 
+#include <array>
+#include <cmath>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -18,6 +20,100 @@ struct FlowRunResult {
   double indexCodelength = 0.0;
   unsigned int numTopModules = 0;
 };
+
+struct RegularizedMultilayerEgoFlow {
+  double egoStateFlow = 0.0;
+  double presentPeripheralStateFlow = 0.0;
+  double absentPeripheralStateFlow = 0.0;
+  double codelength = 0.0;
+};
+
+double plogp(double value)
+{
+  return value <= 0.0 ? 0.0 : value * std::log2(value);
+}
+
+std::array<double, 3> solve3x3(std::array<std::array<double, 3>, 3> coefficients, std::array<double, 3> rhs)
+{
+  for (unsigned int pivot = 0; pivot < 3; ++pivot) {
+    const auto pivotValue = coefficients[pivot][pivot];
+    for (unsigned int col = pivot; col < 3; ++col) {
+      coefficients[pivot][col] /= pivotValue;
+    }
+    rhs[pivot] /= pivotValue;
+
+    for (unsigned int row = 0; row < 3; ++row) {
+      if (row == pivot) {
+        continue;
+      }
+      const auto factor = coefficients[row][pivot];
+      for (unsigned int col = pivot; col < 3; ++col) {
+        coefficients[row][col] -= factor * coefficients[pivot][col];
+      }
+      rhs[row] -= factor * rhs[pivot];
+    }
+  }
+
+  return rhs;
+}
+
+RegularizedMultilayerEgoFlow analyticRegularizedMultilayerEgoFlow()
+{
+  constexpr double numPhysicalNodes = 5.0;
+  constexpr double numLayers = 2.0;
+  constexpr double intraOutWeightPerState = 2.0;
+
+  // Current implementation of the manuscript prior strengths:
+  // gamma_intra out-weight = log(N_phys) / L, and each state has L vertical
+  // inter-layer prior links with weight log(L) / L, for total log(L).
+  const double intraPriorOutWeight = std::log(numPhysicalNodes) / numLayers;
+  const double interPriorOutWeight = std::log(numLayers);
+
+  const double alpha = intraPriorOutWeight / (intraPriorOutWeight + intraOutWeightPerState);
+  const double beta = 1.0 - alpha;
+  const double alphaInterPresent = interPriorOutWeight / (interPriorOutWeight + intraOutWeightPerState + intraPriorOutWeight);
+  const double alphaInterAbsent = interPriorOutWeight / (interPriorOutWeight + intraPriorOutWeight);
+
+  // Symmetry reduces the ten state-node flows to three variables:
+  // x: ego state present in both layers,
+  // y: peripheral state present in its triangle layer,
+  // z: peripheral state absent from the opposite layer but created by vertical priors.
+  //
+  // The two-step model first moves unrecorded vertical flow to counterparts, then
+  // redistributes recorded intralayer prior flow within each layer.
+  const double presentBaseFromY = 1.0 - alphaInterPresent / 2.0;
+  const double presentBaseFromZ = alphaInterAbsent / 2.0;
+  const double absentBaseFromY = alphaInterPresent / 2.0;
+  const double absentBaseFromZ = 1.0 - alphaInterAbsent / 2.0;
+
+  const std::array<double, 3> layerTeleportFlowCoefficients = {
+      alpha,
+      2.0 * alpha * presentBaseFromY + 2.0 * absentBaseFromY,
+      2.0 * alpha * presentBaseFromZ + 2.0 * absentBaseFromZ,
+  };
+  const std::array<double, 3> presentBaseCoefficients = { 0.0, presentBaseFromY, presentBaseFromZ };
+
+  std::array<std::array<double, 3>, 3> coefficients = {{
+      {{
+          1.0 - layerTeleportFlowCoefficients[0] / numPhysicalNodes - beta * presentBaseCoefficients[0],
+          -layerTeleportFlowCoefficients[1] / numPhysicalNodes - beta * presentBaseCoefficients[1],
+          -layerTeleportFlowCoefficients[2] / numPhysicalNodes - beta * presentBaseCoefficients[2],
+      }},
+      {{
+          -layerTeleportFlowCoefficients[0] / numPhysicalNodes - beta / 2.0,
+          1.0 - layerTeleportFlowCoefficients[1] / numPhysicalNodes - beta * presentBaseCoefficients[1] / 2.0,
+          -layerTeleportFlowCoefficients[2] / numPhysicalNodes - beta * presentBaseCoefficients[2] / 2.0,
+      }},
+      {{ 2.0, 4.0, 4.0 }},
+  }};
+  const auto solution = solve3x3(coefficients, {{ 0.0, 0.0, 1.0 }});
+
+  const double egoPhysicalFlow = 2.0 * solution[0];
+  const double peripheralPhysicalFlow = solution[1] + solution[2];
+  const double codelength = -plogp(egoPhysicalFlow) - 4.0 * plogp(peripheralPhysicalFlow);
+
+  return { solution[0], solution[1], solution[2], codelength };
+}
 
 FlowRunResult runDirectedFixture(const std::string& extraFlags)
 {
@@ -107,6 +203,41 @@ TEST_CASE("Regularized multilayer flow supports non-dense matchable state ids [f
 
   CHECK_NOTHROW(im.run());
   infomap::test::checkRunSanity(im);
+}
+
+TEST_CASE("Regularized multilayer ego flow matches analytic prior-strength sample [fast][core][flow]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--directed --regularized --no-infomap --two-level"));
+
+  auto addDirectedTriangle = [&im](unsigned int layer, unsigned int ego, unsigned int first, unsigned int second) {
+    im.addMultilayerIntraLink(layer, ego, first, 1.0);
+    im.addMultilayerIntraLink(layer, first, ego, 1.0);
+    im.addMultilayerIntraLink(layer, ego, second, 1.0);
+    im.addMultilayerIntraLink(layer, second, ego, 1.0);
+    im.addMultilayerIntraLink(layer, first, second, 1.0);
+    im.addMultilayerIntraLink(layer, second, first, 1.0);
+  };
+  addDirectedTriangle(1, 1, 2, 3);
+  addDirectedTriangle(2, 1, 4, 5);
+
+  im.run();
+
+  const auto expected = analyticRegularizedMultilayerEgoFlow();
+  infomap::test::checkRunSanity(im);
+  infomap::test::checkApproxCodelength(im.codelength(), expected.codelength);
+
+  for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
+    const auto& node = *it;
+    const bool presentInLayer = node.physicalId == 1
+        || (node.layerId == 1 && (node.physicalId == 2 || node.physicalId == 3))
+        || (node.layerId == 2 && (node.physicalId == 4 || node.physicalId == 5));
+    const double expectedFlow = node.physicalId == 1
+        ? expected.egoStateFlow
+        : presentInLayer ? expected.presentPeripheralStateFlow
+                         : expected.absentPeripheralStateFlow;
+
+    CHECK(node.data.flow == doctest::Approx(expectedFlow).epsilon(1e-10));
+  }
 }
 
 TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fast][core][flow]")
