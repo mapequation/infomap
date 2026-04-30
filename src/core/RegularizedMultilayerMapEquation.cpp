@@ -62,6 +62,7 @@ void RegularizedMultilayerMapEquation::initSubNetwork(InfoNode& /*root*/)
 void RegularizedMultilayerMapEquation::initPartition(std::vector<InfoNode*>& nodes)
 {
   initPartitionOfPhysicalNodes(nodes);
+  initPartitionLayerTeleFlowData(nodes);
 
   calculateCodelength(nodes);
 }
@@ -216,6 +217,17 @@ void RegularizedMultilayerMapEquation::initPartitionOfPhysicalNodes(std::vector<
   m_memoryContributionsAdded = false;
 }
 
+void RegularizedMultilayerMapEquation::initPartitionLayerTeleFlowData(std::vector<InfoNode*>& nodes)
+{
+  m_moduleLayerTeleFlowData.clear();
+  m_moduleLayerTeleFlowData.resize(nodes.size());
+
+  for (auto& n : nodes) {
+    InfoNode& node = *n;
+    addLayerTeleFlow(node.index, node.layerTeleFlowData);
+  }
+}
+
 // ===================================================
 // Codelength
 // ===================================================
@@ -323,25 +335,23 @@ void RegularizedMultilayerMapEquation::addTeleportationFlow(InfoNode& current, c
   // TODO: Optimize: check if teleportFlow is zero and skip this (true for multilayer regularization now)
   Base::addTeleportationFlow(current, moduleFlowData, oldModuleDelta, newModuleDelta);
 
-  auto& oldModuleFlowData = moduleFlowData[oldModuleDelta.module];
+  auto& oldModuleLayerFlowData = m_moduleLayerTeleFlowData[oldModuleDelta.module];
 
-  for (auto& it : current.data.layerTeleFlowData) {
-    auto itModuleLayer = oldModuleFlowData.layerTeleFlowData.find(it.first);
-    if (itModuleLayer != oldModuleFlowData.layerTeleFlowData.end()) {
+  for (const auto& nodeLayerFlow : current.layerTeleFlowData) {
+    auto itModuleLayer = oldModuleLayerFlowData.find(nodeLayerFlow.layerId);
+    if (itModuleLayer != oldModuleLayerFlowData.end()) {
       const auto& moduleLayerFlow = itModuleLayer->second;
-      const auto& nodeLayerFlow = it.second;
       oldModuleDelta.deltaEnter += (moduleLayerFlow.teleportFlow - nodeLayerFlow.teleportFlow) * nodeLayerFlow.teleportWeight;
       oldModuleDelta.deltaExit += nodeLayerFlow.teleportFlow * (moduleLayerFlow.teleportWeight - nodeLayerFlow.teleportWeight);
     }
   }
 
-  auto& newModuleFlowData = moduleFlowData[newModuleDelta.module];
+  auto& newModuleLayerFlowData = m_moduleLayerTeleFlowData[newModuleDelta.module];
 
-  for (auto& it : current.data.layerTeleFlowData) {
-    auto itModuleLayer = newModuleFlowData.layerTeleFlowData.find(it.first);
-    if (itModuleLayer != newModuleFlowData.layerTeleFlowData.end()) {
+  for (const auto& nodeLayerFlow : current.layerTeleFlowData) {
+    auto itModuleLayer = newModuleLayerFlowData.find(nodeLayerFlow.layerId);
+    if (itModuleLayer != newModuleLayerFlowData.end()) {
       const auto& moduleLayerFlow = itModuleLayer->second;
-      const auto& nodeLayerFlow = it.second;
       newModuleDelta.deltaEnter += moduleLayerFlow.teleportFlow * nodeLayerFlow.teleportWeight;
       newModuleDelta.deltaExit += nodeLayerFlow.teleportFlow * moduleLayerFlow.teleportWeight;
     }
@@ -361,26 +371,24 @@ void RegularizedMultilayerMapEquation::addTeleportationFlow(InfoNode& current, c
     double deltaExit = 0;
 
     if (moduleIndex == current.index) {
-      auto& oldModuleFlowData = moduleFlowData[moduleIndex];
+      auto& oldModuleLayerFlowData = m_moduleLayerTeleFlowData[moduleIndex];
 
       // A single node here can be multiple nodes moving (coarse-tune), so need to check all layers
-      for (auto& it : current.data.layerTeleFlowData) {
-        auto itModuleLayer = oldModuleFlowData.layerTeleFlowData.find(it.first);
-        if (itModuleLayer != oldModuleFlowData.layerTeleFlowData.end()) {
+      for (const auto& nodeLayerFlow : current.layerTeleFlowData) {
+        auto itModuleLayer = oldModuleLayerFlowData.find(nodeLayerFlow.layerId);
+        if (itModuleLayer != oldModuleLayerFlowData.end()) {
           const auto& moduleLayerFlow = itModuleLayer->second;
-          const auto& nodeLayerFlow = it.second;
           deltaEnter += (moduleLayerFlow.teleportFlow - nodeLayerFlow.teleportFlow) * nodeLayerFlow.teleportWeight;
           deltaExit += nodeLayerFlow.teleportFlow * (moduleLayerFlow.teleportWeight - nodeLayerFlow.teleportWeight);
         }
       }
     } else {
-      auto& newModuleFlowData = moduleFlowData[moduleIndex];
+      auto& newModuleLayerFlowData = m_moduleLayerTeleFlowData[moduleIndex];
 
-      for (auto& it : current.data.layerTeleFlowData) {
-        auto itModuleLayer = newModuleFlowData.layerTeleFlowData.find(it.first);
-        if (itModuleLayer != newModuleFlowData.layerTeleFlowData.end()) {
+      for (const auto& nodeLayerFlow : current.layerTeleFlowData) {
+        auto itModuleLayer = newModuleLayerFlowData.find(nodeLayerFlow.layerId);
+        if (itModuleLayer != newModuleLayerFlowData.end()) {
           const auto& moduleLayerFlow = itModuleLayer->second;
-          const auto& nodeLayerFlow = it.second;
           deltaEnter += moduleLayerFlow.teleportFlow * nodeLayerFlow.teleportWeight;
           deltaExit += nodeLayerFlow.teleportFlow * moduleLayerFlow.teleportWeight;
         }
@@ -419,11 +427,38 @@ void RegularizedMultilayerMapEquation::updateCodelengthOnMovingNode(InfoNode& cu
   else
     addMemoryContributionsAndUpdatePhysicalNodes(current, oldModuleDelta, newModuleDelta);
 
+  removeLayerTeleFlow(oldModuleDelta.module, current.layerTeleFlowData);
+  addLayerTeleFlow(newModuleDelta.module, current.layerTeleFlowData);
+
   double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
   nodeFlow_log_nodeFlow += delta_nodeFlow_log_nodeFlow;
   moduleCodelength -= delta_nodeFlow_log_nodeFlow;
   codelength -= delta_nodeFlow_log_nodeFlow;
+}
+
+void RegularizedMultilayerMapEquation::addLayerTeleFlow(unsigned int moduleIndex, const std::vector<LayerTeleFlowData>& layerTeleFlowData)
+{
+  auto& moduleLayerTeleFlowData = m_moduleLayerTeleFlowData[moduleIndex];
+  for (const auto& layerData : layerTeleFlowData) {
+    auto& moduleLayerData = moduleLayerTeleFlowData[layerData.layerId];
+    moduleLayerData.layerId = layerData.layerId;
+    moduleLayerData += layerData;
+  }
+}
+
+void RegularizedMultilayerMapEquation::removeLayerTeleFlow(unsigned int moduleIndex, const std::vector<LayerTeleFlowData>& layerTeleFlowData)
+{
+  auto& moduleLayerTeleFlowData = m_moduleLayerTeleFlowData[moduleIndex];
+  for (const auto& layerData : layerTeleFlowData) {
+    auto it = moduleLayerTeleFlowData.find(layerData.layerId);
+    if (it == moduleLayerTeleFlowData.end())
+      throw std::length_error("Couldn't find old module layer teleport data.");
+
+    it->second -= layerData;
+    if (it->second.isEmpty())
+      moduleLayerTeleFlowData.erase(it);
+  }
 }
 
 void RegularizedMultilayerMapEquation::updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex)
@@ -508,6 +543,15 @@ void RegularizedMultilayerMapEquation::consolidateModules(std::vector<InfoNode*>
         throw std::domain_error("[InfomapGreedy::consolidateModules] Error updating physical nodes: duplication error");
 
       modules[modToMemNode.first]->physicalNodes.emplace_back(i, modToMemNode.second.sumFlow);
+    }
+  }
+
+  for (unsigned int moduleIndex = 0; moduleIndex < modules.size(); ++moduleIndex) {
+    if (modules[moduleIndex] == nullptr)
+      continue;
+    modules[moduleIndex]->layerTeleFlowData.clear();
+    for (const auto& layerIt : m_moduleLayerTeleFlowData[moduleIndex]) {
+      modules[moduleIndex]->layerTeleFlowData.push_back(layerIt.second);
     }
   }
 }

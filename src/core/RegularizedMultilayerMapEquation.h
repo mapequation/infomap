@@ -22,11 +22,11 @@ namespace infomap {
 
 class InfoNode;
 
-class RegularizedMultilayerMapEquation : private MapEquation<MultiFlowData, MemDeltaFlow> {
-  using Base = MapEquation<MultiFlowData, MemDeltaFlow>;
+class RegularizedMultilayerMapEquation : private MapEquation<FlowData, MemDeltaFlow> {
+  using Base = MapEquation<FlowData, MemDeltaFlow>;
 
 public:
-  using FlowDataType = MultiFlowData;
+  using FlowDataType = FlowData;
   using DeltaFlowDataType = MemDeltaFlow;
 
   // ===================================================
@@ -110,6 +110,7 @@ private:
   void initPhysicalNodes(InfoNode& root);
 
   void initPartitionOfPhysicalNodes(std::vector<InfoNode*>& nodes);
+  void initPartitionLayerTeleFlowData(std::vector<InfoNode*>& nodes);
 
   // ===================================================
   // Codelength
@@ -130,6 +131,9 @@ private:
   void updatePhysicalNodes(InfoNode& current, unsigned int oldModuleIndex, unsigned int bestModuleIndex);
 
   void addMemoryContributionsAndUpdatePhysicalNodes(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta);
+
+  void addLayerTeleFlow(unsigned int moduleIndex, const std::vector<LayerTeleFlowData>& layerTeleFlowData);
+  void removeLayerTeleFlow(unsigned int moduleIndex, const std::vector<LayerTeleFlowData>& layerTeleFlowData);
 
 public:
   // ===================================================
@@ -157,8 +161,10 @@ private:
   using Base::exitNetworkFlow_log_exitNetworkFlow;
 
   using ModuleToMemNodes = std::map<unsigned int, MemNodeSet>;
+  using LayerTeleFlowMap = std::map<unsigned int, LayerTeleFlowData>;
 
   std::vector<ModuleToMemNodes> m_physToModuleToMemNodes; // vector[physicalNodeID] map<moduleID, {#memNodes, sumFlow}>
+  std::vector<LayerTeleFlowMap> m_moduleLayerTeleFlowData; // vector[moduleID] map<layerID, layer teleport flow>
   unsigned int m_numPhysicalNodes = 0;
   bool m_memoryContributionsAdded = false;
 };

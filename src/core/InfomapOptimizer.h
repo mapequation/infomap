@@ -171,7 +171,7 @@ void InfomapOptimizer<Objective>::initPartition()
   for (auto& nodePtr : network) {
     InfoNode& node = *nodePtr;
     node.index = i; // Unique module index for each node
-    m_moduleFlowData[i] = node.data; // node.data is hard coded MultiFlowData now to solve this, trade-offs with template?
+    m_moduleFlowData[i] = node.data;
     node.dirty = true;
     ++i;
   }
@@ -287,7 +287,8 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
   unsigned int numMoved = 0;
 
   unsigned int numRandTries = (unsigned int)std::round(numNodes * m_infomap->randomNodeCheckRate);
-  std::vector<bool> moduleTested(numNodes);
+  const bool checkRandomNodes = numRandTries > 0;
+  std::vector<bool> moduleTested(checkRandomNodes ? numNodes : 0);
 
   // Create map with module links
   VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
@@ -307,31 +308,36 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     // For memory networks, don't skip try move to same physical node!
 
     deltaFlow.startRound();
-    std::fill(moduleTested.begin(), moduleTested.end(), false);
+    if (checkRandomNodes)
+      std::fill(moduleTested.begin(), moduleTested.end(), false);
 
     // For all outlinks
     for (auto& e : current.outEdges()) {
       auto& edge = *e;
       InfoNode* neighbour = edge.target;
       deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, edge.data.flow, 0.0));
-      moduleTested[neighbour->index] = true;
+      if (checkRandomNodes)
+        moduleTested[neighbour->index] = true;
     }
     // For all inlinks
     for (auto& e : current.inEdges()) {
       auto& edge = *e;
       InfoNode* neighbour = edge.source;
       deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, 0.0, edge.data.flow));
-      moduleTested[neighbour->index] = true;
+      if (checkRandomNodes)
+        moduleTested[neighbour->index] = true;
     }
 
     // Check random nodes if recorded teleportation
-    for (unsigned int j = 0; j < numRandTries; ++j) {
-      unsigned int randPos = m_infomap->m_rand.randInt(0, numNodes - 1);
-      InfoNode& neighbour = *network[nodeEnumeration[randPos]];
-      if (moduleTested[neighbour.index])
-        continue;
-      deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0, 0));
-      moduleTested[neighbour.index] = true;
+    if (checkRandomNodes) {
+      for (unsigned int j = 0; j < numRandTries; ++j) {
+        unsigned int randPos = m_infomap->m_rand.randInt(0, numNodes - 1);
+        InfoNode& neighbour = *network[nodeEnumeration[randPos]];
+        if (moduleTested[neighbour.index])
+          continue;
+        deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0, 0));
+        moduleTested[neighbour.index] = true;
+      }
     }
 
     // For not moving

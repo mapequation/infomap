@@ -71,7 +71,7 @@ public:
   using const_infomap_child_iterator_wrapper = IterWrapper<const_infomap_child_iterator>;
 
 public:
-  MultiFlowData data;
+  FlowData data;
   unsigned int index = 0; // Temporary index used in finding best module
   unsigned int stateId = 0; // Unique state node id for the leaf nodes
   unsigned int physicalId = 0; // Physical id equals stateId for first order networks, otherwise can be non-unique
@@ -90,6 +90,7 @@ public:
   bool dirty = false;
 
   std::vector<PhysData> physicalNodes;
+  std::vector<LayerTeleFlowData> layerTeleFlowData; // For regularized multilayer flow
   MetaCollection metaCollection; // For modules
   std::vector<unsigned int> stateNodes; // For physically aggregated nodes
 
@@ -104,21 +105,18 @@ private:
   InfomapBase* m_infomap = nullptr;
 
 public:
-  InfoNode(const MultiFlowData& flowData)
+  InfoNode(const FlowData& flowData)
       : data(flowData) {};
 
   // For first order nodes, physicalId equals stateId
-  InfoNode(const MultiFlowData& flowData, unsigned int stateId)
+  InfoNode(const FlowData& flowData, unsigned int stateId)
       : data(flowData), stateId(stateId), physicalId(stateId) {};
 
-  InfoNode(const MultiFlowData& flowData, unsigned int stateId, unsigned int physicalId)
+  InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId)
       : data(flowData), stateId(stateId), physicalId(physicalId) {};
 
-  InfoNode(const MultiFlowData& flowData, unsigned int stateId, unsigned int physicalId, unsigned int layerId)
+  InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId, unsigned int layerId)
       : data(flowData), stateId(stateId), physicalId(physicalId), layerId(layerId) {};
-
-  InfoNode(const FlowData& flowData)
-      : data(flowData) {};
 
   InfoNode() = default;
 
@@ -138,6 +136,8 @@ public:
         collapsedLastChild(other.collapsedLastChild),
         codelength(other.codelength),
         dirty(other.dirty),
+        physicalNodes(other.physicalNodes),
+        layerTeleFlowData(other.layerTeleFlowData),
         metaCollection(other.metaCollection),
         m_childDegree(other.m_childDegree),
         m_childrenChanged(other.m_childrenChanged),
