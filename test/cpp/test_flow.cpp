@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cmath>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -28,9 +29,172 @@ struct RegularizedMultilayerEgoFlow {
   double codelength = 0.0;
 };
 
+struct MultilayerIntraLink {
+  unsigned int layer = 0;
+  unsigned int source = 0;
+  unsigned int target = 0;
+  double weight = 0.0;
+};
+
+struct AnalyticStateFlow {
+  unsigned int layer = 0;
+  unsigned int physicalId = 0;
+  double flow = 0.0;
+};
+
+struct AnalyticMultilayerFlow {
+  std::vector<AnalyticStateFlow> stateFlows;
+  std::map<unsigned int, double> physicalFlows;
+  double codelength = 0.0;
+};
+
 double plogp(double value)
 {
   return value <= 0.0 ? 0.0 : value * std::log2(value);
+}
+
+unsigned int findStateIndex(const std::vector<AnalyticStateFlow>& states, unsigned int layer, unsigned int physicalId)
+{
+  for (unsigned int i = 0; i < states.size(); ++i) {
+    if (states[i].layer == layer && states[i].physicalId == physicalId) {
+      return i;
+    }
+  }
+  throw std::logic_error("Missing analytic multilayer state");
+}
+
+AnalyticMultilayerFlow analyticRegularizedMultilayerFlow(const std::vector<MultilayerIntraLink>& intraLinks)
+{
+  std::map<unsigned int, unsigned int> layers;
+  std::map<unsigned int, unsigned int> physicalIds;
+  for (const auto& link : intraLinks) {
+    layers.emplace(link.layer, layers.size());
+    physicalIds.emplace(link.source, physicalIds.size());
+    physicalIds.emplace(link.target, physicalIds.size());
+  }
+
+  std::vector<AnalyticStateFlow> states;
+  states.reserve(layers.size() * physicalIds.size());
+  for (const auto& layer : layers) {
+    for (const auto& physicalId : physicalIds) {
+      states.push_back({ layer.first, physicalId.first, 0.0 });
+    }
+  }
+
+  const auto numStates = states.size();
+  const auto numLayers = layers.size();
+  const auto numPhysicalIds = physicalIds.size();
+  const double intraPriorOutWeight = std::log(static_cast<double>(numPhysicalIds)) / static_cast<double>(numLayers);
+  const double interLinkWeight = std::log(static_cast<double>(numLayers)) / static_cast<double>(numLayers);
+  const double interOutWeight = interLinkWeight * static_cast<double>(numLayers);
+
+  std::vector<double> sOut(numStates, 0.0);
+  std::vector<std::vector<std::pair<unsigned int, double>>> intraProb(numStates);
+  for (const auto& link : intraLinks) {
+    const auto source = findStateIndex(states, link.layer, link.source);
+    const auto target = findStateIndex(states, link.layer, link.target);
+    sOut[source] += link.weight;
+    intraProb[source].push_back({ target, link.weight });
+  }
+  for (unsigned int source = 0; source < numStates; ++source) {
+    if (sOut[source] == 0.0) {
+      continue;
+    }
+    for (auto& link : intraProb[source]) {
+      link.second /= sOut[source];
+    }
+  }
+
+  std::vector<double> alpha(numStates, 0.0);
+  std::vector<double> alphaInter(numStates, 0.0);
+  for (unsigned int i = 0; i < numStates; ++i) {
+    alpha[i] = sOut[i] == 0.0 ? 1.0 : intraPriorOutWeight / (intraPriorOutWeight + sOut[i]);
+    alphaInter[i] = interOutWeight / (interOutWeight + sOut[i] + intraPriorOutWeight);
+  }
+
+  std::vector<double> stateFlow(numStates, 1.0 / static_cast<double>(numStates));
+  std::vector<double> nextFlow(numStates, 0.0);
+  std::vector<double> unrecordedInterFlow(numStates, 0.0);
+  std::vector<double> layerTeleFlow(numLayers, 0.0);
+
+  for (unsigned int iteration = 0; iteration < 1000; ++iteration) {
+    std::fill(nextFlow.begin(), nextFlow.end(), 0.0);
+    std::fill(unrecordedInterFlow.begin(), unrecordedInterFlow.end(), 0.0);
+    std::fill(layerTeleFlow.begin(), layerTeleFlow.end(), 0.0);
+
+    for (unsigned int source = 0; source < numStates; ++source) {
+      for (const auto& layer : layers) {
+        const auto target = findStateIndex(states, layer.first, states[source].physicalId);
+        unrecordedInterFlow[target] += alphaInter[source] * stateFlow[source] / static_cast<double>(numLayers);
+      }
+    }
+
+    for (unsigned int i = 0; i < numStates; ++i) {
+      const auto layerIndex = layers.at(states[i].layer);
+      layerTeleFlow[layerIndex] += alpha[i] * ((1.0 - alphaInter[i]) * stateFlow[i] + unrecordedInterFlow[i]);
+    }
+
+    for (unsigned int i = 0; i < numStates; ++i) {
+      const auto layerIndex = layers.at(states[i].layer);
+      nextFlow[i] += layerTeleFlow[layerIndex] / static_cast<double>(numPhysicalIds);
+    }
+
+    for (unsigned int source = 0; source < numStates; ++source) {
+      const double sourceFlow = (1.0 - alphaInter[source]) * stateFlow[source] + unrecordedInterFlow[source];
+      for (const auto& link : intraProb[source]) {
+        nextFlow[link.first] += (1.0 - alpha[source]) * link.second * sourceFlow;
+      }
+    }
+
+    double error = 0.0;
+    double sumFlow = 0.0;
+    for (unsigned int i = 0; i < numStates; ++i) {
+      error += std::abs(nextFlow[i] - stateFlow[i]);
+      sumFlow += nextFlow[i];
+    }
+    for (auto& flow : nextFlow) {
+      flow /= sumFlow;
+    }
+    stateFlow = nextFlow;
+    if (error < 1e-15 && iteration >= 50) {
+      break;
+    }
+  }
+
+  AnalyticMultilayerFlow result;
+  result.stateFlows = states;
+  for (unsigned int i = 0; i < numStates; ++i) {
+    result.stateFlows[i].flow = stateFlow[i];
+    result.physicalFlows[states[i].physicalId] += stateFlow[i];
+  }
+  for (const auto& physicalFlow : result.physicalFlows) {
+    result.codelength -= plogp(physicalFlow.second);
+  }
+  return result;
+}
+
+void addMultilayerIntraLinks(InfomapWrapper& im, const std::vector<MultilayerIntraLink>& intraLinks)
+{
+  for (const auto& link : intraLinks) {
+    im.addMultilayerIntraLink(link.layer, link.source, link.target, link.weight);
+  }
+}
+
+void checkRegularizedMultilayerFlow(InfomapWrapper& im, const AnalyticMultilayerFlow& expected)
+{
+  infomap::test::checkRunSanity(im);
+  infomap::test::checkApproxCodelength(im.codelength(), expected.codelength, 1e-9);
+
+  std::map<std::pair<unsigned int, unsigned int>, double> expectedStateFlows;
+  for (const auto& stateFlow : expected.stateFlows) {
+    expectedStateFlows[{ stateFlow.layer, stateFlow.physicalId }] = stateFlow.flow;
+  }
+
+  for (auto it = im.iterLeafNodes(); !it.isEnd(); ++it) {
+    const auto& node = *it;
+    const auto expectedFlow = expectedStateFlows.at({ node.layerId, node.physicalId });
+    CHECK(node.data.flow == doctest::Approx(expectedFlow).epsilon(1e-10));
+  }
 }
 
 std::array<double, 3> solve3x3(std::array<std::array<double, 3>, 3> coefficients, std::array<double, 3> rhs)
@@ -238,6 +402,44 @@ TEST_CASE("Regularized multilayer ego flow matches analytic prior-strength sampl
 
     CHECK(node.data.flow == doctest::Approx(expectedFlow).epsilon(1e-10));
   }
+}
+
+TEST_CASE("Regularized multilayer asymmetric flow matches analytic prior-strength sample [fast][core][flow]")
+{
+  const std::vector<MultilayerIntraLink> intraLinks = {
+      { 1, 1, 2, 2.0 },
+      { 1, 2, 1, 1.0 },
+      { 1, 1, 3, 1.0 },
+      { 1, 3, 1, 1.0 },
+      { 2, 1, 2, 1.0 },
+      { 2, 2, 3, 3.0 },
+      { 2, 3, 1, 1.0 },
+  };
+
+  InfomapWrapper im(infomap::test::defaultFlags("--directed --regularized --no-infomap --two-level"));
+  addMultilayerIntraLinks(im, intraLinks);
+
+  im.run();
+
+  checkRegularizedMultilayerFlow(im, analyticRegularizedMultilayerFlow(intraLinks));
+}
+
+TEST_CASE("Regularized multilayer matchable state-id flow matches analytic prior-strength sample [fast][core][flow]")
+{
+  const std::vector<MultilayerIntraLink> intraLinks = {
+      { 1, 10, 20, 1.0 },
+      { 1, 20, 10, 2.0 },
+      { 2, 10, 30, 3.0 },
+      { 2, 30, 10, 1.0 },
+  };
+
+  InfomapWrapper im(infomap::test::defaultFlags(
+      "--directed --regularized --matchable-multilayer-ids 2 --no-infomap --two-level"));
+  addMultilayerIntraLinks(im, intraLinks);
+
+  im.run();
+
+  checkRegularizedMultilayerFlow(im, analyticRegularizedMultilayerFlow(intraLinks));
 }
 
 TEST_CASE("Directed regularized codelength matches analytic multi-level tree [fast][core][flow]")
