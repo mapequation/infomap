@@ -1,0 +1,26 @@
+#!/bin/sh
+# Stage the C++ core, the SWIG-generated wrapper, and the rendered
+# Makevars into this package directory before R compiles native code.
+#
+# This script is run by `R CMD INSTALL` when installing from the
+# in-tree skeleton (e.g. via remotes::install_github or r-universe).
+# Source tarballs produced by `make build-r` are already staged and
+# do not ship this script.
+
+set -e
+
+PKG_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$PKG_DIR/../../.." && pwd)"
+SCRIPT="$REPO_ROOT/scripts/stage_r_package.py"
+
+if [ ! -f "$SCRIPT" ]; then
+  echo "ERROR: $SCRIPT not found." >&2
+  echo "This package must be installed from a checkout of the Infomap repository." >&2
+  exit 1
+fi
+
+PYTHON="${PYTHON:-python3}"
+"$PYTHON" "$SCRIPT" --in-place \
+  --skeleton "$PKG_DIR" \
+  --generated "$REPO_ROOT/interfaces/R/generated" \
+  --src "$REPO_ROOT/src"

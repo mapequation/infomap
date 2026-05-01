@@ -24,6 +24,8 @@ NPM ?= npm
 NODE ?= node
 SWIG ?= swig
 EMXX ?= em++
+R ?= R
+RSCRIPT ?= Rscript
 SPHINX_BUILD_BIN := $(shell command -v sphinx-build 2>/dev/null || true)
 SPHINX_BUILD ?= $(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),$(PYTHON) -m sphinx)
 CMAKE ?= $(shell command -v cmake 2>/dev/null || command -v /opt/homebrew/bin/cmake 2>/dev/null || echo cmake)
@@ -76,6 +78,9 @@ help:
 		"  build-lib             Build the static C++ library and exported headers." \
 		"  build-python          Build a Python wheel from the repo root using pyproject metadata." \
 		"  build-python-swig     Regenerate the tracked SWIG wrapper outputs for Python maintainers." \
+		"  build-r               Build the infomap R source tarball into dist/R/." \
+		"  build-r-binary        Build a platform-native R binary into dist/R/." \
+		"  build-r-swig          Regenerate the tracked SWIG wrapper outputs for R maintainers." \
 		"  build-js-metadata     Refresh the tracked JS parameters/changelog metadata." \
 		"  build-js              Build the JS worker bundle and npm package assets from tracked metadata." \
 		"  build-docs            Refresh the committed Python docs site in docs/." \
@@ -87,6 +92,9 @@ help:
 		"  test-python-doctest   Run Python doctests and ruff checks for the installed package." \
 		"  test-python-examples  Run the Python example smoke tests." \
 		"  test-python-swig-freshness  Verify tracked SWIG outputs are up to date." \
+		"  test-r                Run R CMD check --as-cran on the staged infomap R package." \
+		"  test-r-examples       Run the R example smoke tests." \
+		"  test-r-swig-freshness Verify tracked R SWIG outputs are up to date." \
 		"  test-docs             Rebuild docs in a temp dir and verify committed docs/ is fresh." \
 		"  test-js-metadata      Regenerate JS metadata in a temp dir and verify tracked files are current." \
 		"  test-js               Run JS lint/typecheck/unit/browser/package verification for the built npm package." \
@@ -103,6 +111,7 @@ help:
 		"  clean                 Remove native, Python, and JS build outputs." \
 		"  clean-native          Remove native build artifacts, libraries, and CMake build dirs." \
 		"  clean-python          Remove Python build outputs." \
+		"  clean-r               Remove R build outputs." \
 		"  clean-js              Remove JS build and pack outputs." \
 		"" \
 		"Docs / Release" \
@@ -141,6 +150,8 @@ doctor:
 	@printf "cxx (%s): %s\n" "$(CXX)" "$$(command -v $(CXX) 2>/dev/null || echo missing)"
 	@printf "python (%s): %s\n" "$(PYTHON)" "$$(command -v $(PYTHON) 2>/dev/null || echo missing)"
 	@printf "swig (%s): %s\n" "$(SWIG)" "$$(command -v $(SWIG) 2>/dev/null || echo missing)"
+	@printf "R (%s): %s\n" "$(R)" "$$(command -v $(R) 2>/dev/null || echo missing)"
+	@printf "Rscript (%s): %s\n" "$(RSCRIPT)" "$$(command -v $(RSCRIPT) 2>/dev/null || echo missing)"
 	@printf "node (%s): %s\n" "$(NODE)" "$$(command -v $(NODE) 2>/dev/null || echo missing)"
 	@printf "npm (%s): %s\n" "$(NPM)" "$$(command -v $(NPM) 2>/dev/null || echo missing)"
 	@printf "sphinx (%s): %s\n" "$(SPHINX_BUILD)" "$(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),python -m sphinx)"
@@ -165,5 +176,5 @@ dev-bootstrap:
 		"  make build-python dev-python-install" \
 		"  make test-fast"
 
-clean: clean-native clean-python clean-js
+clean: clean-native clean-python clean-r clean-js
 	@true

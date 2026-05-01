@@ -2,9 +2,6 @@
 # Advanced / secondary targets
 ##################################################
 
-R_BUILD_DIR := build/R
-R_HEADERS := $(HEADERS:src/%.h=$(R_BUILD_DIR)/src/%.h)
-R_SOURCES := $(SOURCES:src/%.cpp=$(R_BUILD_DIR)/src/%.cpp)
 TAG_NAME := mapequation/infomap
 DOCKER ?= docker
 DOCKER_COMPOSE ?= $(DOCKER) compose
@@ -12,8 +9,6 @@ DOCKER_SUPPORTED_CLI_TAG ?= infomap:cli-local
 DOCKER_SUPPORTED_NOTEBOOK_TAG ?= infomap:notebook-local
 
 .PHONY: \
-	R \
-	R-build \
 	docker-build \
 	docker-run \
 	docker-build-notebook \
@@ -26,23 +21,6 @@ DOCKER_SUPPORTED_NOTEBOOK_TAG ?= infomap:notebook-local
 	docker-build-r \
 	docker-run-r \
 	test-docker-supported
-
-R: R-build
-	@mkdir -p $(R_BUILD_DIR)/Infomap
-	@cp -a examples/R/load-infomap.R $(R_BUILD_DIR)/Infomap/
-	cd $(R_BUILD_DIR) && CXX="$(CXX)" PKG_CPPFLAGS="$(NATIVE_CXXFLAGS) -DAS_LIB" PKG_LIBS="$(NATIVE_LDFLAGS)" R CMD SHLIB infomap_wrap.cpp $(SOURCES)
-	@cp -a $(R_BUILD_DIR)/infomap.R $(R_BUILD_DIR)/Infomap/
-	@cp -a $(R_BUILD_DIR)/infomap_wrap.so $(R_BUILD_DIR)/Infomap/infomap.so
-	@cp -a examples/R/example-minimal.R $(R_BUILD_DIR)/Infomap/
-
-R-build: $(R_HEADERS) $(R_SOURCES) $(MK_FILES) Makefile
-	@mkdir -p $(R_BUILD_DIR)
-	@cp -a $(SWIG_FILES) $(R_BUILD_DIR)/
-	$(SWIG) -c++ -r -outdir $(R_BUILD_DIR) -o $(R_BUILD_DIR)/infomap_wrap.cpp $(R_BUILD_DIR)/Infomap.i
-
-$(R_BUILD_DIR)/src/%: src/%
-	@mkdir -p $(dir $@)
-	@cp -a $^ $@
 
 docker-build: docker/infomap.Dockerfile
 	$(DOCKER_COMPOSE) build infomap

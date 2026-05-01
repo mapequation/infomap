@@ -1,0 +1,210 @@
+name: _R Package
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: false
+        type: string
+        default: ""
+      run-tests:
+        required: false
+        type: boolean
+        default: true
+      build-release-artifacts:
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  swig-freshness:
+    if: inputs.run-tests
+    name: R SWIG freshness
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Set up Python
+        uses: ./.github/actions/setup-python-build
+        with:
+          python-version: "3.14"
+
+      - name: Install SWIG 4.4.1
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates curl build-essential libpcre2-dev
+          curl -L --retry 3 --output /tmp/swig.tar.gz \
+            https://downloads.sourceforge.net/project/swig/swig/swig-4.4.1/swig-4.4.1.tar.gz
+          mkdir -p /tmp/swig-src
+          tar -xzf /tmp/swig.tar.gz -C /tmp/swig-src --strip-components=1
+          cd /tmp/swig-src
+          ./configure
+          make -j"$(nproc)"
+          sudo make install
+          swig -version
+
+      - name: Verify tracked SWIG outputs
+        run: make test-r-swig-freshness
+
+  tests:
+    if: inputs.run-tests
+    name: R ${{ matrix.r }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    needs: swig-freshness
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+        r: [release, oldrel]
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.r }}
+          use-public-rspm: true
+
+      - name: Install macOS OpenMP runtime
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          brew install libomp
+          mkdir -p ~/.R
+          {
+            printf 'CPPFLAGS += -I%s/include\n' "$(brew --prefix libomp)"
+            printf 'LDFLAGS  += -L%s/lib\n' "$(brew --prefix libomp)"
+          } >> ~/.R/Makevars
+
+      - name: Set up Python (for staging script)
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+
+      - name: Install R package dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: interfaces/R/infomap
+          extra-packages: |
+            any::testthat
+            any::igraph
+            any::tibble
+            any::rcmdcheck
+
+      - name: Stage and check the package
+        run: make test-r
+
+  build-source:
+    if: inputs.build-release-artifacts
+    name: R source tarball
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+
+      - name: Build source tarball
+        run: make build-r
+
+      - name: Upload R source tarball
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: r-source
+          path: dist/R/*.tar.gz
+          retention-days: 7
+
+  build-binaries:
+    if: inputs.build-release-artifacts
+    name: R binary ${{ matrix.os }} / ${{ matrix.r }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+        r: [release, oldrel]
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.r }}
+          use-public-rspm: true
+
+      - name: Install macOS OpenMP runtime
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          brew install libomp
+          mkdir -p ~/.R
+          {
+            printf 'CPPFLAGS += -I%s/include\n' "$(brew --prefix libomp)"
+            printf 'LDFLAGS  += -L%s/lib\n' "$(brew --prefix libomp)"
+          } >> ~/.R/Makevars
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+
+      - name: Build platform binary
+        run: make build-r-binary
+
+      - name: Compute platform tag
+        id: platform
+        run: |
+          case "$(uname -s)" in
+            Linux*)  tag=linux ;;
+            Darwin*) tag=macos ;;
+            MINGW*|MSYS*|CYGWIN*) tag=windows ;;
+            *) tag=unknown ;;
+          esac
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Upload R binary
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: r-binary-${{ steps.platform.outputs.tag }}-r${{ matrix.r }}
+          path: |
+            dist/R/*.tgz
+            dist/R/*.zip
+          retention-days: 7
+          if-no-files-found: ignore
