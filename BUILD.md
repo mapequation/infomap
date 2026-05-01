@@ -103,6 +103,66 @@ Build source and wheel distributions locally when needed:
 make release-python-dist
 ```
 
+## R package
+
+`make build-r` builds an R source tarball of the `infomap` R package
+under `interfaces/R/infomap/`. The package wraps the same C++ core via
+SWIG-generated R bindings tracked in `interfaces/R/generated/`.
+
+Building the R package requires R, Python 3 (for the staging script),
+and a C++ toolchain. SWIG 4.4.1 is only needed when refreshing the
+tracked SWIG outputs.
+
+On macOS with Homebrew:
+
+```bash
+brew install r libomp
+# Optional, only if regenerating SWIG outputs:
+brew install swig
+```
+
+Local maintainer flow:
+
+```bash
+make build-r-stage          # stage skeleton + C++ core into build/R/infomap
+make dev-r-install          # R CMD INSTALL into the user library
+make test-r                 # R CMD check --as-cran on the staged package
+make test-r-examples        # run examples/R/*.R against the installed package
+```
+
+Build a tarball and platform binary:
+
+```bash
+make build-r                # writes dist/R/infomap_X.Y.Z.tar.gz
+make build-r-binary         # writes dist/R/infomap_X.Y.Z.tgz (or .zip on Windows)
+```
+
+Refresh tracked SWIG outputs (only when the SWIG interface changes):
+
+```bash
+make build-r-swig
+make test-r-swig-freshness
+```
+
+Regenerate the package's roxygen-managed Rd and NAMESPACE after
+changing `R/Infomap.R`:
+
+```bash
+R CMD INSTALL --with-keep.source build/R/infomap
+Rscript -e 'roxygen2::roxygenise("interfaces/R/infomap")'
+```
+
+The R skeleton declares C++14 (`SystemRequirements: C++14`,
+`CXX_STD = CXX14`), matching the core's actual C++ standard. R 4.6 emits
+a NOTE about C++14 being obsolete; this is non-blocking for r-universe
+distribution.
+
+On macOS, `mk/r.mk` writes a temporary Makevars that pins
+`CC=/usr/bin/clang` and `CXX=/usr/bin/clang++` so the compiled `.so` is
+ABI-compatible with Homebrew R's libc++. This workaround is documented
+in `mk/r.mk` and tagged for removal once Homebrew R links against LLVM
+libc++.
+
 ## JavaScript worker package
 
 The JavaScript package requires
