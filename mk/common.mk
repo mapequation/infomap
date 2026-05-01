@@ -151,8 +151,23 @@ doctor:
 	@printf "python (%s): %s\n" "$(PYTHON)" "$$(command -v $(PYTHON) 2>/dev/null || echo missing)"
 	@printf "python build module: %s\n" "$$($(PYTHON) -c 'from importlib.metadata import version; print(version(\"build\"))' 2>/dev/null || echo 'missing (pip install build)')"
 	@printf "swig (%s): %s\n" "$(SWIG)" "$$(command -v $(SWIG) 2>/dev/null || echo missing)"
+	@printf "swig version: %s\n" "$$($(SWIG) -version 2>/dev/null | sed -nE 's/.*SWIG Version[[:space:]]+([0-9.]+).*/\1/p' | head -1 || echo unknown) (R bindings require 4.4.1)"
 	@printf "R (%s): %s\n" "$(R)" "$$(command -v $(R) 2>/dev/null || echo missing)"
+	@printf "R version: %s\n" "$$($(R) --version 2>/dev/null | sed -nE 's/^R version ([0-9.]+).*/\1/p' | head -1 || echo missing)"
 	@printf "Rscript (%s): %s\n" "$(RSCRIPT)" "$$(command -v $(RSCRIPT) 2>/dev/null || echo missing)"
+	@printf "R packages:\n"
+	@if command -v $(RSCRIPT) >/dev/null 2>&1; then \
+		for pkg in R6 methods roxygen2 rcmdcheck testthat igraph tibble; do \
+			ver=$$($(RSCRIPT) -e "cat(as.character(packageVersion('$$pkg')))" 2>/dev/null); \
+			if [ -n "$$ver" ]; then \
+				printf "  %-10s %s\n" "$$pkg" "$$ver"; \
+			else \
+				printf "  %-10s missing (Rscript -e 'install.packages(\"%s\")')\n" "$$pkg" "$$pkg"; \
+			fi; \
+		done; \
+	else \
+		printf "  Rscript not available; cannot probe R packages\n"; \
+	fi
 	@printf "node (%s): %s\n" "$(NODE)" "$$(command -v $(NODE) 2>/dev/null || echo missing)"
 	@printf "npm (%s): %s\n" "$(NPM)" "$$(command -v $(NPM) 2>/dev/null || echo missing)"
 	@printf "sphinx (%s): %s\n" "$(SPHINX_BUILD)" "$(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),python -m sphinx)"
@@ -165,6 +180,7 @@ doctor:
 		printf "brew prefix: %s\n" "$(if $(BUILD_CONFIG_BREW_PREFIX),$(BUILD_CONFIG_BREW_PREFIX),missing)"; \
 		printf "libomp prefix: %s\n" "$(if $(BUILD_CONFIG_LIBOMP_PREFIX),$(BUILD_CONFIG_LIBOMP_PREFIX),missing)"; \
 		printf "deployment target: %s\n" "$(if $(BUILD_CONFIG_DEPLOYMENT_TARGET),$(BUILD_CONFIG_DEPLOYMENT_TARGET),unset)"; \
+		printf "Apple clang++ (for R workaround): %s\n" "$$([ -x /usr/bin/clang++ ] && /usr/bin/clang++ --version 2>/dev/null | head -1 || echo 'missing (xcode-select --install)')"; \
 	fi
 
 dev-bootstrap:
