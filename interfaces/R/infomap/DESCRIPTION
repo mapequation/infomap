@@ -6,6 +6,9 @@ Authors@R: c(
     person("Anton", "Holmgren", role = "aut"),
     person("Martin", "Rosvall", role = "aut"),
     person("mapequation", role = "cph"))
+Author: Daniel Edler [aut, cre], Anton Holmgren [aut], Martin Rosvall [aut],
+    mapequation [cph]
+Maintainer: Daniel Edler <daniel.edler@umu.se>
 Description: R bindings for the Infomap network clustering algorithm. Infomap
     decomposes a network into modules by optimally compressing a description
     of information flows on the network using the Map Equation. Provides a

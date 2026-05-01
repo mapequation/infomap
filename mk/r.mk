@@ -65,8 +65,9 @@ build-r-binary: build-r
 test-r: build-r-stage
 	$(_write_apple_mv)
 	@mkdir -p $(R_BUILD_DIR)/check
-	$(R_CMD_ENV) $(R) CMD check --as-cran --no-manual --no-vignettes \
-		--output=$(R_BUILD_DIR)/check $(R_STAGED_DIR)
+	$(R_CMD_ENV) _R_CHECK_FORCE_SUGGESTS_=false \
+		$(RSCRIPT) scripts/r_check.R $(R_STAGED_DIR) $(R_BUILD_DIR)/check \
+		--no-manual --no-vignettes --as-cran
 
 dev-r-install: build-r-stage
 	$(_write_apple_mv)
