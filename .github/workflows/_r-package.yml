@@ -37,7 +37,17 @@ jobs:
         with:
           python-version: "3.14"
 
+      - name: Cache SWIG 4.4.1 install
+        id: swig-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/bin/swig
+            /usr/local/share/swig
+          key: swig-4.4.1-${{ runner.os }}-${{ runner.arch }}-v1
+
       - name: Install SWIG 4.4.1
+        if: steps.swig-cache.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y ca-certificates curl build-essential libpcre2-dev
@@ -49,7 +59,9 @@ jobs:
           ./configure
           make -j"$(nproc)"
           sudo make install
-          swig -version
+
+      - name: Verify SWIG version
+        run: swig -version
 
       - name: Verify tracked SWIG outputs
         run: make test-r-swig-freshness

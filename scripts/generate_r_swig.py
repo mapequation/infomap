@@ -96,20 +96,79 @@ def scrub_invocation_comment(text: str) -> str:
     return "".join(out)
 
 
-def copy_file(src: Path, dest: Path, scrub: bool = False) -> None:
+# REMOVE WHEN SWIG > 4.4.1 emits R 4.6-clean code (upstream fix in
+# https://github.com/swig/swig/pull/3411, not yet released as of SWIG 4.4.1).
+# R 4.6.0 (April 2025) removed two non-API macros that SWIG 4.4.1's R
+# templates still emit:
+#   - SET_S4_OBJECT(x): mutated the S4 bit in place. Replacement is
+#     x = Rf_asS4(x, TRUE, 0), available since R 2.4.0.
+#   - CHARACTER_POINTER(s): now returns const SEXP *, so the
+#     CHARACTER_POINTER(s)[i] = Rf_mkChar(...) idiom no longer compiles.
+#     Replacement is SET_STRING_ELT(s, i, Rf_mkChar(...)).
+# The replacements come straight from SWIG PR #3411.
+_CHARACTER_POINTER_INNER = r"(?:[^()]|\([^()]*\))*"
+_CHARACTER_POINTER_RE = re.compile(
+    r"CHARACTER_POINTER\((" + _CHARACTER_POINTER_INNER + r")\)\[([^\]]+)\]\s*=\s*(.+?);",
+    re.DOTALL,
+)
+
+
+def patch_for_r_4_6(text: str) -> str:
+    """Rewrite SWIG-emitted non-API macros to R 4.6-clean equivalents."""
+    text = re.sub(
+        r"SET_S4_OBJECT\((\w+)\);",
+        r"\1 = Rf_asS4(\1, TRUE, 0);",
+        text,
+    )
+    text = _CHARACTER_POINTER_RE.sub(
+        lambda m: f"SET_STRING_ELT({m.group(1)}, {m.group(2)}, {m.group(3)});",
+        text,
+    )
+    text = _patch_r_init_symbol_visibility(text)
+    return text
+
+
+# R CMD check --as-cran requires `R_useDynamicSymbols(dll, FALSE)` to
+# constrain the .Call interface to the registered routines table. SWIG's
+# R_init_<pkg> registers routines but doesn't call this, triggering a
+# WARNING. Append the call inside R_init_infomap.
+def _patch_r_init_symbol_visibility(text: str) -> str:
+    needle = "R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);"
+    if needle not in text:
+        return text
+    # Idempotent: skip if already patched.
+    if "R_useDynamicSymbols(dll, FALSE);" in text:
+        return text
+    # NOTE: do not add R_forceSymbols(dll, TRUE) here — SWIG's generated
+    # R bindings invoke C entry points by string name via .Call(...), which
+    # forceSymbols breaks.
+    replacement = (
+        "R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);\n"
+        "    R_useDynamicSymbols(dll, FALSE);"
+    )
+    return text.replace(needle, replacement, 1)
+
+
+def copy_file(src: Path, dest: Path, scrub: bool = False, patch_cpp: bool = False) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     if scrub:
-        dest.write_text(scrub_invocation_comment(src.read_text(encoding="utf-8")), encoding="utf-8")
+        text = scrub_invocation_comment(src.read_text(encoding="utf-8"))
+    elif patch_cpp:
+        text = patch_for_r_4_6(src.read_text(encoding="utf-8"))
     else:
         shutil.copyfile(src, dest)
+        return
+    dest.write_text(text, encoding="utf-8")
 
 
-def files_match(expected: Path, actual: Path, scrub: bool = False) -> bool:
+def files_match(expected: Path, actual: Path, scrub: bool = False, patch_cpp: bool = False) -> bool:
     if not expected.exists():
         return False
     actual_text = actual.read_text(encoding="utf-8")
     if scrub:
         actual_text = scrub_invocation_comment(actual_text)
+    elif patch_cpp:
+        actual_text = patch_for_r_4_6(actual_text)
     return expected.read_text(encoding="utf-8") == actual_text
 
 
@@ -131,7 +190,7 @@ def main() -> int:
             failures = []
             if not files_match(r_out, generated_r, scrub=True):
                 failures.append(str(r_out))
-            if not files_match(cpp_out, generated_cpp):
+            if not files_match(cpp_out, generated_cpp, patch_cpp=True):
                 failures.append(str(cpp_out))
             if failures:
                 print_github_actions_error(
@@ -153,7 +212,7 @@ def main() -> int:
             return 0
 
         copy_file(generated_r, r_out, scrub=True)
-        copy_file(generated_cpp, cpp_out)
+        copy_file(generated_cpp, cpp_out, patch_cpp=True)
 
     print(f"Updated {r_out}")
     print(f"Updated {cpp_out}")

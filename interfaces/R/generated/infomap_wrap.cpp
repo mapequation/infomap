@@ -1133,7 +1133,7 @@ SWIG_MakePtr(void *ptr, const char *typeName, int flags)
     R_RegisterCFinalizer(external, R_SWIG_ReferenceFinalizer);
 
   r_obj = SET_SLOT(r_obj, Rf_mkString((char *) "ref"), external);
-  SET_S4_OBJECT(r_obj);
+  r_obj = Rf_asS4(r_obj, TRUE, 0);
   Rf_unprotect(2);
 
   return(r_obj);
@@ -1151,7 +1151,7 @@ R_SWIG_create_SWIG_R_Array(const char *typeName, SEXP ref, int len)
    Rf_protect(arr = R_do_slot_assign(arr, Rf_mkString("dims"), Rf_ScalarInteger(len)));
 
    Rf_unprotect(3); 			   
-   SET_S4_OBJECT(arr);	
+   arr = Rf_asS4(arr, TRUE, 0);	
    return arr;
 }
 
@@ -1174,7 +1174,7 @@ SWIG_R_NewPointerObj(void *ptr, swig_type_info *type, int flags) {
   }
   rptr = R_MakeExternalPtr(ptr, 
   R_MakeExternalPtr(type, R_NilValue, R_NilValue), R_NilValue); 
-  SET_S4_OBJECT(rptr);
+  rptr = Rf_asS4(rptr, TRUE, 0);
   return rptr;
 }
 
@@ -2391,7 +2391,7 @@ namespace swig {
          PROTECT(result = Rf_allocVector(STRSXP, val->size()));
          for (unsigned pos = 0; pos < val->size(); pos++)
            {
-             CHARACTER_POINTER(result)[pos] = Rf_mkChar(((*val)[pos]).c_str());
+             SET_STRING_ELT(result, pos, Rf_mkChar(((*val)[pos]).c_str()));
            }
         UNPROTECT(1);
         return(result);
@@ -2857,7 +2857,7 @@ namespace swig {
             // Fill the R vector
             for (unsigned vpos = 0; vpos < val->at(pos).size(); ++vpos)
               {
-                CHARACTER_POINTER(VECTOR_ELT(result, pos))[vpos] = Rf_mkChar(val->at(pos).at(vpos).c_str());
+                SET_STRING_ELT(VECTOR_ELT(result, pos), vpos, Rf_mkChar(val->at(pos).at(vpos).c_str()));
               }
           }
         UNPROTECT(1);
@@ -47898,6 +47898,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
 
 extern "C" SWIGEXPORT void R_init_infomap(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 
 
 SWIG_init();

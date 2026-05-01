@@ -10,7 +10,6 @@ R_TARBALL := $(R_DIST_DIR)/infomap_$(R_VERSION).tar.gz
 
 R_STAGE_SCRIPT := scripts/stage_r_package.py
 R_SWIG_SCRIPT := scripts/generate_r_swig.py
-R_TEST_DIR := test/R
 
 # On macOS, Homebrew LLVM clang++ may be first in PATH but Homebrew R uses
 # Apple's libc++ at runtime.  Compilation with LLVM clang++ produces a .so
@@ -18,6 +17,9 @@ R_TEST_DIR := test/R
 # that the Apple runtime cannot resolve.  Writing a temporary Makevars file
 # that pins CC/CXX to Apple's toolchain — and passing it via
 # R_MAKEVARS_USER — keeps the compiled .so ABI-compatible with R.
+# REMOVE WHEN: Homebrew R links against the LLVM libc++ runtime, or the
+# CRAN macOS toolchain assumption changes such that LLVM-built .so files
+# load cleanly under R.
 ifeq ($(UNAME_S),Darwin)
 _R_APPLE_MV  := $(CURDIR)/$(R_BUILD_DIR)/.Makevars.apple
 R_CMD_ENV    := R_MAKEVARS_USER=$(_R_APPLE_MV)

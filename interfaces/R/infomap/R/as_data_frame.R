@@ -11,11 +11,14 @@
 #'   physical id within a module. Default `TRUE`.
 #' @param depth_level Tree depth used for the `module_id` column. `1`
 #'   gives top-level modules, `-1` the bottom level. Default `1`.
+#' @param tibble If `TRUE`, return a `tibble` (requires the `tibble`
+#'   package). Default `FALSE` returns a plain `data.frame` so the
+#'   return type is independent of installed packages.
 #' @param ... Unused.
 #'
-#' @return A `data.frame` (or a `tibble` if the `tibble` package is
-#'   available) with columns `state_id`, `node_id`, `module_id`,
-#'   `flow`, `name` and (for multilayer networks) `layer_id`.
+#' @return A `data.frame` (or a `tibble` when `tibble = TRUE`) with
+#'   columns `state_id`, `node_id`, `module_id`, `flow`, `name` and
+#'   (for multilayer networks) `layer_id`.
 #'
 #' @examples
 #' im <- Infomap(silent = TRUE)
@@ -28,6 +31,7 @@ as.data.frame.Infomap <- function(x,
                                   optional = FALSE,
                                   states = TRUE,
                                   depth_level = 1L,
+                                  tibble = FALSE,
                                   ...) {
   raw <- x$get_nodes(depth_level = as.integer(depth_level), states = isTRUE(states))
   df <- data.frame(
@@ -45,7 +49,14 @@ as.data.frame.Infomap <- function(x,
     if (is.null(nm) || is.na(nm)) NA_character_ else as.character(nm)
   }, character(1L))
 
-  if (requireNamespace("tibble", quietly = TRUE)) {
+  if (isTRUE(tibble)) {
+    if (!requireNamespace("tibble", quietly = TRUE)) {
+      stop(
+        "tibble = TRUE requires the 'tibble' package. ",
+        "Install it with install.packages(\"tibble\").",
+        call. = FALSE
+      )
+    }
     return(tibble::as_tibble(df))
   }
   df

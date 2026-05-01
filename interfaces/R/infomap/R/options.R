@@ -80,11 +80,11 @@ ALGORITHM_POST_DIRECTED_OPTIONS <- list(
   list(type = "value", name = "multilayer_relax_rate", flag = "--multilayer-relax-rate",
        default = DEFAULT_MULTILAYER_RELAX_RATE, include = .skip_when_not_equal(DEFAULT_MULTILAYER_RELAX_RATE)),
   list(type = "value", name = "multilayer_relax_limit", flag = "--multilayer-relax-limit",
-       default = -1L, include = .skip_when_not_equal(-1L)),
+       default = NULL, include = .skip_when_null),
   list(type = "value", name = "multilayer_relax_limit_up", flag = "--multilayer-relax-limit-up",
-       default = -1L, include = .skip_when_not_equal(-1L)),
+       default = NULL, include = .skip_when_null),
   list(type = "value", name = "multilayer_relax_limit_down", flag = "--multilayer-relax-limit-down",
-       default = -1L, include = .skip_when_not_equal(-1L)),
+       default = NULL, include = .skip_when_null),
   list(type = "flag",  name = "multilayer_relax_by_jsd", flag = "--multilayer-relax-by-jsd", default = FALSE)
 )
 
@@ -153,8 +153,8 @@ OPTION_DEFAULTS <- list(
   markov_time = 1.0, variable_markov_time = FALSE, variable_markov_damping = 1.0,
   preferred_number_of_modules = NULL,
   multilayer_relax_rate = DEFAULT_MULTILAYER_RELAX_RATE,
-  multilayer_relax_limit = -1L, multilayer_relax_limit_up = -1L,
-  multilayer_relax_limit_down = -1L, multilayer_relax_by_jsd = FALSE,
+  multilayer_relax_limit = NULL, multilayer_relax_limit_up = NULL,
+  multilayer_relax_limit_down = NULL, multilayer_relax_by_jsd = FALSE,
   seed = DEFAULT_SEED, num_trials = 1L, core_loop_limit = 10L,
   core_level_limit = NULL, tune_iteration_limit = NULL,
   core_loop_codelength_threshold = DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
@@ -168,7 +168,7 @@ OPTION_DEFAULTS <- list(
 #' Returns a named list with one entry per Infomap CLI option. All
 #' arguments default to the Infomap-internal defaults, so callers only
 #' need to supply the options they want to override. The returned list
-#' is accepted by [Infomap()] and [Infomap$run()].
+#' is accepted by [Infomap()] and `Infomap$run()`.
 #'
 #' Argument names mirror the Infomap CLI flags (with hyphens replaced by
 #' underscores) and the keyword arguments accepted by the Python
@@ -325,7 +325,7 @@ format_value <- function(value) {
 #' Render an Infomap options list to a CLI argument string
 #'
 #' This is exported for advanced use; most callers should pass options
-#' directly to [Infomap()] or [Infomap$run()].
+#' directly to [Infomap()] or `Infomap$run()`.
 #'
 #' @param args Optional raw argument string to prepend.
 #' @param opts Options list from [infomap_options()] (or `NULL`).
@@ -337,9 +337,11 @@ construct_args <- function(args = NULL, opts = NULL) {
   parts <- character(0)
 
   if (!is.null(opts$include_self_links)) {
-    warning(
-      "include_self_links is deprecated, use no_self_links to exclude self-links",
-      call. = FALSE
+    .Deprecated(
+      new = "no_self_links",
+      package = "infomap",
+      old = "include_self_links",
+      msg = "include_self_links is deprecated; use no_self_links = TRUE to exclude self-links."
     )
   }
 
@@ -378,7 +380,7 @@ construct_args <- function(args = NULL, opts = NULL) {
 
   rendered <- paste(parts, collapse = " ")
   if (is.null(args) || !nzchar(args)) {
-    if (length(parts) == 0L) "" else paste0(" ", rendered)
+    rendered
   } else if (length(parts) == 0L) {
     args
   } else {

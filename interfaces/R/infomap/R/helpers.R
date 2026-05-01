@@ -60,16 +60,20 @@ multilayer_node <- function(layer_id, node_id) {
 #' Run Infomap from the command line
 #'
 #' Parses arguments from `commandArgs()` (or the `args` parameter), runs
-#' Infomap, and exits. This is mainly used by the bundled
-#' `inst/exec/infomap` shim and is exported so users can call it from
-#' Rscript: `Rscript -e 'infomap::main()' --args -- <flags>`.
+#' Infomap, and exits. Useful for invoking the optimizer from `Rscript`:
+#' `Rscript -e 'infomap::main()' --args <flags...>`.
+#'
+#' Each element of `args` is treated as a single token; spaces inside a
+#' token (e.g. in filenames) survive via `shQuote`. Pass tokens, not a
+#' single pre-joined string.
 #'
 #' @param args Character vector of CLI arguments (default: from `commandArgs()`).
 #' @return Invisibly returns the resulting `Infomap` instance.
 #' @export
 main <- function(args = NULL) {
   if (is.null(args)) args <- commandArgs(trailingOnly = TRUE)
-  cli <- paste(args, collapse = " ")
+  args <- as.character(args)
+  cli <- paste(shQuote(args), collapse = " ")
   im <- Infomap(args = cli)
   im$run()
   invisible(im)

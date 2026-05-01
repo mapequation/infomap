@@ -47,7 +47,9 @@ InfomapClass$set(
       }
     }
 
-    edges <- igraph::as_edgelist(g, names = FALSE) - 1L  # 0-indexed
+    # Vertex names are captured in `mapping` above; the edge list uses
+    # 0-indexed integer ids (Infomap's convention) regardless.
+    edges <- igraph::as_edgelist(g, names = FALSE) - 1L
     weights <- if (has_weight) {
       as.numeric(igraph::edge_attr(g, weight))
     } else {
@@ -67,6 +69,17 @@ InfomapClass$set(
           if (layers[s] == layers[t]) {
             self$add_multilayer_intra_link(layers[s], phys[s], phys[t], weights[e])
           } else {
+            # add_multilayer_inter_link models the same physical node
+            # across layers; diagonal edges (different layer AND
+            # different physical node) cannot be represented.
+            if (phys[s] != phys[t]) {
+              stop(
+                "Multilayer intra/inter format does not support diagonal links ",
+                "(edge between different physical nodes in different layers). ",
+                "Use `multilayer_inter_intra_format = FALSE`.",
+                call. = FALSE
+              )
+            }
             self$add_multilayer_inter_link(layers[s], phys[s], layers[t], weights[e])
           }
         } else {
@@ -88,22 +101,21 @@ InfomapClass$set(
       }
     }
 
-    if (is_directed && is.null(private$.directed_set)) {
-      # Mirror Python: if the graph is directed and the user didn't
-      # explicitly set a flow model, treat the network as directed.
-      # Achieved by passing --directed at run() time. The flag here is
-      # informational; the user can override via run(directed = FALSE).
+    if (is_directed) {
+      # Mirror Python: remember that the source graph is directed. run()
+      # injects --directed unless the user has set a flow model (via
+      # opts at construction/run, or via raw args).
+      private$.directed_from_igraph <- TRUE
     }
 
     invisible(mapping)
   }
 )
 
-#' @description Convert Infomap partition to an igraph communities object.
-#' @param g The same igraph graph that was passed to \code{add_igraph()}.
-#' @return A \code{communities} object (from \code{igraph::make_clusters()})
-#'   compatible with \code{modularity()}, \code{membership()}, and
-#'   \code{plot()}.
+# R6 method `as_communities(g)`: convert the Infomap partition to an
+# igraph `communities` object (from `igraph::make_clusters()`),
+# compatible with `modularity()`, `membership()`, and `plot()`. `g`
+# must be the same igraph graph passed to `add_igraph()`.
 InfomapClass$set(
   "public",
   "as_communities",

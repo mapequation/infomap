@@ -16,10 +16,16 @@ install.packages(
 )
 ```
 
-Source install from a release tarball:
+Source install from a release tarball — pick the version from the
+[GitHub releases page](https://github.com/mapequation/infomap/releases):
 
 ```r
-install.packages("https://github.com/mapequation/infomap/releases/latest/download/infomap_<version>.tar.gz", repos = NULL)
+# Replace VERSION with the desired tag, e.g. "2.9.2".
+install.packages(
+  paste0("https://github.com/mapequation/infomap/releases/download/v",
+         "VERSION", "/infomap_", "VERSION", ".tar.gz"),
+  repos = NULL
+)
 ```
 
 Source install from a git checkout (requires Python 3 and a C++17 compiler):

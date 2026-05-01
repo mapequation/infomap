@@ -42,3 +42,18 @@ test_that("fast_hierarchical_solution renders -F repetition", {
   expect_match(construct_args(NULL, infomap_options(fast_hierarchical_solution = 2L)), "-FF")
   expect_match(construct_args(NULL, infomap_options(fast_hierarchical_solution = 3L)), "-FFF")
 })
+
+test_that("multilayer_relax_limit defaults to NULL and is not rendered", {
+  rendered <- construct_args(NULL, infomap_options())
+  expect_false(grepl("--multilayer-relax-limit", rendered))
+})
+
+test_that("explicit multilayer_relax_limit = -1L is rendered", {
+  rendered <- construct_args(NULL, infomap_options(multilayer_relax_limit = -1L))
+  expect_match(rendered, "--multilayer-relax-limit -1")
+})
+
+test_that("construct_args returns no leading whitespace", {
+  rendered <- construct_args(NULL, infomap_options(silent = TRUE))
+  expect_false(grepl("^\\s", rendered))
+})

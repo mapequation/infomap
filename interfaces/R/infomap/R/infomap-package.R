@@ -14,4 +14,7 @@
 #' }
 #'
 #' @keywords internal
+#' @useDynLib infomap
+#' @importFrom R6 R6Class
+#' @importFrom methods new slot as is callNextMethod cacheMetaData extends setClass
 "_PACKAGE"
