@@ -39,14 +39,22 @@ Sys.unsetenv("MFLAGS")
 # once the core is wrapped to route I/O through R callbacks. We require
 # the warning to be the "checking compiled code" one and to mention only
 # these specific symbols — anything else falls through and fails.
+#
+# R CMD check renders quotes as ASCII straight quotes ('...') in non-UTF-8
+# locales and as Unicode curly quotes ('...') in UTF-8 locales (which is
+# what CI runners use). Normalise both styles before matching.
 is_allowed_warning <- function(text) {
   if (!grepl("^checking compiled code", text)) return(FALSE)
+  # Normalise curly quotes to ASCII for regex matching.
+  text <- gsub("[‘’]", "'", text)
   found_lines <- grep("^\\s*Found '", strsplit(text, "\n")[[1L]], value = TRUE)
   if (length(found_lines) == 0L) return(FALSE)
+  # Match by the human-readable "possibly from 'X'" attribution rather
+  # than the platform-specific mangled symbol on the left.
   allowed <- c(
-    "Found '_exit', possibly from 'exit'",
     "possibly from 'std::cerr'",
-    "possibly from 'std::cout'"
+    "possibly from 'std::cout'",
+    "possibly from 'exit'"
   )
   all(vapply(found_lines, function(line) {
     any(vapply(allowed, function(pat) grepl(pat, line, fixed = TRUE), logical(1L)))

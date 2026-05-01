@@ -1,8 +1,8 @@
 Package: infomap
 Title: Infomap Network Clustering Algorithm
-# x-release-please-start-version
+Config/x-release-please-start-version: marker
 Version: 2.9.2
-# x-release-please-end
+Config/x-release-please-end: marker
 Authors@R: c(
     person("Daniel", "Edler", email = "daniel.edler@umu.se", role = c("aut", "cre")),
     person("Anton", "Holmgren", role = "aut"),
