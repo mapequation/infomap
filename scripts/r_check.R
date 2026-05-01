@@ -38,7 +38,7 @@ result <- rcmdcheck::rcmdcheck(
   quiet    = FALSE
 )
 
-# rcmdcheck's error_on triggers a non-zero exit on the chosen severity,
+# rcmdcheck's error_on triggers a non-zero exit on ERROR or WARNING,
 # so reaching here means at most NOTEs.
 if (length(result$notes) > 0L) {
   message(sprintf("R CMD check passed with %d NOTE(s).", length(result$notes)))

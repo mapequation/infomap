@@ -8,9 +8,7 @@
  ******************************************************************************/
 
 #include "Log.h"
-#ifndef AS_LIB
 #include <iostream>
-#endif
 #include <streambuf>
 
 namespace infomap {
@@ -26,18 +24,8 @@ protected:
 
 std::ostream& Log::defaultStream()
 {
-#ifdef AS_LIB
-  // Library builds (R, Python, JS) must not pull in std::cout to avoid
-  // referencing libc++ globals that R CMD check --as-cran flags. Embedders
-  // should call setOutputStream() to route logging into their host runtime
-  // (e.g. Rprintf-backed streambuf for the R bindings).
-  static NullStreambuf nullBuf;
-  static std::ostream s(&nullBuf);
-  return s;
-#else
   static std::ostream& s = std::cout;
   return s;
-#endif
 }
 
 std::ostream* Log::s_ostream = nullptr;
