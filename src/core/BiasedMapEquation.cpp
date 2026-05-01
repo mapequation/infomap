@@ -10,6 +10,7 @@
 #include "BiasedMapEquation.h"
 #include "FlowData.h"
 #include "InfoNode.h"
+#include "../utils/Log.h"
 
 #include <vector>
 #include <utility>
@@ -231,7 +232,7 @@ void BiasedMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 
 void BiasedMapEquation::printDebug() const
 {
-  std::cout << "BiasedMapEquation\n";
+  Log() << "BiasedMapEquation\n";
   Base::printDebug();
 }
 

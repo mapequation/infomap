@@ -15,7 +15,6 @@
 #include <sstream>
 #include <string>
 #include <locale> // std::locale, std::tolower
-#include <iostream>
 #include <limits>
 #include <vector>
 
