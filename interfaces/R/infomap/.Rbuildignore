@@ -9,5 +9,4 @@
 ^src/Makevars\.in$
 ^src/Makevars\.win\.in$
 ^src/symbols\.rds$
-^configure$
 ^configure\.win$

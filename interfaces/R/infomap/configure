@@ -1,26 +1,46 @@
 #!/bin/sh
-# Stage the C++ core, the SWIG-generated wrapper, and the rendered
-# Makevars into this package directory before R compiles native code.
+# configure — run by R CMD INSTALL on macOS/Linux.
 #
-# This script is run by `R CMD INSTALL` when installing from the
-# in-tree skeleton (e.g. via remotes::install_github or r-universe).
-# Source tarballs produced by `make build-r` are already staged and
-# do not ship this script.
+# 1. Stages C++ sources if absent (direct git-checkout installs via
+#    remotes::install_github).  r-universe and CRAN tarballs already
+#    contain the staged sources (bootstrap.R ran before R CMD build)
+#    so this block is skipped for tarball installs.
+#
+# 2. On macOS, pins the compiler to Apple clang to avoid an LLVM/Apple
+#    libc++ ABI mismatch: Homebrew's LLVM clang++ (often first on PATH)
+#    emits references to LLVM-only symbols such as
+#    __ZNSt3__113__hash_memoryEPKvm that are absent from the Apple libc++
+#    runtime Homebrew R links against.
 
 set -e
 
 PKG_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$PKG_DIR/../../.." && pwd)"
-SCRIPT="$REPO_ROOT/scripts/stage_r_package.py"
 
-if [ ! -f "$SCRIPT" ]; then
-  echo "ERROR: $SCRIPT not found." >&2
-  echo "This package must be installed from a checkout of the Infomap repository." >&2
-  exit 1
+# ── 1. Stage sources when not already present ─────────────────────────────────
+if [ ! -f "$PKG_DIR/src/infomap_wrap.cpp" ]; then
+  REPO_ROOT="$(cd "$PKG_DIR/../../.." && pwd)"
+  SCRIPT="$REPO_ROOT/scripts/stage_r_package.py"
+  if [ ! -f "$SCRIPT" ]; then
+    echo "ERROR: $SCRIPT not found." >&2
+    echo "  Install from a full git checkout of mapequation/infomap," >&2
+    echo "  or via install.packages() from r-universe / CRAN." >&2
+    exit 1
+  fi
+  PYTHON="${PYTHON:-python3}"
+  "$PYTHON" "$SCRIPT" --in-place \
+    --skeleton "$PKG_DIR" \
+    --generated "$REPO_ROOT/interfaces/R/generated" \
+    --src "$REPO_ROOT/src"
 fi
 
-PYTHON="${PYTHON:-python3}"
-"$PYTHON" "$SCRIPT" --in-place \
-  --skeleton "$PKG_DIR" \
-  --generated "$REPO_ROOT/interfaces/R/generated" \
-  --src "$REPO_ROOT/src"
+# ── 2. Pin to Apple clang on macOS ───────────────────────────────────────────
+# Idempotent: skip if already pinned (e.g. repeated installs).
+if [ "$(uname)" = "Darwin" ] && ! grep -q '/usr/bin/clang' "$PKG_DIR/src/Makevars" 2>/dev/null; then
+  {
+    printf '\n'
+    printf '# Pinned by configure: Apple clang avoids LLVM libc++ ABI mismatch.\n'
+    printf 'CC    = /usr/bin/clang\n'
+    printf 'CXX   = /usr/bin/clang++\n'
+    printf 'CXX14 = /usr/bin/clang++ -std=c++14\n'
+  } >> "$PKG_DIR/src/Makevars"
+fi
