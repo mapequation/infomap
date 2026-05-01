@@ -28,7 +28,7 @@ install.packages(
 )
 ```
 
-Source install from a git checkout (requires Python 3 and a C++17 compiler):
+Source install from a git checkout (requires Python 3 and a C++14 compiler):
 
 ```r
 remotes::install_github("mapequation/infomap", subdir = "interfaces/R/infomap")

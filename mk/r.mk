@@ -24,7 +24,7 @@ ifeq ($(UNAME_S),Darwin)
 _R_APPLE_MV  := $(CURDIR)/$(R_BUILD_DIR)/.Makevars.apple
 R_CMD_ENV    := R_MAKEVARS_USER=$(_R_APPLE_MV)
 _write_apple_mv = @mkdir -p $(R_BUILD_DIR) && \
-	printf 'CC = /usr/bin/clang\nCXX = /usr/bin/clang++\nCXX17 = /usr/bin/clang++ -std=c++17\n' \
+	printf 'CC = /usr/bin/clang\nCXX = /usr/bin/clang++\nCXX14 = /usr/bin/clang++ -std=c++14\n' \
 	> $(_R_APPLE_MV)
 else
 R_CMD_ENV       :=
