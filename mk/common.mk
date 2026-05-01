@@ -149,6 +149,7 @@ doctor:
 	@printf "make: %s\n" "$$(command -v $(MAKE) 2>/dev/null || echo missing)"
 	@printf "cxx (%s): %s\n" "$(CXX)" "$$(command -v $(CXX) 2>/dev/null || echo missing)"
 	@printf "python (%s): %s\n" "$(PYTHON)" "$$(command -v $(PYTHON) 2>/dev/null || echo missing)"
+	@printf "python build module: %s\n" "$$($(PYTHON) -c 'from importlib.metadata import version; print(version(\"build\"))' 2>/dev/null || echo 'missing (pip install build)')"
 	@printf "swig (%s): %s\n" "$(SWIG)" "$$(command -v $(SWIG) 2>/dev/null || echo missing)"
 	@printf "R (%s): %s\n" "$(R)" "$$(command -v $(R) 2>/dev/null || echo missing)"
 	@printf "Rscript (%s): %s\n" "$(RSCRIPT)" "$$(command -v $(RSCRIPT) 2>/dev/null || echo missing)"
