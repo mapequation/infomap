@@ -2,6 +2,7 @@
 
 S3method(as.data.frame,Infomap)
 export(Infomap)
+export(InfomapClass)
 export(construct_args)
 export(entropy)
 export(infomap_options)

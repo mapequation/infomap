@@ -31,6 +31,9 @@ node-level frame.
 Returned objects have R6 class \code{"Infomap"}; the underlying
 R6ClassGenerator is exposed as the unexported \code{InfomapClass} for
 advanced use (subclassing, method introspection).
+
+See \link{InfomapClass} for the full list of public methods and active
+bindings.
 }
 \examples{
 # Two triangles joined by a bridge.
