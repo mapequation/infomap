@@ -1,12 +1,6 @@
 #!/usr/bin/env Rscript
 # Build a tarball, then run R CMD check --as-cran via rcmdcheck.
-# Fail the run on ERROR or unexpected WARNING. NOTEs do not fail the run.
-#
-# A tightly-scoped allowlist suppresses the single known WARNING about
-# the Infomap C++ core writing to std::cout/std::cerr and calling exit.
-# That originates in the upstream optimizer and is out of scope for the
-# R bindings; addressing it requires routing the core's I/O through
-# Rprintf/REprintf and replacing exit() with R errors.
+# Fail on any ERROR or WARNING. NOTEs do not fail the run.
 #
 # Usage: Rscript scripts/r_check.R <pkg-dir> <check-outdir> [extra R CMD check flags...]
 
@@ -34,65 +28,19 @@ dir.create(check_dir, showWarnings = FALSE, recursive = TRUE)
 Sys.unsetenv("MAKEFLAGS")
 Sys.unsetenv("MFLAGS")
 
-# Allowlist: pre-existing WARNING about the Infomap C++ core using
-# std::cout/std::cerr/exit. Tracked in the issue queue; remove this entry
-# once the core is wrapped to route I/O through R callbacks. We require
-# the warning to be the "checking compiled code" one and to mention only
-# these specific symbols — anything else falls through and fails.
-#
-# R CMD check renders quotes as ASCII straight quotes ('...') in non-UTF-8
-# locales and as Unicode curly quotes ('...') in UTF-8 locales (which is
-# what CI runners use). Normalise both styles before matching.
-is_allowed_warning <- function(text) {
-  if (!grepl("^checking compiled code", text)) return(FALSE)
-  # Normalise curly quotes to ASCII for regex matching.
-  text <- gsub("[‘’]", "'", text)
-  found_lines <- grep("^\\s*Found '", strsplit(text, "\n")[[1L]], value = TRUE)
-  if (length(found_lines) == 0L) return(FALSE)
-  # Match by the human-readable "possibly from 'X'" attribution rather
-  # than the platform-specific mangled symbol on the left.
-  allowed <- c(
-    "possibly from 'std::cerr'",
-    "possibly from 'std::cout'",
-    "possibly from 'exit'"
-  )
-  all(vapply(found_lines, function(line) {
-    any(vapply(allowed, function(pat) grepl(pat, line, fixed = TRUE), logical(1L)))
-  }, logical(1L)))
-}
-
 # rcmdcheck::rcmdcheck() runs R CMD build first when given a directory,
 # so the source tree (pkg_dir) is left untouched.
 result <- rcmdcheck::rcmdcheck(
   path     = pkg_dir,
   args     = flags,
   check_dir = check_dir,
-  error_on = "never",
+  error_on = "warning",
   quiet    = FALSE
 )
 
-unexpected_warnings <- Filter(
-  function(w) !is_allowed_warning(w),
-  result$warnings
-)
-
-if (length(result$errors) > 0L) {
-  message(sprintf("R CMD check found %d ERROR(s).", length(result$errors)))
-  quit(status = 1L, save = "no")
+# rcmdcheck's error_on triggers a non-zero exit on the chosen severity,
+# so reaching here means at most NOTEs.
+if (length(result$notes) > 0L) {
+  message(sprintf("R CMD check passed with %d NOTE(s).", length(result$notes)))
 }
-
-if (length(unexpected_warnings) > 0L) {
-  message(sprintf(
-    "R CMD check found %d unexpected WARNING(s) (allowlist did not match):",
-    length(unexpected_warnings)
-  ))
-  for (w in unexpected_warnings) message("  ", strsplit(w, "\n")[[1L]][1L])
-  quit(status = 1L, save = "no")
-}
-
-allowed_count <- length(result$warnings) - length(unexpected_warnings)
-message(sprintf(
-  "R CMD check passed (%d allowlisted WARNING(s), %d NOTE(s)).",
-  allowed_count, length(result$notes)
-))
 quit(status = 0L, save = "no")

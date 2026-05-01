@@ -8,7 +8,10 @@
  ******************************************************************************/
 
 #include "Infomap.h"
+#include "io/ProgramInterface.h"
+#ifndef AS_LIB
 #include <iostream>
+#endif
 #include <stdexcept>
 
 #ifdef _OPENMP
@@ -21,11 +24,22 @@ int run(const std::string& flags)
 {
   try {
     InfomapWrapper(Config(flags, true)).run();
+  } catch (const CleanExit&) {
+    // Help / version / json-parameters CLI flags requested a clean exit.
+    return 0;
   } catch (std::exception& e) {
+#ifndef AS_LIB
     std::cerr << "Error: " << e.what() << '\n';
+#else
+    (void)e;
+#endif
     return 1;
   } catch (char const* e) {
+#ifndef AS_LIB
     std::cerr << "Str error: " << e << '\n';
+#else
+    (void)e;
+#endif
     return 1;
   }
 

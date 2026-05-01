@@ -22296,6 +22296,17 @@ setMethod('$', '_p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t', f
 );
 # end of accessor method for std::map< std::pair< unsigned int,unsigned int >,double >
 setMethod('delete', '_p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t', function(obj) {delete_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t(obj)})
+# Start of initRLogging
+
+`initRLogging` = function()
+{
+  ;.Call('R_swig_initRLogging', PACKAGE='infomap');
+  
+}
+
+attr(`initRLogging`, 'returnType') = 'void'
+class(`initRLogging`) = c("SWIGFunction", class('initRLogging'))
+
 # Start of new_InfomapWrapper
 
 `InfomapWrapper__SWIG_0` = function()

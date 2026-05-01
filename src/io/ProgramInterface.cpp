@@ -10,7 +10,6 @@
 #include "ProgramInterface.h"
 #include "../utils/Log.h"
 
-#include <cstdlib>
 #include <map>
 #include <utility>
 
@@ -241,7 +240,7 @@ void ProgramInterface::exitWithUsage(bool showAdvanced) const
     }
   }
   Log() << '\n';
-  std::exit(0);
+  throw CleanExit{};
 }
 
 void ProgramInterface::exitWithVersionInformation() const
@@ -252,7 +251,7 @@ void ProgramInterface::exitWithVersionInformation() const
 #endif
   Log() << '\n';
   Log() << "See www.mapequation.org for terms of use.\n";
-  std::exit(0);
+  throw CleanExit{};
 }
 
 void ProgramInterface::exitWithError(const std::string& message) const
@@ -323,7 +322,7 @@ void ProgramInterface::exitWithJsonParameters() const
   }
   Log() << "  ]\n}";
 
-  std::exit(0);
+  throw CleanExit{};
 }
 
 void ProgramInterface::parseArgs(const std::string& args)

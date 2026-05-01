@@ -3363,6 +3363,47 @@ namespace swig {
       }
     
 
+#include "src/utils/Log.h"
+#include <R_ext/Print.h>
+#include <ostream>
+#include <streambuf>
+
+namespace {
+
+class RPrintStreambuf : public std::streambuf {
+protected:
+  int_type overflow(int_type c) override
+  {
+    if (c != traits_type::eof()) {
+      char ch = static_cast<char>(c);
+      Rprintf("%c", ch);
+    }
+    return c;
+  }
+  std::streamsize xsputn(const char* s, std::streamsize n) override
+  {
+    Rprintf("%.*s", static_cast<int>(n), s);
+    return n;
+  }
+};
+
+} // namespace
+
+namespace infomap {
+void initRLogging()
+{
+  static RPrintStreambuf rbuf;
+  static std::ostream rstream(&rbuf);
+  Log::setOutputStream(rstream);
+}
+} // namespace infomap
+
+
+namespace infomap {
+void initRLogging();
+}
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44025,6 +44066,33 @@ R_swig_delete_map_pair_uint_uint_double ( SEXP self)
 
 
 SWIGEXPORT SEXP
+R_swig_initRLogging ( )
+{
+  {
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    {
+      try {
+        infomap::initRLogging();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_new_InfomapWrapper__SWIG_0 ( )
 {
   {
@@ -47836,6 +47904,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapParentIterator_PlusPlusPostfix", (DL_FUNC) &R_swig_InfomapParentIterator_PlusPlusPostfix, 3},
    {"R_swig_vector_double_resize__SWIG_1", (DL_FUNC) &R_swig_vector_double_resize__SWIG_1, 3},
    {"R_swig_new_InfomapConfigInfomapBase__SWIG_5", (DL_FUNC) &R_swig_new_InfomapConfigInfomapBase__SWIG_5, 1},
+   {"R_swig_initRLogging", (DL_FUNC) &R_swig_initRLogging, 0},
    {"R_swig_vector_double_empty", (DL_FUNC) &R_swig_vector_double_empty, 2},
    {"R_swig_InfomapConfigInfomapBase_setNoCoarseTune", (DL_FUNC) &R_swig_InfomapConfigInfomapBase_setNoCoarseTune, 3},
    {"R_swig_InfomapWrapper_addMultilayerLink__SWIG_0", (DL_FUNC) &R_swig_InfomapWrapper_addMultilayerLink__SWIG_0, 6},
