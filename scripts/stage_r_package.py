@@ -23,7 +23,6 @@ Two modes:
 from __future__ import annotations
 
 import argparse
-import os
 import shutil
 import sys
 from pathlib import Path
@@ -34,7 +33,9 @@ DEFAULT_SKELETON = REPO_ROOT / "interfaces" / "R" / "infomap"
 DEFAULT_GENERATED = REPO_ROOT / "interfaces" / "R" / "generated"
 DEFAULT_SRC = REPO_ROOT / "src"
 DEFAULT_OUT_DIR = REPO_ROOT / "build" / "R" / "infomap"
-PYTHON_VERSION_FILE = REPO_ROOT / "interfaces" / "python" / "src" / "infomap" / "_version.py"
+PYTHON_VERSION_FILE = (
+    REPO_ROOT / "interfaces" / "python" / "src" / "infomap" / "_version.py"
+)
 
 
 def find_cpp_sources(src_root: Path) -> list[Path]:
@@ -50,6 +51,7 @@ def read_python_version() -> str:
         return ""
     text = PYTHON_VERSION_FILE.read_text(encoding="utf-8")
     import re
+
     match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', text)
     return match.group(1) if match else ""
 
@@ -58,6 +60,7 @@ def sync_description_version(description_path: Path, version: str) -> None:
     if not description_path.exists() or not version:
         return
     import re
+
     text = description_path.read_text(encoding="utf-8")
     new_text, n = re.subn(
         r"^Version:\s*\S+\s*$",
@@ -143,8 +146,7 @@ def stage(
     copy_tree(src, nested_src)
 
     cpp_sources = ["infomap_wrap.cpp"] + [
-        f"src/{p.relative_to(src).as_posix()}"
-        for p in find_cpp_sources(src)
+        f"src/{p.relative_to(src).as_posix()}" for p in find_cpp_sources(src)
     ]
     objects_block = render_objects(cpp_sources)
 
@@ -155,7 +157,9 @@ def stage(
         template_path = pkg_src / in_name
         if not template_path.exists():
             raise RuntimeError(f"Skeleton missing template: {template_path}")
-        rendered = render_makevars(template_path.read_text(encoding="utf-8"), objects_block)
+        rendered = render_makevars(
+            template_path.read_text(encoding="utf-8"), objects_block
+        )
         write_text(pkg_src / out_name, rendered)
         if not in_place:
             template_path.unlink()
