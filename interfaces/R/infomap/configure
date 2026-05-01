@@ -11,6 +11,12 @@
 #    emits references to LLVM-only symbols such as
 #    __ZNSt3__113__hash_memoryEPKvm that are absent from the Apple libc++
 #    runtime Homebrew R links against.
+#
+#    R's build system loads src/Makevars *before* R's own Makeconf, so a
+#    plain assignment like CXX = /usr/bin/clang++ is overridden by Makeconf.
+#    Using GNU Make's `override` directive makes the assignment survive both
+#    the Makeconf reload and the command-line CXX=$(CXX14) that R passes to
+#    make.
 
 set -e
 
@@ -35,12 +41,14 @@ fi
 
 # ── 2. Pin to Apple clang on macOS ───────────────────────────────────────────
 # Idempotent: skip if already pinned (e.g. repeated installs).
+# `override` is required: R loads src/Makevars first, then Makeconf (which
+# resets CXX14 to bare `clang++`), then passes CXX=$(CXX14) on the make
+# command line.  Without `override`, both later steps clobber our setting.
 if [ "$(uname)" = "Darwin" ] && ! grep -q '/usr/bin/clang' "$PKG_DIR/src/Makevars" 2>/dev/null; then
   {
     printf '\n'
     printf '# Pinned by configure: Apple clang avoids LLVM libc++ ABI mismatch.\n'
-    printf 'CC    = /usr/bin/clang\n'
-    printf 'CXX   = /usr/bin/clang++\n'
-    printf 'CXX14 = /usr/bin/clang++ -std=c++14\n'
+    printf 'override CC  = /usr/bin/clang\n'
+    printf 'override CXX = /usr/bin/clang++\n'
   } >> "$PKG_DIR/src/Makevars"
 fi

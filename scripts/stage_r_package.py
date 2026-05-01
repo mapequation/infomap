@@ -164,12 +164,6 @@ def stage(
         if not in_place:
             template_path.unlink()
 
-    if not in_place:
-        for stale in ("configure", "configure.win"):
-            stale_path = out_dir / stale
-            if stale_path.exists():
-                stale_path.unlink()
-
     sync_description_version(out_dir / "DESCRIPTION", read_python_version())
 
 
