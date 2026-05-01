@@ -8,7 +8,7 @@ This repository contains the native CLI, the Python package, the JavaScript web
 worker, the Docker images, and the source for the published Python
 documentation.
 
-Start with `mapequation.org/infomap`_ for the user guide and
+Start with `mapequation.org/infomap/`_ for the user guide and
 `CHANGELOG.md`_ for release notes.
 
 For contributing, security reporting, and maintainer workflows, see
@@ -32,7 +32,7 @@ For contributing, security reporting, and maintainer workflows, see
    :alt: Nightly quality
 
 .. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
-.. _`mapequation.org/infomap`: https://www.mapequation.org/infomap
+.. _`mapequation.org/infomap/`: https://www.mapequation.org/infomap/
 .. _`CHANGELOG.md`: https://github.com/mapequation/infomap/blob/master/CHANGELOG.md
 .. _`CONTRIBUTING.md`: https://github.com/mapequation/infomap/blob/master/CONTRIBUTING.md
 .. _`SECURITY.md`: https://github.com/mapequation/infomap/blob/master/SECURITY.md
