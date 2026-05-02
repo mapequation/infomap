@@ -34,7 +34,7 @@ struct FlowModel {
 
   int value = 0;
 
-  FlowModel(int val) : value(val) { }
+  FlowModel(int val) : value(val) {}
   FlowModel& operator=(int val)
   {
     value = val;

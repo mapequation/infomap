@@ -105,17 +105,17 @@ private:
 
 public:
   InfoNode(const FlowData& flowData)
-      : data(flowData) { };
+      : data(flowData) {};
 
   // For first order nodes, physicalId equals stateId
   InfoNode(const FlowData& flowData, unsigned int stateId)
-      : data(flowData), stateId(stateId), physicalId(stateId) { };
+      : data(flowData), stateId(stateId), physicalId(stateId) {};
 
   InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId)
-      : data(flowData), stateId(stateId), physicalId(physicalId) { };
+      : data(flowData), stateId(stateId), physicalId(physicalId) {};
 
   InfoNode(const FlowData& flowData, unsigned int stateId, unsigned int physicalId, unsigned int layerId)
-      : data(flowData), stateId(stateId), physicalId(physicalId), layerId(layerId) { };
+      : data(flowData), stateId(stateId), physicalId(physicalId), layerId(layerId) {};
 
   InfoNode() = default;
 
@@ -138,7 +138,7 @@ public:
         metaCollection(other.metaCollection),
         m_childDegree(other.m_childDegree),
         m_childrenChanged(other.m_childrenChanged),
-        m_numLeafMembers(other.m_numLeafMembers) { }
+        m_numLeafMembers(other.m_numLeafMembers) {}
 
   ~InfoNode() noexcept;
 

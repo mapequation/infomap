@@ -29,7 +29,7 @@ namespace infomap {
 /// status 0; library callers (R/Python/JS bindings) never trigger these
 /// flags. Not derived from std::exception so the generic catch in
 /// infomap::run() does not treat it as an error.
-struct CleanExit { };
+struct CleanExit {};
 
 struct ArgType {
   static const std::string integer;
@@ -51,7 +51,7 @@ struct Option {
         isAdvanced(isAdvanced),
         requireArgument(requireArgument),
         incrementalArgument(false),
-        argumentName(std::move(argName)) { }
+        argumentName(std::move(argName)) {}
 
   virtual ~Option() = default;
 
@@ -137,7 +137,7 @@ struct IncrementalOption : Option {
 template <typename T>
 struct ArgumentOption : Option {
   ArgumentOption(T& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced, std::string argName)
-      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, true, std::move(argName)), target(target) { }
+      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, true, std::move(argName)), target(target) {}
 
   bool parse(std::string const& value) override
   {
@@ -155,7 +155,7 @@ struct ArgumentOption : Option {
 template <typename T>
 struct LowerBoundArgumentOption : ArgumentOption<T> {
   LowerBoundArgumentOption(T& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced, std::string argName, T minValue)
-      : ArgumentOption<T>(target, shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, std::move(argName)), minValue(minValue) { }
+      : ArgumentOption<T>(target, shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, std::move(argName)), minValue(minValue) {}
 
   bool parse(std::string const& value) override
   {
@@ -170,7 +170,7 @@ struct LowerBoundArgumentOption : ArgumentOption<T> {
 template <typename T>
 struct LowerUpperBoundArgumentOption : LowerBoundArgumentOption<T> {
   LowerUpperBoundArgumentOption(T& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced, std::string argName, T minValue, T maxValue)
-      : LowerBoundArgumentOption<T>(target, shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, std::move(argName), minValue), maxValue(maxValue) { }
+      : LowerBoundArgumentOption<T>(target, shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, std::move(argName), minValue), maxValue(maxValue) {}
 
   bool parse(std::string const& value) override
   {
@@ -185,7 +185,7 @@ struct LowerUpperBoundArgumentOption : LowerBoundArgumentOption<T> {
 template <>
 struct ArgumentOption<bool> : Option {
   ArgumentOption(bool& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced)
-      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, false), target(target) { }
+      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, false), target(target) {}
 
   bool parse(std::string const& value) override
   {
@@ -217,7 +217,7 @@ struct ParsedOption {
         incrementalArgument(opt.incrementalArgument),
         argumentName(opt.argumentName),
         negated(opt.negated),
-        value(opt.printValue()) { }
+        value(opt.printValue()) {}
 
   friend std::ostream& operator<<(std::ostream& out, const ParsedOption& option)
   {
@@ -243,7 +243,7 @@ struct ParsedOption {
 
 struct TargetBase {
   TargetBase(std::string variableName, std::string desc, std::string group, bool isAdvanced)
-      : variableName(std::move(variableName)), description(std::move(desc)), group(std::move(group)), isOptionalVector(false), isAdvanced(isAdvanced) { }
+      : variableName(std::move(variableName)), description(std::move(desc)), group(std::move(group)), isOptionalVector(false), isAdvanced(isAdvanced) {}
 
   virtual ~TargetBase() = default;
 
@@ -264,7 +264,7 @@ struct TargetBase {
 template <typename T>
 struct Target : TargetBase {
   Target(T& target, std::string variableName, std::string desc, std::string group, bool isAdvanced)
-      : TargetBase(std::move(variableName), std::move(desc), std::move(group), isAdvanced), target(target) { }
+      : TargetBase(std::move(variableName), std::move(desc), std::move(group), isAdvanced), target(target) {}
 
   bool parse(std::string const& value) override
   {
