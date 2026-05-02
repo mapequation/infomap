@@ -88,6 +88,7 @@ help:
 		"  build-docs            Refresh the committed Python docs site in docs/." \
 		"" \
 		"Test" \
+		"  test-cpp-stream-policy  Verify runtime C++ does not use direct global std streams outside approved files." \
 		"  test-native           Configure, build, and run the C++ doctest suite via CMake/CTest." \
 		"  test-python           Run the full Python verification suite." \
 		"  test-python-unit      Run pytest for test/python." \

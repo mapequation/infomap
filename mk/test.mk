@@ -27,7 +27,10 @@ define warn_cmake_build_type_mismatch
 	fi
 endef
 
-.PHONY: test-native test-binding-options-freshness test-fast test-sanitizers bench-python bench-native
+.PHONY: test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers bench-python bench-native
+
+test-cpp-stream-policy:
+	@$(PYTHON) scripts/check_cpp_stream_policy.py
 
 test-binding-options-freshness: build-native
 	@$(PYTHON_FOR_BUILD_CONFIG) $(BINDING_OPTIONS_SCRIPT) --check --infomap-bin ./Infomap --output-root .
@@ -49,7 +52,7 @@ test-native:
 	@"$(CMAKE)" --build $(CMAKE_TEST_BUILD_DIR) --target $(CMAKE_TEST_TARGET) --parallel $(JOBS)
 	@"$(CTEST)" --test-dir $(CMAKE_TEST_BUILD_DIR) --output-on-failure $(CTEST_ARGS)
 
-test-fast: test-native test-python-unit
+test-fast: test-cpp-stream-policy test-native test-python-unit
 	@true
 
 test-sanitizers:
