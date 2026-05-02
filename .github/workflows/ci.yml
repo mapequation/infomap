@@ -23,6 +23,7 @@ jobs:
       native: ${{ steps.filter.outputs.native }}
       python: ${{ steps.filter.outputs.python }}
       javascript: ${{ steps.filter.outputs.javascript }}
+      r: ${{ steps.filter.outputs.r }}
 
     steps:
       - name: Checkout repository
@@ -79,6 +80,17 @@ jobs:
               - "scripts/prepare_npm_package.py"
               - ".github/actions/setup-js-build/action.yml"
               - ".github/workflows/_js-package.yml"
+            r:
+              - "Makefile"
+              - "mk/**"
+              - "src/**"
+              - "interfaces/swig/**"
+              - "interfaces/R/**"
+              - "examples/R/**"
+              - "scripts/generate_r_swig.py"
+              - "scripts/stage_r_package.py"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/_r-package.yml"
 
   native:
     needs: changes
@@ -101,9 +113,17 @@ jobs:
       run-tests: true
       pack-artifact: false
 
+  r:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.r == 'true'
+    uses: ./.github/workflows/_r-package.yml
+    with:
+      run-tests: true
+      build-release-artifacts: false
+
   ci-summary:
     name: CI Summary
-    needs: [changes, native, python, javascript]
+    needs: [changes, native, python, javascript, r]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 10

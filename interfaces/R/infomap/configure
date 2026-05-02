@@ -1,0 +1,60 @@
+#!/bin/sh
+# configure — run by R CMD INSTALL on macOS/Linux.
+#
+# 1. Stages C++ sources if absent (direct git-checkout installs via
+#    remotes::install_github).  r-universe and CRAN tarballs already
+#    contain the staged sources (bootstrap.R ran before R CMD build)
+#    so this block is skipped for tarball installs.
+#
+# 2. On macOS, pins the compiler to Apple clang to avoid an LLVM/Apple
+#    libc++ ABI mismatch: Homebrew's LLVM clang++ (often first on PATH)
+#    emits references to LLVM-only symbols such as
+#    __ZNSt3__113__hash_memoryEPKvm that are absent from the Apple libc++
+#    runtime Homebrew R links against.
+#
+#    Some r-universe macOS x86_64/oldrel toolchains also report "using C++17"
+#    while omitting the standard flag from compile commands.  Put the C++17
+#    flag directly on the pinned compiler command so headers are always parsed
+#    in the requested standard.
+#
+#    R's build system loads src/Makevars *before* R's own Makeconf, so a
+#    plain assignment like CXX = /usr/bin/clang++ is overridden by Makeconf.
+#    Using GNU Make's `override` directive makes the assignment survive both
+#    the Makeconf reload and the command-line compiler setting that R passes to
+#    make.
+
+set -e
+
+PKG_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# ── 1. Stage sources when not already present ─────────────────────────────────
+if [ ! -f "$PKG_DIR/src/infomap_wrap.cpp" ]; then
+  REPO_ROOT="$(cd "$PKG_DIR/../../.." && pwd)"
+  SCRIPT="$REPO_ROOT/scripts/stage_r_package.py"
+  if [ ! -f "$SCRIPT" ]; then
+    echo "ERROR: $SCRIPT not found." >&2
+    echo "  Install from a full git checkout of mapequation/infomap," >&2
+    echo "  or via install.packages() from r-universe / CRAN." >&2
+    exit 1
+  fi
+  PYTHON="${PYTHON:-python3}"
+  "$PYTHON" "$SCRIPT" --in-place \
+    --skeleton "$PKG_DIR" \
+    --generated "$REPO_ROOT/interfaces/R/generated" \
+    --src "$REPO_ROOT/src"
+fi
+
+# ── 2. Pin to Apple clang on macOS ───────────────────────────────────────────
+# Idempotent: skip if already pinned (e.g. repeated installs).
+# `override` is required: R loads src/Makevars first, then Makeconf, then
+# passes CXX on the make command line. Without `override`, both later steps
+# clobber our setting.
+if [ "$(uname)" = "Darwin" ] && ! grep -q 'override CXX17 = /usr/bin/clang++ -std=gnu++17' "$PKG_DIR/src/Makevars" 2>/dev/null; then
+  {
+    printf '\n'
+    printf '# Pinned by configure: Apple clang avoids LLVM libc++ ABI mismatch.\n'
+    printf 'override CC  = /usr/bin/clang\n'
+    printf 'override CXX = /usr/bin/clang++ -std=gnu++17\n'
+    printf 'override CXX17 = /usr/bin/clang++ -std=gnu++17\n'
+  } >> "$PKG_DIR/src/Makevars"
+fi

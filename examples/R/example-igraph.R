@@ -1,44 +1,24 @@
+# Infomap on Zachary's karate club via igraph.
+#
+# Run with: Rscript examples/R/example-igraph.R
+# Requires the `infomap` and `igraph` R packages.
 
-# Load igraph library (assuming installed, else do install.package("igraph"))
-message("Load igraph library...")
 library(igraph)
+library(infomap)
 
-# Load Infomap library
-source("load-infomap.R")
+g <- make_graph("Zachary")
 
-## Zachary's karate club
-g <- graph.famous("Zachary")
+im <- Infomap(silent = TRUE, two_level = TRUE)
+im$add_igraph(g)
+im$run()
 
-# Init Infomap network
-conf <- init("--two-level --silent")
-network <- Network(conf);
+cat(sprintf(
+  "Partitioned %d-node network in %d modules with codelength %.4f bits.\n",
+  im$num_nodes, im$num_top_modules, im$codelength
+))
 
-# Add links to Infomap network from igraph data
-edgelist <- get.edgelist(g)
-apply(edgelist, 1, function(e) network$addLink(e[1] - 1, e[2] - 1))
-
-network$finalizeAndCheckNetwork(TRUE, vcount(g))
-
-cat("Created network with", network$numNodes(), "nodes and", network$numLinks(), "links.\n")
-
-tree <- HierarchicalNetwork(conf)
-
-run(network, tree);
-
-cat("Partitioned network in", tree$numTopModules(), "modules with codelength", tree$codelength(), "bits:\n")
-
-clusterIndexLevel <- 1 # 1, 2, ... or -1 for top, second, ... or lowest cluster level
-leafIt <- tree$leafIter(clusterIndexLevel)
-modules <- integer(length = network$numNodes())
-
-while (!leafIt$isEnd()) {
-	modules[leafIt$originalLeafIndex + 1] = leafIt$moduleIndex() + 1
-	leafIt$stepForward()
-}
-
-# Create igraph community data
-comm <- create.communities(modules, algorithm = 'Infomap')
+comm <- im$as_communities(g)
 print(comm)
 
-# Plot communities and network
-plot(comm, g)
+# Uncomment to plot:
+# plot(comm, g)

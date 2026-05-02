@@ -7,6 +7,9 @@ Public release deliverables are:
 
 - native CLI release assets
 - the `infomap` Python package
+- the `infomap` R package (source tarball plus per-platform binaries
+  attached to the GitHub release; r-universe builds and publishes
+  separately from the same repository)
 - the `@mapequation/infomap` npm package
 - the committed Python docs output in `docs/`
 
@@ -51,17 +54,30 @@ Configure these integrations before the first release:
    Also confirm `CHANGELOG.md` contains only entries new since the last
    `vX.Y.Z` tag. If a version surface did not move, the issue is in
    `release-please-config.json` `extra-files`, not in the PR.
+
+   The R package's `interfaces/R/infomap/DESCRIPTION` `Version:` field
+   is **not** wired into release-please (R DCF doesn't tolerate the
+   `#` block markers release-please's generic updater needs). It is
+   resynced from `_version.py` at build time by
+   `scripts/stage_r_package.py` whenever `make build-r` or the
+   r-universe `configure` script runs. Bump the committed value
+   manually if you want it to track between releases.
 4. Merge the release PR.
 5. Release Please creates the `vX.Y.Z` tag and the GitHub Release.
 6. `.github/workflows/release.yml` runs for that tag and:
    - builds the native release assets
    - builds the Python sdist and wheels
+   - builds the R source tarball and per-platform R binaries
    - builds and verifies the npm package
    - attaches assets to the GitHub Release
    - dispatches the Homebrew tap update workflow
    - publishes to PyPI behind `pypi-release`
    - publishes to npm behind `npm-release`
    - dispatches the `infomap-online` package update workflow
+
+   The R package is also continuously published by r-universe from
+   `master` (configured via `.r-universe.json` at the repo root); the
+   release workflow does not push to r-universe directly.
 
 ### Conventional Commit to version bump
 

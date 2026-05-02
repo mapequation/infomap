@@ -1,0 +1,13 @@
+^\.Rproj\.user$
+^.*\.Rproj$
+^_pkgdown\.yml$
+^pkgdown$
+^docs$
+^\.github$
+^cran-comments\.md$
+^CRAN-RELEASE$
+^src/Makevars\.in$
+^src/Makevars\.win\.in$
+^src/symbols\.rds$
+^configure\.win$
+^bootstrap\.R$

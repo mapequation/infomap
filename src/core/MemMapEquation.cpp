@@ -10,6 +10,7 @@
 #include "MemMapEquation.h"
 #include "FlowData.h"
 #include "InfoNode.h"
+#include "../utils/Log.h"
 
 #include <vector>
 #include <set>
@@ -442,7 +443,7 @@ void MemMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 
 void MemMapEquation::printDebug() const
 {
-  std::cout << "MemMapEquation::m_numPhysicalNodes: " << m_numPhysicalNodes << "\n";
+  Log() << "MemMapEquation::m_numPhysicalNodes: " << m_numPhysicalNodes << "\n";
   Base::printDebug();
 }
 

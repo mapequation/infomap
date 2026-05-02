@@ -11,7 +11,6 @@
 #include "../utils/Log.h"
 #include "../utils/infomath.h"
 #include "../core/StateNetwork.h"
-#include <iostream>
 #include <cmath>
 #include <numeric>
 #include <limits>

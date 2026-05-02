@@ -10,6 +10,7 @@
 #include "MetaMapEquation.h"
 #include "FlowData.h"
 #include "InfoNode.h"
+#include "../utils/Log.h"
 
 #include <vector>
 #include <utility>
@@ -263,7 +264,7 @@ void MetaMapEquation::consolidateModules(std::vector<InfoNode*>& modules)
 
 void MetaMapEquation::printDebug() const
 {
-  std::cout << "MetaMapEquation\n";
+  Log() << "MetaMapEquation\n";
   Base::printDebug();
 }
 

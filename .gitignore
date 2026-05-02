@@ -6,6 +6,7 @@
 .cproject
 .settings/
 cmake-build-*/
+.claude/settings.local.json
 
 __pycache__/
 node_modules/
@@ -24,6 +25,17 @@ callgrind.*
 interfaces/python/src/infomap.egg-info/
 interfaces/python/src/infomap/_infomap*.so
 interfaces/python/src/infomap/*.pyd
+
+# In-place staging artifacts written by interfaces/R/infomap/configure
+# (run by r-universe at install time) and by local R CMD INSTALL.
+interfaces/R/infomap/src/Makevars
+interfaces/R/infomap/src/Makevars.win
+interfaces/R/infomap/src/infomap_wrap.cpp
+interfaces/R/infomap/src/src/
+interfaces/R/infomap/src/*.o
+interfaces/R/infomap/src/*.so
+interfaces/R/infomap/src/symbols.rds
+interfaces/R/infomap/R/swig_bindings.R
 
 /README.md
 /npm-pack.json

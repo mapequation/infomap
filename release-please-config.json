@@ -15,6 +15,10 @@
           "path": "interfaces/python/src/infomap/_version.py"
         },
         {
+          "type": "generic",
+          "path": "interfaces/R/infomap/DESCRIPTION"
+        },
+        {
           "type": "yaml",
           "path": "CITATION.cff",
           "jsonpath": "$.version"

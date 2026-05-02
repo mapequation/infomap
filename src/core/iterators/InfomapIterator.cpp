@@ -9,7 +9,6 @@
 
 #include "InfomapIterator.h"
 #include "../InfoNode.h"
-#include <iostream>
 #include <utility> // std::pair
 
 namespace infomap {
