@@ -8,6 +8,7 @@
  ******************************************************************************/
 
 #include "Infomap.h"
+#include "io/ProgramInterface.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -21,6 +22,9 @@ int run(const std::string& flags)
 {
   try {
     InfomapWrapper(Config(flags, true)).run();
+  } catch (const CleanExit&) {
+    // Help / version / json-parameters CLI flags requested a clean exit.
+    return 0;
   } catch (std::exception& e) {
     std::cerr << "Error: " << e.what() << '\n';
     return 1;

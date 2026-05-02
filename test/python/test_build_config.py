@@ -46,3 +46,39 @@ def test_windows_unknown_compiler_defaults_to_msvc_flags():
     assert "/std:c++14" in config["compile_flags"]
     assert "-Wextra" not in config["compile_flags"]
     assert "-fopenmp" not in config["compile_flags"]
+
+
+def test_clang_debug_and_release_share_warning_policy():
+    debug_config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        mode="debug",
+        openmp=False,
+    )
+    release_config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        mode="release",
+        openmp=False,
+    )
+
+    for flag in ["-Wall", "-Wextra", "-Wshadow", "-pedantic", "-Wnon-virtual-dtor", "-std=c++14"]:
+        assert flag in debug_config["compile_flags"]
+        assert flag in release_config["compile_flags"]
+
+    assert "-O0" in debug_config["compile_flags"]
+    assert "-g" in debug_config["compile_flags"]
+    assert "-O3" in release_config["compile_flags"]
+
+
+def test_clang_without_openmp_drops_openmp_flags():
+    config = resolve_build_config(
+        platform_name="linux",
+        compiler="clang++",
+        mode="release",
+        openmp=False,
+    )
+
+    assert "-Xpreprocessor" not in config["compile_flags"]
+    assert "-fopenmp" not in config["compile_flags"]
+    assert "-lomp" not in config["link_flags"]

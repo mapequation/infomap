@@ -35,11 +35,14 @@
 <section id="infomap">
 <h1>Infomap<a class="headerlink" href="#infomap" title="Link to this heading">¶</a></h1>
 <p>Infomap is a network clustering algorithm based on the <a class="reference external" href="https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation">Map equation</a>.
-This repository contains the native CLI, the Python package, the JavaScript web
-worker, the Docker images, and the source for the published Python
-documentation.</p>
-<p>Start with <a class="reference external" href="https://www.mapequation.org/infomap">mapequation.org/infomap</a> for the user guide and
+This repository contains the native CLI, the Python package, the R package,
+the JavaScript web worker, the Docker images, and the source for the
+published Python documentation.</p>
+<p>Start with <a class="reference external" href="https://www.mapequation.org/infomap/">mapequation.org/infomap/</a> for the user guide and
 <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/CHANGELOG.md">CHANGELOG.md</a> for release notes.</p>
+<p>For contributing, security reporting, and maintainer workflows, see
+<a class="reference external" href="https://github.com/mapequation/infomap/blob/master/CONTRIBUTING.md">CONTRIBUTING.md</a>, <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/SECURITY.md">SECURITY.md</a>, <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/BUILD.md">BUILD.md</a>, <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/ARCHITECTURE.md">ARCHITECTURE.md</a>, and
+<a class="reference external" href="https://github.com/mapequation/infomap/blob/master/AGENTS.md">AGENTS.md</a>.</p>
 <section id="install">
 <h2>Install<a class="headerlink" href="#install" title="Link to this heading">¶</a></h2>
 <section id="python-package">
@@ -64,6 +67,48 @@ The Python API reference lives at <a class="reference external" href="https://ma
 <span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">num_top_modules</span><span class="p">,</span> <span class="n">im</span><span class="o">.</span><span class="n">codelength</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="r-package">
+<h3>R package<a class="headerlink" href="#r-package" title="Link to this heading">¶</a></h3>
+<p>Pre-built binaries are published on <a class="reference external" href="https://mapequation.r-universe.dev">r-universe</a>; this is the recommended path:</p>
+<div class="highlight-r notranslate"><div class="highlight"><pre><span></span><span class="nf">install.packages</span><span class="p">(</span>
+<span class="w">  </span><span class="s">&quot;infomap&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="n">repos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s">&quot;https://mapequation.r-universe.dev&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;https://cloud.r-project.org&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Quick start with R:</p>
+<div class="highlight-r notranslate"><div class="highlight"><pre><span></span><span class="nf">library</span><span class="p">(</span><span class="n">infomap</span><span class="p">)</span>
+
+<span class="n">im</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">two_level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">num_trials</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">)</span>
+<span class="n">im</span><span class="o">$</span><span class="nf">add_link</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">)</span>
+<span class="n">im</span><span class="o">$</span><span class="nf">add_link</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">)</span>
+<span class="n">im</span><span class="o">$</span><span class="nf">run</span><span class="p">()</span>
+
+<span class="nf">print</span><span class="p">(</span><span class="n">im</span><span class="o">$</span><span class="n">num_top_modules</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">im</span><span class="o">$</span><span class="n">codelength</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See <code class="docutils literal notranslate"><span class="pre">?Infomap</span></code> for the user-facing constructor and <code class="docutils literal notranslate"><span class="pre">?InfomapClass</span></code> for
+the full method and active-binding reference. The R-specific source README
+lives at <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/interfaces/R/infomap/README.md">interfaces/R/infomap/README.md</a>.</p>
+</section>
+<section id="homebrew-cli">
+<h3>Homebrew CLI<a class="headerlink" href="#homebrew-cli" title="Link to this heading">¶</a></h3>
+<p>If you want the native CLI without the Python package, install the tap and
+formula with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>tap<span class="w"> </span>mapequation/infomap
+brew<span class="w"> </span>install<span class="w"> </span>infomap
+</pre></div>
+</div>
+<p>Or install directly in one command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>install<span class="w"> </span>mapequation/infomap/infomap
+</pre></div>
+</div>
+<p>Upgrade the CLI with the normal Homebrew flow:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>upgrade<span class="w"> </span>infomap
 </pre></div>
 </div>
 </section>
@@ -127,11 +172,14 @@ Show the available CLI options with:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">RELEASING.md</span></code> for the release flow</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ARCHITECTURE.md</span></code> for ownership and source-of-truth rules</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">AGENTS.md</span></code> for repo-local maintenance guidance</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CONTRIBUTING.md</span></code> for pull request and contributor guidance</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SECURITY.md</span></code> for vulnerability reporting</p></li>
 </ul>
 </section>
 <section id="feedback">
 <h2>Feedback<a class="headerlink" href="#feedback" title="Link to this heading">¶</a></h2>
-<p>Questions, bug reports, and feature requests belong in <a class="reference external" href="https://github.com/mapequation/infomap/issues">GitHub issues</a>.</p>
+<p>Usage questions and setup help belong in <a class="reference external" href="https://github.com/mapequation/infomap/discussions">GitHub Discussions</a>.
+Bug reports and feature requests belong in <a class="reference external" href="https://github.com/mapequation/infomap/issues">GitHub issues</a>.</p>
 </section>
 <section id="authors">
 <h2>Authors<a class="headerlink" href="#authors" title="Link to this heading">¶</a></h2>

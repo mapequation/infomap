@@ -19,10 +19,17 @@
 #include <memory>
 #include <string>
 #include <sstream>
-#include <iostream>
+#include <ostream>
 #include <unordered_map>
 
 namespace infomap {
+
+/// Thrown by ProgramInterface help/version/json-parameters paths
+/// instead of std::exit(0). The CLI binary catches this and exits with
+/// status 0; library callers (R/Python/JS bindings) never trigger these
+/// flags. Not derived from std::exception so the generic catch in
+/// infomap::run() does not treat it as an error.
+struct CleanExit { };
 
 struct ArgType {
   static const std::string integer;

@@ -1,0 +1,36 @@
+Package: infomap
+Title: Network Clustering with the Map Equation
+Config/x-release-please-start-version: marker
+Version: 2.9.2
+Config/x-release-please-end: marker
+Authors@R: c(
+    person("Daniel", "Edler", email = "daniel.edler@umu.se", role = c("aut", "cre")),
+    person("Anton", "Holmgren", role = "aut"),
+    person("Martin", "Rosvall", role = "aut"),
+    person("mapequation", role = "cph"))
+Author: Daniel Edler [aut, cre], Anton Holmgren [aut], Martin Rosvall [aut],
+    mapequation [cph]
+Maintainer: Daniel Edler <daniel.edler@umu.se>
+Description: R bindings for the Infomap network clustering algorithm. Infomap
+    decomposes a network into modules by optimally compressing a description
+    of information flows on the network using the Map Equation. Provides a
+    high-level R6 facade over the SWIG-generated bindings, with idiomatic
+    R helpers for inspecting the modular hierarchy, exporting to data
+    frames, and integrating with the 'igraph' package.
+License: GPL-3
+URL: https://www.mapequation.org/infomap/, https://mapequation.github.io/infomap/
+BugReports: https://github.com/mapequation/infomap/issues
+Encoding: UTF-8
+SystemRequirements: C++17
+Depends: R (>= 4.0)
+Imports:
+    methods,
+    R6
+Suggests:
+    igraph,
+    testthat (>= 3.0.0),
+    tibble
+Config/testthat/edition: 3
+LazyData: false
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3

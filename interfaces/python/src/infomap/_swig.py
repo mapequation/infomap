@@ -119,6 +119,7 @@ class Config(object):
     multilayerJSRelaxRate = property(_infomap.Config_multilayerJSRelaxRate_get, _infomap.Config_multilayerJSRelaxRate_set)
     multilayerRelaxByJensenShannonDivergence = property(_infomap.Config_multilayerRelaxByJensenShannonDivergence_get, _infomap.Config_multilayerRelaxByJensenShannonDivergence_set)
     multilayerJSRelaxLimit = property(_infomap.Config_multilayerJSRelaxLimit_get, _infomap.Config_multilayerJSRelaxLimit_set)
+    maxFlowIterations = property(_infomap.Config_maxFlowIterations_get, _infomap.Config_maxFlowIterations_set)
     twoLevel = property(_infomap.Config_twoLevel_get, _infomap.Config_twoLevel_set)
     noCoarseTune = property(_infomap.Config_noCoarseTune_get, _infomap.Config_noCoarseTune_set)
     recordedTeleportation = property(_infomap.Config_recordedTeleportation_get, _infomap.Config_recordedTeleportation_set)

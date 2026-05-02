@@ -10,7 +10,7 @@
 #ifndef INFOEDGE_H_
 #define INFOEDGE_H_
 
-#include <iostream>
+#include <iosfwd>
 
 namespace infomap {
 

@@ -94,29 +94,106 @@ def collect_module_size_bucket_labels(run_samples: list[dict[str, object]]) -> l
     return sorted(labels)
 
 
+def build_benchmark_cases(profile: str, repo_root: Path, generated_dir: Path) -> list[dict[str, str | Path]]:
+    cases: list[dict[str, str | Path]] = [
+        {"name": "twotriangles", "path": repo_root / "examples" / "networks" / "twotriangles.net", "flags": ""},
+        {"name": "ninetriangles", "path": repo_root / "examples" / "networks" / "ninetriangles.net", "flags": ""},
+        {"name": "modular_w", "path": repo_root / "examples" / "networks" / "modular_w.net", "flags": ""},
+        {"name": "modular_wd", "path": repo_root / "examples" / "networks" / "modular_wd.net", "flags": ""},
+        {"name": "states", "path": repo_root / "examples" / "networks" / "states.net", "flags": ""},
+        {
+            "name": "states_meta",
+            "path": repo_root / "examples" / "networks" / "states.net",
+            "flags": f"--meta-data {repo_root / 'test' / 'fixtures' / 'meta' / 'states.meta'} --meta-data-rate 2",
+        },
+        {"name": "multilayer", "path": repo_root / "examples" / "networks" / "multilayer.net", "flags": ""},
+        {"name": "bipartite", "path": repo_root / "examples" / "networks" / "bipartite.net", "flags": ""},
+        {
+            "name": "twotriangles_meta",
+            "path": repo_root / "examples" / "networks" / "twotriangles.net",
+            "flags": f"--meta-data {repo_root / 'test' / 'fixtures' / 'meta' / 'twotriangles.meta'} --meta-data-rate 2",
+        },
+    ]
+    case_index = {str(case["name"]): case for case in cases}
+
+    state_5k = generated_dir / "state_ring_5k.net"
+    generate_state_ring(state_5k, physical_nodes=5_000)
+
+    baseline_only_cases: list[dict[str, str | Path]] = []
+    if profile in {"baseline", "full", "pr"}:
+        sparse_100k = generated_dir / "sparse_100k.net"
+        ring_100k = generated_dir / "ring_of_cliques_100k.net"
+        generate_sparse_graph(sparse_100k, num_nodes=100_000, avg_degree=10, seed=456)
+        generate_ring_of_cliques(ring_100k, clique_count=10_000, clique_size=10)
+        baseline_only_cases = [
+            {"name": "sparse_100k", "path": sparse_100k, "flags": ""},
+            {"name": "ring_of_cliques_100k", "path": ring_100k, "flags": ""},
+        ]
+
+    if profile == "pr":
+        return [
+            case_index["states_meta"],
+            {"name": "state_ring_5k", "path": state_5k, "flags": ""},
+            *baseline_only_cases,
+        ]
+
+    sparse_10k = generated_dir / "sparse_10k.net"
+    ring_10k = generated_dir / "ring_of_cliques_10k.net"
+    generate_sparse_graph(sparse_10k, num_nodes=10_000, avg_degree=10, seed=123)
+    generate_ring_of_cliques(ring_10k, clique_count=1_000, clique_size=10)
+    smoke_cases = [
+        {"name": "sparse_10k", "path": sparse_10k, "flags": ""},
+        {"name": "ring_of_cliques_10k", "path": ring_10k, "flags": ""},
+        {"name": "state_ring_5k", "path": state_5k, "flags": ""},
+    ]
+
+    cases.extend(smoke_cases)
+
+    if profile in {"baseline", "full"}:
+        cases.extend(baseline_only_cases)
+
+    if profile == "full":
+        sparse_1m = generated_dir / "sparse_1m.net"
+        generate_sparse_graph(sparse_1m, num_nodes=1_000_000, avg_degree=10, seed=789)
+        cases.append({"name": "sparse_1m", "path": sparse_1m, "flags": ""})
+
+    return cases
+
+
 def benchmark_case(
     binary: Path,
     name: str,
     network_path: Path,
     repeats: int,
+    warmup_runs: int,
     iterations: int,
     flags: str,
 ) -> dict[str, object]:
     samples: list[dict[str, object]] = []
     run_samples: list[dict[str, object]] = []
+
+    command = [
+        str(binary),
+        "--input",
+        str(network_path),
+        "--name",
+        name,
+        "--flags",
+        flags,
+        "--iterations",
+        str(iterations),
+    ]
+    for _ in range(warmup_runs):
+        subprocess.run(
+            command,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
     for repeat in range(repeats):
         completed = subprocess.run(
-            [
-                str(binary),
-                "--input",
-                str(network_path),
-                "--name",
-                name,
-                "--flags",
-                flags,
-                "--iterations",
-                str(iterations),
-            ],
+            command,
             check=True,
             capture_output=True,
             text=True,
@@ -189,6 +266,7 @@ def benchmark_case(
         "name": name,
         "path": str(network_path),
         "repeats": repeats,
+        "warmup_runs": warmup_runs,
         "iterations": iterations,
         "flags": samples[0]["flags"],
         "samples": samples,
@@ -276,10 +354,11 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True, help="Path to write the JSON benchmark report.")
     parser.add_argument("--summary", type=Path, default=None, help="Optional Markdown summary output.")
     parser.add_argument("--repeats", type=int, default=3, help="Number of runs per case.")
+    parser.add_argument("--warmup-runs", type=int, default=0, help="Number of unmeasured warmup runs per case.")
     parser.add_argument("--iterations", type=int, default=1, help="Number of in-process iterations per benchmark run.")
     parser.add_argument(
         "--profile",
-        choices=("smoke", "baseline", "full"),
+        choices=("smoke", "baseline", "full", "pr"),
         default="baseline",
         help="Benchmark corpus size.",
     )
@@ -292,70 +371,25 @@ def main() -> None:
 
     if args.iterations < 1:
         parser.error("--iterations must be at least 1")
+    if args.repeats < 1:
+        parser.error("--repeats must be at least 1")
+    if args.warmup_runs < 0:
+        parser.error("--warmup-runs must be at least 0")
 
     repo_root = Path(__file__).resolve().parents[2]
     if not args.binary.is_file():
         raise FileNotFoundError(f"Benchmark binary not found: {args.binary}")
 
-    cases: list[dict[str, str | Path]] = [
-        {"name": "twotriangles", "path": repo_root / "examples" / "networks" / "twotriangles.net", "flags": ""},
-        {"name": "ninetriangles", "path": repo_root / "examples" / "networks" / "ninetriangles.net", "flags": ""},
-        {"name": "modular_w", "path": repo_root / "examples" / "networks" / "modular_w.net", "flags": ""},
-        {"name": "modular_wd", "path": repo_root / "examples" / "networks" / "modular_wd.net", "flags": ""},
-        {"name": "states", "path": repo_root / "examples" / "networks" / "states.net", "flags": ""},
-        {
-            "name": "states_meta",
-            "path": repo_root / "examples" / "networks" / "states.net",
-            "flags": f"--meta-data {repo_root / 'test' / 'fixtures' / 'meta' / 'states.meta'} --meta-data-rate 2",
-        },
-        {"name": "multilayer", "path": repo_root / "examples" / "networks" / "multilayer.net", "flags": ""},
-        {"name": "bipartite", "path": repo_root / "examples" / "networks" / "bipartite.net", "flags": ""},
-        {
-            "name": "twotriangles_meta",
-            "path": repo_root / "examples" / "networks" / "twotriangles.net",
-            "flags": f"--meta-data {repo_root / 'test' / 'fixtures' / 'meta' / 'twotriangles.meta'} --meta-data-rate 2",
-        },
-    ]
-
     with tempfile.TemporaryDirectory() as temp_dir:
         generated_dir = Path(temp_dir)
-        sparse_10k = generated_dir / "sparse_10k.net"
-        ring_10k = generated_dir / "ring_of_cliques_10k.net"
-        state_5k = generated_dir / "state_ring_5k.net"
-        generate_sparse_graph(sparse_10k, num_nodes=10_000, avg_degree=10, seed=123)
-        generate_ring_of_cliques(ring_10k, clique_count=1_000, clique_size=10)
-        generate_state_ring(state_5k, physical_nodes=5_000)
-        cases.extend(
-            [
-                {"name": "sparse_10k", "path": sparse_10k, "flags": ""},
-                {"name": "ring_of_cliques_10k", "path": ring_10k, "flags": ""},
-                {"name": "state_ring_5k", "path": state_5k, "flags": ""},
-            ]
-        )
-
-        if args.profile in {"baseline", "full"}:
-            sparse_100k = generated_dir / "sparse_100k.net"
-            ring_100k = generated_dir / "ring_of_cliques_100k.net"
-            generate_sparse_graph(sparse_100k, num_nodes=100_000, avg_degree=10, seed=456)
-            generate_ring_of_cliques(ring_100k, clique_count=10_000, clique_size=10)
-            cases.extend(
-                [
-                    {"name": "sparse_100k", "path": sparse_100k, "flags": ""},
-                    {"name": "ring_of_cliques_100k", "path": ring_100k, "flags": ""},
-                ]
-            )
-
-        if args.profile == "full":
-            sparse_1m = generated_dir / "sparse_1m.net"
-            generate_sparse_graph(sparse_1m, num_nodes=1_000_000, avg_degree=10, seed=789)
-            cases.append({"name": "sparse_1m", "path": sparse_1m, "flags": ""})
-
+        cases = build_benchmark_cases(args.profile, repo_root, generated_dir)
         results = [
             benchmark_case(
                 args.binary,
                 str(case["name"]),
                 Path(case["path"]),
                 args.repeats,
+                args.warmup_runs,
                 args.iterations,
                 " ".join(part for part in (args.flags, str(case["flags"])) if part).strip(),
             )
@@ -365,6 +399,7 @@ def main() -> None:
     report = {
         "profile": args.profile,
         "repeats": args.repeats,
+        "warmup_runs": args.warmup_runs,
         "iterations": args.iterations,
         "binary": str(args.binary),
         "benchmarks": results,

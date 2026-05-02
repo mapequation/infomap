@@ -8,6 +8,10 @@ and source-of-truth rules live in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 - Use `make help` to see the maintained target surface.
 - Use `make doctor` to inspect tool availability and active build flags.
+- `MODE=release|debug` is the source of truth for Infomap optimization and
+  debug-symbol flags across the native CLI, Python extension, and CMake-based
+  native tests.
+- `OPENMP=0|1` controls whether the shared build policy adds OpenMP flags.
 - Builds use all detected logical cores by default; add `JOBS=1` when you want
   a serial build.
 - The repository uses
@@ -20,6 +24,14 @@ Examples:
 - `docs: refresh build instructions`
 
 ## Native CLI
+
+Build policy summary:
+
+- `MODE=release` adds the maintained release optimization flags.
+- `MODE=debug` adds the maintained debug flags (`-O0 -g` on Clang/GCC-style
+  toolchains).
+- `make doctor` prints the resolved compile and link flags for the current
+  settings.
 
 Build the C++ binary from the repository root:
 
@@ -39,6 +51,10 @@ make build-native
 The compiled binary is written to `./Infomap`.
 
 ## Python package
+
+`make build-python` uses the same shared `MODE`/`OPENMP` policy as
+`make build-native`, so native and Python builds stay aligned unless you pass
+extra flags explicitly with `CPPFLAGS`, `CXXFLAGS`, or `LDFLAGS`.
 
 Building the Python package requires [SWIG](https://www.swig.org/), Python
 packaging tooling, and Sphinx.
@@ -64,17 +80,88 @@ make dev-python-install
 make test-python
 ```
 
+Run `make dev-python-install` again after changing C++ extension sources,
+SWIG interfaces, or tracked SWIG outputs. Local tests import the installed
+editable package; without reinstalling, they can load an older `_infomap`
+extension that does not match the current Python wrapper.
+
 More targeted checks are available when you only need one slice:
 
 - `make test-python-unit`
 - `make test-python-doctest`
 - `make test-python-examples`
 
+To build the Python extension in debug mode, pass the same mode override:
+
+```bash
+make build-python MODE=debug
+```
+
 Build source and wheel distributions locally when needed:
 
 ```bash
 make release-python-dist
 ```
+
+## R package
+
+`make build-r` builds an R source tarball of the `infomap` R package
+under `interfaces/R/infomap/`. The package wraps the same C++ core via
+SWIG-generated R bindings tracked in `interfaces/R/generated/`.
+
+Building the R package requires R, Python 3 (for the staging script),
+and a C++ toolchain. SWIG 4.4.1 is only needed when refreshing the
+tracked SWIG outputs.
+
+On macOS with Homebrew:
+
+```bash
+brew install r libomp
+# Optional, only if regenerating SWIG outputs:
+brew install swig
+```
+
+Local maintainer flow:
+
+```bash
+make build-r-stage          # stage skeleton + C++ core into build/R/infomap
+make dev-r-install          # R CMD INSTALL into the user library
+make test-r                 # R CMD check --as-cran on the staged package
+make test-r-examples        # run examples/R/*.R against the installed package
+```
+
+Build a tarball and platform binary:
+
+```bash
+make build-r                # writes dist/R/infomap_X.Y.Z.tar.gz
+make build-r-binary         # writes dist/R/infomap_X.Y.Z.tgz (or .zip on Windows)
+```
+
+Refresh tracked SWIG outputs (only when the SWIG interface changes):
+
+```bash
+make build-r-swig
+make test-r-swig-freshness
+```
+
+Regenerate the package's roxygen-managed Rd and NAMESPACE after
+changing `R/Infomap.R`:
+
+```bash
+R CMD INSTALL --with-keep.source build/R/infomap
+Rscript -e 'roxygen2::roxygenise("interfaces/R/infomap")'
+```
+
+The R skeleton declares C++17 (`SystemRequirements: C++17`,
+`CXX_STD = CXX17`). This lets R's build system provide the standard flag
+portably on r-universe without putting non-portable `-std=...` flags in
+`PKG_CXXFLAGS`.
+
+On macOS, `mk/r.mk` writes a temporary Makevars that pins
+`CC=/usr/bin/clang` and `CXX=/usr/bin/clang++` so the compiled `.so` is
+ABI-compatible with Homebrew R's libc++. This workaround is documented
+in `mk/r.mk` and tagged for removal once Homebrew R links against LLVM
+libc++.
 
 ## JavaScript worker package
 
@@ -141,6 +228,21 @@ The current automated macOS wheel build in CI/release uses
 `MACOSX_DEPLOYMENT_TARGET=15.0`. If you need broader compatibility than the
 published wheel currently provides, verify that policy before changing the
 release pipeline.
+
+## Native tests and benchmarks
+
+`make test-native` and `make bench-native` pass `MODE` through to the shared
+build policy used by CMake. `CMAKE_BUILD_TYPE` is still forwarded for generator
+and output-directory behavior, but it does not override Infomap's own
+optimization/debug policy.
+
+Examples:
+
+```bash
+make test-native
+make test-native MODE=debug
+make bench-native MODE=debug CMAKE_BUILD_TYPE=Debug
+```
 
 Build source and wheel distributions locally when needed:
 

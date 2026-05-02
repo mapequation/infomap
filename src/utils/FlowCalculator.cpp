@@ -12,7 +12,6 @@
 #include "../utils/Log.h"
 #include "../utils/infomath.h"
 #include "../core/StateNetwork.h"
-#include <iostream>
 #include <cmath>
 #include <numeric>
 #include <limits>
@@ -32,7 +31,7 @@ inline void normalize(std::vector<T>& v, const T sum) noexcept
 template <typename T>
 inline void normalize(std::vector<T>& v) noexcept
 {
-  const auto sum = std::accumulate(cbegin(v), cend(v), T {});
+  const auto sum = std::accumulate(cbegin(v), cend(v), T { });
   normalize(v, sum);
 }
 
@@ -294,7 +293,7 @@ struct IterationResult {
 static inline void noInterruptCheck() noexcept {}
 
 template <typename Iteration, typename Interrupt>
-IterationResult powerIterate(double alpha, Iteration&& iter, Interrupt&& interrupt)
+IterationResult powerIterate(double alpha, unsigned int maxIterations, Iteration&& iter, Interrupt&& interrupt)
 {
   unsigned int iterations = 0;
   double beta = 1.0 - alpha;
@@ -312,15 +311,19 @@ IterationResult powerIterate(double alpha, Iteration&& iter, Interrupt&& interru
     }
 
     ++iterations;
-  } while (iterations < 200 && (err > 1.0e-15 || iterations < 50));
+  } while (iterations < maxIterations && (err > 1.0e-15 || iterations < 50));
 
-  Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
+  if (iterations >= maxIterations) {
+    Log() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
+  } else {
+    Log() << "\n  -> PageRank calculation done in " << iterations << " iterations with error " << err << ".\n";
+  }
 
   return { alpha, beta };
 }
 
 template <typename Iteration, typename Interrupt>
-unsigned int iterateToConvergence(Iteration&& iter, Interrupt&& interrupt, double& err)
+unsigned int iterateToConvergence(unsigned int maxIterations, Iteration&& iter, Interrupt&& interrupt, double& err)
 {
   unsigned int iterations = 0;
   err = 0.0;
@@ -335,7 +338,7 @@ unsigned int iterateToConvergence(Iteration&& iter, Interrupt&& interrupt, doubl
     }
 
     ++iterations;
-  } while (iterations < 200 && (err > 1.0e-15 || iterations < 50));
+  } while (iterations < maxIterations && (err > 1.0e-15 || iterations < 50));
 
   return iterations;
 }
@@ -410,8 +413,8 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
   };
 
   const auto result = m_interruptOwner == nullptr
-      ? powerIterate(config.teleportationProbability, iteration, noInterruptCheck)
-      : powerIterate(config.teleportationProbability, iteration, [this]() {
+      ? powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration, noInterruptCheck)
+      : powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration, [this]() {
           m_interruptOwner->throwIfInterrupted();
         });
 
@@ -561,12 +564,16 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
   double err = 0.0;
   const unsigned int iterations = m_interruptOwner == nullptr
-      ? iterateToConvergence(iteration, noInterruptCheck, err)
-      : iterateToConvergence(iteration, [this]() {
+      ? iterateToConvergence(config.maxFlowIterations, iteration, noInterruptCheck, err)
+      : iterateToConvergence(config.maxFlowIterations, iteration, [this]() {
           m_interruptOwner->throwIfInterrupted();
         }, err);
 
-  Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
+  if (iterations >= config.maxFlowIterations) {
+    Log() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
+  } else {
+    Log() << "\n  -> PageRank calculation done in " << iterations << " iterations with error " << err << ".\n";
+  }
 
   double sumNodeRank = 1.0;
   for (auto& link : flowLinks) {
@@ -776,8 +783,8 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
   };
 
   const auto result = m_interruptOwner == nullptr
-      ? powerIterate(config.teleportationProbability, iteration, noInterruptCheck)
-      : powerIterate(config.teleportationProbability, iteration, [this]() {
+      ? powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration, noInterruptCheck)
+      : powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration, [this]() {
           m_interruptOwner->throwIfInterrupted();
         });
 

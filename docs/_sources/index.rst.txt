@@ -4,12 +4,16 @@ Infomap
 =======
 
 Infomap is a network clustering algorithm based on the `Map equation`_.
-This repository contains the native CLI, the Python package, the JavaScript web
-worker, the Docker images, and the source for the published Python
-documentation.
+This repository contains the native CLI, the Python package, the R package,
+the JavaScript web worker, the Docker images, and the source for the
+published Python documentation.
 
-Start with `mapequation.org/infomap`_ for the user guide and
+Start with `mapequation.org/infomap/`_ for the user guide and
 `CHANGELOG.md`_ for release notes.
+
+For contributing, security reporting, and maintainer workflows, see
+`CONTRIBUTING.md`_, `SECURITY.md`_, `BUILD.md`_, `ARCHITECTURE.md`_, and
+`AGENTS.md`_.
 
 .. |ci| image:: https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg
    :target: https://github.com/mapequation/infomap/actions/workflows/ci.yml
@@ -28,8 +32,13 @@ Start with `mapequation.org/infomap`_ for the user guide and
    :alt: Nightly quality
 
 .. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
-.. _`mapequation.org/infomap`: https://www.mapequation.org/infomap
+.. _`mapequation.org/infomap/`: https://www.mapequation.org/infomap/
 .. _`CHANGELOG.md`: https://github.com/mapequation/infomap/blob/master/CHANGELOG.md
+.. _`CONTRIBUTING.md`: https://github.com/mapequation/infomap/blob/master/CONTRIBUTING.md
+.. _`SECURITY.md`: https://github.com/mapequation/infomap/blob/master/SECURITY.md
+.. _`BUILD.md`: https://github.com/mapequation/infomap/blob/master/BUILD.md
+.. _`ARCHITECTURE.md`: https://github.com/mapequation/infomap/blob/master/ARCHITECTURE.md
+.. _`AGENTS.md`: https://github.com/mapequation/infomap/blob/master/AGENTS.md
 
 Install
 -------
@@ -68,6 +77,62 @@ Quick start with Python:
 
 .. _PyPI: https://pypi.org/project/infomap/
 .. _`Infomap Python API`: https://mapequation.github.io/infomap/python/
+
+R package
+^^^^^^^^^
+
+Pre-built binaries are published on `r-universe`_; this is the recommended path:
+
+.. code-block:: r
+
+    install.packages(
+      "infomap",
+      repos = c("https://mapequation.r-universe.dev", "https://cloud.r-project.org")
+    )
+
+Quick start with R:
+
+.. code-block:: r
+
+    library(infomap)
+
+    im <- Infomap(silent = TRUE, two_level = TRUE, num_trials = 20)
+    im$add_link(0, 1)
+    im$add_link(1, 2)
+    im$run()
+
+    print(im$num_top_modules)
+    print(im$codelength)
+
+See ``?Infomap`` for the user-facing constructor and ``?InfomapClass`` for
+the full method and active-binding reference. The R-specific source README
+lives at `interfaces/R/infomap/README.md`_.
+
+.. _r-universe: https://mapequation.r-universe.dev
+.. _`interfaces/R/infomap/README.md`: https://github.com/mapequation/infomap/blob/master/interfaces/R/infomap/README.md
+
+Homebrew CLI
+^^^^^^^^^^^^
+
+If you want the native CLI without the Python package, install the tap and
+formula with:
+
+.. code-block:: bash
+
+    brew tap mapequation/infomap
+    brew install infomap
+
+Or install directly in one command:
+
+.. code-block:: bash
+
+    brew install mapequation/infomap/infomap
+
+Upgrade the CLI with the normal Homebrew flow:
+
+.. code-block:: bash
+
+    brew upgrade infomap
 
 JavaScript package
 ^^^^^^^^^^^^^^^^^^
@@ -148,12 +213,16 @@ Maintainers should use:
 - ``RELEASING.md`` for the release flow
 - ``ARCHITECTURE.md`` for ownership and source-of-truth rules
 - ``AGENTS.md`` for repo-local maintenance guidance
+- ``CONTRIBUTING.md`` for pull request and contributor guidance
+- ``SECURITY.md`` for vulnerability reporting
 
 Feedback
 --------
 
-Questions, bug reports, and feature requests belong in `GitHub issues`_.
+Usage questions and setup help belong in `GitHub Discussions`_.
+Bug reports and feature requests belong in `GitHub issues`_.
 
+.. _`GitHub Discussions`: https://github.com/mapequation/infomap/discussions
 .. _`GitHub issues`: https://github.com/mapequation/infomap/issues
 
 Authors

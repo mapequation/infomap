@@ -10,8 +10,6 @@
 #include "ProgramInterface.h"
 #include "../utils/Log.h"
 
-#include <iostream>
-#include <cstdlib>
 #include <map>
 #include <utility>
 
@@ -242,7 +240,7 @@ void ProgramInterface::exitWithUsage(bool showAdvanced) const
     }
   }
   Log() << '\n';
-  std::exit(0);
+  throw CleanExit{};
 }
 
 void ProgramInterface::exitWithVersionInformation() const
@@ -253,7 +251,7 @@ void ProgramInterface::exitWithVersionInformation() const
 #endif
   Log() << '\n';
   Log() << "See www.mapequation.org for terms of use.\n";
-  std::exit(0);
+  throw CleanExit{};
 }
 
 void ProgramInterface::exitWithError(const std::string& message) const
@@ -263,7 +261,6 @@ void ProgramInterface::exitWithError(const std::string& message) const
   Log() << " compiled with OpenMP";
 #endif
   Log() << std::endl;
-  std::cerr << message << std::endl;
   Log() << "Usage: " << m_executableName;
   for (auto& nonOptionArgument : m_nonOptionArguments)
     if (!nonOptionArgument->isAdvanced)
@@ -271,7 +268,7 @@ void ProgramInterface::exitWithError(const std::string& message) const
   if (!m_optionArguments.empty())
     Log() << " [options]";
   Log() << ". Run with option '-h' for more information.\n";
-  std::exit(1);
+  throw std::runtime_error(message);
 }
 
 std::string toJson(const std::string& key, const std::string& value)
@@ -325,7 +322,7 @@ void ProgramInterface::exitWithJsonParameters() const
   }
   Log() << "  ]\n}";
 
-  std::exit(0);
+  throw CleanExit{};
 }
 
 void ProgramInterface::parseArgs(const std::string& args)

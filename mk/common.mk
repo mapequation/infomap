@@ -24,6 +24,8 @@ NPM ?= npm
 NODE ?= node
 SWIG ?= swig
 EMXX ?= em++
+R ?= R
+RSCRIPT ?= Rscript
 SPHINX_BUILD_BIN := $(shell command -v sphinx-build 2>/dev/null || true)
 SPHINX_BUILD ?= $(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),$(PYTHON) -m sphinx)
 CMAKE ?= $(shell command -v cmake 2>/dev/null || command -v /opt/homebrew/bin/cmake 2>/dev/null || echo cmake)
@@ -76,6 +78,9 @@ help:
 		"  build-lib             Build the static C++ library and exported headers." \
 		"  build-python          Build a Python wheel from the repo root using pyproject metadata." \
 		"  build-python-swig     Regenerate the tracked SWIG wrapper outputs for Python maintainers." \
+		"  build-r               Build the infomap R source tarball into dist/R/." \
+		"  build-r-binary        Build a platform-native R binary into dist/R/." \
+		"  build-r-swig          Regenerate the tracked SWIG wrapper outputs for R maintainers." \
 		"  build-js-metadata     Refresh the tracked JS parameters/changelog metadata." \
 		"  build-js              Build the JS worker bundle and npm package assets from tracked metadata." \
 		"  build-docs            Refresh the committed Python docs site in docs/." \
@@ -87,6 +92,9 @@ help:
 		"  test-python-doctest   Run Python doctests and ruff checks for the installed package." \
 		"  test-python-examples  Run the Python example smoke tests." \
 		"  test-python-swig-freshness  Verify tracked SWIG outputs are up to date." \
+		"  test-r                Run R CMD check --as-cran on the staged infomap R package." \
+		"  test-r-examples       Run the R example smoke tests." \
+		"  test-r-swig-freshness Verify tracked R SWIG outputs are up to date." \
 		"  test-docs             Rebuild docs in a temp dir and verify committed docs/ is fresh." \
 		"  test-js-metadata      Regenerate JS metadata in a temp dir and verify tracked files are current." \
 		"  test-js               Run JS lint/typecheck/unit/browser/package verification for the built npm package." \
@@ -103,6 +111,7 @@ help:
 		"  clean                 Remove native, Python, and JS build outputs." \
 		"  clean-native          Remove native build artifacts, libraries, and CMake build dirs." \
 		"  clean-python          Remove Python build outputs." \
+		"  clean-r               Remove R build outputs." \
 		"  clean-js              Remove JS build and pack outputs." \
 		"" \
 		"Docs / Release" \
@@ -132,12 +141,33 @@ doctor:
 	@printf "%s\n" "Infomap doctor" ""
 	@printf "Platform: %s\n" "$(UNAME_S)"
 	@printf "Mode: MODE=%s OPENMP=%s\n" "$(MODE)" "$(OPENMP)"
+	@printf "Policy: MODE drives Infomap optimization/debug flags for native, Python, and CMake targets.\n"
+	@printf "Mode detail: %s\n" "$(if $(filter debug,$(MODE)),$(if $(filter msvc,$(BUILD_CONFIG_COMPILER_FAMILY)),debug => /Od /Zi,debug => -O0 -g),$(if $(filter msvc,$(BUILD_CONFIG_COMPILER_FAMILY)),release => /O2,release => -O3))"
+	@printf "CMake detail: CMAKE_BUILD_TYPE=%s is kept for generator/output behavior; MODE still owns Infomap compile flags.\n" "$(CMAKE_BUILD_TYPE)"
 	@printf "Parallel jobs: %s\n" "$(JOBS)"
 	@printf "ccache: %s\n" "$(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN),disabled)"
 	@printf "make: %s\n" "$$(command -v $(MAKE) 2>/dev/null || echo missing)"
 	@printf "cxx (%s): %s\n" "$(CXX)" "$$(command -v $(CXX) 2>/dev/null || echo missing)"
 	@printf "python (%s): %s\n" "$(PYTHON)" "$$(command -v $(PYTHON) 2>/dev/null || echo missing)"
+	@printf "python build module: %s\n" "$$($(PYTHON) -c 'from importlib.metadata import version; print(version(\"build\"))' 2>/dev/null || echo 'missing (pip install build)')"
 	@printf "swig (%s): %s\n" "$(SWIG)" "$$(command -v $(SWIG) 2>/dev/null || echo missing)"
+	@printf "swig version: %s\n" "$$($(SWIG) -version 2>/dev/null | sed -nE 's/.*SWIG Version[[:space:]]+([0-9.]+).*/\1/p' | head -1 || echo unknown) (R bindings require 4.4.1)"
+	@printf "R (%s): %s\n" "$(R)" "$$(command -v $(R) 2>/dev/null || echo missing)"
+	@printf "R version: %s\n" "$$($(R) --version 2>/dev/null | sed -nE 's/^R version ([0-9.]+).*/\1/p' | head -1 || echo missing)"
+	@printf "Rscript (%s): %s\n" "$(RSCRIPT)" "$$(command -v $(RSCRIPT) 2>/dev/null || echo missing)"
+	@printf "R packages:\n"
+	@if command -v $(RSCRIPT) >/dev/null 2>&1; then \
+		for pkg in R6 methods roxygen2 rcmdcheck testthat igraph tibble; do \
+			ver=$$($(RSCRIPT) -e "cat(as.character(packageVersion('$$pkg')))" 2>/dev/null); \
+			if [ -n "$$ver" ]; then \
+				printf "  %-10s %s\n" "$$pkg" "$$ver"; \
+			else \
+				printf "  %-10s missing (Rscript -e 'install.packages(\"%s\")')\n" "$$pkg" "$$pkg"; \
+			fi; \
+		done; \
+	else \
+		printf "  Rscript not available; cannot probe R packages\n"; \
+	fi
 	@printf "node (%s): %s\n" "$(NODE)" "$$(command -v $(NODE) 2>/dev/null || echo missing)"
 	@printf "npm (%s): %s\n" "$(NPM)" "$$(command -v $(NPM) 2>/dev/null || echo missing)"
 	@printf "sphinx (%s): %s\n" "$(SPHINX_BUILD)" "$(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),python -m sphinx)"
@@ -150,6 +180,7 @@ doctor:
 		printf "brew prefix: %s\n" "$(if $(BUILD_CONFIG_BREW_PREFIX),$(BUILD_CONFIG_BREW_PREFIX),missing)"; \
 		printf "libomp prefix: %s\n" "$(if $(BUILD_CONFIG_LIBOMP_PREFIX),$(BUILD_CONFIG_LIBOMP_PREFIX),missing)"; \
 		printf "deployment target: %s\n" "$(if $(BUILD_CONFIG_DEPLOYMENT_TARGET),$(BUILD_CONFIG_DEPLOYMENT_TARGET),unset)"; \
+		printf "Apple clang++ (for R workaround): %s\n" "$$([ -x /usr/bin/clang++ ] && /usr/bin/clang++ --version 2>/dev/null | head -1 || echo 'missing (xcode-select --install)')"; \
 	fi
 
 dev-bootstrap:
@@ -162,5 +193,5 @@ dev-bootstrap:
 		"  make build-python dev-python-install" \
 		"  make test-fast"
 
-clean: clean-native clean-python clean-js
+clean: clean-native clean-python clean-r clean-js
 	@true

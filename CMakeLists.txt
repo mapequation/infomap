@@ -141,6 +141,7 @@ if(BUILD_TESTING)
     add_infomap_cpp_test(infomap_cpp_utils_io_tests test/cpp/test_utils_io.cpp "fast;core;utils;io")
     add_infomap_cpp_test(infomap_cpp_program_interface_tests test/cpp/test_program_interface.cpp "fast;core;parser;cli")
     add_infomap_cpp_test(infomap_cpp_config_tests test/cpp/test_config.cpp "fast;core;config;cli")
+    add_infomap_cpp_test(infomap_cpp_no_output_tests test/cpp/test_no_output.cpp "fast;core;output;library")
 
     add_test(
         NAME print_json_parameters
@@ -166,6 +167,7 @@ if(BUILD_TESTING)
             infomap_cpp_utils_io_tests
             infomap_cpp_program_interface_tests
             infomap_cpp_config_tests
+            infomap_cpp_no_output_tests
             infomap_cli
     )
 endif()

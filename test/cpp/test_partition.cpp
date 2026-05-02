@@ -200,6 +200,30 @@ TEST_CASE("InfoNode hierarchy mutations preserve parentage and child order [fast
   CHECK(childStateIds(root) == std::vector<unsigned int> { 40, 50 });
 }
 
+TEST_CASE("InfoNode releaseChildren detaches active children without deleting them [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* childA = new InfoNode({}, 10);
+  auto* childB = new InfoNode({}, 20);
+  root.addChild(childA);
+  root.addChild(childB);
+
+  root.releaseChildren();
+
+  CHECK(root.childDegree() == 0);
+  CHECK(root.firstChild == nullptr);
+  CHECK(root.lastChild == nullptr);
+  CHECK(childA->stateId == 10);
+  CHECK(childB->stateId == 20);
+  CHECK(childA->parent == &root);
+  CHECK(childB->parent == &root);
+  CHECK(childA->next == childB);
+  CHECK(childB->previous == childA);
+
+  delete childA;
+  delete childB;
+}
+
 TEST_CASE("Reinitializing a network clears collapsed root children [fast][core][partition][tree]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
@@ -227,6 +251,24 @@ TEST_CASE("InfoNode deleteChildren also clears collapsed children [fast][core][p
   CHECK(root.childDegree() == 0);
   CHECK(root.firstChild == nullptr);
   CHECK(root.collapsedFirstChild != nullptr);
+
+  root.deleteChildren();
+
+  CHECK(root.childDegree() == 0);
+  CHECK(root.firstChild == nullptr);
+  CHECK(root.lastChild == nullptr);
+  CHECK(root.collapsedFirstChild == nullptr);
+  CHECK(root.collapsedLastChild == nullptr);
+}
+
+TEST_CASE("InfoNode deleteChildren clears both active and collapsed child chains [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  root.addChild(new InfoNode({}, 10));
+  root.addChild(new InfoNode({}, 20));
+
+  CHECK(root.collapseChildren() == 2);
+  root.addChild(new InfoNode({}, 30));
 
   root.deleteChildren();
 
@@ -290,6 +332,75 @@ TEST_CASE("InfoNode replace mutations preserve flattened tree structure [fast][c
     CHECK(child.parent == &root);
     CHECK(child.isLeaf());
   }
+}
+
+TEST_CASE("InfoNode replaceWithChildren reparents a middle child chain before deleting the module [fast][core][partition][tree][ownership]")
+{
+  InfoNode root;
+  auto* before = new InfoNode({}, 10);
+  auto* module = new InfoNode({}, 20);
+  auto* after = new InfoNode({}, 30);
+  root.addChild(before);
+  root.addChild(module);
+  root.addChild(after);
+  module->addChild(new InfoNode({}, 1));
+  module->addChild(new InfoNode({}, 2));
+
+  CHECK(module->replaceWithChildren() == 1);
+
+  CHECK(childStateIds(root) == std::vector<unsigned int> { 10, 1, 2, 30 });
+  CHECK(root.firstChild == before);
+  CHECK(root.lastChild == after);
+  CHECK(before->next->stateId == 1);
+  CHECK(before->next->parent == &root);
+  CHECK(before->next->next->stateId == 2);
+  CHECK(before->next->next->parent == &root);
+  CHECK(before->next->next->next == after);
+  CHECK(after->previous->stateId == 2);
+}
+
+TEST_CASE("InfoNode remove documents current child-chain ownership semantics [fast][core][partition][tree][ownership]")
+{
+  InfoNode deleteRoot;
+  auto* deletingParent = new InfoNode({}, 10);
+  deletingParent->addChild(new InfoNode({}, 11));
+  deleteRoot.addChild(deletingParent);
+
+  deletingParent->remove(false);
+
+  CHECK(deleteRoot.firstChild == nullptr);
+  CHECK(deleteRoot.lastChild == nullptr);
+
+  InfoNode detachRoot;
+  auto* detachingParent = new InfoNode({}, 20);
+  auto* detachedChild = new InfoNode({}, 21);
+  detachingParent->addChild(detachedChild);
+  detachRoot.addChild(detachingParent);
+
+  detachingParent->remove(true);
+
+  CHECK(detachRoot.firstChild == nullptr);
+  CHECK(detachRoot.lastChild == nullptr);
+  CHECK(detachedChild->stateId == 21);
+
+  detachedChild->parent = nullptr;
+  detachedChild->previous = nullptr;
+  detachedChild->next = nullptr;
+  delete detachedChild;
+}
+
+TEST_CASE("InfoNode owns outgoing edges while incoming edges are non-owning references [fast][core][partition][tree][ownership]")
+{
+  auto* source = new InfoNode({}, 10);
+  InfoNode target({}, 20);
+  source->addOutEdge(target, 1.0, 0.5);
+
+  CHECK(source->outDegree() == 1);
+  CHECK(target.inDegree() == 1);
+
+  delete source;
+
+  CHECK(target.inDegree() == 1);
 }
 
 TEST_CASE("Soft cluster-data can be optimized away when it is suboptimal [fast][core][partition]")
