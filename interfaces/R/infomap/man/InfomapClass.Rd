@@ -573,13 +573,14 @@ physical node) trigger an error. Set to \code{FALSE} to allow
 \subsection{Details}{
 Translated from \verb{interfaces/python/src/infomap/_networkx.py}.
 
-\strong{Node id convention.} Infomap uses 0-indexed internal node ids
-regardless of how igraph labels vertices. The 1-indexed igraph
-vertex sequence \code{V(g)} maps to internal ids
-\verb{0, 1, ..., vcount(g) - 1}. Result accessors that key by node id
-(e.g. \code{modules}, \code{as.data.frame(im)}, \code{get_modules()}) therefore
-return 0-indexed ids; if the original igraph had vertex names
-(\code{V(g)$name}), the returned mapping recovers them.
+\strong{Node id convention.} Infomap result accessors report the numeric
+node ids used to build the network. For links added directly with
+\code{add_link()} or \code{add_links()}, those user-supplied ids are preserved.
+\code{add_igraph()} is different because igraph vertices are positional:
+this method assigns the 1-indexed igraph vertex sequence \code{V(g)} to
+generated ids \verb{0, 1, ..., vcount(g) - 1} before adding edges. If the
+original igraph had vertex names (\code{V(g)$name}), the returned mapping
+recovers them.
 
 If the graph is directed, \code{run()} will inject \code{--directed}
 unless the user has already chosen a flow model via \code{opts} or
@@ -587,11 +588,11 @@ raw args.
 }
 
 \subsection{Returns}{
-Invisibly returns a named character vector mapping
-internal 0-indexed node ids to the original igraph vertex
-names (or stringified vertex indices when \code{V(g)$name} is
-absent). Useful for joining Infomap results back to the
-original graph.
+Invisibly returns a named character vector mapping the
+generated \code{add_igraph()} node ids to the original igraph vertex
+names (or stringified 1-indexed vertex positions when \code{V(g)$name}
+is absent). Useful for joining Infomap results back to the original
+graph.
 }
 }
 \if{html}{\out{<hr>}}

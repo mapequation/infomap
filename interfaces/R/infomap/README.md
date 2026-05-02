@@ -78,12 +78,15 @@ comm <- im$as_communities(g)  # igraph 'communities' object
 `add_igraph()` and `as_communities()` raise an informative error if
 `igraph` is not installed.
 
-**Node id convention.** Infomap uses 0-indexed internal node ids; igraph
-uses 1-indexed `V(g)`. The `mapping` returned by `add_igraph()` recovers
-the original igraph vertex names (or stringified indices) keyed by
-internal id, so you can join Infomap results back to the original
-graph. Module assignments returned by `im$modules` and
-`as.data.frame(im)` use the 0-indexed internal ids.
+**Node id convention.** Infomap result accessors report the numeric node
+ids used to build the network. For links added directly with
+`add_link()` or `add_links()`, those user-supplied ids are preserved.
+`add_igraph()` is different because igraph vertices are positional: it
+assigns the 1-indexed igraph vertex sequence `V(g)` to generated ids
+`0, 1, ..., vcount(g) - 1` before adding edges. The `mapping` returned
+by `add_igraph()` recovers the original igraph vertex names (or
+stringified 1-indexed vertex positions) keyed by those generated ids, so
+you can join Infomap results back to the original graph.
 
 ## Related packages
 
