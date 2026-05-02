@@ -20,19 +20,19 @@ class IterWrapper {
   Iter m_begin, m_end;
 
 public:
-  IterWrapper(Iter begin, Iter end) : m_begin(begin), m_end(end) { }
+  IterWrapper(Iter begin, Iter end) : m_begin(begin), m_end(end) {}
 
   // template <typename Container>
   template <typename Container,
             typename = decltype(std::declval<Container>().begin()),
             typename = decltype(std::declval<Container>().end())>
-  IterWrapper(Container& container) : m_begin(container.begin()), m_end(container.end()) { }
+  IterWrapper(Container& container) : m_begin(container.begin()), m_end(container.end()) {}
 
   template <typename Container,
             typename std::enable_if<std::is_convertible<Container&, IterWrapper<Iter>&>::value, int>::type = 0>
   IterWrapper(Container& container)
       : m_begin(static_cast<IterWrapper<Iter>&>(container).begin()),
-        m_end(static_cast<IterWrapper<Iter>&>(container).end()) { }
+        m_end(static_cast<IterWrapper<Iter>&>(container).end()) {}
 
   Iter begin() noexcept { return m_begin; };
 

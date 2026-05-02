@@ -30,6 +30,10 @@ SPHINX_BUILD_BIN := $(shell command -v sphinx-build 2>/dev/null || true)
 SPHINX_BUILD ?= $(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),$(PYTHON) -m sphinx)
 CMAKE ?= $(shell command -v cmake 2>/dev/null || command -v /opt/homebrew/bin/cmake 2>/dev/null || echo cmake)
 CTEST ?= $(shell command -v ctest 2>/dev/null || command -v /opt/homebrew/bin/ctest 2>/dev/null || echo ctest)
+CLANG_FORMAT ?= $(shell command -v clang-format 2>/dev/null || command -v /opt/homebrew/bin/clang-format 2>/dev/null || command -v /opt/homebrew/opt/llvm/bin/clang-format 2>/dev/null || echo clang-format)
+CLANG_TIDY ?= $(shell command -v clang-tidy 2>/dev/null || command -v /opt/homebrew/bin/clang-tidy 2>/dev/null || command -v /opt/homebrew/opt/llvm/bin/clang-tidy 2>/dev/null || echo clang-tidy)
+CLANGD ?= $(shell command -v clangd 2>/dev/null || command -v /opt/homebrew/bin/clangd 2>/dev/null || command -v /opt/homebrew/opt/llvm/bin/clangd 2>/dev/null || echo clangd)
+NINJA ?= $(shell command -v ninja 2>/dev/null || command -v /opt/homebrew/bin/ninja 2>/dev/null || echo ninja)
 
 MODE ?= release
 OPENMP ?= 1
@@ -110,6 +114,11 @@ help:
 		"Dev" \
 		"  help                  Show this guide." \
 		"  doctor                Inspect tool availability and active build flags." \
+		"  configure-cpp-dev     Configure a clangd-friendly CMake dev build." \
+		"  format-native         Rewrite C++ sources with clang-format." \
+		"  format-native-check   Verify C++ sources are clang-format clean." \
+		"  tidy-native           Run clang-tidy over C++ source files." \
+		"  dev-cpp-check         Run the fast C++ developer feedback suite." \
 		"  dev-bootstrap         Install Python dev dependencies and run npm ci." \
 		"  dev-python-install    Install the built Python package in editable mode." \
 		"  clean                 Remove native, Python, and JS build outputs." \
@@ -181,6 +190,11 @@ doctor:
 	@printf "sphinx (%s): %s\n" "$(SPHINX_BUILD)" "$(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),python -m sphinx)"
 	@printf "cmake (%s): %s\n" "$(CMAKE)" "$$(command -v $(CMAKE) 2>/dev/null || echo missing)"
 	@printf "ctest (%s): %s\n" "$(CTEST)" "$$(command -v $(CTEST) 2>/dev/null || echo missing)"
+	@printf "clang-format (%s): %s\n" "$(CLANG_FORMAT)" "$$(command -v $(CLANG_FORMAT) 2>/dev/null || echo missing)"
+	@printf "clang-tidy (%s): %s\n" "$(CLANG_TIDY)" "$$(command -v $(CLANG_TIDY) 2>/dev/null || echo missing)"
+	@printf "clangd (%s): %s\n" "$(CLANGD)" "$$(command -v $(CLANGD) 2>/dev/null || echo missing)"
+	@printf "ninja (%s): %s\n" "$(NINJA)" "$$(command -v $(NINJA) 2>/dev/null || echo missing)"
+	@printf "compile_commands.json: %s\n" "$$([ -e compile_commands.json ] && printf present || printf missing)"
 	@printf "em++ (%s): %s\n" "$(EMXX)" "$$(command -v $(EMXX) 2>/dev/null || echo missing)"
 	@printf "NATIVE_CXXFLAGS=%s\n" "$(NATIVE_CXXFLAGS)"
 	@printf "NATIVE_LDFLAGS=%s\n" "$(NATIVE_LDFLAGS)"

@@ -46,6 +46,9 @@ jobs:
               - "scripts/check_cpp_stream_policy.py"
               - ".github/workflows/ci.yml"
             native:
+              - ".clang-format"
+              - ".clang-tidy"
+              - "CMakePresets.json"
               - "CMakeLists.txt"
               - "Makefile"
               - "mk/**"
@@ -115,6 +118,26 @@ jobs:
       - name: Check runtime stream policy
         run: make test-cpp-stream-policy PYTHON=python3
 
+  cxx-format:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.native == 'true' || needs.changes.outputs.policy == 'true'
+    name: C++ formatting
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+        shell: bash
+
+      - name: Check C++ formatting
+        run: make format-native-check
+
   native:
     needs: changes
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.native == 'true'
@@ -146,7 +169,7 @@ jobs:
 
   ci-summary:
     name: CI Summary
-    needs: [changes, policy, native, python, javascript, r]
+    needs: [changes, policy, cxx-format, native, python, javascript, r]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 10

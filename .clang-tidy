@@ -1,0 +1,19 @@
+---
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-crtp-constructor-accessibility,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape,
+  -bugprone-narrowing-conversions,
+  -bugprone-switch-missing-default-case,
+  -bugprone-unhandled-exception-at-new,
+  -bugprone-unused-local-non-trivial-variable,
+  performance-*,
+  modernize-use-nullptr,
+  modernize-use-override,
+  readability-container-size-empty,
+  readability-redundant-member-init
+HeaderFilterRegex: '^.*/src/.*'
+FormatStyle: file
+...

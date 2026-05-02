@@ -25,7 +25,7 @@ struct FlowData {
   double danglingFlow = 0.0;
 
   FlowData() = default;
-  FlowData(double flow) : flow(flow) { }
+  FlowData(double flow) : flow(flow) {}
 
   FlowData& operator+=(const FlowData& other)
   {
@@ -68,7 +68,7 @@ struct DeltaFlow {
   explicit DeltaFlow(unsigned int module, double deltaExit, double deltaEnter)
       : module(module),
         deltaExit(deltaExit),
-        deltaEnter(deltaEnter) { }
+        deltaEnter(deltaEnter) {}
 
   DeltaFlow() = default;
   DeltaFlow(const DeltaFlow&) = default;
@@ -117,7 +117,7 @@ struct MemDeltaFlow : DeltaFlow {
   explicit MemDeltaFlow(unsigned int module, double deltaExit, double deltaEnter, double sumDeltaPlogpPhysFlow = 0.0, double sumPlogpPhysFlow = 0.0)
       : DeltaFlow(module, deltaExit, deltaEnter),
         sumDeltaPlogpPhysFlow(sumDeltaPlogpPhysFlow),
-        sumPlogpPhysFlow(sumPlogpPhysFlow) { }
+        sumPlogpPhysFlow(sumPlogpPhysFlow) {}
 
   MemDeltaFlow& operator+=(const MemDeltaFlow& other)
   {
@@ -152,7 +152,7 @@ struct PhysData {
   double sumFlowFromM2Node; // The amount of flow from the memory node in this physical node
 
   explicit PhysData(unsigned int physNodeIndex, double sumFlowFromM2Node = 0.0)
-      : physNodeIndex(physNodeIndex), sumFlowFromM2Node(sumFlowFromM2Node) { }
+      : physNodeIndex(physNodeIndex), sumFlowFromM2Node(sumFlowFromM2Node) {}
 
   friend std::ostream& operator<<(std::ostream& out, const PhysData& data)
   {

@@ -17,10 +17,10 @@ namespace infomap {
 
 namespace {
 
-class NullStreambuf : public std::streambuf {
-protected:
-  int_type overflow(int_type c) override { return traits_type::not_eof(c); }
-};
+  class NullStreambuf : public std::streambuf {
+  protected:
+    int_type overflow(int_type c) override { return traits_type::not_eof(c); }
+  };
 
 } // namespace
 

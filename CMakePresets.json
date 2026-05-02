@@ -1,0 +1,63 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "dev",
+      "displayName": "C++ dev",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/cmake-dev",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "INFOMAP_MODE": "debug",
+        "INFOMAP_USE_OPENMP": "OFF"
+      }
+    },
+    {
+      "name": "dev-openmp",
+      "displayName": "C++ dev with OpenMP",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/cmake-dev-openmp",
+      "cacheVariables": {
+        "INFOMAP_USE_OPENMP": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "targets": [
+        "infomap_cpp_tests"
+      ]
+    },
+    {
+      "name": "dev-openmp",
+      "configurePreset": "dev-openmp",
+      "targets": [
+        "infomap_cpp_tests"
+      ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "dev-openmp",
+      "configurePreset": "dev-openmp",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

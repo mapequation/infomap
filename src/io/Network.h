@@ -204,7 +204,7 @@ private:
 
 struct LayerNode {
   unsigned int layer, node;
-  explicit LayerNode(unsigned int layer = 0, unsigned int node = 0) : layer(layer), node(node) { }
+  explicit LayerNode(unsigned int layer = 0, unsigned int node = 0) : layer(layer), node(node) {}
 
   bool operator<(const LayerNode other) const
   {
