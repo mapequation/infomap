@@ -1,5 +1,5 @@
 Package: infomap
-Title: Infomap Network Clustering Algorithm
+Title: Network Clustering with the Map Equation
 Config/x-release-please-start-version: marker
 Version: 2.9.2
 Config/x-release-please-end: marker

@@ -10,3 +10,4 @@
 ^src/Makevars\.win\.in$
 ^src/symbols\.rds$
 ^configure\.win$
+^bootstrap\.R$

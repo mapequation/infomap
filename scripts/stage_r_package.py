@@ -39,7 +39,7 @@ PYTHON_VERSION_FILE = (
 
 
 def find_cpp_sources(src_root: Path) -> list[Path]:
-    return sorted(p for p in src_root.rglob("*.cpp"))
+    return sorted(p for p in src_root.rglob("*.cpp") if p.name != "main.cpp")
 
 
 def read_python_version() -> str:
@@ -97,6 +97,12 @@ def copy_skeleton(skeleton: Path, dest: Path) -> None:
     shutil.copytree(skeleton, dest)
 
 
+def remove_compiled_artifacts(pkg_src: Path) -> None:
+    for pattern in ("*.o", "*.so", "*.dll", "*.dylib"):
+        for path in pkg_src.rglob(pattern):
+            path.unlink()
+
+
 def write_text(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
@@ -132,6 +138,7 @@ def stage(
     pkg_r = out_dir / "R"
     pkg_src.mkdir(parents=True, exist_ok=True)
     pkg_r.mkdir(parents=True, exist_ok=True)
+    remove_compiled_artifacts(pkg_src)
 
     shutil.copyfile(generated_cpp, pkg_src / "infomap_wrap.cpp")
     # Rename the SWIG-generated R wrapper at stage time. Its default name
