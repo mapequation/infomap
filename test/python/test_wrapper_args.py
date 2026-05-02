@@ -1,3 +1,4 @@
+import inspect
 import shlex
 
 import pytest
@@ -23,8 +24,8 @@ def test_construct_args_renders_expected_cli_flags():
     assert shlex.split(args) == [
         "--existing",
         "--no-infomap",
-        "-vvv",
         "--no-file-output",
+        "-vvv",
         "--output",
         "json,tree",
         "--recorded-teleportation",
@@ -69,6 +70,21 @@ def test_run_forwards_variable_markov_options(monkeypatch):
     assert captured["rendered_args"] == "--synthetic"
     assert captured["kwargs"]["variable_markov_time"] is True
     assert captured["kwargs"]["variable_markov_damping"] == 0.25
+
+
+def test_construct_args_renders_variable_markov_min_scale():
+    args = infomap_module._construct_args(variable_markov_min_scale=0.5)
+
+    assert shlex.split(args) == ["--variable-markov-min-scale", "0.5"]
+
+
+def test_infomap_facade_signatures_match_options():
+    option_fields = set(infomap_module.InfomapOptions.__dataclass_fields__)
+    init_params = set(inspect.signature(infomap_module.Infomap.__init__).parameters)
+    run_params = set(inspect.signature(infomap_module.Infomap.run).parameters)
+
+    assert option_fields <= init_params - {"self", "args"}
+    assert option_fields <= run_params - {"self", "args", "initial_partition"}
 
 
 def test_no_file_output_runs_without_output_directory(make_infomap, load_graph_fixture):

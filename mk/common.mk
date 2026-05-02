@@ -49,6 +49,7 @@ HEADERS := $(shell find src -name "*.h")
 SOURCES := $(shell find src -name "*.cpp")
 SWIG_FILES := $(shell find interfaces/swig -name "*.i")
 MK_FILES := $(wildcard mk/*.mk)
+BINDING_OPTIONS_SCRIPT := scripts/generate_binding_options.py
 BUILD_CONFIG_SCRIPT := scripts/build_config.py
 
 define build_config_field
@@ -67,7 +68,7 @@ NATIVE_CXXFLAGS := $(call build_config_field,compile_flags)
 NATIVE_LDFLAGS := $(call build_config_field,link_flags)
 CXX_COMPILE := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN) ,)$(CXX)
 
-.PHONY: help doctor dev-bootstrap clean
+.PHONY: help doctor dev-bootstrap clean build-binding-options test-binding-options-freshness
 
 help:
 	@printf "%s\n" \
@@ -81,6 +82,7 @@ help:
 		"  build-r               Build the infomap R source tarball into dist/R/." \
 		"  build-r-binary        Build a platform-native R binary into dist/R/." \
 		"  build-r-swig          Regenerate the tracked SWIG wrapper outputs for R maintainers." \
+		"  build-binding-options Regenerate Python, R, and TypeScript option APIs from C++ metadata." \
 		"  build-js-metadata     Refresh the tracked JS parameters/changelog metadata." \
 		"  build-js              Build the JS worker bundle and npm package assets from tracked metadata." \
 		"  build-docs            Refresh the committed Python docs site in docs/." \
@@ -95,6 +97,7 @@ help:
 		"  test-r                Run R CMD check --as-cran on the staged infomap R package." \
 		"  test-r-examples       Run the R example smoke tests." \
 		"  test-r-swig-freshness Verify tracked R SWIG outputs are up to date." \
+		"  test-binding-options-freshness Verify tracked binding option APIs are current." \
 		"  test-docs             Rebuild docs in a temp dir and verify committed docs/ is fresh." \
 		"  test-js-metadata      Regenerate JS metadata in a temp dir and verify tracked files are current." \
 		"  test-js               Run JS lint/typecheck/unit/browser/package verification for the built npm package." \
@@ -130,12 +133,19 @@ help:
 		"  make build-native JOBS=1" \
 		"  make build-native MODE=debug OPENMP=0" \
 		"  make build-python dev-python-install test-python-unit" \
+		"  make build-binding-options test-binding-options-freshness" \
 		"  make build-js-metadata test-js-metadata" \
 		"  make build-js test-js" \
 		"  make build-docs" \
 		"  make test-docs" \
 		"" \
 		"Legacy aliases like make python, make js-worker, make cpp-test, and make py-test still work."
+
+build-binding-options: build-native
+	@$(PYTHON_FOR_BUILD_CONFIG) $(BINDING_OPTIONS_SCRIPT) --infomap-bin ./Infomap --output-root .
+
+test-binding-options-freshness: build-native
+	@$(PYTHON_FOR_BUILD_CONFIG) $(BINDING_OPTIONS_SCRIPT) --check --infomap-bin ./Infomap --output-root .
 
 doctor:
 	@printf "%s\n" "Infomap doctor" ""
