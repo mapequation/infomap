@@ -1,0 +1,31 @@
+test_that("add_igraph imports edges from an igraph graph", {
+  skip_if_not_installed("igraph")
+
+  g <- igraph::make_graph(c(1, 2, 1, 3, 2, 3, 4, 5, 4, 6, 5, 6), directed = FALSE)
+
+  im <- Infomap(silent = TRUE, num_trials = 5)
+  mapping <- im$add_igraph(g)
+  im$run()
+
+  expect_equal(names(mapping), as.character(seq_len(igraph::vcount(g))))
+  expect_equal(unname(mapping), as.character(seq_len(igraph::vcount(g))))
+  expect_equal(im$num_top_modules, 2L)
+  expect_true(im$num_links >= 6L)
+  expect_setequal(names(im$modules), as.character(seq_len(igraph::vcount(g))))
+  expect_setequal(as.data.frame(im)$node_id, seq_len(igraph::vcount(g)))
+})
+
+test_that("as_communities aligns membership with igraph vertex ids", {
+  skip_if_not_installed("igraph")
+
+  g <- igraph::make_graph(c(1, 2, 1, 3, 2, 3, 4, 5, 4, 6, 5, 6), directed = FALSE)
+
+  im <- Infomap(silent = TRUE, num_trials = 5)
+  im$add_igraph(g)
+  im$run()
+
+  communities <- im$as_communities(g)
+  expect_s3_class(communities, "communities")
+  expect_length(igraph::membership(communities), igraph::vcount(g))
+  expect_false(anyNA(igraph::membership(communities)))
+})

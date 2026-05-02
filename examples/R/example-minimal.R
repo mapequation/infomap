@@ -1,30 +1,32 @@
+# Minimal Infomap example.
+#
+# Run with: Rscript examples/R/example-minimal.R
+# Requires the `infomap` R package installed (e.g. via `make dev-r-install`).
 
-source("load-infomap.R")
+library(infomap)
 
-im <- InfomapWrapper("-2 -d")
+im <- Infomap(silent = TRUE, two_level = TRUE, directed = TRUE)
 
-im$addLink(0, 1);
-im$addLink(0, 2);
-im$addLink(0, 3);
-im$addLink(1, 0);
-im$addLink(1, 2);
-im$addLink(2, 1);
-im$addLink(2, 0);
-im$addLink(3, 0);
-im$addLink(3, 4);
-im$addLink(3, 5);
-im$addLink(4, 3);
-im$addLink(4, 5);
-im$addLink(5, 4);
-im$addLink(5, 3);
+im$add_link(0, 1)
+im$add_link(0, 2)
+im$add_link(0, 3)
+im$add_link(1, 0)
+im$add_link(1, 2)
+im$add_link(2, 1)
+im$add_link(2, 0)
+im$add_link(3, 0)
+im$add_link(3, 4)
+im$add_link(3, 5)
+im$add_link(4, 3)
+im$add_link(4, 5)
+im$add_link(5, 4)
+im$add_link(5, 3)
 
-im$run();
+im$run()
 
-cat("Partitioned network in", im$numTopModules(), "modules with codelength", im$codelength(), "bits:\n")
+cat(sprintf(
+  "Partitioned network in %d modules with codelength %.4f bits.\n",
+  im$num_top_modules, im$codelength
+))
 
-it <- im$iterLeafNodes()
-
-while (!it$isEnd()) {
-	cat("Node:", it$stateId, "module:", it$moduleId(), '\n')
-	it$stepForward()
-}
+print(im$modules)

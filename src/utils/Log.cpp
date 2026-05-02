@@ -8,7 +8,9 @@
  ******************************************************************************/
 
 #include "Log.h"
+#ifndef INFOMAP_R
 #include <iostream>
+#endif
 #include <streambuf>
 
 namespace infomap {
@@ -22,11 +24,13 @@ protected:
 
 } // namespace
 
+#ifndef INFOMAP_R
 std::ostream& Log::defaultStream()
 {
   static std::ostream& s = std::cout;
   return s;
 }
+#endif
 
 std::ostream* Log::s_ostream = nullptr;
 unsigned int Log::s_verboseLevel = 0;

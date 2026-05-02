@@ -4,11 +4,11 @@ Infomap
 =======
 
 Infomap is a network clustering algorithm based on the `Map equation`_.
-This repository contains the native CLI, the Python package, the JavaScript web
-worker, the Docker images, and the source for the published Python
-documentation.
+This repository contains the native CLI, the Python package, the R package,
+the JavaScript web worker, the Docker images, and the source for the
+published Python documentation.
 
-Start with `mapequation.org/infomap`_ for the user guide and
+Start with `mapequation.org/infomap/`_ for the user guide and
 `CHANGELOG.md`_ for release notes.
 
 For contributing, security reporting, and maintainer workflows, see
@@ -32,7 +32,7 @@ For contributing, security reporting, and maintainer workflows, see
    :alt: Nightly quality
 
 .. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
-.. _`mapequation.org/infomap`: https://www.mapequation.org/infomap
+.. _`mapequation.org/infomap/`: https://www.mapequation.org/infomap/
 .. _`CHANGELOG.md`: https://github.com/mapequation/infomap/blob/master/CHANGELOG.md
 .. _`CONTRIBUTING.md`: https://github.com/mapequation/infomap/blob/master/CONTRIBUTING.md
 .. _`SECURITY.md`: https://github.com/mapequation/infomap/blob/master/SECURITY.md
@@ -77,6 +77,39 @@ Quick start with Python:
 
 .. _PyPI: https://pypi.org/project/infomap/
 .. _`Infomap Python API`: https://mapequation.github.io/infomap/python/
+
+R package
+^^^^^^^^^
+
+Pre-built binaries are published on `r-universe`_; this is the recommended path:
+
+.. code-block:: r
+
+    install.packages(
+      "infomap",
+      repos = c("https://mapequation.r-universe.dev", "https://cloud.r-project.org")
+    )
+
+Quick start with R:
+
+.. code-block:: r
+
+    library(infomap)
+
+    im <- Infomap(silent = TRUE, two_level = TRUE, num_trials = 20)
+    im$add_link(0, 1)
+    im$add_link(1, 2)
+    im$run()
+
+    print(im$num_top_modules)
+    print(im$codelength)
+
+See ``?Infomap`` for the user-facing constructor and ``?InfomapClass`` for
+the full method and active-binding reference. The R-specific source README
+lives at `interfaces/R/infomap/README.md`_.
+
+.. _r-universe: https://mapequation.r-universe.dev
+.. _`interfaces/R/infomap/README.md`: https://github.com/mapequation/infomap/blob/master/interfaces/R/infomap/README.md
 
 Homebrew CLI
 ^^^^^^^^^^^^

@@ -52,5 +52,55 @@ namespace std {
 }
 #endif
 
+#ifdef SWIGR
+// R-only: route Infomap log output through Rprintf/REprintf so the
+// optimizer's progress text appears in the R console (and obeys R's
+// output buffering / sink redirection) instead of going to a null sink.
+// The hook is exposed to R as `infomap::initRLogging()` and called from
+// the package's .onLoad.
+%{
+#include "src/utils/Log.h"
+#include <R_ext/Print.h>
+#include <ostream>
+#include <streambuf>
+
+namespace {
+
+class RPrintStreambuf : public std::streambuf {
+protected:
+  int_type overflow(int_type c) override
+  {
+    if (c != traits_type::eof()) {
+      char ch = static_cast<char>(c);
+      Rprintf("%c", ch);
+    }
+    return c;
+  }
+  std::streamsize xsputn(const char* s, std::streamsize n) override
+  {
+    Rprintf("%.*s", static_cast<int>(n), s);
+    return n;
+  }
+};
+
+} // namespace
+
+namespace infomap {
+void initRLogging()
+{
+  static RPrintStreambuf rbuf;
+  static std::ostream rstream(&rbuf);
+  Log::setOutputStream(rstream);
+}
+} // namespace infomap
+%}
+
+%inline %{
+namespace infomap {
+void initRLogging();
+}
+%}
+#endif
+
 /* Parse the header file to generate wrappers */
 %include "src/Infomap.h"

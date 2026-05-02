@@ -98,9 +98,15 @@ private:
 
   static std::ostream& ostream()
   {
+#ifdef INFOMAP_R
+    return *s_ostream;
+#else
     return s_ostream ? *s_ostream : defaultStream();
+#endif
   }
+#ifndef INFOMAP_R
   static std::ostream& defaultStream();
+#endif
   static std::ostream* s_ostream;
   static unsigned int s_verboseLevel;
   static bool s_silent;
