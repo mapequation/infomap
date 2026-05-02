@@ -510,11 +510,11 @@ InfomapClass <- R6::R6Class(
         stop("`g` must be an igraph graph.", call. = FALSE)
       }
       # self$modules returns a named integer vector: node_id -> 0-indexed
-      # module. igraph's make_clusters expects a 1-indexed membership
-      # vector aligned with V(g) order, so look up by vertex sequence.
+      # module. add_igraph() uses R igraph's 1-indexed vertex ids directly,
+      # so look up by vertex sequence.
       mods <- self$modules
       n <- igraph::vcount(g)
-      vertex_ids <- as.character(seq_len(n) - 1L)
+      vertex_ids <- as.character(seq_len(n))
       membership <- as.integer(mods[vertex_ids])
       igraph::make_clusters(
         g,
