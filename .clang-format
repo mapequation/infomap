@@ -20,6 +20,7 @@ ReflowComments: true
 SortIncludes: Never
 SortUsingDeclarations: true
 Standard: c++14
+SpaceInEmptyBlock: false
 UseTab: Never
 IndentWidth: 2
 BraceWrapping:

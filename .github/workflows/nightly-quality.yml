@@ -118,6 +118,25 @@ jobs:
           ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
           UBSAN_OPTIONS: print_stacktrace=1
 
+  linux-clang-tidy:
+    name: Linux clang-tidy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install clang-tidy toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy ninja-build
+        shell: bash
+
+      - name: Run clang-tidy
+        run: make tidy-native CMAKE_DEV_GENERATOR=Ninja
+        shell: bash
+
   python-benchmarks:
     name: Python benchmarks
     runs-on: ubuntu-24.04

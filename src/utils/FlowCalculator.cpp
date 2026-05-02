@@ -31,7 +31,7 @@ inline void normalize(std::vector<T>& v, const T sum) noexcept
 template <typename T>
 inline void normalize(std::vector<T>& v) noexcept
 {
-  const auto sum = std::accumulate(cbegin(v), cend(v), T { });
+  const auto sum = std::accumulate(cbegin(v), cend(v), T {});
   normalize(v, sum);
 }
 

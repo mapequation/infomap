@@ -30,6 +30,10 @@ SPHINX_BUILD_BIN := $(shell command -v sphinx-build 2>/dev/null || true)
 SPHINX_BUILD ?= $(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),$(PYTHON) -m sphinx)
 CMAKE ?= $(shell command -v cmake 2>/dev/null || command -v /opt/homebrew/bin/cmake 2>/dev/null || echo cmake)
 CTEST ?= $(shell command -v ctest 2>/dev/null || command -v /opt/homebrew/bin/ctest 2>/dev/null || echo ctest)
+CLANG_FORMAT ?= $(shell command -v clang-format 2>/dev/null || command -v /opt/homebrew/bin/clang-format 2>/dev/null || command -v /opt/homebrew/opt/llvm/bin/clang-format 2>/dev/null || echo clang-format)
+CLANG_TIDY ?= $(shell command -v clang-tidy 2>/dev/null || command -v /opt/homebrew/bin/clang-tidy 2>/dev/null || command -v /opt/homebrew/opt/llvm/bin/clang-tidy 2>/dev/null || echo clang-tidy)
+CLANGD ?= $(shell command -v clangd 2>/dev/null || command -v /opt/homebrew/bin/clangd 2>/dev/null || command -v /opt/homebrew/opt/llvm/bin/clangd 2>/dev/null || echo clangd)
+NINJA ?= $(shell command -v ninja 2>/dev/null || command -v /opt/homebrew/bin/ninja 2>/dev/null || echo ninja)
 
 MODE ?= release
 OPENMP ?= 1
@@ -49,6 +53,7 @@ HEADERS := $(shell find src -name "*.h")
 SOURCES := $(shell find src -name "*.cpp")
 SWIG_FILES := $(shell find interfaces/swig -name "*.i")
 MK_FILES := $(wildcard mk/*.mk)
+BINDING_OPTIONS_SCRIPT := scripts/generate_binding_options.py
 BUILD_CONFIG_SCRIPT := scripts/build_config.py
 
 define build_config_field
@@ -67,7 +72,7 @@ NATIVE_CXXFLAGS := $(call build_config_field,compile_flags)
 NATIVE_LDFLAGS := $(call build_config_field,link_flags)
 CXX_COMPILE := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN) ,)$(CXX)
 
-.PHONY: help doctor dev-bootstrap clean
+.PHONY: help doctor dev-bootstrap clean build-binding-options
 
 help:
 	@printf "%s\n" \
@@ -81,11 +86,13 @@ help:
 		"  build-r               Build the infomap R source tarball into dist/R/." \
 		"  build-r-binary        Build a platform-native R binary into dist/R/." \
 		"  build-r-swig          Regenerate the tracked SWIG wrapper outputs for R maintainers." \
+		"  build-binding-options Regenerate Python, R, and TypeScript option APIs from C++ metadata." \
 		"  build-js-metadata     Refresh the tracked JS parameters/changelog metadata." \
 		"  build-js              Build the JS worker bundle and npm package assets from tracked metadata." \
 		"  build-docs            Refresh the committed Python docs site in docs/." \
 		"" \
 		"Test" \
+		"  test-cpp-stream-policy  Verify runtime C++ does not use direct global std streams outside approved files." \
 		"  test-native           Configure, build, and run the C++ doctest suite via CMake/CTest." \
 		"  test-python           Run the full Python verification suite." \
 		"  test-python-unit      Run pytest for test/python." \
@@ -95,6 +102,7 @@ help:
 		"  test-r                Run R CMD check --as-cran on the staged infomap R package." \
 		"  test-r-examples       Run the R example smoke tests." \
 		"  test-r-swig-freshness Verify tracked R SWIG outputs are up to date." \
+		"  test-binding-options-freshness Verify tracked binding option APIs are current." \
 		"  test-docs             Rebuild docs in a temp dir and verify committed docs/ is fresh." \
 		"  test-js-metadata      Regenerate JS metadata in a temp dir and verify tracked files are current." \
 		"  test-js               Run JS lint/typecheck/unit/browser/package verification for the built npm package." \
@@ -106,6 +114,11 @@ help:
 		"Dev" \
 		"  help                  Show this guide." \
 		"  doctor                Inspect tool availability and active build flags." \
+		"  configure-cpp-dev     Configure a clangd-friendly CMake dev build." \
+		"  format-native         Rewrite C++ sources with clang-format." \
+		"  format-native-check   Verify C++ sources are clang-format clean." \
+		"  tidy-native           Run clang-tidy over C++ source files." \
+		"  dev-cpp-check         Run the fast C++ developer feedback suite." \
 		"  dev-bootstrap         Install Python dev dependencies and run npm ci." \
 		"  dev-python-install    Install the built Python package in editable mode." \
 		"  clean                 Remove native, Python, and JS build outputs." \
@@ -123,19 +136,23 @@ help:
 		"" \
 		"CI / Advanced" \
 		"  ci-export-github-env  Print GitHub Actions environment exports for macOS libomp." \
-		"  Advanced/internal targets such as R and docker-* remain available but are no longer primary." \
+		"  Advanced/internal targets such as docker-* remain available but are secondary." \
 		"" \
 		"Examples" \
 		"  make build-native" \
 		"  make build-native JOBS=1" \
 		"  make build-native MODE=debug OPENMP=0" \
 		"  make build-python dev-python-install test-python-unit" \
+		"  make build-binding-options test-binding-options-freshness" \
 		"  make build-js-metadata test-js-metadata" \
 		"  make build-js test-js" \
 		"  make build-docs" \
 		"  make test-docs" \
 		"" \
 		"Legacy aliases like make python, make js-worker, make cpp-test, and make py-test still work."
+
+build-binding-options: build-native
+	@$(PYTHON_FOR_BUILD_CONFIG) $(BINDING_OPTIONS_SCRIPT) --infomap-bin ./Infomap --output-root .
 
 doctor:
 	@printf "%s\n" "Infomap doctor" ""
@@ -151,7 +168,7 @@ doctor:
 	@printf "python (%s): %s\n" "$(PYTHON)" "$$(command -v $(PYTHON) 2>/dev/null || echo missing)"
 	@printf "python build module: %s\n" "$$($(PYTHON) -c 'from importlib.metadata import version; print(version(\"build\"))' 2>/dev/null || echo 'missing (pip install build)')"
 	@printf "swig (%s): %s\n" "$(SWIG)" "$$(command -v $(SWIG) 2>/dev/null || echo missing)"
-	@printf "swig version: %s\n" "$$($(SWIG) -version 2>/dev/null | sed -nE 's/.*SWIG Version[[:space:]]+([0-9.]+).*/\1/p' | head -1 || echo unknown) (R bindings require 4.4.1)"
+	@printf "swig version: %s\n" "$$($(SWIG) -version 2>/dev/null | sed -nE 's/.*SWIG Version[[:space:]]+([0-9.]+).*/\1/p' | head -1 || echo unknown) (tracked wrappers require 4.4.1)"
 	@printf "R (%s): %s\n" "$(R)" "$$(command -v $(R) 2>/dev/null || echo missing)"
 	@printf "R version: %s\n" "$$($(R) --version 2>/dev/null | sed -nE 's/^R version ([0-9.]+).*/\1/p' | head -1 || echo missing)"
 	@printf "Rscript (%s): %s\n" "$(RSCRIPT)" "$$(command -v $(RSCRIPT) 2>/dev/null || echo missing)"
@@ -173,6 +190,11 @@ doctor:
 	@printf "sphinx (%s): %s\n" "$(SPHINX_BUILD)" "$(if $(SPHINX_BUILD_BIN),$(SPHINX_BUILD_BIN),python -m sphinx)"
 	@printf "cmake (%s): %s\n" "$(CMAKE)" "$$(command -v $(CMAKE) 2>/dev/null || echo missing)"
 	@printf "ctest (%s): %s\n" "$(CTEST)" "$$(command -v $(CTEST) 2>/dev/null || echo missing)"
+	@printf "clang-format (%s): %s\n" "$(CLANG_FORMAT)" "$$(command -v $(CLANG_FORMAT) 2>/dev/null || echo missing)"
+	@printf "clang-tidy (%s): %s\n" "$(CLANG_TIDY)" "$$(command -v $(CLANG_TIDY) 2>/dev/null || echo missing)"
+	@printf "clangd (%s): %s\n" "$(CLANGD)" "$$(command -v $(CLANGD) 2>/dev/null || echo missing)"
+	@printf "ninja (%s): %s\n" "$(NINJA)" "$$(command -v $(NINJA) 2>/dev/null || echo missing)"
+	@printf "compile_commands.json: %s\n" "$$([ -e compile_commands.json ] && printf present || printf missing)"
 	@printf "em++ (%s): %s\n" "$(EMXX)" "$$(command -v $(EMXX) 2>/dev/null || echo missing)"
 	@printf "NATIVE_CXXFLAGS=%s\n" "$(NATIVE_CXXFLAGS)"
 	@printf "NATIVE_LDFLAGS=%s\n" "$(NATIVE_LDFLAGS)"

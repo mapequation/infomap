@@ -24,7 +24,7 @@ class Random {
   uniform_uint_dist uniform;
 
 public:
-  Random(unsigned int seed = 123) : m_randGen(seed) { }
+  Random(unsigned int seed = 123) : m_randGen(seed) {}
 
   void seed(unsigned int seedValue)
   {

@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
+      policy: ${{ steps.filter.outputs.policy }}
       native: ${{ steps.filter.outputs.native }}
       python: ${{ steps.filter.outputs.python }}
       javascript: ${{ steps.filter.outputs.javascript }}
@@ -36,7 +37,18 @@ jobs:
         uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.2
         with:
           filters: |
+            policy:
+              - "Makefile"
+              - "mk/**"
+              - "src/**"
+              - "interfaces/swig/**"
+              - "interfaces/R/generated/**"
+              - "scripts/check_cpp_stream_policy.py"
+              - ".github/workflows/ci.yml"
             native:
+              - ".clang-format"
+              - ".clang-tidy"
+              - "CMakePresets.json"
               - "CMakeLists.txt"
               - "Makefile"
               - "mk/**"
@@ -92,6 +104,40 @@ jobs:
               - ".github/workflows/ci.yml"
               - ".github/workflows/_r-package.yml"
 
+  policy:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.policy == 'true'
+    name: C++ stream policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Check runtime stream policy
+        run: make test-cpp-stream-policy PYTHON=python3
+
+  cxx-format:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.native == 'true' || needs.changes.outputs.policy == 'true'
+    name: C++ formatting
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+        shell: bash
+
+      - name: Check C++ formatting
+        run: make format-native-check
+
   native:
     needs: changes
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.native == 'true'
@@ -123,7 +169,7 @@ jobs:
 
   ci-summary:
     name: CI Summary
-    needs: [changes, native, python, javascript, r]
+    needs: [changes, policy, cxx-format, native, python, javascript, r]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 10

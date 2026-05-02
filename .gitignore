@@ -15,6 +15,7 @@ callgrind.*
 
 /Infomap
 /build/
+/compile_commands.json
 /dist/
 /include/
 /lib/

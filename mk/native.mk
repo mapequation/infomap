@@ -8,7 +8,7 @@ NATIVE_OBJECTS := $(SOURCES:src/%.cpp=$(NATIVE_OBJECT_DIR)/%.o)
 LIB_OBJECTS := $(SOURCES:src/%.cpp=$(LIB_OBJECT_DIR)/%.o)
 LIB_HEADERS := $(HEADERS:src/%.h=$(PUBLIC_INCLUDE_DIR)/%.h)
 
-.PHONY: build-native build-lib clean-native format-native
+.PHONY: build-native build-lib clean-native format-native format-native-check
 
 build-native: $(NATIVE_BINARY)
 	@printf "Built %s (MODE=%s OPENMP=%s)\n" "$(NATIVE_BINARY)" "$(MODE)" "$(OPENMP)"
@@ -39,7 +39,10 @@ $(LIB_OBJECT_DIR)/%.o: src/%.cpp $(HEADERS) $(MK_FILES) Makefile
 	$(CXX_COMPILE) $(NATIVE_CXXFLAGS) -DNS_INFOMAP -DAS_LIB -c $< -o $@
 
 format-native:
-	clang-format -i $(HEADERS) $(SOURCES)
+	$(CLANG_FORMAT) -i $(HEADERS) $(SOURCES)
+
+format-native-check:
+	$(CLANG_FORMAT) --dry-run --Werror $(HEADERS) $(SOURCES)
 
 clean-native:
 	$(RM) -r $(NATIVE_BINARY) build/native build/Infomap build/lib build/cmake build/cmake-sanitizers lib include

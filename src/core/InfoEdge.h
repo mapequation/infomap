@@ -18,7 +18,7 @@ struct EdgeData {
 public:
   EdgeData() = default;
 
-  EdgeData(double weight, double flow) : weight(weight), flow(flow) { }
+  EdgeData(double weight, double flow) : weight(weight), flow(flow) {}
 
   double weight;
   double flow;
@@ -31,7 +31,7 @@ public:
   InfoEdge(InfoNode& source, InfoNode& target, double weight, double flow)
       : data(weight, flow),
         source(&source),
-        target(&target) { }
+        target(&target) {}
 
   InfoNode& other(InfoNode& node) const;
 

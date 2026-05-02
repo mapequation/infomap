@@ -23,7 +23,7 @@ public:
       : m_capacity(capacity),
         m_values(capacity),
         m_redirect(capacity, 0),
-        m_maxOffset(std::numeric_limits<unsigned int>::max() - 1 - capacity) { }
+        m_maxOffset(std::numeric_limits<unsigned int>::max() - 1 - capacity) {}
 
   void startRound()
   {

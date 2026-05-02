@@ -141,7 +141,7 @@ public:
         metaCollection(other.metaCollection),
         m_childDegree(other.m_childDegree),
         m_childrenChanged(other.m_childrenChanged),
-        m_numLeafMembers(other.m_numLeafMembers) { }
+        m_numLeafMembers(other.m_numLeafMembers) {}
 
   ~InfoNode() noexcept;
 

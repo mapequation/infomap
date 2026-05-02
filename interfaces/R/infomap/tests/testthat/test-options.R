@@ -53,6 +53,11 @@ test_that("explicit multilayer_relax_limit = -1L is rendered", {
   expect_match(rendered, "--multilayer-relax-limit -1")
 })
 
+test_that("variable_markov_min_scale renders when non-default", {
+  rendered <- construct_args(NULL, infomap_options(variable_markov_min_scale = 0.5))
+  expect_match(rendered, "--variable-markov-min-scale 0.5")
+})
+
 test_that("construct_args returns no leading whitespace", {
   rendered <- construct_args(NULL, infomap_options(silent = TRUE))
   expect_false(grepl("^\\s", rendered))
