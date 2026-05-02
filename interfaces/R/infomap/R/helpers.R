@@ -1,14 +1,6 @@
-# Top-level helpers exported alongside the Infomap class.
+# Internal helpers.
 
-#' Compute p * log2(p) for each element
-#'
-#' Returns 0 for non-positive entries, mirroring the Python helper.
-#'
-#' @param p Numeric vector of probabilities.
-#' @return Numeric vector of `p log2(p)` values.
-#' @examples
-#' plogp(c(0.5, 0.5))
-#' @export
+#' @noRd
 plogp <- function(p) {
   out <- numeric(length(p))
   pos <- !is.na(p) & p > 0
@@ -16,27 +8,17 @@ plogp <- function(p) {
   out
 }
 
-#' Shannon entropy (in bits)
-#'
-#' @param p Numeric vector of probabilities.
-#' @return Numeric scalar entropy in bits.
-#' @examples
-#' entropy(c(0.5, 0.5))
-#' @export
+#' @noRd
 entropy <- function(p) {
   -sum(plogp(p))
 }
 
-#' Perplexity
-#'
-#' Defined as `2 ^ entropy(p)`.
-#'
-#' @param p Numeric vector of probabilities.
-#' @return Numeric scalar.
-#' @export
+#' @noRd
 perplexity <- function(p) {
   2 ^ entropy(p)
 }
+
+# Top-level helpers exported alongside the Infomap class.
 
 #' Multilayer node helper
 #'

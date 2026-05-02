@@ -10,7 +10,6 @@
 #'   \item [Infomap()] — the user-facing R6 class.
 #'   \item [infomap_options()] — build a reusable options list.
 #'   \item [as.data.frame.Infomap()] — tidy node-level data.frame.
-#'   \item [entropy()], [perplexity()], [plogp()] — information-theoretic helpers.
 #' }
 #'
 #' @keywords internal

@@ -35,6 +35,10 @@ test_that("active bindings return current values without parens", {
 })
 
 test_that("entropy / perplexity / plogp compute the expected values", {
+  entropy <- getFromNamespace("entropy", "infomap")
+  perplexity <- getFromNamespace("perplexity", "infomap")
+  plogp <- getFromNamespace("plogp", "infomap")
+
   expect_equal(entropy(c(0.5, 0.5)), 1)
   expect_equal(perplexity(c(0.5, 0.5)), 2)
   expect_equal(plogp(0), 0)

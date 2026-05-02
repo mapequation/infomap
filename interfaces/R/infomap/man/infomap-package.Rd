@@ -17,7 +17,6 @@ SWIG-generated bindings.
 \item \code{\link[=Infomap]{Infomap()}} — the user-facing R6 class.
 \item \code{\link[=infomap_options]{infomap_options()}} — build a reusable options list.
 \item \code{\link[=as.data.frame.Infomap]{as.data.frame.Infomap()}} — tidy node-level data.frame.
-\item \code{\link[=entropy]{entropy()}}, \code{\link[=perplexity]{perplexity()}}, \code{\link[=plogp]{plogp()}} — information-theoretic helpers.
 }
 }
 
