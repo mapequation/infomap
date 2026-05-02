@@ -1,2 +1,0 @@
-#!/bin/sh
-exec "$(cd "$(dirname "$0")/.." && pwd)/.venv/bin/python" "$@"
