@@ -24,17 +24,13 @@ protected:
 
 } // namespace
 
+#ifndef INFOMAP_R
 std::ostream& Log::defaultStream()
 {
-#ifdef INFOMAP_R
-  static NullStreambuf nullBuf;
-  static std::ostream nullStream(&nullBuf);
-  return nullStream;
-#else
   static std::ostream& s = std::cout;
   return s;
-#endif
 }
+#endif
 
 std::ostream* Log::s_ostream = nullptr;
 unsigned int Log::s_verboseLevel = 0;
