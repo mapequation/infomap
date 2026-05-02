@@ -20,6 +20,7 @@
 \alias{$,_p_infomap__InfomapModuleIterator-method}
 \alias{$,_p_infomap__InfomapParentIterator-method}
 \alias{$,_p_infomap__InfomapWrapper-method}
+\alias{$,_p_infomap__LayerTeleFlowData-method}
 \alias{$,_p_infomap__LayerNode-method}
 \alias{$,_p_infomap__MemDeltaFlow-method}
 \alias{$,_p_infomap__Network-method}
@@ -46,6 +47,7 @@
 \alias{$<-,_p_infomap__InfoNode-method}
 \alias{$<-,_p_infomap__InfomapIterator-method}
 \alias{$<-,_p_infomap__InfomapParentIterator-method}
+\alias{$<-,_p_infomap__LayerTeleFlowData-method}
 \alias{$<-,_p_infomap__LayerNode-method}
 \alias{$<-,_p_infomap__MemDeltaFlow-method}
 \alias{$<-,_p_infomap__PhysData-method}
@@ -65,6 +67,7 @@
 \alias{[[<-,_p_infomap__InfoNode,character-method}
 \alias{[[<-,_p_infomap__InfomapIterator,character-method}
 \alias{[[<-,_p_infomap__InfomapParentIterator,character-method}
+\alias{[[<-,_p_infomap__LayerTeleFlowData,character-method}
 \alias{[[<-,_p_infomap__LayerNode,character-method}
 \alias{[[<-,_p_infomap__MemDeltaFlow,character-method}
 \alias{[[<-,_p_infomap__PhysData,character-method}

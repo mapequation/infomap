@@ -20,6 +20,7 @@ delete_infomap__InfomapModuleIterator <- function(obj) delete_InfomapModuleItera
 delete_infomap__InfomapParentIterator <- function(obj) delete_InfomapParentIterator(obj)
 delete_infomap__InfomapWrapper <- function(obj) delete_InfomapWrapper(obj)
 delete_infomap__InfoNode <- function(obj) delete_InfoNode(obj)
+delete_infomap__LayerTeleFlowData <- function(obj) delete_LayerTeleFlowData(obj)
 delete_infomap__LayerNode <- function(obj) delete_LayerNode(obj)
 delete_infomap__MemDeltaFlow <- function(obj) delete_MemDeltaFlow(obj)
 delete_infomap__Network <- function(obj) delete_Network(obj)
