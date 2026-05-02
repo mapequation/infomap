@@ -364,9 +364,21 @@ InfomapClass <- R6::R6Class(
     # ----------------------------------------
 
     #' @description Import an igraph graph.
-    #' @details Translated from `interfaces/python/src/infomap/_networkx.py`.
-    #'   Vertex names are captured separately; edges use 0-indexed
-    #'   integer ids regardless of igraph's vertex labels.
+    #' @details
+    #' Translated from `interfaces/python/src/infomap/_networkx.py`.
+    #'
+    #' **Node id convention.** Infomap uses 0-indexed internal node ids
+    #' regardless of how igraph labels vertices. The 1-indexed igraph
+    #' vertex sequence `V(g)` maps to internal ids
+    #' `0, 1, ..., vcount(g) - 1`. Result accessors that key by node id
+    #' (e.g. `modules`, `as.data.frame(im)`, `get_modules()`) therefore
+    #' return 0-indexed ids; if the original igraph had vertex names
+    #' (`V(g)$name`), the returned mapping recovers them.
+    #'
+    #' If the graph is directed, `run()` will inject `--directed`
+    #' unless the user has already chosen a flow model via `opts` or
+    #' raw args.
+    #'
     #' @param g An igraph graph.
     #' @param weight Edge attribute to use as link weight.
     #' @param phys_id Vertex attribute holding physical node ids
@@ -377,6 +389,11 @@ InfomapClass <- R6::R6Class(
     #'   format is used; diagonal links (different layer AND different
     #'   physical node) trigger an error. Set to `FALSE` to allow
     #'   `add_multilayer_link()` for arbitrary (layer, node) pairs.
+    #' @return Invisibly returns a named character vector mapping
+    #'   internal 0-indexed node ids to the original igraph vertex
+    #'   names (or stringified vertex indices when `V(g)$name` is
+    #'   absent). Useful for joining Infomap results back to the
+    #'   original graph.
     add_igraph = function(g,
                           weight = "weight",
                           phys_id = "phys_id",

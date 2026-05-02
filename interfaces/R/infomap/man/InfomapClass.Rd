@@ -572,10 +572,27 @@ physical node) trigger an error. Set to \code{FALSE} to allow
 }
 \subsection{Details}{
 Translated from \verb{interfaces/python/src/infomap/_networkx.py}.
-Vertex names are captured separately; edges use 0-indexed
-integer ids regardless of igraph's vertex labels.
+
+\strong{Node id convention.} Infomap uses 0-indexed internal node ids
+regardless of how igraph labels vertices. The 1-indexed igraph
+vertex sequence \code{V(g)} maps to internal ids
+\verb{0, 1, ..., vcount(g) - 1}. Result accessors that key by node id
+(e.g. \code{modules}, \code{as.data.frame(im)}, \code{get_modules()}) therefore
+return 0-indexed ids; if the original igraph had vertex names
+(\code{V(g)$name}), the returned mapping recovers them.
+
+If the graph is directed, \code{run()} will inject \code{--directed}
+unless the user has already chosen a flow model via \code{opts} or
+raw args.
 }
 
+\subsection{Returns}{
+Invisibly returns a named character vector mapping
+internal 0-indexed node ids to the original igraph vertex
+names (or stringified vertex indices when \code{V(g)$name} is
+absent). Useful for joining Infomap results back to the
+original graph.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Infomap-as_communities"></a>}}

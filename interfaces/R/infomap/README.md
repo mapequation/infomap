@@ -51,8 +51,39 @@ im$modules                # named integer vector: node_id -> module_id
 as.data.frame(im)         # one row per node, with path / flow / name / module_id
 ```
 
-See `?Infomap` for the full method reference and `?infomap_options` for
-the complete list of named options.
+See `?Infomap` for the user-facing constructor surface, `?InfomapClass`
+for the full method and active-binding reference, and `?infomap_options`
+for the complete list of named options.
+
+## Working with igraph
+
+`igraph` is a `Suggests` dependency, not a hard requirement — install
+it separately if you want to import existing graphs:
+
+```r
+install.packages("igraph")
+
+library(igraph)
+library(infomap)
+
+g <- make_graph("Zachary")
+
+im <- Infomap(silent = TRUE, two_level = TRUE)
+mapping <- im$add_igraph(g)   # invisibly returns id -> vertex name
+im$run()
+
+comm <- im$as_communities(g)  # igraph 'communities' object
+```
+
+`add_igraph()` and `as_communities()` raise an informative error if
+`igraph` is not installed.
+
+**Node id convention.** Infomap uses 0-indexed internal node ids; igraph
+uses 1-indexed `V(g)`. The `mapping` returned by `add_igraph()` recovers
+the original igraph vertex names (or stringified indices) keyed by
+internal id, so you can join Infomap results back to the original
+graph. Module assignments returned by `im$modules` and
+`as.data.frame(im)` use the 0-indexed internal ids.
 
 ## Related packages
 
