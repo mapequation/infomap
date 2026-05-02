@@ -12,6 +12,11 @@
 #    __ZNSt3__113__hash_memoryEPKvm that are absent from the Apple libc++
 #    runtime Homebrew R links against.
 #
+#    Some r-universe macOS x86_64/oldrel toolchains also report "using C++17"
+#    while omitting the standard flag from compile commands.  Put the C++17
+#    flag directly on the pinned compiler command so headers are always parsed
+#    in the requested standard.
+#
 #    R's build system loads src/Makevars *before* R's own Makeconf, so a
 #    plain assignment like CXX = /usr/bin/clang++ is overridden by Makeconf.
 #    Using GNU Make's `override` directive makes the assignment survive both
@@ -44,11 +49,12 @@ fi
 # `override` is required: R loads src/Makevars first, then Makeconf, then
 # passes CXX on the make command line. Without `override`, both later steps
 # clobber our setting.
-if [ "$(uname)" = "Darwin" ] && ! grep -q '/usr/bin/clang' "$PKG_DIR/src/Makevars" 2>/dev/null; then
+if [ "$(uname)" = "Darwin" ] && ! grep -q 'override CXX17 = /usr/bin/clang++ -std=gnu++17' "$PKG_DIR/src/Makevars" 2>/dev/null; then
   {
     printf '\n'
     printf '# Pinned by configure: Apple clang avoids LLVM libc++ ABI mismatch.\n'
     printf 'override CC  = /usr/bin/clang\n'
-    printf 'override CXX = /usr/bin/clang++\n'
+    printf 'override CXX = /usr/bin/clang++ -std=gnu++17\n'
+    printf 'override CXX17 = /usr/bin/clang++ -std=gnu++17\n'
   } >> "$PKG_DIR/src/Makevars"
 fi
