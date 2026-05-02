@@ -26,7 +26,7 @@ namespace infomap {
 class InfoNode;
 
 struct MemNodeSet {
-  MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) { }
+  MemNodeSet(unsigned int numMemNodes, double sumFlow) : numMemNodes(numMemNodes), sumFlow(sumFlow) {}
   unsigned int numMemNodes; // use counter to check for zero to avoid round-off errors in sumFlow
   double sumFlow;
 };

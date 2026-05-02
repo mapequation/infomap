@@ -52,7 +52,7 @@ public:
 
   void init(const Config& config) override;
 
-  void initTree(InfoNode& /*root*/) override { }
+  void initTree(InfoNode& /*root*/) override {}
 
   void initNetwork(InfoNode& root) override;
 

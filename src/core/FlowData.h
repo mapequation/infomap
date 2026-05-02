@@ -168,7 +168,7 @@ struct LayerTeleFlowData {
 
   LayerTeleFlowData() = default;
   LayerTeleFlowData(unsigned int layerId, double flow, double weight, unsigned int numNodes = 1)
-      : layerId(layerId), numNodes(numNodes), teleportFlow(flow), teleportWeight(weight) { }
+      : layerId(layerId), numNodes(numNodes), teleportFlow(flow), teleportWeight(weight) {}
 
   LayerTeleFlowData& operator+=(const LayerTeleFlowData& other)
   {
