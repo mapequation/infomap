@@ -126,7 +126,7 @@ help:
 		"" \
 		"CI / Advanced" \
 		"  ci-export-github-env  Print GitHub Actions environment exports for macOS libomp." \
-		"  Advanced/internal targets such as R and docker-* remain available but are no longer primary." \
+		"  Advanced/internal targets such as docker-* remain available but are secondary." \
 		"" \
 		"Examples" \
 		"  make build-native" \
@@ -158,7 +158,7 @@ doctor:
 	@printf "python (%s): %s\n" "$(PYTHON)" "$$(command -v $(PYTHON) 2>/dev/null || echo missing)"
 	@printf "python build module: %s\n" "$$($(PYTHON) -c 'from importlib.metadata import version; print(version(\"build\"))' 2>/dev/null || echo 'missing (pip install build)')"
 	@printf "swig (%s): %s\n" "$(SWIG)" "$$(command -v $(SWIG) 2>/dev/null || echo missing)"
-	@printf "swig version: %s\n" "$$($(SWIG) -version 2>/dev/null | sed -nE 's/.*SWIG Version[[:space:]]+([0-9.]+).*/\1/p' | head -1 || echo unknown) (R bindings require 4.4.1)"
+	@printf "swig version: %s\n" "$$($(SWIG) -version 2>/dev/null | sed -nE 's/.*SWIG Version[[:space:]]+([0-9.]+).*/\1/p' | head -1 || echo unknown) (tracked wrappers require 4.4.1)"
 	@printf "R (%s): %s\n" "$(R)" "$$(command -v $(R) 2>/dev/null || echo missing)"
 	@printf "R version: %s\n" "$$($(R) --version 2>/dev/null | sed -nE 's/^R version ([0-9.]+).*/\1/p' | head -1 || echo missing)"
 	@printf "Rscript (%s): %s\n" "$(RSCRIPT)" "$$(command -v $(RSCRIPT) 2>/dev/null || echo missing)"
