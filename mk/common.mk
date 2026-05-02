@@ -68,7 +68,7 @@ NATIVE_CXXFLAGS := $(call build_config_field,compile_flags)
 NATIVE_LDFLAGS := $(call build_config_field,link_flags)
 CXX_COMPILE := $(if $(and $(filter 1,$(USE_CCACHE)),$(CCACHE_BIN)),$(CCACHE_BIN) ,)$(CXX)
 
-.PHONY: help doctor dev-bootstrap clean build-binding-options test-binding-options-freshness
+.PHONY: help doctor dev-bootstrap clean build-binding-options
 
 help:
 	@printf "%s\n" \
@@ -143,9 +143,6 @@ help:
 
 build-binding-options: build-native
 	@$(PYTHON_FOR_BUILD_CONFIG) $(BINDING_OPTIONS_SCRIPT) --infomap-bin ./Infomap --output-root .
-
-test-binding-options-freshness: build-native
-	@$(PYTHON_FOR_BUILD_CONFIG) $(BINDING_OPTIONS_SCRIPT) --check --infomap-bin ./Infomap --output-root .
 
 doctor:
 	@printf "%s\n" "Infomap doctor" ""

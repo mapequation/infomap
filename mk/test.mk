@@ -27,7 +27,10 @@ define warn_cmake_build_type_mismatch
 	fi
 endef
 
-.PHONY: test-native test-fast test-sanitizers bench-python bench-native
+.PHONY: test-native test-binding-options-freshness test-fast test-sanitizers bench-python bench-native
+
+test-binding-options-freshness: build-native
+	@$(PYTHON_FOR_BUILD_CONFIG) $(BINDING_OPTIONS_SCRIPT) --check --infomap-bin ./Infomap --output-root .
 
 test-native:
 	$(warn_cmake_build_type_mismatch)
