@@ -50,6 +50,55 @@ make build-native
 
 The compiled binary is written to `./Infomap`.
 
+## C++ development
+
+For editor and agent workflows, configure a clangd-friendly CMake build:
+
+```bash
+make configure-cpp-dev
+```
+
+This writes CMake output under `build/cmake-dev/` and links
+`compile_commands.json` in the repository root. The default dev configuration
+uses `INFOMAP_MODE=debug` and disables OpenMP for simpler local setup. Use
+`CMAKE_DEV_OPENMP=1` when you need OpenMP in the dev build.
+
+Run the fast C++ feedback path with:
+
+```bash
+make dev-cpp-check
+```
+
+Format C++ sources or verify formatting without rewriting files:
+
+```bash
+make format-native
+make format-native-check
+```
+
+Run the opt-in clang-tidy profile with:
+
+```bash
+make tidy-native
+```
+
+On macOS with Homebrew LLVM, use the matching compiler if `clang-tidy` cannot
+resolve the standard library from the default AppleClang compile database:
+
+```bash
+make tidy-native CMAKE_DEV_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++
+```
+
+The same dev build is available through CMake Presets:
+
+```bash
+cmake --preset dev
+cmake --build --preset dev
+ctest --preset dev
+```
+
+Use `dev-openmp` instead of `dev` for an OpenMP-enabled preset.
+
 ## Python package
 
 `make build-python` uses the same shared `MODE`/`OPENMP` policy as

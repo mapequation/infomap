@@ -26,39 +26,39 @@ constexpr int FlowModel::precomputed;
 
 namespace {
 
-void applyFlowModelSelection(Config& config, const std::string& flowModelArg)
-{
-  if (flowModelArg == "directed" || config.directed) {
-    config.setFlowModel(FlowModel::directed);
-  } else if (flowModelArg == "undirected") {
-    config.setFlowModel(FlowModel::undirected);
-  } else if (flowModelArg == "undirdir") {
-    config.setFlowModel(FlowModel::undirdir);
-  } else if (flowModelArg == "outdirdir") {
-    config.setFlowModel(FlowModel::outdirdir);
-  } else if (flowModelArg == "rawdir") {
-    config.setFlowModel(FlowModel::rawdir);
-  } else if (flowModelArg == "precomputed") {
-    config.setFlowModel(FlowModel::precomputed);
-  } else if (!flowModelArg.empty()) {
-    throw std::runtime_error(io::Str() << "Unrecognized flow model: '" << flowModelArg << "'");
+  void applyFlowModelSelection(Config& config, const std::string& flowModelArg)
+  {
+    if (flowModelArg == "directed" || config.directed) {
+      config.setFlowModel(FlowModel::directed);
+    } else if (flowModelArg == "undirected") {
+      config.setFlowModel(FlowModel::undirected);
+    } else if (flowModelArg == "undirdir") {
+      config.setFlowModel(FlowModel::undirdir);
+    } else if (flowModelArg == "outdirdir") {
+      config.setFlowModel(FlowModel::outdirdir);
+    } else if (flowModelArg == "rawdir") {
+      config.setFlowModel(FlowModel::rawdir);
+    } else if (flowModelArg == "precomputed") {
+      config.setFlowModel(FlowModel::precomputed);
+    } else if (!flowModelArg.empty()) {
+      throw std::runtime_error(io::Str() << "Unrecognized flow model: '" << flowModelArg << "'");
+    }
   }
-}
 
-void normalizeOutputDirectory(Config& config)
-{
-  if (!config.haveOutput() || config.outDirectory.empty())
-    return;
+  void normalizeOutputDirectory(Config& config)
+  {
+    if (!config.haveOutput() || config.outDirectory.empty())
+      return;
 
-  if (config.outDirectory.back() != '/')
-    config.outDirectory.push_back('/');
-}
+    if (config.outDirectory.back() != '/')
+      config.outDirectory.push_back('/');
+  }
 
-void validateOutputDirectory(const Config& config)
-{
-  if (config.haveOutput() && !isDirectoryWritable(config.outDirectory))
-    throw std::runtime_error(io::Str() << "Can't write to directory '" << config.outDirectory << "'. Check that the directory exists and that you have write permissions.");
-}
+  void validateOutputDirectory(const Config& config)
+  {
+    if (config.haveOutput() && !isDirectoryWritable(config.outDirectory))
+      throw std::runtime_error(io::Str() << "Can't write to directory '" << config.outDirectory << "'. Check that the directory exists and that you have write permissions.");
+  }
 
 } // namespace
 

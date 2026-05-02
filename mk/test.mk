@@ -1,4 +1,9 @@
 CMAKE_TEST_BUILD_DIR ?= build/cmake
+CMAKE_DEV_BUILD_DIR ?= build/cmake-dev
+CMAKE_DEV_GENERATOR ?= Ninja
+CMAKE_DEV_OPENMP ?= 0
+CMAKE_DEV_CXX_COMPILER ?=
+CMAKE_DEV_OSX_SYSROOT ?= $(if $(filter Darwin,$(UNAME_S)),$(shell xcrun --show-sdk-path 2>/dev/null || true),)
 SANITIZER_BUILD_DIR ?= build/cmake-sanitizers
 DEFAULT_CMAKE_BUILD_TYPE := $(if $(filter debug,$(MODE)),Debug,RelWithDebInfo)
 CMAKE_BUILD_TYPE ?= $(DEFAULT_CMAKE_BUILD_TYPE)
@@ -27,7 +32,28 @@ define warn_cmake_build_type_mismatch
 	fi
 endef
 
-.PHONY: test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers bench-python bench-native
+.PHONY: configure-cpp-dev tidy-native dev-cpp-check test-cpp-stream-policy test-native test-binding-options-freshness test-fast test-sanitizers bench-python bench-native
+
+configure-cpp-dev:
+	@generator_args=""; \
+	if [ -n "$(CMAKE_DEV_GENERATOR)" ]; then generator_args="-G $(CMAKE_DEV_GENERATOR)"; fi; \
+	"$(CMAKE)" -S . -B $(CMAKE_DEV_BUILD_DIR) $$generator_args \
+		-DCMAKE_BUILD_TYPE=Debug \
+		$(if $(CMAKE_DEV_CXX_COMPILER),-DCMAKE_CXX_COMPILER=$(CMAKE_DEV_CXX_COMPILER),) \
+		$(if $(CMAKE_DEV_OSX_SYSROOT),-DCMAKE_OSX_SYSROOT=$(CMAKE_DEV_OSX_SYSROOT),) \
+		-DINFOMAP_MODE=debug \
+		-DINFOMAP_USE_OPENMP=$(if $(filter 1,$(CMAKE_DEV_OPENMP)),ON,OFF) \
+		-DINFOMAP_EXTRA_CPPFLAGS="$(CPPFLAGS)" \
+		-DINFOMAP_EXTRA_CXX_FLAGS="$(CXXFLAGS)" \
+		-DINFOMAP_EXTRA_LINK_FLAGS="$(LDFLAGS)" \
+		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+	@ln -sfn $(CMAKE_DEV_BUILD_DIR)/compile_commands.json compile_commands.json
+
+tidy-native: configure-cpp-dev
+	$(CLANG_TIDY) --quiet -p $(CMAKE_DEV_BUILD_DIR) $(SOURCES)
+
+dev-cpp-check: format-native-check test-cpp-stream-policy
+	@$(MAKE) test-native MODE=debug OPENMP=0 CMAKE_GENERATOR="$(CMAKE_DEV_GENERATOR)" CMAKE_TEST_BUILD_DIR=$(CMAKE_DEV_BUILD_DIR) CMAKE_BUILD_TYPE=Debug
 
 test-cpp-stream-policy:
 	@$(PYTHON) scripts/check_cpp_stream_policy.py

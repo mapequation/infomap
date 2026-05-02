@@ -35,131 +35,131 @@ const std::unordered_map<std::string, char> ArgType::toShort = {
 
 namespace {
 
-using ShortOptionMap = std::map<char, Option*>;
-using LongOptionMap = std::map<std::string, Option*>;
-using NonOptionArguments = std::deque<std::unique_ptr<TargetBase>>;
+  using ShortOptionMap = std::map<char, Option*>;
+  using LongOptionMap = std::map<std::string, Option*>;
+  using NonOptionArguments = std::deque<std::unique_ptr<TargetBase>>;
 
-struct OptionLookup {
-  ShortOptionMap shortOptions;
-  LongOptionMap longOptions;
-};
+  struct OptionLookup {
+    ShortOptionMap shortOptions;
+    LongOptionMap longOptions;
+  };
 
-OptionLookup buildOptionLookup(std::deque<std::unique_ptr<Option>>& options)
-{
-  OptionLookup lookup;
-  for (auto& optionArgument : options) {
-    auto& opt = *optionArgument;
-    if (opt.shortName != '\0') {
-      auto inserted = lookup.shortOptions.insert(std::make_pair(opt.shortName, &opt));
+  OptionLookup buildOptionLookup(std::deque<std::unique_ptr<Option>>& options)
+  {
+    OptionLookup lookup;
+    for (auto& optionArgument : options) {
+      auto& opt = *optionArgument;
+      if (opt.shortName != '\0') {
+        auto inserted = lookup.shortOptions.insert(std::make_pair(opt.shortName, &opt));
+        if (!inserted.second)
+          throw std::runtime_error(io::Str() << "Duplication of option '" << opt.shortName << "'");
+      }
+
+      auto inserted = lookup.longOptions.insert(std::make_pair(opt.longName, &opt));
       if (!inserted.second)
-        throw std::runtime_error(io::Str() << "Duplication of option '" << opt.shortName << "'");
+        throw std::runtime_error(io::Str() << "Duplication of option \"" << opt.longName << "\"");
     }
-
-    auto inserted = lookup.longOptions.insert(std::make_pair(opt.longName, &opt));
-    if (!inserted.second)
-      throw std::runtime_error(io::Str() << "Duplication of option \"" << opt.longName << "\"");
+    return lookup;
   }
-  return lookup;
-}
 
-std::vector<std::string> tokenizeArgs(const std::string& args)
-{
-  std::vector<std::string> flags;
-  std::istringstream argStream(args);
-  std::string arg;
-  while (!(argStream >> arg).fail())
-    flags.push_back(arg);
-  return flags;
-}
+  std::vector<std::string> tokenizeArgs(const std::string& args)
+  {
+    std::vector<std::string> flags;
+    std::istringstream argStream(args);
+    std::string arg;
+    while (!(argStream >> arg).fail())
+      flags.push_back(arg);
+    return flags;
+  }
 
-void parseOptionValue(Option& opt, const std::string& value)
-{
-  if (!opt.parse(value))
-    throw std::runtime_error(io::Str() << "Cannot parse '" << value << "' as argument to option '" << opt.longName << "'. ");
-}
+  void parseOptionValue(Option& opt, const std::string& value)
+  {
+    if (!opt.parse(value))
+      throw std::runtime_error(io::Str() << "Cannot parse '" << value << "' as argument to option '" << opt.longName << "'. ");
+  }
 
-void parseLongOption(const std::string& arg, const LongOptionMap& longOptions, const std::vector<std::string>& flags, unsigned int& i)
-{
-  if (arg.length() < 3)
-    throw std::runtime_error("Illegal argument '--'");
+  void parseLongOption(const std::string& arg, const LongOptionMap& longOptions, const std::vector<std::string>& flags, unsigned int& i)
+  {
+    if (arg.length() < 3)
+      throw std::runtime_error("Illegal argument '--'");
 
-  std::string longOpt = arg.substr(2);
-  bool flagValue = true;
-  auto it = longOptions.find(longOpt);
-  if (it == longOptions.end()) {
-    // Unrecognized option, check if it negates a recognised option with the '--no-' prefix
-    if (longOpt.compare(0, 3, "no-") == 0 && longOptions.find(std::string(longOpt, 3)) != longOptions.end()) {
-      longOpt = std::string(longOpt, 3);
-      it = longOptions.find(longOpt);
-      flagValue = false;
-    } else {
-      throw std::runtime_error(io::Str() << "Unrecognized option: '--" << longOpt << "'");
+    std::string longOpt = arg.substr(2);
+    bool flagValue = true;
+    auto it = longOptions.find(longOpt);
+    if (it == longOptions.end()) {
+      // Unrecognized option, check if it negates a recognised option with the '--no-' prefix
+      if (longOpt.compare(0, 3, "no-") == 0 && longOptions.find(std::string(longOpt, 3)) != longOptions.end()) {
+        longOpt = std::string(longOpt, 3);
+        it = longOptions.find(longOpt);
+        flagValue = false;
+      } else {
+        throw std::runtime_error(io::Str() << "Unrecognized option: '--" << longOpt << "'");
+      }
     }
-  }
-
-  auto& opt = *it->second;
-  if (!opt.requireArgument || opt.incrementalArgument) {
-    opt.set(flagValue);
-    return;
-  }
-
-  const auto numArgsLeft = flags.size() - i - 1;
-  if (numArgsLeft == 0)
-    throw std::runtime_error(io::Str() << "Option '" << opt.longName << "' requires argument");
-
-  ++i;
-  parseOptionValue(opt, flags[i]);
-}
-
-void parseShortOptions(const std::string& arg, const ShortOptionMap& shortOptions, const std::vector<std::string>& flags, unsigned int& i)
-{
-  for (unsigned int j = 1; j < arg.length(); ++j) {
-    const auto optionName = arg[j];
-    const auto numCharsLeft = arg.length() - j - 1;
-    auto it = shortOptions.find(optionName);
-    if (it == shortOptions.end())
-      throw std::runtime_error(io::Str() << "Unrecognized option: '-" << optionName << "'");
 
     auto& opt = *it->second;
     if (!opt.requireArgument || opt.incrementalArgument) {
-      opt.set(true);
-      continue;
+      opt.set(flagValue);
+      return;
     }
 
-    std::string optArg;
     const auto numArgsLeft = flags.size() - i - 1;
-    if (numCharsLeft > 0) {
-      optArg = arg.substr(j + 1);
-      j = arg.length() - 1;
-    } else if (numArgsLeft > 0) {
-      ++i;
-      optArg = flags[i];
-    } else {
+    if (numArgsLeft == 0)
       throw std::runtime_error(io::Str() << "Option '" << opt.longName << "' requires argument");
+
+    ++i;
+    parseOptionValue(opt, flags[i]);
+  }
+
+  void parseShortOptions(const std::string& arg, const ShortOptionMap& shortOptions, const std::vector<std::string>& flags, unsigned int& i)
+  {
+    for (unsigned int j = 1; j < arg.length(); ++j) {
+      const auto optionName = arg[j];
+      const auto numCharsLeft = arg.length() - j - 1;
+      auto it = shortOptions.find(optionName);
+      if (it == shortOptions.end())
+        throw std::runtime_error(io::Str() << "Unrecognized option: '-" << optionName << "'");
+
+      auto& opt = *it->second;
+      if (!opt.requireArgument || opt.incrementalArgument) {
+        opt.set(true);
+        continue;
+      }
+
+      std::string optArg;
+      const auto numArgsLeft = flags.size() - i - 1;
+      if (numCharsLeft > 0) {
+        optArg = arg.substr(j + 1);
+        j = arg.length() - 1;
+      } else if (numArgsLeft > 0) {
+        ++i;
+        optArg = flags[i];
+      } else {
+        throw std::runtime_error(io::Str() << "Option '" << opt.longName << "' requires argument");
+      }
+
+      parseOptionValue(opt, optArg);
     }
-
-    parseOptionValue(opt, optArg);
   }
-}
 
-void parseNonOptionArguments(std::deque<std::string>& nonOpts, NonOptionArguments& nonOptionArguments, unsigned int numRequiredArguments)
-{
-  if (nonOpts.size() < numRequiredArguments)
-    throw std::runtime_error("Missing required arguments.");
+  void parseNonOptionArguments(std::deque<std::string>& nonOpts, NonOptionArguments& nonOptionArguments, unsigned int numRequiredArguments)
+  {
+    if (nonOpts.size() < numRequiredArguments)
+      throw std::runtime_error("Missing required arguments.");
 
-  unsigned int i = 0;
-  unsigned int numVectorArguments = nonOpts.size() - (nonOptionArguments.size() - 1);
-  while (!nonOpts.empty()) {
-    std::string arg = nonOpts.front();
-    nonOpts.pop_front();
-    if (nonOptionArguments[i]->isOptionalVector && numVectorArguments == 0)
-      ++i;
-    if (!nonOptionArguments[i]->parse(arg))
-      throw std::runtime_error("Argument error.");
-    if (!nonOptionArguments[i]->isOptionalVector || --numVectorArguments == 0)
-      ++i;
+    unsigned int i = 0;
+    unsigned int numVectorArguments = nonOpts.size() - (nonOptionArguments.size() - 1);
+    while (!nonOpts.empty()) {
+      std::string arg = nonOpts.front();
+      nonOpts.pop_front();
+      if (nonOptionArguments[i]->isOptionalVector && numVectorArguments == 0)
+        ++i;
+      if (!nonOptionArguments[i]->parse(arg))
+        throw std::runtime_error("Argument error.");
+      if (!nonOptionArguments[i]->isOptionalVector || --numVectorArguments == 0)
+        ++i;
+    }
   }
-}
 
 } // namespace
 
@@ -240,7 +240,7 @@ void ProgramInterface::exitWithUsage(bool showAdvanced) const
     }
   }
   Log() << '\n';
-  throw CleanExit{};
+  throw CleanExit {};
 }
 
 void ProgramInterface::exitWithVersionInformation() const
@@ -251,7 +251,7 @@ void ProgramInterface::exitWithVersionInformation() const
 #endif
   Log() << '\n';
   Log() << "See www.mapequation.org for terms of use.\n";
-  throw CleanExit{};
+  throw CleanExit {};
 }
 
 void ProgramInterface::exitWithError(const std::string& message) const
@@ -322,7 +322,7 @@ void ProgramInterface::exitWithJsonParameters() const
   }
   Log() << "  ]\n}";
 
-  throw CleanExit{};
+  throw CleanExit {};
 }
 
 void ProgramInterface::parseArgs(const std::string& args)
