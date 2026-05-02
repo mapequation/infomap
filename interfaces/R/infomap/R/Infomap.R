@@ -438,8 +438,8 @@ InfomapClass <- R6::R6Class(
         }
       }
 
-      # Vertex names are captured in `mapping` above; the edge list uses
-      # 0-indexed integer ids (Infomap's convention) regardless.
+      # Vertex names are captured in `mapping` above; add_igraph() uses
+      # generated 0-based ids derived from igraph vertex positions.
       edges <- igraph::as_edgelist(g, names = FALSE) - 1L
       weights <- if (has_weight) {
         as.numeric(igraph::edge_attr(g, weight))
