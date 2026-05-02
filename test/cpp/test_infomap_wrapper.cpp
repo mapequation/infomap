@@ -4,6 +4,9 @@
 
 #include "TestUtils.h"
 
+#include <limits>
+#include <memory>
+#include <mutex>
 #include <cstdio>
 #include <set>
 #include <tuple>
@@ -15,6 +18,50 @@ using infomap::InfomapWrapper;
 
 using InternalEdge = std::tuple<unsigned int, unsigned int, double, double>;
 using NodeIdentity = std::tuple<unsigned int, unsigned int, std::vector<int>>;
+
+struct TrackingEngine {
+  using result_type = infomap::RandGen::result_type;
+
+  struct Stats {
+    mutable std::mutex mutex;
+    std::vector<unsigned int> seedValues;
+
+    void recordSeed(unsigned int seedValue)
+    {
+      std::lock_guard<std::mutex> lock(mutex);
+      seedValues.push_back(seedValue);
+    }
+
+    std::vector<unsigned int> snapshot() const
+    {
+      std::lock_guard<std::mutex> lock(mutex);
+      return seedValues;
+    }
+  };
+
+  std::shared_ptr<Stats> stats;
+  result_type state = 0;
+
+  explicit TrackingEngine(std::shared_ptr<Stats> sharedStats)
+    : stats(std::move(sharedStats))
+  {
+  }
+
+  void seed(unsigned int seedValue)
+  {
+    state = seedValue;
+    stats->recordSeed(seedValue);
+  }
+
+  static constexpr result_type min() { return 0; }
+  static constexpr result_type max() { return std::numeric_limits<result_type>::max(); }
+
+  result_type operator()()
+  {
+    state = state * 1664525u + 1013904223u;
+    return state;
+  }
+};
 
 std::multiset<InternalEdge> internalEdgesForModule(infomap::InfoNode& module)
 {
@@ -92,6 +139,53 @@ TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][l
   CHECK(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
   CHECK(im.codelength() == doctest::Approx(firstCodelength));
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
+}
+
+TEST_CASE("Infomap accepts a custom RNG engine and reseeding stays deterministic [fast][core][lifecycle][rng]")
+{
+  auto stats = std::make_shared<TrackingEngine::Stats>();
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.setRandomEngine(TrackingEngine(stats));
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  const auto firstPartition = infomap::test::canonicalPartition(im.getModules());
+  const auto firstCodelength = im.codelength();
+  const auto firstIndexCodelength = im.getIndexCodelength();
+
+  im.reseed(123);
+  im.run();
+  infomap::test::checkRunSanity(im);
+
+  const auto seedValues = stats->snapshot();
+  CHECK(infomap::test::canonicalPartition(im.getModules()) == firstPartition);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+  CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
+  REQUIRE(seedValues.size() >= 2);
+  CHECK(seedValues[0] == 123u);
+  CHECK(seedValues[1] == 123u);
+}
+
+TEST_CASE("setConfig preserves injected RNG engine and applies the new seed [fast][core][lifecycle][rng]")
+{
+  auto stats = std::make_shared<TrackingEngine::Stats>();
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.setRandomEngine(TrackingEngine(stats));
+
+  infomap::Config conf(im.getConfig());
+  conf.seedToRandomNumberGenerator = 321;
+  im.setConfig(conf);
+
+  const auto seedValues = stats->snapshot();
+  REQUIRE(seedValues.size() == 2);
+  CHECK(seedValues[0] == 123u);
+  CHECK(seedValues[1] == 321u);
+
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+  im.run();
+  infomap::test::checkRunSanity(im);
 }
 
 TEST_CASE("Infomap reruns ninetriangles deterministically on the same instance [fast][core][lifecycle][crash]")
@@ -334,6 +428,34 @@ TEST_CASE("Subnetwork reuse and dispose stay stable on the same parent module [f
 
   CHECK(module.disposeInfomap());
   CHECK(module.getInfomapRoot() == nullptr);
+}
+
+TEST_CASE("Subnetwork creation inherits an injected RNG engine [fast][core][lifecycle][subnetwork][rng]")
+{
+  auto stats = std::make_shared<TrackingEngine::Stats>();
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.setRandomEngine(TrackingEngine(stats));
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  REQUIRE(im.numTopModules() == 2);
+
+  im.reseed(456);
+  const auto seedEventsBeforeSubnetwork = stats->snapshot().size();
+
+  auto& module = *im.root().firstChild;
+  auto& subInfomap = im.getSubInfomap(module).initNetwork(module);
+
+  const auto seedValues = stats->snapshot();
+  REQUIRE(seedValues.size() == seedEventsBeforeSubnetwork + 1);
+  CHECK(seedValues.back() == 456u);
+
+  subInfomap.run();
+  CHECK(std::isfinite(subInfomap.codelength()));
+  CHECK(std::isfinite(subInfomap.getIndexCodelength()));
+  CHECK(subInfomap.codelength() >= -1e-12);
+  CHECK(subInfomap.getIndexCodelength() >= -1e-12);
 }
 
 TEST_CASE("Higher-order subnetwork rebuild preserves state identities and internal edges [fast][core][lifecycle][subnetwork]")

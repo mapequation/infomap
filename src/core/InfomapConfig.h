@@ -14,6 +14,7 @@
 #include "../utils/Random.h"
 #include "../utils/Log.h"
 #include <string>
+#include <utility>
 
 namespace infomap {
 
@@ -58,7 +59,7 @@ public:
 
   Infomap& setConfig(const Config& conf)
   {
-    *this = conf;
+    static_cast<Config&>(*this) = conf;
     m_rand.seed(conf.seedToRandomNumberGenerator);
     Log::precision(conf.verboseNumberPrecision);
     return get();
@@ -67,6 +68,15 @@ public:
   Infomap& setNonMainConfig(const Config& conf)
   {
     cloneAsNonMain(conf);
+    m_rand.seed(conf.seedToRandomNumberGenerator);
+    return get();
+  }
+
+  Infomap& setNonMainConfig(const InfomapConfig& conf)
+  {
+    cloneAsNonMain(conf);
+    m_rand = conf.m_rand;
+    m_rand.seed(conf.seedToRandomNumberGenerator);
     return get();
   }
 
@@ -131,8 +141,26 @@ public:
     return get();
   }
 
+#ifndef SWIG
+  /**
+   * Install a seedable standard-engine-compatible RNG for native embedders.
+   *
+   * Example:
+   *   infomap.setRandomEngine(MyEngine{});
+   *   infomap.reseed(123);
+   */
+  template <typename Engine>
+  Infomap& setRandomEngine(Engine engine)
+  {
+    m_rand.setEngine(std::move(engine));
+    m_rand.seed(seedToRandomNumberGenerator);
+    return get();
+  }
+#endif
+
   Infomap& reseed(unsigned int seed)
   {
+    seedToRandomNumberGenerator = seed;
     m_rand.seed(seed);
     return get();
   }

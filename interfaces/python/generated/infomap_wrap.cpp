@@ -44687,7 +44687,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_InfomapConfigInfomapBase_setNonMainConfig(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_InfomapConfigInfomapBase_setNonMainConfig__SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   infomap::InfomapConfig< infomap::InfomapBase > *arg1 = 0 ;
   infomap::Config *arg2 = 0 ;
@@ -44695,11 +44695,10 @@ SWIGINTERN PyObject *_wrap_InfomapConfigInfomapBase_setNonMainConfig(PyObject *s
   int res1 = 0 ;
   void *argp2 = 0 ;
   int res2 = 0 ;
-  PyObject *swig_obj[2] ;
   infomap::InfomapBase *result = 0 ;
   
   (void)self;
-  if (!SWIG_Python_UnpackTuple(args, "InfomapConfigInfomapBase_setNonMainConfig", 2, 2, swig_obj)) SWIG_fail;
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapConfigT_infomap__InfomapBase_t, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapConfigInfomapBase_setNonMainConfig" "', argument " "1"" of type '" "infomap::InfomapConfig< infomap::InfomapBase > *""'"); 
@@ -44724,6 +44723,89 @@ SWIGINTERN PyObject *_wrap_InfomapConfigInfomapBase_setNonMainConfig(PyObject *s
   return resultobj;
 fail:
   return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfomapConfigInfomapBase_setNonMainConfig__SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  infomap::InfomapConfig< infomap::InfomapBase > *arg1 = 0 ;
+  infomap::InfomapConfig< infomap::InfomapBase > *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  infomap::InfomapBase *result = 0 ;
+  
+  (void)self;
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapConfigT_infomap__InfomapBase_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapConfigInfomapBase_setNonMainConfig" "', argument " "1"" of type '" "infomap::InfomapConfig< infomap::InfomapBase > *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapConfig< infomap::InfomapBase > * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2, SWIGTYPE_p_infomap__InfomapConfigT_infomap__InfomapBase_t,  0  | 0);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfomapConfigInfomapBase_setNonMainConfig" "', argument " "2"" of type '" "infomap::InfomapConfig< infomap::InfomapBase > const &""'"); 
+  }
+  if (!argp2) {
+    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapConfigInfomapBase_setNonMainConfig" "', argument " "2"" of type '" "infomap::InfomapConfig< infomap::InfomapBase > const &""'"); 
+  }
+  arg2 = reinterpret_cast< infomap::InfomapConfig< infomap::InfomapBase > * >(argp2);
+  {
+    try {
+      result = (infomap::InfomapBase *) &(arg1)->setNonMainConfig((infomap::InfomapConfig< infomap::InfomapBase > const &)*arg2);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__InfomapBase, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_InfomapConfigInfomapBase_setNonMainConfig(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[3] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args, "InfomapConfigInfomapBase_setNonMainConfig", 0, 2, argv))) SWIG_fail;
+  --argc;
+  if (argc == 2) {
+    int _v = 0;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_infomap__InfomapConfigT_infomap__InfomapBase_t, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_ConvertPtr(argv[1], 0, SWIGTYPE_p_infomap__InfomapConfigT_infomap__InfomapBase_t, SWIG_POINTER_NO_NULL | 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        return _wrap_InfomapConfigInfomapBase_setNonMainConfig__SWIG_1(self, argc, argv);
+      }
+    }
+  }
+  if (argc == 2) {
+    int _v = 0;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_infomap__InfomapConfigT_infomap__InfomapBase_t, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_ConvertPtr(argv[1], 0, SWIGTYPE_p_infomap__Config, SWIG_POINTER_NO_NULL | 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        return _wrap_InfomapConfigInfomapBase_setNonMainConfig__SWIG_0(self, argc, argv);
+      }
+    }
+  }
+  
+fail:
+  SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'InfomapConfigInfomapBase_setNonMainConfig'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    infomap::InfomapConfig< infomap::InfomapBase >::setNonMainConfig(infomap::Config const &)\n"
+    "    infomap::InfomapConfig< infomap::InfomapBase >::setNonMainConfig(infomap::InfomapConfig< infomap::InfomapBase > const &)\n");
+  return 0;
 }
 
 
