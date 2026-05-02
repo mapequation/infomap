@@ -2,6 +2,7 @@
 % Please edit documentation in R/Infomap.R
 \name{Infomap}
 \alias{Infomap}
+\alias{InfomapClass}
 \title{Infomap network clustering}
 \usage{
 Infomap(args = NULL, opts = NULL, ...)
@@ -20,6 +21,11 @@ An object of R6 class \code{"Infomap"}.
 Constructor for an Infomap network clustering instance. Mirrors the
 Python \code{Infomap} class in shape, with named arguments for every CLI
 flag and active bindings for read-only properties.
+
+R6 class encapsulating an Infomap clustering session. Most users
+should call the \code{\link[=Infomap]{Infomap()}} wrapper rather than constructing this
+class directly. The generator is exported for subclassing and
+method introspection.
 }
 \details{
 Build a network by calling \code{add_node()} / \code{add_link()} (or pass an
@@ -29,11 +35,13 @@ Inspect results via the active bindings (\code{codelength}, \code{modules},
 node-level frame.
 
 Returned objects have R6 class \code{"Infomap"}; the underlying
-R6ClassGenerator is exposed as the unexported \code{InfomapClass} for
-advanced use (subclassing, method introspection).
+R6ClassGenerator is also exported as \code{InfomapClass} for advanced use
+(subclassing, method introspection).
 
-See \link{InfomapClass} for the full list of public methods and active
-bindings.
+Methods are grouped here as input (build the network), run
+(optimise the partition), igraph integration, results (read out
+module assignments and node attributes), and writers (export to
+.tree / .clu / etc).
 }
 \examples{
 # Two triangles joined by a bridge.
@@ -45,4 +53,877 @@ im$run()
 im$num_top_modules
 im$codelength
 im$modules
+}
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{swig}}{The underlying SWIG-generated InfomapWrapper handle.}
+
+\item{\code{network}}{The underlying Network reference.}
+
+\item{\code{codelength}}{Total (hierarchical) codelength.}
+
+\item{\code{codelengths}}{Codelength of each trial.}
+
+\item{\code{num_top_modules}}{Number of top modules in the tree.}
+
+\item{\code{num_non_trivial_top_modules}}{Number of non-trivial top modules.}
+
+\item{\code{num_levels}}{Number of levels in the tree.}
+
+\item{\code{max_tree_depth}}{Maximum depth of the tree.}
+
+\item{\code{num_leaf_nodes}}{Number of leaf nodes in the tree.}
+
+\item{\code{num_nodes}}{Number of nodes (state nodes for higher-order networks).}
+
+\item{\code{num_physical_nodes}}{Number of physical nodes.}
+
+\item{\code{num_links}}{Number of links.}
+
+\item{\code{have_memory}}{\code{TRUE} if this is a state/multilayer network.}
+
+\item{\code{index_codelength}}{Index codelength (top-level part of the codelength).}
+
+\item{\code{module_codelength}}{Module codelength (within-module part).}
+
+\item{\code{hierarchical_codelength}}{Hierarchical codelength.}
+
+\item{\code{one_level_codelength}}{One-level codelength baseline.}
+
+\item{\code{relative_codelength_savings}}{Relative codelength savings.}
+
+\item{\code{entropy_rate}}{Entropy rate of the network.}
+
+\item{\code{max_entropy}}{Maximum possible entropy.}
+
+\item{\code{bipartite_start_id}}{Get or set the bipartite start id.}
+
+\item{\code{modules}}{Top-level module assignment per node (named integer vector).}
+
+\item{\code{multilevel_modules}}{List of integer paths for each node
+through the module hierarchy.}
+
+\item{\code{nodes}}{Per-state-node attributes (state id, physical id,
+module, flow, optional layer id).}
+
+\item{\code{physical_nodes}}{Per-physical-node attributes (state nodes
+merged within a module).}
+
+\item{\code{names}}{Named character vector of all assigned node names.}
+}
+\if{html}{\out{</div>}}
+}
+\section{Methods}{
+\subsection{Public methods}{
+\itemize{
+\item \href{#method-Infomap-new}{\code{InfomapClass$new()}}
+\item \href{#method-Infomap-read_file}{\code{InfomapClass$read_file()}}
+\item \href{#method-Infomap-add_node}{\code{InfomapClass$add_node()}}
+\item \href{#method-Infomap-add_nodes}{\code{InfomapClass$add_nodes()}}
+\item \href{#method-Infomap-add_state_node}{\code{InfomapClass$add_state_node()}}
+\item \href{#method-Infomap-add_state_nodes}{\code{InfomapClass$add_state_nodes()}}
+\item \href{#method-Infomap-set_name}{\code{InfomapClass$set_name()}}
+\item \href{#method-Infomap-set_names}{\code{InfomapClass$set_names()}}
+\item \href{#method-Infomap-add_link}{\code{InfomapClass$add_link()}}
+\item \href{#method-Infomap-add_links}{\code{InfomapClass$add_links()}}
+\item \href{#method-Infomap-remove_link}{\code{InfomapClass$remove_link()}}
+\item \href{#method-Infomap-remove_links}{\code{InfomapClass$remove_links()}}
+\item \href{#method-Infomap-add_multilayer_link}{\code{InfomapClass$add_multilayer_link()}}
+\item \href{#method-Infomap-add_multilayer_intra_link}{\code{InfomapClass$add_multilayer_intra_link()}}
+\item \href{#method-Infomap-add_multilayer_inter_link}{\code{InfomapClass$add_multilayer_inter_link()}}
+\item \href{#method-Infomap-add_multilayer_links}{\code{InfomapClass$add_multilayer_links()}}
+\item \href{#method-Infomap-set_meta_data}{\code{InfomapClass$set_meta_data()}}
+\item \href{#method-Infomap-run}{\code{InfomapClass$run()}}
+\item \href{#method-Infomap-get_bipartite_start_id}{\code{InfomapClass$get_bipartite_start_id()}}
+\item \href{#method-Infomap-set_bipartite_start_id}{\code{InfomapClass$set_bipartite_start_id()}}
+\item \href{#method-Infomap-print}{\code{InfomapClass$print()}}
+\item \href{#method-Infomap-add_igraph}{\code{InfomapClass$add_igraph()}}
+\item \href{#method-Infomap-as_communities}{\code{InfomapClass$as_communities()}}
+\item \href{#method-Infomap-get_modules}{\code{InfomapClass$get_modules()}}
+\item \href{#method-Infomap-get_multilevel_modules}{\code{InfomapClass$get_multilevel_modules()}}
+\item \href{#method-Infomap-get_nodes}{\code{InfomapClass$get_nodes()}}
+\item \href{#method-Infomap-get_name}{\code{InfomapClass$get_name()}}
+\item \href{#method-Infomap-get_names}{\code{InfomapClass$get_names()}}
+\item \href{#method-Infomap-write_clu}{\code{InfomapClass$write_clu()}}
+\item \href{#method-Infomap-write_tree}{\code{InfomapClass$write_tree()}}
+\item \href{#method-Infomap-write_flow_tree}{\code{InfomapClass$write_flow_tree()}}
+\item \href{#method-Infomap-write_newick}{\code{InfomapClass$write_newick()}}
+\item \href{#method-Infomap-write_json}{\code{InfomapClass$write_json()}}
+\item \href{#method-Infomap-write_csv}{\code{InfomapClass$write_csv()}}
+\item \href{#method-Infomap-write_pajek}{\code{InfomapClass$write_pajek()}}
+\item \href{#method-Infomap-write_state_network}{\code{InfomapClass$write_state_network()}}
+\item \href{#method-Infomap-write}{\code{InfomapClass$write()}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-new"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-new}{}}}
+\subsection{Method \code{new()}}{
+Create a new Infomap instance.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$new(args = NULL, opts = NULL, ...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{args}}{Optional raw CLI argument string to prepend.}
+
+\item{\code{opts}}{Optional options list from \code{\link[=infomap_options]{infomap_options()}}.}
+
+\item{\code{...}}{Named option overrides forwarded to \code{\link[=infomap_options]{infomap_options()}}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-read_file"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-read_file}{}}}
+\subsection{Method \code{read_file()}}{
+Read network data from file.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$read_file(filename, accumulate = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{filename}}{Path to a network file (\code{.net}, \code{.txt}, \code{.tree}, etc.).}
+
+\item{\code{accumulate}}{If \code{TRUE} (default), accumulate to existing nodes/links.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_node"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_node}{}}}
+\subsection{Method \code{add_node()}}{
+Add a node.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_node(node_id, name = NULL, teleportation_weight = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{node_id}}{Integer node id.}
+
+\item{\code{name}}{Optional node name.}
+
+\item{\code{teleportation_weight}}{Optional teleportation weight.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_nodes"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_nodes}{}}}
+\subsection{Method \code{add_nodes()}}{
+Add many nodes at once.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_nodes(nodes)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{nodes}}{A list of integer node ids, or a list of vectors of the form
+\code{c(node_id, name, teleportation_weight)} (last two optional), or a
+named list/vector mapping \code{node_id} to \code{name} or to
+\code{c(name, teleportation_weight)}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_state_node"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_state_node}{}}}
+\subsection{Method \code{add_state_node()}}{
+Add a state node.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_state_node(state_id, node_id)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{state_id}}{Integer state node id.}
+
+\item{\code{node_id}}{Integer physical node id.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_state_nodes"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_state_nodes}{}}}
+\subsection{Method \code{add_state_nodes()}}{
+Add many state nodes at once.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_state_nodes(state_nodes)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{state_nodes}}{A list of \code{c(state_id, node_id)} vectors, or a
+named list/vector mapping \code{state_id} to \code{node_id}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-set_name"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-set_name}{}}}
+\subsection{Method \code{set_name()}}{
+Set the name of a node.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$set_name(node_id, name)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{node_id}}{Integer node id.}
+
+\item{\code{name}}{Node name (character). \code{NULL} clears the name.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-set_names"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-set_names}{}}}
+\subsection{Method \code{set_names()}}{
+Set names for several nodes at once.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$set_names(mapping)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{mapping}}{A list of \code{c(node_id, name)} vectors, or a named
+list/vector mapping \code{node_id} to \code{name}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_link"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_link}{}}}
+\subsection{Method \code{add_link()}}{
+Add a link.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_link(source_id, target_id, weight = 1)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{source_id}}{Source node id.}
+
+\item{\code{target_id}}{Target node id.}
+
+\item{\code{weight}}{Link weight.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_links"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_links}{}}}
+\subsection{Method \code{add_links()}}{
+Add many links at once.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_links(links)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{links}}{A list of vectors of the form \code{c(source, target, weight)}
+(weight optional), or a 2- or 3-column matrix / data.frame whose
+first two columns are integer/numeric node ids and (optionally)
+third column is numeric weight.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-remove_link"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-remove_link}{}}}
+\subsection{Method \code{remove_link()}}{
+Remove a link.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$remove_link(source_id, target_id)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{source_id}}{Source node id.}
+
+\item{\code{target_id}}{Target node id.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-remove_links"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-remove_links}{}}}
+\subsection{Method \code{remove_links()}}{
+Remove many links at once.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$remove_links(links)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{links}}{A list of \code{c(source, target)} vectors.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_multilayer_link"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_multilayer_link}{}}}
+\subsection{Method \code{add_multilayer_link()}}{
+Add a multilayer link.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_multilayer_link(
+  source_multilayer_node,
+  target_multilayer_node,
+  weight = 1
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{source_multilayer_node}}{A \code{c(layer_id, node_id)} vector or
+the result of \code{\link[=multilayer_node]{multilayer_node()}}.}
+
+\item{\code{target_multilayer_node}}{A \code{c(layer_id, node_id)} vector or
+the result of \code{\link[=multilayer_node]{multilayer_node()}}.}
+
+\item{\code{weight}}{Link weight.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_multilayer_intra_link"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_multilayer_intra_link}{}}}
+\subsection{Method \code{add_multilayer_intra_link()}}{
+Add an intra-layer link in a multilayer network.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_multilayer_intra_link(
+  layer_id,
+  source_node_id,
+  target_node_id,
+  weight = 1
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{layer_id}}{Integer layer id.}
+
+\item{\code{source_node_id}}{Source node id.}
+
+\item{\code{target_node_id}}{Target node id.}
+
+\item{\code{weight}}{Link weight.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_multilayer_inter_link"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_multilayer_inter_link}{}}}
+\subsection{Method \code{add_multilayer_inter_link()}}{
+Add an inter-layer link in a multilayer network.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_multilayer_inter_link(
+  source_layer_id,
+  node_id,
+  target_layer_id,
+  weight = 1
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{source_layer_id}}{Source layer id.}
+
+\item{\code{node_id}}{Physical node id (same in both layers).}
+
+\item{\code{target_layer_id}}{Target layer id.}
+
+\item{\code{weight}}{Link weight.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_multilayer_links"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_multilayer_links}{}}}
+\subsection{Method \code{add_multilayer_links()}}{
+Add many multilayer links at once.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_multilayer_links(links)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{links}}{A list of vectors, each
+\verb{c(source_multilayer_node, target_multilayer_node, [weight])}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-set_meta_data"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-set_meta_data}{}}}
+\subsection{Method \code{set_meta_data()}}{
+Set meta data for a node.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$set_meta_data(node_id, meta_category)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{node_id}}{Integer node id.}
+
+\item{\code{meta_category}}{Integer meta category.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-run"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-run}{}}}
+\subsection{Method \code{run()}}{
+Run Infomap.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$run(args = NULL, opts = NULL, ...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{args}}{Optional raw CLI argument string for this run only.}
+
+\item{\code{opts}}{Optional \code{\link[=infomap_options]{infomap_options()}} result for this run only.}
+
+\item{\code{...}}{Named option overrides for this run only.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-get_bipartite_start_id"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-get_bipartite_start_id}{}}}
+\subsection{Method \code{get_bipartite_start_id()}}{
+Get the bipartite start id (the node id where the second node type starts).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_bipartite_start_id()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-set_bipartite_start_id"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-set_bipartite_start_id}{}}}
+\subsection{Method \code{set_bipartite_start_id()}}{
+Set the bipartite start id.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$set_bipartite_start_id(start_id)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{start_id}}{Integer node id where the second node type starts.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-print"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-print}{}}}
+\subsection{Method \code{print()}}{
+Print a short summary.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$print(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Unused.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_igraph"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_igraph}{}}}
+\subsection{Method \code{add_igraph()}}{
+Import an igraph graph.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_igraph(
+  g,
+  weight = "weight",
+  phys_id = "phys_id",
+  layer_id = "layer_id",
+  multilayer_inter_intra_format = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{g}}{An igraph graph.}
+
+\item{\code{weight}}{Edge attribute to use as link weight.}
+
+\item{\code{phys_id}}{Vertex attribute holding physical node ids
+(state-node case).}
+
+\item{\code{layer_id}}{Vertex attribute holding layer ids
+(multilayer case).}
+
+\item{\code{multilayer_inter_intra_format}}{If \code{TRUE}, intra/inter
+format is used; diagonal links (different layer AND different
+physical node) trigger an error. Set to \code{FALSE} to allow
+\code{add_multilayer_link()} for arbitrary (layer, node) pairs.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+Translated from \verb{interfaces/python/src/infomap/_networkx.py}.
+
+\strong{Node id convention.} Infomap result accessors report the numeric
+node ids used to build the network. For links added directly with
+\code{add_link()} or \code{add_links()}, those user-supplied ids are preserved.
+\code{add_igraph()} uses R igraph's 1-indexed vertex ids directly. If the
+original igraph had vertex names (\code{V(g)$name}), the returned mapping
+recovers them.
+
+If the graph is directed, \code{run()} will inject \code{--directed}
+unless the user has already chosen a flow model via \code{opts} or
+raw args.
+}
+
+\subsection{Returns}{
+Invisibly returns a named character vector mapping igraph
+vertex ids to the original igraph vertex names (or stringified
+vertex ids when \code{V(g)$name} is absent). Useful for joining Infomap
+results back to the original graph.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-as_communities"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-as_communities}{}}}
+\subsection{Method \code{as_communities()}}{
+Convert the Infomap partition to an igraph
+\code{communities} object (from \code{igraph::make_clusters()}),
+compatible with \code{modularity()}, \code{membership()}, \code{plot()}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$as_communities(g)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{g}}{The same igraph graph passed to \code{add_igraph()}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-get_modules"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-get_modules}{}}}
+\subsection{Method \code{get_modules()}}{
+Get module assignment per leaf node.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_modules(depth_level = 1L, states = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{depth_level}}{Tree depth used for the module id. \code{1} gives
+top-level modules, \code{-1} the bottom level.}
+
+\item{\code{states}}{If \code{TRUE}, return one entry per state node (for
+higher-order networks); otherwise one per physical node.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A named integer vector mapping node id (or state id) to
+module id.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-get_multilevel_modules"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-get_multilevel_modules}{}}}
+\subsection{Method \code{get_multilevel_modules()}}{
+Get the full module path for each leaf node.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_multilevel_modules(states = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{states}}{If \code{TRUE}, use state ids for higher-order networks.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A named list mapping node id (or state id) to an integer
+vector of module ids per level.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-get_nodes"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-get_nodes}{}}}
+\subsection{Method \code{get_nodes()}}{
+Get per-leaf-node attributes (state id, physical id,
+module id, flow, optional layer id).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_nodes(depth_level = 1L, states = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{depth_level}}{Tree depth used for the module id.}
+
+\item{\code{states}}{If \code{TRUE}, return one row per state node.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A list of integer/numeric vectors.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-get_name"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-get_name}{}}}
+\subsection{Method \code{get_name()}}{
+Look up a node's name.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_name(node_id, default = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{node_id}}{Integer node id.}
+
+\item{\code{default}}{Value returned when the node has no name.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Character (or \code{default}).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-get_names"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-get_names}{}}}
+\subsection{Method \code{get_names()}}{
+Get all assigned node names.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_names()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A named character vector mapping node id to name.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-write_clu"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-write_clu}{}}}
+\subsection{Method \code{write_clu()}}{
+Write the partition as a \code{.clu} file.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$write_clu(filename, states = FALSE, depth_level = 1L)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{filename}}{Output path.}
+
+\item{\code{states}}{Whether to write state ids (default \code{FALSE}).}
+
+\item{\code{depth_level}}{Tree depth used for the module id.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-write_tree"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-write_tree}{}}}
+\subsection{Method \code{write_tree()}}{
+Write the partition as a \code{.tree} file.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$write_tree(filename, states = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{filename}}{Output path.}
+
+\item{\code{states}}{Whether to include state ids.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-write_flow_tree"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-write_flow_tree}{}}}
+\subsection{Method \code{write_flow_tree()}}{
+Write the partition as a \code{.ftree} (flow-tree) file.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$write_flow_tree(filename, states = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{filename}}{Output path.}
+
+\item{\code{states}}{Whether to include state ids.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-write_newick"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-write_newick}{}}}
+\subsection{Method \code{write_newick()}}{
+Write the partition as a Newick \code{.nwk} file.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$write_newick(filename, states = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{filename}}{Output path.}
+
+\item{\code{states}}{Whether to include state ids.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-write_json"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-write_json}{}}}
+\subsection{Method \code{write_json()}}{
+Write the partition as a JSON file.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$write_json(filename, states = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{filename}}{Output path.}
+
+\item{\code{states}}{Whether to include state ids.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-write_csv"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-write_csv}{}}}
+\subsection{Method \code{write_csv()}}{
+Write the partition as a CSV file.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$write_csv(filename, states = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{filename}}{Output path.}
+
+\item{\code{states}}{Whether to include state ids.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-write_pajek"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-write_pajek}{}}}
+\subsection{Method \code{write_pajek()}}{
+Write the input network in Pajek \code{.net} format.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$write_pajek(filename, flow = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{filename}}{Output path.}
+
+\item{\code{flow}}{Whether to write computed flow values per link.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-write_state_network"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-write_state_network}{}}}
+\subsection{Method \code{write_state_network()}}{
+Write the state network.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$write_state_network(filename)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{filename}}{Output path.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-write"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-write}{}}}
+\subsection{Method \code{write()}}{
+Dispatch on file extension to the appropriate
+writer (\code{.tree}, \code{.ftree}, \code{.nwk}, \code{.clu}, \code{.json}, \code{.csv},
+\code{.net}).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$write(filename, ...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{filename}}{Output path. Extension chooses the writer.}
+
+\item{\code{...}}{Forwarded to the chosen writer.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

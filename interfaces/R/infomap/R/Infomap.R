@@ -13,11 +13,8 @@
 #' node-level frame.
 #'
 #' Returned objects have R6 class `"Infomap"`; the underlying
-#' R6ClassGenerator is exposed as the unexported `InfomapClass` for
-#' advanced use (subclassing, method introspection).
-#'
-#' See [InfomapClass] for the full list of public methods and active
-#' bindings.
+#' R6ClassGenerator is also exported as `InfomapClass` for advanced use
+#' (subclassing, method introspection).
 #'
 #' @param args Optional raw CLI argument string to prepend.
 #' @param opts Optional options list from [infomap_options()].
@@ -54,7 +51,7 @@ Infomap <- function(args = NULL, opts = NULL, ...) {
 #' module assignments and node attributes), and writers (export to
 #' .tree / .clu / etc).
 #'
-#' @keywords internal
+#' @rdname Infomap
 #' @export
 InfomapClass <- R6::R6Class(
   "Infomap",
