@@ -152,10 +152,10 @@ R CMD INSTALL --with-keep.source build/R/infomap
 Rscript -e 'roxygen2::roxygenise("interfaces/R/infomap")'
 ```
 
-The R skeleton declares C++14 (`SystemRequirements: C++14`,
-`CXX_STD = CXX14`), matching the core's actual C++ standard. R 4.6 emits
-a NOTE about C++14 being obsolete; this is non-blocking for r-universe
-distribution.
+The R skeleton declares C++17 (`SystemRequirements: C++17`,
+`CXX_STD = CXX17`). This lets R's build system provide the standard flag
+portably on r-universe without putting non-portable `-std=...` flags in
+`PKG_CXXFLAGS`.
 
 On macOS, `mk/r.mk` writes a temporary Makevars that pins
 `CC=/usr/bin/clang` and `CXX=/usr/bin/clang++` so the compiled `.so` is

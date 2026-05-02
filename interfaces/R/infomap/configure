@@ -15,7 +15,7 @@
 #    R's build system loads src/Makevars *before* R's own Makeconf, so a
 #    plain assignment like CXX = /usr/bin/clang++ is overridden by Makeconf.
 #    Using GNU Make's `override` directive makes the assignment survive both
-#    the Makeconf reload and the command-line CXX=$(CXX14) that R passes to
+#    the Makeconf reload and the command-line compiler setting that R passes to
 #    make.
 
 set -e
@@ -41,9 +41,9 @@ fi
 
 # ── 2. Pin to Apple clang on macOS ───────────────────────────────────────────
 # Idempotent: skip if already pinned (e.g. repeated installs).
-# `override` is required: R loads src/Makevars first, then Makeconf (which
-# resets CXX14 to bare `clang++`), then passes CXX=$(CXX14) on the make
-# command line.  Without `override`, both later steps clobber our setting.
+# `override` is required: R loads src/Makevars first, then Makeconf, then
+# passes CXX on the make command line. Without `override`, both later steps
+# clobber our setting.
 if [ "$(uname)" = "Darwin" ] && ! grep -q '/usr/bin/clang' "$PKG_DIR/src/Makevars" 2>/dev/null; then
   {
     printf '\n'
