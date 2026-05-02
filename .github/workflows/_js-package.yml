@@ -41,6 +41,10 @@ jobs:
         if: inputs.run-tests
         run: make test-js-metadata
 
+      - name: Verify binding option freshness
+        if: inputs.run-tests
+        run: make test-binding-options-freshness
+
       - name: Build JavaScript worker
         if: ${{ !inputs.run-tests }}
         run: make -j build-js

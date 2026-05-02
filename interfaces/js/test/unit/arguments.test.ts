@@ -10,6 +10,14 @@ describe("argumentsToString", () => {
         output: ["tree", "clu"],
         help: "advanced"
       })
-    ).toBe(" -o tree,clu --two-level --num-trials 5 -hh");
+    ).toBe(" --output tree,clu --two-level --num-trials 5 -hh");
+  });
+
+  test("serializes variable Markov minimum scale", () => {
+    expect(
+      argumentsToString({
+        variableMarkovMinScale: 0.5
+      })
+    ).toBe(" --variable-markov-min-scale 0.5");
   });
 });
