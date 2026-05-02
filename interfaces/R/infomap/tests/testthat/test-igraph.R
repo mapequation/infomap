@@ -7,6 +7,10 @@ test_that("add_igraph imports edges from an igraph graph", {
   mapping <- im$add_igraph(g)
   im$run()
 
+  expect_equal(names(mapping), as.character(seq_len(igraph::vcount(g))))
+  expect_equal(unname(mapping), as.character(seq_len(igraph::vcount(g))))
   expect_equal(im$num_top_modules, 2L)
   expect_true(im$num_links >= 6L)
+  expect_setequal(names(im$modules), as.character(seq_len(igraph::vcount(g))))
+  expect_setequal(as.data.frame(im)$node_id, seq_len(igraph::vcount(g)))
 })

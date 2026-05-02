@@ -576,9 +576,7 @@ Translated from \verb{interfaces/python/src/infomap/_networkx.py}.
 \strong{Node id convention.} Infomap result accessors report the numeric
 node ids used to build the network. For links added directly with
 \code{add_link()} or \code{add_links()}, those user-supplied ids are preserved.
-\code{add_igraph()} is different because igraph vertices are positional:
-this method assigns the 1-indexed igraph vertex sequence \code{V(g)} to
-generated ids \verb{0, 1, ..., vcount(g) - 1} before adding edges. If the
+\code{add_igraph()} uses R igraph's 1-indexed vertex ids directly. If the
 original igraph had vertex names (\code{V(g)$name}), the returned mapping
 recovers them.
 
@@ -588,11 +586,10 @@ raw args.
 }
 
 \subsection{Returns}{
-Invisibly returns a named character vector mapping the
-generated \code{add_igraph()} node ids to the original igraph vertex
-names (or stringified 1-indexed vertex positions when \code{V(g)$name}
-is absent). Useful for joining Infomap results back to the original
-graph.
+Invisibly returns a named character vector mapping igraph
+vertex ids to the original igraph vertex names (or stringified
+vertex ids when \code{V(g)$name} is absent). Useful for joining Infomap
+results back to the original graph.
 }
 }
 \if{html}{\out{<hr>}}

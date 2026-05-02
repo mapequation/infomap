@@ -370,9 +370,7 @@ InfomapClass <- R6::R6Class(
     #' **Node id convention.** Infomap result accessors report the numeric
     #' node ids used to build the network. For links added directly with
     #' `add_link()` or `add_links()`, those user-supplied ids are preserved.
-    #' `add_igraph()` is different because igraph vertices are positional:
-    #' this method assigns the 1-indexed igraph vertex sequence `V(g)` to
-    #' generated ids `0, 1, ..., vcount(g) - 1` before adding edges. If the
+    #' `add_igraph()` uses R igraph's 1-indexed vertex ids directly. If the
     #' original igraph had vertex names (`V(g)$name`), the returned mapping
     #' recovers them.
     #'
@@ -390,11 +388,10 @@ InfomapClass <- R6::R6Class(
     #'   format is used; diagonal links (different layer AND different
     #'   physical node) trigger an error. Set to `FALSE` to allow
     #'   `add_multilayer_link()` for arbitrary (layer, node) pairs.
-    #' @return Invisibly returns a named character vector mapping the
-    #'   generated `add_igraph()` node ids to the original igraph vertex
-    #'   names (or stringified 1-indexed vertex positions when `V(g)$name`
-    #'   is absent). Useful for joining Infomap results back to the original
-    #'   graph.
+    #' @return Invisibly returns a named character vector mapping igraph
+    #'   vertex ids to the original igraph vertex names (or stringified
+    #'   vertex ids when `V(g)$name` is absent). Useful for joining Infomap
+    #'   results back to the original graph.
     add_igraph = function(g,
                           weight = "weight",
                           phys_id = "phys_id",
@@ -421,26 +418,24 @@ InfomapClass <- R6::R6Class(
         vertex_names <- as.character(seq_len(igraph::vcount(g)))
       }
 
-      # Build a 0-indexed mapping from vertex index -> internal id and
-      # propagate names if the graph has no phys_id attribute.
-      internal_ids <- seq_len(igraph::vcount(g)) - 1L
-      mapping <- stats::setNames(vertex_names, as.character(internal_ids))
+      vertex_ids <- seq_len(igraph::vcount(g))
+      mapping <- stats::setNames(vertex_names, as.character(vertex_ids))
 
       if (has_phys) {
         phys <- as.integer(igraph::vertex_attr(g, phys_id))
       } else {
-        phys <- internal_ids
+        phys <- vertex_ids
       }
 
       if (!has_phys && is.character(vertex_names)) {
         for (i in seq_len(igraph::vcount(g))) {
-          self$add_node(internal_ids[i], name = vertex_names[i])
+          self$add_node(vertex_ids[i], name = vertex_names[i])
         }
       }
 
-      # Vertex names are captured in `mapping` above; add_igraph() uses
-      # generated 0-based ids derived from igraph vertex positions.
-      edges <- igraph::as_edgelist(g, names = FALSE) - 1L
+      # Vertex names are captured in `mapping` above; edge endpoints use
+      # R igraph's 1-indexed vertex ids.
+      edges <- igraph::as_edgelist(g, names = FALSE)
       weights <- if (has_weight) {
         as.numeric(igraph::edge_attr(g, weight))
       } else {
@@ -451,11 +446,11 @@ InfomapClass <- R6::R6Class(
         # Multilayer state network.
         layers <- as.integer(igraph::vertex_attr(g, layer_id))
         for (i in seq_len(igraph::vcount(g))) {
-          self$add_state_node(internal_ids[i], phys[i])
+          self$add_state_node(vertex_ids[i], phys[i])
         }
         for (e in seq_len(nrow(edges))) {
-          s <- edges[e, 1L] + 1L
-          t <- edges[e, 2L] + 1L
+          s <- edges[e, 1L]
+          t <- edges[e, 2L]
           if (isTRUE(multilayer_inter_intra_format)) {
             if (layers[s] == layers[t]) {
               self$add_multilayer_intra_link(layers[s], phys[s], phys[t], weights[e])
@@ -480,7 +475,7 @@ InfomapClass <- R6::R6Class(
       } else if (has_phys) {
         # State network without explicit layer info.
         for (i in seq_len(igraph::vcount(g))) {
-          self$add_state_node(internal_ids[i], phys[i])
+          self$add_state_node(vertex_ids[i], phys[i])
         }
         for (e in seq_len(nrow(edges))) {
           self$add_link(edges[e, 1L], edges[e, 2L], weights[e])

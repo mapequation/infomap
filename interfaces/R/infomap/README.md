@@ -81,12 +81,10 @@ comm <- im$as_communities(g)  # igraph 'communities' object
 **Node id convention.** Infomap result accessors report the numeric node
 ids used to build the network. For links added directly with
 `add_link()` or `add_links()`, those user-supplied ids are preserved.
-`add_igraph()` is different because igraph vertices are positional: it
-assigns the 1-indexed igraph vertex sequence `V(g)` to generated ids
-`0, 1, ..., vcount(g) - 1` before adding edges. The `mapping` returned
-by `add_igraph()` recovers the original igraph vertex names (or
-stringified 1-indexed vertex positions) keyed by those generated ids, so
-you can join Infomap results back to the original graph.
+`add_igraph()` uses R igraph's 1-indexed vertex ids directly. The
+`mapping` returned by `add_igraph()` recovers the original igraph vertex
+names (or stringified vertex ids) keyed by those ids, so you can join
+Infomap results back to the original graph.
 
 ## Related packages
 
