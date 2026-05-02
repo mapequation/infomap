@@ -1427,9 +1427,8 @@ SWIGINTERN void SWIG_R_Raise(SEXP obj, const char *msg) {
 #define SWIGTYPE_p_std__vectorT_unsigned_int_t swig_types[111]
 #define SWIGTYPE_p_tree_iterator swig_types[112]
 #define SWIGTYPE_p_value_type swig_types[113]
-#define SWIGTYPE_p_void swig_types[114]
-static swig_type_info *swig_types[116];
-static swig_module_info swig_module = {swig_types, 115, 0, 0, 0, 0};
+static swig_type_info *swig_types[115];
+static swig_module_info swig_module = {swig_types, 114, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -38167,45 +38166,6 @@ R_swig_InfomapConfigInfomapBase_reseed ( SEXP self, SEXP seed, SEXP s_swig_copy)
 }
 
 
-bool _p_f_p_void__bool(void * swigarg_arg1) {
-  void *arg1 = 0 ;
-  bool result;
-  RCallbackFunctionData *r_swig_cb_data = R_SWIG_getCallbackFunctionData();
-  SEXP r_tmp;
-  int r_nprotect = 0;
-  char * r_vmax= 0;
-  
-  arg1 = (void *) swigarg_arg1;
-  Rf_protect(r_swig_cb_data->expr = Rf_allocVector(LANGSXP, 2));
-  r_nprotect++;
-  r_swig_cb_data->el = r_swig_cb_data->expr;
-  
-  SETCAR(r_swig_cb_data->el, r_swig_cb_data->fun);
-  r_swig_cb_data->el = CDR(r_swig_cb_data->el);
-  
-  r_tmp = SWIG_R_NewPointerObj(SWIG_as_voidptr(arg1), SWIGTYPE_p_void, 0 |  0 );
-  SETCAR(r_swig_cb_data->el, r_tmp);
-  r_swig_cb_data->el = CDR(r_swig_cb_data->el);
-  
-  
-  
-  r_swig_cb_data->retValue = R_tryEval(r_swig_cb_data->expr, R_GlobalEnv, &r_swig_cb_data->errorOccurred);
-  
-  if(r_swig_cb_data->errorOccurred) {
-    R_SWIG_popCallbackFunctionData(1);
-    Rf_error("error in calling R function as a function pointer (_p_f_p_void__bool)");
-  }
-  result = LOGICAL(r_swig_cb_data->retValue)[0] ? true : false;
-  R_SWIG_popCallbackFunctionData(1);
-  
-  vmaxset(r_vmax);
-  if(r_nprotect)  Rf_unprotect(r_nprotect);
-  
-  return result;
-  
-}
-
-
 SWIGEXPORT SEXP
 R_swig_new_InfomapBase__SWIG_0 ( )
 {
@@ -46094,7 +46054,6 @@ static swig_type_info _swigt__p_std__vectorT_std__string_std__allocatorT_std__st
 static swig_type_info _swigt__p_std__vectorT_unsigned_int_t = {"_p_std__vectorT_unsigned_int_t", "std::vector< unsigned int,std::allocator< unsigned int > > *|std::vector< unsigned int > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_tree_iterator = {"_p_tree_iterator", "tree_iterator *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_value_type = {"_p_value_type", "value_type *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_void = {"_p_void", "void *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_ChildIteratorT_infomap__InfoNode_const_p_t,
@@ -46211,7 +46170,6 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_std__vectorT_unsigned_int_t,
   &_swigt__p_tree_iterator,
   &_swigt__p_value_type,
-  &_swigt__p_void,
 };
 
 static swig_cast_info _swigc__p_ChildIteratorT_infomap__InfoNode_const_p_t[] = {  {&_swigt__p_ChildIteratorT_infomap__InfoNode_const_p_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -46328,7 +46286,6 @@ static swig_cast_info _swigc__p_std__vectorT_std__string_std__allocatorT_std__st
 static swig_cast_info _swigc__p_std__vectorT_unsigned_int_t[] = {  {&_swigt__p_std__vectorT_unsigned_int_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_tree_iterator[] = {  {&_swigt__p_tree_iterator, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_value_type[] = {  {&_swigt__p_value_type, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_void[] = {  {&_swigt__p_void, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_ChildIteratorT_infomap__InfoNode_const_p_t,
@@ -46445,7 +46402,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_std__vectorT_unsigned_int_t,
   _swigc__p_tree_iterator,
   _swigc__p_value_type,
-  _swigc__p_void,
 };
 
 

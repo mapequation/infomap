@@ -21,6 +21,7 @@ namespace infomap {
     %template(InfomapConfigInfomapBase) InfomapConfig<InfomapBase>;
 }
 
+%ignore infomap::InterruptCallback;
 %ignore infomap::InfomapBase::setInterruptHandler;
 %ignore infomap::InfomapBase::clearInterruptHandler;
 %ignore infomap::InfomapBase::setInterruptPollingPeriod;

@@ -404,12 +404,6 @@ setClass("infomap::LayerNode",
 setClass('_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t', contains = 'C++Reference')
 setClass('_p_std__vectorT_double_t', contains = 'C++Reference')
 setClass('_p_infomap__InfomapConfigT_infomap__InfomapBase_t', contains = c('_p_infomap__Config'))
-setClass('_p_f_p_void__bool',
-        prototype = list(parameterTypes = c('_p_void'),
-                        returnType = '_p_f_p_void__bool'),
-        contains = 'CRoutinePointer')
-
-##
 setClass('_p_infomap__InfomapBase', contains = c('_p_infomap__InfomapConfigT_infomap__InfomapBase_t'))
 setClass('_p_infomap__detail__PerLevelStat', contains = 'C++Reference')
 setClass("infomap::detail::PerLevelStat",
