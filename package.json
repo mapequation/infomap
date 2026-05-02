@@ -121,15 +121,5 @@
     "react": {
       "optional": true
     }
-  },
-  "python": {
-    "url": "https://pypi.org/project/infomap/",
-    "homepage": "https://mapequation.github.io/infomap/",
-    "classifiers": [
-      "Development Status :: 5 - Production/Stable",
-      "Intended Audience :: Science/Research",
-      "Topic :: Scientific/Engineering :: Information Analysis",
-      "Programming Language :: Python :: 3"
-    ]
   }
 }
