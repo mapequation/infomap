@@ -100,9 +100,9 @@ Quick start with R:
     print(im$num_top_modules)
     print(im$codelength)
 
-See ``?Infomap`` for the user-facing constructor and ``?InfomapClass`` for
-the full method and active-binding reference. The R-specific source README
-lives at `interfaces/R/infomap/README.md`_.
+See ``?Infomap`` for the user-facing constructor plus the ``InfomapClass``
+method and active-binding reference. The R-specific source README lives at
+`interfaces/R/infomap/README.md`_.
 
 .. _r-universe: https://mapequation.r-universe.dev
 .. _`interfaces/R/infomap/README.md`: https://github.com/mapequation/infomap/blob/master/interfaces/R/infomap/README.md

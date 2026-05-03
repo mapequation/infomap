@@ -51,9 +51,9 @@ im$modules                # named integer vector: node_id -> module_id
 as.data.frame(im)         # one row per node, with path / flow / name / module_id
 ```
 
-See `?Infomap` for the user-facing constructor surface, `?InfomapClass`
-for the full method and active-binding reference, and `?infomap_options`
-for the complete list of named options.
+See `?Infomap` for the user-facing constructor plus the `InfomapClass`
+method and active-binding reference, and `?infomap_options` for the
+complete list of named options.
 
 ## Working with igraph
 
