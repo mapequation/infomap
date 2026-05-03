@@ -121,7 +121,7 @@ protected:
   std::set<unsigned int> m_layers;
 
 public:
-  StateNetwork() : m_config(Config()) {}
+  StateNetwork() {}
   StateNetwork(Config config) : m_config(std::move(config)) {}
   virtual ~StateNetwork() = default;
 

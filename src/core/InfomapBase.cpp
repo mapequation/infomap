@@ -416,7 +416,7 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
   FileURI file(clusterDataFile);
   ClusterMap clusterMap;
   if (this->isMultilayerNetwork() && network != nullptr) {
-    auto map = network->layerNodeToStateId();
+    const auto& map = network->layerNodeToStateId();
     clusterMap.readClusterData(clusterDataFile, false, &map);
   } else {
     clusterMap.readClusterData(clusterDataFile);

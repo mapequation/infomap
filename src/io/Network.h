@@ -59,7 +59,7 @@ private:
   // };
 
 public:
-  Network() : StateNetwork() { init(); }
+  Network() { init(); }
   explicit Network(const Config& config) : StateNetwork(config) { init(); }
   explicit Network(const std::string& flags) : StateNetwork(Config(flags)) { init(); }
   ~Network() override = default;

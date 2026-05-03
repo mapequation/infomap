@@ -107,7 +107,7 @@ namespace io {
     std::stringstream ss(s);
     std::string item;
     while (std::getline(ss, item, delim)) {
-      if (item.length() > 0) {
+      if (!item.empty()) {
         items.push_back(item);
       }
     }

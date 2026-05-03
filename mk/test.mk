@@ -4,6 +4,7 @@ CMAKE_DEV_GENERATOR ?= Ninja
 CMAKE_DEV_OPENMP ?= 0
 CMAKE_DEV_CXX_COMPILER ?=
 CMAKE_DEV_OSX_SYSROOT ?= $(if $(filter Darwin,$(UNAME_S)),$(shell xcrun --show-sdk-path 2>/dev/null || true),)
+CLANG_TIDY_WARNINGS_AS_ERRORS ?=
 SANITIZER_BUILD_DIR ?= build/cmake-sanitizers
 DEFAULT_CMAKE_BUILD_TYPE := $(if $(filter debug,$(MODE)),Debug,RelWithDebInfo)
 CMAKE_BUILD_TYPE ?= $(DEFAULT_CMAKE_BUILD_TYPE)
@@ -50,7 +51,7 @@ configure-cpp-dev:
 	@ln -sfn $(CMAKE_DEV_BUILD_DIR)/compile_commands.json compile_commands.json
 
 tidy-native: configure-cpp-dev
-	$(CLANG_TIDY) --quiet -p $(CMAKE_DEV_BUILD_DIR) $(SOURCES)
+	$(CLANG_TIDY) --quiet $(if $(CLANG_TIDY_WARNINGS_AS_ERRORS),--warnings-as-errors=$(CLANG_TIDY_WARNINGS_AS_ERRORS),) -p $(CMAKE_DEV_BUILD_DIR) $(SOURCES)
 
 dev-cpp-check: format-native-check test-cpp-stream-policy
 	@$(MAKE) test-native MODE=debug OPENMP=0 CMAKE_GENERATOR="$(CMAKE_DEV_GENERATOR)" CMAKE_TEST_BUILD_DIR=$(CMAKE_DEV_BUILD_DIR) CMAKE_BUILD_TYPE=Debug
