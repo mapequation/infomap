@@ -145,6 +145,111 @@ jobs:
         with:
           packages-dir: dist/python
 
+  publish-ghcr:
+    name: Publish GHCR Docker images
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: [publish-github-release]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
+
+      - name: Resolve release metadata
+        id: release
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Expected release tag vX.Y.Z, got: $RELEASE_TAG" >&2
+            exit 1
+          fi
+
+          version="${RELEASE_TAG#v}"
+          revision="$(git rev-parse HEAD)"
+
+          {
+            echo "tag=$RELEASE_TAG"
+            echo "version=$version"
+            echo "revision=$revision"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build and smoke-test supported Docker images
+        run: make test-docker-supported
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
+        with:
+          platforms: amd64,arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish CLI image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: .
+          file: docker/infomap.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/mapequation/infomap:${{ steps.release.outputs.version }}
+            ghcr.io/mapequation/infomap:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.release.outputs.version }}
+            org.opencontainers.image.revision=${{ steps.release.outputs.revision }}
+            org.opencontainers.image.licenses=GPL-3.0-or-later
+
+      - name: Build and publish notebook image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: .
+          file: docker/notebook.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/mapequation/infomap:notebook-${{ steps.release.outputs.version }}
+            ghcr.io/mapequation/infomap:notebook
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.release.outputs.version }}
+            org.opencontainers.image.revision=${{ steps.release.outputs.revision }}
+            org.opencontainers.image.licenses=GPL-3.0-or-later
+
+      - name: Verify published multi-arch manifests
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          for image in \
+            "ghcr.io/mapequation/infomap:$VERSION" \
+            "ghcr.io/mapequation/infomap:latest" \
+            "ghcr.io/mapequation/infomap:notebook-$VERSION" \
+            "ghcr.io/mapequation/infomap:notebook"
+          do
+            echo "Inspecting $image"
+            docker buildx imagetools inspect "$image" | tee manifest.txt
+            grep -q "linux/amd64" manifest.txt
+            grep -q "linux/arm64" manifest.txt
+          done
+
   publish-npm:
     name: Publish to npm
     if: github.event_name == 'push'
