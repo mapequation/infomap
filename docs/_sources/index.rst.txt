@@ -1,4 +1,4 @@
-|ci| |docs| |docker| |nightly|
+|ci| |docs| |docker|
 
 Infomap
 =======
@@ -26,10 +26,6 @@ For contributing, security reporting, and maintainer workflows, see
 .. |docker| image:: https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml/badge.svg
    :target: https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml
    :alt: Docker smoke
-
-.. |nightly| image:: https://github.com/mapequation/infomap/actions/workflows/nightly-quality.yml/badge.svg
-   :target: https://github.com/mapequation/infomap/actions/workflows/nightly-quality.yml
-   :alt: Nightly quality
 
 .. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
 .. _`mapequation.org/infomap/`: https://www.mapequation.org/infomap/
@@ -104,9 +100,9 @@ Quick start with R:
     print(im$num_top_modules)
     print(im$codelength)
 
-See ``?Infomap`` for the user-facing constructor and ``?InfomapClass`` for
-the full method and active-binding reference. The R-specific source README
-lives at `interfaces/R/infomap/README.md`_.
+See ``?Infomap`` for the user-facing constructor plus the ``InfomapClass``
+method and active-binding reference. The R-specific source README lives at
+`interfaces/R/infomap/README.md`_.
 
 .. _r-universe: https://mapequation.r-universe.dev
 .. _`interfaces/R/infomap/README.md`: https://github.com/mapequation/infomap/blob/master/interfaces/R/infomap/README.md
@@ -148,10 +144,13 @@ The browser worker package is published on `NPM`_:
 Docker
 ^^^^^^
 
-Supported images are published on `Docker Hub`_:
+The Dockerfiles in this repository are smoke-tested in CI and can be built
+locally:
 
-- ``mapequation/infomap``
-- ``mapequation/infomap:notebook``
+.. code-block:: bash
+
+    docker build -f docker/infomap.Dockerfile -t infomap:local .
+    docker build -f docker/notebook.Dockerfile -t infomap:notebook-local .
 
 Run the CLI image with:
 
@@ -159,7 +158,7 @@ Run the CLI image with:
 
     docker run -it --rm \
         -v "$(pwd)":/data \
-        mapequation/infomap \
+        infomap:local \
         [infomap arguments]
 
 Or use the local Compose file:
@@ -175,10 +174,8 @@ Start the notebook image with:
     docker run \
         -v "$(pwd)":/home/jovyan/work \
         -p 8888:8888 \
-        mapequation/infomap:notebook \
+        infomap:notebook-local \
         start.sh jupyter lab
-
-.. _`Docker Hub`: https://hub.docker.com/r/mapequation/infomap
 
 Build from source
 -----------------

@@ -32,6 +32,7 @@ jobs:
               cxxflags: -static,
               ldflags: -static,
               compiler: g++,
+              test_extra_args: "CMAKE_GENERATOR=Ninja",
             }
           - {
               name: ubuntu,
@@ -41,6 +42,7 @@ jobs:
               cxxflags: "",
               ldflags: "",
               compiler: g++,
+              test_extra_args: "",
             }
           - {
               name: macos,
@@ -50,6 +52,7 @@ jobs:
               cxxflags: "",
               ldflags: "",
               compiler: clang++,
+              test_extra_args: "",
             }
         target:
           - { name: "", openmp: "1" }
@@ -80,8 +83,8 @@ jobs:
         shell: bash
 
       - name: Run C++ tests
-        if: matrix.config.name != 'windows' && matrix.target.name == ''
-        run: make test-native CMAKE_CXX_COMPILER=${{ matrix.config.compiler }}
+        if: matrix.target.name == ''
+        run: make test-native CMAKE_CXX_COMPILER=${{ matrix.config.compiler }} ${{ matrix.config.test_extra_args }}
         shell: bash
         env:
           CXX: ${{ matrix.config.compiler }}

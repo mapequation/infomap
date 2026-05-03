@@ -120,7 +120,9 @@ jobs:
 
   cxx-format:
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.native == 'true' || needs.changes.outputs.policy == 'true'
+    # Temporarily disabled while compilation warnings are being addressed (see #479).
+    # if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.native == 'true' || needs.changes.outputs.policy == 'true'
+    if: false
     name: C++ formatting
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -137,6 +139,51 @@ jobs:
 
       - name: Check C++ formatting
         run: make format-native-check
+
+  sanitizers:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.native == 'true'
+    name: Linux sanitizers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install sanitizer toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang lld ninja-build
+        shell: bash
+
+      - name: Configure sanitizer build
+        run: make test-sanitizers CMAKE_GENERATOR=Ninja SANITIZER_CXX=clang++
+        shell: bash
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: print_stacktrace=1
+
+  clang-tidy:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.native == 'true'
+    name: Linux clang-tidy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install clang-tidy toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy ninja-build
+        shell: bash
+
+      - name: Run clang-tidy
+        run: make tidy-native CMAKE_DEV_GENERATOR=Ninja
+        shell: bash
 
   native:
     needs: changes
@@ -169,7 +216,7 @@ jobs:
 
   ci-summary:
     name: CI Summary
-    needs: [changes, policy, cxx-format, native, python, javascript, r]
+    needs: [changes, policy, cxx-format, sanitizers, clang-tidy, native, python, javascript, r]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 10

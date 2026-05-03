@@ -23,7 +23,7 @@ Do not bundle unrelated cleanup into the same change.
 - `test/`: Python-facing regression tests and fixtures
 - `examples/python/`: executable Python examples used by `make test-python`
 - `examples/R/`: executable R examples used by `make test-r-examples`
-- `docs/`: committed generated Python docs output plus hand-maintained maintainer docs
+- `docs/`: committed generated Python docs output
 - `.github/workflows/`: CI, docs verification, release, and packaging workflows
 
 ## Source Of Truth
@@ -62,11 +62,18 @@ Baseline tools:
 Common local setup:
 
 ```bash
-python3 -m pip install -e '.[test,docs,examples,release]'
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e '.[test,docs,examples,release]'
 npm ci
 make doctor
 make build-native
 ```
+
+Use an active virtual environment for Python development. Some system-managed
+Python installs, including Homebrew Python on macOS and distro Python on Linux,
+reject direct `pip install` into the system environment.
 
 On macOS with Homebrew:
 
@@ -84,7 +91,8 @@ worker work, activate Emscripten 5.0.5 before running `make build-js` or
 Run the smallest sufficient verification for the changed surface:
 
 - `src/` changes: at least `make build-native`
-- Python wrapper or packaging changes: `make build-python` and `make test-python`
+- Python wrapper or packaging changes: `make build-python`,
+  `make dev-python-install`, and `make test-python`
 - R wrapper or packaging changes: `make test-r` (R CMD check) plus
   `make test-r-examples`. Refresh tracked SWIG outputs with
   `make build-r-swig` and verify with `make test-r-swig-freshness`.

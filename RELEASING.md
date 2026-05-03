@@ -44,24 +44,23 @@ Configure these integrations before the first release:
 
 1. Merge ordinary pull requests to `master` using Conventional Commit messages.
 2. Let `.github/workflows/release-please.yml` open or update the release PR.
-3. Review the release PR. Verify all four version surfaces moved to the
+3. Review the release PR. Verify the main release version fields moved to the
    same `X.Y.Z` and match the PR title:
    - `package.json` (`version`) — drives the npm package
    - `src/version.h` (`INFOMAP_VERSION`) — compiled into the native CLI
    - `interfaces/python/src/infomap/_version.py` (`__version__`) — Python package
+   - `interfaces/R/infomap/DESCRIPTION` (`Version`) — R package version only
    - `CITATION.cff` (`version`) — citation metadata
 
    Also confirm `CHANGELOG.md` contains only entries new since the last
-   `vX.Y.Z` tag. If a version surface did not move, the issue is in
+   `vX.Y.Z` tag. If a version field did not move, the issue is in
    `release-please-config.json` `extra-files`, not in the PR.
 
-   The R package's `interfaces/R/infomap/DESCRIPTION` `Version:` field
-   is **not** wired into release-please (R DCF doesn't tolerate the
-   `#` block markers release-please's generic updater needs). It is
-   resynced from `_version.py` at build time by
-   `scripts/stage_r_package.py` whenever `make build-r` or the
-   r-universe `configure` script runs. Bump the committed value
-   manually if you want it to track between releases.
+   The R package is not a separate Release Please component. Its committed
+   `DESCRIPTION` version is bumped as a generic `extra-files` entry so release
+   artifacts and repository metadata stay aligned. The staged `DESCRIPTION` is
+   also resynced from `_version.py` by `scripts/stage_r_package.py` whenever
+   `make build-r` or the r-universe `configure` script runs.
 4. Merge the release PR.
 5. Release Please creates the `vX.Y.Z` tag and the GitHub Release.
 6. `.github/workflows/release.yml` runs for that tag and:

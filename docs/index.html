@@ -31,7 +31,7 @@
 
           <div class="body" role="main">
             
-  <p><a class="reference external" href="https://github.com/mapequation/infomap/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg" /></a> <a class="reference external" href="https://github.com/mapequation/infomap/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/mapequation/infomap/actions/workflows/docs.yml/badge.svg" /></a> <a class="reference external" href="https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml"><img alt="Docker smoke" src="https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml/badge.svg" /></a> <a class="reference external" href="https://github.com/mapequation/infomap/actions/workflows/nightly-quality.yml"><img alt="Nightly quality" src="https://github.com/mapequation/infomap/actions/workflows/nightly-quality.yml/badge.svg" /></a></p>
+  <p><a class="reference external" href="https://github.com/mapequation/infomap/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg" /></a> <a class="reference external" href="https://github.com/mapequation/infomap/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/mapequation/infomap/actions/workflows/docs.yml/badge.svg" /></a> <a class="reference external" href="https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml"><img alt="Docker smoke" src="https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml/badge.svg" /></a></p>
 <section id="infomap">
 <h1>Infomap<a class="headerlink" href="#infomap" title="Link to this heading">¶</a></h1>
 <p>Infomap is a network clustering algorithm based on the <a class="reference external" href="https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation">Map equation</a>.
@@ -91,9 +91,9 @@ The Python API reference lives at <a class="reference external" href="https://ma
 <span class="nf">print</span><span class="p">(</span><span class="n">im</span><span class="o">$</span><span class="n">codelength</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>See <code class="docutils literal notranslate"><span class="pre">?Infomap</span></code> for the user-facing constructor and <code class="docutils literal notranslate"><span class="pre">?InfomapClass</span></code> for
-the full method and active-binding reference. The R-specific source README
-lives at <a class="reference external" href="https://github.com/mapequation/infomap/blob/master/interfaces/R/infomap/README.md">interfaces/R/infomap/README.md</a>.</p>
+<p>See <code class="docutils literal notranslate"><span class="pre">?Infomap</span></code> for the user-facing constructor plus the <code class="docutils literal notranslate"><span class="pre">InfomapClass</span></code>
+method and active-binding reference. The R-specific source README lives at
+<a class="reference external" href="https://github.com/mapequation/infomap/blob/master/interfaces/R/infomap/README.md">interfaces/R/infomap/README.md</a>.</p>
 </section>
 <section id="homebrew-cli">
 <h3>Homebrew CLI<a class="headerlink" href="#homebrew-cli" title="Link to this heading">¶</a></h3>
@@ -121,15 +121,16 @@ brew<span class="w"> </span>install<span class="w"> </span>infomap
 </section>
 <section id="docker">
 <h3>Docker<a class="headerlink" href="#docker" title="Link to this heading">¶</a></h3>
-<p>Supported images are published on <a class="reference external" href="https://hub.docker.com/r/mapequation/infomap">Docker Hub</a>:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">mapequation/infomap</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">mapequation/infomap:notebook</span></code></p></li>
-</ul>
+<p>The Dockerfiles in this repository are smoke-tested in CI and can be built
+locally:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span>-f<span class="w"> </span>docker/infomap.Dockerfile<span class="w"> </span>-t<span class="w"> </span>infomap:local<span class="w"> </span>.
+docker<span class="w"> </span>build<span class="w"> </span>-f<span class="w"> </span>docker/notebook.Dockerfile<span class="w"> </span>-t<span class="w"> </span>infomap:notebook-local<span class="w"> </span>.
+</pre></div>
+</div>
 <p>Run the CLI image with:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-v<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">&quot;</span>:/data<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>mapequation/infomap<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>infomap:local<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span><span class="o">[</span>infomap<span class="w"> </span>arguments<span class="o">]</span>
 </pre></div>
 </div>
@@ -141,7 +142,7 @@ brew<span class="w"> </span>install<span class="w"> </span>infomap
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-v<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">&quot;</span>:/home/jovyan/work<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-p<span class="w"> </span><span class="m">8888</span>:8888<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>mapequation/infomap:notebook<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>infomap:notebook-local<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>start.sh<span class="w"> </span>jupyter<span class="w"> </span>lab
 </pre></div>
 </div>

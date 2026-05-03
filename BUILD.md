@@ -105,13 +105,17 @@ Use `dev-openmp` instead of `dev` for an OpenMP-enabled preset.
 `make build-native`, so native and Python builds stay aligned unless you pass
 extra flags explicitly with `CPPFLAGS`, `CXXFLAGS`, or `LDFLAGS`.
 
-Building the Python package requires [SWIG](https://www.swig.org/), Python
-packaging tooling, and Sphinx.
+Building the Python package requires Python packaging tooling. The normal
+build uses the tracked SWIG artifacts committed under `interfaces/python/`;
+SWIG 4.4.1 is only needed when refreshing those tracked wrapper outputs.
+Sphinx is needed for docs builds and doctest verification.
 
 On macOS with Homebrew:
 
 ```bash
-brew install swig sphinx-doc libomp
+brew install sphinx-doc libomp
+# Optional, only if regenerating SWIG outputs:
+brew install swig
 ```
 
 Install development dependencies, build the extension, then run the full Python

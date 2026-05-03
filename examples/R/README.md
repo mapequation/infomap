@@ -14,7 +14,7 @@ install.packages(
 )
 ```
 
-To build and install from the working tree (requires Python 3 and a C++14
+To build and install from the working tree (requires Python 3 and a C++17
 compiler; SWIG 4.4.1 only when refreshing tracked SWIG outputs):
 
 ```sh

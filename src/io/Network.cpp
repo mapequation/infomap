@@ -550,7 +550,7 @@ void Network::addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned i
   addMultilayerLink(stateId1, layer1, n1, stateId2, layer2, n2, weight);
 }
 
-void Network::addMultilayerLink(unsigned int stateId1, unsigned int layer1, unsigned int n1, unsigned int stateId2, unsigned int layer2, unsigned int n2, double weight)
+void Network::addMultilayerLink(unsigned int stateId1, unsigned int layer1, unsigned int n1, unsigned int stateId2, unsigned int layer2, unsigned int, double weight)
 {
   // if (stateId1 == stateId2) {
   // TODO: Handle self-links?
