@@ -14,6 +14,7 @@ SWIG-generated bindings.
 \section{Main entry points}{
 
 \itemize{
+\item \code{\link[=cluster_infomap]{cluster_infomap()}} - one-call clustering for edge lists and igraph graphs.
 \item \code{\link[=Infomap]{Infomap()}} — the user-facing R6 class.
 \item \code{\link[=infomap_options]{infomap_options()}} — build a reusable options list.
 \item \code{\link[=as.data.frame.Infomap]{as.data.frame.Infomap()}} — tidy node-level data.frame.
