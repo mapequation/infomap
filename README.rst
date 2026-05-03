@@ -144,10 +144,13 @@ The browser worker package is published on `NPM`_:
 Docker
 ^^^^^^
 
-Supported images are published on `Docker Hub`_:
+The Dockerfiles in this repository are smoke-tested in CI and can be built
+locally:
 
-- ``mapequation/infomap``
-- ``mapequation/infomap:notebook``
+.. code-block:: bash
+
+    docker build -f docker/infomap.Dockerfile -t infomap:local .
+    docker build -f docker/notebook.Dockerfile -t infomap:notebook-local .
 
 Run the CLI image with:
 
@@ -155,7 +158,7 @@ Run the CLI image with:
 
     docker run -it --rm \
         -v "$(pwd)":/data \
-        mapequation/infomap \
+        infomap:local \
         [infomap arguments]
 
 Or use the local Compose file:
@@ -171,10 +174,8 @@ Start the notebook image with:
     docker run \
         -v "$(pwd)":/home/jovyan/work \
         -p 8888:8888 \
-        mapequation/infomap:notebook \
+        infomap:notebook-local \
         start.sh jupyter lab
-
-.. _`Docker Hub`: https://hub.docker.com/r/mapequation/infomap
 
 Build from source
 -----------------
