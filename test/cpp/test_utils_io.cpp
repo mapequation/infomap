@@ -2,6 +2,7 @@
 
 #include "io/SafeFile.h"
 #include "utils/FileURI.h"
+#include "utils/Random.h"
 #include "utils/convert.h"
 
 #include <cerrno>
@@ -138,6 +139,40 @@ TEST_CASE("convert helpers preserve current tokenization behavior [fast][core][u
   CHECK(infomap::io::stringify(parts, "|") == "alpha|beta|gamma");
   CHECK(infomap::io::tolower("MiXeD") == "mixed");
   CHECK(infomap::io::InsensitiveCompare {}("abc", "ABD"));
+}
+
+TEST_CASE("PortableRandom maps integers portably [fast][core][utils]")
+{
+  infomap::PortableRandom random(2501);
+  CHECK(random.randInt(0, 10) == 9u);
+  CHECK(random.randInt(1, 3) == 3u);
+  CHECK(random.randInt(7, 19) == 14u);
+  CHECK(random.randInt(0, 1) == 1u);
+  CHECK(random.randInt(42, 42) == 42u);
+  CHECK(random.randInt(0, 999) == 695u);
+  CHECK(random.randInt(0, std::numeric_limits<unsigned int>::max()) == 3859750371u);
+  CHECK(random.randInt(100, 100000) == 3169u);
+}
+
+TEST_CASE("PortableRandom index vectors are portable [fast][core][utils]")
+{
+  infomap::PortableRandom random(2501);
+  std::vector<unsigned int> order(16);
+  random.getRandomizedIndexVector(order);
+
+  CHECK(order == std::vector<unsigned int> { 9, 0, 5, 14, 7, 15, 4, 12, 3, 8, 10, 11, 13, 2, 1, 6 });
+}
+
+TEST_CASE("Random keeps the standard library distribution by default [fast][core][utils]")
+{
+  infomap::Random random(2501);
+  CHECK(random.randInt(42, 42) == 42u);
+
+  for (unsigned int i = 0; i < 32; ++i) {
+    const auto value = random.randInt(7, 19);
+    CHECK(value >= 7u);
+    CHECK(value <= 19u);
+  }
 }
 
 TEST_CASE("FileURI splits valid paths and rejects invalid ones [fast][core][utils][io]")
