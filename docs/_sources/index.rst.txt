@@ -1,4 +1,4 @@
-|ci| |docs| |docker| |nightly|
+|ci| |docs| |docker|
 
 Infomap
 =======
@@ -26,10 +26,6 @@ For contributing, security reporting, and maintainer workflows, see
 .. |docker| image:: https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml/badge.svg
    :target: https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml
    :alt: Docker smoke
-
-.. |nightly| image:: https://github.com/mapequation/infomap/actions/workflows/nightly-quality.yml/badge.svg
-   :target: https://github.com/mapequation/infomap/actions/workflows/nightly-quality.yml
-   :alt: Nightly quality
 
 .. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
 .. _`mapequation.org/infomap/`: https://www.mapequation.org/infomap/
