@@ -248,11 +248,11 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
 
   if (network.haveFileInput()) {
     if (network.haveMemoryInput() && !network.haveStateNodeWeights()) {
-      Log() << std::endl;
+      Log() << '\n';
       throw std::runtime_error("Missing node flow in input data. Should be passed as a third field under a *States section.");
     }
     if (!network.haveMemoryInput() && !network.haveNodeWeights()) {
-      Log() << std::endl;
+      Log() << '\n';
       throw std::runtime_error("Missing node flow in input data. Should be passed as a third field under a *Vertices section.");
     }
   }

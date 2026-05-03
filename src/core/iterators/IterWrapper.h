@@ -20,7 +20,7 @@ class IterWrapper {
   Iter m_begin, m_end;
 
 public:
-  IterWrapper(Iter begin, Iter end) : m_begin(begin), m_end(end) {}
+  IterWrapper(const Iter& begin, const Iter& end) : m_begin(begin), m_end(end) {}
 
   // template <typename Container>
   template <typename Container,

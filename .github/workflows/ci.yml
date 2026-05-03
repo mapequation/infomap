@@ -182,7 +182,7 @@ jobs:
         shell: bash
 
       - name: Run clang-tidy
-        run: make tidy-native CMAKE_DEV_GENERATOR=Ninja
+        run: make tidy-native CMAKE_DEV_GENERATOR=Ninja CLANG_TIDY_WARNINGS_AS_ERRORS='readability-*,performance-*,modernize-use-override,bugprone-branch-clone'
         shell: bash
 
   native:

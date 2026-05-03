@@ -115,7 +115,7 @@ protected:
   unsigned int m_bipartiteStartId = 0;
 
 public:
-  StateNetwork() : m_config(Config()) {}
+  StateNetwork() {}
   StateNetwork(Config config) : m_config(std::move(config)) {}
   virtual ~StateNetwork() = default;
 

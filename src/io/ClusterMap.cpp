@@ -51,7 +51,7 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
 
   while (!std::getline(input, line).fail()) {
     ++lineNr;
-    if (line.length() == 0)
+    if (line.empty())
       continue;
     if (line[0] == '#') {
       continue;
@@ -137,7 +137,7 @@ void ClusterMap::readClu(const std::string& filename, bool includeFlow, const st
   std::map<unsigned int, unsigned int> clusterData;
 
   while (!std::getline(input, line).fail()) {
-    if (line.length() == 0 || line[0] == '#' || line[0] == '*')
+    if (line.empty() || line[0] == '#' || line[0] == '*')
       continue;
 
     lineStream.clear();

@@ -22,10 +22,10 @@ namespace infomap {
 // Wrapper class for the Python API
 struct InfomapWrapper : public InfomapBase {
 public:
-  InfomapWrapper() : InfomapBase() {}
+  InfomapWrapper() {}
   InfomapWrapper(const std::string& flags) : InfomapBase(flags) {}
   InfomapWrapper(const Config& conf) : InfomapBase(conf) {}
-  virtual ~InfomapWrapper() = default;
+  ~InfomapWrapper() override = default;
 
   // ===================================================
   // Wrapper methods
