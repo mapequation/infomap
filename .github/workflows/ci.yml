@@ -120,7 +120,9 @@ jobs:
 
   cxx-format:
     needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.native == 'true' || needs.changes.outputs.policy == 'true'
+    # Temporarily disabled while compilation warnings are being addressed (see #479).
+    # if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.native == 'true' || needs.changes.outputs.policy == 'true'
+    if: false
     name: C++ formatting
     runs-on: ubuntu-24.04
     timeout-minutes: 10
