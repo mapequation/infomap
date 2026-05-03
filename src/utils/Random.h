@@ -10,21 +10,49 @@
 #ifndef RANDOM_H_
 #define RANDOM_H_
 
-#include <vector>
+#include <cstdint>
 #include <random>
 #include <utility>
+#include <vector>
 
 namespace infomap {
 using RandGen = std::mt19937;
-using uniform_uint_dist = std::uniform_int_distribution<unsigned int>;
-using uniform_param_t = uniform_uint_dist::param_type;
+using StdUniformUIntDistribution = std::uniform_int_distribution<unsigned int>;
 
-class Random {
+class PortableUniformUIntDistribution {
+public:
+  struct param_type {
+    param_type(unsigned int minValue, unsigned int maxValue) : min(minValue), max(maxValue) {}
+
+    unsigned int min;
+    unsigned int max;
+  };
+
+  // Portable unbiased bounded integer mapping, independent of std::uniform_int_distribution internals.
+  unsigned int operator()(RandGen& randGen, const param_type& params)
+  {
+    const auto min = params.min;
+    const auto max = params.max;
+    const std::uint64_t range = static_cast<std::uint64_t>(max) - min + 1u;
+    const std::uint64_t generatorRange = static_cast<std::uint64_t>(RandGen::max()) - RandGen::min() + 1u;
+    const std::uint64_t limit = generatorRange - (generatorRange % range);
+
+    std::uint64_t value = 0;
+    do {
+      value = static_cast<std::uint64_t>(randGen()) - RandGen::min();
+    } while (value >= limit);
+
+    return min + static_cast<unsigned int>(value % range);
+  }
+};
+
+template <typename UniformUIntDistribution>
+class BasicRandom {
   RandGen m_randGen;
-  uniform_uint_dist uniform;
+  UniformUIntDistribution m_uniform;
 
 public:
-  Random(unsigned int seed = 123) : m_randGen(seed) {}
+  BasicRandom(unsigned int seed = 123) : m_randGen(seed) {}
 
   void seed(unsigned int seedValue)
   {
@@ -33,7 +61,7 @@ public:
 
   unsigned int randInt(unsigned int min, unsigned int max)
   {
-    return uniform(m_randGen, uniform_param_t(min, max));
+    return m_uniform(m_randGen, typename UniformUIntDistribution::param_type(min, max));
   }
 
   /**
@@ -48,6 +76,10 @@ public:
       std::swap(randomOrder[i], randomOrder[i + randInt(0, size - i - 1)]);
   }
 };
+
+using StdRandom = BasicRandom<StdUniformUIntDistribution>;
+using PortableRandom = BasicRandom<PortableUniformUIntDistribution>;
+using Random = StdRandom;
 } // namespace infomap
 
 #endif // RANDOM_H_
