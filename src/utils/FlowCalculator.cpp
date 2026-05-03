@@ -241,7 +241,7 @@ void FlowCalculator::calcRawdirFlow() noexcept
   }
 }
 
-void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Config& config)
+void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Config&)
 {
   Log() << "\n  -> Using directed links with precomputed flow from input data.";
   Log() << "\n  -> Total link flow: " << sumLinkWeight << ".";
