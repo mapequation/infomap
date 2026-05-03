@@ -1300,7 +1300,7 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   }
 
   // Enter/exit flow
-  if (enterFlow.size() == 0) {
+  if (enterFlow.empty()) {
     if (!config.isUndirectedClustering() && !config.regularized) {
       enterFlow.assign(numNodes, 0);
       exitFlow.assign(numNodes, 0);
