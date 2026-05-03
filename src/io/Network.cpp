@@ -125,36 +125,35 @@ void Network::parseNetwork(const std::string& filename, const InsensitiveStringS
   SafeInFile input(filename);
 
   // Parse standard links by default until possible heading is reached
-  std::string heading = startHeading.length() > 0 ? startHeading : parseLinks(input);
+  std::string heading = !startHeading.empty() ? startHeading : parseLinks(input);
 
-  while (heading.length() > 0 && heading[0] == '*') {
+  while (!heading.empty() && heading[0] == '*') {
     std::string headingLowerCase = io::tolower(io::firstWord(heading));
     if (validHeadings.count(headingLowerCase) == 0) {
       throw std::runtime_error(io::Str() << "Unrecognized heading in network file: '" << headingLowerCase << "'.");
     }
-    if (ignoreHeadings.count(headingLowerCase) > 0) {
-      heading = ignoreSection(input, headingLowerCase);
-    } else if (headingLowerCase == "*vertices") {
+    bool shouldIgnoreHeading = ignoreHeadings.count(headingLowerCase) > 0;
+    if (!shouldIgnoreHeading && headingLowerCase == "*vertices") {
       heading = parseVertices(input, heading);
-    } else if (headingLowerCase == "*states") {
+    } else if (!shouldIgnoreHeading && headingLowerCase == "*states") {
       heading = parseStateNodes(input, heading);
-    } else if (headingLowerCase == "*edges") {
+    } else if (!shouldIgnoreHeading && headingLowerCase == "*edges") {
       if (!m_config.isUndirectedFlow())
         Log() << "\n --> Notice: Links marked as undirected but parsed as directed.\n";
       heading = parseLinks(input);
-    } else if (headingLowerCase == "*arcs") {
+    } else if (!shouldIgnoreHeading && headingLowerCase == "*arcs") {
       if (m_config.isUndirectedFlow())
         Log() << "\n --> Notice: Links marked as directed but parsed as undirected.\n";
       heading = parseLinks(input);
-    } else if (headingLowerCase == "*links") {
+    } else if (!shouldIgnoreHeading && headingLowerCase == "*links") {
       heading = parseLinks(input);
-    } else if (headingLowerCase == "*multilayer" || headingLowerCase == "*multiplex") {
+    } else if (!shouldIgnoreHeading && (headingLowerCase == "*multilayer" || headingLowerCase == "*multiplex")) {
       heading = parseMultilayerLinks(input);
-    } else if (headingLowerCase == "*intra") {
+    } else if (!shouldIgnoreHeading && headingLowerCase == "*intra") {
       heading = parseMultilayerIntraLinks(input);
-    } else if (headingLowerCase == "*inter") {
+    } else if (!shouldIgnoreHeading && headingLowerCase == "*inter") {
       heading = parseMultilayerInterLinks(input);
-    } else if (headingLowerCase == "*bipartite") {
+    } else if (!shouldIgnoreHeading && headingLowerCase == "*bipartite") {
       heading = parseBipartiteLinks(input, heading);
     } else {
       heading = ignoreSection(input, headingLowerCase);
@@ -185,7 +184,7 @@ void Network::readMetaData(const std::string& filename)
   SafeInFile input(filename);
   std::string line;
   while (!std::getline(input, line).fail()) {
-    if (line.length() == 0 || line[0] == '#')
+    if (line.empty() || line[0] == '#')
       continue;
 
     if (line[0] == '*')
@@ -222,7 +221,7 @@ std::string Network::parseVertices(std::ifstream& file, const std::string& /*hea
         << std::flush;
   std::string line;
   while (!std::getline(file, line).fail()) {
-    if (line.length() == 0 || line[0] == '#')
+    if (line.empty() || line[0] == '#')
       continue;
 
     if (line[0] == '*')
@@ -267,7 +266,7 @@ std::string Network::parseStateNodes(std::ifstream& file, const std::string& /*h
         << std::flush;
   std::string line;
   while (!std::getline(file, line).fail()) {
-    if (line.length() == 0 || line[0] == '#')
+    if (line.empty() || line[0] == '#')
       continue;
 
     if (line[0] == '*')
@@ -291,7 +290,7 @@ std::string Network::parseLinks(std::ifstream& file)
   bool parsingLinks = false;
   std::string line;
   while (!std::getline(file, line).fail()) {
-    if (line.length() == 0 || line[0] == '#')
+    if (line.empty() || line[0] == '#')
       continue;
 
     if (line[0] == '*')
@@ -325,7 +324,7 @@ std::string Network::parseMultilayerLinks(std::ifstream& file)
 
   std::string line;
   while (!std::getline(file, line).fail()) {
-    if (line.length() == 0 || line[0] == '#')
+    if (line.empty() || line[0] == '#')
       continue;
 
     if (line[0] == '*')
@@ -355,7 +354,7 @@ std::string Network::parseMultilayerIntraLinks(std::ifstream& file)
 
   std::string line;
   while (!std::getline(file, line).fail()) {
-    if (line.length() == 0 || line[0] == '#')
+    if (line.empty() || line[0] == '#')
       continue;
 
     if (line[0] == '*')
@@ -377,7 +376,7 @@ std::string Network::parseMultilayerInterLinks(std::ifstream& file)
         << std::flush;
   std::string line;
   while (!std::getline(file, line).fail()) {
-    if (line.length() == 0 || line[0] == '#')
+    if (line.empty() || line[0] == '#')
       continue;
 
     if (line[0] == '*')
@@ -407,7 +406,7 @@ std::string Network::parseBipartiteLinks(std::ifstream& file, const std::string&
   m_config.bipartite = true;
   std::string line;
   while (!std::getline(file, line).fail()) {
-    if (line.length() == 0 || line[0] == '#')
+    if (line.empty() || line[0] == '#')
       continue;
 
     if (line[0] == '*')

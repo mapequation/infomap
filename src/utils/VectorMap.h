@@ -37,7 +37,7 @@ public:
     }
   }
 
-  void add(unsigned int index, T value)
+  void add(unsigned int index, const T& value)
   {
     if (isSet(index)) {
       m_values[m_redirect[index] - m_offset] += value;

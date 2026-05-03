@@ -260,7 +260,7 @@ void ProgramInterface::exitWithError(const std::string& message) const
 #ifdef _OPENMP
   Log() << " compiled with OpenMP";
 #endif
-  Log() << std::endl;
+  Log() << '\n';
   Log() << "Usage: " << m_executableName;
   for (auto& nonOptionArgument : m_nonOptionArguments)
     if (!nonOptionArgument->isAdvanced)
@@ -334,7 +334,7 @@ void ProgramInterface::parseArgs(const std::string& args)
   try {
     for (unsigned int i = 0; i < flags.size(); ++i) {
       const std::string& arg = flags[i];
-      if (arg.length() == 0)
+      if (arg.empty())
         throw std::runtime_error("Illegal argument ''");
 
       if (arg[0] != '-') {

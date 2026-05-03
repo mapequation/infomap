@@ -46,7 +46,7 @@ class InfomapBase : public InfomapConfig<InfomapBase> {
 public:
   using PartitionQueue = detail::PartitionQueue;
 
-  InfomapBase() : InfomapConfig<InfomapBase>() { initOptimizer(); }
+  InfomapBase() { initOptimizer(); }
 
   explicit InfomapBase(const Config& conf) : InfomapConfig<InfomapBase>(conf), m_network(conf) { initOptimizer(); }
 
@@ -57,7 +57,7 @@ public:
     m_initialParameters = m_currentParameters = flags;
   }
 
-  virtual ~InfomapBase() = default;
+  ~InfomapBase() override = default;
 
   // ===================================================
   // Iterators
@@ -488,7 +488,7 @@ protected:
   std::vector<InfoNode*> m_originalLeafNodes;
 
   Network m_network;
-  InitialPartition m_initialPartition = {}; // nodeId -> moduleId
+  InitialPartition m_initialPartition; // nodeId -> moduleId
 
   const unsigned int SUPER_LEVEL_ADDITION = 1 << 20;
   bool m_isMain = true;
