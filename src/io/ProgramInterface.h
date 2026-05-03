@@ -43,13 +43,13 @@ struct ArgType {
 };
 
 struct Option {
-  Option(char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced, bool requireArgument = false, std::string argName = "")
-      : shortName(shortName),
-        longName(std::move(longName)),
+  Option(char shortName_, std::string longName_, std::string desc, std::string group_, bool isAdvanced_, bool requireArgument_ = false, std::string argName = "")
+      : shortName(shortName_),
+        longName(std::move(longName_)),
         description(std::move(desc)),
-        group(std::move(group)),
-        isAdvanced(isAdvanced),
-        requireArgument(requireArgument),
+        group(std::move(group_)),
+        isAdvanced(isAdvanced_),
+        requireArgument(requireArgument_),
         incrementalArgument(false),
         argumentName(std::move(argName)) {}
 
@@ -106,8 +106,8 @@ struct Option {
 };
 
 struct IncrementalOption : Option {
-  IncrementalOption(unsigned int& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced)
-      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, false), target(target)
+  IncrementalOption(unsigned int& target_, char shortName_, std::string longName_, std::string desc, std::string group_, bool isAdvanced_)
+      : Option(shortName_, std::move(longName_), std::move(desc), std::move(group_), isAdvanced_, false), target(target_)
   {
     incrementalArgument = true;
   }
@@ -136,8 +136,8 @@ struct IncrementalOption : Option {
 
 template <typename T>
 struct ArgumentOption : Option {
-  ArgumentOption(T& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced, std::string argName)
-      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, true, std::move(argName)), target(target) {}
+  ArgumentOption(T& target_, char shortName_, std::string longName_, std::string desc, std::string group_, bool isAdvanced_, std::string argName)
+      : Option(shortName_, std::move(longName_), std::move(desc), std::move(group_), isAdvanced_, true, std::move(argName)), target(target_) {}
 
   bool parse(std::string const& value) override
   {
@@ -154,8 +154,8 @@ struct ArgumentOption : Option {
 
 template <typename T>
 struct LowerBoundArgumentOption : ArgumentOption<T> {
-  LowerBoundArgumentOption(T& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced, std::string argName, T minValue)
-      : ArgumentOption<T>(target, shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, std::move(argName)), minValue(minValue) {}
+  LowerBoundArgumentOption(T& target_, char shortName_, std::string longName_, std::string desc, std::string group_, bool isAdvanced_, std::string argName, T minValue_)
+      : ArgumentOption<T>(target_, shortName_, std::move(longName_), std::move(desc), std::move(group_), isAdvanced_, std::move(argName)), minValue(minValue_) {}
 
   bool parse(std::string const& value) override
   {
@@ -169,8 +169,8 @@ struct LowerBoundArgumentOption : ArgumentOption<T> {
 
 template <typename T>
 struct LowerUpperBoundArgumentOption : LowerBoundArgumentOption<T> {
-  LowerUpperBoundArgumentOption(T& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced, std::string argName, T minValue, T maxValue)
-      : LowerBoundArgumentOption<T>(target, shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, std::move(argName), minValue), maxValue(maxValue) {}
+  LowerUpperBoundArgumentOption(T& target_, char shortName_, std::string longName_, std::string desc, std::string group_, bool isAdvanced_, std::string argName, T minValue_, T maxValue_)
+      : LowerBoundArgumentOption<T>(target_, shortName_, std::move(longName_), std::move(desc), std::move(group_), isAdvanced_, std::move(argName), minValue_), maxValue(maxValue_) {}
 
   bool parse(std::string const& value) override
   {
@@ -184,8 +184,8 @@ struct LowerUpperBoundArgumentOption : LowerBoundArgumentOption<T> {
 
 template <>
 struct ArgumentOption<bool> : Option {
-  ArgumentOption(bool& target, char shortName, std::string longName, std::string desc, std::string group, bool isAdvanced)
-      : Option(shortName, std::move(longName), std::move(desc), std::move(group), isAdvanced, false), target(target) {}
+  ArgumentOption(bool& target_, char shortName_, std::string longName_, std::string desc, std::string group_, bool isAdvanced_)
+      : Option(shortName_, std::move(longName_), std::move(desc), std::move(group_), isAdvanced_, false), target(target_) {}
 
   bool parse(std::string const& value) override
   {
@@ -242,8 +242,8 @@ struct ParsedOption {
 };
 
 struct TargetBase {
-  TargetBase(std::string variableName, std::string desc, std::string group, bool isAdvanced)
-      : variableName(std::move(variableName)), description(std::move(desc)), group(std::move(group)), isOptionalVector(false), isAdvanced(isAdvanced) {}
+  TargetBase(std::string variableName_, std::string desc, std::string group_, bool isAdvanced_)
+      : variableName(std::move(variableName_)), description(std::move(desc)), group(std::move(group_)), isOptionalVector(false), isAdvanced(isAdvanced_) {}
 
   virtual ~TargetBase() = default;
 
@@ -263,8 +263,8 @@ struct TargetBase {
 
 template <typename T>
 struct Target : TargetBase {
-  Target(T& target, std::string variableName, std::string desc, std::string group, bool isAdvanced)
-      : TargetBase(std::move(variableName), std::move(desc), std::move(group), isAdvanced), target(target) {}
+  Target(T& target_, std::string variableName_, std::string desc, std::string group_, bool isAdvanced_)
+      : TargetBase(std::move(variableName_), std::move(desc), std::move(group_), isAdvanced_), target(target_) {}
 
   bool parse(std::string const& value) override
   {
