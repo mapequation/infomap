@@ -39,6 +39,27 @@ remotes::install_github("mapequation/infomap", subdir = "interfaces/R/infomap")
 ```r
 library(infomap)
 
+edges <- data.frame(
+  source = c(1, 1, 2, 3, 4, 4, 5),
+  target = c(2, 3, 3, 4, 5, 6, 6)
+)
+
+result <- cluster_infomap(edges, silent = TRUE, num_trials = 10)
+
+result$codelength
+result$num_top_modules
+result$modules              # named integer vector: node_id -> module_id
+result$nodes                # one row per node, with flow / name / module_id
+```
+
+If `igraph` is also attached, use `infomap::cluster_infomap()` or
+`igraph::cluster_infomap()` to choose explicitly. `infomap` returns an
+`infomap_result`; use `as_communities(result, graph)` when you need an
+igraph `communities` object.
+
+For more control, use the low-level R6 API directly:
+
+```r
 im <- Infomap(silent = TRUE, num_trials = 10)
 im$add_links(list(c(1, 2), c(1, 3), c(2, 3),
                   c(3, 4),
@@ -51,9 +72,9 @@ im$modules                # named integer vector: node_id -> module_id
 as.data.frame(im)         # one row per node, with path / flow / name / module_id
 ```
 
-See `?Infomap` for the user-facing constructor plus the `InfomapClass`
-method and active-binding reference, and `?infomap_options` for the
-complete list of named options.
+See `?cluster_infomap` for the one-call helper, `?Infomap` for the
+low-level constructor plus the `InfomapClass` method and active-binding
+reference, and `?infomap_options` for the complete list of named options.
 
 ## Working with igraph
 
