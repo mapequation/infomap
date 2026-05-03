@@ -2167,6 +2167,8 @@ unsigned int printPerLevelCodelength(const InfoNode& parent, std::ostream& out)
   out << io::padValue(childDegree, 11) << "]";
   out << " (average: " << sumAverageChildDegree / (sumNumModules + sumNumLeafNodes) << ")\n";
 
+  std::ios::fmtflags oldFlags = out.flags();
+  std::streamsize oldPrecision = out.precision();
   out << std::fixed << std::setprecision(9);
   out << "Per level codelength for modules:    [";
   for (unsigned int i = 0; i < numLevels - 1; ++i) {
@@ -2199,6 +2201,8 @@ unsigned int printPerLevelCodelength(const InfoNode& parent, std::ostream& out)
   for (unsigned int i = 0; i < numLevels; ++i)
     sumCodelengths += perLevelStats[i].codelength();
   out << " (sum: " << sumCodelengths << ")\n";
+  out.flags(oldFlags);
+  out << std::setprecision(oldPrecision);
 
   return numLevels;
 }
