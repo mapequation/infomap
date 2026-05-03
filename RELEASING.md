@@ -11,6 +11,8 @@ Public release deliverables are:
   attached to the GitHub release; r-universe builds and publishes
   separately from the same repository)
 - the `@mapequation/infomap` npm package
+- multi-arch Docker images published to GHCR for `linux/amd64` and
+  `linux/arm64`
 - the committed Python docs output in `docs/`
 
 Internal-supported packages and secondary Docker images are outside the default
@@ -36,7 +38,10 @@ Configure these integrations before the first release:
    `infomap-v2.9.2`. If Release Please is allowed to add the component
    prefix, the first release PR after the migration can re-include already
    released commits and generate an overlapping `CHANGELOG.md`.
-7. Add repository dispatch tokens for downstream update workflows:
+7. Confirm that GitHub Actions can publish this repository's package to GHCR.
+   The release workflow uses `GITHUB_TOKEN` with `packages: write` permission
+   and publishes `ghcr.io/mapequation/infomap`.
+8. Add repository dispatch tokens for downstream update workflows:
    - `HOMEBREW_INFOMAP_REPO_DISPATCH_TOKEN`
    - `INFOMAP_ONLINE_REPO_DISPATCH_TOKEN`
 
@@ -69,6 +74,11 @@ Configure these integrations before the first release:
    - builds the R source tarball and per-platform R binaries
    - builds and verifies the npm package
    - attaches assets to the GitHub Release
+   - builds, smoke-tests, and publishes multi-arch Docker images to GHCR:
+     - `ghcr.io/mapequation/infomap:X.Y.Z`
+     - `ghcr.io/mapequation/infomap:latest`
+     - `ghcr.io/mapequation/infomap:notebook-X.Y.Z`
+     - `ghcr.io/mapequation/infomap:notebook`
    - dispatches the Homebrew tap update workflow
    - publishes to PyPI behind `pypi-release`
    - publishes to npm behind `npm-release`
@@ -127,6 +137,8 @@ state is the source of truth, not the workflow log:
 gh release view vX.Y.Z
 pip index versions infomap
 npm view @mapequation/infomap versions --json
+docker buildx imagetools inspect ghcr.io/mapequation/infomap:X.Y.Z
+docker buildx imagetools inspect ghcr.io/mapequation/infomap:notebook-X.Y.Z
 ```
 
 If a recovery action would conflict with what is already published, stop
@@ -142,6 +154,11 @@ If a release only partially succeeds:
   rerun `publish-pypi` in the original tag-triggered release workflow.
 - If npm fails before any successful publish, fix the configuration problem and
   rerun `publish-npm` in the original tag-triggered release workflow.
+- If GHCR publishing fails before any successful publish, fix the configuration
+  problem and rerun `.github/workflows/release.yml` with `workflow_dispatch`
+  for the same tag. If any GHCR tags already published, inspect the registry
+  state before rerunning because the workflow also updates the mutable `latest`
+  and `notebook` tags.
 - If a registry publish already succeeded, do not delete or rewrite the tag.
   Resume from the remaining failed job and keep the published version.
 

@@ -144,13 +144,13 @@ The browser worker package is published on `NPM`_:
 Docker
 ^^^^^^
 
-The Dockerfiles in this repository are smoke-tested in CI and can be built
-locally:
+Multi-arch images are published to `GHCR`_ for ``linux/amd64`` and
+``linux/arm64``:
 
-.. code-block:: bash
-
-    docker build -f docker/infomap.Dockerfile -t infomap:local .
-    docker build -f docker/notebook.Dockerfile -t infomap:notebook-local .
+- ``ghcr.io/mapequation/infomap:latest``
+- ``ghcr.io/mapequation/infomap:X.Y.Z``
+- ``ghcr.io/mapequation/infomap:notebook``
+- ``ghcr.io/mapequation/infomap:notebook-X.Y.Z``
 
 Run the CLI image with:
 
@@ -158,14 +158,8 @@ Run the CLI image with:
 
     docker run -it --rm \
         -v "$(pwd)":/data \
-        infomap:local \
+        ghcr.io/mapequation/infomap:latest \
         [infomap arguments]
-
-Or use the local Compose file:
-
-.. code-block:: bash
-
-    docker compose run --rm infomap
 
 Start the notebook image with:
 
@@ -174,8 +168,24 @@ Start the notebook image with:
     docker run \
         -v "$(pwd)":/home/jovyan/work \
         -p 8888:8888 \
-        infomap:notebook-local \
+        ghcr.io/mapequation/infomap:notebook \
         start.sh jupyter lab
+
+The Dockerfiles in this repository are also smoke-tested in CI and can be
+built locally:
+
+.. code-block:: bash
+
+    docker build -f docker/infomap.Dockerfile -t infomap:local .
+    docker build -f docker/notebook.Dockerfile -t infomap:notebook-local .
+
+Or use the local Compose file:
+
+.. code-block:: bash
+
+    docker compose run --rm infomap
+
+.. _GHCR: https://github.com/mapequation/infomap/pkgs/container/infomap
 
 Build from source
 -----------------
