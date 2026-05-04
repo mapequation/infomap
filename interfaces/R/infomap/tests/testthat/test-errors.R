@@ -21,6 +21,17 @@ test_that("add_links rejects a 4-column data.frame", {
   expect_error(im$add_links(bad), "2 or 3 columns")
 })
 
+test_that("add_links rejects malformed list entries", {
+  im <- Infomap(silent = TRUE)
+  expect_error(im$add_links(list(c(1))), "2 or 3 values")
+  expect_error(im$add_links(list(c(1, 2, 3, 4))), "2 or 3 values")
+  expect_error(im$add_links(list(c("a", "b"))), "numeric/integer")
+  expect_error(im$add_links(list(list(1, 2, "bad"))), "weight values must be numeric")
+  expect_error(im$add_links(list(list(c(1, 2), 3))), "source value must be scalar")
+  expect_error(im$add_links(list(list(1, c(2, 3)))), "target value must be scalar")
+  expect_error(im$add_links(list(list(1, 2, c(3, 4)))), "weight value must be scalar")
+})
+
 test_that("running twice in a row does not crash", {
   im <- Infomap(silent = TRUE)
   im$add_link(1, 2)

@@ -108,6 +108,8 @@ parameter reference.</p>
 <span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_links</span><span class="p">(</span><span class="n">links</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span><span class="o">.</span><span class="n">add_links</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]]))</span>
 </pre></div>
 </div>
 <div class="admonition seealso">
@@ -116,8 +118,10 @@ parameter reference.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>links</strong> (<em>iterable</em><em> of </em><em>tuples</em>) – Iterable of tuples of int of the form
-<code class="docutils literal notranslate"><span class="pre">(source_id,</span> <span class="pre">target_id,</span> <span class="pre">[weight])</span></code></p>
+<dd class="field-odd"><p><strong>links</strong> (<em>iterable</em><em> of </em><em>tuples</em><em> or </em><em>numpy.ndarray</em>) – Iterable of tuples of int of the form
+<code class="docutils literal notranslate"><span class="pre">(source_id,</span> <span class="pre">target_id,</span> <span class="pre">[weight])</span></code>. NumPy arrays must be
+2-dimensional with 2 or 3 columns, where the first two columns are
+source and target ids and the optional third column is link weight.</p>
 </dd>
 </dl>
 </dd></dl>

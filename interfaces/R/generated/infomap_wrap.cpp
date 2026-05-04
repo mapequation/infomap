@@ -3160,39 +3160,6 @@ namespace swig {
 #include "src/core/StateNetwork.h"
 
 
-#include <utility>
-
-
-#include <map>
-
-
-#include <algorithm>
-
-
-
-
-      namespace swig {
-	template <>  struct traits<std::pair< unsigned int, unsigned int > > {
-	  typedef pointer_category category;
-	  static const char* type_name() {
-	    return "std::pair<" "unsigned int" "," "unsigned int" " >";
-	  }
-	};
-      }
-    
-
-
-
-      namespace swig {
-	template <>  struct traits<std::map< unsigned int, unsigned int, std::less< unsigned int >, std::allocator< std::pair< unsigned int const,unsigned int > > > > {
-	  typedef pointer_category category;
-	  static const char* type_name() {
-	    return "std::map<" "unsigned int" "," "unsigned int" "," "std::less< unsigned int >" "," "std::allocator< std::pair< unsigned int const,unsigned int > >" " >";
-	  }
-	};
-      }
-    
-
   namespace swig {
     template <>  struct traits< std::vector<double> > {
       typedef pointer_category category;
@@ -3244,6 +3211,39 @@ SWIGINTERN void std_vector_Sl_double_Sg____setitem__(std::vector< double > *self
 SWIGINTERN void std_vector_Sl_double_Sg__append(std::vector< double > *self,std::vector< double >::value_type const &x){
       self->push_back(x);
     }
+
+#include <utility>
+
+
+#include <map>
+
+
+#include <algorithm>
+
+
+
+
+      namespace swig {
+	template <>  struct traits<std::pair< unsigned int, unsigned int > > {
+	  typedef pointer_category category;
+	  static const char* type_name() {
+	    return "std::pair<" "unsigned int" "," "unsigned int" " >";
+	  }
+	};
+      }
+    
+
+
+
+      namespace swig {
+	template <>  struct traits<std::map< unsigned int, unsigned int, std::less< unsigned int >, std::allocator< std::pair< unsigned int const,unsigned int > > > > {
+	  typedef pointer_category category;
+	  static const char* type_name() {
+	    return "std::map<" "unsigned int" "," "unsigned int" "," "std::less< unsigned int >" "," "std::allocator< std::pair< unsigned int const,unsigned int > >" " >";
+	  }
+	};
+      }
+    
 
       namespace swig {
 	template <>  struct traits<std::pair< unsigned int, std::vector< unsigned int,std::allocator< unsigned int > > > > {
@@ -31880,6 +31880,1256 @@ R_swig_InfomapParentIterator_addOutEdge__SWIG_1 ( SEXP self, SEXP target, SEXP w
 
 
 SWIGEXPORT SEXP
+R_swig_vector_double___nonzero__ ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    bool result;
+    std::vector< double > *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___nonzero__" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    {
+      try {
+        result = (bool)std_vector_Sl_double_Sg____nonzero__((std::vector< double > const *)arg1);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = Rf_ScalarLogical(result);
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double___len__ ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    std::vector< double >::size_type result;
+    std::vector< double > *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___len__" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    {
+      try {
+        result = std_vector_Sl_double_Sg____len__((std::vector< double > const *)arg1);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_int(static_cast< int >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_pop ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    std::vector< double >::value_type result;
+    std::vector< double > *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_pop" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    {
+      try {
+        try {
+          result = (std::vector< double >::value_type)std_vector_Sl_double_Sg__pop(arg1);
+        } catch(std::out_of_range &_e) {
+          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
+        }
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_double(static_cast< double >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double___getslice__ ( SEXP self, SEXP i, SEXP j)
+{
+  {
+    std::vector< double,std::allocator< double > > *result = 0 ;
+    std::vector< double > *arg1 = 0 ;
+    std::vector< double >::difference_type arg2 ;
+    std::vector< double >::difference_type arg3 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___getslice__" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    ecode2 = SWIG_AsVal_int(i, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double___getslice__" "', argument " "2"" of type '" "std::vector< double >::difference_type""'");
+    } 
+    arg2 = static_cast< std::vector< double >::difference_type >(val2);
+    ecode3 = SWIG_AsVal_int(j, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_double___getslice__" "', argument " "3"" of type '" "std::vector< double >::difference_type""'");
+    } 
+    arg3 = static_cast< std::vector< double >::difference_type >(val3);
+    {
+      try {
+        try {
+          result = (std::vector< double,std::allocator< double > > *)std_vector_Sl_double_Sg____getslice__(arg1,SWIG_STD_MOVE(arg2),SWIG_STD_MOVE(arg3));
+        } catch(std::out_of_range &_e) {
+          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
+        }
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_R_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_double_t, SWIG_POINTER_OWN |  0 );
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double___setslice__ ( SEXP self, SEXP i, SEXP j, SEXP is)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    std::vector< double >::difference_type arg2 ;
+    std::vector< double >::difference_type arg3 ;
+    std::vector< double,std::allocator< double > > *arg4 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
+    int res4 = SWIG_OLDOBJ ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___setslice__" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    ecode2 = SWIG_AsVal_int(i, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double___setslice__" "', argument " "2"" of type '" "std::vector< double >::difference_type""'");
+    } 
+    arg2 = static_cast< std::vector< double >::difference_type >(val2);
+    ecode3 = SWIG_AsVal_int(j, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_double___setslice__" "', argument " "3"" of type '" "std::vector< double >::difference_type""'");
+    } 
+    arg3 = static_cast< std::vector< double >::difference_type >(val3);
+    {
+      std::vector< double,std::allocator< double > > *ptr = (std::vector< double,std::allocator< double > > *)0;
+      res4 = swig::asptr(is, &ptr);
+      if (!SWIG_IsOK(res4)) {
+        SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "vector_double___setslice__" "', argument " "4"" of type '" "std::vector< double,std::allocator< double > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "vector_double___setslice__" "', argument " "4"" of type '" "std::vector< double,std::allocator< double > > const &""'"); 
+      }
+      arg4 = ptr;
+    }
+    {
+      try {
+        try {
+          std_vector_Sl_double_Sg____setslice__(arg1,SWIG_STD_MOVE(arg2),SWIG_STD_MOVE(arg3),(std::vector< double,std::allocator< double > > const &)*arg4);
+        } catch(std::out_of_range &_e) {
+          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
+        } catch(std::invalid_argument &_e) {
+          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::invalid_argument(static_cast< const std::invalid_argument& >(_e))), SWIGTYPE_p_std__invalid_argument, SWIG_POINTER_OWN), "C/C++ exception of type " "std::invalid_argument"); return R_NilValue;
+        }
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    if (SWIG_IsNewObj(res4)) delete arg4;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+    if (SWIG_IsNewObj(res4)) delete arg4;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double___delslice__ ( SEXP self, SEXP i, SEXP j)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    std::vector< double >::difference_type arg2 ;
+    std::vector< double >::difference_type arg3 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___delslice__" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    ecode2 = SWIG_AsVal_int(i, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double___delslice__" "', argument " "2"" of type '" "std::vector< double >::difference_type""'");
+    } 
+    arg2 = static_cast< std::vector< double >::difference_type >(val2);
+    ecode3 = SWIG_AsVal_int(j, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_double___delslice__" "', argument " "3"" of type '" "std::vector< double >::difference_type""'");
+    } 
+    arg3 = static_cast< std::vector< double >::difference_type >(val3);
+    {
+      try {
+        try {
+          std_vector_Sl_double_Sg____delslice__(arg1,SWIG_STD_MOVE(arg2),SWIG_STD_MOVE(arg3));
+        } catch(std::out_of_range &_e) {
+          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
+        }
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double___delitem__ ( SEXP self, SEXP i)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    std::vector< double >::difference_type arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___delitem__" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    ecode2 = SWIG_AsVal_int(i, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double___delitem__" "', argument " "2"" of type '" "std::vector< double >::difference_type""'");
+    } 
+    arg2 = static_cast< std::vector< double >::difference_type >(val2);
+    {
+      try {
+        try {
+          std_vector_Sl_double_Sg____delitem__(arg1,SWIG_STD_MOVE(arg2));
+        } catch(std::out_of_range &_e) {
+          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
+        }
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double___getitem__ ( SEXP self, SEXP i, SEXP s_swig_copy)
+{
+  {
+    std::vector< double >::value_type *result = 0 ;
+    std::vector< double > *arg1 = 0 ;
+    std::vector< double >::difference_type arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___getitem__" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    ecode2 = SWIG_AsVal_int(i, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double___getitem__" "', argument " "2"" of type '" "std::vector< double >::difference_type""'");
+    } 
+    arg2 = static_cast< std::vector< double >::difference_type >(val2);
+    {
+      try {
+        try {
+          result = (std::vector< double >::value_type *) &std_vector_Sl_double_Sg____getitem__((std::vector< double > const *)arg1,SWIG_STD_MOVE(arg2));
+        } catch(std::out_of_range &_e) {
+          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
+        }
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_double(static_cast< double >(*result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double___setitem__ ( SEXP self, SEXP i, SEXP x)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    std::vector< double >::difference_type arg2 ;
+    std::vector< double >::value_type *arg3 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    std::vector< double >::value_type temp3 ;
+    double val3 ;
+    int ecode3 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___setitem__" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    ecode2 = SWIG_AsVal_int(i, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double___setitem__" "', argument " "2"" of type '" "std::vector< double >::difference_type""'");
+    } 
+    arg2 = static_cast< std::vector< double >::difference_type >(val2);
+    ecode3 = SWIG_AsVal_double(x, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_double___setitem__" "', argument " "3"" of type '" "std::vector< double >::value_type""'");
+    } 
+    temp3 = static_cast< std::vector< double >::value_type >(val3);
+    arg3 = &temp3;
+    {
+      try {
+        try {
+          std_vector_Sl_double_Sg____setitem__(arg1,SWIG_STD_MOVE(arg2),(double const &)*arg3);
+        } catch(std::out_of_range &_e) {
+          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
+        }
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_append ( SEXP self, SEXP x)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    std::vector< double >::value_type *arg2 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    std::vector< double >::value_type temp2 ;
+    double val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_append" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    ecode2 = SWIG_AsVal_double(x, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double_append" "', argument " "2"" of type '" "std::vector< double >::value_type""'");
+    } 
+    temp2 = static_cast< std::vector< double >::value_type >(val2);
+    arg2 = &temp2;
+    {
+      try {
+        std_vector_Sl_double_Sg__append(arg1,(double const &)*arg2);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_new_vector_double__SWIG_0 ( )
+{
+  {
+    std::vector< double > *result = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    {
+      try {
+        result = (std::vector< double > *)new std::vector< double >();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_R_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_double_t, SWIG_POINTER_OWN |  0 );
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_new_vector_double__SWIG_1 ( SEXP other)
+{
+  {
+    std::vector< double > *result = 0 ;
+    std::vector< double > *arg1 = 0 ;
+    int res1 = SWIG_OLDOBJ ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    {
+      std::vector< double,std::allocator< double > > *ptr = (std::vector< double,std::allocator< double > > *)0;
+      res1 = swig::asptr(other, &ptr);
+      if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_vector_double" "', argument " "1"" of type '" "std::vector< double > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_vector_double" "', argument " "1"" of type '" "std::vector< double > const &""'"); 
+      }
+      arg1 = ptr;
+    }
+    {
+      try {
+        result = (std::vector< double > *)new std::vector< double >((std::vector< double > const &)*arg1);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_R_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_double_t, SWIG_POINTER_OWN |  0 );
+    if (SWIG_IsNewObj(res1)) delete arg1;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+    if (SWIG_IsNewObj(res1)) delete arg1;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_empty ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    bool result;
+    std::vector< double > *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_empty" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    {
+      try {
+        result = (bool)((std::vector< double > const *)arg1)->empty();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = Rf_ScalarLogical(result);
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_size ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    std::vector< double >::size_type result;
+    std::vector< double > *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_size" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    {
+      try {
+        result = ((std::vector< double > const *)arg1)->size();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_int(static_cast< int >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_swap ( SEXP self, SEXP v)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    std::vector< double > *arg2 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_swap" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    res2 = SWIG_R_ConvertPtr(v, &argp2, SWIGTYPE_p_std__vectorT_double_t,  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "vector_double_swap" "', argument " "2"" of type '" "std::vector< double > &""'"); 
+    }
+    if (!argp2) {
+      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "vector_double_swap" "', argument " "2"" of type '" "std::vector< double > &""'"); 
+    }
+    arg2 = reinterpret_cast< std::vector< double > * >(argp2);
+    {
+      try {
+        (arg1)->swap(*arg2);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_clear ( SEXP self)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_clear" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    {
+      try {
+        (arg1)->clear();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_get_allocator ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    SwigValueWrapper< std::allocator< double > > result;
+    std::vector< double > *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_get_allocator" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    {
+      try {
+        result = ((std::vector< double > const *)arg1)->get_allocator();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_R_NewPointerObj((new std::vector< double >::allocator_type(result)), SWIGTYPE_p_std__allocatorT_double_t, SWIG_POINTER_OWN |  0 );
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_new_vector_double__SWIG_2 ( SEXP size)
+{
+  {
+    std::vector< double > *result = 0 ;
+    std::vector< double >::size_type arg1 ;
+    int val1 ;
+    int ecode1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    ecode1 = SWIG_AsVal_int(size, &val1);
+    if (!SWIG_IsOK(ecode1)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_vector_double" "', argument " "1"" of type '" "std::vector< double >::size_type""'");
+    } 
+    arg1 = static_cast< std::vector< double >::size_type >(val1);
+    {
+      try {
+        result = (std::vector< double > *)new std::vector< double >(SWIG_STD_MOVE(arg1));
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_R_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_double_t, SWIG_POINTER_OWN |  0 );
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_pop_back ( SEXP self)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_pop_back" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    {
+      try {
+        (arg1)->pop_back();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_resize__SWIG_0 ( SEXP self, SEXP new_size)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    std::vector< double >::size_type arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_resize" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    ecode2 = SWIG_AsVal_int(new_size, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double_resize" "', argument " "2"" of type '" "std::vector< double >::size_type""'");
+    } 
+    arg2 = static_cast< std::vector< double >::size_type >(val2);
+    {
+      try {
+        (arg1)->resize(SWIG_STD_MOVE(arg2));
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_new_vector_double__SWIG_3 ( SEXP size, SEXP value)
+{
+  {
+    std::vector< double > *result = 0 ;
+    std::vector< double >::size_type arg1 ;
+    std::vector< double >::value_type *arg2 = 0 ;
+    int val1 ;
+    int ecode1 = 0 ;
+    std::vector< double >::value_type temp2 ;
+    double val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    ecode1 = SWIG_AsVal_int(size, &val1);
+    if (!SWIG_IsOK(ecode1)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_vector_double" "', argument " "1"" of type '" "std::vector< double >::size_type""'");
+    } 
+    arg1 = static_cast< std::vector< double >::size_type >(val1);
+    ecode2 = SWIG_AsVal_double(value, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_vector_double" "', argument " "2"" of type '" "std::vector< double >::value_type""'");
+    } 
+    temp2 = static_cast< std::vector< double >::value_type >(val2);
+    arg2 = &temp2;
+    {
+      try {
+        result = (std::vector< double > *)new std::vector< double >(SWIG_STD_MOVE(arg1),(std::vector< double >::value_type const &)*arg2);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_R_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_double_t, SWIG_POINTER_OWN |  0 );
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_push_back ( SEXP self, SEXP x)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    std::vector< double >::value_type *arg2 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    std::vector< double >::value_type temp2 ;
+    double val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_push_back" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    ecode2 = SWIG_AsVal_double(x, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double_push_back" "', argument " "2"" of type '" "std::vector< double >::value_type""'");
+    } 
+    temp2 = static_cast< std::vector< double >::value_type >(val2);
+    arg2 = &temp2;
+    {
+      try {
+        (arg1)->push_back((std::vector< double >::value_type const &)*arg2);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_front ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    std::vector< double >::value_type *result = 0 ;
+    std::vector< double > *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_front" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    {
+      try {
+        result = (std::vector< double >::value_type *) &((std::vector< double > const *)arg1)->front();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_double(static_cast< double >(*result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_back ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    std::vector< double >::value_type *result = 0 ;
+    std::vector< double > *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_back" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    {
+      try {
+        result = (std::vector< double >::value_type *) &((std::vector< double > const *)arg1)->back();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_double(static_cast< double >(*result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_assign ( SEXP self, SEXP n, SEXP x)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    std::vector< double >::size_type arg2 ;
+    std::vector< double >::value_type *arg3 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    std::vector< double >::value_type temp3 ;
+    double val3 ;
+    int ecode3 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_assign" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    ecode2 = SWIG_AsVal_int(n, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double_assign" "', argument " "2"" of type '" "std::vector< double >::size_type""'");
+    } 
+    arg2 = static_cast< std::vector< double >::size_type >(val2);
+    ecode3 = SWIG_AsVal_double(x, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_double_assign" "', argument " "3"" of type '" "std::vector< double >::value_type""'");
+    } 
+    temp3 = static_cast< std::vector< double >::value_type >(val3);
+    arg3 = &temp3;
+    {
+      try {
+        (arg1)->assign(SWIG_STD_MOVE(arg2),(std::vector< double >::value_type const &)*arg3);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_resize__SWIG_1 ( SEXP self, SEXP new_size, SEXP x)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    std::vector< double >::size_type arg2 ;
+    std::vector< double >::value_type *arg3 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    std::vector< double >::value_type temp3 ;
+    double val3 ;
+    int ecode3 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_resize" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    ecode2 = SWIG_AsVal_int(new_size, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double_resize" "', argument " "2"" of type '" "std::vector< double >::size_type""'");
+    } 
+    arg2 = static_cast< std::vector< double >::size_type >(val2);
+    ecode3 = SWIG_AsVal_double(x, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_double_resize" "', argument " "3"" of type '" "std::vector< double >::value_type""'");
+    } 
+    temp3 = static_cast< std::vector< double >::value_type >(val3);
+    arg3 = &temp3;
+    {
+      try {
+        (arg1)->resize(SWIG_STD_MOVE(arg2),(std::vector< double >::value_type const &)*arg3);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_reserve ( SEXP self, SEXP n)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    std::vector< double >::size_type arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_reserve" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    ecode2 = SWIG_AsVal_int(n, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double_reserve" "', argument " "2"" of type '" "std::vector< double >::size_type""'");
+    } 
+    arg2 = static_cast< std::vector< double >::size_type >(val2);
+    {
+      try {
+        (arg1)->reserve(SWIG_STD_MOVE(arg2));
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_vector_double_capacity ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    std::vector< double >::size_type result;
+    std::vector< double > *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_capacity" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    {
+      try {
+        result = ((std::vector< double > const *)arg1)->capacity();
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_int(static_cast< int >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_delete_vector_double ( SEXP self)
+{
+  {
+    std::vector< double > *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, SWIG_POINTER_DISOWN |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_vector_double" "', argument " "1"" of type '" "std::vector< double > *""'"); 
+    }
+    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
+    {
+      try {
+        delete arg1;
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    R_ClearExternalPtr(self);
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_delete_StateNetwork ( SEXP self)
 {
   {
@@ -32689,6 +33939,86 @@ R_swig_StateNetwork_addLink__SWIG_2 ( SEXP self, SEXP sourceId, SEXP targetId, S
     
     return r_ans;
     fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_StateNetwork_addLinks ( SEXP self, SEXP sourceIds, SEXP targetIds, SEXP weights)
+{
+  {
+    infomap::StateNetwork *arg1 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg2 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg3 = 0 ;
+    std::vector< double,std::allocator< double > > *arg4 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 = SWIG_OLDOBJ ;
+    int res3 = SWIG_OLDOBJ ;
+    int res4 = SWIG_OLDOBJ ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__StateNetwork, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StateNetwork_addLinks" "', argument " "1"" of type '" "infomap::StateNetwork *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::StateNetwork * >(argp1);
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res2 = swig::asptr(sourceIds, &ptr);
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "StateNetwork_addLinks" "', argument " "2"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "StateNetwork_addLinks" "', argument " "2"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg2 = ptr;
+    }
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res3 = swig::asptr(targetIds, &ptr);
+      if (!SWIG_IsOK(res3)) {
+        SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "StateNetwork_addLinks" "', argument " "3"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "StateNetwork_addLinks" "', argument " "3"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg3 = ptr;
+    }
+    {
+      std::vector< double,std::allocator< double > > *ptr = (std::vector< double,std::allocator< double > > *)0;
+      res4 = swig::asptr(weights, &ptr);
+      if (!SWIG_IsOK(res4)) {
+        SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "StateNetwork_addLinks" "', argument " "4"" of type '" "std::vector< double,std::allocator< double > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "StateNetwork_addLinks" "', argument " "4"" of type '" "std::vector< double,std::allocator< double > > const &""'"); 
+      }
+      arg4 = ptr;
+    }
+    {
+      try {
+        (arg1)->addLinks((std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg2,(std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg3,(std::vector< double,std::allocator< double > > const &)*arg4);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    if (SWIG_IsNewObj(res2)) delete arg2;
+    if (SWIG_IsNewObj(res3)) delete arg3;
+    if (SWIG_IsNewObj(res4)) delete arg4;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+    if (SWIG_IsNewObj(res2)) delete arg2;
+    if (SWIG_IsNewObj(res3)) delete arg3;
+    if (SWIG_IsNewObj(res4)) delete arg4;
   }
   Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
   return R_NilValue;
@@ -35871,1256 +37201,6 @@ R_swig_delete_map_uint_uint ( SEXP self)
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_map_uint_uint" "', argument " "1"" of type '" "std::map< unsigned int,unsigned int > *""'"); 
     }
     arg1 = reinterpret_cast< std::map< unsigned int,unsigned int > * >(argp1);
-    {
-      try {
-        delete arg1;
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    R_ClearExternalPtr(self);
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double___nonzero__ ( SEXP self, SEXP s_swig_copy)
-{
-  {
-    bool result;
-    std::vector< double > *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___nonzero__" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    {
-      try {
-        result = (bool)std_vector_Sl_double_Sg____nonzero__((std::vector< double > const *)arg1);
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = Rf_ScalarLogical(result);
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double___len__ ( SEXP self, SEXP s_swig_copy)
-{
-  {
-    std::vector< double >::size_type result;
-    std::vector< double > *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___len__" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    {
-      try {
-        result = std_vector_Sl_double_Sg____len__((std::vector< double > const *)arg1);
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_From_int(static_cast< int >(result));
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_pop ( SEXP self, SEXP s_swig_copy)
-{
-  {
-    std::vector< double >::value_type result;
-    std::vector< double > *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_pop" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    {
-      try {
-        try {
-          result = (std::vector< double >::value_type)std_vector_Sl_double_Sg__pop(arg1);
-        } catch(std::out_of_range &_e) {
-          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
-        }
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_From_double(static_cast< double >(result));
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double___getslice__ ( SEXP self, SEXP i, SEXP j)
-{
-  {
-    std::vector< double,std::allocator< double > > *result = 0 ;
-    std::vector< double > *arg1 = 0 ;
-    std::vector< double >::difference_type arg2 ;
-    std::vector< double >::difference_type arg3 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    int val3 ;
-    int ecode3 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___getslice__" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    ecode2 = SWIG_AsVal_int(i, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double___getslice__" "', argument " "2"" of type '" "std::vector< double >::difference_type""'");
-    } 
-    arg2 = static_cast< std::vector< double >::difference_type >(val2);
-    ecode3 = SWIG_AsVal_int(j, &val3);
-    if (!SWIG_IsOK(ecode3)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_double___getslice__" "', argument " "3"" of type '" "std::vector< double >::difference_type""'");
-    } 
-    arg3 = static_cast< std::vector< double >::difference_type >(val3);
-    {
-      try {
-        try {
-          result = (std::vector< double,std::allocator< double > > *)std_vector_Sl_double_Sg____getslice__(arg1,SWIG_STD_MOVE(arg2),SWIG_STD_MOVE(arg3));
-        } catch(std::out_of_range &_e) {
-          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
-        }
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_R_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_double_t, SWIG_POINTER_OWN |  0 );
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double___setslice__ ( SEXP self, SEXP i, SEXP j, SEXP is)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    std::vector< double >::difference_type arg2 ;
-    std::vector< double >::difference_type arg3 ;
-    std::vector< double,std::allocator< double > > *arg4 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    int val3 ;
-    int ecode3 = 0 ;
-    int res4 = SWIG_OLDOBJ ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___setslice__" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    ecode2 = SWIG_AsVal_int(i, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double___setslice__" "', argument " "2"" of type '" "std::vector< double >::difference_type""'");
-    } 
-    arg2 = static_cast< std::vector< double >::difference_type >(val2);
-    ecode3 = SWIG_AsVal_int(j, &val3);
-    if (!SWIG_IsOK(ecode3)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_double___setslice__" "', argument " "3"" of type '" "std::vector< double >::difference_type""'");
-    } 
-    arg3 = static_cast< std::vector< double >::difference_type >(val3);
-    {
-      std::vector< double,std::allocator< double > > *ptr = (std::vector< double,std::allocator< double > > *)0;
-      res4 = swig::asptr(is, &ptr);
-      if (!SWIG_IsOK(res4)) {
-        SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "vector_double___setslice__" "', argument " "4"" of type '" "std::vector< double,std::allocator< double > > const &""'"); 
-      }
-      if (!ptr) {
-        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "vector_double___setslice__" "', argument " "4"" of type '" "std::vector< double,std::allocator< double > > const &""'"); 
-      }
-      arg4 = ptr;
-    }
-    {
-      try {
-        try {
-          std_vector_Sl_double_Sg____setslice__(arg1,SWIG_STD_MOVE(arg2),SWIG_STD_MOVE(arg3),(std::vector< double,std::allocator< double > > const &)*arg4);
-        } catch(std::out_of_range &_e) {
-          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
-        } catch(std::invalid_argument &_e) {
-          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::invalid_argument(static_cast< const std::invalid_argument& >(_e))), SWIGTYPE_p_std__invalid_argument, SWIG_POINTER_OWN), "C/C++ exception of type " "std::invalid_argument"); return R_NilValue;
-        }
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    if (SWIG_IsNewObj(res4)) delete arg4;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-    if (SWIG_IsNewObj(res4)) delete arg4;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double___delslice__ ( SEXP self, SEXP i, SEXP j)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    std::vector< double >::difference_type arg2 ;
-    std::vector< double >::difference_type arg3 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    int val3 ;
-    int ecode3 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___delslice__" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    ecode2 = SWIG_AsVal_int(i, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double___delslice__" "', argument " "2"" of type '" "std::vector< double >::difference_type""'");
-    } 
-    arg2 = static_cast< std::vector< double >::difference_type >(val2);
-    ecode3 = SWIG_AsVal_int(j, &val3);
-    if (!SWIG_IsOK(ecode3)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_double___delslice__" "', argument " "3"" of type '" "std::vector< double >::difference_type""'");
-    } 
-    arg3 = static_cast< std::vector< double >::difference_type >(val3);
-    {
-      try {
-        try {
-          std_vector_Sl_double_Sg____delslice__(arg1,SWIG_STD_MOVE(arg2),SWIG_STD_MOVE(arg3));
-        } catch(std::out_of_range &_e) {
-          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
-        }
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double___delitem__ ( SEXP self, SEXP i)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    std::vector< double >::difference_type arg2 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___delitem__" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    ecode2 = SWIG_AsVal_int(i, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double___delitem__" "', argument " "2"" of type '" "std::vector< double >::difference_type""'");
-    } 
-    arg2 = static_cast< std::vector< double >::difference_type >(val2);
-    {
-      try {
-        try {
-          std_vector_Sl_double_Sg____delitem__(arg1,SWIG_STD_MOVE(arg2));
-        } catch(std::out_of_range &_e) {
-          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
-        }
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double___getitem__ ( SEXP self, SEXP i, SEXP s_swig_copy)
-{
-  {
-    std::vector< double >::value_type *result = 0 ;
-    std::vector< double > *arg1 = 0 ;
-    std::vector< double >::difference_type arg2 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___getitem__" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    ecode2 = SWIG_AsVal_int(i, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double___getitem__" "', argument " "2"" of type '" "std::vector< double >::difference_type""'");
-    } 
-    arg2 = static_cast< std::vector< double >::difference_type >(val2);
-    {
-      try {
-        try {
-          result = (std::vector< double >::value_type *) &std_vector_Sl_double_Sg____getitem__((std::vector< double > const *)arg1,SWIG_STD_MOVE(arg2));
-        } catch(std::out_of_range &_e) {
-          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
-        }
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_From_double(static_cast< double >(*result));
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double___setitem__ ( SEXP self, SEXP i, SEXP x)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    std::vector< double >::difference_type arg2 ;
-    std::vector< double >::value_type *arg3 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    std::vector< double >::value_type temp3 ;
-    double val3 ;
-    int ecode3 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double___setitem__" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    ecode2 = SWIG_AsVal_int(i, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double___setitem__" "', argument " "2"" of type '" "std::vector< double >::difference_type""'");
-    } 
-    arg2 = static_cast< std::vector< double >::difference_type >(val2);
-    ecode3 = SWIG_AsVal_double(x, &val3);
-    if (!SWIG_IsOK(ecode3)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_double___setitem__" "', argument " "3"" of type '" "std::vector< double >::value_type""'");
-    } 
-    temp3 = static_cast< std::vector< double >::value_type >(val3);
-    arg3 = &temp3;
-    {
-      try {
-        try {
-          std_vector_Sl_double_Sg____setitem__(arg1,SWIG_STD_MOVE(arg2),(double const &)*arg3);
-        } catch(std::out_of_range &_e) {
-          SWIG_R_Raise(SWIG_R_NewPointerObj((new std::out_of_range(static_cast< const std::out_of_range& >(_e))), SWIGTYPE_p_std__out_of_range, SWIG_POINTER_OWN), "C/C++ exception of type " "std::out_of_range"); return R_NilValue;
-        }
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_append ( SEXP self, SEXP x)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    std::vector< double >::value_type *arg2 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    std::vector< double >::value_type temp2 ;
-    double val2 ;
-    int ecode2 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_append" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    ecode2 = SWIG_AsVal_double(x, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double_append" "', argument " "2"" of type '" "std::vector< double >::value_type""'");
-    } 
-    temp2 = static_cast< std::vector< double >::value_type >(val2);
-    arg2 = &temp2;
-    {
-      try {
-        std_vector_Sl_double_Sg__append(arg1,(double const &)*arg2);
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_new_vector_double__SWIG_0 ( )
-{
-  {
-    std::vector< double > *result = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    {
-      try {
-        result = (std::vector< double > *)new std::vector< double >();
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_R_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_double_t, SWIG_POINTER_OWN |  0 );
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_new_vector_double__SWIG_1 ( SEXP other)
-{
-  {
-    std::vector< double > *result = 0 ;
-    std::vector< double > *arg1 = 0 ;
-    int res1 = SWIG_OLDOBJ ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    {
-      std::vector< double,std::allocator< double > > *ptr = (std::vector< double,std::allocator< double > > *)0;
-      res1 = swig::asptr(other, &ptr);
-      if (!SWIG_IsOK(res1)) {
-        SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_vector_double" "', argument " "1"" of type '" "std::vector< double > const &""'"); 
-      }
-      if (!ptr) {
-        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "new_vector_double" "', argument " "1"" of type '" "std::vector< double > const &""'"); 
-      }
-      arg1 = ptr;
-    }
-    {
-      try {
-        result = (std::vector< double > *)new std::vector< double >((std::vector< double > const &)*arg1);
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_R_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_double_t, SWIG_POINTER_OWN |  0 );
-    if (SWIG_IsNewObj(res1)) delete arg1;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-    if (SWIG_IsNewObj(res1)) delete arg1;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_empty ( SEXP self, SEXP s_swig_copy)
-{
-  {
-    bool result;
-    std::vector< double > *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_empty" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    {
-      try {
-        result = (bool)((std::vector< double > const *)arg1)->empty();
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = Rf_ScalarLogical(result);
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_size ( SEXP self, SEXP s_swig_copy)
-{
-  {
-    std::vector< double >::size_type result;
-    std::vector< double > *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_size" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    {
-      try {
-        result = ((std::vector< double > const *)arg1)->size();
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_From_int(static_cast< int >(result));
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_swap ( SEXP self, SEXP v)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    std::vector< double > *arg2 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    void *argp2 = 0 ;
-    int res2 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_swap" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    res2 = SWIG_R_ConvertPtr(v, &argp2, SWIGTYPE_p_std__vectorT_double_t,  0 );
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "vector_double_swap" "', argument " "2"" of type '" "std::vector< double > &""'"); 
-    }
-    if (!argp2) {
-      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "vector_double_swap" "', argument " "2"" of type '" "std::vector< double > &""'"); 
-    }
-    arg2 = reinterpret_cast< std::vector< double > * >(argp2);
-    {
-      try {
-        (arg1)->swap(*arg2);
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_clear ( SEXP self)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_clear" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    {
-      try {
-        (arg1)->clear();
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_get_allocator ( SEXP self, SEXP s_swig_copy)
-{
-  {
-    SwigValueWrapper< std::allocator< double > > result;
-    std::vector< double > *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_get_allocator" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    {
-      try {
-        result = ((std::vector< double > const *)arg1)->get_allocator();
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_R_NewPointerObj((new std::vector< double >::allocator_type(result)), SWIGTYPE_p_std__allocatorT_double_t, SWIG_POINTER_OWN |  0 );
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_new_vector_double__SWIG_2 ( SEXP size)
-{
-  {
-    std::vector< double > *result = 0 ;
-    std::vector< double >::size_type arg1 ;
-    int val1 ;
-    int ecode1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    ecode1 = SWIG_AsVal_int(size, &val1);
-    if (!SWIG_IsOK(ecode1)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_vector_double" "', argument " "1"" of type '" "std::vector< double >::size_type""'");
-    } 
-    arg1 = static_cast< std::vector< double >::size_type >(val1);
-    {
-      try {
-        result = (std::vector< double > *)new std::vector< double >(SWIG_STD_MOVE(arg1));
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_R_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_double_t, SWIG_POINTER_OWN |  0 );
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_pop_back ( SEXP self)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_pop_back" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    {
-      try {
-        (arg1)->pop_back();
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_resize__SWIG_0 ( SEXP self, SEXP new_size)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    std::vector< double >::size_type arg2 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_resize" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    ecode2 = SWIG_AsVal_int(new_size, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double_resize" "', argument " "2"" of type '" "std::vector< double >::size_type""'");
-    } 
-    arg2 = static_cast< std::vector< double >::size_type >(val2);
-    {
-      try {
-        (arg1)->resize(SWIG_STD_MOVE(arg2));
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_new_vector_double__SWIG_3 ( SEXP size, SEXP value)
-{
-  {
-    std::vector< double > *result = 0 ;
-    std::vector< double >::size_type arg1 ;
-    std::vector< double >::value_type *arg2 = 0 ;
-    int val1 ;
-    int ecode1 = 0 ;
-    std::vector< double >::value_type temp2 ;
-    double val2 ;
-    int ecode2 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    ecode1 = SWIG_AsVal_int(size, &val1);
-    if (!SWIG_IsOK(ecode1)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_vector_double" "', argument " "1"" of type '" "std::vector< double >::size_type""'");
-    } 
-    arg1 = static_cast< std::vector< double >::size_type >(val1);
-    ecode2 = SWIG_AsVal_double(value, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_vector_double" "', argument " "2"" of type '" "std::vector< double >::value_type""'");
-    } 
-    temp2 = static_cast< std::vector< double >::value_type >(val2);
-    arg2 = &temp2;
-    {
-      try {
-        result = (std::vector< double > *)new std::vector< double >(SWIG_STD_MOVE(arg1),(std::vector< double >::value_type const &)*arg2);
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_R_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_double_t, SWIG_POINTER_OWN |  0 );
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_push_back ( SEXP self, SEXP x)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    std::vector< double >::value_type *arg2 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    std::vector< double >::value_type temp2 ;
-    double val2 ;
-    int ecode2 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_push_back" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    ecode2 = SWIG_AsVal_double(x, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double_push_back" "', argument " "2"" of type '" "std::vector< double >::value_type""'");
-    } 
-    temp2 = static_cast< std::vector< double >::value_type >(val2);
-    arg2 = &temp2;
-    {
-      try {
-        (arg1)->push_back((std::vector< double >::value_type const &)*arg2);
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_front ( SEXP self, SEXP s_swig_copy)
-{
-  {
-    std::vector< double >::value_type *result = 0 ;
-    std::vector< double > *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_front" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    {
-      try {
-        result = (std::vector< double >::value_type *) &((std::vector< double > const *)arg1)->front();
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_From_double(static_cast< double >(*result));
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_back ( SEXP self, SEXP s_swig_copy)
-{
-  {
-    std::vector< double >::value_type *result = 0 ;
-    std::vector< double > *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_back" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    {
-      try {
-        result = (std::vector< double >::value_type *) &((std::vector< double > const *)arg1)->back();
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_From_double(static_cast< double >(*result));
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_assign ( SEXP self, SEXP n, SEXP x)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    std::vector< double >::size_type arg2 ;
-    std::vector< double >::value_type *arg3 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    std::vector< double >::value_type temp3 ;
-    double val3 ;
-    int ecode3 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_assign" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    ecode2 = SWIG_AsVal_int(n, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double_assign" "', argument " "2"" of type '" "std::vector< double >::size_type""'");
-    } 
-    arg2 = static_cast< std::vector< double >::size_type >(val2);
-    ecode3 = SWIG_AsVal_double(x, &val3);
-    if (!SWIG_IsOK(ecode3)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_double_assign" "', argument " "3"" of type '" "std::vector< double >::value_type""'");
-    } 
-    temp3 = static_cast< std::vector< double >::value_type >(val3);
-    arg3 = &temp3;
-    {
-      try {
-        (arg1)->assign(SWIG_STD_MOVE(arg2),(std::vector< double >::value_type const &)*arg3);
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_resize__SWIG_1 ( SEXP self, SEXP new_size, SEXP x)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    std::vector< double >::size_type arg2 ;
-    std::vector< double >::value_type *arg3 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    std::vector< double >::value_type temp3 ;
-    double val3 ;
-    int ecode3 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_resize" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    ecode2 = SWIG_AsVal_int(new_size, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double_resize" "', argument " "2"" of type '" "std::vector< double >::size_type""'");
-    } 
-    arg2 = static_cast< std::vector< double >::size_type >(val2);
-    ecode3 = SWIG_AsVal_double(x, &val3);
-    if (!SWIG_IsOK(ecode3)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_double_resize" "', argument " "3"" of type '" "std::vector< double >::value_type""'");
-    } 
-    temp3 = static_cast< std::vector< double >::value_type >(val3);
-    arg3 = &temp3;
-    {
-      try {
-        (arg1)->resize(SWIG_STD_MOVE(arg2),(std::vector< double >::value_type const &)*arg3);
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_reserve ( SEXP self, SEXP n)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    std::vector< double >::size_type arg2 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_reserve" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    ecode2 = SWIG_AsVal_int(n, &val2);
-    if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_double_reserve" "', argument " "2"" of type '" "std::vector< double >::size_type""'");
-    } 
-    arg2 = static_cast< std::vector< double >::size_type >(val2);
-    {
-      try {
-        (arg1)->reserve(SWIG_STD_MOVE(arg2));
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = R_NilValue;
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_vector_double_capacity ( SEXP self, SEXP s_swig_copy)
-{
-  {
-    std::vector< double >::size_type result;
-    std::vector< double > *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_double_capacity" "', argument " "1"" of type '" "std::vector< double > const *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
-    {
-      try {
-        result = ((std::vector< double > const *)arg1)->capacity();
-      } catch (const std::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-      }
-    }
-    r_ans = SWIG_From_int(static_cast< int >(result));
-    vmaxset(r_vmax);
-    if(r_nprotect)  Rf_unprotect(r_nprotect);
-    
-    return r_ans;
-    fail: SWIGUNUSED;
-  }
-  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
-  return R_NilValue;
-}
-
-
-SWIGEXPORT SEXP
-R_swig_delete_vector_double ( SEXP self)
-{
-  {
-    std::vector< double > *arg1 = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    unsigned int r_nprotect = 0;
-    SEXP r_ans = R_NilValue ;
-    VMAXTYPE r_vmax = vmaxget() ;
-    
-    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_std__vectorT_double_t, SWIG_POINTER_DISOWN |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_vector_double" "', argument " "1"" of type '" "std::vector< double > *""'"); 
-    }
-    arg1 = reinterpret_cast< std::vector< double > * >(argp1);
     {
       try {
         delete arg1;
@@ -45015,6 +45095,86 @@ R_swig_InfomapWrapper_addLink__SWIG_2 ( SEXP self, SEXP sourceId, SEXP targetId,
 
 
 SWIGEXPORT SEXP
+R_swig_InfomapWrapper_addLinks ( SEXP self, SEXP sourceIds, SEXP targetIds, SEXP weights)
+{
+  {
+    infomap::InfomapWrapper *arg1 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg2 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg3 = 0 ;
+    std::vector< double,std::allocator< double > > *arg4 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 = SWIG_OLDOBJ ;
+    int res3 = SWIG_OLDOBJ ;
+    int res4 = SWIG_OLDOBJ ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_addLinks" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res2 = swig::asptr(sourceIds, &ptr);
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfomapWrapper_addLinks" "', argument " "2"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapWrapper_addLinks" "', argument " "2"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg2 = ptr;
+    }
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res3 = swig::asptr(targetIds, &ptr);
+      if (!SWIG_IsOK(res3)) {
+        SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "InfomapWrapper_addLinks" "', argument " "3"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapWrapper_addLinks" "', argument " "3"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg3 = ptr;
+    }
+    {
+      std::vector< double,std::allocator< double > > *ptr = (std::vector< double,std::allocator< double > > *)0;
+      res4 = swig::asptr(weights, &ptr);
+      if (!SWIG_IsOK(res4)) {
+        SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "InfomapWrapper_addLinks" "', argument " "4"" of type '" "std::vector< double,std::allocator< double > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapWrapper_addLinks" "', argument " "4"" of type '" "std::vector< double,std::allocator< double > > const &""'"); 
+      }
+      arg4 = ptr;
+    }
+    {
+      try {
+        (arg1)->addLinks((std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg2,(std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg3,(std::vector< double,std::allocator< double > > const &)*arg4);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    if (SWIG_IsNewObj(res2)) delete arg2;
+    if (SWIG_IsNewObj(res3)) delete arg3;
+    if (SWIG_IsNewObj(res4)) delete arg4;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+    if (SWIG_IsNewObj(res2)) delete arg2;
+    if (SWIG_IsNewObj(res3)) delete arg3;
+    if (SWIG_IsNewObj(res4)) delete arg4;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_InfomapWrapper_addMultilayerLink__SWIG_0 ( SEXP self, SEXP layer1, SEXP n1, SEXP layer2, SEXP n2, SEXP weight)
 {
   {
@@ -46891,8 +47051,8 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_Config_multilayerRelaxLimitUp_get", (DL_FUNC) &R_swig_Config_multilayerRelaxLimitUp_get, 2},
    {"R_swig_InfomapWrapper_getName", (DL_FUNC) &R_swig_InfomapWrapper_getName, 3},
    {"R_swig_InfomapIterator_getMetaData__SWIG_0", (DL_FUNC) &R_swig_InfomapIterator_getMetaData__SWIG_0, 3},
-   {"R_swig_map_uint_uint_size", (DL_FUNC) &R_swig_map_uint_uint_size, 2},
    {"R_swig_vector_double_get_allocator", (DL_FUNC) &R_swig_vector_double_get_allocator, 2},
+   {"R_swig_map_uint_uint_size", (DL_FUNC) &R_swig_map_uint_uint_size, 2},
    {"R_swig_InfomapIterator_getMetaData__SWIG_1", (DL_FUNC) &R_swig_InfomapIterator_getMetaData__SWIG_1, 2},
    {"R_swig_StateNetwork_addNode__SWIG_0", (DL_FUNC) &R_swig_StateNetwork_addNode__SWIG_0, 3},
    {"R_swig_StateNetwork_addNode__SWIG_1", (DL_FUNC) &R_swig_StateNetwork_addNode__SWIG_1, 4},
@@ -47586,6 +47746,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapParentIterator_begin_inEdge", (DL_FUNC) &R_swig_InfomapParentIterator_begin_inEdge, 2},
    {"R_swig_map_uint_uint_erase", (DL_FUNC) &R_swig_map_uint_uint_erase, 3},
    {"R_swig_Config_outName_set", (DL_FUNC) &R_swig_Config_outName_set, 2},
+   {"R_swig_StateNetwork_addLinks", (DL_FUNC) &R_swig_StateNetwork_addLinks, 4},
    {"R_swig_InfomapIterator_owner_get", (DL_FUNC) &R_swig_InfomapIterator_owner_get, 1},
    {"R_swig_DeltaFlow_deltaEnter_get", (DL_FUNC) &R_swig_DeltaFlow_deltaEnter_get, 2},
    {"R_swig_Config_markovTime_set", (DL_FUNC) &R_swig_Config_markovTime_set, 2},
@@ -47669,6 +47830,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_releaseChildren", (DL_FUNC) &R_swig_InfomapIterator_releaseChildren, 1},
    {"R_swig_InfomapBase_writeClu__SWIG_2", (DL_FUNC) &R_swig_InfomapBase_writeClu__SWIG_2, 3},
    {"R_swig_InfomapBase_writeClu__SWIG_3", (DL_FUNC) &R_swig_InfomapBase_writeClu__SWIG_3, 2},
+   {"R_swig_InfomapWrapper_addLinks", (DL_FUNC) &R_swig_InfomapWrapper_addLinks, 4},
    {"R_swig_InfomapIterator_physicalId_get", (DL_FUNC) &R_swig_InfomapIterator_physicalId_get, 2},
    {"R_swig_Config_weightThreshold_set", (DL_FUNC) &R_swig_Config_weightThreshold_set, 2},
    {"R_swig_StateNetwork_bipartiteStartId", (DL_FUNC) &R_swig_StateNetwork_bipartiteStartId, 2},

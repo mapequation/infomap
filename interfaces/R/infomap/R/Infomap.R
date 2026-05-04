@@ -222,14 +222,59 @@ InfomapClass <- R6::R6Class(
         } else {
           rep(1.0, length(sources))
         }
-        for (i in seq_along(sources)) {
-          self$add_link(sources[i], targets[i], weights[i])
-        }
       } else {
-        for (entry in links) {
-          do.call(self$add_link, as.list(entry))
+        link_lengths <- vapply(links, length, integer(1L))
+        if (!all(link_lengths %in% c(2L, 3L))) {
+          stop("Each link must contain 2 or 3 values: source, target, and optional weight.",
+               call. = FALSE)
         }
+        sources <- vapply(
+          links,
+          function(entry) {
+            value <- entry[[1L]]
+            if (length(value) != 1L) {
+              stop("Each link source value must be scalar.", call. = FALSE)
+            }
+            if (!is.numeric(value)) {
+              stop("`links` source/target values must be numeric/integer.",
+                   call. = FALSE)
+            }
+            value
+          },
+          numeric(1L)
+        )
+        targets <- vapply(
+          links,
+          function(entry) {
+            value <- entry[[2L]]
+            if (length(value) != 1L) {
+              stop("Each link target value must be scalar.", call. = FALSE)
+            }
+            if (!is.numeric(value)) {
+              stop("`links` source/target values must be numeric/integer.",
+                   call. = FALSE)
+            }
+            value
+          },
+          numeric(1L)
+        )
+        weights <- vapply(
+          links,
+          function(entry) {
+            value <- if (length(entry) == 3L) entry[[3L]] else 1.0
+            if (length(value) != 1L) {
+              stop("Each link weight value must be scalar.", call. = FALSE)
+            }
+            if (!is.numeric(value)) {
+              stop("`links` weight values must be numeric.", call. = FALSE)
+            }
+            value
+          },
+          numeric(1L)
+        )
       }
+
+      private$.swig$addLinks(as.integer(sources), as.integer(targets), as.numeric(weights))
       invisible(self)
     },
 
@@ -474,14 +519,10 @@ InfomapClass <- R6::R6Class(
         for (i in seq_len(igraph::vcount(g))) {
           self$add_state_node(vertex_ids[i], phys[i])
         }
-        for (e in seq_len(nrow(edges))) {
-          self$add_link(edges[e, 1L], edges[e, 2L], weights[e])
-        }
+        self$add_links(cbind(edges[, 1L], edges[, 2L], weights))
       } else {
         # Plain network.
-        for (e in seq_len(nrow(edges))) {
-          self$add_link(edges[e, 1L], edges[e, 2L], weights[e])
-        }
+        self$add_links(cbind(edges[, 1L], edges[, 2L], weights))
       }
 
       if (is_directed) {

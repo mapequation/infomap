@@ -11,6 +11,7 @@
 
 namespace std {
     %template(vector_uint) std::vector<unsigned int>;
+    %template(vector_double) std::vector<double>;
 }
 
 /* Parse the header file to generate wrappers */
