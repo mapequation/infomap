@@ -76,6 +76,8 @@ protected:
 
   void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules) override;
 
+  double evaluateActiveNetworkPartition(std::vector<unsigned int>& modules) override;
+
   bool moveNodeToPredefinedModule(InfoNode& current, unsigned int module);
 
   unsigned int optimizeActiveNetwork() override;
@@ -192,6 +194,60 @@ void InfomapOptimizer<Objective>::moveActiveNodesToPredefinedModules(std::vector
   for (unsigned int i = 0; i < numNodes; ++i) {
     moveNodeToPredefinedModule(*network[i], modules[i]);
   }
+}
+
+template <typename Objective>
+double InfomapOptimizer<Objective>::evaluateActiveNetworkPartition(std::vector<unsigned int>& modules)
+{
+  struct ScopedPartitionState {
+    explicit ScopedPartitionState(InfomapOptimizer& optimizer)
+        : optimizer(optimizer),
+          objective(optimizer.m_objective),
+          consolidatedObjective(optimizer.m_consolidatedObjective),
+          moduleFlowData(optimizer.m_moduleFlowData),
+          moduleMembers(optimizer.m_moduleMembers),
+          emptyModules(optimizer.m_emptyModules)
+    {
+      auto& network = optimizer.m_infomap->activeNetwork();
+      nodes.reserve(network.size());
+      nodeIndices.reserve(network.size());
+      nodeDirty.reserve(network.size());
+      for (auto* node : network) {
+        nodes.push_back(node);
+        nodeIndices.push_back(node->index);
+        nodeDirty.push_back(node->dirty);
+      }
+    }
+
+    ~ScopedPartitionState()
+    {
+      optimizer.m_objective = objective;
+      optimizer.m_consolidatedObjective = consolidatedObjective;
+      optimizer.m_moduleFlowData = moduleFlowData;
+      optimizer.m_moduleMembers = moduleMembers;
+      optimizer.m_emptyModules = emptyModules;
+
+      for (unsigned int i = 0; i < nodes.size(); ++i) {
+        nodes[i]->index = nodeIndices[i];
+        nodes[i]->dirty = nodeDirty[i];
+      }
+    }
+
+    InfomapOptimizer& optimizer;
+    Objective objective;
+    Objective consolidatedObjective;
+    std::vector<FlowDataType> moduleFlowData;
+    std::vector<unsigned int> moduleMembers;
+    std::vector<unsigned int> emptyModules;
+    std::vector<InfoNode*> nodes;
+    std::vector<unsigned int> nodeIndices;
+    std::vector<bool> nodeDirty;
+  };
+
+  ScopedPartitionState state(*this);
+  initPartition();
+  moveActiveNodesToPredefinedModules(modules);
+  return m_objective.getCodelength();
 }
 
 template <typename Objective>

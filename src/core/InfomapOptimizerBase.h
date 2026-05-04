@@ -70,6 +70,8 @@ protected:
 
   virtual void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules) = 0;
 
+  virtual double evaluateActiveNetworkPartition(std::vector<unsigned int>& modules) = 0;
+
   virtual unsigned int optimizeActiveNetwork() = 0;
 
   virtual unsigned int tryMoveEachNodeIntoBestModule() = 0;

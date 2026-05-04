@@ -350,7 +350,21 @@ private:
 
   void findTopModulesRepeatedly(unsigned int maxLevels);
 
+  struct RefinementProposal {
+    std::vector<unsigned int> refinedModules;
+    std::vector<unsigned int> parentModules;
+    unsigned int parentModulesProcessed = 0;
+    unsigned int parentModulesSplit = 0;
+    unsigned int refinedSubmodules = 0;
+  };
+
   bool runRefinementBeforeAggregation();
+
+  RefinementProposal buildRefinementProposal();
+
+  double evaluateRefinementProposal(const RefinementProposal& proposal);
+
+  void applyRefinementProposal(const RefinementProposal& proposal);
 
   void applyPendingRefinedParentModules();
 
@@ -366,6 +380,11 @@ private:
   void moveActiveNodesToPredefinedModules(std::vector<unsigned int>& modules)
   {
     return m_optimizer->moveActiveNodesToPredefinedModules(modules);
+  }
+
+  double evaluateActiveNetworkPartition(std::vector<unsigned int>& modules)
+  {
+    return m_optimizer->evaluateActiveNetworkPartition(modules);
   }
 
   void consolidateModules(bool replaceExistingModules = true)

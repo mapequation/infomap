@@ -4,6 +4,7 @@
 
 #include "TestUtils.h"
 
+#include <cmath>
 #include <map>
 #include <set>
 #include <tuple>
@@ -526,6 +527,37 @@ TEST_CASE("Consolidate modules preserves aggregated inter-module flow [fast][cor
   CHECK(im.numTopModules() == 2);
   CHECK(im.root().childDegree() == 2);
   CHECK(aggregatedModuleFlow(im.root(), im.isUndirectedClustering()) == expectedFlows);
+}
+
+TEST_CASE("Active partition evaluator restores optimizer state [fast][core][partition]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+  im.initPartition();
+
+  const auto codelengthBefore = im.getCodelength();
+  std::vector<unsigned int> indicesBefore;
+  std::vector<bool> dirtyBefore;
+  for (auto* node : im.activeNetwork()) {
+    indicesBefore.push_back(node->index);
+    dirtyBefore.push_back(node->dirty);
+  }
+
+  std::vector<unsigned int> modules { 0, 0, 0, 1, 1, 1 };
+  const auto evaluatedCodelength = im.evaluateActiveNetworkPartition(modules);
+
+  CHECK(std::isfinite(evaluatedCodelength));
+  CHECK(im.getCodelength() == doctest::Approx(codelengthBefore));
+  REQUIRE(im.activeNetwork().size() == indicesBefore.size());
+  for (unsigned int i = 0; i < im.activeNetwork().size(); ++i) {
+    CHECK(im.activeNetwork()[i]->index == indicesBefore[i]);
+    CHECK(im.activeNetwork()[i]->dirty == dirtyBefore[i]);
+  }
+
+  im.moveActiveNodesToPredefinedModules(modules);
+  CHECK(im.getCodelength() == doctest::Approx(evaluatedCodelength));
 }
 
 TEST_CASE("Refine before aggregation can split a consolidated parent module [fast][core][partition][tree]")

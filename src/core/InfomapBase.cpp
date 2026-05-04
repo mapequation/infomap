@@ -1441,6 +1441,54 @@ bool InfomapBase::runRefinementBeforeAggregation()
 
   Stopwatch timer(true);
   const double codelengthBefore = getCodelength();
+  auto* activeNetworkBeforeRefinement = m_activeNetwork;
+  auto moduleNodesBeforeRefinement = m_moduleNodes;
+
+  RefinementProposal proposal = buildRefinementProposal();
+
+  double codelengthAfterRefinement = codelengthBefore;
+  const char* decision = "unchanged";
+  bool kept = false;
+
+  if (proposal.parentModulesSplit > 0) {
+    codelengthAfterRefinement = evaluateRefinementProposal(proposal);
+
+    if (codelengthAfterRefinement > codelengthBefore + 1e-12) {
+      m_pendingRefinedParentModules.clear();
+      decision = "rejected";
+    } else {
+      applyRefinementProposal(proposal);
+      m_pendingRefinedParentModules = proposal.parentModules;
+      decision = "kept";
+      kept = true;
+    }
+  } else {
+    m_pendingRefinedParentModules.clear();
+  }
+
+  if (kept) {
+    setActiveNetworkFromChildrenOfRoot();
+  } else {
+    m_moduleNodes = moduleNodesBeforeRefinement;
+    m_activeNetwork = activeNetworkBeforeRefinement;
+  }
+
+  timer.stop();
+  Log(1) << "Refine before aggregation level " << m_aggregationLevel
+         << ": codelengthBefore=" << io::toPrecision(codelengthBefore)
+         << ", codelengthAfterRefinement=" << io::toPrecision(codelengthAfterRefinement)
+         << ", decision=" << decision
+         << ", parentModules=" << proposal.parentModulesProcessed
+         << ", splitParentModules=" << proposal.parentModulesSplit
+         << ", refinedSubmodules=" << proposal.refinedSubmodules
+         << ", runtime=" << timer << '\n';
+
+  return kept;
+}
+
+InfomapBase::RefinementProposal InfomapBase::buildRefinementProposal()
+{
+  RefinementProposal proposal;
 
   bool isSilent = false;
   if (isMainInfomap()) {
@@ -1448,18 +1496,17 @@ bool InfomapBase::runRefinementBeforeAggregation()
     Log::setSilent(true);
   }
 
-  unsigned int parentModulesProcessed = 0;
-  unsigned int parentModulesSplit = 0;
-  unsigned int refinedModuleOffset = 0;
-
+  unsigned int parentModule = 0;
   for (auto& module : m_root) {
-    ++parentModulesProcessed;
+    ++proposal.parentModulesProcessed;
 
     if (module.childDegree() < 2) {
-      for (auto& child : module) {
-        child.index = refinedModuleOffset;
+      for (unsigned int i = 0; i < module.childDegree(); ++i) {
+        proposal.refinedModules.push_back(proposal.refinedSubmodules);
       }
-      ++refinedModuleOffset;
+      proposal.parentModules.push_back(parentModule);
+      ++proposal.refinedSubmodules;
+      ++parentModule;
       continue;
     }
 
@@ -1469,68 +1516,46 @@ bool InfomapBase::runRefinementBeforeAggregation()
                                   .setTuneIterationLimit(1);
     subInfomap.initNetwork(module).run();
 
-    auto originalChildIt = module.begin_child();
     for (auto& subLeafPtr : subInfomap.leafNodes()) {
-      InfoNode& subLeaf = *subLeafPtr;
-      originalChildIt->index = subLeaf.index + refinedModuleOffset;
-      ++originalChildIt;
+      proposal.refinedModules.push_back(subLeafPtr->index + proposal.refinedSubmodules);
+    }
+
+    for (unsigned int i = 0; i < subInfomap.numTopModules(); ++i) {
+      proposal.parentModules.push_back(parentModule);
     }
 
     if (subInfomap.numTopModules() > 1)
-      ++parentModulesSplit;
+      ++proposal.parentModulesSplit;
 
-    refinedModuleOffset += subInfomap.numTopModules();
+    proposal.refinedSubmodules += subInfomap.numTopModules();
     module.disposeInfomap();
+    ++parentModule;
   }
 
   if (isMainInfomap())
     Log::setSilent(isSilent);
 
-  double codelengthAfterRefinement = codelengthBefore;
-  const char* decision = "kept";
+  return proposal;
+}
 
-  if (parentModulesSplit > 0) {
-    setActiveNetworkFromChildrenOfTopModules();
-    std::vector<unsigned int> refinedModules(activeNetwork().size());
-    for (unsigned int i = 0; i < activeNetwork().size(); ++i) {
-      refinedModules[i] = activeNetwork()[i]->index;
-    }
+double InfomapBase::evaluateRefinementProposal(const RefinementProposal& proposal)
+{
+  setActiveNetworkFromChildrenOfTopModules();
+  std::vector<unsigned int> refinedModules = proposal.refinedModules;
+  return evaluateActiveNetworkPartition(refinedModules);
+}
 
-    initPartition();
-    moveActiveNodesToPredefinedModules(refinedModules);
-    consolidateModules(true);
+void InfomapBase::applyRefinementProposal(const RefinementProposal& proposal)
+{
+  setActiveNetworkFromChildrenOfTopModules();
+  std::vector<unsigned int> refinedModules = proposal.refinedModules;
+  initPartition();
+  moveActiveNodesToPredefinedModules(refinedModules);
+  consolidateModules(true);
 
-    codelengthAfterRefinement = getCodelength();
-
-    std::vector<unsigned int> parentModules(numTopModules());
-    unsigned int i = 0;
-    for (auto& refinedModule : m_root) {
-      parentModules[i++] = refinedModule.index;
-    }
-
-    if (codelengthAfterRefinement > codelengthBefore + 1e-12) {
-      setActiveNetworkFromChildrenOfRoot();
-      initPartition();
-      moveActiveNodesToPredefinedModules(parentModules);
-      consolidateModules(true);
-      m_pendingRefinedParentModules.clear();
-      decision = "reverted";
-    } else {
-      m_pendingRefinedParentModules = parentModules;
-    }
+  if (proposal.parentModules.size() != numTopModules()) {
+    throw std::logic_error("Refined parent partition size differs from consolidated refined modules.");
   }
-
-  timer.stop();
-  Log(1) << "Refine before aggregation level " << m_aggregationLevel
-         << ": codelengthBefore=" << io::toPrecision(codelengthBefore)
-         << ", codelengthAfterRefinement=" << io::toPrecision(codelengthAfterRefinement)
-         << ", decision=" << decision
-         << ", parentModules=" << parentModulesProcessed
-         << ", splitParentModules=" << parentModulesSplit
-         << ", refinedSubmodules=" << refinedModuleOffset
-         << ", runtime=" << timer << '\n';
-
-  return parentModulesSplit > 0 && decision[0] == 'k';
 }
 
 unsigned int InfomapBase::fineTune()
