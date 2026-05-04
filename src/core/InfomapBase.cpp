@@ -1510,6 +1510,12 @@ InfomapBase::RefinementProposal InfomapBase::buildRefinementProposal()
       continue;
     }
 
+    std::vector<unsigned int> originalChildIndices;
+    originalChildIndices.reserve(module.childDegree());
+    for (auto& child : module) {
+      originalChildIndices.push_back(child.index);
+    }
+
     InfomapBase& subInfomap = getSubInfomap(module)
                                   .setTwoLevel(true)
                                   .setRefineBeforeAggregation(false)
@@ -1529,6 +1535,13 @@ InfomapBase::RefinementProposal InfomapBase::buildRefinementProposal()
 
     proposal.refinedSubmodules += subInfomap.numTopModules();
     module.disposeInfomap();
+
+    auto childIt = module.begin_child();
+    for (auto index : originalChildIndices) {
+      childIt->index = index;
+      ++childIt;
+    }
+
     ++parentModule;
   }
 

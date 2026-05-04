@@ -560,6 +560,42 @@ TEST_CASE("Active partition evaluator restores optimizer state [fast][core][part
   CHECK(im.getCodelength() == doctest::Approx(evaluatedCodelength));
 }
 
+TEST_CASE("Refinement proposal restores child indices before apply [fast][core][partition][tree]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  for (unsigned int source = 1; source <= 4; ++source) {
+    for (unsigned int target = source + 1; target <= 4; ++target) {
+      im.addLink(source, target);
+    }
+  }
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+  im.initPartition();
+
+  std::vector<unsigned int> oneModule(4, 0);
+  im.moveActiveNodesToPredefinedModules(oneModule);
+  im.consolidateModules(false);
+
+  REQUIRE(im.numTopModules() == 1);
+  REQUIRE(im.root().firstChild->childDegree() == 4);
+
+  std::vector<unsigned int> childIndicesBefore;
+  for (const auto& child : im.root().firstChild->children()) {
+    childIndicesBefore.push_back(child.index);
+  }
+
+  auto proposal = im.buildRefinementProposal();
+
+  std::vector<unsigned int> childIndicesAfter;
+  for (const auto& child : im.root().firstChild->children()) {
+    childIndicesAfter.push_back(child.index);
+  }
+  CHECK(proposal.refinedModules.size() == 4);
+  CHECK(childIndicesAfter == childIndicesBefore);
+  CHECK(im.numTopModules() == 1);
+  CHECK(im.m_pendingRefinedParentModules.empty());
+}
+
 TEST_CASE("Refine before aggregation can split a consolidated parent module [fast][core][partition][tree]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
