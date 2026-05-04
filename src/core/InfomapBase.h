@@ -354,6 +354,7 @@ private:
     std::vector<unsigned int> refinedModules;
     std::vector<unsigned int> parentModules;
     unsigned int parentModulesProcessed = 0;
+    unsigned int parentModulesSkippedSmall = 0;
     unsigned int parentModulesSplit = 0;
     unsigned int refinedSubmodules = 0;
   };

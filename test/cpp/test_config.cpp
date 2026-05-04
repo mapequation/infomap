@@ -25,8 +25,10 @@ TEST_CASE("Config parses flow model selection and output formats [fast][core][co
 
 TEST_CASE("Config parses refine-before-aggregation flag [fast][core][config][cli]")
 {
-  const Config config("input.net --silent --no-file-output --refine-before-aggregation", true);
+  const Config config("input.net --silent --no-file-output --refine-before-aggregation --refine-min-module-size 8 --refine-start-mode one-module", true);
   CHECK(config.refineBeforeAggregation);
+  CHECK(config.refineMinModuleSize == 8);
+  CHECK(config.refineStartMode == "one-module");
 }
 
 TEST_CASE("Config treats directed shorthand as directed flow model [fast][core][config][cli]")
@@ -39,6 +41,7 @@ TEST_CASE("Config rejects unknown flow models and output formats [fast][core][co
 {
   CHECK_THROWS_AS(Config("input.net --silent --no-file-output --flow-model unknown", true), std::runtime_error);
   CHECK_THROWS_AS(Config("input.net --silent --no-file-output --output tree,unknown", true), std::runtime_error);
+  CHECK_THROWS_AS(Config("input.net --silent --no-file-output --refine-start-mode unknown", true), std::runtime_error);
 }
 
 } // namespace

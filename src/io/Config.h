@@ -112,6 +112,8 @@ struct Config {
   // Clustering
   bool twoLevel = false;
   bool refineBeforeAggregation = false;
+  unsigned int refineMinModuleSize = 2;
+  std::string refineStartMode = "singleton";
   bool noCoarseTune = false;
   bool recordedTeleportation = false;
   bool regularized = false; // Add a Bayesian prior network with recorded teleportation (sets recordedTeleportation and teleportToNodes to true)
@@ -205,6 +207,8 @@ struct Config {
     multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
     twoLevel = other.twoLevel;
     refineBeforeAggregation = other.refineBeforeAggregation;
+    refineMinModuleSize = other.refineMinModuleSize;
+    refineStartMode = other.refineStartMode;
     noCoarseTune = other.noCoarseTune;
     recordedTeleportation = other.recordedTeleportation;
     regularized = other.regularized;

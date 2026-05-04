@@ -42,6 +42,8 @@ export type Arguments = Partial<{
   // algorithm
   twoLevel: boolean;
   refineBeforeAggregation: boolean;
+  refineMinModuleSize: number;
+  refineStartMode: string;
   flowModel:
     | "undirected"
     | "directed"
@@ -139,6 +141,10 @@ export default function argumentsToString(args: Arguments) {
   if (args.twoLevel) result += " --two-level";
 
   if (args.refineBeforeAggregation) result += " --refine-before-aggregation";
+
+  if (args.refineMinModuleSize != null) result += " --refine-min-module-size " + args.refineMinModuleSize;
+
+  if (args.refineStartMode != null) result += " --refine-start-mode " + args.refineStartMode;
 
   if (args.flowModel != null) result += " --flow-model " + args.flowModel;
 

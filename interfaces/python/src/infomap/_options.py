@@ -46,6 +46,8 @@ _OUTPUT_OPTION_SPECS = (
 _ALGORITHM_OPTION_SPECS = (
     ("flag", "two_level", "--two-level", None),
     ("flag", "refine_before_aggregation", "--refine-before-aggregation", None),
+    ("value", "refine_min_module_size", "--refine-min-module-size", lambda value: value is not None),
+    ("value", "refine_start_mode", "--refine-start-mode", lambda value: value is not None),
     ("value", "flow_model", "--flow-model", lambda value: value is not None),
     ("flag", "recorded_teleportation", "--recorded-teleportation", None),
     ("flag", "use_node_weights_as_flow", "--use-node-weights-as-flow", None),
@@ -173,6 +175,11 @@ class InfomapOptions:
     refine_before_aggregation : bool, optional
         Experimentally refine modules before aggregation to reduce destructive
         coarsening.
+    refine_min_module_size : int, optional
+        Minimum active child units in a module before experimental refinement is
+        attempted.
+    refine_start_mode : str, optional
+        Initial partition for experimental refinement. Options: singleton, one-module.
     flow_model : str, optional
         Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir,
         precomputed.
@@ -287,6 +294,8 @@ class InfomapOptions:
     # algorithm
     two_level: bool = False
     refine_before_aggregation: bool = False
+    refine_min_module_size: int | None = None
+    refine_start_mode: str | None = None
     flow_model: str | None = None
     directed: bool | None = None
     recorded_teleportation: bool = False
@@ -397,6 +406,8 @@ def _construct_args(
     # algorithm
     two_level=False,
     refine_before_aggregation=False,
+    refine_min_module_size=None,
+    refine_start_mode=None,
     flow_model=None,
     directed=None,
     recorded_teleportation=False,

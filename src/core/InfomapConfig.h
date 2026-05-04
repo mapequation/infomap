@@ -13,7 +13,9 @@
 #include "../io/Config.h"
 #include "../utils/Random.h"
 #include "../utils/Log.h"
+#include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace infomap {
 
@@ -115,6 +117,20 @@ public:
   Infomap& setRefineBeforeAggregation(bool value)
   {
     refineBeforeAggregation = value;
+    return get();
+  }
+
+  Infomap& setRefineMinModuleSize(unsigned int value)
+  {
+    refineMinModuleSize = value;
+    return get();
+  }
+
+  Infomap& setRefineStartMode(std::string value)
+  {
+    if (value != "singleton" && value != "one-module")
+      throw std::invalid_argument("Refinement start mode must be one of: singleton, one-module.");
+    refineStartMode = std::move(value);
     return get();
   }
 

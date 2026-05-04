@@ -128,6 +128,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
   // --------------------- Core algorithm options ---------------------
   api.addOptionArgument(twoLevel, '2', "two-level", "Optimize a two-level partition of the network. Default is multi-level.", "Algorithm");
   api.addOptionArgument(refineBeforeAggregation, "refine-before-aggregation", "Experimentally refine modules before aggregation to reduce destructive coarsening.", "Algorithm", true);
+  api.addOptionArgument(refineMinModuleSize, "refine-min-module-size", "Minimum active child units in a module before experimental refinement is attempted.", ArgType::integer, "Algorithm", 1u, true);
+  api.addOptionArgument(refineStartMode, "refine-start-mode", "Initial partition for experimental refinement. Options: singleton, one-module.", ArgType::option, "Algorithm", true);
 
   std::string flowModelArg;
 
@@ -204,6 +206,10 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   if (deprecated_includeSelfLinks) {
     throw std::runtime_error("The --include-self-links flag is deprecated to include self links by default. Use --no-self-links to exclude.");
+  }
+
+  if (refineStartMode != "singleton" && refineStartMode != "one-module") {
+    throw std::runtime_error("The --refine-start-mode option must be one of: singleton, one-module.");
   }
 
   if (!optionalOutputDir.empty())

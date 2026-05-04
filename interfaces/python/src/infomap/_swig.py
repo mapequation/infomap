@@ -122,6 +122,8 @@ class Config(object):
     maxFlowIterations = property(_infomap.Config_maxFlowIterations_get, _infomap.Config_maxFlowIterations_set)
     twoLevel = property(_infomap.Config_twoLevel_get, _infomap.Config_twoLevel_set)
     refineBeforeAggregation = property(_infomap.Config_refineBeforeAggregation_get, _infomap.Config_refineBeforeAggregation_set)
+    refineMinModuleSize = property(_infomap.Config_refineMinModuleSize_get, _infomap.Config_refineMinModuleSize_set)
+    refineStartMode = property(_infomap.Config_refineStartMode_get, _infomap.Config_refineStartMode_set)
     noCoarseTune = property(_infomap.Config_noCoarseTune_get, _infomap.Config_noCoarseTune_set)
     recordedTeleportation = property(_infomap.Config_recordedTeleportation_get, _infomap.Config_recordedTeleportation_set)
     regularized = property(_infomap.Config_regularized_get, _infomap.Config_regularized_set)
@@ -2455,6 +2457,12 @@ class InfomapConfigInfomapBase(Config):
 
     def setRefineBeforeAggregation(self, value):
         return _infomap.InfomapConfigInfomapBase_setRefineBeforeAggregation(self, value)
+
+    def setRefineMinModuleSize(self, value):
+        return _infomap.InfomapConfigInfomapBase_setRefineMinModuleSize(self, value)
+
+    def setRefineStartMode(self, value):
+        return _infomap.InfomapConfigInfomapBase_setRefineStartMode(self, value)
 
     def setNoInfomap(self, value=True):
         return _infomap.InfomapConfigInfomapBase_setNoInfomap(self, value)

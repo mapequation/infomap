@@ -596,7 +596,62 @@ TEST_CASE("Refinement proposal restores child indices before apply [fast][core][
   CHECK(im.m_pendingRefinedParentModules.empty());
 }
 
-TEST_CASE("Refine before aggregation can split a consolidated parent module [fast][core][partition][tree]")
+TEST_CASE("Refinement proposal respects min module size gate [fast][core][partition][tree]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--refine-min-module-size 7"));
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+  im.initPartition();
+
+  std::vector<unsigned int> oneModule(6, 0);
+  im.moveActiveNodesToPredefinedModules(oneModule);
+  im.consolidateModules(false);
+
+  auto proposal = im.buildRefinementProposal();
+
+  CHECK(proposal.parentModulesProcessed == 1);
+  CHECK(proposal.parentModulesSkippedSmall == 1);
+  CHECK(proposal.parentModulesSplit == 0);
+  CHECK(proposal.refinedSubmodules == 1);
+  const std::vector<unsigned int> expectedParentModules { 0 };
+  CHECK(proposal.parentModules == expectedParentModules);
+  CHECK(proposal.refinedModules == oneModule);
+}
+
+TEST_CASE("Refinement rejects split proposals without strict codelength gain as no-op [fast][core][partition][tree]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.minimumCodelengthImprovement = 1.0;
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+  im.initPartition();
+
+  std::vector<unsigned int> oneModule(6, 0);
+  im.moveActiveNodesToPredefinedModules(oneModule);
+  im.consolidateModules(false);
+
+  REQUIRE(im.numTopModules() == 1);
+  const auto codelengthBefore = im.getCodelength();
+  std::vector<unsigned int> childIndicesBefore;
+  for (const auto& child : im.root().firstChild->children()) {
+    childIndicesBefore.push_back(child.index);
+  }
+
+  CHECK_FALSE(im.runRefinementBeforeAggregation());
+
+  CHECK(im.numTopModules() == 1);
+  CHECK(im.getCodelength() == doctest::Approx(codelengthBefore));
+  CHECK(im.m_pendingRefinedParentModules.empty());
+  std::vector<unsigned int> childIndicesAfter;
+  for (const auto& child : im.root().firstChild->children()) {
+    childIndicesAfter.push_back(child.index);
+  }
+  CHECK(childIndicesAfter == childIndicesBefore);
+}
+
+TEST_CASE("Refinement proposal can split a consolidated parent module and preserve pending parent grouping [fast][core][partition][tree]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
   im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
@@ -609,7 +664,10 @@ TEST_CASE("Refine before aggregation can split a consolidated parent module [fas
   im.consolidateModules(false);
 
   REQUIRE(im.numTopModules() == 1);
-  CHECK(im.runRefinementBeforeAggregation());
+  auto proposal = im.buildRefinementProposal();
+  REQUIRE(proposal.parentModulesSplit == 1);
+  im.applyRefinementProposal(proposal);
+  im.m_pendingRefinedParentModules = proposal.parentModules;
 
   CHECK(im.numTopModules() > 1);
   REQUIRE(im.m_pendingRefinedParentModules.size() == im.numTopModules());
@@ -623,6 +681,25 @@ TEST_CASE("Refine before aggregation can split a consolidated parent module [fas
 
   CHECK(im.numActiveModules() == 1);
   CHECK(im.m_pendingRefinedParentModules.empty());
+}
+
+TEST_CASE("Refine before aggregation one-module start mode runs deterministically [fast][core][partition][tree]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--refine-before-aggregation --refine-start-mode one-module"));
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+  im.initPartition();
+
+  std::vector<unsigned int> oneModule(6, 0);
+  im.moveActiveNodesToPredefinedModules(oneModule);
+  im.consolidateModules(false);
+
+  auto proposal = im.buildRefinementProposal();
+  CHECK(proposal.refinedModules.size() == 6);
+  CHECK(proposal.refinedSubmodules >= 1);
+
+  CHECK_NOTHROW(im.runRefinementBeforeAggregation());
 }
 
 TEST_CASE("Refine before aggregation flag keeps default fixture result stable when disabled [fast][core][partition]")

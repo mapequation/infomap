@@ -1455,14 +1455,17 @@ bool InfomapBase::runRefinementBeforeAggregation()
   if (proposal.parentModulesSplit > 0) {
     codelengthAfterRefinement = evaluateRefinementProposal(proposal);
 
-    if (codelengthAfterRefinement > codelengthBefore + 1e-12) {
-      m_pendingRefinedParentModules.clear();
-      decision = "rejected";
-    } else {
+    if (codelengthAfterRefinement < codelengthBefore - minimumCodelengthImprovement) {
       applyRefinementProposal(proposal);
       m_pendingRefinedParentModules = proposal.parentModules;
-      decision = "kept";
+      decision = "accepted";
       kept = true;
+    } else if (codelengthAfterRefinement > codelengthBefore + 1e-12) {
+      m_pendingRefinedParentModules.clear();
+      decision = "rejected-worse";
+    } else {
+      m_pendingRefinedParentModules.clear();
+      decision = "rejected-no-gain";
     }
   } else {
     m_pendingRefinedParentModules.clear();
@@ -1481,6 +1484,7 @@ bool InfomapBase::runRefinementBeforeAggregation()
          << ", codelengthAfterRefinement=" << io::toPrecision(codelengthAfterRefinement)
          << ", decision=" << decision
          << ", parentModules=" << proposal.parentModulesProcessed
+         << ", skippedSmallParentModules=" << proposal.parentModulesSkippedSmall
          << ", splitParentModules=" << proposal.parentModulesSplit
          << ", refinedSubmodules=" << proposal.refinedSubmodules
          << ", runtime=" << timer << '\n';
@@ -1502,11 +1506,12 @@ InfomapBase::RefinementProposal InfomapBase::buildRefinementProposal()
   for (auto& module : m_root) {
     ++proposal.parentModulesProcessed;
 
-    if (module.childDegree() < 2) {
+    if (module.childDegree() < refineMinModuleSize) {
       for (unsigned int i = 0; i < module.childDegree(); ++i) {
         proposal.refinedModules.push_back(proposal.refinedSubmodules);
       }
       proposal.parentModules.push_back(parentModule);
+      ++proposal.parentModulesSkippedSmall;
       ++proposal.refinedSubmodules;
       ++parentModule;
       continue;
@@ -1522,20 +1527,33 @@ InfomapBase::RefinementProposal InfomapBase::buildRefinementProposal()
                                   .setTwoLevel(true)
                                   .setRefineBeforeAggregation(false)
                                   .setTuneIterationLimit(1);
-    subInfomap.initNetwork(module).run();
-
-    for (auto& subLeafPtr : subInfomap.leafNodes()) {
-      proposal.refinedModules.push_back(subLeafPtr->index + proposal.refinedSubmodules);
+    subInfomap.initNetwork(module);
+    if (refineStartMode == "one-module") {
+      subInfomap.setActiveNetworkFromLeafs();
+      subInfomap.initPartition();
+      std::vector<unsigned int> oneModule(module.childDegree(), 0);
+      subInfomap.moveActiveNodesToPredefinedModules(oneModule);
+      subInfomap.optimizeActiveNetwork();
+      subInfomap.consolidateModules(false);
+    } else {
+      subInfomap.run();
     }
 
-    for (unsigned int i = 0; i < subInfomap.numTopModules(); ++i) {
+    std::map<unsigned int, unsigned int> compactRefinedModules;
+    for (auto& subLeafPtr : subInfomap.leafNodes()) {
+      auto inserted = compactRefinedModules.insert(std::make_pair(subLeafPtr->index, static_cast<unsigned int>(compactRefinedModules.size())));
+      proposal.refinedModules.push_back(inserted.first->second + proposal.refinedSubmodules);
+    }
+
+    const auto numRefinedSubmodules = static_cast<unsigned int>(compactRefinedModules.size());
+    for (unsigned int i = 0; i < numRefinedSubmodules; ++i) {
       proposal.parentModules.push_back(parentModule);
     }
 
-    if (subInfomap.numTopModules() > 1)
+    if (numRefinedSubmodules > 1)
       ++proposal.parentModulesSplit;
 
-    proposal.refinedSubmodules += subInfomap.numTopModules();
+    proposal.refinedSubmodules += numRefinedSubmodules;
     module.disposeInfomap();
 
     auto childIt = module.begin_child();

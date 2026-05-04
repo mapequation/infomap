@@ -43,6 +43,8 @@ OUTPUT_OPTIONS <- list(
 ALGORITHM_OPTIONS <- list(
   list(type = "flag", name = "two_level", flag = "--two-level", default = FALSE),
   list(type = "flag", name = "refine_before_aggregation", flag = "--refine-before-aggregation", default = FALSE),
+  list(type = "value", name = "refine_min_module_size", flag = "--refine-min-module-size", default = NULL, include = .skip_when_null),
+  list(type = "value", name = "refine_start_mode", flag = "--refine-start-mode", default = NULL, include = .skip_when_null),
   list(type = "value", name = "flow_model", flag = "--flow-model", default = NULL, include = .skip_when_null),
   list(type = "flag", name = "recorded_teleportation", flag = "--recorded-teleportation", default = FALSE),
   list(type = "flag", name = "use_node_weights_as_flow", flag = "--use-node-weights-as-flow", default = FALSE),
@@ -83,14 +85,15 @@ OPTION_FIELD_NAMES <- c(
   "no_infomap", "out_name", "no_file_output", "tree",
   "ftree", "clu", "clu_level", "output",
   "hide_bipartite_nodes", "print_all_trials", "verbosity_level", "silent",
-  "two_level", "refine_before_aggregation", "flow_model", "directed",
-  "recorded_teleportation", "use_node_weights_as_flow", "to_nodes", "teleportation_probability",
-  "regularized", "regularization_strength", "entropy_corrected", "entropy_correction_strength",
-  "markov_time", "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale",
-  "preferred_number_of_modules", "multilayer_relax_rate", "multilayer_relax_limit", "multilayer_relax_limit_up",
-  "multilayer_relax_limit_down", "multilayer_relax_by_jsd", "seed", "num_trials",
-  "core_loop_limit", "core_level_limit", "tune_iteration_limit", "core_loop_codelength_threshold",
-  "tune_iteration_relative_threshold", "fast_hierarchical_solution", "prefer_modular_solution", "inner_parallelization"
+  "two_level", "refine_before_aggregation", "refine_min_module_size", "refine_start_mode",
+  "flow_model", "directed", "recorded_teleportation", "use_node_weights_as_flow",
+  "to_nodes", "teleportation_probability", "regularized", "regularization_strength",
+  "entropy_corrected", "entropy_correction_strength", "markov_time", "variable_markov_time",
+  "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules", "multilayer_relax_rate",
+  "multilayer_relax_limit", "multilayer_relax_limit_up", "multilayer_relax_limit_down", "multilayer_relax_by_jsd",
+  "seed", "num_trials", "core_loop_limit", "core_level_limit",
+  "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution",
+  "prefer_modular_solution", "inner_parallelization"
 )
 
 OPTION_DEFAULTS <- list(
@@ -120,6 +123,8 @@ OPTION_DEFAULTS <- list(
   silent = FALSE,
   two_level = FALSE,
   refine_before_aggregation = FALSE,
+  refine_min_module_size = NULL,
+  refine_start_mode = NULL,
   flow_model = NULL,
   directed = NULL,
   recorded_teleportation = FALSE,
@@ -201,6 +206,8 @@ OPTION_DEFAULTS <- list(
 #' \describe{
 #'   \item{`two_level`}{Optimize a two-level partition of the network. Default is multi-level.}
 #'   \item{`refine_before_aggregation`}{Experimentally refine modules before aggregation to reduce destructive coarsening.}
+#'   \item{`refine_min_module_size`}{Minimum active child units in a module before experimental refinement is attempted.}
+#'   \item{`refine_start_mode`}{Initial partition for experimental refinement. Options: singleton, one-module.}
 #'   \item{`flow_model`}{Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir, precomputed.}
 #'   \item{`directed`}{Assume directed links. Shorthand for '--flow-model directed'.}
 #'   \item{`recorded_teleportation`}{If teleportation is used to calculate the flow, also record it when minimizing codelength.}

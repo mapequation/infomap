@@ -106,6 +106,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         print_all_trials=False,
         # algorithm
         two_level=False,
+        refine_before_aggregation=False,
+        refine_min_module_size=None,
+        refine_start_mode=None,
         flow_model=None,
         directed=None,
         recorded_teleportation=False,
@@ -1281,6 +1284,9 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         print_all_trials=False,
         # algorithm
         two_level=False,
+        refine_before_aggregation=False,
+        refine_min_module_size=None,
+        refine_start_mode=None,
         flow_model=None,
         directed=None,
         recorded_teleportation=False,
