@@ -76,8 +76,10 @@ export type Arguments = Partial<{
   coreLoopCodelengthThreshold: number;
   tuneIterationRelativeThreshold: number;
   fastHierarchicalSolution: 1 | 2 | 3;
-  preferModularSolution: boolean;
   innerParallelization: boolean;
+  preferModularSolution: boolean;
+  numRandomMoves: number;
+  maxDegreeForRandomMoves: number;
   // about
   help: boolean | "advanced";
   version: boolean;
@@ -193,9 +195,13 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.fastHierarchicalSolution) result += " -" + "F".repeat(args.fastHierarchicalSolution);
 
+  if (args.innerParallelization) result += " --inner-parallelization";
+
   if (args.preferModularSolution) result += " --prefer-modular-solution";
 
-  if (args.innerParallelization) result += " --inner-parallelization";
+  if (args.numRandomMoves != null) result += " --num-random-moves " + args.numRandomMoves;
+
+  if (args.maxDegreeForRandomMoves != null) result += " --max-degree-for-random-moves " + args.maxDegreeForRandomMoves;
 
   if (args.help) result += args.help === "advanced" ? " -hh" : " -h";
 
