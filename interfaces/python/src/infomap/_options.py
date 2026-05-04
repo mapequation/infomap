@@ -252,8 +252,7 @@ class InfomapOptions:
         Prefer modular solutions even if they are worse than putting all nodes in one
         module.
     num_random_moves : int, optional
-        Number of random moves to try in core loop, used if regularized/recorded
-        teleportation.
+        Number of random moves to try in core loop to try merge weakly connected nodes.
     max_degree_for_random_moves : int, optional
         Maximum degree of nodes for which to try random moves.
     include_self_links : bool, optional

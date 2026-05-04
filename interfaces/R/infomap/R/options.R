@@ -237,7 +237,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`fast_hierarchical_solution`}{Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.}
 #'   \item{`inner_parallelization`}{Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.}
 #'   \item{`prefer_modular_solution`}{Prefer modular solutions even if they are worse than putting all nodes in one module.}
-#'   \item{`num_random_moves`}{Number of random moves to try in core loop, used if regularized/recorded teleportation.}
+#'   \item{`num_random_moves`}{Number of random moves to try in core loop to try merge weakly connected nodes.}
 #'   \item{`max_degree_for_random_moves`}{Maximum degree of nodes for which to try random moves.}
 #' }
 #'

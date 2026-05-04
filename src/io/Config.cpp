@@ -193,7 +193,7 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(preferModularSolution, "prefer-modular-solution", "Prefer modular solutions even if they are worse than putting all nodes in one module.", "Accuracy", true);
 
-  api.addOptionArgument(numRandomMoves, "num-random-moves", "Number of random moves to try in core loop, used if regularized/recorded teleportation.", ArgType::integer, "Accuracy", 0u, true);
+  api.addOptionArgument(numRandomMoves, "num-random-moves", "Number of random moves to try in core loop to try merge weakly connected nodes.", ArgType::integer, "Accuracy", 0u, true);
 
   api.addOptionArgument(maxDegreeForRandomMoves, "max-degree-for-random-moves", "Maximum degree of nodes for which to try random moves.", ArgType::integer, "Accuracy", 0u, true);
 
