@@ -17999,6 +17999,24 @@ class(`Network_addMultilayerLink__SWIG_1`) = c("SWIGFunction", class('Network_ad
 }
 
 # Dispatch function
+# Start of Network_addMultilayerLinks
+
+`Network_addMultilayerLinks` = function(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  sourceLayerIds = as.integer(sourceLayerIds);
+  sourceNodeIds = as.integer(sourceNodeIds);
+  targetLayerIds = as.integer(targetLayerIds);
+  targetNodeIds = as.integer(targetNodeIds);
+  weights = as.numeric(weights);
+  ;.Call('R_swig_Network_addMultilayerLinks', self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights, PACKAGE='infomap');
+  
+}
+
+attr(`Network_addMultilayerLinks`, 'returnType') = 'void'
+attr(`Network_addMultilayerLinks`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'integer', 'integer', '_p_std__vectorT_double_t')
+class(`Network_addMultilayerLinks`) = c("SWIGFunction", class('Network_addMultilayerLinks'))
+
 # Start of Network_addMultilayerIntraLink
 
 `Network_addMultilayerIntraLink` = function(self, layer, n1, n2, weight)
@@ -18031,6 +18049,23 @@ attr(`Network_addMultilayerIntraLink`, 'returnType') = 'void'
 attr(`Network_addMultilayerIntraLink`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'integer', 'numeric')
 class(`Network_addMultilayerIntraLink`) = c("SWIGFunction", class('Network_addMultilayerIntraLink'))
 
+# Start of Network_addMultilayerIntraLinks
+
+`Network_addMultilayerIntraLinks` = function(self, layerIds, sourceNodeIds, targetNodeIds, weights)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  layerIds = as.integer(layerIds);
+  sourceNodeIds = as.integer(sourceNodeIds);
+  targetNodeIds = as.integer(targetNodeIds);
+  weights = as.numeric(weights);
+  ;.Call('R_swig_Network_addMultilayerIntraLinks', self, layerIds, sourceNodeIds, targetNodeIds, weights, PACKAGE='infomap');
+  
+}
+
+attr(`Network_addMultilayerIntraLinks`, 'returnType') = 'void'
+attr(`Network_addMultilayerIntraLinks`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'integer', '_p_std__vectorT_double_t')
+class(`Network_addMultilayerIntraLinks`) = c("SWIGFunction", class('Network_addMultilayerIntraLinks'))
+
 # Start of Network_addMultilayerInterLink
 
 `Network_addMultilayerInterLink` = function(self, layer1, n, layer2, interWeight)
@@ -18062,6 +18097,23 @@ class(`Network_addMultilayerIntraLink`) = c("SWIGFunction", class('Network_addMu
 attr(`Network_addMultilayerInterLink`, 'returnType') = 'void'
 attr(`Network_addMultilayerInterLink`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'integer', 'numeric')
 class(`Network_addMultilayerInterLink`) = c("SWIGFunction", class('Network_addMultilayerInterLink'))
+
+# Start of Network_addMultilayerInterLinks
+
+`Network_addMultilayerInterLinks` = function(self, sourceLayerIds, nodeIds, targetLayerIds, weights)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  sourceLayerIds = as.integer(sourceLayerIds);
+  nodeIds = as.integer(nodeIds);
+  targetLayerIds = as.integer(targetLayerIds);
+  weights = as.numeric(weights);
+  ;.Call('R_swig_Network_addMultilayerInterLinks', self, sourceLayerIds, nodeIds, targetLayerIds, weights, PACKAGE='infomap');
+  
+}
+
+attr(`Network_addMultilayerInterLinks`, 'returnType') = 'void'
+attr(`Network_addMultilayerInterLinks`, "inputTypes") = c('_p_infomap__Network', 'integer', 'integer', 'integer', '_p_std__vectorT_double_t')
+class(`Network_addMultilayerInterLinks`) = c("SWIGFunction", class('Network_addMultilayerInterLinks'))
 
 # Start of Network_addMetaData
 
@@ -18133,7 +18185,7 @@ class(`Network_addMetaData__SWIG_1`) = c("SWIGFunction", class('Network_addMetaD
 setMethod('$', '_p_infomap__Network', function(x, name)
 
 {
-  accessorFuns = list('setConfig' = Network_setConfig, 'clear' = Network_clear, 'readInputData' = Network_readInputData, 'readMetaData' = Network_readMetaData, 'numMetaDataColumns' = Network_numMetaDataColumns, 'metaData' = Network_metaData, 'isMultilayerNetwork' = Network_isMultilayerNetwork, 'layerNodeToStateId' = Network_layerNodeToStateId, 'postProcessInputData' = Network_postProcessInputData, 'generateStateNetworkFromMultilayer' = Network_generateStateNetworkFromMultilayer, 'generateStateNetworkFromMultilayerWithInterLinks' = Network_generateStateNetworkFromMultilayerWithInterLinks, 'generateStateNetworkFromMultilayerWithSimulatedInterLinks' = Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks, 'simulateInterLayerLinks' = Network_simulateInterLayerLinks, 'addMultilayerNode' = Network_addMultilayerNode, 'addMultilayerLink' = Network_addMultilayerLink, 'addMultilayerIntraLink' = Network_addMultilayerIntraLink, 'addMultilayerInterLink' = Network_addMultilayerInterLink, 'addMetaData' = Network_addMetaData);
+  accessorFuns = list('setConfig' = Network_setConfig, 'clear' = Network_clear, 'readInputData' = Network_readInputData, 'readMetaData' = Network_readMetaData, 'numMetaDataColumns' = Network_numMetaDataColumns, 'metaData' = Network_metaData, 'isMultilayerNetwork' = Network_isMultilayerNetwork, 'layerNodeToStateId' = Network_layerNodeToStateId, 'postProcessInputData' = Network_postProcessInputData, 'generateStateNetworkFromMultilayer' = Network_generateStateNetworkFromMultilayer, 'generateStateNetworkFromMultilayerWithInterLinks' = Network_generateStateNetworkFromMultilayerWithInterLinks, 'generateStateNetworkFromMultilayerWithSimulatedInterLinks' = Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks, 'simulateInterLayerLinks' = Network_simulateInterLayerLinks, 'addMultilayerNode' = Network_addMultilayerNode, 'addMultilayerLink' = Network_addMultilayerLink, 'addMultilayerLinks' = Network_addMultilayerLinks, 'addMultilayerIntraLink' = Network_addMultilayerIntraLink, 'addMultilayerIntraLinks' = Network_addMultilayerIntraLinks, 'addMultilayerInterLink' = Network_addMultilayerInterLink, 'addMultilayerInterLinks' = Network_addMultilayerInterLinks, 'addMetaData' = Network_addMetaData);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));
@@ -23034,6 +23086,24 @@ class(`InfomapWrapper_addMultilayerLink__SWIG_1`) = c("SWIGFunction", class('Inf
 }
 
 # Dispatch function
+# Start of InfomapWrapper_addMultilayerLinks
+
+`InfomapWrapper_addMultilayerLinks` = function(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  sourceLayerIds = as.integer(sourceLayerIds);
+  sourceNodeIds = as.integer(sourceNodeIds);
+  targetLayerIds = as.integer(targetLayerIds);
+  targetNodeIds = as.integer(targetNodeIds);
+  weights = as.numeric(weights);
+  ;.Call('R_swig_InfomapWrapper_addMultilayerLinks', self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights, PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_addMultilayerLinks`, 'returnType') = 'void'
+attr(`InfomapWrapper_addMultilayerLinks`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', 'integer', 'integer', '_p_std__vectorT_double_t')
+class(`InfomapWrapper_addMultilayerLinks`) = c("SWIGFunction", class('InfomapWrapper_addMultilayerLinks'))
+
 # Start of InfomapWrapper_addMultilayerIntraLink
 
 `InfomapWrapper_addMultilayerIntraLink` = function(self, layer, n1, n2, weight)
@@ -23066,6 +23136,23 @@ attr(`InfomapWrapper_addMultilayerIntraLink`, 'returnType') = 'void'
 attr(`InfomapWrapper_addMultilayerIntraLink`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', 'integer', 'numeric')
 class(`InfomapWrapper_addMultilayerIntraLink`) = c("SWIGFunction", class('InfomapWrapper_addMultilayerIntraLink'))
 
+# Start of InfomapWrapper_addMultilayerIntraLinks
+
+`InfomapWrapper_addMultilayerIntraLinks` = function(self, layerIds, sourceNodeIds, targetNodeIds, weights)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  layerIds = as.integer(layerIds);
+  sourceNodeIds = as.integer(sourceNodeIds);
+  targetNodeIds = as.integer(targetNodeIds);
+  weights = as.numeric(weights);
+  ;.Call('R_swig_InfomapWrapper_addMultilayerIntraLinks', self, layerIds, sourceNodeIds, targetNodeIds, weights, PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_addMultilayerIntraLinks`, 'returnType') = 'void'
+attr(`InfomapWrapper_addMultilayerIntraLinks`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', 'integer', '_p_std__vectorT_double_t')
+class(`InfomapWrapper_addMultilayerIntraLinks`) = c("SWIGFunction", class('InfomapWrapper_addMultilayerIntraLinks'))
+
 # Start of InfomapWrapper_addMultilayerInterLink
 
 `InfomapWrapper_addMultilayerInterLink` = function(self, layer1, n, layer2, interWeight)
@@ -23097,6 +23184,23 @@ class(`InfomapWrapper_addMultilayerIntraLink`) = c("SWIGFunction", class('Infoma
 attr(`InfomapWrapper_addMultilayerInterLink`, 'returnType') = 'void'
 attr(`InfomapWrapper_addMultilayerInterLink`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', 'integer', 'numeric')
 class(`InfomapWrapper_addMultilayerInterLink`) = c("SWIGFunction", class('InfomapWrapper_addMultilayerInterLink'))
+
+# Start of InfomapWrapper_addMultilayerInterLinks
+
+`InfomapWrapper_addMultilayerInterLinks` = function(self, sourceLayerIds, nodeIds, targetLayerIds, weights)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  sourceLayerIds = as.integer(sourceLayerIds);
+  nodeIds = as.integer(nodeIds);
+  targetLayerIds = as.integer(targetLayerIds);
+  weights = as.numeric(weights);
+  ;.Call('R_swig_InfomapWrapper_addMultilayerInterLinks', self, sourceLayerIds, nodeIds, targetLayerIds, weights, PACKAGE='infomap');
+  
+}
+
+attr(`InfomapWrapper_addMultilayerInterLinks`, 'returnType') = 'void'
+attr(`InfomapWrapper_addMultilayerInterLinks`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'integer', 'integer', 'integer', '_p_std__vectorT_double_t')
+class(`InfomapWrapper_addMultilayerInterLinks`) = c("SWIGFunction", class('InfomapWrapper_addMultilayerInterLinks'))
 
 # Start of InfomapWrapper_setBipartiteStartId
 
@@ -23502,7 +23606,7 @@ class(`InfomapWrapper_run__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_ru
 setMethod('$', '_p_infomap__InfomapWrapper', function(x, name)
 
 {
-  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
+  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));

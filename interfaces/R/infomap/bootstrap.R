@@ -20,7 +20,10 @@ if (!file.exists(script)) {
 
 py <- Sys.which("python3")
 if (!nzchar(py)) {
-  stop("python3 not found on PATH; required to run stage_r_package.py.", call. = FALSE)
+  py <- Sys.which("python")
+}
+if (!nzchar(py)) {
+  stop("Neither python3 nor python found on PATH; required to run stage_r_package.py.", call. = FALSE)
 }
 
 message("Staging infomap R package in-place via stage_r_package.py ...")

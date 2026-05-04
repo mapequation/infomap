@@ -2212,11 +2212,20 @@ class Network(StateNetwork):
     def addMultilayerLink(self, *args):
         return _infomap.Network_addMultilayerLink(self, *args)
 
+    def addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights):
+        return _infomap.Network_addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights)
+
     def addMultilayerIntraLink(self, layer, n1, n2, weight):
         return _infomap.Network_addMultilayerIntraLink(self, layer, n1, n2, weight)
 
+    def addMultilayerIntraLinks(self, layerIds, sourceNodeIds, targetNodeIds, weights):
+        return _infomap.Network_addMultilayerIntraLinks(self, layerIds, sourceNodeIds, targetNodeIds, weights)
+
     def addMultilayerInterLink(self, layer1, n, layer2, interWeight):
         return _infomap.Network_addMultilayerInterLink(self, layer1, n, layer2, interWeight)
+
+    def addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights):
+        return _infomap.Network_addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights)
 
     def addMetaData(self, *args):
         return _infomap.Network_addMetaData(self, *args)
@@ -3042,11 +3051,20 @@ class InfomapWrapper(InfomapBase):
     def addMultilayerLink(self, layer1, n1, layer2, n2, weight=1.0):
         return _infomap.InfomapWrapper_addMultilayerLink(self, layer1, n1, layer2, n2, weight)
 
+    def addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights):
+        return _infomap.InfomapWrapper_addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights)
+
     def addMultilayerIntraLink(self, layer, n1, n2, weight):
         return _infomap.InfomapWrapper_addMultilayerIntraLink(self, layer, n1, n2, weight)
 
+    def addMultilayerIntraLinks(self, layerIds, sourceNodeIds, targetNodeIds, weights):
+        return _infomap.InfomapWrapper_addMultilayerIntraLinks(self, layerIds, sourceNodeIds, targetNodeIds, weights)
+
     def addMultilayerInterLink(self, layer1, n, layer2, interWeight):
         return _infomap.InfomapWrapper_addMultilayerInterLink(self, layer1, n, layer2, interWeight)
+
+    def addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights):
+        return _infomap.InfomapWrapper_addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights)
 
     def setBipartiteStartId(self, startId):
         return _infomap.InfomapWrapper_setBipartiteStartId(self, startId)

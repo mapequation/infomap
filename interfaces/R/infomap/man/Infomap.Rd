@@ -131,7 +131,9 @@ merged within a module).}
 \item \href{#method-Infomap-remove_links}{\code{InfomapClass$remove_links()}}
 \item \href{#method-Infomap-add_multilayer_link}{\code{InfomapClass$add_multilayer_link()}}
 \item \href{#method-Infomap-add_multilayer_intra_link}{\code{InfomapClass$add_multilayer_intra_link()}}
+\item \href{#method-Infomap-add_multilayer_intra_links}{\code{InfomapClass$add_multilayer_intra_links()}}
 \item \href{#method-Infomap-add_multilayer_inter_link}{\code{InfomapClass$add_multilayer_inter_link()}}
+\item \href{#method-Infomap-add_multilayer_inter_links}{\code{InfomapClass$add_multilayer_inter_links()}}
 \item \href{#method-Infomap-add_multilayer_links}{\code{InfomapClass$add_multilayer_links()}}
 \item \href{#method-Infomap-set_meta_data}{\code{InfomapClass$set_meta_data()}}
 \item \href{#method-Infomap-run}{\code{InfomapClass$run()}}
@@ -444,6 +446,25 @@ Add an intra-layer link in a multilayer network.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_multilayer_intra_links"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_multilayer_intra_links}{}}}
+\subsection{Method \code{add_multilayer_intra_links()}}{
+Add many intra-layer links in a multilayer network.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_multilayer_intra_links(links)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{links}}{A list of vectors of the form
+\code{c(layer, source_node, target_node, weight)} (weight optional), or
+a 3- or 4-column matrix / data.frame.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Infomap-add_multilayer_inter_link"></a>}}
 \if{latex}{\out{\hypertarget{method-Infomap-add_multilayer_inter_link}{}}}
 \subsection{Method \code{add_multilayer_inter_link()}}{
@@ -472,6 +493,25 @@ Add an inter-layer link in a multilayer network.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_multilayer_inter_links"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_multilayer_inter_links}{}}}
+\subsection{Method \code{add_multilayer_inter_links()}}{
+Add many inter-layer links in a multilayer network.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_multilayer_inter_links(links)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{links}}{A list of vectors of the form
+\code{c(source_layer, node, target_layer, weight)} (weight optional), or
+a 3- or 4-column matrix / data.frame.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Infomap-add_multilayer_links"></a>}}
 \if{latex}{\out{\hypertarget{method-Infomap-add_multilayer_links}{}}}
 \subsection{Method \code{add_multilayer_links()}}{
@@ -483,8 +523,11 @@ Add many multilayer links at once.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{links}}{A list of vectors, each
-\verb{c(source_multilayer_node, target_multilayer_node, [weight])}.}
+\item{\code{links}}{A list whose entries are
+\code{list(source_multilayer_node, target_multilayer_node, weight)}
+(weight optional), or a 4- or 5-column matrix / data.frame of
+\code{source_layer}, \code{source_node}, \code{target_layer}, \code{target_node}, and
+optional \code{weight}.}
 }
 \if{html}{\out{</div>}}
 }

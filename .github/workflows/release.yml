@@ -106,9 +106,9 @@ jobs:
             release-assets/python/**/*.tar.gz
             release-assets/python/**/*.whl
             release-assets/npm/*.tgz
-            release-assets/r/*.tar.gz
-            release-assets/r/*.tgz
-            release-assets/r/*.zip
+            release-assets/r/infomap_*.tar.gz
+            release-assets/r/infomap_*-r*-*.tgz
+            release-assets/r/infomap_*-r*-*.zip
 
   publish-pypi:
     name: Publish to PyPI

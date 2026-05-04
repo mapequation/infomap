@@ -37,6 +37,7 @@ endif
 	build-r-stage \
 	build-r \
 	build-r-binary \
+	build-r-binary-from-tarball \
 	test-r \
 	test-r-examples \
 	dev-r-install \
@@ -59,8 +60,12 @@ build-r: build-r-stage
 	@echo "Built $(R_TARBALL)"
 
 build-r-binary: build-r
+	$(MAKE) build-r-binary-from-tarball
+
+build-r-binary-from-tarball:
 	$(_write_apple_mv)
 	@mkdir -p $(R_DIST_DIR)
+	@test -f $(R_TARBALL)
 	cd $(R_DIST_DIR) && $(R_CMD_ENV) $(R) CMD INSTALL --build $(CURDIR)/$(R_TARBALL)
 	@echo "Built R binary in $(R_DIST_DIR)/"
 

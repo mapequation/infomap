@@ -319,6 +319,84 @@ InfomapClass <- R6::R6Class(
       invisible(self)
     },
 
+    #' @description Add many intra-layer links in a multilayer network.
+    #' @param links A list of vectors of the form
+    #'   `c(layer, source_node, target_node, weight)` (weight optional), or
+    #'   a 3- or 4-column matrix / data.frame.
+    add_multilayer_intra_links = function(links) {
+      if (is.matrix(links) || is.data.frame(links)) {
+        ncol_links <- ncol(links)
+        if (!ncol_links %in% c(3L, 4L)) {
+          stop("`links` matrix/data.frame must have 3 or 4 columns ",
+               "(layer, source_node, target_node, [weight]).", call. = FALSE)
+        }
+
+        layers <- if (is.matrix(links)) links[, 1L] else links[[1L]]
+        sources <- if (is.matrix(links)) links[, 2L] else links[[2L]]
+        targets <- if (is.matrix(links)) links[, 3L] else links[[3L]]
+        id_columns <- list(layers, sources, targets)
+        if (!all(vapply(id_columns, is.numeric, logical(1L)))) {
+          stop("`links` multilayer intra-link id columns must be numeric/integer.",
+               call. = FALSE)
+        }
+
+        weights <- if (ncol_links == 4L) {
+          w <- if (is.matrix(links)) links[, 4L] else links[[4L]]
+          if (!is.numeric(w)) {
+            stop("`links` weight column must be numeric.", call. = FALSE)
+          }
+          as.numeric(w)
+        } else {
+          rep(1.0, length(layers))
+        }
+      } else {
+        link_lengths <- vapply(links, length, integer(1L))
+        if (!all(link_lengths %in% c(3L, 4L))) {
+          stop("Each multilayer intra-link must contain 3 or 4 values: ",
+               "layer, source node, target node, and optional weight.",
+               call. = FALSE)
+        }
+
+        extract_scalar <- function(entry, index, name) {
+          value <- entry[[index]]
+          if (length(value) != 1L) {
+            stop("Each multilayer intra-link ", name, " value must be scalar.",
+                 call. = FALSE)
+          }
+          if (!is.numeric(value)) {
+            stop("Multilayer intra-link id values must be numeric/integer.",
+                 call. = FALSE)
+          }
+          value
+        }
+
+        layers <- vapply(links, function(entry) extract_scalar(entry, 1L, "layer"), numeric(1L))
+        sources <- vapply(links, function(entry) extract_scalar(entry, 2L, "source node"), numeric(1L))
+        targets <- vapply(links, function(entry) extract_scalar(entry, 3L, "target node"), numeric(1L))
+        weights <- vapply(
+          links,
+          function(entry) {
+            value <- if (length(entry) == 4L) entry[[4L]] else 1.0
+            if (length(value) != 1L) {
+              stop("Each multilayer intra-link weight value must be scalar.",
+                   call. = FALSE)
+            }
+            if (!is.numeric(value)) {
+              stop("Multilayer intra-link weight values must be numeric.",
+                   call. = FALSE)
+            }
+            value
+          },
+          numeric(1L)
+        )
+      }
+
+      private$.swig$addMultilayerIntraLinks(
+        as.integer(layers), as.integer(sources), as.integer(targets), as.numeric(weights)
+      )
+      invisible(self)
+    },
+
     #' @description Add an inter-layer link in a multilayer network.
     #' @param source_layer_id Source layer id.
     #' @param node_id Physical node id (same in both layers).
@@ -332,14 +410,186 @@ InfomapClass <- R6::R6Class(
       invisible(self)
     },
 
-    #' @description Add many multilayer links at once.
-    #' @param links A list of vectors, each
-    #'   `c(source_multilayer_node, target_multilayer_node, [weight])`.
-    add_multilayer_links = function(links) {
-      for (entry in links) {
-        weight <- if (length(entry) >= 3L) entry[[3L]] else 1.0
-        self$add_multilayer_link(entry[[1L]], entry[[2L]], weight)
+    #' @description Add many inter-layer links in a multilayer network.
+    #' @param links A list of vectors of the form
+    #'   `c(source_layer, node, target_layer, weight)` (weight optional), or
+    #'   a 3- or 4-column matrix / data.frame.
+    add_multilayer_inter_links = function(links) {
+      if (is.matrix(links) || is.data.frame(links)) {
+        ncol_links <- ncol(links)
+        if (!ncol_links %in% c(3L, 4L)) {
+          stop("`links` matrix/data.frame must have 3 or 4 columns ",
+               "(source_layer, node, target_layer, [weight]).", call. = FALSE)
+        }
+
+        source_layers <- if (is.matrix(links)) links[, 1L] else links[[1L]]
+        nodes <- if (is.matrix(links)) links[, 2L] else links[[2L]]
+        target_layers <- if (is.matrix(links)) links[, 3L] else links[[3L]]
+        id_columns <- list(source_layers, nodes, target_layers)
+        if (!all(vapply(id_columns, is.numeric, logical(1L)))) {
+          stop("`links` multilayer inter-link id columns must be numeric/integer.",
+               call. = FALSE)
+        }
+
+        weights <- if (ncol_links == 4L) {
+          w <- if (is.matrix(links)) links[, 4L] else links[[4L]]
+          if (!is.numeric(w)) {
+            stop("`links` weight column must be numeric.", call. = FALSE)
+          }
+          as.numeric(w)
+        } else {
+          rep(1.0, length(source_layers))
+        }
+      } else {
+        link_lengths <- vapply(links, length, integer(1L))
+        if (!all(link_lengths %in% c(3L, 4L))) {
+          stop("Each multilayer inter-link must contain 3 or 4 values: ",
+               "source layer, node, target layer, and optional weight.",
+               call. = FALSE)
+        }
+
+        extract_scalar <- function(entry, index, name) {
+          value <- entry[[index]]
+          if (length(value) != 1L) {
+            stop("Each multilayer inter-link ", name, " value must be scalar.",
+                 call. = FALSE)
+          }
+          if (!is.numeric(value)) {
+            stop("Multilayer inter-link id values must be numeric/integer.",
+                 call. = FALSE)
+          }
+          value
+        }
+
+        source_layers <- vapply(links, function(entry) extract_scalar(entry, 1L, "source layer"), numeric(1L))
+        nodes <- vapply(links, function(entry) extract_scalar(entry, 2L, "node"), numeric(1L))
+        target_layers <- vapply(links, function(entry) extract_scalar(entry, 3L, "target layer"), numeric(1L))
+        weights <- vapply(
+          links,
+          function(entry) {
+            value <- if (length(entry) == 4L) entry[[4L]] else 1.0
+            if (length(value) != 1L) {
+              stop("Each multilayer inter-link weight value must be scalar.",
+                   call. = FALSE)
+            }
+            if (!is.numeric(value)) {
+              stop("Multilayer inter-link weight values must be numeric.",
+                   call. = FALSE)
+            }
+            value
+          },
+          numeric(1L)
+        )
       }
+
+      private$.swig$addMultilayerInterLinks(
+        as.integer(source_layers), as.integer(nodes),
+        as.integer(target_layers), as.numeric(weights)
+      )
+      invisible(self)
+    },
+
+    #' @description Add many multilayer links at once.
+    #' @param links A list whose entries are
+    #'   `list(source_multilayer_node, target_multilayer_node, weight)`
+    #'   (weight optional), or a 4- or 5-column matrix / data.frame of
+    #'   `source_layer`, `source_node`, `target_layer`, `target_node`, and
+    #'   optional `weight`.
+    add_multilayer_links = function(links) {
+      if (is.matrix(links) || is.data.frame(links)) {
+        ncol_links <- ncol(links)
+        if (!ncol_links %in% c(4L, 5L)) {
+          stop("`links` matrix/data.frame must have 4 or 5 columns ",
+               "(source_layer, source_node, target_layer, target_node, [weight]).",
+               call. = FALSE)
+        }
+
+        source_layers <- if (is.matrix(links)) links[, 1L] else links[[1L]]
+        source_nodes <- if (is.matrix(links)) links[, 2L] else links[[2L]]
+        target_layers <- if (is.matrix(links)) links[, 3L] else links[[3L]]
+        target_nodes <- if (is.matrix(links)) links[, 4L] else links[[4L]]
+        id_columns <- list(source_layers, source_nodes, target_layers, target_nodes)
+        if (!all(vapply(id_columns, is.numeric, logical(1L)))) {
+          stop("`links` multilayer id columns must be numeric/integer.",
+               call. = FALSE)
+        }
+
+        weights <- if (ncol_links == 5L) {
+          w <- if (is.matrix(links)) links[, 5L] else links[[5L]]
+          if (!is.numeric(w)) {
+            stop("`links` weight column must be numeric.", call. = FALSE)
+          }
+          as.numeric(w)
+        } else {
+          rep(1.0, length(source_layers))
+        }
+      } else {
+        link_lengths <- vapply(links, length, integer(1L))
+        if (!all(link_lengths %in% c(2L, 3L))) {
+          stop("Each multilayer link must contain 2 or 3 values: ",
+               "source node, target node, and optional weight.",
+               call. = FALSE)
+        }
+
+        extract_node_value <- function(node, name, index) {
+          if (length(node) != 2L) {
+            stop("Each multilayer node must contain 2 values: layer id and node id.",
+                 call. = FALSE)
+          }
+          value <- node[[index]]
+          if (length(value) != 1L) {
+            stop("Each multilayer ", name, " value must be scalar.",
+                 call. = FALSE)
+          }
+          if (!is.numeric(value)) {
+            stop("Multilayer layer/node values must be numeric/integer.",
+                 call. = FALSE)
+          }
+          value
+        }
+
+        source_layers <- vapply(
+          links,
+          function(entry) extract_node_value(entry[[1L]], "source layer", 1L),
+          numeric(1L)
+        )
+        source_nodes <- vapply(
+          links,
+          function(entry) extract_node_value(entry[[1L]], "source node", 2L),
+          numeric(1L)
+        )
+        target_layers <- vapply(
+          links,
+          function(entry) extract_node_value(entry[[2L]], "target layer", 1L),
+          numeric(1L)
+        )
+        target_nodes <- vapply(
+          links,
+          function(entry) extract_node_value(entry[[2L]], "target node", 2L),
+          numeric(1L)
+        )
+        weights <- vapply(
+          links,
+          function(entry) {
+            value <- if (length(entry) == 3L) entry[[3L]] else 1.0
+            if (length(value) != 1L) {
+              stop("Each multilayer link weight value must be scalar.",
+                   call. = FALSE)
+            }
+            if (!is.numeric(value)) {
+              stop("Multilayer link weight values must be numeric.",
+                   call. = FALSE)
+            }
+            value
+          },
+          numeric(1L)
+        )
+      }
+
+      private$.swig$addMultilayerLinks(
+        as.integer(source_layers), as.integer(source_nodes),
+        as.integer(target_layers), as.integer(target_nodes), as.numeric(weights)
+      )
       invisible(self)
     },
 
@@ -490,27 +740,45 @@ InfomapClass <- R6::R6Class(
         for (i in seq_len(igraph::vcount(g))) {
           self$add_state_node(vertex_ids[i], phys[i])
         }
-        for (e in seq_len(nrow(edges))) {
-          s <- edges[e, 1L]
-          t <- edges[e, 2L]
-          if (isTRUE(multilayer_inter_intra_format)) {
-            if (layers[s] == layers[t]) {
-              self$add_multilayer_intra_link(layers[s], phys[s], phys[t], weights[e])
-            } else {
-              # add_multilayer_inter_link models the same physical node
-              # across layers; diagonal edges (different layer AND
-              # different physical node) cannot be represented.
-              if (phys[s] != phys[t]) {
-                stop(
-                  "Multilayer intra/inter format does not support diagonal links ",
-                  "(edge between different physical nodes in different layers). ",
-                  "Use `multilayer_inter_intra_format = FALSE`.",
-                  call. = FALSE
-                )
-              }
-              self$add_multilayer_inter_link(layers[s], phys[s], layers[t], weights[e])
-            }
-          } else {
+
+        if (isTRUE(multilayer_inter_intra_format)) {
+          edge_sources <- edges[, 1L]
+          edge_targets <- edges[, 2L]
+          same_layer <- layers[edge_sources] == layers[edge_targets]
+          diagonal <- !same_layer & phys[edge_sources] != phys[edge_targets]
+          if (any(diagonal)) {
+            stop(
+              "Multilayer intra/inter format does not support diagonal links ",
+              "(edge between different physical nodes in different layers). ",
+              "Use `multilayer_inter_intra_format = FALSE`.",
+              call. = FALSE
+            )
+          }
+
+          if (any(same_layer)) {
+            intra_sources <- edge_sources[same_layer]
+            intra_targets <- edge_targets[same_layer]
+            self$add_multilayer_intra_links(
+              cbind(
+                layers[intra_sources], phys[intra_sources], phys[intra_targets],
+                weights[same_layer]
+              )
+            )
+          }
+          if (any(!same_layer)) {
+            inter_sources <- edge_sources[!same_layer]
+            inter_targets <- edge_targets[!same_layer]
+            self$add_multilayer_inter_links(
+              cbind(
+                layers[inter_sources], phys[inter_sources], layers[inter_targets],
+                weights[!same_layer]
+              )
+            )
+          }
+        } else {
+          for (e in seq_len(nrow(edges))) {
+            s <- edges[e, 1L]
+            t <- edges[e, 2L]
             self$add_multilayer_link(c(layers[s], phys[s]), c(layers[t], phys[t]), weights[e])
           }
         }
