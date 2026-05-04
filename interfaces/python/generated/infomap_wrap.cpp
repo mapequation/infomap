@@ -10291,6 +10291,114 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_Config_solutionLandscapeTracking_set(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  bool arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "Config_solutionLandscapeTracking_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_solutionLandscapeTracking_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  ecode2 = SWIG_AsVal_bool(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_solutionLandscapeTracking_set" "', argument " "2"" of type '" "bool""'");
+  } 
+  arg2 = static_cast< bool >(val2);
+  if (arg1) (arg1)->solutionLandscapeTracking = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Config_solutionLandscapeTracking_get(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  bool result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_solutionLandscapeTracking_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  result = (bool) ((arg1)->solutionLandscapeTracking);
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Config_solutionLandscapeStopAfter_set(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  unsigned int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "Config_solutionLandscapeStopAfter_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_solutionLandscapeStopAfter_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_solutionLandscapeStopAfter_set" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  if (arg1) (arg1)->solutionLandscapeStopAfter = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Config_solutionLandscapeStopAfter_get(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  unsigned int result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_solutionLandscapeStopAfter_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  result = (unsigned int) ((arg1)->solutionLandscapeStopAfter);
+  resultobj = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_Config_numRandomMoves_set(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::Config *arg1 = 0 ;
@@ -57802,6 +57910,10 @@ static PyMethodDef SwigMethods[] = {
 	 { "Config_preferModularSolution_get", _wrap_Config_preferModularSolution_get, METH_O, NULL},
 	 { "Config_innerParallelization_set", _wrap_Config_innerParallelization_set, METH_VARARGS, NULL},
 	 { "Config_innerParallelization_get", _wrap_Config_innerParallelization_get, METH_O, NULL},
+	 { "Config_solutionLandscapeTracking_set", _wrap_Config_solutionLandscapeTracking_set, METH_VARARGS, NULL},
+	 { "Config_solutionLandscapeTracking_get", _wrap_Config_solutionLandscapeTracking_get, METH_O, NULL},
+	 { "Config_solutionLandscapeStopAfter_set", _wrap_Config_solutionLandscapeStopAfter_set, METH_VARARGS, NULL},
+	 { "Config_solutionLandscapeStopAfter_get", _wrap_Config_solutionLandscapeStopAfter_get, METH_O, NULL},
 	 { "Config_numRandomMoves_set", _wrap_Config_numRandomMoves_set, METH_VARARGS, NULL},
 	 { "Config_numRandomMoves_get", _wrap_Config_numRandomMoves_get, METH_O, NULL},
 	 { "Config_maxDegreeForRandomMoves_set", _wrap_Config_maxDegreeForRandomMoves_set, METH_VARARGS, NULL},

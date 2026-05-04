@@ -7451,6 +7451,134 @@ R_swig_Config_innerParallelization_get ( SEXP self, SEXP s_swig_copy)
 
 
 SWIGEXPORT SEXP
+R_swig_Config_solutionLandscapeTracking_set ( SEXP self, SEXP s_solutionLandscapeTracking)
+{
+  {
+    infomap::Config *arg1 = 0 ;
+    bool arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_solutionLandscapeTracking_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    arg2 = LOGICAL(s_solutionLandscapeTracking)[0] ? true : false;
+    if (arg1) (arg1)->solutionLandscapeTracking = arg2;
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_solutionLandscapeTracking_get ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    bool result;
+    infomap::Config *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_solutionLandscapeTracking_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    result = (bool) ((arg1)->solutionLandscapeTracking);
+    r_ans = Rf_ScalarLogical(result);
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_solutionLandscapeStopAfter_set ( SEXP self, SEXP s_solutionLandscapeStopAfter)
+{
+  {
+    infomap::Config *arg1 = 0 ;
+    unsigned int arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_solutionLandscapeStopAfter_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    ecode2 = SWIG_AsVal_int(s_solutionLandscapeStopAfter, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_solutionLandscapeStopAfter_set" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    if (arg1) (arg1)->solutionLandscapeStopAfter = arg2;
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_solutionLandscapeStopAfter_get ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    unsigned int result;
+    infomap::Config *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_solutionLandscapeStopAfter_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    result = (unsigned int) ((arg1)->solutionLandscapeStopAfter);
+    r_ans = SWIG_From_int(static_cast< int >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_Config_numRandomMoves_set ( SEXP self, SEXP s_numRandomMoves)
 {
   {
@@ -48094,6 +48222,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_Network_layerNodeToStateId", (DL_FUNC) &R_swig_Network_layerNodeToStateId, 2},
    {"R_swig_InfomapLeafIterator_Equal__SWIG_0", (DL_FUNC) &R_swig_InfomapLeafIterator_Equal__SWIG_0, 3},
    {"R_swig_InfoNode_stateNodes_get", (DL_FUNC) &R_swig_InfoNode_stateNodes_get, 1},
+   {"R_swig_Config_solutionLandscapeTracking_get", (DL_FUNC) &R_swig_Config_solutionLandscapeTracking_get, 2},
    {"R_swig_InfomapLeafIterator_Equal__SWIG_1", (DL_FUNC) &R_swig_InfomapLeafIterator_Equal__SWIG_1, 3},
    {"R_swig_InfomapParentIterator_dirty_get", (DL_FUNC) &R_swig_InfomapParentIterator_dirty_get, 2},
    {"R_swig_Network_readInputData__SWIG_0", (DL_FUNC) &R_swig_Network_readInputData__SWIG_0, 3},
@@ -48148,6 +48277,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapLeafIterator_init", (DL_FUNC) &R_swig_InfomapLeafIterator_init, 1},
    {"R_swig_StateNetwork_nodeLinkMap__SWIG_0", (DL_FUNC) &R_swig_StateNetwork_nodeLinkMap__SWIG_0, 2},
    {"R_swig_Config_outputFormats_get", (DL_FUNC) &R_swig_Config_outputFormats_get, 2},
+   {"R_swig_Config_solutionLandscapeStopAfter_set", (DL_FUNC) &R_swig_Config_solutionLandscapeStopAfter_set, 2},
    {"R_swig_InfomapIterator_deleteChildren", (DL_FUNC) &R_swig_InfomapIterator_deleteChildren, 1},
    {"R_swig_StateNetwork_nodeLinkMap__SWIG_1", (DL_FUNC) &R_swig_StateNetwork_nodeLinkMap__SWIG_1, 2},
    {"R_swig_FlowData_teleportFlow_get", (DL_FUNC) &R_swig_FlowData_teleportFlow_get, 2},
@@ -48542,6 +48672,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_map_uint_vector_uint_size", (DL_FUNC) &R_swig_map_uint_vector_uint_size, 2},
    {"R_swig_InfoNode_stateNodes_set", (DL_FUNC) &R_swig_InfoNode_stateNodes_set, 2},
    {"R_swig_InfoNode_degree", (DL_FUNC) &R_swig_InfoNode_degree, 2},
+   {"R_swig_Config_solutionLandscapeTracking_set", (DL_FUNC) &R_swig_Config_solutionLandscapeTracking_set, 2},
    {"R_swig_InfomapParentIterator_dirty_set", (DL_FUNC) &R_swig_InfomapParentIterator_dirty_set, 2},
    {"R_swig_delete_InfomapParentIterator", (DL_FUNC) &R_swig_delete_InfomapParentIterator, 1},
    {"R_swig_Network_clear", (DL_FUNC) &R_swig_Network_clear, 1},
@@ -48558,10 +48689,10 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_vector_double___len__", (DL_FUNC) &R_swig_vector_double___len__, 2},
    {"R_swig_InfomapIterator_disposeInfomap", (DL_FUNC) &R_swig_InfomapIterator_disposeInfomap, 2},
    {"R_swig_InfomapIterator_getInfomapRoot__SWIG_0", (DL_FUNC) &R_swig_InfomapIterator_getInfomapRoot__SWIG_0, 1},
-   {"R_swig_InfomapLeafIteratorPhysical_copy", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_copy, 2},
    {"R_swig_Config_multilayerRelaxLimitDown_get", (DL_FUNC) &R_swig_Config_multilayerRelaxLimitDown_get, 2},
    {"R_swig_InfomapIterator_getInfomapRoot__SWIG_1", (DL_FUNC) &R_swig_InfomapIterator_getInfomapRoot__SWIG_1, 1},
    {"R_swig_InfomapIterator_numPhysicalNodes", (DL_FUNC) &R_swig_InfomapIterator_numPhysicalNodes, 2},
+   {"R_swig_InfomapLeafIteratorPhysical_copy", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_copy, 2},
    {"R_swig_vector_double___setitem__", (DL_FUNC) &R_swig_vector_double___setitem__, 3},
    {"R_swig_InfoNode_collapsedFirstChild_set", (DL_FUNC) &R_swig_InfoNode_collapsedFirstChild_set, 2},
    {"R_swig_new_pair_uint_uint__SWIG_0", (DL_FUNC) &R_swig_new_pair_uint_uint__SWIG_0, 0},
@@ -48777,6 +48908,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_vector_uint_get_allocator", (DL_FUNC) &R_swig_vector_uint_get_allocator, 2},
    {"R_swig_Config_stateOutput_get", (DL_FUNC) &R_swig_Config_stateOutput_get, 2},
    {"R_swig_InfomapParentIterator_infomapChildDegree", (DL_FUNC) &R_swig_InfomapParentIterator_infomapChildDegree, 2},
+   {"R_swig_Config_solutionLandscapeStopAfter_get", (DL_FUNC) &R_swig_Config_solutionLandscapeStopAfter_get, 2},
    {"R_swig_delete_map_uint_uint", (DL_FUNC) &R_swig_delete_map_uint_uint, 1},
    {"R_swig_Config_version_get", (DL_FUNC) &R_swig_Config_version_get, 2},
    {"R_swig_InfomapBase_getIndexCodelength", (DL_FUNC) &R_swig_InfomapBase_getIndexCodelength, 2},
