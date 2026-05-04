@@ -954,6 +954,22 @@ void Network::addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsign
   }
 }
 
+void Network::addMultilayerIntraLinks(const std::vector<unsigned int>& layerIds,
+                                      const std::vector<unsigned int>& sourceNodeIds,
+                                      const std::vector<unsigned int>& targetNodeIds,
+                                      const std::vector<double>& weights)
+{
+  if (layerIds.size() != sourceNodeIds.size() ||
+      layerIds.size() != targetNodeIds.size() ||
+      layerIds.size() != weights.size()) {
+    throw std::invalid_argument("layerIds, sourceNodeIds, targetNodeIds, and weights must have the same length");
+  }
+
+  for (std::size_t i = 0; i < layerIds.size(); ++i) {
+    addMultilayerIntraLink(layerIds[i], sourceNodeIds[i], targetNodeIds[i], weights[i]);
+  }
+}
+
 void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight)
 {
   if (layer1 == layer2) {
@@ -968,6 +984,22 @@ void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsign
     ++m_numInterLayerLinks;
   }
   interLinks[layer2] += interWeight;
+}
+
+void Network::addMultilayerInterLinks(const std::vector<unsigned int>& sourceLayerIds,
+                                      const std::vector<unsigned int>& nodeIds,
+                                      const std::vector<unsigned int>& targetLayerIds,
+                                      const std::vector<double>& weights)
+{
+  if (sourceLayerIds.size() != nodeIds.size() ||
+      sourceLayerIds.size() != targetLayerIds.size() ||
+      sourceLayerIds.size() != weights.size()) {
+    throw std::invalid_argument("sourceLayerIds, nodeIds, targetLayerIds, and weights must have the same length");
+  }
+
+  for (std::size_t i = 0; i < sourceLayerIds.size(); ++i) {
+    addMultilayerInterLink(sourceLayerIds[i], nodeIds[i], targetLayerIds[i], weights[i]);
+  }
 }
 
 unsigned int Network::addMultilayerNode(unsigned int layerId, unsigned int physicalId, double weight)
