@@ -85,6 +85,7 @@ help:
 		"  build-python-swig     Regenerate the tracked SWIG wrapper outputs for Python maintainers." \
 		"  build-r               Build the infomap R source tarball into dist/R/." \
 		"  build-r-binary        Build a platform-native R binary into dist/R/." \
+		"  build-r-binary-from-tarball Build a platform-native R binary from dist/R/." \
 		"  build-r-swig          Regenerate the tracked SWIG wrapper outputs for R maintainers." \
 		"  build-binding-options Regenerate Python, R, and TypeScript option APIs from C++ metadata." \
 		"  build-js-metadata     Refresh the tracked JS parameters/changelog metadata." \
