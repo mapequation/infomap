@@ -41283,6 +41283,45 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_Network_setConfig(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Network *arg1 = 0 ;
+  infomap::Config *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "Network_setConfig", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Network, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Network_setConfig" "', argument " "1"" of type '" "infomap::Network *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Network * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2, SWIGTYPE_p_infomap__Config,  0  | 0);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Network_setConfig" "', argument " "2"" of type '" "infomap::Config const &""'"); 
+  }
+  if (!argp2) {
+    SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "Network_setConfig" "', argument " "2"" of type '" "infomap::Config const &""'"); 
+  }
+  arg2 = reinterpret_cast< infomap::Config * >(argp2);
+  {
+    try {
+      (arg1)->setConfig((infomap::Config const &)*arg2);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_Network_clear(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::Network *arg1 = 0 ;
@@ -57770,6 +57809,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "StateNetwork_swigregister", StateNetwork_swigregister, METH_O, NULL},
 	 { "new_Network", _wrap_new_Network, METH_VARARGS, NULL},
 	 { "delete_Network", _wrap_delete_Network, METH_O, NULL},
+	 { "Network_setConfig", _wrap_Network_setConfig, METH_VARARGS, NULL},
 	 { "Network_clear", _wrap_Network_clear, METH_O, NULL},
 	 { "Network_readInputData", _wrap_Network_readInputData, METH_VARARGS, NULL},
 	 { "Network_readMetaData", _wrap_Network_readMetaData, METH_VARARGS, NULL},

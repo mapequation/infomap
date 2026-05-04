@@ -2165,6 +2165,9 @@ class Network(StateNetwork):
         _infomap.Network_swiginit(self, _infomap.new_Network(*args))
     __swig_destroy__ = _infomap.delete_Network
 
+    def setConfig(self, config):
+        return _infomap.Network_setConfig(self, config)
+
     def clear(self):
         return _infomap.Network_clear(self)
 

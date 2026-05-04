@@ -17476,6 +17476,20 @@ attr(`delete_Network`, 'returnType') = 'void'
 attr(`delete_Network`, "inputTypes") = c('_p_infomap__Network')
 class(`delete_Network`) = c("SWIGFunction", class('delete_Network'))
 
+# Start of Network_setConfig
+
+`Network_setConfig` = function(self, config)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  if (inherits(config, "ExternalReference")) config = slot(config,"ref"); 
+  ;.Call('R_swig_Network_setConfig', self, config, PACKAGE='infomap');
+  
+}
+
+attr(`Network_setConfig`, 'returnType') = 'void'
+attr(`Network_setConfig`, "inputTypes") = c('_p_infomap__Network', '_p_infomap__Config')
+class(`Network_setConfig`) = c("SWIGFunction", class('Network_setConfig'))
+
 # Start of Network_clear
 
 `Network_clear` = function(self)
@@ -18049,7 +18063,7 @@ class(`Network_addMetaData__SWIG_1`) = c("SWIGFunction", class('Network_addMetaD
 setMethod('$', '_p_infomap__Network', function(x, name)
 
 {
-  accessorFuns = list('clear' = Network_clear, 'readInputData' = Network_readInputData, 'readMetaData' = Network_readMetaData, 'numMetaDataColumns' = Network_numMetaDataColumns, 'metaData' = Network_metaData, 'isMultilayerNetwork' = Network_isMultilayerNetwork, 'layerNodeToStateId' = Network_layerNodeToStateId, 'postProcessInputData' = Network_postProcessInputData, 'generateStateNetworkFromMultilayer' = Network_generateStateNetworkFromMultilayer, 'generateStateNetworkFromMultilayerWithInterLinks' = Network_generateStateNetworkFromMultilayerWithInterLinks, 'generateStateNetworkFromMultilayerWithSimulatedInterLinks' = Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks, 'simulateInterLayerLinks' = Network_simulateInterLayerLinks, 'addMultilayerNode' = Network_addMultilayerNode, 'addMultilayerLink' = Network_addMultilayerLink, 'addMultilayerIntraLink' = Network_addMultilayerIntraLink, 'addMultilayerInterLink' = Network_addMultilayerInterLink, 'addMetaData' = Network_addMetaData);
+  accessorFuns = list('setConfig' = Network_setConfig, 'clear' = Network_clear, 'readInputData' = Network_readInputData, 'readMetaData' = Network_readMetaData, 'numMetaDataColumns' = Network_numMetaDataColumns, 'metaData' = Network_metaData, 'isMultilayerNetwork' = Network_isMultilayerNetwork, 'layerNodeToStateId' = Network_layerNodeToStateId, 'postProcessInputData' = Network_postProcessInputData, 'generateStateNetworkFromMultilayer' = Network_generateStateNetworkFromMultilayer, 'generateStateNetworkFromMultilayerWithInterLinks' = Network_generateStateNetworkFromMultilayerWithInterLinks, 'generateStateNetworkFromMultilayerWithSimulatedInterLinks' = Network_generateStateNetworkFromMultilayerWithSimulatedInterLinks, 'simulateInterLayerLinks' = Network_simulateInterLayerLinks, 'addMultilayerNode' = Network_addMultilayerNode, 'addMultilayerLink' = Network_addMultilayerLink, 'addMultilayerIntraLink' = Network_addMultilayerIntraLink, 'addMultilayerInterLink' = Network_addMultilayerInterLink, 'addMetaData' = Network_addMetaData);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));
