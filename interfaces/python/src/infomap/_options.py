@@ -74,8 +74,10 @@ _ACCURACY_OPTION_SPECS = (
     ("value", "tune_iteration_limit", "--tune-iteration-limit", lambda value: value is not None),
     ("value", "core_loop_codelength_threshold", "--core-loop-codelength-threshold", lambda value: value != 1e-10),
     ("value", "tune_iteration_relative_threshold", "--tune-iteration-relative-threshold", lambda value: value != 1e-5),
-    ("flag", "prefer_modular_solution", "--prefer-modular-solution", None),
     ("flag", "inner_parallelization", "--inner-parallelization", None),
+    ("flag", "prefer_modular_solution", "--prefer-modular-solution", None),
+    ("value", "num_random_moves", "--num-random-moves", lambda value: value is not None),
+    ("value", "max_degree_for_random_moves", "--max-degree-for-random-moves", lambda value: value is not None),
     ("flag", "solution_landscape_tracking", "--solution-landscape-tracking", None),
     ("value", "solution_landscape_stop_after", "--solution-landscape-stop-after", lambda value: value is not None),
 )
@@ -245,12 +247,16 @@ class InfomapOptions:
     fast_hierarchical_solution : int, optional
         Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive
         part.
-    prefer_modular_solution : bool, optional
-        Prefer modular solutions even if they are worse than putting all nodes in one
-        module.
     inner_parallelization : bool, optional
         Parallelize the inner-most loop for greater speed. This may give some accuracy
         tradeoff.
+    prefer_modular_solution : bool, optional
+        Prefer modular solutions even if they are worse than putting all nodes in one
+        module.
+    num_random_moves : int, optional
+        Number of random moves to try in core loop to try merge weakly connected nodes.
+    max_degree_for_random_moves : int, optional
+        Maximum degree of nodes for which to try random moves.
     solution_landscape_tracking : bool, optional
         Experimentally track final solution fingerprints across trials.
     solution_landscape_stop_after : int, optional
@@ -318,8 +324,10 @@ class InfomapOptions:
     core_loop_codelength_threshold: float = _DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD
     tune_iteration_relative_threshold: float = _DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD
     fast_hierarchical_solution: int | None = None
-    prefer_modular_solution: bool = False
     inner_parallelization: bool = False
+    prefer_modular_solution: bool = False
+    num_random_moves: int | None = None
+    max_degree_for_random_moves: int | None = None
     solution_landscape_tracking: bool = False
     solution_landscape_stop_after: int | None = None
 
@@ -429,8 +437,10 @@ def _construct_args(
     core_loop_codelength_threshold=_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
     tune_iteration_relative_threshold=_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD,
     fast_hierarchical_solution=None,
-    prefer_modular_solution=False,
     inner_parallelization=False,
+    prefer_modular_solution=False,
+    num_random_moves=None,
+    max_degree_for_random_moves=None,
     solution_landscape_tracking=False,
     solution_landscape_stop_after=None,
 ):

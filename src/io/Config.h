@@ -136,6 +136,8 @@ struct Config {
   bool innerParallelization = false;
   bool solutionLandscapeTracking = false;
   unsigned int solutionLandscapeStopAfter = 0;
+  unsigned int numRandomMoves = 5; // Amount of random moves to try in core loop, used if regularized/recorded teleportation.
+  unsigned int maxDegreeForRandomMoves = 2; // Only try random moves for nodes with degree less than or equal to this value.
 
   // Output
   std::string outDirectory;
@@ -221,6 +223,8 @@ struct Config {
     innerParallelization = other.innerParallelization;
     solutionLandscapeTracking = other.solutionLandscapeTracking;
     solutionLandscapeStopAfter = other.solutionLandscapeStopAfter;
+    numRandomMoves = other.numRandomMoves;
+    maxDegreeForRandomMoves = other.maxDegreeForRandomMoves;
     outDirectory = other.outDirectory;
     outName = other.outName;
     outputFormats = other.outputFormats;

@@ -7451,6 +7451,140 @@ R_swig_Config_innerParallelization_get ( SEXP self, SEXP s_swig_copy)
 
 
 SWIGEXPORT SEXP
+R_swig_Config_numRandomMoves_set ( SEXP self, SEXP s_numRandomMoves)
+{
+  {
+    infomap::Config *arg1 = 0 ;
+    unsigned int arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_numRandomMoves_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    ecode2 = SWIG_AsVal_int(s_numRandomMoves, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_numRandomMoves_set" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    if (arg1) (arg1)->numRandomMoves = arg2;
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_numRandomMoves_get ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    unsigned int result;
+    infomap::Config *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_numRandomMoves_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    result = (unsigned int) ((arg1)->numRandomMoves);
+    r_ans = SWIG_From_int(static_cast< int >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_maxDegreeForRandomMoves_set ( SEXP self, SEXP s_maxDegreeForRandomMoves)
+{
+  {
+    infomap::Config *arg1 = 0 ;
+    unsigned int arg2 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int val2 ;
+    int ecode2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_maxDegreeForRandomMoves_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    ecode2 = SWIG_AsVal_int(s_maxDegreeForRandomMoves, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_maxDegreeForRandomMoves_set" "', argument " "2"" of type '" "unsigned int""'");
+    } 
+    arg2 = static_cast< unsigned int >(val2);
+    if (arg1) (arg1)->maxDegreeForRandomMoves = arg2;
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
+R_swig_Config_maxDegreeForRandomMoves_get ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    unsigned int result;
+    infomap::Config *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Config, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_maxDegreeForRandomMoves_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Config * >(argp1);
+    result = (unsigned int) ((arg1)->maxDegreeForRandomMoves);
+    r_ans = SWIG_From_int(static_cast< int >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_Config_outDirectory_set ( SEXP self, SEXP s_outDirectory)
 {
   {
@@ -47708,6 +47842,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_Config_numMetaDataDimensions_get", (DL_FUNC) &R_swig_Config_numMetaDataDimensions_get, 2},
    {"R_swig_StateNetwork_addNode__SWIG_3", (DL_FUNC) &R_swig_StateNetwork_addNode__SWIG_3, 5},
    {"R_swig_InfomapIteratorPhysical_PlusPlusPrefix", (DL_FUNC) &R_swig_InfomapIteratorPhysical_PlusPlusPrefix, 2},
+   {"R_swig_Config_maxDegreeForRandomMoves_set", (DL_FUNC) &R_swig_Config_maxDegreeForRandomMoves_set, 2},
    {"R_swig_InfomapParentIterator_end_inEdge", (DL_FUNC) &R_swig_InfomapParentIterator_end_inEdge, 2},
    {"R_swig_InfoNode_data_get", (DL_FUNC) &R_swig_InfoNode_data_get, 1},
    {"R_swig_InfomapParentIterator_calculatePath", (DL_FUNC) &R_swig_InfomapParentIterator_calculatePath, 2},
@@ -47879,8 +48014,8 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_Config_minimumSingleNodeCodelengthImprovement_set", (DL_FUNC) &R_swig_Config_minimumSingleNodeCodelengthImprovement_set, 2},
    {"R_swig_StateNetwork_names__SWIG_0", (DL_FUNC) &R_swig_StateNetwork_names__SWIG_0, 2},
    {"R_swig_vector_uint_pop", (DL_FUNC) &R_swig_vector_uint_pop, 2},
-   {"R_swig_InfomapLeafIteratorPhysical_current__SWIG_0", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_current__SWIG_0, 1},
    {"R_swig_Config_clusterDataFile_get", (DL_FUNC) &R_swig_Config_clusterDataFile_get, 2},
+   {"R_swig_InfomapLeafIteratorPhysical_current__SWIG_0", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_current__SWIG_0, 1},
    {"R_swig_StateNetwork_names__SWIG_1", (DL_FUNC) &R_swig_StateNetwork_names__SWIG_1, 2},
    {"R_swig_InfoNode_begin_inEdge", (DL_FUNC) &R_swig_InfoNode_begin_inEdge, 2},
    {"R_swig_InfomapLeafIteratorPhysical_current__SWIG_1", (DL_FUNC) &R_swig_InfomapLeafIteratorPhysical_current__SWIG_1, 1},
@@ -48095,6 +48230,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapParentIterator_disposeInfomap", (DL_FUNC) &R_swig_InfomapParentIterator_disposeInfomap, 2},
    {"R_swig_InfomapIterator_expandChildren", (DL_FUNC) &R_swig_InfomapIterator_expandChildren, 2},
    {"R_swig_Config_noSelfLinks_set", (DL_FUNC) &R_swig_Config_noSelfLinks_set, 2},
+   {"R_swig_Config_numRandomMoves_set", (DL_FUNC) &R_swig_Config_numRandomMoves_set, 2},
    {"R_swig_InfoNode_children__SWIG_0", (DL_FUNC) &R_swig_InfoNode_children__SWIG_0, 2},
    {"R_swig_InfomapConfigInfomapBase_setNonMainConfig", (DL_FUNC) &R_swig_InfomapConfigInfomapBase_setNonMainConfig, 3},
    {"R_swig_InfoNode_lastChild_set", (DL_FUNC) &R_swig_InfoNode_lastChild_set, 2},
@@ -48372,6 +48508,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIteratorPhysical_Equal__SWIG_1", (DL_FUNC) &R_swig_InfomapIteratorPhysical_Equal__SWIG_1, 3},
    {"R_swig_InfomapIterator_Equal__SWIG_1", (DL_FUNC) &R_swig_InfomapIterator_Equal__SWIG_1, 3},
    {"R_swig_new_InfomapWrapper__SWIG_0", (DL_FUNC) &R_swig_new_InfomapWrapper__SWIG_0, 0},
+   {"R_swig_Config_maxDegreeForRandomMoves_get", (DL_FUNC) &R_swig_Config_maxDegreeForRandomMoves_get, 2},
    {"R_swig_vector_double_size", (DL_FUNC) &R_swig_vector_double_size, 2},
    {"R_swig_new_InfomapWrapper__SWIG_1", (DL_FUNC) &R_swig_new_InfomapWrapper__SWIG_1, 1},
    {"R_swig_InfomapParentIterator_initClean", (DL_FUNC) &R_swig_InfomapParentIterator_initClean, 1},
@@ -48746,6 +48883,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_new_InfomapLeafIteratorPhysical__SWIG_0", (DL_FUNC) &R_swig_new_InfomapLeafIteratorPhysical__SWIG_0, 0},
    {"R_swig_InfomapParentIterator_begin_tree__SWIG_0", (DL_FUNC) &R_swig_InfomapParentIterator_begin_tree__SWIG_0, 3},
    {"R_swig_InfomapWrapper_getNames", (DL_FUNC) &R_swig_InfomapWrapper_getNames, 2},
+   {"R_swig_Config_numRandomMoves_get", (DL_FUNC) &R_swig_Config_numRandomMoves_get, 2},
    {"R_swig_new_InfomapLeafIteratorPhysical__SWIG_1", (DL_FUNC) &R_swig_new_InfomapLeafIteratorPhysical__SWIG_1, 2},
    {"R_swig_Config_noSelfLinks_get", (DL_FUNC) &R_swig_Config_noSelfLinks_get, 2},
    {"R_swig_InfomapParentIterator_begin_tree__SWIG_1", (DL_FUNC) &R_swig_InfomapParentIterator_begin_tree__SWIG_1, 2},

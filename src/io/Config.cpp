@@ -189,9 +189,13 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addIncrementalOptionArgument(fastHierarchicalSolution, 'F', "fast-hierarchical-solution", "Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.", "Accuracy", true);
 
+  api.addOptionArgument(innerParallelization, "inner-parallelization", "Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.", "Accuracy", true);
+
   api.addOptionArgument(preferModularSolution, "prefer-modular-solution", "Prefer modular solutions even if they are worse than putting all nodes in one module.", "Accuracy", true);
 
-  api.addOptionArgument(innerParallelization, "inner-parallelization", "Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.", "Accuracy", true);
+  api.addOptionArgument(numRandomMoves, "num-random-moves", "Number of random moves to try in core loop to try merge weakly connected nodes.", ArgType::integer, "Accuracy", 0u, true);
+
+  api.addOptionArgument(maxDegreeForRandomMoves, "max-degree-for-random-moves", "Maximum degree of nodes for which to try random moves.", ArgType::integer, "Accuracy", 0u, true);
 
   api.addOptionArgument(solutionLandscapeTracking, "solution-landscape-tracking", "Experimentally track final solution fingerprints across trials.", "Accuracy", true);
 
