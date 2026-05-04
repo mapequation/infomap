@@ -66,7 +66,21 @@ public:
                                  weights);
   }
   void addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsigned int n2, double weight) { m_network.addMultilayerIntraLink(layer, n1, n2, weight); }
+  void addMultilayerIntraLinks(const std::vector<unsigned int>& layerIds,
+                               const std::vector<unsigned int>& sourceNodeIds,
+                               const std::vector<unsigned int>& targetNodeIds,
+                               const std::vector<double>& weights)
+  {
+    m_network.addMultilayerIntraLinks(layerIds, sourceNodeIds, targetNodeIds, weights);
+  }
   void addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight) { m_network.addMultilayerInterLink(layer1, n, layer2, interWeight); }
+  void addMultilayerInterLinks(const std::vector<unsigned int>& sourceLayerIds,
+                               const std::vector<unsigned int>& nodeIds,
+                               const std::vector<unsigned int>& targetLayerIds,
+                               const std::vector<double>& weights)
+  {
+    m_network.addMultilayerInterLinks(sourceLayerIds, nodeIds, targetLayerIds, weights);
+  }
 
   void setBipartiteStartId(unsigned int startId) { m_network.setBipartiteStartId(startId); }
 

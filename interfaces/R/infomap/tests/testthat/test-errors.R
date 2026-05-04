@@ -83,6 +83,84 @@ test_that("add_multilayer_links rejects malformed list entries", {
   )
 })
 
+test_that("add_multilayer_intra_links rejects malformed matrix/data.frame input", {
+  im <- Infomap(silent = TRUE)
+
+  expect_error(
+    im$add_multilayer_intra_links(matrix(c(1, 2), ncol = 2L)),
+    "3 or 4 columns"
+  )
+  expect_error(
+    im$add_multilayer_intra_links(data.frame(layer = "x", source = 1, target = 2)),
+    "numeric/integer"
+  )
+  expect_error(
+    im$add_multilayer_intra_links(data.frame(layer = 1, source = 1, target = 2, weight = "bad")),
+    "weight column must be numeric"
+  )
+})
+
+test_that("add_multilayer_intra_links rejects malformed list entries", {
+  im <- Infomap(silent = TRUE)
+
+  expect_error(im$add_multilayer_intra_links(list(c(1, 2))), "3 or 4 values")
+  expect_error(im$add_multilayer_intra_links(list(c(1, 2, 3, 4, 5))), "3 or 4 values")
+  expect_error(
+    im$add_multilayer_intra_links(list(list(c(1, 2), 2, 3))),
+    "layer value must be scalar"
+  )
+  expect_error(im$add_multilayer_intra_links(list(c("a", 2, 3))), "numeric/integer")
+  expect_error(
+    im$add_multilayer_intra_links(list(list(1, 2, 3, c(1, 2)))),
+    "weight value must be scalar"
+  )
+  expect_error(
+    im$add_multilayer_intra_links(list(list(1, 2, 3, "bad"))),
+    "weight values must be numeric"
+  )
+})
+
+test_that("add_multilayer_inter_links rejects malformed matrix/data.frame input", {
+  im <- Infomap(silent = TRUE)
+
+  expect_error(
+    im$add_multilayer_inter_links(matrix(c(1, 2), ncol = 2L)),
+    "3 or 4 columns"
+  )
+  expect_error(
+    im$add_multilayer_inter_links(data.frame(source_layer = "x", node = 1, target_layer = 2)),
+    "numeric/integer"
+  )
+  expect_error(
+    im$add_multilayer_inter_links(data.frame(source_layer = 1, node = 1, target_layer = 2, weight = "bad")),
+    "weight column must be numeric"
+  )
+})
+
+test_that("add_multilayer_inter_links rejects malformed list entries", {
+  im <- Infomap(silent = TRUE)
+
+  expect_error(im$add_multilayer_inter_links(list(c(1, 2))), "3 or 4 values")
+  expect_error(im$add_multilayer_inter_links(list(c(1, 2, 3, 4, 5))), "3 or 4 values")
+  expect_error(
+    im$add_multilayer_inter_links(list(list(c(1, 2), 2, 3))),
+    "source layer value must be scalar"
+  )
+  expect_error(im$add_multilayer_inter_links(list(c("a", 2, 3))), "numeric/integer")
+  expect_error(
+    im$add_multilayer_inter_links(list(list(1, 2, 3, c(1, 2)))),
+    "weight value must be scalar"
+  )
+  expect_error(
+    im$add_multilayer_inter_links(list(list(1, 2, 3, "bad"))),
+    "weight values must be numeric"
+  )
+  expect_error(
+    im$add_multilayer_inter_links(list(c(1, 1, 1))),
+    "must have layer1 != layer2"
+  )
+})
+
 test_that("running twice in a row does not crash", {
   im <- Infomap(silent = TRUE)
   im$add_link(1, 2)
