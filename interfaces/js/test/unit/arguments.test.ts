@@ -7,10 +7,12 @@ describe("argumentsToString", () => {
       argumentsToString({
         twoLevel: true,
         numTrials: 5,
+        solutionLandscapeTracking: true,
+        solutionLandscapeStopAfter: 2,
         output: ["tree", "clu"],
         help: "advanced"
       })
-    ).toBe(" --output tree,clu --two-level --num-trials 5 -hh");
+    ).toBe(" --output tree,clu --two-level --num-trials 5 --solution-landscape-tracking --solution-landscape-stop-after 2 -hh");
   });
 
   test("serializes variable Markov minimum scale", () => {

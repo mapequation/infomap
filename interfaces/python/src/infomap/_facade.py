@@ -137,6 +137,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         fast_hierarchical_solution=None,
         prefer_modular_solution=False,
         inner_parallelization=False,
+        solution_landscape_tracking=False,
+        solution_landscape_stop_after=None,
     ):
         """Create a new Infomap instance.
 
@@ -1312,6 +1314,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         fast_hierarchical_solution=None,
         prefer_modular_solution=False,
         inner_parallelization=False,
+        solution_landscape_tracking=False,
+        solution_landscape_stop_after=None,
     ):
         """Run Infomap.
 

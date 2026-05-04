@@ -30,12 +30,61 @@
 #include <cstdlib>
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <ios>
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
 namespace infomap {
+
+namespace {
+
+constexpr std::uint64_t FNV_OFFSET_BASIS = 14695981039346656037ULL;
+constexpr std::uint64_t FNV_PRIME = 1099511628211ULL;
+
+void hashByte(std::uint64_t& hash, unsigned char value)
+{
+  hash ^= value;
+  hash *= FNV_PRIME;
+}
+
+void hashUnsigned(std::uint64_t& hash, std::uint64_t value)
+{
+  for (unsigned int i = 0; i < 8; ++i) {
+    hashByte(hash, static_cast<unsigned char>((value >> (i * 8)) & 0xffU));
+  }
+}
+
+void hashString(std::uint64_t& hash, const char* value)
+{
+  while (*value != '\0') {
+    hashByte(hash, static_cast<unsigned char>(*value));
+    ++value;
+  }
+  hashByte(hash, 0);
+}
+
+std::vector<unsigned int> collectLeafStateIds(const InfoNode& node)
+{
+  std::vector<unsigned int> stateIds;
+  if (node.isLeaf()) {
+    stateIds.push_back(node.stateId);
+    return stateIds;
+  }
+
+  for (auto it = node.begin_tree(); !it.isEnd(); ++it) {
+    if (it->isLeaf()) {
+      stateIds.push_back(it->stateId);
+    }
+  }
+  std::sort(stateIds.begin(), stateIds.end());
+  stateIds.erase(std::unique(stateIds.begin(), stateIds.end()), stateIds.end());
+  return stateIds;
+}
+
+} // namespace
 
 std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)
 {
@@ -93,6 +142,65 @@ unsigned int InfomapBase::maxTreeDepth() const
     }
   }
   return maxDepth;
+}
+
+bool InfomapBase::solutionLandscapeTrackingEnabled() const
+{
+  return solutionLandscapeTracking && isMainInfomap() && numTrials > 1 && !innerParallelization && !noInfomap;
+}
+
+InfomapBase::SolutionLandscapeFingerprint InfomapBase::solutionLandscapeFingerprint() const
+{
+  std::vector<std::vector<unsigned int>> canonicalModules;
+
+  for (auto it = root().begin_tree(); !it.isEnd(); ++it) {
+    const InfoNode& node = *it;
+    if (!node.isRoot() && !node.isLeaf()) {
+      canonicalModules.push_back(collectLeafStateIds(node));
+    }
+  }
+  std::sort(canonicalModules.begin(), canonicalModules.end());
+
+  std::uint64_t hash = FNV_OFFSET_BASIS;
+  hashUnsigned(hash, SOLUTION_LANDSCAPE_FINGERPRINT_VERSION);
+  hashString(hash, "final-solution");
+  hashUnsigned(hash, haveMemory() ? 1 : 0);
+  hashUnsigned(hash, numLeafNodes());
+  hashUnsigned(hash, canonicalModules.size());
+
+  for (const auto& descendants : canonicalModules) {
+    hashUnsigned(hash, descendants.size());
+    for (auto stateId : descendants) {
+      hashUnsigned(hash, stateId);
+    }
+  }
+
+  return hash;
+}
+
+void InfomapBase::observeSolutionLandscapeSolution()
+{
+  if (!solutionLandscapeTrackingEnabled()) {
+    return;
+  }
+
+  const auto fingerprint = solutionLandscapeFingerprint();
+  auto it = m_solutionLandscape.find(fingerprint);
+  if (it != m_solutionLandscape.end()) {
+    ++it->second.hitCount;
+    it->second.lastSeenTrialIndex = m_solutionLandscapeCurrentTrialIndex;
+    Log(2) << "Solution landscape solution revisited in trial " << (m_solutionLandscapeCurrentTrialIndex + 1)
+           << "; first seen in trial " << (it->second.firstTrialIndex + 1)
+           << ".\n";
+    return;
+  }
+
+  SolutionLandscapeEntry entry;
+  entry.firstTrialIndex = m_solutionLandscapeCurrentTrialIndex;
+  entry.lastSeenTrialIndex = m_solutionLandscapeCurrentTrialIndex;
+  m_solutionLandscape.emplace(fingerprint, entry);
+  m_solutionLandscapeTrialDiscoveredNewSolution = true;
+  Log(2) << "Solution landscape solution discovered in trial " << (m_solutionLandscapeCurrentTrialIndex + 1) << ".\n";
 }
 
 // ===================================================
@@ -255,13 +363,21 @@ void InfomapBase::run(Network& network)
   double bestHierarchicalCodelength = std::numeric_limits<double>::max();
   m_codelengths.clear();
   m_numTopModules.clear();
+  m_solutionLandscape.clear();
+  m_solutionLandscapeKnownSolutionStreak = 0;
   NodePaths bestTree(numLeafNodes());
   unsigned int bestTrialIndex = 0;
 
   unsigned int numTrials = this->numTrials;
+  unsigned int completedTrials = 0;
+  bool stoppedBySolutionLandscape = false;
 
   for (unsigned int i = 0; i < numTrials; ++i) {
+    m_solutionLandscapeCurrentTrialIndex = i;
+    m_solutionLandscapeTrialDiscoveredNewSolution = false;
     removeModules();
+    m_hierarchicalCodelength = m_oneLevelCodelength;
+    m_root.codelength = 0.0;
     auto startDate = Date();
     Stopwatch timer(true);
 
@@ -289,6 +405,8 @@ void InfomapBase::run(Network& network)
       Log() << "\n=> Trial " << (i + 1) << "/" << numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
       m_codelengths.push_back(m_hierarchicalCodelength);
       m_numTopModules.push_back(numTopModules());
+      completedTrials = i + 1;
+      observeSolutionLandscapeSolution();
 
       if (printAllTrials && numTrials > 1) {
         writeResult(static_cast<int>(i + 1));
@@ -309,6 +427,22 @@ void InfomapBase::run(Network& network)
           }
         }
       }
+
+      if (solutionLandscapeTrackingEnabled() && solutionLandscapeStopAfter > 0) {
+        if (m_solutionLandscapeTrialDiscoveredNewSolution) {
+          m_solutionLandscapeKnownSolutionStreak = 0;
+        } else {
+          ++m_solutionLandscapeKnownSolutionStreak;
+        }
+
+        if (m_solutionLandscapeKnownSolutionStreak >= solutionLandscapeStopAfter && completedTrials < numTrials) {
+          stoppedBySolutionLandscape = true;
+          Log() << "Stopping after " << completedTrials << "/" << numTrials
+                << " trial budget: " << m_solutionLandscapeKnownSolutionStreak
+                << " consecutive trials revisited known solution-landscape solutions.\n";
+          break;
+        }
+      }
     }
   }
   if (isMainInfomap()) {
@@ -316,10 +450,14 @@ void InfomapBase::run(Network& network)
     m_endDate = Date();
     Log() << "\n\n";
     Log() << "================================================\n";
-    Log() << "Summary after " << numTrials << (numTrials > 1 ? " trials\n" : " trial\n");
+    if (stoppedBySolutionLandscape) {
+      Log() << "Summary after " << completedTrials << "/" << numTrials << " trial budget\n";
+    } else {
+      Log() << "Summary after " << completedTrials << (completedTrials > 1 ? " trials\n" : " trial\n");
+    }
     Log() << "================================================\n";
-    if (numTrials > 1) {
-      if (bestTrialIndex < numTrials - 1) {
+    if (completedTrials > 1) {
+      if (bestTrialIndex < completedTrials - 1) {
         // Restore Infomap tree to best solution
         initTree(bestTree);
         writeResult(); // Overwrite result to get total elapsed time in output file header
@@ -334,7 +472,7 @@ void InfomapBase::run(Network& network)
       auto maxNumTopModules = m_numTopModules[0];
       double bestCodelengthSoFar = std::numeric_limits<double>::max();
       Log() << "Trial    Codelength    NumTopModules    Best\n";
-      for (unsigned int i = 0; i < numTrials; ++i) {
+      for (unsigned int i = 0; i < completedTrials; ++i) {
         bool isBest = m_codelengths[i] < bestCodelengthSoFar;
         if (isBest) {
           bestCodelengthSoFar = m_codelengths[i];
@@ -350,8 +488,8 @@ void InfomapBase::run(Network& network)
         minNumTopModules = std::min(minNumTopModules, m_numTopModules[i]);
         maxNumTopModules = std::max(maxNumTopModules, m_numTopModules[i]);
       }
-      averageCodelength /= numTrials;
-      averageNumTopModules /= numTrials;
+      averageCodelength /= completedTrials;
+      averageNumTopModules /= completedTrials;
       Log() << "\n";
       Log() << "[min, average, max] codelength:      [" << minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n";
       Log() << "[min, average, max] num top modules: [" << minNumTopModules << ", " << io::toPrecision(averageNumTopModules, 1, true) << ", " << maxNumTopModules << "]\n\n";

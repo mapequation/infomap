@@ -78,6 +78,8 @@ export type Arguments = Partial<{
   fastHierarchicalSolution: 1 | 2 | 3;
   preferModularSolution: boolean;
   innerParallelization: boolean;
+  solutionLandscapeTracking: boolean;
+  solutionLandscapeStopAfter: number;
   // about
   help: boolean | "advanced";
   version: boolean;
@@ -196,6 +198,10 @@ export default function argumentsToString(args: Arguments) {
   if (args.preferModularSolution) result += " --prefer-modular-solution";
 
   if (args.innerParallelization) result += " --inner-parallelization";
+
+  if (args.solutionLandscapeTracking) result += " --solution-landscape-tracking";
+
+  if (args.solutionLandscapeStopAfter != null) result += " --solution-landscape-stop-after " + args.solutionLandscapeStopAfter;
 
   if (args.help) result += args.help === "advanced" ? " -hh" : " -h";
 

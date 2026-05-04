@@ -76,6 +76,8 @@ _ACCURACY_OPTION_SPECS = (
     ("value", "tune_iteration_relative_threshold", "--tune-iteration-relative-threshold", lambda value: value != 1e-5),
     ("flag", "prefer_modular_solution", "--prefer-modular-solution", None),
     ("flag", "inner_parallelization", "--inner-parallelization", None),
+    ("flag", "solution_landscape_tracking", "--solution-landscape-tracking", None),
+    ("value", "solution_landscape_stop_after", "--solution-landscape-stop-after", lambda value: value is not None),
 )
 
 
@@ -249,6 +251,11 @@ class InfomapOptions:
     inner_parallelization : bool, optional
         Parallelize the inner-most loop for greater speed. This may give some accuracy
         tradeoff.
+    solution_landscape_tracking : bool, optional
+        Experimentally track final solution fingerprints across trials.
+    solution_landscape_stop_after : int, optional
+        Stop early after this many consecutive trials revisit known solution-landscape
+        solutions. Requires --solution-landscape-tracking.
     include_self_links : bool, optional
         Deprecated. Self-links are included by default; use no_self_links=True to
         exclude them.
@@ -313,6 +320,8 @@ class InfomapOptions:
     fast_hierarchical_solution: int | None = None
     prefer_modular_solution: bool = False
     inner_parallelization: bool = False
+    solution_landscape_tracking: bool = False
+    solution_landscape_stop_after: int | None = None
 
     @classmethod
     def from_mapping(cls, mapping):
@@ -422,5 +431,7 @@ def _construct_args(
     fast_hierarchical_solution=None,
     prefer_modular_solution=False,
     inner_parallelization=False,
+    solution_landscape_tracking=False,
+    solution_landscape_stop_after=None,
 ):
     return InfomapOptions.from_mapping(locals()).to_args(base_args=args)

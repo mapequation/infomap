@@ -94,6 +94,49 @@ TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][l
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
 }
 
+TEST_CASE("Solution landscape tracking keeps exact trial bookkeeping without stop policy [fast][core][lifecycle][landscape]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--num-trials 3 --solution-landscape-tracking"));
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelengths().size() == 3);
+  CHECK(im.m_solutionLandscape.size() >= 1);
+}
+
+TEST_CASE("Solution landscape tracking is deterministic for the same seed [fast][core][lifecycle][landscape]")
+{
+  InfomapWrapper first(infomap::test::defaultFlags("--num-trials 3 --solution-landscape-tracking"));
+  infomap::test::addEdgeFixtureLinks(first, "graphs/twotriangles_unweighted.edges");
+
+  InfomapWrapper second(infomap::test::defaultFlags("--num-trials 3 --solution-landscape-tracking"));
+  infomap::test::addEdgeFixtureLinks(second, "graphs/twotriangles_unweighted.edges");
+
+  first.run();
+  second.run();
+
+  infomap::test::checkRunSanity(first);
+  infomap::test::checkRunSanity(second);
+  CHECK(infomap::test::canonicalPartition(first.getModules()) == infomap::test::canonicalPartition(second.getModules()));
+  CHECK(first.codelength() == doctest::Approx(second.codelength()));
+  CHECK(first.getIndexCodelength() == doctest::Approx(second.getIndexCodelength()));
+  CHECK(first.codelengths() == second.codelengths());
+}
+
+TEST_CASE("Solution landscape stop policy treats num trials as a budget [fast][core][lifecycle][landscape]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--num-trials 10 --solution-landscape-tracking --solution-landscape-stop-after 1"));
+  infomap::test::addEdgeFixtureLinks(im, "graphs/twotriangles_unweighted.edges");
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelengths().size() < 10);
+  CHECK(im.m_solutionLandscapeKnownSolutionStreak == 1);
+}
+
 TEST_CASE("Infomap reruns ninetriangles deterministically on the same instance [fast][core][lifecycle][crash]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

@@ -134,6 +134,8 @@ struct Config {
   unsigned int fastHierarchicalSolution = 0;
   bool preferModularSolution = false;
   bool innerParallelization = false;
+  bool solutionLandscapeTracking = false;
+  unsigned int solutionLandscapeStopAfter = 0;
 
   // Output
   std::string outDirectory;
@@ -217,6 +219,8 @@ struct Config {
     minimumRelativeTuneIterationImprovement = other.minimumRelativeTuneIterationImprovement;
     preferModularSolution = other.preferModularSolution;
     innerParallelization = other.innerParallelization;
+    solutionLandscapeTracking = other.solutionLandscapeTracking;
+    solutionLandscapeStopAfter = other.solutionLandscapeStopAfter;
     outDirectory = other.outDirectory;
     outName = other.outName;
     outputFormats = other.outputFormats;

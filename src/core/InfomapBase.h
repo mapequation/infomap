@@ -25,10 +25,12 @@
 #include <vector>
 #include <deque>
 #include <map>
+#include <unordered_map>
 #include <limits>
 #include <string>
 #include <ostream>
 #include <sstream>
+#include <cstdint>
 
 namespace infomap {
 
@@ -42,6 +44,14 @@ class InfomapBase : public InfomapConfig<InfomapBase> {
   friend class InfomapOptimizer;
 
   void initOptimizer(bool forceNoMemory = false);
+
+  using SolutionLandscapeFingerprint = std::uint64_t;
+
+  struct SolutionLandscapeEntry {
+    unsigned int firstTrialIndex = 0;
+    unsigned int lastSeenTrialIndex = 0;
+    unsigned int hitCount = 0;
+  };
 
 public:
   using PartitionQueue = detail::PartitionQueue;
@@ -309,6 +319,12 @@ private:
 
   void partition();
 
+  bool solutionLandscapeTrackingEnabled() const;
+
+  SolutionLandscapeFingerprint solutionLandscapeFingerprint() const;
+
+  void observeSolutionLandscapeSolution();
+
   // ===================================================
   // runPartition: init: *
   // ===================================================
@@ -516,6 +532,12 @@ protected:
   Stopwatch m_elapsedTime = Stopwatch(false);
   std::string m_initialParameters;
   std::string m_currentParameters;
+
+  static constexpr unsigned int SOLUTION_LANDSCAPE_FINGERPRINT_VERSION = 1;
+  std::unordered_map<SolutionLandscapeFingerprint, SolutionLandscapeEntry> m_solutionLandscape;
+  bool m_solutionLandscapeTrialDiscoveredNewSolution = false;
+  unsigned int m_solutionLandscapeKnownSolutionStreak = 0;
+  unsigned int m_solutionLandscapeCurrentTrialIndex = 0;
 
   std::unique_ptr<InfomapOptimizerBase> m_optimizer;
 };

@@ -193,6 +193,10 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(innerParallelization, "inner-parallelization", "Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.", "Accuracy", true);
 
+  api.addOptionArgument(solutionLandscapeTracking, "solution-landscape-tracking", "Experimentally track final solution fingerprints across trials.", "Accuracy", true);
+
+  api.addOptionArgument(solutionLandscapeStopAfter, "solution-landscape-stop-after", "Stop early after this many consecutive trials revisit known solution-landscape solutions. Requires --solution-landscape-tracking.", ArgType::integer, "Accuracy", 1u, true);
+
   api.addOptionalNonOptionArguments(optionalOutputDir, "out_directory", "Directory to write the results to.", "Output");
 
   api.addIncrementalOptionArgument(verbosity, 'v', "verbose", "Verbose output on the console. Add additional 'v' flags to increase verbosity up to -vvv.", "Output");
@@ -203,6 +207,10 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   if (deprecated_includeSelfLinks) {
     throw std::runtime_error("The --include-self-links flag is deprecated to include self links by default. Use --no-self-links to exclude.");
+  }
+
+  if (solutionLandscapeStopAfter > 0 && !solutionLandscapeTracking) {
+    throw std::runtime_error("The --solution-landscape-stop-after option requires --solution-landscape-tracking.");
   }
 
   if (!optionalOutputDir.empty())

@@ -93,6 +93,8 @@ Accuracy
 \item{\code{fast_hierarchical_solution}}{Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.}
 \item{\code{prefer_modular_solution}}{Prefer modular solutions even if they are worse than putting all nodes in one module.}
 \item{\code{inner_parallelization}}{Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.}
+\item{\code{solution_landscape_tracking}}{Experimentally track final solution fingerprints across trials.}
+\item{\code{solution_landscape_stop_after}}{Stop early after this many consecutive trials revisit known solution-landscape solutions. Requires --solution-landscape-tracking.}
 }
 }
 

@@ -72,7 +72,9 @@ ACCURACY_OPTIONS <- list(
   list(type = "value", name = "core_loop_codelength_threshold", flag = "--core-loop-codelength-threshold", default = DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD, include = .skip_when_not_equal(DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD)),
   list(type = "value", name = "tune_iteration_relative_threshold", flag = "--tune-iteration-relative-threshold", default = DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD, include = .skip_when_not_equal(DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD)),
   list(type = "flag", name = "prefer_modular_solution", flag = "--prefer-modular-solution", default = FALSE),
-  list(type = "flag", name = "inner_parallelization", flag = "--inner-parallelization", default = FALSE)
+  list(type = "flag", name = "inner_parallelization", flag = "--inner-parallelization", default = FALSE),
+  list(type = "flag", name = "solution_landscape_tracking", flag = "--solution-landscape-tracking", default = FALSE),
+  list(type = "value", name = "solution_landscape_stop_after", flag = "--solution-landscape-stop-after", default = NULL, include = .skip_when_null)
 )
 
 OPTION_FIELD_NAMES <- c(
@@ -89,7 +91,8 @@ OPTION_FIELD_NAMES <- c(
   "multilayer_relax_rate", "multilayer_relax_limit", "multilayer_relax_limit_up", "multilayer_relax_limit_down",
   "multilayer_relax_by_jsd", "seed", "num_trials", "core_loop_limit",
   "core_level_limit", "tune_iteration_limit", "core_loop_codelength_threshold", "tune_iteration_relative_threshold",
-  "fast_hierarchical_solution", "prefer_modular_solution", "inner_parallelization"
+  "fast_hierarchical_solution", "prefer_modular_solution", "inner_parallelization", "solution_landscape_tracking",
+  "solution_landscape_stop_after"
 )
 
 OPTION_DEFAULTS <- list(
@@ -147,7 +150,9 @@ OPTION_DEFAULTS <- list(
   tune_iteration_relative_threshold = DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD,
   fast_hierarchical_solution = NULL,
   prefer_modular_solution = FALSE,
-  inner_parallelization = FALSE
+  inner_parallelization = FALSE,
+  solution_landscape_tracking = FALSE,
+  solution_landscape_stop_after = NULL
 )
 
 #' Build a reusable Infomap options list
@@ -232,6 +237,8 @@ OPTION_DEFAULTS <- list(
 #'   \item{`fast_hierarchical_solution`}{Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.}
 #'   \item{`prefer_modular_solution`}{Prefer modular solutions even if they are worse than putting all nodes in one module.}
 #'   \item{`inner_parallelization`}{Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.}
+#'   \item{`solution_landscape_tracking`}{Experimentally track final solution fingerprints across trials.}
+#'   \item{`solution_landscape_stop_after`}{Stop early after this many consecutive trials revisit known solution-landscape solutions. Requires --solution-landscape-tracking.}
 #' }
 #'
 #' @return A named list of options.
