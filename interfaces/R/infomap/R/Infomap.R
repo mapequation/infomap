@@ -222,14 +222,34 @@ InfomapClass <- R6::R6Class(
         } else {
           rep(1.0, length(sources))
         }
-        for (i in seq_along(sources)) {
-          self$add_link(sources[i], targets[i], weights[i])
-        }
       } else {
-        for (entry in links) {
-          do.call(self$add_link, as.list(entry))
+        link_lengths <- vapply(links, length, integer(1L))
+        if (!all(link_lengths %in% c(2L, 3L))) {
+          stop("Each link must contain 2 or 3 values: source, target, and optional weight.",
+               call. = FALSE)
         }
+        sources <- lapply(links, function(entry) entry[[1L]])
+        targets <- lapply(links, function(entry) entry[[2L]])
+        weights <- lapply(
+          links,
+          function(entry) {
+            if (length(entry) == 3L) entry[[3L]] else 1.0
+          }
+        )
+        if (!all(vapply(sources, is.numeric, logical(1L))) ||
+            !all(vapply(targets, is.numeric, logical(1L)))) {
+          stop("`links` source/target values must be numeric/integer.",
+               call. = FALSE)
+        }
+        if (!all(vapply(weights, is.numeric, logical(1L)))) {
+          stop("`links` weight values must be numeric.", call. = FALSE)
+        }
+        sources <- unlist(sources, use.names = FALSE)
+        targets <- unlist(targets, use.names = FALSE)
+        weights <- unlist(weights, use.names = FALSE)
       }
+
+      private$.swig$addLinks(as.integer(sources), as.integer(targets), as.numeric(weights))
       invisible(self)
     },
 
@@ -474,14 +494,10 @@ InfomapClass <- R6::R6Class(
         for (i in seq_len(igraph::vcount(g))) {
           self$add_state_node(vertex_ids[i], phys[i])
         }
-        for (e in seq_len(nrow(edges))) {
-          self$add_link(edges[e, 1L], edges[e, 2L], weights[e])
-        }
+        self$add_links(cbind(edges[, 1L], edges[, 2L], weights))
       } else {
         # Plain network.
-        for (e in seq_len(nrow(edges))) {
-          self$add_link(edges[e, 1L], edges[e, 2L], weights[e])
-        }
+        self$add_links(cbind(edges[, 1L], edges[, 2L], weights))
       }
 
       if (is_directed) {

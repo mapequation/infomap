@@ -459,8 +459,49 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             Iterable of tuples of int of the form
             ``(source_id, target_id, [weight])``
         """
+        if links.__class__.__module__.startswith("numpy"):
+            try:
+                import numpy as np
+            except ImportError:
+                pass
+            else:
+                links_array = np.asarray(links)
+                if links_array.ndim != 2:
+                    raise ValueError("Numpy link arrays must be 2D with 2 or 3 columns.")
+                if links_array.shape[1] not in (2, 3):
+                    raise ValueError("Numpy link arrays must have 2 or 3 columns: (source_id, target_id, [weight]).")
+
+                source_ids = links_array[:, 0].astype(np.uint32, copy=False).tolist()
+                target_ids = links_array[:, 1].astype(np.uint32, copy=False).tolist()
+                if links_array.shape[1] == 3:
+                    weights = links_array[:, 2].astype(np.float64, copy=False).tolist()
+                else:
+                    weights = [1.0] * links_array.shape[0]
+
+                return super().addLinks(source_ids, target_ids, weights)
+
+        source_ids = []
+        target_ids = []
+        weights = []
         for link in links:
-            self.add_link(*link)
+            try:
+                link_length = len(link)
+            except TypeError as err:
+                raise ValueError("Each link must be a sequence of 2 or 3 values.") from err
+
+            if link_length == 2:
+                source_id, target_id = link
+                weight = 1.0
+            elif link_length == 3:
+                source_id, target_id, weight = link
+            else:
+                raise ValueError("Each link must contain 2 or 3 values: (source_id, target_id, [weight]).")
+
+            source_ids.append(source_id)
+            target_ids.append(target_id)
+            weights.append(weight)
+
+        return super().addLinks(source_ids, target_ids, weights)
 
     def remove_link(self, source_id, target_id):
         """Remove a link.
