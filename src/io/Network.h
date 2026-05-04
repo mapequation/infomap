@@ -119,6 +119,11 @@ public:
 
   void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight);
   void addMultilayerLink(unsigned int stateId1, unsigned int layer1, unsigned int n1, unsigned int stateId2, unsigned int layer2, unsigned int n2, double weight);
+  void addMultilayerLinks(const std::vector<unsigned int>& sourceLayerIds,
+                          const std::vector<unsigned int>& sourceNodeIds,
+                          const std::vector<unsigned int>& targetLayerIds,
+                          const std::vector<unsigned int>& targetNodeIds,
+                          const std::vector<double>& weights);
 
   /**
    * Create an intra-layer link

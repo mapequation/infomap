@@ -14,6 +14,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <stdexcept>
 
 namespace infomap {
 
@@ -547,6 +548,24 @@ void Network::addMultilayerLink(unsigned int stateId1, unsigned int layer1, unsi
   }
 
   addLink(stateId1, stateId2, weight);
+}
+
+void Network::addMultilayerLinks(const std::vector<unsigned int>& sourceLayerIds,
+                                 const std::vector<unsigned int>& sourceNodeIds,
+                                 const std::vector<unsigned int>& targetLayerIds,
+                                 const std::vector<unsigned int>& targetNodeIds,
+                                 const std::vector<double>& weights)
+{
+  if (sourceLayerIds.size() != sourceNodeIds.size() ||
+      sourceLayerIds.size() != targetLayerIds.size() ||
+      sourceLayerIds.size() != targetNodeIds.size() ||
+      sourceLayerIds.size() != weights.size()) {
+    throw std::invalid_argument("sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, and weights must have the same length");
+  }
+
+  for (std::size_t i = 0; i < sourceLayerIds.size(); ++i) {
+    addMultilayerLink(sourceLayerIds[i], sourceNodeIds[i], targetLayerIds[i], targetNodeIds[i], weights[i]);
+  }
 }
 
 void Network::generateStateNetworkFromMultilayer()

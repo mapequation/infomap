@@ -36288,6 +36288,116 @@ R_swig_Network_addMultilayerLink__SWIG_1 ( SEXP self, SEXP stateId1, SEXP layer1
 
 
 SWIGEXPORT SEXP
+R_swig_Network_addMultilayerLinks ( SEXP self, SEXP sourceLayerIds, SEXP sourceNodeIds, SEXP targetLayerIds, SEXP targetNodeIds, SEXP weights)
+{
+  {
+    infomap::Network *arg1 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg2 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg3 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg4 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg5 = 0 ;
+    std::vector< double,std::allocator< double > > *arg6 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 = SWIG_OLDOBJ ;
+    int res3 = SWIG_OLDOBJ ;
+    int res4 = SWIG_OLDOBJ ;
+    int res5 = SWIG_OLDOBJ ;
+    int res6 = SWIG_OLDOBJ ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Network, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Network_addMultilayerLinks" "', argument " "1"" of type '" "infomap::Network *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Network * >(argp1);
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res2 = swig::asptr(sourceLayerIds, &ptr);
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Network_addMultilayerLinks" "', argument " "2"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "Network_addMultilayerLinks" "', argument " "2"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg2 = ptr;
+    }
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res3 = swig::asptr(sourceNodeIds, &ptr);
+      if (!SWIG_IsOK(res3)) {
+        SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "Network_addMultilayerLinks" "', argument " "3"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "Network_addMultilayerLinks" "', argument " "3"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg3 = ptr;
+    }
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res4 = swig::asptr(targetLayerIds, &ptr);
+      if (!SWIG_IsOK(res4)) {
+        SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "Network_addMultilayerLinks" "', argument " "4"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "Network_addMultilayerLinks" "', argument " "4"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg4 = ptr;
+    }
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res5 = swig::asptr(targetNodeIds, &ptr);
+      if (!SWIG_IsOK(res5)) {
+        SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "Network_addMultilayerLinks" "', argument " "5"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "Network_addMultilayerLinks" "', argument " "5"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg5 = ptr;
+    }
+    {
+      std::vector< double,std::allocator< double > > *ptr = (std::vector< double,std::allocator< double > > *)0;
+      res6 = swig::asptr(weights, &ptr);
+      if (!SWIG_IsOK(res6)) {
+        SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "Network_addMultilayerLinks" "', argument " "6"" of type '" "std::vector< double,std::allocator< double > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "Network_addMultilayerLinks" "', argument " "6"" of type '" "std::vector< double,std::allocator< double > > const &""'"); 
+      }
+      arg6 = ptr;
+    }
+    {
+      try {
+        (arg1)->addMultilayerLinks((std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg2,(std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg3,(std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg4,(std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg5,(std::vector< double,std::allocator< double > > const &)*arg6);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    if (SWIG_IsNewObj(res2)) delete arg2;
+    if (SWIG_IsNewObj(res3)) delete arg3;
+    if (SWIG_IsNewObj(res4)) delete arg4;
+    if (SWIG_IsNewObj(res5)) delete arg5;
+    if (SWIG_IsNewObj(res6)) delete arg6;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+    if (SWIG_IsNewObj(res2)) delete arg2;
+    if (SWIG_IsNewObj(res3)) delete arg3;
+    if (SWIG_IsNewObj(res4)) delete arg4;
+    if (SWIG_IsNewObj(res5)) delete arg5;
+    if (SWIG_IsNewObj(res6)) delete arg6;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_Network_addMultilayerIntraLink ( SEXP self, SEXP layer, SEXP n1, SEXP n2, SEXP weight)
 {
   {
@@ -45357,6 +45467,116 @@ R_swig_InfomapWrapper_addMultilayerLink__SWIG_1 ( SEXP self, SEXP layer1, SEXP n
 
 
 SWIGEXPORT SEXP
+R_swig_InfomapWrapper_addMultilayerLinks ( SEXP self, SEXP sourceLayerIds, SEXP sourceNodeIds, SEXP targetLayerIds, SEXP targetNodeIds, SEXP weights)
+{
+  {
+    infomap::InfomapWrapper *arg1 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg2 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg3 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg4 = 0 ;
+    std::vector< unsigned int,std::allocator< unsigned int > > *arg5 = 0 ;
+    std::vector< double,std::allocator< double > > *arg6 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 = SWIG_OLDOBJ ;
+    int res3 = SWIG_OLDOBJ ;
+    int res4 = SWIG_OLDOBJ ;
+    int res5 = SWIG_OLDOBJ ;
+    int res6 = SWIG_OLDOBJ ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_addMultilayerLinks" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res2 = swig::asptr(sourceLayerIds, &ptr);
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "InfomapWrapper_addMultilayerLinks" "', argument " "2"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapWrapper_addMultilayerLinks" "', argument " "2"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg2 = ptr;
+    }
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res3 = swig::asptr(sourceNodeIds, &ptr);
+      if (!SWIG_IsOK(res3)) {
+        SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "InfomapWrapper_addMultilayerLinks" "', argument " "3"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapWrapper_addMultilayerLinks" "', argument " "3"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg3 = ptr;
+    }
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res4 = swig::asptr(targetLayerIds, &ptr);
+      if (!SWIG_IsOK(res4)) {
+        SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "InfomapWrapper_addMultilayerLinks" "', argument " "4"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapWrapper_addMultilayerLinks" "', argument " "4"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg4 = ptr;
+    }
+    {
+      std::vector< unsigned int,std::allocator< unsigned int > > *ptr = (std::vector< unsigned int,std::allocator< unsigned int > > *)0;
+      res5 = swig::asptr(targetNodeIds, &ptr);
+      if (!SWIG_IsOK(res5)) {
+        SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "InfomapWrapper_addMultilayerLinks" "', argument " "5"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapWrapper_addMultilayerLinks" "', argument " "5"" of type '" "std::vector< unsigned int,std::allocator< unsigned int > > const &""'"); 
+      }
+      arg5 = ptr;
+    }
+    {
+      std::vector< double,std::allocator< double > > *ptr = (std::vector< double,std::allocator< double > > *)0;
+      res6 = swig::asptr(weights, &ptr);
+      if (!SWIG_IsOK(res6)) {
+        SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "InfomapWrapper_addMultilayerLinks" "', argument " "6"" of type '" "std::vector< double,std::allocator< double > > const &""'"); 
+      }
+      if (!ptr) {
+        SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapWrapper_addMultilayerLinks" "', argument " "6"" of type '" "std::vector< double,std::allocator< double > > const &""'"); 
+      }
+      arg6 = ptr;
+    }
+    {
+      try {
+        (arg1)->addMultilayerLinks((std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg2,(std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg3,(std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg4,(std::vector< unsigned int,std::allocator< unsigned int > > const &)*arg5,(std::vector< double,std::allocator< double > > const &)*arg6);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    if (SWIG_IsNewObj(res2)) delete arg2;
+    if (SWIG_IsNewObj(res3)) delete arg3;
+    if (SWIG_IsNewObj(res4)) delete arg4;
+    if (SWIG_IsNewObj(res5)) delete arg5;
+    if (SWIG_IsNewObj(res6)) delete arg6;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+    if (SWIG_IsNewObj(res2)) delete arg2;
+    if (SWIG_IsNewObj(res3)) delete arg3;
+    if (SWIG_IsNewObj(res4)) delete arg4;
+    if (SWIG_IsNewObj(res5)) delete arg5;
+    if (SWIG_IsNewObj(res6)) delete arg6;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_InfomapWrapper_addMultilayerIntraLink ( SEXP self, SEXP layer, SEXP n1, SEXP n2, SEXP weight)
 {
   {
@@ -47651,6 +47871,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfomapIterator_collapsedLastChild_get", (DL_FUNC) &R_swig_InfomapIterator_collapsedLastChild_get, 1},
    {"R_swig_InfoNode_metaCollection_get", (DL_FUNC) &R_swig_InfoNode_metaCollection_get, 2},
    {"R_swig_Config_verbosity_get", (DL_FUNC) &R_swig_Config_verbosity_get, 2},
+   {"R_swig_Network_addMultilayerLinks", (DL_FUNC) &R_swig_Network_addMultilayerLinks, 6},
    {"R_swig_InfomapParentIterator_firstDepthBelow", (DL_FUNC) &R_swig_InfomapParentIterator_firstDepthBelow, 2},
    {"R_swig_InfomapIterator_metaCollection_get", (DL_FUNC) &R_swig_InfomapIterator_metaCollection_get, 2},
    {"R_swig_InfoNode_parent_set", (DL_FUNC) &R_swig_InfoNode_parent_set, 2},
@@ -47986,6 +48207,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_StateNetwork_addLink__SWIG_2", (DL_FUNC) &R_swig_StateNetwork_addLink__SWIG_2, 5},
    {"R_swig_Config_unweightedMetaData_set", (DL_FUNC) &R_swig_Config_unweightedMetaData_set, 2},
    {"R_swig_Config_coreLoopLimit_set", (DL_FUNC) &R_swig_Config_coreLoopLimit_set, 2},
+   {"R_swig_InfomapWrapper_addMultilayerLinks", (DL_FUNC) &R_swig_InfomapWrapper_addMultilayerLinks, 6},
    {"R_swig_Config_noInfomap_get", (DL_FUNC) &R_swig_Config_noInfomap_get, 2},
    {"R_swig_InfoNode_begin_outEdge", (DL_FUNC) &R_swig_InfoNode_begin_outEdge, 2},
    {"R_swig_Config_useNodeWeightsAsFlow_get", (DL_FUNC) &R_swig_Config_useNodeWeightsAsFlow_get, 2},
