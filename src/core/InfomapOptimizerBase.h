@@ -82,6 +82,8 @@ protected:
 
   virtual bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false) = 0;
 
+  virtual void markCurrentPartitionAsConsolidated() = 0;
+
   // ===================================================
   // Debug: *
   // ===================================================

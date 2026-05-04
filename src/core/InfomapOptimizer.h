@@ -88,6 +88,8 @@ protected:
 
   bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false) override;
 
+  void markCurrentPartitionAsConsolidated() override;
+
   // ===================================================
   // Debug: *
   // ===================================================
@@ -755,6 +757,12 @@ inline bool InfomapOptimizer<Objective>::restoreConsolidatedOptimizationPointIfN
     return true;
   }
   return false;
+}
+
+template <typename Objective>
+inline void InfomapOptimizer<Objective>::markCurrentPartitionAsConsolidated()
+{
+  m_consolidatedObjective = m_objective;
 }
 
 } /* namespace infomap */

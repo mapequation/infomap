@@ -121,6 +121,7 @@ class Config(object):
     multilayerJSRelaxLimit = property(_infomap.Config_multilayerJSRelaxLimit_get, _infomap.Config_multilayerJSRelaxLimit_set)
     maxFlowIterations = property(_infomap.Config_maxFlowIterations_get, _infomap.Config_maxFlowIterations_set)
     twoLevel = property(_infomap.Config_twoLevel_get, _infomap.Config_twoLevel_set)
+    refineBeforeAggregation = property(_infomap.Config_refineBeforeAggregation_get, _infomap.Config_refineBeforeAggregation_set)
     noCoarseTune = property(_infomap.Config_noCoarseTune_get, _infomap.Config_noCoarseTune_set)
     recordedTeleportation = property(_infomap.Config_recordedTeleportation_get, _infomap.Config_recordedTeleportation_set)
     regularized = property(_infomap.Config_regularized_get, _infomap.Config_regularized_set)
@@ -2451,6 +2452,9 @@ class InfomapConfigInfomapBase(Config):
 
     def setNoCoarseTune(self, value):
         return _infomap.InfomapConfigInfomapBase_setNoCoarseTune(self, value)
+
+    def setRefineBeforeAggregation(self, value):
+        return _infomap.InfomapConfigInfomapBase_setRefineBeforeAggregation(self, value)
 
     def setNoInfomap(self, value=True):
         return _infomap.InfomapConfigInfomapBase_setNoInfomap(self, value)

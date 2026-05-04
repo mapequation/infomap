@@ -45,6 +45,7 @@ _OUTPUT_OPTION_SPECS = (
 
 _ALGORITHM_OPTION_SPECS = (
     ("flag", "two_level", "--two-level", None),
+    ("flag", "refine_before_aggregation", "--refine-before-aggregation", None),
     ("value", "flow_model", "--flow-model", lambda value: value is not None),
     ("flag", "recorded_teleportation", "--recorded-teleportation", None),
     ("flag", "use_node_weights_as_flow", "--use-node-weights-as-flow", None),
@@ -169,6 +170,9 @@ class InfomapOptions:
         No output on the console.
     two_level : bool, optional
         Optimize a two-level partition of the network. Default is multi-level.
+    refine_before_aggregation : bool, optional
+        Experimentally refine modules before aggregation to reduce destructive
+        coarsening.
     flow_model : str, optional
         Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir,
         precomputed.
@@ -282,6 +286,7 @@ class InfomapOptions:
     silent: bool = False
     # algorithm
     two_level: bool = False
+    refine_before_aggregation: bool = False
     flow_model: str | None = None
     directed: bool | None = None
     recorded_teleportation: bool = False
@@ -391,6 +396,7 @@ def _construct_args(
     silent=False,
     # algorithm
     two_level=False,
+    refine_before_aggregation=False,
     flow_model=None,
     directed=None,
     recorded_teleportation=False,

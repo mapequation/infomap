@@ -344,9 +344,15 @@ private:
 
   void setActiveNetworkFromChildrenOfRoot();
 
+  void setActiveNetworkFromChildrenOfTopModules();
+
   void initPartition() { return m_optimizer->initPartition(); }
 
   void findTopModulesRepeatedly(unsigned int maxLevels);
+
+  bool runRefinementBeforeAggregation();
+
+  void applyPendingRefinedParentModules();
 
   unsigned int fineTune();
 
@@ -381,6 +387,11 @@ private:
   bool restoreConsolidatedOptimizationPointIfNoImprovement(bool forceRestore = false)
   {
     return m_optimizer->restoreConsolidatedOptimizationPointIfNoImprovement(forceRestore);
+  }
+
+  void markCurrentPartitionAsConsolidated()
+  {
+    return m_optimizer->markCurrentPartitionAsConsolidated();
   }
 
   // ===================================================
@@ -501,6 +512,7 @@ protected:
   unsigned int m_tuneIterationIndex = 0;
   bool m_isCoarseTune = false;
   unsigned int m_aggregationLevel = 0;
+  std::vector<unsigned int> m_pendingRefinedParentModules;
 
   double m_hierarchicalCodelength = 0.0;
   std::vector<double> m_codelengths;

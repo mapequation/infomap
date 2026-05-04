@@ -127,6 +127,7 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   // --------------------- Core algorithm options ---------------------
   api.addOptionArgument(twoLevel, '2', "two-level", "Optimize a two-level partition of the network. Default is multi-level.", "Algorithm");
+  api.addOptionArgument(refineBeforeAggregation, "refine-before-aggregation", "Experimentally refine modules before aggregation to reduce destructive coarsening.", "Algorithm", true);
 
   std::string flowModelArg;
 

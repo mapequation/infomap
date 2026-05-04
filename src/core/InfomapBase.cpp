@@ -1353,6 +1353,17 @@ void InfomapBase::setActiveNetworkFromChildrenOfRoot()
   m_activeNetwork = &m_moduleNodes;
 }
 
+void InfomapBase::setActiveNetworkFromChildrenOfTopModules()
+{
+  m_moduleNodes.clear();
+  for (auto& module : m_root) {
+    for (auto& child : module) {
+      m_moduleNodes.push_back(&child);
+    }
+  }
+  m_activeNetwork = &m_moduleNodes;
+}
+
 void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
 {
   Log(1, 2) << "Iteration " << (m_tuneIterationIndex + 1) << ", moving ";
@@ -1371,6 +1382,8 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
     else
       setActiveNetworkFromLeafs();
     initPartition();
+    applyPendingRefinedParentModules();
+
     if (m_aggregationLevel == 0) {
       initialCodelength = io::Str() << "" << *this;
     }
@@ -1392,14 +1405,132 @@ void InfomapBase::findTopModulesRepeatedly(unsigned int maxLevels)
     // Consolidate modules
     bool replaceExistingModules = haveModules();
     consolidateModules(replaceExistingModules);
+    if (refineBeforeAggregation) {
+      runRefinementBeforeAggregation();
+    }
     ++numLevelsConsolidated;
     ++m_aggregationLevel;
   }
   m_aggregationLevel = 0;
+  m_pendingRefinedParentModules.clear();
 
   m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
 
   Log(1, 2) << (m_isCoarseTune ? "modules" : "nodes") << "*loops from codelength " << initialCodelength << " to codelength " << *this << " in " << numTopModules() << " modules. (" << m_numNonTrivialTopModules << " non-trivial modules)\n";
+}
+
+void InfomapBase::applyPendingRefinedParentModules()
+{
+  if (m_pendingRefinedParentModules.empty())
+    return;
+
+  if (m_pendingRefinedParentModules.size() != activeNetwork().size()) {
+    throw std::logic_error("Pending refined parent partition size differs from active network size.");
+  }
+
+  moveActiveNodesToPredefinedModules(m_pendingRefinedParentModules);
+  markCurrentPartitionAsConsolidated();
+  Log(4) << "Initialized refined supernodes in " << numActiveModules() << " parent modules.\n";
+  m_pendingRefinedParentModules.clear();
+}
+
+bool InfomapBase::runRefinementBeforeAggregation()
+{
+  if (numTopModules() == 0)
+    return false;
+
+  Stopwatch timer(true);
+  const double codelengthBefore = getCodelength();
+
+  bool isSilent = false;
+  if (isMainInfomap()) {
+    isSilent = Log::isSilent();
+    Log::setSilent(true);
+  }
+
+  unsigned int parentModulesProcessed = 0;
+  unsigned int parentModulesSplit = 0;
+  unsigned int refinedModuleOffset = 0;
+
+  for (auto& module : m_root) {
+    ++parentModulesProcessed;
+
+    if (module.childDegree() < 2) {
+      for (auto& child : module) {
+        child.index = refinedModuleOffset;
+      }
+      ++refinedModuleOffset;
+      continue;
+    }
+
+    InfomapBase& subInfomap = getSubInfomap(module)
+                                  .setTwoLevel(true)
+                                  .setRefineBeforeAggregation(false)
+                                  .setTuneIterationLimit(1);
+    subInfomap.initNetwork(module).run();
+
+    auto originalChildIt = module.begin_child();
+    for (auto& subLeafPtr : subInfomap.leafNodes()) {
+      InfoNode& subLeaf = *subLeafPtr;
+      originalChildIt->index = subLeaf.index + refinedModuleOffset;
+      ++originalChildIt;
+    }
+
+    if (subInfomap.numTopModules() > 1)
+      ++parentModulesSplit;
+
+    refinedModuleOffset += subInfomap.numTopModules();
+    module.disposeInfomap();
+  }
+
+  if (isMainInfomap())
+    Log::setSilent(isSilent);
+
+  double codelengthAfterRefinement = codelengthBefore;
+  const char* decision = "kept";
+
+  if (parentModulesSplit > 0) {
+    setActiveNetworkFromChildrenOfTopModules();
+    std::vector<unsigned int> refinedModules(activeNetwork().size());
+    for (unsigned int i = 0; i < activeNetwork().size(); ++i) {
+      refinedModules[i] = activeNetwork()[i]->index;
+    }
+
+    initPartition();
+    moveActiveNodesToPredefinedModules(refinedModules);
+    consolidateModules(true);
+
+    codelengthAfterRefinement = getCodelength();
+
+    std::vector<unsigned int> parentModules(numTopModules());
+    unsigned int i = 0;
+    for (auto& refinedModule : m_root) {
+      parentModules[i++] = refinedModule.index;
+    }
+
+    if (codelengthAfterRefinement > codelengthBefore + 1e-12) {
+      setActiveNetworkFromChildrenOfRoot();
+      initPartition();
+      moveActiveNodesToPredefinedModules(parentModules);
+      consolidateModules(true);
+      m_pendingRefinedParentModules.clear();
+      decision = "reverted";
+    } else {
+      m_pendingRefinedParentModules = parentModules;
+    }
+  }
+
+  timer.stop();
+  Log(1) << "Refine before aggregation level " << m_aggregationLevel
+         << ": codelengthBefore=" << io::toPrecision(codelengthBefore)
+         << ", codelengthAfterRefinement=" << io::toPrecision(codelengthAfterRefinement)
+         << ", decision=" << decision
+         << ", parentModules=" << parentModulesProcessed
+         << ", splitParentModules=" << parentModulesSplit
+         << ", refinedSubmodules=" << refinedModuleOffset
+         << ", runtime=" << timer << '\n';
+
+  return parentModulesSplit > 0 && decision[0] == 'k';
 }
 
 unsigned int InfomapBase::fineTune()

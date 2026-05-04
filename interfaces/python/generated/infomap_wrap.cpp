@@ -9157,6 +9157,60 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_Config_refineBeforeAggregation_set(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  bool arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "Config_refineBeforeAggregation_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_refineBeforeAggregation_set" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  ecode2 = SWIG_AsVal_bool(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Config_refineBeforeAggregation_set" "', argument " "2"" of type '" "bool""'");
+  } 
+  arg2 = static_cast< bool >(val2);
+  if (arg1) (arg1)->refineBeforeAggregation = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Config_refineBeforeAggregation_get(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::Config *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  bool result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__Config, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Config_refineBeforeAggregation_get" "', argument " "1"" of type '" "infomap::Config *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::Config * >(argp1);
+  result = (bool) ((arg1)->refineBeforeAggregation);
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_Config_noCoarseTune_set(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   infomap::Config *arg1 = 0 ;
@@ -45377,6 +45431,43 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_InfomapConfigInfomapBase_setRefineBeforeAggregation(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapConfig< infomap::InfomapBase > *arg1 = 0 ;
+  bool arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  infomap::InfomapBase *result = 0 ;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "InfomapConfigInfomapBase_setRefineBeforeAggregation", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapConfigT_infomap__InfomapBase_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapConfigInfomapBase_setRefineBeforeAggregation" "', argument " "1"" of type '" "infomap::InfomapConfig< infomap::InfomapBase > *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapConfig< infomap::InfomapBase > * >(argp1);
+  ecode2 = SWIG_AsVal_bool(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "InfomapConfigInfomapBase_setRefineBeforeAggregation" "', argument " "2"" of type '" "bool""'");
+  } 
+  arg2 = static_cast< bool >(val2);
+  {
+    try {
+      result = (infomap::InfomapBase *) &(arg1)->setRefineBeforeAggregation(arg2);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_infomap__InfomapBase, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_InfomapConfigInfomapBase_setNoInfomap__SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   infomap::InfomapConfig< infomap::InfomapBase > *arg1 = 0 ;
@@ -57652,6 +57743,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "Config_maxFlowIterations_get", _wrap_Config_maxFlowIterations_get, METH_O, NULL},
 	 { "Config_twoLevel_set", _wrap_Config_twoLevel_set, METH_VARARGS, NULL},
 	 { "Config_twoLevel_get", _wrap_Config_twoLevel_get, METH_O, NULL},
+	 { "Config_refineBeforeAggregation_set", _wrap_Config_refineBeforeAggregation_set, METH_VARARGS, NULL},
+	 { "Config_refineBeforeAggregation_get", _wrap_Config_refineBeforeAggregation_get, METH_O, NULL},
 	 { "Config_noCoarseTune_set", _wrap_Config_noCoarseTune_set, METH_VARARGS, NULL},
 	 { "Config_noCoarseTune_get", _wrap_Config_noCoarseTune_get, METH_O, NULL},
 	 { "Config_recordedTeleportation_set", _wrap_Config_recordedTeleportation_set, METH_VARARGS, NULL},
@@ -58444,6 +58537,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "InfomapConfigInfomapBase_setFastHierarchicalSolution", _wrap_InfomapConfigInfomapBase_setFastHierarchicalSolution, METH_VARARGS, NULL},
 	 { "InfomapConfigInfomapBase_setOnlySuperModules", _wrap_InfomapConfigInfomapBase_setOnlySuperModules, METH_VARARGS, NULL},
 	 { "InfomapConfigInfomapBase_setNoCoarseTune", _wrap_InfomapConfigInfomapBase_setNoCoarseTune, METH_VARARGS, NULL},
+	 { "InfomapConfigInfomapBase_setRefineBeforeAggregation", _wrap_InfomapConfigInfomapBase_setRefineBeforeAggregation, METH_VARARGS, NULL},
 	 { "InfomapConfigInfomapBase_setNoInfomap", _wrap_InfomapConfigInfomapBase_setNoInfomap, METH_VARARGS, NULL},
 	 { "InfomapConfigInfomapBase_setMarkovTime", _wrap_InfomapConfigInfomapBase_setMarkovTime, METH_VARARGS, NULL},
 	 { "InfomapConfigInfomapBase_setDirected", _wrap_InfomapConfigInfomapBase_setDirected, METH_VARARGS, NULL},

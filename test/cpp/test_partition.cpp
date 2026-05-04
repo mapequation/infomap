@@ -528,6 +528,59 @@ TEST_CASE("Consolidate modules preserves aggregated inter-module flow [fast][cor
   CHECK(aggregatedModuleFlow(im.root(), im.isUndirectedClustering()) == expectedFlows);
 }
 
+TEST_CASE("Refine before aggregation can split a consolidated parent module [fast][core][partition][tree]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+  im.setActiveNetworkFromLeafs();
+  im.initPartition();
+
+  std::vector<unsigned int> oneModule(6, 0);
+  im.moveActiveNodesToPredefinedModules(oneModule);
+  im.consolidateModules(false);
+
+  REQUIRE(im.numTopModules() == 1);
+  CHECK(im.runRefinementBeforeAggregation());
+
+  CHECK(im.numTopModules() > 1);
+  REQUIRE(im.m_pendingRefinedParentModules.size() == im.numTopModules());
+  for (auto parentModule : im.m_pendingRefinedParentModules) {
+    CHECK(parentModule == 0);
+  }
+
+  im.setActiveNetworkFromChildrenOfRoot();
+  im.initPartition();
+  im.applyPendingRefinedParentModules();
+
+  CHECK(im.numActiveModules() == 1);
+  CHECK(im.m_pendingRefinedParentModules.empty());
+}
+
+TEST_CASE("Refine before aggregation flag keeps default fixture result stable when disabled [fast][core][partition]")
+{
+  InfomapWrapper baseline(infomap::test::defaultFlags());
+  baseline.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  baseline.run();
+
+  InfomapWrapper explicitOff(infomap::test::defaultFlags("--no-refine-before-aggregation"));
+  explicitOff.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  explicitOff.run();
+
+  CHECK(infomap::test::canonicalPartition(explicitOff.getModules()) == infomap::test::canonicalPartition(baseline.getModules()));
+  CHECK(explicitOff.codelength() == doctest::Approx(baseline.codelength()));
+  CHECK(explicitOff.getIndexCodelength() == doctest::Approx(baseline.getIndexCodelength()));
+}
+
+TEST_CASE("Refine before aggregation flag runs full partition without recursive sub-refinement [fast][core][partition]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--refine-before-aggregation"));
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+
+  CHECK_NOTHROW(im.run());
+  infomap::test::checkRunSanity(im);
+}
+
 TEST_CASE("Invalid cluster-data fixtures fail deterministically [fast][core][partition][parser]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

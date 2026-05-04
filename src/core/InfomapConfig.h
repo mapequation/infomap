@@ -112,6 +112,12 @@ public:
     return get();
   }
 
+  Infomap& setRefineBeforeAggregation(bool value)
+  {
+    refineBeforeAggregation = value;
+    return get();
+  }
+
   Infomap& setNoInfomap(bool value = true)
   {
     noInfomap = value;

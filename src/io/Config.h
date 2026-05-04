@@ -111,6 +111,7 @@ struct Config {
 
   // Clustering
   bool twoLevel = false;
+  bool refineBeforeAggregation = false;
   bool noCoarseTune = false;
   bool recordedTeleportation = false;
   bool regularized = false; // Add a Bayesian prior network with recorded teleportation (sets recordedTeleportation and teleportToNodes to true)
@@ -203,6 +204,7 @@ struct Config {
     multilayerRelaxByJensenShannonDivergence = other.multilayerRelaxByJensenShannonDivergence;
     multilayerJSRelaxLimit = other.multilayerJSRelaxLimit;
     twoLevel = other.twoLevel;
+    refineBeforeAggregation = other.refineBeforeAggregation;
     noCoarseTune = other.noCoarseTune;
     recordedTeleportation = other.recordedTeleportation;
     regularized = other.regularized;

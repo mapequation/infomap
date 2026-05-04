@@ -23,6 +23,12 @@ TEST_CASE("Config parses flow model selection and output formats [fast][core][co
   CHECK(config.printTree);
 }
 
+TEST_CASE("Config parses refine-before-aggregation flag [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output --refine-before-aggregation", true);
+  CHECK(config.refineBeforeAggregation);
+}
+
 TEST_CASE("Config treats directed shorthand as directed flow model [fast][core][config][cli]")
 {
   const Config config("input.net --silent --no-file-output --directed", true);

@@ -41,6 +41,7 @@ export type Arguments = Partial<{
   silent: boolean;
   // algorithm
   twoLevel: boolean;
+  refineBeforeAggregation: boolean;
   flowModel:
     | "undirected"
     | "directed"
@@ -136,6 +137,8 @@ export default function argumentsToString(args: Arguments) {
   if (args.silent) result += " --silent";
 
   if (args.twoLevel) result += " --two-level";
+
+  if (args.refineBeforeAggregation) result += " --refine-before-aggregation";
 
   if (args.flowModel != null) result += " --flow-model " + args.flowModel;
 
