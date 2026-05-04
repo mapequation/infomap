@@ -446,6 +446,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     (1, 3)
         ... )
         >>> im.add_links(links)
+        >>> import numpy as np
+        >>> im.add_links(np.array([[2, 3, 1.0], [3, 4, 2.0]]))
 
 
         See Also
@@ -455,9 +457,11 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
         Parameters
         ----------
-        links : iterable of tuples
+        links : iterable of tuples or numpy.ndarray
             Iterable of tuples of int of the form
-            ``(source_id, target_id, [weight])``
+            ``(source_id, target_id, [weight])``. NumPy arrays must be
+            2-dimensional with 2 or 3 columns, where the first two columns are
+            source and target ids and the optional third column is link weight.
         """
         if links.__class__.__module__.startswith("numpy"):
             try:

@@ -228,25 +228,50 @@ InfomapClass <- R6::R6Class(
           stop("Each link must contain 2 or 3 values: source, target, and optional weight.",
                call. = FALSE)
         }
-        sources <- lapply(links, function(entry) entry[[1L]])
-        targets <- lapply(links, function(entry) entry[[2L]])
-        weights <- lapply(
+        sources <- vapply(
           links,
           function(entry) {
-            if (length(entry) == 3L) entry[[3L]] else 1.0
-          }
+            value <- entry[[1L]]
+            if (length(value) != 1L) {
+              stop("Each link source value must be scalar.", call. = FALSE)
+            }
+            if (!is.numeric(value)) {
+              stop("`links` source/target values must be numeric/integer.",
+                   call. = FALSE)
+            }
+            value
+          },
+          numeric(1L)
         )
-        if (!all(vapply(sources, is.numeric, logical(1L))) ||
-            !all(vapply(targets, is.numeric, logical(1L)))) {
-          stop("`links` source/target values must be numeric/integer.",
-               call. = FALSE)
-        }
-        if (!all(vapply(weights, is.numeric, logical(1L)))) {
-          stop("`links` weight values must be numeric.", call. = FALSE)
-        }
-        sources <- unlist(sources, use.names = FALSE)
-        targets <- unlist(targets, use.names = FALSE)
-        weights <- unlist(weights, use.names = FALSE)
+        targets <- vapply(
+          links,
+          function(entry) {
+            value <- entry[[2L]]
+            if (length(value) != 1L) {
+              stop("Each link target value must be scalar.", call. = FALSE)
+            }
+            if (!is.numeric(value)) {
+              stop("`links` source/target values must be numeric/integer.",
+                   call. = FALSE)
+            }
+            value
+          },
+          numeric(1L)
+        )
+        weights <- vapply(
+          links,
+          function(entry) {
+            value <- if (length(entry) == 3L) entry[[3L]] else 1.0
+            if (length(value) != 1L) {
+              stop("Each link weight value must be scalar.", call. = FALSE)
+            }
+            if (!is.numeric(value)) {
+              stop("`links` weight values must be numeric.", call. = FALSE)
+            }
+            value
+          },
+          numeric(1L)
+        )
       }
 
       private$.swig$addLinks(as.integer(sources), as.integer(targets), as.numeric(weights))
