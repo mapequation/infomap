@@ -35389,6 +35389,52 @@ R_swig_delete_Network ( SEXP self)
 
 
 SWIGEXPORT SEXP
+R_swig_Network_setConfig ( SEXP self, SEXP config)
+{
+  {
+    infomap::Network *arg1 = 0 ;
+    infomap::Config *arg2 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__Network, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Network_setConfig" "', argument " "1"" of type '" "infomap::Network *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::Network * >(argp1);
+    res2 = SWIG_R_ConvertPtr(config, &argp2, SWIGTYPE_p_infomap__Config,  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Network_setConfig" "', argument " "2"" of type '" "infomap::Config const &""'"); 
+    }
+    if (!argp2) {
+      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "Network_setConfig" "', argument " "2"" of type '" "infomap::Config const &""'"); 
+    }
+    arg2 = reinterpret_cast< infomap::Config * >(argp2);
+    {
+      try {
+        (arg1)->setConfig((infomap::Config const &)*arg2);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = R_NilValue;
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_Network_clear ( SEXP self)
 {
   {
@@ -47840,6 +47886,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_InfoNode_begin_leaf_modules", (DL_FUNC) &R_swig_InfoNode_begin_leaf_modules, 2},
    {"R_swig_InfomapIterator_copy", (DL_FUNC) &R_swig_InfomapIterator_copy, 2},
    {"R_swig_new_map_uint_vector_uint__SWIG_0", (DL_FUNC) &R_swig_new_map_uint_vector_uint__SWIG_0, 1},
+   {"R_swig_Network_setConfig", (DL_FUNC) &R_swig_Network_setConfig, 2},
    {"R_swig_new_map_uint_vector_uint__SWIG_1", (DL_FUNC) &R_swig_new_map_uint_vector_uint__SWIG_1, 0},
    {"R_swig_InfomapIterator_begin_leaf_modules", (DL_FUNC) &R_swig_InfomapIterator_begin_leaf_modules, 2},
    {"R_swig_InfomapIteratorPhysical_childIndex", (DL_FUNC) &R_swig_InfomapIteratorPhysical_childIndex, 2},
