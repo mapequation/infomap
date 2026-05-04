@@ -41,10 +41,19 @@ Configure these integrations before the first release:
    `infomap-v2.9.2`. If Release Please is allowed to add the component
    prefix, the first release PR after the migration can re-include already
    released commits and generate an overlapping `CHANGELOG.md`.
-7. Confirm that GitHub Actions can publish this repository's package to GHCR.
+7. Confirm the Release Please GitHub App is configured through these
+   repository secrets:
+   - `RELEASE_PLEASE_APP_ID`
+   - `RELEASE_PLEASE_PRIVATE_KEY`
+
+   The app needs repository permissions for contents, pull requests, and
+   issues. Do not use the default `GITHUB_TOKEN` for Release Please: tags
+   created with `GITHUB_TOKEN` do not trigger the follow-up `release.yml`
+   workflow that publishes packages.
+8. Confirm that GitHub Actions can publish this repository's package to GHCR.
    The release workflow uses `GITHUB_TOKEN` with `packages: write` permission
    and publishes `ghcr.io/mapequation/infomap`.
-8. Add repository dispatch tokens for downstream update workflows:
+9. Add repository dispatch tokens for downstream update workflows:
    - `HOMEBREW_INFOMAP_REPO_DISPATCH_TOKEN`
    - `INFOMAP_ONLINE_REPO_DISPATCH_TOKEN`
 
@@ -90,6 +99,11 @@ Configure these integrations before the first release:
 
    The R package is also continuously published by r-universe from
    `master`; the release workflow does not push to r-universe directly.
+
+   `workflow_dispatch` for `.github/workflows/release.yml` is intentionally a
+   partial recovery path. It rebuilds and re-attaches GitHub Release assets and
+   republishes GHCR images for an existing tag, but PyPI, npm, Homebrew, and
+   `infomap-online` publishing are gated to tag `push` events.
 
 ## R Package Publishing
 
