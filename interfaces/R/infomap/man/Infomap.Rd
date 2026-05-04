@@ -483,8 +483,11 @@ Add many multilayer links at once.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{links}}{A list of vectors, each
-\verb{c(source_multilayer_node, target_multilayer_node, [weight])}.}
+\item{\code{links}}{A list whose entries are
+\code{list(source_multilayer_node, target_multilayer_node, weight)}
+(weight optional), or a 4- or 5-column matrix / data.frame of
+\code{source_layer}, \code{source_node}, \code{target_layer}, \code{target_node}, and
+optional \code{weight}.}
 }
 \if{html}{\out{</div>}}
 }

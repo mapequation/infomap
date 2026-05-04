@@ -259,7 +259,10 @@ and directed links. Infomap will not make any changes to the network.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>links</strong> (<em>iterable</em><em> of </em><em>tuples</em>) – Iterable of tuples of the form
-<code class="docutils literal notranslate"><span class="pre">(source_node,</span> <span class="pre">target_node,</span> <span class="pre">[weight])</span></code></p>
+<code class="docutils literal notranslate"><span class="pre">(source_node,</span> <span class="pre">target_node,</span> <span class="pre">[weight])</span></code>. NumPy arrays must be
+2-dimensional with 4 or 5 columns of the form
+<code class="docutils literal notranslate"><span class="pre">(source_layer_id,</span> <span class="pre">source_node_id,</span> <span class="pre">target_layer_id,</span>
+<span class="pre">target_node_id,</span> <span class="pre">[weight])</span></code>.</p>
 </dd>
 </dl>
 </dd></dl>

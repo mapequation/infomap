@@ -19,6 +19,77 @@ test_that("multilayer intra/inter format clusters across layers", {
   expect_setequal(unique(df$layer_id), c(1L, 2L))
 })
 
+expect_same_multilayer_links <- function(actual, expected) {
+  expect_equal(actual$num_links, expected$num_links)
+  expect_equal(actual$num_nodes, expected$num_nodes)
+  expect_equal(actual$num_physical_nodes, expected$num_physical_nodes)
+}
+
+test_that("add_multilayer_links list input matches repeated add_multilayer_link", {
+  links <- list(
+    list(c(1, 1), c(1, 2), 2.0),
+    list(c(1, 2), c(1, 3), 2.0),
+    list(c(1, 3), c(2, 1), 1.0),
+    list(c(2, 1), c(2, 2), 3.0),
+    list(c(2, 2), c(2, 3), 3.0),
+    list(c(2, 3), c(1, 1), 1.0)
+  )
+
+  baseline <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
+  for (link in links) {
+    baseline$add_multilayer_link(link[[1L]], link[[2L]], link[[3L]])
+  }
+
+  im <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
+  im$add_multilayer_links(links)
+
+  expect_same_multilayer_links(im, baseline)
+
+  baseline$run()
+  im$run()
+  expect_equal(im$codelength, baseline$codelength, tolerance = 1e-10)
+})
+
+test_that("add_multilayer_links accepts matrix input through bulk path", {
+  links <- matrix(
+    c(1, 1, 1, 2, 2,
+      1, 2, 2, 1, 1,
+      2, 1, 2, 2, 3),
+    ncol = 5L,
+    byrow = TRUE
+  )
+
+  baseline <- Infomap(silent = TRUE)
+  for (i in seq_len(nrow(links))) {
+    baseline$add_multilayer_link(links[i, 1:2], links[i, 3:4], links[i, 5])
+  }
+
+  im <- Infomap(silent = TRUE)
+  im$add_multilayer_links(links)
+
+  expect_same_multilayer_links(im, baseline)
+})
+
+test_that("add_multilayer_links accepts unweighted matrix input", {
+  links <- matrix(
+    c(1, 1, 1, 2,
+      1, 2, 2, 1,
+      2, 1, 2, 2),
+    ncol = 4L,
+    byrow = TRUE
+  )
+
+  baseline <- Infomap(silent = TRUE)
+  for (i in seq_len(nrow(links))) {
+    baseline$add_multilayer_link(links[i, 1:2], links[i, 3:4])
+  }
+
+  im <- Infomap(silent = TRUE)
+  im$add_multilayer_links(links)
+
+  expect_same_multilayer_links(im, baseline)
+})
+
 test_that("add_igraph rejects diagonal multilayer links by default", {
   skip_if_not_installed("igraph")
 

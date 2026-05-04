@@ -712,10 +712,92 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ----------
         links : iterable of tuples
             Iterable of tuples of the form
-            ``(source_node, target_node, [weight])``
+            ``(source_node, target_node, [weight])``. NumPy arrays must be
+            2-dimensional with 4 or 5 columns of the form
+            ``(source_layer_id, source_node_id, target_layer_id,
+            target_node_id, [weight])``.
         """
+        if links.__class__.__module__.startswith("numpy"):
+            try:
+                import numpy as np
+            except ImportError:
+                pass
+            else:
+                links_array = np.asarray(links)
+                if links_array.ndim != 2:
+                    raise ValueError(
+                        "Numpy multilayer link arrays must be 2D with 4 or 5 columns."
+                    )
+                if links_array.shape[1] not in (4, 5):
+                    raise ValueError(
+                        "Numpy multilayer link arrays must have 4 or 5 columns: "
+                        "(source_layer_id, source_node_id, target_layer_id, "
+                        "target_node_id, [weight])."
+                    )
+
+                source_layer_ids = links_array[:, 0].astype(np.uint32, copy=False).tolist()
+                source_node_ids = links_array[:, 1].astype(np.uint32, copy=False).tolist()
+                target_layer_ids = links_array[:, 2].astype(np.uint32, copy=False).tolist()
+                target_node_ids = links_array[:, 3].astype(np.uint32, copy=False).tolist()
+                if links_array.shape[1] == 5:
+                    weights = links_array[:, 4].astype(np.float64, copy=False).tolist()
+                else:
+                    weights = [1.0] * links_array.shape[0]
+
+                return super().addMultilayerLinks(
+                    source_layer_ids,
+                    source_node_ids,
+                    target_layer_ids,
+                    target_node_ids,
+                    weights,
+                )
+
+        source_layer_ids = []
+        source_node_ids = []
+        target_layer_ids = []
+        target_node_ids = []
+        weights = []
+
         for link in links:
-            self.add_multilayer_link(*link)
+            try:
+                link_length = len(link)
+            except TypeError as err:
+                raise ValueError(
+                    "Each multilayer link must be a sequence of 2 or 3 values."
+                ) from err
+
+            if link_length == 2:
+                source_node, target_node = link
+                weight = 1.0
+            elif link_length == 3:
+                source_node, target_node, weight = link
+            else:
+                raise ValueError(
+                    "Each multilayer link must contain 2 or 3 values: "
+                    "(source_node, target_node, [weight])."
+                )
+
+            try:
+                source_layer_id, source_node_id = source_node
+                target_layer_id, target_node_id = target_node
+            except (TypeError, ValueError) as err:
+                raise ValueError(
+                    "Each multilayer node must contain 2 values: (layer_id, node_id)."
+                ) from err
+
+            source_layer_ids.append(source_layer_id)
+            source_node_ids.append(source_node_id)
+            target_layer_ids.append(target_layer_id)
+            target_node_ids.append(target_node_id)
+            weights.append(weight)
+
+        return super().addMultilayerLinks(
+            source_layer_ids,
+            source_node_ids,
+            target_layer_ids,
+            target_node_ids,
+            weights,
+        )
 
     def remove_multilayer_link(self):
         raise NotImplementedError(

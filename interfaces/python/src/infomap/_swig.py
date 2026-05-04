@@ -2210,6 +2210,9 @@ class Network(StateNetwork):
     def addMultilayerLink(self, *args):
         return _infomap.Network_addMultilayerLink(self, *args)
 
+    def addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights):
+        return _infomap.Network_addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights)
+
     def addMultilayerIntraLink(self, layer, n1, n2, weight):
         return _infomap.Network_addMultilayerIntraLink(self, layer, n1, n2, weight)
 
@@ -3039,6 +3042,9 @@ class InfomapWrapper(InfomapBase):
 
     def addMultilayerLink(self, layer1, n1, layer2, n2, weight=1.0):
         return _infomap.InfomapWrapper_addMultilayerLink(self, layer1, n1, layer2, n2, weight)
+
+    def addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights):
+        return _infomap.InfomapWrapper_addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights)
 
     def addMultilayerIntraLink(self, layer, n1, n2, weight):
         return _infomap.InfomapWrapper_addMultilayerIntraLink(self, layer, n1, n2, weight)

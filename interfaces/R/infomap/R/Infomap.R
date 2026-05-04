@@ -333,13 +333,106 @@ InfomapClass <- R6::R6Class(
     },
 
     #' @description Add many multilayer links at once.
-    #' @param links A list of vectors, each
-    #'   `c(source_multilayer_node, target_multilayer_node, [weight])`.
+    #' @param links A list whose entries are
+    #'   `list(source_multilayer_node, target_multilayer_node, weight)`
+    #'   (weight optional), or a 4- or 5-column matrix / data.frame of
+    #'   `source_layer`, `source_node`, `target_layer`, `target_node`, and
+    #'   optional `weight`.
     add_multilayer_links = function(links) {
-      for (entry in links) {
-        weight <- if (length(entry) >= 3L) entry[[3L]] else 1.0
-        self$add_multilayer_link(entry[[1L]], entry[[2L]], weight)
+      if (is.matrix(links) || is.data.frame(links)) {
+        ncol_links <- ncol(links)
+        if (!ncol_links %in% c(4L, 5L)) {
+          stop("`links` matrix/data.frame must have 4 or 5 columns ",
+               "(source_layer, source_node, target_layer, target_node, [weight]).",
+               call. = FALSE)
+        }
+
+        source_layers <- if (is.matrix(links)) links[, 1L] else links[[1L]]
+        source_nodes <- if (is.matrix(links)) links[, 2L] else links[[2L]]
+        target_layers <- if (is.matrix(links)) links[, 3L] else links[[3L]]
+        target_nodes <- if (is.matrix(links)) links[, 4L] else links[[4L]]
+        id_columns <- list(source_layers, source_nodes, target_layers, target_nodes)
+        if (!all(vapply(id_columns, is.numeric, logical(1L)))) {
+          stop("`links` multilayer id columns must be numeric/integer.",
+               call. = FALSE)
+        }
+
+        weights <- if (ncol_links == 5L) {
+          w <- if (is.matrix(links)) links[, 5L] else links[[5L]]
+          if (!is.numeric(w)) {
+            stop("`links` weight column must be numeric.", call. = FALSE)
+          }
+          as.numeric(w)
+        } else {
+          rep(1.0, length(source_layers))
+        }
+      } else {
+        link_lengths <- vapply(links, length, integer(1L))
+        if (!all(link_lengths %in% c(2L, 3L))) {
+          stop("Each multilayer link must contain 2 or 3 values: ",
+               "source node, target node, and optional weight.",
+               call. = FALSE)
+        }
+
+        extract_node_value <- function(node, name, index) {
+          if (length(node) != 2L) {
+            stop("Each multilayer node must contain 2 values: layer id and node id.",
+                 call. = FALSE)
+          }
+          value <- node[[index]]
+          if (length(value) != 1L) {
+            stop("Each multilayer ", name, " value must be scalar.",
+                 call. = FALSE)
+          }
+          if (!is.numeric(value)) {
+            stop("Multilayer layer/node values must be numeric/integer.",
+                 call. = FALSE)
+          }
+          value
+        }
+
+        source_layers <- vapply(
+          links,
+          function(entry) extract_node_value(entry[[1L]], "source layer", 1L),
+          numeric(1L)
+        )
+        source_nodes <- vapply(
+          links,
+          function(entry) extract_node_value(entry[[1L]], "source node", 2L),
+          numeric(1L)
+        )
+        target_layers <- vapply(
+          links,
+          function(entry) extract_node_value(entry[[2L]], "target layer", 1L),
+          numeric(1L)
+        )
+        target_nodes <- vapply(
+          links,
+          function(entry) extract_node_value(entry[[2L]], "target node", 2L),
+          numeric(1L)
+        )
+        weights <- vapply(
+          links,
+          function(entry) {
+            value <- if (length(entry) == 3L) entry[[3L]] else 1.0
+            if (length(value) != 1L) {
+              stop("Each multilayer link weight value must be scalar.",
+                   call. = FALSE)
+            }
+            if (!is.numeric(value)) {
+              stop("Multilayer link weight values must be numeric.",
+                   call. = FALSE)
+            }
+            value
+          },
+          numeric(1L)
+        )
       }
+
+      private$.swig$addMultilayerLinks(
+        as.integer(source_layers), as.integer(source_nodes),
+        as.integer(target_layers), as.integer(target_nodes), as.numeric(weights)
+      )
       invisible(self)
     },
 
