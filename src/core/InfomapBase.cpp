@@ -969,7 +969,9 @@ void InfomapBase::hierarchicalPartition()
 
           module.replaceChildrenWithGrandChildren();
 
-          auto& subInfomap = getSubInfomap(module).initNetwork(module);
+          auto& subInfomap = getSubInfomap(module)
+                                  .setRefineBeforeAggregation(false)
+                                  .initNetwork(module);
 
           subInfomap.initPartition(modules);
 
@@ -1634,6 +1636,7 @@ unsigned int InfomapBase::coarseTune()
     } else {
       InfomapBase& subInfomap = getSubInfomap(node)
                                     .setTwoLevel(true)
+                                    .setRefineBeforeAggregation(false)
                                     .setTuneIterationLimit(1);
       subInfomap.initNetwork(node).run();
 
@@ -2098,6 +2101,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
     subQueue.level = queue.level + 1;
 
     auto& subInfomap = getSubInfomap(module)
+                           .setRefineBeforeAggregation(false)
                            .initNetwork(module);
     // Run two-level partition + find hierarchically super modules (skip recursion)
     subInfomap.setOnlySuperModules(true).run();
