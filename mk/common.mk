@@ -148,9 +148,7 @@ help:
 		"  make build-js-metadata test-js-metadata" \
 		"  make build-js test-js" \
 		"  make build-docs" \
-		"  make test-docs" \
-		"" \
-		"Legacy aliases like make python, make js-worker, make cpp-test, and make py-test still work."
+		"  make test-docs"
 
 build-binding-options: build-native
 	@$(PYTHON_FOR_BUILD_CONFIG) $(BINDING_OPTIONS_SCRIPT) --infomap-bin ./Infomap --output-root .

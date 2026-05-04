@@ -45,7 +45,6 @@ PYTHON_BUILD_ENV = \
 .PHONY: \
 	build-python \
 	build-python-swig \
-	build-python-package-files \
 	clean-python-build-cache \
 	test-python-swig-freshness \
 	dev-python-install \
@@ -60,8 +59,7 @@ PYTHON_BUILD_ENV = \
 	format-python \
 	release-python-dist \
 	release-python-testpypi \
-	release-python-pypi \
-	py-prepare
+	release-python-pypi
 
 build-python:
 	@$(MAKE) --no-print-directory clean-python-build-cache
@@ -70,9 +68,6 @@ build-python:
 
 clean-python-build-cache:
 	@find build -maxdepth 1 -type d \( -name 'bdist.*' -o -name 'lib.*' \) -exec rm -rf {} + 2>/dev/null || true
-
-build-python-package-files: build-python-swig
-	@true
 
 build-python-swig:
 	@SWIG="$(SWIG)" $(PYTHON) scripts/generate_python_swig.py --python-out $(PYTHON_SWIG_PY) --cpp-out $(PYTHON_SWIG_CPP)
@@ -132,9 +127,6 @@ clean-python:
 
 format-python:
 	$(RUFF) format $(PYTHON_FORMAT_TARGETS) || true
-
-py-prepare:
-	$(PIP) install -e '.[test,docs,examples,release]'
 
 release-python-dist:
 	@$(MAKE) --no-print-directory clean-python-build-cache

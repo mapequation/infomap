@@ -21,7 +21,7 @@ example-igraph: example-igraph.cpp $(INFOMAP_LIB) Makefile
 
 # Make Infomap library
 $(INFOMAP_LIB):
-	cd $(INFOMAP_DIR) && $(MAKE) lib
+	cd $(INFOMAP_DIR) && $(MAKE) build-lib
 
 clean:
 	$(RM) example-igraph
