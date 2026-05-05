@@ -27,10 +27,12 @@ Configure these integrations before the first release:
 
 1. Create the GitHub environments `pypi-release` and `npm-release`.
 2. Add the required reviewers to both environments.
-3. Configure PyPI trusted publishing for this repository and
-   `.github/workflows/release.yml`.
-4. Configure npm trusted publishing for this repository and
-   `.github/workflows/release.yml`.
+3. Configure PyPI trusted publishing for project `infomap` with owner
+   `mapequation`, repository `infomap`, workflow `release.yml`, and
+   environment `pypi-release`.
+4. Configure npm trusted publishing for package `@mapequation/infomap` with
+   owner `mapequation`, repository `infomap`, workflow `release.yml`, and
+   environment `npm-release`.
 5. Remove legacy registry secrets after trusted publishing is confirmed:
    - `PYPI_USERNAME`
    - `PYPI_PASSWORD`
@@ -100,10 +102,9 @@ Configure these integrations before the first release:
    The R package is also continuously published by r-universe from
    `master`; the release workflow does not push to r-universe directly.
 
-   `workflow_dispatch` for `.github/workflows/release.yml` is intentionally a
-   partial recovery path. It rebuilds and re-attaches GitHub Release assets and
-   republishes GHCR images for an existing tag, but PyPI, npm, Homebrew, and
-   `infomap-online` publishing are gated to tag `push` events.
+   `workflow_dispatch` for `.github/workflows/release.yml` rebuilds and
+   republishes an existing tag. Use it only after confirming the target version
+   has not already been published to a registry that rejects duplicate uploads.
 
 ## R Package Publishing
 
@@ -203,9 +204,13 @@ If a release only partially succeeds:
   `workflow_dispatch` for the same tag to rebuild and re-attach the GitHub
   Release assets before approving registry publishing.
 - If PyPI fails before any successful publish, fix the configuration problem and
-  rerun `publish-pypi` in the original tag-triggered release workflow.
+  rerun `.github/workflows/release.yml` with `workflow_dispatch` for the same
+  tag, or rerun `publish-pypi` in the original workflow if its artifacts are
+  still available.
 - If npm fails before any successful publish, fix the configuration problem and
-  rerun `publish-npm` in the original tag-triggered release workflow.
+  rerun `.github/workflows/release.yml` with `workflow_dispatch` for the same
+  tag, or rerun `publish-npm` in the original workflow if its artifacts are
+  still available.
 - If GHCR publishing fails before any successful publish, fix the configuration
   problem and rerun `.github/workflows/release.yml` with `workflow_dispatch`
   for the same tag. If any GHCR tags already published, inspect the registry
