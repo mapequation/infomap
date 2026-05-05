@@ -61,6 +61,14 @@ release = [
   "wheel",
 ]
 
+[dependency-groups]
+release = [
+  "build",
+  "cibuildwheel==3.3.1",
+  "twine",
+  "wheel",
+]
+
 [project.scripts]
 infomap = "infomap:main"
 
