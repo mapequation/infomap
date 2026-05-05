@@ -2575,6 +2575,9 @@ class InfomapBase(InfomapConfigInfomapBase):
     def getElapsedTime(self):
         return _infomap.InfomapBase_getElapsedTime(self)
 
+    def getElapsedTimeInSeconds(self):
+        return _infomap.InfomapBase_getElapsedTimeInSeconds(self)
+
     def activeNetwork(self):
         return _infomap.InfomapBase_activeNetwork(self)
 

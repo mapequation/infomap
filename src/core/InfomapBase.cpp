@@ -286,7 +286,7 @@ void InfomapBase::run(Network& network)
       restoreHardPartition();
 
     if (isMainInfomap()) {
-      Log() << "\n=> Trial " << (i + 1) << "/" << numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
+      Log() << "\n=> Trial " << (i + 1) << "/" << numTrials << " finished in " << timer.getElapsedTimeInSeconds() << "s with codelength " << m_hierarchicalCodelength << "\n";
       m_codelengths.push_back(m_hierarchicalCodelength);
       m_numTopModules.push_back(numTopModules());
 
@@ -1234,7 +1234,7 @@ void InfomapBase::aggregateFlowValuesFromLeafToRoot()
 {
   for (auto& node : root().infomapTree()) {
     if (!node.isLeaf()) {
-      node.data = {};
+      node.data = { };
     }
   }
 

@@ -55,7 +55,7 @@ public:
     return m_running ? Clock::now() : m_stop;
   }
 
-  double getElapsedTimeInSec() const
+  double getElapsedTimeInSeconds() const
   {
     std::chrono::duration<double> diff = getCurrentTimePoint() - m_start;
     return diff.count();
@@ -88,7 +88,7 @@ public:
       temp %= 60'000;
       out << temp * 1.0 / 1000 << "s";
     } else {
-      out << stopwatch.getElapsedTimeInSec() << "s";
+      out << stopwatch.getElapsedTimeInSeconds() << "s";
     }
     return out;
   }

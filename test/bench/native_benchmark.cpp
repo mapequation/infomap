@@ -48,7 +48,7 @@ std::string jsonEscape(const std::string& value)
 unsigned long long peakRssBytes()
 {
 #if defined(__unix__) || defined(__APPLE__)
-  struct rusage usage {};
+  struct rusage usage { };
   if (getrusage(RUSAGE_SELF, &usage) != 0) {
     return 0;
   }
@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
 
     infomap::Stopwatch readTimer(true);
     im.readInputData(inputPath);
-    const double readInputSec = readTimer.getElapsedTimeInSec();
+    const double readInputSec = readTimer.getElapsedTimeInSeconds();
 
     const auto inputNodeCount = im.network().numNodes();
     const auto inputLinkCount = im.network().numLinks();
@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
     for (int iteration = 0; iteration < iterations; ++iteration) {
       infomap::Stopwatch runTimer(true);
       im.run();
-      const double runSec = runTimer.getElapsedTimeInSec();
+      const double runSec = runTimer.getElapsedTimeInSeconds();
       const auto currentPeakRss = peakRssBytes();
       totalRunSec += runSec;
       if (currentPeakRss > peakRss) {

@@ -1013,6 +1013,17 @@ class _InfomapResultsMixin:
         return super().getEntropyRate()
 
     @property
+    def elapsed_time(self):
+        """Get the elapsed time of the last run.
+
+        Returns
+        -------
+        float
+            The elapsed time in seconds
+        """
+        return super().getElapsedTimeInSeconds()
+
+    @property
     def meta_codelength(self):
         """Get the meta codelength.
 

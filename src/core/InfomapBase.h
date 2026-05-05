@@ -141,6 +141,7 @@ public:
 
   const Date& getStartDate() const { return m_startDate; }
   const Stopwatch& getElapsedTime() const { return m_elapsedTime; }
+  const double getElapsedTimeInSeconds() const { return m_elapsedTime.getElapsedTimeInSeconds(); }
 
   std::vector<InfoNode*>& activeNetwork() const { return *m_activeNetwork; }
 
