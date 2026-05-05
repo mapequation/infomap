@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.10.1](https://github.com/mapequation/infomap/compare/v2.10.0...v2.10.1) (2026-05-05)
+
+
+### Bug Fixes
+
+* **python:** handle missing CLI arguments ([#509](https://github.com/mapequation/infomap/issues/509)) ([705871d](https://github.com/mapequation/infomap/commit/705871d5d4abf94b0f314c55eb6ab663934dafb9))
+
 ## [2.10.0](https://github.com/mapequation/infomap/compare/v2.9.2...v2.10.0) (2026-05-04)
 
 
