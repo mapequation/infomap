@@ -20907,11 +20907,24 @@ class(`InfomapBase_writeClu__SWIG_3`) = c("SWIGFunction", class('InfomapBase_wri
 }
 
 # Dispatch function
+# Start of InfomapBase_elapsedTime
+
+`InfomapBase_elapsedTime` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_InfomapBase_elapsedTime', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`InfomapBase_elapsedTime`, 'returnType') = 'numeric'
+attr(`InfomapBase_elapsedTime`, "inputTypes") = c('_p_infomap__InfomapBase')
+class(`InfomapBase_elapsedTime`) = c("SWIGFunction", class('InfomapBase_elapsedTime'))
+
 # Start of accessor method for infomap::InfomapBase
 setMethod('$', '_p_infomap__InfomapBase', function(x, name)
 
 {
-  accessorFuns = list('iterTree' = InfomapBase_iterTree, 'iterTreePhysical' = InfomapBase_iterTreePhysical, 'iterModules' = InfomapBase_iterModules, 'iterLeafModules' = InfomapBase_iterLeafModules, 'iterLeafNodes' = InfomapBase_iterLeafNodes, 'iterLeafNodesPhysical' = InfomapBase_iterLeafNodesPhysical, 'begin' = InfomapBase_begin, 'end' = InfomapBase_end, 'network' = InfomapBase_network, 'root' = InfomapBase_root, 'numLeafNodes' = InfomapBase_numLeafNodes, 'leafNodes' = InfomapBase_leafNodes, 'numTopModules' = InfomapBase_numTopModules, 'numActiveModules' = InfomapBase_numActiveModules, 'numNonTrivialTopModules' = InfomapBase_numNonTrivialTopModules, 'haveModules' = InfomapBase_haveModules, 'haveNonTrivialModules' = InfomapBase_haveNonTrivialModules, 'numLevels' = InfomapBase_numLevels, 'maxTreeDepth' = InfomapBase_maxTreeDepth, 'getCodelength' = InfomapBase_getCodelength, 'getMetaCodelength' = InfomapBase_getMetaCodelength, 'codelength' = InfomapBase_codelength, 'codelengths' = InfomapBase_codelengths, 'getIndexCodelength' = InfomapBase_getIndexCodelength, 'getModuleCodelength' = InfomapBase_getModuleCodelength, 'getHierarchicalCodelength' = InfomapBase_getHierarchicalCodelength, 'getOneLevelCodelength' = InfomapBase_getOneLevelCodelength, 'getRelativeCodelengthSavings' = InfomapBase_getRelativeCodelengthSavings, 'getEntropyRate' = InfomapBase_getEntropyRate, 'getMaxEntropy' = InfomapBase_getMaxEntropy, 'getMaxFlow' = InfomapBase_getMaxFlow, 'getStartDate' = InfomapBase_getStartDate, 'getElapsedTime' = InfomapBase_getElapsedTime, 'activeNetwork' = InfomapBase_activeNetwork, 'getMultilevelModules' = InfomapBase_getMultilevelModules, 'toString' = InfomapBase_toString, 'getInitialPartition' = InfomapBase_getInitialPartition, 'setInitialPartition' = InfomapBase_setInitialPartition, 'run' = InfomapBase_run, 'writeTree' = InfomapBase_writeTree, 'writeFlowTree' = InfomapBase_writeFlowTree, 'writeNewickTree' = InfomapBase_writeNewickTree, 'writeJsonTree' = InfomapBase_writeJsonTree, 'writeCsvTree' = InfomapBase_writeCsvTree, 'writeClu' = InfomapBase_writeClu);
+  accessorFuns = list('iterTree' = InfomapBase_iterTree, 'iterTreePhysical' = InfomapBase_iterTreePhysical, 'iterModules' = InfomapBase_iterModules, 'iterLeafModules' = InfomapBase_iterLeafModules, 'iterLeafNodes' = InfomapBase_iterLeafNodes, 'iterLeafNodesPhysical' = InfomapBase_iterLeafNodesPhysical, 'begin' = InfomapBase_begin, 'end' = InfomapBase_end, 'network' = InfomapBase_network, 'root' = InfomapBase_root, 'numLeafNodes' = InfomapBase_numLeafNodes, 'leafNodes' = InfomapBase_leafNodes, 'numTopModules' = InfomapBase_numTopModules, 'numActiveModules' = InfomapBase_numActiveModules, 'numNonTrivialTopModules' = InfomapBase_numNonTrivialTopModules, 'haveModules' = InfomapBase_haveModules, 'haveNonTrivialModules' = InfomapBase_haveNonTrivialModules, 'numLevels' = InfomapBase_numLevels, 'maxTreeDepth' = InfomapBase_maxTreeDepth, 'getCodelength' = InfomapBase_getCodelength, 'getMetaCodelength' = InfomapBase_getMetaCodelength, 'codelength' = InfomapBase_codelength, 'codelengths' = InfomapBase_codelengths, 'getIndexCodelength' = InfomapBase_getIndexCodelength, 'getModuleCodelength' = InfomapBase_getModuleCodelength, 'getHierarchicalCodelength' = InfomapBase_getHierarchicalCodelength, 'getOneLevelCodelength' = InfomapBase_getOneLevelCodelength, 'getRelativeCodelengthSavings' = InfomapBase_getRelativeCodelengthSavings, 'getEntropyRate' = InfomapBase_getEntropyRate, 'getMaxEntropy' = InfomapBase_getMaxEntropy, 'getMaxFlow' = InfomapBase_getMaxFlow, 'getStartDate' = InfomapBase_getStartDate, 'getElapsedTime' = InfomapBase_getElapsedTime, 'activeNetwork' = InfomapBase_activeNetwork, 'getMultilevelModules' = InfomapBase_getMultilevelModules, 'toString' = InfomapBase_toString, 'getInitialPartition' = InfomapBase_getInitialPartition, 'setInitialPartition' = InfomapBase_setInitialPartition, 'run' = InfomapBase_run, 'writeTree' = InfomapBase_writeTree, 'writeFlowTree' = InfomapBase_writeFlowTree, 'writeNewickTree' = InfomapBase_writeNewickTree, 'writeJsonTree' = InfomapBase_writeJsonTree, 'writeCsvTree' = InfomapBase_writeCsvTree, 'writeClu' = InfomapBase_writeClu, 'elapsedTime' = InfomapBase_elapsedTime);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));

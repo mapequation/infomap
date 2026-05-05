@@ -46,6 +46,15 @@ def test_add_networkx_state_graph_uses_stable_first_seen_phys_ids(make_infomap):
     assert nodes == [(0, 0, 1), (1, 1, 1), (2, 0, 1)]
 
 
+def test_elapsed_time_is_exposed_after_run(make_infomap):
+    im = make_infomap(no_infomap=True)
+    im.add_links([(1, 2), (2, 3), (3, 1)])
+    im.run()
+
+    assert isinstance(im.elapsed_time, float)
+    assert im.elapsed_time >= 0.0
+
+
 def test_add_networkx_multilayer_graph_with_string_ids(make_infomap):
     graph = nx.Graph()
     graph.add_node("state-b-layer-1", phys_id="beta", layer_id=1)

@@ -1,5 +1,7 @@
 import inspect
 import shlex
+import subprocess
+import sys
 
 import pytest
 
@@ -94,3 +96,30 @@ def test_no_file_output_runs_without_output_directory(make_infomap, load_graph_f
     im.run()
 
     assert im.num_top_modules == 2
+
+
+def test_cli_without_arguments_exits_without_traceback():
+    result = subprocess.run(
+        [sys.executable, "-m", "infomap"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert "Usage: Infomap network_file out_directory [options]." in result.stdout
+    assert "Error: Missing required arguments." in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_cli_help_exits_without_traceback():
+    result = subprocess.run(
+        [sys.executable, "-m", "infomap", "--help"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "Usage:" in result.stdout
+    assert "Traceback" not in result.stderr

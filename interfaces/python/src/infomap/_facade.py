@@ -1390,14 +1390,23 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         """
         return super().codelengths()
 
+    @property
+    def elapsed_time(self):
+        """Get the elapsed run time in seconds.
+
+        Returns
+        -------
+        float
+            The elapsed run time in seconds.
+        """
+        return super().elapsedTime()
+
 def main():
     import sys
 
     args = " ".join(sys.argv[1:])
-    conf = Config(args, True)  # noqa: F405
-    im = Infomap(conf)
-    im.run()
+    return run(args)  # noqa: F405
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
