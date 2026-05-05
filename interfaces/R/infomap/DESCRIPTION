@@ -1,7 +1,7 @@
 Package: infomap
 Title: Network Clustering with the Map Equation
 Config/x-release-please-start-version: marker
-Version: 2.10.0
+Version: 2.10.1
 Config/x-release-please-end: marker
 Authors@R: c(
     person("Daniel", "Edler", email = "daniel.edler@umu.se", role = c("aut", "cre")),
