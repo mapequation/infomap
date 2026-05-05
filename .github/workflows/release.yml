@@ -112,8 +112,7 @@ jobs:
 
   publish-pypi:
     name: Publish to PyPI
-    if: github.event_name == 'push'
-    needs: [publish-github-release, python]
+    needs: [publish-github-release]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment:
@@ -147,7 +146,6 @@ jobs:
 
   publish-ghcr:
     name: Publish GHCR Docker images
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: [publish-github-release]
     runs-on: ubuntu-24.04
     timeout-minutes: 90
@@ -252,8 +250,7 @@ jobs:
 
   publish-npm:
     name: Publish to npm
-    if: github.event_name == 'push'
-    needs: [publish-github-release, publish-pypi, javascript]
+    needs: [publish-github-release]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment:
@@ -280,7 +277,6 @@ jobs:
 
   notify-homebrew-infomap:
     name: Notify homebrew-infomap
-    if: github.event_name == 'push'
     needs: [publish-github-release]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -302,7 +298,6 @@ jobs:
 
   notify-infomap-online:
     name: Notify infomap-online
-    if: github.event_name == 'push'
     needs: [publish-npm]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
