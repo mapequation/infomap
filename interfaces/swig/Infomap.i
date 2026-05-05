@@ -6,6 +6,11 @@
 %{
 /* Includes the header in the wrapper code */
 #include "src/Infomap.h"
+#ifdef SWIGPYTHON
+namespace infomap {
+int run(const std::string& flags);
+}
+#endif
 // SWIG strips namespaces, so include infomap in global namespace in wrapper code
 using namespace infomap;
 %}
@@ -30,6 +35,20 @@ namespace std {
     %template(map_uint_string) std::map<unsigned int, std::string>;
     %template(pair_uint_uint) std::pair<unsigned int, unsigned int>;
     %template(map_pair_uint_uint_double) std::map<std::pair<unsigned int, unsigned int>, double>;
+}
+
+namespace infomap {
+#ifdef SWIGPYTHON
+int run(const std::string& flags);
+#endif
+}
+
+%extend infomap::InfomapBase
+{
+    double elapsedTime()
+    {
+        return $self->getElapsedTime().getElapsedTimeInSec();
+    }
 }
 
 #ifdef SWIGPYTHON

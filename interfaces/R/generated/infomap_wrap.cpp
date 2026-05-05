@@ -1630,6 +1630,11 @@ template <typename T> T SwigValueInit() {
 
 /* Includes the header in the wrapper code */
 #include "src/Infomap.h"
+#ifdef SWIGPYTHON
+namespace infomap {
+int run(const std::string& flags);
+}
+#endif
 // SWIG strips namespaces, so include infomap in global namespace in wrapper code
 using namespace infomap;
 
@@ -3244,6 +3249,9 @@ SWIGINTERN void std_vector_Sl_double_Sg__append(std::vector< double > *self,std:
 	};
       }
     
+SWIGINTERN double infomap_InfomapBase_elapsedTime(infomap::InfomapBase *self){
+        return self->getElapsedTime().getElapsedTimeInSec();
+    }
 
       namespace swig {
 	template <>  struct traits<std::pair< unsigned int, std::vector< unsigned int,std::allocator< unsigned int > > > > {
@@ -41807,6 +41815,42 @@ R_swig_InfomapBase_writeClu__SWIG_3 ( SEXP self, SEXP s_swig_copy)
 
 
 SWIGEXPORT SEXP
+R_swig_InfomapBase_elapsedTime ( SEXP self, SEXP s_swig_copy)
+{
+  {
+    double result;
+    infomap::InfomapBase *arg1 = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    unsigned int r_nprotect = 0;
+    SEXP r_ans = R_NilValue ;
+    VMAXTYPE r_vmax = vmaxget() ;
+    
+    res1 = SWIG_R_ConvertPtr(self, &argp1, SWIGTYPE_p_infomap__InfomapBase, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapBase_elapsedTime" "', argument " "1"" of type '" "infomap::InfomapBase *""'"); 
+    }
+    arg1 = reinterpret_cast< infomap::InfomapBase * >(argp1);
+    {
+      try {
+        result = (double)infomap_InfomapBase_elapsedTime(arg1);
+      } catch (const std::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+      }
+    }
+    r_ans = SWIG_From_double(static_cast< double >(result));
+    vmaxset(r_vmax);
+    if(r_nprotect)  Rf_unprotect(r_nprotect);
+    
+    return r_ans;
+    fail: SWIGUNUSED;
+  }
+  Rf_error("%s %s", SWIG_ErrorType(SWIG_lasterror_code), SWIG_lasterror_msg);
+  return R_NilValue;
+}
+
+
+SWIGEXPORT SEXP
 R_swig_printPerLevelCodelength ( SEXP parent, SEXP out, SEXP s_swig_copy)
 {
   {
@@ -48846,6 +48890,7 @@ SWIGINTERN R_CallMethodDef CallEntries[] = {
    {"R_swig_Config_innerParallelization_set", (DL_FUNC) &R_swig_Config_innerParallelization_set, 2},
    {"R_swig_new_InfomapConfigInfomapBase__SWIG_2", (DL_FUNC) &R_swig_new_InfomapConfigInfomapBase__SWIG_2, 1},
    {"R_swig_InfomapBase_writeCsvTree__SWIG_1", (DL_FUNC) &R_swig_InfomapBase_writeCsvTree__SWIG_1, 3},
+   {"R_swig_InfomapBase_elapsedTime", (DL_FUNC) &R_swig_InfomapBase_elapsedTime, 2},
    {"R_swig_InfomapWrapper_addStateNode", (DL_FUNC) &R_swig_InfomapWrapper_addStateNode, 3},
    {"R_swig_Config_clusterDataIsHard_get", (DL_FUNC) &R_swig_Config_clusterDataIsHard_get, 2},
    {"R_swig_new_InfomapConfigInfomapBase__SWIG_3", (DL_FUNC) &R_swig_new_InfomapConfigInfomapBase__SWIG_3, 1},

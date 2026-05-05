@@ -3715,6 +3715,11 @@ namespace swig {
 
 /* Includes the header in the wrapper code */
 #include "src/Infomap.h"
+#ifdef SWIGPYTHON
+namespace infomap {
+int run(const std::string& flags);
+}
+#endif
 // SWIG strips namespaces, so include infomap in global namespace in wrapper code
 using namespace infomap;
 
@@ -6351,6 +6356,9 @@ SWIGINTERN PyObject *std_map_Sl_unsigned_SS_int_Sc_unsigned_SS_int_Sg__asdict(st
     }
 SWIGINTERN void std_map_Sl_unsigned_SS_int_Sc_unsigned_SS_int_Sg__erase__SWIG_1(std::map< unsigned int,unsigned int > *self,std::map< unsigned int,unsigned int >::iterator position){ self->erase(position); }
 SWIGINTERN void std_map_Sl_unsigned_SS_int_Sc_unsigned_SS_int_Sg__erase__SWIG_2(std::map< unsigned int,unsigned int > *self,std::map< unsigned int,unsigned int >::iterator first,std::map< unsigned int,unsigned int >::iterator last){ self->erase(first, last); }
+SWIGINTERN double infomap_InfomapBase_elapsedTime(infomap::InfomapBase *self){
+        return self->getElapsedTime().getElapsedTimeInSec();
+    }
 
       namespace swig {
 	template <>  struct traits<std::pair< unsigned int, std::vector< unsigned int,std::allocator< unsigned int > > > > {
@@ -49320,6 +49328,36 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_InfomapBase_elapsedTime(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapBase *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  double result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapBase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapBase_elapsedTime" "', argument " "1"" of type '" "infomap::InfomapBase *""'"); 
+  }
+  arg1 = reinterpret_cast< infomap::InfomapBase * >(argp1);
+  {
+    try {
+      result = (double)infomap_InfomapBase_elapsedTime(arg1);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_double(static_cast< double >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *InfomapBase_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *obj = NULL;
   if (!SWIG_Python_UnpackTuple(args, "swigregister", 1, 1, &obj)) return NULL;
@@ -55052,6 +55090,43 @@ SWIGINTERN PyObject *map_pair_uint_uint_double_swiginit(PyObject *SWIGUNUSEDPARM
   return SWIG_Python_InitShadowInstance(args);
 }
 
+SWIGINTERN PyObject *_wrap_run(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string *arg1 = 0 ;
+  int res1 = SWIG_OLDOBJ ;
+  PyObject *swig_obj[1] ;
+  int result;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  {
+    std::string *ptr = (std::string *)0;
+    res1 = SWIG_AsPtr_std_string(swig_obj[0], &ptr);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "run" "', argument " "1"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "run" "', argument " "1"" of type '" "std::string const &""'"); 
+    }
+    arg1 = ptr;
+  }
+  {
+    try {
+      result = (int)infomap::run((std::string const &)*arg1);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  if (SWIG_IsNewObj(res1)) delete arg1;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res1)) delete arg1;
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_new_InfomapWrapper__SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **SWIGUNUSEDPARM(swig_obj)) {
   PyObject *resultobj = 0;
   infomap::InfomapWrapper *result = 0 ;
@@ -58609,6 +58684,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "InfomapBase_writeJsonTree", _wrap_InfomapBase_writeJsonTree, METH_VARARGS, NULL},
 	 { "InfomapBase_writeCsvTree", _wrap_InfomapBase_writeCsvTree, METH_VARARGS, NULL},
 	 { "InfomapBase_writeClu", _wrap_InfomapBase_writeClu, METH_VARARGS, NULL},
+	 { "InfomapBase_elapsedTime", _wrap_InfomapBase_elapsedTime, METH_O, NULL},
 	 { "InfomapBase_swigregister", InfomapBase_swigregister, METH_O, NULL},
 	 { "InfomapBase_swiginit", InfomapBase_swiginit, METH_VARARGS, NULL},
 	 { "printPerLevelCodelength", _wrap_printPerLevelCodelength, METH_VARARGS, NULL},
@@ -58757,6 +58833,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "delete_map_pair_uint_uint_double", _wrap_delete_map_pair_uint_uint_double, METH_O, NULL},
 	 { "map_pair_uint_uint_double_swigregister", map_pair_uint_uint_double_swigregister, METH_O, NULL},
 	 { "map_pair_uint_uint_double_swiginit", map_pair_uint_uint_double_swiginit, METH_VARARGS, NULL},
+	 { "run", _wrap_run, METH_O, NULL},
 	 { "new_InfomapWrapper", _wrap_new_InfomapWrapper, METH_VARARGS, NULL},
 	 { "delete_InfomapWrapper", _wrap_delete_InfomapWrapper, METH_O, NULL},
 	 { "InfomapWrapper_readInputData", _wrap_InfomapWrapper_readInputData, METH_VARARGS, NULL},

@@ -2611,6 +2611,9 @@ class InfomapBase(InfomapConfigInfomapBase):
     def writeClu(self, *args):
         return _infomap.InfomapBase_writeClu(self, *args)
 
+    def elapsedTime(self):
+        return _infomap.InfomapBase_elapsedTime(self)
+
 # Register InfomapBase in _infomap:
 _infomap.InfomapBase_swigregister(InfomapBase)
 
@@ -3013,6 +3016,9 @@ class map_pair_uint_uint_double(object):
 
 # Register map_pair_uint_uint_double in _infomap:
 _infomap.map_pair_uint_uint_double_swigregister(map_pair_uint_uint_double)
+
+def run(flags):
+    return _infomap.run(flags)
 class InfomapWrapper(InfomapBase):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
