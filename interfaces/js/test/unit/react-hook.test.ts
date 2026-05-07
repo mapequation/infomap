@@ -113,6 +113,7 @@ function installAnimationFrame() {
 }
 
 afterEach(() => {
+  vi.clearAllMocks();
   createdWorkers.length = 0;
 });
 
