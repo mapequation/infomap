@@ -177,7 +177,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`no_self_links`}{Exclude self links in the input network.}
 #'   \item{`node_limit`}{Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.}
 #'   \item{`matchable_multilayer_ids`}{Construct state ids from node and layer ids that are consistent across networks for the same max number of layers. Set to at least the largest layer id among networks to match.}
-#'   \item{`cluster_data`}{Provide an initial two-level (clu format) or multi-layer (tree format) solution.}
+#'   \item{`cluster_data`}{Provide an initial partition as cluster ids (clu) or a hierarchical tree (tree, ftree). Tree input may be physical or state-level for higher-order networks.}
 #'   \item{`assign_to_neighbouring_module`}{Assign nodes without module assignments (from --cluster-data) to the module assignment of a neighbouring node if possible.}
 #'   \item{`meta_data`}{Provide meta data (clu format) that should be encoded.}
 #'   \item{`meta_data_rate`}{Metadata encoding rate. Default is to encode each step.}

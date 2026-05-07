@@ -412,9 +412,8 @@ InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
 
 InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool hard, const Network* network)
 {
-  FileURI file(clusterDataFile);
   ClusterMap clusterMap;
-  if (this->isMultilayerNetwork() && network != nullptr) {
+  if (network != nullptr && network->isMultilayerNetwork()) {
     const auto& map = network->layerNodeToStateId();
     clusterMap.readClusterData(clusterDataFile, false, &map);
   } else {
@@ -426,7 +425,12 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
   const auto& ext = clusterMap.extension();
 
   if (ext == "tree" || ext == "ftree") {
-    initTree(clusterMap.nodePaths());
+    unsigned int numTreeNodesNotInNetwork = 0;
+    const auto normalizedTree = normalizeTreePaths(clusterMap.treePaths(), numTreeNodesNotInNetwork);
+    if (numTreeNodesNotInNetwork > 0) {
+      Log(1) << "\n -> " << numTreeNodesNotInNetwork << " physical nodes in tree not found in network.";
+    }
+    initTree(normalizedTree);
   } else if (ext == "clu") {
     initPartition(clusterMap.clusterIds(), hard);
   }
@@ -434,6 +438,81 @@ InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool
   Log() << "done! Generated " << numLevels() << " levels with codelength " << getIndexCodelength() << " + " << (m_hierarchicalCodelength - getIndexCodelength()) << " = " << io::toPrecision(m_hierarchicalCodelength) << '\n';
 
   return *this;
+}
+
+NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& numNodesNotInNetwork) const
+{
+  numNodesNotInNetwork = 0;
+  NodePaths normalized;
+  normalized.reserve(tree.size());
+
+  // Fast path: every row is a state-level leaf — pass through.
+  bool allState = true;
+  for (const auto& tp : tree) {
+    if (tp.idType != TreeLeafIdType::state) {
+      allState = false;
+      break;
+    }
+  }
+  if (allState) {
+    for (const auto& tp : tree)
+      normalized.emplace_back(tp.nodeId, tp.path);
+    return normalized;
+  }
+
+  // Build physical -> [state ids] index across the active leaf set.
+  std::map<unsigned int, std::vector<unsigned int>> physicalToStateIds;
+  for (const auto* leafNode : m_leafNodes) {
+    physicalToStateIds[leafNode->physicalId].push_back(leafNode->stateId);
+  }
+
+  // Count how many tree rows reference each physical id; a physical id may
+  // appear multiple times (one row per state) on higher-order outputs.
+  std::map<unsigned int, unsigned int> physicalRowCount;
+  for (const auto& tp : tree) {
+    if (tp.idType == TreeLeafIdType::physical)
+      ++physicalRowCount[tp.nodeId];
+  }
+
+  std::map<unsigned int, unsigned int> physicalRowsConsumed;
+  std::map<unsigned int, unsigned int> physicalStatesConsumed;
+
+  for (const auto& tp : tree) {
+    if (tp.idType == TreeLeafIdType::state) {
+      normalized.emplace_back(tp.nodeId, tp.path);
+      continue;
+    }
+
+    const auto it = physicalToStateIds.find(tp.nodeId);
+    if (it == physicalToStateIds.end()) {
+      ++numNodesNotInNetwork;
+      continue;
+    }
+
+    auto& rowsConsumed = physicalRowsConsumed[tp.nodeId];
+    auto& statesConsumed = physicalStatesConsumed[tp.nodeId];
+    const auto totalRows = physicalRowCount[tp.nodeId];
+    const auto remainingRows = totalRows - rowsConsumed;
+    const auto remainingStates = it->second.size() - statesConsumed;
+
+    if (remainingStates == 0) {
+      ++numNodesNotInNetwork;
+      ++rowsConsumed;
+      continue;
+    }
+
+    // If this is the last row for this physical id, claim every remaining state.
+    // Otherwise consume one state per row, preserving 1:1 alignment when the
+    // original output wrote one row per state.
+    const auto statesToAssign = (remainingRows <= 1) ? remainingStates : 1u;
+    for (unsigned int i = 0; i < statesToAssign; ++i) {
+      normalized.emplace_back(it->second[statesConsumed + i], tp.path);
+    }
+    statesConsumed += statesToAssign;
+    ++rowsConsumed;
+  }
+
+  return normalized;
 }
 
 InfomapBase& InfomapBase::initTree(const NodePaths& tree)
@@ -454,57 +533,61 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       clusterIds[nodeId] = clusterId;
     }
     return initPartition(clusterIds, false);
-  } else {
-    // TODO: Use initPartition on lowest modular level and apply it iteratively upwards to build tree
   }
 
+  // Tear down the existing partition. Detach the leaves first so that the
+  // module destruction below does not also destroy them, then collect every
+  // released leaf for re-attachment.
   std::map<unsigned int, unsigned int> nodeIdToIndex;
-  auto leafIndex = 0;
-  for (auto& leafNode : m_leafNodes) {
-    // Also detach leaf nodes to delete all modules, safe to call multiple times
-    leafNode->parent->releaseChildren();
-    // Set parent to nullptr to be able to collect any orphaned nodes in the end
+  unsigned int leafIndex = 0;
+  for (auto* leafNode : m_leafNodes) {
+    if (leafNode->parent != nullptr)
+      leafNode->parent->releaseChildren();
     leafNode->parent = nullptr;
+    leafNode->next = nullptr;
+    leafNode->previous = nullptr;
     nodeIdToIndex[leafNode->stateId] = leafIndex;
     ++leafIndex;
   }
   m_root.deleteChildren();
 
+  // Build the module tree by walking each path top-down and creating only
+  // missing prefixes — this guarantees that two leaves sharing a path prefix
+  // share the same ancestor modules, which is what determines codelength.
+  std::map<Path, InfoNode*> moduleByPathPrefix;
+
   auto numNodesFound = 0;
   auto numNodesNotInNetwork = 0;
   for (const auto& nodePath : tree) {
-    ++numNodesFound;
-    InfoNode* node = &root();
-    auto depth = 0;
     const auto& path = nodePath.second;
-    const auto nodeId = nodePath.first;
-    InfoNode* leafNode = nullptr;
+    if (path.empty())
+      continue;
 
-    try {
-      auto nodeIndex = nodeIdToIndex.at(nodeId);
-      leafNode = m_leafNodes[nodeIndex];
-    } catch (std::exception& e) {
+    ++numNodesFound;
+    InfoNode* leafNode = nullptr;
+    const auto nodeIdIt = nodeIdToIndex.find(nodePath.first);
+    if (nodeIdIt == nodeIdToIndex.end()) {
       ++numNodesNotInNetwork;
       continue;
     }
+    leafNode = m_leafNodes[nodeIdIt->second];
 
-    for (size_t i = 0; i < path.size(); ++i) {
-      auto childNumber = path[i]; // 1-based indexing
-
-      // Create new node if path doesn't exist
-      // TODO: Check correct tree indexing?
-      if (node->childDegree() < childNumber) {
-        InfoNode* child = leafNode;
-        if (i + 1 < path.size()) {
-          child = new InfoNode();
-        }
-        node->addChild(child);
+    InfoNode* parent = &m_root;
+    Path prefix;
+    for (size_t i = 0; i + 1 < path.size(); ++i) {
+      prefix.push_back(path[i]);
+      auto inserted = moduleByPathPrefix.emplace(prefix, nullptr);
+      if (inserted.second) {
+        auto* module = new InfoNode();
+        parent->addChild(module);
+        inserted.first->second = module;
       }
-
-      node = node->lastChild;
-      ++depth;
+      parent = inserted.first->second;
     }
-    maxDepth = std::max(maxDepth, depth);
+
+    parent->addChild(leafNode);
+    if (static_cast<int>(path.size()) > maxDepth)
+      maxDepth = static_cast<int>(path.size());
   }
 
   if (numNodesNotInNetwork > 0) {

@@ -88,7 +88,7 @@
   {
     "long": "--cluster-data",
     "short": "-c",
-    "description": "Provide an initial two-level (clu format) or multi-layer (tree format) solution.",
+    "description": "Provide an initial partition as cluster ids (clu) or a hierarchical tree (tree, ftree). Tree input may be physical or state-level for higher-order networks.",
     "group": "Input",
     "required": true,
     "advanced": false,
