@@ -10,6 +10,7 @@
 #ifndef CLUSTER_MAP_H_
 #define CLUSTER_MAP_H_
 
+#include <cstdint>
 #include <string>
 #include <map>
 #include <vector>
@@ -23,7 +24,7 @@ using NodePath = std::pair<unsigned int, Path>;
 
 using NodePaths = std::vector<NodePath>;
 
-enum class TreeLeafIdType {
+enum class TreeLeafIdType : std::uint8_t {
   physical,
   state,
 };
