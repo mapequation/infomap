@@ -33,7 +33,7 @@ function workerSourcePlugin() {
 
       const source = fs.readFileSync(workerPath, "utf8");
       return `export default ${JSON.stringify(source)};`;
-    }
+    },
   };
 }
 
@@ -42,22 +42,23 @@ const packageEntries = {
   arguments: path.join(sourceRoot, "arguments.ts"),
   filetypes: path.join(sourceRoot, "filetypes.ts"),
   network: path.join(sourceRoot, "network.ts"),
-  react: path.join(sourceRoot, "react.ts")
+  react: path.join(sourceRoot, "react.ts"),
+  result: path.join(sourceRoot, "result.ts"),
 };
 
 const basePlugins = [
   workerSourcePlugin(),
   nodeResolve({
     browser: true,
-    extensions: [".ts", ".js", ".json"]
+    extensions: [".ts", ".js", ".json"],
   }),
   commonjs(),
   json(),
   typescript({
     tsconfig: "./interfaces/js/tsconfig.json",
     declaration: false,
-    sourceMap: true
-  })
+    sourceMap: true,
+  }),
 ];
 
 export default [
@@ -67,10 +68,10 @@ export default [
       dir: outputDir,
       entryFileNames: "[name].js",
       format: "es",
-      sourcemap: true
+      sourcemap: true,
     },
     external: ["react"],
-    plugins: basePlugins
+    plugins: basePlugins,
   },
   {
     input: packageEntries,
@@ -79,10 +80,10 @@ export default [
       entryFileNames: "[name].cjs",
       format: "cjs",
       exports: "named",
-      sourcemap: true
+      sourcemap: true,
     },
     external: ["react"],
-    plugins: basePlugins
+    plugins: basePlugins,
   },
   {
     input: path.join(sourceRoot, "index.ts"),
@@ -91,8 +92,8 @@ export default [
       format: "umd",
       name: "infomap",
       exports: "named",
-      sourcemap: true
+      sourcemap: true,
     },
-    plugins: basePlugins
-  }
+    plugins: basePlugins,
+  },
 ];

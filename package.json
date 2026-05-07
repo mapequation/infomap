@@ -30,6 +30,12 @@
       "require": "./react.cjs",
       "default": "./react.js"
     },
+    "./result": {
+      "types": "./result.d.ts",
+      "import": "./result.js",
+      "require": "./result.cjs",
+      "default": "./result.js"
+    },
     "./arguments": {
       "types": "./arguments.d.ts",
       "import": "./arguments.js",
@@ -105,9 +111,10 @@
     "@types/react-dom": "^19.2.2",
     "eslint": "^9.39.1",
     "globals": "^16.4.0",
+    "jsdom": "^26.1.0",
     "prettier": "^3.8.1",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react-dom": "^19.2.5",
     "rollup": "^4.52.4",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3",
