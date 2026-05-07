@@ -592,4 +592,92 @@ TEST_CASE("Invalid tree cluster-data failure does not poison later valid tree in
   infomap::test::checkRunSanity(im);
 }
 
+namespace {
+
+std::string scratchTreePath(const std::string& tag)
+{
+  return std::string("infomap_test_issue247_") + tag + ".tree";
+}
+
+void writeAndCheckRoundTrip(InfomapWrapper& source, const std::string& networkPath, bool states, const std::string& tag)
+{
+  const auto treePath = scratchTreePath(tag);
+  source.writeTree(treePath, states);
+  const auto expectedCodelength = source.codelength();
+  const auto expectedIndexCodelength = source.getIndexCodelength();
+
+  // --no-infomap: load tree and verify codelength matches the source.
+  InfomapWrapper noInfomap(infomap::test::defaultFlags("--no-infomap --cluster-data " + treePath));
+  noInfomap.readInputData(networkPath);
+  noInfomap.run();
+  infomap::test::checkApproxCodelength(noInfomap.codelength(), expectedCodelength);
+  infomap::test::checkApproxCodelength(noInfomap.getIndexCodelength(), expectedIndexCodelength);
+  infomap::test::checkRunSanity(noInfomap);
+
+  // Continuing optimization: load tree and run; codelength must not regress
+  // and the lifecycle must not crash or leak.
+  InfomapWrapper continued(infomap::test::defaultFlags("--cluster-data " + treePath));
+  continued.readInputData(networkPath);
+  continued.run();
+  CHECK(continued.codelength() <= expectedCodelength + 1e-9);
+  infomap::test::checkRunSanity(continued);
+
+  std::remove(treePath.c_str());
+}
+
+} // namespace
+
+TEST_CASE("Tree round-trip reproduces codelength on a regular network [fast][core][partition][parser][lifecycle]")
+{
+  auto baseline = infomap::test::makeRunningInfomap(
+      [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net")); },
+      "--num-trials 5");
+
+  writeAndCheckRoundTrip(*baseline, infomap::test::repoPath("examples/networks/ninetriangles.net"), false, "ninetriangles");
+}
+
+TEST_CASE("Tree round-trip reproduces codelength on a higher-order (states) network [fast][core][partition][parser][lifecycle]")
+{
+  auto baseline = infomap::test::makeRunningInfomap(
+      [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/states.net")); });
+
+  // Physical-merged tree (column 4 = physical id).
+  writeAndCheckRoundTrip(*baseline, infomap::test::repoPath("examples/networks/states.net"), false, "states_physical");
+  // State-level tree (column 4 = state id, column 5 = physical id).
+  writeAndCheckRoundTrip(*baseline, infomap::test::repoPath("examples/networks/states.net"), true, "states_state");
+}
+
+TEST_CASE("Tree round-trip reproduces codelength on a multilayer network [fast][core][partition][parser][lifecycle]")
+{
+  auto baseline = infomap::test::makeRunningInfomap(
+      [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/multilayer.net")); });
+
+  // State-level tree carries layer ids; physical-merged tree on multilayer is
+  // ambiguous when the same physical id appears in multiple layers, so we only
+  // exercise the recoverable variant.
+  writeAndCheckRoundTrip(*baseline, infomap::test::repoPath("examples/networks/multilayer.net"), true, "multilayer_state");
+}
+
+TEST_CASE("Tree cluster-data tolerates repeated reinit on the same higher-order instance [fast][core][partition][lifecycle]")
+{
+  auto baseline = infomap::test::makeRunningInfomap(
+      [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/states.net")); });
+
+  const auto treePath = scratchTreePath("states_lifecycle_state");
+  baseline->writeTree(treePath, true);
+
+  InfomapWrapper im(infomap::test::defaultFlags("--num-trials 5 --cluster-data " + treePath));
+  im.readInputData(infomap::test::repoPath("examples/networks/states.net"));
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  const auto firstCodelength = im.codelength();
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+  CHECK(im.codelength() == doctest::Approx(firstCodelength));
+
+  std::remove(treePath.c_str());
+}
+
 } // namespace

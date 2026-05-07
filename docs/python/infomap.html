@@ -945,7 +945,8 @@ ignored nodes.</p></li>
 <li><p><strong>matchable_multilayer_ids</strong> (<em>int</em><em>, </em><em>optional</em>) – Construct state ids from node and layer ids that are consistent across networks
 for the same max number of layers. Set to at least the largest layer id among
 networks to match.</p></li>
-<li><p><strong>cluster_data</strong> (<em>str</em><em>, </em><em>optional</em>) – Provide an initial two-level (clu format) or multi-layer (tree format) solution.</p></li>
+<li><p><strong>cluster_data</strong> (<em>str</em><em>, </em><em>optional</em>) – Provide an initial partition as cluster ids (clu) or a hierarchical tree (tree,
+ftree). Tree input may be physical or state-level for higher-order networks.</p></li>
 <li><p><strong>assign_to_neighbouring_module</strong> (<em>bool</em><em>, </em><em>optional</em>) – Assign nodes without module assignments (from –cluster-data) to the module
 assignment of a neighbouring node if possible.</p></li>
 <li><p><strong>meta_data</strong> (<em>str</em><em>, </em><em>optional</em>) – Provide meta data (clu format) that should be encoded.</p></li>
