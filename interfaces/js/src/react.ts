@@ -24,11 +24,13 @@ function requestOutputFrame(callback: () => void) {
   return globalThis.setTimeout(callback, 0);
 }
 
-function cancelOutputFrame(id: number) {
+type OutputFrameHandle = ReturnType<typeof requestOutputFrame>;
+
+function cancelOutputFrame(id: OutputFrameHandle) {
   if (typeof window !== "undefined" && window.cancelAnimationFrame) {
-    window.cancelAnimationFrame(id);
+    window.cancelAnimationFrame(id as number);
   } else {
-    globalThis.clearTimeout(id);
+    globalThis.clearTimeout(id as ReturnType<typeof setTimeout>);
   }
 }
 
@@ -42,7 +44,7 @@ export function useInfomap(args?: Arguments, options: UseInfomapOptions = {}) {
   const clearOutputOnRunRef = useRef(options.clearOutputOnRun ?? true);
   const activeRunsRef = useRef(0);
   const outputBufferRef = useRef<string[]>([]);
-  const outputFrameRef = useRef<number | null>(null);
+  const outputFrameRef = useRef<OutputFrameHandle | null>(null);
 
   eventsRef.current = options.events;
   collectOutputRef.current = options.collectOutput ?? false;

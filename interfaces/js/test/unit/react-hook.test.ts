@@ -3,7 +3,7 @@
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Arguments } from "../../src/arguments";
 import type { UseInfomapOptions } from "../../src/react";
 
@@ -112,7 +112,16 @@ function installAnimationFrame() {
   };
 }
 
+beforeEach(() => {
+  // Fake only setTimeout/clearTimeout so leftover Infomap._terminate timers
+  // (default 1000ms) do not fire across tests. Leave React's scheduler and
+  // queueMicrotask alone so act()/rAF helpers continue to work.
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+});
+
 afterEach(() => {
+  vi.runOnlyPendingTimers();
+  vi.useRealTimers();
   vi.clearAllMocks();
   createdWorkers.length = 0;
 });

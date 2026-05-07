@@ -206,16 +206,26 @@ class Infomap {
 
     const emitError = (message: string) => {
       const normalized = normalizeErrorMessage(message);
-      this.events.error?.(normalized, id);
+      // Settle the runAsync promise first so a throwing global callback
+      // cannot leave the returned promise pending forever.
       if (events.error && events.error !== this.events.error) {
         events.error(normalized, id);
+      }
+      try {
+        this.events.error?.(normalized, id);
+      } catch {
+        // user-registered global callback threw; promise has already settled
       }
     };
 
     const emitFinished = (result: Result) => {
-      this.events.finished?.(result, id);
       if (events.finished && events.finished !== this.events.finished) {
         events.finished(result, id);
+      }
+      try {
+        this.events.finished?.(result, id);
+      } catch {
+        // user-registered global callback threw; promise has already settled
       }
     };
 

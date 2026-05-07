@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 const postMessage = vi.fn();
 const terminate = vi.fn();
@@ -17,6 +17,16 @@ vi.mock("../../src/worker", () => ({
 const { default: Infomap } = await import("../../src/index");
 
 describe("Infomap", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
   function getWorker(infomap: InstanceType<typeof Infomap>, id: number) {
     return (infomap as unknown as { workers: Record<number, WorkerMock> })
       .workers[id];
