@@ -250,7 +250,7 @@ export function getResultMetadata(result: Result): ResultMetadata {
 export function getResultFiles(result: Result, basename: string): ResultFile[] {
   return resultFormats.flatMap((format) => {
     const value = result[format.key];
-    if (!value) return [];
+    if (value == null) return [];
 
     const content =
       format.key === "json" || format.key === "json_states"
