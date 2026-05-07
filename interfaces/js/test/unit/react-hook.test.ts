@@ -76,9 +76,20 @@ function renderUseInfomap(args?: Arguments, options?: UseInfomapOptions) {
   };
 }
 
+const animationFrameCleanups: Array<() => void> = [];
+
 function installAnimationFrame() {
   const frames = new Map<number, FrameRequestCallback>();
   let frameId = 0;
+
+  const previousRaf = Object.getOwnPropertyDescriptor(
+    window,
+    "requestAnimationFrame",
+  );
+  const previousCaf = Object.getOwnPropertyDescriptor(
+    window,
+    "cancelAnimationFrame",
+  );
 
   Object.defineProperty(window, "requestAnimationFrame", {
     configurable: true,
@@ -93,6 +104,21 @@ function installAnimationFrame() {
     value: vi.fn((id: number) => {
       frames.delete(id);
     }),
+  });
+
+  animationFrameCleanups.push(() => {
+    if (previousRaf) {
+      Object.defineProperty(window, "requestAnimationFrame", previousRaf);
+    } else {
+      delete (window as { requestAnimationFrame?: unknown })
+        .requestAnimationFrame;
+    }
+    if (previousCaf) {
+      Object.defineProperty(window, "cancelAnimationFrame", previousCaf);
+    } else {
+      delete (window as { cancelAnimationFrame?: unknown })
+        .cancelAnimationFrame;
+    }
   });
 
   return {
@@ -122,6 +148,9 @@ beforeEach(() => {
 afterEach(() => {
   vi.runOnlyPendingTimers();
   vi.useRealTimers();
+  while (animationFrameCleanups.length > 0) {
+    animationFrameCleanups.pop()?.();
+  }
   vi.clearAllMocks();
   createdWorkers.length = 0;
 });
