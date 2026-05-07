@@ -12,41 +12,55 @@ for (const file of [
   "index.umd.js",
   "react.js",
   "react.cjs",
+  "result.js",
+  "result.cjs",
   "arguments.js",
   "filetypes.js",
   "network.js",
   "index.d.ts",
   "react.d.ts",
-  "package.json"
+  "result.d.ts",
+  "package.json",
 ]) {
-  assert.ok(fs.existsSync(path.join(unpackedDir, file)), `Missing packed file: ${file}`);
+  assert.ok(
+    fs.existsSync(path.join(unpackedDir, file)),
+    `Missing packed file: ${file}`,
+  );
 }
 
-execFileSync(process.execPath, ["interfaces/js/test/package/runtime-check.mjs"], {
-  stdio: "inherit"
+execFileSync(
+  process.execPath,
+  ["interfaces/js/test/package/runtime-check.mjs"],
+  {
+    stdio: "inherit",
+  },
+);
+
+const consumerDir = fs.mkdtempSync(
+  path.join(os.tmpdir(), "infomap-package-check-"),
+);
+
+fs.mkdirSync(path.join(consumerDir, "node_modules", "@mapequation"), {
+  recursive: true,
 });
-
-const consumerDir = fs.mkdtempSync(path.join(os.tmpdir(), "infomap-package-check-"));
-
-fs.mkdirSync(path.join(consumerDir, "node_modules", "@mapequation"), { recursive: true });
 fs.symlinkSync(
   unpackedDir,
   path.join(consumerDir, "node_modules", "@mapequation", "infomap"),
-  "dir"
+  "dir",
 );
 fs.symlinkSync(
   path.resolve("node_modules", "react"),
   path.join(consumerDir, "node_modules", "react"),
-  "dir"
+  "dir",
 );
 fs.symlinkSync(
   path.resolve("node_modules", "@types"),
   path.join(consumerDir, "node_modules", "@types"),
-  "dir"
+  "dir",
 );
 fs.copyFileSync(
   path.resolve("interfaces/js/test/package/consumer.ts"),
-  path.join(consumerDir, "consumer.ts")
+  path.join(consumerDir, "consumer.ts"),
 );
 
 execFileSync(
@@ -64,6 +78,6 @@ execFileSync(
   ],
   {
     cwd: consumerDir,
-    stdio: "inherit"
-  }
+    stdio: "inherit",
+  },
 );

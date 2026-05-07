@@ -16,6 +16,9 @@
       ],
       "@mapequation/infomap/react": [
         "../../../dist/npm/unpacked/package/react.d.ts"
+      ],
+      "@mapequation/infomap/result": [
+        "../../../dist/npm/unpacked/package/result.d.ts"
       ]
     }
   },
