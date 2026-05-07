@@ -21,14 +21,14 @@ function requestOutputFrame(callback: () => void) {
     return window.requestAnimationFrame(callback);
   }
 
-  return window.setTimeout(callback, 0);
+  return globalThis.setTimeout(callback, 0);
 }
 
 function cancelOutputFrame(id: number) {
   if (typeof window !== "undefined" && window.cancelAnimationFrame) {
     window.cancelAnimationFrame(id);
   } else {
-    window.clearTimeout(id);
+    globalThis.clearTimeout(id);
   }
 }
 
