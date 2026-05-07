@@ -62,7 +62,6 @@ private:
   std::string m_extension;
   bool m_isHigherOrder = false;
   bool m_hasTreeLeafIdType = false;
-  bool m_treeLeafIdTypeFromHeader = false;
   TreeLeafIdType m_treeLeafIdType = TreeLeafIdType::physical;
 };
 

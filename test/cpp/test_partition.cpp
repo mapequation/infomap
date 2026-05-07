@@ -627,6 +627,18 @@ void writeAndCheckRoundTrip(InfomapWrapper& source, const std::string& networkPa
 
 } // namespace
 
+TEST_CASE("Tree with rows that mix physical and state id columns fails deterministically [fast][core][partition][parser]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  im.readInputData(infomap::test::repoPath("examples/networks/twotriangles.net"));
+  im.initNetwork(im.network());
+
+  CHECK_THROWS_WITH_AS(
+      im.initPartition(infomap::test::clusterFixturePath("mixed_id_columns.tree"), false, &im.network()),
+      "Mixed state and physical tree ids are not supported in line '1:2 0.5 \"2\" 2'.",
+      std::runtime_error);
+}
+
 TEST_CASE("Tree round-trip reproduces codelength on a regular network [fast][core][partition][parser][lifecycle]")
 {
   auto baseline = infomap::test::makeRunningInfomap(

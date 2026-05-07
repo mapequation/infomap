@@ -15,38 +15,6 @@
 
 namespace infomap {
 
-namespace {
-
-bool tryParseTreeLeafIdTypeFromHeader(const std::string& line, TreeLeafIdType& idType)
-{
-  // Match `# path flow name <id_field> ...` to identify whether the leaf id
-  // column carries a physical or a state id.
-  std::istringstream headerStream(line);
-  std::string hash;
-  std::string path;
-  std::string flowField;
-  std::string name;
-  std::string idField;
-
-  if (!(headerStream >> hash >> path >> flowField >> name >> idField))
-    return false;
-
-  if (hash != "#" || path != "path" || name != "name")
-    return false;
-
-  if (idField == "state_id") {
-    idType = TreeLeafIdType::state;
-    return true;
-  }
-  if (idField == "node_id" || idField == "physical_id" || idField == "physicalId") {
-    idType = TreeLeafIdType::physical;
-    return true;
-  }
-  return false;
-}
-
-} // namespace
-
 void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, const std::map<unsigned int, std::map<unsigned int, unsigned int>>* layerNodeToStateId)
 {
   m_clusterIds.clear();
@@ -55,7 +23,6 @@ void ClusterMap::readClusterData(const std::string& filename, bool includeFlow, 
   m_extension.clear();
   m_isHigherOrder = false;
   m_hasTreeLeafIdType = false;
-  m_treeLeafIdTypeFromHeader = false;
   m_treeLeafIdType = TreeLeafIdType::physical;
 
   FileURI file(filename);
@@ -97,12 +64,8 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
     if (line.empty())
       continue;
     if (line[0] == '#') {
-      TreeLeafIdType idType;
-      if (tryParseTreeLeafIdTypeFromHeader(line, idType)) {
-        m_treeLeafIdType = idType;
-        m_hasTreeLeafIdType = true;
-        m_treeLeafIdTypeFromHeader = true;
-      }
+      // Header lines like `# path flow name node_id [...]` are just
+      // human-readable decoration — the row column count is authoritative.
       continue;
     }
     if (line[0] == '*') {
@@ -135,7 +98,10 @@ void ClusterMap::readTree(const std::string& filename, bool includeFlow, const s
     if (!m_hasTreeLeafIdType) {
       m_treeLeafIdType = inferredLeafIdType;
       m_hasTreeLeafIdType = true;
-    } else if (!m_treeLeafIdTypeFromHeader && inferredLeafIdType != m_treeLeafIdType) {
+    } else if (inferredLeafIdType != m_treeLeafIdType) {
+      // Earlier rows had a different column count. A file that mixes
+      // physical-id (4 columns) and state-id (5+ columns) rows cannot be
+      // parsed safely.
       throw std::runtime_error(io::Str() << "Mixed state and physical tree ids are not supported in line '" << line << "'.");
     }
 
