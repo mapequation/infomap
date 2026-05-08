@@ -5,6 +5,9 @@
 
 library(infomap)
 
+# --- R6 API ----------------------------------------------------------------
+# Build a network link by link via the Infomap R6 class.
+
 im <- Infomap(silent = TRUE, two_level = TRUE, directed = TRUE)
 
 im$add_link(0, 1)
@@ -25,8 +28,24 @@ im$add_link(5, 3)
 im$run()
 
 cat(sprintf(
-  "Partitioned network in %d modules with codelength %.4f bits.\n",
+  "[R6]     %d modules, codelength %.4f bits.\n",
   im$num_top_modules, im$codelength
 ))
-
 print(im$modules)
+
+# --- cluster_infomap helper ------------------------------------------------
+# Same network expressed as a data.frame edge list. Columns are positional:
+# (source, target, [weight]).
+
+edges <- data.frame(
+  source = c(0, 0, 0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5),
+  target = c(1, 2, 3, 0, 2, 1, 0, 0, 4, 5, 3, 5, 4, 3)
+)
+
+result <- cluster_infomap(edges, silent = TRUE, two_level = TRUE, directed = TRUE)
+
+cat(sprintf(
+  "[helper] %d modules, codelength %.4f bits.\n",
+  result$num_top_modules, result$codelength
+))
+print(result$modules)
