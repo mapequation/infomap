@@ -176,9 +176,10 @@ double BiasedMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
                                                          DeltaFlow& oldModuleDelta,
                                                          DeltaFlow& newModuleDelta,
                                                          std::vector<FlowData>& moduleFlowData,
+                                                         std::vector<FlowDataPlogp>& moduleFlowPlogp,
                                                          std::vector<unsigned int>& moduleMembers)
 {
-  double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
+  double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleFlowPlogp, moduleMembers);
 
   if (preferredNumModules == 0)
     return deltaL;
@@ -200,9 +201,10 @@ void BiasedMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
                                                      DeltaFlow& oldModuleDelta,
                                                      DeltaFlow& newModuleDelta,
                                                      std::vector<FlowData>& moduleFlowData,
+                                                     std::vector<FlowDataPlogp>& moduleFlowPlogp,
                                                      std::vector<unsigned int>& moduleMembers)
 {
-  Base::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
+  Base::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleFlowPlogp, moduleMembers);
 
   if (preferredNumModules == 0)
     return;

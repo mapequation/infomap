@@ -25,6 +25,26 @@ namespace infomap {
 
 class InfoNode;
 
+struct FlowDataPlogp {
+  double enterFlow = 0.0;
+  double exitFlow = 0.0;
+  double exitFlowPlusFlow = 0.0;
+
+  FlowDataPlogp() = default;
+
+  explicit FlowDataPlogp(const FlowData& flowData)
+  {
+    update(flowData);
+  }
+
+  void update(const FlowData& flowData)
+  {
+    enterFlow = infomath::plogp(flowData.enterFlow);
+    exitFlow = infomath::plogp(flowData.exitFlow);
+    exitFlowPlusFlow = infomath::plogp(flowData.exitFlow + flowData.flow);
+  }
+};
+
 template <typename FlowDataType = FlowData, typename DeltaFlowDataType = DeltaFlow>
 class MapEquation {
   using ME = MapEquation<FlowDataType, DeltaFlowDataType>;
@@ -118,6 +138,7 @@ public:
                                                 DeltaFlowDataType& oldModuleDelta,
                                                 DeltaFlowDataType& newModuleDelta,
                                                 std::vector<FlowDataType>& moduleFlowData,
+                                                std::vector<FlowDataPlogp>& moduleFlowPlogp,
                                                 std::vector<unsigned int>& /*moduleMembers*/);
 
   // ===================================================
@@ -128,6 +149,7 @@ public:
                                             DeltaFlowDataType& oldModuleDelta,
                                             DeltaFlowDataType& newModuleDelta,
                                             std::vector<FlowDataType>& moduleFlowData,
+                                            std::vector<FlowDataPlogp>& moduleFlowPlogp,
                                             std::vector<unsigned int>& /*moduleMembers*/);
 
   virtual void consolidateModules(std::vector<InfoNode*>& /*modules*/) = 0;
@@ -194,7 +216,7 @@ protected:
 };
 
 template <typename FlowDataType, typename DeltaFlowDataType>
-double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelengthOnMovingNode(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>&)
+double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelengthOnMovingNode(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<FlowDataPlogp>& moduleFlowPlogp, std::vector<unsigned int>&)
 {
   using infomath::plogp;
   unsigned int oldModule = oldModuleDelta.module;
@@ -204,18 +226,18 @@ double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelengthOnMovingN
 
   double delta_enter = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
 
-  double delta_enter_log_enter = -plogp(moduleFlowData[oldModule].enterFlow)
-      - plogp(moduleFlowData[newModule].enterFlow)
+  double delta_enter_log_enter = -moduleFlowPlogp[oldModule].enterFlow
+      - moduleFlowPlogp[newModule].enterFlow
       + plogp(moduleFlowData[oldModule].enterFlow - current.data.enterFlow + deltaEnterExitOldModule)
       + plogp(moduleFlowData[newModule].enterFlow + current.data.enterFlow - deltaEnterExitNewModule);
 
-  double delta_exit_log_exit = -plogp(moduleFlowData[oldModule].exitFlow)
-      - plogp(moduleFlowData[newModule].exitFlow)
+  double delta_exit_log_exit = -moduleFlowPlogp[oldModule].exitFlow
+      - moduleFlowPlogp[newModule].exitFlow
       + plogp(moduleFlowData[oldModule].exitFlow - current.data.exitFlow + deltaEnterExitOldModule)
       + plogp(moduleFlowData[newModule].exitFlow + current.data.exitFlow - deltaEnterExitNewModule);
 
-  double delta_flow_log_flow = -plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow)
-      - plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow)
+  double delta_flow_log_flow = -moduleFlowPlogp[oldModule].exitFlowPlusFlow
+      - moduleFlowPlogp[newModule].exitFlowPlusFlow
       + plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow
               - current.data.exitFlow - current.data.flow + deltaEnterExitOldModule)
       + plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow
@@ -226,7 +248,7 @@ double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelengthOnMovingN
 }
 
 template <typename FlowDataType, typename DeltaFlowDataType>
-void MapEquation<FlowDataType, DeltaFlowDataType>::updateCodelengthOnMovingNode(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<unsigned int>&)
+void MapEquation<FlowDataType, DeltaFlowDataType>::updateCodelengthOnMovingNode(InfoNode& current, DeltaFlowDataType& oldModuleDelta, DeltaFlowDataType& newModuleDelta, std::vector<FlowDataType>& moduleFlowData, std::vector<FlowDataPlogp>& moduleFlowPlogp, std::vector<unsigned int>&)
 {
   using infomath::plogp;
   unsigned int oldModule = oldModuleDelta.module;
@@ -235,9 +257,9 @@ void MapEquation<FlowDataType, DeltaFlowDataType>::updateCodelengthOnMovingNode(
   double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
   enterFlow -= moduleFlowData[oldModule].enterFlow + moduleFlowData[newModule].enterFlow;
-  enter_log_enter -= plogp(moduleFlowData[oldModule].enterFlow) + plogp(moduleFlowData[newModule].enterFlow);
-  exit_log_exit -= plogp(moduleFlowData[oldModule].exitFlow) + plogp(moduleFlowData[newModule].exitFlow);
-  flow_log_flow -= plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow) + plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow);
+  enter_log_enter -= moduleFlowPlogp[oldModule].enterFlow + moduleFlowPlogp[newModule].enterFlow;
+  exit_log_exit -= moduleFlowPlogp[oldModule].exitFlow + moduleFlowPlogp[newModule].exitFlow;
+  flow_log_flow -= moduleFlowPlogp[oldModule].exitFlowPlusFlow + moduleFlowPlogp[newModule].exitFlowPlusFlow;
 
   moduleFlowData[oldModule] -= current.data;
   moduleFlowData[newModule] += current.data;
@@ -247,10 +269,13 @@ void MapEquation<FlowDataType, DeltaFlowDataType>::updateCodelengthOnMovingNode(
   moduleFlowData[newModule].enterFlow -= deltaEnterExitNewModule;
   moduleFlowData[newModule].exitFlow -= deltaEnterExitNewModule;
 
+  moduleFlowPlogp[oldModule].update(moduleFlowData[oldModule]);
+  moduleFlowPlogp[newModule].update(moduleFlowData[newModule]);
+
   enterFlow += moduleFlowData[oldModule].enterFlow + moduleFlowData[newModule].enterFlow;
-  enter_log_enter += plogp(moduleFlowData[oldModule].enterFlow) + plogp(moduleFlowData[newModule].enterFlow);
-  exit_log_exit += plogp(moduleFlowData[oldModule].exitFlow) + plogp(moduleFlowData[newModule].exitFlow);
-  flow_log_flow += plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow) + plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow);
+  enter_log_enter += moduleFlowPlogp[oldModule].enterFlow + moduleFlowPlogp[newModule].enterFlow;
+  exit_log_exit += moduleFlowPlogp[oldModule].exitFlow + moduleFlowPlogp[newModule].exitFlow;
+  flow_log_flow += moduleFlowPlogp[oldModule].exitFlowPlusFlow + moduleFlowPlogp[newModule].exitFlowPlusFlow;
 
   enterFlow_log_enterFlow = plogp(enterFlow);
 
