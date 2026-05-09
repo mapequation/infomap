@@ -528,7 +528,8 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
   threadRandoms.reserve(numThreads);
   for (unsigned int threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
     scratches.emplace_back(numNodes);
-    threadRandoms.emplace_back(static_cast<unsigned int>(m_infomap->seedToRandomNumberGenerator + 0x9e3779b9u * (threadIndex + 1u)));
+    const auto streamOffset = static_cast<unsigned long>(0x9e3779b9u) * static_cast<unsigned long>(threadIndex + 1u);
+    threadRandoms.emplace_back(static_cast<unsigned int>(m_infomap->seedToRandomNumberGenerator + streamOffset));
   }
 
 #pragma omp parallel for schedule(dynamic) // Use dynamic scheduling as some threads could end early
@@ -591,14 +592,19 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
       deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
     }
 
+    auto addMemoryContributions = [&]() {
+      m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+    };
+
     // For memory networks
     if (m_infomap->haveMemory()) {
 #pragma omp critical(memoryContribution)
       {
-        m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+        addMemoryContributions();
       }
-    } else {
-      m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+    }
+    if (!m_infomap->haveMemory()) {
+      addMemoryContributions();
     }
 
     auto& moduleDeltaEnterExit = deltaFlow.values();
@@ -638,23 +644,22 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
       unsigned int otherModule = moduleDeltaEnterExit[j].module;
       if (otherModule != current.index) {
         double deltaCodelength = 0.0;
+        auto getDeltaCodelength = [&]() {
+          return m_objective.getDeltaCodelengthOnMovingNode(current,
+                                                            oldModuleDelta,
+                                                            moduleDeltaEnterExit[j],
+                                                            m_moduleFlowData,
+                                                            m_moduleFlowPlogp,
+                                                            m_moduleMembers);
+        };
         if (m_infomap->haveMetaData()) {
 #pragma omp critical(metaDeltaCodelength)
           {
-            deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
-                                                                         oldModuleDelta,
-                                                                         moduleDeltaEnterExit[j],
-                                                                         m_moduleFlowData,
-                                                                         m_moduleFlowPlogp,
-                                                                         m_moduleMembers);
+            deltaCodelength = getDeltaCodelength();
           }
-        } else {
-          deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
-                                                                       oldModuleDelta,
-                                                                       moduleDeltaEnterExit[j],
-                                                                       m_moduleFlowData,
-                                                                       m_moduleFlowPlogp,
-                                                                       m_moduleMembers);
+        }
+        if (!m_infomap->haveMetaData()) {
+          deltaCodelength = getDeltaCodelength();
         }
 
         if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement) {
