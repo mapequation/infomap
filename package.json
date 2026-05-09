@@ -111,7 +111,7 @@
     "@types/react-dom": "^19.2.2",
     "eslint": "^9.39.1",
     "globals": "^16.4.0",
-    "jsdom": "^26.1.0",
+    "jsdom": "^29.1.1",
     "prettier": "^3.8.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.5",
