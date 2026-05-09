@@ -507,10 +507,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 
   struct MoveScratch {
     explicit MoveScratch(unsigned int capacity)
-        : deltaFlow(capacity)
-    {
-      candidateOrder.reserve(capacity);
-    }
+        : deltaFlow(capacity) {}
 
     VectorMap<DeltaFlowDataType> deltaFlow;
     std::vector<unsigned int> candidateOrder;
@@ -686,6 +683,11 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
       proposals[i].action = 2;
       proposals[i].bestDeltaModule = bestDeltaModule;
     }
+  }
+
+  for (unsigned int i = 0; i < numNodes; ++i) {
+    if (proposals[i].action == 1)
+      network[nodeEnumeration[i]]->dirty = false;
   }
 
   VectorMap<DeltaFlowDataType> applyDeltaFlow(numNodes);
