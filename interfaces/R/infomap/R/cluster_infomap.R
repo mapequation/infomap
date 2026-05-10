@@ -19,7 +19,8 @@
 #' @param weight Edge weight column. For data frames, use a column name or
 #'   numeric column index. For matrices, use a numeric column index. Set
 #'   `FALSE` to ignore weights. For igraph graphs, use the edge attribute
-#'   name, or `NULL` to use `"weight"` when present.
+#'   name, `NULL` to use `"weight"` when present, or `FALSE` to ignore
+#'   igraph edge weights.
 #' @param e.weights Alias for `weight`, provided for familiarity with
 #'   `igraph::cluster_infomap()`. For igraph inputs, this can be an edge
 #'   attribute name or a numeric vector with one value per edge. Do not
