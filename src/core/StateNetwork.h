@@ -77,17 +77,6 @@ public:
     double flow;
   };
 
-  struct LinkInput {
-    LinkInput(unsigned int sourceId = 0, unsigned int targetId = 0, double weight = 1.0)
-        : source(sourceId),
-          target(targetId),
-          weight(weight) {}
-
-    unsigned int source;
-    unsigned int target;
-    double weight;
-  };
-
   // Unique state id to state node
   using NodeMap = std::map<unsigned int, StateNode>;
   using OutLinkMap = std::map<StateNode, LinkData>;
@@ -153,7 +142,6 @@ public:
   bool addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0);
   bool addLink(unsigned int sourceId, unsigned int targetId, unsigned long weight);
   void addLinks(const std::vector<unsigned int>& sourceIds, const std::vector<unsigned int>& targetIds, const std::vector<double>& weights);
-  void addLinksBulk(std::vector<LinkInput> links);
 
   /**
    * Remove link

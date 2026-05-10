@@ -194,16 +194,13 @@ void addLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links, std::size_t n
 
   const auto* data = linksBuffer.data<char>();
   const auto rowStride = static_cast<std::size_t>(numColumns) * itemSize;
-  std::vector<StateNetwork::LinkInput> linkData;
-  linkData.reserve(numRows);
   for (std::size_t i = 0; i < numRows; ++i) {
     const auto* row = data + i * rowStride;
     const auto source = readUnsignedId(row, dtypeKind, itemSize, "source id");
     const auto target = readUnsignedId(row + itemSize, dtypeKind, itemSize, "target id");
     const auto weight = numColumns == 3 ? readWeight(row + 2 * itemSize, dtypeKind, itemSize) : 1.0;
-    linkData.emplace_back(source, target, weight);
+    infomap.addLink(source, target, weight);
   }
-  infomap.addLinksBulk(std::move(linkData));
 }
 
 void addMultilayerLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links, std::size_t numRows, unsigned int numColumns, const std::string& dtypeKind, unsigned int itemSize)
@@ -343,8 +340,6 @@ namespace infomap {
 int run(const std::string& flags);
 #endif
 }
-
-%ignore infomap::InfomapWrapper::addLinksBulk;
 
 %extend infomap::InfomapBase
 {

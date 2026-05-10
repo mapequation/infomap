@@ -55,7 +55,6 @@ public:
   void addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0) { m_network.addLink(sourceId, targetId, weight); }
   void addLink(unsigned int sourceId, unsigned int targetId, unsigned long weight) { m_network.addLink(sourceId, targetId, weight); }
   void addLinks(const std::vector<unsigned int>& sourceIds, const std::vector<unsigned int>& targetIds, const std::vector<double>& weights) { m_network.addLinks(sourceIds, targetIds, weights); }
-  void addLinksBulk(std::vector<StateNetwork::LinkInput> links) { m_network.addLinksBulk(std::move(links)); }
   void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight = 1.0) { m_network.addMultilayerLink(layer1, n1, layer2, n2, weight); }
   void addMultilayerLinks(const std::vector<unsigned int>& sourceLayerIds,
                           const std::vector<unsigned int>& sourceNodeIds,
