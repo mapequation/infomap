@@ -172,8 +172,10 @@ as.data.frame.infomap_result <- function(x,
 #'   inter-layer links, Infomap couples layers via
 #'   `multilayer_relax_rate` (default 0.15).
 #'
-#' Columns may appear in any order. Matrix inputs are interpreted
-#' positionally in the orders listed above.
+#' Data-frame columns may appear in any order. Matrix inputs are interpreted
+#' positionally with 3 columns for unweighted intra-layer links and 4 or 5
+#' columns for full multilayer links. Use a data frame for weighted
+#' intra-layer-only inputs.
 #'
 #' For more exotic setups (e.g. weighted inter-layer couplings via
 #' `add_multilayer_inter_links()`), use the lower-level [Infomap()] R6
@@ -182,9 +184,9 @@ as.data.frame.infomap_result <- function(x,
 #' @param multilayer_edges A data frame, tibble, or matrix of multilayer
 #'   edges in one of the formats above.
 #' @param weight Edge weight column name or numeric column index. Set
-#'   `FALSE` to ignore weights. If `NULL` (default), uses a column named
-#'   `weight` when present, then falls back to a trailing extra column,
-#'   then to weight `1`.
+#'   `FALSE` to ignore weights. If `NULL` (default), uses a data-frame column
+#'   named `weight` when present, then falls back to a single non-format
+#'   data-frame column, then to weight `1`.
 #' @param args Optional raw CLI argument string passed to [Infomap()].
 #' @param opts Optional options list from [infomap_options()].
 #' @param tibble If `TRUE`, return `nodes` as a tibble (requires the
@@ -401,12 +403,14 @@ as_communities.infomap_result <- function(x, graph, ...) {
 .detect_multilayer_format <- function(edges) {
   if (is.matrix(edges)) {
     nc <- ncol(edges)
+    if (nc == 3L) return("intra")
     if (nc %in% c(4L, 5L)) return("full")
-    if (nc %in% c(3L, 4L)) return("intra")
     stop(
-      "Multilayer matrix input must have 3-4 columns ",
-      "(layer, node_from, node_to, [weight]) or 4-5 columns ",
-      "(layer_from, node_from, layer_to, node_to, [weight]).",
+      "Multilayer matrix input must have 3 columns ",
+      "(layer, node_from, node_to) for unweighted intra-layer links or ",
+      "4-5 columns (layer_from, node_from, layer_to, node_to, [weight]) ",
+      "for full multilayer links. Use a data frame for weighted ",
+      "intra-layer-only input.",
       call. = FALSE
     )
   }
@@ -468,7 +472,7 @@ as_communities.infomap_result <- function(x, graph, ...) {
     layer     <- edges[, 1L]
     node_from <- edges[, 2L]
     node_to   <- edges[, 3L]
-    weights <- .multilayer_weights(edges, weight, default_index = 4L)
+    weights <- .multilayer_weights(edges, weight)
   } else {
     layer     <- edges[["layer"]]
     node_from <- edges[["node_from"]]

@@ -18,9 +18,9 @@ cluster_infomap_multilayer(
 edges in one of the formats above.}
 
 \item{weight}{Edge weight column name or numeric column index. Set
-\code{FALSE} to ignore weights. If \code{NULL} (default), uses a column named
-\code{weight} when present, then falls back to a trailing extra column,
-then to weight \code{1}.}
+\code{FALSE} to ignore weights. If \code{NULL} (default), uses a data-frame column
+named \code{weight} when present, then falls back to a single non-format
+data-frame column, then to weight \code{1}.}
 
 \item{args}{Optional raw CLI argument string passed to \code{\link[=Infomap]{Infomap()}}.}
 
@@ -58,8 +58,10 @@ inter-layer links, Infomap couples layers via
 \code{multilayer_relax_rate} (default 0.15).
 }
 
-Columns may appear in any order. Matrix inputs are interpreted
-positionally in the orders listed above.
+Data-frame columns may appear in any order. Matrix inputs are interpreted
+positionally with 3 columns for unweighted intra-layer links and 4 or 5
+columns for full multilayer links. Use a data frame for weighted
+intra-layer-only inputs.
 
 For more exotic setups (e.g. weighted inter-layer couplings via
 \code{add_multilayer_inter_links()}), use the lower-level \code{\link[=Infomap]{Infomap()}} R6

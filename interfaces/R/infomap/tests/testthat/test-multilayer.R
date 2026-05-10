@@ -326,6 +326,32 @@ test_that("cluster_infomap_multilayer reads weight column by name", {
   expect_equal(result$codelength, baseline$codelength, tolerance = 1e-10)
 })
 
+test_that("cluster_infomap_multilayer can ignore weight column explicitly", {
+  edges <- data.frame(
+    layer     = c(1, 1, 2, 2),
+    node_from = c(1, 2, 1, 2),
+    node_to   = c(2, 3, 2, 3),
+    weight    = c(100, 100, 1, 1)
+  )
+
+  baseline <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
+  for (i in seq_len(nrow(edges))) {
+    baseline$add_multilayer_intra_link(
+      edges$layer[i], edges$node_from[i], edges$node_to[i], 1.0
+    )
+  }
+  baseline$run()
+
+  result <- cluster_infomap_multilayer(
+    edges,
+    weight = FALSE,
+    silent = TRUE, num_trials = 1L, two_level = TRUE
+  )
+
+  expect_equal(result$num_links, baseline$num_links)
+  expect_equal(result$codelength, baseline$codelength, tolerance = 1e-10)
+})
+
 test_that("cluster_infomap_multilayer accepts matrix input positionally", {
   m_full <- matrix(
     c(1, 1, 1, 2,

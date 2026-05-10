@@ -63,6 +63,3 @@ examples/cpp/Infomap-igraph-interface-library/lib/
 *.nwk
 *.csv
 /*.net
-.Rproj.user
-.positai
-*.Rproj
