@@ -24,6 +24,12 @@ Upgrade an existing installation with::
 
     pip install --upgrade infomap
 
+Install optional integrations for common research workflows with::
+
+    pip install "infomap[networkx]"
+    pip install "infomap[igraph]"
+    pip install "infomap[pandas]"
+
 .. _PyPI: https://pypi.org/project/infomap/
 
 Usage
@@ -69,6 +75,22 @@ A simple example:
 
 .. code-block:: python
 
+    import networkx as nx
+    import infomap
+
+    graph = nx.karate_club_graph()
+    communities = infomap.find_communities(
+        graph,
+        seed=123,
+        num_trials=20,
+    )
+
+    print(communities)
+
+For direct control over Infomap-specific options and result access:
+
+.. code-block:: python
+
     from infomap import Infomap
 
     # Command line flags can be provided as a string
@@ -100,6 +122,52 @@ A simple example:
     for node in im.tree:
         if node.is_leaf:
             print(node.node_id, node.module_id)
+
+Recommended researcher workflow
+"""""""""""""""""""""""""""""""
+
+For notebooks and scripts, start from the graph package you already use,
+choose a seed, run multiple trials, then store both the partition and the
+settings used to produce it:
+
+.. code-block:: python
+
+    import networkx as nx
+    import infomap
+
+    graph = nx.karate_club_graph()
+    communities = infomap.find_communities(
+        graph,
+        weight="weight",
+        seed=123,
+        num_trials=20,
+        module_attribute="module_id",
+        flow_attribute="flow",
+    )
+
+    print(f"{len(communities)} communities")
+    print("Report: Infomap, seed=123, num_trials=20, weight='weight'")
+
+When you need tabular results, use :meth:`infomap.Infomap.to_dataframe` after
+running an explicit :class:`infomap.Infomap` instance:
+
+.. code-block:: python
+
+    from infomap import Infomap
+
+    im = Infomap(silent=True, seed=123, num_trials=20)
+    im.add_networkx_graph(graph)
+    im.run()
+    results = im.to_dataframe(
+        columns=["node_id", "community", "flow"],
+        index="node_id",
+        sort=["community", "flow"],
+    )
+
+``seed`` initializes the random number generator. ``num_trials`` controls how
+many independent optimization trials are run before Infomap keeps the best
+solution. For reproducible reports, record the package version, graph input,
+edge weight field, ``seed``, ``num_trials``, and non-default Infomap options.
 
 Reusable options
 """"""""""""""""
@@ -276,6 +344,28 @@ python-igraph documentation for
 `Graph.community_infomap <https://python.igraph.org/en/main/api/igraph.Graph.html>`__
 and
 `VertexClustering <https://python.igraph.org/en/main/api/igraph.VertexClustering.html>`__.
+
+Migration guide for NetworkX and igraph users
+"""""""""""""""""""""""""""""""""""""""""""""
+
+NetworkX community functions usually return a partition such as ``list[set]``.
+Use :func:`infomap.find_communities` for that style. Pass ``weight`` as the edge
+attribute name, pass ``None`` for unweighted edges, and use ``module_attribute``
+or ``flow_attribute`` when you want values written back to graph nodes.
+Directed ``DiGraph`` inputs are detected automatically unless you already set an
+Infomap flow model.
+
+python-igraph community functions usually return a ``VertexClustering``. Use
+:func:`infomap.find_igraph_communities` for that style. Pass ``edge_weights`` as
+an igraph edge attribute name, an explicit sequence, or ``None`` for unweighted
+edges. Directed igraph graphs are detected automatically, and optional
+``module_attribute`` and ``flow_attribute`` arguments write results back to
+vertices.
+
+Use :meth:`infomap.Infomap.add_networkx_graph` or
+:meth:`infomap.Infomap.add_igraph_graph` instead of the one-shot helpers when
+you need state networks, multilayer networks, explicit result iteration,
+dataframe export, or several runs with different Infomap options.
 
 Please read the :doc:`/python/infomap` reference to learn more.
 

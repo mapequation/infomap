@@ -65,6 +65,12 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">infomap</span>
 </pre></div>
 </div>
+<p>Install optional integrations for common research workflows with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="s2">&quot;infomap[networkx]&quot;</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="s2">&quot;infomap[igraph]&quot;</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="s2">&quot;infomap[pandas]&quot;</span>
+</pre></div>
+</div>
 </section>
 <section id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h2>
@@ -102,6 +108,20 @@ To verify that the CLI is available, run:</p>
 </pre></div>
 </div>
 <p>A simple example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">infomap</span>
+
+<span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">karate_club_graph</span><span class="p">()</span>
+<span class="n">communities</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">find_communities</span><span class="p">(</span>
+    <span class="n">graph</span><span class="p">,</span>
+    <span class="n">seed</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span>
+    <span class="n">num_trials</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">communities</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For direct control over Infomap-specific options and result access:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">infomap</span><span class="w"> </span><span class="kn">import</span> <span class="n">Infomap</span>
 
 <span class="c1"># Command line flags can be provided as a string</span>
@@ -135,6 +155,47 @@ To verify that the CLI is available, run:</p>
         <span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">node_id</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">module_id</span><span class="p">)</span>
 </pre></div>
 </div>
+<section id="recommended-researcher-workflow">
+<h4>Recommended researcher workflow<a class="headerlink" href="#recommended-researcher-workflow" title="Link to this heading">¶</a></h4>
+<p>For notebooks and scripts, start from the graph package you already use,
+choose a seed, run multiple trials, then store both the partition and the
+settings used to produce it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">infomap</span>
+
+<span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">karate_club_graph</span><span class="p">()</span>
+<span class="n">communities</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">find_communities</span><span class="p">(</span>
+    <span class="n">graph</span><span class="p">,</span>
+    <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span>
+    <span class="n">seed</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span>
+    <span class="n">num_trials</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="n">module_attribute</span><span class="o">=</span><span class="s2">&quot;module_id&quot;</span><span class="p">,</span>
+    <span class="n">flow_attribute</span><span class="o">=</span><span class="s2">&quot;flow&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">communities</span><span class="p">)</span><span class="si">}</span><span class="s2"> communities&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Report: Infomap, seed=123, num_trials=20, weight=&#39;weight&#39;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>When you need tabular results, use <code class="xref py py-meth docutils literal notranslate"><span class="pre">infomap.Infomap.to_dataframe()</span></code> after
+running an explicit <a class="reference internal" href="infomap.html#infomap.Infomap" title="infomap.Infomap"><code class="xref py py-class docutils literal notranslate"><span class="pre">infomap.Infomap</span></code></a> instance:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">infomap</span><span class="w"> </span><span class="kn">import</span> <span class="n">Infomap</span>
+
+<span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_networkx_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">(</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;node_id&quot;</span><span class="p">,</span> <span class="s2">&quot;community&quot;</span><span class="p">,</span> <span class="s2">&quot;flow&quot;</span><span class="p">],</span>
+    <span class="n">index</span><span class="o">=</span><span class="s2">&quot;node_id&quot;</span><span class="p">,</span>
+    <span class="n">sort</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;community&quot;</span><span class="p">,</span> <span class="s2">&quot;flow&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">seed</span></code> initializes the random number generator. <code class="docutils literal notranslate"><span class="pre">num_trials</span></code> controls how
+many independent optimization trials are run before Infomap keeps the best
+solution. For reproducible reports, record the package version, graph input,
+edge weight field, <code class="docutils literal notranslate"><span class="pre">seed</span></code>, <code class="docutils literal notranslate"><span class="pre">num_trials</span></code>, and non-default Infomap options.</p>
+</section>
 <section id="reusable-options">
 <h4>Reusable options<a class="headerlink" href="#reusable-options" title="Link to this heading">¶</a></h4>
 <p>Use <a class="reference internal" href="infomap.html#infomap.InfomapOptions" title="infomap.InfomapOptions"><code class="xref py py-class docutils literal notranslate"><span class="pre">infomap.InfomapOptions</span></code></a> when you want to reuse the same
@@ -284,6 +345,25 @@ python-igraph documentation for
 <a class="reference external" href="https://python.igraph.org/en/main/api/igraph.Graph.html">Graph.community_infomap</a>
 and
 <a class="reference external" href="https://python.igraph.org/en/main/api/igraph.VertexClustering.html">VertexClustering</a>.</p>
+</section>
+<section id="migration-guide-for-networkx-and-igraph-users">
+<h4>Migration guide for NetworkX and igraph users<a class="headerlink" href="#migration-guide-for-networkx-and-igraph-users" title="Link to this heading">¶</a></h4>
+<p>NetworkX community functions usually return a partition such as <code class="docutils literal notranslate"><span class="pre">list[set]</span></code>.
+Use <a class="reference internal" href="infomap.html#infomap.find_communities" title="infomap.find_communities"><code class="xref py py-func docutils literal notranslate"><span class="pre">infomap.find_communities()</span></code></a> for that style. Pass <code class="docutils literal notranslate"><span class="pre">weight</span></code> as the edge
+attribute name, pass <code class="docutils literal notranslate"><span class="pre">None</span></code> for unweighted edges, and use <code class="docutils literal notranslate"><span class="pre">module_attribute</span></code>
+or <code class="docutils literal notranslate"><span class="pre">flow_attribute</span></code> when you want values written back to graph nodes.
+Directed <code class="docutils literal notranslate"><span class="pre">DiGraph</span></code> inputs are detected automatically unless you already set an
+Infomap flow model.</p>
+<p>python-igraph community functions usually return a <code class="docutils literal notranslate"><span class="pre">VertexClustering</span></code>. Use
+<a class="reference internal" href="infomap.html#infomap.find_igraph_communities" title="infomap.find_igraph_communities"><code class="xref py py-func docutils literal notranslate"><span class="pre">infomap.find_igraph_communities()</span></code></a> for that style. Pass <code class="docutils literal notranslate"><span class="pre">edge_weights</span></code> as
+an igraph edge attribute name, an explicit sequence, or <code class="docutils literal notranslate"><span class="pre">None</span></code> for unweighted
+edges. Directed igraph graphs are detected automatically, and optional
+<code class="docutils literal notranslate"><span class="pre">module_attribute</span></code> and <code class="docutils literal notranslate"><span class="pre">flow_attribute</span></code> arguments write results back to
+vertices.</p>
+<p>Use <a class="reference internal" href="infomap.html#infomap.Infomap.add_networkx_graph" title="infomap.Infomap.add_networkx_graph"><code class="xref py py-meth docutils literal notranslate"><span class="pre">infomap.Infomap.add_networkx_graph()</span></code></a> or
+<a class="reference internal" href="infomap.html#infomap.Infomap.add_igraph_graph" title="infomap.Infomap.add_igraph_graph"><code class="xref py py-meth docutils literal notranslate"><span class="pre">infomap.Infomap.add_igraph_graph()</span></code></a> instead of the one-shot helpers when
+you need state networks, multilayer networks, explicit result iteration,
+dataframe export, or several runs with different Infomap options.</p>
 <p>Please read the <a class="reference internal" href="infomap.html"><span class="doc">infomap module</span></a> reference to learn more.</p>
 </section>
 </section>
