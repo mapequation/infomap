@@ -707,7 +707,11 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
     if (bestModuleIndex == oldModuleIndex)
       continue;
 
-    bool movingToEmptyModule = !m_emptyModules.empty() && bestModuleIndex == m_emptyModules.back();
+    auto emptyModuleIt = m_emptyModules.end();
+    if (m_moduleMembers[bestModuleIndex] == 0) {
+      emptyModuleIt = std::find(m_emptyModules.begin(), m_emptyModules.end(), bestModuleIndex);
+    }
+    bool movingToEmptyModule = emptyModuleIt != m_emptyModules.end();
     bool validMove = movingToEmptyModule
         // Check validity of move to empty target
         ? m_moduleMembers[oldModuleIndex] > 1
@@ -768,8 +772,8 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
 
     if (deltaCodelength < 0.0 - m_infomap->minimumSingleNodeCodelengthImprovement) {
       // Update empty module vector
-      if (m_moduleMembers[bestModuleIndex] == 0) {
-        m_emptyModules.pop_back();
+      if (movingToEmptyModule) {
+        m_emptyModules.erase(emptyModuleIt);
       }
       if (m_moduleMembers[oldModuleIndex] == 1) {
         m_emptyModules.push_back(oldModuleIndex);
