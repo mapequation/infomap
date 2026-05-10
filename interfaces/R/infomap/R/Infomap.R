@@ -662,16 +662,20 @@ InfomapClass <- R6::R6Class(
     #' **Node id convention.** Infomap result accessors report the numeric
     #' node ids used to build the network. For links added directly with
     #' `add_link()` or `add_links()`, those user-supplied ids are preserved.
-    #' `add_igraph()` uses R igraph's 1-indexed vertex ids directly. If the
-    #' original igraph had vertex names (`V(g)$name`), the returned mapping
-    #' recovers them.
+    #' `add_igraph()` uses R igraph's 1-indexed vertex ids as state ids.
+    #' Plain graph results therefore use those ids directly. State and
+    #' multilayer graphs may use separate physical ids from `phys_id`; if
+    #' those ids are labels, they are mapped to stable internal integers and
+    #' returned as `attr(mapping, "phys_id")`. If the original igraph had
+    #' vertex names (`V(g)$name`), the returned mapping recovers them.
     #'
     #' If the graph is directed, `run()` will inject `--directed`
     #' unless the user has already chosen a flow model via `opts` or
     #' raw args.
     #'
     #' @param g An igraph graph.
-    #' @param weight Edge attribute to use as link weight.
+    #' @param weight Edge attribute to use as link weight. Use `NULL` to use
+    #'   `"weight"` when present, or `FALSE` to ignore edge weights.
     #' @param phys_id Vertex attribute holding physical node ids
     #'   (state-node case).
     #' @param layer_id Vertex attribute holding layer ids
@@ -682,8 +686,10 @@ InfomapClass <- R6::R6Class(
     #'   `add_multilayer_link()` for arbitrary (layer, node) pairs.
     #' @return Invisibly returns a named character vector mapping igraph
     #'   vertex ids to the original igraph vertex names (or stringified
-    #'   vertex ids when `V(g)$name` is absent). Useful for joining Infomap
-    #'   results back to the original graph.
+    #'   vertex ids when `V(g)$name` is absent). For state or multilayer
+    #'   networks with non-numeric `phys_id` labels, the returned vector has
+    #'   a `"phys_id"` attribute mapping internal physical ids to original
+    #'   labels. Useful for joining Infomap results back to the original graph.
     add_igraph = function(g,
                           weight = "weight",
                           phys_id = "phys_id",
@@ -701,9 +707,8 @@ InfomapClass <- R6::R6Class(
       }
 
       is_directed <- igraph::is_directed(g)
-      has_phys <- phys_id %in% igraph::vertex_attr_names(g)
-      has_layer <- layer_id %in% igraph::vertex_attr_names(g)
-      has_weight <- weight %in% igraph::edge_attr_names(g)
+      has_phys <- length(phys_id) == 1L && phys_id %in% igraph::vertex_attr_names(g)
+      has_layer <- length(layer_id) == 1L && layer_id %in% igraph::vertex_attr_names(g)
 
       vertex_names <- igraph::V(g)$name
       if (is.null(vertex_names)) {
@@ -714,7 +719,11 @@ InfomapClass <- R6::R6Class(
       mapping <- stats::setNames(vertex_names, as.character(vertex_ids))
 
       if (has_phys) {
-        phys <- as.integer(igraph::vertex_attr(g, phys_id))
+        phys_data <- .map_igraph_phys_ids(igraph::vertex_attr(g, phys_id))
+        phys <- phys_data$ids
+        if (!is.null(phys_data$mapping)) {
+          attr(mapping, "phys_id") <- phys_data$mapping
+        }
       } else {
         phys <- vertex_ids
       }
@@ -728,11 +737,7 @@ InfomapClass <- R6::R6Class(
       # Vertex names are captured in `mapping` above; edge endpoints use
       # R igraph's 1-indexed vertex ids.
       edges <- igraph::as_edgelist(g, names = FALSE)
-      weights <- if (has_weight) {
-        as.numeric(igraph::edge_attr(g, weight))
-      } else {
-        rep(1.0, nrow(edges))
-      }
+      weights <- .igraph_edge_weights(g, weight, nrow(edges))
 
       if (has_phys && has_layer) {
         # Multilayer state network.
@@ -799,6 +804,8 @@ InfomapClass <- R6::R6Class(
         # (via opts at construction/run, or via raw args).
         private$.directed_from_igraph <- TRUE
       }
+      private$.igraph_vcount <- igraph::vcount(g)
+      private$.igraph_have_memory <- has_phys
 
       invisible(mapping)
     },
@@ -818,13 +825,32 @@ InfomapClass <- R6::R6Class(
       if (!inherits(g, "igraph")) {
         stop("`g` must be an igraph graph.", call. = FALSE)
       }
-      # self$modules returns a named integer vector: node_id -> 0-indexed
-      # module. add_igraph() uses R igraph's 1-indexed vertex ids directly,
-      # so look up by vertex sequence.
-      mods <- self$modules
+      if (!is.null(private$.igraph_vcount) &&
+          igraph::vcount(g) != private$.igraph_vcount) {
+        stop(
+          "`g` must be the same igraph graph passed to add_igraph().",
+          call. = FALSE
+        )
+      }
+
+      # add_igraph() uses R igraph's 1-indexed vertex ids as state ids. For
+      # state/multilayer graphs, membership therefore has to be looked up by
+      # state id; plain graphs can keep using physical node ids.
+      mods <- if (isTRUE(private$.igraph_have_memory)) {
+        self$get_modules(states = TRUE)
+      } else {
+        self$modules
+      }
       n <- igraph::vcount(g)
       vertex_ids <- as.character(seq_len(n))
       membership <- as.integer(mods[vertex_ids])
+      if (length(membership) != n || anyNA(membership)) {
+        stop(
+          "Could not align Infomap membership with `g`; `g` must be the ",
+          "same igraph graph passed to add_igraph().",
+          call. = FALSE
+        )
+      }
       igraph::make_clusters(
         g,
         membership = membership,
@@ -1130,7 +1156,9 @@ InfomapClass <- R6::R6Class(
   private = list(
     .swig = NULL,
     .flow_model_set = FALSE,
-    .directed_from_igraph = FALSE
+    .directed_from_igraph = FALSE,
+    .igraph_vcount = NULL,
+    .igraph_have_memory = FALSE
   )
 )
 
@@ -1141,4 +1169,62 @@ InfomapClass <- R6::R6Class(
 .flow_model_in_args <- function(args) {
   if (is.null(args) || !nzchar(args)) return(FALSE)
   grepl("(^|\\s)(--directed|-d\\b|--flow-model|-f\\b)", args)
+}
+
+.igraph_edge_weights <- function(g, weight, num_edges) {
+  if (identical(weight, FALSE)) {
+    return(rep(1.0, num_edges))
+  }
+
+  attr_name <- if (is.null(weight)) {
+    "weight"
+  } else {
+    if (!is.character(weight) || length(weight) != 1L || is.na(weight)) {
+      stop(
+        "`weight` must be NULL, FALSE, or a single igraph edge attribute name.",
+        call. = FALSE
+      )
+    }
+    weight
+  }
+
+  if (!(attr_name %in% igraph::edge_attr_names(g))) {
+    return(rep(1.0, num_edges))
+  }
+
+  weights <- igraph::edge_attr(g, attr_name)
+  if (!is.numeric(weights)) {
+    stop("`weight` edge attribute must be numeric.", call. = FALSE)
+  }
+  if (anyNA(weights)) {
+    stop("`weight` edge attribute cannot contain missing values.", call. = FALSE)
+  }
+  as.numeric(weights)
+}
+
+.map_igraph_phys_ids <- function(values) {
+  if (anyNA(values)) {
+    stop("`phys_id` vertex attribute cannot contain missing values.", call. = FALSE)
+  }
+
+  if (is.numeric(values)) {
+    ids <- as.integer(values)
+    if (any(!is.finite(values)) || any(values != ids)) {
+      stop(
+        "`phys_id` vertex attribute must contain integer-like numeric values or non-missing labels.",
+        call. = FALSE
+      )
+    }
+    return(list(ids = ids, mapping = NULL))
+  }
+
+  labels <- as.character(values)
+  if (anyNA(labels)) {
+    stop("`phys_id` vertex attribute cannot contain missing values.", call. = FALSE)
+  }
+
+  unique_labels <- unique(labels)
+  ids <- match(labels, unique_labels)
+  mapping <- stats::setNames(unique_labels, as.character(seq_along(unique_labels)))
+  list(ids = as.integer(ids), mapping = mapping)
 }

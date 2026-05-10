@@ -636,7 +636,8 @@ Import an igraph graph.
 \describe{
 \item{\code{g}}{An igraph graph.}
 
-\item{\code{weight}}{Edge attribute to use as link weight.}
+\item{\code{weight}}{Edge attribute to use as link weight. Use \code{NULL} to use
+\code{"weight"} when present, or \code{FALSE} to ignore edge weights.}
 
 \item{\code{phys_id}}{Vertex attribute holding physical node ids
 (state-node case).}
@@ -657,9 +658,12 @@ Translated from \verb{interfaces/python/src/infomap/_networkx.py}.
 \strong{Node id convention.} Infomap result accessors report the numeric
 node ids used to build the network. For links added directly with
 \code{add_link()} or \code{add_links()}, those user-supplied ids are preserved.
-\code{add_igraph()} uses R igraph's 1-indexed vertex ids directly. If the
-original igraph had vertex names (\code{V(g)$name}), the returned mapping
-recovers them.
+\code{add_igraph()} uses R igraph's 1-indexed vertex ids as state ids.
+Plain graph results therefore use those ids directly. State and
+multilayer graphs may use separate physical ids from \code{phys_id}; if
+those ids are labels, they are mapped to stable internal integers and
+returned as \code{attr(mapping, "phys_id")}. If the original igraph had
+vertex names (\code{V(g)$name}), the returned mapping recovers them.
 
 If the graph is directed, \code{run()} will inject \code{--directed}
 unless the user has already chosen a flow model via \code{opts} or
@@ -669,8 +673,10 @@ raw args.
 \subsection{Returns}{
 Invisibly returns a named character vector mapping igraph
 vertex ids to the original igraph vertex names (or stringified
-vertex ids when \code{V(g)$name} is absent). Useful for joining Infomap
-results back to the original graph.
+vertex ids when \code{V(g)$name} is absent). For state or multilayer
+networks with non-numeric \code{phys_id} labels, the returned vector has
+a \code{"phys_id"} attribute mapping internal physical ids to original
+labels. Useful for joining Infomap results back to the original graph.
 }
 }
 \if{html}{\out{<hr>}}
