@@ -319,10 +319,9 @@ double MemMapEquation::getDeltaCodelengthOnMovingNode(InfoNode& current,
                                                       MemDeltaFlow& oldModuleDelta,
                                                       MemDeltaFlow& newModuleDelta,
                                                       std::vector<FlowData>& moduleFlowData,
-                                                      std::vector<FlowDataPlogp>& moduleFlowPlogp,
                                                       std::vector<unsigned int>& moduleMembers)
 {
-  double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleFlowPlogp, moduleMembers);
+  double deltaL = Base::getDeltaCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
 
   double delta_nodeFlow_log_nodeFlow = oldModuleDelta.sumDeltaPlogpPhysFlow + newModuleDelta.sumDeltaPlogpPhysFlow + oldModuleDelta.sumPlogpPhysFlow - newModuleDelta.sumPlogpPhysFlow;
 
@@ -337,10 +336,9 @@ void MemMapEquation::updateCodelengthOnMovingNode(InfoNode& current,
                                                   MemDeltaFlow& oldModuleDelta,
                                                   MemDeltaFlow& newModuleDelta,
                                                   std::vector<FlowData>& moduleFlowData,
-                                                  std::vector<FlowDataPlogp>& moduleFlowPlogp,
                                                   std::vector<unsigned int>& moduleMembers)
 {
-  Base::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleFlowPlogp, moduleMembers);
+  Base::updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, moduleFlowData, moduleMembers);
   if (m_memoryContributionsAdded)
     updatePhysicalNodes(current, oldModuleDelta.module, newModuleDelta.module);
   else

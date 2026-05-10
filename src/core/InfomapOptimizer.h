@@ -103,7 +103,6 @@ protected:
   Objective m_objective;
   Objective m_consolidatedObjective;
   std::vector<FlowDataType> m_moduleFlowData;
-  std::vector<FlowDataPlogp> m_moduleFlowPlogp;
   std::vector<unsigned int> m_moduleMembers;
   std::vector<unsigned int> m_emptyModules;
 };
@@ -165,12 +164,6 @@ void InfomapOptimizer<Objective>::initPartition()
   // Init one module for each node
   auto numNodes = network.size();
   m_moduleFlowData.resize(numNodes);
-  if (m_infomap->haveMemory()) {
-    m_moduleFlowPlogp.clear();
-    m_moduleFlowPlogp.shrink_to_fit();
-  } else {
-    m_moduleFlowPlogp.resize(numNodes);
-  }
   m_moduleMembers.assign(numNodes, 1);
   m_emptyModules.clear();
   m_emptyModules.reserve(numNodes);
@@ -180,8 +173,6 @@ void InfomapOptimizer<Objective>::initPartition()
     InfoNode& node = *nodePtr;
     node.index = i; // Unique module index for each node
     m_moduleFlowData[i] = node.data;
-    if (!m_moduleFlowPlogp.empty())
-      m_moduleFlowPlogp[i].update(m_moduleFlowData[i]);
     node.dirty = true;
     ++i;
   }
@@ -258,7 +249,7 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
     m_emptyModules.push_back(oldM);
   }
 
-  m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, m_moduleFlowData, m_moduleFlowPlogp, m_moduleMembers);
+  m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, newModuleDelta, m_moduleFlowData, m_moduleMembers);
 
   m_moduleMembers[oldM] -= 1;
   m_moduleMembers[newM] += 1;
@@ -399,7 +390,6 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
                                                                             oldModuleDelta,
                                                                             moduleDeltaEnterExit[j],
                                                                             m_moduleFlowData,
-                                                                            m_moduleFlowPlogp,
                                                                             m_moduleMembers);
 
         if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement) {
@@ -431,7 +421,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
         m_emptyModules.push_back(current.index);
       }
 
-      m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleFlowPlogp, m_moduleMembers);
+      m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
 
       m_moduleMembers[current.index] -= 1;
       m_moduleMembers[bestModuleIndex] += 1;
@@ -570,7 +560,6 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
                                                                             oldModuleDelta,
                                                                             moduleDeltaEnterExit[j],
                                                                             m_moduleFlowData,
-                                                                            m_moduleFlowPlogp,
                                                                             m_moduleMembers);
 
         if (deltaCodelength < bestDeltaCodelength - m_infomap->minimumSingleNodeCodelengthImprovement) {
@@ -639,7 +628,6 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
                                                                               oldModuleDelta,
                                                                               newModuleDelta,
                                                                               m_moduleFlowData,
-                                                                              m_moduleFlowPlogp,
                                                                               m_moduleMembers);
 
           if (deltaCodelength < 0.0 - m_infomap->minimumSingleNodeCodelengthImprovement) {
@@ -651,7 +639,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
               m_emptyModules.push_back(oldModuleIndex);
             }
 
-            m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleFlowPlogp, m_moduleMembers);
+            m_objective.updateCodelengthOnMovingNode(current, oldModuleDelta, bestDeltaModule, m_moduleFlowData, m_moduleMembers);
 
             m_moduleMembers[oldModuleIndex] -= 1;
             m_moduleMembers[bestModuleIndex] += 1;

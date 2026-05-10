@@ -75,7 +75,6 @@ public:
                                         MemDeltaFlow& oldModuleDelta,
                                         MemDeltaFlow& newModuleDelta,
                                         std::vector<FlowData>& moduleFlowData,
-                                        std::vector<FlowDataPlogp>& moduleFlowPlogp,
                                         std::vector<unsigned int>& moduleMembers) override;
 
   // ===================================================
@@ -86,7 +85,6 @@ public:
                                     MemDeltaFlow& oldModuleDelta,
                                     MemDeltaFlow& newModuleDelta,
                                     std::vector<FlowData>& moduleFlowData,
-                                    std::vector<FlowDataPlogp>& moduleFlowPlogp,
                                     std::vector<unsigned int>& moduleMembers) override;
 
   void consolidateModules(std::vector<InfoNode*>& modules) override;
