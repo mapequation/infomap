@@ -6,7 +6,7 @@
 .cproject
 .settings/
 cmake-build-*/
-.claude/settings.local.json
+.claude
 
 __pycache__/
 node_modules/
