@@ -477,14 +477,19 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
                 if links_array.shape[1] not in (2, 3):
                     raise ValueError("Numpy link arrays must have 2 or 3 columns: (source_id, target_id, [weight]).")
 
-                source_ids = links_array[:, 0].astype(np.uint32, copy=False).tolist()
-                target_ids = links_array[:, 1].astype(np.uint32, copy=False).tolist()
-                if links_array.shape[1] == 3:
-                    weights = links_array[:, 2].astype(np.float64, copy=False).tolist()
-                else:
-                    weights = [1.0] * links_array.shape[0]
+                if links_array.dtype.kind not in "uif":
+                    raise ValueError("Numpy link arrays must have a numeric dtype.")
+                if links_array.dtype.itemsize not in (4, 8):
+                    raise ValueError("Numpy link arrays must use 32-bit or 64-bit numeric values.")
 
-                return super().addLinks(source_ids, target_ids, weights)
+                links_array = np.ascontiguousarray(links_array)
+                return super().addLinksFromNumpy2D(
+                    links_array,
+                    links_array.shape[0],
+                    links_array.shape[1],
+                    links_array.dtype.kind,
+                    links_array.dtype.itemsize,
+                )
 
         source_ids = []
         target_ids = []

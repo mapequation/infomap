@@ -79,6 +79,22 @@ def copy_file(src: Path, dest: Path) -> None:
     shutil.copyfile(src, dest)
 
 
+def strip_trailing_whitespace_in_block(path: Path, start_marker: str, end_marker: str) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    in_block = False
+    updated_lines = []
+    for line in lines:
+        if start_marker in line:
+            in_block = True
+        if in_block:
+            newline = "\n" if line.endswith("\n") else ""
+            line = line.rstrip("\r\n").rstrip() + newline
+        updated_lines.append(line)
+        if in_block and end_marker in line:
+            in_block = False
+    path.write_text("".join(updated_lines), encoding="utf-8")
+
+
 def files_match(expected: Path, actual: Path) -> bool:
     return expected.exists() and expected.read_text(encoding="utf-8") == actual.read_text(encoding="utf-8")
 
@@ -96,6 +112,11 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="infomap-swig-") as temp_dir_name:
         temp_dir = Path(temp_dir_name)
         generated_python, generated_cpp = generate(temp_dir)
+        strip_trailing_whitespace_in_block(
+            generated_cpp,
+            "SWIGINTERN PyObject *_wrap_InfomapWrapper_addLinksFromNumpy2D",
+            "resultobj = SWIG_Py_Void();",
+        )
 
         if args.check:
             failures = []

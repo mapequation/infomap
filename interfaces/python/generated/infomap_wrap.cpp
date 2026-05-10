@@ -3719,9 +3719,174 @@ namespace swig {
 namespace infomap {
 int run(const std::string& flags);
 }
+#include <Python.h>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
+#include <limits>
+#include <stdexcept>
 #endif
 // SWIG strips namespaces, so include infomap in global namespace in wrapper code
 using namespace infomap;
+
+#ifdef SWIGPYTHON
+namespace infomap {
+namespace {
+
+class PyBufferView {
+public:
+  PyBufferView(PyObject* object, const char* name) : m_name(name)
+  {
+    if (PyObject_GetBuffer(object, &m_view, PyBUF_SIMPLE) != 0) {
+      PyErr_Clear();
+      throw std::runtime_error(std::string("Expected a contiguous NumPy-compatible buffer for ") + m_name);
+    }
+  }
+
+  ~PyBufferView()
+  {
+    PyBuffer_Release(&m_view);
+  }
+
+  PyBufferView(const PyBufferView&) = delete;
+  PyBufferView& operator=(const PyBufferView&) = delete;
+
+  template <typename T>
+  const T* data() const
+  {
+    if (m_view.len < 0 || static_cast<std::size_t>(m_view.len) % sizeof(T) != 0) {
+      throw std::runtime_error(std::string("Invalid buffer size for ") + m_name);
+    }
+    return static_cast<const T*>(m_view.buf);
+  }
+
+  template <typename T>
+  std::size_t size() const
+  {
+    if (m_view.len < 0 || static_cast<std::size_t>(m_view.len) % sizeof(T) != 0) {
+      throw std::runtime_error(std::string("Invalid buffer size for ") + m_name);
+    }
+    return static_cast<std::size_t>(m_view.len) / sizeof(T);
+  }
+
+private:
+  Py_buffer m_view {};
+  const char* m_name;
+};
+
+template <typename T>
+T readUnaligned(const char* data)
+{
+  T value {};
+  std::memcpy(&value, data, sizeof(T));
+  return value;
+}
+
+unsigned int readUnsignedId(const char* data, const std::string& kind, unsigned int itemSize, const char* name)
+{
+  std::uint64_t value = 0;
+  if (kind == "u") {
+    if (itemSize == 4) {
+      value = readUnaligned<std::uint32_t>(data);
+    } else if (itemSize == 8) {
+      value = readUnaligned<std::uint64_t>(data);
+    } else {
+      throw std::runtime_error("Unsupported unsigned integer itemsize for NumPy link ids");
+    }
+  } else if (kind == "i") {
+    std::int64_t signedValue = 0;
+    if (itemSize == 4) {
+      signedValue = readUnaligned<std::int32_t>(data);
+    } else if (itemSize == 8) {
+      signedValue = readUnaligned<std::int64_t>(data);
+    } else {
+      throw std::runtime_error("Unsupported signed integer itemsize for NumPy link ids");
+    }
+    if (signedValue < 0) {
+      throw std::runtime_error(std::string("NumPy link array contains negative ") + name);
+    }
+    value = static_cast<std::uint64_t>(signedValue);
+  } else if (kind == "f") {
+    double floatValue = 0.0;
+    if (itemSize == 4) {
+      floatValue = readUnaligned<float>(data);
+    } else if (itemSize == 8) {
+      floatValue = readUnaligned<double>(data);
+    } else {
+      throw std::runtime_error("Unsupported floating point itemsize for NumPy link ids");
+    }
+    if (!std::isfinite(floatValue) || floatValue < 0.0 || floatValue > static_cast<double>(std::numeric_limits<unsigned int>::max())) {
+      throw std::runtime_error(std::string("NumPy link array contains invalid ") + name);
+    }
+    value = static_cast<std::uint64_t>(floatValue);
+  } else {
+    throw std::runtime_error("Unsupported NumPy dtype for link ids");
+  }
+
+  if (value > std::numeric_limits<unsigned int>::max()) {
+    throw std::runtime_error(std::string("NumPy link array contains out-of-range ") + name);
+  }
+  return static_cast<unsigned int>(value);
+}
+
+double readWeight(const char* data, const std::string& kind, unsigned int itemSize)
+{
+  if (kind == "f") {
+    if (itemSize == 4)
+      return readUnaligned<float>(data);
+    if (itemSize == 8)
+      return readUnaligned<double>(data);
+    throw std::runtime_error("Unsupported floating point itemsize for NumPy link weights");
+  }
+  if (kind == "u") {
+    if (itemSize == 4)
+      return readUnaligned<std::uint32_t>(data);
+    if (itemSize == 8)
+      return static_cast<double>(readUnaligned<std::uint64_t>(data));
+    throw std::runtime_error("Unsupported unsigned integer itemsize for NumPy link weights");
+  }
+  if (kind == "i") {
+    if (itemSize == 4)
+      return readUnaligned<std::int32_t>(data);
+    if (itemSize == 8)
+      return static_cast<double>(readUnaligned<std::int64_t>(data));
+    throw std::runtime_error("Unsupported signed integer itemsize for NumPy link weights");
+  }
+  throw std::runtime_error("Unsupported NumPy dtype for link weights");
+}
+
+void addLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links, std::size_t numRows, unsigned int numColumns, const std::string& dtypeKind, unsigned int itemSize)
+{
+  if (numColumns != 2 && numColumns != 3) {
+    throw std::invalid_argument("NumPy link arrays must have 2 or 3 columns");
+  }
+  if (itemSize == 0) {
+    throw std::runtime_error("Invalid NumPy itemsize for link array");
+  }
+
+  PyBufferView linksBuffer(links, "links");
+  const auto expectedBytes = numRows * static_cast<std::size_t>(numColumns) * itemSize;
+  if (numRows != 0 && expectedBytes / numRows != static_cast<std::size_t>(numColumns) * itemSize) {
+    throw std::runtime_error("NumPy link array is too large");
+  }
+  if (linksBuffer.size<char>() != expectedBytes) {
+    throw std::runtime_error("NumPy link array buffer size does not match its shape");
+  }
+
+  const auto* data = linksBuffer.data<char>();
+  const auto rowStride = static_cast<std::size_t>(numColumns) * itemSize;
+  for (std::size_t i = 0; i < numRows; ++i) {
+    const auto* row = data + i * rowStride;
+    const auto source = readUnsignedId(row, dtypeKind, itemSize, "source id");
+    const auto target = readUnsignedId(row + itemSize, dtypeKind, itemSize, "target id");
+    const auto weight = numColumns == 3 ? readWeight(row + 2 * itemSize, dtypeKind, itemSize) : 1.0;
+    infomap.addLink(source, target, weight);
+  }
+}
+
+} // namespace
+} // namespace infomap
+#endif
 
 
 #include <string>
@@ -6772,6 +6937,9 @@ SWIGINTERN PyObject *std_map_Sl_std_pair_Sl_unsigned_SS_int_Sc_unsigned_SS_int_S
     }
 SWIGINTERN void std_map_Sl_std_pair_Sl_unsigned_SS_int_Sc_unsigned_SS_int_Sg__Sc_double_Sg__erase__SWIG_1(std::map< std::pair< unsigned int,unsigned int >,double > *self,std::map< std::pair< unsigned int,unsigned int >,double >::iterator position){ self->erase(position); }
 SWIGINTERN void std_map_Sl_std_pair_Sl_unsigned_SS_int_Sc_unsigned_SS_int_Sg__Sc_double_Sg__erase__SWIG_2(std::map< std::pair< unsigned int,unsigned int >,double > *self,std::map< std::pair< unsigned int,unsigned int >,double >::iterator first,std::map< std::pair< unsigned int,unsigned int >,double >::iterator last){ self->erase(first, last); }
+SWIGINTERN void infomap_InfomapWrapper_addLinksFromNumpy2D(infomap::InfomapWrapper *self,PyObject *links,std::size_t numRows,unsigned int numColumns,std::string const &dtypeKind,unsigned int itemSize){
+        infomap::addLinksFromNumpy2D(*self, links, numRows, numColumns, dtypeKind, itemSize);
+    }
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -57736,6 +57904,75 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_InfomapWrapper_addLinksFromNumpy2D(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  infomap::InfomapWrapper *arg1 = 0 ;
+  PyObject *arg2 = 0 ;
+  std::size_t arg3 ;
+  unsigned int arg4 ;
+  std::string *arg5 = 0 ;
+  unsigned int arg6 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val3 ;
+  int ecode3 = 0 ;
+  unsigned int val4 ;
+  int ecode4 = 0 ;
+  int res5 = SWIG_OLDOBJ ;
+  unsigned int val6 ;
+  int ecode6 = 0 ;
+  PyObject *swig_obj[6] ;
+
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "InfomapWrapper_addLinksFromNumpy2D", 6, 6, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_infomap__InfomapWrapper, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "InfomapWrapper_addLinksFromNumpy2D" "', argument " "1"" of type '" "infomap::InfomapWrapper *""'");
+  }
+  arg1 = reinterpret_cast< infomap::InfomapWrapper * >(argp1);
+  arg2 = swig_obj[1];
+  ecode3 = SWIG_AsVal_size_t(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "InfomapWrapper_addLinksFromNumpy2D" "', argument " "3"" of type '" "std::size_t""'");
+  }
+  arg3 = static_cast< std::size_t >(val3);
+  ecode4 = SWIG_AsVal_unsigned_SS_int(swig_obj[3], &val4);
+  if (!SWIG_IsOK(ecode4)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "InfomapWrapper_addLinksFromNumpy2D" "', argument " "4"" of type '" "unsigned int""'");
+  }
+  arg4 = static_cast< unsigned int >(val4);
+  {
+    std::string *ptr = (std::string *)0;
+    res5 = SWIG_AsPtr_std_string(swig_obj[4], &ptr);
+    if (!SWIG_IsOK(res5)) {
+      SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "InfomapWrapper_addLinksFromNumpy2D" "', argument " "5"" of type '" "std::string const &""'");
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_NullReferenceError, "invalid null reference " "in method '" "InfomapWrapper_addLinksFromNumpy2D" "', argument " "5"" of type '" "std::string const &""'");
+    }
+    arg5 = ptr;
+  }
+  ecode6 = SWIG_AsVal_unsigned_SS_int(swig_obj[5], &val6);
+  if (!SWIG_IsOK(ecode6)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "InfomapWrapper_addLinksFromNumpy2D" "', argument " "6"" of type '" "unsigned int""'");
+  }
+  arg6 = static_cast< unsigned int >(val6);
+  {
+    try {
+      infomap_InfomapWrapper_addLinksFromNumpy2D(arg1,arg2,SWIG_STD_MOVE(arg3),arg4,(std::string const &)*arg5,arg6);
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  if (SWIG_IsNewObj(res5)) delete arg5;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res5)) delete arg5;
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *InfomapWrapper_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *obj = NULL;
   if (!SWIG_Python_UnpackTuple(args, "swigregister", 1, 1, &obj)) return NULL;
@@ -58860,6 +59097,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "InfomapWrapper_iterLeafNodes", _wrap_InfomapWrapper_iterLeafNodes, METH_VARARGS, NULL},
 	 { "InfomapWrapper_iterTree", _wrap_InfomapWrapper_iterTree, METH_VARARGS, NULL},
 	 { "InfomapWrapper_run", _wrap_InfomapWrapper_run, METH_VARARGS, NULL},
+	 { "InfomapWrapper_addLinksFromNumpy2D", _wrap_InfomapWrapper_addLinksFromNumpy2D, METH_VARARGS, NULL},
 	 { "InfomapWrapper_swigregister", InfomapWrapper_swigregister, METH_O, NULL},
 	 { "InfomapWrapper_swiginit", InfomapWrapper_swiginit, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
