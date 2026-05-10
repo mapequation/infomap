@@ -161,6 +161,82 @@ namespace {
     }
   }
 
+  std::string join(const std::vector<std::string>& values, const std::string& separator)
+  {
+    std::ostringstream out;
+    for (unsigned int i = 0; i < values.size(); ++i) {
+      if (i > 0)
+        out << separator;
+      out << values[i];
+    }
+    return out.str();
+  }
+
+  std::string bashWords(const std::vector<std::string>& values)
+  {
+    return join(values, " ");
+  }
+
+  std::string zshDescription(std::string value)
+  {
+    for (char& c : value) {
+      if (c == '\'' || c == '[' || c == ']' || c == ':' || c == '\\')
+        c = ' ';
+    }
+    return value;
+  }
+
+  std::string zshAction(const Option& opt)
+  {
+    if (!opt.choices.empty())
+      return io::Str() << "(" << join(opt.choices, " ") << ")";
+    if (opt.argumentName == ArgType::path)
+      return "_files";
+    return "";
+  }
+
+  std::vector<std::string> visibleOptionWords(const std::deque<std::unique_ptr<Option>>& options)
+  {
+    std::vector<std::string> words;
+    for (const auto& optionArgument : options) {
+      const auto& opt = *optionArgument;
+      if (opt.hidden)
+        continue;
+      if (opt.shortName != '\0')
+        words.push_back(io::Str() << "-" << opt.shortName);
+      words.push_back(io::Str() << "--" << opt.longName);
+    }
+    return words;
+  }
+
+  std::vector<std::string> valueOptionWords(const std::deque<std::unique_ptr<Option>>& options)
+  {
+    std::vector<std::string> words;
+    for (const auto& optionArgument : options) {
+      const auto& opt = *optionArgument;
+      if (opt.hidden || !opt.requireArgument)
+        continue;
+      if (opt.shortName != '\0')
+        words.push_back(io::Str() << "-" << opt.shortName);
+      words.push_back(io::Str() << "--" << opt.longName);
+    }
+    return words;
+  }
+
+  std::vector<std::string> pathOptionWords(const std::deque<std::unique_ptr<Option>>& options)
+  {
+    std::vector<std::string> words;
+    for (const auto& optionArgument : options) {
+      const auto& opt = *optionArgument;
+      if (opt.hidden || opt.argumentName != ArgType::path)
+        continue;
+      if (opt.shortName != '\0')
+        words.push_back(io::Str() << "-" << opt.shortName);
+      words.push_back(io::Str() << "--" << opt.longName);
+    }
+    return words;
+  }
+
 } // namespace
 
 ProgramInterface::ProgramInterface(std::string name, std::string shortDescription, std::string version)
@@ -170,6 +246,7 @@ ProgramInterface::ProgramInterface(std::string name, std::string shortDescriptio
 {
   addIncrementalOptionArgument(m_displayHelp, 'h', "help", "Prints this help message. Use -hh to show advanced options.", "About");
   addOptionArgument(m_displayVersion, 'V', "version", "Display program version information.", "About");
+  addOptionArgument(m_completionShell, "completion", "Print shell completion script for bash or zsh.", ArgType::option, "About").setChoices({ "bash", "zsh" });
   addOptionArgument(m_printJsonParameters, "print-json-parameters", "Print Infomap parameters in JSON.", "About").setHidden(true);
 }
 
@@ -271,6 +348,117 @@ void ProgramInterface::exitWithError(const std::string& message) const
   throw std::runtime_error(message);
 }
 
+void ProgramInterface::printBashCompletion() const
+{
+  const auto options = visibleOptionWords(m_optionArguments);
+  const auto valueOptions = valueOptionWords(m_optionArguments);
+  const auto pathOptions = pathOptionWords(m_optionArguments);
+
+  Log() << "# bash completion for Infomap\n";
+  Log() << "_infomap_completion()\n";
+  Log() << "{\n";
+  Log() << "  local cur prev position\n";
+  Log() << "  COMPREPLY=()\n";
+  Log() << "  cur=\"${COMP_WORDS[COMP_CWORD]}\"\n";
+  Log() << "  prev=\"${COMP_WORDS[COMP_CWORD-1]}\"\n";
+  Log() << "\n";
+  Log() << "  __infomap_words() { COMPREPLY=( $(compgen -W \"$1\" -- \"$cur\") ); }\n";
+  Log() << "  __infomap_files() { if declare -F _filedir >/dev/null; then _filedir; else COMPREPLY=( $(compgen -f -- \"$cur\") ); fi; }\n";
+  Log() << "  __infomap_dirs() { if declare -F _filedir >/dev/null; then _filedir -d; else COMPREPLY=( $(compgen -d -- \"$cur\") ); fi; }\n";
+  Log() << "  __infomap_option_requires_value() {\n";
+  Log() << "    case \"$1\" in\n";
+  Log() << "      " << join(valueOptions, "|") << ") return 0 ;;\n";
+  Log() << "    esac\n";
+  Log() << "    return 1\n";
+  Log() << "  }\n";
+  Log() << "  __infomap_position() {\n";
+  Log() << "    local i word count=0\n";
+  Log() << "    for ((i = 1; i < COMP_CWORD; ++i)); do\n";
+  Log() << "      word=\"${COMP_WORDS[i]}\"\n";
+  Log() << "      if __infomap_option_requires_value \"$word\"; then ((++i)); continue; fi\n";
+  Log() << "      [[ \"$word\" == -* ]] && continue\n";
+  Log() << "      ((++count))\n";
+  Log() << "    done\n";
+  Log() << "    printf '%s' \"$count\"\n";
+  Log() << "  }\n";
+  Log() << "\n";
+  Log() << "  case \"$prev\" in\n";
+  Log() << "    --completion) __infomap_words \"bash zsh\"; return ;;\n";
+  for (const auto& optionArgument : m_optionArguments) {
+    const auto& opt = *optionArgument;
+    if (opt.hidden || opt.choices.empty() || opt.longName == "completion")
+      continue;
+    std::vector<std::string> words;
+    if (opt.shortName != '\0')
+      words.push_back(io::Str() << "-" << opt.shortName);
+    words.push_back(io::Str() << "--" << opt.longName);
+    Log() << "    " << join(words, "|") << ") __infomap_words \"" << bashWords(opt.choices) << "\"; return ;;\n";
+  }
+  if (!pathOptions.empty())
+    Log() << "    " << join(pathOptions, "|") << ") __infomap_files; return ;;\n";
+  Log() << "  esac\n";
+  Log() << "\n";
+  Log() << "  case \"$cur\" in\n";
+  Log() << "    -*) __infomap_words \"" << bashWords(options) << "\"; return ;;\n";
+  Log() << "  esac\n";
+  Log() << "\n";
+  Log() << "  position=\"$(__infomap_position)\"\n";
+  Log() << "  if [[ \"$position\" -ge 1 ]]; then\n";
+  Log() << "    __infomap_dirs\n";
+  Log() << "  else\n";
+  Log() << "    __infomap_files\n";
+  Log() << "  fi\n";
+  Log() << "}\n";
+  Log() << "\n";
+  Log() << "complete -F _infomap_completion Infomap infomap\n";
+}
+
+void ProgramInterface::printZshCompletion() const
+{
+  Log() << "#compdef Infomap infomap\n";
+  Log() << "\n";
+  Log() << "_infomap() {\n";
+  Log() << "  _arguments -C \\\n";
+  for (const auto& optionArgument : m_optionArguments) {
+    const auto& opt = *optionArgument;
+    if (opt.hidden)
+      continue;
+
+    const auto desc = zshDescription(opt.description);
+    const auto action = zshAction(opt);
+    if (opt.shortName != '\0') {
+      Log() << "    '(-" << opt.shortName << " --" << opt.longName << ")'{-" << opt.shortName << ",--" << opt.longName << "}'[" << desc << "]";
+    } else {
+      Log() << "    '--" << opt.longName << "[" << desc << "]";
+    }
+    if (opt.requireArgument) {
+      Log() << ":" << opt.argumentName << ":";
+      if (!action.empty())
+        Log() << action;
+    }
+    Log() << "'";
+    Log() << " \\\n";
+  }
+  Log() << "    '1:network file:_files' \\\n";
+  Log() << "    '2:output directory:_files -/'\n";
+  Log() << "}\n";
+  Log() << "\n";
+  Log() << "_infomap \"$@\"\n";
+}
+
+void ProgramInterface::exitWithCompletion() const
+{
+  if (m_completionShell == "bash") {
+    printBashCompletion();
+  } else if (m_completionShell == "zsh") {
+    printZshCompletion();
+  } else {
+    throw std::runtime_error(io::Str() << "Unsupported completion shell '" << m_completionShell << "'. Supported shells: bash, zsh.");
+  }
+
+  throw CleanExit {};
+}
+
 std::string toJson(const std::string& key, const std::string& value)
 {
   return io::Str() << '"' << key << "\": \"" << value << '"';
@@ -289,20 +477,31 @@ std::string toJson(const std::string& key, Value value)
 
 std::string toJson(const Option& opt)
 {
-  return io::Str() << "{ "
-                   << toJson("long", std::string(io::Str() << "--" << opt.longName)) << ", "
-                   << toJson("short", opt.shortName != '\0' ? std::string(io::Str() << "-" << opt.shortName) : "") << ", "
-                   << toJson("description", opt.description) << ", "
-                   << toJson("group", opt.group) << ", "
-                   << toJson("required", opt.requireArgument) << ", "
-                   << toJson("advanced", opt.isAdvanced) << ", "
-                   << toJson("incremental", opt.incrementalArgument) << ", "
-                   << (opt.requireArgument
-                           ? (io::Str() << toJson("longType", opt.argumentName) << ", "
-                                        << toJson("shortType", std::string(1, ArgType::toShort.at(opt.argumentName))) << ", "
-                                        << toJson("default", opt.printValue()))
-                           : toJson("default", false))
-                   << " }";
+  std::ostringstream json;
+  json << "{ "
+       << toJson("long", std::string(io::Str() << "--" << opt.longName)) << ", "
+       << toJson("short", opt.shortName != '\0' ? std::string(io::Str() << "-" << opt.shortName) : "") << ", "
+       << toJson("description", opt.description) << ", "
+       << toJson("group", opt.group) << ", "
+       << toJson("required", opt.requireArgument) << ", "
+       << toJson("advanced", opt.isAdvanced) << ", "
+       << toJson("incremental", opt.incrementalArgument) << ", "
+       << (opt.requireArgument
+               ? (io::Str() << toJson("longType", opt.argumentName) << ", "
+                            << toJson("shortType", std::string(1, ArgType::toShort.at(opt.argumentName))) << ", "
+                            << toJson("default", opt.printValue()))
+               : toJson("default", false));
+  if (!opt.choices.empty()) {
+    json << ", \"choices\": [";
+    for (unsigned int i = 0; i < opt.choices.size(); ++i) {
+      if (i > 0)
+        json << ", ";
+      json << '"' << opt.choices[i] << '"';
+    }
+    json << "]";
+  }
+  json << " }";
+  return json.str();
 }
 
 void ProgramInterface::exitWithJsonParameters() const
@@ -353,6 +552,8 @@ void ProgramInterface::parseArgs(const std::string& args)
         exitWithUsage(m_displayHelp > 1);
       if (m_displayVersion)
         exitWithVersionInformation();
+      if (!m_completionShell.empty())
+        exitWithCompletion();
       if (m_printJsonParameters)
         exitWithJsonParameters();
     }

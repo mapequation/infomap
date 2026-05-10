@@ -4,7 +4,10 @@ from contextlib import contextmanager
 
 from ._bindings import *  # noqa: F401,F403
 from ._bindings import __all__ as _BINDINGS_ALL
+from ._igraph import add_igraph_graph as _add_igraph_graph
+from ._igraph import find_igraph_communities
 from ._networkx import add_networkx_graph as _add_networkx_graph
+from ._networkx import find_communities
 from ._options import (
     InfomapOptions,
     _DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
@@ -30,12 +33,27 @@ def _package_construct_args():
 
 MultilayerNode = namedtuple("MultilayerNode", "layer_id, node_id")
 
+
+def _as_contiguous_numeric_array(np, array, name):
+    if array.dtype.kind not in "uif":
+        raise ValueError(f"Numpy {name} arrays must have a numeric dtype.")
+
+    if array.dtype.kind == "f" and array.dtype.itemsize not in (4, 8):
+        array = array.astype(np.float64, copy=False)
+    elif array.dtype.kind in "ui" and array.dtype.itemsize not in (1, 2, 4, 8):
+        array = array.astype(np.float64, copy=False)
+
+    return np.ascontiguousarray(array)
+
+
 __all__ = [
     *_BINDINGS_ALL,
     "Infomap",
     "InfomapOptions",
     "MultilayerNode",
     "entropy",
+    "find_communities",
+    "find_igraph_communities",
     "main",
     "perplexity",
     "plogp",
@@ -477,14 +495,19 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
                 if links_array.shape[1] not in (2, 3):
                     raise ValueError("Numpy link arrays must have 2 or 3 columns: (source_id, target_id, [weight]).")
 
-                source_ids = links_array[:, 0].astype(np.uint32, copy=False).tolist()
-                target_ids = links_array[:, 1].astype(np.uint32, copy=False).tolist()
-                if links_array.shape[1] == 3:
-                    weights = links_array[:, 2].astype(np.float64, copy=False).tolist()
-                else:
-                    weights = [1.0] * links_array.shape[0]
+                if links_array.dtype.kind not in "uif":
+                    raise ValueError("Numpy link arrays must have a numeric dtype.")
+                if links_array.dtype.itemsize not in (4, 8):
+                    raise ValueError("Numpy link arrays must use 32-bit or 64-bit numeric values.")
 
-                return super().addLinks(source_ids, target_ids, weights)
+                links_array = np.ascontiguousarray(links_array)
+                return super().addLinksFromNumpy2D(
+                    links_array,
+                    links_array.shape[0],
+                    links_array.shape[1],
+                    links_array.dtype.kind,
+                    links_array.dtype.itemsize,
+                )
 
         source_ids = []
         target_ids = []
@@ -689,16 +712,15 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
                         "(layer_id, source_node_id, target_node_id, [weight])."
                     )
 
-                layer_ids = links_array[:, 0].astype(np.uint32, copy=False).tolist()
-                source_node_ids = links_array[:, 1].astype(np.uint32, copy=False).tolist()
-                target_node_ids = links_array[:, 2].astype(np.uint32, copy=False).tolist()
-                if links_array.shape[1] == 4:
-                    weights = links_array[:, 3].astype(np.float64, copy=False).tolist()
-                else:
-                    weights = [1.0] * links_array.shape[0]
-
-                return super().addMultilayerIntraLinks(
-                    layer_ids, source_node_ids, target_node_ids, weights
+                links_array = _as_contiguous_numeric_array(
+                    np, links_array, "multilayer intra-link"
+                )
+                return super().addMultilayerIntraLinksFromNumpy2D(
+                    links_array,
+                    links_array.shape[0],
+                    links_array.shape[1],
+                    links_array.dtype.kind,
+                    links_array.dtype.itemsize,
                 )
 
         layer_ids = []
@@ -822,16 +844,15 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
                         "(source_layer_id, node_id, target_layer_id, [weight])."
                     )
 
-                source_layer_ids = links_array[:, 0].astype(np.uint32, copy=False).tolist()
-                node_ids = links_array[:, 1].astype(np.uint32, copy=False).tolist()
-                target_layer_ids = links_array[:, 2].astype(np.uint32, copy=False).tolist()
-                if links_array.shape[1] == 4:
-                    weights = links_array[:, 3].astype(np.float64, copy=False).tolist()
-                else:
-                    weights = [1.0] * links_array.shape[0]
-
-                return super().addMultilayerInterLinks(
-                    source_layer_ids, node_ids, target_layer_ids, weights
+                links_array = _as_contiguous_numeric_array(
+                    np, links_array, "multilayer inter-link"
+                )
+                return super().addMultilayerInterLinksFromNumpy2D(
+                    links_array,
+                    links_array.shape[0],
+                    links_array.shape[1],
+                    links_array.dtype.kind,
+                    links_array.dtype.itemsize,
                 )
 
         source_layer_ids = []
@@ -913,21 +934,15 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
                         "target_node_id, [weight])."
                     )
 
-                source_layer_ids = links_array[:, 0].astype(np.uint32, copy=False).tolist()
-                source_node_ids = links_array[:, 1].astype(np.uint32, copy=False).tolist()
-                target_layer_ids = links_array[:, 2].astype(np.uint32, copy=False).tolist()
-                target_node_ids = links_array[:, 3].astype(np.uint32, copy=False).tolist()
-                if links_array.shape[1] == 5:
-                    weights = links_array[:, 4].astype(np.float64, copy=False).tolist()
-                else:
-                    weights = [1.0] * links_array.shape[0]
-
-                return super().addMultilayerLinks(
-                    source_layer_ids,
-                    source_node_ids,
-                    target_layer_ids,
-                    target_node_ids,
-                    weights,
+                links_array = _as_contiguous_numeric_array(
+                    np, links_array, "multilayer link"
+                )
+                return super().addMultilayerLinksFromNumpy2D(
+                    links_array,
+                    links_array.shape[0],
+                    links_array.shape[1],
+                    links_array.dtype.kind,
+                    links_array.dtype.itemsize,
                 )
 
         source_layer_ids = []
@@ -1135,6 +1150,58 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             self,
             g,
             weight=weight,
+            phys_id=phys_id,
+            layer_id=layer_id,
+            multilayer_inter_intra_format=multilayer_inter_intra_format,
+        )
+
+    def add_igraph_graph(
+        self,
+        g,
+        edge_weights=None,
+        vertex_weights=None,
+        phys_id="phys_id",
+        layer_id="layer_id",
+        multilayer_inter_intra_format=True,
+    ):
+        """Add a python-igraph graph.
+
+        This method imports igraph lazily, so igraph is not required unless
+        this method is used. It uses igraph's zero-based vertex indices as
+        state/internal ids, uses the ``name`` vertex attribute as Infomap node
+        names when present, and treats ``phys_id``/``layer_id`` vertex
+        attributes as state/multilayer metadata.
+
+        Parameters
+        ----------
+        g : igraph.Graph
+            A python-igraph graph.
+        edge_weights : str, sequence, or None, optional
+            Edge weight attribute name, explicit sequence with one value per
+            edge, or ``None`` to treat every edge as weight 1. Default
+            ``None``.
+        vertex_weights : None, optional
+            Accepted for igraph API familiarity but not supported yet.
+        phys_id : str, optional
+            Vertex attribute for physical node ids, implying a state network.
+        layer_id : str, optional
+            Vertex attribute for layer ids, implying a multilayer network when
+            ``phys_id`` is also present.
+        multilayer_inter_intra_format : bool, optional
+            Use intra/inter format to simulate inter-layer links. Default
+            ``True``.
+
+        Returns
+        -------
+        dict
+            Dict with igraph vertex indices as keys and vertex names as values
+            when names are present, otherwise vertex indices as values.
+        """
+        return _add_igraph_graph(
+            self,
+            g,
+            edge_weights=edge_weights,
+            vertex_weights=vertex_weights,
             phys_id=phys_id,
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,

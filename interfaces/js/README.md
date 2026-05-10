@@ -56,6 +56,36 @@ React users can import the hook entrypoint directly from the main package:
 import { useInfomap } from "@mapequation/infomap/react";
 ```
 
+The hook exposes `run`, `runAsync`, `running`, `progress`, `output`,
+`outputText`, `clearOutput`, and `on`. It keeps `running` set until the worker
+finishes or errors, and it terminates active workers when the component
+unmounts. Console output collection is opt-in.
+
+```js
+const { outputText, run, running } = useInfomap(
+  { silent: true },
+  {
+    collectOutput: true,
+    events: {
+      finished: (result) => console.log(result),
+      error: (message) => console.warn(message),
+    },
+  },
+);
+
+run({ network, args: { clu: true, tree: true } });
+```
+
+Result helpers are available from `@mapequation/infomap/result` for common UI
+tasks such as metadata display and file downloads:
+
+```js
+import { getResultFiles, getResultMetadata } from "@mapequation/infomap/result";
+
+const metadata = getResultMetadata(result);
+const files = getResultFiles(result, "network");
+```
+
 ## Use from a CDN
 
 With JSDelivr, the package is available as `window.infomap.default`.

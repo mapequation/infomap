@@ -1,10 +1,17 @@
+from __future__ import annotations
+
+import warnings
+from collections.abc import Sequence
 from math import log2
+from typing import Any
 
 from ._optional import get_pandas
 
 
 pandas = get_pandas()
 _DEFAULT_DATAFRAME_COLUMNS = ("path", "flow", "name", "node_id")
+_DEFAULT_TO_DATAFRAME_COLUMNS = ("node_id", "module_id", "flow", "path", "name")
+_DATAFRAME_COLUMN_ALIASES = {"community": "module_id"}
 
 
 def plogp(p):
@@ -17,6 +24,60 @@ def entropy(p):
 
 def perplexity(p):
     return 2 ** entropy(p)
+
+
+def _to_dataframe_sort_columns(sort, dataframe_columns):
+    if sort is True:
+        sort_columns = [
+            column
+            for column in ("module_id", "community", "node_id")
+            if column in dataframe_columns
+        ]
+        return sort_columns or list(dataframe_columns)
+
+    if isinstance(sort, str):
+        sort_columns = [sort]
+    else:
+        sort_columns = list(sort)
+
+    missing = [column for column in sort_columns if column not in dataframe_columns]
+    if missing:
+        available = ", ".join(dataframe_columns)
+        raise ValueError(
+            f"Cannot sort by unknown DataFrame column {missing[0]!r}. "
+            f"Available columns: {available}."
+        )
+
+    return sort_columns
+
+
+def _to_dataframe_column_getter(requested, resolved, names):
+    if resolved == "name":
+        return lambda node: names.get(node.node_id, node.node_id)
+
+    def get_column_value(node):
+        try:
+            return getattr(node, resolved)
+        except AttributeError as exc:
+            available = ", ".join(
+                sorted(
+                    {
+                        *_DEFAULT_TO_DATAFRAME_COLUMNS,
+                        "child_index",
+                        "community",
+                        "depth",
+                        "layer_id",
+                        "modular_centrality",
+                        "state_id",
+                    }
+                )
+            )
+            raise ValueError(
+                f"Unknown DataFrame column {requested!r}. "
+                f"Available columns include: {available}."
+            ) from exc
+
+    return get_column_value
 
 
 class _LeafIterWrapper:
@@ -461,8 +522,16 @@ class _InfomapResultsMixin:
         """
         return self.get_nodes(depth_level=1, states=False)
 
-    def get_dataframe(self, columns=None, *, states=True, depth_level=1):
+    def get_dataframe(
+        self,
+        columns: Sequence[str] | None = None,
+        *,
+        states: bool = True,
+        depth_level: int = 1,
+    ) -> Any:
         """Get a Pandas DataFrame with the selected columns.
+
+        Deprecated. Use :meth:`to_dataframe` for dataframe exports.
 
         Examples
         --------
@@ -471,7 +540,7 @@ class _InfomapResultsMixin:
         >>> im = Infomap(silent=True)
         >>> im.read_file("twotriangles.net")
         >>> im.run()
-        >>> im.get_dataframe()
+        >>> im.to_dataframe(columns=["path", "flow", "name", "node_id"], states=True)
              path      flow name  node_id
         0  (1, 1)  0.214286    C        3
         1  (1, 2)  0.142857    A        1
@@ -479,7 +548,7 @@ class _InfomapResultsMixin:
         3  (2, 1)  0.214286    D        4
         4  (2, 2)  0.142857    E        5
         5  (2, 3)  0.142857    F        6
-        >>> im.get_dataframe(columns=["node_id", "module_id"])
+        >>> im.to_dataframe(columns=["node_id", "module_id"], states=True)
            node_id  module_id
         0        3          1
         1        1          1
@@ -513,7 +582,8 @@ class _InfomapResultsMixin:
         Raises
         ------
         ImportError
-            If the pandas package is not available.
+            If the pandas package is not available. Install it with
+            ``python -m pip install "infomap[pandas]"``.
         AttributeError
             If a column name is not available as an ``InfoNode`` attribute.
 
@@ -522,8 +592,18 @@ class _InfomapResultsMixin:
         pandas.DataFrame
             A DataFrame containing the selected columns.
         """
+        warnings.warn(
+            "Infomap.get_dataframe() is deprecated; use "
+            "Infomap.to_dataframe() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         if pandas is None:
-            raise ImportError("Cannot import package 'pandas'")
+            raise ImportError(
+                'Cannot import package `pandas`. Install it with '
+                '`python -m pip install "infomap[pandas]"`.'
+            )
 
         if columns is None:
             columns = _DEFAULT_DATAFRAME_COLUMNS
@@ -542,6 +622,78 @@ class _InfomapResultsMixin:
             ],
             columns=columns,
         )
+
+    def to_dataframe(
+        self,
+        columns: Sequence[str] | None = None,
+        *,
+        states: bool = False,
+        level: int = 1,
+        index: str | bool | None = None,
+        sort: bool | str | Sequence[str] = False,
+        depth_level: int | None = None,
+    ) -> Any:
+        """Get a pandas-friendly DataFrame with Infomap results.
+
+        Compared with :meth:`get_dataframe`, this method defaults to physical
+        nodes and includes ``module_id`` for analysis workflows.
+
+        Parameters
+        ----------
+        columns : sequence of str, optional
+            Columns to include. ``"community"`` is accepted as an alias for
+            ``"module_id"``. Default
+            ``["node_id", "module_id", "flow", "path", "name"]``.
+        states : bool, optional
+            Use state-node iterators when ``True`` and physical-node iterators
+            when ``False``. Default ``False``.
+        level : int, optional
+            Depth level passed to :meth:`get_nodes`. Default ``1``.
+        index : str, bool, or None, optional
+            Column to set as the DataFrame index. Use ``False`` or ``None`` to
+            keep the default RangeIndex.
+        sort : bool, str, or sequence of str, optional
+            Sort by one or more columns. Use ``True`` to sort by
+            ``["module_id", "node_id"]`` when available. Default ``False``.
+        depth_level : int, optional
+            Backward-compatible alias for ``level``.
+        """
+        if pandas is None:
+            raise ImportError(
+                'Cannot import package `pandas`. Install it with '
+                '`python -m pip install "infomap[pandas]"`.'
+            )
+
+        if depth_level is not None:
+            level = depth_level
+        if columns is None:
+            columns = _DEFAULT_TO_DATAFRAME_COLUMNS
+
+        requested_columns = list(columns)
+        resolved_columns = [
+            _DATAFRAME_COLUMN_ALIASES.get(column, column) for column in requested_columns
+        ]
+        names = self.names if "name" in resolved_columns else None
+        column_getters = [
+            _to_dataframe_column_getter(requested, resolved, names)
+            for requested, resolved in zip(requested_columns, resolved_columns, strict=True)
+        ]
+        data = {column: [] for column in requested_columns}
+
+        for node in self.get_nodes(depth_level=level, states=states):
+            for column, getter in zip(requested_columns, column_getters, strict=True):
+                data[column].append(getter(node))
+
+        dataframe = pandas.DataFrame(data, columns=requested_columns)
+
+        if sort:
+            sort_columns = _to_dataframe_sort_columns(sort, dataframe.columns)
+            dataframe = dataframe.sort_values(sort_columns).reset_index(drop=True)
+
+        if index not in (None, False):
+            dataframe = dataframe.set_index(index)
+
+        return dataframe
 
     def get_name(self, node_id, default=None):
         """Get the name of a node.

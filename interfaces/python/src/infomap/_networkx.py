@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from typing import Any
+
+
 def _label_to_internal_id(labels):
     if not labels:
         return {}
@@ -17,15 +22,112 @@ def _stable_unique_labels(labels):
     return unique
 
 
-def add_networkx_graph(
-    infomap,
-    g,
+def _communities_from_infomap(infomap, node_mapping):
+    communities = {}
+
+    for node in infomap.nodes:
+        original_node = node_mapping[node.state_id]
+        communities.setdefault(node.module_id, set()).add(original_node)
+
+    return list(communities.values())
+
+
+def _set_networkx_node_attributes(g, infomap, node_mapping, module_attribute, flow_attribute):
+    if module_attribute is None and flow_attribute is None:
+        return
+
+    for node in infomap.nodes:
+        original_node = node_mapping[node.state_id]
+        if module_attribute is not None:
+            g.nodes[original_node][module_attribute] = node.module_id
+        if flow_attribute is not None:
+            g.nodes[original_node][flow_attribute] = node.flow
+
+
+def find_communities(
+    g: Any,
     *,
-    weight="weight",
-    phys_id="phys_id",
-    layer_id="layer_id",
-    multilayer_inter_intra_format=True,
-):
+    weight: str | None = "weight",
+    phys_id: str = "phys_id",
+    layer_id: str = "layer_id",
+    multilayer_inter_intra_format: bool = True,
+    module_attribute: str | None = None,
+    flow_attribute: str | None = None,
+    **infomap_options: Any,
+) -> list[set[Any]]:
+    """Find communities in a NetworkX-style graph.
+
+    This helper is duck-typed and does not import NetworkX. It accepts the same
+    graph objects as :meth:`Infomap.add_networkx_graph`, runs Infomap, and
+    returns communities using the original graph node labels.
+
+    Parameters
+    ----------
+    g : nx.Graph
+        A NetworkX-compatible graph.
+    weight : str or None, optional
+        Key to look up link weight in edge data if present. Default
+        ``"weight"``. Use ``None`` to treat every edge as weight 1.
+    phys_id : str, optional
+        Node attribute for physical node ids, implying a state network.
+    layer_id : str, optional
+        Node attribute for layer ids, implying a multilayer network.
+    multilayer_inter_intra_format : bool, optional
+        Use intra/inter format to simulate inter-layer links. Default
+        ``True``.
+    module_attribute : str, optional
+        If set, write each node's module id back to this node attribute on
+        ``g``.
+    flow_attribute : str, optional
+        If set, write each node's flow back to this node attribute on ``g``.
+    **infomap_options
+        Keyword arguments passed to :class:`infomap.Infomap`. By default,
+        ``silent=True`` and ``no_file_output=True`` are used unless explicitly
+        overridden.
+
+    Returns
+    -------
+    list of set
+        A partition of ``g.nodes`` grouped by top-level Infomap module.
+    """
+    if len(g.nodes) == 0:
+        return []
+
+    from ._facade import Infomap
+
+    options = {"silent": True, "no_file_output": True}
+    options.update(infomap_options)
+
+    infomap = Infomap(**options)
+    node_mapping = add_networkx_graph(
+        infomap,
+        g,
+        weight=weight,
+        phys_id=phys_id,
+        layer_id=layer_id,
+        multilayer_inter_intra_format=multilayer_inter_intra_format,
+    )
+    infomap.run()
+
+    _set_networkx_node_attributes(
+        g,
+        infomap,
+        node_mapping,
+        module_attribute,
+        flow_attribute,
+    )
+    return _communities_from_infomap(infomap, node_mapping)
+
+
+def add_networkx_graph(
+    infomap: Any,
+    g: Any,
+    *,
+    weight: str | None = "weight",
+    phys_id: str = "phys_id",
+    layer_id: str = "layer_id",
+    multilayer_inter_intra_format: bool = True,
+) -> dict[int, Any]:
     try:
         nodes = list(g.nodes)
         first = nodes[0]

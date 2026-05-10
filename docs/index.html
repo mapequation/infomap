@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Infomap &#8212; Infomap 2.10.0 documentation</title>
+    <title>Infomap &#8212; Infomap 2.10.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
-    <script src="_static/documentation_options.js?v=67920a36"></script>
+    <script src="_static/documentation_options.js?v=c3ea8e2f"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -51,6 +51,12 @@ published Python documentation.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>infomap
 </pre></div>
 </div>
+<p>Install optional integrations for common Python graph and analysis workflows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;infomap[networkx]&quot;</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;infomap[igraph]&quot;</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;infomap[pandas]&quot;</span>
+</pre></div>
+</div>
 <p>Upgrades use the usual <cite>pip</cite> flow:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>infomap
 </pre></div>
@@ -58,15 +64,30 @@ published Python documentation.</p>
 <p>The package also installs the <code class="docutils literal notranslate"><span class="pre">infomap</span></code> CLI entry point.
 The Python API reference lives at <a class="reference external" href="https://mapequation.github.io/infomap/python/">Infomap Python API</a>.</p>
 <p>Quick start with Python:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">infomap</span>
+
+<span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">karate_club_graph</span><span class="p">()</span>
+<span class="n">communities</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">find_communities</span><span class="p">(</span>
+    <span class="n">graph</span><span class="p">,</span>
+    <span class="n">seed</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span>
+    <span class="n">num_trials</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">communities</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For direct control over Infomap-specific options and result access:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">infomap</span><span class="w"> </span><span class="kn">import</span> <span class="n">Infomap</span><span class="p">,</span> <span class="n">InfomapOptions</span>
 
-<span class="n">options</span> <span class="o">=</span> <span class="n">InfomapOptions</span><span class="p">(</span><span class="n">two_level</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">options</span> <span class="o">=</span> <span class="n">InfomapOptions</span><span class="p">(</span><span class="n">two_level</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
 <span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="o">.</span><span class="n">from_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
 <span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">im</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">num_top_modules</span><span class="p">,</span> <span class="n">im</span><span class="o">.</span><span class="n">codelength</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;node_id&quot;</span><span class="p">,</span> <span class="s2">&quot;module_id&quot;</span><span class="p">,</span> <span class="s2">&quot;flow&quot;</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="s2">&quot;node_id&quot;</span><span class="p">))</span>
 </pre></div>
 </div>
 </section>
@@ -111,6 +132,8 @@ brew<span class="w"> </span>install<span class="w"> </span>infomap
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>upgrade<span class="w"> </span>infomap
 </pre></div>
 </div>
+<p>The Homebrew formula installs Bash and Zsh completion files into Homebrew’s
+standard completion directories.</p>
 </section>
 <section id="javascript-package">
 <h3>JavaScript package<a class="headerlink" href="#javascript-package" title="Link to this heading">¶</a></h3>
@@ -174,6 +197,17 @@ Show the available CLI options with:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./Infomap<span class="w"> </span>--help
 </pre></div>
 </div>
+<p>Install shell completion scripts manually with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>~/.zfunc
+./Infomap<span class="w"> </span>--completion<span class="w"> </span>zsh<span class="w"> </span>&gt;<span class="w"> </span>~/.zfunc/_Infomap
+
+mkdir<span class="w"> </span>-p<span class="w"> </span>~/.local/share/bash-completion/completions
+./Infomap<span class="w"> </span>--completion<span class="w"> </span>bash<span class="w"> </span>&gt;<span class="w"> </span>~/.local/share/bash-completion/completions/infomap
+</pre></div>
+</div>
+<p>For Zsh, make sure <code class="docutils literal notranslate"><span class="pre">~/.zfunc</span></code> is in <code class="docutils literal notranslate"><span class="pre">fpath</span></code> and <code class="docutils literal notranslate"><span class="pre">compinit</span></code> is loaded from
+<code class="docutils literal notranslate"><span class="pre">~/.zshrc</span></code>. For Bash, make sure <code class="docutils literal notranslate"><span class="pre">bash-completion</span></code> is sourced from
+<code class="docutils literal notranslate"><span class="pre">~/.bashrc</span></code>.</p>
 <p>See <code class="docutils literal notranslate"><span class="pre">BUILD.md</span></code> for platform-specific maintainer build details.</p>
 <p>Maintainers should use:</p>
 <ul class="simple">

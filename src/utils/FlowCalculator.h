@@ -10,7 +10,7 @@
 #ifndef FLOW_CALCULATOR_H_
 #define FLOW_CALCULATOR_H_
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 namespace infomap {
@@ -53,7 +53,7 @@ private:
   double sumLinkWeight = 0;
   double sumWeightedDegree = 0;
 
-  std::map<unsigned int, unsigned int> nodeIndexMap;
+  std::unordered_map<unsigned int, unsigned int> nodeIndexMap;
   std::vector<double> nodeFlow;
   std::vector<double> nodeTeleportWeights;
   std::vector<double> nodeTeleportFlow;

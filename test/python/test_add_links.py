@@ -82,11 +82,62 @@ def test_add_links_accepts_weighted_numpy_array(make_infomap, canonical_modules)
     assert canonical_modules(im.get_modules()) == canonical_modules(baseline.get_modules())
 
 
+def test_add_links_accepts_numpy_array_with_duplicates_and_existing_links(make_infomap):
+    np = pytest.importorskip("numpy")
+
+    links = np.array(
+        [
+            [3, 4, 2.0],
+            [1, 2, 1.0],
+            [1, 2, 2.0],
+            [2, 2, 5.0],
+            [4, 4, 0.4],
+            [7, 8, 0.0],
+            [9, 9, -1.0],
+            [1, 2, 3.0],
+        ]
+    )
+
+    baseline = make_infomap(weight_threshold=0.5)
+    baseline.add_link(1, 2, 10.0)
+    baseline.add_link(10, 11, 1.0)
+    for link in links.tolist():
+        baseline.add_link(*link)
+
+    im = make_infomap(weight_threshold=0.5)
+    im.add_link(1, 2, 10.0)
+    im.add_link(10, 11, 1.0)
+    im.add_links(links)
+
+    assert im.num_links == baseline.num_links
+    assert im.num_nodes == baseline.num_nodes
+    assert sorted(im.get_links()) == sorted(baseline.get_links())
+
+
 def test_add_links_accepts_unweighted_numpy_array(make_infomap):
     np = pytest.importorskip("numpy")
 
     im = make_infomap()
     im.add_links(np.array([[1, 2], [2, 3], [3, 1]], dtype=np.uint32))
+    im.run()
+
+    assert im.num_links == 3
+    assert im.num_nodes == 3
+
+
+def test_add_links_accepts_non_contiguous_numpy_array(make_infomap):
+    np = pytest.importorskip("numpy")
+
+    links = np.array(
+        [
+            [0, 1, 1.0, 99.0],
+            [1, 2, 1.0, 99.0],
+            [2, 0, 1.0, 99.0],
+        ]
+    )[:, :3]
+
+    im = make_infomap()
+    im.add_links(links)
     im.run()
 
     assert im.num_links == 3
@@ -102,3 +153,9 @@ def test_add_links_rejects_invalid_numpy_shapes(make_infomap):
 
     with pytest.raises(ValueError, match="2 or 3 columns"):
         im.add_links(np.array([[1, 2, 3, 4]]))
+
+    with pytest.raises(ValueError, match="numeric dtype"):
+        im.add_links(np.array([["1", "2"]]))
+
+    with pytest.raises(ValueError, match="32-bit or 64-bit"):
+        im.add_links(np.array([[1, 2]], dtype=np.uint16))

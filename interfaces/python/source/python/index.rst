@@ -24,6 +24,12 @@ Upgrade an existing installation with::
 
     pip install --upgrade infomap
 
+Install optional integrations for common research workflows with::
+
+    pip install "infomap[networkx]"
+    pip install "infomap[igraph]"
+    pip install "infomap[pandas]"
+
 .. _PyPI: https://pypi.org/project/infomap/
 
 Usage
@@ -45,6 +51,18 @@ For a list of available options, run::
 
     infomap --help
 
+Install shell completion scripts manually with::
+
+    mkdir -p ~/.zfunc
+    infomap --completion zsh > ~/.zfunc/_infomap
+
+    mkdir -p ~/.local/share/bash-completion/completions
+    infomap --completion bash > ~/.local/share/bash-completion/completions/infomap
+
+For Zsh, make sure ``~/.zfunc`` is in ``fpath`` and ``compinit`` is loaded from
+``~/.zshrc``. For Bash, make sure ``bash-completion`` is sourced from
+``~/.bashrc``.
+
 
 Python package
 ^^^^^^^^^^^^^^
@@ -54,6 +72,22 @@ Import the package with::
     import infomap
 
 A simple example:
+
+.. code-block:: python
+
+    import networkx as nx
+    import infomap
+
+    graph = nx.karate_club_graph()
+    communities = infomap.find_communities(
+        graph,
+        seed=123,
+        num_trials=20,
+    )
+
+    print(communities)
+
+For direct control over Infomap-specific options and result access:
 
 .. code-block:: python
 
@@ -89,6 +123,52 @@ A simple example:
         if node.is_leaf:
             print(node.node_id, node.module_id)
 
+Recommended researcher workflow
+"""""""""""""""""""""""""""""""
+
+For notebooks and scripts, start from the graph package you already use,
+choose a seed, run multiple trials, then store both the partition and the
+settings used to produce it:
+
+.. code-block:: python
+
+    import networkx as nx
+    import infomap
+
+    graph = nx.karate_club_graph()
+    communities = infomap.find_communities(
+        graph,
+        weight="weight",
+        seed=123,
+        num_trials=20,
+        module_attribute="module_id",
+        flow_attribute="flow",
+    )
+
+    print(f"{len(communities)} communities")
+    print("Report: Infomap, seed=123, num_trials=20, weight='weight'")
+
+When you need tabular results, use :meth:`infomap.Infomap.to_dataframe` after
+running an explicit :class:`infomap.Infomap` instance:
+
+.. code-block:: python
+
+    from infomap import Infomap
+
+    im = Infomap(silent=True, seed=123, num_trials=20)
+    im.add_networkx_graph(graph)
+    im.run()
+    results = im.to_dataframe(
+        columns=["node_id", "community", "flow"],
+        index="node_id",
+        sort=["community", "flow"],
+    )
+
+``seed`` initializes the random number generator. ``num_trials`` controls how
+many independent optimization trials are run before Infomap keeps the best
+solution. For reproducible reports, record the package version, graph input,
+edge weight field, ``seed``, ``num_trials``, and non-default Infomap options.
+
 Reusable options
 """"""""""""""""
 
@@ -119,7 +199,42 @@ configuration across multiple runs:
 NetworkX graphs
 """""""""""""""
 
-``Infomap.add_networkx_graph()`` accepts standard, state, and multilayer
+``infomap.find_communities()`` provides a NetworkX-style entry point that
+returns communities as a ``list[set]`` partition using the original graph node
+labels. It is duck-typed and does not import NetworkX, so NetworkX remains an
+optional user-installed package:
+
+.. code-block:: python
+
+    import networkx as nx
+    import infomap
+
+    graph = nx.Graph([("a", "b"), ("a", "c")])
+    communities = infomap.find_communities(graph, weight="weight")
+
+Directed graphs are detected from the graph object:
+
+.. code-block:: python
+
+    graph = nx.DiGraph([("a", "b"), ("b", "c")])
+    communities = infomap.find_communities(graph)
+
+To annotate a graph for drawing or downstream NetworkX workflows, pass a node
+attribute name:
+
+.. code-block:: python
+
+    infomap.find_communities(graph, module_attribute="community")
+
+This follows NetworkX community conventions where algorithms return partitions
+and node attributes are stored on the graph. See the NetworkX documentation for
+`community algorithms <https://networkx.org/documentation/stable/reference/algorithms/community.html>`__,
+`Louvain communities <https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.community.louvain.louvain_communities.html>`__,
+and
+`setting node attributes <https://networkx.org/documentation/stable/reference/generated/networkx.classes.function.set_node_attributes.html>`__.
+
+``Infomap.add_networkx_graph()`` remains available when you need direct control
+over the ``Infomap`` instance. It accepts standard, state, and multilayer
 NetworkX graphs. Non-integer node labels are mapped to stable internal ids in
 first-seen order and returned as a mapping:
 
@@ -137,7 +252,8 @@ State and multilayer networks
 """""""""""""""""""""""""""""
 
 State networks are inferred from a ``phys_id`` node attribute, and multilayer
-networks additionally use ``layer_id``:
+networks additionally use ``layer_id``. ``find_communities()`` returns a
+partition of the graph's own nodes, which are state nodes for these inputs:
 
 .. code-block:: python
 
@@ -154,6 +270,102 @@ networks additionally use ``layer_id``:
     im = Infomap(silent=True)
     im.add_networkx_graph(graph)
     im.run()
+
+For the NetworkX-style wrapper:
+
+.. code-block:: python
+
+    communities = infomap.find_communities(graph)
+
+igraph graphs
+"""""""""""""
+
+``infomap.find_igraph_communities()`` provides an igraph-native entry point
+without making igraph a required dependency. It imports igraph only when the
+igraph-specific API is used and returns an ``igraph.VertexClustering`` with a
+``codelength`` attribute, matching python-igraph community conventions:
+
+.. code-block:: python
+
+    import igraph as ig
+    import infomap
+
+    graph = ig.Graph.TupleList([("a", "b"), ("a", "c")], directed=False)
+    communities = infomap.find_igraph_communities(graph, trials=10)
+    communities.codelength
+
+Use ``edge_weights`` the same way as python-igraph's community functions:
+
+.. code-block:: python
+
+    graph.es["weight"] = [2.0, 1.0]
+    communities = infomap.find_igraph_communities(graph, edge_weights="weight")
+
+Directed igraph graphs are detected from the graph object:
+
+.. code-block:: python
+
+    graph = ig.Graph.TupleList([("a", "b"), ("b", "c")], directed=True)
+    communities = infomap.find_igraph_communities(graph)
+
+To annotate an igraph graph for plotting or downstream igraph workflows, pass
+vertex attribute names:
+
+.. code-block:: python
+
+    infomap.find_igraph_communities(
+        graph,
+        module_attribute="community",
+        flow_attribute="flow",
+    )
+
+``Infomap.add_igraph_graph()`` remains available when you need direct control
+over the ``Infomap`` instance. It accepts standard, state, and multilayer
+igraph graphs. The igraph vertex index is used as the state/internal id, while
+non-numeric ``phys_id`` labels in state and multilayer graphs are mapped to
+stable internal physical ids:
+
+.. code-block:: python
+
+    graph = ig.Graph(edges=[(0, 1), (0, 2)])
+    graph.vs["name"] = ["state-a", "state-b", "state-a-next"]
+    graph.vs["phys_id"] = ["a", "b", "a"]
+    graph.vs["layer_id"] = [1, 1, 2]
+
+    im = infomap.Infomap(silent=True)
+    im.add_igraph_graph(graph)
+    im.run()
+
+python-igraph also includes ``Graph.community_infomap()``. The
+``infomap`` package API is useful when you want the current Infomap package
+implementation, Infomap-specific options, or state/multilayer import, while
+still receiving an igraph-native ``VertexClustering`` result. See the
+python-igraph documentation for
+`Graph.community_infomap <https://python.igraph.org/en/main/api/igraph.Graph.html>`__
+and
+`VertexClustering <https://python.igraph.org/en/main/api/igraph.VertexClustering.html>`__.
+
+Migration guide for NetworkX and igraph users
+"""""""""""""""""""""""""""""""""""""""""""""
+
+NetworkX community functions usually return a partition such as ``list[set]``.
+Use :func:`infomap.find_communities` for that style. Pass ``weight`` as the edge
+attribute name, pass ``None`` for unweighted edges, and use ``module_attribute``
+or ``flow_attribute`` when you want values written back to graph nodes.
+Directed ``DiGraph`` inputs are detected automatically unless you already set an
+Infomap flow model.
+
+python-igraph community functions usually return a ``VertexClustering``. Use
+:func:`infomap.find_igraph_communities` for that style. Pass ``edge_weights`` as
+an igraph edge attribute name, an explicit sequence, or ``None`` for unweighted
+edges. Directed igraph graphs are detected automatically, and optional
+``module_attribute`` and ``flow_attribute`` arguments write results back to
+vertices.
+
+Use :meth:`infomap.Infomap.add_networkx_graph` or
+:meth:`infomap.Infomap.add_igraph_graph` instead of the one-shot helpers when
+you need state networks, multilayer networks, explicit result iteration,
+dataframe export, or several runs with different Infomap options.
 
 Please read the :doc:`/python/infomap` reference to learn more.
 

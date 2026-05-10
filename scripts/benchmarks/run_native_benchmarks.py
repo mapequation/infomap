@@ -57,6 +57,64 @@ def generate_ring_of_cliques(path: Path, clique_count: int, clique_size: int) ->
     write_pajek_edges(path, num_nodes, edges)
 
 
+def generate_large_ring_of_cliques(path: Path, clique_count: int, clique_size: int) -> None:
+    num_nodes = clique_count * clique_size
+    with path.open("w", encoding="utf-8") as handle:
+        handle.write("*Vertices\n")
+        for node_id in range(num_nodes):
+            handle.write(f'{node_id} "{node_id}"\n')
+        handle.write("*Edges\n")
+        for clique in range(clique_count):
+            offset = clique * clique_size
+            for local_source in range(clique_size):
+                source = offset + local_source
+                for local_target in range(local_source + 1, clique_size):
+                    handle.write(f"{source} {offset + local_target}\n")
+            next_offset = ((clique + 1) % clique_count) * clique_size
+            handle.write(f"{offset} {next_offset}\n")
+
+
+def generate_large_sparse_graph(path: Path, num_nodes: int, avg_degree: int) -> None:
+    if avg_degree < 2:
+        raise ValueError("avg_degree must be at least 2")
+    offsets = list(range(1, max(2, avg_degree // 2)))
+    while len(offsets) < avg_degree // 2:
+        offsets.append(offsets[-1] * 2 + 1)
+
+    with path.open("w", encoding="utf-8") as handle:
+        handle.write("*Vertices\n")
+        for node_id in range(num_nodes):
+            handle.write(f'{node_id} "{node_id}"\n')
+        handle.write("*Edges\n")
+        for node in range(num_nodes):
+            for offset in offsets[: avg_degree // 2]:
+                handle.write(f"{node} {(node + offset) % num_nodes}\n")
+
+
+def generate_block_sparse_graph(path: Path, num_nodes: int, block_size: int, intra_degree: int, inter_degree: int) -> None:
+    if num_nodes % block_size != 0:
+        raise ValueError("num_nodes must be divisible by block_size")
+    if intra_degree < 2:
+        raise ValueError("intra_degree must be at least 2")
+
+    num_blocks = num_nodes // block_size
+    with path.open("w", encoding="utf-8") as handle:
+        handle.write("*Vertices\n")
+        for node_id in range(num_nodes):
+            handle.write(f'{node_id} "{node_id}"\n')
+        handle.write("*Edges\n")
+        for block in range(num_blocks):
+            block_offset = block * block_size
+            next_block_offset = ((block + 1) % num_blocks) * block_size
+            for local in range(block_size):
+                source = block_offset + local
+                for step in range(1, intra_degree // 2 + 1):
+                    target = block_offset + ((local + step) % block_size)
+                    handle.write(f"{source} {target}\n")
+                if local < inter_degree:
+                    handle.write(f"{source} {next_block_offset + local}\n")
+
+
 def generate_state_ring(path: Path, physical_nodes: int) -> None:
     with path.open("w", encoding="utf-8") as handle:
         handle.write(f"*Vertices {physical_nodes}\n")
@@ -76,6 +134,70 @@ def generate_state_ring(path: Path, physical_nodes: int) -> None:
             handle.write(f"{current_a} {next_b} 1\n")
             handle.write(f"{current_b} {next_a} 1\n")
             handle.write(f"{current_b} {next_b} 1\n")
+
+
+def generate_state_block_network(path: Path, physical_nodes: int, states_per_physical: int, block_size: int) -> None:
+    if physical_nodes % block_size != 0:
+        raise ValueError("physical_nodes must be divisible by block_size")
+    if states_per_physical < 2:
+        raise ValueError("states_per_physical must be at least 2")
+
+    def state_id(physical_index: int, state_index: int) -> int:
+        return physical_index * states_per_physical + state_index + 1
+
+    with path.open("w", encoding="utf-8") as handle:
+        handle.write(f"*Vertices {physical_nodes}\n")
+        for node_id in range(1, physical_nodes + 1):
+            handle.write(f'{node_id} "{node_id}"\n')
+        handle.write("*States\n")
+        for physical_index in range(physical_nodes):
+            physical_id = physical_index + 1
+            for state_index in range(states_per_physical):
+                sid = state_id(physical_index, state_index)
+                handle.write(f'{sid} {physical_id} "{physical_id}:{state_index + 1}"\n')
+        handle.write("*Links\n")
+        for physical_index in range(physical_nodes):
+            block_start = physical_index - (physical_index % block_size)
+            next_physical = block_start + ((physical_index - block_start + 1) % block_size)
+            skip_physical = block_start + ((physical_index - block_start + 7) % block_size)
+            next_block_physical = (physical_index + block_size) % physical_nodes
+            for state_index in range(states_per_physical):
+                sid = state_id(physical_index, state_index)
+                same_state_next = state_id(next_physical, state_index)
+                next_state_skip = state_id(skip_physical, (state_index + 1) % states_per_physical)
+                inter_block_state = state_id(next_block_physical, state_index)
+                handle.write(f"{sid} {same_state_next} 1\n")
+                handle.write(f"{sid} {next_state_skip} 0.7\n")
+                handle.write(f"{sid} {inter_block_state} 0.05\n")
+
+
+def generate_multilayer_block_network(path: Path, physical_nodes: int, layers: int, block_size: int) -> None:
+    if physical_nodes % block_size != 0:
+        raise ValueError("physical_nodes must be divisible by block_size")
+    if layers < 2:
+        raise ValueError("layers must be at least 2")
+
+    with path.open("w", encoding="utf-8") as handle:
+        handle.write(f"*Vertices {physical_nodes}\n")
+        for node_id in range(1, physical_nodes + 1):
+            handle.write(f'{node_id} "{node_id}"\n')
+        handle.write("*Multilayer\n")
+        for layer in range(1, layers + 1):
+            next_layer = 1 if layer == layers else layer + 1
+            for physical_index in range(physical_nodes):
+                node_id = physical_index + 1
+                block_start = physical_index - (physical_index % block_size)
+                next_node = block_start + ((physical_index - block_start + 1) % block_size) + 1
+                skip_node = block_start + ((physical_index - block_start + 5) % block_size) + 1
+                handle.write(f"{layer} {node_id} {layer} {next_node} 1\n")
+                handle.write(f"{layer} {node_id} {layer} {skip_node} 0.7\n")
+                handle.write(f"{layer} {node_id} {next_layer} {node_id} 0.15\n")
+
+
+def generate_if_missing(path: Path, generator, *args: object) -> None:
+    if path.exists():
+        return
+    generator(path, *args)
 
 
 def metric_stats(values: list[float]) -> dict[str, float]:
@@ -115,6 +237,32 @@ def build_benchmark_cases(profile: str, repo_root: Path, generated_dir: Path) ->
         },
     ]
     case_index = {str(case["name"]): case for case in cases}
+
+    if profile == "large":
+        sparse_1m = generated_dir / "sparse_1m.net"
+        ring_1m = generated_dir / "ring_of_cliques_1m.net"
+        block_sparse_1m = generated_dir / "block_sparse_1m.net"
+        state_ring_500k = generated_dir / "state_ring_500k.net"
+        state_block_1m_states = generated_dir / "state_block_1m_states.net"
+        multilayer_100k_x10 = generated_dir / "multilayer_100k_x10.net"
+        multilayer_250k_x8 = generated_dir / "multilayer_250k_x8.net"
+
+        generate_if_missing(sparse_1m, generate_large_sparse_graph, 1_000_000, 10)
+        generate_if_missing(ring_1m, generate_large_ring_of_cliques, 100_000, 10)
+        generate_if_missing(block_sparse_1m, generate_block_sparse_graph, 1_000_000, 100, 8, 2)
+        generate_if_missing(state_ring_500k, generate_state_ring, 500_000)
+        generate_if_missing(state_block_1m_states, generate_state_block_network, 250_000, 4, 50)
+        generate_if_missing(multilayer_100k_x10, generate_multilayer_block_network, 100_000, 10, 50)
+        generate_if_missing(multilayer_250k_x8, generate_multilayer_block_network, 250_000, 8, 50)
+        return [
+            {"name": "sparse_1m", "path": sparse_1m, "flags": ""},
+            {"name": "ring_of_cliques_1m", "path": ring_1m, "flags": ""},
+            {"name": "block_sparse_1m", "path": block_sparse_1m, "flags": ""},
+            {"name": "state_ring_500k", "path": state_ring_500k, "flags": ""},
+            {"name": "state_block_1m_states", "path": state_block_1m_states, "flags": ""},
+            {"name": "multilayer_100k_x10", "path": multilayer_100k_x10, "flags": ""},
+            {"name": "multilayer_250k_x8", "path": multilayer_250k_x8, "flags": ""},
+        ]
 
     state_5k = generated_dir / "state_ring_5k.net"
     generate_state_ring(state_5k, physical_nodes=5_000)
@@ -358,9 +506,15 @@ def main() -> None:
     parser.add_argument("--iterations", type=int, default=1, help="Number of in-process iterations per benchmark run.")
     parser.add_argument(
         "--profile",
-        choices=("smoke", "baseline", "full", "pr"),
+        choices=("smoke", "baseline", "full", "pr", "large"),
         default="baseline",
         help="Benchmark corpus size.",
+    )
+    parser.add_argument(
+        "--generated-dir",
+        type=Path,
+        default=None,
+        help="Optional directory for generated benchmark networks. Reuses existing files when present.",
     )
     parser.add_argument(
         "--flags",
@@ -380,10 +534,9 @@ def main() -> None:
     if not args.binary.is_file():
         raise FileNotFoundError(f"Benchmark binary not found: {args.binary}")
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        generated_dir = Path(temp_dir)
+    def run_with_generated_dir(generated_dir: Path) -> list[dict[str, object]]:
         cases = build_benchmark_cases(args.profile, repo_root, generated_dir)
-        results = [
+        return [
             benchmark_case(
                 args.binary,
                 str(case["name"]),
@@ -396,12 +549,24 @@ def main() -> None:
             for case in cases
         ]
 
+    if args.generated_dir is None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            generated_dir = Path(temp_dir)
+            results = run_with_generated_dir(generated_dir)
+            generated_dir_text = None
+    else:
+        args.generated_dir.mkdir(parents=True, exist_ok=True)
+        generated_dir = args.generated_dir.resolve()
+        results = run_with_generated_dir(generated_dir)
+        generated_dir_text = str(generated_dir)
+
     report = {
         "profile": args.profile,
         "repeats": args.repeats,
         "warmup_runs": args.warmup_runs,
         "iterations": args.iterations,
         "binary": str(args.binary),
+        "generated_dir": generated_dir_text,
         "benchmarks": results,
     }
 

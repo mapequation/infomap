@@ -48,6 +48,14 @@ Install from `PyPI`_:
 
     pip install infomap
 
+Install optional integrations for common Python graph and analysis workflows:
+
+.. code-block:: bash
+
+    pip install "infomap[networkx]"
+    pip install "infomap[igraph]"
+    pip install "infomap[pandas]"
+
 Upgrades use the usual `pip` flow:
 
 .. code-block:: bash
@@ -61,15 +69,32 @@ Quick start with Python:
 
 .. code-block:: python
 
+    import networkx as nx
+    import infomap
+
+    graph = nx.karate_club_graph()
+    communities = infomap.find_communities(
+        graph,
+        seed=123,
+        num_trials=20,
+    )
+
+    print(communities)
+
+For direct control over Infomap-specific options and result access:
+
+.. code-block:: python
+
     from infomap import Infomap, InfomapOptions
 
-    options = InfomapOptions(two_level=True, silent=True, num_trials=20)
+    options = InfomapOptions(two_level=True, silent=True, num_trials=20, seed=123)
     im = Infomap.from_options(options)
     im.add_link(0, 1)
     im.add_link(1, 2)
     im.run()
 
     print(im.num_top_modules, im.codelength)
+    print(im.to_dataframe(columns=["node_id", "module_id", "flow"], index="node_id"))
 
 .. _PyPI: https://pypi.org/project/infomap/
 .. _`Infomap Python API`: https://mapequation.github.io/infomap/python/
@@ -129,6 +154,9 @@ Upgrade the CLI with the normal Homebrew flow:
 .. code-block:: bash
 
     brew upgrade infomap
+
+The Homebrew formula installs Bash and Zsh completion files into Homebrew's
+standard completion directories.
 
 JavaScript package
 ^^^^^^^^^^^^^^^^^^
@@ -211,6 +239,20 @@ Show the available CLI options with:
 .. code-block:: bash
 
     ./Infomap --help
+
+Install shell completion scripts manually with:
+
+.. code-block:: bash
+
+    mkdir -p ~/.zfunc
+    ./Infomap --completion zsh > ~/.zfunc/_Infomap
+
+    mkdir -p ~/.local/share/bash-completion/completions
+    ./Infomap --completion bash > ~/.local/share/bash-completion/completions/infomap
+
+For Zsh, make sure ``~/.zfunc`` is in ``fpath`` and ``compinit`` is loaded from
+``~/.zshrc``. For Bash, make sure ``bash-completion`` is sourced from
+``~/.bashrc``.
 
 See ``BUILD.md`` for platform-specific maintainer build details.
 

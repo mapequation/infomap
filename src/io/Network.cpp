@@ -14,11 +14,76 @@
 
 #include <cmath>
 #include <algorithm>
+#include <cstdlib>
+#include <limits>
 #include <stdexcept>
 
 namespace infomap {
 
 using std::make_pair;
+
+namespace {
+
+inline bool isInputWhitespace(char c)
+{
+  return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\v';
+}
+
+inline bool isDigit(char c)
+{
+  return c >= '0' && c <= '9';
+}
+
+void skipWhitespace(const char*& p)
+{
+  while (isInputWhitespace(*p)) {
+    ++p;
+  }
+}
+
+bool parseUnsigned(const char*& p, unsigned int& value)
+{
+  skipWhitespace(p);
+  if (*p == '+') {
+    ++p;
+  }
+  if (!isDigit(*p)) {
+    return false;
+  }
+
+  unsigned long long result = 0;
+  const unsigned long long maxValue = std::numeric_limits<unsigned int>::max();
+  do {
+    result = result * 10 + static_cast<unsigned long long>(*p - '0');
+    if (result > maxValue) {
+      return false;
+    }
+    ++p;
+  } while (isDigit(*p));
+
+  value = static_cast<unsigned int>(result);
+  return true;
+}
+
+bool parseOptionalDouble(const char*& p, double& value)
+{
+  skipWhitespace(p);
+  if (*p == '\0' || *p == '#') {
+    return false;
+  }
+
+  char* end = nullptr;
+  const double parsed = std::strtod(p, &end);
+  if (end == p) {
+    return false;
+  }
+
+  value = parsed;
+  p = end;
+  return true;
+}
+
+} // namespace
 
 void Network::init()
 {
@@ -444,20 +509,19 @@ std::string Network::ignoreSection(std::ifstream& file, const std::string& headi
 
 void Network::parseStateNode(const std::string& line, StateNetwork::StateNode& stateNode)
 {
-  m_extractor.clear();
-  m_extractor.str(line);
-  if (!(m_extractor >> stateNode.id >> stateNode.physicalId))
+  const char* p = line.c_str();
+  if (!parseUnsigned(p, stateNode.id) || !parseUnsigned(p, stateNode.physicalId))
     throw std::runtime_error(io::Str() << "Can't parse any state node from line '" << line << "'");
 
   // Optional name enclosed in double quotes
-  auto nameStart = line.find_first_of('\"', m_extractor.tellg());
+  auto nameStart = line.find_first_of('\"', static_cast<std::size_t>(p - line.c_str()));
   auto nameEnd = line.find_last_of('\"');
   if (nameStart < nameEnd) {
     stateNode.name = std::string(line.begin() + nameStart + 1, line.begin() + nameEnd);
-    m_extractor.seekg(nameEnd + 1);
+    p = line.c_str() + nameEnd + 1;
   }
   // Optional weight, default to 1.0
-  if ((m_extractor >> stateNode.weight)) {
+  if (parseOptionalDouble(p, stateNode.weight)) {
     m_haveStateNodeWeights = true;
     if (stateNode.weight < 0)
       throw std::runtime_error(io::Str() << "Negative state node weight (" << stateNode.weight << ") from line '" << line << "'");
@@ -466,38 +530,42 @@ void Network::parseStateNode(const std::string& line, StateNetwork::StateNode& s
 
 void Network::parseLink(const std::string& line, unsigned int& n1, unsigned int& n2, double& weight)
 {
-  m_extractor.clear();
-  m_extractor.str(line);
-  if (!(m_extractor >> n1 >> n2))
+  const char* p = line.c_str();
+  if (!parseUnsigned(p, n1) || !parseUnsigned(p, n2))
     throw std::runtime_error(io::Str() << "Can't parse link data from line '" << line << "'");
-  (m_extractor >> weight) || (weight = 1.0);
+  if (!parseOptionalDouble(p, weight)) {
+    weight = 1.0;
+  }
 }
 
 void Network::parseMultilayerLink(const std::string& line, unsigned int& layer1, unsigned int& n1, unsigned int& layer2, unsigned int& n2, double& weight)
 {
-  m_extractor.clear();
-  m_extractor.str(line);
-  if (!(m_extractor >> layer1 >> n1 >> layer2 >> n2))
+  const char* p = line.c_str();
+  if (!parseUnsigned(p, layer1) || !parseUnsigned(p, n1) || !parseUnsigned(p, layer2) || !parseUnsigned(p, n2))
     throw std::runtime_error(io::Str() << "Can't parse multilayer link data from line '" << line << "'");
-  (m_extractor >> weight) || (weight = 1.0);
+  if (!parseOptionalDouble(p, weight)) {
+    weight = 1.0;
+  }
 }
 
 void Network::parseMultilayerIntraLink(const std::string& line, unsigned int& layer, unsigned int& n1, unsigned int& n2, double& weight)
 {
-  m_extractor.clear();
-  m_extractor.str(line);
-  if (!(m_extractor >> layer >> n1 >> n2))
+  const char* p = line.c_str();
+  if (!parseUnsigned(p, layer) || !parseUnsigned(p, n1) || !parseUnsigned(p, n2))
     throw std::runtime_error(io::Str() << "Can't parse intra-multilayer link data from line '" << line << "'");
-  (m_extractor >> weight) || (weight = 1.0);
+  if (!parseOptionalDouble(p, weight)) {
+    weight = 1.0;
+  }
 }
 
 void Network::parseMultilayerInterLink(const std::string& line, unsigned int& layer1, unsigned int& n, unsigned int& layer2, double& weight)
 {
-  m_extractor.clear();
-  m_extractor.str(line);
-  if (!(m_extractor >> layer1 >> n >> layer2))
+  const char* p = line.c_str();
+  if (!parseUnsigned(p, layer1) || !parseUnsigned(p, n) || !parseUnsigned(p, layer2))
     throw std::runtime_error(io::Str() << "Can't parse inter-multilayer link data from line '" << line << "'");
-  (m_extractor >> weight) || (weight = 1.0);
+  if (!parseOptionalDouble(p, weight)) {
+    weight = 1.0;
+  }
   if (layer1 == layer2)
     throw std::runtime_error(io::Str() << "Inter-layer link from line '" << line << "' doesn't go between different layers.");
   // TODO: Same as intra-layer self-link?

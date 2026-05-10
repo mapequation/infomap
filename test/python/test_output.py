@@ -67,3 +67,37 @@ def test_state_output_writers_include_state_columns(make_infomap, network_fixtur
     parsed = json.loads(json_text)
     assert parsed["stateLevel"] is True
     assert parsed["higherOrder"] is True
+
+
+@pytest.mark.parametrize(
+    "network_name,states_output",
+    [
+        ("ninetriangles.net", False),
+        ("states.net", False),
+        ("states.net", True),
+        ("multilayer.net", True),
+    ],
+    ids=["physical", "states_physical_tree", "states_state_tree", "multilayer_state_tree"],
+)
+def test_tree_cluster_data_roundtrip(make_infomap, example_network_path, output_dir, network_name, states_output):
+    network_path = str(example_network_path(network_name))
+
+    baseline = make_infomap(num_trials=5)
+    baseline.read_file(network_path)
+    baseline.run()
+    expected_codelength = baseline.codelength
+
+    tree_path = output_dir / f"{network_name}.{int(states_output)}.tree"
+    baseline.write_tree(str(tree_path), states=states_output)
+
+    # --no-infomap path: codelength should match exactly.
+    no_infomap = make_infomap(no_infomap=True, cluster_data=str(tree_path))
+    no_infomap.read_file(network_path)
+    no_infomap.run()
+    assert no_infomap.codelength == pytest.approx(expected_codelength, abs=1e-9)
+
+    # Continuing optimization: codelength must not regress, no crashes/leaks.
+    continued = make_infomap(cluster_data=str(tree_path))
+    continued.read_file(network_path)
+    continued.run()
+    assert continued.codelength <= expected_codelength + 1e-9

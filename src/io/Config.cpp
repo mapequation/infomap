@@ -93,7 +93,7 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(matchableMultilayerIds, "matchable-multilayer-ids", "Construct state ids from node and layer ids that are consistent across networks for the same max number of layers. Set to at least the largest layer id among networks to match.", ArgType::integer, "Input", 1u, true);
 
-  api.addOptionArgument(clusterDataFile, 'c', "cluster-data", "Provide an initial two-level (clu format) or multi-layer (tree format) solution.", ArgType::path, "Input");
+  api.addOptionArgument(clusterDataFile, 'c', "cluster-data", "Provide an initial partition as cluster ids (clu) or a hierarchical tree (tree, ftree). Tree input may be physical or state-level for higher-order networks.", ArgType::path, "Input");
 
   api.addOptionArgument(assignToNeighbouringModule, "assign-to-neighbouring-module", "Assign nodes without module assignments (from --cluster-data) to the module assignment of a neighbouring node if possible.", "Input", true);
 
@@ -119,7 +119,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(cluLevel, "clu-level", "For clu output, print modules at specified depth from root. Use -1 for bottom level modules.", ArgType::integer, "Output", -1, true);
 
-  api.addOptionArgument(outputFormats, 'o', "output", "Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.", ArgType::list, "Output", true);
+  api.addOptionArgument(outputFormats, 'o', "output", "Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.", ArgType::list, "Output", true)
+      .setChoices({ "clu", "tree", "ftree", "newick", "json", "csv", "network", "states", "flow" });
 
   api.addOptionArgument(hideBipartiteNodes, "hide-bipartite-nodes", "Project bipartite solution to unipartite.", "Output", true);
 
@@ -130,7 +131,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   std::string flowModelArg;
 
-  api.addOptionArgument(flowModelArg, 'f', "flow-model", "Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir, precomputed.", ArgType::option, "Algorithm");
+  api.addOptionArgument(flowModelArg, 'f', "flow-model", "Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir, precomputed.", ArgType::option, "Algorithm")
+      .setChoices({ "undirected", "directed", "undirdir", "outdirdir", "rawdir", "precomputed" });
 
   api.addOptionArgument(directed, 'd', "directed", "Assume directed links. Shorthand for '--flow-model directed'.", "Algorithm");
 

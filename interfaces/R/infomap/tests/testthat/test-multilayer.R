@@ -365,6 +365,32 @@ test_that("cluster_infomap_multilayer rejects unrecognised columns", {
   )
 })
 
+test_that("add_igraph supports non-numeric physical ids", {
+  skip_if_not_installed("igraph")
+
+  g <- igraph::make_empty_graph(4, directed = TRUE)
+  g <- igraph::set_vertex_attr(
+    g, "phys_id",
+    value = factor(c("alpha", "beta", "alpha", "beta"))
+  )
+  g <- igraph::set_vertex_attr(g, "layer_id", value = c(1, 1, 2, 2))
+  g <- igraph::add_edges(g, c(1, 2, 3, 4, 1, 3, 2, 4))
+
+  im <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
+  mapping <- im$add_igraph(g)
+  im$run()
+
+  phys_mapping <- attr(mapping, "phys_id")
+  expect_named(phys_mapping)
+  expect_setequal(unname(phys_mapping), c("alpha", "beta"))
+  expect_false(anyNA(im$nodes$node_id))
+
+  communities <- im$as_communities(g)
+  expect_s3_class(communities, "communities")
+  expect_length(igraph::membership(communities), igraph::vcount(g))
+  expect_false(anyNA(igraph::membership(communities)))
+})
+
 test_that("add_igraph accepts diagonal links with multilayer_inter_intra_format = FALSE", {
   skip_if_not_installed("igraph")
   g <- igraph::make_empty_graph(4, directed = FALSE)
