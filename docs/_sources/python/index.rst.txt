@@ -197,6 +197,74 @@ For the NetworkX-style wrapper:
 
     communities = infomap.find_communities(graph)
 
+igraph graphs
+"""""""""""""
+
+``infomap.find_igraph_communities()`` provides an igraph-native entry point
+without making igraph a required dependency. It imports igraph only when the
+igraph-specific API is used and returns an ``igraph.VertexClustering`` with a
+``codelength`` attribute, matching python-igraph community conventions:
+
+.. code-block:: python
+
+    import igraph as ig
+    import infomap
+
+    graph = ig.Graph.TupleList([("a", "b"), ("a", "c")], directed=False)
+    communities = infomap.find_igraph_communities(graph, trials=10)
+    communities.codelength
+
+Use ``edge_weights`` the same way as python-igraph's community functions:
+
+.. code-block:: python
+
+    graph.es["weight"] = [2.0, 1.0]
+    communities = infomap.find_igraph_communities(graph, edge_weights="weight")
+
+Directed igraph graphs are detected from the graph object:
+
+.. code-block:: python
+
+    graph = ig.Graph.TupleList([("a", "b"), ("b", "c")], directed=True)
+    communities = infomap.find_igraph_communities(graph)
+
+To annotate an igraph graph for plotting or downstream igraph workflows, pass
+vertex attribute names:
+
+.. code-block:: python
+
+    infomap.find_igraph_communities(
+        graph,
+        module_attribute="community",
+        flow_attribute="flow",
+    )
+
+``Infomap.add_igraph_graph()`` remains available when you need direct control
+over the ``Infomap`` instance. It accepts standard, state, and multilayer
+igraph graphs. The igraph vertex index is used as the state/internal id, while
+non-numeric ``phys_id`` labels in state and multilayer graphs are mapped to
+stable internal physical ids:
+
+.. code-block:: python
+
+    graph = ig.Graph(edges=[(0, 1), (0, 2)])
+    graph.vs["name"] = ["state-a", "state-b", "state-a-next"]
+    graph.vs["phys_id"] = ["a", "b", "a"]
+    graph.vs["layer_id"] = [1, 1, 2]
+
+    im = infomap.Infomap(silent=True)
+    im.add_igraph_graph(graph)
+    im.run()
+
+python-igraph also includes ``Graph.community_infomap()``. The
+``infomap`` package API is useful when you want the current Infomap package
+implementation, Infomap-specific options, or state/multilayer import, while
+still receiving an igraph-native ``VertexClustering`` result. See the
+python-igraph documentation for
+`Graph.community_infomap <https://python.igraph.org/en/main/api/igraph.Graph.html>`__
+and
+`VertexClustering <https://python.igraph.org/en/main/api/igraph.VertexClustering.html>`__.
+
 Please read the :doc:`/python/infomap` reference to learn more.
 
 .. * :ref:`genindex`
