@@ -856,7 +856,7 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
     }
   }
 
-  std::sort(moduleLinks.begin(), moduleLinks.end(), [](const ModuleLink& left, const ModuleLink& right) {
+  std::stable_sort(moduleLinks.begin(), moduleLinks.end(), [](const ModuleLink& left, const ModuleLink& right) {
     return left.source < right.source || (left.source == right.source && left.target < right.target);
   });
 
