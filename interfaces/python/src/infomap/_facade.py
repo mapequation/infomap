@@ -4,6 +4,8 @@ from contextlib import contextmanager
 
 from ._bindings import *  # noqa: F401,F403
 from ._bindings import __all__ as _BINDINGS_ALL
+from ._igraph import add_igraph_graph as _add_igraph_graph
+from ._igraph import find_igraph_communities
 from ._networkx import add_networkx_graph as _add_networkx_graph
 from ._networkx import find_communities
 from ._options import (
@@ -51,6 +53,7 @@ __all__ = [
     "MultilayerNode",
     "entropy",
     "find_communities",
+    "find_igraph_communities",
     "main",
     "perplexity",
     "plogp",
@@ -1147,6 +1150,58 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             self,
             g,
             weight=weight,
+            phys_id=phys_id,
+            layer_id=layer_id,
+            multilayer_inter_intra_format=multilayer_inter_intra_format,
+        )
+
+    def add_igraph_graph(
+        self,
+        g,
+        edge_weights=None,
+        vertex_weights=None,
+        phys_id="phys_id",
+        layer_id="layer_id",
+        multilayer_inter_intra_format=True,
+    ):
+        """Add a python-igraph graph.
+
+        This method imports igraph lazily, so igraph is not required unless
+        this method is used. It uses igraph's zero-based vertex indices as
+        state/internal ids, uses the ``name`` vertex attribute as Infomap node
+        names when present, and treats ``phys_id``/``layer_id`` vertex
+        attributes as state/multilayer metadata.
+
+        Parameters
+        ----------
+        g : igraph.Graph
+            A python-igraph graph.
+        edge_weights : str, sequence, or None, optional
+            Edge weight attribute name, explicit sequence with one value per
+            edge, or ``None`` to treat every edge as weight 1. Default
+            ``None``.
+        vertex_weights : None, optional
+            Accepted for igraph API familiarity but not supported yet.
+        phys_id : str, optional
+            Vertex attribute for physical node ids, implying a state network.
+        layer_id : str, optional
+            Vertex attribute for layer ids, implying a multilayer network when
+            ``phys_id`` is also present.
+        multilayer_inter_intra_format : bool, optional
+            Use intra/inter format to simulate inter-layer links. Default
+            ``True``.
+
+        Returns
+        -------
+        dict
+            Dict with igraph vertex indices as keys and vertex names as values
+            when names are present, otherwise vertex indices as values.
+        """
+        return _add_igraph_graph(
+            self,
+            g,
+            edge_weights=edge_weights,
+            vertex_weights=vertex_weights,
             phys_id=phys_id,
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,

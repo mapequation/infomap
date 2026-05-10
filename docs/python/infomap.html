@@ -76,6 +76,40 @@ parameter reference.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="infomap.Infomap.add_igraph_graph">
+<span class="sig-name descname"><span class="pre">add_igraph_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phys_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'phys_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'layer_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multilayer_inter_intra_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_igraph_graph" title="Link to this definition">¶</a></dt>
+<dd><p>Add a python-igraph graph.</p>
+<p>This method imports igraph lazily, so igraph is not required unless
+this method is used. It uses igraph’s zero-based vertex indices as
+state/internal ids, uses the <code class="docutils literal notranslate"><span class="pre">name</span></code> vertex attribute as Infomap node
+names when present, and treats <code class="docutils literal notranslate"><span class="pre">phys_id</span></code>/<code class="docutils literal notranslate"><span class="pre">layer_id</span></code> vertex
+attributes as state/multilayer metadata.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>g</strong> (<em>igraph.Graph</em>) – A python-igraph graph.</p></li>
+<li><p><strong>edge_weights</strong> (<em>str</em><em>, </em><em>sequence</em><em>, or </em><em>None</em><em>, </em><em>optional</em>) – Edge weight attribute name, explicit sequence with one value per
+edge, or <code class="docutils literal notranslate"><span class="pre">None</span></code> to treat every edge as weight 1. Default
+<code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>vertex_weights</strong> (<em>None</em><em>, </em><em>optional</em>) – Accepted for igraph API familiarity but not supported yet.</p></li>
+<li><p><strong>phys_id</strong> (<em>str</em><em>, </em><em>optional</em>) – Vertex attribute for physical node ids, implying a state network.</p></li>
+<li><p><strong>layer_id</strong> (<em>str</em><em>, </em><em>optional</em>) – Vertex attribute for layer ids, implying a multilayer network when
+<code class="docutils literal notranslate"><span class="pre">phys_id</span></code> is also present.</p></li>
+<li><p><strong>multilayer_inter_intra_format</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use intra/inter format to simulate inter-layer links. Default
+<code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict with igraph vertex indices as keys and vertex names as values
+when names are present, otherwise vertex indices as values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="infomap.Infomap.add_link">
 <span class="sig-name descname"><span class="pre">add_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.Infomap.add_link" title="Link to this definition">¶</a></dt>
 <dd><p>Add a link.</p>
@@ -955,6 +989,12 @@ overridden.</p></li>
 <dd class="field-odd"><p>list of set</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="infomap.find_igraph_communities">
+<span class="sig-prename descclassname"><span class="pre">infomap.</span></span><span class="sig-name descname"><span class="pre">find_igraph_communities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phys_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'phys_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'layer_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multilayer_inter_intra_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module_attribute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow_attribute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">infomap_options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infomap.find_igraph_communities" title="Link to this definition">¶</a></dt>
+<dd><p>Find communities in a python-igraph graph.</p>
 </dd></dl>
 
 <dl class="py class">

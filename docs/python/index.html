@@ -42,6 +42,7 @@
 <li class="toctree-l2"><a class="reference internal" href="infomap.html#infomap.Infomap"><code class="docutils literal notranslate"><span class="pre">Infomap</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="infomap.html#infomap.MultilayerNode"><code class="docutils literal notranslate"><span class="pre">MultilayerNode</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="infomap.html#infomap.find_communities"><code class="docutils literal notranslate"><span class="pre">find_communities()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="infomap.html#infomap.find_igraph_communities"><code class="docutils literal notranslate"><span class="pre">find_igraph_communities()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="infomap.html#infomap.InfomapOptions"><code class="docutils literal notranslate"><span class="pre">InfomapOptions</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="infomap.html#infomap.InfoNode"><code class="docutils literal notranslate"><span class="pre">InfoNode</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="infomap.html#infomap.InfomapIterator"><code class="docutils literal notranslate"><span class="pre">InfomapIterator</span></code></a></li>
@@ -215,6 +216,63 @@ partition of the graph’s own nodes, which are state nodes for these inputs:</p
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">communities</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">find_communities</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
 </pre></div>
 </div>
+</section>
+<section id="igraph-graphs">
+<h4>igraph graphs<a class="headerlink" href="#igraph-graphs" title="Link to this heading">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">infomap.find_igraph_communities()</span></code> provides an igraph-native entry point
+without making igraph a required dependency. It imports igraph only when the
+igraph-specific API is used and returns an <code class="docutils literal notranslate"><span class="pre">igraph.VertexClustering</span></code> with a
+<code class="docutils literal notranslate"><span class="pre">codelength</span></code> attribute, matching python-igraph community conventions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">igraph</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ig</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">infomap</span>
+
+<span class="n">graph</span> <span class="o">=</span> <span class="n">ig</span><span class="o">.</span><span class="n">Graph</span><span class="o">.</span><span class="n">TupleList</span><span class="p">([(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">)],</span> <span class="n">directed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">communities</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">find_igraph_communities</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">trials</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">communities</span><span class="o">.</span><span class="n">codelength</span>
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">edge_weights</span></code> the same way as python-igraph’s community functions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span><span class="o">.</span><span class="n">es</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span>
+<span class="n">communities</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">find_igraph_communities</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">edge_weights</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Directed igraph graphs are detected from the graph object:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">ig</span><span class="o">.</span><span class="n">Graph</span><span class="o">.</span><span class="n">TupleList</span><span class="p">([(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">)],</span> <span class="n">directed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">communities</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">find_igraph_communities</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To annotate an igraph graph for plotting or downstream igraph workflows, pass
+vertex attribute names:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">infomap</span><span class="o">.</span><span class="n">find_igraph_communities</span><span class="p">(</span>
+    <span class="n">graph</span><span class="p">,</span>
+    <span class="n">module_attribute</span><span class="o">=</span><span class="s2">&quot;community&quot;</span><span class="p">,</span>
+    <span class="n">flow_attribute</span><span class="o">=</span><span class="s2">&quot;flow&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Infomap.add_igraph_graph()</span></code> remains available when you need direct control
+over the <code class="docutils literal notranslate"><span class="pre">Infomap</span></code> instance. It accepts standard, state, and multilayer
+igraph graphs. The igraph vertex index is used as the state/internal id, while
+non-numeric <code class="docutils literal notranslate"><span class="pre">phys_id</span></code> labels in state and multilayer graphs are mapped to
+stable internal physical ids:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">ig</span><span class="o">.</span><span class="n">Graph</span><span class="p">(</span><span class="n">edges</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)])</span>
+<span class="n">graph</span><span class="o">.</span><span class="n">vs</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;state-a&quot;</span><span class="p">,</span> <span class="s2">&quot;state-b&quot;</span><span class="p">,</span> <span class="s2">&quot;state-a-next&quot;</span><span class="p">]</span>
+<span class="n">graph</span><span class="o">.</span><span class="n">vs</span><span class="p">[</span><span class="s2">&quot;phys_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">]</span>
+<span class="n">graph</span><span class="o">.</span><span class="n">vs</span><span class="p">[</span><span class="s2">&quot;layer_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+
+<span class="n">im</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">add_igraph_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+<span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>python-igraph also includes <code class="docutils literal notranslate"><span class="pre">Graph.community_infomap()</span></code>. The
+<code class="docutils literal notranslate"><span class="pre">infomap</span></code> package API is useful when you want the current Infomap package
+implementation, Infomap-specific options, or state/multilayer import, while
+still receiving an igraph-native <code class="docutils literal notranslate"><span class="pre">VertexClustering</span></code> result. See the
+python-igraph documentation for
+<a class="reference external" href="https://python.igraph.org/en/main/api/igraph.Graph.html">Graph.community_infomap</a>
+and
+<a class="reference external" href="https://python.igraph.org/en/main/api/igraph.VertexClustering.html">VertexClustering</a>.</p>
 <p>Please read the <a class="reference internal" href="infomap.html"><span class="doc">infomap module</span></a> reference to learn more.</p>
 </section>
 </section>
