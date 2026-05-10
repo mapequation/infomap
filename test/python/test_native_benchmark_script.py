@@ -253,6 +253,56 @@ def test_build_benchmark_cases_smoke_skips_100k_generation(monkeypatch, tmp_path
     assert calls == [10_000]
 
 
+def test_build_benchmark_cases_large_profile_uses_only_large_generated_cases(monkeypatch, tmp_path: Path):
+    benchmark_module = _load_benchmark_module()
+    repo_root = _find_repo_root(Path(__file__).resolve())
+    calls: list[tuple[str, Path, tuple[object, ...]]] = []
+
+    def stub_generate_if_missing(path: Path, generator, *args: object) -> None:
+        calls.append((generator.__name__, path, args))
+
+    monkeypatch.setattr(benchmark_module, "generate_if_missing", stub_generate_if_missing)
+
+    cases = benchmark_module.build_benchmark_cases("large", repo_root, tmp_path)
+
+    assert [case["name"] for case in cases] == [
+        "sparse_1m",
+        "ring_of_cliques_1m",
+        "block_sparse_1m",
+        "state_ring_500k",
+        "state_block_1m_states",
+        "multilayer_100k_x10",
+        "multilayer_250k_x8",
+    ]
+    assert [Path(case["path"]).parent for case in cases] == [tmp_path] * len(cases)
+    assert [(name, path.name, args) for name, path, args in calls] == [
+        ("generate_large_sparse_graph", "sparse_1m.net", (1_000_000, 10)),
+        ("generate_large_ring_of_cliques", "ring_of_cliques_1m.net", (100_000, 10)),
+        ("generate_block_sparse_graph", "block_sparse_1m.net", (1_000_000, 100, 8, 2)),
+        ("generate_state_ring", "state_ring_500k.net", (500_000,)),
+        ("generate_state_block_network", "state_block_1m_states.net", (250_000, 4, 50)),
+        ("generate_multilayer_block_network", "multilayer_100k_x10.net", (100_000, 10, 50)),
+        ("generate_multilayer_block_network", "multilayer_250k_x8.net", (250_000, 8, 50)),
+    ]
+
+
+def test_generate_if_missing_reuses_existing_generated_network(tmp_path: Path):
+    benchmark_module = _load_benchmark_module()
+    path = tmp_path / "network.net"
+    path.write_text("existing\n", encoding="utf-8")
+    calls = 0
+
+    def generator(path: Path) -> None:
+        nonlocal calls
+        calls += 1
+        path.write_text("generated\n", encoding="utf-8")
+
+    benchmark_module.generate_if_missing(path, generator)
+
+    assert calls == 0
+    assert path.read_text(encoding="utf-8") == "existing\n"
+
+
 def test_main_rejects_negative_warmup_runs(monkeypatch):
     benchmark_module = _load_benchmark_module()
 
