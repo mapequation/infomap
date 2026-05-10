@@ -221,23 +221,33 @@ double MapEquation<FlowDataType, DeltaFlowDataType>::getDeltaCodelengthOnMovingN
   using infomath::plogp;
   unsigned int oldModule = oldModuleDelta.module;
   unsigned int newModule = newModuleDelta.module;
+  const bool usePlogpCache = !moduleFlowPlogp.empty();
+  auto enterPlogp = [&](unsigned int module) {
+    return usePlogpCache ? moduleFlowPlogp[module].enterFlow : plogp(moduleFlowData[module].enterFlow);
+  };
+  auto exitPlogp = [&](unsigned int module) {
+    return usePlogpCache ? moduleFlowPlogp[module].exitFlow : plogp(moduleFlowData[module].exitFlow);
+  };
+  auto exitFlowPlogp = [&](unsigned int module) {
+    return usePlogpCache ? moduleFlowPlogp[module].exitFlowPlusFlow : plogp(moduleFlowData[module].exitFlow + moduleFlowData[module].flow);
+  };
   double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
   double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
   double delta_enter = plogp(enterFlow + deltaEnterExitOldModule - deltaEnterExitNewModule) - enterFlow_log_enterFlow;
 
-  double delta_enter_log_enter = -moduleFlowPlogp[oldModule].enterFlow
-      - moduleFlowPlogp[newModule].enterFlow
+  double delta_enter_log_enter = -enterPlogp(oldModule)
+      - enterPlogp(newModule)
       + plogp(moduleFlowData[oldModule].enterFlow - current.data.enterFlow + deltaEnterExitOldModule)
       + plogp(moduleFlowData[newModule].enterFlow + current.data.enterFlow - deltaEnterExitNewModule);
 
-  double delta_exit_log_exit = -moduleFlowPlogp[oldModule].exitFlow
-      - moduleFlowPlogp[newModule].exitFlow
+  double delta_exit_log_exit = -exitPlogp(oldModule)
+      - exitPlogp(newModule)
       + plogp(moduleFlowData[oldModule].exitFlow - current.data.exitFlow + deltaEnterExitOldModule)
       + plogp(moduleFlowData[newModule].exitFlow + current.data.exitFlow - deltaEnterExitNewModule);
 
-  double delta_flow_log_flow = -moduleFlowPlogp[oldModule].exitFlowPlusFlow
-      - moduleFlowPlogp[newModule].exitFlowPlusFlow
+  double delta_flow_log_flow = -exitFlowPlogp(oldModule)
+      - exitFlowPlogp(newModule)
       + plogp(moduleFlowData[oldModule].exitFlow + moduleFlowData[oldModule].flow
               - current.data.exitFlow - current.data.flow + deltaEnterExitOldModule)
       + plogp(moduleFlowData[newModule].exitFlow + moduleFlowData[newModule].flow
@@ -253,13 +263,23 @@ void MapEquation<FlowDataType, DeltaFlowDataType>::updateCodelengthOnMovingNode(
   using infomath::plogp;
   unsigned int oldModule = oldModuleDelta.module;
   unsigned int newModule = newModuleDelta.module;
+  const bool usePlogpCache = !moduleFlowPlogp.empty();
+  auto enterPlogp = [&](unsigned int module) {
+    return usePlogpCache ? moduleFlowPlogp[module].enterFlow : plogp(moduleFlowData[module].enterFlow);
+  };
+  auto exitPlogp = [&](unsigned int module) {
+    return usePlogpCache ? moduleFlowPlogp[module].exitFlow : plogp(moduleFlowData[module].exitFlow);
+  };
+  auto exitFlowPlogp = [&](unsigned int module) {
+    return usePlogpCache ? moduleFlowPlogp[module].exitFlowPlusFlow : plogp(moduleFlowData[module].exitFlow + moduleFlowData[module].flow);
+  };
   double deltaEnterExitOldModule = oldModuleDelta.deltaEnter + oldModuleDelta.deltaExit;
   double deltaEnterExitNewModule = newModuleDelta.deltaEnter + newModuleDelta.deltaExit;
 
   enterFlow -= moduleFlowData[oldModule].enterFlow + moduleFlowData[newModule].enterFlow;
-  enter_log_enter -= moduleFlowPlogp[oldModule].enterFlow + moduleFlowPlogp[newModule].enterFlow;
-  exit_log_exit -= moduleFlowPlogp[oldModule].exitFlow + moduleFlowPlogp[newModule].exitFlow;
-  flow_log_flow -= moduleFlowPlogp[oldModule].exitFlowPlusFlow + moduleFlowPlogp[newModule].exitFlowPlusFlow;
+  enter_log_enter -= enterPlogp(oldModule) + enterPlogp(newModule);
+  exit_log_exit -= exitPlogp(oldModule) + exitPlogp(newModule);
+  flow_log_flow -= exitFlowPlogp(oldModule) + exitFlowPlogp(newModule);
 
   moduleFlowData[oldModule] -= current.data;
   moduleFlowData[newModule] += current.data;
@@ -269,13 +289,15 @@ void MapEquation<FlowDataType, DeltaFlowDataType>::updateCodelengthOnMovingNode(
   moduleFlowData[newModule].enterFlow -= deltaEnterExitNewModule;
   moduleFlowData[newModule].exitFlow -= deltaEnterExitNewModule;
 
-  moduleFlowPlogp[oldModule].update(moduleFlowData[oldModule]);
-  moduleFlowPlogp[newModule].update(moduleFlowData[newModule]);
+  if (usePlogpCache) {
+    moduleFlowPlogp[oldModule].update(moduleFlowData[oldModule]);
+    moduleFlowPlogp[newModule].update(moduleFlowData[newModule]);
+  }
 
   enterFlow += moduleFlowData[oldModule].enterFlow + moduleFlowData[newModule].enterFlow;
-  enter_log_enter += moduleFlowPlogp[oldModule].enterFlow + moduleFlowPlogp[newModule].enterFlow;
-  exit_log_exit += moduleFlowPlogp[oldModule].exitFlow + moduleFlowPlogp[newModule].exitFlow;
-  flow_log_flow += moduleFlowPlogp[oldModule].exitFlowPlusFlow + moduleFlowPlogp[newModule].exitFlowPlusFlow;
+  enter_log_enter += enterPlogp(oldModule) + enterPlogp(newModule);
+  exit_log_exit += exitPlogp(oldModule) + exitPlogp(newModule);
+  flow_log_flow += exitFlowPlogp(oldModule) + exitFlowPlogp(newModule);
 
   enterFlow_log_enterFlow = plogp(enterFlow);
 

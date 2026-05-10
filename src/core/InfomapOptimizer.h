@@ -165,7 +165,12 @@ void InfomapOptimizer<Objective>::initPartition()
   // Init one module for each node
   auto numNodes = network.size();
   m_moduleFlowData.resize(numNodes);
-  m_moduleFlowPlogp.resize(numNodes);
+  if (m_infomap->haveMemory()) {
+    m_moduleFlowPlogp.clear();
+    m_moduleFlowPlogp.shrink_to_fit();
+  } else {
+    m_moduleFlowPlogp.resize(numNodes);
+  }
   m_moduleMembers.assign(numNodes, 1);
   m_emptyModules.clear();
   m_emptyModules.reserve(numNodes);
@@ -175,7 +180,8 @@ void InfomapOptimizer<Objective>::initPartition()
     InfoNode& node = *nodePtr;
     node.index = i; // Unique module index for each node
     m_moduleFlowData[i] = node.data;
-    m_moduleFlowPlogp[i].update(m_moduleFlowData[i]);
+    if (!m_moduleFlowPlogp.empty())
+      m_moduleFlowPlogp[i].update(m_moduleFlowData[i]);
     node.dirty = true;
     ++i;
   }
@@ -703,25 +709,9 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
     modules[moduleIndex]->addChild(node);
   }
 
-  struct ModuleLink {
-    unsigned int source;
-    unsigned int target;
-    double flow;
-    std::size_t order;
-  };
-
-  std::size_t interModuleLinkCount = 0;
-  for (auto& node : network) {
-    unsigned int module1 = node->index;
-    for (auto& e : node->outEdges()) {
-      if (module1 != e->target->index) {
-        ++interModuleLinkCount;
-      }
-    }
-  }
-
-  std::vector<ModuleLink> moduleLinks;
-  moduleLinks.reserve(interModuleLinkCount);
+  using NodePair = std::pair<unsigned int, unsigned int>;
+  using EdgeMap = std::map<NodePair, double>;
+  EdgeMap moduleLinks;
 
   for (auto& node : network) {
     unsigned int module1 = node->index;
@@ -734,29 +724,18 @@ inline void InfomapOptimizer<Objective>::consolidateModules(bool replaceExisting
         // If undirected, the order may be swapped to aggregate the edge on an opposite one
         if (m_infomap->isUndirectedClustering() && m1 > m2)
           std::swap(m1, m2);
-        moduleLinks.push_back({ m1, m2, edge.data.flow, moduleLinks.size() });
+        auto ret = moduleLinks.insert(std::make_pair(NodePair(m1, m2), edge.data.flow));
+        if (!ret.second) {
+          ret.first->second += edge.data.flow;
+        }
       }
     }
   }
 
-  std::sort(moduleLinks.begin(), moduleLinks.end(), [](const ModuleLink& left, const ModuleLink& right) {
-    if (left.source != right.source)
-      return left.source < right.source;
-    if (left.target != right.target)
-      return left.target < right.target;
-    return left.order < right.order;
-  });
-
   // Add the aggregated edge flow structure to the new modules
-  for (std::size_t i = 0; i < moduleLinks.size();) {
-    const auto source = moduleLinks[i].source;
-    const auto target = moduleLinks[i].target;
-    double flow = 0.0;
-    do {
-      flow += moduleLinks[i].flow;
-      ++i;
-    } while (i < moduleLinks.size() && moduleLinks[i].source == source && moduleLinks[i].target == target);
-    modules[source]->addOutEdge(*modules[target], 0.0, flow);
+  for (auto& e : moduleLinks) {
+    const auto& nodePair = e.first;
+    modules[nodePair.first]->addOutEdge(*modules[nodePair.second], 0.0, e.second);
   }
 
   if (replaceExistingModules) {
