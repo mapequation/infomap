@@ -301,7 +301,6 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
 
   // Create map with module links
   VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
-  std::vector<unsigned int> moduleEnumeration;
 
   for (unsigned int i = 0; i < numNodes; ++i) {
     InfoNode& current = *network[nodeEnumeration[i]];
@@ -373,7 +372,7 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
     }
 
     // Randomize link order for optimized search
-    moduleEnumeration.resize(numModuleLinks);
+    std::vector<unsigned int> moduleEnumeration(numModuleLinks);
     m_infomap->m_rand.getRandomizedIndexVector(moduleEnumeration);
 
     DeltaFlowDataType bestDeltaModule(oldModuleDelta);
