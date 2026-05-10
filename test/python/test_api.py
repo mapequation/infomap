@@ -1,9 +1,12 @@
+import importlib.resources
 from operator import itemgetter
+import tomllib
 
 import networkx as nx
 import pytest
 
 import infomap as infomap_module
+import infomap._results as results_module
 
 
 pytestmark = pytest.mark.fast
@@ -88,10 +91,11 @@ def test_get_dataframe_supports_states_and_depth_level(make_infomap, example_net
     states_im.read_file(str(example_network_path("states.net")))
     states_im.run()
 
-    physical_df = states_im.get_dataframe(
-        columns=["node_id", "module_id"],
-        states=False,
-    )
+    with pytest.deprecated_call(match="get_dataframe.*to_dataframe"):
+        physical_df = states_im.get_dataframe(
+            columns=["node_id", "module_id"],
+            states=False,
+        )
     expected_physical = [
         (node.node_id, node.module_id)
         for node in states_im.get_nodes(depth_level=1, states=False)
@@ -102,16 +106,149 @@ def test_get_dataframe_supports_states_and_depth_level(make_infomap, example_net
     hierarchical_im.read_file(str(example_network_path("ninetriangles.net")))
     hierarchical_im.run()
 
-    depth_df = hierarchical_im.get_dataframe(
-        columns=["node_id", "module_id"],
-        states=False,
-        depth_level=2,
-    )
+    with pytest.deprecated_call(match="get_dataframe.*to_dataframe"):
+        depth_df = hierarchical_im.get_dataframe(
+            columns=["node_id", "module_id"],
+            states=False,
+            depth_level=2,
+        )
     expected_depth = [
         (node.node_id, node.module_id)
         for node in hierarchical_im.get_nodes(depth_level=2, states=False)
     ]
     assert list(depth_df.itertuples(index=False, name=None)) == expected_depth
+
+
+def test_to_dataframe_alias_matches_get_dataframe(make_infomap, example_network_path):
+    pytest.importorskip("pandas")
+
+    im = make_infomap(num_trials=10)
+    im.read_file(str(example_network_path("twotriangles.net")))
+    im.run()
+
+    columns = ["node_id", "module_id"]
+    with pytest.deprecated_call(match="get_dataframe.*to_dataframe"):
+        expected = im.get_dataframe(columns=columns, states=False)
+    actual = im.to_dataframe(columns=columns, states=False)
+
+    assert actual.equals(expected)
+
+
+def test_to_dataframe_uses_pandas_friendly_defaults(make_infomap, example_network_path):
+    pytest.importorskip("pandas")
+
+    im = make_infomap(num_trials=10)
+    im.read_file(str(example_network_path("twotriangles.net")))
+    im.run()
+
+    dataframe = im.to_dataframe()
+
+    assert list(dataframe.columns) == ["node_id", "module_id", "flow", "path", "name"]
+    assert set(dataframe["node_id"]) == {1, 2, 3, 4, 5, 6}
+    assert set(dataframe["module_id"]) == {1, 2}
+
+
+def test_to_dataframe_supports_index_sort_and_community_alias(make_infomap, example_network_path):
+    pytest.importorskip("pandas")
+
+    im = make_infomap(num_trials=10)
+    im.read_file(str(example_network_path("twotriangles.net")))
+    im.run()
+
+    dataframe = im.to_dataframe(
+        columns=["node_id", "community", "flow"],
+        index="node_id",
+        sort=["community", "flow"],
+    )
+
+    assert dataframe.index.name == "node_id"
+    assert list(dataframe.columns) == ["community", "flow"]
+    assert list(dataframe["community"]) == sorted(dataframe["community"])
+
+
+def test_to_dataframe_caches_names_for_name_column(monkeypatch, make_infomap, example_network_path):
+    pytest.importorskip("pandas")
+
+    im = make_infomap(num_trials=10)
+    im.read_file(str(example_network_path("twotriangles.net")))
+    im.run()
+    names = dict(im.names)
+    access_count = 0
+
+    def fake_names(self):
+        nonlocal access_count
+        access_count += 1
+        return names
+
+    monkeypatch.setattr(type(im), "names", property(fake_names))
+
+    dataframe = im.to_dataframe(columns=["node_id", "name"])
+
+    assert access_count == 1
+    assert set(dataframe["name"]) == {"A", "B", "C", "D", "E", "F"}
+
+
+def test_to_dataframe_supports_true_sort_and_depth_level_alias(make_infomap, example_network_path):
+    pytest.importorskip("pandas")
+
+    im = make_infomap(num_trials=10)
+    im.read_file(str(example_network_path("ninetriangles.net")))
+    im.run()
+
+    dataframe = im.to_dataframe(
+        columns=["node_id", "module_id"],
+        states=False,
+        depth_level=2,
+        sort=True,
+    )
+    with pytest.deprecated_call(match="get_dataframe.*to_dataframe"):
+        expected = (
+            im.get_dataframe(
+                columns=["node_id", "module_id"],
+                states=False,
+                depth_level=2,
+            )
+            .sort_values(["module_id", "node_id"])
+            .reset_index(drop=True)
+        )
+
+    assert dataframe.equals(expected)
+
+
+def test_to_dataframe_rejects_unknown_columns(make_infomap, example_network_path):
+    pytest.importorskip("pandas")
+
+    im = make_infomap(num_trials=10)
+    im.read_file(str(example_network_path("twotriangles.net")))
+    im.run()
+
+    with pytest.raises(ValueError, match="Unknown DataFrame column 'modul_id'"):
+        im.to_dataframe(columns=["node_id", "modul_id"])
+
+
+def test_get_dataframe_missing_pandas_message(monkeypatch, make_infomap):
+    im = make_infomap(no_infomap=True)
+    monkeypatch.setattr(results_module, "pandas", None)
+
+    with (
+        pytest.deprecated_call(match="get_dataframe.*to_dataframe"),
+        pytest.raises(ImportError, match=r'infomap\[pandas\]'),
+    ):
+        im.get_dataframe()
+
+
+def test_python_package_extras_are_declared(test_paths):
+    pyproject = tomllib.loads((test_paths.repo_root / "pyproject.toml").read_text())
+    optional_dependencies = pyproject["project"]["optional-dependencies"]
+
+    assert optional_dependencies["networkx"] == ["networkx"]
+    assert optional_dependencies["igraph"] == ["igraph"]
+    assert optional_dependencies["pandas"] == ["pandas"]
+    assert set(optional_dependencies["all"]) == {"igraph", "networkx", "pandas"}
+
+
+def test_py_typed_marker_is_packaged():
+    assert importlib.resources.files("infomap").joinpath("py.typed").is_file()
 
 
 def test_infomap_options_to_args_matches_construct_args():

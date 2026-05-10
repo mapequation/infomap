@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from typing import Any
+
+
 def _label_to_internal_id(labels):
     if not labels:
         return {}
@@ -40,16 +45,16 @@ def _set_networkx_node_attributes(g, infomap, node_mapping, module_attribute, fl
 
 
 def find_communities(
-    g,
+    g: Any,
     *,
-    weight="weight",
-    phys_id="phys_id",
-    layer_id="layer_id",
-    multilayer_inter_intra_format=True,
-    module_attribute=None,
-    flow_attribute=None,
-    **infomap_options,
-):
+    weight: str | None = "weight",
+    phys_id: str = "phys_id",
+    layer_id: str = "layer_id",
+    multilayer_inter_intra_format: bool = True,
+    module_attribute: str | None = None,
+    flow_attribute: str | None = None,
+    **infomap_options: Any,
+) -> list[set[Any]]:
     """Find communities in a NetworkX-style graph.
 
     This helper is duck-typed and does not import NetworkX. It accepts the same
@@ -115,14 +120,14 @@ def find_communities(
 
 
 def add_networkx_graph(
-    infomap,
-    g,
+    infomap: Any,
+    g: Any,
     *,
-    weight="weight",
-    phys_id="phys_id",
-    layer_id="layer_id",
-    multilayer_inter_intra_format=True,
-):
+    weight: str | None = "weight",
+    phys_id: str = "phys_id",
+    layer_id: str = "layer_id",
+    multilayer_inter_intra_format: bool = True,
+) -> dict[int, Any]:
     try:
         nodes = list(g.nodes)
         first = nodes[0]
