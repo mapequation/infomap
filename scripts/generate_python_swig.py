@@ -112,11 +112,17 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="infomap-swig-") as temp_dir_name:
         temp_dir = Path(temp_dir_name)
         generated_python, generated_cpp = generate(temp_dir)
-        strip_trailing_whitespace_in_block(
-            generated_cpp,
-            "SWIGINTERN PyObject *_wrap_InfomapWrapper_addLinksFromNumpy2D",
-            "resultobj = SWIG_Py_Void();",
-        )
+        for wrapper_name in (
+            "addLinksFromNumpy2D",
+            "addMultilayerLinksFromNumpy2D",
+            "addMultilayerIntraLinksFromNumpy2D",
+            "addMultilayerInterLinksFromNumpy2D",
+        ):
+            strip_trailing_whitespace_in_block(
+                generated_cpp,
+                f"SWIGINTERN PyObject *_wrap_InfomapWrapper_{wrapper_name}",
+                "resultobj = SWIG_Py_Void();",
+            )
 
         if args.check:
             failures = []

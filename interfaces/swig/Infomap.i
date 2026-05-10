@@ -77,7 +77,11 @@ unsigned int readUnsignedId(const char* data, const std::string& kind, unsigned 
 {
   std::uint64_t value = 0;
   if (kind == "u") {
-    if (itemSize == 4) {
+    if (itemSize == 1) {
+      value = readUnaligned<std::uint8_t>(data);
+    } else if (itemSize == 2) {
+      value = readUnaligned<std::uint16_t>(data);
+    } else if (itemSize == 4) {
       value = readUnaligned<std::uint32_t>(data);
     } else if (itemSize == 8) {
       value = readUnaligned<std::uint64_t>(data);
@@ -86,7 +90,11 @@ unsigned int readUnsignedId(const char* data, const std::string& kind, unsigned 
     }
   } else if (kind == "i") {
     std::int64_t signedValue = 0;
-    if (itemSize == 4) {
+    if (itemSize == 1) {
+      signedValue = readUnaligned<std::int8_t>(data);
+    } else if (itemSize == 2) {
+      signedValue = readUnaligned<std::int16_t>(data);
+    } else if (itemSize == 4) {
       signedValue = readUnaligned<std::int32_t>(data);
     } else if (itemSize == 8) {
       signedValue = readUnaligned<std::int64_t>(data);
@@ -130,6 +138,10 @@ double readWeight(const char* data, const std::string& kind, unsigned int itemSi
     throw std::runtime_error("Unsupported floating point itemsize for NumPy link weights");
   }
   if (kind == "u") {
+    if (itemSize == 1)
+      return readUnaligned<std::uint8_t>(data);
+    if (itemSize == 2)
+      return readUnaligned<std::uint16_t>(data);
     if (itemSize == 4)
       return readUnaligned<std::uint32_t>(data);
     if (itemSize == 8)
@@ -137,6 +149,10 @@ double readWeight(const char* data, const std::string& kind, unsigned int itemSi
     throw std::runtime_error("Unsupported unsigned integer itemsize for NumPy link weights");
   }
   if (kind == "i") {
+    if (itemSize == 1)
+      return readUnaligned<std::int8_t>(data);
+    if (itemSize == 2)
+      return readUnaligned<std::int16_t>(data);
     if (itemSize == 4)
       return readUnaligned<std::int32_t>(data);
     if (itemSize == 8)
@@ -146,33 +162,153 @@ double readWeight(const char* data, const std::string& kind, unsigned int itemSi
   throw std::runtime_error("Unsupported NumPy dtype for link weights");
 }
 
+std::size_t expectedNumpy2DBytes(std::size_t numRows, unsigned int numColumns, unsigned int itemSize)
+{
+  if (itemSize == 0) {
+    throw std::runtime_error("Invalid NumPy itemsize for link array");
+  }
+
+  const auto rowBytes = static_cast<std::size_t>(numColumns) * itemSize;
+  if (numColumns != 0 && rowBytes / numColumns != itemSize) {
+    throw std::runtime_error("NumPy link array is too large");
+  }
+
+  const auto expectedBytes = numRows * rowBytes;
+  if (numRows != 0 && expectedBytes / numRows != rowBytes) {
+    throw std::runtime_error("NumPy link array is too large");
+  }
+  return expectedBytes;
+}
+
 void addLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links, std::size_t numRows, unsigned int numColumns, const std::string& dtypeKind, unsigned int itemSize)
 {
   if (numColumns != 2 && numColumns != 3) {
     throw std::invalid_argument("NumPy link arrays must have 2 or 3 columns");
   }
-  if (itemSize == 0) {
-    throw std::runtime_error("Invalid NumPy itemsize for link array");
-  }
 
   PyBufferView linksBuffer(links, "links");
-  const auto expectedBytes = numRows * static_cast<std::size_t>(numColumns) * itemSize;
-  if (numRows != 0 && expectedBytes / numRows != static_cast<std::size_t>(numColumns) * itemSize) {
-    throw std::runtime_error("NumPy link array is too large");
-  }
+  const auto expectedBytes = expectedNumpy2DBytes(numRows, numColumns, itemSize);
   if (linksBuffer.size<char>() != expectedBytes) {
     throw std::runtime_error("NumPy link array buffer size does not match its shape");
   }
 
   const auto* data = linksBuffer.data<char>();
   const auto rowStride = static_cast<std::size_t>(numColumns) * itemSize;
+  std::vector<StateNetwork::LinkInput> linkData;
+  linkData.reserve(numRows);
   for (std::size_t i = 0; i < numRows; ++i) {
     const auto* row = data + i * rowStride;
     const auto source = readUnsignedId(row, dtypeKind, itemSize, "source id");
     const auto target = readUnsignedId(row + itemSize, dtypeKind, itemSize, "target id");
     const auto weight = numColumns == 3 ? readWeight(row + 2 * itemSize, dtypeKind, itemSize) : 1.0;
-    infomap.addLink(source, target, weight);
+    linkData.emplace_back(source, target, weight);
   }
+  infomap.addLinksBulk(std::move(linkData));
+}
+
+void addMultilayerLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links, std::size_t numRows, unsigned int numColumns, const std::string& dtypeKind, unsigned int itemSize)
+{
+  if (numColumns != 4 && numColumns != 5) {
+    throw std::invalid_argument("NumPy multilayer link arrays must have 4 or 5 columns");
+  }
+
+  PyBufferView linksBuffer(links, "links");
+  const auto expectedBytes = expectedNumpy2DBytes(numRows, numColumns, itemSize);
+  if (linksBuffer.size<char>() != expectedBytes) {
+    throw std::runtime_error("NumPy multilayer link array buffer size does not match its shape");
+  }
+
+  std::vector<unsigned int> sourceLayerIds;
+  std::vector<unsigned int> sourceNodeIds;
+  std::vector<unsigned int> targetLayerIds;
+  std::vector<unsigned int> targetNodeIds;
+  std::vector<double> weights;
+  sourceLayerIds.reserve(numRows);
+  sourceNodeIds.reserve(numRows);
+  targetLayerIds.reserve(numRows);
+  targetNodeIds.reserve(numRows);
+  weights.reserve(numRows);
+
+  const auto* data = linksBuffer.data<char>();
+  const auto rowStride = static_cast<std::size_t>(numColumns) * itemSize;
+  for (std::size_t i = 0; i < numRows; ++i) {
+    const auto* row = data + i * rowStride;
+    sourceLayerIds.push_back(readUnsignedId(row, dtypeKind, itemSize, "source layer id"));
+    sourceNodeIds.push_back(readUnsignedId(row + itemSize, dtypeKind, itemSize, "source node id"));
+    targetLayerIds.push_back(readUnsignedId(row + 2 * itemSize, dtypeKind, itemSize, "target layer id"));
+    targetNodeIds.push_back(readUnsignedId(row + 3 * itemSize, dtypeKind, itemSize, "target node id"));
+    weights.push_back(numColumns == 5 ? readWeight(row + 4 * itemSize, dtypeKind, itemSize) : 1.0);
+  }
+
+  infomap.addMultilayerLinks(sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights);
+}
+
+void addMultilayerIntraLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links, std::size_t numRows, unsigned int numColumns, const std::string& dtypeKind, unsigned int itemSize)
+{
+  if (numColumns != 3 && numColumns != 4) {
+    throw std::invalid_argument("NumPy multilayer intra-link arrays must have 3 or 4 columns");
+  }
+
+  PyBufferView linksBuffer(links, "links");
+  const auto expectedBytes = expectedNumpy2DBytes(numRows, numColumns, itemSize);
+  if (linksBuffer.size<char>() != expectedBytes) {
+    throw std::runtime_error("NumPy multilayer intra-link array buffer size does not match its shape");
+  }
+
+  std::vector<unsigned int> layerIds;
+  std::vector<unsigned int> sourceNodeIds;
+  std::vector<unsigned int> targetNodeIds;
+  std::vector<double> weights;
+  layerIds.reserve(numRows);
+  sourceNodeIds.reserve(numRows);
+  targetNodeIds.reserve(numRows);
+  weights.reserve(numRows);
+
+  const auto* data = linksBuffer.data<char>();
+  const auto rowStride = static_cast<std::size_t>(numColumns) * itemSize;
+  for (std::size_t i = 0; i < numRows; ++i) {
+    const auto* row = data + i * rowStride;
+    layerIds.push_back(readUnsignedId(row, dtypeKind, itemSize, "layer id"));
+    sourceNodeIds.push_back(readUnsignedId(row + itemSize, dtypeKind, itemSize, "source node id"));
+    targetNodeIds.push_back(readUnsignedId(row + 2 * itemSize, dtypeKind, itemSize, "target node id"));
+    weights.push_back(numColumns == 4 ? readWeight(row + 3 * itemSize, dtypeKind, itemSize) : 1.0);
+  }
+
+  infomap.addMultilayerIntraLinks(layerIds, sourceNodeIds, targetNodeIds, weights);
+}
+
+void addMultilayerInterLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links, std::size_t numRows, unsigned int numColumns, const std::string& dtypeKind, unsigned int itemSize)
+{
+  if (numColumns != 3 && numColumns != 4) {
+    throw std::invalid_argument("NumPy multilayer inter-link arrays must have 3 or 4 columns");
+  }
+
+  PyBufferView linksBuffer(links, "links");
+  const auto expectedBytes = expectedNumpy2DBytes(numRows, numColumns, itemSize);
+  if (linksBuffer.size<char>() != expectedBytes) {
+    throw std::runtime_error("NumPy multilayer inter-link array buffer size does not match its shape");
+  }
+
+  std::vector<unsigned int> sourceLayerIds;
+  std::vector<unsigned int> nodeIds;
+  std::vector<unsigned int> targetLayerIds;
+  std::vector<double> weights;
+  sourceLayerIds.reserve(numRows);
+  nodeIds.reserve(numRows);
+  targetLayerIds.reserve(numRows);
+  weights.reserve(numRows);
+
+  const auto* data = linksBuffer.data<char>();
+  const auto rowStride = static_cast<std::size_t>(numColumns) * itemSize;
+  for (std::size_t i = 0; i < numRows; ++i) {
+    const auto* row = data + i * rowStride;
+    sourceLayerIds.push_back(readUnsignedId(row, dtypeKind, itemSize, "source layer id"));
+    nodeIds.push_back(readUnsignedId(row + itemSize, dtypeKind, itemSize, "node id"));
+    targetLayerIds.push_back(readUnsignedId(row + 2 * itemSize, dtypeKind, itemSize, "target layer id"));
+    weights.push_back(numColumns == 4 ? readWeight(row + 3 * itemSize, dtypeKind, itemSize) : 1.0);
+  }
+
+  infomap.addMultilayerInterLinks(sourceLayerIds, nodeIds, targetLayerIds, weights);
 }
 
 } // namespace
@@ -208,6 +344,8 @@ int run(const std::string& flags);
 #endif
 }
 
+%ignore infomap::InfomapWrapper::addLinksBulk;
+
 %extend infomap::InfomapBase
 {
     double elapsedTime()
@@ -222,6 +360,21 @@ int run(const std::string& flags);
     void addLinksFromNumpy2D(PyObject* links, std::size_t numRows, unsigned int numColumns, const std::string& dtypeKind, unsigned int itemSize)
     {
         infomap::addLinksFromNumpy2D(*$self, links, numRows, numColumns, dtypeKind, itemSize);
+    }
+
+    void addMultilayerLinksFromNumpy2D(PyObject* links, std::size_t numRows, unsigned int numColumns, const std::string& dtypeKind, unsigned int itemSize)
+    {
+        infomap::addMultilayerLinksFromNumpy2D(*$self, links, numRows, numColumns, dtypeKind, itemSize);
+    }
+
+    void addMultilayerIntraLinksFromNumpy2D(PyObject* links, std::size_t numRows, unsigned int numColumns, const std::string& dtypeKind, unsigned int itemSize)
+    {
+        infomap::addMultilayerIntraLinksFromNumpy2D(*$self, links, numRows, numColumns, dtypeKind, itemSize);
+    }
+
+    void addMultilayerInterLinksFromNumpy2D(PyObject* links, std::size_t numRows, unsigned int numColumns, const std::string& dtypeKind, unsigned int itemSize)
+    {
+        infomap::addMultilayerInterLinksFromNumpy2D(*$self, links, numRows, numColumns, dtypeKind, itemSize);
     }
 
 	// overrides to convert swig map proxy object to pure dict

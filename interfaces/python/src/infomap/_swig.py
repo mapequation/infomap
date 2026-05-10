@@ -3102,6 +3102,15 @@ class InfomapWrapper(InfomapBase):
     def addLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize):
         return _infomap.InfomapWrapper_addLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize)
 
+    def addMultilayerLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize):
+        return _infomap.InfomapWrapper_addMultilayerLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize)
+
+    def addMultilayerIntraLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize):
+        return _infomap.InfomapWrapper_addMultilayerIntraLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize)
+
+    def addMultilayerInterLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize):
+        return _infomap.InfomapWrapper_addMultilayerInterLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize)
+
     def getModules(self, level=1, states=False):
         return dict(_infomap.InfomapWrapper_getModules(self, level, states))
 

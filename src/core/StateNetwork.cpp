@@ -11,6 +11,8 @@
 #include "../utils/FlowCalculator.h"
 #include "../utils/Log.h"
 #include "../io/SafeFile.h"
+#include <algorithm>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 
@@ -157,6 +159,83 @@ void StateNetwork::addLinks(const std::vector<unsigned int>& sourceIds, const st
 
   for (std::size_t i = 0; i < sourceIds.size(); ++i) {
     addLink(sourceIds[i], targetIds[i], weights[i]);
+  }
+}
+
+void StateNetwork::addLinksBulk(std::vector<LinkInput> links)
+{
+  std::size_t numAcceptedLinks = 0;
+  for (auto& link : links) {
+    if (link.weight < m_config.weightThreshold || link.weight <= 0) {
+      ++m_numLinksIgnoredByWeightThreshold;
+      m_totalLinkWeightIgnored += link.weight;
+      continue;
+    }
+    m_totalLinkWeightAdded += link.weight;
+
+    if (link.source == link.target) {
+      ++m_numSelfLinksFound;
+      if (m_config.noSelfLinks) {
+        continue;
+      }
+      ++m_numSelfLinks;
+      m_sumSelfLinkWeight += link.weight;
+    }
+
+    m_sumLinkWeight += link.weight;
+    m_outWeights[link.source] += link.weight;
+    links[numAcceptedLinks++] = link;
+  }
+
+  links.resize(numAcceptedLinks);
+  if (links.empty()) {
+    return;
+  }
+
+  std::stable_sort(links.begin(), links.end(), [](const LinkInput& lhs, const LinkInput& rhs) {
+    return lhs.source == rhs.source ? lhs.target < rhs.target : lhs.source < rhs.source;
+  });
+
+  auto addAggregatedCount = [this](std::size_t count) {
+    if (count == 0) {
+      return;
+    }
+    if (count > static_cast<std::size_t>(std::numeric_limits<unsigned int>::max() - m_numAggregatedLinks)) {
+      throw std::overflow_error("Too many aggregated links");
+    }
+    m_numAggregatedLinks += static_cast<unsigned int>(count);
+  };
+
+  for (std::size_t i = 0; i < links.size();) {
+    const auto first = i;
+    const auto source = links[i].source;
+    const auto target = links[i].target;
+    std::size_t count = 0;
+
+    do {
+      ++count;
+      ++i;
+    } while (i < links.size() && links[i].source == source && links[i].target == target);
+
+    addNode(source);
+    addNode(target);
+
+    auto& outLinks = m_nodeLinkMap[source];
+    auto linkIt = outLinks.find(target);
+    if (linkIt == outLinks.end()) {
+      double weight = 0.0;
+      for (auto j = first; j < i; ++j) {
+        weight += links[j].weight;
+      }
+      outLinks[target] = weight;
+      ++m_numLinks;
+      addAggregatedCount(count - 1);
+    } else {
+      for (auto j = first; j < i; ++j) {
+        linkIt->second.weight += links[j].weight;
+      }
+      addAggregatedCount(count);
+    }
   }
 }
 
