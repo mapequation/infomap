@@ -1,32 +1,34 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable
 from numbers import Integral, Real
+from typing import Any
 
 
-def _import_igraph():
+def _import_igraph() -> Any:
     try:
         import igraph as ig
     except ImportError as exc:
         raise ImportError(
             "The 'igraph' package is required for igraph graph support. "
-            "Install it with `python -m pip install igraph`."
+            'Install it with `python -m pip install "infomap[igraph]"`.'
         ) from exc
     return ig
 
 
-def _validate_igraph_graph(g):
+def _validate_igraph_graph(g: Any) -> Any:
     ig = _import_igraph()
     if not isinstance(g, ig.Graph):
         raise TypeError("`g` must be an igraph.Graph.")
     return ig
 
 
-def _is_missing(value):
+def _is_missing(value: Any) -> bool:
     return value is None or (isinstance(value, Real) and math.isnan(value))
 
 
-def _validate_weight_values(values, *, name):
+def _validate_weight_values(values: Iterable[Any], *, name: str) -> list[float]:
     weights = list(values)
     for value in weights:
         if _is_missing(value):
@@ -36,7 +38,7 @@ def _validate_weight_values(values, *, name):
     return [float(value) for value in weights]
 
 
-def _edge_weights(g, edge_weights):
+def _edge_weights(g: Any, edge_weights: str | Iterable[Any] | None) -> list[float]:
     if edge_weights is None:
         return [1.0] * g.ecount()
 
@@ -103,15 +105,15 @@ def _vertex_names(g):
 
 
 def add_igraph_graph(
-    infomap,
-    g,
+    infomap: Any,
+    g: Any,
     *,
-    edge_weights=None,
-    vertex_weights=None,
-    phys_id="phys_id",
-    layer_id="layer_id",
-    multilayer_inter_intra_format=True,
-):
+    edge_weights: str | Iterable[Any] | None = None,
+    vertex_weights: Any = None,
+    phys_id: str = "phys_id",
+    layer_id: str = "layer_id",
+    multilayer_inter_intra_format: bool = True,
+) -> dict[int, Any]:
     """Add a python-igraph graph to an Infomap instance."""
     _validate_igraph_graph(g)
     if vertex_weights is not None:
@@ -223,18 +225,18 @@ def _membership_and_flows(infomap, g):
 
 
 def find_igraph_communities(
-    g,
+    g: Any,
     *,
-    edge_weights=None,
-    vertex_weights=None,
-    trials=10,
-    phys_id="phys_id",
-    layer_id="layer_id",
-    multilayer_inter_intra_format=True,
-    module_attribute=None,
-    flow_attribute=None,
-    **infomap_options,
-):
+    edge_weights: str | Iterable[Any] | None = None,
+    vertex_weights: Any = None,
+    trials: int = 10,
+    phys_id: str = "phys_id",
+    layer_id: str = "layer_id",
+    multilayer_inter_intra_format: bool = True,
+    module_attribute: str | None = None,
+    flow_attribute: str | None = None,
+    **infomap_options: Any,
+) -> Any:
     """Find communities in a python-igraph graph."""
     ig = _validate_igraph_graph(g)
     if "num_trials" in infomap_options:
