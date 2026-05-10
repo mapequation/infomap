@@ -119,7 +119,42 @@ configuration across multiple runs:
 NetworkX graphs
 """""""""""""""
 
-``Infomap.add_networkx_graph()`` accepts standard, state, and multilayer
+``infomap.find_communities()`` provides a NetworkX-style entry point that
+returns communities as a ``list[set]`` partition using the original graph node
+labels. It is duck-typed and does not import NetworkX, so NetworkX remains an
+optional user-installed package:
+
+.. code-block:: python
+
+    import networkx as nx
+    import infomap
+
+    graph = nx.Graph([("a", "b"), ("a", "c")])
+    communities = infomap.find_communities(graph, weight="weight")
+
+Directed graphs are detected from the graph object:
+
+.. code-block:: python
+
+    graph = nx.DiGraph([("a", "b"), ("b", "c")])
+    communities = infomap.find_communities(graph)
+
+To annotate a graph for drawing or downstream NetworkX workflows, pass a node
+attribute name:
+
+.. code-block:: python
+
+    infomap.find_communities(graph, module_attribute="community")
+
+This follows NetworkX community conventions where algorithms return partitions
+and node attributes are stored on the graph. See the NetworkX documentation for
+`community algorithms <https://networkx.org/documentation/stable/reference/algorithms/community.html>`__,
+`Louvain communities <https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.community.louvain.louvain_communities.html>`__,
+and
+`setting node attributes <https://networkx.org/documentation/stable/reference/generated/networkx.classes.function.set_node_attributes.html>`__.
+
+``Infomap.add_networkx_graph()`` remains available when you need direct control
+over the ``Infomap`` instance. It accepts standard, state, and multilayer
 NetworkX graphs. Non-integer node labels are mapped to stable internal ids in
 first-seen order and returned as a mapping:
 
@@ -137,7 +172,8 @@ State and multilayer networks
 """""""""""""""""""""""""""""
 
 State networks are inferred from a ``phys_id`` node attribute, and multilayer
-networks additionally use ``layer_id``:
+networks additionally use ``layer_id``. ``find_communities()`` returns a
+partition of the graph's own nodes, which are state nodes for these inputs:
 
 .. code-block:: python
 
@@ -154,6 +190,12 @@ networks additionally use ``layer_id``:
     im = Infomap(silent=True)
     im.add_networkx_graph(graph)
     im.run()
+
+For the NetworkX-style wrapper:
+
+.. code-block:: python
+
+    communities = infomap.find_communities(graph)
 
 Please read the :doc:`/python/infomap` reference to learn more.
 

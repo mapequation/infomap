@@ -41,6 +41,7 @@
 <li class="toctree-l1"><a class="reference internal" href="infomap.html">infomap module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="infomap.html#infomap.Infomap"><code class="docutils literal notranslate"><span class="pre">Infomap</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="infomap.html#infomap.MultilayerNode"><code class="docutils literal notranslate"><span class="pre">MultilayerNode</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="infomap.html#infomap.find_communities"><code class="docutils literal notranslate"><span class="pre">find_communities()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="infomap.html#infomap.InfomapOptions"><code class="docutils literal notranslate"><span class="pre">InfomapOptions</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="infomap.html#infomap.InfoNode"><code class="docutils literal notranslate"><span class="pre">InfoNode</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="infomap.html#infomap.InfomapIterator"><code class="docutils literal notranslate"><span class="pre">InfomapIterator</span></code></a></li>
@@ -149,7 +150,35 @@ configuration across multiple runs:</p>
 </section>
 <section id="networkx-graphs">
 <h4>NetworkX graphs<a class="headerlink" href="#networkx-graphs" title="Link to this heading">¶</a></h4>
-<p><code class="docutils literal notranslate"><span class="pre">Infomap.add_networkx_graph()</span></code> accepts standard, state, and multilayer
+<p><code class="docutils literal notranslate"><span class="pre">infomap.find_communities()</span></code> provides a NetworkX-style entry point that
+returns communities as a <code class="docutils literal notranslate"><span class="pre">list[set]</span></code> partition using the original graph node
+labels. It is duck-typed and does not import NetworkX, so NetworkX remains an
+optional user-installed package:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">infomap</span>
+
+<span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">([(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">)])</span>
+<span class="n">communities</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">find_communities</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Directed graphs are detected from the graph object:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">([(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">)])</span>
+<span class="n">communities</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">find_communities</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To annotate a graph for drawing or downstream NetworkX workflows, pass a node
+attribute name:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">infomap</span><span class="o">.</span><span class="n">find_communities</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">module_attribute</span><span class="o">=</span><span class="s2">&quot;community&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This follows NetworkX community conventions where algorithms return partitions
+and node attributes are stored on the graph. See the NetworkX documentation for
+<a class="reference external" href="https://networkx.org/documentation/stable/reference/algorithms/community.html">community algorithms</a>,
+<a class="reference external" href="https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.community.louvain.louvain_communities.html">Louvain communities</a>,
+and
+<a class="reference external" href="https://networkx.org/documentation/stable/reference/generated/networkx.classes.function.set_node_attributes.html">setting node attributes</a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Infomap.add_networkx_graph()</span></code> remains available when you need direct control
+over the <code class="docutils literal notranslate"><span class="pre">Infomap</span></code> instance. It accepts standard, state, and multilayer
 NetworkX graphs. Non-integer node labels are mapped to stable internal ids in
 first-seen order and returned as a mapping:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
@@ -165,7 +194,8 @@ first-seen order and returned as a mapping:</p>
 <section id="state-and-multilayer-networks">
 <h4>State and multilayer networks<a class="headerlink" href="#state-and-multilayer-networks" title="Link to this heading">¶</a></h4>
 <p>State networks are inferred from a <code class="docutils literal notranslate"><span class="pre">phys_id</span></code> node attribute, and multilayer
-networks additionally use <code class="docutils literal notranslate"><span class="pre">layer_id</span></code>:</p>
+networks additionally use <code class="docutils literal notranslate"><span class="pre">layer_id</span></code>. <code class="docutils literal notranslate"><span class="pre">find_communities()</span></code> returns a
+partition of the graph’s own nodes, which are state nodes for these inputs:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">infomap</span><span class="w"> </span><span class="kn">import</span> <span class="n">Infomap</span>
 
@@ -179,6 +209,10 @@ networks additionally use <code class="docutils literal notranslate"><span class
 <span class="n">im</span> <span class="o">=</span> <span class="n">Infomap</span><span class="p">(</span><span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">im</span><span class="o">.</span><span class="n">add_networkx_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
 <span class="n">im</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>For the NetworkX-style wrapper:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">communities</span> <span class="o">=</span> <span class="n">infomap</span><span class="o">.</span><span class="n">find_communities</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Please read the <a class="reference internal" href="infomap.html"><span class="doc">infomap module</span></a> reference to learn more.</p>

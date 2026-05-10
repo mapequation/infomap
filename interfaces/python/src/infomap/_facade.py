@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from ._bindings import *  # noqa: F401,F403
 from ._bindings import __all__ as _BINDINGS_ALL
 from ._networkx import add_networkx_graph as _add_networkx_graph
+from ._networkx import find_communities
 from ._options import (
     InfomapOptions,
     _DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
@@ -49,6 +50,7 @@ __all__ = [
     "InfomapOptions",
     "MultilayerNode",
     "entropy",
+    "find_communities",
     "main",
     "perplexity",
     "plogp",
