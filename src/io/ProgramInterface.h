@@ -78,6 +78,12 @@ struct Option {
     return *this;
   }
 
+  Option& setChoices(std::vector<std::string> values)
+  {
+    choices = std::move(values);
+    return *this;
+  }
+
   virtual std::ostream& printValue(std::ostream& out) const { return out; }
   virtual std::string printValue() const { return ""; }
   virtual std::string printNumericValue() const { return ""; }
@@ -103,6 +109,7 @@ struct Option {
   bool hidden = false;
   bool used = false;
   bool negated = false;
+  std::vector<std::string> choices;
 };
 
 struct IncrementalOption : Option {
@@ -395,7 +402,10 @@ private:
   void exitWithUsage(bool showAdvanced) const;
   void exitWithVersionInformation() const;
   void exitWithError(const std::string& message) const;
+  void exitWithCompletion() const;
   void exitWithJsonParameters() const;
+  void printBashCompletion() const;
+  void printZshCompletion() const;
 
   std::deque<std::unique_ptr<Option>> m_optionArguments;
   std::deque<std::unique_ptr<TargetBase>> m_nonOptionArguments;
@@ -408,6 +418,7 @@ private:
   unsigned int m_displayHelp = 0;
   bool m_displayVersion = false;
   bool m_printJsonParameters = false;
+  std::string m_completionShell;
 
   unsigned int m_numOptionalNonOptionArguments = 0;
 };

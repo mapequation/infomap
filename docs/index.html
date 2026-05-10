@@ -111,6 +111,8 @@ brew<span class="w"> </span>install<span class="w"> </span>infomap
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>upgrade<span class="w"> </span>infomap
 </pre></div>
 </div>
+<p>The Homebrew formula installs Bash and Zsh completion files into Homebrew’s
+standard completion directories.</p>
 </section>
 <section id="javascript-package">
 <h3>JavaScript package<a class="headerlink" href="#javascript-package" title="Link to this heading">¶</a></h3>
@@ -174,6 +176,17 @@ Show the available CLI options with:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./Infomap<span class="w"> </span>--help
 </pre></div>
 </div>
+<p>Install shell completion scripts manually with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>~/.zfunc
+./Infomap<span class="w"> </span>--completion<span class="w"> </span>zsh<span class="w"> </span>&gt;<span class="w"> </span>~/.zfunc/_Infomap
+
+mkdir<span class="w"> </span>-p<span class="w"> </span>~/.local/share/bash-completion/completions
+./Infomap<span class="w"> </span>--completion<span class="w"> </span>bash<span class="w"> </span>&gt;<span class="w"> </span>~/.local/share/bash-completion/completions/infomap
+</pre></div>
+</div>
+<p>For Zsh, make sure <code class="docutils literal notranslate"><span class="pre">~/.zfunc</span></code> is in <code class="docutils literal notranslate"><span class="pre">fpath</span></code> and <code class="docutils literal notranslate"><span class="pre">compinit</span></code> is loaded from
+<code class="docutils literal notranslate"><span class="pre">~/.zshrc</span></code>. For Bash, make sure <code class="docutils literal notranslate"><span class="pre">bash-completion</span></code> is sourced from
+<code class="docutils literal notranslate"><span class="pre">~/.bashrc</span></code>.</p>
 <p>See <code class="docutils literal notranslate"><span class="pre">BUILD.md</span></code> for platform-specific maintainer build details.</p>
 <p>Maintainers should use:</p>
 <ul class="simple">
