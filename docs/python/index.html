@@ -83,6 +83,17 @@ To verify that the CLI is available, run:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">infomap</span> <span class="o">--</span><span class="n">help</span>
 </pre></div>
 </div>
+<p>Install shell completion scripts manually with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="o">-</span><span class="n">p</span> <span class="o">~/.</span><span class="n">zfunc</span>
+<span class="n">infomap</span> <span class="o">--</span><span class="n">completion</span> <span class="n">zsh</span> <span class="o">&gt;</span> <span class="o">~/.</span><span class="n">zfunc</span><span class="o">/</span><span class="n">_infomap</span>
+
+<span class="n">mkdir</span> <span class="o">-</span><span class="n">p</span> <span class="o">~/.</span><span class="n">local</span><span class="o">/</span><span class="n">share</span><span class="o">/</span><span class="n">bash</span><span class="o">-</span><span class="n">completion</span><span class="o">/</span><span class="n">completions</span>
+<span class="n">infomap</span> <span class="o">--</span><span class="n">completion</span> <span class="n">bash</span> <span class="o">&gt;</span> <span class="o">~/.</span><span class="n">local</span><span class="o">/</span><span class="n">share</span><span class="o">/</span><span class="n">bash</span><span class="o">-</span><span class="n">completion</span><span class="o">/</span><span class="n">completions</span><span class="o">/</span><span class="n">infomap</span>
+</pre></div>
+</div>
+<p>For Zsh, make sure <code class="docutils literal notranslate"><span class="pre">~/.zfunc</span></code> is in <code class="docutils literal notranslate"><span class="pre">fpath</span></code> and <code class="docutils literal notranslate"><span class="pre">compinit</span></code> is loaded from
+<code class="docutils literal notranslate"><span class="pre">~/.zshrc</span></code>. For Bash, make sure <code class="docutils literal notranslate"><span class="pre">bash-completion</span></code> is sourced from
+<code class="docutils literal notranslate"><span class="pre">~/.bashrc</span></code>.</p>
 </section>
 <section id="python-package">
 <h3>Python package<a class="headerlink" href="#python-package" title="Link to this heading">¶</a></h3>

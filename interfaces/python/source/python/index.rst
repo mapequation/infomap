@@ -45,6 +45,18 @@ For a list of available options, run::
 
     infomap --help
 
+Install shell completion scripts manually with::
+
+    mkdir -p ~/.zfunc
+    infomap --completion zsh > ~/.zfunc/_infomap
+
+    mkdir -p ~/.local/share/bash-completion/completions
+    infomap --completion bash > ~/.local/share/bash-completion/completions/infomap
+
+For Zsh, make sure ``~/.zfunc`` is in ``fpath`` and ``compinit`` is loaded from
+``~/.zshrc``. For Bash, make sure ``bash-completion`` is sourced from
+``~/.bashrc``.
+
 
 Python package
 ^^^^^^^^^^^^^^

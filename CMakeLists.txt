@@ -152,6 +152,15 @@ if(BUILD_TESTING)
     )
     set_tests_properties(print_json_parameters PROPERTIES LABELS "fast;core;parser;cli")
 
+    add_test(
+        NAME shell_completion
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_shell_completion.py"
+            "$<TARGET_FILE:infomap_cli>"
+    )
+    set_tests_properties(shell_completion PROPERTIES LABELS "fast;core;parser;cli")
+
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(infomap_cpp_lifecycle_tests PRIVATE -fno-access-control)
         target_compile_options(infomap_cpp_partition_tests PRIVATE -fno-access-control)

@@ -130,6 +130,9 @@ Upgrade the CLI with the normal Homebrew flow:
 
     brew upgrade infomap
 
+The Homebrew formula installs Bash and Zsh completion files into Homebrew's
+standard completion directories.
+
 JavaScript package
 ^^^^^^^^^^^^^^^^^^
 
@@ -211,6 +214,20 @@ Show the available CLI options with:
 .. code-block:: bash
 
     ./Infomap --help
+
+Install shell completion scripts manually with:
+
+.. code-block:: bash
+
+    mkdir -p ~/.zfunc
+    ./Infomap --completion zsh > ~/.zfunc/_Infomap
+
+    mkdir -p ~/.local/share/bash-completion/completions
+    ./Infomap --completion bash > ~/.local/share/bash-completion/completions/infomap
+
+For Zsh, make sure ``~/.zfunc`` is in ``fpath`` and ``compinit`` is loaded from
+``~/.zshrc``. For Bash, make sure ``bash-completion`` is sourced from
+``~/.bashrc``.
 
 See ``BUILD.md`` for platform-specific maintainer build details.
 
