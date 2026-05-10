@@ -27,6 +27,7 @@
 #include <limits>
 #include <map>
 #include <set>
+#include <unordered_map>
 #include <cstdlib>
 #include <algorithm>
 #include <cmath>
@@ -836,7 +837,8 @@ void InfomapBase::generateSubNetwork(Network& network)
   m_leafNodes.reserve(numNodes);
   double sumNodeFlow = 0.0;
   double sumTeleFlow = 0.0;
-  std::map<unsigned int, unsigned int> nodeIndexMap;
+  std::unordered_map<unsigned int, unsigned int> nodeIndexMap;
+  nodeIndexMap.reserve(numNodes);
   for (auto& nodeIt : network.nodes()) {
     auto& networkNode = nodeIt.second;
     auto* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);

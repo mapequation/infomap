@@ -41,6 +41,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
 
   // Prepare data in sequence containers for fast access of individual elements
   // Map to zero-based dense indexing
+  nodeIndexMap.reserve(numNodes);
   nodeFlow.assign(numNodes, 0.0);
   nodeTeleportWeights.assign(numNodes, 0.0); // Fraction of teleportation flow landing on node i
 
