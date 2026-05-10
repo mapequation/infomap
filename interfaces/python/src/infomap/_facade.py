@@ -30,6 +30,19 @@ def _package_construct_args():
 
 MultilayerNode = namedtuple("MultilayerNode", "layer_id, node_id")
 
+
+def _as_contiguous_numeric_array(np, array, name):
+    if array.dtype.kind not in "uif":
+        raise ValueError(f"Numpy {name} arrays must have a numeric dtype.")
+
+    if array.dtype.kind == "f" and array.dtype.itemsize not in (4, 8):
+        array = array.astype(np.float64, copy=False)
+    elif array.dtype.kind in "ui" and array.dtype.itemsize not in (1, 2, 4, 8):
+        array = array.astype(np.float64, copy=False)
+
+    return np.ascontiguousarray(array)
+
+
 __all__ = [
     *_BINDINGS_ALL,
     "Infomap",
@@ -477,14 +490,19 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
                 if links_array.shape[1] not in (2, 3):
                     raise ValueError("Numpy link arrays must have 2 or 3 columns: (source_id, target_id, [weight]).")
 
-                source_ids = links_array[:, 0].astype(np.uint32, copy=False).tolist()
-                target_ids = links_array[:, 1].astype(np.uint32, copy=False).tolist()
-                if links_array.shape[1] == 3:
-                    weights = links_array[:, 2].astype(np.float64, copy=False).tolist()
-                else:
-                    weights = [1.0] * links_array.shape[0]
+                if links_array.dtype.kind not in "uif":
+                    raise ValueError("Numpy link arrays must have a numeric dtype.")
+                if links_array.dtype.itemsize not in (4, 8):
+                    raise ValueError("Numpy link arrays must use 32-bit or 64-bit numeric values.")
 
-                return super().addLinks(source_ids, target_ids, weights)
+                links_array = np.ascontiguousarray(links_array)
+                return super().addLinksFromNumpy2D(
+                    links_array,
+                    links_array.shape[0],
+                    links_array.shape[1],
+                    links_array.dtype.kind,
+                    links_array.dtype.itemsize,
+                )
 
         source_ids = []
         target_ids = []
@@ -689,16 +707,15 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
                         "(layer_id, source_node_id, target_node_id, [weight])."
                     )
 
-                layer_ids = links_array[:, 0].astype(np.uint32, copy=False).tolist()
-                source_node_ids = links_array[:, 1].astype(np.uint32, copy=False).tolist()
-                target_node_ids = links_array[:, 2].astype(np.uint32, copy=False).tolist()
-                if links_array.shape[1] == 4:
-                    weights = links_array[:, 3].astype(np.float64, copy=False).tolist()
-                else:
-                    weights = [1.0] * links_array.shape[0]
-
-                return super().addMultilayerIntraLinks(
-                    layer_ids, source_node_ids, target_node_ids, weights
+                links_array = _as_contiguous_numeric_array(
+                    np, links_array, "multilayer intra-link"
+                )
+                return super().addMultilayerIntraLinksFromNumpy2D(
+                    links_array,
+                    links_array.shape[0],
+                    links_array.shape[1],
+                    links_array.dtype.kind,
+                    links_array.dtype.itemsize,
                 )
 
         layer_ids = []
@@ -822,16 +839,15 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
                         "(source_layer_id, node_id, target_layer_id, [weight])."
                     )
 
-                source_layer_ids = links_array[:, 0].astype(np.uint32, copy=False).tolist()
-                node_ids = links_array[:, 1].astype(np.uint32, copy=False).tolist()
-                target_layer_ids = links_array[:, 2].astype(np.uint32, copy=False).tolist()
-                if links_array.shape[1] == 4:
-                    weights = links_array[:, 3].astype(np.float64, copy=False).tolist()
-                else:
-                    weights = [1.0] * links_array.shape[0]
-
-                return super().addMultilayerInterLinks(
-                    source_layer_ids, node_ids, target_layer_ids, weights
+                links_array = _as_contiguous_numeric_array(
+                    np, links_array, "multilayer inter-link"
+                )
+                return super().addMultilayerInterLinksFromNumpy2D(
+                    links_array,
+                    links_array.shape[0],
+                    links_array.shape[1],
+                    links_array.dtype.kind,
+                    links_array.dtype.itemsize,
                 )
 
         source_layer_ids = []
@@ -913,21 +929,15 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
                         "target_node_id, [weight])."
                     )
 
-                source_layer_ids = links_array[:, 0].astype(np.uint32, copy=False).tolist()
-                source_node_ids = links_array[:, 1].astype(np.uint32, copy=False).tolist()
-                target_layer_ids = links_array[:, 2].astype(np.uint32, copy=False).tolist()
-                target_node_ids = links_array[:, 3].astype(np.uint32, copy=False).tolist()
-                if links_array.shape[1] == 5:
-                    weights = links_array[:, 4].astype(np.float64, copy=False).tolist()
-                else:
-                    weights = [1.0] * links_array.shape[0]
-
-                return super().addMultilayerLinks(
-                    source_layer_ids,
-                    source_node_ids,
-                    target_layer_ids,
-                    target_node_ids,
-                    weights,
+                links_array = _as_contiguous_numeric_array(
+                    np, links_array, "multilayer link"
+                )
+                return super().addMultilayerLinksFromNumpy2D(
+                    links_array,
+                    links_array.shape[0],
+                    links_array.shape[1],
+                    links_array.dtype.kind,
+                    links_array.dtype.itemsize,
                 )
 
         source_layer_ids = []

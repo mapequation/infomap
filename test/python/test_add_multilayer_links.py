@@ -78,6 +78,28 @@ def test_add_multilayer_links_accepts_unweighted_numpy_array(make_infomap):
     assert_same_multilayer_links(im, baseline)
 
 
+def test_add_multilayer_links_accepts_non_contiguous_numpy_array(make_infomap):
+    np = pytest.importorskip("numpy")
+    links = np.array(
+        [
+            [0, 1, 1, 2, 1.5, 99.0],
+            [0, 3, 1, 2, 2.0, 99.0],
+            [1, 2, 2, 4, 3.0, 99.0],
+        ]
+    )[:, :5]
+
+    baseline = make_infomap()
+    for source_layer, source_node, target_layer, target_node, weight in links.tolist():
+        baseline.add_multilayer_link(
+            (source_layer, source_node), (target_layer, target_node), weight
+        )
+
+    im = make_infomap()
+    im.add_multilayer_links(links)
+
+    assert_same_multilayer_links(im, baseline)
+
+
 def test_add_multilayer_links_rejects_invalid_link_lengths(make_infomap):
     im = make_infomap()
 
@@ -107,3 +129,6 @@ def test_add_multilayer_links_rejects_invalid_numpy_shapes(make_infomap):
 
     with pytest.raises(ValueError, match="4 or 5 columns"):
         im.add_multilayer_links(np.array([[0, 1, 1]]))
+
+    with pytest.raises(ValueError, match="numeric dtype"):
+        im.add_multilayer_links(np.array([["0", "1", "1", "2"]]))
