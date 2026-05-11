@@ -112,6 +112,8 @@ jobs:
 
   deploy-docs:
     name: Build and deploy GitHub Pages docs
+    # enable or remove when we have a python docs deployment method
+    if: false
     needs: [publish-github-release]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
