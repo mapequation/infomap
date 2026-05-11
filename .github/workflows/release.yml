@@ -142,6 +142,9 @@ jobs:
       - name: Build docs
         run: make build-docs
 
+      - name: Add .nojekyll
+        run: touch ./docs/.nojekyll
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
