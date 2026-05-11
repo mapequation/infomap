@@ -96,9 +96,7 @@ test-python-examples:
 
 _build-docs-site:
 	@mkdir -p "$(SPHINX_TARGET_DIR)"
-	@cp -a README.rst "$(SPHINX_SOURCE_DIR)/index.rst"
-	@trap 'rm -f "$(SPHINX_SOURCE_DIR)/index.rst"' EXIT; \
-		$(SPHINX_BUILD) -b html "$(SPHINX_SOURCE_DIR)" "$(SPHINX_TARGET_DIR)"
+	@$(SPHINX_BUILD) -b html "$(SPHINX_SOURCE_DIR)" "$(SPHINX_TARGET_DIR)"
 	@searchindex="$(SPHINX_TARGET_DIR)/searchindex.js"; \
 		if [ -f "$$searchindex" ] && [ -n "$$(tail -c 1 "$$searchindex" 2>/dev/null)" ]; then \
 			printf '\n' >> "$$searchindex"; \
