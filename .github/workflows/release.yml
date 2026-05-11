@@ -298,7 +298,7 @@ jobs:
             -F "client_payload[release_tag]=$RELEASE_TAG" \
             -F "client_payload[release_url]=https://github.com/${{ github.repository }}/releases/tag/$RELEASE_TAG"
 
-  notify-infomap-online:
+  notify-mapequation:
     name: Notify mapequation.github.io
     needs: [publish-npm]
     runs-on: ubuntu-24.04
