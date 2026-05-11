@@ -25,6 +25,8 @@ jobs:
       python: ${{ steps.filter.outputs.python }}
       javascript: ${{ steps.filter.outputs.javascript }}
       r: ${{ steps.filter.outputs.r }}
+      docs: ${{ steps.filter.outputs.docs }}
+      docker: ${{ steps.filter.outputs.docker }}
 
     steps:
       - name: Checkout repository
@@ -103,6 +105,29 @@ jobs:
               - "scripts/stage_r_package.py"
               - ".github/workflows/ci.yml"
               - ".github/workflows/_r-package.yml"
+            docs:
+              - "README.rst"
+              - "BUILD.md"
+              - "Makefile"
+              - "mk/**"
+              - "pyproject.toml"
+              - "setup.py"
+              - "scripts/build_config.py"
+              - "interfaces/python/**"
+              - "src/**"
+              - ".github/actions/setup-python-build/action.yml"
+            docker:
+              - "docker/**"
+              - "docker-compose.yml"
+              - ".dockerignore"
+              - "Makefile"
+              - "mk/**"
+              - "pyproject.toml"
+              - "setup.py"
+              - "src/**"
+              - "interfaces/python/**"
+              - "scripts/build_config.py"
+              - "README.rst"
 
   policy:
     needs: changes
@@ -213,6 +238,35 @@ jobs:
     with:
       run-tests: true
       build-release-artifacts: false
+
+  docs:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Python
+        uses: ./.github/actions/setup-python-build
+        with:
+          python-version: "3.14"
+
+      - name: Build docs
+        run: make build-docs
+
+  docker:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.docker == 'true'
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Build and smoke-test supported Docker images
+        run: make test-docker-supported
 
   ci-summary:
     name: CI Summary
