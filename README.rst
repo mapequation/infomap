@@ -1,4 +1,4 @@
-|ci| |docs| |docker|
+|ci|
 
 Infomap
 =======
@@ -18,14 +18,6 @@ For contributing, security reporting, and maintainer workflows, see
 .. |ci| image:: https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg
    :target: https://github.com/mapequation/infomap/actions/workflows/ci.yml
    :alt: CI
-
-.. |docs| image:: https://github.com/mapequation/infomap/actions/workflows/docs.yml/badge.svg
-   :target: https://github.com/mapequation/infomap/actions/workflows/docs.yml
-   :alt: Docs
-
-.. |docker| image:: https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml/badge.svg
-   :target: https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml
-   :alt: Docker smoke
 
 .. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
 .. _`mapequation.org/infomap/`: https://www.mapequation.org/infomap/

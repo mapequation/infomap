@@ -63,8 +63,6 @@ it is not a primary public contract for release planning.
 - `ARCHITECTURE.md`, `BUILD.md`, `RELEASING.md`, `AGENTS.md`,
   `CONTRIBUTING.md`, `SECURITY.md`, and `CODE_OF_CONDUCT.md`
   - hand-maintained maintainer, contribution, and governance documentation
-- `docs/`
-  - generated Python docs output for GitHub Pages
 - `test/fixtures/`
   - shared regression inputs and expected outputs for tests
 
@@ -73,11 +71,10 @@ They are not hand-maintained source files.
 
 For the Python docs site:
 
-- `make build-docs` refreshes the committed generated output in `docs/`
-- `make test-docs` rebuilds in a temp directory and compares that output with
-  the committed generated subset of `docs/`
-
-Do not hand-edit generated HTML, JavaScript, or `_sources` files under `docs/`.
+- `make build-docs` builds the Sphinx site into `docs/`. The output is not
+  tracked in the repo; PRs verify the build via the `docs` job in
+  `.github/workflows/ci.yml`, and the release workflow deploys the site to
+  GitHub Pages.
 
 ## Build ownership
 

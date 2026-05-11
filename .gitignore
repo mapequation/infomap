@@ -43,7 +43,7 @@ interfaces/R/infomap/R/swig_bindings.R
 /npm-pack.json
 /mapequation-infomap-*.tgz
 
-docs/.buildinfo
+docs/
 examples/R/.Rhistory
 examples/R/infomap/
 examples/js/index.js
