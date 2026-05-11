@@ -2,9 +2,7 @@ PYTHON_SWIG_PY := interfaces/python/src/infomap/_swig.py
 PYTHON_SWIG_CPP := interfaces/python/generated/infomap_wrap.cpp
 SPHINX_SOURCE_DIR := interfaces/python/source
 SPHINX_TARGET_DIR ?= docs
-DOCS_FRESHNESS_EXCLUDES := maintainers .nojekyll .buildinfo
-DOCS_FRESHNESS_DIFF_ARGS := $(foreach excluded,$(DOCS_FRESHNESS_EXCLUDES),--exclude=$(excluded))
-DOCS_SYNC_ARGS := -a --delete $(foreach excluded,$(DOCS_FRESHNESS_EXCLUDES),--exclude=/$(excluded))
+DOCS_SYNC_ARGS := -a --delete
 PYTHON_TEST_DIR := test/python
 PYTHON_LINT_TARGETS := \
 	interfaces/python/src/infomap/__init__.py \
@@ -53,7 +51,6 @@ PYTHON_BUILD_ENV = \
 	test-python-doctest \
 	test-python-examples \
 	build-docs \
-	test-docs \
 	_build-docs-site \
 	clean-python \
 	format-python \
@@ -114,12 +111,6 @@ build-docs: dev-python-install
 	$(MAKE) --no-print-directory SPHINX_TARGET_DIR="$$tmp_dir/docs" _build-docs-site; \
 	mkdir -p docs; \
 	rsync $(DOCS_SYNC_ARGS) "$$tmp_dir/docs/" docs/
-
-test-docs: dev-python-install
-	@tmp_dir="$$(mktemp -d 2>/dev/null || mktemp -d -t infomap-docs)"; \
-	trap 'rm -rf "$$tmp_dir"' EXIT; \
-	$(MAKE) --no-print-directory SPHINX_TARGET_DIR="$$tmp_dir/docs" _build-docs-site; \
-	diff -ru $(DOCS_FRESHNESS_DIFF_ARGS) "$$tmp_dir/docs" docs
 
 clean-python:
 	$(RM) -r dist/python *.egg-info interfaces/python/src/infomap/_infomap*.so interfaces/python/src/infomap/*.pyd

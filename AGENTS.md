@@ -23,8 +23,7 @@ Do not bundle unrelated cleanup into the same change.
 - `test/`: Python-facing regression tests and fixtures
 - `examples/python/`: executable Python examples used by `make test-python`
 - `examples/R/`: executable R examples used by `make test-r-examples`
-- `docs/`: committed generated Python docs output
-- `.github/workflows/`: CI, docs verification, release, and packaging workflows
+- `.github/workflows/`: CI, release, and packaging workflows
 
 ## Source Of Truth
 
@@ -35,7 +34,6 @@ Do not bundle unrelated cleanup into the same change.
 - `interfaces/python/generated/` and `interfaces/python/src/infomap/_swig.py` are tracked Python wrapper outputs
 - `interfaces/R/infomap/` owns the R package skeleton (`R/`, `DESCRIPTION`, `tests/`, `man/`)
 - `interfaces/R/generated/` are tracked SWIG-generated R outputs; refresh with `make build-r-swig`
-- `docs/` generated HTML, JS, and `_sources` files are build output; do not hand-edit them
 
 When two documents disagree, fix the source document and regenerate derived
 output instead of patching the generated copy by hand.
@@ -100,7 +98,7 @@ Run the smallest sufficient verification for the changed surface:
   `Rscript -e 'roxygen2::roxygenise("interfaces/R/infomap")'`
   after installing with `R CMD INSTALL --with-keep.source`.
 - JavaScript worker or package changes: `npm ci` plus `make build-js` or `make test-js`
-- docs-only text changes: no code build unless docs output freshness is affected; then run `make test-docs`
+- docs-only text changes: no code build needed; run `make build-docs` to verify the site still builds
 - workflow or release changes: run the smallest relevant local smoke check and say what remains unverified
 
 Approximate local runtimes vary by machine and cache state:
@@ -111,7 +109,7 @@ Approximate local runtimes vary by machine and cache state:
 - `make test-r`: about 1-3 minutes after R dependencies are installed
 - `make build-js`: about 2-4 minutes with `em++` already on `PATH`
 - `make test-js`: about 3-6 minutes after JavaScript dependencies and browsers are installed
-- `make test-docs`: about 1-3 minutes after Python docs dependencies are installed
+- `make build-docs`: about 1-3 minutes after Python docs dependencies are installed
 
 Targeted checks:
 
@@ -130,7 +128,6 @@ Targeted checks:
 
 - Do not improvise around SWIG generation, Python packaging, or R packaging
 - Do not improvise around JS worker generation or Emscripten
-- Do not hand-edit generated docs output in `docs/`
 - Do not hand-edit `interfaces/R/generated/` or `interfaces/R/infomap/man/`;
   regenerate with `make build-r-swig` and `roxygen2::roxygenise(...)`
   respectively

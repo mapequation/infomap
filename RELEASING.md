@@ -16,7 +16,8 @@ Public release deliverables are:
 - the `@mapequation/infomap` npm package
 - multi-arch Docker images published to GHCR for `linux/amd64` and
   `linux/arm64`
-- the committed Python docs output in `docs/`
+- the Python documentation site, built from `interfaces/python/source/`
+  and `README.rst` and deployed to GitHub Pages
 
 Internal-supported packages and secondary Docker images are outside the default
 public release flow unless a maintainer explicitly widens the release scope.
@@ -176,10 +177,15 @@ If the proposed bump does not match the commit log
 
 ## Documentation publishing
 
-The published Python docs are served from the committed `docs/` tree on
-`master`. `.github/workflows/docs.yml` is verify-only: it runs `make test-docs`
-to confirm that the committed generated output derived from
-`interfaces/python/source/` and `README.rst` is fresh.
+The published Python docs are built and deployed to GitHub Pages by the
+`deploy-docs` job in `.github/workflows/release.yml` after each tagged
+release. The job runs `make build-docs`, creates `.nojekyll`, and uploads
+the result via `actions/upload-pages-artifact` and `actions/deploy-pages`.
+
+On pull requests, the `docs` job in `.github/workflows/ci.yml` runs
+`make build-docs` to verify the site still builds. Nothing is deployed
+from CI. The `docs/` directory is build output and is not tracked in the
+repo.
 
 ## Recovery
 
