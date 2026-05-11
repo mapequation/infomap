@@ -61,6 +61,9 @@ test = [
 ]
 docs = [
   "sphinx",
+  "furo",
+  "sphinx-copybutton",
+  "sphinxext-opengraph",
 ]
 examples = [
   "matplotlib",
