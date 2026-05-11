@@ -230,6 +230,167 @@ test_that("add_igraph accepts intra/inter-compatible multilayer links", {
   expect_gt(im$num_links, 0L)
 })
 
+test_that("cluster_infomap_multilayer matches R6 path on intra-layer-only data.frame", {
+  edges <- data.frame(
+    layer     = c(1, 1, 1, 2, 2, 2),
+    node_from = c(1, 2, 3, 1, 2, 3),
+    node_to   = c(2, 3, 1, 2, 3, 1)
+  )
+
+  baseline <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
+  for (i in seq_len(nrow(edges))) {
+    baseline$add_multilayer_intra_link(
+      edges$layer[i], edges$node_from[i], edges$node_to[i]
+    )
+  }
+  baseline$run()
+
+  result <- cluster_infomap_multilayer(
+    edges,
+    silent = TRUE, num_trials = 1L, two_level = TRUE
+  )
+
+  expect_s3_class(result, "infomap_result")
+  expect_equal(result$num_links, baseline$num_links)
+  expect_equal(result$codelength, baseline$codelength, tolerance = 1e-10)
+  expect_true("layer_id" %in% names(result$nodes))
+  expect_setequal(unique(result$nodes$layer_id), c(1L, 2L))
+})
+
+test_that("cluster_infomap_multilayer matches R6 path on full multilayer data.frame", {
+  edges <- data.frame(
+    layer_from = c(1, 1, 1, 2, 2, 2, 1, 1, 1),
+    node_from  = c(1, 2, 3, 1, 2, 3, 1, 2, 3),
+    layer_to   = c(1, 1, 1, 2, 2, 2, 2, 2, 2),
+    node_to    = c(2, 3, 1, 2, 3, 1, 1, 2, 3),
+    weight     = c(1, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5)
+  )
+
+  baseline <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
+  for (i in seq_len(nrow(edges))) {
+    baseline$add_multilayer_link(
+      c(edges$layer_from[i], edges$node_from[i]),
+      c(edges$layer_to[i],   edges$node_to[i]),
+      edges$weight[i]
+    )
+  }
+  baseline$run()
+
+  result <- cluster_infomap_multilayer(
+    edges,
+    silent = TRUE, num_trials = 1L, two_level = TRUE
+  )
+
+  expect_equal(result$num_links, baseline$num_links)
+  expect_equal(result$codelength, baseline$codelength, tolerance = 1e-10)
+  expect_true("layer_id" %in% names(result$nodes))
+})
+
+test_that("cluster_infomap_multilayer is column-order independent", {
+  ordered <- data.frame(
+    layer_from = c(1, 1, 2, 2),
+    node_from  = c(1, 2, 1, 2),
+    layer_to   = c(1, 1, 2, 2),
+    node_to    = c(2, 3, 2, 3)
+  )
+  shuffled <- ordered[, c("node_to", "layer_from", "node_from", "layer_to")]
+
+  a <- cluster_infomap_multilayer(ordered,  silent = TRUE, num_trials = 1L, two_level = TRUE)
+  b <- cluster_infomap_multilayer(shuffled, silent = TRUE, num_trials = 1L, two_level = TRUE)
+
+  expect_equal(a$codelength, b$codelength, tolerance = 1e-10)
+  expect_equal(a$num_links, b$num_links)
+})
+
+test_that("cluster_infomap_multilayer reads weight column by name", {
+  edges <- data.frame(
+    layer     = c(1, 1, 2, 2),
+    node_from = c(1, 2, 1, 2),
+    node_to   = c(2, 3, 2, 3),
+    weight    = c(2, 2, 3, 3)
+  )
+
+  baseline <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
+  for (i in seq_len(nrow(edges))) {
+    baseline$add_multilayer_intra_link(
+      edges$layer[i], edges$node_from[i], edges$node_to[i], edges$weight[i]
+    )
+  }
+  baseline$run()
+
+  result <- cluster_infomap_multilayer(
+    edges,
+    silent = TRUE, num_trials = 1L, two_level = TRUE
+  )
+
+  expect_equal(result$codelength, baseline$codelength, tolerance = 1e-10)
+})
+
+test_that("cluster_infomap_multilayer can ignore weight column explicitly", {
+  edges <- data.frame(
+    layer     = c(1, 1, 2, 2),
+    node_from = c(1, 2, 1, 2),
+    node_to   = c(2, 3, 2, 3),
+    weight    = c(100, 100, 1, 1)
+  )
+
+  baseline <- Infomap(silent = TRUE, num_trials = 1L, two_level = TRUE)
+  for (i in seq_len(nrow(edges))) {
+    baseline$add_multilayer_intra_link(
+      edges$layer[i], edges$node_from[i], edges$node_to[i], 1.0
+    )
+  }
+  baseline$run()
+
+  result <- cluster_infomap_multilayer(
+    edges,
+    weight = FALSE,
+    silent = TRUE, num_trials = 1L, two_level = TRUE
+  )
+
+  expect_equal(result$num_links, baseline$num_links)
+  expect_equal(result$codelength, baseline$codelength, tolerance = 1e-10)
+})
+
+test_that("cluster_infomap_multilayer accepts matrix input positionally", {
+  m_full <- matrix(
+    c(1, 1, 1, 2,
+      1, 2, 2, 1,
+      2, 1, 2, 2),
+    ncol = 4L, byrow = TRUE
+  )
+
+  expect_silent(
+    res <- cluster_infomap_multilayer(
+      m_full, silent = TRUE, num_trials = 1L, two_level = TRUE
+    )
+  )
+  expect_s3_class(res, "infomap_result")
+
+  m_intra <- matrix(
+    c(1, 1, 2,
+      1, 2, 3,
+      2, 1, 2,
+      2, 2, 3),
+    ncol = 3L, byrow = TRUE
+  )
+
+  expect_silent(
+    res2 <- cluster_infomap_multilayer(
+      m_intra, silent = TRUE, num_trials = 1L, two_level = TRUE
+    )
+  )
+  expect_s3_class(res2, "infomap_result")
+})
+
+test_that("cluster_infomap_multilayer rejects unrecognised columns", {
+  bad <- data.frame(from = 1:2, to = 2:3, layer = 1:2)
+  expect_error(
+    cluster_infomap_multilayer(bad, silent = TRUE),
+    "must have either columns"
+  )
+})
+
 test_that("add_igraph supports non-numeric physical ids", {
   skip_if_not_installed("igraph")
 
