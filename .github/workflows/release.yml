@@ -110,53 +110,6 @@ jobs:
             release-assets/r/infomap_*-r*-*.tgz
             release-assets/r/infomap_*-r*-*.zip
 
-  deploy-docs:
-    name: Build and deploy GitHub Pages docs
-    # enable or remove when we have a python docs deployment method
-    if: false
-    needs: [publish-github-release]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Checkout release ref
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Set up Python
-        uses: ./.github/actions/setup-python-build
-        with:
-          python-version: "3.14"
-
-      - name: Build docs
-        run: make build-docs
-
-      - name: Add .nojekyll
-        run: touch ./docs/.nojekyll
-
-      - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: docs
-          include-hidden-files: true
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
-
   publish-pypi:
     name: Publish to PyPI
     needs: [publish-github-release]
@@ -340,6 +293,27 @@ jobs:
 
           version="${RELEASE_TAG#v}"
           gh api repos/mapequation/homebrew-infomap/dispatches \
+            -f event_type=infomap_release_published \
+            -F "client_payload[version]=$version" \
+            -F "client_payload[release_tag]=$RELEASE_TAG" \
+            -F "client_payload[release_url]=https://github.com/${{ github.repository }}/releases/tag/$RELEASE_TAG"
+
+  notify-python-docs:
+    name: Notify infomap-python-docs
+    needs: [publish-pypi]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Dispatch infomap-python-docs build workflow
+        env:
+          GH_TOKEN: ${{ secrets.PYTHON_DOCS_DISPATCH_TOKEN }}
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          version="${RELEASE_TAG#v}"
+          gh api repos/mapequation/infomap-python-docs/dispatches \
             -f event_type=infomap_release_published \
             -F "client_payload[version]=$version" \
             -F "client_payload[release_tag]=$RELEASE_TAG" \
