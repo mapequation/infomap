@@ -692,4 +692,27 @@ TEST_CASE("Tree cluster-data tolerates repeated reinit on the same higher-order 
   std::remove(treePath.c_str());
 }
 
+// Invariant: whenever Infomap ends up with a single top module, numNonTrivialTopModules()
+// must be 0. Before the fix in partition(), the one-level fallback path (triggered when
+// the found codelength is worse than the one-level codelength) left m_numNonTrivialTopModules
+// at its pre-fallback value instead of recalculating it.
+TEST_CASE("numNonTrivialTopModules is zero when all nodes are in one module [fast][core][partition]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags());
+  // Complete graph K5 — no community structure, one-level codelength is optimal.
+  // The optimizer converges directly to one module without needing the codelength-comparison
+  // fallback, so this test covers the invariant rather than the specific fallback code path.
+  im.addLink(1, 2); im.addLink(1, 3); im.addLink(1, 4); im.addLink(1, 5);
+  im.addLink(2, 3); im.addLink(2, 4); im.addLink(2, 5);
+  im.addLink(3, 4); im.addLink(3, 5);
+  im.addLink(4, 5);
+  im.run();
+
+  CHECK(im.numTopModules() == 1);
+  CHECK(im.numNonTrivialTopModules() == 0);
+  CHECK(im.codelength() == doctest::Approx(im.getOneLevelCodelength()));
+  infomap::test::checkRunSanity(im);
+  infomap::test::checkCanonicalPartition(im, { { 1, 2, 3, 4, 5 } });
+}
+
 } // namespace

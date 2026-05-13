@@ -1212,6 +1212,7 @@ void InfomapBase::partition()
     m_hierarchicalCodelength = getOneLevelCodelength();
     // calcCodelengthOnTree(root(), true);
     m_root.codelength = 0.0;
+    m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
 
   } else {
     // Set consolidated cluster index on nodes and modules
