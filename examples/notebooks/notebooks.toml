@@ -67,3 +67,18 @@ description = "Requires geospatial dependencies and external data access."
 path = "9.4 Model Selection with Correlational Data.ipynb"
 tier = "full"
 description = "Correlational-data model-selection example with local dependencies."
+
+[[notebooks]]
+path = "compare-infomap-louvain-leiden-networkx.ipynb"
+tier = "smoke"
+description = "NetworkX comparison of Infomap, Louvain, and Leiden when available."
+
+[[notebooks]]
+path = "compare-infomap-louvain-leiden-igraph.ipynb"
+tier = "full"
+description = "python-igraph comparison of Infomap, Louvain, and Leiden."
+
+[[notebooks]]
+path = "compare-infomap-scanpy-workflow.ipynb"
+tier = "manual"
+description = "Scanpy and AnnData comparison of Infomap and Leiden with optional Scanpy dependencies."
