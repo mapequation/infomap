@@ -32,18 +32,48 @@ jobs:
             <head>
               <meta charset="utf-8">
               <meta name="viewport" content="width=device-width, initial-scale=1">
-              <meta http-equiv="refresh" content="0; url=https://mapequation.org/?redirect_to=/infomap">
+              <meta http-equiv="refresh" content="0; url=https://www.mapequation.org/?redirect_to=/infomap">
               <link rel="canonical" href="https://mapequation.org/infomap/">
               <title>Redirecting to Infomap</title>
               <script>
-                window.location.replace("https://mapequation.org/?redirect_to=/infomap");
+                window.location.replace("https://www.mapequation.org/?redirect_to=/infomap");
               </script>
             </head>
             <body>
               <p>
                 Redirecting to
-                <a href="https://mapequation.org/?redirect_to=/infomap">mapequation.org/infomap</a>.
+                <a href="https://www.mapequation.org/?redirect_to=/infomap">mapequation.org/infomap</a>.
               </p>
+            </body>
+          </html>
+          HTML
+          cat > site/404.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <meta name="robots" content="noindex">
+              <title>Redirecting to Infomap</title>
+              <script>
+                (function () {
+                  var path = window.location.pathname;
+
+                  if (!path.startsWith("/infomap")) {
+                    path = "/infomap" + (path.startsWith("/") ? "" : "/") + path;
+                  }
+
+                  var redirectTo = path + window.location.search + window.location.hash;
+                  var destination =
+                    "https://www.mapequation.org/?redirect_to=" +
+                    encodeURIComponent(redirectTo);
+
+                  window.location.replace(destination);
+                })();
+              </script>
+            </head>
+            <body>
+              <p>Redirecting to mapequation.org.</p>
             </body>
           </html>
           HTML
