@@ -2,10 +2,10 @@ import networkx as nx
 from infomap import Infomap
 
 G = nx.Graph()
-G.add_node(11, phys_id=1, layer_id=1)
-G.add_node(21, phys_id=2, layer_id=1)
-G.add_node(22, phys_id=2, layer_id=2)
-G.add_node(32, phys_id=3, layer_id=2)
+G.add_node(11, node_id=1, layer_id=1)
+G.add_node(21, node_id=2, layer_id=1)
+G.add_node(22, node_id=2, layer_id=2)
+G.add_node(32, node_id=3, layer_id=2)
 G.add_edge(11, 21, weight=2)
 G.add_edge(22, 32)
 im = Infomap(silent=True)

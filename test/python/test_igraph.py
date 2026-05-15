@@ -207,7 +207,7 @@ def test_add_igraph_graph_rejects_invalid_edge_weight_inputs():
 def test_find_igraph_communities_partitions_state_vertices():
     ig = pytest.importorskip("igraph")
     graph = ig.Graph(edges=[(0, 1), (1, 2)], directed=False)
-    graph.vs["phys_id"] = ["beta", "alpha", "beta"]
+    graph.vs["node_id"] = ["beta", "alpha", "beta"]
 
     clustering = infomap.find_igraph_communities(graph, trials=1, seed=123)
 
@@ -217,7 +217,7 @@ def test_find_igraph_communities_partitions_state_vertices():
 def test_add_igraph_graph_names_non_numeric_physical_ids(make_infomap):
     ig = pytest.importorskip("igraph")
     graph = ig.Graph(edges=[(0, 1), (1, 2)], directed=False)
-    graph.vs["phys_id"] = ["beta", "alpha", "beta"]
+    graph.vs["node_id"] = ["beta", "alpha", "beta"]
 
     im = make_infomap(no_infomap=True)
     im.add_igraph_graph(graph)
@@ -228,7 +228,7 @@ def test_add_igraph_graph_names_non_numeric_physical_ids(make_infomap):
 def test_find_igraph_communities_partitions_multilayer_vertices():
     ig = pytest.importorskip("igraph")
     graph = ig.Graph(edges=[(0, 1), (0, 2)], directed=False)
-    graph.vs["phys_id"] = ["alpha", "beta", "alpha"]
+    graph.vs["node_id"] = ["alpha", "beta", "alpha"]
     graph.vs["layer_id"] = [1, 1, 2]
 
     clustering = infomap.find_igraph_communities(graph, trials=1, seed=123)

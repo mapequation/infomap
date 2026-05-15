@@ -48,7 +48,7 @@ def find_communities(
     g: Any,
     *,
     weight: str | None = "weight",
-    phys_id: str = "phys_id",
+    node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
     module_attribute: str | None = None,
@@ -68,7 +68,7 @@ def find_communities(
     weight : str or None, optional
         Key to look up link weight in edge data if present. Default
         ``"weight"``. Use ``None`` to treat every edge as weight 1.
-    phys_id : str, optional
+    node_id : str, optional
         Node attribute for physical node ids, implying a state network.
     layer_id : str, optional
         Node attribute for layer ids, implying a multilayer network.
@@ -103,7 +103,7 @@ def find_communities(
         infomap,
         g,
         weight=weight,
-        phys_id=phys_id,
+        node_id=node_id,
         layer_id=layer_id,
         multilayer_inter_intra_format=multilayer_inter_intra_format,
     )
@@ -124,7 +124,7 @@ def add_networkx_graph(
     g: Any,
     *,
     weight: str | None = "weight",
-    phys_id: str = "phys_id",
+    node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
 ) -> dict[int, Any]:
@@ -139,19 +139,19 @@ def add_networkx_graph(
 
     node_map = _label_to_internal_id(nodes)
     is_string_id = isinstance(first, str)
-    phys_ids = dict(g.nodes.data(phys_id))
+    node_ids = dict(g.nodes.data(node_id))
     layer_ids = dict(g.nodes.data(layer_id))
-    is_state_network = None not in phys_ids.values()
+    is_state_network = None not in node_ids.values()
     is_multilayer_network = None not in layer_ids.values()
 
     phys_map = {}
     if is_state_network:
-        phys_labels = [phys_ids[node] for node in nodes]
+        phys_labels = [node_ids[node] for node in nodes]
         phys_map = _label_to_internal_id(_stable_unique_labels(phys_labels))
 
         if not isinstance(phys_labels[0], int):
-            for label, node_id in phys_map.items():
-                infomap.set_name(node_id, str(label))
+            for label, _node_id in phys_map.items():
+                infomap.set_name(_node_id, str(label))
         else:
             for label in phys_map:
                 infomap.set_name(label, f"{label}")
@@ -161,17 +161,17 @@ def add_networkx_graph(
                 infomap.network.add_multilayer_node(
                     node_map[state_label],
                     data[layer_id],
-                    phys_map[data[phys_id]],
+                    phys_map[data[node_id]],
                     1.0,
                 )
         else:
             for state_label in nodes:
-                infomap.add_state_node(node_map[state_label], phys_map[phys_ids[state_label]])
+                infomap.add_state_node(node_map[state_label], phys_map[node_ids[state_label]])
     else:
         for node, name in g.nodes.data("name"):
-            node_id = node_map[node]
+            _node_id = node_map[node]
             node_name = node if is_string_id else name
-            infomap.add_node(node_id, name=node_name)
+            infomap.add_node(_node_id, name=node_name)
 
     if is_multilayer_network:
         for source, target, data in g.edges.data():
@@ -179,8 +179,8 @@ def add_networkx_graph(
             target_state_id = node_map[target]
             source_layer_id = layer_ids[source]
             target_layer_id = layer_ids[target]
-            source_node_id = phys_map[phys_ids[source]]
-            target_node_id = phys_map[phys_ids[target]]
+            source_node_id = phys_map[node_ids[source]]
+            target_node_id = phys_map[node_ids[target]]
             edge_weight = data[weight] if weight is not None and weight in data else 1.0
 
             if multilayer_inter_intra_format:

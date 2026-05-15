@@ -95,9 +95,9 @@ def test_find_communities_sets_directed_for_digraph(monkeypatch):
 
 def test_find_communities_partitions_state_network_nodes():
     graph = nx.Graph()
-    graph.add_node("state-b", phys_id="beta")
-    graph.add_node("state-a", phys_id="alpha")
-    graph.add_node("state-b-2", phys_id="beta")
+    graph.add_node("state-b", node_id="beta")
+    graph.add_node("state-a", node_id="alpha")
+    graph.add_node("state-b-2", node_id="beta")
     graph.add_edge("state-b", "state-a")
     graph.add_edge("state-a", "state-b-2")
 
@@ -108,9 +108,9 @@ def test_find_communities_partitions_state_network_nodes():
 
 def test_find_communities_partitions_multilayer_network_nodes():
     graph = nx.Graph()
-    graph.add_node("state-b-layer-1", phys_id="beta", layer_id=1)
-    graph.add_node("state-a-layer-1", phys_id="alpha", layer_id=1)
-    graph.add_node("state-a-layer-2", phys_id="alpha", layer_id=2)
+    graph.add_node("state-b-layer-1", node_id="beta", layer_id=1)
+    graph.add_node("state-a-layer-1", node_id="alpha", layer_id=1)
+    graph.add_node("state-a-layer-2", node_id="alpha", layer_id=2)
     graph.add_edge("state-b-layer-1", "state-a-layer-1", weight=2.0)
     graph.add_edge("state-a-layer-1", "state-a-layer-2")
 
