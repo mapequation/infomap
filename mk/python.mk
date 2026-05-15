@@ -15,6 +15,7 @@ PYTHON_LINT_TARGETS := \
 	interfaces/python/src/infomap/_results.py \
 	interfaces/python/src/infomap/_version.py \
 	interfaces/python/src/infomap/_writers.py \
+	interfaces/python/src/infomap/tl.py \
 	examples/python
 PYTHON_FORMAT_TARGETS := \
 	interfaces/python/src/infomap/__init__.py \
@@ -27,6 +28,7 @@ PYTHON_FORMAT_TARGETS := \
 	interfaces/python/src/infomap/_results.py \
 	interfaces/python/src/infomap/_version.py \
 	interfaces/python/src/infomap/_writers.py \
+	interfaces/python/src/infomap/tl.py \
 	examples/python \
 	test/python
 PYTEST_ARGS ?=

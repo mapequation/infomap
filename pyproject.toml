@@ -51,13 +51,20 @@ pandas = [
 scipy = [
   "scipy",
 ]
+anndata = [
+  "anndata",
+  "pandas",
+  "scipy",
+]
 all = [
+  "anndata",
   "igraph",
   "networkx",
   "pandas",
   "scipy",
 ]
 test = [
+  "anndata",
   "igraph",
   "pytest",
   "networkx",
