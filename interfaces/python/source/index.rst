@@ -33,6 +33,8 @@ Where to go next
 - :doc:`installation` — install the package, optional integrations, and the
   ``infomap`` CLI entry point.
 - :doc:`quickstart` — the shortest path from ``pip install`` to a partition.
+- :doc:`notebooks` — survey companion notebooks for learning the map equation
+  and adapting Infomap workflows.
 - :doc:`usage` — NetworkX, igraph, state and multilayer networks, reusable
   options, and a migration guide for users of other community-detection
   packages.
@@ -59,6 +61,7 @@ External resources
 
    installation
    quickstart
+   notebooks
    usage
    export
    scanpy

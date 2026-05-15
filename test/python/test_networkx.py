@@ -80,8 +80,8 @@ def test_find_communities_sets_directed_for_digraph(monkeypatch):
         def add_link(self, source_id, target_id, weight=1.0):
             pass
 
-        def run(self):
-            pass
+        def run(self, initial_partition=None):
+            self.initial_partition = initial_partition
 
     monkeypatch.setattr(facade, "Infomap", FakeInfomap)
 
@@ -91,6 +91,41 @@ def test_find_communities_sets_directed_for_digraph(monkeypatch):
     assert instances[0].directed is True
     assert instances[0].options["silent"] is True
     assert instances[0].options["no_file_output"] is True
+    assert instances[0].initial_partition is None
+
+
+def test_find_communities_accepts_initial_partition_with_original_labels(monkeypatch):
+    instances = []
+
+    class FakeInfomap:
+        flowModelIsSet = True
+
+        def __init__(self, **options):
+            self.options = options
+            self.nodes = [
+                SimpleNamespace(state_id=0, module_id=1, flow=0.5),
+                SimpleNamespace(state_id=1, module_id=2, flow=0.5),
+            ]
+            instances.append(self)
+
+        def add_node(self, node_id, name=None):
+            pass
+
+        def add_link(self, source_id, target_id, weight=1.0):
+            pass
+
+        def run(self, initial_partition=None):
+            self.initial_partition = initial_partition
+
+    monkeypatch.setattr(facade, "Infomap", FakeInfomap)
+
+    communities = infomap.find_communities(
+        nx.Graph([("source", "target")]),
+        initial_partition={"source": 7, "target": 8},
+    )
+
+    assert communities == [{"source"}, {"target"}]
+    assert instances[0].initial_partition == {0: 7, 1: 8}
 
 
 def test_find_communities_partitions_state_network_nodes():

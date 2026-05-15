@@ -5,10 +5,11 @@ Infomap
 
 Infomap is a network clustering algorithm based on the `Map equation`_.
 This repository contains the native CLI, the Python package, the R package,
-the JavaScript web worker, the Docker images, and the source for the
-published Python documentation.
+the JavaScript web worker, the Docker images, the tutorial notebooks, and the
+source for the published Python documentation.
 
-Start with `mapequation.org/infomap/`_ for the user guide and
+Start with `mapequation.org/infomap/`_ for the user guide, the
+`Infomap Python API`_ for Python examples and tutorial notebooks, and
 `CHANGELOG.md`_ for release notes.
 
 For contributing, security reporting, and maintainer workflows, see
@@ -89,7 +90,7 @@ For direct control over Infomap-specific options and result access:
     print(im.to_dataframe(columns=["node_id", "module_id", "flow"], index="node_id"))
 
 .. _PyPI: https://pypi.org/project/infomap/
-.. _`Infomap Python API`: https://mapequation.github.io/infomap/
+.. _`Infomap Python API`: https://mapequation.github.io/infomap-python-docs/
 
 R package
 ^^^^^^^^^
@@ -185,8 +186,19 @@ Start the notebook image with:
 
 .. code-block:: bash
 
-    docker run \
-        -v "$(pwd)":/home/jovyan/work \
+    docker run --rm \
+        -p 8888:8888 \
+        ghcr.io/mapequation/infomap:notebook \
+        start.sh jupyter lab
+
+The notebook image includes the survey companion notebooks from
+``examples/notebooks`` and opens in that workspace by default. To keep local
+copies or outputs, mount a host directory as a separate workspace path:
+
+.. code-block:: bash
+
+    docker run --rm \
+        -v "$(pwd)":/home/jovyan/work/local \
         -p 8888:8888 \
         ghcr.io/mapequation/infomap:notebook \
         start.sh jupyter lab

@@ -1,0 +1,13 @@
+# Notebook-generated files that are local to this tutorial directory.
+.ipynb_checkpoints/
+.jupyter/
+.Trash-*/
+output/*
+!output/.gitkeep
+data/state_network.net
+
+# External checkouts created by manual-tier notebooks.
+bipartite-infomap/
+color-map-equation/
+mapping-hypergraphs/
+partition-validation/
