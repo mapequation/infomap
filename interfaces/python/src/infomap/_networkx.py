@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 
@@ -32,7 +33,9 @@ def _communities_from_infomap(infomap, node_mapping):
     return list(communities.values())
 
 
-def _set_networkx_node_attributes(g, infomap, node_mapping, module_attribute, flow_attribute):
+def _set_networkx_node_attributes(
+    g, infomap, node_mapping, module_attribute, flow_attribute
+):
     if module_attribute is None and flow_attribute is None:
         return
 
@@ -44,6 +47,47 @@ def _set_networkx_node_attributes(g, infomap, node_mapping, module_attribute, fl
             g.nodes[original_node][flow_attribute] = node.flow
 
 
+def _to_internal_partition(initial_partition, node_mapping):
+    if initial_partition is None or not isinstance(initial_partition, Mapping):
+        return initial_partition
+
+    internal_by_label = {label: node_id for node_id, label in node_mapping.items()}
+    return {
+        internal_by_label.get(node_id, node_id): module_id
+        for node_id, module_id in initial_partition.items()
+    }
+
+
+def run_networkx(
+    g: Any,
+    *,
+    weight: str | None = "weight",
+    node_id: str = "node_id",
+    layer_id: str = "layer_id",
+    multilayer_inter_intra_format: bool = True,
+    initial_partition: Any = None,
+    **infomap_options: Any,
+) -> tuple[Any, dict[int, Any]]:
+    from ._facade import Infomap
+
+    options = {"silent": True, "no_file_output": True}
+    options.update(infomap_options)
+
+    infomap = Infomap(**options)
+    node_mapping = add_networkx_graph(
+        infomap,
+        g,
+        weight=weight,
+        node_id=node_id,
+        layer_id=layer_id,
+        multilayer_inter_intra_format=multilayer_inter_intra_format,
+    )
+    infomap.run(
+        initial_partition=_to_internal_partition(initial_partition, node_mapping)
+    )
+    return infomap, node_mapping
+
+
 def find_communities(
     g: Any,
     *,
@@ -51,6 +95,7 @@ def find_communities(
     node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
+    initial_partition: Any = None,
     module_attribute: str | None = None,
     flow_attribute: str | None = None,
     **infomap_options: Any,
@@ -80,6 +125,9 @@ def find_communities(
         ``g``.
     flow_attribute : str, optional
         If set, write each node's flow back to this node attribute on ``g``.
+    initial_partition : mapping, optional
+        Initial module assignment passed to :meth:`infomap.Infomap.run`.
+        Keys may use the original NetworkX node labels.
     **infomap_options
         Keyword arguments passed to :class:`infomap.Infomap`. By default,
         ``silent=True`` and ``no_file_output=True`` are used unless explicitly
@@ -93,21 +141,15 @@ def find_communities(
     if len(g.nodes) == 0:
         return []
 
-    from ._facade import Infomap
-
-    options = {"silent": True, "no_file_output": True}
-    options.update(infomap_options)
-
-    infomap = Infomap(**options)
-    node_mapping = add_networkx_graph(
-        infomap,
+    infomap, node_mapping = run_networkx(
         g,
         weight=weight,
         node_id=node_id,
         layer_id=layer_id,
         multilayer_inter_intra_format=multilayer_inter_intra_format,
+        initial_partition=initial_partition,
+        **infomap_options,
     )
-    infomap.run()
 
     _set_networkx_node_attributes(
         g,
@@ -166,7 +208,9 @@ def add_networkx_graph(
                 )
         else:
             for state_label in nodes:
-                infomap.add_state_node(node_map[state_label], phys_map[node_ids[state_label]])
+                infomap.add_state_node(
+                    node_map[state_label], phys_map[node_ids[state_label]]
+                )
     else:
         for node, name in g.nodes.data("name"):
             _node_id = node_map[node]

@@ -4,6 +4,9 @@ SPHINX_SOURCE_DIR := interfaces/python/source
 SPHINX_TARGET_DIR ?= docs
 DOCS_SYNC_ARGS := -a --delete
 PYTHON_TEST_DIR := test/python
+NOTEBOOK_DIR := examples/notebooks
+NOTEBOOK_MANIFEST := $(NOTEBOOK_DIR)/notebooks.toml
+NOTEBOOK_TIMEOUT ?= 300
 PYTHON_LINT_TARGETS := \
 	interfaces/python/src/infomap/__init__.py \
 	interfaces/python/src/infomap/__main__.py \
@@ -48,10 +51,13 @@ PYTHON_BUILD_ENV = \
 	clean-python-build-cache \
 	test-python-swig-freshness \
 	dev-python-install \
+	dev-python-notebooks-install \
 	test-python \
 	test-python-unit \
 	test-python-doctest \
 	test-python-examples \
+	test-python-notebooks-smoke \
+	test-python-notebooks-full \
 	build-docs \
 	_build-docs-site \
 	clean-python \
@@ -77,6 +83,9 @@ test-python-swig-freshness:
 dev-python-install:
 	$(PYTHON_BUILD_ENV) $(PIP) install -e .[test,docs,examples]
 
+dev-python-notebooks-install:
+	$(PYTHON_BUILD_ENV) $(PIP) install -e .[notebooks]
+
 test-python: test-python-unit test-python-doctest test-python-examples
 	@true
 
@@ -95,6 +104,14 @@ test-python-doctest:
 
 test-python-examples:
 	@cd examples/python && for f in *.py; do $(PYTHON) "$$f" > /dev/null || exit 1; done
+
+test-python-notebooks-smoke:
+	@cd $(NOTEBOOK_DIR) && $(PYTHON) ../../scripts/notebook_manifest.py --manifest notebooks.toml --suite smoke --print0 | \
+		xargs -0 $(PYTEST) --nbmake --nbmake-timeout=$(NOTEBOOK_TIMEOUT)
+
+test-python-notebooks-full:
+	@cd $(NOTEBOOK_DIR) && $(PYTHON) ../../scripts/notebook_manifest.py --manifest notebooks.toml --suite full --print0 | \
+		xargs -0 $(PYTEST) --nbmake --nbmake-timeout=$(NOTEBOOK_TIMEOUT)
 
 _build-docs-site:
 	@mkdir -p "$(SPHINX_TARGET_DIR)"

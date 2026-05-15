@@ -85,6 +85,20 @@ examples = [
   "scikit-learn",
   "scipy",
 ]
+notebooks = [
+  "coloraide",
+  "ipykernel",
+  "jupyterlab",
+  "matplotlib",
+  "nbmake",
+  "networkx",
+  "numpy",
+  "pandas",
+  "scikit-learn",
+  "scipy",
+  "seaborn",
+  "SPARQLWrapper",
+]
 release = [
   "build",
   "cibuildwheel==3.3.1",

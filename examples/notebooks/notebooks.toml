@@ -1,0 +1,69 @@
+[[notebooks]]
+path = "3.1 The two-level map equation.ipynb"
+tier = "smoke"
+description = "Core two-level map equation example with local data only."
+
+[[notebooks]]
+path = "4.1 The Two-level Phase.ipynb"
+tier = "full"
+description = "Two-level search phase walkthrough with local data only."
+
+[[notebooks]]
+path = "4.3 Solution Landscape.ipynb"
+tier = "manual"
+description = "Requires partition-validation checkout/build and extra dimensionality reduction dependencies."
+
+[[notebooks]]
+path = "5.1 Memory Networks.ipynb"
+tier = "full"
+description = "Memory-network walkthrough with local data only."
+
+[[notebooks]]
+path = "5.2 Multilayer Networks.ipynb"
+tier = "smoke"
+description = "Small multilayer Infomap API example."
+
+[[notebooks]]
+path = "5.3 Modeling Temporal Data.ipynb"
+tier = "full"
+description = "Short local temporal-data modeling note."
+
+[[notebooks]]
+path = "5.4 Modeling Multi-body Interactions.ipynb"
+tier = "manual"
+description = "Requires mapping-hypergraphs checkout and Rust/Cargo build."
+
+[[notebooks]]
+path = "6.1 Networks with Metadata.ipynb"
+tier = "manual"
+description = "Requires color-map-equation checkout and Rust/Cargo build."
+
+[[notebooks]]
+path = "6.2 Bipartite Networks.ipynb"
+tier = "manual"
+description = "Requires an experimental Infomap branch checkout/build."
+
+[[notebooks]]
+path = "7 Networks with incomplete data.ipynb"
+tier = "full"
+description = "Incomplete-data examples using local input networks."
+
+[[notebooks]]
+path = "9.1 Map Equation Centrality.ipynb"
+tier = "smoke"
+description = "Map equation centrality example with local dependencies."
+
+[[notebooks]]
+path = "9.2 Map Equation Similarity.ipynb"
+tier = "manual"
+description = "Requires the separate map-equation-similarity package."
+
+[[notebooks]]
+path = "9.3 Infomap Bioregions.ipynb"
+tier = "manual"
+description = "Requires geospatial dependencies and external data access."
+
+[[notebooks]]
+path = "9.4 Model Selection with Correlational Data.ipynb"
+tier = "full"
+description = "Correlational-data model-selection example with local dependencies."

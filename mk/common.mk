@@ -99,6 +99,8 @@ help:
 		"  test-python-unit      Run pytest for test/python." \
 		"  test-python-doctest   Run Python doctests and ruff checks for the installed package." \
 		"  test-python-examples  Run the Python example smoke tests." \
+		"  test-python-notebooks-smoke  Run PR-safe tutorial notebook smoke tests with nbmake." \
+		"  test-python-notebooks-full   Run all CI-maintained tutorial notebooks with nbmake." \
 		"  test-python-swig-freshness  Verify tracked SWIG outputs are up to date." \
 		"  test-r                Run R CMD check --as-cran on the staged infomap R package." \
 		"  test-r-examples       Run the R example smoke tests." \
@@ -121,6 +123,7 @@ help:
 		"  dev-cpp-check         Run the fast C++ developer feedback suite." \
 		"  dev-bootstrap         Install Python dev dependencies and run npm ci." \
 		"  dev-python-install    Install the built Python package in editable mode." \
+		"  dev-python-notebooks-install Install notebook execution dependencies." \
 		"  clean                 Remove native, Python, and JS build outputs." \
 		"  clean-native          Remove native build artifacts, libraries, and CMake build dirs." \
 		"  clean-python          Remove Python build outputs." \
