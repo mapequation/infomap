@@ -153,6 +153,81 @@ and ``A[j, i]`` exist, one undirected link is added. If the two entries have
 different weights, the larger weight is used. For large graphs, prefer CSR or
 COO input to avoid unnecessary conversion work.
 
+edge_index and graph ML workflows
+---------------------------------
+
+Use :meth:`infomap.Infomap.from_edge_index` when your graph is stored in the
+PyTorch Geometric-style ``edge_index`` format. The input has shape
+``(2, num_edges)``, with source node ids in row 0 and target node ids in row
+1. NumPy arrays, Python lists and PyTorch tensors are accepted. PyTorch is
+optional; tensor inputs are converted with ``detach().cpu().numpy()`` only
+when provided. NumPy is required for edge-index conversion; install it with
+``python -m pip install numpy`` if it is not already available.
+
+.. code-block:: python
+
+    import numpy as np
+    from infomap import Infomap
+
+    edge_index = np.array([
+        [0, 1, 1, 2],
+        [1, 0, 2, 1],
+    ])
+
+    im = Infomap.from_edge_index(edge_index, directed=False, args="--silent")
+    im.run()
+    modules = im.get_modules()
+
+Pass ``edge_weight`` for weighted graphs:
+
+.. code-block:: python
+
+    edge_weight = np.array([1.0, 1.0, 3.5, 3.5])
+    im = Infomap.from_edge_index(
+        edge_index,
+        edge_weight=edge_weight,
+        directed=False,
+        args="--silent",
+    )
+
+PyTorch tensors can be passed directly when PyTorch is installed:
+
+.. code-block:: python
+
+    import torch
+    from infomap import Infomap
+
+    edge_index = torch.tensor([
+        [0, 1, 2],
+        [1, 2, 0],
+    ])
+    im = Infomap.from_edge_index(edge_index, directed=True, args="--silent")
+
+PyTorch Geometric ``Data`` objects are not required. Pass their attributes to
+the edge-index API:
+
+.. code-block:: python
+
+    im = Infomap.from_edge_index(
+        data.edge_index,
+        edge_weight=data.edge_weight,
+        num_nodes=data.num_nodes,
+        args="--silent",
+    )
+
+Pass ``num_nodes`` to preserve isolated nodes that do not appear in
+``edge_index``. For undirected input, reverse duplicate edges are
+de-duplicated; if the two entries have different weights, the larger weight is
+used. Custom ``node_ids`` follow the same mapping pattern as
+:meth:`infomap.Infomap.add_networkx_graph`:
+
+.. code-block:: python
+
+    im = Infomap(silent=True)
+    mapping = im.add_edge_index(edge_index, node_ids=["gene_a", "gene_b", "gene_c"])
+    im.run()
+    modules = {mapping[node_id]: module_id for node_id, module_id in im.get_modules().items()}
+
 State and multilayer networks
 -----------------------------
 

@@ -4,6 +4,7 @@ from contextlib import contextmanager
 
 from ._bindings import *  # noqa: F401,F403
 from ._bindings import __all__ as _BINDINGS_ALL
+from ._edge_index import add_edge_index as _add_edge_index
 from ._igraph import add_igraph_graph as _add_igraph_graph
 from ._igraph import find_igraph_communities
 from ._networkx import add_networkx_graph as _add_networkx_graph
@@ -197,6 +198,29 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             A,
             directed=directed,
             weighted=weighted,
+            node_ids=node_ids,
+        )
+        return im
+
+    @classmethod
+    def from_edge_index(
+        cls,
+        edge_index,
+        *,
+        edge_weight=None,
+        num_nodes=None,
+        directed=True,
+        node_ids=None,
+        args=None,
+        **infomap_options,
+    ):
+        """Create an :class:`Infomap` instance from a PyG-style edge index."""
+        im = cls(args=args, **infomap_options)
+        im.add_edge_index(
+            edge_index,
+            edge_weight=edge_weight,
+            num_nodes=num_nodes,
+            directed=directed,
             node_ids=node_ids,
         )
         return im
@@ -1205,6 +1229,47 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             A,
             directed=directed,
             weighted=weighted,
+            node_ids=node_ids,
+        )
+
+    def add_edge_index(
+        self,
+        edge_index,
+        edge_weight=None,
+        num_nodes=None,
+        directed=True,
+        node_ids=None,
+    ):
+        """Add links and nodes from a PyG-style edge index.
+
+        Parameters
+        ----------
+        edge_index : array-like
+            Two-row edge index where row 0 contains source node ids and row 1
+            contains target node ids.
+        edge_weight : array-like, optional
+            One-dimensional edge weights with one value per edge. If omitted,
+            every edge is treated as weight ``1.0``.
+        num_nodes : int, optional
+            Total number of nodes. Pass this to preserve isolated nodes.
+        directed : bool, optional
+            Interpret edges as directed. Default ``True``.
+        node_ids : sequence, optional
+            External node ids in internal node order. If omitted, ``0..n-1`` is
+            used.
+
+        Returns
+        -------
+        dict
+            Dict with internal integer node ids as keys and external node ids
+            as values.
+        """
+        return _add_edge_index(
+            self,
+            edge_index,
+            edge_weight=edge_weight,
+            num_nodes=num_nodes,
+            directed=directed,
             node_ids=node_ids,
         )
 
