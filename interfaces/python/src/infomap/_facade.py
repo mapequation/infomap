@@ -21,6 +21,7 @@ from ._options import (
 )
 from ._results import _InfomapResultsMixin
 from ._results import entropy, perplexity, plogp
+from ._scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 from ._writers import _InfomapWritersMixin
 
 
@@ -178,6 +179,27 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         if not isinstance(options, InfomapOptions):
             raise TypeError("options must be an InfomapOptions instance")
         return cls(args=args, **options.to_kwargs())
+
+    @classmethod
+    def from_scipy_sparse_matrix(
+        cls,
+        A,
+        *,
+        directed=False,
+        weighted=True,
+        node_ids=None,
+        args=None,
+        **infomap_options,
+    ):
+        """Create an :class:`Infomap` instance from a SciPy sparse adjacency matrix."""
+        im = cls(args=args, **infomap_options)
+        im.add_scipy_sparse_matrix(
+            A,
+            directed=directed,
+            weighted=weighted,
+            node_ids=node_ids,
+        )
+        return im
 
     # ----------------------------------------
     # Input
@@ -1153,6 +1175,37 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             node_id=node_id,
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
+        )
+
+    def add_scipy_sparse_matrix(self, A, directed=False, weighted=True, node_ids=None):
+        """Add links and nodes from a SciPy sparse adjacency matrix.
+
+        Parameters
+        ----------
+        A : scipy.sparse matrix or array
+            Square sparse adjacency matrix.
+        directed : bool, optional
+            Interpret ``A[i, j]`` as a directed edge from row ``i`` to column
+            ``j``. Default ``False``.
+        weighted : bool, optional
+            Use sparse matrix values as link weights. If ``False``, every
+            nonzero entry is treated as weight ``1.0``. Default ``True``.
+        node_ids : sequence, optional
+            External node ids in matrix row order. If omitted, ``0..n-1`` is
+            used.
+
+        Returns
+        -------
+        dict
+            Dict with internal integer node ids as keys and external node ids
+            as values.
+        """
+        return _add_scipy_sparse_matrix(
+            self,
+            A,
+            directed=directed,
+            weighted=weighted,
+            node_ids=node_ids,
         )
 
     def add_igraph_graph(
