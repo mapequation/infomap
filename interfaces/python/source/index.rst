@@ -36,6 +36,8 @@ Where to go next
 - :doc:`usage` — NetworkX, igraph, state and multilayer networks, reusable
   options, and a migration guide for users of other community-detection
   packages.
+- :doc:`export` — write Infomap module assignments to GraphML and GEXF for
+  visualization tools.
 - :doc:`scanpy` — run Infomap on AnnData graphs in Scanpy-style single-cell
   workflows.
 - :doc:`api/index` — full API reference, split into top-level functions, the
@@ -58,5 +60,6 @@ External resources
    installation
    quickstart
    usage
+   export
    scanpy
    api/index
