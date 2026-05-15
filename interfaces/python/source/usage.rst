@@ -9,6 +9,9 @@ packages.
 For single-cell analysis workflows using AnnData or Scanpy, see
 :doc:`scanpy`.
 
+For GraphML and GEXF files with module assignments attached to nodes, see
+:doc:`export`.
+
 Reusable options
 ----------------
 

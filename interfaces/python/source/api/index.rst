@@ -14,6 +14,8 @@ tree iterators returned when walking the resulting partition.
    * - :doc:`functions`
      - Top-level helpers: :func:`find_communities`,
        :func:`find_igraph_communities`, and information-theoretic primitives.
+   * - :doc:`export`
+     - GraphML and GEXF export helpers for graph-package workflows.
    * - :doc:`infomap`
      - The main :class:`Infomap` class with all configuration and run methods.
    * - :doc:`options`
@@ -28,6 +30,7 @@ tree iterators returned when walking the resulting partition.
    :maxdepth: 1
 
    functions
+   export
    infomap
    options
    iterators
