@@ -73,137 +73,137 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
   std::vector<std::string> optionalOutputDir; // Used if !isCLI
   // --------------------- Input options ---------------------
   if (isCLI) {
-    api.addNonOptionArgument(networkFile, "network_file", "File containing the network data. Assumes a link list format if no Pajek formatted heading.", "Input");
+    api.addNonOptionArgument(networkFile, "network_file", "Network file to read. Infomap assumes link-list format unless the file starts with a Pajek heading.", "Input");
   } else {
-    api.addOptionArgument(networkFile, "input", "File containing the network data. Assumes a link list format if no Pajek formatted heading.", ArgType::path, "Input");
+    api.addOptionArgument(networkFile, "input", "Network file to read. Infomap assumes link-list format unless the file starts with a Pajek heading.", ArgType::path, "Input");
   }
 
-  api.addOptionArgument(skipAdjustBipartiteFlow, "skip-adjust-bipartite-flow", "Skip distributing all flow from the bipartite nodes to the primary nodes.", "Input", true);
+  api.addOptionArgument(skipAdjustBipartiteFlow, "skip-adjust-bipartite-flow", "Keep flow on bipartite nodes instead of distributing it to primary nodes.", "Input", true);
 
-  api.addOptionArgument(bipartiteTeleportation, "bipartite-teleportation", "Teleport like the bipartite flow instead of two-step (unipartite) teleportation.", "Input", true);
+  api.addOptionArgument(bipartiteTeleportation, "bipartite-teleportation", "Use bipartite teleportation instead of the default two-step unipartite teleportation.", "Input", true);
 
-  api.addOptionArgument(weightThreshold, "weight-threshold", "Limit the number of links to read from the network. Ignore links with less weight than the threshold.", ArgType::number, "Input", 0.0, true);
+  api.addOptionArgument(weightThreshold, "weight-threshold", "Ignore input links with weight below this threshold.", ArgType::number, "Input", 0.0, true);
 
   bool deprecated_includeSelfLinks = false;
-  api.addOptionArgument(deprecated_includeSelfLinks, 'k', "include-self-links", "DEPRECATED. Include self links by default now, exclude with --no-self-links.", "Input", true).setHidden(true);
+  api.addOptionArgument(deprecated_includeSelfLinks, 'k', "include-self-links", "DEPRECATED. Self-links are included by default; use --no-self-links to exclude them.", "Input", true).setHidden(true);
 
-  api.addOptionArgument(noSelfLinks, "no-self-links", "Exclude self links in the input network.", "Input", true);
+  api.addOptionArgument(noSelfLinks, "no-self-links", "Exclude self-links from the input network.", "Input", true);
 
-  api.addOptionArgument(nodeLimit, "node-limit", "Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.", ArgType::integer, "Input", 1u, true);
+  api.addOptionArgument(nodeLimit, "node-limit", "Read only nodes up to this node id and ignore links connected to higher node ids.", ArgType::integer, "Input", 1u, true);
 
-  api.addOptionArgument(matchableMultilayerIds, "matchable-multilayer-ids", "Construct state ids from node and layer ids that are consistent across networks for the same max number of layers. Set to at least the largest layer id among networks to match.", ArgType::integer, "Input", 1u, true);
+  api.addOptionArgument(matchableMultilayerIds, "matchable-multilayer-ids", "Construct state ids from node ids and layer ids that stay comparable across networks. Set at least to the largest layer id among networks to match.", ArgType::integer, "Input", 1u, true);
 
-  api.addOptionArgument(clusterDataFile, 'c', "cluster-data", "Provide an initial partition as cluster ids (clu) or a hierarchical tree (tree, ftree). Tree input may be physical or state-level for higher-order networks.", ArgType::path, "Input");
+  api.addOptionArgument(clusterDataFile, 'c', "cluster-data", "Read an initial partition from a clu file or a hierarchy from a tree/ftree file. Tree input may use physical or state nodes for higher-order networks.", ArgType::path, "Input");
 
-  api.addOptionArgument(assignToNeighbouringModule, "assign-to-neighbouring-module", "Assign nodes without module assignments (from --cluster-data) to the module assignment of a neighbouring node if possible.", "Input", true);
+  api.addOptionArgument(assignToNeighbouringModule, "assign-to-neighbouring-module", "With --cluster-data, assign nodes missing module ids to a neighboring node's module when possible.", "Input", true);
 
-  api.addOptionArgument(metaDataFile, "meta-data", "Provide meta data (clu format) that should be encoded.", ArgType::path, "Input", true);
+  api.addOptionArgument(metaDataFile, "meta-data", "Read metadata to encode from a clu-format file.", ArgType::path, "Input", true);
 
-  api.addOptionArgument(metaDataRate, "meta-data-rate", "Metadata encoding rate. Default is to encode each step.", ArgType::number, "Input", 0.0, true);
+  api.addOptionArgument(metaDataRate, "meta-data-rate", "With --meta-data, set the metadata encoding rate. The default encodes metadata at each step.", ArgType::number, "Input", 0.0, true);
 
-  api.addOptionArgument(unweightedMetaData, "meta-data-unweighted", "Don't weight meta data by node flow.", "Input", true);
+  api.addOptionArgument(unweightedMetaData, "meta-data-unweighted", "With --meta-data, encode metadata without weighting by node flow.", "Input", true);
 
-  api.addOptionArgument(noInfomap, "no-infomap", "Don't run the optimizer. Useful to calculate codelength of provided cluster data or to print non-modular statistics.", "Input");
+  api.addOptionArgument(noInfomap, "no-infomap", "Skip optimization. Use this to calculate codelength for --cluster-data or to print non-modular statistics.", "Input");
 
   // --------------------- Output options ---------------------
 
-  api.addOptionArgument(outName, "out-name", "Name for the output files, e.g. [output_directory]/[out-name].tree", ArgType::string, "Output", true);
+  api.addOptionArgument(outName, "out-name", "Base name for output files, for example [out_directory]/[out-name].tree.", ArgType::string, "Output", true);
 
-  api.addOptionArgument(noFileOutput, '0', "no-file-output", "Don't write output to file.", "Output", true);
+  api.addOptionArgument(noFileOutput, '0', "no-file-output", "Do not write output files.", "Output", true);
 
-  api.addOptionArgument(printTree, "tree", "Write a tree file with the modular hierarchy. Automatically enabled if no other output is specified.", "Output");
+  api.addOptionArgument(printTree, "tree", "Write the modular hierarchy to a tree file. Enabled by default when no other output format is selected.", "Output");
 
-  api.addOptionArgument(printFlowTree, "ftree", "Write a ftree file with the modular hierarchy including aggregated links between (nested) modules. (Used by Network Navigator)", "Output");
+  api.addOptionArgument(printFlowTree, "ftree", "Write the modular hierarchy and aggregated links between nested modules to an ftree file. Used by Network Navigator.", "Output");
 
-  api.addOptionArgument(printClu, "clu", "Write a clu file with the top cluster ids for each node.", "Output");
+  api.addOptionArgument(printClu, "clu", "Write top-level module ids for each node to a clu file.", "Output");
 
-  api.addOptionArgument(cluLevel, "clu-level", "For clu output, print modules at specified depth from root. Use -1 for bottom level modules.", ArgType::integer, "Output", -1, true);
+  api.addOptionArgument(cluLevel, "clu-level", "With --clu or --output clu, write module ids at this depth from the root. Use -1 for bottom-level modules.", ArgType::integer, "Output", -1, true);
 
-  api.addOptionArgument(outputFormats, 'o', "output", "Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.", ArgType::list, "Output", true)
+  api.addOptionArgument(outputFormats, 'o', "output", "Write selected output formats as a comma-separated list without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.", ArgType::list, "Output", true)
       .setChoices({ "clu", "tree", "ftree", "newick", "json", "csv", "network", "states", "flow" });
 
-  api.addOptionArgument(hideBipartiteNodes, "hide-bipartite-nodes", "Project bipartite solution to unipartite.", "Output", true);
+  api.addOptionArgument(hideBipartiteNodes, "hide-bipartite-nodes", "Hide bipartite nodes in output by projecting the solution to primary nodes.", "Output", true);
 
-  api.addOptionArgument(printAllTrials, "print-all-trials", "Print all trials to separate files.", "Output", true);
+  api.addOptionArgument(printAllTrials, "print-all-trials", "Write each trial to separate output files. Has effect only when --num-trials is greater than 1.", "Output", true);
 
   // --------------------- Core algorithm options ---------------------
-  api.addOptionArgument(twoLevel, '2', "two-level", "Optimize a two-level partition of the network. Default is multi-level.", "Algorithm");
+  api.addOptionArgument(twoLevel, '2', "two-level", "Optimize a two-level partition instead of the default multi-level hierarchy.", "Algorithm");
 
   std::string flowModelArg;
 
-  api.addOptionArgument(flowModelArg, 'f', "flow-model", "Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir, precomputed.", ArgType::option, "Algorithm")
+  api.addOptionArgument(flowModelArg, 'f', "flow-model", "Choose how Infomap derives flow from the input links. Options: undirected, directed, undirdir, outdirdir, rawdir, precomputed.", ArgType::option, "Algorithm")
       .setChoices({ "undirected", "directed", "undirdir", "outdirdir", "rawdir", "precomputed" });
 
-  api.addOptionArgument(directed, 'd', "directed", "Assume directed links. Shorthand for '--flow-model directed'.", "Algorithm");
+  api.addOptionArgument(directed, 'd', "directed", "Treat input links as directed. Shorthand for --flow-model directed.", "Algorithm");
 
-  api.addOptionArgument(recordedTeleportation, 'e', "recorded-teleportation", "If teleportation is used to calculate the flow, also record it when minimizing codelength.", "Algorithm", true);
+  api.addOptionArgument(recordedTeleportation, 'e', "recorded-teleportation", "When teleportation is used to calculate flow, also record teleportation steps in the codelength.", "Algorithm", true);
 
-  api.addOptionArgument(useNodeWeightsAsFlow, "use-node-weights-as-flow", "Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1", "Algorithm", true);
+  api.addOptionArgument(useNodeWeightsAsFlow, "use-node-weights-as-flow", "Use node weights from the API or Pajek node records as normalized node flow.", "Algorithm", true);
 
-  api.addOptionArgument(teleportToNodes, "to-nodes", "Teleport to nodes instead of to links, assuming uniform node weights if no such input data.", "Algorithm", true);
+  api.addOptionArgument(teleportToNodes, "to-nodes", "Teleport to nodes instead of links. Uses uniform node weights unless node weights are provided.", "Algorithm", true);
 
-  api.addOptionArgument(teleportationProbability, 'p', "teleportation-probability", "Probability of teleporting to a random node or link.", ArgType::probability, "Algorithm", 0.0, 1.0, true);
+  api.addOptionArgument(teleportationProbability, 'p', "teleportation-probability", "Set the probability of teleporting to a random node or link when calculating flow.", ArgType::probability, "Algorithm", 0.0, 1.0, true);
 
-  api.addOptionArgument(regularized, "regularized", "Effectively add a fully connected Bayesian prior network to not overfit due to missing links. Implies recorded teleportation", "Algorithm", true);
+  api.addOptionArgument(regularized, "regularized", "Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.", "Algorithm", true);
 
-  api.addOptionArgument(regularizationStrength, "regularization-strength", "Adjust relative strength of Bayesian prior network with this multiplier.", ArgType::number, "Algorithm", 0.0, true);
+  api.addOptionArgument(regularizationStrength, "regularization-strength", "Scale the relative strength of the Bayesian prior network used by --regularized.", ArgType::number, "Algorithm", 0.0, true);
 
-  api.addOptionArgument(entropyBiasCorrection, "entropy-corrected", "Correct for negative entropy bias in small samples (many modules).", "Algorithm", true);
+  api.addOptionArgument(entropyBiasCorrection, "entropy-corrected", "Correct for negative entropy bias in small samples, especially solutions with many modules.", "Algorithm", true);
 
-  api.addOptionArgument(entropyBiasCorrectionMultiplier, "entropy-correction-strength", "Increase or decrease the default entropy correction with this factor.", ArgType::number, "Algorithm", true);
+  api.addOptionArgument(entropyBiasCorrectionMultiplier, "entropy-correction-strength", "Scale the default correction used by --entropy-corrected.", ArgType::number, "Algorithm", true);
 
-  api.addOptionArgument(markovTime, "markov-time", "Scale link flow to change the cost of moving between modules. Higher values results in fewer modules.", ArgType::number, "Algorithm", 0.0, true);
+  api.addOptionArgument(markovTime, "markov-time", "Scale link flow to change the cost of moving between modules. Higher values result in fewer modules.", ArgType::number, "Algorithm", 0.0, true);
 
-  api.addOptionArgument(variableMarkovTime, "variable-markov-time", "Increase Markov time locally to level out link flow. Reduces risk of overpartitioning sparse areas while keeping high resolution in dense areas.", "Algorithm", true);
+  api.addOptionArgument(variableMarkovTime, "variable-markov-time", "Vary Markov time locally to reduce overpartitioning in sparse areas while keeping higher resolution in dense areas.", "Algorithm", true);
 
-  api.addOptionArgument(variableMarkovTimeDamping, "variable-markov-damping", "Damping parameter for variable Markov time, to scale with local effective degree (0) or local entropy (1).", ArgType::number, "Algorithm", true);
+  api.addOptionArgument(variableMarkovTimeDamping, "variable-markov-damping", "With --variable-markov-time, set damping between local effective degree (0) and local entropy (1).", ArgType::number, "Algorithm", true);
 
-  api.addOptionArgument(variableMarkovTimeMinLocalScale, "variable-markov-min-scale", "Minimum local scale for nodes with zero entropy to avoid division by zero. Local Markov time is max scale divided by local scale.", ArgType::number, "Algorithm", true);
+  api.addOptionArgument(variableMarkovTimeMinLocalScale, "variable-markov-min-scale", "With --variable-markov-time, set the minimum local scale for zero-entropy nodes. Local Markov time is max scale divided by local scale.", ArgType::number, "Algorithm", true);
 
   // api.addOptionArgument(markovTimeNoSelfLinks, "markov-time-no-self-links", "For testing.", "Algorithm", true);
 
-  api.addOptionArgument(preferredNumberOfModules, "preferred-number-of-modules", "Penalize solutions the more they differ from this number.", ArgType::integer, "Algorithm", 1u, true);
+  api.addOptionArgument(preferredNumberOfModules, "preferred-number-of-modules", "Penalize solutions by how far their number of modules differs from this value.", ArgType::integer, "Algorithm", 1u, true);
 
-  api.addOptionArgument(multilayerRelaxRate, "multilayer-relax-rate", "Probability to relax the constraint to move only in the current layer.", ArgType::probability, "Algorithm", 0.0, 1.0, true);
+  api.addOptionArgument(multilayerRelaxRate, "multilayer-relax-rate", "Set the probability of relaxing from a state node to neighboring layers instead of staying in the current layer.", ArgType::probability, "Algorithm", 0.0, 1.0, true);
 
-  api.addOptionArgument(multilayerRelaxLimit, "multilayer-relax-limit", "Number of neighboring layers in each direction to relax to. If negative, relax to any layer.", ArgType::integer, "Algorithm", -1, true);
+  api.addOptionArgument(multilayerRelaxLimit, "multilayer-relax-limit", "Limit relaxation to this many neighboring layer ids in each direction. Use a negative value to allow relaxation to any layer.", ArgType::integer, "Algorithm", -1, true);
 
-  api.addOptionArgument(multilayerRelaxLimitUp, "multilayer-relax-limit-up", "Number of neighboring layers with higher id to relax to. If negative, relax to any layer.", ArgType::integer, "Algorithm", -1, true);
+  api.addOptionArgument(multilayerRelaxLimitUp, "multilayer-relax-limit-up", "Limit relaxation upward to this many higher neighboring layer ids. Use a negative value to allow relaxation to any higher layer.", ArgType::integer, "Algorithm", -1, true);
 
-  api.addOptionArgument(multilayerRelaxLimitDown, "multilayer-relax-limit-down", "Number of neighboring layers with lower id to relax to. If negative, relax to any layer.", ArgType::integer, "Algorithm", -1, true);
+  api.addOptionArgument(multilayerRelaxLimitDown, "multilayer-relax-limit-down", "Limit relaxation downward to this many lower neighboring layer ids. Use a negative value to allow relaxation to any lower layer.", ArgType::integer, "Algorithm", -1, true);
 
-  api.addOptionArgument(multilayerRelaxByJensenShannonDivergence, "multilayer-relax-by-jsd", "Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.", "Algorithm", true);
+  api.addOptionArgument(multilayerRelaxByJensenShannonDivergence, "multilayer-relax-by-jsd", "Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon divergence.", "Algorithm", true);
 
   // --------------------- Performance and accuracy options ---------------------
-  api.addOptionArgument(seedToRandomNumberGenerator, 's', "seed", "A seed (integer) to the random number generator for reproducible results.", ArgType::integer, "Accuracy", 1ul);
+  api.addOptionArgument(seedToRandomNumberGenerator, 's', "seed", "Set the random number generator seed for reproducible results.", ArgType::integer, "Accuracy", 1ul);
 
-  api.addOptionArgument(numTrials, 'N', "num-trials", "Number of outer-most loops to run before picking the best solution.", ArgType::integer, "Accuracy", 1u);
+  api.addOptionArgument(numTrials, 'N', "num-trials", "Run this many independent trials and keep the best solution.", ArgType::integer, "Accuracy", 1u);
 
-  api.addOptionArgument(coreLoopLimit, 'M', "core-loop-limit", "Limit the number of loops that tries to move each node into the best possible module.", ArgType::integer, "Accuracy", 1u, true);
+  api.addOptionArgument(coreLoopLimit, 'M', "core-loop-limit", "Limit how many core loops try to move each node to the best module.", ArgType::integer, "Accuracy", 1u, true);
 
-  api.addOptionArgument(levelAggregationLimit, 'L', "core-level-limit", "Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.", ArgType::integer, "Accuracy", 1u, true);
+  api.addOptionArgument(levelAggregationLimit, 'L', "core-level-limit", "Limit how many times core loops are reapplied to the aggregated modular network to find larger structures.", ArgType::integer, "Accuracy", 1u, true);
 
-  api.addOptionArgument(tuneIterationLimit, 'T', "tune-iteration-limit", "Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.", ArgType::integer, "Accuracy", 1u, true);
+  api.addOptionArgument(tuneIterationLimit, 'T', "tune-iteration-limit", "Limit the main iterations in the two-level partition algorithm. 0 means no limit.", ArgType::integer, "Accuracy", 1u, true);
 
-  api.addOptionArgument(minimumCodelengthImprovement, "core-loop-codelength-threshold", "Minimum codelength threshold for accepting a new solution in core loop.", ArgType::number, "Accuracy", 0.0, true);
+  api.addOptionArgument(minimumCodelengthImprovement, "core-loop-codelength-threshold", "Require at least this codelength improvement to accept a new solution in a core loop.", ArgType::number, "Accuracy", 0.0, true);
 
-  api.addOptionArgument(minimumRelativeTuneIterationImprovement, "tune-iteration-relative-threshold", "Set codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.", ArgType::number, "Accuracy", 0.0, true);
+  api.addOptionArgument(minimumRelativeTuneIterationImprovement, "tune-iteration-relative-threshold", "Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.", ArgType::number, "Accuracy", 0.0, true);
 
-  api.addIncrementalOptionArgument(fastHierarchicalSolution, 'F', "fast-hierarchical-solution", "Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.", "Accuracy", true);
+  api.addIncrementalOptionArgument(fastHierarchicalSolution, 'F', "fast-hierarchical-solution", "Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to skip recursive refinement.", "Accuracy", true);
 
-  api.addOptionArgument(innerParallelization, "inner-parallelization", "Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.", "Accuracy", true);
+  api.addOptionArgument(innerParallelization, "inner-parallelization", "Parallelize the innermost loop for speed, with a possible accuracy tradeoff.", "Accuracy", true);
 
-  api.addOptionArgument(preferModularSolution, "prefer-modular-solution", "Prefer modular solutions even if they are worse than putting all nodes in one module.", "Accuracy", true);
+  api.addOptionArgument(preferModularSolution, "prefer-modular-solution", "Prefer a modular solution even when one module gives a lower codelength.", "Accuracy", true);
 
-  api.addOptionArgument(numRandomMoves, "num-random-moves", "Number of random moves to try in core loop to try merge weakly connected nodes.", ArgType::integer, "Accuracy", 0u, true);
+  api.addOptionArgument(numRandomMoves, "num-random-moves", "Try this many random moves in each core loop to merge weakly connected nodes.", ArgType::integer, "Accuracy", 0u, true);
 
-  api.addOptionArgument(maxDegreeForRandomMoves, "max-degree-for-random-moves", "Maximum degree of nodes for which to try random moves.", ArgType::integer, "Accuracy", 0u, true);
+  api.addOptionArgument(maxDegreeForRandomMoves, "max-degree-for-random-moves", "Try random moves only for nodes with degree at most this value.", ArgType::integer, "Accuracy", 0u, true);
 
-  api.addOptionalNonOptionArguments(optionalOutputDir, "out_directory", "Directory to write the results to.", "Output");
+  api.addOptionalNonOptionArguments(optionalOutputDir, "out_directory", "Directory where output files are written.", "Output");
 
-  api.addIncrementalOptionArgument(verbosity, 'v', "verbose", "Verbose output on the console. Add additional 'v' flags to increase verbosity up to -vvv.", "Output");
+  api.addIncrementalOptionArgument(verbosity, 'v', "verbose", "Increase console verbosity. Add more v flags to increase verbosity up to -vvv.", "Output");
 
-  api.addOptionArgument(silent, "silent", "No output on the console.", "Output");
+  api.addOptionArgument(silent, "silent", "Suppress console output.", "Output");
 
   api.parseArgs(flags);
 
