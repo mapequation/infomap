@@ -90,7 +90,7 @@ mapped to stable internal ids in first-seen order and returned as a mapping:
 State and multilayer networks
 -----------------------------
 
-State networks are inferred from a ``phys_id`` node attribute, and multilayer
+State networks are inferred from a ``node_id`` node attribute, and multilayer
 networks additionally use ``layer_id``. :func:`infomap.find_communities`
 returns a partition of the graph's own nodes, which are state nodes for these
 inputs:
@@ -101,9 +101,9 @@ inputs:
     from infomap import Infomap
 
     graph = nx.Graph()
-    graph.add_node("state-a", phys_id="a", layer_id=1)
-    graph.add_node("state-b", phys_id="b", layer_id=1)
-    graph.add_node("state-a-next", phys_id="a", layer_id=2)
+    graph.add_node("state-a", node_id="a", layer_id=1)
+    graph.add_node("state-b", node_id="b", layer_id=1)
+    graph.add_node("state-a-next", node_id="a", layer_id=2)
     graph.add_edge("state-a", "state-b")
     graph.add_edge("state-a", "state-a-next")
 
@@ -162,14 +162,14 @@ vertex attribute names:
 :meth:`infomap.Infomap.add_igraph_graph` remains available when you need
 direct control over the :class:`infomap.Infomap` instance. It accepts
 standard, state, and multilayer igraph graphs. The igraph vertex index is
-used as the state/internal id, while non-numeric ``phys_id`` labels in state
+used as the state/internal id, while non-numeric ``node_id`` labels in state
 and multilayer graphs are mapped to stable internal physical ids:
 
 .. code-block:: python
 
     graph = ig.Graph(edges=[(0, 1), (0, 2)])
     graph.vs["name"] = ["state-a", "state-b", "state-a-next"]
-    graph.vs["phys_id"] = ["a", "b", "a"]
+    graph.vs["node_id"] = ["a", "b", "a"]
     graph.vs["layer_id"] = [1, 1, 2]
 
     im = infomap.Infomap(silent=True)

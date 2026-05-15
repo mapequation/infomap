@@ -79,10 +79,10 @@ def _integer_like(value, *, name):
     raise ValueError(f"`{name}` values must be integer-like.")
 
 
-def _phys_ids(values):
+def _node_ids(values):
     if all(isinstance(value, Real) and not isinstance(value, bool) for value in values):
-        ids = [_integer_like(value, name="phys_id") for value in values]
-        return ids, {node_id: str(node_id) for node_id in dict.fromkeys(ids)}
+        ids = [_integer_like(value, name="node_id") for value in values]
+        return ids, {_node_id: str(_node_id) for _node_id in dict.fromkeys(ids)}
 
     label_to_id = {}
     ids = []
@@ -90,7 +90,7 @@ def _phys_ids(values):
         if label not in label_to_id:
             label_to_id[label] = len(label_to_id)
         ids.append(label_to_id[label])
-    names = {node_id: str(label) for label, node_id in label_to_id.items()}
+    names = {_node_id: str(label) for label, _node_id in label_to_id.items()}
     return ids, names
 
 
@@ -110,7 +110,7 @@ def add_igraph_graph(
     *,
     edge_weights: str | Iterable[Any] | None = None,
     vertex_weights: Any = None,
-    phys_id: str = "phys_id",
+    node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
 ) -> dict[int, Any]:
@@ -125,20 +125,20 @@ def add_igraph_graph(
     names = _vertex_names(g)
     weights = _edge_weights(g, edge_weights)
     vertices = list(range(g.vcount()))
-    phys_values = _vertex_attribute(g, phys_id)
+    phys_values = _vertex_attribute(g, node_id)
     layer_values = _vertex_attribute(g, layer_id)
     is_state_network = phys_values is not None
     is_multilayer_network = phys_values is not None and layer_values is not None
 
     phys_names = {}
     if is_state_network:
-        phys, phys_names = _phys_ids(phys_values)
+        phys, phys_names = _node_ids(phys_values)
     else:
         phys = vertices
     layers = _layer_ids(layer_values) if is_multilayer_network else None
 
-    for node_id, name in phys_names.items():
-        infomap.set_name(node_id, name)
+    for _node_id, name in phys_names.items():
+        infomap.set_name(_node_id, name)
 
     if is_multilayer_network:
         for vertex_id in vertices:
@@ -230,7 +230,7 @@ def find_igraph_communities(
     edge_weights: str | Iterable[Any] | None = None,
     vertex_weights: Any = None,
     trials: int = 10,
-    phys_id: str = "phys_id",
+    node_id: str = "node_id",
     layer_id: str = "layer_id",
     multilayer_inter_intra_format: bool = True,
     module_attribute: str | None = None,
@@ -261,7 +261,7 @@ def find_igraph_communities(
         g,
         edge_weights=edge_weights,
         vertex_weights=vertex_weights,
-        phys_id=phys_id,
+        node_id=node_id,
         layer_id=layer_id,
         multilayer_inter_intra_format=multilayer_inter_intra_format,
     )

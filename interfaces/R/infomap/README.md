@@ -109,10 +109,10 @@ ids used to build the network. For links added directly with
 `add_link()` or `add_links()`, those user-supplied ids are preserved.
 `add_igraph()` uses R igraph's 1-indexed vertex ids as state ids. Plain
 graph results use those ids directly. State and multilayer graphs can use
-separate physical ids from a `phys_id` vertex attribute; non-numeric
+separate physical ids from a `node_id` vertex attribute; non-numeric
 physical labels are mapped to stable internal integers. The `mapping`
 returned by `add_igraph()` recovers the original igraph vertex names (or
-stringified vertex ids) keyed by vertex id, and `attr(mapping, "phys_id")`
+stringified vertex ids) keyed by vertex id, and `attr(mapping, "node_id")`
 maps internal physical ids back to original physical labels when such a
 mapping was needed.
 
