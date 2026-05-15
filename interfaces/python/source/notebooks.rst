@@ -30,6 +30,21 @@ The notebooks cover:
 The notebook source is available in
 `examples/notebooks <https://github.com/mapequation/infomap/tree/master/examples/notebooks>`_.
 
+Comparison tutorials
+--------------------
+
+The unnumbered workflow notebooks show how to run Infomap next to common
+community-detection tools without following the article section numbering:
+
+- `compare-infomap-louvain-leiden-networkx.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-leiden-networkx.ipynb>`_
+  compares :func:`infomap.find_communities` with NetworkX Louvain and Leiden
+  when Leiden is available.
+- `compare-infomap-louvain-leiden-igraph.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-louvain-leiden-igraph.ipynb>`_
+  compares :func:`infomap.find_igraph_communities` with python-igraph
+  Louvain and Leiden.
+- `compare-infomap-scanpy-workflow.ipynb <https://github.com/mapequation/infomap/blob/master/examples/notebooks/compare-infomap-scanpy-workflow.ipynb>`_
+  shows :func:`infomap.tl.infomap` in an AnnData and Scanpy-style workflow.
+
 Run with Docker
 ---------------
 

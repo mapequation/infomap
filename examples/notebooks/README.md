@@ -1,7 +1,9 @@
 # Infomap tutorial notebooks
 
-These notebooks accompany [Community Detection with the Map Equation and
-Infomap: Theory and Applications](https://doi.org/10.1145/3779648).
+Most numbered notebooks accompany [Community Detection with the Map Equation
+and Infomap: Theory and Applications](https://doi.org/10.1145/3779648).
+Descriptive, unnumbered notebooks cover practical Python workflows that are
+not tied to the article section numbering.
 
 They live in the main Infomap repository so API changes, dependency drift, and
 broken examples are caught by the normal maintenance workflow.

@@ -87,6 +87,7 @@ examples = [
 ]
 notebooks = [
   "coloraide",
+  "igraph",
   "ipykernel",
   "jupyterlab",
   "matplotlib",
