@@ -244,7 +244,13 @@ def test_python_package_extras_are_declared(test_paths):
     assert optional_dependencies["networkx"] == ["networkx"]
     assert optional_dependencies["igraph"] == ["igraph"]
     assert optional_dependencies["pandas"] == ["pandas"]
-    assert set(optional_dependencies["all"]) == {"igraph", "networkx", "pandas"}
+    assert optional_dependencies["scipy"] == ["scipy"]
+    assert set(optional_dependencies["all"]) == {
+        "igraph",
+        "networkx",
+        "pandas",
+        "scipy",
+    }
 
 
 def test_py_typed_marker_is_packaged():

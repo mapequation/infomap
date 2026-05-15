@@ -48,16 +48,21 @@ igraph = [
 pandas = [
   "pandas",
 ]
+scipy = [
+  "scipy",
+]
 all = [
   "igraph",
   "networkx",
   "pandas",
+  "scipy",
 ]
 test = [
   "igraph",
   "pytest",
   "networkx",
   "ruff",
+  "scipy",
 ]
 docs = [
   "sphinx",
@@ -71,6 +76,7 @@ examples = [
   "numpy",
   "pandas",
   "scikit-learn",
+  "scipy",
 ]
 release = [
   "build",

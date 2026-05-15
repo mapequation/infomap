@@ -87,6 +87,72 @@ mapped to stable internal ids in first-seen order and returned as a mapping:
     mapping = im.add_networkx_graph(graph)
     im.run()
 
+SciPy sparse matrices
+---------------------
+
+Use :meth:`infomap.Infomap.from_scipy_sparse_matrix` when your graph is
+already stored as a SciPy sparse adjacency matrix. CSR, CSC and COO matrices
+and sparse arrays are accepted. The adapter imports SciPy lazily, so SciPy is
+only required when this API is used.
+
+.. code-block:: python
+
+    import scipy.sparse as sp
+    from infomap import Infomap
+
+    adjacency = sp.csr_matrix([
+        [0, 1, 0],
+        [1, 0, 2],
+        [0, 2, 0],
+    ])
+
+    im = Infomap.from_scipy_sparse_matrix(adjacency, directed=False, args="--silent")
+    im.run()
+    modules = im.get_modules()
+
+For unweighted graphs, pass ``weighted=False`` to treat every nonzero matrix
+entry as weight ``1.0``:
+
+.. code-block:: python
+
+    im = Infomap.from_scipy_sparse_matrix(adjacency, weighted=False, args="--silent")
+
+For directed graphs, pass ``directed=True``. Then ``A[i, j]`` is interpreted
+as a directed edge from row ``i`` to column ``j``:
+
+.. code-block:: python
+
+    directed_adjacency = sp.coo_matrix([
+        [0, 1],
+        [0, 0],
+    ])
+    im = Infomap.from_scipy_sparse_matrix(
+        directed_adjacency,
+        directed=True,
+        args="--silent",
+    )
+
+Custom node ids can be supplied in matrix row order. The adapter returns a
+mapping from Infomap's internal integer ids to those external ids, matching
+the pattern used by :meth:`infomap.Infomap.add_networkx_graph`:
+
+.. code-block:: python
+
+    adjacency = sp.coo_matrix([
+        [0, 3],
+        [3, 0],
+    ])
+    im = Infomap(silent=True)
+    mapping = im.add_scipy_sparse_matrix(adjacency, directed=False, node_ids=["gene_a", "gene_b"])
+    im.run()
+    modules = {mapping[node_id]: module_id for node_id, module_id in im.get_modules().items()}
+    assert set(modules) == {"gene_a", "gene_b"}
+
+For undirected input, symmetric entries are de-duplicated: if both ``A[i, j]``
+and ``A[j, i]`` exist, one undirected link is added. If the two entries have
+different weights, the larger weight is used. For large graphs, prefer CSR or
+COO input to avoid unnecessary conversion work.
+
 State and multilayer networks
 -----------------------------
 

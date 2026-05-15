@@ -25,6 +25,7 @@ Install optional integrations for common research workflows:
     pip install "infomap[networkx]"
     pip install "infomap[igraph]"
     pip install "infomap[pandas]"
+    pip install "infomap[scipy]"
 
 Or install all optional integrations at once:
 
