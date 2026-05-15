@@ -36,6 +36,8 @@ Where to go next
 - :doc:`usage` — NetworkX, igraph, state and multilayer networks, reusable
   options, and a migration guide for users of other community-detection
   packages.
+- :doc:`scanpy` — run Infomap on AnnData graphs in Scanpy-style single-cell
+  workflows.
 - :doc:`api/index` — full API reference, split into top-level functions, the
   :class:`infomap.Infomap` class, options, and tree iterators.
 
@@ -56,4 +58,5 @@ External resources
    installation
    quickstart
    usage
+   scanpy
    api/index

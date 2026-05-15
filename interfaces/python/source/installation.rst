@@ -26,6 +26,7 @@ Install optional integrations for common research workflows:
     pip install "infomap[igraph]"
     pip install "infomap[pandas]"
     pip install "infomap[scipy]"
+    pip install "infomap[anndata]"
 
 Or install all optional integrations at once:
 

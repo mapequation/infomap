@@ -6,6 +6,9 @@ NetworkX- and igraph-style entry points, state and multilayer networks, and a
 short migration guide for users coming from other community-detection
 packages.
 
+For single-cell analysis workflows using AnnData or Scanpy, see
+:doc:`scanpy`.
+
 Reusable options
 ----------------
 
