@@ -56,6 +56,17 @@ test_that("add_links list input matches repeated add_link", {
   expect_equal(im$modules, baseline$modules)
 })
 
+test_that("add_state_nodes accepts pair lists and named mappings", {
+  pairs <- Infomap(silent = TRUE)
+  pairs$add_state_nodes(list(c(10, 1), c(11, 1), c(20, 2)))
+
+  mapping <- Infomap(silent = TRUE)
+  mapping$add_state_nodes(list("10" = 1, "11" = 1, "20" = 2))
+
+  expect_equal(pairs$num_nodes, 3L)
+  expect_equal(mapping$num_nodes, pairs$num_nodes)
+})
+
 test_that("Infomap accepts named-argument keyword overrides", {
   opts <- infomap_options(num_trials = 7L, silent = TRUE, two_level = TRUE)
   expect_true(is.list(opts))
