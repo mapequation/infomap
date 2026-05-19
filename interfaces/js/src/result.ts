@@ -1,4 +1,5 @@
 import type { Result } from "./index";
+import outputFormatsManifestJson from "../generated/output-formats.json";
 
 export type ResultKey = keyof Result;
 
@@ -21,147 +22,30 @@ export type ResultMetadata = {
   numLevels: number | null;
 };
 
-const textMimeType = "text/plain;charset=utf-8";
-const jsonMimeType = "application/json;charset=utf-8";
+type ResultFormatManifest = {
+  resultOrder: ResultKey[];
+  formats: {
+    optionName: string;
+    files: ResultFormat[];
+  }[];
+};
 
-export const resultFormats: ResultFormat[] = [
-  {
-    key: "clu",
-    name: "Clu",
-    isStates: false,
-    suffix: "",
-    extension: "clu",
-    mimeType: textMimeType,
-  },
-  {
-    key: "tree",
-    name: "Tree",
-    isStates: false,
-    suffix: "",
-    extension: "tree",
-    mimeType: textMimeType,
-  },
-  {
-    key: "ftree",
-    name: "Ftree",
-    isStates: false,
-    suffix: "",
-    extension: "ftree",
-    mimeType: textMimeType,
-  },
-  {
-    key: "net",
-    name: "Network",
-    isStates: false,
-    suffix: "",
-    extension: "net",
-    mimeType: textMimeType,
-  },
-  {
-    key: "states_as_physical",
-    name: "States as physical",
-    isStates: false,
-    suffix: "_states_as_physical",
-    extension: "net",
-    mimeType: textMimeType,
-  },
-  {
-    key: "clu_states",
-    name: "Clu",
-    isStates: true,
-    suffix: "_states",
-    extension: "clu",
-    mimeType: textMimeType,
-  },
-  {
-    key: "tree_states",
-    name: "Tree",
-    isStates: true,
-    suffix: "_states",
-    extension: "tree",
-    mimeType: textMimeType,
-  },
-  {
-    key: "ftree_states",
-    name: "Ftree",
-    isStates: true,
-    suffix: "_states",
-    extension: "ftree",
-    mimeType: textMimeType,
-  },
-  {
-    key: "states",
-    name: "States",
-    isStates: true,
-    suffix: "_states",
-    extension: "net",
-    mimeType: textMimeType,
-  },
-  {
-    key: "flow",
-    name: "Flow",
-    isStates: false,
-    suffix: "_flow",
-    extension: "net",
-    mimeType: textMimeType,
-  },
-  {
-    key: "flow_as_physical",
-    name: "Flow states as physical",
-    isStates: true,
-    suffix: "_states_as_physical_flow",
-    extension: "net",
-    mimeType: textMimeType,
-  },
-  {
-    key: "newick",
-    name: "Newick",
-    isStates: false,
-    suffix: "",
-    extension: "nwk",
-    mimeType: textMimeType,
-  },
-  {
-    key: "newick_states",
-    name: "Newick",
-    isStates: true,
-    suffix: "_states",
-    extension: "nwk",
-    mimeType: textMimeType,
-  },
-  {
-    key: "json",
-    name: "JSON",
-    isStates: false,
-    suffix: "",
-    extension: "json",
-    mimeType: jsonMimeType,
-  },
-  {
-    key: "json_states",
-    name: "JSON",
-    isStates: true,
-    suffix: "_states",
-    extension: "json",
-    mimeType: jsonMimeType,
-  },
-  {
-    key: "csv",
-    name: "CSV",
-    isStates: false,
-    suffix: "",
-    extension: "csv",
-    mimeType: textMimeType,
-  },
-  {
-    key: "csv_states",
-    name: "CSV",
-    isStates: true,
-    suffix: "_states",
-    extension: "csv",
-    mimeType: textMimeType,
-  },
-];
+const outputFormatsManifest = outputFormatsManifestJson as ResultFormatManifest;
+
+const resultFormatsByKey = new Map<ResultKey, ResultFormat>(
+  outputFormatsManifest.formats
+    .flatMap((format) => format.files)
+    .map((format) => [format.key, format]),
+);
+
+export const resultFormats: ResultFormat[] =
+  outputFormatsManifest.resultOrder.map((key) => {
+    const format = resultFormatsByKey.get(key);
+    if (!format) {
+      throw new Error(`Missing result format metadata for ${key}`);
+    }
+    return format;
+  });
 
 function parseJsonMetadata(result: Result): ResultMetadata {
   const json = result.json_states ?? result.json;

@@ -8,6 +8,7 @@
  ******************************************************************************/
 
 #include "Config.h"
+#include "OutputFormats.h"
 #include "ProgramInterface.h"
 #include "SafeFile.h"
 #include "../utils/FileURI.h"
@@ -58,6 +59,39 @@ namespace {
   {
     if (config.haveOutput() && !isDirectoryWritable(config.outDirectory))
       throw std::runtime_error(io::Str() << "Can't write to directory '" << config.outDirectory << "'. Check that the directory exists and that you have write permissions.");
+  }
+
+  void enableOutputFormat(Config& config, const OutputFormat& format)
+  {
+    switch (format.flag) {
+    case OutputFormatFlag::Clu:
+      config.printClu = true;
+      break;
+    case OutputFormatFlag::Tree:
+      config.printTree = true;
+      break;
+    case OutputFormatFlag::FlowTree:
+      config.printFlowTree = true;
+      break;
+    case OutputFormatFlag::Newick:
+      config.printNewick = true;
+      break;
+    case OutputFormatFlag::Json:
+      config.printJson = true;
+      break;
+    case OutputFormatFlag::Csv:
+      config.printCsv = true;
+      break;
+    case OutputFormatFlag::PajekNetwork:
+      config.printPajekNetwork = true;
+      break;
+    case OutputFormatFlag::StateNetwork:
+      config.printStateNetwork = true;
+      break;
+    case OutputFormatFlag::FlowNetwork:
+      config.printFlowNetwork = true;
+      break;
+    }
   }
 
 } // namespace
@@ -120,7 +154,7 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
   api.addOptionArgument(cluLevel, "clu-level", "With --clu or --output clu, write module ids at this depth from the root. Use -1 for bottom-level modules.", ArgType::integer, "Output", -1, true);
 
   api.addOptionArgument(outputFormats, 'o', "output", "Write selected output formats as a comma-separated list without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.", ArgType::list, "Output", true)
-      .setChoices({ "clu", "tree", "ftree", "newick", "json", "csv", "network", "states", "flow" });
+      .setChoices(outputFormatNames());
 
   api.addOptionArgument(hideBipartiteNodes, "hide-bipartite-nodes", "Hide bipartite nodes in output by projecting the solution to primary nodes.", "Output", true);
 
@@ -254,27 +288,11 @@ void Config::adaptDefaults()
 {
   auto outputs = io::split(outputFormats, ',');
   for (std::string& o : outputs) {
-    if (o == "clu") {
-      printClu = true;
-    } else if (o == "tree") {
-      printTree = true;
-    } else if (o == "ftree") {
-      printFlowTree = true;
-    } else if (o == "newick") {
-      printNewick = true;
-    } else if (o == "json") {
-      printJson = true;
-    } else if (o == "csv") {
-      printCsv = true;
-    } else if (o == "network") {
-      printPajekNetwork = true;
-    } else if (o == "flow") {
-      printFlowNetwork = true;
-    } else if (o == "states") {
-      printStateNetwork = true;
-    } else {
+    const auto* format = findOutputFormat(o);
+    if (format == nullptr) {
       throw std::runtime_error(io::Str() << "Unrecognized output format: '" << o << "'.");
     }
+    enableOutputFormat(*this, *format);
   }
 
   // Of no output format specified, use tree as default (if not used as a library).
