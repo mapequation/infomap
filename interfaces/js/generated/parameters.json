@@ -673,5 +673,15 @@
     "advanced": false,
     "incremental": false,
     "default": false
+  },
+  {
+    "long": "--pretty",
+    "short": "",
+    "description": "Use modernized console output with color and Unicode on interactive terminals.",
+    "group": "Output",
+    "required": false,
+    "advanced": false,
+    "incremental": false,
+    "default": false
   }
 ]

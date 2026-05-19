@@ -39,6 +39,7 @@ export type Arguments = Partial<{
   printAllTrials: boolean;
   verbose: 1 | 2 | 3;
   silent: boolean;
+  pretty: boolean;
   // algorithm
   twoLevel: boolean;
   flowModel:
@@ -140,6 +141,8 @@ export default function argumentsToString(args: Arguments) {
   if (args.verbose) result += " -" + "v".repeat(args.verbose);
 
   if (args.silent) result += " --silent";
+
+  if (args.pretty) result += " --pretty";
 
   if (args.twoLevel) result += " --two-level";
 

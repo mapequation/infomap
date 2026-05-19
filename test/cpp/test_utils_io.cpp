@@ -2,6 +2,8 @@
 
 #include "io/SafeFile.h"
 #include "utils/FileURI.h"
+#include "utils/Log.h"
+#include "utils/PrettyOutput.h"
 #include "utils/Random.h"
 #include "utils/convert.h"
 
@@ -9,7 +11,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <iostream>
 #include <limits>
+#include <sstream>
 #include <string>
 #include <sys/stat.h>
 #include <vector>
@@ -139,6 +143,65 @@ TEST_CASE("convert helpers preserve current tokenization behavior [fast][core][u
   CHECK(infomap::io::stringify(parts, "|") == "alpha|beta|gamma");
   CHECK(infomap::io::tolower("MiXeD") == "mixed");
   CHECK(infomap::io::InsensitiveCompare {}("abc", "ABD"));
+}
+
+TEST_CASE("PrettyOutput formats plain output without ANSI and clamps tiny percentages [fast][core][utils][io]")
+{
+  std::ostringstream output;
+  infomap::Log::setOutputStream(output);
+  infomap::Log::init(0, false, 9, true);
+
+#ifndef _WIN32
+  setenv("NO_COLOR", "1", 1);
+#endif
+
+  infomap::PrettyOutput pretty(true);
+  pretty.section("Flow");
+  pretty.metric("Model", "directed");
+  pretty.status("Recursive", infomap::PrettyOutput::percent(-1.0e-12));
+
+  CHECK(output.str().find("\033[") == std::string::npos);
+  CHECK(output.str().find("Flow") != std::string::npos);
+  CHECK(output.str().find("0%") != std::string::npos);
+  CHECK(infomap::PrettyOutput::percent(-1.55696863e-14) == "0%");
+
+#ifndef _WIN32
+  unsetenv("NO_COLOR");
+#endif
+  infomap::Log::setOutputStream(std::cout);
+  infomap::Log::init(0, false, 9);
+}
+
+TEST_CASE("Log channels mute legacy output in default pretty mode [fast][core][utils][io]")
+{
+  std::ostringstream output;
+  infomap::Log::setOutputStream(output);
+
+  infomap::Log::init(0, false, 9, true);
+  infomap::Log() << "legacy";
+  infomap::Log::pretty() << "pretty";
+  infomap::Log::important() << "important";
+
+  CHECK(output.str().find("legacy") == std::string::npos);
+  CHECK(output.str().find("pretty") != std::string::npos);
+  CHECK(output.str().find("important") != std::string::npos);
+
+  output.str("");
+  output.clear();
+  infomap::Log::init(1, false, 9, true);
+  infomap::Log() << "legacy";
+  CHECK(output.str().find("legacy") != std::string::npos);
+
+  output.str("");
+  output.clear();
+  infomap::Log::init(0, true, 9, true);
+  infomap::Log() << "legacy";
+  infomap::Log::pretty() << "pretty";
+  infomap::Log::important() << "important";
+  CHECK(output.str().empty());
+
+  infomap::Log::setOutputStream(std::cout);
+  infomap::Log::init(0, false, 9);
 }
 
 TEST_CASE("PortableRandom maps integers portably [fast][core][utils]")

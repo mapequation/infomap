@@ -156,6 +156,7 @@ struct Config {
   unsigned int verbosity = 0;
   unsigned int verboseNumberPrecision = 9;
   bool silent = false;
+  bool prettyOutput = false;
   bool hideBipartiteNodes = false;
 
   // Other
@@ -226,6 +227,7 @@ struct Config {
     outputFormats = other.outputFormats;
     verbosity = other.verbosity;
     verboseNumberPrecision = other.verboseNumberPrecision;
+    prettyOutput = other.prettyOutput;
     startDate = other.startDate;
     version = other.version;
     return *this;

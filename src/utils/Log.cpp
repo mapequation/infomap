@@ -35,6 +35,7 @@ std::ostream& Log::defaultStream()
 std::ostream* Log::s_ostream = nullptr;
 unsigned int Log::s_verboseLevel = 0;
 bool Log::s_silent = false;
+bool Log::s_legacyMuted = false;
 
 void Log::setNoOutput()
 {
@@ -42,6 +43,7 @@ void Log::setNoOutput()
   static std::ostream nullStream(&nullBuf);
   s_ostream = &nullStream;
   s_silent = true;
+  s_legacyMuted = true;
 }
 
 } // namespace infomap

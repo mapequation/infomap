@@ -9,6 +9,8 @@
 
 #include "FlowCalculator.h"
 #include "../utils/Log.h"
+#include "../utils/PrettyOutput.h"
+#include "../utils/convert.h"
 #include "../utils/infomath.h"
 #include "../core/StateNetwork.h"
 #include <cmath>
@@ -37,6 +39,7 @@ inline void normalize(std::vector<T>& v) noexcept
 FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
     : numNodes(network.numNodes())
 {
+  m_prettyOutput = config.prettyOutput;
   Log() << "Calculating global network flow using flow model '" << config.flowModel << "'... " << std::flush;
 
   // Prepare data in sequence containers for fast access of individual elements
@@ -187,8 +190,26 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   finalize(network, config, normalizeNodeFlow);
 }
 
+void FlowCalculator::addFlowNote(const std::string& note)
+{
+  if (m_prettyOutput)
+    m_flowNotes.push_back(note);
+}
+
+void FlowCalculator::recordPageRank(unsigned int iterations, double error, bool converged) noexcept
+{
+  if (m_prettyOutput) {
+    m_havePageRank = true;
+    m_pageRankIterations = iterations;
+    m_pageRankError = error;
+    m_pageRankConverged = converged;
+  }
+}
+
 void FlowCalculator::calcUndirectedFlow() noexcept
 {
+  if (m_prettyOutput)
+    m_flowMethod = "undirected links";
   Log() << "\n  -> Using undirected links.";
 
   // Flow is outgoing transition probability times source node flow
@@ -206,6 +227,7 @@ void FlowCalculator::calcUndirectedFlow() noexcept
 
 void FlowCalculator::calcDirdirFlow(const Config& config) noexcept
 {
+  m_flowMethod = config.flowModel == FlowModel::outdirdir ? "ingoing links only" : "undirected links, directed steady state";
   if (config.flowModel == FlowModel::outdirdir)
     Log() << "\n  -> Counting only ingoing links.";
   else
@@ -229,6 +251,8 @@ void FlowCalculator::calcDirdirFlow(const Config& config) noexcept
 
 void FlowCalculator::calcRawdirFlow() noexcept
 {
+  m_flowMethod = "directed links with raw flow";
+  addFlowNote(io::Str() << "Total link weight " << sumLinkWeight);
   Log() << "\n  -> Using directed links with raw flow.";
   Log() << "\n  -> Total link weight: " << sumLinkWeight << ".";
 
@@ -244,6 +268,8 @@ void FlowCalculator::calcRawdirFlow() noexcept
 
 void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Config&)
 {
+  m_flowMethod = "precomputed directed flow";
+  addFlowNote(io::Str() << "Total link flow " << sumLinkWeight);
   Log() << "\n  -> Using directed links with precomputed flow from input data.";
   Log() << "\n  -> Total link flow: " << sumLinkWeight << ".";
 
@@ -267,6 +293,8 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
     nodeFlow[nodeIndexMap[node.id]] = node.weight;
     sumFlow += node.weight;
   }
+  if (m_prettyOutput)
+    addFlowNote(io::Str() << "Total node flow " << sumFlow);
   Log() << "\n  -> Total node flow: " << sumFlow << ".";
 
   if (infomath::isEqual(sumFlow, 0)) {
@@ -274,9 +302,9 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
   }
   if (!infomath::isEqual(sumFlow, 1)) {
     if (infomath::isEqual(sumFlow, numNodes) && infomath::isEqual(nodeFlow[0], 1)) {
-      Log() << "\n  Warning: Node flow sums to the number of nodes, is node flow provided or is default node weights used? Normalizing.";
+      Log::important() << "\n  Warning: Node flow sums to the number of nodes, is node flow provided or is default node weights used? Normalizing.";
     } else {
-      Log() << "\n  Warning: Node flow sums to " << sumFlow << ", normalizing.";
+      Log::important() << "\n  Warning: Node flow sums to " << sumFlow << ", normalizing.";
     }
     for (unsigned int i = 0; i < numNodes; ++i) {
       nodeFlow[i] /= sumFlow;
@@ -287,6 +315,9 @@ void FlowCalculator::usePrecomputedFlow(const StateNetwork& network, const Confi
 struct IterationResult {
   double alpha;
   double beta;
+  unsigned int iterations;
+  double error;
+  bool converged;
 };
 
 template <typename Iteration>
@@ -309,17 +340,20 @@ IterationResult powerIterate(double alpha, unsigned int maxIterations, Iteration
     ++iterations;
   } while (iterations < maxIterations && (err > 1.0e-15 || iterations < 50));
 
-  if (iterations >= maxIterations) {
-    Log() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
+  const bool converged = iterations < maxIterations;
+  if (!converged) {
+    Log::important() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
   } else {
     Log() << "\n  -> PageRank calculation done in " << iterations << " iterations with error " << err << ".\n";
   }
 
-  return { alpha, beta };
+  return { alpha, beta, iterations, err, converged };
 }
 
 void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config& config) noexcept
 {
+  m_flowMethod = "directed links";
+  m_teleportation = io::Str() << (config.recordedTeleportation ? "recorded" : "unrecorded") << ", to " << (config.teleportToNodes ? "nodes" : "links");
   Log() << "\n  -> Using " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " << (config.teleportToNodes ? "nodes" : "links") << ". " << std::flush;
 
   // Calculate the teleport rate distribution
@@ -388,6 +422,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
   };
 
   const auto result = powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration);
+  recordPageRank(result.iterations, result.error, result.converged);
 
   double sumNodeRank = 1.0;
   double beta = result.beta;
@@ -414,6 +449,8 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
 void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, const Config& config) noexcept
 {
+  m_flowMethod = "directed regularized flow";
+  m_teleportation = "recorded, Bayesian prior to nodes";
   Log() << "\n  -> Using recorded teleportation to nodes according to a fully connected Bayesian prior. " << std::flush;
 
   // Calculate node weights w_i = s_i/k_i, where s_i is the node strength (weighted degree) and k_i the (unweighted) degree
@@ -547,8 +584,9 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
     ++iterations;
   } while (iterations < config.maxFlowIterations && (err > 1.0e-15 || iterations < 50));
 
+  recordPageRank(iterations, err, iterations < config.maxFlowIterations);
   if (iterations >= config.maxFlowIterations) {
-    Log() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
+    Log::important() << "\n  Warning: PageRank calculation did not converge after " << iterations << " iterations with error " << err << ".\n";
   } else {
     Log() << "\n  -> PageRank calculation done in " << iterations << " iterations with error " << err << ".\n";
   }
@@ -567,6 +605,8 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
 
 void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, const Config& config) noexcept
 {
+  m_flowMethod = "undirected regularized flow";
+  m_teleportation = "recorded, Bayesian prior to nodes";
   Log() << "\n  -> Using recorded teleportation to nodes according to a fully connected Bayesian prior. " << std::flush;
 
   // Calculate node weights w_i = s_i/k_i, where s_i is the node strength (weighted degree) and k_i the (unweighted) degree
@@ -662,6 +702,8 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
 
 void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, const Config& config) noexcept
 {
+  m_flowMethod = "directed bipartite links";
+  m_teleportation = io::Str() << (config.recordedTeleportation ? "recorded" : "unrecorded") << ", to " << (config.teleportToNodes ? "nodes" : "links");
   Log() << "\n  -> Using bipartite " << (config.recordedTeleportation ? "recorded" : "unrecorded") << " teleportation to " << (config.teleportToNodes ? "nodes" : "links") << ". " << std::flush;
 
   const auto bipartiteStartId = network.bipartiteStartId();
@@ -761,6 +803,7 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
   };
 
   const auto result = powerIterate(config.teleportationProbability, config.maxFlowIterations, iteration);
+  recordPageRank(result.iterations, result.error, result.converged);
 
   double sumNodeRank = 1.0;
   double beta = result.beta;
@@ -793,6 +836,8 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   unsigned int N = network.numNodes();
   // TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
   if (network.isBipartite()) {
+    if (m_prettyOutput)
+      addFlowNote("Using bipartite links");
     Log() << "\n  -> Using bipartite links.";
 
     if (!config.skipAdjustBipartiteFlow && !config.bipartiteTeleportation) {
@@ -826,6 +871,8 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
   }
 
   if (config.useNodeWeightsAsFlow) {
+    if (m_prettyOutput)
+      addFlowNote("Using node weights as flow");
     Log() << "\n  -> Using node weights as flow.";
 
     for (auto& nodeIt : network.nodes()) {
@@ -924,6 +971,23 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     }
   }
 
+  if (m_prettyOutput) {
+    PrettyOutput pretty(true);
+    pretty.section("Flow");
+    pretty.metric("Model", io::Str() << config.flowModel);
+    pretty.metric("Method", m_flowMethod.empty() ? "standard" : m_flowMethod);
+    if (!m_teleportation.empty())
+      pretty.metric("Teleportation", m_teleportation);
+    if (m_havePageRank) {
+      pretty.metric(m_pageRankConverged ? "PageRank" : "PageRank warning",
+                    io::Str() << m_pageRankIterations << " iterations, error " << io::toPrecision(m_pageRankError));
+    }
+    for (const auto& note : m_flowNotes)
+      pretty.status("Note", note);
+    pretty.metric("Node flow sum", io::toPrecision(sumNodeFlow));
+    pretty.metric("Link flow sum", io::toPrecision(sumLinkFlow));
+    return;
+  }
   Log() << "\n  => Sum node flow: " << sumNodeFlow << ", sum link flow: " << sumLinkFlow << "\n";
 }
 

@@ -162,6 +162,16 @@ if(BUILD_TESTING)
     set_tests_properties(shell_completion PROPERTIES LABELS "fast;core;parser;cli")
 
     add_test(
+        NAME pretty_output
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_pretty_output.py"
+            "$<TARGET_FILE:infomap_cli>"
+            "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+    set_tests_properties(pretty_output PROPERTIES LABELS "fast;core;output;cli")
+
+    add_test(
         NAME js_output_format_manifest
         COMMAND
             "${CMAKE_COMMAND}" -E env "CXX=${CMAKE_CXX_COMPILER}"

@@ -41,6 +41,7 @@ _OUTPUT_OPTION_SPECS = (
     ("flag", "hide_bipartite_nodes", "--hide-bipartite-nodes", None),
     ("flag", "print_all_trials", "--print-all-trials", None),
     ("flag", "silent", "--silent", None),
+    ("flag", "pretty", "--pretty", None),
 )
 
 _ALGORITHM_OPTION_SPECS = (
@@ -172,6 +173,8 @@ class InfomapOptions:
         and so on.
     silent : bool, optional
         Suppress console output.
+    pretty : bool, optional
+        Use modernized console output with color and Unicode on interactive terminals.
     two_level : bool, optional
         Optimize a two-level partition instead of the default multi-level hierarchy.
     flow_model : str, optional
@@ -289,6 +292,7 @@ class InfomapOptions:
     print_all_trials: bool = False
     verbosity_level: int = _DEFAULT_VERBOSITY_LEVEL
     silent: bool = False
+    pretty: bool = False
     # algorithm
     two_level: bool = False
     flow_model: str | None = None
@@ -400,6 +404,7 @@ def _construct_args(
     print_all_trials=False,
     verbosity_level=_DEFAULT_VERBOSITY_LEVEL,
     silent=False,
+    pretty=False,
     # algorithm
     two_level=False,
     flow_model=None,

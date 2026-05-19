@@ -239,6 +239,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(silent, "silent", "Suppress console output.", "Output");
 
+  api.addOptionArgument(prettyOutput, "pretty", "Use modernized console output with color and Unicode on interactive terminals.", "Output");
+
   api.parseArgs(flags);
 
   if (deprecated_includeSelfLinks) {
@@ -275,13 +277,17 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
   parsedString = flags;
   parsedOptions = api.getUsedOptionArguments();
 
+  if (verbosity > 0) {
+    prettyOutput = false;
+  }
+
   if (printAllTrials && numTrials < 2) {
     printAllTrials = false;
   }
 
   adaptDefaults();
 
-  Log::init(verbosity, silent, verboseNumberPrecision);
+  Log::init(verbosity, silent, verboseNumberPrecision, prettyOutput);
 }
 
 void Config::adaptDefaults()
