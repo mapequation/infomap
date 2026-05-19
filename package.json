@@ -60,6 +60,7 @@
   "scripts": {
     "build": "npm run build:package",
     "build:package": "rollup -c interfaces/js/rollup.config.mjs && tsc -p interfaces/js/tsconfig.build.json",
+    "build:worker-output-formats": "node interfaces/js/scripts/write-worker-output-formats.mjs",
     "typecheck": "tsc -p interfaces/js/tsconfig.json --noEmit",
     "lint": "biome lint --error-on-warnings interfaces/js",
     "test:unit": "vitest run --config interfaces/js/vitest.config.ts",

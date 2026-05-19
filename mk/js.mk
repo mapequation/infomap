@@ -33,7 +33,7 @@ test-js-metadata: build-native
 	rm -rf "$$tmpdir"
 
 $(JS_WORKER_OUTPUT_FORMATS): $(JS_OUTPUT_FORMATS_JSON) interfaces/js/scripts/write-worker-output-formats.mjs
-	$(NODE) interfaces/js/scripts/write-worker-output-formats.mjs $@
+	$(NPM) run build:worker-output-formats -- $@
 
 $(JS_WORKER_TARGET): $(SOURCES) $(HEADERS) $(PRE_WORKER_MODULES) $(MK_FILES) Makefile
 	@echo "Compiling Infomap to run in a worker in the browser..."
