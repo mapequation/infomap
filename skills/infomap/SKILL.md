@@ -14,8 +14,8 @@ Identify the user's mode before answering:
 - **Analysis planning**: choose a network representation, flow model, interface, outputs, and reproducibility checklist. Read `references/method-selection.md` and usually `references/reproducibility.md`.
 - **Code or command generation**: choose the smallest practical interface, then read `references/cli.md`, `references/python.md`, or `references/r.md`.
 - **Notebook workflow**: read `references/notebooks.md`; also read `references/python.md` when converting notebook ideas into scripts.
-- **Result interpretation or method text**: read `references/reproducibility.md`; read interface-specific references only if output fields or APIs matter.
-- **Usage troubleshooting**: inspect the installed package help, CLI help, or online user docs first, then read the relevant interface reference.
+- **Result interpretation or method text**: read `references/reproducibility.md`; read `references/faq.md` for common interpretation traps.
+- **Usage troubleshooting**: inspect the installed package help, CLI help, or online user docs first, then read `references/faq.md` and the relevant interface reference.
 
 ## Choose the interface
 
@@ -50,3 +50,4 @@ When the user already chose an interface, stay there unless a different interfac
 - `references/r.md`: R package workflows and igraph interop.
 - `references/notebooks.md`: survey companion notebooks and Jupyter adaptation.
 - `references/reproducibility.md`: reporting, provenance, and method-section checklist.
+- `references/faq.md`: common troubleshooting patterns distilled from Infomap Discussions.
