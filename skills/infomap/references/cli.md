@@ -55,7 +55,11 @@ mkdir -p results/transitions
   printf 'binary=%s\n' "$INFOMAP_BIN"
   printf '%s\n' "$INFOMAP_BIN data/transitions.tsv results/transitions --directed --seed 123 --num-trials 20 --tree --clu --silent"
   "$INFOMAP_BIN" --version
-  shasum -a 256 data/transitions.tsv
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum data/transitions.tsv
+  else
+    shasum -a 256 data/transitions.tsv
+  fi
   "$INFOMAP_BIN" --print-json-parameters
 } > results/transitions/run-log.txt
 ```
