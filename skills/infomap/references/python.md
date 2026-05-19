@@ -6,6 +6,7 @@ Use this reference when the user works in Python, notebooks, NetworkX, python-ig
 
 - Installed package help and signatures, for example `import infomap`, `help(infomap.Infomap)`, `help(infomap.find_communities)`, and `help(infomap.tl.infomap)`.
 - Installed package metadata, such as `import importlib.metadata; importlib.metadata.version("infomap")`.
+- When inspecting an installed package from an Infomap source checkout, verify `infomap.__file__` so Python has not imported repo-local sources by accident. If needed, run inspection from another working directory or a clean environment.
 - Published Python docs at `https://mapequation.github.io/infomap-python-docs/`.
 - Source checkout files only when the user is actually working inside an Infomap repository.
 

@@ -23,7 +23,7 @@ Source discussions: [#241](https://github.com/mapequation/infomap/discussions/24
 
 Use `seed` and `num_trials`, and record the Infomap version, interface, build, options, and input. A seed is still the right starting point, but do not promise bit-identical results across all binaries, platforms, standard libraries, and OpenMP/build configurations. If exact reproduction matters, use the same Infomap version and build environment, and compare codelengths and partitions rather than assuming labels or node order are stable.
 
-Current code still exposes a standard-library based random mapping path, so keep this caveat unless the installed version explicitly documents portable cross-platform seeded permutations.
+Recent/current Infomap builds are known to expose a standard-library based random mapping path. Keep the cross-platform caveat unless the installed version's docs or source explicitly document portable seeded permutations.
 
 Source discussion: [#524](https://github.com/mapequation/infomap/discussions/524).
 

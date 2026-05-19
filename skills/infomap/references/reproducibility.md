@@ -39,8 +39,8 @@ Use these local benchmark results only as order-of-magnitude guidance. They were
 
 Practical gating:
 
-- Run without asking for tiny examples, smoke checks, and single-trial runs on networks around 1M links or less when the user asked for execution.
-- Ask before running `num_trials=20` on million-link or state-heavy networks unless the user explicitly requested a research run.
+- Run without asking only for tiny examples, known-small smoke checks, and single-trial runs where the user requested execution and the resource context is clear.
+- Ask before million-link runs, `num_trials=20` on large or state-heavy networks, or any run that could be intrusive in a notebook, shared server, CI job, or memory-limited environment.
 - Ask before parameter sweeps, repeated seeds, full notebooks, Docker/Jupyter startup, multilayer/state networks beyond these sizes, or inputs where size is unknown.
 
 ## Method-section checklist
