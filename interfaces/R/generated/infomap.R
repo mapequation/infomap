@@ -420,6 +420,7 @@ setClass("infomap::detail::PerLevelStat",
 # End class infomap::detail::PerLevelStat
 
 setClass('_p_infomap__detail__PartitionQueue', contains = 'C++Reference')
+setClass('_p_std__vectorT_infomap__LinkResult_t', contains = 'C++Reference')
 setClass('_p_std__mapT_unsigned_int_std__vectorT_unsigned_int_t_t', contains = 'C++Reference')
 setClass('_p_std__mapT_unsigned_int_std__string_t', contains = 'C++Reference')
 setClass('_p_std__pairT_unsigned_int_unsigned_int_t', contains = 'C++Reference')
@@ -433,6 +434,18 @@ setClass("std::pair<(unsigned int,unsigned int)>",
 # End class std::pair<(unsigned int,unsigned int)>
 
 setClass('_p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_t', contains = 'C++Reference')
+setClass('_p_infomap__LinkResult', contains = 'C++Reference')
+setClass("infomap::LinkResult",
+    representation(
+        source = "integer",
+        target = "integer",
+        weight = "numeric",
+        flow = "numeric"),
+        contains = "RSWIGStruct")
+
+
+# End class infomap::LinkResult
+
 setClass('_p_infomap__InfomapWrapper', contains = c('_p_infomap__InfomapBase'))
 setClass("infomap::InfomapWrapper",
     representation(
@@ -21610,6 +21623,588 @@ setMethod('[[<-', c('_p_infomap__detail__PartitionQueue', 'character'),function(
 );
 # end of accessor method for infomap::detail::PartitionQueue
 setMethod('delete', '_p_infomap__detail__PartitionQueue', function(obj) {delete_infomap__detail__PartitionQueue(obj)})
+# Start of vector_link_result___nonzero__
+
+`vector_link_result___nonzero__` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_vector_link_result___nonzero__', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result___nonzero__`, 'returnType') = 'logical'
+attr(`vector_link_result___nonzero__`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result___nonzero__`) = c("SWIGFunction", class('vector_link_result___nonzero__'))
+
+# Start of vector_link_result___len__
+
+`vector_link_result___len__` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_vector_link_result___len__', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result___len__`, 'returnType') = 'integer'
+attr(`vector_link_result___len__`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result___len__`) = c("SWIGFunction", class('vector_link_result___len__'))
+
+# Start of vector_link_result_pop
+
+`vector_link_result_pop` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_vector_link_result_pop', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__LinkResult", ref=ans);
+  
+  ans
+  
+}
+
+attr(`vector_link_result_pop`, 'returnType') = '_p_infomap__LinkResult'
+attr(`vector_link_result_pop`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result_pop`) = c("SWIGFunction", class('vector_link_result_pop'))
+
+# Start of vector_link_result___getslice__
+
+`vector_link_result___getslice__` = function(self, i, j)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  i = as.integer(i);
+  
+  if(length(i) > 1) {
+    warning("using only the first element of i");
+  };
+  
+  j = as.integer(j);
+  
+  if(length(j) > 1) {
+    warning("using only the first element of j");
+  };
+  
+  ;ans = .Call('R_swig_vector_link_result___getslice__', self, i, j, PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__vectorT_infomap__LinkResult_t", ref=ans);
+  
+  ans
+  
+}
+
+attr(`vector_link_result___getslice__`, 'returnType') = '_p_std__vectorT_infomap__LinkResult_t'
+attr(`vector_link_result___getslice__`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t', 'integer', 'integer')
+class(`vector_link_result___getslice__`) = c("SWIGFunction", class('vector_link_result___getslice__'))
+
+# Start of vector_link_result___setslice__
+
+`vector_link_result___setslice__` = function(self, i, j, is)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  i = as.integer(i);
+  
+  if(length(i) > 1) {
+    warning("using only the first element of i");
+  };
+  
+  j = as.integer(j);
+  
+  if(length(j) > 1) {
+    warning("using only the first element of j");
+  };
+  
+  if (inherits(is, "ExternalReference")) is = slot(is,"ref"); 
+  ;.Call('R_swig_vector_link_result___setslice__', self, i, j, is, PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result___setslice__`, 'returnType') = 'void'
+attr(`vector_link_result___setslice__`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t', 'integer', 'integer', '_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result___setslice__`) = c("SWIGFunction", class('vector_link_result___setslice__'))
+
+# Start of vector_link_result___delslice__
+
+`vector_link_result___delslice__` = function(self, i, j)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  i = as.integer(i);
+  
+  if(length(i) > 1) {
+    warning("using only the first element of i");
+  };
+  
+  j = as.integer(j);
+  
+  if(length(j) > 1) {
+    warning("using only the first element of j");
+  };
+  
+  ;.Call('R_swig_vector_link_result___delslice__', self, i, j, PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result___delslice__`, 'returnType') = 'void'
+attr(`vector_link_result___delslice__`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t', 'integer', 'integer')
+class(`vector_link_result___delslice__`) = c("SWIGFunction", class('vector_link_result___delslice__'))
+
+# Start of vector_link_result___delitem__
+
+`vector_link_result___delitem__` = function(self, i)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  i = as.integer(i);
+  
+  if(length(i) > 1) {
+    warning("using only the first element of i");
+  };
+  
+  ;.Call('R_swig_vector_link_result___delitem__', self, i, PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result___delitem__`, 'returnType') = 'void'
+attr(`vector_link_result___delitem__`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t', 'integer')
+class(`vector_link_result___delitem__`) = c("SWIGFunction", class('vector_link_result___delitem__'))
+
+# Start of vector_link_result___getitem__
+
+`vector_link_result___getitem__` = function(self, i, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  i = as.integer(i);
+  
+  if(length(i) > 1) {
+    warning("using only the first element of i");
+  };
+  
+  ;ans = .Call('R_swig_vector_link_result___getitem__', self, i, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__LinkResult", ref=ans);
+  
+  ans
+  
+}
+
+attr(`vector_link_result___getitem__`, 'returnType') = '_p_infomap__LinkResult'
+attr(`vector_link_result___getitem__`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t', 'integer')
+class(`vector_link_result___getitem__`) = c("SWIGFunction", class('vector_link_result___getitem__'))
+
+# Start of vector_link_result___setitem__
+
+`vector_link_result___setitem__` = function(self, i, x)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  i = as.integer(i);
+  
+  if(length(i) > 1) {
+    warning("using only the first element of i");
+  };
+  
+  if (inherits(x, "ExternalReference")) x = slot(x,"ref"); 
+  ;.Call('R_swig_vector_link_result___setitem__', self, i, x, PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result___setitem__`, 'returnType') = 'void'
+attr(`vector_link_result___setitem__`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t', 'integer', '_p_infomap__LinkResult')
+class(`vector_link_result___setitem__`) = c("SWIGFunction", class('vector_link_result___setitem__'))
+
+# Start of vector_link_result_append
+
+`vector_link_result_append` = function(self, x)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  if (inherits(x, "ExternalReference")) x = slot(x,"ref"); 
+  ;.Call('R_swig_vector_link_result_append', self, x, PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result_append`, 'returnType') = 'void'
+attr(`vector_link_result_append`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t', '_p_infomap__LinkResult')
+class(`vector_link_result_append`) = c("SWIGFunction", class('vector_link_result_append'))
+
+# Start of new_vector_link_result
+
+`vector_link_result__SWIG_0` = function()
+{
+  ;ans = .Call('R_swig_new_vector_link_result__SWIG_0', PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__vectorT_infomap__LinkResult_t", ref=ans);
+  
+  reg.finalizer(ans@ref, delete_vector_link_result);
+  ans
+  
+}
+
+attr(`vector_link_result__SWIG_0`, 'returnType') = '_p_std__vectorT_infomap__LinkResult_t'
+class(`vector_link_result__SWIG_0`) = c("SWIGFunction", class('vector_link_result__SWIG_0'))
+
+# Start of new_vector_link_result
+
+`vector_link_result__SWIG_1` = function(other)
+{
+  if (inherits(other, "ExternalReference")) other = slot(other,"ref"); 
+  ;ans = .Call('R_swig_new_vector_link_result__SWIG_1', other, PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__vectorT_infomap__LinkResult_t", ref=ans);
+  
+  reg.finalizer(ans@ref, delete_vector_link_result);
+  ans
+  
+}
+
+attr(`vector_link_result__SWIG_1`, 'returnType') = '_p_std__vectorT_infomap__LinkResult_t'
+attr(`vector_link_result__SWIG_1`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result__SWIG_1`) = c("SWIGFunction", class('vector_link_result__SWIG_1'))
+
+# Start of vector_link_result_empty
+
+`vector_link_result_empty` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_vector_link_result_empty', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result_empty`, 'returnType') = 'logical'
+attr(`vector_link_result_empty`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result_empty`) = c("SWIGFunction", class('vector_link_result_empty'))
+
+# Start of vector_link_result_size
+
+`vector_link_result_size` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_vector_link_result_size', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result_size`, 'returnType') = 'integer'
+attr(`vector_link_result_size`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result_size`) = c("SWIGFunction", class('vector_link_result_size'))
+
+# Start of vector_link_result_swap
+
+`vector_link_result_swap` = function(self, v)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  if (inherits(v, "ExternalReference")) v = slot(v,"ref"); 
+  ;.Call('R_swig_vector_link_result_swap', self, v, PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result_swap`, 'returnType') = 'void'
+attr(`vector_link_result_swap`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t', '_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result_swap`) = c("SWIGFunction", class('vector_link_result_swap'))
+
+# Start of vector_link_result_clear
+
+`vector_link_result_clear` = function(self)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_vector_link_result_clear', self, PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result_clear`, 'returnType') = 'void'
+attr(`vector_link_result_clear`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result_clear`) = c("SWIGFunction", class('vector_link_result_clear'))
+
+# Start of vector_link_result_get_allocator
+
+`vector_link_result_get_allocator` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_vector_link_result_get_allocator', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__allocatorT_infomap__LinkResult_t", ref=ans);
+  
+  ans
+  
+}
+
+attr(`vector_link_result_get_allocator`, 'returnType') = '_p_std__allocatorT_infomap__LinkResult_t'
+attr(`vector_link_result_get_allocator`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result_get_allocator`) = c("SWIGFunction", class('vector_link_result_get_allocator'))
+
+# Start of new_vector_link_result
+
+`vector_link_result__SWIG_2` = function(size)
+{
+  size = as.integer(size);
+  
+  if(length(size) > 1) {
+    warning("using only the first element of size");
+  };
+  
+  ;ans = .Call('R_swig_new_vector_link_result__SWIG_2', size, PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__vectorT_infomap__LinkResult_t", ref=ans);
+  
+  reg.finalizer(ans@ref, delete_vector_link_result);
+  ans
+  
+}
+
+attr(`vector_link_result__SWIG_2`, 'returnType') = '_p_std__vectorT_infomap__LinkResult_t'
+attr(`vector_link_result__SWIG_2`, "inputTypes") = c('integer')
+class(`vector_link_result__SWIG_2`) = c("SWIGFunction", class('vector_link_result__SWIG_2'))
+
+# Start of vector_link_result_pop_back
+
+`vector_link_result_pop_back` = function(self)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_vector_link_result_pop_back', self, PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result_pop_back`, 'returnType') = 'void'
+attr(`vector_link_result_pop_back`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result_pop_back`) = c("SWIGFunction", class('vector_link_result_pop_back'))
+
+# Start of vector_link_result_resize
+
+`vector_link_result_resize__SWIG_0` = function(self, new_size)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  new_size = as.integer(new_size);
+  
+  if(length(new_size) > 1) {
+    warning("using only the first element of new_size");
+  };
+  
+  ;.Call('R_swig_vector_link_result_resize__SWIG_0', self, new_size, PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result_resize__SWIG_0`, 'returnType') = 'void'
+attr(`vector_link_result_resize__SWIG_0`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t', 'integer')
+class(`vector_link_result_resize__SWIG_0`) = c("SWIGFunction", class('vector_link_result_resize__SWIG_0'))
+
+# Start of new_vector_link_result
+
+`vector_link_result__SWIG_3` = function(size, value)
+{
+  size = as.integer(size);
+  
+  if(length(size) > 1) {
+    warning("using only the first element of size");
+  };
+  
+  if (inherits(value, "ExternalReference")) value = slot(value,"ref"); 
+  ;ans = .Call('R_swig_new_vector_link_result__SWIG_3', size, value, PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__vectorT_infomap__LinkResult_t", ref=ans);
+  
+  reg.finalizer(ans@ref, delete_vector_link_result);
+  ans
+  
+}
+
+attr(`vector_link_result__SWIG_3`, 'returnType') = '_p_std__vectorT_infomap__LinkResult_t'
+attr(`vector_link_result__SWIG_3`, "inputTypes") = c('integer', '_p_infomap__LinkResult')
+class(`vector_link_result__SWIG_3`) = c("SWIGFunction", class('vector_link_result__SWIG_3'))
+
+`vector_link_result` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 4
+  if (argc == 0) {
+    f <- vector_link_result__SWIG_0; 
+  } else if (argc == 1) {
+    if ( (is.integer(argv[[1]]) || is.numeric(argv[[1]])) && length(argv[[1]]) == 1 ) {
+      f <- vector_link_result__SWIG_2; 
+    }
+    else if ( extends(argtypes[1], '_p_std__vectorT_infomap__LinkResult_t') && length(argv[[1]]) == 1 ) {
+      f <- vector_link_result__SWIG_1; 
+    }
+  } else if (argc == 2) {
+    if (( (is.integer(argv[[1]]) || is.numeric(argv[[1]])) && length(argv[[1]]) == 1 ) && ( extends(argtypes[2], '_p_infomap__LinkResult') && length(argv[[2]]) == 1 )) {
+      f <- vector_link_result__SWIG_3; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for vector_link_result with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of vector_link_result_push_back
+
+`vector_link_result_push_back` = function(self, x)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  if (inherits(x, "ExternalReference")) x = slot(x,"ref"); 
+  ;.Call('R_swig_vector_link_result_push_back', self, x, PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result_push_back`, 'returnType') = 'void'
+attr(`vector_link_result_push_back`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t', '_p_infomap__LinkResult')
+class(`vector_link_result_push_back`) = c("SWIGFunction", class('vector_link_result_push_back'))
+
+# Start of vector_link_result_front
+
+`vector_link_result_front` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_vector_link_result_front', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__LinkResult", ref=ans);
+  
+  ans
+  
+}
+
+attr(`vector_link_result_front`, 'returnType') = '_p_infomap__LinkResult'
+attr(`vector_link_result_front`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result_front`) = c("SWIGFunction", class('vector_link_result_front'))
+
+# Start of vector_link_result_back
+
+`vector_link_result_back` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_vector_link_result_back', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__LinkResult", ref=ans);
+  
+  ans
+  
+}
+
+attr(`vector_link_result_back`, 'returnType') = '_p_infomap__LinkResult'
+attr(`vector_link_result_back`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result_back`) = c("SWIGFunction", class('vector_link_result_back'))
+
+# Start of vector_link_result_assign
+
+`vector_link_result_assign` = function(self, n, x)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  n = as.integer(n);
+  
+  if(length(n) > 1) {
+    warning("using only the first element of n");
+  };
+  
+  if (inherits(x, "ExternalReference")) x = slot(x,"ref"); 
+  ;.Call('R_swig_vector_link_result_assign', self, n, x, PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result_assign`, 'returnType') = 'void'
+attr(`vector_link_result_assign`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t', 'integer', '_p_infomap__LinkResult')
+class(`vector_link_result_assign`) = c("SWIGFunction", class('vector_link_result_assign'))
+
+# Start of vector_link_result_resize
+
+`vector_link_result_resize__SWIG_1` = function(self, new_size, x)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  new_size = as.integer(new_size);
+  
+  if(length(new_size) > 1) {
+    warning("using only the first element of new_size");
+  };
+  
+  if (inherits(x, "ExternalReference")) x = slot(x,"ref"); 
+  ;.Call('R_swig_vector_link_result_resize__SWIG_1', self, new_size, x, PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result_resize__SWIG_1`, 'returnType') = 'void'
+attr(`vector_link_result_resize__SWIG_1`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t', 'integer', '_p_infomap__LinkResult')
+class(`vector_link_result_resize__SWIG_1`) = c("SWIGFunction", class('vector_link_result_resize__SWIG_1'))
+
+`vector_link_result_resize` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 2
+  if (argc == 2) {
+    if (( extends(argtypes[1], '_p_std__vectorT_infomap__LinkResult_t') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 )) {
+      f <- vector_link_result_resize__SWIG_0; 
+    }
+  } else if (argc == 3) {
+    if (( extends(argtypes[1], '_p_std__vectorT_infomap__LinkResult_t') || is.null(argv[[1]]) ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( extends(argtypes[3], '_p_infomap__LinkResult') && length(argv[[3]]) == 1 )) {
+      f <- vector_link_result_resize__SWIG_1; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for vector_link_result_resize with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of vector_link_result_reserve
+
+`vector_link_result_reserve` = function(self, n)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  n = as.integer(n);
+  
+  if(length(n) > 1) {
+    warning("using only the first element of n");
+  };
+  
+  ;.Call('R_swig_vector_link_result_reserve', self, n, PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result_reserve`, 'returnType') = 'void'
+attr(`vector_link_result_reserve`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t', 'integer')
+class(`vector_link_result_reserve`) = c("SWIGFunction", class('vector_link_result_reserve'))
+
+# Start of vector_link_result_capacity
+
+`vector_link_result_capacity` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_vector_link_result_capacity', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`vector_link_result_capacity`, 'returnType') = 'integer'
+attr(`vector_link_result_capacity`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t')
+class(`vector_link_result_capacity`) = c("SWIGFunction", class('vector_link_result_capacity'))
+
+# Start of delete_vector_link_result
+
+`delete_vector_link_result` = function(self)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_delete_vector_link_result', self, PACKAGE='infomap');
+  
+}
+
+attr(`delete_vector_link_result`, 'returnType') = 'void'
+attr(`delete_vector_link_result`, "inputTypes") = c('_p_std__vectorT_infomap__LinkResult_t')
+class(`delete_vector_link_result`) = c("SWIGFunction", class('delete_vector_link_result'))
+
+# Start of accessor method for std::vector< infomap::LinkResult >
+setMethod('$', '_p_std__vectorT_infomap__LinkResult_t', function(x, name)
+
+{
+  accessorFuns = list('__nonzero__' = vector_link_result___nonzero__, '__len__' = vector_link_result___len__, 'pop' = vector_link_result_pop, '__getslice__' = vector_link_result___getslice__, '__setslice__' = vector_link_result___setslice__, '__delslice__' = vector_link_result___delslice__, '__delitem__' = vector_link_result___delitem__, '__getitem__' = vector_link_result___getitem__, '__setitem__' = vector_link_result___setitem__, 'append' = vector_link_result_append, 'empty' = vector_link_result_empty, 'size' = vector_link_result_size, 'swap' = vector_link_result_swap, 'clear' = vector_link_result_clear, 'get_allocator' = vector_link_result_get_allocator, 'pop_back' = vector_link_result_pop_back, 'resize' = vector_link_result_resize, 'push_back' = vector_link_result_push_back, 'front' = vector_link_result_front, 'back' = vector_link_result_back, 'assign' = vector_link_result_assign, 'reserve' = vector_link_result_reserve, 'capacity' = vector_link_result_capacity);
+  ;        idx = pmatch(name, names(accessorFuns));
+  if(is.na(idx)) 
+  return(callNextMethod(x, name));
+  f = accessorFuns[[idx]];
+  function(...){
+    f(x, ...)
+  };
+}
+
+
+);
+# end of accessor method for std::vector< infomap::LinkResult >
+setMethod('delete', '_p_std__vectorT_infomap__LinkResult_t', function(obj) {delete_std__vectorT_infomap__LinkResult_t(obj)})
 # Start of new_map_uint_vector_uint
 
 `map_uint_vector_uint__SWIG_0` = function(other)
@@ -22472,6 +23067,283 @@ setMethod('delete', '_p_std__mapT_std__pairT_unsigned_int_unsigned_int_t_double_
 attr(`initRLogging`, 'returnType') = 'void'
 class(`initRLogging`) = c("SWIGFunction", class('initRLogging'))
 
+# Start of new_LinkResult
+
+`LinkResult__SWIG_0` = function()
+{
+  ;ans = .Call('R_swig_new_LinkResult__SWIG_0', PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__LinkResult", ref=ans);
+  
+  reg.finalizer(ans@ref, delete_LinkResult);
+  ans
+  
+}
+
+attr(`LinkResult__SWIG_0`, 'returnType') = '_p_infomap__LinkResult'
+class(`LinkResult__SWIG_0`) = c("SWIGFunction", class('LinkResult__SWIG_0'))
+
+# Start of new_LinkResult
+
+`LinkResult__SWIG_1` = function(source, target, weight, flow)
+{
+  source = as.integer(source);
+  
+  if(length(source) > 1) {
+    warning("using only the first element of source");
+  };
+  
+  target = as.integer(target);
+  
+  if(length(target) > 1) {
+    warning("using only the first element of target");
+  };
+  
+  
+  
+  ;ans = .Call('R_swig_new_LinkResult__SWIG_1', source, target, weight, flow, PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_infomap__LinkResult", ref=ans);
+  
+  reg.finalizer(ans@ref, delete_LinkResult);
+  ans
+  
+}
+
+attr(`LinkResult__SWIG_1`, 'returnType') = '_p_infomap__LinkResult'
+attr(`LinkResult__SWIG_1`, "inputTypes") = c('integer', 'integer', 'numeric', 'numeric')
+class(`LinkResult__SWIG_1`) = c("SWIGFunction", class('LinkResult__SWIG_1'))
+
+`LinkResult` <- function(...) {
+  argtypes <- mapply(class, list(...));
+  argv <- list(...);
+  argc <- length(argtypes);
+  f <- NULL;
+# dispatch functions 2
+  if (argc == 0) {
+    f <- LinkResult__SWIG_0; 
+  } else if (argc == 4) {
+    if (( (is.integer(argv[[1]]) || is.numeric(argv[[1]])) && length(argv[[1]]) == 1 ) && ( (is.integer(argv[[2]]) || is.numeric(argv[[2]])) && length(argv[[2]]) == 1 ) && ( is.numeric(argv[[3]]) && length(argv[[3]]) == 1 ) && ( is.numeric(argv[[4]]) && length(argv[[4]]) == 1 )) {
+      f <- LinkResult__SWIG_1; 
+    }
+  };
+  if (is.null(f)) {
+    stop("cannot find overloaded function for LinkResult with argtypes (",toString(argtypes),")");
+  };
+  f(...);
+}
+
+# Dispatch function
+# Start of LinkResult_source_set
+
+`LinkResult_source_set` = function(self, s_source)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  s_source = as.integer(s_source);
+  
+  if(length(s_source) > 1) {
+    warning("using only the first element of s_source");
+  };
+  
+  ;.Call('R_swig_LinkResult_source_set', self, s_source, PACKAGE='infomap');
+  
+}
+
+attr(`LinkResult_source_set`, 'returnType') = 'void'
+attr(`LinkResult_source_set`, "inputTypes") = c('_p_infomap__LinkResult', 'integer')
+class(`LinkResult_source_set`) = c("SWIGFunction", class('LinkResult_source_set'))
+
+# Start of LinkResult_source_get
+
+`LinkResult_source_get` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_LinkResult_source_get', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`LinkResult_source_get`, 'returnType') = 'integer'
+attr(`LinkResult_source_get`, "inputTypes") = c('_p_infomap__LinkResult')
+class(`LinkResult_source_get`) = c("SWIGFunction", class('LinkResult_source_get'))
+
+# Start of LinkResult_target_set
+
+`LinkResult_target_set` = function(self, s_target)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  s_target = as.integer(s_target);
+  
+  if(length(s_target) > 1) {
+    warning("using only the first element of s_target");
+  };
+  
+  ;.Call('R_swig_LinkResult_target_set', self, s_target, PACKAGE='infomap');
+  
+}
+
+attr(`LinkResult_target_set`, 'returnType') = 'void'
+attr(`LinkResult_target_set`, "inputTypes") = c('_p_infomap__LinkResult', 'integer')
+class(`LinkResult_target_set`) = c("SWIGFunction", class('LinkResult_target_set'))
+
+# Start of LinkResult_target_get
+
+`LinkResult_target_get` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_LinkResult_target_get', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`LinkResult_target_get`, 'returnType') = 'integer'
+attr(`LinkResult_target_get`, "inputTypes") = c('_p_infomap__LinkResult')
+class(`LinkResult_target_get`) = c("SWIGFunction", class('LinkResult_target_get'))
+
+# Start of LinkResult_weight_set
+
+`LinkResult_weight_set` = function(self, s_weight)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  
+  ;.Call('R_swig_LinkResult_weight_set', self, s_weight, PACKAGE='infomap');
+  
+}
+
+attr(`LinkResult_weight_set`, 'returnType') = 'void'
+attr(`LinkResult_weight_set`, "inputTypes") = c('_p_infomap__LinkResult', 'numeric')
+class(`LinkResult_weight_set`) = c("SWIGFunction", class('LinkResult_weight_set'))
+
+# Start of LinkResult_weight_get
+
+`LinkResult_weight_get` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_LinkResult_weight_get', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`LinkResult_weight_get`, 'returnType') = 'numeric'
+attr(`LinkResult_weight_get`, "inputTypes") = c('_p_infomap__LinkResult')
+class(`LinkResult_weight_get`) = c("SWIGFunction", class('LinkResult_weight_get'))
+
+# Start of LinkResult_flow_set
+
+`LinkResult_flow_set` = function(self, s_flow)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  
+  ;.Call('R_swig_LinkResult_flow_set', self, s_flow, PACKAGE='infomap');
+  
+}
+
+attr(`LinkResult_flow_set`, 'returnType') = 'void'
+attr(`LinkResult_flow_set`, "inputTypes") = c('_p_infomap__LinkResult', 'numeric')
+class(`LinkResult_flow_set`) = c("SWIGFunction", class('LinkResult_flow_set'))
+
+# Start of LinkResult_flow_get
+
+`LinkResult_flow_get` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_LinkResult_flow_get', self, as.logical(.copy), PACKAGE='infomap');
+  
+}
+
+attr(`LinkResult_flow_get`, 'returnType') = 'numeric'
+attr(`LinkResult_flow_get`, "inputTypes") = c('_p_infomap__LinkResult')
+class(`LinkResult_flow_get`) = c("SWIGFunction", class('LinkResult_flow_get'))
+
+# Start of delete_LinkResult
+
+`delete_LinkResult` = function(self)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;.Call('R_swig_delete_LinkResult', self, PACKAGE='infomap');
+  
+}
+
+attr(`delete_LinkResult`, 'returnType') = 'void'
+attr(`delete_LinkResult`, "inputTypes") = c('_p_infomap__LinkResult')
+class(`delete_LinkResult`) = c("SWIGFunction", class('delete_LinkResult'))
+
+# Start of accessor method for infomap::LinkResult
+setMethod('$', '_p_infomap__LinkResult', function(x, name)
+
+{
+  accessorFuns = list('source' = LinkResult_source_get, 'target' = LinkResult_target_get, 'weight' = LinkResult_weight_get, 'flow' = LinkResult_flow_get);
+  vaccessors = c('source', 'target', 'weight', 'flow');
+  ;        idx = pmatch(name, names(accessorFuns));
+  if(is.na(idx)) 
+  return(callNextMethod(x, name));
+  f = accessorFuns[[idx]];
+  if (is.na(match(name, vaccessors))) function(...){
+    f(x, ...)
+  } else f(x);
+}
+
+
+);
+# end of accessor method for infomap::LinkResult
+# Start of accessor method for infomap::LinkResult
+setMethod('$<-', '_p_infomap__LinkResult', function(x, name, value)
+
+{
+  accessorFuns = list('source' = LinkResult_source_set, 'target' = LinkResult_target_set, 'weight' = LinkResult_weight_set, 'flow' = LinkResult_flow_set);
+  ;        idx = pmatch(name, names(accessorFuns));
+  if(is.na(idx)) 
+  return(callNextMethod(x, name, value));
+  f = accessorFuns[[idx]];
+  f(x, value);
+  x;
+}
+
+
+);
+setMethod('[[<-', c('_p_infomap__LinkResult', 'character'),function(x, i, j, ..., value)
+
+{
+  name = i;
+  accessorFuns = list('source' = LinkResult_source_set, 'target' = LinkResult_target_set, 'weight' = LinkResult_weight_set, 'flow' = LinkResult_flow_set);
+  ;        idx = pmatch(name, names(accessorFuns));
+  if(is.na(idx)) 
+  return(callNextMethod(x, name, value));
+  f = accessorFuns[[idx]];
+  f(x, value);
+  x;
+}
+
+
+);
+# end of accessor method for infomap::LinkResult
+setMethod('delete', '_p_infomap__LinkResult', function(obj) {delete_infomap__LinkResult(obj)})
+# Start definition of copy functions & methods for infomap::LinkResult
+CopyToR_infomap__LinkResult = function(value, obj = new("infomap::LinkResult"))
+{
+  obj@source = value$source;
+  obj@target = value$target;
+  obj@weight = value$weight;
+  obj@flow = value$flow;
+  obj;
+}
+
+
+
+CopyToC_infomap__LinkResult = function(value, obj)
+{
+  obj$source = value@source;
+  obj$target = value@target;
+  obj$weight = value@weight;
+  obj$flow = value@flow;
+  obj
+}
+
+
+
+# Start definition of copy methods for infomap::LinkResult
+setMethod('copyToR', '_p_infomap__LinkResult', CopyToR_infomap__LinkResult);
+setMethod('copyToC', 'infomap::LinkResult', CopyToC_infomap__LinkResult);
+
+# End definition of copy methods for infomap::LinkResult
+# End definition of copy functions & methods for infomap::LinkResult
 # Start of new_InfomapWrapper
 
 `InfomapWrapper__SWIG_0` = function()
@@ -23252,6 +24124,23 @@ attr(`InfomapWrapper_getLinks`, 'returnType') = '_p_std__mapT_std__pairT_unsigne
 attr(`InfomapWrapper_getLinks`, "inputTypes") = c('_p_infomap__InfomapWrapper', 'logical')
 class(`InfomapWrapper_getLinks`) = c("SWIGFunction", class('InfomapWrapper_getLinks'))
 
+# Start of InfomapWrapper_getLinkResults
+
+`InfomapWrapper_getLinkResults` = function(self, .copy = FALSE)
+{
+  if (inherits(self, "ExternalReference")) self = slot(self,"ref"); 
+  ;ans = .Call('R_swig_InfomapWrapper_getLinkResults', self, as.logical(.copy), PACKAGE='infomap');
+  ans <- if (is.null(ans)) ans
+  else new("_p_std__vectorT_infomap__LinkResult_t", ref=ans);
+  
+  ans
+  
+}
+
+attr(`InfomapWrapper_getLinkResults`, 'returnType') = '_p_std__vectorT_infomap__LinkResult_t'
+attr(`InfomapWrapper_getLinkResults`, "inputTypes") = c('_p_infomap__InfomapWrapper')
+class(`InfomapWrapper_getLinkResults`) = c("SWIGFunction", class('InfomapWrapper_getLinkResults'))
+
 # Start of InfomapWrapper_getModules
 
 `InfomapWrapper_getModules__SWIG_0` = function(self, level, states, .copy = FALSE)
@@ -23619,7 +24508,7 @@ class(`InfomapWrapper_run__SWIG_2`) = c("SWIGFunction", class('InfomapWrapper_ru
 setMethod('$', '_p_infomap__InfomapWrapper', function(x, name)
 
 {
-  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
+  accessorFuns = list('readInputData' = InfomapWrapper_readInputData, 'addNode' = InfomapWrapper_addNode, 'addName' = InfomapWrapper_addName, 'getName' = InfomapWrapper_getName, 'getNames' = InfomapWrapper_getNames, 'addPhysicalNode' = InfomapWrapper_addPhysicalNode, 'addStateNode' = InfomapWrapper_addStateNode, 'addLink' = InfomapWrapper_addLink, 'addLinks' = InfomapWrapper_addLinks, 'addMultilayerLink' = InfomapWrapper_addMultilayerLink, 'addMultilayerLinks' = InfomapWrapper_addMultilayerLinks, 'addMultilayerIntraLink' = InfomapWrapper_addMultilayerIntraLink, 'addMultilayerIntraLinks' = InfomapWrapper_addMultilayerIntraLinks, 'addMultilayerInterLink' = InfomapWrapper_addMultilayerInterLink, 'addMultilayerInterLinks' = InfomapWrapper_addMultilayerInterLinks, 'setBipartiteStartId' = InfomapWrapper_setBipartiteStartId, 'getLinks' = InfomapWrapper_getLinks, 'getLinkResults' = InfomapWrapper_getLinkResults, 'getModules' = InfomapWrapper_getModules, 'codelength' = InfomapWrapper_codelength, 'getEntropyRate' = InfomapWrapper_getEntropyRate, 'getMultilevelModules' = InfomapWrapper_getMultilevelModules, 'iterLeafNodes' = InfomapWrapper_iterLeafNodes, 'iterTree' = InfomapWrapper_iterTree, 'run' = InfomapWrapper_run);
   ;        idx = pmatch(name, names(accessorFuns));
   if(is.na(idx)) 
   return(callNextMethod(x, name));

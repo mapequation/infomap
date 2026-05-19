@@ -20,6 +20,20 @@
 
 namespace infomap {
 
+struct LinkResult {
+  LinkResult() = default;
+  LinkResult(unsigned int source, unsigned int target, double weight, double flow)
+      : source(source),
+        target(target),
+        weight(weight),
+        flow(flow) {}
+
+  unsigned int source = 0;
+  unsigned int target = 0;
+  double weight = 0.0;
+  double flow = 0.0;
+};
+
 // Wrapper class for the Python API
 struct InfomapWrapper : public InfomapBase {
 public:
@@ -94,6 +108,23 @@ public:
       for (const auto& link : node.second) {
         const auto targetId = link.first.id;
         links[{ sourceId, targetId }] = flow ? link.second.flow : link.second.weight;
+      }
+    }
+
+    return links;
+  }
+
+  std::vector<LinkResult> getLinkResults() const
+  {
+    std::vector<LinkResult> links;
+    links.reserve(m_network.numLinks());
+
+    for (const auto& node : m_network.nodeLinkMap()) {
+      const auto sourceId = node.first.id;
+
+      for (const auto& link : node.second) {
+        const auto targetId = link.first.id;
+        links.emplace_back(sourceId, targetId, link.second.weight, link.second.flow);
       }
     }
 

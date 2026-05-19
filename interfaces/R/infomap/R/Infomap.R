@@ -855,15 +855,9 @@ InfomapClass <- R6::R6Class(
     # ----------------------------------------
     # Results
     # ----------------------------------------
-    # SWIG R does not auto-convert std::map / std::vector to native R
-    # types, so the result accessors walk iterators (which DO work over
-    # the SWIG barrier) and accumulate values into R vectors.
-    #
-    # Note: per-link weight/flow extraction (Python's `links` /
-    # `flow_links`) is not exposed yet because SWIG R does not provide
-    # an iterable wrapper over the underlying IterWrapper / std::map
-    # containers. Use the Python or JS bindings for per-link flow
-    # extraction.
+    # SWIG R does not auto-convert every STL type to native R types, so
+    # result accessors walk iterator/vector wrappers and accumulate values
+    # into R vectors.
 
     #' @description Get module assignment per leaf node.
     #' @param depth_level Tree depth used for the module id. `1` gives
@@ -954,6 +948,40 @@ InfomapClass <- R6::R6Class(
       )
       if (has_layer) out$layer_id <- layer_id[seq_len(i)]
       out
+    },
+
+    #' @description Get per-link weights and flow.
+    #' @details
+    #' For ordinary networks added with `add_link()` or `add_links()`,
+    #' `source` and `target` are the user-supplied node ids. For state
+    #' and multilayer networks they are state ids. Before `run()`,
+    #' `weight` reflects the input weights and `flow` reflects the core
+    #' link-flow values currently stored by Infomap, usually zero.
+    #' @return A `data.frame` with columns `source`, `target`, `weight`,
+    #'   and `flow`.
+    get_links = function() {
+      raw <- private$.swig$getLinkResults()
+      n <- as.integer(raw$size())
+
+      source <- integer(n)
+      target <- integer(n)
+      weight <- numeric(n)
+      flow <- numeric(n)
+
+      for (i in seq_len(n)) {
+        link <- raw$`__getitem__`(as.integer(i - 1L))
+        source[i] <- as.integer(link$source)
+        target[i] <- as.integer(link$target)
+        weight[i] <- as.numeric(link$weight)
+        flow[i] <- as.numeric(link$flow)
+      }
+
+      data.frame(
+        source = source,
+        target = target,
+        weight = weight,
+        flow = flow
+      )
     },
 
     #' @description Look up a node's name.
@@ -1140,6 +1168,17 @@ InfomapClass <- R6::R6Class(
     #'   merged within a module).
     physical_nodes = function() {
       self$get_nodes(depth_level = 1L, states = FALSE)
+    },
+    #' @field links Per-link source, target, weight and flow as a
+    #'   `data.frame`.
+    links = function() {
+      self$get_links()
+    },
+    #' @field flow_links Per-link source, target and flow as a
+    #'   `data.frame`.
+    flow_links = function() {
+      links <- self$get_links()
+      links[c("source", "target", "flow")]
     },
     #' @field names Named character vector of all assigned node names.
     names = function() {
