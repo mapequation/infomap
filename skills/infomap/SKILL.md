@@ -37,7 +37,7 @@ When the user already chose an interface, stay there unless a different interfac
 ## Default research standards
 
 - Make examples reproducible by default: include `seed`, use meaningful `num_trials`, record Infomap version, input provenance, non-default options, and output artifacts.
-- Avoid starting expensive runs without consent. Use tiny smoke examples or `num_trials=1` for validation; ask first before running large networks, notebook images, parameter sweeps, many trials, or anything likely to take more than a few minutes.
+- Avoid starting expensive runs without consent. Use tiny smoke examples or `num_trials=1` for validation; read `references/reproducibility.md` for rough runtime hints before running large networks, notebook images, parameter sweeps, or many trials.
 - Distinguish top-level module assignments from hierarchical paths, and distinguish physical nodes from state nodes for higher-order or multilayer inputs.
 - Explain `two_level` versus multilevel only as much as the task needs.
 - Do not block users with broad method-validity warnings unless they ask for method comparison.
