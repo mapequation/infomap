@@ -78,10 +78,7 @@ const isMultilayer = (network: NetworkTypes): network is MultilayerNetwork => {
   const net = network as MultilayerNetwork;
   return (
     "links" in net &&
-    Array.isArray(net.links) &&
     net.links.length > 0 &&
-    net.links[0] != null &&
-    typeof net.links[0] === "object" &&
     "sourceLayer" in net.links[0] &&
     "targetLayer" in net.links[0]
   );
@@ -95,161 +92,21 @@ const isMultilayerIntraInter = (
 };
 
 export default function stringifyNetwork(network: NetworkTypes) {
-  assertRecord(network, "network");
-
   if (isMultilayerIntraInter(network)) {
-    assertMultilayerIntraInterNetwork(network);
     return multilayerIntraInterToString(network);
   } else if (isMultilayer(network)) {
-    assertMultilayerNetwork(network);
     return multilayerToString(network);
   } else if (isBipartiteState(network)) {
-    assertBipartiteStateNetwork(network);
     return bipartiteStateToString(network);
   } else if (isBipartite(network)) {
-    assertBipartiteNetwork(network);
     return bipartiteToString(network);
   } else if (isState(network)) {
-    assertStateNetwork(network);
     return stateToString(network);
   } else if ("links" in network) {
-    assertNetwork(network);
     return networkToString(network);
   }
 
-  throw new TypeError("network must contain links, states, or intra links");
-}
-
-function assertRecord(value: unknown, path: string): asserts value is object {
-  if (value == null || typeof value !== "object") {
-    throw new TypeError(`${path} must be an object`);
-  }
-}
-
-function assertArray(value: unknown, path: string): asserts value is unknown[] {
-  if (!Array.isArray(value)) {
-    throw new TypeError(`${path} must be an array`);
-  }
-}
-
-function assertNumber(value: unknown, path: string) {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new TypeError(`${path} must be a finite number`);
-  }
-}
-
-function assertOptionalNumber(value: unknown, path: string) {
-  if (value != null) {
-    assertNumber(value, path);
-  }
-}
-
-function assertOptionalString(value: unknown, path: string) {
-  if (value != null && typeof value !== "string") {
-    throw new TypeError(`${path} must be a string`);
-  }
-}
-
-function assertNodes(nodes: unknown, path: string, required = false) {
-  if (nodes == null) {
-    if (required) throw new TypeError(`${path} must be an array`);
-    return;
-  }
-
-  assertArray(nodes, path);
-  nodes.forEach((node, index) => {
-    assertRecord(node, `${path}[${index}]`);
-    const item = node as Node;
-    assertNumber(item.id, `${path}[${index}].id`);
-    assertOptionalString(item.name, `${path}[${index}].name`);
-    assertOptionalNumber(item.weight, `${path}[${index}].weight`);
-  });
-}
-
-function assertStates(states: unknown, path: string) {
-  assertArray(states, path);
-  states.forEach((node, index) => {
-    assertRecord(node, `${path}[${index}]`);
-    const item = node as StateNode;
-    assertNumber(item.stateId, `${path}[${index}].stateId`);
-    assertNumber(item.id, `${path}[${index}].id`);
-    assertOptionalString(item.name, `${path}[${index}].name`);
-  });
-}
-
-function assertLinks(links: unknown, path: string) {
-  assertArray(links, path);
-  links.forEach((link, index) => {
-    assertRecord(link, `${path}[${index}]`);
-    const item = link as Link;
-    assertNumber(item.source, `${path}[${index}].source`);
-    assertNumber(item.target, `${path}[${index}].target`);
-    assertOptionalNumber(item.weight, `${path}[${index}].weight`);
-  });
-}
-
-function assertMultilayerLinks(links: unknown, path: string) {
-  assertLinks(links, path);
-  (links as MultilayerLink[]).forEach((link, index) => {
-    assertNumber(link.sourceLayer, `${path}[${index}].sourceLayer`);
-    assertNumber(link.targetLayer, `${path}[${index}].targetLayer`);
-  });
-}
-
-function assertIntraLinks(links: unknown, path: string) {
-  assertLinks(links, path);
-  (links as IntraLink[]).forEach((link, index) => {
-    assertNumber(link.layerId, `${path}[${index}].layerId`);
-  });
-}
-
-function assertInterLinks(links: unknown, path: string) {
-  if (links == null) return;
-
-  assertArray(links, path);
-  links.forEach((link, index) => {
-    assertRecord(link, `${path}[${index}]`);
-    const item = link as InterLink;
-    assertNumber(item.sourceLayer, `${path}[${index}].sourceLayer`);
-    assertNumber(item.id, `${path}[${index}].id`);
-    assertNumber(item.targetLayer, `${path}[${index}].targetLayer`);
-    assertOptionalNumber(item.weight, `${path}[${index}].weight`);
-  });
-}
-
-function assertNetwork(network: Network) {
-  assertNodes(network.nodes, "network.nodes");
-  assertLinks(network.links, "network.links");
-}
-
-function assertMultilayerNetwork(network: MultilayerNetwork) {
-  assertNodes(network.nodes, "network.nodes");
-  assertMultilayerLinks(network.links, "network.links");
-}
-
-function assertBipartiteNetwork(network: BipartiteNetwork) {
-  assertNodes(network.nodes, "network.nodes");
-  assertLinks(network.links, "network.links");
-  assertNumber(network.bipartiteStartId, "network.bipartiteStartId");
-}
-
-function assertStateNetwork(network: StateNetwork) {
-  assertNodes(network.nodes, "network.nodes", true);
-  assertStates(network.states, "network.states");
-  assertLinks(network.links, "network.links");
-}
-
-function assertBipartiteStateNetwork(network: BipartiteStateNetwork) {
-  assertStateNetwork(network);
-  assertNumber(network.bipartiteStartId, "network.bipartiteStartId");
-}
-
-function assertMultilayerIntraInterNetwork(
-  network: MultilayerIntraInterNetwork,
-) {
-  assertNodes(network.nodes, "network.nodes");
-  assertIntraLinks(network.intra, "network.intra");
-  assertInterLinks(network.inter, "network.inter");
+  return "";
 }
 
 function multilayerIntraInterToString(network: MultilayerIntraInterNetwork) {

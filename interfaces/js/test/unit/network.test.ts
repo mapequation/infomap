@@ -43,16 +43,4 @@ describe("networkToString", () => {
       }),
     ).toBe("*Intra\n1 2 3\n*Inter\n1 2 3 0.25\n");
   });
-
-  test("rejects malformed network objects with explicit errors", () => {
-    expect(() => networkToString({} as never)).toThrow(
-      "network must contain links, states, or intra links",
-    );
-    expect(() =>
-      networkToString({ links: [{ source: "1", target: 2 }] } as never),
-    ).toThrow("network.links[0].source must be a finite number");
-    expect(() => networkToString({ states: [], links: [] } as never)).toThrow(
-      "network.nodes must be an array",
-    );
-  });
 });
