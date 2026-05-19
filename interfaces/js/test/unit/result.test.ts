@@ -5,6 +5,7 @@ import {
   resultFormats,
   type ResultFormat,
 } from "../../src/result";
+import outputFormatsManifest from "../../generated/output-formats.json";
 import type { Result } from "../../src";
 
 describe("result helpers", () => {
@@ -127,5 +128,20 @@ describe("result helpers", () => {
     expect(byKey.get("clu")?.extension).toBe("clu");
     expect(byKey.get("json_states")?.suffix).toBe("_states");
     expect(byKey.get("flow_as_physical")?.isStates).toBe(true);
+  });
+
+  test("uses generated output format metadata in result order", () => {
+    const generatedFormats = new Map(
+      outputFormatsManifest.formats
+        .flatMap((format) => format.files)
+        .map((format) => [format.key, format]),
+    );
+
+    expect(resultFormats.map((format) => format.key)).toEqual(
+      outputFormatsManifest.resultOrder,
+    );
+    expect(resultFormats).toEqual(
+      outputFormatsManifest.resultOrder.map((key) => generatedFormats.get(key)),
+    );
   });
 });

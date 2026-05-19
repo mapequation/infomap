@@ -1,0 +1,204 @@
+{
+  "resultOrder": [
+    "clu",
+    "tree",
+    "ftree",
+    "net",
+    "states_as_physical",
+    "clu_states",
+    "tree_states",
+    "ftree_states",
+    "states",
+    "flow",
+    "flow_as_physical",
+    "newick",
+    "newick_states",
+    "json",
+    "json_states",
+    "csv",
+    "csv_states"
+  ],
+  "formats": [
+    {
+      "optionName": "clu",
+      "files": [
+        {
+          "key": "clu",
+          "name": "Clu",
+          "isStates": false,
+          "suffix": "",
+          "extension": "clu",
+          "mimeType": "text/plain;charset=utf-8"
+        },
+        {
+          "key": "clu_states",
+          "name": "Clu",
+          "isStates": true,
+          "suffix": "_states",
+          "extension": "clu",
+          "mimeType": "text/plain;charset=utf-8"
+        }
+      ]
+    },
+    {
+      "optionName": "tree",
+      "files": [
+        {
+          "key": "tree",
+          "name": "Tree",
+          "isStates": false,
+          "suffix": "",
+          "extension": "tree",
+          "mimeType": "text/plain;charset=utf-8"
+        },
+        {
+          "key": "tree_states",
+          "name": "Tree",
+          "isStates": true,
+          "suffix": "_states",
+          "extension": "tree",
+          "mimeType": "text/plain;charset=utf-8"
+        }
+      ]
+    },
+    {
+      "optionName": "ftree",
+      "files": [
+        {
+          "key": "ftree",
+          "name": "Ftree",
+          "isStates": false,
+          "suffix": "",
+          "extension": "ftree",
+          "mimeType": "text/plain;charset=utf-8"
+        },
+        {
+          "key": "ftree_states",
+          "name": "Ftree",
+          "isStates": true,
+          "suffix": "_states",
+          "extension": "ftree",
+          "mimeType": "text/plain;charset=utf-8"
+        }
+      ]
+    },
+    {
+      "optionName": "newick",
+      "files": [
+        {
+          "key": "newick",
+          "name": "Newick",
+          "isStates": false,
+          "suffix": "",
+          "extension": "nwk",
+          "mimeType": "text/plain;charset=utf-8"
+        },
+        {
+          "key": "newick_states",
+          "name": "Newick",
+          "isStates": true,
+          "suffix": "_states",
+          "extension": "nwk",
+          "mimeType": "text/plain;charset=utf-8"
+        }
+      ]
+    },
+    {
+      "optionName": "json",
+      "files": [
+        {
+          "key": "json",
+          "name": "JSON",
+          "isStates": false,
+          "suffix": "",
+          "extension": "json",
+          "mimeType": "application/json;charset=utf-8"
+        },
+        {
+          "key": "json_states",
+          "name": "JSON",
+          "isStates": true,
+          "suffix": "_states",
+          "extension": "json",
+          "mimeType": "application/json;charset=utf-8"
+        }
+      ]
+    },
+    {
+      "optionName": "csv",
+      "files": [
+        {
+          "key": "csv",
+          "name": "CSV",
+          "isStates": false,
+          "suffix": "",
+          "extension": "csv",
+          "mimeType": "text/plain;charset=utf-8"
+        },
+        {
+          "key": "csv_states",
+          "name": "CSV",
+          "isStates": true,
+          "suffix": "_states",
+          "extension": "csv",
+          "mimeType": "text/plain;charset=utf-8"
+        }
+      ]
+    },
+    {
+      "optionName": "network",
+      "files": [
+        {
+          "key": "net",
+          "name": "Network",
+          "isStates": false,
+          "suffix": "",
+          "extension": "net",
+          "mimeType": "text/plain;charset=utf-8"
+        },
+        {
+          "key": "states_as_physical",
+          "name": "States as physical",
+          "isStates": false,
+          "suffix": "_states_as_physical",
+          "extension": "net",
+          "mimeType": "text/plain;charset=utf-8"
+        }
+      ]
+    },
+    {
+      "optionName": "states",
+      "files": [
+        {
+          "key": "states",
+          "name": "States",
+          "isStates": true,
+          "suffix": "_states",
+          "extension": "net",
+          "mimeType": "text/plain;charset=utf-8"
+        }
+      ]
+    },
+    {
+      "optionName": "flow",
+      "files": [
+        {
+          "key": "flow",
+          "name": "Flow",
+          "isStates": false,
+          "suffix": "_flow",
+          "extension": "net",
+          "mimeType": "text/plain;charset=utf-8"
+        },
+        {
+          "key": "flow_as_physical",
+          "name": "Flow states as physical",
+          "isStates": true,
+          "suffix": "_states_as_physical_flow",
+          "extension": "net",
+          "mimeType": "text/plain;charset=utf-8"
+        }
+      ]
+    }
+  ]
+}
