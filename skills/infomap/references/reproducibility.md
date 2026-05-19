@@ -18,6 +18,7 @@ Record:
 
 - Set `seed` for repeatability.
 - Use more than one trial for serious analyses; `num_trials=20` is a practical default in examples, but large or time-sensitive runs may need adjustment.
+- Separate smoke checks from research runs: use small inputs or one trial to validate setup, then ask before launching long runs, sweeps, repeated seeds, or notebook executions.
 - Save both machine-readable results and human-readable notes.
 - Preserve mappings from internal ids to original node labels.
 - Keep state-level and physical-node-level outputs separate when higher-order or multilayer data are involved.

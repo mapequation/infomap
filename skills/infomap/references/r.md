@@ -18,6 +18,8 @@ Use this reference when the user works in R, R igraph, R Markdown, data frames, 
 
 ## Common patterns
 
+For examples in answers, `num_trials = 20` is a reasonable research default. For actual validation runs, use a tiny graph or `num_trials = 1` first. Ask before running large graphs, many trials, repeated seeds, multilayer sweeps, or expensive R Markdown/notebook-style workflows.
+
 Data-frame workflow:
 
 ```r

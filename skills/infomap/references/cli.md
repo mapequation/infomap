@@ -22,6 +22,8 @@ Installed Python packages usually provide an `infomap` entry point; native build
 
 ## Reproducible command pattern
 
+For examples in answers, `--num-trials 20` is a good research default. For local validation that the command and input format work, run a smoke test with `--num-trials 1` first. Ask before launching commands on large files, many trials, multiple seeds, parameter sweeps, or jobs likely to take more than a few minutes.
+
 ```bash
 INFOMAP_BIN="${INFOMAP_BIN:-infomap}"
 mkdir -p results/karate

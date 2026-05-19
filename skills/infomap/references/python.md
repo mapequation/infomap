@@ -18,6 +18,8 @@ Use this reference when the user works in Python, notebooks, NetworkX, python-ig
 
 ## Common patterns
 
+For examples in answers, `num_trials=20` is a reasonable research default. For actual validation runs, use a tiny graph or `num_trials=1` first. Ask before running large graphs, many trials, repeated seeds, Scanpy workflows on large AnnData objects, or parameter sweeps.
+
 NetworkX quick path:
 
 ```python
