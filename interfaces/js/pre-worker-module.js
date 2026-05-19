@@ -6,34 +6,6 @@ function readFile(filename) {
   return content;
 }
 
-const resultFiles = [
-  { key: "clu", suffix: "", extension: "clu" },
-  { key: "tree", suffix: "", extension: "tree" },
-  { key: "ftree", suffix: "", extension: "ftree" },
-  { key: "net", suffix: "", extension: "net" },
-  {
-    key: "states_as_physical",
-    suffix: "_states_as_physical",
-    extension: "net",
-  },
-  { key: "clu_states", suffix: "_states", extension: "clu" },
-  { key: "tree_states", suffix: "_states", extension: "tree" },
-  { key: "ftree_states", suffix: "_states", extension: "ftree" },
-  { key: "states", suffix: "_states", extension: "net" },
-  { key: "flow", suffix: "_flow", extension: "net" },
-  {
-    key: "flow_as_physical",
-    suffix: "_states_as_physical_flow",
-    extension: "net",
-  },
-  { key: "newick", suffix: "", extension: "nwk" },
-  { key: "newick_states", suffix: "_states", extension: "nwk" },
-  { key: "json", suffix: "", extension: "json" },
-  { key: "json_states", suffix: "_states", extension: "json" },
-  { key: "csv", suffix: "", extension: "csv" },
-  { key: "csv_states", suffix: "_states", extension: "csv" },
-];
-
 function readResultFile(file) {
   let content = readFile(`${outName}${file.suffix}.${file.extension}`);
   if (file.extension !== "json" || !content) {
