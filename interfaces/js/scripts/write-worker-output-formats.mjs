@@ -1,8 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import outputFormatsManifest from "../generated/output-formats.json" with {
-  type: "json",
-};
+import { fileURLToPath } from "node:url";
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const manifestPath = path.resolve(
+  scriptDir,
+  "../generated/output-formats.json",
+);
+const outputFormatsManifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 
 const [, , outputPath] = process.argv;
 

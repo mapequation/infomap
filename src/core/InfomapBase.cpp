@@ -297,22 +297,20 @@ void InfomapBase::run(Network& network)
   }
 
   if (printStateNetwork) {
-    const auto* format = findOutputFormat("states");
-    std::string filename = outputFilename(outDirectory + outName, format->files.at(0));
+    std::string filename = outputFilenameForResultKey(outDirectory + outName, "states");
     Log() << "Writing state network to '" << filename << "'... ";
     network.writeStateNetwork(filename);
     Log() << "done!\n";
   }
 
   if (printPajekNetwork) {
-    const auto* format = findOutputFormat("network");
     std::string filename;
     if (printStates()) {
-      filename = outputFilename(outDirectory + outName, format->files.at(1));
+      filename = outputFilenameForResultKey(outDirectory + outName, "states_as_physical");
       Log() << "Writing state network as first order Pajek network to '" << filename << "'... ";
     } else {
       // Non-memory input
-      filename = outputFilename(outDirectory + outName, format->files.at(0));
+      filename = outputFilenameForResultKey(outDirectory + outName, "net");
       Log() << "Writing Pajek network to '" << filename << "'... ";
     }
     network.writePajekNetwork(filename);
@@ -354,14 +352,13 @@ void InfomapBase::run(Network& network)
     throw std::domain_error("No nodes to partition");
 
   if (printFlowNetwork) {
-    const auto* format = findOutputFormat("flow");
     std::string filename;
     if (printStates()) {
-      filename = outputFilename(outDirectory + outName, format->files.at(1));
+      filename = outputFilenameForResultKey(outDirectory + outName, "flow_as_physical");
       Log() << "Writing flow state network as first order Pajek network to '" << filename << "'... ";
     } else {
       // Non-memory input
-      filename = outputFilename(outDirectory + outName, format->files.at(0));
+      filename = outputFilenameForResultKey(outDirectory + outName, "flow");
       Log() << "Writing flow network to '" << filename << "'... ";
     }
     network.writePajekNetwork(filename, true);
@@ -2160,13 +2157,12 @@ void InfomapBase::writeResult(int trial)
 
   std::string basename = s;
 
-  const auto filenameFor = [&basename](const std::string& optionName, unsigned int fileIndex) {
-    const auto* format = findOutputFormat(optionName);
-    return outputFilename(basename, format->files.at(fileIndex));
+  const auto filenameFor = [&basename](const std::string& resultKey) {
+    return outputFilenameForResultKey(basename, resultKey);
   };
 
   if (printTree) {
-    std::string filename = filenameFor("tree", 0);
+    std::string filename = filenameFor("tree");
 
     if (!printStates()) {
       Log() << "Write tree to " << filename << "... ";
@@ -2177,7 +2173,7 @@ void InfomapBase::writeResult(int trial)
       Log() << "Write physical tree to " << filename << "... ";
       writeTree(filename);
       Log() << "done!\n";
-      std::string filenameStates = filenameFor("tree", 1);
+      std::string filenameStates = filenameFor("tree_states");
       Log() << "Write state tree to " << filenameStates << "... ";
       writeTree(filenameStates, true);
       Log() << "done!\n";
@@ -2185,7 +2181,7 @@ void InfomapBase::writeResult(int trial)
   }
 
   if (printFlowTree) {
-    std::string filename = filenameFor("ftree", 0);
+    std::string filename = filenameFor("ftree");
 
     if (!printStates()) {
       Log() << "Write flow tree to " << filename << "... ";
@@ -2196,7 +2192,7 @@ void InfomapBase::writeResult(int trial)
       Log() << "Write physical flow tree to " << filename << "... ";
       writeFlowTree(filename, false);
       Log() << "done!\n";
-      std::string filenameStates = filenameFor("ftree", 1);
+      std::string filenameStates = filenameFor("ftree_states");
       Log() << "Write state flow tree to " << filenameStates << "... ";
       writeFlowTree(filenameStates, true);
       Log() << "done!\n";
@@ -2204,7 +2200,7 @@ void InfomapBase::writeResult(int trial)
   }
 
   if (printNewick) {
-    std::string filename = filenameFor("newick", 0);
+    std::string filename = filenameFor("newick");
 
     if (!printStates()) {
       Log() << "Write Newick tree to " << filename << "... ";
@@ -2215,7 +2211,7 @@ void InfomapBase::writeResult(int trial)
       Log() << "Write physical Newick tree to " << filename << "... ";
       writeNewickTree(filename, false);
       Log() << "done!\n";
-      std::string filenameStates = filenameFor("newick", 1);
+      std::string filenameStates = filenameFor("newick_states");
       Log() << "Write state Newick tree to " << filenameStates << "... ";
       writeNewickTree(filenameStates, true);
       Log() << "done!\n";
@@ -2223,7 +2219,7 @@ void InfomapBase::writeResult(int trial)
   }
 
   if (printJson) {
-    std::string filename = filenameFor("json", 0);
+    std::string filename = filenameFor("json");
     const bool writeLinks = false;
 
     if (!printStates()) {
@@ -2235,7 +2231,7 @@ void InfomapBase::writeResult(int trial)
       Log() << "Write physical JSON tree to " << filename << "... ";
       writeJsonTree(filename, false, writeLinks);
       Log() << "done!\n";
-      std::string filenameStates = filenameFor("json", 1);
+      std::string filenameStates = filenameFor("json_states");
       Log() << "Write state JSON tree to " << filenameStates << "... ";
       writeJsonTree(filenameStates, true, writeLinks);
       Log() << "done!\n";
@@ -2243,7 +2239,7 @@ void InfomapBase::writeResult(int trial)
   }
 
   if (printCsv) {
-    std::string filename = filenameFor("csv", 0);
+    std::string filename = filenameFor("csv");
 
     if (!printStates()) {
       Log() << "Write CSV tree to " << filename << "... ";
@@ -2254,7 +2250,7 @@ void InfomapBase::writeResult(int trial)
       Log() << "Write physical CSV tree to " << filename << "... ";
       writeCsvTree(filename, false);
       Log() << "done!\n";
-      std::string filenameStates = filenameFor("csv", 1);
+      std::string filenameStates = filenameFor("csv_states");
       Log() << "Write state CSV tree to " << filenameStates << "... ";
       writeCsvTree(filenameStates, true);
       Log() << "done!\n";
@@ -2262,7 +2258,7 @@ void InfomapBase::writeResult(int trial)
   }
 
   if (printClu) {
-    std::string filename = filenameFor("clu", 0);
+    std::string filename = filenameFor("clu");
     if (!printStates()) {
       Log() << "Write node modules to " << filename << "... ";
       writeClu(filename, false, cluLevel);
@@ -2272,7 +2268,7 @@ void InfomapBase::writeResult(int trial)
       Log() << "Write physical node modules to " << filename << "... ";
       writeClu(filename, false, cluLevel);
       Log() << "done!\n";
-      std::string filenameStates = filenameFor("clu", 1);
+      std::string filenameStates = filenameFor("clu_states");
       Log() << "Write state node modules to " << filenameStates << "... ";
       writeClu(filenameStates, true, cluLevel);
       Log() << "done!\n";

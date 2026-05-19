@@ -35,6 +35,7 @@ struct OutputFileFormat {
   std::string suffix;
   std::string extension;
   std::string mimeType;
+  unsigned int resultOrder;
 };
 
 struct OutputFormat {
@@ -46,7 +47,9 @@ struct OutputFormat {
 const std::vector<OutputFormat>& outputFormats();
 std::vector<std::string> outputFormatNames();
 const OutputFormat* findOutputFormat(const std::string& optionName);
+const OutputFileFormat* findOutputFileFormat(const std::string& resultKey);
 std::string outputFilename(const std::string& basename, const OutputFileFormat& file);
+std::string outputFilenameForResultKey(const std::string& basename, const std::string& resultKey);
 std::string outputFormatsManifestJson();
 
 } // namespace infomap

@@ -2,49 +2,45 @@
 """Verify tracked JavaScript output metadata against the C++ manifest."""
 
 import json
-import re
+import os
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
-MIME_TYPES = {
-    "textMimeType": "text/plain;charset=utf-8",
-    "jsonMimeType": "application/json;charset=utf-8",
-}
+def read_cpp_manifest(source: Path) -> dict[str, object]:
+    repo_root = source.parents[2]
 
-FORMAT_PATTERN = re.compile(r'^\s*format\("([^"]+)",')
-FILE_PATTERN = re.compile(
-    r'^\s*file\("([^"]+)", "([^"]+)", (true|false), "([^"]*)", "([^"]+)", (textMimeType|jsonMimeType)\)'
-)
+    with tempfile.TemporaryDirectory() as temp_dir_name:
+        temp_dir = Path(temp_dir_name)
+        helper = temp_dir / "emit_output_formats.cpp"
+        binary = temp_dir / "emit_output_formats"
+        helper.write_text(
+            '#include "io/OutputFormats.h"\n'
+            "#include <iostream>\n"
+            "int main()\n"
+            "{\n"
+            "  std::cout << infomap::outputFormatsManifestJson();\n"
+            "  return 0;\n"
+            "}\n"
+        )
 
-
-def read_cpp_manifest(source: Path) -> list[dict[str, object]]:
-    formats: list[dict[str, object]] = []
-    current: dict[str, object] | None = None
-
-    for line in source.read_text().splitlines():
-        format_match = FORMAT_PATTERN.match(line)
-        if format_match:
-            current = {"optionName": format_match.group(1), "files": []}
-            formats.append(current)
-            continue
-
-        file_match = FILE_PATTERN.match(line)
-        if file_match and current is not None:
-            files = current["files"]
-            assert isinstance(files, list)
-            files.append(
-                {
-                    "key": file_match.group(1),
-                    "name": file_match.group(2),
-                    "isStates": file_match.group(3) == "true",
-                    "suffix": file_match.group(4),
-                    "extension": file_match.group(5),
-                    "mimeType": MIME_TYPES[file_match.group(6)],
-                }
-            )
-
-    return formats
+        compiler = os.environ.get("CXX", "c++")
+        subprocess.run(
+            [
+                compiler,
+                "-std=c++14",
+                "-I",
+                str(repo_root / "src"),
+                str(helper),
+                str(source),
+                "-o",
+                str(binary),
+            ],
+            check=True,
+        )
+        return json.loads(subprocess.check_output([str(binary)], text=True))
 
 
 def main() -> int:
@@ -52,16 +48,11 @@ def main() -> int:
         print("Usage: check_js_output_formats.py OUTPUT_FORMATS_CPP OUTPUT_FORMATS_JSON")
         return 2
 
-    cpp_formats = read_cpp_manifest(Path(sys.argv[1]))
+    cpp_manifest = read_cpp_manifest(Path(sys.argv[1]))
     js_manifest = json.loads(Path(sys.argv[2]).read_text())
 
-    if js_manifest["formats"] != cpp_formats:
+    if js_manifest != cpp_manifest:
         print("JavaScript output format metadata differs from src/io/OutputFormats.cpp")
-        return 1
-
-    result_keys = [file["key"] for format in cpp_formats for file in format["files"]]
-    if sorted(js_manifest["resultOrder"]) != sorted(result_keys):
-        print("JavaScript resultOrder must contain each C++ result key exactly once")
         return 1
 
     return 0

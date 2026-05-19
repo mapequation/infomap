@@ -9,6 +9,8 @@
 
 #include "OutputFormats.h"
 
+#include <algorithm>
+#include <stdexcept>
 #include <sstream>
 #include <utility>
 
@@ -19,9 +21,9 @@ namespace {
   const std::string textMimeType = "text/plain;charset=utf-8";
   const std::string jsonMimeType = "application/json;charset=utf-8";
 
-  OutputFileFormat file(const std::string& resultKey, const std::string& displayName, bool states, const std::string& suffix, const std::string& extension, const std::string& mimeType)
+  OutputFileFormat file(const std::string& resultKey, const std::string& displayName, bool states, const std::string& suffix, const std::string& extension, const std::string& mimeType, unsigned int resultOrder)
   {
-    return { resultKey, displayName, states, suffix, extension, mimeType };
+    return { resultKey, displayName, states, suffix, extension, mimeType, resultOrder };
   }
 
   OutputFormat format(const std::string& optionName, OutputFormatFlag flag, std::vector<OutputFileFormat> files)
@@ -43,45 +45,59 @@ namespace {
     return escaped.str();
   }
 
+  std::vector<OutputFileFormat> orderedOutputFiles()
+  {
+    std::vector<OutputFileFormat> files;
+    for (const auto& format : outputFormats()) {
+      for (const auto& file : format.files) {
+        files.push_back(file);
+      }
+    }
+    std::sort(files.begin(), files.end(), [](const OutputFileFormat& a, const OutputFileFormat& b) {
+      return a.resultOrder < b.resultOrder;
+    });
+    return files;
+  }
+
 } // namespace
 
 const std::vector<OutputFormat>& outputFormats()
 {
   static const std::vector<OutputFormat> formats = {
     format("clu", OutputFormatFlag::Clu, {
-                                             file("clu", "Clu", false, "", "clu", textMimeType),
-                                             file("clu_states", "Clu", true, "_states", "clu", textMimeType),
+                                             file("clu", "Clu", false, "", "clu", textMimeType, 0),
+                                             file("clu_states", "Clu", true, "_states", "clu", textMimeType, 5),
                                          }),
     format("tree", OutputFormatFlag::Tree, {
-                                               file("tree", "Tree", false, "", "tree", textMimeType),
-                                               file("tree_states", "Tree", true, "_states", "tree", textMimeType),
+                                               file("tree", "Tree", false, "", "tree", textMimeType, 1),
+                                               file("tree_states", "Tree", true, "_states", "tree", textMimeType, 6),
                                            }),
     format("ftree", OutputFormatFlag::FlowTree, {
-                                                    file("ftree", "Ftree", false, "", "ftree", textMimeType),
-                                                    file("ftree_states", "Ftree", true, "_states", "ftree", textMimeType),
+                                                    file("ftree", "Ftree", false, "", "ftree", textMimeType, 2),
+                                                    file("ftree_states", "Ftree", true, "_states", "ftree", textMimeType, 7),
                                                 }),
     format("newick", OutputFormatFlag::Newick, {
-                                                   file("newick", "Newick", false, "", "nwk", textMimeType),
-                                                   file("newick_states", "Newick", true, "_states", "nwk", textMimeType),
+                                                   file("newick", "Newick", false, "", "nwk", textMimeType, 11),
+                                                   file("newick_states", "Newick", true, "_states", "nwk", textMimeType, 12),
                                                }),
     format("json", OutputFormatFlag::Json, {
-                                               file("json", "JSON", false, "", "json", jsonMimeType),
-                                               file("json_states", "JSON", true, "_states", "json", jsonMimeType),
+                                               file("json", "JSON", false, "", "json", jsonMimeType, 13),
+                                               file("json_states", "JSON", true, "_states", "json", jsonMimeType, 14),
                                            }),
     format("csv", OutputFormatFlag::Csv, {
-                                             file("csv", "CSV", false, "", "csv", textMimeType),
-                                             file("csv_states", "CSV", true, "_states", "csv", textMimeType),
+                                             file("csv", "CSV", false, "", "csv", textMimeType, 15),
+                                             file("csv_states", "CSV", true, "_states", "csv", textMimeType, 16),
                                          }),
     format("network", OutputFormatFlag::PajekNetwork, {
-                                                          file("net", "Network", false, "", "net", textMimeType),
-                                                          file("states_as_physical", "States as physical", false, "_states_as_physical", "net", textMimeType),
+                                                          file("net", "Network", false, "", "net", textMimeType, 3),
+                                                          file("states_as_physical", "States as physical", false, "_states_as_physical", "net", textMimeType, 4),
                                                       }),
     format("states", OutputFormatFlag::StateNetwork, {
-                                                         file("states", "States", true, "_states", "net", textMimeType),
+                                                         file("states", "States", true, "_states", "net", textMimeType, 8),
                                                      }),
     format("flow", OutputFormatFlag::FlowNetwork, {
-                                                      file("flow", "Flow", false, "_flow", "net", textMimeType),
-                                                      file("flow_as_physical", "Flow states as physical", true, "_states_as_physical_flow", "net", textMimeType),
+                                                      file("flow", "Flow", false, "_flow", "net", textMimeType, 9),
+                                                      file("flow_as_physical", "Flow states as physical", true, "_states_as_physical_flow", "net", textMimeType, 10),
                                                   }),
   };
   return formats;
@@ -105,33 +121,44 @@ const OutputFormat* findOutputFormat(const std::string& optionName)
   return nullptr;
 }
 
+const OutputFileFormat* findOutputFileFormat(const std::string& resultKey)
+{
+  for (const auto& format : outputFormats()) {
+    for (const auto& file : format.files) {
+      if (file.resultKey == resultKey)
+        return &file;
+    }
+  }
+  return nullptr;
+}
+
 std::string outputFilename(const std::string& basename, const OutputFileFormat& file)
 {
   return basename + file.suffix + "." + file.extension;
+}
+
+std::string outputFilenameForResultKey(const std::string& basename, const std::string& resultKey)
+{
+  const auto* file = findOutputFileFormat(resultKey);
+  if (file == nullptr)
+    throw std::logic_error("Unknown output result key: " + resultKey);
+  return outputFilename(basename, *file);
 }
 
 std::string outputFormatsManifestJson()
 {
   std::ostringstream json;
   json << "{\n"
-       << "  \"resultOrder\": [\n"
-       << "    \"clu\",\n"
-       << "    \"tree\",\n"
-       << "    \"ftree\",\n"
-       << "    \"net\",\n"
-       << "    \"states_as_physical\",\n"
-       << "    \"clu_states\",\n"
-       << "    \"tree_states\",\n"
-       << "    \"ftree_states\",\n"
-       << "    \"states\",\n"
-       << "    \"flow\",\n"
-       << "    \"flow_as_physical\",\n"
-       << "    \"newick\",\n"
-       << "    \"newick_states\",\n"
-       << "    \"json\",\n"
-       << "    \"json_states\",\n"
-       << "    \"csv\",\n"
-       << "    \"csv_states\"\n"
+       << "  \"resultOrder\": [\n";
+  bool firstResultKey = true;
+  for (const auto& file : orderedOutputFiles()) {
+    if (!firstResultKey) {
+      json << ",\n";
+    }
+    firstResultKey = false;
+    json << "    " << jsonString(file.resultKey);
+  }
+  json << "\n"
        << "  ],\n"
        << "  \"formats\": [\n";
   bool firstFormat = true;
