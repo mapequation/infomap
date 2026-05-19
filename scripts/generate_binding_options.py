@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from parameter_catalog import GROUPS, ParameterCatalog
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OVERRIDES = REPO_ROOT / "interfaces" / "parameters" / "overrides.json"
@@ -15,43 +17,6 @@ OVERRIDES = REPO_ROOT / "interfaces" / "parameters" / "overrides.json"
 PYTHON_OUT = Path("interfaces/python/src/infomap/_options.py")
 R_OUT = Path("interfaces/R/infomap/R/options.R")
 TS_OUT = Path("interfaces/js/src/arguments.ts")
-
-GROUPS = ("Input", "Output", "Algorithm", "Accuracy")
-
-PY_DEFAULTS = {
-    "--meta-data-rate": "1.0",
-    "--teleportation-probability": "0.15",
-    "--regularization-strength": "1.0",
-    "--entropy-correction-strength": "1.0",
-    "--markov-time": "1.0",
-    "--variable-markov-damping": "1.0",
-    "--variable-markov-min-scale": "1.0",
-    "--multilayer-relax-rate": "0.15",
-    "--multilayer-relax-limit": "-1",
-    "--multilayer-relax-limit-up": "-1",
-    "--multilayer-relax-limit-down": "-1",
-    "--seed": "123",
-    "--num-trials": "1",
-    "--core-loop-limit": "10",
-    "--core-loop-codelength-threshold": "1e-10",
-    "--tune-iteration-relative-threshold": "1e-5",
-}
-
-R_DEFAULTS = {
-    "--meta-data-rate": "DEFAULT_META_DATA_RATE",
-    "--teleportation-probability": "DEFAULT_TELEPORTATION_PROB",
-    "--regularization-strength": "1.0",
-    "--entropy-correction-strength": "1.0",
-    "--markov-time": "1.0",
-    "--variable-markov-damping": "1.0",
-    "--variable-markov-min-scale": "1.0",
-    "--multilayer-relax-rate": "DEFAULT_MULTILAYER_RELAX_RATE",
-    "--seed": "DEFAULT_SEED",
-    "--num-trials": "1L",
-    "--core-loop-limit": "10L",
-    "--core-loop-codelength-threshold": "DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD",
-    "--tune-iteration-relative-threshold": "DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD",
-}
 
 
 def load_parameters(infomap_bin: Path) -> list[dict]:
@@ -69,136 +34,10 @@ def load_overrides() -> dict:
     for language, entries in overrides.get("bindingOnly", {}).items():
         for entry in entries:
             if not entry.get("reason"):
-                raise RuntimeError(f"bindingOnly entry for {language}:{entry.get('name')} must include a reason")
+                raise RuntimeError(
+                    f"bindingOnly entry for {language}:{entry.get('name')} must include a reason"
+                )
     return overrides
-
-
-def binding_only(overrides: dict, language: str) -> list[dict]:
-    return overrides.get("bindingOnly", {}).get(language, [])
-
-
-def binding_only_entry(overrides: dict, language: str, name: str) -> dict:
-    for entry in binding_only(overrides, language):
-        if entry["name"] == name:
-            return entry
-    raise RuntimeError(f"Missing bindingOnly override for {language}:{name}")
-
-
-def runtime_parameters(parameters: list[dict]) -> list[dict]:
-    return [param for param in parameters if param["group"] in GROUPS]
-
-
-def snake_name(flag: str) -> str:
-    return flag.removeprefix("--").replace("-", "_")
-
-
-def camel_name(flag: str) -> str:
-    parts = flag.removeprefix("--").split("-")
-    return parts[0] + "".join(part.capitalize() for part in parts[1:])
-
-
-def binding_name(flag: str, language: str, overrides: dict) -> str:
-    names = overrides.get("names", {}).get(flag, {})
-    if language in names:
-        return names[language]
-    if language == "ts":
-        return camel_name(flag)
-    return snake_name(flag)
-
-
-def param_kind(param: dict) -> str:
-    return "value" if param["required"] else "flag"
-
-
-def py_type(param: dict, overrides: dict) -> str:
-    if param["long"] in {"--verbose", "--fast-hierarchical-solution"}:
-        return "int | None" if param["long"] == "--fast-hierarchical-solution" else "int"
-    if param["long"] == "--directed":
-        return "bool | None"
-    choices = overrides.get("choices", {}).get(param["long"])
-    if choices:
-        if param["long"] == "--output":
-            return "list[str] | tuple[str, ...] | None"
-        return "str | None"
-    if not param["required"]:
-        return "bool"
-    long_type = param.get("longType")
-    if long_type in {"integer", "probability", "number"}:
-        base = "float" if long_type in {"probability", "number"} else "int"
-    elif long_type == "list":
-        base = "list[str] | tuple[str, ...]"
-    else:
-        base = "str"
-    return base if py_default(param) != "None" else f"{base} | None"
-
-
-def ts_type(param: dict, overrides: dict) -> str:
-    choices = overrides.get("choices", {}).get(param["long"])
-    if param["long"] == "--output":
-        return "OutputFormats | OutputFormats[]"
-    if choices:
-        return "\n    | " + "\n    | ".join(json.dumps(choice) for choice in choices)
-    if param["incremental"] and param["long"] == "--fast-hierarchical-solution":
-        return "1 | 2 | 3"
-    if param["incremental"] and param["long"] == "--verbose":
-        return "1 | 2 | 3"
-    if not param["required"]:
-        return "boolean"
-    long_type = param.get("longType")
-    return "number" if long_type in {"integer", "probability", "number"} else "string"
-
-
-def py_default(param: dict) -> str:
-    if param["long"] == "--verbose":
-        return "1"
-    if param["long"] in {"--directed", "--fast-hierarchical-solution"}:
-        return "None"
-    if not param["required"]:
-        return "False"
-    return PY_DEFAULTS.get(param["long"], "None")
-
-
-def py_include(param: dict) -> str:
-    default = py_default(param)
-    if default == "None":
-        return "lambda value: value is not None"
-    return f"lambda value: value != {default}"
-
-
-def r_default(param: dict) -> str:
-    if param["long"] == "--verbose":
-        return "DEFAULT_VERBOSITY_LEVEL"
-    if param["long"] in {"--directed", "--fast-hierarchical-solution"}:
-        return "NULL"
-    if not param["required"]:
-        return "FALSE"
-    return R_DEFAULTS.get(param["long"], "NULL")
-
-
-def r_include(param: dict) -> str:
-    default = r_default(param)
-    if default == "NULL":
-        return ".skip_when_null"
-    return f".skip_when_not_equal({default})"
-
-
-def py_doc_type(param: dict, py_name: str, overrides: dict) -> str:
-    if py_name == "include_self_links":
-        return "bool, optional"
-    if param["long"] in {"--verbose", "--fast-hierarchical-solution"}:
-        return "int, optional"
-    if param["long"] == "--directed":
-        return "bool, optional"
-    if param["long"] == "--output":
-        return "sequence of str, optional"
-    if not param["required"]:
-        return "bool, optional"
-    long_type = param.get("longType")
-    if long_type == "integer":
-        return "int, optional"
-    if long_type in {"number", "probability"}:
-        return "float, optional"
-    return "str, optional"
 
 
 def wrap_doc(text: str, prefix: str, width: int = 88) -> list[str]:
@@ -216,13 +55,9 @@ def wrap_doc(text: str, prefix: str, width: int = 88) -> list[str]:
     return lines
 
 
-def grouped_params(params: list[dict]) -> dict[str, list[dict]]:
-    return {group: [param for param in params if param["group"] == group] for group in GROUPS}
-
-
-def generate_python(params: list[dict], overrides: dict) -> str:
-    grouped = grouped_params(params)
-    include_self_links = binding_only_entry(overrides, "python", "include_self_links")
+def generate_python(catalog: ParameterCatalog) -> str:
+    grouped = catalog.grouped()
+    include_self_links = catalog.binding_only_entry("python", "include_self_links")
     lines = [
         "from __future__ import annotations",
         "",
@@ -252,21 +87,12 @@ def generate_python(params: list[dict], overrides: dict) -> str:
         spec_name = f"_{group.upper()}_OPTION_SPECS"
         lines.append(f"{spec_name} = (")
         for param in grouped[group]:
-            flag = param["long"]
-            name = binding_name(flag, "python", overrides)
-            if flag == "--no-self-links":
+            if not param.uses_generic_spec():
                 continue
-            if flag == "--verbose":
-                continue
-            if flag == "--output":
-                continue
-            if flag == "--directed":
-                continue
-            if flag == "--fast-hierarchical-solution":
-                continue
-            kind = param_kind(param)
-            include = "None" if kind == "flag" else py_include(param)
-            lines.append(f'    ("{kind}", "{name}", "{flag}", {include}),')
+            name = param.name("python")
+            kind = param.spec_kind
+            include = "None" if kind == "flag" else param.python_include_expr()
+            lines.append(f'    ("{kind}", "{name}", "{param.flag}", {include}),')
         lines.append(")")
         lines.append("")
 
@@ -288,8 +114,8 @@ def generate_python(params: list[dict], overrides: dict) -> str:
             "    if not parts:",
             '        return "" if base_args is None else base_args',
             "    if not base_args:",
-            '        return f" {\' \'.join(parts)}"',
-            '    return f"{base_args} {\' \'.join(parts)}"',
+            "        return f\" {' '.join(parts)}\"",
+            "    return f\"{base_args} {' '.join(parts)}\"",
             "",
             "",
             "@dataclass(slots=True)",
@@ -308,41 +134,28 @@ def generate_python(params: list[dict], overrides: dict) -> str:
     )
     for group in GROUPS:
         for param in grouped[group]:
-            name = binding_name(param["long"], "python", overrides)
-            if name == "verbosity_level":
-                description = "Verbosity level on the console. 1 keeps the default output level, 2 renders -vv and so on."
-            elif param["long"] == "--fast-hierarchical-solution":
-                description = "Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive part."
-            else:
-                description = param["description"]
-            lines.append(f"    {name} : {py_doc_type(param, name, overrides)}")
+            name = param.name("python")
+            description = param.python_doc_description()
+            lines.append(f"    {name} : {param.python_doc_type()}")
             lines.extend(wrap_doc(description, "        "))
     lines.append("    include_self_links : bool, optional")
-    lines.extend(wrap_doc("Deprecated. Self-links are included by default; use no_self_links=True to exclude them.", "        "))
+    lines.extend(
+        wrap_doc(
+            "Deprecated. Self-links are included by default; use no_self_links=True to exclude them.",
+            "        ",
+        )
+    )
     lines.extend(['    """', ""])
     for group in GROUPS:
         lines.append(f"    # {group.lower()}")
         if group == "Input":
-            lines.append(f"    include_self_links: {include_self_links['type']} = {include_self_links['default']}")
+            lines.append(
+                f"    include_self_links: {include_self_links.type} = {include_self_links.default}"
+            )
         for param in grouped[group]:
-            name = binding_name(param["long"], "python", overrides)
-            typ = py_type(param, overrides)
-            default = py_default(param)
-            if name == "verbosity_level":
-                default = "_DEFAULT_VERBOSITY_LEVEL"
-            elif param["long"] == "--meta-data-rate":
-                default = "_DEFAULT_META_DATA_RATE"
-            elif param["long"] == "--teleportation-probability":
-                default = "_DEFAULT_TELEPORTATION_PROB"
-            elif param["long"] == "--multilayer-relax-rate":
-                default = "_DEFAULT_MULTILAYER_RELAX_RATE"
-            elif param["long"] == "--seed":
-                default = "_DEFAULT_SEED"
-            elif param["long"] == "--core-loop-codelength-threshold":
-                default = "_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD"
-            elif param["long"] == "--tune-iteration-relative-threshold":
-                default = "_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD"
-            lines.append(f"    {name}: {typ} = {default}")
+            lines.append(
+                f"    {param.name('python')}: {param.python_type()} = {param.python_default_expr()}"
+            )
     lines.extend(
         [
             "",
@@ -372,10 +185,10 @@ def generate_python(params: list[dict], overrides: dict) -> str:
             "        _append_option_specs(rendered_args, options, _OUTPUT_OPTION_SPECS)",
             "",
             "        if self.verbosity_level > 1:",
-            '            rendered_args.append(f"-{\'v\' * self.verbosity_level}")',
+            "            rendered_args.append(f\"-{'v' * self.verbosity_level}\")",
             "",
             "        if self.output is not None:",
-            '            rendered_args.append(f"--output {\',\'.join(self.output)}")',
+            "            rendered_args.append(f\"--output {','.join(self.output)}\")",
             "",
             "        _append_option_specs(rendered_args, options, _ALGORITHM_OPTION_SPECS)",
             "",
@@ -385,7 +198,7 @@ def generate_python(params: list[dict], overrides: dict) -> str:
             "        _append_option_specs(rendered_args, options, _ACCURACY_OPTION_SPECS)",
             "",
             "        if self.fast_hierarchical_solution is not None:",
-            '            rendered_args.append(f"-{\'F\' * self.fast_hierarchical_solution}")',
+            "            rendered_args.append(f\"-{'F' * self.fast_hierarchical_solution}\")",
             "",
             "        return _join_args(base_args, rendered_args)",
             "",
@@ -400,25 +213,9 @@ def generate_python(params: list[dict], overrides: dict) -> str:
     for group in GROUPS:
         lines.append(f"    # {group.lower()}")
         if group == "Input":
-            lines.append(f"    include_self_links={include_self_links['default']},")
+            lines.append(f"    include_self_links={include_self_links.default},")
         for param in grouped[group]:
-            name = binding_name(param["long"], "python", overrides)
-            default = py_default(param)
-            if name == "verbosity_level":
-                default = "_DEFAULT_VERBOSITY_LEVEL"
-            elif param["long"] == "--meta-data-rate":
-                default = "_DEFAULT_META_DATA_RATE"
-            elif param["long"] == "--teleportation-probability":
-                default = "_DEFAULT_TELEPORTATION_PROB"
-            elif param["long"] == "--multilayer-relax-rate":
-                default = "_DEFAULT_MULTILAYER_RELAX_RATE"
-            elif param["long"] == "--seed":
-                default = "_DEFAULT_SEED"
-            elif param["long"] == "--core-loop-codelength-threshold":
-                default = "_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD"
-            elif param["long"] == "--tune-iteration-relative-threshold":
-                default = "_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD"
-            lines.append(f"    {name}={default},")
+            lines.append(f"    {param.name('python')}={param.python_default_expr()},")
     lines.extend(
         [
             "):",
@@ -429,13 +226,9 @@ def generate_python(params: list[dict], overrides: dict) -> str:
     return "\n".join(lines)
 
 
-def r_value(value: str) -> str:
-    return value
-
-
-def generate_r(params: list[dict], overrides: dict) -> str:
-    grouped = grouped_params(params)
-    include_self_links = binding_only_entry(overrides, "r", "include_self_links")
+def generate_r(catalog: ParameterCatalog) -> str:
+    grouped = catalog.grouped()
+    include_self_links = catalog.binding_only_entry("r", "include_self_links")
     lines = [
         "# Defaults, option specs, and CLI argument construction.",
         "# Generated by scripts/generate_binding_options.py from ./Infomap --print-json-parameters.",
@@ -458,14 +251,15 @@ def generate_r(params: list[dict], overrides: dict) -> str:
         lines.append(f"{group.upper()}_OPTIONS <- list(")
         specs = []
         for param in grouped[group]:
-            flag = param["long"]
-            if flag in {"--no-self-links", "--verbose", "--output", "--directed", "--fast-hierarchical-solution"}:
+            if not param.uses_generic_spec():
                 continue
-            kind = param_kind(param)
-            name = binding_name(flag, "r", overrides)
-            default = r_default(param)
-            include = "" if kind == "flag" else f", include = {r_include(param)}"
-            specs.append(f'  list(type = "{kind}", name = "{name}", flag = "{flag}", default = {default}{include})')
+            kind = param.spec_kind
+            name = param.name("r")
+            default = param.r_default()
+            include = "" if kind == "flag" else f", include = {param.r_include_expr()}"
+            specs.append(
+                f'  list(type = "{kind}", name = "{name}", flag = "{param.flag}", default = {default}{include})'
+            )
         lines.append(",\n".join(specs))
         lines.append(")")
         lines.append("")
@@ -473,18 +267,21 @@ def generate_r(params: list[dict], overrides: dict) -> str:
     for group in GROUPS:
         if group == "Input":
             fields.append("include_self_links")
-        fields.extend(binding_name(param["long"], "r", overrides) for param in grouped[group])
+        fields.extend(param.name("r") for param in grouped[group])
     lines.append("OPTION_FIELD_NAMES <- c(")
     for i in range(0, len(fields), 4):
-        lines.append("  " + ", ".join(json.dumps(field) for field in fields[i : i + 4]) + ("," if i + 4 < len(fields) else ""))
+        lines.append(
+            "  "
+            + ", ".join(json.dumps(field) for field in fields[i : i + 4])
+            + ("," if i + 4 < len(fields) else "")
+        )
     lines.append(")")
     lines.append("")
     lines.append("OPTION_DEFAULTS <- list(")
-    defaults = [f"include_self_links = {include_self_links['default']}"]
+    defaults = [f"include_self_links = {include_self_links.default}"]
     for group in GROUPS:
         for param in grouped[group]:
-            name = binding_name(param["long"], "r", overrides)
-            defaults.append(f"{name} = {r_default(param)}")
+            defaults.append(f"{param.name('r')} = {param.r_default()}")
     for i, default in enumerate(defaults):
         suffix = "," if i + 1 < len(defaults) else ""
         lines.append(f"  {default}{suffix}")
@@ -511,12 +308,13 @@ def generate_r(params: list[dict], overrides: dict) -> str:
         lines.append(f"#' {group}")
         lines.append("#' \\describe{")
         if group == "Input":
-            lines.append("#'   \\item{`include_self_links`}{Deprecated. Self-links are included by default; use `no_self_links = TRUE` to exclude them.}")
+            lines.append(
+                "#'   \\item{`include_self_links`}{Deprecated. Self-links are included by default; use `no_self_links = TRUE` to exclude them.}"
+            )
         for param in grouped[group]:
-            name = binding_name(param["long"], "r", overrides)
+            name = param.name("r")
             desc = (
-                param["description"]
-                .replace("\\", "\\\\")
+                param.description.replace("\\", "\\\\")
                 .replace("{", "\\{")
                 .replace("}", "\\}")
                 .replace("[", "\\[")
@@ -641,10 +439,10 @@ def generate_r(params: list[dict], overrides: dict) -> str:
     return "\n".join(lines)
 
 
-def generate_ts(params: list[dict], overrides: dict) -> str:
-    grouped = grouped_params(params)
-    about_options = binding_only(overrides, "ts")
-    output_choices = overrides["choices"]["--output"]
+def generate_ts(catalog: ParameterCatalog) -> str:
+    grouped = catalog.grouped()
+    about_options = catalog.binding_only("ts")
+    output_choices = catalog.overrides["choices"]["--output"]
     lines = [
         "// Generated by scripts/generate_binding_options.py from ./Infomap --print-json-parameters.",
         "// Edit src/io/Config.cpp or interfaces/parameters/overrides.json, then run",
@@ -659,25 +457,37 @@ def generate_ts(params: list[dict], overrides: dict) -> str:
     for group in GROUPS:
         lines.append(f"  // {group.lower()}")
         for param in grouped[group]:
-            name = binding_name(param["long"], "ts", overrides)
-            typ = ts_type(param, overrides)
+            name = param.name("ts")
+            typ = param.ts_type()
             if typ.startswith("\n"):
                 lines.append(f"  {name}:{typ};")
             else:
                 lines.append(f"  {name}: {typ};")
     lines.append("  // about")
     for entry in about_options:
-        lines.append(f"  {entry['name']}: {entry['type']};")
-    lines.extend(["}>;", "", "export default function argumentsToString(args: Arguments) {", '  let result = "";', ""])
+        lines.append(f"  {entry.name}: {entry.type};")
+    lines.extend(
+        [
+            "}>;",
+            "",
+            "export default function argumentsToString(args: Arguments) {",
+            '  let result = "";',
+            "",
+        ]
+    )
     for group in GROUPS:
         for param in grouped[group]:
-            flag = param["long"]
-            name = binding_name(flag, "ts", overrides)
-            if flag == "--verbose":
-                lines.append(f"  if (args.{name}) result += \" -\" + \"v\".repeat(args.{name});")
-            elif flag == "--fast-hierarchical-solution":
-                lines.append(f"  if (args.{name}) result += \" -\" + \"F\".repeat(args.{name});")
-            elif flag == "--output":
+            flag = param.flag
+            name = param.name("ts")
+            if param.render_policy == "repeated_short" and flag == "--verbose":
+                lines.append(
+                    f'  if (args.{name}) result += " -" + "v".repeat(args.{name});'
+                )
+            elif param.render_policy == "repeated_short":
+                lines.append(
+                    f'  if (args.{name}) result += " -" + "F".repeat(args.{name});'
+                )
+            elif param.render_policy == "comma_list":
                 lines.extend(
                     [
                         f"  if (args.{name} != null) {{",
@@ -686,18 +496,24 @@ def generate_ts(params: list[dict], overrides: dict) -> str:
                         "  }",
                     ]
                 )
-            elif not param["required"]:
+            elif not param.required:
                 lines.append(f'  if (args.{name}) result += " {flag}";')
             else:
-                lines.append(f'  if (args.{name} != null) result += " {flag} " + args.{name};')
+                lines.append(
+                    f'  if (args.{name} != null) result += " {flag} " + args.{name};'
+                )
             lines.append("")
     for entry in about_options:
-        if entry["name"] == "help":
-            lines.append('  if (args.help) result += args.help === "advanced" ? " -hh" : " -h";')
-        elif entry["name"] == "version":
+        if entry.name == "help":
+            lines.append(
+                '  if (args.help) result += args.help === "advanced" ? " -hh" : " -h";'
+            )
+        elif entry.name == "version":
             lines.append('  if (args.version) result += " --version";')
         else:
-            raise RuntimeError(f"Unsupported TypeScript binding-only option: {entry['name']}")
+            raise RuntimeError(
+                f"Unsupported TypeScript binding-only option: {entry.name}"
+            )
         lines.append("")
     lines.extend(["  return result;", "}", ""])
     return "\n".join(lines)
@@ -705,11 +521,11 @@ def generate_ts(params: list[dict], overrides: dict) -> str:
 
 def outputs(infomap_bin: Path) -> dict[Path, str]:
     overrides = load_overrides()
-    params = runtime_parameters(load_parameters(infomap_bin))
+    catalog = ParameterCatalog(load_parameters(infomap_bin), overrides)
     return {
-        PYTHON_OUT: generate_python(params, overrides),
-        R_OUT: generate_r(params, overrides),
-        TS_OUT: generate_ts(params, overrides),
+        PYTHON_OUT: generate_python(catalog),
+        R_OUT: generate_r(catalog),
+        TS_OUT: generate_ts(catalog),
     }
 
 
@@ -730,7 +546,9 @@ def check_outputs(generated: dict[Path, str], output_root: Path) -> int:
         print("Tracked binding option outputs are fresh.")
         return 0
     if sys.platform and "GITHUB_ACTIONS" in __import__("os").environ:
-        print("::error title=Tracked binding option outputs are stale::Run make build-binding-options and commit the updated files.")
+        print(
+            "::error title=Tracked binding option outputs are stale::Run make build-binding-options and commit the updated files."
+        )
     print("Tracked binding option outputs are stale:")
     for path in failures:
         print(f"  {path}")
