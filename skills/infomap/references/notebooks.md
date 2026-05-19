@@ -46,20 +46,4 @@ When helping adapt a notebook:
 
 ## Running notebooks
 
-Published notebook image:
-
-```bash
-docker run --rm -p 8888:8888 \
-  ghcr.io/mapequation/infomap:notebook \
-  start.sh jupyter lab
-```
-
-From a source checkout, only when the user has the repository locally:
-
-```bash
-python -m pip install -e '.[notebooks]'
-cd examples/notebooks
-jupyter lab
-```
-
-Do not start a dev server or Jupyter session unless the user asks.
+Do not start Docker, Jupyter, or full notebook execution unless the user asks. Before giving launch commands, verify the current notebook image, installation extras, or source-checkout path from the published docs, package metadata, or the user's local repository. For validation, prefer extracting one small cell into a temporary script or reduced notebook and record the package version, inputs, seed, options, and outputs.

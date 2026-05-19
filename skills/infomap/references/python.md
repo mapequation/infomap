@@ -2,110 +2,49 @@
 
 Use this reference when the user works in Python, notebooks, NetworkX, python-igraph, SciPy, edge-index, AnnData, Scanpy, pandas, or graph export workflows.
 
-## Sources to inspect
+## Authority for current syntax
 
-- Installed package help and signatures, for example `import infomap`, `help(infomap.Infomap)`, `help(infomap.find_communities)`, and `help(infomap.tl.infomap)`.
-- Installed package metadata, such as `import importlib.metadata; importlib.metadata.version("infomap")`.
-- When inspecting an installed package from an Infomap source checkout, verify `infomap.__file__` so Python has not imported repo-local sources by accident. If needed, run inspection from another working directory or a clean environment.
-- Published Python docs at `https://mapequation.github.io/infomap-python-docs/`.
-- Source checkout files only when the user is actually working inside an Infomap repository.
+Do not treat this skill as the Python API manual. Before giving runnable code, inspect the installed package:
+
+```python
+import inspect
+import importlib.metadata as md
+import infomap
+
+print(md.version("infomap"))
+print(infomap.__file__)
+print(inspect.signature(infomap.Infomap))
+print(inspect.getdoc(infomap.Infomap))
+print(inspect.signature(infomap.find_communities))
+print(inspect.getdoc(infomap.find_communities))
+```
+
+For optional helpers, check availability before using them:
+
+```python
+hasattr(infomap, "InfomapOptions")
+hasattr(infomap, "tl") and hasattr(infomap.tl, "infomap")
+```
+
+If inspection is run from an Infomap source checkout, verify `infomap.__file__` so Python has not imported repo-local sources by accident. If needed, run from another working directory or a clean environment. Use the published Python docs at `https://mapequation.github.io/infomap-python-docs/` when internet access is available.
 
 ## Choose the Python entry point
 
-- Use `infomap.find_communities(...)` for NetworkX-style workflows where the user wants a partition and original node labels.
-- Use `Infomap(...)` when the user needs codelength, flow, hierarchical paths, output files, state/multilayer handling, repeated runs, or tabular results.
-- Use `InfomapOptions` when the same options should be reused across runs or documented as a structured configuration.
-- Use `infomap.tl.infomap(adata, ...)` for AnnData/Scanpy-style observation graphs.
+- Prefer a high-level community helper when the user has a NetworkX-style graph and only needs a partition with original labels. Verify the helper signature from the installed package.
+- Prefer the `Infomap` class when the user needs codelength, flow, hierarchy paths, output files, state/multilayer handling, repeated runs, or tabular results.
+- Prefer reusable option objects only if the installed package exposes them and the workflow benefits from a structured configuration.
+- Prefer the AnnData/Scanpy helper only if the installed package exposes it and the user is working with observation graphs.
 
-## Common patterns
+## Generating code
 
-For examples in answers, `num_trials=20` is a reasonable research default. For actual validation runs, use a tiny graph or `num_trials=1` first. Ask before running large graphs, many trials, repeated seeds, Scanpy workflows on large AnnData objects, or parameter sweeps.
+- Generate code after inspecting signatures or docs for the installed version.
+- Keep examples small. Use one trial for smoke tests; use a meaningful `num_trials` value for research runs only after runtime is acceptable.
+- Record package version, `infomap.__file__`, graph source, directed/weighted choice, seed, trials, non-default options, and output artifacts.
+- Preserve mappings when labels are converted to internal integer ids.
+- For state or multilayer output, state whether results are state-level or physical-node-level.
 
-NetworkX quick path:
+## Minimal patterns
 
-```python
-import networkx as nx
-import infomap
+For simple graph partitioning, use the installed high-level helper if available. For richer results, instantiate `Infomap`, add/read the network with installed methods, run, then extract modules, codelength, and node/state tables using methods confirmed by `help(...)` or `inspect`.
 
-graph = nx.karate_club_graph()
-communities = infomap.find_communities(
-    graph,
-    weight="weight",
-    seed=123,
-    num_trials=20,
-    module_attribute="infomap_module",
-)
-```
-
-Explicit run with tabular output:
-
-```python
-from infomap import Infomap
-
-im = Infomap(silent=True, seed=123, num_trials=20)
-mapping = im.add_networkx_graph(graph)
-im.run()
-
-nodes = im.to_dataframe(
-    columns=["node_id", "module_id", "flow"],
-    index="node_id",
-    sort=["module_id", "flow"],
-)
-```
-
-SciPy sparse matrix:
-
-```python
-from infomap import Infomap
-
-im = Infomap.from_scipy_sparse_matrix(
-    adjacency,
-    directed=False,
-    args="--silent --seed 123 --num-trials 20",
-)
-im.run()
-modules = im.get_modules()
-```
-
-Edge-index data:
-
-```python
-from infomap import Infomap
-
-im = Infomap.from_edge_index(
-    edge_index,
-    edge_weight=edge_weight,
-    directed=False,
-    args="--silent --seed 123 --num-trials 20",
-)
-im.run()
-```
-
-Scanpy-style AnnData:
-
-```python
-import infomap
-
-infomap.tl.infomap(
-    adata,
-    key_added="infomap",
-    directed=False,
-    use_weights=True,
-    seed=123,
-    num_trials=20,
-)
-```
-
-## State and multilayer reminders
-
-- NetworkX state networks use a `node_id` node attribute to map states to physical nodes.
-- Multilayer NetworkX graphs additionally use `layer_id`.
-- For state or multilayer output, be explicit whether results should be state-level or physical-node-level.
-- Preserve and report mappings when non-integer labels are converted to internal ids.
-
-## Export and reporting
-
-- Use `to_dataframe()` when a paper or pipeline needs node-level tables.
-- Use `get_modules()` for simple module mappings.
-- Use `infomap.export.write_graphml` or `write_gexf` for NetworkX visualization workflows.
-- Record package version, graph source, directed/weighted choice, seed, `num_trials`, and non-default options.
+Avoid copying long API examples from this skill. The exact method names, signatures, and helper coverage should come from the installed package and published docs.

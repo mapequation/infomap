@@ -1,6 +1,6 @@
 # FAQ and Troubleshooting
 
-Use this reference when the user asks why a result looks surprising, why a run is slow, how to get an output field, or how to translate advice from old Infomap discussions to current versions. The entries below are distilled from high-signal GitHub Discussions and checked against current CLI/Python/R option names where possible.
+Use this reference when the user asks why a result looks surprising, why a run is slow, how to get an output field, or how to translate advice from old Infomap discussions to current versions. The entries below are distilled from high-signal GitHub Discussions, but option names and API calls must still be verified against the user's installed CLI/Python/R package before giving runnable code.
 
 ## One module or fewer modules than expected
 
@@ -9,13 +9,13 @@ Start from `references/reproducibility.md` for codelength interpretation. A one-
 Practical checks:
 
 - Confirm weights mean stronger interaction/flow, not distance or dissimilarity.
-- Confirm directionality and `--flow-model` / `--directed`.
+- Confirm directionality and the installed flow-model or directedness options.
 - Run more trials or compare seeds if the network is stochastic or hard to optimize.
-- For dense or aggregated networks, test whether filtering weak links with `--weight-threshold` changes the signal.
-- For scale sensitivity, lower `--markov-time` / `markov_time` to explore smaller modules, but treat this as a modeling choice.
-- To bias the search toward a target granularity, consider `--preferred-number-of-modules` / `preferred_number_of_modules`, but treat it as a modeling choice and report it.
+- For dense or aggregated networks, test whether filtering weak links changes the signal, using the installed option name.
+- For scale sensitivity, explore lower Markov-time settings to look for smaller modules, but treat this as a modeling choice.
+- To bias the search toward a target granularity, consider the installed preferred-module-count option if available, but treat it as a modeling choice and report it.
 - If the data can be stratified by context, model layers/state nodes instead of flattening.
-- To evaluate an expected partition, use `--cluster-data PARTITION --no-infomap`, or Python `initial_partition` with `run(no_infomap=True)`.
+- To evaluate an expected partition, look for the installed cluster-data / no-optimization options or initial-partition API. Use them to calculate codelength without optimizing when supported.
 
 Source discussions: [#241](https://github.com/mapequation/infomap/discussions/241), [#340](https://github.com/mapequation/infomap/discussions/340).
 
@@ -29,7 +29,7 @@ Source discussion: [#524](https://github.com/mapequation/infomap/discussions/524
 
 ## Slow runs or low CPU usage
 
-Check `infomap --version` / `Infomap --version` for OpenMP support. Some phases can be single-threaded even when the binary supports OpenMP. For Python, reading a network file with `im.read_file(...)` is usually much faster than adding many links in Python loops. Also check memory pressure: swapping can make runs look CPU-light and extremely slow.
+Check `infomap --version` / `Infomap --version` for OpenMP support. Some phases can be single-threaded even when the binary supports OpenMP. For Python, reading a network file through the installed file-reading API is usually much faster than adding many links in Python loops; verify the method name from package help. Also check memory pressure: swapping can make runs look CPU-light and extremely slow.
 
 For very large graphs, use runtime planning in `references/reproducibility.md`, start with one trial, and ask before launching many trials or parameter sweeps.
 
@@ -51,15 +51,15 @@ Source discussions: [#267](https://github.com/mapequation/infomap/discussions/26
 
 ## Multilayer `--cluster-data` or initial partitions
 
-For multilayer/state networks, initial partitions usually need state-level identifiers, not only physical node ids. When possible, write a state-level `.clu` from a known run and use that as the shape/template. Current CLI help says `--cluster-data` accepts a `.clu`, `.tree`, or `.ftree`, and `--no-infomap` can calculate codelength without optimization.
+For multilayer/state networks, initial partitions usually need state-level identifiers, not only physical node ids. When possible, write a state-level partition from a known run and use that as the shape/template. Verify the installed CLI or API support for cluster-data input and no-optimization codelength calculation.
 
-For Python, `im.initial_partition = {...}` or `im.run(initial_partition=..., no_infomap=True)` can evaluate a supplied partition. For CLI/R, use the current `cluster_data` and `no_infomap` option names.
+For Python/R/CLI, inspect installed help before naming exact parameters. Older discussion examples may use names that have since changed.
 
 Source discussions: [#329](https://github.com/mapequation/infomap/discussions/329), [#340](https://github.com/mapequation/infomap/discussions/340).
 
 ## CLI flags changed from old versions
 
-When reproducing old commands, check `infomap -hh` or `Infomap -hh`. In current help, self-links are included by default and `-k` / `--include-self-links` is deprecated; use `--no-self-links` to exclude them. Current Infomap does not require zero-based indexing flags for ordinary non-consecutive ids.
+When reproducing old commands, check advanced CLI help and installed parameter metadata. Old discussions may mention flags that were removed, renamed, or made defaults. In recent/current versions, self-links are included by default and the old include-self-links flag is deprecated; verify the installed exclusion flag before using it. Current versions do not require zero-based indexing flags for ordinary non-consecutive ids.
 
 Source discussions: [#138](https://github.com/mapequation/infomap/discussions/138), [#350](https://github.com/mapequation/infomap/discussions/350).
 
@@ -71,7 +71,7 @@ Source discussions: [#177](https://github.com/mapequation/infomap/discussions/17
 
 ## Output formats and Network Navigator
 
-Use `--ftree` or `--output ftree` when Network Navigator or aggregated links between modules are needed. In Python/R APIs, prefer the current writer/helper names from installed help. Do not assume `write_pajek` is a general export of the original user-facing multilayer input; check whether the desired output should be `.tree`, `.ftree`, `.clu`, `.csv`, `.json`, `states`, or graph-package export.
+When Network Navigator or aggregated links between modules are needed, inspect current CLI help for the flow-tree or equivalent output format. In Python/R APIs, prefer the current writer/helper names from installed help. Do not assume a Pajek writer is a general export of the original user-facing multilayer input; check whether the desired output should be hierarchy, flow-tree, cluster assignment, table, JSON, state-level output, or graph-package export.
 
 Source discussions: [#330](https://github.com/mapequation/infomap/discussions/330), [#283](https://github.com/mapequation/infomap/discussions/283).
 

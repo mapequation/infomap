@@ -84,12 +84,12 @@ Infomap may collapse to one module when candidate modular partitions do not impr
 If the user expected multiple modules, check:
 
 - **Input semantics**: weights should mean stronger flow or interaction, not distances or dissimilarities unless transformed.
-- **Direction and flow model**: verify directedness, observed-flow assumptions, and `flow_model`/`--directed` choices.
+- **Direction and flow model**: verify directedness, observed-flow assumptions, and the installed flow-model or directedness options.
 - **Network construction**: check that ids, delimiters, isolated nodes, duplicate links, self-links, and component structure match the intended graph.
 - **Search stability**: rerun with a fixed `seed`, then increase `num_trials` or compare several seeds to rule out a poor local optimum.
-- **Supplied partition diagnostic**: initialize from a candidate partition with `--cluster-data` and run `--no-infomap` to calculate its codelength without optimization. This helps test whether the expected partition compresses flow better than the one-level baseline.
-- **Resolution scale**: for exploratory sensitivity analysis, try lower `markov_time` values to look for smaller-scale modules; this is a modeling choice and needs extra thought before being used in a reported result.
-- **Preferred module count**: `preferred_number_of_modules` / `--preferred-number-of-modules` can explore what partitions near a target count look like; this is also a modeling choice, not neutral evidence that the data contain that many modules.
+- **Supplied partition diagnostic**: if the installed interface supports cluster-data input and no-optimization codelength calculation, use it to test whether an expected partition compresses flow better than the one-level baseline.
+- **Resolution scale**: for exploratory sensitivity analysis, try lower Markov-time settings to look for smaller-scale modules; this is a modeling choice and needs extra thought before being used in a reported result.
+- **Preferred module count**: if the installed interface supports a preferred module count, it can explore what partitions near a target count look like; this is also a modeling choice, not neutral evidence that the data contain that many modules.
 - **Representation**: if the data have layers, sequence memory, metadata, or bipartite structure, model those explicitly instead of flattening away the signal.
 - **Expectation check**: if no tested representation improves on the one-level codelength, report the one-module result rather than forcing a partition.
 

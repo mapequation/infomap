@@ -30,8 +30,9 @@ When the user already chose an interface, stay there unless a different interfac
 - Do not assume the user has an Infomap source checkout. Most users will only have the CLI, Python package, R package, or notebook image installed.
 - Treat installed help and published docs as the normal authority for current syntax. Use source files only when the user is working inside an Infomap checkout or explicitly provides repo files.
 - For CLI details, inspect the available binary with `infomap --help`, `Infomap --help`, advanced help, or `--print-json-parameters` when available.
-- For Python details, prefer installed package help (`import infomap`, `help(...)`, object signatures), published Python docs, and package examples available to the user.
-- For R details, prefer `?infomap::cluster_infomap`, `?infomap::Infomap`, `?infomap::infomap_options`, and installed package help.
+- For Python details, prefer installed package help (`help(...)`), `inspect.signature(...)`, package metadata, published Python docs, and package examples available to the user.
+- For R details, prefer installed help (`utils::help(..., package = "infomap")`), `args(...)`, `packageVersion("infomap")`, and package exports.
+- Do not copy version-sensitive examples from this skill as if they were authoritative. Generate runnable code only after checking the installed interface or published docs for the user's version.
 - Use the survey article as a decision guide for representation, flow modeling, higher-order networks, metadata, bipartite networks, incomplete data, and applications: `https://doi.org/10.1145/3779648`. Do not quote long passages from it.
 
 ## Default research standards
