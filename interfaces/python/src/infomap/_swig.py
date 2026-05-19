@@ -2669,6 +2669,111 @@ class PartitionQueue(object):
 
 # Register PartitionQueue in _infomap:
 _infomap.PartitionQueue_swigregister(PartitionQueue)
+class vector_link_result(object):
+    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    __repr__ = _swig_repr
+
+    def iterator(self):
+        return _infomap.vector_link_result_iterator(self)
+    def __iter__(self):
+        return self.iterator()
+
+    def __nonzero__(self):
+        return _infomap.vector_link_result___nonzero__(self)
+
+    def __bool__(self):
+        return _infomap.vector_link_result___bool__(self)
+
+    def __len__(self):
+        return _infomap.vector_link_result___len__(self)
+
+    def __getslice__(self, i, j):
+        return _infomap.vector_link_result___getslice__(self, i, j)
+
+    def __setslice__(self, *args):
+        return _infomap.vector_link_result___setslice__(self, *args)
+
+    def __delslice__(self, i, j):
+        return _infomap.vector_link_result___delslice__(self, i, j)
+
+    def __delitem__(self, *args):
+        return _infomap.vector_link_result___delitem__(self, *args)
+
+    def __getitem__(self, *args):
+        return _infomap.vector_link_result___getitem__(self, *args)
+
+    def __setitem__(self, *args):
+        return _infomap.vector_link_result___setitem__(self, *args)
+
+    def pop(self):
+        return _infomap.vector_link_result_pop(self)
+
+    def append(self, x):
+        return _infomap.vector_link_result_append(self, x)
+
+    def empty(self):
+        return _infomap.vector_link_result_empty(self)
+
+    def size(self):
+        return _infomap.vector_link_result_size(self)
+
+    def swap(self, v):
+        return _infomap.vector_link_result_swap(self, v)
+
+    def begin(self):
+        return _infomap.vector_link_result_begin(self)
+
+    def end(self):
+        return _infomap.vector_link_result_end(self)
+
+    def rbegin(self):
+        return _infomap.vector_link_result_rbegin(self)
+
+    def rend(self):
+        return _infomap.vector_link_result_rend(self)
+
+    def clear(self):
+        return _infomap.vector_link_result_clear(self)
+
+    def get_allocator(self):
+        return _infomap.vector_link_result_get_allocator(self)
+
+    def pop_back(self):
+        return _infomap.vector_link_result_pop_back(self)
+
+    def erase(self, *args):
+        return _infomap.vector_link_result_erase(self, *args)
+
+    def __init__(self, *args):
+        _infomap.vector_link_result_swiginit(self, _infomap.new_vector_link_result(*args))
+
+    def push_back(self, x):
+        return _infomap.vector_link_result_push_back(self, x)
+
+    def front(self):
+        return _infomap.vector_link_result_front(self)
+
+    def back(self):
+        return _infomap.vector_link_result_back(self)
+
+    def assign(self, n, x):
+        return _infomap.vector_link_result_assign(self, n, x)
+
+    def resize(self, *args):
+        return _infomap.vector_link_result_resize(self, *args)
+
+    def insert(self, *args):
+        return _infomap.vector_link_result_insert(self, *args)
+
+    def reserve(self, n):
+        return _infomap.vector_link_result_reserve(self, n)
+
+    def capacity(self):
+        return _infomap.vector_link_result_capacity(self)
+    __swig_destroy__ = _infomap.delete_vector_link_result
+
+# Register vector_link_result in _infomap:
+_infomap.vector_link_result_swigregister(vector_link_result)
 class map_uint_vector_uint(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
@@ -3019,6 +3124,20 @@ _infomap.map_pair_uint_uint_double_swigregister(map_pair_uint_uint_double)
 
 def run(flags):
     return _infomap.run(flags)
+class LinkResult(object):
+    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    __repr__ = _swig_repr
+
+    def __init__(self, *args):
+        _infomap.LinkResult_swiginit(self, _infomap.new_LinkResult(*args))
+    source = property(_infomap.LinkResult_source_get, _infomap.LinkResult_source_set)
+    target = property(_infomap.LinkResult_target_get, _infomap.LinkResult_target_set)
+    weight = property(_infomap.LinkResult_weight_get, _infomap.LinkResult_weight_set)
+    flow = property(_infomap.LinkResult_flow_get, _infomap.LinkResult_flow_set)
+    __swig_destroy__ = _infomap.delete_LinkResult
+
+# Register LinkResult in _infomap:
+_infomap.LinkResult_swigregister(LinkResult)
 class InfomapWrapper(InfomapBase):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
@@ -3077,6 +3196,9 @@ class InfomapWrapper(InfomapBase):
 
     def getLinks(self, flow):
         return _infomap.InfomapWrapper_getLinks(self, flow)
+
+    def getLinkResults(self):
+        return _infomap.InfomapWrapper_getLinkResults(self)
 
     def getModules(self, level=1, states=False):
         return _infomap.InfomapWrapper_getModules(self, level, states)
