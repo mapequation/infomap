@@ -110,6 +110,12 @@ module, flow, optional layer id).}
 \item{\code{physical_nodes}}{Per-physical-node attributes (state nodes
 merged within a module).}
 
+\item{\code{links}}{Per-link source, target, weight and flow as a
+\code{data.frame}.}
+
+\item{\code{flow_links}}{Per-link source, target and flow as a
+\code{data.frame}.}
+
 \item{\code{names}}{Named character vector of all assigned node names.}
 }
 \if{html}{\out{</div>}}
@@ -145,6 +151,7 @@ merged within a module).}
 \item \href{#method-Infomap-get_modules}{\code{InfomapClass$get_modules()}}
 \item \href{#method-Infomap-get_multilevel_modules}{\code{InfomapClass$get_multilevel_modules()}}
 \item \href{#method-Infomap-get_nodes}{\code{InfomapClass$get_nodes()}}
+\item \href{#method-Infomap-get_links}{\code{InfomapClass$get_links()}}
 \item \href{#method-Infomap-get_name}{\code{InfomapClass$get_name()}}
 \item \href{#method-Infomap-get_names}{\code{InfomapClass$get_names()}}
 \item \href{#method-Infomap-write_clu}{\code{InfomapClass$write_clu()}}
@@ -765,6 +772,28 @@ module id, flow, optional layer id).
 }
 \subsection{Returns}{
 A list of integer/numeric vectors.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-get_links"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-get_links}{}}}
+\subsection{Method \code{get_links()}}{
+Get per-link weights and flow.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_links()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+For ordinary networks added with \code{add_link()} or \code{add_links()},
+\code{source} and \code{target} are the user-supplied node ids. For state
+and multilayer networks they are state ids. Before \code{run()},
+\code{weight} reflects the input weights and \code{flow} reflects the core
+link-flow values currently stored by Infomap, usually zero.
+}
+
+\subsection{Returns}{
+A \code{data.frame} with columns \code{source}, \code{target}, \code{weight},
+and \code{flow}.
 }
 }
 \if{html}{\out{<hr>}}

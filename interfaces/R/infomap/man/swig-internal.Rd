@@ -10,6 +10,7 @@
 \alias{$,_p_infomap__FlowModel-method}
 \alias{$,_p_infomap__InfoEdge-method}
 \alias{$,_p_infomap__InfoNode-method}
+\alias{$,_p_infomap__LinkResult-method}
 \alias{$,_p_infomap__InfomapBase-method}
 \alias{$,_p_infomap__InfomapConfigT_infomap__InfomapBase_t-method}
 \alias{$,_p_infomap__InfomapIterator-method}
@@ -35,6 +36,7 @@
 \alias{$,_p_std__mapT_unsigned_int_unsigned_int_std__lessT_unsigned_int_t_std__allocatorT_std__pairT_unsigned_int_const_unsigned_int_t_t_t-method}
 \alias{$,_p_std__pairT_unsigned_int_unsigned_int_t-method}
 \alias{$,_p_std__vectorT_double_t-method}
+\alias{$,_p_std__vectorT_infomap__LinkResult_t-method}
 \alias{$,_p_std__vectorT_unsigned_int_t-method}
 % $<- setter methods
 \alias{$<-,_p_infomap__Config-method}
@@ -44,6 +46,7 @@
 \alias{$<-,_p_infomap__FlowModel-method}
 \alias{$<-,_p_infomap__InfoEdge-method}
 \alias{$<-,_p_infomap__InfoNode-method}
+\alias{$<-,_p_infomap__LinkResult-method}
 \alias{$<-,_p_infomap__InfomapIterator-method}
 \alias{$<-,_p_infomap__InfomapParentIterator-method}
 \alias{$<-,_p_infomap__LayerNode-method}
@@ -63,6 +66,7 @@
 \alias{[[<-,_p_infomap__FlowModel,character-method}
 \alias{[[<-,_p_infomap__InfoEdge,character-method}
 \alias{[[<-,_p_infomap__InfoNode,character-method}
+\alias{[[<-,_p_infomap__LinkResult,character-method}
 \alias{[[<-,_p_infomap__InfomapIterator,character-method}
 \alias{[[<-,_p_infomap__InfomapParentIterator,character-method}
 \alias{[[<-,_p_infomap__LayerNode,character-method}

@@ -328,6 +328,9 @@ void addMultilayerInterLinksFromNumpy2D(InfomapWrapper& infomap, PyObject* links
 
 namespace std {
     %template(vector_uint) std::vector<unsigned int>;
+#ifndef SWIGPYTHON
+    %template(vector_link_result) std::vector<infomap::LinkResult>;
+#endif
     %template(map_uint_uint) std::map<unsigned int, unsigned int>;
     %template(map_uint_vector_uint) std::map<unsigned int, std::vector<unsigned int>>;
     %template(map_uint_string) std::map<unsigned int, std::string>;
