@@ -269,6 +269,12 @@ Maintainers should use:
 - ``CONTRIBUTING.md`` for pull request and contributor guidance
 - ``SECURITY.md`` for vulnerability reporting
 
+Agent skill
+-----------
+
+This repository includes an Infomap agent skill in ``skills/infomap/`` for
+reproducible CLI, Python, R, and notebook research workflows.
+
 Feedback
 --------
 
