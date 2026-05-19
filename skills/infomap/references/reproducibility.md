@@ -69,3 +69,26 @@ We detected flow-based communities with Infomap using the map equation framework
 - `num_top_modules` is the number of top-level modules.
 - Hierarchical output paths encode nested modules; do not collapse them unless the user wants top-level labels.
 - State nodes can allow the same physical node to appear in different modules; report whether assignments are state-level or merged to physical nodes.
+
+## Codelength and one-module results
+
+When Infomap returns one top module, first compare the total modular `codelength` with `one_level_codelength`.
+
+- `one_level_codelength` is the non-modular baseline: one codebook for the whole network flow.
+- `codelength` is the total description length of the selected partition.
+- For modular results, `codelength = index_codelength + module_codelength`.
+- `module_codelength` alone is not the value to compare against `one_level_codelength`; the index codebook also costs bits.
+
+If the best modular partition has a total `codelength` that is not lower than `one_level_codelength`, Infomap may collapse the solution to one module. This usually means that, under the current network representation and flow model, modules do not compress the flow better than a one-level description. It is not automatically an error.
+
+If the user expected multiple modules, check:
+
+- **Input semantics**: weights should mean stronger flow or interaction, not distances or dissimilarities unless transformed.
+- **Direction and flow model**: verify directedness, observed-flow assumptions, and `flow_model`/`--directed` choices.
+- **Network construction**: check that ids, delimiters, isolated nodes, duplicate links, self-links, and component structure match the intended graph.
+- **Search stability**: rerun with a fixed `seed`, then increase `num_trials` or compare several seeds to rule out a poor local optimum.
+- **Resolution scale**: for exploratory sensitivity analysis, try lower `markov_time` values to look for smaller-scale modules; report this as a non-default modeling choice.
+- **Representation**: if the data have layers, sequence memory, metadata, or bipartite structure, model those explicitly instead of flattening away the signal.
+- **Expectation check**: if no tested representation improves on the one-level codelength, report the one-module result rather than forcing a partition.
+
+Avoid presenting forced module counts as evidence of community structure. Options such as preferred module counts or non-default Markov time can be useful for sensitivity analysis, but they change the model and must be reported.
