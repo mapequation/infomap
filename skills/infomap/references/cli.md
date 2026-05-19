@@ -4,12 +4,11 @@ Use this reference when the user wants native Infomap commands, file-based analy
 
 ## Sources to inspect
 
-- `./Infomap --help`
-- `./Infomap -hh` for advanced options
-- `./Infomap --print-json-parameters` for current parameter names
-- `README.rst`
-- `examples/networks/`
-- `src/io/Config.cpp` and `src/io/Network.cpp` only when help text is not enough
+- `infomap --help` or `Infomap --help`, depending on the installed binary name.
+- `infomap -hh` or `Infomap -hh` for advanced options.
+- `infomap --print-json-parameters` or `Infomap --print-json-parameters` for current parameter names.
+- The published user guide at `https://www.mapequation.org/infomap/`.
+- Source checkout files only when the user is actually working inside an Infomap repository.
 
 ## Basic shape
 
@@ -19,28 +18,30 @@ The native command shape is:
 Infomap network_file out_directory [options]
 ```
 
-From a source checkout, examples may use `./Infomap`. Installed Python packages may provide an `infomap` entry point. Verify which binary is on `PATH` before giving exact commands.
+Installed Python packages usually provide an `infomap` entry point; native builds may expose `Infomap`. Verify which binary is on `PATH` before giving exact commands. In shell examples, use `INFOMAP_BIN` when the binary name is unknown.
 
 ## Reproducible command pattern
 
 ```bash
+INFOMAP_BIN="${INFOMAP_BIN:-infomap}"
 mkdir -p results/karate
-./Infomap data/karate.net results/karate \
+"$INFOMAP_BIN" data/karate.net results/karate \
   --flow-model undirected \
   --seed 123 \
   --num-trials 20 \
   --tree \
   --clu
 
-./Infomap --version > results/karate/infomap-version.txt
-./Infomap --print-json-parameters > results/karate/infomap-parameters.json
+"$INFOMAP_BIN" --version > results/karate/infomap-version.txt
+"$INFOMAP_BIN" --print-json-parameters > results/karate/infomap-parameters.json
 ```
 
 Weighted directed edge-list pattern:
 
 ```bash
+INFOMAP_BIN="${INFOMAP_BIN:-infomap}"
 mkdir -p results/transitions
-./Infomap data/transitions.tsv results/transitions \
+"$INFOMAP_BIN" data/transitions.tsv results/transitions \
   --directed \
   --seed 123 \
   --num-trials 20 \
@@ -49,14 +50,15 @@ mkdir -p results/transitions
   --silent
 
 {
-  printf '%s\n' './Infomap data/transitions.tsv results/transitions --directed --seed 123 --num-trials 20 --tree --clu --silent'
-  ./Infomap --version
+  printf 'binary=%s\n' "$INFOMAP_BIN"
+  printf '%s\n' "$INFOMAP_BIN data/transitions.tsv results/transitions --directed --seed 123 --num-trials 20 --tree --clu --silent"
+  "$INFOMAP_BIN" --version
   shasum -a 256 data/transitions.tsv
-  ./Infomap --print-json-parameters
+  "$INFOMAP_BIN" --print-json-parameters
 } > results/transitions/run-log.txt
 ```
 
-For a weighted link list, ensure the input columns and delimiter match the current supported format. The usual edge-list shape is source, target, and optional weight; inspect the user guide, examples, or parser tests before giving format-specific guarantees.
+For a weighted link list, ensure the input columns and delimiter match the current supported format. The usual edge-list shape is source, target, and optional weight; inspect the installed help or user guide before giving format-specific guarantees.
 
 Use `--silent` for scripts when console progress is not needed. Use `-v`, `-vv`, or `-vvv` when diagnosing a run.
 
@@ -78,7 +80,7 @@ Use `--silent` for scripts when console progress is not needed. Use `-v`, `-vv`,
 - Infomap assumes link-list input unless a file starts with a Pajek-style heading.
 - Use weighted input when weights carry interaction strength or observed flow frequency.
 - Use directed options when edge orientation is part of the process.
-- For state, multilayer, metadata, or bipartite formats, inspect current docs/examples before writing a full command.
+- For state, multilayer, metadata, or bipartite formats, inspect installed help, published docs, or user-provided examples before writing a full command.
 - Choose `--clu` when the user needs one top-level module id per node.
 - Choose `--tree` when the user needs hierarchy, flow, names, or downstream parsing.
 - Choose `--ftree` when Network Navigator or aggregated module links are needed.

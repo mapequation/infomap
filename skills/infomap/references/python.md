@@ -4,12 +4,10 @@ Use this reference when the user works in Python, notebooks, NetworkX, python-ig
 
 ## Sources to inspect
 
-- `interfaces/python/source/quickstart.rst`
-- `interfaces/python/source/usage.rst`
-- `interfaces/python/source/scanpy.rst`
-- `interfaces/python/source/export.rst`
-- `examples/python/`
-- `test/python/` for exact behavior when docs are not enough
+- Installed package help and signatures, for example `import infomap`, `help(infomap.Infomap)`, `help(infomap.find_communities)`, and `help(infomap.tl.infomap)`.
+- Installed package metadata, such as `import importlib.metadata; importlib.metadata.version("infomap")`.
+- Published Python docs at `https://mapequation.github.io/infomap-python-docs/`.
+- Source checkout files only when the user is actually working inside an Infomap repository.
 
 ## Choose the Python entry point
 

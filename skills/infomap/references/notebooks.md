@@ -4,11 +4,10 @@ Use this reference when the user mentions Jupyter, tutorial notebooks, survey co
 
 ## Sources to inspect
 
-- `interfaces/python/source/notebooks.rst`
-- `examples/notebooks/notebooks.toml`
-- `examples/notebooks/`
-- `interfaces/python/source/quickstart.rst`
-- `interfaces/python/source/usage.rst`
+- Published Python docs and notebook page.
+- The installed or published notebook image `ghcr.io/mapequation/infomap:notebook`.
+- The public notebook source on GitHub when internet access is available.
+- Source checkout files only when the user is actually working inside an Infomap repository.
 
 ## When notebooks are the right path
 
@@ -21,7 +20,7 @@ Use notebooks when the user wants to:
 
 Use scripts instead when the user wants batch runs, CI, parameter sweeps, or stable pipeline execution.
 
-## Notebook topics in this repo
+## Notebook topics
 
 The survey companion notebooks cover:
 
@@ -53,7 +52,7 @@ docker run --rm -p 8888:8888 \
   start.sh jupyter lab
 ```
 
-From a source checkout:
+From a source checkout, only when the user has the repository locally:
 
 ```bash
 python -m pip install -e '.[notebooks]'

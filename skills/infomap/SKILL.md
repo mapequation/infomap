@@ -15,7 +15,7 @@ Identify the user's mode before answering:
 - **Code or command generation**: choose the smallest practical interface, then read `references/cli.md`, `references/python.md`, or `references/r.md`.
 - **Notebook workflow**: read `references/notebooks.md`; also read `references/python.md` when converting notebook ideas into scripts.
 - **Result interpretation or method text**: read `references/reproducibility.md`; read interface-specific references only if output fields or APIs matter.
-- **Usage troubleshooting**: inspect current repo docs/source or local help first, then read the relevant interface reference.
+- **Usage troubleshooting**: inspect the installed package help, CLI help, or online user docs first, then read the relevant interface reference.
 
 ## Choose the interface
 
@@ -27,9 +27,11 @@ When the user already chose an interface, stay there unless a different interfac
 
 ## Source rules
 
-- Treat repo docs and source as the authority for current syntax. For CLI details, inspect `./Infomap --help`, `./Infomap -hh`, or `./Infomap --print-json-parameters` when available.
-- For Python details, inspect `interfaces/python/source/`, `examples/python/`, or package API docs in the repo before giving version-sensitive advice.
-- For R details, inspect `interfaces/R/infomap/README.md`, `interfaces/R/infomap/R/`, and `examples/R/`.
+- Do not assume the user has an Infomap source checkout. Most users will only have the CLI, Python package, R package, or notebook image installed.
+- Treat installed help and published docs as the normal authority for current syntax. Use source files only when the user is working inside an Infomap checkout or explicitly provides repo files.
+- For CLI details, inspect the available binary with `infomap --help`, `Infomap --help`, advanced help, or `--print-json-parameters` when available.
+- For Python details, prefer installed package help (`import infomap`, `help(...)`, object signatures), published Python docs, and package examples available to the user.
+- For R details, prefer `?infomap::cluster_infomap`, `?infomap::Infomap`, `?infomap::infomap_options`, and installed package help.
 - Use the survey article as a decision guide for representation, flow modeling, higher-order networks, metadata, bipartite networks, incomplete data, and applications. Do not quote long passages from it.
 
 ## Default research standards

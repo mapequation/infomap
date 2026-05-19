@@ -4,11 +4,10 @@ Use this reference when the user works in R, R igraph, R Markdown, data frames, 
 
 ## Sources to inspect
 
-- `interfaces/R/infomap/README.md`
-- `interfaces/R/infomap/R/cluster_infomap.R`
-- `interfaces/R/infomap/R/Infomap.R`
-- `interfaces/R/infomap/R/options.R`
-- `examples/R/`
+- Installed R help: `?infomap::cluster_infomap`, `?infomap::Infomap`, and `?infomap::infomap_options`.
+- Installed package metadata, such as `packageVersion("infomap")`.
+- The r-universe package page and published repository docs when internet access is available.
+- Source checkout files only when the user is actually working inside an Infomap repository.
 
 ## Choose the R entry point
 
