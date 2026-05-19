@@ -10,12 +10,13 @@
 #ifndef OUTPUT_FORMATS_H_
 #define OUTPUT_FORMATS_H_
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
 namespace infomap {
 
-enum class OutputFormatFlag {
+enum class OutputFormatFlag : std::uint8_t {
   Clu,
   Tree,
   FlowTree,
