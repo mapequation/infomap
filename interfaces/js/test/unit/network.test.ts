@@ -7,8 +7,8 @@ describe("networkToString", () => {
       networkToString({
         nodes: [{ id: 1, name: "A" }],
         states: [{ stateId: 1, id: 1, name: "A/1" }],
-        links: [{ source: 1, target: 1, weight: 2 }]
-      })
+        links: [{ source: 1, target: 1, weight: 2 }],
+      }),
     ).toContain("*States");
   });
 });

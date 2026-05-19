@@ -5,7 +5,7 @@ type RunParams = [RunOptions];
 
 export function mergeInfomapArgs(
   params: RunParams,
-  args?: Arguments
+  args?: Arguments,
 ): RunParams {
   const param = params[0] ? { ...params[0] } : {};
 
