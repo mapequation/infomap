@@ -38,6 +38,130 @@
 
 namespace infomap {
 
+class InfomapBase::RunSession {
+public:
+  struct Result {
+    std::ostringstream bestSolutionStatistics;
+    unsigned int bestNumLevels = 0;
+    double bestHierarchicalCodelength = std::numeric_limits<double>::max();
+    NodePaths bestTree;
+    unsigned int bestTrialIndex = 0;
+  };
+
+  RunSession(InfomapBase& infomap, Network& network) : m_infomap(infomap), m_network(network) {}
+
+  Result runTrials()
+  {
+    Result result;
+    result.bestTree = NodePaths(m_infomap.numLeafNodes());
+    m_infomap.m_codelengths.clear();
+    m_infomap.m_numTopModules.clear();
+
+    for (unsigned int i = 0; i < m_numTrials; ++i) {
+      runTrial(i, result);
+    }
+
+    return result;
+  }
+
+  void restoreBestResult(const Result& result)
+  {
+    if (m_numTrials > 1 && result.bestTrialIndex < m_numTrials - 1) {
+      // Restore Infomap tree to best solution.
+      m_infomap.initTree(result.bestTree);
+      m_infomap.writeResult(); // Overwrite result to get total elapsed time in output file header.
+    }
+  }
+
+private:
+  void runTrial(unsigned int trialIndex, Result& result)
+  {
+    m_infomap.removeModules();
+    auto startDate = Date();
+    Stopwatch timer(true);
+
+    logTrialStart(trialIndex, startDate);
+    initTrialPartition();
+    executeTrial();
+    finishTrial(trialIndex, timer, result);
+  }
+
+  void logTrialStart(unsigned int trialIndex, const Date& startDate)
+  {
+    if (!m_infomap.isMainInfomap()) {
+      return;
+    }
+
+    Log() << "\n";
+    Log() << "================================================\n";
+    Log() << "Trial " << (trialIndex + 1) << "/" << m_numTrials << " starting at " << startDate << "\n";
+    Log() << "================================================\n";
+  }
+
+  void initTrialPartition()
+  {
+    if (!m_infomap.isMainInfomap()) {
+      return;
+    }
+
+    if (!m_infomap.clusterDataFile.empty())
+      m_infomap.initPartition(m_infomap.clusterDataFile, m_infomap.clusterDataIsHard, &m_network);
+    else if (!m_infomap.m_initialPartition.empty())
+      m_infomap.initPartition(m_infomap.m_initialPartition, m_infomap.clusterDataIsHard);
+  }
+
+  void executeTrial()
+  {
+    if (!m_infomap.noInfomap)
+      m_infomap.runPartition();
+    else
+      m_infomap.m_hierarchicalCodelength = m_infomap.calcCodelengthOnTree(m_infomap.root(), true);
+
+    if (m_infomap.haveHardPartition())
+      m_infomap.restoreHardPartition();
+  }
+
+  void finishTrial(unsigned int trialIndex, Stopwatch& timer, Result& result)
+  {
+    if (!m_infomap.isMainInfomap()) {
+      return;
+    }
+
+    Log() << "\n=> Trial " << (trialIndex + 1) << "/" << m_numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_infomap.m_hierarchicalCodelength << "\n";
+    m_infomap.m_codelengths.push_back(m_infomap.m_hierarchicalCodelength);
+    m_infomap.m_numTopModules.push_back(m_infomap.numTopModules());
+
+    if (m_infomap.printAllTrials && m_numTrials > 1) {
+      m_infomap.writeResult(static_cast<int>(trialIndex + 1));
+    }
+
+    if (m_infomap.m_hierarchicalCodelength < result.bestHierarchicalCodelength - 1e-10) {
+      updateBestResult(trialIndex, result);
+    }
+  }
+
+  void updateBestResult(unsigned int trialIndex, Result& result)
+  {
+    result.bestSolutionStatistics.clear();
+    result.bestSolutionStatistics.str("");
+    result.bestNumLevels = printPerLevelCodelength(m_infomap.root(), result.bestSolutionStatistics);
+    result.bestHierarchicalCodelength = m_infomap.m_hierarchicalCodelength;
+    result.bestTrialIndex = trialIndex;
+    m_infomap.root().sortChildrenOnFlow();
+    m_infomap.writeResult();
+    if (m_numTrials > 1) {
+      result.bestTree.clear();
+      for (auto it(m_infomap.iterLeafNodes()); !it.isEnd(); ++it) {
+        result.bestTree.emplace_back(it->stateId, it.path());
+      }
+    }
+  }
+
+  InfomapBase& m_infomap;
+  Network& m_network;
+  const unsigned int m_numTrials = m_infomap.numTrials;
+};
+
 std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)
 {
   if (haveMemory() && !states) {
@@ -251,67 +375,10 @@ void InfomapBase::run(Network& network)
   else
     Log(2) << "Run Infomap...\n";
 
-  std::ostringstream bestSolutionStatistics;
-  unsigned int bestNumLevels = 0;
-  double bestHierarchicalCodelength = std::numeric_limits<double>::max();
-  m_codelengths.clear();
-  m_numTopModules.clear();
-  NodePaths bestTree(numLeafNodes());
-  unsigned int bestTrialIndex = 0;
-
+  RunSession runSession(*this, network);
+  auto runResult = runSession.runTrials();
   unsigned int numTrials = this->numTrials;
 
-  for (unsigned int i = 0; i < numTrials; ++i) {
-    removeModules();
-    auto startDate = Date();
-    Stopwatch timer(true);
-
-    if (isMainInfomap()) {
-      Log() << "\n";
-      Log() << "================================================\n";
-      Log() << "Trial " << (i + 1) << "/" << numTrials << " starting at " << startDate << "\n";
-      Log() << "================================================\n";
-
-      if (!clusterDataFile.empty())
-        initPartition(clusterDataFile, clusterDataIsHard, &network);
-      else if (!m_initialPartition.empty())
-        initPartition(m_initialPartition, clusterDataIsHard);
-    }
-
-    if (!noInfomap)
-      runPartition();
-    else
-      m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
-
-    if (haveHardPartition())
-      restoreHardPartition();
-
-    if (isMainInfomap()) {
-      Log() << "\n=> Trial " << (i + 1) << "/" << numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
-      m_codelengths.push_back(m_hierarchicalCodelength);
-      m_numTopModules.push_back(numTopModules());
-
-      if (printAllTrials && numTrials > 1) {
-        writeResult(static_cast<int>(i + 1));
-      }
-
-      if (m_hierarchicalCodelength < bestHierarchicalCodelength - 1e-10) {
-        bestSolutionStatistics.clear();
-        bestSolutionStatistics.str("");
-        bestNumLevels = printPerLevelCodelength(root(), bestSolutionStatistics);
-        bestHierarchicalCodelength = m_hierarchicalCodelength;
-        bestTrialIndex = i;
-        root().sortChildrenOnFlow();
-        writeResult();
-        if (numTrials > 1) {
-          bestTree.clear();
-          for (auto it(iterLeafNodes()); !it.isEnd(); ++it) {
-            bestTree.emplace_back(it->stateId, it.path());
-          }
-        }
-      }
-    }
-  }
   if (isMainInfomap()) {
     m_elapsedTime.stop();
     m_endDate = Date();
@@ -320,11 +387,7 @@ void InfomapBase::run(Network& network)
     Log() << "Summary after " << numTrials << (numTrials > 1 ? " trials\n" : " trial\n");
     Log() << "================================================\n";
     if (numTrials > 1) {
-      if (bestTrialIndex < numTrials - 1) {
-        // Restore Infomap tree to best solution
-        initTree(bestTree);
-        writeResult(); // Overwrite result to get total elapsed time in output file header
-      }
+      runSession.restoreBestResult(runResult);
 
       Log() << std::fixed << std::setprecision(9);
       double averageCodelength = 0.0;
@@ -362,12 +425,12 @@ void InfomapBase::run(Network& network)
     Log() << "Average degree:                    " << io::toPrecision(network.numLinks() * 2.0 / numLeafNodes(), 1, true) << "\n";
     Log() << "Number of top modules:             " << numTopModules() << "\n";
     Log() << "Number of non-trivial top modules: " << numNonTrivialTopModules() << "\n";
-    Log() << "Number of levels:                  " << bestNumLevels << "\n";
+    Log() << "Number of levels:                  " << runResult.bestNumLevels << "\n";
     Log() << "One-level codelength:              " << io::toPrecision(getOneLevelCodelength()) << "\n";
-    Log() << "Codelength:                        " << io::toPrecision(bestHierarchicalCodelength) << "\n";
+    Log() << "Codelength:                        " << io::toPrecision(runResult.bestHierarchicalCodelength) << "\n";
     Log() << "Relative codelength savings:       " << io::toPrecision(getRelativeCodelengthSavings() * 100, 2, true) << "%\n";
     Log() << "\n";
-    Log() << bestSolutionStatistics.str() << '\n';
+    Log() << runResult.bestSolutionStatistics.str() << '\n';
   }
 }
 

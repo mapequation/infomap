@@ -594,36 +594,36 @@ TEST_CASE("Invalid tree cluster-data failure does not poison later valid tree in
 
 namespace {
 
-std::string scratchTreePath(const std::string& tag)
-{
-  return std::string("infomap_test_issue247_") + tag + ".tree";
-}
+  std::string scratchTreePath(const std::string& tag)
+  {
+    return std::string("infomap_test_issue247_") + tag + ".tree";
+  }
 
-void writeAndCheckRoundTrip(InfomapWrapper& source, const std::string& networkPath, bool states, const std::string& tag)
-{
-  const auto treePath = scratchTreePath(tag);
-  source.writeTree(treePath, states);
-  const auto expectedCodelength = source.codelength();
-  const auto expectedIndexCodelength = source.getIndexCodelength();
+  void writeAndCheckRoundTrip(InfomapWrapper& source, const std::string& networkPath, bool states, const std::string& tag)
+  {
+    const auto treePath = scratchTreePath(tag);
+    source.writeTree(treePath, states);
+    const auto expectedCodelength = source.codelength();
+    const auto expectedIndexCodelength = source.getIndexCodelength();
 
-  // --no-infomap: load tree and verify codelength matches the source.
-  InfomapWrapper noInfomap(infomap::test::defaultFlags("--no-infomap --cluster-data " + treePath));
-  noInfomap.readInputData(networkPath);
-  noInfomap.run();
-  infomap::test::checkApproxCodelength(noInfomap.codelength(), expectedCodelength);
-  infomap::test::checkApproxCodelength(noInfomap.getIndexCodelength(), expectedIndexCodelength);
-  infomap::test::checkRunSanity(noInfomap);
+    // --no-infomap: load tree and verify codelength matches the source.
+    InfomapWrapper noInfomap(infomap::test::defaultFlags("--no-infomap --cluster-data " + treePath));
+    noInfomap.readInputData(networkPath);
+    noInfomap.run();
+    infomap::test::checkApproxCodelength(noInfomap.codelength(), expectedCodelength);
+    infomap::test::checkApproxCodelength(noInfomap.getIndexCodelength(), expectedIndexCodelength);
+    infomap::test::checkRunSanity(noInfomap);
 
-  // Continuing optimization: load tree and run; codelength must not regress
-  // and the lifecycle must not crash or leak.
-  InfomapWrapper continued(infomap::test::defaultFlags("--cluster-data " + treePath));
-  continued.readInputData(networkPath);
-  continued.run();
-  CHECK(continued.codelength() <= expectedCodelength + 1e-9);
-  infomap::test::checkRunSanity(continued);
+    // Continuing optimization: load tree and run; codelength must not regress
+    // and the lifecycle must not crash or leak.
+    InfomapWrapper continued(infomap::test::defaultFlags("--cluster-data " + treePath));
+    continued.readInputData(networkPath);
+    continued.run();
+    CHECK(continued.codelength() <= expectedCodelength + 1e-9);
+    infomap::test::checkRunSanity(continued);
 
-  std::remove(treePath.c_str());
-}
+    std::remove(treePath.c_str());
+  }
 
 } // namespace
 
@@ -692,6 +692,33 @@ TEST_CASE("Tree cluster-data tolerates repeated reinit on the same higher-order 
   std::remove(treePath.c_str());
 }
 
+TEST_CASE("No-infomap tree cluster-data reruns preserve loaded codelength [fast][core][partition][lifecycle]")
+{
+  auto baseline = infomap::test::makeRunningInfomap(
+      [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net")); },
+      "--num-trials 5");
+
+  const auto treePath = scratchTreePath("ninetriangles_no_infomap_lifecycle");
+  baseline->writeTree(treePath);
+  const auto expectedCodelength = baseline->codelength();
+  const auto expectedIndexCodelength = baseline->getIndexCodelength();
+
+  InfomapWrapper im(infomap::test::defaultFlags("--no-infomap --cluster-data " + treePath));
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  infomap::test::checkApproxCodelength(im.codelength(), expectedCodelength);
+  infomap::test::checkApproxCodelength(im.getIndexCodelength(), expectedIndexCodelength);
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+  infomap::test::checkApproxCodelength(im.codelength(), expectedCodelength);
+  infomap::test::checkApproxCodelength(im.getIndexCodelength(), expectedIndexCodelength);
+
+  std::remove(treePath.c_str());
+}
+
 // Invariant: whenever Infomap ends up with a single top module, numNonTrivialTopModules()
 // must be 0. Before the fix in partition(), the one-level fallback path (triggered when
 // the found codelength is worse than the one-level codelength) left m_numNonTrivialTopModules
@@ -702,9 +729,15 @@ TEST_CASE("numNonTrivialTopModules is zero when all nodes are in one module [fas
   // Complete graph K5 — no community structure, one-level codelength is optimal.
   // The optimizer converges directly to one module without needing the codelength-comparison
   // fallback, so this test covers the invariant rather than the specific fallback code path.
-  im.addLink(1, 2); im.addLink(1, 3); im.addLink(1, 4); im.addLink(1, 5);
-  im.addLink(2, 3); im.addLink(2, 4); im.addLink(2, 5);
-  im.addLink(3, 4); im.addLink(3, 5);
+  im.addLink(1, 2);
+  im.addLink(1, 3);
+  im.addLink(1, 4);
+  im.addLink(1, 5);
+  im.addLink(2, 3);
+  im.addLink(2, 4);
+  im.addLink(2, 5);
+  im.addLink(3, 4);
+  im.addLink(3, 5);
   im.addLink(4, 5);
   im.run();
 

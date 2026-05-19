@@ -171,6 +171,8 @@ public:
   void run(Network& network);
 
 private:
+  class RunSession;
+
   bool isFullNetwork() const { return m_isMain && m_aggregationLevel == 0; }
   bool isFirstLoop() const { return m_tuneIterationIndex == 0 && isFullNetwork(); }
 
