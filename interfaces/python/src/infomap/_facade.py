@@ -7,6 +7,12 @@ from ._bindings import __all__ as _BINDINGS_ALL
 from ._edge_index import add_edge_index as _add_edge_index
 from ._igraph import add_igraph_graph as _add_igraph_graph
 from ._igraph import find_igraph_communities
+from ._network_input import first_order_unpacker as _first_order_unpacker
+from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
+from ._network_input import is_numpy_input as _is_numpy_input
+from ._network_input import normalize_numpy_links as _normalize_numpy_links
+from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
+from ._network_input import split_optional_weight_rows as _split_optional_weight_rows
 from ._networkx import add_networkx_graph as _add_networkx_graph
 from ._networkx import find_communities
 from ._options import (
@@ -34,18 +40,6 @@ def _package_construct_args():
 
 
 MultilayerNode = namedtuple("MultilayerNode", "layer_id, node_id")
-
-
-def _as_contiguous_numeric_array(np, array, name):
-    if array.dtype.kind not in "uif":
-        raise ValueError(f"Numpy {name} arrays must have a numeric dtype.")
-
-    if array.dtype.kind == "f" and array.dtype.itemsize not in (4, 8):
-        array = array.astype(np.float64, copy=False)
-    elif array.dtype.kind in "ui" and array.dtype.itemsize not in (1, 2, 4, 8):
-        array = array.astype(np.float64, copy=False)
-
-    return np.ascontiguousarray(array)
 
 
 __all__ = [
@@ -529,52 +523,29 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             2-dimensional with 2 or 3 columns, where the first two columns are
             source and target ids and the optional third column is link weight.
         """
-        if links.__class__.__module__.startswith("numpy"):
-            try:
-                import numpy as np
-            except ImportError:
-                pass
-            else:
-                links_array = np.asarray(links)
-                if links_array.ndim != 2:
-                    raise ValueError("Numpy link arrays must be 2D with 2 or 3 columns.")
-                if links_array.shape[1] not in (2, 3):
-                    raise ValueError("Numpy link arrays must have 2 or 3 columns: (source_id, target_id, [weight]).")
+        if _is_numpy_input(links):
+            links_array = _normalize_numpy_links(
+                links,
+                name="link",
+                valid_columns=(2, 3),
+                column_description="(source_id, target_id, [weight])",
+                require_32_or_64_bit=True,
+            )
+            return super().addLinksFromNumpy2D(
+                links_array,
+                links_array.shape[0],
+                links_array.shape[1],
+                links_array.dtype.kind,
+                links_array.dtype.itemsize,
+            )
 
-                if links_array.dtype.kind not in "uif":
-                    raise ValueError("Numpy link arrays must have a numeric dtype.")
-                if links_array.dtype.itemsize not in (4, 8):
-                    raise ValueError("Numpy link arrays must use 32-bit or 64-bit numeric values.")
-
-                links_array = np.ascontiguousarray(links_array)
-                return super().addLinksFromNumpy2D(
-                    links_array,
-                    links_array.shape[0],
-                    links_array.shape[1],
-                    links_array.dtype.kind,
-                    links_array.dtype.itemsize,
-                )
-
-        source_ids = []
-        target_ids = []
-        weights = []
-        for link in links:
-            try:
-                link_length = len(link)
-            except TypeError as err:
-                raise ValueError("Each link must be a sequence of 2 or 3 values.") from err
-
-            if link_length == 2:
-                source_id, target_id = link
-                weight = 1.0
-            elif link_length == 3:
-                source_id, target_id, weight = link
-            else:
-                raise ValueError("Each link must contain 2 or 3 values: (source_id, target_id, [weight]).")
-
-            source_ids.append(source_id)
-            target_ids.append(target_id)
-            weights.append(weight)
+        source_ids, target_ids, weights = _split_optional_weight_rows(
+            links,
+            row_name="link",
+            valid_lengths=(2, 3),
+            unpack=_first_order_unpacker(),
+            length_description="2 or 3 values",
+        )
 
         return super().addLinks(source_ids, target_ids, weights)
 
@@ -741,62 +712,32 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             ``(layer_id, source_node_id, target_node_id, [weight])``.
             NumPy arrays must be 2-dimensional with 3 or 4 columns.
         """
-        if links.__class__.__module__.startswith("numpy"):
-            try:
-                import numpy as np
-            except ImportError:
-                pass
-            else:
-                links_array = np.asarray(links)
-                if links_array.ndim != 2:
-                    raise ValueError(
-                        "Numpy multilayer intra-link arrays must be 2D with 3 or 4 columns."
-                    )
-                if links_array.shape[1] not in (3, 4):
-                    raise ValueError(
-                        "Numpy multilayer intra-link arrays must have 3 or 4 columns: "
-                        "(layer_id, source_node_id, target_node_id, [weight])."
-                    )
+        if _is_numpy_input(links):
+            links_array = _normalize_numpy_links(
+                links,
+                name="multilayer intra-link",
+                valid_columns=(3, 4),
+                column_description="(layer_id, source_node_id, target_node_id, [weight])",
+            )
+            return super().addMultilayerIntraLinksFromNumpy2D(
+                links_array,
+                links_array.shape[0],
+                links_array.shape[1],
+                links_array.dtype.kind,
+                links_array.dtype.itemsize,
+            )
 
-                links_array = _as_contiguous_numeric_array(
-                    np, links_array, "multilayer intra-link"
-                )
-                return super().addMultilayerIntraLinksFromNumpy2D(
-                    links_array,
-                    links_array.shape[0],
-                    links_array.shape[1],
-                    links_array.dtype.kind,
-                    links_array.dtype.itemsize,
-                )
-
-        layer_ids = []
-        source_node_ids = []
-        target_node_ids = []
-        weights = []
-
-        for link in links:
-            try:
-                link_length = len(link)
-            except TypeError as err:
-                raise ValueError(
-                    "Each multilayer intra-link must be a sequence of 3 or 4 values."
-                ) from err
-
-            if link_length == 3:
-                layer_id, source_node_id, target_node_id = link
-                weight = 1.0
-            elif link_length == 4:
-                layer_id, source_node_id, target_node_id, weight = link
-            else:
-                raise ValueError(
-                    "Each multilayer intra-link must contain 3 or 4 values: "
-                    "(layer_id, source_node_id, target_node_id, [weight])."
-                )
-
-            layer_ids.append(layer_id)
-            source_node_ids.append(source_node_id)
-            target_node_ids.append(target_node_id)
-            weights.append(weight)
+        layer_ids, source_node_ids, target_node_ids, weights = (
+            _split_optional_weight_rows(
+                links,
+                row_name="multilayer intra-link",
+                valid_lengths=(3, 4),
+                unpack=_flat_multilayer_unpacker(
+                    ("layer_id", "source_node_id", "target_node_id"),
+                ),
+                length_description="3 or 4 values",
+            )
+        )
 
         return super().addMultilayerIntraLinks(
             layer_ids, source_node_ids, target_node_ids, weights
@@ -873,62 +814,32 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             ``(source_layer_id, node_id, target_layer_id, [weight])``.
             NumPy arrays must be 2-dimensional with 3 or 4 columns.
         """
-        if links.__class__.__module__.startswith("numpy"):
-            try:
-                import numpy as np
-            except ImportError:
-                pass
-            else:
-                links_array = np.asarray(links)
-                if links_array.ndim != 2:
-                    raise ValueError(
-                        "Numpy multilayer inter-link arrays must be 2D with 3 or 4 columns."
-                    )
-                if links_array.shape[1] not in (3, 4):
-                    raise ValueError(
-                        "Numpy multilayer inter-link arrays must have 3 or 4 columns: "
-                        "(source_layer_id, node_id, target_layer_id, [weight])."
-                    )
+        if _is_numpy_input(links):
+            links_array = _normalize_numpy_links(
+                links,
+                name="multilayer inter-link",
+                valid_columns=(3, 4),
+                column_description="(source_layer_id, node_id, target_layer_id, [weight])",
+            )
+            return super().addMultilayerInterLinksFromNumpy2D(
+                links_array,
+                links_array.shape[0],
+                links_array.shape[1],
+                links_array.dtype.kind,
+                links_array.dtype.itemsize,
+            )
 
-                links_array = _as_contiguous_numeric_array(
-                    np, links_array, "multilayer inter-link"
-                )
-                return super().addMultilayerInterLinksFromNumpy2D(
-                    links_array,
-                    links_array.shape[0],
-                    links_array.shape[1],
-                    links_array.dtype.kind,
-                    links_array.dtype.itemsize,
-                )
-
-        source_layer_ids = []
-        node_ids = []
-        target_layer_ids = []
-        weights = []
-
-        for link in links:
-            try:
-                link_length = len(link)
-            except TypeError as err:
-                raise ValueError(
-                    "Each multilayer inter-link must be a sequence of 3 or 4 values."
-                ) from err
-
-            if link_length == 3:
-                source_layer_id, node_id, target_layer_id = link
-                weight = 1.0
-            elif link_length == 4:
-                source_layer_id, node_id, target_layer_id, weight = link
-            else:
-                raise ValueError(
-                    "Each multilayer inter-link must contain 3 or 4 values: "
-                    "(source_layer_id, node_id, target_layer_id, [weight])."
-                )
-
-            source_layer_ids.append(source_layer_id)
-            node_ids.append(node_id)
-            target_layer_ids.append(target_layer_id)
-            weights.append(weight)
+        source_layer_ids, node_ids, target_layer_ids, weights = (
+            _split_optional_weight_rows(
+                links,
+                row_name="multilayer inter-link",
+                valid_lengths=(3, 4),
+                unpack=_flat_multilayer_unpacker(
+                    ("source_layer_id", "node_id", "target_layer_id"),
+                ),
+                length_description="3 or 4 values",
+            )
+        )
 
         return super().addMultilayerInterLinks(
             source_layer_ids, node_ids, target_layer_ids, weights
@@ -962,73 +873,37 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             ``(source_layer_id, source_node_id, target_layer_id,
             target_node_id, [weight])``.
         """
-        if links.__class__.__module__.startswith("numpy"):
-            try:
-                import numpy as np
-            except ImportError:
-                pass
-            else:
-                links_array = np.asarray(links)
-                if links_array.ndim != 2:
-                    raise ValueError(
-                        "Numpy multilayer link arrays must be 2D with 4 or 5 columns."
-                    )
-                if links_array.shape[1] not in (4, 5):
-                    raise ValueError(
-                        "Numpy multilayer link arrays must have 4 or 5 columns: "
-                        "(source_layer_id, source_node_id, target_layer_id, "
-                        "target_node_id, [weight])."
-                    )
+        if _is_numpy_input(links):
+            links_array = _normalize_numpy_links(
+                links,
+                name="multilayer link",
+                valid_columns=(4, 5),
+                column_description=(
+                    "(source_layer_id, source_node_id, target_layer_id, "
+                    "target_node_id, [weight])"
+                ),
+            )
+            return super().addMultilayerLinksFromNumpy2D(
+                links_array,
+                links_array.shape[0],
+                links_array.shape[1],
+                links_array.dtype.kind,
+                links_array.dtype.itemsize,
+            )
 
-                links_array = _as_contiguous_numeric_array(
-                    np, links_array, "multilayer link"
-                )
-                return super().addMultilayerLinksFromNumpy2D(
-                    links_array,
-                    links_array.shape[0],
-                    links_array.shape[1],
-                    links_array.dtype.kind,
-                    links_array.dtype.itemsize,
-                )
-
-        source_layer_ids = []
-        source_node_ids = []
-        target_layer_ids = []
-        target_node_ids = []
-        weights = []
-
-        for link in links:
-            try:
-                link_length = len(link)
-            except TypeError as err:
-                raise ValueError(
-                    "Each multilayer link must be a sequence of 2 or 3 values."
-                ) from err
-
-            if link_length == 2:
-                source_node, target_node = link
-                weight = 1.0
-            elif link_length == 3:
-                source_node, target_node, weight = link
-            else:
-                raise ValueError(
-                    "Each multilayer link must contain 2 or 3 values: "
-                    "(source_node, target_node, [weight])."
-                )
-
-            try:
-                source_layer_id, source_node_id = source_node
-                target_layer_id, target_node_id = target_node
-            except (TypeError, ValueError) as err:
-                raise ValueError(
-                    "Each multilayer node must contain 2 values: (layer_id, node_id)."
-                ) from err
-
-            source_layer_ids.append(source_layer_id)
-            source_node_ids.append(source_node_id)
-            target_layer_ids.append(target_layer_id)
-            target_node_ids.append(target_node_id)
-            weights.append(weight)
+        (
+            source_layer_ids,
+            source_node_ids,
+            target_layer_ids,
+            target_node_ids,
+            weights,
+        ) = _split_optional_weight_rows(
+            links,
+            row_name="multilayer link",
+            valid_lengths=(2, 3),
+            unpack=_paired_multilayer_unpacker(),
+            length_description="2 or 3 values",
+        )
 
         return super().addMultilayerLinks(
             source_layer_ids,
@@ -1585,6 +1460,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             The elapsed run time in seconds.
         """
         return super().elapsedTime()
+
 
 def main():
     import sys

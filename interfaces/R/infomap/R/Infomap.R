@@ -37,6 +37,116 @@ Infomap <- function(args = NULL, opts = NULL, ...) {
   InfomapClass$new(args = args, opts = opts, ...)
 }
 
+.network_input_columns <- function(input, columns) {
+  if (is.matrix(input)) {
+    lapply(columns, function(index) input[, index])
+  } else {
+    lapply(columns, function(index) input[[index]])
+  }
+}
+
+.network_input_require_numeric <- function(columns, message) {
+  if (!all(vapply(columns, is.numeric, logical(1L)))) {
+    stop(message, call. = FALSE)
+  }
+}
+
+.network_input_weights <- function(input, weight_index, count, message) {
+  if (ncol(input) == weight_index) {
+    weights <- if (is.matrix(input)) input[, weight_index] else input[[weight_index]]
+    if (!is.numeric(weights)) {
+      stop(message, call. = FALSE)
+    }
+    as.numeric(weights)
+  } else {
+    rep(1.0, count)
+  }
+}
+
+.network_input_validate_entry_lengths <- function(entries, allowed, message) {
+  lengths <- vapply(entries, length, integer(1L))
+  if (!all(lengths %in% allowed)) {
+    stop(message, call. = FALSE)
+  }
+  lengths
+}
+
+.network_input_scalar_numeric <- function(entry, index, scalar_message, numeric_message) {
+  value <- entry[[index]]
+  if (length(value) != 1L) {
+    stop(scalar_message, call. = FALSE)
+  }
+  if (!is.numeric(value)) {
+    stop(numeric_message, call. = FALSE)
+  }
+  value
+}
+
+.network_input_table <- function(input, allowed_columns, shape_message,
+                                 id_columns, id_message,
+                                 weight_column, weight_message) {
+  ncol_input <- ncol(input)
+  if (!ncol_input %in% allowed_columns) {
+    stop(shape_message, call. = FALSE)
+  }
+
+  values <- .network_input_columns(input, id_columns)
+  .network_input_require_numeric(values, id_message)
+  weights <- .network_input_weights(
+    input, weight_column, length(values[[1L]]), weight_message
+  )
+  c(values, list(weights))
+}
+
+.network_input_flat_rows <- function(entries, allowed_lengths, length_message,
+                                     value_names, row_name,
+                                     id_message, weight_scalar_message,
+                                     weight_numeric_message) {
+  .network_input_validate_entry_lengths(entries, allowed_lengths, length_message)
+
+  values <- lapply(
+    seq_along(value_names),
+    function(index) {
+      vapply(
+        entries,
+        function(entry) {
+          .network_input_scalar_numeric(
+            entry,
+            index,
+            paste0("Each ", row_name, " ", value_names[[index]], " value must be scalar."),
+            id_message
+          )
+        },
+        numeric(1L)
+      )
+    }
+  )
+  weights <- vapply(
+    entries,
+    function(entry) {
+      value <- if (length(entry) == length(value_names) + 1L) entry[[length(entry)]] else 1.0
+      .network_input_scalar_numeric(
+        list(value), 1L, weight_scalar_message, weight_numeric_message
+      )
+    },
+    numeric(1L)
+  )
+  c(values, list(weights))
+}
+
+.network_input_multilayer_node_value <- function(node, name, index) {
+  if (length(node) != 2L) {
+    stop("Each multilayer node must contain 2 values: layer id and node id.",
+         call. = FALSE)
+  }
+  .network_input_scalar_numeric(
+    node,
+    index,
+    paste0("Each multilayer ", name, " value must be scalar."),
+    "Multilayer layer/node values must be numeric/integer."
+  )
+}
+
 #' R6 class generator for the Infomap clustering algorithm
 #'
 #' @description
@@ -207,54 +317,43 @@ InfomapClass <- R6::R6Class(
           stop("`links` matrix/data.frame must have 2 or 3 columns ",
                "(source, target, [weight]).", call. = FALSE)
         }
-        sources <- if (is.matrix(links)) links[, 1L] else links[[1L]]
-        targets <- if (is.matrix(links)) links[, 2L] else links[[2L]]
-        if (!is.numeric(sources) || !is.numeric(targets)) {
-          stop("`links` source/target columns must be numeric/integer.",
-               call. = FALSE)
-        }
-        weights <- if (ncol_links == 3L) {
-          w <- if (is.matrix(links)) links[, 3L] else links[[3L]]
-          if (!is.numeric(w)) {
-            stop("`links` weight column must be numeric.", call. = FALSE)
-          }
-          as.numeric(w)
-        } else {
-          rep(1.0, length(sources))
-        }
+        id_columns <- .network_input_columns(links, c(1L, 2L))
+        .network_input_require_numeric(
+          id_columns,
+          "`links` source/target columns must be numeric/integer."
+        )
+        sources <- id_columns[[1L]]
+        targets <- id_columns[[2L]]
+        weights <- .network_input_weights(
+          links, 3L, length(sources), "`links` weight column must be numeric."
+        )
       } else {
-        link_lengths <- vapply(links, length, integer(1L))
-        if (!all(link_lengths %in% c(2L, 3L))) {
-          stop("Each link must contain 2 or 3 values: source, target, and optional weight.",
-               call. = FALSE)
-        }
+        link_lengths <- .network_input_validate_entry_lengths(
+          links,
+          c(2L, 3L),
+          "Each link must contain 2 or 3 values: source, target, and optional weight."
+        )
         sources <- vapply(
           links,
           function(entry) {
-            value <- entry[[1L]]
-            if (length(value) != 1L) {
-              stop("Each link source value must be scalar.", call. = FALSE)
-            }
-            if (!is.numeric(value)) {
-              stop("`links` source/target values must be numeric/integer.",
-                   call. = FALSE)
-            }
-            value
+            .network_input_scalar_numeric(
+              entry,
+              1L,
+              "Each link source value must be scalar.",
+              "`links` source/target values must be numeric/integer."
+            )
           },
           numeric(1L)
         )
         targets <- vapply(
           links,
           function(entry) {
-            value <- entry[[2L]]
-            if (length(value) != 1L) {
-              stop("Each link target value must be scalar.", call. = FALSE)
-            }
-            if (!is.numeric(value)) {
-              stop("`links` source/target values must be numeric/integer.",
-                   call. = FALSE)
-            }
-            value
+            .network_input_scalar_numeric(
+              entry,
+              2L,
+              "Each link target value must be scalar.",
+              "`links` source/target values must be numeric/integer."
+            )
           },
           numeric(1L)
         )
@@ -262,13 +361,12 @@ InfomapClass <- R6::R6Class(
           links,
           function(entry) {
             value <- if (length(entry) == 3L) entry[[3L]] else 1.0
-            if (length(value) != 1L) {
-              stop("Each link weight value must be scalar.", call. = FALSE)
-            }
-            if (!is.numeric(value)) {
-              stop("`links` weight values must be numeric.", call. = FALSE)
-            }
-            value
+            .network_input_scalar_numeric(
+              list(value),
+              1L,
+              "Each link weight value must be scalar.",
+              "`links` weight values must be numeric."
+            )
           },
           numeric(1L)
         )
@@ -325,70 +423,34 @@ InfomapClass <- R6::R6Class(
     #'   a 3- or 4-column matrix / data.frame.
     add_multilayer_intra_links = function(links) {
       if (is.matrix(links) || is.data.frame(links)) {
-        ncol_links <- ncol(links)
-        if (!ncol_links %in% c(3L, 4L)) {
-          stop("`links` matrix/data.frame must have 3 or 4 columns ",
-               "(layer, source_node, target_node, [weight]).", call. = FALSE)
-        }
-
-        layers <- if (is.matrix(links)) links[, 1L] else links[[1L]]
-        sources <- if (is.matrix(links)) links[, 2L] else links[[2L]]
-        targets <- if (is.matrix(links)) links[, 3L] else links[[3L]]
-        id_columns <- list(layers, sources, targets)
-        if (!all(vapply(id_columns, is.numeric, logical(1L)))) {
-          stop("`links` multilayer intra-link id columns must be numeric/integer.",
-               call. = FALSE)
-        }
-
-        weights <- if (ncol_links == 4L) {
-          w <- if (is.matrix(links)) links[, 4L] else links[[4L]]
-          if (!is.numeric(w)) {
-            stop("`links` weight column must be numeric.", call. = FALSE)
-          }
-          as.numeric(w)
-        } else {
-          rep(1.0, length(layers))
-        }
-      } else {
-        link_lengths <- vapply(links, length, integer(1L))
-        if (!all(link_lengths %in% c(3L, 4L))) {
-          stop("Each multilayer intra-link must contain 3 or 4 values: ",
-               "layer, source node, target node, and optional weight.",
-               call. = FALSE)
-        }
-
-        extract_scalar <- function(entry, index, name) {
-          value <- entry[[index]]
-          if (length(value) != 1L) {
-            stop("Each multilayer intra-link ", name, " value must be scalar.",
-                 call. = FALSE)
-          }
-          if (!is.numeric(value)) {
-            stop("Multilayer intra-link id values must be numeric/integer.",
-                 call. = FALSE)
-          }
-          value
-        }
-
-        layers <- vapply(links, function(entry) extract_scalar(entry, 1L, "layer"), numeric(1L))
-        sources <- vapply(links, function(entry) extract_scalar(entry, 2L, "source node"), numeric(1L))
-        targets <- vapply(links, function(entry) extract_scalar(entry, 3L, "target node"), numeric(1L))
-        weights <- vapply(
+        parts <- .network_input_table(
           links,
-          function(entry) {
-            value <- if (length(entry) == 4L) entry[[4L]] else 1.0
-            if (length(value) != 1L) {
-              stop("Each multilayer intra-link weight value must be scalar.",
-                   call. = FALSE)
-            }
-            if (!is.numeric(value)) {
-              stop("Multilayer intra-link weight values must be numeric.",
-                   call. = FALSE)
-            }
-            value
-          },
-          numeric(1L)
+          c(3L, 4L),
+          "`links` matrix/data.frame must have 3 or 4 columns (layer, source_node, target_node, [weight]).",
+          c(1L, 2L, 3L),
+          "`links` multilayer intra-link id columns must be numeric/integer.",
+          4L,
+          "`links` weight column must be numeric."
         )
+        layers <- parts[[1L]]
+        sources <- parts[[2L]]
+        targets <- parts[[3L]]
+        weights <- parts[[4L]]
+      } else {
+        parts <- .network_input_flat_rows(
+          links,
+          c(3L, 4L),
+          "Each multilayer intra-link must contain 3 or 4 values: layer, source node, target node, and optional weight.",
+          c("layer", "source node", "target node"),
+          "multilayer intra-link",
+          "Multilayer intra-link id values must be numeric/integer.",
+          "Each multilayer intra-link weight value must be scalar.",
+          "Multilayer intra-link weight values must be numeric."
+        )
+        layers <- parts[[1L]]
+        sources <- parts[[2L]]
+        targets <- parts[[3L]]
+        weights <- parts[[4L]]
       }
 
       private$.swig$addMultilayerIntraLinks(
@@ -416,70 +478,34 @@ InfomapClass <- R6::R6Class(
     #'   a 3- or 4-column matrix / data.frame.
     add_multilayer_inter_links = function(links) {
       if (is.matrix(links) || is.data.frame(links)) {
-        ncol_links <- ncol(links)
-        if (!ncol_links %in% c(3L, 4L)) {
-          stop("`links` matrix/data.frame must have 3 or 4 columns ",
-               "(source_layer, node, target_layer, [weight]).", call. = FALSE)
-        }
-
-        source_layers <- if (is.matrix(links)) links[, 1L] else links[[1L]]
-        nodes <- if (is.matrix(links)) links[, 2L] else links[[2L]]
-        target_layers <- if (is.matrix(links)) links[, 3L] else links[[3L]]
-        id_columns <- list(source_layers, nodes, target_layers)
-        if (!all(vapply(id_columns, is.numeric, logical(1L)))) {
-          stop("`links` multilayer inter-link id columns must be numeric/integer.",
-               call. = FALSE)
-        }
-
-        weights <- if (ncol_links == 4L) {
-          w <- if (is.matrix(links)) links[, 4L] else links[[4L]]
-          if (!is.numeric(w)) {
-            stop("`links` weight column must be numeric.", call. = FALSE)
-          }
-          as.numeric(w)
-        } else {
-          rep(1.0, length(source_layers))
-        }
-      } else {
-        link_lengths <- vapply(links, length, integer(1L))
-        if (!all(link_lengths %in% c(3L, 4L))) {
-          stop("Each multilayer inter-link must contain 3 or 4 values: ",
-               "source layer, node, target layer, and optional weight.",
-               call. = FALSE)
-        }
-
-        extract_scalar <- function(entry, index, name) {
-          value <- entry[[index]]
-          if (length(value) != 1L) {
-            stop("Each multilayer inter-link ", name, " value must be scalar.",
-                 call. = FALSE)
-          }
-          if (!is.numeric(value)) {
-            stop("Multilayer inter-link id values must be numeric/integer.",
-                 call. = FALSE)
-          }
-          value
-        }
-
-        source_layers <- vapply(links, function(entry) extract_scalar(entry, 1L, "source layer"), numeric(1L))
-        nodes <- vapply(links, function(entry) extract_scalar(entry, 2L, "node"), numeric(1L))
-        target_layers <- vapply(links, function(entry) extract_scalar(entry, 3L, "target layer"), numeric(1L))
-        weights <- vapply(
+        parts <- .network_input_table(
           links,
-          function(entry) {
-            value <- if (length(entry) == 4L) entry[[4L]] else 1.0
-            if (length(value) != 1L) {
-              stop("Each multilayer inter-link weight value must be scalar.",
-                   call. = FALSE)
-            }
-            if (!is.numeric(value)) {
-              stop("Multilayer inter-link weight values must be numeric.",
-                   call. = FALSE)
-            }
-            value
-          },
-          numeric(1L)
+          c(3L, 4L),
+          "`links` matrix/data.frame must have 3 or 4 columns (source_layer, node, target_layer, [weight]).",
+          c(1L, 2L, 3L),
+          "`links` multilayer inter-link id columns must be numeric/integer.",
+          4L,
+          "`links` weight column must be numeric."
         )
+        source_layers <- parts[[1L]]
+        nodes <- parts[[2L]]
+        target_layers <- parts[[3L]]
+        weights <- parts[[4L]]
+      } else {
+        parts <- .network_input_flat_rows(
+          links,
+          c(3L, 4L),
+          "Each multilayer inter-link must contain 3 or 4 values: source layer, node, target layer, and optional weight.",
+          c("source layer", "node", "target layer"),
+          "multilayer inter-link",
+          "Multilayer inter-link id values must be numeric/integer.",
+          "Each multilayer inter-link weight value must be scalar.",
+          "Multilayer inter-link weight values must be numeric."
+        )
+        source_layers <- parts[[1L]]
+        nodes <- parts[[2L]]
+        target_layers <- parts[[3L]]
+        weights <- parts[[4L]]
       }
 
       private$.swig$addMultilayerInterLinks(
@@ -497,90 +523,57 @@ InfomapClass <- R6::R6Class(
     #'   optional `weight`.
     add_multilayer_links = function(links) {
       if (is.matrix(links) || is.data.frame(links)) {
-        ncol_links <- ncol(links)
-        if (!ncol_links %in% c(4L, 5L)) {
-          stop("`links` matrix/data.frame must have 4 or 5 columns ",
-               "(source_layer, source_node, target_layer, target_node, [weight]).",
-               call. = FALSE)
-        }
-
-        source_layers <- if (is.matrix(links)) links[, 1L] else links[[1L]]
-        source_nodes <- if (is.matrix(links)) links[, 2L] else links[[2L]]
-        target_layers <- if (is.matrix(links)) links[, 3L] else links[[3L]]
-        target_nodes <- if (is.matrix(links)) links[, 4L] else links[[4L]]
-        id_columns <- list(source_layers, source_nodes, target_layers, target_nodes)
-        if (!all(vapply(id_columns, is.numeric, logical(1L)))) {
-          stop("`links` multilayer id columns must be numeric/integer.",
-               call. = FALSE)
-        }
-
-        weights <- if (ncol_links == 5L) {
-          w <- if (is.matrix(links)) links[, 5L] else links[[5L]]
-          if (!is.numeric(w)) {
-            stop("`links` weight column must be numeric.", call. = FALSE)
-          }
-          as.numeric(w)
-        } else {
-          rep(1.0, length(source_layers))
-        }
+        parts <- .network_input_table(
+          links,
+          c(4L, 5L),
+          "`links` matrix/data.frame must have 4 or 5 columns (source_layer, source_node, target_layer, target_node, [weight]).",
+          c(1L, 2L, 3L, 4L),
+          "`links` multilayer id columns must be numeric/integer.",
+          5L,
+          "`links` weight column must be numeric."
+        )
+        source_layers <- parts[[1L]]
+        source_nodes <- parts[[2L]]
+        target_layers <- parts[[3L]]
+        target_nodes <- parts[[4L]]
+        weights <- parts[[5L]]
       } else {
-        link_lengths <- vapply(links, length, integer(1L))
-        if (!all(link_lengths %in% c(2L, 3L))) {
-          stop("Each multilayer link must contain 2 or 3 values: ",
-               "source node, target node, and optional weight.",
-               call. = FALSE)
-        }
-
-        extract_node_value <- function(node, name, index) {
-          if (length(node) != 2L) {
-            stop("Each multilayer node must contain 2 values: layer id and node id.",
-                 call. = FALSE)
-          }
-          value <- node[[index]]
-          if (length(value) != 1L) {
-            stop("Each multilayer ", name, " value must be scalar.",
-                 call. = FALSE)
-          }
-          if (!is.numeric(value)) {
-            stop("Multilayer layer/node values must be numeric/integer.",
-                 call. = FALSE)
-          }
-          value
-        }
+        .network_input_validate_entry_lengths(
+          links,
+          c(2L, 3L),
+          "Each multilayer link must contain 2 or 3 values: source node, target node, and optional weight."
+        )
 
         source_layers <- vapply(
           links,
-          function(entry) extract_node_value(entry[[1L]], "source layer", 1L),
+          function(entry) .network_input_multilayer_node_value(entry[[1L]], "source layer", 1L),
           numeric(1L)
         )
         source_nodes <- vapply(
           links,
-          function(entry) extract_node_value(entry[[1L]], "source node", 2L),
+          function(entry) .network_input_multilayer_node_value(entry[[1L]], "source node", 2L),
           numeric(1L)
         )
         target_layers <- vapply(
           links,
-          function(entry) extract_node_value(entry[[2L]], "target layer", 1L),
+          function(entry) .network_input_multilayer_node_value(entry[[2L]], "target layer", 1L),
           numeric(1L)
         )
         target_nodes <- vapply(
           links,
-          function(entry) extract_node_value(entry[[2L]], "target node", 2L),
+          function(entry) .network_input_multilayer_node_value(entry[[2L]], "target node", 2L),
           numeric(1L)
         )
         weights <- vapply(
           links,
           function(entry) {
             value <- if (length(entry) == 3L) entry[[3L]] else 1.0
-            if (length(value) != 1L) {
-              stop("Each multilayer link weight value must be scalar.",
-                   call. = FALSE)
-            }
-            if (!is.numeric(value)) {
-              stop("Multilayer link weight values must be numeric.",
-                   call. = FALSE)
-            }
-            value
+            .network_input_scalar_numeric(
+              list(value),
+              1L,
+              "Each multilayer link weight value must be scalar.",
+              "Multilayer link weight values must be numeric."
+            )
           },
           numeric(1L)
         )
