@@ -92,21 +92,25 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.bipartiteTeleportation) result += " --bipartite-teleportation";
 
-  if (args.weightThreshold != null) result += " --weight-threshold " + args.weightThreshold;
+  if (args.weightThreshold != null)
+    result += " --weight-threshold " + args.weightThreshold;
 
   if (args.noSelfLinks) result += " --no-self-links";
 
   if (args.nodeLimit != null) result += " --node-limit " + args.nodeLimit;
 
-  if (args.matchableMultilayerIds != null) result += " --matchable-multilayer-ids " + args.matchableMultilayerIds;
+  if (args.matchableMultilayerIds != null)
+    result += " --matchable-multilayer-ids " + args.matchableMultilayerIds;
 
   if (args.clusterData != null) result += " --cluster-data " + args.clusterData;
 
-  if (args.assignToNeighbouringModule) result += " --assign-to-neighbouring-module";
+  if (args.assignToNeighbouringModule)
+    result += " --assign-to-neighbouring-module";
 
   if (args.metaData != null) result += " --meta-data " + args.metaData;
 
-  if (args.metaDataRate != null) result += " --meta-data-rate " + args.metaDataRate;
+  if (args.metaDataRate != null)
+    result += " --meta-data-rate " + args.metaDataRate;
 
   if (args.metaDataUnweighted) result += " --meta-data-unweighted";
 
@@ -149,33 +153,44 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.toNodes) result += " --to-nodes";
 
-  if (args.teleportationProbability != null) result += " --teleportation-probability " + args.teleportationProbability;
+  if (args.teleportationProbability != null)
+    result += " --teleportation-probability " + args.teleportationProbability;
 
   if (args.regularized) result += " --regularized";
 
-  if (args.regularizationStrength != null) result += " --regularization-strength " + args.regularizationStrength;
+  if (args.regularizationStrength != null)
+    result += " --regularization-strength " + args.regularizationStrength;
 
   if (args.entropyCorrected) result += " --entropy-corrected";
 
-  if (args.entropyCorrectionStrength != null) result += " --entropy-correction-strength " + args.entropyCorrectionStrength;
+  if (args.entropyCorrectionStrength != null)
+    result +=
+      " --entropy-correction-strength " + args.entropyCorrectionStrength;
 
   if (args.markovTime != null) result += " --markov-time " + args.markovTime;
 
   if (args.variableMarkovTime) result += " --variable-markov-time";
 
-  if (args.variableMarkovDamping != null) result += " --variable-markov-damping " + args.variableMarkovDamping;
+  if (args.variableMarkovDamping != null)
+    result += " --variable-markov-damping " + args.variableMarkovDamping;
 
-  if (args.variableMarkovMinScale != null) result += " --variable-markov-min-scale " + args.variableMarkovMinScale;
+  if (args.variableMarkovMinScale != null)
+    result += " --variable-markov-min-scale " + args.variableMarkovMinScale;
 
-  if (args.preferredNumberOfModules != null) result += " --preferred-number-of-modules " + args.preferredNumberOfModules;
+  if (args.preferredNumberOfModules != null)
+    result += " --preferred-number-of-modules " + args.preferredNumberOfModules;
 
-  if (args.multilayerRelaxRate != null) result += " --multilayer-relax-rate " + args.multilayerRelaxRate;
+  if (args.multilayerRelaxRate != null)
+    result += " --multilayer-relax-rate " + args.multilayerRelaxRate;
 
-  if (args.multilayerRelaxLimit != null) result += " --multilayer-relax-limit " + args.multilayerRelaxLimit;
+  if (args.multilayerRelaxLimit != null)
+    result += " --multilayer-relax-limit " + args.multilayerRelaxLimit;
 
-  if (args.multilayerRelaxLimitUp != null) result += " --multilayer-relax-limit-up " + args.multilayerRelaxLimitUp;
+  if (args.multilayerRelaxLimitUp != null)
+    result += " --multilayer-relax-limit-up " + args.multilayerRelaxLimitUp;
 
-  if (args.multilayerRelaxLimitDown != null) result += " --multilayer-relax-limit-down " + args.multilayerRelaxLimitDown;
+  if (args.multilayerRelaxLimitDown != null)
+    result += " --multilayer-relax-limit-down " + args.multilayerRelaxLimitDown;
 
   if (args.multilayerRelaxByJsd) result += " --multilayer-relax-by-jsd";
 
@@ -183,25 +198,36 @@ export default function argumentsToString(args: Arguments) {
 
   if (args.numTrials != null) result += " --num-trials " + args.numTrials;
 
-  if (args.coreLoopLimit != null) result += " --core-loop-limit " + args.coreLoopLimit;
+  if (args.coreLoopLimit != null)
+    result += " --core-loop-limit " + args.coreLoopLimit;
 
-  if (args.coreLevelLimit != null) result += " --core-level-limit " + args.coreLevelLimit;
+  if (args.coreLevelLimit != null)
+    result += " --core-level-limit " + args.coreLevelLimit;
 
-  if (args.tuneIterationLimit != null) result += " --tune-iteration-limit " + args.tuneIterationLimit;
+  if (args.tuneIterationLimit != null)
+    result += " --tune-iteration-limit " + args.tuneIterationLimit;
 
-  if (args.coreLoopCodelengthThreshold != null) result += " --core-loop-codelength-threshold " + args.coreLoopCodelengthThreshold;
+  if (args.coreLoopCodelengthThreshold != null)
+    result +=
+      " --core-loop-codelength-threshold " + args.coreLoopCodelengthThreshold;
 
-  if (args.tuneIterationRelativeThreshold != null) result += " --tune-iteration-relative-threshold " + args.tuneIterationRelativeThreshold;
+  if (args.tuneIterationRelativeThreshold != null)
+    result +=
+      " --tune-iteration-relative-threshold " +
+      args.tuneIterationRelativeThreshold;
 
-  if (args.fastHierarchicalSolution) result += " -" + "F".repeat(args.fastHierarchicalSolution);
+  if (args.fastHierarchicalSolution)
+    result += " -" + "F".repeat(args.fastHierarchicalSolution);
 
   if (args.innerParallelization) result += " --inner-parallelization";
 
   if (args.preferModularSolution) result += " --prefer-modular-solution";
 
-  if (args.numRandomMoves != null) result += " --num-random-moves " + args.numRandomMoves;
+  if (args.numRandomMoves != null)
+    result += " --num-random-moves " + args.numRandomMoves;
 
-  if (args.maxDegreeForRandomMoves != null) result += " --max-degree-for-random-moves " + args.maxDegreeForRandomMoves;
+  if (args.maxDegreeForRandomMoves != null)
+    result += " --max-degree-for-random-moves " + args.maxDegreeForRandomMoves;
 
   if (args.help) result += args.help === "advanced" ? " -hh" : " -h";
 

@@ -68,7 +68,7 @@ const isState = (network: NetworkTypes): network is StateNetwork => {
 };
 
 const isBipartiteState = (
-  network: NetworkTypes
+  network: NetworkTypes,
 ): network is BipartiteStateNetwork => {
   const net = network as BipartiteStateNetwork;
   return "bipartiteStartId" in net && "states" in net;
@@ -85,13 +85,13 @@ const isMultilayer = (network: NetworkTypes): network is MultilayerNetwork => {
 };
 
 const isMultilayerIntraInter = (
-  network: NetworkTypes
+  network: NetworkTypes,
 ): network is MultilayerIntraInterNetwork => {
   const net = network as MultilayerIntraInterNetwork;
   return "intra" in net;
 };
 
-export default function toString(network: NetworkTypes) {
+export default function stringifyNetwork(network: NetworkTypes) {
   if (isMultilayerIntraInter(network)) {
     return multilayerIntraInterToString(network);
   } else if (isMultilayer(network)) {
@@ -174,7 +174,7 @@ function bipartiteStateToString(network: BipartiteStateNetwork) {
 
   result += linksToString(
     network.links,
-    `*Bipartite ${network.bipartiteStartId}\n`
+    `*Bipartite ${network.bipartiteStartId}\n`,
   );
 
   return result;
@@ -189,7 +189,7 @@ function bipartiteToString(network: BipartiteNetwork) {
 
   result += linksToString(
     network.links,
-    `*Bipartite ${network.bipartiteStartId}\n`
+    `*Bipartite ${network.bipartiteStartId}\n`,
   );
 
   return result;

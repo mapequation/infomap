@@ -49,7 +49,7 @@ function renderUseInfomap(args?: Arguments, options?: UseInfomapOptions) {
   const root: Root = createRoot(container);
   let current: HookValue | null = null;
 
-  act(() => {
+  void act(() => {
     root.render(
       createElement(HookHarness, {
         args,
@@ -69,7 +69,7 @@ function renderUseInfomap(args?: Arguments, options?: UseInfomapOptions) {
       return current;
     },
     unmount() {
-      act(() => {
+      void act(() => {
         root.unmount();
       });
     },
@@ -125,8 +125,10 @@ function installAnimationFrame() {
     flush() {
       const callbacks = [...frames.values()];
       frames.clear();
-      act(() => {
-        callbacks.forEach((callback) => callback(performance.now()));
+      void act(() => {
+        callbacks.forEach((callback) => {
+          callback(performance.now());
+        });
       });
     },
     requestAnimationFrame: window.requestAnimationFrame as ReturnType<
@@ -159,13 +161,13 @@ describe("useInfomap", () => {
   test("keeps running true until a run finishes", () => {
     const hook = renderUseInfomap();
 
-    act(() => {
+    void act(() => {
       expect(hook.current.run({ network: "1 2\n" })).toBe(0);
     });
 
     expect(hook.current.running).toBe(true);
 
-    act(() => {
+    void act(() => {
       createdWorkers[0]?.onmessage?.({
         data: {
           type: "finished",
@@ -181,12 +183,12 @@ describe("useInfomap", () => {
     const hook = renderUseInfomap();
     const finished = vi.fn();
 
-    act(() => {
+    void act(() => {
       hook.current.on("finished", finished);
       hook.current.run({ network: "1 2\n" });
     });
 
-    act(() => {
+    void act(() => {
       createdWorkers[0]?.onmessage?.({
         data: {
           type: "finished",
@@ -203,12 +205,12 @@ describe("useInfomap", () => {
     const hook = renderUseInfomap();
     const error = vi.fn();
 
-    act(() => {
+    void act(() => {
       hook.current.on("error", error);
       hook.current.run({ network: "1 2\n" });
     });
 
-    act(() => {
+    void act(() => {
       createdWorkers[0]?.onmessage?.({
         data: {
           type: "error",
@@ -224,7 +226,7 @@ describe("useInfomap", () => {
   test("terminates active workers on unmount", () => {
     const hook = renderUseInfomap();
 
-    act(() => {
+    void act(() => {
       hook.current.run({ network: "1 2\n" });
     });
 
@@ -237,7 +239,7 @@ describe("useInfomap", () => {
     const animationFrame = installAnimationFrame();
     const hook = renderUseInfomap(undefined, { collectOutput: true });
 
-    act(() => {
+    void act(() => {
       hook.current.run({ network: "1 2\n" });
       createdWorkers[0]?.onmessage?.({
         data: {
@@ -266,7 +268,7 @@ describe("useInfomap", () => {
     const animationFrame = installAnimationFrame();
     const hook = renderUseInfomap(undefined, { collectOutput: true });
 
-    act(() => {
+    void act(() => {
       hook.current.run({ network: "1 2\n" });
       createdWorkers[0]?.onmessage?.({
         data: {
@@ -287,7 +289,7 @@ describe("useInfomap", () => {
     const animationFrame = installAnimationFrame();
     const hook = renderUseInfomap(undefined, { collectOutput: true });
 
-    act(() => {
+    void act(() => {
       hook.current.run({ network: "1 2\n" });
       createdWorkers[0]?.onmessage?.({
         data: {
@@ -299,7 +301,7 @@ describe("useInfomap", () => {
     animationFrame.flush();
     expect(hook.current.output).toEqual(["previous line"]);
 
-    act(() => {
+    void act(() => {
       hook.current.run({ network: "2 3\n" });
     });
 
@@ -314,7 +316,7 @@ describe("useInfomap", () => {
       events: { finished },
     });
 
-    act(() => {
+    void act(() => {
       hook.current.run({ network: "1 2\n" });
       createdWorkers[0]?.onmessage?.({
         data: {
@@ -342,7 +344,7 @@ describe("useInfomap", () => {
       events: { error },
     });
 
-    act(() => {
+    void act(() => {
       hook.current.run({ network: "1 2\n" });
       createdWorkers[0]?.onmessage?.({
         data: {
@@ -366,7 +368,7 @@ describe("useInfomap", () => {
     const animationFrame = installAnimationFrame();
     const hook = renderUseInfomap();
 
-    act(() => {
+    void act(() => {
       hook.current.run({ network: "1 2\n" });
       createdWorkers[0]?.onmessage?.({
         data: {

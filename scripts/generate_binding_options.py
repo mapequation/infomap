@@ -475,17 +475,42 @@ def generate_ts(catalog: ParameterCatalog) -> str:
             "",
         ]
     )
+
+    def append_result(condition: str, expression: str) -> None:
+        one_line = f"  if ({condition}) result += {expression};"
+        if len(one_line) <= 80:
+            lines.append(one_line)
+            return
+
+        lines.append(f"  if ({condition})")
+        assignment = f"    result += {expression};"
+        if len(assignment) <= 80:
+            lines.append(assignment)
+            return
+
+        lines.append("    result +=")
+        if len(f"      {expression};") <= 80:
+            lines.append(f"      {expression};")
+            return
+        if " + " in expression:
+            left, right = expression.rsplit(" + ", 1)
+            if len(f"      {left} +") <= 80 and len(f"      {right};") <= 80:
+                lines.append(f"      {left} +")
+                lines.append(f"      {right};")
+                return
+        lines.append(f"      {expression};")
+
     for group in GROUPS:
         for param in grouped[group]:
             flag = param.flag
             name = param.name("ts")
             if param.render_policy == "repeated_short" and flag == "--verbose":
-                lines.append(
-                    f'  if (args.{name}) result += " -" + "v".repeat(args.{name});'
+                append_result(
+                    f"args.{name}", f'" -" + "v".repeat(args.{name})'
                 )
             elif param.render_policy == "repeated_short":
-                lines.append(
-                    f'  if (args.{name}) result += " -" + "F".repeat(args.{name});'
+                append_result(
+                    f"args.{name}", f'" -" + "F".repeat(args.{name})'
                 )
             elif param.render_policy == "comma_list":
                 lines.extend(
@@ -497,10 +522,10 @@ def generate_ts(catalog: ParameterCatalog) -> str:
                     ]
                 )
             elif not param.required:
-                lines.append(f'  if (args.{name}) result += " {flag}";')
+                append_result(f"args.{name}", f'" {flag}"')
             else:
-                lines.append(
-                    f'  if (args.{name} != null) result += " {flag} " + args.{name};'
+                append_result(
+                    f"args.{name} != null", f'" {flag} " + args.{name}'
                 )
             lines.append("")
     for entry in about_options:
