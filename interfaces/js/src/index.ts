@@ -170,8 +170,7 @@ class Infomap {
     const index = filename.lastIndexOf(".");
     const networkName = index > 0 ? filename.slice(0, index) : filename;
     const outNameMatch = args.match(/--out-name\s(\S+)/);
-    const outName =
-      outNameMatch && outNameMatch[1] ? outNameMatch[1] : networkName;
+    const outName = outNameMatch?.[1] ? outNameMatch[1] : networkName;
 
     const worker = createInfomapWorker();
     const id = this.workerId++;

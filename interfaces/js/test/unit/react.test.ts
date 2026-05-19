@@ -4,7 +4,7 @@ import { mergeInfomapArgs } from "../../src/react-args";
 describe("mergeInfomapArgs", () => {
   test("merges default object args with call-site args", () => {
     expect(
-      mergeInfomapArgs([{ args: { silent: true } }], { twoLevel: true })
+      mergeInfomapArgs([{ args: { silent: true } }], { twoLevel: true }),
     ).toEqual([{ args: { twoLevel: true, silent: true } }]);
   });
 
