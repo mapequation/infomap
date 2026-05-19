@@ -164,6 +164,7 @@ if(BUILD_TESTING)
     add_test(
         NAME js_output_format_manifest
         COMMAND
+            "${CMAKE_COMMAND}" -E env "CXX=${CMAKE_CXX_COMPILER}"
             "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_js_output_formats.py"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/io/OutputFormats.cpp"
