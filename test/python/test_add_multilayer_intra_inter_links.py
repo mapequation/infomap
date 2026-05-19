@@ -31,7 +31,9 @@ def assert_same_result(actual, expected):
     assert actual.get_modules(states=True) == expected.get_modules(states=True)
 
 
-def test_add_multilayer_intra_links_matches_repeated_add_multilayer_intra_link(make_infomap):
+def test_add_multilayer_intra_links_matches_repeated_add_multilayer_intra_link(
+    make_infomap,
+):
     baseline = make_infomap(two_level=True)
     for link in INTRA_LINKS:
         baseline.add_multilayer_intra_link(*link)
@@ -89,7 +91,9 @@ def test_add_multilayer_intra_links_accepts_non_contiguous_numpy_array(make_info
     assert_same_result(im, baseline)
 
 
-def test_add_multilayer_inter_links_matches_repeated_add_multilayer_inter_link(make_infomap):
+def test_add_multilayer_inter_links_matches_repeated_add_multilayer_inter_link(
+    make_infomap,
+):
     baseline = make_infomap(two_level=True)
     baseline.add_multilayer_intra_links(INTRA_LINKS)
     for link in INTER_LINKS:
@@ -175,6 +179,22 @@ def test_add_multilayer_intra_links_rejects_invalid_input(make_infomap):
         im.add_multilayer_intra_links(np.array([["1", "2", "3"]]))
 
 
+def test_add_multilayer_intra_links_rejects_non_numeric_iterable_values(make_infomap):
+    im = make_infomap()
+
+    with pytest.raises(ValueError, match="layer_id value must be scalar"):
+        im.add_multilayer_intra_links([([1], 2, 3)])
+
+    with pytest.raises(ValueError, match="id values must be numeric"):
+        im.add_multilayer_intra_links([("1", 2, 3)])
+
+    with pytest.raises(ValueError, match="weight value must be scalar"):
+        im.add_multilayer_intra_links([(1, 2, 3, [1.0])])
+
+    with pytest.raises(ValueError, match="weight values must be numeric"):
+        im.add_multilayer_intra_links([(1, 2, 3, "1.0")])
+
+
 def test_add_multilayer_inter_links_rejects_invalid_input(make_infomap):
     np = pytest.importorskip("numpy")
     im = make_infomap()
@@ -193,6 +213,22 @@ def test_add_multilayer_inter_links_rejects_invalid_input(make_infomap):
 
     with pytest.raises(ValueError, match="numeric dtype"):
         im.add_multilayer_inter_links(np.array([["1", "2", "3"]]))
+
+
+def test_add_multilayer_inter_links_rejects_non_numeric_iterable_values(make_infomap):
+    im = make_infomap()
+
+    with pytest.raises(ValueError, match="source_layer_id value must be scalar"):
+        im.add_multilayer_inter_links([([1], 2, 3)])
+
+    with pytest.raises(ValueError, match="id values must be numeric"):
+        im.add_multilayer_inter_links([("1", 2, 3)])
+
+    with pytest.raises(ValueError, match="weight value must be scalar"):
+        im.add_multilayer_inter_links([(1, 2, 3, [1.0])])
+
+    with pytest.raises(ValueError, match="weight values must be numeric"):
+        im.add_multilayer_inter_links([(1, 2, 3, "1.0")])
 
 
 def test_add_multilayer_inter_links_preserves_native_layer_validation(make_infomap):

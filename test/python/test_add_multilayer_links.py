@@ -16,7 +16,11 @@ def test_add_multilayer_links_matches_repeated_add_multilayer_link(make_infomap)
     links = [
         ((0, 1), (1, 2), 1.5),
         ((0, 3), (1, 2), 2.0),
-        (MultilayerNode(layer_id=1, node_id=2), MultilayerNode(layer_id=2, node_id=4), 3.0),
+        (
+            MultilayerNode(layer_id=1, node_id=2),
+            MultilayerNode(layer_id=2, node_id=4),
+            3.0,
+        ),
     ]
 
     baseline = make_infomap()
@@ -70,7 +74,9 @@ def test_add_multilayer_links_accepts_unweighted_numpy_array(make_infomap):
 
     baseline = make_infomap()
     for source_layer, source_node, target_layer, target_node in links.tolist():
-        baseline.add_multilayer_link((source_layer, source_node), (target_layer, target_node))
+        baseline.add_multilayer_link(
+            (source_layer, source_node), (target_layer, target_node)
+        )
 
     im = make_infomap()
     im.add_multilayer_links(links)
@@ -118,6 +124,22 @@ def test_add_multilayer_links_rejects_invalid_node_lengths(make_infomap):
 
     with pytest.raises(ValueError, match="multilayer node.*2 values"):
         im.add_multilayer_links([((0, 1), (1, 2, 3))])
+
+
+def test_add_multilayer_links_rejects_non_numeric_iterable_values(make_infomap):
+    im = make_infomap()
+
+    with pytest.raises(ValueError, match="source layer value must be scalar"):
+        im.add_multilayer_links([(([0], 1), (1, 2))])
+
+    with pytest.raises(ValueError, match="layer and node values must be numeric"):
+        im.add_multilayer_links([(("0", 1), (1, 2))])
+
+    with pytest.raises(ValueError, match="weight value must be scalar"):
+        im.add_multilayer_links([((0, 1), (1, 2), [1.0])])
+
+    with pytest.raises(ValueError, match="weight values must be numeric"):
+        im.add_multilayer_links([((0, 1), (1, 2), "1.0")])
 
 
 def test_add_multilayer_links_rejects_invalid_numpy_shapes(make_infomap):

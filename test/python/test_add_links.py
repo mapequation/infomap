@@ -25,7 +25,15 @@ def test_add_links_smoke(make_infomap, load_graph_fixture, canonical_modules):
 
 
 def test_add_links_matches_repeated_add_link(make_infomap, canonical_modules):
-    links = [(1, 2, 2.0), (1, 3, 2.0), (2, 3, 2.0), (3, 4, 1.0), (4, 5, 3.0), (4, 6, 3.0), (5, 6, 3.0)]
+    links = [
+        (1, 2, 2.0),
+        (1, 3, 2.0),
+        (2, 3, 2.0),
+        (3, 4, 1.0),
+        (4, 5, 3.0),
+        (4, 6, 3.0),
+        (5, 6, 3.0),
+    ]
 
     baseline = make_infomap()
     for link in links:
@@ -39,7 +47,9 @@ def test_add_links_matches_repeated_add_link(make_infomap, canonical_modules):
     assert im.num_links == baseline.num_links
     assert im.num_nodes == baseline.num_nodes
     assert im.codelength == pytest.approx(baseline.codelength)
-    assert canonical_modules(im.get_modules()) == canonical_modules(baseline.get_modules())
+    assert canonical_modules(im.get_modules()) == canonical_modules(
+        baseline.get_modules()
+    )
 
 
 def test_add_links_rejects_invalid_link_lengths(make_infomap):
@@ -50,6 +60,22 @@ def test_add_links_rejects_invalid_link_lengths(make_infomap):
 
     with pytest.raises(ValueError, match="2 or 3 values"):
         im.add_links([(1, 2, 3, 4)])
+
+
+def test_add_links_rejects_non_numeric_iterable_values(make_infomap):
+    im = make_infomap()
+
+    with pytest.raises(ValueError, match="source.*scalar"):
+        im.add_links([([1], 2)])
+
+    with pytest.raises(ValueError, match="source and target values must be numeric"):
+        im.add_links([("1", 2)])
+
+    with pytest.raises(ValueError, match="weight value must be scalar"):
+        im.add_links([(1, 2, [3])])
+
+    with pytest.raises(ValueError, match="weight values must be numeric"):
+        im.add_links([(1, 2, "3")])
 
 
 def test_add_links_accepts_weighted_numpy_array(make_infomap, canonical_modules):
@@ -79,7 +105,9 @@ def test_add_links_accepts_weighted_numpy_array(make_infomap, canonical_modules)
     assert im.num_links == baseline.num_links
     assert im.num_nodes == baseline.num_nodes
     assert im.codelength == pytest.approx(baseline.codelength)
-    assert canonical_modules(im.get_modules()) == canonical_modules(baseline.get_modules())
+    assert canonical_modules(im.get_modules()) == canonical_modules(
+        baseline.get_modules()
+    )
 
 
 def test_add_links_accepts_numpy_array_with_duplicates_and_existing_links(make_infomap):

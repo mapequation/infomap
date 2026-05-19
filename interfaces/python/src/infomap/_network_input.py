@@ -1,3 +1,6 @@
+import numbers
+
+
 def is_numpy_input(value):
     return value.__class__.__module__.startswith("numpy")
 
@@ -87,13 +90,45 @@ class RowUnpacker:
         return self._callback(row, row_length)
 
 
+def scalar_numeric(value, *, scalar_message, numeric_message):
+    if isinstance(value, bool):
+        raise ValueError(numeric_message)
+    if isinstance(value, (str, bytes)):
+        raise ValueError(numeric_message)
+    try:
+        len(value)
+    except TypeError:
+        pass
+    else:
+        raise ValueError(scalar_message)
+    if not isinstance(value, numbers.Real):
+        raise ValueError(numeric_message)
+    return value
+
+
 def first_order_unpacker():
     def unpack(row, row_length):
         if row_length == 2:
             source_id, target_id = row
-            return (source_id, target_id), 1.0
-        source_id, target_id, weight = row
-        return (source_id, target_id), weight
+            weight = 1.0
+        else:
+            source_id, target_id, weight = row
+        return (
+            scalar_numeric(
+                source_id,
+                scalar_message="Each link source value must be scalar.",
+                numeric_message="Link source and target values must be numeric.",
+            ),
+            scalar_numeric(
+                target_id,
+                scalar_message="Each link target value must be scalar.",
+                numeric_message="Link source and target values must be numeric.",
+            ),
+        ), scalar_numeric(
+            weight,
+            scalar_message="Each link weight value must be scalar.",
+            numeric_message="Link weight values must be numeric.",
+        )
 
     return RowUnpacker(2, "(source_id, target_id, [weight])", unpack)
 
@@ -101,9 +136,22 @@ def first_order_unpacker():
 def flat_multilayer_unpacker(value_names):
     def unpack(row, row_length):
         if row_length == len(value_names):
-            return tuple(row), 1.0
-        *values, weight = row
-        return tuple(values), weight
+            values = tuple(row)
+            weight = 1.0
+        else:
+            *values, weight = row
+        return tuple(
+            scalar_numeric(
+                value,
+                scalar_message=f"Each multilayer {name} value must be scalar.",
+                numeric_message="Multilayer id values must be numeric.",
+            )
+            for name, value in zip(value_names, values)
+        ), scalar_numeric(
+            weight,
+            scalar_message="Each multilayer weight value must be scalar.",
+            numeric_message="Multilayer weight values must be numeric.",
+        )
 
     return RowUnpacker(
         len(value_names),
@@ -129,10 +177,30 @@ def paired_multilayer_unpacker():
             ) from err
 
         return (
-            source_layer_id,
-            source_node_id,
-            target_layer_id,
-            target_node_id,
-        ), weight
+            scalar_numeric(
+                source_layer_id,
+                scalar_message="Each multilayer source layer value must be scalar.",
+                numeric_message="Multilayer layer and node values must be numeric.",
+            ),
+            scalar_numeric(
+                source_node_id,
+                scalar_message="Each multilayer source node value must be scalar.",
+                numeric_message="Multilayer layer and node values must be numeric.",
+            ),
+            scalar_numeric(
+                target_layer_id,
+                scalar_message="Each multilayer target layer value must be scalar.",
+                numeric_message="Multilayer layer and node values must be numeric.",
+            ),
+            scalar_numeric(
+                target_node_id,
+                scalar_message="Each multilayer target node value must be scalar.",
+                numeric_message="Multilayer layer and node values must be numeric.",
+            ),
+        ), scalar_numeric(
+            weight,
+            scalar_message="Each multilayer link weight value must be scalar.",
+            numeric_message="Multilayer link weight values must be numeric.",
+        )
 
     return RowUnpacker(4, "(source_node, target_node, [weight])", unpack)
