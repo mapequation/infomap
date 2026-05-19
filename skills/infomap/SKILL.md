@@ -32,7 +32,7 @@ When the user already chose an interface, stay there unless a different interfac
 - For CLI details, inspect the available binary with `infomap --help`, `Infomap --help`, advanced help, or `--print-json-parameters` when available.
 - For Python details, prefer installed package help (`import infomap`, `help(...)`, object signatures), published Python docs, and package examples available to the user.
 - For R details, prefer `?infomap::cluster_infomap`, `?infomap::Infomap`, `?infomap::infomap_options`, and installed package help.
-- Use the survey article as a decision guide for representation, flow modeling, higher-order networks, metadata, bipartite networks, incomplete data, and applications. Do not quote long passages from it.
+- Use the survey article as a decision guide for representation, flow modeling, higher-order networks, metadata, bipartite networks, incomplete data, and applications: `https://doi.org/10.1145/3779648`. Do not quote long passages from it.
 
 ## Default research standards
 

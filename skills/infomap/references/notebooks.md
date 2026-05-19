@@ -1,6 +1,6 @@
 # Notebook Workflows
 
-Use this reference when the user mentions Jupyter, tutorial notebooks, survey companion notebooks, exploratory analysis, teaching material, or adapting notebook examples.
+Use this reference when the user mentions Jupyter, tutorial notebooks, survey companion notebooks, exploratory analysis, teaching material, or adapting notebook examples related to the survey article (`https://doi.org/10.1145/3779648`).
 
 ## Sources to inspect
 

@@ -4,7 +4,7 @@ Use this reference when the user needs help turning a research problem into an I
 
 ## Survey frame
 
-The survey organizes map equation workflows as:
+The survey article (`https://doi.org/10.1145/3779648`) organizes map equation workflows as:
 
 1. **Network representation**: decide what nodes and links mean.
 2. **Flow modeling**: decide how flows move on that representation.
