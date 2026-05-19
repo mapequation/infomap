@@ -692,6 +692,33 @@ TEST_CASE("Tree cluster-data tolerates repeated reinit on the same higher-order 
   std::remove(treePath.c_str());
 }
 
+TEST_CASE("No-infomap tree cluster-data reruns preserve loaded codelength [fast][core][partition][lifecycle]")
+{
+  auto baseline = infomap::test::makeRunningInfomap(
+      [](InfomapWrapper& im) { im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net")); },
+      "--num-trials 5");
+
+  const auto treePath = scratchTreePath("ninetriangles_no_infomap_lifecycle");
+  baseline->writeTree(treePath);
+  const auto expectedCodelength = baseline->codelength();
+  const auto expectedIndexCodelength = baseline->getIndexCodelength();
+
+  InfomapWrapper im(infomap::test::defaultFlags("--no-infomap --cluster-data " + treePath));
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  infomap::test::checkApproxCodelength(im.codelength(), expectedCodelength);
+  infomap::test::checkApproxCodelength(im.getIndexCodelength(), expectedIndexCodelength);
+
+  im.run();
+  infomap::test::checkRunSanity(im);
+  infomap::test::checkApproxCodelength(im.codelength(), expectedCodelength);
+  infomap::test::checkApproxCodelength(im.getIndexCodelength(), expectedIndexCodelength);
+
+  std::remove(treePath.c_str());
+}
+
 // Invariant: whenever Infomap ends up with a single top module, numNonTrivialTopModules()
 // must be 0. Before the fix in partition(), the one-level fallback path (triggered when
 // the found codelength is worse than the one-level codelength) left m_numNonTrivialTopModules
