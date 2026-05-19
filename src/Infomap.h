@@ -20,6 +20,7 @@
 
 namespace infomap {
 
+#ifndef SWIGPYTHON
 struct LinkResult {
   LinkResult() = default;
   LinkResult(unsigned int source, unsigned int target, double weight, double flow)
@@ -33,6 +34,7 @@ struct LinkResult {
   double weight = 0.0;
   double flow = 0.0;
 };
+#endif
 
 // Wrapper class for the Python API
 struct InfomapWrapper : public InfomapBase {
@@ -114,6 +116,7 @@ public:
     return links;
   }
 
+#ifndef SWIGPYTHON
   std::vector<LinkResult> getLinkResults() const
   {
     std::vector<LinkResult> links;
@@ -130,6 +133,7 @@ public:
 
     return links;
   }
+#endif
 
   std::map<unsigned int, unsigned int> getModules(int level = 1, bool states = false)
   {
