@@ -554,7 +554,7 @@
   {
     "long": "--core-level-limit",
     "short": "-L",
-    "description": "Limit how many times core loops are reapplied to the aggregated modular network to find larger structures.",
+    "description": "Limit how many times core loops are reapplied to the aggregated modular network to find larger structures. 0 means no limit.",
     "group": "Accuracy",
     "required": true,
     "advanced": true,

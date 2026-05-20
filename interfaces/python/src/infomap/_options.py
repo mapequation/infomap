@@ -231,7 +231,7 @@ class InfomapOptions:
         Limit how many core loops try to move each node to the best module.
     core_level_limit : int, optional
         Limit how many times core loops are reapplied to the aggregated modular network
-        to find larger structures.
+        to find larger structures. 0 means no limit.
     tune_iteration_limit : int, optional
         Limit the main iterations in the two-level partition algorithm. 0 means no
         limit.

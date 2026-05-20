@@ -70,6 +70,7 @@ def main() -> int:
     assert by_long["--num-trials"]["bindingDefaults"]["r"]["value"] == "1L"
     assert by_long["--core-level-limit"]["default"] == "0"
     assert by_long["--core-level-limit"]["min"] == "0"
+    assert by_long["--core-level-limit"]["description"].endswith("0 means no limit.")
     assert by_long["--tune-iteration-limit"]["default"] == "0"
     assert by_long["--tune-iteration-limit"]["min"] == "0"
     return 0

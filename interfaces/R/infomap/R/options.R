@@ -225,7 +225,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`seed`}{Set the random number generator seed for reproducible results.}
 #'   \item{`num_trials`}{Run this many independent trials and keep the best solution.}
 #'   \item{`core_loop_limit`}{Limit how many core loops try to move each node to the best module.}
-#'   \item{`core_level_limit`}{Limit how many times core loops are reapplied to the aggregated modular network to find larger structures.}
+#'   \item{`core_level_limit`}{Limit how many times core loops are reapplied to the aggregated modular network to find larger structures. 0 means no limit.}
 #'   \item{`tune_iteration_limit`}{Limit the main iterations in the two-level partition algorithm. 0 means no limit.}
 #'   \item{`core_loop_codelength_threshold`}{Require at least this codelength improvement to accept a new solution in a core loop.}
 #'   \item{`tune_iteration_relative_threshold`}{Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.}
