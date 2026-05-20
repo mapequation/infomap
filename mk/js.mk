@@ -38,7 +38,7 @@ $(JS_WORKER_OUTPUT_FORMATS): $(JS_OUTPUT_FORMATS_JSON) interfaces/js/scripts/wri
 $(JS_WORKER_TARGET): $(SOURCES) $(HEADERS) $(PRE_WORKER_MODULES) $(MK_FILES) Makefile
 	@echo "Compiling Infomap to run in a worker in the browser..."
 	@mkdir -p $(dir $@)
-	$(EMXX) -std=c++14 -O3 -s WASM=0 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=worker $(foreach file,$(PRE_WORKER_MODULES),--pre-js $(file)) -o $@ $(SOURCES)
+	$(EMXX) -std=c++14 -O3 -s SINGLE_FILE=1 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s ENVIRONMENT=worker $(foreach file,$(PRE_WORKER_MODULES),--pre-js $(file)) -o $@ $(SOURCES)
 
 test-js: build-js
 	$(RM) -r $(NPM_UNPACK_DIR) $(NPM_STAGE_DIR)/*.tgz $(NPM_PACK_JSON)
