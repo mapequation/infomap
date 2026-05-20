@@ -6,24 +6,8 @@ import fileToString, {
 import networkToString from "./network";
 import type { RunOptions } from "./run-options";
 import { createInfomapWorker } from "./worker";
-import changelog from "../generated/changelog.json";
 import parameters from "../generated/parameters.json";
 import packageJson from "../../../package.json";
-
-export interface Changelog {
-  body: string | null;
-  date: string;
-  footer: string | null;
-  header: string;
-  mentions: string[];
-  merge: string | null;
-  notes: string[];
-  references: string[];
-  revert: string | null;
-  scope: string | null;
-  subject: string;
-  type: string | null;
-}
 
 export interface Parameter<Required = false> {
   long: string;
@@ -296,7 +280,6 @@ class Infomap {
 export {
   Infomap as default,
   Infomap,
-  changelog,
   parameters,
   networkToString,
   argumentsToString,

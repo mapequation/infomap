@@ -88,7 +88,7 @@ help:
 		"  build-r-binary-from-tarball Build a platform-native R binary from dist/R/." \
 		"  build-r-swig          Regenerate the tracked SWIG wrapper outputs for R maintainers." \
 		"  build-binding-options Regenerate Python, R, and TypeScript option APIs from C++ metadata." \
-		"  build-js-metadata     Refresh the tracked JS parameters/changelog metadata." \
+		"  build-js-metadata     Refresh the tracked JS parameter metadata." \
 		"  build-js              Build the JS worker bundle and npm package assets from tracked metadata." \
 		"  build-docs            Build the Python docs site into docs/ (untracked output)." \
 		"" \
