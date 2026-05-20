@@ -1,5 +1,7 @@
 import inspect
 import shlex
+import subprocess
+import sys
 
 import pytest
 
@@ -98,11 +100,18 @@ def test_construct_args_renders_variable_markov_min_scale():
     assert shlex.split(args) == ["--variable-markov-min-scale", "0.5"]
 
 
+def test_construct_args_renders_pretty_output():
+    args = infomap_module._construct_args(pretty=True)
+
+    assert shlex.split(args) == ["--pretty"]
+
+
 def test_infomap_facade_signatures_match_options():
     option_fields = set(infomap_module.InfomapOptions.__dataclass_fields__)
     init_params = set(inspect.signature(infomap_module.Infomap.__init__).parameters)
     run_params = set(inspect.signature(infomap_module.Infomap.run).parameters)
 
+    assert "completion" not in option_fields
     assert option_fields <= init_params - {"self", "args"}
     assert option_fields <= run_params - {"self", "args", "initial_partition"}
 
@@ -114,3 +123,67 @@ def test_no_file_output_runs_without_output_directory(make_infomap, load_graph_f
     im.run()
 
     assert im.num_top_modules == 2
+
+
+def test_cli_without_arguments_exits_without_traceback():
+    result = subprocess.run(
+        [sys.executable, "-m", "infomap"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert "Usage: Infomap network_file out_directory [options]." in result.stdout
+    assert "Error: Missing required arguments." in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_cli_help_exits_without_traceback():
+    result = subprocess.run(
+        [sys.executable, "-m", "infomap", "--help"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "Usage:" in result.stdout
+    assert "Traceback" not in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("shell", "expected"),
+    [
+        ("bash", "complete -F _infomap_completion Infomap infomap"),
+        ("zsh", "#compdef Infomap infomap"),
+    ],
+)
+def test_cli_completion_exits_without_traceback(shell, expected):
+    result = subprocess.run(
+        [sys.executable, "-m", "infomap", "--completion", shell],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert expected in result.stdout
+    assert "--completion" in result.stdout
+    assert "--flow-model" in result.stdout
+    assert "--pretty" in result.stdout
+    assert "--print-json-parameters" not in result.stdout
+    assert "Traceback" not in result.stderr
+
+
+def test_cli_completion_invalid_shell_exits_without_traceback():
+    result = subprocess.run(
+        [sys.executable, "-m", "infomap", "--completion", "fish"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert "Unsupported completion shell 'fish'" in result.stderr
+    assert "Traceback" not in result.stderr

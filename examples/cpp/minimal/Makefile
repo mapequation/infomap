@@ -23,7 +23,7 @@ meta-example: meta-example.cpp $(INFOMAP_LIB) Makefile
 	$(CXX) $(CXXFLAGS) -DNS_INFOMAP $< -o $@ -I$(INFOMAP_DIR)/include -L$(INFOMAP_DIR)/lib -lInfomap
 
 $(INFOMAP_LIB):
-	$(MAKE) -C $(INFOMAP_DIR) lib
+	$(MAKE) -C $(INFOMAP_DIR) build-lib
 
 clean:
 	$(RM) example

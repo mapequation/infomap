@@ -16,8 +16,25 @@
 #include <string>
 #include <utility>
 #include <map>
+#include <vector>
 
 namespace infomap {
+
+#ifndef SWIGPYTHON
+struct LinkResult {
+  LinkResult() = default;
+  LinkResult(unsigned int source, unsigned int target, double weight, double flow)
+      : source(source),
+        target(target),
+        weight(weight),
+        flow(flow) {}
+
+  unsigned int source = 0;
+  unsigned int target = 0;
+  double weight = 0.0;
+  double flow = 0.0;
+};
+#endif
 
 // Wrapper class for the Python API
 struct InfomapWrapper : public InfomapBase {
@@ -53,9 +70,33 @@ public:
 
   void addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0) { m_network.addLink(sourceId, targetId, weight); }
   void addLink(unsigned int sourceId, unsigned int targetId, unsigned long weight) { m_network.addLink(sourceId, targetId, weight); }
+  void addLinks(const std::vector<unsigned int>& sourceIds, const std::vector<unsigned int>& targetIds, const std::vector<double>& weights) { m_network.addLinks(sourceIds, targetIds, weights); }
   void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight = 1.0) { m_network.addMultilayerLink(layer1, n1, layer2, n2, weight); }
+  void addMultilayerLinks(const std::vector<unsigned int>& sourceLayerIds,
+                          const std::vector<unsigned int>& sourceNodeIds,
+                          const std::vector<unsigned int>& targetLayerIds,
+                          const std::vector<unsigned int>& targetNodeIds,
+                          const std::vector<double>& weights)
+  {
+    m_network.addMultilayerLinks(sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds,
+                                 weights);
+  }
   void addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsigned int n2, double weight) { m_network.addMultilayerIntraLink(layer, n1, n2, weight); }
+  void addMultilayerIntraLinks(const std::vector<unsigned int>& layerIds,
+                               const std::vector<unsigned int>& sourceNodeIds,
+                               const std::vector<unsigned int>& targetNodeIds,
+                               const std::vector<double>& weights)
+  {
+    m_network.addMultilayerIntraLinks(layerIds, sourceNodeIds, targetNodeIds, weights);
+  }
   void addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight) { m_network.addMultilayerInterLink(layer1, n, layer2, interWeight); }
+  void addMultilayerInterLinks(const std::vector<unsigned int>& sourceLayerIds,
+                               const std::vector<unsigned int>& nodeIds,
+                               const std::vector<unsigned int>& targetLayerIds,
+                               const std::vector<double>& weights)
+  {
+    m_network.addMultilayerInterLinks(sourceLayerIds, nodeIds, targetLayerIds, weights);
+  }
 
   void setBipartiteStartId(unsigned int startId) { m_network.setBipartiteStartId(startId); }
 
@@ -74,6 +115,25 @@ public:
 
     return links;
   }
+
+#ifndef SWIGPYTHON
+  std::vector<LinkResult> getLinkResults() const
+  {
+    std::vector<LinkResult> links;
+    links.reserve(m_network.numLinks());
+
+    for (const auto& node : m_network.nodeLinkMap()) {
+      const auto sourceId = node.first.id;
+
+      for (const auto& link : node.second) {
+        const auto targetId = link.first.id;
+        links.emplace_back(sourceId, targetId, link.second.weight, link.second.flow);
+      }
+    }
+
+    return links;
+  }
+#endif
 
   std::map<unsigned int, unsigned int> getModules(int level = 1, bool states = false)
   {

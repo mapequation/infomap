@@ -37,6 +37,116 @@ Infomap <- function(args = NULL, opts = NULL, ...) {
   InfomapClass$new(args = args, opts = opts, ...)
 }
 
+.network_input_columns <- function(input, columns) {
+  if (is.matrix(input)) {
+    lapply(columns, function(index) input[, index])
+  } else {
+    lapply(columns, function(index) input[[index]])
+  }
+}
+
+.network_input_require_numeric <- function(columns, message) {
+  if (!all(vapply(columns, is.numeric, logical(1L)))) {
+    stop(message, call. = FALSE)
+  }
+}
+
+.network_input_weights <- function(input, weight_index, count, message) {
+  if (ncol(input) == weight_index) {
+    weights <- if (is.matrix(input)) input[, weight_index] else input[[weight_index]]
+    if (!is.numeric(weights)) {
+      stop(message, call. = FALSE)
+    }
+    as.numeric(weights)
+  } else {
+    rep(1.0, count)
+  }
+}
+
+.network_input_validate_entry_lengths <- function(entries, allowed, message) {
+  lengths <- vapply(entries, length, integer(1L))
+  if (!all(lengths %in% allowed)) {
+    stop(message, call. = FALSE)
+  }
+  lengths
+}
+
+.network_input_scalar_numeric <- function(entry, index, scalar_message, numeric_message) {
+  value <- entry[[index]]
+  if (length(value) != 1L) {
+    stop(scalar_message, call. = FALSE)
+  }
+  if (!is.numeric(value)) {
+    stop(numeric_message, call. = FALSE)
+  }
+  value
+}
+
+.network_input_table <- function(input, allowed_columns, shape_message,
+                                 id_columns, id_message,
+                                 weight_column, weight_message) {
+  ncol_input <- ncol(input)
+  if (!ncol_input %in% allowed_columns) {
+    stop(shape_message, call. = FALSE)
+  }
+
+  values <- .network_input_columns(input, id_columns)
+  .network_input_require_numeric(values, id_message)
+  weights <- .network_input_weights(
+    input, weight_column, length(values[[1L]]), weight_message
+  )
+  c(values, list(weights))
+}
+
+.network_input_flat_rows <- function(entries, allowed_lengths, length_message,
+                                     value_names, row_name,
+                                     id_message, weight_scalar_message,
+                                     weight_numeric_message) {
+  .network_input_validate_entry_lengths(entries, allowed_lengths, length_message)
+
+  values <- lapply(
+    seq_along(value_names),
+    function(index) {
+      vapply(
+        entries,
+        function(entry) {
+          .network_input_scalar_numeric(
+            entry,
+            index,
+            paste0("Each ", row_name, " ", value_names[[index]], " value must be scalar."),
+            id_message
+          )
+        },
+        numeric(1L)
+      )
+    }
+  )
+  weights <- vapply(
+    entries,
+    function(entry) {
+      value <- if (length(entry) == length(value_names) + 1L) entry[[length(entry)]] else 1.0
+      .network_input_scalar_numeric(
+        list(value), 1L, weight_scalar_message, weight_numeric_message
+      )
+    },
+    numeric(1L)
+  )
+  c(values, list(weights))
+}
+
+.network_input_multilayer_node_value <- function(node, name, index) {
+  if (length(node) != 2L) {
+    stop("Each multilayer node must contain 2 values: layer id and node id.",
+         call. = FALSE)
+  }
+  .network_input_scalar_numeric(
+    node,
+    index,
+    paste0("Each multilayer ", name, " value must be scalar."),
+    "Multilayer layer/node values must be numeric/integer."
+  )
+}
+
 #' R6 class generator for the Infomap clustering algorithm
 #'
 #' @description
@@ -207,29 +317,62 @@ InfomapClass <- R6::R6Class(
           stop("`links` matrix/data.frame must have 2 or 3 columns ",
                "(source, target, [weight]).", call. = FALSE)
         }
-        sources <- if (is.matrix(links)) links[, 1L] else links[[1L]]
-        targets <- if (is.matrix(links)) links[, 2L] else links[[2L]]
-        if (!is.numeric(sources) || !is.numeric(targets)) {
-          stop("`links` source/target columns must be numeric/integer.",
-               call. = FALSE)
-        }
-        weights <- if (ncol_links == 3L) {
-          w <- if (is.matrix(links)) links[, 3L] else links[[3L]]
-          if (!is.numeric(w)) {
-            stop("`links` weight column must be numeric.", call. = FALSE)
-          }
-          as.numeric(w)
-        } else {
-          rep(1.0, length(sources))
-        }
-        for (i in seq_along(sources)) {
-          self$add_link(sources[i], targets[i], weights[i])
-        }
+        id_columns <- .network_input_columns(links, c(1L, 2L))
+        .network_input_require_numeric(
+          id_columns,
+          "`links` source/target columns must be numeric/integer."
+        )
+        sources <- id_columns[[1L]]
+        targets <- id_columns[[2L]]
+        weights <- .network_input_weights(
+          links, 3L, length(sources), "`links` weight column must be numeric."
+        )
       } else {
-        for (entry in links) {
-          do.call(self$add_link, as.list(entry))
-        }
+        link_lengths <- .network_input_validate_entry_lengths(
+          links,
+          c(2L, 3L),
+          "Each link must contain 2 or 3 values: source, target, and optional weight."
+        )
+        sources <- vapply(
+          links,
+          function(entry) {
+            .network_input_scalar_numeric(
+              entry,
+              1L,
+              "Each link source value must be scalar.",
+              "`links` source/target values must be numeric/integer."
+            )
+          },
+          numeric(1L)
+        )
+        targets <- vapply(
+          links,
+          function(entry) {
+            .network_input_scalar_numeric(
+              entry,
+              2L,
+              "Each link target value must be scalar.",
+              "`links` source/target values must be numeric/integer."
+            )
+          },
+          numeric(1L)
+        )
+        weights <- vapply(
+          links,
+          function(entry) {
+            value <- if (length(entry) == 3L) entry[[3L]] else 1.0
+            .network_input_scalar_numeric(
+              list(value),
+              1L,
+              "Each link weight value must be scalar.",
+              "`links` weight values must be numeric."
+            )
+          },
+          numeric(1L)
+        )
       }
+
+      private$.swig$addLinks(as.integer(sources), as.integer(targets), as.numeric(weights))
       invisible(self)
     },
 
@@ -274,6 +417,48 @@ InfomapClass <- R6::R6Class(
       invisible(self)
     },
 
+    #' @description Add many intra-layer links in a multilayer network.
+    #' @param links A list of vectors of the form
+    #'   `c(layer, source_node, target_node, weight)` (weight optional), or
+    #'   a 3- or 4-column matrix / data.frame.
+    add_multilayer_intra_links = function(links) {
+      if (is.matrix(links) || is.data.frame(links)) {
+        parts <- .network_input_table(
+          links,
+          c(3L, 4L),
+          "`links` matrix/data.frame must have 3 or 4 columns (layer, source_node, target_node, [weight]).",
+          c(1L, 2L, 3L),
+          "`links` multilayer intra-link id columns must be numeric/integer.",
+          4L,
+          "`links` weight column must be numeric."
+        )
+        layers <- parts[[1L]]
+        sources <- parts[[2L]]
+        targets <- parts[[3L]]
+        weights <- parts[[4L]]
+      } else {
+        parts <- .network_input_flat_rows(
+          links,
+          c(3L, 4L),
+          "Each multilayer intra-link must contain 3 or 4 values: layer, source node, target node, and optional weight.",
+          c("layer", "source node", "target node"),
+          "multilayer intra-link",
+          "Multilayer intra-link id values must be numeric/integer.",
+          "Each multilayer intra-link weight value must be scalar.",
+          "Multilayer intra-link weight values must be numeric."
+        )
+        layers <- parts[[1L]]
+        sources <- parts[[2L]]
+        targets <- parts[[3L]]
+        weights <- parts[[4L]]
+      }
+
+      private$.swig$addMultilayerIntraLinks(
+        as.integer(layers), as.integer(sources), as.integer(targets), as.numeric(weights)
+      )
+      invisible(self)
+    },
+
     #' @description Add an inter-layer link in a multilayer network.
     #' @param source_layer_id Source layer id.
     #' @param node_id Physical node id (same in both layers).
@@ -287,14 +472,117 @@ InfomapClass <- R6::R6Class(
       invisible(self)
     },
 
-    #' @description Add many multilayer links at once.
-    #' @param links A list of vectors, each
-    #'   `c(source_multilayer_node, target_multilayer_node, [weight])`.
-    add_multilayer_links = function(links) {
-      for (entry in links) {
-        weight <- if (length(entry) >= 3L) entry[[3L]] else 1.0
-        self$add_multilayer_link(entry[[1L]], entry[[2L]], weight)
+    #' @description Add many inter-layer links in a multilayer network.
+    #' @param links A list of vectors of the form
+    #'   `c(source_layer, node, target_layer, weight)` (weight optional), or
+    #'   a 3- or 4-column matrix / data.frame.
+    add_multilayer_inter_links = function(links) {
+      if (is.matrix(links) || is.data.frame(links)) {
+        parts <- .network_input_table(
+          links,
+          c(3L, 4L),
+          "`links` matrix/data.frame must have 3 or 4 columns (source_layer, node, target_layer, [weight]).",
+          c(1L, 2L, 3L),
+          "`links` multilayer inter-link id columns must be numeric/integer.",
+          4L,
+          "`links` weight column must be numeric."
+        )
+        source_layers <- parts[[1L]]
+        nodes <- parts[[2L]]
+        target_layers <- parts[[3L]]
+        weights <- parts[[4L]]
+      } else {
+        parts <- .network_input_flat_rows(
+          links,
+          c(3L, 4L),
+          "Each multilayer inter-link must contain 3 or 4 values: source layer, node, target layer, and optional weight.",
+          c("source layer", "node", "target layer"),
+          "multilayer inter-link",
+          "Multilayer inter-link id values must be numeric/integer.",
+          "Each multilayer inter-link weight value must be scalar.",
+          "Multilayer inter-link weight values must be numeric."
+        )
+        source_layers <- parts[[1L]]
+        nodes <- parts[[2L]]
+        target_layers <- parts[[3L]]
+        weights <- parts[[4L]]
       }
+
+      private$.swig$addMultilayerInterLinks(
+        as.integer(source_layers), as.integer(nodes),
+        as.integer(target_layers), as.numeric(weights)
+      )
+      invisible(self)
+    },
+
+    #' @description Add many multilayer links at once.
+    #' @param links A list whose entries are
+    #'   `list(source_multilayer_node, target_multilayer_node, weight)`
+    #'   (weight optional), or a 4- or 5-column matrix / data.frame of
+    #'   `source_layer`, `source_node`, `target_layer`, `target_node`, and
+    #'   optional `weight`.
+    add_multilayer_links = function(links) {
+      if (is.matrix(links) || is.data.frame(links)) {
+        parts <- .network_input_table(
+          links,
+          c(4L, 5L),
+          "`links` matrix/data.frame must have 4 or 5 columns (source_layer, source_node, target_layer, target_node, [weight]).",
+          c(1L, 2L, 3L, 4L),
+          "`links` multilayer id columns must be numeric/integer.",
+          5L,
+          "`links` weight column must be numeric."
+        )
+        source_layers <- parts[[1L]]
+        source_nodes <- parts[[2L]]
+        target_layers <- parts[[3L]]
+        target_nodes <- parts[[4L]]
+        weights <- parts[[5L]]
+      } else {
+        .network_input_validate_entry_lengths(
+          links,
+          c(2L, 3L),
+          "Each multilayer link must contain 2 or 3 values: source node, target node, and optional weight."
+        )
+
+        source_layers <- vapply(
+          links,
+          function(entry) .network_input_multilayer_node_value(entry[[1L]], "source layer", 1L),
+          numeric(1L)
+        )
+        source_nodes <- vapply(
+          links,
+          function(entry) .network_input_multilayer_node_value(entry[[1L]], "source node", 2L),
+          numeric(1L)
+        )
+        target_layers <- vapply(
+          links,
+          function(entry) .network_input_multilayer_node_value(entry[[2L]], "target layer", 1L),
+          numeric(1L)
+        )
+        target_nodes <- vapply(
+          links,
+          function(entry) .network_input_multilayer_node_value(entry[[2L]], "target node", 2L),
+          numeric(1L)
+        )
+        weights <- vapply(
+          links,
+          function(entry) {
+            value <- if (length(entry) == 3L) entry[[3L]] else 1.0
+            .network_input_scalar_numeric(
+              list(value),
+              1L,
+              "Each multilayer link weight value must be scalar.",
+              "Multilayer link weight values must be numeric."
+            )
+          },
+          numeric(1L)
+        )
+      }
+
+      private$.swig$addMultilayerLinks(
+        as.integer(source_layers), as.integer(source_nodes),
+        as.integer(target_layers), as.integer(target_nodes), as.numeric(weights)
+      )
       invisible(self)
     },
 
@@ -367,16 +655,20 @@ InfomapClass <- R6::R6Class(
     #' **Node id convention.** Infomap result accessors report the numeric
     #' node ids used to build the network. For links added directly with
     #' `add_link()` or `add_links()`, those user-supplied ids are preserved.
-    #' `add_igraph()` uses R igraph's 1-indexed vertex ids directly. If the
-    #' original igraph had vertex names (`V(g)$name`), the returned mapping
-    #' recovers them.
+    #' `add_igraph()` uses R igraph's 1-indexed vertex ids as state ids.
+    #' Plain graph results therefore use those ids directly. State and
+    #' multilayer graphs may use separate physical ids from `phys_id`; if
+    #' those ids are labels, they are mapped to stable internal integers and
+    #' returned as `attr(mapping, "phys_id")`. If the original igraph had
+    #' vertex names (`V(g)$name`), the returned mapping recovers them.
     #'
     #' If the graph is directed, `run()` will inject `--directed`
     #' unless the user has already chosen a flow model via `opts` or
     #' raw args.
     #'
     #' @param g An igraph graph.
-    #' @param weight Edge attribute to use as link weight.
+    #' @param weight Edge attribute to use as link weight. Use `NULL` to use
+    #'   `"weight"` when present, or `FALSE` to ignore edge weights.
     #' @param phys_id Vertex attribute holding physical node ids
     #'   (state-node case).
     #' @param layer_id Vertex attribute holding layer ids
@@ -387,8 +679,10 @@ InfomapClass <- R6::R6Class(
     #'   `add_multilayer_link()` for arbitrary (layer, node) pairs.
     #' @return Invisibly returns a named character vector mapping igraph
     #'   vertex ids to the original igraph vertex names (or stringified
-    #'   vertex ids when `V(g)$name` is absent). Useful for joining Infomap
-    #'   results back to the original graph.
+    #'   vertex ids when `V(g)$name` is absent). For state or multilayer
+    #'   networks with non-numeric `phys_id` labels, the returned vector has
+    #'   a `"phys_id"` attribute mapping internal physical ids to original
+    #'   labels. Useful for joining Infomap results back to the original graph.
     add_igraph = function(g,
                           weight = "weight",
                           phys_id = "phys_id",
@@ -406,9 +700,8 @@ InfomapClass <- R6::R6Class(
       }
 
       is_directed <- igraph::is_directed(g)
-      has_phys <- phys_id %in% igraph::vertex_attr_names(g)
-      has_layer <- layer_id %in% igraph::vertex_attr_names(g)
-      has_weight <- weight %in% igraph::edge_attr_names(g)
+      has_phys <- length(phys_id) == 1L && phys_id %in% igraph::vertex_attr_names(g)
+      has_layer <- length(layer_id) == 1L && layer_id %in% igraph::vertex_attr_names(g)
 
       vertex_names <- igraph::V(g)$name
       if (is.null(vertex_names)) {
@@ -419,7 +712,11 @@ InfomapClass <- R6::R6Class(
       mapping <- stats::setNames(vertex_names, as.character(vertex_ids))
 
       if (has_phys) {
-        phys <- as.integer(igraph::vertex_attr(g, phys_id))
+        phys_data <- .map_igraph_phys_ids(igraph::vertex_attr(g, phys_id))
+        phys <- phys_data$ids
+        if (!is.null(phys_data$mapping)) {
+          attr(mapping, "phys_id") <- phys_data$mapping
+        }
       } else {
         phys <- vertex_ids
       }
@@ -433,11 +730,7 @@ InfomapClass <- R6::R6Class(
       # Vertex names are captured in `mapping` above; edge endpoints use
       # R igraph's 1-indexed vertex ids.
       edges <- igraph::as_edgelist(g, names = FALSE)
-      weights <- if (has_weight) {
-        as.numeric(igraph::edge_attr(g, weight))
-      } else {
-        rep(1.0, nrow(edges))
-      }
+      weights <- .igraph_edge_weights(g, weight, nrow(edges))
 
       if (has_phys && has_layer) {
         # Multilayer state network.
@@ -445,27 +738,45 @@ InfomapClass <- R6::R6Class(
         for (i in seq_len(igraph::vcount(g))) {
           self$add_state_node(vertex_ids[i], phys[i])
         }
-        for (e in seq_len(nrow(edges))) {
-          s <- edges[e, 1L]
-          t <- edges[e, 2L]
-          if (isTRUE(multilayer_inter_intra_format)) {
-            if (layers[s] == layers[t]) {
-              self$add_multilayer_intra_link(layers[s], phys[s], phys[t], weights[e])
-            } else {
-              # add_multilayer_inter_link models the same physical node
-              # across layers; diagonal edges (different layer AND
-              # different physical node) cannot be represented.
-              if (phys[s] != phys[t]) {
-                stop(
-                  "Multilayer intra/inter format does not support diagonal links ",
-                  "(edge between different physical nodes in different layers). ",
-                  "Use `multilayer_inter_intra_format = FALSE`.",
-                  call. = FALSE
-                )
-              }
-              self$add_multilayer_inter_link(layers[s], phys[s], layers[t], weights[e])
-            }
-          } else {
+
+        if (isTRUE(multilayer_inter_intra_format)) {
+          edge_sources <- edges[, 1L]
+          edge_targets <- edges[, 2L]
+          same_layer <- layers[edge_sources] == layers[edge_targets]
+          diagonal <- !same_layer & phys[edge_sources] != phys[edge_targets]
+          if (any(diagonal)) {
+            stop(
+              "Multilayer intra/inter format does not support diagonal links ",
+              "(edge between different physical nodes in different layers). ",
+              "Use `multilayer_inter_intra_format = FALSE`.",
+              call. = FALSE
+            )
+          }
+
+          if (any(same_layer)) {
+            intra_sources <- edge_sources[same_layer]
+            intra_targets <- edge_targets[same_layer]
+            self$add_multilayer_intra_links(
+              cbind(
+                layers[intra_sources], phys[intra_sources], phys[intra_targets],
+                weights[same_layer]
+              )
+            )
+          }
+          if (any(!same_layer)) {
+            inter_sources <- edge_sources[!same_layer]
+            inter_targets <- edge_targets[!same_layer]
+            self$add_multilayer_inter_links(
+              cbind(
+                layers[inter_sources], phys[inter_sources], layers[inter_targets],
+                weights[!same_layer]
+              )
+            )
+          }
+        } else {
+          for (e in seq_len(nrow(edges))) {
+            s <- edges[e, 1L]
+            t <- edges[e, 2L]
             self$add_multilayer_link(c(layers[s], phys[s]), c(layers[t], phys[t]), weights[e])
           }
         }
@@ -474,14 +785,10 @@ InfomapClass <- R6::R6Class(
         for (i in seq_len(igraph::vcount(g))) {
           self$add_state_node(vertex_ids[i], phys[i])
         }
-        for (e in seq_len(nrow(edges))) {
-          self$add_link(edges[e, 1L], edges[e, 2L], weights[e])
-        }
+        self$add_links(cbind(edges[, 1L], edges[, 2L], weights))
       } else {
         # Plain network.
-        for (e in seq_len(nrow(edges))) {
-          self$add_link(edges[e, 1L], edges[e, 2L], weights[e])
-        }
+        self$add_links(cbind(edges[, 1L], edges[, 2L], weights))
       }
 
       if (is_directed) {
@@ -490,6 +797,8 @@ InfomapClass <- R6::R6Class(
         # (via opts at construction/run, or via raw args).
         private$.directed_from_igraph <- TRUE
       }
+      private$.igraph_vcount <- igraph::vcount(g)
+      private$.igraph_have_memory <- has_phys
 
       invisible(mapping)
     },
@@ -509,13 +818,32 @@ InfomapClass <- R6::R6Class(
       if (!inherits(g, "igraph")) {
         stop("`g` must be an igraph graph.", call. = FALSE)
       }
-      # self$modules returns a named integer vector: node_id -> 0-indexed
-      # module. add_igraph() uses R igraph's 1-indexed vertex ids directly,
-      # so look up by vertex sequence.
-      mods <- self$modules
+      if (!is.null(private$.igraph_vcount) &&
+          igraph::vcount(g) != private$.igraph_vcount) {
+        stop(
+          "`g` must be the same igraph graph passed to add_igraph().",
+          call. = FALSE
+        )
+      }
+
+      # add_igraph() uses R igraph's 1-indexed vertex ids as state ids. For
+      # state/multilayer graphs, membership therefore has to be looked up by
+      # state id; plain graphs can keep using physical node ids.
+      mods <- if (isTRUE(private$.igraph_have_memory)) {
+        self$get_modules(states = TRUE)
+      } else {
+        self$modules
+      }
       n <- igraph::vcount(g)
       vertex_ids <- as.character(seq_len(n))
       membership <- as.integer(mods[vertex_ids])
+      if (length(membership) != n || anyNA(membership)) {
+        stop(
+          "Could not align Infomap membership with `g`; `g` must be the ",
+          "same igraph graph passed to add_igraph().",
+          call. = FALSE
+        )
+      }
       igraph::make_clusters(
         g,
         membership = membership,
@@ -527,15 +855,9 @@ InfomapClass <- R6::R6Class(
     # ----------------------------------------
     # Results
     # ----------------------------------------
-    # SWIG R does not auto-convert std::map / std::vector to native R
-    # types, so the result accessors walk iterators (which DO work over
-    # the SWIG barrier) and accumulate values into R vectors.
-    #
-    # Note: per-link weight/flow extraction (Python's `links` /
-    # `flow_links`) is not exposed yet because SWIG R does not provide
-    # an iterable wrapper over the underlying IterWrapper / std::map
-    # containers. Use the Python or JS bindings for per-link flow
-    # extraction.
+    # SWIG R does not auto-convert every STL type to native R types, so
+    # result accessors walk iterator/vector wrappers and accumulate values
+    # into R vectors.
 
     #' @description Get module assignment per leaf node.
     #' @param depth_level Tree depth used for the module id. `1` gives
@@ -626,6 +948,40 @@ InfomapClass <- R6::R6Class(
       )
       if (has_layer) out$layer_id <- layer_id[seq_len(i)]
       out
+    },
+
+    #' @description Get per-link weights and flow.
+    #' @details
+    #' For ordinary networks added with `add_link()` or `add_links()`,
+    #' `source` and `target` are the user-supplied node ids. For state
+    #' and multilayer networks they are state ids. Before `run()`,
+    #' `weight` reflects the input weights and `flow` reflects the core
+    #' link-flow values currently stored by Infomap, usually zero.
+    #' @return A `data.frame` with columns `source`, `target`, `weight`,
+    #'   and `flow`.
+    get_links = function() {
+      raw <- private$.swig$getLinkResults()
+      n <- as.integer(raw$size())
+
+      source <- integer(n)
+      target <- integer(n)
+      weight <- numeric(n)
+      flow <- numeric(n)
+
+      for (i in seq_len(n)) {
+        link <- raw$`__getitem__`(as.integer(i - 1L))
+        source[i] <- as.integer(link$source)
+        target[i] <- as.integer(link$target)
+        weight[i] <- as.numeric(link$weight)
+        flow[i] <- as.numeric(link$flow)
+      }
+
+      data.frame(
+        source = source,
+        target = target,
+        weight = weight,
+        flow = flow
+      )
     },
 
     #' @description Look up a node's name.
@@ -813,6 +1169,17 @@ InfomapClass <- R6::R6Class(
     physical_nodes = function() {
       self$get_nodes(depth_level = 1L, states = FALSE)
     },
+    #' @field links Per-link source, target, weight and flow as a
+    #'   `data.frame`.
+    links = function() {
+      self$get_links()
+    },
+    #' @field flow_links Per-link source, target and flow as a
+    #'   `data.frame`.
+    flow_links = function() {
+      links <- self$get_links()
+      links[c("source", "target", "flow")]
+    },
     #' @field names Named character vector of all assigned node names.
     names = function() {
       self$get_names()
@@ -821,7 +1188,9 @@ InfomapClass <- R6::R6Class(
   private = list(
     .swig = NULL,
     .flow_model_set = FALSE,
-    .directed_from_igraph = FALSE
+    .directed_from_igraph = FALSE,
+    .igraph_vcount = NULL,
+    .igraph_have_memory = FALSE
   )
 )
 
@@ -832,4 +1201,62 @@ InfomapClass <- R6::R6Class(
 .flow_model_in_args <- function(args) {
   if (is.null(args) || !nzchar(args)) return(FALSE)
   grepl("(^|\\s)(--directed|-d\\b|--flow-model|-f\\b)", args)
+}
+
+.igraph_edge_weights <- function(g, weight, num_edges) {
+  if (identical(weight, FALSE)) {
+    return(rep(1.0, num_edges))
+  }
+
+  attr_name <- if (is.null(weight)) {
+    "weight"
+  } else {
+    if (!is.character(weight) || length(weight) != 1L || is.na(weight)) {
+      stop(
+        "`weight` must be NULL, FALSE, or a single igraph edge attribute name.",
+        call. = FALSE
+      )
+    }
+    weight
+  }
+
+  if (!(attr_name %in% igraph::edge_attr_names(g))) {
+    return(rep(1.0, num_edges))
+  }
+
+  weights <- igraph::edge_attr(g, attr_name)
+  if (!is.numeric(weights)) {
+    stop("`weight` edge attribute must be numeric.", call. = FALSE)
+  }
+  if (anyNA(weights)) {
+    stop("`weight` edge attribute cannot contain missing values.", call. = FALSE)
+  }
+  as.numeric(weights)
+}
+
+.map_igraph_phys_ids <- function(values) {
+  if (anyNA(values)) {
+    stop("`phys_id` vertex attribute cannot contain missing values.", call. = FALSE)
+  }
+
+  if (is.numeric(values)) {
+    ids <- as.integer(values)
+    if (any(!is.finite(values)) || any(values != ids)) {
+      stop(
+        "`phys_id` vertex attribute must contain integer-like numeric values or non-missing labels.",
+        call. = FALSE
+      )
+    }
+    return(list(ids = ids, mapping = NULL))
+  }
+
+  labels <- as.character(values)
+  if (anyNA(labels)) {
+    stop("`phys_id` vertex attribute cannot contain missing values.", call. = FALSE)
+  }
+
+  unique_labels <- unique(labels)
+  ids <- match(labels, unique_labels)
+  mapping <- stats::setNames(unique_labels, as.character(seq_along(unique_labels)))
+  list(ids = as.integer(ids), mapping = mapping)
 }

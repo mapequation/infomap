@@ -7,13 +7,17 @@ Public release deliverables are:
 
 - native CLI release assets
 - the `infomap` Python package
-- the `infomap` R package (source tarball plus per-platform binaries
-  attached to the GitHub release; r-universe builds and publishes
-  separately from the same repository)
+- the `infomap` R package:
+  - source tarball: `infomap_X.Y.Z.tar.gz`
+  - macOS binaries: `infomap_X.Y.Z-rrelease-macos.tgz` and
+    `infomap_X.Y.Z-roldrel-macos.tgz`
+  - Windows binaries: `infomap_X.Y.Z-rrelease-windows.zip` and
+    `infomap_X.Y.Z-roldrel-windows.zip`
 - the `@mapequation/infomap` npm package
 - multi-arch Docker images published to GHCR for `linux/amd64` and
   `linux/arm64`
-- the committed Python docs output in `docs/`
+- the Python documentation site, built from `interfaces/python/source/`
+  and `README.rst` and deployed to GitHub Pages
 
 Internal-supported packages and secondary Docker images are outside the default
 public release flow unless a maintainer explicitly widens the release scope.
@@ -24,10 +28,12 @@ Configure these integrations before the first release:
 
 1. Create the GitHub environments `pypi-release` and `npm-release`.
 2. Add the required reviewers to both environments.
-3. Configure PyPI trusted publishing for this repository and
-   `.github/workflows/release.yml`.
-4. Configure npm trusted publishing for this repository and
-   `.github/workflows/release.yml`.
+3. Configure PyPI trusted publishing for project `infomap` with owner
+   `mapequation`, repository `infomap`, workflow `release.yml`, and
+   environment `pypi-release`.
+4. Configure npm trusted publishing for package `@mapequation/infomap` with
+   owner `mapequation`, repository `infomap`, workflow `release.yml`, and
+   environment `npm-release`.
 5. Remove legacy registry secrets after trusted publishing is confirmed:
    - `PYPI_USERNAME`
    - `PYPI_PASSWORD`
@@ -38,10 +44,19 @@ Configure these integrations before the first release:
    `infomap-v2.9.2`. If Release Please is allowed to add the component
    prefix, the first release PR after the migration can re-include already
    released commits and generate an overlapping `CHANGELOG.md`.
-7. Confirm that GitHub Actions can publish this repository's package to GHCR.
+7. Confirm the Release Please GitHub App is configured through these
+   repository secrets:
+   - `RELEASE_PLEASE_APP_ID`
+   - `RELEASE_PLEASE_PRIVATE_KEY`
+
+   The app needs repository permissions for contents, pull requests, and
+   issues. Do not use the default `GITHUB_TOKEN` for Release Please: tags
+   created with `GITHUB_TOKEN` do not trigger the follow-up `release.yml`
+   workflow that publishes packages.
+8. Confirm that GitHub Actions can publish this repository's package to GHCR.
    The release workflow uses `GITHUB_TOKEN` with `packages: write` permission
    and publishes `ghcr.io/mapequation/infomap`.
-8. Add repository dispatch tokens for downstream update workflows:
+9. Add repository dispatch tokens for downstream update workflows:
    - `HOMEBREW_INFOMAP_REPO_DISPATCH_TOKEN`
    - `INFOMAP_ONLINE_REPO_DISPATCH_TOKEN`
 
@@ -71,7 +86,8 @@ Configure these integrations before the first release:
 6. `.github/workflows/release.yml` runs for that tag and:
    - builds the native release assets
    - builds the Python sdist and wheels
-   - builds the R source tarball and per-platform R binaries
+   - builds the R source tarball once, then builds macOS and Windows R
+     binaries from that exact tarball for both R `release` and `oldrel`
    - builds and verifies the npm package
    - attaches assets to the GitHub Release
    - builds, smoke-tests, and publishes multi-arch Docker images to GHCR:
@@ -85,8 +101,46 @@ Configure these integrations before the first release:
    - dispatches the `infomap-online` package update workflow
 
    The R package is also continuously published by r-universe from
-   `master` (configured via `.r-universe.json` at the repo root); the
-   release workflow does not push to r-universe directly.
+   `master`; the release workflow does not push to r-universe directly.
+
+   `workflow_dispatch` for `.github/workflows/release.yml` rebuilds and
+   republishes an existing tag. Use it only after confirming the target version
+   has not already been published to a registry that rejects duplicate uploads.
+
+## R Package Publishing
+
+GitHub Releases ship the R source tarball plus macOS and Windows binaries.
+Linux users install the source tarball or use r-universe. The release workflow
+does not attach Linux R binaries because `R CMD INSTALL --build` produces
+Linux artifacts tied to the runner's specific R and glibc environment, unlike
+the conventional macOS and Windows binary channels.
+
+The R release filenames are intentionally unique across R versions:
+
+| Asset | Filename |
+| ----- | -------- |
+| Source | `infomap_X.Y.Z.tar.gz` |
+| macOS, R release | `infomap_X.Y.Z-rrelease-macos.tgz` |
+| macOS, R oldrel | `infomap_X.Y.Z-roldrel-macos.tgz` |
+| Windows, R release | `infomap_X.Y.Z-rrelease-windows.zip` |
+| Windows, R oldrel | `infomap_X.Y.Z-roldrel-windows.zip` |
+
+r-universe is continuous off `master` and usually publishes within minutes of
+a merged commit. It is separate from the tag-driven GitHub Release flow:
+
+- Registry source of truth:
+  `https://github.com/mapequation/mapequation.r-universe.dev`
+- User-facing package endpoint:
+  `https://mapequation.r-universe.dev`
+- Auto-managed build repository and run history:
+  `https://github.com/r-universe/mapequation/actions/workflows/build.yml`
+- Reusable deploy workflow maintained by r-universe:
+  `https://github.com/r-universe-org/workflows`
+
+The registry repository's `packages.json` declares `subdir` for this package.
+If the R package directory is moved or renamed, update `subdir` there. Do not
+edit `https://github.com/r-universe/mapequation` directly; it is generated by
+r-universe from the registry.
 
 ### Conventional Commit to version bump
 
@@ -123,10 +177,15 @@ If the proposed bump does not match the commit log
 
 ## Documentation publishing
 
-The published Python docs are served from the committed `docs/` tree on
-`master`. `.github/workflows/docs.yml` is verify-only: it runs `make test-docs`
-to confirm that the committed generated output derived from
-`interfaces/python/source/` and `README.rst` is fresh.
+The published Python docs are built and deployed to GitHub Pages by the
+`deploy-docs` job in `.github/workflows/release.yml` after each tagged
+release. The job runs `make build-docs`, creates `.nojekyll`, and uploads
+the result via `actions/upload-pages-artifact` and `actions/deploy-pages`.
+
+On pull requests, the `docs` job in `.github/workflows/ci.yml` runs
+`make build-docs` to verify the site still builds. Nothing is deployed
+from CI. The `docs/` directory is build output and is not tracked in the
+repo.
 
 ## Recovery
 
@@ -151,9 +210,13 @@ If a release only partially succeeds:
   `workflow_dispatch` for the same tag to rebuild and re-attach the GitHub
   Release assets before approving registry publishing.
 - If PyPI fails before any successful publish, fix the configuration problem and
-  rerun `publish-pypi` in the original tag-triggered release workflow.
+  rerun `.github/workflows/release.yml` with `workflow_dispatch` for the same
+  tag, or rerun `publish-pypi` in the original workflow if its artifacts are
+  still available.
 - If npm fails before any successful publish, fix the configuration problem and
-  rerun `publish-npm` in the original tag-triggered release workflow.
+  rerun `.github/workflows/release.yml` with `workflow_dispatch` for the same
+  tag, or rerun `publish-npm` in the original workflow if its artifacts are
+  still available.
 - If GHCR publishing fails before any successful publish, fix the configuration
   problem and rerun `.github/workflows/release.yml` with `workflow_dispatch`
   for the same tag. If any GHCR tags already published, inspect the registry

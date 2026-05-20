@@ -4,7 +4,17 @@ from contextlib import contextmanager
 
 from ._bindings import *  # noqa: F401,F403
 from ._bindings import __all__ as _BINDINGS_ALL
+from ._edge_index import add_edge_index as _add_edge_index
+from ._igraph import add_igraph_graph as _add_igraph_graph
+from ._igraph import find_igraph_communities
+from ._network_input import first_order_unpacker as _first_order_unpacker
+from ._network_input import flat_multilayer_unpacker as _flat_multilayer_unpacker
+from ._network_input import is_numpy_input as _is_numpy_input
+from ._network_input import normalize_numpy_links as _normalize_numpy_links
+from ._network_input import paired_multilayer_unpacker as _paired_multilayer_unpacker
+from ._network_input import split_optional_weight_rows as _split_optional_weight_rows
 from ._networkx import add_networkx_graph as _add_networkx_graph
+from ._networkx import find_communities
 from ._options import (
     InfomapOptions,
     _DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
@@ -18,6 +28,7 @@ from ._options import (
 )
 from ._results import _InfomapResultsMixin
 from ._results import entropy, perplexity, plogp
+from ._scipy import add_scipy_sparse_matrix as _add_scipy_sparse_matrix
 from ._writers import _InfomapWritersMixin
 
 
@@ -30,12 +41,15 @@ def _package_construct_args():
 
 MultilayerNode = namedtuple("MultilayerNode", "layer_id, node_id")
 
+
 __all__ = [
     *_BINDINGS_ALL,
     "Infomap",
     "InfomapOptions",
     "MultilayerNode",
     "entropy",
+    "find_communities",
+    "find_igraph_communities",
     "main",
     "perplexity",
     "plogp",
@@ -100,6 +114,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         clu=False,
         verbosity_level=_DEFAULT_VERBOSITY_LEVEL,
         silent=False,
+        pretty=False,
         out_name=None,
         no_file_output=False,
         clu_level=None,
@@ -142,6 +157,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         fast_hierarchical_solution=None,
         prefer_modular_solution=False,
         inner_parallelization=False,
+        num_random_moves=None,
+        max_degree_for_random_moves=None,
     ):
         """Create a new Infomap instance.
 
@@ -163,6 +180,50 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         if not isinstance(options, InfomapOptions):
             raise TypeError("options must be an InfomapOptions instance")
         return cls(args=args, **options.to_kwargs())
+
+    @classmethod
+    def from_scipy_sparse_matrix(
+        cls,
+        A,
+        *,
+        directed=False,
+        weighted=True,
+        node_ids=None,
+        args=None,
+        **infomap_options,
+    ):
+        """Create an :class:`Infomap` instance from a SciPy sparse adjacency matrix."""
+        im = cls(args=args, **infomap_options)
+        im.add_scipy_sparse_matrix(
+            A,
+            directed=directed,
+            weighted=weighted,
+            node_ids=node_ids,
+        )
+        return im
+
+    @classmethod
+    def from_edge_index(
+        cls,
+        edge_index,
+        *,
+        edge_weight=None,
+        num_nodes=None,
+        directed=True,
+        node_ids=None,
+        args=None,
+        **infomap_options,
+    ):
+        """Create an :class:`Infomap` instance from a PyG-style edge index."""
+        im = cls(args=args, **infomap_options)
+        im.add_edge_index(
+            edge_index,
+            edge_weight=edge_weight,
+            num_nodes=num_nodes,
+            directed=directed,
+            node_ids=node_ids,
+        )
+        return im
 
     # ----------------------------------------
     # Input
@@ -451,6 +512,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ...     (1, 3)
         ... )
         >>> im.add_links(links)
+        >>> import numpy as np
+        >>> im.add_links(np.array([[2, 3, 1.0], [3, 4, 2.0]]))
 
 
         See Also
@@ -460,12 +523,37 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
 
         Parameters
         ----------
-        links : iterable of tuples
+        links : iterable of tuples or numpy.ndarray
             Iterable of tuples of int of the form
-            ``(source_id, target_id, [weight])``
+            ``(source_id, target_id, [weight])``. NumPy arrays must be
+            2-dimensional with 2 or 3 columns, where the first two columns are
+            source and target ids and the optional third column is link weight.
         """
-        for link in links:
-            self.add_link(*link)
+        if _is_numpy_input(links):
+            links_array = _normalize_numpy_links(
+                links,
+                name="link",
+                valid_columns=(2, 3),
+                column_description="(source_id, target_id, [weight])",
+                require_32_or_64_bit=True,
+            )
+            return super().addLinksFromNumpy2D(
+                links_array,
+                links_array.shape[0],
+                links_array.shape[1],
+                links_array.dtype.kind,
+                links_array.dtype.itemsize,
+            )
+
+        source_ids, target_ids, weights = _split_optional_weight_rows(
+            links,
+            row_name="link",
+            valid_lengths=(2, 3),
+            unpack=_first_order_unpacker(),
+            length_description="2 or 3 values",
+        )
+
+        return super().addLinks(source_ids, target_ids, weights)
 
     def remove_link(self, source_id, target_id):
         """Remove a link.
@@ -604,6 +692,63 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             layer_id, source_node_id, target_node_id, weight
         )
 
+    def add_multilayer_intra_links(self, links):
+        """Add several intra-layer links.
+
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> links = (
+        ...     (1, 1, 2),
+        ...     (1, 2, 3, 2.0),
+        ...     (2, 1, 3),
+        ... )
+        >>> im.add_multilayer_intra_links(links)
+
+        See Also
+        --------
+        add_multilayer_intra_link
+
+        Parameters
+        ----------
+        links : iterable of tuples
+            Iterable of tuples of the form
+            ``(layer_id, source_node_id, target_node_id, [weight])``.
+            NumPy arrays must be 2-dimensional with 3 or 4 columns.
+        """
+        if _is_numpy_input(links):
+            links_array = _normalize_numpy_links(
+                links,
+                name="multilayer intra-link",
+                valid_columns=(3, 4),
+                column_description="(layer_id, source_node_id, target_node_id, [weight])",
+            )
+            return super().addMultilayerIntraLinksFromNumpy2D(
+                links_array,
+                links_array.shape[0],
+                links_array.shape[1],
+                links_array.dtype.kind,
+                links_array.dtype.itemsize,
+            )
+
+        layer_ids, source_node_ids, target_node_ids, weights = (
+            _split_optional_weight_rows(
+                links,
+                row_name="multilayer intra-link",
+                valid_lengths=(3, 4),
+                unpack=_flat_multilayer_unpacker(
+                    ("layer_id", "source_node_id", "target_node_id"),
+                ),
+                length_description="3 or 4 values",
+            )
+        )
+
+        return super().addMultilayerIntraLinks(
+            layer_ids, source_node_ids, target_node_ids, weights
+        )
+
     def add_multilayer_inter_link(
         self, source_layer_id, node_id, target_layer_id, weight=1.0
     ):
@@ -649,6 +794,63 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             source_layer_id, node_id, target_layer_id, weight
         )
 
+    def add_multilayer_inter_links(self, links):
+        """Add several inter-layer links.
+
+        Examples
+        --------
+
+        >>> from infomap import Infomap
+        >>> im = Infomap()
+        >>> links = (
+        ...     (1, 1, 2),
+        ...     (1, 2, 2, 2.0),
+        ...     (2, 3, 1),
+        ... )
+        >>> im.add_multilayer_inter_links(links)
+
+        See Also
+        --------
+        add_multilayer_inter_link
+
+        Parameters
+        ----------
+        links : iterable of tuples
+            Iterable of tuples of the form
+            ``(source_layer_id, node_id, target_layer_id, [weight])``.
+            NumPy arrays must be 2-dimensional with 3 or 4 columns.
+        """
+        if _is_numpy_input(links):
+            links_array = _normalize_numpy_links(
+                links,
+                name="multilayer inter-link",
+                valid_columns=(3, 4),
+                column_description="(source_layer_id, node_id, target_layer_id, [weight])",
+            )
+            return super().addMultilayerInterLinksFromNumpy2D(
+                links_array,
+                links_array.shape[0],
+                links_array.shape[1],
+                links_array.dtype.kind,
+                links_array.dtype.itemsize,
+            )
+
+        source_layer_ids, node_ids, target_layer_ids, weights = (
+            _split_optional_weight_rows(
+                links,
+                row_name="multilayer inter-link",
+                valid_lengths=(3, 4),
+                unpack=_flat_multilayer_unpacker(
+                    ("source_layer_id", "node_id", "target_layer_id"),
+                ),
+                length_description="3 or 4 values",
+            )
+        )
+
+        return super().addMultilayerInterLinks(
+            source_layer_ids, node_ids, target_layer_ids, weights
+        )
+
     def add_multilayer_links(self, links):
         """Add several multilayer links.
 
@@ -672,10 +874,50 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         ----------
         links : iterable of tuples
             Iterable of tuples of the form
-            ``(source_node, target_node, [weight])``
+            ``(source_node, target_node, [weight])``. NumPy arrays must be
+            2-dimensional with 4 or 5 columns of the form
+            ``(source_layer_id, source_node_id, target_layer_id,
+            target_node_id, [weight])``.
         """
-        for link in links:
-            self.add_multilayer_link(*link)
+        if _is_numpy_input(links):
+            links_array = _normalize_numpy_links(
+                links,
+                name="multilayer link",
+                valid_columns=(4, 5),
+                column_description=(
+                    "(source_layer_id, source_node_id, target_layer_id, "
+                    "target_node_id, [weight])"
+                ),
+            )
+            return super().addMultilayerLinksFromNumpy2D(
+                links_array,
+                links_array.shape[0],
+                links_array.shape[1],
+                links_array.dtype.kind,
+                links_array.dtype.itemsize,
+            )
+
+        (
+            source_layer_ids,
+            source_node_ids,
+            target_layer_ids,
+            target_node_ids,
+            weights,
+        ) = _split_optional_weight_rows(
+            links,
+            row_name="multilayer link",
+            valid_lengths=(2, 3),
+            unpack=_paired_multilayer_unpacker(),
+            length_description="2 or 3 values",
+        )
+
+        return super().addMultilayerLinks(
+            source_layer_ids,
+            source_node_ids,
+            target_layer_ids,
+            target_node_ids,
+            weights,
+        )
 
     def remove_multilayer_link(self):
         raise NotImplementedError(
@@ -720,14 +962,14 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         self,
         g,
         weight="weight",
-        phys_id="phys_id",
+        node_id="node_id",
         layer_id="layer_id",
         multilayer_inter_intra_format=True,
     ):
         """Add a NetworkX graph.
 
         Uses weighted links if present on the `weight` attribute.
-        Treats the graph as a state network if the `phys_id` attribute
+        Treats the graph as a state network if the `node_id` attribute
         is present and as a multilayer network if also the `layer_id`
         attribute is present on the nodes.
 
@@ -753,12 +995,12 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         >>> import networkx as nx
         >>> from infomap import Infomap
         >>> G = nx.Graph()
-        >>> G.add_node("a", phys_id=1)
-        >>> G.add_node("b", phys_id=2)
-        >>> G.add_node("c", phys_id=3)
-        >>> G.add_node("d", phys_id=1)
-        >>> G.add_node("e", phys_id=4)
-        >>> G.add_node("f", phys_id=5)
+        >>> G.add_node("a", node_id=1)
+        >>> G.add_node("b", node_id=2)
+        >>> G.add_node("c", node_id=3)
+        >>> G.add_node("d", node_id=1)
+        >>> G.add_node("e", node_id=4)
+        >>> G.add_node("f", node_id=5)
         >>> G.add_edge("a", "b")
         >>> G.add_edge("a", "c")
         >>> G.add_edge("b", "c")
@@ -784,10 +1026,10 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         >>> import networkx as nx
         >>> from infomap import Infomap
         >>> G = nx.Graph()
-        >>> G.add_node(11, phys_id=1, layer_id=1)
-        >>> G.add_node(21, phys_id=2, layer_id=1)
-        >>> G.add_node(22, phys_id=2, layer_id=2)
-        >>> G.add_node(32, phys_id=3, layer_id=2)
+        >>> G.add_node(11, node_id=1, layer_id=1)
+        >>> G.add_node(21, node_id=2, layer_id=1)
+        >>> G.add_node(22, node_id=2, layer_id=2)
+        >>> G.add_node(32, node_id=3, layer_id=2)
         >>> G.add_edge(11, 21, weight=2)
         >>> G.add_edge(22, 32)
         >>> im = Infomap(silent=True)
@@ -817,7 +1059,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         weight : str, optional
             Key to look up link weight in edge data if present. Default
             ``"weight"``.
-        phys_id : str, optional
+        node_id : str, optional
             Node attribute for physical node ids, implying a state network.
         layer_id : str, optional
             Node attribute for layer ids, implying a multilayer network.
@@ -835,7 +1077,131 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
             self,
             g,
             weight=weight,
-            phys_id=phys_id,
+            node_id=node_id,
+            layer_id=layer_id,
+            multilayer_inter_intra_format=multilayer_inter_intra_format,
+        )
+
+    def add_scipy_sparse_matrix(self, A, directed=False, weighted=True, node_ids=None):
+        """Add links and nodes from a SciPy sparse adjacency matrix.
+
+        Parameters
+        ----------
+        A : scipy.sparse matrix or array
+            Square sparse adjacency matrix.
+        directed : bool, optional
+            Interpret ``A[i, j]`` as a directed edge from row ``i`` to column
+            ``j``. Default ``False``.
+        weighted : bool, optional
+            Use sparse matrix values as link weights. If ``False``, every
+            nonzero entry is treated as weight ``1.0``. Default ``True``.
+        node_ids : sequence, optional
+            External node ids in matrix row order. If omitted, ``0..n-1`` is
+            used.
+
+        Returns
+        -------
+        dict
+            Dict with internal integer node ids as keys and external node ids
+            as values.
+        """
+        return _add_scipy_sparse_matrix(
+            self,
+            A,
+            directed=directed,
+            weighted=weighted,
+            node_ids=node_ids,
+        )
+
+    def add_edge_index(
+        self,
+        edge_index,
+        edge_weight=None,
+        num_nodes=None,
+        directed=True,
+        node_ids=None,
+    ):
+        """Add links and nodes from a PyG-style edge index.
+
+        Parameters
+        ----------
+        edge_index : array-like
+            Two-row edge index where row 0 contains source node ids and row 1
+            contains target node ids.
+        edge_weight : array-like, optional
+            One-dimensional edge weights with one value per edge. If omitted,
+            every edge is treated as weight ``1.0``.
+        num_nodes : int, optional
+            Total number of nodes. Pass this to preserve isolated nodes.
+        directed : bool, optional
+            Interpret edges as directed. Default ``True``.
+        node_ids : sequence, optional
+            External node ids in internal node order. If omitted, ``0..n-1`` is
+            used.
+
+        Returns
+        -------
+        dict
+            Dict with internal integer node ids as keys and external node ids
+            as values.
+        """
+        return _add_edge_index(
+            self,
+            edge_index,
+            edge_weight=edge_weight,
+            num_nodes=num_nodes,
+            directed=directed,
+            node_ids=node_ids,
+        )
+
+    def add_igraph_graph(
+        self,
+        g,
+        edge_weights=None,
+        vertex_weights=None,
+        node_id="node_id",
+        layer_id="layer_id",
+        multilayer_inter_intra_format=True,
+    ):
+        """Add a python-igraph graph.
+
+        This method imports igraph lazily, so igraph is not required unless
+        this method is used. It uses igraph's zero-based vertex indices as
+        state/internal ids, uses the ``name`` vertex attribute as Infomap node
+        names when present, and treats ``node_id``/``layer_id`` vertex
+        attributes as state/multilayer metadata.
+
+        Parameters
+        ----------
+        g : igraph.Graph
+            A python-igraph graph.
+        edge_weights : str, sequence, or None, optional
+            Edge weight attribute name, explicit sequence with one value per
+            edge, or ``None`` to treat every edge as weight 1. Default
+            ``None``.
+        vertex_weights : None, optional
+            Accepted for igraph API familiarity but not supported yet.
+        node_id : str, optional
+            Vertex attribute for physical node ids, implying a state network.
+        layer_id : str, optional
+            Vertex attribute for layer ids, implying a multilayer network when
+            ``node_id`` is also present.
+        multilayer_inter_intra_format : bool, optional
+            Use intra/inter format to simulate inter-layer links. Default
+            ``True``.
+
+        Returns
+        -------
+        dict
+            Dict with igraph vertex indices as keys and vertex names as values
+            when names are present, otherwise vertex indices as values.
+        """
+        return _add_igraph_graph(
+            self,
+            g,
+            edge_weights=edge_weights,
+            vertex_weights=vertex_weights,
+            node_id=node_id,
             layer_id=layer_id,
             multilayer_inter_intra_format=multilayer_inter_intra_format,
         )
@@ -977,6 +1343,7 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         clu=False,
         verbosity_level=_DEFAULT_VERBOSITY_LEVEL,
         silent=False,
+        pretty=False,
         out_name=None,
         no_file_output=False,
         clu_level=None,
@@ -1019,6 +1386,8 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         fast_hierarchical_solution=None,
         prefer_modular_solution=False,
         inner_parallelization=False,
+        num_random_moves=None,
+        max_degree_for_random_moves=None,
     ):
         """Run Infomap.
 
@@ -1093,14 +1462,24 @@ class Infomap(_InfomapResultsMixin, _InfomapWritersMixin, InfomapWrapper):  # no
         """
         return super().codelengths()
 
+    @property
+    def elapsed_time(self):
+        """Get the elapsed run time in seconds.
+
+        Returns
+        -------
+        float
+            The elapsed run time in seconds.
+        """
+        return super().elapsedTime()
+
+
 def main():
     import sys
 
     args = " ".join(sys.argv[1:])
-    conf = Config(args, True)  # noqa: F405
-    im = Infomap(conf)
-    im.run()
+    return run(args)  # noqa: F405
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

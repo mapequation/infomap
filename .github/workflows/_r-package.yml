@@ -21,7 +21,6 @@ permissions:
 
 jobs:
   swig-freshness:
-    if: inputs.run-tests
     name: R SWIG freshness
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -39,7 +38,7 @@ jobs:
 
       - name: Cache SWIG 4.4.1 install
         id: swig-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             /usr/local/bin/swig
@@ -127,6 +126,7 @@ jobs:
     name: R source tarball
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    needs: swig-freshness
 
     steps:
       - name: Checkout repository
@@ -154,16 +154,18 @@ jobs:
           name: r-source
           path: dist/R/*.tar.gz
           retention-days: 7
+          if-no-files-found: error
 
   build-binaries:
     if: inputs.build-release-artifacts
     name: R binary ${{ matrix.os }} / ${{ matrix.r }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    needs: build-source
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2025]
+        os: [macos-15, windows-2025]
         r: [release, oldrel]
 
     defaults:
@@ -197,8 +199,19 @@ jobs:
         with:
           python-version: "3.14"
 
+      - name: Install R package dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: interfaces/R/infomap
+
+      - name: Download R source tarball
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: r-source
+          path: dist/R
+
       - name: Build platform binary
-        run: make build-r-binary
+        run: make build-r-binary-from-tarball
 
       - name: Compute platform tag
         id: platform
@@ -211,12 +224,81 @@ jobs:
           esac
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
+      - name: Rename R binary
+        env:
+          PLATFORM_TAG: ${{ steps.platform.outputs.tag }}
+          R_FLAVOR: ${{ matrix.r }}
+        run: |
+          set -euo pipefail
+          version="$(awk '/^Version:/ {print $2}' interfaces/R/infomap/DESCRIPTION)"
+          case "$PLATFORM_TAG" in
+            macos) ext=tgz ;;
+            windows) ext=zip ;;
+            *) echo "Unsupported R binary platform: $PLATFORM_TAG" >&2; exit 1 ;;
+          esac
+          src="dist/R/infomap_${version}.${ext}"
+          dest="dist/R/infomap_${version}-r${R_FLAVOR}-${PLATFORM_TAG}.${ext}"
+          test -f "$src"
+          mv "$src" "$dest"
+          echo "Renamed $src to $dest"
+
       - name: Upload R binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: r-binary-${{ steps.platform.outputs.tag }}-r${{ matrix.r }}
-          path: |
-            dist/R/*.tgz
-            dist/R/*.zip
+          path: dist/R/infomap_*-r${{ matrix.r }}-${{ steps.platform.outputs.tag }}.*
           retention-days: 7
-          if-no-files-found: ignore
+          if-no-files-found: error
+
+  r-universe-simulation:
+    if: inputs.run-tests
+    name: R r-universe simulation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    needs: swig-freshness
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+
+      - name: Install R package dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: interfaces/R/infomap
+          extra-packages: |
+            any::testthat
+            any::igraph
+            any::tibble
+
+      - name: Simulate r-universe package build
+        run: |
+          set -euo pipefail
+          rm -f interfaces/R/infomap/src/infomap_wrap.cpp
+          (
+            cd interfaces/R/infomap
+            Rscript bootstrap.R
+            R CMD build --no-manual --no-build-vignettes .
+          )
+          mkdir -p build/R/r-universe-simulation
+          mv interfaces/R/infomap/infomap_*.tar.gz build/R/r-universe-simulation/
+          tarball="$(find build/R/r-universe-simulation -maxdepth 1 -name 'infomap_*.tar.gz' -print -quit)"
+          test -n "$tarball"
+          R CMD INSTALL "$tarball"
+          Rscript -e 'library(testthat); library(infomap); testthat::test_dir("interfaces/R/infomap/tests/testthat")'

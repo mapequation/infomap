@@ -6,7 +6,8 @@
 .cproject
 .settings/
 cmake-build-*/
-.claude/settings.local.json
+.claude
+.cache/
 
 __pycache__/
 node_modules/
@@ -42,7 +43,7 @@ interfaces/R/infomap/R/swig_bindings.R
 /npm-pack.json
 /mapequation-infomap-*.tgz
 
-docs/.buildinfo
+docs/
 examples/R/.Rhistory
 examples/R/infomap/
 examples/js/index.js

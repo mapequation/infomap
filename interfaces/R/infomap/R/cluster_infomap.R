@@ -19,7 +19,8 @@
 #' @param weight Edge weight column. For data frames, use a column name or
 #'   numeric column index. For matrices, use a numeric column index. Set
 #'   `FALSE` to ignore weights. For igraph graphs, use the edge attribute
-#'   name, or `NULL` to use `"weight"` when present.
+#'   name, `NULL` to use `"weight"` when present, or `FALSE` to ignore
+#'   igraph edge weights.
 #' @param e.weights Alias for `weight`, provided for familiarity with
 #'   `igraph::cluster_infomap()`. For igraph inputs, this can be an edge
 #'   attribute name or a numeric vector with one value per edge. Do not
@@ -145,6 +146,107 @@ as.data.frame.infomap_result <- function(x,
                                          optional = FALSE,
                                          ...) {
   x$nodes
+}
+
+#' Cluster a multilayer network with Infomap
+#'
+#' @description
+#' High-level helper for multilayer networks: pass a single data frame
+#' (or matrix / tibble) of multilayer edges, run Infomap, and get an
+#' `infomap_result` whose `nodes` data frame includes a `layer_id`
+#' column.
+#'
+#' @details
+#' Two input formats are recognised by column name (case-sensitive):
+#'
+#' * **Full multilayer**: columns `layer_from`, `node_from`, `layer_to`,
+#'   `node_to`, plus an optional weight column. Each row is an arbitrary
+#'   `(layer, node) -> (layer, node)` link, routed via
+#'   `Infomap$add_multilayer_links()`. Use this format to mix
+#'   intra-layer links (same `layer_from`/`layer_to`) and inter-layer
+#'   links (same `node_from`/`node_to` across different layers) in a
+#'   single edge list.
+#' * **Intra-layer only**: columns `layer`, `node_from`, `node_to`, plus
+#'   an optional weight column. Every row is a link within one layer,
+#'   routed via `Infomap$add_multilayer_intra_links()`. With no explicit
+#'   inter-layer links, Infomap couples layers via
+#'   `multilayer_relax_rate` (default 0.15).
+#'
+#' Data-frame columns may appear in any order. Matrix inputs are interpreted
+#' positionally with 3 columns for unweighted intra-layer links and 4 or 5
+#' columns for full multilayer links. Use a data frame for weighted
+#' intra-layer-only inputs.
+#'
+#' For more exotic setups (e.g. weighted inter-layer couplings via
+#' `add_multilayer_inter_links()`), use the lower-level [Infomap()] R6
+#' API directly.
+#'
+#' @param multilayer_edges A data frame, tibble, or matrix of multilayer
+#'   edges in one of the formats above.
+#' @param weight Edge weight column name or numeric column index. Set
+#'   `FALSE` to ignore weights. If `NULL` (default), uses a data-frame column
+#'   named `weight` when present, then falls back to a single non-format
+#'   data-frame column, then to weight `1`.
+#' @param args Optional raw CLI argument string passed to [Infomap()].
+#' @param opts Optional options list from [infomap_options()].
+#' @param tibble If `TRUE`, return `nodes` as a tibble (requires the
+#'   `tibble` package). Default `FALSE` returns a plain data frame.
+#' @param ... Named option overrides forwarded to [Infomap()].
+#'
+#' @return An object of class `"infomap_result"`. The `nodes` field
+#'   includes a `layer_id` column.
+#'
+#' @examples
+#' # Intra-layer only: two triangles, one per layer.
+#' intra <- data.frame(
+#'   layer     = c(1, 1, 1, 2, 2, 2),
+#'   node_from = c(1, 2, 3, 1, 2, 3),
+#'   node_to   = c(2, 3, 1, 2, 3, 1)
+#' )
+#' result <- cluster_infomap_multilayer(intra, silent = TRUE, num_trials = 3)
+#' result$codelength
+#' as.data.frame(result)
+#'
+#' # Full multilayer: intra-layer triangles + inter-layer couplings.
+#' edges <- data.frame(
+#'   layer_from = c(1, 1, 1, 2, 2, 2, 1, 1, 1),
+#'   node_from  = c(1, 2, 3, 1, 2, 3, 1, 2, 3),
+#'   layer_to   = c(1, 1, 1, 2, 2, 2, 2, 2, 2),
+#'   node_to    = c(2, 3, 1, 2, 3, 1, 1, 2, 3),
+#'   weight     = c(1, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5)
+#' )
+#' result <- cluster_infomap_multilayer(edges, silent = TRUE, num_trials = 3)
+#' result$num_top_modules
+#' @export
+cluster_infomap_multilayer <- function(multilayer_edges,
+                                       weight = NULL,
+                                       args = NULL,
+                                       opts = NULL,
+                                       tibble = FALSE,
+                                       ...) {
+  call_options <- list(...)
+  im <- do.call(Infomap, c(list(args = args, opts = opts), call_options))
+  .add_multilayer_input(im, multilayer_edges, weight)
+  im$run()
+
+  nodes <- as.data.frame(im, tibble = tibble)
+  out <- list(
+    nodes = nodes,
+    modules = im$modules,
+    codelength = im$codelength,
+    index_codelength = im$index_codelength,
+    module_codelength = im$module_codelength,
+    one_level_codelength = im$one_level_codelength,
+    relative_codelength_savings = im$relative_codelength_savings,
+    num_top_modules = im$num_top_modules,
+    num_nodes = im$num_nodes,
+    num_links = im$num_links,
+    num_levels = im$num_levels,
+    mapping = NULL,
+    model = im
+  )
+  class(out) <- "infomap_result"
+  out
 }
 
 #' Convert an Infomap result to igraph communities
@@ -273,4 +375,190 @@ as_communities.infomap_result <- function(x, graph, ...) {
   }
 
   stop("`weight` must be NULL, FALSE, a column name, or a column index.", call. = FALSE)
+}
+
+.MULTILAYER_FULL_COLS  <- c("layer_from", "node_from", "layer_to", "node_to")
+.MULTILAYER_INTRA_COLS <- c("layer", "node_from", "node_to")
+
+.add_multilayer_input <- function(im, edges, weight) {
+  if (!is.data.frame(edges) && !is.matrix(edges)) {
+    stop("`multilayer_edges` must be a data.frame, tibble, or matrix.",
+         call. = FALSE)
+  }
+  if (nrow(edges) == 0L) {
+    stop("`multilayer_edges` must have at least one row.", call. = FALSE)
+  }
+
+  format <- .detect_multilayer_format(edges)
+  if (format == "full") {
+    normalized <- .normalize_multilayer_full(edges, weight)
+    im$add_multilayer_links(normalized)
+  } else {
+    normalized <- .normalize_multilayer_intra(edges, weight)
+    im$add_multilayer_intra_links(normalized)
+  }
+  invisible(NULL)
+}
+
+.detect_multilayer_format <- function(edges) {
+  if (is.matrix(edges)) {
+    nc <- ncol(edges)
+    if (nc == 3L) return("intra")
+    if (nc %in% c(4L, 5L)) return("full")
+    stop(
+      "Multilayer matrix input must have 3 columns ",
+      "(layer, node_from, node_to) for unweighted intra-layer links or ",
+      "4-5 columns (layer_from, node_from, layer_to, node_to, [weight]) ",
+      "for full multilayer links. Use a data frame for weighted ",
+      "intra-layer-only input.",
+      call. = FALSE
+    )
+  }
+
+  cols <- names(edges)
+  has_full  <- all(.MULTILAYER_FULL_COLS  %in% cols)
+  has_intra <- all(.MULTILAYER_INTRA_COLS %in% cols) &&
+    !any(c("layer_from", "layer_to") %in% cols)
+
+  if (has_full)  return("full")
+  if (has_intra) return("intra")
+
+  stop(
+    "`multilayer_edges` must have either columns ",
+    "{layer_from, node_from, layer_to, node_to} for a full multilayer ",
+    "edge list, or {layer, node_from, node_to} for an intra-layer-only ",
+    "edge list. An optional `weight` column is supported in both cases.",
+    call. = FALSE
+  )
+}
+
+.normalize_multilayer_full <- function(edges, weight) {
+  if (is.matrix(edges)) {
+    layer_from <- edges[, 1L]
+    node_from  <- edges[, 2L]
+    layer_to   <- edges[, 3L]
+    node_to    <- edges[, 4L]
+    weights <- .multilayer_weights(edges, weight, default_index = 5L)
+  } else {
+    layer_from <- edges[["layer_from"]]
+    node_from  <- edges[["node_from"]]
+    layer_to   <- edges[["layer_to"]]
+    node_to    <- edges[["node_to"]]
+    weights <- .multilayer_weights(
+      edges, weight,
+      reserved = .MULTILAYER_FULL_COLS
+    )
+  }
+
+  .check_multilayer_ids(
+    list(
+      layer_from = layer_from, node_from = node_from,
+      layer_to = layer_to, node_to = node_to
+    )
+  )
+
+  data.frame(
+    layer_from = layer_from,
+    node_from  = node_from,
+    layer_to   = layer_to,
+    node_to    = node_to,
+    weight     = as.numeric(weights),
+    stringsAsFactors = FALSE
+  )
+}
+
+.normalize_multilayer_intra <- function(edges, weight) {
+  if (is.matrix(edges)) {
+    layer     <- edges[, 1L]
+    node_from <- edges[, 2L]
+    node_to   <- edges[, 3L]
+    weights <- .multilayer_weights(edges, weight)
+  } else {
+    layer     <- edges[["layer"]]
+    node_from <- edges[["node_from"]]
+    node_to   <- edges[["node_to"]]
+    weights <- .multilayer_weights(
+      edges, weight,
+      reserved = .MULTILAYER_INTRA_COLS
+    )
+  }
+
+  .check_multilayer_ids(
+    list(layer = layer, node_from = node_from, node_to = node_to)
+  )
+
+  data.frame(
+    layer     = layer,
+    node_from = node_from,
+    node_to   = node_to,
+    weight    = as.numeric(weights),
+    stringsAsFactors = FALSE
+  )
+}
+
+.check_multilayer_ids <- function(cols) {
+  for (nm in names(cols)) {
+    v <- cols[[nm]]
+    if (!is.numeric(v)) {
+      stop("`", nm, "` column must be numeric/integer.", call. = FALSE)
+    }
+    if (anyNA(v)) {
+      stop("`", nm, "` column cannot contain missing values.", call. = FALSE)
+    }
+  }
+}
+
+.multilayer_weights <- function(edges, weight,
+                                reserved = NULL,
+                                default_index = NULL) {
+  n <- nrow(edges)
+
+  if (identical(weight, FALSE)) {
+    return(rep(1.0, n))
+  }
+
+  if (is.null(weight)) {
+    # Auto-detect: prefer a column literally named "weight" on data frames,
+    # else fall back to a trailing positional column on matrices.
+    if (is.data.frame(edges) && "weight" %in% names(edges)) {
+      w <- edges[["weight"]]
+    } else if (is.matrix(edges) && !is.null(default_index) &&
+               ncol(edges) >= default_index) {
+      w <- edges[, default_index]
+    } else if (is.data.frame(edges) && !is.null(reserved)) {
+      extras <- setdiff(names(edges), reserved)
+      if (length(extras) == 1L) {
+        w <- edges[[extras]]
+      } else {
+        return(rep(1.0, n))
+      }
+    } else {
+      return(rep(1.0, n))
+    }
+  } else if (is.character(weight) && length(weight) == 1L &&
+             is.data.frame(edges)) {
+    if (!weight %in% names(edges)) {
+      stop("`weight` column not found in `multilayer_edges`.", call. = FALSE)
+    }
+    w <- edges[[weight]]
+  } else if (is.numeric(weight) && length(weight) == 1L) {
+    index <- as.integer(weight)
+    if (is.na(index) || index < 1L || index > ncol(edges)) {
+      stop("`weight` column index is out of bounds.", call. = FALSE)
+    }
+    w <- if (is.matrix(edges)) edges[, index] else edges[[index]]
+  } else {
+    stop(
+      "`weight` must be NULL, FALSE, a column name, or a column index.",
+      call. = FALSE
+    )
+  }
+
+  if (!is.numeric(w)) {
+    stop("`weight` column must be numeric.", call. = FALSE)
+  }
+  if (anyNA(w)) {
+    stop("`weight` column cannot contain missing values.", call. = FALSE)
+  }
+  w
 }

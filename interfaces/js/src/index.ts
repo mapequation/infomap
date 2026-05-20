@@ -1,7 +1,7 @@
 import argumentsToString from "./arguments";
 import fileToString, {
   type TreeNode as Node,
-  type TreeStateNode as StateNode
+  type TreeStateNode as StateNode,
 } from "./filetypes";
 import networkToString from "./network";
 import type { RunOptions } from "./run-options";
@@ -117,6 +117,10 @@ type EventData =
   | Event<"error">
   | Event<"finished">;
 
+function normalizeErrorMessage(message: string) {
+  return message.replace(/^(?:Error:\s*)+/i, "");
+}
+
 class Infomap {
   static __version__: string = packageJson.version;
 
@@ -133,7 +137,7 @@ class Infomap {
   runAsync(...args: Parameters<Infomap["createWorker"]>) {
     const id = this.createWorker(...args);
     return new Promise<Result>((finished, error) =>
-      this.setHandlers(id, { finished, error })
+      this.setHandlers(id, { finished, error }),
     );
   }
 
@@ -142,12 +146,7 @@ class Infomap {
     return this;
   }
 
-  protected createWorker({
-    network,
-    filename,
-    args,
-    files,
-  }: RunOptions) {
+  protected createWorker({ network, filename, args, files }: RunOptions) {
     network = network ?? "";
     filename = filename ?? "network.net";
     args = args ?? "";
@@ -171,8 +170,7 @@ class Infomap {
     const index = filename.lastIndexOf(".");
     const networkName = index > 0 ? filename.slice(0, index) : filename;
     const outNameMatch = args.match(/--out-name\s(\S+)/);
-    const outName =
-      outNameMatch && outNameMatch[1] ? outNameMatch[1] : networkName;
+    const outName = outNameMatch?.[1] ? outNameMatch[1] : networkName;
 
     const worker = createInfomapWorker();
     const id = this.workerId++;
@@ -189,41 +187,74 @@ class Infomap {
     return id;
   }
 
-  protected setHandlers(id: number, events = this.events) {
+  protected setHandlers(id: number, events: EventCallbacks = {}) {
     const worker = this.workers[id];
-    const { data, progress, error, finished } = { ...this.events, ...events };
+
+    const emitData = (output: string) => {
+      this.events.data?.(output, id);
+      if (events.data && events.data !== this.events.data)
+        events.data(output, id);
+    };
+
+    const emitProgress = (currentProgress: number) => {
+      this.events.progress?.(currentProgress, id);
+      if (events.progress && events.progress !== this.events.progress) {
+        events.progress(currentProgress, id);
+      }
+    };
+
+    const emitError = (message: string) => {
+      const normalized = normalizeErrorMessage(message);
+      // Settle the runAsync promise first so a throwing global callback
+      // cannot leave the returned promise pending forever.
+      if (events.error && events.error !== this.events.error) {
+        events.error(normalized, id);
+      }
+      try {
+        this.events.error?.(normalized, id);
+      } catch {
+        // user-registered global callback threw; promise has already settled
+      }
+    };
+
+    const emitFinished = (result: Result) => {
+      if (events.finished && events.finished !== this.events.finished) {
+        events.finished(result, id);
+      }
+      try {
+        this.events.finished?.(result, id);
+      } catch {
+        // user-registered global callback threw; promise has already settled
+      }
+    };
 
     worker.onmessage = (event: MessageEvent<EventData>) => {
       if (event.data.type === "data") {
-        if (data) {
-          data(event.data.content, id);
-        }
-        if (progress) {
-          const match = event.data.content.match(/^Trial (\d+)\/(\d+)/);
-          if (match) {
-            const trial = Number(match[1]);
-            const totTrials = Number(match[2]);
-            const currentProgress = (100 * trial) / (totTrials + 1);
-            progress(currentProgress, id);
-          } else {
-            const summary = event.data.content.match(/^Summary after/);
-            if (summary) {
-              progress(100, id);
-            }
+        emitData(event.data.content);
+        const match = event.data.content.match(/^Trial (\d+)\/(\d+)/);
+        if (match) {
+          const trial = Number(match[1]);
+          const totTrials = Number(match[2]);
+          emitProgress((100 * trial) / (totTrials + 1));
+        } else {
+          const summary = event.data.content.match(/^Summary(?: after)?/);
+          if (summary) {
+            emitProgress(100);
           }
         }
-      } else if (error && event.data.type === "error") {
+      } else if (event.data.type === "error") {
+        void this._terminate(id, 0);
+        emitError(event.data.content);
+      } else if (event.data.type === "finished") {
         void this._terminate(id);
-        error(event.data.content, id);
-      } else if (finished && event.data.type === "finished") {
-        void this._terminate(id);
-        finished(event.data.content, id);
+        emitFinished(event.data.content);
       }
     };
 
     worker.onerror = (err: ErrorEvent) => {
       err.preventDefault();
-      if (error) error(err.message, id);
+      void this._terminate(id, 0);
+      emitError(err.message);
     };
   }
 
@@ -252,6 +283,14 @@ class Infomap {
   async terminate(id: number, timeout = 1000) {
     return await this._terminate(id, timeout);
   }
+
+  async terminateAll(timeout = 1000) {
+    const ids = Object.keys(this.workers).map(Number);
+    const terminated = await Promise.all(
+      ids.map((id) => this._terminate(id, timeout)),
+    );
+    return terminated.filter(Boolean).length;
+  }
 }
 
 export {
@@ -260,5 +299,14 @@ export {
   changelog,
   parameters,
   networkToString,
-  argumentsToString
+  argumentsToString,
 };
+
+export {
+  getResultFiles,
+  getResultMetadata,
+  resultFormats,
+  type ResultFile,
+  type ResultFormat,
+  type ResultMetadata,
+} from "./result";

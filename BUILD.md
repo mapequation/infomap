@@ -303,21 +303,17 @@ Build source and wheel distributions locally when needed:
 make release-python-dist
 ```
 
-After the normal Python setup from the section above, refresh the committed
-Sphinx output in `docs/` with:
+After the normal Python setup from the section above, build the Sphinx
+site with:
 
 ```bash
 make build-docs
 ```
 
-Verify that the committed generated output is fresh without rewriting `docs/`
-with:
-
-```bash
-make test-docs
-```
-
-Do not hand-edit generated HTML, JavaScript, or `_sources` files under `docs/`.
+The output is written to `docs/` as untracked build artefacts; do not
+commit them. CI runs `make build-docs` on PRs that touch docs-relevant
+files (see the `docs` job in `.github/workflows/ci.yml`), and the release
+workflow builds and deploys the site to GitHub Pages.
 
 ## Docker
 

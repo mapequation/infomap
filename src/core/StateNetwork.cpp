@@ -150,6 +150,17 @@ bool StateNetwork::addLink(unsigned int sourceId, unsigned int targetId, unsigne
   return addLink(sourceId, targetId, static_cast<double>(weight));
 }
 
+void StateNetwork::addLinks(const std::vector<unsigned int>& sourceIds, const std::vector<unsigned int>& targetIds, const std::vector<double>& weights)
+{
+  if (sourceIds.size() != targetIds.size() || sourceIds.size() != weights.size()) {
+    throw std::invalid_argument("sourceIds, targetIds, and weights must have the same length");
+  }
+
+  for (std::size_t i = 0; i < sourceIds.size(); ++i) {
+    addLink(sourceIds[i], targetIds[i], weights[i]);
+  }
+}
+
 bool StateNetwork::removeLink(unsigned int sourceId, unsigned int targetId)
 {
   auto itSource = m_nodeLinkMap.find(sourceId);

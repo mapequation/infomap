@@ -13,13 +13,9 @@ DOCKER_SUPPORTED_NOTEBOOK_TAG ?= infomap:notebook-local
 	docker-run \
 	docker-build-notebook \
 	docker-run-notebook \
-	docker-build-rstudio \
-	docker-run-rstudio \
 	docker-build-ubuntu-test-python \
 	docker-run-ubuntu-test-python \
 	docker-build-python \
-	docker-build-r \
-	docker-run-r \
 	test-docker-supported
 
 docker-build: docker/infomap.Dockerfile
@@ -34,15 +30,6 @@ docker-build-notebook: docker/notebook.Dockerfile
 docker-run-notebook:
 	$(DOCKER_COMPOSE) up notebook
 
-docker-build-rstudio: docker/rstudio.Dockerfile
-	$(DOCKER) build \
-	-f docker/rstudio.Dockerfile \
-	-t $(TAG_NAME):rstudio .
-
-docker-run-rstudio:
-	$(DOCKER) run --rm \
-	$(TAG_NAME):rstudio
-
 docker-build-ubuntu-test-python:
 	$(DOCKER) build -f docker/ubuntu.Dockerfile -t infomap:python-test .
 
@@ -51,12 +38,6 @@ docker-run-ubuntu-test-python:
 
 docker-build-python: docker/python.Dockerfile
 	$(DOCKER) build -f docker/python.Dockerfile -t infomap-python .
-
-docker-build-r:
-	$(DOCKER) build -f docker/rstudio.Dockerfile -t infomap:r .
-
-docker-run-r:
-	$(DOCKER) run --rm -p 8787:8787 -e PASSWORD=InfomapR infomap:r
 
 test-docker-supported:
 	$(DOCKER) build -f docker/infomap.Dockerfile -t $(DOCKER_SUPPORTED_CLI_TAG) .

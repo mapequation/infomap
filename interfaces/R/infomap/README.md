@@ -99,13 +99,22 @@ comm <- im$as_communities(g)  # igraph 'communities' object
 `add_igraph()` and `as_communities()` raise an informative error if
 `igraph` is not installed.
 
+`add_igraph()` uses an igraph edge attribute named `weight` by default.
+Use `weight = NULL` to use that attribute only when present, or
+`weight = FALSE` to ignore edge weights. Non-numeric or missing weight
+values raise an error.
+
 **Node id convention.** Infomap result accessors report the numeric node
 ids used to build the network. For links added directly with
 `add_link()` or `add_links()`, those user-supplied ids are preserved.
-`add_igraph()` uses R igraph's 1-indexed vertex ids directly. The
-`mapping` returned by `add_igraph()` recovers the original igraph vertex
-names (or stringified vertex ids) keyed by those ids, so you can join
-Infomap results back to the original graph.
+`add_igraph()` uses R igraph's 1-indexed vertex ids as state ids. Plain
+graph results use those ids directly. State and multilayer graphs can use
+separate physical ids from a `node_id` vertex attribute; non-numeric
+physical labels are mapped to stable internal integers. The `mapping`
+returned by `add_igraph()` recovers the original igraph vertex names (or
+stringified vertex ids) keyed by vertex id, and `attr(mapping, "node_id")`
+maps internal physical ids back to original physical labels when such a
+mapping was needed.
 
 ## Related packages
 

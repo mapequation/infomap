@@ -4,7 +4,7 @@ let workerUrl: string | undefined;
 
 export function createInfomapWorker() {
   workerUrl ??= URL.createObjectURL(
-    new Blob([workerSource], { type: "application/javascript" })
+    new Blob([workerSource], { type: "application/javascript" }),
   );
   return new Worker(workerUrl);
 }

@@ -69,6 +69,12 @@ public:
   Network(Network&&) = delete;
   Network& operator=(Network&&) = delete;
 
+  void setConfig(const Config& config)
+  {
+    StateNetwork::setConfig(config);
+    updateDerivedConfig();
+  }
+
   void clear() override;
 
   /**
@@ -116,11 +122,20 @@ public:
 
   void addMultilayerLink(unsigned int layer1, unsigned int n1, unsigned int layer2, unsigned int n2, double weight);
   void addMultilayerLink(unsigned int stateId1, unsigned int layer1, unsigned int n1, unsigned int stateId2, unsigned int layer2, unsigned int n2, double weight);
+  void addMultilayerLinks(const std::vector<unsigned int>& sourceLayerIds,
+                          const std::vector<unsigned int>& sourceNodeIds,
+                          const std::vector<unsigned int>& targetLayerIds,
+                          const std::vector<unsigned int>& targetNodeIds,
+                          const std::vector<double>& weights);
 
   /**
    * Create an intra-layer link
    */
   void addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsigned int n2, double weight);
+  void addMultilayerIntraLinks(const std::vector<unsigned int>& layerIds,
+                               const std::vector<unsigned int>& sourceNodeIds,
+                               const std::vector<unsigned int>& targetNodeIds,
+                               const std::vector<double>& weights);
 
   /**
    * Create links between (layer1,n) and (layer2,m) for all m connected to n in layer 2.
@@ -128,6 +143,10 @@ public:
    * TODO: This is done later..
    */
   void addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight);
+  void addMultilayerInterLinks(const std::vector<unsigned int>& sourceLayerIds,
+                               const std::vector<unsigned int>& nodeIds,
+                               const std::vector<unsigned int>& targetLayerIds,
+                               const std::vector<double>& weights);
 
   void addMetaData(unsigned int nodeId, int meta);
 
@@ -135,6 +154,7 @@ public:
 
 private:
   void init();
+  void updateDerivedConfig();
   void initValidHeadings();
 
   void parseNetwork(const std::string& filename);

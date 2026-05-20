@@ -31,7 +31,8 @@ cluster_infomap(
 \item{weight}{Edge weight column. For data frames, use a column name or
 numeric column index. For matrices, use a numeric column index. Set
 \code{FALSE} to ignore weights. For igraph graphs, use the edge attribute
-name, or \code{NULL} to use \code{"weight"} when present.}
+name, \code{NULL} to use \code{"weight"} when present, or \code{FALSE} to ignore
+igraph edge weights.}
 
 \item{e.weights}{Alias for \code{weight}, provided for familiarity with
 \code{igraph::cluster_infomap()}. For igraph inputs, this can be an edge

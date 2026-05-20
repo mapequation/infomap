@@ -2,10 +2,11 @@ PYTHON_SWIG_PY := interfaces/python/src/infomap/_swig.py
 PYTHON_SWIG_CPP := interfaces/python/generated/infomap_wrap.cpp
 SPHINX_SOURCE_DIR := interfaces/python/source
 SPHINX_TARGET_DIR ?= docs
-DOCS_FRESHNESS_EXCLUDES := maintainers .nojekyll .buildinfo
-DOCS_FRESHNESS_DIFF_ARGS := $(foreach excluded,$(DOCS_FRESHNESS_EXCLUDES),--exclude=$(excluded))
-DOCS_SYNC_ARGS := -a --delete $(foreach excluded,$(DOCS_FRESHNESS_EXCLUDES),--exclude=/$(excluded))
+DOCS_SYNC_ARGS := -a --delete
 PYTHON_TEST_DIR := test/python
+NOTEBOOK_DIR := examples/notebooks
+NOTEBOOK_MANIFEST := $(NOTEBOOK_DIR)/notebooks.toml
+NOTEBOOK_TIMEOUT ?= 300
 PYTHON_LINT_TARGETS := \
 	interfaces/python/src/infomap/__init__.py \
 	interfaces/python/src/infomap/__main__.py \
@@ -17,6 +18,7 @@ PYTHON_LINT_TARGETS := \
 	interfaces/python/src/infomap/_results.py \
 	interfaces/python/src/infomap/_version.py \
 	interfaces/python/src/infomap/_writers.py \
+	interfaces/python/src/infomap/tl.py \
 	examples/python
 PYTHON_FORMAT_TARGETS := \
 	interfaces/python/src/infomap/__init__.py \
@@ -29,6 +31,7 @@ PYTHON_FORMAT_TARGETS := \
 	interfaces/python/src/infomap/_results.py \
 	interfaces/python/src/infomap/_version.py \
 	interfaces/python/src/infomap/_writers.py \
+	interfaces/python/src/infomap/tl.py \
 	examples/python \
 	test/python
 PYTEST_ARGS ?=
@@ -45,23 +48,23 @@ PYTHON_BUILD_ENV = \
 .PHONY: \
 	build-python \
 	build-python-swig \
-	build-python-package-files \
 	clean-python-build-cache \
 	test-python-swig-freshness \
 	dev-python-install \
+	dev-python-notebooks-install \
 	test-python \
 	test-python-unit \
 	test-python-doctest \
 	test-python-examples \
+	test-python-notebooks-smoke \
+	test-python-notebooks-full \
 	build-docs \
-	test-docs \
 	_build-docs-site \
 	clean-python \
 	format-python \
 	release-python-dist \
 	release-python-testpypi \
-	release-python-pypi \
-	py-prepare
+	release-python-pypi
 
 build-python:
 	@$(MAKE) --no-print-directory clean-python-build-cache
@@ -71,9 +74,6 @@ build-python:
 clean-python-build-cache:
 	@find build -maxdepth 1 -type d \( -name 'bdist.*' -o -name 'lib.*' \) -exec rm -rf {} + 2>/dev/null || true
 
-build-python-package-files: build-python-swig
-	@true
-
 build-python-swig:
 	@SWIG="$(SWIG)" $(PYTHON) scripts/generate_python_swig.py --python-out $(PYTHON_SWIG_PY) --cpp-out $(PYTHON_SWIG_CPP)
 
@@ -82,6 +82,9 @@ test-python-swig-freshness:
 
 dev-python-install:
 	$(PYTHON_BUILD_ENV) $(PIP) install -e .[test,docs,examples]
+
+dev-python-notebooks-install:
+	$(PYTHON_BUILD_ENV) $(PIP) install -e .[notebooks]
 
 test-python: test-python-unit test-python-doctest test-python-examples
 	@true
@@ -102,11 +105,17 @@ test-python-doctest:
 test-python-examples:
 	@cd examples/python && for f in *.py; do $(PYTHON) "$$f" > /dev/null || exit 1; done
 
+test-python-notebooks-smoke:
+	@cd $(NOTEBOOK_DIR) && $(PYTHON) ../../scripts/notebook_manifest.py --manifest notebooks.toml --suite smoke --print0 | \
+		xargs -0 $(PYTEST) --nbmake --nbmake-timeout=$(NOTEBOOK_TIMEOUT)
+
+test-python-notebooks-full:
+	@cd $(NOTEBOOK_DIR) && $(PYTHON) ../../scripts/notebook_manifest.py --manifest notebooks.toml --suite full --print0 | \
+		xargs -0 $(PYTEST) --nbmake --nbmake-timeout=$(NOTEBOOK_TIMEOUT)
+
 _build-docs-site:
 	@mkdir -p "$(SPHINX_TARGET_DIR)"
-	@cp -a README.rst "$(SPHINX_SOURCE_DIR)/index.rst"
-	@trap 'rm -f "$(SPHINX_SOURCE_DIR)/index.rst"' EXIT; \
-		$(SPHINX_BUILD) -b html "$(SPHINX_SOURCE_DIR)" "$(SPHINX_TARGET_DIR)"
+	@$(SPHINX_BUILD) -b html "$(SPHINX_SOURCE_DIR)" "$(SPHINX_TARGET_DIR)"
 	@searchindex="$(SPHINX_TARGET_DIR)/searchindex.js"; \
 		if [ -f "$$searchindex" ] && [ -n "$$(tail -c 1 "$$searchindex" 2>/dev/null)" ]; then \
 			printf '\n' >> "$$searchindex"; \
@@ -120,21 +129,12 @@ build-docs: dev-python-install
 	mkdir -p docs; \
 	rsync $(DOCS_SYNC_ARGS) "$$tmp_dir/docs/" docs/
 
-test-docs: dev-python-install
-	@tmp_dir="$$(mktemp -d 2>/dev/null || mktemp -d -t infomap-docs)"; \
-	trap 'rm -rf "$$tmp_dir"' EXIT; \
-	$(MAKE) --no-print-directory SPHINX_TARGET_DIR="$$tmp_dir/docs" _build-docs-site; \
-	diff -ru $(DOCS_FRESHNESS_DIFF_ARGS) "$$tmp_dir/docs" docs
-
 clean-python:
 	$(RM) -r dist/python *.egg-info interfaces/python/src/infomap/_infomap*.so interfaces/python/src/infomap/*.pyd
 	@find build -maxdepth 1 -type d \( -name 'bdist.*' -o -name 'lib.*' -o -name 'temp.*' \) -exec rm -rf {} + 2>/dev/null || true
 
 format-python:
 	$(RUFF) format $(PYTHON_FORMAT_TARGETS) || true
-
-py-prepare:
-	$(PIP) install -e '.[test,docs,examples,release]'
 
 release-python-dist:
 	@$(MAKE) --no-print-directory clean-python-build-cache

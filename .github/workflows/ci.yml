@@ -25,6 +25,9 @@ jobs:
       python: ${{ steps.filter.outputs.python }}
       javascript: ${{ steps.filter.outputs.javascript }}
       r: ${{ steps.filter.outputs.r }}
+      docs: ${{ steps.filter.outputs.docs }}
+      docker: ${{ steps.filter.outputs.docker }}
+      notebooks: ${{ steps.filter.outputs.notebooks }}
 
     steps:
       - name: Checkout repository
@@ -34,7 +37,7 @@ jobs:
 
       - name: Detect changed paths
         id: filter
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.2
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v3.0.2
         with:
           filters: |
             policy:
@@ -70,10 +73,12 @@ jobs:
               - "setup.py"
               - "interfaces/python/**"
               - "examples/python/**"
+              - "examples/notebooks/**"
               - "examples/networks/**"
               - "test/python/**"
               - "scripts/build_config.py"
               - "scripts/generate_python_swig.py"
+              - "scripts/notebook_manifest.py"
               - ".github/actions/setup-python-build/action.yml"
               - ".github/workflows/_python-package.yml"
             javascript:
@@ -103,6 +108,42 @@ jobs:
               - "scripts/stage_r_package.py"
               - ".github/workflows/ci.yml"
               - ".github/workflows/_r-package.yml"
+            docs:
+              - "README.rst"
+              - "BUILD.md"
+              - "Makefile"
+              - "mk/**"
+              - "pyproject.toml"
+              - "setup.py"
+              - "examples/notebooks/**"
+              - "scripts/build_config.py"
+              - "scripts/notebook_manifest.py"
+              - "interfaces/python/**"
+              - "src/**"
+              - ".github/actions/setup-python-build/action.yml"
+            docker:
+              - "docker/**"
+              - "docker-compose.yml"
+              - ".dockerignore"
+              - "Makefile"
+              - "mk/**"
+              - "pyproject.toml"
+              - "setup.py"
+              - "examples/notebooks/**"
+              - "src/**"
+              - "interfaces/python/**"
+              - "scripts/build_config.py"
+              - "README.rst"
+            notebooks:
+              - "Makefile"
+              - "mk/**"
+              - "pyproject.toml"
+              - "setup.py"
+              - "examples/notebooks/**"
+              - "scripts/notebook_manifest.py"
+              - ".github/actions/setup-python-build/action.yml"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/notebooks.yml"
 
   policy:
     needs: changes
@@ -198,6 +239,32 @@ jobs:
       run-tests: true
       build-release-artifacts: false
 
+  notebooks:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.python == 'true' || needs.changes.outputs.notebooks == 'true'
+    name: Tutorial notebook smoke tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Python
+        uses: ./.github/actions/setup-python-build
+        with:
+          python-version: "3.14"
+          install-build-tooling: "true"
+
+      - name: Install package and notebook dependencies
+        run: |
+          make build-python
+          make dev-python-install
+          make dev-python-notebooks-install
+
+      - name: Run notebook smoke tests
+        run: make test-python-notebooks-smoke
+
   javascript:
     needs: changes
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.javascript == 'true'
@@ -214,9 +281,38 @@ jobs:
       run-tests: true
       build-release-artifacts: false
 
+  docs:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Python
+        uses: ./.github/actions/setup-python-build
+        with:
+          python-version: "3.14"
+
+      - name: Build docs
+        run: make build-docs
+
+  docker:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.docker == 'true'
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Build and smoke-test supported Docker images
+        run: make test-docker-supported
+
   ci-summary:
     name: CI Summary
-    needs: [changes, policy, cxx-format, sanitizers, clang-tidy, native, python, javascript, r]
+    needs: [changes, policy, cxx-format, sanitizers, clang-tidy, native, python, notebooks, javascript, r]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 10

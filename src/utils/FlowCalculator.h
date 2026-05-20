@@ -10,7 +10,8 @@
 #ifndef FLOW_CALCULATOR_H_
 #define FLOW_CALCULATOR_H_
 
-#include <map>
+#include <unordered_map>
+#include <string>
 #include <vector>
 
 namespace infomap {
@@ -47,6 +48,9 @@ private:
 
   void finalize(StateNetwork&, const Config&, bool) noexcept;
 
+  void addFlowNote(const std::string& note);
+  void recordPageRank(unsigned int iterations, double error, bool converged) noexcept;
+
   unsigned int numNodes;
   unsigned int nonDanglingStartIndex = 0;
   unsigned int bipartiteStartIndex = 0;
@@ -56,7 +60,7 @@ private:
   double sumWeightedDegree = 0;
   double sumTeleFlow = 0;
 
-  std::map<unsigned int, unsigned int> nodeIndexMap;
+  std::unordered_map<unsigned int, unsigned int> nodeIndexMap;
   std::vector<double> nodeFlow;
   std::vector<double> nodeTeleportWeights;
   std::vector<double> nodeTeleportFlow;
@@ -66,6 +70,15 @@ private:
   std::vector<unsigned int> nodeOutDegree;
   using FlowLink = detail::FlowLink;
   std::vector<FlowLink> flowLinks;
+
+  bool m_prettyOutput = false;
+  std::string m_flowMethod;
+  std::string m_teleportation;
+  std::vector<std::string> m_flowNotes;
+  unsigned int m_pageRankIterations = 0;
+  double m_pageRankError = 0.0;
+  bool m_havePageRank = false;
+  bool m_pageRankConverged = true;
 };
 
 inline void calculateFlow(StateNetwork& network, const Config& config)

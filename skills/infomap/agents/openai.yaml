@@ -1,0 +1,4 @@
+interface:
+  display_name: "Infomap"
+  short_description: "Use Infomap for reproducible research workflows"
+  default_prompt: "Use $infomap to plan or implement a reproducible Infomap analysis with CLI, Python, R, or notebooks."

@@ -147,6 +147,7 @@ public:
   std::pair<std::map<unsigned int, std::string>::iterator, bool> addName(unsigned int id, const std::string&);
   bool addLink(unsigned int sourceId, unsigned int targetId, double weight = 1.0);
   bool addLink(unsigned int sourceId, unsigned int targetId, unsigned long weight);
+  void addLinks(const std::vector<unsigned int>& sourceIds, const std::vector<unsigned int>& targetIds, const std::vector<double>& weights);
 
   /**
    * Remove link

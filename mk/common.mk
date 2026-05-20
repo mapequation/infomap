@@ -85,11 +85,12 @@ help:
 		"  build-python-swig     Regenerate the tracked SWIG wrapper outputs for Python maintainers." \
 		"  build-r               Build the infomap R source tarball into dist/R/." \
 		"  build-r-binary        Build a platform-native R binary into dist/R/." \
+		"  build-r-binary-from-tarball Build a platform-native R binary from dist/R/." \
 		"  build-r-swig          Regenerate the tracked SWIG wrapper outputs for R maintainers." \
 		"  build-binding-options Regenerate Python, R, and TypeScript option APIs from C++ metadata." \
 		"  build-js-metadata     Refresh the tracked JS parameters/changelog metadata." \
 		"  build-js              Build the JS worker bundle and npm package assets from tracked metadata." \
-		"  build-docs            Refresh the committed Python docs site in docs/." \
+		"  build-docs            Build the Python docs site into docs/ (untracked output)." \
 		"" \
 		"Test" \
 		"  test-cpp-stream-policy  Verify runtime C++ does not use direct global std streams outside approved files." \
@@ -98,12 +99,13 @@ help:
 		"  test-python-unit      Run pytest for test/python." \
 		"  test-python-doctest   Run Python doctests and ruff checks for the installed package." \
 		"  test-python-examples  Run the Python example smoke tests." \
+		"  test-python-notebooks-smoke  Run PR-safe tutorial notebook smoke tests with nbmake." \
+		"  test-python-notebooks-full   Run all CI-maintained tutorial notebooks with nbmake." \
 		"  test-python-swig-freshness  Verify tracked SWIG outputs are up to date." \
 		"  test-r                Run R CMD check --as-cran on the staged infomap R package." \
 		"  test-r-examples       Run the R example smoke tests." \
 		"  test-r-swig-freshness Verify tracked R SWIG outputs are up to date." \
 		"  test-binding-options-freshness Verify tracked binding option APIs are current." \
-		"  test-docs             Rebuild docs in a temp dir and verify committed docs/ is fresh." \
 		"  test-js-metadata      Regenerate JS metadata in a temp dir and verify tracked files are current." \
 		"  test-js               Run JS lint/typecheck/unit/browser/package verification for the built npm package." \
 		"  test-fast             Run the fast native + Python feedback suite." \
@@ -121,6 +123,7 @@ help:
 		"  dev-cpp-check         Run the fast C++ developer feedback suite." \
 		"  dev-bootstrap         Install Python dev dependencies and run npm ci." \
 		"  dev-python-install    Install the built Python package in editable mode." \
+		"  dev-python-notebooks-install Install notebook execution dependencies." \
 		"  clean                 Remove native, Python, and JS build outputs." \
 		"  clean-native          Remove native build artifacts, libraries, and CMake build dirs." \
 		"  clean-python          Remove Python build outputs." \
@@ -128,8 +131,7 @@ help:
 		"  clean-js              Remove JS build and pack outputs." \
 		"" \
 		"Docs / Release" \
-		"  build-docs            Refresh the committed Python docs site after installing the local package." \
-		"  test-docs             Verify committed docs/ matches a fresh Sphinx build." \
+		"  build-docs            Build the Python docs site into docs/ after installing the local package." \
 		"  release-python-dist   Build local sdist and wheel artifacts from the repo root." \
 		"  release-python-testpypi  Publish the built distributions to TestPyPI." \
 		"  release-python-pypi      Publish the built distributions to PyPI." \
@@ -146,10 +148,7 @@ help:
 		"  make build-binding-options test-binding-options-freshness" \
 		"  make build-js-metadata test-js-metadata" \
 		"  make build-js test-js" \
-		"  make build-docs" \
-		"  make test-docs" \
-		"" \
-		"Legacy aliases like make python, make js-worker, make cpp-test, and make py-test still work."
+		"  make build-docs"
 
 build-binding-options: build-native
 	@$(PYTHON_FOR_BUILD_CONFIG) $(BINDING_OPTIONS_SCRIPT) --infomap-bin ./Infomap --output-root .

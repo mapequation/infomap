@@ -94,6 +94,23 @@ TEST_CASE("Infomap can rerun the same multi-trial instance safely [fast][core][l
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
 }
 
+TEST_CASE("Multi-trial run reports the best trial codelength [fast][core][lifecycle]")
+{
+  InfomapWrapper im("--silent --seed 1 --num-trials 5");
+  im.readInputData(infomap::test::repoPath("examples/networks/ninetriangles.net"));
+
+  im.run();
+
+  infomap::test::checkRunSanity(im);
+  const auto& codelengths = im.codelengths();
+  REQUIRE(codelengths.size() == 5);
+
+  auto bestIt = std::min_element(codelengths.begin(), codelengths.end());
+  REQUIRE(bestIt != codelengths.end());
+
+  CHECK(im.codelength() == doctest::Approx(*bestIt));
+}
+
 TEST_CASE("Infomap reruns ninetriangles deterministically on the same instance [fast][core][lifecycle][crash]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());

@@ -1,14 +1,15 @@
-|ci| |docs| |docker|
+|ci|
 
 Infomap
 =======
 
 Infomap is a network clustering algorithm based on the `Map equation`_.
 This repository contains the native CLI, the Python package, the R package,
-the JavaScript web worker, the Docker images, and the source for the
-published Python documentation.
+the JavaScript web worker, the Docker images, the tutorial notebooks, and the
+source for the published Python documentation.
 
-Start with `mapequation.org/infomap/`_ for the user guide and
+Start with `mapequation.org/infomap/`_ for the user guide, the
+`Infomap Python API`_ for Python examples and tutorial notebooks, and
 `CHANGELOG.md`_ for release notes.
 
 For contributing, security reporting, and maintainer workflows, see
@@ -18,14 +19,6 @@ For contributing, security reporting, and maintainer workflows, see
 .. |ci| image:: https://github.com/mapequation/infomap/actions/workflows/ci.yml/badge.svg
    :target: https://github.com/mapequation/infomap/actions/workflows/ci.yml
    :alt: CI
-
-.. |docs| image:: https://github.com/mapequation/infomap/actions/workflows/docs.yml/badge.svg
-   :target: https://github.com/mapequation/infomap/actions/workflows/docs.yml
-   :alt: Docs
-
-.. |docker| image:: https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml/badge.svg
-   :target: https://github.com/mapequation/infomap/actions/workflows/docker-smoke.yml
-   :alt: Docker smoke
 
 .. _Map equation: https://www.mapequation.org/publications.html#Rosvall-Axelsson-Bergstrom-2009-Map-equation
 .. _`mapequation.org/infomap/`: https://www.mapequation.org/infomap/
@@ -48,6 +41,14 @@ Install from `PyPI`_:
 
     pip install infomap
 
+Install optional integrations for common Python graph and analysis workflows:
+
+.. code-block:: bash
+
+    pip install "infomap[networkx]"
+    pip install "infomap[igraph]"
+    pip install "infomap[pandas]"
+
 Upgrades use the usual `pip` flow:
 
 .. code-block:: bash
@@ -61,18 +62,35 @@ Quick start with Python:
 
 .. code-block:: python
 
+    import networkx as nx
+    import infomap
+
+    graph = nx.karate_club_graph()
+    communities = infomap.find_communities(
+        graph,
+        seed=123,
+        num_trials=20,
+    )
+
+    print(communities)
+
+For direct control over Infomap-specific options and result access:
+
+.. code-block:: python
+
     from infomap import Infomap, InfomapOptions
 
-    options = InfomapOptions(two_level=True, silent=True, num_trials=20)
+    options = InfomapOptions(two_level=True, silent=True, num_trials=20, seed=123)
     im = Infomap.from_options(options)
     im.add_link(0, 1)
     im.add_link(1, 2)
     im.run()
 
     print(im.num_top_modules, im.codelength)
+    print(im.to_dataframe(columns=["node_id", "module_id", "flow"], index="node_id"))
 
 .. _PyPI: https://pypi.org/project/infomap/
-.. _`Infomap Python API`: https://mapequation.github.io/infomap/python/
+.. _`Infomap Python API`: https://mapequation.github.io/infomap-python-docs/
 
 R package
 ^^^^^^^^^
@@ -130,6 +148,9 @@ Upgrade the CLI with the normal Homebrew flow:
 
     brew upgrade infomap
 
+The Homebrew formula installs Bash and Zsh completion files into Homebrew's
+standard completion directories.
+
 JavaScript package
 ^^^^^^^^^^^^^^^^^^
 
@@ -165,8 +186,19 @@ Start the notebook image with:
 
 .. code-block:: bash
 
-    docker run \
-        -v "$(pwd)":/home/jovyan/work \
+    docker run --rm \
+        -p 8888:8888 \
+        ghcr.io/mapequation/infomap:notebook \
+        start.sh jupyter lab
+
+The notebook image includes the survey companion notebooks from
+``examples/notebooks`` and opens in that workspace by default. To keep local
+copies or outputs, mount a host directory as a separate workspace path:
+
+.. code-block:: bash
+
+    docker run --rm \
+        -v "$(pwd)":/home/jovyan/work/local \
         -p 8888:8888 \
         ghcr.io/mapequation/infomap:notebook \
         start.sh jupyter lab
@@ -212,6 +244,20 @@ Show the available CLI options with:
 
     ./Infomap --help
 
+Install shell completion scripts manually with:
+
+.. code-block:: bash
+
+    mkdir -p ~/.zfunc
+    ./Infomap --completion zsh > ~/.zfunc/_Infomap
+
+    mkdir -p ~/.local/share/bash-completion/completions
+    ./Infomap --completion bash > ~/.local/share/bash-completion/completions/infomap
+
+For Zsh, make sure ``~/.zfunc`` is in ``fpath`` and ``compinit`` is loaded from
+``~/.zshrc``. For Bash, make sure ``bash-completion`` is sourced from
+``~/.bashrc``.
+
 See ``BUILD.md`` for platform-specific maintainer build details.
 
 Maintainers should use:
@@ -222,6 +268,12 @@ Maintainers should use:
 - ``AGENTS.md`` for repo-local maintenance guidance
 - ``CONTRIBUTING.md`` for pull request and contributor guidance
 - ``SECURITY.md`` for vulnerability reporting
+
+Agent skill
+-----------
+
+This repository includes an Infomap agent skill in ``skills/infomap/`` for
+reproducible CLI, Python, R, and notebook research workflows.
 
 Feedback
 --------

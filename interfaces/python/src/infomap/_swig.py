@@ -146,6 +146,8 @@ class Config(object):
     fastHierarchicalSolution = property(_infomap.Config_fastHierarchicalSolution_get, _infomap.Config_fastHierarchicalSolution_set)
     preferModularSolution = property(_infomap.Config_preferModularSolution_get, _infomap.Config_preferModularSolution_set)
     innerParallelization = property(_infomap.Config_innerParallelization_get, _infomap.Config_innerParallelization_set)
+    numRandomMoves = property(_infomap.Config_numRandomMoves_get, _infomap.Config_numRandomMoves_set)
+    maxDegreeForRandomMoves = property(_infomap.Config_maxDegreeForRandomMoves_get, _infomap.Config_maxDegreeForRandomMoves_set)
     outDirectory = property(_infomap.Config_outDirectory_get, _infomap.Config_outDirectory_set)
     outName = property(_infomap.Config_outName_get, _infomap.Config_outName_set)
     outputFormats = property(_infomap.Config_outputFormats_get, _infomap.Config_outputFormats_set)
@@ -164,6 +166,7 @@ class Config(object):
     verbosity = property(_infomap.Config_verbosity_get, _infomap.Config_verbosity_set)
     verboseNumberPrecision = property(_infomap.Config_verboseNumberPrecision_get, _infomap.Config_verboseNumberPrecision_set)
     silent = property(_infomap.Config_silent_get, _infomap.Config_silent_set)
+    prettyOutput = property(_infomap.Config_prettyOutput_get, _infomap.Config_prettyOutput_set)
     hideBipartiteNodes = property(_infomap.Config_hideBipartiteNodes_get, _infomap.Config_hideBipartiteNodes_set)
     startDate = property(_infomap.Config_startDate_get, _infomap.Config_startDate_set)
     version = property(_infomap.Config_version_get, _infomap.Config_version_set)
@@ -1967,6 +1970,111 @@ class InfomapParentIterator(object):
 
 # Register InfomapParentIterator in _infomap:
 _infomap.InfomapParentIterator_swigregister(InfomapParentIterator)
+class vector_double(object):
+    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
+    __repr__ = _swig_repr
+
+    def iterator(self):
+        return _infomap.vector_double_iterator(self)
+    def __iter__(self):
+        return self.iterator()
+
+    def __nonzero__(self):
+        return _infomap.vector_double___nonzero__(self)
+
+    def __bool__(self):
+        return _infomap.vector_double___bool__(self)
+
+    def __len__(self):
+        return _infomap.vector_double___len__(self)
+
+    def __getslice__(self, i, j):
+        return _infomap.vector_double___getslice__(self, i, j)
+
+    def __setslice__(self, *args):
+        return _infomap.vector_double___setslice__(self, *args)
+
+    def __delslice__(self, i, j):
+        return _infomap.vector_double___delslice__(self, i, j)
+
+    def __delitem__(self, *args):
+        return _infomap.vector_double___delitem__(self, *args)
+
+    def __getitem__(self, *args):
+        return _infomap.vector_double___getitem__(self, *args)
+
+    def __setitem__(self, *args):
+        return _infomap.vector_double___setitem__(self, *args)
+
+    def pop(self):
+        return _infomap.vector_double_pop(self)
+
+    def append(self, x):
+        return _infomap.vector_double_append(self, x)
+
+    def empty(self):
+        return _infomap.vector_double_empty(self)
+
+    def size(self):
+        return _infomap.vector_double_size(self)
+
+    def swap(self, v):
+        return _infomap.vector_double_swap(self, v)
+
+    def begin(self):
+        return _infomap.vector_double_begin(self)
+
+    def end(self):
+        return _infomap.vector_double_end(self)
+
+    def rbegin(self):
+        return _infomap.vector_double_rbegin(self)
+
+    def rend(self):
+        return _infomap.vector_double_rend(self)
+
+    def clear(self):
+        return _infomap.vector_double_clear(self)
+
+    def get_allocator(self):
+        return _infomap.vector_double_get_allocator(self)
+
+    def pop_back(self):
+        return _infomap.vector_double_pop_back(self)
+
+    def erase(self, *args):
+        return _infomap.vector_double_erase(self, *args)
+
+    def __init__(self, *args):
+        _infomap.vector_double_swiginit(self, _infomap.new_vector_double(*args))
+
+    def push_back(self, x):
+        return _infomap.vector_double_push_back(self, x)
+
+    def front(self):
+        return _infomap.vector_double_front(self)
+
+    def back(self):
+        return _infomap.vector_double_back(self)
+
+    def assign(self, n, x):
+        return _infomap.vector_double_assign(self, n, x)
+
+    def resize(self, *args):
+        return _infomap.vector_double_resize(self, *args)
+
+    def insert(self, *args):
+        return _infomap.vector_double_insert(self, *args)
+
+    def reserve(self, n):
+        return _infomap.vector_double_reserve(self, n)
+
+    def capacity(self):
+        return _infomap.vector_double_capacity(self)
+    __swig_destroy__ = _infomap.delete_vector_double
+
+# Register vector_double in _infomap:
+_infomap.vector_double_swigregister(vector_double)
 class StateNetwork(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
 
@@ -1992,6 +2100,9 @@ class StateNetwork(object):
 
     def addLink(self, *args):
         return _infomap.StateNetwork_addLink(self, *args)
+
+    def addLinks(self, sourceIds, targetIds, weights):
+        return _infomap.StateNetwork_addLinks(self, sourceIds, targetIds, weights)
 
     def removeLink(self, sourceId, targetId):
         return _infomap.StateNetwork_removeLink(self, sourceId, targetId)
@@ -2096,6 +2207,9 @@ class Network(StateNetwork):
         _infomap.Network_swiginit(self, _infomap.new_Network(*args))
     __swig_destroy__ = _infomap.delete_Network
 
+    def setConfig(self, config):
+        return _infomap.Network_setConfig(self, config)
+
     def clear(self):
         return _infomap.Network_clear(self)
 
@@ -2150,11 +2264,20 @@ class Network(StateNetwork):
     def addMultilayerLink(self, *args):
         return _infomap.Network_addMultilayerLink(self, *args)
 
+    def addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights):
+        return _infomap.Network_addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights)
+
     def addMultilayerIntraLink(self, layer, n1, n2, weight):
         return _infomap.Network_addMultilayerIntraLink(self, layer, n1, n2, weight)
 
+    def addMultilayerIntraLinks(self, layerIds, sourceNodeIds, targetNodeIds, weights):
+        return _infomap.Network_addMultilayerIntraLinks(self, layerIds, sourceNodeIds, targetNodeIds, weights)
+
     def addMultilayerInterLink(self, layer1, n, layer2, interWeight):
         return _infomap.Network_addMultilayerInterLink(self, layer1, n, layer2, interWeight)
+
+    def addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights):
+        return _infomap.Network_addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights)
 
     def addMetaData(self, *args):
         return _infomap.Network_addMetaData(self, *args)
@@ -2345,111 +2468,6 @@ class map_uint_uint(object):
 
 # Register map_uint_uint in _infomap:
 _infomap.map_uint_uint_swigregister(map_uint_uint)
-class vector_double(object):
-    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
-    __repr__ = _swig_repr
-
-    def iterator(self):
-        return _infomap.vector_double_iterator(self)
-    def __iter__(self):
-        return self.iterator()
-
-    def __nonzero__(self):
-        return _infomap.vector_double___nonzero__(self)
-
-    def __bool__(self):
-        return _infomap.vector_double___bool__(self)
-
-    def __len__(self):
-        return _infomap.vector_double___len__(self)
-
-    def __getslice__(self, i, j):
-        return _infomap.vector_double___getslice__(self, i, j)
-
-    def __setslice__(self, *args):
-        return _infomap.vector_double___setslice__(self, *args)
-
-    def __delslice__(self, i, j):
-        return _infomap.vector_double___delslice__(self, i, j)
-
-    def __delitem__(self, *args):
-        return _infomap.vector_double___delitem__(self, *args)
-
-    def __getitem__(self, *args):
-        return _infomap.vector_double___getitem__(self, *args)
-
-    def __setitem__(self, *args):
-        return _infomap.vector_double___setitem__(self, *args)
-
-    def pop(self):
-        return _infomap.vector_double_pop(self)
-
-    def append(self, x):
-        return _infomap.vector_double_append(self, x)
-
-    def empty(self):
-        return _infomap.vector_double_empty(self)
-
-    def size(self):
-        return _infomap.vector_double_size(self)
-
-    def swap(self, v):
-        return _infomap.vector_double_swap(self, v)
-
-    def begin(self):
-        return _infomap.vector_double_begin(self)
-
-    def end(self):
-        return _infomap.vector_double_end(self)
-
-    def rbegin(self):
-        return _infomap.vector_double_rbegin(self)
-
-    def rend(self):
-        return _infomap.vector_double_rend(self)
-
-    def clear(self):
-        return _infomap.vector_double_clear(self)
-
-    def get_allocator(self):
-        return _infomap.vector_double_get_allocator(self)
-
-    def pop_back(self):
-        return _infomap.vector_double_pop_back(self)
-
-    def erase(self, *args):
-        return _infomap.vector_double_erase(self, *args)
-
-    def __init__(self, *args):
-        _infomap.vector_double_swiginit(self, _infomap.new_vector_double(*args))
-
-    def push_back(self, x):
-        return _infomap.vector_double_push_back(self, x)
-
-    def front(self):
-        return _infomap.vector_double_front(self)
-
-    def back(self):
-        return _infomap.vector_double_back(self)
-
-    def assign(self, n, x):
-        return _infomap.vector_double_assign(self, n, x)
-
-    def resize(self, *args):
-        return _infomap.vector_double_resize(self, *args)
-
-    def insert(self, *args):
-        return _infomap.vector_double_insert(self, *args)
-
-    def reserve(self, n):
-        return _infomap.vector_double_reserve(self, n)
-
-    def capacity(self):
-        return _infomap.vector_double_capacity(self)
-    __swig_destroy__ = _infomap.delete_vector_double
-
-# Register vector_double in _infomap:
-_infomap.vector_double_swigregister(vector_double)
 class InfomapConfigInfomapBase(Config):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
@@ -2645,11 +2663,14 @@ class InfomapBase(InfomapConfigInfomapBase):
     def writeClu(self, *args):
         return _infomap.InfomapBase_writeClu(self, *args)
 
+    def elapsedTime(self):
+        return _infomap.InfomapBase_elapsedTime(self)
+
 # Register InfomapBase in _infomap:
 _infomap.InfomapBase_swigregister(InfomapBase)
 
-def printPerLevelCodelength(parent, out):
-    return _infomap.printPerLevelCodelength(parent, out)
+def printPerLevelCodelength(parent, out, prettyOutput=False):
+    return _infomap.printPerLevelCodelength(parent, out, prettyOutput)
 
 def aggregatePerLevelCodelength(parent, perLevelStat, level=0):
     return _infomap.aggregatePerLevelCodelength(parent, perLevelStat, level)
@@ -3047,6 +3068,9 @@ class map_pair_uint_uint_double(object):
 
 # Register map_pair_uint_uint_double in _infomap:
 _infomap.map_pair_uint_uint_double_swigregister(map_pair_uint_uint_double)
+
+def run(flags):
+    return _infomap.run(flags)
 class InfomapWrapper(InfomapBase):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
@@ -3079,14 +3103,26 @@ class InfomapWrapper(InfomapBase):
     def addLink(self, *args):
         return _infomap.InfomapWrapper_addLink(self, *args)
 
+    def addLinks(self, sourceIds, targetIds, weights):
+        return _infomap.InfomapWrapper_addLinks(self, sourceIds, targetIds, weights)
+
     def addMultilayerLink(self, layer1, n1, layer2, n2, weight=1.0):
         return _infomap.InfomapWrapper_addMultilayerLink(self, layer1, n1, layer2, n2, weight)
+
+    def addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights):
+        return _infomap.InfomapWrapper_addMultilayerLinks(self, sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, weights)
 
     def addMultilayerIntraLink(self, layer, n1, n2, weight):
         return _infomap.InfomapWrapper_addMultilayerIntraLink(self, layer, n1, n2, weight)
 
+    def addMultilayerIntraLinks(self, layerIds, sourceNodeIds, targetNodeIds, weights):
+        return _infomap.InfomapWrapper_addMultilayerIntraLinks(self, layerIds, sourceNodeIds, targetNodeIds, weights)
+
     def addMultilayerInterLink(self, layer1, n, layer2, interWeight):
         return _infomap.InfomapWrapper_addMultilayerInterLink(self, layer1, n, layer2, interWeight)
+
+    def addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights):
+        return _infomap.InfomapWrapper_addMultilayerInterLinks(self, sourceLayerIds, nodeIds, targetLayerIds, weights)
 
     def setBipartiteStartId(self, startId):
         return _infomap.InfomapWrapper_setBipartiteStartId(self, startId)
@@ -3114,6 +3150,18 @@ class InfomapWrapper(InfomapBase):
 
     def run(self, *args):
         return _infomap.InfomapWrapper_run(self, *args)
+
+    def addLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize):
+        return _infomap.InfomapWrapper_addLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize)
+
+    def addMultilayerLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize):
+        return _infomap.InfomapWrapper_addMultilayerLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize)
+
+    def addMultilayerIntraLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize):
+        return _infomap.InfomapWrapper_addMultilayerIntraLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize)
+
+    def addMultilayerInterLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize):
+        return _infomap.InfomapWrapper_addMultilayerInterLinksFromNumpy2D(self, links, numRows, numColumns, dtypeKind, itemSize)
 
     def getModules(self, level=1, states=False):
         return dict(_infomap.InfomapWrapper_getModules(self, level, states))

@@ -11,17 +11,89 @@
 #include "../io/SafeFile.h"
 #include "../utils/FileURI.h"
 #include "../utils/Log.h"
+#include "../utils/PrettyOutput.h"
 
 #include <cmath>
 #include <algorithm>
+#include <cstdlib>
+#include <limits>
+#include <stdexcept>
 
 namespace infomap {
 
 using std::make_pair;
 
+namespace {
+
+inline bool isInputWhitespace(char c)
+{
+  return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\v';
+}
+
+inline bool isDigit(char c)
+{
+  return c >= '0' && c <= '9';
+}
+
+void skipWhitespace(const char*& p)
+{
+  while (isInputWhitespace(*p)) {
+    ++p;
+  }
+}
+
+bool parseUnsigned(const char*& p, unsigned int& value)
+{
+  skipWhitespace(p);
+  if (*p == '+') {
+    ++p;
+  }
+  if (!isDigit(*p)) {
+    return false;
+  }
+
+  unsigned long long result = 0;
+  const unsigned long long maxValue = std::numeric_limits<unsigned int>::max();
+  do {
+    result = result * 10 + static_cast<unsigned long long>(*p - '0');
+    if (result > maxValue) {
+      return false;
+    }
+    ++p;
+  } while (isDigit(*p));
+
+  value = static_cast<unsigned int>(result);
+  return true;
+}
+
+bool parseOptionalDouble(const char*& p, double& value)
+{
+  skipWhitespace(p);
+  if (*p == '\0' || *p == '#') {
+    return false;
+  }
+
+  char* end = nullptr;
+  const double parsed = std::strtod(p, &end);
+  if (end == p) {
+    return false;
+  }
+
+  value = parsed;
+  p = end;
+  return true;
+}
+
+} // namespace
+
 void Network::init()
 {
   initValidHeadings();
+  updateDerivedConfig();
+}
+
+void Network::updateDerivedConfig()
+{
   m_multilayerStateIdBitShift = m_config.matchableMultilayerIds == 0
       ? 0
       : static_cast<unsigned int>(std::ceil(std::log2(m_config.matchableMultilayerIds)));
@@ -459,20 +531,19 @@ std::string Network::ignoreSection(std::ifstream& file, const std::string& headi
 
 void Network::parseStateNode(const std::string& line, StateNetwork::StateNode& stateNode)
 {
-  m_extractor.clear();
-  m_extractor.str(line);
-  if (!(m_extractor >> stateNode.id >> stateNode.physicalId))
+  const char* p = line.c_str();
+  if (!parseUnsigned(p, stateNode.id) || !parseUnsigned(p, stateNode.physicalId))
     throw std::runtime_error(io::Str() << "Can't parse any state node from line '" << line << "'");
 
   // Optional name enclosed in double quotes
-  auto nameStart = line.find_first_of('\"', m_extractor.tellg());
+  auto nameStart = line.find_first_of('\"', static_cast<std::size_t>(p - line.c_str()));
   auto nameEnd = line.find_last_of('\"');
   if (nameStart < nameEnd) {
     stateNode.name = std::string(line.begin() + nameStart + 1, line.begin() + nameEnd);
-    m_extractor.seekg(nameEnd + 1);
+    p = line.c_str() + nameEnd + 1;
   }
   // Optional weight, default to 1.0
-  if ((m_extractor >> stateNode.weight)) {
+  if (parseOptionalDouble(p, stateNode.weight)) {
     m_haveStateNodeWeights = true;
     if (stateNode.weight < 0)
       throw std::runtime_error(io::Str() << "Negative state node weight (" << stateNode.weight << ") from line '" << line << "'");
@@ -481,38 +552,42 @@ void Network::parseStateNode(const std::string& line, StateNetwork::StateNode& s
 
 void Network::parseLink(const std::string& line, unsigned int& n1, unsigned int& n2, double& weight)
 {
-  m_extractor.clear();
-  m_extractor.str(line);
-  if (!(m_extractor >> n1 >> n2))
+  const char* p = line.c_str();
+  if (!parseUnsigned(p, n1) || !parseUnsigned(p, n2))
     throw std::runtime_error(io::Str() << "Can't parse link data from line '" << line << "'");
-  (m_extractor >> weight) || (weight = 1.0);
+  if (!parseOptionalDouble(p, weight)) {
+    weight = 1.0;
+  }
 }
 
 void Network::parseMultilayerLink(const std::string& line, unsigned int& layer1, unsigned int& n1, unsigned int& layer2, unsigned int& n2, double& weight)
 {
-  m_extractor.clear();
-  m_extractor.str(line);
-  if (!(m_extractor >> layer1 >> n1 >> layer2 >> n2))
+  const char* p = line.c_str();
+  if (!parseUnsigned(p, layer1) || !parseUnsigned(p, n1) || !parseUnsigned(p, layer2) || !parseUnsigned(p, n2))
     throw std::runtime_error(io::Str() << "Can't parse multilayer link data from line '" << line << "'");
-  (m_extractor >> weight) || (weight = 1.0);
+  if (!parseOptionalDouble(p, weight)) {
+    weight = 1.0;
+  }
 }
 
 void Network::parseMultilayerIntraLink(const std::string& line, unsigned int& layer, unsigned int& n1, unsigned int& n2, double& weight)
 {
-  m_extractor.clear();
-  m_extractor.str(line);
-  if (!(m_extractor >> layer >> n1 >> n2))
+  const char* p = line.c_str();
+  if (!parseUnsigned(p, layer) || !parseUnsigned(p, n1) || !parseUnsigned(p, n2))
     throw std::runtime_error(io::Str() << "Can't parse intra-multilayer link data from line '" << line << "'");
-  (m_extractor >> weight) || (weight = 1.0);
+  if (!parseOptionalDouble(p, weight)) {
+    weight = 1.0;
+  }
 }
 
 void Network::parseMultilayerInterLink(const std::string& line, unsigned int& layer1, unsigned int& n, unsigned int& layer2, double& weight)
 {
-  m_extractor.clear();
-  m_extractor.str(line);
-  if (!(m_extractor >> layer1 >> n >> layer2))
+  const char* p = line.c_str();
+  if (!parseUnsigned(p, layer1) || !parseUnsigned(p, n) || !parseUnsigned(p, layer2))
     throw std::runtime_error(io::Str() << "Can't parse inter-multilayer link data from line '" << line << "'");
-  (m_extractor >> weight) || (weight = 1.0);
+  if (!parseOptionalDouble(p, weight)) {
+    weight = 1.0;
+  }
   if (layer1 == layer2)
     throw std::runtime_error(io::Str() << "Inter-layer link from line '" << line << "' doesn't go between different layers.");
   // TODO: Same as intra-layer self-link?
@@ -520,6 +595,35 @@ void Network::parseMultilayerInterLink(const std::string& line, unsigned int& la
 
 void Network::printSummary()
 {
+  if (m_config.prettyOutput) {
+    PrettyOutput pretty(true);
+    pretty.section("Network");
+    pretty.metric("Input", m_config.networkFile);
+    pretty.metric("Direction", m_config.isUndirectedFlow() ? "undirected" : "directed");
+    if (haveMemoryInput()) {
+      pretty.metric("Type", isMultilayerNetwork() ? "higher-order multilayer" : "higher-order state");
+      pretty.metric("State nodes", io::Str() << numNodes());
+      pretty.metric("Physical nodes", io::Str() << numPhysicalNodes());
+    } else if (m_bipartiteStartId > 0) {
+      pretty.metric("Type", "bipartite first-order");
+      pretty.metric("Bipartite start id", io::Str() << m_bipartiteStartId);
+      pretty.metric("Nodes", io::Str() << numNodes());
+    } else {
+      pretty.metric("Type", "first-order");
+      pretty.metric("Nodes", io::Str() << numNodes());
+    }
+    if (isMultilayerNetwork()) {
+      pretty.metric("Layers", io::Str() << m_layers.size());
+      pretty.metric("Layer links", io::Str() << (m_numIntraLayerLinks + m_numInterLayerLinks) << " (" << m_numIntraLayerLinks << " intra, " << m_numInterLayerLinks << " inter)");
+    }
+    pretty.metric("Links", io::Str() << numLinks());
+    pretty.metric("Total weight", io::Str() << m_totalLinkWeightAdded);
+    if (m_numLinksIgnoredByWeightThreshold > 0) {
+      pretty.metric("Ignored by threshold", io::Str() << m_numLinksIgnoredByWeightThreshold << " links, weight " << m_totalLinkWeightIgnored << " (" << PrettyOutput::percent(m_totalLinkWeightIgnored / (m_totalLinkWeightIgnored + m_totalLinkWeightAdded) * 100) << ")");
+    }
+    return;
+  }
+
   Log() << "-------------------------------------\n";
   if (haveMemoryInput()) {
     Log() << "  -> " << numNodes() << " state nodes\n";
@@ -563,6 +667,24 @@ void Network::addMultilayerLink(unsigned int stateId1, unsigned int layer1, unsi
   }
 
   addLink(stateId1, stateId2, weight);
+}
+
+void Network::addMultilayerLinks(const std::vector<unsigned int>& sourceLayerIds,
+                                 const std::vector<unsigned int>& sourceNodeIds,
+                                 const std::vector<unsigned int>& targetLayerIds,
+                                 const std::vector<unsigned int>& targetNodeIds,
+                                 const std::vector<double>& weights)
+{
+  if (sourceLayerIds.size() != sourceNodeIds.size() ||
+      sourceLayerIds.size() != targetLayerIds.size() ||
+      sourceLayerIds.size() != targetNodeIds.size() ||
+      sourceLayerIds.size() != weights.size()) {
+    throw std::invalid_argument("sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, and weights must have the same length");
+  }
+
+  for (std::size_t i = 0; i < sourceLayerIds.size(); ++i) {
+    addMultilayerLink(sourceLayerIds[i], sourceNodeIds[i], targetLayerIds[i], targetNodeIds[i], weights[i]);
+  }
 }
 
 void Network::generateStateNetworkFromMultilayer()
@@ -1227,6 +1349,22 @@ void Network::addMultilayerIntraLink(unsigned int layer, unsigned int n1, unsign
   addPhysicalNode(n2);
 }
 
+void Network::addMultilayerIntraLinks(const std::vector<unsigned int>& layerIds,
+                                      const std::vector<unsigned int>& sourceNodeIds,
+                                      const std::vector<unsigned int>& targetNodeIds,
+                                      const std::vector<double>& weights)
+{
+  if (layerIds.size() != sourceNodeIds.size() ||
+      layerIds.size() != targetNodeIds.size() ||
+      layerIds.size() != weights.size()) {
+    throw std::invalid_argument("layerIds, sourceNodeIds, targetNodeIds, and weights must have the same length");
+  }
+
+  for (std::size_t i = 0; i < layerIds.size(); ++i) {
+    addMultilayerIntraLink(layerIds[i], sourceNodeIds[i], targetNodeIds[i], weights[i]);
+  }
+}
+
 void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsigned int layer2, double interWeight)
 {
   if (layer1 == layer2) {
@@ -1241,6 +1379,22 @@ void Network::addMultilayerInterLink(unsigned int layer1, unsigned int n, unsign
     ++m_numInterLayerLinks;
   }
   interLinks[layer2] += interWeight;
+}
+
+void Network::addMultilayerInterLinks(const std::vector<unsigned int>& sourceLayerIds,
+                                      const std::vector<unsigned int>& nodeIds,
+                                      const std::vector<unsigned int>& targetLayerIds,
+                                      const std::vector<double>& weights)
+{
+  if (sourceLayerIds.size() != nodeIds.size() ||
+      sourceLayerIds.size() != targetLayerIds.size() ||
+      sourceLayerIds.size() != weights.size()) {
+    throw std::invalid_argument("sourceLayerIds, nodeIds, targetLayerIds, and weights must have the same length");
+  }
+
+  for (std::size_t i = 0; i < sourceLayerIds.size(); ++i) {
+    addMultilayerInterLink(sourceLayerIds[i], nodeIds[i], targetLayerIds[i], weights[i]);
+  }
 }
 
 unsigned int Network::addMultilayerNode(unsigned int layerId, unsigned int physicalId, double weight)

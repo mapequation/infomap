@@ -19,6 +19,54 @@ test_that("Infomap clusters two triangles into two modules", {
   expect_named(modules, as.character(1:6))
 })
 
+test_that("add_links accepts matrix input through bulk path", {
+  im <- Infomap(silent = TRUE)
+  links <- matrix(
+    c(1, 2, 2,
+      2, 3, 1,
+      3, 1, 1),
+    ncol = 3L,
+    byrow = TRUE
+  )
+
+  im$add_links(links)
+  im$run()
+
+  expect_equal(im$num_links, 3L)
+  expect_equal(im$num_nodes, 3L)
+})
+
+test_that("add_links list input matches repeated add_link", {
+  links <- list(c(1, 2, 2), c(1, 3, 2), c(2, 3, 2), c(3, 4, 1),
+                c(4, 5, 3), c(4, 6, 3), c(5, 6, 3))
+
+  baseline <- Infomap(silent = TRUE, num_trials = 3, two_level = TRUE)
+  for (link in links) {
+    baseline$add_link(link[[1L]], link[[2L]], link[[3L]])
+  }
+  baseline$run()
+
+  im <- Infomap(silent = TRUE, num_trials = 3, two_level = TRUE)
+  im$add_links(links)
+  im$run()
+
+  expect_equal(im$num_links, baseline$num_links)
+  expect_equal(im$num_nodes, baseline$num_nodes)
+  expect_equal(im$codelength, baseline$codelength, tolerance = 1e-10)
+  expect_equal(im$modules, baseline$modules)
+})
+
+test_that("add_state_nodes accepts pair lists and named mappings", {
+  pairs <- Infomap(silent = TRUE)
+  pairs$add_state_nodes(list(c(10, 1), c(11, 1), c(20, 2)))
+
+  mapping <- Infomap(silent = TRUE)
+  mapping$add_state_nodes(list("10" = 1, "11" = 1, "20" = 2))
+
+  expect_equal(pairs$num_nodes, 3L)
+  expect_equal(mapping$num_nodes, pairs$num_nodes)
+})
+
 test_that("Infomap accepts named-argument keyword overrides", {
   opts <- infomap_options(num_trials = 7L, silent = TRUE, two_level = TRUE)
   expect_true(is.list(opts))

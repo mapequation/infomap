@@ -152,6 +152,36 @@ if(BUILD_TESTING)
     )
     set_tests_properties(print_json_parameters PROPERTIES LABELS "fast;core;parser;cli")
 
+    add_test(
+        NAME shell_completion
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_shell_completion.py"
+            "$<TARGET_FILE:infomap_cli>"
+    )
+    set_tests_properties(shell_completion PROPERTIES LABELS "fast;core;parser;cli")
+
+    add_test(
+        NAME pretty_output
+        COMMAND
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_pretty_output.py"
+            "$<TARGET_FILE:infomap_cli>"
+            "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+    set_tests_properties(pretty_output PROPERTIES LABELS "fast;core;output;cli")
+
+    add_test(
+        NAME js_output_format_manifest
+        COMMAND
+            "${CMAKE_COMMAND}" -E env "CXX=${CMAKE_CXX_COMPILER}"
+            "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/scripts/check_js_output_formats.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/io/OutputFormats.cpp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/interfaces/js/generated/output-formats.json"
+    )
+    set_tests_properties(js_output_format_manifest PROPERTIES LABELS "fast;core;output;js")
+
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(infomap_cpp_lifecycle_tests PRIVATE -fno-access-control)
         target_compile_options(infomap_cpp_partition_tests PRIVATE -fno-access-control)

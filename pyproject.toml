@@ -39,13 +39,43 @@ Repository = "https://github.com/mapequation/infomap.git"
 Issues = "https://github.com/mapequation/infomap/issues"
 
 [project.optional-dependencies]
+networkx = [
+  "networkx",
+]
+igraph = [
+  "igraph",
+]
+pandas = [
+  "pandas",
+]
+scipy = [
+  "scipy",
+]
+anndata = [
+  "anndata",
+  "pandas",
+  "scipy",
+]
+all = [
+  "anndata",
+  "igraph",
+  "networkx",
+  "pandas",
+  "scipy",
+]
 test = [
+  "anndata",
+  "igraph",
   "pytest",
   "networkx",
   "ruff",
+  "scipy",
 ]
 docs = [
   "sphinx",
+  "furo",
+  "sphinx-copybutton",
+  "sphinxext-opengraph",
 ]
 examples = [
   "matplotlib",
@@ -53,6 +83,22 @@ examples = [
   "numpy",
   "pandas",
   "scikit-learn",
+  "scipy",
+]
+notebooks = [
+  "coloraide",
+  "igraph",
+  "ipykernel",
+  "jupyterlab",
+  "matplotlib",
+  "nbmake",
+  "networkx",
+  "numpy",
+  "pandas",
+  "scikit-learn",
+  "scipy",
+  "seaborn",
+  "SPARQLWrapper",
 ]
 release = [
   "build",
@@ -66,6 +112,9 @@ infomap = "infomap:main"
 
 [tool.setuptools]
 include-package-data = true
+
+[tool.setuptools.package-data]
+infomap = ["py.typed"]
 
 [tool.setuptools.package-dir]
 "" = "interfaces/python/src"

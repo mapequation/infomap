@@ -17,8 +17,10 @@
 #include "RegularizedMultilayerMapEquation.h"
 #include "InfomapOptimizer.h"
 #include "../io/SafeFile.h"
+#include "../io/OutputFormats.h"
 #include "../utils/FileURI.h"
 #include "../utils/FlowCalculator.h"
+#include "../utils/PrettyOutput.h"
 
 #include <stdexcept>
 #include <string>
@@ -28,15 +30,270 @@
 #include <limits>
 #include <map>
 #include <set>
+#include <unordered_map>
 #include <cstdlib>
 #include <algorithm>
 #include <cmath>
+#include <functional>
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
 namespace infomap {
+
+namespace {
+
+  std::string compressionSummary(const std::vector<std::string>& compression)
+  {
+    if (compression.empty())
+      return "0%";
+
+    std::string summary;
+    for (unsigned int i = 0; i < compression.size(); ++i) {
+      if (i > 0)
+        summary += ", ";
+      summary += compression[i];
+    }
+    return summary;
+  }
+
+  void printPrettyStart(const Config& config, const Date& startDate, unsigned int numInitialModuleIds)
+  {
+    PrettyOutput pretty(config.prettyOutput);
+    Log::pretty() << pretty.bold() << "Infomap v" << INFOMAP_VERSION << pretty.reset() << "\n";
+    Log::pretty() << pretty.dim() << pretty.branch() << " started " << startDate << pretty.reset() << "\n";
+    Log::pretty() << pretty.bullet() << " Input      " << config.networkFile << "\n";
+    Log::pretty() << pretty.bullet() << " Output     " << (config.noFileOutput ? "disabled" : config.outDirectory) << "\n";
+    if (!config.parsedOptions.empty()) {
+      Log::pretty() << pretty.bullet() << " Options    ";
+      for (unsigned int i = 0; i < config.parsedOptions.size(); ++i) {
+        if (i > 0)
+          Log::pretty() << ", ";
+        Log::pretty() << config.parsedOptions[i];
+      }
+      Log::pretty() << "\n";
+    }
+    if (numInitialModuleIds > 0) {
+      Log::pretty() << pretty.bullet() << " Initial    " << numInitialModuleIds << " module ids\n";
+    }
+    Log::pretty() << "\n";
+  }
+
+  void printPrettyEnd(const Date& endDate, const Stopwatch& elapsedTime)
+  {
+    PrettyOutput pretty(true);
+    Log::pretty() << "\n"
+                  << pretty.dim() << "Finished " << endDate << " in " << elapsedTime << pretty.reset() << "\n";
+  }
+
+  void printPrettyTrialTable(const std::vector<double>& codelengths, const std::vector<unsigned int>& numTopModules)
+  {
+    PrettyOutput pretty(true);
+    double bestCodelengthSoFar = std::numeric_limits<double>::max();
+    Log::pretty() << "  " << pretty.dim() << "Trial  Codelength     Top modules  Best" << pretty.reset() << "\n";
+    for (unsigned int i = 0; i < codelengths.size(); ++i) {
+      bool isBest = codelengths[i] < bestCodelengthSoFar;
+      if (isBest) {
+        bestCodelengthSoFar = codelengths[i];
+      }
+      bool isEqual = std::abs(codelengths[i] - bestCodelengthSoFar) < 1e-10;
+      Log::pretty() << "  " << std::setw(5) << (i + 1)
+                    << "  " << std::setw(12) << io::toPrecision(codelengths[i])
+                    << "  " << std::setw(11) << numTopModules[i]
+                    << "  " << (isBest ? pretty.green() : isEqual ? pretty.yellow()
+                                                                  : "")
+                    << (isBest ? "best" : isEqual ? "tie"
+                                                  : "")
+                    << pretty.reset() << "\n";
+    }
+  }
+
+  std::pair<std::string, std::string> splitExtension(const std::string& filename)
+  {
+    const auto slashPos = filename.find_last_of("/\\");
+    const auto dotPos = filename.find_last_of('.');
+    if (dotPos == std::string::npos || (slashPos != std::string::npos && dotPos < slashPos)) {
+      return { filename, "" };
+    }
+    return { filename.substr(0, dotPos), filename.substr(dotPos + 1) };
+  }
+
+  std::vector<std::string> summarizeOutputFiles(const std::vector<std::pair<std::string, std::string>>& outputFiles)
+  {
+    std::vector<std::pair<std::string, std::vector<std::string>>> groups;
+    for (const auto& outputFile : outputFiles) {
+      const auto parts = splitExtension(outputFile.second);
+      auto it = std::find_if(groups.begin(), groups.end(), [&parts](const std::pair<std::string, std::vector<std::string>>& group) {
+        return group.first == parts.first;
+      });
+      if (it == groups.end()) {
+        groups.push_back({ parts.first, { parts.second } });
+      } else {
+        it->second.push_back(parts.second);
+      }
+    }
+
+    std::vector<std::string> summaries;
+    summaries.reserve(groups.size());
+    for (const auto& group : groups) {
+      if (group.second.size() == 1) {
+        summaries.push_back(group.second.front().empty() ? group.first : io::Str() << group.first << "." << group.second.front());
+        continue;
+      }
+      io::Str suffixes;
+      for (unsigned int i = 0; i < group.second.size(); ++i) {
+        if (i > 0)
+          suffixes << ",";
+        suffixes << group.second[i];
+      }
+      summaries.push_back(io::Str() << group.first << ".{" << std::string(suffixes) << "}");
+    }
+    return summaries;
+  }
+
+} // namespace
+
+class InfomapBase::RunSession {
+public:
+  struct Result {
+    std::ostringstream bestSolutionStatistics;
+    unsigned int bestNumLevels = 0;
+    double bestHierarchicalCodelength = std::numeric_limits<double>::max();
+    NodePaths bestTree;
+    unsigned int bestTrialIndex = 0;
+  };
+
+  RunSession(InfomapBase& infomap, Network& network) : m_infomap(infomap), m_network(network) {}
+
+  Result runTrials()
+  {
+    Result result;
+    result.bestTree = NodePaths(m_infomap.numLeafNodes());
+    m_infomap.m_codelengths.clear();
+    m_infomap.m_numTopModules.clear();
+
+    for (unsigned int i = 0; i < m_numTrials; ++i) {
+      runTrial(i, result);
+    }
+
+    return result;
+  }
+
+  void restoreBestResult(const Result& result)
+  {
+    if (m_numTrials > 1 && result.bestTrialIndex < m_numTrials - 1) {
+      // Restore Infomap tree to best solution.
+      m_infomap.initTree(result.bestTree);
+      m_infomap.writeResult(); // Overwrite result to get total elapsed time in output file header.
+    }
+  }
+
+private:
+  void runTrial(unsigned int trialIndex, Result& result)
+  {
+    m_infomap.removeModules();
+    auto startDate = Date();
+    Stopwatch timer(true);
+
+    logTrialStart(trialIndex, startDate);
+    initTrialPartition();
+    executeTrial();
+    finishTrial(trialIndex, timer, result);
+  }
+
+  void logTrialStart(unsigned int trialIndex, const Date& startDate)
+  {
+    if (!m_infomap.isMainInfomap()) {
+      return;
+    }
+
+    if (m_infomap.prettyOutput) {
+      PrettyOutput pretty(true);
+      Log::pretty() << "\n"
+                    << pretty.cyan() << "Trial " << (trialIndex + 1) << "/" << m_numTrials << pretty.reset()
+                    << pretty.dim() << " started " << startDate << pretty.reset() << "\n";
+      return;
+    }
+
+    Log() << "\n";
+    Log() << "================================================\n";
+    Log() << "Trial " << (trialIndex + 1) << "/" << m_numTrials << " starting at " << startDate << "\n";
+    Log() << "================================================\n";
+  }
+
+  void initTrialPartition()
+  {
+    if (!m_infomap.isMainInfomap()) {
+      return;
+    }
+
+    if (!m_infomap.clusterDataFile.empty())
+      m_infomap.initPartition(m_infomap.clusterDataFile, m_infomap.clusterDataIsHard, &m_network);
+    else if (!m_infomap.m_initialPartition.empty())
+      m_infomap.initPartition(m_infomap.m_initialPartition, m_infomap.clusterDataIsHard);
+  }
+
+  void executeTrial()
+  {
+    if (!m_infomap.noInfomap)
+      m_infomap.runPartition();
+    else
+      m_infomap.m_hierarchicalCodelength = m_infomap.calcCodelengthOnTree(m_infomap.root(), true);
+
+    if (m_infomap.haveHardPartition())
+      m_infomap.restoreHardPartition();
+  }
+
+  void finishTrial(unsigned int trialIndex, Stopwatch& timer, Result& result)
+  {
+    if (!m_infomap.isMainInfomap()) {
+      return;
+    }
+
+    if (m_infomap.prettyOutput) {
+      PrettyOutput pretty(true);
+      Log::pretty() << "\n"
+                    << pretty.green() << "Done" << pretty.reset()
+                    << " trial " << (trialIndex + 1) << "/" << m_numTrials
+                    << " in " << timer.getElapsedTimeInSec() << "s"
+                    << " | codelength " << m_infomap.m_hierarchicalCodelength << "\n";
+    } else {
+      Log() << "\n=> Trial " << (trialIndex + 1) << "/" << m_numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_infomap.m_hierarchicalCodelength << "\n";
+    }
+    m_infomap.m_codelengths.push_back(m_infomap.m_hierarchicalCodelength);
+    m_infomap.m_numTopModules.push_back(m_infomap.numTopModules());
+
+    if (m_infomap.printAllTrials && m_numTrials > 1) {
+      m_infomap.writeResult(static_cast<int>(trialIndex + 1));
+    }
+
+    if (m_infomap.m_hierarchicalCodelength < result.bestHierarchicalCodelength - 1e-10) {
+      updateBestResult(trialIndex, result);
+    }
+  }
+
+  void updateBestResult(unsigned int trialIndex, Result& result)
+  {
+    result.bestSolutionStatistics.clear();
+    result.bestSolutionStatistics.str("");
+    result.bestNumLevels = printPerLevelCodelength(m_infomap.root(), result.bestSolutionStatistics, m_infomap.prettyOutput);
+    result.bestHierarchicalCodelength = m_infomap.m_hierarchicalCodelength;
+    result.bestTrialIndex = trialIndex;
+    m_infomap.root().sortChildrenOnFlow();
+    m_infomap.writeResult();
+    if (m_numTrials > 1) {
+      result.bestTree.clear();
+      for (auto it(m_infomap.iterLeafNodes()); !it.isEnd(); ++it) {
+        result.bestTree.emplace_back(it->stateId, it.path());
+      }
+    }
+  }
+
+  InfomapBase& m_infomap;
+  Network& m_network;
+  const unsigned int m_numTrials = m_infomap.numTrials;
+};
 
 std::map<unsigned int, std::vector<unsigned int>> InfomapBase::getMultilevelModules(bool states)
 {
@@ -117,8 +374,10 @@ void InfomapBase::run(const std::string& parameters)
     m_network.setConfig(*this);
   }
 
-  Log::init(verbosity, silent, verboseNumberPrecision);
+  Log::init(verbosity, silent, verboseNumberPrecision, prettyOutput);
 
+  if (prettyOutput)
+    printPrettyStart(*this, m_startDate, m_initialPartition.size());
   Log() << "=======================================================\n";
   Log() << "  Infomap v" << INFOMAP_VERSION << " starts at " << m_startDate << "\n";
   Log() << "  -> Input network: " << networkFile << "\n";
@@ -138,6 +397,10 @@ void InfomapBase::run(const std::string& parameters)
 #pragma omp parallel
 #pragma omp master
   {
+    if (prettyOutput) {
+      PrettyOutput pretty(true);
+      Log::pretty() << pretty.bullet() << " Runtime    OpenMP " << _OPENMP << " with " << omp_get_num_threads() << " threads\n\n";
+    }
     Log() << "  OpenMP " << _OPENMP << " detected with " << omp_get_num_threads() << " threads...\n";
   }
 #endif
@@ -153,6 +416,8 @@ void InfomapBase::run(const std::string& parameters)
 
   run(m_network);
 
+  if (prettyOutput)
+    printPrettyEnd(m_endDate, m_elapsedTime);
   Log() << "===================================================\n";
   Log() << "  Infomap ends at " << m_endDate << "\n";
   Log() << "  (Elapsed time: " << m_elapsedTime << ")\n";
@@ -172,24 +437,28 @@ void InfomapBase::run(Network& network)
   }
 
   if (printStateNetwork) {
-    std::string filename = outDirectory + outName + "_states.net";
+    std::string filename = outputFilenameForResultKey(outDirectory + outName, "states");
     Log() << "Writing state network to '" << filename << "'... ";
     network.writeStateNetwork(filename);
     Log() << "done!\n";
+    if (prettyOutput)
+      PrettyOutput(true).status("Output", io::Str() << "state network -> " << filename);
   }
 
   if (printPajekNetwork) {
     std::string filename;
     if (printStates()) {
-      filename = outDirectory + outName + "_states_as_physical.net";
+      filename = outputFilenameForResultKey(outDirectory + outName, "states_as_physical");
       Log() << "Writing state network as first order Pajek network to '" << filename << "'... ";
     } else {
       // Non-memory input
-      filename = outDirectory + outName + ".net";
+      filename = outputFilenameForResultKey(outDirectory + outName, "net");
       Log() << "Writing Pajek network to '" << filename << "'... ";
     }
     network.writePajekNetwork(filename);
     Log() << "done!\n";
+    if (prettyOutput)
+      PrettyOutput(true).status("Output", io::Str() << (printStates() ? "state network as Pajek" : "Pajek network") << " -> " << filename);
   }
 
   if (network.haveMemoryInput()) {
@@ -202,7 +471,7 @@ void InfomapBase::run(Network& network)
     }
   } else {
     if (haveMemory() || network.higherOrderInputMethodCalled()) {
-      Log() << "  -> Warning: Higher order network specified but no higher order input found.\n";
+      Log::important() << "  -> Warning: Higher order network specified but no higher order input found.\n";
       // Use state output anyway for consistency even in the special case when input is first order
       setStateOutput();
     }
@@ -229,15 +498,17 @@ void InfomapBase::run(Network& network)
   if (printFlowNetwork) {
     std::string filename;
     if (printStates()) {
-      filename = outDirectory + outName + "_states_as_physical_flow.net";
+      filename = outputFilenameForResultKey(outDirectory + outName, "flow_as_physical");
       Log() << "Writing flow state network as first order Pajek network to '" << filename << "'... ";
     } else {
       // Non-memory input
-      filename = outDirectory + outName + "_flow.net";
+      filename = outputFilenameForResultKey(outDirectory + outName, "flow");
       Log() << "Writing flow network to '" << filename << "'... ";
     }
     network.writePajekNetwork(filename, true);
     Log() << "done!\n";
+    if (prettyOutput)
+      PrettyOutput(true).status("Output", io::Str() << (printStates() ? "flow state network as Pajek" : "flow network") << " -> " << filename);
   }
 
   // If used as a library, we may want to reuse the network instance, else clear to use less memory
@@ -251,82 +522,27 @@ void InfomapBase::run(Network& network)
   else
     Log(2) << "Run Infomap...\n";
 
-  std::ostringstream bestSolutionStatistics;
-  unsigned int bestNumLevels = 0;
-  double bestHierarchicalCodelength = std::numeric_limits<double>::max();
-  m_codelengths.clear();
-  m_numTopModules.clear();
-  NodePaths bestTree(numLeafNodes());
-  unsigned int bestTrialIndex = 0;
-
+  RunSession runSession(*this, network);
+  auto runResult = runSession.runTrials();
   unsigned int numTrials = this->numTrials;
 
-  for (unsigned int i = 0; i < numTrials; ++i) {
-    removeModules();
-    auto startDate = Date();
-    Stopwatch timer(true);
-
-    if (isMainInfomap()) {
-      Log() << "\n";
-      Log() << "================================================\n";
-      Log() << "Trial " << (i + 1) << "/" << numTrials << " starting at " << startDate << "\n";
-      Log() << "================================================\n";
-
-      if (!clusterDataFile.empty())
-        initPartition(clusterDataFile, clusterDataIsHard, &network);
-      else if (!m_initialPartition.empty())
-        initPartition(m_initialPartition, clusterDataIsHard);
-    }
-
-    if (!noInfomap)
-      runPartition();
-    else
-      m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
-
-    if (haveHardPartition())
-      restoreHardPartition();
-
-    if (isMainInfomap()) {
-      Log() << "\n=> Trial " << (i + 1) << "/" << numTrials << " finished in " << timer.getElapsedTimeInSec() << "s with codelength " << m_hierarchicalCodelength << "\n";
-      m_codelengths.push_back(m_hierarchicalCodelength);
-      m_numTopModules.push_back(numTopModules());
-
-      if (printAllTrials && numTrials > 1) {
-        writeResult(static_cast<int>(i + 1));
-      }
-
-      if (m_hierarchicalCodelength < bestHierarchicalCodelength - 1e-10) {
-        bestSolutionStatistics.clear();
-        bestSolutionStatistics.str("");
-        bestNumLevels = printPerLevelCodelength(root(), bestSolutionStatistics);
-        bestHierarchicalCodelength = m_hierarchicalCodelength;
-        bestTrialIndex = i;
-        root().sortChildrenOnFlow();
-        writeResult();
-        if (numTrials > 1) {
-          bestTree.clear();
-          for (auto it(iterLeafNodes()); !it.isEnd(); ++it) {
-            bestTree.emplace_back(it->stateId, it.path());
-          }
-        }
-      }
-    }
-  }
   if (isMainInfomap()) {
     m_elapsedTime.stop();
     m_endDate = Date();
+    if (prettyOutput)
+      PrettyOutput(true).section(io::Str() << "Summary after " << numTrials << (numTrials > 1 ? " trials" : " trial"));
     Log() << "\n\n";
     Log() << "================================================\n";
     Log() << "Summary after " << numTrials << (numTrials > 1 ? " trials\n" : " trial\n");
     Log() << "================================================\n";
+    std::string codelengthRange;
+    std::string topModulesRange;
     if (numTrials > 1) {
-      if (bestTrialIndex < numTrials - 1) {
-        // Restore Infomap tree to best solution
-        initTree(bestTree);
-        writeResult(); // Overwrite result to get total elapsed time in output file header
-      }
+      runSession.restoreBestResult(runResult);
 
       Log() << std::fixed << std::setprecision(9);
+      if (prettyOutput)
+        Log::pretty() << std::fixed << std::setprecision(9);
       double averageCodelength = 0.0;
       double minCodelength = m_codelengths[0];
       double maxCodelength = m_codelengths[0];
@@ -334,6 +550,8 @@ void InfomapBase::run(Network& network)
       auto minNumTopModules = m_numTopModules[0];
       auto maxNumTopModules = m_numTopModules[0];
       double bestCodelengthSoFar = std::numeric_limits<double>::max();
+      if (prettyOutput)
+        printPrettyTrialTable(m_codelengths, m_numTopModules);
       Log() << "Trial    Codelength    NumTopModules    Best\n";
       for (unsigned int i = 0; i < numTrials; ++i) {
         bool isBest = m_codelengths[i] < bestCodelengthSoFar;
@@ -356,18 +574,39 @@ void InfomapBase::run(Network& network)
       Log() << "\n";
       Log() << "[min, average, max] codelength:      [" << minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n";
       Log() << "[min, average, max] num top modules: [" << minNumTopModules << ", " << io::toPrecision(averageNumTopModules, 1, true) << ", " << maxNumTopModules << "]\n\n";
+      codelengthRange = io::Str() << minCodelength << " / " << averageCodelength << " / " << maxCodelength;
+      topModulesRange = io::Str() << minNumTopModules << " / " << io::toPrecision(averageNumTopModules, 1, true) << " / " << maxNumTopModules;
+    }
+    if (prettyOutput) {
+      PrettyOutput pretty(true);
+      if (numTrials > 1) {
+        pretty.metric("Codelength min/avg/max", codelengthRange);
+        pretty.metric("Top modules min/avg/max", topModulesRange);
+        Log::pretty() << "\n";
+      }
+      pretty.metric("Nodes", io::Str() << numLeafNodes());
+      pretty.metric("Links", io::Str() << network.numLinks());
+      pretty.metric("Average degree", io::toPrecision(network.numLinks() * 2.0 / numLeafNodes(), 1, true));
+      pretty.metric("Top modules", io::Str() << numTopModules() << " (" << numNonTrivialTopModules() << " non-trivial)");
+      pretty.metric("Levels", io::Str() << runResult.bestNumLevels);
+      pretty.metric("One-level codelength", io::toPrecision(getOneLevelCodelength()));
+      pretty.metric("Best codelength", io::toPrecision(runResult.bestHierarchicalCodelength));
+      pretty.metric("Relative savings", io::Str() << io::toPrecision(getRelativeCodelengthSavings() * 100, 2, true) << "%");
+      Log::pretty() << "\n";
     }
     Log() << "Number nodes:                      " << numLeafNodes() << "\n";
     Log() << "Number links:                      " << network.numLinks() << "\n";
     Log() << "Average degree:                    " << io::toPrecision(network.numLinks() * 2.0 / numLeafNodes(), 1, true) << "\n";
     Log() << "Number of top modules:             " << numTopModules() << "\n";
     Log() << "Number of non-trivial top modules: " << numNonTrivialTopModules() << "\n";
-    Log() << "Number of levels:                  " << bestNumLevels << "\n";
+    Log() << "Number of levels:                  " << runResult.bestNumLevels << "\n";
     Log() << "One-level codelength:              " << io::toPrecision(getOneLevelCodelength()) << "\n";
-    Log() << "Codelength:                        " << io::toPrecision(bestHierarchicalCodelength) << "\n";
+    Log() << "Codelength:                        " << io::toPrecision(runResult.bestHierarchicalCodelength) << "\n";
     Log() << "Relative codelength savings:       " << io::toPrecision(getRelativeCodelengthSavings() * 100, 2, true) << "%\n";
     Log() << "\n";
-    Log() << bestSolutionStatistics.str() << '\n';
+    Log() << runResult.bestSolutionStatistics.str() << '\n';
+    if (prettyOutput)
+      Log::pretty() << runResult.bestSolutionStatistics.str() << '\n';
   }
 }
 
@@ -413,28 +652,111 @@ InfomapBase& InfomapBase::initNetwork(InfoNode& parent, bool asSuperNetwork)
 
 InfomapBase& InfomapBase::initPartition(const std::string& clusterDataFile, bool hard, const Network* network)
 {
-  FileURI file(clusterDataFile);
   ClusterMap clusterMap;
-  if (this->isMultilayerNetwork() && network != nullptr) {
+  if (network != nullptr && network->isMultilayerNetwork()) {
     const auto& map = network->layerNodeToStateId();
     clusterMap.readClusterData(clusterDataFile, false, &map);
   } else {
     clusterMap.readClusterData(clusterDataFile);
   }
 
+  if (prettyOutput)
+    PrettyOutput(true).status("Initial", io::Str() << "reading " << clusterDataFile);
   Log() << "Init partition from file '" << clusterDataFile << "'... ";
 
   const auto& ext = clusterMap.extension();
 
   if (ext == "tree" || ext == "ftree") {
-    initTree(clusterMap.nodePaths());
+    unsigned int numTreeNodesNotInNetwork = 0;
+    const auto normalizedTree = normalizeTreePaths(clusterMap.treePaths(), numTreeNodesNotInNetwork);
+    if (numTreeNodesNotInNetwork > 0) {
+      Log(1) << "\n -> " << numTreeNodesNotInNetwork << " physical nodes in tree not found in network.";
+    }
+    initTree(normalizedTree);
   } else if (ext == "clu") {
     initPartition(clusterMap.clusterIds(), hard);
   }
 
+  if (prettyOutput)
+    PrettyOutput(true).status("Initial", io::Str() << "generated " << numLevels() << " levels, codelength " << io::toPrecision(m_hierarchicalCodelength));
   Log() << "done! Generated " << numLevels() << " levels with codelength " << getIndexCodelength() << " + " << (m_hierarchicalCodelength - getIndexCodelength()) << " = " << io::toPrecision(m_hierarchicalCodelength) << '\n';
 
   return *this;
+}
+
+NodePaths InfomapBase::normalizeTreePaths(const TreePaths& tree, unsigned int& numNodesNotInNetwork) const
+{
+  numNodesNotInNetwork = 0;
+  NodePaths normalized;
+  normalized.reserve(tree.size());
+
+  // Fast path: every row is a state-level leaf — pass through.
+  bool allState = true;
+  for (const auto& tp : tree) {
+    if (tp.idType != TreeLeafIdType::state) {
+      allState = false;
+      break;
+    }
+  }
+  if (allState) {
+    for (const auto& tp : tree)
+      normalized.emplace_back(tp.nodeId, tp.path);
+    return normalized;
+  }
+
+  // Build physical -> [state ids] index across the active leaf set.
+  std::map<unsigned int, std::vector<unsigned int>> physicalToStateIds;
+  for (const auto* leafNode : m_leafNodes) {
+    physicalToStateIds[leafNode->physicalId].push_back(leafNode->stateId);
+  }
+
+  // Count how many tree rows reference each physical id; a physical id may
+  // appear multiple times (one row per state) on higher-order outputs.
+  std::map<unsigned int, unsigned int> physicalRowCount;
+  for (const auto& tp : tree) {
+    if (tp.idType == TreeLeafIdType::physical)
+      ++physicalRowCount[tp.nodeId];
+  }
+
+  std::map<unsigned int, unsigned int> physicalRowsConsumed;
+  std::map<unsigned int, unsigned int> physicalStatesConsumed;
+
+  for (const auto& tp : tree) {
+    if (tp.idType == TreeLeafIdType::state) {
+      normalized.emplace_back(tp.nodeId, tp.path);
+      continue;
+    }
+
+    const auto it = physicalToStateIds.find(tp.nodeId);
+    if (it == physicalToStateIds.end()) {
+      ++numNodesNotInNetwork;
+      continue;
+    }
+
+    auto& rowsConsumed = physicalRowsConsumed[tp.nodeId];
+    auto& statesConsumed = physicalStatesConsumed[tp.nodeId];
+    const auto totalRows = physicalRowCount[tp.nodeId];
+    const auto remainingRows = totalRows - rowsConsumed;
+    const auto remainingStates = it->second.size() - statesConsumed;
+
+    if (remainingStates == 0) {
+      ++numNodesNotInNetwork;
+      ++rowsConsumed;
+      continue;
+    }
+
+    // If this is the last row for this physical id, claim every remaining state.
+    // Otherwise consume one state per row, preserving 1:1 alignment when the
+    // original output wrote one row per state.
+    const auto statesToAssign = (remainingRows <= 1) ? remainingStates : 1u;
+    for (unsigned int i = 0; i < statesToAssign; ++i) {
+      normalized.emplace_back(it->second[statesConsumed + i], tp.path);
+    }
+    statesConsumed += statesToAssign;
+    ++rowsConsumed;
+  }
+
+  return normalized;
 }
 
 InfomapBase& InfomapBase::initTree(const NodePaths& tree)
@@ -455,57 +777,61 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
       clusterIds[nodeId] = clusterId;
     }
     return initPartition(clusterIds, false);
-  } else {
-    // TODO: Use initPartition on lowest modular level and apply it iteratively upwards to build tree
   }
 
+  // Tear down the existing partition. Detach the leaves first so that the
+  // module destruction below does not also destroy them, then collect every
+  // released leaf for re-attachment.
   std::map<unsigned int, unsigned int> nodeIdToIndex;
-  auto leafIndex = 0;
-  for (auto& leafNode : m_leafNodes) {
-    // Also detach leaf nodes to delete all modules, safe to call multiple times
-    leafNode->parent->releaseChildren();
-    // Set parent to nullptr to be able to collect any orphaned nodes in the end
+  unsigned int leafIndex = 0;
+  for (auto* leafNode : m_leafNodes) {
+    if (leafNode->parent != nullptr)
+      leafNode->parent->releaseChildren();
     leafNode->parent = nullptr;
+    leafNode->next = nullptr;
+    leafNode->previous = nullptr;
     nodeIdToIndex[leafNode->stateId] = leafIndex;
     ++leafIndex;
   }
   m_root.deleteChildren();
 
+  // Build the module tree by walking each path top-down and creating only
+  // missing prefixes — this guarantees that two leaves sharing a path prefix
+  // share the same ancestor modules, which is what determines codelength.
+  std::map<Path, InfoNode*> moduleByPathPrefix;
+
   auto numNodesFound = 0;
   auto numNodesNotInNetwork = 0;
   for (const auto& nodePath : tree) {
-    ++numNodesFound;
-    InfoNode* node = &root();
-    auto depth = 0;
     const auto& path = nodePath.second;
-    const auto nodeId = nodePath.first;
-    InfoNode* leafNode = nullptr;
+    if (path.empty())
+      continue;
 
-    try {
-      auto nodeIndex = nodeIdToIndex.at(nodeId);
-      leafNode = m_leafNodes[nodeIndex];
-    } catch (std::exception& e) {
+    ++numNodesFound;
+    InfoNode* leafNode = nullptr;
+    const auto nodeIdIt = nodeIdToIndex.find(nodePath.first);
+    if (nodeIdIt == nodeIdToIndex.end()) {
       ++numNodesNotInNetwork;
       continue;
     }
+    leafNode = m_leafNodes[nodeIdIt->second];
 
-    for (size_t i = 0; i < path.size(); ++i) {
-      auto childNumber = path[i]; // 1-based indexing
-
-      // Create new node if path doesn't exist
-      // TODO: Check correct tree indexing?
-      if (node->childDegree() < childNumber) {
-        InfoNode* child = leafNode;
-        if (i + 1 < path.size()) {
-          child = new InfoNode();
-        }
-        node->addChild(child);
+    InfoNode* parent = &m_root;
+    Path prefix;
+    for (size_t i = 0; i + 1 < path.size(); ++i) {
+      prefix.push_back(path[i]);
+      auto inserted = moduleByPathPrefix.emplace(prefix, nullptr);
+      if (inserted.second) {
+        auto* module = new InfoNode();
+        parent->addChild(module);
+        inserted.first->second = module;
       }
-
-      node = node->lastChild;
-      ++depth;
+      parent = inserted.first->second;
     }
-    maxDepth = std::max(maxDepth, depth);
+
+    parent->addChild(leafNode);
+    if (static_cast<int>(path.size()) > maxDepth)
+      maxDepth = static_cast<int>(path.size());
   }
 
   if (numNodesNotInNetwork > 0) {
@@ -574,6 +900,8 @@ InfomapBase& InfomapBase::initTree(const NodePaths& tree)
   initPartition();
 
   m_hierarchicalCodelength = calcCodelengthOnTree(root(), true);
+  if (prettyOutput)
+    PrettyOutput(true).status("Initial", io::Str() << "codelength " << m_hierarchicalCodelength << ", " << maxDepth << " levels, " << numTopModules() << " top modules");
   Log() << "\n -> Initiated to codelength " << m_hierarchicalCodelength << " in " << maxDepth << " levels with " << numTopModules() << " top modules.\n";
   Log() << std::setprecision(6);
   return *this;
@@ -733,6 +1061,8 @@ InfomapBase& InfomapBase::initPartition(std::vector<unsigned int>& modules, bool
 
     Log() << "\n -> Hard-partitioned the network to " << numNodesInNewNetwork << " nodes and " << numLinksInNewNetwork << " links with codelength " << *this << '\n';
   } else {
+    if (prettyOutput)
+      PrettyOutput(true).status("Initial", io::Str() << "codelength " << *this << ", " << numTopModules() << " top modules");
     Log() << "\n -> Initiated to codelength " << *this << " in " << numTopModules() << " top modules.\n";
   }
   m_hierarchicalCodelength = getCodelength();
@@ -754,7 +1084,8 @@ void InfomapBase::generateSubNetwork(Network& network)
   m_leafNodes.reserve(numNodes);
   double sumNodeFlow = 0.0;
   double sumTeleFlow = 0.0;
-  std::map<unsigned int, unsigned int> nodeIndexMap;
+  std::unordered_map<unsigned int, unsigned int> nodeIndexMap;
+  nodeIndexMap.reserve(numNodes);
   for (auto& nodeIt : network.nodes()) {
     auto& networkNode = nodeIt.second;
     auto* node = new InfoNode(networkNode.flow, networkNode.id, networkNode.physicalId, networkNode.layerId);
@@ -1050,6 +1381,9 @@ void InfomapBase::hierarchicalPartition()
 void InfomapBase::partition()
 {
   auto oldPrecision = Log::precision();
+  std::vector<std::string> prettyCompression;
+  if (prettyOutput)
+    PrettyOutput(true).section("Optimization");
   Log(0, 0) << "Two-level compression: " << std::setprecision(2) << std::flush;
   Log(1) << "Trying to find modular structure... \n";
   double initialCodelength = m_oneLevelCodelength;
@@ -1060,6 +1394,8 @@ void InfomapBase::partition()
 
   double newCodelength = getCodelength();
   double compression = oldCodelength < 1e-16 ? 0.0 : (oldCodelength - newCodelength) / oldCodelength;
+  if (prettyOutput)
+    prettyCompression.push_back(PrettyOutput::percent(compression * 100));
   Log(0, 0) << (compression * 100) << "% " << std::flush;
   oldCodelength = newCodelength;
 
@@ -1103,10 +1439,18 @@ void InfomapBase::partition()
     } else {
       oldCodelength = newCodelength;
     }
+    if (prettyOutput)
+      prettyCompression.push_back(PrettyOutput::percent(compression * 100));
     Log(0, 0) << (compression * 100) << "% " << std::flush;
     doFineTune = !doFineTune;
   }
 
+  if (prettyOutput) {
+    std::string nonTrivialSummary;
+    if (m_numNonTrivialTopModules != numTopModules())
+      nonTrivialSummary = io::Str() << " (" << m_numNonTrivialTopModules << " non-trivial)";
+    PrettyOutput(true).status("Two-level", io::Str() << compressionSummary(prettyCompression) << " -> codelength " << io::toPrecision(getCodelength()) << ", " << numTopModules() << " modules" << nonTrivialSummary);
+  }
   Log(0, 0) << std::setprecision(oldPrecision) << '\n';
   Log() << "Partitioned to codelength " << *this << " in " << numTopModules();
   if (m_numNonTrivialTopModules != numTopModules())
@@ -1130,6 +1474,7 @@ void InfomapBase::partition()
     m_hierarchicalCodelength = getOneLevelCodelength();
     // calcCodelengthOnTree(root(), true);
     m_root.codelength = 0.0;
+    m_numNonTrivialTopModules = calculateNumNonTrivialTopModules();
 
   } else {
     // Set consolidated cluster index on nodes and modules
@@ -1638,6 +1983,7 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
     throw std::logic_error("Trying to find hierarchical super modules without any modules");
 
   Log(1) << "\nFind hierarchical super modules iteratively...\n";
+  std::vector<std::string> prettyCompression;
   Log(0, 0) << "Super-level compression: " << std::setprecision(2) << std::flush;
 
   // Add index codebooks as long as the code gets shorter
@@ -1675,6 +2021,10 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
 
     workingHierarchicalCodelength += superCodelength - oldIndexLength;
 
+    const double superCompression = ((hierarchicalCodelength - workingHierarchicalCodelength)
+                                     / hierarchicalCodelength * 100);
+    if (prettyOutput)
+      prettyCompression.push_back(PrettyOutput::percent(superCompression));
     Log(0, 0) << ((hierarchicalCodelength - workingHierarchicalCodelength)
                   / hierarchicalCodelength * 100)
               << "% " << std::flush;
@@ -1709,6 +2059,8 @@ unsigned int InfomapBase::findHierarchicalSuperModules(unsigned int superLevelLi
   // Restore the temporary transformation of flow to enter flow on super modules
   resetFlowOnModules();
 
+  if (prettyOutput)
+    PrettyOutput(true).status("Super-level", io::Str() << compressionSummary(prettyCompression) << " -> codelength " << io::toPrecision(hierarchicalCodelength) << ", " << numTopModules() << " top modules");
   Log(0, 0) << "to codelength " << io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules.\n";
   Log(1) << "Finding super modules done! Added " << numLevelsCreated << " levels with hierarchical codelength " << io::toPrecision(hierarchicalCodelength) << " in " << numTopModules() << " top modules.\n";
 
@@ -1780,6 +2132,7 @@ unsigned int InfomapBase::recursivePartition()
   double indexCodelength = getIndexCodelength();
   double hierarchicalCodelength = m_hierarchicalCodelength;
 
+  std::vector<std::string> prettyCompression;
   Log(0, 0) << "\nRecursive sub-structure compression: " << std::flush;
 
   PartitionQueue partitionQueue;
@@ -1820,6 +2173,9 @@ unsigned int InfomapBase::recursivePartition()
     sumConsolidatedCodelength += partitionQueue.indexCodelength + partitionQueue.leafCodelength;
     double limitCodelength = sumConsolidatedCodelength + leftToImprove;
 
+    const double recursiveCompression = ((hierarchicalCodelength - limitCodelength) / hierarchicalCodelength) * 100;
+    if (prettyOutput)
+      prettyCompression.push_back(PrettyOutput::percent(recursiveCompression));
     Log(0, 0) << ((hierarchicalCodelength - limitCodelength) / hierarchicalCodelength) * 100 << "% " << std::flush;
     Log(1) << "done! Codelength: " << partitionQueue.indexCodelength << " + " << partitionQueue.leafCodelength << " (+ " << leftToImprove << " left to improve)"
            << " -> limit: " << io::toPrecision(limitCodelength) << " bits.\n";
@@ -1832,6 +2188,8 @@ unsigned int InfomapBase::recursivePartition()
   // Store resulting hierarchical codelength
   m_hierarchicalCodelength = hierarchicalCodelength;
 
+  if (prettyOutput)
+    PrettyOutput(true).status("Recursive", io::Str() << compressionSummary(prettyCompression) << " -> " << partitionQueue.level << " levels, codelength " << io::toPrecision(hierarchicalCodelength));
   Log(0, 0) << ". Found " << partitionQueue.level << " levels with codelength " << io::toPrecision(hierarchicalCodelength) << "\n";
   Log(1) << "  -> Found " << partitionQueue.level << " levels with codelength " << io::toPrecision(hierarchicalCodelength) << "\n";
 
@@ -2010,127 +2368,195 @@ void InfomapBase::writeResult(int trial)
 
   std::string basename = s;
 
+  const auto filenameFor = [&basename](const std::string& resultKey) {
+    return outputFilenameForResultKey(basename, resultKey);
+  };
+
+  std::vector<std::pair<std::string, std::string>> prettyOutputFiles;
+  const auto writeOutput = [this](const std::string& label, const std::string& filename, const std::function<void()>& write) {
+    if (prettyOutput) {
+      write();
+      return;
+    }
+
+    Log() << "Write " << label << " to " << filename << "... ";
+    write();
+    Log() << "done!\n";
+  };
+  const auto trackPrettyOutput = [&prettyOutputFiles, this](const std::string& label, const std::string& filename) {
+    if (prettyOutput)
+      prettyOutputFiles.emplace_back(label, filename);
+  };
+
   if (printTree) {
-    std::string filename = basename + ".tree";
+    std::string filename = filenameFor("tree");
 
     if (!printStates()) {
-      Log() << "Write tree to " << filename << "... ";
-      writeTree(filename);
-      Log() << "done!\n";
+      writeOutput("tree", filename, [&]() { writeTree(filename); });
+      trackPrettyOutput("tree", filename);
     } else {
       // Write both physical and state level
-      Log() << "Write physical tree to " << filename << "... ";
-      writeTree(filename);
-      Log() << "done!\n";
-      std::string filenameStates = basename + "_states.tree";
-      Log() << "Write state tree to " << filenameStates << "... ";
-      writeTree(filenameStates, true);
-      Log() << "done!\n";
+      writeOutput("physical tree", filename, [&]() { writeTree(filename); });
+      trackPrettyOutput("physical tree", filename);
+      std::string filenameStates = filenameFor("tree_states");
+      writeOutput("state tree", filenameStates, [&]() { writeTree(filenameStates, true); });
+      trackPrettyOutput("state tree", filenameStates);
     }
   }
 
   if (printFlowTree) {
-    std::string filename = basename + ".ftree";
+    std::string filename = filenameFor("ftree");
 
     if (!printStates()) {
-      Log() << "Write flow tree to " << filename << "... ";
-      writeFlowTree(filename);
-      Log() << "done!\n";
+      writeOutput("flow tree", filename, [&]() { writeFlowTree(filename); });
+      trackPrettyOutput("flow tree", filename);
     } else {
       // Write both physical and state level
-      Log() << "Write physical flow tree to " << filename << "... ";
-      writeFlowTree(filename, false);
-      Log() << "done!\n";
-      std::string filenameStates = basename + "_states.ftree";
-      Log() << "Write state flow tree to " << filenameStates << "... ";
-      writeFlowTree(filenameStates, true);
-      Log() << "done!\n";
+      writeOutput("physical flow tree", filename, [&]() { writeFlowTree(filename, false); });
+      trackPrettyOutput("physical flow tree", filename);
+      std::string filenameStates = filenameFor("ftree_states");
+      writeOutput("state flow tree", filenameStates, [&]() { writeFlowTree(filenameStates, true); });
+      trackPrettyOutput("state flow tree", filenameStates);
     }
   }
 
   if (printNewick) {
-    std::string filename = basename + ".nwk";
+    std::string filename = filenameFor("newick");
 
     if (!printStates()) {
-      Log() << "Write Newick tree to " << filename << "... ";
-      writeNewickTree(filename);
-      Log() << "done!\n";
+      writeOutput("Newick tree", filename, [&]() { writeNewickTree(filename); });
+      trackPrettyOutput("Newick tree", filename);
     } else {
       // Write both physical and state level
-      Log() << "Write physical Newick tree to " << filename << "... ";
-      writeNewickTree(filename, false);
-      Log() << "done!\n";
-      std::string filenameStates = basename + "_states.nwk";
-      Log() << "Write state Newick tree to " << filenameStates << "... ";
-      writeNewickTree(filenameStates, true);
-      Log() << "done!\n";
+      writeOutput("physical Newick tree", filename, [&]() { writeNewickTree(filename, false); });
+      trackPrettyOutput("physical Newick tree", filename);
+      std::string filenameStates = filenameFor("newick_states");
+      writeOutput("state Newick tree", filenameStates, [&]() { writeNewickTree(filenameStates, true); });
+      trackPrettyOutput("state Newick tree", filenameStates);
     }
   }
 
   if (printJson) {
-    std::string filename = basename + ".json";
+    std::string filename = filenameFor("json");
     const bool writeLinks = false;
 
     if (!printStates()) {
-      Log() << "Write JSON tree to " << filename << "... ";
-      writeJsonTree(filename, false, writeLinks);
-      Log() << "done!\n";
+      writeOutput("JSON tree", filename, [&]() { writeJsonTree(filename, false, writeLinks); });
+      trackPrettyOutput("JSON tree", filename);
     } else {
       // Write both physical and state level
-      Log() << "Write physical JSON tree to " << filename << "... ";
-      writeJsonTree(filename, false, writeLinks);
-      Log() << "done!\n";
-      std::string filenameStates = basename + "_states.json";
-      Log() << "Write state JSON tree to " << filenameStates << "... ";
-      writeJsonTree(filenameStates, true, writeLinks);
-      Log() << "done!\n";
+      writeOutput("physical JSON tree", filename, [&]() { writeJsonTree(filename, false, writeLinks); });
+      trackPrettyOutput("physical JSON tree", filename);
+      std::string filenameStates = filenameFor("json_states");
+      writeOutput("state JSON tree", filenameStates, [&]() { writeJsonTree(filenameStates, true, writeLinks); });
+      trackPrettyOutput("state JSON tree", filenameStates);
     }
   }
 
   if (printCsv) {
-    std::string filename = basename + ".csv";
+    std::string filename = filenameFor("csv");
 
     if (!printStates()) {
-      Log() << "Write CSV tree to " << filename << "... ";
-      writeCsvTree(filename);
-      Log() << "done!\n";
+      writeOutput("CSV tree", filename, [&]() { writeCsvTree(filename); });
+      trackPrettyOutput("CSV tree", filename);
     } else {
       // Write both physical and state level
-      Log() << "Write physical CSV tree to " << filename << "... ";
-      writeCsvTree(filename, false);
-      Log() << "done!\n";
-      std::string filenameStates = basename + "_states.csv";
-      Log() << "Write state CSV tree to " << filenameStates << "... ";
-      writeCsvTree(filenameStates, true);
-      Log() << "done!\n";
+      writeOutput("physical CSV tree", filename, [&]() { writeCsvTree(filename, false); });
+      trackPrettyOutput("physical CSV tree", filename);
+      std::string filenameStates = filenameFor("csv_states");
+      writeOutput("state CSV tree", filenameStates, [&]() { writeCsvTree(filenameStates, true); });
+      trackPrettyOutput("state CSV tree", filenameStates);
     }
   }
 
   if (printClu) {
-    std::string filename = basename + ".clu";
+    std::string filename = filenameFor("clu");
     if (!printStates()) {
-      Log() << "Write node modules to " << filename << "... ";
-      writeClu(filename, false, cluLevel);
-      Log() << "done!\n";
+      writeOutput("node modules", filename, [&]() { writeClu(filename, false, cluLevel); });
+      trackPrettyOutput("node modules", filename);
     } else {
       // Write both physical and state level
-      Log() << "Write physical node modules to " << filename << "... ";
-      writeClu(filename, false, cluLevel);
-      Log() << "done!\n";
-      std::string filenameStates = basename + "_states.clu";
-      Log() << "Write state node modules to " << filenameStates << "... ";
-      writeClu(filenameStates, true, cluLevel);
-      Log() << "done!\n";
+      writeOutput("physical node modules", filename, [&]() { writeClu(filename, false, cluLevel); });
+      trackPrettyOutput("physical node modules", filename);
+      std::string filenameStates = filenameFor("clu_states");
+      writeOutput("state node modules", filenameStates, [&]() { writeClu(filenameStates, true, cluLevel); });
+      trackPrettyOutput("state node modules", filenameStates);
+    }
+  }
+
+  if (prettyOutput && !prettyOutputFiles.empty()) {
+    if (prettyOutputFiles.size() == 1) {
+      PrettyOutput(true).status("Output", io::Str() << prettyOutputFiles.front().first << " -> " << prettyOutputFiles.front().second);
+    } else {
+      const auto summaries = summarizeOutputFiles(prettyOutputFiles);
+      for (unsigned int i = 0; i < summaries.size(); ++i) {
+        const std::string prefix = i == 0 ? std::string(io::Str() << prettyOutputFiles.size() << " files -> ") : "         ";
+        PrettyOutput(true).status("Output", io::Str() << prefix << summaries[i]);
+      }
     }
   }
 }
 
-unsigned int printPerLevelCodelength(const InfoNode& parent, std::ostream& out)
+unsigned int printPerLevelCodelength(const InfoNode& parent, std::ostream& out, bool prettyOutput)
 {
   std::vector<detail::PerLevelStat> perLevelStats;
   aggregatePerLevelCodelength(parent, perLevelStats);
 
   unsigned int numLevels = perLevelStats.size();
+
+  if (prettyOutput) {
+    std::vector<std::vector<std::string>> rows;
+    rows.reserve(numLevels + 1);
+    unsigned int sumNumModules = 0;
+    unsigned int sumNumLeafNodes = 0;
+    double sumAverageChildDegree = 0.0;
+    double sumIndexLengths = 0.0;
+    double sumLeafLengths = 0.0;
+    double sumCodelengths = 0.0;
+    for (unsigned int i = 0; i < numLevels; ++i) {
+      double averageChildDegree = perLevelStats[i].numNodes();
+      if (i > 0 && perLevelStats[i - 1].numModules > 0) {
+        averageChildDegree = perLevelStats[i].numNodes() * 1.0 / perLevelStats[i - 1].numModules;
+      }
+      sumNumModules += perLevelStats[i].numModules;
+      sumNumLeafNodes += perLevelStats[i].numLeafNodes;
+      sumAverageChildDegree += averageChildDegree * perLevelStats[i].numNodes();
+      sumIndexLengths += perLevelStats[i].indexLength;
+      sumLeafLengths += perLevelStats[i].leafLength;
+      sumCodelengths += perLevelStats[i].codelength();
+      rows.push_back({
+          io::Str() << (i + 1),
+          io::Str() << perLevelStats[i].numModules,
+          io::Str() << perLevelStats[i].numLeafNodes,
+          io::toPrecision(averageChildDegree, 2, true),
+          PrettyOutput::fixed(perLevelStats[i].indexLength),
+          PrettyOutput::fixed(perLevelStats[i].leafLength),
+          PrettyOutput::fixed(perLevelStats[i].codelength()),
+      });
+    }
+    const unsigned int sumNumNodes = sumNumModules + sumNumLeafNodes;
+    rows.push_back({
+        "Total",
+        io::Str() << sumNumModules,
+        io::Str() << sumNumLeafNodes,
+        sumNumNodes > 0 ? io::toPrecision(sumAverageChildDegree / sumNumNodes, 2, true) : "0",
+        PrettyOutput::fixed(sumIndexLengths),
+        PrettyOutput::fixed(sumLeafLengths),
+        PrettyOutput::fixed(sumCodelengths),
+    });
+    out << "\nLevels\n";
+    out << "  Level  Modules  Leaves  Avg degree  Module bits  Leaf bits  Total bits\n";
+    for (const auto& row : rows) {
+      out << "  " << std::setw(5) << row[0]
+          << "  " << std::setw(7) << row[1]
+          << "  " << std::setw(6) << row[2]
+          << "  " << std::setw(10) << row[3]
+          << "  " << std::setw(11) << row[4]
+          << "  " << std::setw(9) << row[5]
+          << "  " << std::setw(10) << row[6] << "\n";
+    }
+    return numLevels;
+  }
 
   out << "Per level number of modules:         [";
   for (unsigned int i = 0; i < numLevels - 1; ++i) {

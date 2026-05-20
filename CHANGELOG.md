@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file. Releases are automated with [release-please](https://github.com/googleapis/release-please), using [Conventional Commits](https://www.conventionalcommits.org) to determine version bumps and changelog entries.
 
+## [2.10.1](https://github.com/mapequation/infomap/compare/v2.10.0...v2.10.1) (2026-05-05)
+
+
+### Bug Fixes
+
+* **python:** handle missing CLI arguments ([#509](https://github.com/mapequation/infomap/issues/509)) ([705871d](https://github.com/mapequation/infomap/commit/705871d5d4abf94b0f314c55eb6ab663934dafb9))
+
+## [2.10.0](https://github.com/mapequation/infomap/compare/v2.9.2...v2.10.0) (2026-05-04)
+
+
+### Features
+
+* add per-level module counts to json output ([#372](https://github.com/mapequation/infomap/issues/372)) ([dc9b30c](https://github.com/mapequation/infomap/commit/dc9b30cd7278d604e7327ddf6c33056d6a471dd2))
+* high-level R cluster_infomap helper ([#489](https://github.com/mapequation/infomap/issues/489)) ([0caea75](https://github.com/mapequation/infomap/commit/0caea755138734ee72d65ae38d107cef9ff9aa90))
+* library-safe no-output mode and reduced iostream references ([#428](https://github.com/mapequation/infomap/issues/428)) ([b43b8cc](https://github.com/mapequation/infomap/commit/b43b8cc3c6c39ad1b86d1751e138b1b68a1c1651))
+* **r:** add idiomatic R package with SWIG bindings and CI ([#464](https://github.com/mapequation/infomap/issues/464)) ([c4b3103](https://github.com/mapequation/infomap/commit/c4b31034f90a5fba35e4be47cd45512cb166637f))
+
+
+### Bug Fixes
+
+* avoid expensive vector copies in regularized flow lambdas ([#371](https://github.com/mapequation/infomap/issues/371)) ([23445fc](https://github.com/mapequation/infomap/commit/23445fcdf708f0ad1d0621c753582d63a9d14bb6))
+* Check random moves for weakly connected nodes ([#442](https://github.com/mapequation/infomap/issues/442)) ([3d05b8f](https://github.com/mapequation/infomap/commit/3d05b8fc5ea221455cfd0fd49091229dd96b35fb))
+* **ci:** enforce low-noise clang-tidy checks ([#485](https://github.com/mapequation/infomap/issues/485)) ([f157c05](https://github.com/mapequation/infomap/commit/f157c05c4cea8bdf2d7b9a92374058f34b3b5189))
+* correct regularized multilevel codelength ([#461](https://github.com/mapequation/infomap/issues/461)) ([1fae0f7](https://github.com/mapequation/infomap/commit/1fae0f7a3c25cab90197dc74c0e44256df46fdb6))
+* delete collapsed children when resetting InfoNode trees ([#403](https://github.com/mapequation/infomap/issues/403)) ([050a686](https://github.com/mapequation/infomap/commit/050a6869a0b028a5957cc1db296b29241f0e4866))
+* guard empty-module access in parallel move path ([#404](https://github.com/mapequation/infomap/issues/404)) ([c445a88](https://github.com/mapequation/infomap/commit/c445a88fe6f34f4e51ef834f1722ce822ad8270a))
+* guard multilayer state id shift for zero ([#373](https://github.com/mapequation/infomap/issues/373)) ([499b88a](https://github.com/mapequation/infomap/commit/499b88a2184929740f45e5355b0b94fe67e3fb6e))
+* handle regularized no-link networks ([#374](https://github.com/mapequation/infomap/issues/374)) ([f2700d0](https://github.com/mapequation/infomap/commit/f2700d03d806cf5f6593be142a5b2accae1178c7))
+* plumbing and lifecycle fixes ([#405](https://github.com/mapequation/infomap/issues/405)) ([ce27af6](https://github.com/mapequation/infomap/commit/ce27af604ac8806284ee84ce9de4389ad89839cd))
+* repair R release artifact flow ([#496](https://github.com/mapequation/infomap/issues/496)) ([5fa6ddf](https://github.com/mapequation/infomap/commit/5fa6ddf180073155283d0f0677960b00a0016d59))
+* restore stream format after codelength output ([#486](https://github.com/mapequation/infomap/issues/486)) ([c35a629](https://github.com/mapequation/infomap/commit/c35a629dd9366a8ad935669bd4f2f74da72e9ea1))
+* speed up bulk link loading ([#493](https://github.com/mapequation/infomap/issues/493)) ([59e13e8](https://github.com/mapequation/infomap/commit/59e13e88f94dbf0a4c79e7f3b7d8f114665da46f))
+* speed up bulk multilayer link loading ([#497](https://github.com/mapequation/infomap/issues/497)) ([1ec735f](https://github.com/mapequation/infomap/commit/1ec735f183285b482f7bb1a2cf349695b0974b93))
+* speed up multilayer intra/inter link loading ([#499](https://github.com/mapequation/infomap/issues/499)) ([6685aab](https://github.com/mapequation/infomap/commit/6685aab04a1cca6000a0395c1beacd8bb133aebf))
+* sync matchable multilayer ids for python input ([#494](https://github.com/mapequation/infomap/issues/494)) ([9ff9af8](https://github.com/mapequation/infomap/commit/9ff9af82f8460409315cd20d0d7395fb15a5128d))
+* tighten wrapper edge cases ([4a9d542](https://github.com/mapequation/infomap/commit/4a9d54298629fdc484d8c40d44a9f3d6d8434ffd))
+* Use consistent convention on degree of self-links ([342321d](https://github.com/mapequation/infomap/commit/342321d0b25a008bd6ccf5ff5815add75c1e1fa9))
+
+
+### Performance Improvements
+
+* **ci:** add PR perf regression benchmark check ([#427](https://github.com/mapequation/infomap/issues/427)) ([270e527](https://github.com/mapequation/infomap/commit/270e5274ade5b23e0ed2b429bad3e53fe06c085e))
+
 ### [2.9.2](https://github.com/mapequation/infomap/compare/v2.9.1...v2.9.2) (2026-02-25)
 
 

@@ -1,0 +1,22 @@
+/* Furo overrides for Infomap docs */
+
+:root {
+    --color-brand-primary: #f48024;
+    --color-brand-content: #f48024;
+}
+
+.sidebar-brand-text {
+    font-weight: 600;
+}
+
+/* Constrain very wide code blocks for readability */
+.highlight pre {
+    line-height: 1.45;
+}
+
+/* Slightly tighter API signature blocks */
+dl.py.class > dt,
+dl.py.function > dt,
+dl.py.method > dt {
+    padding: 0.4rem 0.6rem;
+}

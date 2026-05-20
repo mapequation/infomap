@@ -39,7 +39,8 @@ OUTPUT_OPTIONS <- list(
   list(type = "value", name = "clu_level", flag = "--clu-level", default = NULL, include = .skip_when_null),
   list(type = "flag", name = "hide_bipartite_nodes", flag = "--hide-bipartite-nodes", default = FALSE),
   list(type = "flag", name = "print_all_trials", flag = "--print-all-trials", default = FALSE),
-  list(type = "flag", name = "silent", flag = "--silent", default = FALSE)
+  list(type = "flag", name = "silent", flag = "--silent", default = FALSE),
+  list(type = "flag", name = "pretty", flag = "--pretty", default = FALSE)
 )
 
 ALGORITHM_OPTIONS <- list(
@@ -76,8 +77,10 @@ ACCURACY_OPTIONS <- list(
   list(type = "value", name = "tune_iteration_limit", flag = "--tune-iteration-limit", default = NULL, include = .skip_when_null),
   list(type = "value", name = "core_loop_codelength_threshold", flag = "--core-loop-codelength-threshold", default = DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD, include = .skip_when_not_equal(DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD)),
   list(type = "value", name = "tune_iteration_relative_threshold", flag = "--tune-iteration-relative-threshold", default = DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD, include = .skip_when_not_equal(DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD)),
+  list(type = "flag", name = "inner_parallelization", flag = "--inner-parallelization", default = FALSE),
   list(type = "flag", name = "prefer_modular_solution", flag = "--prefer-modular-solution", default = FALSE),
-  list(type = "flag", name = "inner_parallelization", flag = "--inner-parallelization", default = FALSE)
+  list(type = "value", name = "num_random_moves", flag = "--num-random-moves", default = NULL, include = .skip_when_null),
+  list(type = "value", name = "max_degree_for_random_moves", flag = "--max-degree-for-random-moves", default = NULL, include = .skip_when_null)
 )
 
 OPTION_FIELD_NAMES <- c(
@@ -87,15 +90,16 @@ OPTION_FIELD_NAMES <- c(
   "meta_data_unweighted", "no_infomap", "hard_partition", "out_name",
   "no_file_output", "tree", "ftree", "clu",
   "clu_level", "output", "hide_bipartite_nodes", "print_all_trials",
-  "verbosity_level", "silent", "two_level", "flow_model",
-  "directed", "recorded_teleportation", "use_node_weights_as_flow", "to_nodes",
-  "teleportation_probability", "random_node_check_rate", "regularized", "regularization_strength",
-  "entropy_corrected", "entropy_correction_strength", "markov_time", "variable_markov_time",
-  "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules", "multilayer_relax_rate",
-  "multilayer_relax_limit", "multilayer_relax_limit_up", "multilayer_relax_limit_down", "multilayer_relax_by_jsd",
-  "multilayer_test", "multilayer_aggregation", "seed", "num_trials",
-  "core_loop_limit", "core_level_limit", "tune_iteration_limit", "core_loop_codelength_threshold",
-  "tune_iteration_relative_threshold", "fast_hierarchical_solution", "prefer_modular_solution", "inner_parallelization"
+  "verbosity_level", "silent", "pretty", "two_level",
+  "flow_model", "directed", "recorded_teleportation", "use_node_weights_as_flow",
+  "to_nodes", "teleportation_probability", "random_node_check_rate", "regularized",
+  "regularization_strength", "entropy_corrected", "entropy_correction_strength", "markov_time",
+  "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules",
+  "multilayer_relax_rate", "multilayer_relax_limit", "multilayer_relax_limit_up", "multilayer_relax_limit_down",
+  "multilayer_relax_by_jsd", "multilayer_test", "multilayer_aggregation", "seed",
+  "num_trials", "core_loop_limit", "core_level_limit", "tune_iteration_limit",
+  "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution", "inner_parallelization",
+  "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
 )
 
 OPTION_DEFAULTS <- list(
@@ -125,6 +129,7 @@ OPTION_DEFAULTS <- list(
   print_all_trials = FALSE,
   verbosity_level = DEFAULT_VERBOSITY_LEVEL,
   silent = FALSE,
+  pretty = FALSE,
   two_level = FALSE,
   flow_model = NULL,
   directed = NULL,
@@ -157,8 +162,10 @@ OPTION_DEFAULTS <- list(
   core_loop_codelength_threshold = DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
   tune_iteration_relative_threshold = DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD,
   fast_hierarchical_solution = NULL,
+  inner_parallelization = FALSE,
   prefer_modular_solution = FALSE,
-  inner_parallelization = FALSE
+  num_random_moves = NULL,
+  max_degree_for_random_moves = NULL
 )
 
 #' Build a reusable Infomap options list
@@ -177,77 +184,80 @@ OPTION_DEFAULTS <- list(
 #' Input
 #' \describe{
 #'   \item{`include_self_links`}{Deprecated. Self-links are included by default; use `no_self_links = TRUE` to exclude them.}
-#'   \item{`skip_adjust_bipartite_flow`}{Skip distributing all flow from the bipartite nodes to the primary nodes.}
-#'   \item{`bipartite_teleportation`}{Teleport like the bipartite flow instead of two-step (unipartite) teleportation.}
-#'   \item{`weight_threshold`}{Limit the number of links to read from the network. Ignore links with less weight than the threshold.}
-#'   \item{`no_self_links`}{Exclude self links in the input network.}
-#'   \item{`node_limit`}{Limit the number of nodes to read from the network. Ignore links connected to ignored nodes.}
+#'   \item{`skip_adjust_bipartite_flow`}{Keep flow on bipartite nodes instead of distributing it to primary nodes.}
+#'   \item{`bipartite_teleportation`}{Use bipartite teleportation instead of the default two-step unipartite teleportation.}
+#'   \item{`weight_threshold`}{Ignore input links with weight below this threshold.}
+#'   \item{`no_self_links`}{Exclude self-links from the input network.}
+#'   \item{`node_limit`}{Read only nodes up to this node id and ignore links connected to higher node ids.}
 #'   \item{`multilayer_self_inter_links`}{For inter/intra format, restrict inter-layer links within same physical node but adjust flow to approximate physical steps}
-#'   \item{`matchable_multilayer_ids`}{Construct state ids from node and layer ids that are consistent across networks for the same max number of layers. Set to at least the largest layer id among networks to match.}
-#'   \item{`cluster_data`}{Provide an initial two-level (clu format) or multi-layer (tree format) solution.}
-#'   \item{`assign_to_neighbouring_module`}{Assign nodes without module assignments (from --cluster-data) to the module assignment of a neighbouring node if possible.}
-#'   \item{`meta_data`}{Provide meta data (clu format) that should be encoded.}
-#'   \item{`meta_data_rate`}{Metadata encoding rate. Default is to encode each step.}
-#'   \item{`meta_data_unweighted`}{Don't weight meta data by node flow.}
-#'   \item{`no_infomap`}{Don't run the optimizer. Useful to calculate codelength of provided cluster data or to print non-modular statistics.}
+#'   \item{`matchable_multilayer_ids`}{Construct state ids from node ids and layer ids that stay comparable across networks. Set at least to the largest layer id among networks to match.}
+#'   \item{`cluster_data`}{Read an initial partition from a clu file or a hierarchy from a tree/ftree file. Tree input may use physical or state nodes for higher-order networks.}
+#'   \item{`assign_to_neighbouring_module`}{With --cluster-data, assign nodes missing module ids to a neighboring node's module when possible.}
+#'   \item{`meta_data`}{Read metadata to encode from a clu-format file.}
+#'   \item{`meta_data_rate`}{With --meta-data, set the metadata encoding rate. The default encodes metadata at each step.}
+#'   \item{`meta_data_unweighted`}{With --meta-data, encode metadata without weighting by node flow.}
+#'   \item{`no_infomap`}{Skip optimization. Use this to calculate codelength for --cluster-data or to print non-modular statistics.}
 #'   \item{`hard_partition`}{Do not split initial partition.}
 #' }
 #'
 #' Output
 #' \describe{
-#'   \item{`out_name`}{Name for the output files, e.g. \[output_directory\]/\[out-name\].tree}
-#'   \item{`no_file_output`}{Don't write output to file.}
-#'   \item{`tree`}{Write a tree file with the modular hierarchy. Automatically enabled if no other output is specified.}
-#'   \item{`ftree`}{Write a ftree file with the modular hierarchy including aggregated links between (nested) modules. (Used by Network Navigator)}
-#'   \item{`clu`}{Write a clu file with the top cluster ids for each node.}
-#'   \item{`clu_level`}{For clu output, print modules at specified depth from root. Use -1 for bottom level modules.}
-#'   \item{`output`}{Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.}
-#'   \item{`hide_bipartite_nodes`}{Project bipartite solution to unipartite.}
-#'   \item{`print_all_trials`}{Print all trials to separate files.}
-#'   \item{`verbosity_level`}{Verbose output on the console. Add additional 'v' flags to increase verbosity up to -vvv.}
-#'   \item{`silent`}{No output on the console.}
+#'   \item{`out_name`}{Base name for output files, for example \[out_directory\]/\[out-name\].tree.}
+#'   \item{`no_file_output`}{Do not write output files.}
+#'   \item{`tree`}{Write the modular hierarchy to a tree file. Enabled by default when no other output format is selected.}
+#'   \item{`ftree`}{Write the modular hierarchy and aggregated links between nested modules to an ftree file. Used by Network Navigator.}
+#'   \item{`clu`}{Write top-level module ids for each node to a clu file.}
+#'   \item{`clu_level`}{With --clu or --output clu, write module ids at this depth from the root. Use -1 for bottom-level modules.}
+#'   \item{`output`}{Write selected output formats as a comma-separated list without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.}
+#'   \item{`hide_bipartite_nodes`}{Hide bipartite nodes in output by projecting the solution to primary nodes.}
+#'   \item{`print_all_trials`}{Write each trial to separate output files. Has effect only when --num-trials is greater than 1.}
+#'   \item{`verbosity_level`}{Increase console verbosity. Add more v flags to increase verbosity up to -vvv.}
+#'   \item{`silent`}{Suppress console output.}
+#'   \item{`pretty`}{Use modernized console output with color and Unicode on interactive terminals.}
 #' }
 #'
 #' Algorithm
 #' \describe{
-#'   \item{`two_level`}{Optimize a two-level partition of the network. Default is multi-level.}
-#'   \item{`flow_model`}{Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir, precomputed.}
-#'   \item{`directed`}{Assume directed links. Shorthand for '--flow-model directed'.}
-#'   \item{`recorded_teleportation`}{If teleportation is used to calculate the flow, also record it when minimizing codelength.}
-#'   \item{`use_node_weights_as_flow`}{Use node weights (from api or after names in Pajek format) as flow, normalized to sum to 1}
-#'   \item{`to_nodes`}{Teleport to nodes instead of to links, assuming uniform node weights if no such input data.}
-#'   \item{`teleportation_probability`}{Probability of teleporting to a random node or link.}
+#'   \item{`two_level`}{Optimize a two-level partition instead of the default multi-level hierarchy.}
+#'   \item{`flow_model`}{Choose how Infomap derives flow from the input links. Options: undirected, directed, undirdir, outdirdir, rawdir, precomputed.}
+#'   \item{`directed`}{Treat input links as directed. Shorthand for --flow-model directed.}
+#'   \item{`recorded_teleportation`}{When teleportation is used to calculate flow, also record teleportation steps in the codelength.}
+#'   \item{`use_node_weights_as_flow`}{Use node weights from the API or Pajek node records as normalized node flow.}
+#'   \item{`to_nodes`}{Teleport to nodes instead of links. Uses uniform node weights unless node weights are provided.}
+#'   \item{`teleportation_probability`}{Set the probability of teleporting to a random node or link when calculating flow.}
 #'   \item{`random_node_check_rate`}{Check a selected proportion of nodes for moves if recorded teleportation}
-#'   \item{`regularized`}{Effectively add a fully connected Bayesian prior network to not overfit due to missing links. Implies recorded teleportation}
-#'   \item{`regularization_strength`}{Adjust relative strength of Bayesian prior network with this multiplier.}
-#'   \item{`entropy_corrected`}{Correct for negative entropy bias in small samples (many modules).}
-#'   \item{`entropy_correction_strength`}{Increase or decrease the default entropy correction with this factor.}
-#'   \item{`markov_time`}{Scale link flow to change the cost of moving between modules. Higher values results in fewer modules.}
-#'   \item{`variable_markov_time`}{Increase Markov time locally to level out link flow. Reduces risk of overpartitioning sparse areas while keeping high resolution in dense areas.}
-#'   \item{`variable_markov_damping`}{Damping parameter for variable Markov time, to scale with local effective degree (0) or local entropy (1).}
-#'   \item{`variable_markov_min_scale`}{Minimum local scale for nodes with zero entropy to avoid division by zero. Local Markov time is max scale divided by local scale.}
-#'   \item{`preferred_number_of_modules`}{Penalize solutions the more they differ from this number.}
-#'   \item{`multilayer_relax_rate`}{Probability to relax the constraint to move only in the current layer.}
-#'   \item{`multilayer_relax_limit`}{Number of neighboring layers in each direction to relax to. If negative, relax to any layer.}
-#'   \item{`multilayer_relax_limit_up`}{Number of neighboring layers with higher id to relax to. If negative, relax to any layer.}
-#'   \item{`multilayer_relax_limit_down`}{Number of neighboring layers with lower id to relax to. If negative, relax to any layer.}
-#'   \item{`multilayer_relax_by_jsd`}{Relax proportional to the out-link similarity measured by the Jensen-Shannon divergence.}
+#'   \item{`regularized`}{Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.}
+#'   \item{`regularization_strength`}{Scale the relative strength of the Bayesian prior network used by --regularized.}
+#'   \item{`entropy_corrected`}{Correct for negative entropy bias in small samples, especially solutions with many modules.}
+#'   \item{`entropy_correction_strength`}{Scale the default correction used by --entropy-corrected.}
+#'   \item{`markov_time`}{Scale link flow to change the cost of moving between modules. Higher values result in fewer modules.}
+#'   \item{`variable_markov_time`}{Vary Markov time locally to reduce overpartitioning in sparse areas while keeping higher resolution in dense areas.}
+#'   \item{`variable_markov_damping`}{With --variable-markov-time, set damping between local effective degree (0) and local entropy (1).}
+#'   \item{`variable_markov_min_scale`}{With --variable-markov-time, set the minimum local scale for zero-entropy nodes. Local Markov time is max scale divided by local scale.}
+#'   \item{`preferred_number_of_modules`}{Penalize solutions by how far their number of modules differs from this value.}
+#'   \item{`multilayer_relax_rate`}{Set the probability of relaxing from a state node to neighboring layers instead of staying in the current layer.}
+#'   \item{`multilayer_relax_limit`}{Limit relaxation to this many neighboring layer ids in each direction. Use a negative value to allow relaxation to any layer.}
+#'   \item{`multilayer_relax_limit_up`}{Limit relaxation upward to this many higher neighboring layer ids. Use a negative value to allow relaxation to any higher layer.}
+#'   \item{`multilayer_relax_limit_down`}{Limit relaxation downward to this many lower neighboring layer ids. Use a negative value to allow relaxation to any lower layer.}
+#'   \item{`multilayer_relax_by_jsd`}{Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon divergence.}
 #'   \item{`multilayer_test`}{Testing different multilayer implementations.}
 #'   \item{`multilayer_aggregation`}{Experimental: Use aggregated multilayer network.}
 #' }
 #'
 #' Accuracy
 #' \describe{
-#'   \item{`seed`}{A seed (integer) to the random number generator for reproducible results.}
-#'   \item{`num_trials`}{Number of outer-most loops to run before picking the best solution.}
-#'   \item{`core_loop_limit`}{Limit the number of loops that tries to move each node into the best possible module.}
-#'   \item{`core_level_limit`}{Limit the number of times the core loops are reapplied on existing modular network to search bigger structures.}
-#'   \item{`tune_iteration_limit`}{Limit the number of main iterations in the two-level partition algorithm. 0 means no limit.}
-#'   \item{`core_loop_codelength_threshold`}{Minimum codelength threshold for accepting a new solution in core loop.}
-#'   \item{`tune_iteration_relative_threshold`}{Set codelength improvement threshold of each new tune iteration to 'f' times the initial two-level codelength.}
-#'   \item{`fast_hierarchical_solution`}{Find top modules fast. Use -FF to keep all fast levels. Use -FFF to skip recursive part.}
-#'   \item{`prefer_modular_solution`}{Prefer modular solutions even if they are worse than putting all nodes in one module.}
-#'   \item{`inner_parallelization`}{Parallelize the inner-most loop for greater speed. This may give some accuracy tradeoff.}
+#'   \item{`seed`}{Set the random number generator seed for reproducible results.}
+#'   \item{`num_trials`}{Run this many independent trials and keep the best solution.}
+#'   \item{`core_loop_limit`}{Limit how many core loops try to move each node to the best module.}
+#'   \item{`core_level_limit`}{Limit how many times core loops are reapplied to the aggregated modular network to find larger structures.}
+#'   \item{`tune_iteration_limit`}{Limit the main iterations in the two-level partition algorithm. 0 means no limit.}
+#'   \item{`core_loop_codelength_threshold`}{Require at least this codelength improvement to accept a new solution in a core loop.}
+#'   \item{`tune_iteration_relative_threshold`}{Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.}
+#'   \item{`fast_hierarchical_solution`}{Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to skip recursive refinement.}
+#'   \item{`inner_parallelization`}{Parallelize the innermost loop for speed, with a possible accuracy tradeoff.}
+#'   \item{`prefer_modular_solution`}{Prefer a modular solution even when one module gives a lower codelength.}
+#'   \item{`num_random_moves`}{Try this many random moves in each core loop to merge weakly connected nodes.}
+#'   \item{`max_degree_for_random_moves`}{Try random moves only for nodes with degree at most this value.}
 #' }
 #'
 #' @return A named list of options.

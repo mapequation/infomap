@@ -43,6 +43,7 @@ _OUTPUT_OPTION_SPECS = (
     ("flag", "hide_bipartite_nodes", "--hide-bipartite-nodes", None),
     ("flag", "print_all_trials", "--print-all-trials", None),
     ("flag", "silent", "--silent", None),
+    ("flag", "pretty", "--pretty", None),
 )
 
 _ALGORITHM_OPTION_SPECS = (
@@ -79,8 +80,10 @@ _ACCURACY_OPTION_SPECS = (
     ("value", "tune_iteration_limit", "--tune-iteration-limit", lambda value: value is not None),
     ("value", "core_loop_codelength_threshold", "--core-loop-codelength-threshold", lambda value: value != 1e-10),
     ("value", "tune_iteration_relative_threshold", "--tune-iteration-relative-threshold", lambda value: value != 1e-5),
-    ("flag", "prefer_modular_solution", "--prefer-modular-solution", None),
     ("flag", "inner_parallelization", "--inner-parallelization", None),
+    ("flag", "prefer_modular_solution", "--prefer-modular-solution", None),
+    ("value", "num_random_moves", "--num-random-moves", lambda value: value is not None),
+    ("value", "max_degree_for_random_moves", "--max-degree-for-random-moves", lambda value: value is not None),
 )
 
 
@@ -116,155 +119,164 @@ class InfomapOptions:
     Parameters
     ----------
     skip_adjust_bipartite_flow : bool, optional
-        Skip distributing all flow from the bipartite nodes to the primary nodes.
+        Keep flow on bipartite nodes instead of distributing it to primary nodes.
     bipartite_teleportation : bool, optional
-        Teleport like the bipartite flow instead of two-step (unipartite) teleportation.
+        Use bipartite teleportation instead of the default two-step unipartite
+        teleportation.
     weight_threshold : float, optional
-        Limit the number of links to read from the network. Ignore links with less
-        weight than the threshold.
+        Ignore input links with weight below this threshold.
     no_self_links : bool, optional
-        Exclude self links in the input network.
+        Exclude self-links from the input network.
     node_limit : int, optional
-        Limit the number of nodes to read from the network. Ignore links connected to
-        ignored nodes.
+        Read only nodes up to this node id and ignore links connected to higher node
+        ids.
     multilayer_self_inter_links : bool, optional
         For inter/intra format, restrict inter-layer links within same physical node but
         adjust flow to approximate physical steps
     matchable_multilayer_ids : int, optional
-        Construct state ids from node and layer ids that are consistent across networks
-        for the same max number of layers. Set to at least the largest layer id among
-        networks to match.
+        Construct state ids from node ids and layer ids that stay comparable across
+        networks. Set at least to the largest layer id among networks to match.
     cluster_data : str, optional
-        Provide an initial two-level (clu format) or multi-layer (tree format) solution.
+        Read an initial partition from a clu file or a hierarchy from a tree/ftree file.
+        Tree input may use physical or state nodes for higher-order networks.
     assign_to_neighbouring_module : bool, optional
-        Assign nodes without module assignments (from --cluster-data) to the module
-        assignment of a neighbouring node if possible.
+        With --cluster-data, assign nodes missing module ids to a neighboring node's
+        module when possible.
     meta_data : str, optional
-        Provide meta data (clu format) that should be encoded.
+        Read metadata to encode from a clu-format file.
     meta_data_rate : float, optional
-        Metadata encoding rate. Default is to encode each step.
+        With --meta-data, set the metadata encoding rate. The default encodes metadata
+        at each step.
     meta_data_unweighted : bool, optional
-        Don't weight meta data by node flow.
+        With --meta-data, encode metadata without weighting by node flow.
     no_infomap : bool, optional
-        Don't run the optimizer. Useful to calculate codelength of provided cluster data
-        or to print non-modular statistics.
+        Skip optimization. Use this to calculate codelength for --cluster-data or to
+        print non-modular statistics.
     hard_partition : bool, optional
         Do not split initial partition.
     out_name : str, optional
-        Name for the output files, e.g. [output_directory]/[out-name].tree
+        Base name for output files, for example [out_directory]/[out-name].tree.
     no_file_output : bool, optional
-        Don't write output to file.
+        Do not write output files.
     tree : bool, optional
-        Write a tree file with the modular hierarchy. Automatically enabled if no other
-        output is specified.
+        Write the modular hierarchy to a tree file. Enabled by default when no other
+        output format is selected.
     ftree : bool, optional
-        Write a ftree file with the modular hierarchy including aggregated links between
-        (nested) modules. (Used by Network Navigator)
+        Write the modular hierarchy and aggregated links between nested modules to an
+        ftree file. Used by Network Navigator.
     clu : bool, optional
-        Write a clu file with the top cluster ids for each node.
+        Write top-level module ids for each node to a clu file.
     clu_level : int, optional
-        For clu output, print modules at specified depth from root. Use -1 for bottom
-        level modules.
+        With --clu or --output clu, write module ids at this depth from the root. Use -1
+        for bottom-level modules.
     output : sequence of str, optional
-        Comma-separated output formats without spaces, e.g. -o clu,tree,ftree. Options:
-        clu, tree, ftree, newick, json, csv, network, states, flow.
+        Write selected output formats as a comma-separated list without spaces, e.g. -o
+        clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states,
+        flow.
     hide_bipartite_nodes : bool, optional
-        Project bipartite solution to unipartite.
+        Hide bipartite nodes in output by projecting the solution to primary nodes.
     print_all_trials : bool, optional
-        Print all trials to separate files.
+        Write each trial to separate output files. Has effect only when --num-trials is
+        greater than 1.
     verbosity_level : int, optional
         Verbosity level on the console. 1 keeps the default output level, 2 renders -vv
         and so on.
     silent : bool, optional
-        No output on the console.
+        Suppress console output.
+    pretty : bool, optional
+        Use modernized console output with color and Unicode on interactive terminals.
     two_level : bool, optional
-        Optimize a two-level partition of the network. Default is multi-level.
+        Optimize a two-level partition instead of the default multi-level hierarchy.
     flow_model : str, optional
-        Specify flow model. Options: undirected, directed, undirdir, outdirdir, rawdir,
-        precomputed.
+        Choose how Infomap derives flow from the input links. Options: undirected,
+        directed, undirdir, outdirdir, rawdir, precomputed.
     directed : bool, optional
-        Assume directed links. Shorthand for '--flow-model directed'.
+        Treat input links as directed. Shorthand for --flow-model directed.
     recorded_teleportation : bool, optional
-        If teleportation is used to calculate the flow, also record it when minimizing
-        codelength.
+        When teleportation is used to calculate flow, also record teleportation steps in
+        the codelength.
     use_node_weights_as_flow : bool, optional
-        Use node weights (from api or after names in Pajek format) as flow, normalized
-        to sum to 1
+        Use node weights from the API or Pajek node records as normalized node flow.
     to_nodes : bool, optional
-        Teleport to nodes instead of to links, assuming uniform node weights if no such
-        input data.
+        Teleport to nodes instead of links. Uses uniform node weights unless node
+        weights are provided.
     teleportation_probability : float, optional
-        Probability of teleporting to a random node or link.
+        Set the probability of teleporting to a random node or link when calculating
+        flow.
     random_node_check_rate : float, optional
         Check a selected proportion of nodes for moves if recorded teleportation
     regularized : bool, optional
-        Effectively add a fully connected Bayesian prior network to not overfit due to
-        missing links. Implies recorded teleportation
+        Add a fully connected Bayesian prior network to reduce overfitting to missing
+        links. Activates --recorded-teleportation.
     regularization_strength : float, optional
-        Adjust relative strength of Bayesian prior network with this multiplier.
+        Scale the relative strength of the Bayesian prior network used by --regularized.
     entropy_corrected : bool, optional
-        Correct for negative entropy bias in small samples (many modules).
+        Correct for negative entropy bias in small samples, especially solutions with
+        many modules.
     entropy_correction_strength : float, optional
-        Increase or decrease the default entropy correction with this factor.
+        Scale the default correction used by --entropy-corrected.
     markov_time : float, optional
         Scale link flow to change the cost of moving between modules. Higher values
-        results in fewer modules.
+        result in fewer modules.
     variable_markov_time : bool, optional
-        Increase Markov time locally to level out link flow. Reduces risk of
-        overpartitioning sparse areas while keeping high resolution in dense areas.
+        Vary Markov time locally to reduce overpartitioning in sparse areas while
+        keeping higher resolution in dense areas.
     variable_markov_damping : float, optional
-        Damping parameter for variable Markov time, to scale with local effective degree
-        (0) or local entropy (1).
+        With --variable-markov-time, set damping between local effective degree (0) and
+        local entropy (1).
     variable_markov_min_scale : float, optional
-        Minimum local scale for nodes with zero entropy to avoid division by zero. Local
-        Markov time is max scale divided by local scale.
+        With --variable-markov-time, set the minimum local scale for zero-entropy nodes.
+        Local Markov time is max scale divided by local scale.
     preferred_number_of_modules : int, optional
-        Penalize solutions the more they differ from this number.
+        Penalize solutions by how far their number of modules differs from this value.
     multilayer_relax_rate : float, optional
-        Probability to relax the constraint to move only in the current layer.
+        Set the probability of relaxing from a state node to neighboring layers instead
+        of staying in the current layer.
     multilayer_relax_limit : int, optional
-        Number of neighboring layers in each direction to relax to. If negative, relax
-        to any layer.
+        Limit relaxation to this many neighboring layer ids in each direction. Use a
+        negative value to allow relaxation to any layer.
     multilayer_relax_limit_up : int, optional
-        Number of neighboring layers with higher id to relax to. If negative, relax to
-        any layer.
+        Limit relaxation upward to this many higher neighboring layer ids. Use a
+        negative value to allow relaxation to any higher layer.
     multilayer_relax_limit_down : int, optional
-        Number of neighboring layers with lower id to relax to. If negative, relax to
-        any layer.
+        Limit relaxation downward to this many lower neighboring layer ids. Use a
+        negative value to allow relaxation to any lower layer.
     multilayer_relax_by_jsd : bool, optional
-        Relax proportional to the out-link similarity measured by the Jensen-Shannon
+        Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon
         divergence.
     multilayer_test : int, optional
         Testing different multilayer implementations.
     multilayer_aggregation : bool, optional
         Experimental: Use aggregated multilayer network.
     seed : int, optional
-        A seed (integer) to the random number generator for reproducible results.
+        Set the random number generator seed for reproducible results.
     num_trials : int, optional
-        Number of outer-most loops to run before picking the best solution.
+        Run this many independent trials and keep the best solution.
     core_loop_limit : int, optional
-        Limit the number of loops that tries to move each node into the best possible
-        module.
+        Limit how many core loops try to move each node to the best module.
     core_level_limit : int, optional
-        Limit the number of times the core loops are reapplied on existing modular
-        network to search bigger structures.
+        Limit how many times core loops are reapplied to the aggregated modular network
+        to find larger structures.
     tune_iteration_limit : int, optional
-        Limit the number of main iterations in the two-level partition algorithm. 0
-        means no limit.
+        Limit the main iterations in the two-level partition algorithm. 0 means no
+        limit.
     core_loop_codelength_threshold : float, optional
-        Minimum codelength threshold for accepting a new solution in core loop.
+        Require at least this codelength improvement to accept a new solution in a core
+        loop.
     tune_iteration_relative_threshold : float, optional
-        Set codelength improvement threshold of each new tune iteration to 'f' times the
+        Require each tune iteration to improve codelength by this fraction of the
         initial two-level codelength.
     fast_hierarchical_solution : int, optional
         Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive
         part.
-    prefer_modular_solution : bool, optional
-        Prefer modular solutions even if they are worse than putting all nodes in one
-        module.
     inner_parallelization : bool, optional
-        Parallelize the inner-most loop for greater speed. This may give some accuracy
-        tradeoff.
+        Parallelize the innermost loop for speed, with a possible accuracy tradeoff.
+    prefer_modular_solution : bool, optional
+        Prefer a modular solution even when one module gives a lower codelength.
+    num_random_moves : int, optional
+        Try this many random moves in each core loop to merge weakly connected nodes.
+    max_degree_for_random_moves : int, optional
+        Try random moves only for nodes with degree at most this value.
     include_self_links : bool, optional
         Deprecated. Self-links are included by default; use no_self_links=True to
         exclude them.
@@ -298,6 +310,7 @@ class InfomapOptions:
     print_all_trials: bool = False
     verbosity_level: int = _DEFAULT_VERBOSITY_LEVEL
     silent: bool = False
+    pretty: bool = False
     # algorithm
     two_level: bool = False
     flow_model: str | None = None
@@ -332,8 +345,10 @@ class InfomapOptions:
     core_loop_codelength_threshold: float = _DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD
     tune_iteration_relative_threshold: float = _DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD
     fast_hierarchical_solution: int | None = None
-    prefer_modular_solution: bool = False
     inner_parallelization: bool = False
+    prefer_modular_solution: bool = False
+    num_random_moves: int | None = None
+    max_degree_for_random_moves: int | None = None
 
     @classmethod
     def from_mapping(cls, mapping):
@@ -412,6 +427,7 @@ def _construct_args(
     print_all_trials=False,
     verbosity_level=_DEFAULT_VERBOSITY_LEVEL,
     silent=False,
+    pretty=False,
     # algorithm
     two_level=False,
     flow_model=None,
@@ -446,7 +462,9 @@ def _construct_args(
     core_loop_codelength_threshold=_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD,
     tune_iteration_relative_threshold=_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD,
     fast_hierarchical_solution=None,
-    prefer_modular_solution=False,
     inner_parallelization=False,
+    prefer_modular_solution=False,
+    num_random_moves=None,
+    max_degree_for_random_moves=None,
 ):
     return InfomapOptions.from_mapping(locals()).to_args(base_args=args)

@@ -110,6 +110,12 @@ module, flow, optional layer id).}
 \item{\code{physical_nodes}}{Per-physical-node attributes (state nodes
 merged within a module).}
 
+\item{\code{links}}{Per-link source, target, weight and flow as a
+\code{data.frame}.}
+
+\item{\code{flow_links}}{Per-link source, target and flow as a
+\code{data.frame}.}
+
 \item{\code{names}}{Named character vector of all assigned node names.}
 }
 \if{html}{\out{</div>}}
@@ -131,7 +137,9 @@ merged within a module).}
 \item \href{#method-Infomap-remove_links}{\code{InfomapClass$remove_links()}}
 \item \href{#method-Infomap-add_multilayer_link}{\code{InfomapClass$add_multilayer_link()}}
 \item \href{#method-Infomap-add_multilayer_intra_link}{\code{InfomapClass$add_multilayer_intra_link()}}
+\item \href{#method-Infomap-add_multilayer_intra_links}{\code{InfomapClass$add_multilayer_intra_links()}}
 \item \href{#method-Infomap-add_multilayer_inter_link}{\code{InfomapClass$add_multilayer_inter_link()}}
+\item \href{#method-Infomap-add_multilayer_inter_links}{\code{InfomapClass$add_multilayer_inter_links()}}
 \item \href{#method-Infomap-add_multilayer_links}{\code{InfomapClass$add_multilayer_links()}}
 \item \href{#method-Infomap-set_meta_data}{\code{InfomapClass$set_meta_data()}}
 \item \href{#method-Infomap-run}{\code{InfomapClass$run()}}
@@ -143,6 +151,7 @@ merged within a module).}
 \item \href{#method-Infomap-get_modules}{\code{InfomapClass$get_modules()}}
 \item \href{#method-Infomap-get_multilevel_modules}{\code{InfomapClass$get_multilevel_modules()}}
 \item \href{#method-Infomap-get_nodes}{\code{InfomapClass$get_nodes()}}
+\item \href{#method-Infomap-get_links}{\code{InfomapClass$get_links()}}
 \item \href{#method-Infomap-get_name}{\code{InfomapClass$get_name()}}
 \item \href{#method-Infomap-get_names}{\code{InfomapClass$get_names()}}
 \item \href{#method-Infomap-write_clu}{\code{InfomapClass$write_clu()}}
@@ -444,6 +453,25 @@ Add an intra-layer link in a multilayer network.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_multilayer_intra_links"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_multilayer_intra_links}{}}}
+\subsection{Method \code{add_multilayer_intra_links()}}{
+Add many intra-layer links in a multilayer network.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_multilayer_intra_links(links)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{links}}{A list of vectors of the form
+\code{c(layer, source_node, target_node, weight)} (weight optional), or
+a 3- or 4-column matrix / data.frame.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Infomap-add_multilayer_inter_link"></a>}}
 \if{latex}{\out{\hypertarget{method-Infomap-add_multilayer_inter_link}{}}}
 \subsection{Method \code{add_multilayer_inter_link()}}{
@@ -472,6 +500,25 @@ Add an inter-layer link in a multilayer network.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-add_multilayer_inter_links"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-add_multilayer_inter_links}{}}}
+\subsection{Method \code{add_multilayer_inter_links()}}{
+Add many inter-layer links in a multilayer network.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$add_multilayer_inter_links(links)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{links}}{A list of vectors of the form
+\code{c(source_layer, node, target_layer, weight)} (weight optional), or
+a 3- or 4-column matrix / data.frame.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Infomap-add_multilayer_links"></a>}}
 \if{latex}{\out{\hypertarget{method-Infomap-add_multilayer_links}{}}}
 \subsection{Method \code{add_multilayer_links()}}{
@@ -483,8 +530,11 @@ Add many multilayer links at once.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{links}}{A list of vectors, each
-\verb{c(source_multilayer_node, target_multilayer_node, [weight])}.}
+\item{\code{links}}{A list whose entries are
+\code{list(source_multilayer_node, target_multilayer_node, weight)}
+(weight optional), or a 4- or 5-column matrix / data.frame of
+\code{source_layer}, \code{source_node}, \code{target_layer}, \code{target_node}, and
+optional \code{weight}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -593,7 +643,8 @@ Import an igraph graph.
 \describe{
 \item{\code{g}}{An igraph graph.}
 
-\item{\code{weight}}{Edge attribute to use as link weight.}
+\item{\code{weight}}{Edge attribute to use as link weight. Use \code{NULL} to use
+\code{"weight"} when present, or \code{FALSE} to ignore edge weights.}
 
 \item{\code{phys_id}}{Vertex attribute holding physical node ids
 (state-node case).}
@@ -614,9 +665,12 @@ Translated from \verb{interfaces/python/src/infomap/_networkx.py}.
 \strong{Node id convention.} Infomap result accessors report the numeric
 node ids used to build the network. For links added directly with
 \code{add_link()} or \code{add_links()}, those user-supplied ids are preserved.
-\code{add_igraph()} uses R igraph's 1-indexed vertex ids directly. If the
-original igraph had vertex names (\code{V(g)$name}), the returned mapping
-recovers them.
+\code{add_igraph()} uses R igraph's 1-indexed vertex ids as state ids.
+Plain graph results therefore use those ids directly. State and
+multilayer graphs may use separate physical ids from \code{phys_id}; if
+those ids are labels, they are mapped to stable internal integers and
+returned as \code{attr(mapping, "phys_id")}. If the original igraph had
+vertex names (\code{V(g)$name}), the returned mapping recovers them.
 
 If the graph is directed, \code{run()} will inject \code{--directed}
 unless the user has already chosen a flow model via \code{opts} or
@@ -626,8 +680,10 @@ raw args.
 \subsection{Returns}{
 Invisibly returns a named character vector mapping igraph
 vertex ids to the original igraph vertex names (or stringified
-vertex ids when \code{V(g)$name} is absent). Useful for joining Infomap
-results back to the original graph.
+vertex ids when \code{V(g)$name} is absent). For state or multilayer
+networks with non-numeric \code{phys_id} labels, the returned vector has
+a \code{"phys_id"} attribute mapping internal physical ids to original
+labels. Useful for joining Infomap results back to the original graph.
 }
 }
 \if{html}{\out{<hr>}}
@@ -716,6 +772,28 @@ module id, flow, optional layer id).
 }
 \subsection{Returns}{
 A list of integer/numeric vectors.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Infomap-get_links"></a>}}
+\if{latex}{\out{\hypertarget{method-Infomap-get_links}{}}}
+\subsection{Method \code{get_links()}}{
+Get per-link weights and flow.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InfomapClass$get_links()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+For ordinary networks added with \code{add_link()} or \code{add_links()},
+\code{source} and \code{target} are the user-supplied node ids. For state
+and multilayer networks they are state ids. Before \code{run()},
+\code{weight} reflects the input weights and \code{flow} reflects the core
+link-flow values currently stored by Infomap, usually zero.
+}
+
+\subsection{Returns}{
+A \code{data.frame} with columns \code{source}, \code{target}, \code{weight},
+and \code{flow}.
 }
 }
 \if{html}{\out{<hr>}}

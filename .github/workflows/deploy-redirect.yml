@@ -1,0 +1,91 @@
+name: Deploy Pages redirect
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy redirect
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Create redirect site
+        run: |
+          mkdir -p site
+          touch site/.nojekyll
+          cat > site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <meta http-equiv="refresh" content="0; url=https://www.mapequation.org/?redirect_to=/infomap">
+              <link rel="canonical" href="https://mapequation.org/infomap/">
+              <title>Redirecting to Infomap</title>
+              <script>
+                window.location.replace("https://www.mapequation.org/?redirect_to=/infomap");
+              </script>
+            </head>
+            <body>
+              <p>
+                Redirecting to
+                <a href="https://www.mapequation.org/?redirect_to=/infomap">mapequation.org/infomap</a>.
+              </p>
+            </body>
+          </html>
+          HTML
+          cat > site/404.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <meta name="robots" content="noindex">
+              <title>Redirecting to Infomap</title>
+              <script>
+                (function () {
+                  var path = window.location.pathname;
+
+                  if (!path.startsWith("/infomap")) {
+                    path = "/infomap" + (path.startsWith("/") ? "" : "/") + path;
+                  }
+
+                  var redirectTo = path + window.location.search + window.location.hash;
+                  var destination =
+                    "https://www.mapequation.org/?redirect_to=" +
+                    encodeURIComponent(redirectTo);
+
+                  window.location.replace(destination);
+                })();
+              </script>
+            </head>
+            <body>
+              <p>Redirecting to mapequation.org.</p>
+            </body>
+          </html>
+          HTML
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
