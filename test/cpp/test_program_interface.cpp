@@ -68,6 +68,16 @@ TEST_CASE("ProgramInterface requires explicit JSON parameter metadata [fast][cor
   infomap::ProgramInterface configured("Test", "Test parser", "1.0");
   configured.setJsonParameters("{\"parameters\": []}");
   CHECK_THROWS_AS(configured.parseArgs("--print-json-parameters"), infomap::CleanExit);
+
+  bool providerCalled = false;
+  infomap::ProgramInterface lazyConfigured("Test", "Test parser", "1.0");
+  lazyConfigured.setJsonParametersProvider([&providerCalled]() {
+    providerCalled = true;
+    return "{\"parameters\": []}";
+  });
+
+  CHECK_THROWS_AS(lazyConfigured.parseArgs("--print-json-parameters"), infomap::CleanExit);
+  CHECK(providerCalled);
 }
 
 } // namespace

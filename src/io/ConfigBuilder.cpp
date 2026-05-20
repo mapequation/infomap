@@ -64,7 +64,7 @@ ParsedConfigParameters ConfigBuilder::parseRaw(Config& config, const std::string
                        INFOMAP_VERSION);
 
   api.setGroups({ "Input", "Algorithm", "Accuracy", "Output" });
-  api.setJsonParameters(parameterCatalogJson());
+  api.setJsonParametersProvider(parameterCatalogJson);
 
   ParsedConfigParameters parsed;
   registerConfigParameters(api, { config, parsed.flowModelArg, parsed.deprecatedIncludeSelfLinks, parsed.optionalOutputDir }, isCLI);

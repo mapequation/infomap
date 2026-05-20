@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 #include <deque>
+#include <functional>
 #include <memory>
 #include <string>
 #include <sstream>
@@ -395,6 +396,7 @@ public:
   void parseArgs(const std::string& args);
 
   void setJsonParameters(std::string jsonParameters) { m_jsonParameters = std::move(jsonParameters); }
+  void setJsonParametersProvider(std::function<std::string()> jsonParametersProvider) { m_jsonParametersProvider = std::move(jsonParametersProvider); }
 
   std::vector<ParsedOption> getUsedOptionArguments() const;
 
@@ -422,6 +424,7 @@ private:
   bool m_printJsonParameters = false;
   std::string m_completionShell;
   std::string m_jsonParameters;
+  std::function<std::string()> m_jsonParametersProvider;
 
   unsigned int m_numOptionalNonOptionArguments = 0;
 };

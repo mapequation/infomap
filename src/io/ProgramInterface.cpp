@@ -461,11 +461,16 @@ void ProgramInterface::exitWithCompletion() const
 
 void ProgramInterface::exitWithJsonParameters() const
 {
-  if (m_jsonParameters.empty()) {
+  auto jsonParameters = m_jsonParameters;
+  if (jsonParameters.empty() && m_jsonParametersProvider) {
+    jsonParameters = m_jsonParametersProvider();
+  }
+
+  if (jsonParameters.empty()) {
     throw std::runtime_error("JSON parameter metadata is not configured for this ProgramInterface.");
   }
 
-  Log() << m_jsonParameters;
+  Log() << jsonParameters;
   throw CleanExit {};
 }
 

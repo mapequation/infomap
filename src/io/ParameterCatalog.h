@@ -10,6 +10,7 @@
 #ifndef PARAMETER_CATALOG_H_
 #define PARAMETER_CATALOG_H_
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -18,7 +19,7 @@ namespace infomap {
 struct Config;
 class ProgramInterface;
 
-enum class ParameterId {
+enum class ParameterId : std::uint8_t {
   Help,
   Version,
   Completion,
