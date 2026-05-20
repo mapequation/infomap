@@ -45,12 +45,12 @@ TEST_CASE("Config parses flow model selection and output formats [fast][core][co
 TEST_CASE("Flow model names map to runtime values [fast][core][config][cli]")
 {
   const std::vector<std::pair<std::string, int>> expected = {
-    { "undirected", infomap::FlowModel::undirected },
-    { "directed", infomap::FlowModel::directed },
-    { "undirdir", infomap::FlowModel::undirdir },
-    { "outdirdir", infomap::FlowModel::outdirdir },
-    { "rawdir", infomap::FlowModel::rawdir },
-    { "precomputed", infomap::FlowModel::precomputed },
+    { "undirected", static_cast<int>(infomap::FlowModel::undirected) },
+    { "directed", static_cast<int>(infomap::FlowModel::directed) },
+    { "undirdir", static_cast<int>(infomap::FlowModel::undirdir) },
+    { "outdirdir", static_cast<int>(infomap::FlowModel::outdirdir) },
+    { "rawdir", static_cast<int>(infomap::FlowModel::rawdir) },
+    { "precomputed", static_cast<int>(infomap::FlowModel::precomputed) },
   };
 
   CHECK(infomap::flowModelNames().size() == expected.size());
