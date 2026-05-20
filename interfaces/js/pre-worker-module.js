@@ -22,11 +22,34 @@ function readResultFile(file) {
 }
 
 let outName = "Untitled";
+let pendingMessage = undefined;
+let readyForFiles = false;
+
+function prepareFiles(message) {
+  const data = message.data;
+  outName = data.outName;
+  Module.arguments.push(...[data.filename, ".", ...data.arguments]);
+  FS.writeFile(data.filename, data.network);
+  for (let filename of Object.keys(data.files)) {
+    FS.writeFile(filename, data.files[filename]);
+  }
+  removeRunDependency("filesReady");
+}
+
+function processPendingMessage() {
+  if (readyForFiles && pendingMessage) {
+    const message = pendingMessage;
+    pendingMessage = undefined;
+    prepareFiles(message);
+  }
+}
 
 var Module = {
   arguments: [],
   preRun: function () {
     addRunDependency("filesReady");
+    readyForFiles = true;
+    processPendingMessage();
   },
   print: function (content) {
     postMessage({ type: "data", content });
@@ -44,12 +67,6 @@ var Module = {
 };
 
 onmessage = function onmessage(message) {
-  const data = message.data;
-  outName = data.outName;
-  Module.arguments.push(...[data.filename, ".", ...data.arguments]);
-  FS.writeFile(data.filename, data.network);
-  for (let filename of Object.keys(data.files)) {
-    FS.writeFile(filename, data.files[filename]);
-  }
-  removeRunDependency("filesReady");
+  pendingMessage = message;
+  processPendingMessage();
 };
