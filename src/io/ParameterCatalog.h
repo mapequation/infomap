@@ -10,7 +10,7 @@
 #ifndef PARAMETER_CATALOG_H_
 #define PARAMETER_CATALOG_H_
 
-#include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -19,75 +19,14 @@ namespace infomap {
 struct Config;
 class ProgramInterface;
 
-enum class ParameterId : std::uint8_t {
-  Help,
-  Version,
-  Completion,
-  NetworkFile,
-  Input,
-  SkipAdjustBipartiteFlow,
-  BipartiteTeleportation,
-  WeightThreshold,
-  IncludeSelfLinks,
-  NoSelfLinks,
-  NodeLimit,
-  MatchableMultilayerIds,
-  ClusterData,
-  AssignToNeighbouringModule,
-  MetaData,
-  MetaDataRate,
-  MetaDataUnweighted,
-  NoInfomap,
-  OutName,
-  NoFileOutput,
-  Tree,
-  FlowTree,
-  Clu,
-  CluLevel,
-  Output,
-  HideBipartiteNodes,
-  PrintAllTrials,
-  TwoLevel,
-  FlowModel,
-  Directed,
-  RecordedTeleportation,
-  UseNodeWeightsAsFlow,
-  TeleportToNodes,
-  TeleportationProbability,
-  Regularized,
-  RegularizationStrength,
-  EntropyCorrected,
-  EntropyCorrectionStrength,
-  MarkovTime,
-  VariableMarkovTime,
-  VariableMarkovDamping,
-  VariableMarkovMinScale,
-  PreferredNumberOfModules,
-  MultilayerRelaxRate,
-  MultilayerRelaxLimit,
-  MultilayerRelaxLimitUp,
-  MultilayerRelaxLimitDown,
-  MultilayerRelaxByJsd,
-  Seed,
-  NumTrials,
-  CoreLoopLimit,
-  CoreLevelLimit,
-  TuneIterationLimit,
-  CoreLoopCodelengthThreshold,
-  TuneIterationRelativeThreshold,
-  FastHierarchicalSolution,
-  InnerParallelization,
-  PreferModularSolution,
-  NumRandomMoves,
-  MaxDegreeForRandomMoves,
-  OutputDirectory,
-  Verbose,
-  Silent,
-  Pretty
+struct ConfigParameterTargets {
+  Config& config;
+  std::string& flowModelArg;
+  bool& deprecatedIncludeSelfLinks;
+  std::vector<std::string>& optionalOutputDir;
 };
 
 struct ParameterSpec {
-  ParameterId id;
   char shortName;
   std::string longName;
   std::string description;
@@ -108,13 +47,10 @@ struct ParameterSpec {
   std::string pythonDefault;
   std::string rDefault;
   std::string pythonDocDescription;
-};
-
-struct ConfigParameterTargets {
-  Config& config;
-  std::string& flowModelArg;
-  bool& deprecatedIncludeSelfLinks;
-  std::vector<std::string>& optionalOutputDir;
+  bool cliOnly = false;
+  bool libraryOnly = false;
+  bool includeInJson = true;
+  std::function<void(ProgramInterface&, ConfigParameterTargets&, const ParameterSpec&)> registrar;
 };
 
 // Declarative source of truth for Infomap parameter metadata. Config remains the
