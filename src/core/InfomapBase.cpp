@@ -165,6 +165,106 @@ public:
 
   RunSession(InfomapBase& infomap, Network& network) : m_infomap(infomap), m_network(network) {}
 
+  Result run()
+  {
+    validateNetwork();
+    writeStateNetworkIfRequested();
+    writePajekNetworkIfRequested();
+    configureNetworkMode();
+    calculateFlowAndInitNetwork();
+    writeFlowNetworkIfRequested();
+    releaseInputLinksIfCli();
+    logRunPartitionStart();
+    return runTrials();
+  }
+
+  void printSummary(const Result& result)
+  {
+    if (!m_infomap.isMainInfomap()) {
+      return;
+    }
+
+    if (m_infomap.prettyOutput)
+      PrettyOutput(true).section(io::Str() << "Summary after " << m_numTrials << (m_numTrials > 1 ? " trials" : " trial"));
+    Log() << "\n\n";
+    Log() << "================================================\n";
+    Log() << "Summary after " << m_numTrials << (m_numTrials > 1 ? " trials\n" : " trial\n");
+    Log() << "================================================\n";
+    std::string codelengthRange;
+    std::string topModulesRange;
+    if (m_numTrials > 1) {
+      restoreBestResult(result);
+
+      Log() << std::fixed << std::setprecision(9);
+      if (m_infomap.prettyOutput)
+        Log::pretty() << std::fixed << std::setprecision(9);
+      double averageCodelength = 0.0;
+      double minCodelength = m_infomap.m_codelengths[0];
+      double maxCodelength = m_infomap.m_codelengths[0];
+      double averageNumTopModules = 0.0;
+      auto minNumTopModules = m_infomap.m_numTopModules[0];
+      auto maxNumTopModules = m_infomap.m_numTopModules[0];
+      double bestCodelengthSoFar = std::numeric_limits<double>::max();
+      if (m_infomap.prettyOutput)
+        printPrettyTrialTable(m_infomap.m_codelengths, m_infomap.m_numTopModules);
+      Log() << "Trial    Codelength    NumTopModules    Best\n";
+      for (unsigned int i = 0; i < m_numTrials; ++i) {
+        bool isBest = m_infomap.m_codelengths[i] < bestCodelengthSoFar;
+        if (isBest) {
+          bestCodelengthSoFar = m_infomap.m_codelengths[i];
+        }
+        bool isEqual = std::abs(m_infomap.m_codelengths[i] - bestCodelengthSoFar) < 1e-10;
+        Log() << std::setw(5) << (i + 1) << std::setw(14) << io::toPrecision(m_infomap.m_codelengths[i]) << std::setw(17) << m_infomap.m_numTopModules[i] << std::setw(8) << (isBest ? '*' : isEqual ? '='
+                                                                                                                                                                                                     : ' ')
+              << "\n";
+        averageCodelength += m_infomap.m_codelengths[i];
+        minCodelength = std::min(minCodelength, m_infomap.m_codelengths[i]);
+        maxCodelength = std::max(maxCodelength, m_infomap.m_codelengths[i]);
+        averageNumTopModules += m_infomap.m_numTopModules[i];
+        minNumTopModules = std::min(minNumTopModules, m_infomap.m_numTopModules[i]);
+        maxNumTopModules = std::max(maxNumTopModules, m_infomap.m_numTopModules[i]);
+      }
+      averageCodelength /= m_numTrials;
+      averageNumTopModules /= m_numTrials;
+      Log() << "\n";
+      Log() << "[min, average, max] codelength:      [" << minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n";
+      Log() << "[min, average, max] num top modules: [" << minNumTopModules << ", " << io::toPrecision(averageNumTopModules, 1, true) << ", " << maxNumTopModules << "]\n\n";
+      codelengthRange = io::Str() << minCodelength << " / " << averageCodelength << " / " << maxCodelength;
+      topModulesRange = io::Str() << minNumTopModules << " / " << io::toPrecision(averageNumTopModules, 1, true) << " / " << maxNumTopModules;
+    }
+    if (m_infomap.prettyOutput) {
+      PrettyOutput pretty(true);
+      if (m_numTrials > 1) {
+        pretty.metric("Codelength min/avg/max", codelengthRange);
+        pretty.metric("Top modules min/avg/max", topModulesRange);
+        Log::pretty() << "\n";
+      }
+      pretty.metric("Nodes", io::Str() << m_infomap.numLeafNodes());
+      pretty.metric("Links", io::Str() << m_network.numLinks());
+      pretty.metric("Average degree", io::toPrecision(m_network.numLinks() * 2.0 / m_infomap.numLeafNodes(), 1, true));
+      pretty.metric("Top modules", io::Str() << m_infomap.numTopModules() << " (" << m_infomap.numNonTrivialTopModules() << " non-trivial)");
+      pretty.metric("Levels", io::Str() << result.bestNumLevels);
+      pretty.metric("One-level codelength", io::toPrecision(m_infomap.getOneLevelCodelength()));
+      pretty.metric("Best codelength", io::toPrecision(result.bestHierarchicalCodelength));
+      pretty.metric("Relative savings", io::Str() << io::toPrecision(m_infomap.getRelativeCodelengthSavings() * 100, 2, true) << "%");
+      Log::pretty() << "\n";
+    }
+    Log() << "Number nodes:                      " << m_infomap.numLeafNodes() << "\n";
+    Log() << "Number links:                      " << m_network.numLinks() << "\n";
+    Log() << "Average degree:                    " << io::toPrecision(m_network.numLinks() * 2.0 / m_infomap.numLeafNodes(), 1, true) << "\n";
+    Log() << "Number of top modules:             " << m_infomap.numTopModules() << "\n";
+    Log() << "Number of non-trivial top modules: " << m_infomap.numNonTrivialTopModules() << "\n";
+    Log() << "Number of levels:                  " << result.bestNumLevels << "\n";
+    Log() << "One-level codelength:              " << io::toPrecision(m_infomap.getOneLevelCodelength()) << "\n";
+    Log() << "Codelength:                        " << io::toPrecision(result.bestHierarchicalCodelength) << "\n";
+    Log() << "Relative codelength savings:       " << io::toPrecision(m_infomap.getRelativeCodelengthSavings() * 100, 2, true) << "%\n";
+    Log() << "\n";
+    Log() << result.bestSolutionStatistics.str() << '\n';
+    if (m_infomap.prettyOutput)
+      Log::pretty() << result.bestSolutionStatistics.str() << '\n';
+  }
+
+private:
   Result runTrials()
   {
     Result result;
@@ -188,7 +288,134 @@ public:
     }
   }
 
-private:
+  void validateNetwork()
+  {
+    if (m_network.numNodes() == 0) {
+      m_network.postProcessInputData();
+      if (m_network.numNodes() == 0) {
+        throw std::domain_error("Network is empty");
+      }
+    }
+  }
+
+  std::string resultFilename(const std::string& resultKey) const
+  {
+    return outputFilenameForResultKey(m_infomap.outDirectory + m_infomap.outName, resultKey);
+  }
+
+  void writeStateNetworkIfRequested()
+  {
+    if (!m_infomap.printStateNetwork) {
+      return;
+    }
+
+    std::string filename = resultFilename("states");
+    Log() << "Writing state network to '" << filename << "'... ";
+    m_network.writeStateNetwork(filename);
+    Log() << "done!\n";
+    if (m_infomap.prettyOutput)
+      PrettyOutput(true).status("Output", io::Str() << "state network -> " << filename);
+  }
+
+  void writePajekNetworkIfRequested()
+  {
+    if (!m_infomap.printPajekNetwork) {
+      return;
+    }
+
+    std::string filename;
+    if (m_infomap.printStates()) {
+      filename = resultFilename("states_as_physical");
+      Log() << "Writing state network as first order Pajek network to '" << filename << "'... ";
+    } else {
+      // Non-memory input
+      filename = resultFilename("net");
+      Log() << "Writing Pajek network to '" << filename << "'... ";
+    }
+    m_network.writePajekNetwork(filename);
+    Log() << "done!\n";
+    if (m_infomap.prettyOutput)
+      PrettyOutput(true).status("Output", io::Str() << (m_infomap.printStates() ? "state network as Pajek" : "Pajek network") << " -> " << filename);
+  }
+
+  void configureNetworkMode()
+  {
+    if (m_network.haveMemoryInput()) {
+      Log() << "  -> Found higher order network input, using the Map Equation for higher order network flows\n";
+      m_infomap.setStateInput();
+      m_infomap.setStateOutput();
+
+      if (m_network.isMultilayerNetwork() && !m_infomap.isMultilayerNetwork()) {
+        m_infomap.setMultilayerInput();
+      }
+    } else {
+      if (m_infomap.haveMemory() || m_network.higherOrderInputMethodCalled()) {
+        Log::important() << "  -> Warning: Higher order network specified but no higher order input found.\n";
+        // Use state output anyway for consistency even in the special case when input is first order
+        m_infomap.setStateOutput();
+      }
+      Log() << "  -> Ordinary network input, using the Map Equation for first order network flows\n";
+    }
+
+    if (m_network.haveDirectedInput() && m_infomap.isUndirectedFlow()) {
+      Log() << "  -> Notice: Directed input found, changing flow model from '" << m_infomap.flowModel << "' to '" << FlowModel(FlowModel::directed) << "'\n";
+      m_infomap.flowModel = FlowModel::directed;
+    }
+    m_network.setConfig(m_infomap);
+  }
+
+  void calculateFlowAndInitNetwork()
+  {
+    calculateFlow(m_network, m_infomap);
+
+    if (m_network.isBipartite()) {
+      m_infomap.bipartite = true;
+    }
+
+    m_infomap.initNetwork(m_network);
+
+    if (m_infomap.numLeafNodes() == 0)
+      throw std::domain_error("No nodes to partition");
+  }
+
+  void writeFlowNetworkIfRequested()
+  {
+    if (!m_infomap.printFlowNetwork) {
+      return;
+    }
+
+    std::string filename;
+    if (m_infomap.printStates()) {
+      filename = resultFilename("flow_as_physical");
+      Log() << "Writing flow state network as first order Pajek network to '" << filename << "'... ";
+    } else {
+      // Non-memory input
+      filename = resultFilename("flow");
+      Log() << "Writing flow network to '" << filename << "'... ";
+    }
+    m_network.writePajekNetwork(filename, true);
+    Log() << "done!\n";
+    if (m_infomap.prettyOutput)
+      PrettyOutput(true).status("Output", io::Str() << (m_infomap.printStates() ? "flow state network as Pajek" : "flow network") << " -> " << filename);
+  }
+
+  void releaseInputLinksIfCli()
+  {
+    // If used as a library, we may want to reuse the network instance, else clear to use less memory
+    // TODO: May have to use some meta data for output?
+    if (m_infomap.isCLI) {
+      m_network.clearLinks();
+    }
+  }
+
+  void logRunPartitionStart()
+  {
+    if (m_infomap.haveMemory())
+      Log(2) << "Run Infomap with memory...\n";
+    else
+      Log(2) << "Run Infomap...\n";
+  }
+
   void runTrial(unsigned int trialIndex, Result& result)
   {
     m_infomap.removeModules();
@@ -428,185 +655,11 @@ void InfomapBase::run(Network& network)
   if (!isMainInfomap())
     throw std::logic_error("Can't run a non-main Infomap with an input network");
 
-  if (network.numNodes() == 0) {
-    network.postProcessInputData();
-    if (network.numNodes() == 0) {
-      throw std::domain_error("Network is empty");
-    }
-  }
-
-  if (printStateNetwork) {
-    std::string filename = outputFilenameForResultKey(outDirectory + outName, "states");
-    Log() << "Writing state network to '" << filename << "'... ";
-    network.writeStateNetwork(filename);
-    Log() << "done!\n";
-    if (prettyOutput)
-      PrettyOutput(true).status("Output", io::Str() << "state network -> " << filename);
-  }
-
-  if (printPajekNetwork) {
-    std::string filename;
-    if (printStates()) {
-      filename = outputFilenameForResultKey(outDirectory + outName, "states_as_physical");
-      Log() << "Writing state network as first order Pajek network to '" << filename << "'... ";
-    } else {
-      // Non-memory input
-      filename = outputFilenameForResultKey(outDirectory + outName, "net");
-      Log() << "Writing Pajek network to '" << filename << "'... ";
-    }
-    network.writePajekNetwork(filename);
-    Log() << "done!\n";
-    if (prettyOutput)
-      PrettyOutput(true).status("Output", io::Str() << (printStates() ? "state network as Pajek" : "Pajek network") << " -> " << filename);
-  }
-
-  if (network.haveMemoryInput()) {
-    Log() << "  -> Found higher order network input, using the Map Equation for higher order network flows\n";
-    setStateInput();
-    setStateOutput();
-
-    if (network.isMultilayerNetwork() && !isMultilayerNetwork()) {
-      setMultilayerInput();
-    }
-  } else {
-    if (haveMemory() || network.higherOrderInputMethodCalled()) {
-      Log::important() << "  -> Warning: Higher order network specified but no higher order input found.\n";
-      // Use state output anyway for consistency even in the special case when input is first order
-      setStateOutput();
-    }
-    Log() << "  -> Ordinary network input, using the Map Equation for first order network flows\n";
-  }
-
-  if (network.haveDirectedInput() && isUndirectedFlow()) {
-    Log() << "  -> Notice: Directed input found, changing flow model from '" << flowModel << "' to '" << FlowModel(FlowModel::directed) << "'\n";
-    flowModel = FlowModel::directed;
-  }
-  network.setConfig(*this);
-
-  calculateFlow(network, *this);
-
-  if (network.isBipartite()) {
-    bipartite = true;
-  }
-
-  initNetwork(network);
-
-  if (numLeafNodes() == 0)
-    throw std::domain_error("No nodes to partition");
-
-  if (printFlowNetwork) {
-    std::string filename;
-    if (printStates()) {
-      filename = outputFilenameForResultKey(outDirectory + outName, "flow_as_physical");
-      Log() << "Writing flow state network as first order Pajek network to '" << filename << "'... ";
-    } else {
-      // Non-memory input
-      filename = outputFilenameForResultKey(outDirectory + outName, "flow");
-      Log() << "Writing flow network to '" << filename << "'... ";
-    }
-    network.writePajekNetwork(filename, true);
-    Log() << "done!\n";
-    if (prettyOutput)
-      PrettyOutput(true).status("Output", io::Str() << (printStates() ? "flow state network as Pajek" : "flow network") << " -> " << filename);
-  }
-
-  // If used as a library, we may want to reuse the network instance, else clear to use less memory
-  // TODO: May have to use some meta data for output?
-  if (isCLI) {
-    network.clearLinks();
-  }
-
-  if (haveMemory())
-    Log(2) << "Run Infomap with memory...\n";
-  else
-    Log(2) << "Run Infomap...\n";
-
   RunSession runSession(*this, network);
-  auto runResult = runSession.runTrials();
-  unsigned int numTrials = this->numTrials;
-
-  if (isMainInfomap()) {
-    m_elapsedTime.stop();
-    m_endDate = Date();
-    if (prettyOutput)
-      PrettyOutput(true).section(io::Str() << "Summary after " << numTrials << (numTrials > 1 ? " trials" : " trial"));
-    Log() << "\n\n";
-    Log() << "================================================\n";
-    Log() << "Summary after " << numTrials << (numTrials > 1 ? " trials\n" : " trial\n");
-    Log() << "================================================\n";
-    std::string codelengthRange;
-    std::string topModulesRange;
-    if (numTrials > 1) {
-      runSession.restoreBestResult(runResult);
-
-      Log() << std::fixed << std::setprecision(9);
-      if (prettyOutput)
-        Log::pretty() << std::fixed << std::setprecision(9);
-      double averageCodelength = 0.0;
-      double minCodelength = m_codelengths[0];
-      double maxCodelength = m_codelengths[0];
-      double averageNumTopModules = 0.0;
-      auto minNumTopModules = m_numTopModules[0];
-      auto maxNumTopModules = m_numTopModules[0];
-      double bestCodelengthSoFar = std::numeric_limits<double>::max();
-      if (prettyOutput)
-        printPrettyTrialTable(m_codelengths, m_numTopModules);
-      Log() << "Trial    Codelength    NumTopModules    Best\n";
-      for (unsigned int i = 0; i < numTrials; ++i) {
-        bool isBest = m_codelengths[i] < bestCodelengthSoFar;
-        if (isBest) {
-          bestCodelengthSoFar = m_codelengths[i];
-        }
-        bool isEqual = std::abs(m_codelengths[i] - bestCodelengthSoFar) < 1e-10;
-        Log() << std::setw(5) << (i + 1) << std::setw(14) << io::toPrecision(m_codelengths[i]) << std::setw(17) << m_numTopModules[i] << std::setw(8) << (isBest ? '*' : isEqual ? '='
-                                                                                                                                                                                 : ' ')
-              << "\n";
-        averageCodelength += m_codelengths[i];
-        minCodelength = std::min(minCodelength, m_codelengths[i]);
-        maxCodelength = std::max(maxCodelength, m_codelengths[i]);
-        averageNumTopModules += m_numTopModules[i];
-        minNumTopModules = std::min(minNumTopModules, m_numTopModules[i]);
-        maxNumTopModules = std::max(maxNumTopModules, m_numTopModules[i]);
-      }
-      averageCodelength /= numTrials;
-      averageNumTopModules /= numTrials;
-      Log() << "\n";
-      Log() << "[min, average, max] codelength:      [" << minCodelength << ", " << averageCodelength << ", " << maxCodelength << "]\n";
-      Log() << "[min, average, max] num top modules: [" << minNumTopModules << ", " << io::toPrecision(averageNumTopModules, 1, true) << ", " << maxNumTopModules << "]\n\n";
-      codelengthRange = io::Str() << minCodelength << " / " << averageCodelength << " / " << maxCodelength;
-      topModulesRange = io::Str() << minNumTopModules << " / " << io::toPrecision(averageNumTopModules, 1, true) << " / " << maxNumTopModules;
-    }
-    if (prettyOutput) {
-      PrettyOutput pretty(true);
-      if (numTrials > 1) {
-        pretty.metric("Codelength min/avg/max", codelengthRange);
-        pretty.metric("Top modules min/avg/max", topModulesRange);
-        Log::pretty() << "\n";
-      }
-      pretty.metric("Nodes", io::Str() << numLeafNodes());
-      pretty.metric("Links", io::Str() << network.numLinks());
-      pretty.metric("Average degree", io::toPrecision(network.numLinks() * 2.0 / numLeafNodes(), 1, true));
-      pretty.metric("Top modules", io::Str() << numTopModules() << " (" << numNonTrivialTopModules() << " non-trivial)");
-      pretty.metric("Levels", io::Str() << runResult.bestNumLevels);
-      pretty.metric("One-level codelength", io::toPrecision(getOneLevelCodelength()));
-      pretty.metric("Best codelength", io::toPrecision(runResult.bestHierarchicalCodelength));
-      pretty.metric("Relative savings", io::Str() << io::toPrecision(getRelativeCodelengthSavings() * 100, 2, true) << "%");
-      Log::pretty() << "\n";
-    }
-    Log() << "Number nodes:                      " << numLeafNodes() << "\n";
-    Log() << "Number links:                      " << network.numLinks() << "\n";
-    Log() << "Average degree:                    " << io::toPrecision(network.numLinks() * 2.0 / numLeafNodes(), 1, true) << "\n";
-    Log() << "Number of top modules:             " << numTopModules() << "\n";
-    Log() << "Number of non-trivial top modules: " << numNonTrivialTopModules() << "\n";
-    Log() << "Number of levels:                  " << runResult.bestNumLevels << "\n";
-    Log() << "One-level codelength:              " << io::toPrecision(getOneLevelCodelength()) << "\n";
-    Log() << "Codelength:                        " << io::toPrecision(runResult.bestHierarchicalCodelength) << "\n";
-    Log() << "Relative codelength savings:       " << io::toPrecision(getRelativeCodelengthSavings() * 100, 2, true) << "%\n";
-    Log() << "\n";
-    Log() << runResult.bestSolutionStatistics.str() << '\n';
-    if (prettyOutput)
-      Log::pretty() << runResult.bestSolutionStatistics.str() << '\n';
-  }
+  auto runResult = runSession.run();
+  m_elapsedTime.stop();
+  m_endDate = Date();
+  runSession.printSummary(runResult);
 }
 
 // ===================================================
