@@ -16,7 +16,7 @@
 
 namespace infomap {
 
-enum class OutputFormatFlag : std::uint8_t {
+enum class OutputKind : std::uint8_t {
   Clu,
   Tree,
   FlowTree,
@@ -40,7 +40,7 @@ struct OutputFileFormat {
 
 struct OutputFormat {
   std::string optionName;
-  OutputFormatFlag flag;
+  OutputKind kind;
   std::vector<OutputFileFormat> files;
 };
 
