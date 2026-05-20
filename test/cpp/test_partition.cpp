@@ -6,6 +6,7 @@
 
 #include <map>
 #include <set>
+#include <sstream>
 #include <tuple>
 #include <vector>
 
@@ -154,6 +155,24 @@ TEST_CASE("Tree cluster-data reinit and rerun stay stable on the same instance [
   CHECK(im.codelength() == doctest::Approx(firstCodelength));
   CHECK(im.getIndexCodelength() == doctest::Approx(firstIndexCodelength));
   CHECK(im.numLevels() == firstNumLevels);
+}
+
+TEST_CASE("Pretty per-level codelength renders a structured levels table [fast][core][partition][output]")
+{
+  InfomapWrapper im(infomap::test::defaultFlags("--directed -0 --no-file-output --pretty"));
+  im.readInputData(infomap::test::repoPath("examples/networks/modular_wd.net"));
+  im.run();
+
+  std::ostringstream output;
+  const auto numLevels = infomap::printPerLevelCodelength(im.root(), output, true);
+  const auto text = output.str();
+
+  CHECK(numLevels >= 2);
+  CHECK(text.find("Levels") != std::string::npos);
+  CHECK(text.find("Level  Modules  Leaves  Avg degree  Module bits  Leaf bits  Total bits") != std::string::npos);
+  CHECK(text.find("Total") != std::string::npos);
+  CHECK(text.find("Per level number of modules") == std::string::npos);
+  CHECK(text.find("2.700302") != std::string::npos);
 }
 
 TEST_CASE("InfoNode hierarchy mutations preserve parentage and child order [fast][core][partition][tree]")

@@ -237,7 +237,7 @@ class Infomap {
           const totTrials = Number(match[2]);
           emitProgress((100 * trial) / (totTrials + 1));
         } else {
-          const summary = event.data.content.match(/^Summary after/);
+          const summary = event.data.content.match(/^Summary(?: after)?/);
           if (summary) {
             emitProgress(100);
           }

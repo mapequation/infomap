@@ -11,6 +11,7 @@
 #include "../io/SafeFile.h"
 #include "../utils/FileURI.h"
 #include "../utils/Log.h"
+#include "../utils/PrettyOutput.h"
 
 #include <cmath>
 #include <algorithm>
@@ -573,6 +574,35 @@ void Network::parseMultilayerInterLink(const std::string& line, unsigned int& la
 
 void Network::printSummary()
 {
+  if (m_config.prettyOutput) {
+    PrettyOutput pretty(true);
+    pretty.section("Network");
+    pretty.metric("Input", m_config.networkFile);
+    pretty.metric("Direction", m_config.isUndirectedFlow() ? "undirected" : "directed");
+    if (haveMemoryInput()) {
+      pretty.metric("Type", isMultilayerNetwork() ? "higher-order multilayer" : "higher-order state");
+      pretty.metric("State nodes", io::Str() << numNodes());
+      pretty.metric("Physical nodes", io::Str() << numPhysicalNodes());
+    } else if (m_bipartiteStartId > 0) {
+      pretty.metric("Type", "bipartite first-order");
+      pretty.metric("Bipartite start id", io::Str() << m_bipartiteStartId);
+      pretty.metric("Nodes", io::Str() << numNodes());
+    } else {
+      pretty.metric("Type", "first-order");
+      pretty.metric("Nodes", io::Str() << numNodes());
+    }
+    if (isMultilayerNetwork()) {
+      pretty.metric("Layers", io::Str() << m_layers.size());
+      pretty.metric("Layer links", io::Str() << (m_numIntraLayerLinks + m_numInterLayerLinks) << " (" << m_numIntraLayerLinks << " intra, " << m_numInterLayerLinks << " inter)");
+    }
+    pretty.metric("Links", io::Str() << numLinks());
+    pretty.metric("Total weight", io::Str() << m_totalLinkWeightAdded);
+    if (m_numLinksIgnoredByWeightThreshold > 0) {
+      pretty.metric("Ignored by threshold", io::Str() << m_numLinksIgnoredByWeightThreshold << " links, weight " << m_totalLinkWeightIgnored << " (" << PrettyOutput::percent(m_totalLinkWeightIgnored / (m_totalLinkWeightIgnored + m_totalLinkWeightAdded) * 100) << ")");
+    }
+    return;
+  }
+
   Log() << "-------------------------------------\n";
   if (haveMemoryInput()) {
     Log() << "  -> " << numNodes() << " state nodes\n";

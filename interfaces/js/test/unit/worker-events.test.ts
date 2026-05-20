@@ -49,6 +49,25 @@ describe("Infomap", () => {
     expect(progress).toHaveBeenCalledWith(40, id);
   });
 
+  test("converts pretty summary output to complete progress", () => {
+    const progress = vi.fn();
+    const infomap = new Infomap().on("progress", progress);
+    const id = infomap.run({
+      network: "#source target\n1 2\n",
+      args: { pretty: true },
+    });
+    const worker = getWorker(infomap, id);
+
+    worker.onmessage?.({
+      data: {
+        type: "data",
+        content: "Summary",
+      },
+    } as MessageEvent);
+
+    expect(progress).toHaveBeenCalledWith(100, id);
+  });
+
   test("runAsync still emits registered callbacks", async () => {
     const data = vi.fn();
     const progress = vi.fn();

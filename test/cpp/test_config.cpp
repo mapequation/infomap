@@ -33,6 +33,15 @@ TEST_CASE("Config treats directed shorthand as directed flow model [fast][core][
   CHECK(infomap::flowModelToString(config.flowModel) == std::string("directed"));
 }
 
+TEST_CASE("Config parses pretty output flag [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output --pretty", true);
+  CHECK(config.prettyOutput);
+
+  const Config negatedConfig("input.net --silent --no-file-output --pretty --no-pretty", true);
+  CHECK_FALSE(negatedConfig.prettyOutput);
+}
+
 TEST_CASE("Config rejects unknown flow models and output formats [fast][core][config][cli]")
 {
   CHECK_THROWS_AS(Config("input.net --silent --no-file-output --flow-model unknown", true), std::runtime_error);

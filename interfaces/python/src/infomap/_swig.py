@@ -162,6 +162,7 @@ class Config(object):
     verbosity = property(_infomap.Config_verbosity_get, _infomap.Config_verbosity_set)
     verboseNumberPrecision = property(_infomap.Config_verboseNumberPrecision_get, _infomap.Config_verboseNumberPrecision_set)
     silent = property(_infomap.Config_silent_get, _infomap.Config_silent_set)
+    prettyOutput = property(_infomap.Config_prettyOutput_get, _infomap.Config_prettyOutput_set)
     hideBipartiteNodes = property(_infomap.Config_hideBipartiteNodes_get, _infomap.Config_hideBipartiteNodes_set)
     startDate = property(_infomap.Config_startDate_get, _infomap.Config_startDate_set)
     version = property(_infomap.Config_version_get, _infomap.Config_version_set)
@@ -2617,8 +2618,8 @@ class InfomapBase(InfomapConfigInfomapBase):
 # Register InfomapBase in _infomap:
 _infomap.InfomapBase_swigregister(InfomapBase)
 
-def printPerLevelCodelength(parent, out):
-    return _infomap.printPerLevelCodelength(parent, out)
+def printPerLevelCodelength(parent, out, prettyOutput=False):
+    return _infomap.printPerLevelCodelength(parent, out, prettyOutput)
 
 def aggregatePerLevelCodelength(parent, perLevelStat, level=0):
     return _infomap.aggregatePerLevelCodelength(parent, perLevelStat, level)

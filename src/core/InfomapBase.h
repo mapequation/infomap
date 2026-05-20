@@ -536,7 +536,7 @@ protected:
 /**
  * Print per level statistics
  */
-unsigned int printPerLevelCodelength(const InfoNode& parent, std::ostream& out);
+unsigned int printPerLevelCodelength(const InfoNode& parent, std::ostream& out, bool prettyOutput = false);
 
 void aggregatePerLevelCodelength(const InfoNode& parent, std::vector<detail::PerLevelStat>& perLevelStat, unsigned int level = 0);
 
