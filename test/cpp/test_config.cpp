@@ -1,7 +1,9 @@
 #include "vendor/doctest.h"
 
+#include "io/ConfigBuilder.h"
 #include "io/Config.h"
 #include "io/OutputFormats.h"
+#include "io/ParameterCatalog.h"
 
 #include <map>
 #include <set>
@@ -31,6 +33,43 @@ TEST_CASE("Config treats directed shorthand as directed flow model [fast][core][
 {
   const Config config("input.net --silent --no-file-output --directed", true);
   CHECK(infomap::flowModelToString(config.flowModel) == std::string("directed"));
+
+  const Config aliasPrecedence("input.net --silent --no-file-output --flow-model undirected --directed", true);
+  CHECK(infomap::flowModelToString(aliasPrecedence.flowModel) == std::string("directed"));
+}
+
+TEST_CASE("Config adapts parsed runtime defaults after registration [fast][core][config][cli]")
+{
+  const Config regularized("input.net --silent --no-file-output --regularized", true);
+  CHECK(regularized.regularized);
+  CHECK(regularized.recordedTeleportation);
+
+  const Config noInfomap("input.net --silent --no-file-output --no-infomap --num-trials 4", true);
+  CHECK(noInfomap.noInfomap);
+  CHECK(noInfomap.numTrials == 1);
+
+  const Config libraryConfig("--silent", false);
+  CHECK(libraryConfig.noFileOutput);
+  CHECK(libraryConfig.outDirectory.empty());
+}
+
+TEST_CASE("ConfigBuilder exposes raw parse state before runtime adaptation [fast][core][config][cli]")
+{
+  Config raw;
+  raw.isCLI = true;
+
+  const auto parsed = infomap::ConfigBuilder::parseRaw(raw, "input.net --silent --no-file-output --flow-model directed --regularized --num-trials 4", true);
+  CHECK(raw.networkFile == "input.net");
+  CHECK(raw.noFileOutput);
+  CHECK(raw.regularized);
+  CHECK_FALSE(raw.recordedTeleportation);
+  CHECK(raw.numTrials == 4);
+  CHECK(parsed.flowModelArg == "directed");
+  CHECK_FALSE(parsed.usedOptions.empty());
+
+  infomap::ConfigBuilder::applyParsed(raw, parsed, true);
+  CHECK(infomap::flowModelToString(raw.flowModel) == std::string("directed"));
+  CHECK(raw.recordedTeleportation);
 }
 
 TEST_CASE("Config parses pretty output flag [fast][core][config][cli]")
@@ -96,6 +135,45 @@ TEST_CASE("Output format manifest result keys stay unique [fast][core][config][c
   }
   CHECK(resultKeys.count("json_states") == 1);
   CHECK(resultKeys.count("flow_as_physical") == 1);
+}
+
+TEST_CASE("Parameter catalog owns option choices and binding names [fast][core][config][cli]")
+{
+  const infomap::ParameterSpec* output = nullptr;
+  const infomap::ParameterSpec* verbose = nullptr;
+  const infomap::ParameterSpec* teleportation = nullptr;
+  const infomap::ParameterSpec* numTrials = nullptr;
+  for (const auto& parameter : infomap::parameterCatalog()) {
+    if (parameter.longName == "output") {
+      output = &parameter;
+    }
+    if (parameter.longName == "verbose") {
+      verbose = &parameter;
+    }
+    if (parameter.longName == "teleportation-probability") {
+      teleportation = &parameter;
+    }
+    if (parameter.longName == "num-trials") {
+      numTrials = &parameter;
+    }
+  }
+
+  REQUIRE(output != nullptr);
+  CHECK(output->choices == infomap::outputFormatNames());
+  CHECK(output->renderPolicy == "comma_list");
+
+  REQUIRE(verbose != nullptr);
+  CHECK(verbose->pythonName == "verbosity_level");
+  CHECK(verbose->rName == "verbosity_level");
+  CHECK(verbose->tsName == "verbose");
+  CHECK(verbose->renderPolicy == "repeated_short");
+
+  REQUIRE(teleportation != nullptr);
+  CHECK(teleportation->minValue == "0");
+  CHECK(teleportation->maxValue == "1");
+
+  REQUIRE(numTrials != nullptr);
+  CHECK(numTrials->minValue == "1");
 }
 
 } // namespace

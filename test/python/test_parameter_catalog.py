@@ -29,6 +29,10 @@ def test_parameter_catalog_classifies_binding_render_policies():
             "incremental": False,
             "longType": "integer",
             "default": "1",
+            "bindingDefaults": {
+                "python": {"value": "1"},
+                "r": {"value": "1L"},
+            },
         },
         {
             "long": "--verbose",
@@ -39,6 +43,21 @@ def test_parameter_catalog_classifies_binding_render_policies():
             "advanced": False,
             "incremental": True,
             "default": False,
+            "bindingNames": {
+                "python": "verbosity_level",
+                "r": "verbosity_level",
+                "ts": "verbose",
+            },
+            "renderPolicy": "repeated_short",
+            "bindingDocs": {
+                "python": {
+                    "description": "Verbosity level on the console.",
+                },
+            },
+            "bindingDefaults": {
+                "python": {"value": "1", "constant": "_DEFAULT_VERBOSITY_LEVEL"},
+                "r": {"value": "DEFAULT_VERBOSITY_LEVEL", "constantValue": "1L"},
+            },
         },
         {
             "long": "--output",
@@ -50,17 +69,11 @@ def test_parameter_catalog_classifies_binding_render_policies():
             "incremental": False,
             "longType": "list",
             "default": "",
+            "choices": ["clu", "tree"],
+            "renderPolicy": "comma_list",
         },
     ]
     overrides = {
-        "choices": {"--output": ["clu", "tree"]},
-        "names": {
-            "--verbose": {
-                "python": "verbosity_level",
-                "r": "verbosity_level",
-                "ts": "verbose",
-            }
-        },
         "bindingOnly": {
             "python": [
                 {
@@ -89,6 +102,18 @@ def test_parameter_catalog_classifies_binding_render_policies():
     assert by_flag["--num-trials"].render_policy == "value"
     assert by_flag["--verbose"].render_policy == "repeated_short"
     assert by_flag["--output"].render_policy == "comma_list"
+    assert by_flag["--verbose"].name("python") == "verbosity_level"
+    assert by_flag["--verbose"].name("r") == "verbosity_level"
+    assert by_flag["--verbose"].name("ts") == "verbose"
+    assert by_flag["--output"].choices == ["clu", "tree"]
+    assert by_flag["--num-trials"].python_default_value() == "1"
+    assert by_flag["--num-trials"].r_default() == "1L"
+    assert (
+        by_flag["--verbose"].python_doc_description()
+        == "Verbosity level on the console."
+    )
+    assert catalog.python_default_constants() == [("_DEFAULT_VERBOSITY_LEVEL", "1")]
+    assert catalog.r_default_constants() == [("DEFAULT_VERBOSITY_LEVEL", "1L")]
     assert (
         catalog.binding_only_entry("python", "include_self_links").render_policy
         == "deprecated_alias"

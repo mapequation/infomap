@@ -394,6 +394,8 @@ public:
 
   void parseArgs(const std::string& args);
 
+  void setJsonParameters(std::string jsonParameters) { m_jsonParameters = std::move(jsonParameters); }
+
   std::vector<ParsedOption> getUsedOptionArguments() const;
 
   unsigned int numRequiredArguments() const { return m_nonOptionArguments.size() - m_numOptionalNonOptionArguments; }
@@ -419,6 +421,7 @@ private:
   bool m_displayVersion = false;
   bool m_printJsonParameters = false;
   std::string m_completionShell;
+  std::string m_jsonParameters;
 
   unsigned int m_numOptionalNonOptionArguments = 0;
 };

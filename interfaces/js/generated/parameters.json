@@ -7,7 +7,8 @@
     "required": false,
     "advanced": false,
     "incremental": true,
-    "default": false
+    "default": false,
+    "renderPolicy": "repeated_short"
   },
   {
     "long": "--version",
@@ -65,7 +66,8 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "0"
+    "default": "0",
+    "min": "0"
   },
   {
     "long": "--no-self-links",
@@ -75,7 +77,8 @@
     "required": false,
     "advanced": true,
     "incremental": false,
-    "default": false
+    "default": false,
+    "renderPolicy": "deprecated_alias_target"
   },
   {
     "long": "--node-limit",
@@ -87,7 +90,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "0"
+    "default": "0",
+    "min": "1"
   },
   {
     "long": "--matchable-multilayer-ids",
@@ -99,7 +103,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "0"
+    "default": "0",
+    "min": "1"
   },
   {
     "long": "--cluster-data",
@@ -145,7 +150,18 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1"
+    "default": "1",
+    "min": "0",
+    "bindingDefaults": {
+      "python": {
+        "value": "1.0",
+        "constant": "_DEFAULT_META_DATA_RATE"
+      },
+      "r": {
+        "value": "DEFAULT_META_DATA_RATE",
+        "constantValue": "1.0"
+      }
+    }
   },
   {
     "long": "--meta-data-unweighted",
@@ -229,7 +245,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "1"
+    "default": "1",
+    "min": "-1"
   },
   {
     "long": "--output",
@@ -252,7 +269,8 @@
       "network",
       "states",
       "flow"
-    ]
+    ],
+    "renderPolicy": "comma_list"
   },
   {
     "long": "--hide-bipartite-nodes",
@@ -312,7 +330,16 @@
     "required": false,
     "advanced": false,
     "incremental": false,
-    "default": false
+    "default": false,
+    "renderPolicy": "directed_alias",
+    "bindingDefaults": {
+      "python": {
+        "value": "None"
+      },
+      "r": {
+        "value": "NULL"
+      }
+    }
   },
   {
     "long": "--recorded-teleportation",
@@ -354,7 +381,19 @@
     "incremental": false,
     "longType": "probability",
     "shortType": "P",
-    "default": "0.15"
+    "default": "0.15",
+    "min": "0",
+    "max": "1",
+    "bindingDefaults": {
+      "python": {
+        "value": "0.15",
+        "constant": "_DEFAULT_TELEPORTATION_PROB"
+      },
+      "r": {
+        "value": "DEFAULT_TELEPORTATION_PROB",
+        "constantValue": "0.15"
+      }
+    }
   },
   {
     "long": "--regularized",
@@ -376,7 +415,16 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1"
+    "default": "1",
+    "min": "0",
+    "bindingDefaults": {
+      "python": {
+        "value": "1.0"
+      },
+      "r": {
+        "value": "1.0"
+      }
+    }
   },
   {
     "long": "--entropy-corrected",
@@ -398,7 +446,15 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1"
+    "default": "1",
+    "bindingDefaults": {
+      "python": {
+        "value": "1.0"
+      },
+      "r": {
+        "value": "1.0"
+      }
+    }
   },
   {
     "long": "--markov-time",
@@ -410,7 +466,16 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1"
+    "default": "1",
+    "min": "0",
+    "bindingDefaults": {
+      "python": {
+        "value": "1.0"
+      },
+      "r": {
+        "value": "1.0"
+      }
+    }
   },
   {
     "long": "--variable-markov-time",
@@ -432,7 +497,15 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1"
+    "default": "1",
+    "bindingDefaults": {
+      "python": {
+        "value": "1.0"
+      },
+      "r": {
+        "value": "1.0"
+      }
+    }
   },
   {
     "long": "--variable-markov-min-scale",
@@ -444,7 +517,15 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1"
+    "default": "1",
+    "bindingDefaults": {
+      "python": {
+        "value": "1.0"
+      },
+      "r": {
+        "value": "1.0"
+      }
+    }
   },
   {
     "long": "--preferred-number-of-modules",
@@ -456,7 +537,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "0"
+    "default": "0",
+    "min": "1"
   },
   {
     "long": "--multilayer-relax-rate",
@@ -468,7 +550,19 @@
     "incremental": false,
     "longType": "probability",
     "shortType": "P",
-    "default": "0.15"
+    "default": "0.15",
+    "min": "0",
+    "max": "1",
+    "bindingDefaults": {
+      "python": {
+        "value": "0.15",
+        "constant": "_DEFAULT_MULTILAYER_RELAX_RATE"
+      },
+      "r": {
+        "value": "DEFAULT_MULTILAYER_RELAX_RATE",
+        "constantValue": "0.15"
+      }
+    }
   },
   {
     "long": "--multilayer-relax-limit",
@@ -480,7 +574,15 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "-1"
+    "default": "-1",
+    "bindingDefaults": {
+      "python": {
+        "value": "-1"
+      },
+      "r": {
+        "value": "NULL"
+      }
+    }
   },
   {
     "long": "--multilayer-relax-limit-up",
@@ -492,7 +594,15 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "-1"
+    "default": "-1",
+    "bindingDefaults": {
+      "python": {
+        "value": "-1"
+      },
+      "r": {
+        "value": "NULL"
+      }
+    }
   },
   {
     "long": "--multilayer-relax-limit-down",
@@ -504,7 +614,15 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "-1"
+    "default": "-1",
+    "bindingDefaults": {
+      "python": {
+        "value": "-1"
+      },
+      "r": {
+        "value": "NULL"
+      }
+    }
   },
   {
     "long": "--multilayer-relax-by-jsd",
@@ -526,7 +644,18 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "123"
+    "default": "123",
+    "min": "1",
+    "bindingDefaults": {
+      "python": {
+        "value": "123",
+        "constant": "_DEFAULT_SEED"
+      },
+      "r": {
+        "value": "DEFAULT_SEED",
+        "constantValue": "123L"
+      }
+    }
   },
   {
     "long": "--num-trials",
@@ -538,7 +667,16 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "1"
+    "default": "1",
+    "min": "1",
+    "bindingDefaults": {
+      "python": {
+        "value": "1"
+      },
+      "r": {
+        "value": "1L"
+      }
+    }
   },
   {
     "long": "--core-loop-limit",
@@ -550,7 +688,16 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "10"
+    "default": "10",
+    "min": "1",
+    "bindingDefaults": {
+      "python": {
+        "value": "10"
+      },
+      "r": {
+        "value": "10L"
+      }
+    }
   },
   {
     "long": "--core-level-limit",
@@ -562,7 +709,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "0"
+    "default": "0",
+    "min": "1"
   },
   {
     "long": "--tune-iteration-limit",
@@ -574,7 +722,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "0"
+    "default": "0",
+    "min": "1"
   },
   {
     "long": "--core-loop-codelength-threshold",
@@ -586,7 +735,18 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1e-10"
+    "default": "1e-10",
+    "min": "0",
+    "bindingDefaults": {
+      "python": {
+        "value": "1e-10",
+        "constant": "_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD"
+      },
+      "r": {
+        "value": "DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD",
+        "constantValue": "1e-10"
+      }
+    }
   },
   {
     "long": "--tune-iteration-relative-threshold",
@@ -598,7 +758,18 @@
     "incremental": false,
     "longType": "number",
     "shortType": "f",
-    "default": "1e-05"
+    "default": "1e-05",
+    "min": "0",
+    "bindingDefaults": {
+      "python": {
+        "value": "1e-5",
+        "constant": "_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD"
+      },
+      "r": {
+        "value": "DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD",
+        "constantValue": "1e-5"
+      }
+    }
   },
   {
     "long": "--fast-hierarchical-solution",
@@ -608,7 +779,21 @@
     "required": false,
     "advanced": true,
     "incremental": true,
-    "default": false
+    "default": false,
+    "renderPolicy": "repeated_short",
+    "bindingDocs": {
+      "python": {
+        "description": "Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive part."
+      }
+    },
+    "bindingDefaults": {
+      "python": {
+        "value": "None"
+      },
+      "r": {
+        "value": "NULL"
+      }
+    }
   },
   {
     "long": "--inner-parallelization",
@@ -640,7 +825,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "5"
+    "default": "5",
+    "min": "0"
   },
   {
     "long": "--max-degree-for-random-moves",
@@ -652,7 +838,8 @@
     "incremental": false,
     "longType": "integer",
     "shortType": "n",
-    "default": "2"
+    "default": "2",
+    "min": "0"
   },
   {
     "long": "--verbose",
@@ -662,7 +849,28 @@
     "required": false,
     "advanced": false,
     "incremental": true,
-    "default": false
+    "default": false,
+    "bindingNames": {
+      "python": "verbosity_level",
+      "r": "verbosity_level",
+      "ts": "verbose"
+    },
+    "renderPolicy": "repeated_short",
+    "bindingDocs": {
+      "python": {
+        "description": "Verbosity level on the console. 1 keeps the default output level, 2 renders -vv and so on."
+      }
+    },
+    "bindingDefaults": {
+      "python": {
+        "value": "1",
+        "constant": "_DEFAULT_VERBOSITY_LEVEL"
+      },
+      "r": {
+        "value": "DEFAULT_VERBOSITY_LEVEL",
+        "constantValue": "1L"
+      }
+    }
   },
   {
     "long": "--silent",

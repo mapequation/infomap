@@ -57,4 +57,17 @@ TEST_CASE("ProgramInterface parses long options with separate values [fast][core
   CHECK(rate == doctest::Approx(0.25));
 }
 
+TEST_CASE("ProgramInterface requires explicit JSON parameter metadata [fast][core][parser][cli]")
+{
+  infomap::ProgramInterface missingMetadata("Test", "Test parser", "1.0");
+  CHECK_THROWS_WITH_AS(
+      missingMetadata.parseArgs("--print-json-parameters"),
+      "JSON parameter metadata is not configured for this ProgramInterface.",
+      std::runtime_error);
+
+  infomap::ProgramInterface configured("Test", "Test parser", "1.0");
+  configured.setJsonParameters("{\"parameters\": []}");
+  CHECK_THROWS_AS(configured.parseArgs("--print-json-parameters"), infomap::CleanExit);
+}
+
 } // namespace
