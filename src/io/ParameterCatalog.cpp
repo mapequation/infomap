@@ -21,43 +21,6 @@ namespace infomap {
 
 namespace {
 
-  ParameterSpec spec(ParameterId id,
-                     char shortName,
-                     std::string longName,
-                     std::string description,
-                     std::string argumentName,
-                     std::string group,
-                     bool isAdvanced = false,
-                     bool hidden = false,
-                     bool requireArgument = false,
-                     bool incrementalArgument = false,
-                     std::string defaultValue = "",
-                     std::vector<std::string> choices = {},
-                     std::string pythonName = "",
-                     std::string rName = "",
-                     std::string tsName = "",
-                     std::string renderPolicy = "")
-  {
-    ParameterSpec parameter;
-    parameter.id = id;
-    parameter.shortName = shortName;
-    parameter.longName = std::move(longName);
-    parameter.description = std::move(description);
-    parameter.argumentName = std::move(argumentName);
-    parameter.group = std::move(group);
-    parameter.isAdvanced = isAdvanced;
-    parameter.hidden = hidden;
-    parameter.requireArgument = requireArgument;
-    parameter.incrementalArgument = incrementalArgument;
-    parameter.defaultValue = std::move(defaultValue);
-    parameter.choices = std::move(choices);
-    parameter.pythonName = std::move(pythonName);
-    parameter.rName = std::move(rName);
-    parameter.tsName = std::move(tsName);
-    parameter.renderPolicy = std::move(renderPolicy);
-    return parameter;
-  }
-
   bool isFloatingPointArgument(const ParameterSpec& parameter)
   {
     return parameter.argumentName == ArgType::number || parameter.argumentName == ArgType::probability;
@@ -81,37 +44,130 @@ namespace {
     return value;
   }
 
-  ParameterSpec withBindingDefaults(ParameterSpec parameter)
-  {
-    parameter.pythonDefault = numericBindingDefault(parameter);
-    parameter.rDefault = rBindingDefault(parameter);
-    return parameter;
-  }
+  class SpecBuilder {
+  public:
+    explicit SpecBuilder(ParameterId id)
+    {
+      parameter_.id = id;
+    }
 
-  ParameterSpec withBindingDefaults(ParameterSpec parameter, std::string pythonDefault, std::string rDefault)
-  {
-    parameter.pythonDefault = std::move(pythonDefault);
-    parameter.rDefault = std::move(rDefault);
-    return parameter;
-  }
+    SpecBuilder& shortName(char value)
+    {
+      parameter_.shortName = value;
+      return *this;
+    }
 
-  ParameterSpec withMin(ParameterSpec parameter, std::string minValue)
-  {
-    parameter.minValue = std::move(minValue);
-    return parameter;
-  }
+    SpecBuilder& longName(std::string value)
+    {
+      parameter_.longName = std::move(value);
+      return *this;
+    }
 
-  ParameterSpec withRange(ParameterSpec parameter, std::string minValue, std::string maxValue)
-  {
-    parameter.minValue = std::move(minValue);
-    parameter.maxValue = std::move(maxValue);
-    return parameter;
-  }
+    SpecBuilder& description(std::string value)
+    {
+      parameter_.description = std::move(value);
+      return *this;
+    }
 
-  ParameterSpec withPythonDocDescription(ParameterSpec parameter, std::string description)
+    SpecBuilder& group(std::string value)
+    {
+      parameter_.group = std::move(value);
+      return *this;
+    }
+
+    SpecBuilder& argument(std::string value)
+    {
+      parameter_.argumentName = std::move(value);
+      parameter_.requireArgument = true;
+      return *this;
+    }
+
+    SpecBuilder& defaultValue(std::string value)
+    {
+      parameter_.defaultValue = std::move(value);
+      return *this;
+    }
+
+    SpecBuilder& advanced()
+    {
+      parameter_.isAdvanced = true;
+      return *this;
+    }
+
+    SpecBuilder& hidden()
+    {
+      parameter_.hidden = true;
+      return *this;
+    }
+
+    SpecBuilder& incremental()
+    {
+      parameter_.incrementalArgument = true;
+      return *this;
+    }
+
+    SpecBuilder& choices(std::vector<std::string> values)
+    {
+      parameter_.choices = std::move(values);
+      return *this;
+    }
+
+    SpecBuilder& min(std::string value)
+    {
+      parameter_.minValue = std::move(value);
+      return *this;
+    }
+
+    SpecBuilder& range(std::string minValue, std::string maxValue)
+    {
+      parameter_.minValue = std::move(minValue);
+      parameter_.maxValue = std::move(maxValue);
+      return *this;
+    }
+
+    SpecBuilder& bindingNames(std::string pythonName, std::string rName, std::string tsName)
+    {
+      parameter_.pythonName = std::move(pythonName);
+      parameter_.rName = std::move(rName);
+      parameter_.tsName = std::move(tsName);
+      return *this;
+    }
+
+    SpecBuilder& renderPolicy(std::string value)
+    {
+      parameter_.renderPolicy = std::move(value);
+      return *this;
+    }
+
+    SpecBuilder& bindingDefaults()
+    {
+      parameter_.pythonDefault = numericBindingDefault(parameter_);
+      parameter_.rDefault = rBindingDefault(parameter_);
+      return *this;
+    }
+
+    SpecBuilder& bindingDefaults(std::string pythonDefault, std::string rDefault)
+    {
+      parameter_.pythonDefault = std::move(pythonDefault);
+      parameter_.rDefault = std::move(rDefault);
+      return *this;
+    }
+
+    SpecBuilder& pythonDoc(std::string value)
+    {
+      parameter_.pythonDocDescription = std::move(value);
+      return *this;
+    }
+
+    operator ParameterSpec() const { return parameter_; }
+
+  private:
+    ParameterSpec parameter_;
+  };
+
+  SpecBuilder param(ParameterId id)
   {
-    parameter.pythonDocDescription = std::move(description);
-    return parameter;
+    return SpecBuilder(id);
   }
 
   std::string jsonString(const std::string& value)
@@ -391,70 +447,442 @@ namespace {
 const std::vector<ParameterSpec>& parameterCatalog()
 {
   static const std::vector<ParameterSpec> parameters = {
-    spec(ParameterId::Help, 'h', "help", "Prints this help message. Use -hh to show advanced options.", "", "About", false, false, false, true, "false", {}, "", "", "", "repeated_short"),
-    spec(ParameterId::Version, 'V', "version", "Display program version information.", "", "About", false, false, false, false, "false"),
-    spec(ParameterId::Completion, '\0', "completion", "Print shell completion script for bash or zsh.", ArgType::option, "About", false, false, true, false, "", { "bash", "zsh" }),
-    spec(ParameterId::NetworkFile, '\0', "network_file", "Network file to read. Infomap assumes link-list format unless the file starts with a Pajek heading.", "", "Input"),
-    spec(ParameterId::Input, '\0', "input", "Network file to read. Infomap assumes link-list format unless the file starts with a Pajek heading.", ArgType::path, "Input", false, false, true),
-    spec(ParameterId::SkipAdjustBipartiteFlow, '\0', "skip-adjust-bipartite-flow", "Keep flow on bipartite nodes instead of distributing it to primary nodes.", "", "Input", true),
-    spec(ParameterId::BipartiteTeleportation, '\0', "bipartite-teleportation", "Use bipartite teleportation instead of the default two-step unipartite teleportation.", "", "Input", true),
-    withMin(spec(ParameterId::WeightThreshold, '\0', "weight-threshold", "Ignore input links with weight below this threshold.", ArgType::number, "Input", true, false, true, false, "0"), "0"),
-    spec(ParameterId::IncludeSelfLinks, 'k', "include-self-links", "DEPRECATED. Self-links are included by default; use --no-self-links to exclude them.", "", "Input", true, true),
-    spec(ParameterId::NoSelfLinks, '\0', "no-self-links", "Exclude self-links from the input network.", "", "Input", true, false, false, false, "false", {}, "", "", "", "deprecated_alias_target"),
-    withMin(spec(ParameterId::NodeLimit, '\0', "node-limit", "Read only nodes up to this node id and ignore links connected to higher node ids.", ArgType::integer, "Input", true, false, true, false, "0"), "1"),
-    withMin(spec(ParameterId::MatchableMultilayerIds, '\0', "matchable-multilayer-ids", "Construct state ids from node ids and layer ids that stay comparable across networks. Set at least to the largest layer id among networks to match.", ArgType::integer, "Input", true, false, true, false, "0"), "1"),
-    spec(ParameterId::ClusterData, 'c', "cluster-data", "Read an initial partition from a clu file or a hierarchy from a tree/ftree file. Tree input may use physical or state nodes for higher-order networks.", ArgType::path, "Input", false, false, true),
-    spec(ParameterId::AssignToNeighbouringModule, '\0', "assign-to-neighbouring-module", "With --cluster-data, assign nodes missing module ids to a neighboring node's module when possible.", "", "Input", true),
-    spec(ParameterId::MetaData, '\0', "meta-data", "Read metadata to encode from a clu-format file.", ArgType::path, "Input", true, false, true),
-    withBindingDefaults(withMin(spec(ParameterId::MetaDataRate, '\0', "meta-data-rate", "With --meta-data, set the metadata encoding rate. The default encodes metadata at each step.", ArgType::number, "Input", true, false, true, false, "1"), "0")),
-    spec(ParameterId::MetaDataUnweighted, '\0', "meta-data-unweighted", "With --meta-data, encode metadata without weighting by node flow.", "", "Input", true),
-    spec(ParameterId::NoInfomap, '\0', "no-infomap", "Skip optimization. Use this to calculate codelength for --cluster-data or to print non-modular statistics.", "", "Input"),
-    spec(ParameterId::OutName, '\0', "out-name", "Base name for output files, for example [out_directory]/[out-name].tree.", ArgType::string, "Output", true, false, true),
-    spec(ParameterId::NoFileOutput, '0', "no-file-output", "Do not write output files.", "", "Output", true),
-    spec(ParameterId::Tree, '\0', "tree", "Write the modular hierarchy to a tree file. Enabled by default when no other output format is selected.", "", "Output"),
-    spec(ParameterId::FlowTree, '\0', "ftree", "Write the modular hierarchy and aggregated links between nested modules to an ftree file. Used by Network Navigator.", "", "Output"),
-    spec(ParameterId::Clu, '\0', "clu", "Write top-level module ids for each node to a clu file.", "", "Output"),
-    withMin(spec(ParameterId::CluLevel, '\0', "clu-level", "With --clu or --output clu, write module ids at this depth from the root. Use -1 for bottom-level modules.", ArgType::integer, "Output", true, false, true, false, "1"), "-1"),
-    spec(ParameterId::Output, 'o', "output", "Write selected output formats as a comma-separated list without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.", ArgType::list, "Output", true, false, true, false, "", outputFormatNames(), "", "", "", "comma_list"),
-    spec(ParameterId::HideBipartiteNodes, '\0', "hide-bipartite-nodes", "Hide bipartite nodes in output by projecting the solution to primary nodes.", "", "Output", true),
-    spec(ParameterId::PrintAllTrials, '\0', "print-all-trials", "Write each trial to separate output files. Has effect only when --num-trials is greater than 1.", "", "Output", true),
-    spec(ParameterId::TwoLevel, '2', "two-level", "Optimize a two-level partition instead of the default multi-level hierarchy.", "", "Algorithm"),
-    spec(ParameterId::FlowModel, 'f', "flow-model", "Choose how Infomap derives flow from the input links. Options: undirected, directed, undirdir, outdirdir, rawdir, precomputed.", ArgType::option, "Algorithm", false, false, true, false, "", { "undirected", "directed", "undirdir", "outdirdir", "rawdir", "precomputed" }),
-    withBindingDefaults(spec(ParameterId::Directed, 'd', "directed", "Treat input links as directed. Shorthand for --flow-model directed.", "", "Algorithm", false, false, false, false, "false", {}, "", "", "", "directed_alias"), "None", "NULL"),
-    spec(ParameterId::RecordedTeleportation, 'e', "recorded-teleportation", "When teleportation is used to calculate flow, also record teleportation steps in the codelength.", "", "Algorithm", true),
-    spec(ParameterId::UseNodeWeightsAsFlow, '\0', "use-node-weights-as-flow", "Use node weights from the API or Pajek node records as normalized node flow.", "", "Algorithm", true),
-    spec(ParameterId::TeleportToNodes, '\0', "to-nodes", "Teleport to nodes instead of links. Uses uniform node weights unless node weights are provided.", "", "Algorithm", true),
-    withBindingDefaults(withRange(spec(ParameterId::TeleportationProbability, 'p', "teleportation-probability", "Set the probability of teleporting to a random node or link when calculating flow.", ArgType::probability, "Algorithm", true, false, true, false, "0.15"), "0", "1")),
-    spec(ParameterId::Regularized, '\0', "regularized", "Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.", "", "Algorithm", true),
-    withBindingDefaults(withMin(spec(ParameterId::RegularizationStrength, '\0', "regularization-strength", "Scale the relative strength of the Bayesian prior network used by --regularized.", ArgType::number, "Algorithm", true, false, true, false, "1"), "0")),
-    spec(ParameterId::EntropyCorrected, '\0', "entropy-corrected", "Correct for negative entropy bias in small samples, especially solutions with many modules.", "", "Algorithm", true),
-    withBindingDefaults(spec(ParameterId::EntropyCorrectionStrength, '\0', "entropy-correction-strength", "Scale the default correction used by --entropy-corrected.", ArgType::number, "Algorithm", true, false, true, false, "1")),
-    withBindingDefaults(withMin(spec(ParameterId::MarkovTime, '\0', "markov-time", "Scale link flow to change the cost of moving between modules. Higher values result in fewer modules.", ArgType::number, "Algorithm", true, false, true, false, "1"), "0")),
-    spec(ParameterId::VariableMarkovTime, '\0', "variable-markov-time", "Vary Markov time locally to reduce overpartitioning in sparse areas while keeping higher resolution in dense areas.", "", "Algorithm", true),
-    withBindingDefaults(spec(ParameterId::VariableMarkovDamping, '\0', "variable-markov-damping", "With --variable-markov-time, set damping between local effective degree (0) and local entropy (1).", ArgType::number, "Algorithm", true, false, true, false, "1")),
-    withBindingDefaults(spec(ParameterId::VariableMarkovMinScale, '\0', "variable-markov-min-scale", "With --variable-markov-time, set the minimum local scale for zero-entropy nodes. Local Markov time is max scale divided by local scale.", ArgType::number, "Algorithm", true, false, true, false, "1")),
-    withMin(spec(ParameterId::PreferredNumberOfModules, '\0', "preferred-number-of-modules", "Penalize solutions by how far their number of modules differs from this value.", ArgType::integer, "Algorithm", true, false, true, false, "0"), "1"),
-    withBindingDefaults(withRange(spec(ParameterId::MultilayerRelaxRate, '\0', "multilayer-relax-rate", "Set the probability of relaxing from a state node to neighboring layers instead of staying in the current layer.", ArgType::probability, "Algorithm", true, false, true, false, "0.15"), "0", "1")),
-    withBindingDefaults(spec(ParameterId::MultilayerRelaxLimit, '\0', "multilayer-relax-limit", "Limit relaxation to this many neighboring layer ids in each direction. Use a negative value to allow relaxation to any layer.", ArgType::integer, "Algorithm", true, false, true, false, "-1"), "-1", "NULL"),
-    withBindingDefaults(spec(ParameterId::MultilayerRelaxLimitUp, '\0', "multilayer-relax-limit-up", "Limit relaxation upward to this many higher neighboring layer ids. Use a negative value to allow relaxation to any higher layer.", ArgType::integer, "Algorithm", true, false, true, false, "-1"), "-1", "NULL"),
-    withBindingDefaults(spec(ParameterId::MultilayerRelaxLimitDown, '\0', "multilayer-relax-limit-down", "Limit relaxation downward to this many lower neighboring layer ids. Use a negative value to allow relaxation to any lower layer.", ArgType::integer, "Algorithm", true, false, true, false, "-1"), "-1", "NULL"),
-    spec(ParameterId::MultilayerRelaxByJsd, '\0', "multilayer-relax-by-jsd", "Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon divergence.", "", "Algorithm", true),
-    withBindingDefaults(withMin(spec(ParameterId::Seed, 's', "seed", "Set the random number generator seed for reproducible results.", ArgType::integer, "Accuracy", false, false, true, false, "123"), "1")),
-    withBindingDefaults(withMin(spec(ParameterId::NumTrials, 'N', "num-trials", "Run this many independent trials and keep the best solution.", ArgType::integer, "Accuracy", false, false, true, false, "1"), "1")),
-    withBindingDefaults(withMin(spec(ParameterId::CoreLoopLimit, 'M', "core-loop-limit", "Limit how many core loops try to move each node to the best module.", ArgType::integer, "Accuracy", true, false, true, false, "10"), "1")),
-    withMin(spec(ParameterId::CoreLevelLimit, 'L', "core-level-limit", "Limit how many times core loops are reapplied to the aggregated modular network to find larger structures.", ArgType::integer, "Accuracy", true, false, true, false, "0"), "1"),
-    withMin(spec(ParameterId::TuneIterationLimit, 'T', "tune-iteration-limit", "Limit the main iterations in the two-level partition algorithm. 0 means no limit.", ArgType::integer, "Accuracy", true, false, true, false, "0"), "1"),
-    withBindingDefaults(withMin(spec(ParameterId::CoreLoopCodelengthThreshold, '\0', "core-loop-codelength-threshold", "Require at least this codelength improvement to accept a new solution in a core loop.", ArgType::number, "Accuracy", true, false, true, false, "1e-10"), "0")),
-    withBindingDefaults(withMin(spec(ParameterId::TuneIterationRelativeThreshold, '\0', "tune-iteration-relative-threshold", "Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.", ArgType::number, "Accuracy", true, false, true, false, "1e-05"), "0")),
-    withPythonDocDescription(withBindingDefaults(spec(ParameterId::FastHierarchicalSolution, 'F', "fast-hierarchical-solution", "Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to skip recursive refinement.", "", "Accuracy", true, false, false, true, "false", {}, "", "", "", "repeated_short"), "None", "NULL"), "Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive part."),
-    spec(ParameterId::InnerParallelization, '\0', "inner-parallelization", "Parallelize the innermost loop for speed, with a possible accuracy tradeoff.", "", "Accuracy", true),
-    spec(ParameterId::PreferModularSolution, '\0', "prefer-modular-solution", "Prefer a modular solution even when one module gives a lower codelength.", "", "Accuracy", true),
-    withMin(spec(ParameterId::NumRandomMoves, '\0', "num-random-moves", "Try this many random moves in each core loop to merge weakly connected nodes.", ArgType::integer, "Accuracy", true, false, true, false, "5"), "0"),
-    withMin(spec(ParameterId::MaxDegreeForRandomMoves, '\0', "max-degree-for-random-moves", "Try random moves only for nodes with degree at most this value.", ArgType::integer, "Accuracy", true, false, true, false, "2"), "0"),
-    spec(ParameterId::OutputDirectory, '\0', "out_directory", "Directory where output files are written.", "", "Output"),
-    withPythonDocDescription(withBindingDefaults(spec(ParameterId::Verbose, 'v', "verbose", "Increase console verbosity. Add more v flags to increase verbosity up to -vvv.", "", "Output", false, false, false, true, "false", {}, "verbosity_level", "verbosity_level", "verbose", "repeated_short"), "1", "1L"), "Verbosity level on the console. 1 keeps the default output level, 2 renders -vv and so on."),
-    spec(ParameterId::Silent, '\0', "silent", "Suppress console output.", "", "Output"),
-    spec(ParameterId::Pretty, '\0', "pretty", "Use modernized console output with color and Unicode on interactive terminals.", "", "Output"),
+    param(ParameterId::Help)
+        .shortName('h')
+        .longName("help")
+        .description("Prints this help message. Use -hh to show advanced options.")
+        .group("About")
+        .incremental()
+        .defaultValue("false")
+        .renderPolicy("repeated_short"),
+    param(ParameterId::Version)
+        .shortName('V')
+        .longName("version")
+        .description("Display program version information.")
+        .group("About")
+        .defaultValue("false"),
+    param(ParameterId::Completion)
+        .longName("completion")
+        .description("Print shell completion script for bash or zsh.")
+        .argument(ArgType::option)
+        .group("About")
+        .choices({ "bash", "zsh" }),
+    param(ParameterId::NetworkFile)
+        .longName("network_file")
+        .description("Network file to read. Infomap assumes link-list format unless the file starts with a Pajek heading.")
+        .group("Input"),
+    param(ParameterId::Input)
+        .longName("input")
+        .description("Network file to read. Infomap assumes link-list format unless the file starts with a Pajek heading.")
+        .argument(ArgType::path)
+        .group("Input"),
+    param(ParameterId::SkipAdjustBipartiteFlow)
+        .longName("skip-adjust-bipartite-flow")
+        .description("Keep flow on bipartite nodes instead of distributing it to primary nodes.")
+        .group("Input")
+        .advanced(),
+    param(ParameterId::BipartiteTeleportation)
+        .longName("bipartite-teleportation")
+        .description("Use bipartite teleportation instead of the default two-step unipartite teleportation.")
+        .group("Input")
+        .advanced(),
+    param(ParameterId::WeightThreshold)
+        .longName("weight-threshold")
+        .description("Ignore input links with weight below this threshold.")
+        .argument(ArgType::number)
+        .group("Input")
+        .advanced()
+        .defaultValue("0")
+        .min("0"),
+    param(ParameterId::IncludeSelfLinks)
+        .shortName('k')
+        .longName("include-self-links")
+        .description("DEPRECATED. Self-links are included by default; use --no-self-links to exclude them.")
+        .group("Input")
+        .advanced()
+        .hidden(),
+    param(ParameterId::NoSelfLinks)
+        .longName("no-self-links")
+        .description("Exclude self-links from the input network.")
+        .group("Input")
+        .advanced()
+        .defaultValue("false")
+        .renderPolicy("deprecated_alias_target"),
+    param(ParameterId::NodeLimit)
+        .longName("node-limit")
+        .description("Read only nodes up to this node id and ignore links connected to higher node ids.")
+        .argument(ArgType::integer)
+        .group("Input")
+        .advanced()
+        .defaultValue("0")
+        .min("1"),
+    param(ParameterId::MatchableMultilayerIds)
+        .longName("matchable-multilayer-ids")
+        .description("Construct state ids from node ids and layer ids that stay comparable across networks. Set at least to the largest layer id among networks to match.")
+        .argument(ArgType::integer)
+        .group("Input")
+        .advanced()
+        .defaultValue("0")
+        .min("1"),
+    param(ParameterId::ClusterData)
+        .shortName('c')
+        .longName("cluster-data")
+        .description("Read an initial partition from a clu file or a hierarchy from a tree/ftree file. Tree input may use physical or state nodes for higher-order networks.")
+        .argument(ArgType::path)
+        .group("Input"),
+    param(ParameterId::AssignToNeighbouringModule)
+        .longName("assign-to-neighbouring-module")
+        .description("With --cluster-data, assign nodes missing module ids to a neighboring node's module when possible.")
+        .group("Input")
+        .advanced(),
+    param(ParameterId::MetaData)
+        .longName("meta-data")
+        .description("Read metadata to encode from a clu-format file.")
+        .argument(ArgType::path)
+        .group("Input")
+        .advanced(),
+    param(ParameterId::MetaDataRate)
+        .longName("meta-data-rate")
+        .description("With --meta-data, set the metadata encoding rate. The default encodes metadata at each step.")
+        .argument(ArgType::number)
+        .group("Input")
+        .advanced()
+        .defaultValue("1")
+        .min("0")
+        .bindingDefaults(),
+    param(ParameterId::MetaDataUnweighted)
+        .longName("meta-data-unweighted")
+        .description("With --meta-data, encode metadata without weighting by node flow.")
+        .group("Input")
+        .advanced(),
+    param(ParameterId::NoInfomap)
+        .longName("no-infomap")
+        .description("Skip optimization. Use this to calculate codelength for --cluster-data or to print non-modular statistics.")
+        .group("Input"),
+    param(ParameterId::OutName)
+        .longName("out-name")
+        .description("Base name for output files, for example [out_directory]/[out-name].tree.")
+        .argument(ArgType::string)
+        .group("Output")
+        .advanced(),
+    param(ParameterId::NoFileOutput)
+        .shortName('0')
+        .longName("no-file-output")
+        .description("Do not write output files.")
+        .group("Output")
+        .advanced(),
+    param(ParameterId::Tree)
+        .longName("tree")
+        .description("Write the modular hierarchy to a tree file. Enabled by default when no other output format is selected.")
+        .group("Output"),
+    param(ParameterId::FlowTree)
+        .longName("ftree")
+        .description("Write the modular hierarchy and aggregated links between nested modules to an ftree file. Used by Network Navigator.")
+        .group("Output"),
+    param(ParameterId::Clu)
+        .longName("clu")
+        .description("Write top-level module ids for each node to a clu file.")
+        .group("Output"),
+    param(ParameterId::CluLevel)
+        .longName("clu-level")
+        .description("With --clu or --output clu, write module ids at this depth from the root. Use -1 for bottom-level modules.")
+        .argument(ArgType::integer)
+        .group("Output")
+        .advanced()
+        .defaultValue("1")
+        .min("-1"),
+    param(ParameterId::Output)
+        .shortName('o')
+        .longName("output")
+        .description("Write selected output formats as a comma-separated list without spaces, e.g. -o clu,tree,ftree. Options: clu, tree, ftree, newick, json, csv, network, states, flow.")
+        .argument(ArgType::list)
+        .group("Output")
+        .advanced()
+        .choices(outputFormatNames())
+        .renderPolicy("comma_list"),
+    param(ParameterId::HideBipartiteNodes)
+        .longName("hide-bipartite-nodes")
+        .description("Hide bipartite nodes in output by projecting the solution to primary nodes.")
+        .group("Output")
+        .advanced(),
+    param(ParameterId::PrintAllTrials)
+        .longName("print-all-trials")
+        .description("Write each trial to separate output files. Has effect only when --num-trials is greater than 1.")
+        .group("Output")
+        .advanced(),
+    param(ParameterId::TwoLevel)
+        .shortName('2')
+        .longName("two-level")
+        .description("Optimize a two-level partition instead of the default multi-level hierarchy.")
+        .group("Algorithm"),
+    param(ParameterId::FlowModel)
+        .shortName('f')
+        .longName("flow-model")
+        .description("Choose how Infomap derives flow from the input links. Options: undirected, directed, undirdir, outdirdir, rawdir, precomputed.")
+        .argument(ArgType::option)
+        .group("Algorithm")
+        .choices({ "undirected", "directed", "undirdir", "outdirdir", "rawdir", "precomputed" }),
+    param(ParameterId::Directed)
+        .shortName('d')
+        .longName("directed")
+        .description("Treat input links as directed. Shorthand for --flow-model directed.")
+        .group("Algorithm")
+        .defaultValue("false")
+        .renderPolicy("directed_alias")
+        .bindingDefaults("None", "NULL"),
+    param(ParameterId::RecordedTeleportation)
+        .shortName('e')
+        .longName("recorded-teleportation")
+        .description("When teleportation is used to calculate flow, also record teleportation steps in the codelength.")
+        .group("Algorithm")
+        .advanced(),
+    param(ParameterId::UseNodeWeightsAsFlow)
+        .longName("use-node-weights-as-flow")
+        .description("Use node weights from the API or Pajek node records as normalized node flow.")
+        .group("Algorithm")
+        .advanced(),
+    param(ParameterId::TeleportToNodes)
+        .longName("to-nodes")
+        .description("Teleport to nodes instead of links. Uses uniform node weights unless node weights are provided.")
+        .group("Algorithm")
+        .advanced(),
+    param(ParameterId::TeleportationProbability)
+        .shortName('p')
+        .longName("teleportation-probability")
+        .description("Set the probability of teleporting to a random node or link when calculating flow.")
+        .argument(ArgType::probability)
+        .group("Algorithm")
+        .advanced()
+        .defaultValue("0.15")
+        .range("0", "1")
+        .bindingDefaults(),
+    param(ParameterId::Regularized)
+        .longName("regularized")
+        .description("Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.")
+        .group("Algorithm")
+        .advanced(),
+    param(ParameterId::RegularizationStrength)
+        .longName("regularization-strength")
+        .description("Scale the relative strength of the Bayesian prior network used by --regularized.")
+        .argument(ArgType::number)
+        .group("Algorithm")
+        .advanced()
+        .defaultValue("1")
+        .min("0")
+        .bindingDefaults(),
+    param(ParameterId::EntropyCorrected)
+        .longName("entropy-corrected")
+        .description("Correct for negative entropy bias in small samples, especially solutions with many modules.")
+        .group("Algorithm")
+        .advanced(),
+    param(ParameterId::EntropyCorrectionStrength)
+        .longName("entropy-correction-strength")
+        .description("Scale the default correction used by --entropy-corrected.")
+        .argument(ArgType::number)
+        .group("Algorithm")
+        .advanced()
+        .defaultValue("1")
+        .bindingDefaults(),
+    param(ParameterId::MarkovTime)
+        .longName("markov-time")
+        .description("Scale link flow to change the cost of moving between modules. Higher values result in fewer modules.")
+        .argument(ArgType::number)
+        .group("Algorithm")
+        .advanced()
+        .defaultValue("1")
+        .min("0")
+        .bindingDefaults(),
+    param(ParameterId::VariableMarkovTime)
+        .longName("variable-markov-time")
+        .description("Vary Markov time locally to reduce overpartitioning in sparse areas while keeping higher resolution in dense areas.")
+        .group("Algorithm")
+        .advanced(),
+    param(ParameterId::VariableMarkovDamping)
+        .longName("variable-markov-damping")
+        .description("With --variable-markov-time, set damping between local effective degree (0) and local entropy (1).")
+        .argument(ArgType::number)
+        .group("Algorithm")
+        .advanced()
+        .defaultValue("1")
+        .bindingDefaults(),
+    param(ParameterId::VariableMarkovMinScale)
+        .longName("variable-markov-min-scale")
+        .description("With --variable-markov-time, set the minimum local scale for zero-entropy nodes. Local Markov time is max scale divided by local scale.")
+        .argument(ArgType::number)
+        .group("Algorithm")
+        .advanced()
+        .defaultValue("1")
+        .bindingDefaults(),
+    param(ParameterId::PreferredNumberOfModules)
+        .longName("preferred-number-of-modules")
+        .description("Penalize solutions by how far their number of modules differs from this value.")
+        .argument(ArgType::integer)
+        .group("Algorithm")
+        .advanced()
+        .defaultValue("0")
+        .min("1"),
+    param(ParameterId::MultilayerRelaxRate)
+        .longName("multilayer-relax-rate")
+        .description("Set the probability of relaxing from a state node to neighboring layers instead of staying in the current layer.")
+        .argument(ArgType::probability)
+        .group("Algorithm")
+        .advanced()
+        .defaultValue("0.15")
+        .range("0", "1")
+        .bindingDefaults(),
+    param(ParameterId::MultilayerRelaxLimit)
+        .longName("multilayer-relax-limit")
+        .description("Limit relaxation to this many neighboring layer ids in each direction. Use a negative value to allow relaxation to any layer.")
+        .argument(ArgType::integer)
+        .group("Algorithm")
+        .advanced()
+        .defaultValue("-1")
+        .bindingDefaults("-1", "NULL"),
+    param(ParameterId::MultilayerRelaxLimitUp)
+        .longName("multilayer-relax-limit-up")
+        .description("Limit relaxation upward to this many higher neighboring layer ids. Use a negative value to allow relaxation to any higher layer.")
+        .argument(ArgType::integer)
+        .group("Algorithm")
+        .advanced()
+        .defaultValue("-1")
+        .bindingDefaults("-1", "NULL"),
+    param(ParameterId::MultilayerRelaxLimitDown)
+        .longName("multilayer-relax-limit-down")
+        .description("Limit relaxation downward to this many lower neighboring layer ids. Use a negative value to allow relaxation to any lower layer.")
+        .argument(ArgType::integer)
+        .group("Algorithm")
+        .advanced()
+        .defaultValue("-1")
+        .bindingDefaults("-1", "NULL"),
+    param(ParameterId::MultilayerRelaxByJsd)
+        .longName("multilayer-relax-by-jsd")
+        .description("Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon divergence.")
+        .group("Algorithm")
+        .advanced(),
+    param(ParameterId::Seed)
+        .shortName('s')
+        .longName("seed")
+        .description("Set the random number generator seed for reproducible results.")
+        .argument(ArgType::integer)
+        .group("Accuracy")
+        .defaultValue("123")
+        .min("1")
+        .bindingDefaults(),
+    param(ParameterId::NumTrials)
+        .shortName('N')
+        .longName("num-trials")
+        .description("Run this many independent trials and keep the best solution.")
+        .argument(ArgType::integer)
+        .group("Accuracy")
+        .defaultValue("1")
+        .min("1")
+        .bindingDefaults(),
+    param(ParameterId::CoreLoopLimit)
+        .shortName('M')
+        .longName("core-loop-limit")
+        .description("Limit how many core loops try to move each node to the best module.")
+        .argument(ArgType::integer)
+        .group("Accuracy")
+        .advanced()
+        .defaultValue("10")
+        .min("1")
+        .bindingDefaults(),
+    param(ParameterId::CoreLevelLimit)
+        .shortName('L')
+        .longName("core-level-limit")
+        .description("Limit how many times core loops are reapplied to the aggregated modular network to find larger structures.")
+        .argument(ArgType::integer)
+        .group("Accuracy")
+        .advanced()
+        .defaultValue("0")
+        .min("1"),
+    param(ParameterId::TuneIterationLimit)
+        .shortName('T')
+        .longName("tune-iteration-limit")
+        .description("Limit the main iterations in the two-level partition algorithm. 0 means no limit.")
+        .argument(ArgType::integer)
+        .group("Accuracy")
+        .advanced()
+        .defaultValue("0")
+        .min("1"),
+    param(ParameterId::CoreLoopCodelengthThreshold)
+        .longName("core-loop-codelength-threshold")
+        .description("Require at least this codelength improvement to accept a new solution in a core loop.")
+        .argument(ArgType::number)
+        .group("Accuracy")
+        .advanced()
+        .defaultValue("1e-10")
+        .min("0")
+        .bindingDefaults(),
+    param(ParameterId::TuneIterationRelativeThreshold)
+        .longName("tune-iteration-relative-threshold")
+        .description("Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.")
+        .argument(ArgType::number)
+        .group("Accuracy")
+        .advanced()
+        .defaultValue("1e-05")
+        .min("0")
+        .bindingDefaults(),
+    param(ParameterId::FastHierarchicalSolution)
+        .shortName('F')
+        .longName("fast-hierarchical-solution")
+        .description("Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to skip recursive refinement.")
+        .group("Accuracy")
+        .advanced()
+        .incremental()
+        .defaultValue("false")
+        .renderPolicy("repeated_short")
+        .bindingDefaults("None", "NULL")
+        .pythonDoc("Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive part."),
+    param(ParameterId::InnerParallelization)
+        .longName("inner-parallelization")
+        .description("Parallelize the innermost loop for speed, with a possible accuracy tradeoff.")
+        .group("Accuracy")
+        .advanced(),
+    param(ParameterId::PreferModularSolution)
+        .longName("prefer-modular-solution")
+        .description("Prefer a modular solution even when one module gives a lower codelength.")
+        .group("Accuracy")
+        .advanced(),
+    param(ParameterId::NumRandomMoves)
+        .longName("num-random-moves")
+        .description("Try this many random moves in each core loop to merge weakly connected nodes.")
+        .argument(ArgType::integer)
+        .group("Accuracy")
+        .advanced()
+        .defaultValue("5")
+        .min("0"),
+    param(ParameterId::MaxDegreeForRandomMoves)
+        .longName("max-degree-for-random-moves")
+        .description("Try random moves only for nodes with degree at most this value.")
+        .argument(ArgType::integer)
+        .group("Accuracy")
+        .advanced()
+        .defaultValue("2")
+        .min("0"),
+    param(ParameterId::OutputDirectory)
+        .longName("out_directory")
+        .description("Directory where output files are written.")
+        .group("Output"),
+    param(ParameterId::Verbose)
+        .shortName('v')
+        .longName("verbose")
+        .description("Increase console verbosity. Add more v flags to increase verbosity up to -vvv.")
+        .group("Output")
+        .incremental()
+        .defaultValue("false")
+        .bindingNames("verbosity_level", "verbosity_level", "verbose")
+        .renderPolicy("repeated_short")
+        .bindingDefaults("1", "1L")
+        .pythonDoc("Verbosity level on the console. 1 keeps the default output level, 2 renders -vv and so on."),
+    param(ParameterId::Silent)
+        .longName("silent")
+        .description("Suppress console output.")
+        .group("Output"),
+    param(ParameterId::Pretty)
+        .longName("pretty")
+        .description("Use modernized console output with color and Unicode on interactive terminals.")
+        .group("Output"),
   };
   return parameters;
 }
