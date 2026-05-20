@@ -66,7 +66,7 @@ std::string writeClu(InfomapBase& im, const StateNetwork& network, const std::st
     outFile << "# node_id module flow\n";
   }
 
-  view.forEachLeaf(moduleIndexLevel, OutputLeafFilter::Regular, [&](const OutputLeafRow& row) {
+  view.forEachLeaf(moduleIndexLevel, OutputLeafPolicy::HideBipartite, [&](const OutputLeafRow& row) {
     if (states) {
       outFile << row.stateId << " " << row.moduleId << " " << row.flow << " " << row.physicalId;
       if (view.isMultilayer())
@@ -96,7 +96,7 @@ void writeTree(InfomapBase& im, const StateNetwork& network, std::ostream& outSt
     outStream << "# path flow name node_id\n";
   }
 
-  view.forEachLeaf(1, OutputLeafFilter::TreeNoFlowFilter, [&](const OutputLeafRow& row) {
+  view.forEachLeaf(1, OutputLeafPolicy::HideBipartiteUnlessFlowTree, [&](const OutputLeafRow& row) {
     outStream << io::stringify(row.path, ":") << " " << row.flow << " \"" << row.name << "\" ";
 
     if (states) {
@@ -317,7 +317,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   auto first = true;
 
   if (view.isHigherOrderPhysicalLevel()) {
-    view.forEachLeaf(1, OutputLeafFilter::Regular, [&](const OutputLeafRow& row) {
+    view.forEachLeaf(1, OutputLeafPolicy::HideBipartite, [&](const OutputLeafRow& row) {
       const auto path = io::stringify(row.path, ",");
 
       if (first) {
@@ -336,7 +336,7 @@ void writeJsonTree(InfomapBase& im, const StateNetwork& network, std::ostream& o
   } else {
     const auto multilevelModules = im.getMultilevelModules(states);
 
-    view.forEachLeaf(1, OutputLeafFilter::Regular, [&](const OutputLeafRow& row) {
+    view.forEachLeaf(1, OutputLeafPolicy::HideBipartite, [&](const OutputLeafRow& row) {
       if (first) {
         first = false;
       } else {
@@ -452,7 +452,7 @@ void writeCsvTree(InfomapBase& im, const StateNetwork& network, std::ostream& ou
     outStream << "node_id\n";
   }
 
-  view.forEachLeaf(1, OutputLeafFilter::Regular, [&](const OutputLeafRow& row) {
+  view.forEachLeaf(1, OutputLeafPolicy::HideBipartite, [&](const OutputLeafRow& row) {
     const auto path = io::stringify(row.path, ":");
     outStream << path << ',' << row.flow << ",\"" << row.name << "\",";
 

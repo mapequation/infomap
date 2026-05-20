@@ -74,7 +74,7 @@ std::vector<OutputRowIdentity> outputViewIdentities(InfomapWrapper& im, bool sta
 {
   infomap::OutputView view(im, im.network(), states);
   std::vector<OutputRowIdentity> rows;
-  view.forEachLeaf(1, infomap::OutputLeafFilter::Regular, [&](const infomap::OutputLeafRow& row) {
+  view.forEachLeaf(1, infomap::OutputLeafPolicy::HideBipartite, [&](const infomap::OutputLeafRow& row) {
     rows.emplace_back(row.stateId, row.physicalId, row.layerId);
   });
   std::sort(rows.begin(), rows.end());
@@ -518,7 +518,7 @@ TEST_CASE("OutputView projects first-order leaf rows [fast][core][output]")
   infomap::OutputView view(*im, im->network(), false);
   std::vector<unsigned int> physicalIds;
   unsigned int nonEmptyPaths = 0;
-  view.forEachLeaf(1, infomap::OutputLeafFilter::Regular, [&](const infomap::OutputLeafRow& row) {
+  view.forEachLeaf(1, infomap::OutputLeafPolicy::HideBipartite, [&](const infomap::OutputLeafRow& row) {
     physicalIds.push_back(row.physicalId);
     CHECK(row.stateId == row.physicalId);
     CHECK(row.moduleId > 0);
@@ -562,7 +562,7 @@ TEST_CASE("OutputView exposes multilayer state layer ids [fast][core][output]")
 
   infomap::OutputView view(*im, im->network(), true);
   bool foundLayer = false;
-  view.forEachLeaf(1, infomap::OutputLeafFilter::Regular, [&](const infomap::OutputLeafRow& row) {
+  view.forEachLeaf(1, infomap::OutputLeafPolicy::HideBipartite, [&](const infomap::OutputLeafRow& row) {
     CHECK(row.physicalId != 0);
     if (row.layerId != 0) {
       foundLayer = true;
@@ -581,7 +581,7 @@ TEST_CASE("OutputView applies bipartite hide filter centrally [fast][core][outpu
 
   infomap::OutputView view(*im, im->network(), false);
   std::vector<unsigned int> physicalIds;
-  view.forEachLeaf(1, infomap::OutputLeafFilter::Regular, [&](const infomap::OutputLeafRow& row) {
+  view.forEachLeaf(1, infomap::OutputLeafPolicy::HideBipartite, [&](const infomap::OutputLeafRow& row) {
     physicalIds.push_back(row.physicalId);
   });
 

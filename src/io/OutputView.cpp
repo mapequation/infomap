@@ -33,7 +33,7 @@ bool OutputView::hasMetaData() const
   return m_infomap.haveMetaData();
 }
 
-void OutputView::forEachLeaf(int moduleIndexLevel, OutputLeafFilter filter, const LeafCallback& callback)
+void OutputView::forEachLeaf(int moduleIndexLevel, OutputLeafPolicy filter, const LeafCallback& callback)
 {
   if (isHigherOrderPhysicalLevel()) {
     for (auto it(m_infomap.iterTreePhysical(moduleIndexLevel)); !it.isEnd(); ++it) {
@@ -91,9 +91,9 @@ std::map<unsigned int, OutputStateNodeTarget> OutputView::stateNodeTargets()
   return targets;
 }
 
-bool OutputView::shouldIncludeLeaf(const InfoNode& node, OutputLeafFilter filter) const
+bool OutputView::shouldIncludeLeaf(const InfoNode& node, OutputLeafPolicy filter) const
 {
-  const auto shouldHideBipartiteNodes = filter == OutputLeafFilter::TreeNoFlowFilter
+  const auto shouldHideBipartiteNodes = filter == OutputLeafPolicy::HideBipartiteUnlessFlowTree
       ? !m_infomap.printFlowTree && m_infomap.isBipartite() && m_infomap.hideBipartiteNodes
       : m_infomap.isBipartite() && m_infomap.hideBipartiteNodes;
 

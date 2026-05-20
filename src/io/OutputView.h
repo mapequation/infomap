@@ -22,9 +22,9 @@ class InfomapBase;
 class InfoNode;
 class StateNetwork;
 
-enum class OutputLeafFilter : std::uint8_t {
-  Regular,
-  TreeNoFlowFilter
+enum class OutputLeafPolicy : std::uint8_t {
+  HideBipartite,
+  HideBipartiteUnlessFlowTree
 };
 
 struct OutputLeafRow {
@@ -65,13 +65,13 @@ public:
   bool isMultilayer() const;
   bool hasMetaData() const;
 
-  void forEachLeaf(int moduleIndexLevel, OutputLeafFilter filter, const LeafCallback& callback);
+  void forEachLeaf(int moduleIndexLevel, OutputLeafPolicy filter, const LeafCallback& callback);
   void forEachTreeNode(const TreeCallback& callback);
 
   std::map<unsigned int, OutputStateNodeTarget> stateNodeTargets();
 
 private:
-  bool shouldIncludeLeaf(const InfoNode& node, OutputLeafFilter filter) const;
+  bool shouldIncludeLeaf(const InfoNode& node, OutputLeafPolicy filter) const;
   OutputLeafRow leafRow(const InfoNode& node,
                         const std::deque<unsigned int>& path,
                         unsigned int moduleId,
