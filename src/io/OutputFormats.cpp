@@ -26,9 +26,9 @@ namespace {
     return { resultKey, displayName, states, suffix, extension, mimeType, resultOrder };
   }
 
-  OutputFormat format(const std::string& optionName, OutputFormatFlag flag, std::vector<OutputFileFormat> files)
+  OutputFormat format(const std::string& optionName, OutputKind kind, std::vector<OutputFileFormat> files)
   {
-    return { optionName, flag, std::move(files) };
+    return { optionName, kind, std::move(files) };
   }
 
   std::string jsonString(const std::string& value)
@@ -64,41 +64,41 @@ namespace {
 const std::vector<OutputFormat>& outputFormats()
 {
   static const std::vector<OutputFormat> formats = {
-    format("clu", OutputFormatFlag::Clu, {
-                                             file("clu", "Clu", false, "", "clu", textMimeType, 0),
-                                             file("clu_states", "Clu", true, "_states", "clu", textMimeType, 5),
+    format("clu", OutputKind::Clu, {
+                                       file("clu", "Clu", false, "", "clu", textMimeType, 0),
+                                       file("clu_states", "Clu", true, "_states", "clu", textMimeType, 5),
+                                   }),
+    format("tree", OutputKind::Tree, {
+                                         file("tree", "Tree", false, "", "tree", textMimeType, 1),
+                                         file("tree_states", "Tree", true, "_states", "tree", textMimeType, 6),
+                                     }),
+    format("ftree", OutputKind::FlowTree, {
+                                              file("ftree", "Ftree", false, "", "ftree", textMimeType, 2),
+                                              file("ftree_states", "Ftree", true, "_states", "ftree", textMimeType, 7),
+                                          }),
+    format("newick", OutputKind::Newick, {
+                                             file("newick", "Newick", false, "", "nwk", textMimeType, 11),
+                                             file("newick_states", "Newick", true, "_states", "nwk", textMimeType, 12),
                                          }),
-    format("tree", OutputFormatFlag::Tree, {
-                                               file("tree", "Tree", false, "", "tree", textMimeType, 1),
-                                               file("tree_states", "Tree", true, "_states", "tree", textMimeType, 6),
-                                           }),
-    format("ftree", OutputFormatFlag::FlowTree, {
-                                                    file("ftree", "Ftree", false, "", "ftree", textMimeType, 2),
-                                                    file("ftree_states", "Ftree", true, "_states", "ftree", textMimeType, 7),
+    format("json", OutputKind::Json, {
+                                         file("json", "JSON", false, "", "json", jsonMimeType, 13),
+                                         file("json_states", "JSON", true, "_states", "json", jsonMimeType, 14),
+                                     }),
+    format("csv", OutputKind::Csv, {
+                                       file("csv", "CSV", false, "", "csv", textMimeType, 15),
+                                       file("csv_states", "CSV", true, "_states", "csv", textMimeType, 16),
+                                   }),
+    format("network", OutputKind::PajekNetwork, {
+                                                    file("net", "Network", false, "", "net", textMimeType, 3),
+                                                    file("states_as_physical", "States as physical", false, "_states_as_physical", "net", textMimeType, 4),
                                                 }),
-    format("newick", OutputFormatFlag::Newick, {
-                                                   file("newick", "Newick", false, "", "nwk", textMimeType, 11),
-                                                   file("newick_states", "Newick", true, "_states", "nwk", textMimeType, 12),
+    format("states", OutputKind::StateNetwork, {
+                                                   file("states", "States", true, "_states", "net", textMimeType, 8),
                                                }),
-    format("json", OutputFormatFlag::Json, {
-                                               file("json", "JSON", false, "", "json", jsonMimeType, 13),
-                                               file("json_states", "JSON", true, "_states", "json", jsonMimeType, 14),
-                                           }),
-    format("csv", OutputFormatFlag::Csv, {
-                                             file("csv", "CSV", false, "", "csv", textMimeType, 15),
-                                             file("csv_states", "CSV", true, "_states", "csv", textMimeType, 16),
-                                         }),
-    format("network", OutputFormatFlag::PajekNetwork, {
-                                                          file("net", "Network", false, "", "net", textMimeType, 3),
-                                                          file("states_as_physical", "States as physical", false, "_states_as_physical", "net", textMimeType, 4),
-                                                      }),
-    format("states", OutputFormatFlag::StateNetwork, {
-                                                         file("states", "States", true, "_states", "net", textMimeType, 8),
-                                                     }),
-    format("flow", OutputFormatFlag::FlowNetwork, {
-                                                      file("flow", "Flow", false, "_flow", "net", textMimeType, 9),
-                                                      file("flow_as_physical", "Flow states as physical", true, "_states_as_physical_flow", "net", textMimeType, 10),
-                                                  }),
+    format("flow", OutputKind::FlowNetwork, {
+                                                file("flow", "Flow", false, "_flow", "net", textMimeType, 9),
+                                                file("flow_as_physical", "Flow states as physical", true, "_states_as_physical_flow", "net", textMimeType, 10),
+                                            }),
   };
   return formats;
 }

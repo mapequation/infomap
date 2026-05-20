@@ -16,7 +16,7 @@
 #include "MetaMapEquation.h"
 #include "InfomapOptimizer.h"
 #include "../io/SafeFile.h"
-#include "../io/OutputFormats.h"
+#include "../io/OutputPlan.h"
 #include "../utils/FileURI.h"
 #include "../utils/FlowCalculator.h"
 #include "../utils/PrettyOutput.h"
@@ -33,7 +33,6 @@
 #include <cstdlib>
 #include <algorithm>
 #include <cmath>
-#include <functional>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -108,49 +107,6 @@ namespace {
     }
   }
 
-  std::pair<std::string, std::string> splitExtension(const std::string& filename)
-  {
-    const auto slashPos = filename.find_last_of("/\\");
-    const auto dotPos = filename.find_last_of('.');
-    if (dotPos == std::string::npos || (slashPos != std::string::npos && dotPos < slashPos)) {
-      return { filename, "" };
-    }
-    return { filename.substr(0, dotPos), filename.substr(dotPos + 1) };
-  }
-
-  std::vector<std::string> summarizeOutputFiles(const std::vector<std::pair<std::string, std::string>>& outputFiles)
-  {
-    std::vector<std::pair<std::string, std::vector<std::string>>> groups;
-    for (const auto& outputFile : outputFiles) {
-      const auto parts = splitExtension(outputFile.second);
-      auto it = std::find_if(groups.begin(), groups.end(), [&parts](const std::pair<std::string, std::vector<std::string>>& group) {
-        return group.first == parts.first;
-      });
-      if (it == groups.end()) {
-        groups.push_back({ parts.first, { parts.second } });
-      } else {
-        it->second.push_back(parts.second);
-      }
-    }
-
-    std::vector<std::string> summaries;
-    summaries.reserve(groups.size());
-    for (const auto& group : groups) {
-      if (group.second.size() == 1) {
-        summaries.push_back(group.second.front().empty() ? group.first : io::Str() << group.first << "." << group.second.front());
-        continue;
-      }
-      io::Str suffixes;
-      for (unsigned int i = 0; i < group.second.size(); ++i) {
-        if (i > 0)
-          suffixes << ",";
-        suffixes << group.second[i];
-      }
-      summaries.push_back(io::Str() << group.first << ".{" << std::string(suffixes) << "}");
-    }
-    return summaries;
-  }
-
 } // namespace
 
 class InfomapBase::RunSession {
@@ -168,11 +124,10 @@ public:
   Result run()
   {
     validateNetwork();
-    writeStateNetworkIfRequested();
-    writePajekNetworkIfRequested();
+    writeOutputArtifacts(m_infomap, m_network, OutputPhase::BeforeFlow);
     configureNetworkMode();
     calculateFlowAndInitNetwork();
-    writeFlowNetworkIfRequested();
+    writeOutputArtifacts(m_infomap, m_network, OutputPhase::AfterFlow);
     releaseInputLinksIfCli();
     logRunPartitionStart();
     return runTrials();
@@ -298,46 +253,6 @@ private:
     }
   }
 
-  std::string resultFilename(const std::string& resultKey) const
-  {
-    return outputFilenameForResultKey(m_infomap.outDirectory + m_infomap.outName, resultKey);
-  }
-
-  void writeStateNetworkIfRequested()
-  {
-    if (!m_infomap.printStateNetwork) {
-      return;
-    }
-
-    std::string filename = resultFilename("states");
-    Log() << "Writing state network to '" << filename << "'... ";
-    m_network.writeStateNetwork(filename);
-    Log() << "done!\n";
-    if (m_infomap.prettyOutput)
-      PrettyOutput(true).status("Output", io::Str() << "state network -> " << filename);
-  }
-
-  void writePajekNetworkIfRequested()
-  {
-    if (!m_infomap.printPajekNetwork) {
-      return;
-    }
-
-    std::string filename;
-    if (m_infomap.printStates()) {
-      filename = resultFilename("states_as_physical");
-      Log() << "Writing state network as first order Pajek network to '" << filename << "'... ";
-    } else {
-      // Non-memory input
-      filename = resultFilename("net");
-      Log() << "Writing Pajek network to '" << filename << "'... ";
-    }
-    m_network.writePajekNetwork(filename);
-    Log() << "done!\n";
-    if (m_infomap.prettyOutput)
-      PrettyOutput(true).status("Output", io::Str() << (m_infomap.printStates() ? "state network as Pajek" : "Pajek network") << " -> " << filename);
-  }
-
   void configureNetworkMode()
   {
     if (m_network.haveMemoryInput()) {
@@ -376,27 +291,6 @@ private:
 
     if (m_infomap.numLeafNodes() == 0)
       throw std::domain_error("No nodes to partition");
-  }
-
-  void writeFlowNetworkIfRequested()
-  {
-    if (!m_infomap.printFlowNetwork) {
-      return;
-    }
-
-    std::string filename;
-    if (m_infomap.printStates()) {
-      filename = resultFilename("flow_as_physical");
-      Log() << "Writing flow state network as first order Pajek network to '" << filename << "'... ";
-    } else {
-      // Non-memory input
-      filename = resultFilename("flow");
-      Log() << "Writing flow network to '" << filename << "'... ";
-    }
-    m_network.writePajekNetwork(filename, true);
-    Log() << "done!\n";
-    if (m_infomap.prettyOutput)
-      PrettyOutput(true).status("Output", io::Str() << (m_infomap.printStates() ? "flow state network as Pajek" : "flow network") << " -> " << filename);
   }
 
   void releaseInputLinksIfCli()
@@ -2406,145 +2300,7 @@ bool InfomapBase::processPartitionQueue(PartitionQueue& queue, PartitionQueue& n
 
 void InfomapBase::writeResult(int trial)
 {
-  if (noFileOutput)
-    return;
-
-  io::Str s;
-  s << outDirectory + outName;
-
-  if (printAllTrials && trial != -1 && numTrials > 1) {
-    s << "_trial_" << trial;
-  }
-
-  std::string basename = s;
-
-  const auto filenameFor = [&basename](const std::string& resultKey) {
-    return outputFilenameForResultKey(basename, resultKey);
-  };
-
-  std::vector<std::pair<std::string, std::string>> prettyOutputFiles;
-  const auto writeOutput = [this](const std::string& label, const std::string& filename, const std::function<void()>& write) {
-    if (prettyOutput) {
-      write();
-      return;
-    }
-
-    Log() << "Write " << label << " to " << filename << "... ";
-    write();
-    Log() << "done!\n";
-  };
-  const auto trackPrettyOutput = [&prettyOutputFiles, this](const std::string& label, const std::string& filename) {
-    if (prettyOutput)
-      prettyOutputFiles.emplace_back(label, filename);
-  };
-
-  if (printTree) {
-    std::string filename = filenameFor("tree");
-
-    if (!printStates()) {
-      writeOutput("tree", filename, [&]() { writeTree(filename); });
-      trackPrettyOutput("tree", filename);
-    } else {
-      // Write both physical and state level
-      writeOutput("physical tree", filename, [&]() { writeTree(filename); });
-      trackPrettyOutput("physical tree", filename);
-      std::string filenameStates = filenameFor("tree_states");
-      writeOutput("state tree", filenameStates, [&]() { writeTree(filenameStates, true); });
-      trackPrettyOutput("state tree", filenameStates);
-    }
-  }
-
-  if (printFlowTree) {
-    std::string filename = filenameFor("ftree");
-
-    if (!printStates()) {
-      writeOutput("flow tree", filename, [&]() { writeFlowTree(filename); });
-      trackPrettyOutput("flow tree", filename);
-    } else {
-      // Write both physical and state level
-      writeOutput("physical flow tree", filename, [&]() { writeFlowTree(filename, false); });
-      trackPrettyOutput("physical flow tree", filename);
-      std::string filenameStates = filenameFor("ftree_states");
-      writeOutput("state flow tree", filenameStates, [&]() { writeFlowTree(filenameStates, true); });
-      trackPrettyOutput("state flow tree", filenameStates);
-    }
-  }
-
-  if (printNewick) {
-    std::string filename = filenameFor("newick");
-
-    if (!printStates()) {
-      writeOutput("Newick tree", filename, [&]() { writeNewickTree(filename); });
-      trackPrettyOutput("Newick tree", filename);
-    } else {
-      // Write both physical and state level
-      writeOutput("physical Newick tree", filename, [&]() { writeNewickTree(filename, false); });
-      trackPrettyOutput("physical Newick tree", filename);
-      std::string filenameStates = filenameFor("newick_states");
-      writeOutput("state Newick tree", filenameStates, [&]() { writeNewickTree(filenameStates, true); });
-      trackPrettyOutput("state Newick tree", filenameStates);
-    }
-  }
-
-  if (printJson) {
-    std::string filename = filenameFor("json");
-    const bool writeLinks = false;
-
-    if (!printStates()) {
-      writeOutput("JSON tree", filename, [&]() { writeJsonTree(filename, false, writeLinks); });
-      trackPrettyOutput("JSON tree", filename);
-    } else {
-      // Write both physical and state level
-      writeOutput("physical JSON tree", filename, [&]() { writeJsonTree(filename, false, writeLinks); });
-      trackPrettyOutput("physical JSON tree", filename);
-      std::string filenameStates = filenameFor("json_states");
-      writeOutput("state JSON tree", filenameStates, [&]() { writeJsonTree(filenameStates, true, writeLinks); });
-      trackPrettyOutput("state JSON tree", filenameStates);
-    }
-  }
-
-  if (printCsv) {
-    std::string filename = filenameFor("csv");
-
-    if (!printStates()) {
-      writeOutput("CSV tree", filename, [&]() { writeCsvTree(filename); });
-      trackPrettyOutput("CSV tree", filename);
-    } else {
-      // Write both physical and state level
-      writeOutput("physical CSV tree", filename, [&]() { writeCsvTree(filename, false); });
-      trackPrettyOutput("physical CSV tree", filename);
-      std::string filenameStates = filenameFor("csv_states");
-      writeOutput("state CSV tree", filenameStates, [&]() { writeCsvTree(filenameStates, true); });
-      trackPrettyOutput("state CSV tree", filenameStates);
-    }
-  }
-
-  if (printClu) {
-    std::string filename = filenameFor("clu");
-    if (!printStates()) {
-      writeOutput("node modules", filename, [&]() { writeClu(filename, false, cluLevel); });
-      trackPrettyOutput("node modules", filename);
-    } else {
-      // Write both physical and state level
-      writeOutput("physical node modules", filename, [&]() { writeClu(filename, false, cluLevel); });
-      trackPrettyOutput("physical node modules", filename);
-      std::string filenameStates = filenameFor("clu_states");
-      writeOutput("state node modules", filenameStates, [&]() { writeClu(filenameStates, true, cluLevel); });
-      trackPrettyOutput("state node modules", filenameStates);
-    }
-  }
-
-  if (prettyOutput && !prettyOutputFiles.empty()) {
-    if (prettyOutputFiles.size() == 1) {
-      PrettyOutput(true).status("Output", io::Str() << prettyOutputFiles.front().first << " -> " << prettyOutputFiles.front().second);
-    } else {
-      const auto summaries = summarizeOutputFiles(prettyOutputFiles);
-      for (unsigned int i = 0; i < summaries.size(); ++i) {
-        const std::string prefix = i == 0 ? std::string(io::Str() << prettyOutputFiles.size() << " files -> ") : "         ";
-        PrettyOutput(true).status("Output", io::Str() << prefix << summaries[i]);
-      }
-    }
-  }
+  writeOutputArtifacts(*this, m_network, OutputPhase::AfterPartition, trial);
 }
 
 unsigned int printPerLevelCodelength(const InfoNode& parent, std::ostream& out, bool prettyOutput)

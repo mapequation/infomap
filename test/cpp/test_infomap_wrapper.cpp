@@ -61,6 +61,13 @@ std::string temporaryOutputPath(const std::string& prefix, const std::string& su
   return prefix + suffix;
 }
 
+void removeFiles(const std::vector<std::string>& paths)
+{
+  for (const auto& path : paths) {
+    std::remove(path.c_str());
+  }
+}
+
 TEST_CASE("Infomap partitions the unweighted two-triangle fixture into two modules [fast][core][lifecycle]")
 {
   InfomapWrapper im(infomap::test::defaultFlags());
@@ -508,6 +515,90 @@ TEST_CASE("writeFlowTree is stable across repeated calls on the same instance [f
 
   std::remove(firstPath.c_str());
   std::remove(secondPath.c_str());
+}
+
+TEST_CASE("writeResult renders selected first-order output artifacts [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::addEdgeFixtureLinks(infomap, "graphs/twotriangles_unweighted.edges"); });
+
+  im->noFileOutput = false;
+  im->outDirectory = "";
+  im->outName = "output_result_first_order";
+  im->printTree = true;
+  im->printClu = true;
+  im->printJson = true;
+  im->printCsv = true;
+
+  const std::vector<std::string> paths = {
+    "output_result_first_order.tree",
+    "output_result_first_order.clu",
+    "output_result_first_order.json",
+    "output_result_first_order.csv",
+  };
+  removeFiles(paths);
+
+  im->writeResult();
+
+  const auto treeText = infomap::test::readTextFile(paths[0]);
+  const auto cluText = infomap::test::readTextFile(paths[1]);
+  const auto jsonText = infomap::test::readTextFile(paths[2]);
+  const auto csvText = infomap::test::readTextFile(paths[3]);
+
+  CHECK(treeText.find("# path flow name node_id") != std::string::npos);
+  CHECK(cluText.find("# node_id module flow") != std::string::npos);
+  CHECK(jsonText.find("\"nodes\":[") != std::string::npos);
+  CHECK(csvText.find("path,flow,name,node_id") != std::string::npos);
+
+  removeFiles(paths);
+}
+
+TEST_CASE("writeResult renders selected physical and state output artifacts [fast][core][output]")
+{
+  auto im = infomap::test::makeRunningInfomap(
+      [&](InfomapWrapper& infomap) { infomap::test::readNetworkFixture(infomap, "states.net"); });
+
+  im->noFileOutput = false;
+  im->outDirectory = "";
+  im->outName = "output_result_states";
+  im->printTree = true;
+  im->printClu = true;
+  im->printJson = true;
+  im->printCsv = true;
+
+  const std::vector<std::string> paths = {
+    "output_result_states.tree",
+    "output_result_states_states.tree",
+    "output_result_states.clu",
+    "output_result_states_states.clu",
+    "output_result_states.json",
+    "output_result_states_states.json",
+    "output_result_states.csv",
+    "output_result_states_states.csv",
+  };
+  removeFiles(paths);
+
+  im->writeResult();
+
+  const auto physicalTreeText = infomap::test::readTextFile(paths[0]);
+  const auto stateTreeText = infomap::test::readTextFile(paths[1]);
+  const auto physicalCluText = infomap::test::readTextFile(paths[2]);
+  const auto stateCluText = infomap::test::readTextFile(paths[3]);
+  const auto physicalJsonText = infomap::test::readTextFile(paths[4]);
+  const auto stateJsonText = infomap::test::readTextFile(paths[5]);
+  const auto physicalCsvText = infomap::test::readTextFile(paths[6]);
+  const auto stateCsvText = infomap::test::readTextFile(paths[7]);
+
+  CHECK(physicalTreeText.find("# path flow name node_id") != std::string::npos);
+  CHECK(stateTreeText.find("# path flow name state_id node_id") != std::string::npos);
+  CHECK(physicalCluText.find("# node_id module flow") != std::string::npos);
+  CHECK(stateCluText.find("# state_id module flow node_id") != std::string::npos);
+  CHECK(physicalJsonText.find("\"stateLevel\":false") != std::string::npos);
+  CHECK(stateJsonText.find("\"stateLevel\":true") != std::string::npos);
+  CHECK(physicalCsvText.find("path,flow,name,node_id") != std::string::npos);
+  CHECK(stateCsvText.find("path,flow,name,state_id,node_id") != std::string::npos);
+
+  removeFiles(paths);
 }
 
 } // namespace

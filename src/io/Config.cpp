@@ -27,32 +27,32 @@ namespace {
 
   void enableOutputFormat(Config& config, const OutputFormat& format)
   {
-    switch (format.flag) {
-    case OutputFormatFlag::Clu:
+    switch (format.kind) {
+    case OutputKind::Clu:
       config.printClu = true;
       break;
-    case OutputFormatFlag::Tree:
+    case OutputKind::Tree:
       config.printTree = true;
       break;
-    case OutputFormatFlag::FlowTree:
+    case OutputKind::FlowTree:
       config.printFlowTree = true;
       break;
-    case OutputFormatFlag::Newick:
+    case OutputKind::Newick:
       config.printNewick = true;
       break;
-    case OutputFormatFlag::Json:
+    case OutputKind::Json:
       config.printJson = true;
       break;
-    case OutputFormatFlag::Csv:
+    case OutputKind::Csv:
       config.printCsv = true;
       break;
-    case OutputFormatFlag::PajekNetwork:
+    case OutputKind::PajekNetwork:
       config.printPajekNetwork = true;
       break;
-    case OutputFormatFlag::StateNetwork:
+    case OutputKind::StateNetwork:
       config.printStateNetwork = true;
       break;
-    case OutputFormatFlag::FlowNetwork:
+    case OutputKind::FlowNetwork:
       config.printFlowNetwork = true;
       break;
     }
