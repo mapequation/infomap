@@ -18,6 +18,7 @@
 #include <limits>
 #include <algorithm>
 #include <functional>
+#include <unordered_map>
 
 namespace infomap {
 
@@ -111,6 +112,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
 
   unsigned int linkIndex = 0;
   unsigned int featureLinkIndex = bipartiteLinkStartIndex; // bipartite case
+  double undirectedLinkNormalization = 2 * sumLinkWeight - network.sumSelfLinkWeight();
 
   for (const auto& node : nodeLinkMap) {
     const auto sourceId = node.first.id;
@@ -123,7 +125,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
 
       ++nodeOutDegree[sourceIndex];
       sumLinkOutWeight[sourceIndex] += linkWeight;
-      nodeFlow[sourceIndex] += linkWeight / sumWeightedDegree;
+      nodeFlow[sourceIndex] += linkWeight / undirectedLinkNormalization;
 
       if (network.isBipartite() && sourceId >= network.bipartiteStartId()) {
         // Link from feature node to ordinary node
@@ -145,7 +147,7 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
           sumLinkOutWeight[targetIndex] += linkWeight;
         }
         if (config.flowModel != FlowModel::outdirdir) {
-          nodeFlow[targetIndex] += linkWeight / sumWeightedDegree;
+          nodeFlow[targetIndex] += linkWeight / undirectedLinkNormalization;
         }
       }
     }
@@ -156,7 +158,10 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
   switch (config.flowModel) {
   case FlowModel::undirected:
     if (config.regularized) {
-      calcUndirectedRegularizedFlow(network, config);
+      if (config.isMultilayerNetwork())
+        calcUndirectedRegularizedMultilayerFlow(network, config);
+      else
+        calcUndirectedRegularizedFlow(network, config);
     } else {
       calcUndirectedFlow();
     }
@@ -166,7 +171,10 @@ FlowCalculator::FlowCalculator(StateNetwork& network, const Config& config)
       calcDirectedBipartiteFlow(network, config);
     } else {
       if (config.regularized) {
-        calcDirectedRegularizedFlow(network, config);
+        if (config.isMultilayerNetwork())
+          calcDirectedRegularizedMultilayerFlow(network, config);
+        else
+          calcDirectedRegularizedFlow(network, config);
       } else {
         calcDirectedFlow(network, config);
       }
@@ -414,7 +422,7 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
 
     // Normalize if needed
     if (std::abs(nodeFlowDiff) > 1.0e-10) {
-      Log() << "(Normalizing ranks after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
+      Log() << "(Normalizing flow after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
       normalize(nodeFlow, nodeFlowDiff + 1.0);
     }
 
@@ -438,6 +446,32 @@ void FlowCalculator::calcDirectedFlow(const StateNetwork& network, const Config&
     }
 
     beta = 1.0;
+  }
+
+  if (config.multilayerSelfInterLinks) {
+    // Log() << "(adjusting flow for self-inter-links...) ";
+    // auto r = config.multilayerRelaxRate;
+    // for (unsigned int i = 0; i < numNodes; ++i) {
+    //   nodeFlow[i] *= (1 - r);
+    // }
+    // double sumFlow = 1 - r;
+
+    // // for (auto& nodeIt : network.m_nodes) {
+    // //   auto& node = nodeIt.second;
+    // //   const auto nodeIndex = nodeIndexMap[node.id];
+    // // }
+
+    // for (const auto& link : flowLinks) {
+    //   bool isIntra = true; //asdf
+    //   if (isIntra) {
+    //     double f = r * nodeFlowTmp[link.source] * link.flow;
+    //     sumFlow += f;
+    //     nodeFlow[link.target] += f;
+    //   }
+    // }
+    // for (unsigned int i = 0; i < numNodes; ++i) {
+    //   nodeFlow[i] /= sumFlow;
+    // }
   }
 
   // Update the links with their global flow from the PageRank values.
@@ -603,6 +637,320 @@ void FlowCalculator::calcDirectedRegularizedFlow(const StateNetwork& network, co
   }
 }
 
+void FlowCalculator::calcDirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config) noexcept
+{
+  Log() << "\n  -> Using regularized multilayer flow. " << std::flush;
+
+  // Calculate node weights w_i = s_i/k_i, where s_i is the node strength (weighted degree) and k_i the (unweighted) degree
+  unsigned int N = network.numNodes();
+  unsigned int N_phys = network.numPhysicalNodes();
+  unsigned int L = network.numLayers();
+  // unsigned int N_states = network.numNodes();
+  // double nodeWeight = 1.0 / N;
+  double intraOutWeight = config.regularizationStrength * std::log(N_phys) / L;
+  // double interOutWeight = config.regularizationStrength * std::log(L);
+
+  // Log() << "\n N: " << N_phys << ", N_states: " << N << ", L: " << L << "\n";
+  // Log() << "ln(N)/(NL): " << std::log(N_phys) / (N_phys * L) << "\n";
+  // Log() << "ln(N)/(L): " << std::log(N_phys) / (L) << "\n";
+
+  std::vector<unsigned int> layerIds(N, 0);
+  std::vector<unsigned int> physicalIds(N, 0);
+
+  std::unordered_map<unsigned int, unsigned int> layerIdToIndex;
+  unsigned int layerIndex = 0;
+  for (unsigned int layerId : network.layers()) {
+    layerIdToIndex[layerId] = layerIndex++;
+    // Log() << "Layer " << layerId << " -> index " << layerIdToIndex[layerId] << "\n";
+  }
+  // Log() << "\n -> " << layerIdToIndex.size() << " layers...\n";
+
+  std::vector<bool> isInterLink(flowLinks.size(), false);
+  std::vector<unsigned int> layerIndices(N);
+
+  for (const auto& node : network.nodes()) {
+    const auto nodeIndex = nodeIndexMap[node.second.id];
+    layerIds[nodeIndex] = node.second.layerId;
+    physicalIds[nodeIndex] = node.second.physicalId;
+    layerIndices[nodeIndex] = layerIdToIndex[node.second.layerId];
+    // nodeTeleportWeights[nodeIndexMap[nodeId]] = node.weight;
+    // if (layerIdToIndex.count(node.second.layerId) == 0) {
+    //   layerIdToIndex[node.second.layerId] = layerIndex++;
+    // }
+    // Log() << "Node (physId: " << node.second.physicalId << ", layerId: " << node.second.layerId << ") -> index: " << nodeIndexMap[node.second.id] << "\n";
+  }
+
+  unsigned int linkIndex = 0;
+
+  // Log() << "\nLinks:\n";
+
+  for (const auto& link : flowLinks) {
+    isInterLink[linkIndex] = physicalIds[link.source] == physicalIds[link.target];
+    // Log() << linkIndex << ": (" << layerIds[link.source] << "," << physicalIds[link.source] << ") -> (" << layerIds[link.target] << "," << physicalIds[link.target] << ") is inter: " << isInterLink[linkIndex] << "\n";
+    ++linkIndex;
+  }
+
+  std::vector<unsigned int> k_out(N, 0);
+  std::vector<unsigned int> k_in(N, 0);
+  std::vector<double> s_out(N, 0);
+  std::vector<double> s_in(N, 0);
+  std::vector<double> inter_out(N, 0);
+  // double sum_s = sumWeightedDegree;
+  // unsigned int sum_k = network.sumDegree();
+  // double average_weight = sum_s / sum_k;
+
+  linkIndex = 0;
+  for (auto& link : flowLinks) {
+    if (isInterLink[linkIndex++]) {
+      inter_out[link.source] += link.flow;
+    } else {
+      k_out[link.source] += 1;
+      s_out[link.source] += link.flow;
+      k_in[link.target] += 1;
+      s_in[link.target] += link.flow;
+      // if (link.source == 0) {
+      //   Log() << link.source << " -> " << link.target << " => k_out[0] -> " << k_out[link.source] << "\n";
+      // }
+    }
+  }
+
+  // auto gamma = [s_out, intraOutWeight, interOutWeight](auto i) { return 1 + interOutWeight / (s_out[i] + intraOutWeight); };
+
+  // double min_u_out = std::numeric_limits<double>::max();
+  // double min_u_in = std::numeric_limits<double>::max();
+  // for (unsigned int i = 0; i < N; ++i) {
+  //   if (k_out[i] > 0) {
+  //     min_u_out = std::min(min_u_out, s_out[i] / k_out[i]);
+  //   }
+  //   if (k_in[i] > 0) {
+  //     min_u_in = std::min(min_u_in, s_in[i] / k_in[i]);
+  //   }
+  // }
+
+  // auto u_out = [s_out, k_out, min_u_out](auto i) { return k_out[i] == 0 ? min_u_out : s_out[i] / k_out[i]; };
+  // auto u_in = [s_in, k_in, min_u_in](auto i) { return k_in[i] == 0 ? min_u_in : s_in[i] / k_in[i]; };
+
+  // unsigned int numNodesAsTeleportationTargets = config.noSelfLinks ? N - 1 : N;
+  // double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
+  // double u_t = average_weight;
+
+  // double sum_u_in = 0.0;
+  // for (unsigned int i = 0; i < N; ++i) {
+  //   sum_u_in += u_in(i);
+  // }
+
+  // Log() << "\nNodes:\n";
+  for (unsigned int i = 0; i < N; ++i) {
+    // nodeTeleportWeights[i] = u_in(i) / sum_u_in;
+    // nodeTeleportWeights[i] = 1 / N;
+    nodeTeleportWeights[i] = 1.0 / N_phys;
+    // nodeTeleportWeights[i] = 1.0 / (config.noSelfLinks ? N_phys - 1 : N_phys);
+    // Log() << i << ") k_out: " << k_out[i] << ", s_out: " << s_out[i] << ", inter_out: " << inter_out[i] << "\n";
+  }
+
+  // std::function<double(unsigned int)> t_out_withoutSelfLinks = [lambda, u_t, u_out, u_in, sum_u_in](unsigned int i) { return lambda / u_t * u_out(i) * (sum_u_in - u_in(i)); };
+  // std::function<double(unsigned int)> t_out_withSelfLinks = [lambda, u_t, u_out, sum_u_in](unsigned int i) { return lambda / u_t * u_out(i) * sum_u_in; };
+  // auto t_out = config.noSelfLinks ? t_out_withoutSelfLinks : t_out_withSelfLinks;
+
+  auto intraLayerTeleRate = [s_out, k_out, intraOutWeight](auto i) { return k_out[i] == 0 ? 1 : intraOutWeight / (intraOutWeight + s_out[i]); };
+
+  std::vector<double> alpha(N, 0);
+  std::vector<double> alphaInter(N, 0);
+  // Log() << "\nTele probabilities:\n";
+  for (unsigned int i = 0; i < N; ++i) {
+    // auto t_i = t_out(i);
+    alpha[i] = intraLayerTeleRate(i); // = 1 for dangling nodes
+    alphaInter[i] = inter_out[i] / (inter_out[i] + s_out[i] + intraOutWeight);
+    if (config.noSelfLinks) {
+      // Inflate to adjust for no self-teleportation
+      // TODO: Check possible side-effects
+      alpha[i] /= 1 - nodeTeleportWeights[i];
+      // alphaInter[i] /= 1 - nodeTeleportWeights[i];
+    }
+    // Log() << i << ": intra: " << alpha[i] << ", inter: " << alphaInter[i] << "\n";
+    // Log() << i << ": intra: " << alpha[i] << ", inter: " << alphaInter[i] << " (inter_out: " << inter_out[i] << ", s_out: " << s_out[i] << ", intra_prior_out: " << intraOutWeight << ")\n";
+  }
+
+  // Log() << "\nLink probabilities:\n";
+  // Normalize link weights to probabilities, separate for intra and inter links
+  linkIndex = 0;
+  for (auto& link : flowLinks) {
+    // if (sumLinkOutWeight[link.source] > 0) {
+    //   link.flow /= sumLinkOutWeight[link.source];
+    // }
+    if (isInterLink[linkIndex++]) {
+      link.flow /= inter_out[link.source];
+    } else {
+      if (k_out[link.source] > 0) {
+        link.flow /= s_out[link.source];
+      }
+    }
+    // Log() << link.source << " -> " << link.target << ": " << link.flow << "\n";
+  }
+
+  std::vector<double> unrecordedInterFlow(N, 0);
+  std::vector<double> nodeFlowTmp(numNodes, 0.0);
+  std::vector<double> layerTeleFlow(L, 0.0);
+
+  for (unsigned int i = 0; i < N; ++i) {
+    nodeFlow[i] = 1.0 / N;
+  }
+
+  // Calculate two-step PageRank:
+  const auto iteration = [&](const auto iter) {
+    // Log() << "\nIter " << iter << ":\n";
+
+    // 1. Unrecorded inter-layer step: push fraction of flow on inter-layer links to temporary location
+    linkIndex = 0;
+    unrecordedInterFlow.assign(N, 0.0);
+    for (auto& link : flowLinks) {
+      if (!isInterLink[linkIndex++]) {
+        continue;
+      }
+      unrecordedInterFlow[link.target] += alphaInter[link.source] * nodeFlow[link.source] * link.flow;
+      // unrecordedInterFlow[link.target] += alphaInter[link.source] * nodeFlow[link.source] * link.flow * (config.noSelfLinks ? 1 - nodeTeleportWeights[link.source] : 1);
+      // Log() << "  " << link.source << " -> " << link.target << ": unrecorded[" << link.target << "] += " << nodeFlow[link.source] << " * " << alphaInter[link.source] << " * " << link.flow << "\n";
+    }
+
+    // double sumFlow = 0.0;
+    // double sumUnrecordedFlow = 0.0;
+    // for (unsigned int i = 0; i < N; ++i) {
+    //   sumFlow += nodeFlow[i];
+    //   sumUnrecordedFlow += unrecordedInterFlow[i];
+    // }
+    // Log() << "  Sum flow: " << sumFlow << "\n";
+    // Log() << "  Sum unrecorded flow: " << sumUnrecordedFlow << "\n";
+
+    // 2. Recorded intra-layer step: push rest of flow plus temporarily stored flow to intra-layer with intra-layer teleportation
+    layerTeleFlow.assign(L, 0.0);
+    for (unsigned int i = 0; i < N; ++i) {
+      layerTeleFlow[layerIndices[i]] += alpha[i] * ((1 - alphaInter[i]) * nodeFlow[i] + unrecordedInterFlow[i]);
+      // Log() << "Node " << i << " in layer " << layerIndices[i] << ": alpha: " << alpha[i] << ", non-inter flow: " << (1 - alphaInter[i]) * nodeFlow[i] << ", unrecorded flow: " << unrecordedInterFlow[i] << ", += " << alpha[i] * ((1 - alphaInter[i]) * nodeFlow[i] + unrecordedInterFlow[i]) << " -> " << layerTeleFlow[layerIndices[i]] << "\n";
+    }
+
+    // for (unsigned int i = 0; i < layerTeleFlow.size(); ++i) {
+    //   Log() << "Layer " << i << " tele flow: " << layerTeleFlow[i] << "\n";
+    // }
+
+    for (unsigned int i = 0; i < N; ++i) {
+      nodeFlowTmp[i] = nodeTeleportWeights[i] * (layerTeleFlow[layerIndices[i]] - (config.noSelfLinks ? (alpha[i] * nodeFlow[i]) : 0));
+      // nodeFlowTmp[i] = nodeTeleportWeights[i] * layerTeleFlow[layerIndices[i]];
+      // Log() << i << ": tele flow: " << nodeFlowTmp[i] << "\n";
+    }
+
+    // Flow from links
+    linkIndex = 0;
+    for (const auto& link : flowLinks) {
+      if (isInterLink[linkIndex++]) {
+        continue;
+      }
+      double beta = 1 - alpha[link.source] * (config.noSelfLinks ? 1 - nodeTeleportWeights[link.source] : 1);
+      // double beta = 1 - alpha[link.source];
+      nodeFlowTmp[link.target] += beta * link.flow * ((1 - alphaInter[link.source]) * nodeFlow[link.source] + unrecordedInterFlow[link.source]);
+    }
+
+    // Update node flow from the power iteration above and check if converged
+    double nodeFlowDiff = -1.0; // Start with -1.0 so we don't have to subtract it later
+    double error = 0.0;
+    for (unsigned int i = 0; i < numNodes; ++i) {
+      nodeFlowDiff += nodeFlowTmp[i];
+      error += std::abs(nodeFlowTmp[i] - nodeFlow[i]);
+    }
+
+    nodeFlow = nodeFlowTmp;
+
+    // Normalize if needed
+    if (std::abs(nodeFlowDiff) > 1.0e-10) {
+      Log() << "(Normalizing ranks after " << iter << " power iterations with error " << nodeFlowDiff << ") ";
+      if (std::abs(nodeFlowDiff) > 1.0e-4) {
+        throw std::runtime_error(io::Str() << "Total flow differs from 1 by " << nodeFlowDiff << " after " << iter << " iterations. Please report the issue.\n");
+      }
+      normalize(nodeFlow, nodeFlowDiff + 1.0);
+    }
+
+    return error;
+  };
+
+  unsigned int iterations = 0;
+  unsigned int maxIterations = 200;
+  double err = 0.0;
+
+  do {
+    double oldErr = err;
+    err = iteration(iterations);
+
+    // Perturb the system if equilibrium
+    if (std::abs(err - oldErr) < 1e-15) {
+    }
+
+    ++iterations;
+  } while (iterations < maxIterations && (err > 1.0e-15 || iterations < 50));
+
+  if (iterations == maxIterations && err > 1e-14) {
+    Log() << "  -> Warning: PageRank calculation stopped after maximum " << iterations << " with diff " << err << ".\n";
+  } else {
+    Log() << "\n  -> PageRank calculation done in " << iterations << " iterations.\n";
+  }
+
+  // Log() << std::setprecision(16);
+  // Log() << "Flow: ";
+  for (unsigned int i = 0; i < layerTeleFlow.size(); ++i) {
+    sumTeleFlow += layerTeleFlow[i];
+  }
+  Log() << "Sum tele flow: " << sumTeleFlow << "\n";
+
+  // double sumNodeRank = 1.0;
+  // for (auto& link : flowLinks) {
+  //   double beta = 1 - alpha[link.source] * (config.noSelfLinks ? 1 - nodeTeleportWeights[link.source] : 1);
+  //   link.flow *= beta * nodeFlow[link.source] / sumNodeRank;
+  // }
+  linkIndex = 0;
+  double sumLinkFlow = 0.0;
+  double sumInterLinkFlow = 0.0;
+  enterFlow.assign(numNodes, 0.0);
+  exitFlow.assign(numNodes, 0.0);
+  // unrecorded inter-layer flow, skip adding enter/exit to intermediate node for unrecorded flow?
+  for (auto& link : flowLinks) {
+    if (isInterLink[linkIndex++]) {
+      // Log() << " | Inter-link " << linkIndex << ": (" << layerIds[link.source] << "," << physicalIds[link.source] << ") -> (" << layerIds[link.target] << "," << physicalIds[link.target] << ") p_i_inter: " << alphaInter[link.source] << ", flow: " << nodeFlow[link.source] << ", p_ij_inter: " << link.flow << " -> flow " << alphaInter[link.source] * nodeFlow[link.source] * link.flow << "\n";
+      link.flow = alphaInter[link.source] * nodeFlow[link.source] * link.flow;
+      sumInterLinkFlow += link.flow;
+      // Need to add enter/exit flow to eventually collapse
+      exitFlow[link.source] += link.flow;
+      enterFlow[link.target] += link.flow;
+      // Remove unrecorded enter and exit flow on intermediate nodes removes collapse
+      // exitFlow[link.target] -= link.flow;
+      // enterFlow[link.target] -= link.flow;
+      // }
+    } else {
+      double beta = 1 - alpha[link.source];
+      link.flow = beta * link.flow * ((1 - alphaInter[link.source]) * nodeFlow[link.source] + unrecordedInterFlow[link.source]);
+      // Log() << " - Intra-link " << linkIndex << ": (" << layerIds[link.source] << "," << physicalIds[link.source] << ") -> (" << layerIds[link.target] << "," << physicalIds[link.target] << "), flow: " << link.flow << "\n";
+      exitFlow[link.source] += link.flow;
+      enterFlow[link.target] += link.flow;
+    }
+    sumLinkFlow += link.flow;
+    // Log() << linkIndex << ": (" << layerIds[link.source] << "," << physicalIds[link.source] << ") -> (" << layerIds[link.target] << "," << physicalIds[link.target] << ") is inter: " << isInterLink[linkIndex] << ", flow: " << link.flow << "\n";
+  }
+  Log() << "=> Sum link flow: " << sumLinkFlow << ", sum inter link flow: " << sumInterLinkFlow << ", sum intra link flow: " << sumLinkFlow - sumInterLinkFlow << "\n";
+  Log() << "Sum intra link flow plus tele flow: " << sumTeleFlow + sumLinkFlow - sumInterLinkFlow << "\n";
+
+  nodeTeleportFlow.assign(numNodes, 0.0);
+  for (unsigned int i = 0; i < N; ++i) {
+    // nodeTeleportFlow[i] = nodeFlow[i] * alpha[i];
+    nodeTeleportFlow[i] = alpha[i] * ((1 - alphaInter[i]) * nodeFlow[i] + unrecordedInterFlow[i]);
+    // Log() << i << ": " << nodeFlow[i] << ", tele-flow: " << nodeTeleportFlow[i] << "\n";
+    // Log() << i << " (" << layerIds[i] << "," << physicalIds[i] << "): " << nodeFlow[i] << ", tele-flow: " << nodeTeleportFlow[i] << ", alpha: " << alpha[i] << ", alphaInter: " << alphaInter[i] << ", unrecordedInter: " << unrecordedInterFlow[i] << ", tele-weight: " << nodeTeleportWeights[i] << "\n";
+
+    exitFlow[i] += nodeTeleportFlow[i] * (1 - nodeTeleportWeights[i]); // + node.intraLayerTeleFlow * (1 - node.intraLayerTeleWeight);
+    enterFlow[i] += (layerTeleFlow[layerIndices[i]] - nodeTeleportFlow[i]) * nodeTeleportWeights[i];
+    // double unrecordedTeleFlow = alpha[i] * (1 - alphaInter[i]) * nodeFlow[i];
+    // exitFlow[i] += unrecordedTeleFlow * (1 - nodeTeleportWeights[i]); // + node.intraLayerTeleFlow * (1 - node.intraLayerTeleWeight);
+    // enterFlow[i] += (layerTeleFlow[layerIndices[i]] - unrecordedTeleFlow) * nodeTeleportWeights[i];
+    // Log() << i << " (" << layerIds[i] << "," << physicalIds[i] << "): enter: " << enterFlow[i] << ", exit: " << exitFlow[i] << "\n";
+  }
+}
+
 void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, const Config& config) noexcept
 {
   m_flowMethod = "undirected regularized flow";
@@ -698,6 +1046,55 @@ void FlowCalculator::calcUndirectedRegularizedFlow(const StateNetwork& network, 
     double beta = 1 - alpha[link.source] * (config.noSelfLinks ? 1 - nodeTeleportWeights[link.source] : 1);
     link.flow *= beta * nodeFlow[link.source] * 2;
   }
+}
+
+void FlowCalculator::calcUndirectedRegularizedMultilayerFlow(const StateNetwork& network, const Config& config)
+{
+  if (config.multilayerTest == 0) {
+    calcUndirectedRegularizedFlow(network, config);
+    return;
+  }
+  Log() << "\n  -> Using undirected regularized multilayer flow. " << std::flush;
+  throw std::runtime_error("Undirected multilayer regularization not implemented");
+
+  // double lambda = config.regularizationStrength * std::log(N) / numNodesAsTeleportationTargets;
+
+  unsigned int N = network.numPhysicalNodes();
+  unsigned int N_states = network.numNodes();
+  // unsigned int L = network.numLayers();
+  // double n = N / L; // average number of nodes per layer
+
+  // Default tele degree is log(N_states)
+  // We want log(N), so adjust with regularization strength
+
+  // double defaultLambda = std::log(N_states) / N_states;
+
+  // double lambdaIntra = std::log(N) / (L * N);
+  // double lambdaInter = std::log(L) / (L * N);
+  // double lambda = lambdaIntra + lambdaInter;
+  // double fractionIntraFlow = std::log(N) / (std::log(N) + L * std::log(L));
+
+  // double newLambda = lambdaIntra + lambdaInter;
+
+  Config tmpConfig(config);
+  // tmpConfig.regularizationStrength *= newLambda / defaultLambda;
+  // Log() << "\n!! old lambda: " << defaultLambda << ", new lambda: " << newLambda << "\n";
+  double lambdaFactor = std::log(N) / std::log(N_states);
+  tmpConfig.regularizationStrength *= lambdaFactor;
+  Log() << "\n  -> Using regularized multilayer flow (lambda factor " << lambdaFactor << "). " << std::flush;
+  // Log() << "\n!! lambda factor: " << lambdaFactor << "\n";
+  // Log() << "Fraction intra flow: " << fractionIntraFlow << "\n";
+
+  // for (auto& link : flowLinks) {
+  //   k[link.source] += 1;
+  //   s[link.source] += link.flow;
+  //   if (link.source != link.target) {
+  //     k[link.target] += 1;
+  //     s[link.target] += link.flow;
+  //   }
+  // }
+
+  calcUndirectedRegularizedFlow(network, tmpConfig);
 }
 
 void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, const Config& config) noexcept
@@ -833,7 +1230,6 @@ void FlowCalculator::calcDirectedBipartiteFlow(const StateNetwork& network, cons
 
 void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool normalizeNodeFlow) noexcept
 {
-  unsigned int N = network.numNodes();
   // TODO: Skip bipartite flow adjustment for directed / rawdir / .. ?
   if (network.isBipartite()) {
     if (m_prettyOutput)
@@ -905,12 +1301,27 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
     }
   }
 
+  // unsigned int N_phys = network.numPhysicalNodes();
+  // unsigned int L = network.numLayers();
+  // double fractionIntraFlow = std::log(N_phys) / (std::log(N_phys) + L * std::log(L));
+  // double fractionIntraFlow = 1 / L;
+  double fractionIntraFlow = config.isMultilayerNetwork() && config.regularized ? 1 : 0;
+  // if (config.multilayerTest < 2) {
+  //   fractionIntraFlow = 0;
+  // }
+
+  sumTeleFlow = 0.0;
+  // double sumIntraTeleFlow = 0.0;
+
   for (auto& nodeIt : network.m_nodes) {
     auto& node = nodeIt.second;
     const auto nodeIndex = nodeIndexMap[node.id];
     node.flow = nodeFlow[nodeIndex];
     node.weight = nodeTeleportWeights[nodeIndex];
     node.teleFlow = !nodeTeleportFlow.empty() ? nodeTeleportFlow[nodeIndex] : nodeFlow[nodeIndex] * (nodeOutDegree[nodeIndex] == 0 ? 1 : config.teleportationProbability);
+    node.intraLayerTeleFlow = fractionIntraFlow * node.teleFlow;
+    node.teleFlow *= 1 - fractionIntraFlow;
+    node.intraLayerTeleWeight = nodeTeleportWeights[nodeIndex];
     node.enterFlow = node.flow;
     node.exitFlow = node.flow;
 
@@ -932,37 +1343,44 @@ void FlowCalculator::finalize(StateNetwork& network, const Config& config, bool 
       }
     }
 
+    sumTeleFlow += node.teleFlow;
     sumNodeFlow += node.flow;
   }
 
   // Enter/exit flow
-  if (!config.isUndirectedClustering() && !config.regularized) {
-    enterFlow.assign(N, 0);
-    exitFlow.assign(N, 0);
-    double alpha = config.teleportationProbability;
-    double sumDanglingFlow = 0.0;
-    for (unsigned int i = 0; i < N; ++i) {
-      if (nodeOutDegree[i] == 0) {
-        sumDanglingFlow += nodeFlow[i];
+  if (enterFlow.empty()) {
+    if (!config.isUndirectedClustering() && !config.regularized) {
+      enterFlow.assign(numNodes, 0);
+      exitFlow.assign(numNodes, 0);
+      double alpha = config.teleportationProbability;
+      double sumDanglingFlow = 0.0;
+      for (unsigned int i = 0; i < numNodes; ++i) {
+        if (nodeOutDegree[i] == 0) {
+          sumDanglingFlow += nodeFlow[i];
+        }
+      }
+      for (auto& nodeIt : network.m_nodes) {
+        auto& node = nodeIt.second;
+        const auto sourceIndex = nodeIndexMap[node.id];
+        auto& outLinks = network.m_nodeLinkMap[node.id];
+        double danglingFlow = outLinks.empty() ? node.flow : 0.0;
+        if (config.recordedTeleportation) {
+          // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
+          exitFlow[sourceIndex] += alpha * node.flow * (1.0 - node.weight);
+          enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + (1 - alpha) * (sumDanglingFlow - danglingFlow)) * node.weight;
+        }
+        for (auto& link : outLinks) {
+          auto& linkData = link.second;
+          const auto targetIndex = nodeIndexMap[link.first.id];
+          exitFlow[sourceIndex] += linkData.flow;
+          enterFlow[targetIndex] += linkData.flow;
+        }
       }
     }
-    for (auto& nodeIt : network.m_nodes) {
-      auto& node = nodeIt.second;
-      const auto sourceIndex = nodeIndexMap[node.id];
-      auto& outLinks = network.m_nodeLinkMap[node.id];
-      double danglingFlow = outLinks.empty() ? node.flow : 0.0;
-      if (config.recordedTeleportation) {
-        // Don't let self-teleportation add to the enter/exit flow (i.e. multiply with (1.0 - node.data.teleportWeight))
-        exitFlow[sourceIndex] += alpha * node.flow * (1.0 - node.weight);
-        enterFlow[sourceIndex] += (alpha * (1.0 - node.flow) + (1 - alpha) * (sumDanglingFlow - danglingFlow)) * node.weight;
-      }
-      for (auto& link : outLinks) {
-        auto& linkData = link.second;
-        const auto targetIndex = nodeIndexMap[link.first.id];
-        exitFlow[sourceIndex] += linkData.flow;
-        enterFlow[targetIndex] += linkData.flow;
-      }
-    }
+  }
+
+  // Save enter/exit flow on nodes
+  if (!enterFlow.empty()) {
     for (auto& nodeIt : network.m_nodes) {
       auto& node = nodeIt.second;
       const auto nodeIndex = nodeIndexMap[node.id];

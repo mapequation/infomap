@@ -81,6 +81,7 @@ std::ostream& operator<<(std::ostream& out, const BiasedMapEquation& mapEq)
 void BiasedMapEquation::init(const Config& config)
 {
   Log(3) << "BiasedMapEquation::init()...\n";
+  Base::init(config);
   preferredNumModules = config.preferredNumberOfModules;
   useEntropyBiasCorrection = config.entropyBiasCorrection;
   entropyBiasCorrectionMultiplier = config.entropyBiasCorrectionMultiplier;

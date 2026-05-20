@@ -25,7 +25,7 @@ namespace infomap {
 
 template <typename Objective>
 class InfomapOptimizer : public InfomapOptimizerBase {
-  using FlowDataType = FlowData;
+  using FlowDataType = typename Objective::FlowDataType;
   using DeltaFlowDataType = typename Objective::DeltaFlowDataType;
 
 public:
@@ -228,19 +228,8 @@ bool InfomapOptimizer<Objective>::moveNodeToPredefinedModule(InfoNode& current, 
   }
 
   // For recorded teleportation
-  if (m_infomap->recordedTeleportation) {
-    auto& oldModuleFlowData = m_moduleFlowData[oldM];
-    double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
-    double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
-    oldModuleDelta.deltaEnter += deltaEnterOld;
-    oldModuleDelta.deltaExit += deltaExitOld;
+  m_objective.addTeleportationFlow(current, m_moduleFlowData, oldModuleDelta, newModuleDelta);
 
-    auto& newModuleFlowData = m_moduleFlowData[newM];
-    double deltaEnterNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
-    double deltaExitNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
-    newModuleDelta.deltaEnter += deltaEnterNew;
-    newModuleDelta.deltaExit += deltaExitNew;
-  }
   // Update empty module vector
   if (m_moduleMembers[newM] == 0) {
     m_emptyModules.pop_back();
@@ -299,6 +288,10 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
   unsigned int numMoved = 0;
   unsigned int numRandomMoves = std::min(m_infomap->numRandomMoves, numNodes);
 
+  unsigned int numRandTries = (unsigned int)std::round(numNodes * m_infomap->randomNodeCheckRate);
+  const bool checkRandomNodes = numRandTries > 0;
+  std::vector<bool> moduleTested(checkRandomNodes ? numNodes : 0);
+
   // Create map with module links
   VectorMap<DeltaFlowDataType> deltaFlow(numNodes);
 
@@ -313,18 +306,36 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
       continue;
 
     deltaFlow.startRound();
+    if (checkRandomNodes)
+      std::fill(moduleTested.begin(), moduleTested.end(), false);
 
     // For all outlinks
     for (auto& e : current.outEdges()) {
       auto& edge = *e;
       InfoNode* neighbour = edge.target;
       deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, edge.data.flow, 0.0));
+      if (checkRandomNodes)
+        moduleTested[neighbour->index] = true;
     }
     // For all inlinks
     for (auto& e : current.inEdges()) {
       auto& edge = *e;
       InfoNode* neighbour = edge.source;
       deltaFlow.add(neighbour->index, DeltaFlowDataType(neighbour->index, 0.0, edge.data.flow));
+      if (checkRandomNodes)
+        moduleTested[neighbour->index] = true;
+    }
+
+    // Check random nodes if recorded teleportation
+    if (checkRandomNodes) {
+      for (unsigned int j = 0; j < numRandTries; ++j) {
+        unsigned int randPos = m_infomap->m_rand.randInt(0, numNodes - 1);
+        InfoNode& neighbour = *network[nodeEnumeration[randPos]];
+        if (moduleTested[neighbour.index])
+          continue;
+        deltaFlow.add(neighbour.index, DeltaFlowDataType(neighbour.index, 0, 0));
+        moduleTested[neighbour.index] = true;
+      }
     }
 
     // For random moves
@@ -346,30 +357,16 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModule()
       deltaFlow.add(m_emptyModules.back(), DeltaFlowDataType(m_emptyModules.back(), 0.0, 0.0));
     }
 
+    // TODO: Optimize for singletons? If leaving a singleton, it's easy to calculate change in codelength in old module.
+
     // For memory networks
     m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
+    // For recorded teleportation
+    m_objective.addTeleportationFlow(current, m_moduleFlowData, deltaFlow);
+
     auto& moduleDeltaEnterExit = deltaFlow.values();
     unsigned int numModuleLinks = deltaFlow.size();
-
-    // For recorded teleportation
-    if (m_infomap->recordedTeleportation) {
-      for (unsigned int j = 0; j < numModuleLinks; ++j) {
-        auto& deltaEnterExit = moduleDeltaEnterExit[j];
-        auto moduleIndex = deltaEnterExit.module;
-        if (moduleIndex == current.index) {
-          auto& oldModuleFlowData = m_moduleFlowData[moduleIndex];
-          double deltaEnterOld = (oldModuleFlowData.teleportFlow - current.data.teleportFlow) * current.data.teleportWeight;
-          double deltaExitOld = current.data.teleportFlow * (oldModuleFlowData.teleportWeight - current.data.teleportWeight);
-          deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitOld, deltaEnterOld));
-        } else {
-          auto& newModuleFlowData = m_moduleFlowData[moduleIndex];
-          double deltaEnterNew = newModuleFlowData.teleportFlow * current.data.teleportWeight;
-          double deltaExitNew = current.data.teleportFlow * newModuleFlowData.teleportWeight;
-          deltaFlow.add(moduleIndex, DeltaFlowDataType(moduleIndex, deltaExitNew, deltaEnterNew));
-        }
-      }
-    }
 
     // Randomize link order for optimized search
     std::vector<unsigned int> moduleEnumeration(numModuleLinks);
@@ -535,6 +532,9 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
     // For memory networks
     m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
 
+    // For recorded teleportation
+    m_objective.addTeleportationFlow(current, m_moduleFlowData, deltaFlow);
+
     auto& moduleDeltaEnterExit = deltaFlow.values();
     unsigned int numModuleLinks = deltaFlow.size();
 
@@ -621,7 +621,12 @@ unsigned int InfomapOptimizer<Objective>::tryMoveEachNodeIntoBestModuleInParalle
           }
 
           // For memory networks
+          // XXX: Don't use deltaFlow but create method for only old and new module!
+          // TODO: Expose first part of addMemoryContributionsAndUpdatePhysicalNodes
           m_objective.addMemoryContributions(current, oldModuleDelta, deltaFlow);
+
+          // For recorded teleportation
+          m_objective.addTeleportationFlow(current, m_moduleFlowData, oldModuleDelta, newModuleDelta);
 
           double deltaCodelength = m_objective.getDeltaCodelengthOnMovingNode(current,
                                                                               oldModuleDelta,

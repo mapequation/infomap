@@ -19,13 +19,15 @@ INPUT_OPTIONS <- list(
   list(type = "flag", name = "bipartite_teleportation", flag = "--bipartite-teleportation", default = FALSE),
   list(type = "value", name = "weight_threshold", flag = "--weight-threshold", default = NULL, include = .skip_when_null),
   list(type = "value", name = "node_limit", flag = "--node-limit", default = NULL, include = .skip_when_null),
+  list(type = "flag", name = "multilayer_self_inter_links", flag = "--multilayer-self-inter-links", default = FALSE),
   list(type = "value", name = "matchable_multilayer_ids", flag = "--matchable-multilayer-ids", default = NULL, include = .skip_when_null),
   list(type = "value", name = "cluster_data", flag = "--cluster-data", default = NULL, include = .skip_when_null),
   list(type = "flag", name = "assign_to_neighbouring_module", flag = "--assign-to-neighbouring-module", default = FALSE),
   list(type = "value", name = "meta_data", flag = "--meta-data", default = NULL, include = .skip_when_null),
   list(type = "value", name = "meta_data_rate", flag = "--meta-data-rate", default = DEFAULT_META_DATA_RATE, include = .skip_when_not_equal(DEFAULT_META_DATA_RATE)),
   list(type = "flag", name = "meta_data_unweighted", flag = "--meta-data-unweighted", default = FALSE),
-  list(type = "flag", name = "no_infomap", flag = "--no-infomap", default = FALSE)
+  list(type = "flag", name = "no_infomap", flag = "--no-infomap", default = FALSE),
+  list(type = "flag", name = "hard_partition", flag = "--hard-partition", default = FALSE)
 )
 
 OUTPUT_OPTIONS <- list(
@@ -48,6 +50,7 @@ ALGORITHM_OPTIONS <- list(
   list(type = "flag", name = "use_node_weights_as_flow", flag = "--use-node-weights-as-flow", default = FALSE),
   list(type = "flag", name = "to_nodes", flag = "--to-nodes", default = FALSE),
   list(type = "value", name = "teleportation_probability", flag = "--teleportation-probability", default = DEFAULT_TELEPORTATION_PROB, include = .skip_when_not_equal(DEFAULT_TELEPORTATION_PROB)),
+  list(type = "value", name = "random_node_check_rate", flag = "--random-node-check-rate", default = NULL, include = .skip_when_null),
   list(type = "flag", name = "regularized", flag = "--regularized", default = FALSE),
   list(type = "value", name = "regularization_strength", flag = "--regularization-strength", default = 1.0, include = .skip_when_not_equal(1.0)),
   list(type = "flag", name = "entropy_corrected", flag = "--entropy-corrected", default = FALSE),
@@ -61,7 +64,9 @@ ALGORITHM_OPTIONS <- list(
   list(type = "value", name = "multilayer_relax_limit", flag = "--multilayer-relax-limit", default = NULL, include = .skip_when_null),
   list(type = "value", name = "multilayer_relax_limit_up", flag = "--multilayer-relax-limit-up", default = NULL, include = .skip_when_null),
   list(type = "value", name = "multilayer_relax_limit_down", flag = "--multilayer-relax-limit-down", default = NULL, include = .skip_when_null),
-  list(type = "flag", name = "multilayer_relax_by_jsd", flag = "--multilayer-relax-by-jsd", default = FALSE)
+  list(type = "flag", name = "multilayer_relax_by_jsd", flag = "--multilayer-relax-by-jsd", default = FALSE),
+  list(type = "value", name = "multilayer_test", flag = "--multilayer-test", default = NULL, include = .skip_when_null),
+  list(type = "flag", name = "multilayer_aggregation", flag = "--multilayer-aggregation", default = FALSE)
 )
 
 ACCURACY_OPTIONS <- list(
@@ -80,20 +85,21 @@ ACCURACY_OPTIONS <- list(
 
 OPTION_FIELD_NAMES <- c(
   "include_self_links", "skip_adjust_bipartite_flow", "bipartite_teleportation", "weight_threshold",
-  "no_self_links", "node_limit", "matchable_multilayer_ids", "cluster_data",
-  "assign_to_neighbouring_module", "meta_data", "meta_data_rate", "meta_data_unweighted",
-  "no_infomap", "out_name", "no_file_output", "tree",
-  "ftree", "clu", "clu_level", "output",
-  "hide_bipartite_nodes", "print_all_trials", "verbosity_level", "silent",
-  "pretty", "two_level", "flow_model", "directed",
-  "recorded_teleportation", "use_node_weights_as_flow", "to_nodes", "teleportation_probability",
-  "regularized", "regularization_strength", "entropy_corrected", "entropy_correction_strength",
-  "markov_time", "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale",
-  "preferred_number_of_modules", "multilayer_relax_rate", "multilayer_relax_limit", "multilayer_relax_limit_up",
-  "multilayer_relax_limit_down", "multilayer_relax_by_jsd", "seed", "num_trials",
-  "core_loop_limit", "core_level_limit", "tune_iteration_limit", "core_loop_codelength_threshold",
-  "tune_iteration_relative_threshold", "fast_hierarchical_solution", "inner_parallelization", "prefer_modular_solution",
-  "num_random_moves", "max_degree_for_random_moves"
+  "no_self_links", "node_limit", "multilayer_self_inter_links", "matchable_multilayer_ids",
+  "cluster_data", "assign_to_neighbouring_module", "meta_data", "meta_data_rate",
+  "meta_data_unweighted", "no_infomap", "hard_partition", "out_name",
+  "no_file_output", "tree", "ftree", "clu",
+  "clu_level", "output", "hide_bipartite_nodes", "print_all_trials",
+  "verbosity_level", "silent", "pretty", "two_level",
+  "flow_model", "directed", "recorded_teleportation", "use_node_weights_as_flow",
+  "to_nodes", "teleportation_probability", "random_node_check_rate", "regularized",
+  "regularization_strength", "entropy_corrected", "entropy_correction_strength", "markov_time",
+  "variable_markov_time", "variable_markov_damping", "variable_markov_min_scale", "preferred_number_of_modules",
+  "multilayer_relax_rate", "multilayer_relax_limit", "multilayer_relax_limit_up", "multilayer_relax_limit_down",
+  "multilayer_relax_by_jsd", "multilayer_test", "multilayer_aggregation", "seed",
+  "num_trials", "core_loop_limit", "core_level_limit", "tune_iteration_limit",
+  "core_loop_codelength_threshold", "tune_iteration_relative_threshold", "fast_hierarchical_solution", "inner_parallelization",
+  "prefer_modular_solution", "num_random_moves", "max_degree_for_random_moves"
 )
 
 OPTION_DEFAULTS <- list(
@@ -103,6 +109,7 @@ OPTION_DEFAULTS <- list(
   weight_threshold = NULL,
   no_self_links = FALSE,
   node_limit = NULL,
+  multilayer_self_inter_links = FALSE,
   matchable_multilayer_ids = NULL,
   cluster_data = NULL,
   assign_to_neighbouring_module = FALSE,
@@ -110,6 +117,7 @@ OPTION_DEFAULTS <- list(
   meta_data_rate = DEFAULT_META_DATA_RATE,
   meta_data_unweighted = FALSE,
   no_infomap = FALSE,
+  hard_partition = FALSE,
   out_name = NULL,
   no_file_output = FALSE,
   tree = FALSE,
@@ -129,6 +137,7 @@ OPTION_DEFAULTS <- list(
   use_node_weights_as_flow = FALSE,
   to_nodes = FALSE,
   teleportation_probability = DEFAULT_TELEPORTATION_PROB,
+  random_node_check_rate = NULL,
   regularized = FALSE,
   regularization_strength = 1.0,
   entropy_corrected = FALSE,
@@ -143,6 +152,8 @@ OPTION_DEFAULTS <- list(
   multilayer_relax_limit_up = NULL,
   multilayer_relax_limit_down = NULL,
   multilayer_relax_by_jsd = FALSE,
+  multilayer_test = NULL,
+  multilayer_aggregation = FALSE,
   seed = DEFAULT_SEED,
   num_trials = 1L,
   core_loop_limit = 10L,
@@ -178,6 +189,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`weight_threshold`}{Ignore input links with weight below this threshold.}
 #'   \item{`no_self_links`}{Exclude self-links from the input network.}
 #'   \item{`node_limit`}{Read only nodes up to this node id and ignore links connected to higher node ids.}
+#'   \item{`multilayer_self_inter_links`}{For inter/intra format, restrict inter-layer links within same physical node but adjust flow to approximate physical steps}
 #'   \item{`matchable_multilayer_ids`}{Construct state ids from node ids and layer ids that stay comparable across networks. Set at least to the largest layer id among networks to match.}
 #'   \item{`cluster_data`}{Read an initial partition from a clu file or a hierarchy from a tree/ftree file. Tree input may use physical or state nodes for higher-order networks.}
 #'   \item{`assign_to_neighbouring_module`}{With --cluster-data, assign nodes missing module ids to a neighboring node's module when possible.}
@@ -185,6 +197,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`meta_data_rate`}{With --meta-data, set the metadata encoding rate. The default encodes metadata at each step.}
 #'   \item{`meta_data_unweighted`}{With --meta-data, encode metadata without weighting by node flow.}
 #'   \item{`no_infomap`}{Skip optimization. Use this to calculate codelength for --cluster-data or to print non-modular statistics.}
+#'   \item{`hard_partition`}{Do not split initial partition.}
 #' }
 #'
 #' Output
@@ -212,6 +225,7 @@ OPTION_DEFAULTS <- list(
 #'   \item{`use_node_weights_as_flow`}{Use node weights from the API or Pajek node records as normalized node flow.}
 #'   \item{`to_nodes`}{Teleport to nodes instead of links. Uses uniform node weights unless node weights are provided.}
 #'   \item{`teleportation_probability`}{Set the probability of teleporting to a random node or link when calculating flow.}
+#'   \item{`random_node_check_rate`}{Check a selected proportion of nodes for moves if recorded teleportation}
 #'   \item{`regularized`}{Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.}
 #'   \item{`regularization_strength`}{Scale the relative strength of the Bayesian prior network used by --regularized.}
 #'   \item{`entropy_corrected`}{Correct for negative entropy bias in small samples, especially solutions with many modules.}
@@ -226,6 +240,8 @@ OPTION_DEFAULTS <- list(
 #'   \item{`multilayer_relax_limit_up`}{Limit relaxation upward to this many higher neighboring layer ids. Use a negative value to allow relaxation to any higher layer.}
 #'   \item{`multilayer_relax_limit_down`}{Limit relaxation downward to this many lower neighboring layer ids. Use a negative value to allow relaxation to any lower layer.}
 #'   \item{`multilayer_relax_by_jsd`}{Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon divergence.}
+#'   \item{`multilayer_test`}{Testing different multilayer implementations.}
+#'   \item{`multilayer_aggregation`}{Experimental: Use aggregated multilayer network.}
 #' }
 #'
 #' Accuracy

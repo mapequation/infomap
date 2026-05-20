@@ -17,7 +17,6 @@
 #include <map>
 #include <utility>
 #include <vector>
-#include <set>
 #include <utility>
 #include <limits>
 #include <sstream>
@@ -34,11 +33,11 @@ private:
 
   // Multilayer
   std::map<unsigned int, Network> m_networks; // intra-layer links
+  std::unique_ptr<Network> m_aggregatedNetwork;
   std::map<LayerNode, std::map<unsigned int, double>> m_interLinks;
   // { layer -> { physId -> stateId }}
   std::map<unsigned int, std::map<unsigned int, unsigned int>> m_layerNodeToStateId;
   std::map<unsigned int, std::map<unsigned int, double>> m_sumIntraOutWeight;
-  std::set<unsigned int> m_layers;
   unsigned int m_numInterLayerLinks = 0;
   unsigned int m_numIntraLayerLinks = 0;
   unsigned int m_maxNodeIdInIntraLayerNetworks = 0;
@@ -107,6 +106,10 @@ public:
   void generateStateNetworkFromMultilayer();
   void generateStateNetworkFromMultilayerWithInterLinks();
   void generateStateNetworkFromMultilayerWithSimulatedInterLinks();
+  void generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnLayerSimilarity();
+  void generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrength();
+  void generateStateNetworkFromMultilayerWithSimulatedInterLinksBasedOnNodeStrengthRegularized();
+  void generateInterlayerLinksFromAggregatedMultilayer();
   void simulateInterLayerLinks();
 
   /**

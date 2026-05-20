@@ -50,6 +50,26 @@ def test_construct_args_deduplicates_no_self_links():
     assert tokens.count("--no-self-links") == 1
 
 
+def test_construct_args_renders_regularized_multilayer_options():
+    args = infomap_module._construct_args(
+        hard_partition=True,
+        multilayer_self_inter_links=True,
+        random_node_check_rate=0.25,
+        multilayer_test=2,
+        multilayer_aggregation=True,
+    )
+
+    assert shlex.split(args) == [
+        "--multilayer-self-inter-links",
+        "--hard-partition",
+        "--random-node-check-rate",
+        "0.25",
+        "--multilayer-test",
+        "2",
+        "--multilayer-aggregation",
+    ]
+
+
 def test_run_forwards_variable_markov_options(monkeypatch):
     captured = {}
     im = infomap_module.Infomap(silent=True, no_file_output=True)

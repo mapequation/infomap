@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from numbers import Integral
 from typing import Any
 
 
 def _label_to_internal_id(labels):
     if not labels:
         return {}
-    if isinstance(labels[0], int):
+    if isinstance(labels[0], Integral):
         return {label: label for label in labels}
     return {label: index for index, label in enumerate(labels)}
 

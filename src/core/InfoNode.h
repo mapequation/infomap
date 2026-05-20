@@ -90,6 +90,7 @@ public:
   bool dirty = false;
 
   std::vector<PhysData> physicalNodes;
+  std::vector<LayerTeleFlowData> layerTeleFlowData; // For regularized multilayer flow
   MetaCollection metaCollection; // For modules
   std::vector<unsigned int> stateNodes; // For physically aggregated nodes
 
@@ -135,6 +136,8 @@ public:
         collapsedLastChild(other.collapsedLastChild),
         codelength(other.codelength),
         dirty(other.dirty),
+        physicalNodes(other.physicalNodes),
+        layerTeleFlowData(other.layerTeleFlowData),
         metaCollection(other.metaCollection),
         m_childDegree(other.m_childDegree),
         m_childrenChanged(other.m_childrenChanged),

@@ -125,6 +125,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(nodeLimit, "node-limit", "Read only nodes up to this node id and ignore links connected to higher node ids.", ArgType::integer, "Input", 1u, true);
 
+  api.addOptionArgument(multilayerSelfInterLinks, "multilayer-self-inter-links", "For inter/intra format, restrict inter-layer links within same physical node but adjust flow to approximate physical steps", "Input", true);
+
   api.addOptionArgument(matchableMultilayerIds, "matchable-multilayer-ids", "Construct state ids from node ids and layer ids that stay comparable across networks. Set at least to the largest layer id among networks to match.", ArgType::integer, "Input", 1u, true);
 
   api.addOptionArgument(clusterDataFile, 'c', "cluster-data", "Read an initial partition from a clu file or a hierarchy from a tree/ftree file. Tree input may use physical or state nodes for higher-order networks.", ArgType::path, "Input");
@@ -144,6 +146,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
   api.addOptionArgument(outName, "out-name", "Base name for output files, for example [out_directory]/[out-name].tree.", ArgType::string, "Output", true);
 
   api.addOptionArgument(noFileOutput, '0', "no-file-output", "Do not write output files.", "Output", true);
+
+  api.addOptionArgument(clusterDataIsHard, "hard-partition", "Do not split initial partition.", "Input", true);
 
   api.addOptionArgument(printTree, "tree", "Write the modular hierarchy to a tree file. Enabled by default when no other output format is selected.", "Output");
 
@@ -178,6 +182,8 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
 
   api.addOptionArgument(teleportationProbability, 'p', "teleportation-probability", "Set the probability of teleporting to a random node or link when calculating flow.", ArgType::probability, "Algorithm", 0.0, 1.0, true);
 
+  api.addOptionArgument(randomNodeCheckRate, "random-node-check-rate", "Check a selected proportion of nodes for moves if recorded teleportation", ArgType::probability, "Algorithm", 0.0, 1.0, true);
+
   api.addOptionArgument(regularized, "regularized", "Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.", "Algorithm", true);
 
   api.addOptionArgument(regularizationStrength, "regularization-strength", "Scale the relative strength of the Bayesian prior network used by --regularized.", ArgType::number, "Algorithm", 0.0, true);
@@ -207,6 +213,10 @@ Config::Config(const std::string& flags, bool isCLI) : isCLI(isCLI)
   api.addOptionArgument(multilayerRelaxLimitDown, "multilayer-relax-limit-down", "Limit relaxation downward to this many lower neighboring layer ids. Use a negative value to allow relaxation to any lower layer.", ArgType::integer, "Algorithm", -1, true);
 
   api.addOptionArgument(multilayerRelaxByJensenShannonDivergence, "multilayer-relax-by-jsd", "Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon divergence.", "Algorithm", true);
+
+  api.addOptionArgument(multilayerTest, "multilayer-test", "Testing different multilayer implementations.", ArgType::integer, "Algorithm", true);
+
+  api.addOptionArgument(multilayerAggregation, "multilayer-aggregation", "Experimental: Use aggregated multilayer network.", "Algorithm", true);
 
   // --------------------- Performance and accuracy options ---------------------
   api.addOptionArgument(seedToRandomNumberGenerator, 's', "seed", "Set the random number generator seed for reproducible results.", ArgType::integer, "Accuracy", 1ul);

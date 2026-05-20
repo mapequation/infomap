@@ -38,7 +38,9 @@ private:
   void calcUndirectedFlow() noexcept;
   void calcDirectedFlow(const StateNetwork&, const Config&) noexcept;
   void calcUndirectedRegularizedFlow(const StateNetwork&, const Config&) noexcept;
+  void calcUndirectedRegularizedMultilayerFlow(const StateNetwork&, const Config&);
   void calcDirectedRegularizedFlow(const StateNetwork&, const Config&) noexcept;
+  void calcDirectedRegularizedMultilayerFlow(const StateNetwork&, const Config&) noexcept;
   void calcDirectedBipartiteFlow(const StateNetwork&, const Config&) noexcept;
   void calcDirdirFlow(const Config&) noexcept;
   void calcRawdirFlow() noexcept;
@@ -56,6 +58,7 @@ private:
 
   double sumLinkWeight = 0;
   double sumWeightedDegree = 0;
+  double sumTeleFlow = 0;
 
   std::unordered_map<unsigned int, unsigned int> nodeIndexMap;
   std::vector<double> nodeFlow;
