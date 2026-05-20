@@ -16,7 +16,11 @@ def test_add_multilayer_links_matches_repeated_add_multilayer_link(make_infomap)
     links = [
         ((0, 1), (1, 2), 1.5),
         ((0, 3), (1, 2), 2.0),
-        (MultilayerNode(layer_id=1, node_id=2), MultilayerNode(layer_id=2, node_id=4), 3.0),
+        (
+            MultilayerNode(layer_id=1, node_id=2),
+            MultilayerNode(layer_id=2, node_id=4),
+            3.0,
+        ),
     ]
 
     baseline = make_infomap()
@@ -70,7 +74,9 @@ def test_add_multilayer_links_accepts_unweighted_numpy_array(make_infomap):
 
     baseline = make_infomap()
     for source_layer, source_node, target_layer, target_node in links.tolist():
-        baseline.add_multilayer_link((source_layer, source_node), (target_layer, target_node))
+        baseline.add_multilayer_link(
+            (source_layer, source_node), (target_layer, target_node)
+        )
 
     im = make_infomap()
     im.add_multilayer_links(links)

@@ -25,64 +25,64 @@ using std::make_pair;
 
 namespace {
 
-inline bool isInputWhitespace(char c)
-{
-  return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\v';
-}
-
-inline bool isDigit(char c)
-{
-  return c >= '0' && c <= '9';
-}
-
-void skipWhitespace(const char*& p)
-{
-  while (isInputWhitespace(*p)) {
-    ++p;
-  }
-}
-
-bool parseUnsigned(const char*& p, unsigned int& value)
-{
-  skipWhitespace(p);
-  if (*p == '+') {
-    ++p;
-  }
-  if (!isDigit(*p)) {
-    return false;
+  inline bool isInputWhitespace(char c)
+  {
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\v';
   }
 
-  unsigned long long result = 0;
-  const unsigned long long maxValue = std::numeric_limits<unsigned int>::max();
-  do {
-    result = result * 10 + static_cast<unsigned long long>(*p - '0');
-    if (result > maxValue) {
+  inline bool isDigit(char c)
+  {
+    return c >= '0' && c <= '9';
+  }
+
+  void skipWhitespace(const char*& p)
+  {
+    while (isInputWhitespace(*p)) {
+      ++p;
+    }
+  }
+
+  bool parseUnsigned(const char*& p, unsigned int& value)
+  {
+    skipWhitespace(p);
+    if (*p == '+') {
+      ++p;
+    }
+    if (!isDigit(*p)) {
       return false;
     }
-    ++p;
-  } while (isDigit(*p));
 
-  value = static_cast<unsigned int>(result);
-  return true;
-}
+    unsigned long long result = 0;
+    const unsigned long long maxValue = std::numeric_limits<unsigned int>::max();
+    do {
+      result = result * 10 + static_cast<unsigned long long>(*p - '0');
+      if (result > maxValue) {
+        return false;
+      }
+      ++p;
+    } while (isDigit(*p));
 
-bool parseOptionalDouble(const char*& p, double& value)
-{
-  skipWhitespace(p);
-  if (*p == '\0' || *p == '#') {
-    return false;
+    value = static_cast<unsigned int>(result);
+    return true;
   }
 
-  char* end = nullptr;
-  const double parsed = std::strtod(p, &end);
-  if (end == p) {
-    return false;
-  }
+  bool parseOptionalDouble(const char*& p, double& value)
+  {
+    skipWhitespace(p);
+    if (*p == '\0' || *p == '#') {
+      return false;
+    }
 
-  value = parsed;
-  p = end;
-  return true;
-}
+    char* end = nullptr;
+    const double parsed = std::strtod(p, &end);
+    if (end == p) {
+      return false;
+    }
+
+    value = parsed;
+    p = end;
+    return true;
+  }
 
 } // namespace
 
@@ -654,10 +654,7 @@ void Network::addMultilayerLinks(const std::vector<unsigned int>& sourceLayerIds
                                  const std::vector<unsigned int>& targetNodeIds,
                                  const std::vector<double>& weights)
 {
-  if (sourceLayerIds.size() != sourceNodeIds.size() ||
-      sourceLayerIds.size() != targetLayerIds.size() ||
-      sourceLayerIds.size() != targetNodeIds.size() ||
-      sourceLayerIds.size() != weights.size()) {
+  if (sourceLayerIds.size() != sourceNodeIds.size() || sourceLayerIds.size() != targetLayerIds.size() || sourceLayerIds.size() != targetNodeIds.size() || sourceLayerIds.size() != weights.size()) {
     throw std::invalid_argument("sourceLayerIds, sourceNodeIds, targetLayerIds, targetNodeIds, and weights must have the same length");
   }
 
@@ -1057,9 +1054,7 @@ void Network::addMultilayerIntraLinks(const std::vector<unsigned int>& layerIds,
                                       const std::vector<unsigned int>& targetNodeIds,
                                       const std::vector<double>& weights)
 {
-  if (layerIds.size() != sourceNodeIds.size() ||
-      layerIds.size() != targetNodeIds.size() ||
-      layerIds.size() != weights.size()) {
+  if (layerIds.size() != sourceNodeIds.size() || layerIds.size() != targetNodeIds.size() || layerIds.size() != weights.size()) {
     throw std::invalid_argument("layerIds, sourceNodeIds, targetNodeIds, and weights must have the same length");
   }
 
@@ -1089,9 +1084,7 @@ void Network::addMultilayerInterLinks(const std::vector<unsigned int>& sourceLay
                                       const std::vector<unsigned int>& targetLayerIds,
                                       const std::vector<double>& weights)
 {
-  if (sourceLayerIds.size() != nodeIds.size() ||
-      sourceLayerIds.size() != targetLayerIds.size() ||
-      sourceLayerIds.size() != weights.size()) {
+  if (sourceLayerIds.size() != nodeIds.size() || sourceLayerIds.size() != targetLayerIds.size() || sourceLayerIds.size() != weights.size()) {
     throw std::invalid_argument("sourceLayerIds, nodeIds, targetLayerIds, and weights must have the same length");
   }
 

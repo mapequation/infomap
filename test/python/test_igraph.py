@@ -40,7 +40,7 @@ def test_missing_igraph_error_mentions_extra(monkeypatch):
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
 
-    with pytest.raises(ImportError, match=r'infomap\[igraph\]'):
+    with pytest.raises(ImportError, match=r"infomap\[igraph\]"):
         _import_igraph()
 
 

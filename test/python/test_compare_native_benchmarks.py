@@ -22,7 +22,9 @@ def _find_compare_script_path() -> Path:
 
 def _load_compare_module():
     module_path = _find_compare_script_path()
-    spec = importlib.util.spec_from_file_location("compare_native_benchmarks", module_path)
+    spec = importlib.util.spec_from_file_location(
+        "compare_native_benchmarks", module_path
+    )
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -118,14 +120,22 @@ def test_render_markdown_uses_na_for_missing_case_metrics():
     assert "| ring | manual_review | n/a | n/a | n/a | n/a | case_missing |" in markdown
 
 
-def test_main_writes_markdown_and_json(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+def test_main_writes_markdown_and_json(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
     compare_module = _load_compare_module()
     base_path = tmp_path / "base.json"
     head_path = tmp_path / "head.json"
     markdown_path = tmp_path / "summary.md"
     json_path = tmp_path / "comparison.json"
-    base_path.write_text(json.dumps({"benchmarks": [_case("ring", median_run_sec=1.00)]}) + "\n", encoding="utf-8")
-    head_path.write_text(json.dumps({"benchmarks": [_case("ring", median_run_sec=1.30)]}) + "\n", encoding="utf-8")
+    base_path.write_text(
+        json.dumps({"benchmarks": [_case("ring", median_run_sec=1.00)]}) + "\n",
+        encoding="utf-8",
+    )
+    head_path.write_text(
+        json.dumps({"benchmarks": [_case("ring", median_run_sec=1.30)]}) + "\n",
+        encoding="utf-8",
+    )
 
     import sys
 
@@ -149,7 +159,10 @@ def test_main_writes_markdown_and_json(tmp_path: Path, capsys: pytest.CaptureFix
     captured = capsys.readouterr()
     assert "PR Native Benchmark Comparison" in captured.out
     assert "possible regression" in markdown_path.read_text(encoding="utf-8")
-    assert json.loads(json_path.read_text(encoding="utf-8"))["overall_status"] == "possible_regression"
+    assert (
+        json.loads(json_path.read_text(encoding="utf-8"))["overall_status"]
+        == "possible_regression"
+    )
 
 
 def test_main_can_fail_after_writing_reports_for_regression(tmp_path: Path):
@@ -158,8 +171,14 @@ def test_main_can_fail_after_writing_reports_for_regression(tmp_path: Path):
     head_path = tmp_path / "head.json"
     markdown_path = tmp_path / "summary.md"
     json_path = tmp_path / "comparison.json"
-    base_path.write_text(json.dumps({"benchmarks": [_case("ring", median_run_sec=1.00)]}) + "\n", encoding="utf-8")
-    head_path.write_text(json.dumps({"benchmarks": [_case("ring", median_run_sec=1.20)]}) + "\n", encoding="utf-8")
+    base_path.write_text(
+        json.dumps({"benchmarks": [_case("ring", median_run_sec=1.00)]}) + "\n",
+        encoding="utf-8",
+    )
+    head_path.write_text(
+        json.dumps({"benchmarks": [_case("ring", median_run_sec=1.20)]}) + "\n",
+        encoding="utf-8",
+    )
 
     import sys
 
@@ -182,4 +201,6 @@ def test_main_can_fail_after_writing_reports_for_regression(tmp_path: Path):
         sys.argv = old_argv
 
     assert "possible regression" in markdown_path.read_text(encoding="utf-8")
-    assert json.loads(json_path.read_text(encoding="utf-8"))["counts"]["regression"] == 1
+    assert (
+        json.loads(json_path.read_text(encoding="utf-8"))["counts"]["regression"] == 1
+    )
