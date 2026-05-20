@@ -562,7 +562,7 @@
     "longType": "integer",
     "shortType": "n",
     "default": "0",
-    "min": "1"
+    "min": "0"
   },
   {
     "long": "--tune-iteration-limit",
@@ -575,7 +575,7 @@
     "longType": "integer",
     "shortType": "n",
     "default": "0",
-    "min": "1"
+    "min": "0"
   },
   {
     "long": "--core-loop-codelength-threshold",

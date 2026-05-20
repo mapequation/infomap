@@ -81,6 +81,13 @@ TEST_CASE("Config parses pretty output flag [fast][core][config][cli]")
   CHECK_FALSE(negatedConfig.prettyOutput);
 }
 
+TEST_CASE("Config accepts zero sentinel limits [fast][core][config][cli]")
+{
+  const Config config("input.net --silent --no-file-output --core-level-limit 0 --tune-iteration-limit 0", true);
+  CHECK(config.levelAggregationLimit == 0);
+  CHECK(config.tuneIterationLimit == 0);
+}
+
 TEST_CASE("Config rejects unknown flow models and output formats [fast][core][config][cli]")
 {
   CHECK_THROWS_AS(Config("input.net --silent --no-file-output --flow-model unknown", true), std::runtime_error);
@@ -174,6 +181,25 @@ TEST_CASE("Parameter catalog owns option choices and binding names [fast][core][
 
   REQUIRE(numTrials != nullptr);
   CHECK(numTrials->minValue == "1");
+
+  const auto findParameter = [](const std::string& longName) {
+    for (const auto& parameter : infomap::parameterCatalog()) {
+      if (parameter.longName == longName) {
+        return &parameter;
+      }
+    }
+    return static_cast<const infomap::ParameterSpec*>(nullptr);
+  };
+
+  const auto* coreLevelLimit = findParameter("core-level-limit");
+  REQUIRE(coreLevelLimit != nullptr);
+  CHECK(coreLevelLimit->defaultValue == "0");
+  CHECK(coreLevelLimit->minValue == "0");
+
+  const auto* tuneIterationLimit = findParameter("tune-iteration-limit");
+  REQUIRE(tuneIterationLimit != nullptr);
+  CHECK(tuneIterationLimit->defaultValue == "0");
+  CHECK(tuneIterationLimit->minValue == "0");
 }
 
 } // namespace
