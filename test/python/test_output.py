@@ -15,7 +15,9 @@ def _run_small_network(make_infomap, load_graph_fixture):
     return im
 
 
-def test_output_writers_are_stable_across_repeat_calls(make_infomap, load_graph_fixture, output_dir):
+def test_output_writers_are_stable_across_repeat_calls(
+    make_infomap, load_graph_fixture, output_dir
+):
     im = _run_small_network(make_infomap, load_graph_fixture)
 
     tree_a = output_dir / "first.tree"
@@ -44,7 +46,9 @@ def test_output_writers_are_stable_across_repeat_calls(make_infomap, load_graph_
     assert "# module level 1" in clu_a.read_text()
 
 
-def test_state_output_writers_include_state_columns(make_infomap, network_fixture_path, output_dir):
+def test_state_output_writers_include_state_columns(
+    make_infomap, network_fixture_path, output_dir
+):
     im = make_infomap()
     im.read_file(str(network_fixture_path("states.net")))
     im.run()
@@ -77,9 +81,16 @@ def test_state_output_writers_include_state_columns(make_infomap, network_fixtur
         ("states.net", True),
         ("multilayer.net", True),
     ],
-    ids=["physical", "states_physical_tree", "states_state_tree", "multilayer_state_tree"],
+    ids=[
+        "physical",
+        "states_physical_tree",
+        "states_state_tree",
+        "multilayer_state_tree",
+    ],
 )
-def test_tree_cluster_data_roundtrip(make_infomap, example_network_path, output_dir, network_name, states_output):
+def test_tree_cluster_data_roundtrip(
+    make_infomap, example_network_path, output_dir, network_name, states_output
+):
     network_path = str(example_network_path(network_name))
 
     baseline = make_infomap(num_trials=5)

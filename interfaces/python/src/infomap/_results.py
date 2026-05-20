@@ -601,7 +601,7 @@ class _InfomapResultsMixin:
 
         if pandas is None:
             raise ImportError(
-                'Cannot import package `pandas`. Install it with '
+                "Cannot import package `pandas`. Install it with "
                 '`python -m pip install "infomap[pandas]"`.'
             )
 
@@ -660,7 +660,7 @@ class _InfomapResultsMixin:
         """
         if pandas is None:
             raise ImportError(
-                'Cannot import package `pandas`. Install it with '
+                "Cannot import package `pandas`. Install it with "
                 '`python -m pip install "infomap[pandas]"`.'
             )
 
@@ -671,12 +671,15 @@ class _InfomapResultsMixin:
 
         requested_columns = list(columns)
         resolved_columns = [
-            _DATAFRAME_COLUMN_ALIASES.get(column, column) for column in requested_columns
+            _DATAFRAME_COLUMN_ALIASES.get(column, column)
+            for column in requested_columns
         ]
         names = self.names if "name" in resolved_columns else None
         column_getters = [
             _to_dataframe_column_getter(requested, resolved, names)
-            for requested, resolved in zip(requested_columns, resolved_columns, strict=True)
+            for requested, resolved in zip(
+                requested_columns, resolved_columns, strict=True
+            )
         ]
         data = {column: [] for column in requested_columns}
 

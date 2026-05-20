@@ -84,7 +84,9 @@ def _parse_graph_fixture(path: Path) -> list[tuple[int, ...]]:
         elif len(parts) == 3:
             links.append((int(parts[0]), int(parts[1]), float(parts[2])))
         else:
-            raise ValueError(f"Invalid graph fixture line {line_number} in {path}: {raw_line!r}")
+            raise ValueError(
+                f"Invalid graph fixture line {line_number} in {path}: {raw_line!r}"
+            )
 
     return links
 
@@ -99,7 +101,9 @@ def graph_fixture_links(graph_fixture_path):
 
 @pytest.fixture
 def load_graph_fixture(graph_fixture_links):
-    def _load_graph_fixture(im: Infomap, name: str, *, method: str = "add_links") -> list[tuple[int, ...]]:
+    def _load_graph_fixture(
+        im: Infomap, name: str, *, method: str = "add_links"
+    ) -> list[tuple[int, ...]]:
         links = graph_fixture_links(name)
         if method == "add_links":
             im.add_links(links)
@@ -113,7 +117,9 @@ def load_graph_fixture(graph_fixture_links):
     return _load_graph_fixture
 
 
-def _canonical_modules(modules: Union[Iterable[tuple[int, int]], dict[int, int]]) -> list[list[int]]:
+def _canonical_modules(
+    modules: Union[Iterable[tuple[int, int]], dict[int, int]],
+) -> list[list[int]]:
     grouped: dict[int, list[int]] = {}
     items = modules.items() if isinstance(modules, dict) else modules
     for node_id, module_id in items:
@@ -135,7 +141,9 @@ def output_dir(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def make_infomap():
-    def _make_infomap(*, seed: int = 123, num_trials: int = 1, silent: bool = True, **kwargs) -> Infomap:
+    def _make_infomap(
+        *, seed: int = 123, num_trials: int = 1, silent: bool = True, **kwargs
+    ) -> Infomap:
         return Infomap(seed=seed, num_trials=num_trials, silent=silent, **kwargs)
 
     return _make_infomap
@@ -144,6 +152,8 @@ def make_infomap():
 @pytest.fixture
 def assert_pajek_matches_fixture():
     def _assert_pajek_matches_fixture(actual_path: Path, expected_path: Path) -> None:
-        assert _normalized_pajek_lines(actual_path) == _normalized_pajek_lines(expected_path)
+        assert _normalized_pajek_lines(actual_path) == _normalized_pajek_lines(
+            expected_path
+        )
 
     return _assert_pajek_matches_fixture

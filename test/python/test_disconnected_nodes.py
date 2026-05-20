@@ -84,7 +84,9 @@ def test_regularized_recovers_planted_partition(make_infomap, canonical_modules)
 
 
 @pytest.mark.parametrize("regularized", [False, True])
-def test_regularized_matches_baseline_on_easy_partition(make_infomap, canonical_modules, regularized):
+def test_regularized_matches_baseline_on_easy_partition(
+    make_infomap, canonical_modules, regularized
+):
     g = _sbm()
     expected = _expected_sbm_partition(g)
 

@@ -1,4 +1,6 @@
-def test_matchable_multilayer_ids_with_python_read_file(make_infomap, example_network_path):
+def test_matchable_multilayer_ids_with_python_read_file(
+    make_infomap, example_network_path
+):
     im = make_infomap(no_infomap=True, matchable_multilayer_ids=3)
     im.read_file(str(example_network_path("multilayer.net")))
     im.run()

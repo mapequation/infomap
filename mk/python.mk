@@ -27,7 +27,6 @@ PYTHON_FORMAT_TARGETS := \
 	interfaces/python/src/infomap/_facade.py \
 	interfaces/python/src/infomap/_networkx.py \
 	interfaces/python/src/infomap/_optional.py \
-	interfaces/python/src/infomap/_options.py \
 	interfaces/python/src/infomap/_results.py \
 	interfaces/python/src/infomap/_version.py \
 	interfaces/python/src/infomap/_writers.py \
