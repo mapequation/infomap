@@ -21,22 +21,6 @@
     "default": false
   },
   {
-    "long": "--completion",
-    "short": "",
-    "description": "Print shell completion script for bash or zsh.",
-    "group": "About",
-    "required": true,
-    "advanced": false,
-    "incremental": false,
-    "longType": "option",
-    "shortType": "o",
-    "default": "",
-    "choices": [
-      "bash",
-      "zsh"
-    ]
-  },
-  {
     "long": "--skip-adjust-bipartite-flow",
     "short": "",
     "description": "Keep flow on bipartite nodes instead of distributing it to primary nodes.",

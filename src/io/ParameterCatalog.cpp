@@ -457,7 +457,7 @@ std::string parameterCatalogJson()
   json << "{\n  \"parameters\": [\n";
   bool firstParameter = true;
   for (const auto& parameter : parameterCatalog()) {
-    if (parameter.hidden || parameter.id == ParameterId::NetworkFile || parameter.id == ParameterId::Input || parameter.id == ParameterId::OutputDirectory) {
+    if (parameter.hidden || parameter.id == ParameterId::Completion || parameter.id == ParameterId::NetworkFile || parameter.id == ParameterId::Input || parameter.id == ParameterId::OutputDirectory) {
       continue;
     }
     if (!firstParameter) {

@@ -17,10 +17,11 @@ def main() -> int:
     parameters = payload["parameters"]
     assert parameters[0]["long"] == "--help"
     assert parameters[1]["long"] == "--version"
+    assert "--completion" not in {param["long"] for param in parameters}
     assert "--print-json-parameters" not in {param["long"] for param in parameters}
 
     groups = [param["group"] for param in parameters]
-    assert groups[:3] == ["About", "About", "About"]
+    assert groups[:2] == ["About", "About"]
     assert "Input" in groups
     assert "Output" in groups
     assert "Algorithm" in groups
