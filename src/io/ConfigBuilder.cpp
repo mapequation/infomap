@@ -77,7 +77,7 @@ ParsedConfigParameters ConfigBuilder::parseRaw(Config& config, const std::string
 void ConfigBuilder::applyParsed(Config& config, const ParsedConfigParameters& parsed, bool isCLI)
 {
   if (parsed.deprecatedIncludeSelfLinks) {
-    throw std::runtime_error("The --include-self-links flag is deprecated to include self links by default. Use --no-self-links to exclude.");
+    throw std::runtime_error("The --include-self-links flag is deprecated; self-links are included by default. Use --no-self-links to exclude them.");
   }
 
   if (!parsed.optionalOutputDir.empty())
