@@ -115,11 +115,11 @@ OutputTreeRow OutputView::treeRow(const InfoNode& node, unsigned int depth) cons
 
 std::string OutputView::nodeName(const InfoNode& node) const
 {
-  try {
-    return m_network.names().at(node.physicalId);
-  } catch (...) {
-    return io::stringify(node.physicalId);
+  const auto nameIt = m_network.names().find(node.physicalId);
+  if (nameIt != m_network.names().end()) {
+    return nameIt->second;
   }
+  return io::stringify(node.physicalId);
 }
 
 } // namespace infomap

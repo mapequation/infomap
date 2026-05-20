@@ -29,7 +29,7 @@ enum class OutputLeafPolicy : std::uint8_t {
 
 struct OutputLeafRow {
   const InfoNode& node;
-  const std::deque<unsigned int>& path;
+  std::deque<unsigned int> path;
   unsigned int moduleId = 0;
   double modularCentrality = 0.0;
   unsigned int stateId = 0;
