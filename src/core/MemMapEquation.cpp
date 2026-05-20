@@ -15,8 +15,10 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <limits>
 #include <utility>
 #include <algorithm>
+#include <unordered_map>
 
 namespace infomap {
 

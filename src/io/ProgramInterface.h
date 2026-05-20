@@ -10,6 +10,7 @@
 #ifndef PROGRAM_INTERFACE_H_
 #define PROGRAM_INTERFACE_H_
 
+#include "ParsedOption.h"
 #include "../utils/convert.h"
 
 #include <stdexcept>
@@ -212,41 +213,6 @@ struct ArgumentOption<bool> : Option {
   std::string printNumericValue() const override { return ""; }
 
   bool& target;
-};
-
-struct ParsedOption {
-  explicit ParsedOption(const Option& opt)
-      : shortName(opt.shortName),
-        longName(opt.longName),
-        description(opt.description),
-        group(opt.group),
-        isAdvanced(opt.isAdvanced),
-        requireArgument(opt.requireArgument),
-        incrementalArgument(opt.incrementalArgument),
-        argumentName(opt.argumentName),
-        negated(opt.negated),
-        value(opt.printValue()) {}
-
-  friend std::ostream& operator<<(std::ostream& out, const ParsedOption& option)
-  {
-    if (option.negated)
-      out << "no ";
-    out << option.longName;
-    if (option.requireArgument)
-      out << " = " << option.value;
-    return out;
-  }
-
-  char shortName;
-  std::string longName;
-  std::string description;
-  std::string group;
-  bool isAdvanced;
-  bool requireArgument;
-  bool incrementalArgument;
-  std::string argumentName;
-  bool negated;
-  std::string value;
 };
 
 struct TargetBase {

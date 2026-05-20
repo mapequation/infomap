@@ -8,6 +8,8 @@
 
 #include <map>
 #include <set>
+#include <utility>
+#include <vector>
 
 namespace {
 
@@ -38,6 +40,41 @@ TEST_CASE("Config parses flow model selection and output formats [fast][core][co
   CHECK(infomap::flowModelToString(config.flowModel) == std::string("precomputed"));
   CHECK(config.printJson);
   CHECK(config.printTree);
+}
+
+TEST_CASE("Flow model names map to runtime values [fast][core][config][cli]")
+{
+  const std::vector<std::pair<std::string, int>> expected = {
+    { "undirected", static_cast<int>(infomap::FlowModel::undirected) },
+    { "directed", static_cast<int>(infomap::FlowModel::directed) },
+    { "undirdir", static_cast<int>(infomap::FlowModel::undirdir) },
+    { "outdirdir", static_cast<int>(infomap::FlowModel::outdirdir) },
+    { "rawdir", static_cast<int>(infomap::FlowModel::rawdir) },
+    { "precomputed", static_cast<int>(infomap::FlowModel::precomputed) },
+  };
+
+  CHECK(infomap::flowModelNames().size() == expected.size());
+  for (const auto& entry : expected) {
+    infomap::FlowModel parsed = infomap::FlowModel::undirected;
+    CHECK(infomap::parseFlowModel(entry.first, parsed));
+    CHECK(parsed == entry.second);
+    CHECK(infomap::flowModelToString(parsed) == entry.first);
+  }
+}
+
+TEST_CASE("Parameter catalog flow model choices match runtime flow model names [fast][core][config][cli]")
+{
+  const auto& expected = infomap::flowModelNames();
+  bool foundFlowModel = false;
+
+  for (const auto& parameter : infomap::parameterCatalog()) {
+    if (parameter.longName == "flow-model") {
+      foundFlowModel = true;
+      CHECK(parameter.choices == expected);
+    }
+  }
+
+  CHECK(foundFlowModel);
 }
 
 TEST_CASE("Config treats directed shorthand as directed flow model [fast][core][config][cli]")
@@ -101,7 +138,7 @@ TEST_CASE("Config accepts zero sentinel limits [fast][core][config][cli]")
 
 TEST_CASE("Config rejects unknown flow models and output formats [fast][core][config][cli]")
 {
-  CHECK_THROWS_AS(Config("input.net --silent --no-file-output --flow-model unknown", true), std::runtime_error);
+  CHECK_THROWS_WITH_AS(Config("input.net --silent --no-file-output --flow-model unknown", true), "Unrecognized flow model: 'unknown'", std::runtime_error);
   CHECK_THROWS_AS(Config("input.net --silent --no-file-output --output tree,unknown", true), std::runtime_error);
 }
 
