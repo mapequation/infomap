@@ -17,6 +17,7 @@
 #include <map>
 #include <utility>
 #include <algorithm>
+#include <unordered_map>
 
 namespace infomap {
 
