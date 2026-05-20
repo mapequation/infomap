@@ -124,9 +124,7 @@ class Parameter:
         return "None"
 
     def python_default_expr(self) -> str:
-        return self.binding_default("python").get(
-            "constant", self.python_default_value()
-        )
+        return self.python_default_value()
 
     def python_include_expr(self) -> str:
         default = self.python_default_value()
@@ -236,21 +234,3 @@ class ParameterCatalog:
             if entry.name == name:
                 return entry
         raise RuntimeError(f"Missing bindingOnly override for {language}:{name}")
-
-    def python_default_constants(self) -> list[tuple[str, str]]:
-        constants = []
-        for parameter in self.parameters:
-            binding_default = parameter.binding_default("python")
-            constant = binding_default.get("constant")
-            if constant:
-                constants.append((constant, binding_default["value"]))
-        return constants
-
-    def r_default_constants(self) -> list[tuple[str, str]]:
-        constants = []
-        for parameter in self.parameters:
-            binding_default = parameter.binding_default("r")
-            constant_value = binding_default.get("constantValue")
-            if constant_value:
-                constants.append((binding_default["value"], constant_value))
-        return constants

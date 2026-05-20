@@ -106,9 +106,7 @@ struct ParameterSpec {
   std::string tsName;
   std::string renderPolicy;
   std::string pythonDefault;
-  std::string pythonDefaultConstant;
   std::string rDefault;
-  std::string rDefaultConstantValue;
   std::string pythonDocDescription;
 };
 

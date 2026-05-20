@@ -58,16 +58,40 @@ namespace {
     return parameter;
   }
 
-  ParameterSpec withBindingDefaults(ParameterSpec parameter,
-                                    std::string pythonDefault,
-                                    std::string pythonDefaultConstant = "",
-                                    std::string rDefault = "",
-                                    std::string rDefaultConstantValue = "")
+  bool isFloatingPointArgument(const ParameterSpec& parameter)
+  {
+    return parameter.argumentName == ArgType::number || parameter.argumentName == ArgType::probability;
+  }
+
+  std::string numericBindingDefault(const ParameterSpec& parameter)
+  {
+    auto value = parameter.defaultValue;
+    if (isFloatingPointArgument(parameter) && value.find_first_of(".eE") == std::string::npos) {
+      value += ".0";
+    }
+    return value;
+  }
+
+  std::string rBindingDefault(const ParameterSpec& parameter)
+  {
+    auto value = numericBindingDefault(parameter);
+    if (parameter.argumentName == ArgType::integer) {
+      value += "L";
+    }
+    return value;
+  }
+
+  ParameterSpec withBindingDefaults(ParameterSpec parameter)
+  {
+    parameter.pythonDefault = numericBindingDefault(parameter);
+    parameter.rDefault = rBindingDefault(parameter);
+    return parameter;
+  }
+
+  ParameterSpec withBindingDefaults(ParameterSpec parameter, std::string pythonDefault, std::string rDefault)
   {
     parameter.pythonDefault = std::move(pythonDefault);
-    parameter.pythonDefaultConstant = std::move(pythonDefaultConstant);
     parameter.rDefault = std::move(rDefault);
-    parameter.rDefaultConstantValue = std::move(rDefaultConstantValue);
     return parameter;
   }
 
@@ -382,7 +406,7 @@ const std::vector<ParameterSpec>& parameterCatalog()
     spec(ParameterId::ClusterData, 'c', "cluster-data", "Read an initial partition from a clu file or a hierarchy from a tree/ftree file. Tree input may use physical or state nodes for higher-order networks.", ArgType::path, "Input", false, false, true),
     spec(ParameterId::AssignToNeighbouringModule, '\0', "assign-to-neighbouring-module", "With --cluster-data, assign nodes missing module ids to a neighboring node's module when possible.", "", "Input", true),
     spec(ParameterId::MetaData, '\0', "meta-data", "Read metadata to encode from a clu-format file.", ArgType::path, "Input", true, false, true),
-    withBindingDefaults(withMin(spec(ParameterId::MetaDataRate, '\0', "meta-data-rate", "With --meta-data, set the metadata encoding rate. The default encodes metadata at each step.", ArgType::number, "Input", true, false, true, false, "1"), "0"), "1.0", "_DEFAULT_META_DATA_RATE", "DEFAULT_META_DATA_RATE", "1.0"),
+    withBindingDefaults(withMin(spec(ParameterId::MetaDataRate, '\0', "meta-data-rate", "With --meta-data, set the metadata encoding rate. The default encodes metadata at each step.", ArgType::number, "Input", true, false, true, false, "1"), "0")),
     spec(ParameterId::MetaDataUnweighted, '\0', "meta-data-unweighted", "With --meta-data, encode metadata without weighting by node flow.", "", "Input", true),
     spec(ParameterId::NoInfomap, '\0', "no-infomap", "Skip optimization. Use this to calculate codelength for --cluster-data or to print non-modular statistics.", "", "Input"),
     spec(ParameterId::OutName, '\0', "out-name", "Base name for output files, for example [out_directory]/[out-name].tree.", ArgType::string, "Output", true, false, true),
@@ -396,39 +420,39 @@ const std::vector<ParameterSpec>& parameterCatalog()
     spec(ParameterId::PrintAllTrials, '\0', "print-all-trials", "Write each trial to separate output files. Has effect only when --num-trials is greater than 1.", "", "Output", true),
     spec(ParameterId::TwoLevel, '2', "two-level", "Optimize a two-level partition instead of the default multi-level hierarchy.", "", "Algorithm"),
     spec(ParameterId::FlowModel, 'f', "flow-model", "Choose how Infomap derives flow from the input links. Options: undirected, directed, undirdir, outdirdir, rawdir, precomputed.", ArgType::option, "Algorithm", false, false, true, false, "", { "undirected", "directed", "undirdir", "outdirdir", "rawdir", "precomputed" }),
-    withBindingDefaults(spec(ParameterId::Directed, 'd', "directed", "Treat input links as directed. Shorthand for --flow-model directed.", "", "Algorithm", false, false, false, false, "false", {}, "", "", "", "directed_alias"), "None", "", "NULL"),
+    withBindingDefaults(spec(ParameterId::Directed, 'd', "directed", "Treat input links as directed. Shorthand for --flow-model directed.", "", "Algorithm", false, false, false, false, "false", {}, "", "", "", "directed_alias"), "None", "NULL"),
     spec(ParameterId::RecordedTeleportation, 'e', "recorded-teleportation", "When teleportation is used to calculate flow, also record teleportation steps in the codelength.", "", "Algorithm", true),
     spec(ParameterId::UseNodeWeightsAsFlow, '\0', "use-node-weights-as-flow", "Use node weights from the API or Pajek node records as normalized node flow.", "", "Algorithm", true),
     spec(ParameterId::TeleportToNodes, '\0', "to-nodes", "Teleport to nodes instead of links. Uses uniform node weights unless node weights are provided.", "", "Algorithm", true),
-    withBindingDefaults(withRange(spec(ParameterId::TeleportationProbability, 'p', "teleportation-probability", "Set the probability of teleporting to a random node or link when calculating flow.", ArgType::probability, "Algorithm", true, false, true, false, "0.15"), "0", "1"), "0.15", "_DEFAULT_TELEPORTATION_PROB", "DEFAULT_TELEPORTATION_PROB", "0.15"),
+    withBindingDefaults(withRange(spec(ParameterId::TeleportationProbability, 'p', "teleportation-probability", "Set the probability of teleporting to a random node or link when calculating flow.", ArgType::probability, "Algorithm", true, false, true, false, "0.15"), "0", "1")),
     spec(ParameterId::Regularized, '\0', "regularized", "Add a fully connected Bayesian prior network to reduce overfitting to missing links. Activates --recorded-teleportation.", "", "Algorithm", true),
-    withBindingDefaults(withMin(spec(ParameterId::RegularizationStrength, '\0', "regularization-strength", "Scale the relative strength of the Bayesian prior network used by --regularized.", ArgType::number, "Algorithm", true, false, true, false, "1"), "0"), "1.0", "", "1.0"),
+    withBindingDefaults(withMin(spec(ParameterId::RegularizationStrength, '\0', "regularization-strength", "Scale the relative strength of the Bayesian prior network used by --regularized.", ArgType::number, "Algorithm", true, false, true, false, "1"), "0")),
     spec(ParameterId::EntropyCorrected, '\0', "entropy-corrected", "Correct for negative entropy bias in small samples, especially solutions with many modules.", "", "Algorithm", true),
-    withBindingDefaults(spec(ParameterId::EntropyCorrectionStrength, '\0', "entropy-correction-strength", "Scale the default correction used by --entropy-corrected.", ArgType::number, "Algorithm", true, false, true, false, "1"), "1.0", "", "1.0"),
-    withBindingDefaults(withMin(spec(ParameterId::MarkovTime, '\0', "markov-time", "Scale link flow to change the cost of moving between modules. Higher values result in fewer modules.", ArgType::number, "Algorithm", true, false, true, false, "1"), "0"), "1.0", "", "1.0"),
+    withBindingDefaults(spec(ParameterId::EntropyCorrectionStrength, '\0', "entropy-correction-strength", "Scale the default correction used by --entropy-corrected.", ArgType::number, "Algorithm", true, false, true, false, "1")),
+    withBindingDefaults(withMin(spec(ParameterId::MarkovTime, '\0', "markov-time", "Scale link flow to change the cost of moving between modules. Higher values result in fewer modules.", ArgType::number, "Algorithm", true, false, true, false, "1"), "0")),
     spec(ParameterId::VariableMarkovTime, '\0', "variable-markov-time", "Vary Markov time locally to reduce overpartitioning in sparse areas while keeping higher resolution in dense areas.", "", "Algorithm", true),
-    withBindingDefaults(spec(ParameterId::VariableMarkovDamping, '\0', "variable-markov-damping", "With --variable-markov-time, set damping between local effective degree (0) and local entropy (1).", ArgType::number, "Algorithm", true, false, true, false, "1"), "1.0", "", "1.0"),
-    withBindingDefaults(spec(ParameterId::VariableMarkovMinScale, '\0', "variable-markov-min-scale", "With --variable-markov-time, set the minimum local scale for zero-entropy nodes. Local Markov time is max scale divided by local scale.", ArgType::number, "Algorithm", true, false, true, false, "1"), "1.0", "", "1.0"),
+    withBindingDefaults(spec(ParameterId::VariableMarkovDamping, '\0', "variable-markov-damping", "With --variable-markov-time, set damping between local effective degree (0) and local entropy (1).", ArgType::number, "Algorithm", true, false, true, false, "1")),
+    withBindingDefaults(spec(ParameterId::VariableMarkovMinScale, '\0', "variable-markov-min-scale", "With --variable-markov-time, set the minimum local scale for zero-entropy nodes. Local Markov time is max scale divided by local scale.", ArgType::number, "Algorithm", true, false, true, false, "1")),
     withMin(spec(ParameterId::PreferredNumberOfModules, '\0', "preferred-number-of-modules", "Penalize solutions by how far their number of modules differs from this value.", ArgType::integer, "Algorithm", true, false, true, false, "0"), "1"),
-    withBindingDefaults(withRange(spec(ParameterId::MultilayerRelaxRate, '\0', "multilayer-relax-rate", "Set the probability of relaxing from a state node to neighboring layers instead of staying in the current layer.", ArgType::probability, "Algorithm", true, false, true, false, "0.15"), "0", "1"), "0.15", "_DEFAULT_MULTILAYER_RELAX_RATE", "DEFAULT_MULTILAYER_RELAX_RATE", "0.15"),
-    withBindingDefaults(spec(ParameterId::MultilayerRelaxLimit, '\0', "multilayer-relax-limit", "Limit relaxation to this many neighboring layer ids in each direction. Use a negative value to allow relaxation to any layer.", ArgType::integer, "Algorithm", true, false, true, false, "-1"), "-1", "", "NULL"),
-    withBindingDefaults(spec(ParameterId::MultilayerRelaxLimitUp, '\0', "multilayer-relax-limit-up", "Limit relaxation upward to this many higher neighboring layer ids. Use a negative value to allow relaxation to any higher layer.", ArgType::integer, "Algorithm", true, false, true, false, "-1"), "-1", "", "NULL"),
-    withBindingDefaults(spec(ParameterId::MultilayerRelaxLimitDown, '\0', "multilayer-relax-limit-down", "Limit relaxation downward to this many lower neighboring layer ids. Use a negative value to allow relaxation to any lower layer.", ArgType::integer, "Algorithm", true, false, true, false, "-1"), "-1", "", "NULL"),
+    withBindingDefaults(withRange(spec(ParameterId::MultilayerRelaxRate, '\0', "multilayer-relax-rate", "Set the probability of relaxing from a state node to neighboring layers instead of staying in the current layer.", ArgType::probability, "Algorithm", true, false, true, false, "0.15"), "0", "1")),
+    withBindingDefaults(spec(ParameterId::MultilayerRelaxLimit, '\0', "multilayer-relax-limit", "Limit relaxation to this many neighboring layer ids in each direction. Use a negative value to allow relaxation to any layer.", ArgType::integer, "Algorithm", true, false, true, false, "-1"), "-1", "NULL"),
+    withBindingDefaults(spec(ParameterId::MultilayerRelaxLimitUp, '\0', "multilayer-relax-limit-up", "Limit relaxation upward to this many higher neighboring layer ids. Use a negative value to allow relaxation to any higher layer.", ArgType::integer, "Algorithm", true, false, true, false, "-1"), "-1", "NULL"),
+    withBindingDefaults(spec(ParameterId::MultilayerRelaxLimitDown, '\0', "multilayer-relax-limit-down", "Limit relaxation downward to this many lower neighboring layer ids. Use a negative value to allow relaxation to any lower layer.", ArgType::integer, "Algorithm", true, false, true, false, "-1"), "-1", "NULL"),
     spec(ParameterId::MultilayerRelaxByJsd, '\0', "multilayer-relax-by-jsd", "Weight multilayer relaxation by out-link similarity measured with Jensen-Shannon divergence.", "", "Algorithm", true),
-    withBindingDefaults(withMin(spec(ParameterId::Seed, 's', "seed", "Set the random number generator seed for reproducible results.", ArgType::integer, "Accuracy", false, false, true, false, "123"), "1"), "123", "_DEFAULT_SEED", "DEFAULT_SEED", "123L"),
-    withBindingDefaults(withMin(spec(ParameterId::NumTrials, 'N', "num-trials", "Run this many independent trials and keep the best solution.", ArgType::integer, "Accuracy", false, false, true, false, "1"), "1"), "1", "", "1L"),
-    withBindingDefaults(withMin(spec(ParameterId::CoreLoopLimit, 'M', "core-loop-limit", "Limit how many core loops try to move each node to the best module.", ArgType::integer, "Accuracy", true, false, true, false, "10"), "1"), "10", "", "10L"),
+    withBindingDefaults(withMin(spec(ParameterId::Seed, 's', "seed", "Set the random number generator seed for reproducible results.", ArgType::integer, "Accuracy", false, false, true, false, "123"), "1")),
+    withBindingDefaults(withMin(spec(ParameterId::NumTrials, 'N', "num-trials", "Run this many independent trials and keep the best solution.", ArgType::integer, "Accuracy", false, false, true, false, "1"), "1")),
+    withBindingDefaults(withMin(spec(ParameterId::CoreLoopLimit, 'M', "core-loop-limit", "Limit how many core loops try to move each node to the best module.", ArgType::integer, "Accuracy", true, false, true, false, "10"), "1")),
     withMin(spec(ParameterId::CoreLevelLimit, 'L', "core-level-limit", "Limit how many times core loops are reapplied to the aggregated modular network to find larger structures.", ArgType::integer, "Accuracy", true, false, true, false, "0"), "1"),
     withMin(spec(ParameterId::TuneIterationLimit, 'T', "tune-iteration-limit", "Limit the main iterations in the two-level partition algorithm. 0 means no limit.", ArgType::integer, "Accuracy", true, false, true, false, "0"), "1"),
-    withBindingDefaults(withMin(spec(ParameterId::CoreLoopCodelengthThreshold, '\0', "core-loop-codelength-threshold", "Require at least this codelength improvement to accept a new solution in a core loop.", ArgType::number, "Accuracy", true, false, true, false, "1e-10"), "0"), "1e-10", "_DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD", "DEFAULT_CORE_LOOP_CODELENGTH_THRESHOLD", "1e-10"),
-    withBindingDefaults(withMin(spec(ParameterId::TuneIterationRelativeThreshold, '\0', "tune-iteration-relative-threshold", "Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.", ArgType::number, "Accuracy", true, false, true, false, "1e-05"), "0"), "1e-5", "_DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD", "DEFAULT_TUNE_ITER_RELATIVE_THRESHOLD", "1e-5"),
-    withPythonDocDescription(withBindingDefaults(spec(ParameterId::FastHierarchicalSolution, 'F', "fast-hierarchical-solution", "Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to skip recursive refinement.", "", "Accuracy", true, false, false, true, "false", {}, "", "", "", "repeated_short"), "None", "", "NULL"), "Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive part."),
+    withBindingDefaults(withMin(spec(ParameterId::CoreLoopCodelengthThreshold, '\0', "core-loop-codelength-threshold", "Require at least this codelength improvement to accept a new solution in a core loop.", ArgType::number, "Accuracy", true, false, true, false, "1e-10"), "0")),
+    withBindingDefaults(withMin(spec(ParameterId::TuneIterationRelativeThreshold, '\0', "tune-iteration-relative-threshold", "Require each tune iteration to improve codelength by this fraction of the initial two-level codelength.", ArgType::number, "Accuracy", true, false, true, false, "1e-05"), "0")),
+    withPythonDocDescription(withBindingDefaults(spec(ParameterId::FastHierarchicalSolution, 'F', "fast-hierarchical-solution", "Find top modules quickly. Use -FF to keep all fast levels. Use -FFF to skip recursive refinement.", "", "Accuracy", true, false, false, true, "false", {}, "", "", "", "repeated_short"), "None", "NULL"), "Find top modules fast. Use 2 to keep all fast levels and 3 to skip the recursive part."),
     spec(ParameterId::InnerParallelization, '\0', "inner-parallelization", "Parallelize the innermost loop for speed, with a possible accuracy tradeoff.", "", "Accuracy", true),
     spec(ParameterId::PreferModularSolution, '\0', "prefer-modular-solution", "Prefer a modular solution even when one module gives a lower codelength.", "", "Accuracy", true),
     withMin(spec(ParameterId::NumRandomMoves, '\0', "num-random-moves", "Try this many random moves in each core loop to merge weakly connected nodes.", ArgType::integer, "Accuracy", true, false, true, false, "5"), "0"),
     withMin(spec(ParameterId::MaxDegreeForRandomMoves, '\0', "max-degree-for-random-moves", "Try random moves only for nodes with degree at most this value.", ArgType::integer, "Accuracy", true, false, true, false, "2"), "0"),
     spec(ParameterId::OutputDirectory, '\0', "out_directory", "Directory where output files are written.", "", "Output"),
-    withPythonDocDescription(withBindingDefaults(spec(ParameterId::Verbose, 'v', "verbose", "Increase console verbosity. Add more v flags to increase verbosity up to -vvv.", "", "Output", false, false, false, true, "false", {}, "verbosity_level", "verbosity_level", "verbose", "repeated_short"), "1", "_DEFAULT_VERBOSITY_LEVEL", "DEFAULT_VERBOSITY_LEVEL", "1L"), "Verbosity level on the console. 1 keeps the default output level, 2 renders -vv and so on."),
+    withPythonDocDescription(withBindingDefaults(spec(ParameterId::Verbose, 'v', "verbose", "Increase console verbosity. Add more v flags to increase verbosity up to -vvv.", "", "Output", false, false, false, true, "false", {}, "verbosity_level", "verbosity_level", "verbose", "repeated_short"), "1", "1L"), "Verbosity level on the console. 1 keeps the default output level, 2 renders -vv and so on."),
     spec(ParameterId::Silent, '\0', "silent", "Suppress console output.", "", "Output"),
     spec(ParameterId::Pretty, '\0', "pretty", "Use modernized console output with color and Unicode on interactive terminals.", "", "Output"),
   };
@@ -522,18 +546,12 @@ std::string parameterCatalogJson()
       bool firstLanguage = true;
       if (!parameter.pythonDefault.empty()) {
         json << "\"python\": {\"value\": " << jsonString(parameter.pythonDefault);
-        if (!parameter.pythonDefaultConstant.empty()) {
-          json << ", \"constant\": " << jsonString(parameter.pythonDefaultConstant);
-        }
         json << "}";
         firstLanguage = false;
       }
       if (!parameter.rDefault.empty()) {
         json << (firstLanguage ? "" : ", ")
              << "\"r\": {\"value\": " << jsonString(parameter.rDefault);
-        if (!parameter.rDefaultConstantValue.empty()) {
-          json << ", \"constantValue\": " << jsonString(parameter.rDefaultConstantValue);
-        }
         json << "}";
       }
       json << "}";

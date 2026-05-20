@@ -70,11 +70,6 @@ def generate_python(catalog: ParameterCatalog) -> str:
         "# make build-binding-options.",
         "",
     ]
-    for const, value in catalog.python_default_constants():
-        lines.append(f"{const} = {value}")
-    lines.append("")
-    lines.append("")
-
     for group in GROUPS:
         spec_name = f"_{group.upper()}_OPTION_SPECS"
         lines.append(f"{spec_name} = (")
@@ -228,11 +223,8 @@ def generate_r(catalog: ParameterCatalog) -> str:
         "# make build-binding-options.",
         "",
     ]
-    for const, value in catalog.r_default_constants():
-        lines.append(f"{const} <- {value}")
     lines.extend(
         [
-            "",
             ".skip_when_null <- function(x) !is.null(x)",
             ".skip_when_not_equal <- function(default) function(x) !identical(x, default)",
             "",

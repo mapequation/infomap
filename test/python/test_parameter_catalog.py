@@ -55,8 +55,8 @@ def test_parameter_catalog_classifies_binding_render_policies():
                 },
             },
             "bindingDefaults": {
-                "python": {"value": "1", "constant": "_DEFAULT_VERBOSITY_LEVEL"},
-                "r": {"value": "DEFAULT_VERBOSITY_LEVEL", "constantValue": "1L"},
+                "python": {"value": "1"},
+                "r": {"value": "1L"},
             },
         },
         {
@@ -112,8 +112,6 @@ def test_parameter_catalog_classifies_binding_render_policies():
         by_flag["--verbose"].python_doc_description()
         == "Verbosity level on the console."
     )
-    assert catalog.python_default_constants() == [("_DEFAULT_VERBOSITY_LEVEL", "1")]
-    assert catalog.r_default_constants() == [("DEFAULT_VERBOSITY_LEVEL", "1L")]
     assert (
         catalog.binding_only_entry("python", "include_self_links").render_policy
         == "deprecated_alias"
