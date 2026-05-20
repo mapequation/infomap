@@ -349,7 +349,7 @@ namespace {
       api.addOptionalNonOptionArguments(targets.optionalOutputDir, "out_directory", parameter.description, parameter.group);
       break;
     case ParameterId::Verbose:
-      addConfiguredOption(api.addIncrementalOptionArgument(config.verbosity, parameter.shortName, parameter.longName, parameter.description, parameter.group), parameter);
+      addConfiguredOption(api.addIncrementalOptionArgument(config.verbosity, parameter.shortName, parameter.longName, parameter.description, parameter.group, parameter.isAdvanced), parameter);
       break;
     case ParameterId::Silent:
       registerBoolOption(api, config.silent, parameter);
