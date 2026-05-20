@@ -20,18 +20,16 @@
 #include <set>
 #include <utility>
 #include <limits>
-#include <sstream>
-#include <locale>
 
 namespace infomap {
 
 struct LayerNode;
+class NetworkInputSinkAdapter;
 
 class Network : public StateNetwork {
-private:
-  // Helpers
-  std::istringstream m_extractor;
+  friend class NetworkInputSinkAdapter;
 
+private:
   // Multilayer
   std::map<unsigned int, Network> m_networks; // intra-layer links
   std::map<LayerNode, std::map<unsigned int, double>> m_interLinks;
@@ -48,16 +46,6 @@ private:
   // Meta data
   std::map<unsigned int, std::vector<int>> m_metaData;
   unsigned int m_numMetaDataColumns = 0;
-
-  using InsensitiveStringSet = std::set<std::string, io::InsensitiveCompare>;
-
-  std::map<std::string, InsensitiveStringSet> m_ignoreHeadings;
-  std::map<std::string, InsensitiveStringSet> m_validHeadings; // {
-  // 	{ "pajek", {"*Vertices", "*Edges", "*Arcs"} },
-  // 	{ "link-list", {"*Links"} },
-  // 	{ "bipartite", {"*Vertices", "*Bipartite"} },
-  // 	{ "general", {"*Vertices", "*States", "*Edges", "*Arcs", "*Links", "*Context"} }
-  // };
 
 public:
   Network() { init(); }
@@ -152,70 +140,6 @@ public:
 private:
   void init();
   void updateDerivedConfig();
-  void initValidHeadings();
-
-  void parseNetwork(const std::string& filename);
-  void parseNetwork(const std::string& filename, const InsensitiveStringSet& validHeadings, const InsensitiveStringSet& ignoreHeadings, const std::string& startHeading = "");
-
-  // Helper methods
-
-  /**
-   * Parse vertices under the heading
-   * @return The line after the vertices
-   */
-  std::string parseVertices(std::ifstream& file, const std::string& heading);
-  std::string parseStateNodes(std::ifstream& file, const std::string& heading);
-
-  std::string parseLinks(std::ifstream& file);
-
-  /**
-   * Parse multilayer links from a *multilayer section
-   */
-  std::string parseMultilayerLinks(std::ifstream& file);
-
-  /**
-   * Parse multilayer links from an *intra section
-   */
-  std::string parseMultilayerIntraLinks(std::ifstream& file);
-
-  /**
-   * Parse multilayer links from an *inter section
-   */
-  std::string parseMultilayerInterLinks(std::ifstream& file);
-
-  std::string parseBipartiteLinks(std::ifstream& file, const std::string& heading);
-
-  static std::string ignoreSection(std::ifstream& file, const std::string& heading);
-
-  void parseStateNode(const std::string& line, StateNetwork::StateNode& stateNode);
-
-  /**
-   * Parse a string of link data.
-   * If no weight data can be extracted, the default value 1.0 will be used.
-   * @throws an error if not both node ids can be extracted.
-   */
-  void parseLink(const std::string& line, unsigned int& n1, unsigned int& n2, double& weight);
-
-  /**
-   * Parse a string of multilayer link data.
-   * If no weight data can be extracted, the default value 1.0 will be used.
-   * @throws an error if not both node and layer ids can be extracted.
-   */
-  void parseMultilayerLink(const std::string& line, unsigned int& layer1, unsigned int& n1, unsigned int& layer2, unsigned int& n2, double& weight);
-
-  /**
-   * Parse a string of intra-multilayer link data.
-   * If no weight data can be extracted, the default value 1.0 will be used.
-   * @throws an error if not both node and layer ids can be extracted.
-   */
-  void parseMultilayerIntraLink(const std::string& line, unsigned int& layer, unsigned int& n1, unsigned int& n2, double& weight);
-
-  /**
-   * Parse a string of inter-multilayer link data.
-   * If no weight data can be extracted, the default value 1.0 will be used.
-   * @throws an error if not both node and layer ids can be extracted.
-   */
-  void parseMultilayerInterLink(const std::string& line, unsigned int& layer1, unsigned int& n, unsigned int& layer2, double& weight);
 
   static double calculateJensenShannonDivergence(bool& intersect, const OutLinkMap& layer1OutLinks, double sumOutLinkWeightLayer1, const OutLinkMap& layer2OutLinks, double sumOutLinkWeightLayer2);
 
